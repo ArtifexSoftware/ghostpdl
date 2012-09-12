@@ -147,6 +147,7 @@ s_jbig2_free(void *ptr, void *userdata)
 static void JB2_Callback
 s_jbig2_message(const char *message, JB2_Message_Level level, void *userdata)
 {
+    stream_jbig2decode_state *const state = (stream_jbig2decode_state *) userdata;
     const char *type;
 
     if (message == NULL) return;
@@ -164,9 +165,9 @@ s_jbig2_message(const char *message, JB2_Message_Level level, void *userdata)
     }
 
     if (level == cJB2_Message_Error) {
-        dprintf2("Luratech JBIG2 %s %s\n", type, message);
+        dmprintf2(state->memory, "Luratech JBIG2 %s %s\n", type, message);
     } else {
-        if_debug2('w', "[w]Luratech JBIG2 %s %s\n", type, message);
+        if_debug2m('w', state->memory, "[w]Luratech JBIG2 %s %s\n", type, message);
     }
 
     return;
@@ -211,7 +212,7 @@ s_jbig2_write(unsigned char *buffer,
     long available = ((width - 1) >> 3) + 1;
 
     if (row >= state->height) {
-        dlprintf2("jbig2decode: output for row index %lu of %lu called!\n", row, state->height);
+        dmlprintf2(state->memory, "jbig2decode: output for row index %lu of %lu called!\n", row, state->height);
         return cJB2_Error_Invalid_Index;
     }
 
@@ -242,8 +243,8 @@ s_jbig2decode_inbuf(stream_jbig2decode_state *state, stream_cursor_read * pr)
         while (new_size < state->infill + in_size)
             new_size = new_size << 1;
 
-        if_debug1('s', "[s]jbig2decode growing input buffer to %lu bytes\n",
-                new_size);
+        if_debug1m('s', state->memory, "[s]jbig2decode growing input buffer to %lu bytes\n",
+                   new_size);
         new = realloc(state->inbuf, new_size);
         if (new == NULL) return gs_error_VMerror;
 
@@ -334,7 +335,7 @@ s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
             if (error != cJB2_Error_OK) return ERRC;
             state->height = result;
             state->stride = ((state->width - 1) >> 3) + 1;
-            if_debug2('w', "[w]jbig2decode page is %ldx%ld; allocating image\n", state->width, state->height);
+            if_debug2m('w', state->memory, "[w]jbig2decode page is %ldx%ld; allocating image\n", state->width, state->height);
             state->image = malloc(state->height*state->stride);
 
             /* start image decode */
@@ -439,7 +440,7 @@ s_jbig2encode_write(const unsigned char *buffer,
     if (state->outbuf == NULL) {
         state->outbuf = malloc(JBIG2_BUFFER_SIZE);
         if (state->outbuf == NULL) {
-            dprintf("jbig2encode: failed to allocate output buffer\n");
+            dmprintf(state->memory, "jbig2encode: failed to allocate output buffer\n");
             return 0; /* can't return an error! */
         }
         state->outsize = JBIG2_BUFFER_SIZE;
@@ -447,13 +448,13 @@ s_jbig2encode_write(const unsigned char *buffer,
 
     /* grow the output buffer if necessary */
     while (pos+size > state->outsize) {
-        unsigned char *new = realloc(state->outbuf, state->outsize*2);
+        unsigned char *new_ = realloc(state->outbuf, state->outsize*2);
         if (new == NULL) {
-            dprintf1("jbig2encode: failed to resize output buffer"
+            dmprintf1(state->memory, "jbig2encode: failed to resize output buffer"
                 " beyond %lu bytes\n", state->outsize);
             return 0; /* can't return an error! */
         }
-        state->outbuf = new;
+        state->outbuf = new_;
         state->outsize *= 2;
     }
 

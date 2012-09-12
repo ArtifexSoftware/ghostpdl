@@ -231,7 +231,7 @@ df:         return mem_default_strip_copy_rop(dev,
                         rop_body_24(const_source, const_texture);
                     }
                 if (memcmp(testbuffer, start, bytelen) != 0) {
-                    eprintf("Failed!\n");
+                    emprintf(dev->memory, "Failed!\n");
                 }
 #else
                 rop_run(&ropper, drow, width);
@@ -277,7 +277,7 @@ df:         return mem_default_strip_copy_rop(dev,
                             rop_body_24(s_pixel, const_texture);
                         }
                     if (memcmp(testbuffer, start, bytelen) != 0) {
-                        eprintf("Failed!\n");
+                        emprintf(dev->memory, "Failed!\n");
                     }
 #else
 /**** 1-bit source ****/
@@ -329,7 +329,7 @@ df:         return mem_default_strip_copy_rop(dev,
                         }
                     }
                     if (memcmp(testbuffer, start, bytelen) != 0) {
-                        eprintf("Failed!\n");
+                        emprintf(dev->memory, "Failed!\n");
                     }
 #else
 /**** 8-bit source & dest ****/
@@ -386,7 +386,7 @@ df:         return mem_default_strip_copy_rop(dev,
                             rop_body_24(const_source, t_pixel);
                         }
                     if (memcmp(testbuffer, start, bytelen) != 0) {
-                        eprintf("Failed!\n");
+                        emprintf(dev->memory, "Failed!\n");
                     }
 #else
                     rop_run(&ropper, dptr, left);
@@ -437,7 +437,7 @@ df:         return mem_default_strip_copy_rop(dev,
                         }
                     }
                     if (memcmp(testbuffer, start, bytelen) != 0) {
-                        eprintf("Failed!\n");
+                        emprintf(dev->memory, "Failed!\n");
                     }
 #else
 /**** 8-bit T & D ****/
@@ -526,7 +526,7 @@ df:         return mem_default_strip_copy_rop(dev,
                         }
                     }
                     if (memcmp(testbuffer, start, bytelen) != 0) {
-                        eprintf("Failed!\n");
+                        emprintf(dev->memory, "Failed!\n");
                     }
 #else
                     rop_run(&ropper, dptr, left);
@@ -576,7 +576,7 @@ df:         return mem_default_strip_copy_rop(dev,
                         }
                     }
                     if (memcmp(testbuffer, start, bytelen) != 0) {
-                        eprintf("Failed!\n");
+                        emprintf(dev->memory, "Failed!\n");
                     }
 #else
 /**** 8-bit destination ****/

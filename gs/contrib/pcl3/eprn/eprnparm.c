@@ -189,11 +189,11 @@ void eprn_dump_parameter_list(gs_param_list *plist)
     int j;
 
     count++;
-    dlprintf("  `");
-    for (j = 0; j < key.size; j++) dputc(key.data[j]);
-    dprintf("'\n");
+    dmlprintf(plist->memory, "  `");
+    for (j = 0; j < key.size; j++) dmputc(plist->memory, key.data[j]);
+    dmprintf(plist->memory, "'\n");
   }
-  dlprintf1("  Number of parameters: %d.\n", count);
+  dmlprintf1(plist->memory, "  Number of parameters: %d.\n", count);
 
   return;
 }
@@ -894,7 +894,7 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
 
 #ifdef EPRN_TRACE
   if (gs_debug_c(EPRN_TRACE_CHAR)) {
-    dlprintf(
+    dmlprintf(dev->memory,
       "! eprn_put_params() called with the following device parameters:\n");
     eprn_dump_parameter_list(plist);
   }

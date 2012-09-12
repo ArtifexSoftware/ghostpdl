@@ -81,8 +81,8 @@ rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname
     }
 #ifdef DEBUG
     if (profile_cache->num_entries != 0)
-        eprintf1("gsicc_profile_cache_free, num_entries is %d (should be 0).\n",
-            profile_cache->num_entries);
+        emprintf1(mem,"gsicc_profile_cache_free, num_entries is %d (should be 0).\n",
+                  profile_cache->num_entries);
 #endif
     gs_free_object(mem->stable_memory, profile_cache,
                    "rc_gsicc_profile_cache_free");
@@ -148,7 +148,7 @@ gsicc_remove_cs_entry(gsicc_profile_cache_t *profile_cache)
 
 #ifdef DEBUG
     if (curr == NULL) {
-        eprintf(" attempt to remove from an empty profile cache.\n");
+        emprintf(memory, " attempt to remove from an empty profile cache.\n");
         return; /* gs_abort(); */
     }
 #endif
@@ -162,7 +162,7 @@ gsicc_remove_cs_entry(gsicc_profile_cache_t *profile_cache)
         profile_cache->head = NULL;
 #ifdef DEBUG
     if (profile_cache->num_entries != 0) {
-        eprintf1("profile cache list empty, but list has num_entries=%d.\n",
+        emprintf1(memory, "profile cache list empty, but list has num_entries=%d.\n",
             profile_cache->num_entries);
     }
 #endif

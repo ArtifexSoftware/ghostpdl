@@ -105,7 +105,7 @@ z_jbig2makeglobalctx(i_ctx_t * i_ctx_p)
         code = s_jbig2decode_make_global_data(data, size,
                         &global);
         if (size > 0 && global == NULL) {
-            dlprintf("failed to create parsed JBIG2GLOBALS object.");
+            dmlprintf(imemory, "failed to create parsed JBIG2GLOBALS object.");
             return_error(e_unknownerror);
         }
 

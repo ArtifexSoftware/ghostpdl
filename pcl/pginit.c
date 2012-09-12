@@ -189,7 +189,7 @@ hpgl_do_reset(
     if ((type & pcl_reset_picture_frame) != 0) {
         /* this shouldn't happen.  Picture frame side effects are
            handled directly by the command picture frame command. */
-        dprintf("PCL reset picture frame received\n");
+        dmprintf(pcs->memory, "PCL reset picture frame received\n");
     }
 
     if ((type & pcl_reset_overlay) != 0)
@@ -199,7 +199,7 @@ hpgl_do_reset(
     if ((type & (pcl_reset_plot_size)) != 0) {
         /* this shouldn't happen.  Plot size side effects are handled
            directly by the command picture frame command. */
-        dprintf("PCL reset plot received\n");
+        dmprintf(pcs->memory, "PCL reset plot received\n");
     }
 
     if ((type & (pcl_reset_permanent)) != 0 ) {

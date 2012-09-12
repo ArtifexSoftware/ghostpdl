@@ -791,7 +791,7 @@ gs_private_st_composite(st_compressed_color_list, compressed_color_list_t,
  * dumps the contents of the list.
  */
 void
-print_compressed_color_list(compressed_color_list_t * pcomp_list, int num_comp)
+print_compressed_color_list(const gs_memory_t *mem, compressed_color_list_t * pcomp_list, int num_comp)
 {
     int i, j, comp_num, comp;
     comp_bit_map_list_t * pcomp_bit_map;
@@ -801,8 +801,8 @@ print_compressed_color_list(compressed_color_list_t * pcomp_list, int num_comp)
 
     /* Indent our print out for sub levels */
     for (i = TOP_ENCODED_LEVEL - pcomp_list->level_num_comp; i > 0; i--)
-        dlprintf("    ");
-    dlprintf1("List level = %d\n", pcomp_list->level_num_comp);
+        dmlprintf(mem, "    ");
+    dmlprintf1(mem, "List level = %d\n", pcomp_list->level_num_comp);
     /*
      * Print the colorant bit maps for this level.
      */
@@ -810,30 +810,31 @@ print_compressed_color_list(compressed_color_list_t * pcomp_list, int num_comp)
         pcomp_bit_map = &(pcomp_list->u.comp_data[i]);
         /* Indent our print out for sub levels */
         for (j = TOP_ENCODED_LEVEL - pcomp_list->level_num_comp; j > 0; j--)
-            dlprintf("    ");
-        dlprintf4("%3d%4d%4d %d ", i, pcomp_bit_map->num_comp,
-                pcomp_bit_map->num_non_solid_comp, pcomp_bit_map->solid_not_100);
+            dmlprintf(mem, "    ");
+        dmlprintf4(mem,"%3d%4d%4d %d ", i, pcomp_bit_map->num_comp,
+                   pcomp_bit_map->num_non_solid_comp,
+                   pcomp_bit_map->solid_not_100);
         for (comp_num = num_comp - 1; comp_num >= 0; comp_num--) {
             comp = colorant_present(pcomp_bit_map, colorants, comp_num);
-            dlprintf1("%d", comp);
+            dmlprintf1(mem, "%d", comp);
             if ((comp_num & 7) == 0)    /* Separate into groups of 8 bits */
-                dlprintf(" ");
+                dmlprintf(mem, " ");
         }
-        dlprintf("    ");
+        dmlprintf(mem, "    ");
         for (comp_num = num_comp - 1; comp_num >= 0; comp_num--) {
             comp = colorant_present(pcomp_bit_map, solid_colorants, comp_num);
-            dlprintf1("%d", comp);
+            dmlprintf1(mem, "%d", comp);
             if ((comp_num & 7) == 0)    /* Separate into groups of 8 bits */
-                dlprintf(" ");
+                dmlprintf(mem, " ");
         }
-        dlprintf("\n");
+        dmlprintf(mem, "\n");
     }
 
     /*
      * Print the sub levels.
      */
     for (i = 0; i < pcomp_list->num_sub_level_ptrs; i++)
-       print_compressed_color_list(pcomp_list->u.sub_level_ptrs[i], num_comp);
+       print_compressed_color_list(mem, pcomp_list->u.sub_level_ptrs[i], num_comp);
 
     return;
 }

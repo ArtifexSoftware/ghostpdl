@@ -545,7 +545,7 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
     if (code < 0) { /* failed to load glyph data, put CID 0 */
        int default_fallback_CID = 0 ;
 
-       if_debug2('J', "[J]ztype9cidmap() use CID %d instead of glyph-missing CID %d\n", default_fallback_CID, op->value.intval);
+       if_debug2m('J', imemory, "[J]ztype9cidmap() use CID %d instead of glyph-missing CID %d\n", default_fallback_CID, op->value.intval);
 
        op->value.intval = default_fallback_CID;
 
@@ -556,7 +556,7 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
                                    &gdata, &fidx);
 
        if (code < 0) {
-           if_debug1('J', "[J]ztype9cidmap() could not load default glyph (CID %d)\n", op->value.intval);
+           if_debug1m('J', imemory, "[J]ztype9cidmap() could not load default glyph (CID %d)\n", op->value.intval);
            return_error(e_invalidfont);
        }
 

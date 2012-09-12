@@ -2493,7 +2493,7 @@ $(GLOBJ)gdevpsfu.$(OBJ) : $(GLSRC)gdevpsfu.c $(AK) $(gx_h)\
 $(GLOBJ)gdevpsfx.$(OBJ) : $(GLSRC)gdevpsfx.c $(AK) $(gx_h)\
  $(gserrors_h) $(math__h) $(memory__h)\
  $(gxfixed_h) $(gxfont_h) $(gxfont1_h) $(gxmatrix_h) $(gxtype1_h)\
- $(stream_h) $(gdevpsf_h) $(MAKEDIRS)
+ $(stream_h) $(gdevpsf_h) $(gxistate_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevpsfx.$(OBJ) $(C_) $(GLSRC)gdevpsfx.c
 
 # ---------------- Font copying ---------------- #

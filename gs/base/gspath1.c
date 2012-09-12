@@ -455,7 +455,7 @@ arc_add(const arc_curve_params_t * arc, bool is_quadrant)
     p2.x = p3.x + (fixed)((pt.x - p3.x) * fraction);
     p2.y = p3.y + (fixed)((pt.y - p3.y) * fraction);
 add:
-    if_debug8('r',
+    if_debug8m('r', path->memory,
               "[r]Arc f=%f p0=(%f,%f) pt=(%f,%f) p3=(%f,%f) action=%d\n",
               fraction, x0, y0, xt, yt, arc->p3.x, arc->p3.y,
               (int)arc->action);

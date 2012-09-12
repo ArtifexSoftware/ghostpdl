@@ -15,8 +15,8 @@
 
 
 /* Mask clipping support */
-#include "gserrors.h"
 #include "gx.h"
+#include "gserrors.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gxmclip.h"

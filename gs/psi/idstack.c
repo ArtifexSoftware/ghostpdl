@@ -66,10 +66,12 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
             )
             INCR(probes[1]);
     }
+#ifndef GS_THREADSAFE
     if (gs_debug_c('d') && !(stats_dstack.lookups % 1000))
         dlprintf3("[d]lookups=%ld probe1=%ld probe2=%ld\n",
                   stats_dstack.lookups, stats_dstack.probes[0],
                   stats_dstack.probes[1]);
+#endif
     return pvalue;
 }
 #define dstack_find_name_by_index real_dstack_find_name_by_index
@@ -119,11 +121,11 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
             ref dnref;
 
             name_index_ref(mem, nidx, &dnref);
-            dlputs("[D]lookup ");
+            dmlputs(mem, "[D]lookup ");
             debug_print_name(mem, &dnref);
-            dprintf3(" in 0x%lx(%u/%u)\n",
-                     (ulong) pdict, dict_length(pdref),
-                     dict_maxlength(pdref));
+            dmprintf3(mem," in 0x%lx(%u/%u)\n",
+                      (ulong) pdict, dict_length(pdref),
+                      dict_maxlength(pdref));
         }
 #endif
 #define INCR_DEPTH(pdref)\

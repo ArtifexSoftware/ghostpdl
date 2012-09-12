@@ -471,18 +471,18 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
         if (debug_print_OutputIntent) {
             int i, j;
 
-            dlprintf1("%d strings:\n", intent.size);
+            dmlprintf1(pdev->memory, "%d strings:\n", intent.size);
             for (i = 0; i < intent.size; i++) {
                 const gs_param_string *s = &intent.data[i];
-                dlprintf2("  %d: size %d:", i, s->size);
+                dmlprintf2(pdev->memory, "  %d: size %d:", i, s->size);
                 if (i < 4) {
                     for (j = 0; j < s->size; j++)
-                        dlprintf1("%c", s->data[j]);
+                        dmlprintf1(pdev->memory, "%c", s->data[j]);
                 } else {
                     for (j = 0; j < s->size; j++)
-                        dlprintf1(" %02x", s->data[j]);
+                        dmlprintf1(pdev->memory, " %02x", s->data[j]);
                 }
-                dlprintf("\n");
+                dmlprintf(pdev->memory, "\n");
             }
         }
     }
@@ -1242,10 +1242,10 @@ psm_print_page(gx_device_printer * pdev, FILE * pstream)
                     memset(data, 0, raster);
 #ifdef DEBUG
                 if (plane == 0)
-                    if_debug4(':',
-                              "[:]%4d - %4d mask = 0x%lx, slow_rop = %d\n",
-                              lnum, band_end - 1, (ulong)color_usage.or,
-                              color_usage.slow_rop);
+                    if_debug4m(':', pdev->memory,
+                               "[:]%4d - %4d mask = 0x%lx, slow_rop = %d\n",
+                               lnum, band_end - 1, (ulong)color_usage.or,
+                               color_usage.slow_rop);
 #endif
             }
             if (marked) {

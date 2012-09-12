@@ -251,29 +251,29 @@ rc_object_type_name(const void *vp, const rc_header *prc)
 void
 rc_trace_init_free(const void *vp, const rc_header *prc)
 {
-    dprintf3("[^]%s 0x%lx init = %ld\n",
-             rc_object_type_name(vp, prc), (ulong)vp, (long)prc->ref_count);
+    dmprintf3(prc->memory, "[^]%s 0x%lx init = %ld\n",
+              rc_object_type_name(vp, prc), (ulong)vp, (long)prc->ref_count);
 }
 void
 rc_trace_free_struct(const void *vp, const rc_header *prc, client_name_t cname)
 {
-    dprintf3("[^]%s 0x%lx => free (%s)\n",
+    dmprintf3(prc->memory, "[^]%s 0x%lx => free (%s)\n",
               rc_object_type_name(vp, prc),
               (ulong)vp, client_name_string(cname));
 }
 void
 rc_trace_increment(const void *vp, const rc_header *prc)
 {
-    dprintf3("[^]%s 0x%lx ++ => %ld\n",
+    dmprintf3(prc->memory, "[^]%s 0x%lx ++ => %ld\n",
               rc_object_type_name(vp, prc),
               (ulong)vp, (long)prc->ref_count);
 }
 void
 rc_trace_adjust(const void *vp, const rc_header *prc, int delta)
 {
-    dprintf4("[^]%s 0x%lx %+d => %ld\n",
-             rc_object_type_name(vp, prc),
-             (ulong)vp, delta, (long)(prc->ref_count + delta));
+    dmprintf4(prc->memory, "[^]%s 0x%lx %+d => %ld\n",
+              rc_object_type_name(vp, prc),
+              (ulong)vp, delta, (long)(prc->ref_count + delta));
 }
 
 #endif /* DEBUG */
@@ -297,8 +297,8 @@ ENUM_PTRS_BEGIN_PROC(basic_enum_ptrs)
     /* with number of elements 0 and allocation not passing 'element' */
     if (size == 0) {
 #ifdef DEBUG
-        dprintf2("  basic_enum_ptrs: Attempt to enum 0 size structure at 0x%lx, type: %s\n",
-                 (ulong)vptr, pstype->sname);
+        dmprintf2(mem, "  basic_enum_ptrs: Attempt to enum 0 size structure at 0x%lx, type: %s\n",
+                  (ulong)vptr, pstype->sname);
 #endif
         return 0;
     }
@@ -309,8 +309,8 @@ ENUM_PTRS_BEGIN_PROC(basic_enum_ptrs)
 #ifdef DEBUG
         /* some extra checking to make sure we aren't out of bounds */
         if (ppe->offset > size - sizeof(void *)) {
-            dprintf4("  basic_enum_ptrs: Attempt to enum ptr with offset=%d beyond size=%d: structure at 0x%lx, type: %s\n",
-                     ppe->offset, size, (ulong)vptr, pstype->sname);
+            dmprintf4(mem, "  basic_enum_ptrs: Attempt to enum ptr with offset=%d beyond size=%d: structure at 0x%lx, type: %s\n",
+                      ppe->offset, size, (ulong)vptr, pstype->sname);
             return 0;
         }
 #endif

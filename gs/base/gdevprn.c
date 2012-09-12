@@ -117,9 +117,9 @@ gdev_prn_setup_as_command_list(gx_device *pdev, gs_memory_t *buffer_memory,
   BEGIN\
     ulong *fp_ = (ulong *)&first_arg - 2;\
     for (; fp_ && (fp_[1] & 0xff000000) == 0x08000000; fp_ = (ulong *)*fp_)\
-        dprintf2("  fp=0x%lx ip=0x%lx\n", (ulong)fp_, fp_[1]);\
+        dmprintf2(buffer_memory, "  fp=0x%lx ip=0x%lx\n", (ulong)fp_, fp_[1]);\
   END
-dputs("alloc buffer:\n");
+dmputs(buffer_memory, "alloc buffer:\n");
 BACKTRACE(pdev);
 #endif /*DEBUGGING_HACKS*/
     for ( space = space_params->BufferSpace; ; ) {
@@ -1370,10 +1370,10 @@ gdev_prn_maybe_realloc_memory(gx_device_printer *prdev,
         gdev_prn_space_params new_sp;
 
 #ifdef DEBUGGING_HACKS
-debug_dump_bytes((const byte *)old_sp, (const byte *)(old_sp + 1), "old");
-debug_dump_bytes((const byte *)&prdev->space_params,
+debug_dump_bytes(pdev->memory, (const byte *)old_sp, (const byte *)(old_sp + 1), "old");
+debug_dump_bytes(pddev->memory, (const byte *)&prdev->space_params,
                  (const byte *)(&prdev->space_params + 1), "new");
-dprintf4("w=%d/%d, h=%d/%d\n", old_width, new_width, old_height, new_height);
+dmprintf4(pdev->memory, "w=%d/%d, h=%d/%d\n", old_width, new_width, old_height, new_height);
 #endif /*DEBUGGING_HACKS*/
         new_sp = prdev->space_params;
         prdev->width = old_width;

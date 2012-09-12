@@ -1192,7 +1192,7 @@ xcf_write_header(xcf_write_ctx *xc, xcf_device *pdev)
     for (channel_idx = 0; channel_idx < n_extra_channels; channel_idx++) {
         const gs_param_string *separation_name =
             pdev->separation_names.names[channel_idx];
-        dlprintf1("tile offset: %d\n", tile_offset);
+        dmlprintf1(pdev->memory, "tile offset: %d\n", tile_offset);
         xcf_write_32(xc, tile_offset);
         tile_offset += xcf_channel_size(xc, separation_name->size);
     }
@@ -1410,7 +1410,7 @@ xcf_write_footer(xcf_write_ctx *xc, xcf_device *pdev)
         int offset;
         int tile_idx;
 
-        dlprintf2("actual tile offset: %d %d\n", xc->offset, (int)arch_sizeof_color_index);
+        dmlprintf2(pdev->memory, "actual tile offset: %d %d\n", xc->offset, (int)arch_sizeof_color_index);
         xcf_write_32(xc, xc->width);
         xcf_write_32(xc, xc->height);
         xcf_write_32(xc, separation_name->size + 1);

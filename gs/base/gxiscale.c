@@ -319,7 +319,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     }
     penum->xyi.y = penum->yi0 + fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y
                                     * penum->dst_height / penum->Height));
-    if_debug0('b', "[b]render=interpolate\n");
+    if_debug0m('b', penum->memory, "[b]render=interpolate\n");
     if (use_icc) {
         /* Set up the link now */
         const gs_color_space *pcs;
@@ -549,7 +549,7 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                     dpd = - dpd;
                 }
                 stream_r->ptr = (byte *) psrc - 1;
-                if_debug0('B', "[B]Remap row:\n[B]");
+                if_debug0m('B', penum->memory, "[B]Remap row:\n[B]");
                 if (is_icc) {
                     stream_r->ptr = (byte *) pdata - 1;
                 } else {
@@ -568,14 +568,14 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                             int ci;
 
                             for (ci = 0; ci < spp_decode; ++ci)
-                                dprintf2("%c%04x", (ci == 0 ? ' ' : ','), psrc[ci]);
+                                dmprintf2(penum->memory, "%c%04x", (ci == 0 ? ' ' : ','), psrc[ci]);
                         }
     #endif
                     }
                 }
                 out += round_up(pss->params.WidthIn * spp_decode * sizeof(frac),
                                 align_bitmap_mod);
-                if_debug0('B', "\n");
+                if_debug0m('B', penum->memory, "\n");
             } else {
                 /* indexed and more than 8bps.  Need to get to the base space */
                 int bps = penum->bps;
@@ -690,8 +690,8 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                 /* Are we active? (i.e. in the render rectangle) */
                 if (!pss->params.Active)
                     goto inactive;
-                if_debug1('B', "[B]Interpolated row %d:\n[B]",
-                          penum->line_xy);
+                if_debug1m('B', penum->memory, "[B]Interpolated row %d:\n[B]",
+                           penum->line_xy);
                 psrc += pss->params.LeftMarginOut * spp_decode;
                 for (x = xo; x < xe;) {
 #ifdef DEBUG
@@ -699,7 +699,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                         int ci;
 
                         for (ci = 0; ci < spp_decode; ++ci)
-                            dprintf2("%c%04x", (ci == 0 ? ' ' : ','),
+                            dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
                                      psrc[ci]);
                     }
 #endif
@@ -809,10 +809,10 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                     }
                 }
                 LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
-                /*if_debug1('w', "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
+                /*if_debug1m('w', dev->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 inactive:
                 penum->line_xy++;
-                if_debug0('B', "\n");
+                if_debug0m('B', dev->memory, "\n");
             }
             if ((status == 0 && stream_r.ptr == stream_r.limit) || status == EOFC)
                 break;
@@ -948,8 +948,8 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                 /* Are we active? (i.e. in the render rectangle) */
                 if (!pss->params.Active)
                     goto inactive;
-                if_debug1('B', "[B]Interpolated row %d:\n[B]",
-                          penum->line_xy);
+                if_debug1m('B', penum->memory, "[B]Interpolated row %d:\n[B]",
+                           penum->line_xy);
                 /* Take care of CM on the entire interpolated row, if we 
                    did not already do CM */
                 if (penum->icc_link->is_identity || pss->params.early_cm) {
@@ -971,7 +971,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                         int ci;
 
                         for (ci = 0; ci < spp_cm; ++ci)
-                            dprintf2("%c%04x", (ci == 0 ? ' ' : ','),
+                            dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
                                      p_cm_interp[ci]);
                     }
 #endif
@@ -1038,10 +1038,10 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                     }
                 }  /* End on x loop */
                 LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
-                /*if_debug1('w', "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
+                /*if_debug1m('w', penum->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 inactive:
                 penum->line_xy++;
-                if_debug0('B', "\n");
+                if_debug0m('B', penum->memory, "\n");
             }
             if ((status == 0 && stream_r.ptr == stream_r.limit) || status == EOFC)
                 break;

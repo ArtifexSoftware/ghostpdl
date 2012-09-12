@@ -198,12 +198,12 @@ rb:
                 ss->offset_map_length++;
             }
 #	    endif
-            if_debug7('l',
-                      "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u color %d rop %d\n",
-                      bmin, bmax,
-                      (long)(io_procs->ftell(bfile) - sizeof(ss->b_this)), /* stefan foo was: 2 * sizeof ?? */
-                      (long)pos, left, ss->b_this.band_complexity.uses_color,
-                      ss->b_this.band_complexity.nontrivial_rops);
+            if_debug7m('l', st->memory,
+                       "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u color %d rop %d\n",
+                       bmin, bmax,
+                       (long)(io_procs->ftell(bfile) - sizeof(ss->b_this)), /* stefan foo was: 2 * sizeof ?? */
+                       (long)pos, left, ss->b_this.band_complexity.uses_color,
+                       ss->b_this.band_complexity.nontrivial_rops);
         }
     }
     pw->ptr = q;
@@ -739,7 +739,7 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
         crdev->yplane = *render_plane;
     else
         crdev->yplane.index = -1;
-    if_debug2('l', "[l]rendering bands (%d,%d)\n", band_first, band_last);
+    if_debug2m('l', bdev->memory, "[l]rendering bands (%d,%d)\n", band_first, band_last);
 #if 0 /* Disabled because it is slow and appears to have no useful effect. */
     if (clear)
         dev_proc(bdev, fill_rectangle)

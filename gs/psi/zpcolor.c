@@ -242,7 +242,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
     if (internal_accum) {
         gs_setdevice_no_init(pgs, (gx_device *)pdev);
         if (pinst->templat.uses_transparency) {
-            if_debug0('v', "   pushing the pdf14 compositor device into this graphics state\n");
+            if_debug0m('v', imemory, "   pushing the pdf14 compositor device into this graphics state\n");
             if ((code = gs_push_pdf14trans_device(pgs, true)) < 0)
                 return code;
         } else { /* not transparent */
@@ -329,7 +329,7 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
     }
     if (o_stack_adjust > 0) {
 #if 0
-        dlprintf1("PaintProc left %d extra on operator stack!\n", o_stack_adjust);
+        dmlprintf1(imemory, "PaintProc left %d extra on operator stack!\n", o_stack_adjust);
 #endif
         pop(o_stack_adjust);
     }

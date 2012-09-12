@@ -588,16 +588,16 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
         X_color_value mb = b & xdev->cman.match_mask.blue;
 
         if ((mr | mg | mb) == 0) {	/* i.e., all 0 */
-            if_debug4('C', "[cX]%u,%u,%u => foreground = %lu\n",
-                      r, g, b, (ulong) xdev->foreground);
+            if_debug4m('C', dev->memory, "[cX]%u,%u,%u => foreground = %lu\n",
+                       r, g, b, (ulong) xdev->foreground);
             return xdev->foreground;
         }
         if (mr == xdev->cman.match_mask.red &&
             mg == xdev->cman.match_mask.green &&
             mb == xdev->cman.match_mask.blue
             ) {
-            if_debug4('C', "[cX]%u,%u,%u => background = %lu\n",
-                      r, g, b, (ulong) xdev->background);
+            if_debug4m('C', dev->memory, "[cX]%u,%u,%u => background = %lu\n",
+                       r, g, b, (ulong) xdev->background);
             return xdev->background;
         }
     }
@@ -639,11 +639,11 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
                      cr * cmap->red_mult + cg * cmap->green_mult +
                      cb * cmap->blue_mult) + cmap->base_pixel;
 
-                if_debug4('C', "[cX]%u,%u,%u (std cmap) => %lu\n",
-                          r, g, b, pixel);  /* NB: gx_color_index size is 4 or 8 */
+                if_debug4m('C', dev->memory, "[cX]%u,%u,%u (std cmap) => %lu\n",
+                           r, g, b, pixel);  /* NB: gx_color_index size is 4 or 8 */
                 return pixel;
             }
-            if_debug3('C', "[cX]%u,%u,%u (std cmap fails)\n", r, g, b);
+            if_debug3m('C', dev->memory, "[cX]%u,%u,%u (std cmap fails)\n", r, g, b);
         } else {
             uint cr;
             X_color_value cvr;
@@ -653,10 +653,10 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
             if ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0) {
                 gx_color_index pixel = cr * cmap->red_mult + cmap->base_pixel;
 
-                if_debug2('C', "[cX]%u (std cmap) => %lu\n", r, pixel);
+                if_debug2m('C', dev->memory, "[cX]%u (std cmap) => %lu\n", r, pixel);
                 return pixel;
             }
-            if_debug1('C', "[cX]%u (std cmap fails)\n", r);
+            if_debug1m('C', dev->memory, "[cX]%u (std cmap fails)\n", r);
         }
     } else
 #endif
@@ -689,11 +689,11 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
                 gx_color_index pixel =
                     xdev->cman.dither_ramp[CUBE_INDEX(cr, cg, cb)];
 
-                if_debug4('C', "[cX]%u,%u,%u (dither cube) => %lu\n",
+                if_debug4m('C', dev->memory, "[cX]%u,%u,%u (dither cube) => %lu\n",
                           r, g, b, pixel);
                 return pixel;
             }
-            if_debug3('C', "[cX]%u,%u,%u (dither cube fails)\n", r, g, b);
+            if_debug3m('C', dev->memory, "[cX]%u,%u,%u (dither cube fails)\n", r, g, b);
         } else {
             uint cr;
             X_color_value cvr;
@@ -705,10 +705,10 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
             if ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0) {
                 gx_color_index pixel = xdev->cman.dither_ramp[cr];
 
-                if_debug2('C', "[cX]%u (dither ramp) => %lu\n", r, pixel);
+                if_debug2m('C', dev->memory, "[cX]%u (dither ramp) => %lu\n", r, pixel);
                 return pixel;
             }
-            if_debug1('C', "[cX]%u (dither ramp fails)\n", r);
+            if_debug1m('C', dev->memory, "[cX]%u (dither ramp fails)\n", r);
         }
     }
 
@@ -729,12 +729,12 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
                     xdev->cman.dynamic.colors[i] = xcp;
                 }
                 if (xcp->color.pad) {
-                    if_debug4('C', "[cX]%u,%u,%u (dynamic) => %lu\n",
-                              r, g, b, (ulong) xcp->color.pixel);
+                    if_debug4m('C', dev->memory, "[cX]%u,%u,%u (dynamic) => %lu\n",
+                               r, g, b, (ulong) xcp->color.pixel);
                     return xcp->color.pixel;
                 } else {
-                    if_debug3('C', "[cX]%u,%u,%u (dynamic) => missing\n",
-                              r, g, b);
+                    if_debug3m('C', dev->memory, "[cX]%u,%u,%u (dynamic) => missing\n",
+                               r, g, b);
                     return gx_no_color_index;
                 }
             }
@@ -743,7 +743,7 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
         /* ask the X server and add an entry. */
         /* First check if dynamic table is exhausted */
         if (xdev->cman.dynamic.used > xdev->cman.dynamic.max_used) {
-            if_debug3('C', "[cX]%u,%u,%u (dynamic) => full\n", r, g, b);
+            if_debug3m('C', dev->memory, "[cX]%u,%u,%u (dynamic) => full\n", r, g, b);
             return gx_no_color_index;
         }
         xcp = (x11_color_t *)
@@ -759,18 +759,18 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
         if (x_alloc_color(xdev, &xc)) {
             xcp->color.pixel = xc.pixel;
             xcp->color.pad = true;
-            if_debug5('c', "[cX]0x%x,0x%x,0x%x (dynamic) => added [%d]%lu\n",
-                      dr, dg, db, xdev->cman.dynamic.used - 1,
-                      (ulong)xc.pixel);
+            if_debug5m('c', dev->memory, "[cX]0x%x,0x%x,0x%x (dynamic) => added [%d]%lu\n",
+                       dr, dg, db, xdev->cman.dynamic.used - 1,
+                       (ulong)xc.pixel);
             return xc.pixel;
         } else {
             xcp->color.pad = false;
-            if_debug3('c', "[cX]0x%x,0x%x,0x%x (dynamic) => can't alloc\n",
-                      dr, dg, db);
+            if_debug3m('c', dev->memory, "[cX]0x%x,0x%x,0x%x (dynamic) => can't alloc\n",
+                       dr, dg, db);
             return gx_no_color_index;
         }
     }
-    if_debug3('C', "[cX]%u,%u,%u fails\n", r, g, b);
+    if_debug3m('C', dev->memory, "[cX]%u,%u,%u fails\n", r, g, b);
     return gx_no_color_index;
 #undef CV_DENOM
 }

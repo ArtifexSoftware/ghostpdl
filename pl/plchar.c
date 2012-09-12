@@ -113,7 +113,7 @@ pl_bitmap_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, g
     pwidth->x = pwidth->y = 0;
     if ( !pwidth ) {
 #ifdef DEBUG
-        dprintf("Warning should not call width function without width\n" );
+        dmprintf(plfont->pfont->memory, "Warning should not call width function without width\n" );
 #endif
         return (cdata == 0 ? 1 : 0);
     }
@@ -449,14 +449,14 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
           if ( gs_debug_c('B') ) {
               int i;
               int pixels = round_up(image.Width,8) * image.Height;
-              dprintf7("bitmap font data chr=%ld, width=%d, height=%d, lsb=%d, ascent=%d, top offset=%d left offset=%d\n",
-                       chr, image.Width, image.Height, lsb, ascent, pl_get_int16(params + 2), pl_get_int16(params));
+              dmprintf7(pgs->memory, "bitmap font data chr=%ld, width=%d, height=%d, lsb=%d, ascent=%d, top offset=%d left offset=%d\n",
+                        chr, image.Width, image.Height, lsb, ascent, pl_get_int16(params + 2), pl_get_int16(params));
               for ( i = 0; i < pixels; i++ ) {
                   if ( i % round_up(image.Width, 8) == 0 )
-                      dprintf("\n");
-                  dprintf1("%d", bitmap_data[i >> 3] & (128 >> (i & 7)) ? 1 : 0);
+                      dmprintf(pgs->memory, "\n");
+                  dmprintf1(pgs->memory, "%d", bitmap_data[i >> 3] & (128 >> (i & 7)) ? 1 : 0);
               }
-              dprintf("\n");
+              dmprintf(pgs->memory, "\n");
           }
 #endif
           code = image_bitmap_char(ienum, &image, bitmap_data,
@@ -595,7 +595,7 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index,
         }
         else {
             if ( gs_debug_c('=') ) {
-                dprintf("Found vertical metrics\n");
+                dmprintf(pfont->memory, "Found vertical metrics\n");
             }
         }
     }
@@ -783,7 +783,7 @@ pl_tt_cmap_encode_char(gs_font_type42 *pfont, ulong cmap_offset,
         cmap_sub = cmap + 4;
         { uint i;
           for ( i = 0; i < pl_get_uint16(cmap + 2); ++i )
-            { if_debug3('j', "[j]cmap %d: platform %u encoding %u\n",
+            { if_debug3m('j', pfont->memory, "[j]cmap %d: platform %u encoding %u\n",
                         i, pl_get_uint16(cmap_sub + i * 8), pl_get_uint16(cmap_sub + i * 8 + 2));
               if ( pl_get_uint16(cmap_sub + i * 8) == 3 )
                 { cmap_sub += i * 8;
@@ -1203,7 +1203,7 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
     cdata = font_glyph->data;
 
     if ( cdata == 0 ) {
-        if_debug1('1', "[1] no character data for glyph %ld\n",glyph);
+        if_debug1m('1', pgs->memory, "[1] no character data for glyph %ld\n",glyph);
         return 0;
     }
     if ( cdata[3] == 4 ) { /* Compound character */
@@ -1232,7 +1232,7 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
         outlines = cdata + pl_get_uint16(cdata + 6);
         num_loops = pl_get_uint16(outlines);
 
-        if_debug2('1', "[1]ifont glyph %lu: loops=%u\n",(ulong)glyph, num_loops);
+        if_debug2m('1', pgs->memory, "[1]ifont glyph %lu: loops=%u\n",(ulong)glyph, num_loops);
 
         if (num_loops == 0)
             return -1;
@@ -1292,13 +1292,13 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
                     gs_free_object(pgs->memory, xBuffer, "x point buffer");
                 if( yBuffer != NULL)
                     gs_free_object(pgs->memory, yBuffer, "y point buffer");
-                if_debug1('1', "[1]cannot allocate point buffers %i\n",pointBufferSize * sizeof(int));
+                if_debug1m('1', pgs->memory, "[1]cannot allocate point buffers %i\n",pointBufferSize * sizeof(int));
                 return_error(gs_error_VMerror);
             }
 
             xLast = NULL;
 
-            if_debug2('1', "[1]num_points=%u num_aux_points=%u\n", num_points, num_aux_points);
+            if_debug2m('1', pgs->memory, "[1]num_points=%u num_aux_points=%u\n", num_points, num_aux_points);
 
             /* collect the points in the buffers, since we need to clean them up later */
             /* only points inside the bounding box are allowed */
@@ -1308,9 +1308,9 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
                 x = pl_get_uint16(x_coords) & 0x3fff;
                 y = pl_get_uint16(y_coords) & 0x3fff;
 
-                if_debug4('1', "[1]%s (%d,%d) %s\n",
-                          (*x_coords & 0x80 ? " line" : "curve"), x, y,
-                          (*y_coords & 0x80 ? " line" : "curve"));
+                if_debug4m('1', pgs->memory, "[1]%s (%d,%d) %s\n",
+                           (*x_coords & 0x80 ? " line" : "curve"), x, y,
+                           (*y_coords & 0x80 ? " line" : "curve"));
 
                 if (xScan > xBuffer)  { /* not first point, therefore aux is possible */
                     if ( x_aux_coords < x_aux_coords_last &&!(*x_coords & 0x80) ) { /* use an aux point */
@@ -1318,7 +1318,7 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
                         int dx = (*x_aux_coords++ ^ 0x80) - 0x80;
                         int dy = (*y_aux_coords++ ^ 0x80) - 0x80;
 
-                        if_debug2('1', "[1]... aux (%d,%d)\n", dx, dy);
+                        if_debug2m('1', pgs->memory, "[1]... aux (%d,%d)\n", dx, dy);
 
                         xAux = (x + *(xScan-1)) / 2 + dx;
                         yAux = (y + *(yScan-1)) / 2 + dy;
@@ -1404,8 +1404,8 @@ pl_intelli_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, 
 #ifdef DEBUG
         {
             pl_font_glyph_t *cglyph = pl_font_lookup_glyph(plfont, char_code);
-            if_debug1('1', "[1] glyph %ld\n", cglyph->glyph);
-            if_debug2('1', "[1] intelli width of %d %f\n", char_code, pwidth->x);
+            if_debug1m('1', plfont->pfont->memory, "[1] glyph %ld\n", cglyph->glyph);
+            if_debug2m('1', plfont->pfont->memory, "[1] intelli width of %d %f\n", char_code, pwidth->x);
         }
 #endif
         return 0;
@@ -1426,7 +1426,8 @@ pl_intelli_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code
 
     /* compound */
     if ( cdata[3] == 4 ) {
-        dprintf("warning compound intellifont metrics not supported" );
+        dmprintf(plfont->pfont->memory,
+                 "warning compound intellifont metrics not supported");
         return 0;
     }
 
@@ -1535,9 +1536,11 @@ pl_tt_finish_init(gs_font_type42 *pfont, bool downloaded)
             access(12, numTables * 16, TableDirectory);
             for ( i = 0; i < numTables; ++i )
               { const byte *tab = TableDirectory + i * 16;
-                dprintf6("%c%c%c%c offset = %lu length = %lu\n",
-                         tab[0], tab[1], tab[2], tab[3],
-                         (ulong)pl_get_uint32(tab + 8), (ulong)pl_get_uint32(tab + 12));
+                dmprintf6(pfont->memory,
+                          "%c%c%c%c offset = %lu length = %lu\n",
+                          tab[0], tab[1], tab[2], tab[3],
+                          (ulong)pl_get_uint32(tab + 8),
+                          (ulong)pl_get_uint32(tab + 12));
               }
           }
 #endif

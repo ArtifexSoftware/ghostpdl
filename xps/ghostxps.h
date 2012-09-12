@@ -309,7 +309,7 @@ int xps_parse_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, ch
 void xps_free_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict);
 void xps_resolve_resource_reference(xps_context_t *ctx, xps_resource_t *dict, char **attp, xps_item_t **tagp, char **urip);
 
-void xps_debug_resource_dictionary(xps_resource_t *dict);
+void xps_debug_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict);
 
 /*
  * Fixed page/graphics parsing.

@@ -150,6 +150,7 @@ color_hsb_to_rgb(floatp hue, floatp saturation, floatp brightness, float rgb[3])
         rgb[0] = frac2float(R);
         rgb[1] = frac2float(G);
         rgb[2] = frac2float(B);
+#ifndef GS_THREADSAFE
 #ifdef DEBUG
         if (gs_debug_c('c')) {
             dlprintf7("[c]hsb(%g,%g,%g)->VSFI(%ld,%d,%ld,%d)->\n",
@@ -157,6 +158,7 @@ color_hsb_to_rgb(floatp hue, floatp saturation, floatp brightness, float rgb[3])
             dlprintf6("   RGB(%d,%d,%d)->rgb(%g,%g,%g)\n",
                       R, G, B, rgb[0], rgb[1], rgb[2]);
         }
+#endif
 #endif
     }
 }

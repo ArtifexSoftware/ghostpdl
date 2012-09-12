@@ -740,8 +740,9 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
         if (cdev->cropping_saved) {
             cdev->cropping_min = cdev->save_cropping_min;
             cdev->cropping_max = cdev->save_cropping_max;
-            if_debug2('v', "[v] clist_fill_path: restore cropping_min=%d croping_max=%d\n",
-                                    cdev->save_cropping_min, cdev->save_cropping_max);
+            if_debug2m('v', cdev->memory,
+                       "[v] clist_fill_path: restore cropping_min=%d croping_max=%d\n",
+                       cdev->save_cropping_min, cdev->save_cropping_max);
         }
         return code;
     }
@@ -764,8 +765,9 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
         cdev->save_cropping_max = cdev->cropping_max;
         cdev->cropping_min = max(ry, cdev->cropping_min);
         cdev->cropping_max = min(ry + rheight, cdev->cropping_max);
-        if_debug2('v', "[v] clist_fill_path: narrow cropping_min=%d croping_max=%d\n",
-                                cdev->save_cropping_min, cdev->save_cropping_max);
+        if_debug2m('v', cdev->memory,
+                   "[v] clist_fill_path: narrow cropping_min=%d croping_max=%d\n",
+                   cdev->save_cropping_min, cdev->save_cropping_max);
         RECT_ENUM_INIT(re, ry, rheight);
         do {
             RECT_STEP_INIT(re);
@@ -1110,11 +1112,11 @@ cmd_put_segment(cmd_segment_writer * psw, byte op,
     if (gs_debug_c('L')) {
         int j;
 
-        dlprintf2("[L]  %s:%d:", cmd_sub_op_names[op >> 4][op & 0xf],
+        dmlprintf2(psw->cldev->memory, "[L]  %s:%d:", cmd_sub_op_names[op >> 4][op & 0xf],
                   (int)notes);
         for (j = 0; j < i; ++j)
-            dprintf1(" %g", fixed2float(operands[j]));
-        dputs("\n");
+            dmprintf1(psw->cldev->memory, " %g", fixed2float(operands[j]));
+        dmputs(psw->cldev->memory, "\n");
     }
 #endif
 
@@ -1146,7 +1148,7 @@ cmd_put_segment(cmd_segment_writer * psw, byte op,
                         operands[1] == -psw->delta_first.y
                         ) {
                         cmd_uncount_op(cmd_opv_rm2lineto, psw->len);
-                        *psw->dp = cmd_count_op(cmd_opv_rm3lineto, psw->len);
+                        *psw->dp = cmd_count_op(cmd_opv_rm3lineto, psw->len, psw->cldev->memory);
                         return 0;
                     }
                     break;
@@ -1302,9 +1304,9 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     struct { fixed vs[6]; } prev;
 
     first.x = first.y = out.x = out.y = start.x = start.y = 0; /* Quiet gcc warning. */
-    if_debug4('p', "[p]initial (%g,%g), clip [%g..%g)\n",
-              fixed2float(px), fixed2float(py),
-              fixed2float(ymin), fixed2float(ymax));
+    if_debug4m('p', cldev->memory, "[p]initial (%g,%g), clip [%g..%g)\n",
+               fixed2float(px), fixed2float(py),
+               fixed2float(ymin), fixed2float(ymax));
     gx_path_enum_init(&cenum, ppath);
     writer.cldev = cldev;
     writer.pcls = pcls;
@@ -1334,8 +1336,8 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                 /* All done. */
                 pcls->rect.x = fixed2int_var(px);
                 pcls->rect.y = fixed2int_var(py);
-                if_debug2('p', "[p]final (%d,%d)\n",
-                          pcls->rect.x, pcls->rect.y);
+                if_debug2m('p', cldev->memory, "[p]final (%d,%d)\n",
+                           pcls->rect.x, pcls->rect.y);
                 return set_cmd_put_op(dp, cldev, pcls, path_op, 1);
             case gs_pe_moveto:
                 /* If the path is open and needs an implicit close, */
@@ -1349,16 +1351,16 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                 start_skip = false;
                 if ((start_side = side = which_side(B)) != 0) {
                     out.x = A, out.y = B;
-                    if_debug3('p', "[p]skip moveto (%g,%g) side %d\n",
-                              fixed2float(out.x), fixed2float(out.y),
-                              side);
+                    if_debug3m('p', cldev->memory, "[p]skip moveto (%g,%g) side %d\n",
+                               fixed2float(out.x), fixed2float(out.y),
+                               side);
                     continue;
                 }
                 C = A - px, D = B - py;
                 first.x = px = A, first.y = py = B;
                 code = cmd_put_rmoveto(&writer, &C);
-                if_debug2('p', "[p]moveto (%g,%g)\n",
-                          fixed2float(px), fixed2float(py));
+                if_debug2m('p', cldev->memory, "[p]moveto (%g,%g)\n",
+                           fixed2float(px), fixed2float(py));
                 break;
             case gs_pe_gapto:
                 {
@@ -1371,9 +1373,9 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                             start_skip = true;
                         out.x = A, out.y = B;
                         out_notes = notes;
-                        if_debug3('p', "[p]skip gapto (%g,%g) side %d\n",
-                                  fixed2float(out.x), fixed2float(out.y),
-                                  side);
+                        if_debug3m('p', cldev->memory, "[p]skip gapto (%g,%g) side %d\n",
+                                   fixed2float(out.x), fixed2float(out.y),
+                                   side);
                         continue;
                     }
                     /* If we skipped any segments, put out a moveto/lineto. */
@@ -1387,9 +1389,9 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                         if (code < 0)
                             return code;
                         px = out.x, py = out.y;
-                        if_debug3('p', "[p]catchup %s (%g,%g) for line\n",
-                                  (open < 0 ? "moveto" : "lineto"),
-                                  fixed2float(px), fixed2float(py));
+                        if_debug3m('p', cldev->memory, "[p]catchup %s (%g,%g) for line\n",
+                                   (open < 0 ? "moveto" : "lineto"),
+                                   fixed2float(px), fixed2float(py));
                     }
                     if ((side = next_side) != 0) {	/* Note a vertex going outside the clip region. */
                         out.x = A, out.y = B;
@@ -1399,8 +1401,8 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                     open = 1;
                     code = cmd_put_rgapto(&writer, &C, notes);
                 }
-                if_debug3('p', "[p]gapto (%g,%g) side %d\n",
-                          fixed2float(px), fixed2float(py), side);
+                if_debug3m('p', cldev->memory, "[p]gapto (%g,%g) side %d\n",
+                           fixed2float(px), fixed2float(py), side);
                 break;
             case gs_pe_lineto:
                 {
@@ -1413,9 +1415,9 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                             start_skip = true;
                         out.x = A, out.y = B;
                         out_notes = notes;
-                        if_debug3('p', "[p]skip lineto (%g,%g) side %d\n",
-                                  fixed2float(out.x), fixed2float(out.y),
-                                  side);
+                        if_debug3m('p', cldev->memory, "[p]skip lineto (%g,%g) side %d\n",
+                                   fixed2float(out.x), fixed2float(out.y),
+                                   side);
                         continue;
                     }
                     /* If we skipped any segments, put out a moveto/lineto. */
@@ -1429,9 +1431,9 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                         if (code < 0)
                             return code;
                         px = out.x, py = out.y;
-                        if_debug3('p', "[p]catchup %s (%g,%g) for line\n",
-                                  (open < 0 ? "moveto" : "lineto"),
-                                  fixed2float(px), fixed2float(py));
+                        if_debug3m('p', cldev->memory, "[p]catchup %s (%g,%g) for line\n",
+                                   (open < 0 ? "moveto" : "lineto"),
+                                   fixed2float(px), fixed2float(py));
                     }
                     if ((side = next_side) != 0) {	/* Note a vertex going outside the clip region. */
                         out.x = A, out.y = B;
@@ -1441,8 +1443,8 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                     open = 1;
                     code = cmd_put_rlineto(&writer, &C, notes);
                 }
-                if_debug3('p', "[p]lineto (%g,%g) side %d\n",
-                          fixed2float(px), fixed2float(py), side);
+                if_debug3m('p', cldev->memory, "[p]lineto (%g,%g) side %d\n",
+                           fixed2float(px), fixed2float(py), side);
                 break;
             case gs_pe_closepath:
 #ifdef DEBUG
@@ -1457,8 +1459,9 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                         case gs_pe_moveto:
                             break;
                         default:
-                            lprintf1("closepath followed by %d, not end/moveto!\n",
-                                     op);
+                            mlprintf1(cldev->memory,
+                                      "closepath followed by %d, not end/moveto!\n",
+                                      op);
                     }
                 }
 #endif
@@ -1471,8 +1474,8 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                         if (code < 0)
                             return code;
                         px = out.x, py = out.y;
-                        if_debug2('p', "[p]catchup line (%g,%g) for close\n",
-                                  fixed2float(px), fixed2float(py));
+                        if_debug2m('p', cldev->memory, "[p]catchup line (%g,%g) for close\n",
+                                   fixed2float(px), fixed2float(py));
                     }
                     if (open > 0 && start_skip) {	/* Draw the closing line back to the start. */
                         C = start.x - px, D = start.y - py;
@@ -1480,8 +1483,8 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                         if (code < 0)
                             return code;
                         px = start.x, py = start.y;
-                        if_debug2('p', "[p]draw close to (%g,%g)\n",
-                                  fixed2float(px), fixed2float(py));
+                        if_debug2m('p', cldev->memory, "[p]draw close to (%g,%g)\n",
+                                   fixed2float(px), fixed2float(py));
                     }
                 }
                 /*
@@ -1513,7 +1516,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                 open = 0;
                 px = first.x, py = first.y;
                 code = cmd_put_segment(&writer, cmd_opv_closepath, &A, sn_none);
-                if_debug0('p', "[p]close\n");
+                if_debug0m('p', cldev->memory, "[p]close\n");
                 break;
             case gs_pe_curveto:
                 {
@@ -1540,9 +1543,10 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                                     start_skip = true;
                                 out.x = E, out.y = F;
                                 out_notes = notes;
-                                if_debug3('p', "[p]skip curveto (%g,%g) side %d\n",
-                                     fixed2float(out.x), fixed2float(out.y),
-                                          side);
+                                if_debug3m('p', cldev->memory,
+                                           "[p]skip curveto (%g,%g) side %d\n",
+                                           fixed2float(out.x), fixed2float(out.y),
+                                           side);
                                 continue;
                             }
                             out_side = all_side;
@@ -1561,9 +1565,10 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                             if (code < 0)
                                 return code;
                             px = out.x, py = out.y;
-                            if_debug3('p', "[p]catchup %s (%g,%g) for curve\n",
-                                      (open < 0 ? "moveto" : "lineto"),
-                                      fixed2float(px), fixed2float(py));
+                            if_debug3m('p', cldev->memory,
+                                       "[p]catchup %s (%g,%g) for curve\n",
+                                       (open < 0 ? "moveto" : "lineto"),
+                                       fixed2float(px), fixed2float(py));
                         }
                         if ((side = out_side) != 0) {	/* Note a vertex going outside the clip region. */
                             out.x = E, out.y = F;
@@ -1574,10 +1579,11 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                         const fixed *optr = vs;
                         byte op;
 
-                        if_debug7('p', "[p]curveto (%g,%g; %g,%g; %g,%g) side %d\n",
-                                  fixed2float(A), fixed2float(B),
-                                  fixed2float(C), fixed2float(D),
-                                  fixed2float(E), fixed2float(F), side);
+                        if_debug7m('p', cldev->memory,
+                                   "[p]curveto (%g,%g; %g,%g; %g,%g) side %d\n",
+                                   fixed2float(A), fixed2float(B),
+                                   fixed2float(C), fixed2float(D),
+                                   fixed2float(E), fixed2float(F), side);
                         E -= C, F -= D;
                         C -= A, D -= B;
                         A -= px, B -= py;

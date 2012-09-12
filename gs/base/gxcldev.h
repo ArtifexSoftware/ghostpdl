@@ -387,12 +387,12 @@ int cmd_put_params(gx_device_clist_writer *, gs_param_list *);
 
 /* Conditionally keep command statistics. */
 #ifdef DEBUG
-int cmd_count_op(int op, uint size);
+int cmd_count_op(int op, uint size, const gs_memory_t *mem);
 void cmd_uncount_op(int op, uint size);
-void cmd_print_stats(void);
+void cmd_print_stats(const gs_memory_t *);
 #  define cmd_count_add1(v) (v++)
 #else
-#  define cmd_count_op(op, size) (op)
+#  define cmd_count_op(op, size, mem) (op)
 #  define cmd_uncount_op(op, size) DO_NOTHING
 #  define cmd_count_add1(v) DO_NOTHING
 #endif
@@ -416,7 +416,7 @@ byte *cmd_put_op(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint siz
 #define set_cmd_put_op(dp, cldev, pcls, op, csize)\
   ( (dp = cmd_put_op(cldev, pcls, csize)) == 0 ?\
       (cldev)->error_code :\
-    (*dp = cmd_count_op(op, csize), 0) )
+    (*dp = cmd_count_op(op, csize, cldev->memory), 0) )
 
 /* Add a command for all bands or a range of bands. */
 byte *cmd_put_range_op(gx_device_clist_writer * cldev, int band_min,
@@ -428,7 +428,7 @@ byte *cmd_put_range_op(gx_device_clist_writer * cldev, int band_min,
 #define set_cmd_put_range_op(dp, cldev, op, bmin, bmax, csize)\
   ( (dp = cmd_put_range_op(cldev, bmin, bmax, csize)) == 0 ?\
       (cldev)->error_code :\
-    (*dp = cmd_count_op(op, csize), 0) )
+    (*dp = cmd_count_op(op, csize, (cldev)->memory), 0) )
 #define set_cmd_put_all_op(dp, cldev, op, csize)\
   set_cmd_put_range_op(dp, cldev, op, 0, (cldev)->nbands - 1, csize)
 

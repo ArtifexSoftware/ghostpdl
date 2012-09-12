@@ -88,8 +88,8 @@ gs_image_class_1_simple(gx_image_enum * penum)
                         return 0;
                     }
                 }
-                if_debug2('b', "[b]render=simple, unpack=copy; rect.w=%d, dev_width=%ld\n",
-                          penum->rect.w, dev_width);
+                if_debug2m('b', penum->memory, "[b]render=simple, unpack=copy; rect.w=%d, dev_width=%ld\n",
+                           penum->rect.w, dev_width);
                 rproc = image_render_simple;
                 break;
             }
@@ -119,8 +119,9 @@ gs_image_class_1_simple(gx_image_enum * penum)
                     return 0;
                 }
                 penum->xi_next = penum->line_xy = fixed2int_var_rounded(ox);
-                if_debug3('b', "[b]render=landscape, unpack=copy; rect.w=%d, dev_width=%ld, line_size=%ld\n",
-                          penum->rect.w, dev_width, line_size);
+                if_debug3m('b', penum->memory,
+                           "[b]render=landscape, unpack=copy; rect.w=%d, dev_width=%ld, line_size=%ld\n",
+                           penum->rect.w, dev_width, line_size);
                 rproc = image_render_landscape;
                 /* Precompute values needed for rasterizing. */
                 penum->dxy =

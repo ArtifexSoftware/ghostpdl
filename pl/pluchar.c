@@ -165,7 +165,7 @@ pl_set_ufst_font(const pl_font_t * plfont, FONTCONTEXT * pfc)
     uint    status = CGIFfont(FSA pfc);
 
     if (status != 0)
-        dprintf1("CGIFfont error %d\n", status);
+        dmprintf1(plfont->pfont->memory, "CGIFfont error %d\n", status);
     else
         plfont_last = plfont;   /* record this font for use in call-backs */
     return status;
@@ -264,7 +264,7 @@ pl_ufst_char_width(
     CGIFchIdptr(FSA (VOID *)&chIdloc, NULL);
     fcode.CharType.TT_unicode = char_code;
     if ((status = CGIFwidth2(FSA &fcode, 1, 4, fontWidth)) != 0) {
-        dprintf1("CGIFwidth error %d\n", status);
+        dmprintf1(pgs->memory, "CGIFwidth error %d\n", status);
         return status;
     }
     if (fontWidth[0] == ERR_char_unavailable || fontWidth[1] == 0)
@@ -315,7 +315,7 @@ pl_ufst_make_char(
             }
         }
         if (status != 0) {
-            dprintf2("CGIFchar_handle error %d for char=0x%x\n", status, chr);
+            dmprintf2(pgs->memory, "CGIFchar_handle error %d for char=0x%x\n", status, chr);
             gs_setcharwidth(penum, pgs, 0.0, 0.0);
             return 0;   /* returning status causes the job to be aborted */
         }

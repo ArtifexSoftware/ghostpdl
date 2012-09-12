@@ -70,8 +70,9 @@ cmd_write_rect_hl_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     }
     if (code < 0)
         return code;
-    if_debug5('L', "rect hl r%d:%d,%d,%d,%d\n",
-        rcsize - 1, pcls->rect.x, pcls->rect.y, pcls->rect.width, pcls->rect.height);
+    if_debug5m('L', cldev->memory, "rect hl r%d:%d,%d,%d,%d\n",
+               rcsize - 1, pcls->rect.x, pcls->rect.y,
+               pcls->rect.width, pcls->rect.height);
     cmd_put_rect(&pcls->rect, dp);
     return 0;
 }
@@ -124,14 +125,14 @@ cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             code = set_cmd_put_op(dp, cldev, pcls, op + 0x10, 3);
             if (code < 0)
                 return code;
-            if_debug3('L', "    rs2:%d,%d,0,%d\n",
-                      dx, dwidth, dheight);
+            if_debug3m('L', cldev->memory, "    rs2:%d,%d,0,%d\n",
+                       dx, dwidth, dheight);
         } else {
             code = set_cmd_put_op(dp, cldev, pcls, op + 0x10, 5);
             if (code < 0)
                 return code;
-            if_debug4('L', "    rs4:%d,%d,%d,%d\n",
-                      dx, dwidth, dy, dheight);
+            if_debug4m('L', cldev->memory, "    rs4:%d,%d,%d,%d\n",
+                       dx, dwidth, dy, dheight);
             dp[3] = dy - rmin;
             dp[4] = dheight - rmin;
         }
@@ -157,8 +158,8 @@ cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         code = set_cmd_put_op(dp, cldev, pcls, op, rcsize);
         if (code < 0)
             return code;
-        if_debug5('L', "    r%d:%d,%d,%d,%d\n",
-                  rcsize - 1, dx, dwidth, dy, dheight);
+        if_debug5m('L', cldev->memory, "    r%d:%d,%d,%d,%d\n",
+                   rcsize - 1, dx, dwidth, dy, dheight);
         cmd_put_rect(&pcls->rect, dp + 1);
     }
     return 0;
@@ -178,7 +179,7 @@ cmd_write_page_rect_cmd(gx_device_clist_writer * cldev, int op)
     gx_clist_state *pcls1;
     int code;
 
-    if_debug0('L', "[L]fillpage beg\n");
+    if_debug0m('L', cldev->memory, "[L]fillpage beg\n");
     code = set_cmd_put_all_op(dp, cldev, op, rcsize);
     if (code < 0)
         return code;
@@ -189,7 +190,7 @@ cmd_write_page_rect_cmd(gx_device_clist_writer * cldev, int op)
     cmd_putw(0, dp);
     cmd_putw(0, dp);
     cmd_putw(0, dp);
-    if_debug0('L', "[L]fillpage end\n");
+    if_debug0m('L', cldev->memory, "[L]fillpage end\n");
     return 0;
 }
 
@@ -274,10 +275,10 @@ cmd_write_trapezoid_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         cmd_putw(ybot, dp);
         cmd_putw(ytop, dp);
     }
-    if_debug6('L', "    t%d:%ld,%ld,%ld,%ld   %ld\n",
-              rcsize - 1, left->start.x, left->start.y, left->end.x, left->end.y, ybot);
-    if_debug6('L', "    t%ld,%ld,%ld,%ld   %ld   o=%d\n",
-              right->start.x, right->start.y, right->end.x, right->end.y, ytop, options);
+    if_debug6m('L', cldev->memory, "    t%d:%ld,%ld,%ld,%ld   %ld\n",
+               rcsize - 1, left->start.x, left->start.y, left->end.x, left->end.y, ybot);
+    if_debug6m('L', cldev->memory, "    t%ld,%ld,%ld,%ld   %ld   o=%d\n",
+               right->start.x, right->start.y, right->end.x, right->end.y, ytop, options);
     if (options & 2) {
         cmd_putw(fa->clip->p.x, dp);
         cmd_putw(fa->clip->p.y, dp);
@@ -838,10 +839,10 @@ copy:{
         }
         op += compress;
         if (dx) {
-            *dp++ = cmd_count_op(cmd_opv_set_misc, 2);
+            *dp++ = cmd_count_op(cmd_opv_set_misc, 2, dev->memory);
             *dp++ = cmd_set_misc_data_x + dx;
         }
-        *dp++ = cmd_count_op(op, csize);
+        *dp++ = cmd_count_op(op, csize, dev->memory);
         /* Store the plane_height */
         cmd_putw(0, dp);
         cmd_put2w(rx, re.y, dp);
@@ -957,10 +958,10 @@ copy:
              * cmd_put_bits fill the buffer up. */
             dp2 = dp;
             if (dx) {
-                *dp2++ = cmd_count_op(cmd_opv_set_misc, 2);
+                *dp2++ = cmd_count_op(cmd_opv_set_misc, 2, cdev->memory);
                 *dp2++ = cmd_set_misc_data_x + dx;
             }
-            *dp2++ = cmd_count_op(op + code, csize);
+            *dp2++ = cmd_count_op(op + code, csize, cdev->memory);
             cmd_putw(plane_height, dp2);
             cmd_put2w(rx, re.y, dp2);
             cmd_put2w(w1, re.height, dp2);
@@ -1129,10 +1130,10 @@ copy:{
             }
             op += compress;
             if (dx) {
-                *dp++ = cmd_count_op(cmd_opv_set_misc, 2);
+                *dp++ = cmd_count_op(cmd_opv_set_misc, 2, dev->memory);
                 *dp++ = cmd_set_misc_data_x + dx;
             }
-            *dp++ = cmd_count_op(op, csize);
+            *dp++ = cmd_count_op(op, csize, dev->memory);
             cmd_put2w(rx, re.y, dp);
             cmd_put2w(w1, re.height, dp);
             re.pcls->rect = rect;
@@ -1271,10 +1272,10 @@ copy:{
             }
             op += compress;
             if (dx) {
-                *dp++ = cmd_count_op(cmd_opv_set_misc, 2);
+                *dp++ = cmd_count_op(cmd_opv_set_misc, 2, dev->memory);
                 *dp++ = cmd_set_misc_data_x + dx;
             }
-            *dp++ = cmd_count_op(op, csize);
+            *dp++ = cmd_count_op(op, csize, dev->memory);
             *dp++ = depth;
             cmd_put2w(rx, re.y, dp);
             cmd_put2w(w1, re.height, dp);
@@ -1420,10 +1421,10 @@ copy:{
             }
             op += compress;
             if (dx) {
-                *dp++ = cmd_count_op(cmd_opv_set_misc, 2);
+                *dp++ = cmd_count_op(cmd_opv_set_misc, 2, dev->memory);
                 *dp++ = cmd_set_misc_data_x + dx;
             }
-            *dp++ = cmd_count_op(op, csize);
+            *dp++ = cmd_count_op(op, csize, dev->memory);
             *dp++ = depth;
             cmd_put2w(rx, re.y, dp);
             cmd_put2w(w1, re.height, dp);

@@ -122,8 +122,8 @@ s_LZWD_process(stream_state * st, stream_cursor_read * pr,
     byte b;
     byte *q1;
 
-    if_debug2('w', "[w]process decode: code_size=%d next_code=%d\n",
-              code_size, next_code);
+    if_debug2m('w', ss->memory, "[w]process decode: code_size=%d next_code=%d\n",
+               code_size, next_code);
 #define set_code_size()\
   code_mask = (1 << code_size) - 1,\
   switch_code = code_mask + 1 - ss->EarlyChange
@@ -139,8 +139,8 @@ s_LZWD_process(stream_state * st, stream_cursor_read * pr,
 
         c = code;
         ss->copy_left = rlen -= len;
-        if_debug3('W', "[W]copying 0x%x, %d byte(s) out of %d left\n",
-                  code, len, rlen + len);
+        if_debug3m('W', ss->memory, "[W]copying 0x%x, %d byte(s) out of %d left\n",
+                   code, len, rlen + len);
         while (rlen)
             c = table[c].prefix,
                 rlen--;
@@ -171,7 +171,7 @@ s_LZWD_process(stream_state * st, stream_cursor_read * pr,
             if (p == rlimit)
                 goto out;
             bytes_left = *++p;
-            if_debug1('W', "[W]block count %d\n", bytes_left);
+            if_debug1m('W', ss->memory, "[W]block count %d\n", bytes_left);
             if (bytes_left == 0) {
                 status = EOFC;
                 goto out;
@@ -187,8 +187,8 @@ s_LZWD_process(stream_state * st, stream_cursor_read * pr,
                 if (rlimit - p < 3)
                     goto out;
                 bytes_left = p[2];
-                if_debug1('W', "[W]block count %d\n",
-                          bytes_left);
+                if_debug1m('W', ss->memory, "[W]block count %d\n",
+                           bytes_left);
                 if (bytes_left == 0) {
                     status = EOFC;
                     goto out;
@@ -230,7 +230,7 @@ s_LZWD_process(stream_state * st, stream_cursor_read * pr,
                 code = bits >> bits_left;
     }
     code &= code_mask;
-    if_debug2('W', "[W]reading 0x%x,%d\n", code, code_size);
+    if_debug2m('W', ss->memory, "[W]reading 0x%x,%d\n", code, code_size);
     /*
      * There is an anomalous case where a code S is followed
      * immediately by another occurrence of the S string.
@@ -243,7 +243,7 @@ s_LZWD_process(stream_state * st, stream_cursor_read * pr,
     if (code >= next_code) {
         if (code > next_code) {
 #ifdef DEBUG
-            lprintf2("[W]code = %d > next_code = %d\n",
+            mlprintf2(ss->memory, "[W]code = %d > next_code = %d\n",
                      code, next_code);
 #endif
             status = ERRC;
@@ -256,8 +256,8 @@ s_LZWD_process(stream_state * st, stream_cursor_read * pr,
         len = prev_len + 1;
         dc_next->len = min(len, 255);
         dc_next->prefix = prev_code;
-        if_debug3('w', "[w]decoding anomalous 0x%x=0x%x+%c\n",
-                  next_code, prev_code, dc_next->datum);
+        if_debug3m('w', ss->memory, "[w]decoding anomalous 0x%x=0x%x+%c\n",
+                   next_code, prev_code, dc_next->datum);
     }
     /* See if there is enough room for the code. */
 reset:
@@ -266,8 +266,8 @@ reset:
         /* We set their lengths to 255 to avoid doing */
         /* an extra check in the normal case. */
         if (code == code_reset) {
-            if_debug1('w', "[w]reset: next_code was %d\n",
-                      next_code);
+            if_debug1m('w', ss->memory, "[w]reset: next_code was %d\n",
+                       next_code);
             next_code = code_0;
             dc_next = table + code_0;
             code_size = ss->InitialCodeLength + 1;
@@ -282,7 +282,7 @@ reset:
         /* compute it the hard way. */
         for (c = code, len = 0; c != eod; len++)
             c = table[c].prefix;
-        if_debug2('w', "[w]long code %d, length=%d\n", code, len);
+        if_debug2m('w', ss->memory, "[w]long code %d, length=%d\n", code, len);
     }
     if (wlimit - q < len) {
         ss->copy_code = code;
@@ -367,16 +367,16 @@ reset:
         dc_next->len = min(prev_len, 254) + 1;
         dc_next->prefix = prev_code;
         dc_next++;
-        if_debug4('W', "[W]adding 0x%x=0x%x+%c(%d)\n",
-                  next_code, prev_code, b, min(len, 255));
+        if_debug4m('W', ss->memory, "[W]adding 0x%x=0x%x+%c(%d)\n",
+                   next_code, prev_code, b, min(len, 255));
         if (++next_code == switch_code) {	/* Crossed a power of 2. */
             /* We have to make a strange special check for */
             /* reaching the end of the code space. */
             if (next_code < lzw_decode_max - 1) {
                 code_size++;
                 set_code_size();
-                if_debug2('w', "[w]crossed power of 2: new code_size=%d, next_code=%d\n",
-                          code_size, next_code);
+                if_debug2m('w', ss->memory, "[w]crossed power of 2: new code_size=%d, next_code=%d\n",
+                           code_size, next_code);
             }
         }
     }
@@ -392,8 +392,8 @@ reset:
     ss->bits_left = bits_left;
     ss->bytes_left = bytes_left;
     ss->next_code = next_code;
-    if_debug3('w', "[w]decoded %d bytes, prev_code=%d, next_code=%d\n",
-              (int)(q - q0), prev_code, next_code);
+    if_debug3m('w', ss->memory, "[w]decoded %d bytes, prev_code=%d, next_code=%d\n",
+               (int)(q - q0), prev_code, next_code);
     return status;
 }
 

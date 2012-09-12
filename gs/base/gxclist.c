@@ -335,8 +335,8 @@ clist_init_bands(gx_device * dev, gx_device_memory *bdev, uint data_size,
     cdev->nbands = nbands;
 #ifdef DEBUG
     if (gs_debug_c('l') | gs_debug_c(':'))
-        dlprintf4("[:]width=%d, band_width=%d, band_height=%d, nbands=%d\n",
-                  bdev->width, band_width, band_height, nbands);
+        dmlprintf4(dev->memory, "[:]width=%d, band_width=%d, band_height=%d, nbands=%d\n",
+                   bdev->width, band_width, band_height, nbands);
 #endif
     return 0;
 }
@@ -844,10 +844,10 @@ clist_end_page(gx_device_clist_writer * cldev)
 #ifdef DEBUG
     if (gs_debug_c('l') | gs_debug_c(':')) {
         if (cb.pos <= 0xFFFFFFFF)
-            dlprintf2("[:]clist_end_page at cfile=%lu, bfile=%lu\n",
+            dmlprintf2(cldev->memory, "[:]clist_end_page at cfile=%lu, bfile=%lu\n",
                   (unsigned long)cb.pos, (unsigned long)cldev->page_bfile_end_pos);
         else
-            dlprintf3("[:]clist_end_page at cfile=%lu%0lu, bfile=%lu\n",
+            dmlprintf3(cldev->memory, "[:]clist_end_page at cfile=%lu%0lu, bfile=%lu\n",
                 (unsigned long) (cb.pos >> 32), (unsigned long) (cb.pos & 0xFFFFFFFF),
                 (unsigned long)cldev->page_bfile_end_pos);
     }
@@ -928,7 +928,7 @@ clist_VMerror_recover(gx_device_clist_writer *cldev,
         }
     } while (pages_remain);
 
-    if_debug1('L', "[L]soft flush of command list, status: %d\n", code);
+    if_debug1m('L', cldev->memory, "[L]soft flush of command list, status: %d\n", code);
     return code;
 }
 
@@ -968,7 +968,7 @@ clist_VMerror_recover_flush(gx_device_clist_writer *cldev,
     }
 
     code = (reset_code < 0 ? reset_code : free_code < 0 ? old_error_code : 0);
-    if_debug1('L', "[L]hard flush of command list, status: %d\n", code);
+    if_debug1m('L', cldev->memory, "[L]hard flush of command list, status: %d\n", code);
     return code;
 }
 
@@ -1142,7 +1142,7 @@ clist_icc_addprofile(gx_device_clist_writer *cldev, cmm_profile_t *iccprofile, i
     /* Get the serialized header */
     gsicc_profile_serialize(&profile_data, iccprofile);
     /* Write the header */
-    if_debug1('l', "[l]writing icc profile in cfile at pos %ld\n",fileposit);
+    if_debug1m('l', cldev->memory, "[l]writing icc profile in cfile at pos %ld\n",fileposit);
     count1 = cldev->page_info.io_procs->fwrite_chars(&profile_data, sizeof(gsicc_serialized_profile_t), cfile);
     /* Now write the profile */
     count2 = cldev->page_info.io_procs->fwrite_chars(iccprofile->buffer, iccprofile->buffer_size, cfile);
@@ -1234,7 +1234,7 @@ clist_writer_push_no_cropping(gx_device_clist_writer *cdev)
 
     if (buf == NULL)
         return_error(gs_error_VMerror);
-    if_debug1('v', "[v]push cropping[%d]\n", cdev->cropping_level);
+    if_debug1m('v', cdev->memory, "[v]push cropping[%d]\n", cdev->cropping_level);
     buf->next = cdev->cropping_stack;
     cdev->cropping_stack = buf;
     buf->cropping_min = cdev->cropping_min;
@@ -1270,7 +1270,7 @@ clist_writer_pop_cropping(gx_device_clist_writer *cdev)
     cdev->temp_mask_id = buf->temp_mask_id;
     cdev->cropping_stack = buf->next;
     cdev->cropping_level--;
-    if_debug1('v', "[v]pop cropping[%d]\n", cdev->cropping_level);
+    if_debug1m('v', cdev->memory, "[v]pop cropping[%d]\n", cdev->cropping_level);
     gs_free_object(cdev->memory, buf, "clist_writer_transparency_pop");
     return 0;
 }
@@ -1279,7 +1279,7 @@ int
 clist_writer_check_empty_cropping_stack(gx_device_clist_writer *cdev)
 {
     if (cdev->cropping_stack != NULL) {
-        if_debug1('v', "[v]Error: left %d cropping(s)\n", cdev->cropping_level);
+        if_debug1m('v', cdev->memory, "[v]Error: left %d cropping(s)\n", cdev->cropping_level);
         return_error(gs_error_unregistered); /* Must not happen */
     }
     return 0;

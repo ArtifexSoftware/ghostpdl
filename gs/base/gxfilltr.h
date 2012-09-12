@@ -128,9 +128,9 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
         }
 #	ifdef DEBUG
             if (gs_debug_c('F')) {
-                dlprintf2("[F]before loop: y=%f y1=%f:\n",
+                dmlprintf2(ll->memory, "[F]before loop: y=%f y1=%f:\n",
                           fixed2float(y), fixed2float(y1));
-                print_line_list(ll->x_list);
+                print_line_list(ll->memory, ll->x_list);
             }
 #	endif
         if (y == y1) {
@@ -177,7 +177,7 @@ TEMPLATE_spot_into_trapezoids (line_list *ll, fixed band_mask)
             for (alp = ll->x_list; alp != 0; alp = alp->next) {
                 int code;
 
-                print_al("step", alp);
+                print_al(ll->memory, "step", alp);
                 INCR(band_step);
                 if (!INSIDE_PATH_P(inside, rule)) { 	/* i.e., outside */
                     ADVANCE_WINDING(inside, alp, ll);

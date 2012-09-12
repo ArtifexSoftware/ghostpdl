@@ -490,8 +490,8 @@ process_threshold2(gx_ht_order * porder, gs_state * pgs,
         gx_ht_bit *bits = (gx_ht_bit *)porder->bit_data;
         int row, di;
 
-        if_debug7('h', "[h]rect1=(%d,%d), rect2=(%d,%d), strip=(%d,%d), shift=%d\n",
-                  w1, h1, w2, h2, sod, d, shift);
+        if_debug7m('h', mem, "[h]rect1=(%d,%d), rect2=(%d,%d), strip=(%d,%d), shift=%d\n",
+                   w1, h1, w2, h2, sod, d, shift);
         for (row = 0, di = 0; row < d; ++row) {
             /* Iterate over destination rows. */
             int dx, sy = row;	/* sy = row mod d */

@@ -169,13 +169,13 @@ check_resident_fonts(pl_dict_t *pfontdict, gs_memory_t *mem)
          i ++)
         if (!pl_lookup_font_by_pjl_number(pfontdict, i)) {
             int j;
-            dprintf2("%s (entry %d) not found\n", resident_table[i].full_font_name, i);
-            dprintf("pxl unicode name:");
+            dmprintf2(mem, "%s (entry %d) not found\n", resident_table[i].full_font_name, i);
+            dmprintf(mem, "pxl unicode name:");
             for (j = 0;
                  j < countof(resident_table[i].unicode_fontname);
                  j++)
-                dprintf1("'%c'", resident_table[i].unicode_fontname[j]);
-            dprintf("\n");
+                dmprintf1(mem, "'%c'", resident_table[i].unicode_fontname[j]);
+            dmprintf(mem, "\n");
         }
 }
 #endif
@@ -227,7 +227,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
         if ((strlen(pattern) +
              strlen(tmp_pathp) + 1 ) +
             (append_separator ? separator_length : 0) > sizeof( tmp_path_copy ) ) {
-            dprintf1("path name %s too long\n", tmp_pathp );
+            dmprintf1(mem, "path name %s too long\n", tmp_pathp );
             continue;
         }
 
@@ -251,7 +251,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
             pl_font_t *plfont;
 
             if (code > sizeof(tmp_path_copy)) {
-                dprintf("filename length exceeds file name storage buffer length\n");
+                dmprintf(mem, "filename length exceeds file name storage buffer length\n");
                 continue;
             }
             /* null terminate the string */
@@ -259,13 +259,13 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 
             in = sfopen(tmp_path_copy, "rb", mem);
             if (in == NULL) { /* shouldn't happen */
-                dprintf1("cannot open file %s\n", tmp_path_copy );
+                dmprintf1(mem, "cannot open file %s\n", tmp_path_copy );
                 continue;
             }
             if ( !is_ttfile( in ) ) {
 #ifdef DEBUG
                 if ( gs_debug_c('=') ) {
-                    dprintf1("%s not a TrueType file\n", tmp_path_copy);
+                    dmprintf1(mem, "%s not a TrueType file\n", tmp_path_copy);
                 }
 #endif
                     continue;
@@ -273,12 +273,12 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 
             code = get_name_from_tt_file( in, mem, buffer, PSNAME);
             if ( code < 0 ) {
-                dprintf1("input output failure on TrueType File %s\n", tmp_path_copy );
+                dmprintf1(mem, "input output failure on TrueType File %s\n", tmp_path_copy );
                 continue;
             }
 
             if (strlen( buffer ) == 0) {
-                dprintf1("could not extract font file name from file %s\n", tmp_path_copy );
+                dmprintf1(mem, "could not extract font file name from file %s\n", tmp_path_copy );
                 continue;
             }
 
@@ -318,7 +318,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
 
                         /* leave data stored in the file.  NB this should be a fatal error also. */
                         if (pl_store_resident_font_data_in_file( tmp_path_copy, mem, plfont ) < 0) {
-                            dprintf1("%s could not store data", tmp_path_copy);
+                            dmprintf1(mem, "%s could not store data", tmp_path_copy);
                             continue;
                         }
                     }
@@ -331,11 +331,11 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
                 if (!found) {
                     #ifdef DEBUG
                     if (gs_debug_c('=')) {
-                        dprintf2("TrueType font %s in file %s not found in table\n", buffer, tmp_path_copy);
+                        dmprintf2(mem, "TrueType font %s in file %s not found in table\n", buffer, tmp_path_copy);
                         in = sfopen(tmp_path_copy, "rb", mem);
                         code = get_name_from_tt_file(in, mem, buffer, WINDOWSNAME);
                         sfclose(in);
-                        dprintf1("Windows name %s\n", buffer);
+                        dmprintf1(mem, "Windows name %s\n", buffer);
                     }
                     #endif
                 }

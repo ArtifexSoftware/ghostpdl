@@ -188,23 +188,24 @@ gs_private_st_ptrs3(st_file_enum, struct file_enum_s, "file_enum",
 #ifdef DEBUG
 static bool
 wmatch(const byte * str, uint len, const byte * pstr, uint plen,
-       const string_match_params * psmp)
+       const gs_memory_t *mem)
 {
-    bool match = string_match(str, len, pstr, plen, psmp);
+    bool match = string_match(str, len, pstr, plen, NULL);
 
     if (gs_debug_c('e')) {
         int i;
-        dlputs("[e]string_match(\"");
+        dmlputs(mem, "[e]string_match(\"");
         for (i=0; i<len; i++)
-            errprintf_nomem("%c", str[i]);
-        dputs("\", \"");
+            errprintf(mem, "%c", str[i]);
+        dmputs(mem, "\", \"");
         for (i=0; i<plen; i++)
-            errprintf_nomem("%c", pstr[i]);
-        dprintf1("\") = %s\n", (match ? "TRUE" : "false"));
+            errprintf(mem, "%c", pstr[i]);
+        dmprintf1(mem, "\") = %s\n", (match ? "TRUE" : "false"));
     }
     return match;
 }
-#define string_match wmatch
+#else
+#define wmatch(S,L,PS,PL,M) string_match(S,L,PS,PL,NULL)
 #endif
 
 /* Search a string backward for a character. */
@@ -331,7 +332,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 
     if (pfen->first_time) {
         pfen->dirp = ((worklen == 0) ? opendir(".") : opendir(work));
-        if_debug1('e', "[e]file_enum:First-Open '%s'\n", work);
+        if_debug1m('e', pfen->memory, "[e]file_enum:First-Open '%s'\n", work);
         pfen->first_time = false;
         if (pfen->dirp == 0) {  /* first opendir failed */
             gp_enumerate_files_close(pfen);
@@ -342,7 +343,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
     if (de == 0) {              /* No more entries in this directory */
         char *p;
 
-        if_debug0('e', "[e]file_enum:Closedir\n");
+        if_debug0m('e', pfen->memory, "[e]file_enum:Closedir\n");
         closedir(pfen->dirp);
         /* Back working directory and matching pattern up one level */
         p = rchr(work, '/', worklen);
@@ -360,10 +361,10 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
             pathead = 0;
 
         if (popdir(pfen)) {     /* Back up the directory tree. */
-            if_debug1('e', "[e]file_enum:Dir popped '%s'\n", work);
+            if_debug1m('e', pfen->memory, "[e]file_enum:Dir popped '%s'\n", work);
             goto top;
         } else {
-            if_debug0('e', "[e]file_enum:Dirstack empty\n");
+            if_debug0m('e', pfen->memory, "[e]file_enum:Dirstack empty\n");
             gp_enumerate_files_close(pfen);
             return ~(uint) 0;
         }
@@ -387,7 +388,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
     }
 
     /* Test for a match at this directory level */
-    if (!string_match((byte *) work, len, (byte *) pattern, pathead, NULL))
+    if (!wmatch((byte *) work, len, (byte *) pattern, pathead, pfen->memory))
         goto top;
 
     /* Perhaps descend into subdirectories */
@@ -422,8 +423,8 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
             char save_end = pattern[pathead];
 
             pattern[pathead] = 0;
-            if_debug2('e', "[e]file_enum:fname='%s', p='%s'\n",
-                      work, pattern);
+            if_debug2m('e', pfen->memory, "[e]file_enum:fname='%s', p='%s'\n",
+                       work, pattern);
             pattern[pathead] = save_end;
         }
 #endif /* DEBUG */
@@ -456,8 +457,8 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
             } else
                 DO_NOTHING;     /* >>> e_VMerror!!! */
 
-            if_debug1('e', "[e]file_enum:Dir pushed '%s'\n",
-                      work);
+            if_debug1m('e', pfen->memory, "[e]file_enum:Dir pushed '%s'\n",
+                       work);
             worklen = len;
             pfen->dirp = dp;
             goto top;
@@ -477,7 +478,7 @@ gp_enumerate_files_close(file_enum * pfen)
 {
     gs_memory_t *mem = pfen->memory;
 
-    if_debug0('e', "[e]file_enum:Cleanup\n");
+    if_debug0m('e', mem, "[e]file_enum:Cleanup\n");
     while (popdir(pfen))        /* clear directory stack */
         DO_NOTHING;
     gs_free_object(mem, (byte *) pfen->work,

@@ -760,10 +760,11 @@ gx_image3x_plane_data(gx_image_enum_common_t * info,
                 }
         }
     }
-    if_debug7('b', "[b]image3x h=%d %sopacity.y=%d %sopacity.y=%d %spixel.y=%d\n",
-              h, (mask_plane[0].data ? "+" : ""), penum->mask[0].y,
-              (mask_plane[1].data ? "+" : ""), penum->mask[1].y,
-              (pixel_planes[0].data ? "+" : ""), penum->pixel.y);
+    if_debug7m('b', penum->memory,
+               "[b]image3x h=%d %sopacity.y=%d %sopacity.y=%d %spixel.y=%d\n",
+               h, (mask_plane[0].data ? "+" : ""), penum->mask[0].y,
+               (mask_plane[1].data ? "+" : ""), penum->mask[1].y,
+               (pixel_planes[0].data ? "+" : ""), penum->pixel.y);
     if (penum->mask[0].depth == 0 || penum->mask[0].y >= penum->mask[0].height) {
         if (penum->mask[1].depth == 0 || penum->mask[1].y >= penum->mask[1].height) {
             if (penum->pixel.y >= penum->pixel.height) {

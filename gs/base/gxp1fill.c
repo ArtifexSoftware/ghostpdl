@@ -149,6 +149,9 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
     int i0, i1, j0, j1, i, j;
     gs_matrix step_matrix;      /* translated by phase */
     int code;
+#ifdef DEBUG
+    const gs_memory_t *mem = ptfs->pcdev->memory;
+#endif
 
     ptfs->x0 = x0, ptfs->w0 = w0;
     ptfs->y0 = y0, ptfs->h0 = h0;
@@ -165,11 +168,11 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
         bbox.p.x = x0, bbox.p.y = y0;
         bbox.q.x = x1, bbox.q.y = y1;
         gs_bbox_transform_inverse(&bbox, &step_matrix, &ibbox);
-        if_debug10('T',
+        if_debug10m('T', mem,
           "[T]x,y=(%d,%d) w,h=(%d,%d) => (%g,%g),(%g,%g), offset=(%g,%g)\n",
-                   x0, y0, w0, h0,
-                   ibbox.p.x, ibbox.p.y, ibbox.q.x, ibbox.q.y,
-                   step_matrix.tx, step_matrix.ty);
+                    x0, y0, w0, h0,
+                    ibbox.p.x, ibbox.p.y, ibbox.q.x, ibbox.q.y,
+                    step_matrix.tx, step_matrix.ty);
         /*
          * If the pattern is partly transparent and XStep/YStep is smaller
          * than the device space BBox, we need to ensure that we cover
@@ -187,7 +190,7 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
         i1 = (int)ceil(u1);
         j1 = (int)ceil(v1);
     }
-    if_debug4('T', "[T]i=(%d,%d) j=(%d,%d)\n", i0, i1, j0, j1);
+    if_debug4m('T', mem, "[T]i=(%d,%d) j=(%d,%d)\n", i0, i1, j0, j1);
     for (i = i0; i < i1; i++)
         for (j = j0; j < j1; j++) {
             int x = (int)fastfloor(step_matrix.xx * i +
@@ -198,7 +201,7 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
             int h = tbits_or_tmask->size.y;
             int xoff, yoff;
 
-            if_debug4('T', "[T]i=%d j=%d x,y=(%d,%d)", i, j, x, y);
+            if_debug4m('T', mem, "[T]i=%d j=%d x,y=(%d,%d)", i, j, x, y);
             if (x < x0)
                 xoff = x0 - x, x = x0, w -= xoff;
             else
@@ -211,8 +214,8 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
                 w = x1 - x;
             if (y + h > y1)
                 h = y1 - y;
-            if_debug6('T', "=>(%d,%d) w,h=(%d,%d) x/yoff=(%d,%d)\n",
-                      x, y, w, h, xoff, yoff);
+            if_debug6m('T', mem, "=>(%d,%d) w,h=(%d,%d) x/yoff=(%d,%d)\n",
+                       x, y, w, h, xoff, yoff);
             if (w > 0 && h > 0) {
                 if (ptfs->pcdev == (gx_device *) & ptfs->cdev)
                     tile_clip_set_phase(&ptfs->cdev,
@@ -324,10 +327,10 @@ tile_pattern_clist(const tile_fill_state_t * ptfs,
     /* Also allocate the icc cache for the clist reader */
     if ( crdev->icc_cache_cl == NULL )
         crdev->icc_cache_cl = gsicc_cache_new(crdev->memory);
-    if_debug0('L', "Pattern clist playback begin\n");
+    if_debug0m('L', dev->memory, "Pattern clist playback begin\n");
     code = clist_playback_file_bands(playback_action_render,
                 crdev, &crdev->page_info, dev, 0, 0, ptfs->xoff - x, ptfs->yoff - y);
-    if_debug0('L', "Pattern clist playback end\n");
+    if_debug0m('L', dev->memory, "Pattern clist playback end\n");
     return code;
 }
 
@@ -572,6 +575,9 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
     int i0, i1, j0, j1, i, j;
     gs_matrix step_matrix;      /* translated by phase */
     gx_pattern_trans_t *ptrans_pat = ptile->ttrans;
+#ifdef DEBUG
+    const gs_memory_t *mem = ptfs->pcdev->memory;
+#endif
 
     ptfs->x0 = x0, ptfs->w0 = w0;
     ptfs->y0 = y0, ptfs->h0 = h0;
@@ -588,11 +594,11 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
         bbox.p.x = x0, bbox.p.y = y0;
         bbox.q.x = x1, bbox.q.y = y1;
         gs_bbox_transform_inverse(&bbox, &step_matrix, &ibbox);
-        if_debug10('T',
+        if_debug10m('T', mem,
           "[T]x,y=(%d,%d) w,h=(%d,%d) => (%g,%g),(%g,%g), offset=(%g,%g)\n",
-                   x0, y0, w0, h0,
-                   ibbox.p.x, ibbox.p.y, ibbox.q.x, ibbox.q.y,
-                   step_matrix.tx, step_matrix.ty);
+                    x0, y0, w0, h0,
+                    ibbox.p.x, ibbox.p.y, ibbox.q.x, ibbox.q.y,
+                    step_matrix.tx, step_matrix.ty);
         /*
          * If the pattern is partly transparent and XStep/YStep is smaller
          * than the device space BBox, we need to ensure that we cover
@@ -610,7 +616,7 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
         i1 = (int)ceil(u1);
         j1 = (int)ceil(v1);
     }
-    if_debug4('T', "[T]i=(%d,%d) j=(%d,%d)\n", i0, i1, j0, j1);
+    if_debug4m('T', mem, "[T]i=(%d,%d) j=(%d,%d)\n", i0, i1, j0, j1);
     for (i = i0; i < i1; i++)
         for (j = j0; j < j1; j++) {
             int x = (int)fastfloor(step_matrix.xx * i +
@@ -622,7 +628,7 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
             int xoff, yoff;
             int px, py;
 
-            if_debug4('T', "[T]i=%d j=%d x,y=(%d,%d)", i, j, x, y);
+            if_debug4m('T', mem, "[T]i=%d j=%d x,y=(%d,%d)", i, j, x, y);
             if (x < x0)
                 xoff = x0 - x, x = x0, w -= xoff;
             else
@@ -635,8 +641,8 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
                 w = x1 - x;
             if (y + h > y1)
                 h = y1 - y;
-            if_debug6('T', "=>(%d,%d) w,h=(%d,%d) x/yoff=(%d,%d)\n",
-                      x, y, w, h, xoff, yoff);
+            if_debug6m('T', mem, "=>(%d,%d) w,h=(%d,%d) x/yoff=(%d,%d)\n",
+                       x, y, w, h, xoff, yoff);
             if (w > 0 && h > 0) {
 
                 px = imod(xoff - x, ptile->ttrans->width);

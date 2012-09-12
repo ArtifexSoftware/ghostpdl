@@ -88,7 +88,7 @@ svg_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     svg_context_t *ctx;
     gs_state *pgs;
 
-    dputs("-- svg_imp_allocate_interp_instance --\n");
+    dmputs(pmem, "-- svg_imp_allocate_interp_instance --\n");
 
     instance = (svg_interp_instance_t *) gs_alloc_bytes(pmem,
             sizeof(svg_interp_instance_t), "svg_imp_allocate_interp_instance");
@@ -183,7 +183,7 @@ svg_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     svg_context_t *ctx = instance->ctx;
     int code;
 
-    dputs("-- svg_imp_set_device --\n");
+    dmputs(ctx->memory, "-- svg_imp_set_device --\n");
 
     gs_opendevice(pdevice);
 
@@ -246,7 +246,7 @@ svg_imp_process_file(pl_interp_instance_t *pinstance, char *filename)
     char buf[4096];
     int n;
 
-    dprintf1("svg_imp_process_file %s\n", filename);
+    dmprintf1(ctx->memory, "svg_imp_process_file %s\n", filename);
 
     file = fopen(filename, "rb");
     if (!file)
@@ -321,7 +321,7 @@ svg_imp_process_eof(pl_interp_instance_t *pinstance)
     svg_item_t *root;
     int code;
 
-    dputs("-- svg_imp_process_eof --\n");
+    dmputs(ctx->memory, "-- svg_imp_process_eof --\n");
 
     root = svg_close_xml_parser(ctx);
     if (!root)
@@ -354,7 +354,7 @@ svg_imp_init_job(pl_interp_instance_t *pinstance)
     svg_interp_instance_t *instance = (svg_interp_instance_t *)pinstance;
     svg_context_t *ctx = instance->ctx;
 
-    dputs("-- svg_imp_init_job --\n");
+    dmputs(ctx->memory, "-- svg_imp_init_job --\n");
 
     return svg_open_xml_parser(ctx);
 }
@@ -363,7 +363,10 @@ svg_imp_init_job(pl_interp_instance_t *pinstance)
 static int
 svg_imp_dnit_job(pl_interp_instance_t *pinstance)
 {
-    dputs("-- svg_imp_dnit_job --\n");
+    svg_interp_instance_t *instance = (svg_interp_instance_t *)pinstance;
+    svg_context_t *ctx = instance->ctx;
+
+    dmputs(ctx->memory, "-- svg_imp_dnit_job --\n");
 
     return 0;
 }
@@ -378,7 +381,7 @@ svg_imp_remove_device(pl_interp_instance_t *pinstance)
     int code = 0;       /* first error status encountered */
     int error;
 
-    dputs("-- svg_imp_remove_device --\n");
+    dmputs(ctx->memory, "-- svg_imp_remove_device --\n");
 
     /* return to original gstate  */
     gs_grestore_only(ctx->pgs);        /* destroys gs_save stack */
@@ -400,7 +403,7 @@ svg_imp_deallocate_interp_instance(pl_interp_instance_t *pinstance)
     svg_context_t *ctx = instance->ctx;
     gs_memory_t *mem = ctx->memory;
 
-    dputs("-- svg_imp_deallocate_interp_instance --\n");
+    dmputs(mem, "-- svg_imp_deallocate_interp_instance --\n");
 
     /* language clients don't free the font cache machinery */
 

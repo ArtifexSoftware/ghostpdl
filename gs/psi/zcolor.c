@@ -818,13 +818,13 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
         cvbad[i] = 0;
     }
 
-    dprintf1("Number of components = %d\n", ncomp);
-    dprintf1("Depth = %d\n", dev->color_info.depth);
-    dprintf2("max_gray = %d   dither_grays = %d\n",
-        dev->color_info.max_gray, dev->color_info.dither_grays);
-    dprintf2("max_color = %d   dither_colors = %d\n",
-        dev->color_info.max_color, dev->color_info.dither_colors);
-    dprintf1("polarity = %s\n",
+    dmprintf1(dev->memory, "Number of components = %d\n", ncomp);
+    dmprintf1(dev->memory, "Depth = %d\n", dev->color_info.depth);
+    dmprintf2(dev->memory, "max_gray = %d   dither_grays = %d\n",
+              dev->color_info.max_gray, dev->color_info.dither_grays);
+    dmprintf2(dev->memory, "max_color = %d   dither_colors = %d\n",
+              dev->color_info.max_color, dev->color_info.dither_colors);
+    dmprintf1(dev->memory, "polarity = %s\n",
       dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE ? "Additive" :
       dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE ?"Subtractive":
       "Unknown");
@@ -833,23 +833,23 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
         cv[i] = 0;
     color = (*dev_proc(dev, encode_color)) (dev, cv);
     if (sizeof(color) <= sizeof(ulong))
-        dprintf1("Zero color index:  %8lx\n", (ulong)color);
+        dmprintf1(dev->memory, "Zero color index:  %8lx\n", (ulong)color);
     else
-        dprintf2("Zero color index:  %8lx%08lx\n",
+        dmprintf2(dev->memory, "Zero color index:  %8lx%08lx\n",
             (ulong)(color >> 8*(sizeof(color) - sizeof(ulong))), (ulong)color);
 
-    dprintf1("separable_and_linear = %s\n",
+    dmprintf1(dev->memory, "separable_and_linear = %s\n",
       linsep == GX_CINFO_SEP_LIN_NONE ? "No" :
       linsep == GX_CINFO_SEP_LIN ? "Yes" :
       "Unknown");
     if (dev->color_info.gray_index == GX_CINFO_COMP_INDEX_UNKNOWN)
-        dprintf("gray_index is unknown\n");
+        dmprintf(dev->memory, "gray_index is unknown\n");
     else
-        dprintf1("gray_index = %d\n", dev->color_info.gray_index);
+        dmprintf1(dev->memory, "gray_index = %d\n", dev->color_info.gray_index);
     if (linsep) {
-        dprintf(" Shift     Mask  Bits\n");
+        dmprintf(dev->memory, " Shift     Mask  Bits\n");
         for (i = 0; i < ncomp; i++) {
-            dprintf3(" %5d %8x  %4d\n",
+            dmprintf3(dev->memory, " %5d %8x  %4d\n",
                 (int)(dev->color_info.comp_shift[i]),
                 (int)(dev->color_info.comp_mask[i]),
                 (int)(dev->color_info.comp_bits[i]));
@@ -866,11 +866,11 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
                 lscolor = gx_default_encode_color(dev, cv);
                 if ((color != lscolor) && (linsepfailed < 5)) {
                     linsepfailed++;
-                    dprintf("Failed separable_and_linear for");
+                    dmprintf(dev->memory, "Failed separable_and_linear for");
                     for (i = 0; i < ncomp; i++)
-                        dprintf1(" %d", cv[i]);
-                    dprintf("\n");
-                    dprintf2("encode_color=%x  gx_default_encode_color=%x\n",
+                        dmprintf1(dev->memory, " %d", cv[i]);
+                    dmprintf(dev->memory, "\n");
+                    dmprintf2(dev->memory, "encode_color=%x  gx_default_encode_color=%x\n",
                         (int)color, (int)lscolor);
                 }
             }
@@ -913,13 +913,13 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
             finished = 1;
     }
 
-    dprintf2("Maximum error %g %s\n",
+    dmprintf2(dev->memory, "Maximum error %g %s\n",
         (float)maxerror / (float)gx_max_color_value,
         maxerror <= acceptable_error ? "is Ok" :
         maxerror <= 3*acceptable_error/2 ? "is POOR" : "FAILED");
 
     if (linsep)
-      dprintf2("Maximum linear_and_separable error %g %s\n",
+      dmprintf2(dev->memory, "Maximum linear_and_separable error %g %s\n",
         (float)lsmaxerror / (float)gx_max_color_value,
         lsmaxerror <= acceptable_error ? "is Ok" :
         lsmaxerror <= 3*acceptable_error/2 ? "is POOR" : "FAILED");

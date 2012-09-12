@@ -312,9 +312,9 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
 #ifdef DEBUG
                     if (gs_debug_c('i')) {
                         int i;
-                        dprintf("Scanned Data:\n");
+                        dmprintf(pcs->memory,"Scanned Data:\n");
                         for (i=0; i<count; i++) {
-                            dprintf2("%02x%c", pst->args.data[i],
+                            dmprintf2(pcs->memory, "%02x%c", pst->args.data[i],
                                      (i % 16 == 15 || i == count - 1) ?
                                      '\n' : ' ');
                         }
@@ -401,18 +401,18 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                 }
 #ifdef DEBUG
                 if (gs_debug_c('i')) {
-                    dprintf2("(ESC %c %c)",
-                             pst->param_class, pst->param_group);
+                    dmprintf2(pcs->memory, "(ESC %c %c)",
+                              pst->param_class, pst->param_group);
                     if (value_is_present(&avalue)) {
-                        dputc(' ');
+                        dmputc(pcs->memory, ' ');
                         if (value_is_signed(&avalue))
-                            dputc((value_is_neg(&avalue) ? '-' : '+'));
+                            dmputc(pcs->memory, (value_is_neg(&avalue) ? '-' : '+'));
                         if (value_is_float(&avalue))
-                            dprintf1("%g", avalue.i + avalue.fraction);
+                            dmprintf1(pcs->memory, "%g", avalue.i + avalue.fraction);
                         else
-                            dprintf1("%u", avalue.i);
+                            dmprintf1(pcs->memory, "%u", avalue.i);
                     }
-                    dprintf1(" %c\n", chr);
+                    dmprintf1(pcs->memory, " %c\n", chr);
                 }
 #endif
                 if (chr >= min_escape_command + 32 &&
@@ -432,7 +432,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                                                    pst->param_class,
                                                    pst->param_group, chr);
                 if (cdefn) {
-                    if_debug1('i', "   [%s]\n", cdefn->cname);
+                    if_debug1m('i', pcs->memory, "   [%s]\n", cdefn->cname);
                     code = pcl_adjust_arg(&pst->args, cdefn);
                     if (code < 0)
                         goto x;
@@ -486,7 +486,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                         --p;
                         goto x;
                     }
-                    if_debug2('i', "%x%x\n", p[0], p[1]);
+                    if_debug2m('i', pcs->memory, "%x%x\n", p[0], p[1]);
                     code = pcl_text(p, bytelen, pcs, false);
                     if (code < 0)
                         goto x;
@@ -494,10 +494,10 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     p += (bytelen - 1);
                     cdefn = NULL;
                 } else if (chr != ESC) {
-                    if_debug1('i',
-                              (chr == '\\' ? "\\%c\n" :
-                               chr >= 33 && chr <= 126 ?
-                               "%c\n" : "\\%03o\n"), chr);
+                    if_debug1m('i', pcs->memory,
+                               (chr == '\\' ? "\\%c\n" :
+                                chr >= 33 && chr <= 126 ?
+                                "%c\n" : "\\%03o\n"), chr);
                     cdefn = pst->definitions->pcl_command_list
                         [chr < 33 ?
                          pst->definitions->pcl_control_command_indices[chr] :
@@ -510,11 +510,11 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                         const byte *str = p;
 
                         while (p < rlimit && p[1] >= 32 && p[1] <= 127) {
-                            if_debug1('i', "%c", p[1]);
+                            if_debug1m('i', pcs->memory, "%c", p[1]);
                             ++p;
                         }
 
-                        if_debug0('i', "\n");
+                        if_debug0m('i', pcs->memory, "\n");
                         code = pcl_text(str, (uint) (p + 1 - str),
                                         pcs, false);
                         if (code < 0)
@@ -528,9 +528,9 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     }
                     chr = *++p;
                     if (chr < min_escape_class || chr > max_escape_class) {
-                        if_debug1('i',
-                                  (chr >= 33 && chr <= 126 ?
-                                   "ESC %c\n" : "ESC \\%03o\n"), chr);
+                        if_debug1m('i', pcs->memory,
+                                   (chr >= 33 && chr <= 126 ?
+                                    "ESC %c\n" : "ESC \\%03o\n"), chr);
                         cdefn = pcl_get_command_definition(pst, 0, 0, chr);
                         if (!cdefn) {
                             /* Skip the ESC, back up
@@ -539,7 +539,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                             --p;
                             continue;
                         }
-                        if_debug1('i', "   [%s]\n", cdefn->cname);
+                        if_debug1m('i', pcs->memory, "   [%s]\n", cdefn->cname);
                     } else {
                         if (p >= rlimit) {
                             p -= 2;
@@ -552,7 +552,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                             chr = 0;
                         }
                         pst->param_group = chr;
-                        if_debug2('i', "ESC %c %c\n", pst->param_class, chr);
+                        if_debug2m('i', pcs->memory, "ESC %c %c\n", pst->param_class, chr);
                         pst->scan_type = scanning_parameter;
                         param_init();
                         continue;
@@ -594,7 +594,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
             }
             if (code == e_Unimplemented) {
 #if e_Unimplemented != 0
-                if_debug0('i', "Unimplemented\n");
+                if_debug0m('i', pcs->memory, "Unimplemented\n");
 #endif
             } else if (code < 0)
                 break;

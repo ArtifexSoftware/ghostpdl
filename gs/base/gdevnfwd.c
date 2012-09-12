@@ -1319,12 +1319,12 @@ static void do_device_dump(gx_device *dev, int n)
 
     /* Dump the details of device dev */
     for (i = 0; i < n; i++)
-        dlprintf(" ");
+        dmlprintf(dev->memory, " ");
     if (dev == NULL) {
-        dlprintf("NULL\n");
+        dmlprintf(dev->memory, "NULL\n");
         return;
     }
-    dlprintf3("%x(%d) = '%s'\n", dev, dev->rc.ref_count, dev->dname);
+    dmlprintf3(dev->memory, "%x(%d) = '%s'\n", dev, dev->rc.ref_count, dev->dname);
 
     data.n = 0;
     do {
@@ -1337,7 +1337,7 @@ static void do_device_dump(gx_device *dev, int n)
 
 void gx_device_dump(gx_device *dev, const char *text)
 {
-    dlprintf1("%s", text);
+    dmlprintf1(dev->memory, "%s", text);
     do_device_dump(dev, 0);
 }
 #endif

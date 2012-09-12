@@ -54,28 +54,28 @@ static void
 alloc_trace(const char *chars, gs_ref_memory_t * imem, client_name_t cname,
             gs_memory_type_ptr_t stype, uint size, const void *ptr)
 {
-    if_debug7('A', "[a%d%s]%s %s(%u) %s0x%lx\n",
-              alloc_trace_space(imem), chars, client_name_string(cname),
-              (ptr == 0 || stype == 0 ? "" :
-               struct_type_name_string(stype)),
-              size, (chars[1] == '+' ? "= " : ""), (ulong) ptr);
+    if_debug7m('A', (const gs_memory_t *)imem, "[a%d%s]%s %s(%u) %s0x%lx\n",
+               alloc_trace_space(imem), chars, client_name_string(cname),
+               (ptr == 0 || stype == 0 ? "" :
+                struct_type_name_string(stype)),
+               size, (chars[1] == '+' ? "= " : ""), (ulong) ptr);
 }
 static bool
 alloc_size_is_ok(gs_memory_type_ptr_t stype)
 {
     return (stype->ssize > 0 && stype->ssize < 0x200000);
 }
-#  define ALLOC_CHECK_SIZE(stype)\
+#  define ALLOC_CHECK_SIZE(mem,stype)\
     BEGIN\
       if (!alloc_size_is_ok(stype)) {\
-        lprintf2("size of struct type 0x%lx is 0x%lx!\n",\
+        mlprintf2(mem,"size of struct type 0x%lx is 0x%lx!\n",\
                  (ulong)(stype), (ulong)((stype)->ssize));\
         return 0;\
       }\
     END
 #else
 #  define alloc_trace(chars, imem, cname, stype, size, ptr) DO_NOTHING
-#  define ALLOC_CHECK_SIZE(stype) DO_NOTHING
+#  define ALLOC_CHECK_SIZE(mem,stype) DO_NOTHING
 #endif
 
 /*
@@ -386,12 +386,13 @@ ialloc_set_limit(register gs_ref_memory_t * mem)
         }
     } else
         mem->limit = min(max_allocated, mem->gc_allocated + FORCE_GC_LIMIT);
-    if_debug7('0', "[0]space=%d, max_vm=%ld, prev.alloc=%ld, enabled=%d,\n\
-      gc_alloc=%ld, threshold=%ld => limit=%ld\n",
-              mem->space, (long)mem->gc_status.max_vm,
-              (long)mem->previous_status.allocated,
-              mem->gc_status.enabled, (long)mem->gc_allocated,
-              (long)mem->gc_status.vm_threshold, (long)mem->limit);
+    if_debug7m('0', (const gs_memory_t *)mem,
+               "[0]space=%d, max_vm=%ld, prev.alloc=%ld, enabled=%d,\n"
+               "      gc_alloc=%ld, threshold=%ld => limit=%ld\n",
+               mem->space, (long)mem->gc_status.max_vm,
+               (long)mem->previous_status.allocated,
+               mem->gc_status.enabled, (long)mem->gc_allocated,
+               (long)mem->gc_status.vm_threshold, (long)mem->limit);
 }
 
 /*
@@ -594,7 +595,7 @@ i_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
         return NULL;
 #endif
 
-    ALLOC_CHECK_SIZE(pstype);
+    ALLOC_CHECK_SIZE(mem,pstype);
     IF_FREELIST_ALLOC(obj, imem, size, pstype, pfl)
         alloc_trace(":+<f", imem, cname, pstype, size, obj);
     ELSEIF_BIG_FREELIST_ALLOC(obj, imem, size, pstype)
@@ -626,7 +627,7 @@ i_alloc_struct_immovable(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
         return NULL;
 #endif
 
-    ALLOC_CHECK_SIZE(pstype);
+    ALLOC_CHECK_SIZE(mem,pstype);
     obj = alloc_obj(imem, size, pstype, ALLOC_IMMOVABLE | ALLOC_DIRECT, cname);
     alloc_trace("|+<.", imem, cname, pstype, size, obj);
     return obj;
@@ -646,10 +647,10 @@ i_alloc_byte_array(gs_memory_t * mem, uint num_elements, uint elt_size,
     obj = alloc_obj(imem, (ulong) num_elements * elt_size,
                     &st_bytes, ALLOC_DIRECT, cname);
 
-    if_debug6('A', "[a%d:+b.]%s -bytes-*(%lu=%u*%u) = 0x%lx\n",
-              alloc_trace_space(imem), client_name_string(cname),
-              (ulong) num_elements * elt_size,
-              num_elements, elt_size, (ulong) obj);
+    if_debug6m('A', mem, "[a%d:+b.]%s -bytes-*(%lu=%u*%u) = 0x%lx\n",
+               alloc_trace_space(imem), client_name_string(cname),
+               (ulong) num_elements * elt_size,
+               num_elements, elt_size, (ulong) obj);
     return (byte *) obj;
 }
 static byte *
@@ -668,10 +669,10 @@ i_alloc_byte_array_immovable(gs_memory_t * mem, uint num_elements,
                     &st_bytes, ALLOC_IMMOVABLE | ALLOC_DIRECT,
                     cname);
 
-    if_debug6('A', "[a%d|+b.]%s -bytes-*(%lu=%u*%u) = 0x%lx\n",
-              alloc_trace_space(imem), client_name_string(cname),
-              (ulong) num_elements * elt_size,
-              num_elements, elt_size, (ulong) obj);
+    if_debug6m('A', mem, "[a%d|+b.]%s -bytes-*(%lu=%u*%u) = 0x%lx\n",
+               alloc_trace_space(imem), client_name_string(cname),
+               (ulong) num_elements * elt_size,
+               num_elements, elt_size, (ulong) obj);
     return (byte *) obj;
 }
 static void *
@@ -686,10 +687,10 @@ i_alloc_struct_array(gs_memory_t * mem, uint num_elements,
         return NULL;
 #endif
 
-    ALLOC_CHECK_SIZE(pstype);
+    ALLOC_CHECK_SIZE(mem,pstype);
 #ifdef DEBUG
     if (pstype->enum_ptrs == basic_enum_ptrs) {
-        dprintf2("  i_alloc_struct_array: called with incorrect structure type (not element), struct='%s', client='%s'\n",
+        dmprintf2(mem, "  i_alloc_struct_array: called with incorrect structure type (not element), struct='%s', client='%s'\n",
                 pstype->sname, cname);
         return NULL;		/* fail */
     }
@@ -697,11 +698,11 @@ i_alloc_struct_array(gs_memory_t * mem, uint num_elements,
     obj = alloc_obj(imem,
                     (ulong) num_elements * pstype->ssize,
                     pstype, ALLOC_DIRECT, cname);
-    if_debug7('A', "[a%d:+<.]%s %s*(%lu=%u*%u) = 0x%lx\n",
-              alloc_trace_space(imem), client_name_string(cname),
-              struct_type_name_string(pstype),
-              (ulong) num_elements * pstype->ssize,
-              num_elements, pstype->ssize, (ulong) obj);
+    if_debug7m('A', mem, "[a%d:+<.]%s %s*(%lu=%u*%u) = 0x%lx\n",
+               alloc_trace_space(imem), client_name_string(cname),
+               struct_type_name_string(pstype),
+               (ulong) num_elements * pstype->ssize,
+               num_elements, pstype->ssize, (ulong) obj);
     return (char *)obj;
 }
 static void *
@@ -716,15 +717,15 @@ i_alloc_struct_array_immovable(gs_memory_t * mem, uint num_elements,
         return NULL;
 #endif
 
-    ALLOC_CHECK_SIZE(pstype);
+    ALLOC_CHECK_SIZE(mem,pstype);
     obj = alloc_obj(imem,
                     (ulong) num_elements * pstype->ssize,
                     pstype, ALLOC_IMMOVABLE | ALLOC_DIRECT, cname);
-    if_debug7('A', "[a%d|+<.]%s %s*(%lu=%u*%u) = 0x%lx\n",
-              alloc_trace_space(imem), client_name_string(cname),
-              struct_type_name_string(pstype),
-              (ulong) num_elements * pstype->ssize,
-              num_elements, pstype->ssize, (ulong) obj);
+    if_debug7m('A', mem, "[a%d|+<.]%s %s*(%lu=%u*%u) = 0x%lx\n",
+               alloc_trace_space(imem), client_name_string(cname),
+               struct_type_name_string(pstype),
+               (ulong) num_elements * pstype->ssize,
+               num_elements, pstype->ssize, (ulong) obj);
     return (char *)obj;
 }
 static void *
@@ -760,13 +761,13 @@ i_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
                 new_obj = obj;
             }
     if (new_obj) {
-        if_debug8('A', "[a%d:%c%c ]%s %s(%lu=>%lu) 0x%lx\n",
-                  alloc_trace_space(imem),
-                  (new_size > old_size ? '>' : '<'),
-                  (pstype == &st_bytes ? 'b' : '<'),
-                  client_name_string(cname),
-                  struct_type_name_string(pstype),
-                  old_size, new_size, (ulong) obj);
+        if_debug8m('A', mem, "[a%d:%c%c ]%s %s(%lu=>%lu) 0x%lx\n",
+                   alloc_trace_space(imem),
+                   (new_size > old_size ? '>' : '<'),
+                   (pstype == &st_bytes ? 'b' : '<'),
+                   client_name_string(cname),
+                   struct_type_name_string(pstype),
+                   old_size, new_size, (ulong) obj);
         return new_obj;
     }
     /* Punt. */
@@ -798,8 +799,8 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         chunk_locator_t cld;
 
         if (pstype == &st_free) {
-            lprintf2("%s: object 0x%lx already free!\n",
-                     client_name_string(cname), (ulong) ptr);
+            mlprintf2(mem, "%s: object 0x%lx already free!\n",
+                      client_name_string(cname), (ulong) ptr);
             return;		/*gs_abort(); */
         }
         /* Check that this allocator owns the object being freed. */
@@ -808,9 +809,9 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
                !chunk_locate_ptr(ptr, &cld)
             ) {
             if (!cld.memory->saved) {
-                lprintf3("%s: freeing 0x%lx, not owned by memory 0x%lx!\n",
-                         client_name_string(cname), (ulong) ptr,
-                         (ulong) mem);
+                mlprintf3(mem, "%s: freeing 0x%lx, not owned by memory 0x%lx!\n",
+                          client_name_string(cname), (ulong) ptr,
+                          (ulong) mem);
                 return;		/*gs_abort(); */
             }
                   /****** HACK: we know the saved state is the first ******
@@ -823,10 +824,10 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         if (!(PTR_BETWEEN((const byte *)pp, cld.cp->cbase,
                           cld.cp->cbot))
             ) {
-            lprintf5("%s: freeing 0x%lx,\n\toutside chunk 0x%lx cbase=0x%lx, cbot=0x%lx!\n",
-                     client_name_string(cname), (ulong) ptr,
-                     (ulong) cld.cp, (ulong) cld.cp->cbase,
-                     (ulong) cld.cp->cbot);
+            mlprintf5(mem, "%s: freeing 0x%lx,\n\toutside chunk 0x%lx cbase=0x%lx, cbot=0x%lx!\n",
+                      client_name_string(cname), (ulong) ptr,
+                      (ulong) cld.cp, (ulong) cld.cp->cbase,
+                      (ulong) cld.cp->cbot);
             return;		/*gs_abort(); */
         }
     }
@@ -842,9 +843,9 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         if (gs_debug['a'] || gs_debug['A'])
             saved_stype = *pstype;
 
-        if_debug3('u', "[u]finalizing %s 0x%lx (%s)\n",
-                  struct_type_name_string(pstype),
-                  (ulong) ptr, client_name_string(cname));
+        if_debug3m('u', mem, "[u]finalizing %s 0x%lx (%s)\n",
+                   struct_type_name_string(pstype),
+                   (ulong) ptr, client_name_string(cname));
         (*finalize) (mem, ptr);
 
         if (gs_debug['a'] || gs_debug['A'])
@@ -951,9 +952,9 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
     }
 top:
     if (imem->cc.ctop - imem->cc.cbot > nbytes) {
-        if_debug4('A', "[a%d:+> ]%s(%u) = 0x%lx\n",
-                  alloc_trace_space(imem), client_name_string(cname), nbytes,
-                  (ulong) (imem->cc.ctop - nbytes));
+        if_debug4m('A', mem, "[a%d:+> ]%s(%u) = 0x%lx\n",
+                   alloc_trace_space(imem), client_name_string(cname), nbytes,
+                   (ulong) (imem->cc.ctop - nbytes));
         str = imem->cc.ctop -= nbytes;
         gs_alloc_fill(str, gs_alloc_fill_alloc, nbytes);
         return str;
@@ -1011,9 +1012,9 @@ i_alloc_string_immovable(gs_memory_t * mem, uint nbytes, client_name_t cname)
     if (cp == 0)
         return 0;
     str = cp->ctop = cp->climit - nbytes;
-    if_debug4('a', "[a%d|+>L]%s(%u) = 0x%lx\n",
-              alloc_trace_space(imem), client_name_string(cname), nbytes,
-              (ulong) str);
+    if_debug4m('a', mem, "[a%d|+>L]%s(%u) = 0x%lx\n",
+               alloc_trace_space(imem), client_name_string(cname), nbytes,
+               (ulong) str);
     gs_alloc_fill(str, gs_alloc_fill_alloc, nbytes);
     return str;
 }
@@ -1031,11 +1032,11 @@ i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
          imem->cc.ctop - imem->cc.cbot > new_num - old_num)
         ) {			/* Resize in place. */
         ptr = data + old_num - new_num;
-        if_debug6('A', "[a%d:%c> ]%s(%u->%u) 0x%lx\n",
-                  alloc_trace_space(imem),
-                  (new_num > old_num ? '>' : '<'),
-                  client_name_string(cname), old_num, new_num,
-                  (ulong) ptr);
+        if_debug6m('A', mem, "[a%d:%c> ]%s(%u->%u) 0x%lx\n",
+                   alloc_trace_space(imem),
+                   (new_num > old_num ? '>' : '<'),
+                   client_name_string(cname), old_num, new_num,
+                   (ulong) ptr);
         imem->cc.ctop = ptr;
         memmove(ptr, data, min(old_num, new_num));
 #ifdef DEBUG
@@ -1052,9 +1053,9 @@ i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
             imem->lost.strings += old_num - new_num;
             gs_alloc_fill(data + new_num, gs_alloc_fill_free,
                           old_num - new_num);
-            if_debug5('A', "[a%d:<> ]%s(%u->%u) 0x%lx\n",
-                      alloc_trace_space(imem), client_name_string(cname),
-                      old_num, new_num, (ulong)ptr);
+            if_debug5m('A', mem, "[a%d:<> ]%s(%u->%u) 0x%lx\n",
+                       alloc_trace_space(imem), client_name_string(cname),
+                       old_num, new_num, (ulong)ptr);
         } else {			/* Punt. */
             ptr = gs_alloc_string(mem, new_num, cname);
             if (ptr == 0)
@@ -1071,14 +1072,14 @@ i_free_string(gs_memory_t * mem, byte * data, uint nbytes,
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     if (data == imem->cc.ctop) {
-        if_debug4('A', "[a%d:-> ]%s(%u) 0x%lx\n",
-                  alloc_trace_space(imem), client_name_string(cname), nbytes,
-                  (ulong) data);
+        if_debug4m('A', mem, "[a%d:-> ]%s(%u) 0x%lx\n",
+                   alloc_trace_space(imem), client_name_string(cname), nbytes,
+                   (ulong) data);
         imem->cc.ctop += nbytes;
     } else {
-        if_debug4('A', "[a%d:->#]%s(%u) 0x%lx\n",
-                  alloc_trace_space(imem), client_name_string(cname), nbytes,
-                  (ulong) data);
+        if_debug4m('A', mem, "[a%d:->#]%s(%u) 0x%lx\n",
+                   alloc_trace_space(imem), client_name_string(cname), nbytes,
+                   (ulong) data);
         imem->lost.strings += nbytes;
     }
     gs_alloc_fill(data, gs_alloc_fill_free, nbytes);
@@ -1381,9 +1382,10 @@ consolidate_chunk_free(chunk_t *cp, gs_ref_memory_t *mem)
         /* We found free objects at the top of the object area. */
         /* Remove the free objects from the freelists. */
         remove_range_from_freelist(mem, begin_free, cp->cbot);
-        if_debug4('a', "[a]resetting chunk 0x%lx cbot from 0x%lx to 0x%lx (%lu free)\n",
-                  (ulong) cp, (ulong) cp->cbot, (ulong) begin_free,
-                  (ulong) ((byte *) cp->cbot - (byte *) begin_free));
+        if_debug4m('a', (const gs_memory_t *)mem,
+                   "[a]resetting chunk 0x%lx cbot from 0x%lx to 0x%lx (%lu free)\n",
+                   (ulong) cp, (ulong) cp->cbot, (ulong) begin_free,
+                   (ulong) ((byte *) cp->cbot - (byte *) begin_free));
         cp->cbot = (byte *) begin_free;
     }
 }
@@ -1639,8 +1641,8 @@ i_register_root(gs_memory_t * mem, gs_gc_root_t * rp, gs_ptr_type_t ptype,
         rp->free_on_unregister = true;
     } else
         rp->free_on_unregister = false;
-    if_debug3('8', "[8]register root(%s) 0x%lx -> 0x%lx\n",
-              client_name_string(cname), (ulong)rp, (ulong)up);
+    if_debug3m('8', mem, "[8]register root(%s) 0x%lx -> 0x%lx\n",
+               client_name_string(cname), (ulong)rp, (ulong)up);
     rp->ptype = ptype;
     rp->p = up;
     rp->next = imem->roots;
@@ -1655,8 +1657,8 @@ i_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp, client_name_t cname)
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     gs_gc_root_t **rpp = &imem->roots;
 
-    if_debug2('8', "[8]unregister root(%s) 0x%lx\n",
-              client_name_string(cname), (ulong) rp);
+    if_debug2m('8', mem, "[8]unregister root(%s) 0x%lx\n",
+               client_name_string(cname), (ulong) rp);
     while (*rpp != rp)
         rpp = &(*rpp)->next;
     *rpp = (*rpp)->next;
@@ -1750,9 +1752,10 @@ alloc_acquire_chunk(gs_ref_memory_t * mem, ulong csize, bool has_strings,
                 gs_free_object(parent, cp, cname);
                 return 0;
             }
-            if_debug4('0', "[0]signaling space=%d, allocated=%ld, limit=%ld, requested=%ld\n",
-                      mem->space, (long)mem->allocated,
-                      (long)mem->limit, (long)mem->gc_status.requested);
+            if_debug4m('0', (const gs_memory_t *)mem,
+                       "[0]signaling space=%d, allocated=%ld, limit=%ld, requested=%ld\n",
+                       mem->space, (long)mem->allocated,
+                       (long)mem->limit, (long)mem->gc_status.requested);
             *mem->gc_status.psignal = mem->gc_status.signal_value;
         }
     }
@@ -1833,8 +1836,8 @@ alloc_close_chunk(gs_ref_memory_t * mem)
         *mem->pcc = mem->cc;
 #ifdef DEBUG
         if (gs_debug_c('a')) {
-            dlprintf1("[a%d]", alloc_trace_space(mem));
-            dprintf_chunk("closing chunk", mem->pcc);
+            dmlprintf1((const gs_memory_t *)mem, "[a%d]", alloc_trace_space(mem));
+            dmprintf_chunk((const gs_memory_t *)mem, "closing chunk", mem->pcc);
         }
 #endif
     }
@@ -1848,8 +1851,8 @@ alloc_open_chunk(gs_ref_memory_t * mem)
         mem->cc = *mem->pcc;
 #ifdef DEBUG
         if (gs_debug_c('a')) {
-            dlprintf1("[a%d]", alloc_trace_space(mem));
-            dprintf_chunk("opening chunk", mem->pcc);
+            dmlprintf1((const gs_memory_t *)mem, "[a%d]", alloc_trace_space(mem));
+            dmprintf_chunk((const gs_memory_t *)mem, "opening chunk", mem->pcc);
         }
 #endif
     }
@@ -1866,8 +1869,8 @@ alloc_unlink_chunk(chunk_t * cp, gs_ref_memory_t * mem)
         while (ap != 0 && ap != cp)
             ap = ap->cnext;
         if (ap != cp) {
-            lprintf2("unlink_chunk 0x%lx not owned by memory 0x%lx!\n",
-                     (ulong) cp, (ulong) mem);
+            mlprintf2((const gs_memory_t *)mem, "unlink_chunk 0x%lx not owned by memory 0x%lx!\n",
+                      (ulong) cp, (ulong) mem);
             return;		/*gs_abort(); */
         }
     }
@@ -1993,16 +1996,16 @@ const dump_control_t dump_control_no_contents =
  * also as characters.
  */
 static void
-debug_indent(int indent)
+debug_indent(const gs_memory_t *mem, int indent)
 {
     int i;
 
     for (i = indent; i > 0; --i)
-        dputc(' ');
+        dmputc(mem, ' ');
 }
 static void
-debug_dump_contents(const byte * bot, const byte * top, int indent,
-                    bool as_chars)
+debug_dump_contents(const gs_memory_t *mem, const byte * bot,
+                    const byte * top, int indent, bool as_chars)
 {
     const byte *block;
 
@@ -2025,39 +2028,39 @@ debug_dump_contents(const byte * bot, const byte * top, int indent,
             if (block < bot + block_size * 2 ||
                 memcmp(block, block - block_size * 2, block_size)
                 ) {
-                debug_indent(indent);
-                dputs("  ...\n");
+                debug_indent(mem, indent);
+                dmputs(mem, "  ...\n");
             }
             continue;
         }
         sprintf(label, "0x%lx:", (ulong) block);
-        debug_indent(indent);
-        dputs(label);
+        debug_indent(mem, indent);
+        dmputs(mem, label);
         for (i = 0; i < block_size; ++i) {
             const char *sepr = ((i & 3) == 0 && i != 0 ? "  " : " ");
 
-            dputs(sepr);
+            dmputs(mem, sepr);
             if (block + i >= bot && block + i < top)
-                dprintf1("%02x", block[i]);
+                dmprintf1(mem, "%02x", block[i]);
             else
-                dputs("  ");
+                dmputs(mem, "  ");
         }
-        dputc('\n');
+        dmputc(mem, '\n');
         if (as_chars) {
-            debug_indent(indent + strlen(label));
+            debug_indent(mem, indent + strlen(label));
             for (i = 0; i < block_size; ++i) {
                 byte ch;
 
                 if ((i & 3) == 0 && i != 0)
-                    dputc(' ');
+                    dmputc(mem, ' ');
                 if (block + i >= bot && block + i < top &&
                     (ch = block[i]) >= 32 && ch <= 126
                     )
-                    dprintf1("  %c", ch);
+                    dmprintf1(mem, "  %c", ch);
                 else
-                    dputs("   ");
+                    dmputs(mem, "   ");
             }
-            dputc('\n');
+            dmputc(mem, '\n');
         }
     }
 #undef block_size
@@ -2074,25 +2077,25 @@ debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t
     const gs_memory_struct_type_t *type = pre->o_type;
     dump_options_t options = control->options;
 
-    dprintf3("  pre=0x%lx(obj=0x%lx) size=%lu", (ulong) pre, (ulong) obj,
+    dmprintf3(mem, "  pre=0x%lx(obj=0x%lx) size=%lu", (ulong) pre, (ulong) obj,
              size);
     switch (options & (dump_do_type_addresses | dump_do_no_types)) {
     case dump_do_type_addresses + dump_do_no_types:	/* addresses only */
-        dprintf1(" type=0x%lx", (ulong) type);
+        dmprintf1(mem, " type=0x%lx", (ulong) type);
         break;
     case dump_do_type_addresses:	/* addresses & names */
-        dprintf2(" type=%s(0x%lx)", struct_type_name_string(type),
+        dmprintf2(mem, " type=%s(0x%lx)", struct_type_name_string(type),
                  (ulong) type);
         break;
     case 0:		/* names only */
-        dprintf1(" type=%s", struct_type_name_string(type));
+        dmprintf1(mem, " type=%s", struct_type_name_string(type));
     case dump_do_no_types:	/* nothing */
         ;
     }
     if (options & dump_do_marks) {
-        dprintf2(" smark/back=%u (0x%x)", pre->o_smark, pre->o_smark);
+        dmprintf2(mem, " smark/back=%u (0x%x)", pre->o_smark, pre->o_smark);
     }
-    dputc('\n');
+    dmputc(mem, '\n');
     if (type == &st_free)
         return;
     if (options & dump_do_pointers) {
@@ -2108,35 +2111,35 @@ debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t
                      ) {
                     const void *ptr = eptr.ptr;
 
-                    dprintf1("    ptr %u: ", index);
+                    dmprintf1(mem, "    ptr %u: ", index);
                     if (ptype == ptr_string_type || ptype == ptr_const_string_type) {
                         const gs_const_string *str = (const gs_const_string *)&eptr;
                         if (!str)
-                            dprintf("0x0");
+                            dmprintf(mem, "0x0");
                         else
-                            dprintf2("0x%lx(%u)", (ulong) str->data, str->size);
+                            dmprintf2(mem, "0x%lx(%u)", (ulong) str->data, str->size);
                         if (options & dump_do_pointed_strings) {
-                            dputs(" =>\n");
+                            dmputs(mem, " =>\n");
                             if (!str)
-                                dprintf("(null)\n");
+                                dmprintf(mem, "(null)\n");
                             else
-                                debug_dump_contents(str->data, str->data + str->size, 6,
+                                debug_dump_contents(mem, str->data, str->data + str->size, 6,
                                                     true);
                         } else {
-                            dputc('\n');
+                            dmputc(mem, '\n');
                         }
                     } else {
-                        dprintf1((PTR_BETWEEN(ptr, obj, (const byte *)obj + size) ?
+                        dmprintf1(mem, (PTR_BETWEEN(ptr, obj, (const byte *)obj + size) ?
                                   "(0x%lx)\n" : "0x%lx\n"), (ulong) ptr);
                     }
                 }
             } else { /* proc == 0 */
-                dprintf("previous line should be a ref\n");
+                dmprintf(mem, "previous line should be a ref\n");
             }
         } /* proc != gs_no_struct_enum_ptrs */
     }
     if (options & dump_do_contents) {
-        debug_dump_contents((const byte *)obj, (const byte *)obj + size,
+        debug_dump_contents(mem, (const byte *)obj, (const byte *)obj + size,
                             0, false);
     }
 }
@@ -2146,24 +2149,24 @@ debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t
 void
 debug_dump_chunk(const gs_memory_t *mem, const chunk_t * cp, const dump_control_t * control)
 {
-    dprintf1("chunk at 0x%lx:\n", (ulong) cp);
-    dprintf3("   chead=0x%lx  cbase=0x%lx sbase=0x%lx\n",
-             (ulong) cp->chead, (ulong) cp->cbase, (ulong) cp->sbase);
-    dprintf3("    rcur=0x%lx   rtop=0x%lx  cbot=0x%lx\n",
-             (ulong) cp->rcur, (ulong) cp->rtop, (ulong) cp->cbot);
-    dprintf4("    ctop=0x%lx climit=0x%lx smark=0x%lx, size=%u\n",
-             (ulong) cp->ctop, (ulong) cp->climit, (ulong) cp->smark,
-             cp->smark_size);
-    dprintf2("  sreloc=0x%lx   cend=0x%lx\n",
-             (ulong) cp->sreloc, (ulong) cp->cend);
-    dprintf5("cprev=0x%lx cnext=0x%lx outer=0x%lx inner_count=%u has_refs=%s\n",
-             (ulong) cp->cprev, (ulong) cp->cnext, (ulong) cp->outer,
-             cp->inner_count, (cp->has_refs ? "true" : "false"));
+    dmprintf1(mem, "chunk at 0x%lx:\n", (ulong) cp);
+    dmprintf3(mem, "   chead=0x%lx  cbase=0x%lx sbase=0x%lx\n",
+              (ulong) cp->chead, (ulong) cp->cbase, (ulong) cp->sbase);
+    dmprintf3(mem, "    rcur=0x%lx   rtop=0x%lx  cbot=0x%lx\n",
+              (ulong) cp->rcur, (ulong) cp->rtop, (ulong) cp->cbot);
+    dmprintf4(mem, "    ctop=0x%lx climit=0x%lx smark=0x%lx, size=%u\n",
+              (ulong) cp->ctop, (ulong) cp->climit, (ulong) cp->smark,
+              cp->smark_size);
+    dmprintf2(mem, "  sreloc=0x%lx   cend=0x%lx\n",
+              (ulong) cp->sreloc, (ulong) cp->cend);
+    dmprintf5(mem, "cprev=0x%lx cnext=0x%lx outer=0x%lx inner_count=%u has_refs=%s\n",
+              (ulong) cp->cprev, (ulong) cp->cnext, (ulong) cp->outer,
+              cp->inner_count, (cp->has_refs ? "true" : "false"));
 
-    dprintf2("  sfree1=0x%lx   sfree=0x%x\n",
-             (ulong) cp->sfree1, cp->sfree);
+    dmprintf2(mem, "  sfree1=0x%lx   sfree=0x%x\n",
+              (ulong) cp->sfree1, cp->sfree);
     if (control->options & dump_do_strings) {
-        debug_dump_contents((control->bottom == 0 ? cp->ctop :
+        debug_dump_contents(mem, (control->bottom == 0 ? cp->ctop :
                              max(control->bottom, cp->ctop)),
                             (control->top == 0 ? cp->climit :
                              min(control->top, cp->climit)),
@@ -2230,7 +2233,7 @@ debug_find_pointers(const gs_ref_memory_t *mem, const void *target)
                                &eptr, pre->o_type, NULL);
                      ++index)
                     if (eptr.ptr == target) {
-                        dprintf1("Index %d in", index);
+                        dmprintf1((const gs_memory_t *)mem, "Index %d in", index);
                         debug_print_object((const gs_memory_t *)mem, pre + 1, &control);
                     }
         END_OBJECTS_SCAN_NO_ABORT

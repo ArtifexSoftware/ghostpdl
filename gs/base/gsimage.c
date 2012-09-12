@@ -455,9 +455,9 @@ free_row_buffers(gs_image_enum *penum, int num_planes, client_name_t cname)
     int i;
 
     for (i = num_planes - 1; i >= 0; --i) {
-        if_debug3('b', "[b]free plane %d row (0x%lx,%u)\n",
-                  i, (ulong)penum->planes[i].row.data,
-                  penum->planes[i].row.size);
+        if_debug3m('b', penum->memory, "[b]free plane %d row (0x%lx,%u)\n",
+                   i, (ulong)penum->planes[i].row.data,
+                   penum->planes[i].row.size);
         gs_free_string(gs_image_row_memory(penum), penum->planes[i].row.data,
                        penum->planes[i].row.size, cname);
         penum->planes[i].row.data = 0;
@@ -508,7 +508,7 @@ gs_image_next_planes(gs_image_enum * penum,
         int pi;
 
         for (pi = 0; pi < num_planes; ++pi)
-            dprintf6("[b]plane %d source=0x%lx,%u pos=%u data=0x%lx,%u\n",
+            dmprintf6(penum->memory, "[b]plane %d source=0x%lx,%u pos=%u data=0x%lx,%u\n",
                      pi, (ulong)penum->planes[pi].source.data,
                      penum->planes[pi].source.size, penum->planes[pi].pos,
                      (ulong)plane_data[pi].data, plane_data[pi].size);
@@ -552,9 +552,9 @@ gs_image_next_planes(gs_image_enum * penum,
                              gs_resize_string(mem, old_data, old_size, raster,
                                               "gs_image_next(row)"));
 
-                        if_debug5('b', "[b]plane %d row (0x%lx,%u) => (0x%lx,%u)\n",
-                                  i, (ulong)old_data, old_size,
-                                  (ulong)row, raster);
+                        if_debug5m('b', mem, "[b]plane %d row (0x%lx,%u) => (0x%lx,%u)\n",
+                                   i, (ulong)old_data, old_size,
+                                   (ulong)row, raster);
                         if (row == 0) {
                             code = gs_note_error(gs_error_VMerror);
                             free_row_buffers(penum, i, "gs_image_next(row)");
@@ -604,7 +604,7 @@ gs_image_next_planes(gs_image_enum * penum,
         } else {
             code = gx_image_plane_data_rows(penum->info, penum->image_planes,
                                             h, &h);
-            if_debug2('b', "[b]used %d, code=%d\n", h, code);
+            if_debug2m('b', penum->memory, "[b]used %d, code=%d\n", h, code);
             penum->error = code < 0;
         }
         penum->y += h;

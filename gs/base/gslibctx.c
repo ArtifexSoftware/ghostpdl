@@ -150,10 +150,12 @@ int outwrite(const gs_memory_t *mem, const char *str, int len)
     return code;
 }
 
+#ifndef GS_THREADSAFE
 int errwrite_nomem(const char *str, int len)
 {
     return errwrite(mem_err_print, str, len);
 }
+#endif
 
 int errwrite(const gs_memory_t *mem, const char *str, int len)
 {
@@ -182,10 +184,13 @@ void outflush(const gs_memory_t *mem)
         fflush(mem->gs_lib_ctx->fstdout);
 }
 
+#ifndef GS_THREADSAFE
 void errflush_nomem(void)
 {
     errflush(mem_err_print);
 }
+#endif
+
 void errflush(const gs_memory_t *mem)
 {
     if (!mem->gs_lib_ctx->stderr_fn)

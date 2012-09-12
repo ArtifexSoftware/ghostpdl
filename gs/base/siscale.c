@@ -422,7 +422,7 @@ calculate_dst_contrib(stream_IScale_state * ss, int y)
                       ss->filter, ss->min_scale);
     int first_index_mod = ss->dst_next_list.first_pixel / row_size;
 
-    if_debug2('w', "[W]calculate_dst_contrib for y = %d, y+offset=%d\n", y, y + ss->src_y_offset);
+    if_debug2m('w', ss->memory, "[W]calculate_dst_contrib for y = %d, y+offset=%d\n", y, y + ss->src_y_offset);
     ss->dst_last_index = last_index;
     last_index %= ss->max_support;
     if (last_index < first_index_mod) {         /* Shuffle the indices to account for wraparound. */
@@ -436,13 +436,13 @@ calculate_dst_contrib(stream_IScale_state * ss, int y)
                  i >= first_index_mod ?
                  ss->dst_items[i - first_index_mod].weight :
                  0);
-            if_debug1('W', " %f", shuffle[i].weight);
+            if_debug1m('W', ss->memory, " %f", shuffle[i].weight);
         }
         memcpy(ss->dst_items, shuffle, ss->max_support * sizeof(CONTRIB));
         ss->dst_next_list.n = ss->max_support;
         ss->dst_next_list.first_pixel = 0;
     }
-    if_debug0('W', "\n");
+    if_debug0m('W', ss->memory, "\n");
 }
 
 /* Set default parameter values (actually, just clear pointers). */

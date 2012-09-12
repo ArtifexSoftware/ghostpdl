@@ -278,14 +278,14 @@ void alloc_free_chunk(chunk_t *, gs_ref_memory_t *);
 /* define the list of variables being printed as a macro. */
 #define dprintf_chunk_format\
   "%s 0x%lx (0x%lx..0x%lx, 0x%lx..0x%lx..0x%lx)\n"
-#define dprintf_chunk(msg, cp)\
-  dprintf7(dprintf_chunk_format,\
-           msg, (ulong)(cp), (ulong)(cp)->cbase, (ulong)(cp)->cbot,\
-           (ulong)(cp)->ctop, (ulong)(cp)->climit, (ulong)(cp)->cend)
-#define if_debug_chunk(c, msg, cp)\
-  if_debug7(c, dprintf_chunk_format,\
+#define dmprintf_chunk(mem, msg, cp)\
+  dmprintf7(mem, dprintf_chunk_format,\
             msg, (ulong)(cp), (ulong)(cp)->cbase, (ulong)(cp)->cbot,\
             (ulong)(cp)->ctop, (ulong)(cp)->climit, (ulong)(cp)->cend)
+#define if_debug_chunk(c, mem, msg, cp)\
+  if_debug7m(c, mem,dprintf_chunk_format,\
+             msg, (ulong)(cp), (ulong)(cp)->cbase, (ulong)(cp)->cbot,\
+             (ulong)(cp)->ctop, (ulong)(cp)->climit, (ulong)(cp)->cend)
 
 /* ================ Allocator state ================ */
 

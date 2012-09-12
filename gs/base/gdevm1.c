@@ -204,7 +204,7 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
     }
 
 #ifdef DEBUG
-    if_debug1('b', "final rop=0x%x\n", rop);
+    if_debug1m('b', dev->memory, "final rop=0x%x\n", rop);
 #endif
 
     /* Set up transfer parameters. */
@@ -413,7 +413,7 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
 
 #ifdef DEBUG
     if (gs_debug_c('B'))
-        debug_dump_bitmap(scan_line_base(mdev, y), mdev->raster,
+        debug_dump_bitmap(mdev->memory, scan_line_base(mdev, y), mdev->raster,
                           height, "final dest bits");
 #endif
     return 0;

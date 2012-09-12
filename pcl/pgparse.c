@@ -62,7 +62,7 @@ hpgl_define_commands(const gs_memory_t *mem, const hpgl_named_command_t *pcmds,
                                 &pcmd->defn)
 #ifdef DEBUG
           )
-            dprintf2("Redefining command %c%c\n", pcmd->char1, pcmd->char2);
+            dmprintf2(mem, "Redefining command %c%c\n", pcmd->char1, pcmd->char2);
 #endif
           ;
 }
@@ -95,7 +95,7 @@ hpgl_process(hpgl_parser_state_t *pst, hpgl_state_t *pgls,
             pr->ptr = pst->source.ptr;
             if ( code < 0 && code != e_NeedData )
               { pst->command = 0; /* cancel command */
-                if_debug0('i', "\n");
+                if_debug0m('i', pgls->memory, "\n");
                 return code;
               }
             return 0;
@@ -109,7 +109,7 @@ call:	if ( pst->command )
             if ( code < 0 )
               goto x;
             pst->command = 0;
-            if_debug0('i', "\n");
+            if_debug0m('i', pgls->memory, "\n");
           }
         while ( p < rlimit )
           {	byte next = *++p;
@@ -139,8 +139,8 @@ call:	if ( pst->command )
 #ifdef DEBUG
                   if ( gs_debug_c('i') )
                     { char c = (index ? '-' : '?');
-                      dprintf4("--%c%c%c%c", pst->first_letter + 'A',
-                               next + 'A', c, c);
+                      dmprintf4(pgls->memory, "--%c%c%c%c",
+                                pst->first_letter + 'A', next + 'A', c, c);
                     }
 #endif
                   if ( index == 0 )	/* anomalous, drop 1st letter */
@@ -311,11 +311,11 @@ out:	pst->source.ptr = p;
           case 0:		/* no argument */
             return NULL;
           case 1:		/* integer */
-            if_debug1('I', "  %ld", (long)pvalue->v_n.i);
+            if_debug1m('I', mem, "  %ld", (long)pvalue->v_n.i);
             pvalue->is_real = false;
             break;
           default /* case 2 */:	/* real */
-            if_debug1('I', "  %g", pvalue->v_n.r);
+            if_debug1m('I', mem, "  %g", pvalue->v_n.r);
             pvalue->is_real = true;
           }
         hpgl_arg_init(pst);

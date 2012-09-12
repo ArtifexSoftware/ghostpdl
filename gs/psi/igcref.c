@@ -28,9 +28,9 @@
 
 /* Define whether to trace every step of relocating ref pointers. */
 #if 0
-#  define rputc(c) dputc(c)
+#  define rputc(m,c) dmputc(m,c)
 #else
-#  define rputc(c) DO_NOTHING
+#  define rputc(m,c) DO_NOTHING
 #endif
 
 /* Forward references */
@@ -118,9 +118,9 @@ refs_clear_marks(const gs_memory_t *cmem,
         if (r_is_packed(rp)) {
 #ifdef DEBUG
             if (gs_debug_c('8')) {
-                dlprintf1("  [8]unmark packed 0x%lx ", (ulong) rp);
+                dmlprintf1(cmem, "  [8]unmark packed 0x%lx ", (ulong) rp);
                 debug_print_ref(cmem, (const ref *)rp);
-                dputs("\n");
+                dmputs(cmem, "\n");
             }
 #endif
             r_clear_pmark(rp);
@@ -130,9 +130,9 @@ refs_clear_marks(const gs_memory_t *cmem,
 
 #ifdef DEBUG
             if (gs_debug_c('8')) {
-                dlprintf1("  [8]unmark ref 0x%lx ", (ulong) rp);
+                dmlprintf1(cmem, "  [8]unmark ref 0x%lx ", (ulong) rp);
                 debug_print_ref(cmem, pref);
-                dputs("\n");
+                dmputs(cmem, "\n");
             }
 #endif
             r_clear_attrs(pref, l_mark);
@@ -413,9 +413,9 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
         /* The following assignment is logically unnecessary; */
         /* we do it only for convenience in debugging. */
         pref = (ref *) rp;
-        if_debug3('8', "  [8]relocating %s %d ref at 0x%lx\n",
-                  (r_has_attr(pref, l_mark) ? "marked" : "unmarked"),
-                  r_btype(pref), (ulong) pref);
+        if_debug3m('8', gcst->heap, "  [8]relocating %s %d ref at 0x%lx\n",
+                   (r_has_attr(pref, l_mark) ? "marked" : "unmarked"),
+                   r_btype(pref), (ulong) pref);
         if ((r_has_attr(pref, l_mark) || do_all) &&
             r_space(pref) >= min_trace
             ) {
@@ -436,7 +436,7 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
                     break;
                     /* Non-trivial non-struct cases */
                 case t_dictionary:
-                    rputc('d');
+                    rputc(gcst->heap, 'd');
                     SET_RELOC(pref->value.pdict,
                               (dict *)igc_reloc_ref_ptr((ref_packed *)pref->value.pdict, gcst));
                     break;
@@ -456,12 +456,12 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
                              * just after it.
                              */
                             if (size < max_size_st_refs / sizeof(ref)) {
-                                rputc('a');
+                                rputc(gcst->heap, 'a');
                                 SET_RELOC(pref->value.refs,
                                     (ref *) igc_reloc_ref_ptr(
                                      (ref_packed *) pref->value.refs, gcst));
                             } else {
-                                rputc('A');
+                                rputc(gcst->heap, 'A');
                                 /*
                                  * See the t_shortarray case below for why we
                                  * decrement size.
@@ -477,7 +477,7 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
                     break;
                 case t_mixedarray:
                     if (r_size(pref) != 0) {	/* value.refs might be NULL */
-                        rputc('m');
+                        rputc(gcst->heap, 'm');
                         SET_RELOC(pref->value.packed,
                                   igc_reloc_ref_ptr(pref->value.packed, gcst));
                     }
@@ -495,7 +495,7 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
                          * beginning.
                          */
                         if (size != 0) {	/* value.refs might be NULL */
-                            rputc('s');
+                            rputc(gcst->heap, 's');
                             /*
                              * igc_reloc_ref_ptr has to be able to determine
                              * whether the pointer points into a space that
@@ -534,15 +534,15 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
                     }
                     break;
                 case t_oparray:
-                    rputc('o');
+                    rputc(gcst->heap, 'o');
                     SET_RELOC(pref->value.const_refs,
                         (const ref *)igc_reloc_ref_ptr((const ref_packed *)pref->value.const_refs, gcst));
                     break;
                 default:
                     goto no_reloc; /* don't print trace message */
             }
-            if_debug2('8', "  [8]relocated 0x%lx => 0x%lx\n",
-                      (ulong)before, (ulong)after);
+            if_debug2m('8', gcst->heap, "  [8]relocated 0x%lx => 0x%lx\n",
+                       (ulong)before, (ulong)after);
         }
 no_reloc:
         rp += packed_per_ref;
@@ -577,11 +577,11 @@ igc_reloc_ref_ptr_nocheck(const ref_packed * prp, gc_state_t *gcst)
              * each such unmarked packed ref we pass over,
              * we have to decrement the final relocation.
              */
-            rputc((*rp & lp_mark ? '1' : '0'));
+            rputc(gcst->heap, (*rp & lp_mark ? '1' : '0'));
             if (!(*rp & lp_mark)) {
                 if (*rp != pt_tag(pt_integer) + packed_max_value) {
                     /* This is a stored relocation value. */
-                    rputc('\n');
+                    rputc(gcst->heap, '\n');
                     rp = print_reloc(prp, "ref",
                                      (const ref_packed *)
                                      ((const char *)prp -
@@ -601,7 +601,7 @@ igc_reloc_ref_ptr_nocheck(const ref_packed * prp, gc_state_t *gcst)
         }
         if (!ref_type_uses_size_or_null(r_type(RP_REF(rp)))) {
             /* reloc is in r_size */
-            rputc('\n');
+            rputc(gcst->heap, '\n');
             rp = print_reloc(prp, "ref",
                              (const ref_packed *)
                              (r_size(RP_REF(rp)) == 0 ? prp :
@@ -609,7 +609,7 @@ igc_reloc_ref_ptr_nocheck(const ref_packed * prp, gc_state_t *gcst)
                                                    r_size(RP_REF(rp)) + dec)));
             break;
         }
-        rputc('u');
+        rputc(gcst->heap, 'u');
         rp += packed_per_ref;
     }
     /* Use a severely deprecated pun to remove the const property. */
@@ -688,7 +688,7 @@ refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, ui
             if (r_is_packed(src)) {
                 if (!r_has_pmark(src))
                     break;
-                if_debug1('8', "  [8]packed ref 0x%lx \"copied\"\n",
+                if_debug1m('8', mem, "  [8]packed ref 0x%lx \"copied\"\n",
                           (ulong) src);
                 *src &= ~lp_mark;
                 src++;
@@ -697,7 +697,7 @@ refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, ui
 
                 if (!r_has_attr(pref, l_mark))
                     break;
-                if_debug1('8', "  [8]ref 0x%lx \"copied\"\n", (ulong) src);
+                if_debug1m('8', mem, "  [8]ref 0x%lx \"copied\"\n", (ulong) src);
                 r_clear_attrs(pref, l_mark);
                 src += packed_per_ref;
             }
@@ -707,7 +707,7 @@ refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, ui
     for (;;) {
         if (r_is_packed(src)) {
             if (r_has_pmark(src)) {
-                if_debug2('8', "  [8]packed ref 0x%lx copied to 0x%lx\n",
+                if_debug2m('8', mem, "  [8]packed ref 0x%lx copied to 0x%lx\n",
                           (ulong) src, (ulong) dest);
                 *dest++ = *src & ~lp_mark;
             }
@@ -716,8 +716,8 @@ refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, ui
             if (r_has_attr((ref *) src, l_mark)) {
                 ref rtemp;
 
-                if_debug2('8', "  [8]ref 0x%lx copied to 0x%lx\n",
-                          (ulong) src, (ulong) dest);
+                if_debug2m('8', mem, "  [8]ref 0x%lx copied to 0x%lx\n",
+                           (ulong) src, (ulong) dest);
                 /* We can't just use ref_assign_inline, */
                 /* because the source and destination */
                 /* might overlap! */
@@ -738,7 +738,7 @@ refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, ui
     /* Check that the relocation came out OK. */
     /* NOTE: this check only works within a single chunk. */
     if ((byte *) src - (byte *) dest != r_size((ref *) src - 1) + sizeof(ref)) {
-        lprintf3("Reloc error for refs 0x%lx: reloc = %lu, stored = %u\n",
+        mlprintf3(mem, "Reloc error for refs 0x%lx: reloc = %lu, stored = %u\n",
                  (ulong) dpre, (ulong) ((byte *) src - (byte *) dest),
                  (uint) r_size((ref *) src - 1));
         gs_abort(mem);

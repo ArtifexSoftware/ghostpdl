@@ -96,7 +96,7 @@ display_set_callback(gs_main_instance *minst, display_callback *callback)
         if (was_open) {
             code = gs_opendevice(dev);
             if (code < 0) {
-                dprintf("**** Unable to open the display device, quitting.\n");
+                dmprintf(dev->memory, "**** Unable to open the display device, quitting.\n");
                 return_error(code);
             }
         }

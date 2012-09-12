@@ -301,7 +301,7 @@ pl_build_crd(gs_state *pgs)
     pl_pcrd_built = true;
 
     if ( pl_read_device_CRD(pl_pcrd, pgs) ) {
-        dprintf("CRD initialized from device\n");
+        dmprintf(pgs->memory, "CRD initialized from device\n");
         return 0;
     }
 

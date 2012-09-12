@@ -62,7 +62,7 @@ gx_default_encode_color(gx_device * dev, const gx_color_value cv[])
 
 #ifdef DEBUG
     if ( dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN ) {
-        dprintf( "gx_default_encode_color() requires separable and linear\n" );
+        dmprintf(dev->memory, "gx_default_encode_color() requires separable and linear\n" );
         return gx_no_color_index;
     }
 #endif
@@ -91,7 +91,7 @@ gx_default_decode_color(gx_device * dev, gx_color_index color, gx_color_value cv
 
 #ifdef DEBUG
     if ( dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN ) {
-        dprintf( "gx_default_decode_color() requires separable and linear\n" );
+        dmprintf(dev->memory, "gx_default_decode_color() requires separable and linear\n" );
         return gs_error_rangecheck;
     }
 #endif
@@ -124,7 +124,7 @@ gx_error_encode_color(gx_device * dev, const gx_color_value colors[])
 #ifdef DEBUG
     /* The "null" device is expected to be missing encode_color */
     if (strcmp(dev->dname, "null") != 0)
-        dprintf("No encode_color proc defined for device.\n");
+        dmprintf(dev->memory, "No encode_color proc defined for device.\n");
 #endif
     return gx_no_color_index;
 }
@@ -135,7 +135,7 @@ gx_error_decode_color(gx_device * dev, gx_color_index cindex, gx_color_value col
      int i=dev->color_info.num_components;
 
 #ifdef DEBUG
-     dprintf("No decode_color proc defined for device.\n");
+     dmprintf(dev->memory, "No decode_color proc defined for device.\n");
 #endif
      for(; i>=0; i--)
         colors[i] = 0;
@@ -470,7 +470,7 @@ gx_error_get_color_comp_index(gx_device * dev, const char * pname,
      * routine for the device.
      */
 #ifdef DEBUG
-    dprintf("No get_color_comp_index proc defined for device.\n");
+    dmprintf(dev->memory, "No get_color_comp_index proc defined for device.\n");
 #endif
     return -1;			    /* Always return "unknown" component name */
 }

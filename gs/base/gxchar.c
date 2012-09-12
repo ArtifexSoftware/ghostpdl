@@ -499,7 +499,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
         return 0;
     if (SHOW_IS_ALL_OF(penum, TEXT_DO_NONE | TEXT_INTERVENE)) { /* cshow */
         int code;
-        if_debug0('k', "[k]no cache: cshow");
+        if_debug0m('k', penum->memory, "[k]no cache: cshow");
         code = gs_nulldevice(pgs);
         if (code < 0)
             return code;
@@ -513,8 +513,8 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
     /* We can only use the cache if ctm is unchanged */
     /* (aside from a possible translation). */
     if (penum->can_cache <= 0 || !pgs->char_tm_valid) {
-        if_debug2('k', "[k]no cache: can_cache=%d, char_tm_valid=%d\n",
-                  penum->can_cache, (int)pgs->char_tm_valid);
+        if_debug2m('k', penum->memory, "[k]no cache: can_cache=%d, char_tm_valid=%d\n",
+                   penum->can_cache, (int)pgs->char_tm_valid);
         return 0;
     } {
         const gs_font *pfont = pgs->font;
@@ -578,13 +578,13 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
             return code;
 #ifdef DEBUG
         if (gs_debug_c('k')) {
-            dlprintf6("[k]cbox=[%g %g %g %g] scale=%dx%d\n",
-                      fixed2float(cll.x), fixed2float(cll.y),
-                      fixed2float(cur.x), fixed2float(cur.y),
-                      1 << log2_scale.x, 1 << log2_scale.y);
-            dlprintf6("[p]  ctm=[%g %g %g %g %g %g]\n",
-                      pgs->ctm.xx, pgs->ctm.xy, pgs->ctm.yx, pgs->ctm.yy,
-                      pgs->ctm.tx, pgs->ctm.ty);
+            dmlprintf6(pgs->memory, "[k]cbox=[%g %g %g %g] scale=%dx%d\n",
+                       fixed2float(cll.x), fixed2float(cll.y),
+                       fixed2float(cur.x), fixed2float(cur.y),
+                       1 << log2_scale.x, 1 << log2_scale.y);
+            dmlprintf6(pgs->memory, "[p]  ctm=[%g %g %g %g %g %g]\n",
+                       pgs->ctm.xx, pgs->ctm.xy, pgs->ctm.yx, pgs->ctm.yy,
+                       pgs->ctm.tx, pgs->ctm.ty);
         }
 #endif
         cdim.x = cur.x - cll.x;
@@ -595,9 +595,9 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
             return 0;           /* much too big */
         iwidth = ((ushort) fixed2int_var(cdim.x) + 3) << log2_scale.x;
         iheight = ((ushort) fixed2int_var(cdim.y) + 3) << log2_scale.y;
-        if_debug3('k', "[k]iwidth=%u iheight=%u dev_cache %s\n",
-                  (uint) iwidth, (uint) iheight,
-                  (penum->dev_cache == 0 ? "not set" : "set"));
+        if_debug3m('k', penum->memory, "[k]iwidth=%u iheight=%u dev_cache %s\n",
+                   (uint) iwidth, (uint) iheight,
+                   (penum->dev_cache == 0 ? "not set" : "set"));
         if (penum->dev_cache == 0) {
             code = show_cache_setup(penum);
             if (code < 0)
@@ -648,10 +648,10 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
         /* Truncate the offsets to avoid artifacts later. */
         cc->offset.x = fixed_ceiling(-cll.x) + fixed_1;
         cc->offset.y = fixed_ceiling(-cll.y) + fixed_1;
-        if_debug4('k', "[k]width=%u, height=%u, offset=[%g %g]\n",
-                  (uint) iwidth, (uint) iheight,
-                  fixed2float(cc->offset.x),
-                  fixed2float(cc->offset.y));
+        if_debug4m('k', penum->memory, "[k]width=%u, height=%u, offset=[%g %g]\n",
+                   (uint) iwidth, (uint) iheight,
+                   fixed2float(cc->offset.x),
+                   fixed2float(cc->offset.y));
         pgs->in_cachedevice = CACHE_DEVICE_NONE; /* Provide correct grestore */
         if ((code = gs_gsave(pgs)) < 0) {
             gx_free_cached_char(dir, cc);

@@ -1392,7 +1392,7 @@ gsijs_client_set_param(gx_device_ijs *ijsdev, const char *key,
     int code = ijs_client_set_param(ijsdev->ctx, 0 /* job id */,
         key, value, strlen(value));
     if (code < 0)
-        dprintf2("ijs: Can't set parameter %s=%s\n", key, value);
+        dmprintf2(ijsdev->memory, "ijs: Can't set parameter %s=%s\n", key, value);
     return code;
 }
 

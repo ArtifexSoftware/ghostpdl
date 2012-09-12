@@ -158,7 +158,7 @@ c_alpha_write(const gs_composite_t * pcte, byte * data, uint * psize, gx_device_
     uint size = *psize;
     uint used;
 
-    if_debug1('v', "[v]c_alpha_write(%d)\n", pacte->params.op);
+    if_debug1m('v', ((gx_device *)cdev)->memory, "[v]c_alpha_write(%d)\n", pacte->params.op);
     if (pacte->params.op == composite_Dissolve) {
         used = 1 + sizeof(pacte->params.delta);
         if (size < used) {
@@ -188,7 +188,7 @@ c_alpha_read(gs_composite_t ** ppcte, const byte * data, uint size,
     if (size < 1 || *data > composite_op_last)
         return_error(gs_error_rangecheck);
     params.op = *data;
-    if_debug1('v', "[v]c_alpha_read(%d)\n", params.op);
+    if_debug1m('v', mem, "[v]c_alpha_read(%d)\n", params.op);
     if (params.op == composite_Dissolve) {
         if (size < 1 + sizeof(params.delta))
             return_error(gs_error_rangecheck);

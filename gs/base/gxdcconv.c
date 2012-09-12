@@ -103,8 +103,8 @@ color_rgb_to_cmyk(frac r, frac g, frac b, const gs_imager_state * pis,
         }
     }
     cmyk[3] = bg;
-    if_debug7('c', "[c]RGB 0x%x,0x%x,0x%x -> CMYK 0x%x,0x%x,0x%x,0x%x\n",
-              r, g, b, cmyk[0], cmyk[1], cmyk[2], cmyk[3]);
+    if_debug7m('c', mem, "[c]RGB 0x%x,0x%x,0x%x -> CMYK 0x%x,0x%x,0x%x,0x%x\n",
+               r, g, b, cmyk[0], cmyk[1], cmyk[2], cmyk[3]);
 }
 
 /* Convert CMYK to Gray. */
@@ -154,6 +154,6 @@ color_cmyk_to_rgb(frac c, frac m, frac y, frac k, const gs_imager_state * pis,
 #undef deduct_black
             }
     }
-    if_debug7('c', "[c]CMYK 0x%x,0x%x,0x%x,0x%x -> RGB 0x%x,0x%x,0x%x\n",
-              c, m, y, k, rgb[0], rgb[1], rgb[2]);
+    if_debug7m('c', mem, "[c]CMYK 0x%x,0x%x,0x%x,0x%x -> RGB 0x%x,0x%x,0x%x\n",
+               c, m, y, k, rgb[0], rgb[1], rgb[2]);
 }

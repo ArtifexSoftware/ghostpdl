@@ -1174,7 +1174,7 @@ context_create(gs_scheduler_t * psched, gs_context_t ** ppctx,
     *pte = pctx;
     *ppctx = pctx;
     if (gs_debug_c('\'') | gs_debug_c('"'))
-        dlprintf2("[']create %ld at 0x%lx\n", ctx_index, (ulong) pctx);
+        dmlprintf2(imemory, "[']create %ld at 0x%lx\n", ctx_index, (ulong) pctx);
     return 0;
 }
 
@@ -1214,8 +1214,9 @@ context_destroy(gs_context_t * pctx)
         ppctx = &(*ppctx)->table_next;
     *ppctx = (*ppctx)->table_next;
     if (gs_debug_c('\'') | gs_debug_c('"'))
-        dlprintf3("[']destroy %ld at 0x%lx, status = %d\n",
-                  pctx->index, (ulong) pctx, pctx->status);
+        dmlprintf3((const gs_memory_t *)mem,
+                   "[']destroy %ld at 0x%lx, status = %d\n",
+                   pctx->index, (ulong) pctx, pctx->status);
     if (!context_state_free(&pctx->state))
         gs_free_object((gs_memory_t *) mem, pctx, "context_destroy");
 }

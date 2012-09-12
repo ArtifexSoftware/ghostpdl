@@ -39,20 +39,20 @@ pcl_symbol_set_id_code(pcl_args_t *pargs, pcl_state_t *pcs)
 
 #ifdef DEBUG
 static void
-dump_dl_symbol_set(const pl_symbol_map_t *psm)
+dump_dl_symbol_set(const gs_memory_t *mem, const pl_symbol_map_t *psm)
 {
-    dprintf6("header size:%d id:%d format:%s type:%d first code:%d last code:%d\n",
-             pl_get_uint16(psm->header_size),
-             pl_get_uint16(psm->id),
-             (psm->format == 1 ? "MSL" : (psm->format == 3 ? "Unicode" : "Unknown")),
-             psm->type,
-             pl_get_uint16(psm->first_code),
-             pl_get_uint16(psm->last_code));
+    dmprintf6(mem, "header size:%d id:%d format:%s type:%d first code:%d last code:%d\n",
+              pl_get_uint16(psm->header_size),
+              pl_get_uint16(psm->id),
+              (psm->format == 1 ? "MSL" : (psm->format == 3 ? "Unicode" : "Unknown")),
+              psm->type,
+              pl_get_uint16(psm->first_code),
+              pl_get_uint16(psm->last_code));
     {
         int i;
         int num_codes = pl_get_uint16(psm->last_code) - pl_get_uint16(psm->first_code) + 1;
         for (i = 0; i < num_codes; i++) {
-            dprintf2("index=%d, code:%d\n", i, psm->codes[i]);
+            dmprintf2(mem, "index=%d, code:%d\n", i, psm->codes[i]);
         }
     }
 }
@@ -128,7 +128,7 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs)
 
 #ifdef DEBUG
         if ( gs_debug_c('=') )
-            dump_dl_symbol_set(psm);
+            dump_dl_symbol_set(mem, psm);
 #endif
 
         /* Symbol set may already exist; if so, we may be replacing one of
@@ -348,7 +348,7 @@ pcsymbol_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
             /* NB.  Symbol sets are require for RTL/HPGL/2 mode for
              * stickfonts but we shouldn't load all of them. */
             if ( pcl_load_built_in_symbol_sets(pcs) < 0 )
-                dprintf("Internal error, no symbol sets found");
+                dmprintf(pcs->memory, "Internal error, no symbol sets found");
         }
         else if ( type & pcl_reset_printer ) {
             pcl_args_t args;

@@ -2417,7 +2417,7 @@ retry_oversampling:
 
                 glyphn = ref_to_string(&char_name, imemory, "FAPI_do_char");
                 if (glyphn) {
-                    dprintf2(" Substituting .notdef for %s in the font %s \n", glyphn, pbfont->font_name.chars);
+                    dmprintf2(imemory, " Substituting .notdef for %s in the font %s \n", glyphn, pbfont->font_name.chars);
                     gs_free_string(imemory, (byte *)glyphn, strlen(glyphn) + 1, "FAPI_do_char");
                 }
             }
@@ -2960,17 +2960,17 @@ static int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *success
 
         fapi_request = ref_to_string(&reqstr, imemory, "FAPI_do_char");
         if (fapi_request) {
-            dprintf1("Requested FAPI plugin: %s ", fapi_request);
+            dmprintf1(imemory, "Requested FAPI plugin: %s ", fapi_request);
 
             while (h && (strncmp(h->I->d->type, "FAPI", 4) != 0 || strncmp(h->I->d->subtype, fapi_request, strlen(fapi_request)) != 0)) {
                h = h->next;
             }
             if (!h) {
-                dprintf("not found. Falling back to normal plugin search\n");
+                dmprintf(imemory, "not found. Falling back to normal plugin search\n");
                 h = i_plugin_get_list(i_ctx_p);
             }
             else {
-                dprintf("found.\n");
+                dmprintf(imemory, "found.\n");
                 do_restart = true;
             }
             gs_free_string(imemory, (byte *)fapi_request, strlen(fapi_request) + 1, "do_FAPIpassfont");
@@ -3005,7 +3005,7 @@ static int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *success
         /* renderer failed, continue search */
         pbfont->FAPI = NULL;
         if (do_restart == true) {
-            dprintf1("Requested FAPI plugin %s failed, searching for alternative plugin\n", h->I->d->subtype);
+            dmprintf1(imemory, "Requested FAPI plugin %s failed, searching for alternative plugin\n", h->I->d->subtype);
             h = i_plugin_get_list(i_ctx_p);
             do_restart = false;
         }

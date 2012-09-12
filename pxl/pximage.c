@@ -166,7 +166,7 @@ begin_bitmap(px_bitmap_params_t *params, px_bitmap_enum_t *benum,
 static int
 stream_error(stream_state * st, const char *str)
 {
-    dprintf1("pxl stream error %s\n", str );
+    dmprintf1(st->memory, "pxl stream error %s\n", str );
     return 0;
 }
 

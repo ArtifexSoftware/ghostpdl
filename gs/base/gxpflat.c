@@ -204,6 +204,7 @@ gx_flattened_iterator__init(gx_flattened_iterator *self,
     self->curve = true;
     vd_curve(self->x0, self->y0, x1, y1, x2, y2, self->x3, self->y3, 0, RGB(255, 255, 255));
     self->k = k;
+#ifndef GS_THREADSAFE
 #   ifdef DEBUG
         if (gs_debug_c('3')) {
             dlprintf4("[3]x0=%f y0=%f x1=%f y1=%f\n",
@@ -214,6 +215,7 @@ gx_flattened_iterator__init(gx_flattened_iterator *self,
                       fixed2float(self->x3), fixed2float(self->y3), self->k);
         }
 #   endif
+#endif
     if (k == -1) {
         /* A special hook for gx_subdivide_curve_rec.
            Only checked the range.
@@ -335,7 +337,7 @@ gx_flattened_iterator__init_line(gx_flattened_iterator *self,
     return true;
 }
 
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
 static inline void
 gx_flattened_iterator__print_state(gx_flattened_iterator *self)
 {
@@ -421,7 +423,7 @@ gx_flattened_iterator__next(gx_flattened_iterator *self)
         --self->i;
         if (self->i == 0)
             goto last; /* don't bother with last accum */
-#	ifdef DEBUG
+#	if defined(DEBUG) && !defined(GS_THREADSAFE)
             gx_flattened_iterator__print_state(self);
 #	endif
 #	define accum(i, r, di, dr, rmask)\
@@ -495,7 +497,7 @@ gx_flattened_iterator__prev(gx_flattened_iterator *self)
     }
     gx_flattened_iterator__unaccum(self);
     self->i++;
-#   ifdef DEBUG
+#   if defined(DEBUG) && !defined(GS_THREADSAFE)
     if_debug5('3', "[3]%s x=%g, y=%g x=%ld y=%ld\n",
               (((self->x ^ self->lx1) | (self->y ^ self->ly1)) & float2fixed(-0.5) ?
                "add" : "skip"),

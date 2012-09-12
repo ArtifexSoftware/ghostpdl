@@ -1345,7 +1345,7 @@ append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
             gs_fixed_point start,pt_start_off;
             gs_fixed_point cpoints[2];
 
-            if_debug1('1', "[1t]start %d\n", i);
+            if_debug1m('1', pfont->memory, "[1t]start %d\n", i);
 
             for (; np <= last_point; --reps, ++np) {
                 gs_fixed_point dpt;
@@ -1387,8 +1387,9 @@ append_simple(const byte *gdata, float sbw[4], const gs_matrix_fixed *pmat,
 
                 if (ppath) {
                     /* append to a path */
-                    if_debug3('1', "[1t]%s (%g %g)\n",
-                        (flags & gf_OnCurve ? "on " : "off"), fixed2float(pt.x), fixed2float(pt.y));
+                    if_debug3m('1', pfont->memory, "[1t]%s (%g %g)\n",
+                               (flags & gf_OnCurve ? "on " : "off"),
+                               fixed2float(pt.x), fixed2float(pt.y));
 
                     if (move) {
                         if(is_start_off) {

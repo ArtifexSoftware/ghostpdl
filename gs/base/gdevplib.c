@@ -161,7 +161,7 @@ int gs_band_donor_init(void        **opaque,
                        gs_memory_t  *mem)
 {
 #ifdef DEBUG_PRINT
-    eprintf("gs_band_donor_init\n");
+    emprintf(mem, "gs_band_donor_init\n");
 #endif
     *opaque = NULL;
     return 0;
@@ -560,7 +560,7 @@ plib_put_params(gx_device * pdev, gs_param_list * plist)
     code = gdev_prn_put_params(pdev, plist);
     if (ppdev->space_params.band.BandHeight < MINBANDHEIGHT)
     {
-        eprintf1("Must have a BandHeight of at least %d\n", MINBANDHEIGHT);
+        emprintf1(pdev->memory, "Must have a BandHeight of at least %d\n", MINBANDHEIGHT);
 
         ecode = gs_error_rangecheck;
 
@@ -718,7 +718,7 @@ plib_open(gx_device * pdev)
     int code;
 
 #ifdef DEBUG_PRINT
-    eprintf("plib_open\n");
+    emprintf(pdev->memory, "plib_open\n");
 #endif
     bdev->printer_procs.buf_procs.create_buf_device = plib_create_buf_device;
     bdev->printer_procs.buf_procs.setup_buf_device = plib_setup_buf_device;
@@ -735,11 +735,11 @@ plib_open(gx_device * pdev)
 
     /* Start the actual job. */
 #ifdef DEBUG_PRINT
-    eprintf("calling job_begin\n");
+    emprintf(pdev->memory, "calling job_begin\n");
 #endif
     code = gs_band_donor_init(&bdev->opaque, pdev->memory);
 #ifdef DEBUG_PRINT
-    eprintf("called\n");
+    emprintf(pdev->memory, "called\n");
 #endif
 
     return code;
@@ -751,7 +751,7 @@ plib_close(gx_device *pdev)
     gx_device_plib *pldev = (gx_device_plib *)pdev;
 
 #ifdef DEBUG_PRINT
-    eprintf("plib_close\n");
+    emprintf(pdev->memory, "plib_close\n");
 #endif
     gs_band_donor_fin(pldev->opaque);
     pldev->opaque = NULL;
@@ -896,7 +896,7 @@ plib_print_page_loop(gx_device_printer * pdev, int log2bits, int numComps,
     int bandHeight = pdev->space_params.band.BandHeight;
 
 #ifdef DEBUG_PRINT
-    eprintf("Calling page_begin\n");
+    emprintf(pdev->memory, "Calling page_begin\n");
 #endif
     buffer = gs_band_donor_band_get(pldev->opaque,
                                     pdev->width,
@@ -906,7 +906,7 @@ plib_print_page_loop(gx_device_printer * pdev, int log2bits, int numComps,
                                     stride,
                                     bandHeight);
 #ifdef DEBUG_PRINT
-    eprintf1("Called page_begin %x\n", buffer);
+    emprintf1(pdev->memory, "Called page_begin %x\n", buffer);
 #endif
     if (buffer == NULL)
         return_error(gs_error_VMerror);
@@ -945,20 +945,20 @@ plib_print_page_loop(gx_device_printer * pdev, int log2bits, int numComps,
         dump_band(rect.q.y-rect.p.y, pstream);
 #endif
 #ifdef DEBUG_PRINT
-        eprintf3("Calling band_full (%d->%d) of %d\n", rect.p.y, rect.q.y,
-                 pdev->height);
+        emprintf3(pdev->memory, "Calling band_full (%d->%d) of %d\n",
+                  rect.p.y, rect.q.y, pdev->height);
 #endif
         gs_band_donor_band_full(pldev->opaque, rect.q.y-rect.p.y);
 #ifdef DEBUG_PRINT
-        eprintf("Called band_full\n");
+        emprintf(pdev->memory, "Called band_full\n");
 #endif
     }
 #ifdef DEBUG_PRINT
-    eprintf("Calling band_release\n");
+    emprintf(pdev->memory, "Calling band_release\n");
 #endif
     gs_band_donor_band_release(pldev->opaque);
 #ifdef DEBUG_PRINT
-    eprintf("Called band_release\n");
+    emprintf(pdev->memory, "Called band_release\n");
 #endif
     return (code < 0 ? code : 0);
 }
@@ -970,7 +970,7 @@ static int
 plibm_print_page(gx_device_printer * pdev, FILE * pstream)
 {
 #ifdef DEBUG_PRINT
-    eprintf("plibm_print_page\n");
+    emprintf(pdev->memory, "plibm_print_page\n");
 #endif
     return plib_print_page_loop(pdev, 0, 1, pstream);
 }
@@ -980,7 +980,7 @@ static int
 plibg_print_page(gx_device_printer * pdev, FILE * pstream)
 {
 #ifdef DEBUG_PRINT
-    eprintf("plibg_print_page\n");
+    emprintf(pdev->memory, "plibg_print_page\n");
 #endif
     return plib_print_page_loop(pdev, 3, 1, pstream);
 }
@@ -990,7 +990,7 @@ static int
 plib_print_page(gx_device_printer * pdev, FILE * pstream)
 {
 #ifdef DEBUG_PRINT
-    eprintf("plibc_print_page\n");
+    emprintf(pdev->memory, "plibc_print_page\n");
 #endif
     return plib_print_page_loop(pdev, 3, 3, pstream);
 }
@@ -1000,7 +1000,7 @@ static int
 plibk_print_page(gx_device_printer * pdev, FILE * pstream)
 {
 #ifdef DEBUG_PRINT
-    eprintf("plibk_print_page\n");
+    emprintf(pdev->memory, "plibk_print_page\n");
 #endif
     return plib_print_page_loop(pdev, 0, 4, pstream);
 }
@@ -1010,7 +1010,7 @@ static int
 plibc_print_page(gx_device_printer * pdev, FILE * pstream)
 {
 #ifdef DEBUG_PRINT
-    eprintf("plibc_print_page\n");
+    emprintf(pdev->memory, "plibc_print_page\n");
 #endif
     return plib_print_page_loop(pdev, 3, 4, pstream);
 }

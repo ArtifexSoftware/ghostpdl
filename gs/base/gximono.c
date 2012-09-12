@@ -182,7 +182,7 @@ not_fast_halftoning:
         /* We can bypass X clipping for portrait mono-component images. */
         if (!(penum->slow_loop || penum->posture != image_portrait))
             penum->clip_image &= ~(image_clip_xmin | image_clip_xmax);
-        if_debug0('b', "[b]render=mono\n");
+        if_debug0m('b', penum->memory, "[b]render=mono\n");
         /* Precompute values needed for rasterizing. */
         penum->dxx =
             float2fixed(penum->matrix.xx + fixed2float(fixed_epsilon) / 2);
@@ -624,8 +624,8 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
         int xmax = fixed2int_pixround(penum->clip_outer.q.x);
 #define xl dda_current(next.x)
 
-        if_debug2('b', "[b]image y=%d  dda.y.Q=%lg\n", penum->y + penum->rect.y,
-                    penum->dda.row.y.state.Q / 256.);
+        if_debug2m('b', penum->memory, "[b]image y=%d  dda.y.Q=%lg\n",
+                   penum->y + penum->rect.y, penum->dda.row.y.state.Q / 256.);
         /* Fold the adjustment into xrun and xl, */
         /* including the +0.5-epsilon for rounding. */
         xrun = xrun - xa + (fixed_half - fixed_epsilon);

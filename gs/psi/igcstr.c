@@ -21,6 +21,7 @@
 #include "gsstruct.h"
 #include "iastate.h"
 #include "igcstr.h"
+#include "igc.h"
 
 /* Forward references */
 static bool gc_mark_string(const byte *, uint, bool, const chunk_t *);
@@ -117,11 +118,11 @@ gc_mark_string(const byte * ptr, uint size, bool set, const chunk_t * cp)
  * equivalent of fwrite.
  */
 static void
-dfwrite(const byte *ptr, uint count)
+dmfwrite(const gs_memory_t *mem, const byte *ptr, uint count)
 {
     uint i;
     for (i = 0; i < count; ++i)
-        dputc(ptr[i]);
+        dmputc(mem, ptr[i]);
 }
 #endif
 
@@ -134,15 +135,15 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
 
     if (size == 0)
         return false;
-#define dprintstr()\
-  dputc('('); dfwrite(ptr, min(size, 20));\
-  dputs((size <= 20 ? ")" : "...)"))
+#define dmprintstr(mem)\
+  dmputc(mem, '('); dmfwrite(mem, ptr, min(size, 20));\
+  dmputs(mem, (size <= 20 ? ")" : "...)"))
     if (!(cp = gc_locate(ptr, gcst))) {		/* not in a chunk */
 #ifdef DEBUG
         if (gs_debug_c('5')) {
-            dlprintf2("[5]0x%lx[%u]", (ulong) ptr, size);
-            dprintstr();
-            dputs(" not in a chunk\n");
+            dmlprintf2(gcst->heap, "[5]0x%lx[%u]", (ulong) ptr, size);
+            dmprintstr(gcst->heap);
+            dmputs(gcst->heap, " not in a chunk\n");
         }
 #endif
         return false;
@@ -180,11 +181,11 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
     marks = gc_mark_string(ptr, size, set, cp);
 #ifdef DEBUG
     if (gs_debug_c('5')) {
-        dlprintf4("[5]%s%smarked 0x%lx[%u]",
+        dmlprintf4(gcst->heap, "[5]%s%smarked 0x%lx[%u]",
                   (marks ? "" : "already "), (set ? "" : "un"),
                   (ulong) ptr, size);
-        dprintstr();
-        dputc('\n');
+        dmprintstr(gcst->heap);
+        dmputc(gcst->heap, '\n');
     }
 #endif
     return marks;
@@ -338,7 +339,7 @@ igc_reloc_param_string(gs_param_string * sptr, gc_state_t * gcst)
 
 /* Compact the strings in a chunk. */
 void
-gc_strings_compact(chunk_t * cp)
+gc_strings_compact(chunk_t * cp, const gs_memory_t *mem)
 {
     if (cp->smark != 0) {
         byte *hi = cp->climit;
@@ -357,24 +358,24 @@ gc_strings_compact(chunk_t * cp)
             for (; i < n; i += R) {
                 uint j;
 
-                dlprintf1("[4]0x%lx: ", (ulong) (base + i));
+                dmlprintf1(mem, "[4]0x%lx: ", (ulong) (base + i));
                 for (j = i; j < i + R; j++) {
                     byte ch = base[j];
 
                     if (ch <= 31) {
-                        dputc('^');
-                        dputc(ch + 0100);
+                        dmputc(mem, '^');
+                        dmputc(mem, ch + 0100);
                     } else
-                        dputc(ch);
+                        dmputc(mem, ch);
                 }
-                dputc(' ');
+                dmputc(mem, ' ');
                 for (j = i; j < i + R; j++)
-                    dputc((cp->smark[j >> 3] & (1 << (j & 7)) ?
+                    dmputc(mem, (cp->smark[j >> 3] & (1 << (j & 7)) ?
                            '+' : '.'));
 #undef R
                 if (!(i & (string_data_quantum - 1)))
-                    dprintf1(" %u", cp->sreloc[i >> log2_string_data_quantum]);
-                dputc('\n');
+                    dmprintf1(mem, " %u", cp->sreloc[i >> log2_string_data_quantum]);
+                dmputc(mem, '\n');
             }
         }
 #endif

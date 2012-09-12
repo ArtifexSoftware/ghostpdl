@@ -213,8 +213,8 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
         gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
 #ifdef DEBUG
     if (gs_debug_c('a') || msg != ok_msg)
-        dlprintf6("[a+]gs_malloc(%s)(%u) = 0x%lx: %s, used=%ld, max=%ld\n",
-                  client_name_string(cname), size, (ulong) ptr, msg, mmem->used, mmem->max_used);
+        dmlprintf6(mem, "[a+]gs_malloc(%s)(%u) = 0x%lx: %s, used=%ld, max=%ld\n",
+                   client_name_string(cname), size, (ulong) ptr, msg, mmem->used, mmem->max_used);
 #endif
     return ptr;
 #undef set_msg
@@ -308,17 +308,17 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     gs_memory_type_ptr_t pstype;
     struct_proc_finalize((*finalize));
 
-    if_debug3('a', "[a-]gs_free(%s) 0x%lx(%u)\n",
-              client_name_string(cname), (ulong) ptr,
-              (ptr == 0 ? 0 : ((gs_malloc_block_t *) ptr)[-1].size));
+    if_debug3m('a', mem, "[a-]gs_free(%s) 0x%lx(%u)\n",
+               client_name_string(cname), (ulong) ptr,
+               (ptr == 0 ? 0 : ((gs_malloc_block_t *) ptr)[-1].size));
     if (ptr == 0)
         return;
     pstype = ((gs_malloc_block_t *) ptr)[-1].type;
     finalize = pstype->finalize;
     if (finalize != 0) {
-        if_debug3('u', "[u]finalizing %s 0x%lx (%s)\n",
-                  struct_type_name_string(pstype),
-                  (ulong) ptr, client_name_string(cname));
+        if_debug3m('u', mem, "[u]finalizing %s 0x%lx (%s)\n",
+                   struct_type_name_string(pstype),
+                   (ulong) ptr, client_name_string(cname));
         (*finalize) (mem, ptr);
     }
     if (mmem->monitor)
@@ -478,9 +478,9 @@ gs_heap_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 
         for (; bp != 0; bp = np) {
             np = bp->next;
-            if_debug3('a', "[a]gs_heap_free_all(%s) 0x%lx(%u)\n",
-                      client_name_string(bp->cname), (ulong) (bp + 1),
-                      bp->size);
+            if_debug3m('a', mem, "[a]gs_heap_free_all(%s) 0x%lx(%u)\n",
+                       client_name_string(bp->cname), (ulong) (bp + 1),
+                       bp->size);
             gs_alloc_fill(bp + 1, gs_alloc_fill_free, bp->size);
             free(bp);
         }

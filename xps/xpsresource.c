@@ -189,18 +189,18 @@ xps_free_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict)
 }
 
 void
-xps_debug_resource_dictionary(xps_resource_t *dict)
+xps_debug_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict)
 {
     while (dict)
     {
         if (dict->base_uri)
-            dprintf1("URI = '%s'\n", dict->base_uri);
-        dprintf2("KEY = '%s' VAL = %p\n", dict->name, dict->data);
+            dmprintf1(ctx->memory, "URI = '%s'\n", dict->base_uri);
+        dmprintf2(ctx->memory, "KEY = '%s' VAL = %p\n", dict->name, dict->data);
         if (dict->parent)
         {
-            dputs("PARENT = {\n");
-            xps_debug_resource_dictionary(dict->parent);
-            dputs("}\n");
+            dmputs(ctx->memory, "PARENT = {\n");
+            xps_debug_resource_dictionary(ctx, dict->parent);
+            dmputs(ctx->memory, "}\n");
         }
         dict = dict->next;
     }

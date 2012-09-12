@@ -35,7 +35,7 @@ set_cinfo_polarity(gx_device * dev, gx_color_polarity_t new_polarity)
 #ifdef DEBUG
     /* sanity check */
     if (new_polarity == GX_CINFO_POLARITY_UNKNOWN) {
-        dprintf("set_cinfo_polarity: illegal operand\n");
+        dmprintf(dev->memory, "set_cinfo_polarity: illegal operand\n");
         return;
     }
 #endif
@@ -544,7 +544,7 @@ gx_device_fill_in_procs(register gx_device * dev)
 #  define CHECK_NON_DEFAULT(proc, default, procname)\
     BEGIN\
         if ( dev_proc(dev, proc) != NULL && dev_proc(dev, proc) != default )\
-            dprintf2("**** Warning: device %s implements obsolete procedure %s\n",\
+            dmprintf2(dev->memory, "**** Warning: device %s implements obsolete procedure %s\n",\
                      dev->dname, procname);\
     END
 #else

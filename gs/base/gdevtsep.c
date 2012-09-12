@@ -1206,9 +1206,9 @@ tiffsep_get_color_comp_index(gx_device * dev, const char * pname,
     if (index < 0 && component_type == SEPARATION_NAME &&
         pdev->warning_given == false &&
         pdev->devn_params.num_separation_order_names == 0) {
-        dlprintf("**** Max spot colorants reached.\n");
-        dlprintf("**** Some colorants will be converted to equivalent CMYK values.\n");
-        dlprintf("**** If this is a Postscript file, try using the -dMaxSpots= option.\n");
+        dmlprintf(dev->memory, "**** Max spot colorants reached.\n");
+        dmlprintf(dev->memory, "**** Some colorants will be converted to equivalent CMYK values.\n");
+        dmlprintf(dev->memory, "**** If this is a Postscript file, try using the -dMaxSpots= option.\n");
         pdev->warning_given = true;
     }
     return index;
@@ -1674,9 +1674,9 @@ threshold_from_order( gx_ht_order *d_order, int *Width, int *Height, gs_memory_t
 
 #ifdef DEBUG
 if ( gs_debug_c('h') ) {
-       dprintf2("   width=%d, height=%d,",
+       dmprintf2(memory, "   width=%d, height=%d,",
             d_order->width, d_order->height );
-       dprintf2(" num_levels=%d, raster=%d\n",
+       dmprintf2(memory, " num_levels=%d, raster=%d\n",
             d_order->num_levels, d_order->raster );
 }
 #endif
@@ -1707,12 +1707,12 @@ if ( gs_debug_c('h') ) {
          int row, col;
 #ifdef DEBUG
          if ( gs_debug_c('h') )
-            dprintf2("  level[%3d]=%3d\n", l, d_order->levels[l]);
+            dmprintf2(memory, "  level[%3d]=%3d\n", l, d_order->levels[l]);
 #endif
          for( j=d_order->levels[prev_l]; j<d_order->levels[l]; j++) {
 #ifdef DEBUG
             if ( gs_debug_c('h') )
-               dprintf2("       bits.offset=%3d, bits.mask=%8x  ",
+               dmprintf2(memory, "       bits.offset=%3d, bits.mask=%8x  ",
                    bits[j].offset, bits[j].mask);
 #endif
             row = bits[j].offset / d_order->raster;
@@ -1723,7 +1723,7 @@ if ( gs_debug_c('h') ) {
             col += 8 * ( bits[j].offset - (row * d_order->raster) );
 #ifdef DEBUG
             if ( gs_debug_c('h') )
-               dprintf3("row=%2d, col=%2d, t_level=%3d\n",
+               dmprintf3(memory, "row=%2d, col=%2d, t_level=%3d\n",
                   row, col, t_level);
 #endif
             if( col < (int)d_order->width ) {
@@ -1743,10 +1743,10 @@ if ( gs_debug_c('h') ) {
 #ifdef DEBUG
    if (gs_debug_c('h')) {
       for( i=0; i<(int)d_order->height; i++ ) {
-         dprintf1("threshold array row %3d= ", i);
+         dmprintf1(memory, "threshold array row %3d= ", i);
          for( j=(int)d_order->width-1; j>=0; j-- )
-            dprintf1("%3d ", *(thresh+j+(i*d_order->width)) );
-         dprintf("\n");
+            dmprintf1(memory, "%3d ", *(thresh+j+(i*d_order->width)) );
+         dmprintf(memory, "\n");
       }
    }
 #endif
@@ -1789,7 +1789,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
         for (sep_num = 0; sep_num < num_spot; sep_num++) {
             copy_separation_name(tfdev, name,
                 MAX_FILE_NAME_SIZE - base_filename_length - SUFFIX_SIZE, sep_num);
-            dlprintf1("%%%%SeparationName: %s\n", name);
+            dmlprintf1(pdev->memory, "%%%%SeparationName: %s\n", name);
         }
     }
 
@@ -1805,7 +1805,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
         pdev->color_info.depth = 32;        /* Create directory for 32 bit cmyk */
         if (tfdev->Compression==COMPRESSION_NONE &&
             height > ((unsigned long) 0xFFFFFFFF - ftell(file))/(width*4)) { /* note width is never 0 in print_page */
-            dprintf("CMYK composite file would be too large! Reduce resolution or enable compression.\n");
+            dmprintf(pdev->memory, "CMYK composite file would be too large! Reduce resolution or enable compression.\n");
             return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
         }
 
@@ -1841,7 +1841,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
                                         num_std_colorants, num_order, num_spot);
 
     if (!num_order && num_comp < num_std_colorants + num_spot) {
-        dlprintf("Warning: skipping one or more colour separations, see: Devices.htm#TIFF\n");
+        dmlprintf(pdev->memory, "Warning: skipping one or more colour separations, see: Devices.htm#TIFF\n");
     }
 
     for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
@@ -2296,7 +2296,7 @@ cleanup:
      * If we have any non encodable pixels then signal an error.
      */
     if (non_encodable_count) {
-        dlprintf1("WARNING:  Non encodable pixels = %d\n", non_encodable_count);
+        dmlprintf1(pdev->memory, "WARNING:  Non encodable pixels = %d\n", non_encodable_count);
         return_error(gs_error_rangecheck);
     }
 

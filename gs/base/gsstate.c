@@ -348,7 +348,7 @@ gs_gsave(gs_state * pgs)
     if (pgs->show_gstate == pgs)
         pgs->show_gstate = pnew->show_gstate = pnew;
     pgs->level++;
-    if_debug2('g', "[g]gsave -> 0x%lx, level = %d\n",
+    if_debug2m('g', pgs->memory, "[g]gsave -> 0x%lx, level = %d\n",
               (ulong) pnew, pgs->level);
     return 0;
 }
@@ -399,8 +399,8 @@ gs_grestore_only(gs_state * pgs)
     void *sdata;
     bool prior_overprint = pgs->overprint;
 
-    if_debug2('g', "[g]grestore 0x%lx, level was %d\n",
-              (ulong) saved, pgs->level);
+    if_debug2m('g', pgs->memory, "[g]grestore 0x%lx, level was %d\n",
+               (ulong) saved, pgs->level);
     if (!saved)
         return 1;
     sdata = saved->client_data;

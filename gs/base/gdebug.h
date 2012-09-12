@@ -92,7 +92,7 @@ bool gs_debug_c(int /*char */ );
 extern FILE *gs_debug_out;
 
 /* Debugging printout macros. */
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
 #  define if_debug0(c,s)\
     BEGIN if (gs_debug_c(c)) dlprintf(s); END
 #  define if_debug1(c,s,a1)\
@@ -135,12 +135,60 @@ extern FILE *gs_debug_out;
 #  define if_debug12(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12) DO_NOTHING
 #endif
 
+#ifdef DEBUG
+#  define if_debug0m(c,m,s)\
+    BEGIN if (gs_debug_c(c)) dmlprintf(m,s); END
+#  define if_debug1m(c,m,s,a1)\
+    BEGIN if (gs_debug_c(c)) dmlprintf1(m,s,a1); END
+#  define if_debug2m(c,m,s,a1,a2)\
+    BEGIN if (gs_debug_c(c)) dmlprintf2(m,s,a1,a2); END
+#  define if_debug3m(c,m,s,a1,a2,a3)\
+    BEGIN if (gs_debug_c(c)) dmlprintf3(m,s,a1,a2,a3); END
+#  define if_debug4m(c,m,s,a1,a2,a3,a4)\
+    BEGIN if (gs_debug_c(c)) dmlprintf4(m,s,a1,a2,a3,a4); END
+#  define if_debug5m(c,m,s,a1,a2,a3,a4,a5)\
+    BEGIN if (gs_debug_c(c)) dmlprintf5(m,s,a1,a2,a3,a4,a5); END
+#  define if_debug6m(c,m,s,a1,a2,a3,a4,a5,a6)\
+    BEGIN if (gs_debug_c(c)) dmlprintf6(m,s,a1,a2,a3,a4,a5,a6); END
+#  define if_debug7m(c,m,s,a1,a2,a3,a4,a5,a6,a7)\
+    BEGIN if (gs_debug_c(c)) dmlprintf7(m,s,a1,a2,a3,a4,a5,a6,a7); END
+#  define if_debug8m(c,m,s,a1,a2,a3,a4,a5,a6,a7,a8)\
+    BEGIN if (gs_debug_c(c)) dmlprintf8(m,s,a1,a2,a3,a4,a5,a6,a7,a8); END
+#  define if_debug9m(c,m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9)\
+    BEGIN if (gs_debug_c(c)) dmlprintf9(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9); END
+#  define if_debug10m(c,m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)\
+    BEGIN if (gs_debug_c(c)) dmlprintf10(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10); END
+#  define if_debug11m(c,m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11)\
+    BEGIN if (gs_debug_c(c)) dmlprintf11(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11); END
+#  define if_debug12m(c,m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12)\
+    BEGIN if (gs_debug_c(c)) dmlprintf12(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12); END
+#else
+#  define if_debug0m(c,m,s) DO_NOTHING
+#  define if_debug1m(c,m,s,a1) DO_NOTHING
+#  define if_debug2m(c,m,s,a1,a2) DO_NOTHING
+#  define if_debug3m(c,m,s,a1,a2,a3) DO_NOTHING
+#  define if_debug4m(c,m,s,a1,a2,a3,a4) DO_NOTHING
+#  define if_debug5m(c,m,s,a1,a2,a3,a4,a5) DO_NOTHING
+#  define if_debug6m(c,m,s,a1,a2,a3,a4,a5,a6) DO_NOTHING
+#  define if_debug7m(c,m,s,a1,a2,a3,a4,a5,a6,a7) DO_NOTHING
+#  define if_debug8m(c,m,s,a1,a2,a3,a4,a5,a6,a7,a8) DO_NOTHING
+#  define if_debug9m(c,m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9) DO_NOTHING
+#  define if_debug10m(c,m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) DO_NOTHING
+#  define if_debug11m(c,m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11) DO_NOTHING
+#  define if_debug12m(c,m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12) DO_NOTHING
+#endif
+
 /* Debugging support procedures in gsmisc.c */
-void debug_dump_bytes(const byte * from, const byte * to,
+void debug_print_string(const gs_memory_t *mem, const byte * str, uint len);
+void debug_dump_bytes(const gs_memory_t *mem,
+                      const byte * from, const byte * to,
                       const char *msg);
-void debug_dump_bitmap(const byte * from, uint raster, uint height,
+void debug_dump_bitmap(const gs_memory_t *mem,
+                       const byte * from, uint raster, uint height,
                        const char *msg);
-void debug_print_string(const byte * str, uint len);
-void debug_print_string_hex(const byte * str, uint len);
+#ifndef GS_THREADSAFE
+void debug_print_string_hex_nomem(const byte * str, uint len);
+#endif
+void debug_print_string_hex(const gs_memory_t *mem, const byte * str, uint len);
 
 #endif /* gdebug_INCLUDED */

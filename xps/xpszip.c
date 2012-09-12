@@ -98,7 +98,7 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
     int namelength, extralength;
     int code;
 
-    if_debug1('|', "zip: inflating entry '%s'\n", ent->name);
+    if_debug1m('|', ctx->memory, "zip: inflating entry '%s'\n", ent->name);
 
     fseek(ctx->file, ent->offset, 0);
 
@@ -233,10 +233,10 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
 
     for (i = 0; i < ctx->zip_count; i++)
     {
-        if_debug3('|', "zip entry '%s' csize=%d usize=%d\n",
-                ctx->zip_table[i].name,
-                ctx->zip_table[i].csize,
-                ctx->zip_table[i].usize);
+        if_debug3m('|', ctx->memory, "zip entry '%s' csize=%d usize=%d\n",
+                   ctx->zip_table[i].name,
+                   ctx->zip_table[i].csize,
+                   ctx->zip_table[i].usize);
     }
 
     return gs_okay;
@@ -480,7 +480,7 @@ xps_process_file(xps_context_t *ctx, char *filename)
         xps_part_t *part;
         int size;
 
-        if_debug0('|', "zip: single page mode\n");
+        if_debug0m('|', ctx->memory, "zip: single page mode\n");
         xps_strlcpy(buf, filename, sizeof buf);
         while (1)
         {
@@ -490,19 +490,19 @@ xps_process_file(xps_context_t *ctx, char *filename)
             if (!p)
                 break;
             xps_strlcpy(p, "/_rels/.rels", buf + sizeof buf - p);
-            if_debug1('|', "zip: testing if '%s' exists\n", buf);
+            if_debug1m('|', ctx->memory, "zip: testing if '%s' exists\n", buf);
             if (isfile(buf))
             {
                 *p = 0;
                 ctx->directory = xps_strdup(ctx, buf);
-                if_debug1('|', "zip: using '%s' as root directory\n", ctx->directory);
+                if_debug1m('|', ctx->memory, "zip: using '%s' as root directory\n", ctx->directory);
                 break;
             }
             *p = 0;
         }
         if (!ctx->directory)
         {
-            if_debug0('|', "zip: no /_rels/.rels found; assuming absolute paths\n");
+            if_debug0m('|', ctx->memory, "zip: no /_rels/.rels found; assuming absolute paths\n");
             ctx->directory = xps_strdup(ctx, "");
         }
 
@@ -528,7 +528,7 @@ xps_process_file(xps_context_t *ctx, char *filename)
             p = strstr(buf, "\\_rels\\.rels");
         *p = 0;
         ctx->directory = xps_strdup(ctx, buf);
-        if_debug1('|', "zip: using '%s' as root directory\n", ctx->directory);
+        if_debug1m('|', ctx->memory, "zip: using '%s' as root directory\n", ctx->directory);
     }
     else
     {

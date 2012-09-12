@@ -63,12 +63,12 @@ name_print(const char *msg, const name_table *nt, uint nidx, const int *pflag)
     const name *pname = names_index_ptr_inline(nt, nidx);
     const byte *str = pnstr->string_bytes;
 
-    dlprintf1("[n]%s", msg);
+    dmlprintf1(nt->memory, "[n]%s", msg);
     if (pflag)
-        dprintf1("(%d)", *pflag);
-    dprintf2(" (0x%lx#%u)", (ulong)pname, nidx);
-    debug_print_string(str, pnstr->string_size);
-    dprintf2("(0x%lx,%u)\n", (ulong)str, pnstr->string_size);
+        dmprintf1(nt->memory, "(%d)", *pflag);
+    dmprintf2(nt->memory, " (0x%lx#%u)", (ulong)pname, nidx);
+    debug_print_string(nt->memory, str, pnstr->string_size);
+    dmprintf2(nt->memory, "(0x%lx,%u)\n", (ulong)str, pnstr->string_size);
 }
 #  define if_debug_name(msg, nt, nidx, pflag)\
      if ( gs_debug_c('n') ) name_print(msg, nt, nidx, pflag)
@@ -513,7 +513,7 @@ name_alloc_sub(name_table * nt)
         for (i0 = 0; i0 < NT_HASH_SIZE; i0 += 16) {
             int i;
 
-            dlprintf1("[n]chain %d:", i0);
+            dmlprintf1(mem, "[n]chain %d:", i0);
             for (i = i0; i < i0 + 16; i++) {
                 int n = 0;
                 uint nidx;
@@ -523,9 +523,9 @@ name_alloc_sub(name_table * nt)
                                             names_index_string_inline(nt, nidx))
                     )
                     n++;
-                dprintf1(" %d", n);
+                dmprintf1(mem, " %d", n);
             }
-            dputc('\n');
+            dmputc(mem, '\n');
         }
     }
 #endif

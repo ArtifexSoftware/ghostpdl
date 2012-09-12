@@ -429,8 +429,8 @@ gx_install_CIEA(gs_color_space * pcs, gs_state * pgs)
         float in = SAMPLE_LOOP_VALUE(i, lp);
 
         pcie->caches.DecodeA.floats.values[i] = (*pcie->DecodeA)(in, pcie);
-        if_debug3('C', "[C]DecodeA[%d] = %g => %g\n",
-                  i, in, pcie->caches.DecodeA.floats.values[i]);
+        if_debug3m('C', pgs->memory, "[C]DecodeA[%d] = %g => %g\n",
+                   i, in, pcie->caches.DecodeA.floats.values[i]);
     }
     gx_cie_load_common_cache(&pcie->common, pgs);
     gs_cie_a_complete(pcie);

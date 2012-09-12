@@ -31,12 +31,12 @@ static int path_alloc_copy(gx_path *);
 static int gx_path_new_subpath(gx_path *);
 
 #ifdef DEBUG
-static void gx_print_segment(const segment *);
+static void gx_print_segment(const gs_memory_t *,const segment *);
 
-#  define trace_segment(msg, pseg)\
-     if ( gs_debug_c('P') ) dlprintf(msg), gx_print_segment(pseg);
+#  define trace_segment(msg, mem, pseg)\
+     if ( gs_debug_c('P') ) dmlprintf(mem, msg), gx_print_segment(mem,pseg);
 #else
-#  define trace_segment(msg, pseg) DO_NOTHING
+#  define trace_segment(msg, mem, pseg) DO_NOTHING
 #endif
 
 /* Check a point against a preset bounding box. */
@@ -380,7 +380,7 @@ rc_free_path_segments_local(gs_memory_t * mem, void *vpsegs,
     while (pseg) {
         segment *prev = pseg->prev;
 
-        trace_segment("[P]release", pseg);
+        trace_segment("[P]release", mem, pseg);
         gs_free_object(mem, pseg, cname);
         pseg = prev;
     }
@@ -479,7 +479,7 @@ gx_path_new_subpath(gx_path * ppath)
     }
     ppath->current_subpath = spp;
     ppath->subpath_count++;
-    trace_segment("[P]", (const segment *)spp);
+    trace_segment("[P]", ppath->memory, (const segment *)spp);
     return 0;
 }
 
@@ -584,7 +584,7 @@ gz_path_add_line_notes(gx_path * ppath, fixed x, fixed y, segment_notes notes)
     path_alloc_link(lp);
     path_set_point(lp, x, y);
     path_update_draw(ppath);
-    trace_segment("[P]", (segment *) lp);
+    trace_segment("[P]", ppath->memory, (segment *) lp);
     return 0;
 }
 static int
@@ -614,7 +614,7 @@ gz_path_add_gap_notes(gx_path * ppath, fixed x, fixed y, segment_notes notes)
     path_alloc_link(lp);
     path_set_point(lp, x, y);
     path_update_draw(ppath);
-    trace_segment("[P]", (segment *) lp);
+    trace_segment("[P]", ppath->memory, (segment *) lp);
     return 0;
 }
 static int
@@ -673,7 +673,7 @@ gx_path_add_lines_notes(gx_path *ppath, const gs_fixed_point *ppts, int count,
         lp->pt.x = x;
         lp->pt.y = y;
         prev = (segment *) lp;
-        trace_segment("[P]", (segment *) lp);
+        trace_segment("[P]", ppath->memory, (segment *) lp);
     }
     if (lp != 0)
         ppath->position.x = lp->pt.x,
@@ -702,7 +702,7 @@ gx_path_add_dash_notes(gx_path * ppath, fixed x, fixed y, fixed dx, fixed dy, se
     lp->tangent.x = dx;
     lp->tangent.y = dy;
     path_update_draw(ppath);
-    trace_segment("[P]", (segment *) lp);
+    trace_segment("[P]", ppath->memory, (segment *) lp);
     return 0;
 }
 
@@ -759,7 +759,7 @@ gz_path_add_curve_notes(gx_path * ppath,
     psub->curve_count++;
     ppath->curve_count++;
     path_update_draw(ppath);
-    trace_segment("[P]", (segment *) lp);
+    trace_segment("[P]", ppath->memory, (segment *) lp);
     return 0;
 }
 static int
@@ -913,7 +913,7 @@ gz_path_close_subpath_notes(gx_path * ppath, segment_notes notes)
     lp->sub = psub;
     psub->is_closed = 1;
     path_update_closepath(ppath);
-    trace_segment("[P]", (segment *) lp);
+    trace_segment("[P]", ppath->memory, (segment *) lp);
     return 0;
 }
 static int
@@ -998,7 +998,7 @@ path_alloc_copy(gx_path * ppath)
 void
 gx_dump_path(const gx_path * ppath, const char *tag)
 {
-    dlprintf2("[P]Path 0x%lx %s:\n", (ulong) ppath, tag);
+    dmlprintf2(ppath->memory, "[P]Path 0x%lx %s:\n", (ulong) ppath, tag);
     gx_path_print(ppath);
 }
 
@@ -1008,26 +1008,28 @@ gx_path_print(const gx_path * ppath)
 {
     const segment *pseg = (const segment *)ppath->first_subpath;
 
-    dlprintf5(" %% state_flags=%d subpaths=%d, curves=%d, point=(%f,%f)\n",
-              ppath->state_flags, ppath->subpath_count, ppath->curve_count,
-              fixed2float(ppath->position.x),
-              fixed2float(ppath->position.y));
-    dlprintf5(" %% box=(%f,%f),(%f,%f) last=0x%lx\n",
-              fixed2float(ppath->bbox.p.x), fixed2float(ppath->bbox.p.y),
-              fixed2float(ppath->bbox.q.x), fixed2float(ppath->bbox.q.y),
-              (ulong) ppath->box_last);
-    dlprintf4(" %% segments=0x%lx (refct=%ld, first=0x%lx, current=0x%lx)\n",
-              (ulong) ppath->segments, (long)ppath->segments->rc.ref_count,
-              (ulong) ppath->segments->contents.subpath_first,
-              (ulong) ppath->segments->contents.subpath_current);
+    dmlprintf5(ppath->memory,
+               " %% state_flags=%d subpaths=%d, curves=%d, point=(%f,%f)\n",
+               ppath->state_flags, ppath->subpath_count, ppath->curve_count,
+               fixed2float(ppath->position.x),
+               fixed2float(ppath->position.y));
+    dmlprintf5(ppath->memory," %% box=(%f,%f),(%f,%f) last=0x%lx\n",
+               fixed2float(ppath->bbox.p.x), fixed2float(ppath->bbox.p.y),
+               fixed2float(ppath->bbox.q.x), fixed2float(ppath->bbox.q.y),
+               (ulong) ppath->box_last);
+    dmlprintf4(ppath->memory,
+               " %% segments=0x%lx (refct=%ld, first=0x%lx, current=0x%lx)\n",
+               (ulong) ppath->segments, (long)ppath->segments->rc.ref_count,
+               (ulong) ppath->segments->contents.subpath_first,
+               (ulong) ppath->segments->contents.subpath_current);
     while (pseg) {
-        dlputs("");
-        gx_print_segment(pseg);
+        dmlputs(ppath->memory,"");
+        gx_print_segment(ppath->memory, pseg);
         pseg = pseg->next;
     }
 }
 static void
-gx_print_segment(const segment * pseg)
+gx_print_segment(const gs_memory_t *mem, const segment * pseg)
 {
     double px = fixed2float(pseg->pt.x);
     double py = fixed2float(pseg->pt.y);
@@ -1039,45 +1041,45 @@ gx_print_segment(const segment * pseg)
         case s_start:{
                 const subpath *const psub = (const subpath *)pseg;
 
-                dprintf5("   %1.4f %1.4f moveto\t%% %s #curves=%d last=0x%lx\n",
-                         px, py, out, psub->curve_count, (ulong) psub->last);
+                dmprintf5(mem, "   %1.4f %1.4f moveto\t%% %s #curves=%d last=0x%lx\n",
+                          px, py, out, psub->curve_count, (ulong) psub->last);
                 break;
             }
         case s_curve:{
                 const curve_segment *const pcur = (const curve_segment *)pseg;
 
-                dprintf7("   %1.4f %1.4f %1.4f %1.4f %1.4f %1.4f curveto\t%% %s\n",
-                         fixed2float(pcur->p1.x), fixed2float(pcur->p1.y),
-                         fixed2float(pcur->p2.x), fixed2float(pcur->p2.y),
-                         px, py, out);
+                dmprintf7(mem, "   %1.4f %1.4f %1.4f %1.4f %1.4f %1.4f curveto\t%% %s\n",
+                          fixed2float(pcur->p1.x), fixed2float(pcur->p1.y),
+                          fixed2float(pcur->p2.x), fixed2float(pcur->p2.y),
+                          px, py, out);
                 break;
             }
         case s_line:
-            dprintf3("   %1.4f %1.4f lineto\t%% %s\n", px, py, out);
+            dmprintf3(mem, "   %1.4f %1.4f lineto\t%% %s\n", px, py, out);
             break;
         case s_gap:
-            dprintf3("   %1.4f %1.4f gapto\t%% %s\n", px, py, out);
+            dmprintf3(mem, "   %1.4f %1.4f gapto\t%% %s\n", px, py, out);
             break;
         case s_dash:{
                 const dash_segment *const pd = (const dash_segment *)pseg;
 
-                dprintf5("   %1.4f %1.4f %1.4f  %1.4f dash\t%% %s\n",
-                         fixed2float(pd->pt.x), fixed2float(pd->pt.y),
-                         fixed2float(pd->tangent.x),fixed2float(pd->tangent.y),
-                         out);
+                dmprintf5(mem, "   %1.4f %1.4f %1.4f  %1.4f dash\t%% %s\n",
+                          fixed2float(pd->pt.x), fixed2float(pd->pt.y),
+                          fixed2float(pd->tangent.x),fixed2float(pd->tangent.y),
+                          out);
                 break;
             }
         case s_line_close:{
                 const line_close_segment *const plc =
                 (const line_close_segment *)pseg;
 
-                dprintf4("   closepath\t%% %s %1.4f %1.4f 0x%lx\n",
-                         out, px, py, (ulong) (plc->sub));
+                dmprintf4(mem, "   closepath\t%% %s %1.4f %1.4f 0x%lx\n",
+                          out, px, py, (ulong) (plc->sub));
                 break;
             }
         default:
-            dprintf4("   %1.4f %1.4f <type 0x%x>\t%% %s\n",
-                     px, py, pseg->type, out);
+            dmprintf4(mem, "   %1.4f %1.4f <type 0x%x>\t%% %s\n",
+                      px, py, pseg->type, out);
     }
 }
 

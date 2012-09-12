@@ -90,7 +90,7 @@ on_open_tag(void *zp, char *ns_name, char **atts)
 
     if (!name)
     {
-        dprintf1("unknown namespace: %s\n", ns_name);
+        dmprintf1(ctx->memory, "unknown namespace: %s\n", ns_name);
         name = ns_name;
     }
 

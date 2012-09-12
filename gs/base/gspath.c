@@ -467,8 +467,8 @@ static void
 note_set_clip_path(const gs_state * pgs)
 {
     if (gs_debug_c('P')) {
-        dlprintf("[P]Clipping path:\n");
-        gx_cpath_print(pgs->clip_path);
+        dmlprintf(pgs->memory, "[P]Clipping path:\n");
+        gx_cpath_print(pgs->memory, pgs->clip_path);
     }
 }
 #else

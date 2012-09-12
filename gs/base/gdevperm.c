@@ -461,7 +461,7 @@ perm_put_params(gx_device *pdev, gs_param_list *plist)
     if (code < 0)
         return code;
     if (new_mode < 0 || new_mode >= sizeof(perm_cmapping_procs) / sizeof(perm_cmapping_procs[0])) {
-        dlprintf("rangecheck!\n");
+        dmlprintf(pdev->memory, "rangecheck!\n");
         return_error(gs_error_rangecheck);
     }
     dev->permute = new_permute;

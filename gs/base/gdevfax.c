@@ -202,13 +202,15 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
     for (lnum = row_in; ;) {
         int status;
 
-        if_debug7('w', "[w]lnum=%d r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", lnum,
-                  (ulong)in, (ulong)r.ptr, (ulong)r.limit,
-                  (ulong)out, (ulong)w.ptr, (ulong)w.limit);
+        if_debug7m('w', mem,
+                   "[w]lnum=%d r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", lnum,
+                   (ulong)in, (ulong)r.ptr, (ulong)r.limit,
+                   (ulong)out, (ulong)w.ptr, (ulong)w.limit);
         status = temp->process(ss, &r, &w, lnum == row_end);
-        if_debug7('w', "...%d, r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", status,
-                  (ulong)in, (ulong)r.ptr, (ulong)r.limit,
-                  (ulong)out, (ulong)w.ptr, (ulong)w.limit);
+        if_debug7m('w', mem,
+                   "...%d, r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", status,
+                   (ulong)in, (ulong)r.ptr, (ulong)r.limit,
+                   (ulong)out, (ulong)w.ptr, (ulong)w.limit);
         switch (status) {
             case 0:             /* need more input data */
                 if (lnum == row_end)

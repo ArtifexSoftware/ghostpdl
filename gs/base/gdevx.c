@@ -362,8 +362,8 @@ x_fill_rectangle(gx_device * dev,
     if (xdev->bpixmap != (Pixmap) 0) {
         x_update_add(xdev, x, y, w, h);
     }
-    if_debug5('F', "[F] fill (%d,%d):(%d,%d) %ld\n",
-              x, y, w, h, (long)color);
+    if_debug5m('F', dev->memory, "[F] fill (%d,%d):(%d,%d) %ld\n",
+               x, y, w, h, (long)color);
     return 0;
 }
 
@@ -603,8 +603,8 @@ x_copy_color(gx_device * dev,
     code = x_copy_image(xdev, base, sourcex, raster, x, y, w, h);
     if (xdev->bpixmap != (Pixmap) 0)
         x_update_add(xdev, x, y, w, h);
-    if_debug4('F', "[F] copy_color (%d,%d):(%d,%d)\n",
-              x, y, w, h);
+    if_debug4m('F', dev->memory, "[F] copy_color (%d,%d):(%d,%d)\n",
+               x, y, w, h);
     return code;
 }
 
@@ -693,8 +693,8 @@ x_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     if (xdev->bpixmap != (Pixmap) 0) {
         x_update_add(xdev, x, y, w, h);
     }
-    if_debug6('F', "[F] tile (%d,%d):(%d,%d) %ld,%ld\n",
-              x, y, w, h, lzero, lone);
+    if_debug6m('F', dev->memory, "[F] tile (%d,%d):(%d,%d) %ld,%ld\n",
+               x, y, w, h, lzero, lone);
     return 0;
 }
 
@@ -1011,12 +1011,12 @@ set_tile(gx_device * dev, const gx_strip_bitmap * tile)
     if (gs_debug['H']) {
         int i;
 
-        dlprintf4("[H] 0x%lx: width=%d height=%d raster=%d\n",
+        dmlprintf4(xdev->memory, "[H] 0x%lx: width=%d height=%d raster=%d\n",
               (ulong) tile->data, tile->size.x, tile->size.y, tile->raster);
-        dlputs("");
+        dmlputs(xdev->memory, "");
         for (i = 0; i < tile->raster * tile->size.y; i++)
-            dprintf1(" %02x", tile->data[i]);
-        dputc('\n');
+            dmprintf1(xdev->memory, " %02x", tile->data[i]);
+        dmputc(xdev->memory, '\n');
     }
 #endif
     XSetTile(xdev->dpy, xdev->gc, xdev->ht.no_pixmap);	/* *** X bug *** */

@@ -867,7 +867,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     i_ctx_p = minst->i_ctx_p;		/* get current interp context */
     if (gs_debug_c(':')) {
         print_resource_usage(minst, &gs_imemory, "Final");
-        dprintf1("%% Exiting instance 0x%p\n", minst);
+        dmprintf1(minst->heap, "%% Exiting instance 0x%p\n", minst);
     }
     /* Do the equivalent of a restore "past the bottom". */
     /* This will release all memory, close all open files, etc. */
@@ -959,10 +959,10 @@ print_resource_usage(const gs_main_instance * minst, gs_dual_memory_t * dmem,
             }
         }
     }
-    dprintf4("%% %s time = %g, memory allocated = %lu, used = %lu\n",
-             msg, utime[0] - minst->base_time[0] +
-             (utime[1] - minst->base_time[1]) / 1000000000.0,
-             allocated, used);
+    dmprintf4(minst->heap, "%% %s time = %g, memory allocated = %lu, used = %lu\n",
+              msg, utime[0] - minst->base_time[0] +
+              (utime[1] - minst->base_time[1]) / 1000000000.0,
+              allocated, used);
 }
 
 /* Dump the stacks after interpretation */
@@ -972,11 +972,11 @@ gs_main_dump_stack(gs_main_instance *minst, int code, ref * perror_object)
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
 
     zflush(i_ctx_p);            /* force out buffered output */
-    dprintf1("\nUnexpected interpreter error %d.\n", code);
+    dmprintf1(minst->heap, "\nUnexpected interpreter error %d.\n", code);
     if (perror_object != 0) {
-        dputs("Error object: ");
+        dmputs(minst->heap, "Error object: ");
         debug_print_ref(minst->heap, perror_object);
-        dputc('\n');
+        dmputc(minst->heap, '\n');
     }
     debug_dump_stack(minst->heap, &o_stack, "Operand stack");
     debug_dump_stack(minst->heap, &e_stack, "Execution stack");

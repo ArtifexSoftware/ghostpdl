@@ -53,17 +53,17 @@ xps_debug_fixdocseq(xps_context_t *ctx)
     xps_page_t *page = ctx->first_page;
 
     if (ctx->start_part)
-        dprintf1("start part %s\n", ctx->start_part);
+        dmprintf1(ctx->memory, "start part %s\n", ctx->start_part);
 
     while (fixdoc)
     {
-        dprintf1("fixdoc %s\n", fixdoc->name);
+        dmprintf1(ctx->memory, "fixdoc %s\n", fixdoc->name);
         fixdoc = fixdoc->next;
     }
 
     while (page)
     {
-        dprintf3("page %s w=%d h=%d\n", page->name, page->width, page->height);
+        dmprintf3(ctx->memory, "page %s w=%d h=%d\n", page->name, page->width, page->height);
         page = page->next;
     }
 }
@@ -78,7 +78,7 @@ xps_add_fixed_document(xps_context_t *ctx, char *name)
         if (!strcmp(fixdoc->name, name))
             return;
 
-    if_debug1('|', "doc: adding fixdoc %s\n", name);
+    if_debug1m('|', ctx->memory, "doc: adding fixdoc %s\n", name);
 
     fixdoc = xps_alloc(ctx, sizeof(xps_document_t));
     fixdoc->name = xps_strdup(ctx, name);
@@ -121,7 +121,7 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
         if (!strcmp(page->name, name))
             return;
 
-    if_debug1('|', "doc: adding page %s\n", name);
+    if_debug1m('|', ctx->memory, "doc: adding page %s\n", name);
 
     page = xps_alloc(ctx, sizeof(xps_page_t));
     page->name = xps_strdup(ctx, name);

@@ -326,7 +326,7 @@ gx_concrete_space_DeviceN(const gs_color_space * pcs,
      * Verify that the color space and imager state info match.
      */
     if (pcs->id != pis->color_component_map.cspace_id)
-        dprintf("gx_concrete_space_DeviceN: color space id mismatch");
+        dmprintf(pis->memory, "gx_concrete_space_DeviceN: color space id mismatch");
 #endif
     /*
      * Check if we are using the alternate color space.
@@ -402,7 +402,7 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
      * Verify that the color space and imager state info match.
      */
     if (pcs->id != pis->color_component_map.cspace_id)
-        dprintf("gx_concretize_DeviceN: color space id mismatch");
+        dmprintf(dev->memory, "gx_concretize_DeviceN: color space id mismatch");
 #endif
 
     /*
@@ -472,7 +472,7 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
      * Verify that the color space and imager state info match.
      */
     if (pcs->id != pis->color_component_map.cspace_id)
-        dprintf("gx_remap_concrete_DeviceN: color space id mismatch");
+        dmprintf(pis->memory, "gx_remap_concrete_DeviceN: color space id mismatch");
 #endif
     if (pis->color_component_map.use_alt_cspace) {
         const gs_color_space *pacs = pcs->base_space;

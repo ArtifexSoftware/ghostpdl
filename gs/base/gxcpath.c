@@ -1102,12 +1102,12 @@ gx_cpath_copy(const gx_clip_path * from, gx_clip_path * pcpath)
 
 /* Print a clipping list. */
 static void
-gx_clip_list_print(const gx_clip_list *list)
+gx_clip_list_print(const gs_memory_t *mem, const gx_clip_list *list)
 {
     const gx_clip_rect *pr;
 
-    dlprintf3("   list count=%d xmin=%d xmax=%d\n",
-             list->count, list->xmin, list->xmax);
+    dmlprintf3(mem, "   list count=%d xmin=%d xmax=%d\n",
+               list->count, list->xmin, list->xmax);
     switch (list->count) {
         case 0:
             pr = 0;
@@ -1119,31 +1119,31 @@ gx_clip_list_print(const gx_clip_list *list)
             pr = list->head;
     }
     for (; pr != 0; pr = pr->next)
-        dlprintf4("   rect: (%d,%d),(%d,%d)\n",
-                  pr->xmin, pr->ymin, pr->xmax, pr->ymax);
+        dmlprintf4(mem, "   rect: (%d,%d),(%d,%d)\n",
+                   pr->xmin, pr->ymin, pr->xmax, pr->ymax);
 }
 
 /* Print a clipping path */
 void
-gx_cpath_print(const gx_clip_path * pcpath)
+gx_cpath_print(const gs_memory_t *mem, const gx_clip_path * pcpath)
 {
     if (pcpath->path_valid)
         gx_path_print(&pcpath->path);
     else
-        dlputs("   (path not valid)\n");
-    dlprintf4("   inner_box=(%g,%g),(%g,%g)\n",
-              fixed2float(pcpath->inner_box.p.x),
-              fixed2float(pcpath->inner_box.p.y),
-              fixed2float(pcpath->inner_box.q.x),
-              fixed2float(pcpath->inner_box.q.y));
-    dlprintf4("     outer_box=(%g,%g),(%g,%g)",
-              fixed2float(pcpath->outer_box.p.x),
-              fixed2float(pcpath->outer_box.p.y),
-              fixed2float(pcpath->outer_box.q.x),
-              fixed2float(pcpath->outer_box.q.y));
-    dprintf2("     rule=%d list.refct=%ld\n",
-             pcpath->rule, pcpath->rect_list->rc.ref_count);
-    gx_clip_list_print(gx_cpath_list(pcpath));
+        dmlputs(mem, "   (path not valid)\n");
+    dmlprintf4(mem, "   inner_box=(%g,%g),(%g,%g)\n",
+               fixed2float(pcpath->inner_box.p.x),
+               fixed2float(pcpath->inner_box.p.y),
+               fixed2float(pcpath->inner_box.q.x),
+               fixed2float(pcpath->inner_box.q.y));
+    dmlprintf4(mem, "     outer_box=(%g,%g),(%g,%g)",
+               fixed2float(pcpath->outer_box.p.x),
+               fixed2float(pcpath->outer_box.p.y),
+               fixed2float(pcpath->outer_box.q.x),
+               fixed2float(pcpath->outer_box.q.y));
+    dmprintf2(mem, "     rule=%d list.refct=%ld\n",
+              pcpath->rule, pcpath->rect_list->rc.ref_count);
+    gx_clip_list_print(mem, gx_cpath_list(pcpath));
 }
 
 #endif /* DEBUG */

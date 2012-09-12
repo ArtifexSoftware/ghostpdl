@@ -72,13 +72,13 @@ static const char * const pcl_encnames[] = {
 };
 
 const char *
-pcl_cid_cspace_get_debug_name(int index)
+pcl_cid_cspace_get_debug_name(const gs_memory_t *mem, int index)
 {
     if (index == -1) 
         return WHITE_CS;
 
     if (index < 0 || index >= countof(pcl_csnames)) {
-        dprintf("index out of range\n");
+        dmprintf(mem, "index out of range\n");
         return pcl_csnames[0];
     } else {
         return pcl_csnames[index];
@@ -86,10 +86,10 @@ pcl_cid_cspace_get_debug_name(int index)
 }
 
 const char *
-pcl_cid_enc_get_debug_name(int index)
+pcl_cid_enc_get_debug_name(const gs_memory_t *mem, int index)
 {
     if (index < 0 || index >= countof(pcl_encnames)) {
-        dprintf("index out of range\n");
+        dmprintf(mem, "index out of range\n");
         return pcl_encnames[0];
     } else {
         return pcl_encnames[index];
@@ -299,7 +299,7 @@ check_cid_hdr(
         if (pcidh->bits_per_primary[i] == 0)
             pcidh->bits_per_primary[i] = 8;
         if ( pcs->personality == pcl5e && pcidh->bits_per_primary[i] != 1 )
-            dprintf("pcl5e personality with color primaries\n" );
+            dmprintf(pcs->memory, "pcl5e personality with color primaries\n" );
     }
 
     switch (pcidh->encoding) {
@@ -429,20 +429,16 @@ install_cid_data(
     cid.len = len;
     memcpy(&(cid.u.hdr), pbuff, sizeof(pcl_cid_hdr_t));
 
-#ifdef DEBUG
-    if_debug2('c', "[c] cid before check color space: %s encoding: %s\n",
-              pcl_cid_cspace_get_debug_name(pcl_cid_get_cspace(&cid)), 
-              pcl_cid_enc_get_debug_name(pcl_cid_get_encoding(&cid)));
-#endif
+    if_debug2m('c', pcs->memory, "[c] cid before check color space: %s encoding: %s\n",
+               pcl_cid_cspace_get_debug_name(pcs->memory, pcl_cid_get_cspace(&cid)), 
+               pcl_cid_enc_get_debug_name(pcs->memory, pcl_cid_get_encoding(&cid)));
 
     /* check the header this will also make corrections if possible */
     code = check_cid_hdr(pcs, &cid);
 
-#ifdef DEBUG
-    if_debug2('c', "[c] cid after check color space: %s encoding: %s\n",
-              pcl_cid_cspace_get_debug_name(pcl_cid_get_cspace(&cid)), 
-              pcl_cid_enc_get_debug_name(pcl_cid_get_encoding(&cid)));
-#endif
+    if_debug2m('c', pcs->memory, "[c] cid after check color space: %s encoding: %s\n",
+               pcl_cid_cspace_get_debug_name(pcs->memory, pcl_cid_get_cspace(&cid)), 
+               pcl_cid_enc_get_debug_name(pcs->memory, pcl_cid_get_encoding(&cid)));
 
     if (code >= 0) {
         /* check if we should substitute colometric for a device color space */

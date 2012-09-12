@@ -65,7 +65,7 @@ mem_mono_strip_copy_rop(gx_device * dev, const byte * sdata,
                        id, scolors, textures, tcolors,
                        x, y, width, height, phase_x, phase_y, lop);
     if (gs_debug_c('B'))
-        debug_dump_bitmap(scan_line_base(mdev, y), mdev->raster,
+        debug_dump_bitmap(mdev->memory, scan_line_base(mdev, y), mdev->raster,
                           height, "initial dest bits");
 #endif
 

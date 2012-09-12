@@ -1075,14 +1075,14 @@ clist_create_compositor(gx_device * dev,
 
         if(cropping_op != 0) {
 
-           dprintf2("[v] cropping_op = %d. Total number of bands is %d \n",
+           dmprintf2(dev->memory, "[v] cropping_op = %d. Total number of bands is %d \n",
                      cropping_op, no_of_bands);
-           dprintf2("[v]  Writing out from band %d through band %d \n",
+           dmprintf2(dev->memory, "[v]  Writing out from band %d through band %d \n",
                      first_band, last_band);
 
         } else {
 
-           dprintf1("[v] cropping_op = %d. Writing out to all bands \n",
+           dmprintf1(dev->memory, "[v] cropping_op = %d. Writing out to all bands \n",
                      cropping_op);
 
         }
@@ -1451,12 +1451,12 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
     bbox.q.y = fixed2float(min(cbox.q.y, by1) + fixed_half);
 #ifdef DEBUG
     if (gs_debug_c('b')) {
-        dlprintf6("[b]band box for (%d,%d),(%d,%d), band (%d,%d) =>\n",
-                  px, py, qx, qy, y, y + h);
-        dlprintf10("      (%g,%g),(%g,%g), matrix=[%g %g %g %g %g %g]\n",
-                   bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y,
-                   pie->matrix.xx, pie->matrix.xy, pie->matrix.yx,
-                   pie->matrix.yy, pie->matrix.tx, pie->matrix.ty);
+        dmlprintf6(dev->memory, "[b]band box for (%d,%d),(%d,%d), band (%d,%d) =>\n",
+                   px, py, qx, qy, y, y + h);
+        dmlprintf10(dev->memory, "      (%g,%g),(%g,%g), matrix=[%g %g %g %g %g %g]\n",
+                    bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y,
+                    pie->matrix.xx, pie->matrix.xy, pie->matrix.yx,
+                    pie->matrix.yy, pie->matrix.tx, pie->matrix.ty);
     }
 #endif
     if (is_xxyy(&pie->matrix) || is_xyyx(&pie->matrix)) {
@@ -1507,7 +1507,8 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
             gs_point_transform_inverse(bbox.p.x, bbox.q.y, &pie->matrix,
                                        &corners[3]) < 0
             ) {
-            if_debug0('b', "[b]can't inverse-transform a band corner!\n");
+            if_debug0m('b', dev->memory,
+                       "[b]can't inverse-transform a band corner!\n");
             return false;
         }
         corners[4] = corners[0];
@@ -1541,34 +1542,34 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
             if (dx != 0) {
                 double t = (px - pa.x) / dx;
 
-                if_debug3('b', "   (px) t=%g => (%d,%g)\n",
-                          t, px, pa.y + t * dy);
+                if_debug3m('b', dev->memory, "   (px) t=%g => (%d,%g)\n",
+                           t, px, pa.y + t * dy);
                 if (in_range(t, pa.y + t * dy, py, qy))
                     box_merge_point(pbox, (floatp) px, t);
                 t = (qx - pa.x) / dx;
-                if_debug3('b', "   (qx) t=%g => (%d,%g)\n",
-                          t, qx, pa.y + t * dy);
+                if_debug3m('b', dev->memory, "   (qx) t=%g => (%d,%g)\n",
+                           t, qx, pa.y + t * dy);
                 if (in_range(t, pa.y + t * dy, py, qy))
                     box_merge_point(pbox, (floatp) qx, t);
             }
             if (dy != 0) {
                 double t = (py - pa.y) / dy;
 
-                if_debug3('b', "   (py) t=%g => (%g,%d)\n",
-                          t, pa.x + t * dx, py);
+                if_debug3m('b', dev->memory, "   (py) t=%g => (%g,%d)\n",
+                           t, pa.x + t * dx, py);
                 if (in_range(t, pa.x + t * dx, px, qx))
                     box_merge_point(pbox, t, (floatp) py);
                 t = (qy - pa.y) / dy;
-                if_debug3('b', "   (qy) t=%g => (%g,%d)\n",
-                          t, pa.x + t * dx, qy);
+                if_debug3m('b', dev->memory, "   (qy) t=%g => (%g,%d)\n",
+                           t, pa.x + t * dx, qy);
                 if (in_range(t, pa.x + t * dx, px, qx))
                     box_merge_point(pbox, t, (floatp) qy);
             }
 #undef in_range
         }
     }
-    if_debug4('b', "    => (%d,%d),(%d,%d)\n", pbox->p.x, pbox->p.y,
-              pbox->q.x, pbox->q.y);
+    if_debug4m('b', dev->memory, "    => (%d,%d),(%d,%d)\n",
+               pbox->p.x, pbox->p.y, pbox->q.x, pbox->q.y);
     /*
      * If necessary, add pixels around the edges so we will have
      * enough information to do interpolation.
@@ -1740,7 +1741,7 @@ write_image_end_all(gx_device *dev, const clist_image_enum *pie)
         RECT_STEP_INIT(re);
         if (re.pcls->known & begin_image_known) {
             do {
-                if_debug1('L', "[L]image_end for band %d\n", re.band);
+                if_debug1m('L', dev->memory, "[L]image_end for band %d\n", re.band);
                 code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_image_data, 2);
             } while (RECT_RECOVER(code));
             if (code < 0 && SET_BAND_CODE(code))

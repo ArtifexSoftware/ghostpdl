@@ -1014,9 +1014,9 @@ psd_get_color_comp_index(gx_device * dev, const char * pname,
     if (index < 0 && component_type == SEPARATION_NAME && 
         pdev->warning_given == false && 
         pdev->devn_params.num_separation_order_names == 0) {
-        dlprintf("**** Max spot colorants reached.\n");
-        dlprintf("**** Some colorants will be converted to equivalent CMYK values.\n");
-        dlprintf("**** If this is a Postscript file, try using the -dMaxSpots= option.\n");
+        dmlprintf(dev->memory, "**** Max spot colorants reached.\n");
+        dmlprintf(dev->memory, "**** Some colorants will be converted to equivalent CMYK values.\n");
+        dmlprintf(dev->memory, "**** If this is a Postscript file, try using the -dMaxSpots= option.\n");
         pdev->warning_given = true;
     }
     return index;

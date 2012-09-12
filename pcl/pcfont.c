@@ -543,7 +543,7 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
             pcl_data_storage = pcds_all_simms;
             break;
         default:
-            dprintf("pcfont.c: unknown pjl resource\n");
+            dmprintf(pcs->memory, "pcfont.c: unknown pjl resource\n");
             return -1;
         }
         {
@@ -614,7 +614,7 @@ pcl_unload_resident_fonts(pcl_state_t *pcs)
         pl_font_t *plfont = (pl_font_t *)value;
         if ( plfont->font_file )
             if ( pl_store_resident_font_data_in_file(plfont->font_file, pcs->memory, plfont) < 0 )
-                dprintf1("%s", "could not store data" );
+                dmprintf1(pcs->memory, "%s", "could not store data" );
 
     }
 }

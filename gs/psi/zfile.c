@@ -1088,7 +1088,7 @@ file_read_string(const byte *str, uint len, ref *pfile, gs_ref_memory_t *imem)
 int
 filter_report_error(stream_state * st, const char *str)
 {
-    if_debug1('s', "[s]stream error: %s\n", str);
+    if_debug1m('s', st->memory, "[s]stream error: %s\n", str);
     strncpy(st->error_string, str, STREAM_MAX_ERROR_STRING);
     /* Ensure null termination. */
     st->error_string[STREAM_MAX_ERROR_STRING] = 0;

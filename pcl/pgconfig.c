@@ -75,7 +75,7 @@ hpgl_CO(hpgl_args_t *pargs, hpgl_state_t *pgls)
                     }
                     break;
                 default:
-                    dprintf("HPGL CO automata is in an unknown state\n" );
+                    dmprintf(pgls->memory, "HPGL CO automata is in an unknown state\n" );
                     pargs->source.ptr = p;
                     return 0;
                 }

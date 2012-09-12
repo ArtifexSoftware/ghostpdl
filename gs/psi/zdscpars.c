@@ -457,7 +457,7 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
          * location of the data area for the parser in our DSC dict.
          */
         comment_code = dsc_scan_data(dsc_state->dsc_data_ptr, dsc_buffer, ssize + 1);
-        if_debug1('%', "[%%].parse_dsc_comments: code = %d\n", comment_code);
+        if_debug1m('%', imemory, "[%%].parse_dsc_comments: code = %d\n", comment_code);
         /*
          * We ignore any errors from Russell's parser.  The only value that
          * it will return for an error is -1 so there is very little information.

@@ -607,7 +607,7 @@ xps_post_callback_decode_glyph(gs_font *p42, gs_glyph glyph, int ch)
 static int
 xps_post_callback_glyph_name(gs_font *pf, gs_glyph glyph, gs_const_string *pstr)
 {
-    dprintf1("asking for CFF glyph name %lu\n", (ulong)glyph);
+    dmprintf1(pf->memory, "asking for CFF glyph name %lu\n", (ulong)glyph);
     return -1;
 }
 
@@ -615,7 +615,7 @@ static int
 xps_post_callback_glyph_info(gs_font *font, gs_glyph glyph,
         const gs_matrix *pmat, int members, gs_glyph_info_t *info)
 {
-    dprintf1("asking for CFF glyph info %lu\n", (ulong)glyph);
+    dmprintf1(font->memory, "asking for CFF glyph info %lu\n", (ulong)glyph);
     return -1;
 }
 
@@ -623,7 +623,7 @@ static int
 xps_post_callback_glyph_outline(gs_font *font, int wmode, gs_glyph glyph,
         const gs_matrix *pmat, gx_path *ppath, double sbw[4])
 {
-    dprintf1("asking for CFF glyph outline %lu\n", (ulong)glyph);
+    dmprintf1(font->memory, "asking for CFF glyph outline %lu\n", (ulong)glyph);
     return -1;
 }
 

@@ -127,14 +127,22 @@ typedef ulong bits32;
 
 /*
  * Standard error printing macros.
- * Use dprintf for messages that just go to dpf;
- * dlprintf for messages to dpf with optional with file name (and,
- * if available, line number);
- * eprintf or eprintfm for error messages to epf that include the program
- * name (eprintfm requires a memory pointer and is safe to use in
- * multithreaded environments - eprint does not, and is not, and should
- * therefore be avoided where possible);
- * lprintf for debugging messages that should include line number info.
+ *
+ * Use dmprintf (and dmputs, dmputc, dmflush etc for messages intended for
+ * stdout). If you would like an optional filename/line number (where
+ * available) prepended, use dmlprintf (and family).
+ *
+ * Use emprintf (and emputs, emputc, emflush etc for messages intended for
+ * stderr).
+ *
+ * All these above functions/macros take a "const gs_memory_t *" pointer to
+ * ensure that the correct stdout/stderr is used for the given gsapi instance.
+ *
+ * If you do not have a gs_memory_t * to hand, then you may call dprintf (and
+ * family) and eprintf(and family) insteads. Be aware that these functions
+ * compile away to nothing in GS_THREADSAFE builds, as they will not work in
+ * multithreaded environments.
+ *
  * Since we all stdout/stderr output must go via outprintf/errprintf,
  * we have to define dputc and dputs in terms of errprintf also.
  */
@@ -157,9 +165,13 @@ typedef struct gs_memory_s gs_memory_t;
   int proc(gs_memory_t *)
 
 /* dpf and epf may be redefined */
+#define dpfm errprintf
+#define epfm errprintf
+
+#ifndef GS_THREADSAFE
 #define dpf errprintf_nomem
 #define epf errprintf_nomem
-#define epfm errprintf
+#endif /* GS_THREADSAFE */
 
 /* To allow stdout and stderr to be redirected, all stdout goes
  * though outwrite and all stderr goes through errwrite.
@@ -170,11 +182,13 @@ int errwrite(const gs_memory_t *mem, const char *str, int len);
 void outflush(const gs_memory_t *mem);
 void errflush(const gs_memory_t *mem);
 
+#ifndef GS_THREADSAFE
 /* As a temporary measure, we allow forms of errwrite/errflush that do not
  * need to be given a memory pointer. Any uses of this (largely the debugging
  * system) will fail with multithreaded usage. */
 int errwrite_nomem(const char *str, int len);
 void errflush_nomem(void);
+#endif /* GS_THREADSAFE */
 
 /* Formatted output to outwrite and errwrite.
  * The maximum string length is 1023 characters.
@@ -191,14 +205,77 @@ void errflush_nomem(void);
 #  endif
 int outprintf(const gs_memory_t *mem, const char *fmt, ...) __printflike(2, 3);
 int errprintf(const gs_memory_t *mem, const char *fmt, ...) __printflike(2, 3);
+#ifndef GS_THREADSAFE
 int errprintf_nomem(const char *fmt, ...) __printflike(1, 2);
+#endif
 #else
 int outprintf();
 int errprintf();
+#ifndef GS_THREADSAFE
 int errprintf_nomem();
 #endif
+#endif
 
-/* Print the program line # for debugging. */
+/* Print the program line # for debugging - NON THREADSAFE VERSIONS */
+#ifdef GS_THREADSAFE
+#define dflush() DO_NOTHING
+#define dputc(chr) DO_NOTHING
+#define dlputc(chr) DO_NOTHING
+#define dputs(str) DO_NOTHING
+#define dlputs(str) DO_NOTHING
+#define dprintf(str)\
+  DO_NOTHING
+#define dlprintf(str)\
+  DO_NOTHING
+#define dprintf1(str,arg1)\
+  DO_NOTHING
+#define dlprintf1(str,arg1)\
+  DO_NOTHING
+#define dprintf2(str,arg1,arg2)\
+  DO_NOTHING
+#define dlprintf2(str,arg1,arg2)\
+  DO_NOTHING
+#define dprintf3(str,arg1,arg2,arg3)\
+  DO_NOTHING
+#define dlprintf3(str,arg1,arg2,arg3)\
+  DO_NOTHING
+#define dprintf4(str,arg1,arg2,arg3,arg4)\
+  DO_NOTHING
+#define dlprintf4(str,arg1,arg2,arg3,arg4)\
+  DO_NOTHING
+#define dprintf5(str,arg1,arg2,arg3,arg4,arg5)\
+  DO_NOTHING
+#define dlprintf5(str,arg1,arg2,arg3,arg4,arg5)\
+  DO_NOTHING
+#define dprintf6(str,arg1,arg2,arg3,arg4,arg5,arg6)\
+  DO_NOTHING
+#define dlprintf6(str,arg1,arg2,arg3,arg4,arg5,arg6)\
+  DO_NOTHING
+#define dprintf7(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
+  DO_NOTHING
+#define dlprintf7(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
+  DO_NOTHING
+#define dprintf8(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
+  DO_NOTHING
+#define dlprintf8(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
+  DO_NOTHING
+#define dprintf9(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
+  DO_NOTHING
+#define dlprintf9(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
+  DO_NOTHING
+#define dprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
+  DO_NOTHING
+#define dlprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
+  DO_NOTHING
+#define dprintf11(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11)\
+  DO_NOTHING
+#define dlprintf11(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11)\
+  DO_NOTHING
+#define dprintf12(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
+  DO_NOTHING
+#define dlprintf12(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
+  DO_NOTHING
+#else
 #if __LINE__                    /* compiler provides it */
 void dprintf_file_and_line(const char *, int);
 #  define _dpl dprintf_file_and_line(__FILE__, __LINE__),
@@ -264,15 +341,112 @@ void dflush(void);              /* flush stderr */
   dpf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12)
 #define dlprintf12(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
   (_dpl dprintf12(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12))
+#endif /* GS_THREADSAFE */
+
+/* Print the program line # for debugging. */
+#if __LINE__                    /* compiler provides it */
+void dmprintf_file_and_line(const gs_memory_t *,const char *, int);
+#  define _dmpl(M) dmprintf_file_and_line(M,__FILE__, __LINE__),
+#else
+void dmprintf_file_only(const gs_memory_t *,const char *);
+#  define _dmpl(M) dmprintf_file_only(M,__FILE__),
+#endif
+
+#define dmflush(mem) errflush(mem)
+#define dmputc(mem,chr) dmprintf1(mem,"%c", chr)
+#define dmlputc(mem,chr) dmlprintf1(mem,"%c", chr)
+#define dmputs(mem,str) dmprintf1(mem,"%s", str)
+#define dmlputs(mem,str) dmlprintf1(mem,"%s", str)
+#define dmprintf(mem,str)\
+  dpfm(mem,str)
+#define dmlprintf(mem,str)\
+  (_dmpl(mem) dpfm(mem,str))
+#define dmprintf1(mem,str,arg1)\
+  dpfm(mem,str, arg1)
+#define dmlprintf1(mem,str,arg1)\
+  (_dmpl(mem) dmprintf1(mem,str, arg1))
+#define dmprintf2(mem,str,arg1,arg2)\
+  dpfm(mem,str, arg1, arg2)
+#define dmlprintf2(mem,str,arg1,arg2)\
+  (_dmpl(mem) dmprintf2(mem,str, arg1, arg2))
+#define dmprintf3(mem,str,arg1,arg2,arg3)\
+  dpfm(mem,str, arg1, arg2, arg3)
+#define dmlprintf3(mem,str,arg1,arg2,arg3)\
+  (_dmpl(mem) dmprintf3(mem,str, arg1, arg2, arg3))
+#define dmprintf4(mem,str,arg1,arg2,arg3,arg4)\
+  dpfm(mem,str, arg1, arg2, arg3, arg4)
+#define dmlprintf4(mem,str,arg1,arg2,arg3,arg4)\
+  (_dmpl(mem) dmprintf4(mem,str, arg1, arg2, arg3, arg4))
+#define dmprintf5(mem,str,arg1,arg2,arg3,arg4,arg5)\
+  dpfm(mem,str, arg1, arg2, arg3, arg4, arg5)
+#define dmlprintf5(mem,str,arg1,arg2,arg3,arg4,arg5)\
+  (_dmpl(mem) dmprintf5(mem,str, arg1, arg2, arg3, arg4, arg5))
+#define dmprintf6(mem,str,arg1,arg2,arg3,arg4,arg5,arg6)\
+  dpfm(mem,str, arg1, arg2, arg3, arg4, arg5, arg6)
+#define dmlprintf6(mem,str,arg1,arg2,arg3,arg4,arg5,arg6)\
+  (_dmpl(mem) dmprintf6(mem,str, arg1, arg2, arg3, arg4, arg5, arg6))
+#define dmprintf7(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
+  dpfm(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+#define dmlprintf7(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
+  (_dmpl(mem) dmprintf7(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7))
+#define dmprintf8(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
+  dpfm(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
+#define dmlprintf8(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
+  (_dmpl(mem) dmprintf8(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8))
+#define dmprintf9(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
+  dpfm(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+#define dmlprintf9(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
+  (_dmpl(mem) dmprintf9(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
+#define dmprintf10(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
+  dpfm(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
+#define dmlprintf10(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
+  (_dmpl(mem) dmprintf10(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
+#define dmprintf11(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11)\
+  dpfm(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11)
+#define dmlprintf11(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11)\
+  (_dmpl(mem) dmprintf11(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11))
+#define dmprintf12(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
+  dpfm(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12)
+#define dmlprintf12(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
+  (_dmpl(mem) dmprintf12(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12))
+
 
 void printf_program_ident(const gs_memory_t *mem, const char *program_name, long revision_number);
+#ifdef GS_THREADSAFE
+#define eprintf_program_ident(NAME,NUM) DO_NOTHING
+#else
 void eprintf_program_ident(const char *program_name, long revision_number);
+#endif /* GS_THREADSAFE */
 void emprintf_program_ident(const gs_memory_t *mem,
                             const char *program_name,
                             long revision_number);
 const char *gs_program_name(void);
 long gs_revision_number(void);
 
+#ifdef GS_THREADSAFE
+#define eprintf(str)\
+  DO_NOTHING
+#define eprintf1(str,arg1)\
+  DO_NOTHING
+#define eprintf2(str,arg1,arg2)\
+  DO_NOTHING
+#define eprintf3(str,arg1,arg2,arg3)\
+  DO_NOTHING
+#define eprintf4(str,arg1,arg2,arg3,arg4)\
+  DO_NOTHING
+#define eprintf5(str,arg1,arg2,arg3,arg4,arg5)\
+  DO_NOTHING
+#define eprintf6(str,arg1,arg2,arg3,arg4,arg5,arg6)\
+  DO_NOTHING
+#define eprintf7(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
+  DO_NOTHING
+#define eprintf8(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
+  DO_NOTHING
+#define eprintf9(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
+  DO_NOTHING
+#define eprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
+  DO_NOTHING
+#else
 #define _epi eprintf_program_ident(gs_program_name(), gs_revision_number()),
 
 #define eprintf(str)\
@@ -297,6 +471,7 @@ long gs_revision_number(void);
   (_epi epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
 #define eprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
   (_epi epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
+#endif /* GS_THREADSAFE */
 
 #define _epim(mem) emprintf_program_ident(mem, gs_program_name(), gs_revision_number()),
 
@@ -323,6 +498,30 @@ long gs_revision_number(void);
 #define emprintf10(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
   (_epim(mem) epfm(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
 
+#ifdef GS_THREADSAFE
+#define lprintf(str)\
+  DO_NOTHING
+#define lprintf1(str,arg1)\
+  DO_NOTHING
+#define lprintf2(str,arg1,arg2)\
+  DO_NOTHING
+#define lprintf3(str,arg1,arg2,arg3)\
+  DO_NOTHING
+#define lprintf4(str,arg1,arg2,arg3,arg4)\
+  DO_NOTHING
+#define lprintf5(str,arg1,arg2,arg3,arg4,arg5)\
+  DO_NOTHING
+#define lprintf6(str,arg1,arg2,arg3,arg4,arg5,arg6)\
+  DO_NOTHING
+#define lprintf7(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
+  DO_NOTHING
+#define lprintf8(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
+  DO_NOTHING
+#define lprintf9(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
+  DO_NOTHING
+#define lprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
+  DO_NOTHING
+#else
 #if __LINE__			/* compiler provides it */
 void lprintf_file_and_line(const char *, int);
 #  define _epl _epi lprintf_file_and_line(__FILE__, __LINE__),
@@ -353,7 +552,38 @@ void lprintf_file_only(const char *);
   (_epl epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
 #define lprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
   (_epl epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
+#endif /* GS_THREADSAFE */
 
+#if __LINE__			/* compiler provides it */
+void mlprintf_file_and_line(const gs_memory_t *,const char *, int);
+#  define _eplm(mem) _epim(mem) mlprintf_file_and_line(mem, __FILE__, __LINE__),
+#else
+void lprintf_file_only(const gs_memory_t *,const char *);
+#  define _eplm(mem) _epim(mem) mlprintf_file_only(mem, __FILE__)
+#endif
+
+#define mlprintf(mem,str)\
+  (_eplm(mem) epfm(mem,str))
+#define mlprintf1(mem,str,arg1)\
+  (_eplm(mem) epfm(mem,str, arg1))
+#define mlprintf2(mem,str,arg1,arg2)\
+  (_eplm(mem) epfm(mem,str, arg1, arg2))
+#define mlprintf3(mem,str,arg1,arg2,arg3)\
+  (_eplm(mem) epfm(mem,str, arg1, arg2, arg3))
+#define mlprintf4(mem,str,arg1,arg2,arg3,arg4)\
+  (_eplm(mem) epfm(mem,str, arg1, arg2, arg3, arg4))
+#define mlprintf5(mem,str,arg1,arg2,arg3,arg4,arg5)\
+  (_eplm(mem) epfm(mem,str, arg1, arg2, arg3, arg4, arg5))
+#define mlprintf6(mem,str,arg1,arg2,arg3,arg4,arg5,arg6)\
+  (_eplm(mem) epfm(mem,str, arg1, arg2, arg3, arg4, arg5, arg6))
+#define mlprintf7(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
+  (_eplm(mem) epfm(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7))
+#define mlprintf8(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
+  (_eplm(mem) epfm(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8))
+#define mlprintf9(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
+  (_eplm(mem) epfm(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
+#define mlprintf10(mem,str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
+  (_eplm(mem) epfm(mem,str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
 /*
  * Define the prototype for module initialization procedures.  This is not
  * a very good place to define this, but we can't find a better one.

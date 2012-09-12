@@ -26,6 +26,7 @@
 #include "gxtype1.h"
 #include "stream.h"
 #include "gdevpsf.h"
+#include "gxistate.h"
 
 /* ------ Type 1 Charstring parsing ------ */
 
@@ -210,15 +211,15 @@ type1_next(gs_type1_state *pcis)
             const fixed *p;
 
             for (p = pcis->ostack; p <= csp; ++p)
-                dprintf1(" %g", fixed2float(*p));
+                dmprintf1(pcis->pis->memory, " %g", fixed2float(*p));
             if (c == cx_escape) {
                 crypt_state cstate = state;
                 int cn;
 
                 charstring_next(*cip, cstate, cn, encrypted);
-                dprintf1(" [*%d]\n", cn);
+                dmprintf1(pcis->pis->memory, " [*%d]\n", cn);
             } else
-                dprintf1(" [%d]\n", c);
+                dmprintf1(pcis->pis->memory, " [%d]\n", c);
         }
 #endif
         switch ((char_command) c) {

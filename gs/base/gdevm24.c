@@ -108,7 +108,8 @@ mem_true24_fill_rectangle(gx_device * dev,
     declare_unpack_color(r, g, b, color);
     declare_scan_ptr(dest);
 
-    if_debug4('b', "[b]device y=%d h=%d x=%d w=%d\n", y + mdev->band_y, h, x, w);
+    if_debug4m('b', dev->memory,
+               "[b]device y=%d h=%d x=%d w=%d\n", y + mdev->band_y, h, x, w);
     /*
      * In order to avoid testing w > 0 and h > 0 twice, we defer
      * executing setup_rect, and use fit_fill_xywh instead of
@@ -469,7 +470,8 @@ mem_true24_copy_color(gx_device * dev,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
 
-    if_debug1('w', "[w]device y=%d:\n", y + mdev->band_y); /* See siscale.c about 'w'. */
+    if_debug1m('w', dev->memory, "[w]device y=%d:\n",
+               y + mdev->band_y); /* See siscale.c about 'w'. */
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     mem_copy_byte_rect(mdev, base, sourcex, sraster, x, y, w, h);
     return 0;

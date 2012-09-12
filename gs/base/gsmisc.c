@@ -73,6 +73,7 @@ int outprintf(const gs_memory_t *mem, const char *fmt, ...)
     return count;
 }
 
+#ifndef GS_THREADSAFE
 int errprintf_nomem(const char *fmt, ...)
 {
     int count;
@@ -90,6 +91,7 @@ int errprintf_nomem(const char *fmt, ...)
     va_end(args);
     return count;
 }
+#endif
 
 int errprintf(const gs_memory_t *mem, const char *fmt, ...)
 {
@@ -132,7 +134,7 @@ gs_debug_c(int c)
 
     do {
         ret |= gs_debug[c];
-    } while (c = gs_debug_flag_implied_by[c]);
+    } while ((c = gs_debug_flag_implied_by[c]) != 0);
     return ret;
 }
 
@@ -146,11 +148,6 @@ const char *const dprintf_file_only_format = "%10s(unkn): ";
  * out/errprintf, not fprintf nor fput[cs], because of the way that
  * stdout/stderr are implemented on DLL/shared library builds.
  */
-void
-dflush(void)
-{
-    errflush_nomem();
-}
 static const char *
 dprintf_file_tail(const char *file)
 {
@@ -162,6 +159,12 @@ dprintf_file_tail(const char *file)
         --tail;
     return tail;
 }
+#ifndef GS_THREADSAFE
+void
+dflush(void)
+{
+    errflush_nomem();
+}
 #if __LINE__                    /* compiler provides it */
 void
 dprintf_file_and_line(const char *file, int line)
@@ -170,6 +173,11 @@ dprintf_file_and_line(const char *file, int line)
         dpf(dprintf_file_and_line_format,
                 dprintf_file_tail(file), line);
 }
+void
+lprintf_file_and_line(const char *file, int line)
+{
+    epf("%s(%d): ", file, line);
+}
 #else
 void
 dprintf_file_only(const char *file)
@@ -177,18 +185,12 @@ dprintf_file_only(const char *file)
     if (gs_debug['/'])
         dpf(dprintf_file_only_format, dprintf_file_tail(file));
 }
-#endif
 void
-printf_program_ident(const gs_memory_t *mem, const char *program_name, long revision_number)
+lprintf_file_only(FILE * f, const char *file)
 {
-    if (program_name)
-        outprintf(mem, (revision_number ? "%s " : "%s"), program_name);
-    if (revision_number) {
-        int fpart = revision_number % 100;
-
-        outprintf(mem, "%d.%02d", (int)(revision_number / 100), fpart);
-    }
+    epf("%s(?): ", file);
 }
+#endif
 void
 eprintf_program_ident(const char *program_name,
                       long revision_number)
@@ -201,6 +203,34 @@ eprintf_program_ident(const char *program_name,
             epf("%d.%02d", (int)(revision_number / 100), fpart);
         }
         epf(": ");
+    }
+}
+#endif
+#if __LINE__                    /* compiler provides it */
+void
+dmprintf_file_and_line(const gs_memory_t *mem,const char *file, int line)
+{
+    if (gs_debug['/'])
+        dpfm(mem, dprintf_file_and_line_format,
+                dprintf_file_tail(file), line);
+}
+#else
+void
+dmprintf_file_only(const gs_memory_t *mem,const char *file)
+{
+    if (gs_debug['/'])
+        dpfm(mem, dprintf_file_only_format, dprintf_file_tail(file));
+}
+#endif
+void
+printf_program_ident(const gs_memory_t *mem, const char *program_name, long revision_number)
+{
+    if (program_name)
+        outprintf(mem, (revision_number ? "%s " : "%s"), program_name);
+    if (revision_number) {
+        int fpart = revision_number % 100;
+
+        outprintf(mem, "%d.%02d", (int)(revision_number / 100), fpart);
     }
 }
 void
@@ -220,15 +250,15 @@ emprintf_program_ident(const gs_memory_t *mem,
 }
 #if __LINE__                    /* compiler provides it */
 void
-lprintf_file_and_line(const char *file, int line)
+mlprintf_file_and_line(const gs_memory_t *mem, const char *file, int line)
 {
-    epf("%s(%d): ", file, line);
+    epfm(mem, "%s(%d): ", file, line);
 }
 #else
 void
-lprintf_file_only(FILE * f, const char *file)
+mlprintf_file_only(const gs_memory_t *mem, FILE * f, const char *file)
 {
-    epf("%s(?): ", file);
+    epfm(mem, "%s(?): ", file);
 }
 #endif
 
@@ -262,6 +292,7 @@ gs_return_check_interrupt(const gs_memory_t *mem, int code)
     }
 }
 
+#ifndef GS_THREADSAFE
 int gs_throw_imp(const char *func, const char *file, int line, int op, int code, const char *fmt, ...)
 {
     char msg[1024];
@@ -298,6 +329,7 @@ int gs_throw_imp(const char *func, const char *file, int line, int op, int code,
 
     return code;
 }
+#endif
 
 const char *gs_errstr(int code)
 {
@@ -495,55 +527,68 @@ gs_realloc(void *old_ptr, size_t old_size, size_t new_size)
 
 /* ------ Debugging support ------ */
 
-/* Dump a region of memory. */
-void
-debug_dump_bytes(const byte * from, const byte * to, const char *msg)
-{
-    const byte *p = from;
-
-    if (from < to && msg)
-        dprintf1("%s:\n", msg);
-    while (p != to) {
-        const byte *q = min(p + 16, to);
-
-        dprintf1("0x%lx:", (ulong) p);
-        while (p != q)
-            dprintf1(" %02x", *p++);
-        dputc('\n');
-    }
-}
-
-/* Dump a bitmap. */
-void
-debug_dump_bitmap(const byte * bits, uint raster, uint height, const char *msg)
-{
-    uint y;
-    const byte *data = bits;
-
-    for (y = 0; y < height; ++y, data += raster)
-        debug_dump_bytes(data, data + raster, (y == 0 ? msg : NULL));
-}
-
-/* Print a string. */
-void
-debug_print_string(const byte * chrs, uint len)
-{
-    uint i;
-
-    for (i = 0; i < len; i++)
-        dputc(chrs[i]);
-    dflush();
-}
-
+#ifndef GS_THREADSAFE
 /* Print a string in hexdump format. */
 void
-debug_print_string_hex(const byte * chrs, uint len)
+debug_print_string_hex_nomem(const byte * chrs, uint len)
 {
     uint i;
 
     for (i = 0; i < len; i++)
         dprintf1("%02x", chrs[i]);
     dflush();
+}
+#endif
+
+/* Dump a region of memory. */
+void
+debug_dump_bytes(const gs_memory_t *mem, const byte * from, const byte * to, const char *msg)
+{
+    const byte *p = from;
+
+    if (from < to && msg)
+        dmprintf1(mem, "%s:\n", msg);
+    while (p != to) {
+        const byte *q = min(p + 16, to);
+
+        dmprintf1(mem, "0x%lx:", (ulong) p);
+        while (p != q)
+            dmprintf1(mem, " %02x", *p++);
+        dmputc(mem, '\n');
+    }
+}
+
+/* Dump a bitmap. */
+void
+debug_dump_bitmap(const gs_memory_t *mem, const byte * bits, uint raster, uint height, const char *msg)
+{
+    uint y;
+    const byte *data = bits;
+
+    for (y = 0; y < height; ++y, data += raster)
+        debug_dump_bytes(mem, data, data + raster, (y == 0 ? msg : NULL));
+}
+
+/* Print a string. */
+void
+debug_print_string(const gs_memory_t *mem, const byte * chrs, uint len)
+{
+    uint i;
+
+    for (i = 0; i < len; i++)
+        dmputc(mem, chrs[i]);
+    dmflush(mem);
+}
+
+/* Print a string in hexdump format. */
+void
+debug_print_string_hex(const gs_memory_t *mem, const byte * chrs, uint len)
+{
+    uint i;
+
+    for (i = 0; i < len; i++)
+        dmprintf1(mem, "%02x", chrs[i]);
+    dmflush(mem);
 }
 
 /*
@@ -555,12 +600,14 @@ debug_print_string_hex(const byte * chrs, uint len)
  * first_arg is the first argument of the procedure into which this code
  * is patched.
  */
+#ifndef GS_THREADSAFE
 #define BACKTRACE(first_arg)\
   BEGIN\
     ulong *fp_ = (ulong *)&first_arg - 2;\
     for (; fp_ && (fp_[1] & 0xff000000) == 0x08000000; fp_ = (ulong *)*fp_)\
         dprintf2("  fp=0x%lx ip=0x%lx\n", (ulong)fp_, fp_[1]);\
   END
+#endif
 
 /* ------ Arithmetic ------ */
 
@@ -873,10 +920,12 @@ fixed_mult_quo(fixed signed_A, fixed B, fixed C)
 double
 gs_sqrt(double x, const char *file, int line)
 {
+#ifndef GS_THREADSAFE
     if (gs_debug_c('~')) {
         dprintf3("[~]sqrt(%g) at %s:%d\n", x, (const char *)file, line);
         dflush();
     }
+#endif
     return orig_sqrt(x);
 }
 

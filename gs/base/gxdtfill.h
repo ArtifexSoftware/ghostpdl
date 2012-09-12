@@ -175,7 +175,7 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
                 dev_proc(dev, fill_rectangle);
 #	endif
 
-        if_debug2('z', "[z]y=[%d,%d]\n", iy, iy1);
+        if_debug2m('z', dev->memory, "[z]y=[%d,%d]\n", iy, iy1);
 
         l.h = left->end.y - left->start.y;
         r.h = right->end.y - right->start.y;

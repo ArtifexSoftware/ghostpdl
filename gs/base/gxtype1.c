@@ -107,7 +107,7 @@ gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
     const gs_log2_scale_point *plog2_subpixels =
         (FORCE_HINTS_TO_BIG_PIXELS ? (psubpixels != NULL ? psubpixels : plog2_scale) : &no_scale);
 
-    if_debug0('1', "[1]gs_type1_interp_init\n");
+    if_debug0m('1', pis->memory, "[1]gs_type1_interp_init\n");
     pcis->pfont = pfont;
     pcis->pis = pis;
     pcis->path = ppath;

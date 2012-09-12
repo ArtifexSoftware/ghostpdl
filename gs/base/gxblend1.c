@@ -238,8 +238,9 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     if ((tos->n_chan == 0) || (nos->n_chan == 0))
         return;
     rect_merge(nos->dirty, tos->dirty);
-    if_debug6('v', "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, tag =  bm = %d\n",
-                        y0, y1, width, alpha, shape, blend_mode);
+    if_debug6m('v', nos->mask_stack->memory,
+               "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, tag =  bm = %d\n",
+               y0, y1, width, alpha, shape, blend_mode);
     if (nos->has_alpha_g)
         nos_alpha_g_ptr = nos_ptr + n_chan * nos_planestride;
     else
@@ -594,7 +595,7 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
 
     file = fopen ("c:\\temp\\tmp.png", "wb");
 
-    if_debug0('v', "[v]pnga_output_page\n");
+    if_debug0m('v', mem, "[v]pnga_output_page\n");
 
     if (row == 0 || png_ptr == 0 || info_ptr == 0) {
         code = gs_note_error(gs_error_VMerror);

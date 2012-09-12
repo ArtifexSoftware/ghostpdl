@@ -3570,7 +3570,7 @@ const int pl_built_in_symbol_map_count =
 ulong
 pl_map_symbol(const pl_symbol_map_t *psm,
               uint chr, bool is_resident_font, bool is_MSL,
-              bool is_590)
+              bool is_590, const gs_memory_t *mem)
 {
     uint first_code, last_code, code;
 
@@ -3611,8 +3611,8 @@ pl_map_symbol(const pl_symbol_map_t *psm,
         (pl_symbol_map_vocabulary(psm) == plgv_Unicode)) {
 #ifdef DEBUG
         if ( gs_debug_c('=') ) {
-            dprintf3("[=] unicode to msl conversion: chr=%d, unicode=0x%x, msl code=%d\n",
-                     chr, code, pl_map_Unicode_to_MSL(code, (psm->id[0] << 8) + psm->id[1]));
+            dmprintf3(mem, "[=] unicode to msl conversion: chr=%d, unicode=0x%x, msl code=%d\n",
+                      chr, code, pl_map_Unicode_to_MSL(code, (psm->id[0] << 8) + psm->id[1]));
         }
 #endif
         code = pl_map_Unicode_to_MSL(code, (psm->id[0] << 8) + psm->id[1]);
@@ -3620,8 +3620,8 @@ pl_map_symbol(const pl_symbol_map_t *psm,
         (pl_symbol_map_vocabulary(psm) == plgv_MSL)) {
 #ifdef DEBUG
         if ( gs_debug_c('=') ) {
-            dprintf3("[=] msl to unicode conversion: chr=%d, msl=0x%x, unicode=%d\n",
-                     chr, code, pl_map_MSL_to_Unicode(code, (psm->id[0] << 8) + psm->id[1]));
+            dmprintf3(mem, "[=] msl to unicode conversion: chr=%d, msl=0x%x, unicode=%d\n",
+                      chr, code, pl_map_MSL_to_Unicode(code, (psm->id[0] << 8) + psm->id[1]));
         }
 #endif
         code = pl_map_MSL_to_Unicode(code, (psm->id[0] << 8) + psm->id[1]);

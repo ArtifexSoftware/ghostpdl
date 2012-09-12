@@ -223,12 +223,13 @@ s_CFD_process(stream_state * st, stream_cursor_read * pr,
     {
         hcd_declare_state;
         hcd_load_state();
-        if_debug8('w', "[w]CFD_process top: eol_count=%d, k_left=%d, rows_left=%d\n"
-                "    bits=0x%lx, bits_left=%d, read %u, wrote %u%s\n",
-                  eol_count, k_left, rows_left,
-                  (ulong) bits, bits_left,
-                  (uint) (p - rstart), (uint) (pw->ptr - wstart),
-                  (ss->skipping_damage ? ", skipping damage" : ""));
+        if_debug8m('w', ss->memory,
+                   "[w]CFD_process top: eol_count=%d, k_left=%d, rows_left=%d\n"
+                   "    bits=0x%lx, bits_left=%d, read %u, wrote %u%s\n",
+                   eol_count, k_left, rows_left,
+                   (ulong) bits, bits_left,
+                   (uint) (p - rstart), (uint) (pw->ptr - wstart),
+                   (ss->skipping_damage ? ", skipping damage" : ""));
     }
 #endif
     if (ss->skipping_damage) {	/* Skip until we reach an EOL. */
@@ -314,7 +315,7 @@ s_CFD_process(stream_state * st, stream_cursor_read * pr,
              */
 ck_eol:
         while ((status = cf_decode_eol(ss, pr)) > 0) {
-            if_debug0('w', "[w]EOL\n");
+            if_debug0m('w', ss->memory, "[w]EOL\n");
             /* If we are in a Group 3 mixed regime, */
             /* check the next bit for 1- vs. 2-D. */
             if (ss->K > 0) {
@@ -352,17 +353,17 @@ ck_eol:
     }
     /* Now decode actual data. */
     if (k_left < 0) {
-        if_debug0('w', "[w2]new row\n");
+        if_debug0m('w', ss->memory, "[w2]new row\n");
         status = cf_decode_2d(ss, pr);
     } else if (k_left == 0) {
-        if_debug0('w', "[w1]new row\n");
+        if_debug0m('w', ss->memory, "[w1]new row\n");
         status = cf_decode_1d(ss, pr);
     } else {
-        if_debug1('w', "[w1]new 2-D row, k_left=%d\n", k_left);
+        if_debug1m('w', ss->memory, "[w1]new 2-D row, k_left=%d\n", k_left);
         status = cf_decode_2d(ss, pr);
     }
-    if_debug3('w', "[w]CFD status = %d, wpos = %d, cbit = %d\n",
-              status, ss->wpos, ss->cbit);
+    if_debug3m('w', ss->memory, "[w]CFD status = %d, wpos = %d, cbit = %d\n",
+               status, ss->wpos, ss->cbit);
   check:switch (status) {
         case 1:		/* output full */
             goto top;
@@ -450,7 +451,7 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
     int bcnt;
 
     cfd_load_state();
-    if_debug1('w', "[w1]entry run_color = %d\n", ss->run_color);
+    if_debug1m('w', ss->memory, "[w1]entry run_color = %d\n", ss->run_color);
     if (ss->run_color > 0)
         goto db;
     else
@@ -512,7 +513,7 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
         status = 1;
   out:cfd_store_state();
     ss->run_color = run_color;
-    if_debug1('w', "[w1]exit run_color = %d\n", run_color);
+    if_debug1m('w', ss->memory, "[w1]exit run_color = %d\n", run_color);
     return status;
   out0:			/* We already set run_color to 0 or -1. */
     status = 0;
@@ -544,7 +545,7 @@ cf_decode_2d(stream_CFD_state * ss, stream_cursor_read * pr)
     count = ((endptr - q) << 3) + qbit;
     endptr[1] = 0xa0;		/* a byte with some 0s and some 1s, */
     /* to ensure run scan will stop */
-    if_debug1('W', "[w2]raster=%d\n", raster);
+    if_debug1m('W', ss->memory, "[w2]raster=%d\n", raster);
     switch (ss->run_color) {
         case -2:
             ss->run_color = 0;
@@ -567,15 +568,15 @@ cf_decode_2d(stream_CFD_state * ss, stream_cursor_read * pr)
     /* If invert == invert_white, white and black have their */
     /* correct meanings; if invert == ~invert_white, */
     /* black and white are interchanged. */
-    if_debug1('W', "[w2]%4d:\n", count);
+    if_debug1m('W', ss->memory, "[w2]%4d:\n", count);
 #ifdef DEBUG
     /* Check the invariant between q, qbit, and count. */
     {
         int pcount = (endptr - q) * 8 + qbit;
 
         if (pcount != count)
-            dlprintf2("[w2]Error: count=%d pcount=%d\n",
-                      count, pcount);
+            dmlprintf2(ss->memory, "[w2]Error: count=%d pcount=%d\n",
+                       count, pcount);
     }
 #endif
     /*
@@ -652,37 +653,37 @@ v0:	    skip_bits(1);
         if ((prev_data & count_bit[prev_count & 7]) &&
             (prev_count < init_count || invert != invert_white)
             ) {			/* Look for changing white first. */
-            if_debug1('W', " data=0x%x", prev_data);
+            if_debug1m('W', ss->memory, " data=0x%x", prev_data);
             skip_black_pixels(prev_data, prev_q,
                               prev_count, invert, plen);
             if (prev_count < end_count)		/* overshot */
                 prev_count = end_count;
-            if_debug1('W', " b1 other=%d", prev_count);
+            if_debug1m('W', ss->memory, " b1 other=%d", prev_count);
         }
         if (prev_count != end_count) {
-            if_debug1('W', " data=0x%x", prev_data);
+            if_debug1m('W', ss->memory, " data=0x%x", prev_data);
             skip_white_pixels(prev_data, prev_q,
                               prev_count, invert, plen);
             if (prev_count < end_count)		/* overshot */
                 prev_count = end_count;
-            if_debug1('W', " b1 same=%d", prev_count);
+            if_debug1m('W', ss->memory, " b1 same=%d", prev_count);
         }
         /* b1 = prev_count; */
         if (rlen == run2_pass) {	/* Pass mode.  Find b2. */
             if (prev_count != end_count) {
-                if_debug1('W', " data=0x%x", prev_data);
+                if_debug1m('W', ss->memory, " data=0x%x", prev_data);
                 skip_black_pixels(prev_data, prev_q,
                                   prev_count, invert, plen);
                 if (prev_count < end_count)	/* overshot */
                     prev_count = end_count;
             }
             /* b2 = prev_count; */
-            if_debug2('W', " b2=%d, pass %d\n",
+            if_debug2m('W', ss->memory, " b2=%d, pass %d\n",
                       prev_count, count - prev_count);
         } else {		/* Vertical coding. */
             /* Remember that count counts *down*. */
             prev_count += rlen - vertical_0;	/* a1 */
-            if_debug2('W', " vertical %d -> %d\n",
+            if_debug2m('W', ss->memory, " vertical %d -> %d\n",
                       rlen - vertical_0, prev_count);
         }
         /* Now either invert or skip from count */
@@ -790,11 +791,11 @@ cf_decode_uncompressed(stream * s)
             break;
         }
         if (rlen == cfd_uncompressed_initial_bits) {	/* Longest representable white run */
-            if_debug1('W', "[wu]%d\n", rlen);
+            if_debug1m('W', s->memory, "[wu]%d\n", rlen);
             if ((qbit -= cfd_uncompressed_initial_bits) < 0)
                 qbit += 8, q++;
         } else {
-            if_debug1('W', "[wu]%d+1\n", rlen);
+            if_debug1m('W', s->memory, "[wu]%d+1\n", rlen);
             if (qbit -= rlen < 0)
                 qbit += 8, q++;
             *q ^= 1 << qbit;
@@ -807,7 +808,7 @@ cf_decode_uncompressed(stream * s)
     np = &cf_uncompressed_decode[rlen + peek_var_bits(clen)];
     rlen = np->run_length;
     skip_bits(np->code_length);
-    if_debug1('w', "[wu]exit %d\n", rlen);
+    if_debug1m('w', s->memory, "[wu]exit %d\n", rlen);
     if (rlen >= 0) {		/* Valid exit code, rlen = 2 * run length + next polarity */
         if ((qbit -= rlen >> 1) < 0)
             qbit += 8, q++;

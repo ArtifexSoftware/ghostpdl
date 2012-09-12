@@ -206,8 +206,8 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 }
             } else		/* not possible */
                 return_error(gs_error_invalidfont);
-          pushed:if_debug3('1', "[1]%d: (%d) %f\n",
-                      (int)(csp - cstack), c, fixed2float(*csp));
+          pushed:if_debug3m('1', pfont->memory, "[1]%d: (%d) %f\n",
+                            (int)(csp - cstack), c, fixed2float(*csp));
             continue;
         }
 #ifdef DEBUG
@@ -216,9 +216,9 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
             {char1_command_names};
 
             if (c1names[c] == 0)
-                dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+                dmlprintf2(pfont->memory, "[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
             else
-                dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
+                dmlprintf3(pfont->memory, "[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
                           c1names[c]);
         }
 #endif
@@ -388,10 +388,11 @@ rsbw:		/* Give the caller the opportunity to intervene. */
                     {char1_extended_command_names};
 
                     if (ce1names[c] == 0)
-                        dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+                        dmlprintf2(pfont->memory, "[1]0x%lx: %02x??\n",
+                                   (ulong) (cip - 1), c);
                     else
-                        dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
-                                  ce1names[c]);
+                        dmlprintf3(pfont->memory, "[1]0x%lx: %02x %s\n",
+                                   (ulong) (cip - 1), c, ce1names[c]);
                 }
 #endif
                 switch ((char1_extended_command) c) {

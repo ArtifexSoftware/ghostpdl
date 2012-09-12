@@ -167,7 +167,7 @@ jpx_print_page(gx_device_printer * pdev, FILE * prn_stream)
         case  8: state.colorspace = gs_jpx_cs_gray; break;
         default:
             state.colorspace = gs_jpx_cs_gray; /* safest option */
-            dlprintf1("unexpected color_info depth %d\n",
+            dmlprintf1(mem, "unexpected color_info depth %d\n",
                                         jdev->color_info.depth);
     }
     state.bpc = 8; /* currently only 8 bits per component is supported */

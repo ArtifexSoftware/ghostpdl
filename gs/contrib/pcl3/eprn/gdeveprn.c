@@ -314,7 +314,7 @@ static void print_flags(ms_MediaCode flags, const ms_Flag *user_flags)
   if (user_flags != NULL) {
     while (user_flags->code != ms_none) {
       if (user_flags->code & flags) {
-        errprintf_nomem("%s", user_flags->name);
+        eprintf1("%s", user_flags->name);
         flags &= ~user_flags->code;
       }
       user_flags++;

@@ -199,7 +199,7 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
     if (image->hasalpha)
     {
         if (image->bits < 8)
-            dprintf1("cannot isolate alpha channel in %d bpc images\n", image->bits);
+            dmprintf1(ctx->memory, "cannot isolate alpha channel in %d bpc images\n", image->bits);
         if (image->bits == 8)
             xps_isolate_alpha_channel_8(ctx, image);
         if (image->bits == 16)

@@ -919,7 +919,7 @@ int
 pxBeginUserDefinedLineCap(px_args_t *par, px_state_t *pxs)
 {
 
-    dprintf("undocumented\n" );
+    dmprintf(pxs->memory, "undocumented\n" );
     return 0;
 }
 
@@ -928,7 +928,7 @@ int
 pxEndUserDefinedLineCap(px_args_t *par, px_state_t *pxs)
 {
 
-    dprintf("undocumented\n" );
+    dmprintf(pxs->memory, "undocumented\n" );
     return 0;
 }
 
@@ -1034,7 +1034,7 @@ pxSetPageScale(px_args_t *par, px_state_t *pxs)
             sy = pxs->units_per_measure.y / suy;
             /* check for overflow.  NB we should do a better job here */
             if ( fabs(sx) > 1000.0 ) {
-                dprintf2("warning probable overflow avoided for scaling factors %f %f\n",
+                dmprintf2(pxs->memory, "warning probable overflow avoided for scaling factors %f %f\n",
                          sx, sy );
                 sx = sy = 1;
             }

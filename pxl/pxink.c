@@ -449,7 +449,7 @@ px_needs_halftone(const gs_memory_t *mem, px_paint_t *ppt)
             }
         }
     } else {
-        dprintf("unknown paint type\n");
+        dmprintf(mem, "unknown paint type\n");
         needs_halftone = true;
     }
     return needs_halftone;
@@ -547,7 +547,7 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
         else if ( pxgs->color_space == eSRGB )
             ppt->type = pxpSRGB;
         else {
-            dprintf1("Warning unknown color space %d\n", pxgs->color_space);
+            dmprintf1(pxgs->memory, "Warning unknown color space %d\n", pxgs->color_space);
             ppt->type = pxpGray;
         }
         /* NB depth?? - for range checking */

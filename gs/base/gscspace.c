@@ -97,7 +97,7 @@ gs_cspace_final(const gs_memory_t *cmem, void *vptr)
 
     if (pcs->type->final)
         pcs->type->final(pcs);
-    if_debug2('c', "[c]cspace final %08x %d\n", pcs, pcs->id);
+    if_debug2m('c', cmem, "[c]cspace final %08x %d\n", pcs, pcs->id);
     rc_decrement_only_cs(pcs->base_space, "gs_cspace_final");
 
     /* No need to decrement the ICC profile data.  It is handled
@@ -114,8 +114,8 @@ gs_cspace_alloc_with_id(gs_memory_t *mem, ulong id,
 
     rc_alloc_struct_1(pcs, gs_color_space, &st_color_space, mem, return NULL,
                       "gs_cspace_alloc_with_id");
-    if_debug3('c', "[c]cspace alloc %08x %s %d\n",
-              pcs, pcstype->stype->sname, pcstype->index);
+    if_debug3m('c', mem, "[c]cspace alloc %08x %s %d\n",
+               pcs, pcstype->stype->sname, pcstype->index);
     pcs->type = pcstype;
     pcs->id = id;
     pcs->base_space = NULL;

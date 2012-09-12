@@ -258,7 +258,7 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
                                         pxs->font_dir,
                                         (int)pxfsInternal,
                                         true /* use unicode key names */) < 0 ) {
-                dprintf("Fatal error - no resident fonts\n");
+                dmprintf(pxs->memory, "Fatal error - no resident fonts\n");
                 return -1;
 
             }

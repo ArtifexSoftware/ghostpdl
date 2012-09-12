@@ -384,7 +384,7 @@ segment_notes
 gx_cpath_enum_notes(const gs_cpath_enum *);
 
 #ifdef DEBUG
-void gx_cpath_print(const gx_clip_path *);
+void gx_cpath_print(const gs_memory_t *mem, const gx_clip_path *);
 #endif
 
 #endif /* gxpath_INCLUDED */

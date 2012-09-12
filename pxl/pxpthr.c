@@ -94,15 +94,15 @@ pxPassthrough_pcl_state_nonpage_exceptions(px_state_t *pxs)
         global_pcs->cap.x = 0;
         global_pcs->cap.y = inch2coord(2.0/6.0); /* 1/6" off by 2x in resolution. */
         if (gs_debug_c('i'))
-            dprintf2("passthrough: changing cap NO currentpoint (%d, %d) \n",
-                     global_pcs->cap.x, global_pcs->cap.y);
+            dmprintf2(pxs->memory, "passthrough: changing cap NO currentpoint (%d, %d) \n",
+                      global_pcs->cap.x, global_pcs->cap.y);
     } else {
       if (gs_debug_c('i'))
-        dprintf8("passthrough: changing cap from (%d,%d) (%d,%d) (%d, %d) (%d, %d) \n",
-                 global_pcs->cap.x, global_pcs->cap.y,
-                 (coord)xlcp.x, (coord)xlcp.y,
-                 (coord)dp.x, (coord)dp.y,
-                 (coord)pclcp.x, (coord)pclcp.y);
+        dmprintf8(pxs->memory, "passthrough: changing cap from (%d,%d) (%d,%d) (%d, %d) (%d, %d) \n",
+                  global_pcs->cap.x, global_pcs->cap.y,
+                  (coord)xlcp.x, (coord)xlcp.y,
+                  (coord)dp.x, (coord)dp.y,
+                  (coord)pclcp.x, (coord)pclcp.y);
       global_pcs->cap.x = (coord)pclcp.x;
       global_pcs->cap.y = (coord)pclcp.y;
     }
@@ -130,7 +130,7 @@ pxPassthrough_init(px_state_t *pxs)
     int code;
 
     if (gs_debug_c('i'))
-        dprintf("passthrough: initializing global pcl state\n");
+        dmprintf(pxs->memory, "passthrough: initializing global pcl state\n");
     global_pcs = pcl_get_gstate(pxs->pcls);
 
     /* default to pcl5c */
@@ -188,7 +188,7 @@ pxPassthrough_setpagestate(px_state_t *pxs)
        the page */
     if ( pxs->have_page ) {
         if (gs_debug_c('i'))
-            dprintf("passthrough: snippet mode\n");
+            dmprintf(pxs->memory, "passthrough: snippet mode\n");
         /* disable an end page in pcl, also used to flag in snippet mode */
         global_pcs->end_page = pcl_end_page_noop;
         /* set the page size and orientation.  Really just sets
@@ -198,8 +198,8 @@ pxPassthrough_setpagestate(px_state_t *pxs)
                                              &pxs->media_dims);
 
         if (gs_debug_c('i'))
-            dprintf2("passthrough: snippet mode changing orientation from %d to %d\n",
-                     global_pcs->xfm_state.lp_orient, (int)pxs->orientation);
+            dmprintf2(pxs->memory, "passthrough: snippet mode changing orientation from %d to %d\n",
+                      global_pcs->xfm_state.lp_orient, (int)pxs->orientation);
 
     } else { /* not snippet mode - full page mode */
         /* pcl can feed the page and presumedely pcl commands will
@@ -210,7 +210,7 @@ pxPassthrough_setpagestate(px_state_t *pxs)
         global_pcs->page_marked = 0;
         pcl_new_logical_page_for_passthrough(global_pcs, (int)pxs->orientation, &pxs->media_dims);
         if (gs_debug_c('i'))
-            dprintf("passthrough: full page mode\n");
+            dmprintf(pxs->memory, "passthrough: full page mode\n");
     }
 }
 
@@ -225,7 +225,7 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
        spec this should already be open, in practice it is not. */
     if ( !pxs->data_source_open ) {
         if (gs_debug_c('i'))
-            dprintf("passthrough: data source not open upon entry\n");
+            dmprintf(pxs->memory, "passthrough: data source not open upon entry\n");
         pxs->data_source_open = true;
         pxs->data_source_big_endian = true;
     }
@@ -235,7 +235,7 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
     if ( par->source.available == 0 ) {
         if (par->source.phase == 0) {
             if (gs_debug_c('i'))
-                dprintf("passthrough starting getting more data\n");
+                dmprintf(pxs->memory, "passthrough starting getting more data\n");
 
             if ( !global_pcs )
                 pxPassthrough_init(pxs);
@@ -270,14 +270,14 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
     par->source.data = r.ptr + 1;
 
     if ( code < 0 ) {
-        dprintf1("passthrough: error return %d\n", code);
+        dmprintf1(pxs->memory, "passthrough: error return %d\n", code);
         return code;
     }
     /* always return need data and we exit at the top when the data is
        exhausted. */
     {
         if (used > px_parser_data_left(par->parser)) {
-            dprintf("error: read past end of stream\n");
+            dmprintf(pxs->memory, "error: read past end of stream\n");
             return -1;
         } else if (used < px_parser_data_left(par->parser)) {
             return pxNeedData;
@@ -305,7 +305,7 @@ pxpcl_release(void)
 {
     if (global_pcs) {
         if (gs_debug_c('i'))
-            dprintf("passthrough: releasing global pcl state\n");
+            dmprintf(global_pcs->memory, "passthrough: releasing global pcl state\n");
         pcl_grestore(global_pcs);
         gs_grestore_only(global_pcs->pgs);
         gs_nulldevice(global_pcs->pgs);

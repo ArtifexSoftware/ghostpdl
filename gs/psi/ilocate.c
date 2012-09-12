@@ -248,13 +248,13 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
         const chunk_t *cp;
         int i;
 
-        if_debug3('6', "[6]validating memory 0x%lx, space %d, level %d\n",
-                  (ulong) mem, mem->space, level);
+        if_debug3m('6', (gs_memory_t *)mem, "[6]validating memory 0x%lx, space %d, level %d\n",
+                   (ulong) mem, mem->space, level);
         /* Validate chunks. */
         for (cp = smem->cfirst; cp != 0; cp = cp->cnext)
             if (do_validate_chunk(cp, gcst)) {
-                lprintf3("while validating memory 0x%lx, space %d, level %d\n",
-                         (ulong) mem, mem->space, level);
+                mlprintf3((gs_memory_t *)mem, "while validating memory 0x%lx, space %d, level %d\n",
+                          (ulong) mem, mem->space, level);
                 gs_abort(gcst->heap);
             }
         /* Validate freelists. */
@@ -268,15 +268,15 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
                 uint size = pfree[-1].o_size;
 
                 if (pfree[-1].o_type != &st_free) {
-                    lprintf3("Non-free object 0x%lx(%u) on freelist %i!\n",
-                             (ulong) pfree, size, i);
+                    mlprintf3((gs_memory_t *)mem, "Non-free object 0x%lx(%u) on freelist %i!\n",
+                              (ulong) pfree, size, i);
                     break;
                 }
                 if ((i == LARGE_FREELIST_INDEX && size < max_freelist_size) ||
                  (i != LARGE_FREELIST_INDEX &&
                  (size < free_size - obj_align_mask || size > free_size))) {
-                    lprintf3("Object 0x%lx(%u) size wrong on freelist %i!\n",
-                             (ulong) pfree, size, i);
+                    mlprintf3((gs_memory_t *)mem, "Object 0x%lx(%u) size wrong on freelist %i!\n",
+                              (ulong) pfree, size, i);
                     break;
                 }
             }
@@ -307,7 +307,7 @@ do_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 {
     int ret = 0;
 
-    if_debug_chunk('6', "[6]validating chunk", cp);
+    if_debug_chunk('6', gcst->heap, "[6]validating chunk", cp);
     SCAN_CHUNK_OBJECTS(cp);
     DO_ALL
         if (pre->o_type == &st_free) {
@@ -317,12 +317,12 @@ do_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
                 return 1;
             }
         } else if (do_validate_object(pre + 1, cp, gcst)) {
-            dprintf_chunk("while validating chunk", cp);
+            dmprintf_chunk(gcst->heap, "while validating chunk", cp);
             return 1;
         }
-    if_debug3('7', " [7]validating %s(%lu) 0x%lx\n",
-              struct_type_name_string(pre->o_type),
-              (ulong) size, (ulong) pre);
+    if_debug3m('7', gcst->heap, " [7]validating %s(%lu) 0x%lx\n",
+               struct_type_name_string(pre->o_type),
+               (ulong) size, (ulong) pre);
     if (pre->o_type == &st_refs) {
         const ref_packed *rp = (const ref_packed *)(pre + 1);
         const char *end = (const char *)rp + size;
@@ -334,10 +334,10 @@ do_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
             ret = ialloc_validate_ref_packed(rp, gcst);
 #	    endif
             if (ret) {
-                lprintf3("while validating %s(%lu) 0x%lx\n",
+                mlprintf3(gcst->heap, "while validating %s(%lu) 0x%lx\n",
                          struct_type_name_string(pre->o_type),
                          (ulong) size, (ulong) pre);
-                dprintf_chunk("in chunk", cp);
+                dmprintf_chunk(gcst->heap, "in chunk", cp);
                 return ret;
             }
             rp = packed_next(rp);
@@ -368,7 +368,7 @@ do_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
                     ret = ialloc_validate_ref_packed(eptr.ptr, gcst);
 #		    endif
                 if (ret) {
-                    dprintf_chunk("while validating chunk", cp);
+                    dmprintf_chunk(gcst->heap, "while validating chunk", cp);
                     return ret;
                 }
             }
@@ -586,13 +586,13 @@ do_validate_object(const obj_header_t * ptr, const chunk_t * cp,
 
         st = *gcst;		/* no side effects! */
         if (!(cp = gc_locate(pre, &st))) {
-            lprintf1("Object 0x%lx not in any chunk!\n",
-                     (ulong) ptr);
+            mlprintf1(gcst->heap, "Object 0x%lx not in any chunk!\n",
+                      (ulong) ptr);
             return 1;		/*gs_abort(); */
         }
     }
     if (otype == &st_free) {
-        lprintf3("Reference to free object 0x%lx(%lu), in chunk 0x%lx!\n",
+        mlprintf3(gcst->heap, "Reference to free object 0x%lx(%lu), in chunk 0x%lx!\n",
                  (ulong) ptr, (ulong) size, (ulong) cp);
         return 1;
     }
@@ -602,10 +602,10 @@ do_validate_object(const obj_header_t * ptr, const chunk_t * cp,
         (oname = struct_type_name_string(otype),
          *oname < 33 || *oname > 126)
         ) {
-        lprintf2("Bad object 0x%lx(%lu),\n",
-                 (ulong) ptr, (ulong) size);
-        dprintf2(" ssize = %u, in chunk 0x%lx!\n",
-                 otype->ssize, (ulong) cp);
+        mlprintf2(gcst->heap, "Bad object 0x%lx(%lu),\n",
+                  (ulong) ptr, (ulong) size);
+        dmprintf2(gcst->heap, " ssize = %u, in chunk 0x%lx!\n",
+                  otype->ssize, (ulong) cp);
         return 1;
     }
     return 0;

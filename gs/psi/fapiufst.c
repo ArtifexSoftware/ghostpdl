@@ -1760,7 +1760,7 @@ static void gs_fapiufst_finit(i_plugin_instance *this, i_plugin_client_memory *m
     FSA_FROM_SERVER;
 
 #if UFST_MEMORY_CHECKING
-    dprintf1("UFST used %Lf kb\n", ((long double)maxmem) / 1024);
+    dmprintf1(r->mem, "UFST used %Lf kb\n", ((long double)maxmem) / 1024);
 #endif
 
     if (r->If.ig.d != &ufst_descriptor)

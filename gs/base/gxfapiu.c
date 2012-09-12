@@ -335,17 +335,17 @@ gx_UFST_init(gs_memory_t *mem, const UB8 *ufst_root_dir)
     config_block.typePath[0] = 0;
 
     if ((status = CGIFinit(FSA0)) != 0) {
-        dprintf1("CGIFinit() error: %d\n", status);
+        dmprintf1(mem, "CGIFinit() error: %d\n", status);
         gs_mem_ctx = NULL;
         return status;
     }
     if ((status = CGIFconfig(FSA &config_block)) != 0) {
-        dprintf1("CGIFconfig() error: %d\n", status);
+        dmprintf1(mem, "CGIFconfig() error: %d\n", status);
         gs_mem_ctx = NULL;
         return status;
     }
     if ((status = CGIFenter(FSA0)) != 0) {
-        dprintf1("CGIFenter() error: %u\n",status);
+        dmprintf1(mem, "CGIFenter() error: %u\n",status);
         gs_mem_ctx = NULL;
         return status;
     }

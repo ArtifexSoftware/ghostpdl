@@ -305,7 +305,7 @@ px_str_to_gschars( px_args_t *par, px_state_t *pxs, gs_char *pchr)
         pchr[i] = pl_map_symbol((db ? NULL : psm), chr,
                                 pxs->pxgs->base_font->storage == pxfsInternal,
                                 false /* pxl does not support MSL */,
-                                symbol_set == 590);
+                                symbol_set == 590, pxs->memory);
     }
 }
 

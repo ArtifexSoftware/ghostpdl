@@ -101,14 +101,14 @@ px_find_existing_font(px_value_t *pfnv, px_font_t **ppxfont,
                 *ppxfont = pxfont;
               else {
                   /* in the process of being downloaded. */
-                  dprintf("font is being downloaded???\n");
+                  dmprintf(pxs->memory, "font is being downloaded???\n");
                   return -1;
               }
         } else if ( px_dict_find(&pxs->builtin_font_dict, pfnv, &pxfont) )
             if ( ((px_font_t *)pxfont)->pfont )
                 *ppxfont = pxfont;
             else {
-                dprintf("corrupt pxl builtin font\n");
+                dmprintf(pxs->memory, "corrupt pxl builtin font\n");
                 return -1;
             }
         else

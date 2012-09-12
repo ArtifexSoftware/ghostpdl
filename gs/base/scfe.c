@@ -37,19 +37,19 @@ static stats_runs_t stats_white_runs, stats_black_runs;
 #define COUNT_RUN(tab, i) (tab)[i]++;
 
 static void
-print_run_stats(const stats_runs_t * stats)
+print_run_stats(const gs_memory_t *mem, const stats_runs_t * stats)
 {
     int i;
     ulong total;
 
     for (i = 0, total = 0; i < 41; i++)
-        dprintf1(" %lu", stats->make_up[i]),
+        dmprintf1(mem, " %lu", stats->make_up[i]),
             total += stats->make_up[i];
-    dprintf1(" total=%lu\n\t", total);
+    dmprintf1(mem, " total=%lu\n\t", total);
     for (i = 0, total = 0; i < 64; i++)
-        dprintf1(" %lu", stats->termination[i]),
+        dmprintf1(mem, " %lu", stats->termination[i]),
             total += stats->termination[i];
-    dprintf1(" total=%lu\n", total);
+    dmprintf1(mem, " total=%lu\n", total);
 }
 
 #else /* !DEBUG */
@@ -208,11 +208,11 @@ s_CFE_process(stream_state * st, stream_cursor_read * pr,
     for (;;) {
         stream_cursor_write w;
 
-        if_debug2('w', "[w]CFE: read_count = %d, write_count=%d,\n",
-                  ss->read_count, ss->write_count);
-        if_debug6('w', "    pr = 0x%lx(%d)0x%lx, pw = 0x%lx(%d)0x%lx\n",
-                  (ulong) pr->ptr, (int)(rlimit - pr->ptr), (ulong) rlimit,
-                  (ulong) pw->ptr, (int)(wlimit - pw->ptr), (ulong) wlimit);
+        if_debug2m('w', ss->memory, "[w]CFE: read_count = %d, write_count=%d,\n",
+                   ss->read_count, ss->write_count);
+        if_debug6m('w', ss->memory, "    pr = 0x%lx(%d)0x%lx, pw = 0x%lx(%d)0x%lx\n",
+                   (ulong) pr->ptr, (int)(rlimit - pr->ptr), (ulong) rlimit,
+                   (ulong) pw->ptr, (int)(wlimit - pw->ptr), (ulong) wlimit);
         if (ss->write_count) {
             /* Copy more of an encoded line to the caller. */
             int wcount = wlimit - pw->ptr;
@@ -268,10 +268,10 @@ s_CFE_process(stream_state * st, stream_cursor_read * pr,
         }
 #ifdef DEBUG
         if (ss->K > 0) {
-            if_debug2('w', "[w2]new %d-D row, k_left=%d\n",
-                      (ss->k_left == 1 ? 1 : 2), ss->k_left);
+            if_debug2m('w', ss->memory, "[w2]new %d-D row, k_left=%d\n",
+                       (ss->k_left == 1 ? 1 : 2), ss->k_left);
         } else {
-            if_debug1('w', "[w%d]new row\n", (ss->K < 0 ? 2 : 1));
+            if_debug1m('w', ss->memory, "[w%d]new row\n", (ss->K < 0 ? 2 : 1));
         }
 #endif
         /*
@@ -358,20 +358,20 @@ s_CFE_process(stream_state * st, stream_cursor_read * pr,
         pw->ptr = hc_put_last_bits((stream_hc_state *) ss, q);
     }
   out:
-    if_debug9('w', "[w]CFE exit %d: read_count = %d, write_count = %d,\n     pr = 0x%lx(%d)0x%lx; pw = 0x%lx(%d)0x%lx\n",
-              status, ss->read_count, ss->write_count,
-              (ulong) pr->ptr, (int)(rlimit - pr->ptr), (ulong) rlimit,
-              (ulong) pw->ptr, (int)(wlimit - pw->ptr), (ulong) wlimit);
+    if_debug9m('w', ss->memory, "[w]CFE exit %d: read_count = %d, write_count = %d,\n     pr = 0x%lx(%d)0x%lx; pw = 0x%lx(%d)0x%lx\n",
+               status, ss->read_count, ss->write_count,
+               (ulong) pr->ptr, (int)(rlimit - pr->ptr), (ulong) rlimit,
+               (ulong) pw->ptr, (int)(wlimit - pw->ptr), (ulong) wlimit);
 #ifdef DEBUG
     if (pr->ptr > rlimit || pw->ptr > wlimit) {
         lprintf("Pointer overrun!\n");
         status = ERRC;
     }
     if (gs_debug_c('w') && status == 1) {
-        dlputs("[w]white runs:");
-        print_run_stats(&stats_white_runs);
-        dlputs("[w]black runs:");
-        print_run_stats(&stats_black_runs);
+        dmlputs(ss->memory, "[w]white runs:");
+        print_run_stats(ss->memory, &stats_white_runs);
+        dmlputs(ss->memory, "[w]black runs:");
+        print_run_stats(ss->memory, &stats_black_runs);
     }
 #endif
     return status;
@@ -477,8 +477,8 @@ cf_encode_2d(stream_CFE_state * ss, const byte * lbuf, stream_cursor_write * pw,
                                   prev_count, invert, rlen);
             if (prev_count > a1) {
                 /* Use pass mode. */
-                if_debug4('W', "[W]pass: count = %d, a1 = %d, b1 = %d, new count = %d\n",
-                          a0, a1, b1, prev_count);
+                if_debug4m('W', ss->memory, "[W]pass: count = %d, a1 = %d, b1 = %d, new count = %d\n",
+                           a0, a1, b1, prev_count);
                 hc_put_value(ss, q, cf2_run_pass_value, cf2_run_pass_length);
                 a0 = prev_count;
                 goto pass;
@@ -489,8 +489,8 @@ cf_encode_2d(stream_CFE_state * ss, const byte * lbuf, stream_cursor_write * pw,
             /* Use vertical coding. */
             const cfe_run *cp = &cf2_run_vertical[diff + 3];
 
-            if_debug5('W', "[W]vertical %d: count = %d, a1 = %d, b1 = %d, new count = %d\n",
-                      diff, a0, a1, b1, count);
+            if_debug5m('W', ss->memory, "[W]vertical %d: count = %d, a1 = %d, b1 = %d, new count = %d\n",
+                       diff, a0, a1, b1, count);
             hc_put_code(ss, q, cp);
             invert = ~invert;	/* a1 polarity changes */
             data ^= 0xff;
@@ -504,13 +504,13 @@ cf_encode_2d(stream_CFE_state * ss, const byte * lbuf, stream_cursor_write * pw,
         a0 -= a1;
         a1 -= count;
         if (invert == invert_white) {
-            if_debug3('W', "[W]horizontal: white = %d, black = %d, new count = %d\n",
+            if_debug3m('W', ss->memory, "[W]horizontal: white = %d, black = %d, new count = %d\n",
                       a0, a1, count);
             CF_PUT_WHITE_RUN(ss, a0);
             CF_PUT_BLACK_RUN(ss, a1);
         } else {
-            if_debug3('W', "[W]horizontal: black = %d, white = %d, new count = %d\n",
-                      a0, a1, count);
+            if_debug3m('W', ss->memory, "[W]horizontal: black = %d, white = %d, new count = %d\n",
+                       a0, a1, count);
             CF_PUT_BLACK_RUN(ss, a0);
             CF_PUT_WHITE_RUN(ss, a1);
 #undef b1

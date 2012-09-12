@@ -87,7 +87,7 @@ gx_concrete_space_Separation(const gs_color_space * pcs,
      * Verify that the color space and imager state info match.
      */
     if (pcs->id != pis->color_component_map.cspace_id)
-        dprintf("gx_concretze_space_Separation: color space id mismatch");
+        dmprintf(pis->memory, "gx_concretze_space_Separation: color space id mismatch");
 #endif
 
     /*
@@ -389,7 +389,7 @@ gx_remap_concrete_Separation(const frac * pconc,  const gs_color_space * pcs,
      * Verify that the color space and imager state info match.
      */
     if (pcs->id != pis->color_component_map.cspace_id)
-        dprintf("gx_remap_concrete_Separation: color space id mismatch");
+        dmprintf(pis->memory, "gx_remap_concrete_Separation: color space id mismatch");
 #endif
 
     if (pis->color_component_map.use_alt_cspace) {

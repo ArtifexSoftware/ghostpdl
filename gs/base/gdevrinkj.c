@@ -955,7 +955,7 @@ rinkj_set_luts(rinkj_device *rdev,
         val = linebuf + i;
 
         if (!strcmp(key, "AddLut")) {
-            if_debug1('r', "[r]%s", linebuf);
+            if_debug1m('r', rdev->memory, "[r]%s", linebuf);
             rinkj_add_lut(rdev, &lutset, val[0], f);
         } else if (!strcmp(key, "Dither") || !strcmp(key, "Aspect")) {
             rinkj_device_set_param_string(cmyk_dev, key, val);
@@ -1032,7 +1032,7 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
     rinkj_color_cache_entry *cache = NULL;
 
     n_planes = n_planes_in + rdev->separation_names.num_names;
-    if_debug1('r', "[r]n_planes = %d\n", n_planes);
+    if_debug1m('r', rdev->memory, "[r]n_planes = %d\n", n_planes);
     xsb = pdev->width;
     for (i = 0; i < n_planes_out; i++)
         plane_data[i] = gs_alloc_bytes(pdev->memory, xsb, "rinkj_write_image_data");

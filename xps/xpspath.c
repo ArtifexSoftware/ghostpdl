@@ -263,7 +263,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
     args = xps_alloc(ctx, sizeof(char*) * (strlen(geom) + 1));
     pargs = args;
 
-    //dprintf1("new path (%.70s)\n", geom);
+    //dmprintf1(ctx->memory, "new path (%.70s)\n", geom);
     gs_newpath(ctx->pgs);
 
     while (*s)
@@ -321,47 +321,47 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 
         case 'M':
             gs_moveto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-            //dprintf2("moveto %g %g\n", atof(args[i]), atof(args[i+1]));
+            //dmprintf2(ctx->memory, "moveto %g %g\n", atof(args[i]), atof(args[i+1]));
             i += 2;
             break;
         case 'm':
             gs_rmoveto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-            //dprintf2("rmoveto %g %g\n", atof(args[i]), atof(args[i+1]));
+            //dmprintf2(ctx->memory, "rmoveto %g %g\n", atof(args[i]), atof(args[i+1]));
             i += 2;
             break;
 
         case 'L':
             gs_lineto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-            //dprintf2("lineto %g %g\n", atof(args[i]), atof(args[i+1]));
+            //dmprintf2(ctx->memory, "lineto %g %g\n", atof(args[i]), atof(args[i+1]));
             i += 2;
             break;
         case 'l':
             gs_rlineto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-            //dprintf2("rlineto %g %g\n", atof(args[i]), atof(args[i+1]));
+            //dmprintf2(ctx->memory, "rlineto %g %g\n", atof(args[i]), atof(args[i+1]));
             i += 2;
             break;
 
         case 'H':
             gs_currentpoint(ctx->pgs, &pt);
             gs_lineto(ctx->pgs, atof(args[i]), pt.y);
-            //dprintf1("hlineto %g\n", atof(args[i]));
+            //dmprintf1(ctx->memory, "hlineto %g\n", atof(args[i]));
             i += 1;
             break;
         case 'h':
             gs_rlineto(ctx->pgs, atof(args[i]), 0.0);
-            //dprintf1("rhlineto %g\n", atof(args[i]));
+            //dmprintf1(ctx->memory, "rhlineto %g\n", atof(args[i]));
             i += 1;
             break;
 
         case 'V':
             gs_currentpoint(ctx->pgs, &pt);
             gs_lineto(ctx->pgs, pt.x, atof(args[i]));
-            //dprintf1("vlineto %g\n", atof(args[i]));
+            //dmprintf1(ctx->memory, "vlineto %g\n", atof(args[i]));
             i += 1;
             break;
         case 'v':
             gs_rlineto(ctx->pgs, 0.0, atof(args[i]));
-            //dprintf1("rvlineto %g\n", atof(args[i]));
+            //dmprintf1(ctx->memory, "rvlineto %g\n", atof(args[i]));
             i += 1;
             break;
 
@@ -400,7 +400,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
             y1 = atof(args[i+1]);
             x2 = atof(args[i+2]);
             y2 = atof(args[i+3]);
-            //dprintf2("smooth %g %g\n", smooth_x, smooth_y);
+            //dmprintf2(ctx->memory, "smooth %g %g\n", smooth_x, smooth_y);
             gs_curveto(ctx->pgs, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
             i += 4;
             reset_smooth = 0;
@@ -414,7 +414,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
             y1 = atof(args[i+1]) + pt.y;
             x2 = atof(args[i+2]) + pt.x;
             y2 = atof(args[i+3]) + pt.y;
-            //dprintf2("smooth %g %g\n", smooth_x, smooth_y);
+            //dmprintf2(ctx->memory, "smooth %g %g\n", smooth_x, smooth_y);
             gs_curveto(ctx->pgs, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
             i += 4;
             reset_smooth = 0;
@@ -428,7 +428,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
             y1 = atof(args[i+1]);
             x2 = atof(args[i+2]);
             y2 = atof(args[i+3]);
-            //dprintf4("conicto %g %g %g %g\n", x1, y1, x2, y2);
+            //dmprintf4(ctx->memory, "conicto %g %g %g %g\n", x1, y1, x2, y2);
             gs_curveto(ctx->pgs,
                     (pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
                     (x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
@@ -441,7 +441,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
             y1 = atof(args[i+1]) + pt.y;
             x2 = atof(args[i+2]) + pt.x;
             y2 = atof(args[i+3]) + pt.y;
-            //dprintf4("conicto %g %g %g %g\n", x1, y1, x2, y2);
+            //dmprintf4(ctx->memory, "conicto %g %g %g %g\n", x1, y1, x2, y2);
             gs_curveto(ctx->pgs,
                     (pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
                     (x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
@@ -468,7 +468,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
         case 'Z':
         case 'z':
             gs_closepath(ctx->pgs);
-            //dputs("closepath\n");
+            //dmputs(ctx->memory, "closepath\n");
             break;
 
         default:

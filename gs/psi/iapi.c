@@ -30,11 +30,13 @@
 #include "gsmalloc.h"
 #include "gslibctx.h"
 
-/* number of threads to allow per process
- * currently more than 1 is guarenteed to fail
+#ifndef GS_THREADSAFE
+/* Number of threads to allow per process. Unless GS_THREADSAFE is defined
+ * more than 1 is guarenteed to fail.
  */
-//static int gsapi_instance_counter = 0;
-//static const int gsapi_instance_max = 1;
+static int gsapi_instance_counter = 0;
+static const int gsapi_instance_max = 1;
+#endif
 
 /* Return revision numbers and strings of Ghostscript. */
 /* Used for determining if wrong GSDLL loaded. */
@@ -65,10 +67,12 @@ gsapi_new_instance(void **pinstance, void *caller_handle)
     if (pinstance == NULL)
         return e_Fatal;
 
+#ifndef GS_THREADSAFE
     /* limited to 1 instance, till it works :) */
-    //if ( gsapi_instance_counter >= gsapi_instance_max )
-    //    return e_Fatal;
-    //++gsapi_instance_counter;
+    if ( gsapi_instance_counter >= gsapi_instance_max )
+        return e_Fatal;
+    ++gsapi_instance_counter;
+#endif
 
     if (*pinstance == NULL)
         /* first instance in this process */
@@ -120,7 +124,9 @@ gsapi_delete_instance(void *lib)
         /* Release the memory (frees up everything) */
         gs_malloc_release(minst->heap);
 
-        //--gsapi_instance_counter;
+#ifndef GS_THREADSAFE
+        --gsapi_instance_counter;
+#endif
     }
 }
 

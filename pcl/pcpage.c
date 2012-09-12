@@ -517,12 +517,12 @@ pcl_mark_page_for_current_pos(pcl_state_t *pcs)
         page_bbox_float.q.y = fixed2float(page_bbox_fixed.q.y);
 
         if ( gs_currentpoint(pcs->pgs, &current_pt) < 0 ) {
-             dprintf("Not expected to fail\n" );
+             dmprintf(pcs->memory, "Not expected to fail\n" );
              return;
         }
 
         if ( gs_transform(pcs->pgs, current_pt.x, current_pt.y, &dev_pt) ) {
-             dprintf("Not expected to fail\n" );
+             dmprintf(pcs->memory, "Not expected to fail\n" );
              return;
         }
 
@@ -1282,7 +1282,7 @@ pcl_get_default_paper(
                 pcs->wide_a4 = true;
             return &(PAPER_SIZES[i].psize);
         }
-    dprintf("system does not support requested paper setting\n");
+    dmprintf(pcs->memory, "system does not support requested paper setting\n");
     return &(PAPER_SIZES[1].psize);
 }
 

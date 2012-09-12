@@ -502,19 +502,19 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
         int count = pgs_lp->dash.pattern_size;
         int i;
 
-        dlprintf4("[o]half_width=%f, start_cap=%d, end_cap=%d, dash_cap=%d,\n",
-                  pgs_lp->half_width, (int)pgs_lp->start_cap,
-                  (int)pgs_lp->end_cap, (int)pgs_lp->dash_cap);
-        dlprintf3("   join=%d, miter_limit=%f, miter_check=%f,\n",
-                  (int)pgs_lp->join, pgs_lp->miter_limit,
-                  pgs_lp->miter_check);
-        dlprintf1("   dash pattern=%d", count);
+        dmlprintf4(ppath->memory, "[o]half_width=%f, start_cap=%d, end_cap=%d, dash_cap=%d,\n",
+                   pgs_lp->half_width, (int)pgs_lp->start_cap,
+                   (int)pgs_lp->end_cap, (int)pgs_lp->dash_cap);
+        dmlprintf3(ppath->memory, "   join=%d, miter_limit=%f, miter_check=%f,\n",
+                   (int)pgs_lp->join, pgs_lp->miter_limit,
+                   pgs_lp->miter_check);
+        dmlprintf1(ppath->memory, "   dash pattern=%d", count);
         for (i = 0; i < count; i++)
-            dprintf1(",%f", pgs_lp->dash.pattern[i]);
-        dputs(",\n");
-        dlprintf4("\toffset=%f, init(ink_on=%d, index=%d, dist_left=%f)\n",
-                  pgs_lp->dash.offset, pgs_lp->dash.init_ink_on,
-                  pgs_lp->dash.init_index, pgs_lp->dash.init_dist_left);
+            dmprintf1(ppath->memory, ",%f", pgs_lp->dash.pattern[i]);
+        dmputs(ppath->memory, ",\n");
+        dmlprintf4(ppath->memory, "\toffset=%f, init(ink_on=%d, index=%d, dist_left=%f)\n",
+                   pgs_lp->dash.offset, pgs_lp->dash.init_ink_on,
+                   pgs_lp->dash.init_index, pgs_lp->dash.init_dist_left);
     }
 #endif
 
@@ -560,9 +560,9 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 
         if (pcpath) {
             gx_cpath_outer_box(pcpath, &bbox);
-            if_debug4('f', "   outer_box=(%g,%g),(%g,%g)\n",
-                      fixed2float(bbox.p.x), fixed2float(bbox.p.y),
-                      fixed2float(bbox.q.x), fixed2float(bbox.q.y));
+            if_debug4m('f', ppath->memory, "   outer_box=(%g,%g),(%g,%g)\n",
+                       fixed2float(bbox.p.x), fixed2float(bbox.p.y),
+                       fixed2float(bbox.q.x), fixed2float(bbox.q.y));
             rect_intersect(ibox, bbox);
         } else
             rect_intersect(ibox, cbox);
@@ -644,7 +644,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                 }
         }
     }
-    if_debug7('o', "[o]ctm=(%g,%g,%g,%g,%g,%g) thin=%d\n",
+    if_debug7m('o', ppath->memory, "[o]ctm=(%g,%g,%g,%g,%g,%g) thin=%d\n",
               xx, xy, yx, yy, pis->ctm.tx, pis->ctm.ty, always_thin);
     if (device_dot_length != 0) {
         /*
@@ -1256,9 +1256,9 @@ adjust_stroke(gx_device *dev, pl_ptr plp, const gs_imager_state * pis,
                         if (plp->o.p.x < dev->sgr.orig[0].x ||
                             (plp->o.p.x == dev->sgr.orig[0].x && plp->o.p.y < dev->sgr.orig[0].y)) {
                             /* Left contact, adjust to keep the contact. */
-                            if_debug4('O', "[O]don't adjust {{%f,%f},{%f,%f}}\n",
-                                  fixed2float(plp->o.p.x), fixed2float(plp->o.p.y),
-                                  fixed2float(plp->e.p.x), fixed2float(plp->e.p.y));
+                            if_debug4m('O', dev->memory, "[O]don't adjust {{%f,%f},{%f,%f}}\n",
+                                       fixed2float(plp->o.p.x), fixed2float(plp->o.p.y),
+                                       fixed2float(plp->e.p.x), fixed2float(plp->e.p.y));
                             plp->width.x += (shift_o_x - delta_w_x) / 2;
                             plp->width.y += (shift_o_y - delta_w_y) / 2;
                             plp->o.p.x += (shift_o_x - delta_w_x) / 2;
@@ -1268,9 +1268,9 @@ adjust_stroke(gx_device *dev, pl_ptr plp, const gs_imager_state * pis,
                             adjust = false;
                         } else {
                             /* Right contact, adjust to keep the contact. */
-                            if_debug4('O', "[O]don't adjust {{%f,%f},{%f,%f}}\n",
-                                  fixed2float(plp->o.p.x), fixed2float(plp->o.p.y),
-                                  fixed2float(plp->e.p.x), fixed2float(plp->e.p.y));
+                            if_debug4m('O', dev->memory, "[O]don't adjust {{%f,%f},{%f,%f}}\n",
+                                       fixed2float(plp->o.p.x), fixed2float(plp->o.p.y),
+                                       fixed2float(plp->e.p.x), fixed2float(plp->e.p.y));
                             plp->width.x -= (shift_o_x + delta_w_x) / 2;
                             plp->width.y -= (shift_o_y + delta_w_y) / 2;
                             plp->o.p.x += (shift_o_x + delta_w_x) / 2;
@@ -1328,7 +1328,7 @@ line_intersect(
     double f1;
     double max_result = any_abs(denom) * (double)max_fixed;
 
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
     if (gs_debug_c('O')) {
         dlprintf4("[o]Intersect %f,%f(%f/%f)",
                   fixed2float(pp1->x), fixed2float(pp1->y),
@@ -1994,7 +1994,7 @@ check_miter(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
          * we actually have to do the test backwards.
          */
         ccw0 = v1 * u2 < v2 * u1;
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
         {
             double a1 = atan2(u1, v1), a2 = atan2(u2, v2), dif = a1 - a2;
 
@@ -2017,7 +2017,7 @@ check_miter(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
      */
     if (!ccw0)          /* have plp - nplp, want vice versa */
         num = -num;
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
     if (gs_debug_c('O')) {
         dlprintf4("[o]Miter check: u1/v1=%f/%f, u2/v2=%f/%f,\n",
                   u1, v1, u2, v2);
@@ -2310,7 +2310,7 @@ compute_caps(pl_ptr plp)
     plp->o.ce.x = plp->o.p.x - wx2, plp->o.ce.y = plp->o.p.y - wy2;
     plp->e.co.x = plp->e.p.x - wx2, plp->e.co.y = plp->e.p.y - wy2;
     plp->e.ce.x = plp->e.p.x + wx2, plp->e.ce.y = plp->e.p.y + wy2;
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
     if (gs_debug_c('O')) {
         dlprintf4("[o]Stroke o=(%f,%f) e=(%f,%f)\n",
                   fixed2float(plp->o.p.x), fixed2float(plp->o.p.y),

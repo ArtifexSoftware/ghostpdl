@@ -1034,13 +1034,13 @@ int eprn_fetch_scan_line(eprn_Device *dev, eprn_OctetString *line)
 #if 0 && defined(EPRN_TRACE)
   if (gs_debug_c(EPRN_TRACE_CHAR)) {
     int j;
-    dlprintf("! eprn_fetch_scan_line(): Fetched ");
-    if (line->length == 0) dprintf("empty scan line.");
+    dmlprintf(dev->memory, "! eprn_fetch_scan_line(): Fetched ");
+    if (line->length == 0) dmprintf(dev->memory, "empty scan line.");
     else {
-      dprintf("scan line: 0x");
-      for (j = 0; j < line->length; j++) dprintf1("%02X", line->str[j]);
+      dmprintf(dev->memory, "scan line: 0x");
+      for (j = 0; j < line->length; j++) dmprintf1(dev->memory, "%02X", line->str[j]);
     }
-    dlprintf("\n");
+    dmlprintf(dev->memory, "\n");
   }
 #endif
 
@@ -1124,9 +1124,9 @@ int eprn_get_planes(eprn_Device *dev, eprn_OctetString bitplanes[])
           if (gs_debug_c(EPRN_TRACE_CHAR)) {
             static bool already_noted = false;
             if (!already_noted && line->str[line->length - 1] != 0xEE) {
-              dlprintf1("! eprn_get_planes(): "
-                "Line-terminating octet is 0x%02X.\n",
-                line->str[line->length - 1]);
+              dmlprintf1(dev->memory, "! eprn_get_planes(): "
+                         "Line-terminating octet is 0x%02X.\n",
+                         line->str[line->length - 1]);
               already_noted = true;
             }
           }

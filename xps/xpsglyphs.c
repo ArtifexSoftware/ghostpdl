@@ -51,27 +51,27 @@ xps_debug_path(xps_context_t *ctx)
         switch (seg->type)
         {
         case s_start:
-            dprintf2("%g %g moveto\n",
-                    fixed2float(seg->pt.x) * 0.001,
-                    fixed2float(seg->pt.y) * 0.001);
+            dmprintf2(ctx->memory, "%g %g moveto\n",
+                      fixed2float(seg->pt.x) * 0.001,
+                      fixed2float(seg->pt.y) * 0.001);
             break;
         case s_line:
-            dprintf2("%g %g lineto\n",
-                    fixed2float(seg->pt.x) * 0.001,
-                    fixed2float(seg->pt.y) * 0.001);
+            dmprintf2(ctx->memory, "%g %g lineto\n",
+                      fixed2float(seg->pt.x) * 0.001,
+                      fixed2float(seg->pt.y) * 0.001);
             break;
         case s_line_close:
-            dputs("closepath\n");
+            dmputs(ctx->memory, "closepath\n");
             break;
         case s_curve:
             cseg = (curve_segment*)seg;
-            dprintf6("%g %g %g %g %g %g curveto\n",
-                    fixed2float(cseg->p1.x) * 0.001,
-                    fixed2float(cseg->p1.y) * 0.001,
-                    fixed2float(cseg->p2.x) * 0.001,
-                    fixed2float(cseg->p2.y) * 0.001,
-                    fixed2float(seg->pt.x) * 0.001,
-                    fixed2float(seg->pt.y) * 0.001);
+            dmprintf6(ctx->memory, "%g %g %g %g %g %g curveto\n",
+                      fixed2float(cseg->p1.x) * 0.001,
+                      fixed2float(cseg->p1.y) * 0.001,
+                      fixed2float(cseg->p2.x) * 0.001,
+                      fixed2float(cseg->p2.y) * 0.001,
+                      fixed2float(seg->pt.x) * 0.001,
+                      fixed2float(seg->pt.y) * 0.001);
             break;
         }
         seg = seg->next;
@@ -168,7 +168,7 @@ xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
     int code;
     int i;
 
-    // dprintf1("flushing text buffer (%d glyphs)\n", buf->count);
+    // dmprintf1(ctx->memory, "flushing text buffer (%d glyphs)\n", buf->count);
 
     gs_moveto(ctx->pgs, x, y);
 

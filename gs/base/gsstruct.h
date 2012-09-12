@@ -148,9 +148,9 @@ struct gs_gc_root_s {
     gc_root_enum_ptrs, gc_root_reloc_ptrs, next)
 
 /* Print a root debugging message. */
-#define if_debug_root(c, msg, rp)\
-  if_debug4(c, "%s 0x%lx: 0x%lx -> 0x%lx\n",\
-            msg, (ulong)(rp), (ulong)(rp)->p, (ulong)*(rp)->p)
+#define if_debug_root(c, mem, msg, rp)\
+  if_debug4m(c, mem, "%s 0x%lx: 0x%lx -> 0x%lx\n",\
+             msg, (ulong)(rp), (ulong)(rp)->p, (ulong)*(rp)->p)
 
 /*
  * We don't want to tie the allocator to using a single garbage collector,

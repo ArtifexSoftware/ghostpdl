@@ -311,6 +311,7 @@ typedef struct {
     FcConfig* fc;           /* FontConfig library handle */
     FcFontSet* font_list;   /* FontConfig font list */
     char name[255];         /* name of last font */
+    gs_memory_t *mem;       /* Memory pointer */
 } unix_fontenum_t;
 #endif
 
@@ -328,13 +329,14 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem)
     state->index     = 0;
     state->fc        = NULL;
     state->font_list = NULL;
+    state->mem       = mem;
 
     /* Load the fontconfig library */
     state->fc = FcInitLoadConfigAndFonts();
     if (state->fc == NULL) {
         free(state);
         state = NULL;
-        dlprintf("destroyed state - fontconfig init failed");
+        dmlprintf(mem, "destroyed state - fontconfig init failed");
         return NULL;  /* Failed to open fontconfig library */
     }
 
@@ -384,31 +386,31 @@ int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 
     result = FcPatternGetString (font, FC_FAMILY, 0, &family_fc);
     if (result != FcResultMatch || family_fc == NULL) {
-        dlprintf ("DEBUG: FC_FAMILY mismatch\n");
+        dmlprintf(state->mem, "DEBUG: FC_FAMILY mismatch\n");
         return 0;
     }
 
     result = FcPatternGetString (font, FC_FILE, 0, &file_fc);
     if (result != FcResultMatch || file_fc == NULL) {
-        dlprintf ("DEBUG: FC_FILE mismatch\n");
+        dmlprintf(state->mem, "DEBUG: FC_FILE mismatch\n");
         return 0;
     }
 
     result = FcPatternGetBool (font, FC_OUTLINE, 0, &outline_fc);
     if (result != FcResultMatch) {
-        dlprintf1 ("DEBUG: FC_OUTLINE failed to match on %s\n", (char*)family_fc);
+        dmlprintf1(state->mem, "DEBUG: FC_OUTLINE failed to match on %s\n", (char*)family_fc);
         return 0;
     }
 
     result = FcPatternGetInteger (font, FC_SLANT, 0, &slant_fc);
     if (result != FcResultMatch) {
-        dlprintf ("DEBUG: FC_SLANT didn't match\n");
+        dmlprintf(state->mem, "DEBUG: FC_SLANT didn't match\n");
         return 0;
     }
 
     result = FcPatternGetInteger (font, FC_WEIGHT, 0, &weight_fc);
     if (result != FcResultMatch) {
-        dlprintf ("DEBUG: FC_WEIGHT didn't match\n");
+        dmlprintf(state->mem, "DEBUG: FC_WEIGHT didn't match\n");
         return 0;
     }
 

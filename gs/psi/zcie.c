@@ -792,8 +792,8 @@ cie_cache_finish_store(i_ctx_t *i_ctx_p, bool replicate)
     pcache = (cie_cache_floats *) (r_ptr(esp - 1, char) + esp->value.intval);
 
     pcache->params.is_identity = false;	/* cache_set_linear computes this */
-    if_debug3('c', "[c]cache 0x%lx base=%g, factor=%g:\n",
-              (ulong) pcache, pcache->params.base, pcache->params.factor);
+    if_debug3m('c', imemory, "[c]cache 0x%lx base=%g, factor=%g:\n",
+               (ulong) pcache, pcache->params.base, pcache->params.factor);
     if (replicate ||
         (code = float_params(op, gx_cie_cache_size, &pcache->values[0])) < 0
         ) {
@@ -814,9 +814,9 @@ cie_cache_finish_store(i_ctx_t *i_ctx_p, bool replicate)
         int i;
 
         for (i = 0; i < gx_cie_cache_size; i += 4)
-            dlprintf5("[c]  cache[%3d]=%g, %g, %g, %g\n", i,
-                      pcache->values[i], pcache->values[i + 1],
-                      pcache->values[i + 2], pcache->values[i + 3]);
+            dmlprintf5(imemory, "[c]  cache[%3d]=%g, %g, %g, %g\n", i,
+                       pcache->values[i], pcache->values[i + 1],
+                       pcache->values[i + 2], pcache->values[i + 3]);
     }
 #endif
     ref_stack_pop(&o_stack, (replicate ? 1 : gx_cie_cache_size));
@@ -927,8 +927,8 @@ cie_create_icc(i_ctx_t *i_ctx_p)
     pcache = (cie_cache_floats *) (r_ptr(esp - 1, char) + esp->value.intval);
 
     pcache->params.is_identity = false;	/* cache_set_linear computes this */
-    if_debug3('c', "[c]icc_sample_proc 0x%lx base=%g, factor=%g:\n",
-              (ulong) pcache, pcache->params.base, pcache->params.factor);
+    if_debug3m('c', imemory, "[c]icc_sample_proc 0x%lx base=%g, factor=%g:\n",
+               (ulong) pcache, pcache->params.base, pcache->params.factor);
     if ((code = float_params(op, gx_cie_cache_size, &pcache->values[0])) < 0) {
         /* We might have underflowed the current stack block. */
         /* Handle the parameters one-by-one. */
@@ -946,9 +946,9 @@ cie_create_icc(i_ctx_t *i_ctx_p)
         int i;
 
         for (i = 0; i < gx_cie_cache_size; i += 4)
-            dlprintf5("[c]  icc_sample_proc[%3d]=%g, %g, %g, %g\n", i,
-                      pcache->values[i], pcache->values[i + 1],
-                      pcache->values[i + 2], pcache->values[i + 3]);
+            dmlprintf5(imemory, "[c]  icc_sample_proc[%3d]=%g, %g, %g, %g\n", i,
+                       pcache->values[i], pcache->values[i + 1],
+                       pcache->values[i + 2], pcache->values[i + 3]);
     }
 #endif
     ref_stack_pop(&o_stack, gx_cie_cache_size);

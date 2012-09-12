@@ -216,10 +216,10 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
                 if (gs_debug[':'] && arg[1] == 'Z') {
                     int i;
 
-                    dprintf1("%% Init started, instance 0x%p, with args: ", minst);
+                    dmprintf1(minst->heap, "%% Init started, instance 0x%p, with args: ", minst);
                     for (i=1; i<argc; i++)
-                        dprintf1("%s ", argv[i]);
-                    dprintf("\n");
+                        dmprintf1(minst->heap, "%s ", argv[i]);
+                    dmprintf(minst->heap, "\n");
                 }
                 break;
             default:
@@ -238,10 +238,10 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
     if (gs_debug[':']) {
         int i;
 
-        dprintf1("%% Init done, instance 0x%p, with args: ", minst);
+        dmprintf1(minst->heap, "%% Init done, instance 0x%p, with args: ", minst);
         for (i=1; i<argc; i++)
-            dprintf1("%s ", argv[i]);
-        dprintf("\n");
+            dmprintf1(minst->heap, "%s ", argv[i]);
+        dmprintf(minst->heap, "\n");
     }
     if (!minst->run_start)
         return e_Quit;

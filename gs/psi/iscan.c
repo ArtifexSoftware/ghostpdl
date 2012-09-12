@@ -355,9 +355,9 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
         /* Process as a DSC comment if requested. */
 #ifdef DEBUG
         if (gs_debug_c('%')) {
-            dlprintf2("[%%%%%s%c]", sstr, (len >= 3 ? '+' : '-'));
-            debug_print_string(base, len);
-            dputs("\n");
+            dmlprintf2(imemory, "[%%%%%s%c]", sstr, (len >= 3 ? '+' : '-'));
+            debug_print_string(imemory, base, len);
+            dmputs(imemory, "\n");
         }
 #endif
         if (gs_scan_dsc_proc != NULL) {
@@ -373,9 +373,9 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
 #ifdef DEBUG
     else {
         if (gs_debug_c('%')) {
-            dlprintf2("[%% %s%c]", sstr, (len >= 2 ? '+' : '-'));
-            debug_print_string(base, len);
-            dputs("\n");
+            dmlprintf2(imemory, "[%% %s%c]", sstr, (len >= 2 ? '+' : '-'));
+            debug_print_string(imemory, base, len);
+            dmputs(imemory, "\n");
         }
     }
 #endif
@@ -564,7 +564,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
      *      If pstack != 0, myref = osp, and *osp is a valid slot.
      */
   top:c = scan_getc();
-    if_debug1('S', (c >= 32 && c <= 126 ? "`%c'" : c >= 0 ? "`\\%03o'" : "`%d'"), c);
+    if_debug1m('S', s->memory, (c >= 32 && c <= 126 ? "`%c'" : c >= 0 ? "`\\%03o'" : "`%d'"), c);
     switch (c) {
         case ' ':
         case '\f':
@@ -680,8 +680,8 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             }
             make_int(osp, pstack);
             pstack = ref_stack_count_inline(&o_stack);
-            if_debug3('S', "[S{]d=%d, s=%d->%d\n",
-                      pdepth, (int)osp->value.intval, pstack);
+            if_debug3m('S', s->memory, "[S{]d=%d, s=%d->%d\n",
+                       pdepth, (int)osp->value.intval, pstack);
             goto snext;
         case '>':
             if (scan_enable_level2) {
@@ -701,11 +701,11 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                 uint size = ref_stack_count_inline(&o_stack) - pstack;
                 ref arr;
 
-                if_debug4('S', "[S}]d=%d, s=%d->%d, c=%d\n",
-                          pdepth, pstack,
-                          (pstack == pdepth ? 0 :
-                          ref_stack_index(&o_stack, size)->value.intval),
-                          size + pstack);
+                if_debug4m('S', s->memory, "[S}]d=%d, s=%d->%d, c=%d\n",
+                           pdepth, pstack,
+                           (pstack == pdepth ? 0 :
+                           ref_stack_index(&o_stack, size)->value.intval),
+                           size + pstack);
                 if (size > max_array_size)
                     sreturn(e_limitcheck);
                 myref = (pstack == pdepth ? pref : &arr);

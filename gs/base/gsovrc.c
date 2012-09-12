@@ -170,7 +170,7 @@ c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize, gx_devi
     if (used > avail)
         return_error(gs_error_rangecheck);
     data[0] = flags;
-    if_debug1('v', "[v]c_overprint_write(%d)\n", flags);
+    if_debug1m('v', ((const gx_device *)cdev)->memory, "[v]c_overprint_write(%d)\n", flags);
     return 0;
 }
 
@@ -192,7 +192,7 @@ c_overprint_read(
     if (size < 1)
         return_error(gs_error_rangecheck);
     flags = *data;
-    if_debug1('v', "[v]c_overprint_read(%d)\n", flags);
+    if_debug1m('v', mem, "[v]c_overprint_read(%d)\n", flags);
     params.retain_any_comps = (flags & OVERPRINT_ANY_COMPS) != 0;
     params.retain_spot_comps = (flags & OVERPRINT_SPOT_COMPS) != 0;
     params.idle = 0;

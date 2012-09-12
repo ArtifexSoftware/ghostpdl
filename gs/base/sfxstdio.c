@@ -66,7 +66,7 @@ sread_file(register stream * s, FILE * file, byte * buf, uint len)
         clearerr(file);
     s_std_init(s, buf, len, &p,
                (seekable ? s_mode_read + s_mode_seek : s_mode_read));
-    if_debug1('s', "[s]read file=0x%lx\n", (ulong) file);
+    if_debug1m('s', s->memory, "[s]read file=0x%lx\n", (ulong) file);
     s->file = file;
     s->file_modes = s->modes;
     s->file_offset = 0;
@@ -189,7 +189,7 @@ swrite_file(register stream * s, FILE * file, byte * buf, uint len)
 
     s_std_init(s, buf, len, &p,
                (file == stdout ? s_mode_write : s_mode_write + s_mode_seek));
-    if_debug1('s', "[s]write file=0x%lx\n", (ulong) file);
+    if_debug1m('s', s->memory, "[s]write file=0x%lx\n", (ulong) file);
     s->file = file;
     s->file_modes = s->modes;
     s->file_offset = 0;		/* in case we switch to reading later */
@@ -277,8 +277,8 @@ s_file_switch(stream * s, bool writing)
         if (!(s->file_modes & s_mode_write))
             return ERRC;
         pos = stell(s);
-        if_debug2('s', "[s]switch 0x%lx to write at %ld\n",
-                  (ulong) s, pos);
+        if_debug2m('s', s->memory, "[s]switch 0x%lx to write at %ld\n",
+                   (ulong) s, pos);
         fseek(file, pos, SEEK_SET);
         if (modes & s_mode_append) {
             sappend_file(s, file, s->cbuf, s->cbsize);	/* sets position */
@@ -291,8 +291,8 @@ s_file_switch(stream * s, bool writing)
         if (!(s->file_modes & s_mode_read))
             return ERRC;
         pos = stell(s);
-        if_debug2('s', "[s]switch 0x%lx to read at %ld\n",
-                  (ulong) s, pos);
+        if_debug2m('s', s->memory, "[s]switch 0x%lx to read at %ld\n",
+                   (ulong) s, pos);
         if (sflush(s) < 0)
             return ERRC;
         fseek(file, 0L, SEEK_CUR);	/* pacify C library */

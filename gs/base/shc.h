@@ -105,7 +105,7 @@ typedef struct hce_table_s {
  * that q does not exceed pw->limit.
  */
 
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
 #  define hc_print_value(code, clen)\
     (gs_debug_c('W') ?\
      (dlprintf2("[W]0x%x,%d\n", code, clen), 0) : 0)

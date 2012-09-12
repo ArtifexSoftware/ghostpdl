@@ -29,10 +29,10 @@ static void
 pcl_dump_current_macro(pcl_state_t *pcs, const char *msg)
 {
     int i;
-    dputs(msg); dputs(" ");
+    dmputs(pcs->memory, msg); dmputs(pcs->memory, " ");
     for (i=0; i < current_macro_id_size; i++)
-        dprintf1("%02x", current_macro_id[i]);
-    dputs("\n");
+        dmprintf1(pcs->memory, "%02x", current_macro_id[i]);
+    dmputs(pcs->memory, "\n");
     return;
 }
 #endif

@@ -369,14 +369,14 @@ static void
 cmap_separation_capture_cmyk_color(frac all, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
-    dprintf("cmap_separation_capture_cmyk_color - this routine should not be executed\n");
+    dmprintf(pis->memory, "cmap_separation_capture_cmyk_color - this routine should not be executed\n");
 }
 
 static void
 cmap_devicen_capture_cmyk_color(const frac * pcc, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
-    dprintf("cmap_devicen_capture_cmyk_color - this routine should not be executed\n");
+    dmprintf(pis->memory, "cmap_devicen_capture_cmyk_color - this routine should not be executed\n");
 }
 
 /*

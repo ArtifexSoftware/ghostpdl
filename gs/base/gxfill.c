@@ -155,42 +155,42 @@ gs_private_st_simple(st_active_line, active_line, "active_line");
 #ifdef DEBUG
 /* Internal procedures for printing and checking active lines. */
 static void
-print_active_line(const char *label, const active_line * alp)
+print_active_line(const gs_memory_t *mem, const char *label, const active_line * alp)
 {
-    dlprintf5("[f]%s 0x%lx(%d): x_current=%f x_next=%f\n",
-              label, (ulong) alp, alp->direction,
-              fixed2float(alp->x_current), fixed2float(alp->x_next));
-    dlprintf5("    start=(%f,%f) pt_end=0x%lx(%f,%f)\n",
-              fixed2float(alp->start.x), fixed2float(alp->start.y),
-              (ulong) alp->pseg,
-              fixed2float(alp->end.x), fixed2float(alp->end.y));
-    dlprintf2("    prev=0x%lx next=0x%lx\n",
-              (ulong) alp->prev, (ulong) alp->next);
+    dmlprintf5(mem, "[f]%s 0x%lx(%d): x_current=%f x_next=%f\n",
+               label, (ulong) alp, alp->direction,
+               fixed2float(alp->x_current), fixed2float(alp->x_next));
+    dmlprintf5(mem, "    start=(%f,%f) pt_end=0x%lx(%f,%f)\n",
+               fixed2float(alp->start.x), fixed2float(alp->start.y),
+               (ulong) alp->pseg,
+               fixed2float(alp->end.x), fixed2float(alp->end.y));
+    dmlprintf2(mem, "    prev=0x%lx next=0x%lx\n",
+               (ulong) alp->prev, (ulong) alp->next);
 }
 static void
-print_line_list(const active_line * flp)
+print_line_list(const gs_memory_t *mem, const active_line * flp)
 {
     const active_line *lp;
 
     for (lp = flp; lp != 0; lp = lp->next) {
         fixed xc = lp->x_current, xn = lp->x_next;
 
-        dlprintf3("[f]0x%lx(%d): x_current/next=%g",
+        dmlprintf3(mem, "[f]0x%lx(%d): x_current/next=%g",
                   (ulong) lp, lp->direction,
                   fixed2float(xc));
         if (xn != xc)
-            dprintf1("/%g", fixed2float(xn));
-        dputc('\n');
+            dmprintf1(mem, "/%g", fixed2float(xn));
+        dmputc(mem, '\n');
     }
 }
 static inline void
-print_al(const char *label, const active_line * alp)
+print_al(const gs_memory_t *mem, const char *label, const active_line * alp)
 {
     if (gs_debug_c('F'))
-        print_active_line(label, alp);
+        print_active_line(mem, label, alp);
 }
 #else
-#define print_al(label,alp) DO_NOTHING
+#define print_al(mem,label,alp) DO_NOTHING
 #endif
 
 static inline bool
@@ -337,10 +337,10 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
             vd_bar(x0, k, x1, k, 1, RGB(128, 128, 128));
     }
     /* Check the bounding boxes. */
-    if_debug6('f', "[f]adjust=%g,%g bbox=(%g,%g),(%g,%g)\n",
-              fixed2float(adjust.x), fixed2float(adjust.y),
-              fixed2float(ibox.p.x), fixed2float(ibox.p.y),
-              fixed2float(ibox.q.x), fixed2float(ibox.q.y));
+    if_debug6m('f', pdev->memory, "[f]adjust=%g,%g bbox=(%g,%g),(%g,%g)\n",
+               fixed2float(adjust.x), fixed2float(adjust.y),
+               fixed2float(ibox.p.x), fixed2float(ibox.p.y),
+               fixed2float(ibox.q.x), fixed2float(ibox.q.y));
     if (pcpath)
         gx_cpath_inner_box(pcpath, &bbox);
     else
@@ -352,9 +352,9 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
          */
         if (pcpath)
             gx_cpath_outer_box(pcpath, &bbox);
-        if_debug4('f', "   outer_box=(%g,%g),(%g,%g)\n",
-                  fixed2float(bbox.p.x), fixed2float(bbox.p.y),
-                  fixed2float(bbox.q.x), fixed2float(bbox.q.y));
+        if_debug4m('f', pdev->memory, "   outer_box=(%g,%g),(%g,%g)\n",
+                   fixed2float(bbox.p.x), fixed2float(bbox.p.y),
+                   fixed2float(bbox.q.x), fixed2float(bbox.q.y));
         rect_intersect(ibox, bbox);
         if (ibox.p.x - adjust.x >= ibox.q.x + adjust.x ||
             ibox.p.y - adjust.y >= ibox.q.y + adjust.y
@@ -522,23 +522,25 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
         gx_path_free(pfpath, "gx_general_fill_path");
 #ifdef DEBUG
     if (gs_debug_c('f')) {
-        dlputs("[f]  # alloc    up  down horiz step slowx  iter  find  band bstep bfill\n");
-        dlprintf5(" %5ld %5ld %5ld %5ld %5ld",
-                  stats_fill.fill, stats_fill.fill_alloc,
-                  stats_fill.y_up, stats_fill.y_down,
-                  stats_fill.horiz);
-        dlprintf4(" %5ld %5ld %5ld %5ld",
-                  stats_fill.x_step, stats_fill.slow_x,
-                  stats_fill.iter, stats_fill.find_y);
-        dlprintf3(" %5ld %5ld %5ld\n",
-                  stats_fill.band, stats_fill.band_step,
-                  stats_fill.band_fill);
-        dlputs("[f]    afill slant shall sfill mqcrs order slowo\n");
-        dlprintf7("       %5ld %5ld %5ld %5ld %5ld %5ld %5ld\n",
-                  stats_fill.afill, stats_fill.slant,
-                  stats_fill.slant_shallow, stats_fill.sfill,
-                  stats_fill.mq_cross, stats_fill.order,
-                  stats_fill.slow_order);
+        dmlputs(ppath->memory,
+                "[f]  # alloc    up  down horiz step slowx  iter  find  band bstep bfill\n");
+        dmlprintf5(ppath->memory, " %5ld %5ld %5ld %5ld %5ld",
+                   stats_fill.fill, stats_fill.fill_alloc,
+                   stats_fill.y_up, stats_fill.y_down,
+                   stats_fill.horiz);
+        dmlprintf4(ppath->memory, " %5ld %5ld %5ld %5ld",
+                   stats_fill.x_step, stats_fill.slow_x,
+                   stats_fill.iter, stats_fill.find_y);
+        dmlprintf3(ppath->memory, " %5ld %5ld %5ld\n",
+                   stats_fill.band, stats_fill.band_step,
+                   stats_fill.band_fill);
+        dmlputs(ppath->memory,
+                "[f]    afill slant shall sfill mqcrs order slowo\n");
+        dmlprintf7(ppath->memory, "       %5ld %5ld %5ld %5ld %5ld %5ld %5ld\n",
+                   stats_fill.afill, stats_fill.slant,
+                   stats_fill.slant_shallow, stats_fill.sfill,
+                   stats_fill.mq_cross, stats_fill.order,
+                   stats_fill.slow_order);
     }
 #endif
     return code;
@@ -747,7 +749,7 @@ insert_y_line(line_list *ll, active_line *alp)
     }
     ll->y_line = alp;
     vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(0, 255, 0));
-    print_al("add ", alp);
+    print_al(ll->memory, "add ", alp);
 }
 
 typedef struct contour_cursor_s {
@@ -1299,7 +1301,7 @@ remove_al(const line_list *ll, active_line *alp)
     alp->prev->next = nlp;
     if (nlp)
         nlp->prev = alp->prev;
-    if_debug1('F', "[F]drop 0x%lx\n", (ulong) alp);
+    if_debug1m('F', ll->memory, "[F]drop 0x%lx\n", (ulong) alp);
 }
 
 /*
@@ -1353,7 +1355,7 @@ end_x_line(active_line *alp, const line_list *ll, bool update)
     }
     alp->x_current = alp->x_next = alp->start.x;
     vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(128, 0, 128));
-    print_al("repl", alp);
+    print_al(ll->memory, "repl", alp);
     return false;
 }
 
@@ -1601,7 +1603,7 @@ resort_x_line(active_line * alp)
         next->prev = prev;
     while (x_order(prev, alp) > 0) {
         if_debug2('F', "[F]swap 0x%lx,0x%lx\n",
-                  (ulong) alp, (ulong) prev);
+                   (ulong) alp, (ulong) prev);
         next = prev, prev = prev->prev;
     }
     alp->next = next;
@@ -1959,8 +1961,8 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
     }
 #ifdef DEBUG
     if (gs_debug_c('F')) {
-        dlprintf1("[F]after loop: y1=%f\n", fixed2float(y1));
-        print_line_list(ll->x_list);
+        dmlprintf1(ll->memory, "[F]after loop: y1=%f\n", fixed2float(y1));
+        print_line_list(ll->memory, ll->x_list);
     }
 #endif
     *y_top = y1;

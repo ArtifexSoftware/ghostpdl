@@ -192,11 +192,11 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     }
 
 #define mat inst.step_matrix
-    if_debug6('t', "[t]step_matrix=[%g %g %g %g %g %g]\n",
-              inst.step_matrix.xx, inst.step_matrix.xy, inst.step_matrix.yx,
-              inst.step_matrix.yy, inst.step_matrix.tx, inst.step_matrix.ty);
-    if_debug5('t', "[t]bbox=(%g,%g),(%g,%g), uses_transparency=%d\n",
-              bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y, inst.templat.uses_transparency);
+    if_debug6m('t', mem, "[t]step_matrix=[%g %g %g %g %g %g]\n",
+               inst.step_matrix.xx, inst.step_matrix.xy, inst.step_matrix.yx,
+               inst.step_matrix.yy, inst.step_matrix.tx, inst.step_matrix.ty);
+    if_debug5m('t', mem, "[t]bbox=(%g,%g),(%g,%g), uses_transparency=%d\n",
+               bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y, inst.templat.uses_transparency);
     {
         float bbw = bbox.q.x - bbox.p.x;
         float bbh = bbox.q.y - bbox.p.y;
@@ -242,11 +242,11 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                     gs_scale(saved, (fabs(inst.size.x) - 1.0 / fixed_scale) / fabs(inst.size.x),
                                     (fabs(inst.size.y) - 1.0 / fixed_scale) / fabs(inst.size.y));
                 }
-                if_debug2('t',
-                          "[t]adjusted XStep & YStep to size=(%d,%d)\n",
-                          inst.size.x, inst.size.y);
-                if_debug4('t', "[t]bbox=(%g,%g),(%g,%g)\n",
-                          bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
+                if_debug2m('t', mem,
+                           "[t]adjusted XStep & YStep to size=(%d,%d)\n",
+                           inst.size.x, inst.size.y);
+                if_debug4m('t', mem, "[t]bbox=(%g,%g),(%g,%g)\n",
+                           bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
             } else if ((ADJUST_AS_ADOBE) && (inst.templat.TilingType != 2)) {
                 if (inst.step_matrix.xy == 0 && inst.step_matrix.yx == 0 &&
                     fabs(fabs(inst.step_matrix.xx) - bbw) < 0.5 &&
@@ -330,15 +330,15 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     }
     if ((code = gs_bbox_transform_inverse(&bbox, &inst.step_matrix, &inst.bbox)) < 0)
         goto fsaved;
-    if_debug4('t', "[t]ibbox=(%g,%g),(%g,%g)\n",
-              inst.bbox.p.x, inst.bbox.p.y, inst.bbox.q.x, inst.bbox.q.y);
+    if_debug4m('t', mem, "[t]ibbox=(%g,%g),(%g,%g)\n",
+               inst.bbox.p.x, inst.bbox.p.y, inst.bbox.q.x, inst.bbox.q.y);
     inst.is_simple = (fabs(inst.step_matrix.xx) == inst.size.x && inst.step_matrix.xy == 0 &&
                       inst.step_matrix.yx == 0 && fabs(inst.step_matrix.yy) == inst.size.y);
-    if_debug6('t',
-              "[t]is_simple? xstep=(%g,%g) ystep=(%g,%g) size=(%d,%d)\n",
-              inst.step_matrix.xx, inst.step_matrix.xy,
-              inst.step_matrix.yx, inst.step_matrix.yy,
-              inst.size.x, inst.size.y);
+    if_debug6m('t', mem,
+               "[t]is_simple? xstep=(%g,%g) ystep=(%g,%g) size=(%d,%d)\n",
+               inst.step_matrix.xx, inst.step_matrix.xy,
+               inst.step_matrix.yx, inst.step_matrix.yy,
+               inst.size.x, inst.size.y);
     /* Absent other information, instances always require a mask. */
     inst.uses_mask = true;
     inst.is_clist = false;      /* automatically set clist (don't force use) */

@@ -562,12 +562,12 @@ test_IE(void)
         w.limit = w.ptr + sizeof(out);
         memset(table, 0xcc, sizeof(table));
         memset(out, 0xff, sizeof(out));
-        dprintf1("processing %d bytes\n", n);
+        dmprintf1(ss->memory, "processing %d bytes\n", n);
         status = templat->process(ss, &r, &w, true);
-        dprintf3("%d bytes read, %d bytes written, status = %d\n",
+        dmprintf3(ss->memory, "%d bytes read, %d bytes written, status = %d\n",
                  (int)(r.ptr + 1 - in), (int)(w.ptr + 1 - out), status);
-        debug_dump_bytes(table, table + sizeof(table), "table");
-        debug_dump_bytes(out, w.ptr + 1, "out");
+        debug_dump_bytes(ss->memory, table, table + sizeof(table), "table");
+        debug_dump_bytes(ss->memory, out, w.ptr + 1, "out");
     }
 }
 
@@ -627,8 +627,9 @@ s_Subsample_process(stream_state * st, stream_cursor_read * pr,
     int x = ss->x, y = ss->y;
     int status = 0;
 
-    if_debug4('w', "[w]subsample: x=%d, y=%d, rcount=%ld, wcount=%ld\n",
-              x, y, (long)(rlimit - p), (long)(wlimit - q));
+    if_debug4m('w', st->memory,
+               "[w]subsample: x=%d, y=%d, rcount=%ld, wcount=%ld\n",
+               x, y, (long)(rlimit - p), (long)(wlimit - q));
     for (; rlimit - p >= spp; p += spp) {
         if (((y % yf == yf2 && y < ylimit) || y == ylast) &&
             ((x % xf == xf2 && x < xlimit) || x == xlast)
@@ -643,9 +644,9 @@ s_Subsample_process(stream_state * st, stream_cursor_read * pr,
         if (++x == width)
             x = 0, ++y;
     }
-    if_debug5('w',
-              "[w]subsample: x'=%d, y'=%d, read %ld, wrote %ld, status = %d\n",
-              x, y, (long)(p - pr->ptr), (long)(q - pw->ptr), status);
+    if_debug5m('w', st->memory,
+               "[w]subsample: x'=%d, y'=%d, read %ld, wrote %ld, status = %d\n",
+               x, y, (long)(p - pr->ptr), (long)(q - pw->ptr), status);
     pr->ptr = p;
     pw->ptr = q;
     ss->x = x, ss->y = y;

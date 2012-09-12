@@ -120,11 +120,11 @@ gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
 
             if (pair->font == 0) {
                 pair->font = pfont;
-                if_debug2('k', "[k]updating pair 0x%lx with font 0x%lx\n",
-                          (ulong) pair, (ulong) pfont);
+                if_debug2m('k', pfont->memory, "[k]updating pair 0x%lx with font 0x%lx\n",
+                           (ulong) pair, (ulong) pfont);
             } else {
-                if_debug2('k', "[k]found pair 0x%lx: font=0x%lx\n",
-                          (ulong) pair, (ulong) pair->font);
+                if_debug2m('k', pfont->memory, "[k]found pair 0x%lx: font=0x%lx\n",
+                           (ulong) pair, (ulong) pair->font);
             }
             code = gx_touch_fm_pair(dir, pair);
             if (code < 0)
@@ -157,13 +157,14 @@ gx_lookup_cached_char(const gs_font * pfont, const cached_fm_pair * pair,
             cc->subpix_origin.y == subpix_origin->y &&
             cc->wmode == wmode && cc_depth(cc) == depth
             ) {
-            if_debug4('K', "[K]found 0x%lx (depth=%d) for glyph=0x%lx, wmode=%d\n",
-                      (ulong) cc, cc_depth(cc), (ulong) glyph, wmode);
+            if_debug4m('K', pfont->memory,
+                       "[K]found 0x%lx (depth=%d) for glyph=0x%lx, wmode=%d\n",
+                       (ulong) cc, cc_depth(cc), (ulong) glyph, wmode);
             return cc;
         }
         chi++;
     }
-    if_debug3('K', "[K]not found: glyph=0x%lx, wmode=%d, depth=%d\n",
+    if_debug3m('K', pfont->memory, "[K]not found: glyph=0x%lx, wmode=%d, depth=%d\n",
               (ulong) glyph, wmode, depth);
     return 0;
 }
@@ -206,16 +207,16 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 #ifdef DEBUG
     if (gs_debug_c('K')) {
         if (cc_has_bits(cc))
-            debug_dump_bitmap(cc_bits(cc), cc_raster(cc), h,
+            debug_dump_bitmap(penum->memory, cc_bits(cc), cc_raster(cc), h,
                               "[K]bits");
         else
-            dputs("[K]no bits\n");
-        dlprintf3("[K]copying 0x%lx, offset=(%g,%g)\n", (ulong) cc,
-                  fixed2float(-cc->offset.x),
-                  fixed2float(-cc->offset.y));
-        dlprintf6("   at (%g,%g)+(%d,%d)->(%d,%d)\n",
-                  fixed2float(pt.x), fixed2float(pt.y),
-                  penum->ftx, penum->fty, x, y);
+            dmputs(penum->memory, "[K]no bits\n");
+        dmlprintf3(penum->memory, "[K]copying 0x%lx, offset=(%g,%g)\n", (ulong) cc,
+                   fixed2float(-cc->offset.x),
+                   fixed2float(-cc->offset.y));
+        dmlprintf6(penum->memory, "   at (%g,%g)+(%d,%d)->(%d,%d)\n",
+                   fixed2float(pt.x), fixed2float(pt.y),
+                   penum->ftx, penum->fty, x, y);
     }
 #endif
     if ((x < penum->ibox.p.x || x + w > penum->ibox.q.x ||
@@ -234,7 +235,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
             return code;
         gx_make_clip_device_on_stack(&cdev, pcpath, imaging_dev);
         imaging_dev = (gx_device *) & cdev;
-        if_debug0('K', "[K](clipping)\n");
+        if_debug0m('K', penum->memory, "[K](clipping)\n");
     }
     code = gx_set_dev_color(pgs);
     if (code != 0)
@@ -254,10 +255,11 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
             code = (*xf->common.procs->render_char) (xf, xg,
                                         imaging_dev, cx, cy,
                                         pdevc->colors.pure, 0);
-            if_debug8('K', "[K]render_char display: xfont=0x%lx, glyph=0x%lx\n\tdev=0x%lx(%s) x,y=%d,%d, color=0x%lx => %d\n",
-                      (ulong) xf, (ulong) xg, (ulong) imaging_dev,
-                      imaging_dev->dname, cx, cy,
-                      (ulong) pdevc->colors.pure, code);
+            if_debug8m('K', penum->memory,
+                       "[K]render_char display: xfont=0x%lx, glyph=0x%lx\n\tdev=0x%lx(%s) x,y=%d,%d, color=0x%lx => %d\n",
+                       (ulong) xf, (ulong) xg, (ulong) imaging_dev,
+                       imaging_dev->dname, cx, cy,
+                       (ulong) pdevc->colors.pure, code);
             if (code == 0)
                 return_check_interrupt(penum->memory, 0);
         }
@@ -271,7 +273,8 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
             code = (*xf->common.procs->render_char) (xf, xg,
                                        (gx_device *) & mdev, cx - x, cy - y,
                                                      (gx_color_index) 1, 1);
-            if_debug7('K', "[K]render_char to bits: xfont=0x%lx, glyph=0x%lx\n\tdev=0x%lx(%s) x,y=%d,%d => %d\n",
+            if_debug7m('K', penum->memory,
+                       "[K]render_char to bits: xfont=0x%lx, glyph=0x%lx\n\tdev=0x%lx(%s) x,y=%d,%d => %d\n",
                       (ulong) xf, (ulong) xg, (ulong) & mdev,
                       mdev.dname, cx - x, cy - y, code);
             if (code != 0)

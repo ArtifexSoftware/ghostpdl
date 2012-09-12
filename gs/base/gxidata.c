@@ -121,7 +121,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
         }
 #ifdef DEBUG
         if (gs_debug_c('b'))
-            dprintf1("[b]image1 y=%d\n", y);
+            dmprintf1(dev->memory, "[b]image1 y=%d\n", y);
         if (gs_debug_c('B')) {
             int i, n = width_spp;
 
@@ -129,10 +129,10 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
                 n *= 2;
             else if (penum->bps == 1 && penum->unpack_bps == 8)
                 n = (n + 7) / 8;
-            dlputs("[B]row:");
+            dmlputs(dev->memory, "[B]row:");
             for (i = 0; i < n; i++)
-                dprintf1(" %02x", buffer[i]);
-            dputs("\n");
+                dmprintf1(dev->memory, " %02x", buffer[i]);
+            dmputs(dev->memory, "\n");
         }
 #endif
         penum->cur.x = dda_current(penum->dda.row.x);
@@ -163,8 +163,8 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
                         penum->hci = fixed2int_pixround_perfect(yn) - penum->yci;
                         if (penum->hci == 0)
                             goto mt;
-                        if_debug2('b', "[b]yci=%d, hci=%d\n",
-                                  penum->yci, penum->hci);
+                        if_debug2m('b', penum->memory, "[b]yci=%d, hci=%d\n",
+                                   penum->yci, penum->hci);
                     }
                     break;
                 case image_landscape:
@@ -188,8 +188,8 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
                         penum->wci = fixed2int_pixround_perfect(xn) - penum->xci;
                         if (penum->wci == 0)
                             goto mt;
-                        if_debug2('b', "[b]xci=%d, wci=%d\n",
-                                  penum->xci, penum->wci);
+                        if_debug2m('b', penum->memory, "[b]xci=%d, wci=%d\n",
+                                   penum->xci, penum->wci);
                     }
                     break;
                 case image_skewed:
@@ -205,9 +205,9 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
             dda_advance(penum->dda.pixel0.y, x_used);
             penum->used.x = 0;
         }
-        if_debug2('b', "[b]pixel0 x=%g, y=%g\n",
-                  fixed2float(dda_current(penum->dda.pixel0.x)),
-                  fixed2float(dda_current(penum->dda.pixel0.y)));
+        if_debug2m('b', penum->memory, "[b]pixel0 x=%g, y=%g\n",
+                   fixed2float(dda_current(penum->dda.pixel0.x)),
+                   fixed2float(dda_current(penum->dda.pixel0.y)));
         code = (*penum->render)(penum, buffer, sourcex + x_used,
                                 width_spp - x_used * penum->spp, 1, dev);
         if (code < 0) {
@@ -442,8 +442,8 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
     gs_memory_t *mem = penum->memory;
     stream_image_scale_state *scaler = penum->scaler;
 
-    if_debug2('b', "[b]%send_image, y=%d\n",
-              (penum->y < penum->rect.h ? "premature " : ""), penum->y);
+    if_debug2m('b', penum->memory, "[b]%send_image, y=%d\n",
+               (penum->y < penum->rect.h ? "premature " : ""), penum->y);
     if (draw_last) {
         int code = gx_image_flush(info);
 

@@ -76,7 +76,7 @@ z_jpx_decode(i_ctx_t * i_ctx_p)
                 /* use the name directly */
                 csname = sop;
             } else {
-                dprintf("warning: JPX ColorSpace value is an unhandled type!\n");
+                dmprintf(imemory, "warning: JPX ColorSpace value is an unhandled type!\n");
             }
             if (csname != NULL) {
                 ref sref;
@@ -114,8 +114,8 @@ z_jpx_decode(i_ctx_t * i_ctx_p)
                         /* else guess based on the number of components */
                         if (state.colorspace == gs_jpx_cs_unset &&
                                 dict_find_string(csdict, "N", &nref) > 0) {
-                          if_debug1('w', "[w] JPX image has an external %d"
-                                   " channel colorspace\n", nref->value.intval);
+                          if_debug1m('w', imemory, "[w] JPX image has an external %d"
+                                     " channel colorspace\n", nref->value.intval);
                           switch (nref->value.intval) {
                             case 1: state.colorspace = gs_jpx_cs_gray;
                                 break;
@@ -128,7 +128,7 @@ z_jpx_decode(i_ctx_t * i_ctx_p)
                     }
                 }
             } else {
-                if_debug0('w', "[w] Couldn't read JPX ColorSpace key!\n");
+                if_debug0m('w', imemory, "[w] Couldn't read JPX ColorSpace key!\n");
             }
         }
     }

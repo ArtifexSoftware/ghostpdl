@@ -210,8 +210,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 *++csp = arith_rshift(lw, 16 - _fixed_shift);
             } else		/* not possible */
                 return_error(gs_error_invalidfont);
-          pushed:if_debug3('1', "[1]%d: (%d) %f\n",
-                      (int)(csp - cstack), c, fixed2float(*csp));
+          pushed:if_debug3m('1', pfont->memory, "[1]%d: (%d) %f\n",
+                            (int)(csp - cstack), c, fixed2float(*csp));
             continue;
         }
 #ifdef DEBUG
@@ -220,10 +220,11 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
             {char2_command_names};
 
             if (c2names[c] == 0)
-                dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+                dmlprintf2(pfont->memory, "[1]0x%lx: %02x??\n",
+                           (ulong) (cip - 1), c);
             else
-                dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
-                          c2names[c]);
+                dmlprintf3(pfont->memory, "[1]0x%lx: %02x %s\n",
+                           (ulong) (cip - 1), c, c2names[c]);
         }
 #endif
         switch ((char_command) c) {
@@ -464,16 +465,16 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 
                     for (i = 0; i < pcis->num_hints; ++cip, i += 8) {
                         charstring_next(*cip, state, mask[i >> 3], encrypted);
-                        if_debug1('1', " 0x%02x", mask[i >> 3]);
+                        if_debug1m('1', pfont->memory, " 0x%02x", mask[i >> 3]);
                     }
-                    if_debug0('1', "\n");
+                    if_debug0m('1', pfont->memory, "\n");
                     ipsp->ip = cip;
                     ipsp->dstate = state;
                     if (c == c2_cntrmask) {
                         /****** NYI ******/
                     } else {	/* hintmask or equivalent */
-                        if_debug0('1', "[1]hstem hints:\n");
-                        if_debug0('1', "[1]vstem hints:\n");
+                        if_debug0m('1', pfont->memory, "[1]hstem hints:\n");
+                        if_debug0m('1', pfont->memory, "[1]vstem hints:\n");
                         code = t1_hinter__hint_mask(h, mask);
                         if (code < 0)
                             return code;
@@ -558,10 +559,11 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     {char2_extended_command_names};
 
                     if (ce2names[c] == 0)
-                        dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+                        dmlprintf2(pfont->memory, "[1]0x%lx: %02x??\n",
+                                   (ulong) (cip - 1), c);
                     else
-                        dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
-                                  ce2names[c]);
+                        dmlprintf3(pfont->memory, "[1]0x%lx: %02x %s\n",
+                                   (ulong) (cip - 1), c, ce2names[c]);
                 }
 #endif
                 switch ((char2_extended_command) c) {

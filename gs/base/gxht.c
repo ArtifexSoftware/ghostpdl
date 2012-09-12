@@ -793,12 +793,12 @@ render_ht(gx_ht_tile * pbt, int level /* [1..num_bits-1] */ ,
         const byte *ptr = p + wb * pbt->tiles.size.y;
 
         while (p < ptr) {
-            dprintf8(" %d%d%d%d%d%d%d%d",
-                     *p >> 7, (*p >> 6) & 1, (*p >> 5) & 1,
-                     (*p >> 4) & 1, (*p >> 3) & 1, (*p >> 2) & 1,
-                     (*p >> 1) & 1, *p & 1);
+            dmprintf8(porder->data_memory, " %d%d%d%d%d%d%d%d",
+                      *p >> 7, (*p >> 6) & 1, (*p >> 5) & 1,
+                      (*p >> 4) & 1, (*p >> 3) & 1, (*p >> 2) & 1,
+                      (*p >> 1) & 1, *p & 1);
             if ((++p - data) % wb == 0)
-                dputc('\n');
+                dmputc(porder->data_memory, '\n');
         }
     }
 #endif

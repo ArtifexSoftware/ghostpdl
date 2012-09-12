@@ -63,7 +63,7 @@ lzw_put_code(register stream_LZW_state *ss, byte *q, uint code)
 {	uint size = ss->code_size;
         byte cb = (ss->bits << ss->bits_left) +
                 (code >> (size - ss->bits_left));
-        if_debug2('W', "[w]writing 0x%x,%d\n", code, ss->code_size);
+        if_debug2m('W', ss->memory, "[w]writing 0x%x,%d\n", code, ss->code_size);
         *++q = cb;
         if ( (ss->bits_left += 8 - size) <= 0 )
         {	*++q = code >> -ss->bits_left;
@@ -168,7 +168,7 @@ s_LZWE_process(stream_state *st, stream_cursor_read *pr,
                                         ss->code_size++;
                                         set_limit_code();
                                 }
-                                if_debug3('W', "[W]encoding 0x%x=0x%x+%c\n",
+                                if_debug3m('W', ss->memory, "[W]encoding 0x%x=0x%x+%c\n",
                                           ss->next_code, code, c);
                                 *tp = ss->next_code++;
                                 ep = &table->encode[*tp];

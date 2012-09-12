@@ -65,23 +65,25 @@ static const char * const score_name[] = {
 };
 
 static void
-dprint_cc(const byte *pcc)
-{	dprintf8("cc=%02x %02x %02x %02x %02x %02x %02x %02x", pcc[0],
-                 pcc[1], pcc[2], pcc[3], pcc[4], pcc[5], pcc[6], pcc[7]);
+dmprint_cc(const gs_memory_t *mem, const byte *pcc)
+{
+    dmprintf8(mem, "cc=%02x %02x %02x %02x %02x %02x %02x %02x", pcc[0],
+              pcc[1], pcc[2], pcc[3], pcc[4], pcc[5], pcc[6], pcc[7]);
 }
 void
-dprint_font_params_t(const pl_font_params_t *pfp)
-{	dprintf8("symset=%u %s pitch=%g ht=%u style=%u wt=%d face=%u:%u\n",
-                 pfp->symbol_set,
-                 (pfp->proportional_spacing ? "prop." : "fixed"),
-                 pl_fp_pitch_cp(pfp) / 100.0, pfp->height_4ths / 4, pfp->style,
-                 pfp->stroke_weight, pfp->typeface_family, (0x07FF &pfp->typeface_family) );
+dmprint_font_params_t(const gs_memory_t *mem, const pl_font_params_t *pfp)
+{
+    dmprintf8(mem, "symset=%u %s pitch=%g ht=%u style=%u wt=%d face=%u:%u\n",
+              pfp->symbol_set,
+              (pfp->proportional_spacing ? "prop." : "fixed"),
+              pl_fp_pitch_cp(pfp) / 100.0, pfp->height_4ths / 4, pfp->style,
+              pfp->stroke_weight, pfp->typeface_family, (0x07FF &pfp->typeface_family) );
 }
 
 #include "plftable.h"
 
 static void
-dprint_font_name(const pl_font_t *pfont)
+dmprint_font_name(const gs_memory_t *mem, const pl_font_t *pfont)
 {
     int i;
     bool found = false;
@@ -95,49 +97,49 @@ dprint_font_name(const pl_font_t *pfont)
         }
     }
     if (found) {
-        dprintf1("%s ", resident_table[i].full_font_name);
+        dmprintf1(mem, "%s ", resident_table[i].full_font_name);
     } else {
         if (pfont->storage == pcds_internal) {
-            dprintf("internal font not found in resident table");
-            dprintf1("%s\n", pfont->font_file);
+            dmprintf(mem, "internal font not found in resident table");
+            dmprintf1(mem, "%s\n", pfont->font_file);
         }
-        dprintf("external font ");
+        dmprintf(mem, "external font ");
     }
 }
 
 static void
-dprint_font_t(const pl_font_t *pfont)
+dmprint_font_t(const gs_memory_t *mem, const pl_font_t *pfont)
 {
-    dprint_font_name(pfont);
-    dprintf3("storage=%d scaling=%d type=%d ",
-             pfont->storage, pfont->scaling_technology, pfont->font_type);
-    dprint_cc(pfont->character_complement);
-    dputs(";\n   ");
-    dprint_font_params_t(&pfont->params);
+    dmprint_font_name(mem, pfont);
+    dmprintf3(mem, "storage=%d scaling=%d type=%d ",
+              pfont->storage, pfont->scaling_technology, pfont->font_type);
+    dmprint_cc(mem, pfont->character_complement);
+    dmputs(mem, ";\n   ");
+    dmprint_font_params_t(mem, &pfont->params);
 }
 
 static void
-dprint_font_map(const pl_symbol_map_t *pmap)
+dmprint_font_map(const gs_memory_t *mem, const pl_symbol_map_t *pmap)
 {
     if (pmap != 0)
-        dprintf3("selected symbol set id:%d type:%d format:%s\n", pl_get_uint16(pmap->id),
-                 pmap->type, (pmap->format == 1 ? "MSL" : "Unicode"));
+        dmprintf3(mem, "selected symbol set id:%d type:%d format:%s\n", pl_get_uint16(pmap->id),
+                  pmap->type, (pmap->format == 1 ? "MSL" : "Unicode"));
     else
-        dprintf("selected symbol set NULL\n");
+        dmprintf(mem, "selected symbol set NULL\n");
 
 }
 
 static void
-dprintf_font_scoring(const char *type, const pl_font_t *pfont, pl_symbol_map_t *pmap, match_score_t score)
+dmprintf_font_scoring(const gs_memory_t *mem, const char *type, const pl_font_t *pfont, pl_symbol_map_t *pmap, match_score_t score)
 {
     int i;
-    dprintf1("%s: ", type);
-    dprint_font_t(pfont);
-    dprint_font_map(pmap);
-    dputs("   score:");
+    dmprintf1(mem, "%s: ", type);
+    dmprint_font_t(mem, pfont);
+    dmprint_font_map(mem, pmap);
+    dmputs(mem, "   score:");
     for ( i = 0; i < score_limit; ++i )
-        dprintf2(" %s: %d", score_name[i], score[i]);
-    dputs("\n");
+        dmprintf2(mem, " %s: %d", score_name[i], score[i]);
+    dmputs(mem, "\n");
 }
 
 #endif
@@ -359,7 +361,7 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 
 #ifdef DEBUG
         if ( gs_debug_c('=') )
-            dprintf_font_scoring("candidate", fp, *mapp, score);
+            dmprintf_font_scoring(pcs->memory, "candidate", fp, *mapp, score);
 #endif
 
 }
@@ -380,8 +382,8 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs, bool intern
 
 #ifdef DEBUG
             if ( gs_debug_c('=') )
-              { dputs("[=]request: ");
-                dprint_font_params_t(&pfs->params);
+              { dmputs(pcs->memory, "[=]request: ");
+                dmprint_font_params_t(pcs->memory, &pfs->params);
               }
 #endif
             /* if the font table is set up to select character by id
@@ -415,7 +417,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs, bool intern
 #ifdef DEBUG
                 if ( gs_debug_c('=') ) {
                     if (best_match[0] != -1) /* skip sentinel */
-                        dprintf_font_scoring("best", best_font, mapp, best_match);
+                        dmprintf_font_scoring(pcs->memory, "best", best_font, mapp, best_match);
                 }
 #endif
                 for (i=(score_index_t)0; i<score_limit; i++)
@@ -429,8 +431,8 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs, bool intern
                               sizeof(match));
 #ifdef DEBUG
                           if ( gs_debug_c('=') ) {
-                              dprintf_font_scoring("usurper", fp, mapp, best_match);
-                              dprintf1("   better %s***)\n", score_name[i]);
+                              dmprintf_font_scoring(pcs->memory, "usurper", fp, mapp, best_match);
+                              dmprintf1(pcs->memory, "   better %s***)\n", score_name[i]);
 
                           }
 #endif
@@ -443,7 +445,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs, bool intern
                 return gs_throw_code(gs_error_Fatal);
 #ifdef DEBUG
             if ( gs_debug_c('=') ) {
-                dprintf_font_scoring("champion", best_font, mapp, best_match);
+                dmprintf_font_scoring(pcs->memory, "champion", best_font, mapp, best_match);
             }
 #endif
 

@@ -693,7 +693,7 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
             /* Draw current circle */
 
             if (!point_inside_circle(x0, y0, x1, y1, r1))
-                dputs("xps: we should reverse gradient here too\n");
+                dmputs(ctx->memory, "xps: we should reverse gradient here too\n");
 
             if (spread == SPREAD_REFLECT && (i & 1))
                 code = xps_draw_one_radial_gradient(ctx, func, 0, x1, y1, r1, x0, y0, r0);

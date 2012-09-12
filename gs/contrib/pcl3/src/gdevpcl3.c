@@ -675,7 +675,7 @@ static int pcl3_get_params(gx_device *device, gs_param_list *plist)
 
 #ifdef EPRN_TRACE
   if (gs_debug_c(EPRN_TRACE_CHAR)) {
-    dlprintf("! pcl3_get_params() returns the following parameters:\n");
+    dmlprintf(dev->memory, "! pcl3_get_params() returns the following parameters:\n");
     eprn_dump_parameter_list(plist);
   }
 #endif

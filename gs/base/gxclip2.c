@@ -291,7 +291,7 @@ tile_clip_copy_mono(gx_device * dev,
             do {\
               t_next(tx);\
             } while ( tx < x + w && (*tp & tbit) != 0 );\
-            if_debug3('T', "[T]run x=(%d,%d), y=%d\n", tx1, tx, ty);
+            if_debug3m('T', cdev->memory, "[T]run x=(%d,%d), y=%d\n", tx1, tx, ty);
 /* (body goes here) */
 #define END_FOR_RUNS()\
           }\

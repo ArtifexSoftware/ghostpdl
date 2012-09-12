@@ -726,8 +726,10 @@ art_blend_pixel_8(byte *dst, const byte *backdrop,
             }
             break;
         default:
+#ifndef GS_THREADSAFE
             dlprintf1("art_blend_pixel_8: blend mode %d not implemented\n",
                       blend_mode);
+#endif
             memcpy(dst, src, n_chan);
             break;
     }
@@ -851,8 +853,10 @@ art_blend_pixel(ArtPixMaxDepth* dst, const ArtPixMaxDepth *backdrop,
             }
             break;
         default:
+#ifndef GS_THREADSAFE
             dlprintf1("art_blend_pixel: blend mode %d not implemented\n",
                       blend_mode);
+#endif
             memcpy(dst, src, n_chan);
             break;
     }

@@ -498,7 +498,7 @@ pjl_verify_file_operation(pjl_parser_state_t *pst, char *fname)
     /* make sure we are playing in the pjl sandbox */
     if ( 0 != strncmp(PJL_VOLUME_0, fname, strlen(PJL_VOLUME_0))
          && 0 != strncmp(PJL_VOLUME_1, fname, strlen(PJL_VOLUME_1)) ) {
-        dprintf1("illegal path name %s\n", fname);
+        dmprintf1(pst->mem, "illegal path name %s\n", fname);
         return -1;
     }
     /* make sure we are not currently writing to a file.
@@ -521,7 +521,7 @@ pjl_warn_exists(const gs_memory_t *mem, char *fname)
     /* issue a warning if the file exists */
     if ( (fpdownload = fopen(fname, gp_fmode_rb) ) != NULL ) {
         fclose(fpdownload);
-        dprintf1("warning file exists overwriting %s\n", fname);
+        dmprintf1(mem, "warning file exists overwriting %s\n", fname);
     }
 }
 
@@ -542,7 +542,7 @@ pjl_setup_file_for_writing(pjl_parser_state_t *pst, char *pathname, int size, bo
         if (append)
             strcat(fmode, "+");
         if ( (fp = fopen(fname, gp_fmode_wb)) == NULL) {
-            dprintf("warning file open for writing failed\n" );
+            dmprintf(pst->mem, "warning file open for writing failed\n" );
             return NULL;
         }
     }
@@ -669,7 +669,7 @@ pjl_fsdirlist(pjl_parser_state_t *pst, char *pathname, int entry, int count)
                 return 0;
             fontfilename[fstatus] = '\0';
             /* NB - debugging output only */
-            dprintf1("%s\n", fontfilename);
+            dmprintf1(pst->mem, "%s\n", fontfilename);
         } while (1);
     }
     /* should not get here */
@@ -1250,7 +1250,7 @@ pjl_process_destroy(pjl_parser_state *pst, gs_memory_t *mem)
 pjl_register_permanent_soft_font_deletion(pjl_parser_state *pst, int font_number)
 {
     if ( (font_number > MAX_PERMANENT_FONTS - 1) || (font_number < 0) ) {
-        dprintf("pjparse.c:pjl_register_permanent_soft_font_deletion() bad font number\n");
+        dmprintf(pst->mem, "pjparse.c:pjl_register_permanent_soft_font_deletion() bad font number\n");
         return 0;
     }
     /* if the font is present. */
@@ -1302,7 +1302,7 @@ pjl_register_permanent_soft_font_addition(pjl_parser_state *pst)
         }
     /* yikes, shouldn't happen */
     if ( !slot_found ) {
-        dprintf("pjparse.c:pjl_register_permanent_soft_font_addition()\
+        dmprintf(pst->mem, "pjparse.c:pjl_register_permanent_soft_font_addition()\
                  font table full recycling font number 0\n");
         font_num = 0;
     }

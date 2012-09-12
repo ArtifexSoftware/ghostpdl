@@ -554,7 +554,7 @@ extern int comp_bit_factor[];
  * A routine for debugging the encoded color colorant list.  This routine
  * dumps the contents of the list.
  */
-void print_compressed_color_list(compressed_color_list_t * pcomp_list, int num_comp);
+void print_compressed_color_list(const gs_memory_t *mem, compressed_color_list_t * pcomp_list, int num_comp);
 
 /*
  * Free the elements of a compressed color list.

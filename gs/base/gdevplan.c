@@ -309,7 +309,7 @@ plan_open(gx_device * pdev)
     int code;
 
 #ifdef DEBUG_PRINT
-    eprintf("plan_open\n");
+    emprintf(pdev->memory, "plan_open\n");
 #endif
     code = gdev_prn_open_planar(pdev, 1);
     if (code < 0)
@@ -326,7 +326,7 @@ plan_close(gx_device *pdev)
     gx_device_printer *pldev = (gx_device_printer *)pdev;
 
 #ifdef DEBUG_PRINT
-    eprintf("plan_close\n");
+    emprintf(pdev->memory, "plan_close\n");
 #endif
 
     return gdev_prn_close(pdev);
@@ -506,7 +506,7 @@ static int
 planm_print_page(gx_device_printer * pdev, FILE * pstream)
 {
 #ifdef DEBUG_PRINT
-    eprintf("planm_print_page\n");
+    emprintf(pdev->memory, "planm_print_page\n");
 #endif
     return plan_print_page_loop(pdev, 0, 1, pstream);
 }
@@ -516,7 +516,7 @@ static int
 plang_print_page(gx_device_printer * pdev, FILE * pstream)
 {
 #ifdef DEBUG_PRINT
-    eprintf("plang_print_page\n");
+    emprintf(pdev->memory, "plang_print_page\n");
 #endif
     return plan_print_page_loop(pdev, 3, 1, pstream);
 }
@@ -526,7 +526,7 @@ static int
 plan_print_page(gx_device_printer * pdev, FILE * pstream)
 {
 #ifdef DEBUG_PRINT
-    eprintf("planc_print_page\n");
+    emprintf(pdev->memory, "planc_print_page\n");
 #endif
     return plan_print_page_loop(pdev, 3, 3, pstream);
 }
@@ -536,7 +536,7 @@ static int
 plank_print_page(gx_device_printer * pdev, FILE * pstream)
 {
 #ifdef DEBUG_PRINT
-    eprintf("plank_print_page\n");
+    emprintf(pdev->memory, "plank_print_page\n");
 #endif
     return plan_print_page_loop(pdev, 0, 4, pstream);
 }
@@ -546,7 +546,7 @@ static int
 planc_print_page(gx_device_printer * pdev, FILE * pstream)
 {
 #ifdef DEBUG_PRINT
-    eprintf("planc_print_page\n");
+    emprintf(pdev->memory, "planc_print_page\n");
 #endif
     return plan_print_page_loop(pdev, 3, 4, pstream);
 }

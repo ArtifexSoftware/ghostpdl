@@ -318,7 +318,7 @@ xps_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *cursor)
             gs_catch(gs_error_invalidfileaccess, "cannot open scratch file");
             return e_ExitLanguage;
         }
-        if_debug1('|', "xps: open scratch file '%s'\n", instance->scratch_name);
+        if_debug1m('|', ctx->memory, "xps: open scratch file '%s'\n", instance->scratch_name);
     }
 
     avail = cursor->limit - cursor->ptr;
@@ -354,7 +354,7 @@ xps_imp_process_eof(pl_interp_instance_t *pinstance)
 
     if (instance->scratch_file)
     {
-        if_debug0('|', "xps: executing scratch file\n");
+        if_debug0m('|', ctx->memory, "xps: executing scratch file\n");
         fclose(instance->scratch_file);
         instance->scratch_file = NULL;
         code = xps_process_file(ctx, instance->scratch_name);

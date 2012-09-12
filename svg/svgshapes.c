@@ -358,7 +358,7 @@ svg_parse_path_data(svg_context_t *ctx, char *str)
         case 'M':
             if (nargs == 2)
             {
-                // dprintf2("moveto %g %g\n", args[0], args[1]);
+                // dmprintf2(ctx->memory, "moveto %g %g\n", args[0], args[1]);
                 gs_moveto(ctx->pgs, args[0], args[1]);
                 nargs = 0;
                 cmd = 'L'; /* implicit lineto after */
@@ -368,7 +368,7 @@ svg_parse_path_data(svg_context_t *ctx, char *str)
         case 'm':
             if (nargs == 2)
             {
-                // dprintf2("rmoveto %g %g\n", args[0], args[1]);
+                // dmprintf2(ctx->memory, "rmoveto %g %g\n", args[0], args[1]);
                 gs_rmoveto(ctx->pgs, args[0], args[1]);
                 nargs = 0;
                 cmd = 'l'; /* implicit lineto after */
@@ -379,7 +379,7 @@ svg_parse_path_data(svg_context_t *ctx, char *str)
         case 'z':
             if (nargs == 0)
             {
-                // dprintf("closepath\n");
+                // dmprintf(ctx->memory, "closepath\n");
                 gs_closepath(ctx->pgs);
             }
             break;
@@ -387,7 +387,7 @@ svg_parse_path_data(svg_context_t *ctx, char *str)
         case 'L':
             if (nargs == 2)
             {
-                // dprintf2("lineto %g %g\n", args[0], args[1]);
+                // dmprintf2(ctx->memory, "lineto %g %g\n", args[0], args[1]);
                 gs_lineto(ctx->pgs, args[0], args[1]);
                 nargs = 0;
             }
@@ -396,7 +396,7 @@ svg_parse_path_data(svg_context_t *ctx, char *str)
         case 'l':
             if (nargs == 2)
             {
-                // dprintf2("rlineto %g %g\n", args[0], args[1]);
+                // dmprintf2(ctx->memory, "rlineto %g %g\n", args[0], args[1]);
                 gs_rlineto(ctx->pgs, args[0], args[1]);
                 nargs = 0;
             }
@@ -406,7 +406,7 @@ svg_parse_path_data(svg_context_t *ctx, char *str)
             if (nargs == 1)
             {
                 gs_currentpoint(ctx->pgs, &pt);
-                // dprintf1("hlineto %g\n", args[0]);
+                // dmprintf1(ctx->memory, "hlineto %g\n", args[0]);
                 gs_lineto(ctx->pgs, args[0], pt.y);
                 nargs = 0;
             }
@@ -415,7 +415,7 @@ svg_parse_path_data(svg_context_t *ctx, char *str)
         case 'h':
             if (nargs == 1)
             {
-                // dprintf1("rhlineto %g\n", args[0]);
+                // dmprintf1(ctx->memory, "rhlineto %g\n", args[0]);
                 gs_rlineto(ctx->pgs, args[0], 0.0);
                 nargs = 0;
             }
@@ -425,7 +425,7 @@ svg_parse_path_data(svg_context_t *ctx, char *str)
             if (nargs == 1)
             {
                 gs_currentpoint(ctx->pgs, &pt);
-                // dprintf1("vlineto %g\n", args[0]);
+                // dmprintf1(ctx->memory, "vlineto %g\n", args[0]);
                 gs_lineto(ctx->pgs, pt.x, args[0]);
                 nargs = 0;
             }
@@ -434,7 +434,7 @@ svg_parse_path_data(svg_context_t *ctx, char *str)
         case 'v':
             if (nargs == 1)
             {
-                // dprintf1("rvlineto %g\n", args[0]);
+                // dmprintf1(ctx->memory, "rvlineto %g\n", args[0]);
                 gs_rlineto(ctx->pgs, 0.0, args[0]);
                 nargs = 0;
             }

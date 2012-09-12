@@ -646,7 +646,7 @@ vesa_set_mode(int mode)
 
 /* Read information about a device mode */
 static int
-vesa_get_info(int mode, vesa_info _ss * info)
+vesa_get_info(const gs_memory_t *mem, int mode, vesa_info _ss * info)
 {
     registers regs;
     struct SREGS sregs;
@@ -660,14 +660,14 @@ vesa_get_info(int mode, vesa_info _ss * info)
     int86x(0x10, &regs, &regs, &sregs);
 #ifdef DEBUG
     if (regs.h.ah == 0 && regs.h.al == 0x4f)
-        dlprintf8("vesa_get_info(%x): ma=%x wa=%x/%x wg=%x ws=%x wseg=%x/%x\n",
-                  mode, info->mode_attributes,
-                  info->win_a_attributes, info->win_b_attributes,
-                  info->win_granularity, info->win_size,
-                  info->win_a_segment, info->win_b_segment);
+        dmlprintf8(mem, "vesa_get_info(%x): ma=%x wa=%x/%x wg=%x ws=%x wseg=%x/%x\n",
+                   mode, info->mode_attributes,
+                   info->win_a_attributes, info->win_b_attributes,
+                   info->win_granularity, info->win_size,
+                   info->win_a_segment, info->win_b_segment);
     else
-        dlprintf3("vesa_get_info(%x) failed: ah=%x al=%x\n",
-                  mode, regs.h.ah, regs.h.al);
+        dmlprintf3(mem, "vesa_get_info(%x) failed: ah=%x al=%x\n",
+                   mode, regs.h.ah, regs.h.al);
 #endif
     return (regs.h.ah == 0 && regs.h.al == 0x4f ? 0 : -1);
 }
@@ -683,7 +683,7 @@ vesa_find_mode(gx_device * dev, const mode_info * mode_table)
     for (mip = mode_table; mip->mode >= 0; mip++) {
         if (mip->width >= fb_dev->width &&
             mip->height >= fb_dev->height &&
-            vesa_get_info(mip->mode, &info) >= 0 &&
+            vesa_get_info(dev->memory, mip->mode, &info) >= 0 &&
             bits_include(info.mode_attributes,
                          m_supported | m_graphics) &&
             info.win_granularity <= 64 &&

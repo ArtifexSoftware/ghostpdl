@@ -143,9 +143,9 @@ main(int argc, const char *argv[])
             lprintf1("reading Name failed! code = %d\n", code);
             gs_abort(mem);
         }
-        dputs("Device name = ");
-        debug_print_string(nstr.data, nstr.size);
-        dputs("\n");
+        dmputs(dev->memory, "Device name = ");
+        debug_print_string(dev->memory, nstr.data, nstr.size);
+        dmputs(dev->memory, "\n");
         gs_c_param_list_release(&list);
     }
     /*
@@ -196,12 +196,12 @@ main(int argc, const char *argv[])
         gs_rect bbox;
 
         gx_device_bbox_bbox(bbdev, &bbox);
-        dprintf4("Bounding box: [%g %g %g %g]\n",
+        dmprintf4(mem, "Bounding box: [%g %g %g %g]\n",
                  bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
     }
     if (code)
-        dprintf1("**** Test returned code = %d.\n", code);
-    dputs("Done.  Press <enter> to exit.");
+        dmprintf1(mem, "**** Test returned code = %d.\n", code);
+    dmputs(mem, "Done.  Press <enter> to exit.");
     fgetc(mem->gs_lib_ctx->fstdin);
     gs_lib_finit(0, 0, mem);
     return 0;
@@ -817,12 +817,12 @@ test7(gs_state * pgs, gs_memory_t * mem)
 
     /* Fabricate a Type 5 halftone. */
     code = gs_ht_build(&pht, 1, mem);
-    dprintf1("ht build code = %d\n", code);
+    dmprintf1(mem, "ht build code = %d\n", code);
     code = gs_ht_set_mask_comp(pht, 0,
                                4, 4, 4, masks, NULL, NULL);
-    dprintf1("set mask code = %d\n", code);
+    dmprintf1(mem, "set mask code = %d\n", code);
     code = gs_sethalftone(pgs, pht);
-    dprintf1("sethalftone code = %d\n", code);
+    dmprintf1(mem, "sethalftone code = %d\n", code);
     for (i = 0; i <= 4; ++i) {
         gs_setgray(pgs, i / 4.0);
         fill_rect1(pgs, 100 + i * 100, 100, 50, 50);

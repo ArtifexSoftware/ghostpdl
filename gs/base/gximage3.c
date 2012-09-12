@@ -664,9 +664,9 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
             }
         }
     }
-    if_debug5('b', "[b]image3 h=%d %smask_y=%d %spixel_y=%d\n",
-              h, (mask_plane.data ? "+" : ""), penum->mask_y,
-              (pixel_planes[0].data ? "+" : ""), penum->pixel_y);
+    if_debug5m('b', penum->memory, "[b]image3 h=%d %smask_y=%d %spixel_y=%d\n",
+               h, (mask_plane.data ? "+" : ""), penum->mask_y,
+               (pixel_planes[0].data ? "+" : ""), penum->pixel_y);
     if (penum->mask_y >= penum->mask_height &&
         penum->pixel_y >= penum->pixel_height)
         return 1;

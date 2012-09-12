@@ -79,11 +79,11 @@ stream_finalize(const gs_memory_t *cmem, void *vptr)
     stream *const st = vptr;
     (void)cmem; /* unused */
 
-    if_debug2('u', "[u]%s 0x%lx\n",
-              (!s_is_valid(st) ? "already closed:" :
-               st->is_temp ? "is_temp set:" :
-               st->file == 0 ? "not file:" :
-               "closing file:"), (ulong) st);
+    if_debug2m('u', cmem, "[u]%s 0x%lx\n",
+               (!s_is_valid(st) ? "already closed:" :
+                st->is_temp ? "is_temp set:" :
+                st->file == 0 ? "not file:" :
+                "closing file:"), (ulong) st);
     if (s_is_valid(st) && !st->is_temp && st->file != 0) {
         /* Prevent any attempt to free the buffer. */
         st->cbuf = 0;
@@ -118,8 +118,8 @@ s_alloc(gs_memory_t * mem, client_name_t cname)
 {
     stream *s = gs_alloc_struct(mem, stream, &st_stream, cname);
 
-    if_debug2('s', "[s]alloc(%s) = 0x%lx\n",
-              client_name_string(cname), (ulong) s);
+    if_debug2m('s', mem, "[s]alloc(%s) = 0x%lx\n",
+               client_name_string(cname), (ulong) s);
     if (s == 0)
         return 0;
     s_init(s, mem);
@@ -143,10 +143,10 @@ s_alloc_state(gs_memory_t * mem, gs_memory_type_ptr_t stype,
 {
     stream_state *st = gs_alloc_struct(mem, stream_state, stype, cname);
 
-    if_debug3('s', "[s]alloc_state %s(%s) = 0x%lx\n",
-              client_name_string(cname),
-              client_name_string(stype->sname),
-              (ulong) st);
+    if_debug3m('s', mem, "[s]alloc_state %s(%s) = 0x%lx\n",
+               client_name_string(cname),
+               client_name_string(stype->sname),
+               (ulong) st);
     if (st)
         s_init_state(st, NULL, mem);
     return st;
@@ -174,8 +174,8 @@ s_std_init(register stream * s, byte * ptr, uint len, const stream_procs * pp,
     s->file = 0;
     s->file_name.data = 0;	/* in case stream is on stack */
     s->file_name.size = 0;
-    if_debug4('s', "[s]init 0x%lx, buf=0x%lx, len=%u, modes=%d\n",
-              (ulong) s, (ulong) ptr, len, modes);
+    if_debug4m('s', s->memory, "[s]init 0x%lx, buf=0x%lx, len=%u, modes=%d\n",
+               (ulong) s, (ulong) ptr, len, modes);
 }
 
 /* Set the file name of a stream, copying the name. */
@@ -311,7 +311,7 @@ s_disable(register stream * s)
         s->file_name.size = 0;
     }
     /****** SHOULD DO MORE THAN THIS ******/
-    if_debug1('s', "[s]disable 0x%lx\n", (ulong) s);
+    if_debug1m('s', s->memory, "[s]disable 0x%lx\n", (ulong) s);
 }
 
 /* Implement flushing for encoding filters. */
@@ -396,8 +396,8 @@ stell(stream * s)
 int
 spseek(stream * s, long pos)
 {
-    if_debug3('s', "[s]seek 0x%lx to %ld, position was %ld\n",
-              (ulong) s, pos, stell(s));
+    if_debug3m('s', s->memory, "[s]seek 0x%lx to %ld, position was %ld\n",
+               (ulong) s, pos, stell(s));
     return (*(s)->procs.seek) (s, pos);
 }
 
@@ -802,15 +802,15 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
                 eof = strm->end_status == EOFC;
             }
             pw = (prev == 0 ? pbuf : &curr->cursor.w);
-            if_debug4('s', "[s]read process 0x%lx, nr=%u, nw=%u, eof=%d\n",
-                      (ulong) curr, (uint) (pr->limit - pr->ptr),
-                      (uint) (pw->limit - pw->ptr), eof);
+            if_debug4m('s', s->memory, "[s]read process 0x%lx, nr=%u, nw=%u, eof=%d\n",
+                       (ulong) curr, (uint) (pr->limit - pr->ptr),
+                       (uint) (pw->limit - pw->ptr), eof);
             oldpos = pw->ptr;
             status = (*curr->procs.process) (curr->state, pr, pw, eof);
             pr->limit += left;
-            if_debug5('s', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d, position=%ld\n",
-                      (ulong) curr, (uint) (pr->limit - pr->ptr),
-                      (uint) (pw->limit - pw->ptr), status, s->position);
+            if_debug5m('s', s->memory, "[s]after read 0x%lx, nr=%u, nw=%u, status=%d, position=%ld\n",
+                       (ulong) curr, (uint) (pr->limit - pr->ptr),
+                       (uint) (pw->limit - pw->ptr), status, s->position);
             if (strm == 0 || status != 0)
                 break;
             if (strm->end_status < 0) {
@@ -885,19 +885,19 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
                 pr = pbuf;
             else
                 pr = &curr->cursor.r;
-            if_debug5('s',
-                      "[s]write process 0x%lx(%s), nr=%u, nw=%u, end=%d\n",
-                      (ulong)curr,
-                      gs_struct_type_name(curr->state->templat->stype),
-                      (uint)(pr->limit - pr->ptr),
-                      (uint)(pw->limit - pw->ptr), end);
+            if_debug5m('s', s->memory,
+                       "[s]write process 0x%lx(%s), nr=%u, nw=%u, end=%d\n",
+                       (ulong)curr,
+                       gs_struct_type_name(curr->state->templat->stype),
+                       (uint)(pr->limit - pr->ptr),
+                       (uint)(pw->limit - pw->ptr), end);
             status = curr->end_status;
             if (status >= 0) {
                 status = (*curr->procs.process)(curr->state, pr, pw, end);
-                if_debug5('s',
-                          "[s]after write 0x%lx, nr=%u, nw=%u, end=%d, status=%d\n",
-                          (ulong) curr, (uint) (pr->limit - pr->ptr),
-                          (uint) (pw->limit - pw->ptr), end, status);
+                if_debug5m('s', s->memory,
+                           "[s]after write 0x%lx, nr=%u, nw=%u, end=%d, status=%d\n",
+                           (ulong) curr, (uint) (pr->limit - pr->ptr),
+                           (uint) (pw->limit - pw->ptr), end, status);
                 if (status == 0 && end)
                     status = EOFC;
                 if (status == EOFC || status == ERRC)
@@ -918,7 +918,7 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
                 break;
             if (!curr->is_temp)
                 ++depth;
-            if_debug1('s', "[s]moving ahead, depth = %d\n", depth);
+            if_debug1m('s', strm->memory, "[s]moving ahead, depth = %d\n", depth);
             MOVE_AHEAD(curr, prev);
             stream_compact(curr, false);
         }
@@ -933,7 +933,7 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
              * otherwise leave it alone.
              */
             while (prev) {
-                if_debug0('s', "[s]unwinding\n");
+                if_debug0m('s', s->memory, "[s]unwinding\n");
                 MOVE_BACK(curr, prev);
                 if (status >= 0)
                     curr->end_status = 0;
@@ -945,7 +945,7 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
         MOVE_BACK(curr, prev);
         if (!curr->is_temp)
             --depth;
-        if_debug1('s', "[s]moving back, depth = %d\n", depth);
+        if_debug1m('s', s->memory, "[s]moving back, depth = %d\n", depth);
     }
 }
 

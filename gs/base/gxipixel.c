@@ -193,9 +193,9 @@ gx_image_enum_alloc(const gs_image_common_t * pic,
     penum->rrect.h = penum->rect.h;
 #ifdef DEBUG
     if (gs_debug_c('b')) {
-        dlprintf2("[b]Image: w=%d h=%d", width, height);
+        dmlprintf2(mem, "[b]Image: w=%d h=%d", width, height);
         if (prect)
-            dprintf4(" ((%d,%d),(%d,%d))",
+            dmprintf4(mem, " ((%d,%d),(%d,%d))",
                      prect->p.x, prect->p.y, prect->q.x, prect->q.y);
     }
 #endif
@@ -420,7 +420,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     penum->matrix.yy = mat.yy;
     penum->matrix.tx = mat.tx;
     penum->matrix.ty = mat.ty;
-    if_debug6('b', " [%g %g %g %g %g %g]\n",
+    if_debug6m('b', penum->memory, " [%g %g %g %g %g %g]\n",
               mat.xx, mat.xy, mat.yx, mat.yy, mat.tx, mat.ty);
     /* following works for 1, 2, 4, 8, 12, 16 */
     index_bps = (bps < 8 ? bps >> 1 : (bps >> 2) + 1);
@@ -668,8 +668,8 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 #ifdef DEBUG
     if (gs_debug_c('*')) {
         if (penum->use_rop)
-            dprintf1("[%03x]", lop);
-        dprintf5("%c%d%c%dx%d ",
+            dmprintf1(mem, "[%03x]", lop);
+        dmprintf5(mem, "%c%d%c%dx%d ",
                  (masked ? (color_is_pure(pdcolor) ? 'm' : 'h') : 'i'),
                  bps,
                  (penum->posture == image_portrait ? ' ' :
@@ -741,16 +741,16 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
                 mty = (((mty + diff) | fixed_half) & -fixed_half) - diff;
             }
         }
-        if_debug5('b', "[b]Image: %sspp=%d, bps=%d, mt=(%g,%g)\n",
-                  (masked? "masked, " : ""), spp, bps,
-                  fixed2float(mtx), fixed2float(mty));
-        if_debug9('b',
-                  "[b]   cbox=(%g,%g),(%g,%g), obox=(%g,%g),(%g,%g), clip_image=0x%x\n",
-                  fixed2float(cbox.p.x), fixed2float(cbox.p.y),
-                  fixed2float(cbox.q.x), fixed2float(cbox.q.y),
-                  fixed2float(obox.p.x), fixed2float(obox.p.y),
-                  fixed2float(obox.q.x), fixed2float(obox.q.y),
-                  penum->clip_image);
+        if_debug5m('b', penum->memory, "[b]Image: %sspp=%d, bps=%d, mt=(%g,%g)\n",
+                   (masked? "masked, " : ""), spp, bps,
+                   fixed2float(mtx), fixed2float(mty));
+        if_debug9m('b', penum->memory,
+                   "[b]   cbox=(%g,%g),(%g,%g), obox=(%g,%g),(%g,%g), clip_image=0x%x\n",
+                   fixed2float(cbox.p.x), fixed2float(cbox.p.y),
+                   fixed2float(cbox.q.x), fixed2float(cbox.q.y),
+                   fixed2float(obox.p.x), fixed2float(obox.p.y),
+                   fixed2float(obox.q.x), fixed2float(obox.q.y),
+                   penum->clip_image);
         dda_init(penum->dda.row.x, mtx, col_extent.x, height);
         dda_init(penum->dda.row.y, mty, col_extent.y, height);
         penum->dst_width = row_extent.x;
@@ -827,7 +827,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
         } else {
             penum->unpack = procs[interleaved][index_bps];
         }
-        if_debug1('b', "[b]unpack=%d\n", bps);
+        if_debug1m('b', penum->memory, "[b]unpack=%d\n", bps);
         /* Set up pixel0 for image class procedures. */
         penum->dda.pixel0 = penum->dda.strip;
         for (i = 0; i < gx_image_class_table_count; ++i)

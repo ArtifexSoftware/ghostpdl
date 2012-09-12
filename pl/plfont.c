@@ -355,7 +355,7 @@ pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
             pstr->size = strlen((const char *)pstr->data);
             return 0;
         } else {
-            if_debug1('=', "[=]glyph index %lx out of range\n", (ulong)glyph);
+            if_debug1m('=', pfont->memory, "[=]glyph index %lx out of range\n", (ulong)glyph);
             return -1;
         }
     }
@@ -381,13 +381,13 @@ pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
             /* format 1.0 (mac encoding) is a simple table see the TT
                spec.  We don't implement this because we don't see it
                in practice */
-            dprintf1("unkonwn post table format %lX\n", format);
+            dmprintf1(pfont->memory, "unknown post table format %lX\n", format);
             return -1;
         }
         /* skip over the post header */
         numGlyphs = u16(postp + 32);
         if ( glyph < 0 || glyph > numGlyphs - 1) {
-            if_debug1('=', "[=]glyph index %lx out of range\n", glyph);
+            if_debug1m('=', pfont->memory, "[=]glyph index %lx out of range\n", glyph);
             return -1;
         }
         /* glyph name index starts at post + 34 each entry is 2 bytes */
@@ -422,7 +422,7 @@ pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
             /* sanity check */
             if ( pstr->data + pstr->size > postp + table_length ||
                  pstr->data - 1 < postp) {
-                dprintf("data out of range\n");
+                dmprintf(pfont->memory, "data out of range\n");
                 return -1;
             }
             /* sigh - we have to allocate a copy of the data - by the

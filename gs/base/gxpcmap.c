@@ -287,7 +287,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
             return 0;
 #ifdef DEBUG
         if (pinst->is_clist)
-            eprintf("not using clist even though clist is requested\n");
+            emprintf(mem, "not using clist even though clist is requested\n");
 #endif
         pinst->is_clist = false;
         gx_device_init((gx_device *)adev,
@@ -1328,7 +1328,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
         saved->pattern_cache = pis->pattern_cache;
     gs_setdevice_no_init(saved, (gx_device *)adev);
     if (pinst->templat.uses_transparency) {
-        if_debug0('v', "gx_pattern_load: pushing the pdf14 compositor device into this graphics state\n");
+        if_debug0m('v', mem, "gx_pattern_load: pushing the pdf14 compositor device into this graphics state\n");
         if ((code = gs_push_pdf14trans_device(saved, true)) < 0)
             return code;
         saved->device->is_open = true;
@@ -1367,7 +1367,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
         return code;
     }
     if (pinst->templat.uses_transparency) {
-        /* if_debug0('v', "gx_pattern_load: popping the pdf14 compositor device from this graphics state\n");
+        /* if_debug0m('v', saved->memory, "gx_pattern_load: popping the pdf14 compositor device from this graphics state\n");
         if ((code = gs_pop_pdf14trans_device(saved, true)) < 0)
             return code; */
             if (pinst->is_clist) {
@@ -1393,7 +1393,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
                 adev, &ctile);
     if (code >= 0) {
         if (!gx_pattern_cache_lookup(pdc, pis, dev, select)) {
-            lprintf("Pattern cache lookup failed after insertion!\n");
+            mlprintf(mem, "Pattern cache lookup failed after insertion!\n");
             code = gs_note_error(gs_error_Fatal);
         }
     }
@@ -1402,10 +1402,12 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
         gx_device_pattern_accum *pdev = (gx_device_pattern_accum *)adev;
 
         if (pdev->mask)
-            debug_dump_bitmap(pdev->mask->base, pdev->mask->raster,
+            debug_dump_bitmap(pdev->memory,
+                              pdev->mask->base, pdev->mask->raster,
                               pdev->mask->height, "[B]Pattern mask");
         if (pdev->bits)
-            debug_dump_bitmap(((gx_device_memory *) pdev->target)->base,
+            debug_dump_bitmap(pdev->memory,
+                              ((gx_device_memory *) pdev->target)->base,
                               ((gx_device_memory *) pdev->target)->raster,
                               pdev->target->height, "[B]Pattern bits");
     }

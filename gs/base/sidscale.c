@@ -86,7 +86,7 @@ idownscale_x(void /* PixelIn */ * tmp, const void /* PixelIn */ *src, stream_ISp
             const byte *pp =  (const byte *)src + c;
 
             ss->dda_x = ss->dda_x_init;
-            if_debug1('W', "[W]idownscale_x color %d:", c);
+            if_debug1m('W', ss->memory, "[W]idownscale_x color %d:", c);
 
             for ( i = 0; i < WidthIn; tp += Colors) {
                 int endx;
@@ -104,9 +104,9 @@ idownscale_x(void /* PixelIn */ * tmp, const void /* PixelIn */ *src, stream_ISp
                         *tp = *pp;
                    i++; pp += Colors;
                 }
-                if_debug1('W', " %d", *tp);
+                if_debug1m('W', ss->memory, " %d", *tp);
             }
-            if_debug0('W', "\n");
+            if_debug0m('W', ss->memory, "\n");
         }
     } else {		/* sizeofPixelIn == 2 */
         for (c = 0; c < Colors; ++c) {
@@ -114,7 +114,7 @@ idownscale_x(void /* PixelIn */ * tmp, const void /* PixelIn */ *src, stream_ISp
             const bits16 *pp =  (const bits16 *)src + c;
 
             ss->dda_x = ss->dda_x_init;
-            if_debug1('W', "[W]idownscale_x color %d:", c);
+            if_debug1m('W', ss->memory, "[W]idownscale_x color %d:", c);
 
             for ( i = 0; i < WidthIn; tp += Colors) {
                 int endx;
@@ -132,9 +132,9 @@ idownscale_x(void /* PixelIn */ * tmp, const void /* PixelIn */ *src, stream_ISp
                         *tp = *pp;
                    i++; pp += Colors;
                 }
-                if_debug1('W', " %d", *tp);
+                if_debug1m('W', ss->memory, " %d", *tp);
             }
-            if_debug0('W', "\n");
+            if_debug0m('W', ss->memory, "\n");
         }
     }
 }
@@ -154,21 +154,21 @@ idownscale_y(void /*PixelOut */ *dst, const void /* PixelIn */ *tmp,
     int kc;
     float scale = (float) ss->params.MaxValueOut/255.0;
 
-    if_debug0('W', "[W]idownscale_y: ");
+    if_debug0m('W', ss->memory, "[W]idownscale_y: ");
 
     if (ss->sizeofPixelOut == 1) {
         if (ss->sizeofPixelIn == 1) {
             const byte *pp = (byte *)tmp;
 
             for ( kc = 0; kc < kn; ++kc, pp++ ) {
-                if_debug1('W', " %d", *pp);
+                if_debug1m('W', ss->memory, " %d", *pp);
                 ((byte *)dst)[kc] = *pp;
             }
         } else {	/* sizeofPixelIn == 2 */
             const bits16 *pp = (bits16 *)tmp;
 
             for ( kc = 0; kc < kn; ++kc, pp++ ) {
-                if_debug1('W', " %d", *pp);
+                if_debug1m('W', ss->memory, " %d", *pp);
                 ((byte *)dst)[kc] = frac2byte(*pp);
             }
         }
@@ -177,19 +177,19 @@ idownscale_y(void /*PixelOut */ *dst, const void /* PixelIn */ *tmp,
             const byte *pp = (byte *)tmp;
 
             for ( kc = 0; kc < kn; ++kc, pp++ ) {
-                if_debug1('W', " %d", *pp);
+                if_debug1m('W', ss->memory, " %d", *pp);
                 ((bits16 *)dst)[kc] = (bits16)((*pp)*scale);
             }
         } else {	/* sizeofPixelIn == 2 */
             const bits16 *pp = (bits16 *)tmp;
 
             for ( kc = 0; kc < kn; ++kc, pp++ ) {
-                if_debug1('W', " %d", *pp);
+                if_debug1m('W', ss->memory, " %d", *pp);
                 ((bits16 *)dst)[kc] = *pp;
             }
         }
     }
-    if_debug0('W', "n");
+    if_debug0m('W', ss->memory, "n");
 }
 
 /* ------ Stream implementation ------ */
@@ -325,8 +325,8 @@ adv:	++(ss->dst_y);
                 ss->src_offset = 0;
             }
             /* Apply filter to zoom horizontally from src to tmp. */
-            if_debug2('w', "[w]idownscale_x y = %d to tmp row %d\n",
-                      ss->src_y, (ss->src_y % MAX_ISCALE_SUPPORT));
+            if_debug2m('w', ss->memory, "[w]idownscale_x y = %d to tmp row %d\n",
+                       ss->src_y, (ss->src_y % MAX_ISCALE_SUPPORT));
             idownscale_x(ss->tmp, row, ss);
             pr->ptr += rcount;
             ++(ss->src_y);

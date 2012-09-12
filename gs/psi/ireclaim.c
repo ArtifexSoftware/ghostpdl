@@ -69,8 +69,8 @@ ireclaim(gs_dual_memory_t * dmem, int space)
     } else {
         mem = dmem->spaces_indexed[space >> r_space_shift];
     }
-    if_debug3('0', "[0]GC called, space=%d, requestor=%d, requested=%ld\n",
-              space, mem->space, (long)mem->gc_status.requested);
+    if_debug3m('0', (gs_memory_t *)mem, "[0]GC called, space=%d, requestor=%d, requested=%ld\n",
+               space, mem->space, (long)mem->gc_status.requested);
     global = mem->space != avm_local;
     /* Since dmem may move, reset the request now. */
     ialloc_reset_requested(dmem);

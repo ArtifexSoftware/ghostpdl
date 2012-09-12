@@ -147,8 +147,8 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
     struct jpeg_source_mgr *src = jddp->dinfo.src;
     int code;
 
-    if_debug3('w', "[wdd]process avail=%u, skip=%u, last=%d\n",
-              (uint) (pr->limit - pr->ptr), (uint) jddp->skip, last);
+    if_debug3m('w', st->memory, "[wdd]process avail=%u, skip=%u, last=%d\n",
+               (uint) (pr->limit - pr->ptr), (uint) jddp->skip, last);
     if (jddp->skip != 0) {
         long avail = pr->limit - pr->ptr;
 
@@ -219,10 +219,10 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
                 return 0;
             ss->scan_line_size =
                 jddp->dinfo.output_width * jddp->dinfo.output_components;
-            if_debug4('w', "[wdd]width=%u, components=%d, scan_line_size=%u, min_out_size=%u\n",
-                      jddp->dinfo.output_width,
-                      jddp->dinfo.output_components,
-                      ss->scan_line_size, jddp->templat.min_out_size);
+            if_debug4m('w', ss->memory, "[wdd]width=%u, components=%d, scan_line_size=%u, min_out_size=%u\n",
+                       jddp->dinfo.output_width,
+                       jddp->dinfo.output_components,
+                       ss->scan_line_size, jddp->templat.min_out_size);
             if (ss->scan_line_size > (uint) jddp->templat.min_out_size) {
                 /* Create a spare buffer for oversize scanline */
                 jddp->scanline_buffer =
@@ -242,8 +242,8 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
                 uint tomove = min(jddp->bytes_in_scanline,
                                   avail);
 
-                if_debug2('w', "[wdd]moving %u/%u\n",
-                          tomove, avail);
+                if_debug2m('w', ss->memory, "[wdd]moving %u/%u\n",
+                           tomove, avail);
                 memcpy(pw->ptr + 1, jddp->scanline_buffer +
                        (ss->scan_line_size - jddp->bytes_in_scanline),
                        tomove);
@@ -266,10 +266,10 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
                 read = gs_jpeg_read_scanlines(ss, &samples, 1);
                 if (read < 0)
                     return ERRC;
-                if_debug3('w', "[wdd]read returns %d, used=%u, faked_eoi=%d\n",
-                          read,
-                          (uint) (src->next_input_byte - 1 - pr->ptr),
-                          (int)jddp->faked_eoi);
+                if_debug3m('w', ss->memory, "[wdd]read returns %d, used=%u, faked_eoi=%d\n",
+                           read,
+                           (uint) (src->next_input_byte - 1 - pr->ptr),
+                           (int)jddp->faked_eoi);
                 pr->ptr =
                     (jddp->faked_eoi ? pr->limit : src->next_input_byte - 1);
                 if (!read) {

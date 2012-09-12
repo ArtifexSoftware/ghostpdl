@@ -128,7 +128,8 @@ hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
     return pl_map_symbol(psm, chr,
                          pfs->font->storage == pcds_internal,
                          pfs->font->font_type == plgv_MSL,
-                         false);
+                         false,
+                         pgls->memory);
 }
 
 /* ------ Font selection ------- */
@@ -1038,7 +1039,7 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 
 #ifdef CHECK_UNIMPLEMENTED
     if (pgls->g.character.extra_space.x != 0 || pgls->g.character.extra_space.y != 0)
-        dprintf("warning origin offset with non zero extra space not supported\n");
+        dmprintf(pgls->memory, "warning origin offset with non zero extra space not supported\n");
 #endif
     adjusted_height /= 1.6;
     if (hpgl_is_currentfont_stick(pgls))
@@ -1126,7 +1127,7 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
         }
         break;
     default:
-        dprintf("unknown label parameter");
+        dmprintf(pgls->memory, "unknown label parameter");
 
     }
     /* a relative move to the new position */
@@ -1417,10 +1418,10 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
             GL_LB_HAVE_16BITS = !GL_LB_HAVE_16BITS;
             GL_LB_PREV_CH = GL_LB_CH;
             GL_LB_CH = *++p;
-            if_debug1('I',
-                      (GL_LB_CH == '\\' ? " \\%c" : GL_LB_CH >= 33 && GL_LB_CH <= 126 ? " %c" :
-                       " \\%03o"),
-                      GL_LB_CH);
+            if_debug1m('I', pgls->memory,
+                       (GL_LB_CH == '\\' ? " \\%c" : GL_LB_CH >= 33 && GL_LB_CH <= 126 ? " %c" :
+                        " \\%03o"),
+                       GL_LB_CH);
             if ( is_terminator(pgls, GL_LB_PREV_CH, GL_LB_CH, GL_LB_HAVE_16BITS) )
               {
                 if ( !print_terminator )

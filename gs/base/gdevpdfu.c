@@ -1313,7 +1313,7 @@ pdf_print_resource_statistics(gx_device_pdf * pdev)
         for (i = 0; i < NUM_RESOURCE_CHAINS; i++) {
             for (pres = pchain[i]; pres != 0; pres = pres->next, n++);
         }
-        dprintf3("Resource type %d (%s) has %d instances.\n", rtype,
+        dmprintf3(pdev->pdf_memory, "Resource type %d (%s) has %d instances.\n", rtype,
                 (name ? name : ""), n);
     }
 }

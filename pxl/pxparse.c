@@ -255,16 +255,16 @@ px_save_array(px_value_t *pv, px_state_t *pxs, client_name_t cname,
 
 /* Define data tracing if debugging. */
 #ifdef DEBUG
-#  define trace_data(format, cast, ptr, count)\
+#  define trace_data(mem, format, cast, ptr, count)\
                   do\
                     { uint i_;\
                       for ( i_ = 0; i_ < count; ++i_ )\
-                        dprintf1(format, (cast)((ptr)[i_]));\
-                      dputc('\n');\
+                        dmprintf1(mem, format, (cast)((ptr)[i_]));\
+                      dmputc(mem, '\n');\
                     }\
                   while (0)
 static void
-trace_array_data(const char *label, const px_value_t *pav)
+trace_array_data(const gs_memory_t *mem, const char *label, const px_value_t *pav)
 {	px_data_type_t type = pav->type;
         const byte *ptr = pav->value.array.data;
         uint count = pav->value.array.size;
@@ -272,46 +272,46 @@ trace_array_data(const char *label, const px_value_t *pav)
         bool text = (type & pxd_ubyte) != 0;
         uint i;
 
-        dputs(label);
-        dputs((type & pxd_ubyte ? " <" : " {"));
+        dmputs(mem, label);
+        dmputs(mem, (type & pxd_ubyte ? " <" : " {"));
         for ( i = 0; i < count; ++i )
           { if ( !(i & 15) && i )
               { const char *p;
-                dputs("\n  ");
+                dmputs(mem, "\n  ");
                 for ( p = label; *p; ++p )
-                  dputc(' ');
+                  dmputc(mem, ' ');
               }
             if ( type & pxd_ubyte )
-              { dprintf1("%02x ", ptr[i]);
+              { dmprintf1(mem, "%02x ", ptr[i]);
                 if ( ptr[i] < 32 || ptr[i] > 126 )
                   text = false;
               }
             else if ( type & pxd_uint16 )
-              dprintf1("%u ", uint16at(ptr + i * 2, big_endian));
+              dmprintf1(mem, "%u ", uint16at(ptr + i * 2, big_endian));
             else if ( type & pxd_sint16 )
-              dprintf1("%d ", sint16at(ptr + i * 2, big_endian));
+              dmprintf1(mem, "%d ", sint16at(ptr + i * 2, big_endian));
             else if ( type & pxd_uint32 )
-              dprintf1("%lu ", (ulong)uint32at(ptr + i * 4, big_endian));
+              dmprintf1(mem, "%lu ", (ulong)uint32at(ptr + i * 4, big_endian));
             else if ( type & pxd_sint32 )
-              dprintf1("%ld ", (long)sint32at(ptr + i * 4, big_endian));
+              dmprintf1(mem, "%ld ", (long)sint32at(ptr + i * 4, big_endian));
             else if ( type & pxd_real32 )
-              dprintf1("%g ", real32at(ptr + i * 4, big_endian));
+              dmprintf1(mem, "%g ", real32at(ptr + i * 4, big_endian));
             else
-              dputs("? ");
+              dmputs(mem, "? ");
           }
-        dputs((type & pxd_ubyte ? ">\n" : "}\n"));
+        dmputs(mem, (type & pxd_ubyte ? ">\n" : "}\n"));
         if ( text )
-          { dputs("%chars: \"");
-            debug_print_string(ptr, count);
-            dputs("\"\n");
+          { dmputs(mem, "%chars: \"");
+            debug_print_string(mem, ptr, count);
+            dmputs(mem, "\"\n");
           }
 }
-#  define trace_array(pav)\
+#  define trace_array(mem,pav)\
      if ( gs_debug_c('I') )\
-       trace_array_data("array:", pav)
+       trace_array_data(mem,"array:", pav)
 #else
-#  define trace_data(format, cast, ptr, count) DO_NOTHING
-#  define trace_array(pav) DO_NOTHING
+#  define trace_data(mem, format, cast, ptr, count) DO_NOTHING
+#  define trace_array(mem,pav) DO_NOTHING
 #endif
 
 /* Process a buffer of PCL XL commands. */
@@ -364,7 +364,7 @@ top:	if ( st->data_left )
                     data_array.type = pxd_ubyte;
                     data_array.value.array.data = p + 1;
                     data_array.value.array.size = used;
-                    trace_array_data("data:", &data_array);
+                    trace_array_data(pxs->memory,"data:", &data_array);
                   }
 #endif
                 p = st->args.source.data - 1;
@@ -406,7 +406,7 @@ top:	if ( st->data_left )
                   }
                 /* Complete the array and continue parsing. */
                 memcpy(dest, p + 1, st->data_left);
-                trace_array(sp);
+                trace_array(memory, sp);
                 p += st->data_left;
               }
             st->data_left = 0;
@@ -426,16 +426,16 @@ top:	if ( st->data_left )
                     if ( left < 5 )
                       goto x;			/* can't look ahead */
                     st->data_left = get_uint32(st, p + 2);
-                    if_debug2('i', "tag=  0x%2x  data, length %u\n",
-                              p[1], st->data_left);
+                    if_debug2m('i', memory, "tag=  0x%2x  data, length %u\n",
+                               p[1], st->data_left);
                     p += 5;
                     goto top;
                   case pxt_dataLengthByte:
                     if ( left < 2 )
                       goto x;			/* can't look ahead */
                     st->data_left = p[2];
-                    if_debug2('i', "tag=  0x%2x  data, length %u\n",
-                              p[1], st->data_left);
+                    if_debug2m('i', memory, "tag=  0x%2x  data, length %u\n",
+                               p[1], st->data_left);
                     p += 2;
                     goto top;
                   default:
@@ -453,15 +453,15 @@ top:	if ( st->data_left )
           { int count;
 #ifdef DEBUG
             if ( gs_debug_c('i') )
-              { dprintf1("tag=  0x%02x  ", tag);
+              { dmprintf1(memory, "tag=  0x%02x  ", tag);
                 if ( tag == pxt_attr_ubyte || tag == pxt_attr_uint16 )
                   { px_attribute_t attr =
                       (tag == pxt_attr_ubyte ? p[2] : get_uint16(st, p + 2));
                     const char *aname = px_attribute_names[attr];
                     if ( aname )
-                      dprintf1("   @%s\n", aname);
+                      dmprintf1(memory, "   @%s\n", aname);
                     else
-                      dprintf1("   attribute %u ???\n", attr);
+                      dmprintf1(memory, "   attribute %u ???\n", attr);
                   }
                 else
                   { const char *format;
@@ -480,12 +480,12 @@ top:	if ( st->data_left )
                           format = "%s\n";
                       }
                     if ( tname ) {
-                      dprintf1(format, tname);
+                      dmprintf1(memory, format, tname);
                       if (operator)
-                          dprintf1(" (%ld)\n", st->operator_count+1);
+                          dmprintf1(memory, " (%ld)\n", st->operator_count+1);
                     }
                     else
-                      dputs("???\n");
+                      dmputs(memory, "???\n");
                   }
               }
 #endif
@@ -657,11 +657,11 @@ data:		{ int i;
                   sp->attribute = 0;
                   p += 2;
 #ifdef DEBUG
-#  define trace_scalar(format, cast, alt)\
+#  define trace_scalar(mem, format, cast, alt)\
                   if ( gs_debug_c('i') )\
-                    trace_data(format, cast, sp->value.alt, count)
+                    trace_data(mem, format, cast, sp->value.alt, count)
 #else
-#  define trace_scalar(format, cast, alt) DO_NOTHING
+#  define trace_scalar(mem, format, cast, alt) DO_NOTHING
 #endif
                   switch ( tag & 7 )
                     {
@@ -669,7 +669,7 @@ data:		{ int i;
                       sp->type |= pxd_ubyte;
                       for ( i = 0; i < count; ++p, ++i )
                         sp->value.ia[i] = *p;
-dux:		      trace_scalar(" %lu", ulong, ia);
+dux:		      trace_scalar(pxs->memory, " %lu", ulong, ia);
                       --p;
                       continue;
                     case pxt_uint16 & 7:
@@ -686,7 +686,7 @@ dux:		      trace_scalar(" %lu", ulong, ia);
                       sp->type |= pxd_sint16;
                       for ( i = 0; i < count; p += 2, ++i )
                         sp->value.ia[i] = get_sint16(st, p);
-dsx:		      trace_scalar(" %ld", long, ia);
+dsx:		      trace_scalar(pxs->memory, " %ld", long, ia);
                       --p;
                       continue;
                     case pxt_sint32 & 7:
@@ -698,7 +698,7 @@ dsx:		      trace_scalar(" %ld", long, ia);
                       sp->type |= pxd_real32;
                       for ( i = 0; i < count; p += 4, ++i )
                         sp->value.ra[i] = get_real32(st, p);
-                      trace_scalar(" %g", double, ra);
+                      trace_scalar(pxs->memory, " %g", double, ra);
                       --p;
                       continue;
                     default:
@@ -722,7 +722,7 @@ dsx:		      trace_scalar(" %ld", long, ia);
                       break;
                     case pxt_uint16:
                       if ( left < 4 )
-                        { if_debug0('i', "...\n");
+                        { if_debug0m('i', memory, "...\n");
                           /* Undo the state transition. */
                           st->macro_state ^= syntax->state_transition;
                           goto x;
@@ -736,7 +736,7 @@ dsx:		      trace_scalar(" %ld", long, ia);
                       goto x;
                     }
                   nbytes = sp[1].value.array.size;
-                  if_debug1('i', "[%u]\n", sp[1].value.array.size);
+                  if_debug1m('i', memory, "[%u]\n", sp[1].value.array.size);
                   switch ( tag )
                     {
                     case pxt_ubyte_array:
@@ -763,7 +763,7 @@ array:		      ++sp;
                           goto x;
                         }
                       p = dp + nbytes - 1;
-                      trace_array(sp);
+                      trace_array(memory, sp);
                       continue;
                     case pxt_uint16_array:
                       sp[1].type = pxd_array | pxd_uint16;

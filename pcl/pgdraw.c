@@ -56,7 +56,7 @@ hpgl_picture_frame_scale(hpgl_state_t *pgls)
          (pgls->g.picture_frame_width == 0) ||
          (pgls->g.plot_width == 0) ||
          (pgls->g.plot_height == 0) ) {
-        dprintf("bad picture frame coordinates\n");
+        dmprintf(pgls->memory, "bad picture frame coordinates\n");
     } else {
         scale.x = (pgls->g.plot_size_horizontal_specified) ?
             ((hpgl_real_t)pgls->g.picture_frame_width /
@@ -447,7 +447,7 @@ vector:
 
       default:
         /* shouldn't happen; we must have a mode to properly parse hpgl file. */
-        dprintf("warning no hpgl rendering mode set using vector mode\n");
+        dmprintf(pgls->memory, "warning no hpgl rendering mode set using vector mode\n");
         goto vector;
     }
 
@@ -943,7 +943,7 @@ hpgl_set_drawing_color(
                 goto fill;
 
           default:
-            dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
+            dmprintf(pgls->memory, "hpgl_set_drawing_color: internal error illegal fill\n");
             return 0;
         }
         break;
@@ -1008,7 +1008,7 @@ fill:
 
             break;
           default:
-            dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
+            dmprintf(pgls->memory, "hpgl_set_drawing_color: internal error illegal fill\n");
             break;
         }
         break;
@@ -1053,13 +1053,13 @@ fill:
             break;
 
           default:
-            dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
+            dmprintf(pgls->memory, "hpgl_set_drawing_color: internal error illegal fill\n");
             break;
         }
         break;
 
       default:
-        dprintf("hpgl_set_drawing_color: internal error illegal mode\n");
+        dmprintf(pgls->memory, "hpgl_set_drawing_color: internal error illegal mode\n");
         break;
     }
 
@@ -1669,7 +1669,7 @@ hpgl_draw_current_path(
             break;
         }
     default :
-        dprintf("unknown render mode\n");
+        dmprintf(pgls->memory, "unknown render mode\n");
     }
 
     return 0;

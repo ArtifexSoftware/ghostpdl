@@ -925,7 +925,7 @@ static void addByte(ByteList *list,Byte value ) {
  if (list->current < list->maxSize)
   list->data[list->current++] = value;
  else
-   errprintf_nomem("Could not add byte to command\n");
+   eprintf("Could not add byte to command\n");
 }
 
 /*
@@ -939,7 +939,7 @@ static void addArray(ByteList *list, Byte *source, short nb){
     list->current += nb;
   }
   else
-    errprintf_nomem("Could not add byte array to command\n");
+    eprintf("Could not add byte array to command\n");
 }
 
 /*
@@ -957,7 +957,7 @@ static void addNBytes(ByteList * list, Byte value, short nb){
     list->current += nb;
   }
   else
-    errprintf_nomem("Could not add %d bytes to command\n",nb);
+    eprintf1("Could not add %d bytes to command\n",nb);
 }
 
 /*

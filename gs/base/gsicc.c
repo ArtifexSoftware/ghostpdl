@@ -364,15 +364,15 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
 #ifdef DEBUG
     if (!icc_link->is_identity) {
         num_src_comps = pcs->cmm_icc_profile_data->num_comps;
-        if_debug0(gs_debug_flag_icc,"[icc] remap [ ");
+        if_debug0m(gs_debug_flag_icc, dev->memory, "[icc] remap [ ");
         for (k = 0; k < num_src_comps; k++) {
-            if_debug1(gs_debug_flag_icc, "%d ",psrc[k]);
+            if_debug1m(gs_debug_flag_icc, dev->memory, "%d ", psrc[k]);
         }
-        if_debug0(gs_debug_flag_icc,"] --> [ ");
+        if_debug0m(gs_debug_flag_icc, dev->memory, "] --> [ ");
         for (k = 0; k < num_des_comps; k++) {
-            if_debug1(gs_debug_flag_icc, "%d ",psrc_temp[k]);
+            if_debug1m(gs_debug_flag_icc, dev->memory, "%d ", psrc_temp[k]);
         }
-        if_debug0(gs_debug_flag_icc,"]\n");
+        if_debug0m(gs_debug_flag_icc, dev->memory, "]\n");
     }
 #endif
     /* Release the link */

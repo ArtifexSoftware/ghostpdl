@@ -68,9 +68,9 @@ s_jbig2decode_error(void *error_callback_data, const char *msg, Jbig2Severity se
     else sprintf(segment, "(segment 0x%02x)", seg_idx);
 
     if (severity == JBIG2_SEVERITY_FATAL) {
-        dlprintf3("jbig2dec %s %s %s\n", type, msg, segment);
+        dmlprintf3(state->memory, "jbig2dec %s %s %s\n", type, msg, segment);
     } else {
-        if_debug3('w', "[w] jbig2dec %s %s %s\n", type, msg, segment);
+        if_debug3m('w', state->memory, "[w] jbig2dec %s %s %s\n", type, msg, segment);
     }
 
     return code;

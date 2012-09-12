@@ -228,12 +228,14 @@ clip_enumerate_rest(gx_device_clip * rdev,
 
 #ifdef DEBUG
     if (INCR(loops) % clip_interval == 0 && gs_debug_c('q')) {
-        dprintf5("[q]loops=%ld out=%ld in_y=%ld in=%ld in1=%ld\n",
-                 stats_clip.loops, stats_clip.out, stats_clip.in,
-                 stats_clip.in_y, stats_clip.in1);
-        dprintf4("[q]   down=%ld up=%ld x=%ld no_x=%ld\n",
-                 stats_clip.down, stats_clip.up, stats_clip.x,
-                 stats_clip.no_x);
+        dmprintf5(rdev->memory,
+                  "[q]loops=%ld out=%ld in_y=%ld in=%ld in1=%ld\n",
+                  stats_clip.loops, stats_clip.out, stats_clip.in,
+                  stats_clip.in_y, stats_clip.in1);
+        dmprintf4(rdev->memory,
+                  "[q]   down=%ld up=%ld x=%ld no_x=%ld\n",
+                  stats_clip.down, stats_clip.up, stats_clip.x,
+                  stats_clip.no_x);
     }
 #endif
     pccd->x = x, pccd->y = y;
@@ -274,7 +276,7 @@ clip_enumerate_rest(gx_device_clip * rdev,
         const int ymax = rptr->ymax;
         int yec = min(ymax, ye);
 
-        if_debug2('Q', "[Q]yc=%d yec=%d\n", yc, yec);
+        if_debug2m('Q', rdev->memory, "[Q]yc=%d yec=%d\n", yc, yec);
         do {
             int xc = rptr->xmin;
             int xec = rptr->xmax;
@@ -285,7 +287,7 @@ clip_enumerate_rest(gx_device_clip * rdev,
                 xec = xe;
             if (xec > xc) {
                 clip_rect_print('Q', "match", rptr);
-                if_debug2('Q', "[Q]xc=%d xec=%d\n", xc, xec);
+                if_debug2m('Q', rdev->memory, "[Q]xc=%d xec=%d\n", xc, xec);
                 INCR(x);
 /*
  * Conditionally look ahead to detect unclipped vertical strips.  This is

@@ -40,32 +40,32 @@ struct count_node_s {
 };
 
 #ifdef DEBUG
-#  define debug_print_nodes(nodes, n, tag, lengths)\
-     if ( gs_debug_c('W') ) print_nodes_proc(nodes, n, tag, lengths);
+#  define debug_print_nodes(mem, nodes, n, tag, lengths)\
+     if ( gs_debug_c('W') ) print_nodes_proc(mem, nodes, n, tag, lengths);
 static void
-print_nodes_proc(const count_node * nodes, int n, const char *tag, int lengths)
+print_nodes_proc(const gs_memory_t *mem, const count_node * nodes, int n, const char *tag, int lengths)
 {
     int i;
 
-    dlprintf1("[w]---------------- %s ----------------\n", tag);
+    dmlprintf1(mem, "[w]---------------- %s ----------------\n", tag);
     for (i = 0; i < n; ++i)
-        dlprintf7("[w]node %d: f=%ld v=%d len=%d N=%d L=%d R=%d\n",
-                  i, nodes[i].freq, nodes[i].value, nodes[i].code_length,
-                  (nodes[i].next == 0 ? -1 : (int)(nodes[i].next - nodes)),
-                  (nodes[i].left == 0 ? -1 : (int)(nodes[i].left - nodes)),
-                (nodes[i].right == 0 ? -1 : (int)(nodes[i].right - nodes)));
+        dmlprintf7(mem, "[w]node %d: f=%ld v=%d len=%d N=%d L=%d R=%d\n",
+                   i, nodes[i].freq, nodes[i].value, nodes[i].code_length,
+                   (nodes[i].next == 0 ? -1 : (int)(nodes[i].next - nodes)),
+                   (nodes[i].left == 0 ? -1 : (int)(nodes[i].left - nodes)),
+                   (nodes[i].right == 0 ? -1 : (int)(nodes[i].right - nodes)));
     for (i = lengths; i > 0;) {
         int j = i;
         int len = nodes[--j].code_length;
 
         while (j > 0 && nodes[j - 1].code_length == len)
             --j;
-        dlprintf2("[w]%d codes of length %d\n", i - j, len);
+        dmlprintf2(mem, "[w]%d codes of length %d\n", i - j, len);
         i = j;
     }
 }
 #else
-#  define debug_print_nodes(nodes, n, tag, lengths) DO_NOTHING
+#  define debug_print_nodes(mem, nodes, n, tag, lengths) DO_NOTHING
 #endif
 
 /* Node comparison procedures for sorting. */
@@ -189,7 +189,7 @@ hc_compute(hc_definition * def, const long *freqs, gs_memory_t * mem)
             nodes[i].code_length = 0,
             nodes[i].left = nodes[i].right = 0;
     nodes[0].next = 0;
-    debug_print_nodes(nodes, num_values, "after sort", 0);
+    debug_print_nodes(mem, nodes, num_values, "after sort", 0);
 
     /* Construct the Huffman code tree. */
     for (lowest = &nodes[num_values - 1], comb = &nodes[num_values];;
@@ -235,15 +235,15 @@ hc_compute(hc_definition * def, const long *freqs, gs_memory_t * mem)
         comb->left->code_length = comb->right->code_length =
             comb->code_length + 1;
     }
-    debug_print_nodes(nodes, num_values * 2 - 1, "after combine", 0);
+    debug_print_nodes(mem, nodes, num_values * 2 - 1, "after combine", 0);
 
     /* Sort the leaves again by code length. */
     qsort(nodes, num_values, sizeof(count_node), compare_code_lengths);
-    debug_print_nodes(nodes, num_values, "after re-sort", num_values);
+    debug_print_nodes(mem, nodes, num_values, "after re-sort", num_values);
 
     /* Limit the code length to def->num_counts. */
     hc_limit_code_lengths(nodes, num_values, def->num_counts);
-    debug_print_nodes(nodes, num_values, "after limit", num_values);
+    debug_print_nodes(mem, nodes, num_values, "after limit", num_values);
 
     /* Sort within each code length by increasing code value. */
     /* This doesn't affect data compression, but it makes */

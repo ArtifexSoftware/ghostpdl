@@ -77,8 +77,8 @@ s_buffered_process(stream_state * st, stream_cursor_read * pr, bool last)
         return 1;
     if (left < count)
         count = left;
-    if_debug3('w', "[w]buffering %d bytes to position %d, last = %s\n",
-              count, ss->bpos, (last ? "true" : "false"));
+    if_debug3m('w', st->memory, "[w]buffering %d bytes to position %d, last = %s\n",
+               count, ss->bpos, (last ? "true" : "false"));
     memcpy(ss->buffer + ss->bpos, p + 1, count);
     pr->ptr = p += count;
     ss->bpos += count;
@@ -485,7 +485,7 @@ s_BWBSD_process(stream_state * st, stream_cursor_read * pr,
             I = (I << 8) + *++p;
         ss->N = N;
         ss->I = I;
-        if_debug2('w', "[w]N=%d I=%d\n", N, I);
+        if_debug2m('w', ss->memory, "[w]N=%d I=%d\n", N, I);
         pr->ptr = p;
         if (N < 0 || N > ss->BlockSize || I < 0 || I >= N)
             return ERRC;

@@ -1409,7 +1409,7 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 
     /* Write the GSubrs Index, if any, checking the offset. */
     offset = stell(writer.strm) - start_pos;
-    if_debug2('l', "[l]GSubrs = %u => %u\n", GSubrs_offset, offset);
+    if_debug2m('l', s->memory, "[l]GSubrs = %u => %u\n", GSubrs_offset, offset);
     if (offset > GSubrs_offset)
         return_error(gs_error_rangecheck);
     GSubrs_offset = offset;
@@ -1688,12 +1688,13 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
         cff_Index_size(gsubrs_count, gsubrs_size);
     FDSelect_offset = charset_offset + charset_size;
     CharStrings_offset = FDSelect_offset + fdselect_size;
-    if_debug4('l', "[l]GSubrs at %u, charset at %u, FDSelect at %u, CharStrings at %u\n",
-              GSubrs_offset, charset_offset, FDSelect_offset, CharStrings_offset);
+    if_debug4m('l', s->memory,
+               "[l]GSubrs at %u, charset at %u, FDSelect at %u, CharStrings at %u\n",
+               GSubrs_offset, charset_offset, FDSelect_offset, CharStrings_offset);
 
  write:
     start_pos = stell(writer.strm);
-    if_debug1('l', "[l]start_pos = %ld\n", start_pos);
+    if_debug1m('l', s->memory, "[l]start_pos = %ld\n", start_pos);
     /* Write the header, setting offset_size. */
     cff_write_header(&writer, End_offset);
 
@@ -1709,14 +1710,14 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     cff_write_Top_cidfont(&writer, charset_offset, CharStrings_offset,
                           FDSelect_offset, Font_offset, &info);
     Top_size = stell(writer.strm) - start_pos - offset;
-    if_debug1('l', "[l]Top_size = %u\n", Top_size);
+    if_debug1m('l', s->memory, "[l]Top_size = %u\n", Top_size);
 
     /* Write the strings Index. */
     cff_put_Index(&writer, &writer.strings);
 
     /* Write the GSubrs Index, if any, checking the offset. */
     offset = stell(writer.strm) - start_pos;
-    if_debug2('l', "[l]GSubrs = %u => %u\n", GSubrs_offset, offset);
+    if_debug2m('l', s->memory, "[l]GSubrs = %u => %u\n", GSubrs_offset, offset);
     if (offset > GSubrs_offset)
         return_error(gs_error_rangecheck);
     GSubrs_offset = offset;
@@ -1730,12 +1731,12 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
                         pfont->cidata.FDArray[0], true);
 
     /* Write the charset. */
-    if_debug1('l', "[l]charset = %lu\n", stell(writer.strm) - start_pos);
+    if_debug1m('l', s->memory, "[l]charset = %lu\n", stell(writer.strm) - start_pos);
     cff_write_cidset(&writer, &genum);
 
     /* Write the FDSelect structure, checking the offset. */
     offset = stell(writer.strm) - start_pos;
-    if_debug2('l', "[l]FDSelect = %u => %u\n", FDSelect_offset, offset);
+    if_debug2m('l', s->memory, "[l]FDSelect = %u => %u\n", FDSelect_offset, offset);
     if (offset > FDSelect_offset)
         return_error(offset_error("FDselect"));
     FDSelect_offset = offset;
@@ -1743,7 +1744,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 
     /* Write the CharStrings Index, checking the offset. */
     offset = stell(writer.strm) - start_pos;
-    if_debug2('l', "[l]CharStrings = %u => %u\n", CharStrings_offset, offset);
+    if_debug2m('l', s->memory, "[l]CharStrings = %u => %u\n", CharStrings_offset, offset);
     if (offset > CharStrings_offset)
         return_error(offset_error("CharStrings"));
     CharStrings_offset = offset;
@@ -1752,13 +1753,13 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 
     /* Write the Font Dict Index. */
     offset = stell(writer.strm) - start_pos;
-    if_debug2('l', "[l]Font = %u => %u\n", Font_offset, offset);
+    if_debug2m('l', s->memory, "[l]Font = %u => %u\n", Font_offset, offset);
     if (offset > Font_offset)
         return_error(offset_error("Font"));
     Font_offset = offset;
     cff_write_FDArray_offsets(&writer, FDArray_offsets, num_fonts);
     offset = stell(writer.strm) - start_pos;
-    if_debug2('l', "[l]FDArray[0] = %u => %u\n", FDArray_offsets[0], offset);
+    if_debug2m('l', s->memory, "[l]FDArray[0] = %u => %u\n", FDArray_offsets[0], offset);
     if (offset > FDArray_offsets[0])
         return_error(offset_error("FDArray[0]"));
     FDArray_offsets[0] = offset;
@@ -1774,8 +1775,8 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
         cff_write_Top_fdarray(&writer, (gs_font_base *)pfd, Private_offsets[j],
                               Private_offsets[j + 1] - Private_offsets[j]);
         offset = stell(writer.strm) - start_pos;
-        if_debug3('l', "[l]FDArray[%d] = %u => %u\n", j + 1,
-                  FDArray_offsets[j + 1], offset);
+        if_debug3m('l', s->memory, "[l]FDArray[%d] = %u => %u\n", j + 1,
+                   FDArray_offsets[j + 1], offset);
         if (offset > FDArray_offsets[j + 1])
             return_error(offset_error("FDArray"));
         FDArray_offsets[j + 1] = offset;
@@ -1786,8 +1787,8 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
         gs_font_type1 *pfd;
 
         offset = stell(writer.strm) - start_pos;
-        if_debug3('l', "[l]Private[%d] = %u => %u\n",
-                  j, Private_offsets[j], offset);
+        if_debug3m('l', s->memory, "[l]Private[%d] = %u => %u\n",
+                   j, Private_offsets[j], offset);
         if (offset > Private_offsets[j])
             return_error(offset_error("Private"));
         Private_offsets[j] = offset;
@@ -1803,8 +1804,8 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
         gs_font_type1 *pfd;
 
         offset = stell(writer.strm) - (start_pos + Private_offsets[j]);
-        if_debug3('l', "[l]Subrs[%d] = %u => %u\n",
-                  j, Subrs_offsets[j], offset);
+        if_debug3m('l', s->memory, "[l]Subrs[%d] = %u => %u\n",
+                   j, Subrs_offsets[j], offset);
         if (offset > Subrs_offsets[j])
             return_error(offset_error("Subrs"));
         Subrs_offsets[j] = offset;
@@ -1819,7 +1820,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 
     /* Check the final offset. */
     offset = stell(writer.strm) - start_pos;
-    if_debug2('l', "[l]End = %u => %u\n", End_offset, offset);
+    if_debug2m('l', s->memory, "[l]End = %u => %u\n", End_offset, offset);
     if (offset > End_offset)
         return_error(offset_error("End"));
     if (offset == End_offset) {

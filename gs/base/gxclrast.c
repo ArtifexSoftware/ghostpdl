@@ -65,23 +65,23 @@ extern const gs_color_space_type gs_color_space_type_Indexed;
 /* Print a bitmap for tracing */
 #ifdef DEBUG
 static void
-cmd_print_bits(const byte * data, int width, int height, int raster)
+cmd_print_bits(gs_memory_t *mem, const byte * data, int width, int height, int raster)
 {
     int i, j;
 
-    dlprintf3("[L]width=%d, height=%d, raster=%d\n",
+    dmlprintf3(mem, "[L]width=%d, height=%d, raster=%d\n",
               width, height, raster);
     for (i = 0; i < height; i++) {
         const byte *row = data + i * raster;
 
-        dlprintf("[L]");
+        dmlprintf(mem, "[L]");
         for (j = 0; j < raster; j++)
-            dprintf1(" %02x", row[j]);
-        dputc('\n');
+            dmprintf1(mem, " %02x", row[j]);
+        dmputc(mem, '\n');
     }
 }
 #else
-#  define cmd_print_bits(data, width, height, raster) DO_NOTHING
+#  define cmd_print_bits(mem, data, width, height, raster) DO_NOTHING
 #endif
 
 /* Get a variable-length integer operand. */
@@ -443,8 +443,7 @@ read_set_misc_map(byte cb, command_buf_t *pcb, gs_imager_state *pis, gs_memory_t
         cbp++;
     else {
         *pcomp_num = (int) *cbp++;
-                if_debug1('L', " comp_num=%d",
-                        *pcomp_num);
+        if_debug1m('L', mem, " comp_num=%d", *pcomp_num);
     }
     if (cont == cmd_map_other) {
         cbp = cmd_read_data(pcb, (byte *)mdata, count, cbp);
@@ -454,11 +453,11 @@ read_set_misc_map(byte cb, command_buf_t *pcb, gs_imager_state *pis, gs_memory_t
             uint i;
 
             for (i = 0; i < count / sizeof(*mdata); ++i)
-                dprintf1(" 0x%04x", mdata[i]);
-            dputc('\n');
+                dmprintf1(mem, " 0x%04x", mdata[i]);
+            dmputc(mem, '\n');
         }
     } else {
-        if_debug0('L', " none\n");
+        if_debug0m('L', mem, " none\n");
 #endif
     }
     /* Recompute the effective transfer, */
@@ -660,17 +659,17 @@ in:                             /* Initialize for a new page. */
             long offset = (long)clist_file_offset(st, cbp - 1 - cbuf.data);
 
             if (sub)
-                dlprintf1("[L]%s", sub[op & 0xf]);
+                dmlprintf1(mem, "[L]%s", sub[op & 0xf]);
             else
-                dlprintf2("[L]%s %d", cmd_op_names[op >> 4], op & 0xf);
-            dlprintf1("(offset=%ld):", offset);
+                dmlprintf2(mem, "[L]%s %d", cmd_op_names[op >> 4], op & 0xf);
+            dmlprintf1(mem, "(offset=%ld):", offset);
         }
 #endif
         switch (op >> 4) {
             case cmd_op_misc >> 4:
                 switch (op) {
                     case cmd_opv_end_run:
-                        if_debug0('L', "\n");
+                        if_debug0m('L', mem, "\n");
                         continue;
                     case cmd_opv_set_tile_size:
                         cbuf.ptr = cbp;
@@ -683,9 +682,9 @@ in:                             /* Initialize for a new page. */
                     case cmd_opv_set_tile_phase:
                         cmd_getw(state.tile_phase.x, cbp);
                         cmd_getw(state.tile_phase.y, cbp);
-                        if_debug2('L', " (%d,%d)\n",
-                                  state.tile_phase.x,
-                                  state.tile_phase.y);
+                        if_debug2m('L', mem, " (%d,%d)\n",
+                                   state.tile_phase.x,
+                                   state.tile_phase.y);
                         goto set_phase;
                     case cmd_opv_set_tile_bits:
                         bits = tile_bits;
@@ -704,9 +703,9 @@ in:                             /* Initialize for a new page. */
                         bits.cb_depth = *cbp++ >> 2;
                         cmd_getw(bits.width, cbp);
                         cmd_getw(bits.height, cbp);
-                        if_debug4('L', " compress=%d depth=%d size=(%d,%d)",
-                                  compress, bits.cb_depth,
-                                  bits.width, bits.height);
+                        if_debug4m('L', mem, " compress=%d depth=%d size=(%d,%d)",
+                                   compress, bits.cb_depth,
+                                   bits.width, bits.height);
                         bits.cb_raster =
                             bitmap_raster(bits.width * bits.cb_depth);
                         bits.x_reps = bits.y_reps = 1;
@@ -715,7 +714,7 @@ in:                             /* Initialize for a new page. */
                         goto stb;
                     case cmd_opv_set_tile_color:
                         set_colors = state.tile_colors;
-                        if_debug0('L', "\n");
+                        if_debug0m('L', mem, "\n");
                         continue;
                     case cmd_opv_set_misc:
                         {
@@ -725,7 +724,7 @@ in:                             /* Initialize for a new page. */
                                 case cmd_set_misc_lop >> 6:
                                     cmd_getw(state.lop, cbp);
                                     state.lop = (state.lop << 6) + (cb & 0x3f);
-                                    if_debug1('L', " lop=0x%x\n", state.lop);
+                                    if_debug1m('L', mem, " lop=0x%x\n", state.lop);
                                     if (state.lop_enabled)
                                         imager_state.log_op = state.lop;
                                     break;
@@ -735,7 +734,7 @@ in:                             /* Initialize for a new page. */
                                     else
                                         data_x = 0;
                                     data_x = (data_x << 5) + (cb & 0x1f);
-                                    if_debug1('L', " data_x=%d\n", data_x);
+                                    if_debug1m('L', mem, " data_x=%d\n", data_x);
                                     break;
                                 case cmd_set_misc_map >> 6:
                                     cbuf.ptr = cbp;
@@ -749,8 +748,8 @@ in:                             /* Initialize for a new page. */
 
                                     halftone_type = cb & 0x3f;
                                     cmd_getw(num_comp, cbp);
-                                    if_debug2('L', " halftone type=%d num_comp=%u\n",
-                                              halftone_type, num_comp);
+                                    if_debug2m('L', mem, " halftone type=%d num_comp=%u\n",
+                                               halftone_type, num_comp);
                                     code = cmd_resize_halftone(
                                                         &imager_state.dev_ht,
                                                         num_comp, mem);
@@ -766,15 +765,15 @@ in:                             /* Initialize for a new page. */
                     case cmd_opv_enable_lop:
                         state.lop_enabled = true;
                         imager_state.log_op = state.lop;
-                        if_debug0('L', "\n");
+                        if_debug0m('L', mem, "\n");
                         continue;
                     case cmd_opv_disable_lop:
                         state.lop_enabled = false;
                         imager_state.log_op = lop_default;
-                        if_debug0('L', "\n");
+                        if_debug0m('L', mem, "\n");
                         continue;
                     case cmd_opv_end_page:
-                        if_debug0('L', "\n");
+                        if_debug0m('L', mem, "\n");
                         /*
                          * Do end-of-page cleanup, then reinitialize if
                          * there are more pages to come.
@@ -834,18 +833,18 @@ in:                             /* Initialize for a new page. */
                             *pcolor += delta - cmd_delta_offsets[dev_depth_bytes];
                         }
                         if (sizeof(*pcolor) <= sizeof(ulong))
-                            if_debug1('L', " 0x%lx\n", (ulong)*pcolor);
+                            if_debug1m('L', mem, " 0x%lx\n", (ulong)*pcolor);
                         else
-                            if_debug2('L', " 0x%8lx%08lx\n",
-                                (ulong)(*pcolor >> 8*(sizeof(*pcolor) - sizeof(ulong))), (ulong)*pcolor);
+                            if_debug2m('L', mem, " 0x%8lx%08lx\n",
+                                       (ulong)(*pcolor >> 8*(sizeof(*pcolor) - sizeof(ulong))), (ulong)*pcolor);
                         continue;
                     case cmd_opv_set_copy_color:
                         state.color_is_alpha = 0;
-                        if_debug0('L', "\n");
+                        if_debug0m('L', mem, "\n");
                         continue;
                     case cmd_opv_set_copy_alpha:
                         state.color_is_alpha = 1;
-                        if_debug0('L', "\n");
+                        if_debug0m('L', mem, "\n");
                         continue;
                     default:
                         goto bad_op;
@@ -898,10 +897,10 @@ in:                             /* Initialize for a new page. */
                     *pcolor = color;
                 }
                 if (sizeof(*pcolor) <= sizeof(ulong))
-                    if_debug1('L', " 0x%lx\n", (ulong)*pcolor);
+                    if_debug1m('L', mem, " 0x%lx\n", (ulong)*pcolor);
                 else
-                    if_debug2('L', " 0x%8lx%08lx\n",
-                        (ulong)(*pcolor >> 8*(sizeof(*pcolor) - sizeof(ulong))), (ulong)*pcolor);
+                    if_debug2m('L', mem, " 0x%8lx%08lx\n",
+                               (ulong)(*pcolor >> 8*(sizeof(*pcolor) - sizeof(ulong))), (ulong)*pcolor);
                 continue;
             case cmd_op_fill_rect >> 4:
             case cmd_op_tile_rect >> 4:
@@ -940,7 +939,7 @@ in:                             /* Initialize for a new page. */
                 } else {
                     depth = tdev->color_info.depth;
                 }
-                if_debug1('L', " plane_height=0x%x", plane_height);
+                if_debug1m('L', mem, " plane_height=0x%x", plane_height);
                 goto copy;
             case cmd_op_copy_color_alpha >> 4:
                 if (state.color_is_alpha) {
@@ -954,9 +953,9 @@ in:                             /* Initialize for a new page. */
                 if (op & 8) {   /* Use the current "tile". */
 #ifdef DEBUG
                     if (state_slot->index != state.tile_index) {
-                        lprintf2("state_slot->index = %d, state.tile_index = %d!\n",
-                                 state_slot->index,
-                                 state.tile_index);
+                        mlprintf2(mem, "state_slot->index = %d, state.tile_index = %d!\n",
+                                  state_slot->index,
+                                  state.tile_index);
                         code = gs_note_error(gs_error_ioerror);
                         goto out;
                     }
@@ -999,11 +998,11 @@ in:                             /* Initialize for a new page. */
                     /* even after decompression if compressed. */
 #ifdef DEBUG
                     if (planes * out_bytes > cbuf_size) {
-                        lprintf6("bitmap size exceeds buffer!  width=%d raster=%d height=%d\n    file pos %ld buf pos %d/%d\n",
-                                 state.rect.width, raster,
-                                 state.rect.height,
-                                 stell(s), (int)(cbp - cbuf.data),
-                                 (int)(cbuf.end - cbuf.data));
+                        mlprintf6(mem, "bitmap size exceeds buffer!  width=%d raster=%d height=%d\n    file pos %ld buf pos %d/%d\n",
+                                  state.rect.width, raster,
+                                  state.rect.height,
+                                  stell(s), (int)(cbp - cbuf.data),
+                                  (int)(cbuf.end - cbuf.data));
                         code = gs_note_error(gs_error_ioerror);
                         goto out;
                     }
@@ -1097,9 +1096,9 @@ in:                             /* Initialize for a new page. */
                     }
 #ifdef DEBUG
                     if (gs_debug_c('L')) {
-                        dprintf2(" depth=%d, data_x=%d\n",
-                                 depth, data_x);
-                        cmd_print_bits(source, state.rect.width,
+                        dmprintf2(mem, " depth=%d, data_x=%d\n",
+                                  depth, data_x);
+                        cmd_print_bits(mem, source, state.rect.width,
                                        state.rect.height, raster);
                     }
 #endif
@@ -1114,9 +1113,9 @@ in:                             /* Initialize for a new page. */
               sti:state_slot =
                     (tile_slot *) (cdev->chunk.data +
                                  cdev->tile_table[state.tile_index].offset);
-                if_debug2('L', " index=%u offset=%lu\n",
-                          state.tile_index,
-                          cdev->tile_table[state.tile_index].offset);
+                if_debug2m('L', mem, " index=%u offset=%lu\n",
+                           state.tile_index,
+                           cdev->tile_table[state.tile_index].offset);
                 state_tile.data = (byte *) (state_slot + 1);
               stp:state_tile.size.x = state_slot->width;
                 state_tile.size.y = state_slot->height;
@@ -1182,18 +1181,18 @@ set_phase:      /*
                     case cmd_opv_set_fill_adjust:
                         cmd_get_value(imager_state.fill_adjust.x, cbp);
                         cmd_get_value(imager_state.fill_adjust.y, cbp);
-                        if_debug2('L', " (%g,%g)\n",
-                                  fixed2float(imager_state.fill_adjust.x),
-                                  fixed2float(imager_state.fill_adjust.y));
+                        if_debug2m('L', mem, " (%g,%g)\n",
+                                   fixed2float(imager_state.fill_adjust.x),
+                                   fixed2float(imager_state.fill_adjust.y));
                         continue;
                     case cmd_opv_set_ctm:
                         {
                             gs_matrix mat;
 
                             cbp = cmd_read_matrix(&mat, cbp);
-                            if_debug6('L', " [%g %g %g %g %g %g]\n",
-                                      mat.xx, mat.xy, mat.yx, mat.yy,
-                                      mat.tx, mat.ty);
+                            if_debug6m('L', mem, " [%g %g %g %g %g %g]\n",
+                                       mat.xx, mat.xy, mat.yx, mat.yy,
+                                       mat.tx, mat.ty);
                             mat.tx -= x0;
                             mat.ty -= y0;
                             gs_imager_setmatrix(&imager_state, &mat);
@@ -1228,13 +1227,13 @@ set_phase:      /*
                             if (gs_debug_c('L')) {
                                 int i;
 
-                                dprintf4(" dot=%g(mode %d) adapt=%d offset=%g [",
+                                dmprintf4(mem, " dot=%g(mode %d) adapt=%d offset=%g [",
                                          dot_length,
                                          (nb & 0x40) != 0,
                                          (nb & 0x80) != 0, offset);
                                 for (i = 0; i < n; ++i)
-                                    dprintf1("%g ", dash_pattern[i]);
-                                dputs("]\n");
+                                    dmprintf1(mem, "%g ", dash_pattern[i]);
+                                dmputs(mem, "]\n");
                             }
 #endif
                             cbp += n * sizeof(float);
@@ -1243,18 +1242,18 @@ set_phase:      /*
                     case cmd_opv_enable_clip:
                         pcpath = (use_clip ? &clip_path : NULL);
                         clipper_dev_open = false;
-                        if_debug0('L', "\n");
+                        if_debug0m('L', mem, "\n");
                         break;
                     case cmd_opv_disable_clip:
                         pcpath = NULL;
                         clipper_dev_open = false;
-                        if_debug0('L', "\n");
+                        if_debug0m('L', mem, "\n");
                         break;
                     case cmd_opv_begin_clip:
                         pcpath = NULL;
                         clipper_dev_open = false;
                         in_clip = true;
-                        if_debug0('L', "\n");
+                        if_debug0m('L', mem, "\n");
                         code = gx_cpath_reset(&clip_path);
                         if (code < 0)
                             goto out;
@@ -1270,7 +1269,7 @@ set_phase:      /*
                         imager_state.log_op = lop_default;
                         break;
                     case cmd_opv_end_clip:
-                        if_debug0('L', "\n");
+                        if_debug0m('L', mem, "\n");
                         gx_cpath_accum_end(&clip_accum, &clip_path);
                         tdev = target;
                         /*
@@ -1313,13 +1312,13 @@ set_phase:      /*
 
                             cbp = cmd_read_rect(op & 0xf0, &state.rect, cbp);
                             if (dev_color.type != gx_dc_type_devn) {
-                                if_debug0('L', "hl rect fill without devn color\n");
+                                if_debug0m('L', mem, "hl rect fill without devn color\n");
                                 code = gs_note_error(gs_error_typecheck);
                                 goto out;
                             }
-                            if_debug4('L', " x=%d y=%d w=%d h=%d\n",
-                                      state.rect.x, state.rect.y,
-                                      state.rect.width,state.rect.height);
+                            if_debug4m('L', mem, " x=%d y=%d w=%d h=%d\n",
+                                       state.rect.x, state.rect.y,
+                                       state.rect.width,state.rect.height);
                             rect_hl.p.x = int2fixed(state.rect.x - x0);
                             rect_hl.p.y = int2fixed(state.rect.y - y0);
                             rect_hl.q.x = int2fixed(state.rect.width) + rect_hl.p.x;
@@ -1344,9 +1343,9 @@ set_phase:      /*
                             image_rect.q.x = image.d.Width - diff;
                             cmd_getw(diff, cbp);
                             image_rect.q.y = image.d.Height - diff;
-                            if_debug4('L', " rect=(%d,%d),(%d,%d)",
-                                      image_rect.p.x, image_rect.p.y,
-                                      image_rect.q.x, image_rect.q.y);
+                            if_debug4m('L', mem, " rect=(%d,%d),(%d,%d)",
+                                       image_rect.p.x, image_rect.p.y,
+                                       image_rect.q.x, image_rect.q.y);
                         }
                         goto ibegin;
                     case cmd_opv_begin_image:
@@ -1359,9 +1358,9 @@ set_phase:      /*
                         image_rect.p.y = 0;
                         image_rect.q.x = image.d.Width;
                         image_rect.q.y = image.d.Height;
-                        if_debug2('L', " size=(%d,%d)",
+                        if_debug2m('L', mem, " size=(%d,%d)",
                                   image.d.Width, image.d.Height);
-ibegin:                 if_debug0('L', "\n");
+ibegin:                 if_debug0m('L', mem, "\n");
                         {
                             /* Processing an image operation */
                             dev_proc(tdev, set_graphics_type_tag)(tdev, GS_IMAGE_TAG);
@@ -1377,7 +1376,7 @@ ibegin:                 if_debug0('L', "\n");
                     case cmd_opv_image_plane_data:
                         cmd_getw(data_height, cbp);
                         if (data_height == 0) {
-                            if_debug0('L', " done image\n");
+                            if_debug0m('L', mem, " done image\n");
                             code = gx_image_end(image_info, true);
                             if (code < 0)
                                 goto out;
@@ -1412,7 +1411,7 @@ ibegin:                 if_debug0('L', "\n");
                     case cmd_opv_image_data:
                         cmd_getw(data_height, cbp);
                         if (data_height == 0) {
-                            if_debug0('L', " done image\n");
+                            if_debug0m('L', mem, " done image\n");
                             code = gx_image_end(image_info, true);
                             if (code < 0)
                                 goto out;
@@ -1423,8 +1422,8 @@ ibegin:                 if_debug0('L', "\n");
                             int plane;
 
                             cmd_getw(bytes_per_plane, cbp);
-                            if_debug2('L', " height=%u raster=%u\n",
-                                      data_height, bytes_per_plane);
+                            if_debug2m('L', mem, " height=%u raster=%u\n",
+                                       data_height, bytes_per_plane);
                             for (plane = 0;
                                  plane < image_info->num_planes;
                                  ++plane
@@ -1498,7 +1497,8 @@ idata:                  data_size = 0;
                             for (plane = 0; plane < image_info->num_planes;
                                  ++plane)
                                 if (planes[plane].data != 0)
-                                    cmd_print_bits(planes[plane].data,
+                                    cmd_print_bits(mem,
+                                                   planes[plane].data,
                                                    image_rect.q.x -
                                                    image_rect.p.x,
                                                    data_height,
@@ -1531,7 +1531,7 @@ idata:                  data_size = 0;
                                     goto out;
                                 break;
                             case cmd_opv_ext_create_compositor:
-                                if_debug0('L', " ext_create_compositor\n");
+                                if_debug0m('L', mem, " ext_create_compositor\n");
                                 cbuf.ptr = cbp;
                                 /*
                                  * The screen phase may have been changed during
@@ -1695,7 +1695,7 @@ idata:                  data_size = 0;
                                 {
                                     uint    ht_size;
 
-                                    if_debug0('L', " ext_put_halftone\n");
+                                    if_debug0m('L', mem, " ext_put_halftone\n");
                                     enc_u_getw(ht_size, cbp);
                                     code = read_alloc_ht_buff(&ht_buff, ht_size, mem);
                                     if (code < 0)
@@ -1703,7 +1703,7 @@ idata:                  data_size = 0;
                                 }
                                 break;
                             case cmd_opv_ext_put_ht_seg:
-                                if_debug0('L', " ext_put_ht_seg\n");
+                                if_debug0m('L', mem, " ext_put_ht_seg\n");
                                 cbuf.ptr = cbp;
                                 code = read_ht_segment(&ht_buff, &cbuf,
                                                        &imager_state, tdev,
@@ -1714,18 +1714,18 @@ idata:                  data_size = 0;
                                 break;
                             case cmd_opv_ext_set_color_is_devn:
                                 state.color_is_devn = true;
-                                if_debug0('L', " ext_set_color_is_devn\n");
+                                if_debug0m('L', mem, " ext_set_color_is_devn\n");
                                 break;
                             case cmd_opv_ext_unset_color_is_devn:
                                 state.color_is_devn = false;
-                                if_debug0('L', " ext_unset_color_is_devn\n");
+                                if_debug0m('L', mem, " ext_unset_color_is_devn\n");
                                 break;
                             case cmd_opv_ext_tile_rect_hl:
                                 /* Strip tile with devn colors */
                                 cbp = cmd_read_rect(op & 0xf0, &state.rect, cbp);
-                                if_debug4('L', " x=%d y=%d w=%d h=%d\n",
-                                          state.rect.x, state.rect.y,
-                                          state.rect.width,state.rect.height);
+                                if_debug4m('L', mem, " x=%d y=%d w=%d h=%d\n",
+                                           state.rect.x, state.rect.y,
+                                           state.rect.width,state.rect.height);
                                 code = (*dev_proc(tdev, strip_tile_rect_devn))
                                     (tdev, &state_tile,
                                      state.rect.x - x0, state.rect.y - y0,
@@ -1749,7 +1749,7 @@ idata:                  data_size = 0;
                                     byte type_and_flag = *cbp++;
                                     byte is_continuation = type_and_flag & 0x80;
 
-                                   if_debug0('L', " cmd_opv_ext_put_drawing_color\n");
+                                   if_debug0m('L', mem, " cmd_opv_ext_put_drawing_color\n");
                                    pdct = gx_get_dc_type_from_index(type_and_flag & 0x7F);
                                     if (pdct == 0) {
                                         code = gs_note_error(gs_error_rangecheck);
@@ -1810,8 +1810,8 @@ idata:                  data_size = 0;
                     if (!in_path) {
                         ppos.x = int2fixed(state.rect.x);
                         ppos.y = int2fixed(state.rect.y);
-                        if_debug2('L', " (%d,%d)", state.rect.x,
-                                  state.rect.y);
+                        if_debug2m('L', mem, " (%d,%d)", state.rect.x,
+                                   state.rect.y);
                         notes = sn_none;
                         in_path = true;
                     }
@@ -1825,7 +1825,7 @@ idata:                  data_size = 0;
                                 vs[i++] =
                                     ((fixed) ((b ^ 0x20) - 0x20) << 13) +
                                     ((int)cbp[1] << 5) + (cbp[2] >> 3);
-                                if_debug1('L', " %g", fixed2float(vs[i - 1]));
+                                if_debug1m('L', mem, " %g", fixed2float(vs[i - 1]));
                                 cbp += 2;
                                 v = (int)((*cbp & 7) ^ 4) - 4;
                                 break;
@@ -1848,7 +1848,7 @@ idata:                  data_size = 0;
                                 v = (b ^ 0xd0) - 0x10;
                                 vs[i] =
                                     ((v << 8) + cbp[1]) << (_fixed_shift - 2);
-                                if_debug1('L', " %g", fixed2float(vs[i]));
+                                if_debug1m('L', mem, " %g", fixed2float(vs[i]));
                                 cbp += 2;
                                 continue;
                             default /*case 7 */ :
@@ -1862,9 +1862,9 @@ idata:                  data_size = 0;
                         /* the Borland C++ 4.5 compiler incorrectly */
                         /* sign-extends the result of the shift. */
                         vs[i] = (v << 16) + (uint) (cbp[-2] << 8) + cbp[-1];
-                        if_debug1('L', " %g", fixed2float(vs[i]));
+                        if_debug1m('L', mem, " %g", fixed2float(vs[i]));
                     }
-                    if_debug0('L', "\n");
+                    if_debug0m('L', mem, "\n");
                     code = clist_decode_segment(&path, op, vs, &ppos,
                                                 x0, y0, notes);
                     if (code < 0)
@@ -1881,7 +1881,7 @@ idata:                  data_size = 0;
 
                     ppath = &path;
 
-                    if_debug0('L', "\n");
+                    if_debug0m('L', mem, "\n");
                     /* if in clip, flatten path first */
                     if (in_clip) {
                         gx_path_init_local(&fpath, mem);
@@ -2077,14 +2077,14 @@ idata:                  data_size = 0;
                     goto out;
                 continue;
             default:
-              bad_op:lprintf5("Bad op %02x band y0 = %d file pos %ld buf pos %d/%d\n",
+              bad_op:mlprintf5(mem, "Bad op %02x band y0 = %d file pos %ld buf pos %d/%d\n",
                  op, y0, stell(s), (int)(cbp - cbuf.data), (int)(cbuf.end - cbuf.data));
                 {
                     const byte *pp;
 
                     for (pp = cbuf.data; pp < cbuf.end; pp += 10) {
-                        dlprintf1("%4d:", (int)(pp - cbuf.data));
-                        dprintf10(" %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+                        dmlprintf1(mem, "%4d:", (int)(pp - cbuf.data));
+                        dmprintf10(mem, " %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
                                   pp[0], pp[1], pp[2], pp[3], pp[4],
                                   pp[5], pp[6], pp[7], pp[8], pp[9]);
                     }
@@ -2092,7 +2092,7 @@ idata:                  data_size = 0;
                 code = gs_note_error(gs_error_Fatal);
                 goto out;
         }
-        if_debug4('L', " x=%d y=%d w=%d h=%d\n",
+        if_debug4m('L', mem, " x=%d y=%d w=%d h=%d\n",
                   state.rect.x, state.rect.y, state.rect.width,
                   state.rect.height);
         switch (op >> 4) {
@@ -2380,7 +2380,7 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 
     cmd_getw(index, cbp);
     cmd_getw(offset, cbp);
-    if_debug2('L', " index=%d offset=%lu\n", pcls->tile_index, offset);
+    if_debug2m('L', mem, " index=%d offset=%lu\n", pcls->tile_index, offset);
     pcls->tile_index = index;
     cdev->tile_table[pcls->tile_index].offset = offset;
     slot = (tile_slot *)(cdev->chunk.data + offset);
@@ -2476,7 +2476,7 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
                                   bits->height);
 #ifdef DEBUG
     if (gs_debug_c('L'))
-        cmd_print_bits(data, bits->width, bits->height, bits->cb_raster);
+        cmd_print_bits(mem, data, bits->width, bits->height, bits->cb_raster);
 #endif
     pcb->ptr = cbp;
     return 0;
@@ -2578,39 +2578,39 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
         cb = *cbp++;
         pis->line_params.start_cap = (gs_line_cap)((cb >> 3) & 7);
         pis->line_params.join = (gs_line_join)(cb & 7);
-        if_debug2('L', " start_cap=%d join=%d\n",
-                  pis->line_params.start_cap, pis->line_params.join);
+        if_debug2m('L', pis->memory, " start_cap=%d join=%d\n",
+                   pis->line_params.start_cap, pis->line_params.join);
         cb = *cbp++;
         pis->line_params.end_cap = (gs_line_cap)((cb >> 3) & 7);
         pis->line_params.dash_cap = (gs_line_cap)(cb & 7);
-        if_debug2('L', "end_cap=%d dash_cap=%d\n",
-                  pis->line_params.end_cap, pis->line_params.dash_cap);
+        if_debug2m('L', pis->memory, "end_cap=%d dash_cap=%d\n",
+                   pis->line_params.end_cap, pis->line_params.dash_cap);
     }
     if (mask & cj_ac_sa_known) {
         cb = *cbp++;
         pis->line_params.curve_join = ((cb >> 2) & 7) - 1;
         pis->accurate_curves = (cb & 2) != 0;
         pis->stroke_adjust = cb & 1;
-        if_debug3('L', " CJ=%d AC=%d SA=%d\n",
-                  pis->line_params.curve_join, pis->accurate_curves,
-                  pis->stroke_adjust);
+        if_debug3m('L', pis->memory, " CJ=%d AC=%d SA=%d\n",
+                   pis->line_params.curve_join, pis->accurate_curves,
+                   pis->stroke_adjust);
     }
     if (mask & flatness_known) {
         cmd_get_value(pis->flatness, cbp);
-        if_debug1('L', " flatness=%g\n", pis->flatness);
+        if_debug1m('L', pis->memory, " flatness=%g\n", pis->flatness);
     }
     if (mask & line_width_known) {
         float width;
 
         cmd_get_value(width, cbp);
-        if_debug1('L', " line_width=%g\n", width);
+        if_debug1m('L', pis->memory, " line_width=%g\n", width);
         gx_set_line_width(&pis->line_params, width);
     }
     if (mask & miter_limit_known) {
         float limit;
 
         cmd_get_value(limit, cbp);
-        if_debug1('L', " miter_limit=%g\n", limit);
+        if_debug1m('L', pis->memory, " miter_limit=%g\n", limit);
         gx_set_miter_limit(&pis->line_params, limit);
     }
     if (mask & op_bm_tk_known) {
@@ -2623,26 +2623,26 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
         pis->overprint = cb & 1;
         cb = *cbp++;
         pis->renderingintent = cb;
-        if_debug5('L', " BM=%d TK=%d OPM=%d OP=%d RI=%d\n",
-                  pis->blend_mode, pis->text_knockout, pis->overprint_mode,
-                  pis->overprint, pis->renderingintent);
+        if_debug5m('L', pis->memory, " BM=%d TK=%d OPM=%d OP=%d RI=%d\n",
+                   pis->blend_mode, pis->text_knockout, pis->overprint_mode,
+                   pis->overprint, pis->renderingintent);
     }
     if (mask & segment_notes_known) {
         cb = *cbp++;
         *pnotes = (segment_notes)(cb & 0x3f);
-        if_debug1('L', " notes=%d\n", *pnotes);
+        if_debug1m('L', pis->memory, " notes=%d\n", *pnotes);
     }
     if (mask & opacity_alpha_known) {
         cmd_get_value(pis->opacity.alpha, cbp);
-        if_debug1('L', " opacity.alpha=%g\n", pis->opacity.alpha);
+        if_debug1m('L', pis->memory, " opacity.alpha=%g\n", pis->opacity.alpha);
     }
     if (mask & shape_alpha_known) {
         cmd_get_value(pis->shape.alpha, cbp);
-        if_debug1('L', " shape.alpha=%g\n", pis->shape.alpha);
+        if_debug1m('L', pis->memory, " shape.alpha=%g\n", pis->shape.alpha);
     }
     if (mask & alpha_known) {
         cmd_get_value(pis->alpha, cbp);
-        if_debug1('L', " alpha=%u\n", pis->alpha);
+        if_debug1m('L', pis->memory, " alpha=%u\n", pis->alpha);
     }
     pcb->ptr = cbp;
     return 0;
@@ -2661,9 +2661,9 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
     cmm_profile_t *picc_profile;
     clist_icc_color_t icc_information;
 
-    if_debug3('L', " %d%s%s\n", index,
-              (b & 8 ? " (indexed)" : ""),
-              (b & 4 ? "(proc)" : ""));
+    if_debug3m('L', mem, " %d%s%s\n", index,
+               (b & 8 ? " (indexed)" : ""),
+               (b & 4 ? "(proc)" : ""));
     /* They all store the ICC information.  Even if it is NULL
        it is used in the ICC case to avoid reading from the
        serialized profile data which is stored elsewhere in the
@@ -2801,7 +2801,7 @@ read_put_params(command_buf_t *pcb, gs_imager_state *pis,
     int code;
 
     cmd_get_value(param_length, cbp);
-    if_debug1('L', " length=%d\n", param_length);
+    if_debug1m('L', mem, " length=%d\n", param_length);
     if (param_length == 0) {
         code = 1;               /* empty list */
         goto out;
@@ -3044,7 +3044,7 @@ cmd_select_map(cmd_map_index map_index, cmd_map_contents cont,
     *pcomp_num = NULL;          /* Only used for color transfer maps */
     switch (map_index) {
         case cmd_map_transfer:
-            if_debug0('L', " transfer");
+            if_debug0m('L', mem, " transfer");
             rc_unshare_struct(pis->set_transfer.gray, gx_transfer_map,
                 &st_transfer_map, mem, return_error(gs_error_VMerror),
                 "cmd_select_map(default_transfer)");
@@ -3075,7 +3075,7 @@ cmd_select_map(cmd_map_index map_index, cmd_map_contents cont,
         case cmd_map_transfer_3:
             pmap = &pis->set_transfer.gray;
             *pcomp_num = &pis->set_transfer.gray_component_num;
-transfer1:  if_debug1('L', " transfer[%d]", (int)(map_index - cmd_map_transfer_0));
+transfer1:  if_debug1m('L', mem, " transfer[%d]", (int)(map_index - cmd_map_transfer_0));
             rc_unshare_struct(*pmap, gx_transfer_map, &st_transfer_map, mem,
                 return_error(gs_error_VMerror), "cmd_select_map(transfer)");
             map = *pmap;
@@ -3088,12 +3088,12 @@ transfer2:  if (cont != cmd_map_other) {
             }
             break;
         case cmd_map_black_generation:
-            if_debug0('L', " black generation");
+            if_debug0m('L', mem, " black generation");
             pmap = &pis->black_generation;
             cname = "cmd_select_map(black generation)";
             goto alloc;
         case cmd_map_undercolor_removal:
-            if_debug0('L', " undercolor removal");
+            if_debug0m('L', mem, " undercolor removal");
             pmap = &pis->undercolor_removal;
             cname = "cmd_select_map(undercolor removal)";
 alloc:      if (cont == cmd_map_none) {

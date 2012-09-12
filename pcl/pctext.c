@@ -139,7 +139,8 @@ substituting_allowed(pcl_state_t *pcs, gs_char mapped_chr)
     remapped_chr = pl_map_symbol(pcs->map, mapped_chr,
                                  false, /* storage not internal */
                                  false, /* unicode not msl */
-                                 false  /* is_590 */);
+                                 false  /* is_590 */,
+				 pcs->memory);
 
     /* now we can assume the characters are unicode */
     if (
@@ -243,7 +244,8 @@ get_next_char(
  r: db = pcl_downloaded_and_bound(plfont);
     mapped_chr = pl_map_symbol((db ? NULL : pcs->map), chr,
                                plfont->storage == pcds_internal,
-                               plfont->font_type == plft_MSL, false);
+                               plfont->font_type == plft_MSL, false,
+                               pcs->memory);
     *pchr = mapped_chr;
     if (mapped_chr == 0xffff) {
         if ((plfont->storage != pcds_internal) &&

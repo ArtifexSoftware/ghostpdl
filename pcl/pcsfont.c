@@ -200,7 +200,7 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
                                                   pcs->memory,
                                                   "pcl_font_control()");
                 if ( plfont == 0 ) {
-                    dprintf("pcsfont.c clone font FIXME\n");
+                    dmprintf(pcs->memory, "pcsfont.c clone font FIXME\n");
                     return 0;
                 }
                 code = gs_definefont(pcs->font_dir, plfont->pfont);
@@ -281,7 +281,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
             }
 
             if (sum != 0) {
-                dprintf1("corrupt font sum=%ld\n", sum);
+                dmprintf1(pcs->memory, "corrupt font sum=%ld\n", sum);
                 return e_Range;
             }
         }
@@ -483,7 +483,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
            characters for now, since we don't have real world
            examples for the other font file formats.  */
         if ( data[0] != pccd_bitmap && data[3] != 1 ) {
-            dprintf("continuation not implemented for this font type\n");
+            dmprintf(pcs->memory, "continuation not implemented for this font type\n");
             return e_Unimplemented;
         }
         /* append the new data to the new object */

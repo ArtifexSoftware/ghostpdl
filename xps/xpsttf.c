@@ -202,7 +202,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     /* mac easy */
     if ( glyph_name_index < 258 )
     {
-        // dprintf2("glyph name (mac) %d = %s\n", glyph, pl_mac_names[glyph_name_index]);
+        // dmprintf2(pfont->memory, "glyph name (mac) %d = %s\n", glyph, pl_mac_names[glyph_name_index]);
         pstr->data = (byte*) pl_mac_names[glyph_name_index];
         pstr->size = strlen((char*)pstr->data);
         return 0;
@@ -262,7 +262,7 @@ xps_true_callback_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
     gs_fixed_point saved_adjust;
     int code;
 
-    // dprintf1("build char ttf %d\n", glyph);
+    // dmprintf1(pfont->memory, "build char ttf %d\n", glyph);
 
     code = gs_type42_get_metrics(p42, glyph, sbw);
     if (code < 0)

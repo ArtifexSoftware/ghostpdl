@@ -33,9 +33,9 @@
 
 /* Forward declarations */
 #ifdef DEBUG
-#define trace_ctm(pgs) trace_matrix_fixed(&(pgs)->ctm)
-static void trace_matrix_fixed(const gs_matrix_fixed *);
-static void trace_matrix(const gs_matrix *);
+#define trace_ctm(pgs) trace_matrix_fixed((pgs)->memory, &(pgs)->ctm)
+static void trace_matrix_fixed(const gs_memory_t *mem, const gs_matrix_fixed *);
+static void trace_matrix(const gs_memory_t *mem, const gs_matrix *);
 
 #endif
 
@@ -43,7 +43,7 @@ static void trace_matrix(const gs_matrix *);
 #ifdef DEBUG
 #  define print_inverse(pgs)\
      if ( gs_debug_c('x') )\
-       dlprintf("[x]Inverting:\n"), trace_ctm(pgs), trace_matrix(&pgs->ctm_inverse)
+       dmlprintf(pgs->memory, "[x]Inverting:\n"), trace_ctm(pgs), trace_matrix(pgs->memory, &pgs->ctm_inverse)
 #else
 #  define print_inverse(pgs) DO_NOTHING
 #endif
@@ -105,7 +105,7 @@ gs_initmatrix(gs_state * pgs)
     set_ctm_only(pgs, imat);
 #ifdef DEBUG
     if (gs_debug_c('x'))
-        dlprintf("[x]initmatrix:\n"), trace_ctm(pgs);
+        dmlprintf(pgs->memory, "[x]initmatrix:\n"), trace_ctm(pgs);
 #endif
     return 0;
 }
@@ -162,7 +162,7 @@ gs_setcharmatrix(gs_state * pgs, const gs_matrix * pmat)
     char_tm_only(pgs) = cmat;
 #ifdef DEBUG
     if (gs_debug_c('x'))
-        dlprintf("[x]setting char_tm:"), trace_matrix_fixed(&pgs->char_tm);
+        dmlprintf(pgs->memory, "[x]setting char_tm:"), trace_matrix_fixed(pgs->memory, &pgs->char_tm);
 #endif
     pgs->char_tm_valid = true;
     return 0;
@@ -195,7 +195,7 @@ gs_setmatrix(gs_state * pgs, const gs_matrix * pmat)
     set_ctm_only(pgs, *pmat);
 #ifdef DEBUG
     if (gs_debug_c('x'))
-        dlprintf("[x]setmatrix:\n"), trace_ctm(pgs);
+        dmlprintf(pgs->memory, "[x]setmatrix:\n"), trace_ctm(pgs);
 #endif
     return 0;
 }
@@ -207,7 +207,7 @@ gs_imager_setmatrix(gs_imager_state * pis, const gs_matrix * pmat)
     set_ctm_only(pis, *pmat);
 #ifdef DEBUG
     if (gs_debug_c('x'))
-        dlprintf("[x]imager_setmatrix:\n"), trace_ctm(pis);
+        dmlprintf(pis->memory, "[x]imager_setmatrix:\n"), trace_ctm(pis);
 #endif
     return 0;
 }
@@ -236,7 +236,7 @@ gs_translate(gs_state * pgs, floatp dx, floatp dy)
     update_ctm(pgs, pt.x, pt.y);
 #ifdef DEBUG
     if (gs_debug_c('x'))
-        dlprintf4("[x]translate: %f %f -> %f %f\n",
+        dmlprintf4(pgs->memory, "[x]translate: %f %f -> %f %f\n",
                   dx, dy, pt.x, pt.y),
             trace_ctm(pgs);
 #endif
@@ -254,7 +254,7 @@ gs_translate_untransformed(gs_state * pgs, floatp dx, floatp dy)
     update_ctm(pgs, pt.x, pt.y);
 #ifdef DEBUG
     if (gs_debug_c('x'))
-        dlprintf4("[x]translate_untransformed: %f %f -> %f %f\n",
+        dmlprintf4(pgs->memory, "[x]translate_untransformed: %f %f -> %f %f\n",
                   dx, dy, pt.x, pt.y),
             trace_ctm(pgs);
 #endif
@@ -271,7 +271,7 @@ gs_scale(gs_state * pgs, floatp sx, floatp sy)
     pgs->ctm_inverse_valid = false, pgs->char_tm_valid = false;
 #ifdef DEBUG
     if (gs_debug_c('x'))
-        dlprintf2("[x]scale: %f %f\n", sx, sy), trace_ctm(pgs);
+        dmlprintf2(pgs->memory, "[x]scale: %f %f\n", sx, sy), trace_ctm(pgs);
 #endif
     return 0;
 }
@@ -285,7 +285,7 @@ gs_rotate(gs_state * pgs, floatp ang)
     pgs->ctm_inverse_valid = false, pgs->char_tm_valid = false;
 #ifdef DEBUG
     if (gs_debug_c('x'))
-        dlprintf1("[x]rotate: %f\n", ang), trace_ctm(pgs);
+        dmlprintf1(pgs->memory, "[x]rotate: %f\n", ang), trace_ctm(pgs);
 #endif
     return code;
 }
@@ -302,7 +302,7 @@ gs_concat(gs_state * pgs, const gs_matrix * pmat)
     set_ctm_only(pgs, cmat);
 #ifdef DEBUG
     if (gs_debug_c('x'))
-        dlprintf("[x]concat:\n"), trace_matrix(pmat), trace_ctm(pgs);
+        dmlprintf(pgs->memory, "[x]concat:\n"), trace_matrix(pgs->memory, pmat), trace_ctm(pgs);
 #endif
     return code;
 }
@@ -394,11 +394,11 @@ gx_translate_to_fixed(register gs_state * pgs, fixed px, fixed py)
     }
 #ifdef DEBUG
     if (gs_debug_c('x')) {
-        dlprintf2("[x]translate_to_fixed %g, %g:\n",
-                  fixed2float(px), fixed2float(py));
+        dmlprintf2(pgs->memory, "[x]translate_to_fixed %g, %g:\n",
+                   fixed2float(px), fixed2float(py));
         trace_ctm(pgs);
-        dlprintf("[x]   char_tm:\n");
-        trace_matrix_fixed(&pgs->char_tm);
+        dmlprintf(pgs->memory, "[x]   char_tm:\n");
+        trace_matrix_fixed(pgs->memory, &pgs->char_tm);
     }
 #endif
     gx_setcurrentpoint(pgs, fixed2float(pgs->ctm.tx_fixed), fixed2float(pgs->ctm.ty_fixed));
@@ -423,7 +423,7 @@ gx_scale_char_matrix(register gs_state * pgs, int sx, int sy)
     scale_cxy(sx, xx, yx);
     scale_cxy(sy, xy, yy);
 #undef scale_cxy
-    if_debug2('x', "[x]char scale: %d %d\n", sx, sy);
+    if_debug2m('x', pgs->memory, "[x]char scale: %d %d\n", sx, sy);
     return 0;
 }
 
@@ -487,6 +487,7 @@ gx_matrix_to_fixed_coeff(const gs_matrix * pmat, register fixed_coeff * pfc,
     SET_C(yx);
     SET_C(yy);
 #undef SET_C
+#ifndef GS_THREADSAFE
 #ifdef DEBUG
     if (gs_debug_c('x')) {
         dlprintf6("[x]ctm: [%6g %6g %6g %6g %6g %6g]\n",
@@ -495,6 +496,7 @@ gx_matrix_to_fixed_coeff(const gs_matrix * pmat, register fixed_coeff * pfc,
                   scale, pfc->xx, pfc->xy, pfc->yx, pfc->yy,
                   pfc->shift);
     }
+#endif
 #endif
     pfc->max_bits = max_bits;
     return 0;
@@ -536,22 +538,22 @@ fixed_coeff_mult(fixed value, long coeff, const fixed_coeff *pfc, int maxb)
 
 /* Print a matrix */
 static void
-trace_matrix_fixed(const gs_matrix_fixed * pmat)
+trace_matrix_fixed(const gs_memory_t *mem, const gs_matrix_fixed * pmat)
 {
-    trace_matrix((const gs_matrix *)pmat);
+    trace_matrix(mem, (const gs_matrix *)pmat);
     if (pmat->txy_fixed_valid) {
-        dprintf2("\t\tt_fixed: [%6g %6g]\n",
-                 fixed2float(pmat->tx_fixed),
-                 fixed2float(pmat->ty_fixed));
+        dmprintf2(mem, "\t\tt_fixed: [%6g %6g]\n",
+                  fixed2float(pmat->tx_fixed),
+                  fixed2float(pmat->ty_fixed));
     } else {
-        dputs("\t\tt_fixed not valid\n");
+        dmputs(mem, "\t\tt_fixed not valid\n");
     }
 }
 static void
-trace_matrix(register const gs_matrix * pmat)
+trace_matrix(const gs_memory_t *mem, register const gs_matrix * pmat)
 {
-    dlprintf6("\t[%6g %6g %6g %6g %6g %6g]\n",
-              pmat->xx, pmat->xy, pmat->yx, pmat->yy, pmat->tx, pmat->ty);
+    dmlprintf6(mem, "\t[%6g %6g %6g %6g %6g %6g]\n",
+               pmat->xx, pmat->xy, pmat->yx, pmat->yy, pmat->tx, pmat->ty);
 }
 
 #endif

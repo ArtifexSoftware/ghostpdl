@@ -201,7 +201,8 @@ gx_ciedefg_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *m
     gx_cie_scalar_cache    *lmn_caches = &(pcs->params.abc->common.caches.DecodeLMN[0]);
     gx_cie_scalar_cache *defg_caches = &(pcs->params.defg->caches_defg.DecodeDEFG[0]);
 
-    if_debug0(gs_debug_flag_icc,"[icc] Creating ICC profile from defg object");  
+    if_debug0m(gs_debug_flag_icc, memory,
+               "[icc] Creating ICC profile from defg object");  
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory->stable_memory);
     /* record the cie alt space as the icc alternative color space */
@@ -228,9 +229,9 @@ gx_remap_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs_in,
     gs_client_color scale_pc;
     gs_color_space *pcs = (gs_color_space *) pcs_in;
 
-    if_debug4('c', "[c]remap CIEDEFG [%g %g %g %g]\n",
-              pc->paint.values[0], pc->paint.values[1],
-              pc->paint.values[2], pc->paint.values[3]);
+    if_debug4m('c', pis->memory, "[c]remap CIEDEFG [%g %g %g %g]\n",
+               pc->paint.values[0], pc->paint.values[1],
+               pc->paint.values[2], pc->paint.values[3]);
     /* If we are comming in here then we have not completed
        the conversion of the DEFG space to an ICC type.  We
        will finish that process now. */
@@ -265,9 +266,9 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs_in,
     gs_client_color scale_pc;
     gs_color_space *pcs = (gs_color_space *) pcs_in;
 
-    if_debug4('c', "[c]concretize DEFG [%g %g %g %g]\n",
-              pc->paint.values[0], pc->paint.values[1],
-              pc->paint.values[2], pc->paint.values[3]);
+    if_debug4m('c', pis->memory, "[c]concretize DEFG [%g %g %g %g]\n",
+               pc->paint.values[0], pc->paint.values[1],
+               pc->paint.values[2], pc->paint.values[3]);
     /* If we are comming in here then we have not completed
        the conversion of the DEFG space to an ICC type.  We
        will finish that process now. */
@@ -297,7 +298,7 @@ gx_psconcretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
     cie_cached_vector3 vlmn;
     int code;
 
-    if_debug1('c', "[c]concretize CIEA %g\n", pc->paint.values[0]);
+    if_debug1m('c', pis->memory, "[c]concretize CIEA %g\n", pc->paint.values[0]);
     code = gx_cie_check_rendering_inline(pcs, pconc, pis);
     if (code < 0)
         return code;
@@ -322,9 +323,9 @@ gx_psconcretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     cie_cached_vector3 vec3;
     int code;
 
-    if_debug3('c', "[c]concretize CIEABC [%g %g %g]\n",
-              pc->paint.values[0], pc->paint.values[1],
-              pc->paint.values[2]);
+    if_debug3m('c', pis->memory, "[c]concretize CIEABC [%g %g %g]\n",
+               pc->paint.values[0], pc->paint.values[1],
+               pc->paint.values[2]);
     code = gx_cie_check_rendering_inline(pcs, pconc, pis);
     if (code < 0)
         return code;
@@ -353,9 +354,9 @@ gx_psconcretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
     cie_cached_vector3 vec3;
     int code;
 
-    if_debug4('c', "[c]concretize DEFG [%g %g %g %g]\n",
-              pc->paint.values[0], pc->paint.values[1],
-              pc->paint.values[2], pc->paint.values[3]);
+    if_debug4m('c', pis->memory, "[c]concretize DEFG [%g %g %g %g]\n",
+               pc->paint.values[0], pc->paint.values[1],
+               pc->paint.values[2], pc->paint.values[3]);
     code = gx_cie_check_rendering_inline(pcs, pconc, pis);
     if (code < 0)
         return code;
@@ -415,9 +416,9 @@ gx_psconcretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
     cie_cached_vector3 vec3;
     int code;
 
-    if_debug3('c', "[c]concretize DEF [%g %g %g]\n",
-              pc->paint.values[0], pc->paint.values[1],
-              pc->paint.values[2]);
+    if_debug3m('c', pis->memory, "[c]concretize DEF [%g %g %g]\n",
+               pc->paint.values[0], pc->paint.values[1],
+               pc->paint.values[2]);
     code = gx_cie_check_rendering_inline(pcs, pconc, pis);
     if (code < 0)
         return code;
@@ -500,9 +501,9 @@ gx_remap_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs_in,
     int i,code;
     gs_color_space *pcs = (gs_color_space *) pcs_in;
 
-    if_debug3('c', "[c]remap CIEDEF [%g %g %g]\n",
-              pc->paint.values[0], pc->paint.values[1],
-              pc->paint.values[2]);
+    if_debug3m('c', pis->memory, "[c]remap CIEDEF [%g %g %g]\n",
+               pc->paint.values[0], pc->paint.values[1],
+               pc->paint.values[2]);
     /* If we are comming in here then we have not completed
        the conversion of the DEF space to an ICC type.  We
        will finish that process now. */
@@ -537,9 +538,9 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs_in,
     gs_client_color scale_pc;
     gs_color_space *pcs = (gs_color_space *) pcs_in;
 
-    if_debug3('c', "[c]concretize DEF [%g %g %g]\n",
-              pc->paint.values[0], pc->paint.values[1],
-              pc->paint.values[2]);
+    if_debug3m('c', pis->memory, "[c]concretize DEF [%g %g %g]\n",
+               pc->paint.values[0], pc->paint.values[1],
+               pc->paint.values[2]);
     /* If we are comming in here then we have not completed
        the conversion of the DEF space to an ICC type.  We
        will finish that process now. */
@@ -570,7 +571,7 @@ gx_cieabc_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, bool *islab,
     gx_cie_vector_cache *abc_caches = &(pcs->params.abc->caches.DecodeABC.caches[0]);
     gx_cie_scalar_cache *lmn_caches = &(pcs->params.abc->common.caches.DecodeLMN[0]);
 
-    if_debug0(gs_debug_flag_icc,"[icc] Creating ICC profile from abc object");  
+    if_debug0m(gs_debug_flag_icc, memory, "[icc] Creating ICC profile from abc object");  
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory);
     /* record the cie alt space as the icc alternative color space */
@@ -603,9 +604,9 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs_in,
     gs_color_space *pcs = (gs_color_space *) pcs_in;
 
 
-    if_debug3('c', "[c]remap CIEABC [%g %g %g]\n",
-              pc->paint.values[0], pc->paint.values[1],
-              pc->paint.values[2]);
+    if_debug3m('c', pis->memory, "[c]remap CIEABC [%g %g %g]\n",
+               pc->paint.values[0], pc->paint.values[1],
+               pc->paint.values[2]);
     /* If we are comming in here then we have not completed
        the conversion of the ABC space to an ICC type.  We
        will finish that process now. */
@@ -640,9 +641,9 @@ gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs_in,
     bool islab;
     gs_color_space *pcs = (gs_color_space *) pcs_in;
 
-    if_debug3('c', "[c]concretize CIEABC [%g %g %g]\n",
-              pc->paint.values[0], pc->paint.values[1],
-              pc->paint.values[2]);
+    if_debug3m('c', pis->memory, "[c]concretize CIEABC [%g %g %g]\n",
+               pc->paint.values[0], pc->paint.values[1],
+               pc->paint.values[2]);
     /* If we are comming in here then we have not completed
        the conversion of the ABC space to an ICC type.  We
        will finish that process now. */
@@ -671,7 +672,8 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *memo
     gx_cie_vector_cache *a_cache = &(pcs->params.a->caches.DecodeA);
     gx_cie_scalar_cache    *lmn_caches = &(pcs->params.a->common.caches.DecodeLMN[0]);
 
-    if_debug0(gs_debug_flag_icc,"[icc] Creating ICC profile from CIEA object");  
+    if_debug0m(gs_debug_flag_icc, memory,
+               "[icc] Creating ICC profile from CIEA object");  
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory);
     /* record the cie alt space as the icc alternative color space */
@@ -699,7 +701,7 @@ gx_remap_CIEA(const gs_client_color * pc, const gs_color_space * pcs_in,
     gs_client_color scale_pc;
     gs_color_space *pcs = (gs_color_space *) pcs_in;
 
-    if_debug1('c', "[c]remap CIEA [%g]\n",pc->paint.values[0]);
+    if_debug1m('c', dev->memory, "[c]remap CIEA [%g]\n",pc->paint.values[0]);
    /* If we are coming in here then we may have not completed
        the conversion of the CIE A space to an ICC type.  We
        will finish that process now. */
@@ -734,7 +736,7 @@ gx_concretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs_in,
     gs_client_color scale_pc;
     gs_color_space *pcs = (gs_color_space *) pcs_in;
 
-    if_debug1('c', "[c]concretize CIEA %g\n", pc->paint.values[0]);
+    if_debug1m('c', dev->memory, "[c]concretize CIEA %g\n", pc->paint.values[0]);
     /* If we are comming in here then we have not completed
        the conversion of the CIE A space to an ICC type.  We
        will finish that process now. */
@@ -876,15 +878,15 @@ gx_cie_real_remap_finish(cie_cached_vector3 vec3, frac * pconc,
         rfix[2] = FABC(2, s);
 #undef FABC
 #undef EABC
-        if_debug6('c', "[c]ABC=%g,%g,%g => iabc=%g,%g,%g\n",
-                  cie_cached2float(vec3.u), cie_cached2float(vec3.v),
-                  cie_cached2float(vec3.w), fixed2float(rfix[0]),
-                  fixed2float(rfix[1]), fixed2float(rfix[2]));
+        if_debug6m('c', pis->memory, "[c]ABC=%g,%g,%g => iabc=%g,%g,%g\n",
+                   cie_cached2float(vec3.u), cie_cached2float(vec3.v),
+                   cie_cached2float(vec3.w), fixed2float(rfix[0]),
+                   fixed2float(rfix[1]), fixed2float(rfix[2]));
         gx_color_interpolate_linear(rfix, &pcrd->RenderTable.lookup,
                                     pconc);
-        if_debug3('c', "[c]  interpolated => %g,%g,%g\n",
-                  frac2float(pconc[0]), frac2float(pconc[1]),
-                  frac2float(pconc[2]));
+        if_debug3m('c', pis->memory, "[c]  interpolated => %g,%g,%g\n",
+                   frac2float(pconc[0]), frac2float(pconc[1]),
+                   frac2float(pconc[2]));
         if (!pcrd->caches.RenderTableT_is_identity) {
             /* Map the interpolated values. */
 #define frac2cache_index(v) frac2bits(v, gx_cie_log2_cache_size)
@@ -911,9 +913,9 @@ gx_cie_real_remap_finish(cie_cached_vector3 vec3, frac * pconc,
 
         /* (*pcrd->RenderTable.T)(prtc, m, pcrd, pconc); */
 
-        if_debug6('c', "[c]ABC=%g,%g,%g => iabc=%d,%d,%d\n",
-                  cie_cached2float(vec3.u), cie_cached2float(vec3.v),
-                  cie_cached2float(vec3.w), ia, ib, ic);
+        if_debug6m('c', pis->memory, "[c]ABC=%g,%g,%g => iabc=%d,%d,%d\n",
+                   cie_cached2float(vec3.u), cie_cached2float(vec3.v),
+                   cie_cached2float(vec3.w), ia, ib, ic);
         if (pcrd->caches.RenderTableT_is_identity) {
             pconc[0] = byte2frac(prtc[0]);
             pconc[1] = byte2frac(prtc[1]);

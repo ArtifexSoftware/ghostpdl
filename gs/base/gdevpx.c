@@ -1553,7 +1553,8 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
         palette[1] = (byte) color1;
         palette_size = 2;
         color_space = eGray;
-        if_debug2('b', "color palette %02X %02X\n", palette[0], palette[1]);
+        if_debug2m('b', dev->memory, "color palette %02X %02X\n",
+                   palette[0], palette[1]);
     } else {
         palette[0] = (byte) (color0 >> 16);
         palette[1] = (byte) (color0 >> 8);
