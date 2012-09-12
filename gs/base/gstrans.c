@@ -31,8 +31,6 @@
 #include "gxclist.h"
 #include "gsicc_manage.h"
 
-#define PUSH_TS 0
-
 /* ------ Transparency-related graphics state elements ------ */
 
 int
@@ -107,46 +105,6 @@ bool
 gs_currenttextknockout(const gs_state *pgs)
 {
     return pgs->text_knockout;
-}
-
-/* ------ Transparency rendering stack ------ */
-
-gs_transparency_state_type_t
-gs_current_transparency_type(const gs_state *pgs)
-{
-    return (pgs->transparency_stack == 0 ? 0 :
-            pgs->transparency_stack->type);
-}
-
-/* Support for dummy implementation */
-gs_private_st_ptrs1(st_transparency_state, gs_transparency_state_t,
-                    "gs_transparency_state_t", transparency_state_enum_ptrs,
-                    transparency_state_reloc_ptrs, saved);
-#if PUSH_TS
-static int
-push_transparency_stack(gs_state *pgs, gs_transparency_state_type_t type,
-                        client_name_t cname)
-{
-    gs_transparency_state_t *pts =
-        gs_alloc_struct(pgs->memory, gs_transparency_state_t,
-                        &st_transparency_state, cname);
-
-    if (pts == 0)
-        return_error(gs_error_VMerror);
-    pts->saved = pgs->transparency_stack;
-    pts->type = type;
-    pgs->transparency_stack = pts;
-    return 0;
-}
-#endif
-static void
-pop_transparency_stack(gs_state *pgs, client_name_t cname)
-{
-    gs_transparency_state_t *pts = pgs->transparency_stack; /* known non-0 */
-    gs_transparency_state_t *saved = pts->saved;
-
-    gs_free_object(pgs->memory, pts, cname);
-    pgs->transparency_stack = saved;
 }
 
 /* This is used to keep pdf14 compositor actions from the interpreter from
@@ -406,7 +364,7 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
 #endif
     if (dev_proc(pdev, begin_transparency_group) != 0)
         return (*dev_proc(pdev, begin_transparency_group)) (pdev, &tgp,
-                                                        &bbox, pis, NULL, NULL);
+                                                        &bbox, pis, NULL);
     else
         return 0;
 }
@@ -430,7 +388,7 @@ gx_end_transparency_group(gs_imager_state * pis, gx_device * pdev)
 {
     if_debug0('v', "[v]gx_end_transparency_group\n");
     if (dev_proc(pdev, end_transparency_group) != 0)
-        return (*dev_proc(pdev, end_transparency_group)) (pdev, pis, NULL);
+        return (*dev_proc(pdev, end_transparency_group)) (pdev, pis);
     else
         return 0;
 }
@@ -671,7 +629,7 @@ gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
                "has TR"));
     if (dev_proc(pdev, begin_transparency_mask) != 0)
         return (*dev_proc(pdev, begin_transparency_mask))
-                        (pdev, &tmp, &(pparams->bbox), pis, NULL, NULL);
+                        (pdev, &tmp, &(pparams->bbox), pis, NULL);
     else
         return 0;
 }
@@ -720,22 +678,9 @@ gx_end_transparency_mask(gs_imager_state * pis, gx_device * pdev,
     if_debug2('v', "[v](0x%lx)gx_end_transparency_mask(%d)\n", (ulong)pis,
               (int)pparams->csel);
     if (dev_proc(pdev, end_transparency_mask) != 0)
-        return (*dev_proc(pdev, end_transparency_mask)) (pdev, pis, NULL);
+        return (*dev_proc(pdev, end_transparency_mask)) (pdev, pis);
     else
         return 0;
-}
-
-int
-gs_discard_transparency_layer(gs_state *pgs)
-{
-    /****** NYI, DUMMY ******/
-    gs_transparency_state_t *pts = pgs->transparency_stack;
-
-    if_debug1('v', "[v](0x%lx)gs_discard_transparency_layer\n", (ulong)pgs);
-    if (!pts)
-        return_error(gs_error_rangecheck);
-    pop_transparency_stack(pgs, "gs_discard_transparency_layer");
-    return 0;
 }
 
 /*

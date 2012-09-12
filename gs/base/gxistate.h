@@ -251,7 +251,6 @@ typedef struct gs_xstate_trans_flags {
         gs_id soft_mask_id;\
         bool text_knockout;\
         uint text_rendering_mode;\
-        gs_transparency_state_t *transparency_stack;\
         bool has_transparency;   /* used to keep from doing shading fills in device color space */\
         gx_device *trans_device;  /* trans device has all mappings to group color space */\
         bool overprint;\
@@ -275,7 +274,7 @@ typedef struct gs_xstate_trans_flags {
           (*get_cmap_procs)(const gs_imager_state *, const gx_device *);\
         gs_color_rendering_state_common
 #define st_imager_state_num_ptrs\
-  (st_line_params_num_ptrs + st_cr_state_num_ptrs + 6)
+  (st_line_params_num_ptrs + st_cr_state_num_ptrs + 5)
 /* Access macros */
 #define ctm_only(pis) (*(const gs_matrix *)&(pis)->ctm)
 #define ctm_only_writable(pis) (*(gs_matrix *)&(pis)->ctm)
@@ -301,7 +300,7 @@ struct gs_imager_state_s {
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
   false, {0, 0}, {0, 0}, false, \
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
-{ 1.0 }, { 1.0 }, {0, 0}, 0, 0/*false*/, 0, 0, 0, 0, 0/*false*/, 0, 0, 0/*false*/, 0, 0, 1.0,  \
+{ 1.0 }, { 1.0 }, {0, 0}, 0, 0/*false*/, 0, 0, 0, 0/*false*/, 0, 0, 0/*false*/, 0, 0, 1.0,  \
    { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 0/*false*/, 1.0,\
   1, 0, 0, 0, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
   gx_default_get_cmap_procs

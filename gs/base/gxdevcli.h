@@ -1173,7 +1173,6 @@ typedef struct gs_param_list_s gs_param_list;
     const gs_transparency_group_params_t *ptgp,\
     const gs_rect *pbbox,\
     gs_imager_state *pis,\
-    gs_transparency_state_t **ppts,\
     gs_memory_t *mem)
 #define dev_proc_begin_transparency_group(proc)\
   dev_t_proc_begin_transparency_group(proc, gx_device)
@@ -1187,8 +1186,7 @@ typedef struct gs_param_list_s gs_param_list;
 */
 #define dev_t_proc_end_transparency_group(proc, dev_t)\
   int proc(gx_device *dev,\
-    gs_imager_state *pis,\
-    gs_transparency_state_t **ppts)
+    gs_imager_state *pis)
 #define dev_proc_end_transparency_group(proc)\
   dev_t_proc_end_transparency_group(proc, gx_device)
 
@@ -1202,7 +1200,6 @@ typedef struct gs_param_list_s gs_param_list;
     const gx_transparency_mask_params_t *ptmp,\
     const gs_rect *pbbox,\
     gs_imager_state *pis,\
-    gs_transparency_state_t **ppts,\
     gs_memory_t *mem)
 #define dev_proc_begin_transparency_mask(proc)\
   dev_t_proc_begin_transparency_mask(proc, gx_device)
@@ -1215,8 +1212,7 @@ typedef struct gs_param_list_s gs_param_list;
 */
 #define dev_t_proc_end_transparency_mask(proc, dev_t)\
   int proc(gx_device *dev,\
-    gs_imager_state *pis,\
-    gs_transparency_mask_t **pptm)
+    gs_imager_state *pis)
 #define dev_proc_end_transparency_mask(proc)\
   dev_t_proc_end_transparency_mask(proc, gx_device)
 
@@ -1225,8 +1221,7 @@ typedef struct gs_param_list_s gs_param_list;
   either a group or a mask.  Set *ppts to 0 iff the stack is now empty.
 */
 #define dev_t_proc_discard_transparency_layer(proc, dev_t)\
-  int proc(gx_device *dev,\
-    gs_transparency_state_t **ppts)
+  int proc(gx_device *dev)
 #define dev_proc_discard_transparency_layer(proc)\
   dev_t_proc_discard_transparency_layer(proc, gx_device)
 

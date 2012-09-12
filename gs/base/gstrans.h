@@ -146,14 +146,6 @@ int gs_settextknockout(gs_state *, bool);
 bool gs_currenttextknockout(const gs_state *);
 
 /*
- * Manage transparency group and mask rendering.  Eventually these will be
- * driver procedures, taking dev + pis instead of pgs.
- */
-
-gs_transparency_state_type_t
-    gs_current_transparency_type(const gs_state *pgs);
-
-/*
  * We have to abbreviate the procedure name because procedure names are
  * only unique to 23 characters on VMS.
  */
@@ -181,8 +173,6 @@ int gs_begin_transparency_mask(gs_state *pgs,
 int gs_end_transparency_mask(gs_state *pgs,
                              gs_transparency_channel_selector_t csel);
 
-int gs_discard_transparency_layer(gs_state *pgs);
-
 /*
  * Imager level routines for the PDF 1.4 transparency operations.
  */
@@ -196,8 +186,6 @@ int gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
 
 int gx_end_transparency_mask(gs_imager_state * pis, gx_device * pdev,
                                 const gs_pdf14trans_params_t * pparams);
-
-int gx_discard_transparency_layer(gs_imager_state *pis);
 
 /* These are used for watching for q Smask Q events.  We need to
    send special compositor commands to keep the bands in sync

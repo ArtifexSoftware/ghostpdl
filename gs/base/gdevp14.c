@@ -3375,9 +3375,7 @@ static	int
 pdf14_begin_transparency_group(gx_device *dev,
                               const gs_transparency_group_params_t *ptgp,
                               const gs_rect *pbbox,
-                              gs_imager_state *pis,
-                              gs_transparency_state_t **ppts,
-                              gs_memory_t *mem)
+                              gs_imager_state *pis, gs_memory_t *mem)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
     double alpha = pis->opacity.alpha * pis->shape.alpha;
@@ -3480,8 +3478,7 @@ pdf14_begin_transparency_group(gx_device *dev,
 
 static	int
 pdf14_end_transparency_group(gx_device *dev,
-                              gs_imager_state *pis,
-                              gs_transparency_state_t **ppts)
+                              gs_imager_state *pis)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
     int code;
@@ -4101,9 +4098,7 @@ static	int
 pdf14_begin_transparency_mask(gx_device	*dev,
                               const gx_transparency_mask_params_t *ptmp,
                               const gs_rect *pbbox,
-                              gs_imager_state *pis,
-                              gs_transparency_state_t **ppts,
-                              gs_memory_t *mem)
+                              gs_imager_state *pis, gs_memory_t *mem)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
     byte bg_alpha = 255;
@@ -4171,8 +4166,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 }
 
 static	int
-pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
-                          gs_transparency_mask_t **pptm)
+pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_parent_color_t *parent_color;

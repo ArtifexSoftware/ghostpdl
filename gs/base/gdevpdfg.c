@@ -1456,9 +1456,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
          * we can't represent them, so return a rangecheck.
          */
         if (pis->opacity.alpha != 1 ||
-            pis->shape.alpha != 1 ||
-            pis->transparency_stack != 0
-            )
+            pis->shape.alpha != 1)
             return_error(gs_error_rangecheck);
     }
     /*

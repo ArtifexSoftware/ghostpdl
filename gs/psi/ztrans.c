@@ -242,9 +242,7 @@ zbegintransparencygroup(i_ctx_t *i_ctx_p)
 static int
 zdiscardtransparencygroup(i_ctx_t *i_ctx_p)
 {
-    if (gs_current_transparency_type(igs) != TRANSPARENCY_STATE_Group)
-        return_error(e_rangecheck);
-    return gs_discard_transparency_layer(igs);
+    return 0;
 }
 
 /* - .endtransparencygroup - */
@@ -344,9 +342,7 @@ tf_using_function(floatp in_val, float *out, void *proc_data)
 static int
 zdiscardtransparencymask(i_ctx_t *i_ctx_p)
 {
-    if (gs_current_transparency_type(igs) != TRANSPARENCY_STATE_Mask)
-        return_error(e_rangecheck);
-    return gs_discard_transparency_layer(igs);
+    return 0;
 }
 
 /* <mask#> .endtransparencymask - */

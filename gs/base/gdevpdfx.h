@@ -928,7 +928,6 @@ dev_proc_begin_transparency_group(gdev_pdf_begin_transparency_group);
 dev_proc_end_transparency_group(gdev_pdf_end_transparency_group);
 dev_proc_begin_transparency_mask(gdev_pdf_begin_transparency_mask);
 dev_proc_end_transparency_mask(gdev_pdf_end_transparency_mask);
-dev_proc_discard_transparency_layer(gdev_pdf_discard_transparency_layer);
 dev_proc_dev_spec_op(gdev_pdf_dev_spec_op);
 
 /* ================ Utility procedures ================ */

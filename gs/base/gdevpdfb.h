@@ -79,7 +79,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
   gdev_pdf_end_transparency_group,	/* end_transparency_group */
   gdev_pdf_begin_transparency_mask,	/* begin_transparency_mask */
   gdev_pdf_end_transparency_mask,	/* end_transparency_mask */
-  gdev_pdf_discard_transparency_layer,	/* discard_transparency_layer */
+  NULL,	            /* discard_transparency_layer */
   NULL,				/* get_color_mapping_procs */
   NULL,				/* get_color_comp_index */
   NULL,				/* encode_color */

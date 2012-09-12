@@ -398,17 +398,14 @@ int
 gdev_pdf_begin_transparency_group(gx_device *dev,
     const gs_transparency_group_params_t *ptgp,
     const gs_rect *pbbox,
-    gs_imager_state *pis,
-    gs_transparency_state_t **ppts,
-    gs_memory_t *mem)
+    gs_imager_state *pis, gs_memory_t *mem)
 {
     return 0;
 }
 
 int
 gdev_pdf_end_transparency_group(gx_device *dev,
-    gs_imager_state *pis,
-    gs_transparency_state_t **ppts)
+    gs_imager_state *pis)
 {
     return 0;
 }
@@ -417,24 +414,14 @@ int
 gdev_pdf_begin_transparency_mask(gx_device *dev,
     const gx_transparency_mask_params_t *ptmp,
     const gs_rect *pbbox,
-    gs_imager_state *pis,
-    gs_transparency_state_t **ppts,
-    gs_memory_t *mem)
+    gs_imager_state *pis, gs_memory_t *mem)
 {
     return 0;
 }
 
 int
 gdev_pdf_end_transparency_mask(gx_device *dev,
-    gs_imager_state *pis,
-    gs_transparency_mask_t **pptm)
-{
-    return 0;
-}
-
-int
-gdev_pdf_discard_transparency_layer(gx_device *dev,
-    gs_transparency_state_t **ppts)
+    gs_imager_state *pis)
 {
     return 0;
 }

@@ -53,26 +53,6 @@ typedef enum {
   "HardLight", "Overlay", "SoftLight", "Luminosity", "Hue",\
   "Saturation", "Color", "Compatible"
 
-/* Define the common part for a transparency stack state. */
-typedef enum {
-    TRANSPARENCY_STATE_Group = 1,	/* must not be 0 */
-    TRANSPARENCY_STATE_Mask
-} gs_transparency_state_type_t;
-#define GS_TRANSPARENCY_STATE_COMMON\
-    gs_transparency_state_t *saved;\
-    gs_transparency_state_type_t type
-typedef struct gs_transparency_state_s gs_transparency_state_t;
-struct gs_transparency_state_s {
-    GS_TRANSPARENCY_STATE_COMMON;
-};
-
-/* Define the common part for a cached transparency mask. */
-#define GS_TRANSPARENCY_MASK_COMMON\
-    rc_header rc
-typedef struct gs_transparency_mask_s {
-    GS_TRANSPARENCY_MASK_COMMON;
-} gs_transparency_mask_t;
-
 /* Define the parameter structure for a transparency group. */
 #ifndef gs_color_space_DEFINED
 #  define gs_color_space_DEFINED
