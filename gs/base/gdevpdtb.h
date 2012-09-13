@@ -117,7 +117,7 @@ bool pdf_has_subset_prefix(const byte *str, uint size);
  * Add the XXXXXX+ prefix for a subset font.
  */
 int pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr,
-                        byte *used, int count);
+                        byte *used, int count, char *md5_hash);
 
 /*
  * Determine whether a copied font should be subsetted.

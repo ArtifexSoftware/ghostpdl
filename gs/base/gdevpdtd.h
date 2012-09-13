@@ -104,6 +104,8 @@ bool pdf_font_descriptor_is_subset(const pdf_font_descriptor_t *pfd);
  */
 gs_string *pdf_font_descriptor_name(pdf_font_descriptor_t *pfd);
 
+char *pdf_fontfile_hash(void *pfd);
+
 /*
  * Return the (copied, subset or complete) font associated with a FontDescriptor.
  * This procedure probably shouldn't exist....

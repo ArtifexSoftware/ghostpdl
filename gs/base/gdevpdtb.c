@@ -146,7 +146,7 @@ hash(ulong v, int index, ushort w)
  * Add the XXXXXX+ prefix for a subset font.
  */
 int
-pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, byte *used, int count)
+pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, byte *used, int count, char *md5_hash)
 {
     uint size = pstr->size;
     byte *data = gs_resize_string(pdev->pdf_memory, pstr->data, size,
@@ -159,6 +159,12 @@ pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, byte *used, in
 
     if (data == 0)
         return_error(gs_error_VMerror);
+
+    if (md5_hash) {
+        for (i = 0; i < 8; i++) {
+            v = hash(v, i, *(ushort *)(md5_hash + i));
+        }
+    }
 
     /* Hash the 'used' array. */
     for (i = 0; i < len0; i += sizeof(ushort))
