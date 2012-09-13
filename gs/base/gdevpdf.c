@@ -1703,7 +1703,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     for (i = 1;i < pdev->ResourceUsageSize; i++) {
         pdf_linearisation_record_t *record = &pdev->ResourceUsage[i];
 
-        if (record->PageUsage < resource_usage_page_shared)
+        if (record->PageUsage < resource_usage_page_shared || record->PageUsage == resource_usage_not_referenced)
             continue;
         if (record->PageUsage == resource_usage_page_shared) {
             /* shared objects are recorded in the shared object hints, and also the page hints */
