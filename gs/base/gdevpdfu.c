@@ -408,8 +408,8 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
          * mark derived from the BoundingBox of all the individual pages.
          */
         {
-            int pagecount = 1;
-            int urx=0, ury=0, j;
+            int pagecount = 1, j;
+            double urx=0, ury=0;
 
             for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
                 pdf_resource_t *pres = pdev->resources[resourcePage].chains[j];
@@ -418,16 +418,18 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
                     if ((!pres->named || pdev->ForOPDFRead)
                         && !pres->object->written) {
                         pdf_page_t *page = &pdev->pages[pagecount - 1];
-                        if ((int)ceil(page->MediaBox.x) > urx)
-                            urx = (int)ceil(page->MediaBox.x);
-                        if ((int)ceil(page->MediaBox.y) > urx)
-                            ury = (int)ceil(page->MediaBox.y);
+                        if (ceil(page->MediaBox.x) > urx)
+                            urx = ceil(page->MediaBox.x);
+                        if (ceil(page->MediaBox.y) > ury)
+                            ury = ceil(page->MediaBox.y);
                         pagecount++;
                     }
             }
-            sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", urx, ury);
+            sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", (int)urx, (int)ury);
+            stream_write(s, (byte *)BBox, strlen(BBox));
+            sprintf(BBox, "%%%%HiResBoundingBox: 0 0 %.2f %.2f\n", urx, ury);
+            stream_write(s, (byte *)BBox, strlen(BBox));
         }
-        stream_write(s, (byte *)BBox, strlen(BBox));
         cre_date_time_len = pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time) - 1);
         cre_date_time[cre_date_time_len] = 0;
         sprintf(BBox, "%%%%Creator: %s %d (%s)\n", gs_product, (int)gs_revision,
