@@ -1922,7 +1922,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     write_hint_stream(linear_params, (unsigned int *)&linear_params->SharedHintHeader.FirstSharedObject, 32);
     dprintf1("\nFirstSharedObject %d\n", linear_params->SharedHintHeader.FirstSharedObject);
     write_hint_stream(linear_params, (unsigned int *)&linear_params->SharedHintHeader.FirstObjectOffset, 32);
-    dprintf1("FirstObjectOffset %d\n", linear_params->SharedHintHeader.FirstObjectOffset);
+    dprintf1("FirstObjectOffset %ld\n", linear_params->SharedHintHeader.FirstObjectOffset);
     write_hint_stream(linear_params, (unsigned int *)&linear_params->SharedHintHeader.FirstPageEntries, 32);
     dprintf1("FirstPageEntries %d\n", linear_params->SharedHintHeader.FirstPageEntries);
     write_hint_stream(linear_params, (unsigned int *)&linear_params->SharedHintHeader.NumSharedObjects, 32);
@@ -1931,7 +1931,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     write_hint_stream(linear_params, (unsigned int *)&j, 32);
     dprintf("GreatestObjectsNumBits 1\n");
     write_hint_stream(linear_params, (unsigned int *)&linear_params->SharedHintHeader.FirstObjectOffset, 16);
-    dprintf1("FirstObjectOffset %d\n", linear_params->SharedHintHeader.FirstObjectOffset);
+    dprintf1("FirstObjectOffset %ld\n", linear_params->SharedHintHeader.FirstObjectOffset);
     write_hint_stream(linear_params, (unsigned int *)&linear_params->SharedHintHeader.LeastObjectLength, 32);
     dprintf1("LeastObjectLength %d\n", linear_params->SharedHintHeader.LeastObjectLength);
 
