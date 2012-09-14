@@ -1797,6 +1797,7 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
        if /PUT pdfmark executes before pdf_substitute_resource in pdfmark_EP
        drops this object.
     */
+    pdev->FormDepth++;
     return 0;
 }
 
@@ -1819,6 +1820,7 @@ pdfmark_EP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     if (code < 0)
         return 0;
     gs_free_const_string(pdev->memory, objname.data, objname.size, "pdfmark_EP");
+    pdev->FormDepth--;
     return 0;
 }
 
