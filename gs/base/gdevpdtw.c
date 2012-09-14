@@ -164,7 +164,8 @@ pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long 
             return code; /* Must not happen */
         if (code == 0 && (pdfont->FontType == ft_user_defined ||
             pdfont->FontType == ft_PCL_user_defined ||
-            pdfont->FontType == ft_GL2_stick_user_defined)) {
+            pdfont->FontType == ft_GL2_stick_user_defined ||
+            pdfont->FontType == ft_GL2_531)) {
             /* PDF 1.4 spec Appendix H Note 42 says that
              * Acrobat 4 can't properly handle Base Encoding.
              * Enforce writing differences against that.
@@ -569,7 +570,8 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
         if (pdfont->FontType == ft_composite ||
             ((pdfont->FontType == ft_encrypted || pdfont->FontType == ft_encrypted2 ||
                 pdfont->FontType == ft_TrueType || pdfont->FontType == ft_user_defined ||
-                pdfont->FontType == ft_GL2_stick_user_defined || pdfont->FontType == ft_PCL_user_defined ) &&
+                pdfont->FontType == ft_GL2_stick_user_defined || pdfont->FontType == ft_PCL_user_defined ||
+                pdfont->FontType == ft_GL2_531) &&
                 pdf_simple_font_needs_ToUnicode(pdfont))
            ) {
             pdf_resource_t *prcmap;
@@ -582,7 +584,8 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     if (pdev->CompatibilityLevel >= 1.2 &&
             (pdfont->FontType == ft_user_defined ||
             pdfont->FontType == ft_PCL_user_defined ||
-            pdfont->FontType == ft_GL2_stick_user_defined) &&
+            pdfont->FontType == ft_GL2_stick_user_defined ||
+            pdfont->FontType == ft_GL2_531) &&
             pdfont->u.simple.s.type3.Resources != NULL &&
             pdfont->u.simple.s.type3.Resources->elements != NULL) {
         int code;

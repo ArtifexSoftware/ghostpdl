@@ -1159,6 +1159,7 @@ txtwrite_font_orig_matrix(const gs_font *font, gs_glyph cid, gs_matrix *pmat)
     case ft_user_defined:
     case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
+    case ft_GL2_531:
         /*
          * Type 1 fonts are supposed to use a standard FontMatrix of
          * [0.001 0 0 0.001 0 0], with a 1000-unit cell.  However,
@@ -1196,7 +1197,8 @@ txtwrite_font_orig_matrix(const gs_font *font, gs_glyph cid, gs_matrix *pmat)
                 base_font = base_font->base;
             if (font->FontType == ft_user_defined ||
                 font->FontType == ft_PCL_user_defined ||
-                font->FontType == ft_GL2_stick_user_defined)
+                font->FontType == ft_GL2_stick_user_defined ||
+                font->FontType == ft_GL2_531)
                 *pmat = base_font->FontMatrix;
             else if (base_font->orig_FontMatrix.xx != 0 || base_font->orig_FontMatrix.xy != 0 ||
                 base_font->orig_FontMatrix.yx != 0 || base_font->orig_FontMatrix.yy != 0)
@@ -1520,7 +1522,8 @@ txt_glyph_widths(gs_font *font, int wmode, gs_glyph glyph,
        to be equal to half glyph width, and AR5 takes it from W, DW.
        So make a compatibe data here.
      */
-    if (font->FontType != ft_PCL_user_defined && font->FontType != ft_GL2_stick_user_defined
+    if (font->FontType != ft_PCL_user_defined && font->FontType != ft_GL2_stick_user_defined &&
+        font->FontType != ft_GL2_531
         && (code == gs_error_undefined || !(info.members & (GLYPH_INFO_WIDTH0 << wmode)))) {
         code = get_missing_width(font, wmode, &scale_c, pwidths);
         if (code < 0)
@@ -1619,7 +1622,8 @@ txt_char_widths_to_uts(gs_font *font /* may be NULL for non-Type3 */,
 {
     if (font && (font->FontType == ft_user_defined ||
         font->FontType == ft_PCL_user_defined ||
-        font->FontType == ft_GL2_stick_user_defined)) {
+        font->FontType == ft_GL2_stick_user_defined ||
+        font->FontType == ft_GL2_531)) {
         gs_matrix *pmat = &font->orig_FontMatrix;
 
         pwidths->Width.xy.x *= pmat->xx; /* formula simplified based on wy in glyph space == 0 */
@@ -2140,6 +2144,7 @@ textw_text_process(gs_text_enum_t *pte)
         case ft_user_defined:
         case ft_PCL_user_defined:
         case ft_GL2_stick_user_defined:
+        case ft_GL2_531:
             code = txtwrite_process_plain_text(pte);
             break;
         default:

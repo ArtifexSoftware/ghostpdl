@@ -152,7 +152,8 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 
     if ((penum->current_font->FontType == ft_user_defined ||
         penum->current_font->FontType == ft_PCL_user_defined ||
-        penum->current_font->FontType == ft_GL2_stick_user_defined) &&
+        penum->current_font->FontType == ft_GL2_stick_user_defined ||
+        penum->current_font->FontType == ft_GL2_531) &&
             penum->outer_CID == GS_NO_GLYPH &&
             !(pgste->text.operation & TEXT_DO_CHARWIDTH)) {
         int code;
@@ -538,7 +539,8 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 
     if(font->FontType == ft_user_defined ||
        font->FontType == ft_PCL_user_defined ||
-       font->FontType == ft_GL2_stick_user_defined)
+       font->FontType == ft_GL2_stick_user_defined ||
+       font->FontType == ft_GL2_531)
         user_defined = 1;
 
     /* We need to know whether any of the glyphs in a string using a composite font
@@ -736,6 +738,7 @@ font_cache_elem_array_sizes(gx_device_pdf *pdev, gs_font *font,
     case ft_user_defined:
     case ft_GL2_stick_user_defined:
     case ft_PCL_user_defined:
+    case ft_GL2_531:
     case ft_disk_based:
     case ft_Chameleon:
     case ft_TrueType:
@@ -767,7 +770,8 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
                         num_widths * sizeof(*e->real_widths) *
                             ((font->FontType == ft_user_defined ||
                             font->FontType == ft_GL2_stick_user_defined ||
-                            font->FontType == ft_PCL_user_defined) ? 2 : 1),
+                            font->FontType == ft_PCL_user_defined ||
+                            font->FontType == ft_GL2_531) ? 2 : 1),
                         "alloc_font_cache_elem_arrays") : NULL);
     if (e->glyph_usage == NULL || (num_widths !=0 && e->real_widths == NULL)) {
         gs_free_object(pdev->pdf_memory, e->glyph_usage,
@@ -850,7 +854,8 @@ pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font,
     if (pdfont->FontType != font->FontType &&
         (pdfont->FontType != ft_user_defined ||
         (font->FontType != ft_PCL_user_defined &&
-        font->FontType != ft_GL2_stick_user_defined)))
+        font->FontType != ft_GL2_stick_user_defined &&
+        font->FontType != ft_GL2_531)))
         return_error(gs_error_unregistered); /* Must not happen. */
     font_cache_elem_array_sizes(pdev, font, &num_widths, &num_chars);
     len = (num_chars + 7) / 8;
@@ -904,6 +909,7 @@ pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
     case ft_user_defined:
     case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
+    case ft_GL2_531:
         /*
          * Type 1 fonts are supposed to use a standard FontMatrix of
          * [0.001 0 0 0.001 0 0], with a 1000-unit cell.  However,
@@ -941,7 +947,8 @@ pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
                 base_font = base_font->base;
             if (font->FontType == ft_user_defined ||
                 font->FontType == ft_PCL_user_defined ||
-                font->FontType == ft_GL2_stick_user_defined)
+                font->FontType == ft_GL2_stick_user_defined ||
+                font->FontType == ft_GL2_531)
                 *pmat = base_font->FontMatrix;
             else if (base_font->orig_FontMatrix.xx != 0 || base_font->orig_FontMatrix.xy != 0 ||
                 base_font->orig_FontMatrix.yx != 0 || base_font->orig_FontMatrix.yy != 0)
@@ -1078,6 +1085,7 @@ pdf_is_compatible_encoding(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
     case ft_user_defined:
     case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
+    case ft_GL2_531:
         if (pdfont->u.simple.Encoding == NULL)
             return false; /* Not sure. Happens with 020-01.ps . */
         /* fall through */
@@ -1115,6 +1123,7 @@ pdf_font_has_glyphs(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
     case ft_user_defined:
     case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
+    case ft_GL2_531:
         /* Unused case. */
         return false;
     case ft_encrypted:
@@ -1447,6 +1456,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
     case ft_user_defined:
     case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
+    case ft_GL2_531:
         code = pdf_make_font3_resource(pdev, font, ppdfont);
         if (code < 0)
             return code;
@@ -1562,7 +1572,8 @@ pdf_is_simple_font(gs_font *font)
             font->FontType == ft_TrueType ||
             font->FontType == ft_user_defined ||
             font->FontType == ft_PCL_user_defined ||
-            font->FontType == ft_GL2_stick_user_defined);
+            font->FontType == ft_GL2_stick_user_defined ||
+            font->FontType == ft_GL2_531);
 }
 
 /*
@@ -1936,7 +1947,8 @@ pdf_obtain_font_resource_encoded(gx_device_pdf *pdev, gs_font *font,
 
         if (font->FontType != ft_user_defined &&
             font->FontType != ft_PCL_user_defined &&
-            font->FontType != ft_GL2_stick_user_defined ) {
+            font->FontType != ft_GL2_stick_user_defined &&
+            font->FontType != ft_GL2_531) {
             code = gs_copied_can_copy_glyphs((gs_font *)cfont, font,
                         &cgp->s[cgp->unused_offset].glyph, cgp->num_unused_chars,
                         sizeof(pdf_char_glyph_pair_t), true);
@@ -2196,7 +2208,8 @@ pdf_find_glyph(pdf_font_resource_t *pdfont, gs_glyph glyph)
 {
     if (pdfont->FontType != ft_user_defined &&
         pdfont->FontType != ft_PCL_user_defined &&
-        pdfont->FontType != ft_GL2_stick_user_defined)
+        pdfont->FontType != ft_GL2_stick_user_defined &&
+        pdfont->FontType != ft_GL2_531)
         return GS_NO_CHAR;
     else {
         pdf_encoding_element_t *pet = pdfont->u.simple.Encoding;
@@ -2265,7 +2278,8 @@ float pdf_calculate_text_size(gs_imager_state *pis, pdf_font_resource_t *pdfont,
 
         if (pdfont->FontType == ft_user_defined ||
             pdfont->FontType == ft_PCL_user_defined ||
-            pdfont->FontType == ft_GL2_stick_user_defined)
+            pdfont->FontType == ft_GL2_stick_user_defined ||
+            pdfont->FontType == ft_GL2_531)
             orig_matrix = pdfont->u.simple.s.type3.FontMatrix;
         else if (cfont != 0) {
             /*
@@ -2846,7 +2860,8 @@ static int install_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *pte
     pdev->charproc_ctm = penum->pis->ctm;
     if ((penum->current_font->FontType == ft_user_defined ||
         penum->current_font->FontType == ft_PCL_user_defined ||
-        penum->current_font->FontType == ft_GL2_stick_user_defined) &&
+        penum->current_font->FontType == ft_GL2_stick_user_defined ||
+        penum->current_font->FontType == ft_GL2_531) &&
             penum->outer_CID == GS_NO_GLYPH &&
             !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
         /* The condition above must be consistent with one in pdf_text_set_cache,
@@ -2909,7 +2924,8 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
 
     if ((penum->current_font->FontType == ft_user_defined ||
        penum->current_font->FontType == ft_PCL_user_defined ||
-       penum->current_font->FontType == ft_GL2_stick_user_defined) &&
+       penum->current_font->FontType == ft_GL2_stick_user_defined ||
+       penum->current_font->FontType == ft_GL2_531) &&
        stell(pdev->strm) == 0)
     {
         char glyph[256], FontName[gs_font_name_max + 1], KeyName[256];
@@ -3021,7 +3037,8 @@ pdf_text_process(gs_text_enum_t *pte)
     }
     if ((penum->current_font->FontType == ft_user_defined ||
         penum->current_font->FontType == ft_PCL_user_defined ||
-        penum->current_font->FontType == ft_GL2_stick_user_defined) &&
+        penum->current_font->FontType == ft_GL2_stick_user_defined ||
+        penum->current_font->FontType == ft_GL2_531) &&
         (penum->text.operation & TEXT_DO_ANY_CHARPATH)
         && !pdev->type3charpath) {
         pdev->type3charpath = true;
@@ -3086,7 +3103,8 @@ pdf_text_process(gs_text_enum_t *pte)
             else
                 early_accumulator = 1;
         }
-        if (penum->current_font->FontType == ft_GL2_stick_user_defined
+        if ((penum->current_font->FontType == ft_GL2_stick_user_defined ||
+            penum->current_font->FontType == ft_GL2_531)
             && operation & TEXT_FROM_CHARS && !pdev->type3charpath) {
             /* Check for anamorphic sacling, we msut not cache stick font
              * in this case, as the stroke width will vary with the scaling.
@@ -3329,6 +3347,7 @@ pdf_text_process(gs_text_enum_t *pte)
         case ft_user_defined:
         case ft_PCL_user_defined:
         case ft_GL2_stick_user_defined:
+        case ft_GL2_531:
             /* The data may be either glyphs or characters. */
             process = process_plain_text;
             break;
@@ -3390,6 +3409,7 @@ pdf_text_process(gs_text_enum_t *pte)
             ((pte->current_font->FontType == ft_user_defined ||
             pte->current_font->FontType == ft_PCL_user_defined ||
             pte->current_font->FontType == ft_GL2_stick_user_defined ||
+            pte->current_font->FontType == ft_GL2_531 ||
             pte->current_font->FontType == ft_TrueType) &&
              code != TEXT_PROCESS_INTERVENE &&
             penum->index < penum->text.size)) {

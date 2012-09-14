@@ -442,6 +442,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
         /* Type 3 fonts may use a FontMatrix in PDF, so we don't
          * need to deal with non-standard matrices
          */
+    case ft_GL2_531:
     case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
     case ft_user_defined:
