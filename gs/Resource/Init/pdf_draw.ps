@@ -550,15 +550,12 @@ def
     //false		% no defined colorspace
   } ifelse
   3 -1 roll dup
-  dup 4 1 roll /BBox get aload pop .begintransparencymaskgroup {
-    exch dup /Resources knownoget { oforce } { 2 dict } ifelse
-    3 -1 roll dup /GroupGState .knownget { 2 index /GroupGState 3 -1 roll put} if
-    /GroupExtGState .knownget { 1 index /GroupExtGState 3 -1 roll put} if
-    exch //false resolvestream
-    .execgroup .endtransparencymask
-  } stopped {
-    .discardtransparencymask stop
-  } if
+  dup 4 1 roll /BBox get aload pop .begintransparencymaskgroup
+  exch dup /Resources knownoget { oforce } { 2 dict } ifelse
+  3 -1 roll dup /GroupGState .knownget { 2 index /GroupGState 3 -1 roll put} if
+  /GroupExtGState .knownget { 1 index /GroupExtGState 3 -1 roll put} if
+  exch //false resolvestream
+  .execgroup .endtransparencymask
   PDFfile exch setfileposition
   .setuseciecolor setcolorspace setcolor
   setmatrix
@@ -609,11 +606,9 @@ def
 /.paintgroupform {	% <resdict> <stream> <formdict> .paintgroupform -
   dup /Group oget exch /BBox oget
                 % Stack: resdict stream groupdict bbox
-  .beginformgroup {
-    .execgroup
-  } stopped {
-    .discardtransparencygroup stop
-  } if .endtransparencygroup
+  .beginformgroup
+  .execgroup
+  .endtransparencygroup
 } bdef
 
 % Make an ImageType 103 (soft-masked) image.

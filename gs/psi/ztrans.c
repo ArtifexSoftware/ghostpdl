@@ -238,13 +238,6 @@ zbegintransparencygroup(i_ctx_t *i_ctx_p)
     return code;
 }
 
-/* - .discardtransparencygroup - */
-static int
-zdiscardtransparencygroup(i_ctx_t *i_ctx_p)
-{
-    return 0;
-}
-
 /* - .endtransparencygroup - */
 static int
 zendtransparencygroup(i_ctx_t *i_ctx_p)
@@ -336,13 +329,6 @@ tf_using_function(floatp in_val, float *out, void *proc_data)
     gs_function_t *const pfn = proc_data;
 
     return gs_function_evaluate(pfn, &in, out);
-}
-
-/* - .discardtransparencymask - */
-static int
-zdiscardtransparencymask(i_ctx_t *i_ctx_p)
-{
-    return 0;
 }
 
 /* <mask#> .endtransparencymask - */
@@ -509,11 +495,9 @@ const op_def ztrans1_op_defs[] = {
 };
 const op_def ztrans2_op_defs[] = {
     {"5.begintransparencygroup", zbegintransparencygroup},
-    {"0.discardtransparencygroup", zdiscardtransparencygroup},
     {"0.endtransparencygroup", zendtransparencygroup},
     {"5.begintransparencymaskgroup", zbegintransparencymaskgroup},
     {"5.begintransparencymaskimage", zbegintransparencymaskimage},
-    {"0.discardtransparencymask", zdiscardtransparencymask},
     {"1.endtransparencymask", zendtransparencymask},
     {"1.image3x", zimage3x},
     {"1.pushpdf14devicefilter", zpushpdf14devicefilter},
