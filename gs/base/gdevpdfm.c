@@ -139,6 +139,13 @@ pdfmark_make_dest(char dstr[MAX_DEST_STRING], gx_device_pdf * pdev,
 
     if (present || RequirePage)
         page = pdfmark_page_number(pdev, &page_string);
+
+    if (page < pdev->FirstPage || (pdev->LastPage != 0 && page > pdev->LastPage))
+        return -1;
+    else
+        if (pdev->FirstPage != 0)
+            page = (page - pdev->FirstPage) + 1;
+
     if (view_string.size == 0)
         param_string_from_string(view_string, "[/XYZ null null null]");
     if (page == 0)
@@ -487,11 +494,13 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
             if (Dest.data == 0) {
                 code = pdfmark_make_dest(dest, params->pdev, "/Page", "/View",
                                          pairs, count, 0);
-                if (code < 0)
-                    return code;
-                param_string_from_string(Dest, dest);
-                if (for_outline)
-                    coerce_dest = false;
+                if (code >= 0) {
+                    param_string_from_string(Dest, dest);
+                    if (for_outline)
+                        coerce_dest = false;
+                } else {
+                    emprintf(pdev->memory, "   **** Warning: Outline has invalid link that was discarded.\n");
+                }
             }
         } else if (pdf_key_eq(pair, "/Subtype"))
             Subtype = pair[1];
