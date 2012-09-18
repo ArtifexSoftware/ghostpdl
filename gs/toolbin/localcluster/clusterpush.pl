@@ -27,6 +27,7 @@ my $filters="";
 my $command="";
 my $res="";
 my $w32="";
+my $relaxTimeout="";
 my $t1;
 while ($t1=shift) {
   if ($t1 eq "lowres") {
@@ -35,6 +36,8 @@ while ($t1=shift) {
     $res="highres";
   } elsif ($t1 eq "32") {
     $w32="32";
+  } elsif ($t1 eq "timeout" || $t1 eq "relaxtimeout") {
+    $relaxTimeout="relaxTimeout";
   } elsif ($t1=~m/^-/ || $t1=~m/^\d/) {
     $command.=$t1.' ';
   } elsif ($t1 =~ m/filter=.*/) {
@@ -175,7 +178,7 @@ if ($product ne "abort" ) { #&& $product ne "bmpcmp") {
 }
 
 open(F,">cluster_command.run");
-print F "$user $product $res $w32\n";
+print F "$user $product $res $w32 $relaxTimeout\n";
 print F "$command\n";
 print F "$filters\n";
 close(F);

@@ -4,7 +4,7 @@ code that has not been committed to git.
 
 Usage:
 
-  clusterpush.pl [prduct] ['bmpcmp'] ['lowres'|'hires']  [user]
+  clusterpush.pl [prduct] ['bmpcmp'] ['lowres'|'hires'] ['32'] ['relaxtimeout'] [user]
 
 
 Where product gs, pcl, xps, and/or ls ('ls' standing for language switch).
@@ -16,12 +16,21 @@ last svn commit should be performed.
 lowres or hires indicates to only perform a low-resolution or
 high-resolution cluster run; by default both are performed.
 
+32 indicates that the code is to be compiled in 32 bit mode (opposed
+to the default of 64 bit)
+
+relaxtimeout relaxes the timeout for each job, from 5 minutes to
+30 minutes.  Note that the total time for the cluster job is still
+limited to 2 hours.
+
 user is your cluster user name, if you don't specify one, clusterpush.pl
 uses, in order of preference, the value of one of the following
 environment variables: CLUSTER_USER, USER, and USERNAME This works under
 Linux, Mac OS X, Msys,  and probably cygwin.
 
-The order of the options is not important.
+The order of the options is not important but some of the options
+are mutually exclusive (specifically 32 and relaxtimeout cannot both
+be specfified).
 
 You need to run clusterpush.pl from the top level directory (the same
 directory from where you normally run 'make').  Clusterpush prints and
