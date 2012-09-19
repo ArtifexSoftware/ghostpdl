@@ -26,6 +26,9 @@
 
 #include "lcms2_internal.h"
 
+#ifdef PACIFY_VALGRIND
+#include <valgrind/helgrind.h>
+#endif
 
 // D50 - Widely used
 const cmsCIEXYZ* CMSEXPORT cmsD50_XYZ(void)
@@ -39,6 +42,9 @@ const cmsCIExyY* CMSEXPORT cmsD50_xyY(void)
 {
     static cmsCIExyY D50xyY;
 
+#ifdef PACIFY_VALGRIND
+    VALGRIND_HG_DISABLE_CHECKING(&D50xyY, sizeof(D50xyY));
+#endif
     cmsXYZ2xyY(&D50xyY, cmsD50_XYZ());
 
     return &D50xyY;

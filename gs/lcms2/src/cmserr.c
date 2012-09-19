@@ -25,6 +25,10 @@
 
 #include "lcms2_internal.h"
 
+#ifdef PACIFY_VALGRIND
+#include <valgrind/helgrind.h>
+#endif
+
 // I am so tired about incompatibilities on those functions that here are some replacements
 // that hopefully would be fully portable.
 
@@ -392,6 +396,9 @@ void DefaultLogErrorHandlerFunction(cmsContext ContextID, cmsUInt32Number ErrorC
 // Change log error
 void CMSEXPORT cmsSetLogErrorHandler(cmsLogErrorHandlerFunction Fn)
 {
+#ifdef PACIFY_VALGRIND
+    VALGRIND_HG_DISABLE_CHECKING(&LogErrorHandler, sizeof(LogErrorHandler));
+#endif
     if (Fn == NULL) 
         LogErrorHandler = DefaultLogErrorHandlerFunction;
     else

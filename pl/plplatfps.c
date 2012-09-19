@@ -26,6 +26,10 @@
 #include "gslib.h"
 #include "plplatf.h"
 
+#ifdef PACIFY_VALGRIND
+#include <valgrind/helgrind.h>
+#endif
+
 /* ------------- Platform de/init --------- */
 void
 pl_platform_init(FILE *debug_out)
@@ -34,6 +38,9 @@ pl_platform_init(FILE *debug_out)
     /* debug flags we reset this out of gs_lib_init0 which sets these
          and the allocator we want the debug setting but we do our own
          allocator */
+#ifdef PACIFY_VALGRIND
+    VALGRIND_HG_DISABLE_CHECKING(gs_debug, 128);
+#endif
     memset(gs_debug, 0, 128);
     gs_log_errors = 0;
 }

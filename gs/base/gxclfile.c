@@ -23,6 +23,10 @@
 #include "gp.h"
 #include "gxclio.h"
 
+#ifdef PACIFY_VALGRIND
+#include <valgrind/helgrind.h>
+#endif
+
 /* This is an implementation of the command list I/O interface */
 /* that uses the file system for storage. */
 
@@ -171,6 +175,9 @@ init_proc(gs_gxclfile_init);
 int
 gs_gxclfile_init(gs_memory_t *mem)
 {
+#ifdef PACIFY_VALGRIND
+    VALGRIND_HG_DISABLE_CHECKING(&clist_io_procs_file_global, sizeof(clist_io_procs_file_global));
+#endif
     clist_io_procs_file_global = &clist_io_procs_file;
     return 0;
 }

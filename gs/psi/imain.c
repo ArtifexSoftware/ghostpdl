@@ -52,6 +52,10 @@
 #include "idisp.h"              /* for setting display device callback */
 #include "iplugin.h"
 
+#ifdef PACIFY_VALGRIND
+#include <valgrind/helgrind.h>
+#endif
+
 /* ------ Exported data ------ */
 
 /** using backpointers retrieve minst from any memory pointer
@@ -136,11 +140,14 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 
     /* Initialize the imager. */
 #   ifndef PSI_INCLUDED
-       /* Reset debugging flags */
-       memset(gs_debug, 0, 128);
-       gs_log_errors = 0;  /* gs_debug['#'] = 0 */
+    /* Reset debugging flags */
+#ifdef PACIFY_VALGRIND
+    VALGRIND_HG_DISABLE_CHECKING(gs_debug, 128);
+#endif
+    memset(gs_debug, 0, 128);
+    gs_log_errors = 0;  /* gs_debug['#'] = 0 */
 #   else
-       /* plmain settings remain in effect */
+    /* plmain settings remain in effect */
 #   endif
     gp_get_realtime(minst->base_time);
 

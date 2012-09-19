@@ -20,6 +20,10 @@
 #include "gserrors.h"
 #include "gxclmem.h"
 
+#ifdef PACIFY_VALGRIND
+#include <valgrind/helgrind.h>
+#endif
+
 /*
  * Based on: memfile.c        Version: 1.4 3/21/95 14:59:33 by Ray Johnston.
  * Copyright assigned to Aladdin Enterprises.
@@ -1262,6 +1266,9 @@ init_proc(gs_gxclmem_init);
 int
 gs_gxclmem_init(gs_memory_t *mem)
 {
+#ifdef PACIFY_VALGRIND
+    VALGRIND_HG_DISABLE_CHECKING(&clist_io_procs_memory_global, sizeof(clist_io_procs_memory_global));
+#endif
     clist_io_procs_memory_global = &clist_io_procs_memory;
     return 0;
 }
