@@ -36,6 +36,7 @@ gs_lib_ctx_get_real_stdio(FILE **in, FILE **out, FILE **err)
 #include "gslibctx.h"
 #include "gsmemory.h"
 
+#ifndef GS_THREADSAFE
 static gs_memory_t *mem_err_print = NULL;
 
 gs_memory_t *
@@ -43,6 +44,7 @@ gs_lib_ctx_get_non_gc_memory_t()
 {
     return mem_err_print ? mem_err_print->non_gc_memory : NULL;
 }
+#endif
 
 /*  This sets the directory to prepend to the ICC profile names specified for
     defaultgray, defaultrgb, defaultcmyk, proofing, linking, named color and device */
@@ -84,7 +86,9 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     if ( mem == 0 )
         return -1;  /* assert mem != 0 */
 
+#ifndef GS_THREADSAFE
     mem_err_print = mem;
+#endif
 
     if (mem->gs_lib_ctx) /* one time initialization */
         return 0;

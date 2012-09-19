@@ -114,7 +114,8 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
        if it has a data space that is CIELAB */
     picc_profile->profile_handle =
         gsicc_get_profile_handle_buffer(picc_profile->buffer,
-                                        picc_profile->buffer_size);
+                                        picc_profile->buffer_size,
+                                        gs_state_memory(igs));
     if (picc_profile->profile_handle == NULL) {
         /* Free up everything, the profile is not valid. We will end up going
            ahead and using a default based upon the number of components */
@@ -271,7 +272,8 @@ zset_outputintent(i_ctx_t * i_ctx_p)
     picc_profile->num_comps = ncomps;
     picc_profile->profile_handle =
         gsicc_get_profile_handle_buffer(picc_profile->buffer,
-                                        picc_profile->buffer_size);
+                                        picc_profile->buffer_size,
+                                        gs_state_memory(igs));
     if (picc_profile->profile_handle == NULL) {
         rc_decrement(picc_profile,"zset_outputintent");
         return -1;

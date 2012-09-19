@@ -83,10 +83,12 @@ int gs_lib_ctx_init( gs_memory_t *mem );
 
 gs_lib_ctx_t *gs_lib_ctx_get_interp_instance( const gs_memory_t *mem );
 
+#ifndef GS_THREADSAFE
 /* HACK to get at non garbage collection memory pointer
  *
  */
 gs_memory_t * gs_lib_ctx_get_non_gc_memory_t(void);
+#endif
 
 void gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
                         int dir_namelen);

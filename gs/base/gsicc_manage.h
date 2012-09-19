@@ -104,7 +104,8 @@ void gsicc_init_hash_cs(cmm_profile_t *picc_profile, gs_imager_state *pis);
 gcmmhprofile_t gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile,
                                               gs_memory_t *memory);
 gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer,
-                                               int profile_size);
+                                               int profile_size,
+                                               gs_memory_t *memory);
 gsicc_smask_t* gsicc_new_iccsmask(gs_memory_t *memory);
 int gsicc_initialize_iccsmask(gsicc_manager_t *icc_manager);
 unsigned int gsicc_getprofilesize(unsigned char *buffer);

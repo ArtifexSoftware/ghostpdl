@@ -32,7 +32,8 @@ typedef struct gsicc_lcms2_link_s gsicc_lcms2_link_t;
 static void
 gscms_error(cmsContext       ContextID,
             cmsUInt32Number  error_code,
-            const char      *error_text){
+            const char      *error_text)
+{
 #ifdef DEBUG
     gs_warn1("cmm error : %s",error_text);
 #endif
@@ -42,8 +43,9 @@ static
 void *gs_lcms2_malloc(cmsContext id, unsigned int size)
 {
     void *ptr;
+    gs_memory_t *mem = (gs_memory_t *)id;
 
-    ptr = gs_alloc_bytes(gs_lib_ctx_get_non_gc_memory_t(), size, "lcms");
+    ptr = gs_alloc_bytes(mem, size, "lcms");
 #if DEBUG_LCMS_MEM
     gs_warn2("lcms malloc (%d) at 0x%x",size,ptr);
 #endif
@@ -54,8 +56,9 @@ static
 void *gs_lcms2_realloc(cmsContext id, void *ptr, unsigned int size)
 {
     void *ptr2;
+    gs_memory_t *mem = (gs_memory_t *)id;
 
-    ptr2 = gs_resize_object(gs_lib_ctx_get_non_gc_memory_t(), ptr, size, "lcms");
+    ptr2 = gs_resize_object(mem, ptr, size, "lcms");
 #if DEBUG_LCMS_MEM
     gs_warn3("lcms realloc (%x,%d) at 0x%x",ptr,size,ptr2);
 #endif
@@ -65,11 +68,13 @@ void *gs_lcms2_realloc(cmsContext id, void *ptr, unsigned int size)
 static
 void gs_lcms2_free(cmsContext id, void *ptr)
 {
+  gs_memory_t *mem = (gs_memory_t *)id;
+
     if (ptr != NULL) {
 #if DEBUG_LCMS_MEM
         gs_warn1("lcms free at 0x%x",ptr);
 #endif
-        gs_free_object(gs_lib_ctx_get_non_gc_memory_t(), ptr, "lcms");
+        gs_free_object(mem, ptr, "lcms");
     }
 }
 
@@ -170,17 +175,17 @@ gscms_get_profile_data_space(gcmmhprofile_t profile)
 
 /* Get ICC Profile handle from buffer */
 gcmmhprofile_t
-gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size)
+gscms_get_profile_handle_mem(gs_memory_t *mem, unsigned char *buffer, unsigned int input_size)
 {
     cmsSetLogErrorHandler(gscms_error);
-    return(cmsOpenProfileFromMem(buffer,input_size));
+    return(cmsOpenProfileFromMemTHR((cmsContext)mem,buffer,input_size));
 }
 
 /* Get ICC Profile handle from file ptr */
 gcmmhprofile_t
-gscms_get_profile_handle_file(const char *filename)
+gscms_get_profile_handle_file(gs_memory_t *mem,const char *filename)
 {
-    return(cmsOpenProfileFromFile(filename, "r"));
+    return(cmsOpenProfileFromFileTHR((cmsContext)mem, filename, "r"));
 }
 
 /* Transform an entire buffer */
@@ -311,8 +316,9 @@ gscms_transform_color(gx_device *dev, gsicc_link_t *icclink,
 /* Get the link from the CMS. TODO:  Add error checking */
 gcmmhlink_t
 gscms_get_link(gcmmhprofile_t  lcms_srchandle,
-                    gcmmhprofile_t lcms_deshandle,
-                    gsicc_rendering_param_t *rendering_params)
+               gcmmhprofile_t lcms_deshandle,
+               gsicc_rendering_param_t *rendering_params,
+               gs_memory_t *memory)
 {
     cmsUInt32Number src_data_type,des_data_type;
     cmsColorSpaceSignature src_color_space,des_color_space;
@@ -351,8 +357,10 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     des_data_type = des_data_type | ENDIAN16_SH(1);
 #endif
 /* Create the link */
-    return(cmsCreateTransform(lcms_srchandle, src_data_type, lcms_deshandle,
-                        des_data_type, rendering_params->rendering_intent,
+    return(cmsCreateTransformTHR((cmsContext)memory,
+               lcms_srchandle, src_data_type,
+               lcms_deshandle, des_data_type,
+               rendering_params->rendering_intent,
                (cmsFLAGS_BLACKPOINTCOMPENSATION | cmsFLAGS_HIGHRESPRECALC)));
     /* cmsFLAGS_HIGHRESPRECALC)  cmsFLAGS_NOTPRECALC  cmsFLAGS_LOWRESPRECALC*/
 }
@@ -364,7 +372,8 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
                              gcmmhprofile_t lcms_proofhandle,
                              gcmmhprofile_t lcms_deshandle, 
                              gcmmhprofile_t lcms_devlinkhandle, 
-                             gsicc_rendering_param_t *rendering_params)
+                             gsicc_rendering_param_t *rendering_params,
+                             gs_memory_t *memory)
 {
     cmsUInt32Number src_data_type,des_data_type;
     cmsColorSpaceSignature src_color_space,des_color_space;
@@ -405,10 +414,10 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
     if (lcms_devlinkhandle != NULL) {
         hProfiles[nProfiles++] = lcms_devlinkhandle;
     }
-    return(cmsCreateMultiprofileTransform(hProfiles, nProfiles, src_data_type, 
-                                          des_data_type, rendering_params->rendering_intent, 
-                                          (cmsFLAGS_BLACKPOINTCOMPENSATION | 
-                                          cmsFLAGS_HIGHRESPRECALC)));
+    return(cmsCreateMultiprofileTransformTHR((cmsContext)memory,
+                hProfiles, nProfiles, src_data_type,
+                des_data_type, rendering_params->rendering_intent,
+                (cmsFLAGS_BLACKPOINTCOMPENSATION | cmsFLAGS_HIGHRESPRECALC)));
 }
 
 /* Do any initialization if needed to the CMS */
@@ -491,9 +500,12 @@ gscms_transform_named_color(gsicc_link_t *icclink,  float tint_value,
    i.e. in namedcolor_information.  Note that an ICC named color profile
     need NOT contain the device values but must contain the CIELAB values. */
 void
-gscms_get_name2device_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle,
-                    gcmmhprofile_t lcms_deshandle, gcmmhprofile_t lcms_proofhandle,
-                    gsicc_rendering_param_t *rendering_params)
+gscms_get_name2device_link(gsicc_link_t *icclink,
+                           gcmmhprofile_t  lcms_srchandle,
+                           gcmmhprofile_t lcms_deshandle,
+                           gcmmhprofile_t lcms_proofhandle,
+                           gsicc_rendering_param_t *rendering_params,
+                           gs_memory_t *memory)
 {
     cmsHTRANSFORM hTransform;
     cmsUInt32Number dwOutputFormat;
@@ -509,7 +521,8 @@ gscms_get_name2device_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle
     }
     /* Create the transform */
     /* ToDo:  Adjust rendering intent */
-    hTransform = cmsCreateProofingTransform(lcms_srchandle, TYPE_NAMED_COLOR_INDEX,
+    hTransform = cmsCreateProofingTransformTHR(memory,
+                                            lcms_srchandle, TYPE_NAMED_COLOR_INDEX,
                                             lcms_deshandle, TYPE_CMYK_8,
                                             lcms_proofhandle,INTENT_PERCEPTUAL,
                                             INTENT_ABSOLUTE_COLORIMETRIC,

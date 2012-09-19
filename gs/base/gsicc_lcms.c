@@ -106,7 +106,7 @@ gscms_get_profile_data_space(gcmmhprofile_t profile)
 
 /* Get ICC Profile handle from buffer */
 gcmmhprofile_t
-gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size)
+gscms_get_profile_handle_mem(gs_memory_t *mem, unsigned char *buffer, unsigned int input_size)
 {
     cmsSetErrorHandler((cmsErrorHandlerFunction) gscms_error);
     return(cmsOpenProfileFromMem(buffer,input_size));
@@ -114,7 +114,7 @@ gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size)
 
 /* Get ICC Profile handle from file ptr */
 gcmmhprofile_t
-gscms_get_profile_handle_file(const char *filename)
+gscms_get_profile_handle_file(gs_memory_t *mem, const char *filename)
 {
     return(cmsOpenProfileFromFile(filename, "r"));
 }
@@ -264,8 +264,9 @@ gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
 /* Get the link from the CMS. TODO:  Add error checking */
 gcmmhlink_t
 gscms_get_link(gcmmhprofile_t  lcms_srchandle,
-                    gcmmhprofile_t lcms_deshandle,
-                    gsicc_rendering_param_t *rendering_params)
+               gcmmhprofile_t lcms_deshandle,
+               gsicc_rendering_param_t *rendering_params,
+               gs_memory_t *mem)
 {
     DWORD src_data_type,des_data_type;
     icColorSpaceSignature src_color_space,des_color_space;
@@ -309,7 +310,8 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
                              gcmmhprofile_t lcms_proofhandle,
                              gcmmhprofile_t lcms_deshandle, 
                              gcmmhprofile_t lcms_devlinkhandle, 
-                             gsicc_rendering_param_t *rendering_params)
+                             gsicc_rendering_param_t *rendering_params,
+                             gs_memory_t *mem)
 {
     DWORD src_data_type,des_data_type;
     icColorSpaceSignature src_color_space,des_color_space;

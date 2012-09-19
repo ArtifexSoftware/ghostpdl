@@ -636,7 +636,7 @@ xcf_open_profile(const char *profile_out_fn, cmm_profile_t *icc_profile, gcmmhli
 
     /* Call with a NULL destination profile since we are using a device link profile here */
     icc_link = gscms_get_link(icc_profile,
-                    NULL, &rendering_params);
+                              NULL, &rendering_params, memory);
 
     if (icc_link == NULL)
         return gs_throw(-1, "Could not create link handle for xdev device");

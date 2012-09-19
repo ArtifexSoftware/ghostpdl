@@ -36,9 +36,11 @@
 
 gsicc_link_t* gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev, 
                                   gs_color_space_index src_index);
-gcmmhprofile_t gscms_get_profile_handle_mem(unsigned char *buffer,
+gcmmhprofile_t gscms_get_profile_handle_mem(gs_memory_t *mem,
+                                            unsigned char *buffer,
                                             unsigned int input_size);
-gcmmhprofile_t gscms_get_profile_handle_file(const char *filename);
+gcmmhprofile_t gscms_get_profile_handle_file(gs_memory_t *mem,
+                                             const char *filename);
 void gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                              gsicc_bufferdesc_t *output_buff_desc,
@@ -51,14 +53,16 @@ int gscms_get_numberclrtnames(gcmmhprofile_t profile);
 gsicc_colorbuffer_t gscms_get_profile_data_space(gcmmhprofile_t profile);
 void gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
                            void *outputcolor, int num_bytes);
-gcmmhlink_t gscms_get_link(gcmmhprofile_t  lcms_srchandle,
-                    gcmmhprofile_t lcms_deshandle,
-                    gsicc_rendering_param_t *rendering_params);
-gcmmhlink_t gscms_get_link_proof_devlink(gcmmhprofile_t  lcms_srchandle,
+gcmmhlink_t gscms_get_link(gcmmhprofile_t lcms_srchandle,
+                           gcmmhprofile_t lcms_deshandle,
+                           gsicc_rendering_param_t *rendering_params,
+                           gs_memory_t *mem);
+gcmmhlink_t gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
                                          gcmmhprofile_t lcms_proofhandle,
                                          gcmmhprofile_t lcms_deshandle, 
                                          gcmmhprofile_t lcms_devlinkhandle,
-                                         gsicc_rendering_param_t *rendering_params);
+                                         gsicc_rendering_param_t *rendering_params,
+                                         gs_memory_t *memory);
 void gscms_create(void **contextptr);
 void gscms_destroy(void **contextptr);
 void gscms_release_link(gsicc_link_t *icclink);
@@ -66,9 +70,12 @@ void gscms_release_profile(void *profile);
 int gscms_transform_named_color(gsicc_link_t *icclink,  float tint_value,
                                 const char* ColorName,
                                 gx_color_value device_values[] );
-void gscms_get_name2device_link(gsicc_link_t *icclink, gcmmhprofile_t  lcms_srchandle,
-                    gcmmhprofile_t lcms_deshandle, gcmmhprofile_t lcms_proofhandle,
-                    gsicc_rendering_param_t *rendering_params);
+void gscms_get_name2device_link(gsicc_link_t *icclink,
+                                gcmmhprofile_t lcms_srchandle,
+                                gcmmhprofile_t lcms_deshandle,
+                                gcmmhprofile_t lcms_proofhandle,
+                                gsicc_rendering_param_t *rendering_params,
+                                gs_memory_t *memory);
 int gscms_get_input_channel_count(gcmmhprofile_t profile);
 int gscms_get_output_channel_count(gcmmhprofile_t profile);
 

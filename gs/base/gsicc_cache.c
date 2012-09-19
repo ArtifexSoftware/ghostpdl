@@ -666,7 +666,8 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
         if (gs_input_profile->buffer != NULL) {
             cms_input_profile =
                 gsicc_get_profile_handle_buffer(gs_input_profile->buffer,
-                                                gs_input_profile->buffer_size);
+                                                gs_input_profile->buffer_size,
+                                                memory);
             gs_input_profile->profile_handle = cms_input_profile;
             /* This *must* be a default profile that was not set up at start-up/
                However it could be one from the icc creator code which does not
@@ -699,7 +700,8 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
         if (gs_output_profile->buffer != NULL) {
             cms_output_profile =
                 gsicc_get_profile_handle_buffer(gs_output_profile->buffer,
-                                                gs_output_profile->buffer_size);
+                                                gs_output_profile->buffer_size,
+                                                memory);
             gs_output_profile->profile_handle = cms_output_profile;
             /* This *must* be a default profile that was not set up at start-up */
             code = gsicc_initialize_default_profile(gs_output_profile); 
@@ -729,7 +731,8 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             if (proof_profile->buffer != NULL) {
                 cms_proof_profile =
                     gsicc_get_profile_handle_buffer(proof_profile->buffer,
-                                                    proof_profile->buffer_size);
+                                                    proof_profile->buffer_size,
+                                                    memory);
                 proof_profile->profile_handle = cms_proof_profile;
                 gx_monitor_enter(proof_profile->lock);
             } else {
@@ -746,7 +749,8 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             if (devlink_profile->buffer != NULL) {
                 cms_devlink_profile =
                     gsicc_get_profile_handle_buffer(devlink_profile->buffer,
-                                                    devlink_profile->buffer_size);
+                                                    devlink_profile->buffer_size,
+                                                    memory);
                 devlink_profile->profile_handle = cms_devlink_profile;
                 gx_monitor_enter(devlink_profile->lock);
             } else {
@@ -788,7 +792,8 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                                                    cms_proof_profile,
                                                    cms_output_profile,
                                                    cms_devlink_profile,
-                                                   rendering_params);
+                                                   rendering_params,
+                                                   cache_mem);
         if (include_softproof) {
             gx_monitor_leave(proof_profile->lock);
         }
@@ -797,7 +802,7 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
         }
     } else {
         link_handle = gscms_get_link(cms_input_profile, cms_output_profile,
-                                        rendering_params);
+                                     rendering_params, cache_mem);
     }
     gx_monitor_leave(gs_output_profile->lock);
     gx_monitor_leave(gs_input_profile->lock);

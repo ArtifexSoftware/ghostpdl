@@ -146,7 +146,8 @@ gsicc_set_iccsmaskprofile(const char *pname,
         /* Get the profile handle */
         icc_profile->profile_handle =
             gsicc_get_profile_handle_buffer(icc_profile->buffer,
-                                            icc_profile->buffer_size);
+                                            icc_profile->buffer_size,
+                                            mem);
         /* Compute the hash code of the profile. Everything in the
            ICC manager will have it's hash code precomputed */
         gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode),
@@ -362,7 +363,8 @@ gsicc_get_devicen_names(cmm_profile_t *icc_profile, gs_memory_t *memory)
         if (icc_profile->buffer != NULL) {
             icc_profile->profile_handle =
                 gsicc_get_profile_handle_buffer(icc_profile->buffer,
-                                                icc_profile->buffer_size);
+                                                icc_profile->buffer_size,
+                                                memory);
         } else
             return;
     }
@@ -774,15 +776,14 @@ gsicc_initialize_default_profile(cmm_profile_t *icc_profile)
     gsicc_profile_t defaulttype = icc_profile->default_match;
     gsicc_colorbuffer_t default_space = gsUNDEFINED;
     int num_comps, num_comps_out;
-#ifdef DEBUG
     const gs_memory_t *mem = icc_profile->memory;
-#endif
 
     /* Get the profile handle if it is not already set */
     if (icc_profile->profile_handle != NULL) {
         icc_profile->profile_handle = 
                         gsicc_get_profile_handle_buffer(icc_profile->buffer,
-                                                        icc_profile->buffer_size);
+                                                        icc_profile->buffer_size,
+                                                        mem);
         if (icc_profile->profile_handle == NULL) {
             return gs_rethrow1(-1, "allocation of profile %s handle failed", 
                                icc_profile->name);
@@ -873,7 +874,8 @@ gsicc_init_profile_info(cmm_profile_t *profile)
     /* Get the profile handle */
     profile->profile_handle =
         gsicc_get_profile_handle_buffer(profile->buffer,
-                                        profile->buffer_size);
+                                        profile->buffer_size,
+                                        profile->memory);
 
     /* Compute the hash code of the profile. */
     gsicc_get_icc_buff_hash(profile->buffer, &(profile->hashcode),
@@ -1316,7 +1318,8 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
             /* Get the profile handle */
             icc_profile->profile_handle =
                 gsicc_get_profile_handle_buffer(icc_profile->buffer,
-                                                icc_profile->buffer_size);
+                                                icc_profile->buffer_size,
+                                                mem);
             /* Compute the hash code of the profile. Everything in the
                ICC manager will have it's hash code precomputed */
             gsicc_get_icc_buff_hash(icc_profile->buffer,
@@ -1772,7 +1775,7 @@ gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory)
         picc_profile->buffer = buffer_ptr;
         clist_read_chunk(pcrdev, position+sizeof(gsicc_serialized_profile_t),
             profile_size, (unsigned char *) buffer_ptr);
-        profile_handle = gscms_get_profile_handle_mem(buffer_ptr, profile_size);
+        profile_handle = gscms_get_profile_handle_mem(memory->non_gc_memory, buffer_ptr, profile_size);
         /* We also need to get some of the serialized information */
         clist_read_chunk(pcrdev, position, sizeof(gsicc_serialized_profile_t),
                         (unsigned char *) (&profile_header));
@@ -1795,7 +1798,7 @@ gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory)
 }
 
 gcmmhprofile_t
-gsicc_get_profile_handle_buffer(unsigned char *buffer, int profile_size)
+gsicc_get_profile_handle_buffer(unsigned char *buffer, int profile_size, gs_memory_t *memory)
 {
 
     gcmmhprofile_t profile_handle = NULL;
@@ -1804,7 +1807,7 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer, int profile_size)
          if (profile_size < ICC_HEADER_SIZE) {
              return(0);
          }
-         profile_handle = gscms_get_profile_handle_mem(buffer, profile_size);
+         profile_handle = gscms_get_profile_handle_mem(memory->non_gc_memory, buffer, profile_size);
          return(profile_handle);
      }
      return(0);
