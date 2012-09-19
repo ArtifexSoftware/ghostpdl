@@ -651,6 +651,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
         if (pcpath1 != pcpath2)
             gx_cpath_free(&cpath_with_shading_bbox, "shading_fill_cpath_intersection");
     } else {
+#ifndef GS_THREADSAFE
         bool got_dc = false;
         vd_save;
         if (vd_allowed('F') || vd_allowed('f')) {
@@ -670,6 +671,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
         if (got_dc)
             vd_release_dc;
         vd_restore;
+#endif
     }
     return code;
 }

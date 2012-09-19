@@ -74,8 +74,8 @@ enum {
 /* Forward references */
 static int dict_create_contents(uint size, const ref * pdref, bool pack);
 
-/* Debugging statistics */
-#ifdef DEBUG
+/* Debugging statistics - uses a static, so not threadsafe. */
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
 struct stats_dict_s {
     long lookups;		/* total lookups */
     long probe1;		/* successful lookups on only 1 probe */
@@ -105,12 +105,10 @@ dict_find(const ref * pdref, const ref * pkey, ref ** ppvalue)
             )
             stats_dict.probe2++;
     }
-#ifndef GS_THREADSAFE
     /* Do the cheap flag test before the expensive remainder test. */
     if (gs_debug_c('d') && !(stats_dict.lookups % 1000))
         dlprintf3("[d]lookups=%ld probe1=%ld probe2=%ld\n",
                   stats_dict.lookups, stats_dict.probe1, stats_dict.probe2);
-#endif
     return code;
 }
 #define dict_find real_dict_find

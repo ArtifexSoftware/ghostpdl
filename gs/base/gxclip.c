@@ -196,7 +196,7 @@ gx_make_clip_device_in_heap(gx_device_clip * dev, const gx_clip_path *pcpath, gx
     (*dev_proc(dev, open_device)) ((gx_device *)dev);
 }
 /* Define debugging statistics for the clipping loops. */
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
 struct stats_clip_s {
     long
          loops, out, in_y, in, in1, down, up, x, no_x;
@@ -226,7 +226,7 @@ clip_enumerate_rest(gx_device_clip * rdev,
     int yc;
     int code;
 
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
     if (INCR(loops) % clip_interval == 0 && gs_debug_c('q')) {
         dmprintf5(rdev->memory,
                   "[q]loops=%ld out=%ld in_y=%ld in=%ld in1=%ld\n",

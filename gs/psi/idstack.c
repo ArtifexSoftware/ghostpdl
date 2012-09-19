@@ -30,7 +30,7 @@
 */
 
 /* Debugging statistics */
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
 #include "idebug.h"
 #define MAX_STATS_DEPTH 6
 struct stats_dstack_s {
@@ -43,7 +43,7 @@ struct stats_dstack_s {
 # define INCR(v) DO_NOTHING
 #endif
 
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
 /* Wrapper for dstack_find_name_by_index */
 ref *real_dstack_find_name_by_index(dict_stack_t * pds, uint nidx);
 ref *
@@ -66,12 +66,10 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
             )
             INCR(probes[1]);
     }
-#ifndef GS_THREADSAFE
     if (gs_debug_c('d') && !(stats_dstack.lookups % 1000))
         dlprintf3("[d]lookups=%ld probe1=%ld probe2=%ld\n",
                   stats_dstack.lookups, stats_dstack.probes[0],
                   stats_dstack.probes[1]);
-#endif
     return pvalue;
 }
 #define dstack_find_name_by_index real_dstack_find_name_by_index

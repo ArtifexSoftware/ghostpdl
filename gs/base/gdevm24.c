@@ -34,7 +34,7 @@
 /*#define USE_MEMCPY*/
 
 /* Define debugging statistics. */
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
 struct stats_mem24_s {
     long
         fill, fwide, fgray[101], fsetc, fcolor[101], fnarrow[5],
@@ -117,7 +117,7 @@ mem_true24_fill_rectangle(gx_device * dev,
      */
     fit_fill_xywh(dev, x, y, w, h);
     INCR(fill);
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
     stats_mem24.ftotal += w;
 #endif
     if (w >= 5) {
@@ -199,7 +199,7 @@ mem_true24_fill_rectangle(gx_device * dev,
                 INCR(fsetc);
                 set_color24_cache(color, r, g, b);
             }
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
             {
                 int ci;
                 for (ci = 0; ci < prev_count; ++ci)
