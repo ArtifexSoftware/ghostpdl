@@ -1305,7 +1305,7 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
 
     code = fread(&c, 1, 1, linear_params->sfile);
     read++;
-    if (c == '<') {
+    if (c == '<' || c == '[') {
         int index = 0;
         Scratch[index++] = c;
         do {
