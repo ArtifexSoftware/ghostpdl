@@ -1288,9 +1288,6 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
     char c, Scratch[16384], *source, *target, Buf[280], *next;
     int code, ID;
 
-    /* To prevent the cluster timing out on testing */
-/*    return 0;*/
-
     Size = pdev->ResourceUsage[object].Length;
 
     pdev->ResourceUsage[object].LinearisedOffset = gp_ftell_64(linear_params->Lin_File.file);
@@ -1436,7 +1433,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     linear_params->MainFileEnd = gp_ftell_64(pdev->file);
 #ifdef LINEAR_DEBUGGING
     code = gx_device_open_output_file((gx_device *)pdev, "/temp/linear.pdf",
-                                   true, true, linear_params->Lin_File.file);
+                                   true, true, &linear_params->Lin_File.file);
 #else
     code = pdf_open_temp_file(pdev, &linear_params->Lin_File);
 #endif
@@ -1651,7 +1648,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     gp_fseek_64(linear_params->Lin_File.file, 0, SEEK_SET);
     code = gp_fseek_64(linear_params->sfile, 0, SEEK_SET);
     Length = pdev->ResourceUsage[HintStreamObj].LinearisedOffset;
-    while (Length && code > 0) {
+    while (Length && code >= 0) {
         if (Length > 1024) {
             code = fread(Buffer, 1024, 1, linear_params->Lin_File.file);
             fwrite(Buffer, 1024, 1, linear_params->sfile);
@@ -1709,8 +1706,13 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
             /* shared objects are recorded in the shared object hints, and also the page hints */
             for (j=0;j<record->NumPagesUsing;j++) {
                 int page = record->PageList[j];
-                page_hint_stream_t *pagehint = &linear_params->PageHints[page];
+                page_hint_stream_t *pagehint;
 
+                if (page >= pdev->next_page)
+                    /* This can happen if the job makes marks, but does not call showpage */
+                    continue;
+
+                pagehint = &linear_params->PageHints[page - 1];
                 if (pagehint->SharedObjectRef){
                     int *Temp = (int *)gs_alloc_bytes(pdev->pdf_memory, (pagehint->NumSharedObjects + 1) * sizeof(int), "realloc shared object hints");
                     memcpy(Temp, pagehint->SharedObjectRef, (pagehint->NumSharedObjects) * sizeof(int));
@@ -1731,13 +1733,19 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
              */
             int page = record->PageUsage, pageID = pdev->pages[page - 1].Page->id;
             int64_t LinearisedPageOffset = pdev->ResourceUsage[pageID].LinearisedOffset;
-            page_hint_stream_t *pagehint = &linear_params->PageHints[page - 1];
+            page_hint_stream_t *pagehint;
 
-            pagehint->NumUniqueObjects++;
-            if (record->LinearisedOffset - LinearisedPageOffset > pagehint->PageLength)
-                pagehint->PageLength = (record->LinearisedOffset + record->Length) - LinearisedPageOffset;
-            if (page == 1) {
-                linear_params->SharedHintHeader.FirstPageEntries++;
+            /* If the final page makes marks but does not call showpage we don't emit it
+             * which can lead to references to non-existent pages.
+             */
+            if (page < pdev->next_page) {
+                pagehint = &linear_params->PageHints[page - 1];
+                pagehint->NumUniqueObjects++;
+                if (record->LinearisedOffset - LinearisedPageOffset > pagehint->PageLength)
+                    pagehint->PageLength = (record->LinearisedOffset + record->Length) - LinearisedPageOffset;
+                if (page == 1) {
+                    linear_params->SharedHintHeader.FirstPageEntries++;
+                }
             }
         }
     }
@@ -1817,6 +1825,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     write_hint_stream(linear_params, (unsigned int *)&j, 16);
     write_hint_stream(linear_params, (unsigned int *)&j, 16);
 
+#ifdef LINEAR_DEBUGGING
     dmprintf1(pdev->pdf_memory, "LeastObjectsPerPage %d\n", linear_params->PageHintHeader.LeastObjectsPerPage);
     dmprintf1(pdev->pdf_memory, "Page 1 Offset %ld\n", pdev->ResourceUsage[pdev->pages[0].Page->id].LinearisedOffset);
     dmprintf1(pdev->pdf_memory, "ObjectNumBits %d\n", linear_params->PageHintHeader.ObjectNumBits);
@@ -1834,6 +1843,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     dmprintf1(pdev->pdf_memory, "SharedObjectNumBits %d\n", linear_params->PageHintHeader.SharedObjectNumBits);
     dmprintf(pdev->pdf_memory, "Position Numerator 1\n");
     dmprintf(pdev->pdf_memory, "Position Denominator 1\n\n");
+#endif
 
     for (i=0;i < pdev->next_page;i++) {
         page_hint_stream_t *hint = &linear_params->PageHints[i];
@@ -2153,10 +2163,17 @@ int pdf_record_usage(gx_device_pdf *const pdev, long resource_id, int page_num)
 
 int pdf_record_usage_by_parent(gx_device_pdf *const pdev, long resource_id, long parent_id)
 {
+    int i;
     if (!pdev->Linearise)
         return 0;
 
-    pdf_record_usage(pdev, resource_id, pdev->ResourceUsage[parent_id].PageUsage);
+    if (pdev->ResourceUsage[parent_id].PageUsage >= 0)
+        pdf_record_usage(pdev, resource_id, pdev->ResourceUsage[parent_id].PageUsage);
+    else {
+        for (i = 0; i < pdev->ResourceUsage[parent_id].NumPagesUsing; i++) {
+            pdf_record_usage(pdev, resource_id, pdev->ResourceUsage[parent_id].PageList[i]);
+        }
+    }
     return 0;
 }
 
@@ -2574,7 +2591,6 @@ pdf_close(gx_device * dev)
         int i;
 
         code = pdf_linearise(pdev, &linear_params);
-        gs_free_object(pdev->pdf_memory, linear_params.Offsets, "Free linearisation offset records");
         for (i=0; i<pdev->ResourceUsageSize; i++) {
             if (pdev->ResourceUsage[i].PageList)
                 gs_free_object(pdev->pdf_memory, pdev->ResourceUsage[i].PageList, "Free linearisation Page Usage list records");
@@ -2880,8 +2896,5 @@ pdf_close(gx_device * dev)
     if (code < 0)
         return code;
 
-    if (pdev->Linearise) {
-        gs_free_object(pdev->pdf_memory, pdev->ResourceUsage, "free resource usage storage");
-    }
     return code;
 }
