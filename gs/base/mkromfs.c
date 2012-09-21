@@ -80,9 +80,6 @@
 
 #include <zlib.h>
 
-/* We need to stub some functions */
-#include "gsicc_cms.h"
-
 /*
  * The rom file system is an array of pointers to nodes, terminated by a NULL
  */
@@ -115,6 +112,124 @@ typedef struct Xlist_element_s {
         char *path;
     } Xlist_element;
 
+/*******************************************************************************
+ * The following are non-redirected printing functions to avoid the need for
+ * these included from gsmisc.c (unix gp_ functions, among others, use if_debug).
+ *******************************************************************************/
+#include <stdarg.h>
+#define PRINTF_BUF_LENGTH 1024
+
+static const char msg_truncated[] = "\n*** Previous line has been truncated.\n";
+
+int outprintf(const gs_memory_t *mem, const char *fmt, ...)
+{
+    int count;
+    char buf[PRINTF_BUF_LENGTH];
+    va_list args;
+
+    va_start(args, fmt);
+    count = vsnprintf(buf, sizeof(buf), fmt, args);
+    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+        fwrite(buf, 1, sizeof(buf) - 1, stdout);
+        fwrite(msg_truncated, 1, sizeof(msg_truncated) - 1, stdout);
+    } else {
+        fwrite(buf, 1, count, stdout);
+    }
+    va_end(args);
+    return count;
+}
+
+int errprintf_nomem(const char *fmt, ...)
+{
+    int count;
+    char buf[PRINTF_BUF_LENGTH];
+    va_list args;
+
+    va_start(args, fmt);
+    count = vsnprintf(buf, sizeof(buf), fmt, args);
+    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+        fwrite(buf, 1, sizeof(buf) - 1, stderr);
+        fwrite(msg_truncated, 1, sizeof(msg_truncated) - 1, stderr);
+    } else {
+        fwrite(buf, 1, count, stderr);
+    }
+    va_end(args);
+    return count;
+}
+
+int errprintf(const gs_memory_t *mem, const char *fmt, ...)
+{
+    int count;
+    char buf[PRINTF_BUF_LENGTH];
+    va_list args;
+
+    va_start(args, fmt);
+    count = vsnprintf(buf, sizeof(buf), fmt, args);
+    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+        fwrite(buf, 1, sizeof(buf) - 1, stderr);
+        fwrite(msg_truncated, 1, sizeof(msg_truncated) - 1, stderr);
+    } else {
+        fwrite(buf, 1, count, stderr);
+    }
+    va_end(args);
+    return count;
+}
+
+
+#if __LINE__                    /* compiler provides it */
+void
+lprintf_file_and_line(const char *file, int line)
+{
+    epf("%s(%d): ", file, line);
+}
+#else
+void
+lprintf_file_only(FILE * f, const char *file)
+{
+    epf("%s(?): ", file);
+}
+#endif
+
+void
+eprintf_program_ident(const char *program_name,
+                      long revision_number)
+{
+    if (program_name) {
+        epf((revision_number ? "%s " : "%s"), program_name);
+        if (revision_number) {
+            int fpart = revision_number % 100;
+
+            epf("%d.%02d", (int)(revision_number / 100), fpart);
+        }
+        epf(": ");
+    }
+}
+void
+lprintf_file_only(FILE * f, const char *file)
+{
+    epf("%s(?): ", file);
+}
+
+void
+emprintf_program_ident(const gs_memory_t *mem,
+                       const char *program_name,
+                       long revision_number)
+{
+    if (program_name) {
+        epfm(mem, (revision_number ? "%s " : "%s"), program_name);
+        if (revision_number) {
+            int fpart = revision_number % 100;
+
+            epfm(mem, "%d.%02d", (int)(revision_number / 100), fpart);
+        }
+        epfm(mem, ": ");
+    }
+}
+
+/*******************************************************************************
+ * The following is a REALLY minimal gs_memory_t for use by the gp_ functions
+ *******************************************************************************/
+
 byte *minimal_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname);
 byte *minimal_alloc_byte_array(gs_memory_t * mem, uint num_elements,
                              uint elt_size, client_name_t cname);
@@ -123,9 +238,6 @@ void *minimal_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
 void minimal_free_object(gs_memory_t * mem, void * data, client_name_t cname);
 void minimal_free_string(gs_memory_t * mem, byte * data, uint nbytes, client_name_t cname);
 
-/*******************************************************************************
- * The following is a REALLY minimal gs_memory_t for use by the gp_ functions
- *******************************************************************************/
 byte *
 minimal_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 {
@@ -2258,14 +2370,4 @@ main(int argc, char *argv[])
     printf("Total %%rom%% structure size is %d bytes.\n", totlen);
 
     return 0;
-}
-
-/* A couple of stub functions */
-int gscms_create(gs_memory_t *mem)
-{
-    return 0;
-}
-
-void gscms_destroy(gs_memory_t *mem)
-{
 }
