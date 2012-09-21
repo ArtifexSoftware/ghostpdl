@@ -46,6 +46,7 @@ lcms2_OBJS=\
 	$(LCMS2OBJ)cmserr.$(OBJ) \
 	$(LCMS2OBJ)cmsgamma.$(OBJ) \
 	$(LCMS2OBJ)cmsgmt.$(OBJ) \
+	$(LCMS2OBJ)cmshalf.$(OBJ) \
 	$(LCMS2OBJ)cmsintrp.$(OBJ) \
 	$(LCMS2OBJ)cmsio0.$(OBJ) \
 	$(LCMS2OBJ)cmsio1.$(OBJ) \
@@ -113,6 +114,9 @@ $(LCMS2OBJ)cmsgamma.$(OBJ) : $(LCMS2SRC)cmsgamma.c $(lcms2_HDRS)
 
 $(LCMS2OBJ)cmsgmt.$(OBJ) : $(LCMS2SRC)cmsgmt.c $(lcms2_HDRS)
 	$(LCMS2_CC) $(LCMS2O_)cmsgmt.$(OBJ) $(C_) $(LCMS2SRC)cmsgmt.c
+
+$(LCMS2OBJ)cmshalf.$(OBJ) : $(LCMS2SRC)cmshalf.c $(lcms2_HDRS)
+	$(LCMS2_CC) $(LCMS2O_)cmshalf.$(OBJ) $(C_) $(LCMS2SRC)cmshalf.c
 
 $(LCMS2OBJ)cmsintrp.$(OBJ) : $(LCMS2SRC)cmsintrp.c $(lcms2_HDRS)
 	$(LCMS2_CC) $(LCMS2O_)cmsintrp.$(OBJ) $(C_) $(LCMS2SRC)cmsintrp.c

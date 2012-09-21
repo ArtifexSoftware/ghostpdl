@@ -52,3 +52,37 @@ Fixed Absolute colorimetric intent issues
 Fixed a bug on the range of data in transicc, when colorant tag is specified
 Adding a memory alignment macro for CGATS parser
 Updated to ICC spec 4.3
+Added compatibilty with Argyll's CGATS parser
+
+2.3 Maintenance release
+-----------------------
+
+Fixed a bug in the named color devicelink generation
+Fixed uint64 to work in systems without long long native type
+Added performance improvements from several contributors, mostly Artifex
+Fixed a bug in black preservation checking
+Added black point detection algorithm from Adobe paper
+Added support for transforms on planar data with different stride
+Added a new plug in entry for full transform
+Exposed internal overview table for tone curves
+gamma 1.0 can now operate in unbounded mode
+Fixed a bug in pipeline duplication
+Added getPipelineContextID
+Added a new plug-in type
+Internal stage structs are now accessible through plug-in API
+Fixed a bug on ending zero when saving a IT8 to memory
+Fixed a bug on IT8 reading of negative numbers.
+Increased security checks, thanks to Mateusz Jurczyk, from Google.
+Added half float support
+Fixed a typo on tificc and jpgicc names, thanks to Elle Stone for reporting.
+Fixed a bug on named color profiles.
+Added a conditional compilatio flag for "half" support
+Fixed a bug in transicc when clot tables are present
+Added formatter resolution after xform optimization plugin
+added half float variants (ABGR and so)
+Fixed a bug in XYZ floating point PCS
+Fixed an unitialized read on PatchLUT
+Added a check for maximum input channels
+
+2.4 Featured release
+--------------------

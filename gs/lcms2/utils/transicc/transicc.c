@@ -469,8 +469,12 @@ cmsBool OpenTransforms(void)
 
         if (cmsIsTag(hOutput, cmsSigColorantTableTag)){
 
-            List = cmsReadTag(hInput, cmsSigColorantTableTag);
+            List = cmsReadTag(hOutput, cmsSigColorantTableTag);
             OutputColorant = cmsDupNamedColorList(List);
+            if (cmsNamedColorCount(OutputColorant) <= 3) 
+                SetRange(255, FALSE);
+            else
+                SetRange(1, FALSE);  // Inks are already divided by 100 in the formatter
         }
         else OutputColorant = ComponentNames(OutputColorSpace, FALSE);
 
@@ -909,6 +913,36 @@ void TakeCGATSValues(int nPatch, cmsFloat64Number Float[])
         Float[2] = GetIT8Val("CMY_Y", 1.0);
         break;
 
+    case cmsSig1colorData:
+    case cmsSig2colorData:
+    case cmsSig3colorData:
+    case cmsSig4colorData:
+    case cmsSig5colorData:
+    case cmsSig6colorData:
+    case cmsSig7colorData:
+    case cmsSig8colorData:
+    case cmsSig9colorData:
+    case cmsSig10colorData:
+    case cmsSig11colorData:
+    case cmsSig12colorData:
+    case cmsSig13colorData:
+    case cmsSig14colorData:
+    case cmsSig15colorData:
+        {
+            cmsUInt32Number i, n;
+
+            n = cmsChannelsOf(InputColorSpace);
+            for (i=0; i < n; i++) { 
+
+                char Buffer[255];
+
+                sprintf(Buffer, "%dCLR_%d", n, i+1);
+                Float[i] = GetIT8Val(Buffer, 100.0);
+            }
+
+        }
+	break;
+
     default: 
         {
             cmsUInt32Number i, n;
@@ -986,6 +1020,37 @@ void PutCGATSValues(cmsFloat64Number Float[])
         SetCGATSfld("CMY_M", Float[1]);
         SetCGATSfld("CMY_Y", Float[2]);                 
         break;
+
+    case cmsSig1colorData:
+    case cmsSig2colorData:
+    case cmsSig3colorData:
+    case cmsSig4colorData:
+    case cmsSig5colorData:
+    case cmsSig6colorData:
+    case cmsSig7colorData:
+    case cmsSig8colorData:
+    case cmsSig9colorData:
+    case cmsSig10colorData:
+    case cmsSig11colorData:
+    case cmsSig12colorData:
+    case cmsSig13colorData:
+    case cmsSig14colorData:
+    case cmsSig15colorData:
+        {
+
+            cmsUInt32Number i, n;
+
+            n = cmsChannelsOf(InputColorSpace);
+            for (i=0; i < n; i++) { 
+
+                char Buffer[255];
+
+                sprintf(Buffer, "%dCLR_%d", n, i+1);
+
+                SetCGATSfld(Buffer, Float[i] * 100.0);
+            }
+        }
+	break;
 
     default: 
         {
@@ -1074,6 +1139,36 @@ void SetOutputDataFormat(void)
         cmsIT8SetDataFormat(hIT8out, 3, "CMY_Y");                   
         break;
 
+    case cmsSig1colorData:
+    case cmsSig2colorData:
+    case cmsSig3colorData:
+    case cmsSig4colorData:
+    case cmsSig5colorData:
+    case cmsSig6colorData:
+    case cmsSig7colorData:
+    case cmsSig8colorData:
+    case cmsSig9colorData:
+    case cmsSig10colorData:
+    case cmsSig11colorData:
+    case cmsSig12colorData:
+    case cmsSig13colorData:
+    case cmsSig14colorData:
+    case cmsSig15colorData:
+	{
+	    int i, n;
+	    char Buffer[255];
+
+	    n = cmsChannelsOf(OutputColorSpace);
+	    cmsIT8SetPropertyDbl(hIT8out, "NUMBER_OF_FIELDS", n+1);
+	    cmsIT8SetDataFormat(hIT8out, 0, "SAMPLE_ID");
+
+	    for (i=1; i <= n; i++) {
+		sprintf(Buffer, "%dCLR_%d", n, i);
+		cmsIT8SetDataFormat(hIT8out, i, Buffer);
+	    }
+	}
+	break;
+
     default: {
 
         int i, n;
@@ -1129,7 +1224,7 @@ int main(int argc, char *argv[])
 
     int nPatch = 0;
 
-    fprintf(stderr, "LittleCMS ColorSpace conversion calculator - 4.1 [LittleCMS %2.2f]\n", LCMS_VERSION / 1000.0);
+    fprintf(stderr, "LittleCMS ColorSpace conversion calculator - 4.2 [LittleCMS %2.2f]\n", LCMS_VERSION / 1000.0);
 
     InitUtils("transicc");
 

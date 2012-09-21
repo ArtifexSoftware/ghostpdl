@@ -3,22 +3,22 @@
 //  Little Color Management System
 //  Copyright (c) 1998-2010 Marti Maria Saguer
 //
-// Permission is hereby granted, free of charge, to any person obtaining 
-// a copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the Software 
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the Software
 // is furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in 
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO 
-// THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE 
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+// THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 //---------------------------------------------------------------------------------
@@ -26,10 +26,10 @@
 
 #include "lcms2_internal.h"
 
-// This module handles all formats supported by lcms. There are two flavors, 16 bits and 
+// This module handles all formats supported by lcms. There are two flavors, 16 bits and
 // floating point. Floating point is supported only in a subset, those formats holding
-// cmsFloat32Number (4 bytes per component) and double (marked as 0 bytes per component as special 
-// case)
+// cmsFloat32Number (4 bytes per component) and double (marked as 0 bytes per component
+// as special case)
 
 // ---------------------------------------------------------------------------
 
@@ -42,17 +42,15 @@
 #define REVERSE_FLAVOR_16(x)    ((cmsUInt16Number)(0xffff-(x)))
 
 // * 0xffff / 0xff00 = (255 * 257) / (255 * 256) = 257 / 256
-cmsINLINE cmsUInt16Number FomLabV2ToLabV4(cmsUInt16Number x) 
+cmsINLINE cmsUInt16Number FomLabV2ToLabV4(cmsUInt16Number x)
 {
-    int a;
-
-    a = (x << 8 | x) >> 8;  // * 257 / 256
+    int a = (x << 8 | x) >> 8;  // * 257 / 256
     if ( a > 0xffff) return 0xffff;
     return (cmsUInt16Number) a;
 }
 
 // * 0xf00 / 0xffff = * 256 / 257
-cmsINLINE cmsUInt16Number FomLabV4ToLabV2(cmsUInt16Number x) 
+cmsINLINE cmsUInt16Number FomLabV4ToLabV2(cmsUInt16Number x)
 {
     return (cmsUInt16Number) (((x << 8) + 0x80) / 257);
 }
@@ -61,16 +59,17 @@ cmsINLINE cmsUInt16Number FomLabV4ToLabV2(cmsUInt16Number x)
 typedef struct {
     cmsUInt32Number Type;
     cmsUInt32Number Mask;
-    cmsFormatter16 Frm;
+    cmsFormatter16  Frm;
 
 } cmsFormatters16;
 
 typedef struct {
     cmsUInt32Number    Type;
     cmsUInt32Number    Mask;
-    cmsFormatterFloat Frm;
+    cmsFormatterFloat  Frm;
 
 } cmsFormattersFloat;
+
 
 #define ANYSPACE        COLORSPACE_SH(31)
 #define ANYCHANNELS     CHANNELS_SH(15)
@@ -78,7 +77,7 @@ typedef struct {
 #define ANYPLANAR       PLANAR_SH(1)
 #define ANYENDIAN       ENDIAN16_SH(1)
 #define ANYSWAP         DOSWAP_SH(1)
-#define ANYSWAPFIRST    SWAPFIRST_SH(1) 
+#define ANYSWAPFIRST    SWAPFIRST_SH(1)
 #define ANYFLAVOR       FLAVOR_SH(1)
 
 
@@ -88,12 +87,13 @@ typedef struct {
 #pragma warning(disable : 4100)
 #endif
 
-// Unpacking routines (16 bits) ---------------------------------------------------------------------------------------- 
+// Unpacking routines (16 bits) ----------------------------------------------------------------------------------------
+
 
 // Does almost everything but is slow
 static
-cmsUInt8Number* UnrollChunkyBytes(register _cmsTRANSFORM* info, 
-                                  register cmsUInt16Number wIn[], 
+cmsUInt8Number* UnrollChunkyBytes(register _cmsTRANSFORM* info,
+                                  register cmsUInt16Number wIn[],
                                   register cmsUInt8Number* accum,
                                   register cmsUInt32Number Stride)
 {
@@ -102,7 +102,7 @@ cmsUInt8Number* UnrollChunkyBytes(register _cmsTRANSFORM* info,
     int Reverse    = T_FLAVOR(info ->InputFormat);
     int SwapFirst  = T_SWAPFIRST(info -> InputFormat);
     int Extra      = T_EXTRA(info -> InputFormat);
-    int ExtraFirst = DoSwap && !SwapFirst;
+    int ExtraFirst = DoSwap ^ SwapFirst;
     cmsUInt16Number v;
     int i;
 
@@ -113,10 +113,10 @@ cmsUInt8Number* UnrollChunkyBytes(register _cmsTRANSFORM* info,
     for (i=0; i < nChan; i++) {
         int index = DoSwap ? (nChan - i - 1) : i;
 
-        v = FROM_8_TO_16(*accum); 
+        v = FROM_8_TO_16(*accum);
         v = Reverse ? REVERSE_FLAVOR_16(v) : v;
         wIn[index] = v;
-        accum++;              
+        accum++;
     }
 
     if (!ExtraFirst) {
@@ -139,25 +139,26 @@ cmsUInt8Number* UnrollChunkyBytes(register _cmsTRANSFORM* info,
 
 // Extra channels are just ignored because come in the next planes
 static
-cmsUInt8Number* UnrollPlanarBytes(register _cmsTRANSFORM* info, 
-                                  register cmsUInt16Number wIn[], 
+cmsUInt8Number* UnrollPlanarBytes(register _cmsTRANSFORM* info,
+                                  register cmsUInt16Number wIn[],
                                   register cmsUInt8Number* accum,
                                   register cmsUInt32Number Stride)
 {
-    int nChan = T_CHANNELS(info -> InputFormat);
-    int DoSwap= T_DOSWAP(info ->InputFormat);
-    int Reverse= T_FLAVOR(info ->InputFormat);
+    int nChan     = T_CHANNELS(info -> InputFormat);
+    int DoSwap    = T_DOSWAP(info ->InputFormat);
+    int SwapFirst = T_SWAPFIRST(info ->InputFormat);
+    int Reverse   = T_FLAVOR(info ->InputFormat);
     int i;
     cmsUInt8Number* Init = accum;
 
-    if (DoSwap) {
+    if (DoSwap ^ SwapFirst) {
         accum += T_EXTRA(info -> InputFormat) * Stride;
     }
 
     for (i=0; i < nChan; i++) {
 
         int index = DoSwap ? (nChan - i - 1) : i;
-        cmsUInt16Number v = FROM_8_TO_16(*accum); 
+        cmsUInt16Number v = FROM_8_TO_16(*accum);
 
         wIn[index] = Reverse ? REVERSE_FLAVOR_16(v) : v;
         accum += Stride;
@@ -168,8 +169,8 @@ cmsUInt8Number* UnrollPlanarBytes(register _cmsTRANSFORM* info,
 
 // Special cases, provided for performance
 static
-cmsUInt8Number* Unroll4Bytes(register _cmsTRANSFORM* info, 
-                             register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll4Bytes(register _cmsTRANSFORM* info,
+                             register cmsUInt16Number wIn[],
                              register cmsUInt8Number* accum,
                              register cmsUInt32Number Stride)
 {
@@ -185,8 +186,8 @@ cmsUInt8Number* Unroll4Bytes(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll4BytesReverse(register _cmsTRANSFORM* info, 
-                                    register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll4BytesReverse(register _cmsTRANSFORM* info,
+                                    register cmsUInt16Number wIn[],
                                     register cmsUInt8Number* accum,
                                     register cmsUInt32Number Stride)
 {
@@ -202,8 +203,8 @@ cmsUInt8Number* Unroll4BytesReverse(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll4BytesSwapFirst(register _cmsTRANSFORM* info, 
-                                      register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll4BytesSwapFirst(register _cmsTRANSFORM* info,
+                                      register cmsUInt16Number wIn[],
                                       register cmsUInt8Number* accum,
                                       register cmsUInt32Number Stride)
 {
@@ -220,8 +221,8 @@ cmsUInt8Number* Unroll4BytesSwapFirst(register _cmsTRANSFORM* info,
 
 // KYMC
 static
-cmsUInt8Number* Unroll4BytesSwap(register _cmsTRANSFORM* info, 
-                                 register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll4BytesSwap(register _cmsTRANSFORM* info,
+                                 register cmsUInt16Number wIn[],
                                  register cmsUInt8Number* accum,
                                  register cmsUInt32Number Stride)
 {
@@ -237,8 +238,8 @@ cmsUInt8Number* Unroll4BytesSwap(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll4BytesSwapSwapFirst(register _cmsTRANSFORM* info, 
-                                          register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll4BytesSwapSwapFirst(register _cmsTRANSFORM* info,
+                                          register cmsUInt16Number wIn[],
                                           register cmsUInt8Number* accum,
                                           register cmsUInt32Number Stride)
 {
@@ -253,10 +254,11 @@ cmsUInt8Number* Unroll4BytesSwapSwapFirst(register _cmsTRANSFORM* info,
     cmsUNUSED_PARAMETER(Stride);
 }
 
-cmsUInt8Number* _cmsUnroll3Bytes(register _cmsTRANSFORM* info,
-                                 register cmsUInt16Number wIn[],
-                                 register cmsUInt8Number* accum,
-                                 register cmsUInt32Number Stride)
+static
+cmsUInt8Number* Unroll3Bytes(register _cmsTRANSFORM* info,
+                             register cmsUInt16Number wIn[],
+                             register cmsUInt8Number* accum,
+                             register cmsUInt32Number Stride)
 {
     wIn[0] = FROM_8_TO_16(*accum); accum++;     // R
     wIn[1] = FROM_8_TO_16(*accum); accum++;     // G
@@ -269,8 +271,8 @@ cmsUInt8Number* _cmsUnroll3Bytes(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll3BytesSkip1Swap(register _cmsTRANSFORM* info, 
-                                      register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll3BytesSkip1Swap(register _cmsTRANSFORM* info,
+                                      register cmsUInt16Number wIn[],
                                       register cmsUInt8Number* accum,
                                       register cmsUInt32Number Stride)
 {
@@ -286,8 +288,8 @@ cmsUInt8Number* Unroll3BytesSkip1Swap(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll3BytesSkip1SwapFirst(register _cmsTRANSFORM* info, 
-                                           register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll3BytesSkip1SwapFirst(register _cmsTRANSFORM* info,
+                                           register cmsUInt16Number wIn[],
                                            register cmsUInt8Number* accum,
                                            register cmsUInt32Number Stride)
 {
@@ -305,8 +307,8 @@ cmsUInt8Number* Unroll3BytesSkip1SwapFirst(register _cmsTRANSFORM* info,
 
 // BRG
 static
-cmsUInt8Number* Unroll3BytesSwap(register _cmsTRANSFORM* info, 
-                                 register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll3BytesSwap(register _cmsTRANSFORM* info,
+                                 register cmsUInt16Number wIn[],
                                  register cmsUInt8Number* accum,
                                  register cmsUInt32Number Stride)
 {
@@ -321,8 +323,8 @@ cmsUInt8Number* Unroll3BytesSwap(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* UnrollLabV2_8(register _cmsTRANSFORM* info, 
-                              register cmsUInt16Number wIn[], 
+cmsUInt8Number* UnrollLabV2_8(register _cmsTRANSFORM* info,
+                              register cmsUInt16Number wIn[],
                               register cmsUInt8Number* accum,
                               register cmsUInt32Number Stride)
 {
@@ -337,8 +339,8 @@ cmsUInt8Number* UnrollLabV2_8(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* UnrollALabV2_8(register _cmsTRANSFORM* info, 
-                               register cmsUInt16Number wIn[], 
+cmsUInt8Number* UnrollALabV2_8(register _cmsTRANSFORM* info,
+                               register cmsUInt16Number wIn[],
                                register cmsUInt8Number* accum,
                                register cmsUInt32Number Stride)
 {
@@ -354,8 +356,8 @@ cmsUInt8Number* UnrollALabV2_8(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* UnrollLabV2_16(register _cmsTRANSFORM* info, 
-                               register cmsUInt16Number wIn[], 
+cmsUInt8Number* UnrollLabV2_16(register _cmsTRANSFORM* info,
+                               register cmsUInt16Number wIn[],
                                register cmsUInt8Number* accum,
                                register cmsUInt32Number Stride)
 {
@@ -371,8 +373,8 @@ cmsUInt8Number* UnrollLabV2_16(register _cmsTRANSFORM* info,
 
 // for duplex
 static
-cmsUInt8Number* Unroll2Bytes(register _cmsTRANSFORM* info, 
-                                     register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll2Bytes(register _cmsTRANSFORM* info,
+                                     register cmsUInt16Number wIn[],
                                      register cmsUInt8Number* accum,
                                      register cmsUInt32Number Stride)
 {
@@ -390,8 +392,8 @@ cmsUInt8Number* Unroll2Bytes(register _cmsTRANSFORM* info,
 
 // Monochrome duplicates L into RGB for null-transforms
 static
-cmsUInt8Number* Unroll1Byte(register _cmsTRANSFORM* info, 
-                            register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll1Byte(register _cmsTRANSFORM* info,
+                            register cmsUInt16Number wIn[],
                             register cmsUInt8Number* accum,
                             register cmsUInt32Number Stride)
 {
@@ -405,8 +407,8 @@ cmsUInt8Number* Unroll1Byte(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* Unroll1ByteSkip1(register _cmsTRANSFORM* info, 
-                                 register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll1ByteSkip1(register _cmsTRANSFORM* info,
+                                 register cmsUInt16Number wIn[],
                                  register cmsUInt8Number* accum,
                                  register cmsUInt32Number Stride)
 {
@@ -420,8 +422,8 @@ cmsUInt8Number* Unroll1ByteSkip1(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll1ByteSkip2(register _cmsTRANSFORM* info, 
-                                 register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll1ByteSkip2(register _cmsTRANSFORM* info,
+                                 register cmsUInt16Number wIn[],
                                  register cmsUInt8Number* accum,
                                  register cmsUInt32Number Stride)
 {
@@ -435,8 +437,8 @@ cmsUInt8Number* Unroll1ByteSkip2(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll1ByteReversed(register _cmsTRANSFORM* info, 
-                                    register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll1ByteReversed(register _cmsTRANSFORM* info,
+                                    register cmsUInt16Number wIn[],
                                     register cmsUInt8Number* accum,
                                     register cmsUInt32Number Stride)
 {
@@ -450,8 +452,8 @@ cmsUInt8Number* Unroll1ByteReversed(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* UnrollAnyWords(register _cmsTRANSFORM* info, 
-                               register cmsUInt16Number wIn[], 
+cmsUInt8Number* UnrollAnyWords(register _cmsTRANSFORM* info,
+                               register cmsUInt16Number wIn[],
                                register cmsUInt8Number* accum,
                                register cmsUInt32Number Stride)
 {
@@ -461,7 +463,7 @@ cmsUInt8Number* UnrollAnyWords(register _cmsTRANSFORM* info,
     int Reverse     = T_FLAVOR(info ->InputFormat);
     int SwapFirst   = T_SWAPFIRST(info -> InputFormat);
     int Extra       = T_EXTRA(info -> InputFormat);
-    int ExtraFirst  = DoSwap && !SwapFirst;
+    int ExtraFirst  = DoSwap ^ SwapFirst;
     int i;
 
     if (ExtraFirst) {
@@ -471,14 +473,14 @@ cmsUInt8Number* UnrollAnyWords(register _cmsTRANSFORM* info,
     for (i=0; i < nChan; i++) {
 
         int index = DoSwap ? (nChan - i - 1) : i;
-        cmsUInt16Number v = *(cmsUInt16Number*) accum; 
+        cmsUInt16Number v = *(cmsUInt16Number*) accum;
 
         if (SwapEndian)
             v = CHANGE_ENDIAN(v);
 
         wIn[index] = Reverse ? REVERSE_FLAVOR_16(v) : v;
 
-        accum += sizeof(cmsUInt16Number);              
+        accum += sizeof(cmsUInt16Number);
     }
 
     if (!ExtraFirst) {
@@ -499,8 +501,8 @@ cmsUInt8Number* UnrollAnyWords(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* UnrollPlanarWords(register _cmsTRANSFORM* info, 
-                                  register cmsUInt16Number wIn[], 
+cmsUInt8Number* UnrollPlanarWords(register _cmsTRANSFORM* info,
+                                  register cmsUInt16Number wIn[],
                                   register cmsUInt8Number* accum,
                                   register cmsUInt32Number Stride)
 {
@@ -518,14 +520,14 @@ cmsUInt8Number* UnrollPlanarWords(register _cmsTRANSFORM* info,
     for (i=0; i < nChan; i++) {
 
         int index = DoSwap ? (nChan - i - 1) : i;
-        cmsUInt16Number v = *(cmsUInt16Number*) accum; 
+        cmsUInt16Number v = *(cmsUInt16Number*) accum;
 
         if (SwapEndian)
             v = CHANGE_ENDIAN(v);
 
         wIn[index] = Reverse ? REVERSE_FLAVOR_16(v) : v;
 
-        accum +=  Stride * sizeof(cmsUInt16Number);           
+        accum +=  Stride * sizeof(cmsUInt16Number);
     }
 
     return (Init + sizeof(cmsUInt16Number));
@@ -533,8 +535,8 @@ cmsUInt8Number* UnrollPlanarWords(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* Unroll4Words(register _cmsTRANSFORM* info, 
-                             register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll4Words(register _cmsTRANSFORM* info,
+                             register cmsUInt16Number wIn[],
                              register cmsUInt8Number* accum,
                              register cmsUInt32Number Stride)
 {
@@ -550,8 +552,8 @@ cmsUInt8Number* Unroll4Words(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll4WordsReverse(register _cmsTRANSFORM* info, 
-                                    register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll4WordsReverse(register _cmsTRANSFORM* info,
+                                    register cmsUInt16Number wIn[],
                                     register cmsUInt8Number* accum,
                                     register cmsUInt32Number Stride)
 {
@@ -567,8 +569,8 @@ cmsUInt8Number* Unroll4WordsReverse(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll4WordsSwapFirst(register _cmsTRANSFORM* info, 
-                                      register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll4WordsSwapFirst(register _cmsTRANSFORM* info,
+                                      register cmsUInt16Number wIn[],
                                       register cmsUInt8Number* accum,
                                       register cmsUInt32Number Stride)
 {
@@ -585,8 +587,8 @@ cmsUInt8Number* Unroll4WordsSwapFirst(register _cmsTRANSFORM* info,
 
 // KYMC
 static
-cmsUInt8Number* Unroll4WordsSwap(register _cmsTRANSFORM* info, 
-                                 register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll4WordsSwap(register _cmsTRANSFORM* info,
+                                 register cmsUInt16Number wIn[],
                                  register cmsUInt8Number* accum,
                                  register cmsUInt32Number Stride)
 {
@@ -602,8 +604,8 @@ cmsUInt8Number* Unroll4WordsSwap(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll4WordsSwapSwapFirst(register _cmsTRANSFORM* info, 
-                                          register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll4WordsSwapSwapFirst(register _cmsTRANSFORM* info,
+                                          register cmsUInt16Number wIn[],
                                           register cmsUInt8Number* accum,
                                           register cmsUInt32Number Stride)
 {
@@ -619,8 +621,8 @@ cmsUInt8Number* Unroll4WordsSwapSwapFirst(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll3Words(register _cmsTRANSFORM* info, 
-                             register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll3Words(register _cmsTRANSFORM* info,
+                             register cmsUInt16Number wIn[],
                              register cmsUInt8Number* accum,
                              register cmsUInt32Number Stride)
 {
@@ -635,8 +637,8 @@ cmsUInt8Number* Unroll3Words(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll3WordsSwap(register _cmsTRANSFORM* info, 
-                                 register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll3WordsSwap(register _cmsTRANSFORM* info,
+                                 register cmsUInt16Number wIn[],
                                  register cmsUInt8Number* accum,
                                  register cmsUInt32Number Stride)
 {
@@ -651,8 +653,8 @@ cmsUInt8Number* Unroll3WordsSwap(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll3WordsSkip1Swap(register _cmsTRANSFORM* info, 
-                                      register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll3WordsSkip1Swap(register _cmsTRANSFORM* info,
+                                      register cmsUInt16Number wIn[],
                                       register cmsUInt8Number* accum,
                                       register cmsUInt32Number Stride)
 {
@@ -668,8 +670,8 @@ cmsUInt8Number* Unroll3WordsSkip1Swap(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll3WordsSkip1SwapFirst(register _cmsTRANSFORM* info, 
-                                           register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll3WordsSkip1SwapFirst(register _cmsTRANSFORM* info,
+                                           register cmsUInt16Number wIn[],
                                            register cmsUInt8Number* accum,
                                            register cmsUInt32Number Stride)
 {
@@ -685,8 +687,8 @@ cmsUInt8Number* Unroll3WordsSkip1SwapFirst(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll1Word(register _cmsTRANSFORM* info, 
-                            register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll1Word(register _cmsTRANSFORM* info,
+                            register cmsUInt16Number wIn[],
                             register cmsUInt8Number* accum,
                             register cmsUInt32Number Stride)
 {
@@ -699,8 +701,8 @@ cmsUInt8Number* Unroll1Word(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll1WordReversed(register _cmsTRANSFORM* info, 
-                                    register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll1WordReversed(register _cmsTRANSFORM* info,
+                                    register cmsUInt16Number wIn[],
                                     register cmsUInt8Number* accum,
                                     register cmsUInt32Number Stride)
 {
@@ -713,12 +715,12 @@ cmsUInt8Number* Unroll1WordReversed(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll1WordSkip3(register _cmsTRANSFORM* info, 
-                                 register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll1WordSkip3(register _cmsTRANSFORM* info,
+                                 register cmsUInt16Number wIn[],
                                  register cmsUInt8Number* accum,
                                  register cmsUInt32Number Stride)
 {
-    wIn[0] = wIn[1] = wIn[2] = *(cmsUInt16Number*) accum; 
+    wIn[0] = wIn[1] = wIn[2] = *(cmsUInt16Number*) accum;
 
     accum += 8;
 
@@ -729,8 +731,8 @@ cmsUInt8Number* Unroll1WordSkip3(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Unroll2Words(register _cmsTRANSFORM* info, 
-                                     register cmsUInt16Number wIn[], 
+cmsUInt8Number* Unroll2Words(register _cmsTRANSFORM* info,
+                                     register cmsUInt16Number wIn[],
                                      register cmsUInt8Number* accum,
                                      register cmsUInt32Number Stride)
 {
@@ -746,11 +748,11 @@ cmsUInt8Number* Unroll2Words(register _cmsTRANSFORM* info,
 
 // This is a conversion of Lab double to 16 bits
 static
-cmsUInt8Number* UnrollLabDoubleTo16(register _cmsTRANSFORM* info, 
-                                    register cmsUInt16Number wIn[], 
+cmsUInt8Number* UnrollLabDoubleTo16(register _cmsTRANSFORM* info,
+                                    register cmsUInt16Number wIn[],
                                     register cmsUInt8Number* accum,
                                     register cmsUInt32Number  Stride)
-{       
+{
     if (T_PLANAR(info -> InputFormat)) {
 
         cmsFloat64Number* Pt = (cmsFloat64Number*) accum;
@@ -772,13 +774,47 @@ cmsUInt8Number* UnrollLabDoubleTo16(register _cmsTRANSFORM* info,
     }
 }
 
+
+// This is a conversion of Lab float to 16 bits
+static
+cmsUInt8Number* UnrollLabFloatTo16(register _cmsTRANSFORM* info,
+                                    register cmsUInt16Number wIn[],
+                                    register cmsUInt8Number* accum,
+                                    register cmsUInt32Number  Stride)
+{
+    cmsCIELab Lab;
+    
+    if (T_PLANAR(info -> InputFormat)) {
+
+        cmsFloat32Number* Pt = (cmsFloat32Number*) accum;
+
+     
+        Lab.L = Pt[0];
+        Lab.a = Pt[Stride];
+        Lab.b = Pt[Stride*2];
+
+        cmsFloat2LabEncoded(wIn, &Lab);
+        return accum + sizeof(cmsFloat32Number);
+    }
+    else {
+ 
+        Lab.L = ((cmsFloat32Number*) accum)[0];
+        Lab.a = ((cmsFloat32Number*) accum)[1];
+        Lab.b = ((cmsFloat32Number*) accum)[2];
+
+        cmsFloat2LabEncoded(wIn, &Lab);
+        accum += (3 + T_EXTRA(info ->InputFormat)) * sizeof(cmsFloat32Number);
+        return accum;
+    }
+}
+
 // This is a conversion of XYZ double to 16 bits
 static
-cmsUInt8Number* UnrollXYZDoubleTo16(register _cmsTRANSFORM* info, 
-                                    register cmsUInt16Number wIn[], 
+cmsUInt8Number* UnrollXYZDoubleTo16(register _cmsTRANSFORM* info,
+                                    register cmsUInt16Number wIn[],
                                     register cmsUInt8Number* accum,
                                     register cmsUInt32Number Stride)
-{   
+{
     if (T_PLANAR(info -> InputFormat)) {
 
         cmsFloat64Number* Pt = (cmsFloat64Number*) accum;
@@ -806,18 +842,18 @@ cmsINLINE cmsBool IsInkSpace(cmsUInt32Number Type)
 {
     switch (T_COLORSPACE(Type)) {
 
-     case PT_CMY:       
-     case PT_CMYK:      
-     case PT_MCH5:      
+     case PT_CMY:
+     case PT_CMYK:
+     case PT_MCH5:
      case PT_MCH6:
-     case PT_MCH7:     
-     case PT_MCH8:     
-     case PT_MCH9:     
-     case PT_MCH10:    
-     case PT_MCH11:    
-     case PT_MCH12:    
-     case PT_MCH13:    
-     case PT_MCH14:    
+     case PT_MCH7:
+     case PT_MCH8:
+     case PT_MCH9:
+     case PT_MCH10:
+     case PT_MCH11:
+     case PT_MCH12:
+     case PT_MCH13:
+     case PT_MCH14:
      case PT_MCH15: return TRUE;
 
      default: return FALSE;
@@ -826,70 +862,122 @@ cmsINLINE cmsBool IsInkSpace(cmsUInt32Number Type)
 
 // Inks does come in percentage, remaining cases are between 0..1.0, again to 16 bits
 static
-cmsUInt8Number* UnrollDoubleTo16(register _cmsTRANSFORM* info, 
-                                 register cmsUInt16Number wIn[], 
-                                 register cmsUInt8Number* accum,
-                                 register cmsUInt32Number Stride)
+cmsUInt8Number* UnrollDoubleTo16(register _cmsTRANSFORM* info,
+                                register cmsUInt16Number wIn[],
+                                register cmsUInt8Number* accum,
+                                register cmsUInt32Number Stride)
 {
-    cmsFloat64Number* Inks = (cmsFloat64Number*) accum;
-    int nChan  = T_CHANNELS(info -> InputFormat);
-    int Planar = T_PLANAR(info -> InputFormat);
-    int i;
+
+    int nChan      = T_CHANNELS(info -> InputFormat);
+    int DoSwap     = T_DOSWAP(info ->InputFormat);
+    int Reverse    = T_FLAVOR(info ->InputFormat);
+    int SwapFirst  = T_SWAPFIRST(info -> InputFormat);
+    int Extra      = T_EXTRA(info -> InputFormat);
+    int ExtraFirst = DoSwap ^ SwapFirst;
+    int Planar     = T_PLANAR(info -> InputFormat);
     cmsFloat64Number v;
-    cmsFloat64Number maximum = IsInkSpace(info ->InputFormat) ? 655.35 : 65535.0;
+    cmsUInt16Number  vi;
+    int i, start = 0;
+   cmsFloat64Number maximum = IsInkSpace(info ->InputFormat) ? 655.35 : 65535.0;
+
+
+    if (ExtraFirst)
+            start = Extra;
 
     for (i=0; i < nChan; i++) {
 
+        int index = DoSwap ? (nChan - i - 1) : i;
+
         if (Planar)
-
-            v = Inks[i * Stride];
+            v = (cmsFloat32Number) ((cmsFloat64Number*) accum)[(i + start) * Stride];
         else
-            v = Inks[i];
+            v = (cmsFloat32Number) ((cmsFloat64Number*) accum)[i + start];
 
-        wIn[i] = _cmsQuickSaturateWord(v * maximum);
+        vi = _cmsQuickSaturateWord(v * maximum);
+
+        if (Reverse)
+            vi = REVERSE_FLAVOR_16(vi);
+
+        wIn[index] = vi;
+    }
+
+
+    if (Extra == 0 && SwapFirst) {
+        cmsUInt16Number tmp = wIn[0];
+
+        memmove(&wIn[0], &wIn[1], (nChan-1) * sizeof(cmsUInt16Number));
+        wIn[nChan-1] = tmp;
     }
 
     if (T_PLANAR(info -> InputFormat))
         return accum + sizeof(cmsFloat64Number);
     else
-        return accum + (nChan + T_EXTRA(info ->InputFormat)) * sizeof(cmsFloat64Number);
+        return accum + (nChan + Extra) * sizeof(cmsFloat64Number);
 }
 
+
+
 static
-cmsUInt8Number* UnrollFloatTo16(register _cmsTRANSFORM* info, 
-                                register cmsUInt16Number wIn[], 
+cmsUInt8Number* UnrollFloatTo16(register _cmsTRANSFORM* info,
+                                register cmsUInt16Number wIn[],
                                 register cmsUInt8Number* accum,
                                 register cmsUInt32Number Stride)
 {
-    cmsFloat32Number* Inks = (cmsFloat32Number*) accum;
-    int nChan  = T_CHANNELS(info -> InputFormat);
-    int Planar = T_PLANAR(info -> InputFormat);
-    int i;
+
+    int nChan      = T_CHANNELS(info -> InputFormat);
+    int DoSwap     = T_DOSWAP(info ->InputFormat);
+    int Reverse    = T_FLAVOR(info ->InputFormat);
+    int SwapFirst  = T_SWAPFIRST(info -> InputFormat);
+    int Extra      = T_EXTRA(info -> InputFormat);
+    int ExtraFirst = DoSwap ^ SwapFirst;
+    int Planar     = T_PLANAR(info -> InputFormat);
     cmsFloat32Number v;
-    cmsFloat64Number maximum = IsInkSpace(info ->InputFormat) ? 655.35 : 65535.0;
+    cmsUInt16Number  vi;
+    int i, start = 0;
+   cmsFloat64Number maximum = IsInkSpace(info ->InputFormat) ? 655.35 : 65535.0;
+
+
+    if (ExtraFirst)
+            start = Extra;
 
     for (i=0; i < nChan; i++) {
 
+        int index = DoSwap ? (nChan - i - 1) : i;
+
         if (Planar)
-
-            v = Inks[i * Stride];
+            v = (cmsFloat32Number) ((cmsFloat32Number*) accum)[(i + start) * Stride];
         else
-            v = Inks[i];
+            v = (cmsFloat32Number) ((cmsFloat32Number*) accum)[i + start];
 
-        wIn[i] = _cmsQuickSaturateWord(v * maximum);
+        vi = _cmsQuickSaturateWord(v * maximum);
+
+        if (Reverse)
+            vi = REVERSE_FLAVOR_16(vi);
+
+        wIn[index] = vi;
+    }
+
+
+    if (Extra == 0 && SwapFirst) {
+        cmsUInt16Number tmp = wIn[0];
+
+        memmove(&wIn[0], &wIn[1], (nChan-1) * sizeof(cmsUInt16Number));
+        wIn[nChan-1] = tmp;
     }
 
     if (T_PLANAR(info -> InputFormat))
         return accum + sizeof(cmsFloat32Number);
     else
-        return accum + (nChan + T_EXTRA(info ->InputFormat)) * sizeof(cmsFloat32Number);
+        return accum + (nChan + Extra) * sizeof(cmsFloat32Number);
 }
+
+
 
 
 // For 1 channel, we need to duplicate data (it comes in 0..1.0 range)
 static
-cmsUInt8Number* UnrollDouble1Chan(register _cmsTRANSFORM* info, 
-                                  register cmsUInt16Number wIn[], 
+cmsUInt8Number* UnrollDouble1Chan(register _cmsTRANSFORM* info,
+                                  register cmsUInt16Number wIn[],
                                   register cmsUInt8Number* accum,
                                   register cmsUInt32Number Stride)
 {
@@ -897,7 +985,7 @@ cmsUInt8Number* UnrollDouble1Chan(register _cmsTRANSFORM* info,
 
     wIn[0] = wIn[1] = wIn[2] = _cmsQuickSaturateWord(Inks[0] * 65535.0);
 
-    return accum + sizeof(cmsFloat64Number);    
+    return accum + sizeof(cmsFloat64Number);
 
     cmsUNUSED_PARAMETER(info);
     cmsUNUSED_PARAMETER(Stride);
@@ -905,76 +993,123 @@ cmsUInt8Number* UnrollDouble1Chan(register _cmsTRANSFORM* info,
 
 //-------------------------------------------------------------------------------------------------------------------
 
-// True float transformation. 
-
-// For anything going from cmsFloat32Number 
+// For anything going from cmsFloat32Number
 static
-cmsUInt8Number* UnrollFloatsToFloat(_cmsTRANSFORM* info, 
-                                    cmsFloat32Number wIn[], 
+cmsUInt8Number* UnrollFloatsToFloat(_cmsTRANSFORM* info,
+                                    cmsFloat32Number wIn[],
                                     cmsUInt8Number* accum,
                                     cmsUInt32Number Stride)
 {
-    cmsFloat32Number* Inks = (cmsFloat32Number*) accum;
-    int nChan  = T_CHANNELS(info -> InputFormat);
-    int Planar = T_PLANAR(info -> InputFormat);
-    int i;
-    cmsFloat64Number maximum = IsInkSpace(info ->InputFormat) ? 100.0 : 1.0;
+
+    int nChan      = T_CHANNELS(info -> InputFormat);
+    int DoSwap     = T_DOSWAP(info ->InputFormat);
+    int Reverse    = T_FLAVOR(info ->InputFormat);
+    int SwapFirst  = T_SWAPFIRST(info -> InputFormat);
+    int Extra      = T_EXTRA(info -> InputFormat);
+    int ExtraFirst = DoSwap ^ SwapFirst;
+    int Planar     = T_PLANAR(info -> InputFormat);
+    cmsFloat32Number v;
+    int i, start = 0;
+    cmsFloat32Number maximum = IsInkSpace(info ->InputFormat) ? 100.0F : 1.0F;
 
 
-    for (i=0; i <  nChan; i++) {
+    if (ExtraFirst)
+            start = Extra;
+
+    for (i=0; i < nChan; i++) {
+
+        int index = DoSwap ? (nChan - i - 1) : i;
 
         if (Planar)
-            wIn[i] = (cmsFloat32Number) (Inks[i * Stride] / maximum);
+            v = (cmsFloat32Number) ((cmsFloat32Number*) accum)[(i + start) * Stride];
         else
-            wIn[i] = (cmsFloat32Number) (Inks[i] / maximum);                            
+            v = (cmsFloat32Number) ((cmsFloat32Number*) accum)[i + start];
+
+        v /= maximum;
+
+        wIn[index] = Reverse ? 1 - v : v;
+    }
+
+
+    if (Extra == 0 && SwapFirst) {
+        cmsFloat32Number tmp = wIn[0];
+
+        memmove(&wIn[0], &wIn[1], (nChan-1) * sizeof(cmsFloat32Number));
+        wIn[nChan-1] = tmp;
     }
 
     if (T_PLANAR(info -> InputFormat))
         return accum + sizeof(cmsFloat32Number);
     else
-        return accum + (nChan + T_EXTRA(info ->InputFormat)) * sizeof(cmsFloat32Number);
+        return accum + (nChan + Extra) * sizeof(cmsFloat32Number);
 }
 
 // For anything going from double
+
 static
-cmsUInt8Number* UnrollDoublesToFloat(_cmsTRANSFORM* info, 
-                                     cmsFloat32Number wIn[], 
-                                     cmsUInt8Number* accum,
-                                     cmsUInt32Number Stride)
+cmsUInt8Number* UnrollDoublesToFloat(_cmsTRANSFORM* info,
+                                    cmsFloat32Number wIn[],
+                                    cmsUInt8Number* accum,
+                                    cmsUInt32Number Stride)
 {
-    cmsFloat64Number* Inks = (cmsFloat64Number*) accum;
-    int nChan  = T_CHANNELS(info -> InputFormat);
-    int Planar = T_PLANAR(info -> InputFormat);
-    int i;
+
+    int nChan      = T_CHANNELS(info -> InputFormat);
+    int DoSwap     = T_DOSWAP(info ->InputFormat);
+    int Reverse    = T_FLAVOR(info ->InputFormat);
+    int SwapFirst  = T_SWAPFIRST(info -> InputFormat);
+    int Extra      = T_EXTRA(info -> InputFormat);
+    int ExtraFirst = DoSwap ^ SwapFirst;
+    int Planar     = T_PLANAR(info -> InputFormat);
+    cmsFloat64Number v;
+    int i, start = 0;
     cmsFloat64Number maximum = IsInkSpace(info ->InputFormat) ? 100.0 : 1.0;
 
-    for (i=0; i <  nChan; i++) {
+
+    if (ExtraFirst)
+            start = Extra;
+
+    for (i=0; i < nChan; i++) {
+
+        int index = DoSwap ? (nChan - i - 1) : i;
 
         if (Planar)
-            wIn[i] = (cmsFloat32Number) (Inks[i * Stride] / maximum);
+            v = (cmsFloat64Number) ((cmsFloat64Number*) accum)[(i + start)  * Stride];
         else
-            wIn[i] = (cmsFloat32Number) (Inks[i] / maximum);                            
+            v = (cmsFloat64Number) ((cmsFloat64Number*) accum)[i + start];
+
+        v /= maximum;
+
+        wIn[index] = (cmsFloat32Number) (Reverse ? 1.0 - v : v);
+    }
+
+
+    if (Extra == 0 && SwapFirst) {
+        cmsFloat32Number tmp = wIn[0];
+
+        memmove(&wIn[0], &wIn[1], (nChan-1) * sizeof(cmsFloat32Number));
+        wIn[nChan-1] = tmp;
     }
 
     if (T_PLANAR(info -> InputFormat))
         return accum + sizeof(cmsFloat64Number);
     else
-        return accum + (nChan + T_EXTRA(info ->InputFormat)) * sizeof(cmsFloat64Number);
+        return accum + (nChan + Extra) * sizeof(cmsFloat64Number);
 }
+
 
 
 // From Lab double to cmsFloat32Number
 static
-cmsUInt8Number* UnrollLabDoubleToFloat(_cmsTRANSFORM* info,  
-                                       cmsFloat32Number wIn[], 
+cmsUInt8Number* UnrollLabDoubleToFloat(_cmsTRANSFORM* info,
+                                       cmsFloat32Number wIn[],
                                        cmsUInt8Number* accum,
                                        cmsUInt32Number Stride)
-{  
+{
     cmsFloat64Number* Pt = (cmsFloat64Number*) accum;
 
     if (T_PLANAR(info -> InputFormat)) {
 
-        wIn[0] = (cmsFloat32Number) (Pt[0] / 100.0);                            // from 0..100 to 0..1 
+        wIn[0] = (cmsFloat32Number) (Pt[0] / 100.0);                            // from 0..100 to 0..1
         wIn[1] = (cmsFloat32Number) ((Pt[Stride] + 128) / 255.0);    // form -128..+127 to 0..1
         wIn[2] = (cmsFloat32Number) ((Pt[Stride*2] + 128) / 255.0);
 
@@ -982,7 +1117,7 @@ cmsUInt8Number* UnrollLabDoubleToFloat(_cmsTRANSFORM* info,
     }
     else {
 
-        wIn[0] = (cmsFloat32Number) (Pt[0] / 100.0);            // from 0..100 to 0..1 
+        wIn[0] = (cmsFloat32Number) (Pt[0] / 100.0);            // from 0..100 to 0..1
         wIn[1] = (cmsFloat32Number) ((Pt[1] + 128) / 255.0);    // form -128..+127 to 0..1
         wIn[2] = (cmsFloat32Number) ((Pt[2] + 128) / 255.0);
 
@@ -993,16 +1128,16 @@ cmsUInt8Number* UnrollLabDoubleToFloat(_cmsTRANSFORM* info,
 
 // From Lab double to cmsFloat32Number
 static
-cmsUInt8Number* UnrollLabFloatToFloat(_cmsTRANSFORM* info, 
-                                      cmsFloat32Number wIn[], 
+cmsUInt8Number* UnrollLabFloatToFloat(_cmsTRANSFORM* info,
+                                      cmsFloat32Number wIn[],
                                       cmsUInt8Number* accum,
                                       cmsUInt32Number Stride)
-{  
+{
     cmsFloat32Number* Pt = (cmsFloat32Number*) accum;
 
     if (T_PLANAR(info -> InputFormat)) {
 
-        wIn[0] = (cmsFloat32Number) (Pt[0] / 100.0);                 // from 0..100 to 0..1 
+        wIn[0] = (cmsFloat32Number) (Pt[0] / 100.0);                 // from 0..100 to 0..1
         wIn[1] = (cmsFloat32Number) ((Pt[Stride] + 128) / 255.0);    // form -128..+127 to 0..1
         wIn[2] = (cmsFloat32Number) ((Pt[Stride*2] + 128) / 255.0);
 
@@ -1010,7 +1145,7 @@ cmsUInt8Number* UnrollLabFloatToFloat(_cmsTRANSFORM* info,
     }
     else {
 
-        wIn[0] = (cmsFloat32Number) (Pt[0] / 100.0);            // from 0..100 to 0..1 
+        wIn[0] = (cmsFloat32Number) (Pt[0] / 100.0);            // from 0..100 to 0..1
         wIn[1] = (cmsFloat32Number) ((Pt[1] + 128) / 255.0);    // form -128..+127 to 0..1
         wIn[2] = (cmsFloat32Number) ((Pt[2] + 128) / 255.0);
 
@@ -1018,29 +1153,30 @@ cmsUInt8Number* UnrollLabFloatToFloat(_cmsTRANSFORM* info,
         return accum;
     }
 }
+
 
 
 // 1.15 fixed point, that means maximum value is MAX_ENCODEABLE_XYZ (0xFFFF)
 static
-cmsUInt8Number* UnrollXYZDoubleToFloat(_cmsTRANSFORM* info,  
-                                       cmsFloat32Number wIn[], 
+cmsUInt8Number* UnrollXYZDoubleToFloat(_cmsTRANSFORM* info,
+                                       cmsFloat32Number wIn[],
                                        cmsUInt8Number* accum,
                                        cmsUInt32Number Stride)
-{  
+{
     cmsFloat64Number* Pt = (cmsFloat64Number*) accum;
 
     if (T_PLANAR(info -> InputFormat)) {
 
-        wIn[0] = (cmsFloat32Number) (Pt[0] / MAX_ENCODEABLE_XYZ);                   
-        wIn[1] = (cmsFloat32Number) (Pt[Stride] / MAX_ENCODEABLE_XYZ);    
+        wIn[0] = (cmsFloat32Number) (Pt[0] / MAX_ENCODEABLE_XYZ);
+        wIn[1] = (cmsFloat32Number) (Pt[Stride] / MAX_ENCODEABLE_XYZ);
         wIn[2] = (cmsFloat32Number) (Pt[Stride*2] / MAX_ENCODEABLE_XYZ);
 
         return accum + sizeof(cmsFloat64Number);
     }
     else {
 
-        wIn[0] = (cmsFloat32Number) (Pt[0] / MAX_ENCODEABLE_XYZ);            
-        wIn[1] = (cmsFloat32Number) (Pt[1] / MAX_ENCODEABLE_XYZ);    
+        wIn[0] = (cmsFloat32Number) (Pt[0] / MAX_ENCODEABLE_XYZ);
+        wIn[1] = (cmsFloat32Number) (Pt[1] / MAX_ENCODEABLE_XYZ);
         wIn[2] = (cmsFloat32Number) (Pt[2] / MAX_ENCODEABLE_XYZ);
 
         accum += sizeof(cmsFloat64Number)*(3 + T_EXTRA(info ->InputFormat));
@@ -1049,31 +1185,33 @@ cmsUInt8Number* UnrollXYZDoubleToFloat(_cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* UnrollXYZFloatToFloat(_cmsTRANSFORM* info,  
-                                      cmsFloat32Number wIn[], 
+cmsUInt8Number* UnrollXYZFloatToFloat(_cmsTRANSFORM* info,
+                                      cmsFloat32Number wIn[],
                                       cmsUInt8Number* accum,
                                       cmsUInt32Number Stride)
-{  
+{
     cmsFloat32Number* Pt = (cmsFloat32Number*) accum;
 
     if (T_PLANAR(info -> InputFormat)) {
 
-        wIn[0] = (cmsFloat32Number) (Pt[0] / MAX_ENCODEABLE_XYZ);                   
-        wIn[1] = (cmsFloat32Number) (Pt[Stride] / MAX_ENCODEABLE_XYZ);    
+        wIn[0] = (cmsFloat32Number) (Pt[0] / MAX_ENCODEABLE_XYZ);
+        wIn[1] = (cmsFloat32Number) (Pt[Stride] / MAX_ENCODEABLE_XYZ);
         wIn[2] = (cmsFloat32Number) (Pt[Stride*2] / MAX_ENCODEABLE_XYZ);
 
         return accum + sizeof(cmsFloat32Number);
     }
     else {
 
-        wIn[0] = (cmsFloat32Number) (Pt[0] / MAX_ENCODEABLE_XYZ);            
-        wIn[1] = (cmsFloat32Number) (Pt[1] / MAX_ENCODEABLE_XYZ);    
+        wIn[0] = (cmsFloat32Number) (Pt[0] / MAX_ENCODEABLE_XYZ);
+        wIn[1] = (cmsFloat32Number) (Pt[1] / MAX_ENCODEABLE_XYZ);
         wIn[2] = (cmsFloat32Number) (Pt[2] / MAX_ENCODEABLE_XYZ);
 
         accum += sizeof(cmsFloat32Number)*(3 + T_EXTRA(info ->InputFormat));
         return accum;
     }
 }
+
+
 
 // Packing routines -----------------------------------------------------------------------------------------------------------
 
@@ -1081,8 +1219,8 @@ cmsUInt8Number* UnrollXYZFloatToFloat(_cmsTRANSFORM* info,
 // Generic chunky for byte
 
 static
-cmsUInt8Number* PackAnyBytes(register _cmsTRANSFORM* info, 
-                             register cmsUInt16Number wOut[], 
+cmsUInt8Number* PackAnyBytes(register _cmsTRANSFORM* info,
+                             register cmsUInt16Number wOut[],
                              register cmsUInt8Number* output,
                              register cmsUInt32Number Stride)
 {
@@ -1091,7 +1229,7 @@ cmsUInt8Number* PackAnyBytes(register _cmsTRANSFORM* info,
     int Reverse    = T_FLAVOR(info ->OutputFormat);
     int Extra      = T_EXTRA(info -> OutputFormat);
     int SwapFirst  = T_SWAPFIRST(info -> OutputFormat);
-    int ExtraFirst = DoSwap && !SwapFirst;
+    int ExtraFirst = DoSwap ^ SwapFirst;
     cmsUInt8Number* swap1;
     cmsUInt8Number v = 0;
     int i;
@@ -1133,8 +1271,8 @@ cmsUInt8Number* PackAnyBytes(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* PackAnyWords(register _cmsTRANSFORM* info, 
-                             register cmsUInt16Number wOut[], 
+cmsUInt8Number* PackAnyWords(register _cmsTRANSFORM* info,
+                             register cmsUInt16Number wOut[],
                              register cmsUInt8Number* output,
                              register cmsUInt32Number Stride)
 {
@@ -1144,7 +1282,7 @@ cmsUInt8Number* PackAnyWords(register _cmsTRANSFORM* info,
     int Reverse    = T_FLAVOR(info ->OutputFormat);
     int Extra      = T_EXTRA(info -> OutputFormat);
     int SwapFirst  = T_SWAPFIRST(info -> OutputFormat);
-    int ExtraFirst = DoSwap && !SwapFirst;
+    int ExtraFirst = DoSwap ^ SwapFirst;
     cmsUInt16Number* swap1;
     cmsUInt16Number v = 0;
     int i;
@@ -1190,16 +1328,23 @@ cmsUInt8Number* PackAnyWords(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* PackPlanarBytes(register _cmsTRANSFORM* info, 
-                                register cmsUInt16Number wOut[], 
+cmsUInt8Number* PackPlanarBytes(register _cmsTRANSFORM* info,
+                                register cmsUInt16Number wOut[],
                                 register cmsUInt8Number* output,
                                 register cmsUInt32Number Stride)
 {
-    int nChan = T_CHANNELS(info -> OutputFormat);
-    int DoSwap = T_DOSWAP(info ->OutputFormat);
-    int Reverse= T_FLAVOR(info ->OutputFormat);
+    int nChan     = T_CHANNELS(info -> OutputFormat);
+    int DoSwap    = T_DOSWAP(info ->OutputFormat);
+    int SwapFirst = T_SWAPFIRST(info ->OutputFormat);
+    int Reverse   = T_FLAVOR(info ->OutputFormat);
     int i;
     cmsUInt8Number* Init = output;
+
+
+    if (DoSwap ^ SwapFirst) {
+        output += T_EXTRA(info -> OutputFormat) * Stride;
+    }
+
 
     for (i=0; i < nChan; i++) {
 
@@ -1217,8 +1362,8 @@ cmsUInt8Number* PackPlanarBytes(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* PackPlanarWords(register _cmsTRANSFORM* info, 
-                                register cmsUInt16Number wOut[], 
+cmsUInt8Number* PackPlanarWords(register _cmsTRANSFORM* info,
+                                register cmsUInt16Number wOut[],
                                 register cmsUInt8Number* output,
                                 register cmsUInt32Number Stride)
 {
@@ -1243,7 +1388,7 @@ cmsUInt8Number* PackPlanarWords(register _cmsTRANSFORM* info,
         if (SwapEndian)
             v = CHANGE_ENDIAN(v);
 
-        if (Reverse) 
+        if (Reverse)
             v =  REVERSE_FLAVOR_16(v);
 
         *(cmsUInt16Number*) output = v;
@@ -1256,8 +1401,8 @@ cmsUInt8Number* PackPlanarWords(register _cmsTRANSFORM* info,
 // CMYKcm (unrolled for speed)
 
 static
-cmsUInt8Number* Pack6Bytes(register _cmsTRANSFORM* info, 
-                           register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack6Bytes(register _cmsTRANSFORM* info,
+                           register cmsUInt16Number wOut[],
                            register cmsUInt8Number* output,
                            register cmsUInt32Number Stride)
 {
@@ -1277,8 +1422,8 @@ cmsUInt8Number* Pack6Bytes(register _cmsTRANSFORM* info,
 // KCMYcm
 
 static
-cmsUInt8Number* Pack6BytesSwap(register _cmsTRANSFORM* info, 
-                               register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack6BytesSwap(register _cmsTRANSFORM* info,
+                               register cmsUInt16Number wOut[],
                                register cmsUInt8Number* output,
                                register cmsUInt32Number Stride)
 {
@@ -1297,8 +1442,8 @@ cmsUInt8Number* Pack6BytesSwap(register _cmsTRANSFORM* info,
 
 // CMYKcm
 static
-cmsUInt8Number* Pack6Words(register _cmsTRANSFORM* info, 
-                           register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack6Words(register _cmsTRANSFORM* info,
+                           register cmsUInt16Number wOut[],
                            register cmsUInt8Number* output,
                            register cmsUInt32Number Stride)
 {
@@ -1323,8 +1468,8 @@ cmsUInt8Number* Pack6Words(register _cmsTRANSFORM* info,
 
 // KCMYcm
 static
-cmsUInt8Number* Pack6WordsSwap(register _cmsTRANSFORM* info, 
-                               register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack6WordsSwap(register _cmsTRANSFORM* info,
+                               register cmsUInt16Number wOut[],
                                register cmsUInt8Number* output,
                                register cmsUInt32Number Stride)
 {
@@ -1349,8 +1494,8 @@ cmsUInt8Number* Pack6WordsSwap(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* Pack4Bytes(register _cmsTRANSFORM* info, 
-                           register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack4Bytes(register _cmsTRANSFORM* info,
+                           register cmsUInt16Number wOut[],
                            register cmsUInt8Number* output,
                            register cmsUInt32Number Stride)
 {
@@ -1366,8 +1511,8 @@ cmsUInt8Number* Pack4Bytes(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack4BytesReverse(register _cmsTRANSFORM* info, 
-                                  register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack4BytesReverse(register _cmsTRANSFORM* info,
+                                  register cmsUInt16Number wOut[],
                                   register cmsUInt8Number* output,
                                   register cmsUInt32Number Stride)
 {
@@ -1384,8 +1529,8 @@ cmsUInt8Number* Pack4BytesReverse(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* Pack4BytesSwapFirst(register _cmsTRANSFORM* info, 
-                                    register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack4BytesSwapFirst(register _cmsTRANSFORM* info,
+                                    register cmsUInt16Number wOut[],
                                     register cmsUInt8Number* output,
                                     register cmsUInt32Number Stride)
 {
@@ -1402,8 +1547,8 @@ cmsUInt8Number* Pack4BytesSwapFirst(register _cmsTRANSFORM* info,
 
 // ABGR
 static
-cmsUInt8Number* Pack4BytesSwap(register _cmsTRANSFORM* info, 
-                               register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack4BytesSwap(register _cmsTRANSFORM* info,
+                               register cmsUInt16Number wOut[],
                                register cmsUInt8Number* output,
                                register cmsUInt32Number Stride)
 {
@@ -1419,8 +1564,8 @@ cmsUInt8Number* Pack4BytesSwap(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack4BytesSwapSwapFirst(register _cmsTRANSFORM* info, 
-                                        register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack4BytesSwapSwapFirst(register _cmsTRANSFORM* info,
+                                        register cmsUInt16Number wOut[],
                                         register cmsUInt8Number* output,
                                         register cmsUInt32Number Stride)
 {
@@ -1436,8 +1581,8 @@ cmsUInt8Number* Pack4BytesSwapSwapFirst(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack4Words(register _cmsTRANSFORM* info, 
-                           register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack4Words(register _cmsTRANSFORM* info,
+                           register cmsUInt16Number wOut[],
                            register cmsUInt8Number* output,
                            register cmsUInt32Number Stride)
 {
@@ -1457,8 +1602,8 @@ cmsUInt8Number* Pack4Words(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack4WordsReverse(register _cmsTRANSFORM* info, 
-                                  register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack4WordsReverse(register _cmsTRANSFORM* info,
+                                  register cmsUInt16Number wOut[],
                                   register cmsUInt8Number* output,
                                   register cmsUInt32Number Stride)
 {
@@ -1479,8 +1624,8 @@ cmsUInt8Number* Pack4WordsReverse(register _cmsTRANSFORM* info,
 
 // ABGR
 static
-cmsUInt8Number* Pack4WordsSwap(register _cmsTRANSFORM* info, 
-                               register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack4WordsSwap(register _cmsTRANSFORM* info,
+                               register cmsUInt16Number wOut[],
                                register cmsUInt8Number* output,
                                register cmsUInt32Number Stride)
 {
@@ -1501,8 +1646,8 @@ cmsUInt8Number* Pack4WordsSwap(register _cmsTRANSFORM* info,
 
 // CMYK
 static
-cmsUInt8Number* Pack4WordsBigEndian(register _cmsTRANSFORM* info, 
-                                    register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack4WordsBigEndian(register _cmsTRANSFORM* info,
+                                    register cmsUInt16Number wOut[],
                                     register cmsUInt8Number* output,
                                     register cmsUInt32Number Stride)
 {
@@ -1523,8 +1668,8 @@ cmsUInt8Number* Pack4WordsBigEndian(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* PackLabV2_8(register _cmsTRANSFORM* info, 
-                            register cmsUInt16Number wOut[], 
+cmsUInt8Number* PackLabV2_8(register _cmsTRANSFORM* info,
+                            register cmsUInt16Number wOut[],
                             register cmsUInt8Number* output,
                             register cmsUInt32Number Stride)
 {
@@ -1539,8 +1684,8 @@ cmsUInt8Number* PackLabV2_8(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* PackALabV2_8(register _cmsTRANSFORM* info, 
-                             register cmsUInt16Number wOut[], 
+cmsUInt8Number* PackALabV2_8(register _cmsTRANSFORM* info,
+                             register cmsUInt16Number wOut[],
                              register cmsUInt8Number* output,
                              register cmsUInt32Number Stride)
 {
@@ -1556,8 +1701,8 @@ cmsUInt8Number* PackALabV2_8(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* PackLabV2_16(register _cmsTRANSFORM* info, 
-                             register cmsUInt16Number wOut[], 
+cmsUInt8Number* PackLabV2_16(register _cmsTRANSFORM* info,
+                             register cmsUInt16Number wOut[],
                              register cmsUInt8Number* output,
                              register cmsUInt32Number Stride)
 {
@@ -1575,8 +1720,8 @@ cmsUInt8Number* PackLabV2_16(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack3Bytes(register _cmsTRANSFORM* info, 
-                           register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3Bytes(register _cmsTRANSFORM* info,
+                           register cmsUInt16Number wOut[],
                            register cmsUInt8Number* output,
                            register cmsUInt32Number Stride)
 {
@@ -1591,8 +1736,8 @@ cmsUInt8Number* Pack3Bytes(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack3BytesOptimized(register _cmsTRANSFORM* info, 
-                                    register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3BytesOptimized(register _cmsTRANSFORM* info,
+                                    register cmsUInt16Number wOut[],
                                     register cmsUInt8Number* output,
                                     register cmsUInt32Number Stride)
 {
@@ -1607,8 +1752,8 @@ cmsUInt8Number* Pack3BytesOptimized(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack3BytesSwap(register _cmsTRANSFORM* info, 
-                               register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3BytesSwap(register _cmsTRANSFORM* info,
+                               register cmsUInt16Number wOut[],
                                register cmsUInt8Number* output,
                                register cmsUInt32Number Stride)
 {
@@ -1623,8 +1768,8 @@ cmsUInt8Number* Pack3BytesSwap(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack3BytesSwapOptimized(register _cmsTRANSFORM* info, 
-                                        register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3BytesSwapOptimized(register _cmsTRANSFORM* info,
+                                        register cmsUInt16Number wOut[],
                                         register cmsUInt8Number* output,
                                         register cmsUInt32Number Stride)
 {
@@ -1640,8 +1785,8 @@ cmsUInt8Number* Pack3BytesSwapOptimized(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* Pack3Words(register _cmsTRANSFORM* info, 
-                           register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3Words(register _cmsTRANSFORM* info,
+                           register cmsUInt16Number wOut[],
                            register cmsUInt8Number* output,
                            register cmsUInt32Number Stride)
 {
@@ -1659,8 +1804,8 @@ cmsUInt8Number* Pack3Words(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack3WordsSwap(register _cmsTRANSFORM* info, 
-                               register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3WordsSwap(register _cmsTRANSFORM* info,
+                               register cmsUInt16Number wOut[],
                                register cmsUInt8Number* output,
                                register cmsUInt32Number Stride)
 {
@@ -1678,8 +1823,8 @@ cmsUInt8Number* Pack3WordsSwap(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack3WordsBigEndian(register _cmsTRANSFORM* info, 
-                                    register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3WordsBigEndian(register _cmsTRANSFORM* info,
+                                    register cmsUInt16Number wOut[],
                                     register cmsUInt8Number* output,
                                     register cmsUInt32Number Stride)
 {
@@ -1697,8 +1842,8 @@ cmsUInt8Number* Pack3WordsBigEndian(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack3BytesAndSkip1(register _cmsTRANSFORM* info, 
-                                   register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3BytesAndSkip1(register _cmsTRANSFORM* info,
+                                   register cmsUInt16Number wOut[],
                                    register cmsUInt8Number* output,
                                    register cmsUInt32Number Stride)
 {
@@ -1714,8 +1859,8 @@ cmsUInt8Number* Pack3BytesAndSkip1(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack3BytesAndSkip1Optimized(register _cmsTRANSFORM* info, 
-                                            register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3BytesAndSkip1Optimized(register _cmsTRANSFORM* info,
+                                            register cmsUInt16Number wOut[],
                                             register cmsUInt8Number* output,
                                             register cmsUInt32Number Stride)
 {
@@ -1732,8 +1877,8 @@ cmsUInt8Number* Pack3BytesAndSkip1Optimized(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* Pack3BytesAndSkip1SwapFirst(register _cmsTRANSFORM* info, 
-                                            register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3BytesAndSkip1SwapFirst(register _cmsTRANSFORM* info,
+                                            register cmsUInt16Number wOut[],
                                             register cmsUInt8Number* output,
                                             register cmsUInt32Number Stride)
 {
@@ -1749,8 +1894,8 @@ cmsUInt8Number* Pack3BytesAndSkip1SwapFirst(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack3BytesAndSkip1SwapFirstOptimized(register _cmsTRANSFORM* info, 
-                                                     register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3BytesAndSkip1SwapFirstOptimized(register _cmsTRANSFORM* info,
+                                                     register cmsUInt16Number wOut[],
                                                      register cmsUInt8Number* output,
                                                      register cmsUInt32Number Stride)
 {
@@ -1766,8 +1911,8 @@ cmsUInt8Number* Pack3BytesAndSkip1SwapFirstOptimized(register _cmsTRANSFORM* inf
 }
 
 static
-cmsUInt8Number* Pack3BytesAndSkip1Swap(register _cmsTRANSFORM* info, 
-                                       register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3BytesAndSkip1Swap(register _cmsTRANSFORM* info,
+                                       register cmsUInt16Number wOut[],
                                        register cmsUInt8Number* output,
                                        register cmsUInt32Number Stride)
 {
@@ -1783,8 +1928,8 @@ cmsUInt8Number* Pack3BytesAndSkip1Swap(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack3BytesAndSkip1SwapOptimized(register _cmsTRANSFORM* info, 
-                                                register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3BytesAndSkip1SwapOptimized(register _cmsTRANSFORM* info,
+                                                register cmsUInt16Number wOut[],
                                                 register cmsUInt8Number* output,
                                                 register cmsUInt32Number Stride)
 {
@@ -1801,11 +1946,11 @@ cmsUInt8Number* Pack3BytesAndSkip1SwapOptimized(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* Pack3BytesAndSkip1SwapSwapFirst(register _cmsTRANSFORM* info, 
-                                                register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3BytesAndSkip1SwapSwapFirst(register _cmsTRANSFORM* info,
+                                                register cmsUInt16Number wOut[],
                                                 register cmsUInt8Number* output,
                                                 register cmsUInt32Number Stride)
-{       
+{
     *output++ = FROM_16_TO_8(wOut[2]);
     *output++ = FROM_16_TO_8(wOut[1]);
     *output++ = FROM_16_TO_8(wOut[0]);
@@ -1818,11 +1963,11 @@ cmsUInt8Number* Pack3BytesAndSkip1SwapSwapFirst(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack3BytesAndSkip1SwapSwapFirstOptimized(register _cmsTRANSFORM* info, 
-                                                         register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3BytesAndSkip1SwapSwapFirstOptimized(register _cmsTRANSFORM* info,
+                                                         register cmsUInt16Number wOut[],
                                                          register cmsUInt8Number* output,
                                                          register cmsUInt32Number Stride)
-{       
+{
     *output++ = (wOut[2] & 0xFF);
     *output++ = (wOut[1] & 0xFF);
     *output++ = (wOut[0] & 0xFF);
@@ -1835,8 +1980,8 @@ cmsUInt8Number* Pack3BytesAndSkip1SwapSwapFirstOptimized(register _cmsTRANSFORM*
 }
 
 static
-cmsUInt8Number* Pack3WordsAndSkip1(register _cmsTRANSFORM* info, 
-                                   register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3WordsAndSkip1(register _cmsTRANSFORM* info,
+                                   register cmsUInt16Number wOut[],
                                    register cmsUInt8Number* output,
                                    register cmsUInt32Number Stride)
 {
@@ -1855,8 +2000,8 @@ cmsUInt8Number* Pack3WordsAndSkip1(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack3WordsAndSkip1Swap(register _cmsTRANSFORM* info, 
-                                       register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3WordsAndSkip1Swap(register _cmsTRANSFORM* info,
+                                       register cmsUInt16Number wOut[],
                                        register cmsUInt8Number* output,
                                        register cmsUInt32Number Stride)
 {
@@ -1876,11 +2021,11 @@ cmsUInt8Number* Pack3WordsAndSkip1Swap(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* Pack3WordsAndSkip1SwapFirst(register _cmsTRANSFORM* info, 
-                                            register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3WordsAndSkip1SwapFirst(register _cmsTRANSFORM* info,
+                                            register cmsUInt16Number wOut[],
                                             register cmsUInt8Number* output,
                                             register cmsUInt32Number Stride)
-{   
+{
     output+= 2;
     *(cmsUInt16Number*) output = wOut[0];
     output+= 2;
@@ -1897,11 +2042,11 @@ cmsUInt8Number* Pack3WordsAndSkip1SwapFirst(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* Pack3WordsAndSkip1SwapSwapFirst(register _cmsTRANSFORM* info, 
-                                                register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack3WordsAndSkip1SwapSwapFirst(register _cmsTRANSFORM* info,
+                                                register cmsUInt16Number wOut[],
                                                 register cmsUInt8Number* output,
                                                 register cmsUInt32Number Stride)
-{      
+{
     *(cmsUInt16Number*) output = wOut[2];
     output+= 2;
     *(cmsUInt16Number*) output = wOut[1];
@@ -1918,10 +2063,11 @@ cmsUInt8Number* Pack3WordsAndSkip1SwapSwapFirst(register _cmsTRANSFORM* info,
 
 
 
-cmsUInt8Number* _cmsPack1Byte(register _cmsTRANSFORM* info,
-                              register cmsUInt16Number wOut[],
-                              register cmsUInt8Number* output,
-                              register cmsUInt32Number Stride)
+static
+cmsUInt8Number* Pack1Byte(register _cmsTRANSFORM* info,
+                          register cmsUInt16Number wOut[],
+                          register cmsUInt8Number* output,
+                          register cmsUInt32Number Stride)
 {
     *output++ = FROM_16_TO_8(wOut[0]);
 
@@ -1933,8 +2079,8 @@ cmsUInt8Number* _cmsPack1Byte(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* Pack1ByteReversed(register _cmsTRANSFORM* info, 
-                                  register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack1ByteReversed(register _cmsTRANSFORM* info,
+                                  register cmsUInt16Number wOut[],
                                   register cmsUInt8Number* output,
                                   register cmsUInt32Number Stride)
 {
@@ -1948,8 +2094,8 @@ cmsUInt8Number* Pack1ByteReversed(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* Pack1ByteSkip1(register _cmsTRANSFORM* info, 
-                               register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack1ByteSkip1(register _cmsTRANSFORM* info,
+                               register cmsUInt16Number wOut[],
                                register cmsUInt8Number* output,
                                register cmsUInt32Number Stride)
 {
@@ -1964,8 +2110,8 @@ cmsUInt8Number* Pack1ByteSkip1(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* Pack1ByteSkip1SwapFirst(register _cmsTRANSFORM* info, 
-                                        register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack1ByteSkip1SwapFirst(register _cmsTRANSFORM* info,
+                                        register cmsUInt16Number wOut[],
                                         register cmsUInt8Number* output,
                                         register cmsUInt32Number Stride)
 {
@@ -1979,8 +2125,8 @@ cmsUInt8Number* Pack1ByteSkip1SwapFirst(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack1Word(register _cmsTRANSFORM* info, 
-                          register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack1Word(register _cmsTRANSFORM* info,
+                          register cmsUInt16Number wOut[],
                           register cmsUInt8Number* output,
                           register cmsUInt32Number Stride)
 {
@@ -1995,8 +2141,8 @@ cmsUInt8Number* Pack1Word(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* Pack1WordReversed(register _cmsTRANSFORM* info, 
-                                  register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack1WordReversed(register _cmsTRANSFORM* info,
+                                  register cmsUInt16Number wOut[],
                                   register cmsUInt8Number* output,
                                   register cmsUInt32Number Stride)
 {
@@ -2010,8 +2156,8 @@ cmsUInt8Number* Pack1WordReversed(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack1WordBigEndian(register _cmsTRANSFORM* info, 
-                                   register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack1WordBigEndian(register _cmsTRANSFORM* info,
+                                   register cmsUInt16Number wOut[],
                                    register cmsUInt8Number* output,
                                    register cmsUInt32Number Stride)
 {
@@ -2026,8 +2172,8 @@ cmsUInt8Number* Pack1WordBigEndian(register _cmsTRANSFORM* info,
 
 
 static
-cmsUInt8Number* Pack1WordSkip1(register _cmsTRANSFORM* info, 
-                               register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack1WordSkip1(register _cmsTRANSFORM* info,
+                               register cmsUInt16Number wOut[],
                                register cmsUInt8Number* output,
                                register cmsUInt32Number Stride)
 {
@@ -2041,12 +2187,12 @@ cmsUInt8Number* Pack1WordSkip1(register _cmsTRANSFORM* info,
 }
 
 static
-cmsUInt8Number* Pack1WordSkip1SwapFirst(register _cmsTRANSFORM* info, 
-                                        register cmsUInt16Number wOut[], 
+cmsUInt8Number* Pack1WordSkip1SwapFirst(register _cmsTRANSFORM* info,
+                                        register cmsUInt16Number wOut[],
                                         register cmsUInt8Number* output,
                                         register cmsUInt32Number Stride)
 {
-    output += 2; 
+    output += 2;
     *(cmsUInt16Number*) output = wOut[0];
     output+= 2;
 
@@ -2059,9 +2205,9 @@ cmsUInt8Number* Pack1WordSkip1SwapFirst(register _cmsTRANSFORM* info,
 
 // Unencoded Float values -- don't try optimize speed
 static
-cmsUInt8Number* PackLabDoubleFrom16(register _cmsTRANSFORM* info, 
-                                    register cmsUInt16Number wOut[], 
-                                    register cmsUInt8Number* output, 
+cmsUInt8Number* PackLabDoubleFrom16(register _cmsTRANSFORM* info,
+                                    register cmsUInt16Number wOut[],
+                                    register cmsUInt8Number* output,
                                     register cmsUInt32Number Stride)
 {
 
@@ -2080,14 +2226,43 @@ cmsUInt8Number* PackLabDoubleFrom16(register _cmsTRANSFORM* info,
     else {
 
         cmsLabEncoded2Float((cmsCIELab*) output, wOut);
-        return output + (sizeof(cmsCIELab) + T_EXTRA(info ->OutputFormat) * sizeof(cmsFloat64Number));            
+        return output + (sizeof(cmsCIELab) + T_EXTRA(info ->OutputFormat) * sizeof(cmsFloat64Number));
     }
+}
 
+
+static
+cmsUInt8Number* PackLabFloatFrom16(register _cmsTRANSFORM* info,
+                                    register cmsUInt16Number wOut[],
+                                    register cmsUInt8Number* output,
+                                    register cmsUInt32Number Stride)
+{
+    cmsCIELab  Lab;
+    cmsLabEncoded2Float(&Lab, wOut);
+
+    if (T_PLANAR(info -> OutputFormat)) {
+       
+        cmsFloat32Number* Out = (cmsFloat32Number*) output;
+    
+        Out[0]        = (cmsFloat32Number)Lab.L;
+        Out[Stride]   = (cmsFloat32Number)Lab.a;
+        Out[Stride*2] = (cmsFloat32Number)Lab.b;
+
+        return output + sizeof(cmsFloat32Number);
+    }
+    else {
+
+       ((cmsFloat32Number*) output)[0] = (cmsFloat32Number) Lab.L;
+       ((cmsFloat32Number*) output)[1] = (cmsFloat32Number) Lab.a;
+       ((cmsFloat32Number*) output)[2] = (cmsFloat32Number) Lab.b;
+
+        return output + (3 + T_EXTRA(info ->OutputFormat)) * sizeof(cmsFloat32Number);
+    }
 }
 
 static
-cmsUInt8Number* PackXYZDoubleFrom16(register _cmsTRANSFORM* Info, 
-                                    register cmsUInt16Number wOut[], 
+cmsUInt8Number* PackXYZDoubleFrom16(register _cmsTRANSFORM* Info,
+                                    register cmsUInt16Number wOut[],
                                     register cmsUInt8Number* output,
                                     register cmsUInt32Number Stride)
 {
@@ -2097,7 +2272,7 @@ cmsUInt8Number* PackXYZDoubleFrom16(register _cmsTRANSFORM* Info,
         cmsFloat64Number* Out = (cmsFloat64Number*) output;
         cmsXYZEncoded2Float(&XYZ, wOut);
 
-        Out[0]                  = XYZ.X;
+        Out[0]        = XYZ.X;
         Out[Stride]   = XYZ.Y;
         Out[Stride*2] = XYZ.Z;
 
@@ -2113,96 +2288,135 @@ cmsUInt8Number* PackXYZDoubleFrom16(register _cmsTRANSFORM* Info,
 }
 
 static
-cmsUInt8Number* PackDoubleFrom16(register _cmsTRANSFORM* Info, 
-                                 register cmsUInt16Number wOut[], 
-                                 register cmsUInt8Number* output,
-                                 register cmsUInt32Number Stride)
-{
-    cmsFloat64Number* Inks = (cmsFloat64Number*) output;
-    int nChan = T_CHANNELS(Info -> OutputFormat);
-    int i;
-    cmsFloat64Number maximum = IsInkSpace(Info ->OutputFormat) ? 655.35 : 65535.0;
-
-    if (T_PLANAR(Info -> OutputFormat)) {
-
-        for (i=0; i <  nChan; i++) {
-
-            Inks[i*Stride] = wOut[i] / maximum;
-        }
-
-        return output + sizeof(cmsFloat64Number);
-    } 
-    else {
-
-        for (i=0; i <  nChan; i++) {
-
-            Inks[i] = wOut[i] /  maximum;
-        }
-
-
-        return output + (nChan + T_EXTRA(Info ->OutputFormat)) * sizeof(cmsFloat64Number);
-    }
-
-}
-
-static
-cmsUInt8Number* PackFloatFrom16(register _cmsTRANSFORM* Info, 
-                                register cmsUInt16Number wOut[], 
+cmsUInt8Number* PackDoubleFrom16(register _cmsTRANSFORM* info,
+                                register cmsUInt16Number wOut[],
                                 register cmsUInt8Number* output,
                                 register cmsUInt32Number Stride)
 {
-    cmsFloat32Number* Inks = (cmsFloat32Number*) output;
-    int nChan = T_CHANNELS(Info -> OutputFormat);
-    int i;
-    cmsFloat64Number maximum = IsInkSpace(Info ->OutputFormat) ? 655.35 : 65535.0;
+    int nChan      = T_CHANNELS(info -> OutputFormat);
+    int DoSwap     = T_DOSWAP(info ->OutputFormat);
+    int Reverse    = T_FLAVOR(info ->OutputFormat);
+    int Extra      = T_EXTRA(info -> OutputFormat);
+    int SwapFirst  = T_SWAPFIRST(info -> OutputFormat);
+    int Planar     = T_PLANAR(info -> OutputFormat);
+    int ExtraFirst = DoSwap ^ SwapFirst;
+    cmsFloat64Number maximum = IsInkSpace(info ->OutputFormat) ? 655.35 : 65535.0;
+    cmsFloat64Number v = 0;
+    cmsFloat64Number* swap1 = (cmsFloat64Number*) output;
+    int i, start = 0;
 
-    if (T_PLANAR(Info -> OutputFormat)) {
+    if (ExtraFirst)
+        start = Extra;
 
-        for (i=0; i <  nChan; i++) {
+    for (i=0; i < nChan; i++) {
 
-            Inks[i*Stride] = (cmsFloat32Number) (wOut[i] / maximum);
-        }
+        int index = DoSwap ? (nChan - i - 1) : i;
 
-        return output + sizeof(cmsFloat32Number);
-    } 
-    else {
+        v = (cmsFloat64Number) wOut[index] / maximum;
 
-        for (i=0; i <  nChan; i++) {
+        if (Reverse)
+            v = maximum - v;
 
-            Inks[i] = (cmsFloat32Number) (wOut[i] /  maximum);
-        }
-
-
-        return output + (nChan + T_EXTRA(Info ->OutputFormat)) * sizeof(cmsFloat32Number);
+        if (Planar)
+            ((cmsFloat64Number*) output)[(i + start)  * Stride]= v;
+        else
+            ((cmsFloat64Number*) output)[i + start] = v;
     }
 
+    if (!ExtraFirst) {
+        output += Extra * sizeof(cmsFloat64Number);
+    }
+
+    if (Extra == 0 && SwapFirst) {
+
+         memmove(swap1 + 1, swap1, (nChan-1)* sizeof(cmsFloat64Number));
+        *swap1 = v;
+    }
+
+    if (T_PLANAR(info -> OutputFormat))
+        return output + sizeof(cmsFloat64Number);
+    else
+        return output + nChan * sizeof(cmsFloat64Number);
+
 }
+
+
+static
+cmsUInt8Number* PackFloatFrom16(register _cmsTRANSFORM* info,
+                                register cmsUInt16Number wOut[],
+                                register cmsUInt8Number* output,
+                                register cmsUInt32Number Stride)
+{
+    int nChan      = T_CHANNELS(info -> OutputFormat);
+    int DoSwap     = T_DOSWAP(info ->OutputFormat);
+    int Reverse    = T_FLAVOR(info ->OutputFormat);
+    int Extra      = T_EXTRA(info -> OutputFormat);
+    int SwapFirst  = T_SWAPFIRST(info -> OutputFormat);
+    int Planar     = T_PLANAR(info -> OutputFormat);
+    int ExtraFirst = DoSwap ^ SwapFirst;
+    cmsFloat64Number maximum = IsInkSpace(info ->OutputFormat) ? 655.35 : 65535.0;
+    cmsFloat64Number v = 0;
+    cmsFloat32Number* swap1 = (cmsFloat32Number*) output;
+    int i, start = 0;
+
+    if (ExtraFirst)
+        start = Extra;
+
+    for (i=0; i < nChan; i++) {
+
+        int index = DoSwap ? (nChan - i - 1) : i;
+
+        v = (cmsFloat64Number) wOut[index] / maximum;
+
+        if (Reverse)
+            v = maximum - v;
+
+        if (Planar)
+            ((cmsFloat32Number*) output)[(i + start ) * Stride]= (cmsFloat32Number) v;
+        else
+            ((cmsFloat32Number*) output)[i + start] = (cmsFloat32Number) v;
+    }
+
+    if (!ExtraFirst) {
+        output += Extra * sizeof(cmsFloat32Number);
+    }
+
+  if (Extra == 0 && SwapFirst) {
+
+         memmove(swap1 + 1, swap1, (nChan-1)* sizeof(cmsFloat32Number));
+        *swap1 = (cmsFloat32Number) v;
+    }
+
+    if (T_PLANAR(info -> OutputFormat))
+        return output + sizeof(cmsFloat32Number);
+    else
+        return output + nChan * sizeof(cmsFloat32Number);
+}
+
 
 
 // --------------------------------------------------------------------------------------------------------
 
 static
-cmsUInt8Number* PackChunkyFloatsFromFloat(_cmsTRANSFORM* info, 
-                                          cmsFloat32Number wOut[], 
-                                          cmsUInt8Number* output,
-                                          cmsUInt32Number Stride)
+cmsUInt8Number* PackFloatsFromFloat(_cmsTRANSFORM* info,
+                                    cmsFloat32Number wOut[],
+                                    cmsUInt8Number* output,
+                                    cmsUInt32Number Stride)
 {
     int nChan      = T_CHANNELS(info -> OutputFormat);
     int DoSwap     = T_DOSWAP(info ->OutputFormat);
     int Reverse    = T_FLAVOR(info ->OutputFormat);
     int Extra      = T_EXTRA(info -> OutputFormat);
     int SwapFirst  = T_SWAPFIRST(info -> OutputFormat);
-    int ExtraFirst = DoSwap && !SwapFirst;
+    int Planar     = T_PLANAR(info -> OutputFormat);
+    int ExtraFirst = DoSwap ^ SwapFirst;
     cmsFloat64Number maximum = IsInkSpace(info ->OutputFormat) ? 100.0 : 1.0;
-    cmsFloat32Number* swap1;
+    cmsFloat32Number* swap1 = (cmsFloat32Number*) output;
     cmsFloat64Number v = 0;
-    int i;
+    int i, start = 0;
 
-    swap1 = (cmsFloat32Number*) output;
-
-    if (ExtraFirst) {
-        output += Extra * sizeof(cmsFloat32Number);
-    }
+    if (ExtraFirst)
+        start = Extra;
 
     for (i=0; i < nChan; i++) {
 
@@ -2213,44 +2427,48 @@ cmsUInt8Number* PackChunkyFloatsFromFloat(_cmsTRANSFORM* info,
         if (Reverse)
             v = maximum - v;
 
-        *(cmsFloat32Number*) output = (cmsFloat32Number) v;
-
-        output += sizeof(cmsFloat32Number);
+        if (Planar)
+            ((cmsFloat32Number*) output)[(i + start)* Stride]= (cmsFloat32Number) v;
+        else
+            ((cmsFloat32Number*) output)[i + start] = (cmsFloat32Number) v;
     }
 
     if (!ExtraFirst) {
         output += Extra * sizeof(cmsFloat32Number);
     }
 
-    if (Extra == 0 && SwapFirst) {
+   if (Extra == 0 && SwapFirst) {
 
-        memmove(swap1 + 1, swap1, (nChan-1)* sizeof(cmsFloat32Number));
+         memmove(swap1 + 1, swap1, (nChan-1)* sizeof(cmsFloat32Number));
         *swap1 = (cmsFloat32Number) v;
     }
 
-
-    return output;
-
-    cmsUNUSED_PARAMETER(Stride);
+    if (T_PLANAR(info -> OutputFormat))
+        return output + sizeof(cmsFloat32Number);
+    else
+        return output + nChan * sizeof(cmsFloat32Number);
 }
 
 static
-cmsUInt8Number* PackPlanarFloatsFromFloat(_cmsTRANSFORM* info, 
-                                          cmsFloat32Number wOut[], 
-                                          cmsUInt8Number* output,
-                                          cmsUInt32Number Stride)
+cmsUInt8Number* PackDoublesFromFloat(_cmsTRANSFORM* info,
+                                    cmsFloat32Number wOut[],
+                                    cmsUInt8Number* output,
+                                    cmsUInt32Number Stride)
 {
-    int nChan = T_CHANNELS(info -> OutputFormat);
-    int DoSwap = T_DOSWAP(info ->OutputFormat);
-    int Reverse= T_FLAVOR(info ->OutputFormat);
-    int i;
-    cmsUInt8Number* Init = output;
+    int nChan      = T_CHANNELS(info -> OutputFormat);
+    int DoSwap     = T_DOSWAP(info ->OutputFormat);
+    int Reverse    = T_FLAVOR(info ->OutputFormat);
+    int Extra      = T_EXTRA(info -> OutputFormat);
+    int SwapFirst  = T_SWAPFIRST(info -> OutputFormat);
+    int Planar     = T_PLANAR(info -> OutputFormat);
+    int ExtraFirst = DoSwap ^ SwapFirst;
     cmsFloat64Number maximum = IsInkSpace(info ->OutputFormat) ? 100.0 : 1.0;
-    cmsFloat64Number v;
+    cmsFloat64Number v = 0;
+    cmsFloat64Number* swap1 = (cmsFloat64Number*) output;
+    int i, start = 0;
 
-    if (DoSwap) {
-        output += T_EXTRA(info -> OutputFormat) * Stride * sizeof(cmsFloat32Number);
-    }
+    if (ExtraFirst)
+        start = Extra;
 
     for (i=0; i < nChan; i++) {
 
@@ -2258,114 +2476,43 @@ cmsUInt8Number* PackPlanarFloatsFromFloat(_cmsTRANSFORM* info,
 
         v = wOut[index] * maximum;
 
-        if (Reverse) 
-            v =  maximum - v;
-
-        *(cmsFloat32Number*) output = (cmsFloat32Number) v;
-        output += (Stride * sizeof(cmsFloat32Number));
-    }
-
-    return (Init + sizeof(cmsFloat32Number));
-
-}
-
-
-static
-cmsUInt8Number* PackChunkyDoublesFromFloat(_cmsTRANSFORM* info, 
-                                           cmsFloat32Number wOut[], 
-                                           cmsUInt8Number* output,
-                                           cmsUInt32Number Stride)
-{
-    int nChan      = T_CHANNELS(info -> OutputFormat);
-    int DoSwap     = T_DOSWAP(info ->OutputFormat);
-    int Reverse    = T_FLAVOR(info ->OutputFormat);
-    int Extra      = T_EXTRA(info -> OutputFormat);
-    int SwapFirst  = T_SWAPFIRST(info -> OutputFormat);
-    int ExtraFirst = DoSwap && !SwapFirst;
-    cmsFloat64Number* swap1;
-    cmsFloat64Number maximum = IsInkSpace(info ->OutputFormat) ? 100.0 : 1.0;
-    cmsFloat64Number v = 0;
-    int i;
-
-    swap1 = (cmsFloat64Number*) output;
-
-    if (ExtraFirst) {
-        output += Extra * sizeof(cmsFloat64Number);
-    }
-
-    for (i=0; i < nChan; i++) {
-
-        int index = DoSwap ? (nChan - i - 1) : i;
-
-        v = (cmsFloat64Number) wOut[index] * maximum;
-
         if (Reverse)
             v = maximum - v;
 
-        *(cmsFloat64Number*) output = v;
-
-        output += sizeof(cmsFloat64Number);
+        if (Planar)
+            ((cmsFloat64Number*) output)[(i + start) * Stride] =  v;
+        else
+            ((cmsFloat64Number*) output)[i + start] =  v;
     }
 
     if (!ExtraFirst) {
         output += Extra * sizeof(cmsFloat64Number);
     }
 
-    if (Extra == 0 && SwapFirst) {
+   if (Extra == 0 && SwapFirst) {
 
-        memmove(swap1 + 1, swap1, (nChan-1)* sizeof(cmsFloat64Number));
+         memmove(swap1 + 1, swap1, (nChan-1)* sizeof(cmsFloat64Number));
         *swap1 = v;
     }
 
 
-    return output;
+    if (T_PLANAR(info -> OutputFormat))
+        return output + sizeof(cmsFloat64Number);
+    else
+        return output + nChan * sizeof(cmsFloat64Number);
 
-    cmsUNUSED_PARAMETER(Stride);
-}
-
-static
-cmsUInt8Number* PackPlanarDoublesFromFloat(_cmsTRANSFORM* info, 
-                                           cmsFloat32Number wOut[], 
-                                           cmsUInt8Number* output,
-                                           cmsUInt32Number Stride)
-{
-    int nChan = T_CHANNELS(info -> OutputFormat);
-    int DoSwap = T_DOSWAP(info ->OutputFormat);
-    int Reverse= T_FLAVOR(info ->OutputFormat);
-    int i;
-    cmsUInt8Number* Init = output;
-    cmsFloat64Number maximum = IsInkSpace(info ->OutputFormat) ? 100.0 : 1.0;
-    cmsFloat64Number v;
-
-    if (DoSwap) {
-        output += T_EXTRA(info -> OutputFormat) * Stride * sizeof(cmsFloat64Number);
-    }
-
-    for (i=0; i < nChan; i++) {
-
-        int index = DoSwap ? (nChan - i - 1) : i;
-
-        v = (cmsFloat64Number) wOut[index] * maximum;
-
-        if (Reverse) 
-            v =  maximum - v;
-
-        *(cmsFloat64Number*) output = v;
-        output += (Stride * sizeof(cmsFloat64Number));
-    }
-
-    return (Init + sizeof(cmsFloat64Number));
 }
 
 
 
 
+
 static
-cmsUInt8Number* PackLabFloatFromFloat(_cmsTRANSFORM* Info, 
-                                      cmsFloat32Number wOut[], 
+cmsUInt8Number* PackLabFloatFromFloat(_cmsTRANSFORM* Info,
+                                      cmsFloat32Number wOut[],
                                       cmsUInt8Number* output,
                                       cmsUInt32Number Stride)
-{        
+{
     cmsFloat32Number* Out = (cmsFloat32Number*) output;
 
     if (T_PLANAR(Info -> OutputFormat)) {
@@ -2382,17 +2529,18 @@ cmsUInt8Number* PackLabFloatFromFloat(_cmsTRANSFORM* Info,
         Out[1] = (cmsFloat32Number) (wOut[1] * 255.0 - 128.0);
         Out[2] = (cmsFloat32Number) (wOut[2] * 255.0 - 128.0);
 
-        return output + (sizeof(cmsFloat32Number)*3 + T_EXTRA(Info ->OutputFormat) * sizeof(cmsFloat32Number));            
+        return output + (sizeof(cmsFloat32Number)*3 + T_EXTRA(Info ->OutputFormat) * sizeof(cmsFloat32Number));
     }
 
 }
 
+
 static
-cmsUInt8Number* PackLabDoubleFromFloat(_cmsTRANSFORM* Info, 
-                                       cmsFloat32Number wOut[], 
+cmsUInt8Number* PackLabDoubleFromFloat(_cmsTRANSFORM* Info,
+                                       cmsFloat32Number wOut[],
                                        cmsUInt8Number* output,
                                        cmsUInt32Number Stride)
-{        
+{
     cmsFloat64Number* Out = (cmsFloat64Number*) output;
 
     if (T_PLANAR(Info -> OutputFormat)) {
@@ -2409,7 +2557,7 @@ cmsUInt8Number* PackLabDoubleFromFloat(_cmsTRANSFORM* Info,
         Out[1] = (cmsFloat64Number) (wOut[1] * 255.0 - 128.0);
         Out[2] = (cmsFloat64Number) (wOut[2] * 255.0 - 128.0);
 
-        return output + (sizeof(cmsFloat64Number)*3 + T_EXTRA(Info ->OutputFormat) * sizeof(cmsFloat64Number));            
+        return output + (sizeof(cmsFloat64Number)*3 + T_EXTRA(Info ->OutputFormat) * sizeof(cmsFloat64Number));
     }
 
 }
@@ -2417,11 +2565,11 @@ cmsUInt8Number* PackLabDoubleFromFloat(_cmsTRANSFORM* Info,
 
 // From 0..1 range to 0..MAX_ENCODEABLE_XYZ
 static
-cmsUInt8Number* PackXYZFloatFromFloat(_cmsTRANSFORM* Info, 
-                                      cmsFloat32Number wOut[], 
+cmsUInt8Number* PackXYZFloatFromFloat(_cmsTRANSFORM* Info,
+                                      cmsFloat32Number wOut[],
                                       cmsUInt8Number* output,
                                       cmsUInt32Number Stride)
-{        
+{
     cmsFloat32Number* Out = (cmsFloat32Number*) output;
 
     if (T_PLANAR(Info -> OutputFormat)) {
@@ -2438,19 +2586,18 @@ cmsUInt8Number* PackXYZFloatFromFloat(_cmsTRANSFORM* Info,
         Out[1] = (cmsFloat32Number) (wOut[1] * MAX_ENCODEABLE_XYZ);
         Out[2] = (cmsFloat32Number) (wOut[2] * MAX_ENCODEABLE_XYZ);
 
-        return output + (sizeof(cmsFloat32Number)*3 + T_EXTRA(Info ->OutputFormat) * sizeof(cmsFloat32Number));            
+        return output + (sizeof(cmsFloat32Number)*3 + T_EXTRA(Info ->OutputFormat) * sizeof(cmsFloat32Number));
     }
 
 }
 
-
 // Same, but convert to double
 static
-cmsUInt8Number* PackXYZDoubleFromFloat(_cmsTRANSFORM* Info, 
-                                       cmsFloat32Number wOut[], 
+cmsUInt8Number* PackXYZDoubleFromFloat(_cmsTRANSFORM* Info,
+                                       cmsFloat32Number wOut[],
                                        cmsUInt8Number* output,
                                        cmsUInt32Number Stride)
-{        
+{
     cmsFloat64Number* Out = (cmsFloat64Number*) output;
 
     if (T_PLANAR(Info -> OutputFormat)) {
@@ -2467,11 +2614,228 @@ cmsUInt8Number* PackXYZDoubleFromFloat(_cmsTRANSFORM* Info,
         Out[1] = (cmsFloat64Number) (wOut[1] * MAX_ENCODEABLE_XYZ);
         Out[2] = (cmsFloat64Number) (wOut[2] * MAX_ENCODEABLE_XYZ);
 
-        return output + (sizeof(cmsFloat64Number)*3 + T_EXTRA(Info ->OutputFormat) * sizeof(cmsFloat64Number));            
+        return output + (sizeof(cmsFloat64Number)*3 + T_EXTRA(Info ->OutputFormat) * sizeof(cmsFloat64Number));
     }
 
 }
 
+
+// ----------------------------------------------------------------------------------------------------------------
+
+#ifndef CMS_NO_HALF_SUPPORT 
+
+// Decodes an stream of half floats to wIn[] described by input format
+
+static
+cmsUInt8Number* UnrollHalfTo16(register _cmsTRANSFORM* info,
+                                register cmsUInt16Number wIn[],
+                                register cmsUInt8Number* accum,
+                                register cmsUInt32Number Stride)
+{
+
+    int nChan      = T_CHANNELS(info -> InputFormat);
+    int DoSwap     = T_DOSWAP(info ->InputFormat);
+    int Reverse    = T_FLAVOR(info ->InputFormat);
+    int SwapFirst  = T_SWAPFIRST(info -> InputFormat);
+    int Extra      = T_EXTRA(info -> InputFormat);
+    int ExtraFirst = DoSwap ^ SwapFirst;
+    int Planar     = T_PLANAR(info -> InputFormat);
+    cmsFloat32Number v;
+    int i, start = 0;
+    cmsFloat32Number maximum = IsInkSpace(info ->InputFormat) ? 655.35F : 65535.0F;
+
+
+    if (ExtraFirst)
+            start = Extra;
+
+    for (i=0; i < nChan; i++) {
+
+        int index = DoSwap ? (nChan - i - 1) : i;
+
+        if (Planar)
+            v = _cmsHalf2Float ( ((cmsUInt16Number*) accum)[(i + start) * Stride] );
+        else
+            v = _cmsHalf2Float ( ((cmsUInt16Number*) accum)[i + start] ) ;
+
+        if (Reverse) v = maximum - v;
+
+        wIn[index] = _cmsQuickSaturateWord(v * maximum);
+    }
+
+
+    if (Extra == 0 && SwapFirst) {
+        cmsUInt16Number tmp = wIn[0];
+
+        memmove(&wIn[0], &wIn[1], (nChan-1) * sizeof(cmsUInt16Number));
+        wIn[nChan-1] = tmp;
+    }
+
+    if (T_PLANAR(info -> InputFormat))
+        return accum + sizeof(cmsUInt16Number);
+    else
+        return accum + (nChan + Extra) * sizeof(cmsUInt16Number);
+}
+
+// Decodes an stream of half floats to wIn[] described by input format
+
+static
+cmsUInt8Number* UnrollHalfToFloat(_cmsTRANSFORM* info,
+                                    cmsFloat32Number wIn[],
+                                    cmsUInt8Number* accum,
+                                    cmsUInt32Number Stride)
+{
+
+    int nChan      = T_CHANNELS(info -> InputFormat);
+    int DoSwap     = T_DOSWAP(info ->InputFormat);
+    int Reverse    = T_FLAVOR(info ->InputFormat);
+    int SwapFirst  = T_SWAPFIRST(info -> InputFormat);
+    int Extra      = T_EXTRA(info -> InputFormat);
+    int ExtraFirst = DoSwap ^ SwapFirst;
+    int Planar     = T_PLANAR(info -> InputFormat);
+    cmsFloat32Number v;
+    int i, start = 0;
+    cmsFloat32Number maximum = IsInkSpace(info ->InputFormat) ? 100.0F : 1.0F;
+
+
+    if (ExtraFirst)
+            start = Extra;
+
+    for (i=0; i < nChan; i++) {
+
+        int index = DoSwap ? (nChan - i - 1) : i;
+
+        if (Planar)
+            v =  _cmsHalf2Float ( ((cmsUInt16Number*) accum)[(i + start) * Stride] );
+        else
+            v =  _cmsHalf2Float ( ((cmsUInt16Number*) accum)[i + start] ) ;
+
+        v /= maximum;
+
+        wIn[index] = Reverse ? 1 - v : v;
+    }
+
+
+    if (Extra == 0 && SwapFirst) {
+        cmsFloat32Number tmp = wIn[0];
+
+        memmove(&wIn[0], &wIn[1], (nChan-1) * sizeof(cmsFloat32Number));
+        wIn[nChan-1] = tmp;
+    }
+
+    if (T_PLANAR(info -> InputFormat))
+        return accum + sizeof(cmsUInt16Number);
+    else
+        return accum + (nChan + Extra) * sizeof(cmsUInt16Number);
+}
+
+
+static
+cmsUInt8Number* PackHalfFrom16(register _cmsTRANSFORM* info,
+                                register cmsUInt16Number wOut[],
+                                register cmsUInt8Number* output,
+                                register cmsUInt32Number Stride)
+{
+    int nChan      = T_CHANNELS(info -> OutputFormat);
+    int DoSwap     = T_DOSWAP(info ->OutputFormat);
+    int Reverse    = T_FLAVOR(info ->OutputFormat);
+    int Extra      = T_EXTRA(info -> OutputFormat);
+    int SwapFirst  = T_SWAPFIRST(info -> OutputFormat);
+    int Planar     = T_PLANAR(info -> OutputFormat);
+    int ExtraFirst = DoSwap ^ SwapFirst;
+    cmsFloat32Number maximum = IsInkSpace(info ->OutputFormat) ? 655.35F : 65535.0F;
+    cmsFloat32Number v = 0;
+    cmsUInt16Number* swap1 = (cmsUInt16Number*) output;
+    int i, start = 0;
+
+    if (ExtraFirst)
+        start = Extra;
+
+    for (i=0; i < nChan; i++) {
+
+        int index = DoSwap ? (nChan - i - 1) : i;
+
+        v = (cmsFloat32Number) wOut[index] / maximum;
+
+        if (Reverse)
+            v = maximum - v;
+
+        if (Planar)
+            ((cmsUInt16Number*) output)[(i + start ) * Stride]= _cmsFloat2Half(v);
+        else
+            ((cmsUInt16Number*) output)[i + start] =  _cmsFloat2Half(v);
+    }
+
+    if (!ExtraFirst) {
+        output += Extra * sizeof(cmsUInt16Number);
+    }
+
+  if (Extra == 0 && SwapFirst) {
+
+         memmove(swap1 + 1, swap1, (nChan-1)* sizeof(cmsUInt16Number));
+        *swap1 = _cmsFloat2Half(v);
+    }
+
+    if (T_PLANAR(info -> OutputFormat))
+        return output + sizeof(cmsUInt16Number);
+    else
+        return output + nChan * sizeof(cmsUInt16Number);
+}
+
+
+
+static
+cmsUInt8Number* PackHalfFromFloat(_cmsTRANSFORM* info,
+                                    cmsFloat32Number wOut[],
+                                    cmsUInt8Number* output,
+                                    cmsUInt32Number Stride)
+{
+    int nChan      = T_CHANNELS(info -> OutputFormat);
+    int DoSwap     = T_DOSWAP(info ->OutputFormat);
+    int Reverse    = T_FLAVOR(info ->OutputFormat);
+    int Extra      = T_EXTRA(info -> OutputFormat);
+    int SwapFirst  = T_SWAPFIRST(info -> OutputFormat);
+    int Planar     = T_PLANAR(info -> OutputFormat);
+    int ExtraFirst = DoSwap ^ SwapFirst;
+    cmsFloat32Number maximum = IsInkSpace(info ->OutputFormat) ? 100.0F : 1.0F;
+    cmsUInt16Number* swap1 = (cmsUInt16Number*) output;
+    cmsFloat32Number v = 0;
+    int i, start = 0;
+
+    if (ExtraFirst)
+        start = Extra;
+
+    for (i=0; i < nChan; i++) {
+
+        int index = DoSwap ? (nChan - i - 1) : i;
+
+        v = wOut[index] * maximum;
+
+        if (Reverse)
+            v = maximum - v;
+
+        if (Planar)
+            ((cmsUInt16Number*) output)[(i + start)* Stride]= _cmsFloat2Half( v );
+        else
+            ((cmsUInt16Number*) output)[i + start] = _cmsFloat2Half( v );
+    }
+
+    if (!ExtraFirst) {
+        output += Extra * sizeof(cmsUInt16Number);
+    }
+
+   if (Extra == 0 && SwapFirst) {
+
+         memmove(swap1 + 1, swap1, (nChan-1)* sizeof(cmsUInt16Number));
+        *swap1 = (cmsUInt16Number)  _cmsFloat2Half( v );
+    }
+
+    if (T_PLANAR(info -> OutputFormat))
+        return output + sizeof(cmsUInt16Number);
+    else
+        return output + nChan * sizeof(cmsUInt16Number);
+}
+
+#endif
 
 // ----------------------------------------------------------------------------------------------------------------
 
@@ -2482,35 +2846,43 @@ static cmsFormatters16 InputFormatters16[] = {
     //  ----------------------------   ------------------------------------  ----------------------------
     { TYPE_Lab_DBL,                                 ANYPLANAR|ANYEXTRA,   UnrollLabDoubleTo16},
     { TYPE_XYZ_DBL,                                 ANYPLANAR|ANYEXTRA,   UnrollXYZDoubleTo16},
+    { TYPE_Lab_FLT,                                 ANYPLANAR|ANYEXTRA,   UnrollLabFloatTo16},
     { TYPE_GRAY_DBL,                                                 0,   UnrollDouble1Chan},
-    { FLOAT_SH(1)|BYTES_SH(0), ANYCHANNELS|ANYPLANAR|ANYEXTRA|ANYSPACE,   UnrollDoubleTo16},
-    { FLOAT_SH(1)|BYTES_SH(4), ANYCHANNELS|ANYPLANAR|ANYEXTRA|ANYSPACE,   UnrollFloatTo16},
+    { FLOAT_SH(1)|BYTES_SH(0), ANYCHANNELS|ANYPLANAR|ANYSWAPFIRST|ANYFLAVOR|
+                                             ANYSWAP|ANYEXTRA|ANYSPACE,   UnrollDoubleTo16},
+    { FLOAT_SH(1)|BYTES_SH(4), ANYCHANNELS|ANYPLANAR|ANYSWAPFIRST|ANYFLAVOR|
+                                             ANYSWAP|ANYEXTRA|ANYSPACE,   UnrollFloatTo16},
+#ifndef CMS_NO_HALF_SUPPORT 
+    { FLOAT_SH(1)|BYTES_SH(2), ANYCHANNELS|ANYPLANAR|ANYSWAPFIRST|ANYFLAVOR|
+                                            ANYEXTRA|ANYSWAP|ANYSPACE,   UnrollHalfTo16},
+#endif
 
-
-    { CHANNELS_SH(1)|BYTES_SH(1),                              ANYSPACE,  Unroll1Byte}, 
+    { CHANNELS_SH(1)|BYTES_SH(1),                              ANYSPACE,  Unroll1Byte},
     { CHANNELS_SH(1)|BYTES_SH(1)|EXTRA_SH(1),                  ANYSPACE,  Unroll1ByteSkip1},
     { CHANNELS_SH(1)|BYTES_SH(1)|EXTRA_SH(2),                  ANYSPACE,  Unroll1ByteSkip2},
     { CHANNELS_SH(1)|BYTES_SH(1)|FLAVOR_SH(1),                 ANYSPACE,  Unroll1ByteReversed},
     { COLORSPACE_SH(PT_MCH2)|CHANNELS_SH(2)|BYTES_SH(1),              0,  Unroll2Bytes},
-   
+
     { TYPE_LabV2_8,                                                   0,  UnrollLabV2_8 },
     { TYPE_ALabV2_8,                                                  0,  UnrollALabV2_8 },
     { TYPE_LabV2_16,                                                  0,  UnrollLabV2_16 },
 
-    { CHANNELS_SH(3)|BYTES_SH(1),                              ANYSPACE,  _cmsUnroll3Bytes},
+    { CHANNELS_SH(3)|BYTES_SH(1),                              ANYSPACE,  Unroll3Bytes},
     { CHANNELS_SH(3)|BYTES_SH(1)|DOSWAP_SH(1),                 ANYSPACE,  Unroll3BytesSwap},
     { CHANNELS_SH(3)|EXTRA_SH(1)|BYTES_SH(1)|DOSWAP_SH(1),     ANYSPACE,  Unroll3BytesSkip1Swap},
     { CHANNELS_SH(3)|EXTRA_SH(1)|BYTES_SH(1)|SWAPFIRST_SH(1),  ANYSPACE,  Unroll3BytesSkip1SwapFirst},
 
     { CHANNELS_SH(4)|BYTES_SH(1),                              ANYSPACE,  Unroll4Bytes},
     { CHANNELS_SH(4)|BYTES_SH(1)|FLAVOR_SH(1),                 ANYSPACE,  Unroll4BytesReverse},
-    { CHANNELS_SH(4)|BYTES_SH(1)|SWAPFIRST_SH(1),              ANYSPACE,  Unroll4BytesSwapFirst}, 
-    { CHANNELS_SH(4)|BYTES_SH(1)|DOSWAP_SH(1),                 ANYSPACE,  Unroll4BytesSwap}, 
-    { CHANNELS_SH(4)|BYTES_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1), ANYSPACE,  Unroll4BytesSwapSwapFirst}, 
+    { CHANNELS_SH(4)|BYTES_SH(1)|SWAPFIRST_SH(1),              ANYSPACE,  Unroll4BytesSwapFirst},
+    { CHANNELS_SH(4)|BYTES_SH(1)|DOSWAP_SH(1),                 ANYSPACE,  Unroll4BytesSwap},
+    { CHANNELS_SH(4)|BYTES_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1), ANYSPACE,  Unroll4BytesSwapSwapFirst},
 
-    { BYTES_SH(1)|PLANAR_SH(1),    ANYFLAVOR|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE, UnrollPlanarBytes},
-    { BYTES_SH(1),    ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE, UnrollChunkyBytes},     
+    { BYTES_SH(1)|PLANAR_SH(1), ANYFLAVOR|ANYSWAPFIRST|
+                                   ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE, UnrollPlanarBytes},
 
+    { BYTES_SH(1),    ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|
+                                           ANYEXTRA|ANYCHANNELS|ANYSPACE, UnrollChunkyBytes},
 
     { CHANNELS_SH(1)|BYTES_SH(2),                              ANYSPACE,  Unroll1Word},
     { CHANNELS_SH(1)|BYTES_SH(2)|FLAVOR_SH(1),                 ANYSPACE,  Unroll1WordReversed},
@@ -2524,13 +2896,13 @@ static cmsFormatters16 InputFormatters16[] = {
     { CHANNELS_SH(3)|BYTES_SH(2)|EXTRA_SH(1)|SWAPFIRST_SH(1),  ANYSPACE,  Unroll3WordsSkip1SwapFirst},
     { CHANNELS_SH(3)|BYTES_SH(2)|EXTRA_SH(1)|DOSWAP_SH(1),     ANYSPACE,  Unroll3WordsSkip1Swap},
     { CHANNELS_SH(4)|BYTES_SH(2)|FLAVOR_SH(1),                 ANYSPACE,  Unroll4WordsReverse},
-    { CHANNELS_SH(4)|BYTES_SH(2)|SWAPFIRST_SH(1),              ANYSPACE,  Unroll4WordsSwapFirst}, 
-    { CHANNELS_SH(4)|BYTES_SH(2)|DOSWAP_SH(1),                 ANYSPACE,  Unroll4WordsSwap}, 
-    { CHANNELS_SH(4)|BYTES_SH(2)|DOSWAP_SH(1)|SWAPFIRST_SH(1), ANYSPACE,  Unroll4WordsSwapSwapFirst}, 
+    { CHANNELS_SH(4)|BYTES_SH(2)|SWAPFIRST_SH(1),              ANYSPACE,  Unroll4WordsSwapFirst},
+    { CHANNELS_SH(4)|BYTES_SH(2)|DOSWAP_SH(1),                 ANYSPACE,  Unroll4WordsSwap},
+    { CHANNELS_SH(4)|BYTES_SH(2)|DOSWAP_SH(1)|SWAPFIRST_SH(1), ANYSPACE,  Unroll4WordsSwapSwapFirst},
 
 
-    { BYTES_SH(2)|PLANAR_SH(1),  ANYFLAVOR|ANYSWAP|ANYENDIAN|ANYEXTRA|ANYCHANNELS|ANYSPACE,  UnrollPlanarWords },
-    { BYTES_SH(2),  ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYENDIAN|ANYEXTRA|ANYCHANNELS|ANYSPACE,  UnrollAnyWords}, 
+    { BYTES_SH(2)|PLANAR_SH(1),  ANYFLAVOR|ANYSWAP|ANYENDIAN|ANYEXTRA|ANYCHANNELS|ANYSPACE,  UnrollPlanarWords},
+    { BYTES_SH(2),  ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYENDIAN|ANYEXTRA|ANYCHANNELS|ANYSPACE,  UnrollAnyWords},
 };
 
 
@@ -2541,11 +2913,19 @@ static cmsFormattersFloat InputFormattersFloat[] = {
     //  ----------------------------   ------------------------------------  ----------------------------
     {     TYPE_Lab_DBL,                                ANYPLANAR|ANYEXTRA,   UnrollLabDoubleToFloat},
     {     TYPE_Lab_FLT,                                ANYPLANAR|ANYEXTRA,   UnrollLabFloatToFloat},
+
     {     TYPE_XYZ_DBL,                                ANYPLANAR|ANYEXTRA,   UnrollXYZDoubleToFloat},
     {     TYPE_XYZ_FLT,                                ANYPLANAR|ANYEXTRA,   UnrollXYZFloatToFloat},
 
-    {     FLOAT_SH(1)|BYTES_SH(4), ANYPLANAR|ANYEXTRA|ANYCHANNELS|ANYSPACE,  UnrollFloatsToFloat},
-    {     FLOAT_SH(1)|BYTES_SH(0), ANYPLANAR|ANYEXTRA|ANYCHANNELS|ANYSPACE,  UnrollDoublesToFloat},
+    {     FLOAT_SH(1)|BYTES_SH(4), ANYPLANAR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|
+                                                      ANYCHANNELS|ANYSPACE,  UnrollFloatsToFloat},
+
+    {     FLOAT_SH(1)|BYTES_SH(0), ANYPLANAR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|
+                                                        ANYCHANNELS|ANYSPACE,  UnrollDoublesToFloat},
+#ifndef CMS_NO_HALF_SUPPORT 
+    {     FLOAT_SH(1)|BYTES_SH(2), ANYPLANAR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|
+                                                        ANYCHANNELS|ANYSPACE,  UnrollHalfToFloat},
+#endif
 };
 
 
@@ -2556,9 +2936,9 @@ cmsFormatter _cmsGetStockInputFormatter(cmsUInt32Number dwInput, cmsUInt32Number
     cmsUInt32Number i;
     cmsFormatter fr;
 
+    switch (dwFlags) {
 
-    if (!(dwFlags & CMS_PACK_FLAGS_FLOAT)) {
-
+    case CMS_PACK_FLAGS_16BITS: {
         for (i=0; i < sizeof(InputFormatters16) / sizeof(cmsFormatters16); i++) {
             cmsFormatters16* f = InputFormatters16 + i;
 
@@ -2568,7 +2948,9 @@ cmsFormatter _cmsGetStockInputFormatter(cmsUInt32Number dwInput, cmsUInt32Number
             }
         }
     }
-    else {
+    break;
+
+    case CMS_PACK_FLAGS_FLOAT: {
         for (i=0; i < sizeof(InputFormattersFloat) / sizeof(cmsFormattersFloat); i++) {
             cmsFormattersFloat* f = InputFormattersFloat + i;
 
@@ -2577,6 +2959,11 @@ cmsFormatter _cmsGetStockInputFormatter(cmsUInt32Number dwInput, cmsUInt32Number
                 return fr;
             }
         }
+    }
+    break;
+
+    default:;
+
     }
 
     fr.Fmt16 = NULL;
@@ -2589,10 +2976,19 @@ static cmsFormatters16 OutputFormatters16[] = {
 
     { TYPE_Lab_DBL,                                      ANYPLANAR|ANYEXTRA,  PackLabDoubleFrom16},
     { TYPE_XYZ_DBL,                                      ANYPLANAR|ANYEXTRA,  PackXYZDoubleFrom16},
-    { FLOAT_SH(1)|BYTES_SH(0),      ANYCHANNELS|ANYPLANAR|ANYEXTRA|ANYSPACE,  PackDoubleFrom16},
-    { FLOAT_SH(1)|BYTES_SH(4),      ANYCHANNELS|ANYPLANAR|ANYEXTRA|ANYSPACE,  PackFloatFrom16},
 
-    { CHANNELS_SH(1)|BYTES_SH(1),                                  ANYSPACE,  _cmsPack1Byte},   
+    { TYPE_Lab_FLT,                                      ANYPLANAR|ANYEXTRA,  PackLabFloatFrom16},
+    
+    { FLOAT_SH(1)|BYTES_SH(0),      ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|
+                                    ANYCHANNELS|ANYPLANAR|ANYEXTRA|ANYSPACE,  PackDoubleFrom16},
+    { FLOAT_SH(1)|BYTES_SH(4),      ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|
+                                    ANYCHANNELS|ANYPLANAR|ANYEXTRA|ANYSPACE,  PackFloatFrom16},
+#ifndef CMS_NO_HALF_SUPPORT 
+    { FLOAT_SH(1)|BYTES_SH(2),      ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|
+                                    ANYCHANNELS|ANYPLANAR|ANYEXTRA|ANYSPACE,  PackHalfFrom16},
+#endif
+
+    { CHANNELS_SH(1)|BYTES_SH(1),                                  ANYSPACE,  Pack1Byte},
     { CHANNELS_SH(1)|BYTES_SH(1)|EXTRA_SH(1),                      ANYSPACE,  Pack1ByteSkip1},
     { CHANNELS_SH(1)|BYTES_SH(1)|EXTRA_SH(1)|SWAPFIRST_SH(1),      ANYSPACE,  Pack1ByteSkip1SwapFirst},
 
@@ -2606,9 +3002,9 @@ static cmsFormatters16 OutputFormatters16[] = {
     { CHANNELS_SH(3)|BYTES_SH(1)|EXTRA_SH(1)|OPTIMIZED_SH(1),      ANYSPACE,  Pack3BytesAndSkip1Optimized},
     { CHANNELS_SH(3)|BYTES_SH(1)|EXTRA_SH(1)|SWAPFIRST_SH(1)|OPTIMIZED_SH(1),
                                                                    ANYSPACE,  Pack3BytesAndSkip1SwapFirstOptimized},
-    { CHANNELS_SH(3)|BYTES_SH(1)|EXTRA_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1)|OPTIMIZED_SH(1),  
+    { CHANNELS_SH(3)|BYTES_SH(1)|EXTRA_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1)|OPTIMIZED_SH(1),
                                                                    ANYSPACE,  Pack3BytesAndSkip1SwapSwapFirstOptimized},
-    { CHANNELS_SH(3)|BYTES_SH(1)|DOSWAP_SH(1)|EXTRA_SH(1)|OPTIMIZED_SH(1),         
+    { CHANNELS_SH(3)|BYTES_SH(1)|DOSWAP_SH(1)|EXTRA_SH(1)|OPTIMIZED_SH(1),
                                                                    ANYSPACE,  Pack3BytesAndSkip1SwapOptimized},
     { CHANNELS_SH(3)|BYTES_SH(1)|DOSWAP_SH(1)|OPTIMIZED_SH(1),     ANYSPACE,  Pack3BytesSwapOptimized},
 
@@ -2617,7 +3013,7 @@ static cmsFormatters16 OutputFormatters16[] = {
     { CHANNELS_SH(3)|BYTES_SH(1),                                  ANYSPACE,  Pack3Bytes},
     { CHANNELS_SH(3)|BYTES_SH(1)|EXTRA_SH(1),                      ANYSPACE,  Pack3BytesAndSkip1},
     { CHANNELS_SH(3)|BYTES_SH(1)|EXTRA_SH(1)|SWAPFIRST_SH(1),      ANYSPACE,  Pack3BytesAndSkip1SwapFirst},
-    { CHANNELS_SH(3)|BYTES_SH(1)|EXTRA_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1),  
+    { CHANNELS_SH(3)|BYTES_SH(1)|EXTRA_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1),
                                                                    ANYSPACE,  Pack3BytesAndSkip1SwapSwapFirst},
     { CHANNELS_SH(3)|BYTES_SH(1)|DOSWAP_SH(1)|EXTRA_SH(1),         ANYSPACE,  Pack3BytesAndSkip1Swap},
     { CHANNELS_SH(3)|BYTES_SH(1)|DOSWAP_SH(1),                     ANYSPACE,  Pack3BytesSwap},
@@ -2625,12 +3021,12 @@ static cmsFormatters16 OutputFormatters16[] = {
     { CHANNELS_SH(6)|BYTES_SH(1)|DOSWAP_SH(1),                     ANYSPACE,  Pack6BytesSwap},
     { CHANNELS_SH(4)|BYTES_SH(1),                                  ANYSPACE,  Pack4Bytes},
     { CHANNELS_SH(4)|BYTES_SH(1)|FLAVOR_SH(1),                     ANYSPACE,  Pack4BytesReverse},
-    { CHANNELS_SH(4)|BYTES_SH(1)|SWAPFIRST_SH(1),                  ANYSPACE,  Pack4BytesSwapFirst}, 
-    { CHANNELS_SH(4)|BYTES_SH(1)|DOSWAP_SH(1),                     ANYSPACE,  Pack4BytesSwap}, 
-    { CHANNELS_SH(4)|BYTES_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1),     ANYSPACE,  Pack4BytesSwapSwapFirst}, 
+    { CHANNELS_SH(4)|BYTES_SH(1)|SWAPFIRST_SH(1),                  ANYSPACE,  Pack4BytesSwapFirst},
+    { CHANNELS_SH(4)|BYTES_SH(1)|DOSWAP_SH(1),                     ANYSPACE,  Pack4BytesSwap},
+    { CHANNELS_SH(4)|BYTES_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1),     ANYSPACE,  Pack4BytesSwapSwapFirst},
 
-    { BYTES_SH(1),                 ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE, PackAnyBytes},     
-    { BYTES_SH(1)|PLANAR_SH(1),    ANYFLAVOR|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE, PackPlanarBytes},   
+    { BYTES_SH(1),                 ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE, PackAnyBytes},
+    { BYTES_SH(1)|PLANAR_SH(1),    ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE, PackPlanarBytes},
 
     { CHANNELS_SH(1)|BYTES_SH(2),                                  ANYSPACE,  Pack1Word},
     { CHANNELS_SH(1)|BYTES_SH(2)|EXTRA_SH(1),                      ANYSPACE,  Pack1WordSkip1},
@@ -2644,18 +3040,18 @@ static cmsFormatters16 OutputFormatters16[] = {
     { CHANNELS_SH(3)|BYTES_SH(2)|EXTRA_SH(1)|DOSWAP_SH(1),         ANYSPACE,  Pack3WordsAndSkip1Swap},
     { CHANNELS_SH(3)|BYTES_SH(2)|EXTRA_SH(1)|SWAPFIRST_SH(1),      ANYSPACE,  Pack3WordsAndSkip1SwapFirst},
 
-    { CHANNELS_SH(3)|BYTES_SH(2)|EXTRA_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1),             
+    { CHANNELS_SH(3)|BYTES_SH(2)|EXTRA_SH(1)|DOSWAP_SH(1)|SWAPFIRST_SH(1),
                                                                    ANYSPACE,  Pack3WordsAndSkip1SwapSwapFirst},
 
     { CHANNELS_SH(4)|BYTES_SH(2),                                  ANYSPACE,  Pack4Words},
     { CHANNELS_SH(4)|BYTES_SH(2)|FLAVOR_SH(1),                     ANYSPACE,  Pack4WordsReverse},
-    { CHANNELS_SH(4)|BYTES_SH(2)|DOSWAP_SH(1),                     ANYSPACE,  Pack4WordsSwap}, 
+    { CHANNELS_SH(4)|BYTES_SH(2)|DOSWAP_SH(1),                     ANYSPACE,  Pack4WordsSwap},
     { CHANNELS_SH(4)|BYTES_SH(2)|ENDIAN16_SH(1),                   ANYSPACE,  Pack4WordsBigEndian},
 
     { CHANNELS_SH(6)|BYTES_SH(2),                                  ANYSPACE,  Pack6Words},
     { CHANNELS_SH(6)|BYTES_SH(2)|DOSWAP_SH(1),                     ANYSPACE,  Pack6WordsSwap},
 
-    { BYTES_SH(2)|PLANAR_SH(1),     ANYFLAVOR|ANYENDIAN|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE, PackPlanarWords}, 
+    { BYTES_SH(2)|PLANAR_SH(1),     ANYFLAVOR|ANYENDIAN|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE, PackPlanarWords},
     { BYTES_SH(2),                  ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYENDIAN|ANYEXTRA|ANYCHANNELS|ANYSPACE, PackAnyWords}
 
 };
@@ -2666,14 +3062,19 @@ static cmsFormattersFloat OutputFormattersFloat[] = {
     //  ----------------------------   ---------------------------------------------------  ----------------------------
     {     TYPE_Lab_FLT,                                                ANYPLANAR|ANYEXTRA,   PackLabFloatFromFloat},
     {     TYPE_XYZ_FLT,                                                ANYPLANAR|ANYEXTRA,   PackXYZFloatFromFloat},
+
     {     TYPE_Lab_DBL,                                                ANYPLANAR|ANYEXTRA,   PackLabDoubleFromFloat},
     {     TYPE_XYZ_DBL,                                                ANYPLANAR|ANYEXTRA,   PackXYZDoubleFromFloat},
-    {     FLOAT_SH(1)|BYTES_SH(4), 
-                             ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE,   PackChunkyFloatsFromFloat }, 
-    {     FLOAT_SH(1)|BYTES_SH(4)|PLANAR_SH(1),             ANYEXTRA|ANYCHANNELS|ANYSPACE,   PackPlanarFloatsFromFloat},
-    {     FLOAT_SH(1)|BYTES_SH(0),
-                             ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE,   PackChunkyDoublesFromFloat }, 
-    {     FLOAT_SH(1)|BYTES_SH(0)|PLANAR_SH(1),             ANYEXTRA|ANYCHANNELS|ANYSPACE,   PackPlanarDoublesFromFloat},
+
+    {     FLOAT_SH(1)|BYTES_SH(4), ANYPLANAR|
+                             ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE,   PackFloatsFromFloat },
+    {     FLOAT_SH(1)|BYTES_SH(0), ANYPLANAR|
+                             ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE,   PackDoublesFromFloat },
+#ifndef CMS_NO_HALF_SUPPORT 
+    {     FLOAT_SH(1)|BYTES_SH(2),                                   
+                             ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|ANYEXTRA|ANYCHANNELS|ANYSPACE,   PackHalfFromFloat },
+#endif
+
 
 
 };
@@ -2687,19 +3088,10 @@ cmsFormatter _cmsGetStockOutputFormatter(cmsUInt32Number dwInput, cmsUInt32Numbe
     cmsFormatter fr;
 
 
-    if (dwFlags & CMS_PACK_FLAGS_FLOAT) {
+    switch (dwFlags)
+    {
 
-        for (i=0; i < sizeof(OutputFormattersFloat) / sizeof(cmsFormattersFloat); i++) {
-            cmsFormattersFloat* f = OutputFormattersFloat + i;
-
-            if ((dwInput & ~f ->Mask) == f ->Type) {
-                fr.FmtFloat = f ->Frm;
-                return fr;
-            }
-        }
-
-    }
-    else {
+     case CMS_PACK_FLAGS_16BITS: {
 
         for (i=0; i < sizeof(OutputFormatters16) / sizeof(cmsFormatters16); i++) {
             cmsFormatters16* f = OutputFormatters16 + i;
@@ -2709,6 +3101,24 @@ cmsFormatter _cmsGetStockOutputFormatter(cmsUInt32Number dwInput, cmsUInt32Numbe
                 return fr;
             }
         }
+        }
+        break;
+
+    case CMS_PACK_FLAGS_FLOAT: {
+
+        for (i=0; i < sizeof(OutputFormattersFloat) / sizeof(cmsFormattersFloat); i++) {
+            cmsFormattersFloat* f = OutputFormattersFloat + i;
+
+            if ((dwInput & ~f ->Mask) == f ->Type) {
+                fr.FmtFloat = f ->Frm;
+                return fr;
+            }
+        }
+        }
+        break;
+
+    default:;
+
     }
 
     fr.Fmt16 = NULL;
@@ -2738,7 +3148,7 @@ cmsBool  _cmsRegisterFormattersPlugin(cmsContext id, cmsPluginBase* Data)
           FactoryList = NULL;
           return TRUE;
     }
-    
+
     fl = (cmsFormattersFactoryList*) _cmsPluginMalloc(id, sizeof(cmsFormattersFactoryList));
     if (fl == NULL) return FALSE;
 
@@ -2751,8 +3161,8 @@ cmsBool  _cmsRegisterFormattersPlugin(cmsContext id, cmsPluginBase* Data)
 }
 
 cmsFormatter _cmsGetFormatter(cmsUInt32Number Type,         // Specific type, i.e. TYPE_RGB_8
-                             cmsFormatterDirection Dir, 
-                             cmsUInt32Number dwFlags)       // Float or 16 bits
+                             cmsFormatterDirection Dir,
+                             cmsUInt32Number dwFlags)
 {
     cmsFormattersFactoryList* f;
 
@@ -2763,9 +3173,9 @@ cmsFormatter _cmsGetFormatter(cmsUInt32Number Type,         // Specific type, i.
     }
 
     // Revert to default
-    if (Dir == cmsFormatterInput) 
+    if (Dir == cmsFormatterInput)
         return _cmsGetStockInputFormatter(Type, dwFlags);
-    else 
+    else
         return _cmsGetStockOutputFormatter(Type, dwFlags);
 }
 
@@ -2787,7 +3197,7 @@ cmsBool  _cmsFormatterIs8bit(cmsUInt32Number Type)
 // Build a suitable formatter for the colorspace of this profile
 cmsUInt32Number CMSEXPORT cmsFormatterForColorspaceOfProfile(cmsHPROFILE hProfile, cmsUInt32Number nBytes, cmsBool lIsFloat)
 {
- 
+
     cmsColorSpaceSignature ColorSpace      = cmsGetColorSpace(hProfile);
     cmsUInt32Number        ColorSpaceBits  = _cmsLCMScolorSpace(ColorSpace);
     cmsUInt32Number        nOutputChans    = cmsChannelsOf(ColorSpace);
@@ -2800,7 +3210,7 @@ cmsUInt32Number CMSEXPORT cmsFormatterForColorspaceOfProfile(cmsHPROFILE hProfil
 // Build a suitable formatter for the colorspace of this profile
 cmsUInt32Number CMSEXPORT cmsFormatterForPCSOfProfile(cmsHPROFILE hProfile, cmsUInt32Number nBytes, cmsBool lIsFloat)
 {
- 
+
     cmsColorSpaceSignature ColorSpace      = cmsGetPCS(hProfile);
     int                    ColorSpaceBits  = _cmsLCMScolorSpace(ColorSpace);
     cmsUInt32Number        nOutputChans    = cmsChannelsOf(ColorSpace);

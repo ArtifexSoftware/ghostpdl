@@ -7905,6 +7905,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\lcms2\src\cmshalf.c"
+					>
+				</File>
+				<File
 					RelativePath=".\lcms2\src\cmsintrp.c"
 					>
 				</File>
