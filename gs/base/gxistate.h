@@ -205,14 +205,20 @@ typedef struct gx_transfer_s {
  */
 #define st_cr_state_num_ptrs 14
 
-typedef struct gs_devicen_color_map_s {
+#ifndef gs_devicen_color_map_DEFINED
+#  define gs_devicen_color_map_DEFINED
+typedef struct gs_devicen_color_map_s gs_devicen_color_map;
+#endif
+
+struct gs_devicen_color_map_s {
     bool use_alt_cspace;
     separation_type sep_type;
     uint num_components;	/* Input - Duplicate of value in gs_device_n_params */
     uint num_colorants;		/* Number of colorants - output */
     gs_id cspace_id;		/* Used to verify color space and map match */
     int color_map[GS_CLIENT_COLOR_MAX_COMPONENTS];
-} gs_devicen_color_map;
+};
+
 
 /* These flags are used to keep track of qQ
    combinations surrounding a graphic state

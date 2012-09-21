@@ -29,6 +29,7 @@
 #include "gsicc.h"
 #include "gsicc_cache.h"
 #include "gsicc_cms.h"
+#include "gsicc_manage.h"
 #include "gxdevice.h"
 
 #define SAVEICCPROFILE 0
@@ -270,6 +271,31 @@ gx_restrict_ICC(gs_client_color * pcc, const gs_color_space * pcs)
     }
 }
 
+static int
+gx_remap_concrete_icc_devicen(const frac * pconc, const gs_color_space * pcs,
+        gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+                          gs_color_select_t select)
+{
+    /* Check if this is a device with a DeviceN ICC profile.  In this case,
+       we need to do some special stuff */
+    cmm_dev_profile_t *dev_profile;
+    int code;
+
+    code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    if (dev_profile->spotnames != NULL  && 
+        !dev_profile->spotnames->equiv_cmyk_set) {
+        /* This means that someone has specified a DeviceN (Ncolor) 
+           ICC destination profile for this device and we still need to set
+           up the equivalent CMYK colors for the spot colors that are present.
+           This allows us to have some sort of composite viewing of the spot
+           colors as they would colorimetrically appear. */
+        gsicc_set_devicen_equiv_colors(dev, pis, dev_profile->device_profile[0]);
+        dev_profile->spotnames->equiv_cmyk_set = true;
+    }
+    gx_remap_concrete_devicen(pconc, pdc, pis, dev, select);
+    return 0;
+}
+
 /* If the color is already concretized, then we are in the color space
    defined by the device profile.  The remaining things to do would
    be to potentially apply alpha, apply the transfer function, and
@@ -297,9 +323,10 @@ gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
             code = gx_remap_concrete_DCMYK(pconc, pcs, pdc, pis, dev, select);
             break;
         default:
-            /* Need to do some work on integrating DeviceN and the new ICC flow */
-            /* code = gx_remap_concrete_DeviceN(pconc, pcs, pdc, pis, dev, select); */
-            code = -1;
+            /* This is a special case where we have a source color and our 
+               output profile must be DeviceN.   We will need to map our 
+               colorants to the proper planes */
+            code = gx_remap_concrete_icc_devicen(pconc, pcs, pdc, pis, dev, select);
             break;
         }
     return code;

@@ -1409,7 +1409,12 @@ cmap_devicen_direct(const frac * pcc,
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    map_components_to_colorants(pcc, &(pis->color_component_map), cm_comps);;
+    if (dev_profile->spotnames != NULL && dev_profile->spotnames->equiv_cmyk_set) {
+        map_components_to_colorants(pcc, dev_profile->spotnames->color_map, 
+                                    cm_comps);
+    } else {
+        map_components_to_colorants(pcc, &(pis->color_component_map), cm_comps);
+    }
     /*  Check if we have the standard colorants.  If yes, then we will apply
        ICC color management to those colorants. To understand why, consider
        the example where I have a Device with CMYK + O  and I have a

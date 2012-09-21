@@ -150,6 +150,56 @@ update_Separation_spot_equivalent_cmyk_colors(gx_device * pdev,
     }
 }
 
+/* This is used for getting the equivalent CMYK values for the spots that
+   may exist in a DeviceN output ICC profile */
+static void
+update_ICC_spot_equivalent_cmyk_colors(gx_device * pdev,
+                    const gs_state * pgs, const gs_color_space * pcs,
+                    gs_devn_params * pdevn_params,
+                    equivalent_cmyk_color_params * pparams)
+{
+    int i, j;
+    cmm_dev_profile_t *dev_profile;
+    int code;
+    gs_client_color client_color;
+
+
+    code = dev_proc(pdev, get_profile)(pdev, &dev_profile);
+    /*
+     * Check if the ICC spot names matche any of the
+     * separations for which we need an equivalent CMYK color.
+     */
+    for (i = 0; i < pdevn_params->separations.num_separations; i++) {
+        if (pparams->color[i].color_info_valid == false) {
+            const devn_separation_name * dev_sep_name =
+                            &(pdevn_params->separations.names[i]);
+            gsicc_colorname_t *name_entry;
+
+            name_entry = dev_profile->spotnames->head;
+
+            for (j = 0; j < dev_profile->device_profile[0]->num_comps; j++) {
+                client_color.paint.values[j] = 0.0;
+            }
+            for (j = 0; j < dev_profile->spotnames->count; j++) {
+                if (compare_color_names(dev_sep_name->data, dev_sep_name->size,
+                                name_entry->name, name_entry->length)) {
+                    /*
+                     * Create a copy of the color space and then modify it
+                     * to force the use of the alternate color space.
+                     */
+                    client_color.paint.values[j] = 1.0;
+                    capture_spot_equivalent_cmyk_colors(pdev, pgs, &client_color,
+                                                pcs, i, pparams);
+                    break;
+                }
+                /* Did not match, grab the next one */
+                name_entry = name_entry->next;
+            }
+        }
+    }
+}
+
+
 static void
 update_DeviceN_spot_equivalent_cmyk_colors(gx_device * pdev,
                     const gs_state * pgs, const gs_color_space * pcs,
@@ -237,7 +287,10 @@ update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     gs_devn_params * pdevn_params, equivalent_cmyk_color_params * pparams)
 {
     const gs_color_space * pcs;
+    cmm_dev_profile_t *dev_profile;
+    int code;
 
+    code = dev_proc(pdev, get_profile)(pdev, &dev_profile);
     /* If all of the color_info is valid then there is nothing to do. */
     if (pparams->all_color_info_valid)
         return;
@@ -263,6 +316,14 @@ update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
         else if (pcs->type->index == gs_color_space_index_DeviceN) {
             update_DeviceN_spot_equivalent_cmyk_colors(pdev, pgs, pcs,
                                                 pdevn_params, pparams);
+            pparams->all_color_info_valid = check_all_colors_known
+                    (pdevn_params->separations.num_separations, pparams);
+        } else if (pcs->type->index == gs_color_space_index_ICC &&
+            dev_profile->spotnames != NULL) {
+            /* In this case, we are trying to set up the equivalent colors
+               for the spots in the output ICC profile */
+            update_ICC_spot_equivalent_cmyk_colors(pdev, pgs, pcs, pdevn_params, 
+                                                   pparams);
             pparams->all_color_info_valid = check_all_colors_known
                     (pdevn_params->separations.num_separations, pparams);
         }
@@ -415,7 +476,6 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     temp_profile.usefastcolor = false;  /* This avoids a few headaches */
     temp_profile.prebandthreshold = true;
     temp_profile.supports_devn = false;
-    temp_profile.device_profile[0] = curr_output_profile;
     temp_profile.device_profile[1] = NULL;
     temp_profile.device_profile[2] = NULL;
     temp_profile.device_profile[2] = NULL;
@@ -424,6 +484,22 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     temp_profile.spotnames = NULL;
     temp_profile.oi_profile = NULL;
     temp_device.icc_struct = &temp_profile;
+
+    /* The equivalent CMYK colors are used for
+       the preview of the composite image and as such should not rely
+       upon the output profile if our output profile is a DeviceN profile.
+       For example, if our output profile was CMYK + OG then if we use
+       the device profile here we may not get CMYK values that
+       even come close to the color we want to simulate.  So, for this
+       case we go ahead and use the default CMYK profile and let the user
+       beware.  Note that the actual separations will be correct however
+       for the CMYK + OG values. */
+
+    if (curr_output_profile->data_cs == gsNCHANNEL) {
+        temp_profile.device_profile[0] = temp_state.icc_manager->default_cmyk;
+    } else {
+        temp_profile.device_profile[0] = curr_output_profile;
+    }
     set_dev_proc(&temp_device, get_profile, gx_default_get_profile);
 
     /*

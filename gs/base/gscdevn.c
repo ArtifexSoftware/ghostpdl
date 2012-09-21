@@ -467,6 +467,8 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
         gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
                           gs_color_select_t select)
 {
+    int code;
+
 #ifdef DEBUG
     /*
      * Verify that the color space and imager state info match.
@@ -481,7 +483,23 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
                                 (pconc, pacs, pdc, pis, dev, select);
     }
     else {
-        gx_remap_concrete_devicen(pconc, pdc, pis, dev, select);
+    /* If we are going DeviceN out to real sep device that understands these,
+       and if the destination profile is DeviceN, we print the colors directly. 
+       Make sure to disable the DeviceN profile color map so that is does not
+       get used in gx_remap_concrete_devicen.  We probably should pass something
+       through here but it is a pain due to the change in the proc. */
+        cmm_dev_profile_t *dev_profile;
+        bool temp_val;
+
+        code = dev_proc(dev, get_profile)(dev, &dev_profile);
+        if (dev_profile->spotnames != NULL) {
+            temp_val = dev_profile->spotnames->equiv_cmyk_set;
+            dev_profile->spotnames->equiv_cmyk_set = false;
+            gx_remap_concrete_devicen(pconc, pdc, pis, dev, select);
+            dev_profile->spotnames->equiv_cmyk_set = temp_val;
+        } else {
+            gx_remap_concrete_devicen(pconc, pdc, pis, dev, select);
+        }
         return 0;
     }
 }

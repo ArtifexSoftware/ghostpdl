@@ -82,6 +82,8 @@ void  gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data,
                               cmm_profile_t *iccprofile);
 int gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent,
                                 gsicc_profile_types_t profile_type);
+void gsicc_set_devicen_equiv_colors(gx_device *dev, const gs_imager_state * pis,
+                                    cmm_profile_t *profile);
 int gsicc_set_device_profile_colorants(gx_device *dev, char *name_str);
 int gsicc_init_device_profile_struct(gx_device * dev,  char *profile_name,
                                      gsicc_profile_types_t profile_type);

@@ -124,16 +124,18 @@ gx_install_Separation(gs_color_space * pcs, gs_state * pgs)
        return code;
     gs_currentcolorspace_inline(pgs)->params.separation.use_alt_cspace =
         using_alt_color_space(pgs);
-    if (gs_currentcolorspace_inline(pgs)->params.separation.use_alt_cspace)
+    if (gs_currentcolorspace_inline(pgs)->params.separation.use_alt_cspace) {
         code = (pcs->base_space->type->install_cspace)
             (pcs->base_space, pgs);
-    /*
-     * Give the device an opportunity to capture equivalent colors for any
-     * spot colors which might be present in the color space.
-     */
-    if (code >= 0)
-        code = dev_proc(pgs->device, update_spot_equivalent_colors)
-                                                        (pgs->device, pgs);
+    } else {
+        /*
+         * Give the device an opportunity to capture equivalent colors for any
+         * spot colors which might be present in the color space.
+         */
+        if (code >= 0)
+            code = dev_proc(pgs->device, update_spot_equivalent_colors)
+                                                            (pgs->device, pgs);
+    }
     return code;
 }
 

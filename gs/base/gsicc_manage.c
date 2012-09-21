@@ -45,6 +45,9 @@
 unsigned int global_icc_index = 0;
 #endif
 
+/* Needed for gsicc_set_devicen_equiv_colors. */
+extern const gs_color_space_type gs_color_space_type_ICC;
+
 /* Static prototypes */
 
 static void gsicc_set_default_cs_value(cmm_profile_t *picc_profile,
@@ -384,6 +387,7 @@ gsicc_new_namelist(gs_memory_t *memory)
     result->count = 0;
     result->head = NULL;
     result->name_str = NULL;
+    result->color_map = NULL;
     return result;
 }
 
@@ -1011,6 +1015,9 @@ gsicc_free_spotnames(gsicc_namelist_t *spotnames, gs_memory_t * mem)
         gs_free_object(mem, curr_name, "gsicc_free_spotnames");
         curr_name = next_name;
     }
+    if (spotnames->color_map != NULL) {
+        gs_free_object(mem, spotnames->color_map, "gsicc_free_spotnames");
+    }
     if (spotnames->name_str != NULL) {
         gs_free_object(mem, spotnames->name_str, "gsicc_free_spotnames");
     }
@@ -1105,6 +1112,22 @@ gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent,
     return 0;
 }
 
+/* This is used to set up the equivalent cmyk colors for the spots that may
+   exist in an output DeviceN profile.  We do this by faking a new separation
+   space for each one */
+void
+gsicc_set_devicen_equiv_colors(gx_device *dev, const gs_imager_state * pis,
+                               cmm_profile_t *profile)
+{
+    int code; 
+    gs_state temp_state = *((gs_state*)pis);
+    gs_color_space *pcspace = gs_cspace_alloc(pis->memory->non_gc_memory,
+                                              &gs_color_space_type_ICC);
+    pcspace->cmm_icc_profile_data = profile;
+    temp_state.color[0].color_space = pcspace;
+    code = dev_proc(dev, update_spot_equivalent_colors)(dev, &temp_state);
+}
+
 /* This sets the colorants structure up in the device profile for when 
    we are dealing with DeviceN type output profiles.  Note
    that this feature is only used with the tiffsep and psdcmyk devices */
@@ -1121,6 +1144,7 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
     gsicc_namelist_t *spot_names;
     char *pch;
     int str_len = strlen(name_str);
+    int k;
 
     code = dev_proc(dev, get_profile)((gx_device *)dev, &profile_struct);
     if (profile_struct != NULL) {
@@ -1171,6 +1195,32 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
             pch = strtok(NULL, ",");
         }
         spot_names->count = count;
+        /* Create the color map.  Query the device to find out where these 
+           colorants are located.   It is possible that the device may
+           not be opened yet.  In which case, we need to make sure that 
+           when it is opened that it checks this entry and gets itself 
+           properly initialized if it is a separation device. */
+        spot_names->color_map = 
+            (gs_devicen_color_map*) gs_alloc_bytes(mem, 
+                                                   sizeof(gs_devicen_color_map),
+                                                   "gsicc_set_device_profile_colorants");
+        spot_names->color_map->num_colorants = count;
+        spot_names->color_map->num_components = count;
+
+        name_entry = spot_names->head;
+        for (k = 0; k < count; k++) {
+            int colorant_number = (*dev_proc(dev, get_color_comp_index))
+                    (dev, (const char *)name_entry->name, name_entry->length, SEPARATION_NAME);
+            name_entry = name_entry->next;
+            spot_names->color_map->color_map[k] = colorant_number;
+        }
+        /* We need to set the equivalent CMYK color for this colorant.  This is
+           done by faking out the update spot equivalent call with a special
+           imager state and color space that makes it seem like the 
+           spot color is a separation color space.  Unfortunately, we need the
+           graphic state to do this so we save it for later when we try to do 
+           our first mapping.  We then use this flag to know if we did it yet */
+        spot_names->equiv_cmyk_set = false;
     }
     return 0;
 }

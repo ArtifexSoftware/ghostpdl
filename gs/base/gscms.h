@@ -165,10 +165,21 @@ struct gsicc_colorname_s {
 
 typedef struct gsicc_namelist_s gsicc_namelist_t;
 
+#ifndef gs_devicen_color_map_DEFINED
+#  define gs_devicen_color_map_DEFINED
+typedef struct gs_devicen_color_map_s gs_devicen_color_map;
+#endif
+
 struct gsicc_namelist_s {
     int count;
     gsicc_colorname_t *head;
     char *name_str;
+    gs_devicen_color_map *color_map;
+    bool equiv_cmyk_set;   /* So that we make sure the equiv cmyk values are set */
+                           /* This can't be done at the time this structure
+                              is set up since we need the device and the graphic
+                              state for this, but instead is done when we
+                              do our first mapping */
 };
 
 /* Destination profiles for different objects */
