@@ -2727,7 +2727,7 @@ static cmsFormattersFactoryList* FactoryList = NULL;
 
 
 // Formatters management
-cmsBool  _cmsRegisterFormattersPlugin(cmsPluginBase* Data)
+cmsBool  _cmsRegisterFormattersPlugin(cmsContext id, cmsPluginBase* Data)
 {
     cmsPluginFormatters* Plugin = (cmsPluginFormatters*) Data;
     cmsFormattersFactoryList* fl ;
@@ -2739,7 +2739,7 @@ cmsBool  _cmsRegisterFormattersPlugin(cmsPluginBase* Data)
           return TRUE;
     }
     
-    fl = (cmsFormattersFactoryList*) _cmsPluginMalloc(sizeof(cmsFormattersFactoryList));
+    fl = (cmsFormattersFactoryList*) _cmsPluginMalloc(id, sizeof(cmsFormattersFactoryList));
     if (fl == NULL) return FALSE;
 
     fl ->Factory    = Plugin ->FormattersFactory;
