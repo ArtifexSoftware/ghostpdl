@@ -2862,6 +2862,36 @@ device supports those colorants.
 </dl>
 
 <dl>
+<dt><code>-sOutputICCProfile=</code><em>filename</em>
+<dd>Set the ICC profile that will be associated with
+the output device.  Care should be taken to ensure that the
+number of colorants associated with the device is the same
+as the profile.  If this is not set, an appropriate profile
+(i.e. one with the proper number of colorants) will be
+selected from those in the directory specified by ICCProfilesDir (see below).
+ Note that if the output device is CMYK + spot colorants, a CMYK
+profile can be used to provide color management for the CMYK colorants only.
+In this case, spot colors will pass through unprocessed assuming the
+device supports those colorants.
+</dl>
+
+<dl>
+<dt><code>-sICCOutputColors=</code><em>"Cyan, Magneta, Yellow, Black, Orange, Violet"</em>
+<dd>For the psdcmyk and tiffsep separation devices, the device ICC profile can
+be an N-CLR profile, which means something that includes non-traditional inks
+like Orange, Violet, etc.   In this case, the list of the colorant names in the
+order that they exist in the profile must be provided with this command line
+option.   Note that if a colorant name that is specified for the profile occurs also within 
+the document (e.g. "Orange" above), then these colorants will be assocated with
+the same separation.  It is possible through a compile time option LIMIT_TO_ICC
+defined in gdevdevn.h to restrict the output colorants of the psdcmyk and tiffsep
+device to the colorants of the ICC profile or to allow additional spot colorants
+in the document to be created as different separations.  If restricted, the other
+spot colorants will go through the alternate tint transform and then be mapped to 
+the color space defined by the N-CLR profile.
+</dl>
+
+<dl>
 <dt><code>-sRenderIntent=</code><em>intent</em>
 <dd>Set the rendering intent that should be used with the
 profile specified above by -sOutputICCProfile.  The

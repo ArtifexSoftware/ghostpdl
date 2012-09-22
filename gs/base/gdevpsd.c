@@ -48,9 +48,6 @@
 #   define MAX_CHAN 15
 #endif
 
-/* See comments below during the device set-up as to what this does */
-#define LIMIT_TO_ICC 1
-
 /* Enable logic for a local ICC output profile. */
 #define ENABLE_ICC_PROFILE 0
 

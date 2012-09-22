@@ -18,6 +18,9 @@
 #ifndef gdevdevn_INCLUDED
 # define gdevdevn_INCLUDED
 
+/* See Comments in gdevtsep.c or gdevpsd.c as to the purpose of this */
+#define LIMIT_TO_ICC 1
+
 /*
  * Define the maximum number of spot colors supported by this device.
  * This value is arbitrary.  It is set simply to define a limit on

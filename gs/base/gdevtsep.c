@@ -1393,16 +1393,67 @@ tiffsep_prn_open(gx_device * pdev)
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     tiffsep_device *pdev_sep = (tiffsep_device *) pdev;
     int code, k;
+    bool force_pdf, limit_icc, force_ps;
+    cmm_dev_profile_t *profile_struct;
 
+    /* There are 2 approaches to the use of a DeviceN ICC output profile.  
+       One is to simply limit our device to only output the colorants
+       defined in the output ICC profile.   The other is to use the 
+       DeviceN ICC profile to color manage those N colorants and
+       to let any other separations pass through unmolested.   The define 
+       LIMIT_TO_ICC sets the option to limit our device to only the ICC
+       colorants defined by -sICCOutputColors.  The pass through option 
+       (LIMIT_TO_ICC set to 0) makes life a bit more difficult since we don't 
+       know if the page_spot_colors overlap with any spot colorants that exist 
+       in the DeviceN ICC output profile. Hence we don't know how many planes
+       to use for our device.  This is similar to the issue when processing
+       a PostScript file.  So that I remember, the cases are
+       DeviceN Profile?     limit_icc       Result
+       0                    0               force_pdf 0 force_ps 0  (no effect)
+       0                    0               force_pdf 0 force_ps 0  (no effect)
+       1                    0               force_pdf 0 force_ps 1  (colorants not known)
+       1                    1               force_pdf 1 force_ps 0  (colorants known)
+       */
+#if LIMIT_TO_ICC
+    limit_icc = true;
+#else
+    limit_icc = false;
+#endif
+    code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
+    if (profile_struct->spotnames == NULL) {
+        force_pdf = false;
+        force_ps = false;
+    } else {
+        if (limit_icc) {
+            force_pdf = true;
+            force_ps = false;
+        } else {
+            force_pdf = false;
+            force_ps = true;
+        }
+    }
     /* With planar the depth can be more than 64.  Update the color
        info to reflect the proper depth and number of planes */
     pdev_sep->warning_given = false;
-    if (pdev_sep->devn_params.page_spot_colors >= 0) {
-        pdev->color_info.num_components =
-            (pdev_sep->devn_params.page_spot_colors
-                                 + pdev_sep->devn_params.num_std_colorant_names);
-        if (pdev->color_info.num_components > pdev->color_info.max_components)
-            pdev->color_info.num_components = pdev->color_info.max_components;
+    if ((pdev_sep->devn_params.page_spot_colors >= 0 || force_pdf) && !force_ps) {
+        if (force_pdf) {
+            /* Use the information that is in the ICC profle.  We will be here
+               anytime that we have limited ourselves to a fixed number
+               of colorants specified by the DeviceN ICC profile */
+            pdev->color_info.num_components = 
+                (pdev_sep->devn_params.separations.num_separations 
+                 + pdev_sep->devn_params.num_std_colorant_names);
+            if (pdev->color_info.num_components > pdev->color_info.max_components)
+                pdev->color_info.num_components = pdev->color_info.max_components;
+            /* Limit us only to the ICC colorants */
+            pdev->color_info.max_components = pdev->color_info.num_components;
+        } else {
+            pdev->color_info.num_components =
+                (pdev_sep->devn_params.page_spot_colors
+                                     + pdev_sep->devn_params.num_std_colorant_names);
+            if (pdev->color_info.num_components > pdev->color_info.max_components)
+                pdev->color_info.num_components = pdev->color_info.max_components;
+        }
     } else {
         /* We do not know how many spots may occur on the page.
            For this reason we go ahead and allocate the maximum that we
