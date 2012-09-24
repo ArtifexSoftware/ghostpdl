@@ -2876,13 +2876,13 @@ device supports those colorants.
 </dl>
 
 <dl>
-<dt><code>-sICCOutputColors=</code><em>"Cyan, Magneta, Yellow, Black, Orange, Violet"</em>
+<dt><code>-sICCOutputColors=</code><em>"Cyan, Magenta, Yellow, Black, Orange, Violet"</em>
 <dd>For the psdcmyk and tiffsep separation devices, the device ICC profile can
 be an N-CLR profile, which means something that includes non-traditional inks
 like Orange, Violet, etc.   In this case, the list of the colorant names in the
 order that they exist in the profile must be provided with this command line
 option.   Note that if a colorant name that is specified for the profile occurs also within 
-the document (e.g. "Orange" above), then these colorants will be assocated with
+the document (e.g. "Orange" above), then these colorants will be associated with
 the same separation.  It is possible through a compile time option LIMIT_TO_ICC
 defined in gdevdevn.h to restrict the output colorants of the psdcmyk and tiffsep
 device to the colorants of the ICC profile or to allow additional spot colorants
