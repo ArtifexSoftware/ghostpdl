@@ -146,7 +146,13 @@ In addition to being able to define undefined source colors, it is possible to d
 \textcolor{red}{-sOutputICCProfile = my\_device\_profile.icc}\\
 
  \noindent Care should be taken to make sure that the number of components associated with the output device is the same as the number of components for the output device ICC profile (i.e. use an RGB profile for an RGB device).  If the destination device is CMYK + SPOT colorants, then it is possible to specify either a CMYK ICC profile or an N-Color ICC profile for the device.  If a CMYK profile is specified, then only the CMYK colorants will be color managed.  If an output profile is not specified, then the default CMYK profile is used as the output profile.\\
+ 
+ If an N-Color (NCLR) ICC profile is specified for the output device (valid for tiffsep and psdcmyk devices), then it is necessary to specify the name of the colorants in the profile.   This specification is done using\\
+ 
+\textcolor{red}{-sICCOutputColors=``Cyan, Magenta, Yellow, Black, Orange, Violet''}\\
 
+ \noindent Where the colorants listed are shown as an example.  The list of the colorant names must be in the order that they exist in the profile.  Note that if a colorant name that is specified for the profile occurs also within the document (e.g. "Orange" above), then these colorants will be associated with the same separation. It is possible through a compile time option LIMIT\_TO\_ICC defined in gdevdevn.h to restrict the output colorants of the psdcmyk and tiffsep device to the colorants of the ICC profile or to allow additional spot colorants in the document to be created as different separations. If restricted, the other spot colorants will go through the alternate tint transform and then be mapped to the color space defined by the N-CLR profile.\\
+    
 A directory can be defined, which will be searched to find the above defined ICC profiles.  This makes it easier for users who have their profiles contained in a single directory and do not wish to append the full path name in the above command line options.  The directory is set using\\
 
 \textcolor{red}{-sICCProfilesDir = c:/my\_icc\_profiles}\\
