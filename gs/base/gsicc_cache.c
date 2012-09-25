@@ -790,7 +790,7 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                                                    cms_output_profile,
                                                    cms_devlink_profile,
                                                    rendering_params,
-                                                   cache_mem);
+                                                   cache_mem->non_gc_memory);
         if (include_softproof) {
             gx_monitor_leave(proof_profile->lock);
         }
