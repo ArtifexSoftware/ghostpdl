@@ -20,6 +20,7 @@
 #include "gsutil.h"
 #include "idict.h"
 #include "store.h"
+#include "gsstate.h"
 
 /*
  * Many of the procedures in this file are public only so they can be
@@ -253,15 +254,33 @@ zbitshift(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int shift;
+    short max_shift = (sizeof(ps_int) * 8) - 1;
+    short max_shift32 = (sizeof(ps_int32) * 8) - 1;
 
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
-    if (op->value.intval < -31 || op->value.intval > 31)
+    if ((op->value.intval < -max_shift) || (op->value.intval > max_shift))
         op[-1].value.intval = 0;
-    else if ((shift = op->value.intval) < 0)
-        op[-1].value.intval = ((uint)(op[-1].value.intval)) >> -shift;
-    else
-        op[-1].value.intval <<= shift;
+    else if (sizeof(ps_int) != 4 && gs_currentcpsimode(imemory) && (op->value.intval < -max_shift32 || op->value.intval > max_shift32))
+        op[-1].value.intval = 0;
+    else if ((shift = op->value.intval) < 0) {
+        if (sizeof(ps_int) != 4 && gs_currentcpsimode(imemory)) {
+            ps_int32 val = (ps_int32)(op[-1].value.intval);
+            op[-1].value.intval = (ps_int)((uint)(val)) >> -shift;
+        }
+        else {
+            op[-1].value.intval = ((ps_int)(op[-1].value.intval)) >> -shift;
+        }
+    }
+    else {
+        if (sizeof(ps_int) != 4 && gs_currentcpsimode(imemory)) {
+            ps_int32 val = (ps_int32)(op[-1].value.intval);
+
+            op[-1].value.intval = (ps_int)(val << shift);
+        }
+        else
+           op[-1].value.intval <<= shift;
+    }
     pop(1);
     return 0;
 }

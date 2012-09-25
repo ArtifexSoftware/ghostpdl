@@ -1646,7 +1646,7 @@ $(DD)tiffs.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffs_) $(GLD)page.dev\
 	$(ADDMOD) $(DD)tiffs -include $(GLD)page $(tiff_i_)
 
 $(GLOBJ)gdevtifs.$(OBJ) : $(GLSRC)gdevtifs.c $(PDEVH) $(stdint__h) $(stdio__h) $(time__h)\
- $(gdevtifs_h) $(gscdefs_h) $(gstypes_h)
+ $(gdevtifs_h) $(gscdefs_h) $(gstypes_h) $(stream_h) $(strmio_h)
 	$(GLCC) $(I_)$(GLI_) $(II)$(TI_)$(_I) $(GLO_)gdevtifs.$(OBJ) $(C_) $(GLSRC)gdevtifs.c
 
 # Black & white, G3/G4 fax

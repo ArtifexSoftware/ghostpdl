@@ -29,6 +29,7 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "estack.h"
+#include "gsstate.h"
 
 /* Forward references */
 static int write_string(ref *, stream *);
@@ -184,7 +185,7 @@ zreadhexstring_continue(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     length = op->value.intval & 0xFFFFFF;
-    odd = op->value.intval >> 24;
+    odd = (char)(op->value.intval >> 24);
 
     if (length > r_size(op - 1) || odd < -1 || odd > 0xF)
         return_error(e_rangecheck);
@@ -453,7 +454,7 @@ zbytesavailable(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     stream *s;
-    long avail;
+    gs_offset_t avail;
 
     check_read_file(i_ctx_p, s, op);
     switch (savailable(s, &avail)) {
@@ -463,6 +464,9 @@ zbytesavailable(i_ctx_t *i_ctx_p)
             avail = -1;
         case 0:
             ;
+    }
+    if (gs_currentcpsimode(imemory)) {
+        avail = (ps_int32)avail;
     }
     make_int(op, avail);
     return 0;
@@ -623,7 +627,7 @@ zsetfileposition(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     check_file(s, op - 1);
-    if (sseek(s, op->value.intval) < 0)
+    if (sseek(s, (gs_offset_t)op->value.intval) < 0)
         return_error(e_ioerror);
     pop(2);
     return 0;

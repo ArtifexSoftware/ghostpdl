@@ -22,6 +22,10 @@
 /* Ghostscript uses transitional LFS functions. */
 #define _LARGEFILE64_SOURCE 1
 
+#ifndef _FILE_OFFSET_BITS
+#define _FILE_OFFSET_BITS 64
+#endif
+
 /*
  * Here we deal with the vagaries of various C compilers.  We assume that:
  *      ANSI-standard Unix compilers define __STDC__.

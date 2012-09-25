@@ -54,17 +54,17 @@ scan_number(const byte * str, const byte * end, int sign,
         1e0, 1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6
     };
 
-    int ival;
+    ps_int ival;
     double dval;
     int exp10;
     int code = 0;
     int c, d;
-    uint max_scan; /* max signed or unsigned int */
+    ps_uint max_scan; /* max signed or unsigned int */
     const byte *const decoder = scan_char_decoder;
 #define IS_DIGIT(d, c)\
   ((d = decoder[c]) < 10)
 #define WOULD_OVERFLOW(val, d, maxv)\
-  (val >= maxv / 10 && (val > maxv / 10 || d > (int)(maxv % 10)))
+  (val >= maxv / 10 && (val > maxv / 10 || d > (int64_t)(maxv % 10)))
 
     GET_NEXT(c, sp, return_error(e_syntaxerror));
     if (!IS_DIGIT(d, c)) {
@@ -98,15 +98,15 @@ scan_number(const byte * str, const byte * end, int sign,
             goto ind;
         ival = ival * 10 + d;
     }
-    max_scan = scanner_options & SCAN_PDF_UNSIGNED && sign >= 0 ? ~0 : max_int;
+    max_scan = scanner_options & SCAN_PDF_UNSIGNED && sign >= 0 ? ~((ps_int)0) : MAX_PS_INT;
     for (;; ival = ival * 10 + d) {
         GET_NEXT(c, sp, goto iret);
         if (!IS_DIGIT(d, c))
             break;
-        if (WOULD_OVERFLOW(((unsigned)ival), d, max_scan)) {
-            if (ival == max_int / 10 && d == (max_int % 10) + 1 && sign < 0) {
+        if (WOULD_OVERFLOW(((ps_uint)ival), d, max_scan)) {
+            if (ival == MAX_PS_INT / 10 && d == (MAX_PS_INT % 10) + 1 && sign < 0) {
                 GET_NEXT(c, sp, c = EOFC);
-                dval = -(double)min_int;
+                dval = -(double)MIN_PS_INT;
                 if (c == 'e' || c == 'E') {
                     exp10 = 0;
                     goto fs;
@@ -115,7 +115,7 @@ scan_number(const byte * str, const byte * end, int sign,
                     exp10 = 0;
                     goto fd;
                 } else if (!IS_DIGIT(d, c)) {
-                    ival = min_int;
+                    ival = MIN_PS_INT;
                     break;
                 }
             } else
@@ -144,7 +144,7 @@ scan_number(const byte * str, const byte * end, int sign,
         case '#':
             {
                 const int radix = ival;
-                uint uval = 0, imax;
+                ps_int uval = 0, imax;
 
                 if (sign || radix < min_radix || radix > max_radix)
                     return_error(e_syntaxerror);
@@ -154,19 +154,19 @@ scan_number(const byte * str, const byte * end, int sign,
 
                     switch (radix) {
                         case 2:
-                            shift = 1, imax = max_uint >> 1;
+                            shift = 1, imax = MAX_PS_UINT >> 1;
                             break;
                         case 4:
-                            shift = 2, imax = max_uint >> 2;
+                            shift = 2, imax = MAX_PS_UINT >> 2;
                             break;
                         case 8:
-                            shift = 3, imax = max_uint >> 3;
+                            shift = 3, imax = MAX_PS_UINT >> 3;
                             break;
                         case 16:
-                            shift = 4, imax = max_uint >> 4;
+                            shift = 4, imax = MAX_PS_UINT >> 4;
                             break;
                         case 32:
-                            shift = 5, imax = max_uint >> 5;
+                            shift = 5, imax = MAX_PS_UINT >> 5;
                             break;
                         default:	/* can't happen */
                             return_error(e_rangecheck);
@@ -183,9 +183,9 @@ scan_number(const byte * str, const byte * end, int sign,
                             return_error(e_limitcheck);
                     }
                 } else {
-                    int irem = max_uint % radix;
+                    ps_int irem = MAX_PS_UINT % radix;
 
-                    imax = max_uint / radix;
+                    imax = MAX_PS_UINT / radix;
                     for (;; uval = uval * radix + d) {
                         GET_NEXT(c, sp, break);
                         d = decoder[c];
@@ -200,12 +200,19 @@ scan_number(const byte * str, const byte * end, int sign,
                             return_error(e_limitcheck);
                     }
                 }
-                make_int(pref, uval);
+                if (scanner_options & SCAN_CPSI_MODE) {
+                    ps_uint32 int1 = 0;
+                    int1 |= (uval & 0xffffffff);
+                    make_int(pref, (ps_int)((ps_int32)int1));
+                }
+                else
+                    make_int(pref, uval);
+
                 return code;
             }
     }
 iret:
-    make_int(pref, (sign < 0 ? -ival : ival));
+        make_int(pref, (sign < 0 ? (ps_int)-ival : (ps_int)ival));
     return code;
 
     /* Accumulate a double in dval. */

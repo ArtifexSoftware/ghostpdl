@@ -40,13 +40,13 @@ typedef struct {
     /* Store # available for reading. */
     /* Return 0 if OK, ERRC if error or not implemented. */
 #define stream_proc_available(proc)\
-  int proc(stream *, long *)
+  int proc(stream *, gs_offset_t *)
     stream_proc_available((*available));
 
     /* Set position. */
     /* Return 0 if OK, ERRC if error or not implemented. */
 #define stream_proc_seek(proc)\
-  int proc(stream *, long)
+  int proc(stream *, gs_offset_t)
     stream_proc_seek((*seek));
 
     /* Clear buffer and, if relevant, unblock channel. */
@@ -141,7 +141,7 @@ struct stream_s {
 #define s_can_seek(s) (((s)->modes & s_mode_seek) != 0)
     gs_string cbuf_string;	/* cbuf/cbsize if cbuf is a string, */
                                 /* 0/? if not */
-    long position;		/* file position of beginning of */
+    gs_offset_t position;		/* file position of beginning of */
                                 /* buffer */
     stream_procs procs;
     stream *strm;		/* the underlying stream, non-zero */
@@ -179,8 +179,8 @@ struct stream_s {
     uint file_modes;		/* access modes for the file, */
                                 /* may be a superset of modes */
     /* Clients must only set the following through sread_subfile. */
-    long file_offset;		/* starting point in file (reading) */
-    long file_limit;		/* ending point in file (reading) */
+    gs_offset_t file_offset;		/* starting point in file (reading) */
+    gs_offset_t file_limit;		/* ending point in file (reading) */
 };
 
 /* The descriptor is only public for subclassing. */
@@ -217,7 +217,7 @@ extern_st(st_stream);
 /* it actively disables them. */
 /* The close routine must do a flush if needed. */
 #define sseekable(s) s_can_seek(s)
-int savailable(stream *, long *);
+int savailable(stream *, gs_offset_t *);
 
 #define sreset(s) (*(s)->procs.reset)(s)
 #define sflush(s) (*(s)->procs.flush)(s)
@@ -246,7 +246,7 @@ int sungetc(stream *, byte);	/* ERRC on error, 0 if OK */
 #define sputback(s) ((s)->srptr--)	/* can only do this once! */
 #define seofp(s) (sendrp(s) && (s)->end_status == EOFC)
 #define serrorp(s) (sendrp(s) && (s)->end_status == ERRC)
-int spskip(stream *, long, long *);
+int spskip(stream *, gs_offset_t, gs_offset_t *);
 
 #define sskip(s,nskip,pskipped) spskip(s, (long)(nskip), pskipped)
 /*
@@ -277,10 +277,10 @@ int sputs(stream *, const byte *, uint, uint *);
 int s_process_write_buf(stream *, bool);
 
 /* Following are only valid for positionable streams. */
-long stell(stream *);
-int spseek(stream *, long);
+gs_offset_t stell(stream *);
+int spseek(stream *, gs_offset_t);
 
-#define sseek(s,pos) spseek(s, (long)(pos))
+#define sseek(s,pos) spseek(s, (gs_offset_t)(pos))
 
 /* Following are for high-performance reading clients. */
 /* bufptr points to the next item. */
@@ -383,7 +383,7 @@ void sread_file(stream *, FILE *, byte *, uint),
     sappend_file(stream *, FILE *, byte *, uint);
 
 /* Confine reading to a subfile.  This is primarily for reusable streams. */
-int sread_subfile(stream *s, long start, long length);
+int sread_subfile(stream *s, gs_offset_t start, gs_offset_t length);
 
 /* Set the file name of a stream, copying the name. */
 /* Return <0 if the copy could not be allocated. */
@@ -406,8 +406,8 @@ void s_disable(stream *);
 /* Generic stream procedures exported for templates */
 int s_std_null(stream *);
 void s_std_read_reset(stream *), s_std_write_reset(stream *);
-int s_std_read_flush(stream *), s_std_write_flush(stream *), s_std_noavailable(stream *, long *),
-     s_std_noseek(stream *, long), s_std_close(stream *), s_std_switch_mode(stream *, bool);
+int s_std_read_flush(stream *), s_std_write_flush(stream *), s_std_noavailable(stream *, gs_offset_t *),
+     s_std_noseek(stream *, gs_offset_t), s_std_close(stream *), s_std_switch_mode(stream *, bool);
 
 /* Generic procedures for filters. */
 int s_filter_write_flush(stream *), s_filter_close(stream *);

@@ -85,6 +85,10 @@ typedef ulong bits32;
 #define min_long (-1L << (arch_sizeof_long * 8 - 1))
 #define max_long (~min_long)
 
+#define min_int64_t (-((int64_t)1) << (sizeof(int64_t) * 8 - 1))
+#define max_int64_t (~min_int64_t)
+#define max_uint64_t ((uint64_t)~((uint64_t)0) + (uint64_t)0)
+
 /*
  * The maximum values for the unsigned types are defined in arch.h,
  * because so many compilers handle unsigned constants wrong.

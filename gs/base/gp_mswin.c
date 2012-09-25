@@ -46,6 +46,7 @@
 #include "gpmisc.h"
 #include "gserrors.h"
 #include "gsexit.h"
+#include "scommon.h"
 
 #include "windows_.h"
 #include <stdarg.h>
@@ -798,7 +799,7 @@ FILE *gp_open_printer_64(const gs_memory_t *mem,
     int _fseeki64( FILE *, int64_t, int);
 #endif
 
-int64_t gp_ftell_64(FILE *strm)
+gs_offset_t gp_ftell_64(FILE *strm)
 {
 #if !defined(_MSC_VER)
     return ftell(strm);
@@ -809,7 +810,7 @@ int64_t gp_ftell_64(FILE *strm)
 #endif
 }
 
-int gp_fseek_64(FILE *strm, int64_t offset, int origin)
+int gp_fseek_64(FILE *strm, gs_offset_t offset, int origin)
 {
 #if !defined(_MSC_VER)
     return fseek(strm, offset, origin);

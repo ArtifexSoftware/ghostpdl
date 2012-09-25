@@ -37,7 +37,7 @@ AC_PROG_CC
 # Checks for header files.
 AC_FUNC_ALLOCA
 AC_HEADER_RESOLV
-AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h inttypes.h langinfo.h libintl.h limits.h locale.h malloc.h memory.h netdb.h netinet/in.h nl_types.h stddef.h stdint.h stdlib.h string.h strings.h sys/ioctl.h sys/socket.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h float.h inttypes.h langinfo.h libintl.h limits.h locale.h malloc.h memory.h netdb.h netinet/in.h nl_types.h stddef.h stdint.h stdlib.h string.h strings.h sys/ioctl.h sys/socket.h sys/time.h unistd.h inttypes.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -72,11 +72,20 @@ AC_SUBST(HAVE_MKSTEMP)
 AC_CHECK_FUNCS([fopen64], [HAVE_FILE64=-DHAVE_FILE64])
 AC_SUBST(HAVE_FILE64)
 
+AC_CHECK_FUNCS([fseeko], [HAVE_FSEEKO=-DHAVE_FSEEKO])
+AC_SUBST(HAVE_FSEEKO)
+
 AC_CHECK_FUNCS([mkstemp64], [HAVE_MKSTEMP64=-DHAVE_MKSTEMP64])
 AC_SUBST(HAVE_MKSTEMP64)
 
 AC_CHECK_FUNCS([setlocale], [HAVE_SETLOCALE=-DHAVE_SETLOCALE])
 AC_SUBST(HAVE_SETLOCALE)
+
+if test "x$ac_cv_header_inttypes_h" = xyes; then
+  HAVE_INTTYPES="-DHAVE_INTTYPES_H=1"
+fi
+
+AC_SUBST(HAVE_INTTYPES)
 
 dnl --------------------------------------------------
 dnl Set options that we want to pass into all other

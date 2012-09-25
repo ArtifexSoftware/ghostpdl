@@ -210,9 +210,26 @@ currentdict /tt_tag_dict .undef
 % We used to use the checkSumAdjustment value from the font, but this is
 % not reliable, since some fonts don't set it correctly.
 % Note that we must do this in a string to make it immune to save/restore.
-/xuidstring <80000000> def
+
+% handle 64 bit integer objects
+/xuidstring 16#ffffffff 0 gt
+{
+  <8000000000000000>
+}
+{
+  <80000000>
+} ifelse def
 /curxuid {		% - curxuid <int>
+  .getCPSImode
+  //false .setCPSImode
   0 xuidstring { exch 8 bitshift exch add } forall
+  % for tbe benefit of pdfwrite/ps2write we want the resulting XUID contents
+  % to fit into a 32 bit value
+  16#ffffffff 0 gt
+  {
+    16#ffffffff idiv
+  } if
+  exch .setCPSImode
 } bind def
 /nextxuid {		% - nextxuid -
   3 -1 0 {
@@ -263,7 +280,7 @@ currentdict /tt_tag_dict .undef
 } bind def
 
 16#ffffffff 0 gt {  % 64-bit sign extension
-  { /curxuid /gets32 /gets32a} {
+  { /gets32 /gets32a} {
     mark 1 index load aload pop { 16#80000000 xor 16#80000000 sub } aload pop
     .packtomark cvx def
   } bind forall

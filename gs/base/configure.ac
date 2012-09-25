@@ -280,7 +280,7 @@ dnl --------------------------------------------------
 
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([errno.h fcntl.h limits.h malloc.h memory.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/time.h sys/times.h syslog.h unistd.h dirent.h ndir.h sys/dir.h sys/ndir.h])
+AC_CHECK_HEADERS([errno.h fcntl.h limits.h malloc.h memory.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/time.h sys/times.h syslog.h unistd.h dirent.h ndir.h sys/dir.h sys/ndir.h inttypes.h])
 
 dnl --------------------------------------------------
 dnl Check for *BSD and apply BSD Make workaround
@@ -353,6 +353,10 @@ fi
 
 if test "x$ac_cv_header_sys_times_h" = xyes; then
         GCFLAGS="$GCFLAGS -DHAVE_SYS_TIMES_H=1"
+fi
+
+if test "x$ac_cv_header_inttypes_h" = xyes; then
+        GCFLAGS="$GCFLAGS -DHAVE_INTTYPES_H=1"
 fi
 
 dnl try to find a 64 bit type for devicen color index
@@ -1840,6 +1844,9 @@ AC_SUBST(HAVE_MKSTEMP)
 
 AC_CHECK_FUNCS([fopen64], [HAVE_FILE64=-DHAVE_FILE64])
 AC_SUBST(HAVE_FILE64)
+
+AC_CHECK_FUNCS([fseeko], [HAVE_FSEEKO=-DHAVE_FSEEKO])
+AC_SUBST(HAVE_FSEEKO)
 
 AC_CHECK_FUNCS([mkstemp64], [HAVE_MKSTEMP64=-DHAVE_MKSTEMP64])
 AC_SUBST(HAVE_MKSTEMP64)

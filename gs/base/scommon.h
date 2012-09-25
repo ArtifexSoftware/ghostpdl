@@ -22,6 +22,7 @@
 #include "gsmemory.h"
 #include "gstypes.h"		/* for gs_string */
 #include "gsstype.h"		/* for extern_st */
+#include "stdint_.h"         /* for int64_t */
 
 /*
  * There are three major structures involved in the stream package.
@@ -34,6 +35,15 @@
 #ifndef stream_DEFINED
 #  define stream_DEFINED
 typedef struct stream_s stream;
+#endif
+
+/* We really want our offset type to be 64 bit for large file support
+ * but this allows a particular port to specficy a prefered data type
+ */
+#ifdef GS_OFFSET_T
+typedef GS_OFFSET_T gs_offset_t;
+#else
+typedef int64_t gs_offset_t;
 #endif
 
 /*

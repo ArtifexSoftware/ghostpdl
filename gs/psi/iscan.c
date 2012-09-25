@@ -701,7 +701,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                 uint size = ref_stack_count_inline(&o_stack) - pstack;
                 ref arr;
 
-                if_debug4m('S', imemory, "[S}]d=%d, s=%d->%d, c=%d\n",
+                if_debug4m('S', imemory, "[S}]d=%"PRIu32", s=%"PRIu32"->%"PRIpsint", c=%"PRIu32"\n",
                            pdepth, pstack,
                            (pstack == pdepth ? 0 :
                            ref_stack_index(&o_stack, size)->value.intval),

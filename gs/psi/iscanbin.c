@@ -855,13 +855,13 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, ref * pref,
  * but it always write bytes 0 and 2-7.
  */
 int
-encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, int *ref_offset,
-                    int *char_offset, byte *str)
+encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, ps_int *ref_offset,
+                    ps_int *char_offset, byte *str)
 {
     bin_seq_type_t type;
     uint size = 0;
     int format = (int)ref_binary_object_format.value.intval;
-    int value = 0;
+    ps_int value = 0;
     ref nstr;
 
     switch (r_type(obj)) {
@@ -881,7 +881,7 @@ encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, int *ref_offset,
                 /* The PLRM allocates exactly 4 bytes for reals. */
                 return_error(e_rangecheck);
             }
-            value = *(const int *)&obj->value.realval;
+            value = *(const ps_int *)&obj->value.realval;
 #if !(ARCH_FLOATS_ARE_IEEE && BYTE_SWAP_IEEE_NATIVE_REALS)
             if (format >= 3) {
                 /* Never byte-swap native reals -- use native byte order. */

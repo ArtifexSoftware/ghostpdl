@@ -289,8 +289,8 @@ make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs, long offset, long length)
 }
 /* ----------- Reusable array-of-strings stream ------------- */
 
-static int  s_aos_available(stream *, long *);
-static int  s_aos_seek(stream *, long);
+static int  s_aos_available(stream *, gs_offset_t *);
+static int  s_aos_seek(stream *, gs_offset_t);
 static void s_aos_reset(stream *s);
 static int  s_aos_flush(stream *s);
 static int  s_aos_close(stream *);
@@ -379,7 +379,7 @@ make_aos(i_ctx_t *i_ctx_p, os_ptr op, int blk_sz, int blk_sz_last, uint file_sz)
 
 /* Return the number of available bytes */
 static int
-s_aos_available(stream *s, long *pl)
+s_aos_available(stream *s, gs_offset_t *pl)
 {
     *pl = ((aos_state_t *)s->state)->file_sz - stell(s);
     return 0;
@@ -387,7 +387,7 @@ s_aos_available(stream *s, long *pl)
 
 /* Seek in a string being read.  Return 0 if OK, ERRC if not. */
 static int
-s_aos_seek(register stream * s, long pos)
+s_aos_seek(register stream * s, gs_offset_t pos)
 {
     uint end = s->srlimit - s->cbuf + 1;
     long offset = pos - s->position;

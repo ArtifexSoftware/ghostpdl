@@ -23,6 +23,7 @@
 #include "gsccode.h"
 #include "plsymbol.h"
 #include "pldict.h"
+#include "stream.h" /* required by strmio.h */
 #include "strmio.h"
 
 /* ---------------- PCL-specified definitions ---------------- */

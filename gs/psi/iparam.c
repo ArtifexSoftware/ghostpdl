@@ -65,7 +65,7 @@ ref_to_key(const ref * pref, gs_param_key_t * key, iparam_list *plist)
         int len;
         byte *buf;
 
-        sprintf(istr, "%d", pref->value.intval);
+        sprintf(istr, "%"PRIpsint, pref->value.intval);
         len = strlen(istr);
         /* GC will take care of freeing this: */
         buf = gs_alloc_string(plist->memory, len, "ref_to_key");

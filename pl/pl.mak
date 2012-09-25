@@ -59,7 +59,8 @@ plvalue_h=$(PLSRC)plvalue.h
 plvocab_h=$(PLSRC)plvocab.h
 romfnttab_h=$(PLSRC)romfnttab.h
 # Out of order because of inclusion
-plfont_h=$(PLSRC)plfont.h $(gsccode_h) $(plsymbol_h)
+plfont_h=$(PLSRC)plfont.h $(gsccode_h) $(plsymbol_h) \
+         $(pldict_h) $(stream_h) $(strmio_h)
 plchar_h=$(PLSRC)plchar.h
 ################ PJL ################
 
@@ -248,7 +249,7 @@ $(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(pllfont_h) $(uconfig_h) $(AK)\
 
 # artifex font loading module.
 $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(pllfont_h) $(AK)\
-	$(ctype__h) $(stdio__h) $(string__h)\
+	$(ctype__h) $(stdio__h) $(string__h) $(strmio_h) $(stream_h)\
 	$(gx_h) $(gp_h) $(gsccode_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
 	$(gxfont_h) $(gxfont42_h) $(gxiodev_h) \
         $(plfont_h) $(pldict_h) $(plvalue_h) $(plftable_h)

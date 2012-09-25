@@ -1008,7 +1008,8 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
             /* Special operators. */
         case plain_exec(tx_op_add):
 x_add:      INCR(x_add);
-            if ((code = zop_add(iosp)) < 0)
+            osp = iosp; /* sync o_stack */
+            if ((code = zop_add(i_ctx_p)) < 0)
                 return_with_error_tx_op(code);
             iosp--;
             next_either();
@@ -1105,7 +1106,8 @@ x_roll:     INCR(x_roll);
             next_either();
         case plain_exec(tx_op_sub):
 x_sub:      INCR(x_sub);
-            if ((code = zop_sub(iosp)) < 0)
+            osp = iosp; /* sync o_stack */
+            if ((code = zop_sub(i_ctx_p)) < 0)
                 return_with_error_tx_op(code);
             iosp--;
             next_either();

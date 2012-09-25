@@ -31,6 +31,7 @@
 #include "store.h"
 #include "igstate.h"            /* for gs_currentcpsimode */
 #include "memento.h"
+#include "iscan.h"
 
 /**********************************************************************/
 
@@ -404,6 +405,12 @@ zsetCPSImode(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     check_type(*op, t_boolean);
     gs_setcpsimode(imemory, op->value.boolval);
+    if (op->value.boolval) {
+        i_ctx_p->scanner_options |= SCAN_CPSI_MODE;
+    }
+    else {
+        i_ctx_p->scanner_options &= ~(int)SCAN_CPSI_MODE;
+    }
     pop(1);
     return 0;
 }

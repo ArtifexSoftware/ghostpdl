@@ -998,7 +998,7 @@ in:                             /* Initialize for a new page. */
                     /* even after decompression if compressed. */
 #ifdef DEBUG
                     if (planes * out_bytes > cbuf_size) {
-                        mlprintf6(mem, "bitmap size exceeds buffer!  width=%d raster=%d height=%d\n    file pos %ld buf pos %d/%d\n",
+                        mlprintf6(mem, "bitmap size exceeds buffer!  width=%d raster=%d height=%d\n    file pos %"PRId64" buf pos %d/%d\n",
                                   state.rect.width, raster,
                                   state.rect.height,
                                   stell(s), (int)(cbp - cbuf.data),
@@ -2077,7 +2077,7 @@ idata:                  data_size = 0;
                     goto out;
                 continue;
             default:
-              bad_op:mlprintf5(mem, "Bad op %02x band y0 = %d file pos %ld buf pos %d/%d\n",
+              bad_op:mlprintf5(mem, "Bad op %02x band y0 = %d file pos %"PRId64" buf pos %d/%d\n",
                  op, y0, stell(s), (int)(cbp - cbuf.data), (int)(cbuf.end - cbuf.data));
                 {
                     const byte *pp;

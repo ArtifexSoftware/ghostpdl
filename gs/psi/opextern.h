@@ -45,9 +45,9 @@ int zrepeat(i_ctx_t *);
 int zroll(i_ctx_t *);
 int zsub(i_ctx_t *);
 /* Internal entry points for the interpreter. */
-int zop_add(ref *);
+int zop_add(i_ctx_t *);
 int zop_def(i_ctx_t *);
-int zop_sub(ref *);
+int zop_sub(i_ctx_t *);
 
 /* Operators exported for server loop implementations. */
 int zflush(i_ctx_t *);

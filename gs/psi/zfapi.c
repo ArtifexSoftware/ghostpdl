@@ -639,7 +639,7 @@ static ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int inde
                             length += strlen(Buffer) + 1;
                             break;
                         case t_integer:
-                            sprintf(Buffer, "%d", Element.value.intval);
+                            sprintf(Buffer, "%"PRIpsint, Element.value.intval);
                             length += strlen(Buffer) + 1;
                             break;
                         case t_operator:
@@ -841,7 +841,7 @@ static int FAPI_FF_get_proc(FAPI_font *ff, fapi_font_feature var_id, int index, 
                             ptr += strlen(Buf);
                             break;
                         case t_integer:
-                            sprintf(Buf, "%d", Element.value.intval);
+                            sprintf(Buf, "%"PRIpsint, Element.value.intval);
                             strcpy(ptr, Buf);
                             ptr += strlen(Buf);
                             break;

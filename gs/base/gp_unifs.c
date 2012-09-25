@@ -29,9 +29,11 @@
 #include "unistd_.h"
 #include <stdlib.h>             /* for mkstemp/mktemp */
 
-#if defined(__MINGW32__) && __MINGW32__ == 1
+#if !defined(HAVE_FSEEKO)
 #define ftello ftell
 #define fseeko fseek
+#define ftello64 ftell
+#define fseeko64 fseek
 #endif
 
 /* Provide a definition of the maximum path length in case the system

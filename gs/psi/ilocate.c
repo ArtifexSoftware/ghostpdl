@@ -452,8 +452,8 @@ cks:	    if (optr != 0) {
                                              (const obj_header_t *)optr - 1);
 #		endif
                 if (ret) {
-                    lprintf1("while validating 0x%lx (fontID/struct/astruct)\n",
-                             pref);
+                    lprintf1("while validating 0x%"PRIx64" (fontID/struct/astruct)\n",
+                             (uint64_t)pref);
                     return ret;
                 }
             }

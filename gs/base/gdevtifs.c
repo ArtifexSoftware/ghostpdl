@@ -25,20 +25,12 @@
 #include "gdevprn.h"
 #include "minftrsz.h"
 #include "gxdownscale.h"
+#include "scommon.h"
+#include "stream.h"
+#include "strmio.h"
 
 #include <tiffio.h>
 #include <tiffvers.h>
-
-#ifdef __WIN32__
-#define fseeko _fseeki64
-#define ftello _ftelli64
-typedef __int64 off_t;
-#endif
-
-#if defined(__MINGW32__) && __MINGW32__ == 1
-#define ftello ftell
-#define fseeko fseek
-#endif
 
 #define TIFF_PRINT_BUF_LENGTH 1024
 static const char tifs_msg_truncated[] = "\n*** Previous line has been truncated.\n";
@@ -365,15 +357,15 @@ static uint64_t
 gs_tifsSeekProc(thandle_t fd, uint64_t off, int whence)
 {
     tifs_io_private *tiffio = (tifs_io_private *)fd;
-    off_t off_io = (off_t) off;
+    gs_offset_t off_io = (gs_offset_t) off;
 
     if ((uint64_t) off_io != off) {
         return (uint64_t) -1; /* this is really gross */
     }
-    if (fseeko(tiffio->f , off_io, whence) < 0) {
+    if (gp_fseek_64(tiffio->f , (gs_offset_t)off_io, whence) < 0) {
         return (uint64_t) -1;
     }
-    return (ftello(tiffio->f));
+    return (gp_ftell_64(tiffio->f));
 }
 
 static int
@@ -392,18 +384,19 @@ static uint64_t
 gs_tifsSizeProc(thandle_t fd)
 {
     tifs_io_private *tiffio = (tifs_io_private *)fd;
-    uint64_t length, curpos = (uint64_t)ftello(tiffio->f);
-    
+    uint64_t length;
+    gs_offset_t curpos = gp_ftell_64(tiffio->f);
+
     if (curpos < 0) {
         return(0);
     }
     
-    if (fseeko(tiffio->f, 0, SEEK_END) < 0) {
+    if (gp_fseek_64(tiffio->f, (gs_offset_t)0, SEEK_END) < 0) {
         return(0);
     }
-    length = (uint64_t)ftello(tiffio->f);
+    length = (uint64_t)gp_ftell_64(tiffio->f);
     
-    if (fseeko(tiffio->f, curpos, SEEK_SET) < 0) {
+    if (gp_fseek_64(tiffio->f, curpos, SEEK_SET) < 0) {
         return(0);
     }
     return length;
@@ -412,20 +405,10 @@ gs_tifsSizeProc(thandle_t fd)
 TIFF *
 tiff_from_filep(gx_device_printer *dev,  const char *name, FILE *filep, int big_endian, bool usebigtiff)
 {
-    int fd;
     char mode[5] = "w";
     int modelen = 1;
     TIFF *t;
     tifs_io_private *tiffio;
-
-#ifdef __WIN32__
-        fd = _get_osfhandle(fileno(filep));
-#else
-        fd = fileno(filep);
-#endif
-
-    if (fd < 0)
-        return NULL;
 
     if (big_endian)
         mode[modelen++] = 'b';

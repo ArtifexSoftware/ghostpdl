@@ -259,7 +259,7 @@ s_std_write_flush(stream * s)
 
 /* Indicate that the number of available input bytes is unknown. */
 int
-s_std_noavailable(stream * s, long *pl)
+s_std_noavailable(stream * s, gs_offset_t *pl)
 {
     *pl = -1;
     return 0;
@@ -267,7 +267,7 @@ s_std_noavailable(stream * s, long *pl)
 
 /* Indicate an error when asked to seek. */
 int
-s_std_noseek(stream * s, long pos)
+s_std_noseek(stream * s, gs_offset_t pos)
 {
     return ERRC;
 }
@@ -380,13 +380,13 @@ const stream_procs s_filter_write_procs = {
 
 /* Store the amount of available data in a(n input) stream. */
 int
-savailable(stream * s, long *pl)
+savailable(stream * s, gs_offset_t *pl)
 {
     return (*(s)->procs.available) (s, pl);
 }
 
 /* Return the current position of a stream. */
-long
+gs_offset_t
 stell(stream * s)
 {
     /*
@@ -400,10 +400,10 @@ stell(stream * s)
 
 /* Set the position of a stream. */
 int
-spseek(stream * s, long pos)
+spseek(stream * s, gs_offset_t pos)
 {
-    if_debug3m('s', s->memory, "[s]seek 0x%lx to %ld, position was %ld\n",
-               (ulong) s, pos, stell(s));
+    if_debug3m('s', s->memory, "[s]seek 0x%"PRIx64" to %"PRId64", position was %"PRId64"\n",
+                (uint64_t)s, (int64_t)pos, (int64_t)stell(s));
     return (*(s)->procs.seek) (s, pos);
 }
 
@@ -508,7 +508,7 @@ sgets(stream * s, byte * buf, uint nmax, uint * pn)
 {
     stream_cursor_write cw;
     int status = 0;
-    int min_left = sbuf_min_left(s);
+    gs_offset_t min_left = sbuf_min_left(s);
 
     cw.ptr = buf - 1;
     cw.limit = cw.ptr + nmax;
@@ -595,17 +595,17 @@ sputs(register stream * s, const byte * str, uint wlen, uint * pn)
 /* Return 0 or an exception status. */
 /* Store the number of bytes skipped in *pskipped. */
 int
-spskip(register stream * s, long nskip, long *pskipped)
+spskip(register stream * s, gs_offset_t nskip, gs_offset_t *pskipped)
 {
-    long n = nskip;
-    int min_left;
+    gs_offset_t n = nskip;
+    gs_offset_t min_left;
 
     if (nskip < 0 || !s_is_reading(s)) {
         *pskipped = 0;
         return ERRC;
     }
     if (s_can_seek(s)) {
-        long pos = stell(s);
+        gs_offset_t pos = stell(s);
         int status = sseek(s, pos + n);
 
         *pskipped = stell(s) - pos;
@@ -814,7 +814,7 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
             oldpos = pw->ptr;
             status = (*curr->procs.process) (curr->state, pr, pw, eof);
             pr->limit += left;
-            if_debug5m('s', s->memory, "[s]after read 0x%lx, nr=%u, nw=%u, status=%d, position=%ld\n",
+            if_debug5m('s', s->memory, "[s]after read 0x%lx, nr=%u, nw=%u, status=%d, position=%"PRId64"\n",
                        (ulong) curr, (uint) (pr->limit - pr->ptr),
                        (uint) (pw->limit - pw->ptr), status, s->position);
             if (strm == 0 || status != 0)
@@ -994,9 +994,9 @@ stream_compact(stream * s, bool always)
 
 /* String stream procedures */
 static int
-    s_string_available(stream *, long *),
-    s_string_read_seek(stream *, long),
-    s_string_write_seek(stream *, long),
+    s_string_available(stream *, gs_offset_t *),
+    s_string_read_seek(stream *, gs_offset_t),
+    s_string_write_seek(stream *, gs_offset_t),
     s_string_read_process(stream_state *, stream_cursor_read *,
                           stream_cursor_write *, bool),
     s_string_write_process(stream_state *, stream_cursor_read *,
@@ -1049,7 +1049,7 @@ sread_string_reusable(stream *s, const byte *ptr, uint len)
 
 /* Return the number of available bytes when reading from a string. */
 static int
-s_string_available(stream *s, long *pl)
+s_string_available(stream *s, gs_offset_t *pl)
 {
     *pl = sbufavailable(s);
     if (*pl == 0 && s->close_at_eod)	/* EOF */
@@ -1059,7 +1059,7 @@ s_string_available(stream *s, long *pl)
 
 /* Seek in a string being read.  Return 0 if OK, ERRC if not. */
 static int
-s_string_read_seek(register stream * s, long pos)
+s_string_read_seek(register stream * s, gs_offset_t pos)
 {
     if (pos < 0 || pos > s->bsize)
         return ERRC;
@@ -1094,7 +1094,7 @@ swrite_string(register stream * s, byte * ptr, uint len)
 
 /* Seek in a string being written.  Return 0 if OK, ERRC if not. */
 static int
-s_string_write_seek(register stream * s, long pos)
+s_string_write_seek(register stream * s, gs_offset_t pos)
 {
     if (pos < 0 || pos > s->bsize)
         return ERRC;

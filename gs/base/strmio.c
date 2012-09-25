@@ -107,14 +107,14 @@ sfgetc(stream *s)
  * Seek to a position in the stream. Returns the 0, or -1 if error
  */
 int
-sfseek(stream *s, long offset, int whence)
+sfseek(stream *s, gs_offset_t offset, int whence)
 {
-    long newpos = offset;
+    gs_offset_t newpos = offset;
 
     if (whence == SEEK_CUR)
         newpos += stell(s);
     if (whence == SEEK_END) {
-        long endpos;
+        gs_offset_t endpos;
 
         if (savailable(s, &endpos) < 0)
             return -1;

@@ -94,8 +94,8 @@ get_u32_big_endian(const uint32_t *a)
 
 /* String stream procedures */
 static int
-    s_block_read_available(stream *, long *),
-    s_block_read_seek(stream *, long),
+    s_block_read_available(stream *, gs_offset_t *),
+    s_block_read_seek(stream *, gs_offset_t),
     s_block_read_close(stream *),
     s_block_read_process(stream_state *, stream_cursor_read *,
                           stream_cursor_write *, bool);
@@ -119,7 +119,7 @@ sread_block(register stream *s,  const byte *ptr, uint len, const uint32_t *node
 
 /* Return the number of available bytes */
 static int
-s_block_read_available(stream *s, long *pl)
+s_block_read_available(stream *s, gs_offset_t *pl)
 {
     uint32_t *node = (uint32_t *)s->file;
     uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */
@@ -132,7 +132,7 @@ s_block_read_available(stream *s, long *pl)
 
 /* Seek in a string being read.  Return 0 if OK, ERRC if not. */
 static int
-s_block_read_seek(register stream * s, long pos)
+s_block_read_seek(register stream * s, gs_offset_t pos)
 {
     uint32_t *node = (uint32_t *)s->file;
     uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */

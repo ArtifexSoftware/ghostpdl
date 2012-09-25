@@ -148,7 +148,7 @@ static FT_ULong FF_stream_read (FT_Stream str, unsigned long offset, unsigned ch
     unsigned int rlen = 0;
     int status = 0;
 
-    if (sseek(ps, offset) < 0)
+    if (sseek(ps, (gs_offset_t)offset) < 0)
         return_error(-1);
 
     if (count) {
@@ -174,7 +174,7 @@ static int FF_open_read_stream (gs_memory_t *mem, char *fname, FT_Stream *fts)
     int code = 0;
     gs_parsed_file_name_t pfn;
     stream *ps = (stream *)NULL;
-    long length;
+    gs_offset_t length;
     FT_Stream ftstrm = NULL;
 
     code = gs_parse_file_name(&pfn, (const char *)fname, strlen(fname), mem);
@@ -224,7 +224,7 @@ static int FF_open_read_stream (gs_memory_t *mem, char *fname, FT_Stream *fts)
     ftstrm->descriptor.pointer = ps;
     ftstrm->read = FF_stream_read;
     ftstrm->close = FF_stream_close;
-    ftstrm->size = length;
+    ftstrm->size = (long)length;
     *fts = ftstrm;
 
 error_out:

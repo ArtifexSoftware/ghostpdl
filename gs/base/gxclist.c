@@ -1155,7 +1155,7 @@ clist_icc_addprofile(gx_device_clist_writer *cldev, cmm_profile_t *iccprofile, i
     /* Get the serialized header */
     gsicc_profile_serialize(&profile_data, iccprofile);
     /* Write the header */
-    if_debug1m('l', cldev->memory, "[l]writing icc profile in cfile at pos %ld\n",fileposit);
+    if_debug1m('l', cldev->memory, "[l]writing icc profile in cfile at pos %"PRId64"\n",fileposit);
     count1 = cldev->page_info.io_procs->fwrite_chars(&profile_data, GSICC_SERIALIZED_SIZE, cfile);
     /* Now write the profile */
     count2 = cldev->page_info.io_procs->fwrite_chars(iccprofile->buffer, iccprofile->buffer_size, cfile);

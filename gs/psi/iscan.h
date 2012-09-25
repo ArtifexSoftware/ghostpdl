@@ -144,6 +144,8 @@ extern_st(st_scanner_state_dynamic);
 #define SCAN_PDF_UNSIGNED 64    /* Scan 2147483648..4294967295 as unsigned numbers */
                                 /* This is needed in some contexts for */
                                 /* compatibility with Adobe */
+#define SCAN_CPSI_MODE 128      /* Flag to indicate CPSI compatible integer parsing */
+
 void gs_scanner_init_options(scanner_state *sstate, const ref *fop,
                              int options);
 #define gs_scanner_init(sstate, fop)\

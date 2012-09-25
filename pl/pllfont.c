@@ -28,6 +28,7 @@
 #include "gsutil.h"
 #include "gxfont.h"
 #include "gxfont42.h"
+#include "stream.h"
 #include "strmio.h"
 #include "plfont.h"
 #include "pldict.h"

@@ -494,7 +494,7 @@ other:
         data = (const byte *)(op->value.boolval ? "true" : "false");
         break;
     case t_integer:
-        sprintf(buf, "%d", op->value.intval);
+        sprintf(buf, "%"PRIpsint, op->value.intval);
         break;
     case t_string:
         check_read(*op);
@@ -702,7 +702,7 @@ packed_get(const gs_memory_t *mem, const ref_packed * packed, ref * pref)
             op_index_ref(mem, value, pref);
             break;
         case pt_integer:
-            make_int(pref, (int)value + packed_min_intval);
+            make_int(pref, (ps_int)value + packed_min_intval);
             break;
         case pt_literal_name:
             name_index_ref(mem, value, pref);

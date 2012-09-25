@@ -52,7 +52,7 @@ int sfgetc(stream *s);
 /*
  * Seek to a position in the stream. Returns the 0, or -1 if error
  */
-int sfseek(stream *s, long offset, int whence);
+int sfseek(stream *s, gs_offset_t offset, int whence);
 
 /*
  * Seek to beginning of the file

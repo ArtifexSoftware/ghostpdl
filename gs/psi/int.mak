@@ -309,7 +309,7 @@ OP=$(GH) $(oper_h)
 
 ### Non-graphics operators
 
-$(PSOBJ)zarith.$(OBJ) : $(PSSRC)zarith.c $(OP) $(math__h) $(store_h)
+$(PSOBJ)zarith.$(OBJ) : $(PSSRC)zarith.c $(OP) $(math__h) $(store_h) $(gsstate_h)
 	$(PSCC) $(PSO_)zarith.$(OBJ) $(C_) $(PSSRC)zarith.c
 
 $(PSOBJ)zarray.$(OBJ) : $(PSSRC)zarray.c $(OP) $(memory__h)\
@@ -342,7 +342,7 @@ $(PSOBJ)zfile1.$(OBJ) : $(PSSRC)zfile1.c $(OP) $(memory__h) $(string__h)\
 $(PSOBJ)zfileio.$(OBJ) : $(PSSRC)zfileio.c $(OP) $(memory__h) $(gp_h)\
  $(estack_h) $(files_h) $(ifilter_h) $(interp_h) $(store_h)\
  $(stream_h) $(strimpl_h)\
- $(gsmatrix_h) $(gxdevice_h) $(gxdevmem_h)
+ $(gsmatrix_h) $(gxdevice_h) $(gxdevmem_h) $(gsstate_h)
 	$(PSCC) $(PSO_)zfileio.$(OBJ) $(C_) $(PSSRC)zfileio.c
 
 $(PSOBJ)zfilter.$(OBJ) : $(PSSRC)zfilter.c $(OP) $(memory__h)\
@@ -385,7 +385,7 @@ $(PSOBJ)zalg.$(OBJ) : $(PSSRC)zalg.c $(OP) $(ghost_h) $(gserrors_h)\
 	$(PSCC) $(PSO_)zalg.$(OBJ) $(C_) $(PSSRC)zalg.c
 
 $(PSOBJ)zmisc.$(OBJ) : $(PSSRC)zmisc.c $(OP) $(gscdefs_h) $(gp_h)\
- $(errno__h) $(memory__h) $(string__h)\
+ $(errno__h) $(memory__h) $(string__h) $(iscan_h)\
  $(ialloc_h) $(idict_h) $(dstack_h) $(iname_h) $(ivmspace_h) $(ipacked_h) $(store_h)
 	$(PSCC) $(PSO_)zmisc.$(OBJ) $(C_) $(PSSRC)zmisc.c
 
@@ -395,7 +395,7 @@ $(PSOBJ)zpacked.$(OBJ) : $(PSSRC)zpacked.c $(OP)\
 	$(PSCC) $(PSO_)zpacked.$(OBJ) $(C_) $(PSSRC)zpacked.c
 
 $(PSOBJ)zrelbit.$(OBJ) : $(PSSRC)zrelbit.c $(OP)\
- $(gsutil_h) $(store_h) $(idict_h)
+ $(gsutil_h) $(store_h) $(idict_h) $(gsstate_h)
 	$(PSCC) $(PSO_)zrelbit.$(OBJ) $(C_) $(PSSRC)zrelbit.c
 
 $(PSOBJ)zstack.$(OBJ) : $(PSSRC)zstack.c $(OP) $(memory__h)\

@@ -50,7 +50,7 @@ static int convert_to_string(const gs_memory_t *mem, os_ptr, os_ptr);
  * constant expressions, so we can't use min_long and max_long.
  * What a nuisance!
  */
-#define ALT_MIN_INT (-1 << 31)
+#define ALT_MIN_INT (((ps_int)-1) << ((sizeof(ps_int) * 8) - 1))
 #define ALT_MAX_INT (~(ALT_MIN_INT))
 static const double min_int_real = (ALT_MIN_INT * 1.0 - 1);
 static const double max_int_real = (ALT_MAX_INT * 1.0 + 1);
