@@ -751,6 +751,19 @@ gs_currentrenderingintent(const gs_state * pgs)
     return pgs->renderingintent;
 }
 
+int
+gs_setblackptcomp(gs_state *pgs, bool bkpt) {
+    pgs->blackptcomp = bkpt;
+    return 0;
+}
+
+/* currentrenderingintent */
+bool
+gs_currentblackptcomp(const gs_state * pgs)
+{
+    return pgs->blackptcomp;
+}
+
 /*
  * Reset most of the graphics state.
  *

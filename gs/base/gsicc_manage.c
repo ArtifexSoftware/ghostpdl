@@ -463,6 +463,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
     static const char *const srcgtag_keys[] = {GSICC_SRCGTAG_KEYS};
     cmm_profile_t *icc_profile;
     int ri;
+    int blackptcomp;
     cmm_srcgtag_profile_t *srcgtag;
     bool start = true;
 
@@ -552,6 +553,11 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
                     srcgtag->cmyk_intent[gsSRC_GRAPPRO] = ri | gsRI_OVERRIDE;
+                    /* Get the black point compensation setting */
+                    curr_ptr = strtok(NULL, "\t,\32\n\r");
+                    count = sscanf(curr_ptr, "%d", &blackptcomp);
+                    srcgtag->cmyk_blackptcomp[gsSRC_GRAPPRO] = 
+                                            blackptcomp | gsBP_OVERRIDE;
                     break;
                 case IMAGE_CMYK:
                     srcgtag->cmyk_profiles[gsSRC_IMAGPRO] = icc_profile;
@@ -559,6 +565,11 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
                     srcgtag->cmyk_intent[gsSRC_IMAGPRO] = ri | gsRI_OVERRIDE;
+                    /* Get the black point compensation setting */
+                    curr_ptr = strtok(NULL, "\t,\32\n\r");
+                    count = sscanf(curr_ptr, "%d", &blackptcomp);
+                    srcgtag->cmyk_blackptcomp[gsSRC_IMAGPRO] = 
+                                            blackptcomp | gsBP_OVERRIDE;
                     break;
                 case TEXT_CMYK:
                     srcgtag->cmyk_profiles[gsSRC_TEXTPRO] = icc_profile;
@@ -566,6 +577,11 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
                     srcgtag->cmyk_intent[gsSRC_TEXTPRO] = ri | gsRI_OVERRIDE;
+                    /* Get the black point compensation setting */
+                    curr_ptr = strtok(NULL, "\t,\32\n\r");
+                    count = sscanf(curr_ptr, "%d", &blackptcomp);
+                    srcgtag->cmyk_blackptcomp[gsSRC_TEXTPRO] = 
+                                            blackptcomp | gsBP_OVERRIDE;
                     break;
                 case GRAPHIC_RGB:
                     srcgtag->rgb_profiles[gsSRC_GRAPPRO] = icc_profile;
@@ -573,6 +589,11 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
                     srcgtag->rgb_intent[gsSRC_GRAPPRO] = ri | gsRI_OVERRIDE;
+                    /* Get the black point compensation setting */
+                    curr_ptr = strtok(NULL, "\t,\32\n\r");
+                    count = sscanf(curr_ptr, "%d", &blackptcomp);
+                    srcgtag->rgb_blackptcomp[gsSRC_GRAPPRO] = 
+                                            blackptcomp | gsBP_OVERRIDE;
                    break;
                 case IMAGE_RGB:
                     srcgtag->rgb_profiles[gsSRC_IMAGPRO] = icc_profile;
@@ -580,6 +601,11 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
                     srcgtag->rgb_intent[gsSRC_IMAGPRO] = ri | gsRI_OVERRIDE;
+                    /* Get the black point compensation setting */
+                    curr_ptr = strtok(NULL, "\t,\32\n\r");
+                    count = sscanf(curr_ptr, "%d", &blackptcomp);
+                    srcgtag->rgb_blackptcomp[gsSRC_IMAGPRO] = 
+                                            blackptcomp | gsBP_OVERRIDE;
                     break;
                 case TEXT_RGB:
                     srcgtag->rgb_profiles[gsSRC_TEXTPRO] = icc_profile;
@@ -587,6 +613,11 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
                     srcgtag->rgb_intent[gsSRC_TEXTPRO] = ri | gsRI_OVERRIDE;
+                    /* Get the black point compensation setting */
+                    curr_ptr = strtok(NULL, "\t,\32\n\r");
+                    count = sscanf(curr_ptr, "%d", &blackptcomp);
+                    srcgtag->rgb_blackptcomp[gsSRC_TEXTPRO] = 
+                                            blackptcomp | gsBP_OVERRIDE;
                     break;
                 case GSICC_NUM_SRCGTAG_KEYS:
                     /* Failed to match the key */
@@ -1081,6 +1112,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
         result->device_profile[k] = NULL;
         result->intent[k] = gsPERCEPTUAL;
+        result->blackptcomp[k] = gsBLACKPTCOMP_ON;
     }
     result->proof_profile = NULL;
     result->link_profile = NULL;
@@ -1095,7 +1127,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
 }
 
 int
-gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent,
+gsicc_set_device_profile_intent(gx_device *dev, gsicc_rendering_intents_t intent,
                                 gsicc_profile_types_t profile_type)
 {
     int code;
@@ -1109,6 +1141,24 @@ gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent,
     if (profile_struct ==  NULL)
         return 0;
     profile_struct->intent[profile_type] = intent;
+    return 0;
+}
+
+int
+gsicc_set_device_blackptcomp(gx_device *dev, gsicc_blackptcomp_t blackptcomp,
+                                gsicc_profile_types_t profile_type)
+{
+    int code;
+    cmm_dev_profile_t *profile_struct;
+   
+    if (dev->procs.get_profile == NULL) {
+        profile_struct = dev->icc_struct;
+    } else {
+        code = dev_proc(dev, get_profile)(dev,  &profile_struct);
+    }
+    if (profile_struct ==  NULL)
+        return 0;
+    profile_struct->blackptcomp[profile_type] = blackptcomp;
     return 0;
 }
 
@@ -2067,7 +2117,8 @@ gsicc_get_srcprofile(gsicc_colorbuffer_t data_cs,
                      gs_graphics_type_tag_t graphics_type_tag,
                      cmm_srcgtag_profile_t *srcgtag_profile,
                      cmm_profile_t **profile, 
-                     gsicc_rendering_intents_t *rendering_intent)
+                     gsicc_rendering_intents_t *rendering_intent,
+                     gsicc_blackptcomp_t *blackptcomp)
 {
     (*profile) = NULL;
     *rendering_intent = gsPERCEPTUAL;
@@ -2080,27 +2131,33 @@ gsicc_get_srcprofile(gsicc_colorbuffer_t data_cs,
             if (data_cs == gsRGB) {
                 (*profile) = srcgtag_profile->rgb_profiles[gsSRC_GRAPPRO];
                 *rendering_intent =  srcgtag_profile->rgb_intent[gsSRC_GRAPPRO];
+                *blackptcomp = srcgtag_profile->rgb_blackptcomp[gsSRC_GRAPPRO];
             } else if (data_cs == gsCMYK) {
                 (*profile) = srcgtag_profile->cmyk_profiles[gsSRC_GRAPPRO];
                 *rendering_intent =  srcgtag_profile->cmyk_intent[gsSRC_GRAPPRO];
+                *blackptcomp = srcgtag_profile->cmyk_blackptcomp[gsSRC_GRAPPRO];
             }
             break;
         case GS_IMAGE_TAG:
             if (data_cs == gsRGB) {
                 (*profile) = srcgtag_profile->rgb_profiles[gsSRC_IMAGPRO];
                 *rendering_intent =  srcgtag_profile->rgb_intent[gsSRC_IMAGPRO];
+                *blackptcomp = srcgtag_profile->rgb_blackptcomp[gsSRC_IMAGPRO];
             } else if (data_cs == gsCMYK) {
                 (*profile) = srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO];
                 *rendering_intent =  srcgtag_profile->cmyk_intent[gsSRC_IMAGPRO];
+                *blackptcomp = srcgtag_profile->cmyk_blackptcomp[gsSRC_IMAGPRO];
             }
             break;
         case GS_TEXT_TAG:
             if (data_cs == gsRGB) {
                 (*profile) = srcgtag_profile->rgb_profiles[gsSRC_TEXTPRO];
                 *rendering_intent =  srcgtag_profile->rgb_intent[gsSRC_TEXTPRO];
+                *blackptcomp = srcgtag_profile->rgb_blackptcomp[gsSRC_TEXTPRO];
             } else if (data_cs == gsCMYK) {
                 (*profile) = srcgtag_profile->cmyk_profiles[gsSRC_TEXTPRO];
                 *rendering_intent =  srcgtag_profile->cmyk_intent[gsSRC_TEXTPRO];
+                *blackptcomp = srcgtag_profile->cmyk_blackptcomp[gsSRC_TEXTPRO];
             }
             break;
         }
@@ -2110,7 +2167,8 @@ void
 gsicc_extract_profile(gs_graphics_type_tag_t graphics_type_tag,
                        cmm_dev_profile_t *profile_struct,
                        cmm_profile_t **profile,
-                       gsicc_rendering_intents_t *rendering_intent)
+                       gsicc_rendering_intents_t *rendering_intent,
+                       gsicc_blackptcomp_t *blackptcomp)
 {
     switch (graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS) {
         case GS_UNKNOWN_TAG:
@@ -2118,32 +2176,39 @@ gsicc_extract_profile(gs_graphics_type_tag_t graphics_type_tag,
         default:
             (*profile) = profile_struct->device_profile[0];
             *rendering_intent =  profile_struct->intent[0];
+            *blackptcomp = profile_struct->blackptcomp[0];
             break;
         case GS_PATH_TAG:
             if (profile_struct->device_profile[1] != NULL) {
                 (*profile) = profile_struct->device_profile[1];
                 *rendering_intent =  profile_struct->intent[1];
+                *blackptcomp = profile_struct->blackptcomp[1];
             } else {
                 (*profile) = profile_struct->device_profile[0];
-                *rendering_intent =  profile_struct->intent[0];
+                *rendering_intent =  profile_struct->intent[1];
+                *blackptcomp = profile_struct->blackptcomp[1];
             }
             break;
         case GS_IMAGE_TAG:
             if (profile_struct->device_profile[2] != NULL) {
                 (*profile) = profile_struct->device_profile[2];
                 *rendering_intent =  profile_struct->intent[2];
+                *blackptcomp = profile_struct->blackptcomp[2];
             } else {
                 (*profile) = profile_struct->device_profile[0];
-                *rendering_intent =  profile_struct->intent[0];
+                *rendering_intent =  profile_struct->intent[2];
+                *blackptcomp = profile_struct->blackptcomp[2];
             }
             break;
         case GS_TEXT_TAG:
             if (profile_struct->device_profile[3] != NULL) {
                 (*profile) = profile_struct->device_profile[3];
                 *rendering_intent =  profile_struct->intent[3];
+                *blackptcomp = profile_struct->blackptcomp[3];
             } else {
                 (*profile) = profile_struct->device_profile[0];
-                *rendering_intent =  profile_struct->intent[0];
+                *rendering_intent =  profile_struct->intent[3];
+                *blackptcomp =  profile_struct->blackptcomp[3];
             }
             break;
         }
@@ -2182,7 +2247,22 @@ gs_currentoverride_ri(const gs_imager_state *pis)
         return false;
     }
 }
-
+void
+gs_setoverride_bp(gs_imager_state *pis, bool value)
+{
+    if (pis->icc_manager != NULL) {
+        pis->icc_manager->override_bp = value;
+    }
+}
+bool
+gs_currentoverride_bp(const gs_imager_state *pis)
+{
+    if (pis->icc_manager != NULL) {
+        return pis->icc_manager->override_bp;
+    } else {
+        return false;
+    }
+}
 void
 gsicc_setrange_lab(cmm_profile_t *profile)
 {

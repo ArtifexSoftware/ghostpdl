@@ -355,7 +355,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
-    rendering_params.black_point_comp = BP_ON;
+    rendering_params.black_point_comp = pis->blackptcomp;
     rendering_params.graphics_type_tag = dev->graphics_type_tag;
     /* Need to figure out which one rules here on rendering intent.  The
        source of the device */
@@ -444,7 +444,7 @@ gx_remap_ICC_imagelab(const gs_client_color * pcc, const gs_color_space * pcs,
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
-    rendering_params.black_point_comp = BP_ON;
+    rendering_params.black_point_comp = pis->blackptcomp;
     rendering_params.graphics_type_tag = dev->graphics_type_tag;
     /* Need to figure out which one rules here on rendering intent.  The
        source of the device */
@@ -511,7 +511,7 @@ gx_concretize_ICC(
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     /* Define the rendering intents.  MJV to fix */
-    rendering_params.black_point_comp = BP_ON;
+    rendering_params.black_point_comp = pis->blackptcomp;
     rendering_params.graphics_type_tag = dev->graphics_type_tag;
     rendering_params.rendering_intent = pis->renderingintent;
     for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++) {

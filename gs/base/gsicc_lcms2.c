@@ -330,6 +330,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     cmsColorSpaceSignature src_color_space,des_color_space;
     int src_nChannels,des_nChannels;
     int lcms_src_color_space, lcms_des_color_space;
+    unsigned int flag;
 
     /* Check for case of request for a transfrom from a device link profile
        in that case, the destination profile is NULL */
@@ -363,11 +364,15 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     des_data_type = des_data_type | ENDIAN16_SH(1);
 #endif
 /* Create the link */
-    return(cmsCreateTransformTHR((cmsContext)memory,
+    flag = cmsFLAGS_HIGHRESPRECALC;
+    if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON
+        || rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
+        flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
+    }
+    return cmsCreateTransformTHR((cmsContext)memory,
                lcms_srchandle, src_data_type,
                lcms_deshandle, des_data_type,
-               rendering_params->rendering_intent,
-               (cmsFLAGS_BLACKPOINTCOMPENSATION | cmsFLAGS_HIGHRESPRECALC)));
+               rendering_params->rendering_intent,flag);
     /* cmsFLAGS_HIGHRESPRECALC)  cmsFLAGS_NOTPRECALC  cmsFLAGS_LOWRESPRECALC*/
 }
 
@@ -387,6 +392,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
     int lcms_src_color_space, lcms_des_color_space;
     cmsHPROFILE hProfiles[5]; 
     int nProfiles = 0;
+    unsigned int flag;
 
    /* First handle all the source stuff */
     src_color_space  = cmsGetColorSpace(lcms_srchandle);
@@ -420,10 +426,14 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
     if (lcms_devlinkhandle != NULL) {
         hProfiles[nProfiles++] = lcms_devlinkhandle;
     }
-    return(cmsCreateMultiprofileTransformTHR((cmsContext)memory,
+    flag = cmsFLAGS_HIGHRESPRECALC;
+    if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON
+        || rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
+        flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
+    }
+    return cmsCreateMultiprofileTransformTHR((cmsContext)memory,
                 hProfiles, nProfiles, src_data_type,
-                des_data_type, rendering_params->rendering_intent,
-                (cmsFLAGS_BLACKPOINTCOMPENSATION | cmsFLAGS_HIGHRESPRECALC)));
+                des_data_type, rendering_params->rendering_intent, flag);
 }
 
 /* Do any initialization if needed to the CMS */

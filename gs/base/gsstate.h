@@ -57,6 +57,9 @@ int gs_do_set_overprint(gs_state *);
 int gs_currentrenderingintent(const gs_state *);
 int gs_setrenderingintent(gs_state *, int);
 
+int gs_currentblackptcomp(const gs_state *);
+int gs_setblackptcomp(gs_state *, int);
+
 int gs_initgraphics(gs_state *);
 
 bool gs_currentcpsimode(const gs_memory_t *);

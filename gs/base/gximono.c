@@ -115,7 +115,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
             code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
             num_des_comps = gsicc_get_device_profile_comps(dev_profile);
             /* Define the rendering intents */
-            rendering_params.black_point_comp = BP_ON;
+            rendering_params.black_point_comp = penum->pis->blackptcomp;
             rendering_params.graphics_type_tag = GS_IMAGE_TAG;
             rendering_params.rendering_intent = penum->pis->renderingintent;
             if (gs_color_space_get_index(penum->pcs) ==

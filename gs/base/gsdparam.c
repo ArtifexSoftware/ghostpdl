@@ -13,7 +13,6 @@
    CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-
 /* Default device parameters for Ghostscript library */
 #include "memory_.h"		/* for memcpy */
 #include "string_.h"		/* for strlen */
@@ -24,11 +23,6 @@
 #include "gxdevice.h"
 #include "gxfixed.h"
 #include "gsicc_manage.h"
-
-
-static const char *const std_intent_keys[] = {
-        GSICC_STANDARD_INTENT_KEYS
-    };
 
 /* Define whether we accept PageSize as a synonym for MediaSize. */
 /* This is for backward compatibility only. */
@@ -82,6 +76,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     gs_param_string dns, pcms, profile_array[NUM_DEVICE_PROFILES];
     gs_param_string proof_profile, link_profile, icc_colorants;
     gsicc_rendering_intents_t profile_intents[NUM_DEVICE_PROFILES];
+    gsicc_blackptcomp_t blackptcomps[NUM_DEVICE_PROFILES];
     bool devicegraytok = true;  /* Default if device profile stuct not set */
     bool usefastcolor = false;  /* set for unmanaged color */
     bool prebandthreshold = true;
@@ -147,10 +142,12 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
                 || dev_profile->device_profile[k]->name == NULL) {
                 param_string_from_string(profile_array[k], null_str);
                 profile_intents[k] = gsPERCEPTUAL;
+                blackptcomps[k] = gsBLACKPTCOMP_ON;
             } else {
                 param_string_from_string(profile_array[k], 
                     dev_profile->device_profile[k]->name);
                 profile_intents[k] = dev_profile->intent[k];
+                blackptcomps[k] = dev_profile->blackptcomp[k];
             }
         }
         /* The proof and link profile */
@@ -189,6 +186,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             param_string_from_string(profile_array[k], null_str);
             profile_intents[k] = gsPERCEPTUAL;
+            blackptcomps[k] = gsBLACKPTCOMP_ON;
         }
         param_string_from_string(proof_profile, null_str);
         param_string_from_string(link_profile, null_str);
@@ -234,6 +232,10 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_int(plist,"GraphicIntent", (const int *) &(profile_intents[1]))) < 0 ||
         (code = param_write_int(plist,"ImageIntent", (const int *) &(profile_intents[2]))) < 0 ||
         (code = param_write_int(plist,"TextIntent", (const int *) &(profile_intents[3]))) < 0 ||
+        (code = param_write_int(plist,"BlackPtComp", (const int *) (&(blackptcomps[0])))) < 0 ||
+        (code = param_write_int(plist,"GraphBlackPt", (const int *) &(blackptcomps[1]))) < 0 ||
+        (code = param_write_int(plist,"ImageBlackPt", (const int *) &(blackptcomps[2]))) < 0 ||
+        (code = param_write_int(plist,"TextBlackPt", (const int *) &(blackptcomps[3]))) < 0 ||
         (code = param_write_int_array(plist, "HWSize", &hwsa)) < 0 ||
         (code = param_write_float_array(plist, ".HWMargins", &hwma)) < 0 ||
         (code = param_write_float_array(plist, ".MarginsHWResolution", &mhwra)) < 0 ||
@@ -591,7 +593,7 @@ gx_default_put_usefastcolor(bool fastcolor, gx_device * dev)
 }
 
 static void
-gx_default_put_intent(gsicc_profile_types_t icc_intent, gx_device * dev,  
+gx_default_put_intent(gsicc_rendering_intents_t icc_intent, gx_device * dev,  
                    gsicc_profile_types_t index) 
 {
     int code;
@@ -614,6 +616,33 @@ gx_default_put_intent(gsicc_profile_types_t icc_intent, gx_device * dev,
             dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
         }
         code = gsicc_set_device_profile_intent(dev, icc_intent, index);
+    }
+}
+
+static void
+gx_default_put_blackptcomp(gsicc_blackptcomp_t blackptcomp, gx_device * dev,  
+                           gsicc_profile_types_t index) 
+{
+    int code;
+    cmm_dev_profile_t *profile_struct;
+
+    if (dev->procs.get_profile == NULL) {
+        /* This is an odd case where the device has not yet fully been 
+           set up with its procedures yet.  We want to make sure that
+           we catch this so we assume here that we are dealing with 
+           the target device */
+        if (dev->icc_struct == NULL) {
+            /* Intializes the device structure.  Not the profile though for index */
+            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+        }
+        code = gsicc_set_device_blackptcomp(dev, blackptcomp, index);
+    } else {
+        code = dev_proc(dev, get_profile)(dev,  &profile_struct);
+        if (profile_struct == NULL) {
+            /* Create now  */
+            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+        }
+        code = gsicc_set_device_blackptcomp(dev, blackptcomp, index);
     }
 }
 
@@ -697,16 +726,28 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     int gab = dev->color_info.anti_alias.graphics_bits;
     int mpbm = dev->MaxPatternBitmap;
     int rend_intent[NUM_DEVICE_PROFILES];
+    int blackptcomp[NUM_DEVICE_PROFILES];
     gs_param_string cms;
     int leadingedge = dev->LeadingEdge;
     int k;
     bool devicegraytok = true;
     bool usefastcolor = false;
     bool prebandthreshold = false;
+    bool rend_intent_set[NUM_DEVICE_PROFILES];  /* needed so that global forces */
+    bool blackptcomp_set[NUM_DEVICE_PROFILES];  /* all the types if no types set */
+    int  profile_types[NUM_DEVICE_PROFILES] = {gsDEFAULTPROFILE,
+                                               gsGRAPHICPROFILE,
+                                               gsIMAGEPROFILE,
+                                               gsTEXTPROFILE}; 
 
+    for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
+        rend_intent_set[k] = false;
+        blackptcomp_set[k] = false;
+    }
     if (dev->icc_struct != NULL) {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             rend_intent[k] = dev->icc_struct->intent[k];
+            blackptcomp[k] = dev->icc_struct->blackptcomp[k];
         }
         devicegraytok = dev->icc_struct->devicegraytok;
         usefastcolor = dev->icc_struct->usefastcolor;
@@ -714,6 +755,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     } else {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             rend_intent[k] = gsPERCEPTUAL;
+            blackptcomp[k] = gsBLACKPTCOMP_ON;
         }
     }
 
@@ -918,21 +960,57 @@ nce:
                                                     &(rend_intent[0]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
+    } else if (code == 0) {
+        rend_intent_set[0] = true;
     }
     if ((code = param_read_int(plist, (param_name = "GraphicIntent"), 
                                                     &(rend_intent[1]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
+    } else if (code == 0) {
+        rend_intent_set[1] = true;
     }
     if ((code = param_read_int(plist, (param_name = "ImageIntent"), 
                                                     &(rend_intent[2]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
+    } else if (code == 0) {
+        rend_intent_set[2] = true;
     }
     if ((code = param_read_int(plist, (param_name = "TextIntent"), 
                                                     &(rend_intent[3]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
+    } else if (code == 0) {
+        rend_intent_set[3] = true;
+    }
+    if ((code = param_read_int(plist, (param_name = "BlackPtComp"), 
+                                                    &(blackptcomp[0]))) < 0) {
+        ecode = code;
+        param_signal_error(plist, param_name, ecode);
+    } else if (code == 0) {
+        blackptcomp_set[0] = true;
+    }
+    if ((code = param_read_int(plist, (param_name = "GraphBlackPt"), 
+                                                    &(blackptcomp[1]))) < 0) {
+        ecode = code;
+        param_signal_error(plist, param_name, ecode);
+    } else if (code == 0) {
+        blackptcomp_set[1] = true;
+    }
+    if ((code = param_read_int(plist, (param_name = "ImageBlackPt"), 
+                                                    &(blackptcomp[2]))) < 0) {
+        ecode = code;
+        param_signal_error(plist, param_name, ecode);
+    } else if (code == 0) {
+        blackptcomp_set[2] = true;
+    }
+    if ((code = param_read_int(plist, (param_name = "TextBlackPt"), 
+                                                    &(blackptcomp[3]))) < 0) {
+        ecode = code;
+        param_signal_error(plist, param_name, ecode);
+    } else if (code == 0) {
+        blackptcomp_set[3] = true;
     }
     if ((code = param_read_bool(plist, (param_name = "DeviceGrayToK"), 
                                                         &devicegraytok)) < 0) {
@@ -1142,12 +1220,27 @@ nce:
     dev->MaxPatternBitmap = mpbm;
     gx_device_decache_colors(dev);
 
-    /* Take care of the rendering intents */
+    /* Take care of the rendering intents and blackpts.  For those that
+       are not set special, the default provides an override */
     if (dev->icc_struct != NULL) {
+        /* Set the default object */
         gx_default_put_intent(rend_intent[0], dev, gsDEFAULTPROFILE); 
-        gx_default_put_intent(rend_intent[1], dev, gsGRAPHICPROFILE); 
-        gx_default_put_intent(rend_intent[2], dev, gsIMAGEPROFILE); 
-        gx_default_put_intent(rend_intent[3], dev, gsTEXTPROFILE); 
+        gx_default_put_blackptcomp(blackptcomp[0], dev, gsDEFAULTPROFILE);
+
+        /* If the default was specified and not a specialized one (e.g. graphic
+           image or text) then the special one will get set to the default */
+        for (k = 1; k < NUM_DEVICE_PROFILES; k++) {
+            if (rend_intent_set[0] && !rend_intent_set[k]) {
+                gx_default_put_intent(rend_intent[0], dev, profile_types[k]);
+            } else {
+                gx_default_put_intent(rend_intent[k], dev, profile_types[k]);
+            }
+            if (blackptcomp_set[0] && !blackptcomp_set[k]) {
+                gx_default_put_blackptcomp(blackptcomp[0], dev, profile_types[k]); 
+            } else {
+                gx_default_put_blackptcomp(blackptcomp[k], dev, profile_types[k]); 
+            }
+        }
     }
     gx_default_put_graytok(devicegraytok, dev);
     gx_default_put_usefastcolor(usefastcolor, dev);

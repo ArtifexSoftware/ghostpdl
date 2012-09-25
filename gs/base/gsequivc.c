@@ -453,6 +453,7 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     color_capture_device temp_device = { 0 };
     gx_device_color dev_color;
     gsicc_rendering_intents_t rendering_intent;
+    gsicc_blackptcomp_t       blackptcomp;
     int code;
     cmm_dev_profile_t *dev_profile;
     cmm_profile_t *curr_output_profile;
@@ -461,7 +462,7 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     code = dev_proc(pdev, get_profile)(pdev, &dev_profile);
     gsicc_extract_profile(pdev->graphics_type_tag,
                           dev_profile, &(curr_output_profile),
-                          &rendering_intent);
+                          &rendering_intent, &blackptcomp);
     /*
      * Create a temp device.  The primary purpose of this device is pass the
      * separation number and a pointer to the original device's equivalent

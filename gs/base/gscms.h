@@ -122,7 +122,19 @@ typedef enum {
     gsABSOLUTECOLORIMETRIC_OR   /* in particular through the clist */
 } gsicc_rendering_intents_t;
 
+/* We make an enumerated type in case someone wants to add different types
+   of black point compensation.  Like lcms provides the option for. If 
+   any are added, be sure to add in the regular and the source overide 
+   option. Also not that we have at most 4 options due to gsBP_OVERRIDE  */
+typedef enum {
+    gsBLACKPTCOMP_OFF = 0,
+    gsBLACKPTCOMP_ON,
+    gsBLACKPTCOMP_OFF_OR = 4, /* These are needed for keeping track of the  */                                   
+    gsBLACKPTCOMP_ON_OR,      /* source blackpt is to overide dest. setting */
+} gsicc_blackptcomp_t;
+
 #define gsRI_OVERRIDE 0x4
+#define gsBP_OVERRIDE 0x4 
 #define gsRI_MASK 0x3;
 
 /* Enumerate the types of profiles */
@@ -146,8 +158,10 @@ typedef enum {
 typedef struct cmm_srcgtag_profile_s {
         cmm_profile_t  *rgb_profiles[NUM_SOURCE_PROFILES];
         gsicc_rendering_intents_t rgb_intent[NUM_SOURCE_PROFILES];
+        gsicc_blackptcomp_t rgb_blackptcomp[NUM_SOURCE_PROFILES];
         cmm_profile_t  *cmyk_profiles[NUM_SOURCE_PROFILES];
         gsicc_rendering_intents_t cmyk_intent[NUM_SOURCE_PROFILES];
+        gsicc_blackptcomp_t cmyk_blackptcomp[NUM_SOURCE_PROFILES];
         cmm_profile_t  *color_warp_profile;
         gs_memory_t *memory;
         int name_length;            /* Length of file name */
@@ -189,6 +203,7 @@ typedef struct cmm_dev_profile_s {
         cmm_profile_t  *link_profile;
         cmm_profile_t  *oi_profile;  /* output intent profile */
         gsicc_rendering_intents_t intent[NUM_DEVICE_PROFILES];
+        gsicc_blackptcomp_t blackptcomp[NUM_DEVICE_PROFILES];
         bool devicegraytok;        /* Used for forcing gray to pure black */
         bool usefastcolor;         /* Used when we want to use no cm */
         bool supports_devn;        /* If the target handles devn colors */
@@ -198,15 +213,6 @@ typedef struct cmm_dev_profile_s {
         rc_header rc;
 } cmm_dev_profile_t;
 
-/*  Doing this an an enum type for now.  There is alot going on with respect
- *  to this and V2 versus V4 profiles
- */
-
-typedef enum {
-    BP_ON = 0,
-    BP_OFF,
-} gsicc_black_point_comp_t;
-
 /*  Used so that we can specify if we want to link with Device input color spaces
     during the link creation process. For the DeviceN case, the DeviceN profile
     must match the DeviceN profile in colorant order and number of colorants.
@@ -214,7 +220,6 @@ typedef enum {
     the icc manager.  This is useful for reducing clist size since we will encode
     this value instead of the ICC profile.
 */
-
 typedef enum {
     DEFAULT_NONE,   /* A profile that was actually embedded in a doc */
     DEFAULT_GRAY,   /* The default DeviceGray profile */
@@ -424,6 +429,7 @@ typedef struct gsicc_manager_s {
     gsicc_smask_t *smask_profiles;  /* Profiles used when we are in a softmask group */
     bool override_internal;         /* Set via the user params */
     bool override_ri;               /* Override rend intent. Set via the user params */
+    bool override_bp;               /* Override black point setting.  Set via user params */
     cmm_srcgtag_profile_t *srcgtag_profile;
     gs_memory_t *memory;
     rc_header rc;
@@ -444,7 +450,7 @@ typedef enum {
 typedef struct gsicc_rendering_param_s {
     gsicc_rendering_intents_t rendering_intent;
     gs_graphics_type_tag_t    graphics_type_tag;
-    gsicc_black_point_comp_t  black_point_comp;
+    gsicc_blackptcomp_t       black_point_comp;
 } gsicc_rendering_param_t;
 
 #endif /* ifndef gscms_INCLUDED */

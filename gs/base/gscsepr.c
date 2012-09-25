@@ -328,7 +328,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
             gsicc_rendering_param_t rendering_params;
 
             /* Define the rendering intents. */
-            rendering_params.black_point_comp = BP_ON;
+            rendering_params.black_point_comp = pis->blackptcomp;
             rendering_params.graphics_type_tag = GS_PATH_TAG;
             rendering_params.rendering_intent = pis->renderingintent;
 

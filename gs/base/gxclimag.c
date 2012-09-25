@@ -361,8 +361,10 @@ clist_begin_typed_image(gx_device * dev,
     cmm_profile_t *src_profile;
     cmm_srcgtag_profile_t *srcgtag_profile;
     gsicc_rendering_intents_t renderingintent = pis->renderingintent;
+    gsicc_blackptcomp_t blackptcomp = pis->blackptcomp;
     gs_imager_state *pis_nonconst = (gs_imager_state*) pis;   
     bool intent_changed = false;
+    bool bp_changed = false;
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *gs_output_profile;
     bool is_planar_dev = dev_proc(dev, dev_spec_op)(dev, gxdso_is_native_planar, NULL, 0);
@@ -514,6 +516,8 @@ clist_begin_typed_image(gx_device * dev,
                                 srcgtag_profile->rgb_profiles[gsSRC_IMAGPRO];
                             pis_nonconst->renderingintent = 
                                 srcgtag_profile->rgb_intent[gsSRC_IMAGPRO];
+                            pis_nonconst->blackptcomp = 
+                                srcgtag_profile->rgb_blackptcomp[gsSRC_IMAGPRO];
                         }
                     } else if (src_profile->data_cs == gsCMYK) {
                         if (srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO] != NULL) {
@@ -521,6 +525,8 @@ clist_begin_typed_image(gx_device * dev,
                                 srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO];
                             pis_nonconst->renderingintent = 
                                 srcgtag_profile->cmyk_intent[gsSRC_IMAGPRO];
+                            pis_nonconst->blackptcomp =
+                                srcgtag_profile->cmyk_blackptcomp[gsSRC_IMAGPRO];
                         }
                     }
                 }
@@ -531,15 +537,36 @@ clist_begin_typed_image(gx_device * dev,
                 if (!(pis_nonconst->renderingintent & gsRI_OVERRIDE)) {
                     if (pis->icc_manager != NULL && 
                         pis->icc_manager->override_ri == true) {
+                        gsicc_blackptcomp_t temp_blackpt;
                         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
                         gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
                                               &(gs_output_profile), 
                                               (gsicc_rendering_intents_t *)\
-                                              (&(pis_nonconst->renderingintent)));
+                                              (&(pis_nonconst->renderingintent)),
+                                              (gsicc_blackptcomp_t *)\
+                                              (&(temp_blackpt)));
+                    }
+                }
+                /* We have a similar issue to deal with with respect to the 
+                   black point.  Keeping rendering intent and bp comp 
+                   disentangled. */
+                if (!(pis_nonconst->blackptcomp & gsBP_OVERRIDE)) {
+                    if (pis->icc_manager != NULL && 
+                        pis->icc_manager->override_bp == true) {
+                        gsicc_rendering_intents_t temp_ri;
+                        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+                        gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
+                                              &(gs_output_profile), 
+                                              (gsicc_rendering_intents_t *)\
+                                              (&(temp_ri)),
+                                              (gsicc_blackptcomp_t *)\
+                                              (&(pis_nonconst->blackptcomp)));
                     }
                 }
                 if (renderingintent != pis_nonconst->renderingintent)
                     intent_changed = true;
+                if (blackptcomp != pis_nonconst->blackptcomp)
+                    bp_changed = true;
                 if (!(src_profile->hash_is_valid)) {
                     int64_t hash;
                     gsicc_get_icc_buff_hash(src_profile->buffer, &hash,
@@ -592,10 +619,11 @@ clist_begin_typed_image(gx_device * dev,
        question is penum->image_parent_type == gs_image_type1 */
     if (dev_profile == NULL) {
         gsicc_rendering_intents_t temp_intent;
+        gsicc_blackptcomp_t temp_bp;
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
         gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
                                               &(gs_output_profile),
-                                              &(temp_intent));
+                                              &(temp_intent), &(temp_bp));
     }
     if (gx_device_must_halftone(dev) && pim->BitsPerComponent == 8 && !masked &&
         (dev->color_info.num_components == 1 || is_planar_dev) && 
@@ -686,6 +714,8 @@ clist_begin_typed_image(gx_device * dev,
        on the pis here for this and reset back */    
     if (intent_changed)
         pis_nonconst->renderingintent = renderingintent;
+    if (bp_changed)
+        pis_nonconst->blackptcomp = blackptcomp;
 
     cdev->image_enum_id = pie->id;
     return 0;

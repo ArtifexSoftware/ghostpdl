@@ -72,6 +72,31 @@ zsetrenderingintent(i_ctx_t * i_ctx_p)
     return 0;
 }
 
+/* - .currentblackptcomp <int> */
+static int
+zcurrentblackptcomp(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_int(op, gs_currentblackptcomp(igs));
+    return 0;
+}
+
+/* <int> .setblackptcomp */
+static int
+zsetblackptcomp(i_ctx_t * i_ctx_p)
+{
+    os_ptr op = osp;
+    int param;
+    int code = int_param(op, max_int, &param);
+
+    if (code < 0 || (code = gs_setblackptcomp(igs, param)) < 0)
+        return code;
+    pop(1);
+    return 0;
+}
+
 /*
  * Initialization procedure
  */
@@ -81,5 +106,7 @@ const op_def    zcolor3_l3_op_defs[] = {
     { "0.setuseciecolor", zsetuseciecolor },
     { "0.currentrenderintent", zcurrentrenderingintent },
     { "1.setrenderingintent", zsetrenderingintent },
+    { "2.currentblackptcomp", zcurrentblackptcomp },
+    { "3.setblackptcomp", zsetblackptcomp },
     op_def_end(0)
 };

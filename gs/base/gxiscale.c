@@ -336,7 +336,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
             }
         }
         /* Define the rendering intents */
-        rendering_params.black_point_comp = BP_ON;
+        rendering_params.black_point_comp = penum->pis->blackptcomp;
         rendering_params.graphics_type_tag = GS_IMAGE_TAG;
         rendering_params.rendering_intent = penum->pis->renderingintent;
         if (gs_color_space_is_PSCIE(penum->pcs) && penum->pcs->icc_equivalent != NULL) {
