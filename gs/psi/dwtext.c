@@ -28,7 +28,7 @@
 #include <commdlg.h>
 #include <shellapi.h>
 
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
 #define CHARSIZE 1
 #else
 #define CHARSIZE 2
@@ -62,14 +62,14 @@ static void text_drag_drop(TW *tw, HDROP hdrop);
 static void text_copy_to_clipboard(TW *tw);
 static void text_paste_from_clipboard(TW *tw);
 
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
 static const char* TextWinClassName = "rjlTextWinClass";
 #else
 static const wchar_t* TextWinClassName = L"rjlTextWinClass";
 #endif
 static const POINT TextWinMinSize = {16, 4};
 
-#if !defined(WINDOWS_NO_UNICODE) && defined(_MSC_VER) && _MSC_VER < 1400
+#if !defined(GS_NO_UTF8) && defined(_MSC_VER) && _MSC_VER < 1400
 /*
  * 'wmemset()' is documented for both Visual Studio 6.0 and .NET 2003, but
  * a bug in the shipped "wctype.h" makes it available only for C++ programs.
@@ -160,7 +160,7 @@ text_new_line(TW *tw)
             int i =  tw->ScreenSize.x * (tw->ScreenSize.y - 1);
                 memmove(tw->ScreenBuffer, tw->ScreenBuffer+tw->ScreenSize.x,
                         i * CHARSIZE);
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
                 memset(tw->ScreenBuffer + i, ' ', tw->ScreenSize.x);
 #else
                 wmemset(tw->ScreenBuffer + i, ' ', tw->ScreenSize.x);
@@ -186,7 +186,7 @@ int xpos, ypos;
         ypos = tw->CursorPos.y*tw->CharSize.y - tw->ScrollPos.y;
         hdc = GetDC(tw->hwnd);
         SelectFont(hdc, tw->hfont);
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
         TextOut(hdc,xpos,ypos,
                 (LPSTR)(tw->ScreenBuffer + tw->CursorPos.y*tw->ScreenSize.x
                 + tw->CursorPos.x), count);
@@ -335,7 +335,7 @@ text_new(void)
     tw->y = CW_USEDEFAULT;
     tw->cx = CW_USEDEFAULT;
     tw->cy = CW_USEDEFAULT;
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
     tw->utf8shift = 0;
 #endif
     return tw;
@@ -368,7 +368,7 @@ text_destroy(TW *tw)
     free((char *)tw->fontname);
     tw->fontname = NULL;
 
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
     free((char *)tw->TitleW);
     tw->TitleW = NULL;
 #endif
@@ -378,7 +378,7 @@ text_destroy(TW *tw)
 int
 text_register_class(TW *tw, HICON hicon)
 {
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     WNDCLASS wndclass;
 #else
     WNDCLASSW wndclass;
@@ -397,7 +397,7 @@ text_register_class(TW *tw, HICON hicon)
     wndclass.hbrBackground = GetStockBrush(WHITE_BRUSH);
     wndclass.lpszMenuName = NULL;
     wndclass.lpszClassName = TextWinClassName;
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     return RegisterClass(&wndclass);
 #else
     return RegisterClassW(&wndclass);
@@ -409,7 +409,7 @@ int text_create(TW *tw, const char *app_name, int show_cmd)
 {
     HMENU sysmenu;
     HINSTANCE hInstance = GetModuleHandle(NULL);
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
     wchar_t *app_nameW, *d;
     const char *s;
 
@@ -448,13 +448,13 @@ int text_create(TW *tw, const char *app_name, int show_cmd)
         text_error("Out of memory");
         return 1;
     }
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     memset(tw->ScreenBuffer, ' ', tw->ScreenSize.x * tw->ScreenSize.y);
 #else
     wmemset(tw->ScreenBuffer, ' ', tw->ScreenSize.x * tw->ScreenSize.y);
 #endif
 
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     tw->hwnd = CreateWindow(TextWinClassName, tw->Title,
                   WS_OVERLAPPEDWINDOW | WS_VSCROLL | WS_HSCROLL,
                   tw->x, tw->y, tw->cx, tw->cy,
@@ -485,7 +485,7 @@ text_putch(TW *tw, int ch)
 {
 int pos;
 int n;
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
 int shift = tw->utf8shift;
     tw->utf8shift=0;
 #endif
@@ -523,7 +523,7 @@ int shift = tw->utf8shift;
                 break;
         default:
                 pos = tw->CursorPos.y*tw->ScreenSize.x + tw->CursorPos.x;
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
                 /* Are we continuing a unicode char? */
                 if ((ch & 0xC0) == 0x80) {
                     tw->ScreenBuffer[pos] |= (ch & 0x3F)<<shift;
@@ -551,7 +551,7 @@ int shift = tw->utf8shift;
 void
 text_write_buf(TW *tw, const char *str, int cnt)
 {
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
 BYTE *p;
 #else
 wchar_t *p;
@@ -565,7 +565,7 @@ int n;
         limit = tw->ScreenSize.x - tw->CursorPos.x;
         for (count=0; (count < limit) && (cnt>0) &&
             (
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
              isprint((unsigned char)(*str))
 #else
              ((*str >= 32) && (*str <= 0x7F))
@@ -592,7 +592,7 @@ int n;
                 cnt--;
             }
             else if (!
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
                 isprint((unsigned char)(*str))
 #else
                 ((*str >= 32) && (*str <= 0x7f))
@@ -635,7 +635,7 @@ text_getch(TW *tw)
         ShowCaret(tw->hwnd);
     }
 
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     while (PeekMessage(&msg, (HWND)NULL, 0, 0, PM_NOREMOVE)) {
         if (GetMessage(&msg, (HWND)NULL, 0, 0)) {
             TranslateMessage(&msg);
@@ -656,7 +656,7 @@ text_getch(TW *tw)
 
     while (!text_kbhit(tw)) {
         if (!tw->quitnow) {
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
             if (GetMessage(&msg, (HWND)NULL, 0, 0)) {
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
@@ -711,7 +711,7 @@ int ch;
                     text_putch(tw, '\b');
                     text_putch(tw, ' ');
                     text_putch(tw, '\b');
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
                     while ((tw->line_end) &&
                            ((tw->line_buf[tw->line_end-1] & 0xC0) == 0x80)) {
                         /* It's a UTF-8 continuation char. */
@@ -783,7 +783,7 @@ int ch;
                     text_putch(tw, '\b');
                     text_putch(tw, ' ');
                     text_putch(tw, '\b');
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
                     while ((dest > line) &&
                            ((dest[-1] & 0xC0) == 0x80)) {
                         /* It's a UTF-8 continuation char. */
@@ -855,7 +855,7 @@ text_copy_to_clipboard(TW *tw)
 {
     int size, count;
     HGLOBAL hGMem;
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     LPSTR cbuf, cp;
     HDC hdc;
     TEXTMETRIC tm;
@@ -868,7 +868,7 @@ text_copy_to_clipboard(TW *tw)
     size = tw->ScreenSize.y * (tw->ScreenSize.x + 2) + 1;
     size *= CHARSIZE;
     hGMem = GlobalAlloc(GHND | GMEM_SHARE, (DWORD)size);
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     cbuf = cp = (LPSTR)GlobalLock(hGMem);
 #else
     cbuf = cp = (LPWSTR)GlobalLock(hGMem);
@@ -897,14 +897,14 @@ text_copy_to_clipboard(TW *tw)
         cp -= 2;
         *cp = '\0';
     }
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     size = strlen(cbuf) + 1;
 #else
     size = CHARSIZE*(wcslen(cbuf) + 1);
 #endif
     GlobalUnlock(hGMem);
     hGMem = GlobalReAlloc(hGMem, (DWORD)size, GHND | GMEM_SHARE);
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     /* find out what type to put into clipboard */
     hdc = GetDC(tw->hwnd);
     SelectFont(hdc, tw->hfont);
@@ -928,14 +928,14 @@ void
 text_paste_from_clipboard(TW *tw)
 {
     HGLOBAL hClipMemory;
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     BYTE *p;
 #else
     wchar_t *p;
 #endif
     long count;
     OpenClipboard(tw->hwnd);
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     if (IsClipboardFormatAvailable(CF_TEXT)) {
         hClipMemory = GetClipboardData(CF_TEXT);
 #else
@@ -948,7 +948,7 @@ text_paste_from_clipboard(TW *tw)
             count = tw->KeyBufIn - tw->KeyBufOut;
             if (count < 0)
                 count += tw->KeyBufSize;
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
             /* The clipboard contains unicode, but we put it into the key
              * buffer as if it was typing utf8 */
             if (*p >= 0x800) {
@@ -1170,7 +1170,7 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                */
                 long count = tw->KeyBufIn - tw->KeyBufOut;
                 if (count < 0) count += tw->KeyBufSize;
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
                 if (wParam >= 0x800) {
                     if (count >= tw->KeyBufSize-3)
                         return 0; /* Silently drop the chars! */
@@ -1227,7 +1227,7 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                     width.y = tw->ScreenSize.y - source.y;
             /* for each line */
             while (width.y>0) {
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
                     TextOut(hdc,dest.x,dest.y,
                         (LPSTR)(tw->ScreenBuffer + source.y*tw->ScreenSize.x + source.x),
                         width.x);
@@ -1273,7 +1273,7 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 TCHAR title[256];
                 int count = GetWindowText(hwnd, title,
                                           sizeof(title)/sizeof(TCHAR)-11);
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
                 lstrcpyA(title+count, " - closing");
 #else
                 lstrcpyW(title+count, L" - closing");

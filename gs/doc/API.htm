@@ -30,6 +30,7 @@
 <li><a href="#set_stdio"><code>gsapi_set_stdio</code></a>
 <li><a href="#set_poll"><code>gsapi_set_poll</code></a>
 <li><a href="#set_display_callback"><code>gsapi_set_display_callback</code></a>
+<li><a href="#set_arg_encoding"><code>gsapi_set_arg_encoding</code></a>
 <li><a href="#run"><code>gsapi_run_string_begin</code></a>
 <li><a href="#run"><code>gsapi_run_string_continue</code></a>
 <li><a href="#run"><code>gsapi_run_string_end</code></a>
@@ -180,6 +181,12 @@ int
 int 
 <a href="#set_display_callback">gsapi_set_display_callback</a>
 (void *instance, display_callback *callback);
+</code>
+
+<li><code>
+int 
+<a href="#set_arg_encoding">gsapi_set_arg_encoding</a>
+(void *instance, int encoding);
 </code>
 
 <li><code>
@@ -339,6 +346,20 @@ this must be called after
 and before <code>gsapi_init_with_args()</code>.
 See <code><a href="../base/gdevdsp.h">gdevdsp.h</a></code>
 for more details.
+</blockquote>
+
+<h3><a name="set_arg_encoding"></a><code>gsapi_set_arg_encoding()</code></h3>
+<blockquote>
+Set the encoding used for the interpretation of all subsequent args
+supplied via the gsapi interface on this instance. By default we
+expect args to be in encoding 0 (the 'local' encoding for this OS).
+On Windows this means "the currently selected codepage". On Linux this
+typically means utf8. This means that omitting to call this function
+will leave Ghostscript running exactly as it always has. Please note
+that use of the 'local' encoding is now deprecated and should be
+avoided in new code.
+This must be called after  <code>gsapi_new_instance()</code>
+and before <code>gsapi_init_with_args()</code>.
 </blockquote>
 
 <h3><a name="init"></a><code>gsapi_init_with_args()</code></h3>
@@ -508,7 +529,9 @@ int main(int argc, char *argv[])
     code = gsapi_new_instance(&amp;minst, NULL);
     if (code &lt; 0)
 	return 1;
-    code = gsapi_init_with_args(minst, gsargc, gsargv);
+    code = gsapi_set_arg_encoding(minst, GS_ARG_ENCODING_UTF8);
+    if (code == 0)
+        code = gsapi_init_with_args(minst, gsargc, gsargv);
     code1 = gsapi_exit(minst);
     if ((code == 0) || (code == e_Quit))
 	code = code1;
@@ -585,7 +608,9 @@ int main(int argc, char *argv[])
     if (code &lt; 0)
 	return 1;
     gsapi_set_stdio(minst, gsdll_stdin, gsdll_stdout, gsdll_stderr);
-    code = gsapi_init_with_args(minst, argc, argv);
+    code = gsapi_set_arg_encoding(minst, GS_ARG_ENCODING_UTF8);
+    if (code == 0)
+        code = gsapi_init_with_args(minst, argc, argv);
     if (code == 0)
 	code = gsapi_run_string(minst, start_string, 0, &amp;exit_code);
     code1 = gsapi_exit(minst);
@@ -615,7 +640,9 @@ int main(int argc, char *argv[])
     code = gsapi_new_instance(&amp;minst, NULL);
     if (code &lt; 0)
 	return 1;
-    code = gsapi_init_with_args(minst, argc, argv);
+    code = gsapi_set_arg_encoding(minst, GS_ARG_ENCODING_UTF8);
+    if (code == 0)
+        code = gsapi_init_with_args(minst, argc, argv);
 
     if (code == 0) {
 	gsapi_run_string_begin(minst, 0, &amp;exit_code);

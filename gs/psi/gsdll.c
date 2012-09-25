@@ -71,7 +71,7 @@ static int GSDLLCALL gsdll_old_poll(void *caller_handle);
  * 4. argv
  */
 int GSDLLEXPORT GSDLLAPI
-gsdll_init(GSDLL_CALLBACK callback, HWND hwnd, int argc, char * argv[])
+gsdll_init_with_encoding(GSDLL_CALLBACK callback, HWND hwnd, int argc, char * argv[], int encoding)
 {
     int code;
 
@@ -92,13 +92,34 @@ gsdll_init(GSDLL_CALLBACK callback, HWND hwnd, int argc, char * argv[])
     pgsdll_callback = callback;
 /****** SINGLE-INSTANCE HACK ******/
 
-    code = gsapi_init_with_args(pgs_minst, argc, argv);
+    code = gsapi_set_arg_encoding(pgs_minst, encoding);
+    if (code >= 0)
+        code = gsapi_init_with_args(pgs_minst, argc, argv);
     if (code == e_Quit) {
         gsapi_exit(pgs_minst);
         return GSDLL_INIT_QUIT;
     }
     return code;
 }
+
+int GSDLLEXPORT GSDLLAPI
+gsdll_init(GSDLL_CALLBACK callback, HWND hwnd, int argc, char * argv[])
+{
+    return gsdll_init_with_encoding(callback, hwnd, argc, argv, GS_ARG_ENCODING_LOCAL);
+}
+
+#ifdef __WIN32__
+int GSDLLEXPORT GSDLLAPI
+gsdll_initW(GSDLL_CALLBACK callback, HWND hwnd, int argc, wchar_t * argv[])
+{
+    return gsdll_init_with_encoding(callback, hwnd, argc, argv, GS_ARG_ENCODING_UTF16LE);
+}
+int GSDLLEXPORT GSDLLAPI
+gsdll_initA(GSDLL_CALLBACK callback, HWND hwnd, int argc, char * argv[])
+{
+    return gsdll_init_with_encoding(callback, hwnd, argc, argv, GS_ARG_ENCODING_LOCAL);
+}
+#endif
 
 /* if return value < 0, then error occured and caller should call */
 /* gsdll_exit, then unload library */

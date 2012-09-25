@@ -84,7 +84,7 @@ const char gp_fmode_wb[] = "wb";
 /* ------ File enumeration ------ */
 
 struct file_enum_s {
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     WIN32_FIND_DATA find_data;
 #else
     WIN32_FIND_DATAW find_data;
@@ -155,14 +155,14 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 {
     int code = 0;
     uint len;
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     char *outfname;
 #else
     char outfname[(sizeof(pfen->find_data.cFileName)*3+1)/2];
 #endif
     for(;;) {
         if (pfen->first_time) {
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
             pfen->find_handle = FindFirstFile(pfen->pattern, &(pfen->find_data));
 #else
             wchar_t *pat;
@@ -181,7 +181,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
             }
             pfen->first_time = 0;
         } else {
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
             if (!FindNextFile(pfen->find_handle, &(pfen->find_data))) {
 #else
             if (!FindNextFileW(pfen->find_handle, &(pfen->find_data))) {
@@ -190,7 +190,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
                 break;
             }
         }
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
         if ( strcmp(".",  pfen->find_data.cFileName)
           && strcmp("..", pfen->find_data.cFileName)
           && (pfen->find_data.dwFileAttributes != FILE_ATTRIBUTE_DIRECTORY))
@@ -207,7 +207,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
         gp_enumerate_files_close(pfen);
         return ~(uint) 0;
     }
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     outfname = pfen->find_data.cFileName;
 #else
     wchar_to_utf8(outfname, pfen->find_data.cFileName);

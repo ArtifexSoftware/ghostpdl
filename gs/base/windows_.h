@@ -19,7 +19,7 @@
 #ifndef windows__INCLUDED
 #  define windows__INCLUDED
 
-/* This is a good place to define WINDOWS_NO_UNICODE */
+/* This is a good place to define GS_NO_UTF8 */
 
 #define STRICT
 #include <windows.h>
@@ -27,7 +27,7 @@
 
 /* Unicode/UTF-8 wrappers that we provide */
 BOOL gp_OpenPrinter(char *device, LPHANDLE printer);
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
 int utf8_to_wchar(wchar_t *out, const char *in);
 int wchar_to_utf8(char *out, const wchar_t *in);
 #endif

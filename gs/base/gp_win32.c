@@ -113,3 +113,49 @@ const char gp_null_file_name[] = "nul";
 
 /* Define the name that designates the current directory. */
 const char gp_current_directory_name[] = ".";
+
+/* A function to decode the next codepoint of the supplied args from the
+ * local windows codepage, or -1 for EOF.
+ */
+
+int
+gp_local_arg_encoding_get_codepoint(FILE *file, const char **astr)
+{
+    int len;
+    int c;
+    char arg[3];
+    wchar_t unicode[2];
+    char utf8[4];
+
+    if (file) {
+        c = fgetc(file);
+        if (c == EOF)
+            return EOF;
+    } else if (**astr) {
+        c = *(*astr)++;
+        if (c == 0)
+            return EOF;
+    }
+
+    arg[0] = c;
+    if (IsDBCSLeadByte(c)) {
+        if (file) {
+            c = fgetc(file);
+            if (c == EOF)
+                return EOF;
+        } else if (**astr) {
+            c = *(*astr)++;
+            if (c == 0)
+                return EOF;
+        }
+        arg[1] = c;
+        len = 2;
+    } else {
+        len = 1;
+    }
+
+    /* Convert the string (unterminated in, unterminated out) */
+    len = MultiByteToWideChar(CP_ACP, 0, arg, len, unicode, 2);
+
+    return unicode[0];
+}

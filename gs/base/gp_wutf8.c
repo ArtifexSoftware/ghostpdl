@@ -16,7 +16,7 @@
 
 #include "windows_.h"
 
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
 int utf8_to_wchar(wchar_t *out, const char *in)
 {
     unsigned int i;

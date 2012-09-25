@@ -401,7 +401,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
     int argc;
     LPSTR argv[MAXCMDTOKENS];
     LPSTR p;
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
     LPSTR pstart;
 #endif
     char command[256];
@@ -431,7 +431,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
      *          if called with CreateProcess(command, args, ...)
      * Consequently we must use GetCommandLine()
      */
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     p = GetCommandLine();
 #else
     {
@@ -479,7 +479,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
     }
     argv[argc] = NULL;
 
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
     free(pstart);
 #endif
 

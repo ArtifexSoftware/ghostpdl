@@ -39,4 +39,17 @@ int gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[]);
  */
 int gs_main_run_start(gs_main_instance * minst);
 
+/*
+ * By default gs assumes that all args are in utf8 format. If not, the caller
+ * should call this function to specify a decoding function in advance.
+ * Allocation should be done with the standard gs allocation functions, as
+ * the returned string may be freed using the same.
+ */
+typedef int (gs_arg_get_codepoint)(FILE *, const char **);
+
+void gs_main_inst_arg_decode(gs_main_instance * minst,
+                             gs_arg_get_codepoint *get_codepoint);
+
+gs_arg_get_codepoint *gs_main_inst_get_arg_decode(gs_main_instance * minst);
+
 #endif /* imainarg_INCLUDED */

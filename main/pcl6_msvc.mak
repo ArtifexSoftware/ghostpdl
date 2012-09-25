@@ -6,10 +6,10 @@ MAKEFILE=$(MAKEFILE) ..\main\pcl6_msvc.mak
 
 # Frequently changed configuration options follow:
 
-# To try the UNICODE/UTF8 you can comment out the following
-# or specify USEUNICODE=1 when you invoke nmake
-!if !defined(USEUNICODE) || "$(USEUNICODE)" != "1"
-UNICODECFLAGS=/DWINDOWS_NO_UNICODE
+# We now build with unicode by default. To avoid this, build with
+# GS_NO_UTF8=1
+!if "$(GS_NO_UTF8)" != ""
+UNICODECFLAGS=/DGS_NO_UTF8
 !else
 UNICODECFLAGS=
 !endif

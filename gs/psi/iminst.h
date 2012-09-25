@@ -70,6 +70,10 @@ struct gs_main_instance_s {
     long base_time[2];		/* starting usertime */
     void *readline_data;	/* data for gp_readline */
     ref error_object;		/* Use by gsapi_*() */
+    int (*get_codepoint)(FILE *file, const char **astr);
+                                /* Get next 'unicode' codepoint (in
+                                 * GS_NO_UTF8 builds, these will actually
+                                 * just be 8 bit clean values). */
 #if 1
     /* needs to be removed */
     display_callback *display;	/* callback structure for display device */

@@ -14,6 +14,9 @@ EXPORTS
 		gsdll_copy_palette 	@9
 		gsdll_draw		@10
 		gsdll_get_bitmap_row	@11
+		gsdll_init_with_encoding
+		gsdll_initA
+		gsdll_initW
 		gsapi_revision
 		gsapi_new_instance
 		gsapi_delete_instance
@@ -24,8 +27,11 @@ EXPORTS
 		gsapi_run_string_with_length
 		gsapi_run_string
 		gsapi_run_file
+		gsapi_run_fileA
+		gsapi_run_fileW
 		gsapi_exit
 		gsapi_set_stdio
 		gsapi_set_poll
 		gsapi_set_display_callback
 		gsapi_set_visual_tracer
+		gsapi_set_arg_encoding

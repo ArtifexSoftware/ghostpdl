@@ -37,6 +37,7 @@ int load_dll(GSDLL *gsdll, char *last_error, int len)
     gsdll->set_poll = &gsapi_set_poll;
     gsdll->set_display_callback = &gsapi_set_display_callback;
     gsdll->init_with_args = &gsapi_init_with_args;
+    gsdll->set_arg_encoding = &gsapi_set_arg_encoding;
     gsdll->run_string = &gsapi_run_string;
     gsdll->exit = &gsapi_exit;
     gsdll->set_visual_tracer = &gsapi_set_visual_tracer;

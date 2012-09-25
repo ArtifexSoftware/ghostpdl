@@ -189,6 +189,22 @@ GSDLLEXPORT int GSDLLAPI gsapi_set_poll(void *instance,
 GSDLLEXPORT int GSDLLAPI gsapi_set_display_callback(
    void *instance, display_callback *callback);
 
+/* Set the encoding used for the args. By default we assume
+ * 'local' encoding. For windows this equates to whatever the current
+ * codepage is. For linux this is utf8.
+ *
+ * Use of this API (gsapi) with 'local' encodings (and hence without calling
+ * this function) is now deprecated!
+ */
+GSDLLEXPORT int GSDLLAPI gsapi_set_arg_encoding(void *instance,
+                                                int encoding);
+
+enum {
+    GS_ARG_ENCODING_LOCAL = 0,
+    GS_ARG_ENCODING_UTF8 = 1,
+    GS_ARG_ENCODING_UTF16LE = 2
+};
+
 /* Initialise the interpreter.
  * This calls gs_main_init_with_args() in imainarg.c
  * 1. If quit or EOF occur during gsapi_init_with_args(),
@@ -203,6 +219,14 @@ GSDLLEXPORT int GSDLLAPI gsapi_set_display_callback(
  */
 GSDLLEXPORT int GSDLLAPI gsapi_init_with_args(void *instance,
     int argc, char **argv);
+
+#ifdef __WIN32__
+GSDLLEXPORT int GSDLLAPI gsapi_init_with_argsA(void *instance,
+    int argc, char **argv);
+
+GSDLLEXPORT int GSDLLAPI gsapi_init_with_argsW(void *instance,
+    int argc, wchar_t **argv);
+#endif
 
 /*
  * The gsapi_run_* functions are like gs_main_run_* except
@@ -237,6 +261,16 @@ GSDLLEXPORT int GSDLLAPI
 gsapi_run_file(void *instance,
     const char *file_name, int user_errors, int *pexit_code);
 
+#ifdef __WIN32__
+GSDLLEXPORT int GSDLLAPI
+gsapi_run_fileA(void *instance,
+    const char *file_name, int user_errors, int *pexit_code);
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_run_fileW(void *instance,
+    const wchar_t *file_name, int user_errors, int *pexit_code);
+#endif
+
 /* Exit the interpreter.
  * This must be called on shutdown if gsapi_init_with_args()
  * has been called, and just before gsapi_delete_instance().
@@ -267,6 +301,14 @@ typedef int (GSDLLAPIPTR PFN_gsapi_set_display_callback)(
     void *instance, display_callback *callback);
 typedef int (GSDLLAPIPTR PFN_gsapi_init_with_args)(
     void *instance, int argc, char **argv);
+#ifdef __WIN32__
+typedef int (GSDLLAPIPTR PFN_gsapi_init_with_argsA)(
+    void *instance, int argc, char **argv);
+typedef int (GSDLLAPIPTR PFN_gsapi_init_with_argsW)(
+    void *instance, int argc, wchar_t **argv);
+#endif
+typedef int (GSDLLAPIPTR PFN_gsapi_set_arg_encoding)(
+    void *instance, int encoding);
 typedef int (GSDLLAPIPTR PFN_gsapi_run_string_begin)(
     void *instance, int user_errors, int *pexit_code);
 typedef int (GSDLLAPIPTR PFN_gsapi_run_string_continue)(
@@ -282,6 +324,12 @@ typedef int (GSDLLAPIPTR PFN_gsapi_run_string)(
     int user_errors, int *pexit_code);
 typedef int (GSDLLAPIPTR PFN_gsapi_run_file)(void *instance,
     const char *file_name, int user_errors, int *pexit_code);
+#ifdef __WIN32__
+typedef int (GSDLLAPIPTR PFN_gsapi_run_fileA)(void *instance,
+    const char *file_name, int user_errors, int *pexit_code);
+typedef int (GSDLLAPIPTR PFN_gsapi_run_fileW)(void *instance,
+    const wchar_t *file_name, int user_errors, int *pexit_code);
+#endif
 typedef int (GSDLLAPIPTR PFN_gsapi_exit)(void *instance);
 typedef void (GSDLLAPIPTR PFN_gsapi_set_visual_tracer)
     (struct vd_trace_interface_s *I);

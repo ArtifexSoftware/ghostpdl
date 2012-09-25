@@ -984,7 +984,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     }
 
     /* now try to match the printer name against the [Devices] section */
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     {
         char *devices = gs_malloc(wdev->memory, 4096, 1, "win_pr2_getdc");
         char *p;

@@ -85,6 +85,11 @@ GSDLLEXPORT int GSDLLAPI gsdll_lock_device(unsigned char *device, int flag);
 typedef int (GSDLLAPIPTR PFN_gsdll_revision)(const char ** product,
     const char ** copyright, long * revision, long * revisiondate);
 typedef int (GSDLLAPIPTR PFN_gsdll_init) (GSDLL_CALLBACK, HWND, int argc, char * * argv);
+typedef int (GSDLLAPIPTR PFN_gsdll_init_with_encoding) (GSDLL_CALLBACK, HWND, int argc, char * * argv, int encoding);
+#ifdef __WIN32__
+typedef int (GSDLLAPIPTR PFN_gsdll_initA) (GSDLL_CALLBACK, HWND, int argc, char * * argv);
+typedef int (GSDLLAPIPTR PFN_gsdll_initW) (GSDLL_CALLBACK, HWND, int argc, wchar_t * * argv);
+#endif
 typedef int (GSDLLAPIPTR PFN_gsdll_execute_begin) (void);
 typedef int (GSDLLAPIPTR PFN_gsdll_execute_cont) (const char * str, int len);
 typedef int (GSDLLAPIPTR PFN_gsdll_execute_end) (void);

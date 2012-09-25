@@ -238,6 +238,7 @@ pl_main_aux(
     pl_main_universe_t      universe;
     pl_interp_instance_t *  curr_instance = 0;
     gs_c_param_list         params;
+    int                     (*arg_get_codepoint)(FILE *file, const char **astr) = NULL;
 
     mem = pl_alloc_init();
 
@@ -283,7 +284,11 @@ pl_main_aux(
     gs_c_param_list_write(&params, pjl_mem);
     gs_param_list_set_persistent_keys((gs_param_list*)&params, false);
     pl_main_init_instance(&inst, mem);
-    arg_init(&args, (const char **)argv, argc, pl_main_arg_fopen, NULL);
+#if defined(__WIN32__) && !defined(GS_NO_UTF8)
+    arg_get_codepoint = gp_local_arg_encoding_get_codepoint;
+#endif
+    arg_init(&args, (const char **)argv, argc, pl_main_arg_fopen, NULL,
+             arg_get_codepoint, mem);
 
     /* Create PJL instance */
     if ( pl_allocate_interp(&pjl_interp, &pjl_implementation, pjl_mem) < 0

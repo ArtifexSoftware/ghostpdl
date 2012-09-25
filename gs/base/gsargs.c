@@ -23,15 +23,110 @@
 #include "gsargs.h"
 #include "gserrors.h"
 
+int codepoint_to_utf8(char *cstr, int rune)
+{
+    int idx = 0;
+
+    if (rune < 0x80) {
+        cstr[idx++] = rune;
+    } else {
+        if (rune < 0x800) {
+            cstr[idx++] = 0xc0 | (rune>>6);
+        } else {
+            if (rune < 0x10000) {
+                cstr[idx++] = 0xe0 | (rune>>12);
+            } else {
+                if (rune < 0x200000) {
+                    cstr[idx++] = 0xf0 | (rune>>18);
+                } else {
+                    /* Shouldn't ever be required, but included for completeness */
+                    if (rune < 0x4000000) {
+                        cstr[idx++] = 0xf8 | (rune>>24);
+                    } else {
+                        cstr[idx++] = 0xfc | (rune>>30);
+                        cstr[idx++] = 0xc0 | (rune>>24);
+                    }
+                    cstr[idx++] = 0xc0 | (rune>>18);
+                }
+                cstr[idx++] = 0xc0 | (rune>>12);
+            }
+            cstr[idx++] = 0xc0 | (rune>>6);
+        }
+        cstr[idx++] = 0x80 | (rune & 0x3f);
+    }
+
+    return idx;
+}
+
+static int get_codepoint_utf8(FILE *file, const char **astr)
+{
+    int c;
+    int rune;
+    int len;
+
+    /* This code spots the BOM for utf8 and ignores it. Strictly speaking
+     * this may be wrong, as we are only supposed to ignore it at the beginning
+     * of the string, but if anyone is stupid enough to use ZWNBSP (zero width
+     * non breaking space) in the middle of their strings, then they deserve
+     * what they get. */
+
+    do {
+        c = (file ? fgetc(file) : (**astr ? (int)(unsigned char)*(*astr)++ : EOF));
+        if (c == EOF)
+            return EOF;
+        if (c < 0x80)
+            return c;
+lead: /* We've just read a byte >= 0x80, presumably a leading byte */
+        if (c < 0xc0)
+            continue; /* Illegal - skip it */
+        else if (c < 0xe0)
+            len = 1, rune = c & 0x1f;
+        else if (c < 0xf0)
+            len = 2, rune = c & 0xf;
+        else if (c < 0xf8)
+            len = 3, rune = c & 7;
+        else if (c < 0xfc)
+            len = 4, rune = c & 3;
+        else if (c < 0xfe)
+            len = 5, rune = c & 1;
+        else
+            continue; /* Illegal - skip it */
+        do {
+            c = (file ? fgetc(file) : (**astr ? (int)(unsigned char)*(*astr)++ : EOF));
+            if (c == EOF)
+                return EOF;
+            rune = (rune<<6) | (c & 0x3f);
+        } while (((c & 0xC0) == 0xC0) && --len);
+        if (len) {
+            /* The rune we are collecting is improperly formed. */
+            if (c < 0x80) {
+                /* Just return the simple char we've ended on. */
+                return c;
+            }
+            /* Start collecting again */
+            goto lead;
+        }
+        if (rune == 0xFEFF)
+            continue; /* BOM. Skip it */
+        break;
+    } while (1);
+
+    return rune;
+}
+
 /* Initialize an arg list. */
 void
 arg_init(arg_list * pal, const char **argv, int argc,
-         FILE * (*arg_fopen) (const char *fname, void *fopen_data),
-         void *fopen_data)
+         FILE         *(*arg_fopen)(const char *fname, void *fopen_data),
+         void         *fopen_data,
+         int           (*get_codepoint)(FILE *file, const char **astr),
+         gs_memory_t  *memory)
 {
     pal->expand_ats = true;
     pal->arg_fopen = arg_fopen;
     pal->fopen_data = fopen_data;
+    pal->get_codepoint = (get_codepoint ? get_codepoint : get_codepoint_utf8);
+    pal->memory = memory;
     pal->argp = argv + 1;
     pal->argn = argc - 1;
     pal->depth = 0;
@@ -40,6 +135,12 @@ arg_init(arg_list * pal, const char **argv, int argc,
 /* Push a string onto an arg list. */
 int
 arg_push_memory_string(arg_list * pal, char *str, bool parsed, gs_memory_t * mem)
+{
+    return arg_push_decoded_memory_string(pal, str, parsed, parsed, mem);
+}
+
+int
+arg_push_decoded_memory_string(arg_list * pal, char *str, bool parsed, bool decoded, gs_memory_t * mem)
 {
     arg_source *pas;
 
@@ -50,6 +151,7 @@ arg_push_memory_string(arg_list * pal, char *str, bool parsed, gs_memory_t * mem
     pas = &pal->sources[pal->depth];
     pas->is_file = false;
     pas->u.s.parsed = parsed;
+    pas->u.s.decoded = decoded;
     pas->u.s.chars = str;
     pas->u.s.memory = mem;
     pas->u.s.str = str;
@@ -71,6 +173,11 @@ arg_finit(arg_list * pal)
     }
 }
 
+static int get_codepoint(FILE *file, const char **astr, arg_list *pal, arg_source *pas)
+{
+    return (pas->u.s.decoded ? get_codepoint_utf8(file, astr) : pal->get_codepoint(file, astr));
+}
+
 /* Get the next arg from a list. */
 /* Note that these are not copied to the heap. */
 const char *
@@ -78,26 +185,27 @@ arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
 {
     arg_source *pas;
     FILE *f;
-    const char *astr = 0;	/* initialized only to pacify gcc */
+    const char *astr = 0; /* initialized only to pacify gcc */
     char *cstr;
     const char *result;
-    int endc;
-    int c, i;
+    int c;
+    int i;
     bool in_quote, eol;
 
   top:pas = &pal->sources[pal->depth - 1];
     if (pal->depth == 0) {
-        if (pal->argn <= 0)	/* all done */
+        if (pal->argn <= 0) /* all done */
             return 0;
         pal->argn--;
         result = *(pal->argp++);
         goto at;
     }
     if (pas->is_file)
-        f = pas->u.file, endc = EOF;
+        f = pas->u.file;
     else if (pas->u.s.parsed)
-        /* this	string is a "pushed-back" argument		     */
-        /* (retrieved by a precedeing arg_next(), but not processed) */
+        /* this string is a "pushed-back" argument                  */
+        /* (retrieved by a preceding arg_next(), but not processed) */
+        /* assert(pas->u.s.decoded); */
         if (strlen(pas->u.s.str) >= arg_str_max) {
             errprintf(errmem, "Command too long: %s\n", pas->u.s.str);
             *code = gs_error_Fatal;
@@ -106,22 +214,21 @@ arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
             strcpy(pal->cstr, pas->u.s.str);
             result = pal->cstr;
             if (pas->u.s.memory)
-                gs_free_object(pas->u.s.memory,	pas->u.s.chars,	"arg_next");
+                gs_free_object(pas->u.s.memory, pas->u.s.chars, "arg_next");
             pal->depth--;
             pas--;
             goto at;
         }
     else
-        astr = pas->u.s.str, f = NULL, endc = 0;
+        astr = pas->u.s.str, f = NULL;
     result = cstr = pal->cstr;
-#define cfsgetc() (f == NULL ? (int)(unsigned char)(*astr ? *astr++ : 0) : fgetc(f))
 #define is_eol(c) (c == '\r' || c == '\n')
     i = 0;
     in_quote = false;
     eol = true;
-    c = cfsgetc();
+    c = get_codepoint(f, &astr, pal, pas);
     for (i = 0;;) {
-        if (c == endc) {
+        if (c == EOF) {
             if (in_quote) {
                 cstr[i] = 0;
                 errprintf(errmem,
@@ -141,10 +248,10 @@ arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
             }
             break;
         }
-        /* c != endc */
-        if (isspace(c)) {
+        /* c != 0 */
+        if (c > 0 && c < 256 && isspace(c)) {
             if (i == 0) {
-                c = cfsgetc();
+                c = get_codepoint(f, &astr, pal, pas);
                 continue;
             }
             if (!in_quote)
@@ -154,28 +261,28 @@ arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
         if (c == '#' && eol) {
             /* Skip a comment. */
             do {
-                c = cfsgetc();
-            } while (!(c == endc || is_eol(c)));
+                c = get_codepoint(f, &astr, pal, pas);
+            } while (!(c == 0 || is_eol(c)));
             if (c == '\r')
-                c = cfsgetc();
+                c = get_codepoint(f, &astr, pal, pas);
             if (c == '\n')
-                c = cfsgetc();
+                c = get_codepoint(f, &astr, pal, pas);
             continue;
         }
         if (c == '\\') {
             /* Check for \ followed by newline. */
-            c = cfsgetc();
+            c = get_codepoint(f, &astr, pal, pas);
             if (is_eol(c)) {
                 if (c == '\r')
-                    c = cfsgetc();
+                    c = get_codepoint(f, &astr, pal, pas);
                 if (c == '\n')
-                    c = cfsgetc();
+                    c = get_codepoint(f, &astr, pal, pas);
                 eol = true;
                 continue;
             }
             /* \ anywhere else is treated as a printing character. */
             /* This is different from the Unix shells. */
-            if (i == arg_str_max - 1) {
+            if (i >= arg_str_max - 1) {
                 cstr[i] = 0;
                 errprintf(errmem, "Command too long: %s\n", cstr);
                 *code = gs_error_Fatal;
@@ -186,7 +293,7 @@ arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
             continue;
         }
         /* c will become part of the argument */
-        if (i == arg_str_max - 1) {
+        if (i >= arg_str_max - 1) {
             cstr[i] = 0;
             errprintf(errmem, "Command too long: %s\n", cstr);
             *code = gs_error_Fatal;
@@ -197,9 +304,13 @@ arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
         if (c == '"')
             in_quote = !in_quote;
         else
+#ifdef GS_NO_UTF8
             cstr[i++] = c;
+#else
+            i += codepoint_to_utf8(&cstr[i], c);
+#endif
         eol = is_eol(c);
-        c = cfsgetc();
+        c = get_codepoint(f, &astr, pal, pas);
     }
     cstr[i] = 0;
     if (f == NULL)
@@ -210,7 +321,7 @@ arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
             *code = gs_error_Fatal;
             return NULL;
         }
-        result++;		/* skip @ */
+        result++; /* skip @ */
         f = (*pal->arg_fopen) (result, pal->fopen_data);
         if (f == NULL) {
             errprintf(errmem, "Unable to open command line file %s\n", result);
@@ -245,4 +356,21 @@ void
 arg_free(char *str, gs_memory_t * mem)
 {
     gs_free_object(mem, str, "arg_copy");
+}
+
+int arg_strcmp(arg_list *pal, const char *arg, const char *match)
+{
+    int rune, c;
+
+    if (!arg || !match)
+        return 1;
+    do {
+        rune = pal->get_codepoint(NULL, &arg);
+        if (rune == -1)
+            rune = 0;
+        c = *match++;
+        if (rune != c)
+            return rune - c;
+    } while (rune && c);
+    return 0;
 }

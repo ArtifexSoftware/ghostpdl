@@ -23,7 +23,7 @@
 #define _Windows
 #endif
 
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
 #define UNICODE
 #endif
 
@@ -33,11 +33,11 @@
 
 typedef struct TEXTWINDOW_S {
     const char *Title;		/* required */
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
     wchar_t *TitleW;             /* required */
 #endif
     HICON hIcon;		/* optional */
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     BYTE *ScreenBuffer;
 #else
     wchar_t *ScreenBuffer;
@@ -79,7 +79,7 @@ typedef struct TEXTWINDOW_S {
     POINT ScrollMax;
 
     int x, y, cx, cy;	/* window position */
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
     int utf8shift;
 #endif
 } TW;

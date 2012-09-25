@@ -29,14 +29,17 @@
 #include "gsmemory.h"
 #include "gsmalloc.h"
 #include "gslibctx.h"
+#include "gp.h"
+#include "gsargs.h"
 
 #ifndef GS_THREADSAFE
 /* Number of threads to allow per process. Unless GS_THREADSAFE is defined
- * more than 1 is guarenteed to fail.
+ * more than 1 is guaranteed to fail.
  */
 static int gsapi_instance_counter = 0;
 static const int gsapi_instance_max = 1;
 #endif
+
 
 /* Return revision numbers and strings of Ghostscript. */
 /* Used for determining if wrong GSDLL loaded. */
@@ -100,7 +103,7 @@ gsapi_new_instance(void **pinstance, void *caller_handle)
     mem->gs_lib_ctx->poll_fn = NULL;
 
     *pinstance = (void*)(mem->gs_lib_ctx);
-    return 0;
+    return gsapi_set_arg_encoding(*pinstance, GS_ARG_ENCODING_LOCAL);
 }
 
 /* Destroy an instance of Ghostscript */
@@ -170,13 +173,137 @@ gsapi_set_display_callback(void *lib, display_callback *callback)
     return 0;
 }
 
+static int utf16le_get_codepoint(FILE *file, const char **astr)
+{
+    int c;
+    int rune;
+    int trail;
+
+    /* This code spots the BOM for 16bit LE and ignores it. Strictly speaking
+     * this may be wrong, as we are only supposed to ignore it at the beginning
+     * of the string, but if anyone is stupid enough to use ZWNBSP (zero width
+     * non breaking space) in the middle of their strings, then they deserve
+     * what they get. */
+    /* We spot the BOM for 16bit BE and treat that as EOF. We'd rather give
+     * up on dealing with a broken file than try to run something we know to
+     * be wrong. */
+
+    do {
+        if (file) {
+            rune = fgetc(file);
+            if (rune == EOF)
+                return EOF;
+            c = fgetc(file);
+            if (c == EOF)
+                return EOF;
+            rune += c<<8;
+        } else {
+            rune = (*astr)[0] | ((*astr)[1]<<8);
+            if (rune != 0)
+                (*astr) += 2;
+            else
+                return EOF;
+        }
+        if (rune == 0xFEFF) /* BOM - ignore it */
+            continue;
+        if (rune == 0xFFFE) /* BOM for BE - hopelessly broken */
+            return EOF;
+        if (rune < 0xD800 || rune >= 0xE000)
+            return rune;
+        if (rune >= 0xDC00) /* Found a trailing surrogate pair. Skip it */
+            continue;
+lead: /* We've just read a leading surrogate */
+        rune -= 0xD800;
+        rune <<= 10;
+        if (file) {
+            trail = fgetc(file);
+            if (trail == EOF)
+                return EOF;
+            c = fgetc(file);
+            if (c == EOF)
+                return EOF;
+            trail += c<<8;
+        } else {
+            trail = (*astr)[0] | ((*astr)[1]<<8);
+            if (trail != 0)
+                (*astr) += 2;
+            else
+                return EOF;
+        }
+        if (trail < 0xd800 || trail >= 0xE000) {
+            if (rune == 0xFEFF) /* BOM - ignore it. */
+                continue;
+            if (rune == 0xFFFE) /* BOM for BE - hopelessly broken. */
+                return EOF;
+            /* No trail surrogate was found, so skip the lead surrogate and
+             * return the rune we landed on. */
+            return trail;
+        }
+        if (trail < 0xdc00) {
+            /* We found another leading surrogate. */
+            rune = trail;
+            goto lead;
+        }
+        break;
+    } while (1);
+
+    return rune + (trail-0xDC00) + 0x10000;
+}
+
+#ifdef GS_NO_UTF8
+static int clean8bit_get_codepoint(FILE *file, const char **astr)
+{
+    return (file ? fgetc(file) : (**astr ? (int)(unsigned char)*(*astr)++ : EOF));
+}
+#endif
+
 /* Initialise the interpreter */
+GSDLLEXPORT int GSDLLAPI
+gsapi_set_arg_encoding(void *lib, int encoding)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
+        return e_Fatal;
+
+#if defined(GS_NO_UTF8)
+    if (encoding == GS_ARG_ENCODING_LOCAL) {
+        /* For GS_NO_UTF8 builds, we don't use utf8 internally, and we assume
+         * that all inputs are 8 bit clean. */
+        gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), clean8bit_get_codepoint);
+        return 0;
+    }
+#else
+    if (encoding == GS_ARG_ENCODING_LOCAL) {
+#if defined(__WIN32__)
+        /* For windows, we need to set it up so that we convert from 'local'
+         * format (in this case whatever codepage is set) to utf8 format. At
+         * the moment, all the other OS we care about provide utf8 anyway.
+         */
+        gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), gp_local_arg_encoding_get_codepoint);
+#else
+        gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), NULL);
+#endif /* WIN32 */
+        return 0;
+    }
+    if (encoding == GS_ARG_ENCODING_UTF8) {
+        gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), NULL);
+        return 0;
+    }
+    if (encoding == GS_ARG_ENCODING_UTF16LE) {
+        gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), utf16le_get_codepoint);
+        return 0;
+    }
+#endif
+    return e_Fatal;
+}
+
 GSDLLEXPORT int GSDLLAPI
 gsapi_init_with_args(void *lib, int argc, char **argv)
 {
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
     if (lib == NULL)
         return e_Fatal;
+
     return gs_main_init_with_args(get_minst_from_memory(ctx->memory), argc, argv);
 }
 
@@ -251,14 +378,126 @@ GSDLLEXPORT int GSDLLAPI
 gsapi_run_file(void *lib, const char *file_name,
         int user_errors, int *pexit_code)
 {
+#ifndef GS_NO_UTF8
+    char *d, *temp;
+    const char *c = file_name;
+    char dummy[6];
+    int rune, code, len;
+#endif
     gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    gs_main_instance *minst;
+    if (lib == NULL)
+        return e_Fatal;
+    minst = get_minst_from_memory(ctx->memory);
+
+#ifdef GS_NO_UTF8
+    return gs_main_run_file(minst, file_name, user_errors, pexit_code,
+                            &(minst->error_object));
+#else
+    /* Convert the file_name to utf8 */
+    len = 1;
+    while ((rune = minst->get_codepoint(NULL, &c)) >= 0)
+        len += codepoint_to_utf8(dummy, rune);
+    temp = (char *)gs_alloc_bytes_immovable(ctx->memory, len, "gsapi_run_file");
+    if (temp == NULL)
+        return 0;
+    c = file_name;
+    d = temp;
+    while ((rune = minst->get_codepoint(NULL, &c)) >= 0)
+       d += codepoint_to_utf8(d, rune);
+    *d = 0;
+    code =  gs_main_run_file(minst, temp, user_errors, pexit_code,
+                             &(minst->error_object));
+    gs_free_object(ctx->memory, temp, "gsapi_run_file");
+    return code;
+#endif
+}
+
+#ifdef __WIN32__
+GSDLLEXPORT int GSDLLAPI
+gsapi_init_with_argsW(void *lib, int argc, wchar_t **argv)
+{
+#ifdef GS_NO_UTF8
+    /* Cannot call the W entrypoints in a GS_NO_UTF8 build */
+    return e_Fatal;
+#else
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    int code;
+    gs_arg_get_codepoint *old;
     if (lib == NULL)
         return e_Fatal;
 
-    return gs_main_run_file(get_minst_from_memory(ctx->memory),
-                            file_name, user_errors, pexit_code,
-                            &(get_minst_from_memory(ctx->memory)->error_object));
+    old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
+    code = gsapi_set_arg_encoding(lib, GS_ARG_ENCODING_UTF16LE);
+    if (code != 0)
+        return code;
+    code = gsapi_init_with_args(lib, 2*argc, (char **)argv);
+    gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), old);
+    return code;
+#endif
 }
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_init_with_argsA(void *lib, int argc, char **argv)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    int code;
+    gs_arg_get_codepoint *old;
+    if (lib == NULL)
+        return e_Fatal;
+
+    old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
+    code = gsapi_set_arg_encoding(lib, GS_ARG_ENCODING_LOCAL);
+    if (code != 0)
+        return code;
+    code = gsapi_init_with_args(lib, 2*argc, (char **)argv);
+    gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), old);
+    return code;
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_run_fileW(void *lib, const wchar_t *file_name,
+        int user_errors, int *pexit_code)
+{
+#ifdef GS_NO_UTF8
+    /* Cannot call the W entrypoints in a GS_NO_UTF8 build */
+    return e_Fatal;
+#else
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    int code;
+    gs_arg_get_codepoint *old;
+    if (lib == NULL)
+        return e_Fatal;
+
+    old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
+    code = gsapi_set_arg_encoding(lib, GS_ARG_ENCODING_UTF16LE);
+    if (code != 0)
+        return code;
+    code = gsapi_run_file(lib, (const char *)file_name, user_errors, pexit_code);
+    gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), old);
+    return code;
+#endif
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_run_fileA(void *lib, const char *file_name,
+        int user_errors, int *pexit_code)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    int code;
+    gs_arg_get_codepoint *old;
+    if (lib == NULL)
+        return e_Fatal;
+
+    old = gs_main_inst_get_arg_decode(get_minst_from_memory(ctx->memory));
+    code = gsapi_set_arg_encoding(lib, GS_ARG_ENCODING_LOCAL);
+    if (code != 0)
+        return code;
+    code = gsapi_run_file(lib, (const char *)file_name, user_errors, pexit_code);
+    gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), old);
+    return code;
+}
+#endif
 
 /* Exit the interpreter */
 GSDLLEXPORT int GSDLLAPI

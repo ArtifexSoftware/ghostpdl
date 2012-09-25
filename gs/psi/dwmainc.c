@@ -74,7 +74,7 @@ gsdll_stderr(void *instance, const char *str, int len)
     return len;
 }
 
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
 /* stdio functions - versions that translate to/from utf-8 */
 static int GSDLLCALL
 gsdll_stdin_utf8(void *instance, char *buf, int len)
@@ -487,7 +487,7 @@ display_callback display = {
 
 /*********************************************************************/
 
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
 int main(int argc, char *argv[])
 #else
 static int main_utf8(int argc, char *argv[])
@@ -548,7 +548,7 @@ static int main_utf8(int argc, char *argv[])
     }
 #endif
 
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     gsdll.set_stdio(instance, gsdll_stdin, gsdll_stdout, gsdll_stderr);
 #else
     gsdll.set_stdio(instance,
@@ -602,6 +602,10 @@ static int main_utf8(int argc, char *argv[])
 #if defined(_MSC_VER) || defined(__BORLANDC__)
         __try {
 #endif
+#ifndef GS_NO_UTF8
+            code = gsdll.set_arg_encoding(instance, GS_ARG_ENCODING_UTF8);
+            if (code == 0)
+#endif
             code = gsdll.init_with_args(instance, nargc, nargv);
             if (code == 0)
                 code = gsdll.run_string(instance, start_string, 0, &exit_code);
@@ -652,7 +656,7 @@ static int main_utf8(int argc, char *argv[])
     return exit_status;
 }
 
-#ifndef WINDOWS_NO_UNICODE
+#ifndef GS_NO_UTF8
 int wmain(int argc, wchar_t *argv[], wchar_t *envp[]) {
     /* Duplicate args as utf8 */
     char **nargv;

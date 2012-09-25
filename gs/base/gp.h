@@ -497,4 +497,11 @@ int gp_fseek_64(FILE *strm, int64_t offset, int origin);
    in one operation.
  */
 
+/* Some platforms (currently only windows) may supply a function to convert
+ * characters from an encoded command line arg from the local encoding into
+ * a unicode codepoint. Returns EOF for end of file (or string).
+ */
+int
+gp_local_arg_encoding_get_codepoint(FILE *file, const char **astr);
+
 #endif /* gp_INCLUDED */

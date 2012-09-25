@@ -262,7 +262,7 @@ gp_printfile(const char *filename, const char *pmport)
 
         /* WinNT stores default printer in registry and win.ini */
         /* Win95 stores default printer in win.ini */
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
         GetProfileString("windows", "device", "", buf, sizeof(buf));
 #else
         wchar_t wbuf[512];
@@ -381,7 +381,7 @@ BOOL gp_OpenPrinter(char *port, LPHANDLE printer)
 #ifdef METRO
     return FALSE;
 #else
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     return OpenPrinter(port, printer, NULL);
 #else
     BOOL opened;
@@ -480,7 +480,7 @@ gp_printfile_win32(const char *filename, char *port)
 FILE *mswin_popen(const char *cmd, const char *mode)
 {
     SECURITY_ATTRIBUTES saAttr;
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     STARTUPINFO siStartInfo;
 #else
     STARTUPINFOW siStartInfo;
@@ -493,7 +493,7 @@ FILE *mswin_popen(const char *cmd, const char *mode)
     HANDLE hChildStderrWr = INVALID_HANDLE_VALUE;
     HANDLE hProcess = GetCurrentProcess();
     int handle = 0;
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     char *command = NULL;
 #else
     wchar_t *command = NULL;
@@ -543,7 +543,7 @@ FILE *mswin_popen(const char *cmd, const char *mode)
     siStartInfo.hStdError = hChildStderrWr;
 
     if (handle == 0) {
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
         command = (char *)malloc(strlen(cmd)+1);
         if (command)
             strcpy(command, cmd);
@@ -557,7 +557,7 @@ FILE *mswin_popen(const char *cmd, const char *mode)
     }
 
     if (handle == 0)
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
         if (!CreateProcess(NULL,
 #else
         if (!CreateProcessW(NULL,
@@ -656,7 +656,7 @@ gp_open_scratch_file(const gs_memory_t *mem,
                 n = GetTempFileName(sTempDir, sTempDir + i, 0, sTempFileName);
         }
         if (n != 0) {
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
             hfile = CreateFile(sTempFileName,
                                GENERIC_READ | GENERIC_WRITE | DELETE,
                                FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -718,7 +718,7 @@ gp_open_scratch_file(const gs_memory_t *mem,
 FILE *
 gp_fopen(const char *fname, const char *mode)
 {
-#ifdef WINDOWS_NO_UNICODE
+#ifdef GS_NO_UTF8
     return fopen(fname, mode);
 #else
     int len = utf8_to_wchar(NULL, fname);

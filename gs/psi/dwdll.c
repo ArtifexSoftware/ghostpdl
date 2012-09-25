@@ -160,6 +160,14 @@ gsapi_revision_t rv;
         return 1;
     }
 
+    gsdll->set_arg_encoding = (PFN_gsapi_set_arg_encoding)
+        GetProcAddress(gsdll->hmodule, "gsapi_set_arg_encoding");
+    if (gsdll->set_arg_encoding == NULL) {
+        strncpy(last_error, "Can't find gsapi_set_arg_encoding\n", len-1);
+        unload_dll(gsdll);
+        return 1;
+    }
+
     gsdll->run_string = (PFN_gsapi_run_string) GetProcAddress(gsdll->hmodule,
         "gsapi_run_string");
     if (gsdll->run_string == NULL) {
