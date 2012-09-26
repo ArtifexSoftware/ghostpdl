@@ -576,7 +576,7 @@ tile_by_steps_trans(tile_fill_trans_state_t * ptfs, int x0, int y0, int w0, int 
     gs_matrix step_matrix;      /* translated by phase */
     gx_pattern_trans_t *ptrans_pat = ptile->ttrans;
 #ifdef DEBUG
-    const gs_memory_t *mem = ptfs->pcdev->memory;
+    const gs_memory_t *mem = ptile->ttrans->mem;
 #endif
 
     ptfs->x0 = x0, ptfs->w0 = w0;

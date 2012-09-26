@@ -420,7 +420,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     penum->matrix.yy = mat.yy;
     penum->matrix.tx = mat.tx;
     penum->matrix.ty = mat.ty;
-    if_debug6m('b', penum->memory, " [%g %g %g %g %g %g]\n",
+    if_debug6m('b', pis->memory, " [%g %g %g %g %g %g]\n",
               mat.xx, mat.xy, mat.yx, mat.yy, mat.tx, mat.ty);
     /* following works for 1, 2, 4, 8, 12, 16 */
     index_bps = (bps < 8 ? bps >> 1 : (bps >> 2) + 1);
