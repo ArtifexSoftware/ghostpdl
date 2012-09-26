@@ -1510,11 +1510,10 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
 
 #ifdef LINEAR_DEBUGGING
     {
-    sprintf(Buffer, "NumPage1Resources %d\tNumPart1StructureResources %d\t\tNumUniquePageResources %d\tNumSharedResources %d\t\tNumNonPageResources %d\nNumPart9Resources %d", linear_params->NumPage1Resources, linear_params->NumPart1StructureResources, linear_params->NumUniquePageResources, linear_params->NumSharedResources, linear_params->NumNonPageResources, linear_params->NumPart9Resources);
-    fwrite(Buffer, strlen(Buffer), 1, linear_params->Lin_File.file);
+    dmprintf6(pdev->pdf_memory, "NumPage1Resources %ld\tNumPart1StructureResources %ld\t\tNumUniquePageResources %ld\tNumSharedResources %ld\t\tNumNonPageResources %d\nNumPart9Resources %ld\n", linear_params->NumPage1Resources, linear_params->NumPart1StructureResources, linear_params->NumUniquePageResources, linear_params->NumSharedResources, linear_params->NumNonPageResources, linear_params->NumPart9Resources);
+    dmprintf(pdev->pdf_memory, "Old ID\tPage Usage\tNew ID\n");
     for (i = 1;i < pdev->ResourceUsageSize; i++) {
-        sprintf(Buffer, "Old ID %d\tPage Usage %d\tNew ID %d\n", i, pdev->ResourceUsage[i].PageUsage, pdev->ResourceUsage[i].NewObjectNumber);
-        fwrite(Buffer, strlen(Buffer), 1, linear_params->Lin_File.file);
+        dmprintf3(pdev->pdf_memory, "%d\t%d\t%d\n", i, pdev->ResourceUsage[i].PageUsage, pdev->ResourceUsage[i].NewObjectNumber);
     }
     }
 #endif
@@ -2190,7 +2189,6 @@ pdf_close(gx_device * dev)
     long Catalog_id = pdev->Catalog->id, Info_id = pdev->Info->id,
         Pages_id = pdev->Pages->id, Encrypt_id = 0;
     long Threads_id = 0;
-    bool partial_page = (pdev->contents_id != 0 && pdev->next_page != 0);
     int code = 0, code1, pagecount=0;
     int64_t start_section, end_section;
 
@@ -2316,9 +2314,6 @@ pdf_close(gx_device * dev)
 
         s = pdev->strm;
         stream_puts(s, "<< /Type /Pages /Kids [\n");
-        /* Omit the last page if it was incomplete. */
-        if (partial_page)
-            --(pdev->next_page);
         {
             int i;
 
