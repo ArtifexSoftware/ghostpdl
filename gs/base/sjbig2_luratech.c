@@ -449,7 +449,7 @@ s_jbig2encode_write(const unsigned char *buffer,
     /* grow the output buffer if necessary */
     while (pos+size > state->outsize) {
         unsigned char *new_ = realloc(state->outbuf, state->outsize*2);
-        if (new == NULL) {
+        if (new_ == NULL) {
             dmprintf1(state->memory, "jbig2encode: failed to resize output buffer"
                 " beyond %lu bytes\n", state->outsize);
             return 0; /* can't return an error! */
