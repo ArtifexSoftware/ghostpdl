@@ -1724,7 +1724,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
                 pagehint->NumSharedObjects++;
             }
             linear_params->SharedHints[k].ObjectNumber = record->NewObjectNumber;
-            linear_params->SharedHints[k++].ObjectOffset = record->LinearisedOffset;
+            linear_params->SharedHints[k].ObjectOffset = record->LinearisedOffset;
             linear_params->SharedHints[k++].ObjectLength = record->Length;
         } else {
             /* Objects uniquely used on a page are stored in the page hints table, except
