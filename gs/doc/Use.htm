@@ -2892,7 +2892,7 @@ the color space defined by the N-CLR profile.
 </dl>
 
 <dl>
-<dt><code>-sRenderIntent=</code><em>intent</em>
+<dt><code>-dRenderIntent=</code><em>intent</em>
 <dd>Set the rendering intent that should be used with the
 profile specified above by -sOutputICCProfile.  The
 options for <em>intent</em> are
@@ -2900,6 +2900,13 @@ options for <em>intent</em> are
 which correspond to the ICC intents of Perceptual, Colorimetric,
 Saturation, and Absolute Colorimetric.
 Also see <a href="#OverrideRI">OverrideRI</a>.
+</dl>
+
+<dl>
+<dt><code>-dBlackPtComp=</code><em>0/1</em>
+<dd>Specify if black point compensation should be used with the
+profile specified above by -sOutputICCProfile.  
+Also see <a href="#OverrideBP">OverrideBP </a>.
 </dl>
 
 <dl>
@@ -2914,11 +2921,18 @@ colors for graphics.
 </dl>
 
 <dl>
-<dt><code>-sGraphicIntent=</code><em>intent</em>
+<dt><code>-dGraphicIntent=</code><em>intent</em>
 <dd>Set the rendering intent that should be used with the
 profile specified above by -sGraphicICCProfile.  The
 options are the same as specified for -sRenderIntent.
 Also see <a href="#OverrideRI">OverrideRI</a>.
+</dl>
+
+<dl>
+<dt><code>-dGraphBlackPt=</code><em>0/1</em>
+<dd>Specify if black point compensation should be used with the
+profile specified above by -sGraphicICCProfile.  
+Also see <a href="#OverrideBP">OverrideBP </a>.
 </dl>
 
 <dl>
@@ -2932,11 +2946,18 @@ pleasing images.
 </dl>
 
 <dl>
-<dt><code>-sImageIntent=</code><em>intent</em>
+<dt><code>-dImageIntent=</code><em>intent</em>
 <dd>Set the rendering intent that should be used with the
 profile specified above by -sImageICCProfile.  The
 options are the same as specified for -sRenderIntent.
 Also see <a href="#OverrideRI">OverrideRI</a>.
+</dl>
+
+<dl>
+<dt><code>-dImageBlackPt=</code><em>0/1</em>
+<dd>Specify if black point compensation should be used with the
+profile specified above by -sImageICCProfile.  
+Also see <a href="#OverrideBP">OverrideBP </a>.
 </dl>
 
 <dl>
@@ -2957,6 +2978,13 @@ Also see <a href="#OverrideRI">OverrideRI</a>.
 </dl>
 
 <dl>
+<dt><code>-dTextBlackPt=</code><em>0/1</em>
+<dd>Specify if black point compensation should be used with the
+profile specified above by -sTextICCProfile.  
+Also see <a href="#OverrideBP">OverrideBP </a>.
+</dl>
+
+<dl>
 <dt><code>-dOverrideICC</code>
 <dd>Override any ICC profiles contained in the source
 document with the profiles specified by
@@ -2971,11 +2999,22 @@ control in the specification of source colors see
 <dl>
 <dt><a name="OverrideRI"></a><code>-dOverrideRI</code>
 <dd>Override the rendering intent contained in the source
-document with the rendering intents specified by -sRenderIntent,
--sGraphicIntent,  -sTextIntent, -sGraphicIntent.  Note that
+document with the rendering intents specified by -dRenderIntent,
+-dGraphicIntent,  -dImageIntent, -dTextIntent.  Note that
 unless -dOverrideRI is specified, the above rendering intent
 settings are essentially ignored.  For detailed control over
 rendering intent with specific object types, see
+<a href="#SourceObjectICC">SourceObjectICC</a>.
+</dl>
+
+<dl>
+<dt><a name="OverrideBP"></a><code>-dOverrideBP</code>
+<dd>Override the black point compensation setting contained in the source
+document with the black point settings specified by -dBlackPtComp,
+-dGraphBlackPt,  -dImageBlackPt, -dTextBlackPt.  Note that
+unless -dOverrideBP is specified, the above black point compensation
+settings are essentially ignored.  For detailed control over
+black point compensation with specific object types, see
 <a href="#SourceObjectICC">SourceObjectICC</a>.
 </dl>
 
