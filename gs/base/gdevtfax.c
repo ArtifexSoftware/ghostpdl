@@ -44,6 +44,7 @@ struct gx_device_tfax_s {
                                 /* The type and range of FillOrder follows TIFF 6 spec  */
     int  FillOrder;             /* 1 = lowest column in the high-order bit, 2 = reverse */
     bool  BigEndian;            /* true = big endian; false = little endian*/
+    bool UseBigTIFF;
     uint16 Compression;		/* same values as TIFFTAG_COMPRESSION */
 
     TIFF *tif;			/* For TIFF output only */
@@ -61,6 +62,7 @@ static const gx_device_procs gdev_tfax_std_procs =
     TIFF_DEFAULT_STRIP_SIZE	/* strip size byte count */,\
     1                           /* lowest column in the high-order bit */,\
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,\
+    false,                      /* default to not using bigtiff */\
     compr,\
     NULL\
 }
@@ -82,6 +84,9 @@ tfax_open(gx_device * pdev)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     int code;
+
+    /* Use our own warning and error message handlers in libtiff */
+    tiff_set_handlers();
 
     ppdev->file = NULL;
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
@@ -120,6 +125,10 @@ tfax_get_params(gx_device * dev, gs_param_list * plist)
         ecode = code;
     if ((code = param_write_bool(plist, "BigEndian", &tfdev->BigEndian)) < 0)
         ecode = code;
+#if !(TIFFLIB_VERSION >= 20111221)
+    if ((code = param_write_bool(plist, "UseBigTiff", &tfdev->UseBigTIFF)) < 0)
+        ecode = code;
+#endif
     if ((code = tiff_compression_param_string(&comprstr, tfdev->Compression)) < 0 ||
         (code = param_write_string(plist, "Compression", &comprstr)) < 0)
         ecode = code;
@@ -137,6 +146,7 @@ tfax_put_params(gx_device * dev, gs_param_list * plist)
     int fill_order = tfdev->FillOrder;
     const char *param_name;
     bool big_endian = tfdev->BigEndian;
+    bool usebigtiff = tfdev->UseBigTIFF;
     uint16 compr = tfdev->Compression;
     gs_param_string comprstr;
 
@@ -179,6 +189,23 @@ tfax_put_params(gx_device * dev, gs_param_list * plist)
         case 1:
             break;
     }
+
+    /* Read UseBigTIFF option as bool */
+    switch (code = param_read_bool(plist, (param_name = "UseBigTiff"), &usebigtiff)) {
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 0:
+        case 1:
+            break;
+    }
+
+#if !(TIFFLIB_VERSION >= 20111221)
+    if (usebigtiff)
+        dmlprintf(dev->memory, "Warning: this version of libtiff does not support BigTIFF, ignoring parameter\n");
+    usebigtiff = false;
+#endif
+
     /* Read Compression */
     switch (code = param_read_string(plist, (param_name = "Compression"), &comprstr)) {
         case 0:
@@ -202,6 +229,7 @@ tfax_put_params(gx_device * dev, gs_param_list * plist)
     tfdev->MaxStripSize = mss;
     tfdev->FillOrder = fill_order;
     tfdev->BigEndian = big_endian;
+    tfdev->UseBigTIFF = usebigtiff;
     tfdev->Compression = compr;
     return code;
 }
@@ -351,7 +379,7 @@ tfax_begin_page(gx_device_tfax * tfdev, FILE * file)
 
     /* open the TIFF device */
     if (gdev_prn_file_is_new(pdev)) {
-        tfdev->tif = tiff_from_filep(pdev->dname, file, tfdev->BigEndian);
+        tfdev->tif = tiff_from_filep(pdev, pdev->dname, file, tfdev->BigEndian, tfdev->UseBigTIFF);
         if (!tfdev->tif)
             return_error(gs_error_invalidfileaccess);
     }

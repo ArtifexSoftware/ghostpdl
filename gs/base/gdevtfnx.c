@@ -51,6 +51,7 @@ const gx_device_tiff gs_tiff12nc_device = {
                         0, 0, 0, 0,
                         24, tiff12_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    false,                      /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
@@ -65,6 +66,7 @@ const gx_device_tiff gs_tiff24nc_device = {
                         0, 0, 0, 0,
                         24, tiff_rgb_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    false,                      /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
@@ -79,6 +81,7 @@ const gx_device_tiff gs_tiff48nc_device = {
                         0, 0, 0, 0,
                         48, tiff_rgb_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    false,                      /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
@@ -118,7 +121,7 @@ tiff12_print_page(gx_device_printer * pdev, FILE * file)
 
     /* open the TIFF device */
     if (gdev_prn_file_is_new(pdev)) {
-        tfdev->tif = tiff_from_filep(pdev->dname, file, tfdev->BigEndian);
+        tfdev->tif = tiff_from_filep(pdev, pdev->dname, file, tfdev->BigEndian, tfdev->UseBigTIFF);
         if (!tfdev->tif)
             return_error(gs_error_invalidfileaccess);
     }
@@ -177,7 +180,7 @@ tiff_rgb_print_page(gx_device_printer * pdev, FILE * file)
 
     /* open the TIFF device */
     if (gdev_prn_file_is_new(pdev)) {
-        tfdev->tif = tiff_from_filep(pdev->dname, file, tfdev->BigEndian);
+        tfdev->tif = tiff_from_filep(pdev, pdev->dname, file, tfdev->BigEndian, tfdev->UseBigTIFF);
         if (!tfdev->tif)
             return_error(gs_error_invalidfileaccess);
     }

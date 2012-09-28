@@ -69,6 +69,7 @@ const gx_device_tiff gs_tiffgray_device = {
                     0, 0, 0, 0, /* Margins */
                     1, 8, 255, 0, 256, 0, tiffgray_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    false,                      /* default to *not* bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
@@ -101,6 +102,7 @@ const gx_device_tiff gs_tiffscaled_device = {
                     255, 0, 256, 0,
                     tiffscaled_print_page),
     arch_is_big_endian,/* default to native endian (i.e. use big endian iff the platform is so */
+    false,             /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
@@ -133,6 +135,7 @@ const gx_device_tiff gs_tiffscaled8_device = {
                     255, 0, 256, 0,
                     tiffscaled8_print_page),
     arch_is_big_endian,/* default to native endian (i.e. use big endian iff the platform is so */
+    false,             /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
@@ -165,6 +168,7 @@ const gx_device_tiff gs_tiffscaled24_device = {
                     255, 255, 256, 256,
                     tiffscaled24_print_page),
     arch_is_big_endian,/* default to native endian (i.e. use big endian iff the platform is so */
+    false,             /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
@@ -312,6 +316,7 @@ const gx_device_tiff gs_tiff32nc_device = {
                     0, 0, 0, 0, /* Margins */
                     4, 32, 255, 255, 256, 256, tiffcmyk_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    false,                      /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
@@ -332,6 +337,7 @@ const gx_device_tiff gs_tiff64nc_device = {
                     0, 0, 0, 0, /* Margins */
                     4, 64, 255, 255, 256, 256, tiffcmyk_print_page),
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    false,                      /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
@@ -413,6 +419,7 @@ static dev_proc_output_page(tiffseps_output_page);
     FILE *sep_file[GX_DEVICE_COLOR_MAX_COMPONENTS];\
     TIFF *tiff[GX_DEVICE_COLOR_MAX_COMPONENTS]; \
     bool  BigEndian;            /* true = big endian; false = little endian */\
+    bool  UseBigTIFF;           /* true = output bigtiff, false don't */ \
     uint16 Compression;         /* for the separation files, same values as
                                    TIFFTAG_COMPRESSION */\
     bool close_files; \
@@ -590,6 +597,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
         { 0 },                  /* tiff state for separation files */\
         { 0 },                  /* separation files */\
         arch_is_big_endian      /* true = big endian; false = little endian */,\
+        false,                  /* UseBigTIFF */\
         compr                   /* COMPRESSION_* */,\
         true,                   /* close_files */ \
         TIFF_DEFAULT_STRIP_SIZE,/* MaxStripSize */\
@@ -1039,6 +1047,9 @@ tiffsep1_prn_open(gx_device * pdev)
     tiffsep1_device *pdev_sep = (tiffsep1_device *) pdev;
     int code, k;
 
+    /* Use our own warning and error message handlers in libtiff */
+    tiff_set_handlers();
+
     /* With planar the depth can be more than 64.  Update the color
        info to reflect the proper depth and number of planes */
     pdev_sep->warning_given = false;
@@ -1395,6 +1406,9 @@ tiffsep_prn_open(gx_device * pdev)
     int code, k;
     bool force_pdf, limit_icc, force_ps;
     cmm_dev_profile_t *profile_struct;
+
+    /* Use our own warning and error message handlers in libtiff */
+    tiff_set_handlers();
 
     /* There are 2 approaches to the use of a DeviceN ICC output profile.  
        One is to simply limit our device to only output the colorants
@@ -1864,7 +1878,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
         if (code < 0)
             return code;
 
-        tfdev->tiff_comp = tiff_from_filep(pdev->dname, tfdev->comp_file, tfdev->BigEndian);
+        tfdev->tiff_comp = tiff_from_filep(pdev, pdev->dname, tfdev->comp_file, tfdev->BigEndian, tfdev->UseBigTIFF);
         if (!tfdev->tiff_comp)
             return_error(gs_error_invalidfileaccess);
 
@@ -1909,9 +1923,9 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
                     true, true, &(tfdev->sep_file[comp_num]));
             if (code < 0)
                 return code;
-            tfdev->tiff[comp_num] = tiff_from_filep(name,
+            tfdev->tiff[comp_num] = tiff_from_filep(pdev, name,
                                                     tfdev->sep_file[comp_num],
-                                                    tfdev->BigEndian);
+                                                    tfdev->BigEndian, tfdev->UseBigTIFF);
             if (!tfdev->tiff[comp_num])
                 return_error(gs_error_ioerror);
         }
@@ -2175,9 +2189,9 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
                     true, true, &(tfdev->sep_file[comp_num]));
             if (code < 0)
                 return code;
-            tfdev->tiff[comp_num] = tiff_from_filep(name,
+            tfdev->tiff[comp_num] = tiff_from_filep(pdev, name,
                                                     tfdev->sep_file[comp_num],
-                                                    tfdev->BigEndian);
+                                                    tfdev->BigEndian, tfdev->UseBigTIFF);
             if (!tfdev->tiff[comp_num])
                 return_error(gs_error_ioerror);
         }
@@ -2195,7 +2209,6 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
 
 
     {   /* Get the expanded contone line, halftone and write out the dithered separations */
-        int raster = gdev_prn_raster(pdev);
         byte *planes[GS_CLIENT_COLOR_MAX_COMPONENTS];
         int width = tfdev->width;
         int raster_plane = bitmap_raster(width * 8);

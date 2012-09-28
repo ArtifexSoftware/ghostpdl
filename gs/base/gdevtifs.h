@@ -30,6 +30,7 @@ typedef struct gx_device_tiff_s {
     gx_device_common;
     gx_prn_device_common;
     bool  BigEndian;            /* true = big endian; false = little endian*/
+    bool  UseBigTIFF;           /* true = output big tiff file, false don't */
     uint16 Compression;         /* same values as TIFFTAG_COMPRESSION */
     long MaxStripSize;
     long DownScaleFactor;
@@ -49,13 +50,15 @@ dev_proc_put_params(tiff_put_params_downscale);
 /*
  * Open a TIFF file for writing from a file descriptor.
  */
-TIFF * tiff_from_filep(const char *name, FILE *filep, int big_endian);
+TIFF * tiff_from_filep(gx_device_printer *dev, const char *name,
+                       FILE *filep, int big_endian, bool usebigtiff);
 
 int tiff_print_page(gx_device_printer *dev, TIFF *tif, int min_feature_size);
 
 int tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif,
                                   int factor, int msf, int aw, int bpc,
                                   int num_comps);
+void tiff_set_handlers (void);
 
 /*
  * Sets the compression tag for TIFF and updates the rows_per_strip tag to

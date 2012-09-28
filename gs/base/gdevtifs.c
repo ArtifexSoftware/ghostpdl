@@ -27,6 +27,28 @@
 #include "gxdownscale.h"
 
 #include <tiffio.h>
+#include <tiffvers.h>
+
+#ifdef __WIN32__
+#define fseeko _fseeki64
+#define ftello _ftelli64
+typedef __int64 off_t;
+#endif
+
+#if defined(__MINGW32__) && __MINGW32__ == 1
+#define ftello ftell
+#define fseeko fseek
+#endif
+
+#define TIFF_PRINT_BUF_LENGTH 1024
+static const char tifs_msg_truncated[] = "\n*** Previous line has been truncated.\n";
+
+/* place to hold the data for our libtiff i/o hooks */
+typedef struct tifs_io_private_t
+{
+    FILE *f;
+    gx_device_printer *pdev;
+} tifs_io_private;
 
 /*
  * Open the output seekable, because libtiff doesn't support writing to
@@ -86,6 +108,9 @@ tiff_open(gx_device *pdev)
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     int code;
 
+    /* Use our own warning and error message handlers in libtiff */
+    tiff_set_handlers();
+
     ppdev->file = NULL;
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
     if (code < 0)
@@ -116,6 +141,10 @@ tiff_get_some_params(gx_device * dev, gs_param_list * plist, int which)
 
     if ((code = param_write_bool(plist, "BigEndian", &tfdev->BigEndian)) < 0)
         ecode = code;
+#if (TIFFLIB_VERSION >= 20111221)
+    if ((code = param_write_bool(plist, "UseBigTIFF", &tfdev->UseBigTIFF)) < 0)
+        ecode = code;
+#endif
     if ((code = tiff_compression_param_string(&comprstr, tfdev->Compression)) < 0 ||
         (code = param_write_string(plist, "Compression", &comprstr)) < 0)
         ecode = code;
@@ -153,6 +182,7 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
     int code;
     const char *param_name;
     bool big_endian = tfdev->BigEndian;
+    bool usebigtiff = tfdev->UseBigTIFF;
     uint16 compr = tfdev->Compression;
     gs_param_string comprstr;
     long downscale = tfdev->DownScaleFactor;
@@ -169,6 +199,23 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
         case 1:
             break;
     }
+
+    /* Read UseBigTIFF option as bool */
+    switch (code = param_read_bool(plist, (param_name = "UseBigTIFF"), &usebigtiff)) {
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 0:
+        case 1:
+            break;
+    }
+
+#if !(TIFFLIB_VERSION >= 20111221)
+    if (usebigtiff)
+        dmlprintf(dev->memory, "Warning: this version of libtiff does not support BigTIFF, ignoring parameter\n");
+    usebigtiff = false;
+#endif
+
     /* Read Compression */
     switch (code = param_read_string(plist, (param_name = "Compression"), &comprstr)) {
         case 0:
@@ -249,6 +296,7 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
         return code;
 
     tfdev->BigEndian = big_endian;
+    tfdev->UseBigTIFF = usebigtiff;
     tfdev->Compression = compr;
     tfdev->MaxStripSize = mss;
     tfdev->DownScaleFactor = downscale;
@@ -269,10 +317,106 @@ tiff_put_params_downscale(gx_device * dev, gs_param_list * plist)
     return tiff_put_some_params(dev, plist, 1);
 }
 
+/* libtiff i/o hooks */
+static int
+gs_tifsDummyMapProc(thandle_t fd, void** pbase, toff_t* psize)
+{
+    (void) fd;
+    (void) pbase;
+    (void) psize;
+    return (0);
+}
+
+static void
+gs_tifsDummyUnmapProc(thandle_t fd, void* base, toff_t size)
+{
+    (void) fd;
+    (void) base;
+    (void) size;
+}
+
+static size_t
+gs_tifsReadProc(thandle_t fd, void* buf, size_t size)
+{
+    tifs_io_private *tiffio = (tifs_io_private *)fd;
+    size_t size_io = (size_t) size;
+
+    if ((size_t) size_io != size) {
+        return (size_t) -1;
+    }
+    return((size_t) fread (buf, 1, size_io, tiffio->f));
+}
+
+static size_t
+gs_tifsWriteProc(thandle_t fd, void* buf, size_t size)
+{
+    tifs_io_private *tiffio = (tifs_io_private *)fd;
+    size_t size_io = (size_t) size;
+    size_t written;
+
+    if ((size_t) size_io != size) {
+        return (size_t) -1;
+    }
+    written = (size_t) fwrite (buf, 1, size_io, tiffio->f);
+    return written;
+}
+
+static uint64_t
+gs_tifsSeekProc(thandle_t fd, uint64_t off, int whence)
+{
+    tifs_io_private *tiffio = (tifs_io_private *)fd;
+    off_t off_io = (off_t) off;
+
+    if ((uint64_t) off_io != off) {
+        return (uint64_t) -1; /* this is really gross */
+    }
+    if (fseeko(tiffio->f , off_io, whence) < 0) {
+        return (uint64_t) -1;
+    }
+    return (ftello(tiffio->f));
+}
+
+static int
+gs_tifsCloseProc(thandle_t fd)
+{
+    tifs_io_private *tiffio = (tifs_io_private *)fd;
+    gx_device_printer *pdev = tiffio->pdev;
+    int code = fclose(tiffio->f);
+    
+    gs_free(pdev->memory, tiffio, sizeof(tifs_io_private), 1, "gs_tifsCloseProc");
+
+    return code;
+}
+
+static uint64_t
+gs_tifsSizeProc(thandle_t fd)
+{
+    tifs_io_private *tiffio = (tifs_io_private *)fd;
+    uint64_t length, curpos = (uint64_t)ftello(tiffio->f);
+    
+    if (curpos < 0) {
+        return(0);
+    }
+    
+    if (fseeko(tiffio->f, 0, SEEK_END) < 0) {
+        return(0);
+    }
+    length = (uint64_t)ftello(tiffio->f);
+    
+    if (fseeko(tiffio->f, curpos, SEEK_SET) < 0) {
+        return(0);
+    }
+    return length;
+}
+
 TIFF *
-tiff_from_filep(const char *name, FILE *filep, int big_endian)
+tiff_from_filep(gx_device_printer *dev,  const char *name, FILE *filep, int big_endian, bool usebigtiff)
 {
     int fd;
+    char mode[5] = "w";
+    int modelen = 1;
+    TIFF *t;
+    tifs_io_private *tiffio;
 
 #ifdef __WIN32__
         fd = _get_osfhandle(fileno(filep));
@@ -283,7 +427,31 @@ tiff_from_filep(const char *name, FILE *filep, int big_endian)
     if (fd < 0)
         return NULL;
 
-    return TIFFFdOpen(fd, name, big_endian ? "wb" : "wl");
+    if (big_endian)
+        mode[modelen++] = 'b';
+    else
+        mode[modelen++] = 'l';
+
+    if (usebigtiff)
+    /* this should never happen for libtiff < 4.0 - see tiff_put_some_params() */
+        mode[modelen++] = '8';
+
+    mode[modelen++] = (char)0;
+    
+    tiffio = (tifs_io_private *)gs_malloc(dev->memory, sizeof(tifs_io_private), 1, "tiff_from_filep");
+    if (!tiffio) {
+        return NULL;
+    }
+    tiffio->f = filep;
+    tiffio->pdev = dev;
+
+    t = TIFFClientOpen(name, mode,
+        (thandle_t) tiffio, (TIFFReadWriteProc)gs_tifsReadProc,
+        (TIFFReadWriteProc)gs_tifsWriteProc, (TIFFSeekProc)gs_tifsSeekProc,
+	gs_tifsCloseProc, (TIFFSizeProc)gs_tifsSizeProc, gs_tifsDummyMapProc,
+        gs_tifsDummyUnmapProc);
+
+    return t;
 }
 
 int gdev_tiff_begin_page(gx_device_tiff *tfdev,
@@ -293,7 +461,7 @@ int gdev_tiff_begin_page(gx_device_tiff *tfdev,
 
     if (gdev_prn_file_is_new(pdev)) {
         /* open the TIFF device */
-        tfdev->tif = tiff_from_filep(pdev->dname, file, tfdev->BigEndian);
+        tfdev->tif = tiff_from_filep(pdev, pdev->dname, file, tfdev->BigEndian, tfdev->UseBigTIFF);
         if (!tfdev->tif)
             return_error(gs_error_invalidfileaccess);
     }
@@ -381,7 +549,7 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
             TIFFSetField(tif, TIFFTAG_ICCPROFILE, icc_profile->buffer_size, 
                          icc_profile->buffer);
         }
-    } 
+    }
     return 0;
 }
 
@@ -461,7 +629,6 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
     int size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
     int max_size = max(size, TIFFScanlineSize(tif));
     int row;
-    int width  = dev->width/factor;
     int height = dev->height/factor;
     gx_downscaler_t ds;
 
@@ -546,4 +713,53 @@ int tiff_compression_allowed(uint16 compression, byte depth)
                           compression != COMPRESSION_CCITTFAX3 &&
                           compression != COMPRESSION_CCITTFAX4);
 
+}
+
+static void
+gs_tifsWarningHandlerEx(thandle_t client_data, const char* module, const char* fmt, va_list ap)
+{
+    tifs_io_private *tiffio = (tifs_io_private *)client_data;
+    gx_device_printer *pdev = tiffio->pdev;    
+    int count;
+    char buf[TIFF_PRINT_BUF_LENGTH];
+
+    count = vsnprintf(buf, sizeof(buf), fmt, ap);
+    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+        dmlprintf1(pdev->memory, "%s", buf);
+        dmlprintf1(pdev->memory, "%s\n", tifs_msg_truncated);
+    } else {
+        dmlprintf1(pdev->memory, "%s\n", buf);
+    }
+}
+
+static void
+gs_tifsErrorHandlerEx(thandle_t client_data, const char* module, const char* fmt, va_list ap)
+{
+    tifs_io_private *tiffio = (tifs_io_private *)client_data;
+    gx_device_printer *pdev = tiffio->pdev;    
+    const char *max_size_error = "Maximum TIFF file size exceeded";
+    int count;
+    char buf[TIFF_PRINT_BUF_LENGTH];
+
+    count = vsnprintf(buf, sizeof(buf), fmt, ap);
+    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+        dmlprintf1(pdev->memory, "%s\n", buf);
+        dmlprintf1(pdev->memory, "%s", tifs_msg_truncated);
+    } else {
+        dmlprintf1(pdev->memory, "%s\n", buf);
+    }
+
+#if (TIFFLIB_VERSION >= 20111221)
+    if (!strncmp(fmt, max_size_error, strlen(max_size_error))) {
+        dmlprintf(pdev->memory, "Use -dUseBigTIFF(=true) for BigTIFF output\n");
+    }
+#endif
+}
+
+void tiff_set_handlers (void)
+{
+    (void)TIFFSetErrorHandler(NULL);
+    (void)TIFFSetWarningHandler(NULL);
+    (void)TIFFSetErrorHandlerExt(gs_tifsErrorHandlerEx);
+    (void)TIFFSetWarningHandlerExt(gs_tifsWarningHandlerEx);
 }
