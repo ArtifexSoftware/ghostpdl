@@ -1272,8 +1272,14 @@ static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int64_t start, i
             if (pos & ASIDES_BASE_POSITION)
                 pos += resource_pos - ASIDES_BASE_POSITION;
             pos -= pdev->OPDFRead_procset_length;
-            sprintf(str, "%010ld 00000 n \n", pos);
-            stream_puts(pdev->strm, str);
+            /* If we are linearising there's no point in writing an xref we will
+             * later replace. Also makes the file slightly smaller reducing the
+             * chances of needing to write white space to pad the file out.
+             */
+            if (!pdev->Linearise) {
+                sprintf(str, "%010ld 00000 n \n", pos);
+                stream_puts(pdev->strm, str);
+            }
             if (Offsets)
                 Offsets[i] = pos;
         }
@@ -1285,10 +1291,14 @@ static int
 rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, int object)
 {
     ulong read, Size;
-    char c, Scratch[16384], *source, *target, Buf[280], *next;
-    int code, ID;
+    char c, *Scratch, *source, *target, Buf[280], *next;
+    int code, ID, ScratchSize=16384;
 
     Size = pdev->ResourceUsage[object].Length;
+
+    Scratch = (char *)gs_alloc_bytes(pdev->pdf_memory, ScratchSize, "Working memory for object rewriting");
+    if (Scratch == 0L)
+        return (gs_note_error(gs_error_VMerror));
 
     pdev->ResourceUsage[object].LinearisedOffset = gp_ftell_64(linear_params->Lin_File.file);
     code = gp_fseek_64(linear_params->sfile, pdev->ResourceUsage[object].OriginalOffset, SEEK_SET);
@@ -1313,6 +1323,19 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
                 code = fread(&c, 1, 1, linear_params->sfile);
                 Scratch[index++] = c;
                 read++;
+                if (index == ScratchSize - 2) {
+                    char *Temp;
+
+                    Temp = (char *)gs_alloc_bytes(pdev->pdf_memory, ScratchSize * 2, "Working memory for object rewriting");
+                    if (Temp == 0L) {
+                        gs_free_object(pdev->pdf_memory, Scratch, "Free working memory for object rewriting");
+                        return (gs_note_error(gs_error_VMerror));
+                    }
+                    memcpy(Temp, Scratch, ScratchSize);
+                    gs_free_object(pdev->pdf_memory, Scratch, "Increase working memory for object rewriting");
+                    Scratch = Temp;
+                    ScratchSize *= 2;
+                }
             }while (c != '\r' && c != '\n');
             Scratch[index] = 0;
             if (strncmp(&Scratch[index - 7], "endobj", 6) == 0  || strncmp(&Scratch[index - 7], "stream", 6) == 0)
@@ -1345,9 +1368,9 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
     } while (target);
 
     do {
-        if (Size > 16384) {
-            code = fread(Scratch, 16384, 1, linear_params->sfile);
-            fwrite(Scratch, 16384, 1, linear_params->Lin_File.file);
+        if (Size > ScratchSize) {
+            code = fread(Scratch, ScratchSize, 1, linear_params->sfile);
+            fwrite(Scratch, ScratchSize, 1, linear_params->Lin_File.file);
             Size -= 16384;
         } else {
             code = fread(Scratch, Size, 1, linear_params->sfile);
@@ -1355,6 +1378,8 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
             Size = 0;
         }
     } while (Size);
+
+    gs_free_object(pdev->pdf_memory, Scratch, "Free working memory for object rewriting");
     return 0;
 }
 
@@ -1985,15 +2010,18 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     } while (code > 0);
 
     /* Main xref (part 11) */
-    /* Acrobat 9 and X (possibly other versions) won't recognise a file as
-     * optimised unless hte file is at least 4k bytes in length (!!!)
-     */
     mainxref = gp_ftell_64(linear_params->sfile);
-    sprintf(LDict, "trailer\n<</Size %d>>\nstartxref\n%ld\n%%%%EOF\n",
-        LDictObj, linear_params->FirstxrefOffset);
-    sprintf(Header, "xref\n0 %d\n", LDictObj);
-
-    Length = 4096 - (mainxref + strlen(LDict) + strlen(Header) + LDictObj * 20);
+    /* Acrobat 9 and X (possibly other versions) won't recognise a file as
+     * optimised unless the file is at least 4k bytes in length (!!!)
+     * Also, it is possible that the new file might be smaller than the old one, If a
+     * frequently used object changed to a lower number (eg form object 100 to object 10)
+     * We don't close and reopen the file, so we need to make sure that any difference
+     * is filled in with white space.
+     */
+    if (linear_params->MainFileEnd < 4096)
+        Length = 4096 - (mainxref + strlen(LDict) + strlen(Header) + LDictObj * 20);
+    else
+        Length = linear_params->MainFileEnd - (mainxref + strlen(LDict) + strlen(Header) + LDictObj * 20);
     Pad = ' ';
 
     while(Length > 0) {
@@ -2024,7 +2052,6 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
     linear_params->FileLength = gp_ftell_64(linear_params->sfile);
-
     /* Return to the linearisation dictionary and write it again filling
      * in the missing data.
      */
@@ -2213,14 +2240,6 @@ pdf_close(gx_device * dev)
     }
     if (pdev->contents_id != 0)
         pdf_close_page(pdev, 1);
-
-    if (pdev->Linearise) {
-        for (pagecount = 1; pagecount <= pdev->next_page; ++pagecount)
-            ;
-        if (pagecount == 1)
-            /* No point in linearising a 1 page file */
-            pdev->Linearise = 0;
-    }
 
     /* Write the page objects. */
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
@@ -2568,18 +2587,20 @@ pdf_close(gx_device * dev)
 
         /* Write the trailer. */
 
-        stream_puts(s, "trailer\n");
-        pprintld3(s, "<< /Size %ld /Root %ld 0 R /Info %ld 0 R\n",
-              pdev->next_id, Catalog_id, Info_id);
-        stream_puts(s, "/ID [");
-        psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
-        psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
-        stream_puts(s, "]\n");
-        if (pdev->OwnerPassword.size > 0) {
-            pprintld1(s, "/Encrypt %ld 0 R ", Encrypt_id);
+        if (!pdev->Linearise) {
+            stream_puts(s, "trailer\n");
+            pprintld3(s, "<< /Size %ld /Root %ld 0 R /Info %ld 0 R\n",
+                  pdev->next_id, Catalog_id, Info_id);
+            stream_puts(s, "/ID [");
+            psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
+            psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
+            stream_puts(s, "]\n");
+            if (pdev->OwnerPassword.size > 0) {
+                pprintld1(s, "/Encrypt %ld 0 R ", Encrypt_id);
+            }
+            stream_puts(s, ">>\n");
+            pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
         }
-        stream_puts(s, ">>\n");
-        pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
     }
 
     if (pdev->Linearise) {

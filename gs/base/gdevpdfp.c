@@ -125,7 +125,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("PreserveSMask", gs_param_type_bool, PreserveSMask),
     pi("PreserveTrMode", gs_param_type_bool, PreserveTrMode),
     pi("NoT3CCITT", gs_param_type_bool, NoT3CCITT),
-    pi("Linearise", gs_param_type_bool, Linearise),
+    pi("FastWebView", gs_param_type_bool, Linearise),
     pi("FirstPage", gs_param_type_int, FirstPage),
     pi("LastPage", gs_param_type_int, LastPage),
 #undef pi
