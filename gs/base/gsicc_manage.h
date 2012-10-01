@@ -54,6 +54,8 @@ typedef enum {
     TEXT_RGB
 } gsicc_srcgtagkey_t;
 
+#define GSICC_SRCTAG_NOCM "None"
+
 #define GSICC_SRCGTAG_KEYS\
   "ColorTune", "Graphic_CMYK", "Image_CMYK", "Text_CMYK",\
   "Graphic_RGB", "Image_RGB", "Text_RGB"
@@ -66,15 +68,11 @@ typedef enum {
 void gsicc_profile_reference(cmm_profile_t *icc_profile, int delta);
 void gsicc_extract_profile(gs_graphics_type_tag_t graphics_type_tag,
                        cmm_dev_profile_t *profile_struct,
-                       cmm_profile_t **profile,
-                       gsicc_rendering_intents_t *rendering_intent,
-                       gsicc_blackptcomp_t *blackptcomp);
+                       cmm_profile_t **profile, gsicc_rendering_param_t *render_cond);
 void gsicc_get_srcprofile(gsicc_colorbuffer_t data_cs,
                      gs_graphics_type_tag_t graphics_type_tag,
                      cmm_srcgtag_profile_t *srcgtag_profile,
-                     cmm_profile_t **profile, 
-                     gsicc_rendering_intents_t *rendering_intent,
-                     gsicc_blackptcomp_t *blackptcomp);
+                     cmm_profile_t **profile, gsicc_rendering_param_t *render_cond);
 int gsicc_getsrc_channel_count(cmm_profile_t *icc_profile);
 int gsicc_init_iccmanager(gs_state * pgs);
 int gsicc_init_gs_colors(gs_state *pgs);
@@ -123,10 +121,6 @@ gs_color_space_index gsicc_get_default_type(cmm_profile_t *profile_data);
 cmm_dev_profile_t* gsicc_new_device_profile_array(gs_memory_t *memory);
 void gs_setoverrideicc(gs_imager_state *pis, bool value);
 bool gs_currentoverrideicc(const gs_imager_state *pis);
-void gs_setoverride_ri(gs_imager_state *pis, bool value);
-bool gs_currentoverride_ri(const gs_imager_state *pis);
-void gs_setoverride_bp(gs_imager_state *pis, bool value);
-bool gs_currentoverride_bp(const gs_imager_state *pis);
 cmm_profile_t* gsicc_set_iccsmaskprofile(const char *pname, int namelen, 
                                          gsicc_manager_t *icc_manager, 
                                          gs_memory_t *mem);

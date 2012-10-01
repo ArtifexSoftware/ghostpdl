@@ -619,32 +619,6 @@ set_AccurateScreens(i_ctx_t *i_ctx_p, bool val)
 }
 /* Boolean values */
 static bool
-current_OverrideRI(i_ctx_t *i_ctx_p)
-{
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    return gs_currentoverride_ri(pis);
-}
-static int
-set_OverrideRI(i_ctx_t *i_ctx_p, bool val)
-{
-    gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_setoverride_ri(pis, val);
-    return 0;
-}
-static bool
-current_OverrideBP(i_ctx_t *i_ctx_p)
-{
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    return gs_currentoverride_bp(pis);
-}
-static int
-set_OverrideBP(i_ctx_t *i_ctx_p, bool val)
-{
-    gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_setoverride_bp(pis, val);
-    return 0;
-}
-static bool
 current_OverrideICC(i_ctx_t *i_ctx_p)
 {
     const gs_imager_state * pis = (gs_imager_state *) igs;
@@ -687,9 +661,7 @@ static const bool_param_def_t user_bool_params[] =
     {"AccurateScreens", current_AccurateScreens, set_AccurateScreens},
     {"LockFilePermissions", current_LockFilePermissions, set_LockFilePermissions},
     {"RenderTTNotdef", current_RenderTTNotdef, set_RenderTTNotdef},
-    {"OverrideICC", current_OverrideICC, set_OverrideICC},
-    {"OverrideRI", current_OverrideRI, set_OverrideRI},
-    {"OverrideBP", current_OverrideBP, set_OverrideBP}
+    {"OverrideICC", current_OverrideICC, set_OverrideICC}
 };
 
 /* The user parameter set */

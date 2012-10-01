@@ -110,7 +110,14 @@ typedef struct gscms_procs_s {
     gscms_link_free_proc_t free_link;
 } gscms_procs_t;
 
-/* Enumerate the ICC rendering intents */
+/* Enumerate the ICC rendering intents and other parameters.  A note on 
+   these.  0-3 are for different values.   4-7 are for Override cases
+   where we are trying to override some value specified in the document.
+   8 is reserved for not specified.  This is used in the case were we
+   can specify multiple rendering values for the sources and wish to just
+   use default or document values for a particular value.  For example,
+   we may want for RGB Graphics to specify a Rendering Intent but not
+   a black point compensation. */
 typedef enum {
     gsPERCEPTUAL = 0,
     gsRELATIVECOLORIMETRIC,
@@ -119,7 +126,8 @@ typedef enum {
     gsPERCEPTUAL_OR,            /* These are needed for keeping track  */                                   
     gsRELATIVECOLORIMETRIC_OR,  /* of when the source ri is going to */
     gsSATURATION_OR,            /* override the destination profile intent */
-    gsABSOLUTECOLORIMETRIC_OR   /* in particular through the clist */
+    gsABSOLUTECOLORIMETRIC_OR,  /* in particular through the clist */
+    gsRINOTSPECIFIED = 8            /* Used to ignore value when source based setting */  
 } gsicc_rendering_intents_t;
 
 /* We make an enumerated type in case someone wants to add different types
@@ -131,11 +139,22 @@ typedef enum {
     gsBLACKPTCOMP_ON,
     gsBLACKPTCOMP_OFF_OR = 4, /* These are needed for keeping track of the  */                                   
     gsBLACKPTCOMP_ON_OR,      /* source blackpt is to overide dest. setting */
+    gsBPNOTSPECIFIED = 8     /* Used to ignore value when source based setting */  
 } gsicc_blackptcomp_t;
 
+/* Since this is not specified by the source document we don't need to worry 
+   about override values */
+typedef enum {
+    gsBLACKPRESERVE_OFF = 0,
+    gsBLACKPRESERVE_KONLY,
+    gsBLACKPRESERVE_KPLANE,
+    gsBKPRESNOTSPECIFIED = 8   /* Used to ignore value when source based setting */  
+} gsicc_blackpreserve_t;
+  
 #define gsRI_OVERRIDE 0x4
 #define gsBP_OVERRIDE 0x4 
 #define gsRI_MASK 0x3;
+#define gsBP_MASK 0x3;
 
 /* Enumerate the types of profiles */
 typedef enum {
@@ -154,19 +173,39 @@ typedef enum {
     gsSRC_TEXTPRO,
 } gsicc_profile_srctypes_t;
 
+/* --------------- graphical object tags ------------ */
+
+/* The default is "unknown" which has value 0 and by default devices don't encode tags */
+typedef enum {
+    GS_UNKNOWN_TAG = 0x0,
+    GS_TEXT_TAG = 0x1,
+    GS_IMAGE_TAG = 0x2,
+    GS_PATH_TAG = 0x4,
+    GS_UNTOUCHED_TAG = 0x8,
+    GS_DEVICE_ENCODES_TAGS = 0x80
+} gs_graphics_type_tag_t;
+
+/* Source profile graphic tag rendering conditions */
+typedef struct gsicc_rendering_param_s {
+    gsicc_rendering_intents_t rendering_intent;   /* Standard rendering intent */
+    gsicc_blackptcomp_t black_point_comp;         /* Black point compensation */
+    gsicc_blackpreserve_t preserve_black;         /* preserve K plane in CMYK2CMYK */
+    gs_graphics_type_tag_t graphics_type_tag;  /* Some CMM may want this */
+    bool use_cm;                                  /* use color management (used only with sourcetag) */
+    bool override_icc;                            /* Override source ICC (used only with sourcetag) */
+} gsicc_rendering_param_t;
+
 /* Source profiles for different objects.  only CMYK and RGB */
 typedef struct cmm_srcgtag_profile_s {
-        cmm_profile_t  *rgb_profiles[NUM_SOURCE_PROFILES];
-        gsicc_rendering_intents_t rgb_intent[NUM_SOURCE_PROFILES];
-        gsicc_blackptcomp_t rgb_blackptcomp[NUM_SOURCE_PROFILES];
-        cmm_profile_t  *cmyk_profiles[NUM_SOURCE_PROFILES];
-        gsicc_rendering_intents_t cmyk_intent[NUM_SOURCE_PROFILES];
-        gsicc_blackptcomp_t cmyk_blackptcomp[NUM_SOURCE_PROFILES];
-        cmm_profile_t  *color_warp_profile;
-        gs_memory_t *memory;
-        int name_length;            /* Length of file name */
-        char *name;                 /* Name of file name where this is found */
-        rc_header rc;
+    cmm_profile_t  *rgb_profiles[NUM_SOURCE_PROFILES];
+    gsicc_rendering_param_t rgb_rend_cond[NUM_SOURCE_PROFILES];
+    cmm_profile_t  *cmyk_profiles[NUM_SOURCE_PROFILES];
+    gsicc_rendering_param_t cmyk_rend_cond[NUM_SOURCE_PROFILES];
+    cmm_profile_t  *color_warp_profile;
+    gs_memory_t *memory;
+    int name_length;            /* Length of file name */
+    char *name;                 /* Name of file name where this is found */
+    rc_header rc;
 } cmm_srcgtag_profile_t;
 
 typedef struct gsicc_colorname_s gsicc_colorname_t;
@@ -202,8 +241,7 @@ typedef struct cmm_dev_profile_s {
         cmm_profile_t  *proof_profile;
         cmm_profile_t  *link_profile;
         cmm_profile_t  *oi_profile;  /* output intent profile */
-        gsicc_rendering_intents_t intent[NUM_DEVICE_PROFILES];
-        gsicc_blackptcomp_t blackptcomp[NUM_DEVICE_PROFILES];
+        gsicc_rendering_param_t rendercond[NUM_DEVICE_PROFILES];
         bool devicegraytok;        /* Used for forcing gray to pure black */
         bool usefastcolor;         /* Used when we want to use no cm */
         bool supports_devn;        /* If the target handles devn colors */
@@ -428,29 +466,9 @@ typedef struct gsicc_manager_s {
     gsicc_devicen_t *device_n;      /* A linked list of profiles used for DeviceN support */
     gsicc_smask_t *smask_profiles;  /* Profiles used when we are in a softmask group */
     bool override_internal;         /* Set via the user params */
-    bool override_ri;               /* Override rend intent. Set via the user params */
-    bool override_bp;               /* Override black point setting.  Set via user params */
     cmm_srcgtag_profile_t *srcgtag_profile;
     gs_memory_t *memory;
     rc_header rc;
 } gsicc_manager_t;
-
-/* --------------- graphical object tags ------------ */
-
-/* The default is "unknown" which has value 0 and by default devices don't encode tags */
-typedef enum {
-    GS_UNKNOWN_TAG = 0x0,
-    GS_TEXT_TAG = 0x1,
-    GS_IMAGE_TAG = 0x2,
-    GS_PATH_TAG = 0x4,
-    GS_UNTOUCHED_TAG = 0x8,
-    GS_DEVICE_ENCODES_TAGS = 0x80
-} gs_graphics_type_tag_t;
-
-typedef struct gsicc_rendering_param_s {
-    gsicc_rendering_intents_t rendering_intent;
-    gs_graphics_type_tag_t    graphics_type_tag;
-    gsicc_blackptcomp_t       black_point_comp;
-} gsicc_rendering_param_t;
 
 #endif /* ifndef gscms_INCLUDED */

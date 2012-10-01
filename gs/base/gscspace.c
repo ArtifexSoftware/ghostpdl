@@ -612,12 +612,11 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_state * pgs)
     cmm_profile_t          *output_profile;
     int                     code;
     bool                    profile_ok = false;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t        render_cond;   
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     gsicc_extract_profile(dev->graphics_type_tag, dev_profile, &(output_profile),
-                          &rendering_intent, &blackptcomp);
+                          &render_cond);
 
     /* check if color model behavior must be determined */
     if (pcinfo->opmode == GX_CINFO_OPMODE_UNKNOWN)

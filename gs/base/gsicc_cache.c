@@ -315,14 +315,13 @@ gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, gx_device *dev,
 {
     cmm_dev_profile_t *dev_profile;
     cmm_profile_t *icc_profile;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     int code;
 
     if (cmm_icc_profile_data == NULL ) {
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
         gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
-                               &(icc_profile), &rendering_intent, &blackptcomp);
+                               &(icc_profile), &render_cond);
         *hash = icc_profile->hashcode;
         return;
     }
@@ -455,9 +454,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     cmm_profile_t *gs_output_profile;
     gs_state *pgs;
     gx_device *dev;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t blackptcomp;
-    bool use_src_intent = false;
+    gsicc_rendering_param_t render_cond; 
     cmm_dev_profile_t *dev_profile;
     int code;
     bool devicegraytok;
@@ -485,17 +482,14 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
                     gsicc_get_srcprofile(gs_input_profile->data_cs,
                                       dev->graphics_type_tag,
                                       pis->icc_manager->srcgtag_profile,
-                                      &(gs_srcgtag_profile), &rendering_intent,
-                                      &blackptcomp);
+                                      &(gs_srcgtag_profile), &render_cond);
                 if (gs_srcgtag_profile != NULL) {
                     /* In this case, the user is letting the source profiles
                        drive the color management.  Let that set the 
                        rendering intent and blackpoint compensation also as they 
                        must know what they are doing. */
                     gs_input_profile = gs_srcgtag_profile;
-                    rendering_params->rendering_intent = rendering_intent;
-                    rendering_params->black_point_comp = blackptcomp;
-                    use_src_intent = true;
+                    (*rendering_params) = render_cond;
                 }
             }
     }
@@ -503,9 +497,9 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
         gs_output_profile = output_colorspace->cmm_icc_profile_data;
         devicegraytok = false;
     } else {
-        /* Use the device profile. Only use the rendering intent if override_ri
-           is set. Also, only use the blackpoint if overide_bp is set.
-           Note that this can conflict with intents set from the source
+        /* Use the device profile. Only use the rendering intent if it has 
+           an override setting.  Also, only use the blackpoint if overide_bp 
+           is set. Note that this can conflict with intents set from the source
            objects so the user needs to understand what options to set. */
         gs_color_space_index index = 
                             gsicc_get_default_type(gs_input_profile);
@@ -525,20 +519,20 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
             }
         }
         gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
-                               &(gs_output_profile), &rendering_intent, 
-                               &blackptcomp);
+                               &(gs_output_profile), &render_cond);
         /* Check if the incoming rendering intent was source based
            (this can occur for high level images in the clist) in
            that case we need to use the source ri and not the device one */
         if (!(rendering_params->rendering_intent & gsRI_OVERRIDE)) {
-            if (pis->icc_manager != NULL && pis->icc_manager->override_ri == true) {
-                rendering_params->rendering_intent = rendering_intent;      
+            /* No it was not.  Check if our device profile RI was specified */
+            if (render_cond.rendering_intent != gsRINOTSPECIFIED) {
+                rendering_params->rendering_intent = render_cond.rendering_intent;      
             }
         }
         /* Similar to the black point compensation */
         if (!(rendering_params->black_point_comp & gsBP_OVERRIDE)) {
-            if (pis->icc_manager != NULL && pis->icc_manager->override_bp == true) {
-                rendering_params->black_point_comp = blackptcomp;      
+            if (render_cond.black_point_comp != gsBPNOTSPECIFIED) {
+                rendering_params->black_point_comp = render_cond.black_point_comp;      
             }
         }
         devicegraytok = dev_profile->devicegraytok;
@@ -547,6 +541,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
        is true then use the ps_gray and ps_cmyk profiles instead of these
        profiles */
     rendering_params->rendering_intent = rendering_params->rendering_intent & gsRI_MASK;
+    rendering_params->black_point_comp = rendering_params->black_point_comp & gsBP_MASK;
     return(gsicc_get_link_profile(pis, dev, gs_input_profile, gs_output_profile,
                     rendering_params, memory, devicegraytok));
 }
@@ -949,8 +944,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
     unsigned short white_lab[3] = {65535, 32767, 32767};
     gsicc_link_t *icc_link;
     cmm_profile_t *curr_output_profile;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile;
 
     /* Check if the data that we have has already been generated. */
@@ -1079,7 +1073,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
                     gsicc_extract_profile(dev->graphics_type_tag,
                                           dev_profile, &(curr_output_profile),
-                                          &rendering_intent, &blackptcomp);
+                                          &render_cond);
                 }
                 icc_link = gsicc_get_link_profile(pis, dev,
                                                 pis->icc_manager->lab_profile,

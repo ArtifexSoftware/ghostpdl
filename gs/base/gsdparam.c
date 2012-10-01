@@ -141,13 +141,13 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
             if (dev_profile->device_profile[k] == NULL 
                 || dev_profile->device_profile[k]->name == NULL) {
                 param_string_from_string(profile_array[k], null_str);
-                profile_intents[k] = gsPERCEPTUAL;
-                blackptcomps[k] = gsBLACKPTCOMP_ON;
+                profile_intents[k] = gsRINOTSPECIFIED;
+                blackptcomps[k] = gsBPNOTSPECIFIED;
             } else {
                 param_string_from_string(profile_array[k], 
                     dev_profile->device_profile[k]->name);
-                profile_intents[k] = dev_profile->intent[k];
-                blackptcomps[k] = dev_profile->blackptcomp[k];
+                profile_intents[k] = dev_profile->rendercond[k].rendering_intent;
+                blackptcomps[k] = dev_profile->rendercond[k].black_point_comp;
             }
         }
         /* The proof and link profile */
@@ -185,8 +185,8 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     } else {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             param_string_from_string(profile_array[k], null_str);
-            profile_intents[k] = gsPERCEPTUAL;
-            blackptcomps[k] = gsBLACKPTCOMP_ON;
+            profile_intents[k] = gsRINOTSPECIFIED;
+            blackptcomps[k] = gsBPNOTSPECIFIED;
         }
         param_string_from_string(proof_profile, null_str);
         param_string_from_string(link_profile, null_str);
@@ -733,29 +733,23 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     bool devicegraytok = true;
     bool usefastcolor = false;
     bool prebandthreshold = false;
-    bool rend_intent_set[NUM_DEVICE_PROFILES];  /* needed so that global forces */
-    bool blackptcomp_set[NUM_DEVICE_PROFILES];  /* all the types if no types set */
     int  profile_types[NUM_DEVICE_PROFILES] = {gsDEFAULTPROFILE,
                                                gsGRAPHICPROFILE,
                                                gsIMAGEPROFILE,
                                                gsTEXTPROFILE}; 
 
-    for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
-        rend_intent_set[k] = false;
-        blackptcomp_set[k] = false;
-    }
     if (dev->icc_struct != NULL) {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
-            rend_intent[k] = dev->icc_struct->intent[k];
-            blackptcomp[k] = dev->icc_struct->blackptcomp[k];
+            rend_intent[k] = dev->icc_struct->rendercond[k].rendering_intent;
+            blackptcomp[k] = dev->icc_struct->rendercond[k].black_point_comp;
         }
         devicegraytok = dev->icc_struct->devicegraytok;
         usefastcolor = dev->icc_struct->usefastcolor;
         prebandthreshold = dev->icc_struct->prebandthreshold;
     } else {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
-            rend_intent[k] = gsPERCEPTUAL;
-            blackptcomp[k] = gsBLACKPTCOMP_ON;
+            rend_intent[k] = gsRINOTSPECIFIED;
+            blackptcomp[k] = gsBPNOTSPECIFIED;
         }
     }
 
@@ -960,58 +954,42 @@ nce:
                                                     &(rend_intent[0]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
-    } else if (code == 0) {
-        rend_intent_set[0] = true;
-    }
+    } 
     if ((code = param_read_int(plist, (param_name = "GraphicIntent"), 
                                                     &(rend_intent[1]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
-    } else if (code == 0) {
-        rend_intent_set[1] = true;
-    }
+    } 
     if ((code = param_read_int(plist, (param_name = "ImageIntent"), 
                                                     &(rend_intent[2]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
-    } else if (code == 0) {
-        rend_intent_set[2] = true;
-    }
+    } 
     if ((code = param_read_int(plist, (param_name = "TextIntent"), 
                                                     &(rend_intent[3]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
-    } else if (code == 0) {
-        rend_intent_set[3] = true;
-    }
+    } 
     if ((code = param_read_int(plist, (param_name = "BlackPtComp"), 
                                                     &(blackptcomp[0]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
-    } else if (code == 0) {
-        blackptcomp_set[0] = true;
-    }
+    } 
     if ((code = param_read_int(plist, (param_name = "GraphBlackPt"), 
                                                     &(blackptcomp[1]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
-    } else if (code == 0) {
-        blackptcomp_set[1] = true;
-    }
+    } 
     if ((code = param_read_int(plist, (param_name = "ImageBlackPt"), 
                                                     &(blackptcomp[2]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
-    } else if (code == 0) {
-        blackptcomp_set[2] = true;
-    }
+    } 
     if ((code = param_read_int(plist, (param_name = "TextBlackPt"), 
                                                     &(blackptcomp[3]))) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
-    } else if (code == 0) {
-        blackptcomp_set[3] = true;
-    }
+    } 
     if ((code = param_read_bool(plist, (param_name = "DeviceGrayToK"), 
                                                         &devicegraytok)) < 0) {
         ecode = code;
@@ -1226,16 +1204,17 @@ nce:
         /* Set the default object */
         gx_default_put_intent(rend_intent[0], dev, gsDEFAULTPROFILE); 
         gx_default_put_blackptcomp(blackptcomp[0], dev, gsDEFAULTPROFILE);
-
         /* If the default was specified and not a specialized one (e.g. graphic
-           image or text) then the special one will get set to the default */
+           image or text) then the special one will get set to the default.  */
         for (k = 1; k < NUM_DEVICE_PROFILES; k++) {
-            if (rend_intent_set[0] && !rend_intent_set[k]) {
+            if (rend_intent[0] != gsRINOTSPECIFIED && 
+                rend_intent[k] == gsRINOTSPECIFIED) {
                 gx_default_put_intent(rend_intent[0], dev, profile_types[k]);
             } else {
                 gx_default_put_intent(rend_intent[k], dev, profile_types[k]);
             }
-            if (blackptcomp_set[0] && !blackptcomp_set[k]) {
+            if (blackptcomp[0] != gsBPNOTSPECIFIED && 
+                blackptcomp[k] == gsBPNOTSPECIFIED) {
                 gx_default_put_blackptcomp(blackptcomp[0], dev, profile_types[k]); 
             } else {
                 gx_default_put_blackptcomp(blackptcomp[k], dev, profile_types[k]); 

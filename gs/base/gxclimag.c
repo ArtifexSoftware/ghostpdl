@@ -514,53 +514,52 @@ clist_begin_typed_image(gx_device * dev,
                         if (srcgtag_profile->rgb_profiles[gsSRC_IMAGPRO] != NULL) {
                             src_profile = 
                                 srcgtag_profile->rgb_profiles[gsSRC_IMAGPRO];
-                            pis_nonconst->renderingintent = 
-                                srcgtag_profile->rgb_intent[gsSRC_IMAGPRO];
-                            pis_nonconst->blackptcomp = 
-                                srcgtag_profile->rgb_blackptcomp[gsSRC_IMAGPRO];
+                            pis_nonconst->renderingintent =
+                                srcgtag_profile->rgb_rend_cond[gsSRC_IMAGPRO].rendering_intent;
+                            pis_nonconst->blackptcomp =
+                                srcgtag_profile->rgb_rend_cond[gsSRC_IMAGPRO].black_point_comp;
                         }
                     } else if (src_profile->data_cs == gsCMYK) {
                         if (srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO] != NULL) {
                             src_profile = 
                                 srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO];
-                            pis_nonconst->renderingintent = 
-                                srcgtag_profile->cmyk_intent[gsSRC_IMAGPRO];
+                            pis_nonconst->renderingintent =
+                                srcgtag_profile->cmyk_rend_cond[gsSRC_IMAGPRO].rendering_intent;
                             pis_nonconst->blackptcomp =
-                                srcgtag_profile->cmyk_blackptcomp[gsSRC_IMAGPRO];
+                                srcgtag_profile->cmyk_rend_cond[gsSRC_IMAGPRO].black_point_comp;
                         }
                     }
                 }
-                /* If override is set to true and we are not overriding from
-                   setting the RI by the source structure, then override any
-                   rendering intent specified in the document by the ri 
-                   specified for the device */ 
-                if (!(pis_nonconst->renderingintent & gsRI_OVERRIDE)) {
-                    if (pis->icc_manager != NULL && 
-                        pis->icc_manager->override_ri == true) {
-                        gsicc_blackptcomp_t temp_blackpt;
-                        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-                        gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
-                                              &(gs_output_profile), 
-                                              (gsicc_rendering_intents_t *)\
-                                              (&(pis_nonconst->renderingintent)),
-                                              (gsicc_blackptcomp_t *)\
-                                              (&(temp_blackpt)));
-                    }
+                /* If the device RI is set to an override value and we are not 
+                   setting the RI from the source structure, then override any
+                   RI specified in the document by the RI specified in the 
+                   device */
+                if (!(pis_nonconst->renderingintent & gsRI_OVERRIDE)) {  /* was set by source? */
+                    /* No it was not.  See if we should override with the 
+                       device setting */
+                    gsicc_rendering_param_t temp_render_cond;   
+
+                    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+                    gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
+                                          &(gs_output_profile), 
+                                          (&(temp_render_cond)));
+                    if (temp_render_cond.rendering_intent != gsRINOTSPECIFIED) {
+                        pis_nonconst->renderingintent = 
+                                        temp_render_cond.rendering_intent;
+                        }
                 }
                 /* We have a similar issue to deal with with respect to the 
-                   black point.  Keeping rendering intent and bp comp 
-                   disentangled. */
+                   black point.  */
                 if (!(pis_nonconst->blackptcomp & gsBP_OVERRIDE)) {
-                    if (pis->icc_manager != NULL && 
-                        pis->icc_manager->override_bp == true) {
-                        gsicc_rendering_intents_t temp_ri;
-                        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-                        gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
-                                              &(gs_output_profile), 
-                                              (gsicc_rendering_intents_t *)\
-                                              (&(temp_ri)),
-                                              (gsicc_blackptcomp_t *)\
-                                              (&(pis_nonconst->blackptcomp)));
+                    gsicc_rendering_param_t temp_render_cond;   
+
+                    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+                    gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
+                                          &(gs_output_profile), 
+                                          (&(temp_render_cond)));
+                    if (temp_render_cond.black_point_comp != gsBPNOTSPECIFIED) {
+                        pis_nonconst->blackptcomp = 
+                                            temp_render_cond.black_point_comp;
                     }
                 }
                 if (renderingintent != pis_nonconst->renderingintent)
@@ -618,12 +617,11 @@ clist_begin_typed_image(gx_device * dev,
        we are only doing portrait or landscape cases if we are here.  Only
        question is penum->image_parent_type == gs_image_type1 */
     if (dev_profile == NULL) {
-        gsicc_rendering_intents_t temp_intent;
-        gsicc_blackptcomp_t temp_bp;
+        gsicc_rendering_param_t temp_render_cond;   
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
         gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
-                                              &(gs_output_profile),
-                                              &(temp_intent), &(temp_bp));
+                                              &(gs_output_profile), 
+                                              &(temp_render_cond));
     }
     if (gx_device_must_halftone(dev) && pim->BitsPerComponent == 8 && !masked &&
         (dev->color_info.num_components == 1 || is_planar_dev) && 

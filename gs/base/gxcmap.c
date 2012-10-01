@@ -1181,16 +1181,14 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
     bool use_rgb2dev_icc = false;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     int code;
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(dev->graphics_type_tag,
-                          dev_profile, &des_profile,
-                          &rendering_intent, &blackptcomp);
+                          dev_profile, &des_profile, &render_cond);   
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
     if (pis->color_component_map.sep_type == SEP_ALL) {
@@ -1300,16 +1298,14 @@ devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis, gx_device *dev)
     unsigned short psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int k;
     unsigned short *psrc_temp;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     int code;
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(dev->graphics_type_tag,
-                          dev_profile, &des_profile,
-                          &rendering_intent, &blackptcomp);
+                          dev_profile, &des_profile, &render_cond);
     /* Define the rendering intents. */
     rendering_params.black_point_comp = pis->blackptcomp;
     rendering_params.graphics_type_tag = GS_PATH_TAG;
@@ -1352,15 +1348,13 @@ cmap_devicen_halftoned(const frac * pcc,
     int i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int code;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(dev->graphics_type_tag,
-                          dev_profile, &des_profile,
-                          &rendering_intent, &blackptcomp);
+                          dev_profile, &des_profile, &render_cond);
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
@@ -1400,16 +1394,13 @@ cmap_devicen_direct(const frac * pcc,
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
     int code;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
-
+    gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(dev->graphics_type_tag,
-                          dev_profile, &des_profile,
-                          &rendering_intent, &blackptcomp);
+                          dev_profile, &des_profile, &render_cond);
     /*   See the comment below */
     /* map to the color model */
     for (i=0; i < ncomps; i++)
@@ -1983,16 +1974,14 @@ bool
 gx_device_uses_std_cmap_procs(gx_device * dev, const gs_imager_state * pis)
 {
     const gx_cm_color_map_procs *pprocs;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     int code;
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(dev->graphics_type_tag,
-                          dev_profile, &des_profile,
-                          &rendering_intent, &blackptcomp);
+                          dev_profile, &des_profile, &render_cond);
 
     if (des_profile != NULL) {
         pprocs = dev_proc(dev, get_color_mapping_procs)(dev);

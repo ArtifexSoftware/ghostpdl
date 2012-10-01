@@ -472,10 +472,6 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
                     if ((code = gsicc_init_device_profile_struct(dev, NULL,
                                                             gsDEFAULTPROFILE)) < 0)
                         return(code);
-                    /* set the intent too */
-                    if ((code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
-                                                           gsDEFAULTPROFILE)) < 0)
-                        return(code);
                 }
             }
         }

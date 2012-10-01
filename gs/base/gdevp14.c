@@ -1135,14 +1135,13 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
     cmm_profile_t *src_profile;
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     int code;
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &src_profile,
-                          &rendering_intent, &blackptcomp);
+                          &render_cond);
     ctx->smask_depth -= 1;
     /* icc_match == -1 means old non-icc code.
        icc_match == 0 means use icc code
@@ -1549,8 +1548,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     byte *buf_ptr;
     bool data_blended = false;
     int num_rows_left;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile;
 
     if_debug0m('v', dev->memory, "[v]pdf14_put_image\n");
@@ -1636,8 +1634,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
        and the target will be CIELAB */
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile,
-                          &(pcs->cmm_icc_profile_data), &rendering_intent,
-                          &blackptcomp);
+                          &(pcs->cmm_icc_profile_data), &render_cond);  
     /* pcs takes a reference to the profile data it just retrieved. */
     rc_increment(pcs->cmm_icc_profile_data);
     gscms_set_icc_range(&(pcs->cmm_icc_profile_data));
@@ -1862,7 +1859,7 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
         gx_monitor_enter(profile_dev14->device_profile[0]->lock);
         rc_increment(profile_dev14->device_profile[0]);
         gx_monitor_leave(profile_dev14->device_profile[0]->lock);
-        profile_dev14->intent[0] = profile_targ->intent[0];
+        profile_dev14->rendercond[0] = profile_targ->rendercond[0];
     }
     dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
 #undef COPY_ARRAY_PARAM
@@ -3399,15 +3396,14 @@ pdf14_begin_transparency_group(gx_device *dev,
     gs_transparency_color_t group_color;
     cmm_profile_t *curr_profile;
     cmm_profile_t *group_profile;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile;
 
     sep_target = (strcmp(pdev->dname, "pdf14cmykspot") == 0) ||
                  (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0));
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &group_profile,
-                          &rendering_intent, &blackptcomp);
+                          &render_cond);
     /* If the target device supports separations, then
        we should should NOT create the group.  The exception to this
        rule would be if we just popped a transparency mask */
@@ -3499,13 +3495,12 @@ pdf14_end_transparency_group(gx_device *dev,
     int code;
     pdf14_parent_color_t *parent_color;
     cmm_profile_t *group_profile;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &group_profile,
-                          &rendering_intent, &blackptcomp);
+                          &render_cond);
     if_debug0m('v', dev->memory, "[v]pdf14_end_transparency_group\n");
     vd_get_dc('c');
     vd_set_shift(0, 0);
@@ -3577,8 +3572,7 @@ pdf14_update_device_color_procs(gx_device *dev,
     byte comp_shift[] = {0,0,0,0};
     int k;
     bool has_tags = dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     int code;
     cmm_dev_profile_t *dev_profile;
 
@@ -3730,8 +3724,8 @@ pdf14_update_device_color_procs(gx_device *dev,
         if (group_color == ICC && iccprofile != NULL) {
             code = dev_proc(dev, get_profile)(dev,  &dev_profile);
             gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile,
-                                  &(parent_color_info->icc_profile),
-                                  &rendering_intent, &blackptcomp);
+                                  &(parent_color_info->icc_profile), 
+                                  &render_cond);   
         }
         /* Set new information */
         /* If we are in a soft mask and we are using compressed color
@@ -3800,8 +3794,7 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
     int k;
     bool has_tags = dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
     cmm_profile_t *icc_profile_dev;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     int code;
     cmm_dev_profile_t *dev_profile;
 
@@ -3874,8 +3867,8 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
             case ICC:
                 /* Check if the profile is different. */
                 code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-                gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile_dev,
-                                      &rendering_intent, &blackptcomp);
+                gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, 
+                                      &icc_profile_dev, &render_cond);   
                 if (icc_profile_dev->hashcode != icc_profile->hashcode) {
                     update_color_info = true;
                     new_num_comps = icc_profile->num_comps;
@@ -4052,14 +4045,13 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_parent_color_t *new_parent_color;
     cmm_profile_t *icc_profile;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     int code;
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile,
-                          &rendering_intent, &blackptcomp);
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile, 
+                          &render_cond);
     if_debug0m('v', dev->memory, "[v]pdf14_push_parent_color\n");
     /* Allocate a new one */
     new_parent_color = gs_alloc_struct(dev->memory, pdf14_parent_color_t,
@@ -5018,13 +5010,12 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     int code;
     bool has_tags = target->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
     cmm_profile_t *icc_profile;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(target, get_profile)(target,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile,
-                          &rendering_intent, &blackptcomp);
+                          &render_cond);
     if_debug0m('v', mem, "[v]gs_pdf14_device_push\n");
     code = get_pdf14_device_proto(target, &dev_proto,
                                  &temp_dev_proto, pis, pdf14pct);
@@ -5161,14 +5152,13 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
     bool found_icc;
     int64_t hashcode = 0;
     cmm_profile_t *icc_profile;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc((gx_device *) cdev, get_profile)((gx_device *) cdev,
                                                      &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile,
-                          &rendering_intent, &blackptcomp);
+                          &render_cond);
     *pbuf++ = opcode;			/* 1 byte */
     switch (opcode) {
         default:			/* Should not occur. */
@@ -6099,13 +6089,12 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
     int code;
     bool has_tags = target->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
     cmm_profile_t *target_profile;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(target, get_profile)(target,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &target_profile,
-                          &rendering_intent, &blackptcomp);
+                          &render_cond);
     if_debug0m('v', pis->memory, "[v]pdf14_create_clist_device\n");
     code = get_pdf14_clist_device_proto(target, &dev_proto,
                                  &temp_dev_proto, pis, pdf14pct);
@@ -6879,17 +6868,16 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
     gs_pattern2_instance_t *pinst = NULL;
     gx_device_forward * fdev = (gx_device_forward *)dev;
     cmm_dev_profile_t *dev_profile, *fwd_profile;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     cmm_profile_t *icc_profile_fwd, *icc_profile_dev;
 
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     code = dev_proc(fdev->target, get_profile)(fdev->target,  &fwd_profile);
 
     gsicc_extract_profile(GS_UNKNOWN_TAG, fwd_profile, &icc_profile_fwd,
-                          &rendering_intent, &blackptcomp);
+                          &render_cond);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile_dev,
-                          &rendering_intent, &blackptcomp);
+                          &render_cond);
 
     /*
      * Ensure that that the PDF 1.4 reading compositor will have the current
@@ -7315,18 +7303,16 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
     gs_devn_params * pclist_devn_params;
     gx_device_clist_reader *pcrdev = (gx_device_clist_reader *)cdev;
     cmm_profile_t *cl_icc_profile, *p14_icc_profile;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     int code;
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(cdev, get_profile)(cdev,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &cl_icc_profile,
-                          &rendering_intent, &blackptcomp);
+                          &render_cond);
     code = dev_proc(p14dev, get_profile)((gx_device *)p14dev,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &p14_icc_profile,
-                          &rendering_intent, &blackptcomp);
-
+                          &render_cond);
     /*
      * We only handle the push/pop operations. Save and restore the color_info
      * field for the clist device.  (This is needed since the process color

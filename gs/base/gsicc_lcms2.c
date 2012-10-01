@@ -181,7 +181,8 @@ gscms_get_profile_data_space(gcmmhprofile_t profile)
 
 /* Get ICC Profile handle from buffer */
 gcmmhprofile_t
-gscms_get_profile_handle_mem(gs_memory_t *mem, unsigned char *buffer, unsigned int input_size)
+gscms_get_profile_handle_mem(gs_memory_t *mem, unsigned char *buffer, 
+                             unsigned int input_size)
 {
     cmsSetLogErrorHandler(gscms_error);
     return(cmsOpenProfileFromMemTHR((cmsContext)mem,buffer,input_size));

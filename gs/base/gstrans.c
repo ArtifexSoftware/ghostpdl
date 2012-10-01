@@ -727,15 +727,13 @@ gs_push_pdf14trans_device(gs_state * pgs, bool is_pattern)
 {
     gs_pdf14trans_params_t params = { 0 };
     cmm_profile_t *icc_profile;
-    gsicc_rendering_intents_t rendering_intent;
-    gsicc_blackptcomp_t       blackptcomp;
+    gsicc_rendering_param_t render_cond;   
     int code;
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(pgs->device, get_profile)(pgs->device,  &dev_profile);
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile,
-                          &rendering_intent, &blackptcomp);
-
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile, 
+                          &render_cond); 
     params.pdf14_op = PDF14_PUSH_DEVICE;
     /*
      * We really only care about the number of spot colors when we have
