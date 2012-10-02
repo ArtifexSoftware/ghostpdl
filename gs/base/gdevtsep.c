@@ -604,7 +604,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
         1,                      /* DownScaleFactor */\
         0,                      /* MinFeatureSize */\
         8,                      /* BitsPerComponent */\
-        GS_SOFT_MAX_SPOTS	/* max_spots */
+        GS_SOFT_MAX_SPOTS       /* max_spots */
 
 #define GCIB (ARCH_SIZEOF_GX_COLOR_INDEX * 8)
 
@@ -649,7 +649,7 @@ const tiffsep1_device gs_tiffsep1_device =
       {0, 1, 2, 3, 4, 5, 6, 7 } /* Initial component SeparationOrder */
     },
     { true },                   /* equivalent CMYK colors for spot colors */
-    false,			/* warning_given */
+    false,                      /* warning_given */
     { {0} },                    /* threshold arrays */
     0,                          /* fill_path */
 };

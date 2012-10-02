@@ -436,7 +436,7 @@ tiff_from_filep(gx_device_printer *dev,  const char *name, FILE *filep, int big_
     /* this should never happen for libtiff < 4.0 - see tiff_put_some_params() */
         mode[modelen++] = '8';
 
-    mode[modelen++] = (char)0;
+    mode[modelen] = (char)0;
     
     tiffio = (tifs_io_private *)gs_malloc(dev->memory, sizeof(tifs_io_private), 1, "tiff_from_filep");
     if (!tiffio) {
@@ -448,7 +448,7 @@ tiff_from_filep(gx_device_printer *dev,  const char *name, FILE *filep, int big_
     t = TIFFClientOpen(name, mode,
         (thandle_t) tiffio, (TIFFReadWriteProc)gs_tifsReadProc,
         (TIFFReadWriteProc)gs_tifsWriteProc, (TIFFSeekProc)gs_tifsSeekProc,
-	gs_tifsCloseProc, (TIFFSizeProc)gs_tifsSizeProc, gs_tifsDummyMapProc,
+        gs_tifsCloseProc, (TIFFSizeProc)gs_tifsSizeProc, gs_tifsDummyMapProc,
         gs_tifsDummyUnmapProc);
 
     return t;

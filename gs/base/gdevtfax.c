@@ -40,14 +40,14 @@ struct gx_device_tfax_s {
     gx_device_common;
     gx_prn_device_common;
     gx_fax_device_common;
-    long MaxStripSize;		/* 0 = no limit, other is UNCOMPRESSED limit */
+    long MaxStripSize;          /* 0 = no limit, other is UNCOMPRESSED limit */
                                 /* The type and range of FillOrder follows TIFF 6 spec  */
     int  FillOrder;             /* 1 = lowest column in the high-order bit, 2 = reverse */
     bool  BigEndian;            /* true = big endian; false = little endian*/
     bool UseBigTIFF;
-    uint16 Compression;		/* same values as TIFFTAG_COMPRESSION */
+    uint16 Compression;         /* same values as TIFFTAG_COMPRESSION */
 
-    TIFF *tif;			/* For TIFF output only */
+    TIFF *tif;                  /* For TIFF output only */
 };
 typedef struct gx_device_tfax_s gx_device_tfax;
 
@@ -59,7 +59,7 @@ static const gx_device_procs gdev_tfax_std_procs =
 #define TFAX_DEVICE(dname, print_page, compr)\
 {\
     FAX_DEVICE_BODY(gx_device_tfax, gdev_tfax_std_procs, dname, print_page),\
-    TIFF_DEFAULT_STRIP_SIZE	/* strip size byte count */,\
+    TIFF_DEFAULT_STRIP_SIZE     /* strip size byte count */,\
     1                           /* lowest column in the high-order bit */,\
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,\
     false,                      /* default to not using bigtiff */\
@@ -247,11 +247,11 @@ const gx_device_tfax gs_tifflzw_device = {
     prn_device_std_body(gx_device_tfax, gdev_tfax_std_procs, "tifflzw",
                         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                         X_DPI, Y_DPI,
-                        0, 0, 0, 0,	/* margins */
+                        0, 0, 0, 0, /* margins */
                         1, tifflzw_print_page),
-    0				/* AdjustWidth */,
+    0/* AdjustWidth */,
     0                           /* MinFeatureSize */,
-    TIFF_DEFAULT_STRIP_SIZE	/* strip size byte count */,
+    TIFF_DEFAULT_STRIP_SIZE     /* strip size byte count */,
     1                           /* lowest column in the high-order bit, not used */,
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
     COMPRESSION_LZW
@@ -261,11 +261,11 @@ const gx_device_tfax gs_tiffpack_device = {
     prn_device_std_body(gx_device_tfax, gdev_tfax_std_procs, "tiffpack",
                         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                         X_DPI, Y_DPI,
-                        0, 0, 0, 0,	/* margins */
+                        0, 0, 0, 0, /* margins */
                         1, tiffpack_print_page),
-    0				/* AdjustWidth */,
+    0                           /* AdjustWidth */,
     0                           /* MinFeatureSize */,
-    TIFF_DEFAULT_STRIP_SIZE	/* strip size byte count */,
+    TIFF_DEFAULT_STRIP_SIZE     /* strip size byte count */,
     1                           /* lowest column in the high-order bit, not used */,
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
     COMPRESSION_PACKBITS
