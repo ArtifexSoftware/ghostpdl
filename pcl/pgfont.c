@@ -52,7 +52,7 @@ hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t not_use
 /* The stick font is fixed-pitch.
  */
 static int
-hpgl_stick_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_point *pwidth)
+hpgl_stick_char_width(const pl_font_t *plfont, const void *pgs, gs_char uni_code, gs_point *pwidth)
 {
     /* first map uni_code to roman-8 */
     uni_code = (uint) hpgl_stick_arc_encode_char(NULL, uni_code, 0);
@@ -67,7 +67,7 @@ hpgl_stick_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, g
 }
 
 static int
-hpgl_stick_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code, float metrics[4])
+hpgl_stick_char_metrics(const pl_font_t *plfont, const void *pgs, gs_char uni_code, float metrics[4])
 {
     gs_point width;
 
@@ -85,7 +85,7 @@ hpgl_stick_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code,
 
 /* The arc font is proportionally spaced. */
 static int
-hpgl_arc_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_point *pwidth)
+hpgl_arc_char_width(const pl_font_t *plfont, const void *pgs, gs_char uni_code, gs_point *pwidth)
 {
     /* first map uni_code to roman-8 */
     uni_code = (uint) hpgl_stick_arc_encode_char(NULL, uni_code, 0);
@@ -103,7 +103,7 @@ hpgl_arc_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_
 }
 
 static int
-hpgl_arc_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code, float metrics[4])
+hpgl_arc_char_metrics(const pl_font_t *plfont, const void *pgs, gs_char uni_code, float metrics[4])
 {
     gs_point width;
     /* never a vertical substitute */
@@ -119,7 +119,7 @@ hpgl_arc_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code, f
 }
 
 static int
-hpgl_dl_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_point *pwidth)
+hpgl_dl_char_width(const pl_font_t *plfont, const void *pgs, gs_char uni_code, gs_point *pwidth)
 {
     /* just the width of the cell */
     pwidth->x = 1024;
@@ -128,9 +128,8 @@ hpgl_dl_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_p
 }
 
 static int
-hpgl_dl_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code, float metrics[4])
+hpgl_dl_char_metrics(const pl_font_t *plfont, const void *pgs, gs_char uni_code, float metrics[4])
 {
-    gs_point width;
     /* never a vertical substitute */
     metrics[1] = metrics[3] = 0;
     /* no lsb */

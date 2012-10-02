@@ -165,8 +165,8 @@ struct pl_font_s {
   pl_font_type_t font_type;
   bool allow_vertical_substitutes;
   /* Implementation of pl_font_char_width, see below */
-  int (*char_width)(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth);
-  int (*char_metrics)(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4]);
+  int (*char_width)(const pl_font_t *plfont, const void *pgs, gs_char char_code, gs_point *pwidth);
+  int (*char_metrics)(const pl_font_t *plfont, const void *pgs, gs_char char_code, float metrics[4]);
   bool large_sizes;	/* segment sizes are 32 bits if true, 16 if false */
                         /* (for segmented fonts only) */
   struct { uint x, y; } resolution; /* resolution (for bitmap fonts) */
@@ -283,12 +283,12 @@ int pl_font_add_glyph(pl_font_t *plfont, gs_glyph glyph, const byte *data);
 /* If the font is bound, the symbol set is ignored. */
 /* If the character is undefined, set the escapement to (0,0) and return 1. */
 /* If pwidth is NULL, don't store the escapement. */
-int pl_font_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth);
+int pl_font_char_width(const pl_font_t *plfont, const void *pgs, gs_char char_code, gs_point *pwidth);
 
 /* Determine the character metrics.  If vertical substitution is in
    effect metrics[1] = lsb, metrics[3] = width otherwise metrics[0] =
    lsb and metrics 2 = width.   The same rules for character width apply */
-int pl_font_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4]);
+int pl_font_char_metrics(const pl_font_t *plfont, const void *pgs, gs_char char_code, float metrics[4]);
 
 /* Look up a glyph in a font.  Return a pointer to the glyph's slot */
 /* (data != 0) or where it should be added (data == 0). */

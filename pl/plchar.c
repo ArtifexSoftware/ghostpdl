@@ -106,7 +106,7 @@ pl_bitmap_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t not_used)
 /* Get character existence and escapement for a bitmap font. */
 /* This is simple for the same reason. */
 static int
-pl_bitmap_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
+pl_bitmap_char_width(const pl_font_t *plfont, const void *pgs, gs_char char_code, gs_point *pwidth)
 {
     const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
 
@@ -135,7 +135,7 @@ pl_bitmap_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, g
 }
 
 static int
-pl_bitmap_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
+pl_bitmap_char_metrics(const pl_font_t *plfont, const void *pgs, gs_char char_code, float metrics[4])
 {
     gs_point width;
     const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
@@ -885,7 +885,7 @@ pl_tt_encode_char(gs_font *pfont_generic, gs_char chr, gs_glyph_space_t not_used
 
 /* Get metrics */
 static int
-pl_tt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
+pl_tt_char_metrics(const pl_font_t *plfont, const void *pgs, gs_char char_code, float metrics[4])
 {
     gs_glyph unused_glyph = gs_no_glyph;
     gs_glyph glyph = pl_tt_encode_char(plfont->pfont, char_code, unused_glyph);
@@ -898,7 +898,7 @@ pl_tt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, flo
 
 /* Get character existence and escapement for a TrueType font. */
 static int
-pl_tt_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
+pl_tt_char_width(const pl_font_t *plfont, const void *pgs, gs_char char_code, gs_point *pwidth)
 {       gs_font *pfont = plfont->pfont;
         gs_char chr = char_code;
         gs_glyph unused_glyph = gs_no_glyph;
@@ -1370,7 +1370,7 @@ cleanup:
 
 /* Get character existence and escapement for an Intellifont. */
 static int
-pl_intelli_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
+pl_intelli_char_width(const pl_font_t *plfont, const void *pgs, gs_char char_code, gs_point *pwidth)
 {
         const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
         int wx;
@@ -1412,7 +1412,7 @@ pl_intelli_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, 
 }
 
 static int
-pl_intelli_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
+pl_intelli_char_metrics(const pl_font_t *plfont, const void *pgs, gs_char char_code, float metrics[4])
 
 {
     gs_point width;

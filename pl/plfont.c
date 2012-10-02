@@ -450,13 +450,13 @@ pl_decode_glyph(gs_font *font,  gs_glyph glyph, int ch)
 /* ---------------- Public procedures ---------------- */
 
 /* character width */
-int pl_font_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
+int pl_font_char_width(const pl_font_t *plfont, const void *pgs, gs_char char_code, gs_point *pwidth)
 {
     return (*(plfont)->char_width)(plfont, pgs, char_code, pwidth);
 }
 
 /* character width */
-int pl_font_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
+int pl_font_char_metrics(const pl_font_t *plfont, const void *pgs, gs_char char_code, float metrics[4])
 {
     return (*(plfont)->char_metrics)(plfont, pgs, char_code, metrics);
 }
