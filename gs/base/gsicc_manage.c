@@ -1684,6 +1684,7 @@ gsicc_manager_new(gs_memory_t *memory)
     result->srcgtag_profile = NULL;
     result->override_internal = false;
     result->override_ri = false;
+    result->override_bp = false;
     return(result);
 }
 
