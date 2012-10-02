@@ -252,6 +252,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 
     {
         gs_param_string_array ppa;
+        gs_param_string pps;
 
         code = param_read_string_array(plist, (param_name = "pdfmark"), &ppa);
         switch (code) {
@@ -279,6 +280,27 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                 code = pdf_dsc_process(pdev, &ppa);
                 if (code >= 0)
                     return code;
+                /* falls through for errors */
+            default:
+                param_signal_error(plist, param_name, code);
+                return code;
+            case 1:
+                break;
+        }
+
+        code = param_read_string(plist, (param_name = "pdfpagelabels"), &pps);
+        switch (code) {
+            case 0:
+                {
+                    cos_dict_t *const pcd = pdev->Catalog;
+                    code = pdfwrite_pdf_open_document(pdev);
+                    if (code < 0)
+                        return code;
+                    code = cos_dict_put_string(pcd, (const byte *)"/PageLabels", 11,
+                               pps.data, pps.size);
+                    if (code >= 0)
+                        return code;
+                 }
                 /* falls through for errors */
             default:
                 param_signal_error(plist, param_name, code);

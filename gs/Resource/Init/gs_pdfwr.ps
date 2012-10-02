@@ -466,6 +466,28 @@ userdict /.pdfcvstring () put
     counttomark 4 add 2 roll cleartomark pop pop pop
     .systemvar exch signalerror
 } bind def
+
+/.pdfpagelabels {
+  dup type /dicttype eq {
+    /Nums oget
+    mark exch
+    0 1 2 index length 1 sub {
+      1 index exch oget
+      exch
+    } for
+    pop
+    counttomark array astore
+    1 dict dup begin exch /Nums exch def end
+    .pdfcvs
+    mark /pdfpagelabels 3 -1 roll .pdfputparams
+    dup type /booleantype ne {
+      /pdfpagelabels .pdfparamerror
+    } if cleartomark
+  }{
+    /pdfpagelabels .pdfparamerror
+  } ifelse
+} bind def
+
 /pdfmark {		% -mark- <key> <value> ... <markname> pdfmark -
   dup /SP eq {
     % A hack for synchronizing the clipping path.

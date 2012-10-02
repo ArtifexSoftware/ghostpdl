@@ -820,6 +820,9 @@ currentdict /xref-char-dict undef
       } ifelse
     } ifelse
   } if
+  Trailer /Root oget /PageLabels knownoget {
+     .pdfpagelabels
+  } if
 } bind def
 
 % Verify that each entry in the xref table is pointing at an object with
