@@ -86,7 +86,7 @@ gs_private_st_ptrs3_final(st_icc_linkcache, gsicc_link_cache_t, "gsiccmanage_lin
 
 #define BP_SHIFT 0
 #define REND_SHIFT 8
-#define TYPE_SHIFT 16
+#define PRESERVE_SHIFT 16
 
 /**
  * gsicc_cache_new: Allocate a new ICC cache manager
@@ -288,7 +288,6 @@ gsicc_get_buff_hash(unsigned char *data, int64_t *hash, unsigned int num_bytes)
     This just computes a 64bit xor of upper and lower portions of
     md5 for the input, output
     and rendering params structure.  We may change this later */
-
 static void
 gsicc_compute_linkhash(gsicc_manager_t *icc_manager, gx_device *dev,
                        cmm_profile_t *input_profile,
@@ -300,11 +299,16 @@ gsicc_compute_linkhash(gsicc_manager_t *icc_manager, gx_device *dev,
     gsicc_get_cspace_hash(icc_manager, dev, input_profile, &(hash->src_hash));
     gsicc_get_cspace_hash(icc_manager, dev, output_profile, &(hash->des_hash));
 
-    /* now for the rendering paramaters, just use the word itself */
+    /* now for the rendering paramaters, just use the word itself.  At this
+       point in time, we only include the black point setting, the intent
+       and if we are preserving black.  We don't differentiate at this time
+       with object type since the current CMM does not create different
+       links based upon this type setting.  Other parameters such as use_cm
+       and override ICC are used prior to a link creation and so should also
+       not factor into the link hash calculation */
     hash->rend_hash = ((rendering_params->black_point_comp) << BP_SHIFT) +
                       ((rendering_params->rendering_intent) << REND_SHIFT) +
-                      ((rendering_params->graphics_type_tag) << TYPE_SHIFT);
-
+                      ((rendering_params->preserve_black) << PRESERVE_SHIFT);
    /* for now, mash all of these into a link hash */
    gsicc_mash_hash(hash);
 }
@@ -487,9 +491,42 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
                     /* In this case, the user is letting the source profiles
                        drive the color management.  Let that set the 
                        rendering intent and blackpoint compensation also as they 
-                       must know what they are doing. */
-                    gs_input_profile = gs_srcgtag_profile;
-                    (*rendering_params) = render_cond;
+                       must know what they are doing.  However, before we do
+                       this we need to check if they want to overide 
+                       embedded source profiles.   See if our profile is a 
+                       default one that came from DefaultRGB or DefaultCMYK
+                       for example */
+                    int csi;
+                        
+                    csi = gsicc_get_default_type(gs_input_profile);
+                    if (render_cond.override_icc || 
+                        csi == gs_color_space_index_DeviceRGB ||
+                        csi == gs_color_space_index_DeviceCMYK) {
+                        gs_input_profile = gs_srcgtag_profile;
+                        (*rendering_params) = render_cond;
+                    }
+                } else {
+                    /* In this case we may be wanting for a "unmanaged color"
+                       result. This is done by specifying "None" on the 
+                       particular line for that source object.  Check if this
+                       is what is desired.  If it is, then return the link now */
+                    if (render_cond.use_cm == false) {
+                        gsicc_link_t *link;
+
+                        if (gs_input_profile->data_cs == gsRGB) {
+                            link = gsicc_nocm_get_link(pis, dev, 3);
+                        } else {
+                            link = gsicc_nocm_get_link(pis, dev, 4);
+                        }
+                        /* Set the identity case if we are in that situation */
+                        if (link != NULL) {
+                            if (gs_input_profile->num_comps == 
+                                dev_profile->device_profile[0]->num_comps) {
+                                link->is_identity = true;
+                            }
+                            return link;
+                        }
+                    }
                 }
             }
     }
@@ -659,6 +696,44 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                    gs_output_profile->num_comps, gs_output_profile->hashcode);
         return(found_link);
     }
+    /* Before we do anything, check if we have a case where the source profile
+       is coming from the clist and we don't even want to be doing any color
+       managment */
+    if (gs_input_profile->profile_handle == NULL && 
+        gs_input_profile->buffer == NULL &&
+        gs_input_profile->dev != NULL) {
+
+        /* ICC profile should be in clist. This is
+        the first call to it.  Note that the profiles are not
+        really shared amongst threads like the links are.  Hence
+        the memory is for the local thread's chunk */
+        cms_input_profile =
+            gsicc_get_profile_handle_clist(gs_input_profile,
+                                           gs_input_profile->memory);
+        gs_input_profile->profile_handle = cms_input_profile;
+        /* It is possible that we are not using color management
+           due to a setting forced from srcgtag object (the None option)
+           which has made its way though the clist in the clist imaging 
+           code.   In this case, the srcgtag_profile structure
+           which was part of the ICC manager is no longer available */
+        if (gs_input_profile->rend_is_valid &&
+            gs_input_profile->rend_cond.use_cm == false) {
+
+            if (gs_input_profile->data_cs == gsRGB) {
+                link = gsicc_nocm_get_link(pis, dev, 3);
+            } else {
+                link = gsicc_nocm_get_link(pis, dev, 4);
+            }
+            /* Set the identity case if we are in that situation */
+            if (link != NULL) {
+                if (gs_input_profile->num_comps == 
+                    dev_profile->device_profile[0]->num_comps) {
+                    link->is_identity = true;
+                }
+                return link;
+            }
+        }
+    }
     /* If not, then lets create a new one if there is room. This may actually 
        return a link if another thread has already created it */
     if (gsicc_alloc_link_entry(icc_link_cache, &link, hash, include_softproof,
@@ -679,24 +754,12 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             code = gsicc_initialize_default_profile(gs_input_profile); 
             if (code < 0) return (NULL);
         } else {
-            /* See if we have a clist device pointer. */
-            if ( gs_input_profile->dev != NULL ) {
-                /* ICC profile should be in clist. This is
-                   the first call to it.  Note that the profiles are not
-                   really shared amongst threads like the links are.  Hence
-                   the memory is for the local thread's chunk */
-                cms_input_profile =
-                    gsicc_get_profile_handle_clist(gs_input_profile,
-                                                   gs_input_profile->memory);
-                gs_input_profile->profile_handle = cms_input_profile;
-            } else {
-                /* Cant create the link.  No profile present,
-                   nor any defaults to use for this.  Really
-                   need to throw an error for this case. */
-                gsicc_remove_link(link, cache_mem);
-                icc_link_cache->num_links--;
-                return(NULL);
-            }
+            /* Cant create the link.  No profile present,
+               nor any defaults to use for this.  Really
+               need to throw an error for this case. */
+            gsicc_remove_link(link, cache_mem);
+            icc_link_cache->num_links--;
+            return NULL;
         }
     }
     cms_output_profile = gs_output_profile->profile_handle;
@@ -709,7 +772,7 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             gs_output_profile->profile_handle = cms_output_profile;
             /* This *must* be a default profile that was not set up at start-up */
             code = gsicc_initialize_default_profile(gs_output_profile); 
-            if (code < 0) return (NULL);
+            if (code < 0) return NULL;
         } else {
               /* See if we have a clist device pointer. */
             if ( gs_output_profile->dev != NULL ) {
@@ -725,7 +788,7 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                    need to throw an error for this case. */
                 gsicc_remove_link(link, cache_mem);
                 icc_link_cache->num_links--;
-                return(NULL);
+                return NULL;
             }
         }
     }
@@ -743,7 +806,7 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                 /* Cant create the link */
                 gsicc_remove_link(link, cache_mem);
                 icc_link_cache->num_links--;
-                return(NULL);
+                return NULL;
             }
         }
     }
@@ -761,7 +824,7 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                 /* Cant create the link */
                 gsicc_remove_link(link, cache_mem);
                 icc_link_cache->num_links--;
-                return(NULL);
+                return NULL;
             }
         }
     }
@@ -825,9 +888,9 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
     } else {
         gsicc_remove_link(link, cache_mem);
         icc_link_cache->num_links--;
-        return(NULL);
+        return NULL;
     }
-    return(link);
+    return link;
 }
 
 /* The following is used to transform a named color value at a particular tint

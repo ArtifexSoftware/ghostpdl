@@ -369,6 +369,7 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
        another thread has already created it while we were trying to do so */ 
     if (gsicc_alloc_link_entry(pis->icc_link_cache, &result, hash, false, false)) 
         return result;
+
     /* Now compute the link contents */
     result->procs.map_buffer = gsicc_nocm_transform_color_buffer;
     result->procs.map_color = gsicc_nocm_transform_color;

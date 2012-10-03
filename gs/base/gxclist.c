@@ -1098,12 +1098,17 @@ clist_icc_writetable(gx_device_clist_writer *cldev)
     clist_icctable_entry_t *curr_entry;
     int size_data;
     int k;
+    bool rend_is_valid;
 
     /* First we need to write out the ICC profiles themselves and update
-       in the table where they will be stored and their size. */
+       in the table where they will be stored and their size.  Set the
+       rend cond valid flag prior to writing */
     curr_entry = icc_table->head;
     for ( k = 0; k < number_entries; k++ ){
+        rend_is_valid = curr_entry->icc_profile->rend_is_valid;
+        curr_entry->icc_profile->rend_is_valid = curr_entry->render_is_valid;
         curr_entry->serial_data.file_position = clist_icc_addprofile(cldev, curr_entry->icc_profile, &size_data);
+        curr_entry->icc_profile->rend_is_valid = rend_is_valid;
         curr_entry->serial_data.size = size_data;
         rc_decrement(curr_entry->icc_profile, "clist_icc_writetable");
         curr_entry->icc_profile = NULL;
@@ -1191,6 +1196,7 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
         entry->serial_data.size = -1;
         entry->serial_data.file_position = -1;
         entry->icc_profile = icc_profile;
+        entry->render_is_valid = icc_profile->rend_is_valid;
         rc_increment(icc_profile);
         icc_table = gs_alloc_struct(stable_mem, clist_icctable_t, 
                                     &st_clist_icctable, "clist_icc_addentry");
@@ -1207,9 +1213,9 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
     } else {
         /* First check if we already have this entry */
         curr_entry = icc_table->head;
-        for ( k = 0; k < icc_table->tablesize; k++ ) {
-            if ( curr_entry->serial_data.hashcode == hashcode )
-                return(0);  /* A hit */
+        for (k = 0; k < icc_table->tablesize; k++) {
+            if (curr_entry->serial_data.hashcode == hashcode)
+                return 0;  /* A hit */
             curr_entry = curr_entry->next;
         }
          /* Add a new ICC profile */
@@ -1225,6 +1231,7 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
         entry->serial_data.size = -1;
         entry->serial_data.file_position = -1;
         entry->icc_profile = icc_profile;
+        entry->render_is_valid = icc_profile->rend_is_valid;
         rc_increment(icc_profile);
         icc_table->final->next = entry;
         icc_table->final = entry;

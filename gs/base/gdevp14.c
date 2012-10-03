@@ -903,7 +903,10 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
                 /* Define the rendering intents */
                 rendering_params.black_point_comp = gsBLACKPTCOMP_ON;
                 rendering_params.graphics_type_tag = GS_IMAGE_TAG;
+                rendering_params.override_icc = false;
+                rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
                 rendering_params.rendering_intent = gsPERCEPTUAL;
+                rendering_params.use_cm = true;
                 /* Request the ICC link for the transform that we will need to use */
                 /* Note that if pis is NULL we assume the same color space.  This
                    is due to a call to pop the group from fill_mask when filling
@@ -1271,7 +1274,10 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
                     /* Request the ICC link for the transform that we will need to use */
                     rendering_params.black_point_comp = gsBLACKPTCOMP_OFF;
                     rendering_params.graphics_type_tag = GS_IMAGE_TAG;
+                    rendering_params.override_icc = false;
+                    rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
                     rendering_params.rendering_intent = gsPERCEPTUAL;
+                    rendering_params.use_cm = true;
                     icc_link = gsicc_get_link_profile(pis, dev, des_profile,
                         src_profile, &rendering_params, pis->memory, false);
                     smask_icc(dev, tos->rect.q.y - tos->rect.p.y,

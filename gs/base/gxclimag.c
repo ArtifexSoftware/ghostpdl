@@ -362,12 +362,16 @@ clist_begin_typed_image(gx_device * dev,
     cmm_srcgtag_profile_t *srcgtag_profile;
     gsicc_rendering_intents_t renderingintent = pis->renderingintent;
     gsicc_blackptcomp_t blackptcomp = pis->blackptcomp;
+    gsicc_rendering_param_t stored_rendering_cond;
+    gsicc_rendering_param_t dev_render_cond;
     gs_imager_state *pis_nonconst = (gs_imager_state*) pis;   
     bool intent_changed = false;
     bool bp_changed = false;
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *gs_output_profile;
     bool is_planar_dev = dev_proc(dev, dev_spec_op)(dev, gxdso_is_native_planar, NULL, 0);
+    bool render_is_valid;
+    int csi;
 
     /* We can only handle a limited set of image types. */
     switch ((gs_debug_c('`') ? -1 : pic->type->index)) {
@@ -501,71 +505,100 @@ clist_begin_typed_image(gx_device * dev,
                 (pie->color_space.space = pim->ColorSpace)->id;
             /* Get the hash code of the ICC space */
             if ( base_index == gs_color_space_index_ICC ) {
+                code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+                gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
+                                      &(gs_output_profile), 
+                                      (&(dev_render_cond)));
                 if (!indexed) {
                     src_profile = pim->ColorSpace->cmm_icc_profile_data;
                 } else {
                     src_profile =  
                         pim->ColorSpace->base_space->cmm_icc_profile_data;
                 }
+                /* Initialize the rendering conditions to what we currently
+                   have before we may blow them away with what is set in 
+                   the srcgtag information */
+                stored_rendering_cond.graphics_type_tag = GS_IMAGE_TAG;
+                stored_rendering_cond.override_icc = 
+                                dev_render_cond.override_icc;
+                stored_rendering_cond.preserve_black =  
+                                dev_render_cond.preserve_black;
+                stored_rendering_cond.use_cm = true;  /* Unless spec. below */
                 /* We may need to do some substitions for the source profile */
                 if (pis->icc_manager->srcgtag_profile != NULL) {
                     srcgtag_profile = pis->icc_manager->srcgtag_profile;
                     if (src_profile->data_cs == gsRGB) {
                         if (srcgtag_profile->rgb_profiles[gsSRC_IMAGPRO] != NULL) {
-                            src_profile = 
-                                srcgtag_profile->rgb_profiles[gsSRC_IMAGPRO];
-                            pis_nonconst->renderingintent =
-                                srcgtag_profile->rgb_rend_cond[gsSRC_IMAGPRO].rendering_intent;
-                            pis_nonconst->blackptcomp =
-                                srcgtag_profile->rgb_rend_cond[gsSRC_IMAGPRO].black_point_comp;
+                            /* We only do this replacement depending upon the
+                               ICC override setting for this object and the 
+                               original color space of this object */
+                            csi = gsicc_get_default_type(src_profile);
+                            if (srcgtag_profile->rgb_rend_cond[gsSRC_IMAGPRO].override_icc || 
+                                csi == gs_color_space_index_DeviceRGB) {
+                                src_profile = 
+                                    srcgtag_profile->rgb_profiles[gsSRC_IMAGPRO];
+                                pis_nonconst->renderingintent =
+                                    srcgtag_profile->rgb_rend_cond[gsSRC_IMAGPRO].rendering_intent;
+                                pis_nonconst->blackptcomp =
+                                    srcgtag_profile->rgb_rend_cond[gsSRC_IMAGPRO].black_point_comp;
+                                stored_rendering_cond = 
+                                    srcgtag_profile->rgb_rend_cond[gsSRC_IMAGPRO];
+                            }
+                        } else {
+                            /* A possible do not use CM case */
+                            stored_rendering_cond.use_cm = 
+                                srcgtag_profile->rgb_rend_cond[gsSRC_IMAGPRO].use_cm;
                         }
                     } else if (src_profile->data_cs == gsCMYK) {
                         if (srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO] != NULL) {
-                            src_profile = 
-                                srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO];
-                            pis_nonconst->renderingintent =
-                                srcgtag_profile->cmyk_rend_cond[gsSRC_IMAGPRO].rendering_intent;
-                            pis_nonconst->blackptcomp =
-                                srcgtag_profile->cmyk_rend_cond[gsSRC_IMAGPRO].black_point_comp;
+                            csi = gsicc_get_default_type(src_profile);
+                            if (srcgtag_profile->rgb_rend_cond[gsSRC_IMAGPRO].override_icc || 
+                                csi == gs_color_space_index_DeviceCMYK) {
+                                src_profile = 
+                                    srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO];
+                                pis_nonconst->renderingintent =
+                                    srcgtag_profile->cmyk_rend_cond[gsSRC_IMAGPRO].rendering_intent;
+                                pis_nonconst->blackptcomp =
+                                    srcgtag_profile->cmyk_rend_cond[gsSRC_IMAGPRO].black_point_comp;
+                                stored_rendering_cond = 
+                                    srcgtag_profile->cmyk_rend_cond[gsSRC_IMAGPRO];
+                            }
+                        } else {
+                            /* A possible do not use CM case */
+                            stored_rendering_cond.use_cm = 
+                                srcgtag_profile->cmyk_rend_cond[gsSRC_IMAGPRO].use_cm;
                         }
                     }
                 }
-                /* If the device RI is set to an override value and we are not 
-                   setting the RI from the source structure, then override any
-                   RI specified in the document by the RI specified in the 
-                   device */
+                /* If the device RI is set and we are not  setting the RI from 
+                   the source structure, then override any RI specified in the 
+                   document by the RI specified in the device */
                 if (!(pis_nonconst->renderingintent & gsRI_OVERRIDE)) {  /* was set by source? */
                     /* No it was not.  See if we should override with the 
                        device setting */
-                    gsicc_rendering_param_t temp_render_cond;   
-
-                    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-                    gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
-                                          &(gs_output_profile), 
-                                          (&(temp_render_cond)));
-                    if (temp_render_cond.rendering_intent != gsRINOTSPECIFIED) {
+                    if (dev_render_cond.rendering_intent != gsRINOTSPECIFIED) {
                         pis_nonconst->renderingintent = 
-                                        temp_render_cond.rendering_intent;
+                                        dev_render_cond.rendering_intent;
                         }
                 }
                 /* We have a similar issue to deal with with respect to the 
                    black point.  */
                 if (!(pis_nonconst->blackptcomp & gsBP_OVERRIDE)) {
-                    gsicc_rendering_param_t temp_render_cond;   
-
-                    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-                    gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
-                                          &(gs_output_profile), 
-                                          (&(temp_render_cond)));
-                    if (temp_render_cond.black_point_comp != gsBPNOTSPECIFIED) {
+                    if (dev_render_cond.black_point_comp != gsBPNOTSPECIFIED) {
                         pis_nonconst->blackptcomp = 
-                                            temp_render_cond.black_point_comp;
+                                            dev_render_cond.black_point_comp;
                     }
                 }
                 if (renderingintent != pis_nonconst->renderingintent)
                     intent_changed = true;
                 if (blackptcomp != pis_nonconst->blackptcomp)
                     bp_changed = true;
+                /* Set for the rendering param structure also */
+                stored_rendering_cond.rendering_intent = 
+                                                pis_nonconst->renderingintent;
+                stored_rendering_cond.black_point_comp = 
+                                                pis_nonconst->blackptcomp;
+                stored_rendering_cond.graphics_type_tag = GS_IMAGE_TAG;
                 if (!(src_profile->hash_is_valid)) {
                     int64_t hash;
                     gsicc_get_icc_buff_hash(src_profile->buffer, &hash,
@@ -578,7 +611,11 @@ clist_begin_typed_image(gx_device * dev,
                     src_profile->num_comps;
                 pie->color_space.icc_info.is_lab = src_profile->islab;
                 pie->color_space.icc_info.data_cs = src_profile->data_cs;
+                src_profile->rend_cond = stored_rendering_cond;
+                render_is_valid = src_profile->rend_is_valid;
+                src_profile->rend_is_valid = true;
                 clist_icc_addentry(cdev, src_profile->hashcode, src_profile);
+                src_profile->rend_is_valid = render_is_valid;
             } else {
                 pie->color_space.icc_info = icc_zero_init;
             }

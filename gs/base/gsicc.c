@@ -357,10 +357,10 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     rendering_params.black_point_comp = pis->blackptcomp;
     rendering_params.graphics_type_tag = dev->graphics_type_tag;
-    /* Need to figure out which one rules here on rendering intent.  The
-       source of the device */
+    rendering_params.override_icc = false;
+    rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
     rendering_params.rendering_intent = pis->renderingintent;
-
+    rendering_params.use_cm = true;
     /* Need to clear out psrc_cm in case we have separation bands that are
        not color managed */
     memset(psrc_cm,0,sizeof(unsigned short)*GS_CLIENT_COLOR_MAX_COMPONENTS);
@@ -446,10 +446,10 @@ gx_remap_ICC_imagelab(const gs_client_color * pcc, const gs_color_space * pcs,
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     rendering_params.black_point_comp = pis->blackptcomp;
     rendering_params.graphics_type_tag = dev->graphics_type_tag;
-    /* Need to figure out which one rules here on rendering intent.  The
-       source of the device */
+    rendering_params.override_icc = false;
+    rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
     rendering_params.rendering_intent = pis->renderingintent;
-
+    rendering_params.use_cm = true;
     /* Need to clear out psrc_cm in case we have separation bands that are
        not color managed */
     memset(psrc_cm,0,sizeof(unsigned short)*GS_CLIENT_COLOR_MAX_COMPONENTS);
@@ -510,10 +510,13 @@ gx_concretize_ICC(
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
-    /* Define the rendering intents.  MJV to fix */
+    /* Define the rendering intents.  */
     rendering_params.black_point_comp = pis->blackptcomp;
     rendering_params.graphics_type_tag = dev->graphics_type_tag;
+    rendering_params.override_icc = false;
+    rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
     rendering_params.rendering_intent = pis->renderingintent;
+    rendering_params.use_cm = true;
     for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++) {
         psrc[k] = (unsigned short) (pcc->paint.values[k]*65535.0);
     }

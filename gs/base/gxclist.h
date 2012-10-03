@@ -227,6 +227,11 @@ struct clist_icctable_entry_s {
     clist_icctable_entry_t *next;  /* The next entry in the table */
     cmm_profile_t *icc_profile;    /* The profile.  In non-gc memory. This is
                                       written out at the end of the writer phase */
+    bool render_is_valid;          /* Since the profile is written out at the
+                                      end and is shared, we can't guarantee that
+                                      this entry will stay the same through
+                                      the profile's life.  Hence we store it here
+                                      and set it just when we do the writing */
 };
 
 #define private_st_clist_icctable_entry()\

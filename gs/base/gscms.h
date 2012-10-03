@@ -190,7 +190,7 @@ typedef struct gsicc_rendering_param_s {
     gsicc_rendering_intents_t rendering_intent;   /* Standard rendering intent */
     gsicc_blackptcomp_t black_point_comp;         /* Black point compensation */
     gsicc_blackpreserve_t preserve_black;         /* preserve K plane in CMYK2CMYK */
-    gs_graphics_type_tag_t graphics_type_tag;  /* Some CMM may want this */
+    gs_graphics_type_tag_t graphics_type_tag;     /* Some CMM may want this */
     bool use_cm;                                  /* use color management (used only with sourcetag) */
     bool override_icc;                            /* Override source ICC (used only with sourcetag) */
 } gsicc_rendering_param_t;
@@ -292,7 +292,9 @@ typedef enum {
     bool hash_is_valid;			/* Is the code valid? */\
     int devicen_permute[ICC_MAX_CHANNELS];	/* Permutation vector for deviceN laydown order */\
     bool devicen_permute_needed;		/* Check if we need to permute the DeviceN values */\
-    int buffer_size			/* size of ICC profile buffer */
+    int buffer_size;		/* size of ICC profile buffer */\
+    bool rend_is_valid;                 /* Needed for cond/profile coupling during */\
+    gsicc_rendering_param_t rend_cond   /* clist playback when rendering images */
 
 /* A subset of the profile information which is used when writing and reading
  * out to the c-list

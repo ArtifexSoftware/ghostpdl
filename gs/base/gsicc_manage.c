@@ -446,6 +446,36 @@ gsicc_get_default_type(cmm_profile_t *profile_data)
     }
 }
 
+/* Fill in the actual source structure rending information */
+static void
+gsicc_fill_srcgtag_item(gsicc_rendering_param_t *r_params, bool cmyk)
+{
+    char *curr_ptr;
+    int blackptcomp;
+    int or_icc, preserve_k;
+    int ri, count;
+
+    /* Get the intent */
+    curr_ptr = strtok(NULL, "\t,\32\n\r");
+    count = sscanf(curr_ptr, "%d", &ri);
+    r_params->rendering_intent = ri | gsRI_OVERRIDE;
+    /* Get the black point compensation setting */
+    curr_ptr = strtok(NULL, "\t,\32\n\r");
+    count = sscanf(curr_ptr, "%d", &blackptcomp);
+    r_params->black_point_comp = blackptcomp | gsBP_OVERRIDE;
+    /* Get the over-ride embedded ICC boolean */
+    curr_ptr = strtok(NULL, "\t,\32\n\r");
+    count = sscanf(curr_ptr, "%d", &or_icc);
+    r_params->override_icc = or_icc;
+    if (cmyk) {
+        /* Get the preserve K control */
+        curr_ptr = strtok(NULL, "\t,\32\n\r");
+        count = sscanf(curr_ptr, "%d", &preserve_k);
+        r_params->preserve_black = preserve_k;
+    }
+
+}
+
 /* This inititializes the srcgtag structure in the ICC manager */
 int
 gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
@@ -458,12 +488,9 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
     char *buffer_ptr, *curr_ptr;
     int num_bytes;
     char str_format_key[6], str_format_file[6];
-    int count;
     int k;
     static const char *const srcgtag_keys[] = {GSICC_SRCGTAG_KEYS};
     cmm_profile_t *icc_profile;
-    int ri;
-    int blackptcomp;
     cmm_srcgtag_profile_t *srcgtag;
     bool start = true;
     bool use_cm = true;
@@ -569,96 +596,42 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                     srcgtag->cmyk_profiles[gsSRC_GRAPPRO] = icc_profile;
                     srcgtag->cmyk_rend_cond[gsSRC_GRAPPRO].use_cm = use_cm;
                     if (use_cm) {
-                        /* Get the intent */
-                        curr_ptr = strtok(NULL, "\t,\32\n\r");
-                        count = sscanf(curr_ptr, "%d", &ri);
-                        srcgtag->cmyk_rend_cond[gsSRC_GRAPPRO].rendering_intent = 
-                                                            ri | gsRI_OVERRIDE;
-                        /* Get the black point compensation setting */
-                        curr_ptr = strtok(NULL, "\t,\32\n\r");
-                        count = sscanf(curr_ptr, "%d", &blackptcomp);
-                        srcgtag->cmyk_rend_cond[gsSRC_GRAPPRO].black_point_comp = 
-                                                blackptcomp | gsBP_OVERRIDE;
+                        gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_GRAPPRO]), true);
                     }
                     break;
                 case IMAGE_CMYK:
                     srcgtag->cmyk_profiles[gsSRC_IMAGPRO] = icc_profile;
                     srcgtag->cmyk_rend_cond[gsSRC_IMAGPRO].use_cm = use_cm;
                     if (use_cm) {
-                        /* Get the intent */
-                        curr_ptr = strtok(NULL, "\t,\32\n\r");
-                        count = sscanf(curr_ptr, "%d", &ri);
-                        srcgtag->cmyk_rend_cond[gsSRC_IMAGPRO].rendering_intent = 
-                                                            ri | gsRI_OVERRIDE;
-                        /* Get the black point compensation setting */
-                        curr_ptr = strtok(NULL, "\t,\32\n\r");
-                        count = sscanf(curr_ptr, "%d", &blackptcomp);
-                        srcgtag->cmyk_rend_cond[gsSRC_IMAGPRO].black_point_comp = 
-                                                blackptcomp | gsBP_OVERRIDE;
+                        gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_IMAGPRO]), true);
                     }
                     break;
                 case TEXT_CMYK:
                     srcgtag->cmyk_profiles[gsSRC_TEXTPRO] = icc_profile;
                     srcgtag->cmyk_rend_cond[gsSRC_TEXTPRO].use_cm = use_cm;
                     if (use_cm) {
-                        /* Get the intent */
-                        curr_ptr = strtok(NULL, "\t,\32\n\r");
-                        count = sscanf(curr_ptr, "%d", &ri);
-                        srcgtag->cmyk_rend_cond[gsSRC_TEXTPRO].rendering_intent = 
-                                                            ri | gsRI_OVERRIDE;
-                        /* Get the black point compensation setting */
-                        curr_ptr = strtok(NULL, "\t,\32\n\r");
-                        count = sscanf(curr_ptr, "%d", &blackptcomp);
-                        srcgtag->cmyk_rend_cond[gsSRC_TEXTPRO].black_point_comp = 
-                                                blackptcomp | gsBP_OVERRIDE;
+                        gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_TEXTPRO]), true);
                     }
                     break;
                 case GRAPHIC_RGB:
                     srcgtag->rgb_profiles[gsSRC_GRAPPRO] = icc_profile;
                     srcgtag->rgb_rend_cond[gsSRC_GRAPPRO].use_cm = use_cm;
                     if (use_cm) {
-                         /* Get the intent */
-                        curr_ptr = strtok(NULL, "\t,\32\n\r");
-                        count = sscanf(curr_ptr, "%d", &ri);
-                        srcgtag->rgb_rend_cond[gsSRC_GRAPPRO].rendering_intent = 
-                                                            ri | gsRI_OVERRIDE;
-                        /* Get the black point compensation setting */
-                        curr_ptr = strtok(NULL, "\t,\32\n\r");
-                        count = sscanf(curr_ptr, "%d", &blackptcomp);
-                        srcgtag->rgb_rend_cond[gsSRC_GRAPPRO].black_point_comp = 
-                                                  blackptcomp | gsBP_OVERRIDE;
+                        gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_GRAPPRO]), false);
                     }
                    break;
                 case IMAGE_RGB:
                     srcgtag->rgb_profiles[gsSRC_IMAGPRO] = icc_profile;
                     srcgtag->rgb_rend_cond[gsSRC_IMAGPRO].use_cm = use_cm;
                     if (use_cm) {
-                        /* Get the intent */
-                        curr_ptr = strtok(NULL, "\t,\32\n\r");
-                        count = sscanf(curr_ptr, "%d", &ri);
-                        srcgtag->rgb_rend_cond[gsSRC_IMAGPRO].rendering_intent = 
-                                                            ri | gsRI_OVERRIDE;
-                        /* Get the black point compensation setting */
-                        curr_ptr = strtok(NULL, "\t,\32\n\r");
-                        count = sscanf(curr_ptr, "%d", &blackptcomp);
-                        srcgtag->rgb_rend_cond[gsSRC_IMAGPRO].black_point_comp = 
-                                                  blackptcomp | gsBP_OVERRIDE;
+                        gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_IMAGPRO]), false);
                     }
                     break;
                 case TEXT_RGB:
                     srcgtag->rgb_profiles[gsSRC_TEXTPRO] = icc_profile;
                     srcgtag->rgb_rend_cond[gsSRC_TEXTPRO].use_cm = use_cm;
                     if (use_cm) {
-                        /* Get the intent */
-                        curr_ptr = strtok(NULL, "\t,\32\n\r");
-                        count = sscanf(curr_ptr, "%d", &ri);
-                        srcgtag->rgb_rend_cond[gsSRC_TEXTPRO].rendering_intent = 
-                                                            ri | gsRI_OVERRIDE;
-                        /* Get the black point compensation setting */
-                        curr_ptr = strtok(NULL, "\t,\32\n\r");
-                        count = sscanf(curr_ptr, "%d", &blackptcomp);
-                        srcgtag->rgb_rend_cond[gsSRC_TEXTPRO].black_point_comp = 
-                                                  blackptcomp | gsBP_OVERRIDE;
+                        gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_TEXTPRO]), false);
                     }
                     break;
                 case GSICC_NUM_SRCGTAG_KEYS:
@@ -1063,15 +1036,15 @@ gsicc_new_srcgtag_profile(gs_memory_t *memory)
     for (k = 0; k < NUM_SOURCE_PROFILES; k++) {
         result->rgb_profiles[k] = NULL;
         result->cmyk_profiles[k] = NULL;
-        result->rgb_rend_cond[k].black_point_comp = gsBLACKPTCOMP_ON;
-        result->rgb_rend_cond[k].rendering_intent = gsPERCEPTUAL;
+        result->rgb_rend_cond[k].black_point_comp = gsBPNOTSPECIFIED;
+        result->rgb_rend_cond[k].rendering_intent = gsRINOTSPECIFIED;
         result->rgb_rend_cond[k].override_icc = false;
-        result->rgb_rend_cond[k].preserve_black = gsBLACKPRESERVE_OFF;
+        result->rgb_rend_cond[k].preserve_black = gsBKPRESNOTSPECIFIED;
         result->rgb_rend_cond[k].use_cm = true;
-        result->cmyk_rend_cond[k].black_point_comp = gsBLACKPTCOMP_ON;
-        result->cmyk_rend_cond[k].rendering_intent = gsPERCEPTUAL;
+        result->cmyk_rend_cond[k].black_point_comp = gsBPNOTSPECIFIED;
+        result->cmyk_rend_cond[k].rendering_intent = gsRINOTSPECIFIED;
         result->cmyk_rend_cond[k].override_icc = false;
-        result->cmyk_rend_cond[k].preserve_black = gsBLACKPRESERVE_OFF;
+        result->cmyk_rend_cond[k].preserve_black = gsBKPRESNOTSPECIFIED;
         result->cmyk_rend_cond[k].use_cm = true;
     }
     result->color_warp_profile = NULL;
@@ -1565,7 +1538,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
                                     "gsicc_profile_new");
     if (result == NULL)
         return result;
-    memset(result,0,sizeof(gsicc_serialized_profile_t));
+    memset(result, 0, sizeof(gsicc_serialized_profile_t));
     if (namelen > 0) {
         nameptr = (char*) gs_alloc_bytes(mem_nongc, namelen+1,
                              "gsicc_profile_new");
@@ -1593,6 +1566,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
     rc_init_free(result, mem_nongc, 1, rc_free_icc_profile);
     result->profile_handle = NULL;
     result->spotnames = NULL;
+    result->rend_is_valid = false;
     result->dev = NULL;
     result->memory = mem_nongc;
     result->lock = gx_monitor_alloc(mem_nongc);
@@ -1628,13 +1602,13 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
         }
         /* Release the name if it has been set */
         if(profile->name != NULL) {
-            gs_free_object(mem_nongc ,profile->name,"rc_free_icc_profile");
+            gs_free_object(mem_nongc, profile->name,"rc_free_icc_profile");
             profile->name = NULL;
             profile->name_length = 0;
         }
         profile->hash_is_valid = 0;
         if (profile->lock != NULL) {
-            gs_free_object(mem_nongc ,profile->lock,"rc_free_icc_profile");
+            gs_free_object(mem_nongc, profile->lock,"rc_free_icc_profile");
         }
         /* If we had a DeviceN profile with names
            deallocate that now */
@@ -1939,6 +1913,8 @@ gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory)
         picc_profile->hashcode = profile_header.hashcode;
         picc_profile->islab = profile_header.islab;
         picc_profile->num_comps = profile_header.num_comps;
+        picc_profile->rend_is_valid = profile_header.rend_is_valid;
+        picc_profile->rend_cond = profile_header.rend_cond;
         for ( k = 0; k < profile_header.num_comps; k++ ) {
             picc_profile->Range.ranges[k].rmax =
                 profile_header.Range.ranges[k].rmax;
@@ -2126,23 +2102,9 @@ void
 gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data,
                         cmm_profile_t *icc_profile)
 {
-    int k;
-
     if (icc_profile == NULL)
         return;
-    profile_data->buffer_size = icc_profile->buffer_size;
-    profile_data->data_cs = icc_profile->data_cs;
-    profile_data->default_match = icc_profile->default_match;
-    profile_data->hash_is_valid = icc_profile->hash_is_valid;
-    profile_data->hashcode = icc_profile->hashcode;
-    profile_data->islab = icc_profile->islab;
-    profile_data->num_comps = icc_profile->num_comps;
-    for ( k = 0; k < profile_data->num_comps; k++ ) {
-        profile_data->Range.ranges[k].rmax =
-            icc_profile->Range.ranges[k].rmax;
-        profile_data->Range.ranges[k].rmin =
-            icc_profile->Range.ranges[k].rmin;
-    }
+    memcpy(profile_data, icc_profile, sizeof(gsicc_serialized_profile_t));
 }
 
 /* Utility functions */

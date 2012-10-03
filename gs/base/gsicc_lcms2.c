@@ -204,7 +204,7 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                              void *outputbuffer)
 {
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM)icclink->link_handle;
-    cmsUInt32Number dwInputFormat,dwOutputFormat;
+    cmsUInt32Number dwInputFormat,dwOutputFormat, num_src_lcms, num_des_lcms;
     int planar,numbytes,big_endian,hasalpha,k;
     unsigned char *inputpos, *outputpos;
     int numchannels;
@@ -243,11 +243,16 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     big_endian = !output_buff_desc->little_endian;
     dwOutputFormat = dwOutputFormat | ENDIAN16_SH(big_endian);
 
-    /* number of channels */
-    numchannels = input_buff_desc->num_chan;
-    dwInputFormat = dwInputFormat | CHANNELS_SH(numchannels);
-    numchannels = output_buff_desc->num_chan;
-    dwOutputFormat = dwOutputFormat | CHANNELS_SH(numchannels);
+    /* number of channels.  This should not really be changing! */
+    num_src_lcms = T_CHANNELS(cmsGetTransformInputFormat(hTransform));
+    num_des_lcms = T_CHANNELS(cmsGetTransformOutputFormat(hTransform));
+    if (num_src_lcms != input_buff_desc->num_chan ||
+        num_des_lcms != output_buff_desc->num_chan) {
+        /* We can't transform this. Someone is doing something odd */
+        return;
+    }
+    dwInputFormat = dwInputFormat | CHANNELS_SH(num_src_lcms);
+    dwOutputFormat = dwOutputFormat | CHANNELS_SH(num_des_lcms);
 
     /* alpha, which is passed through unmolested */
     /* ToDo:  Right now we always must have alpha last */
@@ -364,12 +369,43 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
 #if 0
     des_data_type = des_data_type | ENDIAN16_SH(1);
 #endif
-/* Create the link */
+    /* Set up the flags */
     flag = cmsFLAGS_HIGHRESPRECALC;
     if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON
         || rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
         flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
     }
+    if (rendering_params->preserve_black == gsBLACKPRESERVE_KONLY) {
+        switch (rendering_params->rendering_intent) {
+            case INTENT_PERCEPTUAL:
+                rendering_params->rendering_intent = INTENT_PRESERVE_K_ONLY_PERCEPTUAL;
+                break;
+            case INTENT_RELATIVE_COLORIMETRIC:
+                rendering_params->rendering_intent = INTENT_PRESERVE_K_ONLY_RELATIVE_COLORIMETRIC;
+                break;
+            case INTENT_SATURATION:
+                rendering_params->rendering_intent = INTENT_PRESERVE_K_ONLY_SATURATION;
+                break;
+            default:
+                break;
+        }
+    }
+    if (rendering_params->preserve_black == gsBLACKPRESERVE_KPLANE) {
+        switch (rendering_params->rendering_intent) {
+            case INTENT_PERCEPTUAL:
+                rendering_params->rendering_intent = INTENT_PRESERVE_K_PLANE_PERCEPTUAL;
+                break;
+            case INTENT_RELATIVE_COLORIMETRIC:
+                rendering_params->rendering_intent = INTENT_PRESERVE_K_PLANE_RELATIVE_COLORIMETRIC;
+                break;
+            case INTENT_SATURATION:
+                rendering_params->rendering_intent = INTENT_PRESERVE_K_PLANE_SATURATION;
+                break;
+            default:
+                break;
+        }
+    }
+    /* Create the link */
     return cmsCreateTransformTHR((cmsContext)memory,
                lcms_srchandle, src_data_type,
                lcms_deshandle, des_data_type,
@@ -464,7 +500,7 @@ gscms_destroy(gs_memory_t *memory)
 void
 gscms_release_link(gsicc_link_t *icclink)
 {
-    if (icclink->link_handle !=NULL )
+    if (icclink->link_handle != NULL )
         cmsDeleteTransform(icclink->link_handle);
 }
 

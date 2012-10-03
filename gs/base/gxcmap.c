@@ -1236,8 +1236,11 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
         unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS], psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
 
         rendering_params.black_point_comp = pis->blackptcomp;
-        rendering_params.graphics_type_tag = GS_PATH_TAG;
+        rendering_params.graphics_type_tag = dev->graphics_type_tag;
+        rendering_params.override_icc = false;
+        rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
         rendering_params.rendering_intent = pis->renderingintent;
+        rendering_params.use_cm = true;
 
         icc_link = gsicc_get_link_profile(pis, dev, pis->icc_manager->default_rgb,
                                           des_profile, &rendering_params,
@@ -1308,8 +1311,11 @@ devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis, gx_device *dev)
                           dev_profile, &des_profile, &render_cond);
     /* Define the rendering intents. */
     rendering_params.black_point_comp = pis->blackptcomp;
-    rendering_params.graphics_type_tag = GS_PATH_TAG;
+    rendering_params.graphics_type_tag = dev->graphics_type_tag;
+    rendering_params.override_icc = false;
+    rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
     rendering_params.rendering_intent = pis->renderingintent;
+    rendering_params.use_cm = true;
     /* Sigh, frac to full 16 bit.  Need to clean this up */
     for (k = 0; k < 4; k++){
         psrc[k] = frac2cv(cm_comps[k]);

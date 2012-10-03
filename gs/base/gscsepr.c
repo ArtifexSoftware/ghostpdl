@@ -329,9 +329,11 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 
             /* Define the rendering intents. */
             rendering_params.black_point_comp = pis->blackptcomp;
-            rendering_params.graphics_type_tag = GS_PATH_TAG;
+            rendering_params.graphics_type_tag = dev->graphics_type_tag;
+            rendering_params.override_icc = false;
+            rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
             rendering_params.rendering_intent = pis->renderingintent;
-
+            rendering_params.use_cm = true;
             pcs->params.separation.get_colorname_string(pis->memory, name,
                                                 &pname, &name_size);
             code = gsicc_transform_named_color(pc->paint.values[0], pname,

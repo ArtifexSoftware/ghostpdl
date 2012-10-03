@@ -384,7 +384,10 @@ top:
     }
     rendering_params.black_point_comp = pis->blackptcomp;
     rendering_params.graphics_type_tag = GS_PATH_TAG;
+    rendering_params.override_icc = false;
+    rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
     rendering_params.rendering_intent = pis->renderingintent;
+    rendering_params.use_cm = true;
     /* Grab the icc link transform that we need now */
     if (pcs->cmm_icc_profile_data != NULL) {
         pfs->icclink = gsicc_get_link(pis, pis->trans_device, pcs, NULL,
