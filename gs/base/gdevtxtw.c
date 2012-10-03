@@ -1673,7 +1673,7 @@ txt_shift_text_currentpoint(textw_text_enum_t *penum, gs_point *wpt)
  */
 static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short *Buffer)
 {
-    unsigned short unicode;
+    gs_char unicode;
     int code, cid;
     gs_const_string gnstr;
 
@@ -1769,7 +1769,7 @@ static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short
             }
         }
     }
-    *Buffer = unicode;
+    *Buffer = (unsigned short)unicode;
     return 1;
 }
 
@@ -1882,7 +1882,7 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
         if (operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES)) {
             ch = pte->text.data.bytes[pte->index++];
         } else if (operation & (TEXT_FROM_CHARS | TEXT_FROM_SINGLE_CHAR)) {
-            ch = pte->text.data.bytes[pte->index++];
+            ch = pte->text.data.chars[pte->index++];
         } else if (operation & (TEXT_FROM_GLYPHS | TEXT_FROM_SINGLE_GLYPH)) {
             if (operation & TEXT_FROM_GLYPHS) {
                 gdata = pte->text.data.glyphs + (pte->index++ * sizeof (gs_glyph));

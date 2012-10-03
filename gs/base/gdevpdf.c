@@ -1395,7 +1395,7 @@ static int flush_hint_stream(pdf_linearisation_t *linear_params)
 
 static int write_hint_stream(pdf_linearisation_t *linear_params, unsigned int *val, char size_bits)
 {
-    int input_mask, output_mask;
+    unsigned int input_mask, output_mask;
 
     if (size_bits == 0)
         return 0;
