@@ -842,9 +842,6 @@ pl_font_galley_character(gs_char chr, const pl_font_t *plfont)
         return default_char;
 }
 
-/* NB major hack.  This is used by pl_decode_glyph; */
-gs_char last_char = 0;
-
 /* Encode a character for a TrueType font. */
 /* What we actually return is the TT glyph index.  Note that */
 /* we may return either gs_no_glyph or 0 for an undefined character. */
@@ -862,7 +859,8 @@ pl_tt_encode_char(gs_font *pfont_generic, gs_char chr, gs_glyph_space_t not_used
         pl_font_t *plfont = pfont->client_data;
         pl_font_glyph_t *pfg;
 
-        last_char = chr;
+        /* This is used by pl_decode_glyph in plfont.c */
+        plfont->last_char = chr;
 
         if ( plfont->offsets.GC < 0 )
           return glyph;  /* no substitute */
