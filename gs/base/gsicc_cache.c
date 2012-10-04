@@ -946,12 +946,6 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
 
 /* Define the demo structure and function for named color look-up */
 
-typedef struct gsicc_namedcolor_s {
-    char *colorant_name;            /* The name */
-    unsigned int name_size;         /* size of name */
-    unsigned short lab[3];          /* CIELAB D50 values */
-} gsicc_namedcolor_t;
-
 typedef struct gsicc_namedcolortable_s {
     gsicc_namedcolor_t *named_color;    /* The named color */
     unsigned int number_entries;        /* The number of entries */
@@ -979,7 +973,9 @@ get_to_next_line(char **buffptr, int *buffer_count)
 
 /* Function returns -1 if name not found.  Otherwise transform the color. */
 int
-gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
+gsicc_transform_named_color(const float tint_values[],
+                            gsicc_namedcolor_t color_names[], 
+                            uint num_names,
                             gx_color_value device_values[],
                             const gs_imager_state *pis, gx_device *dev,
                             cmm_profile_t *gs_output_profile,
@@ -990,7 +986,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
     unsigned int num_entries;
     cmm_profile_t *named_profile;
     gsicc_namedcolortable_t *namedcolor_table;
-    int k,j;
+    int k,j,n;
     float lab[3];
     char *buffptr;
     int buffer_count;
@@ -1002,6 +998,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
     bool found_match;
     unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     unsigned short psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    unsigned short temp_lab[3];
     unsigned short *psrc_temp;
     float temp;
     unsigned short white_lab[3] = {65535, 32767, 32767};
@@ -1009,6 +1006,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
     cmm_profile_t *curr_output_profile;
     gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile;
+    int indices[GS_CLIENT_COLOR_MAX_COMPONENTS]; 
 
     /* Check if the data that we have has already been generated. */
     if (pis->icc_manager != NULL) {
@@ -1074,8 +1072,9 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                     namedcolor_data[k].name_size = curr_name_size;
                     /* +1 for the null */
                     namedcolor_data[k].colorant_name =
-                        (char*) gs_malloc(pis->memory->stable_memory,1,name_size+1,
-                                        "gsicc_transform_named_color");
+                        (char*) gs_malloc(pis->memory->stable_memory,1,
+                                          curr_name_size+1,
+                                          "gsicc_transform_named_color");
                     strncpy(namedcolor_data[k].colorant_name,temp_ptr,
                             namedcolor_data[k].name_size+1);
                     for (j = 0; j < 3; j++) {
@@ -1111,52 +1110,75 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                     return(-1);
                 }
             }
-            /* Search our structure for the color name */
-            found_match = false;
-            for (k = 0; k < num_entries; k++) {
-                if (name_size == namedcolor_table->named_color[k].name_size) {
-                    if( strncmp((const char *) namedcolor_table->named_color[k].colorant_name,
-                        (const char *) color_name, name_size) == 0) {
+            /* Go through each of our spot names, getting the color value for
+               each one. */
+            for (n = 0; n < num_names; n++) {
+                /* Search our structure for the color name */
+                found_match = false;
+                for (k = 0; k < num_entries; k++) {
+                    if (color_names[n].name_size == 
+                        namedcolor_table->named_color[k].name_size) {
+                        if( strncmp((const char *) namedcolor_table->named_color[k].colorant_name,
+                            (const char *) color_names[n].colorant_name, color_names[n].name_size) == 0) {
                             found_match = true;
                             break;
+                        }
                     }
                 }
+                if (found_match) {
+                    indices[n] = k;
+                } else {
+                    /* We do not know this colorant, return -1 */
+                    return -1;
+                }
             }
-            if (found_match) {
-                /* Apply tint and push through CMM */
+            /* We have all the colorants.  Lets go through and see if we can
+               make something that looks like a merge of the various ones */
+            /* Apply tint, blend LAB values  */
+            for (n = 0; n < num_names; n++) {
                 for (j = 0; j < 3; j++) {
-                    temp = (float) namedcolor_table->named_color[k].lab[j] * tint_value
-                            + (float) white_lab[j] * (1.0 - tint_value);
-                    psrc[j] = (unsigned short) temp;
+                    temp = (float) namedcolor_table->named_color[indices[n]].lab[j] * tint_values[n]
+                            + (float) white_lab[j] * (1.0 - tint_values[n]);
+                    temp_lab[j] = (unsigned short) temp;
                 }
-                if ( gs_output_profile != NULL ) {
-                    curr_output_profile = gs_output_profile;
+                /* Blend with the current color.  Note this is just for 
+                   demonstration.  Much better methods are possible for this */
+                if (n == 0) {
+                    for (j = 0; j < 3; j++) {
+                        psrc[j] = temp_lab[j];
+                    }
                 } else {
-                    /* Use the device profile */
-                    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-                    gsicc_extract_profile(dev->graphics_type_tag,
-                                          dev_profile, &(curr_output_profile),
-                                          &render_cond);
+                    psrc[0] = (psrc[0]*temp_lab[0])/white_lab[0]; /* L* */
+                    psrc[1] = (psrc[1] + temp_lab[1]) / 2; /* a* */
+                    psrc[2] = (psrc[2] + temp_lab[2]) / 2; /* b* */
                 }
-                icc_link = gsicc_get_link_profile(pis, dev,
-                                                pis->icc_manager->lab_profile,
-                                                curr_output_profile, rendering_params,
-                                                pis->memory, false);
-                if (icc_link->is_identity) {
-                    psrc_temp = &(psrc[0]);
-                } else {
-                    /* Transform the color */
-                    psrc_temp = &(psrc_cm[0]);
-                    (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2);
-                }
-                gsicc_release_link(icc_link);
-                for ( k = 0; k < curr_output_profile->num_comps; k++){
-                    device_values[k] = psrc_temp[k];
-                }
-                return(0);
-            } else {
-                return (-1);
             }
+            /* Push LAB value through CMM to get device values */
+            if ( gs_output_profile != NULL ) {
+                curr_output_profile = gs_output_profile;
+            } else {
+                /* Use the device profile */
+                code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+                gsicc_extract_profile(dev->graphics_type_tag,
+                                      dev_profile, &(curr_output_profile),
+                                      &render_cond);
+            }
+            icc_link = gsicc_get_link_profile(pis, dev,
+                                            pis->icc_manager->lab_profile,
+                                            curr_output_profile, rendering_params,
+                                            pis->memory, false);
+            if (icc_link->is_identity) {
+                psrc_temp = &(psrc[0]);
+            } else {
+                /* Transform the color */
+                psrc_temp = &(psrc_cm[0]);
+                (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2);
+            }
+            gsicc_release_link(icc_link);
+            for ( k = 0; k < curr_output_profile->num_comps; k++){
+                device_values[k] = psrc_temp[k];
+            }
+            return 0;
         }
     }
     return(-1);

@@ -312,6 +312,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
     bool is_lab;
     int k;
     int num_des_comps = dev->color_info.num_components;
+    gsicc_namedcolor_t named_color;
 
     if (pcs->params.separation.sep_type == SEP_OTHER &&
         pcs->params.separation.use_alt_cspace) {
@@ -336,9 +337,12 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
             rendering_params.use_cm = true;
             pcs->params.separation.get_colorname_string(pis->memory, name,
                                                 &pname, &name_size);
-            code = gsicc_transform_named_color(pc->paint.values[0], pname,
-                            name_size, device_values, pis, dev, NULL,
-                            &rendering_params);
+            /* Make the name structure and initialized it */
+            named_color.colorant_name = (char*) pname;
+            named_color.name_size = name_size;
+            code = gsicc_transform_named_color(pc->paint.values, &named_color,
+                                               1, device_values, pis, dev, NULL,
+                                               &rendering_params);
             if (code == 0) {
                 for (k = 0; k < num_des_comps; k++){
                     pconc[k] = float2frac(((float) device_values[k])/65535.0);
