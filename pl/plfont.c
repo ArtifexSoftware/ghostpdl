@@ -27,11 +27,15 @@
 #include "gsmatrix.h"
 #include "gsstate.h"
 #include "gschar.h"
+#include "gsimage.h"
 #include "gsutil.h"
+#include "gxfcache.h"
 #include "gxfont.h"
 #include "gxfont42.h"
+#include "gzstate.h"
 #include "plfont.h"
 #include "plvalue.h"
+#include "plchar.h"
 #include "strmio.h"
 
 /* Structure descriptors */
@@ -340,8 +344,6 @@ const char *pl_mac_names[258] = {
     "dcroat"
 };
 
-extern ulong tt_find_table(gs_font_type42 *pfont, const char *tname, uint *plen);
-
 static int
 pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
 {
@@ -486,9 +488,6 @@ pl_alloc_font(gs_memory_t *mem, client_name_t cname)
           }
         return plfont;
 }
-/* import from plchar.c - used to determine if this is a downloaded
-   true type font or a resident font - yuck. */
-extern int pl_tt_get_outline(gs_font_type42 *pfont, uint index, gs_glyph_data_t *pdata);
 
 /* Structure descriptors for cloning fonts */
 gs_private_st_ptrs1(st_pl_font_glyph_f, pl_font_glyph_t, "pl_font_glyph_t",

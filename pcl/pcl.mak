@@ -270,6 +270,7 @@ rtrstcmp_h  = $(PCLSRC)rtrstcmp.h \
               $(gx_h)             \
               $(gsstruct_h)
 
+rtmisc_h  = $(PCLSRC)rtmisc.h
 
 $(PCLOBJ)pcommand.$(OBJ): $(PCLSRC)pcommand.c   \
                           $(std_h)              \
@@ -292,6 +293,7 @@ $(PCLOBJ)pcdraw.$(OBJ): $(PCLSRC)pcdraw.c   \
                         $(gx_h)             \
                         $(gsmatrix_h)       \
                         $(gscoord_h)        \
+                        $(gspath_h)         \
                         $(gsstate_h)        \
                         $(gsrop_h)          \
                         $(gxfixed_h)        \
@@ -356,7 +358,8 @@ $(PCLOBJ)rtmisc.$(OBJ): $(PCLSRC)rtmisc.c   \
                         $(gscoord_h)        \
                         $(pcpatxfm_h)       \
                         $(pcpage_h)         \
-                        $(pcdraw_h)
+                        $(pcdraw_h)         \
+                        $(rtmisc_h)
 	$(PCLCCC) $(PCLSRC)rtmisc.c $(PCLO_)rtmisc.$(OBJ)
 
 # Chapter 15

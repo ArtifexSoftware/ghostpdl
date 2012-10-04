@@ -26,6 +26,7 @@
 #include "pcpatxfm.h"
 #include "pcpage.h"
 #include "pcdraw.h"
+#include "rtmisc.h"
 
 /* ---------------- Chapter 4 ---------------- */
 

@@ -333,4 +333,5 @@ void plu_set_callbacks(void);
 int pl_font_disable_composite_metrics(pl_font_t *plfont, gs_glyph glyph);
 
 pl_font_t *pl_lookup_font_by_pjl_number(pl_dict_t *pfontdict, int pjl_font_number);
+
 #endif				/* plfont_INCLUDED */

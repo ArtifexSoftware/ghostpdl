@@ -45,17 +45,6 @@
 #include "pltop.h"
 #include "gsicc_manage.h"
 
-/* Define the table of pointers to initialization data. */
-
-typedef int  (*px_init_proc) ( px_state_t * );
-
-int pxfont_init(px_state_t *pxs );
-
-const px_init_proc px_init_table[] = {
-    &pxfont_init,
-    0
-};
-
 /* Imported operators */
 px_operator_proc(pxEndPage);
 px_operator_proc(pxBeginSession);

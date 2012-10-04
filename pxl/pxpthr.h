@@ -37,4 +37,6 @@ void pxpcl_release(void);
    entered. */
 void pxPassthrough_pcl_state_nonpage_exceptions(px_state_t *pxs);
 
+int pxpcl_selectfont(px_args_t *par, px_state_t *pxs);
+
 #endif                /* pxpthr_INCLUDED */

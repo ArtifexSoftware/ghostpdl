@@ -64,7 +64,7 @@ stputs(stream *s, const char *str)
 
 /* printf on a stream. */
 /**** THIS SHOULD BE IN THE STREAM PACKAGE. ****/
-void
+static void
 stprintf(stream *s, const char *fmt, ...)
 {	uint count;
         va_list args;

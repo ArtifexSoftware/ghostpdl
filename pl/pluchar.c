@@ -56,6 +56,7 @@
 #include "ufstport.h"
 #include "shareinc.h"
 #include "gxfapiu.h"
+#include "plchar.h"
 
 /* ---------------- UFST utilities ---------------- */
 
@@ -378,13 +379,13 @@ pl_ufst_make_char(
         image.ImageMatrix.tx = -psbm->xorigin / 16.0;
         image.ImageMatrix.ty = psbm->yorigin / 16.0;
         image.adjust = true;
-        code = image_bitmap_char( ienum,
-                                  &image,
-                                  (byte *)psbm->bm,
-                                  psbm->width,
-                                  0,
-                                  NULL,
-                                  pgs );
+        code = pl_image_bitmap_char( ienum,
+                                     &image,
+                                     (byte *)psbm->bm,
+                                     psbm->width,
+                                     0,
+                                     NULL,
+                                     pgs );
         gs_free_object(pgs->memory, ienum, "pl_ufst_make_char");
         MEMfree(FSA CACHE_POOL, memhdl);
         gs_setmatrix(pgs, &sv_ctm);

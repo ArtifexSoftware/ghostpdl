@@ -37,6 +37,7 @@
  * The stick/arc fonts themselves use Roman-8 (8U) indexing.
  */
 extern const pl_symbol_map_t map_8U_unicode;
+
 static gs_glyph
 hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t not_used)
 {
@@ -54,11 +55,11 @@ hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t not_use
 static int
 hpgl_stick_char_width(const pl_font_t *plfont, const void *pgs, gs_char uni_code, gs_point *pwidth)
 {
-    /* first map uni_code to roman-8 */
-    uni_code = (uint) hpgl_stick_arc_encode_char(NULL, uni_code, 0);
+    /* first map unicode to roman-8 */
+    gs_glyph g = hpgl_stick_arc_encode_char(NULL, uni_code, 0);
 
     /* NB need an interface function call to verify the character exists */
-    if ( (uni_code >= 0x20)  && (uni_code <= 0xff) )
+    if ( (g >= 0x20)  && (g <= 0xff) )
         pwidth->x = hpgl_stick_arc_width(uni_code, HPGL_STICK_FONT);
     else
         /* doesn't exist */
@@ -88,10 +89,10 @@ static int
 hpgl_arc_char_width(const pl_font_t *plfont, const void *pgs, gs_char uni_code, gs_point *pwidth)
 {
     /* first map uni_code to roman-8 */
-    uni_code = (uint) hpgl_stick_arc_encode_char(NULL, uni_code, 0);
+    gs_glyph g = hpgl_stick_arc_encode_char(NULL, uni_code, 0);
 
     /* NB need an interface function call to verify the character exists */
-    if ( (uni_code >= 0x20)  && (uni_code <= 0xff) ) {
+    if ( (g >= 0x20)  && (g <= 0xff) ) {
         pwidth->x = hpgl_stick_arc_width(uni_code, HPGL_ARC_FONT)
           / 1024.0  /* convert to ratio of cell size to be multiplied by point size */
           * 0.667;   /* TRM 23-18 cell is 2/3 of point size */

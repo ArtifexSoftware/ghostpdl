@@ -48,6 +48,7 @@
 #include "gxfcache.h"
 #include "gxttf.h"
 #include "gzstate.h"
+#include "plchar.h"
 
 /* Define whether to cache TrueType characters. */
 /* This would only be disabled for debugging. */
@@ -272,7 +273,7 @@ on:           switch ( (dbyte = sbyte = *++sp) ) {
 
 /* Image a bitmap character, with or without bolding. */
 int
-image_bitmap_char(gs_image_enum *ienum, const gs_image_t *pim,
+pl_image_bitmap_char(gs_image_enum *ienum, const gs_image_t *pim,
   const byte *bitmap_data, uint sraster, int bold, byte *bold_lines,
   gs_state *pgs)
 {       uint dest_bytes = (pim->Width + 7) >> 3;
@@ -459,7 +460,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
               dmprintf(pgs->memory, "\n");
           }
 #endif
-          code = image_bitmap_char(ienum, &image, bitmap_data,
+          code = pl_image_bitmap_char(ienum, &image, bitmap_data,
                                    (image.Width - bold + 7) >> 3, bold,
                                    bold_lines, pgs);
 out:      gs_free_object(pgs->memory, bold_lines,
@@ -530,7 +531,7 @@ pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont)
  * pl overrides gstype42_default_get_metrics
  */
 
-int
+static int
 pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index,
                   gs_type42_metrics_options_t options,  float *sbw)
 {
@@ -690,7 +691,7 @@ typedef struct gx_path_s gx_path;
  * not mappable, return gs_error_undefined; if the sub-table type is
  * unknown, return gs_error_invalidfont.
  */
-int
+static int
 pl_cmap_lookup(const uint key, const byte *table, uint *pvalue)
 {       /* Dispatch according to the table type. */
         switch ( pl_get_uint16(table) )
@@ -845,7 +846,7 @@ pl_font_galley_character(gs_char chr, const pl_font_t *plfont)
 /* Encode a character for a TrueType font. */
 /* What we actually return is the TT glyph index.  Note that */
 /* we may return either gs_no_glyph or 0 for an undefined character. */
-gs_glyph
+static gs_glyph
 pl_tt_encode_char(gs_font *pfont_generic, gs_char chr, gs_glyph_space_t not_used)
 {
         gs_font_type42 *pfont = (gs_font_type42 *)pfont_generic;
@@ -1118,9 +1119,9 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
           code = gs_setcharwidth(penum, pgs, w2[0], w2[1]);
           if ( code < 0 )
             goto out;
-          code = image_bitmap_char(ienum, &image, pmdev->base,
-                                   bitmap_raster(pmdev->width), bold_added,
-                                   bold_lines, pgs);
+          code = pl_image_bitmap_char(ienum, &image, pmdev->base,
+                                      bitmap_raster(pmdev->width), bold_added,
+                                      bold_lines, pgs);
 out:      if (bold_device_created)
               gx_device_retain((gx_device *)pmdev, false);
           gs_free_object(pgs->memory, bold_lines, "pl_tt_build_char(bold_lines)");
@@ -1290,7 +1291,6 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
                     gs_free_object(pgs->memory, xBuffer, "x point buffer");
                 if( yBuffer != NULL)
                     gs_free_object(pgs->memory, yBuffer, "y point buffer");
-                if_debug1m('1', pgs->memory, "[1]cannot allocate point buffers %i\n",pointBufferSize * sizeof(int));
                 return_error(gs_error_VMerror);
             }
 
@@ -1398,14 +1398,6 @@ pl_intelli_char_width(const pl_font_t *plfont, const void *pgs, gs_char char_cod
             return 0;
           }
         pwidth->x = (floatp)wx / 8782.0;
-
-#ifdef DEBUG
-        {
-            pl_font_glyph_t *cglyph = pl_font_lookup_glyph(plfont, char_code);
-            if_debug1m('1', plfont->pfont->memory, "[1] glyph %ld\n", cglyph->glyph);
-            if_debug2m('1', plfont->pfont->memory, "[1] intelli width of %d %f\n", char_code, pwidth->x);
-        }
-#endif
         return 0;
 }
 
@@ -1499,7 +1491,7 @@ pl_tt_init_procs(gs_font_type42 *pfont)
 #undef plfont
 }
 
-uint
+static uint
 pl_tt_get_glyph_index(gs_font_type42 *pfont42, gs_glyph glyph)
 {
     /* identity */
@@ -1728,7 +1720,7 @@ fg:     pfg = pl_font_lookup_glyph(plfont, key);
 }
 
 static bool
-is_composite(byte *pgdata)
+is_composite(const byte *pgdata)
 {
     return (pl_get_int16(pgdata) == -1);
 }
@@ -1738,7 +1730,6 @@ pl_font_disable_composite_metrics(pl_font_t *plfont, gs_glyph glyph)
 {
     gs_glyph key = glyph;
     gs_font_type42 *pfont = (gs_font_type42 *)plfont->pfont;
-    pl_font_glyph_t *pfg;
     gs_glyph_data_t glyph_data;
     int code;
 
@@ -1777,12 +1768,12 @@ pl_font_disable_composite_metrics(pl_font_t *plfont, gs_glyph glyph)
        gstype42.c */
     {
         uint flags;
-        byte *next_component = glyph_data.bits.data + 10;
+        byte *next_component = (byte *)glyph_data.bits.data + 10;
         do {
             gs_matrix_fixed mat;
             byte *last_component = next_component;
             memset(&mat, 0, sizeof(mat)); /* arbitrary */
-            gs_type42_parse_component(&next_component, &flags, &mat, NULL,
+            gs_type42_parse_component((const byte **)&next_component, &flags, &mat, NULL,
                                       (const gs_font_type42 *)plfont->pfont, &mat);
             if (flags & TT_CG_USE_MY_METRICS)
                 /* bit 9 of the flags is the "use my metrics" flag

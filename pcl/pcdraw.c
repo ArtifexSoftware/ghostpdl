@@ -19,6 +19,7 @@
 #include "gx.h"
 #include "gsmatrix.h"
 #include "gscoord.h"
+#include "gspath.h"
 #include "gsstate.h"
 #include "gsrop.h"
 #include "gxfixed.h"

@@ -19,6 +19,7 @@
 #include "string_.h"
 #include "gstypes.h"
 #include "gsmemory.h"
+#include "gdebug.h"
 #include "gscspace.h"
 #include "gsstate.h"
 #include "gscie.h"

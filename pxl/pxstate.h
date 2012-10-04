@@ -126,12 +126,12 @@ struct px_state_s {
         /* Font dictionary */
   px_dict_t font_dict;
   px_dict_t builtin_font_dict;
-        /* Font/character downloading state */
-  px_font_t *download_font;
+       /* Font/character downloading state */
+  pl_font_t *download_font;
   int font_format;
         /* Global structures */
   gs_font_dir *font_dir;
-  px_font_t *error_page_font;
+  pl_font_t *error_page_font;
 
         /* Graphics state */
 

@@ -70,7 +70,8 @@ dmprint_cc(const gs_memory_t *mem, const byte *pcc)
     dmprintf8(mem, "cc=%02x %02x %02x %02x %02x %02x %02x %02x", pcc[0],
               pcc[1], pcc[2], pcc[3], pcc[4], pcc[5], pcc[6], pcc[7]);
 }
-void
+
+static void
 dmprint_font_params_t(const gs_memory_t *mem, const pl_font_params_t *pfp)
 {
     dmprintf8(mem, "symset=%u %s pitch=%g ht=%u style=%u wt=%d face=%u:%u\n",

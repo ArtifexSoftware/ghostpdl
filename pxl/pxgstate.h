@@ -27,6 +27,7 @@
 #include "gxbitmap.h"
 #include "gxfixed.h"
 #include "plsymbol.h"
+#include "plfont.h"
 #include "pxdict.h"
 #include "pxenum.h"
 
@@ -34,12 +35,6 @@
 #ifndef gs_state_DEFINED
 #  define gs_state_DEFINED
 typedef struct gs_state_s gs_state;
-#endif
-
-/* Define an abstract type for a font. */
-#ifndef px_font_t_DEFINED
-#  define px_font_t_DEFINED
-typedef struct px_font_s px_font_t;
 #endif
 
 /* Define the type of the PCL XL state. */
@@ -137,7 +132,7 @@ typedef struct px_gstate_s {
   bool palette_is_shared;	/* with next higher gstate */
   float char_size;
   uint symbol_set;
-  px_font_t *base_font;		/* 0 if no font set */
+  pl_font_t *base_font;		/* 0 if no font set */
   struct ht_ {
     pxeDitherMatrix_t method;
     bool set;			/* true if we have done gs_sethalftone */

@@ -244,6 +244,7 @@ int hpgl_DL(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_DR(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_DT(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_DV(hpgl_args_t *pargs, hpgl_state_t *pgls);
+int hpgl_EC(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_ES(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_FI(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_FN(hpgl_args_t *pargs, hpgl_state_t *pgls);
@@ -320,6 +321,7 @@ int hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_PR(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_PU(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_RT(hpgl_args_t *pargs, hpgl_state_t *pgls);
+int hpgl_ZZ(hpgl_args_t *pargs, hpgl_state_t *pgls);
 
 /* commands from pgframe.c -- PCL5/HP-GL/2 picture frame commands */
 int pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, hpgl_state_t *pgls);

@@ -58,23 +58,4 @@ pl_platform_dnit(int exit_status)
 const gs_ptr_procs_t ptr_struct_procs = { NULL, NULL, NULL };
 const gs_ptr_procs_t ptr_string_procs = { NULL, NULL, NULL };
 const gs_ptr_procs_t ptr_const_string_procs = { NULL, NULL, NULL };
-void * /* obj_header_t * */
-gs_reloc_struct_ptr(const void * /* obj_header_t * */ obj, gc_state_t *gcst)
-{	return (void *)obj;
-}
-void
-gs_reloc_string(gs_string *sptr, gc_state_t *gcst)
-{
-}
-void
-gs_reloc_const_string(gs_const_string *sptr, gc_state_t *gcst)
-{
-}
 const gs_ptr_procs_t ptr_name_index_procs = { NULL, NULL, NULL };
-
-/* Stub for abnormal termination */
-void
-gs_exit(int exit_status)
-{	pl_platform_dnit(exit_status);
-        pl_exit(exit_status);	/* must be implemeted by caller */
-}

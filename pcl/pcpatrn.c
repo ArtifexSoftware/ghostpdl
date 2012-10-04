@@ -883,7 +883,7 @@ pattern_set_pen(
     /* set halftone and crd from the palette */
 skip_unsolid:
     {
-        gs_paint_color  paint = {0,0,0,0};
+        gs_paint_color  paint = {{0,0,0,0}};
 
         convert_index_to_paint(pen, &paint);
         code = set_unpatterned_color(pcs, pindexed, NULL, &paint);

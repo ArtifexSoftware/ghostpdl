@@ -21,6 +21,7 @@
 #include "gstypes.h"
 #include "gspath.h"
 #include "gscoord.h"
+#include "gsfont.h"
 #include "gsstate.h"
 #include "gsicc_manage.h"
 #include "pcommand.h"
@@ -33,13 +34,13 @@
 #include "pcdraw.h"
 #include "pxoper.h"
 #include "pxstate.h"
+#include "pxfont.h"
 #include "pxgstate.h"
 #include "pxpthr.h"
 #include "pxparse.h"
 #include "plfont.h"
 #include "pjtop.h"
-
-const byte apxPassthrough[] = {0, 0};
+#include "pxptable.h"
 
 /* NB - globals needing cleanup
  */
@@ -213,6 +214,8 @@ pxPassthrough_setpagestate(px_state_t *pxs)
             dmprintf(pxs->memory, "passthrough: full page mode\n");
     }
 }
+
+const byte apxPassthrough[] = {0, 0};
 
 int
 pxPassthrough(px_args_t *par, px_state_t *pxs)
@@ -414,7 +417,7 @@ int pxpcl_selectfont(px_args_t *par, px_state_t *pxs)
     if (pcl_downloaded_and_bound(global_pcs->font)) {
         pxgs->symbol_map = 0;
     } else {
-        set_symbol_map(pxs, global_pcs->font->font_type == plft_16bit);
+        px_set_symbol_map(pxs, global_pcs->font->font_type == plft_16bit);
     }
 
     {

@@ -438,15 +438,15 @@ set_lumchrom_default_palette(
     pcl_mtx3_t                  tmp_mtx;
     int                         i;
     static  const pcl_vec3_t    lumchrom_default[8] = {
-                                  { 1.0, 1.0, 1.0 },    /* white */
-                                  { 0.0, 1.0, 1.0 },    /* cyan */
-                                  { 1.0, 0.0, 1.0 },    /* magenta */
-                                  { 0.0, 0.0, 1.0 },    /* blue */
-                                  { 1.0, 1.0, 0.0 },    /* yellow */
-                                  { 0.0, 1.0, 0.0 },    /* green */
-                                  { 1.0, 0.0, 0.0 },    /* red */
-                                  { 0.0, 0.0, 0.0 }     /* black */
-                            };
+        {{ 1.0, 1.0, 1.0 }},    /* white */
+        {{ 0.0, 1.0, 1.0 }},    /* cyan */
+        {{ 1.0, 0.0, 1.0 }},    /* magenta */
+        {{ 0.0, 0.0, 1.0 }},    /* blue */
+        {{ 1.0, 1.0, 0.0 }},    /* yellow */
+        {{ 0.0, 1.0, 0.0 }},    /* green */
+        {{ 1.0, 0.0, 0.0 }},    /* red */
+        {{ 0.0, 0.0, 0.0 }}     /* black */
+    };
 
     /* form the primaries to component values matrix */
     pcl_mtx3_convert_from_gs(&tmp_mtx, pxfm);

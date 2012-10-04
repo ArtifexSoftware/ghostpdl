@@ -60,7 +60,7 @@ plvocab_h=$(PLSRC)plvocab.h
 romfnttab_h=$(PLSRC)romfnttab.h
 # Out of order because of inclusion
 plfont_h=$(PLSRC)plfont.h $(gsccode_h) $(plsymbol_h)
-
+plchar_h=$(PLSRC)plchar.h
 ################ PJL ################
 
 
@@ -139,7 +139,7 @@ $(PLOBJ)plchar.$(OBJ): $(PLSRC)plchar.c $(AK) $(math__h) $(memory__h) $(stdio__h
  $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
  $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
- $(plfont_h) $(plvalue_h)
+ $(plfont_h) $(plvalue_h) $(plchar_h)
 	$(PLCCC) $(PLSRC)plchar.c $(PLO_)plchar.$(OBJ)
 
 # agfa ufst character module.
@@ -150,7 +150,7 @@ $(PLOBJ)pluchar.$(OBJ): $(PLSRC)pluchar.c $(AK) $(math__h) $(memory__h) $(stdio_
  $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
  $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gxpath_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
- $(gxchar_h) $(gxfcache_h) $(plfont_h) $(plvalue_h)
+ $(gxchar_h) $(gxfcache_h) $(plfont_h) $(plvalue_h) $(plchar_h)
 	$(PLCCC) $(UFST_CFLAGS) $(UFST_INCLUDES) $(PLSRC)pluchar.c $(PLO_)pluchar.$(OBJ)
 
 $(PLOBJ)pldict.$(OBJ): $(PLSRC)pldict.c $(AK) $(memory__h)\
@@ -164,7 +164,7 @@ $(PLOBJ)plht.$(OBJ): $(PLSRC)plht.c  $(stdpre_h) $(plht_h) $(gxdevice_h)\
 
 $(PLOBJ)plsrgb.$(OBJ): $(PLSRC)plsrgb.c $(math__h) $(string__h) $(plsrgb_h)\
   $(gzstate_h) $(gxstate_h) $(gsparam_h) $(gscrd_h) $(gscrdp_h) $(gscie_h)\
-  $(gsstate_h) $(gscspace_h) $(gsmemory_h) $(gstypes_h)
+  $(gsstate_h) $(gscspace_h) $(gsmemory_h) $(gstypes_h) $(gdebug_h)
 	$(PLCCC) $(PLSRC)plsrgb.c $(PLO_)plsrgb.$(OBJ)
 
 $(PLOBJ)pldraw.$(OBJ): $(PLSRC)pldraw.c $(AK) $(std_h)\
@@ -178,8 +178,8 @@ $(PLOBJ)plfont.$(OBJ): $(PLSRC)plfont.c $(AK) $(memory__h) $(stdio__h)\
  $(gdebug_h) $(gp_h)\
  $(gschar_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
  $(gsstate_h) $(gsstruct_h) $(gsmatrix_h) $(gstypes_h) $(gsutil_h)\
- $(gxfont_h) $(gxfont42_h)\
- $(plfont_h) $(plvalue_h)
+ $(gsimage_h) $(gxfont_h) $(gxfont42_h) $(gzstate_h)\
+ $(gxfache_h) $(plfont_h) $(plvalue_h) $(plchar_h)
 	$(PLCCC) $(PLSRC)plfont.c $(PLO_)plfont.$(OBJ)
 
 #ufst font module.

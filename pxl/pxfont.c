@@ -42,17 +42,6 @@
 #include "gzstate.h"
 #include "pxptable.h"
 
-/* ---------------- Initialization ---------------- */
-
-int
-pxfont_init(px_state_t *pxs)
-{       /* Allocate the font directory now. */
-        pxs->font_dir = gs_font_dir_alloc(pxs->memory);
-        if ( pxs->font_dir == 0 )
-          return_error(errorInsufficientMemory);
-        return 0;
-}
-
 /* ---------------- Operator utilities ---------------- */
 
 static const pl_symbol_map_t *
@@ -67,7 +56,7 @@ pxl_find_symbol_map(uint symbol_set)
 
 /* Compute the symbol map from the font and symbol set. */
 void
-set_symbol_map(px_state_t *pxs, bool wide16)
+px_set_symbol_map(px_state_t *pxs, bool wide16)
 {       px_gstate_t *pxgs = pxs->pxgs;
         uint symbol_set = pxgs->symbol_set;
         pxgs->symbol_map = pxl_find_symbol_map(symbol_set);
@@ -500,7 +489,7 @@ undef:        px_concat_font_name(pxs->error_line, px_max_error_line, pfnv);
         pxgs->char_size = real_value(par->pv[1], 0);
         pxgs->symbol_set = symbol_set;
         pxgs->base_font = pxfont;
-        set_symbol_map(pxs, pxfont->font_type == plft_16bit);
+        px_set_symbol_map(pxs, pxfont->font_type == plft_16bit);
         pxgs->char_matrix_set = false;
         }
         else    /* PCLSelectFont */
@@ -680,9 +669,7 @@ pxReadChar(px_args_t *par, px_state_t *pxs)
     /* We have the complete character. */
     /* Do error checks before installing. */
     {
-        /* const byte *header = pxs->download_font->header;
-           see NB just below */
-        const byte *data = pxs->download_bytes.data;
+        byte *data = pxs->download_bytes.data;
         int code = 0;
 
         switch ( data[0] ) {

@@ -144,7 +144,7 @@ px_find_font(px_value_t *pfnv, uint symbol_set, px_font_t **ppxfont,
         /* shouldn't fail */
         if ( code < 0 )
             return code;
-        message[0] = (char)NULL;
+        message[0] = (char)0;
         px_concat_font_name(message, px_max_error_line, &default_font_value);
         strcat(message, "substituted for ");
         px_concat_font_name(message, px_max_error_line, pfnv);

@@ -87,7 +87,7 @@ $(PXLOBJ)pxparse.$(OBJ): $(PXLSRC)pxparse.c $(AK) $(memory__h)\
 	$(PXLCCC) $(PXLSRC)pxparse.c $(PXLO_)pxparse.$(OBJ)
 
 $(PXLOBJ)pxstate.$(OBJ): $(PXLSRC)pxstate.c $(AK) $(pxfont_h) $(stdio__h)\
- $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gxfcache_h)\
+ $(gsmemory_h) $(gsstruct_h) $(gsfont_h) $(gstypes_h) $(gxfcache_h)\
  $(pxstate_h) $(pxfont_h) $(pxparse_h) $(scommon_h)
 	$(PXLCCC) $(PXLSRC)pxstate.c $(PXLO_)pxstate.$(OBJ)
 
@@ -121,7 +121,7 @@ $(PXLOBJ)pxptable.$(OBJ): $(PXLSRC)pxptable.c $(AK) $(std_h)\
 $(PXLOBJ)pxpthr.$(OBJ): $(PXLSRC)pxpthr.c $(AK) \
  $(gsstate_h) $(gscoord_h) $(gspath_h) $(gstypes_h) $(gsdevice_h)\
  $(pcommand_h) $(pgmand_h) $(pcstate_h) $(pcparse_h) $(pctop_h)\
- $(pcpage_h) $(pxstate_h) $(pxoper_h) $(stdio__h) $(pxpthr_h)\
+ $(pcpage_h) $(pxfont_h) $(pxstate_h) $(pxoper_h) $(stdio__h) $(pxpthr_h)\
  $(pxparse_h) $(pxgstate_h) $(pcdraw_h) $(pcfont_h) $(gsicc_manage_h)
 	$(PXLCCC) $(PXLSRC)pxpthr.c $(PXLO_)pxpthr.$(OBJ)
 

@@ -24,8 +24,7 @@
 #ifdef px_font_t_DEFINED
 #  define pl_font_t_DEFINED
 #endif
-#define pl_font_s px_font_s
-#define pl_font_t px_font_t
+#define px_font_t pl_font_t
 #include "plfont.h"
 #define px_font_t_DEFINED
 
@@ -88,5 +87,8 @@ int px_text(px_args_t *par, px_state_t *pxs, bool to_path);
  */
 /*#define px_free_font(mem, pxf, cname) pl_free_font(mem, pxf, cname)*/
 #define px_free_font pl_free_font
+
+/* Compute the symbol map from the font and symbol set. */
+void px_set_symbol_map(px_state_t *pxs, bool wide16);
 
 #endif				/* pxfont_INCLUDED */

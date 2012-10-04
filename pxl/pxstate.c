@@ -25,11 +25,8 @@
 #include "pxparse.h"
 #include "pxstate.h"
 #include "pxfont.h"
+#include "gsfont.h"
 #include "gxfcache.h"
-
-/* Import the initialization procedure table from pxtop.c. */
-typedef int (*px_init_proc)(px_state_t *);
-extern const px_init_proc px_init_table[];
 
 /* Allocate a px_state_t. */
 px_state_t *
@@ -49,13 +46,13 @@ px_state_alloc(gs_memory_t *memory)
     pxs->pxgs = pxgs;
     pxgs->pxs = pxs;
     px_state_init(pxs, NULL);
-    /* Run module initialization code. */
-    {
-        const px_init_proc *init;
-        for ( init = px_init_table; *init; ++init )
-            (*init)(pxs);
-    }
+    /* allocate the font directory */
+    pxs->font_dir = gs_font_dir_alloc(pxs->memory);
+    if ( pxs->font_dir == 0 )
+        return 0;
+
     return pxs;
+
 }
 
 /* Release a px_state_t */

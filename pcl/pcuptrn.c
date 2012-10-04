@@ -410,7 +410,7 @@ download_pcl_pattern(
 {
     uint                    count = arg_data_size(pargs);
     const pcl_upattern0_t * puptrn0 = (pcl_upattern0_t *)arg_data(pargs);
-    uint                    format, depth, rsize, patsize, ndsize, dsize;
+    uint                    format, depth, rsize, ndsize, dsize;
     gs_depth_bitmap         pixinfo;
     int                     xres = 300, yres = 300;
     pcl_pattern_t *         pptrn = 0;
