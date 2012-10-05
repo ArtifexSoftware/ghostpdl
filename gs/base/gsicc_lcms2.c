@@ -155,8 +155,14 @@ gscms_get_clrtname(gcmmhprofile_t profile, int colorcount)
     return &name[0];
 }
 
-/* Get the device space associated with this profile */
+/* Check if the profile is a device link type */
+bool
+gscms_is_device_link(gcmmhprofile_t profile)
+{
+    return (cmsGetDeviceClass(profile) == cmsSigLinkClass);
+}
 
+/* Get the device space associated with this profile */
 gsicc_colorbuffer_t
 gscms_get_profile_data_space(gcmmhprofile_t profile)
 {
@@ -414,13 +420,16 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
 }
 
 /* Get the link from the CMS, but include proofing and/or a device link  
-   profile. */
+   profile.  Note also, that the source may be a device link profile, in
+   which case we will not have a destination profile but could still have
+   a proof profile or an additional device link profile */
 gcmmhlink_t
 gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
                              gcmmhprofile_t lcms_proofhandle,
                              gcmmhprofile_t lcms_deshandle, 
                              gcmmhprofile_t lcms_devlinkhandle, 
                              gsicc_rendering_param_t *rendering_params,
+                             bool src_dev_link,
                              gs_memory_t *memory)
 {
     cmsUInt32Number src_data_type,des_data_type;
@@ -442,7 +451,11 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
     src_data_type = (COLORSPACE_SH(lcms_src_color_space)|
                         CHANNELS_SH(src_nChannels)|BYTES_SH(2)); 
     if (lcms_devlinkhandle == NULL) {
-        des_color_space = cmsGetColorSpace(lcms_deshandle);
+        if (src_dev_link) {
+            des_color_space = cmsGetPCS(lcms_srchandle);
+        } else {
+            des_color_space = cmsGetColorSpace(lcms_deshandle);
+        }
     } else {
         des_color_space = cmsGetPCS(lcms_devlinkhandle);
     }
@@ -455,11 +468,17 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
        link profile if we have both. So use cmsCreateMultiprofileTransform 
        instead and round trip the proofing profile. */
     hProfiles[nProfiles++] = lcms_srchandle;
-    if (lcms_proofhandle != NULL) {
+    /* Note if source is device link, we cannot do any proofing */
+    if (lcms_proofhandle != NULL && !src_dev_link) {
         hProfiles[nProfiles++] = lcms_proofhandle;
         hProfiles[nProfiles++] = lcms_proofhandle;
     }
-    hProfiles[nProfiles++] = lcms_deshandle;
+    /* This should be NULL if we have a source device link */
+    if (lcms_deshandle != NULL) {
+        hProfiles[nProfiles++] = lcms_deshandle;
+    }
+    /* Someone could have a device link at the output, giving us possibly two
+       device link profiles to smash together */
     if (lcms_devlinkhandle != NULL) {
         hProfiles[nProfiles++] = lcms_devlinkhandle;
     }

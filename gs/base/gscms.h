@@ -285,6 +285,7 @@ typedef enum {
     bool islab;				/* Needed since we want to detect this to avoid */\
                                         /*  expensive decode on LAB images.  Is true */\
                                         /* if PDF color space is \Lab */\
+    bool isdevlink;                  /* is this a device link profile */\
     gsicc_profile_t default_match;	/* Used for detecting a match to a default space */\
     gsicc_colorbuffer_t data_cs;	/* The data color space of the profile (not the PCS) */\
     gs_range_icc_t Range;\

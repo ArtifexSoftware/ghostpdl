@@ -505,6 +505,25 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
                         gs_input_profile = gs_srcgtag_profile;
                         (*rendering_params) = render_cond;
                     }
+                    /* We also need to worry about the case when the source
+                       profile is actually a device link profile.  In this case
+                       we can go ahead now and the our link transform as we
+                       don't need to worry about a destination profile.  
+                       However, it is possible that someone could do another
+                       device link profile associated with the device. */
+                    if (gs_input_profile->isdevlink) {
+                        /* OK. Go ahead and use this one.  Note output profile
+                           is not NULL so that we can compute a hash with out
+                           special conditional logic */
+                        rendering_params->rendering_intent = 
+                            render_cond.rendering_intent & gsRI_MASK;
+                        rendering_params->black_point_comp = 
+                            render_cond.black_point_comp & gsBP_MASK;
+                        return gsicc_get_link_profile(pis, dev, gs_input_profile, 
+                                                      dev_profile->device_profile[0], 
+                                                      rendering_params, memory, 
+                                                      false);
+                    }
                 } else {
                     /* In this case we may be wanting for a "unmanaged color"
                        result. This is done by specifying "None" on the 
@@ -641,7 +660,9 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
    cache If the cache has the link ready, it will return it.  If not, it will 
    request one from the CMS and then return it.  We may need to do some cache 
    locking during this process to avoid multi-threaded issues (e.g. someone 
-   deleting while someone is updating a reference count) */
+   deleting while someone is updating a reference count).  Note that if the
+   source profile is a device link profile we have no output profile but
+   may still have a proofing or another device link profile to use */
 gsicc_link_t*
 gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                        cmm_profile_t *gs_input_profile,
@@ -656,7 +677,7 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
     gsicc_link_cache_t *icc_link_cache = pis->icc_link_cache;
     gs_memory_t *cache_mem = pis->icc_link_cache->memory;
     gcmmhprofile_t *cms_input_profile;
-    gcmmhprofile_t *cms_output_profile;
+    gcmmhprofile_t *cms_output_profile = NULL;
     gcmmhprofile_t *cms_proof_profile = NULL;
     gcmmhprofile_t *cms_devlink_profile = NULL;
     int code;
@@ -665,6 +686,7 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
     cmm_dev_profile_t *dev_profile;
     cmm_profile_t *proof_profile = NULL;
     cmm_profile_t *devlink_profile = NULL;
+    bool src_dev_link = gs_input_profile->isdevlink;
 
     /* Determine if we are using a soft proof or device link profile */
     if (dev != NULL ) {
@@ -733,9 +755,13 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                 return link;
             }
         }
+        /* We may have a source profile that is a device link profile and
+           made its way through the clist.  If so get things set up to 
+           handle that properly. */
+        src_dev_link = gs_input_profile->isdevlink;
     }
-    /* If not, then lets create a new one if there is room. This may actually 
-       return a link if another thread has already created it */
+    /* No link was found so lets create a new one if there is room. This may 
+       actually return a link if another thread has already created it */
     if (gsicc_alloc_link_entry(icc_link_cache, &link, hash, include_softproof,
                                include_devicelink)) 
         return link;
@@ -762,8 +788,12 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             return NULL;
         }
     }
-    cms_output_profile = gs_output_profile->profile_handle;
-    if (cms_output_profile == NULL) {
+    /* No need to worry about an output profile handle if our source is a
+       device link profile */
+    if (!src_dev_link) {
+        cms_output_profile = gs_output_profile->profile_handle;
+    }
+    if (cms_output_profile == NULL && !src_dev_link) {
         if (gs_output_profile->buffer != NULL) {
             cms_output_profile =
                 gsicc_get_profile_handle_buffer(gs_output_profile->buffer,
@@ -830,11 +860,13 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
     }
     /* Profile reading of same structure not thread safe in lcms */
     gx_monitor_enter(gs_input_profile->lock);
-    gx_monitor_enter(gs_output_profile->lock);
+    if (!src_dev_link) {
+        gx_monitor_enter(gs_output_profile->lock);
+    }
     /* We may have to worry about special handling for DeviceGray to
        DeviceCMYK to ensure that Gray is mapped to K only.  This is only
        done once and then it is cached and the link used */
-    if (gs_output_profile->data_cs == gsCMYK && 
+    if (!src_dev_link && gs_output_profile->data_cs == gsCMYK && 
         gs_input_profile->data_cs == gsGRAY && pis->icc_manager != NULL &&
         devicegraytok) {
         if (icc_manager->graytok_profile == NULL) {
@@ -854,12 +886,13 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             icc_manager->graytok_profile->profile_handle;
     }
     /* Get the link with the proof and or device link profile */
-    if (include_softproof || include_devicelink) {
+    if (include_softproof || include_devicelink || src_dev_link) {
         link_handle = gscms_get_link_proof_devlink(cms_input_profile,
                                                    cms_proof_profile,
                                                    cms_output_profile,
                                                    cms_devlink_profile,
                                                    rendering_params,
+                                                   src_dev_link,
                                                    cache_mem->non_gc_memory);
         if (include_softproof) {
             gx_monitor_leave(proof_profile->lock);
@@ -871,7 +904,9 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
         link_handle = gscms_get_link(cms_input_profile, cms_output_profile,
                                      rendering_params, cache_mem->non_gc_memory);
     }
-    gx_monitor_leave(gs_output_profile->lock);
+    if (!src_dev_link) {
+        gx_monitor_leave(gs_output_profile->lock);
+    }
     gx_monitor_leave(gs_input_profile->lock);
     if (link_handle != NULL) {
         gsicc_set_link_data(link, link_handle, hash, icc_link_cache->lock,

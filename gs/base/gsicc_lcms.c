@@ -311,6 +311,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
                              gcmmhprofile_t lcms_deshandle, 
                              gcmmhprofile_t lcms_devlinkhandle, 
                              gsicc_rendering_param_t *rendering_params,
+                             bool src_dev_link,
                              gs_memory_t *mem)
 {
     DWORD src_data_type,des_data_type;
