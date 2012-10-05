@@ -1411,7 +1411,7 @@ static int write_hint_stream(pdf_linearisation_t *linear_params, unsigned int *v
         linear_params->HintBits++;
         if (linear_params->HintBits == 8) {
             linear_params->HintByte++;
-            if (linear_params->HintByte > 255) {
+            if (linear_params->HintByte > 254) {
                 flush_hint_stream(linear_params);
                 memset(linear_params->HintBuffer, 0x00, 256);
             }
