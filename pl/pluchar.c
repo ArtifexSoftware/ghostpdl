@@ -74,7 +74,7 @@ extern PIF_STATE pIFS;
  * NB: UFST automatically inverts the y-axis when generating a bitmap, so
  *     it is necessary to account for that change in this routine.
  */
-void
+static void
 pl_init_fc(
     const pl_font_t *   plfont,
     gs_state *          pgs,
@@ -265,7 +265,6 @@ pl_ufst_char_width(
     CGIFchIdptr(FSA (VOID *)&chIdloc, NULL);
     fcode.CharType.TT_unicode = char_code;
     if ((status = CGIFwidth2(FSA &fcode, 1, 4, fontWidth)) != 0) {
-        dmprintf1(pgs->memory, "CGIFwidth error %d\n", status);
         return status;
     }
     if (fontWidth[0] == ERR_char_unavailable || fontWidth[1] == 0)
@@ -316,7 +315,6 @@ pl_ufst_make_char(
             }
         }
         if (status != 0) {
-            dmprintf2(pgs->memory, "CGIFchar_handle error %d for char=0x%x\n", status, chr);
             gs_setcharwidth(penum, pgs, 0.0, 0.0);
             return 0;   /* returning status causes the job to be aborted */
         }
@@ -496,7 +494,7 @@ struct pl_glyph_width_node_s {
 pl_glyph_width_node_t *head = NULL;
 /* add at the front of the list */
 
-int
+static int
 pl_glyph_width_cache_node_add(gs_memory_t *mem, gs_id font_id, uint char_code, gs_point *pwidth)
 {
     pl_glyph_width_node_t *node =
@@ -520,7 +518,7 @@ pl_glyph_width_cache_node_add(gs_memory_t *mem, gs_id font_id, uint char_code, g
     return 0;
 }
 
-int
+static int
 pl_glyph_width_cache_node_search(gs_id font_id, uint char_code, gs_point *pwidth)
 {
     pl_glyph_width_node_t *current = head;
@@ -534,7 +532,7 @@ pl_glyph_width_cache_node_search(gs_id font_id, uint char_code, gs_point *pwidth
     return -1;
 }
 
-void
+static void
 pl_glyph_width_list_remove(gs_memory_t *mem)
 {
     pl_glyph_width_node_t *current = head;
@@ -596,6 +594,7 @@ pl_mt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, flo
  * id., rather than the unicode. The char_glyphs table in the font maps the
  * latter to the former.
  */
+static
 LPUB8 pl_PCLchId2ptr(FSP UW16 chId)
 {
     const pl_font_t *   plfont = plfont_last;
@@ -617,6 +616,7 @@ LPUB8 pl_PCLchId2ptr(FSP UW16 chId)
 /*
  * callback from UFST to pass PCLEO TT character data starting with header.
  */
+static
 LPUB8 pl_PCLglyphID2Ptr(FSP UW16 chId)
 {
     if (plfont_last == NULL)
@@ -629,12 +629,10 @@ LPUB8 pl_PCLglyphID2Ptr(FSP UW16 chId)
  * callback from UFST to pass PCLEO compound character data starting
  * with header.
  */
+static
 LPUB8 pl_PCLEO_charptr(LPUB8 pfont_hdr, UW16 char_code)
 {
     if (plfont_last == NULL || plfont_last->header != pfont_hdr) {
-        dprintf2("fontheader active=0x%x requested=0x%x\n",
-                  (plfont_last == NULL ? 0 : plfont_last->header),
-                  pfont_hdr );
         return NULL; /* something wrong */
     } else
         return pl_PCLchId2ptr(FSA char_code);
