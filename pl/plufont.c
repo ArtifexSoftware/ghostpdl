@@ -50,13 +50,6 @@ private_st_pl_font();
 /**** ASSUME uint >= 32 BITS ****/
 #define u32(bptr) (uint)pl_get_uint32(bptr)
 
-extern void pl_init_fc(
-    const pl_font_t *   plfont,
-    gs_state *          pgs,
-    int                 need_outline,
-    FONTCONTEXT *       pfc,
-    bool                width_request);
-
 /* ---------------- Library callbacks ---------------- */
 
 /* Fill in AGFA MicroType font boilerplate. */
