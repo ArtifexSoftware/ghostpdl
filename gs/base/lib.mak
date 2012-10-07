@@ -1674,7 +1674,7 @@ $(GLD)luratech_jp2.dev : $(TOP_MAKEFILES) $(LIB_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(GLD)luratech_jp2 $(GLD)liblwf_jp2.a
 
 $(GLOBJ)sjpx_luratech.$(OBJ) : $(GLSRC)sjpx_luratech.c $(AK) \
- $(memory__h) $(malloc__h) $(gserrors_h) \
+ $(memory__h) $(gserrors_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_luratech_h) $(MAKEDIRS)
 	$(GLLWFJPXCC) $(GLO_)sjpx_luratech.$(OBJ) \
 		$(C_) $(GLSRC)sjpx_luratech.c
@@ -1687,7 +1687,7 @@ $(GLD)sjpx_openjpeg.dev : $(LIB_MAK) $(ECHOGS_XE) \
 	$(ADDMOD) $(GLD)sjpx_openjpeg -include $(GLD)openjpeg.dev
 
 $(GLOBJ)sjpx_openjpeg.$(OBJ) : $(GLSRC)sjpx_openjpeg.c $(AK) \
- $(memory__h) $(malloc__h) $(gserror_h) $(gserrors_h) \
+ $(memory__h) $(gserror_h) $(gserrors_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_openjpeg_h) $(MAKEDIRS)
 	$(GLJPXOPJCC) $(GLO_)sjpx_openjpeg.$(OBJ) \
 		$(C_) -DOPJ_STATIC $(GLSRC)sjpx_openjpeg.c

@@ -18,17 +18,10 @@
 /* opj filter implementation using OpenJPeg library */
 
 #include "memory_.h"
-#include "malloc_.h"
 #include "gserrors.h"
 #include "gdebug.h"
 #include "strimpl.h"
 #include "sjpx_openjpeg.h"
-
-
-/* As with the /JBIG2Decode filter, we let the library do its
-   memory management through malloc() etc. and rely on our release()
-   proc being called to deallocate state.
-*/
 
 gs_private_st_simple(st_jpxd_state, stream_jpxd_state,
     "JPXDecode filter state"); /* creates a gc object for our state,
@@ -45,10 +38,6 @@ s_opjd_init(stream_state * ss)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
 	opj_dparameters_t parameters;	/* decompression parameters */
-
-    if (state->jpx_memory == NULL) {
-        state->jpx_memory = ss->memory->non_gc_memory;
-    }
 
     /* get a decoder handle */
     state->opj_dinfo_p = opj_create_decompress(CODEC_JP2);
@@ -105,7 +94,7 @@ s_jpxd_ycc_to_rgb(stream_jpxd_state *state)
         sgnd[i] = state->image->comps[i+1].sgnd;
 
     for (i=0; i<3; i++)
-        row_bufs[i] = malloc(sizeof(int)*state->width);
+    	row_bufs[i] = (int *)gs_alloc_byte_array(state->memory->non_gc_memory, sizeof(int)*state->width, 1, "s_jpxd_ycc_to_rgb");
 
     if (!row_bufs[0] || !row_bufs[1] || !row_bufs[2])
         return_error(gs_error_VMerror);
@@ -152,7 +141,7 @@ s_jpxd_ycc_to_rgb(stream_jpxd_state *state)
     }
 
     for (i=0; i<3; i++)
-        free(row_bufs[i]);
+    	gs_free_object(state->memory->non_gc_memory, row_bufs[i],"s_jpxd_ycc_to_rgb");
 
     return 0;
 }
@@ -260,12 +249,12 @@ static int decode_image(stream_jpxd_state * const state)
     if (state->image->color_space == CLRSPC_SYCC || state->image->color_space == CLRSPC_EYCC)
         s_jpxd_ycc_to_rgb(state);
 
-    state->pdata = malloc(sizeof(int*)*state->image->numcomps);
+    state->pdata = (int **)gs_alloc_byte_array(state->memory->non_gc_memory, sizeof(int*)*state->image->numcomps, 1, "decode_image(pdata)");
     if (!state->pdata)
         return_error(gs_error_VMerror);
 
     /* compensate for signed data (signed => unsigned) */
-    state->sign_comps = malloc(sizeof(int)*state->image->numcomps);
+    state->sign_comps = (int *)gs_alloc_byte_array(state->memory->non_gc_memory, sizeof(int)*state->image->numcomps, 1, "decode_image(sign_comps)");
     if (!state->sign_comps)
         return_error(gs_error_VMerror);
 
@@ -522,13 +511,13 @@ s_opjd_release(stream_state *ss)
 
     /* free input buffer */
     if (state->inbuf)
-	free(state->inbuf);
+        gs_free_object(state->memory->non_gc_memory, state->inbuf, "s_opjd_release(inbuf)");
 
     if (state->pdata)
-	free(state->pdata);
+        gs_free_object(state->memory->non_gc_memory, state->pdata, "s_opjd_release(pdata)");
 
     if (state->sign_comps)
-	free(state->sign_comps);
+        gs_free_object(state->memory->non_gc_memory, state->sign_comps, "s_opjd_release(sign_comps)");
 }
 
 
@@ -548,10 +537,10 @@ s_opjd_accumulate_input(stream_jpxd_state *state, stream_cursor_read * pr)
 
         if_debug1('s', "[s]opj growing input buffer to %lu bytes\n",
                 new_size);
-	if (state->inbuf == NULL)
-            new_buf = (byte *) malloc(new_size);
-	else
-            new_buf = (byte *) realloc(state->inbuf, new_size);
+        if (state->inbuf == NULL)
+            new_buf = (byte *) gs_alloc_byte_array(state->memory->non_gc_memory, new_size, 1, "s_opjd_accumulate_input(alloc)");
+        else
+            new_buf = (byte *) gs_resize_object(state->memory->non_gc_memory, state->inbuf, new_size, "s_opjd_accumulate_input(resize)");
         if (new_buf == NULL) return_error( gs_error_VMerror);
 
         state->inbuf = new_buf;

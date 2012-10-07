@@ -41,7 +41,6 @@ typedef enum {
 typedef struct stream_jpxd_state_s
 {
     stream_state_common;	/* a define from scommon.h */
-    const gs_memory_t *jpx_memory;
     JP2_Decomp_Handle handle;	/* library decoder handle */
     unsigned char *inbuf;	/* input data buffer */
     unsigned long inbuf_size;

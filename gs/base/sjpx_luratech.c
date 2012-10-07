@@ -17,7 +17,6 @@
 /* JPXDecode filter implementation -- hooks in the Luratech JPEG2K CSDK */
 
 #include "memory_.h"
-#include "malloc_.h"
 #include "gserrors.h"
 #include "gdebug.h"
 #include "strimpl.h"
@@ -38,11 +37,6 @@
 #endif
 ***/
 
-/* As with the /JBIG2Decode filter, we let the library do its
-   memory management through malloc() etc. and rely on our release()
-   proc being called to deallocate state.
-*/
-
 private_st_jpxd_state(); /* creates a gc object for our state,
                             defined in sjpx.h */
 
@@ -54,17 +48,14 @@ private_st_jpxd_state(); /* creates a gc object for our state,
 static void * JP2_Callback_Conv
 s_jpx_alloc(long size, JP2_Callback_Param param)
 {
-    void *result = malloc(size);
-
-    return result;
+	return gs_alloc_byte_array((gs_memory_t *)param, size, 1, "s_jpx_alloc");
 }
 
 /* memory free */
 static JP2_Error JP2_Callback_Conv
 s_jpx_free(void *ptr, JP2_Callback_Param param)
 {
-    free(ptr);
-
+	gs_free_object((gs_memory_t *)param, ptr, "s_jpx_free");
     return cJP2_Error_OK;
 }
 
@@ -339,7 +330,7 @@ s_jpxd_inbuf(stream_jpxd_state *state, stream_cursor_read * pr)
 
     /* allocate the input buffer if needed */
     if (state->inbuf == NULL) {
-        state->inbuf = malloc(JPX_BUFFER_SIZE);
+        state->inbuf = s_jpx_alloc(JPX_BUFFER_SIZE, (JP2_Callback_Param)state->memory->non_gc_memory);
         if (state->inbuf == NULL) return gs_error_VMerror;
         state->inbuf_size = JPX_BUFFER_SIZE;
         state->inbuf_fill = 0;
@@ -355,7 +346,8 @@ s_jpxd_inbuf(stream_jpxd_state *state, stream_cursor_read * pr)
 
         if_debug1m('s', state->memory, "[s]jpxd growing input buffer to %lu bytes\n",
                    new_size);
-        new = realloc(state->inbuf, new_size);
+
+        new = gs_resize_object(state->memory->non_gc_memory, state->inbuf, new_size, "s_jpxd_inbuf");
         if (new == NULL) return gs_error_VMerror;
 
         state->inbuf = new;
@@ -381,12 +373,7 @@ s_jpxd_init(stream_state * ss)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
 
-    if (state->jpx_memory == NULL) {
-        state->jpx_memory = ss->memory->non_gc_memory;
-    }
-
     state->handle = (JP2_Decomp_Handle)NULL;
-
     state->inbuf = NULL;
     state->inbuf_size = 0;
     state->inbuf_fill = 0;
@@ -472,8 +459,8 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
             /* initialize decompressor */
             err = JP2_Decompress_Start(&state->handle,
                 /* memory allocator callbacks */
-                s_jpx_alloc, (JP2_Callback_Param)state,
-                s_jpx_free,  (JP2_Callback_Param)state,
+                s_jpx_alloc, (JP2_Callback_Param)state->memory->non_gc_memory,
+                s_jpx_free,  (JP2_Callback_Param)state->memory->non_gc_memory,
                 /* our read callback */
                 s_jpxd_read_data, (JP2_Callback_Param)state
             );
@@ -507,7 +494,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                     dmlprintf1(state->memory, "Luratech JP2 error %d reading channel definitions\n", (int)err);
                     return ERRC;
                 }
-                state->clut = malloc(nchans * sizeof(int));
+                state->clut = s_jpx_alloc(nchans * sizeof(int), (JP2_Callback_Param)state->memory->non_gc_memory);
                 state->ncomp = map_components(chans, nchans, state->alpha, state->clut);
                 if (state->ncomp < 0) {
                     dmlprintf(state->memory, "Luratech JP2 error decoding channel definitions\n");
@@ -645,10 +632,10 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
             if (state->image_is_indexed && state->colorspace == gs_jpx_cs_indexed) {
                 /* Don't expand indexed color space */
                 state->stride = (state->width * real_bpc + 7) / 8;
-                state->image = malloc(state->stride*state->height);
+                state->image = s_jpx_alloc(state->stride*state->height, (JP2_Callback_Param)state->memory->non_gc_memory);
             } else {
                 state->stride = (state->width * max(1, state->ncomp) * real_bpc + 7) / 8;
-                state->image = malloc(state->stride*state->height);
+                state->image = s_jpx_alloc(state->stride*state->height, (JP2_Callback_Param)state->memory->non_gc_memory);
             }
             if (state->image == NULL)
                 return ERRC;
@@ -712,9 +699,12 @@ s_jpxd_release(stream_state *ss)
 
     if (state) {
         JP2_Decompress_End(state->handle);
-        if (state->inbuf) free(state->inbuf);
-        if (state->image) free(state->image);
-        if (state->clut) free(state->clut);
+        if (state->inbuf)
+        	gs_free_object(state->memory->non_gc_memory, state->inbuf, "s_jpxd_release.1");
+        if (state->image)
+    	    gs_free_object(state->memory->non_gc_memory, state->image, "s_jpxd_release.2");
+        if (state->clut)
+    	    gs_free_object(state->memory->non_gc_memory, state->clut, "s_jpxd_release.3");
     }
 }
 
@@ -788,7 +778,7 @@ s_jpxe_write(unsigned char *buffer,
 
     /* allocate the output buffer if necessary */
     if (state->outbuf == NULL) {
-        state->outbuf = malloc(JPX_BUFFER_SIZE);
+        state->outbuf = s_jpx_alloc(JPX_BUFFER_SIZE, (JP2_Callback_Param)state->memory->non_gc_memory);
         if (state->outbuf == NULL) {
             dmprintf(state->memory, "jpx encode: failed to allocate output buffer.\n");
             return cJP2_Error_Failure_Malloc;
@@ -798,7 +788,8 @@ s_jpxe_write(unsigned char *buffer,
 
     /* grow the output buffer if necessary */
     while (pos+size > state->outsize) {
-        unsigned char *new = realloc(state->outbuf, state->outsize*2);
+        unsigned char *new = gs_resize_object(state->memory->non_gc_memory, state->outbuf, state->outsize*2, "s_jpxe_write");
+
         if (new == NULL) {
             dmprintf1(state->memory, "jpx encode: failed to resize output buffer"
                 " beyond %lu bytes.\n", state->outsize);
@@ -846,7 +837,7 @@ s_jpxe_init(stream_state *ss)
         case gs_jpx_cs_gray: state->components = 1; break;
         case gs_jpx_cs_rgb: state->components = 3; break;
         case gs_jpx_cs_cmyk: state->components = 4; break;
-        default: state->components = 0;
+        default: state->components = 0; break;
     }
     state->stride = state->width * state->components;
 
@@ -875,8 +866,8 @@ s_jpxe_init(stream_state *ss)
     /* initialize the encoder */
     err = JP2_Compress_Start(&state->handle,
         /* memory allocator callbacks */
-        s_jpx_alloc, (JP2_Callback_Param)state,
-        s_jpx_free,  (JP2_Callback_Param)state,
+        s_jpx_alloc, (JP2_Callback_Param)state->memory->non_gc_memory,
+        s_jpx_free,  (JP2_Callback_Param)state->memory->non_gc_memory,
         state->components);
     if (err != cJP2_Error_OK) {
         dmlprintf1(state->memory, "Luratech JP2 error %d starting compressor\n", (int)err);
@@ -1010,7 +1001,7 @@ s_jpxe_process(stream_state *ss, stream_cursor_read *pr,
     if (in_size > 0) {
         /* allocate our input buffer if necessary */
         if (state->inbuf == NULL) {
-            state->inbuf = malloc(JPX_BUFFER_SIZE);
+            state->inbuf = s_jpx_alloc(JPX_BUFFER_SIZE, (JP2_Callback_Param)state->memory->non_gc_memory);
             if (state->inbuf == NULL) {
                 dmprintf(state->memory, "jpx encode: failed to allocate input buffer.\n");
                 return ERRC;
@@ -1020,7 +1011,7 @@ s_jpxe_process(stream_state *ss, stream_cursor_read *pr,
 
         /* grow our input buffer if necessary */
         while (state->infill + in_size > state->insize) {
-            unsigned char *new = realloc(state->inbuf, state->insize*2);
+            unsigned char *new = gs_resize_object(state->memory->non_gc_memory, state->inbuf, state->insize*2, "s_jpxe_process");
             if (new == NULL) {
                 dmprintf(state->memory, "jpx encode: failed to resize input buffer.\n");
                 return ERRC;
@@ -1078,8 +1069,8 @@ s_jpxe_release(stream_state *ss)
     }
 
     /* free our own storage */
-    free(state->outbuf);
-    free(state->inbuf);
+    gs_free_object(state->memory->non_gc_memory, state->outbuf, "s_jpxe_release(outbuf)");
+    gs_free_object(state->memory->non_gc_memory, state->inbuf, "s_jpxe_release(inbuf)");
 }
 
 /* encoder stream template */

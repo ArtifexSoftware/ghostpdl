@@ -40,7 +40,6 @@ typedef enum {
 typedef struct stream_jpxd_state_s
 {
     stream_state_common;	/* a define from scommon.h */
-    const gs_memory_t *jpx_memory;
 	opj_dinfo_t *opj_dinfo_p;
 	opj_image_t *image;
 	int width, height, bpp;
