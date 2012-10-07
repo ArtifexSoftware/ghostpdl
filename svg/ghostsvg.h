@@ -126,6 +126,7 @@ int svg_parse_color(char *str, float *rgb);
 int svg_is_whitespace_or_comma(int c);
 int svg_is_whitespace(int c);
 int svg_is_alpha(int c);
+int svg_is_sign(int c);
 int svg_is_digit(int c);
 
 /*

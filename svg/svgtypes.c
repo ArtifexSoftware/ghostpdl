@@ -33,11 +33,16 @@ int svg_is_alpha(int c)
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 }
 
+int svg_is_sign(int c)
+{
+	return (c == '-') || (c == '+');
+}
+
 int svg_is_digit(int c)
 {
     return (c >= '0' && c <= '9') ||
         (c == 'e') || (c == 'E') ||
-        (c == '+') || (c == '-') || (c == '.');
+        (c == '.') || svg_is_sign(c);
 }
 
 /* Return length/coordinate in points */

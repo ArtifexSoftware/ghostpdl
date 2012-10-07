@@ -325,7 +325,8 @@ svg_parse_path_data(svg_context_t *ctx, char *str)
         if (svg_is_digit(*str))
         {
             numberlen = 0;
-            while (svg_is_digit(*str) && numberlen < sizeof(number) - 1)
+            while (svg_is_digit(*str) && (numberlen < sizeof(number) - 1) &&
+                !(svg_is_sign(*str) && numberlen))
                 number[numberlen++] = *str++;
             number[numberlen] = 0;
             if (nargs == 6)
