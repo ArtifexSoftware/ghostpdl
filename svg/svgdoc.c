@@ -261,11 +261,11 @@ svg_parse_document(svg_context_t *ctx, svg_item_t *root)
     }
 
     width = vb_width;
-    if (!width_att)
+    if (width_att)
         width = svg_parse_length(width_att, vb_width, 12);
 
     height = vb_height;
-    if (!height_att)
+    if (height_att)
         height = svg_parse_length(height_att, vb_height, 12);
 
     if (version > 12)
