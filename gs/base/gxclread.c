@@ -807,7 +807,7 @@ clist_playback_file_bands(clist_playback_action action,
 
     /* setup stream */
     s_init_state((stream_state *)&rs, &s_band_read_template,
-                 (gs_memory_t *)mem);
+                 (gs_memory_t *)0); /* Not mem, as we don't want to free rs */
     rs.band_first = band_first;
     rs.band_last = band_last;
     rs.page_info = *page_info;
