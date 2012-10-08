@@ -197,7 +197,7 @@ clist_setup_render_threads(gx_device *dev, int y)
 #if CMM_THREAD_SAFE
         ncdev->icc_cache_cl = cdev->icc_cache_cl;
 #else
-        ncdev->icc_cache_cl = gsicc_cache_new(crdev->memory);
+        ncdev->icc_cache_cl = gsicc_cache_new(thread->memory);
 #endif
         ncdev->icc_table = cdev->icc_table;
         /* create the buf device for this thread, and allocate the semaphores */
