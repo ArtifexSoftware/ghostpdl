@@ -5059,6 +5059,11 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     p14dev->save_get_cmap_procs = pis->get_cmap_procs;
     pis->get_cmap_procs = pdf14_get_cmap_procs;
     gx_set_cmap_procs(pis, (gx_device *)p14dev);
+    /* The number of color planes should not exceed that of the target */
+    if (p14dev->color_info.num_components > target->color_info.num_components)
+        p14dev->color_info.num_components = target->color_info.num_components;
+    if (p14dev->color_info.max_components > target->color_info.max_components)
+        p14dev->color_info.max_components = target->color_info.max_components;
     code = dev_proc((gx_device *) p14dev, open_device) ((gx_device *) p14dev);
     *pdev = (gx_device *) p14dev;
     pdf14_set_marking_params((gx_device *)p14dev, pis);
@@ -5281,7 +5286,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
                 put_value(pbuf, pparams->opacity.alpha);
             if (pparams->changed & PDF14_SET_SHAPE_ALPHA)
                 put_value(pbuf, pparams->shape.alpha);
-                if (pparams->changed & PDF14_SET_OVERPRINT)
+            if (pparams->changed & PDF14_SET_OVERPRINT)
                 put_value(pbuf, pparams->overprint);
             if (pparams->changed & PDF14_SET_OVERPRINT_MODE)
                 put_value(pbuf, pparams->overprint_mode);
@@ -5451,7 +5456,7 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
                 read_value(data, params.opacity.alpha);
             if (params.changed & PDF14_SET_SHAPE_ALPHA)
                 read_value(data, params.shape.alpha);
-                if (params.changed & PDF14_SET_OVERPRINT)
+            if (params.changed & PDF14_SET_OVERPRINT)
                 read_value(data, params.overprint);
             if (params.changed & PDF14_SET_OVERPRINT_MODE)
                 read_value(data, params.overprint_mode);
@@ -6124,6 +6129,11 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
     gx_device_fill_in_procs((gx_device *)pdev);
     gs_pdf14_device_copy_params((gx_device *)pdev, target);
     gx_device_set_target((gx_device_forward *)pdev, target);
+    /* The number of color planes should not exceed that of the target */
+    if (pdev->color_info.num_components > target->color_info.num_components)
+        pdev->color_info.num_components = target->color_info.num_components;
+    if (pdev->color_info.max_components > target->color_info.max_components)
+        pdev->color_info.max_components = target->color_info.max_components;
     code = dev_proc((gx_device *) pdev, open_device) ((gx_device *) pdev);
     pdev->pclist_device = target;
     /* If the target profile was CIELAB, then overide with default RGB for
@@ -6137,11 +6147,6 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
     pdev->my_decode_color = pdev->procs.decode_color;
     pdev->my_get_color_mapping_procs = pdev->procs.get_color_mapping_procs;
     pdev->my_get_color_comp_index = pdev->procs.get_color_comp_index;
-    /* The number of color planes should not exceed that of the target */
-    if (pdev->color_info.num_components > target->color_info.num_components)
-        pdev->color_info.num_components = target->color_info.num_components;
-    if (pdev->color_info.max_components > target->color_info.max_components)
-        pdev->color_info.max_components = target->color_info.max_components;
     pdev->color_info.separable_and_linear = 
         target->color_info.separable_and_linear;
     *ppdev = (gx_device *) pdev;
