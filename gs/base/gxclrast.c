@@ -1749,8 +1749,8 @@ idata:                  data_size = 0;
                                     byte type_and_flag = *cbp++;
                                     byte is_continuation = type_and_flag & 0x80;
 
-                                   if_debug0m('L', mem, " cmd_opv_ext_put_drawing_color\n");
-                                   pdct = gx_get_dc_type_from_index(type_and_flag & 0x7F);
+                                    if_debug0m('L', mem, " cmd_opv_ext_put_drawing_color\n");
+                                    pdct = gx_get_dc_type_from_index(type_and_flag & 0x7F);
                                     if (pdct == 0) {
                                         code = gs_note_error(gs_error_rangecheck);
                                         goto out;
