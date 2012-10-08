@@ -632,6 +632,7 @@ pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres, int 
                     sizeof(*pfres->u.cidfont.CIDToGIDMap), pfres->count, chars_count);
             if (code < 0)
                 return code;
+            pfres->u.cidfont.CIDToGIDMapLength = chars_count;
         }
     }
     if (pfres->FontType == ft_CID_encrypted || pfres->FontType == ft_CID_TrueType) {
