@@ -421,7 +421,7 @@ hpgl_set_graphics_line_attribute_state(
      * plotter units
      */
     if ( render_mode != hpgl_rm_character && pen_wid <= 14.0 ) {
-        hpgl_call(gs_setlinejoin(pgls->pgs, gs_join_miter));
+        hpgl_call(gs_setlinejoin(pgls->pgs, gs_join_none));
         hpgl_call(gs_setlinecap(pgls->pgs, gs_cap_butt));
         hpgl_call(gs_setlinewidth(pgls->pgs, pen_wid));
         hpgl_call(gs_setmiterlimit(pgls->pgs, 5.0));
