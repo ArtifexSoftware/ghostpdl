@@ -174,8 +174,10 @@ s_std_init(register stream * s, byte * ptr, uint len, const stream_procs * pp,
     s->file = 0;
     s->file_name.data = 0;	/* in case stream is on stack */
     s->file_name.size = 0;
-    if_debug4m('s', s->memory, "[s]init 0x%lx, buf=0x%lx, len=%u, modes=%d\n",
-               (ulong) s, (ulong) ptr, len, modes);
+    if (s->memory) {
+        if_debug4m('s', s->memory, "[s]init 0x%lx, buf=0x%lx, len=%u, modes=%d\n",
+                   (ulong) s, (ulong) ptr, len, modes);
+    }
 }
 
 /* Set the file name of a stream, copying the name. */
@@ -305,13 +307,17 @@ s_disable(register stream * s)
     s->templat = &s_no_template;
     /* Free the file name. */
     if (s->file_name.data) {
-        gs_free_const_string(s->memory, s->file_name.data, s->file_name.size,
-                             "s_disable(file_name)");
+        if (s->memory) {
+            gs_free_const_string(s->memory, s->file_name.data, s->file_name.size,
+                                 "s_disable(file_name)");
+        }
         s->file_name.data = 0;
         s->file_name.size = 0;
     }
     /****** SHOULD DO MORE THAN THIS ******/
-    if_debug1m('s', s->memory, "[s]disable 0x%lx\n", (ulong) s);
+    if (s->memory) {
+        if_debug1m('s', s->memory, "[s]disable 0x%lx\n", (ulong) s);
+    }
 }
 
 /* Implement flushing for encoding filters. */

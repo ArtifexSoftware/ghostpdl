@@ -255,10 +255,10 @@ s_file_write_process(stream_state * st, stream_cursor_read * pr,
         if (written < 0)
             written = 0;
         pr->ptr += written;
-        process_interrupts(NULL);
+        process_interrupts(st->memory);
         return (ferror(file) ? ERRC : 0);
     } else {
-        process_interrupts(NULL);
+        process_interrupts(st->memory);
         return 0;
     }
 }

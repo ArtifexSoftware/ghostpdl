@@ -564,7 +564,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
      *      If pstack != 0, myref = osp, and *osp is a valid slot.
      */
   top:c = scan_getc();
-    if_debug1m('S', s->memory, (c >= 32 && c <= 126 ? "`%c'" : c >= 0 ? "`\\%03o'" : "`%d'"), c);
+    if_debug1m('S', imemory, (c >= 32 && c <= 126 ? "`%c'" : c >= 0 ? "`\\%03o'" : "`%d'"), c);
     switch (c) {
         case ' ':
         case '\f':
@@ -680,7 +680,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             }
             make_int(osp, pstack);
             pstack = ref_stack_count_inline(&o_stack);
-            if_debug3m('S', s->memory, "[S{]d=%d, s=%d->%d\n",
+            if_debug3m('S', imemory, "[S{]d=%d, s=%d->%d\n",
                        pdepth, (int)osp->value.intval, pstack);
             goto snext;
         case '>':
@@ -701,7 +701,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                 uint size = ref_stack_count_inline(&o_stack) - pstack;
                 ref arr;
 
-                if_debug4m('S', s->memory, "[S}]d=%d, s=%d->%d, c=%d\n",
+                if_debug4m('S', imemory, "[S}]d=%d, s=%d->%d, c=%d\n",
                            pdepth, pstack,
                            (pstack == pdepth ? 0 :
                            ref_stack_index(&o_stack, size)->value.intval),
