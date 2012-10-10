@@ -88,7 +88,7 @@
 #  define DBG_PRINT4(fmt, a, b, c, d)
 #endif
 
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
 static int nInstrCount=0;
 #endif
 
@@ -5011,7 +5011,7 @@ static int nInstrCount=0;
       CUR.step_ins = TRUE;
       CUR.error    = TT_Err_Ok;
 
-#     ifdef DEBUG
+#     if defined(DEBUG) && !defined(GS_THREADSAFE)
         DBG_PRINT3("\n%%n=%5d IP=%5d OP=%s            ", nInstrCount, CUR.IP, Instruct_Dispatch[CUR.opcode].sName);
         /*
         { for(int i=0;i<CUR.top;i++)
@@ -5028,7 +5028,7 @@ static int nInstrCount=0;
 
       Instruct_Dispatch[CUR.opcode].p( EXEC_ARGS &CUR.stack[CUR.args] );
 
-#     ifdef DEBUG
+#     if defined(DEBUG) && !defined(GS_THREADSAFE)
       if (save_ox != NULL) {
         F26Dot6 *pp[4], *qq[4];
         const char *ss[] = {"org.x", "org.y", "cur.x", "cur.y"};

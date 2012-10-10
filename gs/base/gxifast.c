@@ -37,7 +37,7 @@
 #include "gzht.h"
 
 /* Conditionally include statistics code. */
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
 #  define STATS
 #endif
 

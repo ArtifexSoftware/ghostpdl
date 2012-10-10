@@ -26,7 +26,7 @@
 
 /* Statistics */
 
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
 
 typedef struct stats_runs_s {
     ulong termination[64];
@@ -52,7 +52,7 @@ print_run_stats(const gs_memory_t *mem, const stats_runs_t * stats)
     dmprintf1(mem, " total=%lu\n", total);
 }
 
-#else /* !DEBUG */
+#else /* !DEBUG || defined(GS_THREADSAFE) */
 
 #define COUNT_RUN(cnt, i) DO_NOTHING
 
@@ -82,7 +82,7 @@ cf_put_long_run(stream_CFE_state * ss, byte * q, int lenv, const cf_runs * prt)
     hce_declare_state;
     cfe_run rr;
 
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
     stats_runs_t *pstats =
     (prt == &cf_white_runs ? &stats_white_runs : &stats_black_runs);
 
@@ -362,7 +362,7 @@ s_CFE_process(stream_state * st, stream_cursor_read * pr,
                status, ss->read_count, ss->write_count,
                (ulong) pr->ptr, (int)(rlimit - pr->ptr), (ulong) rlimit,
                (ulong) pw->ptr, (int)(wlimit - pw->ptr), (ulong) wlimit);
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
     if (pr->ptr > rlimit || pw->ptr > wlimit) {
         lprintf("Pointer overrun!\n");
         status = ERRC;

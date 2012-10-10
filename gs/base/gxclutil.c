@@ -46,6 +46,7 @@ const char *const *const cmd_sub_op_names[16] =
  0, 0, 0, 0,
  0, cmd_misc2_op_names, cmd_segment_op_names, cmd_path_op_names
 };
+#ifndef GS_THREADSAFE
 struct stats_cmd_s {
     ulong op_counts[256];
     ulong op_sizes[256];
@@ -77,9 +78,10 @@ cmd_uncount_op(int op, uint size)
     stats_cmd.op_sizes[op] -= size;
 }
 #endif
+#endif
 
 /* Print statistics. */
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
 void
 cmd_print_stats(const gs_memory_t *mem)
 {

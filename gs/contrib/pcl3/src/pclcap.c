@@ -790,7 +790,7 @@ const pcl_PrinterDescription pcl3_printers[] = {
 
 /*****************************************************************************/
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(GS_THREADSAFE)
 
 static int checked = 0;
 
@@ -807,7 +807,7 @@ static void check(void)
   return;
 }
 
-#endif	/* !NDEBUG */
+#endif	/* !NDEBUG && !GS_THREADSAFE */
 
 /******************************************************************************
 
@@ -822,7 +822,7 @@ static void check(void)
 
 void pcl3_fill_defaults(pcl_Printer printer, pcl_FileData *data)
 {
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(GS_THREADSAFE)
   if (!checked) check();
 #endif	/* !NDEBUG */
 

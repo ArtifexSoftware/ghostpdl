@@ -77,8 +77,10 @@ static int dbg_triangle_cnt = 0;
 static int dbg_wedge_triangle_cnt = 0;
 #endif
 
-static int min_linear_grades = 255; /* The minimal number of device color grades,
+enum {
+    min_linear_grades = 255 /* The minimal number of device color grades,
             required to apply linear color device functions. */
+};
 
 /* ================ Utilities ================ */
 

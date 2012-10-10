@@ -386,7 +386,7 @@ int clist_VMerror_recover_flush(gx_device_clist_writer *, int);
 int cmd_put_params(gx_device_clist_writer *, gs_param_list *);
 
 /* Conditionally keep command statistics. */
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
 int cmd_count_op(int op, uint size, const gs_memory_t *mem);
 void cmd_uncount_op(int op, uint size);
 void cmd_print_stats(const gs_memory_t *);

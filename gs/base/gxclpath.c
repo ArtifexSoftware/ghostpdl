@@ -36,7 +36,7 @@
 #include "gxdevsop.h"
 
 /* Statistics */
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
 ulong stats_cmd_diffs[5];
 #endif
 

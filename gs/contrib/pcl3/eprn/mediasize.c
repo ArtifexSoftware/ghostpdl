@@ -155,7 +155,7 @@ static const ms_SizeDescription list[] = {
 
 /*****************************************************************************/
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(GS_THREADSAFE)
 static char checked = 0;
 
 /* Function to check constraints on table entries */
@@ -189,9 +189,9 @@ static void check(void)
 
 const ms_SizeDescription *ms_find_size_from_code(ms_MediaCode code)
 {
-#ifndef NDEBUG
+#if !defined(NDEBUG) && !defined(GS_THREADSAFE)
   if (!checked) check();
-#endif	/* !NDEBUG */
+#endif	/* !NDEBUG && !GS_THREADSAFE */
   code = ms_without_flags(code);
   if (code < 1 || array_size(list) <= code) return NULL;
 
