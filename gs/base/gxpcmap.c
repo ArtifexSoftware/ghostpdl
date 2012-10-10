@@ -379,7 +379,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
             cwdev->page_uses_transparency = false;
         }
         cwdev->band_params.BandWidth = pinst->size.x;
-        cwdev->band_params.BandHeight = pinst->size.x;
+        cwdev->band_params.BandHeight = pinst->size.y;
         cwdev->band_params.BandBufferSpace = 0;
         cwdev->do_not_open_or_close_bandfiles = false;
         cwdev->bandlist_memory = storage_memory->non_gc_memory;
