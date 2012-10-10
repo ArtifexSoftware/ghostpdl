@@ -128,7 +128,7 @@ tile_fill_init(tile_fill_state_t * ptfs, const gx_device_color * pdevc,
                   m_tile->tmask.rep_height);
     } else
         px = py = 0;
-    return tile_clip_initialize(&ptfs->cdev, ptfs->tmask, dev, px, py, NULL);
+    return tile_clip_initialize(&ptfs->cdev, ptfs->tmask, dev, px, py);
 }
 
 /*

@@ -199,8 +199,8 @@ in_path(os_ptr oppath, i_ctx_t *i_ctx_p, gx_device * phdev)
     }
     /* Install the hit detection device. */
     gx_set_device_color_1(igs);
-    gx_device_init((gx_device *) phdev, (const gx_device *)&gs_hit_device,
-                   NULL, true);
+    gx_device_init_on_stack((gx_device *) phdev, (const gx_device *)&gs_hit_device,
+                            imemory);
     phdev->width = phdev->height = max_int;
     gx_device_fill_in_procs(phdev);
     gx_set_device_only(igs, phdev);

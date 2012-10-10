@@ -121,12 +121,12 @@ static const gx_device_tile_clip gs_tile_clip_device =
 /* Initialize a tile clipping device from a mask. */
 int
 tile_clip_initialize(gx_device_tile_clip * cdev, const gx_strip_bitmap * tiles,
-                     gx_device * tdev, int px, int py, gs_memory_t *mem)
+                     gx_device * tdev, int px, int py)
 {
     int code =
     gx_mask_clip_initialize(cdev, &gs_tile_clip_device,
                             (const gx_bitmap *)tiles,
-                            tdev, 0, 0, mem);	/* phase will be reset */
+                            tdev, 0, 0, NULL);	/* phase will be reset */
 
     if (code >= 0) {
         cdev->tiles = *tiles;

@@ -134,12 +134,9 @@ static const gx_device_cpath_accum gs_cpath_accum_device =
 void
 gx_cpath_accum_begin(gx_device_cpath_accum * padev, gs_memory_t * mem)
 {
-    gx_device_init((gx_device *) padev,
-                   (const gx_device *) & gs_cpath_accum_device,
-                   NULL /* allocated on stack */ , true);
+    gx_device_init_on_stack((gx_device *) padev,
+                            (const gx_device *) & gs_cpath_accum_device, mem);
     padev->list_memory = mem;
-    padev->memory = mem; /* gx_general_fill_path may need a storage
-                            for dropout prevention buffer. */
     set_dev_proc(padev, encode_color, gx_default_gray_encode);
     set_dev_proc(padev, decode_color, gx_default_decode_color);
     (*dev_proc(padev, open_device)) ((gx_device *) padev);

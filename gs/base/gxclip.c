@@ -130,7 +130,7 @@ static const gx_device_clip gs_clip_device =
 void
 gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target)
 {
-    gx_device_init((gx_device *)dev, (const gx_device *)&gs_clip_device, NULL, true);
+    gx_device_init_on_stack((gx_device *)dev, (const gx_device *)&gs_clip_device, target->memory);
     dev->list = *gx_cpath_list(pcpath);
     dev->translation.x = 0;
     dev->translation.y = 0;
@@ -167,7 +167,7 @@ gx_make_clip_device_on_stack_if_needed(gx_device_clip * dev, const gx_clip_path 
         if (rect->p.x >= rect->q.x || rect->p.y >= rect->q.y)
             return NULL;
     }
-    gx_device_init((gx_device *)dev, (const gx_device *)&gs_clip_device, NULL, true);
+    gx_device_init_on_stack((gx_device *)dev, (const gx_device *)&gs_clip_device, target->memory);
     dev->list = *gx_cpath_list(pcpath);
     dev->translation.x = 0;
     dev->translation.y = 0;

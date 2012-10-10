@@ -1701,6 +1701,14 @@ extern_st(st_device_null);
 void gx_device_init(gx_device * dev, const gx_device * proto,
                     gs_memory_t * mem, bool internal);
 
+/*
+ * Identical to gx_device_init, except that the reference counting is set
+ * up so that it doesn't attempt to free the device structure when the last
+ * instance is removed, and the device is always internal (never retained).
+ */
+void gx_device_init_on_stack(gx_device * dev, const gx_device * proto,
+                             gs_memory_t * mem);
+
 /* Make a null device. */
 /* The gs_memory_t argument is 0 if the device is temporary and local, */
 /* or the allocator that was used to allocate it if it is a real object. */

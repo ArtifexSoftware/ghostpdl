@@ -538,6 +538,16 @@ gx_device_init(gx_device * dev, const gx_device * proto, gs_memory_t * mem,
     rc_init(dev, mem, (internal ? 0 : 1));
 }
 
+void
+gx_device_init_on_stack(gx_device * dev, const gx_device * proto,
+                        gs_memory_t * mem)
+{
+    memcpy(dev, proto, proto->params_size);
+    dev->memory = mem;
+    dev->retained = 0;
+    rc_init(dev, NULL, 0);
+}
+
 /* Make a null device. */
 void
 gs_make_null_device(gx_device_null *dev_null, gx_device *dev,

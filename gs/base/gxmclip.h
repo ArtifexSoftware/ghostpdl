@@ -60,6 +60,9 @@ extern_st(st_device_mask_clip);
  * Internal routine to initialize a mask clipping device.
  * We supply an explicit device space origin or phase.
  * Note that this procedure does not set cdev->tiles.
+ * If mem is sent as NULL, then the initialised device structure will not be
+ * freed when the refcount reaches 0 (suitable for devices on stack, or within
+ * other structures).
  */
 int gx_mask_clip_initialize(gx_device_mask_clip * cdev,
                             const gx_device_mask_clip * proto,
