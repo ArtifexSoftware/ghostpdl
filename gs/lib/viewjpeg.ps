@@ -155,3 +155,19 @@ end	% JPEGdict
 
     saved end restore
 } bind def
+
+% This lets you do stuff on the command line like:
+% gs -sDEVICE=pdfwrite -o stuff%03d.pdf viewjpeg.ps -c "(image.jpg) << /PageSize 2 index viewJPEGgetsize 2 array astore  >> setpagedevice viewJPEG"
+% so the output size matches the original image.
+/viewJPEGgetsize {		% <file|string> ==> width height
+    save
+    JPEGdict begin
+    /saved exch def
+    /scratch 1 string def
+    dup type /stringtype eq { (r) file } if
+    /F exch def
+    readJPEGmarkers begin
+    F 0 setfileposition		% reset file pointer
+    width height
+    saved end restore
+} bind def

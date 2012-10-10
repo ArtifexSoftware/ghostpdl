@@ -18,6 +18,7 @@
 % Requires the Level 2 `image' operator (to handle variable pixel widths).
 % If SCALE is defined, maps input pixels to output pixels with that scale;
 % if SCALE is undefined, scales the image to fit the page.
+% If FITPAGE true, it fits the output page size to the image, honouring SCALE
 
 /s 100 string def
 /readmaxv {		% <file> readmaxv -
@@ -109,17 +110,29 @@
   begin
     /SCALE where {
       pop
+      /FITPAGE where {/FITPAGE get}{false} ifelse
+      {
+          Width 72 mul SCALE mul Height 72 mul SCALE mul
+      }
+      {
         % Map pixels SCALE-for-1.  Assume orthogonal transformation.
-      Width 1 0 dtransform add abs div SCALE mul
-      Height 0 1 dtransform add abs div SCALE mul
+        Width 1 0 dtransform add abs div SCALE mul
+        Height 0 1 dtransform add abs div SCALE mul
+      } ifelse
     } {
-        % Scale the image (uniformly) to fit the page.
-      clippath pathbbox pop pop translate
-      pathbbox .min exch pop exch pop ceiling
-      dup Height Width gt {
-        Width mul Height div exch
-      } {
-        Height mul Width div
+      /FITPAGE where {/FITPAGE get}{false} ifelse
+      {
+          Width 72 mul Height 72 mul
+      }
+      {
+          % Scale the image (uniformly) to fit the page.
+        clippath pathbbox pop pop translate
+        pathbbox .min exch pop exch pop ceiling
+        dup Height Width gt {
+          Width mul Height div exch
+        } {
+          Height mul Width div
+        } ifelse
       } ifelse
     }
     ifelse scale
@@ -132,6 +145,21 @@
     (r) file /pf exch def {
       pf token not { exit } if
       pbmtypes exch get pf exch exec pbmsetup
+      /FITPAGE where
+      {
+        /FITPAGE get
+        {
+          /SCALE where
+          {
+            pop
+            <</PageSize [w 72 mul SCALE mul h 72 mul SCALE mul] >>
+          }
+          {
+            <</PageSize [w 72 mul h 72 mul] >>
+          } ifelse
+          setpagedevice
+        } if
+      } if
       dup imagescale image showpage
     } loop
   end
@@ -163,6 +191,20 @@
       dup /DataSource datas put
       dup /Decode decode put
     /DeviceCMYK setcolorspace
+    /FITPAGE where
+    {
+      /FITPAGE get
+      {
+        /SCALE where
+        {
+            <</PageSize [w SCALE mul h SCALE mul]>>
+        }
+        {
+            <</PageSize [w h]>>
+        }ifelse
+        setpagedevice
+      } if
+    } if
     dup imagescale image showpage
   end
 } def

@@ -157,3 +157,22 @@
    ifelse
    saved end end end restore
  } bind def
+
+% This lets you do stuff on the command line like:
+% gs -sDEVICE=pdfwrite -o stuff%03d.pdf viewgif.ps -c "(image.gif) << /PageSize 2 index viewGIFgetsize 2 array astore  >> setpagedevice viewGIF"
+% so the output size is influenced by the original image.
+/viewGIFgetsize		% <file|string> ==> [width height]
+{
+   save 20 dict begin
+   /saved exch def
+   dup type /stringtype eq { (r) file } if
+   /F exch def
+   F readGIFheader /Header exch def
+     currentdict Header end begin begin
+   VGIFDEBUG { Header { exch == == } forall (----------------\n) print flush } if
+   F readGIFimageHeader /ImageHeader exch def
+     currentdict ImageHeader end begin begin
+   F 0 setfileposition		% reset file pointer
+   Width Height
+   saved end end end restore
+} bind def

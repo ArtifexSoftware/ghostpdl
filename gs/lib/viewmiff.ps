@@ -17,6 +17,7 @@
 % Display a MIFF file.  You would think the 'display' command would do this,
 % but many versions of 'display' either core-dump or require unacceptably
 % large amounts of memory.
+% FITPAGE is true, it fits the output page size to the image
 
 % Recognize MIFF keywords.
 /miffwords mark
@@ -111,6 +112,19 @@
                 % Read and display the image.
   miffclasses class get exec
   /DataSource miffcompress compression get exec def
+  /FITPAGE where
+  {
+    /FITPAGE get
+    {
+      % we've already set the image color space, so
+      % push it on the stack, and set it again after
+      % setting the page size
+      currentcolorspace
+      <</PageSize [Width Height] >> setpagedevice
+      setcolorspace
+    } if
+  } if
+
   /ImageMatrix [Width 0 0 Height neg 0 Height] def
   currentpagedevice /PageSize get
     dup 0 get exch 1 get scale
