@@ -523,7 +523,7 @@ clist_begin_typed_image(gx_device * dev,
                                 dev_render_cond.override_icc;
                 stored_rendering_cond.preserve_black =  
                                 dev_render_cond.preserve_black;
-                stored_rendering_cond.use_cm = true;  /* Unless spec. below */
+                stored_rendering_cond.cmm = gsCMM_DEFAULT;  /* Unless spec. below */
                 /* We may need to do some substitions for the source profile */
                 if (pis->icc_manager->srcgtag_profile != NULL) {
                     srcgtag_profile = pis->icc_manager->srcgtag_profile;
@@ -546,8 +546,8 @@ clist_begin_typed_image(gx_device * dev,
                             }
                         } else {
                             /* A possible do not use CM case */
-                            stored_rendering_cond.use_cm = 
-                                srcgtag_profile->rgb_rend_cond[gsSRC_IMAGPRO].use_cm;
+                            stored_rendering_cond.cmm = 
+                                srcgtag_profile->rgb_rend_cond[gsSRC_IMAGPRO].cmm;
                         }
                     } else if (src_profile->data_cs == gsCMYK) {
                         if (srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO] != NULL) {
@@ -565,8 +565,8 @@ clist_begin_typed_image(gx_device * dev,
                             }
                         } else {
                             /* A possible do not use CM case */
-                            stored_rendering_cond.use_cm = 
-                                srcgtag_profile->cmyk_rend_cond[gsSRC_IMAGPRO].use_cm;
+                            stored_rendering_cond.cmm = 
+                                srcgtag_profile->cmyk_rend_cond[gsSRC_IMAGPRO].cmm;
                         }
                     }
                 }

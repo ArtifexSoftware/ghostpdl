@@ -303,7 +303,7 @@ gsicc_compute_linkhash(gsicc_manager_t *icc_manager, gx_device *dev,
        point in time, we only include the black point setting, the intent
        and if we are preserving black.  We don't differentiate at this time
        with object type since the current CMM does not create different
-       links based upon this type setting.  Other parameters such as use_cm
+       links based upon this type setting.  Other parameters such as cmm
        and override ICC are used prior to a link creation and so should also
        not factor into the link hash calculation */
     hash->rend_hash = ((rendering_params->black_point_comp) << BP_SHIFT) +
@@ -528,8 +528,9 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
                     /* In this case we may be wanting for a "unmanaged color"
                        result. This is done by specifying "None" on the 
                        particular line for that source object.  Check if this
-                       is what is desired.  If it is, then return the link now */
-                    if (render_cond.use_cm == false) {
+                       is what is desired.  If it is, then return the link now.
+                       Also need to worry about the replace case */
+                    if (render_cond.cmm == gsCMM_NONE) {
                         gsicc_link_t *link;
 
                         if (gs_input_profile->data_cs == gsRGB) {
@@ -545,6 +546,10 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
                             }
                             return link;
                         }
+                    } else if (render_cond.cmm == gsCMM_REPLACE) {
+                        return gsicc_rcm_get_link(pis, dev, 
+                                                  gs_input_profile->data_cs);
+                        /* Note that there is never an identity case  */
                     }
                 }
             }
@@ -737,9 +742,10 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
            due to a setting forced from srcgtag object (the None option)
            which has made its way though the clist in the clist imaging 
            code.   In this case, the srcgtag_profile structure
-           which was part of the ICC manager is no longer available */
+           which was part of the ICC manager is no longer available.
+           We also have the Replace option.  */
         if (gs_input_profile->rend_is_valid &&
-            gs_input_profile->rend_cond.use_cm == false) {
+            gs_input_profile->rend_cond.cmm == gsCMM_NONE) {
 
             if (gs_input_profile->data_cs == gsRGB) {
                 link = gsicc_nocm_get_link(pis, dev, 3);
@@ -754,7 +760,12 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                 }
                 return link;
             }
-        }
+        } else if (gs_input_profile->rend_is_valid &&
+            gs_input_profile->rend_cond.cmm == gsCMM_REPLACE) {
+            return gsicc_rcm_get_link(pis, dev, gs_input_profile->data_cs);
+            /* Note that there is never an identity case for
+               this type.  */
+        }    
         /* We may have a source profile that is a device link profile and
            made its way through the clist.  If so get things set up to 
            handle that properly. */

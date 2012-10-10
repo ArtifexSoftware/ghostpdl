@@ -2184,6 +2184,10 @@
 							RelativePath=".\base\gsicc_profilecache.c"
 							>
 						</File>
+						<File
+							RelativePath=".\base\gsicc_replacecm.c"
+							>
+						</File>
 					</Filter>
 				</Filter>
 				<Filter

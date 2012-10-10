@@ -14,7 +14,7 @@
 */
 
 
-/* gsicc handling for unmanaged color. */
+/* gsicc handling for direct color replacement. */
 
 #include "std.h"
 #include "string_.h"
@@ -30,30 +30,25 @@
 #include "gsicc_cms.h"
 #include "gsicc_cache.h"
 
-/* A link structure for our non-cm color transform */
-typedef struct nocm_link_s {
-    /* device (or default) procs to do the transformation */
-    gx_cm_color_map_procs cm_procs;
-    /* Since RGB to CMYK requires BG and UCR, we need to have the 
-       imager state available */
-    gs_imager_state *pis;
-    byte num_in;
+/* A link structure for our replace color transform */
+typedef struct rcm_link_s {
     byte num_out;
+    byte num_in;
+    gsicc_colorbuffer_t data_cs_in;
     gs_memory_t *memory;
-} nocm_link_t;
+    gx_cm_color_map_procs cm_procs;  /* for the demo */
+    void *context;  /* For a table and or a set of procs */
+} rcm_link_t;
 
-static void gsicc_nocm_transform_general(gx_device *dev, gsicc_link_t *icclink, 
+static void gsicc_rcm_transform_general(gx_device *dev, gsicc_link_t *icclink, 
                                          void *inputcolor, void *outputcolor, 
                                          int num_bytes_in, int num_bytes_out);
 
 /* Functions that should be optimized later to do planar/chunky with 
    color conversions.  Just putting in something that should work 
    right now */
-
-/* At most, we have 4 input and 4 output ptrs.  Since this is used only in
-   DeviceGray, DeviceRGB and DeviceCMYK cases */
 static void
-gsicc_nocm_planar_to_planar(gx_device *dev, gsicc_link_t *icclink,
+gsicc_rcm_planar_to_planar(gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
                                   void *inputbuffer, void *outputbuffer)
@@ -79,7 +74,7 @@ gsicc_nocm_planar_to_planar(gx_device *dev, gsicc_link_t *icclink,
             in_color[j] = *(inputpos[j]);
             inputpos[j] += input_buff_desc->bytes_per_chan;
         }
-        gsicc_nocm_transform_general(dev, icclink, (void*) &(in_color[0]), 
+        gsicc_rcm_transform_general(dev, icclink, (void*) &(in_color[0]), 
                                          (void*) &(out_color[0]), 1, 1);
         for (j = 0; j < output_buff_desc->num_chan; j++) {
             *(outputpos[j]) = out_color[j];
@@ -90,7 +85,7 @@ gsicc_nocm_planar_to_planar(gx_device *dev, gsicc_link_t *icclink,
 
 /* This is not really used yet */
 static void
-gsicc_nocm_planar_to_chunky(gx_device *dev, gsicc_link_t *icclink,
+gsicc_rcm_planar_to_chunky(gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
                                   void *inputbuffer, void *outputbuffer)
@@ -102,7 +97,7 @@ gsicc_nocm_planar_to_chunky(gx_device *dev, gsicc_link_t *icclink,
 /* This is used with the fast thresholding code when doing -dUseFastColor
    and going out to a planar device */
 static void
-gsicc_nocm_chunky_to_planar(gx_device *dev, gsicc_link_t *icclink,
+gsicc_rcm_chunky_to_planar(gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
                                   void *inputbuffer, void *outputbuffer)
@@ -127,7 +122,7 @@ gsicc_nocm_chunky_to_planar(gx_device *dev, gsicc_link_t *icclink,
         /* split the 2 byte 1 byte case here to avoid decision in inner loop */
         if (output_buff_desc->bytes_per_chan == 1) {
             for (j = 0; j < input_buff_desc->pixels_per_row; j++) {
-                gsicc_nocm_transform_general(dev, icclink, (void*) inputcolor, 
+                gsicc_rcm_transform_general(dev, icclink, (void*) inputcolor, 
                                              (void*) &(outputcolor[0]), num_bytes_in, 
                                               num_bytes_out);
                 /* Stuff the output in the proper planar location */
@@ -140,7 +135,7 @@ gsicc_nocm_chunky_to_planar(gx_device *dev, gsicc_link_t *icclink,
             outputpos += output_buff_desc->row_stride;        
         } else {
             for (j = 0; j < input_buff_desc->pixels_per_row; j++) {
-                gsicc_nocm_transform_general(dev, icclink, (void*) inputcolor, 
+                gsicc_rcm_transform_general(dev, icclink, (void*) inputcolor, 
                                              (void*) &(outputcolor[0]), num_bytes_in, 
                                               num_bytes_out);
                 /* Stuff the output in the proper planar location */
@@ -158,7 +153,7 @@ gsicc_nocm_chunky_to_planar(gx_device *dev, gsicc_link_t *icclink,
 }
 
 static void
-gsicc_nocm_chunky_to_chunky(gx_device *dev, gsicc_link_t *icclink,
+gsicc_rcm_chunky_to_chunky(gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
                                   void *inputbuffer, void *outputbuffer)
@@ -177,7 +172,7 @@ gsicc_nocm_chunky_to_chunky(gx_device *dev, gsicc_link_t *icclink,
         inputcolor = inputpos;
         outputcolor = outputpos;
         for (j = 0; j < input_buff_desc->pixels_per_row; j++) {
-            gsicc_nocm_transform_general(dev, icclink, (void*) inputcolor, 
+            gsicc_rcm_transform_general(dev, icclink, (void*) inputcolor, 
                                          (void*) outputcolor, num_bytes_in, 
                                           num_bytes_out);
             inputcolor += pixel_in_step;
@@ -188,35 +183,34 @@ gsicc_nocm_chunky_to_chunky(gx_device *dev, gsicc_link_t *icclink,
     }
 }
 
-/* Transform an entire buffer using the generic (non color managed) 
-   transformations */
+/* Transform an entire buffer using replacement method */
 static void
-gsicc_nocm_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
+gsicc_rcm_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
                                   void *inputbuffer, void *outputbuffer)
 {
     /* Since we have to do the mappings to and from frac colors we will for
-       now just call the gsicc_nocm_transform_color as we step through the
+       now just call the gsicc_rcm_transform_color as we step through the
        buffers.  This process can be significantly sped up */
     
     if (input_buff_desc->is_planar) {
         if (output_buff_desc->is_planar) {
-            gsicc_nocm_planar_to_planar(dev, icclink, input_buff_desc, 
+            gsicc_rcm_planar_to_planar(dev, icclink, input_buff_desc, 
                                         output_buff_desc, inputbuffer, 
                                         outputbuffer);    
         } else {
-            gsicc_nocm_planar_to_chunky(dev, icclink, input_buff_desc, 
+            gsicc_rcm_planar_to_chunky(dev, icclink, input_buff_desc, 
                                         output_buff_desc, inputbuffer, 
                                         outputbuffer);    
         }
     } else {
         if (output_buff_desc->is_planar) {
-            gsicc_nocm_chunky_to_planar(dev, icclink, input_buff_desc, 
+            gsicc_rcm_chunky_to_planar(dev, icclink, input_buff_desc, 
                                         output_buff_desc, inputbuffer, 
                                         outputbuffer);    
         } else {
-            gsicc_nocm_chunky_to_chunky(dev, icclink, input_buff_desc, 
+            gsicc_rcm_chunky_to_chunky(dev, icclink, input_buff_desc, 
                                         output_buff_desc, inputbuffer, 
                                         outputbuffer);    
         }
@@ -224,32 +218,33 @@ gsicc_nocm_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     return;
 }
 
-/* Shared function between the single and buffer conversions */
+/* Shared function between the single and buffer conversions.  This is where
+   we do the actual replacement.   For now, we make the replacement a 
+   negative to show the effect of what using color replacement.  We also use
+   the device procs to map to the device value.  */
 static void
-gsicc_nocm_transform_general(gx_device *dev, gsicc_link_t *icclink, 
+gsicc_rcm_transform_general(gx_device *dev, gsicc_link_t *icclink, 
                              void *inputcolor, void *outputcolor, 
                              int num_bytes_in, int num_bytes_out)
 {
-    /* Input data is either single byte or 2 byte color values.  The 
-       color mapping procs work on frac values so we have to sandwich 
-       the transformation between to and from frac conversions.  We are only
-       doing at most 4 source colors here */
-    nocm_link_t *link = (nocm_link_t*) icclink->link_handle;
+    /* Input data is either single byte or 2 byte color values.  */
+    rcm_link_t *link = (rcm_link_t*) icclink->link_handle;
     byte num_in = link->num_in;
     byte num_out = link->num_out;
     frac frac_in[4];
     frac frac_out[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int k;
 
+    /* Make the negative for the demo.... */
     if (num_bytes_in == 2) {
         unsigned short *data = (unsigned short *) inputcolor;
         for (k = 0; k < num_in; k++) {
-            frac_in[k] = ushort2frac(data[k]);
+            frac_in[k] = frac_1 - ushort2frac(data[k]);
         }
     } else {
         byte *data = (byte *) inputcolor;
         for (k = 0; k < num_in; k++) {
-            frac_in[k] = byte2frac(data[k]);
+            frac_in[k] = frac_1 - byte2frac(data[k]);
         }
     }
     /* Use the device procedure */
@@ -258,7 +253,7 @@ gsicc_nocm_transform_general(gx_device *dev, gsicc_link_t *icclink,
             (link->cm_procs.map_gray)(dev, frac_in[0], frac_out);
             break;
         case 3:
-            (link->cm_procs.map_rgb)(dev, link->pis, frac_in[0], frac_in[1],
+            (link->cm_procs.map_rgb)(dev, NULL, frac_in[0], frac_in[1],
                                  frac_in[2], frac_out);
             break;
         case 4:
@@ -285,64 +280,31 @@ gsicc_nocm_transform_general(gx_device *dev, gsicc_link_t *icclink,
 /* Transform a single color using the generic (non color managed) 
    transformations */
 static void
-gsicc_nocm_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
+gsicc_rcm_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
                            void *outputcolor, int num_bytes)
 {
-
-    gsicc_nocm_transform_general(dev, icclink, inputcolor, outputcolor, 
+    gsicc_rcm_transform_general(dev, icclink, inputcolor, outputcolor, 
                                  num_bytes, num_bytes);
 }
 
 static void
-gsicc_nocm_freelink(gsicc_link_t *icclink)
+gsicc_rcm_freelink(gsicc_link_t *icclink)
 {
-    nocm_link_t *nocm_link = (nocm_link_t*) icclink->link_handle;
-
-    if (nocm_link->pis != NULL) {
-        if (nocm_link->pis->black_generation != NULL) {
-            gs_free_object(nocm_link->memory, nocm_link->pis->black_generation, 
-                           "gsicc_nocm_freelink");
-        }
-        if (nocm_link->pis->undercolor_removal != NULL) {
-            gs_free_object(nocm_link->memory, nocm_link->pis->undercolor_removal, 
-                           "gsicc_nocm_freelink");
-        }
-        gs_free_object(nocm_link->memory, nocm_link->pis, "gsicc_nocm_freelink");
-    }
-    gs_free_object(nocm_link->memory, nocm_link, "gsicc_nocm_freelink");
+    rcm_link_t *rcm_link = (rcm_link_t*) icclink->link_handle;
+    gs_free_object(rcm_link->memory, rcm_link, "gsicc_rcm_freelink");
 }
 
-/* Since this is the only occurence of this object we are not going to 
-   fool aroung with reference counting and closure functions.  When 
-   the link is destroyed, we will simply free the bytes */
-static gx_transfer_map*
-gsicc_nocm_copy_curve(gx_transfer_map *in_map, gs_memory_t *mem)
-{
-    gx_transfer_map *out_map;
-
-    if (in_map == NULL) {
-        return NULL;
-    } else {
-        out_map = (gx_transfer_map*) gs_alloc_bytes(mem, sizeof(gx_transfer_map), 
-                            "gsicc_nocm_copy_curve");
-        out_map->proc = in_map->proc;
-        memcpy(&(out_map->values[0]), &(in_map->values[0]), 
-                sizeof(frac) * transfer_map_size);
-        out_map->id = gs_no_id;
-        return out_map;
-    }
-}
-
-/* Get the link, which is the mapping procedure in this non color managed 
-   transformation case. */
+/* Get the replacement color management link.  It basically needs to store
+   the number of components for the source so that we know what we are 
+   coming from (e.g. RGB, CMYK, Gray) */
 gsicc_link_t*
-gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev, 
-                    gs_color_space_index src_index)
+gsicc_rcm_get_link(const gs_imager_state *pis, gx_device *dev, 
+                   gsicc_colorbuffer_t data_cs)
 {
     gsicc_link_t *result;
     gsicc_hashlink_t hash;
-    nocm_link_t *nocm_link;
-    gs_memory_t *mem = pis->memory->non_gc_memory;
+    rcm_link_t *rcm_link;
+    gs_memory_t *mem = dev->memory->non_gc_memory;
     const gx_cm_color_map_procs * cm_procs;
 
     /* If the cm_procs are forwarding due to the overprint device or other
@@ -352,15 +314,11 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
     } else {
         cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
     }
-    /* We will add this to the link cache so that we can avoid the issue
-       of black_generation and undercolor removal being GC values.
-       Since the link is not GC we would need to copy the contents over
-       each time a link was requested.  This could be costly if we had 
-       a lot of link requests.  */
-    hash.rend_hash = gsCMM_NONE;
+
+    hash.rend_hash = gsCMM_REPLACE;
     hash.des_hash = dev->color_info.num_components;
-    hash.src_hash = src_index;
-    hash.link_hashcode = src_index + hash.des_hash * 256 + hash.rend_hash * 4096;
+    hash.src_hash = data_cs;
+    hash.link_hashcode = data_cs + hash.des_hash * 256 + hash.rend_hash * 4096;
 
     /* Check the cache for a hit. */
     result = gsicc_findcachelink(hash, pis->icc_link_cache, false, false);
@@ -373,36 +331,41 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
         return result;
 
     /* Now compute the link contents */
-    result->procs.map_buffer = gsicc_nocm_transform_color_buffer;
-    result->procs.map_color = gsicc_nocm_transform_color;
-    result->procs.free_link = gsicc_nocm_freelink;
+    result->procs.map_buffer = gsicc_rcm_transform_color_buffer;
+    result->procs.map_color = gsicc_rcm_transform_color;
+    result->procs.free_link = gsicc_rcm_freelink;
     result->hashcode = hash;
-    nocm_link = (nocm_link_t *) gs_alloc_bytes(mem, sizeof(nocm_link_t),
-                                               "gsicc_nocm_get_link");
-    result->link_handle = (void*) nocm_link;
-    nocm_link->memory = mem;
-    /* Create a dummy imager state and populate the ucr/bg values.  This
-       is the only part that we need */ 
-    if (pis == NULL || 
-       (pis->black_generation == NULL && pis->undercolor_removal == NULL)) {
-        nocm_link->pis = NULL;
-    } else {
-        nocm_link->pis = (gs_imager_state*) 
-                          gs_alloc_bytes(mem, sizeof(gs_imager_state), 
-                                         "gsicc_nocm_get_link");
-        nocm_link->pis->black_generation = (gx_transfer_map*)
-                            gsicc_nocm_copy_curve(pis->black_generation, mem); 
-        nocm_link->pis->undercolor_removal = (gx_transfer_map*)
-                            gsicc_nocm_copy_curve(pis->undercolor_removal, mem); 
-    }
-    nocm_link->num_out = min(dev->color_info.num_components, 
+    result->is_identity = false;
+    rcm_link = (rcm_link_t *) gs_alloc_bytes(mem, sizeof(rcm_link_t),
+                                               "gsicc_rcm_get_link");
+    result->link_handle = (void*) rcm_link;
+    rcm_link->memory = mem;
+    rcm_link->num_out = min(dev->color_info.num_components, 
                              GS_CLIENT_COLOR_MAX_COMPONENTS);
-    nocm_link->cm_procs.map_cmyk = cm_procs->map_cmyk;
-    nocm_link->cm_procs.map_rgb = cm_procs->map_rgb;
-    nocm_link->cm_procs.map_gray = cm_procs->map_gray;
-    nocm_link->num_in = src_index;
+    rcm_link->data_cs_in = data_cs;
+    rcm_link->cm_procs.map_cmyk = cm_procs->map_cmyk;
+    rcm_link->cm_procs.map_rgb = cm_procs->map_rgb;
+    rcm_link->cm_procs.map_gray = cm_procs->map_gray;
+
+    switch (data_cs) {
+        case gsGRAY:
+            rcm_link->num_in = 1;
+            break;
+        case gsRGB:
+        case gsCIELAB:
+            rcm_link->num_in = 3;
+            break;
+        case gsCMYK:
+            rcm_link->num_in = 4;
+            break;
+        default:
+            result->procs.free_link(result);
+            return NULL;
+    }
+    /* Likely set if we have something like a table or procs */    
+    rcm_link->context = NULL;  
     if (result != NULL) {
-        gsicc_set_link_data(result, nocm_link, hash,
+        gsicc_set_link_data(result, rcm_link, hash,
                             pis->icc_link_cache->lock, false, false);
     }
     return result;

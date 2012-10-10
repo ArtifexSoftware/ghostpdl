@@ -334,7 +334,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
             rendering_params.override_icc = false;
             rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
             rendering_params.rendering_intent = pis->renderingintent;
-            rendering_params.use_cm = true;
+            rendering_params.cmm = gsCMM_DEFAULT;
             pcs->params.separation.get_colorname_string(pis->memory, name,
                                                 &pname, &name_size);
             /* Make the name structure and initialized it */

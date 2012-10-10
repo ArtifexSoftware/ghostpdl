@@ -360,7 +360,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     rendering_params.override_icc = false;
     rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
     rendering_params.rendering_intent = pis->renderingintent;
-    rendering_params.use_cm = true;
+    rendering_params.cmm = gsCMM_DEFAULT;
     /* Need to clear out psrc_cm in case we have separation bands that are
        not color managed */
     memset(psrc_cm,0,sizeof(unsigned short)*GS_CLIENT_COLOR_MAX_COMPONENTS);
@@ -449,7 +449,7 @@ gx_remap_ICC_imagelab(const gs_client_color * pcc, const gs_color_space * pcs,
     rendering_params.override_icc = false;
     rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
     rendering_params.rendering_intent = pis->renderingintent;
-    rendering_params.use_cm = true;
+    rendering_params.cmm = gsCMM_DEFAULT;
     /* Need to clear out psrc_cm in case we have separation bands that are
        not color managed */
     memset(psrc_cm,0,sizeof(unsigned short)*GS_CLIENT_COLOR_MAX_COMPONENTS);
@@ -516,7 +516,7 @@ gx_concretize_ICC(
     rendering_params.override_icc = false;
     rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
     rendering_params.rendering_intent = pis->renderingintent;
-    rendering_params.use_cm = true;
+    rendering_params.cmm = gsCMM_DEFAULT;
     for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++) {
         psrc[k] = (unsigned short) (pcc->paint.values[k]*65535.0);
     }

@@ -120,7 +120,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
             rendering_params.override_icc = false;
             rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
             rendering_params.rendering_intent = penum->pis->renderingintent;
-            rendering_params.use_cm = true;
+            rendering_params.cmm = gsCMM_DEFAULT;
             if (gs_color_space_get_index(penum->pcs) ==
                 gs_color_space_index_Indexed) {
                 pcs = penum->pcs->base_space;

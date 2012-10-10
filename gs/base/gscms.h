@@ -142,6 +142,14 @@ typedef enum {
     gsBPNOTSPECIFIED = 8     /* Used to ignore value when source based setting */  
 } gsicc_blackptcomp_t;
 
+/* This is used mainly for when the sourcegtag option specifies us to use no
+   color management or a replacement color management CMM */
+typedef enum {
+    gsCMM_DEFAULT = 0,
+    gsCMM_NONE,
+    gsCMM_REPLACE
+} gsicc_cmm_t;
+
 /* Since this is not specified by the source document we don't need to worry 
    about override values */
 typedef enum {
@@ -191,7 +199,7 @@ typedef struct gsicc_rendering_param_s {
     gsicc_blackptcomp_t black_point_comp;         /* Black point compensation */
     gsicc_blackpreserve_t preserve_black;         /* preserve K plane in CMYK2CMYK */
     gs_graphics_type_tag_t graphics_type_tag;     /* Some CMM may want this */
-    bool use_cm;                                  /* use color management (used only with sourcetag) */
+    gsicc_cmm_t cmm;                              /* which cmm? (used only with sourcetag) */
     bool override_icc;                            /* Override source ICC (used only with sourcetag) */
 } gsicc_rendering_param_t;
 

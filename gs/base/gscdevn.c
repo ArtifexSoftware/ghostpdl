@@ -433,7 +433,7 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
             rendering_params.override_icc = false;
             rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
             rendering_params.rendering_intent = pis->renderingintent;
-            rendering_params.use_cm = true;
+            rendering_params.cmm = gsCMM_DEFAULT;
 
             /* Allocate and initialize name structure */
             named_color = 

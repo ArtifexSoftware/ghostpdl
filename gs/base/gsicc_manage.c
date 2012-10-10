@@ -505,7 +505,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
     cmm_profile_t *icc_profile;
     cmm_srcgtag_profile_t *srcgtag;
     bool start = true;
-    bool use_cm = true;
+    gsicc_cmm_t cmm = gsCMM_DEFAULT;
 
     /* If we don't have an icc manager or if this thing is already set
        then ignore the call.  For now, I am going to allow it to
@@ -553,8 +553,8 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
            source type.  Else if we have no profile and don't want color
            management we will make sure to do that */
         for (k = 0; k < NUM_SOURCE_PROFILES; k++) {
-            srcgtag->rgb_rend_cond[k].use_cm = true;
-            srcgtag->cmyk_rend_cond[k].use_cm = true;
+            srcgtag->rgb_rend_cond[k].cmm = gsCMM_DEFAULT;
+            srcgtag->cmyk_rend_cond[k].cmm = gsCMM_DEFAULT;
         }
         while (start || strlen(curr_ptr) > 0) {
             if (start) {
@@ -568,11 +568,18 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
             for (k = 0; k < GSICC_NUM_SRCGTAG_KEYS; k++) {
                 if (strncmp(curr_ptr, srcgtag_keys[k], strlen(srcgtag_keys[k])) == 0 ) {
                     /* Check if the curr_ptr is None which indicates that this
-                       object is not to be color managed. */
+                       object is not to be color managed.  Also, if the 
+                       curr_ptr is Replace which indicates we will be doing
+                       direct replacement of the colors.  */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     if (strncmp(curr_ptr, GSICC_SRCTAG_NOCM, strlen(GSICC_SRCTAG_NOCM)) == 0 &&
                         strlen(curr_ptr) == strlen(GSICC_SRCTAG_NOCM)) {
-                        use_cm = false;
+                        cmm = gsCMM_NONE;
+                        icc_profile = NULL;
+                        break;
+                    } else if ((strncmp(curr_ptr, GSICC_SRCTAG_REPLACE, strlen(GSICC_SRCTAG_REPLACE)) == 0 &&
+                        strlen(curr_ptr) == strlen(GSICC_SRCTAG_REPLACE))) { 
+                        cmm = gsCMM_REPLACE;
                         icc_profile = NULL;
                         break;
                     } else {
@@ -585,7 +592,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                                 gsicc_profile_new(str, mem, curr_ptr, strlen(curr_ptr));
                             code = sfclose(str);
                             gsicc_init_profile_info(icc_profile);
-                            use_cm = true;
+                            cmm = gsCMM_DEFAULT;
                             /* Check if this object is a devicelink profile. 
                                If it is then the intent, blackpoint etc. are not
                                read nor used when dealing with these profiles */
@@ -610,43 +617,43 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                     break;
                 case GRAPHIC_CMYK:
                     srcgtag->cmyk_profiles[gsSRC_GRAPPRO] = icc_profile;
-                    srcgtag->cmyk_rend_cond[gsSRC_GRAPPRO].use_cm = use_cm;
-                    if (use_cm) {
+                    srcgtag->cmyk_rend_cond[gsSRC_GRAPPRO].cmm = cmm;
+                    if (cmm == gsCMM_DEFAULT) {
                         gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_GRAPPRO]), true);
                     }
                     break;
                 case IMAGE_CMYK:
                     srcgtag->cmyk_profiles[gsSRC_IMAGPRO] = icc_profile;
-                    srcgtag->cmyk_rend_cond[gsSRC_IMAGPRO].use_cm = use_cm;
-                    if (use_cm) {
+                    srcgtag->cmyk_rend_cond[gsSRC_IMAGPRO].cmm = cmm;
+                    if (cmm == gsCMM_DEFAULT) {
                         gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_IMAGPRO]), true);
                     }
                     break;
                 case TEXT_CMYK:
                     srcgtag->cmyk_profiles[gsSRC_TEXTPRO] = icc_profile;
-                    srcgtag->cmyk_rend_cond[gsSRC_TEXTPRO].use_cm = use_cm;
-                    if (use_cm) {
+                    srcgtag->cmyk_rend_cond[gsSRC_TEXTPRO].cmm = cmm;
+                    if (cmm == gsCMM_DEFAULT) {
                         gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_TEXTPRO]), true);
                     }
                     break;
                 case GRAPHIC_RGB:
                     srcgtag->rgb_profiles[gsSRC_GRAPPRO] = icc_profile;
-                    srcgtag->rgb_rend_cond[gsSRC_GRAPPRO].use_cm = use_cm;
-                    if (use_cm) {
+                    srcgtag->rgb_rend_cond[gsSRC_GRAPPRO].cmm = cmm;
+                    if (cmm == gsCMM_DEFAULT) {
                         gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_GRAPPRO]), false);
                     }
                    break;
                 case IMAGE_RGB:
                     srcgtag->rgb_profiles[gsSRC_IMAGPRO] = icc_profile;
-                    srcgtag->rgb_rend_cond[gsSRC_IMAGPRO].use_cm = use_cm;
-                    if (use_cm) {
+                    srcgtag->rgb_rend_cond[gsSRC_IMAGPRO].cmm = cmm;
+                    if (cmm == gsCMM_DEFAULT) {
                         gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_IMAGPRO]), false);
                     }
                     break;
                 case TEXT_RGB:
                     srcgtag->rgb_profiles[gsSRC_TEXTPRO] = icc_profile;
-                    srcgtag->rgb_rend_cond[gsSRC_TEXTPRO].use_cm = use_cm;
-                    if (use_cm) {
+                    srcgtag->rgb_rend_cond[gsSRC_TEXTPRO].cmm = cmm;
+                    if (cmm == gsCMM_DEFAULT) {
                         gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_TEXTPRO]), false);
                     }
                     break;
@@ -1056,12 +1063,12 @@ gsicc_new_srcgtag_profile(gs_memory_t *memory)
         result->rgb_rend_cond[k].rendering_intent = gsRINOTSPECIFIED;
         result->rgb_rend_cond[k].override_icc = false;
         result->rgb_rend_cond[k].preserve_black = gsBKPRESNOTSPECIFIED;
-        result->rgb_rend_cond[k].use_cm = true;
+        result->rgb_rend_cond[k].cmm = gsCMM_DEFAULT;
         result->cmyk_rend_cond[k].black_point_comp = gsBPNOTSPECIFIED;
         result->cmyk_rend_cond[k].rendering_intent = gsRINOTSPECIFIED;
         result->cmyk_rend_cond[k].override_icc = false;
         result->cmyk_rend_cond[k].preserve_black = gsBKPRESNOTSPECIFIED;
-        result->cmyk_rend_cond[k].use_cm = true;
+        result->cmyk_rend_cond[k].cmm = gsCMM_DEFAULT;
     }
     result->color_warp_profile = NULL;
     result->name = NULL;
@@ -1155,7 +1162,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
         result->rendercond[k].override_icc = false;
         result->rendercond[k].preserve_black = gsBLACKPRESERVE_OFF;
         result->rendercond[k].graphics_type_tag = GS_UNKNOWN_TAG;
-        result->rendercond[k].use_cm = true;
+        result->rendercond[k].cmm = gsCMM_DEFAULT;
     }
     result->proof_profile = NULL;
     result->link_profile = NULL;

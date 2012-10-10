@@ -2703,7 +2703,8 @@ $(GLOBJ)gxctable.$(OBJ) : $(GLSRC)gxctable.c $(AK) $(gx_h)\
 
 gsicc_=$(GLOBJ)gsicc_manage.$(OBJ) $(GLOBJ)gsicc_cache.$(OBJ)\
  $(GLOBJ)gsicc_$(WHICH_CMS).$(OBJ) $(GLOBJ)gsicc_profilecache.$(OBJ)\
- $(GLOBJ)gsicc_create.$(OBJ)  $(GLOBJ)gsicc_nocm.$(OBJ)
+ $(GLOBJ)gsicc_create.$(OBJ)  $(GLOBJ)gsicc_nocm.$(OBJ)\
+ $(GLOBJ)gsicc_replacecm.$(OBJ)
 
 sicclib_=$(GLOBJ)gsicc.$(OBJ)
 $(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(gsicc_)\
@@ -2730,6 +2731,12 @@ $(GLOBJ)gsicc_nocm.$(OBJ) : $(GLSRC)gsicc_nocm.c $(AK) $(std_h) $(gx_h)\
  $(string__h) $(gxistate_h) $(gxcspace_h) $(gsicc_cms_h)\
  $(gsicc_cache_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsicc_nocm.$(OBJ) $(C_) $(GLSRC)gsicc_nocm.c
+
+$(GLOBJ)gsicc_replacecm.$(OBJ) : $(GLSRC)gsicc_replacecm.c $(AK) $(std_h) $(gx_h)\
+ $(stdpre_h) $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(strmio_h)\
+ $(string__h) $(gxistate_h) $(gxcspace_h) $(gsicc_cms_h)\
+ $(gsicc_cache_h) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gsicc_replacecm.$(OBJ) $(C_) $(GLSRC)gsicc_replacecm.c
 
 $(GLOBJ)gsicc_manage.$(OBJ) : $(GLSRC)gsicc_manage.c $(AK) $(gx_h)\
  $(stdpre_h) $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(strmio_h)\

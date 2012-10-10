@@ -55,6 +55,7 @@ typedef enum {
 } gsicc_srcgtagkey_t;
 
 #define GSICC_SRCTAG_NOCM "None"
+#define GSICC_SRCTAG_REPLACE "Replace"
 
 #define GSICC_SRCGTAG_KEYS\
   "ColorTune", "Graphic_CMYK", "Image_CMYK", "Text_CMYK",\

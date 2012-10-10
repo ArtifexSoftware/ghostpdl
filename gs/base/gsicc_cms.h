@@ -34,6 +34,8 @@
 
 /* Prototypes */
 
+gsicc_link_t* gsicc_rcm_get_link(const gs_imager_state *pis, gx_device *dev, 
+                                 gsicc_colorbuffer_t data_cs);
 gsicc_link_t* gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev, 
                                   gs_color_space_index src_index);
 gcmmhprofile_t gscms_get_profile_handle_mem(gs_memory_t *mem,
