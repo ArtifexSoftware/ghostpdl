@@ -139,6 +139,7 @@ int outprintf(const gs_memory_t *mem, const char *fmt, ...)
     return count;
 }
 
+#ifndef GS_THREADSAFE
 int errprintf_nomem(const char *fmt, ...)
 {
     int count;
@@ -156,6 +157,7 @@ int errprintf_nomem(const char *fmt, ...)
     va_end(args);
     return count;
 }
+#endif
 
 int errprintf(const gs_memory_t *mem, const char *fmt, ...)
 {
@@ -176,6 +178,7 @@ int errprintf(const gs_memory_t *mem, const char *fmt, ...)
 }
 
 
+#ifndef GS_THREADSAFE
 #if __LINE__                    /* compiler provides it */
 void
 lprintf_file_and_line(const char *file, int line)
@@ -209,6 +212,7 @@ lprintf_file_only(FILE * f, const char *file)
 {
     epf("%s(?): ", file);
 }
+#endif
 
 void
 emprintf_program_ident(const gs_memory_t *mem,

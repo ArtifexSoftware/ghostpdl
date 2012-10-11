@@ -261,7 +261,7 @@ cmd_write_buffer(gx_device_clist_writer * cldev, byte cmd_end)
         pcls->list.head = pcls->list.tail = 0;
     cldev->cnext = cldev->cbuf;
     cldev->ccl = 0;
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
     if (gs_debug_c('l'))
         cmd_print_stats(cldev->memory);
 #endif
