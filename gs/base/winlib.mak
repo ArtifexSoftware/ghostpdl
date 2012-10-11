@@ -151,6 +151,7 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\lcupsi.mak
 !include $(GLSRCDIR)\devs.mak
 !include $(GLSRCDIR)\contrib.mak
+!include $(CONTRIBDIR)\contrib.mak
 
 # Define the compilation rule for Windows devices.
 # This requires GL*_ to be defined, so it has to come after lib.mak.

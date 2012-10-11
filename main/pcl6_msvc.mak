@@ -103,6 +103,9 @@ PXLSRCDIR=..\pxl
 !ifndef COMMONDIR
 COMMONDIR=..\common
 !endif
+!ifndef CONTRIBDIR
+CONTRIBDIR=..\gs\contrib
+!endif
 
 # Specify the location of zlib.  We use zlib for bandlist compression.
 !ifndef ZSRCDIR
