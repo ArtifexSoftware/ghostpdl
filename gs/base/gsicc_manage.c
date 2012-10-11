@@ -54,9 +54,6 @@ static void gsicc_set_default_cs_value(cmm_profile_t *picc_profile,
                                        gs_imager_state *pis);
 static gsicc_namelist_t* gsicc_new_namelist(gs_memory_t *memory);
 static gsicc_colorname_t* gsicc_new_colorname(gs_memory_t *memory);
-static void gsicc_copy_colorname( const char *cmm_name,
-                                 gsicc_colorname_t *colorname,
-                                 gs_memory_t *memory );
 static gsicc_namelist_t* gsicc_get_spotnames(gcmmhprofile_t profile,
                                              gs_memory_t *memory);
 static void rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in,
@@ -73,6 +70,7 @@ static int64_t gsicc_search_icc_table(clist_icctable_t *icc_table,
 static int gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s,
                           gs_memory_t *memory);
 static cmm_srcgtag_profile_t* gsicc_new_srcgtag_profile(gs_memory_t *memory);
+static void gsicc_free_spotnames(gsicc_namelist_t *spotnames, gs_memory_t * mem);
 
 /* profile data structure */
 /* profile_handle should NOT be garbage collected since it is allocated by the external CMS */
@@ -342,16 +340,29 @@ gsicc_get_spotnames(gcmmhprofile_t profile, gs_memory_t *memory)
     if (list == NULL)
         return(NULL);
     curr_entry = &(list->head);
-    for (k = 0; k < num_colors; k++) {
-       /* Allocate a new name object */
-        name = gsicc_new_colorname(memory);
-        *curr_entry = name;
-        /* Get the name */
-        clr_name = gscms_get_clrtname(profile, k);
-        gsicc_copy_colorname(clr_name, *curr_entry, memory);
-        curr_entry = &((*curr_entry)->next);
-    }
     list->count = num_colors;
+    for (k = 0; k < num_colors; k++) {
+        /* Allocate a new name object */
+        clr_name = gscms_get_clrtname(profile, k, memory);
+        if (clr_name == NULL)
+            break;
+        name = gsicc_new_colorname(memory);
+        if (name == NULL) {
+            /* FIXME: Free clr_name */
+            gs_free_object(memory, clr_name, "gsicc_get_spotnames");
+            break;
+        }
+        /* Get the name */
+        name->name = clr_name;
+        name->length = strlen(clr_name);
+        *curr_entry = name;
+        curr_entry = &(name->next);
+    }
+    if (k < num_colors) {
+        /* Failed allocation */
+        gsicc_free_spotnames(list, memory);
+        return NULL;
+    }
     return(list);
 }
 
@@ -384,6 +395,8 @@ gsicc_new_namelist(gs_memory_t *memory)
 
     result = (gsicc_namelist_t *) gs_alloc_bytes(memory->non_gc_memory, sizeof(gsicc_namelist_t),
                                                  "gsicc_new_namelist");
+    if (result == NULL)
+        return NULL;
     result->count = 0;
     result->head = NULL;
     result->name_str = NULL;
@@ -399,24 +412,12 @@ gsicc_new_colorname(gs_memory_t *memory)
 
     result = gs_alloc_struct(memory,gsicc_colorname_t,
                 &st_gsicc_colorname, "gsicc_new_colorname");
+    if (result == NULL)
+        return NULL;
     result->length = 0;
     result->name = NULL;
     result->next = NULL;
     return(result);
-}
-
-/* Copy the name from the CMM dependent stucture to ours */
-void
-gsicc_copy_colorname(const char *cmm_name, gsicc_colorname_t *colorname,
-                     gs_memory_t *memory )
-{
-    int length;
-
-    length = strlen(cmm_name);
-    colorname->name = (char*) gs_alloc_bytes(memory, length,
-                                        "gsicc_copy_colorname");
-    strcpy(colorname->name, cmm_name);
-    colorname->length = length;
 }
 
 /* If the profile is one of the default types that were set in the iccmanager,
@@ -2420,7 +2421,7 @@ gs_seticcdirectory(const gs_state * pgs, gs_param_string * pval)
     /* Check if it was "NULL" */
     if (pval->size != 0 ) {
         pname = (char *)gs_alloc_bytes((gs_memory_t *)mem, namelen,
-		   		     "set_icc_directory");
+                                       "set_icc_directory");
         if (pname == NULL)
             return gs_rethrow(-1, "cannot allocate directory name");
         memcpy(pname,pval->data,namelen-1);

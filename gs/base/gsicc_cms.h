@@ -50,7 +50,7 @@ void gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                                   void *outputbuffer);
 int gscms_get_channel_count(gcmmhprofile_t profile);
 int gscms_get_pcs_channel_count(gcmmhprofile_t profile);
-char* gscms_get_clrtname(gcmmhprofile_t profile, int colorcount);
+char* gscms_get_clrtname(gcmmhprofile_t profile, int colorcount, gs_memory_t *memory);
 int gscms_get_numberclrtnames(gcmmhprofile_t profile);
 bool gscms_is_device_link(gcmmhprofile_t profile);
 gsicc_colorbuffer_t gscms_get_profile_data_space(gcmmhprofile_t profile);

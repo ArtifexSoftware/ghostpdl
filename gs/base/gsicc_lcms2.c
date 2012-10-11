@@ -134,12 +134,12 @@ gscms_get_numberclrtnames(gcmmhprofile_t profile)
 
 /* Get the nth colorant name in the clrt tag */
 char*
-gscms_get_clrtname(gcmmhprofile_t profile, int colorcount)
+gscms_get_clrtname(gcmmhprofile_t profile, int colorcount, gs_memory_t *memory)
 {
     cmsNAMEDCOLORLIST *lcms_names;
-    /* FIXME: RJW: Need to avoid using a global here, but not possible with
-     * the current interface. Talk to mvrhel. */
-    static char name[256];
+    char name[256];
+    char *buf;
+    int length;
 
     lcms_names = (cmsNAMEDCOLORLIST *)cmsReadTag(profile,
                                                  cmsSigColorantTableTag);
@@ -152,7 +152,11 @@ gscms_get_clrtname(gcmmhprofile_t profile, int colorcount)
                           NULL,
                           NULL) == 0)
         return NULL;
-    return &name[0];
+    length = strlen(name);
+    buf = (char*) gs_alloc_bytes(memory, length, "gscms_get_clrtname");
+    if (buf)
+        strcpy(buf, name);
+    return buf;
 }
 
 /* Check if the profile is a device link type */

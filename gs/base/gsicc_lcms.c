@@ -71,13 +71,19 @@ gscms_get_numberclrtnames(gcmmhprofile_t profile)
 
 /* Get the nth colorant name in the clrt tag */
 char*
-gscms_get_clrtname(gcmmhprofile_t profile, int colorcount)
+gscms_get_clrtname(gcmmhprofile_t profile, int colorcount, gs_memory_t *memory)
 {
     LPcmsNAMEDCOLORLIST lcms_names;
+    int length;
+    char *name;
 
     lcms_names = cmsReadColorantTable(profile, icSigColorantTableTag);
     if (colorcount+1 > lcms_names->nColors) return(NULL);
-    return(lcms_names->List[colorcount].Name);
+    length = strlen(lcms_names->List[colorcount].Name);
+    name = (char*) gs_alloc_bytes(memory, length, "gscms_get_clrtname");
+    if (name)
+        strcpy(name, lcms_names->List[colorcount].Name);
+    return name;
 }
 
 /* Get the device space associated with this profile */
