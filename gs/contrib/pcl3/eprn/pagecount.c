@@ -11,6 +11,11 @@
 *									      *
 ******************************************************************************/
 
+/* This file should be ignored under windows */
+#ifdef _MSC_VER
+int dummy;
+#else
+
 /* Configuration management identification */
 #ifndef lint
 static const char
@@ -293,3 +298,5 @@ int main(int argc, char **argv)
 }
 
 #endif	/* TEST */
+
+#endif /* _MSC_VER */

@@ -24,7 +24,8 @@
 
     EPRN_NO_PAGECOUNTFILE
         Define this if you do not want to use eprn's pagecount-file feature.
-        You very likely must define this on Microsoft Windows.
+        You very likely must define this on Microsoft Windows. This is
+        automatically defined under Visual Studio builds.
 
     EPRN_TRACE
         Define this to enable tracing. Only useful for development.

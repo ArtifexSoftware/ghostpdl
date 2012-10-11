@@ -14,6 +14,10 @@
 #ifndef _pagecount_h	/* Inclusion protection */
 #define _pagecount_h
 
+#ifdef _MSC_VER
+#define EPRN_NO_PAGECOUNTFILE
+#else
+
 /* Configuration management identification */
 #pragma ident "@(#)$Id: pagecount.h,v 1.3 2000/11/19 07:05:17 Martin Rel $"
 
@@ -31,5 +35,7 @@ extern int pcf_getcount(const char *filename, unsigned long *count);
 extern int pcf_inccount(const char *filename, unsigned long by);
 
 /*****************************************************************************/
+
+#endif
 
 #endif	/* Inclusion protection */
