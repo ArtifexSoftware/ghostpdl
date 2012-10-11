@@ -891,7 +891,7 @@ $(DD)pr1000.dev : $(pr201_)
 $(DD)pr1000_4.dev : $(pr201_)
 	$(SETPDEV) $(DD)pr1000_4 $(pr201_)
 
-$(GLO_)gdevp201.$(OBJ) : $(JAPSRC)gdevp201.c $(PDEVH)
+$(GLOBJ)gdevp201.$(OBJ) : $(JAPSRC)gdevp201.c $(PDEVH)
 	$(GLCC) $(GLO_)gdevp201.$(OBJ) $(C_) $(JAPSRC)gdevp201.c
 
 ### ----------------- The Star JJ-100 printer device ----------------- ###
