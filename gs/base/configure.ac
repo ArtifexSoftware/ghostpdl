@@ -36,7 +36,6 @@ dnl defined at the top of the file for ease of access
 dnl --------------------------------------------------
 
 NTS_DEVS='opvp oprp'
-NTS_DEVS="$NTS_DEVS stcolor"
 NTS_DEVS="$NTS_DEVS uniprint"
 NTS_DEVS="$NTS_DEVS x11 x11alpha"
 NTS_DEVS="$NTS_DEVS pcl3 hpdjplus hpdjportable hpdj310 hpdj320 hpdj340 hpdj400 hpdj500 hpdj500c hpdj510 hpdj520 hpdj540 hpdj550c hpdj560c hpdj600 hpdj660c hpdj670c hpdj680c hpdj690c hpdj850c hpdj855c hpdj870c hpdj890c hpdj1120c"

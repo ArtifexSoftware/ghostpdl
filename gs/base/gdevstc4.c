@@ -151,7 +151,6 @@ stc_fs2(stcolor_device *sd,int npixel,byte *in,byte *buf,byte *out)
 /*    ------------------------------------------------------------------- */
     int i, j, k, e, l, i2, below[3][3], *fb, *b, *bb, *tb;
     byte *p, *q, *cp;
-    static int dir = 1;
 
     p = buf;
     if (*p != 0 || memcmp((char *) p, (char *) p + 1, fullcolor_line_size - 1))
@@ -172,7 +171,7 @@ stc_fs2(stcolor_device *sd,int npixel,byte *in,byte *buf,byte *out)
         bb = below[0];
         *b = b[1] = b[2] = *bb = bb[1] = bb[2] = 0;
 
-        if (dir)
+        if (sd->stc.dir)
         {
             for(p = in, q=buf-3,
                 i=fullcolor_line_size; i; i-=3)
@@ -211,7 +210,7 @@ stc_fs2(stcolor_device *sd,int npixel,byte *in,byte *buf,byte *out)
             *q = *bb;
             q[1] = bb[1];
             q[2] = bb[2];
-            dir = 0;
+            sd->stc.dir = 0;
         }
         else
         {
@@ -253,7 +252,7 @@ stc_fs2(stcolor_device *sd,int npixel,byte *in,byte *buf,byte *out)
             *q = *bb;
             q[1] = bb[1];
             q[2] = bb[2];
-            dir = 1;
+            sd->stc.dir = 1;
         }
 
     escp2c_conv_stc(in, out, fullcolor_line_size);

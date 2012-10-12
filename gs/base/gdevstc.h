@@ -89,6 +89,8 @@ typedef struct stc_s {
    byte           *escp_data;  /* Buffer for ESC/P2-Data */
    byte           *seed_row[4];/* Buffer for delta-row compression (prt_size) */
 
+   int             dir;
+
 } stc_t;
 
 /*** Main-Device Structure ***/

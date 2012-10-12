@@ -1773,6 +1773,7 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
         }           /* new || shared one */
      }                                                         /* vals req. */
   }                                                    /* comp */
+  sd->stc.dir = 1;
 
   if(code == 0) {
       gx_color_value cv[4];
