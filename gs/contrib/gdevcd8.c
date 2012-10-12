@@ -1286,7 +1286,7 @@ cdj850_print_page(gx_device_printer * pdev, FILE * prn_stream)
        2bpp feature of the hp850 someday, it is sized like storage.
        storagee contains the errors from b/w fs-ditherng */
 
-    data_ptrs.storage = (ulong *) gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), misc_vars.storage_size_words, W,
+    data_ptrs.storage = (ulong *) gs_malloc(pdev->memory->non_gc_memory, misc_vars.storage_size_words, W,
                                             "cdj850_print_page");
 
     /* if we can't allocate working area */
@@ -1307,7 +1307,7 @@ cdj850_print_page(gx_device_printer * pdev, FILE * prn_stream)
     (*cdj850->terminate_page) (pdev, prn_stream);
 
     /* Free Memory */
-    gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)data_ptrs.storage, misc_vars.storage_size_words, W,
+    gs_free(pdev->memory->non_gc_memory, (char *)data_ptrs.storage, misc_vars.storage_size_words, W,
             "hp850_print_page");
 
     return 0;

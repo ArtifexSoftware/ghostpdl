@@ -472,14 +472,14 @@ gdev_dmprt_put_dviprt_params(gx_device *pdev, gs_param_list *plist)
   code = param_read_string(plist, "FileName", &vstr);
   if (code < 0) return code;
   if (code == 0) {
-    char *filename = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), vstr.size + 1, 1,
+    char *filename = gs_malloc(pdev->memory->non_gc_memory, vstr.size + 1, 1,
                                "gdev_dmprt_put_props(filename)");
     int ccode;
     if (filename == 0) return e_VMerror;
     strncpy(filename, (const char*)vstr.data, vstr.size);
     filename[vstr.size] = '\0';
     ccode = gdev_dmprt_get_printer_props(pddev,filename);
-    gs_free(gs_lib_ctx_get_non_gc_memory_t(), filename, vstr.size+1, 1, "gdev_dmprt_put_props(filename)");
+    gs_free(pdev->memory->non_gc_memory, filename, vstr.size+1, 1, "gdev_dmprt_put_props(filename)");
     if (ccode < 0) return ccode;
   }
 
@@ -802,7 +802,7 @@ gdev_dmprt_get_printer_props(gx_device_dmprt *pdev,char *fnamebase)
   dviprt_cfg_t cfg;
   char *fname;
 
-  fname = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), 256,1,"dviprt_lib_fname");
+  fname = gs_malloc(pdev->memory->non_gc_memory, 256,1,"dviprt_lib_fname");
   if (fname == NULL) return e_VMerror;
 
   fp = gdev_dmprt_dviprt_lib_fopen(fnamebase,fname);
@@ -833,7 +833,7 @@ gdev_dmprt_get_printer_props(gx_device_dmprt *pdev,char *fnamebase)
       cfg.integer[CFG_Y_DPI] > 0 ? cfg.integer[CFG_Y_DPI] : pddev->dmprt.orig_x_dpi;
   }
 
-  gs_free(gs_lib_ctx_get_non_gc_memory_t(), fname,256,1,"dviprt_lib_fname");
+  gs_free(pdev->memory->non_gc_memory, fname,256,1,"dviprt_lib_fname");
 
   return code;
 }

@@ -219,13 +219,13 @@ lprn_print_image(gx_device_printer * pdev, FILE * fp)
     maxBy = (pdev->height + lprn->nBh - 1) / lprn->nBh;
     maxY = lprn->BlockLine / lprn->nBh * lprn->nBh;
 
-    if (!(lprn->ImageBuf = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), bpl, maxY, "lprn_print_image(ImageBuf)")))
+    if (!(lprn->ImageBuf = gs_malloc(pdev->memory->non_gc_memory, bpl, maxY, "lprn_print_image(ImageBuf)")))
         return_error(gs_error_VMerror);
-    if (!(lprn->TmpBuf = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), bpl, maxY, "lprn_print_iamge(TmpBuf)")))
+    if (!(lprn->TmpBuf = gs_malloc(pdev->memory->non_gc_memory, bpl, maxY, "lprn_print_iamge(TmpBuf)")))
         return_error(gs_error_VMerror);
-    if (!(lprn->bubbleTbl = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), sizeof(Bubble *), maxBx, "lprn_print_image(bubbleTbl)")))
+    if (!(lprn->bubbleTbl = gs_malloc(pdev->memory->non_gc_memory, sizeof(Bubble *), maxBx, "lprn_print_image(bubbleTbl)")))
         return_error(gs_error_VMerror);
-    if (!(bubbleBuffer = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), sizeof(Bubble), maxBx, "lprn_print_image(bubbleBuffer)")))
+    if (!(bubbleBuffer = gs_malloc(pdev->memory->non_gc_memory, sizeof(Bubble), maxBx, "lprn_print_image(bubbleBuffer)")))
         return_error(gs_error_VMerror);
 
     for (i = 0; i < maxBx; i++)
@@ -261,10 +261,10 @@ lprn_print_image(gx_device_printer * pdev, FILE * fp)
     }
     lprn_bubble_flush_all(pdev, fp);	/* flush the rest of bubble */
 
-    gs_free(gs_lib_ctx_get_non_gc_memory_t(), lprn->ImageBuf, bpl, maxY, "lprn_print_image(ImageBuf)");
-    gs_free(gs_lib_ctx_get_non_gc_memory_t(), lprn->TmpBuf, bpl, maxY, "lprn_print_iamge(TmpBuf)");
-    gs_free(gs_lib_ctx_get_non_gc_memory_t(), lprn->bubbleTbl, sizeof(Bubble *), maxBx, "lprn_print_image(bubbleTbl)");
-    gs_free(gs_lib_ctx_get_non_gc_memory_t(), bubbleBuffer, sizeof(Bubble), maxBx, "lprn_print_image(bubbleBuffer)");
+    gs_free(pdev->memory->non_gc_memory, lprn->ImageBuf, bpl, maxY, "lprn_print_image(ImageBuf)");
+    gs_free(pdev->memory->non_gc_memory, lprn->TmpBuf, bpl, maxY, "lprn_print_iamge(TmpBuf)");
+    gs_free(pdev->memory->non_gc_memory, lprn->bubbleTbl, sizeof(Bubble *), maxBx, "lprn_print_image(bubbleTbl)");
+    gs_free(pdev->memory->non_gc_memory, bubbleBuffer, sizeof(Bubble), maxBx, "lprn_print_image(bubbleBuffer)");
 
     return code;
 }

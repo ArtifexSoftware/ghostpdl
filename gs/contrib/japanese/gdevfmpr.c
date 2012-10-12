@@ -117,9 +117,9 @@ fmpr_print_page(gx_device_printer *pdev, FILE *prn_stream)
   char prn_buf[16];
 
   in = (byte *)
-    gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), bits_per_column, line_size, "fmpr_print_page(in)");
+    gs_malloc(pdev->memory->non_gc_memory, bits_per_column, line_size, "fmpr_print_page(in)");
   out = (byte *)
-    gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), bits_per_column, line_size, "fmpr_print_page(out)");
+    gs_malloc(pdev->memory->non_gc_memory, bits_per_column, line_size, "fmpr_print_page(out)");
   if(in == 0 || out == 0)
     return -1;
 
@@ -201,9 +201,9 @@ fmpr_print_page(gx_device_printer *pdev, FILE *prn_stream)
   prn_putc(pdev, '\f');
   prn_flush(pdev);
 
-  gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)out,
+  gs_free(pdev->memory->non_gc_memory, (char *)out,
           bits_per_column, line_size, "fmpr_print_page(out)");
-  gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)in,
+  gs_free(pdev->memory->non_gc_memory, (char *)in,
           bits_per_column, line_size, "fmpr_print_page(in)");
 
   return 0;

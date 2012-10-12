@@ -489,7 +489,7 @@ alps_print_page(gx_device_printer *pdev, FILE *prn_stream,
     int i, j;
 
     /* allocate memory */
-    work = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), 3+sizeof(int), line_size,
+    work = (byte *)gs_malloc(pdev->memory->non_gc_memory, 3+sizeof(int), line_size,
                              "alps_print_page(work)");
     if (work == 0)
         return_error(gs_error_VMerror);
@@ -591,7 +591,7 @@ alps_print_page(gx_device_printer *pdev, FILE *prn_stream,
            "\033\052\162\103"
            "\033\045\0\130", 1, 9, prn_stream);
 
-    gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)work, 3+sizeof(int), line_size, "alps_print_page(work)");
+    gs_free(pdev->memory->non_gc_memory, (char *)work, 3+sizeof(int), line_size, "alps_print_page(work)");
     return 0;
 }
 

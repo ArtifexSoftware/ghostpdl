@@ -876,7 +876,7 @@ void eprn_init_device(eprn_Device *dev, const eprn_PrinterDescription *desc)
       &hres, &vres, &eprn->black_levels, &eprn->non_black_levels);
 
   if (eprn->pagecount_file != NULL) {
-    gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->pagecount_file, strlen(eprn->pagecount_file) + 1,
+    gs_free(dev->memory->non_gc_memory, eprn->pagecount_file, strlen(eprn->pagecount_file) + 1,
       sizeof(char), "eprn_init_device");
     eprn->pagecount_file = NULL;
   }
@@ -1025,7 +1025,7 @@ int eprn_open_device(gx_device *device)
       /* pcf_getcount() has issued an error message. */
       eprintf(
         "  No further attempts will be made to access the page count file.\n");
-      gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->pagecount_file, strlen(eprn->pagecount_file) + 1,
+      gs_free(device->memory->non_gc_memory, eprn->pagecount_file, strlen(eprn->pagecount_file) + 1,
         sizeof(char), "eprn_open_device");
       eprn->pagecount_file = NULL;
     }
@@ -1038,23 +1038,23 @@ int eprn_open_device(gx_device *device)
   /* Just in case a previous open call failed in a derived device (note that
      'octets_per_line' is still the same as then): */
   if (eprn->scan_line.str != NULL)
-    gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->scan_line.str, eprn->octets_per_line, sizeof(eprn_Octet),
+    gs_free(device->memory->non_gc_memory, eprn->scan_line.str, eprn->octets_per_line, sizeof(eprn_Octet),
       "eprn_open_device");
   if (eprn->next_scan_line.str != NULL) {
-    gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->next_scan_line.str, eprn->octets_per_line, sizeof(eprn_Octet),
+    gs_free(device->memory->non_gc_memory, eprn->next_scan_line.str, eprn->octets_per_line, sizeof(eprn_Octet),
       "eprn_open_device");
     eprn->next_scan_line.str = NULL;
   }
 
   /* Calls which might depend on prn having been initialized */
   eprn->octets_per_line = gdev_prn_raster((gx_device_printer *)device);
-  eprn->scan_line.str = (eprn_Octet *) gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), eprn->octets_per_line,
+  eprn->scan_line.str = (eprn_Octet *) gs_malloc(device->memory->non_gc_memory, eprn->octets_per_line,
     sizeof(eprn_Octet), "eprn_open_device");
   if (eprn->intensity_rendering == eprn_IR_FloydSteinberg) {
-    eprn->next_scan_line.str = (eprn_Octet *) gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), eprn->octets_per_line,
+    eprn->next_scan_line.str = (eprn_Octet *) gs_malloc(device->memory->non_gc_memory, eprn->octets_per_line,
       sizeof(eprn_Octet), "eprn_open_device");
     if (eprn->next_scan_line.str == NULL && eprn->scan_line.str != NULL) {
-      gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->scan_line.str, eprn->octets_per_line, sizeof(eprn_Octet),
+      gs_free(device->memory->non_gc_memory, eprn->scan_line.str, eprn->octets_per_line, sizeof(eprn_Octet),
         "eprn_open_device");
       eprn->scan_line.str = NULL;
     }
@@ -1084,12 +1084,12 @@ int eprn_close_device(gx_device *device)
 #endif
 
   if (eprn->scan_line.str != NULL) {
-    gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->scan_line.str, eprn->octets_per_line, sizeof(eprn_Octet),
+    gs_free(device->memory->non_gc_memory, eprn->scan_line.str, eprn->octets_per_line, sizeof(eprn_Octet),
       "eprn_close_device");
     eprn->scan_line.str = NULL;
   }
   if (eprn->next_scan_line.str != NULL) {
-    gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->next_scan_line.str, eprn->octets_per_line, sizeof(eprn_Octet),
+    gs_free(device->memory->non_gc_memory, eprn->next_scan_line.str, eprn->octets_per_line, sizeof(eprn_Octet),
       "eprn_close_device");
     eprn->next_scan_line.str = NULL;
   }
@@ -1107,13 +1107,13 @@ int eprn_close_device(gx_device *device)
 
 ******************************************************************************/
 
-static void eprn_forget_defaultmatrix(void)
+static void eprn_forget_defaultmatrix(gs_memory_t *memory)
 {
 #if EPRN_USE_GSTATE
   /* Old ghostscript versions */
   gs_setdefaultmatrix(igs, NULL);
 #else
-  gs_setdefaultmatrix(get_minst_from_memory(gs_lib_ctx_get_non_gc_memory_t())->i_ctx_p->pgs, NULL);
+  gs_setdefaultmatrix(get_minst_from_memory(memory)->i_ctx_p->pgs, NULL);
 #endif
 
   return;
@@ -1168,7 +1168,7 @@ int eprn_output_page(gx_device *dev, int num_copies, int flush)
       /* pcf_inccount() has issued an error message. */
       eprintf(
         "  No further attempts will be made to access the page count file.\n");
-      gs_free(gs_lib_ctx_get_non_gc_memory_t(), eprn->pagecount_file, strlen(eprn->pagecount_file) + 1,
+      gs_free(dev->memory->non_gc_memory, eprn->pagecount_file, strlen(eprn->pagecount_file) + 1,
         sizeof(char), "eprn_output_page");
       eprn->pagecount_file = NULL;
     }
@@ -1177,7 +1177,7 @@ int eprn_output_page(gx_device *dev, int num_copies, int flush)
 
   /* If soft tumble has been demanded, ensure the get_initial_matrix procedure
      is consulted for the next page */
-  if (eprn->soft_tumble) eprn_forget_defaultmatrix();
+  if (eprn->soft_tumble) eprn_forget_defaultmatrix(dev->memory->non_gc_memory);
 
 #ifdef EPRN_TRACE
   if_debug1(EPRN_TRACE_CHAR, "! eprn_output_page() terminates after %f s.\n",

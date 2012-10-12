@@ -712,7 +712,7 @@ static int fetch_octets(const char *epref,
 
   if ((rc = param_read_null(plist, pname)) == 0) {
     if (s->length != 0)
-      gs_free(gs_lib_ctx_get_non_gc_memory_t(), s->str, s->length, sizeof(pcl_Octet), "fetch_octets");
+      gs_free(plist->memory->non_gc_memory, s->str, s->length, sizeof(pcl_Octet), "fetch_octets");
     s->str = NULL;
     s->length = 0;
   }
@@ -720,10 +720,10 @@ static int fetch_octets(const char *epref,
       (rc = param_read_string(plist, pname, &string_value)) == 0) {
     /* Free old storage */
     if (s->length != 0)
-      gs_free(gs_lib_ctx_get_non_gc_memory_t(), s->str, s->length, sizeof(pcl_Octet), "fetch_octets");
+      gs_free(plist->memory->non_gc_memory, s->str, s->length, sizeof(pcl_Octet), "fetch_octets");
 
     /* Allocate new */
-    s->str = (pcl_Octet *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), string_value.size, sizeof(pcl_Octet),
+    s->str = (pcl_Octet *)gs_malloc(plist->memory->non_gc_memory, string_value.size, sizeof(pcl_Octet),
       "fetch_octets");
 
     if (s->str == NULL) {
@@ -771,16 +771,16 @@ static int fetch_cstring(const char *epref,
   int rc;
 
   if ((rc = param_read_null(plist, pname)) == 0) {
-    if (*s != NULL) gs_free(gs_lib_ctx_get_non_gc_memory_t(), *s, strlen(*s) + 1, sizeof(char), "fetch_cstring");
+    if (*s != NULL) gs_free(plist->memory->non_gc_memory, *s, strlen(*s) + 1, sizeof(char), "fetch_cstring");
     *s = NULL;
   }
   else if (rc < 0 &&
       (rc = param_read_string(plist, pname, &string_value)) == 0) {
     /* Free old storage */
-    if (*s != NULL) gs_free(gs_lib_ctx_get_non_gc_memory_t(), *s, strlen(*s) + 1, sizeof(char), "fetch_cstring");
+    if (*s != NULL) gs_free(plist->memory->non_gc_memory, *s, strlen(*s) + 1, sizeof(char), "fetch_cstring");
 
     /* Allocate new */
-    *s = (char *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), string_value.size + 1, sizeof(char),
+    *s = (char *)gs_malloc(plist->memory->non_gc_memory, string_value.size + 1, sizeof(char),
       "fetch_cstring");
 
     if (*s == NULL) {

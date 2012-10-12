@@ -164,7 +164,7 @@ fmlbp_print_page(gx_device_printer *pdev, FILE *prn_stream)
 #ifdef	FMLBP_NOPAPERSIZE
   char data[LINE_SIZE*2];
 #else
-  byte *data = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), 1, line_size, "fmlpr_print_page(data)");
+  byte *data = (byte *)gs_malloc(pdev->memory->non_gc_memory, 1, line_size, "fmlpr_print_page(data)");
   if(data == NULL) return_error(gs_error_VMerror);
 #endif/*FMLBP_NOPAPERSIZE*/
 
@@ -221,7 +221,7 @@ fmlbp_print_page(gx_device_printer *pdev, FILE *prn_stream)
   fputc(0x0c,prn_stream);
   fflush(prn_stream);
 #ifndef	FMLBP_NOPAPERSIZE
-  gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)data, line_size, sizeof(byte), "fmlbp_print_page(data)");
+  gs_free(pdev->memory->non_gc_memory, (char *)data, line_size, sizeof(byte), "fmlbp_print_page(data)");
 #endif/*!FMLBP_NOPAPERSIZE*/
 
   return 0;

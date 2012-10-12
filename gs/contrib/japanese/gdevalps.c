@@ -185,7 +185,7 @@ md50_print_page(gx_device_printer *pdev, FILE *prn_stream,
 {
   int lnum;
   int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
-  byte *data = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), 8, line_size, "md50_print_page(data)" );
+  byte *data = (byte *)gs_malloc(pdev->memory->non_gc_memory, 8, line_size, "md50_print_page(data)" );
   int skipping = 0;
   int nbyte;
   int nskip;
@@ -244,8 +244,8 @@ md1xm_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
   int lnum;
   int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
-  byte *data = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), 8, line_size, "md1xm_print_page(data)");
-  byte *out_start = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), 8, line_size, "md1xm_print_page(data)");
+  byte *data = (byte *)gs_malloc(pdev->memory->non_gc_memory, 8, line_size, "md1xm_print_page(data)");
+  byte *out_start = (byte *)gs_malloc(pdev->memory->non_gc_memory, 8, line_size, "md1xm_print_page(data)");
   int skipping = 0;
   int nbyte;
 

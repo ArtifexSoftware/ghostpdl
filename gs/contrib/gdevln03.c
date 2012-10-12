@@ -279,7 +279,7 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream,
 
     line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
     in_size = line_size * 6;
-    in = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), in_size, 1, "sixel_print_page");
+    in = (byte *)gs_malloc(pdev->memory->non_gc_memory, in_size, 1, "sixel_print_page");
 
     /* Check allocation */
     if (!in) return(-1);
@@ -389,7 +389,7 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream,
     fputs(eject, prn_stream);
     fflush(prn_stream);
 
-    gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)in, in_size, 1, "sixel_print_page");
+    gs_free(pdev->memory->non_gc_memory, (char *)in, in_size, 1, "sixel_print_page");
 
     return(0);
 }

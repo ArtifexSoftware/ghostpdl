@@ -121,12 +121,12 @@ mag_print_page(gx_device_printer *pdev, int depth, FILE *file)
     long pixel_bytes;
     int y;
 
-    row_buffer = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), raster,17,"mag_row");
-    flag = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), flag_size,2,"mag_flag");
+    row_buffer = (byte *)gs_malloc(pdev->memory->non_gc_memory, raster,17,"mag_row");
+    flag = (byte *)gs_malloc(pdev->memory->non_gc_memory, flag_size,2,"mag_flag");
     flag_prev = flag + flag_size;
-    flag_a = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), flag_a_bytes,1,"mag_flag_a");
-    flag_b = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), flag_b_size,1,"mag_flag_b");
-    pixel = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), width,1,"mag_pixel");
+    flag_a = (byte *)gs_malloc(pdev->memory->non_gc_memory, flag_a_bytes,1,"mag_flag_a");
+    flag_b = (byte *)gs_malloc(pdev->memory->non_gc_memory, flag_b_size,1,"mag_flag_b");
+    pixel = (byte *)gs_malloc(pdev->memory->non_gc_memory, width,1,"mag_pixel");
     if (row_buffer == 0 || flag == 0 ||
         flag_a == 0 || flag_b == 0 || pixel == 0) {
       code = -1;
@@ -216,11 +216,11 @@ mag_print_page(gx_device_printer *pdev, int depth, FILE *file)
    }
 
 mag_done:
-    if (row_buffer) gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)row_buffer, raster, 17, "mag_row");
-    if (flag) gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)flag,flag_size,2,"mag_flag");
-    if (flag_a) gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)flag_a,flag_a_bytes,1,"mag_flag_a");
-    if (flag_b) gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)flag_b,flag_b_size,1,"mag_flag_b");
-    if (pixel) gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)pixel,width,1,"mag_pixel");
+    if (row_buffer) gs_free(pdev->memory->non_gc_memory, (char *)row_buffer, raster, 17, "mag_row");
+    if (flag) gs_free(pdev->memory->non_gc_memory, (char *)flag,flag_size,2,"mag_flag");
+    if (flag_a) gs_free(pdev->memory->non_gc_memory, (char *)flag_a,flag_a_bytes,1,"mag_flag_a");
+    if (flag_b) gs_free(pdev->memory->non_gc_memory, (char *)flag_b,flag_b_size,1,"mag_flag_b");
+    if (pixel) gs_free(pdev->memory->non_gc_memory, (char *)pixel,width,1,"mag_pixel");
 
     fflush(file);
 

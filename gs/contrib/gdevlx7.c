@@ -610,14 +610,14 @@ lxmgen_print_page(gx_device_printer *pdev, FILE *prn_stream)
    dprintf2("Current resolution is %f width x %f height dpi\n",
          pdev->x_pixels_per_inch, pdev->y_pixels_per_inch );
 #endif
-   pbuf = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), rpbufsize, 1, "lxmgen_print_page(pbuf)");
+   pbuf = (byte *)gs_malloc(pdev->memory->non_gc_memory, rpbufsize, 1, "lxmgen_print_page(pbuf)");
    if (pbuf == NULL)
       return_error(gs_error_VMerror);
 
-   outbuf = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), OUT_BUF_SIZE, 1, "lxmgen_print_page(outbuf)");
+   outbuf = (byte *)gs_malloc(pdev->memory->non_gc_memory, OUT_BUF_SIZE, 1, "lxmgen_print_page(outbuf)");
    if (outbuf == NULL)
    {
-      gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char*)pbuf,pbufsize, 1, "lxmgen_print_page(pbuf)");
+      gs_free(pdev->memory->non_gc_memory, (char*)pbuf,pbufsize, 1, "lxmgen_print_page(pbuf)");
       return_error(gs_error_VMerror);
    }
    /* initialize begin of outbuf ... */
@@ -787,8 +787,8 @@ lxmgen_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
    /* eject page */
    lex_eject(prn_stream);
-   gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char*)pbuf,rpbufsize, 1, "lxmgen_print_page(pbuf)");
-   gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char*)outbuf,OUT_BUF_SIZE, 1, "lxmgen_print_page(outbuf)");
+   gs_free(pdev->memory->non_gc_memory, (char*)pbuf,rpbufsize, 1, "lxmgen_print_page(pbuf)");
+   gs_free(pdev->memory->non_gc_memory, (char*)outbuf,OUT_BUF_SIZE, 1, "lxmgen_print_page(outbuf)");
 
 #ifdef DEBUG
    dprintf1("[%s] print_page() end\n",pdev->dname);

@@ -116,7 +116,7 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream, const char *init)
     right  = 0;
     bottom = 0;
 
-    buf = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), line_size, 1, "sixel_print_page");
+    buf = (byte *)gs_malloc(pdev->memory->non_gc_memory, line_size, 1, "sixel_print_page");
     end = buf + line_size - 1;
 
     /* Check allocation */
@@ -213,7 +213,7 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream, const char *init)
     fprintf( prn_stream, "\f%s", XES_RESET );
     fflush(prn_stream);
 
-    gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)buf, line_size, 1, "sixel_print_page");
+    gs_free(pdev->memory->non_gc_memory, (char *)buf, line_size, 1, "sixel_print_page");
 
     return(0);
 }

@@ -975,7 +975,7 @@ mj_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
 
 /* NOZ */
   xtalbuff_size = plane_size*8 + 64;
-  xtalbuff = (short *) gs_malloc(gs_lib_ctx_get_non_gc_memory_t(),  xtalbuff_size*(16*4+2*4) , W, "mj_colour_print_barrier");
+  xtalbuff = (short *) gs_malloc(pdev->memory->non_gc_memory,  xtalbuff_size*(16*4+2*4) , W, "mj_colour_print_barrier");
   memset(xtalbuff, 0, xtalbuff_size*(16*4+2*4) * W);
   {
         int i;
@@ -1014,12 +1014,12 @@ mj_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
         p += xtalbuff_size;
   }
 
-  storage = (word *) gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), storage_size_words, W, "mj_colour_print_page");
+  storage = (word *) gs_malloc(pdev->memory->non_gc_memory, storage_size_words, W, "mj_colour_print_page");
 
 /* prepare a temporary buffer for mj_raster_cmd */
 
   mj_tmp_buf_size = plane_size;
-  mj_tmp_buf = (byte *) gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), mj_tmp_buf_size, W ,"mj_raster_buffer");
+  mj_tmp_buf = (byte *) gs_malloc(pdev->memory->non_gc_memory, mj_tmp_buf_size, W ,"mj_raster_buffer");
 
 #if 0
   dprintf1("storage_size_words :%d\n", storage_size_words);
@@ -1379,9 +1379,9 @@ mj_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
     fflush(prn_stream);
   }
   /* free temporary storage */
-  gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *) storage, storage_size_words, W, "mj_colour_print_page");
-  gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *) mj_tmp_buf, mj_tmp_buf_size, W, "mj_raster_buffer");
-  gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *) xtalbuff , xtalbuff_size*(16*4+2*4) , W, "mj_colour_print_barrier");
+  gs_free(pdev->memory->non_gc_memory, (char *) storage, storage_size_words, W, "mj_colour_print_page");
+  gs_free(pdev->memory->non_gc_memory, (char *) mj_tmp_buf, mj_tmp_buf_size, W, "mj_raster_buffer");
+  gs_free(pdev->memory->non_gc_memory, (char *) xtalbuff , xtalbuff_size*(16*4+2*4) , W, "mj_colour_print_barrier");
 
   return 0;
 }

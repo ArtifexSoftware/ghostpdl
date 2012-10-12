@@ -143,7 +143,7 @@ BoundImage(gx_device_printer *pDev, struct bounding *pBox)
         if (LineSize < Xsize*2+1) {
                 LineSize = Xsize*2+1;
         }
-        Buf = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), 1, LineSize, "LineBuffer");
+        Buf = (byte *)gs_malloc(pDev->memory->non_gc_memory, 1, LineSize, "LineBuffer");
         /* ----==== bounding image ====---- */
         Pt = Pb = Pl = Pr = -1;
         for(y=0 ; y<height && y<Ysize ; y++){
@@ -172,7 +172,7 @@ BoundImage(gx_device_printer *pDev, struct bounding *pBox)
         pBox->Bottom = Pb;
         pBox->Left = Pl;
         pBox->Right = Pr;
-        gs_free(gs_lib_ctx_get_non_gc_memory_t(), Buf, 1, LineSize, "LineBuffer");
+        gs_free(pDev->memory->non_gc_memory, Buf, 1, LineSize, "LineBuffer");
 }
 
 static long
@@ -210,7 +210,7 @@ CompressImage(gx_device_printer *pDev, struct bounding *pBox, FILE *fp, const ch
                 Xres, pBox->Bottom-pBox->Top+1);
 
         /* ----==== Allocate momory ====---- */
-        Buf = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), 1, LineSize, "LineBuffer");
+        Buf = (byte *)gs_malloc(pDev->memory->non_gc_memory, 1, LineSize, "LineBuffer");
         /* ----==== transfer raster image ====---- */
         for (y=pBox->Top ; y<=pBox->Bottom ; y++) {
                 gdev_prn_copy_scan_lines(pDev, y, Buf, LineSize);
@@ -272,6 +272,6 @@ CompressImage(gx_device_printer *pDev, struct bounding *pBox, FILE *fp, const ch
                 DataSize += (count+2);
         }
 
-        gs_free(gs_lib_ctx_get_non_gc_memory_t(), Buf, 1, LineSize, "LineBuffer");
+        gs_free(pDev->memory->non_gc_memory, Buf, 1, LineSize, "LineBuffer");
         return(DataSize);
 }

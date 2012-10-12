@@ -733,10 +733,10 @@ lxm3200_print_page(gx_device_printer *pdev, FILE *prn_stream)
         /* Allocate memory for the buffers and
          * verify that the allocation was done properly.
          */
-        gendata.scanbuf = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), gendata.numbytes, gendata.numblines,
+        gendata.scanbuf = (byte *)gs_malloc(pdev->memory->non_gc_memory, gendata.numbytes, gendata.numblines,
                                                                                                                                                         "lxm3200_print_page(scanbuf)");
 
-        gendata.outdata = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), gendata.numbytes, 30,
+        gendata.outdata = (byte *)gs_malloc(pdev->memory->non_gc_memory, gendata.numbytes, 30,
                                                                                                                                                         "lxm3200_print_page(outdata)");
 
         if(gendata.scanbuf == NULL ||
@@ -944,11 +944,11 @@ static void
 freeresources(gx_device *pdev)
 {
         if(gendata.scanbuf)
-                gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)gendata.scanbuf, gendata.numbytes, gendata.numblines,
+                gs_free(pdev->memory->non_gc_memory, (char *)gendata.scanbuf, gendata.numbytes, gendata.numblines,
                                                 "lxm3200:freeresources(scanbuf)");
 
         if(gendata.outdata)
-                gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)gendata.outdata, gendata.numbytes, 30,
+                gs_free(pdev->memory->non_gc_memory, (char *)gendata.outdata, gendata.numbytes, 30,
                                                 "lxm3200:freeresources(outdata)");
 }
 

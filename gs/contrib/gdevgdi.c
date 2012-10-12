@@ -200,9 +200,9 @@ gdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
         }
 
         ul_band_size = band_width_bytes * band_height;
-        ibp = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), ul_band_size, 1, "gdi_print_page");
-        obp = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), ul_band_size*13/10, 1, "gdi_print_page");
-        tmp = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), raster, 1, "gdi_print_page");
+        ibp = (byte *)gs_malloc(pdev->memory->non_gc_memory, ul_band_size, 1, "gdi_print_page");
+        obp = (byte *)gs_malloc(pdev->memory->non_gc_memory, ul_band_size*13/10, 1, "gdi_print_page");
+        tmp = (byte *)gs_malloc(pdev->memory->non_gc_memory, raster, 1, "gdi_print_page");
 
         if (!ibp) return_error(gs_error_VMerror);
         if (!obp) return_error(gs_error_VMerror);
@@ -271,7 +271,7 @@ gdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
                     int f, g, h;
                     if (!fudge) {
                       ASSERT(use_band == ibp);
-                      use_band = (byte*)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), ul_band_size, 1, "gdi_print_page/fudge");
+                      use_band = (byte*)gs_malloc(pdev->memory->non_gc_memory, ul_band_size, 1, "gdi_print_page/fudge");
                       fudge=1;
                     }
                     memcpy(use_band, ibp, ul_band_size);
@@ -299,7 +299,7 @@ gdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
               oh_well:
                 if (fudge > 1) {
                   ASSERT(use_band != ibp);
-                  gs_free(gs_lib_ctx_get_non_gc_memory_t(), use_band, ul_band_size, 1, "gdi_print_page/fudge");
+                  gs_free(pdev->memory->non_gc_memory, use_band, ul_band_size, 1, "gdi_print_page/fudge");
                   /*dprintf2("smartgdi: band %d fudge factor is %d\n", i, fudge);*/
                 }
               }
@@ -322,9 +322,9 @@ gdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
         /* Trailer Output */
         WriteTrailerData(prn_stream);
-        gs_free(gs_lib_ctx_get_non_gc_memory_t(), ibp, ul_band_size, 1, "gdi_line_buffer");
-        gs_free(gs_lib_ctx_get_non_gc_memory_t(), obp, ul_band_size*13/10, 1, "gdi_line_buffer");
-        gs_free(gs_lib_ctx_get_non_gc_memory_t(), tmp, raster, 1, "gdi_line_buffer");
+        gs_free(pdev->memory->non_gc_memory, ibp, ul_band_size, 1, "gdi_line_buffer");
+        gs_free(pdev->memory->non_gc_memory, obp, ul_band_size*13/10, 1, "gdi_line_buffer");
+        gs_free(pdev->memory->non_gc_memory, tmp, raster, 1, "gdi_line_buffer");
         return code;
 }
 

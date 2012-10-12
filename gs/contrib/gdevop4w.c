@@ -233,7 +233,7 @@ oki4w_print_page(gx_device_printer *pdev, FILE *prn_stream)
         int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
         int line_size_words = (line_size + W - 1) / W;
         uint storage_size_words = line_size_words * 8; /* data, out_row, out_row_alt, prev_row */
-        word *storage = (ulong *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), storage_size_words, W,
+        word *storage = (ulong *)gs_malloc(pdev->memory->non_gc_memory, storage_size_words, W,
                                            "oki4w_print_page");
         word
           *data_words,
@@ -361,7 +361,7 @@ oki4w_print_page(gx_device_printer *pdev, FILE *prn_stream)
         fprintf(prn_stream, "\x1b$B\x1b\x7f%c", 0);
 
         /* free temporary storage */
-        gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)storage, storage_size_words, W, "oki4w_print_page");
+        gs_free(pdev->memory->non_gc_memory, (char *)storage, storage_size_words, W, "oki4w_print_page");
 
         return code;
 }
