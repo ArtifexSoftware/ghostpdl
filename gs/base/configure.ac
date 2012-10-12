@@ -1652,7 +1652,7 @@ if test x$enable_threadsafe = xyes; then
     JBIG2_DEVS=`echo $JBIG2_DEVS | sed "s/\b$ntsdev\b//g"`
   done
 
-  NTS_EXCLUDES=`echo $NTS_EXCLUDES | uniq`
+  NTS_EXCLUDES=`echo "$NTS_EXCLUDES" | tr " " "\n" | sort | uniq | tr "\n" " "`
 fi # x$enable_threadsafe = xyes
 
 noncontribmakefiles=`find . -name '*.mak' -print | grep -v '^\./contrib/'`
