@@ -35,8 +35,7 @@ dnl List of non-threadsafe devices
 dnl defined at the top of the file for ease of access
 dnl --------------------------------------------------
 
-NTS_DEVS='bjcmono bjcgray bjccmyk bjccolor'
-NTS_DEVS="$NTS_DEVS cp50"
+NTS_DEVS='cp50'
 NTS_DEVS="$NTS_DEVS cdj970"
 NTS_DEVS="$NTS_DEVS fmlbp"
 NTS_DEVS="$NTS_DEVS lxm3200"

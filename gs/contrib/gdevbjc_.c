@@ -657,7 +657,7 @@ bjc_print_page_gray(gx_device_printer * pdev, FILE * file)
 
     /* Write the setup data. */
 
-    bjc_build_gamma_table(ppdev->gamma, CMYK_K); /* set up the gamma table */
+    bjc_build_gamma_table(ppdev, ppdev->gamma, CMYK_K); /* set up the gamma table */
 
     bjc_put_set_initial (file);   /* start printing */
     bjc_put_print_method(file, color, media_codes[ppdev->mediaType].c, ppdev->quality, 0);
@@ -669,12 +669,15 @@ bjc_print_page_gray(gx_device_printer * pdev, FILE * file)
 
     /* Write the contents of the image. */
     skip = 0;
+    ppdev->bjc_j = 0;
+    ppdev->bjc_k = 31;
+    ppdev->FloydSteinbergDirectionForward=true;
     if(FloydSteinbergInitG(pdev) == -1)
                 return_error(gs_error_VMerror);   /* initiate the dithering */
 
     for (y = 0; y < pdev->height ; y++) {
      gdev_prn_copy_scan_lines(pdev, y, row, width);   /* image -> row */
-     FloydSteinbergDitheringG(row, dit, width, raster, ppdev->limit); /* gray */
+     FloydSteinbergDitheringG(ppdev, row, dit, width, raster, ppdev->limit); /* gray */
       if (bjc_invert_bytes(dit, raster, ppdev->inverse, lastmask)) /* black -> K and check empty line*/
        {  /* end of empty lines */
         if (skip) bjc_put_raster_skip(file, skip);
@@ -865,9 +868,9 @@ bjc_print_page_color(gx_device_printer * pdev, FILE * file)
     if (row == 0 || cmp == 0 || dit == 0)     /* can't allocate row buffer */
         return_error(gs_error_VMerror);
 
-    bjc_build_gamma_table(rgamma, CMYK_C); /* set up the gamma table */
-    bjc_build_gamma_table(ggamma, CMYK_M); /* set up the gamma table */
-    bjc_build_gamma_table(bgamma, CMYK_Y); /* set up the gamma table */
+    bjc_build_gamma_table(ppdev, rgamma, CMYK_C); /* set up the gamma table */
+    bjc_build_gamma_table(ppdev, ggamma, CMYK_M); /* set up the gamma table */
+    bjc_build_gamma_table(ppdev, bgamma, CMYK_Y); /* set up the gamma table */
 
     /* Write the setup data. */
 
@@ -882,13 +885,16 @@ bjc_print_page_color(gx_device_printer * pdev, FILE * file)
     /* Write the contents of the image. */
     skip = 0;
 
+    ppdev->bjc_j = 0;
+    ppdev->bjc_k = 31;
+    ppdev->FloydSteinbergDirectionForward=true;
     if(FloydSteinbergInitC(pdev) == -1)
                 return_error(gs_error_VMerror);   /* initiate the dithering */
 
     for (y = 0; y < pdev->height ; y++) {
         gdev_prn_copy_scan_lines(pdev, y, row, gdev_prn_raster(pdev));
         /* image -> row */
-        FloydSteinbergDitheringC(row, dit, width, raster, ppdev->limit,
+        FloydSteinbergDitheringC(ppdev, row, dit, width, raster, ppdev->limit,
                                  ppdev->compose);
 
         if(bjc_invert_cmyk_bytes(rowC, rowM, rowY, rowK,

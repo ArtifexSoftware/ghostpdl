@@ -102,6 +102,24 @@ struct gx_device_bjc_printer_s {
         int green;
         int blue;
     } paperColor;                      /* paper color for color correction */
+    /* Global variables from gdevbjca moved here */
+    int bjc_j; /* =0 */
+    int bjc_k; /* =31 */
+    int bjc_treshold[1024];
+    bool FloydSteinbergDirectionForward;
+    int *FloydSteinbergErrorsC;
+    int *FloydSteinbergErrorsM;
+    int *FloydSteinbergErrorsY;
+    int *FloydSteinbergErrorsK;
+    int *FloydSteinbergErrorsG;
+    int FloydSteinbergC;
+    int FloydSteinbergM;
+    int FloydSteinbergY;
+    int FloydSteinbergK;
+    int FloydSteinbergG;
+    int bjc_gamma_tableC[256];
+    int bjc_gamma_tableM[256];
+    int bjc_gamma_tableY[256];
 };
 
 typedef struct gx_device_bjc_printer_s gx_device_bjc_printer;
@@ -209,19 +227,21 @@ bool bjc_invert_cmyk_bytes(byte *rowC,byte *rowM, byte *rowY, byte *rowK, uint r
 uint bjc_compress(const byte *row, uint raster, byte *compressed);
 
 int  FloydSteinbergInitG(gx_device_printer * pdev);
-void FloydSteinbergDitheringG(byte *row, byte *dithered, uint width, uint raster, bool limit_extr);
+void FloydSteinbergDitheringG(gx_device_bjc_printer *dev,
+                              byte *row, byte *dithered, uint width, uint raster, bool limit_extr);
 void FloydSteinbergCloseG(gx_device_printer *pdev);
 
 int  FloydSteinbergForwardCut(int error, int *Errors, int i, byte *dithered, byte bitmask);
 int  FloydSteinbergBckwardCut(int error, int *Errors, int i, byte *dithered, byte bitmask);
 int  FloydSteinbergInitC(gx_device_printer * pdev);
-void FloydSteinbergDitheringC(byte *row, byte *dithered, uint width, uint raster,
+void FloydSteinbergDitheringC(gx_device_bjc_printer *dev,
+                              byte *row, byte *dithered, uint width, uint raster,
                               bool limit_extr, bool composeK);
 void FloydSteinbergCloseC(gx_device_printer *pdev);
 
-void bjc_build_gamma_table(float gamma, char color);
+void bjc_build_gamma_table(gx_device_bjc_printer *dev, float gamma, char color);
 void bjc_rgb_to_cmy (byte r, byte g, byte b, int *c, int *m, int *y);
 void bjc_rgb_to_gray(byte r, byte g, byte b, int *k);
-uint bjc_rand(void);
-void bjc_init_tresh(int rnd);
+uint bjc_rand(gx_device_bjc_printer *dev);
+void bjc_init_tresh(gx_device_bjc_printer *dev, int rnd);
 #endif				/* gdevbjc_INCLUDED */

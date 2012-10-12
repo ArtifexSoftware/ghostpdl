@@ -417,28 +417,25 @@ void bjc_rgb_to_gray(byte r, byte g, byte b,
     *k = ( (int)r * 77 + (int)g * 151 + (int)b * 28) >> 8;
 }
 
-int bjc_gamma_tableC[256];
-int bjc_gamma_tableM[256];
-int bjc_gamma_tableY[256];
 #define bjc_gamma_tableK bjc_gamma_tableC
 
-void bjc_build_gamma_table(float gamma, char color)
+void bjc_build_gamma_table(gx_device_bjc_printer *dev, float gamma, char color)
 { int i;
   int *table;
 
     switch(color) {
     case CMYK_C:
-        table = bjc_gamma_tableC;
+        table = dev->bjc_gamma_tableC;
         break;
     case CMYK_M:
-        table = bjc_gamma_tableM;
+        table = dev->bjc_gamma_tableM;
         break;
     case CMYK_Y:
-        table = bjc_gamma_tableY;
+        table = dev->bjc_gamma_tableY;
         break;
     case CMYK_K:
     default:
-        table = bjc_gamma_tableK;
+        table = dev->bjc_gamma_tableK;
         break;
     }
 
@@ -458,24 +455,20 @@ int bjc_rand_seed[55] = {
 255, 11268, 16121, 11645, 1855, 5982, 9983, 1052, 5255, 15264, 6123, 3577,
 9712, 14629, 4593, 15670
 };
-int bjc_j=0, bjc_k=31;
-
-int bjc_treshold[1024];
-
-uint bjc_rand(void)
+uint bjc_rand(gx_device_bjc_printer *dev)
 {
-    uint ret = (bjc_rand_seed[bjc_j++] += bjc_rand_seed[bjc_k++]);
-    if(bjc_j==55) bjc_j = 0;
-    if(bjc_k==55) bjc_k = 0;
+    uint ret = (bjc_rand_seed[dev->bjc_j++] += bjc_rand_seed[dev->bjc_k++]);
+    if(dev->bjc_j==55) dev->bjc_j = 0;
+    if(dev->bjc_k==55) dev->bjc_k = 0;
     return ret & 0x03ff;
 }                                             /* random numbers 0-1023 */
 
-void bjc_init_tresh(int rnd)
+void bjc_init_tresh(gx_device_bjc_printer *dev, int rnd)
 {
     int i=(int)(time(NULL) & 0x0ff);
     float delta=40.64*rnd;
-    for(;i>0;i--) bjc_rand();
-    for(i=-512; i<512; i++) bjc_treshold[i+512] =
+    for(;i>0;i--) bjc_rand(dev);
+    for(i=-512; i<512; i++) dev->bjc_treshold[i+512] =
                                 (int)(delta * i / 1024.0 + 2040);
 }                      /* init treshold array ~rnd% around halfway (127*16) */
 
@@ -500,47 +493,34 @@ void bjc_init_tresh(int rnd)
  * Each entry is three values long, one value for each color component.
  */
 
-bool FloydSteinbergDirectionForward = true;
-
-int *FloydSteinbergErrorsC;
-int *FloydSteinbergErrorsM;
-int *FloydSteinbergErrorsY;
-int *FloydSteinbergErrorsK;
-int *FloydSteinbergErrorsG;
-
-int FloydSteinbergC;
-int FloydSteinbergM;
-int FloydSteinbergY;
-int FloydSteinbergK;
-int FloydSteinbergG;
-
 int
 FloydSteinbergInitG(gx_device_printer * pdev)
-{  int i;
-#define ppdev ((gx_device_bjc_printer *) pdev)
+{
+    int i;
+    gx_device_bjc_printer *dev = (gx_device_bjc_printer *)pdev;
 
-FloydSteinbergErrorsG = (int *) gs_alloc_bytes(pdev->memory,
+    dev->FloydSteinbergErrorsG = (int *) gs_alloc_bytes(pdev->memory,
                                               sizeof(int)*(pdev->width+3),
                                               "bjc error buffer");
-if (FloydSteinbergErrorsG == 0)		/* can't allocate error buffer */
+    if (dev->FloydSteinbergErrorsG == 0) /* can't allocate error buffer */
         return -1;
-FloydSteinbergDirectionForward=true;
+    dev->FloydSteinbergDirectionForward=true;
 
-for (i=0; i < pdev->width+3; i++) FloydSteinbergErrorsG[i] = 0;
+    for (i=0; i < pdev->width+3; i++) dev->FloydSteinbergErrorsG[i] = 0;
                                                               /* clear */
-bjc_rgb_to_gray(ppdev->paperColor.red,
-                ppdev->paperColor.green,
-                ppdev->paperColor.blue,
-                &FloydSteinbergG);
-FloydSteinbergG = (255 - FloydSteinbergG) << 4;  /* Maybe */
-bjc_init_tresh(ppdev->rnd);
-return 0;
-#undef ppdev
+    bjc_rgb_to_gray(dev->paperColor.red,
+                    dev->paperColor.green,
+                    dev->paperColor.blue,
+                    &dev->FloydSteinbergG);
+    dev->FloydSteinbergG = (255 - dev->FloydSteinbergG) << 4;  /* Maybe */
+    bjc_init_tresh(dev, dev->rnd);
+    return 0;
 }
 
 void
-FloydSteinbergDitheringG(byte *row, byte *dithered, uint width,
-                        uint raster, bool limit_extr)
+FloydSteinbergDitheringG(gx_device_bjc_printer *dev,
+                         byte *row, byte *dithered, uint width,
+                         uint raster, bool limit_extr)
 {
     byte byteG=0, bitmask = 0x80; /* first bit */
     int i;
@@ -548,16 +528,16 @@ FloydSteinbergDitheringG(byte *row, byte *dithered, uint width,
     int err_corr;
     int *err_vect;
 
-    if (FloydSteinbergDirectionForward) {
+    if (dev->FloydSteinbergDirectionForward) {
         /* First  point */
-        err_vect = FloydSteinbergErrorsG + 1;
+        err_vect = dev->FloydSteinbergErrorsG + 1;
 
         for( i=width; i>0; i--, row++, err_vect++) { /* i, sample, error */
-            err_corr = bjc_gamma_tableK[255-(*row)] + FloydSteinbergG;
+            err_corr = dev->bjc_gamma_tableK[255-(*row)] + dev->FloydSteinbergG;
             if(err_corr > 4080 && limit_extr) err_corr = 4080;
             error += err_corr + *(err_vect+1);     /* the error in 1/16 */
 
-            if(error > bjc_treshold[bjc_rand()])  {
+            if(error > dev->bjc_treshold[bjc_rand(dev)])  {
                 error -=  4080;
                 byteG |=  bitmask;
             }
@@ -582,21 +562,21 @@ FloydSteinbergDitheringG(byte *row, byte *dithered, uint width,
             }
             else bitmask >>= 1;
         }
-        FloydSteinbergDirectionForward=false;
+        dev->FloydSteinbergDirectionForward=false;
     }
     else {
         row += width - 1;                   /* point to the end of the row */
         dithered += raster - 1;
         bitmask = 1 << ((raster << 3 ) - width) ;
-        err_vect = FloydSteinbergErrorsG + width + 1;
+        err_vect = dev->FloydSteinbergErrorsG + width + 1;
 
         for( i=width; i>0; i--, row--, err_vect--) {
-            err_corr = bjc_gamma_tableK[255-(*row)] + FloydSteinbergG;
+            err_corr = dev->bjc_gamma_tableK[255-(*row)] + dev->FloydSteinbergG;
             if(err_corr > 4080 && limit_extr) err_corr = 4080;
 
             error += err_corr + *(err_vect - 1);
 
-            if(error > bjc_treshold[bjc_rand()])  {
+            if(error > dev->bjc_treshold[bjc_rand(dev)])  {
                 error -=  4080;
                 byteG |=  bitmask;
             }
@@ -620,66 +600,68 @@ FloydSteinbergDitheringG(byte *row, byte *dithered, uint width,
             }
             else bitmask <<= 1;
         }
-        FloydSteinbergDirectionForward=true;
+        dev->FloydSteinbergDirectionForward=true;
     }
 }
 
 void FloydSteinbergCloseG(gx_device_printer *pdev)
 {
-    gs_free_object(pdev->memory, FloydSteinbergErrorsG, "bjc error buffer");
+    gx_device_bjc_printer *dev = (gx_device_bjc_printer *)pdev;
+    gs_free_object(pdev->memory, dev->FloydSteinbergErrorsG, "bjc error buffer");
 }
 
 int
 FloydSteinbergInitC(gx_device_printer * pdev)
-{ int i;
-#define ppdev ((gx_device_bjc_printer *) pdev)
+{
+    int i;
+    gx_device_bjc_printer *dev = (gx_device_bjc_printer *)pdev;
 
-FloydSteinbergErrorsC = (int *) gs_alloc_bytes(pdev->memory,
+    dev-> FloydSteinbergErrorsC = (int *) gs_alloc_bytes(pdev->memory,
                                             3*sizeof(int)*(pdev->width+3),
                                               "bjc CMY error buffer");
-if (FloydSteinbergErrorsC == 0 )      	/* can't allocate error buffer */
+    if (dev->FloydSteinbergErrorsC == 0 ) /* can't allocate error buffer */
         return -1;
 
-for (i=0; i < 3 * (pdev->width+3); i++) FloydSteinbergErrorsC[i] = 0;
+    for (i=0; i < 3 * (pdev->width+3); i++) dev->FloydSteinbergErrorsC[i] = 0;
 
-FloydSteinbergDirectionForward=true;
-bjc_rgb_to_cmy(ppdev->paperColor.red,
-               ppdev->paperColor.green,
-               ppdev->paperColor.blue,
-               &FloydSteinbergC,
-               &FloydSteinbergM,
-               &FloydSteinbergY);
+    dev->FloydSteinbergDirectionForward=true;
+    bjc_rgb_to_cmy(dev->paperColor.red,
+                   dev->paperColor.green,
+                   dev->paperColor.blue,
+                   &dev->FloydSteinbergC,
+                   &dev->FloydSteinbergM,
+                   &dev->FloydSteinbergY);
 
-FloydSteinbergC <<= 4;
-FloydSteinbergM <<= 4;
-FloydSteinbergY <<= 4;
-bjc_init_tresh(ppdev->rnd);
-return 0;
-#undef ppdev
+    dev->FloydSteinbergC <<= 4;
+    dev->FloydSteinbergM <<= 4;
+    dev->FloydSteinbergY <<= 4;
+    bjc_init_tresh(dev, dev->rnd);
+    return 0;
 }
 
 void
-FloydSteinbergDitheringC(byte *row, byte *dithered, uint width,
-                        uint raster, bool limit_extr, bool composeK)
+FloydSteinbergDitheringC(gx_device_bjc_printer *dev,
+                         byte *row, byte *dithered, uint width,
+                         uint raster, bool limit_extr, bool composeK)
 {   byte byteC=0, byteM=0, byteY=0, byteK=0, bitmask = 0x80; /* first bit */
     int i;
     int errorC = 0, errorM = 0, errorY = 0, delta;
     int err_corrC, err_corrM, err_corrY;
     int *err_vect;
 
-    if (FloydSteinbergDirectionForward) {
-        err_vect = FloydSteinbergErrorsC + 3;         /* errCMY */
+    if (dev->FloydSteinbergDirectionForward) {
+        err_vect = dev->FloydSteinbergErrorsC + 3;         /* errCMY */
         /* First  point */
 
         for( i=width; i>0; i--, row+=4, err_vect+=3) { /*separate components */
 
-/*                                          C     +       K           */
-            err_corrC = bjc_gamma_tableC[ (*row)    + (*(row+3))]
-                          + FloydSteinbergC;
-            err_corrM = bjc_gamma_tableM[(*(row+1)) + (*(row+3))]
-                          + FloydSteinbergM;
-            err_corrY = bjc_gamma_tableY[(*(row+2)) + (*(row+3))]
-                          + FloydSteinbergY;
+/*                                               C     +       K           */
+            err_corrC = dev->bjc_gamma_tableC[ (*row)    + (*(row+3))]
+                          + dev->FloydSteinbergC;
+            err_corrM = dev->bjc_gamma_tableM[(*(row+1)) + (*(row+3))]
+                          + dev->FloydSteinbergM;
+            err_corrY = dev->bjc_gamma_tableY[(*(row+2)) + (*(row+3))]
+                          + dev->FloydSteinbergY;
 
             if(err_corrC > 4080 && limit_extr) err_corrC = 4080;
             if(err_corrM > 4080 && limit_extr) err_corrM = 4080;
@@ -689,17 +671,17 @@ FloydSteinbergDitheringC(byte *row, byte *dithered, uint width,
             errorM += err_corrM + (*(err_vect + 4));       /* |  ^  !   */
             errorY += err_corrY + (*(err_vect + 5));
 
-            if(errorC > bjc_treshold[bjc_rand()])  {
+            if(errorC > dev->bjc_treshold[bjc_rand(dev)])  {
                 errorC -=  4080;
                 byteC |=  bitmask;
             }
 
-            if(errorM > bjc_treshold[bjc_rand()])  {
+            if(errorM > dev->bjc_treshold[bjc_rand(dev)])  {
                 errorM -=  4080;
                 byteM |=  bitmask;
             }
 
-            if(errorY > bjc_treshold[bjc_rand()])  {
+            if(errorY > dev->bjc_treshold[bjc_rand(dev)])  {
                 errorY -=  4080;
                 byteY |=  bitmask;
             }
@@ -760,22 +742,22 @@ FloydSteinbergDitheringC(byte *row, byte *dithered, uint width,
             }
             else bitmask >>= 1;
         }
-        FloydSteinbergDirectionForward=false;
+        dev->FloydSteinbergDirectionForward=false;
     }
     else {
         row += (width << 2) - 4;   /* point to the end of the row */
         dithered += raster - 1;
-        err_vect = FloydSteinbergErrorsC + 3 * width + 3;       /* errCMY */
+        err_vect = dev->FloydSteinbergErrorsC + 3 * width + 3;       /* errCMY */
         bitmask = 1 << ((raster << 3 ) - width) ;
 
         for( i=width; i>0; i--, row-=4, err_vect-=3) {
 
-            err_corrC = bjc_gamma_tableC[  (*row)   + (*(row+3))]
-                          + FloydSteinbergC;
-            err_corrM = bjc_gamma_tableM[(*(row+1)) + (*(row+3))]
-                          + FloydSteinbergM;
-            err_corrY = bjc_gamma_tableY[(*(row+2)) + (*(row+3))]
-                          + FloydSteinbergY;
+            err_corrC = dev->bjc_gamma_tableC[  (*row)   + (*(row+3))]
+                          + dev->FloydSteinbergC;
+            err_corrM = dev->bjc_gamma_tableM[(*(row+1)) + (*(row+3))]
+                          + dev->FloydSteinbergM;
+            err_corrY = dev->bjc_gamma_tableY[(*(row+2)) + (*(row+3))]
+                          + dev->FloydSteinbergY;
 
             if(err_corrC > 4080 && limit_extr) err_corrC = 4080;
             if(err_corrM > 4080 && limit_extr) err_corrM = 4080;
@@ -785,17 +767,17 @@ FloydSteinbergDitheringC(byte *row, byte *dithered, uint width,
             errorM += err_corrM + (*(err_vect - 2));       /* !  ^  |   */
             errorY += err_corrY + (*(err_vect - 1));
 
-            if(errorC > bjc_treshold[bjc_rand()])  {
+            if(errorC > dev->bjc_treshold[bjc_rand(dev)])  {
                 errorC -=  4080;
                 byteC |=  bitmask;
             }
 
-            if(errorM > bjc_treshold[bjc_rand()])  {
+            if(errorM > dev->bjc_treshold[bjc_rand(dev)])  {
                 errorM -=  4080;
                 byteM |=  bitmask;
             }
 
-            if(errorY > bjc_treshold[bjc_rand()])  {
+            if(errorY > dev->bjc_treshold[bjc_rand(dev)])  {
                 errorY -=  4080;
                 byteY |=  bitmask;
             }
@@ -856,12 +838,13 @@ FloydSteinbergDitheringC(byte *row, byte *dithered, uint width,
             }
             else bitmask <<= 1;
         }
-        FloydSteinbergDirectionForward=true;
+        dev->FloydSteinbergDirectionForward=true;
     }
 }
 
 void FloydSteinbergCloseC(gx_device_printer *pdev)
 {
-    gs_free_object(pdev->memory, FloydSteinbergErrorsC,
-                                           "bjc CMY error buffer");
+    gx_device_bjc_printer *dev = (gx_device_bjc_printer *)pdev;
+    gs_free_object(pdev->memory, dev->FloydSteinbergErrorsC,
+                   "bjc CMY error buffer");
 }
