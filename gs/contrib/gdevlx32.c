@@ -46,6 +46,69 @@
 #define FALSE 0
 #endif
 
+typedef struct lxm_device_s lxm_device;
+
+/* General global data that must be accessible
+ * by all routines. (Now moved into device struct).
+ */
+typedef struct pagedata_s
+{
+        /* General invariant data */
+        int numbytes;    /* Number of bytes in a scanline of the buffer */
+        int numrbytes;   /* Width (in bytes) of one rasterized scanline */
+        int goffset;     /* Guard offset at each side of each scanline (columns) */
+        int numblines;   /* Number of lines in a buffer */
+        int numlines;    /* Number of lines in a vertical head pass */
+        int rendermode;  /* Type of rendering */
+        int numvlines;   /* Number of lines in the page */
+        int numcols;     /* Number of columns in a row */
+        int numpasses;   /* Number of passes used to print one stripe */
+        int bidirprint;  /* Bidirectional printing enabled ? */
+        int select;      /* Resolution selector */
+        int modelprint;  /* which printer? - lxm3200=0, z12=1, z31=2 */
+        int z31margin;   /* margin for the Z31 */
+
+        /* Printing offsets */
+        int leftoffset;  /* Start printing offset from left margin */
+        int topoffset;   /* Start printing offset from top margin */
+
+        /* Resolution settings */
+        int xres;        /* Horizontal dots per inch */
+        int yres;        /* Vertical dots per inch */
+        int xrmul;       /* Horizontal coordinate multiplier */
+        int yrmul;       /* Vertical coordinate multiplier */
+
+        /* Pagewide status */
+        int curheadpos;  /* Current absolute printhead position */
+        int linetoeject; /* Number of lines for the eject command */
+        int direction;   /* Printing direction for next stripe */
+
+        /* Alignment data */
+        int bwsep;     /* Nozzle columns separation in B&W/photo cartridge */
+        int colsep;    /* Nozzle columns separation in color cartridge */
+        int vertalign; /* Vertical alignment offset of the two cartridges */
+        int lrhalign;  /* Horizontal alignment between left and right cartridges */
+
+        /* Data pointers */
+        byte *outdata;    /* Buffer to output data codes for one full stripe */
+        byte *scanbuf;    /* Buffer to contain the rasterized scanlines */
+        FILE *stream;     /* Output stream */
+        lxm_device *dev;  /* Pointer to our device */
+
+        /* Buffer data */
+        int left, right;  /* Actual left and right margins */
+        int firstline;    /* Head of the circular scanline buffer */
+        int lastblack;    /* Line of last black pass rendered in a color print */
+        int curvline;     /* Current vertical position */
+
+        /* Stripe related data */
+        byte header[24];  /* Stripe header data */
+        int  fullflag;    /* A stripe is ready to be output */
+        int  stripebytes; /* Number of bytes in a stripe */
+        int  ileave;      /* Interleaving pass: 0=even lines, 1=odd lines */
+
+} pagedata;
+
 /* Prototypes for public routines */
 static dev_proc_map_rgb_color(lxm3200_map_rgb_color);
 static dev_proc_map_color_rgb(lxm3200_map_color_rgb);
@@ -55,24 +118,24 @@ static dev_proc_put_params(lxm3200_put_params);
 static dev_proc_open_device(lxm3200_open);
 
 /* Prototypes for internal routines */
-static void freeresources(gx_device *pdev);
+static void freeresources(lxm_device *pdev);
 static byte calccheck8(byte *data);
-static void outputepilogue(void);
-static void skiplines(int skipcol, int skipin);
-static void fillheader(int head, int numcol, int firstcol, int bytes);
-static void finalizeheader(int vskip, int newhead);
-static void convbuf(int head, int numcols, int firstcol);
-static void encode_bw_buf(void);
-static void encode_col_buf(int head);
-static int fill_mono_buffer(int vline);
-static int init_buffer(void);
-static int qualify_buffer(void);
-static int roll_buffer(void);
-static void calclinemargins(byte *data, int mask, int *left, int *right);
-static void calcbufmargins(int head);
-static void print_color_page(void);
-static void print_mono_page(void);
-static void print_photo_page(void);
+static void outputepilogue(pagedata *gendata);
+static void skiplines(pagedata *gendata, int skipcol, int skipin);
+static void fillheader(pagedata *gendata, int head, int numcol, int firstcol, int bytes);
+static void finalizeheader(pagedata *gendata, int vskip, int newhead);
+static void convbuf(pagedata *gendata, int head, int numcols, int firstcol);
+static void encode_bw_buf(pagedata *gendata);
+static void encode_col_buf(pagedata *gendata, int head);
+static int fill_mono_buffer(pagedata *gendata, int vline);
+static int init_buffer(pagedata *gendata);
+static int qualify_buffer(pagedata *gendata);
+static int roll_buffer(pagedata *gendata);
+static void calclinemargins(pagedata *gendata, byte *data, int mask, int *left, int *right);
+static void calcbufmargins(pagedata *gendata,int head);
+static void print_color_page(pagedata *gendata);
+static void print_mono_page(pagedata *gendata);
+static void print_photo_page(pagedata *gendata);
 
 /* Codes for the color indexes. */
 #define WHITE        0x00  /* Pure white */
@@ -97,9 +160,9 @@ static void print_photo_page(void);
  */
 
 /* Left head (B&W/photo) start position */
-#define LHSTART (gendata.leftoffset+6254)
+#define LHSTART (gendata->leftoffset+6254)
 /* added for Lexmark Z12 28.09.2002 */
-#define LHSTART_z12 (gendata.leftoffset+5000)
+#define LHSTART_z12 (gendata->leftoffset+5000)
 
 /* Right head (color) start position. This is relative to
  * LHSTART so we only need to change one parameter to adjust
@@ -119,15 +182,15 @@ static void print_photo_page(void);
 /* Initial vertical position of the printheads,
  * in 1200ths of an inch.
  */
-#define BWTOPSTART  (gendata.topoffset+420)
-#define COLTOPSTART (gendata.topoffset+476)
+#define BWTOPSTART  (gendata->topoffset+420)
+#define COLTOPSTART (gendata->topoffset+476)
 
 /* Base alignment offset between the color cartridge
  * and the B&W cartridge in 192 nozzles mode.
  */
 #define COLORVALIGN_V  8
-#define BLACKVALIGN_V  (gendata.vertalign+30)
-#define PHOTOVALIGN_V  (gendata.vertalign)
+#define BLACKVALIGN_V  (gendata->vertalign+30)
+#define PHOTOVALIGN_V  (gendata->vertalign)
 
 /* Values used to index the vertical aligment array */
 #define COLORVALIGN  0
@@ -195,7 +258,7 @@ static gx_device_procs lxm3200_procs =
     lxm3200_put_params);
 
 /* Define an extension (subclass) of gx_device_printer. */
-typedef struct lxm_device_s
+struct lxm_device_s
 {
         gx_device_common;
         gx_prn_device_common;
@@ -210,7 +273,31 @@ typedef struct lxm_device_s
         int topoffset;  /* Offset of first row from top of paper */
         int model; /* Parameter to choose the model - lxm3200=0, z12=1, z31=2 */
         int z31m; /* Alignment parameter for the Z31 */
-} lxm_device;
+
+	/* Lookup table for pen position offsets of color/photo cartridges.
+         * Parameter is the pen number, as defined by the pen offsets above:
+         * pen 0 is CYAN/LIGHTCYAN, pen 1 is MAGENTA/LIGHTMAGENTA, pen 2 is
+         * YELLOW/BLACK. This is used to properly take account the position
+         * of each color pen relative to the vertical position of the
+         * color/photo cartridge. */
+        int penofs[3];
+
+        /* Lookup table for vertical alignment of the cartridges relative to
+         * each other. Parameter is the cartridge type: 0 = color cartridge,
+         * 1 = black cartridge in color mode, 2 = photo cartridge.
+         * Black cartridge in monochromatic mode is always aligned at 0
+         * because in that mode we print with only one cartridge so there can
+         * be no alignment problems (a single cartridge is always aligned
+         * with itself, otherwise the printer tray is faulty). */
+        int valign[3];
+
+        /* Lookup table for horizontal offsets. First parameter is the
+         * head, second parameter the printing direction. */
+        int hoffset[2][2];
+
+	/* formerly globals */
+        pagedata data;
+};
 
 /* Device definition: Lexmark 3200 */
 lxm_device far_data gs_lxm3200_device =
@@ -261,30 +348,6 @@ static byte colmask[2][3] =
         { CYAN, MAGENTA, YELLOW }
 };
 
-/* Lookup table for pen position offsets of color/photo cartridges.
- * Parameter is the pen number, as defined by the pen offsets above:
- * pen 0 is CYAN/LIGHTCYAN, pen 1 is MAGENTA/LIGHTMAGENTA, pen 2 is
- * YELLOW/BLACK. This is used to properly take account the position
- * of each color pen relative to the vertical position of the
- * color/photo cartridge.
- */
-static int penofs[3];
-
-/* Lookup table for vertical alignment of the cartridges relative to
- * each other. Parameter is the cartridge type: 0 = color cartridge,
- * 1 = black cartridge in color mode, 2 = photo cartridge.
- * Black cartridge in monochromatic mode is always aligned at 0
- * because in that mode we print with only one cartridge so there can
- * be no alignment problems (a single cartridge is always aligned
- * with itself, otherwise the printer tray is faulty).
- */
-static int valign[3];
-
-/* Lookup table for horizontal offsets. First parameter is the
- * head, second parameter the printing direction.
- */
-static int hoffset[2][2];
-
 /* Initialization sequence needed at the beginning of the data stream.
  * This is invariant and contains a reset sequence, meaning each single
  * page in a multiple page output is sent to the printer as an independent
@@ -306,69 +369,6 @@ static byte z12_init_sequence[] =
         0x1b, 0x30, 0x80, 0x0c, 0x01, 0x00, 0x00, 0xbd,
         0x1b, 0x21, 0x00, 0x00, 0x00, 0x00, 0x00, 0x21
 };
-
-/* General global data that must be accessible
- * by all routines.
- */
-typedef struct pagedata_s
-{
-        /* General invariant data */
-        int numbytes;    /* Number of bytes in a scanline of the buffer */
-        int numrbytes;   /* Width (in bytes) of one rasterized scanline */
-        int goffset;     /* Guard offset at each side of each scanline (columns) */
-        int numblines;   /* Number of lines in a buffer */
-        int numlines;    /* Number of lines in a vertical head pass */
-        int rendermode;  /* Type of rendering */
-        int numvlines;   /* Number of lines in the page */
-        int numcols;     /* Number of columns in a row */
-        int numpasses;   /* Number of passes used to print one stripe */
-        int bidirprint;  /* Bidirectional printing enabled ? */
-        int select;      /* Resolution selector */
-        int modelprint;  /* which printer? - lxm3200=0, z12=1, z31=2 */
-        int z31margin;   /* margin for the Z31 */
-
-        /* Printing offsets */
-        int leftoffset;  /* Start printing offset from left margin */
-        int topoffset;   /* Start printing offset from top margin */
-
-        /* Resolution settings */
-        int xres;        /* Horizontal dots per inch */
-        int yres;        /* Vertical dots per inch */
-        int xrmul;       /* Horizontal coordinate multiplier */
-        int yrmul;       /* Vertical coordinate multiplier */
-
-        /* Pagewide status */
-        int curheadpos;  /* Current absolute printhead position */
-        int linetoeject; /* Number of lines for the eject command */
-        int direction;   /* Printing direction for next stripe */
-
-        /* Alignment data */
-        int bwsep;     /* Nozzle columns separation in B&W/photo cartridge */
-        int colsep;    /* Nozzle columns separation in color cartridge */
-        int vertalign; /* Vertical alignment offset of the two cartridges */
-        int lrhalign;  /* Horizontal alignment between left and right cartridges */
-
-        /* Data pointers */
-        byte *outdata;    /* Buffer to output data codes for one full stripe */
-        byte *scanbuf;    /* Buffer to contain the rasterized scanlines */
-        FILE *stream;     /* Output stream */
-        lxm_device *dev;  /* Pointer to our device */
-
-        /* Buffer data */
-        int left, right;  /* Actual left and right margins */
-        int firstline;    /* Head of the circular scanline buffer */
-        int lastblack;    /* Line of last black pass rendered in a color print */
-        int curvline;     /* Current vertical position */
-
-        /* Stripe related data */
-        byte header[24];  /* Stripe header data */
-        int  fullflag;    /* A stripe is ready to be output */
-        int  stripebytes; /* Number of bytes in a stripe */
-        int  ileave;      /* Interleaving pass: 0=even lines, 1=odd lines */
-
-} pagedata;
-
-static pagedata gendata;
 
 /* --------- Interface routines --------- */
 
@@ -558,84 +558,89 @@ lxm3200_map_color_rgb(gx_device *dev, gx_color_index color,
 static int
 lxm3200_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
+	lxm_device *dev = (lxm_device *)pdev;
+	pagedata *gendata;
+
+	gendata = &dev->data;
+
         /* Store data passed by ghostscript to the driver */
-        gendata.dev = (lxm_device *)pdev;
-        gendata.stream = prn_stream;
-        gendata.rendermode = (gendata.dev)->rendermode;
+        gendata->dev = dev;
+        gendata->stream = prn_stream;
+        gendata->rendermode = (gendata->dev)->rendermode;
 
         /* Snap resolution on one of the three supported setting
          * (300, 600, 1200 dpi) depending on the input resoution value.
          * Horizontal and vertical resolution are treated independently.
    */
-        gendata.xres = 600;
-        if((gendata.dev)->x_pixels_per_inch < 450)gendata.xres = 300;
-        if((gendata.dev)->x_pixels_per_inch > 900)gendata.xres = 1200;
-        gendata.xrmul = 1200 / gendata.xres;
+        gendata->xres = 600;
+        if((gendata->dev)->x_pixels_per_inch < 450)gendata->xres = 300;
+        if((gendata->dev)->x_pixels_per_inch > 900)gendata->xres = 1200;
+        gendata->xrmul = 1200 / gendata->xres;
 
-        gendata.yres = 600;
-        if((gendata.dev)->y_pixels_per_inch < 450)gendata.yres = 300;
-        if((gendata.dev)->y_pixels_per_inch > 900)gendata.yres = 1200;
-        gendata.yrmul = 1200 / gendata.yres;
+        gendata->yres = 600;
+        if((gendata->dev)->y_pixels_per_inch < 450)gendata->yres = 300;
+        if((gendata->dev)->y_pixels_per_inch > 900)gendata->yres = 1200;
+        gendata->yrmul = 1200 / gendata->yres;
 
         /* Cache horizontal and vertical starting offsets */
-        gendata.topoffset = (gendata.dev)->topoffset;
-        gendata.leftoffset = (gendata.dev)->leftoffset;
+        gendata->topoffset = (gendata->dev)->topoffset;
+        gendata->leftoffset = (gendata->dev)->leftoffset;
 
         /* Build lookup table for pen offset, adjusting for
          * vertical resolution setting
          */
-        penofs[0] = (PEN0OFS * 2) / gendata.yrmul;
-        penofs[1] = (PEN1OFS * 2) / gendata.yrmul;
-        penofs[2] = (PEN2OFS * 2) / gendata.yrmul;
+        dev->penofs[0] = (PEN0OFS * 2) / gendata->yrmul;
+        dev->penofs[1] = (PEN1OFS * 2) / gendata->yrmul;
+        dev->penofs[2] = (PEN2OFS * 2) / gendata->yrmul;
 
         /* Build lookup table for vertical heads alignment,
          * adjusting for vertical resolution setting
          */
-        valign[COLORVALIGN] = (COLORVALIGN_V * 2) / gendata.yrmul;
-        valign[BLACKVALIGN] = (BLACKVALIGN_V * 2) / gendata.yrmul;
-        valign[PHOTOVALIGN] = (PHOTOVALIGN_V * 2) / gendata.yrmul;
+        dev->valign[COLORVALIGN] = (COLORVALIGN_V * 2) / gendata->yrmul;
+        dev->valign[BLACKVALIGN] = (BLACKVALIGN_V * 2) / gendata->yrmul;
+        dev->valign[PHOTOVALIGN] = (PHOTOVALIGN_V * 2) / gendata->yrmul;
 
         /* Build lookup tables for initial horizontal offsets,
          * adjusting for horizontal resolution setting
          */
          /* choose whether to use lxm3200 or Z12 settings */
-      gendata.modelprint=(gendata.dev)->model; /* which model? */
-      gendata.z31margin=(gendata.dev)->z31m; /*which additional margin for z31*/
-      switch(gendata.modelprint){
+      gendata->modelprint=(gendata->dev)->model; /* which model? */
+      gendata->z31margin=(gendata->dev)->z31m; /*which additional margin for z31*/
+      switch(gendata->modelprint){
       case 1:  /* we use the Lexmark Z12 */
-          hoffset[LEFT][LEFT] = LHSTART_z12;
-          hoffset[RIGHT][LEFT] = RHSTART_z12 + gendata.lrhalign;
+          dev->hoffset[LEFT][LEFT] = LHSTART_z12;
+          dev->hoffset[RIGHT][LEFT] = RHSTART_z12 + gendata->lrhalign;
           break;
       default: /* default (if one uses the Lexmark 3200 or the Lexmark Z31) */
-          hoffset[LEFT][LEFT] = LHSTART;
-          hoffset[RIGHT][LEFT] = RHSTART + gendata.lrhalign;
+          dev->hoffset[LEFT][LEFT] = LHSTART;
+          dev->hoffset[RIGHT][LEFT] = RHSTART + gendata->lrhalign;
           break;
       }
-      hoffset[LEFT][RIGHT] = hoffset[LEFT][LEFT] - LRPASSHOFS;
-      hoffset[RIGHT][RIGHT] = hoffset[RIGHT][LEFT] - LRPASSHOFS;
+      dev->hoffset[LEFT][RIGHT] = dev->hoffset[LEFT][LEFT] - LRPASSHOFS;
+      dev->hoffset[RIGHT][RIGHT] = dev->hoffset[RIGHT][LEFT] - LRPASSHOFS;
 
         /* Initialization of general parameters */
-        gendata.outdata = NULL;
-        gendata.scanbuf = NULL;
-        gendata.curheadpos = 0;
-        gendata.left = 0;
-        gendata.right = 0;
-        gendata.lastblack = 0;
-        gendata.curvline = 0;
-        gendata.firstline = 0;
-        gendata.fullflag = FALSE;
-        gendata.direction = LEFT;
-        gendata.ileave = 0;
+        gendata->outdata = NULL;
+        gendata->scanbuf = NULL;
+        gendata->curheadpos = 0;
+        gendata->left = 0;
+        gendata->right = 0;
+        gendata->lastblack = 0;
+        gendata->curvline = 0;
+        gendata->firstline = 0;
+        gendata->fullflag = FALSE;
+        gendata->direction = LEFT;
+        gendata->ileave = 0;
 
-        gendata.bidirprint = (gendata.dev)->bidir;
-        gendata.numpasses = (gendata.dev)->numpass;
+        gendata->bidirprint = (gendata->dev)->bidir;
+        gendata->numpasses = (gendata->dev)->numpass;
 
         /* Set some parameters that depend on resolution and
          * printing mode. We calculate all at 600dpi (the native
          * resolution) and then correct later for different
          * resolution settings.
          */
-        switch(gendata.rendermode)
+        switch(gendata->rendermode)
         {
                 /* In monochrome mode we try to use all 208 nozzles of
                  * the black cartridge to speed up printing. But if we
@@ -646,14 +651,14 @@ lxm3200_print_page(gx_device_printer *pdev, FILE *prn_stream)
                  * of the head.
                  */
                 case LXM3200_M:
-                        gendata.numblines = 208;
-                        gendata.numlines = 208;
-                        gendata.select = 0x10;
-                        if(gendata.xres == 1200)
+                        gendata->numblines = 208;
+                        gendata->numlines = 208;
+                        gendata->select = 0x10;
+                        if(gendata->xres == 1200)
                         {
-                                gendata.numblines = 192;
-                                gendata.numlines = 192;
-                                gendata.select = 0x00;
+                                gendata->numblines = 192;
+                                gendata->numlines = 192;
+                                gendata->select = 0x00;
                         }
                         break;
 
@@ -673,9 +678,9 @@ lxm3200_print_page(gx_device_printer *pdev, FILE *prn_stream)
                  */
                 case LXM3200_P:
                 case LXM3200_C:
-                        gendata.numblines = 256;
-                        gendata.numlines = 192;
-                        gendata.select = 0x00;
+                        gendata->numblines = 256;
+                        gendata->numlines = 192;
+                        gendata->select = 0x00;
                         break;
         }
 
@@ -686,7 +691,7 @@ lxm3200_print_page(gx_device_printer *pdev, FILE *prn_stream)
          * into account the different thickness of the lines at the
          * three different vertical resolutions.
          */
-        gendata.numblines = (gendata.numblines * 2) / gendata.yrmul;
+        gendata->numblines = (gendata->numblines * 2) / gendata->yrmul;
 
         /* Now correct the "select" field to adjust the horizontal
          * motor speed depending on position. Meanwhile, if we are
@@ -694,30 +699,30 @@ lxm3200_print_page(gx_device_printer *pdev, FILE *prn_stream)
          * because each stripe at 1200 dpi horizontal must be printed
          * in two passes.
          */
-        switch(gendata.xres)
+        switch(gendata->xres)
         {
                 case 300:
-                        gendata.select |= 0x60;
+                        gendata->select |= 0x60;
                         break;
 
                 case 1200:
-                        gendata.select |= 0x40;
-                        gendata.numpasses *= 2;
+                        gendata->select |= 0x40;
+                        gendata->numpasses *= 2;
                         break;
         }
 
         /* Now store some useful info taken from the ghostscript
          * device structure to speed up access.
          */
-        gendata.numcols = (gendata.dev)->width;
-        gendata.numvlines = (gendata.dev)->height;
-        gendata.lrhalign = (gendata.dev)->algnA;
-        gendata.vertalign = (gendata.dev)->algnB;
-        gendata.bwsep = (gendata.dev)->algnC;
-        gendata.colsep = (gendata.dev)->algnD;
-        gendata.goffset = (max(gendata.bwsep, gendata.colsep) * 2) / gendata.xrmul;
-        gendata.numbytes = gendata.numcols + (2 * gendata.goffset);
-        gendata.numrbytes = gdev_mem_bytes_per_scan_line(gendata.dev);
+        gendata->numcols = (gendata->dev)->width;
+        gendata->numvlines = (gendata->dev)->height;
+        gendata->lrhalign = (gendata->dev)->algnA;
+        gendata->vertalign = (gendata->dev)->algnB;
+        gendata->bwsep = (gendata->dev)->algnC;
+        gendata->colsep = (gendata->dev)->algnD;
+        gendata->goffset = (max(gendata->bwsep, gendata->colsep) * 2) / gendata->xrmul;
+        gendata->numbytes = gendata->numcols + (2 * gendata->goffset);
+        gendata->numrbytes = gdev_mem_bytes_per_scan_line(gendata->dev);
 
         /* Calculate number of lines in the page and initialize the
          * counter of the lines to eject. At the end of the printing,
@@ -727,53 +732,53 @@ lxm3200_print_page(gx_device_printer *pdev, FILE *prn_stream)
          * two inches (the number is expressed in 1200ths of an inch,
          * so "plus two inches" means "add 2400").
          */
-        gendata.linetoeject = gendata.numvlines * gendata.yrmul;
-        gendata.linetoeject += 2400;
+        gendata->linetoeject = gendata->numvlines * gendata->yrmul;
+        gendata->linetoeject += 2400;
 
         /* Allocate memory for the buffers and
          * verify that the allocation was done properly.
          */
-        gendata.scanbuf = (byte *)gs_malloc(pdev->memory->non_gc_memory, gendata.numbytes, gendata.numblines,
+        gendata->scanbuf = (byte *)gs_malloc(pdev->memory->non_gc_memory, gendata->numbytes, gendata->numblines,
                                                                                                                                                         "lxm3200_print_page(scanbuf)");
 
-        gendata.outdata = (byte *)gs_malloc(pdev->memory->non_gc_memory, gendata.numbytes, 30,
+        gendata->outdata = (byte *)gs_malloc(pdev->memory->non_gc_memory, gendata->numbytes, 30,
                                                                                                                                                         "lxm3200_print_page(outdata)");
 
-        if(gendata.scanbuf == NULL ||
-                 gendata.outdata == NULL)
+        if(gendata->scanbuf == NULL ||
+                 gendata->outdata == NULL)
         {
-                freeresources(pdev);
+                freeresources(dev);
                 return_error(gs_error_VMerror);
         }
 
         /* Send initialization sequence to the printer */
-        if(gendata.modelprint==1) fwrite(z12_init_sequence, sizeof(z12_init_sequence), 1, prn_stream);
+        if(gendata->modelprint==1) fwrite(z12_init_sequence, sizeof(z12_init_sequence), 1, prn_stream);
         else fwrite(init_sequence, sizeof(init_sequence), 1, prn_stream);
 
         /* Choose the right page printing routine
          * depending on the printing mode.
          */
-        switch(gendata.rendermode)
+        switch(gendata->rendermode)
         {
                 case LXM3200_P:
-                        print_photo_page();
+                        print_photo_page(gendata);
                         break;
 
                 case LXM3200_C:
-                        print_color_page();
+                        print_color_page(gendata);
                         break;
 
                 case LXM3200_M:
                 default:
-                        print_mono_page();
+                        print_mono_page(gendata);
                         break;
         }
 
         /* Output the end-of-page epilogue */
-        outputepilogue();
+        outputepilogue(gendata);
 
         /* Free the allocated resources */
-        freeresources(pdev);
+        freeresources(dev);
 
         /* Done. Bye bye, see you on next page. */
         return(0);
@@ -941,14 +946,16 @@ lxm3200_put_params(gx_device *pdev, gs_param_list *plist)
 
 /* Free the resources allocated by the driver */
 static void
-freeresources(gx_device *pdev)
+freeresources(lxm_device *dev)
 {
-        if(gendata.scanbuf)
-                gs_free(pdev->memory->non_gc_memory, (char *)gendata.scanbuf, gendata.numbytes, gendata.numblines,
+	pagedata *gendata = &dev->data;
+
+        if(gendata->scanbuf)
+                gs_free(dev->memory->non_gc_memory, (char *)gendata->scanbuf, gendata->numbytes, gendata->numblines,
                                                 "lxm3200:freeresources(scanbuf)");
 
-        if(gendata.outdata)
-                gs_free(pdev->memory->non_gc_memory, (char *)gendata.outdata, gendata.numbytes, 30,
+        if(gendata->outdata)
+                gs_free(dev->memory->non_gc_memory, (char *)gendata->outdata, gendata->numbytes, 30,
                                                 "lxm3200:freeresources(outdata)");
 }
 
@@ -975,7 +982,7 @@ calccheck8(byte *data)
  * take the printheads to the "park" position.
  */
 static void
-outputepilogue(void)
+outputepilogue(pagedata *gendata)
 {
         byte trailer[24];
         int pos;
@@ -984,8 +991,8 @@ outputepilogue(void)
         trailer[0] = 0x1b;
         trailer[1] = 0x22;
         trailer[2] = 0x80;
-        trailer[3] = gendata.linetoeject >> 8;
-        trailer[4] = gendata.linetoeject & 0xff;
+        trailer[3] = gendata->linetoeject >> 8;
+        trailer[4] = gendata->linetoeject & 0xff;
         trailer[5] = 0x00;
         trailer[6] = 0x00;
         trailer[7] = calccheck8(trailer);
@@ -996,8 +1003,8 @@ outputepilogue(void)
          * current head position minus 168 (0xa8) if we printed the
          * last stripe right-to-left.
          */
-        pos = gendata.curheadpos;
-        if(gendata.bidirprint && gendata.direction == LEFT)pos -= 0xa8;
+        pos = gendata->curheadpos;
+        if(gendata->bidirprint && gendata->direction == LEFT)pos -= 0xa8;
         if(pos < 0)pos = 0;
 
         /* Horizontal back sequence */
@@ -1020,7 +1027,7 @@ outputepilogue(void)
         trailer[22] = 0x00;
         trailer[23] = 0x33;
 
-        fwrite(trailer, 8, 3, gendata.stream);
+        fwrite(trailer, 8, 3, gendata->stream);
 }
 
 /* Output a "page forward" escape sequence,
@@ -1030,7 +1037,7 @@ outputepilogue(void)
  * vskip  : fixed offset, in 1200ths of an inch
  */
 static void
-skiplines(int skiprow, int skipin)
+skiplines(pagedata *gendata, int skiprow, int skipin)
 {
         byte escape[8];
         int vskip;
@@ -1043,7 +1050,7 @@ skiplines(int skiprow, int skipin)
          * spacing value depends on the vertical resolution) and a
          * fixed offset that we directly know in spacing units.
          */
-        vskip = skiprow*gendata.yrmul + skipin;
+        vskip = skiprow*gendata->yrmul + skipin;
 
         escape[0] = 0x1b;
         escape[1] = 0x23;
@@ -1055,9 +1062,9 @@ skiplines(int skiprow, int skipin)
         escape[7] = calccheck8(escape);
 
         /* Adjust the number of lines still inside the printer */
-        gendata.linetoeject -= vskip;
+        gendata->linetoeject -= vskip;
 
-        fwrite(escape, 8, 1, gendata.stream);
+        fwrite(escape, 8, 1, gendata->stream);
 }
 
 /* Fill a stripe header with data.
@@ -1070,26 +1077,26 @@ skiplines(int skiprow, int skipin)
  *           (but excluding the 24 bytes of the header).
  */
 static void
-fillheader(int head, int numcol, int firstcol, int bytes)
+fillheader(pagedata *gendata, int head, int numcol, int firstcol, int bytes)
 {
         int len, offs1, startabs;
         int endabs, select, fwd;
         int back, nabspos, sep;
         byte *header;
 
-        header = gendata.header;
+        header = gendata->header;
 
         /* Correct the measures: firstcol and len need to
          * be in 1200ths of an inch.
          */
-        firstcol *= gendata.xrmul;
-        len = numcol * gendata.xrmul;
+        firstcol *= gendata->xrmul;
+        len = numcol * gendata->xrmul;
 
         /* Alter select to choose direction */
-        select = gendata.select | (gendata.direction == LEFT ? 0x01 : 0x00);
+        select = gendata->select | (gendata->direction == LEFT ? 0x01 : 0x00);
 
         /* Calculate the proper horizontal offset */
-        offs1 = hoffset[head][gendata.direction];
+        offs1 = gendata->dev->hoffset[head][gendata->direction];
 
         /* Now calculate the correct separation depending on the
          * head type and adjust "select" to choose between left
@@ -1097,11 +1104,11 @@ fillheader(int head, int numcol, int firstcol, int bytes)
          */
         if(head == LEFT)
         {
-                sep = (gendata.bwsep * 2) / gendata.xrmul;
+                sep = (gendata->bwsep * 2) / gendata->xrmul;
         }
         else
         {
-                sep = (gendata.colsep * 2) / gendata.xrmul;
+                sep = (gendata->colsep * 2) / gendata->xrmul;
                 select |= 0x80;
         }
 
@@ -1110,7 +1117,7 @@ fillheader(int head, int numcol, int firstcol, int bytes)
          */
         startabs = firstcol + offs1;
 
-        if(gendata.direction == LEFT)
+        if(gendata->direction == LEFT)
                 endabs = startabs + len;
         else
                 endabs = startabs - len;
@@ -1125,10 +1132,10 @@ fillheader(int head, int numcol, int firstcol, int bytes)
          * parameter fitting on the data output by the
          * Windows driver.
          */
-        if(gendata.direction == LEFT)
+        if(gendata->direction == LEFT)
         {
                 nabspos = (((endabs - 3600) >> 3) & 0xfff0) + 9;
-                fwd = nabspos - gendata.curheadpos;
+                fwd = nabspos - gendata->curheadpos;
         }
         else
         {
@@ -1136,30 +1143,30 @@ fillheader(int head, int numcol, int firstcol, int bytes)
                         nabspos = (((endabs - 4800) >> 3) & 0xfff0) + 9;
                 else
                         nabspos = (((endabs - 3600) >> 3) & 0xfff0) + 9;
-                fwd = gendata.curheadpos - nabspos;
+                fwd = gendata->curheadpos - nabspos;
         }
 
-        gendata.curheadpos += (gendata.direction == LEFT ? fwd : -fwd);
+        gendata->curheadpos += (gendata->direction == LEFT ? fwd : -fwd);
 
         /* If we are printing unidirectionally, calculate
          * the backward movement to return the printing head
          * at the beginning of this stripe.
          */
         back = 0;
-        if(gendata.bidirprint == FALSE)
+        if(gendata->bidirprint == FALSE)
         {
                 if(startabs > 4816)
                         nabspos = ((startabs - 4800) >> 3) & 0xfff0;
                 else
                         nabspos = ((startabs - 3600) >> 3) & 0xfff0;
 
-                if(gendata.direction == LEFT)
-                        back = gendata.curheadpos - nabspos;
+                if(gendata->direction == LEFT)
+                        back = gendata->curheadpos - nabspos;
                 else
-                        back = nabspos - gendata.curheadpos;
+                        back = nabspos - gendata->curheadpos;
         }
 
-        gendata.curheadpos -= (gendata.direction == LEFT ? back : -back);
+        gendata->curheadpos -= (gendata->direction == LEFT ? back : -back);
 
         /* First part of the header */
         header[0] = 0x1b;
@@ -1175,7 +1182,7 @@ fillheader(int head, int numcol, int firstcol, int bytes)
         header[8] = 0x1b;
         header[9] = 0x42;
         header[10] = 0x00;
-        if(gendata.modelprint==1) header[10] = 0x10; /* Lexmark Z12 protocol */
+        if(gendata->modelprint==1) header[10] = 0x10; /* Lexmark Z12 protocol */
         header[11] = back >> 8;  /* MSB of the relative backward head motion */
         header[12] = back & 0xff;  /* LSB of the relative backward head motion */
         header[13] = 0x00;  /* MSB of the relative downward head motion */
@@ -1195,14 +1202,14 @@ fillheader(int head, int numcol, int firstcol, int bytes)
         /* Signal to other routines that the output buffer
          * is full and how many bytes it is long.
          */
-        gendata.stripebytes = bytes;
-        gendata.fullflag = TRUE;
+        gendata->stripebytes = bytes;
+        gendata->fullflag = TRUE;
 
         /* If bidirectional printing is in effect, change
          * the printing direction for the next stripe
          */
-        if(gendata.bidirprint)
-                gendata.direction = (gendata.direction == LEFT ? RIGHT : LEFT);
+        if(gendata->bidirprint)
+                gendata->direction = (gendata->direction == LEFT ? RIGHT : LEFT);
 }
 
 /* Set final information in the header and output all
@@ -1216,14 +1223,14 @@ fillheader(int head, int numcol, int firstcol, int bytes)
  * newhead: head used for the next stripe (LEFT or RIGHT)
  */
 static void
-finalizeheader(int vskip, int newhead)
+finalizeheader(pagedata *gendata, int vskip, int newhead)
 {
         int offs2, nstartabs, back, fwd;
         int habs, p, dir, endabs, col;
         int newstart, sep;
         byte *header;
 
-        header = gendata.header;
+        header = gendata->header;
 
         /* Check the printing direction this stripe
          * was originally intended for.
@@ -1231,23 +1238,23 @@ finalizeheader(int vskip, int newhead)
         dir = (header[2] & 0x01 ? LEFT : RIGHT);
 
         /* Retrieve the horizontal offset for the next stripe */
-        offs2 = hoffset[newhead][gendata.direction];
+        offs2 = gendata->dev->hoffset[newhead][gendata->direction];
 
         /* Calculate the separation adjust in 1200ths of an inch */
         if(newhead == LEFT)
-                sep = (gendata.bwsep * 2) / gendata.xrmul;
+                sep = (gendata->bwsep * 2) / gendata->xrmul;
         else
-                sep = (gendata.colsep * 2) / gendata.xrmul;
+                sep = (gendata->colsep * 2) / gendata->xrmul;
 
         /* Now calculate the correct starting column
          * of the next stripe
          */
-        if(gendata.direction == LEFT)
-                newstart = (gendata.left * gendata.xrmul) - sep;
+        if(gendata->direction == LEFT)
+                newstart = (gendata->left * gendata->xrmul) - sep;
         else
-                newstart = (gendata.right * gendata.xrmul);
+                newstart = (gendata->right * gendata->xrmul);
 
-        vskip *= gendata.yrmul;
+        vskip *= gendata->yrmul;
 
         /* Calculate absolute starting position of new stripe */
         nstartabs = newstart + offs2;
@@ -1258,7 +1265,7 @@ finalizeheader(int vskip, int newhead)
          */
         endabs = header[21]*256 + header[22]; /* Starting position */
         col = (header[3]*256 + header[4]); /* Width in columns */
-        col *= gendata.xrmul; /* Transformed in 1200ths of an inch */
+        col *= gendata->xrmul; /* Transformed in 1200ths of an inch */
 
         if(dir == LEFT)
                 endabs += col; /* Printing left-to-right */
@@ -1273,13 +1280,13 @@ finalizeheader(int vskip, int newhead)
          */
         if(dir == LEFT)
         {
-                gendata.curheadpos += header[11]*256 + header[12]; /* Back movement */
-                gendata.curheadpos -= header[5]*256 + header[6];   /* Forward movement */
+                gendata->curheadpos += header[11]*256 + header[12]; /* Back movement */
+                gendata->curheadpos -= header[5]*256 + header[6];   /* Forward movement */
         }
         else
         {
-                gendata.curheadpos -= header[11]*256 + header[12]; /* Back movement */
-                gendata.curheadpos += header[5]*256 + header[6];   /* Forward movement */
+                gendata->curheadpos -= header[11]*256 + header[12]; /* Back movement */
+                gendata->curheadpos += header[5]*256 + header[6];   /* Forward movement */
         }
 
         /* We use a convention of passing a negative value for
@@ -1308,10 +1315,10 @@ finalizeheader(int vskip, int newhead)
                 {
                         p = max(endabs, nstartabs);
                         habs = (((p - 3600) >> 3) & 0xfff0) + 9;
-                        fwd = habs - gendata.curheadpos;
+                        fwd = habs - gendata->curheadpos;
 
                         /* part for the Lexmark Z31!!! */
-                        if(gendata.modelprint==2) fwd += gendata.z31margin;
+                        if(gendata->modelprint==2) fwd += gendata->z31margin;
 
                 }
                 else
@@ -1321,20 +1328,20 @@ finalizeheader(int vskip, int newhead)
                                 habs = (((p - 4800) >> 3) & 0xfff0);
                         else
                                 habs = (((p - 3600) >> 3) & 0xfff0);
-                        fwd = gendata.curheadpos - habs;
+                        fwd = gendata->curheadpos - habs;
                 }
         }
 
         /* Now update the current head position to take into
          * account the forward movement just computed
          */
-        gendata.curheadpos += (dir == LEFT ? fwd : -fwd);
+        gendata->curheadpos += (dir == LEFT ? fwd : -fwd);
 
         /* Now calculate the value of the needed backward movement
          * to poisition the head correctly for the start of the
          * next stripe.
          */
-        if(newhead < 0 || gendata.bidirprint)
+        if(newhead < 0 || gendata->bidirprint)
         {
                 /* If this is the last stripe of the page,
                  * there is no need to take back the head:
@@ -1355,7 +1362,7 @@ finalizeheader(int vskip, int newhead)
                 else
                         habs = ((nstartabs - 3600) >> 3) & 0xfff0;
 
-                back = gendata.curheadpos - habs;
+                back = gendata->curheadpos - habs;
 
                 /* If the next stripe starts at the right
                  * of this one, "back" will be too small or
@@ -1374,7 +1381,7 @@ finalizeheader(int vskip, int newhead)
   /* Lastly, update the current head position with the
          * backward movement just calculated.
          */
-        gendata.curheadpos -= (dir == LEFT ? back : -back);
+        gendata->curheadpos -= (dir == LEFT ? back : -back);
 
         /* Modify first part of the header */
         header[5] = fwd >> 8;
@@ -1385,7 +1392,7 @@ finalizeheader(int vskip, int newhead)
         header[8] = 0x1b;
         header[9] = 0x42;
         header[10] = 0x00;
-        if(gendata.modelprint==1) header[10] = 0x10; /* Lexmark Z12 protocol */
+        if(gendata->modelprint==1) header[10] = 0x10; /* Lexmark Z12 protocol */
         header[11] = back >> 8;    /* MSB of the relative backward head motion */
         header[12] = back & 0xff;  /* LSB of the relative backward head motion */
         header[13] = vskip >> 8;   /* MSB of the relative downward head motion */
@@ -1395,9 +1402,9 @@ finalizeheader(int vskip, int newhead)
         /* Now output the data, signalling that the output
          * buffer is now empty.
          */
-        fwrite(header, 3, 8, gendata.stream);
-        fwrite(gendata.outdata, gendata.stripebytes, 1, gendata.stream);
-        gendata.fullflag = FALSE;
+        fwrite(header, 3, 8, gendata->stream);
+        fwrite(gendata->outdata, gendata->stripebytes, 1, gendata->stream);
+        gendata->fullflag = FALSE;
 }
 
 /* Convert a buffer data stream into
@@ -1409,7 +1416,7 @@ finalizeheader(int vskip, int newhead)
  * firstcol: first column to print.
  */
 static void
-convbuf(int head, int numcols, int firstcol)
+convbuf(pagedata *gendata, int head, int numcols, int firstcol)
 {
         byte *read, *write;
         int x, i, c, p, q, cnt, rle, std;
@@ -1422,8 +1429,8 @@ convbuf(int head, int numcols, int firstcol)
          * Note that the encode routines skipped 4 bytes at
          * each column to make room for the directory word.
          */
-        read = gendata.outdata + 4;
-        write = gendata.outdata;
+        read = gendata->outdata + 4;
+        write = gendata->outdata;
 
         /* Set the parameters that will be used to create the directory and
          * to access the data. These parameters define the structure of the
@@ -1456,7 +1463,7 @@ convbuf(int head, int numcols, int firstcol)
          * because we must have at least one data byte to define the initial
          * pattern that will be eventually repeated.
          */
-        if(gendata.numlines == 208)
+        if(gendata->numlines == 208)
         {
                 nby = 26;
                 ofs = 6;
@@ -1570,7 +1577,7 @@ convbuf(int head, int numcols, int firstcol)
                 bytes += cnt;
         }
 
-        fillheader(head, numcols, firstcol, bytes);
+        fillheader(gendata, head, numcols, firstcol, bytes);
 }
 
 /* This routine takes one full buffer of data and
@@ -1578,7 +1585,7 @@ convbuf(int head, int numcols, int firstcol)
  * one if we are printing in monochrome mode.
  */
 static void
-encode_bw_buf(void)
+encode_bw_buf(pagedata *gendata)
 {
         int left, right, x, y, nn, mod;
         int nxp, yy, numcols, incr;
@@ -1595,7 +1602,7 @@ encode_bw_buf(void)
          * the first and second loop, and yincr is the number of lines
          * in the buffer we move on at each cycle.
          */
-        switch(gendata.yres)
+        switch(gendata->yres)
         {
                 /* At 300 dpi we use only one nozzle column, and
                  * each line in the buffer is printed. So both offsets
@@ -1636,8 +1643,8 @@ encode_bw_buf(void)
                  * The buffer is 512 lines, so mask is set to 511 */
                 case 1200:
                         yincr = 4;
-                        s1 = (gendata.ileave ? 1 : 0);
-                        s2 = (gendata.ileave ? 3 : 2);
+                        s1 = (gendata->ileave ? 1 : 0);
+                        s2 = (gendata->ileave ? 3 : 2);
                         mask = 511;
                         break;
         }
@@ -1652,22 +1659,22 @@ encode_bw_buf(void)
          * buffer lines, from first to last, so we also need to set
          * the mask to a neutral value because we don't use wrapping.
          */
-        if(gendata.rendermode == LXM3200_M)
+        if(gendata->rendermode == LXM3200_M)
         {
                 mask = 511;
                 q = 0;
-                lines = gendata.numblines;
+                lines = gendata->numblines;
         }
         else
         {
-                q = gendata.firstline + valign[BLACKVALIGN];
-                lines = (BWCOLPEN * 2) / gendata.yrmul;
+                q = gendata->firstline + gendata->dev->valign[BLACKVALIGN];
+                lines = (BWCOLPEN * 2) / gendata->yrmul;
         }
 
         /* Adjust the value of the nozzle column separation to the
          * horizontal resolution we are using now.
          */
-        csep = (gendata.bwsep * 2) / gendata.xrmul;
+        csep = (gendata->bwsep * 2) / gendata->xrmul;
 
         /* Here we calculate how many "real" passes we are doing.
          * A "real" pass is a pass where a full column is printed
@@ -1681,8 +1688,8 @@ encode_bw_buf(void)
          * "nxp" variable holds the separation, in columns, between two
          * dot columns printed in the same head sweep.
          */
-        nxp = gendata.numpasses;
-        if(gendata.xres == 1200)nxp /= 2;
+        nxp = gendata->numpasses;
+        if(gendata->xres == 1200)nxp /= 2;
 
         /* Now calculate the byte increments for the *output* data
          * buffer (i.e. the encoded buffer). The first variable,
@@ -1692,7 +1699,7 @@ encode_bw_buf(void)
          * to the other (if we are printing multipass we skip some
          * columns that will be printed in subsequent passes).
          */
-        dy = (gendata.numlines / 8) + 4;
+        dy = (gendata->numlines / 8) + 4;
         dy2 = dy * nxp;
 
         /* Calculate the starting and ending horizontal positions for
@@ -1703,15 +1710,15 @@ encode_bw_buf(void)
          * accelerate properly (not sure if this really works, but it
          * doesn't cost much, so I've left it in).
          */
-        if(gendata.direction == LEFT)
+        if(gendata->direction == LEFT)
         {
-                left = gendata.left - 2*csep;
-                right = gendata.right + csep;
+                left = gendata->left - 2*csep;
+                right = gendata->right + csep;
         }
         else
         {
-                left = gendata.left - csep;
-                right = gendata.right + 2*csep;
+                left = gendata->left - csep;
+                right = gendata->right + 2*csep;
         }
 
         /* Number of columns in a full row */
@@ -1731,7 +1738,7 @@ encode_bw_buf(void)
          */
         f1 = 1;
         f2 = 1;
-        if(gendata.yres == 300)
+        if(gendata->yres == 300)
         {
                 /* At 300 dpi we use only one nozzle column. As of now this
                  * is always the even one, but maybe it could be tried to
@@ -1743,22 +1750,22 @@ encode_bw_buf(void)
         }
 
         /* Now start the passes to fill all the stripe */
-        for(pass = 0; pass < gendata.numpasses; pass++)
+        for(pass = 0; pass < gendata->numpasses; pass++)
         {
                 /* If there is data in the buffer which has not been
                  * sent to the printer yet, send it now.
                  */
-                if(gendata.fullflag)
+                if(gendata->fullflag)
                 {
-                        fwrite(gendata.header, 3, 8, gendata.stream);
-                        fwrite(gendata.outdata, gendata.stripebytes, 1, gendata.stream);
-                        gendata.fullflag = FALSE;
+                        fwrite(gendata->header, 3, 8, gendata->stream);
+                        fwrite(gendata->outdata, gendata->stripebytes, 1, gendata->stream);
+                        gendata->fullflag = FALSE;
                 }
 
                 /* Clear the output buffer to avoid problems with the bitwise
                  * operations we will do later on.
                  */
-                memset(gendata.outdata, 0, gendata.numbytes * 30);
+                memset(gendata->outdata, 0, gendata->numbytes * 30);
 
                 /* Calculate standard increments, starting column
                  * and start of output data. They will be corrected
@@ -1766,7 +1773,7 @@ encode_bw_buf(void)
                  */
                 incr = nxp;
                 start = left + pass;
-                data = gendata.outdata + (pass*dy) + 4;
+                data = gendata->outdata + (pass*dy) + 4;
 
                 /* It appears that at 1200dpi, in addition of not being able
                  * to use 208 nozzles mode for the black cartridge, the Lexmark
@@ -1782,20 +1789,20 @@ encode_bw_buf(void)
                  * minimum grand total of 4 passes are needed to print one full
                  * 1200x1200 dpi stripe with the Lexmark 3200.
                  */
-                if(gendata.xres == 1200)
+                if(gendata->xres == 1200)
                 {
                         f1 = pass & 1;
                         f2 = 1 - f1;
 
                         start = left + (pass/2);
-                        data = gendata.outdata + ((pass/2)*dy) + 4;
+                        data = gendata->outdata + ((pass/2)*dy) + 4;
                 }
 
                 /* If printing right-to-left we need to present data
                  * to the printer in that direction, inverting the
                  * normal flow of data.
                  */
-                if(gendata.direction == RIGHT)
+                if(gendata->direction == RIGHT)
                 {
                         incr = -nxp;
                         start += mod;
@@ -1811,7 +1818,7 @@ encode_bw_buf(void)
                  * the contribute of the nozzle columns separation ("csep"),
                  * but having the "if" outside the loop it's somehow better.
                  */
-                if(gendata.direction == LEFT)
+                if(gendata->direction == LEFT)
                 {
                         /* For all the columns in this pass */
                         for(nn = 0; nn < numcols; nn += nxp)
@@ -1819,24 +1826,24 @@ encode_bw_buf(void)
                                 /* Encode the even numbered nozzles */
                                 if((x >= 0) && f1)
                                 {
-                                        scan = gendata.scanbuf + x;
+                                        scan = gendata->scanbuf + x;
                                         yy = 0;
                                         for(y = s1; y < lines; y += yincr)
                                         {
-                                                if(scan[((y+q) & mask) * gendata.numbytes] & BLACK)
+                                                if(scan[((y+q) & mask) * gendata->numbytes] & BLACK)
                                                         data[yy/8] |= bits[yy&7];
                                                 yy += 2;
                                         }
                                 }
 
                                 /* Encode the odd numbered nozzles */
-                                if(((x+csep) < gendata.numbytes) && f2)
+                                if(((x+csep) < gendata->numbytes) && f2)
                                 {
-                                        scan = gendata.scanbuf + x + csep;
+                                        scan = gendata->scanbuf + x + csep;
                                         yy = 1;
                                         for(y = s2; y < lines; y += yincr)
                                         {
-                                                if(scan[((y+q) & mask) * gendata.numbytes] & BLACK)
+                                                if(scan[((y+q) & mask) * gendata->numbytes] & BLACK)
                                                         data[yy/8] |= bits[yy&7];
                                                 yy += 2;
                                         }
@@ -1846,7 +1853,7 @@ encode_bw_buf(void)
                                  * alternate between nozzle columns to avoid
                                  * overstressing the printing head.
                                  */
-                                if(gendata.xres == 1200)
+                                if(gendata->xres == 1200)
                                 {
                                         f1 = 1 - f1;
                                         f2 = 1 - f2;
@@ -1863,13 +1870,13 @@ encode_bw_buf(void)
                         for(nn = 0; nn < numcols; nn += nxp)
                         {
                                 /* Encode the odd numbered nozzles */
-                                if((x < gendata.numbytes) && f1)
+                                if((x < gendata->numbytes) && f1)
                                 {
-                                        scan = gendata.scanbuf + x;
+                                        scan = gendata->scanbuf + x;
                                         yy = 1;
                                         for(y = s1; y < lines; y += yincr)
                                         {
-                                                if(scan[((y+q) & mask) * gendata.numbytes] & BLACK)
+                                                if(scan[((y+q) & mask) * gendata->numbytes] & BLACK)
                                                         data[yy/8] |= bits[yy&7];
                                                 yy += 2;
                                         }
@@ -1878,11 +1885,11 @@ encode_bw_buf(void)
                                 /* Encode the even numbered nozzles */
                                 if(((x-csep) >= 0) && f2)
                                 {
-                                        scan = gendata.scanbuf + x - csep;
+                                        scan = gendata->scanbuf + x - csep;
                                         yy = 0;
                                         for(y = s2; y < lines; y += yincr)
                                         {
-                                                if(scan[((y+q) & mask)*gendata.numbytes] & BLACK)
+                                                if(scan[((y+q) & mask)*gendata->numbytes] & BLACK)
                                                         data[yy/8] |= bits[yy&7];
                                                 yy += 2;
                                         }
@@ -1892,7 +1899,7 @@ encode_bw_buf(void)
                                  * alternate between nozzle columns to avoid
                                  * overstressing the printing head.
                                  */
-                                if(gendata.xres == 1200)
+                                if(gendata->xres == 1200)
                                 {
                                         f1 = 1 - f1;
                                         f2 = 1 - f2;
@@ -1910,10 +1917,10 @@ encode_bw_buf(void)
                  * margin if we are printing left to right or the
                  * right margin if we are printing right to left.
                  */
-                if(gendata.direction == LEFT)
-                        convbuf(LEFT, numcols, left);
+                if(gendata->direction == LEFT)
+                        convbuf(gendata, LEFT, numcols, left);
                 else
-                        convbuf(LEFT, numcols, right);
+                        convbuf(gendata, LEFT, numcols, right);
         }
 }
 
@@ -1929,7 +1936,7 @@ encode_bw_buf(void)
  *       be LEFT for a photo cartridge or RIGHT for a color one.
  */
 static void
-encode_col_buf(int head)
+encode_col_buf(pagedata *gendata, int head)
 {
         int left, right, x, y, nn, mod;
         int nxp, yy, numcols, incr;
@@ -1952,7 +1959,7 @@ encode_col_buf(int head)
          * each color pen is treated separately to fully cover the
          * printing head.
          */
-        switch(gendata.yres)
+        switch(gendata->yres)
         {
                 case 300:
                         yincr = 1;
@@ -1973,8 +1980,8 @@ encode_col_buf(int head)
 
                 case 1200:
                         yincr = 4;
-                        s1 = (gendata.ileave ? 1 : 0);
-                        s2 = (gendata.ileave ? 3 : 2);
+                        s1 = (gendata->ileave ? 1 : 0);
+                        s2 = (gendata->ileave ? 3 : 2);
                         mask = 511;
                         lines = COLORPEN*2;
                         break;
@@ -1985,30 +1992,30 @@ encode_col_buf(int head)
          * with the photo or black cartridge.
          */
         if(head == LEFT)
-                align = valign[PHOTOVALIGN];
+                align = gendata->dev->valign[PHOTOVALIGN];
         else
-                align = valign[COLORVALIGN];
+                align = gendata->dev->valign[COLORVALIGN];
 
         /* All the stuff below is exactly the same as in
          * encode_bw_buf(), and is therefore commented there.
          */
 
-        csep = (gendata.bwsep * 2) / gendata.xrmul;
-        nxp = gendata.numpasses;
-        if(gendata.xres == 1200)nxp /= 2;
+        csep = (gendata->bwsep * 2) / gendata->xrmul;
+        nxp = gendata->numpasses;
+        if(gendata->xres == 1200)nxp /= 2;
 
-        dy = (gendata.numlines / 8) + 4;
+        dy = (gendata->numlines / 8) + 4;
         dy2 = dy * nxp;
 
-        if(gendata.direction == LEFT)
+        if(gendata->direction == LEFT)
         {
-                left = gendata.left - 2*csep;
-                right = gendata.right + csep;
+                left = gendata->left - 2*csep;
+                right = gendata->right + csep;
         }
         else
         {
-                left = gendata.left - csep;
-                right = gendata.right + 2*csep;
+                left = gendata->left - csep;
+                right = gendata->right + 2*csep;
         }
 
         numcols = right - left;
@@ -2016,45 +2023,45 @@ encode_col_buf(int head)
 
         f1 = 1;
         f2 = 1;
-        if(gendata.yres == 300)
+        if(gendata->yres == 300)
         {
                 f1 = 1;
                 f2 = 0;
         }
 
         /* For all passes */
-        for(pass = 0; pass < gendata.numpasses; pass++)
+        for(pass = 0; pass < gendata->numpasses; pass++)
         {
                 /* If there is data in the buffer which has not been
                  * sent to the printer yet, do it now.
                  */
-                if(gendata.fullflag)
+                if(gendata->fullflag)
                 {
-                        fwrite(gendata.header, 3, 8, gendata.stream);
-                        fwrite(gendata.outdata, gendata.stripebytes, 1, gendata.stream);
-                        gendata.fullflag = FALSE;
+                        fwrite(gendata->header, 3, 8, gendata->stream);
+                        fwrite(gendata->outdata, gendata->stripebytes, 1, gendata->stream);
+                        gendata->fullflag = FALSE;
                 }
 
                 /* All the stuff below is exactly the same as in
                  * encode_bw_buf(), and is therefore commented there.
                  */
 
-                memset(gendata.outdata, 0, gendata.numbytes * 30);
+                memset(gendata->outdata, 0, gendata->numbytes * 30);
 
                 incr = nxp;
                 start = left + pass;
-                data = gendata.outdata + (pass*dy) + 4;
+                data = gendata->outdata + (pass*dy) + 4;
 
-                if(gendata.xres == 1200)
+                if(gendata->xres == 1200)
                 {
                         f1 = pass & 1;
                         f2 = 1 - f1;
 
                         start = left + (pass/2);
-                        data = gendata.outdata + ((pass/2)*dy) + 4;
+                        data = gendata->outdata + ((pass/2)*dy) + 4;
                 }
 
-                if(gendata.direction == RIGHT)
+                if(gendata->direction == RIGHT)
                 {
                         incr = -nxp;
                         start += mod;
@@ -2063,7 +2070,7 @@ encode_col_buf(int head)
                 /* Start column scanning */
                 x = start;
 
-                if(gendata.direction == LEFT)
+                if(gendata->direction == LEFT)
                 {
                         /* For all the columns */
                         for(nn = 0; nn < numcols; nn += nxp)
@@ -2071,7 +2078,7 @@ encode_col_buf(int head)
                                 /* Encode the even numbered nozzles */
                                 if((x >= 0) && f1)
                                 {
-                                        scan = gendata.scanbuf + x;
+                                        scan = gendata->scanbuf + x;
                                         yy = 0;
 
                                         /* In color printing there is one more loop to scan
@@ -2090,10 +2097,10 @@ encode_col_buf(int head)
                                          */
                                         for(k=0; k<3; k++)
                                         {
-                                                q = gendata.firstline + align + penofs[k];
+                                                q = gendata->firstline + align + gendata->dev->penofs[k];
                                                 for(y = s1; y < lines; y += yincr)
                                                 {
-                                                        if(scan[((y+q) & mask) * gendata.numbytes] & colmask[head][k])
+                                                        if(scan[((y+q) & mask) * gendata->numbytes] & colmask[head][k])
                                                                 data[yy/8] |= bits[yy&7];
                                                         yy += 2;
                                                 }
@@ -2101,16 +2108,16 @@ encode_col_buf(int head)
                                 }
 
                                 /* Encode the odd numbered nozzles */
-                                if(((x+csep) < gendata.numbytes) && f2)
+                                if(((x+csep) < gendata->numbytes) && f2)
                                 {
-                                        scan = gendata.scanbuf + x + csep;
+                                        scan = gendata->scanbuf + x + csep;
                                         yy = 1;
                                         for(k=0; k<3; k++)
                                         {
-                                                q = gendata.firstline + align + penofs[k];
+                                                q = gendata->firstline + align + gendata->dev->penofs[k];
                                                 for(y = s2; y < lines; y += yincr)
                                                 {
-                                                        if(scan[((y+q) & mask) * gendata.numbytes] & colmask[head][k])
+                                                        if(scan[((y+q) & mask) * gendata->numbytes] & colmask[head][k])
                                                                 data[yy/8] |= bits[yy&7];
                                                         yy += 2;
                                                 }
@@ -2121,7 +2128,7 @@ encode_col_buf(int head)
                                  * alternate between nozzle columns to avoid
                                  * overstressing the printing head.
                                  */
-                                if(gendata.xres == 1200)
+                                if(gendata->xres == 1200)
                                 {
                                         f1 = 1 - f1;
                                         f2 = 1 - f2;
@@ -2138,16 +2145,16 @@ encode_col_buf(int head)
                         for(nn = 0; nn < numcols; nn += nxp)
                         {
                                 /* Encode the odd numbered nozzles */
-                                if((x < gendata.numbytes) && f1)
+                                if((x < gendata->numbytes) && f1)
                                 {
-                                        scan = gendata.scanbuf + x;
+                                        scan = gendata->scanbuf + x;
                                         yy = 1;
                                         for(k=0; k<3; k++)
                                         {
-                                                q = gendata.firstline + align + penofs[k];
+                                                q = gendata->firstline + align + gendata->dev->penofs[k];
                                                 for(y = s1; y < lines; y += yincr)
                                                 {
-                                                        if(scan[((y+q) & mask) * gendata.numbytes] & colmask[head][k])
+                                                        if(scan[((y+q) & mask) * gendata->numbytes] & colmask[head][k])
                                                                 data[yy/8] |= bits[yy&7];
                                                         yy += 2;
                                                 }
@@ -2157,14 +2164,14 @@ encode_col_buf(int head)
                                 /* Encode the even numbered nozzles */
                                 if(((x-csep) >= 0) && f2)
                                 {
-                                        scan = gendata.scanbuf + x - csep;
+                                        scan = gendata->scanbuf + x - csep;
                                         yy = 0;
                                         for(k=0; k<3; k++)
                                         {
-                                                q = gendata.firstline + align + penofs[k];
+                                                q = gendata->firstline + align + gendata->dev->penofs[k];
                                                 for(y = s2; y < lines; y += yincr)
                                                 {
-                                                        if(scan[((y+q) & mask) * gendata.numbytes] & colmask[head][k])
+                                                        if(scan[((y+q) & mask) * gendata->numbytes] & colmask[head][k])
                                                                 data[yy/8] |= bits[yy&7];
                                                         yy += 2;
                                                 }
@@ -2175,7 +2182,7 @@ encode_col_buf(int head)
                                  * alternate between nozzle columns to avoid
                                  * overstressing the printing head.
                                  */
-                                if(gendata.xres == 1200)
+                                if(gendata->xres == 1200)
                                 {
                                         f1 = 1 - f1;
                                         f2 = 1 - f2;
@@ -2187,10 +2194,10 @@ encode_col_buf(int head)
                         }
                 }
 
-                if(gendata.direction == LEFT)
-                        convbuf(head, numcols, left);
+                if(gendata->direction == LEFT)
+                        convbuf(gendata, head, numcols, left);
                 else
-                        convbuf(head, numcols, right);
+                        convbuf(gendata, head, numcols, right);
         }
 }
 
@@ -2204,7 +2211,7 @@ encode_col_buf(int head)
  * vline: the line from which to start searching for data.
  */
 static int
-fill_mono_buffer(int vline)
+fill_mono_buffer(pagedata *gendata, int vline)
 {
         byte *in_data, *data;
         int i, ret, ofs;
@@ -2217,19 +2224,19 @@ fill_mono_buffer(int vline)
          * cartridge, the head must start before the horizontal margin, so
          * the buffer width is slightly bigger than the width of the
          * rasterized lines. The difference is the "guard offset", and the
-         * variables gendata.numbytes and gendata.numrbytes hold respectively
+         * variables gendata->numbytes and gendata->numrbytes hold respectively
          * the number of bytes in a buffer line and the number of bytes in a
-         * rasterized scanline, while gendata.goffset contains the number of
+         * rasterized scanline, while gendata->goffset contains the number of
          * bytes reserved to the guard offset on each side of the scanline.
          */
-        data = gendata.scanbuf;
-        ofs = gendata.goffset;
+        data = gendata->scanbuf;
+        ofs = gendata->goffset;
 
         /* Cycle until we have no more lines on the page */
-        while(vline < gendata.numvlines)
+        while(vline < gendata->numvlines)
         {
                 /* Ask Ghostscript for one rasterized line */
-                gdev_prn_get_bits((gx_device_printer *)gendata.dev,
+                gdev_prn_get_bits((gx_device_printer *)gendata->dev,
                                                                                         vline, data+ofs, &in_data);
 
                 /* And check if it's all zero: if not, break out of
@@ -2238,7 +2245,7 @@ fill_mono_buffer(int vline)
 
                  */
                 if(in_data[0] != 0 ||
-                         memcmp(in_data, in_data+1,gendata.numrbytes-1))break;
+                         memcmp(in_data, in_data+1,gendata->numrbytes-1))break;
                 vline++;
         }
 
@@ -2247,18 +2254,18 @@ fill_mono_buffer(int vline)
          * saying that this is the last buffer (LAST bit set) and it's
          * empty (no LHDATA or RHDATA bit set).
          */
-        if(vline >= gendata.numvlines)return(LAST);
+        if(vline >= gendata->numvlines)return(LAST);
 
         /* This buffer contains at least one non-empty line.
          * Adjust the current vertical position and load the first
          * line into the buffer.
          */
-        gendata.curvline = vline;
-        memset(data, 0, gendata.numbytes);
-        if(in_data != data+ofs)memcpy(data+ofs, in_data, gendata.numrbytes);
+        gendata->curvline = vline;
+        memset(data, 0, gendata->numbytes);
+        if(in_data != data+ofs)memcpy(data+ofs, in_data, gendata->numrbytes);
 
         vline++;
-        data += gendata.numbytes;
+        data += gendata->numbytes;
 
         /* Now initialize the return value to LHDATA (since at least
          * one non-blank line was found, this buffer contains data, and
@@ -2269,10 +2276,10 @@ fill_mono_buffer(int vline)
          * the page.
          */
         ret = LHDATA;
-        for(i=1; i<gendata.numblines; i++)
+        for(i=1; i<gendata->numblines; i++)
         {
-                memset(data, 0, gendata.numbytes);
-                if(vline > gendata.numvlines)
+                memset(data, 0, gendata->numbytes);
+                if(vline > gendata->numvlines)
                 {
                         /* Ok, we are at the end of the page, so set the LAST bit
                          * in the return value but don't exit the loop because we
@@ -2288,13 +2295,13 @@ fill_mono_buffer(int vline)
                         /* If we are not at the end of the page, copy one more
                          * scanline into the buffer.
                          */
-                        gdev_prn_get_bits((gx_device_printer *)gendata.dev,
+                        gdev_prn_get_bits((gx_device_printer *)gendata->dev,
                                                                                                 vline, data+ofs, &in_data);
-                        if(in_data != data+ofs)memcpy(data+ofs, in_data, gendata.numrbytes);
+                        if(in_data != data+ofs)memcpy(data+ofs, in_data, gendata->numrbytes);
                 }
 
                 vline++;
-                data += gendata.numbytes;
+                data += gendata->numbytes;
 
         }
 
@@ -2317,15 +2324,15 @@ fill_mono_buffer(int vline)
  * to print, there is no speed impact.
  */
 static int
-init_buffer(void)
+init_buffer(pagedata *gendata)
 {
         byte *in_data, *data;
         int i, ret, p1, p2, ofs;
 
-        data = gendata.scanbuf;
-        ofs = gendata.goffset;
+        data = gendata->scanbuf;
+        ofs = gendata->goffset;
 
-        if(gendata.rendermode == LXM3200_M)return(fill_mono_buffer(0));
+        if(gendata->rendermode == LXM3200_M)return(fill_mono_buffer(gendata, 0));
 
         /* We position the heads with the bottom color pen (the
          * yellow one in the color cartridge and the black one
@@ -2334,13 +2341,13 @@ init_buffer(void)
          * two parts: "p1" is the number of lines above the top
          * border and "p2" the number of lines below.
          */
-        p1 = 368 / gendata.yrmul;
-        p2 = 144 / gendata.yrmul;
+        p1 = 368 / gendata->yrmul;
+        p2 = 144 / gendata->yrmul;
 
         /* Initialize the counters */
-        gendata.curvline = -p1;
-        gendata.lastblack = gendata.curvline - 1;
-        data = gendata.scanbuf;
+        gendata->curvline = -p1;
+        gendata->lastblack = gendata->curvline - 1;
+        data = gendata->scanbuf;
 
         /* Clear the lines of the buffer that correspond to
          * lines above the top margin: of course we don't
@@ -2348,8 +2355,8 @@ init_buffer(void)
          */
         for(i=0; i<p1; i++)
         {
-                memset(data, 0, gendata.numbytes);
-                data += gendata.numbytes;
+                memset(data, 0, gendata->numbytes);
+                data += gendata->numbytes;
         }
 
         /* And now load the last part of the buffer.
@@ -2358,19 +2365,19 @@ init_buffer(void)
          */
         for(i=0; i<p2; i++)
         {
-                memset(data, 0, gendata.numbytes);
+                memset(data, 0, gendata->numbytes);
 
-                if(i < gendata.numvlines)
+                if(i < gendata->numvlines)
                 {
-                        gdev_prn_get_bits((gx_device_printer *)gendata.dev,
+                        gdev_prn_get_bits((gx_device_printer *)gendata->dev,
                                                                                                 i, data+ofs, &in_data);
-                        if(in_data != data+ofs)memcpy(data+ofs, in_data, gendata.numrbytes);
+                        if(in_data != data+ofs)memcpy(data+ofs, in_data, gendata->numrbytes);
                 }
 
-                data += gendata.numbytes;
+                data += gendata->numbytes;
         }
 
-        gendata.firstline = 0;
+        gendata->firstline = 0;
 
         /* Now check the return value. If by chance we are under
          * the bottom margin, add the LAST bit to the return value.
@@ -2379,7 +2386,7 @@ init_buffer(void)
          * this pass. Anyway this is code that will be executed
          * only once per page, so better safe than sorry.
          */
-        ret = (gendata.numvlines < p2 ? LAST : 0) | qualify_buffer();
+        ret = (gendata->numvlines < p2 ? LAST : 0) | qualify_buffer(gendata);
 
         return(ret);
 }
@@ -2392,7 +2399,7 @@ init_buffer(void)
  * over blank lines, so this routine is not needed.
  */
 static int
-qualify_buffer(void)
+qualify_buffer(pagedata *gendata)
 {
         int i, j, k, ret;
         int rmsk, q, v1;
@@ -2406,9 +2413,9 @@ qualify_buffer(void)
          * adjusting for different resolution settings.
          * Also set the mask used to rollover the buffer.
          */
-        cpsz = (COLORPEN * 2) / gendata.yrmul;
-        bpsz = (BWCOLPEN * 2) / gendata.yrmul;
-        rmsk = gendata.numblines - 1;
+        cpsz = (COLORPEN * 2) / gendata->yrmul;
+        bpsz = (BWCOLPEN * 2) / gendata->yrmul;
+        rmsk = gendata->numblines - 1;
 
         /* Check the right head data, it is always a color cartridge */
         for(k=0; k<3 && ret==0; k++)
@@ -2418,11 +2425,11 @@ qualify_buffer(void)
                  * ORing together all the bits.
                  */
                 v1 = 0;
-                q = gendata.firstline + valign[COLORVALIGN] + penofs[k];
+                q = gendata->firstline + gendata->dev->valign[COLORVALIGN] + gendata->dev->penofs[k];
                 for(i=0; i<cpsz; i++)
                 {
-                        data = gendata.scanbuf + ((q+i) & rmsk)*gendata.numbytes;
-                        for(j=0; j<gendata.numbytes; j++)v1 |= *data++;
+                        data = gendata->scanbuf + ((q+i) & rmsk)*gendata->numbytes;
+                        for(j=0; j<gendata->numbytes; j++)v1 |= *data++;
                 }
                 /* If the result of the OR has the proper color bit
                  * set, it means that this buffer contains at least
@@ -2438,7 +2445,7 @@ qualify_buffer(void)
         /* Check the left head data: it could be a black or
          * a photo cartridge, depending on the printing mode.
          */
-        if(gendata.rendermode == LXM3200_C)
+        if(gendata->rendermode == LXM3200_C)
         {
                 /* We are in standard color mode: the left cartridge
                  * is a black cartridge used in 192 nozzles mode.
@@ -2447,11 +2454,11 @@ qualify_buffer(void)
                  * color pen on this cartridge.
                  */
                 v1 = 0;
-                q = gendata.firstline + valign[BLACKVALIGN];
+                q = gendata->firstline + gendata->dev->valign[BLACKVALIGN];
                 for(i=0; i<bpsz; i++)
                 {
-                        data = gendata.scanbuf + ((q+i) & rmsk)*gendata.numbytes;
-                        for(j=0; j<gendata.numbytes; j++)v1 |= *data++;
+                        data = gendata->scanbuf + ((q+i) & rmsk)*gendata->numbytes;
+                        for(j=0; j<gendata->numbytes; j++)v1 |= *data++;
                 }
                 if(v1 & BLACK)ret |= LHDATA;
         }
@@ -2465,11 +2472,11 @@ qualify_buffer(void)
                 for(k=0; k<3 && !(ret & LHDATA); k++)
                 {
                         v1 = 0;
-                        q = gendata.firstline + valign[PHOTOVALIGN] + penofs[k];
+                        q = gendata->firstline + gendata->dev->valign[PHOTOVALIGN] + gendata->dev->penofs[k];
                         for(i=0; i<cpsz; i++)
                         {
-                                data = gendata.scanbuf + ((q+i) & rmsk)*gendata.numbytes;
-                                for(j=0; j<gendata.numbytes; j++)v1 |= *data++;
+                                data = gendata->scanbuf + ((q+i) & rmsk)*gendata->numbytes;
+                                for(j=0; j<gendata->numbytes; j++)v1 |= *data++;
                         }
                         if(v1 & colmask[LEFT][k])ret |= LHDATA;
                 }
@@ -2495,7 +2502,7 @@ qualify_buffer(void)
  * to lay down the cyan component.
  */
 static int
-roll_buffer(void)
+roll_buffer(pagedata *gendata)
 {
         int i, ret, fline, vl, ofs;
         int cpen, cmask, lline;
@@ -2504,8 +2511,8 @@ roll_buffer(void)
         /* Adjust the size of the color pen and the
          * mask to take into account the current resolution
          */
-        cpen = (COLORPEN * 2) / gendata.yrmul;
-        cmask = (gendata.numblines) - 1;
+        cpen = (COLORPEN * 2) / gendata->yrmul;
+        cmask = (gendata->numblines) - 1;
 
         /* Calculate the line number corresponding to
          * the last buffer we can print before being
@@ -2513,22 +2520,22 @@ roll_buffer(void)
          * has been experimentally determined to be
          * 112 lines from the bottom of the page.
          */
-        lline = gendata.numvlines - (224 / gendata.yrmul);
+        lline = gendata->numvlines - (224 / gendata->yrmul);
 
         /* Roll the buffer by advancing the first line
          * pointer by the height of one color pen.
          */
-        fline = gendata.firstline;
-        gendata.firstline = (fline + cpen) & cmask;
+        fline = gendata->firstline;
+        gendata->firstline = (fline + cpen) & cmask;
 
         /* Now calculate the pointer to the first "fresh"
          * line on the page, i.e. the first line we must
          * read into the buffer at this pass.
          */
-        vl = gendata.curvline + cmask + 1;
+        vl = gendata->curvline + cmask + 1;
 
         /* Take into account the guard offset */
-        ofs = gendata.goffset;
+        ofs = gendata->goffset;
 
         /* Initialize the return value and update the
          * current vertical position on the page, while
@@ -2536,28 +2543,28 @@ roll_buffer(void)
          * buffer.
          */
         ret = 0;
-        gendata.curvline += cpen;
-        if(gendata.curvline >= lline)ret = LAST;
+        gendata->curvline += cpen;
+        if(gendata->curvline >= lline)ret = LAST;
 
         /* Now read "fresh" rasterized scanlines into the
          * input buffer.
          */
         for(i=0; i<cpen; i++)
         {
-                data = gendata.scanbuf + ((fline + i) & cmask) * gendata.numbytes;
+                data = gendata->scanbuf + ((fline + i) & cmask) * gendata->numbytes;
 
-                memset(data, 0, gendata.numbytes);
-                if(vl < gendata.numvlines)
+                memset(data, 0, gendata->numbytes);
+                if(vl < gendata->numvlines)
                 {
-                        gdev_prn_get_bits((gx_device_printer *)gendata.dev,
+                        gdev_prn_get_bits((gx_device_printer *)gendata->dev,
                                                                                                 vl, data+ofs, &in_data);
-                        if(in_data != data+ofs)memcpy(data+ofs, in_data, gendata.numrbytes);
+                        if(in_data != data+ofs)memcpy(data+ofs, in_data, gendata->numrbytes);
                 }
                 vl++;
         }
 
         /* And test for the presence of actual data to print */
-        ret |= qualify_buffer();
+        ret |= qualify_buffer(gendata);
 
         return(ret);
 }
@@ -2573,11 +2580,11 @@ roll_buffer(void)
  * right: calculated right margin (output variable)
  */
 static void
-calclinemargins(byte *data, int mask, int *left, int *right)
+calclinemargins(pagedata *gendata, byte *data, int mask, int *left, int *right)
 {
         int l,r,num;
 
-        num = gendata.numbytes - 1;
+        num = gendata->numbytes - 1;
 
         l = 0;
         while((l <= num) && ((data[l] & mask) == 0))l++;
@@ -2599,7 +2606,7 @@ calclinemargins(byte *data, int mask, int *left, int *right)
  *       margins for (LEFT or RIGHT)
  */
 static void
-calcbufmargins(int head)
+calcbufmargins(pagedata *gendata, int head)
 {
         int i, l1, r1, q, k;
         int mleft, mright, nl;
@@ -2607,22 +2614,22 @@ calcbufmargins(int head)
         byte *scan;
 
         /* Adjust mask and pen height according to vertical resolution */
-        cpen = (COLORPEN * 2) / gendata.yrmul;
-        cmask = (gendata.numblines) - 1;
+        cpen = (COLORPEN * 2) / gendata->yrmul;
+        cmask = (gendata->numblines) - 1;
 
         /* Calculate margins for a color or photo cartridge */
-        if(head == RIGHT || (gendata.rendermode == LXM3200_P))
+        if(head == RIGHT || (gendata->rendermode == LXM3200_P))
         {
                 /* Get correct vertical aligment */
                 al = (head == LEFT ? PHOTOVALIGN : COLORVALIGN);
 
-                q = gendata.firstline + valign[al];
+                q = gendata->firstline + gendata->dev->valign[al];
 
                 /* Calculate margins for first line, using those values
                  * to initialize the max and min values.
                  */
-                scan = gendata.scanbuf + ((q+penofs[0]) & cmask)*gendata.numbytes;
-                calclinemargins(scan, colmask[head][0], &mleft, &mright);
+                scan = gendata->scanbuf + ((q+gendata->dev->penofs[0]) & cmask)*gendata->numbytes;
+                calclinemargins(gendata, scan, colmask[head][0], &mleft, &mright);
 
                 /* And now scan all the remaining buffer. We scan according
                  * to color pens, i.e. we calculate the margin on the rows
@@ -2636,15 +2643,15 @@ calcbufmargins(int head)
                 {
                         for(i=0; i<cpen; i++)
                         {
-                                scan = gendata.scanbuf + ((q+i+penofs[k]) & cmask)*gendata.numbytes;
-                                calclinemargins(scan, colmask[head][k], &l1, &r1);
+                                scan = gendata->scanbuf + ((q+i+gendata->dev->penofs[k]) & cmask)*gendata->numbytes;
+                                calclinemargins(gendata, scan, colmask[head][k], &l1, &r1);
                                 mleft = min(mleft, l1);
                                 mright = max(mright, r1);
                         }
                 }
 
-                gendata.left = mleft;
-                gendata.right = mright;
+                gendata->left = mleft;
+                gendata->right = mright;
 
                 return;
         }
@@ -2653,25 +2660,25 @@ calcbufmargins(int head)
          * almost exactly the same as before, but now we do
          * a single pass because we have only one black pen.
          */
-        if(gendata.rendermode == LXM3200_M)
+        if(gendata->rendermode == LXM3200_M)
         {
                 /* Monochromatic mode: we use 208 nozzles and
                  * all the buffer, so the initial offset is zero.
                  */
 
-                scan = gendata.scanbuf;
-                calclinemargins(scan, BLACK, &mleft, &mright);
+                scan = gendata->scanbuf;
+                calclinemargins(gendata, scan, BLACK, &mleft, &mright);
 
-                for(i=1; i<gendata.numblines; i++)
+                for(i=1; i<gendata->numblines; i++)
                 {
-                        scan += gendata.numbytes;
-                        calclinemargins(scan, BLACK, &l1, &r1);
+                        scan += gendata->numbytes;
+                        calclinemargins(gendata, scan, BLACK, &l1, &r1);
                         mleft = min(mleft, l1);
                         mright = max(mright, r1);
                 }
 
-                gendata.left = mleft;
-                gendata.right = mright;
+                gendata->left = mleft;
+                gendata->right = mright;
 
                 return;
         }
@@ -2680,21 +2687,21 @@ calcbufmargins(int head)
          * take into account the vertical alignment.
          */
 
-        nl = (gendata.numlines * 2) / gendata.yrmul;
-        q = gendata.firstline + valign[BLACKVALIGN];
+        nl = (gendata->numlines * 2) / gendata->yrmul;
+        q = gendata->firstline + gendata->dev->valign[BLACKVALIGN];
 
-        scan = gendata.scanbuf + (q & cmask)*gendata.numbytes;
-        calclinemargins(scan, BLACK, &mleft, &mright);
+        scan = gendata->scanbuf + (q & cmask)*gendata->numbytes;
+        calclinemargins(gendata, scan, BLACK, &mleft, &mright);
 
         for(i=1; i<nl; i++)
         {
-                scan = gendata.scanbuf + ((q+i) & cmask)*gendata.numbytes;
-                calclinemargins(scan, BLACK, &l1, &r1);
+                scan = gendata->scanbuf + ((q+i) & cmask)*gendata->numbytes;
+                calclinemargins(gendata, scan, BLACK, &l1, &r1);
                 mleft = min(mleft, l1);
                 mright = max(mright, r1);
         }
-        gendata.left = mleft;
-        gendata.right = mright;
+        gendata->left = mleft;
+        gendata->right = mright;
 }
 
 /*
@@ -2702,7 +2709,7 @@ calcbufmargins(int head)
  * standard color mode.
  */
 static void
-print_color_page(void)
+print_color_page(pagedata *gendata)
 {
         int res, lline, cmask;
         int i, j, nl, q, sk;
@@ -2715,13 +2722,13 @@ print_color_page(void)
          * the last black stripe and then we print another only if
          * the current line is at least "sk" lines after that.
          */
-        sk = (BWCOLPEN * 2) / gendata.yrmul;
+        sk = (BWCOLPEN * 2) / gendata->yrmul;
 
         /* Get the first buffer, and if it's empty continue
          * to skip forward without doing anything.
          */
-        res = init_buffer();
-        while(res == 0)res = roll_buffer();
+        res = init_buffer(gendata);
+        while(res == 0)res = roll_buffer(gendata);
 
         /* If this buffer happens to be the last one,
          * and empty as well, we had a blank page.
@@ -2733,7 +2740,7 @@ print_color_page(void)
          * page: issue a vertical skip command to
          * advance the paper to proper position.
          */
-        skiplines(gendata.curvline, COLTOPSTART);
+        skiplines(gendata, gendata->curvline, COLTOPSTART);
 
         /* "lline" holds the number of the first line of
          * the last buffer printed, either with left or
@@ -2744,7 +2751,7 @@ print_color_page(void)
          * to do the proper vertical motion in one single
          * pass as soon as we encounter a non-blank buffer).
          */
-        lline = gendata.curvline;
+        lline = gendata->curvline;
 
         /* Now depending on the data we have into the
          * buffer, print with the left head, right
@@ -2768,59 +2775,59 @@ print_color_page(void)
         switch(res)
         {
                 case LHDATA:
-                        calcbufmargins(LEFT);
-                        gendata.ileave = 0;
-                        encode_bw_buf();
-                        gendata.lastblack = gendata.curvline + sk;
-                        lline = gendata.curvline;
-                        if(gendata.yres == 1200)
+                        calcbufmargins(gendata, LEFT);
+                        gendata->ileave = 0;
+                        encode_bw_buf(gendata);
+                        gendata->lastblack = gendata->curvline + sk;
+                        lline = gendata->curvline;
+                        if(gendata->yres == 1200)
                         {
-                                finalizeheader(1, LEFT);
-                                gendata.ileave = 1;
-                                encode_bw_buf();
+                                finalizeheader(gendata, 1, LEFT);
+                                gendata->ileave = 1;
+                                encode_bw_buf(gendata);
                                 lline++;
                         }
                         break;
 
                 case RHDATA:
-                        calcbufmargins(RIGHT);
-                        gendata.ileave = 0;
-                        encode_col_buf(RIGHT);
-                        lline = gendata.curvline;
-                        if(gendata.yres == 1200)
+                        calcbufmargins(gendata, RIGHT);
+                        gendata->ileave = 0;
+                        encode_col_buf(gendata, RIGHT);
+                        lline = gendata->curvline;
+                        if(gendata->yres == 1200)
                         {
-                                finalizeheader(1, RIGHT);
-                                gendata.ileave = 1;
-                                encode_col_buf(RIGHT);
+                                finalizeheader(gendata, 1, RIGHT);
+                                gendata->ileave = 1;
+                                encode_col_buf(gendata, RIGHT);
                                 lline++;
                         }
                         break;
 
                 case LHDATA|RHDATA:
-                        calcbufmargins(LEFT);
-                        gendata.ileave = 0;
-                        encode_bw_buf();
-                        gendata.lastblack = gendata.curvline + sk;
-                        calcbufmargins(RIGHT);
-                        finalizeheader(0, RIGHT);
-                        encode_col_buf(RIGHT);
-                        lline = gendata.curvline;
-                        if(gendata.yres == 1200)
+                        calcbufmargins(gendata, LEFT);
+                        gendata->ileave = 0;
+                        encode_bw_buf(gendata);
+                        gendata->lastblack = gendata->curvline + sk;
+                        calcbufmargins(gendata, RIGHT);
+                        finalizeheader(gendata, 0, RIGHT);
+                        encode_col_buf(gendata, RIGHT);
+                        lline = gendata->curvline;
+                        if(gendata->yres == 1200)
                         {
-                                calcbufmargins(LEFT);
-                                finalizeheader(1, LEFT);
-                                gendata.ileave = 1;
-                                encode_bw_buf();
-                                calcbufmargins(RIGHT);
-                                finalizeheader(0, RIGHT);
-                                encode_col_buf(RIGHT);
+                                calcbufmargins(gendata, LEFT);
+                                finalizeheader(gendata, 1, LEFT);
+                                gendata->ileave = 1;
+                                encode_bw_buf(gendata);
+                                calcbufmargins(gendata, RIGHT);
+                                finalizeheader(gendata, 0, RIGHT);
+                                encode_col_buf(gendata, RIGHT);
                                 lline++;
                         }
                         break;
         }
 
         /* Skip to next buffer */
-        res = roll_buffer();
+        res = roll_buffer(gendata);
 
         /* Start the main loop. Here we do all the stuff required
          * to print buffers properly.
@@ -2829,10 +2836,10 @@ print_color_page(void)
         {
                 /* If we haven't forwarded until "lastblack", do not
                  * print black data because it has been printed on
-                 * previous passes. So, if we are below gendata.lastblack
+                 * previous passes. So, if we are below gendata->lastblack
                  * clear the LHDATA flag to ignore left-head data.
                  */
-                if(gendata.curvline < gendata.lastblack)res &= ~LHDATA;
+                if(gendata->curvline < gendata->lastblack)res &= ~LHDATA;
 
                 /* And now start examining the buffer for data */
                 switch(res)
@@ -2841,7 +2848,7 @@ print_color_page(void)
                         case LHDATA:
 
                                 /* Calculate the margins of this buffer */
-                                calcbufmargins(LEFT);
+                                calcbufmargins(gendata, LEFT);
 
                                 /* And then finalize the previous buffer. We can't
                                  * do this until now, because only now we know the
@@ -2849,29 +2856,29 @@ print_color_page(void)
                                  * which are required data to calculate the final
                                  * head position at the end of the previous buffer.
                                  */
-                                finalizeheader(gendata.curvline - lline, LEFT);
+                                finalizeheader(gendata, gendata->curvline - lline, LEFT);
 
                                 /* Set interleave to zero (only meaningful in 1200dpi
                                  * vertical mode.
                                  */
-                                gendata.ileave = 0;
+                                gendata->ileave = 0;
 
                                 /* Encode this buffer making it the current buffer */
-                                encode_bw_buf();
+                                encode_bw_buf(gendata);
 
                                 /* Since we are printing a black buffer, update
-                                 * gendata.lastblack to point to the first line
+                                 * gendata->lastblack to point to the first line
                                  * not covered by this black pass.
                                  */
-                                gendata.lastblack = gendata.curvline + sk;
+                                gendata->lastblack = gendata->curvline + sk;
 
                                 /* And update "lline" as well */
-                                lline = gendata.curvline;
+                                lline = gendata->curvline;
 
                                 /* If we are printing at 1200 dpi vertical, we must
                                  * do one more pass, interleaved with the one before.
                                  */
-                                if(gendata.yres == 1200)
+                                if(gendata->yres == 1200)
                                 {
                                         /* Finalize previous buffer, moving down 1/1200th
                                          * of an inch to properly interleave the two passes.
@@ -2881,16 +2888,16 @@ print_color_page(void)
                                          * banding on output (no more than 1/600th of an inch,
                                          * but maybe noticeable).
                                          */
-                                        finalizeheader(1, LEFT);
+                                        finalizeheader(gendata, 1, LEFT);
 
                                         /* Set interleave to 1 to start an interleaved pass */
-                                        gendata.ileave = 1;
+                                        gendata->ileave = 1;
 
                                         /* Encode the buffer, and not finalize it: we leave
                                          * the buffer suspended until we find another buffer
                                          * to print.
                                          */
-                                        encode_bw_buf();
+                                        encode_bw_buf(gendata);
 
                                         /* And adjust "lline" because to print the interleaved
                                          * pass we have moved down one line, so we need to
@@ -2903,20 +2910,20 @@ print_color_page(void)
                         /* Right head data. This is absolutely identical to the
                          * code above for left head data, with two exceptions: all
                          * the "LEFT" codes are changed to "RIGHT" and we don't
-                         * update gendata.lastblack because we are printing a
+                         * update gendata->lastblack because we are printing a
                          * color stripe and not a black one.
                          */
                   case RHDATA:
-                                calcbufmargins(RIGHT);
-                                finalizeheader(gendata.curvline - lline, RIGHT);
-                                gendata.ileave = 0;
-                                encode_col_buf(RIGHT);
-                                lline = gendata.curvline;
-                                if(gendata.yres == 1200)
+                                calcbufmargins(gendata, RIGHT);
+                                finalizeheader(gendata, gendata->curvline - lline, RIGHT);
+                                gendata->ileave = 0;
+                                encode_col_buf(gendata, RIGHT);
+                                lline = gendata->curvline;
+                                if(gendata->yres == 1200)
                                 {
-                                        finalizeheader(1, RIGHT);
-                                        gendata.ileave = 1;
-                                        encode_col_buf(RIGHT);
+                                        finalizeheader(gendata, 1, RIGHT);
+                                        gendata->ileave = 1;
+                                        encode_col_buf(gendata, RIGHT);
                                         lline++;
                                 }
                                 break;
@@ -2934,31 +2941,31 @@ print_color_page(void)
                          * above would not work.
                          */
                         case LHDATA|RHDATA:
-                                calcbufmargins(LEFT);
-                                finalizeheader(gendata.curvline - lline, LEFT);
-                                gendata.ileave = 0;
-                                encode_bw_buf();
-                                gendata.lastblack = gendata.curvline + sk;
-                                calcbufmargins(RIGHT);
-                                finalizeheader(0, RIGHT);
-                                encode_col_buf(RIGHT);
-                                lline = gendata.curvline;
-                                if(gendata.yres == 1200)
+                                calcbufmargins(gendata, LEFT);
+                                finalizeheader(gendata, gendata->curvline - lline, LEFT);
+                                gendata->ileave = 0;
+                                encode_bw_buf(gendata);
+                                gendata->lastblack = gendata->curvline + sk;
+                                calcbufmargins(gendata, RIGHT);
+                                finalizeheader(gendata, 0, RIGHT);
+                                encode_col_buf(gendata, RIGHT);
+                                lline = gendata->curvline;
+                                if(gendata->yres == 1200)
                                 {
-                                        calcbufmargins(LEFT);
-                                        finalizeheader(1, LEFT);
-                                        gendata.ileave = 1;
-                                        encode_bw_buf();
-                                        calcbufmargins(RIGHT);
-                                        finalizeheader(0, RIGHT);
-                                        encode_col_buf(RIGHT);
+                                        calcbufmargins(gendata, LEFT);
+                                        finalizeheader(gendata, 1, LEFT);
+                                        gendata->ileave = 1;
+                                        encode_bw_buf(gendata);
+                                        calcbufmargins(gendata, RIGHT);
+                                        finalizeheader(gendata, 0, RIGHT);
+                                        encode_col_buf(gendata, RIGHT);
                                         lline++;
                                 }
                                 break;
                 }
 
                 /* Get another buffer */
-                res = roll_buffer();
+                res = roll_buffer(gendata);
         }
 
         /* Last buffer. We treat this one specially as well,
@@ -2966,7 +2973,7 @@ print_color_page(void)
          * and so we need to finalize this buffers as soon as
          * possible.
          */
-        res = qualify_buffer();
+        res = qualify_buffer(gendata);
 
         /* Void the printed blacks. Since we are printing the
          * last buffer, it could happen that we have advanced
@@ -2980,21 +2987,21 @@ print_color_page(void)
          * lines we have already printed otherwise we would
          * print them twice.
          */
-        if((res & LHDATA) && (gendata.curvline <= gendata.lastblack))
+        if((res & LHDATA) && (gendata->curvline <= gendata->lastblack))
         {
                 /* Find how many black lines we have yet printed
                  * are still in the buffer
                  */
-                nl = gendata.lastblack - gendata.curvline;
+                nl = gendata->lastblack - gendata->curvline;
 
                 /* And now remove the BLACK bit from them */
 
-                q = gendata.firstline + valign[BLACKVALIGN];
-                cmask = (gendata.numblines) - 1;
+                q = gendata->firstline + gendata->dev->valign[BLACKVALIGN];
+                cmask = (gendata->numblines) - 1;
                 for(i=0; i<nl; i++)
                 {
-                        scan = gendata.scanbuf + ((i+q) & cmask)*gendata.numbytes;
-                        for(j=0; j<gendata.numbytes; j++)
+                        scan = gendata->scanbuf + ((i+q) & cmask)*gendata->numbytes;
+                        for(j=0; j<gendata->numbytes; j++)
                         {
                                 *scan &= ~BLACK;
                                 scan++;
@@ -3012,50 +3019,50 @@ print_color_page(void)
         switch(res)
         {
                 case LHDATA:
-                        calcbufmargins(LEFT);
-                        finalizeheader(gendata.curvline - lline, LEFT);
-                        gendata.ileave = 0;
-                        encode_bw_buf();
-                        if(gendata.yres == 1200)
+                        calcbufmargins(gendata, LEFT);
+                        finalizeheader(gendata, gendata->curvline - lline, LEFT);
+                        gendata->ileave = 0;
+                        encode_bw_buf(gendata);
+                        if(gendata->yres == 1200)
                         {
-                                finalizeheader(1, LEFT);
-                                gendata.ileave = 1;
-                                encode_bw_buf();
+                                finalizeheader(gendata, 1, LEFT);
+                                gendata->ileave = 1;
+                                encode_bw_buf(gendata);
                                 lline++;
                         }
                         break;
 
                 case RHDATA:
-                        calcbufmargins(RIGHT);
-                        finalizeheader(gendata.curvline - lline, RIGHT);
-                        gendata.ileave = 0;
-                        encode_col_buf(RIGHT);
-                        if(gendata.yres == 1200)
+                        calcbufmargins(gendata, RIGHT);
+                        finalizeheader(gendata, gendata->curvline - lline, RIGHT);
+                        gendata->ileave = 0;
+                        encode_col_buf(gendata, RIGHT);
+                        if(gendata->yres == 1200)
                         {
-                                finalizeheader(1, RIGHT);
-                                gendata.ileave = 1;
-                                encode_col_buf(RIGHT);
+                                finalizeheader(gendata, 1, RIGHT);
+                                gendata->ileave = 1;
+                                encode_col_buf(gendata, RIGHT);
                                 lline++;
                         }
                         break;
 
                 case LHDATA|RHDATA:
-                        calcbufmargins(LEFT);
-                        finalizeheader(gendata.curvline - lline, LEFT);
-                        gendata.ileave = 0;
-                        encode_bw_buf();
-                        calcbufmargins(RIGHT);
-                        finalizeheader(0, RIGHT);
-                        encode_col_buf(RIGHT);
-                        if(gendata.yres == 1200)
+                        calcbufmargins(gendata, LEFT);
+                        finalizeheader(gendata, gendata->curvline - lline, LEFT);
+                        gendata->ileave = 0;
+                        encode_bw_buf(gendata);
+                        calcbufmargins(gendata, RIGHT);
+                        finalizeheader(gendata, 0, RIGHT);
+                        encode_col_buf(gendata, RIGHT);
+                        if(gendata->yres == 1200)
                         {
-                                calcbufmargins(LEFT);
-                                finalizeheader(1, LEFT);
-                                gendata.ileave = 1;
-                                encode_bw_buf();
-                                calcbufmargins(RIGHT);
-                                finalizeheader(0, RIGHT);
-                                encode_col_buf(RIGHT);
+                                calcbufmargins(gendata, LEFT);
+                                finalizeheader(gendata, 1, LEFT);
+                                gendata->ileave = 1;
+                                encode_bw_buf(gendata);
+                                calcbufmargins(gendata, RIGHT);
+                                finalizeheader(gendata, 0, RIGHT);
+                                encode_col_buf(gendata, RIGHT);
                                 lline++;
                         }
                         break;
@@ -3068,7 +3075,7 @@ print_color_page(void)
          * final head position, it will be reset unconditionally
          * by the trailing sequence).
          */
-        finalizeheader(0, -1);
+        finalizeheader(gendata, 0, -1);
 }
 
 /* This is the equivalent of print_color_page()
@@ -3077,14 +3084,14 @@ print_color_page(void)
  * with only one head.
  */
 static void
-print_mono_page(void)
+print_mono_page(pagedata *gendata)
 {
         int res, lline;
 
         /* Load the first buffer, skipping over
          * blank lines (if any).
          */
-        res = init_buffer();
+        res = init_buffer(gendata);
 
         /* If we happen to have a buffer which is LAST
          * and empty, we have a blank page to print:
@@ -3095,22 +3102,22 @@ print_mono_page(void)
         /* Skip enough lines to reach the start of
          * the first stripe to print.
          */
-        skiplines(gendata.curvline, BWTOPSTART);
-        lline = gendata.curvline;
+        skiplines(gendata, gendata->curvline, BWTOPSTART);
+        lline = gendata->curvline;
 
         /* And now print the first buffer. This part of
          * the code is identical to the LHDATA part in
          * print_color_page()
          */
-        calcbufmargins(LEFT);
-        gendata.ileave = 0;
-        encode_bw_buf();
-        lline = gendata.curvline;
-        if(gendata.yres == 1200)
+        calcbufmargins(gendata, LEFT);
+        gendata->ileave = 0;
+        encode_bw_buf(gendata);
+        lline = gendata->curvline;
+        if(gendata->yres == 1200)
         {
-                finalizeheader(1, LEFT);
-                gendata.ileave = 1;
-                encode_bw_buf();
+                finalizeheader(gendata, 1, LEFT);
+                gendata->ileave = 1;
+                encode_bw_buf(gendata);
                 lline++;
         }
 
@@ -3118,7 +3125,7 @@ print_mono_page(void)
          * look for it from the first line after the
          * pass we have just done.
          */
-        res = fill_mono_buffer(gendata.curvline + gendata.numblines);
+        res = fill_mono_buffer(gendata, gendata->curvline + gendata->numblines);
 
         /* Now loop. Even this code is identical
          * to the code above: the only difference
@@ -3131,21 +3138,21 @@ print_mono_page(void)
          */
         while(!(res & LAST))
         {
-                calcbufmargins(LEFT);
-                finalizeheader(gendata.curvline - lline, LEFT);
-                gendata.ileave = 0;
-                encode_bw_buf();
-                lline = gendata.curvline;
-                if(gendata.yres == 1200)
+                calcbufmargins(gendata, LEFT);
+                finalizeheader(gendata, gendata->curvline - lline, LEFT);
+                gendata->ileave = 0;
+                encode_bw_buf(gendata);
+                lline = gendata->curvline;
+                if(gendata->yres == 1200)
                 {
-                        finalizeheader(1, LEFT);
-                        gendata.ileave = 1;
-                        encode_bw_buf();
+                        finalizeheader(gendata, 1, LEFT);
+                        gendata->ileave = 1;
+                        encode_bw_buf(gendata);
                         lline++;
                 }
 
                 /* Get another buffer, and so on */
-                res = fill_mono_buffer(gendata.curvline + gendata.numblines);
+                res = fill_mono_buffer(gendata, gendata->curvline + gendata->numblines);
         }
 
         /* Last buffer. This can be either empty or full.
@@ -3153,20 +3160,20 @@ print_mono_page(void)
          */
         if(res & LHDATA)
         {
-                calcbufmargins(LEFT);
-                finalizeheader(gendata.curvline - lline, LEFT);
-                encode_bw_buf();
-                if(gendata.yres == 1200)
+                calcbufmargins(gendata, LEFT);
+                finalizeheader(gendata, gendata->curvline - lline, LEFT);
+                encode_bw_buf(gendata);
+                if(gendata->yres == 1200)
                 {
-                        finalizeheader(1, LEFT);
-                        gendata.ileave = 1;
-                        encode_bw_buf();
+                        finalizeheader(gendata, 1, LEFT);
+                        gendata->ileave = 1;
+                        encode_bw_buf(gendata);
                         lline++;
                 }
         }
 
         /* Finalize the last buffer */
-        finalizeheader(0, -1);
+        finalizeheader(gendata, 0, -1);
 }
 
 /* This is the equivalent of print_color_page()
@@ -3177,183 +3184,183 @@ print_mono_page(void)
  * printing pens (i.e.: no "lastblack" tricks).
  */
 static void
-print_photo_page(void)
+print_photo_page(pagedata *gendata)
 {
         int res, lline;
 
-        res = init_buffer();
-        while(res == 0)res = roll_buffer();
+        res = init_buffer(gendata);
+        while(res == 0)res = roll_buffer(gendata);
 
         if(res == LAST)return;
 
-        skiplines(gendata.curvline, COLTOPSTART);
-        lline = gendata.curvline;
+        skiplines(gendata, gendata->curvline, COLTOPSTART);
+        lline = gendata->curvline;
 
         switch(res)
         {
                 case LHDATA:
-                        calcbufmargins(LEFT);
-                        gendata.ileave = 0;
-                        encode_col_buf(LEFT);
-                        lline = gendata.curvline;
-                        if(gendata.yres == 1200)
+                        calcbufmargins(gendata, LEFT);
+                        gendata->ileave = 0;
+                        encode_col_buf(gendata, LEFT);
+                        lline = gendata->curvline;
+                        if(gendata->yres == 1200)
                         {
-                                finalizeheader(1, LEFT);
-                                gendata.ileave = 1;
-                                encode_col_buf(LEFT);
+                                finalizeheader(gendata, 1, LEFT);
+                                gendata->ileave = 1;
+                                encode_col_buf(gendata, LEFT);
                                 lline++;
                         }
                         break;
 
                 case RHDATA:
-                        calcbufmargins(RIGHT);
-                        gendata.ileave = 0;
-                        encode_col_buf(RIGHT);
-                        lline = gendata.curvline;
-                        if(gendata.yres == 1200)
+                        calcbufmargins(gendata, RIGHT);
+                        gendata->ileave = 0;
+                        encode_col_buf(gendata, RIGHT);
+                        lline = gendata->curvline;
+                        if(gendata->yres == 1200)
                         {
-                                finalizeheader(1, RIGHT);
-                                gendata.ileave = 1;
-                                encode_col_buf(RIGHT);
+                                finalizeheader(gendata, 1, RIGHT);
+                                gendata->ileave = 1;
+                                encode_col_buf(gendata, RIGHT);
                                 lline++;
                         }
                         break;
 
                 case LHDATA|RHDATA:
-                        calcbufmargins(LEFT);
-                        gendata.ileave = 0;
-                        encode_col_buf(LEFT);
-                        calcbufmargins(RIGHT);
-                        finalizeheader(0, RIGHT);
-                        encode_col_buf(RIGHT);
-                        lline = gendata.curvline;
-                        if(gendata.yres == 1200)
+                        calcbufmargins(gendata, LEFT);
+                        gendata->ileave = 0;
+                        encode_col_buf(gendata, LEFT);
+                        calcbufmargins(gendata, RIGHT);
+                        finalizeheader(gendata, 0, RIGHT);
+                        encode_col_buf(gendata, RIGHT);
+                        lline = gendata->curvline;
+                        if(gendata->yres == 1200)
                         {
-                                calcbufmargins(LEFT);
-                                finalizeheader(1, LEFT);
-                                gendata.ileave = 1;
-                                encode_col_buf(LEFT);
-                                calcbufmargins(RIGHT);
-                                finalizeheader(0, RIGHT);
-                                encode_col_buf(RIGHT);
+                                calcbufmargins(gendata, LEFT);
+                                finalizeheader(gendata, 1, LEFT);
+                                gendata->ileave = 1;
+                                encode_col_buf(gendata, LEFT);
+                                calcbufmargins(gendata, RIGHT);
+                                finalizeheader(gendata, 0, RIGHT);
+                                encode_col_buf(gendata, RIGHT);
                                 lline++;
                         }
 
                         break;
         }
 
-        res = roll_buffer();
+        res = roll_buffer(gendata);
 
         while(!(res & LAST))
         {
                 switch(res)
                 {
                         case LHDATA:
-                                calcbufmargins(LEFT);
-                                finalizeheader(gendata.curvline - lline, LEFT);
-                                gendata.ileave = 0;
-                                encode_col_buf(LEFT);
-                                lline = gendata.curvline;
-                                if(gendata.yres == 1200)
+                                calcbufmargins(gendata, LEFT);
+                                finalizeheader(gendata, gendata->curvline - lline, LEFT);
+                                gendata->ileave = 0;
+                                encode_col_buf(gendata, LEFT);
+                                lline = gendata->curvline;
+                                if(gendata->yres == 1200)
                                 {
-                                        finalizeheader(1, LEFT);
-                                        gendata.ileave = 1;
-                                        encode_col_buf(LEFT);
+                                        finalizeheader(gendata, 1, LEFT);
+                                        gendata->ileave = 1;
+                                        encode_col_buf(gendata, LEFT);
                                         lline++;
                                 }
                                 break;
 
                         case RHDATA:
-                                calcbufmargins(RIGHT);
-                                finalizeheader(gendata.curvline - lline, RIGHT);
-                                gendata.ileave = 0;
-                                encode_col_buf(RIGHT);
-                                lline = gendata.curvline;
-                                if(gendata.yres == 1200)
+                                calcbufmargins(gendata, RIGHT);
+                                finalizeheader(gendata, gendata->curvline - lline, RIGHT);
+                                gendata->ileave = 0;
+                                encode_col_buf(gendata, RIGHT);
+                                lline = gendata->curvline;
+                                if(gendata->yres == 1200)
                                 {
-                                        finalizeheader(1, RIGHT);
-                                        gendata.ileave = 1;
-                                        encode_col_buf(RIGHT);
+                                        finalizeheader(gendata, 1, RIGHT);
+                                        gendata->ileave = 1;
+                                        encode_col_buf(gendata, RIGHT);
                                         lline++;
                                 }
                                 break;
 
                         case LHDATA|RHDATA:
-                                calcbufmargins(LEFT);
-                                finalizeheader(gendata.curvline - lline, LEFT);
-                                gendata.ileave = 0;
-                                encode_col_buf(LEFT);
-                                calcbufmargins(RIGHT);
-                                finalizeheader(0, RIGHT);
-                                encode_col_buf(RIGHT);
-                                lline = gendata.curvline;
-                                if(gendata.yres == 1200)
+                                calcbufmargins(gendata, LEFT);
+                                finalizeheader(gendata, gendata->curvline - lline, LEFT);
+                                gendata->ileave = 0;
+                                encode_col_buf(gendata, LEFT);
+                                calcbufmargins(gendata, RIGHT);
+                                finalizeheader(gendata, 0, RIGHT);
+                                encode_col_buf(gendata, RIGHT);
+                                lline = gendata->curvline;
+                                if(gendata->yres == 1200)
                                 {
-                                        calcbufmargins(LEFT);
-                                        finalizeheader(1, LEFT);
-                                        gendata.ileave = 1;
-                                        encode_col_buf(LEFT);
-                                        calcbufmargins(RIGHT);
-                                        finalizeheader(0, RIGHT);
-                                        encode_col_buf(RIGHT);
+                                        calcbufmargins(gendata, LEFT);
+                                        finalizeheader(gendata, 1, LEFT);
+                                        gendata->ileave = 1;
+                                        encode_col_buf(gendata, LEFT);
+                                        calcbufmargins(gendata, RIGHT);
+                                        finalizeheader(gendata, 0, RIGHT);
+                                        encode_col_buf(gendata, RIGHT);
                                         lline++;
                                 }
                                 break;
                 }
 
-                res = roll_buffer();
+                res = roll_buffer(gendata);
         }
 
         switch(res)
         {
                 case LHDATA:
-                        calcbufmargins(LEFT);
-                        finalizeheader(gendata.curvline - lline, LEFT);
-                        gendata.ileave = 0;
-                        encode_col_buf(LEFT);
-                        if(gendata.yres == 1200)
+                        calcbufmargins(gendata, LEFT);
+                        finalizeheader(gendata, gendata->curvline - lline, LEFT);
+                        gendata->ileave = 0;
+                        encode_col_buf(gendata, LEFT);
+                        if(gendata->yres == 1200)
                         {
-                                finalizeheader(1, LEFT);
-                                gendata.ileave = 1;
-                                encode_col_buf(LEFT);
+                                finalizeheader(gendata, 1, LEFT);
+                                gendata->ileave = 1;
+                                encode_col_buf(gendata, LEFT);
                                 lline++;
                         }
 
                 case RHDATA:
-                        calcbufmargins(RIGHT);
-                        finalizeheader(gendata.curvline - lline, RIGHT);
-                        gendata.ileave = 0;
-                        encode_col_buf(RIGHT);
-                        if(gendata.yres == 1200)
+                        calcbufmargins(gendata, RIGHT);
+                        finalizeheader(gendata, gendata->curvline - lline, RIGHT);
+                        gendata->ileave = 0;
+                        encode_col_buf(gendata, RIGHT);
+                        if(gendata->yres == 1200)
                         {
-                                finalizeheader(1, RIGHT);
-                                gendata.ileave = 1;
-                                encode_col_buf(RIGHT);
+                                finalizeheader(gendata, 1, RIGHT);
+                                gendata->ileave = 1;
+                                encode_col_buf(gendata, RIGHT);
                                 lline++;
                         }
                         break;
 
                 case LHDATA|RHDATA:
-                        calcbufmargins(LEFT);
-                        finalizeheader(gendata.curvline - lline, LEFT);
-                        gendata.ileave = 0;
-                        encode_col_buf(LEFT);
-                        calcbufmargins(RIGHT);
-                        finalizeheader(0, RIGHT);
-                        encode_col_buf(RIGHT);
-                        if(gendata.yres == 1200)
+                        calcbufmargins(gendata, LEFT);
+                        finalizeheader(gendata, gendata->curvline - lline, LEFT);
+                        gendata->ileave = 0;
+                        encode_col_buf(gendata, LEFT);
+                        calcbufmargins(gendata, RIGHT);
+                        finalizeheader(gendata, 0, RIGHT);
+                        encode_col_buf(gendata, RIGHT);
+                        if(gendata->yres == 1200)
                         {
-                                calcbufmargins(LEFT);
-                                finalizeheader(1, LEFT);
-                                gendata.ileave = 1;
-                                encode_col_buf(LEFT);
-                                calcbufmargins(RIGHT);
-                                finalizeheader(0, RIGHT);
-                                encode_col_buf(RIGHT);
+                                calcbufmargins(gendata, LEFT);
+                                finalizeheader(gendata, 1, LEFT);
+                                gendata->ileave = 1;
+                                encode_col_buf(gendata, LEFT);
+                                calcbufmargins(gendata, RIGHT);
+                                finalizeheader(gendata, 0, RIGHT);
+                                encode_col_buf(gendata, RIGHT);
                                 lline++;
                         }
                         break;
         }
 
-        finalizeheader(0, -1);
+        finalizeheader(gendata, 0, -1);
 }

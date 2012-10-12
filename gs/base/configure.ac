@@ -35,8 +35,7 @@ dnl List of non-threadsafe devices
 dnl defined at the top of the file for ease of access
 dnl --------------------------------------------------
 
-NTS_DEVS='lxm3200'
-NTS_DEVS="$NTS_DEVS opvp oprp"
+NTS_DEVS='opvp oprp'
 NTS_DEVS="$NTS_DEVS stcolor"
 NTS_DEVS="$NTS_DEVS uniprint"
 NTS_DEVS="$NTS_DEVS x11 x11alpha"
