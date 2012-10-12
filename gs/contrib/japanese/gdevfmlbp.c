@@ -100,8 +100,8 @@ static char can_inits[] ={ ESC, 'c',              /* Software reset */
 /* Get the paper size code, based on width and height. */
 /* modified from gdevpcl.c, gdevmjc.c and gdevnpdl.c. */
 static char *
-gdev_fmlbp_paper_size(gx_device_printer *dev)
-{ static char paper[16];
+gdev_fmlbp_paper_size(gx_device_printer *dev, char *paper)
+{
   int    landscape = 0;	/* portrait */
   float height_inches = dev->height / dev->y_pixels_per_inch;
   float  width_inches = dev->width  / dev->x_pixels_per_inch;
@@ -164,6 +164,7 @@ fmlbp_print_page(gx_device_printer *pdev, FILE *prn_stream)
 #ifdef	FMLBP_NOPAPERSIZE
   char data[LINE_SIZE*2];
 #else
+  char paper[16];
   byte *data = (byte *)gs_malloc(pdev->memory->non_gc_memory, 1, line_size, "fmlpr_print_page(data)");
   if(data == NULL) return_error(gs_error_VMerror);
 #endif/*FMLBP_NOPAPERSIZE*/
@@ -177,7 +178,7 @@ fmlbp_print_page(gx_device_printer *pdev, FILE *prn_stream)
 #endif/*!OLD_FMLBP_400DPI*/
 #ifndef	FMLBP_NOPAPERSIZE
   fprintf(prn_stream, "%c%c%s!F", PU1,
-          gdev_fmlbp_paper_size(pdev));		/* Paper size */
+          gdev_fmlbp_paper_size(pdev, paper));		/* Paper size */
 #endif/*!FMLBP_NOPAPERSIZE*/
 
   /* Send each scan line in turn */

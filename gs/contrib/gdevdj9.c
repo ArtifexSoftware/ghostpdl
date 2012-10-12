@@ -449,6 +449,7 @@ typedef struct gx_device_cdj970_s {
     StartRasterMode start_raster_mode;	/* output function to start raster mode */
     PrintNonBlankLines print_non_blank_lines;	/* output function to print a non blank line */
     TerminatePage terminate_page;	/* page termination output function */
+    int PageCtr;
 } gx_device_cdj970;
 
 typedef struct {
@@ -552,8 +553,6 @@ static int cdj_put_param_float(gs_param_list *, gs_param_name, float
 static int cdj_put_param_bpp(gx_device *, gs_param_list *, int, int, int);
 static int cdj_set_bpp(gx_device *, int, int);
 
-static int PageCtr = 0;
-
 /**********************************************************************************/
 /*                                                                                */
 /*																	private functions                             */
@@ -565,6 +564,8 @@ static int PageCtr = 0;
 static int hp_colour_open(gx_device * pdev)
 {
         int   retCode;
+
+	cdj970->PageCtr = 0;
 
         /* Set up colour params if put_params has not already done so */
         if (pdev->color_info.num_components == 0) {
@@ -814,7 +815,7 @@ static int cdj970_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
         Gamma gamma;
 
-        if (PageCtr == 0 && cdj970->ptype == DJ970C) {
+        if (cdj970->PageCtr == 0 && cdj970->ptype == DJ970C) {
                 cdj970_one_time_initialisation(pdev);
         }
 
@@ -874,7 +875,7 @@ static int cdj970_print_page(gx_device_printer * pdev, FILE * prn_stream)
         gs_free(pdev->memory->non_gc_memory, (char *)data_ptrs.storage, misc_vars.storage_size_words, W,
             "hp970_print_page");
 
-        PageCtr ++;
+        cdj970->PageCtr ++;
 
         return (0);
 }
@@ -896,7 +897,7 @@ static int GetScanLine(	gx_device_printer 	* pdev,
         int				i = 0;
         register word *enddata2;
 
-        if ((cdj970->duplex == BOOK) && (PageCtr%2 == 1)) --(*lnum);
+        if ((cdj970->duplex == BOOK) && (cdj970->PageCtr%2 == 1)) --(*lnum);
         else ++(*lnum);
 
         gdev_prn_copy_scan_lines(pdev, *lnum, (byte *) data_words, misc_vars->line_size);
@@ -911,7 +912,7 @@ static int GetScanLine(	gx_device_printer 	* pdev,
 
         end_data = enddata2;
 
-        if ((cdj970->duplex == BOOK) && (PageCtr%2 == 1)) {
+        if ((cdj970->duplex == BOOK) && (cdj970->PageCtr%2 == 1)) {
                 memset (tempBuffer, 0, BUFFER_SIZE*sizeof(unsigned long));
 
                 while (enddata2 > data_words) {
@@ -936,7 +937,7 @@ static int GetScanLine(	gx_device_printer 	* pdev,
         return (end_data - data_words);
 }
 
-#define PAGE_CTR_OK ( ((cdj970->duplex < BOOK) && (lnum < lend)) || ((cdj970->duplex == BOOK) && (lnum >= 0) && (PageCtr%2 == 1)) || ((cdj970->duplex == BOOK) && (PageCtr%2 == 0) && (lnum < lend)))
+#define PAGE_CTR_OK ( ((cdj970->duplex < BOOK) && (lnum < lend)) || ((cdj970->duplex == BOOK) && (lnum >= 0) && (cdj970->PageCtr%2 == 1)) || ((cdj970->duplex == BOOK) && (cdj970->PageCtr%2 == 0) && (lnum < lend)))
 
 /* send_scan_lines: Send the scan lines to the printer
 ----------------------------------------------------------------------------------*/
@@ -961,7 +962,7 @@ static void send_scan_lines(	gx_device_printer 			*pdev,
 
         misc_vars->zero_row_count = 0;
 
-        if ((cdj970->duplex == BOOK) && (PageCtr%2==1)) {
+        if ((cdj970->duplex == BOOK) && (cdj970->PageCtr%2==1)) {
                 lnum = lend;
 
                 if (cdj970->quality == DRAFT)
