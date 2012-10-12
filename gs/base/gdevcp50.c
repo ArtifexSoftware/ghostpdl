@@ -50,15 +50,22 @@ static gx_device_procs cp50_procs =
   prn_color_procs(gdev_prn_open, cp50_output_page, gdev_prn_close,
     cp50_rgb_color, cp50_color_rgb);
 
-const gx_device_printer far_data gs_cp50_device =
-  prn_device(cp50_procs, "cp50",
+typedef struct gx_device_printer_cp50
+{
+    gx_device_common;
+    gx_prn_device_common;
+    int copies;
+} gx_device_printer_cp50;
+
+const gx_device_printer_cp50 far_data gs_cp50_device =
+{
+  prn_device_std_body(gx_device_printer_cp50, cp50_procs, "cp50",
         39,				/* width_10ths, 100mm */
         59,				/* height_10ths,150mm  */
         X_DPI, Y_DPI,
         0.39, 0.91, 0.43, 0.75,		/* margins */
-        24, cp50_print_page);
-
-int copies;
+        24, cp50_print_page)
+};
 
 /* ------ Internal routines ------ */
 
@@ -115,7 +122,7 @@ cp50_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
     /* set number of copies */
     fprintf(prn_stream,"\033\116");
-    num_copies = copies & 0xFF;
+    num_copies = ((gx_device_printer_cp50 *)pdev)->copies & 0xFF;
     fwrite(&num_copies, sizeof(char), 1, prn_stream);
 
     /* download image */
@@ -175,7 +182,7 @@ cp50_output_page(gx_device *pdev, int num_copies, int flush)
     code = gdev_prn_open_printer(pdev, 1);
     if ( code < 0 ) return code;
 
-    copies = num_copies; /* using global variable to pass */
+    ((gx_device_printer_cp50 *)pdev)->copies = num_copies; /* using global variable to pass */
 
     /* Print the accumulated page description. */
     outcode = (*ppdev->printer_procs.print_page)(ppdev, ppdev->file);
