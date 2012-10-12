@@ -31,6 +31,24 @@ CXXFLAGS="${CXXFLAGS:=}"
 LDFLAGS="${LDFLAGS:=}"
 
 dnl --------------------------------------------------
+dnl List of non-threadsafe devices
+dnl defined at the top of the file for ease of access
+dnl --------------------------------------------------
+
+NTS_DEVS='pcl3 hpdjplus hpdjportable hpdj310 hpdj320 hpdj340 hpdj400 hpdj500 hpdj500c hpdj510 hpdj520 hpdj540 hpdj550c hpdj560c hpdj600 hpdj660c hpdj670c hpdj680c hpdj690c hpdj850c hpdj855c hpdj870c hpdj890c hpdj1120c cdj670 cdj850 cdj880 cdj890 cdj970 cdj1600 cdnj500 chp2200'
+NTS_DEVS="$NTS_DEVS lips3"
+NTS_DEVS="$NTS_DEVS lxm3200 lex2050 lex3200 lex5700 lex7000"
+NTS_DEVS="$NTS_DEVS oki4w"
+NTS_DEVS="$NTS_DEVS lips4 bj10v bj10vh md50Mono md50Eco md1xMono lp2000 escpage npdl rpdl fmpr fmlbp jj100 lbp310 lbp320 mj700v2c mj500c mj6000c mj8000c pr201 pr150 pr1000 pr1000_4 lips2p bjc880j"
+NTS_DEVS="$NTS_DEVS gdi samsunggdi dl2100 la50 la70 la75 la75plus ln03 xes md2k md5k"
+NTS_DEVS="$NTS_DEVS mag16 mag256"
+
+# We use this to store a list of devices we have excluded
+# and emit a warning on completion.
+NTS_EXCLUDES=""
+
+
+dnl --------------------------------------------------
 dnl Local utilities
 dnl --------------------------------------------------
 
@@ -247,6 +265,17 @@ AC_RUN_IFELSE(
   ])],
   [BIGENDIAN=1;AC_MSG_RESULT(big)],
   [BIGENDIAN=0;AC_MSG_RESULT(little)])
+
+
+
+dnl --------------------------------------------------
+dnl Enable thread safe build
+dnl --------------------------------------------------
+AC_ARG_ENABLE([threadsafe], AC_HELP_STRING([--enable-threadsafe],
+    [enable a thread safe build - NOTE: this will exclude non-threadsafe devices]))
+if test x$enable_threadsafe = xyes; then
+    CFLAGS="-DGS_THREADSAFE"
+fi
 
 dnl --------------------------------------------------
 dnl Check for headers
@@ -1578,7 +1607,53 @@ while test -n "$drivers"; do
         esac
 done
 
+if test x$enable_threadsafe = xyes; then
+
+  for ntsdev in $NTS_DEVS ; do
+    NTS_EXCLUDES="$(echo \"$P_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
+    P_DEVS0=`echo $P_DEVS0 | sed "s/\b$ntsdev\b//g"`
+  done
+
+  for ntsdev in $NTS_DEVS ; do
+    NTS_EXCLUDES="$(echo \"$F_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
+    F_DEVS0=`echo $F_DEVS0 | sed "s/\b$ntsdev\b//g"`
+  done
+
+  for ntsdev in $NTS_DEVS ; do
+    NTS_EXCLUDES="$(echo \"$CUPS_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
+    CUPS_DEVS0=`echo $CUPS_DEVS0 | sed "s/\b$ntsdev\b//g"`
+  done
+
+  for ntsdev in $NTS_DEVS ; do
+    NTS_EXCLUDES="$(echo \"$SVG_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
+    SVG_DEVS0=`echo $SVG_DEVS0 | sed "s/\b$ntsdev\b//g"`
+  done
+
+  for ntsdev in $NTS_DEVS ; do
+    NTS_EXCLUDES="$(echo \"$IJS_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
+    IJS_DEVS0=`echo $IJS_DEVS0 | sed "s/\b$ntsdev\b//g"`
+  done
+
+  for ntsdev in $NTS_DEVS ; do
+    NTS_EXCLUDES="$(echo \"$PNG_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
+    PNG_DEVS0=`echo $PNG_DEVS0 | sed "s/\b$ntsdev\b//g"`
+  done
+
+  for ntsdev in $NTS_DEVS ; do
+    NTS_EXCLUDES="$(echo \"$X11_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
+    X11_DEVS0=`echo $X11_DEVS0 | sed "s/\b$ntsdev\b//g"`
+  done
+
+  for ntsdev in $NTS_DEVS ; do
+    NTS_EXCLUDES="$(echo \"$JBIG2_DEVS{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
+    JBIG2_DEVS=`echo $JBIG2_DEVS | sed "s/\b$ntsdev\b//g"`
+  done
+
+  NTS_EXCLUDES=`echo $NTS_EXCLUDES | uniq`
+fi # x$enable_threadsafe = xyes
+
 noncontribmakefiles=`find . -name '*.mak' -print | grep -v '^\./contrib/'`
+
 # No need to include opvp/oprp driver without iconv/libiconv.
 if test -n "$P_DEVS0"; then
     if test x$found_iconv = xno ; then
@@ -1936,3 +2011,7 @@ if test "x$AFS" = "x1"; then
    AC_MSG_WARN([Support for this will be removed in a future release])
 fi
 
+if test "x$NTS_EXCLUDES" != "x" ; then
+   AC_MSG_WARN([Due to the --enable-threadsafe option, the following devices have been excluded because they are not threadsafe:])
+   echo "$NTS_EXCLUDES"
+fi
