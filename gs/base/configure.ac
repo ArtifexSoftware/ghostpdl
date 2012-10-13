@@ -125,7 +125,7 @@ case `uname` in
     ;;
     *)
 #     This is just an arbitrary file in contrib to check
-      if !(test -f contrib/gdevbjc_.c); then
+      if ! test -f contrib/gdevbjc_.c; then
         enable_contrib=no
       fi
     ;;
