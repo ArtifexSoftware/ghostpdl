@@ -30,6 +30,7 @@ memobj
 debugobj64
 obj64
 profobj64
+debugaux
 cscope.*
 autom4te.cache
 
