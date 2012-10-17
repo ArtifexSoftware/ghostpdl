@@ -284,6 +284,11 @@ struct gs_overprint_params_s {
        the RGB values with the addition of K.  We will use 8 bits for this.
      */
     unsigned short k_value;
+
+    /* This is used when we want to simulate the overprint of spot colors
+       by blending the equivalent CMYK colorant with with what was already
+       drawn */
+    bool blendspot;
 };
 
 /*

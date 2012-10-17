@@ -405,6 +405,27 @@ gx_spot_colors_set_overprint(const gs_color_space * pcs, gs_state * pgs)
         params.retain_spot_comps = true;
     pgs->effective_overprint_mode = 0;
     params.k_value = 0;
+    params.blendspot = false;
+    return gs_state_update_overprint(pgs, &params);
+}
+
+/*
+ * Push an overprint compositor onto the current device indicating that 
+ * incoming CMYK values should be blended to simulate overprinting.  This
+ * allows us to get simulated overprinting of spot colors on standard CMYK
+ * devices
+ */
+int
+gx_simulated_set_overprint(const gs_color_space * pcs, gs_state * pgs)
+{
+    gs_imager_state *       pis = (gs_imager_state *)pgs;
+    gs_overprint_params_t   params;
+
+    if ((params.retain_any_comps = pis->overprint))
+        params.retain_spot_comps = true;
+    pgs->effective_overprint_mode = 0;
+    params.k_value = 0;
+    params.blendspot = true;
     return gs_state_update_overprint(pgs, &params);
 }
 
@@ -689,6 +710,7 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_state * pgs)
     params.retain_spot_comps = false;
     params.drawn_comps = drawn_comps;
     params.k_value = 0;
+    params.blendspot = false;
     return gs_state_update_overprint(pgs, &params);
 }
 
@@ -720,6 +742,7 @@ int gx_set_overprint_rgb(const gs_color_space * pcs, gs_state * pgs)
     pgs->effective_overprint_mode = 1;
     pdc = gs_currentdevicecolor_inline(pgs);
     params.k_value = 0;
+    params.blendspot = false;
     if (color_is_set(pdc)) {
         gx_color_index  nz_comps, one, temp;
         int             code;

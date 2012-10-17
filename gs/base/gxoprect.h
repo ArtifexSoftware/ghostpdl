@@ -27,6 +27,7 @@
  */
 extern  int     gx_overprint_generic_fill_rectangle(
     gx_device *             tdev,
+    bool                    blendspot,
     gx_color_index          drawn_comps,
     ushort                  k_value,
     int                     x,
@@ -63,6 +64,7 @@ extern  int     gx_overprint_sep_fill_rectangle_1(
 
 extern  int     gx_overprint_sep_fill_rectangle_2(
     gx_device *             tdev,
+    bool                    blendspot,
     gx_color_index          retain_mask,    /* already swapped */
     int                     x,
     int                     y,

@@ -197,7 +197,7 @@ void
 pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
               int x0, int x1, int y0, int y1, int n_chan, bool additive,
               const pdf14_nonseparable_blending_procs_t * pblend_procs,
-              bool overprint, gx_color_index drawn_comps)
+              bool overprint, gx_color_index drawn_comps, bool blendspot)
 {
     int num_comp = n_chan - 1;
     byte alpha = tos->alpha;
@@ -356,9 +356,20 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                 }
             } else {
                 if (overprint) {
-                    for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
-                        if ((comps & 0x1) != 0) {
-                            nos_ptr[x + i * nos_planestride] = 255 - nos_pixel[i];
+                    if (blendspot) {
+                        /* Overprint simulation of spot colorants */
+                        for (i = 0; i < num_comp; ++i) {
+                            int temp = 
+                                (255 - nos_ptr[x + i * nos_planestride]) * 
+                                (nos_pixel[i]);
+                            temp = temp >> 8;
+                            nos_ptr[x + i * nos_planestride] = (255 - temp);
+                        }
+                    } else {
+                        for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
+                            if ((comps & 0x1) != 0) {
+                                nos_ptr[x + i * nos_planestride] = 255 - nos_pixel[i];
+                            }
                         }
                     }
                 } else {

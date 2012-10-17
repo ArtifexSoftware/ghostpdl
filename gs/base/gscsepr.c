@@ -144,9 +144,15 @@ static int
 gx_set_overprint_Separation(const gs_color_space * pcs, gs_state * pgs)
 {
     gs_devicen_color_map *  pcmap = &pgs->color_component_map;
-
+    gx_device *dev = pgs->device;
+    cmm_dev_profile_t *dev_profile;
+    
+    dev_proc(dev, get_profile)(dev, &(dev_profile));
     if (pcmap->use_alt_cspace)
-        return gx_spot_colors_set_overprint( pcs->base_space, pgs );
+        if (dev_profile->sim_overprint)
+            return gx_simulated_set_overprint(pcs->base_space, pgs);
+        else
+            return gx_spot_colors_set_overprint(pcs->base_space, pgs);
     else {
         gs_overprint_params_t   params;
 
@@ -156,6 +162,7 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_state * pgs)
             params.retain_spot_comps = false;
             params.drawn_comps = 0;
             params.k_value = 0;
+            params.blendspot = false;
             if (pcs->params.separation.sep_type != SEP_NONE) {
                 int     mcomp = pcmap->color_map[0];
 

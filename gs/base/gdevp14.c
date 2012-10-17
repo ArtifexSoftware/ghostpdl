@@ -814,7 +814,8 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
     gsicc_bufferdesc_t output_buff_desc;
     pdf14_device *pdev = (pdf14_device *)dev;
     bool overprint = pdev->overprint;
-    gx_color_index drawn_comps = pdev->drawn_comps;		
+    gx_color_index drawn_comps = pdev->drawn_comps;
+    bool blendspot = pdev->blendspot;
 
 #ifdef DEBUG
     pdf14_debug_mask_stack_state(ctx);
@@ -999,14 +1000,14 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
              pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1, nos->n_chan,
                  nos->parent_color_info_procs->isadditive,
                  nos->parent_color_info_procs->parent_blending_procs,
-                 false, drawn_comps);
+                 false, drawn_comps, false);
         }
     } else {
         /* Group color spaces are the same.  No color conversions needed */
         if (x0 < x1 && y0 < y1)
             pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1,nos->n_chan,
                                 ctx->additive, pblend_procs, overprint, 
-                                drawn_comps);
+                                drawn_comps, blendspot);
     }
 exit:
     ctx->stack = nos;
@@ -1866,6 +1867,7 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
         rc_increment(profile_dev14->device_profile[0]);
         gx_monitor_leave(profile_dev14->device_profile[0]->lock);
         profile_dev14->rendercond[0] = profile_targ->rendercond[0];
+        profile_dev14->sim_overprint = profile_targ->sim_overprint;
     }
     dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
 #undef COPY_ARRAY_PARAM
@@ -2130,6 +2132,7 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
     bool overprint = pdev->overprint;
+    bool blendspot = pdev->blendspot;
     gx_color_index drawn_comps = pdev->drawn_comps;
     gx_color_index comps;
     byte shape = 0; /* Quiet compiler. */
@@ -2239,9 +2242,20 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                         dst_ptr[k * planestride] = dst[k];
                 } else {
                     if (overprint) {
-                        for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
-                            if ((comps & 0x1) != 0) {
-                                dst_ptr[k * planestride] = 255 - dst[k];
+                        if (blendspot) {
+                            /* Overprint simulation of spot colorants */
+                            for (k = 0; k < num_comp; ++i) {
+                                int temp = 
+                                    (255 - dst_ptr[k * planestride]) * dst[k];
+                                temp = temp >> 8;
+                                dst_ptr[k * planestride] = (255 - temp);
+                            }
+                        } else {
+                            for (k = 0, comps = drawn_comps; comps != 0; 
+                                 ++k, comps >>= 1) {
+                                if ((comps & 0x1) != 0) {
+                                    dst_ptr[k * planestride] = 255 - dst[k];
+                                }
                             }
                         }
                         /* The alpha channel */
@@ -2728,6 +2742,8 @@ static	void
 pdf14_set_params(gs_imager_state * pis,	gx_device * dev,
                                 const gs_pdf14trans_params_t * pparams)
 {
+    pdf14_device * p14dev = (pdf14_device *)dev;
+
     if_debug0m('v', dev->memory, "[v]pdf14_set_params\n");
     if (pparams->changed & PDF14_SET_BLEND_MODE)
         pis->blend_mode = pparams->blend_mode;
@@ -2741,6 +2757,8 @@ pdf14_set_params(gs_imager_state * pis,	gx_device * dev,
         pis->overprint = pparams->overprint;
     if (pparams->changed & PDF14_SET_OVERPRINT_MODE)
         pis->overprint_mode = pparams->overprint_mode;
+    if (pparams->changed & PDF14_SET_OVERPRINT_BLEND)
+        p14dev->blendspot = pparams->blendspot;
     pdf14_set_marking_params(dev, pis);
 }
 
@@ -3156,6 +3174,7 @@ pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
                    values around a fair amount.  Hence the forced assignement here.
                    See gx_spot_colors_set_overprint in gscspace for issues... */
                 const gs_overprint_t * op_pct = (const gs_overprint_t *) pct;
+                p14dev->blendspot = op_pct->params.blendspot;
                 if (op_pct->params.retain_any_comps && !op_pct->params.retain_spot_comps) {
                     p14dev->drawn_comps = op_pct->params.drawn_comps;
                 } else {
@@ -4263,6 +4282,7 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
     bool overprint = pdev->overprint;
+    bool blendspot = pdev->blendspot;
     gx_color_index drawn_comps = pdev->drawn_comps;
     gx_color_index comps;
     byte shape = 0; /* Quiet compiler. */
@@ -4345,9 +4365,19 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                         dst_ptr[k * planestride] = dst[k];
             } else {
                 if (overprint) {
-                    for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
-                        if ((comps & 0x1) != 0) {
-                            dst_ptr[k * planestride] = 255 - dst[k];
+                    if (blendspot) {
+                        /* Overprint simulation of spot colorants */
+                        for (k = 0; k < num_comp; ++k) {
+                            int temp = 
+                                (255 - dst_ptr[k * planestride]) * dst[k];
+                            temp = temp >> 8;
+                            dst_ptr[k * planestride] = (255 - temp);
+                        }
+                    } else {
+                        for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
+                            if ((comps & 0x1) != 0) {
+                                dst_ptr[k * planestride] = 255 - dst[k];
+                            }
                         }
                     }
                     /* The alpha channel */
@@ -5067,6 +5097,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     code = dev_proc((gx_device *) p14dev, open_device) ((gx_device *) p14dev);
     *pdev = (gx_device *) p14dev;
     pdf14_set_marking_params((gx_device *)p14dev, pis);
+    p14dev->blendspot = false;
     p14dev->trans_group_parent_cmap_procs = NULL;
     /* In case we have alphabits set */
     p14dev->color_info.anti_alias = target->color_info.anti_alias;
@@ -5290,6 +5321,8 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
                 put_value(pbuf, pparams->overprint);
             if (pparams->changed & PDF14_SET_OVERPRINT_MODE)
                 put_value(pbuf, pparams->overprint_mode);
+            if (pparams->changed & PDF14_SET_OVERPRINT_BLEND)
+                put_value(pbuf, pparams->blendspot);
             break;
         case PDF14_PUSH_TRANS_STATE:
             break;
@@ -5460,6 +5493,8 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
                 read_value(data, params.overprint);
             if (params.changed & PDF14_SET_OVERPRINT_MODE)
                 read_value(data, params.overprint_mode);
+            if (params.changed & PDF14_SET_OVERPRINT_BLEND)
+                read_value(data, params.blendspot);
             break;
     }
     code = gs_create_pdf14trans(ppct, &params, mem);

@@ -253,6 +253,7 @@ typedef struct cmm_dev_profile_s {
         bool devicegraytok;        /* Used for forcing gray to pure black */
         bool usefastcolor;         /* Used when we want to use no cm */
         bool supports_devn;        /* If the target handles devn colors */
+        bool sim_overprint;     /* Indicates we want to do overprint blending */
         gsicc_namelist_t *spotnames;  /* If our device profiles are devn */
         bool prebandthreshold;     /* Used to indicate use of HT pre-clist */
         gs_memory_t *memory;

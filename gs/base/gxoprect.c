@@ -187,6 +187,7 @@ pack_scanline_ge8(
 int
 gx_overprint_generic_fill_rectangle(
     gx_device *             tdev,
+    bool                    blendspot,
     gx_color_index          drawn_comps,
     ushort                  k_value,
     int                     x,
@@ -332,9 +333,16 @@ gx_overprint_generic_fill_rectangle(
                     }
                 }
             } else {
-                for (j = 0, comps = drawn_comps; comps != 0; ++j, comps >>= 1) {
-                    if ((comps & 0x1) != 0)
-                        dest_cvals[j] = src_cvals[j];
+                if (blendspot) {
+                    for (j = 0, comps = drawn_comps; comps != 0; ++j, comps >>= 1) {
+                        if ((comps & 0x1) != 0)
+                            dest_cvals[j] = src_cvals[j];
+                    }
+                } else {
+                    for (j = 0, comps = drawn_comps; comps != 0; ++j, comps >>= 1) {
+                        if ((comps & 0x1) != 0)
+                            dest_cvals[j] = src_cvals[j];
+                    }
                 }
             }
             *cp = dev_proc(tdev, encode_color)(tdev, dest_cvals);
@@ -538,6 +546,7 @@ gx_overprint_sep_fill_rectangle_1(
 int
 gx_overprint_sep_fill_rectangle_2(
     gx_device *             tdev,
+    bool                    blendspot,
     gx_color_index          retain_mask,    /* already swapped */
     int                     x,
     int                     y,
@@ -603,10 +612,23 @@ gx_overprint_sep_fill_rectangle_2(
                                                    0 );
         if (code < 0)
             break;
-        for (i = 0, j = 0; i < byte_w; i++, cp++) {
-            *cp = (*cp & pmask[j]) | pcolor[j];
-            if (++j == byte_depth)
-                j = 0;
+        if (blendspot) {
+            /* We need to blend the CMYK colorants as we are simulating
+               the overprint of a spot colorant with its equivalent CMYK
+               colorants */
+            for (i = 0, j = 0; i < byte_w; i++, cp++) {
+                int temp = (255-*cp) * (255-pcolor[j]);
+                temp = temp >> 8;
+                *cp = (255-temp);
+                if (++j == byte_depth)
+                    j = 0;
+            }
+        } else {
+            for (i = 0, j = 0; i < byte_w; i++, cp++) {
+                *cp = (*cp & pmask[j]) | pcolor[j];
+                if (++j == byte_depth)
+                    j = 0;
+            }
         }
         code = dev_proc(tdev, copy_color)( tdev,
                                            gb_buff,

@@ -234,6 +234,7 @@ cs_proc_concretize_color(gx_no_concretize_color);
 cs_proc_remap_color(gx_default_remap_color);
 cs_proc_install_cspace(gx_no_install_cspace);
 cs_proc_set_overprint(gx_spot_colors_set_overprint);
+cs_proc_set_overprint(gx_simulated_set_overprint);
 cs_proc_adjust_color_count(gx_no_adjust_color_count);
 cs_proc_serialize(gx_serialize_cspace_type);
 cs_proc_is_linear(gx_cspace_no_linear);
