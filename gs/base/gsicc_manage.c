@@ -1562,7 +1562,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
                                     "gsicc_profile_new");
     if (result == NULL)
         return result;
-    memset(result, 0, sizeof(gsicc_serialized_profile_t));
+    memset(result, 0, GSICC_SERIALIZED_SIZE);
     if (namelen > 0) {
         nameptr = (char*) gs_alloc_bytes(mem_nongc, namelen+1,
                              "gsicc_profile_new");
@@ -1918,18 +1918,18 @@ gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory)
            I need to write  an interface to the CMM to do this through
            the clist ioprocs */
         /* Allocate the buffer */
-        profile_size = size - sizeof(gsicc_serialized_profile_t);
+        profile_size = size - GSICC_SERIALIZED_SIZE;
         /* Profile and its members are ALL in non-gc memory */
         buffer_ptr = gs_alloc_bytes(memory->non_gc_memory, profile_size,
                                             "gsicc_get_profile_handle_clist");
         if (buffer_ptr == NULL)
             return(0);
         picc_profile->buffer = buffer_ptr;
-        clist_read_chunk(pcrdev, position+sizeof(gsicc_serialized_profile_t),
+        clist_read_chunk(pcrdev, position + GSICC_SERIALIZED_SIZE,
             profile_size, (unsigned char *) buffer_ptr);
         profile_handle = gscms_get_profile_handle_mem(memory->non_gc_memory, buffer_ptr, profile_size);
         /* We also need to get some of the serialized information */
-        clist_read_chunk(pcrdev, position, sizeof(gsicc_serialized_profile_t),
+        clist_read_chunk(pcrdev, position, GSICC_SERIALIZED_SIZE,
                         (unsigned char *) (&profile_header));
         picc_profile->buffer_size = profile_header.buffer_size;
         picc_profile->data_cs = profile_header.data_cs;
@@ -2119,8 +2119,8 @@ gsicc_read_serial_icc(gx_device *dev, int64_t icc_hashcode)
         return(NULL);
 
     /* Get the serialized portion of the ICC profile information */
-    clist_read_chunk(pcrdev, position, sizeof(gsicc_serialized_profile_t),
-                     (unsigned char *) profile);
+    clist_read_chunk(pcrdev, position, GSICC_SERIALIZED_SIZE, 
+                    (unsigned char *) profile);
     return(profile);
 }
 
@@ -2130,7 +2130,7 @@ gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data,
 {
     if (icc_profile == NULL)
         return;
-    memcpy(profile_data, icc_profile, sizeof(gsicc_serialized_profile_t));
+    memcpy(profile_data, icc_profile, GSICC_SERIALIZED_SIZE);
 }
 
 /* Utility functions */

@@ -598,7 +598,7 @@ gx_serialize_ICC(const gs_color_space * pcs, stream * s)
     if (code < 0)
         return code;
     profile__serial = (gsicc_serialized_profile_t*) pcs->cmm_icc_profile_data;
-    code = sputs(s, (byte *)profile__serial, sizeof(gsicc_serialized_profile_t), &n);
+    code = sputs(s, (byte *)profile__serial, GSICC_SERIALIZED_SIZE, &n);
     return(code);
 }
 

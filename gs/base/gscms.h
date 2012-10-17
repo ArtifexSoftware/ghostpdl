@@ -337,6 +337,14 @@ typedef struct cmm_profile_s cmm_profile_t;
 #define cmm_profile_DEFINED
 #endif
 
+/* The above definition is plagued with an offset issue.  Probably should
+   do away with gsicc_serialized_profile_t type */
+#ifndef offsetof
+#define offsetof(st, member) \
+   ((char *)&(((st *)(NULL))->member) - (char *)(NULL))
+#endif
+#define GSICC_SERIALIZED_SIZE offsetof(cmm_profile_t, buffer)
+
 /* A linked list structure for storing profiles in a table in which we
    can store and refer to from the clist and also when creating icc profiles
    from ps object.  Right now it is not clear to me if we really need a
