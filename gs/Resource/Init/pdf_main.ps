@@ -2258,6 +2258,7 @@ currentdict /PDF2PS_matrix_key undef
   //false
   /DefaultGray 2 index /ColorSpace //rget exec {
     resolvecolorspace dup csncomp 1 eq {
+      dup type /nametype eq { 1 array astore } if
       /DefaultGray exch /ColorSpace defineresource pop
       pop //true
     } {
@@ -2269,17 +2270,19 @@ currentdict /PDF2PS_matrix_key undef
 
   /DefaultRGB 2 index /ColorSpace //rget exec {
     resolvecolorspace dup csncomp 3 eq {
+      dup type /nametype eq { 1 array astore } if
       /DefaultRGB exch /ColorSpace defineresource pop
       pop //true
     } {
       pop
-      (   **** Warning: ignoring invalid /DefaultCMYK color space.\n)
+      (   **** Warning: ignoring invalid /DefaultRGB color space.\n)
       pdfformaterror
     } ifelse
   } if
 
   /DefaultCMYK 2 index /ColorSpace //rget exec {
     resolvecolorspace dup csncomp 4 eq {
+      dup type /nametype eq { 1 array astore } if
       /DefaultCMYK exch /ColorSpace defineresource pop
       pop //true
     } {

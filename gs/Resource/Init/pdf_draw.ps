@@ -852,12 +852,24 @@ currentdict end readonly def
     } ifelse
   } ifelse
 } bdef
+
 /resolvecolorspace {	% <cspace> resolvecolorspace <cspace'>
-  dup type /dicttype eq { dup /N known } { //false } ifelse {
-      (   **** ICCBased color space is a bare stream dictionary\n)
-      pdfformaterror
+  dup type /dicttype eq {
+      dup /N known {
+      (   **** ICCBased color space is a bare stream dictionary\n) pdfformaterror
       [ /ICCBased 3 -1 roll ] ICCBased-resolve exec
+      //false
+    } {
+      dup /ColorSpace knownoget {
+        (   **** Strange color space <</ColorSpace /Device...>>\n) pdfformaterror
+        exch pop //true
+      } {
+        //true
+      } ifelse
+    } ifelse
   } {
+    //true
+  } ifelse {
     dup dup type /arraytype eq { 0 get } if
     //csrdict exch .knownget  {
       exec dup type /nametype ne { dup length 1 eq { 0 get } if } if
@@ -868,7 +880,7 @@ currentdict end readonly def
         csset exch pop 
       } ifelse
     } ifelse
-  } ifelse
+  } if
 } bdef
 
 /scresolve {	% <c0> ... scresolve <multi>
