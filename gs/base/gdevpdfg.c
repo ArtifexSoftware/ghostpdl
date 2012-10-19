@@ -441,9 +441,13 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
                     return_error(gs_error_rangecheck);
                 if (code < 0)
                     return code;
-                cos_value_write(cos_resource_value(&cs_value, pres->object), pdev);
-                pprints1(pdev->strm, " %s\n", ppscc->setcolorn);
                 code = pdf_add_resource(pdev, pdev->substream_Resources, "/Pattern", pres);
+                if (code1 != gs_error_rangecheck) {
+                    cos_value_write(cos_resource_value(&cs_value, pres->object), pdev);
+                    pprints1(pdev->strm, " %s\n", ppscc->setcolorn);
+                }
+                else
+                    pres->where_used = 0;
                 if (code < 0)
                     return code;
             }

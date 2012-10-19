@@ -957,11 +957,17 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
                                       psh, pinst->shfill, &pranges);
         if (code >= 0)
             code1 = pdf_put_mesh_shading((cos_stream_t *)psco, psh, pranges);
+        else
+            /* We won't use this shading, we fall back because we couldn't write it */
+            psres->where_used = 0;
     } else {
         cos_become(psco, cos_type_dict);
         code = pdf_put_shading_common((cos_dict_t *)psco, psh, pinst->shfill, &pranges);
         if (code >= 0)
             code = pdf_put_scalar_shading((cos_dict_t *)psco, psh, pranges);
+        else
+            /* We won't use this shading, we fall back because we couldn't write it */
+            psres->where_used = 0;
     }
     /*
      * In PDF, the Matrix is the transformation from the pattern space to
@@ -989,7 +995,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
         )
         return code;
     cos_value_write(&v, pdev);
-    pprints1(pdev->strm, " %s", ppscc->setcolorspace);
+    pprints1(pdev->strm, " %s\n", ppscc->setcolorspace);
     return code1;
 }
 
