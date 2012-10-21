@@ -766,10 +766,21 @@ hpgl_SV(
             {
                 int     level;
 
-                if ( !hpgl_arg_c_int(pgls->memory, pargs, &level) ||
-                     (level < 0)                    ||
-                     (level > 100)                    )
+                /* if the percentage is not provided plotters default
+                   to 50% shading, other HP printers ignore the command
+                   in absence of the second parameter */
+
+                if (!hpgl_arg_c_int(pgls->memory, pargs, &level)) {
+                    if (pgls->personality == rtl) {
+                        level = 50;
+                    } else {
+                        return e_Range;
+                    }
+                }
+                        
+                if ((level < 0) || (level > 100))
                     return e_Range;
+
                 pgls->g.screen.param.shading = level;
             }
             break;
