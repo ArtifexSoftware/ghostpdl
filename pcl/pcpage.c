@@ -383,6 +383,10 @@ new_page_size(
      */
     pcs->underline_enabled = false;
     pcl_home_cursor(pcs);
+    /*
+     * this is were we initialized the cursor position
+     */
+    pcs->cursor_moved = false;
 
     pcl_xfm_reset_pcl_pat_ref_pt(pcs);
 
@@ -544,6 +548,14 @@ pcl_page_marked(
 )
 {
     return pcs->page_marked;
+}
+
+ int
+pcl_cursor_moved(
+    pcl_state_t *           pcs
+)
+{
+    return pcs->cursor_moved;
 }
 
 /*
@@ -882,9 +894,8 @@ set_top_margin(
         /* See the discussion in the Implementor's guide concerning
            "fixed" and "floating" cap.  If the page is not dirty we
            home the cursor - the guide talks about tracking the cursor
-           for any movement and checking for data on the page, we
-           only check the latter. */
-        if (!pcl_page_marked(pcs))
+           for any movement and checking for data on the page */
+        if (!pcl_page_marked(pcs) && !pcl_cursor_moved(pcs))
             return pcl_set_cap_y(pcs, 0L, false, false, true, false);
     }
     return 0;

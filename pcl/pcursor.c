@@ -311,6 +311,7 @@ do_horiz_motion(
 )
 {
     pcl_set_cap_x(pcs, (coord)(motion_args(pargs, truncate_arg) * mul), arg_is_signed(pargs), false);
+    pcs->cursor_moved = true;
     return;
 }
 
@@ -318,6 +319,7 @@ static inline int
 do_vertical_move(pcl_state_t *pcs, pcl_args_t *pargs, float mul,
                  bool use_margins, bool by_row, bool by_row_command, bool truncate_arg)
 {
+    pcs->cursor_moved = true;
     return pcl_set_cap_y(pcs, (coord)(motion_args(pargs, truncate_arg) * mul),
                          arg_is_signed(pargs), use_margins, by_row,
                          by_row_command);
@@ -343,6 +345,7 @@ pcl_do_CR(
     pcl_break_underline(pcs);
     pcl_set_cap_x(pcs, pcs->margins.left, false, false);
     pcl_continue_underline(pcs);
+    pcs->cursor_moved = true;
 }
 
   int
@@ -350,6 +353,7 @@ pcl_do_LF(
     pcl_state_t *   pcs
 )
 {
+    pcs->cursor_moved = true;
     return pcl_set_cap_y( pcs,
                           pcs->vmi_cp,
                           true,
@@ -592,6 +596,7 @@ cmd_BS(
 {
     pcl_set_cap_x(pcs, (coord)-pcs->last_width, true, true);
     pcs->last_was_BS = true;
+    pcs->cursor_moved = true;
     return 0;
 }
 
@@ -616,6 +621,7 @@ cmd_HT(
     else
         x = 0L;
     pcl_set_cap_x(pcs, x, true, true);
+    pcs->cursor_moved = true;
     return 0;
 }
 
@@ -664,6 +670,7 @@ half_line_feed(
     pcl_state_t *   pcs
 )
 {
+    pcs->cursor_moved = true;
     return pcl_set_cap_y( pcs,
                           pcs->vmi_cp / 2,
                           true,

@@ -351,6 +351,8 @@ struct pcl_state_s {
 
     /* indicates page has been written to with a drawing command */
     bool page_marked;
+    /* indicates that the cursor has been moved */
+    bool cursor_moved;
 
     /* end page procedure to use */
     int (*end_page)( pcl_state_t * pcs, int num_copies, int flush );

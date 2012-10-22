@@ -57,6 +57,10 @@ bool pcl_page_marked(
     pcl_state_t *           pcs
 );
 
+bool pcl_cursor_moved(
+    pcl_state_t *           pcs
+);
+
 void pcl_mark_page_for_path(pcl_state_t *pcs);
 void pcl_mark_page_for_current_pos(pcl_state_t *pcs);
 int new_logical_page_for_passthrough_snippet(pcl_state_t *pcs, int orient, int tag);

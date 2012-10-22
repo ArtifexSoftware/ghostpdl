@@ -248,6 +248,7 @@ pcl_init_state(
     pcs->pdflt_frgrnd = 0;
     pcs->pdflt_ht = 0;
     pcs->page_marked = false;
+    pcs->cursor_moved = false;
     pcl_cs_base_init(pcs);
     pcl_cs_indexed_init(pcs);
 
