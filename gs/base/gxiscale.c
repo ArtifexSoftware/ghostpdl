@@ -66,6 +66,8 @@ iclass_proc(gs_image_class_0_interpolate);
    initialized and allocates buffer space if needed */
 static irender_proc(image_render_interpolate);
 static irender_proc(image_render_interpolate_icc);
+static irender_proc(image_render_interpolate_landscape);
+static irender_proc(image_render_interpolate_landscape_icc);
 
 irender_proc_t
 gs_image_class_0_interpolate(gx_image_enum * penum)
@@ -84,7 +86,9 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 
     if (!penum->interpolate)
         return 0;
-    if (penum->use_mask_color || penum->posture != image_portrait ||
+    if (penum->use_mask_color ||
+        (penum->posture != image_portrait &&
+         penum->posture != image_landscape) ||
         penum->masked || penum->alpha) {
         /* We can't handle these cases yet.  Punt. */
         penum->interpolate = false;
@@ -146,37 +150,67 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         iss.BitsPerComponentOut = sizeof(frac) * 8;
         iss.MaxValueOut = frac_1;
     }
-    iss.WidthOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rect.x + penum->rect.w) *
-                                                      penum->dst_width / penum->Width))
-                 - fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.x *
-                                                      penum->dst_width / penum->Width));
-    iss.WidthOut = any_abs(iss.WidthOut);
-    iss.HeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rect.y + penum->rect.h) *
-                                                       penum->dst_height / penum->Height))
-                  - fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y *
-                                                       penum->dst_height / penum->Height));
-    iss.HeightOut = any_abs(iss.HeightOut);
-    iss.WidthIn = penum->rect.w;
-    iss.HeightIn = penum->rect.h;
-    iss.PatchWidthOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.x + penum->rrect.w) *
-                                                           penum->dst_width / penum->Width))
-                      - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.x *
-                                                           penum->dst_width / penum->Width));
-    iss.PatchWidthOut = any_abs(iss.PatchWidthOut);
-    iss.PatchHeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.y + penum->rrect.h) *
-                                                            penum->dst_height / penum->Height))
-                       - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.y *
-                                                            penum->dst_height / penum->Height));
-    iss.PatchHeightOut = any_abs(iss.PatchHeightOut);
     iss.PatchWidthIn = penum->rrect.w;
     iss.PatchHeightIn = penum->rrect.h;
     iss.LeftMarginIn = penum->rrect.x - penum->rect.x;
-    iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)iss.LeftMarginIn *
-                                                   any_abs(penum->dst_width) / penum->Width));
     iss.TopMargin = penum->rrect.y - penum->rect.y;
+    if (penum->posture == image_portrait) {
+        fixed dw = any_abs(penum->dst_width);
+        fixed dh = any_abs(penum->dst_height);
+        iss.WidthOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rect.x + penum->rect.w) *
+                                                          dw / penum->Width))
+                     - fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.x *
+                                                          dw / penum->Width));
+        iss.HeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rect.y + penum->rect.h) *
+                                                           dh / penum->Height))
+                      - fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y *
+                                                           dh / penum->Height));
+        iss.EntireWidthOut = fixed2int_pixround(dw);
+        iss.EntireHeightOut = fixed2int_pixround(dh);
+        iss.PatchWidthOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.x + penum->rrect.w) *
+                                                               dw / penum->Width))
+                          - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.x *
+                                                               dw / penum->Width));
+        iss.PatchHeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.y + penum->rrect.h) *
+                                                                dh / penum->Height))
+                           - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.y *
+                                                                dh / penum->Height));
+        iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)iss.LeftMarginIn *
+                                                               dw / penum->Width));
+    } else {
+        fixed dw = any_abs(penum->dst_width);
+        fixed dh = any_abs(penum->dst_height);
+        iss.WidthOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rect.x + penum->rect.w) *
+                                                          dh / penum->Width))
+                     - fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.x *
+                                                          dh / penum->Width));
+        iss.HeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rect.y + penum->rect.h) *
+                                                           dw / penum->Height))
+                      - fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y *
+                                                           dw / penum->Height));
+        iss.EntireWidthOut = fixed2int_pixround(dh);
+        iss.EntireHeightOut = fixed2int_pixround(dw);
+        iss.PatchWidthOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.x + penum->rrect.w) *
+                                                               dh / penum->Width))
+                          - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.x *
+                                                               dh / penum->Width));
+        iss.PatchHeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.y + penum->rrect.h) *
+                                                                dw / penum->Height))
+                           - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.y *
+                                                                dw / penum->Height));
+        iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)iss.LeftMarginIn *
+                                                               dh / penum->Width));
+    }
+    iss.PatchWidthOut = any_abs(iss.PatchWidthOut);
+    iss.PatchHeightOut = any_abs(iss.PatchHeightOut);
+    if (iss.LeftMarginOut + iss.PatchWidthOut >= iss.WidthOut) {
+        iss.LeftMarginOut = iss.WidthOut - iss.PatchWidthOut;
+        if (iss.LeftMarginOut < 0) {
+            iss.WidthOut += iss.LeftMarginOut;
+            iss.LeftMarginOut = 0;
+        }
+    }
     iss.src_y_offset = penum->rect.y;
-    iss.EntireWidthOut = fixed2int_pixround(any_abs(penum->dst_width));
-    iss.EntireHeightOut = fixed2int_pixround(any_abs(penum->dst_height));
     iss.EntireWidthIn = penum->Width;
     iss.EntireHeightIn = penum->Height;
     iss.WidthIn = penum->rect.w;
@@ -222,15 +256,15 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         iss.MaxValueIn = 0xff;
         /* If it is an index color space we will need to allocate for
            the decoded data */
-       if (pcs->type->index == gs_color_space_index_Indexed) {
-           in_size = iss.WidthIn * iss.spp_decode;
-       } else {
-           /* Non indexed case, we either use the data as
-           is, or allocate space if it is reversed in X */
-            in_size =
-                (penum->matrix.xx < 0 ?
-                 /* We need a buffer for reversing each scan line. */
-                 iss.WidthIn * iss.spp_decode : 0);
+        if (pcs->type->index == gs_color_space_index_Indexed) {
+            in_size = iss.WidthIn * iss.spp_decode;
+        } else {
+            /* Non indexed case, we either use the data as
+            is, or allocate space if it is reversed in X */
+            /* Do we need a buffer for reversing each scan line? */
+            bool reverse = (penum->posture == image_portrait ?
+                            penum->matrix.xx : penum->matrix.xy) < 0;
+            in_size = (reverse ? iss.WidthIn * iss.spp_decode : 0);
             /* If it is not reversed, and we have 8 bit/color channel data then
             no need to allocate extra as we will use the source directly */
             /* However, if we have a nonstandard encoding and are in
@@ -316,15 +350,30 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     penum->line = line;  /* Set to the input and output buffer */
     penum->scaler = pss;
     penum->line_xy = 0;
-    {
+    if (penum->posture == image_portrait) {
         gx_dda_fixed x0;
         x0 = penum->dda.pixel0.x;
+        /* We always plot from left to right. If the matrix would have us
+         * plotting from right to left, then adjust to allow for the fact
+         * we'll flip the data later. */
         if (penum->matrix.xx < 0)
             dda_advance(x0, penum->rect.w);
         penum->xyi.x = fixed2int_pixround(dda_current(x0)) + pss->params.LeftMarginOut;
+        penum->xyi.y = penum->yi0 + fixed2int_pixround_perfect(
+                                 (fixed)((int64_t)penum->rect.y *
+                                         penum->dst_height / penum->Height));
+    } else /* penum->posture == image_landscape */ {
+        /* We always plot from top to bottom. If the matrix would have us
+         * plotting from bottom to top, then adjust to allow for the fact
+         * we'll flip the data later. */
+        int x0 = penum->rrect.x;
+        if (penum->matrix.xy < 0)
+            x0 += penum->rrect.w;
+        penum->xyi.x = fixed2int_pixround(dda_current(penum->dda.pixel0.x));
+        penum->xyi.y = penum->yi0 + fixed2int_pixround_perfect(
+                                 (fixed)((int64_t)x0 *
+                                         penum->dst_height / penum->Width));
     }
-    penum->xyi.y = penum->yi0 + fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y
-                                    * penum->dst_height / penum->Height));
     if_debug0m('b', penum->memory, "[b]render=interpolate\n");
     if (use_icc) {
         /* Set up the link now */
@@ -372,9 +421,13 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         if (penum->bps == 16) {
             penum->unpack = sample_unpackicc_16_proc;
         }
-        return &image_render_interpolate_icc;
+        return (penum->posture == image_portrait ?
+                &image_render_interpolate_icc :
+                &image_render_interpolate_landscape_icc);
     } else {
-        return &image_render_interpolate;
+        return (penum->posture == image_portrait ?
+                &image_render_interpolate :
+                &image_render_interpolate_landscape);
     }
 }
 
@@ -395,6 +448,7 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
     stream_cursor_write w;
     unsigned char index_space;
     byte *out = penum->line;
+    int reversed = (penum->posture == image_portrait ? penum->matrix.xx : penum->matrix.xy) < 0;
 
     if (h != 0) {
         /* Convert the unpacked data to concrete values in the source buffer. */
@@ -429,7 +483,7 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                 if (!need_decode) {
                     /* 8-bit color values, possibly device  indep. or device
                        depend., not indexed. Decode range was [0 1] */
-                    if (penum->matrix.xx >= 0) {
+                    if (!reversed) {
                         /* Use the input data directly. sets up data in the 
                            stream buffer structure */
                         stream_r->ptr = bdata - 1;
@@ -459,7 +513,7 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                     gs_client_color cc;
 
                     /* Go backwards through the data */
-                    if (penum->matrix.xx < 0) {
+                    if (reversed) {
                         pdata += (pss->params.WidthIn - 1) * dpd;
                         dpd = - dpd;
                     }
@@ -494,7 +548,7 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                 penum->map[0].decode_base + 255.0 * penum->map[0].decode_factor);
                 index_space = 1;
                 /* flip the horizontal direction if indicated by the matrix value */
-                if (penum->matrix.xx < 0) {
+                if (reversed) {
                     pdata += (pss->params.WidthIn - 1) * dpd;
                     dpd = - dpd;
                 }
@@ -555,7 +609,7 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                 int i, j;
                 int dpd = dc * (bps <= 8 ? 1 : sizeof(frac));
 
-                if (penum->matrix.xx < 0) {
+                if (reversed) {
                     pdata += (pss->params.WidthIn - 1) * dpd;
                     dpd = - dpd;
                 }
@@ -599,7 +653,7 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
 
                 index_space = 1;
                 /* flip the horizontal direction if indicated by the matrix value */
-                if (penum->matrix.xx < 0) {
+                if (reversed) {
                     pdata += (pss->params.WidthIn - 1) * dpd;
                     dpd = - dpd;
                 }
@@ -652,7 +706,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
     }
     /* Perform any decode procedure if needed */
     need_decode = !(penum->device_color || gs_color_space_is_CIE(pcs) || islab);
-    initial_decode(penum, buffer, data_x, h, need_decode, &stream_r, false); 
+    initial_decode(penum, buffer, data_x, h, need_decode, &stream_r, false);
     is_index_space = (pcs->type->index == gs_color_space_index_Indexed);
     /*
      * Process input and/or collect output.  By construction, the pixels are
@@ -754,17 +808,17 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                                 decode_sample_frac_to_float(penum, psrc[j], &cc, j);
                             }
                         }
-                        /* If the source colors are LAB then use the mapping 
+                        /* If the source colors are LAB then use the mapping
                            that does not rescale the source colors */
-                        if (gs_color_space_is_ICC(pactual_cs) && 
+                        if (gs_color_space_is_ICC(pactual_cs) &&
                             pactual_cs->cmm_icc_profile_data != NULL &&
                             pactual_cs->cmm_icc_profile_data->islab) {
-                            code = gx_remap_ICC_imagelab (&cc, pactual_cs, &devc, 
-                                                          pis, dev, 
+                            code = gx_remap_ICC_imagelab (&cc, pactual_cs, &devc,
+                                                          pis, dev,
                                                           gs_color_select_source);
                         } else {
                             code = (pactual_cs->type->remap_color)
-                                    (&cc, pactual_cs, &devc, pis, dev, 
+                                    (&cc, pactual_cs, &devc, pis, dev,
                                      gs_color_select_source);
                         }
                     }
@@ -843,7 +897,6 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
     const gs_imager_state *pis = penum->pis;
     const gs_color_space *pcs = penum->pcs;
     gs_logical_operation_t lop = penum->log_op;
-    int spp_decode = pss->params.spp_decode;
     byte *out = penum->line;
     bool must_halftone = penum->icc_setup.must_halftone;
     bool has_transfer = penum->icc_setup.has_transfer;
@@ -852,14 +905,14 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
     bool need_decode;
 
     if (penum->icc_link == NULL) {
-        return gs_rethrow(-1, "ICC Link not created duringgs_image_class_0_interpolate");
+        return gs_rethrow(-1, "ICC Link not created during gs_image_class_0_interpolate");
     }
-    /* Go ahead and take apart any indexed color space or do the decode 
+    /* Go ahead and take apart any indexed color space or do the decode
        so that we can then perform the interpolation or color management */
     need_decode = !((penum->device_color || penum->icc_setup.is_lab) &&
                      (penum->icc_setup.need_decode == 0) ||
                      gs_color_space_is_CIE(pcs));
-    initial_decode(penum, buffer, data_x, h, need_decode, &stream_r, true); 
+    initial_decode(penum, buffer, data_x, h, need_decode, &stream_r, true);
     /*
      * Process input and/or collect output.  By construction, the pixels are
      * 1-for-1 with the device, but the Y coordinate might be inverted.
@@ -890,6 +943,450 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
         code = dev_proc(dev, get_profile)(dev, &dev_profile);
         spp_cm = gsicc_get_device_profile_comps(dev_profile);
         if (penum->matrix.yy > 0)
+            dy = 1;
+        else
+            dy = -1, yo--;
+        /* If it makes sense (if enlarging), do early CM */
+        if (pss->params.early_cm && !penum->icc_link->is_identity
+            && stream_r.ptr != stream_r.limit) {
+            /* Get the buffers set up. */
+            p_cm_buff =
+                (byte *) gs_alloc_bytes(pis->memory,
+                                        num_bytes_decode * width_in * spp_cm,
+                                        "image_render_interpolate_icc");
+            /* Set up the buffer descriptors. We keep the bytes the same */
+            gsicc_init_buffer(&input_buff_desc, spp_decode, num_bytes_decode,
+                          false, false, false, 0, width_in * spp_decode,
+                          1, width_in);
+            gsicc_init_buffer(&output_buff_desc, spp_cm, num_bytes_decode,
+                          false, false, false, 0, width_in * spp_cm,
+                          1, width_in);
+            /* Do the transformation */
+            psrc = (byte*) (stream_r.ptr + 1);
+            (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, &input_buff_desc,
+                                                &output_buff_desc, (void*) psrc,
+                                                (void*) p_cm_buff);
+            /* Re-set the reading stream to use the cm data */
+            stream_r.ptr = p_cm_buff - 1;
+            stream_r.limit = stream_r.ptr + num_bytes_decode * width_in * spp_cm;
+        } else {
+            /* CM after interpolation (or none).  Just set up the buffers
+               if needed.  16 bit operations if CM takes place.  */
+            if (!penum->icc_link->is_identity) {
+                p_cm_buff = (byte *) gs_alloc_bytes(pis->memory,
+                    sizeof(unsigned short) * width * spp_cm,
+                    "image_render_interpolate_icc");
+                /* Set up the buffer descriptors. */
+                gsicc_init_buffer(&input_buff_desc, spp_decode, 2,
+                              false, false, false, 0, width * spp_decode,
+                              1, width);
+                gsicc_init_buffer(&output_buff_desc, spp_cm, 2,
+                              false, false, false, 0, width * spp_cm,
+                              1, width);
+            }
+        }
+        for (;;) {
+            int ry = yo + penum->line_xy * dy;
+            int x;
+            const unsigned short *pinterp;
+            gx_device_color devc;
+            int status;
+
+            DECLARE_LINE_ACCUM_COPY(out, bpp, xo);
+            stream_w.limit = out + width *
+                max(spp_interp * sizeofPixelOut, arch_sizeof_color_index) - 1;
+            stream_w.ptr = stream_w.limit - width * spp_interp * sizeofPixelOut;
+            pinterp = (const unsigned short *)(stream_w.ptr + 1);
+            /* This is where the rescale takes place; this will consume the
+             * data from stream_r, and post processed data into stream_w. The
+             * data in stream_w may be bogus if we are outside the active
+             * region, and this will be indiated by pss->params.Active being
+             * set to false. */
+            status = (*pss->templat->process)
+                ((stream_state *) pss, &stream_r, &stream_w, h == 0);
+            if (status < 0 && status != EOFC)
+                return_error(gs_error_ioerror);
+            if (stream_w.ptr == stream_w.limit) {
+                int xe = xo + pss->params.PatchWidthOut;
+
+                /* Are we active? (i.e. in the render rectangle) */
+                if (!pss->params.Active)
+                    goto inactive;
+                if_debug1m('B', penum->memory, "[B]Interpolated row %d:\n[B]",
+                           penum->line_xy);
+                /* Take care of CM on the entire interpolated row, if we
+                   did not already do CM */
+                if (penum->icc_link->is_identity || pss->params.early_cm) {
+                    /* Fastest case. No CM needed */
+                    p_cm_interp = (unsigned short *) pinterp;
+                } else {
+                    /* Transform */
+                    p_cm_interp = (unsigned short *) p_cm_buff;
+                    (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
+                                                        &input_buff_desc,
+                                                        &output_buff_desc,
+                                                        (void*) pinterp,
+                                                        (void*) p_cm_interp);
+                }
+                p_cm_interp += pss->params.LeftMarginOut * spp_cm;
+                for (x = xo; x < xe;) {
+#ifdef DEBUG
+                    if (gs_debug_c('B')) {
+                        int ci;
+
+                        for (ci = 0; ci < spp_cm; ++ci)
+                            dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
+                                     p_cm_interp[ci]);
+                    }
+#endif
+                    /* Get the device color */
+                    /* Now we can do an encoding directly or we have to apply transfer
+                       and or halftoning */
+                    if (must_halftone || has_transfer) {
+                        /* We need to do the tranfer function and/or the halftoning */
+                        cmap_transfer_halftone(p_cm_interp, &devc, pis, dev,
+                            has_transfer, must_halftone, gs_color_select_source);
+                    } else {
+                        /* encode as a color index. avoid all the cv to frac to cv
+                           conversions */
+                        color = dev_proc(dev, encode_color)(dev, p_cm_interp);
+                        /* check if the encoding was successful; we presume failure is rare */
+                        if (color != gx_no_color_index)
+                            color_set_pure(&devc, color);
+                    }
+                    if (color_is_pure(&devc)) {
+                        /* Just pack colors into a scan line. */
+                        gx_color_index color = devc.colors.pure;
+                        /* Skip runs quickly for the common cases. */
+                        switch (spp_cm) {
+                            case 1:
+                                do {
+                                    LINE_ACCUM(color, bpp);
+                                    vd_pixel(int2fixed(x), int2fixed(ry), color);
+                                    x++, p_cm_interp += 1;
+                                } while (x < xe && p_cm_interp[-1] == p_cm_interp[0]);
+                                break;
+                            case 3:
+                                do {
+                                    LINE_ACCUM(color, bpp);
+                                    vd_pixel(int2fixed(x), int2fixed(ry), color);
+                                    x++, p_cm_interp += 3;
+                                } while (x < xe && p_cm_interp[-3] == p_cm_interp[0] &&
+                                     p_cm_interp[-2] == p_cm_interp[1] &&
+                                     p_cm_interp[-1] == p_cm_interp[2]);
+                                break;
+                            case 4:
+                                do {
+                                    LINE_ACCUM(color, bpp);
+                                    x++, p_cm_interp += 4;
+                                } while (x < xe && p_cm_interp[-4] == p_cm_interp[0] &&
+                                     p_cm_interp[-3] == p_cm_interp[1] &&
+                                     p_cm_interp[-2] == p_cm_interp[2] &&
+                                     p_cm_interp[-1] == p_cm_interp[3]);
+                                break;
+                            default:
+                                LINE_ACCUM(color, bpp);
+                                x++, p_cm_interp += spp_cm;
+                        }
+                    } else {
+                        int rcode;
+
+                        LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
+                        rcode = gx_fill_rectangle_device_rop(x, ry,
+                                                     1, 1, &devc, dev, lop);
+                        if (rcode < 0)
+                            return rcode;
+                        LINE_ACCUM_SKIP(bpp);
+                        l_xprev = x + 1;
+                        x++, p_cm_interp += spp_cm;
+                    }
+                }  /* End on x loop */
+                LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
+                /*if_debug1m('w', penum->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
+inactive:
+                penum->line_xy++;
+                if_debug0m('B', penum->memory, "\n");
+            }
+            if ((status == 0 && stream_r.ptr == stream_r.limit) || status == EOFC)
+                break;
+        }
+        /* Free cm buffer, if it was used */
+        if (p_cm_buff != NULL) {
+            gs_free_object(pis->memory, (byte *)p_cm_buff,
+                           "image_render_interpolate_icc");
+        }
+    }
+    return (h == 0 ? 0 : 1);
+}
+
+static int
+image_render_interpolate_landscape(gx_image_enum * penum,
+                                   const byte * buffer,
+                                   int data_x, uint iw, int h,
+                                   gx_device * dev)
+{
+    stream_image_scale_state *pss = penum->scaler;
+    const gs_imager_state *pis = penum->pis;
+    const gs_color_space *pcs = penum->pcs;
+    gs_logical_operation_t lop = penum->log_op;
+    int spp_decode = pss->params.spp_decode;
+    stream_cursor_read stream_r;
+    stream_cursor_write stream_w;
+    bool is_index_space;
+    byte *out = penum->line;
+    bool islab = false;
+    bool need_decode;
+
+    if (pcs->cmm_icc_profile_data != NULL) {
+        islab = pcs->cmm_icc_profile_data->islab;
+    }
+    /* Perform any decode procedure if needed */
+    need_decode = !(penum->device_color || gs_color_space_is_CIE(pcs) || islab);
+    initial_decode(penum, buffer, data_x, h, need_decode, &stream_r, false);
+    is_index_space = (pcs->type->index == gs_color_space_index_Indexed);
+    /*
+     * Process input and/or collect output.  By construction, the pixels are
+     * 1-for-1 with the device, but the Y coordinate might be inverted.
+     */
+    {
+        int xo = penum->xyi.y;
+        int yo = penum->xyi.x;
+        int width = pss->params.WidthOut;
+        int sizeofPixelOut = pss->params.BitsPerComponentOut / 8;
+        int dy;
+        const gs_color_space *pconcs;
+        const gs_color_space *pactual_cs;
+        int bpp = dev->color_info.depth;
+        uint raster = (bpp+7)>>3;
+        bool device_color;
+
+        if (penum->matrix.yx > 0)
+            dy = 1;
+        else
+            dy = -1, yo--;
+        for (;;) {
+            int ry = yo + penum->line_xy * dy;
+            int x;
+            const frac *psrc;
+            gx_device_color devc;
+            int status, code;
+
+            DECLARE_LINE_ACCUM_COPY(out, bpp, xo);
+            stream_w.limit = out + width *
+                max(spp_decode * sizeofPixelOut, arch_sizeof_color_index) - 1;
+            stream_w.ptr = stream_w.limit - width * spp_decode * sizeofPixelOut;
+            psrc = (const frac *)(stream_w.ptr + 1);
+            /* This is where the rescale takes place; this will consume the
+             * data from stream_r, and post processed data into stream_w. The
+             * data in stream_w may be bogus if we are outside the active
+             * region, and this will be indicated by pss->params.Active being
+             * set to false. */
+            status = (*pss->templat->process)
+                ((stream_state *) pss, &stream_r, &stream_w, h == 0);
+            if (status < 0 && status != EOFC)
+                return_error(gs_error_ioerror);
+            if (stream_w.ptr == stream_w.limit) {
+                int xe = xo + pss->params.PatchWidthOut;
+
+                /* Are we active? (i.e. in the render rectangle) */
+                if (!pss->params.Active)
+                    goto inactive;
+                if_debug1m('B', penum->memory, "[B]Interpolated (rotated) row %d:\n[B]",
+                           penum->line_xy);
+                psrc += pss->params.LeftMarginOut * spp_decode;
+                for (x = xo; x < xe;) {
+#ifdef DEBUG
+                    if (gs_debug_c('B')) {
+                        int ci;
+
+                        for (ci = 0; ci < spp_decode; ++ci)
+                            dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
+                                     psrc[ci]);
+                    }
+#endif
+                    /* if we are in a non device space then work
+                       from the pcs not from the concrete space
+                       also handle index case, where base case was device type */
+                    if (pcs->type->index == gs_color_space_index_Indexed) {
+                        pactual_cs = pcs->base_space;
+                    } else {
+                        pactual_cs = pcs;
+                    }
+                    pconcs = cs_concrete_space(pactual_cs, pis);
+                    if (pconcs->cmm_icc_profile_data != NULL) {
+                        device_color = false;
+                    } else {
+                        device_color = (pconcs == pactual_cs);
+                    }
+                    if (device_color) {
+                        /* Use the underlying concrete space remap */
+                        code = (*pconcs->type->remap_concrete_color)
+                        (psrc, pconcs, &devc, pis, dev, gs_color_select_source);
+                    } else {
+                        /* if we are device dependent we need to get back to
+                           float prior to remap.  This stuff needs to be
+                           reworked  as  part of the ICC flow update.
+                           In such a flow, we will want the interpolation
+                           algorithm output likely to be 8 bit (if the input
+                           were 8 bit) and hit that buffer of values directly
+                           with the linked transform */
+                        gs_client_color cc;
+                        int j;
+                        int num_components =
+                              gs_color_space_num_components(pactual_cs);
+
+                        for (j = 0; j < num_components;  ++j) {
+                            /* If we were indexed, dont use the decode procedure
+                               for the index values just get to float directly */
+                            if (is_index_space || islab) {
+                                cc.paint.values[j] = frac2float(psrc[j]);
+                            } else {
+                                decode_sample_frac_to_float(penum, psrc[j], &cc, j);
+                            }
+                        }
+                        /* If the source colors are LAB then use the mapping
+                           that does not rescale the source colors */
+                        if (gs_color_space_is_ICC(pactual_cs) &&
+                            pactual_cs->cmm_icc_profile_data != NULL &&
+                            pactual_cs->cmm_icc_profile_data->islab) {
+                            code = gx_remap_ICC_imagelab (&cc, pactual_cs, &devc,
+                                                          pis, dev,
+                                                          gs_color_select_source);
+                        } else {
+                            code = (pactual_cs->type->remap_color)
+                                    (&cc, pactual_cs, &devc, pis, dev,
+                                     gs_color_select_source);
+                        }
+                    }
+                    if (code < 0)
+                        return code;
+                    if (color_is_pure(&devc)) {
+                        /* Just pack colors into a scan line. */
+                        gx_color_index color = devc.colors.pure;
+                        /* Skip runs quickly for the common cases. */
+                        switch (spp_decode) {
+                            case 1:
+                                do {
+                                    LINE_ACCUM(color, bpp);
+                                    vd_pixel(int2fixed(x), int2fixed(ry), color);
+                                    x++, psrc += 1;
+                                } while (x < xe && psrc[-1] == psrc[0]);
+                                break;
+                            case 3:
+                                do {
+                                    LINE_ACCUM(color, bpp);
+                                    vd_pixel(int2fixed(x), int2fixed(ry), color);
+                                    x++, psrc += 3;
+                                } while (x < xe &&
+                                         psrc[-3] == psrc[0] &&
+                                         psrc[-2] == psrc[1] &&
+                                         psrc[-1] == psrc[2]);
+                                break;
+                            case 4:
+                                do {
+                                    LINE_ACCUM(color, bpp);
+                                    x++, psrc += 4;
+                                } while (x < xe &&
+                                         psrc[-4] == psrc[0] &&
+                                         psrc[-3] == psrc[1] &&
+                                         psrc[-2] == psrc[2] &&
+                                         psrc[-1] == psrc[3]);
+                                break;
+                            default:
+                                LINE_ACCUM(color, bpp);
+                                x++, psrc += spp_decode;
+                        }
+                    } else {
+                        int rcode;
+
+                        LINE_ACCUM_COPY_TRANS(dev, out, bpp, xo, x, raster, ry);
+                        rcode = gx_fill_rectangle_device_rop(ry, x, 1, 1,
+                                                             &devc, dev, lop);
+                        if (rcode < 0)
+                            return rcode;
+                        LINE_ACCUM_SKIP(bpp);
+                        l_xprev = x + 1;
+                        x++, psrc += spp_decode;
+                    }
+                }
+                LINE_ACCUM_COPY_TRANS(dev, out, bpp, xo, x, raster, ry);
+                /*if_debug1m('w', dev->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
+inactive:
+                penum->line_xy++;
+                if_debug0m('B', dev->memory, "\n");
+            }
+            if ((status == 0 && stream_r.ptr == stream_r.limit) || status == EOFC)
+                break;
+        }
+    }
+    return (h == 0 ? 0 : 1);
+}
+
+/* Interpolation with ICC based source spaces. This is done seperately to
+   enable optimization and avoid the multiple tranformations that occur in
+   the above code */
+static int
+image_render_interpolate_landscape_icc(gx_image_enum * penum,
+                                       const byte * buffer,
+                                       int data_x, uint iw, int h,
+                                       gx_device * dev)
+{
+    stream_image_scale_state *pss = penum->scaler;
+    const gs_imager_state *pis = penum->pis;
+    const gs_color_space *pcs = penum->pcs;
+    gs_logical_operation_t lop = penum->log_op;
+    byte *out = penum->line;
+    bool must_halftone = penum->icc_setup.must_halftone;
+    bool has_transfer = penum->icc_setup.has_transfer;
+    stream_cursor_read stream_r;
+    stream_cursor_write stream_w;
+    bool need_decode;
+
+    if (penum->icc_link == NULL) {
+        return gs_rethrow(-1, "ICC Link not created during gs_image_class_0_interpolate");
+    }
+    /* Go ahead and take apart any indexed color space or do the decode
+       so that we can then perform the interpolation or color management */
+    /* We need to perform an extra decode step if:
+     *    we have a non-lab non-device color.
+     * OR the icc stuff tells us we need to.
+     * OR gs_color_space_is_CIE(pcs) == 0 (i.e. we have indexed/sep or devn)
+     * FIXME: Understand this! Michael says change the second || to && maybe.
+     */
+    need_decode = !((penum->device_color || penum->icc_setup.is_lab) &&
+                     (penum->icc_setup.need_decode == 0) ||
+                     gs_color_space_is_CIE(pcs));
+    initial_decode(penum, buffer, data_x, h, need_decode, &stream_r, true);
+    /*
+     * Process input and/or collect output.  By construction, the pixels are
+     * 1-for-1 with the device, but the Y coordinate might be inverted.
+     * CM is performed on the entire row.
+     */
+    {
+        int xo = penum->xyi.y;
+        int yo = penum->xyi.x;
+        int width = pss->params.WidthOut;
+        int width_in = pss->params.WidthIn;
+        int sizeofPixelOut = pss->params.BitsPerComponentOut / 8;
+        int dy;
+        int bpp = dev->color_info.depth;
+        uint raster = (bpp+7)>>3;
+        unsigned short *p_cm_interp;
+        byte *p_cm_buff = NULL;
+        byte *psrc;
+        int spp_decode = pss->params.spp_decode;
+        int spp_interp = pss->params.spp_interp;
+        int spp_cm;
+        gsicc_bufferdesc_t input_buff_desc;
+        gsicc_bufferdesc_t output_buff_desc;
+        gx_color_index color;
+        int code;
+        cmm_dev_profile_t *dev_profile;
+        int num_bytes_decode = pss->params.BitsPerComponentIn / 8;
+
+        code = dev_proc(dev, get_profile)(dev, &dev_profile);
+        spp_cm = gsicc_get_device_profile_comps(dev_profile);
+        if (penum->matrix.yx > 0)
             dy = 1;
         else
             dy = -1, yo--;
@@ -1038,9 +1535,9 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                     } else {
                         int rcode;
 
-                        LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
-                        rcode = gx_fill_rectangle_device_rop(x, ry,
-                                                     1, 1, &devc, dev, lop);
+                        LINE_ACCUM_COPY_TRANS(dev, out, bpp, xo, x, raster, ry);
+                        rcode = gx_fill_rectangle_device_rop(ry, x, 1, 1,
+                                                             &devc, dev, lop);
                         if (rcode < 0)
                             return rcode;
                         LINE_ACCUM_SKIP(bpp);
@@ -1048,7 +1545,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                         x++, p_cm_interp += spp_cm;
                     }
                 }  /* End on x loop */
-                LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
+                LINE_ACCUM_COPY_TRANS(dev, out, bpp, xo, x, raster, ry);
                 /*if_debug1m('w', penum->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 inactive:
                 penum->line_xy++;

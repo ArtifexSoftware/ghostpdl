@@ -217,10 +217,14 @@ struct gx_image_enum_s {
     struct {
         int x, y, w, h;         /* subrectangle that actually needs to be rendered */
     } rrect;
-    fixed dst_height;           /* Full image height in the device space for siscale.c only;
-                                   assumes posture == image_portrait. */
-    fixed dst_width;            /* Full image width in the device space for siscale.c only;
-                                   assumes posture == image_portrait. */
+    fixed dst_height;           /* Full height covered by the transformed image
+                                 * in the device space (for siscale.c only);
+                                 * assumes posture == image_portrait or
+                                 * image_landscape. */
+    fixed dst_width;            /* Full width covered by the transformed image
+                                 * in the device space (for siscale.c only);
+                                 * assumes posture == image_portrait or
+                                 * image_landscape. */
     gs_fixed_point x_extent, y_extent;  /* extent of one row of rect */
     SAMPLE_UNPACK_PROC((*unpack));
     irender_proc((*render));

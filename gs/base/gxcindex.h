@@ -133,6 +133,16 @@ typedef gx_color_index_data gx_color_index;
             if ( code < 0 )\
               return code;\
         }
+/* The same thing, but transposed */
+#define LINE_ACCUM_COPY_TRANS(dev, line, bpp, xo, xe, raster, y)\
+        if ( (xe) > l_xprev ) {\
+            int code;\
+            LINE_ACCUM_STORE(bpp);\
+            code = gx_copy_color_unaligned(dev, line, l_xprev - (xo), raster,\
+               gx_no_bitmap_id, y, l_xprev, 1, (xe) - l_xprev);\
+            if ( code < 0 )\
+              return code;\
+        }
 #define LINE_ACCUM_FLUSH_AND_RESTART(dev, line, bpp, xo, xe, raster, y)\
         { LINE_ACCUM_COPY(dev, line, bpp, xo, xe, raster, y);\
           sample_store_reset(l_dptr, l_dbit, l_dbyte, line, 0, bpp);\

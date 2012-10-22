@@ -389,6 +389,10 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
             int isupport;
             if (any_abs(mi.yy) > support)
                 support = any_abs(mi.yy);
+            if (any_abs(mi.xy) > support)
+                support = any_abs(mi.xy);
+            if (any_abs(mi.yx) > support)
+                support = any_abs(mi.yx);
             isupport = (int)(MAX_ISCALE_SUPPORT * (support+1)) + 1;
             irect.p.x -= isupport;
             irect.p.y -= isupport;
@@ -758,10 +762,18 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
                    fixed2float(obox.p.x), fixed2float(obox.p.y),
                    fixed2float(obox.q.x), fixed2float(obox.q.y),
                    penum->clip_image);
+        /* These DDAs enumerate the starting position of each source pixel
+         * row in device space. */
         dda_init(penum->dda.row.x, mtx, col_extent.x, height);
         dda_init(penum->dda.row.y, mty, col_extent.y, height);
-        penum->dst_width = row_extent.x;
-        penum->dst_height = col_extent.y;
+        if (penum->posture == image_portrait) {
+            penum->dst_width = row_extent.x;
+            penum->dst_height = col_extent.y;
+        } else {
+            penum->dst_width = col_extent.x;
+            penum->dst_height = row_extent.y;
+        }
+        /* For gs_image_class_0_interpolate. */
         penum->yi0 = fixed2int_pixround_perfect(dda_current(penum->dda.row.y)); /* For gs_image_class_0_interpolate. */
         if (penum->rect.y) {
             int y = penum->rect.y;
@@ -773,12 +785,16 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
         }
         penum->cur.x = penum->prev.x = dda_current(penum->dda.row.x);
         penum->cur.y = penum->prev.y = dda_current(penum->dda.row.y);
+        /* These DDAs enumerate the starting positions of each row of our
+         * source pixel data, in the subrectangle ('strip') that we are
+         * actually rendering. */
         dda_init(penum->dda.strip.x, penum->cur.x, row_extent.x, width);
         dda_init(penum->dda.strip.y, penum->cur.y, row_extent.y, width);
         if (penum->rect.x) {
             dda_advance(penum->dda.strip.x, penum->rect.x);
             dda_advance(penum->dda.strip.y, penum->rect.x);
-        } {
+        }
+        {
             fixed ox = dda_current(penum->dda.strip.x);
             fixed oy = dda_current(penum->dda.strip.y);
 
