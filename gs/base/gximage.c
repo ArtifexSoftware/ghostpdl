@@ -240,7 +240,7 @@ gx_image_default_release(gs_image_common_t *pic, gs_memory_t *mem)
 
 #ifdef DEBUG
 static void
-debug_b_print_matrix(const gs_memory_t *mem,const gs_pixel_image_t *pim)
+debug_b_print_matrix(const gs_pixel_image_t *pim)
 {
     if_debug6('b', "      ImageMatrix=[%g %g %g %g %g %g]\n",
               pim->ImageMatrix.xx, pim->ImageMatrix.xy,
@@ -248,20 +248,20 @@ debug_b_print_matrix(const gs_memory_t *mem,const gs_pixel_image_t *pim)
               pim->ImageMatrix.tx, pim->ImageMatrix.ty);
 }
 static void
-debug_b_print_decode(const gs_memory_t *mem,const gs_pixel_image_t *pim, int num_decode)
+debug_b_print_decode(const gs_pixel_image_t *pim, int num_decode)
 {
     if (gs_debug_c('b')) {
         const char *str = "      Decode=[";
         int i;
 
         for (i = 0; i < num_decode; str = " ", ++i)
-            dmprintf2(mem,"%s%g", str, pim->Decode[i]);
-        dmputs(mem,"]\n");
+            dprintf2("%s%g", str, pim->Decode[i]);
+        dputs("]\n");
     }
 }
 #else
-#  define debug_b_print_matrix(mem,pim) DO_NOTHING
-#  define debug_b_print_decode(mem,pim, num_decode) DO_NOTHING
+#  define debug_b_print_matrix(pim) DO_NOTHING
+#  define debug_b_print_decode(pim, num_decode) DO_NOTHING
 #endif
 
 /* Test whether an image has a default ImageMatrix. */
@@ -361,13 +361,13 @@ gx_pixel_image_sput(const gs_pixel_image_t *pim, stream *s,
 
     /* Write the encoding on the stream. */
 
-    if_debug3m('b', s->memory, "[b]put control=0x%x, Width=%d, Height=%d\n",
-               control, pim->Width, pim->Height);
+    if_debug3('b', "[b]put control=0x%x, Width=%d, Height=%d\n",
+              control, pim->Width, pim->Height);
     sput_variable_uint(s, control);
     sput_variable_uint(s, (uint)pim->Width);
     sput_variable_uint(s, (uint)pim->Height);
     if (control & PI_ImageMatrix) {
-        debug_b_print_matrix(s->memory,pim);
+        debug_b_print_matrix(pim);
         sput_matrix(s, &pim->ImageMatrix);
     }
     if (control & PI_Decode) {
@@ -376,7 +376,7 @@ gx_pixel_image_sput(const gs_pixel_image_t *pim, stream *s,
         float decode[8];
         int di = 0;
 
-        debug_b_print_decode(s->memory, pim, num_decode);
+        debug_b_print_decode(pim, num_decode);
         for (i = 0; i < num_decode; i += 2) {
             float u = pim->Decode[i], v = pim->Decode[i + 1];
             float dv = DECODE_DEFAULT(i + 1, decode_default_1);
@@ -455,12 +455,12 @@ gx_pixel_image_sget(gs_pixel_image_t *pim, stream *s,
         (code = sget_variable_uint(s, (uint *)&pim->Height)) < 0
         )
         return code;
-    if_debug3m('b', s->memory, "[b]get control=0x%x, Width=%d, Height=%d\n",
+    if_debug3('b', "[b]get control=0x%x, Width=%d, Height=%d\n",
               control, pim->Width, pim->Height);
     if (control & PI_ImageMatrix) {
         if ((code = sget_matrix(s, &pim->ImageMatrix)) < 0)
             return code;
-        debug_b_print_matrix(s->memory,pim);
+        debug_b_print_matrix(pim);
     } else
         gx_image_matrix_set_default((gs_data_image_t *)pim);
     pim->BitsPerComponent = ((control >> PI_BPC_SHIFT) & PI_BPC_MASK) + 1;
@@ -498,7 +498,7 @@ gx_pixel_image_sget(gs_pixel_image_t *pim, stream *s,
                 break;
             }
         }
-        debug_b_print_decode(s->memory, pim, num_decode);
+        debug_b_print_decode(pim, num_decode);
     } else {
         for (i = 0; i < num_decode; ++i)
             pim->Decode[i] = DECODE_DEFAULT(i, decode_default_1);
