@@ -235,22 +235,13 @@ hpgl_LA(
 
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
-    /* LA1,1,2,1,3,5 is the same as LA */
     if (no_args) {
-        hpgl_args_setup(pargs);
-        hpgl_args_add_int(pargs, 1);
-        hpgl_args_add_int(pargs, 1);
-        hpgl_args_add_int(pargs, 2);
-        hpgl_args_add_int(pargs, 1);
-        hpgl_args_add_int(pargs, 3);
-        hpgl_args_add_real(pargs, 5.0);
-        hpgl_LA(pargs, pgls);
-        return 0;
+        hpgl_set_line_attribute_defaults(pgls);
+    } else {
+        pgls->g.line.cap = cap;
+        pgls->g.line.join = join;
+        pgls->g.miter_limit = miter_limit;
     }
-
-    pgls->g.line.cap = cap;
-    pgls->g.line.join = join;
-    pgls->g.miter_limit = miter_limit;
     return 0;
 }
 
