@@ -1229,9 +1229,15 @@ gsicc_set_devicen_equiv_colors(gx_device *dev, const gs_imager_state * pis,
     code = dev_proc(dev, update_spot_equivalent_colors)(dev, &temp_state);
 }
 
+#define DEFAULT_ICC_PROCESS "Cyan, Magenta, Yellow, Black,"
+#define DEFAULT_ICC_PROCESS_LENGTH 30
+#define DEFAULT_ICC_COLORANT_NAME "ICC_COLOR_"
+#define DEFAULT_ICC_COLORANT_LENGTH 12   
+/* allow at most 16 colorants */
 /* This sets the colorants structure up in the device profile for when 
    we are dealing with DeviceN type output profiles.  Note
-   that this feature is only used with the tiffsep and psdcmyk devices */
+   that this feature is only used with the tiffsep and psdcmyk devices.
+   If name_str is null it will use default names for the colorants */
 int
 gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
 {   
@@ -1244,22 +1250,56 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
     int done;
     gsicc_namelist_t *spot_names;
     char *pch;
-    int str_len = strlen(name_str);
+    int str_len;
     int k;
+    bool free_str = false;
 
     code = dev_proc(dev, get_profile)((gx_device *)dev, &profile_struct);
     if (profile_struct != NULL) {
         int count = 0;
 
+        if (name_str == NULL) {
+            /* Create a default name string that we can use */
+            int total_len;
+            int kk;
+            int num_comps = profile_struct->device_profile[0]->num_comps;
+            char temp_str[DEFAULT_ICC_COLORANT_LENGTH+2];
+
+            free_str = true;
+            /* Assume first 4 are CMYK */
+            total_len = ((DEFAULT_ICC_COLORANT_LENGTH + 1) * (num_comps-4)) +
+                        DEFAULT_ICC_PROCESS_LENGTH - 1;  /* -1 due to no comma at end */
+            name_str = (char*) gs_alloc_bytes(dev->memory, total_len+1, 
+                                               "gsicc_set_device_profile_colorants");
+            sprintf(name_str, DEFAULT_ICC_PROCESS);
+            for (kk = 0; kk < num_comps-5; kk++) {
+                sprintf(temp_str,"ICC_COLOR_%d,",kk);
+                strcat(name_str,temp_str);
+            }
+            /* Last one no comma */
+            sprintf(temp_str,"ICC_COLOR_%d",kk);
+            strcat(name_str,temp_str);
+        } 
+        str_len = strlen(name_str);
         if (profile_struct->spotnames != NULL &&
             profile_struct->spotnames->name_str != NULL &&
             strlen(profile_struct->spotnames->name_str) == str_len) {
             if (strncmp(name_str, profile_struct->spotnames->name_str, str_len) == 0) {
+                if (free_str) 
+                    gs_free_object(dev->memory, name_str, 
+                                            "gsicc_set_device_profile_colorants");
                 return 0;
             }
         }
         mem = dev->memory->non_gc_memory;
-
+        /* We need to free the existing one if there was one */
+        if (profile_struct->spotnames != NULL) {
+            /* Free the linked list in this object */
+            gsicc_free_spotnames(profile_struct->spotnames, mem); 
+            /* Free the main object */
+            gs_free_object(mem, profile_struct->spotnames, 
+                           "gsicc_set_device_profile_colorants");
+        }
         /* Allocate structure for managing names */
         spot_names = gsicc_new_namelist(mem);
         profile_struct->spotnames = spot_names;
@@ -1311,7 +1351,8 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
         name_entry = spot_names->head;
         for (k = 0; k < count; k++) {
             int colorant_number = (*dev_proc(dev, get_color_comp_index))
-                    (dev, (const char *)name_entry->name, name_entry->length, SEPARATION_NAME);
+                    (dev, (const char *)name_entry->name, name_entry->length, 
+                     SEPARATION_NAME);
             name_entry = name_entry->next;
             spot_names->color_map->color_map[k] = colorant_number;
         }
@@ -1322,6 +1363,9 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
            graphic state to do this so we save it for later when we try to do 
            our first mapping.  We then use this flag to know if we did it yet */
         spot_names->equiv_cmyk_set = false;
+        if (free_str) 
+            gs_free_object(dev->memory, name_str, 
+                           "gsicc_set_device_profile_colorants");
     }
     return 0;
 }
@@ -1512,6 +1556,8 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                     }
                     break;
                 default:
+                    /* NCLR Profile.  Set up default colorant names */
+                    gsicc_set_device_profile_colorants(pdev, NULL);
                     break;
             }
             if_debug1m(gs_debug_flag_icc, mem, "[icc] Profile data CS is %d\n", 

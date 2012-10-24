@@ -1416,7 +1416,8 @@ tiffsep_prn_open(gx_device * pdev)
        DeviceN ICC profile to color manage those N colorants and
        to let any other separations pass through unmolested.   The define 
        LIMIT_TO_ICC sets the option to limit our device to only the ICC
-       colorants defined by -sICCOutputColors.  The pass through option 
+       colorants defined by -sICCOutputColors (or to the ones that are used
+       as default names if ICCOutputColors is not used).  The pass through option 
        (LIMIT_TO_ICC set to 0) makes life a bit more difficult since we don't 
        know if the page_spot_colors overlap with any spot colorants that exist 
        in the DeviceN ICC output profile. Hence we don't know how many planes

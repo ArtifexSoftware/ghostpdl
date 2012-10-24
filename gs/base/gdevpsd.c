@@ -358,7 +358,8 @@ psd_prn_open(gx_device * pdev)
        DeviceN ICC profile to color manage those N colorants and
        to let any other separations pass through unmolested.   The define 
        LIMIT_TO_ICC sets the option to limit our device to only the ICC
-       colorants defined by -sICCOutputColors.  The pass through option 
+       colorants defined by -sICCOutputColors (or to the ones that are used
+       as default names if ICCOutputColors is not used).  The pass through option 
        (LIMIT_TO_ICC set to 0) makes life a bit more difficult since we don't 
        know if the page_spot_colors overlap with any spot colorants that exist 
        in the DeviceN ICC output profile. Hence we don't know how many planes
@@ -376,6 +377,13 @@ psd_prn_open(gx_device * pdev)
     limit_icc = false;
 #endif
     code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
+    /* Check for case where someone did NOT specify sICCOutputColors but we 
+       have an NCLR ICC profile for the output. In that case, we use a set of 
+       "default" names */
+    if (profile_struct->device_profile[0]->num_comps > 4 &&
+        profile_struct->spotnames == NULL) {
+        
+    }
     if (profile_struct->spotnames == NULL) {
         force_pdf = false;
         force_ps = false;
