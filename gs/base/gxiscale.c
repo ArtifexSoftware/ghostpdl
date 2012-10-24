@@ -175,10 +175,16 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
                                                    any_abs(penum->dst_width) / penum->Width));
     iss.TopMargin = penum->rrect.y - penum->rect.y;
     iss.src_y_offset = penum->rect.y;
-    iss.EntireWidthIn = penum->Width;
-    iss.EntireHeightIn = penum->Height;
     iss.EntireWidthOut = fixed2int_pixround(any_abs(penum->dst_width));
     iss.EntireHeightOut = fixed2int_pixround(any_abs(penum->dst_height));
+    iss.EntireWidthIn = penum->Width;
+    iss.EntireHeightIn = penum->Height;
+    iss.WidthIn = penum->rect.w;
+    iss.HeightIn = penum->rect.h;
+    iss.WidthOut = any_abs(iss.WidthOut);
+    iss.HeightOut = any_abs(iss.HeightOut);
+    if ((penum->posture == image_portrait ? penum->dst_width : penum->dst_height) < 0)
+        iss.LeftMarginOut = iss.WidthOut - iss.LeftMarginOut - iss.PatchWidthOut;
     /* For interpolator cores that don't set Active, have us always active */
     iss.Active = 1;
     if (iss.EntireWidthOut == 0 || iss.EntireHeightOut == 0)

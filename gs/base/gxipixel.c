@@ -381,13 +381,20 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
         /* If mi.{xx,yy} > 1 then we are downscaling. During downscaling,
          * the support increases to ensure that we don't lose pixels contributions
          * entirely. */
-        /* I do not understand the need for the +/- 1 fudge factors in the Y,
+        /* I do not understand the need for the +/- 1 fudge factors,
          * but they seem to be required. Increasing the render rectangle can
          * never be bad at least... RJW */
-        irect.p.x -= MAX_ISCALE_SUPPORT * (int)any_abs(mi.xx) + 1;
-        irect.p.y -= MAX_ISCALE_SUPPORT * (int)any_abs(mi.yy) + 1;
-        irect.q.x += MAX_ISCALE_SUPPORT * (int)max(1,any_abs(mi.xx)+1.0) + 1;
-        irect.q.y += MAX_ISCALE_SUPPORT * (int)max(1,any_abs(mi.yy)+1.0) + 1;
+        {
+            float support = any_abs(mi.xx);
+            int isupport;
+            if (any_abs(mi.yy) > support)
+                support = any_abs(mi.yy);
+            isupport = (int)(MAX_ISCALE_SUPPORT * (support+1)) + 1;
+            irect.p.x -= isupport;
+            irect.p.y -= isupport;
+            irect.q.x += isupport;
+            irect.q.y += isupport;
+        }
         if (penum->rrect.x < irect.p.x) {
             penum->rrect.w -= irect.p.x - penum->rrect.x;
             if (penum->rrect.w < 0)
