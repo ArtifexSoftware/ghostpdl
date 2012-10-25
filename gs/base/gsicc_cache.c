@@ -590,10 +590,16 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
                 rendering_params->rendering_intent = render_cond.rendering_intent;      
             }
         }
-        /* Similar to the black point compensation */
+        /* Similar for the black point compensation */
         if (!(rendering_params->black_point_comp & gsBP_OVERRIDE)) {
             if (render_cond.black_point_comp != gsBPNOTSPECIFIED) {
                 rendering_params->black_point_comp = render_cond.black_point_comp;      
+            }
+        }
+        /* And the Black preservation */
+        if (!(rendering_params->preserve_black & gsKP_OVERRIDE)) {
+            if (render_cond.preserve_black != gsBPNOTSPECIFIED) {
+                rendering_params->preserve_black = render_cond.preserve_black;      
             }
         }
         devicegraytok = dev_profile->devicegraytok;
@@ -603,6 +609,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
        profiles */
     rendering_params->rendering_intent = rendering_params->rendering_intent & gsRI_MASK;
     rendering_params->black_point_comp = rendering_params->black_point_comp & gsBP_MASK;
+    rendering_params->preserve_black = rendering_params->preserve_black & gsKP_MASK;
     return(gsicc_get_link_profile(pis, dev, gs_input_profile, gs_output_profile,
                     rendering_params, memory, devicegraytok));
 }

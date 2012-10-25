@@ -85,6 +85,9 @@ int gsicc_set_device_profile_intent(gx_device *dev,
 int gsicc_set_device_blackptcomp(gx_device *dev, 
                                     gsicc_blackptcomp_t blackptcomp,
                                     gsicc_profile_types_t profile_type);
+int gsicc_set_device_blackpreserve(gx_device *dev, 
+                                   gsicc_blackpreserve_t blackpreserve,
+                                   gsicc_profile_types_t profile_type);
 void gsicc_set_devicen_equiv_colors(gx_device *dev, const gs_imager_state * pis,
                                     cmm_profile_t *profile);
 int gsicc_set_device_profile_colorants(gx_device *dev, char *name_str);

@@ -161,8 +161,10 @@ typedef enum {
   
 #define gsRI_OVERRIDE 0x4
 #define gsBP_OVERRIDE 0x4 
+#define gsKP_OVERRIDE 0x4
 #define gsRI_MASK 0x3;
 #define gsBP_MASK 0x3;
+#define gsKP_MASK 0x3;
 
 /* Enumerate the types of profiles */
 typedef enum {

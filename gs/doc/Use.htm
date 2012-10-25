@@ -2810,10 +2810,43 @@ tool for creating these source profiles is contained in
 </dl>
 
 <dl>
+<dt><code>-sOutputICCProfile=</code><em>filename</em>
+<dd>Set the ICC profile that will be associated with
+the output device.  Care should be taken to ensure that the
+number of colorants associated with the device is the same
+as the profile.  If this is not set, an appropriate profile
+(i.e. one with the proper number of colorants) will be
+selected from those in the directory specified by ICCProfilesDir (see below).
+ Note that if the output device is CMYK + spot colorants, a CMYK
+profile can be used to provide color management for the CMYK colorants only.
+In this case, spot colors will pass through unprocessed assuming the
+device supports those colorants.  It is also possible for these devices to 
+specify NCLR ICC profiles for output.
+</dl>
+
+<dl>
+<dt><code>-sICCOutputColors=</code><em>"Cyan, Magenta, Yellow, Black, Orange, Violet"</em>
+<dd>For the psdcmyk and tiffsep separation devices, the device ICC profile can
+be an NCLR profile, which means something that includes non-traditional inks
+like Orange, Violet, etc.   In this case, the list of the colorant names in the
+order that they exist in the profile must be provided with this command line
+option.   Note that if a colorant name that is specified for the profile occurs also within 
+the document (e.g. "Orange" above), then these colorants will be associated with
+the same separation.  It is possible through a compile time option LIMIT_TO_ICC
+defined in gdevdevn.h to restrict the output colorants of the psdcmyk and tiffsep
+device to the colorants of the ICC profile or to allow additional spot colorants
+in the document to be created as different separations.  If restricted, the other
+spot colorants will go through the alternate tint transform and then be mapped to 
+the color space defined by the NCLR profile.   If an NCLR ICC profile is specified
+and ICCOutputColors is not used, then a set of default names will be used for
+the extra colorants (non-CMYK) in the profile.
+</dl>
+
+<dl>
 <dt><code>-sProofProfile=</code><em>filename</em>
 <dd>
 Enable the specificiation of a proofing profile that will make the
-color manegement system link multiple profiles together to emulate the
+color management system link multiple profiles together to emulate the
 device defined by the proofing profile.  See the document
 <a href="GS9_Color_Management.pdf">GS9 Color Management</a> for details about this option.
 </dl>
@@ -2843,70 +2876,33 @@ their own proprietary-based format for spot color management.
 This command option is for developer use when an implementation
 for named color management is designed for the function
 gsicc_transform_named_color located in gsicccache.c .  An example
-implementation is currently contained in the code.  For the general
-user this command option should really not be used.
+implementation is currently contained in the code for the handling of both
+Separation and DeviceN colors.  For the general user this command option 
+should really not be used.
 </dl>
 
 <dl>
-<dt><code>-sOutputICCProfile=</code><em>filename</em>
-<dd>Set the ICC profile that will be associated with
-the output device.  Care should be taken to ensure that the
-number of colorants associated with the device is the same
-as the profile.  If this is not set, an appropriate profile
-(i.e. one with the proper number of colorants) will be
-selected from those in the directory specified by ICCProfilesDir (see below).
- Note that if the output device is CMYK + spot colorants, a CMYK
-profile can be used to provide color management for the CMYK colorants only.
-In this case, spot colors will pass through unprocessed assuming the
-device supports those colorants.
-</dl>
-
-<dl>
-<dt><code>-sOutputICCProfile=</code><em>filename</em>
-<dd>Set the ICC profile that will be associated with
-the output device.  Care should be taken to ensure that the
-number of colorants associated with the device is the same
-as the profile.  If this is not set, an appropriate profile
-(i.e. one with the proper number of colorants) will be
-selected from those in the directory specified by ICCProfilesDir (see below).
- Note that if the output device is CMYK + spot colorants, a CMYK
-profile can be used to provide color management for the CMYK colorants only.
-In this case, spot colors will pass through unprocessed assuming the
-device supports those colorants.
-</dl>
-
-<dl>
-<dt><code>-sICCOutputColors=</code><em>"Cyan, Magenta, Yellow, Black, Orange, Violet"</em>
-<dd>For the psdcmyk and tiffsep separation devices, the device ICC profile can
-be an N-CLR profile, which means something that includes non-traditional inks
-like Orange, Violet, etc.   In this case, the list of the colorant names in the
-order that they exist in the profile must be provided with this command line
-option.   Note that if a colorant name that is specified for the profile occurs also within 
-the document (e.g. "Orange" above), then these colorants will be associated with
-the same separation.  It is possible through a compile time option LIMIT_TO_ICC
-defined in gdevdevn.h to restrict the output colorants of the psdcmyk and tiffsep
-device to the colorants of the ICC profile or to allow additional spot colorants
-in the document to be created as different separations.  If restricted, the other
-spot colorants will go through the alternate tint transform and then be mapped to 
-the color space defined by the N-CLR profile.
-</dl>
-
-<dl>
-<dt><code>-dRenderIntent=</code><em>intent</em>
+<dt><code>-dRenderIntent=</code><em>0/1/2/3</em>
 <dd>Set the rendering intent that should be used with the
 profile specified above by -sOutputICCProfile.  The
-options for <em>intent</em> are
-0, 1, 2, and 3,
-which correspond to the ICC intents of Perceptual, Colorimetric,
+options 0, 1, 2, and 3 correspond to the ICC intents of Perceptual, Colorimetric,
 Saturation, and Absolute Colorimetric.
-Also see <a href="#OverrideRI">OverrideRI</a>.
 </dl>
 
 <dl>
 <dt><code>-dBlackPtComp=</code><em>0/1</em>
 <dd>Specify if black point compensation should be used with the
 profile specified above by -sOutputICCProfile.  
-Also see <a href="#OverrideBP">OverrideBP </a>.
+</dl>
+
+<dl>
+<dt><code>-dKPreserve=</code><em>0/1/2</em>
+<dd>Specify if black preservation should be used when mapping
+from CMYK to CMYK.   When using littleCMS as the CMM, the code 0 
+corresponds to no preservation, 1 corresponds to the PRESERVE_K_ONLY approach
+described in the littleCMS documentation and 2 corresponds to the 
+PRESERVE_K_PLANE approach.   This is only valid when using littleCMS for
+color management. 
 </dl>
 
 <dl>
@@ -2921,18 +2917,21 @@ colors for graphics.
 </dl>
 
 <dl>
-<dt><code>-dGraphicIntent=</code><em>intent</em>
-<dd>Set the rendering intent that should be used with the
-profile specified above by -sGraphicICCProfile.  The
-options are the same as specified for -sRenderIntent.
-Also see <a href="#OverrideRI">OverrideRI</a>.
+<dt><code>-dGraphicIntent=</code><em>0/1/2/3</em>
+<dd>Set the rendering intent that should be used with graphic objects.  The
+options are the same as specified for -dRenderIntent.
 </dl>
 
 <dl>
-<dt><code>-dGraphBlackPt=</code><em>0/1</em>
-<dd>Specify if black point compensation should be used with the
-profile specified above by -sGraphicICCProfile.  
-Also see <a href="#OverrideBP">OverrideBP </a>.
+<dt><code>-dGraphicBlackPt=</code><em>0/1</em>
+<dd>Specify if black point compensation should be used for graphic objects.  
+</dl>
+
+<dl>
+<dt><code>-dGraphicKPreserve=</code><em>0/1/2</em>
+<dd>Specify if black preservation should be used when mapping
+from CMYK to CMYK for graphic objects.   The
+options are the same as specified for -dKPreserve.
 </dl>
 
 <dl>
@@ -2946,18 +2945,20 @@ pleasing images.
 </dl>
 
 <dl>
-<dt><code>-dImageIntent=</code><em>intent</em>
-<dd>Set the rendering intent that should be used with the
-profile specified above by -sImageICCProfile.  The
-options are the same as specified for -sRenderIntent.
-Also see <a href="#OverrideRI">OverrideRI</a>.
+<dt><code>-dImageIntent=</code><em>0/1/2/3</em>
+<dd>Set the rendering intent that should be used for images.
 </dl>
 
 <dl>
 <dt><code>-dImageBlackPt=</code><em>0/1</em>
-<dd>Specify if black point compensation should be used with the
-profile specified above by -sImageICCProfile.  
-Also see <a href="#OverrideBP">OverrideBP </a>.
+<dd>Specify if black point compensation should be used with images.  
+</dl>
+
+<dl>
+<dt><code>-dImageKPreserve=</code><em>0/1/2</em>
+<dd>Specify if black preservation should be used when mapping
+from CMYK to CMYK for image objects.   The
+options are the same as specified for -dKPreserve.
 </dl>
 
 <dl>
@@ -2970,18 +2971,21 @@ as the profile.  This can be used ensure K only text.
 </dl>
 
 <dl>
-<dt><code>-sTextIntent=</code><em>intent</em>
-<dd>Set the rendering intent that should be used with the
-profile specified above by -sTextICCProfile.  The
-options are the same as specified for -sRenderIntent.
-Also see <a href="#OverrideRI">OverrideRI</a>.
+<dt><code>-dTextIntent=</code><em>0/1/2/3</em>
+<dd>Set the rendering intent that should be used text objects.  The
+options are the same as specified for -dRenderIntent.
 </dl>
 
 <dl>
 <dt><code>-dTextBlackPt=</code><em>0/1</em>
-<dd>Specify if black point compensation should be used with the
-profile specified above by -sTextICCProfile.  
-Also see <a href="#OverrideBP">OverrideBP </a>.
+<dd>Specify if black point compensation should be used with text objects. 
+</dl>
+
+<dl>
+<dt><code>-dTextKPreserve=</code><em>0/1/2</em>
+<dd>Specify if black preservation should be used when mapping
+from CMYK to CMYK for text objects.   The
+options are the same as specified for -dKPreserve.
 </dl>
 
 <dl>
@@ -2997,28 +3001,6 @@ control in the specification of source colors see
 </dl>
 
 <dl>
-<dt><a name="OverrideRI"></a><code>-dOverrideRI</code>
-<dd>Override the rendering intent contained in the source
-document with the rendering intents specified by -dRenderIntent,
--dGraphicIntent,  -dImageIntent, -dTextIntent.  Note that
-unless -dOverrideRI is specified, the above rendering intent
-settings are essentially ignored.  For detailed control over
-rendering intent with specific object types, see
-<a href="#SourceObjectICC">SourceObjectICC</a>.
-</dl>
-
-<dl>
-<dt><a name="OverrideBP"></a><code>-dOverrideBP</code>
-<dd>Override the black point compensation setting contained in the source
-document with the black point settings specified by -dBlackPtComp,
--dGraphBlackPt,  -dImageBlackPt, -dTextBlackPt.  Note that
-unless -dOverrideBP is specified, the above black point compensation
-settings are essentially ignored.  For detailed control over
-black point compensation with specific object types, see
-<a href="#SourceObjectICC">SourceObjectICC</a>.
-</dl>
-
-<dl>
 <dt><a name="SourceObjectICC"></a><code>-sSourceObjectICC=</code><em>filename</em>
 <dd>
 This option provides an extreme level of override control to
@@ -3026,14 +3008,17 @@ specify the source color spaces and rendering intents to use
 with graphics, images and text for both RGB and CMYK source
 objects.  The specification is made through a file that contains
 on a line a key name to specify the object type (e.g. Image_CMYK)
-followed by an ICC profile file name and a rendering intent
+followed by an ICC profile file name, a rendering intent
 number (0 for perceptual, 1 for colorimetric, 2 for saturation,
-3 for absolute colorimetric).  An example file is given in
+3 for absolute colorimetric) and information for black point compensation,
+black preservation, and source ICC override.   It is also possible to turn
+off color management for certain object types, use device link profiles for
+object types and do custom color replacements.  An example file is given in
 ./gs/toolbin/color/src_color/objsrc_profiles_example.txt.
 Profiles to demonstrate this method of specification are also
 included in this folder.  Note that if objects are colorimetrically
-specified through this mechanism other operations like -sImageIntent,
--dOverrideICC, have no real affect.  See further details in the document
+specified through this mechanism other operations like -dImageIntent,
+-dOverrideICC, have no affect.  See further details in the document
 <a href="GS9_Color_Management.pdf">GS9 Color Management</a>.
 </dl>
 
@@ -3056,6 +3041,14 @@ are defined by DeviceGray, DeviceRGB and DeviceCMYK definitions.  With
 UseFastColor set to true, the traditional Postscript 255 minus operations
 are used to convert between RGB and CMYK with black generation and undercolor
 removal mappings.
+</dl>
+
+
+<dl>
+<dt><code>-dSimulateOverprint=</code><em>true/false</em>
+<dd>
+This option enables CMYK devices (e.g. tiff32nc) to provide an simulation of
+overprinting. 
 </dl>
 
 <dl>

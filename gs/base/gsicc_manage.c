@@ -472,9 +472,10 @@ gsicc_fill_srcgtag_item(gsicc_rendering_param_t *r_params, bool cmyk)
         /* Get the preserve K control */
         curr_ptr = strtok(NULL, "\t,\32\n\r");
         count = sscanf(curr_ptr, "%d", &preserve_k);
-        r_params->preserve_black = preserve_k;
+        r_params->preserve_black = preserve_k | gsKP_OVERRIDE;
+    } else {
+        r_params->preserve_black = gsBKPRESNOTSPECIFIED;
     }
-
 }
 
 static int
@@ -1161,7 +1162,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
         result->rendercond[k].rendering_intent = gsRINOTSPECIFIED;
         result->rendercond[k].black_point_comp = gsBPNOTSPECIFIED;
         result->rendercond[k].override_icc = false;
-        result->rendercond[k].preserve_black = gsBLACKPRESERVE_OFF;
+        result->rendercond[k].preserve_black = gsBKPRESNOTSPECIFIED;
         result->rendercond[k].graphics_type_tag = GS_UNKNOWN_TAG;
         result->rendercond[k].cmm = gsCMM_DEFAULT;
     }
@@ -1175,6 +1176,24 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     result->supports_devn = false;
     rc_init_free(result, memory->non_gc_memory, 1, rc_free_profile_array);
     return(result);
+}
+
+int
+gsicc_set_device_blackpreserve(gx_device *dev, gsicc_blackpreserve_t blackpreserve,
+                                gsicc_profile_types_t profile_type)
+{
+    int code;
+    cmm_dev_profile_t *profile_struct;
+   
+    if (dev->procs.get_profile == NULL) {
+        profile_struct = dev->icc_struct;
+    } else {
+        code = dev_proc(dev, get_profile)(dev,  &profile_struct);
+    }
+    if (profile_struct ==  NULL)
+        return 0;
+    profile_struct->rendercond[profile_type].preserve_black = blackpreserve;
+    return 0;
 }
 
 int
