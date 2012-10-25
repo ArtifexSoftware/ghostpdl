@@ -427,7 +427,7 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                     }
                     break;
                 case 10:
-                    if (SubrsWithMM[Stack[CurrentNumberIndex - 1]] != 0) {
+                    if (CurrentNumberIndex != 0 && SubrsWithMM[Stack[CurrentNumberIndex - 1]] != 0) {
                         int index = Stack[CurrentNumberIndex - 1];
                         int StackBase = CurrentNumberIndex - 1 - pfont->data.WeightVector.count * SubrsWithMM[index];
 
