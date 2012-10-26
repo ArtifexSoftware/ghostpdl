@@ -401,8 +401,8 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
         int sizeofPixelIn = pss->params.BitsPerComponentIn / 8;
         uint row_size = pss->params.WidthIn * spp_decode * sizeofPixelIn;
         /* raw input data */
-        const raw_size = (pcs->type->index == gs_color_space_index_Indexed ?
-                          1 : spp_decode);
+        const int raw_size = (pcs->type->index == gs_color_space_index_Indexed ?
+                              1 : spp_decode);
         const unsigned char *bdata = buffer + data_x * raw_size * sizeofPixelIn;
         index_space = 0;
         /* We have the following cases to worry about
