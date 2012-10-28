@@ -1938,9 +1938,9 @@ drawopdict begin
     OFFlevels length 0 eq {
       doimage
     } {
-      Width
-      1 index /ImageMask knownoget dup { and } if not {
-        1 index /ColorSpace oget csncomp mul
+      pop Width
+      currentdict /ImageMask knownoget dup { and } if not {
+        ColorSpace oforce csncomp mul
         BitsPerComponent mul
       } if
       7 add 8 idiv Height mul
