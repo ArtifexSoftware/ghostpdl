@@ -148,7 +148,7 @@ if ($msys) {
 
 my $cmd="rsync -avxcz ".
 " --max-size=10000000".
-" --delete".
+" --delete --delete-excluded".
 " --exclude .svn --exclude .git".
 " --exclude _darcs --exclude .bzr --exclude .hg".
 " --exclude .deps --exclude .libs --exclude autom4te.cache".
@@ -160,7 +160,8 @@ my $cmd="rsync -avxcz ".
 " --exclude ufst --exclude ufst-obj --exclude ufst-debugobj".
 " --exclude config.log --exclude .png".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
-" --exclude build --exclude generated".
+" --exclude .tif --exclude .bmp".
+" --exclude debug --exclude release --exclude generated".  # we cannot just exclude build, since tiff/build/Makefile.in, etc. is needed
 " -e \"$ssh\" ".
 " .".
 " $hostpath";
