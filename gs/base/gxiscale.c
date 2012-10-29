@@ -46,6 +46,7 @@
 #include "gsicc_cache.h"
 #include "gsicc_manage.h"
 #include "gsicc.h"
+#include "gxdevsop.h"
 
 static void
 decode_sample_frac_to_float(gx_image_enum *penum, frac sample_value, gs_client_color *cc, int i);
@@ -295,29 +296,23 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 #else
     templat = &s_IIEncode_template;
 #endif
-    /* RJW: This is defeated by the presence of pdf14. Use a devspecop. */
-    if (((penum->dev->color_info.num_components == 1 &&
-          penum->dev->color_info.max_gray < 15) ||
-         (penum->dev->color_info.num_components > 1 &&
-          penum->dev->color_info.max_color < 15))
-        ) {
-        /* halftone device -- restrict interpolation */
-        if ((iss.WidthOut < iss.WidthIn * 4) &&
-            (iss.HeightOut < iss.HeightIn * 4)) {
-            if ((iss.WidthOut < iss.WidthIn) &&
-                (iss.HeightOut < iss.HeightIn) &&       /* downsampling */
-                (penum->dev->color_info.polarity != GX_CINFO_POLARITY_UNKNOWN)) {
-                /* Special case handling for when we are downsampling
-                   to a dithered device.  The point of this non-linear
-                   downsampling is to preserve dark pixels from the source
-                   image to avoid dropout. The color polarity is used for this  */
-                templat = &s_ISpecialDownScale_template;
-            } else {
-                penum->interpolate = false;
-                return 0;       /* no interpolation / downsampling */
-            }
+    if ((iss.WidthOut < iss.WidthIn) &&
+        (iss.HeightOut < iss.HeightIn) &&       /* downsampling */
+        (penum->dev->color_info.polarity != GX_CINFO_POLARITY_UNKNOWN) &&
+        (dev_proc(penum->dev, dev_spec_op)(penum->dev, gxdso_interpolate_antidropout, NULL, 0) > 0)) {
+        /* Special case handling for when we are downsampling (to a dithered
+         * device.  The point of this non-linear downsampling is to preserve
+         * dark pixels from the source image to avoid dropout. The color
+         * polarity is used for this. */
+        templat = &s_ISpecialDownScale_template;
+    } else {
+        int threshold = dev_proc(penum->dev, dev_spec_op)(penum->dev, gxdso_interpolate_threshold, NULL, 0);
+        if ((threshold > 0) &&
+            (iss.WidthOut < iss.WidthIn * threshold) &&
+            (iss.HeightOut < iss.HeightIn * threshold)) {
+            penum->interpolate = false;
+            return 0;       /* no interpolation / downsampling */
         }
-        /* else, continue with the Mitchell filter (for upscaling of at least 4:1) */
     }
     /* The SpecialDownScale filter needs polarity, either ADDITIVE or SUBTRACTIVE */
     /* UNKNOWN case (such as for palette colors) has been handled above */

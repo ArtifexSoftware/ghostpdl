@@ -234,11 +234,25 @@ enum {
      *      size = 0
      * Returns 1 if the device supports devicen colors.  example tiffsep.
      */    
-     gxdso_supports_devn,
-     /* gxdso_supports_hlcolor:
-      * for devices that can handle pattern and other high level structures
-        directly. */
+    gxdso_supports_devn,
+    /* gxdso_supports_hlcolor:
+     * for devices that can handle pattern and other high level structures
+       directly. */
     gxdso_supports_hlcolor,
+    /* gxdso_interpolate_threshold:
+     * Some devices may wish to suppress using interpolation for scaling
+     * unless it is above a given threshold (for example halftoning devices
+     * may only want to upscale if the upscale factor is larger than the
+     * halftone tile size). data and size are ignored; the return value is
+     * 0 for 'no special treatment', or an integer upscaling threshold below
+     * which interpolation should be suppressed (for both upscaling and
+     * downscaling). */
+    gxdso_interpolate_threshold,
+    /* gxdso_interpolate_antidropout:
+     * Some devices may wish to use a special 'antidropout' downscaler.
+     * Return 0 for 'no special treatment', or 1 for the anitdropout
+     * downscaler. */
+    gxdso_interpolate_antidropout,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };
