@@ -330,11 +330,14 @@ pcl_impl_set_post_page_action(
 static pcl_personality_t
 pcl_get_personality(pl_interp_instance_t *instance, gx_device *device)
 {
+    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
+
     if ( !strcmp(instance->pcl_personality, "PCL5C" ) )
         return pcl5c;
     else if ( !strcmp(instance->pcl_personality, "PCL5E" ) )
         return pcl5e;
-    else if ( !strcmp(instance->pcl_personality, "RTL" ) )
+    else if ( !strcmp(instance->pcl_personality, "RTL" ) ||
+              !strcmp(pjl_proc_get_envvar(pcli->pcs.pjls, "language"), "HP-GL/2") )
         return rtl;
     else if ( device->color_info.depth == 1 )
         return pcl5e;
