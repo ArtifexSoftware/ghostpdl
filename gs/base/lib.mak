@@ -2576,7 +2576,7 @@ $(GLD)psl2lib.dev : $(LIB_MAK) $(ECHOGS_XE) \
 
 $(GLOBJ)gxiscale.$(OBJ) : $(GLSRC)gxiscale.c $(AK) $(gx_h)\
  $(gserrors_h) $(math__h) $(memory__h) $(stdint__h) $(gpcheck_h)\
- $(gsccolor_h) $(gspaint_h) $(sidscale_h) $(gxdevsop.h)\
+ $(gsccolor_h) $(gspaint_h) $(sidscale_h) $(gxdevsop_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h) $(gximage_h) $(gxistate_h)\
  $(gxmatrix_h) $(siinterp_h) $(siscale_h) $(stream_h) $(vdtrace_h)\
