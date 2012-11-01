@@ -196,6 +196,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	tiffscaled	TIFF (monochrome output, integer downsampled and dithered from grayscale rendering)
 #	tiffscaled8	TIFF (greyscale output, integer downsampled and dithered from grayscale rendering)
 #	tiffscaled24	TIFF (rgb output, integer downsampled and dithered from rgb rendering)
+#	tiffscaled4	TIFF (cmyk output, integer downsampled and dithered from cmyk rendering)
 
 # Note that MS Windows-specific drivers are defined in pcwin.mak, not here,
 # because they have special compilation requirements that require defining
@@ -1726,6 +1727,15 @@ $(DD)tiffscaled24.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled24_)\
  $(DD)tiffs.dev $(minftrsz_h) $(GDEV)
 	$(SETPDEV2) $(DD)tiffscaled24 $(tiffscaled8_)
 	$(ADDMOD) $(DD)tiffscaled24 -include $(DD)tiffs $(tiff_i_)
+
+# TIFF Scaled 4 (downscaled cmyk -> cmyk), configurable compression
+
+tiffscaled4_=$(tiffgray_) $(GLOBJ)gdevtsep.$(OBJ) $(GLOBJ)minftrsz.$(OBJ)
+
+$(DD)tiffscaled4.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled4_)\
+ $(DD)tiffs.dev $(minftrsz_h) $(GDEV)
+	$(SETPDEV2) $(DD)tiffscaled4 $(tiffscaled8_)
+	$(ADDMOD) $(DD)tiffscaled4 -include $(DD)tiffs $(tiff_i_)
 
 # TIFF RGB, no compression
 

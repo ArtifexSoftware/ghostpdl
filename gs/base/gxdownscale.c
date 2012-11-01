@@ -712,6 +712,300 @@ static void down_core_mfs(gx_downscaler_t *ds,
     pack_8to1(out_buffer, outp, awidth);
 }
 
+/* CMYK 32 -> 4bit core */
+static void down_core4(gx_downscaler_t *ds,
+                       byte            *out_buffer,
+                       byte            *in_buffer,
+                       int              row,
+                       int              plane /* unused */,
+                       int              span)
+{
+    int        x, xx, y, value, comp;
+    int        e_downleft, e_down, e_forward = 0;
+    int        pad_white;
+    byte      *inp, *outp;
+    int        width     = ds->width;
+    int        awidth    = ds->awidth;
+    int        factor    = ds->factor;
+    int       *errors    = ds->errors;
+    const int  threshold = factor*factor*128;
+    const int  max_value = factor*factor*255;
+
+    pad_white = (awidth - width) * factor * 4;
+    if (pad_white < 0)
+        pad_white = 0;
+
+    if (pad_white)
+    {
+        inp = in_buffer + width*factor * 4;
+        for (y = factor; y > 0; y--)
+        {
+            memset(inp, 0xFF, pad_white);
+            inp += span;
+        }
+    }
+
+    if ((row & 1) == 0)
+    {
+        /* Left to Right pass (no min feature size) */
+        const int back = span * factor - 4;
+        for (comp = 0; comp < 4; comp++)
+        {
+            errors = ds->errors + (awidth+3)*comp + 2;
+            inp = in_buffer + comp;
+            outp = inp;
+            for (x = awidth; x > 0; x--)
+            {
+                value = e_forward + *errors;
+                for (xx = factor; xx > 0; xx--)
+                {
+                    for (y = factor; y > 0; y--)
+                    {
+                        value += *inp;
+                        inp += span;
+                    }
+                    inp -= back;
+                }
+                if (value >= threshold)
+                {
+                    *outp = 1; outp += 4;
+                    value -= max_value;
+                }
+                else
+                {
+                    *outp = 0; outp += 4;
+                }
+                e_forward  = value * 7/16;
+                e_downleft = value * 3/16;
+                e_down     = value * 5/16;
+                value     -= e_forward + e_downleft + e_down;
+                errors[-2] += e_downleft;
+                errors[-1] += e_down;
+                *errors++   = value;
+            }
+        }
+        outp = in_buffer;
+    }
+    else
+    {
+        /* Right to Left pass (no min feature size) */
+        const int back = span * factor + 4;
+        for (comp = 0; comp < 4; comp++)
+        {
+            errors = ds->errors + (awidth+3)*comp + awidth;
+            inp = in_buffer + awidth*factor*4 - 4 + comp;
+            outp = inp;
+            for (x = awidth; x > 0; x--)
+            {
+                value = e_forward + *errors;
+                for (xx = factor; xx > 0; xx--)
+                {
+                    for (y = factor; y > 0; y--)
+                    {
+                        value += *inp;
+                        inp += span;
+                    }
+                    inp -= back;
+                }
+                if (value >= threshold)
+                {
+                    *outp = 1; outp -= 4;
+                    value -= max_value;
+                }
+                else
+                {
+                    *outp = 0; outp -= 4;
+                }
+                e_forward  = value * 7/16;
+                e_downleft = value * 3/16;
+                e_down     = value * 5/16;
+                value     -= e_forward + e_downleft + e_down;
+                errors[2] += e_downleft;
+                errors[1] += e_down;
+                *errors--   = value;
+            }
+        }
+        outp = in_buffer + awidth*factor*4 - (awidth*4);
+    }
+    pack_8to1(out_buffer, outp, awidth*4);
+}
+
+static void down_core4_mfs(gx_downscaler_t *ds,
+                           byte            *out_buffer,
+                           byte            *in_buffer,
+                           int              row,
+                           int              plane /* unused */,
+                           int              span)
+{
+    int        x, xx, y, value, comp;
+    int        e_downleft, e_down, e_forward = 0;
+    int        pad_white;
+    byte      *inp, *outp;
+    int        width     = ds->width;
+    int        awidth    = ds->awidth;
+    int        factor    = ds->factor;
+    int       *errors;
+    byte      *mfs_data;
+    const int  threshold = factor*factor*128;
+    const int  max_value = factor*factor*255;
+
+    pad_white = (awidth - width) * factor * 4;
+    if (pad_white < 0)
+        pad_white = 0;
+
+    if (pad_white)
+    {
+        inp = in_buffer + width*factor*4;
+        for (y = factor*4; y > 0; y--)
+        {
+            memset(inp, 0xFF, pad_white);
+            inp += span;
+        }
+    }
+
+    inp = in_buffer;
+    if ((row & 1) == 0)
+    {
+        /* Left to Right pass (with min feature size = 2) */
+        const int back = span * factor - 4;
+        byte *outp_base = inp;
+        for (comp = 0; comp < 4; comp++)
+        {
+            byte mfs, force_forward = 0;
+            errors = ds->errors + (awidth+3)*comp + 2;
+            inp = outp_base;
+            outp = outp_base++;
+            mfs_data = ds->mfs_data + (awidth+1)*comp;
+            *mfs_data++ = mfs_clear;
+            for (x = awidth; x > 0; x--)
+            {
+                value = e_forward + *errors;
+                for (xx = factor; xx > 0; xx--)
+                {
+                    for (y = factor; y > 0; y--)
+                    {
+                        value += *inp;
+                        inp += span;
+                    }
+                    inp -= back;
+                }
+                mfs = *mfs_data;
+                *mfs_data++ = mfs_clear;
+                if ((mfs & mfs_force_off) || force_forward)
+                {
+                    /* We are being forced to be 0 */
+                    *outp = 0; outp += 4;
+                    force_forward = 0;
+                }
+                else if (value < threshold)
+                {
+                    /* We want to be 0 anyway */
+                    *outp = 0; outp += 4;
+                    if ((mfs & (mfs_above_is_0 | mfs_above_left_is_0))
+                            != (mfs_above_is_0 | mfs_above_left_is_0))
+                    {
+                        /* We aren't in a group anyway, so must force other
+                         * pixels. */
+                        mfs_data[-2] |= mfs_force_off;
+                        mfs_data[-1] |= mfs_force_off;
+                        force_forward = 1;
+                    }
+                    else
+                    {
+                        /* No forcing, but we need to tell other pixels that
+                         * we were 0. */
+                        mfs_data[-2] |= mfs_above_is_0;
+                        mfs_data[-1] |= mfs_above_left_is_0;
+                    }
+                }
+                else
+                {
+                    *outp = 1; outp += 4;
+                    value -= max_value;
+                }
+                e_forward  = value * 7/16;
+                e_downleft = value * 3/16;
+                e_down     = value * 5/16;
+                value     -= e_forward + e_downleft + e_down;
+                errors[-2] += e_downleft;
+                errors[-1] += e_down;
+                *errors++   = value;
+            }
+        }
+        outp = outp_base-4;
+    }
+    else
+    {
+        /* Right to Left pass (with min feature size = 2) */
+        const int back = span * factor + 4;
+        byte *outp_base = inp + awidth*factor - 4;
+        for (comp = 0; comp < 4; comp++)
+        {
+            byte mfs, force_forward = 0;
+            errors = ds->errors + (awidth+3)*comp + awidth;
+            mfs_data = ds->mfs_data + (awidth+1)*comp + awidth;
+            inp = outp_base;
+            outp = outp_base++;
+            *mfs_data-- = 0;
+            for (x = awidth; x > 0; x--)
+            {
+                value = e_forward + *errors;
+                for (xx = factor; xx > 0; xx--)
+                {
+                    for (y = factor; y > 0; y--)
+                    {
+                        value += *inp;
+                        inp += span;
+                    }
+                    inp -= back;
+                }
+                mfs = *mfs_data;
+                *mfs_data-- = mfs_clear;
+                if ((mfs & mfs_force_off) || force_forward)
+                {
+                    /* We are being forced to be 0 */
+                    *outp = 0; outp -= 4;
+                    force_forward = 0;
+                }
+                else if (value < threshold)
+                {
+                    *outp = 0; outp -= 4;
+                    if ((mfs & (mfs_above_is_0 | mfs_above_left_is_0))
+                            != (mfs_above_is_0 | mfs_above_left_is_0))
+                    {
+                        /* We aren't in a group anyway, so must force other
+                         * pixels. */
+                        mfs_data[1] |= mfs_force_off;
+                        mfs_data[2] |= mfs_force_off;
+                        force_forward = 1;
+                    }
+                    else
+                    {
+                        /* No forcing, but we need to tell other pixels that
+                         * we were 0. */
+                        mfs_data[1] |= mfs_above_is_0;
+                        mfs_data[2] |= mfs_above_left_is_0;
+                    }
+                }
+                else
+                {
+                    *outp = 1; outp -= 4;
+                    value -= max_value;
+                }
+                e_forward  = value * 7/16;
+                e_downleft = value * 3/16;
+                e_down     = value * 5/16;
+                value     -= e_forward + e_downleft + e_down;
+                errors[2] += e_downleft;
+                errors[1] += e_down;
+                *errors--   = value;
+            }
+        }
+        outp = outp_base - awidth*factor;
+    }
+    pack_8to1(out_buffer, outp, awidth*4);
+}
+
 /* Grey (or planar) downscale code */
 static void down_core16(gx_downscaler_t *ds,
                         byte            *outp,
@@ -976,11 +1270,11 @@ static void down_core8_3_2(gx_downscaler_t *ds,
         int g = inp[2*span+0];
         int h = inp[2*span+1];
         int i = inp[2*span+2];
-	outp[0      ] = (4*a+2*b+2*d+e+4)/9;
-	outp[1      ] = (4*c+2*b+2*f+e+4)/9;
-	outp[dspan+0] = (4*g+2*h+2*d+e+4)/9;
-	outp[dspan+1] = (4*i+2*h+2*f+e+4)/9;
-	outp += 2;
+        outp[0      ] = (4*a+2*b+2*d+e+4)/9;
+        outp[1      ] = (4*c+2*b+2*f+e+4)/9;
+        outp[dspan+0] = (4*g+2*h+2*d+e+4)/9;
+        outp[dspan+1] = (4*i+2*h+2*f+e+4)/9;
+        outp += 2;
         inp += 3;
     }
 }
@@ -1027,23 +1321,23 @@ static void down_core8_3_4(gx_downscaler_t *ds,
         int g = inp[2*span+0];
         int h = inp[2*span+1];
         int i = inp[2*span+2];
-	outp[        0] = a;
-	outp[        1] = (a+2*b+1)/3;
-	outp[        2] = (c+2*b+1)/3;
-	outp[        3] = c;
-	outp[  dspan+0] = (a+2*d+1)/3;
-	outp[  dspan+1] = (a+2*b+2*d+4*e+3)/9;
-	outp[  dspan+2] = (c+2*b+2*f+4*e+3)/9;
-	outp[  dspan+3] = (c+2*f+1)/3;
-	outp[2*dspan+0] = (g+2*d+1)/3;
-	outp[2*dspan+1] = (g+2*h+2*d+4*e+3)/9;
-	outp[2*dspan+2] = (i+2*h+2*f+4*e+3)/9;
-	outp[2*dspan+3] = (i+2*f+1)/3;
-	outp[3*dspan+0] = g;
-	outp[3*dspan+1] = (g+2*h+1)/3;
-	outp[3*dspan+2] = (i+2*h+1)/3;
-	outp[3*dspan+3] = i;
-	outp += 4;
+        outp[        0] = a;
+        outp[        1] = (a+2*b+1)/3;
+        outp[        2] = (c+2*b+1)/3;
+        outp[        3] = c;
+        outp[  dspan+0] = (a+2*d+1)/3;
+        outp[  dspan+1] = (a+2*b+2*d+4*e+3)/9;
+        outp[  dspan+2] = (c+2*b+2*f+4*e+3)/9;
+        outp[  dspan+3] = (c+2*f+1)/3;
+        outp[2*dspan+0] = (g+2*d+1)/3;
+        outp[2*dspan+1] = (g+2*h+2*d+4*e+3)/9;
+        outp[2*dspan+2] = (i+2*h+2*f+4*e+3)/9;
+        outp[2*dspan+3] = (i+2*f+1)/3;
+        outp[3*dspan+0] = g;
+        outp[3*dspan+1] = (g+2*h+1)/3;
+        outp[3*dspan+2] = (i+2*h+1)/3;
+        outp[3*dspan+3] = i;
+        outp += 4;
         inp += 3;
     }
 }
@@ -1320,6 +1614,13 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
     {
         core = &down_core16;
     }
+    else if ((src_bpc == 8) && (dst_bpc == 1) && (num_comps == 4))
+    {
+        if (mfs > 1)
+            core = &down_core4_mfs;
+        else
+            core = &down_core4;
+    }
     else if ((src_bpc == 8) && (dst_bpc == 1) && (num_comps == 1))
     {
         if (mfs > 1)
@@ -1335,7 +1636,7 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
         else
             core = &down_core;
     }
-    else if (factor == 1)
+    else if ((factor == 1) && (src_bpc == dst_bpc))
         core = NULL;
     else if ((src_bpc == 8) && (dst_bpc == 8) && (num_comps == 1))
     {
@@ -1465,9 +1766,9 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
         /* Just copy a previous row from our stored buffer */
         for (plane=0; plane < ds->num_planes; plane++)
         {
-	    params->data[plane] = ds->scaled_data + (upfactor * plane + subrow) * ds->scaled_span;
+            params->data[plane] = ds->scaled_data + (upfactor * plane + subrow) * ds->scaled_span;
         }
-	return 0;
+        return 0;
     }
 
     rect.p.x = 0;
@@ -1528,7 +1829,7 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
         {
             byte *scaled = ds->scaled_data + upfactor * plane * ds->scaled_span;
             (ds->down_core)(ds, scaled, params2.data[plane], row, plane, params2.raster);
-	    params->data[plane] = scaled;
+            params->data[plane] = scaled;
         }
     }
     else

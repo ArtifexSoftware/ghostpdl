@@ -218,7 +218,7 @@ DEVICE_DEVS?=$(X11DEVS) \
    $(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev\
    $(DD)tifflzw.dev $(DD)tiffpack.dev $(DD)tiffgray.dev\
    $(DD)tiffscaled.dev $(DD)tiffscaled8.dev $(DD)tiffscaled24.dev\
-   $(DD)tiff12nc.dev $(DD)tiff24nc.dev\
+   $(DD)tiffscaled4.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev\
    $(DD)pxlmono.dev $(DD)pxlcolor.dev\
    $(DD)bmpmono.dev $(DD)bmp16m.dev $(DD)bmpsep8.dev \
    $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev \
