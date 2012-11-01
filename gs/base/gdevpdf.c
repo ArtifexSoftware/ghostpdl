@@ -1229,7 +1229,7 @@ pdf_output_page(gx_device * dev, int num_copies, int flush)
     return code;
 }
 
-static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int64_t start, int resource_pos)
+static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int64_t start, gs_offset_t resource_pos)
 {
     int64_t start_offset = (start - pdev->FirstObjectNumber) * sizeof(ulong);
 
@@ -1238,7 +1238,7 @@ static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int64_t star
         long i, r;
 
         for (i = start; i < pdev->next_id; ++i) {
-            ulong pos;
+            gs_offset_t pos;
 
             r = fread(&pos, sizeof(pos), 1, tfile);
             if (r != 1)
@@ -1254,7 +1254,7 @@ static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int64_t star
     return pdev->next_id;
 }
 
-static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int64_t start, int end, int resource_pos, ulong *Offsets)
+static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int64_t start, int end, gs_offset_t resource_pos, gs_offset_t *Offsets)
 {
     int64_t start_offset = (start - pdev->FirstObjectNumber) * sizeof(ulong);
 
@@ -1263,7 +1263,7 @@ static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int64_t start, i
         long i, r;
 
         for (i = start; i < end; ++i) {
-            unsigned long pos;
+            gs_offset_t pos;
             char str[21];
 
             r = fread(&pos, sizeof(pos), 1, tfile);
@@ -1277,7 +1277,7 @@ static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int64_t start, i
              * chances of needing to write white space to pad the file out.
              */
             if (!pdev->Linearise) {
-                sprintf(str, "%010ld 00000 n \n", pos);
+                sprintf(str, "%010"PRId64" 00000 n \n", pos);
                 stream_puts(pdev->strm, str);
             }
             if (Offsets)
@@ -1507,7 +1507,8 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
 
     /* Record length and positions of all the objects and calculate the new object number */
     for (i = 1;i < pdev->ResourceUsageSize; i++) {
-        int j, end;
+        int j;
+        gs_offset_t end;
 
         pdev->ResourceUsage[i].OriginalOffset = linear_params->Offsets[i];
 
@@ -2211,8 +2212,8 @@ pdf_close(gx_device * dev)
     gs_memory_t *mem = pdev->pdf_memory;
     stream *s;
     FILE *tfile = pdev->xref.file;
-    long xref = 0;
-    long resource_pos;
+    gs_offset_t xref = 0;
+    gs_offset_t resource_pos;
     long Catalog_id = pdev->Catalog->id, Info_id = pdev->Info->id,
         Pages_id = pdev->Pages->id, Encrypt_id = 0;
     long Threads_id = 0;
@@ -2533,8 +2534,8 @@ pdf_close(gx_device * dev)
 
     if (pdev->Linearise) {
         linear_params.LastResource = pdev->next_id - 1;
-        linear_params.Offsets = (ulong *)gs_alloc_bytes(pdev->pdf_memory, pdev->next_id * sizeof(ulong), "temp xref storage");
-        memset(linear_params.Offsets, 0x00, linear_params.LastResource * sizeof(ulong));
+        linear_params.Offsets = (gs_offset_t *)gs_alloc_bytes(pdev->pdf_memory, pdev->next_id * sizeof(gs_offset_t), "temp xref storage");
+        memset(linear_params.Offsets, 0x00, linear_params.LastResource * sizeof(gs_offset_t));
     }
 
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
@@ -2588,6 +2589,7 @@ pdf_close(gx_device * dev)
         /* Write the trailer. */
 
         if (!pdev->Linearise) {
+            char xref_str[32];
             stream_puts(s, "trailer\n");
             pprintld3(s, "<< /Size %ld /Root %ld 0 R /Info %ld 0 R\n",
                   pdev->next_id, Catalog_id, Info_id);
@@ -2599,7 +2601,8 @@ pdf_close(gx_device * dev)
                 pprintld1(s, "/Encrypt %ld 0 R ", Encrypt_id);
             }
             stream_puts(s, ">>\n");
-            pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
+            sprintf(xref_str, "startxref\n%"PRId64"\n%%%%EOF\n", xref);
+            stream_puts(s, xref_str);
         }
     }
 

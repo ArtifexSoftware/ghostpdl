@@ -469,7 +469,7 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
         if (status < 0)
             return_error(gs_error_ioerror);
         stream_puts(s, "\n");
-        pdev->OPDFRead_procset_length = stell(s);
+        pdev->OPDFRead_procset_length = (int)stell(s);
     }
     return 0;
 }
@@ -569,11 +569,11 @@ pdf_next_id(gx_device_pdf * pdev)
  * used locally (for computing lengths or patching), since there is no way
  * to map them later to the eventual position in the output file.
  */
-long
+gs_offset_t
 pdf_stell(gx_device_pdf * pdev)
 {
     stream *s = pdev->strm;
-    long pos = stell(s);
+    gs_offset_t pos = stell(s);
 
     if (s == pdev->asides.strm)
         pos += ASIDES_BASE_POSITION;
@@ -597,7 +597,7 @@ pdf_stell(gx_device_pdf * pdev)
 long pdf_obj_forward_ref(gx_device_pdf * pdev)
 {
     long id = pdf_next_id(pdev);
-    long pos = 0;
+    gs_offset_t pos = 0;
 
     fwrite(&pos, sizeof(pos), 1, pdev->xref.file);
     return id;
@@ -608,7 +608,7 @@ long
 pdf_obj_ref(gx_device_pdf * pdev)
 {
     long id = pdf_next_id(pdev);
-    long pos = pdf_stell(pdev);
+    gs_offset_t pos = pdf_stell(pdev);
 
     fwrite(&pos, sizeof(pos), 1, pdev->xref.file);
     return id;
@@ -623,7 +623,7 @@ pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
     if (id <= 0) {
         id = pdf_obj_ref(pdev);
     } else {
-        long pos = pdf_stell(pdev);
+        gs_offset_t pos = pdf_stell(pdev);
         FILE *tfile = pdev->xref.file;
         int64_t tpos = gp_ftell_64(tfile);
 
@@ -1013,7 +1013,7 @@ static int
 stream_to_none(gx_device_pdf * pdev)
 {
     stream *s = pdev->strm;
-    long length;
+    gs_offset_t length;
     int code;
 
     if (pdev->ResourcesBeforeUsage) {
@@ -1050,7 +1050,7 @@ stream_to_none(gx_device_pdf * pdev)
         stream_puts(s, "endstream\n");
         pdf_end_obj(pdev, resourceStream);
         pdf_open_obj(pdev, pdev->contents_length_id, resourceLength);
-        pprintld1(s, "%ld\n", length);
+        pprintld1(s, "%ld\n", (long)length);
         pdf_end_obj(pdev, resourceLength);
     }
     return PDF_IN_NONE;
@@ -1637,9 +1637,10 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage
 
 /* Copy data from a temporary file to a stream. */
 void
-pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss)
+pdf_copy_data(stream *s, FILE *file, gs_offset_t count, stream_arcfour_state *ss)
 {
-    long r, left = count, code;
+    gs_offset_t r, left = count;
+    long code;
     byte buf[sbuf_size];
 
     while (left > 0) {
@@ -1660,7 +1661,7 @@ pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss)
 /* Copy data from a temporary file to a stream,
    which may be targetted to the same file. */
 void
-pdf_copy_data_safe(stream *s, FILE *file, int64_t position, long count)
+pdf_copy_data_safe(stream *s, FILE *file, gs_offset_t position, long count)
 {
     long r, left = count, code;
 
@@ -1917,7 +1918,7 @@ pdf_encrypt_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size
         }
     }
     sclose(&sout); /* Writes ')'. */
-    return stell(&sinp) + 1;
+    return (int)stell(&sinp) + 1;
 }
 
 /* Write an encoded string with possible encryption. */

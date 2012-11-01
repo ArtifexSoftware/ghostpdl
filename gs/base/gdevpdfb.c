@@ -543,7 +543,8 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     if (!pres) {
         /* Create the Pattern resource. */
         int code;
-        long image_id, length_id, start, end;
+        long image_id, length_id;
+        gs_offset_t start, end;
         stream *s;
         gs_image_t image;
         pdf_image_writer writer;

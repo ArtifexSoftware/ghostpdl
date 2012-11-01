@@ -61,8 +61,8 @@ typedef struct cff_writer_s {
     stream *strm;
     gs_font_base *pfont;	/* type1 or cid0 */
     glyph_data_proc_t glyph_data;
-    int offset_size;
-    long start_pos;
+    gs_offset_t offset_size;
+    gs_offset_t start_pos;
     cff_string_table_t std_strings;
     cff_string_table_t strings;
     gs_int_rect FontBBox;

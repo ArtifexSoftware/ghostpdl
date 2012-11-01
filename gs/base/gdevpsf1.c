@@ -777,7 +777,7 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
                       const gs_const_string *alt_font_name, int lengths[3])
 {
     stream *es = s;
-    long start = stell(s);
+    gs_offset_t start = stell(s);
     param_printer_params_t ppp;
     printer_param_list_t rlist;
     gs_param_list *const plist = (gs_param_list *)&rlist;
@@ -892,7 +892,7 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
     }
     if (options & WRITE_TYPE1_EEXEC) {
         stream_puts(s, "currentfile eexec\n");
-        lengths[0] = stell(s) - start;
+        lengths[0] = (int)(stell(s) - start);
         start = stell(s);
         if (options & WRITE_TYPE1_ASCIIHEX) {
             s_init(&AXE_stream, s->memory);
@@ -927,7 +927,7 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
             stream_puts(es, "mark ");
         stream_puts(es, "currentfile closefile\n");
         s_close_filters(&es, s);
-        lengths[1] = stell(s) - start;
+        lengths[1] = (int)(stell(s) - start);
         start = stell(s);
         if (options & WRITE_TYPE1_EEXEC_PAD) {
             int i;
@@ -936,9 +936,9 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
                 stream_puts(s, "\n0000000000000000000000000000000000000000000000000000000000000000");
             stream_puts(s, "\ncleartomark\n");
         }
-        lengths[2] = stell(s) - start;
+        lengths[2] = (int)(stell(s) - start);
     } else {
-        lengths[0] = stell(s) - start;
+        lengths[0] = (int)(stell(s) - start);
         lengths[1] = lengths[2] = 0;
     }
 

@@ -714,12 +714,12 @@ write_post(stream *s, gs_font *font, post_t *post)
     return 0;
 }
 
-static inline bool check_position(const gs_memory_t *mem, int pos1, int pos2)
+static inline bool check_position(const gs_memory_t *mem, gs_offset_t pos1, gs_offset_t pos2)
 {
     if (pos1 == pos2)
         return false;
     emprintf2(mem,
-              "Actual TT subtable offset %d differs from one in the TT header %d.\n",
+              "Actual TT subtable offset %"PRId64" differs from one in the TT header %"PRId64".\n",
               pos1,
               pos2);
     return true;
@@ -792,7 +792,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     uint maxp_length = 0;
     struct { int glyf, loca, cmap, name, os_2, mtx[2], post, head;
            } subtable_positions;
-    int start_position = stell(s);
+    gs_offset_t start_position = stell(s);
     int enlarged_numGlyphs = 0;
     int code;
     int TTCFontOffset = 0;

@@ -465,7 +465,7 @@ int
 pdf_end_char_proc(gx_device_pdf * pdev, pdf_stream_position_t * ppos)
 {
     stream *s;
-    long start_pos, end_pos, length;
+    gs_offset_t start_pos, end_pos, length;
 
     pdf_end_encrypt(pdev);
     s = pdev->strm;

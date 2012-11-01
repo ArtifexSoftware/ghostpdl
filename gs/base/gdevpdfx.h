@@ -285,7 +285,7 @@ typedef struct pdf_resource_list_s {
 /* Define the bookkeeping for an open stream. */
 typedef struct pdf_stream_position_s {
     long length_id;
-    long start_pos;
+    gs_offset_t start_pos;
 } pdf_stream_position_t;
 
 /*
@@ -353,9 +353,9 @@ typedef struct linearisation_record_s {
     int NumPagesUsing;
     int *PageList;
     uint NewObjectNumber;
-    int64_t OriginalOffset;
-    int64_t LinearisedOffset;
-    int64_t Length;
+    gs_offset_t OriginalOffset;
+    gs_offset_t LinearisedOffset;
+    gs_offset_t Length;
 } pdf_linearisation_record_t;
 
 #define private_st_pdf_linearisation_record()\
@@ -388,13 +388,13 @@ typedef struct page_hint_stream_s {
     unsigned int NumSharedObjects;
     unsigned int *SharedObjectRef; /* one for each shaed object on the page */
     /* Item 5 we invent */
-    int64_t ContentOffset; /* biased by the least offset to the conent stream for any page */
-    int64_t ContentLength;/* biased by the least content stream length */
+    gs_offset_t ContentOffset; /* biased by the least offset to the conent stream for any page */
+    gs_offset_t ContentLength;/* biased by the least content stream length */
 } page_hint_stream_t;
 
 typedef struct shared_hint_stream_header_s {
     unsigned int FirstSharedObject;
-    int64_t FirstObjectOffset;
+    gs_offset_t FirstObjectOffset;
     unsigned int FirstPageEntries;
     unsigned int NumSharedObjects;
     /* Item 5 is always 1 as far as we are concerned */
@@ -405,7 +405,7 @@ typedef struct shared_hint_stream_header_s {
 
 typedef struct share_hint_stream_s {
     unsigned int ObjectNumber;
-    int64_t ObjectOffset;
+    gs_offset_t ObjectOffset;
     unsigned int ObjectLength;   /* biased by the LeastObjectLength */
     /* item 2 is always 0 */
     /* Which means that item 3 is never present */
@@ -429,14 +429,14 @@ typedef struct pdf_linearisation_s {
     long NumNonPageResources;
     long LastResource;
     long MainFileEnd;
-    ulong *Offsets;
-    ulong xref;
-    int64_t FirstxrefOffset;
-    int64_t FirsttrailerOffset;
-    int64_t LDictOffset;
-    int64_t FileLength;
-    int64_t T;
-    int64_t E;
+    gs_offset_t *Offsets;
+    gs_offset_t xref;
+    gs_offset_t FirstxrefOffset;
+    gs_offset_t FirsttrailerOffset;
+    gs_offset_t LDictOffset;
+    gs_offset_t FileLength;
+    gs_offset_t T;
+    gs_offset_t E;
     page_hint_stream_header_t PageHintHeader;
     int NumPageHints;
     page_hint_stream_t *PageHints;
@@ -670,7 +670,7 @@ struct gx_device_pdf_s {
     long contents_id;
     pdf_context_t context;
     long contents_length_id;
-    long contents_pos;
+    gs_offset_t contents_pos;
     pdf_procset_t procsets;        /* used on this page */
     pdf_text_data_t *text;
     pdf_text_rotation_t text_rotation;
@@ -964,7 +964,7 @@ long pdf_obj_forward_ref(gx_device_pdf * pdev);
 long pdf_obj_ref(gx_device_pdf * pdev);
 
 /* Read the current position in the output stream. */
-long pdf_stell(gx_device_pdf * pdev);
+gs_offset_t pdf_stell(gx_device_pdf * pdev);
 
 /* Begin an object, optionally allocating an ID. */
 long pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type);
@@ -996,7 +996,7 @@ int pdf_record_usage_by_parent(gx_device_pdf *const pdev, long resource_id, long
  * asides file rather than the main (contents) file.
  * Must be a power of 2, and larger than the largest possible output file.
  */
-#define ASIDES_BASE_POSITION min_long
+#define ASIDES_BASE_POSITION min_int64_t
 
 /* Begin an object logically separate from the contents. */
 /* (I.e., an object in the resource file.) */
@@ -1103,8 +1103,8 @@ int pdf_write_and_free_all_resource_objects(gx_device_pdf *pdev);
 int pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage);
 
 /* Copy data from a temporary file to a stream. */
-void pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss);
-void pdf_copy_data_safe(stream *s, FILE *file, int64_t position, long count);
+void pdf_copy_data(stream *s, FILE *file, gs_offset_t count, stream_arcfour_state *ss);
+void pdf_copy_data_safe(stream *s, FILE *file, gs_offset_t position, long count);
 
 /* Add the encryption filter. */
 int pdf_begin_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id);
@@ -1227,8 +1227,8 @@ int pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
 /* Define a possibly encoded and compressed data stream. */
 typedef struct pdf_data_writer_s {
     psdf_binary_writer binary;
-    long start;
-    long length_pos;
+    gs_offset_t start;
+    gs_offset_t length_pos;
     pdf_resource_t *pres;
     gx_device_pdf *pdev; /* temporary for backward compatibility of pdf_end_data prototype. */
     long length_id;
