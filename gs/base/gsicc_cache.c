@@ -483,10 +483,11 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
         pis->icc_manager->srcgtag_profile != NULL) {
             if (gs_input_profile->data_cs == gsRGB
                 || gs_input_profile->data_cs == gsCMYK) {
-                    gsicc_get_srcprofile(gs_input_profile->data_cs,
+                gsicc_get_srcprofile(gs_input_profile->data_cs,
                                       dev->graphics_type_tag,
                                       pis->icc_manager->srcgtag_profile,
                                       &(gs_srcgtag_profile), &render_cond);
+                code = dev_proc(dev, get_profile)(dev,  &dev_profile);
                 if (gs_srcgtag_profile != NULL) {
                     /* In this case, the user is letting the source profiles
                        drive the color management.  Let that set the 
