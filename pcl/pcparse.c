@@ -23,6 +23,7 @@
 #include "pcparse.h"
 #include "pcstate.h"            /* for display_functions */
 #include "pcursor.h"
+#include "rtmisc.h"
 #include "rtgmode.h"
 
 /* We don't know whether an Enable Display Functions takes effect while */
@@ -463,6 +464,24 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                 param_init();
                 continue;
             case scanning_none:
+                /* in rtl mode we should only reach this state if the
+                   job begins without proper initialization, starts
+                   with HPGL commands directly */
+                if (pcs->personality == rtl && !pcs->parse_other) {
+                    /* we need at least 2 bytes to make the comparison */
+                    if (p >= rlimit - 2)
+                        goto x;
+
+                    /* now check if these commands DF or IN, likely
+                       candidates to start an HPGL file. */
+                    if ((*(p + 1) == 'I' && *(p + 2) == 'N') ||
+                        (*(p + 1) == 'D' && *(p + 2) == 'F')) {
+                        pcl_args_t args;
+                        arg_set_uint(&args, 0);
+                        rtl_enter_hpgl_mode(&args, pcs);
+                    }
+                }
+
                 if (pcs->parse_other) { /*
                                          * Hand off the data stream
                                          * to another parser (HP-GL/2).

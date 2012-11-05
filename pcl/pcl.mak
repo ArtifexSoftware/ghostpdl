@@ -314,7 +314,8 @@ $(PCLOBJ)pcparse.$(OBJ): $(PCLSRC)pcparse.c \
                          $(pcparse_h)       \
                          $(pcstate_h)       \
                          $(pcursor_h)       \
-                         $(rtgmode_h)
+                         $(rtgmode_h)       \
+                         $(rtmisc_h)
 	$(PCLCCC) $(PCLSRC)pcparse.c $(PCLO_)pcparse.$(OBJ)
 
 PCL5_PARSE  = $(PCLOBJ)pcommand.$(OBJ) $(PCLOBJ)pcparse.$(OBJ)

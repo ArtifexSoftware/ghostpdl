@@ -38,7 +38,7 @@ extern  const pcl_init_t *  pcl_init_table[];
 /*
  * ESC % <enum> B
  */
-  static int
+  int
 rtl_enter_hpgl_mode(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
