@@ -734,8 +734,15 @@ clist_begin_typed_image(gx_device * dev,
         int y0 = (int)floor(dbox.p.y - 0.51);   /* adjust + rounding slop */
         int y1 = (int)ceil(dbox.q.y + 0.51);    /* ditto */
 
-        pie->ymin = max(y0, 0);
-        pie->ymax = min(y1, dev->height);
+        if (pcpath) {
+            gs_fixed_rect obox;
+            gx_cpath_outer_box(pcpath, &obox);
+            pie->ymin = max(y0, fixed2int(obox.p.y));
+            pie->ymax = min(y1, fixed2int(obox.q.y));
+        } else {
+            pie->ymin = max(y0, 0);
+            pie->ymax = min(y1, dev->height);
+        }
     }
 
     /*
@@ -1514,6 +1521,11 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
     bbox.q.x = fixed2float(cbox.q.x + fixed_half);
     bbox.p.y = fixed2float(max(cbox.p.y, by0) - fixed_half);
     bbox.q.y = fixed2float(min(cbox.q.y, by1) + fixed_half);
+    /* Limit the box further if possible (because of a clipping path) */
+    if (bbox.p.y < pie->ymin)
+        bbox.p.y = pie->ymin;
+    if (bbox.q.y > pie->ymax)
+        bbox.q.y = pie->ymax;
 #ifdef DEBUG
     if (gs_debug_c('b')) {
         dmlprintf6(dev->memory, "[b]band box for (%d,%d),(%d,%d), band (%d,%d) =>\n",
