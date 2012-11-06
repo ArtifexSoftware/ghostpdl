@@ -38,7 +38,7 @@ level2dict begin
     4 index //null eq {
       0 dict
     } {
-      4 index 2 index get dup //null eq { pop } if
+      4 index 2 index get dup //null eq { pop 0 dict} if
     } ifelse
     3 -1 roll pop exch filter
     exch pop //true exch		% set CloseSource for further filters
