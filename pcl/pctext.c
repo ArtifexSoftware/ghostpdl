@@ -944,8 +944,12 @@ pcl_text(
     if (pcs->personality == rtl)
         return 0;
     /* set up the current font and HMI */
-    if ((pcs->font == 0) && ((code = pcl_recompute_font(pcs, false)) < 0))
-        return gs_rethrow_code(code);
+    if ((pcs->font == 0) || pcs->font_selection[pcs->font_selected].font == 0)
+    {
+        code = pcl_recompute_font(pcs, false);
+        if (code < 0)
+            return gs_rethrow_code(code);
+    }
 
     /* set up the graphic state */
     code = pcl_set_drawing_color( pcs,

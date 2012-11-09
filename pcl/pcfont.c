@@ -284,7 +284,7 @@ pcl_font_selection_id(pcl_args_t *pargs, pcl_state_t *pcs, int set)
           default:		/* error */
             return code;
           case 0:
-            pcl_decache_font(pcs, -1);
+            pcl_decache_font(pcs, set);
             pfs->selected_id = id;
           case 1:		/* not found */
             return 0;
@@ -332,8 +332,11 @@ static int /* SO */
 pcl_SO(pcl_args_t *pargs, pcl_state_t *pcs)
 {
     if ( pcs->font_selected != 1 ) {
+        pcl_font_selection_t *pfs = &pcs->font_selection[1];
         pcs->font_selected = secondary;
-        pcl_decache_font(pcs, secondary);
+        pcl_decache_hmi(pcs);
+        if ( (int)pfs->selected_id < 0)
+            pcl_decache_font(pcs, 1);
     }
     return 0;
 }
@@ -342,8 +345,11 @@ static int /* SI */
 pcl_SI(pcl_args_t *pargs, pcl_state_t *pcs)
 {
     if ( pcs->font_selected != 0 ) {
+        pcl_font_selection_t *pfs = &pcs->font_selection[0];
         pcs->font_selected = primary;
-        pcl_decache_font(pcs, primary);
+        pcl_decache_hmi(pcs);
+        if ( (int)pfs->selected_id < 0)
+            pcl_decache_font(pcs, 0);
     }
     return 0;
 }

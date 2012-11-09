@@ -452,8 +452,8 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs, bool intern
 
             pfs->font = best_font;
             pfs->map = best_map;
+            pfs->selected_id = (uint)-1;
           }
-        pfs->selected_id = (uint)-1;
         return 0;
 }
 
