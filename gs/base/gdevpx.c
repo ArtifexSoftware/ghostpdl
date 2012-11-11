@@ -1746,6 +1746,7 @@ typedef struct pclxl_image_enum_s {
         int first_y;
         uint raster;
     } rows;
+    bool flipped;
 } pclxl_image_enum_t;
 gs_private_st_suffix_add1(st_pclxl_image_enum, pclxl_image_enum_t,
                           "pclxl_image_enum_t", pclxl_image_enum_enum_ptrs,
@@ -1784,14 +1785,12 @@ pclxl_begin_image(gx_device * dev,
      */
     gs_matrix_invert(&pim->ImageMatrix, &mat);
     gs_matrix_multiply(&mat, &ctm_only(pis), &mat);
-    /* We can handle rotations of 90 degs + scaling.
+    /* We can handle rotations of 90 degs + scaling + reflections.
      * These have one of the diagonals being zeros
      * (and the other diagonals having non-zeros).
-     *
-     * Not to handle reflection (the two >< signs).
      */
-    if ((!((mat.xx * mat.yy > 0) && (mat.xy == 0) && (mat.yx == 0)) &&
-         !((mat.xx == 0) && (mat.yy == 0) && (mat.xy * mat.yx < 0))) ||
+    if ((!((mat.xx * mat.yy != 0) && (mat.xy == 0) && (mat.yx == 0)) &&
+         !((mat.xx == 0) && (mat.yy == 0) && (mat.xy * mat.yx != 0))) ||
         (pim->ImageMask ?
          (!gx_dc_is_pure(pdcolor) || pim->CombineWithColor) :
          (!pclxl_can_handle_color_space(pim->ColorSpace) ||
@@ -1823,6 +1822,7 @@ pclxl_begin_image(gx_device * dev,
         return code;
 
     /* emit a PXL XL rotation and adjust mat correspondingly */
+    pie->flipped = false;
     if (mat.xx * mat.yy >  0) {
         if (mat.xx < 0) {
             stream *s = pclxl_stream(xdev);
@@ -1835,7 +1835,21 @@ pclxl_begin_image(gx_device * dev,
             px_put_ac(s, pxaPageAngle, pxtSetPageRotation);
         }
         /* leave the matrix alone if it is portrait */
-    } else {
+    } else if (mat.xx * mat.yy <  0) {
+      pie->flipped = true;
+        if (mat.xx < 0) {
+          stream *s = pclxl_stream(xdev);
+            mat.xx = -mat.xx;
+            mat.tx = -mat.tx;
+            px_put_ss(s,+180);
+            xdev->state_rotated = +2;
+            px_put_ac(s, pxaPageAngle, pxtSetPageRotation);
+        } else {
+            stream *s = pclxl_stream(xdev);
+            mat.yy = -mat.yy;
+            mat.ty = -mat.ty;
+        }
+    } else if (mat.xy * mat.yx < 0) {
         /* rotate +90 or -90 */
         float tmpf;
         stream *s = pclxl_stream(xdev);
@@ -1853,6 +1867,29 @@ pclxl_begin_image(gx_device * dev,
             tmpf = mat.tx;
             mat.tx = -mat.ty;
             mat.ty = tmpf;
+            px_put_ss(s,+90);
+            xdev->state_rotated = +1;
+        }
+        mat.xy = mat.yx = 0;
+        px_put_ac(s, pxaPageAngle, pxtSetPageRotation);
+    } else if (mat.xy * mat.yx > 0) {
+        float tmpf;
+        stream *s = pclxl_stream(xdev);
+        pie->flipped = true;
+        if(mat.xy > 0) {
+            mat.xx = mat.xy;
+            mat.yy = mat.yx;
+            tmpf = mat.tx;
+            mat.tx = mat.ty;
+            mat.ty = tmpf;
+            px_put_ss(s,-90);
+            xdev->state_rotated = -1;
+        } else {
+            mat.xx = -mat.xy;
+            mat.yy = -mat.yx;
+            tmpf = mat.tx;
+            mat.tx = -mat.ty;
+            mat.ty = -tmpf;
             px_put_ss(s,+90);
             xdev->state_rotated = +1;
         }
@@ -1989,7 +2026,11 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
     int dw = image_transform_x(pie, pie->width) - xo;
     int dh = image_transform_y(pie, y + h) - yo;
     int rows_raster=pie->rows.raster;
+    int offset_lastflippedstrip = 0;
 
+    if (pie->flipped) yo = -yo -dh;
+    if (pie->flipped)
+      offset_lastflippedstrip = pie->rows.raster * (pie->rows.num_rows - h);
     if (dw <= 0 || dh <= 0)
         return 0;
     pclxl_set_cursor(xdev, xo, yo);
@@ -2002,8 +2043,8 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
         px_put_ub(s, eBit_values[8]);
         PX_PUT_LIT(s, ci_);
         if (xdev->color_info.depth==8) {
-          byte *in=pie->rows.data;
-          byte *out=pie->rows.data;
+          byte *in=pie->rows.data + offset_lastflippedstrip;
+          byte *out=pie->rows.data + offset_lastflippedstrip;
           int i;
           int j;
           rows_raster/=3;
@@ -2027,7 +2068,7 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
         PX_PUT_LIT(s, ii_);
     }
     pclxl_write_begin_image(xdev, pie->width, h, dw, dh);
-    pclxl_write_image_data(xdev, pie->rows.data, 0, rows_raster,
+    pclxl_write_image_data(xdev, pie->rows.data + offset_lastflippedstrip, 0, rows_raster,
                            rows_raster << 3, 0, h);
     pclxl_write_end_image(xdev);
     return 0;
@@ -2058,7 +2099,7 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
             pie->rows.first_y = pie->y;
         }
         memcpy(pie->rows.data +
-                 pie->rows.raster * (pie->y - pie->rows.first_y),
+                 pie->rows.raster * (pie->flipped ? (pie->rows.num_rows - (pie->y - pie->rows.first_y) -1) :(pie->y - pie->rows.first_y)),
                planes[0].data + planes[0].raster * i + (data_bit >> 3),
                pie->rows.raster);
     }
