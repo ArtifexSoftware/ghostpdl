@@ -652,7 +652,12 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
             if ( !(size == ncomp << 1 || size == ncomp << 4 ||
                    size == ncomp << 8)
                )
-              return_error(errorIllegalAttributeValue);
+                /* The HP printers we've tested appear to truncate
+                   this value and not produce an error on overflow */
+              if (size > ncomp << 8)
+                  size = ncomp << 8;
+              else
+                  return_error(errorIllegalAttributeValue);
             /* The palette is in an array, but we want a string. */
             {
                 if ( pxgs->palette.data && !pxgs->palette_is_shared &&
