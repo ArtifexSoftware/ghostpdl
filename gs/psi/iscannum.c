@@ -60,6 +60,7 @@ scan_number(const byte * str, const byte * end, int sign,
     int code = 0;
     int c, d;
     ps_uint max_scan; /* max signed or unsigned int */
+    ps_int max_ps_int_scan, min_ps_int_scan;
     const byte *const decoder = scan_char_decoder;
 #define IS_DIGIT(d, c)\
   ((d = decoder[c]) < 10)
@@ -98,15 +99,20 @@ scan_number(const byte * str, const byte * end, int sign,
             goto ind;
         ival = ival * 10 + d;
     }
-    max_scan = scanner_options & SCAN_PDF_UNSIGNED && sign >= 0 ? ~((ps_int)0) : MAX_PS_INT;
+
+    max_ps_int_scan = scanner_options & SCAN_CPSI_MODE ? MAX_PS_INT32 : MAX_PS_INT;
+    min_ps_int_scan = scanner_options & SCAN_CPSI_MODE ? MIN_PS_INT32 : MIN_PS_INT;
+
+    max_scan = scanner_options & SCAN_PDF_UNSIGNED && sign >= 0 ? ~((ps_int)0) : max_ps_int_scan;
+
     for (;; ival = ival * 10 + d) {
         GET_NEXT(c, sp, goto iret);
         if (!IS_DIGIT(d, c))
             break;
         if (WOULD_OVERFLOW(((ps_uint)ival), d, max_scan)) {
-            if (ival == MAX_PS_INT / 10 && d == (MAX_PS_INT % 10) + 1 && sign < 0) {
+            if (ival == max_ps_int_scan / 10 && d == (max_ps_int_scan % 10) + 1 && sign < 0) {
                 GET_NEXT(c, sp, c = EOFC);
-                dval = -(double)MIN_PS_INT;
+                dval = -(double)min_ps_int_scan;
                 if (c == 'e' || c == 'E') {
                     exp10 = 0;
                     goto fs;
@@ -115,7 +121,7 @@ scan_number(const byte * str, const byte * end, int sign,
                     exp10 = 0;
                     goto fd;
                 } else if (!IS_DIGIT(d, c)) {
-                    ival = MIN_PS_INT;
+                    ival = min_ps_int_scan;
                     break;
                 }
             } else
@@ -212,7 +218,12 @@ scan_number(const byte * str, const byte * end, int sign,
             }
     }
 iret:
+    if (scanner_options & SCAN_CPSI_MODE) {
+        make_int(pref, (sign < 0 ? (ps_int32)-ival : (ps_int32)ival));
+    }
+    else {
         make_int(pref, (sign < 0 ? (ps_int)-ival : (ps_int)ival));
+    }
     return code;
 
     /* Accumulate a double in dval. */
