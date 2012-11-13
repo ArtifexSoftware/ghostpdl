@@ -448,12 +448,7 @@ pl_fapi_char_metrics(const pl_font_t *plfont, const void *vpgs,
     gs_char chr = char_code;
     gs_glyph unused_glyph = gs_no_glyph;
     gs_glyph glyph = pl_tt_encode_char(pfont, chr, unused_glyph);
-
-
-    gs_gsave(pgs);
-
-    pgs->font = pfont;
-    pgs->root_font = pfont;
+    gs_matrix  mat;
 
     if (pfont->WMode & 1) {
         gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
@@ -463,32 +458,47 @@ pl_fapi_char_metrics(const pl_font_t *plfont, const void *vpgs,
     }
 
     /* undefined character */
-    if (glyph == 0xffff || glyph == gs_no_glyph)
-        return 1;
-
-    code = gs_moveto(pgs, 0.0, 0.0);
-
-    buf[0] = char_code;
-    buf[1] = '\0';
-
-    text.operation = TEXT_FROM_CHARS | TEXT_DO_NONE | TEXT_RETURN_WIDTH;
-    text.data.chars = buf;
-    text.size = 1;
-
-    if (code >= 0)
-        code = gs_text_begin(pgs, &text, pfont->memory, &penum);
-
-    if (code >= 0)
-        code = gs_text_process(penum);
-
-    if (code >= 0) {
-        metrics[0] = metrics[1] = 0;
-        metrics[2] = penum->returned.total_width.x;
-        metrics[3] = penum->returned.total_width.y;
-
-        gs_text_release(penum, "show_char_foreground");
+    if (glyph == 0xffff || glyph == gs_no_glyph) {
+        metrics[0] = metrics[1] = 
+            metrics[2] = metrics[3] = 0;
+        code = 1;
     }
-    gs_grestore(pgs);
+    else {
+
+        gs_gsave(pgs);
+        pgs->font = pfont;
+        pgs->root_font = pfont;
+
+        memset(&mat, 0x00, sizeof(gs_matrix));
+        mat.xx = 72;
+        mat.yy = 72;
+        gs_setmatrix(pgs, &mat);
+
+
+        code = gs_moveto(pgs, 0.0, 0.0);
+
+        buf[0] = char_code;
+        buf[1] = '\0';
+
+        text.operation = TEXT_FROM_CHARS | TEXT_DO_NONE | TEXT_RETURN_WIDTH;
+        text.data.chars = buf;
+        text.size = 1;
+
+        if (code >= 0)
+            code = gs_text_begin(pgs, &text, pfont->memory, &penum);
+
+        if (code >= 0)
+            code = gs_text_process(penum);
+
+        if (code >= 0) {
+            metrics[0] = metrics[1] = 0;
+            metrics[2] = penum->returned.total_width.x;
+            metrics[3] = penum->returned.total_width.y;
+
+            gs_text_release(penum, "show_char_foreground");
+        }
+        gs_grestore(pgs);
+    }
 
     return (code);
 }
