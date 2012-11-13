@@ -266,7 +266,14 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
             hpgl_set_hpgl_path_mode(pgls, true);
             break;
           case 1 :
-              hpgl_call(hpgl_close_subpolygon(pgls));
+              {
+                  /* creating a sub polygon closes the path only if
+                     the pen is down, but always starts a new subpath */
+                  if ( pgls->g.move_or_draw == hpgl_pen_down
+                       && pgls->g.have_drawn_in_path )
+                      hpgl_call(hpgl_close_subpolygon(pgls));
+                  pgls->g.subpolygon_started = true;
+              }
               break;
           case 2 :
               if ( pgls->g.polygon_mode ) {

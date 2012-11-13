@@ -287,9 +287,6 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
         if ( !pgls->g.polygon_mode )
             hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-        else
-            hpgl_call(hpgl_close_current_path(pgls));
-
 
         hpgl_arg_c_real(pgls->memory, pargs, &chord);
 

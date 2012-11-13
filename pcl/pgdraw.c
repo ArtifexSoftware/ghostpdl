@@ -1150,17 +1150,19 @@ hpgl_add_point_to_path(
     bool                    set_ctm
 )
 {
-    static int              (*const gs_procs[])(gs_state *, floatp, floatp)
-                                = { hpgl_plot_function_procedures };
+    static int (*const gs_procs[])(gs_state *, floatp, floatp)
+        = { hpgl_plot_function_procedures };
+    int        code = 0;
+    gx_path    *ppath = gx_current_path(pgls->pgs);
 
-    gx_path *ppath = gx_current_path(pgls->pgs);
     if (gx_path_is_null(ppath)) {
         /* Start a new GL/2 path. */
-        gs_point    current_pt;
+        gs_point current_pt;
 
         if (set_ctm)
             hpgl_call(hpgl_set_ctm(pgls));
-        if ((func != hpgl_plot_move_absolute) && (!pgls->g.subpolygon_started)) {
+        if ((func != hpgl_plot_move_absolute) && 
+            (!pgls->g.subpolygon_started)) {
             /* moveto the current position */
             hpgl_call(hpgl_get_current_position(pgls, &current_pt));
             hpgl_call_check_lost( gs_moveto( pgls->pgs,
@@ -1169,23 +1171,20 @@ hpgl_add_point_to_path(
                                              ) );
         }
     }
-        
-    {
-        int     code;
-        if (pgls->g.subpolygon_started == true) {
-            pgls->g.subpolygon_started = false;
-            if (hpgl_plot_is_draw(func)) {
-                hpgl_plot_function_t startup_func;
-                if (hpgl_plot_is_relative(func))
-                    startup_func = hpgl_plot_move_relative;
-                else
-                    startup_func = hpgl_plot_move_absolute;
-                code = (*gs_procs[startup_func])(pgls->pgs, x, y);
-                update_pos(pgls, x, y, func);
-                return 0;
-            }
-        }
 
+    /* start a new subpath if necessary */
+    if (pgls->g.subpolygon_started == true) {
+        hpgl_plot_function_t startup_func;
+        pgls->g.subpolygon_started = false;
+        if (hpgl_plot_is_relative(func))
+            startup_func = hpgl_plot_move_relative;
+        else
+            startup_func = hpgl_plot_move_absolute;
+        hpgl_set_hpgl_path_mode(pgls, false);
+        code = (*gs_procs[startup_func])(pgls->pgs, x, y);
+        hpgl_set_hpgl_path_mode(pgls, true);
+        update_pos(pgls, x, y, func);
+    } else { /* no new subpath */
         code = (*gs_procs[func])(pgls->pgs, x, y);
         if (code < 0) {
             if (code == gs_error_limitcheck)
@@ -1194,7 +1193,7 @@ hpgl_add_point_to_path(
             update_pos(pgls, x, y, func);
         }
     }
-    return 0;
+    return code;
 }
 
 void
@@ -1278,6 +1277,9 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 
     pgls->g.pos.x = arccoord_x;
     pgls->g.pos.y = arccoord_y;
+
+    if (start_moveto)
+        pgls->g.subpolygon_started = true;
 
     hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y,
                                      (draw && !start_moveto ?
