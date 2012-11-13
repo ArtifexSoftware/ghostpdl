@@ -186,55 +186,30 @@ MSVC_VERSION=9
 
 D=\\
 DD=$(GLGENDIR)
-# note agfa gives it libraries incompatible names so they cannot be
-# properly found by the linker.  Change the library names to reflect the
-# following (i.e. the if library should be named libif.a
-# NB - this should all be done automatically by choosing the device
-# but it ain't.
 
-# The user is responsible for building the agfa or freetype libs.  We
-# don't overload the makefile with nonsense to build these libraries
-# on the fly. If the artifex font scaler is chosen the makefiles will
-# build the scaler automatically.
-
-# Pick a font system technology.  PCL and XL do not need to use the
-# same scaler, but it is necessary to tinker/hack the makefiles to get
-# it to work properly.
-
-# ufst - Agfa universal font scaler.
-# fts  - FreeType font system.
-# afs  - Artifex font scaler.
-# 3 mutually exclusive choices follow, pick one.
-
-PL_SCALER=afs
-PCL_FONT_SCALER=$(PL_SCALER)
-PXL_FONT_SCALER=$(PL_SCALER)
-
-# defines for building PSI against UFST
-!if "$(PL_SCALER)" == "ufst"
-
-!if "$(COMPILE_INITS)" == "1"
-UFSTFONTDIR=%rom%fontdata/
-UFSTROMFONTDIR=\\\"%%%%%rom%%%%%fontdata/\\\"
-!else
-UFSTFONTDIR=../fontdata/
-UFSTDISCFONTDIR=\"$(UFST_ROOT)/fontdata/\"
+# Define whether to compile in UFST. Note that freetype will/must be disabled.
+# FAPI/UFST depends on UFST_BRIDGE being undefined - hence the construct below.
+# (i.e. use "UFST_BRIDGE=1" or *not to define UFST_BRIDGE to anything*)
+!ifndef UFST_BRIDGE
+UFST_BRIDGE=
 !endif
 
 !ifndef UFST_ROOT
-UFST_ROOT="../ufst"
-!endif
-!ifndef FAPI_DEFS
-FAPI_DEFS= -DUFST_BRIDGE=1 -DUFST_LIB_EXT=.lib -DGCCx86 -DUFST_ROOT=$(UFST_ROOT)
+UFST_ROOT=$(GLSRCDIR)/../ufst
 !endif
 
-UFST_BRIDGE=1
-UFST_LIB_EXT=.lib
+UFST_LIB_EXT=.a
 
-# specify agfa library locations and includes.
-UFST_LIB=$(UFST_ROOT)\rts\lib
-UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray $(I_)$(UFST_ROOT)\rts\tt -DMSVC -DAGFA_FONT_TABLE
-!endif
+UFST_ROMFS_ARGS=-b \
+ -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
+ -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
+ -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
+
+UFSTROMFONTDIR=\"%rom%fontdata/\"
+UFSTDISCFONTDIR=\"$(UFST_ROOT)/fontdata/\"
+
+
+UFST_CFLAGS=
 
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
@@ -278,7 +253,7 @@ FEATURE_CORE    = \
 FEATURE_CORE = $(FEATURE_CORE) $(DD)\pipe.dev
 !endif
 
-FEATURE_DEVS    = $(FEATURE_CORE) $(DD)\fapi.dev 
+FEATURE_DEVS    = $(FEATURE_CORE)
 !endif
 
 !if "$(COMPILE_INITS)" == "1"
