@@ -1845,7 +1845,6 @@ pclxl_begin_image(gx_device * dev,
             xdev->state_rotated = +2;
             px_put_ac(s, pxaPageAngle, pxtSetPageRotation);
         } else {
-            stream *s = pclxl_stream(xdev);
             mat.yy = -mat.yy;
             mat.ty = -mat.ty;
         }

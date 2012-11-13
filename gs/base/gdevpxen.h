@@ -192,6 +192,24 @@ typedef enum {
     eJIS16K,                     /* 2.1 */
     eJISExec,                    /* 2.1 */
     eDefaultPaperSize = 96,     /* 2.1 */
+    eB6JIS = 201,               /* non-standard, Ricoh printers */
+    eC6Envelope = 202,          /* non-standard, Ricoh printers */
+    e8Kai  = 203,               /* non-standard, Ricoh printers */
+    e16Kai = 204,               /* non-standard, Ricoh printers */
+    e12x18 = 205,               /* non-standard, Ricoh printers */
+    e13x19_2 = 212,             /* non-standard, Ricoh printers */
+    e13x19 = 213,               /* non-standard, Ricoh printers */
+    e12_6x19_2 = 214,           /* non-standard, Ricoh printers */
+    e12_6x18_5 = 215,           /* non-standard, Ricoh printers */
+    e13x18  = 216,              /* non-standard, Ricoh printers */
+    eSRA3 = 217,                /* non-standard, Ricoh printers */
+    eSRA4 = 218,                /* non-standard, Ricoh printers */
+    e226x310 = 219,             /* non-standard, Ricoh printers */
+    e310x432 = 220,             /* non-standard, Ricoh printers */
+    eEngQuatro = 221,           /* non-standard, Ricoh printers */
+    e11x14 = 222,               /* non-standard, Ricoh printers */
+    e11x15 = 223,               /* non-standard, Ricoh printers */
+    e10x14 = 224,               /* non-standard, Ricoh printers */
     pxeMediaSize_next
 } pxeMediaSize_t;
 
@@ -227,7 +245,25 @@ typedef enum {
   m(eJB6Paper,         "jisb6",        300, 1512, 2150) \
   m(eJIS8K,            "jis8K",        300, 3154, 4606) \
   m(eJIS16K,           "jis16K",       300, 2303, 3154) \
-  m(eJISExec,          "jisexec",      300, 2551, 3898)
+  m(eJISExec,          "jisexec",      300, 2551, 3898) \
+  m(eB6JIS,            "B6 (JIS)",     300, 1512, 2150) \
+  m(eC6Envelope,       "C6",           300, 1345, 1912) \
+  m(e8Kai,             "8Kai",         300, 3154, 4608) \
+  m(e16Kai,            "16Kai",        300, 2304, 3154) \
+  m(e12x18,            "12x18",        300, 3600, 5400) \
+  m(e13x19_2,          "13x19.2",      300, 3900, 5758) \
+  m(e13x19,            "13x19",        300, 3900, 5700) \
+  m(e12_6x19_2,        "12.6x19.2",    300, 3779, 5758) \
+  m(e12_6x18_5,        "12.6x18.5",    300, 3779, 5550) \
+  m(e13x18,            "13x18",        300, 3900, 5400) \
+  m(eSRA3,             "SRA3",         300, 3779, 5316) \
+  m(eSRA4,             "SRA4",         300, 2658, 3779) \
+  m(e226x310,          "226x310",      300, 2670, 3662) \
+  m(e310x432,          "310x432",      300, 3662, 5104) \
+  m(eEngQuatro,        "EngQuatro",    300, 2400, 3000) \
+  m(e11x14,            "11x14",        300, 3300, 4200) \
+  m(e11x15,            "11x15",        300, 3300, 4500) \
+  m(e10x14,            "10x14",        300, 3000, 4200)
 
 typedef enum {
     eDefaultSource = 0,

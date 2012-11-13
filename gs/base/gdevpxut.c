@@ -150,13 +150,15 @@ px_write_select_media(stream *s, const gx_device *dev,
     /* 0.05 = 30@r600 - one of the test files is 36 off and within 5.0/72@600 */
     for (i = countof(media_sizes) - 2; i > 0; --i)
         if (fabs(media_sizes[i].width - w) < 0.05 &&
-            fabs(media_sizes[i].height - h) < 0.05
+            fabs(media_sizes[i].height - h) < 0.05 &&
+            media_sizes[i].ms < 22 /* HP uses up to 21; Ricoh uses 201-224 */
             ) {
             match_found = true;
             size = media_sizes[i].ms;
             break;
 	} else if (fabs(media_sizes[i].height - w) < 0.05 &&
-		   fabs(media_sizes[i].width - h) < 0.05
+		   fabs(media_sizes[i].width - h) < 0.05 &&
+                   media_sizes[i].ms < 22
 		   ) {
 	    match_found = true;
 	    size = media_sizes[i].ms;
