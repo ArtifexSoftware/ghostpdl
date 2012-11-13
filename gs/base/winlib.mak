@@ -105,7 +105,6 @@ PLATOPT=
 
 # Define conditinal name for UFST bridge :
 !ifdef UFST_ROOT
-UFST_BRIDGE = 1
 UFST_LIB_EXT=.lib
 !endif
 
@@ -136,7 +135,7 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\gs.mak
 !include $(GLSRCDIR)\lib.mak
 !include $(GLSRCDIR)\freetype.mak
-!ifdef UFST_ROOT
+!if "$(UFST_BRIDGE)"=="1"
 !include $(UFST_ROOT)\fapiufst.mak
 !endif
 !include $(GLSRCDIR)\jpeg.mak

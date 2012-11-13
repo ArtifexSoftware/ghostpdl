@@ -275,8 +275,12 @@ FT_CONFIG_SYSTEM_ZLIB=
 !ifndef UFST_BRIDGE
 UFST_BRIDGE=
 !endif
+
+!ifndef UFST_ROOT
 UFST_ROOT=$(GLSRCDIR)/../ufst
-UFST_LIB_EXT=.a
+!endif
+
+UFST_LIB_EXT=
 
 UFST_ROMFS_ARGS=-b \
  -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \

@@ -44,7 +44,11 @@ FT_CONFIG_SYSTEM_ZLIB=
 !ifndef UFST_BRIDGE
 UFST_BRIDGE=
 !endif
+
+!ifndef UFST_ROOT
 UFST_ROOT=$(GLSRCDIR)/../ufst
+!endif
+
 UFST_LIB_EXT=.a
 
 UFST_ROMFS_ARGS=-b \
