@@ -162,7 +162,7 @@ my $cmd="rsync -avxcz ".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
 " --exclude .tif --exclude .bmp".
 " --exclude debug --exclude release --exclude generated".  # we cannot just exclude build, since tiff/build/Makefile.in, etc. is needed
-" --exclude Makefile".
+# " --exclude Makefile". We can't just exclude Makefile, since the GhostPDL top Makefile is not a derived file.
 " -e \"$ssh\" ".
 " .".
 " $hostpath";
