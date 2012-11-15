@@ -708,7 +708,17 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             proof_profile = dev_profile->proof_profile;
             devlink_profile = dev_profile->link_profile;
         }
-        if (proof_profile != NULL ) include_softproof = true;
+        /* If the source color is the same as the proofing color then we do not 
+           need to apply the proofing color in this case.  This occurs in cases
+           where we have a CMYK output intent profile, a Device CMYK color, and
+           are going out to an RGB device */
+        if (proof_profile != NULL ) {
+            if (proof_profile->hashcode == gs_input_profile->hashcode) {
+                proof_profile = NULL;
+            } else {
+                include_softproof = true;
+            }
+        }
         if (devlink_profile != NULL) include_devicelink = true;
     }
     /* First compute the hash code for the incoming case.  If the output color 
