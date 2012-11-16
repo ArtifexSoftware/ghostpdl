@@ -555,7 +555,8 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
            FT incremental interface - when we are using the incremental interface, we handle it in
            our own glyph lookup code.
          */
-        if (!face->ft_inc_int && (index == 0 ||
+        if (!a_fapi_font->is_cid && !face->ft_inc_int &&
+            (index == 0 ||
             (a_char_ref->client_char_code != gs_no_char &&
             FT_Get_Char_Index(ft_face, a_char_ref->client_char_code) <= 0))) {
             int tmp_ind;
