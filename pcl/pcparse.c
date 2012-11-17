@@ -596,7 +596,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
             pst->args.command = chr;
             if (!pcs->raster_state.graphics_mode ||
                 (cdefn->actions & pca_raster_graphics) ||
-                (code = pcl_end_graphics_mode(pcs)) >= 0) {
+                (code = pcl_end_graphics_mode_implicit(pcs)) >= 0) {
                 if ((pcs->personality != rtl) ||
                     ((pcs->personality == rtl)
                      && (cdefn->actions & pca_in_rtl)))

@@ -356,8 +356,7 @@ pcl_enter_graphics_mode(
 
 /*
  * End (raster) graphics mode. This may be called explicitly by either of the
- * end graphics mode commands (<esc>*rB or <esc>*rC), or implicitly by any
- * commmand which is neither legal nor ignored in graphics mode.
+ * end graphics mode commands (<esc>*rB or <esc>*rC).
  */
   int
 pcl_end_graphics_mode(
@@ -386,6 +385,22 @@ pcl_end_graphics_mode(
                           false,
                           false
                           );
+}
+
+/*
+ * This command is called by the PCL parser when a command is neither
+ * legal nor ignored in graphics mode.
+ */
+
+int
+pcl_end_graphics_mode_implicit(pcl_state_t *pcs)
+{
+    /* 
+     * PCL mode shuts down raster when it encounters a locked out
+     *  command in raster graphics mode, RTL mode only ignores the
+     *  locked out command.
+     */
+    return (pcs->personality == rtl ? 0 : pcl_end_graphics_mode(pcs));
 }
 
 /*
