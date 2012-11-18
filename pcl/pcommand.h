@@ -127,7 +127,7 @@ pcl_command_proc(pcl_plain_char);
 /* Define a command definition. */
 typedef struct {
   pcl_command_proc_t proc;
-  byte/*pcl_command_action_t*/ actions;
+  int/*pcl_command_action_t*/ actions;
 #ifdef DEBUG
   const char *cname;
 #  define PCL_COMMAND(cname, proc, actions) { proc, actions, cname }
@@ -159,7 +159,9 @@ typedef enum {
   /* Indicate whether the command should be called while defining a macro. */
   pca_in_macro = 0x40,
   /* Indicate whether the command is allowed in rtl mode */
-  pca_in_rtl = 0x80
+  pca_in_rtl = 0x80,
+  /* */
+  pca_dont_lockout_in_rtl = 0x100,
 } pcl_command_action_t;
 
 /* Define a table of command definitions. */

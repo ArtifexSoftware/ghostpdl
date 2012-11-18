@@ -45,7 +45,7 @@ int     pcl_enter_graphics_mode(
 int pcl_end_graphics_mode(pcl_state_t * pcs);
 
 /* exit because a locked out command was detected. */
-int pcl_end_graphics_mode_implicit(pcl_state_t * pcs);
+int pcl_end_graphics_mode_implicit(pcl_state_t * pcs, bool ignore_in_rtl);
 
 extern  const pcl_init_t    rtgmode_init;
 extern  const pcl_init_t    rtlrastr_init;

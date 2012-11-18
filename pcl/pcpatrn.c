@@ -1356,7 +1356,8 @@ pattern_do_registration(
         'v', 'N',
         PCL_COMMAND( "Source Transparency Mode",
                      set_source_transparency_mode,
-                     pca_neg_ignore | pca_big_ignore | pca_in_rtl
+                     pca_neg_ignore | pca_big_ignore | pca_in_rtl |
+                     pca_dont_lockout_in_rtl
                      )
     },
     {

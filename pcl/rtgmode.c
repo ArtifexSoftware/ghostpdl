@@ -388,19 +388,25 @@ pcl_end_graphics_mode(
 }
 
 /*
- * This command is called by the PCL parser when a command is neither
- * legal nor ignored in graphics mode.
+ * This is called by the PCL parser when in graphics mode and locked out
+ * commands are encountered.
  */
 
 int
-pcl_end_graphics_mode_implicit(pcl_state_t *pcs)
+pcl_end_graphics_mode_implicit(pcl_state_t *pcs, bool ignore_in_rtl)
 {
-    /* 
-     * PCL mode shuts down raster when it encounters a locked out
-     *  command in raster graphics mode, RTL mode only ignores the
-     *  locked out command.
-     */
-    return (pcs->personality == rtl ? 0 : pcl_end_graphics_mode(pcs));
+    /* In PCL modes things are straightforward, always exit graphics
+       mode when encountering a locked out command */
+    if (pcs->personality != rtl)
+        return pcl_end_graphics_mode(pcs);
+    
+    /* RTL mode we don't thoroughly understand, it appears some
+     commands cause graphics to end others don't */
+    if (!ignore_in_rtl)
+        return pcl_end_graphics_mode(pcs);
+
+    return 0;
+
 }
 
 /*
