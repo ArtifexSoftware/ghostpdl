@@ -2217,10 +2217,14 @@ gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
          * the glyp-h component in the name table. If we are using names then we
          * absolutely *must* have an entry in the name table, so go ahead and add
          * one here. Note that the array returned by psf_add_subset_pieces has the
-         * GIDs with an offset of GS_MIN_GLYPH_INDEX added.
+         * GIDs with an offset of GS_MIN_GLYPH_INDEX added. Previously we removed this
+         * offset, but if the resulting GID referenced a name already in use (or later used)
+         * then the generated CMAP was incorrect. By leaving the offset in place we get
+         * a name generated (numeric name based on GID) which gurantees no name collisions.
+         * (Bug #693444).
          */
         if (code == 0 && glyph < GS_MIN_CID_GLYPH && glyphs[i] > GS_MIN_GLYPH_INDEX) {
-            code = copy_glyph_name(font, glyphs[i] - GS_MIN_GLYPH_INDEX, copied,
+            code = copy_glyph_name(font, glyphs[i], copied,
                                glyphs[i]);
             if (code < 0)
                 return code;
