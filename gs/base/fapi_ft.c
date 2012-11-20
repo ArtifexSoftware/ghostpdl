@@ -1523,7 +1523,7 @@ get_char_raster(gs_fapi_server * a_server, gs_fapi_raster * a_raster)
     ff_server *s = (ff_server *) a_server;
 
     if (!s->bitmap_glyph)
-        return_error(gs_error_unregistered);    /* Must not happen. */
+        return(gs_error_unregistered);
     a_raster->p = s->bitmap_glyph->bitmap.buffer;
     a_raster->width = s->bitmap_glyph->bitmap.width;
     a_raster->height = s->bitmap_glyph->bitmap.rows;
