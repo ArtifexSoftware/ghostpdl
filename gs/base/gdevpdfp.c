@@ -469,8 +469,10 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         param_signal_error(plist, "PDFA", ecode);
         goto fail;
     }
-    if (pdev->PDFA == 1)
+    if (pdev->PDFA == 1 || pdev->PDFX || pdev->CompatibilityLevel < 1.4) {
          pdev->HaveTransparency = false;
+         pdev->PreserveSMask = false;
+    }
     /*
      * We have to set version to the new value, because the set of
      * legal parameter values for psdf_put_params varies according to
