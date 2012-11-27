@@ -1075,15 +1075,23 @@ currentdict /ignore_color_op undef
 
 drawopdict begin
                         % Path construction
-  /m { moveto } bind 0 get def
-  /l { { lineto } stopped { pop pop } if } bdef
-  /c { { curveto } stopped { pop pop pop pop pop pop } if } bdef
-  /v { { currentpoint } stopped { pop pop pop pop } { 6 2 roll curveto } ifelse } bdef
-  /y { 2 copy { curveto } stopped { pop pop pop pop pop pop } if } bdef
+  /m { { moveto }  stopped { count pdfemptycount sub 2 .min { pop } repeat 0 0 moveto } if } bdef
+  /l { { lineto }  stopped { count pdfemptycount sub 2 .min { pop } repeat } if } bdef
+  /c { { curveto } stopped { count pdfemptycount sub 6 .min { pop } repeat } if } bdef
+
+  /v { count pdfemptycount sub 4 ge {
+         { currentpoint 6 2 roll curveto } stopped { count pdfemptycount sub 6 .min { pop } repeat  } if
+       } {
+         count pdfemptycount sub { pop } repeat
+       } ifelse
+     } bdef
+  /y { { 2 copy curveto } stopped { count pdfemptycount sub 6 .min { pop } repeat } if } bdef
+
   /re {
    4 2 roll moveto  exch dup 0 rlineto  0 3 -1 roll rlineto  neg 0 rlineto
    closepath
   } bdef
+
   /h { closepath } bind 0 get def
                         % Path painting and clipping
   /n { n } def
@@ -1780,7 +1788,7 @@ currentdict /last-ditch-bpc-csp undef
   ] cvx /PaintProc exch put
     % Adjust pdfemptycount since we have an extra dictionary on the stack
   pdfemptycount countdictstack  3 -1 roll
-  /pdfemptycount count 3 sub store
+  /pdfemptycount count 4 sub store
   /q cvx /execform cvx 5 -2 roll 4 .execn
   % Restore pdfemptycount
   0
