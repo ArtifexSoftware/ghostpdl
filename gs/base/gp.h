@@ -321,6 +321,9 @@ bool gp_file_name_is_empty_item_meanful(void);
 int gp_read_macresource(byte *buf, const char *fname,
                                      const uint type, const ushort id);
 
+/* Returns true when the character can be used in the file name. */
+bool gp_file_name_good_char(unsigned char c);
+
 /* ------ persistent cache interface ------ */
 
 /*

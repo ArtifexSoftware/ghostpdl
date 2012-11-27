@@ -41,6 +41,7 @@
 #include "gxgetbit.h"
 #include "gdevppla.h"
 #include "gxdownscale.h"
+#include "gp.h"
 
 /*
  * Some of the code in this module is based upon the gdevtfnx.c module.
@@ -1295,21 +1296,14 @@ copy_separation_name(tiffsep_device * pdev,
                 char * buffer, int max_size, int sep_num)
 {
     int sep_size = pdev->devn_params.separations.names[sep_num].size;
+    const byte *p = pdev->devn_params.separations.names[sep_num].data;
     int i;
-    int restricted_chars[] = { '/', '\\', ':', 0 };
 
     /* If name is too long then clip it. */
     if (sep_size > max_size - 1)
         sep_size = max_size - 1;
-    memcpy(buffer, pdev->devn_params.separations.names[sep_num].data,
-                sep_size);
-    /* Change some of the commonly known restricted characters to '_' */
-    for (i=0; restricted_chars[i] != 0; i++) {
-        char *p = buffer;
-
-        while ((p=memchr(p, restricted_chars[i], sep_size - (p - buffer))) != NULL)
-            *p = '_';
-    }
+    for (i=0; i < sep_size; i++)
+    	buffer[i] = gp_file_name_good_char(p[i]) ? p[i] : '_';
     buffer[sep_size] = 0;       /* Terminate string */
 }
 

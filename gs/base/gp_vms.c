@@ -642,6 +642,13 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
             fname1, flen1, no_sibling, buffer, blen);
 }
 
+bool
+gp_file_name_good_char(unsigned char c)
+{
+	return (c >= 'A' && c <= 'Z') || (c >='a' && c <= 'z') || (c >= '0' && c <= '9') || c == '$' || c = '-' || c == '_';
+}
+
+
 /* ------ Font enumeration ------ */
 
  /* This is used to query the native os for a list of font names and

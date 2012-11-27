@@ -94,3 +94,9 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
     return gp_file_name_combine_generic(prefix, plen,
             fname, flen, no_sibling, buffer, blen);
 }
+
+bool
+gp_file_name_good_char(unsigned char c)
+{
+	return c != 0 && c != '/' && c != '\\' && c != ':';
+}

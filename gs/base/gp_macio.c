@@ -674,6 +674,13 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
             fname, flen, no_sibling, buffer, blen);
 }
 
+bool
+gp_file_name_good_char(unsigned char c)
+{
+	return c != ':';
+}
+
+
 // FIXME: there must be a system util for this!
 static char *MacStr2c(char *pstring)
 {
