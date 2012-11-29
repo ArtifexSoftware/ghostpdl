@@ -474,12 +474,10 @@ def
            } ifelse
          } if
 
-         printProducer
          /pdf_process_Encrypt cvx /invalidfileaccess signalerror
        } ifelse
     } {
       (   **** This file requires a password for access.\n) pdfformaterror
-      printProducer
       /pdf_process_Encrypt cvx /invalidfileaccess signalerror
     } ifelse
   } ifelse
