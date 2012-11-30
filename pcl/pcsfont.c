@@ -163,7 +163,7 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
         /* Delete soft font <font_id>. */
         pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
         /* decache the currently selected font in case we deleted it. */
-        pcl_decache_font(pcs, -1);
+        pcl_decache_font(pcs, -1, true);
 
         break;
     case 3:
@@ -816,7 +816,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
                 return 1;
               /* NB wrong */
               pcl_set_id_parameters(pcs, pfs, (pl_font_t *)value, 0);
-              pcl_decache_font(pcs, -1);
+              pcl_decache_font(pcs, -1, true);
             }
           break;
           case 3:
@@ -831,7 +831,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
                   return 1;
               /* NB wrong */
               pcl_set_id_parameters(pcs, pfs, (pl_font_t *)value, 0);
-              pcl_decache_font(pcs, -1);
+              pcl_decache_font(pcs, -1, true);
             }
           break;
           case 4:

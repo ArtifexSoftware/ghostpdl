@@ -51,27 +51,26 @@
 /* Clear the font pointer cache after changing a font parameter.  set
  * indicates which font (0/1 for primary/secondary).  -1 means both. */
 void
-pcl_decache_font(pcl_state_t *pcs, int set)
+pcl_decache_font(pcl_state_t *pcs, int set, bool id_select_disable)
 {
-        if ( set < 0 )
-          {
-            pcl_decache_font(pcs, 0);
-            pcl_decache_font(pcs, 1);
-          }
-        else
-          {
-            pcs->font_selection[set].font = NULL;
+    if ( set < 0 ) {
+        pcl_decache_font(pcs, 0, id_select_disable);
+        pcl_decache_font(pcs, 1, id_select_disable);
+    } else {
+        pcs->font_selection[set].font = NULL;
+        pcs->g.font_selection[set].font = NULL;
+
+        if (id_select_disable)
             pcs->font_selection[set].selected_id = -1;
-            pcs->g.font_selection[set].font = NULL;
-            if ( pcs->font_selected == set )
-              {
-                pcs->font = NULL;
-                pcs->map = NULL;
-                pcs->g.font = NULL;
-                pcs->g.map = NULL;
-                pcl_decache_hmi(pcs);
-              }
-          }
+
+        if ( pcs->font_selected == set ) {
+            pcs->font = NULL;
+            pcs->map = NULL;
+            pcs->g.font = NULL;
+            pcs->g.map = NULL;
+            pcl_decache_hmi(pcs);
+        }
+    }
 }
 
 /* set current font and symbol table to selected parameter's font and
@@ -107,15 +106,11 @@ pcl_symbol_set(pcl_args_t *pargs, pcl_state_t *pcs, int set)
         if ( num > 1023 )
           return e_Range;
 
-        pcl_decache_hmi(pcs);
         /* The following algorithm is from Appendix C of the */
         /* PCL5 Comparison Guide. */
         symset = (num << 5) + pargs->command - 64;
-        if ( symset != pcs->font_selection[set].params.symbol_set )
-          {
-            pcs->font_selection[set].params.symbol_set = symset;
-            pcl_decache_font(pcs, set);
-          }
+        pcs->font_selection[set].params.symbol_set = symset;
+        pcl_decache_font(pcs, set, true);
         return 0;
 }
 static int /* ESC ( <> others */
@@ -134,12 +129,9 @@ pcl_spacing(pcl_args_t *pargs, pcl_state_t *pcs, int set)
         if ( spacing > 1 )
           return 0;
 
-        pcl_decache_hmi(pcs);
-        if ( spacing != pcs->font_selection[set].params.proportional_spacing )
-          {
-            pcs->font_selection[set].params.proportional_spacing = spacing;
-            pcl_decache_font(pcs, set);
-          }
+        pcs->font_selection[set].params.proportional_spacing = spacing;
+        pcl_decache_font(pcs, set, true);
+
         return 0;
 }
 static int /* ESC ( s <prop_bool> P */
@@ -156,7 +148,6 @@ pcl_pitch(floatp cpi, pcl_state_t *pcs, int set)
 {	uint pitch_cp;
         pcl_font_selection_t *pfs = &pcs->font_selection[set];
 
-        pcl_decache_hmi(pcs);
         if ( cpi < 0.1 )
           cpi = 0.1;
         /* Convert characters per inch to 100ths of design units. */
@@ -165,12 +156,8 @@ pcl_pitch(floatp cpi, pcl_state_t *pcs, int set)
           return e_Range;
         if ( pitch_cp < 1 )
           pitch_cp = 1;
-        if ( pitch_cp != pl_fp_pitch_cp(&pfs->params) )
-          {
-            pl_fp_set_pitch_cp(&pfs->params, pitch_cp);
-            if ( (int)pfs->selected_id < 0)
-              pcl_decache_font(pcs, set);
-          }
+        pl_fp_set_pitch_cp(&pfs->params, pitch_cp);
+        pcl_decache_font(pcs, set, true);
         return 0;
 }
 static int /* ESC ( s <pitch> H */
@@ -187,13 +174,8 @@ pcl_height(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	uint height_4ths = (uint)(float_arg(pargs) * 4 + 0.5);
         pcl_font_selection_t *pfs = &pcs->font_selection[set];
 
-        pcl_decache_hmi(pcs);
-        if ( height_4ths != pfs->params.height_4ths )
-          {
-            pfs->params.height_4ths = height_4ths;
-            if ( (int)pfs->selected_id < 0)
-              pcl_decache_font(pcs, set);
-          }
+        pfs->params.height_4ths = height_4ths;
+        pcl_decache_font(pcs, set, true);
         return 0;
 }
 static int /* ESC ( s <height> V */
@@ -207,15 +189,11 @@ pcl_secondary_height(pcl_args_t *pargs, pcl_state_t *pcs)
 
 static int
 pcl_style(pcl_args_t *pargs, pcl_state_t *pcs, int set)
-{	uint style = uint_arg(pargs);
-
-        pcl_decache_hmi(pcs);
-        if ( style != pcs->font_selection[set].params.style )
-          {
-            pcs->font_selection[set].params.style = style;
-            pcl_decache_font(pcs, set);
-          }
-        return 0;
+{	
+    uint style = uint_arg(pargs);
+    pcs->font_selection[set].params.style = style;
+    pcl_decache_font(pcs, set, true);
+    return 0;
 }
 static int /* ESC ( s <style> S */
 pcl_primary_style(pcl_args_t *pargs, pcl_state_t *pcs)
@@ -230,17 +208,12 @@ static int
 pcl_stroke_weight(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	int weight = int_arg(pargs);
 
-        pcl_decache_hmi(pcs);
         if ( weight < -7 )
           weight = -7;
         else if ( weight > 7 )
           weight = 7;
-        if ( weight != pcs->font_selection[set].params.stroke_weight )
-          {
-            pcs->font_selection[set].params.stroke_weight = weight;
-            if ( (int)pcs->font_selection[set].selected_id < 0)
-                pcl_decache_font(pcs, set);
-          }
+        pcs->font_selection[set].params.stroke_weight = weight;
+        pcl_decache_font(pcs, set, true);
         return 0;
 }
 static int /* ESC ( s <weight> B */
@@ -256,13 +229,9 @@ static int
 pcl_typeface(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	uint typeface = uint_arg(pargs);
 
-        pcl_decache_hmi(pcs);
-        if ( typeface != pcs->font_selection[set].params.typeface_family )
-          {
-            pcs->font_selection[set].params.typeface_family = typeface;
-            pcl_decache_font(pcs, set);
-          }
-        return 0;
+    pcs->font_selection[set].params.typeface_family = typeface;
+    pcl_decache_font(pcs, set, true);
+    return 0;
 }
 static int /* ESC ( s <typeface> T */
 pcl_primary_typeface(pcl_args_t *pargs, pcl_state_t *pcs)
@@ -284,7 +253,7 @@ pcl_font_selection_id(pcl_args_t *pargs, pcl_state_t *pcs, int set)
           default:		/* error */
             return code;
           case 0:
-            pcl_decache_font(pcs, set);
+            pcl_decache_font(pcs, set, false);
             pfs->selected_id = id;
           case 1:		/* not found */
             return 0;
@@ -316,7 +285,7 @@ pcl_select_default_font(pcl_args_t *pargs, pcl_state_t *pcs, int set)
     pcs->font_selection[set].params.stroke_weight = 0;
     pcs->font_selection[set].params.typeface_family = 3;	/* courier */
     pcs->font_selection[set].font = 0;			/* not looked up yet */
-    pcl_decache_font(pcs, set);
+    pcl_decache_font(pcs, set, true);
     return 0;
 }
 static int /* ESC ( 3 @ */
@@ -331,26 +300,16 @@ pcl_select_default_font_secondary(pcl_args_t *pargs, pcl_state_t *pcs)
 static int /* SO */
 pcl_SO(pcl_args_t *pargs, pcl_state_t *pcs)
 {
-    if ( pcs->font_selected != 1 ) {
-        pcl_font_selection_t *pfs = &pcs->font_selection[1];
-        pcs->font_selected = secondary;
-        pcl_decache_hmi(pcs);
-        if ( (int)pfs->selected_id < 0)
-            pcl_decache_font(pcs, 1);
-    }
+    pcs->font_selected = secondary;
+    pcl_decache_font(pcs, 1, false);
     return 0;
 }
 
 static int /* SI */
 pcl_SI(pcl_args_t *pargs, pcl_state_t *pcs)
 {
-    if ( pcs->font_selected != 0 ) {
-        pcl_font_selection_t *pfs = &pcs->font_selection[0];
-        pcs->font_selected = primary;
-        pcl_decache_hmi(pcs);
-        if ( (int)pfs->selected_id < 0)
-            pcl_decache_font(pcs, 0);
-    }
+    pcs->font_selected = primary;
+    pcl_decache_font(pcs, 0, false);
     return 0;
 }
 

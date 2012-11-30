@@ -290,7 +290,7 @@ get_next_char(
      */
     if (!substituting &&
         substituting_allowed(pcs, db ? mapped_chr : chr)) {
-        pcl_decache_font(pcs, -1);
+        pcl_decache_font(pcs, -1, true);
         pcl_recompute_font(pcs, true);
         substituting = true;
         *unstyled_substitution = true;
@@ -302,7 +302,7 @@ get_next_char(
     /* we substituted and didn't find the character in the font.
        Restore the old font */
     if (substituting) {
-        pcl_decache_font(pcs, -1);
+        pcl_decache_font(pcs, -1, true);
         pcl_recompute_font(pcs, false);
         set_gs_font(pcs);
     }
@@ -857,7 +857,7 @@ pcl_show_chars_slow(
             }
         }
         if (unstyled_substitution) {
-            pcl_decache_font(pcs, -1);
+            pcl_decache_font(pcs, -1, true);
             pcl_recompute_font(pcs, false);
             set_gs_font(pcs);
         }

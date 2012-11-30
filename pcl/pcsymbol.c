@@ -171,7 +171,7 @@ pcl_symbol_set_control(pcl_args_t *pargs, pcl_state_t *pcs)
                * for example, deleting a downloaded overload of a built-in
                * which might be the default ID.) */
               pl_dict_release(&pcs->soft_symbol_sets);
-              pcl_decache_font(pcs, -1);
+              pcl_decache_font(pcs, -1, true);
             }
             return 0;
           case 1:
@@ -180,14 +180,14 @@ pcl_symbol_set_control(pcl_args_t *pargs, pcl_state_t *pcs)
               while ( pl_dict_enum_next(&denum, &key, &value) )
                 if ( ((pcl_symbol_set_t *)value)->storage == pcds_temporary )
                   pl_dict_undef(&pcs->soft_symbol_sets, key.data, key.size);
-              pcl_decache_font(pcs, -1);
+              pcl_decache_font(pcs, -1, true);
             }
             return 0;
           case 2:
             { /* Delete symbol set <symbol_set_id>. */
               pl_dict_undef(&pcs->soft_symbol_sets,
                   id_key(pcs->symbol_set_id), 2);
-              pcl_decache_font(pcs, -1);
+              pcl_decache_font(pcs, -1, true);
             }
             return 0;
           case 4:

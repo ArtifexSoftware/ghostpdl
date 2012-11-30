@@ -25,9 +25,10 @@
 /*
  * Clear the font pointer cache.  Some non-font operations--removing a
  * downloaded symbol set, or changing orientations--can cause this.
- * set == -1 means all.
+ * set == -1 means clear both primary and secondary.  The 3rd
+ * parameter disables id selection for the relevant table.
  */
-void pcl_decache_font(pcl_state_t * pcs, int set);
+void pcl_decache_font(pcl_state_t * pcs, int set, bool id_select_disable);
 
 /*
  * Recompute the font if necessary.

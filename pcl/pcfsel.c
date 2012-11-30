@@ -307,7 +307,7 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
           }
 
         /* 5.  Style. */
-        if ( pfs->params.style == fp->params.style )
+        if ( (pfs->params.style & 31) == fp->params.style )
             score[score_style] = 2;
         else if ( fp->params.style == 0 && pfs->params.style != 0 )
             score[score_style] = 1;  /* prefer NO style fonts to wrong style */
@@ -337,6 +337,21 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
             else
               tscore = 14 + delta;
           score[score_weight] = tscore;
+
+          /* 
+           * The following is a workaround needed because our font
+           * selection algorithm is different than HP's.  HP uses a
+           * filtering algorithm where fonts cannot be given points
+           * toward selection if the last higher priority criteria
+           * failed.  We use straight scoring where points can be
+           * given for close matches without regard to previous
+           * attributes.  The only "real world" case we've found where
+           * the algorithms diverge is with distinguishing italic and
+           * bold typefaces, so if there is not an italic match, bold
+           * can't receive points.
+           */
+          if (score[score_style] == 0)
+              score[score_weight] = 0;
         }
 
         /* 7.  Typeface family. */

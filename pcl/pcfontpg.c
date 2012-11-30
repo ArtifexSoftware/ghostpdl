@@ -48,7 +48,7 @@ process_font(pcl_state_t *pcs, pl_font_t *fp)
 
     if (!fp)
         return gs_throw(-1, "font is null");
-    pcl_decache_font(pcs, -1);
+    pcl_decache_font(pcs, -1, true);
     pfs->params = fp->params;
     pl_fp_set_pitch_per_inch(&pfs->params, 10);
     pfs->params.height_4ths = 12 * 4;
@@ -66,7 +66,7 @@ process_font(pcl_state_t *pcs, pl_font_t *fp)
         /* go to approx center of the page */
         pcl_set_cap_x(pcs, pcs->margins.right / 2, false, false);
 
-        pcl_decache_font(pcs, -1);
+        pcl_decache_font(pcs, -1, true);
 
         /* reset to default font and print the select font string and pjl number */
         /* create the string command for font selection */
