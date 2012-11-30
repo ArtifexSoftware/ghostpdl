@@ -28,6 +28,21 @@
 #include "gdevpdfo.h"
 #include "ConvertUTF.h"
 
+char PDFDocEncodingLookup [90] = {
+    0x20, 0x22, 0x20, 0x21, 0x20, 0x26, 0x20, 0x14,
+    0x20, 0x13, 0x01, 0x92, 0x20, 0x44, 0x20, 0x39,
+    0x20, 0x3A, 0x22, 0x12, 0x20, 0x30, 0x20, 0x1E,
+    0x20, 0x1C, 0x20, 0x1D, 0x20, 0x18, 0x20, 0x19,
+    0x20, 0x1A, 0x21, 0x22, 0xFB, 0x01, 0xFB, 0x02,
+    0x01, 0x41, 0x01, 0x52, 0x01, 0x60, 0x01, 0x78,
+    0x01, 0x7D, 0x01, 0x31, 0x01, 0x42, 0x01, 0x53,
+    0x01, 0x61, 0x01, 0x7E, 0x00, 0x00, 0x20, 0xAC,
+    0x00, 0xA1, 0x00, 0xA2, 0x00, 0xA3, 0x00, 0xA4,
+    0x00, 0xA5, 0x00, 0xA6, 0x00, 0xA7, 0x00, 0xA8,
+    0x00, 0xA9, 0x00, 0xAA, 0x00, 0xAB, 0x00, 0xAC,
+    0x00, 0x00
+};
+
 static void
 copy_bytes(stream *s, const byte **data, int *data_length, int n)
 {
@@ -348,15 +363,53 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
             buf0[j] = c;
             j++;
         }
-        if (buf0[0] == 0xfe && buf0[1] == 0xff) {
+        if (buf0[0] != 0xfe || buf0[1] != 0xff) {
+            unsigned char *buf1;
+            /* We must assume that the information is PDFDocEncoding. In this case
+             * we need to convert it into UTF-8. If we just convert it to UTF-16
+             * then we can safely fall through to the code below.
+             */
+            /* NB the code below skips the BOM in positions 0 and 1, so we need
+             * two extra bytes, to be ignored.
+             */
+            buf1 = (unsigned char *)gs_alloc_bytes(pdev->memory, (j * sizeof(UTF16)) + 2,
+                        "pdf_xmp_write_translated");
+            if (buf1 == NULL) {
+                gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
+                return_error(gs_error_VMerror);
+            }
+            memset(buf1, 0x00, (j * sizeof(UTF16)) + 2);
+            for (i = 0; i < j; i++) {
+                if (buf0[i] <= 0x7f || buf0[0] >= 0xAE) {
+                    if (buf0[0] == 0x7f) {
+                        emprintf1(pdev->memory, "PDFDocEncoding %x cannot be represented in Unicode\n",
+                            PDFDocEncodingLookup[((buf0[i] - 0x7f) * 2) + 1]);
+                    } else
+                        buf1[(i * 2) + 3] = buf0[i];
+                } else {
+                    buf1[(i * 2) + 2] = PDFDocEncodingLookup[(buf0[i] - 0x7f) * 2];
+                    buf1[(i * 2) + 3] = PDFDocEncodingLookup[((buf0[i] - 0x7f) * 2) + 1];
+                    if (PDFDocEncodingLookup[((buf0[i] - 0x7f) * 2) + 1] == 0x00)
+                        emprintf1(pdev->memory, "PDFDocEncoding %x cannot be represented in Unicode\n",
+                            PDFDocEncodingLookup[((buf0[i] - 0x7f) * 2) + 1]);
+                }
+            }
+            gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
+            buf0 = buf1;
+            data_length = j = (j * 2) + 2;
+        }
+        {
             /* Its a Unicode (UTF-16BE) string, convert to UTF-8 */
             UTF16 *buf0b, U16;
             UTF8 *buf1, *buf1b;
 
-            buf1 = (UTF8 *)gs_alloc_bytes(pdev->memory, data_length * sizeof(unsigned char),
+            /* A single UTF-16 (2 bytes) can end up as 4 bytes in UTF-8 */
+            buf1 = (UTF8 *)gs_alloc_bytes(pdev->memory, data_length * 2 * sizeof(unsigned char),
                         "pdf_xmp_write_translated");
-            if (buf1 == NULL)
+            if (buf1 == NULL) {
+                gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
                 return_error(gs_error_VMerror);
+            }
             buf1b = buf1;
             /* Skip the Byte Order Mark (0xfe 0xff) */
             buf0b = (UTF16 *)(buf0 + 2);
@@ -370,7 +423,7 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
             }
             buf0b = (UTF16 *)(buf0 + 2);
             switch (ConvertUTF16toUTF8((const UTF16**)&buf0b, (UTF16 *)(buf0 + j),
-                             &buf1b, buf1 + (data_length * sizeof(unsigned char)), strictConversion)) {
+                             &buf1b, buf1 + (data_length * 2 * sizeof(unsigned char)), strictConversion)) {
                 case conversionOK:
                     write(s, buf1, buf1b - buf1);
                     gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
@@ -379,11 +432,11 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
                 case targetExhausted:
                 case sourceIllegal:
                 default:
+                    gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
                     gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
                     return_error(gs_error_rangecheck);
             }
-        } else
-            write(s, buf0, j);
+        }
         gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
         return 0;
     } else {
