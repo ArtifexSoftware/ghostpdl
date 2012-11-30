@@ -111,8 +111,22 @@
 typedef struct pcl_raster_t pcl_raster_type;
 #endif /* pcl_raster_t_DEFINED */
 
+/*
+ * Types of entry into graphics mode. Note that implicit entry is distinct
+ * from any of the explicit modes.
+ */
+typedef enum {
+    NO_SCALE_LEFT_MARG = 0,
+    NO_SCALE_CUR_PT = 1,
+    SCALE_LEFT_MARG = 2,
+    SCALE_CUR_PTR = 3,
+    IMPLICIT = 100
+} pcl_gmode_entry_t;
+
+
 typedef struct pcl_raster_state_s {
-    uint    resolution;         /* source resolution, dots per inch */
+    pcl_gmode_entry_t entry_mode; /* how we entered gmode */
+    uint              resolution; /* source resolution, dots per inch */
 
     /* various flags */
     uint    pres_mode_3:1;      /* 1 ==> presentation mode 3 */

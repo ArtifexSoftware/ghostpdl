@@ -530,9 +530,20 @@ set_compression_method(
 {
     uint            mode = uint_arg(pargs);
 
-    if (mode < count_of(pcl_decomp_proc))
+    if (mode < count_of(pcl_decomp_proc)) {
         pcs->raster_state.compression_mode = mode;
-    else
+        /* CCITT compression modes are always monochrome - install the
+           monochrome palette and restart raster. */
+        if (mode >=6 && mode <= 9) {
+            pcl_palette_CCITT_raster(pcs);
+            if (pcs->raster_state.graphics_mode) {
+                coord x = pcs->cap.x; coord y = pcs->cap.y;
+                pcl_end_graphics_mode(pcs);
+                pcs->cap.x = x; pcs->cap.y = y;
+                pcl_enter_graphics_mode(pcs, pcs->raster_state.entry_mode);
+            }
+        }
+    } else
         return gs_throw1(e_Range, "unsupported mode %d\n", mode);
     return 0;
 }
@@ -625,6 +636,7 @@ start_graphics_mode(
         if (prstate->pres_mode_3 && (r90 != 0))
             prstate->gmargin_cp += inch2coord(1.0 / 6.0);
         pcl_enter_graphics_mode(pcs, mode);
+        prstate->entry_mode = mode;
     }
     return 0;
 }

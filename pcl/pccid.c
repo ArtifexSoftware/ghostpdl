@@ -605,6 +605,20 @@ pcl_cid_IN(
 }
 
 /*
+ * All CCITT raster is monochrome so this color space is installed
+ * even if the current palette is color.
+ */
+
+int
+pcl_cid_CCITT_raster(pcl_state_t *pcs)
+{
+    static const byte cid_ccitt[6] = { (byte)pcl_cspace_RGB,
+                                       (byte)pcl_penc_indexed_by_plane,
+                                       1, 1, 1, 1 };
+    return install_cid_data(6, cid_ccitt, pcs, false, true);
+}
+
+/*
  * There is no copy code required for this module, as any copying that is
  * required is performed at the palette level. Similarly, there is no reset
  * code, as reset is handled at the palette level.

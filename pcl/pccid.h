@@ -164,6 +164,11 @@ byte pcl_cid_get_bits_per_primary(const pcl_cid_data_t *pcid, int index);
 int     pcl_cid_IN(pcl_state_t * pcs);
 
 /*
+ * Special color space for CCITT raster.
+ */
+int pcl_cid_CCITT_raster(pcl_state_t *pcs);
+
+/*
  * Entry point for the configure image data code.
  */
 extern  const pcl_init_t    pcl_cid_init;

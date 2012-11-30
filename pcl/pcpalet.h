@@ -173,6 +173,12 @@ int pcl_palette_PW(pcl_state_t * pcs, int pen, floatp width);
 #define pcl_palette_IN(pcs) pcl_cid_IN(pcs)
 
 /*
+ * Support for CCITT Raster. This is actually implemented in pccid.c,
+ * but an interface is included here for consistency.
+ */
+#define pcl_palette_CCITT_raster(pcs) pcl_cid_CCITT_raster(pcs)
+
+/*
  * Set the render method for the palette.
  *
  * Returns 0 on success, < 0 in the event of an error.
