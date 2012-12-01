@@ -630,7 +630,7 @@ xcf_open_profile(const char *profile_out_fn, cmm_profile_t *icc_profile, gcmmhli
 
     /* Set up the rendering parameters */
 
-    rendering_params.black_point_comp = false;
+    rendering_params.black_point_comp = gsBPNOTSPECIFIED;
     rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;  /* Already rendered */
     rendering_params.rendering_intent = gsPERCEPTUAL;
 

@@ -469,7 +469,7 @@ rinkj_open_profile(rinkj_device *rdev)
 
         /* Set up the rendering parameters */
 
-        rendering_params.black_point_comp = false;
+        rendering_params.black_point_comp = gsBPNOTSPECIFIED;
         rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;  /* Already rendered */
         rendering_params.rendering_intent = gsPERCEPTUAL;
 
