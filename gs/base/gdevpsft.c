@@ -992,6 +992,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     /* Fix up the head table. */
 
     memset(head + 8, 0, 4);
+    head[50] = (byte)indexToLocFormat;
     head[51] = (byte)indexToLocFormat;
     memset(head + 54, 0, 2);
     for (head_checksum = 0, i = 0; i < 56; i += 4)
