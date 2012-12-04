@@ -1844,8 +1844,8 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                 ref *Ordering;
 
                 /* We only have to lookup the char code if we're *not* using an identity ordering */
-                if (dict_find_string(pdr, "CIDSystemInfo", &CIDSystemInfo) >=
-                    0 && r_has_type(CIDSystemInfo, t_dictionary)
+                if (dict_find_string(pdr, "CIDSystemInfo", &CIDSystemInfo) >= 0
+                    && r_has_type(CIDSystemInfo, t_dictionary)
                     && dict_find_string(CIDSystemInfo, "Ordering",
                                         &Ordering) >= 0
                     && r_has_type(Ordering, t_string)
@@ -1858,10 +1858,15 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                                             &src_type, &dst_type)) < 0) {
                         return code;
                     }
-
                 }
                 else {
-                    c = client_char_code;
+                    if (pbfont->FontType == ft_CID_TrueType) {
+                        c = ((gs_font_cid2 *)pbfont)->cidata.CIDMap_proc(((gs_font_cid2 *)pbfont),
+                                                  client_char_code + GS_MIN_CID_GLYPH);
+                    }
+                    else {
+                        c = client_char_code;
+                    }
                 }
             }
             cr->char_codes[0] = c;
