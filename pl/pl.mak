@@ -284,10 +284,12 @@ ufst_obj=$(font_common_obj) $(PLOBJ)pluchar.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOB
 $(PLOBJ)afs.dev: $(PL_MAK) $(ECHOGS_XE) $(afs_obj) 
 	$(SETMOD) $(PLOBJ)afs $(afs_obj)
 
-$(PLOBJ)plufstlp1.$(OBJ): $(PLSRC)plufstlp1.c $(plufstlp_h)
+$(PLOBJ)plufstlp1.$(OBJ): $(PLSRC)plufstlp1.c $(plufstlp_h) $(stdio__h) $(string__h) $(gsmemory_h) \
+                                         $(gstypes_h) $(gxfapi_h)
 	$(PLCCC) $(UFST_CFLAGS) $(I_)$(UFST_ROOT)$(D)rts$(D)inc$(_I) $(PLSRC)plufstlp1.c $(PLO_)plufstlp1.$(OBJ)
 
-$(PLOBJ)plufstlp.$(OBJ): $(PLSRC)plufstlp.c $(plufstlp_h)
+$(PLOBJ)plufstlp.$(OBJ): $(PLSRC)plufstlp.c $(plufstlp_h)$(stdio__h) $(string__h) $(gsmemory_h) \
+                                         $(gstypes_h) $(gxfapi_h)
 	$(PLCCC) $(PLSRC)plufstlp.c $(PLO_)plufstlp.$(OBJ)
 
 # ufst font device.  the libraries are expected to be linked in the
