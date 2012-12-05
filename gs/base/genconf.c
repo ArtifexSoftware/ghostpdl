@@ -684,7 +684,7 @@ read_dev(config_t * pconf, const char *arg)
     string_item_t *item;
     const char *in;
 
-#define MAX_TOKEN 512
+#define MAX_TOKEN 4096
     char *token;        /* Allocate after duplicate check, prevents */
     char *category;     /* memory leak */
     int file_index;
