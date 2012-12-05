@@ -634,8 +634,9 @@ FAPI_FF_get_long(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
                     if (dict_find_string(Private, name[k], &Subrs) > 0)
                         for (i = r_size(Subrs) - 1; i >= 0; i--) {
                             array_get(pfont->memory, Subrs, i, &v);
-                            size +=
-                                r_size(&v) - (ff->need_decrypt ? 0 : lenIV);
+                            if (r_type(&v) == t_string) {
+                                size += r_size(&v) - (ff->need_decrypt ? 0 : lenIV);
+                            }
                         }
                 }
                 return size;

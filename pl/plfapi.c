@@ -42,8 +42,15 @@ static const char *UFSTFONTDIR = "";    /* A bogus linux location */
 #endif
 
 /* default list of fcos and plugins - relative to UFSTFONTDIR */
+/* FIXME: better solution for file name list separators */
+#ifndef __WIN32__
 static const char *UFSTFCOS =
     "%rom%fontdata/mtfonts/pclps2/mt3/pclp2_xj.fco:%rom%fontdata/mtfonts/pcl45/mt3/wd____xh.fco";
+#else
+static const char *UFSTFCOS =
+    "%rom%fontdata/mtfonts/pclps2/mt3/pclp2_xj.fco;%rom%fontdata/mtfonts/pcl45/mt3/wd____xh.fco";
+#endif
+
 static const char *UFSTPLUGINS =
     "%rom%fontdata/mtfonts/pcl45/mt3/plug__xi.fco";
 
@@ -447,8 +454,15 @@ pl_fapi_char_metrics(const pl_font_t *plfont, const void *vpgs,
     /* NAFF: undefined glyph would be better handled inside FAPI */
     gs_char chr = char_code;
     gs_glyph unused_glyph = gs_no_glyph;
-    gs_glyph glyph = pl_tt_encode_char(pfont, chr, unused_glyph);
+    gs_glyph glyph;
     gs_matrix  mat;
+
+    if (pfont->FontType == ft_MicroType) {
+        glyph = char_code;
+    }
+    else {
+        glyph = pl_tt_encode_char(pfont, chr, unused_glyph);
+    }
 
     if (pfont->WMode & 1) {
         gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
@@ -466,9 +480,8 @@ pl_fapi_char_metrics(const pl_font_t *plfont, const void *vpgs,
     else {
 
         gs_gsave(pgs);
-        pgs->font = pfont;
-        pgs->root_font = pfont;
-
+        pfont->FontMatrix = pfont->orig_FontMatrix;
+        (void)gs_setfont(pgs, pfont);
         memset(&mat, 0x00, sizeof(gs_matrix));
         mat.xx = 72;
         mat.yy = 72;
@@ -494,9 +507,9 @@ pl_fapi_char_metrics(const pl_font_t *plfont, const void *vpgs,
             metrics[0] = metrics[1] = 0;
             metrics[2] = penum->returned.total_width.x;
             metrics[3] = penum->returned.total_width.y;
-
-            gs_text_release(penum, "show_char_foreground");
         }
+
+        gs_text_release(penum, "show_char_foreground");
         gs_grestore(pgs);
     }
 
@@ -532,10 +545,14 @@ pl_fapi_passfont(pl_font_t *plfont, int subfont, char *fapi_request,
     int code = 0;
     gs_string fdata;
     gs_font *pfont = plfont->pfont;
+    gs_fapi_font local_pl_ff_stub;
 
     if (!gs_fapi_available(pfont->memory, NULL)) {
         return (code);
     }
+    
+    local_pl_ff_stub = pl_ff_stub;
+    local_pl_ff_stub.is_mtx_skipped = plfont->is_xl_format;
 
     fdata.data = font_data;
     fdata.size = font_data_len;
@@ -543,7 +560,8 @@ pl_fapi_passfont(pl_font_t *plfont, int subfont, char *fapi_request,
     /* The plfont should contain everything we need, but setting the client data for the server
      * to pbfont makes as much sense as setting it to NULL.
      */
-    gs_fapi_set_servers_client_data(pfont->memory, &pl_ff_stub, pfont);
+    gs_fapi_set_servers_client_data(pfont->memory,
+                  (const gs_fapi_font *)&local_pl_ff_stub, pfont);
 
     code =
         gs_fapi_passfont(pfont, subfont, (char *)file_name, &fdata, (char *)fapi_request,

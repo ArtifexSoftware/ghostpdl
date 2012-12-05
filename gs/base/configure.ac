@@ -622,11 +622,13 @@ if test x"$enable_fapi" != xno; then
     # Check pointer size
     AC_CHECK_SIZEOF(char*)
 
+    # UFST 5.x uses strcmpi() but on GNU systems the equivalent is
+    # strcasecmp()
     if test "x$ac_cv_sizeof_charp" = "x8"; then
-      UFST_CFLAGS="-DGCCx86_64 -DO_BINARY=0"
+      UFST_CFLAGS="-DGCCx86_64 -DO_BINARY=0 -Dstrcmpi=strcasecmp"
     else
       if test "x$ac_cv_sizeof_charp" = "x4"; then
-        UFST_CFLAGS="-DGCCx86 -DO_BINARY=0"
+        UFST_CFLAGS="-DGCCx86 -DO_BINARY=0 -Dstrcmpi=strcasecmp"
       fi
     fi
 

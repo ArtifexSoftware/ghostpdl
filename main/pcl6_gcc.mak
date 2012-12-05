@@ -142,6 +142,13 @@ PCL_TOP_OBJ?=$(PCLOBJDIR)/pctop.$(OBJ)
 PXL_TOP_OBJ?=$(PXLOBJDIR)/pxtop.$(OBJ)
 TOP_OBJ?=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 
+# a 64 bit type is needed for devicen color space/model support but
+# carries a performance burden.  Change unsigned long to unsigned long
+# long to enable large color indices.
+GX_COLOR_INDEX_DEFINE?=-DGX_COLOR_INDEX_TYPE="unsigned long"
+
+include ../config.mak
+
 # In theory XL and PCL could be built with different font scalers so
 # we provide 2 font scaler variables.
 PCL_FONT_SCALER=$(PL_SCALER)
@@ -177,24 +184,34 @@ ifeq ($(PL_SCALER), ufst)
   EXTRALIBS?= $(UFST_LIB)if_lib.a $(UFST_LIB)fco_lib.a $(UFST_LIB)tt_lib.a  $(UFST_LIB)if_lib.a
 endif # PL_SCALER
 
+ifeq ("$(UFST_BRIDGE)", "1")
+  ifeq ($(BUNDLE_FONTS), 1)
+    UFST_ROMFS_ARGS?=-b \
+                     -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
+                     -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
+                     -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
+    UFSTFONTDIR?=%rom%fontdata/
+    UFSTROMFONTDIR=\"%rom%fontdata/\"
+  else
+    UFSTFONTDIR?=/usr/local/fontdata5.0/
+    UFSTDISCFONTDIR=\"$(UFST_ROOT)/fontdata/\"
+  endif
+else
+
 # Flags for artifex scaler
 ifeq ($(PL_SCALER), afs)
   # The mkromfs arguments for including the PCL fonts if BUNDLE_FONTS=1
   ifeq ($(BUNDLE_FONTS), 1)
-    PCLXL_ROMFS_ARGS?= -c -P ../urwfonts -d ttfonts /*.ttf
+    PCLXL_URW_ROMFS_ARGS?= -c -P ../urwfonts -d ttfonts /*.ttf
   endif # BUNDLE_FONTS
 
   XLDFLAGS=
   EXTRALIBS=
   UFST_OBJ=
 endif # PL_SCALER = afs
+endif
 
-# a 64 bit type is needed for devicen color space/model support but
-# carries a performance burden.  Change unsigned long to unsigned long
-# long to enable large color indices.
-GX_COLOR_INDEX_DEFINE?=-DGX_COLOR_INDEX_TYPE="unsigned long"
-
-include ../config.mak
+PCLXL_ROMFS_ARGS=$(PCLXL_URW_ROMFS_ARGS) $(UFST_ROMFS_ARGS)
 
 HAVE_STDINT_H_DEFINE?=-DHAVE_STDINT_H
 HAVE_NO_STRICT_ALIASING_WARNING?=-Wno-strict-aliasing

@@ -554,7 +554,7 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t *mem,
         check_resident_ufst_fonts(pfontdict, use_unicode_names_for_keys, mem);
 #endif
 
-    if (status == 0)
+    if (status == 0 || status == -10)
         return(1);
 
     return(0);

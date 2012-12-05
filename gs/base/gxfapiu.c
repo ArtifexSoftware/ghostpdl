@@ -218,8 +218,6 @@ FAPIU_close(void *s)
     return (sfclose((stream *) (s)));
 }
 
-#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
-
 GLOBAL VOID
 MEMinit(FSP0)
 {
@@ -325,7 +323,6 @@ MEMfree(FSP UW16 pool, MEM_HANDLE ptr0)
     gs_free(gs_mem_ctx, ptr, 0, 0, "UFST MEMfree");
 }
 
-#endif
 
 /* Set UFST callbacks. Each PDL will want it's own character build function and must set the callbacks
  * upon language entry/initialization.

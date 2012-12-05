@@ -386,7 +386,10 @@ gs_fapi_prepare_font(gs_font *pfont, gs_fapi_server *I, int subfont, const char 
     }
     I->ff.is_cid = FAPI_ISCIDFONT(pbfont);
     I->ff.is_outline_font = pbfont->PaintType != 0;
-    I->ff.is_mtx_skipped = (gs_fapi_get_metrics_count(&I->ff) != 0);
+
+    if (!I->ff.is_mtx_skipped)
+        I->ff.is_mtx_skipped = (gs_fapi_get_metrics_count(&I->ff) != 0);
+
     if ((code = gs_fapi_renderer_retcode(mem, I, I->get_scaled_font(I, &I->ff,
                                                                     (const
                                                                      gs_fapi_font_scale
@@ -444,7 +447,8 @@ gs_fapi_prepare_font(gs_font *pfont, gs_fapi_server *I, int subfont, const char 
             I->ff.server_font_data = pbfont1->FAPI_font_data;
             I->ff.is_cid = true;
             I->ff.is_outline_font = pbfont1->PaintType != 0;
-            I->ff.is_mtx_skipped = (gs_fapi_get_metrics_count(&I->ff) != 0);
+            if (!I->ff.is_mtx_skipped)
+                I->ff.is_mtx_skipped = (gs_fapi_get_metrics_count(&I->ff) != 0);
             I->ff.subfont = 0;
             if ((code =
                  gs_fapi_renderer_retcode(mem, I,
@@ -1240,7 +1244,10 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
     I->ff.is_type1 = bIsType1GlyphData;
     I->ff.is_cid = bCID;
     I->ff.is_outline_font = pbfont->PaintType != 0;
-    I->ff.is_mtx_skipped = (gs_fapi_get_metrics_count(&I->ff) != 0);
+
+    if (!I->ff.is_mtx_skipped)
+        I->ff.is_mtx_skipped = (gs_fapi_get_metrics_count(&I->ff) != 0);
+
     I->ff.is_vertical = bVertical;
     I->ff.client_ctx_p = I->client_ctx_p;
 

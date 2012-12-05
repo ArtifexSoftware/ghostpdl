@@ -284,19 +284,20 @@ ufst_obj=$(font_common_obj) $(PLOBJ)pluchar.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOB
 $(PLOBJ)afs.dev: $(PL_MAK) $(ECHOGS_XE) $(afs_obj) 
 	$(SETMOD) $(PLOBJ)afs $(afs_obj)
 
-# ufst font device.  the libraries are expected to be linked in the
-# main platform makefile.
-$(PLOBJ)ufst.dev: $(PL_MAK) $(ECHOGS_XE)  $(ufst_obj)
-	$(SETMOD) $(PLOBJ)ufst $(ufst_obj)
-
-plufstlp_h=$(PLSRC)plufstlp.h $(studio__h) $(string__h) $(gsmemory_h) \
-           $(gstypes_h)
-
 $(PLOBJ)plufstlp1.$(OBJ): $(PLSRC)plufstlp1.c $(plufstlp_h)
 	$(PLCCC) $(UFST_CFLAGS) $(I_)$(UFST_ROOT)$(D)rts$(D)inc$(_I) $(PLSRC)plufstlp1.c $(PLO_)plufstlp1.$(OBJ)
 
 $(PLOBJ)plufstlp.$(OBJ): $(PLSRC)plufstlp.c $(plufstlp_h)
 	$(PLCCC) $(PLSRC)plufstlp.c $(PLO_)plufstlp.$(OBJ)
+
+# ufst font device.  the libraries are expected to be linked in the
+# main platform makefile.
+$(PLOBJ)ufst.dev: $(PL_MAK) $(ECHOGS_XE)  $(ufst_obj) $(PLOBJ)plufstlp1.$(OBJ)
+	$(SETMOD) $(PLOBJ)ufst $(ufst_obj)
+	$(ADDMOD) $(PLOBJ)ufst $(PLOBJ)plufstlp1.$(OBJ)
+
+plufstlp_h=$(PLSRC)plufstlp.h $(studio__h) $(string__h) $(gsmemory_h) \
+           $(gstypes_h)
 
 fapi_objs=$(PLOBJ)plfapi.$(OBJ)
 $(PLOBJ)fapi_pl.dev: $(PL_MAK) $(ECHOGS_XE) $(fapi_objs) 

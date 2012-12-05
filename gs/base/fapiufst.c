@@ -881,17 +881,19 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
     r->fc.ttc_index = ff->subfont;
     if (ff->font_file_path == NULL) {
 #if UFST_VERSION_MAJOR < 6
-        return (e_invalidaccess);
+        return (gs_error_invalidaccess);
 #else
+        /* If we have the Freetype server available, always use it for non-FCO fonts */
+        if (gs_fapi_available(r->mem, "Freetype")) {
+            return (gs_error_invalidaccess);
+        }
+
         area_length += PCLETTOFONTHDRSIZE;
         if (ff->is_type1) {
-            int subrs_count =
-                ff->get_word(ff, gs_fapi_font_feature_Subrs_count, 0);
-            int subrs_length =
-                ff->get_long(ff, gs_fapi_font_feature_Subrs_total_size, 0);
+            int subrs_count = ff->get_word(ff, gs_fapi_font_feature_Subrs_count, 0);
+            int subrs_length = ff->get_long(ff, gs_fapi_font_feature_Subrs_total_size, 0);
             int subrs_area_size;
-            int gsubrs_count =
-                ff->get_word(ff, gs_fapi_font_feature_GlobalSubrs_count, 0);
+            int gsubrs_count = ff->get_word(ff, gs_fapi_font_feature_GlobalSubrs_count, 0);
 
             /* get_word() doesn't have an error return value, so I've used an unlikely value */
             if (gsubrs_count != 65535)
@@ -910,7 +912,6 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
 #endif
     }
     else {
-#if UFST_VERSION_MAJOR < 6
         int sind = strlen(font_file_path) - 1;
 
         if ((font_file_path[sind] != 'o' || font_file_path[sind] != 'O') &&
@@ -919,9 +920,15 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
             && (font_file_path[sind - 2] != 'f'
                 || font_file_path[sind - 2] != 'F')
             && font_file_path[sind - 3] != '.') {
-            return (e_invalidaccess);
-        }
+#if UFST_VERSION_MAJOR < 6
+            return (gs_error_invalidaccess);
+#else
+            /* If we have the Freetype server available, always use it for non-FCO fonts */
+            if (gs_fapi_available(r->mem, "Freetype")) {
+                return (gs_error_invalidaccess);
+            }
 #endif
+        }
         area_length += strlen(font_file_path) + 1;
     }
     buf = gs_malloc(r->mem, area_length, 1, "ufst font data");
@@ -982,10 +989,10 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
             h->fontDescriptorSize = PCLETTOFONTHDRSIZE;
         }
         else {
-            h->fontDescriptorSize = SWAPW(PCLETTOFONTHDRSIZE);
+            h->fontDescriptorSize = PCLETTOFONTHDRSIZE;
         }
 
-        if (d->font_type == FC_TT_TYPE)
+        if (d->font_type == FC_TT_TYPE && !use_XL_format)
             h->descriptorFormat = 16;
         else
             h->descriptorFormat = 15;
@@ -1023,8 +1030,10 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
         h->scaleFactor = 1024;  /* wrong *//* 64- head:unitsPerEm */
         h->masterUnderlinePosition = 0; /* wrong *//* 66- post table, or -20% of em */
         h->masterUnderlineHeight = 0;   /* wrong *//* 68- post table, or 5% of em */
+
         h->fontScalingTechnology = 1;   /* 70- 1=TrueType; 0=Intellifont */
         h->variety = 0;         /* 71- 0 if TrueType */
+
         memset((LPUB8) h + PCLETTOFONTHDRSIZE, 0, 8);   /* work around bug in PCLswapHdr : it wants format 10 */
         /*  fixme : Most fields above being marked "wrong" look unused by UFST.
            Need to check for sure.
@@ -1155,8 +1164,12 @@ get_scaled_font_aux(gs_fapi_server * server, gs_fapi_font * ff,
     fc->numYsubpixels = font_scale->subpixels[1];
     fc->alignment = (font_scale->align_to_pixels ? GAGG : GAPP);
     fc->ExtndFlags = 0;
-    if (d->font_type == FC_TT_TYPE)
+    if (d->font_type == FC_TT_TYPE) {
+#if UFST_VERSION_MAJOR >= 6
+        fc->ExtndFlags |= EF_TT_ERRORCHECK_ON;
+#endif
         fc->ssnum = USER_CMAP;
+    }
     else if (d->font_type == FC_FCO_TYPE) {
         fc->ssnum = UNICODE;
     }
@@ -1165,19 +1178,22 @@ get_scaled_font_aux(gs_fapi_server * server, gs_fapi_font * ff,
     }
 
     if (d->font_type != FC_TT_TYPE && d->font_type != FC_FCO_TYPE) {
-        fc->ExtndFlags = EF_NOSYMSETMAP;
+        fc->ExtndFlags |= EF_NOSYMSETMAP;
     }
     /* always use format 16 for TrueType fonts */
-    if (d->font_type == FC_TT_TYPE) {
+    if (d->font_type == FC_TT_TYPE && !use_XL_format) {
         fc->ExtndFlags |= EF_FORMAT16_TYPE;
     }
-    fc->ExtndFlags |= EF_SUBSTHOLLOWBOX_TYPE;
+/*    fc->ExtndFlags |= EF_SUBSTHOLLOWBOX_TYPE;*/
     fc->format |= FC_NON_Z_WIND;        /* NON_ZERO Winding required for TrueType */
     fc->format |= FC_INCHES_TYPE;       /* output in units per inch */
     fc->user_platID = d->platformId;
     fc->user_specID = d->specificId;
-    if (use_XL_format)
+    if (use_XL_format) {
         fc->ExtndFlags |= EF_XLFONT_TYPE;
+        /* FOR XL format TTFs, we have to disable hinting */
+        fc->ExtndFlags |= EF_TT_NOHINT;
+    }
     if (ff->is_vertical)
         fc->ExtndFlags |= EF_UFSTVERT_TYPE;
     fc->dl_ssnum = (d->specificId << 4) | d->platformId;
@@ -1554,7 +1570,7 @@ get_char(fapi_ufst_server * r, gs_fapi_font * ff, gs_fapi_char_ref * c,
          gs_fapi_path * p, gs_fapi_metrics * metrics, UW16 format)
 {
     UW16 code = 0, code2 = 0;
-    UW16 cc = (UW16) c->char_codes[0];
+    UL32 cc = (UL32) c->char_codes[0];
     SL32 design_bbox[4];
     char PSchar_name[MAX_CHAR_NAME_LENGTH];
     MEM_HANDLE result = NULL;
@@ -1568,6 +1584,9 @@ get_char(fapi_ufst_server * r, gs_fapi_font * ff, gs_fapi_char_ref * c,
     const int client_char_data_len = ff->char_data_len;
     int length;
     FONTCONTEXT *fc = &r->fc;
+    UW16 glyph_width[2];
+    WIDTH_LIST_INPUT_ENTRY glyph_width_code;
+    bool use_XL_format = ff->is_mtx_skipped;
 
     FSA_FROM_SERVER;
 
@@ -1626,11 +1645,36 @@ get_char(fapi_ufst_server * r, gs_fapi_font * ff, gs_fapi_char_ref * c,
     static_server_ptr_for_ufst_callback = r;
 #endif
     pIFS->gpps = NULL;
-    code = CGIFchar_handle(FSA cc, &result, (SW16) 0);
 
-    if (code == ERR_TT_UNDEFINED_INSTRUCTION) {
+    if (d->font_type == FC_TT_TYPE || d->font_type == FC_FCO_TYPE) {
+        glyph_width_code.CharType.TT_unicode = cc;
+    }
+
+    if (use_XL_format || d->font_type == FC_PST1_TYPE) {
+        code = 0;
+        glyph_width[0] = glyph_width[1] = 0;
+    }
+    else {
+        /* CGIFwidth2() is an Artifex addition to UFST, returns an error for a
+         * missing glyph, instead of silently resorting to notdef
+         */
+        code = CGIFFwidth2(FSA &glyph_width_code, 1, sizeof(glyph_width), glyph_width);
+    }
+    
+    if (code >= 0) {
+        code = CGIFchar_handle(FSA cc, &result, (SW16) 0);
+    }
+    else {
+        result = NULL;
+    }
+
+    if (code == ERR_TT_UNDEFINED_INSTRUCTION
+#if UFST_VERSION_MAJOR >= 6
+        || (code >= ERR_TT_NULL_FUNCDEF && code <= ERR_TT_STACK_OUT_OF_RANGE)
+#endif   
+        ) {
         int savehint = FC_DONTHINTTT(fc);
-dprintf("UFST used\n");
+
         fc->ExtndFlags |= EF_TT_NOHINT;
 
         (void)CGIFfont(FSA fc);
@@ -1666,6 +1710,7 @@ dprintf("UFST used\n");
         notdef_str.size = strlen(notdef);
         ff->char_data = (void *)&notdef_str;
         ff->char_data_len = 0;
+        memcpy(PSchar_name, notdef, 8);
         CGIFchIdptr(FSA(void *) & c1, (void *)notdef);
 
         code2 = CGIFchar_handle(FSA c1, &result, (SW16) 0);
@@ -1676,6 +1721,7 @@ dprintf("UFST used\n");
             notdef_str.size = strlen(space);
             ff->char_data = (void *)&notdef_str;
             ff->char_data_len = 0;
+            memcpy(PSchar_name, space, 6);
 
             CGIFchIdptr(FSA(void *) & c1, (void *)space);
 
@@ -1691,16 +1737,20 @@ dprintf("UFST used\n");
     ff->char_data = client_char_data;
     ff->char_data_len = client_char_data_len;
 
+
 #if !UFST_REENTRANT
     static_server_ptr_for_ufst_callback = 0;
 #endif
+
     r->ff = 0;
     release_glyphs(r, (ufst_common_font_data *) ff->server_font_data);
     if (code != ERR_fixed_space && code != 0)
         return code;
+
     if (r->callback_error != 0)
         return r->callback_error;
-    if (format == FC_BITMAP_TYPE) {
+
+    if (format == FC_BITMAP_TYPE && result) {
         IFBITMAP *pbm = (IFBITMAP *) result;
 
         du_emx = pbm->du_emx;
@@ -1712,24 +1762,43 @@ dprintf("UFST used\n");
 
 #if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
 
-        design_bbox[0] = pIFS->glyphMetricsDU.bbox.BBox[0];
-        design_bbox[1] = pIFS->glyphMetricsDU.bbox.BBox[1];
-        design_bbox[2] = pIFS->glyphMetricsDU.bbox.BBox[2];
-        design_bbox[3] = pIFS->glyphMetricsDU.bbox.BBox[3];
-        if (d->font_type != FC_FCO_TYPE) {
-            design_escapement[0] = pIFS->glyphMetricsDU.aw.x;
-            design_escapement[1] = pIFS->glyphMetricsDU.aw.y;
+        design_bbox[0] = pbm->left_indent;
+        design_bbox[1] = pbm->top_indent;
+        design_bbox[2] = pbm->black_width;
+        design_bbox[3] = pbm->black_depth;
+        
+        if (ff->is_vertical) {
+            /* FIXME: this probably isn't need - we can probably just use glyph_width */
+            if (pIFS->glyphMetricsDU.aw.x == 0 && pIFS->glyphMetricsDU.aw.y == 0) {
+                design_escapement[1] = glyph_width[1];
+            }
+            else {
+                design_escapement[1] = pIFS->glyphMetricsDU.aw.y;
+            }
         }
 #endif
 
     }
-    else {
+    else if (result) {
         IFOUTLINE *pol = (IFOUTLINE *) result;
 
-        design_escapement[0] = pol->escapement;
+        design_escapement[0] = glyph_width[0];
+        design_escapement[1] = glyph_width[1];
         du_emx = pol->du_emx;
         du_emy = pol->du_emy;
+
+        design_bbox[0] = pol->left;
+        design_bbox[1] = pol->bottom;
+        design_bbox[2] = pol->right;
+        design_bbox[3] = pol->top;
+        
         r->char_data = (IFOUTLINE *) result;
+    }
+    else {
+        design_escapement[0] = glyph_width[0];
+        design_escapement[1] = glyph_width[1];
+        
+        design_bbox[0] = design_bbox[1] = design_bbox[2] = design_bbox[3] = 0;
     }
 #if 1                           /* UFST 5.0 */
     if (USBOUNDBOX && d->font_type == FC_FCO_TYPE) {

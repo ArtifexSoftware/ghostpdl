@@ -509,6 +509,7 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
     FT_Long w;
     FT_Long h;
     FT_Long fflags;
+    FT_Int32 load_flags = 0;
 
     /* Save a_fapi_font->char_data, which is set to null by FAPI_FF_get_glyph as part of a hack to
      * make the deprecated Type 2 endchar ('seac') work, so that it can be restored
@@ -591,19 +592,18 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
         /* Also the bitmaps tend to look somewhat different (though more readable) than FreeType's rendering. By disabling them we */
         /* maintain consistency better.  (FT_LOAD_NO_BITMAP) */
         a_fapi_font->char_data = saved_char_data;
-        if (!a_fapi_font->is_type1)
-            ft_error =
-                FT_Load_Glyph(ft_face, index,
-                              FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP |
-                              FT_LOAD_LINEAR_DESIGN);
+        if (!a_fapi_font->is_mtx_skipped && !a_fapi_font->is_type1) {
+            load_flags |= FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN;
+        }
         else {
             /* Current FreeType hinting for type 1 fonts is so poor we are actually better off without it (fewer files render incorrectly) (FT_LOAD_NO_HINTING) */
-            ft_error =
-                FT_Load_Glyph(ft_face, index,
-                              FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING |
-                              FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN);
-            if (ft_error == FT_Err_Unknown_File_Format)
-                return index + 1;
+            /* We also need to disable hinting for XL format embedded truetypes */
+            load_flags |= FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN;
+        }
+
+        ft_error = FT_Load_Glyph(ft_face, index, load_flags);
+        if (ft_error == FT_Err_Unknown_File_Format) {
+            return index + 1;
         }
     }
 
@@ -617,10 +617,8 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
         /* We want to prevent hinting, even for a "tricky" font - it shouldn't matter for the notdef */
         fflags = ft_face->face_flags;
         ft_face->face_flags &= ~FT_FACE_FLAG_TRICKY;
-        ft_error =
-            FT_Load_Glyph(ft_face, index,
-                          FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING |
-                          FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN);
+        load_flags |= FT_LOAD_NO_HINTING;
+        ft_error = FT_Load_Glyph(ft_face, index, load_flags);
 
         ft_face->face_flags = fflags;
     }
@@ -644,10 +642,7 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
         fflags = ft_face->face_flags;
         ft_face->face_flags &= ~FT_FACE_FLAG_TRICKY;
 
-        ft_error_fb =
-            FT_Load_Glyph(ft_face, 0,
-                          FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING |
-                          FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN);
+        ft_error_fb = FT_Load_Glyph(ft_face, 0, load_flags);
 
         ft_face->face_flags = fflags;
 

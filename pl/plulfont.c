@@ -26,7 +26,10 @@
 #include "plfont.h"
 #include "pldict.h"
 #include "pllfont.h"
+#include "plufstlp.h"
+#define fontnames(agfascreenfontname, agfaname, urwname) agfaname
 #include "plftable.h"
+#undef fontnames
 #include "plvalue.h"
 #include "plvocab.h"
 #include "gdebug.h"
@@ -51,8 +54,6 @@
 #define UNICODE UFST_UNICODE
 #endif
 
-/* the line printer font NB FIXME use a header file. */
-#include "plulp.c"
 /* global warning.  ufst state structure passed to each ufst function */
 IF_STATE IFS;
 PIF_STATE pIFS = &IFS;
@@ -233,6 +234,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
     UB8                 ufst_root_dir[1024];
     char                 **fcos;
     char                 **plugins;
+
     /* don't load fonts more than once */
     if (pl_dict_length(pfontdict, true) > 0)
         return true;
@@ -392,12 +394,16 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
 
     for (i = 0; strlen(resident_table[i].full_font_name); i++) {
         if (resident_table[i].params.typeface_family == 0) {
-            const byte *header = pl_ulp_header;
-            const byte *char_data = pl_ulp_character_data;
+            byte *header = NULL;
+            byte *char_data = NULL;
+
             pl_font_t *pplfont = pl_alloc_font(mem, "pl_load_ufst_lineprinter pplfont");
             gs_font_base *pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
                                                   "pl_load_ufst_lineprinter pfont");
             int code;
+
+            pl_get_ulp_character_data(&header, &char_data);
+
             /* these shouldn't happen during system setup */
             if (pplfont == 0 || pfont == 0)
                 return -1;
