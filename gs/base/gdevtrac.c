@@ -352,16 +352,16 @@ trace_plane_data(gx_image_enum_common_t * info,
     trace_image_enum_t *pie = (trace_image_enum_t *)info;
     int i;
 
-    dmprintf1(dev->memory,"image_plane_data(height=%d", height);
+    dmprintf1(info->memory,"image_plane_data(height=%d", height);
     for (i = 0; i < pie->num_planes; ++i) {
         if (planes[i].data)
-            dmprintf4(dev->memory,", {depth=%d, width=%d, dx=%d, raster=%u}",
+            dmprintf4(info->memory,", {depth=%d, width=%d, dx=%d, raster=%u}",
                      pie->plane_depths[i], pie->plane_widths[i],
                      planes[i].data_x, planes[i].raster);
         else
-            dmputs(dev->memory,", -");
+            dmputs(info->memory,", -");
     }
-    dmputs(dev->memory,")\n");
+    dmputs(info->memory,")\n");
     *rows_used = height;
     return (pie->rows_left -= height) <= 0;
 }
