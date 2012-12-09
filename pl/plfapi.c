@@ -568,8 +568,11 @@ pl_fapi_passfont(pl_font_t *plfont, int subfont, char *fapi_request,
                          NULL, (char **)&fapi_id,
                          (gs_fapi_get_server_param_callback)pl_get_server_param);
 
-    if (code >= 0 && fapi_id == NULL) {
-        code = gs_error_invalidfont;
+    /* For now, we'll fall back to AFS
+       We should return an error in the future.
+     */
+    if (code < 0 || fapi_id == NULL) {
+        return(0);
     }
 
     pfont->procs.build_char = pl_fapi_build_char;
