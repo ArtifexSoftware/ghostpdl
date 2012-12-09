@@ -274,8 +274,17 @@ delete_face(gs_fapi_server * a_server, ff_face * a_face)
 {
     if (a_face) {
         ff_server *s = (ff_server *) a_server;
+        if (a_face->ft_inc_int) {
+            FT_Incremental a_info = a_face->ft_inc_int->object;
 
+            if (a_info->glyph_data) {
+                gs_free(a_info->fapi_font->memory, a_info->glyph_data, 0, 0, "delete_face");
+            }
+            a_info->glyph_data = NULL;
+            a_info->glyph_data_length = 0;
+        }
         FT_Done_Face(a_face->ft_face);
+
         FF_free(s->ftmemory, a_face->ft_inc_int);
         FF_free(s->ftmemory, a_face->font_data);
         if (a_face->ftstrm) {
@@ -321,6 +330,7 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data * a_data)
 {
     gs_fapi_font *ff = a_info->fapi_font;
     int length = 0;
+    ff_face *face = (ff_face *) ff->server_font_data;
 
     /* Tell the FAPI interface that we need to decrypt the glyph data. */
     ff->need_decrypt = true;
@@ -334,9 +344,8 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data * a_data)
         length = ff->get_glyph(ff, a_index, NULL, 0);
         if (length == 65535)
             return FT_Err_Invalid_Glyph_Index;
-        buffer =
-            gs_malloc((gs_memory_t *) a_info->fapi_font->memory, length, 1,
-                      "get_fapi_glyph_data");
+
+        buffer = gs_malloc((gs_memory_t *) a_info->fapi_font->memory, length, 1, "get_fapi_glyph_data");
         if (!buffer)
             return FT_Err_Out_Of_Memory;
 
