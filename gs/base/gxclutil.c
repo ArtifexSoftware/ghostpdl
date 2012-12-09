@@ -463,7 +463,7 @@ const gx_color_index cmd_delta_offsets[] = {
         tab_entry(0x0808),
         tab_entry(0x102010),
         tab_entry(0x08080808)
-#if ARCH_SIZEOF_COLOR_INDEX > 4
+#if ARCH_SIZEOF_GX_COLOR_INDEX > 4
         ,
         tab_entry(0x1020100808),
         tab_entry(0x080808080808),
@@ -478,7 +478,7 @@ static const gx_color_index cmd_delta_masks[] = {
         tab_entry(0x0f0f),
         tab_entry(0x1f3f1f),
         tab_entry(0x0f0f0f0f)
-#if ARCH_SIZEOF_COLOR_INDEX > 4
+#if ARCH_SIZEOF_GX_COLOR_INDEX > 4
         ,
         tab_entry(0x1f3f1f0f0f),
         tab_entry(0x0f0f0f0f0f0f),
