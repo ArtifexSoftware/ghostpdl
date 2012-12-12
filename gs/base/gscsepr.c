@@ -370,6 +370,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
              pis, pcs->params.separation.map->tint_transform_data);
         if (code < 0)
             return code;
+        (*pacs->type->restrict_color)(&cc, pacs);
         /* First check if this was PS based. */
         if (gs_color_space_is_PSCIE(pacs)) {
             /* If we have not yet create the profile do that now */
