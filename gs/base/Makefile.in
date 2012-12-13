@@ -575,7 +575,7 @@ FOR_MAC=@SO_FOR_MAC@
 # the line. Requires GNU make to make it an 'order only' dependency
 # MAKEDIRSTOP = the topmost dependency - set this if you can't set MAKEDIRS
 
-MAKEDIRS=| directories
+MAKEDIRS=@ORDER_ONLY@ directories
 MAKEDIRSTOP=
 
 # ---------------- End of platform-specific section ---------------- #

@@ -2020,6 +2020,26 @@ fi
 AC_SUBST(HAVE_BYTESWAP_H)
 
 # --------------------------------------------------
+# Sun, BSD possibly other makes don't have quite the
+# feature set of GNU make. We still prefer GNU make,
+# but......
+# --------------------------------------------------
+AC_ARG_WITH([gnu-make],  AC_HELP_STRING([--without-gnu-make],
+    [disable GNU make features]), gnu_make=no)
+
+echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+echo $gnu_make
+echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+
+if test "x$gnu_make" != "xno"; then
+  ORDER_ONLY="|"
+else
+  ORDER_ONLY=""
+fi
+
+AC_SUBST(ORDER_ONLY)
+
+# --------------------------------------------------
 # annoying: Windows doesn't allow "aux" as a
 # directory nor file name, so if we're building in
 # mingw, add the same prefix as the VS build uses
