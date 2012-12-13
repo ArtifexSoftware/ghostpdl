@@ -1418,6 +1418,7 @@ typedef struct tile_trans_clist_info_s {
     int n_chan; /* number of pixel planes including alpha */
     int width;
     int height;
+    gs_blend_mode_t blend_mode;
 } tile_trans_clist_info_t;
 
 typedef struct gx_dc_serialized_tile_s {
@@ -1577,7 +1578,7 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, int64_t offset, byte *dat
         offset1 += sizeof(buf);
 
         /* Do the transparency information now */
-
+        trans_info.blend_mode = ptile->ttrans->blending_mode;
         trans_info.height = ptile->ttrans->height;
         trans_info.n_chan = ptile->ttrans->n_chan;
         trans_info.planestride = ptile->ttrans->planestride;
@@ -1587,6 +1588,7 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, int64_t offset, byte *dat
         trans_info.rect.q.y = ptile->ttrans->rect.q.y;
         trans_info.rowstride = ptile->ttrans->rowstride;
         trans_info.width = ptile->ttrans->width;
+
         if (sizeof(trans_info) > left) {
             return_error(gs_error_unregistered); /* Must not happen. */
         }
@@ -1920,6 +1922,7 @@ gx_dc_pattern_read(
                 ptile->ttrans = new_pattern_trans_buff(mem);
                 /* trans_info was loaded above */
 
+                ptile->ttrans->blending_mode = trans_info.blend_mode;
                 ptile->ttrans->height = trans_info.height;
                 ptile->ttrans->n_chan = trans_info.n_chan;
                 ptile->ttrans->pdev14 = NULL;

@@ -1000,14 +1000,14 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
              pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1, nos->n_chan,
                  nos->parent_color_info_procs->isadditive,
                  nos->parent_color_info_procs->parent_blending_procs,
-                 false, drawn_comps, false);
+                 false, drawn_comps, false, ctx->memory);
         }
     } else {
         /* Group color spaces are the same.  No color conversions needed */
         if (x0 < x1 && y0 < y1)
             pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1,nos->n_chan,
                                 ctx->additive, pblend_procs, overprint, 
-                                drawn_comps, blendspot);
+                                drawn_comps, blendspot, ctx->memory);
     }
 exit:
     ctx->stack = nos;
@@ -1458,6 +1458,8 @@ pdf14_get_buffer_information(const gx_device * dev,
     transbuff->has_shape = buf->has_shape;
     transbuff->width     = buf->rect.q.x - buf->rect.p.x;
     transbuff->height    = buf->rect.q.y - buf->rect.p.y;
+    transbuff->blending_mode = pdev->blend_mode;
+
     if (free_device) {
         transbuff->pdev14 = NULL;
         transbuff->rect = rect;
@@ -1485,6 +1487,7 @@ pdf14_get_buffer_information(const gx_device * dev,
                     buff_ptr_src += buf->rowstride;
                 }
             }
+
         } else {
             /* The entire buffer is used.  Go ahead and grab the pointer and
                clear the pointer in the pdf14 device data buffer so it is not
@@ -2408,6 +2411,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
     int n_chan_tile;
     gx_clip_path cpath_intersection;
     gx_path path_ttrans;
+    gs_blend_mode_t blend_mode;
 
     if (pcpath != NULL) {
         code = gx_cpath_init_local_shared_nested(&cpath_intersection, pcpath, ppath->memory, 1);
@@ -2476,13 +2480,14 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
         ptile = pdevc->colors.pattern.p_tile;
         if (ptile->cdev == NULL) {
             n_chan_tile = ptile->ttrans->n_chan;
+            blend_mode = ptile->ttrans->blending_mode;
+            code = pdf14_push_transparency_group(p14dev->ctx, &rect, 1, 0, 255,255,
+                                                 blend_mode, 0, 0, n_chan_tile-1);        
         } else {
             n_chan_tile = ptile->cdev->common.color_info.num_components+1;
+            blend_mode = p14dev->blend_mode;
         }
-        code = pdf14_push_transparency_group(p14dev->ctx, &rect,
-                                         1, 0, 255,255,
-                                         pis->blend_mode, 0,
-                                         0, n_chan_tile-1);
+
         /* Set the blending procs and the is_additive setting based
            upon the number of channels */
         if (ptile->cdev == NULL) {
@@ -2499,9 +2504,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
         if (ptile->cdev == NULL) {
             fill_trans_buffer = new_pattern_trans_buff(pis->memory);
             pdf14_get_buffer_information(pdev, fill_trans_buffer, NULL, false);
-            /* Set the blending mode in the ptile based upon the current
-               setting in the imager state */
-            ptile->ttrans->blending_mode = pis->blend_mode;
+            fill_trans_buffer->blending_mode = blend_mode;
             /* Based upon if the tiles overlap pick the type of rect fill that we will
                want to use */
             if (ptile->has_overlap) {
@@ -2567,12 +2570,18 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
             gs_free_object(pis->memory, fill_trans_buffer, "pdf14_tile_pattern_fill");
             ptile->ttrans->fill_trans_buffer = NULL;  /* Avoid GC issues */
         }
-        /* pop our transparency group which will force the blending */
-        code = pdf14_pop_transparency_group(pis_noconst, p14dev->ctx, p14dev->blend_procs,
-                            p14dev->color_info.num_components,
-                            p14dev->icc_struct->device_profile[0], pdev);
+        /* pop our transparency group which will force the blending.  In clist
+           case, rendering occurs directly into primary buffer since it includes
+           the device push etc.  This was all needed for Bug 693498 */
+        if (ptile->cdev == NULL) {
+            code = pdf14_pop_transparency_group(pis_noconst, p14dev->ctx, 
+                                                p14dev->blend_procs, 
+                                                p14dev->color_info.num_components,
+                                                p14dev->icc_struct->device_profile[0], 
+                                                pdev);
+        }
     }
-    return(code);
+    return code;
 }
 
 /* Imager render for pattern transparency filling.  This is just here to catch
