@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 
     for (i=0; i < NUM_THREADS; i++)
     {
-        if (pthread_create(&thread[i], NULL, gs_main, (void *)i) < 0)
+        if (pthread_create(&thread[i], NULL, gs_main, (void *)i) != 0)
         {
             fprintf(stderr, "Thread %d creation failed\n", i);
             exit(EXIT_FAILURE);
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 
     for (i=0; i < NUM_THREADS; i++)
     {
-        if (pthread_join(thread[i], NULL) < 0)
+        if (pthread_join(thread[i], NULL) != 0)
         {
             fprintf(stderr, "Thread %d join failed\n", i);
             exit(EXIT_FAILURE);
