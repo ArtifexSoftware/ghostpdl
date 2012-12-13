@@ -1276,7 +1276,14 @@ if test "x$JPX_DECODER" = "x"; then
       JPXDIR="$OPENJPEGDIR"
       JPX_DECODER=openjpeg
       SHARE_JPX=0
-      JPX_AUTOCONF_CFLAGS="-DUSE_OPENJPEG_JP2"
+      AC_CHECK_FUNCS([memalign], [have_memalign=1])
+
+      if test "x$have_memalign" = "x1"; then
+        JPX_AUTOCONF_CFLAGS="-DUSE_OPENJPEG_JP2"
+      else
+        JPX_AUTOCONF_CFLAGS="-DUSE_OPENJPEG_JP2 -D\"memalign(a,b)=malloc(b)\""
+      fi
+
       JPXDEVS='$(PSD)jpx.dev'
     else
       AC_MSG_RESULT([no])
