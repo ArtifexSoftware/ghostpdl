@@ -380,6 +380,7 @@ LDFLAGS=@LDFLAGS@ $(AC_LDFLAGS) $(XLDFLAGS)
 # (Libraries required by individual drivers are handled automatically.)
 
 EXTRALIBS=$(XTRALIBS) @LIBS@ @DYNAMIC_LIBS@ @FONTCONFIG_LIBS@ @FT_LIBS@
+AUXEXTRALIBS=$(XTRALIBS) @LIBS@ @DYNAMIC_LIBS@ @FONTCONFIG_LIBS@ @FT_LIBS@ @AUX_SHARED_ZLIB@
 
 # Define the standard libraries to search at the end of linking.
 # Most platforms require -lpthread for the POSIX threads library;
@@ -557,7 +558,7 @@ AK=
 
 CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
-CCAUX_=$(CCAUX) $(CFLAGS) @AUX_SHARED_ZLIB@
+CCAUX_=$(CCAUX) $(CFLAGS)
 CC_LEAF=$(CC_)
 # note gcc can't use -fomit-frame-pointer with -pg.
 CC_LEAF_PG=$(CC_)
