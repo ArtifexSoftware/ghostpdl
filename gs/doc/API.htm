@@ -276,7 +276,21 @@ else {
 Create a new instance of Ghostscript.
 This instance is passed to most other gsapi functions.
 The caller_handle will be provided to callback functions.
-<b>At this stage, Ghostscript supports only one instance</b>.
+
+<b>Unless Ghostscript has been compiled with the </code>GS_THREADSAFE</code>
+define, only one instance at a time is supported.</b>
+
+<p>Historically, Ghostscript has only supported a single instance; any
+attempt to create more than one at a time would result in gsapi_new_instance
+returning an error. Experimental work has been done to lift this
+restriction; if Ghostscript is compiled with the GS_THREADSAFE define
+then multiple concurrent instances are permitted.
+
+<p>While the core Ghostscript devices are believed to be thread safe
+now, certain devices are known not to be (particularly the contrib
+devices). The makefiles currently make no attempt to exclude these
+from builds. If you enable GS_THREADSAFE then you should check to ensure
+that you do not rely on such devices (check for global variable use).
 </blockquote>
 
 
