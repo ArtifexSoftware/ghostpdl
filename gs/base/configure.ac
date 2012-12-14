@@ -2027,10 +2027,6 @@ AC_SUBST(HAVE_BYTESWAP_H)
 AC_ARG_WITH([gnu-make],  AC_HELP_STRING([--without-gnu-make],
     [disable GNU make features]), gnu_make=no)
 
-echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
-echo $gnu_make
-echo "%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
-
 if test "x$gnu_make" != "xno"; then
   ORDER_ONLY="|"
 else
