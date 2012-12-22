@@ -5057,6 +5057,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     cmm_profile_t *icc_profile;
     gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile;
+    int k;
 
     code = dev_proc(target, get_profile)(target,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile,
@@ -5103,6 +5104,12 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
         p14dev->color_info.num_components = target->color_info.num_components;
     if (p14dev->color_info.max_components > target->color_info.max_components)
         p14dev->color_info.max_components = target->color_info.max_components;
+    /* Components shift, etc have to be based upon 8 bit */
+    for (k = 0; k < p14dev->color_info.num_components; k++) {
+        p14dev->color_info.comp_bits[k] = 8;
+        p14dev->color_info.comp_shift[k] = 
+                            (p14dev->color_info.num_components - 1 - k) * 8;
+    }
     code = dev_proc((gx_device *) p14dev, open_device) ((gx_device *) p14dev);
     *pdev = (gx_device *) p14dev;
     pdf14_set_marking_params((gx_device *)p14dev, pis);
@@ -6146,6 +6153,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
     cmm_profile_t *target_profile;
     gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile;
+    int k;
 
     code = dev_proc(target, get_profile)(target,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &target_profile,
@@ -6178,6 +6186,11 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
         pdev->color_info.num_components = target->color_info.num_components;
     if (pdev->color_info.max_components > target->color_info.max_components)
         pdev->color_info.max_components = target->color_info.max_components;
+    /* Components shift, etc have to be based upon 8 bit */
+    for (k = 0; k < pdev->color_info.num_components; k++) {
+        pdev->color_info.comp_bits[k] = 8;
+        pdev->color_info.comp_shift[k] = (pdev->color_info.num_components - 1 - k) * 8;
+    }
     code = dev_proc((gx_device *) pdev, open_device) ((gx_device *) pdev);
     pdev->pclist_device = target;
     /* If the target profile was CIELAB, then overide with default RGB for
