@@ -2390,6 +2390,7 @@ message when trying to load Ghostscript.  If this happens, use GNU
 <li>A bug in some versions of <code>zlib</code> results in an undefined
 symbol <code>zmemcmp</code> when compiling with Sun cc.  Use gcc
 instead.
+
 </ul>
 
 <h4><a name="SunOS"></a>SunOS</h4>
@@ -2445,6 +2446,10 @@ platforms the generated code is incorrect.  With this compiler on Intel, do
 not use the <code>-native</code> flag: floating point computations
 become unacceptably inaccurate.  You can use <code>-xcg92</code> (SPARC
 V8) and <code>-dalign</code> for better performance.
+
+<li>One user reported compiling from source on a Linux NFS mounted
+volume failed.  Compiling from a local volume was the workaround.
+
 </ul>
 
 <h4><a name="VAX_Ultrix"></a>VAX with Ultrix</h4>
