@@ -1180,10 +1180,27 @@ currentdict /xref-char-dict undef
   } ifelse {
     exch pop exch pop exch pop //true
   } {
-    exch /Resources pget {
-      exch knownoget { exch knownoget } { pop //false } ifelse
+    1 index /Resources pget {
+      1 index  knownoget { 3 index knownoget } { //false } ifelse
     } {
-      pop pop //false
+      //false
+    } ifelse {
+      4 1 roll pop pop pop //true
+    } {
+      countdictstack array dictstack
+      //false 5 1 roll
+      dup length 1 sub -1 4 {       % false /Name <<>> /Type [<<gstate>>] i
+        1 index exch get            % false /Name <<>> /Type [] <<gstate>>
+        /FormResDict .knownget {    % false /Name <<>> /Type [] <<res>>
+          2 index knownoget {       % false /Name <<>> /Type [] <<type_dict>>
+            4 index knownoget {     % false /Name <<>> /type [] <<res_dict>>
+              //true 7 2 roll       % <<res_dict>> true false /Name <<>> /Type []
+              pop exit
+            } if
+          } if
+        } if
+      } for
+      pop pop pop pop
     } ifelse
   } ifelse
 } bind def
