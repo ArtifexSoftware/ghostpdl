@@ -1194,6 +1194,7 @@ currentdict /xref-char-dict undef
         /FormResDict .knownget {    % false /Name <<>> /Type [] <<res>>
           2 index knownoget {       % false /Name <<>> /Type [] <<type_dict>>
             4 index knownoget {     % false /Name <<>> /type [] <<res_dict>>
+              (   **** Warning: resource was found only in the external context.\n) pdfformaterror
               //true 7 2 roll       % <<res_dict>> true false /Name <<>> /Type []
               pop exit
             } if
