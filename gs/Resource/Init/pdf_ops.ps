@@ -594,9 +594,14 @@ end readonly def
   matrix /TextTempMatrix gput		% see settextposition
 } bdef
 /ET {
-  TextRenderingMode 4 ge { .currentfilladjust 0 .setfilladjust clip newpath .setfilladjust} if
-  TextSaveMatrix setmatrix
-  currentdict /TextSaveMatrix undef
+  currentdict /TextSaveMatrix known {
+    TextRenderingMode 4 ge { .currentfilladjust 0 .setfilladjust clip newpath .setfilladjust} if
+    TextSaveMatrix setmatrix
+    currentdict /TextSaveMatrix undef
+  } {
+     (   **** Ignoring spurious ET operator.\n)
+     pdfformaterror
+  } ifelse
 } bdef
 /Tc { /TextSpacing gput { showfirst } /Show gput } bdef
 /TL { /TextLeading gput } bdef
