@@ -738,12 +738,16 @@ static int
 pdf_write_cid_system_info_to_stream(gx_device_pdf *pdev, stream *s,
                           const gs_cid_system_info_t *pcidsi, gs_id object_id)
 {
-    byte Registry[32], Ordering[32];
+    byte *Registry, *Ordering;
 
-    if (pcidsi->Registry.size > sizeof(Registry))
-        return_error(gs_error_limitcheck);
-    if (pcidsi->Ordering.size > sizeof(Ordering))
-        return_error(gs_error_limitcheck);
+    Registry = gs_alloc_bytes(pdev->pdf_memory, pcidsi->Registry.size, "temporary buffer for Registry");
+    if (!Registry)
+        return(gs_note_error(gs_error_VMerror));
+    Ordering = gs_alloc_bytes(pdev->pdf_memory, pcidsi->Ordering.size, "temporary buffer for Registry");
+    if (!Ordering) {
+        gs_free_object(pdev->pdf_memory, Registry, "free temporary Registry buffer");
+        return(gs_note_error(gs_error_VMerror));
+    }
     memcpy(Registry, pcidsi->Registry.data, pcidsi->Registry.size);
     memcpy(Ordering, pcidsi->Ordering.data, pcidsi->Ordering.size);
     if (pdev->KeyLength && object_id != 0) {
@@ -751,12 +755,18 @@ pdf_write_cid_system_info_to_stream(gx_device_pdf *pdev, stream *s,
         int code;
 
         code = pdf_encrypt_init(pdev, object_id, &sarc4);
-        if (code < 0)
-            return code;
+        if (code < 0) {
+            gs_free_object(pdev->pdf_memory, Registry, "free temporary Registry buffer");
+            gs_free_object(pdev->pdf_memory, Ordering, "free temporary Ordering buffer");
+            return(gs_note_error(code));
+        }
         s_arcfour_process_buffer(&sarc4, Registry, pcidsi->Registry.size);
         code = pdf_encrypt_init(pdev, object_id, &sarc4);
-        if (code < 0)
-            return code;
+        if (code < 0) {
+            gs_free_object(pdev->pdf_memory, Registry, "free temporary Registry buffer");
+            gs_free_object(pdev->pdf_memory, Ordering, "free temporary Ordering buffer");
+            return(gs_note_error(code));
+        }
         s_arcfour_process_buffer(&sarc4, Ordering, pcidsi->Ordering.size);
     }
     stream_puts(s, "<<\n/Registry");
@@ -764,6 +774,8 @@ pdf_write_cid_system_info_to_stream(gx_device_pdf *pdev, stream *s,
     stream_puts(s, "\n/Ordering");
     s_write_ps_string(s, Ordering, pcidsi->Ordering.size, PRINT_HEX_NOT_OK);
     pprintd1(s, "\n/Supplement %d\n>>\n", pcidsi->Supplement);
+    gs_free_object(pdev->pdf_memory, Registry, "free temporary Registry buffer");
+    gs_free_object(pdev->pdf_memory, Ordering, "free temporary Ordering buffer");
     return 0;
 }
 
