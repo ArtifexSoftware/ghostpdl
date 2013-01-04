@@ -565,56 +565,75 @@ currentdict end readonly def
         (   **** Warning: Ignoring bad ToUnicode CMap.\n)  pdfformaterror
         pop
       } {
-
         /PDFScanRules .getuserparam dup //null eq {
           pop //PDFScanRules_null
         } {
           1 dict dup /PDFScanRules 4 -1 roll put
         } ifelse
         //PDFScanRules_true setuserparams
-        PDFfile fileposition 3 -1 roll
+        PDFfile fileposition 
+        3 -1 roll
+        count 1 sub
+        countdictstack
+        { //false resolvestream
+          % Following Acrobat we ignore everything outside
+          %   begincodespacerange .. endcmap.
+          dup 0 (begincodespacerange) /SubFileDecode filter flushfile
+          /CIDInit /ProcSet findresource begin
+          //ToUnicodeCMapReader begin
+          12 dict begin
+          /CMapType 2 def
+          mark exch % emulate 'begincodespacerange'
+          0 (endcmap) /SubFileDecode filter cvx /begincmap cvx exch 2 .execn
+          endcmap
+          userdict /.lastToUnicode currentdict put
+          end end end
+        }
 
-        //false resolvestream
-           % Following Acrobat we ignore everything outside
-           %   begincodespacerange .. endcmap.
-           dup 0 (begincodespacerange) /SubFileDecode filter flushfile
-           /CIDInit /ProcSet findresource begin
-           //ToUnicodeCMapReader begin
-           12 dict begin
-           /CMapType 2 def
-           mark exch % emulate 'begincodespacerange'
-           0 (endcmap) /SubFileDecode filter cvx /begincmap cvx exch 2 .execn
-           endcmap
-           userdict /.lastToUnicode currentdict put
-        end end end
+        PDFSTOPONERROR {
+          { exec } 0 get
+          //false
+          5 -2 roll
+          5
+        } {
+          { stopped } 0 get
+          4 2 roll
+          4
+        } ifelse
+        array astore cvx exec
 
+        countdictstack exch sub 0 .max { end } repeat
+        count exch sub 2 sub 0 .max { exch pop } repeat
+        3 1 roll                     % Stach the stop flag.
         PDFfile exch setfileposition
         setuserparams
-
-        1 index /FontInfo .knownget not {
-          currentglobal 2 index dup gcheck setglobal
-          /FontInfo 5 dict dup 5 1 roll .forceput
-          setglobal
-        } if
-        dup /GlyphNames2Unicode .knownget not {
-          //true			    % No existing G2U, make one
-        } {
-          dup wcheck {
-            //false			    % Existing, writeable G2U, don't make new one
-          } {
-            pop //true			    % Existing read only G2U, make new one
-          } ifelse
-        } ifelse
-
         {
-          currentglobal exch dup gcheck setglobal
-          dup /GlyphNames2Unicode 100 dict dup 4 1 roll .forceput
-          3 2 roll setglobal
-        } if                                 % font-res font-dict encoding|null font-info g2u
-        exch pop exch                        % font-res font-dict g2u encoding|null
-        userdict /.lastToUnicode get         % font-res font-dict g2u Encoding|null CMap
-        .convert_ToUnicode-into-g2u          % font-res font-dict
-        //null                               % font-res font-dict null
+          (   **** Warning: Error reading ToUnicode CMap.\n)  pdfformaterror
+        } {
+          1 index /FontInfo .knownget not {
+            currentglobal 2 index dup gcheck setglobal
+            /FontInfo 5 dict dup 5 1 roll .forceput
+            setglobal
+          } if
+          dup /GlyphNames2Unicode .knownget not {
+            //true			    % No existing G2U, make one
+          } {
+            dup wcheck {
+              //false			    % Existing, writeable G2U, don't make new one
+            } {
+              pop //true			    % Existing read only G2U, make new one
+            } ifelse
+          } ifelse
+          {
+            currentglobal exch dup gcheck setglobal
+            dup /GlyphNames2Unicode 100 dict dup 4 1 roll .forceput
+            3 2 roll setglobal
+          } if                                 % font-res font-dict encoding|null font-info g2u
+          exch pop exch                        % font-res font-dict g2u encoding|null
+          userdict /.lastToUnicode get         % font-res font-dict g2u Encoding|null CMap
+          .convert_ToUnicode-into-g2u          % font-res font-dict
+          //null                               % font-res font-dict null
+        } ifelse
       } ifelse
     } if
     PDFDEBUG {
