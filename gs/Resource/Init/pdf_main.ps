@@ -1565,6 +1565,13 @@ end readonly def
     } if
   } if
   dup type /arraytype ne {
+    //systemdict /UseArtBox .knownget dup { and } if {
+      dup /ArtBox pget {
+        /ArtBox exch
+      } if
+    } if
+  } if
+  dup type /arraytype ne {
     //systemdict /UseCropBox .knownget dup { and } if {
       dup /CropBox pget {
         /CropBox exch
@@ -1595,7 +1602,7 @@ end readonly def
   matrix currentmatrix matrix setmatrix exch
   % stack: savedCTM <pdfpagedict>
   dup get_any_box
-  % stack: savedCTM <pdfpagedict> /Trim|Crop|MediaBox <Trim|Crop|Media Box>
+  % stack: savedCTM <pdfpagedict> /Trim|Crop|Art|MediaBox <Trim|Crop|Art|Media Box>
   oforce_elems normrect_elems fix_empty_rect_elems 4 array astore
   //systemdict /PDFFitPage known {
     PDFDEBUG { (Fiting PDF to imageable area of the page.) = flush } if

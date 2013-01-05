@@ -592,7 +592,7 @@ Pages of all documents in PDF collections are numbered sequentionally.
  <dl>
 <dt><code>-dPDFFitPage</code>
 <dd>Rather than selecting a PageSize given by the PDF MediaBox,
-TrimBox (see -dUseTrimBox), or CropBox (see -dUseCropBox),
+TrimBox (see -dUseTrimBox), ArtBox (see -dUseArtBox), or CropBox (see -dUseCropBox),
 the PDF file will be scaled to fit
 the current device page size (usually the default page size).
 <p>
@@ -618,15 +618,6 @@ devices that do have this parameter.
 </dl>
 
 <dl>
-<dt><code>-dUseCropBox</code>
-<dd>Sets the page size to the CropBox rather than the MediaBox.
-Some files have a CropBox that is smaller than the MediaBox and
-may include white space, registration or cutting marks outside
-the CropBox.  Using this option will set the page size
-appropriately for a viewer.
-</dl>
-
-<dl>
 <dt><code>-dUseTrimBox</code>
 <dd>Sets the page size to the TrimBox rather than the MediaBox.
 The trim box defines the intended dimensions of the finished page
@@ -634,6 +625,25 @@ after trimming. Some files have a TrimBox that is smaller than the
 MediaBox and may include white space, registration or cutting marks
 outside the CropBox. Using this option simulates appearance of the
 finished printed page.
+</dl>
+
+<dl>
+<dt><code>-dUseArtBox</code>
+<dd>Sets the page size to the ArtBox rather than the MediaBox.
+The art box defines the extent of the page's meaningful content 
+(including potential white space) as intended by the page's creator.
+The art box is likely to be the smallest box. It can be useful
+when one wants to crop the page as much as possible
+without losing the content.
+</dl>
+
+<dl>
+<dt><code>-dUseCropBox</code>
+<dd>Sets the page size to the CropBox rather than the MediaBox.
+Some files have a CropBox that is smaller than the MediaBox and
+may include white space, registration or cutting marks outside
+the CropBox.  Using this option will set the page size
+appropriately for a viewer.
 </dl>
 
 <dl>
