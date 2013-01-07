@@ -322,6 +322,7 @@ pl_fapi_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
     gs_fapi_server *I = pbfont->FAPI;
     
     I->ff.embolden = plfont->bold_fraction;
+    I->ff.is_mtx_skipped = plfont->is_xl_format;
 
     code =
         gs_fapi_do_char(pfont, pgs, (gs_text_enum_t *)penum, NULL, false, NULL,
@@ -441,6 +442,7 @@ pl_fapi_get_mtype_font_scaleFactor(gs_font *pfont, uint *scaleFactor)
     return (pl_fapi_get_mtype_font_info
             (pfont, gs_fapi_font_info_design_units, scaleFactor, &size));
 }
+
 static int
 pl_fapi_char_metrics(const pl_font_t *plfont, const void *vpgs,
                      gs_char char_code, float metrics[4])
@@ -448,6 +450,7 @@ pl_fapi_char_metrics(const pl_font_t *plfont, const void *vpgs,
     int code = 0;
     gs_text_enum_t *penum;
     gs_font *pfont = plfont->pfont;
+    gs_font_base *pbfont = (gs_font_base *)pfont;
     gs_text_params_t text;
     gs_char buf[2];
     gs_state *pgs = (gs_state *) vpgs;
@@ -478,6 +481,7 @@ pl_fapi_char_metrics(const pl_font_t *plfont, const void *vpgs,
         code = 1;
     }
     else {
+        gs_fapi_server *I = pbfont->FAPI;
 
         gs_gsave(pgs);
         pfont->FontMatrix = pfont->orig_FontMatrix;
@@ -486,7 +490,8 @@ pl_fapi_char_metrics(const pl_font_t *plfont, const void *vpgs,
         mat.xx = 72;
         mat.yy = 72;
         gs_setmatrix(pgs, &mat);
-
+        
+        I->ff.is_mtx_skipped = plfont->is_xl_format;
 
         code = gs_moveto(pgs, 0.0, 0.0);
 
@@ -512,7 +517,6 @@ pl_fapi_char_metrics(const pl_font_t *plfont, const void *vpgs,
         gs_text_release(penum, "show_char_foreground");
         gs_grestore(pgs);
     }
-
     return (code);
 }
 

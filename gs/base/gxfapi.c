@@ -739,7 +739,6 @@ on:           switch ( (dbyte = sbyte = *++sp) ) {
           *dp = dbyte;
 }
 
-
 static const int frac_pixel_shift = 4;
 
 /* NOTE: fapi_image_uncached_glyph() doesn't check various paramters: it assumes fapi_finish_render_aux()
@@ -843,8 +842,7 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_state *pgs, gs_show_enum *penum,
     }
     else {
         gs_memory_t *mem = penum->memory->non_gc_memory;
-        gs_image_enum *pie =
-            gs_image_enum_alloc(mem, "image_char(image_enum)");
+        gs_image_enum *pie;
         gs_image_t image;
         int iy, nbytes;
         uint used;
@@ -852,8 +850,10 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_state *pgs, gs_show_enum *penum,
         int x, y, w, h;
         uint bold = 0;
         byte *bold_lines = NULL;
+        byte *line = NULL;
         int ascent = 0;
-
+        
+        pie = gs_image_enum_alloc(mem, "image_char(image_enum)");
         if (!pie) {
             return_error(gs_error_VMerror);
         }
@@ -864,12 +864,17 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_state *pgs, gs_show_enum *penum,
                   (double)rast_orig_y / (1 << frac_pixel_shift) + 0.5);
         w = rast->width;
         h = rast->height;
-        
         if (I->ff.embolden != 0.0) {
             bold = (uint)(2 * h * I->ff.embolden + 0.5);
             ascent += bold;
             bold_lines = alloc_bold_lines(pgs->memory, w, bold, "fapi_image_uncached_glyph(bold_line)");
-            if ( bold_lines == 0 ) {
+            if (bold_lines == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                return(code);
+            }
+            line = gs_alloc_byte_array(pgs->memory, 1, bitmap_raster(w + bold) + 1, "fapi_copy_mono");
+            if (line == 0) {
+                gs_free_object(pgs->memory, bold_lines, "fapi_image_uncached_glyph(bold_lines)");
                 code = gs_note_error(gs_error_VMerror);
                 return(code);
             }
@@ -910,18 +915,17 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_state *pgs, gs_show_enum *penum,
                         bool first = true;
 
                         if ( y < rast->height ) {
+                            memcpy(line, r + y * rast->line_step, rast->line_step);
+                            memset(line + rast->line_step, 0x00, (dest_raster + 1) -  rast->line_step);
 
-                            bits_smear_horizontally(merged_line(y),
-                                                r + y * rast->line_step, rast->width, bold);
+                            bits_smear_horizontally(merged_line(y), line, rast->width, bold);
                             /* Now re-establish the invariant -- see below. */
                             kmask = 1;
 
                             for ( ; (y & kmask) == kmask && y - kmask >= y0;
                                   kmask = (kmask << 1) + 1) {
 
-                                bits_merge(merged_line(y - kmask),
-                                       merged_line(y - (kmask >> 1)),
-                                       dest_bytes);
+                                bits_merge(merged_line(y - kmask), merged_line(y - (kmask >> 1)), dest_bytes);
                             }
                         }   
 
@@ -958,6 +962,9 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_state *pgs, gs_show_enum *penum,
 
         if (bold_lines)
             gs_free_object(pgs->memory, bold_lines, "fapi_image_uncached_glyph(bold_lines)");
+
+        if (line)
+            gs_free_object(pgs->memory, line, "fapi_image_uncached_glyph(line)");
 
         code1 = gs_image_cleanup_and_free_enum(pie, penum_pgs);
         if (code >= 0 && code1 < 0)
