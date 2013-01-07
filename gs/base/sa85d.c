@@ -114,10 +114,12 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
             rlimit = pr->limit;		/* Here we use the real "limit" */
             /* Handle odd bytes. */
             if (p == rlimit) {
-                if (last)
-                    status = ERRC;
+                if (!last)
+                	p--;
+                else if (ss->pdf_rules)
+            	    goto finish;
                 else
-                    p--;
+                    status = ERRC;
                 break;
             }
             if ((int)(wlimit - q) < ccount - 1) {
@@ -153,6 +155,7 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
                     break;
                 }
             }
+          finish:
             p += i;		/* advance to the '>' */
             pw->ptr = q;
             status = a85d_finish(ccount, word, pw);
