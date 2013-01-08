@@ -1174,6 +1174,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     result->usefastcolor = false;  /* Default is to not use fast color */
     result->prebandthreshold = true;
     result->supports_devn = false;
+    result->sim_overprint = false;
     rc_init_free(result, memory->non_gc_memory, 1, rc_free_profile_array);
     return(result);
 }
