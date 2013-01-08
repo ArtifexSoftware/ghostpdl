@@ -6,29 +6,29 @@ The files in the Resource directory and any subdirectories thereof
 are also part of GPL Ghostscript, with the explicit exception of
 the files in the CMap subdirectory (except "Identity-UTF16-H",
 which is part of GPL Ghostscript). The CMap files are copyright
-Adobe Systems Incorporated and covered by a separate, GPL
+Adobe Systems Incorporated and covered by a separate, Affero GPL
 compatible license.
 
 The files under the jpegxr directory and any subdirectories
 thereof are distributed under a no cost, open source license
-granted by the ITU/ISO/IEC but it is not GPL compatible - see
-jpegxr/COPYRIGHT.txt for details.
+granted by the ITU/ISO/IEC but it is not Affero GPL
+compatible - see jpegxr/COPYRIGHT.txt for details.
 
 GPL Ghostscript is free software; you can redistribute it and/or
-modify it under the terms the GNU General Public License as
+modify it under the terms the GNU Affero General Public License as
 published by the Free Software Foundation, either version 3
 of the License, or (at your option) any later version.
 
 GPL Ghostscript is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-General Public License for more details.
+Affero General Public License for more details.
 
-You should have received a copy of the GNU General Public License
-along with this program so you can know your rights and responsibilities.
-It should be in a file named doc/COPYING. If not, write to the
-Free Software Foundation, Inc., 59 Temple Place Suite 330, Boston, MA
-02111-1307, USA.
+You should have received a copy of the GNU Affero General Public
+License along with this program so you can know your rights and
+responsibilities. It should be in a file named doc/COPYING. If not,
+write to the Free Software Foundation, Inc., 59 Temple Place Suite
+330, Boston, MA 02111-1307, USA.
 
 ---
 
@@ -45,11 +45,11 @@ increase public awareness of Patented Technology, Inventor hereby
 grants a fully paid up, nonexclusive, royalty free license to
 practice the patents listed below ("the Patents") if and only if
 practiced in conjunction with software distributed under the
-terms of any version of the GNU General Public License as
+terms of any version of the GNU Affero General Public License as
 published by the Free Software Foundation, 59 Temple Place, Suite
 330, Boston, MA 02111. Inventor reserves all other rights,
 including without limitation, licensing for software not
-distributed under the GNU General Public License.
+distributed under the GNU Affero General Public License.
 
 5055942 Photographic image reproduction device using digital
 halftoning to screen images allowing adjustable coarseness
