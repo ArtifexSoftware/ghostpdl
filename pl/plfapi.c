@@ -572,6 +572,10 @@ pl_fapi_passfont(pl_font_t *plfont, int subfont, char *fapi_request,
                          NULL, (char **)&fapi_id,
                          (gs_fapi_get_server_param_callback)pl_get_server_param);
 
+    if (pfont->FontType == ft_MicroType && code < 0) {
+        return(code);
+    }
+
     /* For now, we'll fall back to AFS
        We should return an error in the future.
      */
