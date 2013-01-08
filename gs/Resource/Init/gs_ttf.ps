@@ -480,17 +480,22 @@ currentdict /tt_tag_dict .undef
       /i2 exch def
       /scode startc i2 getu16a def
       /ecode endc i2 getu16a def
-      scode ecode 1 add gt {   % Bug 691326.
-        /ecode scode 1 add def % Acrobat does this contrary to TTF spec that
-      } if               % requires such intervals to be ignored.
 
-      numcodes scode firstcode sub
-                % Hack for fonts that have only 0x0000 and 0xf000 ranges
-      %dup 16#e000 ge { 255 and } if
-      % the previous line is obstructive to CJK fonts, so it was removed
-      exch sub 0 .max ecode scode sub 1 add add
-      exch 1 index add exch
-      numcodes add /numcodes exch def
+      % Bug 693538: More undocumented nonsense: in cases where scode == ecode,
+      % see Bug 691326 below *except*, it seems when both are zero
+      scode 0 eq ecode 0 eq and not {
+        scode ecode 1 add gt {   % Bug 691326.
+          /ecode scode 1 add def % Acrobat does this contrary to TTF spec that
+        } if               % requires such intervals to be ignored.
+
+        numcodes scode firstcode sub
+                  % Hack for fonts that have only 0x0000 and 0xf000 ranges
+        %dup 16#e000 ge { 255 and } if
+        % the previous line is obstructive to CJK fonts, so it was removed
+        exch sub 0 .max ecode scode sub 1 add add
+        exch 1 index add exch
+        numcodes add /numcodes exch def
+      } if
     } for pop
 
                 % Now fill in the array.
@@ -499,31 +504,34 @@ currentdict /tt_tag_dict .undef
       /i2 exch def
       /scode startc i2 getu16a def
       /ecode endc i2 getu16a def
-      scode ecode 1 add gt { /ecode scode 1 add def } if % Bug 691326. See above.
+      % Bug 693538: see above
+      scode 0 eq ecode 0 eq and not {
+        scode ecode 1 add gt { /ecode scode 1 add def } if % Bug 691326. See above.
 
-      numcodes scode firstcode sub
-                % Hack for fonts that have only 0x0000 and 0xf000 ranges
-      %dup 16#e000 ge { 255 and } if
-      % the previous line is obstructive to CJK fonts, so it was removed
-      exch sub 0 .max dup /code exch code exch add def
-      ecode scode sub 1 add add numcodes add /numcodes exch def
-      /delta iddelta i2 gets16a def
-      TTFDEBUG {
-        (scode=) print scode =only
-        ( ecode=) print ecode =only
-        ( delta=) print delta =only
-        ( droff=) print idroff i2 getu16 =
+        numcodes scode firstcode sub
+                  % Hack for fonts that have only 0x0000 and 0xf000 ranges
+        %dup 16#e000 ge { 255 and } if
+        % the previous line is obstructive to CJK fonts, so it was removed
+        exch sub 0 .max dup /code exch code exch add def
+        ecode scode sub 1 add add numcodes add /numcodes exch def
+        /delta iddelta i2 gets16a def
+        TTFDEBUG {
+          (scode=) print scode =only
+          ( ecode=) print ecode =only
+          ( delta=) print delta =only
+          ( droff=) print idroff i2 getu16 =
+        } if
+        idroff i2 getu16a dup 0 eq {
+          pop scode delta add 65535 and 1 ecode delta add 65535 and
+          { putglyph } for
+        } {       % The +2 is for the 'reserved pad'.
+          /gloff exch 14 nseg2 3 mul add 2 add i2 add add def
+          0 1 ecode scode sub {
+            2 mul gloff add etab exch getu16a
+            dup 0 ne { delta add 65535 and } if putglyph
+          } for
+        } ifelse
       } if
-      idroff i2 getu16a dup 0 eq {
-        pop scode delta add 65535 and 1 ecode delta add 65535 and
-        { putglyph } for
-      } {	% The +2 is for the 'reserved pad'.
-        /gloff exch 14 nseg2 3 mul add 2 add i2 add add def
-        0 1 ecode scode sub {
-          2 mul gloff add etab exch getu16a
-          dup 0 ne { delta add 65535 and } if putglyph
-        } for
-      } ifelse
     } for glyphs /glyphs //null def	% for GC
   } bind
   6 {		% Single interval lookup.
