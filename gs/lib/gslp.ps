@@ -38,6 +38,9 @@
 %	--detect
 %		treat the file as PostScript if it starts with %!
 %	--first-page <n>
+%     --duplex(|-long-edge|-short-edge)
+%             use duplex if available; if not specified, select long edge
+%             for portrait printing, short edge for landscape
 %		start printing at page <n>
 %	--kern <file.afm>
 %		kern using information from the given .AFM file
@@ -83,6 +86,7 @@ lpdict begin
     { Landscape { defaultBodyFontLandscape } { defaultBodyFontPortrait } ifelse } def
 /Columns 1 def
 /DetectFileType false def
+/Duplex null def
 /EjectEOF true def
 /EjectFF true def
 /Footers false def
@@ -395,6 +399,10 @@ lpdict begin
 % Define some abbreviating procedures.
   /B {save 3 1 roll translate /X 0 def} lpdef
   /BL {save 3 1 roll 90 rotate translate /X 0 def} lpdef
+  /P {/setpagedevice where {pop  % <key> <value> P
+      5 dict begin 2 copy def
+      /Policies 2 dict dup 4 index 1 put def currentdict end setpagedevice
+      } {pop pop} ifelse} lpdef
   /E {showpage restore} lpdef
   /V {neg X exch moveto} lpdef
   /M {/X 2 index def neg moveto} lpdef
@@ -475,6 +483,12 @@ lpdict begin
       /gslp.ps cvx /limitcheck signalerror
     } if
 
+
+% Set duplex if requested.
+  Duplex null ne {
+    /Duplex true /P 2 false lpexec
+    /Tumble Duplex /P 2 false lpexec
+  } if
 
 % Write the kerning table, if relevant.
    OutFile null ne Kern length 0 ne and {
@@ -571,6 +585,9 @@ lpdict begin
 /--add-to-width { cvr /AddToWidth exch def } def
 /--columns { cvi 1 .max /Columns exch def } def
 /--detect { /DetectFileType true def } def
+/--duplex { /Duplex {Landscape} def } def
+/--duplex-long-edge { /Duplex false def } def
+/--duplex-short-edge { /Duplex true def } def
 /--first-page { cvi /PageFirst exch def } def
 /--footing-center { /FootingCenter exch def   /Footers true def } def
 /--footing-left { /FootingLeft exch def   /Footers true def } def
