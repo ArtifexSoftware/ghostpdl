@@ -2390,9 +2390,14 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
         double scale = 72.0 / pdev->HWResolution[1];
 
         if (font->FontMatrix.yy != 0)
-            scaled_width *= fabs(font->orig_FontMatrix.yy) * size * tmat.yy * scale;
+            scaled_width *= fabs(font->orig_FontMatrix.yy) * size * scale;
         else
-            scaled_width *= fabs(font->orig_FontMatrix.xy) * size * tmat.xy * scale;
+            scaled_width *= fabs(font->orig_FontMatrix.xy) * size * scale;
+
+        if (tmat.yy != 0)
+            scaled_width *= tmat.yy;
+        else
+            scaled_width *= tmat.xy;
 
         ppts->values.render_mode = 1;
 
