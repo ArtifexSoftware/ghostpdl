@@ -1122,13 +1122,14 @@ drawopdict begin
           .begintransparencygroup
         } if
         0 .setoverprintmode
-        dup /.shading .knownget {
-          exch
-          pop
-        } {
-          .buildshading
-        } ifelse
-        { .shfill } stopped { 
+        { dup /.shading .knownget {
+            exch
+            pop
+          } {
+           .buildshading
+          } ifelse
+          .shfill 
+        } stopped { 
           pop 
           (   **** Warning: Dropping incorrect smooth shading object.\n)
           pdfformaterror
