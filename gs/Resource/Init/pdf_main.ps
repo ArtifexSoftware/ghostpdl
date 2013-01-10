@@ -889,7 +889,7 @@ currentdict /xref-char-dict undef
 
 /pdfopenfile {		% <file> pdfopenfile <dict>
    pdfdict readonly pop		% can't do it any earlier than this
-   31 dict begin
+   32 dict begin
    /LocalResources 0 dict def
    /DefaultQstate //null def	% establish binding
    /Printed where { pop } {
@@ -902,6 +902,7 @@ currentdict /xref-char-dict undef
    cvlit /PDFfile exch def
    /PDFsource PDFfile def
    /Repaired //false def
+   /StreamRunAborted //false def
    /NeedAppearances //false def
    currentglobal //true .setglobal globaldict begin
    /UndefProcList 0 dict def
@@ -1865,8 +1866,10 @@ currentdict /PDF2PS_matrix_key undef
     currentdict /n known not or
     end
   } loop {
-    (   **** Warning: File has unbalanced q/Q operators \(too many q's\)\n)
-    pdfformaterror
+    StreamRunAborted not {
+      (   **** Warning: File has unbalanced q/Q operators \(too many q's\)\n)
+      pdfformaterror
+    } if
   } if
   pop
 
