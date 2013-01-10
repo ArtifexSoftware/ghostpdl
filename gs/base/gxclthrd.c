@@ -202,7 +202,7 @@ clist_setup_render_threads(gx_device *dev, int y)
         ncdev->icc_table = cdev->icc_table;
         /* create the buf device for this thread, and allocate the semaphores */
         if ((code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
-                                &(thread->bdev), cdev->target,
+                                &(thread->bdev), ndev,
                                 band*crdev->page_band_height, NULL,
                                 thread->memory, clist_get_band_complexity(dev,y)) < 0))
             break;
