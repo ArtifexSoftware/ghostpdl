@@ -1264,14 +1264,18 @@ art_pdf_composite_knockout_isolated_8(byte *dst,
                                       int n_chan,
                                       byte shape,
                                       byte tag,
-                                      byte alpha_mask, byte shape_mask)
+                                      byte alpha_mask, byte shape_mask,
+                                      bool has_mask)
 {
     int tmp;
     int i;
 
-    if (shape == 0)
+    if (shape == 0) {
+        /* If a softmask was present pass it along Bug 693548 */
+        if (has_mask)
+            dst[n_chan] = alpha_mask; 
         return;
-    else if ((shape & shape_mask) == 255) {
+    } else if ((shape & shape_mask) == 255) {
 
         memcpy(dst, src, n_chan + 3);
         tmp = src[n_chan] * alpha_mask + 0x80;

@@ -232,6 +232,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     int nos_tag_offset = nos_planestride * (nos->n_planes - 1);
     byte *mask_tr_fn = NULL; /* Quiet compiler. */
     gx_color_index comps;
+    bool has_mask = false;
 #if RAW_DUMP
     byte *composed_ptr = NULL;
 #endif
@@ -302,6 +303,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                 mask = mask_tr_fn[mask];
                 tmp = pix_alpha * mask + 0x80;
                 pix_alpha = (tmp + (tmp >> 8)) >> 8;
+                has_mask = true;
 #		    if VD_PAINT_MASK
                     vd_pixel(int2fixed(x), int2fixed(y), mask);
 #		    endif
@@ -320,7 +322,8 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                                                     n_chan - 1,
                                                     tos_shape,
                                                     tos_tag,
-                                                    pix_alpha, shape);
+                                                    pix_alpha, shape,
+                                                    has_mask);
             } else {
                 if (tos_isolated) {
                     art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,

@@ -329,7 +329,8 @@ art_pdf_composite_knockout_isolated_8(byte *dst,
                                       int n_chan,
                                       byte shape,
                                       byte tag,
-                                      byte alpha_mask, byte shape_mask);
+                                      byte alpha_mask, byte shape_mask,
+                                      bool has_mask);
 
 /**
  * art_pdf_composite_knockout_8: General knockout compositing.
