@@ -146,7 +146,6 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 #endif
     memset(gs_debug, 0, 128);
     gs_log_errors = 0;  /* gs_debug['#'] = 0 */
-gs_debug[':'] = 1;	// TEST ONLY, FORCE -Z: output 
 #   else
     /* plmain settings remain in effect */
 #   endif
