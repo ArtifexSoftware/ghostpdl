@@ -24,8 +24,10 @@ static int
 prn_planar_dev_spec_op(gx_device *pdev, int dev_spec_op,
                        void *data, int size)
 {
+    gx_device_printer *dev = (gx_device_printer *)pdev;
+
     if (dev_spec_op == gxdso_is_native_planar)
-        return 1;
+        return dev->color_info.depth / dev->color_info.num_components;
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 

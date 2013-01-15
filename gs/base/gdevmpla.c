@@ -49,9 +49,10 @@ mem_planar_dev_spec_op(gx_device *pdev, int dev_spec_op,
                        void *data, int size)
 {
     cmm_dev_profile_t *dev_profile;
+    gx_device_memory *mdev = (gx_device_memory *)pdev;
 
     if (dev_spec_op == gxdso_is_native_planar)
-        return 1;
+        return mdev->plane_depth;
     if (dev_spec_op == gxdso_supports_devn) {
         dev_proc(pdev, get_profile)(pdev, &dev_profile);
         if (dev_profile != NULL && dev_profile->supports_devn &&
@@ -65,8 +66,10 @@ static int
 mem_planar_dev_spec_op_cmyk4(gx_device *pdev, int dev_spec_op,
                              void *data, int size)
 {
+    gx_device_memory *mdev = (gx_device_memory *)pdev;
+
     if (dev_spec_op == gxdso_is_native_planar)
-        return 1;
+        return mdev->plane_depth;
     if (dev_spec_op == gxdso_is_std_cmyk_1bit)
         return 1;
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);

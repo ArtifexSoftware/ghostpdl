@@ -174,7 +174,8 @@ typedef struct gx_clist_state_s gx_clist_state;
         gx_band_params_t band_params;	/* band buffering parameters */\
         bool do_not_open_or_close_bandfiles;	/* if true, do not open/close bandfiles */\
         bool page_uses_transparency;	/* if true then page uses PDF 1.4 transparency */\
-        bool is_planar;                 /* if true then we have a planar device */\
+        int is_planar;                  /* if non zero then we have a planar device
+                                         * with is_planar bits per component. */\
                 /* Following are used for both writing and reading. */\
         gx_bits_cache_chunk chunk;	/* the only chunk of bits */\
         gx_bits_cache bits;\

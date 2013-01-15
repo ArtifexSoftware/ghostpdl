@@ -206,7 +206,7 @@ enum {
     /* gxdso_is_native_planar:
      *      data = NULL
      *      size = 0
-     * Returns 1 if the device's native format is planar
+     * Returns the number of bits per plane if the device's native format is planar
      */
     gxdso_is_native_planar,
 

@@ -173,8 +173,8 @@ gs_image_class_4_color(gx_image_enum * penum)
             /* If num components is 1 or if we are going to CMYK planar device
                then we will may use the thresholding if it is a halftone
                device*/
-            is_planar_dev = dev_proc(penum->dev, dev_spec_op)(penum->dev,
-                                 gxdso_is_native_planar, NULL, 0);
+            is_planar_dev = (dev_proc(penum->dev, dev_spec_op)(penum->dev,
+                                 gxdso_is_native_planar, NULL, 0) > 0);
             if ((penum->dev->color_info.num_components == 1 || is_planar_dev) &&
                  penum->bps == 8 ) {
                 code = gxht_thresh_image_init(penum);

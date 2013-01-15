@@ -131,6 +131,7 @@ gx_default_strip_copy_rop2(gx_device * dev,
     int code;
     int py;
     int is_planar = 0;
+    int plane_depth;
 
 #ifdef DEBUG
     if (gs_debug_c('b'))
@@ -158,16 +159,16 @@ gx_default_strip_copy_rop2(gx_device * dev,
     pmdev->height = block_height;
     pmdev->bitmap_memory = mem;
     pmdev->color_info = dev->color_info;
-    if (dev_proc(dev, dev_spec_op)(dev, gxdso_is_native_planar, NULL, 0))
+    plane_depth = dev_proc(dev, dev_spec_op)(dev, gxdso_is_native_planar, NULL, 0);
+    if (plane_depth > 0)
     {
         gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
         int num_comp = dev->color_info.num_components;
-        int depth = dev->color_info.depth/num_comp;
         int i;
         for (i = 0; i < num_comp; i++)
         {
-            planes[i].shift = depth * (num_comp - 1 - i);
-            planes[i].depth = depth;
+            planes[i].shift = plane_depth * (num_comp - 1 - i);
+            planes[i].depth = plane_depth;
             planes[i].index = i;
         }
         /* RJW: This code, like most of ghostscripts planar support,

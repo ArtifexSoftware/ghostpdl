@@ -701,11 +701,13 @@ static void
 clist_set_planar(gx_device *dev)
 {
     gx_device_clist_common * cdev = &((gx_device_clist *)dev)->common;
+    int ret;
 
-    if (dev_proc(dev, dev_spec_op)(dev, gxdso_is_native_planar, NULL, 0) > 0) {
-        cdev->is_planar = true;
+    ret = dev_proc(dev, dev_spec_op)(dev, gxdso_is_native_planar, NULL, 0);
+    if (ret > 0) {
+        cdev->is_planar = ret;
     } else {
-        cdev->is_planar = false;
+        cdev->is_planar = 0;
     }
 }
 

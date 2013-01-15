@@ -5074,8 +5074,9 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
         gx_device_forward * fdev = (gx_device_forward *)pdev;
         gx_device * target = fdev->target;
         if (target != NULL) {
-            return dev_proc(target, dev_spec_op)(target, gxdso_is_native_planar, 
+            int depth = dev_proc(target, dev_spec_op)(target, gxdso_is_native_planar, 
                                                  NULL, 0);
+            return (depth > 0 ? 8 : 0);
         } else return 0;
     }
     if (dev_spec_op == gxdso_supports_devn) {
@@ -6212,6 +6213,12 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
                          (const gx_device *) dev_proto, mem);
     if (code < 0)
         return code;
+    /* The number of color planes should not exceed that of the target */
+    if (pdev->color_info.num_components > target->color_info.num_components)
+        pdev->color_info.num_components = target->color_info.num_components;
+    if (pdev->color_info.max_components > target->color_info.max_components)
+        pdev->color_info.max_components = target->color_info.max_components;
+    pdev->color_info.depth = pdev->color_info.num_components * 8;
     /* If we have a tag device then go ahead and do a special encoder decoder
        for the pdf14 device to make sure we maintain this information in the
        encoded color information.  We could use the target device's methods but
@@ -6226,11 +6233,6 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
     gx_device_fill_in_procs((gx_device *)pdev);
     gs_pdf14_device_copy_params((gx_device *)pdev, target);
     gx_device_set_target((gx_device_forward *)pdev, target);
-    /* The number of color planes should not exceed that of the target */
-    if (pdev->color_info.num_components > target->color_info.num_components)
-        pdev->color_info.num_components = target->color_info.num_components;
-    if (pdev->color_info.max_components > target->color_info.max_components)
-        pdev->color_info.max_components = target->color_info.max_components;
     /* Components shift, etc have to be based upon 8 bit */
     for (k = 0; k < pdev->color_info.num_components; k++) {
         pdev->color_info.comp_bits[k] = 8;

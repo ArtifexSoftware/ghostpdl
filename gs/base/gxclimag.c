@@ -369,7 +369,7 @@ clist_begin_typed_image(gx_device * dev,
     bool bp_changed = false;
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *gs_output_profile;
-    bool is_planar_dev = dev_proc(dev, dev_spec_op)(dev, gxdso_is_native_planar, NULL, 0);
+    bool is_planar_dev = dev_proc(dev, dev_spec_op)(dev, gxdso_is_native_planar, NULL, 0) > 0;
     bool render_is_valid;
     int csi;
 
