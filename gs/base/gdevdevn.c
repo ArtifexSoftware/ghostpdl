@@ -317,7 +317,8 @@ devn_get_params(gx_device * pdev, gs_param_list * plist,
          (code =
             param_write_name_array(plist, "SeparationColorNames", &scna)) < 0 ||
          (code = param_write_name_array(plist, "SeparationOrder", &sona)) < 0 ||
-         (code = param_write_bool(plist, "Separations", &seprs)) < 0)
+         (code = param_write_bool(plist, "Separations", &seprs)) < 0 ||
+         (code = param_write_int(plist, "PageSpotColors", &(pdevn_params->page_spot_colors))) < 0)
         return code;
 
     return 0;
@@ -512,11 +513,10 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
              */
             pdev->color_info.num_components = (num_order)
                 ? num_order
-                : (pdevn_params->max_separations)
-                        ? pdevn_params->max_separations
-                        : (page_spot_colors >= 0)
-                                ? npcmcolors + num_spot + page_spot_colors
-                                : pdev->color_info.max_components;
+                : (page_spot_colors >= 0)
+                    ? npcmcolors + num_spot + page_spot_colors
+                    : pdev->color_info.max_components;
+
             if (pdev->color_info.num_components >
                     pdev->color_info.max_components)
                 pdev->color_info.num_components =

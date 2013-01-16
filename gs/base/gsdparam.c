@@ -92,7 +92,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     /* Non-standard parameters: */
     int colors = dev->color_info.num_components;
-    int mns = colors;
+    int mns = dev->color_info.max_components;
     int depth = dev->color_info.depth;
     int GrayValues = dev->color_info.max_gray + 1;
     int HWSize[2];
