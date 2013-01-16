@@ -4274,7 +4274,7 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
     int i, j, k;
-    byte *line, *dst_ptr;
+    byte *dst_ptr;
     byte src[PDF14_MAX_PLANES];
     byte dst[PDF14_MAX_PLANES];
     gs_blend_mode_t blend_mode = pdev->blend_mode;
@@ -4296,8 +4296,8 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     gx_color_index comps;
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
-    gx_color_index mask = ((gx_color_index)1 << 8) - 1;
-    int shift = 8;
+    const gx_color_index mask = ((gx_color_index)1 << 8) - 1;
+    const int shift = 8;
 
     if (buf->data == NULL)
         return 0;
@@ -4352,70 +4352,115 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     if (y < buf->dirty.p.y) buf->dirty.p.y = y;
     if (x + w > buf->dirty.q.x) buf->dirty.q.x = x + w;
     if (y + h > buf->dirty.q.y) buf->dirty.q.y = y + h;
-    line = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
-    for (j = 0; j < h; ++j) {
-        dst_ptr = line;
-        for (i = 0; i < w; ++i) {
-            /* Complement the components for subtractive color spaces */
-            if (additive) {
-                for (k = 0; k < num_chan; ++k)
-                    dst[k] = dst_ptr[k * planestride];
-            }
-            else { /* Complement the components for subtractive color spaces */
-                for (k = 0; k < num_comp; ++k)
-                    dst[k] = 255 - dst_ptr[k * planestride];
-                dst[num_comp] = dst_ptr[num_comp * planestride];
-            }
-            art_pdf_composite_pixel_alpha_8(dst, src, num_comp,
-                                         blend_mode, pdev->blend_procs);
-            /* Complement the results for subtractive color spaces */
-            if (additive) {
-                for (k = 0; k < num_chan; ++k)
-                        dst_ptr[k * planestride] = dst[k];
-            } else {
-                if (overprint) {
-                    if (blendspot) {
-                        /* Overprint simulation of spot colorants */
-                        for (k = 0; k < num_comp; ++k) {
-                            int temp = 
-                                (255 - dst_ptr[k * planestride]) * dst[k];
-                            temp = temp >> 8;
-                            dst_ptr[k * planestride] = (255 - temp);
-                        }
+    dst_ptr = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
+    src_alpha = 255-src_alpha;
+    shape = 255-shape;
+    if (!has_alpha_g)
+        alpha_g_off = 0;
+    if (!has_shape)
+        shape_off = 0;
+    if (!has_tags)
+        tag_off = 0;
+    rowstride -= w;
+    /* The num_comp == 1 && additive case is very common (mono output
+     * devices), so we optimise that specifically here. */
+    if (num_comp == 1 && additive) {
+        for (j = h; j > 0; --j) {
+            for (i = w; i > 0; --i) {
+                if (src[1] == 0) {
+                    /* background empty, nothing to change */
+                } else if (dst_ptr[planestride] == 0) {
+                    dst_ptr[0] = src[0];
+                    dst_ptr[planestride] = src[1];
+                } else {
+                    art_pdf_composite_pixel_alpha_8_fast_mono(dst_ptr, src,
+                                                blend_mode, pdev->blend_procs, planestride);
+		}
+                if (alpha_g_off) {
+                    int tmp = (255 - dst_ptr[alpha_g_off]) * src_alpha + 0x80;
+                    dst_ptr[alpha_g_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
+                }
+                if (shape_off) {
+                    int tmp = (255 - dst_ptr[shape_off]) * shape + 0x80;
+                    dst_ptr[shape_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
+                }
+                if (tag_off) {
+                    /* If alpha is 100% then set to pure path, else or */
+                    if (dst_ptr[planestride] == 255) {
+                        dst_ptr[tag_off] = curr_tag;
                     } else {
-                        for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
-                            if ((comps & 0x1) != 0) {
-                                dst_ptr[k * planestride] = 255 - dst[k];
+                        dst_ptr[tag_off] = ( dst_ptr[tag_off] |curr_tag ) & ~GS_UNTOUCHED_TAG;
+                    }
+                }
+                ++dst_ptr;
+            }
+            dst_ptr += rowstride;
+        }
+    } else {
+        for (j = h; j > 0; --j) {
+            for (i = w; i > 0; --i) {
+                if (additive) {
+                    if (src[num_comp] == 0) {
+                        /* background empty, nothing to change */
+                    } else if (dst_ptr[num_comp * planestride] == 0) {
+                        for (k = 0; k < num_chan; ++k)
+                            dst_ptr[k * planestride] = src[k];
+                    } else {
+                        art_pdf_composite_pixel_alpha_8_fast(dst_ptr, src, num_comp,
+                                                blend_mode, pdev->blend_procs, planestride);
+                    }
+                } else {
+                    /* Complement the components for subtractive color spaces */
+                    for (k = 0; k < num_comp; ++k)
+                        dst[k] = 255 - dst_ptr[k * planestride];
+                    dst[num_comp] = dst_ptr[num_comp * planestride];
+                    art_pdf_composite_pixel_alpha_8(dst, src, num_comp,
+                                                    blend_mode, pdev->blend_procs);
+                    /* Complement the results for subtractive color spaces */
+                    if (overprint) {
+                        if (blendspot) {
+                            /* Overprint simulation of spot colorants */
+                            for (k = 0; k < num_comp; ++k) {
+                                int temp =
+                                    (255 - dst_ptr[k * planestride]) * dst[k];
+                                temp = temp >> 8;
+                                dst_ptr[k * planestride] = (255 - temp);
+                            }
+                        } else {
+                            for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
+                                if ((comps & 0x1) != 0) {
+                                    dst_ptr[k * planestride] = 255 - dst[k];
+                                }
                             }
                         }
+                        /* The alpha channel */
+                        dst_ptr[num_comp * planestride] = dst[num_comp];
+                    } else {
+                        for (k = 0; k < num_comp; ++k)
+                            dst_ptr[k * planestride] = 255 - dst[k];
+                        dst_ptr[num_comp * planestride] = dst[num_comp];
                     }
-                    /* The alpha channel */
-                    dst_ptr[num_comp * planestride] = dst[num_comp];
-                } else {
-                    for (k = 0; k < num_comp; ++k)
-                        dst_ptr[k * planestride] = 255 - dst[k];
-                    dst_ptr[num_comp * planestride] = dst[num_comp];
                 }
-            }
-            if (has_alpha_g) {
-                int tmp = (255 - dst_ptr[alpha_g_off]) * (255 - src_alpha) + 0x80;
-                dst_ptr[alpha_g_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
-            }
-            if (has_shape) {
-                int tmp = (255 - dst_ptr[shape_off]) * (255 - shape) + 0x80;
-                dst_ptr[shape_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
-            }
-            if (has_tags) {
-                /* If alpha is 100% then set to pure path, else or */
-                if (dst[num_comp] == 255) {
-                    dst_ptr[tag_off] = curr_tag;
-                } else {
-                    dst_ptr[tag_off] = ( dst_ptr[tag_off] |curr_tag ) & ~GS_UNTOUCHED_TAG;
+                if (alpha_g_off) {
+                    int tmp = (255 - dst_ptr[alpha_g_off]) * src_alpha + 0x80;
+                    dst_ptr[alpha_g_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
                 }
+                if (shape_off) {
+                    int tmp = (255 - dst_ptr[shape_off]) * shape + 0x80;
+                    dst_ptr[shape_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
+                }
+                if (tag_off) {
+                    /* If alpha is 100% then set to pure path, else or */
+                    if (dst[num_comp] == 255) {
+                        dst_ptr[tag_off] = curr_tag;
+                    } else {
+                        dst_ptr[tag_off] = ( dst_ptr[tag_off] |curr_tag ) & ~GS_UNTOUCHED_TAG;
+                    }
+                }
+                ++dst_ptr;
             }
-            ++dst_ptr;
+            dst_ptr += rowstride;
         }
-        line += rowstride;
     }
 #if 0
 /* #if RAW_DUMP */

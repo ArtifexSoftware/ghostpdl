@@ -953,6 +953,115 @@ art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
     dst[n_chan] = a_r;
 }
 
+void
+art_pdf_composite_pixel_alpha_8_fast(byte *dst, const byte *src, int n_chan,
+                                     gs_blend_mode_t blend_mode,
+                                     const pdf14_nonseparable_blending_procs_t * pblend_procs,
+                                     int stride)
+{
+    byte a_b, a_s;
+    unsigned int a_r;
+    int tmp;
+    int src_scale;
+    int c_b, c_s;
+    int i;
+
+    a_s = src[n_chan];
+
+    a_b = dst[n_chan * stride];
+
+    /* Result alpha is Union of backdrop and source alpha */
+    tmp = (0xff - a_b) * (0xff - a_s) + 0x80;
+    a_r = 0xff - (((tmp >> 8) + tmp) >> 8);
+    /* todo: verify that a_r is nonzero in all cases */
+
+    /* Compute a_s / a_r in 16.16 format */
+    src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
+
+    if (blend_mode == BLEND_MODE_Normal) {
+        /* Do simple compositing of source over backdrop */
+        for (i = 0; i < n_chan; i++) {
+            c_s = src[i];
+            c_b = dst[i * stride];
+            tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
+            dst[i * stride] = tmp >> 16;
+       }
+    } else {
+        /* Do compositing with blending */
+        byte blend[ART_MAX_CHAN];
+        byte dst_tmp[ART_MAX_CHAN];
+
+        for (i = 0; i < n_chan; i++) {
+            dst_tmp[i] = dst[i * stride];
+        }
+        art_blend_pixel_8(blend, dst_tmp, src, n_chan, blend_mode, pblend_procs);
+        for (i = 0; i < n_chan; i++) {
+            int c_bl;		/* Result of blend function */
+            int c_mix;		/* Blend result mixed with source color */
+
+            c_s = src[i];
+            c_b = dst_tmp[i];
+            c_bl = blend[i];
+            tmp = a_b * (c_bl - ((int)c_s)) + 0x80;
+            c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
+            tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
+            dst[i * stride] = tmp >> 16;
+        }
+    }
+    dst[n_chan * stride] = a_r;
+}
+
+void
+art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
+                                          gs_blend_mode_t blend_mode,
+                                          const pdf14_nonseparable_blending_procs_t * pblend_procs,
+                                          int stride)
+{
+    byte a_b, a_s;
+    unsigned int a_r;
+    int tmp;
+    int src_scale;
+    int c_b, c_s;
+
+    a_s = src[1];
+
+    a_b = dst[stride];
+
+    /* Result alpha is Union of backdrop and source alpha */
+    tmp = (0xff - a_b) * (0xff - a_s) + 0x80;
+    a_r = 0xff - (((tmp >> 8) + tmp) >> 8);
+    /* todo: verify that a_r is nonzero in all cases */
+
+    /* Compute a_s / a_r in 16.16 format */
+    src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
+
+    if (blend_mode == BLEND_MODE_Normal) {
+        /* Do simple compositing of source over backdrop */
+        c_s = src[0];
+        c_b = dst[0];
+        tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
+        dst[0] = tmp >> 16;
+    } else {
+        /* Do compositing with blending */
+        byte blend[ART_MAX_CHAN];
+
+        art_blend_pixel_8(blend, dst, src, 1, blend_mode, pblend_procs);
+        {
+            int c_bl;		/* Result of blend function */
+            int c_mix;		/* Blend result mixed with source color */
+
+            c_s = src[0];
+            c_b = dst[0];
+            c_bl = blend[0];
+            tmp = a_b * (c_bl - ((int)c_s)) + 0x80;
+            c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
+            tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
+            dst[0] = tmp >> 16;
+        }
+    }
+    dst[stride] = a_r;
+}
+
 #if 0
 /**
  * art_pdf_composite_pixel_knockout_8: Composite two pixels with knockout.
