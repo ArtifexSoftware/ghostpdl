@@ -746,7 +746,12 @@ currentdict /csncompdict undef
   } bdef
 
   /Indexed {
-    aload pop 3 -1 roll oforce resolvecolorspace
+    aload pop
+    1 index -1 eq {
+      exch pop 255 exch
+      (   **** Warning: Assuming that max color index -1 means 255.\n) pdfformaterror
+    } if
+    3 -1 roll oforce resolvecolorspace
                 % Stack: /Indexed hival lookup basespace
                 % If the underlying space is a Lab space, we must scale
                 % the output of the lookup table as part of DecodeABC.
