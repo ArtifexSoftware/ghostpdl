@@ -5129,6 +5129,12 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
                                         pis->icc_manager->default_rgb;
         rc_increment(pis->icc_manager->default_rgb);
     }
+    /* The number of color planes should not exceed that of the target */
+    if (p14dev->color_info.num_components > target->color_info.num_components)
+        p14dev->color_info.num_components = target->color_info.num_components;
+    if (p14dev->color_info.max_components > target->color_info.max_components)
+        p14dev->color_info.max_components = target->color_info.max_components;
+    p14dev->color_info.depth = p14dev->color_info.num_components * 8;
     /* If we have a tag device then go ahead and do a special encoder
        decoder for the pdf14 device to make sure we maintain this
        information in the encoded color information.  We could use
@@ -5145,11 +5151,6 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     p14dev->save_get_cmap_procs = pis->get_cmap_procs;
     pis->get_cmap_procs = pdf14_get_cmap_procs;
     gx_set_cmap_procs(pis, (gx_device *)p14dev);
-    /* The number of color planes should not exceed that of the target */
-    if (p14dev->color_info.num_components > target->color_info.num_components)
-        p14dev->color_info.num_components = target->color_info.num_components;
-    if (p14dev->color_info.max_components > target->color_info.max_components)
-        p14dev->color_info.max_components = target->color_info.max_components;
     /* Components shift, etc have to be based upon 8 bit */
     for (k = 0; k < p14dev->color_info.num_components; k++) {
         p14dev->color_info.comp_bits[k] = 8;
