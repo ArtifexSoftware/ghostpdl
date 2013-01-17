@@ -268,11 +268,14 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
           case 1 :
               {
                   /* creating a sub polygon closes the path only if
-                     the pen is down, but always starts a new subpath */
+                     the pen is down, but always starts a new subpath
+                     unless the path is empty. */
                   if ( pgls->g.move_or_draw == hpgl_pen_down
                        && pgls->g.have_drawn_in_path )
                       hpgl_call(hpgl_close_subpolygon(pgls));
-                  pgls->g.subpolygon_started = true;
+                  
+                  if (!gx_path_is_null(gx_current_path(pgls->pgs)))
+                      pgls->g.subpolygon_started = true;
               }
               break;
           case 2 :
