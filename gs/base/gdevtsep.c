@@ -1302,8 +1302,13 @@ copy_separation_name(tiffsep_device * pdev,
     /* If name is too long then clip it. */
     if (sep_size > max_size - 1)
         sep_size = max_size - 1;
+    /* Avoid the use of '%' in names here. This is checked for here, rather
+     * than in gp_file_name_good_char, as this is NOT a requirement of the
+     * underlying file system, but rather a requirement of the code handling
+     * the separation names (where % is interpreted as a format specifier).
+     */
     for (i=0; i < sep_size; i++)
-    	buffer[i] = gp_file_name_good_char(p[i]) ? p[i] : '_';
+        buffer[i] = (gp_file_name_good_char(p[i]) && p[i] != '%') ? p[i] : '_';
     buffer[sep_size] = 0;       /* Terminate string */
 }
 
