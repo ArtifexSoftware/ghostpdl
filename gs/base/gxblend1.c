@@ -200,7 +200,6 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
               bool overprint, gx_color_index drawn_comps, bool blendspot,
               gs_memory_t *memory)
 {
-    int num_comp = n_chan - 1;
     byte alpha = tos->alpha;
     byte shape = tos->shape;
     byte blend_mode = tos->blend_mode;
@@ -215,7 +214,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     byte mask_bg_alpha = 0; /* Quiet compiler. */
     int width = x1 - x0;
     int x, y;
-    int i, tmp;
+    int i;
     byte tos_pixel[PDF14_MAX_PLANES];
     byte nos_pixel[PDF14_MAX_PLANES];
     bool tos_isolated = tos->isolated;
@@ -227,8 +226,6 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     bool tos_has_tag = tos->has_tags;
     int tos_tag_offset = tos_planestride * (tos->n_planes - 1);
     int nos_shape_offset = n_chan * nos_planestride;
-    bool nos_has_shape = nos->has_shape;
-    bool nos_has_tag = nos->has_tags;
     int nos_tag_offset = nos_planestride * (nos->n_planes - 1);
     byte *mask_tr_fn = NULL; /* Quiet compiler. */
     gx_color_index comps;
@@ -243,6 +240,10 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     if_debug6m('v', memory,
                "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, tag =  bm = %d\n",
                y0, y1, width, alpha, shape, blend_mode);
+    if (!nos->has_shape)
+        nos_shape_offset = 0;
+    if (!nos->has_tags)
+        nos_tag_offset = 0;
     if (nos->has_alpha_g)
         nos_alpha_g_ptr = nos_ptr + n_chan * nos_planestride;
     else
@@ -254,11 +255,13 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
             mask_ptr = maskbuf->data + x0 - maskbuf->rect.p.x +
                     (y0 - maskbuf->rect.p.y) * maskbuf->rowstride;
             mask_planestride = maskbuf->planestride;
+            has_mask = true;
         } else {
             /* We may have a case, where we are outside the maskbuf rect. */
             /* We would have avoided creating the maskbuf->data */
             /* In that case, we should use the background alpha value */
             /* See discussion on the BC entry in the PDF spec */
+            int tmp;
             mask_bg_alpha = maskbuf->alpha;
             /* Adjust alpha by the mask background alpha */
             mask_bg_alpha = mask_tr_fn[mask_bg_alpha];
@@ -266,6 +269,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
             alpha = (tmp + (tmp >> 8)) >> 8;
         }
     }
+    n_chan--;
 #if RAW_DUMP
     composed_ptr = nos_ptr;
     dump_raw_buffer(y1-y0, width, tos->n_planes,
@@ -280,46 +284,44 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                         "dMask",mask_ptr);
     }
 #endif
-    for (y = y0; y < y1; ++y) {
-        for (x = 0; x < width; ++x) {
+    for (y = y1-y0; y > 0; --y) {
+        for (x = width; x > 0; --x) {
             byte pix_alpha = alpha;
 
             /* Complement the components for subtractive color spaces */
             if (additive) {
-                for (i = 0; i < n_chan; ++i) {
-                    tos_pixel[i] = tos_ptr[x + i * tos_planestride];
-                    nos_pixel[i] = nos_ptr[x + i * nos_planestride];
+                for (i = 0; i <= n_chan; ++i) {
+                    tos_pixel[i] = tos_ptr[i * tos_planestride];
+                    nos_pixel[i] = nos_ptr[i * nos_planestride];
                 }
             } else {
-                for (i = 0; i < num_comp; ++i) {
-                    tos_pixel[i] = 255 - tos_ptr[x + i * tos_planestride];
-                    nos_pixel[i] = 255 - nos_ptr[x + i * nos_planestride];
+                for (i = 0; i < n_chan; ++i) {
+                    tos_pixel[i] = 255 - tos_ptr[i * tos_planestride];
+                    nos_pixel[i] = 255 - nos_ptr[i * nos_planestride];
                 }
-                tos_pixel[num_comp] = tos_ptr[x + num_comp * tos_planestride];
-                nos_pixel[num_comp] = nos_ptr[x + num_comp * nos_planestride];
+                tos_pixel[n_chan] = tos_ptr[n_chan * tos_planestride];
+                nos_pixel[n_chan] = nos_ptr[n_chan * nos_planestride];
             }
             if (mask_ptr != NULL) {
-                byte mask = mask_ptr[x];
-                mask = mask_tr_fn[mask];
-                tmp = pix_alpha * mask + 0x80;
+                byte mask = mask_tr_fn[*mask_ptr++];
+                int tmp = pix_alpha * mask + 0x80;
                 pix_alpha = (tmp + (tmp >> 8)) >> 8;
-                has_mask = true;
 #		    if VD_PAINT_MASK
-                    vd_pixel(int2fixed(x), int2fixed(y), mask);
+                    vd_pixel(int2fixed(width-1-x), int2fixed(y1-y), mask);
 #		    endif
             }
             if (nos_knockout) {
-                byte *nos_shape_ptr = nos_has_shape ?
-                    &nos_ptr[x + nos_shape_offset] : NULL;
-                byte *nos_tag_ptr = nos_has_tag ?
-                    &nos_ptr[x + nos_tag_offset] : NULL;
-                byte tos_shape = tos_ptr[x + tos_shape_offset];
-                byte tos_tag = tos_ptr[x + tos_tag_offset];
+                byte *nos_shape_ptr = nos_shape_offset ?
+                    &nos_ptr[nos_shape_offset] : NULL;
+                byte *nos_tag_ptr = nos_tag_offset ?
+                    &nos_ptr[nos_tag_offset] : NULL;
+                byte tos_shape = tos_ptr[tos_shape_offset];
+                byte tos_tag = tos_ptr[tos_tag_offset];
                 art_pdf_composite_knockout_isolated_8(nos_pixel,
                                                     nos_shape_ptr,
                                                     nos_tag_ptr,
                                                     tos_pixel,
-                                                    n_chan - 1,
+                                                    n_chan,
                                                     tos_shape,
                                                     tos_tag,
                                                     pix_alpha, shape,
@@ -327,80 +329,82 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
             } else {
                 if (tos_isolated) {
                     art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
-                                        tos_pixel, n_chan - 1,
+                                        tos_pixel, n_chan,
                                         pix_alpha, blend_mode, pblend_procs);
                 } else {
-                    byte tos_alpha_g = tos_ptr[x + tos_alpha_g_offset];
+                    byte tos_alpha_g = tos_ptr[tos_alpha_g_offset];
                     art_pdf_recomposite_group_8(nos_pixel, nos_alpha_g_ptr,
-                                        tos_pixel, tos_alpha_g, n_chan - 1,
+                                        tos_pixel, tos_alpha_g, n_chan,
                                         pix_alpha, blend_mode, pblend_procs);
                 }
                 if (tos_has_tag) {
                     if (pix_alpha == 255) {
-                        nos_ptr[x + nos_tag_offset] = tos_ptr[x + tos_tag_offset];
-                    } else if (pix_alpha != 0 && tos_ptr[x + tos_tag_offset] !=
+                        nos_ptr[nos_tag_offset] = tos_ptr[tos_tag_offset];
+                    } else if (pix_alpha != 0 && tos_ptr[tos_tag_offset] !=
                                GS_UNTOUCHED_TAG) {
-                        nos_ptr[x + nos_tag_offset] =
-                            (nos_ptr[x + nos_tag_offset] |
-                            tos_ptr[x + tos_tag_offset]) &
+                        nos_ptr[nos_tag_offset] =
+                            (nos_ptr[nos_tag_offset] |
+                            tos_ptr[tos_tag_offset]) &
                             ~GS_UNTOUCHED_TAG;
                     }
                 }
             }
-            if (nos_has_shape) {
-                nos_ptr[x + nos_shape_offset] =
-                    art_pdf_union_mul_8 (nos_ptr[x + nos_shape_offset],
-                                            tos_ptr[x + tos_shape_offset],
+            if (nos_shape_offset) {
+                nos_ptr[nos_shape_offset] =
+                    art_pdf_union_mul_8 (nos_ptr[nos_shape_offset],
+                                            tos_ptr[tos_shape_offset],
                                             shape);
             }
             /* Complement the results for subtractive color spaces */
             if (additive) {
-                for (i = 0; i < n_chan; ++i) {
-                    nos_ptr[x + i * nos_planestride] = nos_pixel[i];
+                for (i = 0; i <= n_chan; ++i) {
+                    nos_ptr[i * nos_planestride] = nos_pixel[i];
                 }
             } else {
                 if (overprint) {
                     if (blendspot) {
                         /* Overprint simulation of spot colorants */
-                        for (i = 0; i < num_comp; ++i) {
+                        for (i = 0; i < n_chan; ++i) {
                             int temp = 
-                                (255 - nos_ptr[x + i * nos_planestride]) * 
+                                (255 - nos_ptr[i * nos_planestride]) *
                                 (nos_pixel[i]);
                             temp = temp >> 8;
-                            nos_ptr[x + i * nos_planestride] = (255 - temp);
+                            nos_ptr[i * nos_planestride] = (255 - temp);
                         }
                     } else {
                         for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
                             if ((comps & 0x1) != 0) {
-                                nos_ptr[x + i * nos_planestride] = 255 - nos_pixel[i];
+                                nos_ptr[i * nos_planestride] = 255 - nos_pixel[i];
                             }
                         }
                     }
                 } else {
-                    for (i = 0; i < num_comp; ++i)
-                        nos_ptr[x + i * nos_planestride] = 255 - nos_pixel[i];
+                    for (i = 0; i < n_chan; ++i)
+                        nos_ptr[i * nos_planestride] = 255 - nos_pixel[i];
                 }
-                nos_ptr[x + num_comp * nos_planestride] = nos_pixel[num_comp];
+                nos_ptr[n_chan * nos_planestride] = nos_pixel[n_chan];
             }
 #		if VD_PAINT_COLORS
-                vd_pixel(int2fixed(x), int2fixed(y), n_chan == 1 ?
+                vd_pixel(int2fixed(width-1-x), int2fixed(y1-y), n_chan == 0 ?
                     (nos_pixel[0] << 16) + (nos_pixel[0] << 8) + nos_pixel[0] :
                     (nos_pixel[0] << 16) + (nos_pixel[1] << 8) + nos_pixel[2]);
 #		endif
 #		if VD_PAINT_ALPHA
-                vd_pixel(int2fixed(x), int2fixed(y),
-                    (nos_pixel[n_chan - 1] << 16) + (nos_pixel[n_chan - 1] << 8) +
-                     nos_pixel[n_chan - 1]);
+                vd_pixel(int2fixed(width-1-x), int2fixed(y1-y),
+                    (nos_pixel[n_chan] << 16) + (nos_pixel[n_chan] << 8) +
+                     nos_pixel[n_chan]);
 #		endif
             if (nos_alpha_g_ptr != NULL)
                 ++nos_alpha_g_ptr;
+            ++tos_ptr;
+            ++nos_ptr;
         }
-        tos_ptr += tos->rowstride;
-        nos_ptr += nos->rowstride;
+        tos_ptr += tos->rowstride - width;
+        nos_ptr += nos->rowstride - width;
         if (nos_alpha_g_ptr != NULL)
             nos_alpha_g_ptr += nos->rowstride - width;
         if (mask_ptr != NULL)
-            mask_ptr += maskbuf->rowstride;
+            mask_ptr += maskbuf->rowstride - width;
     }
     /* Lets look at composed result */
 #if RAW_DUMP
