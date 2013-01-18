@@ -1315,7 +1315,6 @@ gx_pattern_cache_lookup(gx_device_color * pdevc, const gs_imager_state * pis,
     if (pcache != 0) {
         gx_color_tile *ctile = &pcache->tiles[id % pcache->num_tiles];
         bool internal_accum = true;
-        bool is_p1_c;
         if (pis->have_pattern_streams) {
             int code = dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_load, NULL, id);
             internal_accum = (code == 0);
@@ -1323,14 +1322,12 @@ gx_pattern_cache_lookup(gx_device_color * pdevc, const gs_imager_state * pis,
                 return false;
         }
         if (ctile->id == id &&
-            ctile->is_dummy == !internal_accum &&
-            (!(is_p1_c = gx_dc_is_pattern1_color(pdevc)) ||
-             ctile->depth == dev->color_info.depth)
+            ctile->is_dummy == !internal_accum
             ) {
             int px = pis->screen_phase[select].x;
             int py = pis->screen_phase[select].y;
 
-            if (is_p1_c) {       /* colored */
+            if (gx_dc_is_pattern1_color(pdevc)) {       /* colored */
                 pdevc->colors.pattern.p_tile = ctile;
 #           if 0 /* Debugged with Bug688308.ps and applying patterns after clist.
                     Bug688308.ps has a step_matrix much bigger than pattern bbox;
