@@ -2959,6 +2959,13 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   int                   xflip = 0,
                         yflip = 0;
   int                   found = 0;
+  long                  best_score = -1,
+                        score = 0;
+  ppd_size_t            *best_size = NULL;
+  int                   name_matched = 0,
+                        size_matched = 0,
+                        margins_matched = 0;
+  float long_edge_mismatch, short_edge_mismatch;
   gs_param_string icc_pro_dummy;
   int old_cmps = cups->color_info.num_components;
   int old_depth = cups->color_info.depth;
@@ -3330,54 +3337,105 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       * Find the matching page size...
       */
 
+#define LONG_EDGE_LENGTH_MATCH_LIMIT  0.07
+#define SHORT_EDGE_LENGTH_MATCH_LIMIT 0.05
+#define PAGESIZE_SCORE_NAME           3
+#define PAGESIZE_SCORE_SIZE_MARGINS   2
+#define PAGESIZE_SCORE_SIZE           1
+
+      best_score = -1;
+      best_size = NULL;
+      i = 0;
       for (i = cups->PPD->num_sizes, size = cups->PPD->sizes;
-           i > 0;
-           i --, size ++)
+	   i > 0;
+	   i --, size ++)
       {
 	if (size->length == 0 || size->width == 0) continue;
-	if (fabs(cups->MediaSize[1] - size->length)/size->length <
-	    (size->length > size->width ? 0.05 : 0.02) &&
-            fabs(cups->MediaSize[0] - size->width)/size->width <
-	    (size->width > size->length ? 0.05 : 0.02) &&
+
+	score = 0;
+	name_matched = 0;
+	size_matched = 0;
+	margins_matched = 0;
+
 #ifdef CUPS_RASTER_SYNCv1
-	    ((strlen(cups->header.cupsPageSizeName) == 0) ||
-	     (strcasecmp(cups->header.cupsPageSizeName, size->name) == 0)) &&
+	/* Match the size requested as default (cupsPageSizeName) */
+	if ((strlen(cups->header.cupsPageSizeName) != 0) &&
+	    (strcasecmp(cups->header.cupsPageSizeName, size->name) == 0))
+	  name_matched = 1;
 #endif
-	    /* We check whether all 4 margins match with the margin info
-	       of the page size in the PPD. Here we check also for swapped
-	       left/right and top/bottom margins as the cups->HWMargins
-	       info can be from the previous page and there the margins
-	       can be swapped due to duplex printing requirements */
-	    (!margins_set ||
-	     (((fabs(cups->HWMargins[0] - size->left) < 1.0 &&
-		fabs(cups->HWMargins[2] - size->width + size->right) < 1.0) ||
-	       (fabs(cups->HWMargins[0] - size->width + size->right) < 1.0 &&
-		fabs(cups->HWMargins[2] - size->left) < 1.0)) &&
-	      ((fabs(cups->HWMargins[1] - size->bottom) < 1.0 &&
-		fabs(cups->HWMargins[3] - size->length + size->top) < 1.0) ||
-	       (fabs(cups->HWMargins[1] - size->length + size->top) < 1.0 &&
-		fabs(cups->HWMargins[3] - size->bottom) < 1.0)))))
-	  break;
+
+	long_edge_mismatch =
+	  fabs(cups->MediaSize[1] - size->length)/size->length;
+	short_edge_mismatch =
+	  fabs(cups->MediaSize[0] - size->width)/size->width;
+	if (size->length < size->width)
+	{
+	  swap = long_edge_mismatch;
+	  long_edge_mismatch = short_edge_mismatch;
+	  short_edge_mismatch = swap;
+	}
+
+	if (long_edge_mismatch < LONG_EDGE_LENGTH_MATCH_LIMIT &&
+	      short_edge_mismatch < SHORT_EDGE_LENGTH_MATCH_LIMIT)
+	{
+	  size_matched = 1;
+	  /* If two sizes match within the limits, take the one with less
+	     mismatch */
+	  score = (long)(9999.0 -
+			 long_edge_mismatch * short_edge_mismatch * 9999.0 /
+			 LONG_EDGE_LENGTH_MATCH_LIMIT /
+			 SHORT_EDGE_LENGTH_MATCH_LIMIT);
+	  if (score < 0) score = 0;
+	  /* We check whether all 4 margins match with the margin info
+	     of the page size in the PPD. Here we check also for swapped
+	     left/right and top/bottom margins as the cups->HWMargins
+	     info can be from the previous page and there the margins
+	     can be swapped due to duplex printing requirements */
+	  if (!margins_set ||
+	      (((fabs(cups->HWMargins[0] - size->left) < 1.0 &&
+		 fabs(cups->HWMargins[2] - size->width + size->right) < 1.0) ||
+		(fabs(cups->HWMargins[0] - size->width + size->right) < 1.0 &&
+		 fabs(cups->HWMargins[2] - size->left) < 1.0)) &&
+	       ((fabs(cups->HWMargins[1] - size->bottom) < 1.0 &&
+		 fabs(cups->HWMargins[3] - size->length + size->top) < 1.0) ||
+		(fabs(cups->HWMargins[1] - size->length + size->top) < 1.0 &&
+		 fabs(cups->HWMargins[3] - size->bottom) < 1.0))))
+	    margins_matched = 1;
+	}
+
+	if (name_matched && size_matched)
+	  score += PAGESIZE_SCORE_NAME * 10000;
+	else if (margins_matched)
+	  score += PAGESIZE_SCORE_SIZE_MARGINS * 10000;
+	else if (size_matched)
+	  score += PAGESIZE_SCORE_SIZE * 10000;
+
+	if (score > best_score)
+	{
+	  best_score = score;
+	  if (score > 0)
+	    best_size = size;
+	}
       }
 
-      if (i > 0)
+      if (best_size)
       {
        /*
 	* Standard size...
 	*/
 
 #ifdef CUPS_DEBUG
-        dmprintf1(pdev->memory, "DEBUG: size = %s\n", size->name);
+	dmprintf1(pdev->memory, "DEBUG: size = %s\n", best_size->name);
 #endif /* CUPS_DEBUG */
 
-	gx_device_set_media_size(pdev, size->width, size->length);
+	gx_device_set_media_size(pdev, best_size->width, best_size->length);
 
 	cups->landscape = 0;
 
-	margins[0] = size->left / 72.0;
-	margins[1] = size->bottom / 72.0;
-	margins[2] = (size->width - size->right) / 72.0;
-	margins[3] = (size->length - size->top) / 72.0;
+	margins[0] = best_size->left / 72.0;
+	margins[1] = best_size->bottom / 72.0;
+	margins[2] = (best_size->width - best_size->right) / 72.0;
+	margins[3] = (best_size->length - best_size->top) / 72.0;
 	if (xflip == 1)
 	{
 	  swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
@@ -3394,54 +3452,99 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	* landscape orientation...
 	*/
 
+	best_score = -1;
+	best_size = NULL;
+	i = 0;
 	for (i = cups->PPD->num_sizes, size = cups->PPD->sizes;
-             i > 0;
-             i --, size ++)
+	     i > 0;
+	     i --, size ++)
 	{
 	  if (size->length == 0 || size->width == 0) continue;
-	  if (fabs(cups->MediaSize[0] - size->length)/size->length <
-	      (size->length > size->width ? 0.05 : 0.01) &&
-	      fabs(cups->MediaSize[1] - size->width)/size->width <
-	      (size->width > size->length ? 0.05 : 0.01) &&
+
+	  score = 0;
+	  name_matched = 0;
+	  size_matched = 0;
+	  margins_matched = 0;
+
 #ifdef CUPS_RASTER_SYNCv1
-	      ((strlen(cups->header.cupsPageSizeName) == 0) ||
-	       (strcasecmp(cups->header.cupsPageSizeName, size->name) == 0)) &&
+	  /* Match the size requested as default (cupsPageSizeName) */
+	  if ((strlen(cups->header.cupsPageSizeName) != 0) &&
+	      (strcasecmp(cups->header.cupsPageSizeName, size->name) == 0))
+	    name_matched = 1;
 #endif
-	      /* We check whether all 4 margins match with the margin info
-		 of the page size in the PPD. Here we check also for swapped
-		 left/right and top/bottom margins as the cups->HWMargins
-		 info can be from the previous page and there the margins
-		 can be swapped due to duplex printing requirements */
-	      (!margins_set ||
-	       (((fabs(cups->HWMargins[1] - size->left) < 1.0 &&
-		  fabs(cups->HWMargins[3] - size->width + size->right) < 1.0) ||
-		 (fabs(cups->HWMargins[1] - size->width + size->right) < 1.0 &&
-		  fabs(cups->HWMargins[3] - size->left) < 1.0)) &&
-		((fabs(cups->HWMargins[0] - size->bottom) < 1.0 &&
-		  fabs(cups->HWMargins[2] - size->length + size->top) < 1.0) ||
-		 (fabs(cups->HWMargins[0] - size->length + size->top) < 1.0 &&
-		  fabs(cups->HWMargins[2] - size->bottom) < 1.0)))))
-	    break;
+
+	  long_edge_mismatch =
+	    fabs(cups->MediaSize[0] - size->length)/size->length;
+	  short_edge_mismatch =
+	    fabs(cups->MediaSize[1] - size->width)/size->width;
+	  if (size->length < size->width)
+	  {
+	    swap = long_edge_mismatch;
+	    long_edge_mismatch = short_edge_mismatch;
+	    short_edge_mismatch = swap;
+	  }
+
+	  if (long_edge_mismatch < LONG_EDGE_LENGTH_MATCH_LIMIT &&
+	      short_edge_mismatch < SHORT_EDGE_LENGTH_MATCH_LIMIT)
+	  {
+	    size_matched = 1;
+	    /* If two sizes match within the limits, take the one with less
+	       mismatch */
+	    score = (long)(9999.0 -
+			   long_edge_mismatch * short_edge_mismatch * 9999.0 /
+			   LONG_EDGE_LENGTH_MATCH_LIMIT /
+			   SHORT_EDGE_LENGTH_MATCH_LIMIT);
+	    if (score < 0) score = 0;
+	    /* We check whether all 4 margins match with the margin info
+	       of the page size in the PPD. Here we check also for swapped
+	       left/right and top/bottom margins as the cups->HWMargins
+	       info can be from the previous page and there the margins
+	       can be swapped due to duplex printing requirements */
+	    if (!margins_set ||
+		(((fabs(cups->HWMargins[1] - size->left) < 1.0 &&
+		   fabs(cups->HWMargins[3] - size->width + size->right) < 1.0)||
+		  (fabs(cups->HWMargins[1] - size->width + size->right) < 1.0 &&
+		   fabs(cups->HWMargins[3] - size->left) < 1.0)) &&
+		 ((fabs(cups->HWMargins[0] - size->bottom) < 1.0 &&
+		   fabs(cups->HWMargins[2] - size->length + size->top) < 1.0) ||
+		  (fabs(cups->HWMargins[0] - size->length + size->top) < 1.0 &&
+		   fabs(cups->HWMargins[2] - size->bottom) < 1.0))))
+	      margins_matched = 1;
+	  }
+
+	  if (name_matched && size_matched)
+	    score += PAGESIZE_SCORE_NAME * 10000;
+	  else if (margins_matched)
+	    score += PAGESIZE_SCORE_SIZE_MARGINS * 10000;
+	  else if (size_matched)
+	    score += PAGESIZE_SCORE_SIZE * 10000;
+
+	  if (score > best_score)
+	  {
+	    best_score = score;
+	    if (score > 0)
+	      best_size = size;
+	  }
 	}
 
-	if (i > 0)
+	if (best_size)
 	{
 	 /*
 	  * Standard size in landscape orientation...
 	  */
 
 #ifdef CUPS_DEBUG
-          dmprintf1(pdev->memory, "DEBUG: landscape size = %s\n", size->name);
+	  dmprintf1(pdev->memory, "DEBUG: landscape size = %s\n", best_size->name);
 #endif /* CUPS_DEBUG */
 
-	  gx_device_set_media_size(pdev, size->length, size->width);
+	  gx_device_set_media_size(pdev, best_size->length, best_size->width);
 
           cups->landscape = 1;
 
-	  margins[0] = (size->length - size->top) / 72.0;
-	  margins[1] = size->left / 72.0;
-	  margins[2] = size->bottom / 72.0;
-	  margins[3] = (size->width - size->right) / 72.0;
+	  margins[0] = (best_size->length - best_size->top) / 72.0;
+	  margins[1] = best_size->left / 72.0;
+	  margins[2] = best_size->bottom / 72.0;
+	  margins[3] = (best_size->width - best_size->right) / 72.0;
 	  if (xflip == 1)
 	  {
 	    swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;

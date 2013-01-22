@@ -634,18 +634,19 @@ main (int argc, char **argv, char *envp[])
   cupsArrayAdd(gs_args, strdup("-sstdout=%stderr"));
   cupsArrayAdd(gs_args, strdup("-sOutputFile=%stdout"));
 
+	cupsRasterInterpretPPD(&h,ppd,num_options,options,0);
+
   /* setPDF specific options */
   if (doc_type == GS_DOC_TYPE_PDF) {
-    cupsRasterInterpretPPD(&h,ppd,num_options,options,0);
     parse_pdf_header_options(fp, &h);
-
-    /* fixed other values that pdftopdf handles */
-    h.MirrorPrint = CUPS_FALSE;
-    h.Orientation = CUPS_ORIENT_0;
-
-    /* get all the data from the header and pass it to ghostscript */
-    add_pdf_header_options (&h, gs_args);
   }
+
+	/* fixed other values that pdftopdf handles */
+	h.MirrorPrint = CUPS_FALSE;
+	h.Orientation = CUPS_ORIENT_0;
+
+	/* get all the data from the header and pass it to ghostscript */
+	add_pdf_header_options (&h, gs_args);
 
   /* CUPS font path */
   if ((t = getenv("CUPS_FONTPATH")) == NULL)
