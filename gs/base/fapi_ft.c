@@ -1683,11 +1683,16 @@ get_char_outline(gs_fapi_server * a_server, gs_fapi_path * a_path)
     p.path = a_path;
     p.x = 0;
     p.y = 0;
-    ft_error =
-        FT_Outline_Decompose(&s->outline_glyph->outline, &TheFtOutlineFuncs,
-                             &p);
-    if (a_path->gs_error == 0)
-        a_path->closepath(a_path);
+    /* If we got an error during glyph creation, we can get
+     * here with s->outline_glyph == NULL
+     */
+    if (s->outline_glyph) {
+        ft_error =
+            FT_Outline_Decompose(&s->outline_glyph->outline, &TheFtOutlineFuncs,
+                                 &p);
+        if (a_path->gs_error == 0)
+            a_path->closepath(a_path);
+    }
     return ft_to_gs_error(ft_error);
 }
 
