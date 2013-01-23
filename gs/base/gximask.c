@@ -55,6 +55,8 @@ gx_image_fill_masked_start(gx_device *dev, const gx_device_color *pdevc, const g
             pcdev->height = dev->height; /* For gx_default_copy_mono. */
             gx_device_retain((gx_device *)pcdev, true);
             *cdev = (gx_device *)pcdev;
+        } else{
+            *cdev = dev;
         }
     } else
         *cdev = dev;
@@ -99,7 +101,7 @@ gx_image_fill_masked(gx_device *dev,
     const gx_device_color *pdc, int depth,
     gs_logical_operation_t lop, const gx_clip_path *pcpath)
 {
-    gx_device *cdev;
+    gx_device *cdev = dev;
     int code;
 
     code = gx_image_fill_masked_start(dev, pdc, pcpath, dev->memory, &cdev);
