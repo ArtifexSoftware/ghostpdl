@@ -596,6 +596,11 @@ pcl_impl_dnit_job(
         pl_interp_instance_t *instance         /* interp instance to wrap up job in */
 )
 {
+        pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
+        pcl_state_t *pcs = &pcli->pcs;
+
+        if (pcs->raster_state.graphics_mode)
+            pcl_end_graphics_mode(pcs);
         return 0;
 }
 
