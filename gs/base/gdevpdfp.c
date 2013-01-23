@@ -292,14 +292,17 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         switch (code) {
             case 0:
                 {
-                    cos_dict_t *const pcd = pdev->Catalog;
-                    code = pdfwrite_pdf_open_document(pdev);
-                    if (code < 0)
-                        return code;
-                    code = cos_dict_put_string(pcd, (const byte *)"/PageLabels", 11,
-                               pps.data, pps.size);
-                    if (code >= 0)
-                        return code;
+                    if (!pdev->ForOPDFRead) {
+                        cos_dict_t *const pcd = pdev->Catalog;
+                        code = pdfwrite_pdf_open_document(pdev);
+                        if (code < 0)
+                            return code;
+                        code = cos_dict_put_string(pcd, (const byte *)"/PageLabels", 11,
+                                   pps.data, pps.size);
+                        if (code >= 0)
+                            return code;
+                    } else
+                        return 0;
                  }
                 /* falls through for errors */
             default:
