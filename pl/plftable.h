@@ -640,7 +640,6 @@ static const font_resident_t resident_table[] = {
         cc_alphabetic, plft_Unicode
     },
 
-    /************** NB SEMI-WRONG the artifex lineprinter is unbound ****************/
     {fontnames("noname", "noname", "ArtLinePrinter"), {'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','0','N'},
      {14, 0, {431.0, 720000.0/431.0}, 34, REGULAR, NOBOLD, 0, 82},
      cc_alphabetic, plft_8bit_printable},
