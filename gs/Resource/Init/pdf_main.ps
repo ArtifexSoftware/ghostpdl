@@ -1537,9 +1537,9 @@ end readonly def
 % **** implemented in one of those three procedures.
 /pdfshowpage		% <pagedict> pdfshowpage -
  { dup /Page exch store
-   pdfshowpage_init
-   pdfshowpage_setpage
-   pdfshowpage_finish
+   pdfshowpage_init     % <pagedict>
+   pdfshowpage_setpage  % <pagedict>
+   pdfshowpage_finish   % -
  } bind def
 
 /pdfpagecontents	% <pagedict> pdfpagecontents <contents>
@@ -1770,6 +1770,7 @@ currentdict /PDF2PS_matrix_key undef
 /pdfshowpage_finish {	% <pagedict> pdfshowpage_finish -
    save /PDFSave exch store
    /PDFdictstackcount countdictstack store
+   /PDFexecstackcount count 2 sub store
    (before exec) VMDEBUG
 
    % set up color space substitution (this must be inside the page save)
@@ -1872,7 +1873,7 @@ currentdict /PDF2PS_matrix_key undef
     } if
   } if
   pop
-
+  count PDFexecstackcount sub { pop } repeat
   (after exec) VMDEBUG
   Repaired		% pass Repaired state around the restore
   PDFSave restore
