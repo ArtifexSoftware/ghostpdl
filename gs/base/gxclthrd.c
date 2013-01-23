@@ -236,8 +236,10 @@ clist_setup_render_threads(gx_device *dev, int y)
             gs_free_object(crdev->render_threads[i].memory, thread_cdev,
             "clist_setup_render_threads");
         }
-        if (crdev->render_threads[i].memory != NULL)
+        if (crdev->render_threads[i].memory != NULL) {
             gs_memory_chunk_release(crdev->render_threads[i].memory);
+            crdev->render_threads[i].memory = NULL;
+        }
     }
     /* If we weren't able to create at least one thread, punt   */
     /* Although a single thread isn't any more efficient, the   */
