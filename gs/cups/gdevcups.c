@@ -3345,7 +3345,6 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
       best_score = -1;
       best_size = NULL;
-      i = 0;
       for (i = cups->PPD->num_sizes, size = cups->PPD->sizes;
 	   i > 0;
 	   i --, size ++)
@@ -3454,7 +3453,6 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
 	best_score = -1;
 	best_size = NULL;
-	i = 0;
 	for (i = cups->PPD->num_sizes, size = cups->PPD->sizes;
 	     i > 0;
 	     i --, size ++)
