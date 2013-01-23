@@ -673,6 +673,7 @@ $(PCL_TOP_OBJ):         $(PCLSRC)pctop.c            \
                         $(pltop_h)                  \
                         $(pctop_h)                  \
                         $(pcpalet_h)                \
+                        $(rtgmode_h)                \
                         $(gsicc_manage_h)           \
                         $(PCLGEN)pconf.h
 	$(CP_) $(PCLGEN)pconf.h $(PCLGEN)pconfig.h

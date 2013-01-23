@@ -39,6 +39,7 @@
 #include "pltop.h"
 #include "pctop.h"
 #include "pcpalet.h"
+#include "rtgmode.h"
 #include "gsicc_manage.h"
 
 /* Configuration table for modules */
