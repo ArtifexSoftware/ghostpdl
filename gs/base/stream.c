@@ -79,7 +79,7 @@ stream_finalize(const gs_memory_t *cmem, void *vptr)
     stream *const st = vptr;
     (void)cmem; /* unused */
 
-    if_debug2m('u', cmem, "[u]%s 0x%lx\n",
+    if_debug2m('u', st->memory, "[u]%s 0x%lx\n",
                (!s_is_valid(st) ? "already closed:" :
                 st->is_temp ? "is_temp set:" :
                 st->file == 0 ? "not file:" :
