@@ -910,8 +910,20 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
                                       log2_obj_align_mod];
             }
             /* keep track of highest object on a freelist */
-            if ((byte *)pp >= imem->cc.int_freed_top)
-                imem->cc.int_freed_top = (byte *)ptr + rounded_size;
+            /* If we're dealing with a block in the currently open chunk
+               (in imem->cc) update that, otherwise, update the chunk in
+               the chunk list (in imem->cfreed.cp)
+             */
+            if (imem->cfreed.cp->chead == imem->cc.chead) {
+                if ((byte *)pp >= imem->cc.int_freed_top) {
+                    imem->cc.int_freed_top = (byte *)ptr + rounded_size;
+                }
+            }
+            else {
+                if ((byte *)pp >= imem->cfreed.cp->int_freed_top) {
+                    imem->cfreed.cp->int_freed_top = (byte *)ptr + rounded_size;
+                }
+            }
             pp->o_type = &st_free;	/* don't confuse GC */
             o_set_unmarked(pp);
             gs_alloc_fill(ptr, gs_alloc_fill_free, size);
