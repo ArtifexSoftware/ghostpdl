@@ -383,6 +383,7 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata, ulong *psid)
         }
 #endif
     }
+
     alloc_set_in_save(dmem);
     *psid = sid;
     return 0;
@@ -1300,6 +1301,16 @@ drop_redundant_changes(gs_ref_memory_t * mem)
 {
     register alloc_change_t *chp = mem->changes, *chp_back = NULL, *chp_forth;
 
+    /* As we are trying to throw away redundant changes in an allocator instance
+       that has already been "saved", the active chunk has already been "closed"
+       by alloc_save_space(). Using such an allocator (for example, by calling
+       gs_free_object() with it) can leave it in an unstable state, causing
+       problems for the garbage collector (specifically, the chunk validator code).
+       So, before we might use it, open the current chunk, and then close it again
+       when we're done.
+     */
+    alloc_open_chunk(mem);
+
     /* First reverse the list and set all. */
     for (; chp; chp = chp_forth) {
         chp_forth = chp->next;
@@ -1341,6 +1352,8 @@ drop_redundant_changes(gs_ref_memory_t * mem)
         chp_back = chp;
     }
     mem->changes = chp_back;
+
+    alloc_close_chunk(mem);
 }
 
 /* Set or reset the l_new attribute on the changes chain. */
