@@ -18,47 +18,18 @@
 /* dwmain.c */
 /* Windows version of the main program command-line interpreter for PCL interpreters
  */
-#include "string_.h"
-#include "gdebug.h"
-#include "gscdefs.h"
-#include "gsio.h"
-#include "gstypes.h"
-#include "gserrors.h"
-#include "gsmemory.h"
-#include "plalloc.h"
-#include "gsmalloc.h"
-#include "gsmchunk.h"
-#include "gsstruct.h"
-#include "gxalloc.h"
-#include "gsalloc.h"
-#include "gsargs.h"
-#include "gp.h"
-#include "gsdevice.h"
-#include "gxdevice.h"
-#include "gsparam.h"
-#include "gslib.h"
-#include "pjtop.h"
-#include "plparse.h"
-#include "plplatf.h"
-#include "plmain.h"
-#include "pltop.h"
-#include "pltoputl.h"
-#include "plapi.h"
-#include "gslibctx.h"
-#if defined(DEBUG) && defined(ALLOW_VD_TRACE)
-#include "dwtrace.h"
-#include "vdtrace.h"
-#endif
 
-/* includes for Windows and the display procedures */
+
 #include "windows_.h"
-#include "dwimg.h"
-#include "dwres.h"
-
-/* includes for the display device */
-#include "gdevdevn.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <io.h>
+#include <fcntl.h>
+#include <process.h>
+#include "vdtrace.h"
 #include "gdevdsp.h"
-#include "gdevdsp2.h"
+#include "dwimg.h"
+#include "plapi.h"
 
 /* ------ Pseudo-errors used internally ------ */
 /* Copied from gs/psi/ierrors.h */
@@ -364,6 +335,11 @@ static int main_utf8(int argc, char *argv[])
     char **nargv;
     char dformat[64];
     char ddpi[64];
+
+    if (!_isatty(fileno(stdin)))
+        _setmode(fileno(stdin), _O_BINARY);
+    _setmode(fileno(stdout), _O_BINARY);
+    _setmode(fileno(stderr), _O_BINARY);
 
     hwndforeground = GetForegroundWindow();	/* assume this is ours */
 
