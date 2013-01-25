@@ -2354,21 +2354,28 @@ currentdict /set_bc_color undef
 /calc_annot_scale {		% <annot> calc_annot_scale <x_scale> <y_scale>
   dup /Rect knownoget {
     pop dup annotrect 4 2 roll pop pop	 % get width height size in user space
-    3 -1 roll /AP knownoget {
-      /N knownogetdict {
+    2 index /AP knownoget {
+      /N knownogetdict {        % <<Annot>> x y <<N>>
+        dup 4 index /AS knownoget {
+          knownoget {
+            exch pop
+          } if
+        } {
+          pop
+        } ifelse
         dup /Matrix knownoget not { {1 0 0 1 0 0} } if
-        exch /BBox knownoget {  % x y  {matrix} [box]
-          exch .bbox_transform  % x y  x0 y0 x1 y1
-          3 -1 roll sub         % x y  x0 x1 y1-y0
-          3 1 roll exch sub     % x y  y1-y0 x1-x0
+        exch /BBox knownoget {  % <<>> x y  {matrix} [box]
+          exch .bbox_transform  % <<>> x y  x0 y0 x1 y1
+          3 -1 roll sub         % <<>> x y  x0 x1 y1-y0
+          3 1 roll exch sub     % <<>> x y  y1-y0 x1-x0
           2 copy mul 0 eq {
             (   **** Warning: /BBox has zero width or height, which is not allowed.\n)
             pdfformaterror
             pop pop pop pop 1 1	% zero size -- revert to unity scaling
           } {
-            3 1 roll div        % x x1-x0 y/(y1-y0)
-            3 1 roll div        % y/(y1-y0) x/(x1-x0)
-            exch                % x/(x1-x0) y/(y1-y0)
+            3 1 roll div        % <<>> x x1-x0 y/(y1-y0)
+            3 1 roll div        % <<>> y/(y1-y0) x/(x1-x0)
+            exch                % <<>> x/(x1-x0) y/(y1-y0)
           } ifelse
         } {
           pop pop pop 1 1	% default to unity scaling
@@ -2379,6 +2386,7 @@ currentdict /set_bc_color undef
     } {
       pop pop 1 1
     } ifelse			% if we have /AP
+    3 -1 roll pop
   } {
     (   **** Warning: /Annot dict is missing required /Rect entry.\n)
     pdfformaterror
