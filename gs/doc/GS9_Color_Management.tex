@@ -47,7 +47,7 @@ level of control and/or interface with a different color management module.
 \end{abstract}
 \begin{center}
 \vspace*{0.25in}
-Revision 1.3
+Revision 1.4
 \vspace*{0.25in}
 \capstartfalse
 \begin{figure}[h]
@@ -1035,14 +1035,16 @@ Vector colors are typically passed into the c-list in their destination color sp
 
 \section{PDF and PS CIE color space handling}
 
-One feature of Ghostscript is that all color conversions can be handled by the external CMM.  This enables more consistent specialized rendering based upon object type and rendering intents.  Most CMMs cannot directly handle CIE color spaces defined in PostScript or the CalGray and CalRGB color spaces defined in PDF.  Instead most CMMs are limited to handling only ICC-based color conversions.  To enable the handling of the non ICC-based color spaces, Ghostscript converts these to equivalent ICC forms.   The profiles are created by the functions in gsicc\_create.c.
+One feature of Ghostscript is that all color conversions can be handled by the external CMM.  This enables more consistent specialized rendering based upon object type and rendering intents.  Most CMMs cannot directly handle CIE color spaces defined in PostScript or the CalGray and CalRGB color spaces defined in PDF.  Instead most CMMs are limited to handling only ICC-based color conversions.  To enable the handling of the non ICC-based color spaces, Ghostscript converts these to equivalent ICC forms.   The profiles are created by the functions in gsicc\_create.c.  Note that gsicc\_create.c requires icc34.h, since it uses the type definitions in that file in creating the ICC profiles from the PS and PDF CIE color spaces.
 
 PostScript color spaces can be quite complex, including functional mappings defined by programming procedures.  Representing these operations can require a sampling of the 1-D procedures.  Sampling of functions can be computationally expensive if the same non-ICC color space is repeatedly encountered.  To address this issue, the equivalent ICC profiles are cached and a resource id is used to detect repeated color space settings within the source document when possible.
 The profiles are stored in the profile cache indicated in Figure \ref{fig:ICC_ARCH}.  In PDF, it is possible to define CIELAB color values directly.  The ICC profile lab.icc contained in iccprofiles of Figure \ref{fig:ICC_ARCH} is used as the source ICC profile for color defined in this manner.
 
-Currently PostScript color rendering dictionaries (CRDs) are ignored.  Instead, a device ICC profile should be used to define the color for the output device.  There is currently an enhancement request to enable the option of converting CRDs to equivalent ICC profiles.
+Currently PostScript color rendering dictionaries (CRDs) are ignored.  Instead, a device ICC profile should be used to define the color for the output device.  There is currently an enhancement request to enable the option of converting CRDs to equivalent ICC profiles.  
 
-Note that gsicc\_create.c requires icc34.h, since it uses the type definitions in that file in creating the ICC profiles from the PS and PDF CIE color spaces.
+The use of the command line option -dUseCIEColor will result in document DeviceGray, DeviceRGB and DeviceCMYK source colors being substituted respectively by Postscript CIEA, CIEABC and CIEDEFG color spaces.  In this case, -sDefaultGrayProfile, \\
+-sDefaultRGBProfile and -sDefaultCMYKProfile will not specify the ICC profiles to use for these source spaces.   The PS color spaces that are used with -dUseCIEColor are defined in the directory
+gs/Resource/ColorSpace within the files DefaultGray, DefaultRGB and DefaultCMYK.   Note that Ghostscript will end up converting these PS color spaces to equivalent ICC profiles using the methods in gsicc\_create.c, so that the ICC-based CMM can perform the proper color conversions.
 
 \section{DeviceN and Separation colors}
 
