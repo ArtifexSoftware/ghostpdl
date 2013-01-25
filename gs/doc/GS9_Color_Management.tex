@@ -35,7 +35,7 @@
 
 \begin{titlepage}
 
-\begin{center}{\huge \bf Ghostscript 9.06 Color Management\\} \vspace{0.5in} {\Large Michael J.
+\begin{center}{\huge \bf Ghostscript 9.07 Color Management\\} \vspace{0.5in} {\Large Michael J.
 Vrhel, Ph.D.\\} {\Large Artifex Software\\} {\Large 7 Mt. Lassen Drive, A-134\\} {\Large San Rafael, CA 94903, USA\\}
 {\Large www.artifex.com\\}
 \end{center}
@@ -47,7 +47,7 @@ level of control and/or interface with a different color management module.
 \end{abstract}
 \begin{center}
 \vspace*{0.25in}
-Revision 1.2
+Revision 1.3
 \vspace*{0.25in}
 \capstartfalse
 \begin{figure}[h]
@@ -72,13 +72,13 @@ Revision 1.2
 
 With release 9.0, the color architecture of Ghostscript was updated to primarily use the ICC\cite{ICC} format for its color management needs.  Prior to this release, Ghostscript's color architecture was based heavily upon PostScript\cite{PS} Color Management (PCM).  This is due to the fact that Ghostscript was designed prior to the ICC format and likely even before there was much thought about digital color management.  At that point in time, color management was very much an art with someone adjusting controls to achieve the proper output color.
 
-Today, almost all print color management is performed using ICC profiles as opposed to PCM.  This fact along with the desire to create a faster, more flexible design was the motivation for the color architectural changes in release 9.0.  Since 9.0, several new features and capabilities  have been added. As of the 9.05 release, features of the color architecture include:
+Today, almost all print color management is performed using ICC profiles as opposed to PCM.  This fact along with the desire to create a faster, more flexible design was the motivation for the color architectural changes in release 9.0.  Since 9.0, several new features and capabilities  have been added. As of the 9.07 release, features of the color architecture include:
 \begin{itemize}
 \item Easy to interface different CMMs (Color Management Modules) with Ghostscript.
 \item ALL color spaces are defined in terms of ICC profiles.
 \item Linked transformations and internally generated profiles are cached.
 \item Easily accessed manager for ICC profiles.
-\item Easy to specify default profiles for DeviceGray, DeviceRGB and DeviceCMYK color spaces.
+\item Easy to specify default profiles for source DeviceGray, DeviceRGB and DeviceCMYK color spaces.
 \item Devices can readily communicate their ICC profiles and have their ICC profiles set.
 \item Operates efficiently in a multithreaded environment.
 \item Handles named colors (spots) with ICC named color profile or proprietary format.
@@ -92,6 +92,8 @@ Today, almost all print color management is performed using ICC profiles as oppo
 \item Ability to make use of a PDF output intent ICC profile.
 \item Ability to use an NCLR ICC output profile when rendering to a separation device.
 \item Control to force gray source colors to black ink only when rendering to output devices that support black ink.
+\item Ability to make use of device link ICC profiles for direct mapping of source colors to the device color space.
+\item Ability to make use of device link ICC profiles for retargeting from SWOP/Fogra standard color space to a specific device color space.
 \end{itemize}
 The document is organized to first provide a high level overview of the architecture. This is followed by details of the various functions and structures, which include the information necessary to interface other color management modules to Ghostscript as well as how to interface specialized color handling operations.
 
@@ -106,7 +108,7 @@ Figure \ref{fig:ICC_ARCH} provides a graphical overview of the various component
 \item The color management module (CMM), which is the engine that provides and performs the transformations (e.g. little CMS).
 \item The profiles associated with the device, which include profiles dependent upon object type, a proofing profile and a device link profile.
 \end{itemize}
-In the typical flow, when a thread is ready to transform a buffer of data, it will request a linked transform from the link cache. When requesting a link, it is necessary to provide information to the CMM, which consists of a source color space, a destination color space, an object state (e.g. text, graphic, or image) and a rendering type (e.g. perceptual, saturation, colorimetric).  The linked transform provides a mapping directly from the source color space to the destination color space. If a linked transform for these settings does not already exist in the link cache, a linked transform from the CMM will be obtained (assuming there is sufficient memory -- if there is not sufficient memory then the requesting thread will need to wait).  Depending upon the CMM, it is possible that the CMM may create a lazy linked object (i.e. create the real thing when it is asked to transform data).  At some point, a linked transform will be returned to the requesting thread.  The thread can then use this mapping to transform buffers of data through calls through an interface to the external CMM.  Once the thread has completed its use of the link transform, it will notify the link cache.  The link cache will then be able to release the link when it needs additional cache space due to other link requests.
+In the typical flow, when a thread is ready to transform a buffer of data, it will request a linked transform from the link cache. When requesting a link, it is necessary to provide information to the CMM, which consists of a source color space, a destination color space, an object state (e.g. text, graphic, or image), black point compensation setting and a rendering type (e.g. perceptual, saturation, colorimetric).  The linked transform provides a mapping directly from the source color space to the destination color space. If a linked transform for these settings does not already exist in the link cache, a linked transform from the CMM will be obtained (assuming there is sufficient memory -- if there is not sufficient memory then the requesting thread will need to wait).  Depending upon the CMM, it is possible that the CMM may create a lazy linked object (i.e. create the real thing when it is asked to transform data).  At some point, a linked transform will be returned to the requesting thread.  The thread can then use this mapping to transform buffers of data through calls through an interface to the external CMM.  Once the thread has completed its use of the link transform, it will notify the link cache.  The link cache will then be able to release the link when it needs additional cache space due to other link requests.
 
 \begin{figure}
     \begin{center}
@@ -136,13 +138,13 @@ To define source colors that are not already colorimetrically defined in the sou
 
 \textcolor{red}{-sDefaultCMYKProfile = my\_cmyk\_profile.icc}\\
 
- \noindent In this case, for example, any source gray colors will be interpreted as being defined by the ICC profile my\_gray\_profile.icc.  If these profiles are not set, default ICC profiles will be used to define undefined colors.  These default profiles are contained in the directory iccprofiles and are named default\_gray.icc, default\_rgb.icc and default\_cmyk.icc.  The profile default\_gray.icc is defined to provide output along the neutral axis with an sRGB linearization.  The profile default\_rgb.icc is the V2 sRGB ICC profile and the profile default\_cmyk.icc is a SWOP CMYK ICC profile.\\
+ \noindent In this case, for example, any Device Gray source colors will be interpreted as being defined by the ICC profile my\_gray\_profile.icc.  If these profiles are not set, default ICC profiles will be used to define undefined colors.  These default profiles are contained in the directory iccprofiles and are named default\_gray.icc, default\_rgb.icc and default\_cmyk.icc.  The profile default\_gray.icc is defined to provide output along the neutral axis with an sRGB linearization.  The profile default\_rgb.icc is the V2 sRGB ICC profile and the profile default\_cmyk.icc is a SWOP CMYK ICC profile.\\
 
 It is possible to have Ghostscript use the above specified ICC profiles in place of ICC profiles embedded in the document.  This is achieved using\\
 
  \textcolor{red}{-dOverrideICC = true/false}\\
 
-\noindent which, when set to true overrides any ICC profiles contained in the source document with the profiles specified by sDefaultGrayProfile, sDefaultRGBProfile, sDefaultCMYKProfile. Note that if no profiles are specified for the default Device color spaces, then the system default profiles will be used. For detailed override control in the specification of source colors see SourceObjectICC.\\
+\noindent which, when set to true overrides any ICC profiles contained in the source document with the profiles specified by sDefaultGrayProfile, sDefaultRGBProfile, sDefaultCMYKProfile. Note that if no profiles are specified for the default Device color spaces, then the system default profiles will be used for DeviceGray, DeviceRGB and DeviceCMYK source colors. For detailed override control in the specification of source colors see SourceObjectICC.\\
 
 In addition to being able to define undefined source colors, it is possible to define the ICC profile for the output device using\\
 
@@ -150,11 +152,13 @@ In addition to being able to define undefined source colors, it is possible to d
 
  \noindent Care should be taken to make sure that the number of components associated with the output device is the same as the number of components for the output device ICC profile (i.e. use an RGB profile for an RGB device).  If the destination device is CMYK + SPOT colorants, then it is possible to specify either a CMYK ICC profile or an N-Color ICC profile for the device.  If a CMYK profile is specified, then only the CMYK colorants will be color managed.  If an output profile is not specified, then the default CMYK profile is used as the output profile.\\
 
- If an N-Color (NCLR) ICC profile is specified for the output device (valid for tiffsep and psdcmyk devices), then it is necessary to specify the name of the colorants in the profile.   This specification is done using\\
+ If an N-Color (NCLR) ICC profile is specified for the output device (valid for tiffsep and psdcmyk devices), then it is possible to specify the name of the colorants in the profile.   This specification is done using\\
 
 \textcolor{red}{-sICCOutputColors=``Cyan, Magenta, Yellow, Black, Orange, Violet''}\\
 
  \noindent Where the colorants listed are shown as an example.  The list of the colorant names must be in the order that they exist in the profile.  Note that if a colorant name that is specified for the profile occurs also within the document (e.g. "Orange" above), then these colorants will be associated with the same separation. It is possible through a compile time option LIMIT\_TO\_ICC defined in gdevdevn.h to restrict the output colorants of the psdcmyk and tiffsep device to the colorants of the ICC profile or to allow additional spot colorants in the document to be created as different separations. If restricted, the other spot colorants will go through the alternate tint transform and then be mapped to the color space defined by the N-CLR profile.\\
+
+ Note that if an NCLR profile is specified for the device and -sICCOutputColors is not specified, then the assumption will be that the first four colorants in the profile are cyan, magenta, yellow and black and the remaining spot colors will be named using the form ICC\_COLOR\_$i$ where $i$ is an index from 0 to the number of spot colors in the profile minus one.\\
 
 A directory can be defined, which will be searched to find the above defined ICC profiles.  This makes it easier for users who have their profiles contained in a single directory and do not wish to append the full path name in the above command line options.  The directory is set using\\
 
@@ -168,11 +172,13 @@ Named color support for separation color spaces is specified through the command
 
  \noindent While the ICC does define a named color format, the above structure can in practice be much more general for those who have more complex handling requirements of separation color spaces. For example, some developers wish to use their own proprietary-based format for spot color management. This command option is for developer use when an implementation for named color management is designed for the function {\bf gsicc\_transform\_named\_color} located in gsicc\_cache.c . An example implementation is currently contained in the code [see comments above {\bf gsicc\_transform\_named\_color} in gsicc\_cache.c]. For the general user, this command option should really not be used.\\
 
-The above option deals with the handling of single spot colors.  It is possible to specify ICC profiles for managing DeviceN source colors. This is done using the command line option\\
+The above option deals with the handling of single spot (Separation) colors as well as with DeviceN colors.  An example of its use for DeviceN and Separation colors is given in gs/toolbin/color/named\_color, where you will want to use the command line option -sNamedProfile=named\_color\_table.txt.\\
+
+ It is also possible to specify ICC profiles for managing DeviceN source colors. This is done using the command line option\\
 
 \textcolor{red}{-sDeviceNProfile = c:/my\_devicen\_profile.icc}\\
 
- \noindent Note that neither PS nor PDF provide in-document ICC profile definitions for DeviceN color spaces. With this interface it is possible to provide this definition. The colorants tag order in the ICC profile defines the lay-down order of the inks associated with the profile. A windows-based tool for creating these source profiles is contained in gs/toolbin/color/icc\_creator.  If non-ICC based color management of DeviceN source colors is desired by a developer, it is possible to use the same methods used for the handling of individual spot colors.  In that case, a single proprietary structure could be used, which contains information about how to blend multiple colorants for accurate DeviceN color proofing.  This would require the addition of code in {\bf gx\_concretize\_DeviceN} similar to what is done in {\bf gx\_concretize\_Separation} (with the call of {\bf gsicc\_transform\_named\_color}) for the specialized handing of spot colors described above.\\
+ \noindent Note that neither PS nor PDF provide in-document ICC profile definitions for DeviceN color spaces. With this interface it is possible to provide this definition. The colorants tag order in the ICC profile defines the lay-down order of the inks associated with the profile. A windows-based tool for creating these source profiles is contained in gs/toolbin/color/icc\_creator.  If non-ICC based color management of DeviceN source colors is desired by a developer, it is possible to use the same methods used for the handling of individual spot colors as described above.\\
 
 The command line option\\
 
@@ -186,33 +192,38 @@ The command line option\\
 
  \noindent makes it possible to include a device link profile in the color transformations.  This is useful for work flows where one wants to map colors first to a standard color space such as SWOP or Fogra CMYK, but it is desired to redirect this output to other CMYK devices. See Section \ref{sec:proof_link} for details on this option.\\
 
-It is possible for a document to specify the rendering intent to be used when performing a color transformation.  Ghostscript is set up to handle four rendering intents with the nomenclature of Perceptual, Colorimetric, Saturation, and Absolute Colorimetric, which matches the terminology used by the ICC format.  By default, per the specification, the rendering intent is Perceptual for PDF and PS documents.  In many cases, it may be desired to ignore the source settings for rendering intent.  This is achieved through the use of two parameter settings which are\\
-
-\textcolor{red}{-dOverrideRI = true/false}\\
-
-\noindent which, when set to true overrides the rendering intent contained in the source document with the rendering intent that has been specified by\\
+It is possible for a document to specify the rendering intent to be used when performing a color transformation.  Ghostscript is set up to handle four rendering intents with the nomenclature of Perceptual, Colorimetric, Saturation, and Absolute Colorimetric, which matches the terminology used by the ICC format.  By default, per the specification, the rendering intent is Perceptual for PDF and PS documents.  In many cases, it may be desired to ignore the source settings for rendering intent.  This is achieved through the use of\\
 
 \textcolor{red}{-dRenderIntent = intent}\\
 
 \noindent which sets the rendering intent that should be used with the profile specified above by -sOutputICCProfile. The options for intent are 0, 1, 2 and 3, which correspond to the ICC intents of Perceptual, Colorimetric, Saturation, and Absolute Colorimetric.\\
 
-Similarly, it is possible to turn off or on black point compensation for the color managed objects in the document.  Black point compensation is a mapping performed near the black point that ensures that the luminance black in a source color space is mapped to the luminance black in a destination color space with adjustments to ensure a smooth transition for near black colors.  The mapping is similar to the mapping performed at the white point between devices. With black point compensation enabled, potential loss of detail in the shadows is reduced.   By default, Ghostscript has black point compensation  enabled.  However, note that the PDF 2.0 specification adds a black point compensation member to the extended graphic state.  As such, it is possible that the document could turn off black point compensation.   If this is not desired, it is possible to force black point compensation to a particular state using two parameter settings which are\\
-
-\textcolor{red}{-dOverrideBP = true/false}\\
-
-\noindent which, when set to true overrides the black point compensation contained in the source document with the black point compensation that has been specified by\\
+Similarly, it is possible to turn off or on black point compensation for the color managed objects in the document.  Black point compensation is a mapping performed near the black point that ensures that the luminance black in a source color space is mapped to the luminance black in a destination color space with adjustments to ensure a smooth transition for near black colors.  The mapping is similar to the mapping performed at the white point between devices. With black point compensation enabled, potential loss of detail in the shadows is reduced.   By default, Ghostscript has black point compensation  enabled.  However, note that the PDF 2.0 specification adds a black point compensation member to the extended graphic state.  As such, it is possible that the document could turn off black point compensation.   If this is not desired, it is possible to force black point compensation to a particular state using\\
 
 \textcolor{red}{-dBlackPtComp = 0 / 1}\\
 
 \noindent where 0 implies compensation is off and 1 implies that compensation if on.  Integer values were used instead of boolean for this command to enable easy expansion of the option to different types of black point compensation methods.\\
 
+It is also possible to make use of the special black preserving controls that exist in littleCMS.  The command line option
+
+\textcolor{red}{-dKPreserve = 0 / 1 / 2}\\
+
+\noindent specifies if black preservation should be used when mapping from CMYK to CMYK.   When using littleCMS as the CMM, the code 0
+corresponds to no preservation, 1 corresponds to the PRESERVE\_K\_ONLY approach described in the littleCMS documentation and 2 corresponds to the PRESERVE\_K\_PLANE approach.\\
+
+Ghostscript currently provides overprint simulation for spot colorants when rendering to the separation devices psdcmyk and tiffsep.  These devices maintain all the spot color planes and merge these together to provide a simulated preview of what would be printed.  It is possible to get a simulated preview of overprinting with other CMYK devices by specifying\\
+
+\textcolor{red}{-dSimulateOverprint = true/false}\\
+
+In this case, simulated overprinting is achieved through a blending of the CMYK colorants.\\
+
 There are three additional special color handling options that may be of interest to some users.  One is\\
 
 \textcolor{red}{-dDeviceGrayToK = true/false}\\
 
-\noindent By default, Ghostscript will map DeviceGray color spaces to pure K when the output device is CMYK based. This may not always be desired. In particular, it may be desired to map from the gray ICC profile specified by -sDefaultGrayProfile to the output device profile. To achieve this, one should specify -dDeviceGrayToK=false.   The gray\_to\_k.icc profile in ./profiles is used to achieve this mapping of source gray to the colorant K.\\
+\noindent By default, Ghostscript will map DeviceGray color spaces to pure K when the output device is CMYK based. The gray\_to\_k.icc profile in ./profiles is used to achieve this mapping of source gray to the colorant K.  The mapping of gray to K may not always be desired. In particular, it may be desired to map from the gray ICC profile specified by -sDefaultGrayProfile to the output device profile. To achieve this, one should specify -dDeviceGrayToK=false.\\
 
-In certain cases, it may be desired to {\bf not} perform ICC color management on DeviceGray, DeviceRGB and DeviceCMYK source colors.  This can occur in particular. if one is attempting to create an ICC profile for a target device and needed to print pure colorants.  In this case, one may want instead to use the traditional Postscript 255 minus operations to convert between RGB and CMYK with black generation and undercolor removal mappings.  To achieve these types of color mappings use the following command set to true\\
+In certain cases, it may be desired to {\bf not} perform ICC color management on DeviceGray, DeviceRGB and DeviceCMYK source colors.  This can occur in particular if one is attempting to create an ICC profile for a target device and needed to print pure colorants.  In this case, one may want instead to use the traditional Postscript 255 minus operations to convert between RGB and CMYK with black generation and undercolor removal mappings.  To achieve these types of color mappings use the following command set to true\\
 
 \textcolor{red}{-dUseFastColor = true/false}\\
 
@@ -220,13 +231,13 @@ Finally, PDF documents can contain target ICC profiles to which the document is 
 
 \textcolor{red}{-dUsePDFX3Profile = int}\\
 
-If this option is included in the command line, source device color values (e.g DeviceCMYK, DeviceRGB, or DeviceGray) that match the color model of the output intent will be interpreted to be in the output intent color space. In addition, if the output device color model matches the output intent color model, then the destination ICC profile will be the output intent ICC profile. If there is a mismatch between the device color model and the output intent, the output intent profile will be used as a proofing profile, since that is the intended rendering. Note that a PDF document can have multiple rendering intents per the PDF specification. As such, with the option -dUsePDFX3Profile the first output intent encountered will be used. It is possible to specify a particular output intent where int is an integer (a value of 0 is the same as not specifying a number). Probing of the output intents for a particular file is possible using extractICCprofiles.ps in ./gs/toolbin. Finally, note that the ICC profile member entry is an option in the output intent dictionary. In these cases, the output intent specifies a registry and a standard profile (e.g. Fogra39). Ghostscript will not make use of these output intents. Instead, if desired, these standard profiles should be used with the commands specified above (e.g. -sOutputICCProfile).  Note that it is possible that a rendering intent can be an NCLR profile.  In this case, it is necessary to ensure that the device can handle such a profile (e.g. psdcmyk or tiffsep can).  In addition, the colorant names should be specified using -sICCOutputColors .
+If this option is included in the command line, source device color values (e.g DeviceCMYK, DeviceRGB, or DeviceGray) that match the color model of the output intent will be interpreted to be in the output intent color space. In addition, if the output device color model matches the output intent color model, then the destination ICC profile will be the output intent ICC profile. If there is a mismatch between the device color model and the output intent, the output intent profile will be used as a proofing profile, since that is the intended rendering. Note that a PDF document can have multiple rendering intents per the PDF specification. As such, with the option -dUsePDFX3Profile the first output intent encountered will be used. It is possible to specify a particular output intent where int is an integer (a value of 0 is the same as not specifying a number). Probing of the output intents for a particular file is possible using extractICCprofiles.ps in ./gs/toolbin. Finally, note that the ICC profile member entry is an option in the output intent dictionary. It is possible for teh output intent dictionary to specify a registry and a standard profile (e.g. Fogra39) instead of providing a profile. Ghostscript will not make use of these output intents. Instead, if desired, these standard profiles should be used with the commands specified above (e.g. -sOutputICCProfile).  Note that it is possible that a rendering intent can be an NCLR profile.  In this case, it is necessary to ensure that the device can handle such a profile (e.g. psdcmyk or tiffsep can).  In addition, the colorant names should be specified using -sICCOutputColors .
 
 \subsection{Object dependent color management}
 
 It is often desired to perform unique mappings based upon object types.  For example, one may want to perform one color transformation on text colors to ensure a black text and a different transformation on image colors to ensure perceptually pleasing images and yet another transformation on graphics to create saturated colors.   To achieve this, Ghostscript provides a unprecedented amount of color control based upon object type.
 
-The following commands, enable one to specify unique {\bf output} ICC profiles, rendering intents and black point compensation for text, graphic and image objects.  As shown in Figure \ref{fig:ICC_ARCH}, these profiles are stored in the device structure.  Specifically, the command options are:\\
+The following commands, enable one to specify unique {\bf output} ICC profiles, rendering intents, black point compensation and black preserving methods for text, graphic and image objects.  As shown in Figure \ref{fig:ICC_ARCH}, these profiles are stored in the device structure.  Specifically, the command options are:\\
 
 \textcolor{red}{-sGraphicICCProfile = filename}\\
 
@@ -234,11 +245,16 @@ The following commands, enable one to specify unique {\bf output} ICC profiles, 
 
 \textcolor{red}{-dGraphicIntent = intent}\\
 
-\noindent Sets the rendering intent that should be used with the profile specified above by -sGraphicICCProfile. The options are the same as specified for -dRenderIntent. It is also necessary to set -dOverrideRI=true.\\
+\noindent Sets the rendering intent that should be used with the profile specified above by -sGraphicICCProfile. The options are the same as specified for -dRenderIntent.\\
 
 \textcolor{red}{-dGraphBlackPt = 0 / 1}\\
 
-\noindent Sets the black point compensation setting that should be used with the profile specified above by -sGraphicICCProfile.  It is also necessary to set -dOverrideBP=true.\\
+\noindent Sets the black point compensation setting that should be used with the profile specified above by -sGraphicICCProfile.\\
+
+\textcolor{red}{-dGraphicKPreserve = 0 / 1 / 2}\\
+
+\noindent specifies the black preserving method that should be used from mapping CMYK to CMYK for graphic objects.   The
+options are the same as specified for -dKPreserve.\\
 
 \textcolor{red}{-sImageICCProfile = filename}\\
 
@@ -247,11 +263,16 @@ Care should be taken to ensure that the number of colorants associated with the 
 
 \textcolor{red}{-dImageIntent = intent}\\
 
-\noindent Sets the rendering intent that should be used with the profile specified above by -sImageICCProfile. The options are the same as specified for -dRenderIntent. It is also necessary to set -dOverrideRI=true.\\
+\noindent Sets the rendering intent that should be used with the profile specified above by -sImageICCProfile. The options are the same as specified for -dRenderIntent. \\
 
 \textcolor{red}{-dImageBlackPt = 0 / 1}\\
 
-\noindent Sets the black point compensation setting that should be used with the profile specified above by -sImageICCProfile.  It is also necessary to set -dOverrideBP=true.\\
+\noindent Sets the black point compensation setting that should be used with the profile specified above by -sImageICCProfile.\\
+
+\textcolor{red}{-dImageKPreserve = 0 / 1 / 2}\\
+
+\noindent specifies the black preserving method that should be used from mapping CMYK to CMYK for image objects.   The
+options are the same as specified for -dKPreserve.\\
 
 \textcolor{red}{-sTextICCProfile = filename}\\
 
@@ -259,30 +280,52 @@ Care should be taken to ensure that the number of colorants associated with the 
 
 \textcolor{red}{-dTextIntent = intent}\\
 
-\noindent Sets the rendering intent that should be used with the profile specified above by -sTextICCProfile. The options are the same as specified for -dRenderIntent. It is also necessary to set -dOverrideRI=true.\\
+\noindent Sets the rendering intent that should be used with the profile specified above by -sTextICCProfile. The options are the same as specified for -dRenderIntent. \\
 
 \textcolor{red}{-dTextBlackPt = 0 / 1}\\
 
-\noindent Sets the black point compensation setting that should be used with the profile specified above by -sTextICCProfile.  It is also necessary to set -dOverrideBP=true.\\
+\noindent Sets the black point compensation setting that should be used with the profile specified above by -sTextICCProfile.\\
+
+\textcolor{red}{-dTextKPreserve = 0 / 1 / 2}\\
+
+\noindent specifies the black preserving method that should be used from mapping CMYK to CMYK for text objects.   The
+options are the same as specified for -dKPreserve.\\
 
 In addition to being able to have the output ICC profile dependent upon object type, it is possible to have the {\bf source} ICC profile and rendering intents be dependent upon object types for RGB and CMYK objects.  Because this requires the specification of 12 new parameters and is only used in specialized situations, the specification is made through a single text file.  The text file is specified to Ghostscript using\\
 
 \textcolor{red}{-sSourceObjectICC = filename}\\
 
-This option provides an extreme level of override control to specify the source color spaces, rendering intents and black point compensation to use with graphics, images and text for both RGB and CMYK source objects. The specification is made through a file that contains on a line, a key name to specify the object type (e.g. Image\_CMYK) followed by an ICC profile file name, a rendering intent number (0 for perceptual, 1 for colorimetric, 2 for saturation, 3 for absolute colorimetric) and a black point compensation value (0 or 1). An example file is given in ./gs/toolbin/color/src\_color/objsrc\_profiles\_example.txt. Profiles to demonstrate this method of specification are also included in this folder. Note that if objects are colorimetrically specified through this mechanism, other operations like -sImageIntent, -dOverrideICC, have no affect.\\
+This option provides an extreme level of override control to specify the source color spaces, rendering intents and black point compensation to use with graphics, images and text for both RGB and CMYK source objects. The specification is made through a file that contains on a line, a key name to specify the object type (e.g. Image\_CMYK) followed by an ICC profile file name, a rendering intent number (0 for perceptual, 1 for colorimetric, 2 for saturation, 3 for absolute colorimetric), a black point compensation value (0 or 1), a boolean to indicate if source ICC profiles should be overridden, and a value for the CMYK objects to indicate if any type of black preservation should be used when going from CMYK to CMYK transformations. An example file is given in ./gs/toolbin/color/src\_color/objsrc\_profiles\_example.txt. Profiles to demonstrate this method of specification are also included in this folder. Note that if objects are colorimetrically specified through this mechanism, other operations like -sImageIntent, -dOverrideICC, have no affect.\\
 
 The example file mentioned above contains the following tab delimited lines\\
 
-\begin{tabular}{llll}
-Graphic\_CMYK & cmyk\_src\_cyan.icc	& 0 & 1 \\
-Image\_CMYK	& cmyk\_src\_magenta.icc &	0 & 1 \\
-Text\_CMYK	& cmyk\_src\_yellow.icc	 & 0 & 1 \\
-Graphic\_RGB &	rgb\_source\_red.icc	& 0 & 1 \\
-Image\_RGB &	rgb\_source\_green.icc	& 0 & 1 \\
-Text\_RGB & rgb\_source\_blue.icc & 0 & 1 \\
+\begin{tabular}{llllll}
+Graphic\_CMYK & cmyk\_src\_cyan.icc	& 0 & 1 & 0 & 0 \\
+Image\_CMYK	& cmyk\_src\_magenta.icc &	0 & 1 & 0 & 0  \\
+Text\_CMYK	& cmyk\_src\_yellow.icc	 & 0 & 1 & 0 & 0  \\
+Graphic\_RGB &	rgb\_source\_red.icc	& 0 & 1 & 0 & \\
+Image\_RGB &	rgb\_source\_green.icc	& 0 & 1 & 0 & \\
+Text\_RGB & rgb\_source\_blue.icc & 0 & 1 & 0 & \\
 \end{tabular}\\
 
-\noindent where the first item in the line is the key word, the second item in the line is the file name of the {\bf source} ICC profile to use for that object type the third item specifies the rendering intent and the fourth item specifies the black point compensation setting.  Note that not all types need to be specified.  It is possible to have only a single type specified in the file (e.g. Image\_CMYK).  The other items would render in a normal default fashion in this case.\\
+\noindent where the first item in the line is the key word, the second item in the line is the file name of the {\bf source} ICC profile to use for that object type, the third item specifies the rendering intent, the fourth item specifies the black point compensation setting, the fifth term indicates if source ICC profiles should be overridden, and the sixth term which should only be there for CMYK source objects indicates if any type of black preservation should be performed if we are going to a CMYK color space.  Note that not all types need to be specified.  It is possible to have only a single type specified in the file (e.g. Image\_CMYK).  The other items would render in a normal default fashion in this case.  Note that it is necessary to include all the possible options in each line.    That is, ``Graphic\_CMYK  cmyk\_src\_cyan.icc 0'' is not a valid line but must include settings for the next three values as given above for Graphic\_CMYK.
+
+In addition, it is possible to have unique color management methods for these object types through two special names which are ``None'' and ``Replace''.   For example, if our file contained the following two lines\\
+
+\begin{tabular}{ll}
+Graphic\_CMYK & None \\
+Text\_CMYK	& Replace  \\
+\end{tabular}\\
+
+\noindent then graphic CMYK source objects will not be color managed but instead will go through the standard Postscript mapping methods (e.g. 255-X).   CMYK text objects will go through the color replacement color management route which is provided for those developers who wish to provide direct output replacement colors for a given incoming source color.  This is currently implemented in the function gsicc\_rcm\_transform\_general, which is in the file gsicc\_replacecm.c.  The current implementation computes the color negative of the source color as a demonstration.  Note that the replaced color should be in the device's color space.   The entire contents of the file, gsicc\_replacecm.c are provided as an example for developers.
+
+In addition, one can specify a device link ICC profile to use with a particular source object type when mapping to the destination color space.  This is done by simply using a notation such as\\
+
+\begin{tabular}{llllll}
+Graphic\_RGB &	linkRGBtoCMYK.icc	& 0 & 1 & 0 & \\
+\end{tabular}\\
+
+\noindent in the -sSourceObjectICC file, where linkRGBtoCMYK.icc is the device link ICC profile file name.  Note that the rendering intent etc are still specified but their effect is dependent upon the CMM that is hooked in with Ghostscript.  With the current use of lcms, these values have no effect with device link profiles.   Note also that if the device ICC profile is an NCLR profile, it is possible that the device link profiles specified in the -sSourceObjectICC file can have a destination color space that is either CMYK or NCLR.
 
 For those interested in this level of control, it is recommended to execute a number of examples.
 In the first example, copy the files in ./gs/toolbin/color/src\_color/ to ./iccprofiles and render the file ./examples/text\_graph\_image\_cmyk\_rgb.pdf with the option -sSourceObjectICC = objsrc\_profiles\_example.txt to an RGB device (e.g. tiff24nc).  Note, to ensure that Ghostscript can find all the files and to avoid having to do a full rebuild to create the ROM file system, you may want to specify the icc directory using\\
@@ -314,10 +357,10 @@ Figure \ref{fig:normal} displays the source file text\_graph\_image\_cmyk\_rgb.p
 
 Modifying the contents of the objsrc\_profiles\_example.txt file to\\
 
-\begin{tabular}{llll}
-Graphic\_CMYK & cmyk\_src\_renderintent.icc	& 0 & 1 \\
-Image\_CMYK	& cmyk\_src\_renderintent.icc	& 1 & 1 \\
-Text\_CMYK	& cmyk\_src\_renderintent.icc	& 2 & 1 \\
+\begin{tabular}{llllll}
+Graphic\_CMYK & cmyk\_src\_renderintent.icc	& 0 & 1 & 0 & 0\\
+Image\_CMYK	& cmyk\_src\_renderintent.icc	& 1 & 1 & 0 & 0 \\
+Text\_CMYK	& cmyk\_src\_renderintent.icc	& 2 & 1 & 0 & 0 \\
 \end{tabular}\\
 
 \noindent and rendering the file ./examples/text\_graph\_image\_cmyk\_rgb.pdf to an RGB device, one obtains the output shown in Figure \ref{fig:source_ri}.  In this case, we demonstrated the control of rendering intent based upon object type.  The profile cmyk\_src\_renderintent.icc is designed to create significantly different colors for its different intents. Since we only specified this for the CMYK objects we see that they are the only objects effected and that this profile renders its perceptual intent cyan, its colorimetric intent magenta and its saturation intent yellow.
@@ -341,7 +384,6 @@ Finally, in yet another example, we can demonstrate the effect of rendering inte
 -dImageIntent = 0\\
 -dGraphicIntent = 1\\
 -dTextIntent = 2\\
--dOverrideRI\\
 \end{tabular}\\
 
 Figure \ref{fig:des_ri} displays the result.  The profile cmyk\_des\_renderintent.icc is designed such that the perceptual rendering intent outputs cyan only, the colorimetric intent outputs magenta only and the saturation intent outputs yellow only.
@@ -367,6 +409,8 @@ Finally, it should be mentioned that Ghostscript has the capability to maintain 
 
 As shown in Figure \ref{fig:ICC_ARCH}, the proofing profile and the device link profile are associated with the device.  If these profiles have been specified using the options
 -sProofProfile = my\_proof\_profile.icc and -sDeviceLinkProfile = my\_link\_profile.icc, then when the graphics library maps a source color defined by the ICC profile source.icc to the device color values, a transformation is computed by the CMM that consists of the steps shown in Figure \ref{fig:proof_link}. In this Figure, Device ICC Profile is the ICC profile specified for the actual device (this can be specified using -sOutputICCProfile).  In practice, the CMM will create a single mapping that performs the transformation of the multiple mappings shown in Figure \ref{fig:proof_link}.  If we specify a proofing profile, then our output should provide a proof of how the output would appear if it had been displayed or printed on the proofing device defined by the proofing profile.  The device link profile is useful for cases where one may have a work flow that consists of always rendering to a common CMYK space such as Fogra 39 followed by a mapping with a specialized device link profile.  In this case, the profile specified by -sOutputICCProfile would be the profile for the common CMYK space.
+
+Note that if -sSourceObjectICC is used to specify device link ICC profiles to map from source color spaces to device colors, then it is not possible to used either the device profile or the proofing profile for these objects.  However, a device link profile that is associated with the target device will be merged with the device link profile specified for the source object.
 
 \begin{figure}
     \begin{center}
@@ -1026,15 +1070,18 @@ For cases when the device {\bf does} understand the spot colorants of the Device
 
 It should be noted that an ICC profile can define color spaces with up to 15 colorants.  For a device that has 15 or fewer colorants, it is possible to provide an ICC profile for such a device.  In this case, all the colorants will be color managed through the ICC profile.  For cases beyond 15, the device will be doing direct printing of the DeviceN colors outside of the 15 colorants.
 
-\subsection{DeviceN and Spot Color Customization}
+\subsection{DeviceN, Spot Color Customization and Direct Color Replacement}
 \label{sec:devn}
 
 In earlier versions of Ghostscript, there existed a compile define named \\
-CUSTOM\_COLOR\_CALLBACK, which provided developers with a method to intercept color conversions and provide customized processing in particular for Separation and DeviceN input color spaces.  Using specialized mixing models in place of the standard tint transforms, accurate proofing of the spot colorants was obtainable.  An interface for custom handling of separation colors is now performed by customization of the function gsicc\_transform\_named\_color.  An example, implementation is currently in place, which uses a look-up-table based upon the colorant name.  The look-up-table is stored in the device\_named object of the icc manager.  The structure can be stored in the location using \textcolor{red}{-sNamedProfile = c:/my\_namedcolor\_stucture}.
+CUSTOM\_COLOR\_CALLBACK, which provided developers with a method to intercept color conversions and provide customized processing in particular for Separation and DeviceN input color spaces.  Using specialized mixing models in place of the standard tint transforms, accurate proofing of the spot colorants was obtainable.  An interface for custom handling of separation colors and DeviceN is now performed by customization of the function gsicc\_transform\_named\_color.  An example, implementation is currently in place, which uses a look-up-table based upon the colorant name.  The look-up-table is stored in the device\_named object of the icc manager.  The structure can be stored in the location using \textcolor{red}{-sNamedProfile = c:/my\_namedcolor\_stucture}.   An example file is contained in gs/toolbin/color/named\_color.  The PDF file includes both DeviceN and separation colors and the named color structure contains the CIELAB values of the colorants.   Mixing of the colors is performed with the sample function gsicc\_transform\_named\_color.
 
-DeviceN color handling is defined by an object stored in the device\_n entry of the icc\_manager.  Currently, the example implementation is to use an array of ICC profiles that describe the mixing of the DeviceN colors of interest.  This array of profiles is contained in the device\_n entry of the icc\_manager.  In this case, a multi-dimensional look-up-table is essentially used to map the overlayed DeviceN colors to the output device colorants.
+DeviceN color handling can also defined by an object stored in the device\_n entry of the icc\_manager.  Currently, the example implementation is to use an array of ICC profiles that describe the mixing of the DeviceN colors of interest.  This array of profiles is contained in the device\_n entry of the icc\_manager.  In this case, a multi-dimensional look-up-table is essentially used to map the overlayed DeviceN colors to the output device colorants.
 
-If a mathematical mixing model is to be used for the DeviceN colors instead of an ICC-based approach, it will be necessary to store the data required for mixing either in the device\_n entry or, if the same data is used for separation colors, the data in the named\_color location can be used.  In either case, a single line change will be required in {\bf gx\_install\_DeviceN} where a call is currently made to {\bf gsicc\_finddevicen} to locate a matching DeviceN ICC profile for DeviceN color management.  In place of this call, it will be necessary to make a call to a function that will prepare an object that can map colors in this DeviceN space to the real device values.  A pointer to this object is then returned by the function.  If the colorants cannot be handled, the function should return NULL.  If the function can handle the colorants, then when the link request is made between this color space and the output device profile with the function {\bf gsicc\_get\_link} it will be necessary to populate the procs of Ghostscript's link structure with the proper pointers to functions that will use the link and transform the colors.  The procedure structure, which is a member variable of gsicc\_link\_t is defined in gscms.h and given as\\
+In addition to Custom DeviceN and Separation color handling, it is possible to force a path to a completely customizable color management solution for any object type using the \textcolor{red}{-sSourceObjectICC = filename} command line option and the "Replace" key word described above.  In this case, all the RGB or CMYK source objects will be forced through the methods in gsicc\_replacecm.c .  All of the mapping is handled in the function {\bf gsicc\_rcm\_transform\_general}.  Note that through the use of the settings in -sSourceObjectICC it is possible to have this flow occur only for certain source object types as well as for only those objects that are not already colorimetrically defined.
+
+Note that the graphics library is unaware of what type of color management is being preformed (i.e. the custom replace color (rc) method, none or ICC) but simply asks for a link and applies it to a color or buffer of colors.
+The mappings are performed through the procedures of Ghostscript's link structure. The procedure structure, which is a member variable of gsicc\_link\_t is defined in gscms.h and given as\\
 
 \noindent typedef struct gscms\_procs\_s \{
 
@@ -1052,20 +1099,19 @@ For the CMM that is interfaced with Ghostscript, these procedures are populated 
 map\_color = gscms\_transform\_color;\\
 free\_link = gscms\_release\_link;\\
 
-Assuming the DeviceN color manager can handle the DeviceN color space, when it returns the opaque link handle, which is assigned to the link\_handle member variable of gsicc\_link\_t, the above procs should be populated with the procedures that will actually make use of the link.  For example,\\
-
-\noindent map\_buffer = devn\_transform\_buffer;\\
-map\_color = devn\_transform\_color;\\
-free\_link = devn\_release\_link;\\
-
-In this case, the graphics library will make the appropriate calls when it is making use of the link.  As an example template, The unmanaged color option -dUseFastColor makes use of this approach to provide ``links'' that use special mapping procedures where\\
+The unmanaged color option -dUseFastColor uses special mapping procedures where\\
 
 \noindent map\_buffer = gsicc\_nocm\_transform\_color\_buffer;\\
 map\_color = gsicc\_nocm\_transform\_color;\\
 free\_link = gsicc\_nocm\_freelink;\\
 
-In this way, the fact that unmanaged color is occurring is opaque to Ghostscript.   Similarly, the use of special mixing model links for DeviceN color would be unknown to Ghostscript with this approach and requires nothing more than the minor interface procedure settings (as well as the actual code to compute the mixing result).
+In this way, the fact that unmanaged color is occurring is opaque to Ghostscript.   Similarly, the use of ``Replace'' in -sSourceObjectICC results in a link with the procedures\\
 
+\noindent map\_buffer = gsicc\_rcm\_transform\_color\_buffer;\\
+map\_color = gsicc\_rcm\_transform\_color;\\
+free\_link = gsicc\_rcm\_freelink;\\
+
+This is provided as an example implementation for RIP OEMs desiring to provide unique color solutions for their products.
 
 \section{PCL and XPS Support}
 
