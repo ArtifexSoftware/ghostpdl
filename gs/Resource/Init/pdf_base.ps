@@ -832,13 +832,6 @@ currentdict /no_debug_dict undef
 % We do the real work of constructing the data stream only when the
 % contents are needed.
 
-/stream-space-dict <<
-  % 0 is unlikely to be used as a space
-  10 { //false exit } bind 
-  13 {} 
-  32 {}
->> readonly def
-
 % Construct a stream.  The length is not reliable in the face of
 % different end-of-line conventions, but it's all we've got.
 %
@@ -864,17 +857,22 @@ currentdict /no_debug_dict undef
       % make sure that we are just past the EOL \n character
       PDFfile dup fileposition 1 sub setfileposition	% back up one
       % Skip spaces till \n or a non-space character is found.
-      { 
+      //false
+      {
         PDFfile read pop
-        //stream-space-dict exch .knownget {
-          exec
-        } {
-          PDFfile dup fileposition 1 sub setfileposition
-          //true exit
-        } ifelse
-      } loop {
-        (   **** Warning: stream operator isn't terminated by valid EOL.\n) pdfformaterror
+        dup 32 eq { pop //true or } { exit } ifelse
+      } loop
+      dup 13 eq {
+        pop
+        PDFfile read pop
       } if
+      10 ne {
+        PDFfile dup fileposition 1 sub setfileposition
+        //true or
+      } if {
+         (   **** Warning: stream operator isn't terminated by valid EOL.\n) pdfformaterror
+      } if
+
       dup /FilePosition PDFfile fileposition put
       PDFDEBUG {
         PDFSTEPcount 1 le {
@@ -923,8 +921,6 @@ currentdict /no_debug_dict undef
   } ifelse
   cvx
 } bind def
-
-currentdict /stream-space-dict undef
 
 /endstream {
   exit
