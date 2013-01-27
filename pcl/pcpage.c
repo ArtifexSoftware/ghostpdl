@@ -579,6 +579,11 @@ pcl_end_page(
             return 0;
     }
 
+    /* finish up graphics mode in case we finished the page in the
+       middle of a raster stream */
+    if (pcs->raster_state.graphics_mode)
+        pcl_end_graphics_mode(pcs);
+
     /* If there's an overlay macro, execute it now. */
     if (pcs->overlay_enabled) {
         void *  value;
