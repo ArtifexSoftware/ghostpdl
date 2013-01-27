@@ -526,7 +526,7 @@ $(PLOBJDIR)\dwreg.obj: $(PLSRC)dwreg.c $(AK) $(dwreg_h)
 $(PLOBJDIR)\dwimg.obj: $(PLSRC)dwimg.c $(AK) $(windows__h) 
 	$(PLATCCC) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwimg.obj $(C_) $(PLSRC)dwimg.c
 
-$(PLOBJDIR)dwmainc.obj: $(PLSRC)dwmainc.c $(AK) $(windows__h) 
+$(PLOBJDIR)dwmainc.obj: $(PLSRC)dwmainc.c $(AK) $(windows__h) $(gdevdsp_h) $(dwimg_h) $(vdtrace_h) $(plapi_h)
 	$(PLATCCC) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwmainc.obj $(C_) $(PLSRC)dwmainc.c
 
 !ifndef BSCFILE
