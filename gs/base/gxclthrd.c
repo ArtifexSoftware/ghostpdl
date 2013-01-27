@@ -147,6 +147,7 @@ clist_setup_render_threads(gx_device *dev, int y)
                 ncdev->bandlist_memory = thread->memory;
         gs_c_param_list_read(&paramlist);
         ndev->PageCount = dev->PageCount;       /* copy to prevent mismatch error */
+        ndev->color_info = cdev->color_info;	/* copy before putdeviceparams */
 #if CMM_THREAD_SAFE
         ndev->icc_struct = dev->icc_struct;  /* Set before put params */
         rc_increment(ndev->icc_struct);
@@ -160,6 +161,8 @@ clist_setup_render_threads(gx_device *dev, int y)
             code = devn_copy_params(dev, (gx_device*) ncdev);
             if (code < 0) return_error(gs_error_VMerror);
         }
+        /* Also make sure supports_devn is set correctly */
+        ndev->icc_struct->supports_devn = cdev->icc_struct->supports_devn;
         ncdev->page_uses_transparency = cdev->page_uses_transparency;
         if_debug3m(gs_debug_flag_icc, cdev->memory,
                    "[icc] MT clist device = 0x%x profile = 0x%x handle = 0x%x\n", 
