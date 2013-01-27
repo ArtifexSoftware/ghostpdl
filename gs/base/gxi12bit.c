@@ -738,7 +738,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
             psrc_cm += spp_cm;
         }
         /* Compare to previous.  If same then move on */
-        if (posture != image_skewed && next.all[0] == run.all[0])
+        if (posture != image_skewed && !memcmp(next.all, run.all, spp_cm * 2))
                 goto inc;
         /* This needs to be sped up */
         for ( k = 0; k < spp_cm; k++ ) {
