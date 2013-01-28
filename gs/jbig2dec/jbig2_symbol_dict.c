@@ -301,7 +301,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       }
       if (params->SDREFAGG) {
           int64_t tmp = params->SDNUMINSYMS + params->SDNUMNEWSYMS;
-          for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < tmp; SBSYMCODELEN++);
+          for (SBSYMCODELEN = 0; ((int64_t)1 << SBSYMCODELEN) < tmp; SBSYMCODELEN++);
           IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
           IARDX = jbig2_arith_int_ctx_new(ctx);
           IARDY = jbig2_arith_int_ctx_new(ctx);
