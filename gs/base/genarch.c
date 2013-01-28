@@ -180,7 +180,16 @@ main(int argc, char *argv[])
     define_int(f, "ARCH_ALIGN_SHORT_MOD", OFFSET_IN(ss, s));
     define_int(f, "ARCH_ALIGN_INT_MOD", OFFSET_IN(si, i));
     define_int(f, "ARCH_ALIGN_LONG_MOD", OFFSET_IN(sl, l));
+
+#if defined (sparc)
+# ifndef __BIGGEST_ALIGNMENT__
+#  define __BIGGEST_ALIGNMENT__ 8
+# endif
+    define_int(f, "ARCH_ALIGN_PTR_MOD", __BIGGEST_ALIGNMENT__);
+#else
     define_int(f, "ARCH_ALIGN_PTR_MOD", OFFSET_IN(sp, p));
+#endif
+
     define_int(f, "ARCH_ALIGN_FLOAT_MOD", OFFSET_IN(sf, f));
     define_int(f, "ARCH_ALIGN_DOUBLE_MOD", OFFSET_IN(sd, d));
 #undef OFFSET_IN
