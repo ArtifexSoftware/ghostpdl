@@ -2357,7 +2357,7 @@ pdf_close(gx_device * dev)
         /* Close outlines and articles. */
 
         if (pdev->outlines_id != 0) {
-            pdf_record_usage(pdev, pdev->outlines_id, resource_usage_part1_structure);
+            pdf_record_usage(pdev, pdev->outlines_id, resource_usage_part9_structure);
             /* depth > 0 is only possible for an incomplete outline tree. */
             while (pdev->outline_depth > 0) {
                 code1 = pdfmark_close_outline(pdev);
@@ -2384,12 +2384,15 @@ pdf_close(gx_device * dev)
 
         /* Write named destinations.  (We can't free them yet.) */
 
-        if (pdev->Dests)
+        if (pdev->Dests) {
+            pdf_record_usage(pdev, pdev->Dests->id, resource_usage_part9_structure);
             COS_WRITE_OBJECT(pdev->Dests, pdev, resourceDests);
+        }
 
         /* Write the PageLabel array */
         pdfmark_end_pagelabels(pdev);
         if (pdev->PageLabels) {
+            pdf_record_usage(pdev, pdev->PageLabels->id, resource_usage_part9_structure);
             COS_WRITE_OBJECT(pdev->PageLabels, pdev, resourceLabels);
         }
 
@@ -2408,6 +2411,7 @@ pdf_close(gx_device * dev)
             pdf_article_t *part;
 
             Threads_id = pdf_begin_obj(pdev, resourceThread);
+            pdf_record_usage(pdev, Threads_id, resource_usage_part9_structure);
             s = pdev->strm;
             stream_puts(s, "[ ");
             while ((part = pdev->articles) != 0) {
