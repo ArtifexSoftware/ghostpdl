@@ -161,8 +161,8 @@ pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, byte *used, in
         return_error(gs_error_VMerror);
 
     if (md5_hash) {
-        for (i = 0; i < 8; i++) {
-            v = hash(v, i, *(ushort *)(md5_hash + i));
+        for (i = 0; i < 8; i += sizeof(ushort)) {
+	    v = hash(v, i, (*(md5_hash + i) | *(md5_hash + i + 1) << 8));
         }
     }
 
