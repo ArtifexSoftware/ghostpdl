@@ -834,9 +834,12 @@ if test x$with_lcms != xyes; then
   else
     AC_MSG_RESULT([no])
     AC_MSG_CHECKING([for system lcms2 library])
-     AC_CHECK_LIB(lcms2, cmsCreateXYZProfile, [
+    AC_CHECK_LIB(lcms2, cmsGetTransformOutputFormat, [
            AC_CHECK_HEADERS([lcms2.h], [LCMS2DIR="";SHARELCMS=1;WHICHLCMS=lcms2])
          ])
+    if test x$WHICHLCMS = x; then
+      AC_MSG_WARN([lcms2 not found, or too old])
+    fi
   fi
 fi
 
