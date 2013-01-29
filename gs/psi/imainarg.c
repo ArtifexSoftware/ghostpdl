@@ -205,7 +205,7 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
                 return e_Fatal;
         }
     }
-    while ((arg = arg_next(&args, &code)) != 0) {
+    while ((arg = arg_next(&args, &code, minst->heap)) != 0) {
         switch (*arg) {
             case '-':
                 code = swproc(minst, arg, &args);
@@ -307,7 +307,7 @@ run_stdin:
             /* FALLTHROUGH */
         case '@':               /* ditto with @-expansion */
             {
-                const char *psarg = arg_next(pal, &code);
+                const char *psarg = arg_next(pal, &code, minst->heap);
 
                 if (code < 0)
                     return e_Fatal;
@@ -324,7 +324,7 @@ run_stdin:
                 if (code >= 0)
                     code = run_string(minst, "userdict/ARGUMENTS[", 0);
                 if (code >= 0)
-                    while ((arg = arg_next(pal, &code)) != 0) {
+                    while ((arg = arg_next(pal, &code, minst->heap)) != 0) {
                         code = runarg(minst, "", arg, "", runInit);
                         if (code < 0)
                             break;
@@ -375,7 +375,7 @@ run_stdin:
                 if (code < 0)
                     return code;
                 pal->expand_ats = false;
-                while ((arg = arg_next(pal, &code)) != 0) {
+                while ((arg = arg_next(pal, &code, minst->heap)) != 0) {
                     if (arg[0] == '@' ||
                         (arg[0] == '-' && !isdigit((unsigned char)arg[1]))
                         )
@@ -456,7 +456,7 @@ run_stdin:
                 const char *path;
 
                 if (arg[0] == 0) {
-                    path = arg_next(pal, &code);
+                    path = arg_next(pal, &code, minst->heap);
                     if (code < 0)
                         return code;
                 } else
@@ -519,7 +519,7 @@ run_stdin:
                 int len;
 
                 if (arg[0] == 0) {
-                    adef = arg_next(pal, &code);
+                    adef = arg_next(pal, &code, minst->heap);
                     if (code < 0)
                         return code;
                 } else

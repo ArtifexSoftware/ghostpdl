@@ -291,6 +291,8 @@ gs_findiodevice(const gs_memory_t *mem, const byte * str, uint len)
     int i;
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
 
+    if (libctx->io_device_table == 0)
+    	return 0;
     if (len > 1 && str[len - 1] == '%')
         len--;
     for (i = 0; i < gx_io_device_table_count; ++i) {
