@@ -73,7 +73,7 @@ void arg_finit(arg_list * pal);
  * Get the next arg from a list.
  * Note that these are not copied to the heap.
  */
-const char *arg_next(arg_list * pal, int *code);
+const char *arg_next(arg_list * pal, int *code, const gs_memory_t *errmem);
 
 /* Copy an argument string to the heap. */
 char *arg_copy(const char *str, gs_memory_t * mem);
