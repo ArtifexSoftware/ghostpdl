@@ -100,6 +100,11 @@ SODEFS=\
  STDIO_IMPLEMENTATION=c\
  BUILDDIRPREFIX=$(BUILDDIRPREFIX)
 
+SODEFS_FINAL=\
+ DISPLAY_DEV=$(DD)display.dev\
+ STDIO_IMPLEMENTATION=c\
+ BUILDDIRPREFIX=$(BUILDDIRPREFIX)
+
 # This is a bit nasty; because of the directory name rewriting that happens
 # on a recursive build, we have to recurse twice before we are sure that
 # all the targets are correct.
@@ -128,7 +133,7 @@ so-subtarget:
 	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)'\
 	 CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)'\
 	 prefix=$(prefix)
-	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
+	$(MAKE) $(SODEFS_FINAL) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
 	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 $(GSSOC_XE) $(GSSOX_XE)
 
