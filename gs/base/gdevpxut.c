@@ -125,7 +125,7 @@ px_write_page_header(stream *s, const gx_device *dev)
 int
 px_write_select_media(stream *s, const gx_device *dev,
                       pxeMediaSize_t *pms, byte *media_source,
-                      int page, bool Duplex, bool Tumble)
+                      int page, bool Duplex, bool Tumble, int media_type_set, char *media_type)
 {
 #define MSD(ms, mstr, res, w, h)                                 \
     { ms, mstr, (float)((w) * 1.0 / (res)), (float)((h) * 1.0 / res) },
@@ -181,7 +181,13 @@ px_write_select_media(stream *s, const gx_device *dev,
 
     if (media_source != NULL)
         tray = *media_source;
-    px_put_uba(s, tray, pxaMediaSource);
+    /* suppress eAutoSelect if type is set */
+    if (!media_type_set || (tray != eAutoSelect))
+      px_put_uba(s, tray, pxaMediaSource);
+    /* suppress empty(="plain") type if tray is non-auto */
+    if (media_type_set)
+      if ((tray == eAutoSelect) || strlen(media_type))
+        px_put_ubaa(s, media_type, strlen(media_type), pxaMediaType);
 
     if (Duplex)
     {
@@ -398,6 +404,19 @@ void
 px_put_rpa(stream * s, floatp rx, floatp ry, px_attribute_t a)
 {
     px_put_rp(s, rx, ry);
+    px_put_a(s, a);
+}
+
+/* ubyte_array with attribute */
+void
+px_put_ubaa(stream * s, const byte * data, uint count, px_attribute_t a)
+{
+    if (count < 0)
+        return;
+    spputc(s, pxt_ubyte_array);
+    /* uint16 LE length field */
+    px_put_us(s, count);
+    px_put_bytes(s, data, count);
     px_put_a(s, a);
 }
 

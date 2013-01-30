@@ -32,7 +32,8 @@ int px_write_page_header(stream *s, const gx_device *dev);
 int px_write_select_media(stream *s, const gx_device *dev,
                           pxeMediaSize_t *pms,
                           byte *media_source,
-                          int page, bool Duplex, bool Tumble);
+                          int page, bool Duplex, bool Tumble,
+                          int media_type_set, char *media_type);
 
 /*
  * Write the file trailer.  Note that this takes a FILE *, not a stream *,
@@ -80,6 +81,8 @@ void px_put_r(stream * s, floatp r);  /* no tag */
 void px_put_rl(stream * s, floatp r);  /* pxt_real32 tag */
 void px_put_rp(stream * s, floatp rx, floatp ry);
 void px_put_rpa(stream * s, floatp rx, floatp ry, px_attribute_t a);
+
+void px_put_ubaa(stream * s, const byte * data, uint count, px_attribute_t a);
 
 void px_put_data_length(stream * s, uint num_bytes);
 

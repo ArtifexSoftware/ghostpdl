@@ -62,6 +62,8 @@ typedef struct gx_device_pclxl_s {
     bool ManualFeed_set;
     int MediaPosition;		/* MediaPosition attribute */
     int MediaPosition_set;
+    char MediaType[64];	/* MediaType attribute */
+    int MediaType_set;
     int page;			/* Page number starting at 0 */
     bool Duplex;		/* Duplex attribute */
     bool Tumble;		/* Tumble attribute */
@@ -1032,7 +1034,8 @@ pclxl_beginpage(gx_device_vector * vdev)
 
     px_write_select_media(s, (const gx_device *)vdev, &xdev->media_size,
                           &media_source,
-                          xdev->page, xdev->Duplex, xdev->Tumble);
+                          xdev->page, xdev->Duplex, xdev->Tumble,
+                          xdev->MediaType_set, xdev->MediaType);
 
     spputc(s, pxtBeginPage);
     return 0;
@@ -1389,6 +1392,10 @@ pclxl_open_device(gx_device * dev)
     xdev->media_size = pxeMediaSize_next;	/* no size selected */
     memset(&xdev->chars, 0, sizeof(xdev->chars));
     xdev->chars.next_in = xdev->chars.next_out = 2;
+    xdev->MediaPosition_set = false;
+    xdev->MediaType_set = false;
+    xdev->MediaPosition = eAutoSelect;
+    xdev->MediaType[0] = '\0';
     return 0;
 }
 
@@ -2156,6 +2163,7 @@ pclxl_get_params(gx_device     *dev,	/* I - Device info */
 {
   gx_device_pclxl	*xdev;		/* PCL XL device */
   int			code;		/* Return code */
+  gs_param_string	s;		/* Temporary string value */
 
  /*
   * First process the "standard" page device parameters...
@@ -2173,9 +2181,17 @@ pclxl_get_params(gx_device     *dev,	/* I - Device info */
   if ((code = param_write_bool(plist, "Duplex", &(xdev->Duplex))) < 0)
     return (code);
 
-  if ((code = param_write_int(plist, "MediaPosition",
-                              &(xdev->MediaPosition))) < 0)
-    return (code);
+  if (xdev->MediaPosition_set)
+    if ((code = param_write_int(plist, "MediaPosition",
+                                &(xdev->MediaPosition))) < 0)
+      return (code);
+
+  if (xdev->MediaType_set) {
+    if ((code = param_string_from_string(s, xdev->MediaType)) < 0)
+      return (code);
+    if ((code = param_write_string(plist, "MediaType", &s)) < 0)
+      return (code);
+  }
 
   if ((code = param_write_bool(plist, "Tumble", &(xdev->Tumble))) < 0)
     return (code);
@@ -2199,6 +2215,7 @@ pclxl_put_params(gx_device     *dev,	/* I - Device info */
   int			code;		/* Error code */
   int			intval;		/* Integer value */
   bool			boolval;	/* Boolean value */
+  gs_param_string	stringval;	/* String value */
 
  /*
   * Process PCL-XL driver parameters...
@@ -2209,31 +2226,62 @@ pclxl_put_params(gx_device     *dev,	/* I - Device info */
 #define intoption(name, sname, type) \
   if ((code = param_read_int(plist, sname, &intval)) < 0) \
   { \
+    if_debug1('|', "Error setting %s\n", sname); \
     param_signal_error(plist, sname, code); \
     return (code); \
   } \
   else if (code == 0) \
   { \
+    if_debug2('|', "setting %s to %d\n", sname, intval); \
     xdev->name = (type)intval; \
   }
 
 #define booloption(name, sname) \
   if ((code = param_read_bool(plist, sname, &boolval)) < 0) \
   { \
+    if_debug1('|', "Error setting bool %s\n", sname);    \
     if ((code = param_read_null(plist, sname)) < 0) \
     { \
+      if_debug1('|', "Error setting bool %s null\n", sname);     \
       param_signal_error(plist, sname, code); \
       return (code); \
     } \
     if (code == 0) \
       xdev->name = false; \
   } \
-  else if (code == 0) \
-    xdev->name = (bool)boolval;
+  else if (code == 0) {                                   \
+    if_debug2('|', "setting %s to %d\n", sname, boolval); \
+    xdev->name = (bool)boolval; \
+  }
 
+#define stringoption(name, sname)                                \
+  if ((code = param_read_string(plist, sname, &stringval)) < 0)  \
+    {                                                            \
+      if_debug1('|', "Error setting %s string\n", sname);        \
+      if ((code = param_read_null(plist, sname)) < 0)            \
+        {                                                        \
+          if_debug1('|', "Error setting %s null\n", sname);      \
+          param_signal_error(plist, sname, code);                \
+          return (code);                                         \
+        }                                                        \
+      if (code == 0) {                                           \
+        if_debug1('|', "setting %s to empty\n", sname);          \
+        xdev->name[0] = '\0';                                    \
+      }                                                          \
+    }                                                            \
+  else if (code == 0) {                                          \
+    strncpy(xdev->name, (const char *)(stringval.data),          \
+            stringval.size);                                     \
+    xdev->name[stringval.size] = '\0';                           \
+    if_debug2('|', "setting %s to %s\n", sname, xdev->name);     \
+  }
+
+  /* We need to have *_set to distinguish defaults from explicitly sets */
   booloption(Duplex, "Duplex")
   intoption(MediaPosition, "MediaPosition", int)
   if (code == 0) xdev->MediaPosition_set = true;
+  stringoption(MediaType, "MediaType")
+  if (code == 0) xdev->MediaType_set = true;
   booloption(Tumble, "Tumble")
   intoption(CompressMode, "CompressMode", int)
 
