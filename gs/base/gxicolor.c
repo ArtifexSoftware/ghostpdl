@@ -157,13 +157,14 @@ gs_image_class_4_color(gx_image_enum * penum)
            be performed to ensure that the range of 0 to 1 is provided
            to the CMM since ICC profiles are restricted to that range
            but the PS color spaces are not. */
+        penum->use_cie_range = false;
         if (gs_color_space_is_PSCIE(penum->pcs) &&
             penum->pcs->icc_equivalent != NULL) {
             /* We have a PS CIE space.  Check the range */
             if ( !check_cie_range(penum->pcs) ) {
                 /* It is not 0 to 1.  We will be doing decode
                    plus an additional linear adjustment */
-                penum->cie_range = get_cie_range(penum->pcs);
+                penum->use_cie_range = (get_cie_range(penum->pcs) != NULL);
             }
         }
         if (gx_device_must_halftone(penum->dev) && use_fast_thresh &&
@@ -349,12 +350,12 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                     /* Need decode and then to planar */
                     psrc_decode = gs_alloc_bytes(pis->memory,  w,
                                                   "image_color_icc_prep");
-                    if (penum->cie_range == NULL) {
+                    if (!penum->use_cie_range) {
                         decode_row(penum, psrc, spp, psrc_decode, psrc_decode+w);
                     } else {
                         /* Decode needs to include adjustment for CIE range */
                         decode_row_cie(penum, psrc, spp, psrc_decode,
-                                        psrc_decode + w, penum->cie_range);
+                                        psrc_decode + w, get_cie_range(penum->pcs));
                     }
                     planar_src = psrc_decode;
                 } else {
@@ -400,12 +401,12 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                 /* Need decode and CM.  This is slow but does not happen that often */
                 psrc_decode = gs_alloc_bytes(pis->memory, w, 
                                               "image_color_icc_prep");
-                if (penum->cie_range == NULL) {
+                if (!penum->use_cie_range) {
                     decode_row(penum, psrc, spp, psrc_decode, psrc_decode+w);
                 } else {
                     /* Decode needs to include adjustment for CIE range */
                     decode_row_cie(penum, psrc, spp, psrc_decode,
-                                    psrc_decode+w, penum->cie_range);
+                                    psrc_decode+w, get_cie_range(penum->pcs));
                 }
                 (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, 
                                                     &input_buff_desc,
