@@ -60,8 +60,10 @@ typedef struct gx_device_pclxl_s {
     pxeMediaSize_t media_size;
     bool ManualFeed;            /* map ps setpage commands to pxl */
     bool ManualFeed_set;
+    int MediaPosition_old;	/* old Position attribute - for duplex detection */
     int MediaPosition;		/* MediaPosition attribute */
     int MediaPosition_set;
+    char MediaType_old[64];	/* old MediaType attribute - for duplex detection */
     char MediaType[64];	/* MediaType attribute */
     int MediaType_set;
     int page;			/* Page number starting at 0 */
@@ -1017,7 +1019,7 @@ pclxl_beginpage(gx_device_vector * vdev)
     stream *s = vdev->strm;
     byte media_source = eAutoSelect; /* default */
 
-    xdev->page ++;
+    xdev->page ++; /* even/odd for duplex front/back */
 
 /*
     errprintf(vdev->memory, "PAGE: %d %d\n", xdev->page, xdev->NumCopies);
@@ -1394,7 +1396,9 @@ pclxl_open_device(gx_device * dev)
     xdev->chars.next_in = xdev->chars.next_out = 2;
     xdev->MediaPosition_set = false;
     xdev->MediaType_set = false;
+    xdev->MediaPosition_old = eAutoSelect;
     xdev->MediaPosition = eAutoSelect;
+    xdev->MediaType_old[0] = '\0';
     xdev->MediaType[0] = '\0';
     return 0;
 }
@@ -2278,10 +2282,31 @@ pclxl_put_params(gx_device     *dev,	/* I - Device info */
 
   /* We need to have *_set to distinguish defaults from explicitly sets */
   booloption(Duplex, "Duplex")
+  if (code == 0)
+    if (xdev->Duplex) {
+      if_debug0('|', "round up page count\n");
+      xdev->page = (xdev->page+1) & ~1 ;
+    }
   intoption(MediaPosition, "MediaPosition", int)
-  if (code == 0) xdev->MediaPosition_set = true;
+  if (code == 0) {
+    xdev->MediaPosition_set = true;
+    /* round up for duplex */
+    if (xdev->MediaPosition_old != xdev->MediaPosition) {
+      if_debug0('|', "round up page count\n");
+      xdev->page = (xdev->page+1) & ~1 ;
+      xdev->MediaPosition_old = xdev->MediaPosition;
+    }
+  }
   stringoption(MediaType, "MediaType")
-  if (code == 0) xdev->MediaType_set = true;
+  if (code == 0) {
+    xdev->MediaType_set = true;
+    /* round up for duplex */
+    if (strcmp(xdev->MediaType_old, xdev->MediaType)) {
+      if_debug0('|', "round up page count\n");
+      xdev->page = (xdev->page+1) & ~1 ;
+      strcpy(xdev->MediaType_old, xdev->MediaType);
+    }
+  }
   booloption(Tumble, "Tumble")
   intoption(CompressMode, "CompressMode", int)
 
