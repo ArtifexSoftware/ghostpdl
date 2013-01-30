@@ -305,16 +305,16 @@ struct gx_image_enum_s {
     gs_image_parent_t image_parent_type;   /* Need to avoid threshold of type3 images */
     ht_landscape_info_t ht_landscape;
     gx_image_icc_setup_t icc_setup;
-    gs_range_t *cie_range;   /* Needed potentially if CS was PS CIE based */
+    bool use_cie_range;   /* Needed potentially if CS was PS CIE based */
 };
 
 /* Enumerate the pointers in an image enumerator. */
 #define gx_image_enum_do_ptrs(m)\
   m(0,pis) m(1,pcs) m(2,dev) m(3,buffer) m(4,line)\
   m(5,clip_dev) m(6,rop_dev) m(7,scaler) m(8,icc_link)\
-  m(9,color_cache) m(10,ht_buffer) m(11,thresh_buffer) m(12,cie_range)\
-  m(13,clues)
-#define gx_image_enum_num_ptrs 14
+  m(9,color_cache) m(10,ht_buffer) m(11,thresh_buffer) \
+  m(12,clues)
+#define gx_image_enum_num_ptrs 13
 #define private_st_gx_image_enum() /* in gsimage.c */\
   gs_private_st_composite(st_gx_image_enum, gx_image_enum, "gx_image_enum",\
     image_enum_enum_ptrs, image_enum_reloc_ptrs)

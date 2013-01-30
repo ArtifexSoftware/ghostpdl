@@ -673,7 +673,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     penum->color_cache = NULL;
     penum->ht_buffer = NULL;
     penum->thresh_buffer = NULL;
-    penum->cie_range = NULL;
+    penum->use_cie_range = false;
     penum->line_size = 0;
     penum->use_rop = lop != (masked ? rop3_T : rop3_S);
 #ifdef DEBUG

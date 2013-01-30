@@ -680,14 +680,14 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
                 psrc_decode = (unsigned short*) gs_alloc_bytes(pis->memory,
                                 sizeof(unsigned short) * w * spp_cm/spp,
                                 "image_render_icc16");
-                if (penum->cie_range == NULL) {
+                if (!penum->use_cie_range) {
                     decode_row16(penum, psrc, spp, psrc_decode,
                                     (const unsigned short*) (psrc_decode+w));
                 } else {
                     /* Decode needs to include adjustment for CIE range */
                     decode_row_cie16(penum, psrc, spp, psrc_decode,
                                         (const unsigned short*) (psrc_decode+w),
-                                         penum->cie_range);
+                                         get_cie_range(penum->pcs));
                 }
                 (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, 
                                                     &input_buff_desc,

@@ -152,13 +152,14 @@ gs_image_class_3_mono(gx_image_enum * penum)
                be performed to ensure that the range of 0 to 1 is provided
                to the CMM since ICC profiles are restricted to that range
                but the PS color spaces are not. */
+            penum->use_cie_range = false;
             if (gs_color_space_is_PSCIE(penum->pcs) &&
                 penum->pcs->icc_equivalent != NULL) {
                 /* We have a PS CIE space.  Check the range */
                 if ( !check_cie_range(penum->pcs) ) {
                     /* It is not 0 to 1.  We will be doing decode
                        plus an additional linear adjustment */
-                    penum->cie_range = get_cie_range(penum->pcs);
+                    penum->use_cie_range = (get_cie_range(penum->pcs) != NULL);
                 }
             }
             /* If the image has more than 256 pixels then go ahead and
