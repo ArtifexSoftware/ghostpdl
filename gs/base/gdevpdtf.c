@@ -414,7 +414,9 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 
 int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
-        if(pdfont->BaseFont.size) {
+        if(pdfont->BaseFont.size
+           && (pdfont->base_font == NULL || !pdfont->base_font->is_standard)) {
+
             gs_free_string(pdev->pdf_memory, pdfont->BaseFont.data, pdfont->BaseFont.size, "Free BaseFont string");
             pdfont->BaseFont.data = (byte *)0L;
             pdfont->BaseFont.size = 0;
