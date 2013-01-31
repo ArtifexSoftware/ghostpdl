@@ -56,95 +56,88 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h2><a name="Version9.06"></a>Version 9.06 (2012-08-08)</h2>
+<h2><a name="Version9.07"></a>Version 9.07 (2013-02-14)</h2>
 
-<p>This is the sixth full release in the stable 9.x series.
+<p>This is the seventh full release in the stable 9.x series.
 
 <p> Highlights in this release include:
 <ul>
 <li>
-<p>PDF/A-2 - pdfwrite now supports the creation of PDF/A-2 files. The 'PDFA'
-command line switch can now take a numeric parameter:
-<ul>
-<li>0 = not PDF/A compliant</li>
-<li>1 = PDF/A-1b compliant</li>
-<li>2 = PDF/A-2b compliant</li>
-</ul>
-<p>Simply specifying &quot;-dPDFA&quot; continues to have the old behaviour of creating PDF/A-1b files.
-For PDF/A-2 the command line should include &quot;-dPDFA=2&quot;.
-<br>
+<p> As of this release (9.07), Ghostscript and GhostPDL are distributed under
+the GNU Affero General Public License (AGPL).
 </li>
 <li>
-<p>pdfwrite &quot;Server mode&quot; - pdfwrite can now be run in &quot;server mode&quot; which allows
-the device to be closed without closing the interpreter. This means it is no
-longer necessary to terminate GS before starting a new PDF conversion. This leads on to:
-<br>
+<p> Ghostscript now has the option to be built as thread safe. Note that
+not all devices are thread safe. See the GS_THREADSAFE option in:
+<a href="API.htm#new_instance">GS_THREADSAFE</a>
 </li>
 <li>
-<p>pdfwrite now supports the &quot;%d&quot; format in the OutputFile switch. If this is set
-then pdfwrite will output each page of input to an individual file.
-<br>
+<p> The pdfwrite devices now supports linearized (or optimized for fast web
+view) output directly ("-dFastWebView")
 </li>
 <li>
-<p>ps2write - recent exposure to a range of PostScript devices has thrown up some
-interesting deficiencies in those devices. ps2write now emits PostScript in
-slightly different ways in order to produce output on a wider variety of devices.
-In some cases this also results in improved print times but it is still important
-to set the resolution appropriately for the output device, especially if the
-input contains transparency.
-<br>
+<p> The Font API (FAPI) has been moved from the Postscript interpreter (psi)
+into the graphics library (base), and extended to support the other languages
+(PCL/PXL/XPS). All interpreters now use Freetype by default to render all
+viable font types.
 </li>
 <li>
-<p>Ghostscript can now use output intents defined in PDFs by using the
-&quot;-dUsePDFX3Profile&quot; command line option. See <a href="Use.htm#ICC_color_parameters">ICC Color Parameters</a> for details.
-<br>
+<p> Ghostscript has been extended to support Postscript string and array
+objects with >64k entries.
 </li>
 <li>
-<p>tiffsep/tiffsep1: support for large numbers of separations improved. The previous
-implementation of those devices utilised a &quot;compressed color encoding&quot; to
-represent the tints for all the plates in one 64 bit value. As the number of
-plates increased, fewer bits were available for the tint for each plate,
-ultimately resulting in an &quot;unencodable pixels&quot; error. These revisions
-remove the reliance on the compressed color encoding, thus ensuring that
-we have a consistent color bit depth, regardless of the number of plates,
-and ensuring the &quot;unencodable pixels&quot; error will never occur.
-<p>Also as a result of these changes, there are substantial performance
-improvements in jobs with separations and transparency.
-<br>
+<p> Ghostscript has been extended to support file sizes >4Gb - in particular
+reading and writing PDF files. As a side effect of this, Ghostscript also now
+supports 64 bit Postscript integer objects.
 </li>
 <li>
-<p>tiffsep, psdcmyk and psdrgb now support the &quot;downscaler&quot; functionality.
-This brings the &quot;tiffscaled&quot; style functionality to the DeviceN output devices, so
-jobs can be rendered internally in contone and at a high resolution, and the output
-optionally downsampled by a level specified by &quot;-dDownScaleFactor=n&quot;, and
-also optionally error diffused to 1bpp output.
-<br>
+<p> All CMYK devices can now support simulated overprint of spot colors using
+the &quot;-dSimulateOverprint&quot; command line option.
 </li>
 <li>
-<p>Third party libraries: libtiff, libpng, libjpeg , Freetype and zlib have all be updated.
-<br>
+<p> Support for use of DeviceN ICC color profiles as the output profile with
+the tiffsep and psdcmyk devices.
 </li>
 <li>
-<p>clist storage, for rendering pages in bands, is now a run-time option: -sBandListStorage={file|memory}.
-<br>
+<p> Support for customized named color handling with DeviceN colors
+</li>
+<li>
+<p> Support for black point compensation
+</li>
+<li>
+<p> Support for K preservation in CMYK to CMYK conversions
+</li>
+<li>
+<p> Support for DeviceLink profiles for graphic, image and text objects
+</li>
+<li>
+<p> Support for custom color replacement
+</li>
+<li>
+<p> Increased control in specifying color conversions as a function of object type
+<p> Full details of the color management features can be found in:
+<a href="GS9_Color_Management.pdf">GS9_Color_Management.pdf</a>
+</li>
+<li>
+<p> Provide BigTIFF output option: the tiff devices can write BigTIFF files
+using the &quot;-dUseBigTIFF&quot; option. This requires libtiff version >=4.0.0 (the
+option is ignored for versions <4.0.0)
+</li>
+<li>
+<p> LittleCMS updated to 2.4
 </li>
 <li>
 <p>Plus the usual round of bug fixes, compatibility changes, and incremental improvements.
+</li>
 </ul>
-
-<p>In addition, Ghostscript and GhostPDL 8.71 are now unsupported, and those
-still using those versions (or earlier ones) should migrate to 9.x as soon as
-possible since many improvements, features and fixes from the 9.x versions
-are impractical or impossible to back-port to these legacy versions.
-
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 
-<h3><a name="9.04_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="9.07_Incompatible_changes"></a>Incompatible changes</h3>
 <p>
 No recorded incompatible changes.
 
-<h3><a name="9.04_changelog"></a>Changelog</h3>
+<h3><a name="9.07_changelog"></a>Changelog</h3>
 
 <p>See the <a href="History9.htm">history file</a> for complete log 
 of changes.
@@ -155,7 +148,7 @@ of changes.
 <hr>
 
 <p>
-<small>Copyright &copy; 2005-2011 Artifex Software, Inc.
+<small>Copyright &copy; 2005-2013 Artifex Software, Inc.
 All rights reserved.</small>
 
 <p>
@@ -169,7 +162,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.06, 8 August 2012
+<small>Ghostscript version 9.07, 12 February 2013
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
