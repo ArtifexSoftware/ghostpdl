@@ -569,8 +569,68 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
                                       strlen(bstr));
         } else if (for_outline && pdf_key_eq(pair, "/Count"))
             DO_NOTHING;
-        else
+        else {
+            int i, j=0;
+            unsigned char *temp, *buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, pair[1].size * 2 * sizeof(unsigned char),
+                        "pdf_xmp_write_translated");
+            if (buf0 == NULL)
+                return_error(gs_error_VMerror);
+            for (i = 0; i < pair[1].size; i++) {
+                byte c = pair[1].data[i];
+
+                buf0[j++] = c;
+                /* Acrobat doesn't like the 'short' escapes. and wants them as octal....
+                 * I beliwvw this should be considered an Acrtobat bug, either escapes
+                 * can be used, or not, we shouldn't have to force them to octal.
+                 */
+                if (c == '\\') {
+                    switch(pair[1].data[i + 1]) {
+                        case 'b':
+                            buf0[j++] = '0';
+                            buf0[j++] = '0';
+                            buf0[j++] = '7';
+                            i++;
+                            break;
+                        case 'f':
+                            buf0[j++] = '0';
+                            buf0[j++] = '1';
+                            buf0[j++] = '4';
+                            i++;
+                            break;
+                        case 'n':
+                            buf0[j++] = '0';
+                            buf0[j++] = '1';
+                            buf0[j++] = '2';
+                            i++;
+                            break;
+                        case 'r':
+                            buf0[j++] = '0';
+                            buf0[j++] = '1';
+                            buf0[j++] = '5';
+                            i++;
+                            break;
+                        case 't':
+                            buf0[j++] = '0';
+                            buf0[j++] = '1';
+                            buf0[j++] = '1';
+                            i++;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+            i = pair[1].size;
+            temp = (unsigned char *)pair[1].data;
+            ((gs_param_string *)pair)[1].data = buf0;
+            ((gs_param_string *)pair)[1].size = j;
+
             pdfmark_put_pair(pcd, pair);
+
+            ((gs_param_string *)pair)[1].data = temp;
+            ((gs_param_string *)pair)[1].size = i;
+            gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
+        }
     }
     if (!for_outline && pdf_key_eq(&Subtype, "/Link")) {
         if (Action) {
