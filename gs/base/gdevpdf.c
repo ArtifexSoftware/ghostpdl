@@ -1256,7 +1256,7 @@ static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int64_t star
 
 static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int64_t start, int end, gs_offset_t resource_pos, gs_offset_t *Offsets)
 {
-    int64_t start_offset = (start - pdev->FirstObjectNumber) * sizeof(ulong);
+    int64_t start_offset = (start - pdev->FirstObjectNumber) * sizeof(gs_offset_t);
 
     gp_fseek_64(tfile, start_offset, SEEK_SET);
     {
