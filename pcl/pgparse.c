@@ -106,6 +106,10 @@ call:	if ( pst->command )
             pst->arg.next = 0;
             code = (*pst->command->proc)(pst, pgls);
             p = pst->source.ptr;
+            /* cancel the command for any error other than needing
+               more data */
+            if (code < 0 && code != e_NeedData)
+                pst->command = 0;
             if ( code < 0 )
               goto x;
             pst->command = 0;

@@ -462,8 +462,11 @@ hpgl_PG(hpgl_args_t *pargs, hpgl_state_t *pgls)
         int dummy;
         hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
         /* with parameter always feed, without parameter feed if marked */
-        if ( pcl_page_marked(pgls) || hpgl_arg_c_int(pgls->memory, pargs, &dummy) )
-            hpgl_call(pcl_do_FF(pgls));
+        if ( pcl_page_marked(pgls) || hpgl_arg_c_int(pgls->memory, pargs, &dummy) ) {
+            int code = pcl_do_FF(pgls);
+            if (code < 0)
+                return code;
+        }
     }
     return 0;
 }
