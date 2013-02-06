@@ -74,25 +74,6 @@ typedef struct  pcl_seed_row_s {
     byte *  pdata;
 } pcl_seed_row_t;
 
-/* in rtraster.c */
-#define private_st_seed_row_t()                 \
-    gs_private_st_ptrs1( st_seed_row_t,         \
-                         pcl_seed_row_t,        \
-                         "PCL raster seed row", \
-                         seed_row_enum_ptrs,    \
-                         seed_row_reloc_ptrs,   \
-                         pdata                  \
-                         )
-
-#define private_st_seed_row_t_element()                 \
-    gs_private_st_element( st_seed_row_t_element,       \
-                           pcl_seed_row_t,              \
-                           "PCL seed row array",        \
-                           seed_row_element_enum_ptrs,  \
-                           seed_row_element_reloc_ptrs, \
-                           st_seed_row_t                \
-                           )
-
 /*
  * The array of decompression functions.
  */

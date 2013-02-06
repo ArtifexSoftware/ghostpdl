@@ -21,7 +21,7 @@
 #include "pcdither.h"
 
 /* GC Routines */
-private_st_udither_t();
+gs_private_st_simple(st_udither_t, pcl_udither_t, "pcl user defined dither matrix");
 
 /*
  * Return a pointer to the thershold array appropriate for one color plane.

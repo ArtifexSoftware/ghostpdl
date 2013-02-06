@@ -35,44 +35,6 @@
 #include "pxpthr.h"
 #include "gsstruct.h"
 
-/* GC structures and procedures */
-gs_private_st_composite(st_px_parser_state, px_parser_state_t,
-  "px_parser_state_t", parser_state_enum_ptrs, parser_state_reloc_ptrs);
-#define st ((px_parser_state_t *)vptr)
-static ENUM_PTRS_BEGIN(parser_state_enum_ptrs)
-        /* Mark from array pointers on the stack. */
-        if ( index < st->stack_count )
-          { px_value_t *pv = &st->stack[index];
-            ENUM_RETURN((!(~pv->type & (pxd_array | pxd_on_heap)) ?
-                         pv->value.array.data : 0));
-          }
-        return 0;
-ENUM_PTRS_END
-static RELOC_PTRS_BEGIN(parser_state_reloc_ptrs) {
-        px_parser_state_t *st_new =
-            (*gc_proc(gcst, reloc_struct_ptr))((const void *)st, gcst);
-        long diff = (byte *)st_new - (byte *)st;
-
-        /* Relocate array pointers on the stack. */
-        { px_value_t *pv = &st->stack[0];
-          int i;
-
-          for ( i = 0; i < st->stack_count; ++pv, ++i )
-            if ( !(~pv->type & (pxd_array | pxd_on_heap)) )
-                RELOC_OBJ_VAR(pv->value.array.data);
-        }
-        /* Relocate the pointers from the args. */
-        st->args.parser = st_new;
-        { px_value_t **ppv = &st->args.pv[0];
-          int i;
-
-          for ( i = 0; i < max_px_args; ++ppv, ++i )
-            if ( *ppv )
-              *ppv = (px_value_t *)((byte *)*ppv + diff);
-        }
-} RELOC_PTRS_END
-#undef st
-
 /*
  * We define the syntax of each possible tag by 4 parameters:
  *	- The minimum number of input bytes required to parse it;
@@ -175,14 +137,16 @@ static const px_tag_syntax_t tag_syntax[256] = {
 /* Allocate a parser state. */
 px_parser_state_t *
 px_process_alloc(gs_memory_t *memory)
-{	px_parser_state_t *st = gs_alloc_struct(memory, px_parser_state_t,
-                                                &st_px_parser_state,
-                                                "px_process_alloc");
-        if ( st == 0 )
-          return 0;
-        st->memory = memory;
-        px_process_init(st, true);
-        return st;
+{
+    px_parser_state_t *st =
+        (px_parser_state_t *)gs_alloc_bytes(memory,
+                                            sizeof(px_parser_state_t),
+                                            "px_process_alloc");
+    if ( st == 0 )
+        return 0;
+    st->memory = memory;
+    px_process_init(st, true);
+    return st;
 }
 
 /* Release a parser state. */

@@ -34,25 +34,7 @@ static const pcl_cid_hdr_t  dflt_cid_hdr = {
     { 1, 1, 1 }                        /* bits per primary (3 components) */
 };
 
-/*
- * GC routines
- */
-  static
-ENUM_PTRS_BEGIN(pcl_cs_indexed_enum_ptrs)
-        return 0;
-    ENUM_PTR(0, pcl_cs_indexed_t, pbase);
-    ENUM_PTR(1, pcl_cs_indexed_t, pcspace);
-    ENUM_STRING_PTR(2, pcl_cs_indexed_t, palette);
-ENUM_PTRS_END
-
-  static
-RELOC_PTRS_BEGIN(pcl_cs_indexed_reloc_ptrs)
-    RELOC_PTR(pcl_cs_indexed_t, pbase);
-    RELOC_PTR(pcl_cs_indexed_t, pcspace);
-    RELOC_STRING_PTR(pcl_cs_indexed_t, palette);
-RELOC_PTRS_END
-
-private_st_cs_indexed_t();
+gs_private_st_simple(st_cs_indexed_t, pcl_cs_indexed_t, "pcl indexed color space");
 
 /*
  * Find the smallest non-negative integral exponent of 2 larger than

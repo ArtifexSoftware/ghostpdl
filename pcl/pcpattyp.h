@@ -93,15 +93,4 @@ typedef struct pcl_gstate_ids_s {
     pcl_ht_t *                  pht;
 } pcl_gstate_ids_t;
 
-#define private_st_gstate_ids_t()   /* in pcdraw.c */   \
-    gs_private_st_ptrs3( st_gstate_ids_t,               \
-                         pcl_gstate_ids_t,              \
-                         "PCL graphics state tracker",  \
-                         gstate_ids_enum_ptrs,          \
-                         gstate_ids_reloc_ptrs,         \
-                         prev,                          \
-                         pccolor,                       \
-                         pht                            \
-                         )
-
 #endif			/* pcpattyp_INCLUDED */

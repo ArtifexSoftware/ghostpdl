@@ -68,15 +68,6 @@ typedef struct pcl_pattern_data_s {
     int                 yres;
 } pcl_pattern_data_t;
 
-#define private_st_pattern_data_t() /* in pcuptrn.c */  \
-    gs_private_st_suffix_add0( st_pattern_data_t,       \
-                               pcl_pattern_data_t,      \
-                               "PCL/GL pattern data",   \
-                               pattern_data_enum_ptrs,  \
-                               pattern_data_reloc_ptrs, \
-                               st_gs_depth_bitmap       \
-                               )
-
 /*
  * The usual copy, init, and release macros.
  */
@@ -165,17 +156,6 @@ typedef struct pcl_pattern_t {
     gs_point                ref_pt;    /* referenc point (device space) */
 } pcl_pattern_t;
 
-#define private_st_pattern_t()  /* in pcuptrn.c */  \
-    gs_private_st_ptrs3( st_pattern_t,              \
-                         pcl_pattern_t,             \
-                         "PCL/GL pattern",          \
-                         pattern_enum_ptrs,         \
-                         pattern_reloc_ptrs,        \
-                         ppat_data,                 \
-                         pcol_ccolor,               \
-                         pmask_ccolor               \
-                         )
-
 /*
  * The PCL structure corresponding to the graphic library's client color
  * structure. The latter potentially contains a client data structure pointer
@@ -249,18 +229,6 @@ struct  pcl_ccolor_s {
     const byte *            prast;
     gs_client_color         ccolor;
 };
-
-#define private_st_ccolor_t()               \
-    gs_private_st_ptrs4( st_ccolor_t,       \
-                         pcl_ccolor_t,      \
-                         "PCL client color",\
-                         ccolor_enum_ptrs,  \
-                         ccolor_reloc_ptrs, \
-                         ppat_data,         \
-                         pindexed,          \
-                         pbase,             \
-                         ccolor.pattern     \
-                         )
 
 /*
  * The usual copy, init, and release macros.

@@ -165,15 +165,6 @@ typedef struct pcl_lookup_tbl_s {
     const pcl__lookup_tbl_t *   ptbl;
 } pcl_lookup_tbl_t;
 
-#define private_st_lookup_tbl_t()                   \
-    gs_private_st_ptrs1( st_lookup_tbl_t,           \
-                         pcl_lookup_tbl_t,          \
-                         "pcl color lookup table",  \
-                         lookup_enum_ptr,           \
-                         lookup_reloc_ptr,          \
-                         ptbl                       \
-                         )
-
 /*
  * Copy, init, and release macros.
  */

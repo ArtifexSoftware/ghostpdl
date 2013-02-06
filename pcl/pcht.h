@@ -111,14 +111,6 @@ typedef struct pcl_ht_builtin_dither_s {
 } pcl_ht_builtin_dither_t;
 #endif
 
-#define private_st_ht_builtin_dither_t()                    \
-    gs_private_st_composite( st_ht_builtin_dither_t,        \
-                             pcl_ht_builtin_dither_t,       \
-                             "pcl builtin dither object",   \
-                             ht_dither_enum_ptrs,           \
-                             ht_dither_reloc_ptrs           \
-                             )
-
 /*
  * Array of dithers and devices to be used for different rendering methods.
  *
@@ -206,14 +198,6 @@ struct pcl_ht_s {
     gs_ht *                 pfg_ht;
     gs_ht *                 pim_ht;
 };
-
-#define private_st_ht_t()                           \
-    gs_private_st_composite( st_ht_t,               \
-                             pcl_ht_t,              \
-                             "pcl halftone object", \
-                             ht_enum_ptrs,          \
-                             ht_reloc_ptrs          \
-                             )
 
 #ifndef pcl_ht_DEFINED
 #define pcl_ht_DEFINED

@@ -32,11 +32,8 @@
 #include "pcbiptrn.h"
 #include "pcuptrn.h"
 
-/*
- * GC routines.
- */
-private_st_pattern_data_t();
-private_st_pattern_t();
+gs_private_st_simple(st_pattern_data_t, pcl_pattern_data_t, "PCL/GL pattern data");
+gs_private_st_simple(st_pattern_t, pcl_pattern_t, "PCL/GL pattern");
 
 /*
  * Free routine for pattern data structure.

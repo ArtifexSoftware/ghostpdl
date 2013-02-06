@@ -157,15 +157,6 @@ typedef struct px_gstate_s {
   int stack_depth;		/* # of unmatched PushGS */
   const pl_symbol_map_t *symbol_map; /* symbol mapping */
 } px_gstate_t;
-#define private_st_px_gstate()	/* in pxgstate.c */\
-  gs_private_st_composite(st_px_gstate, px_gstate_t, "px_gstate_t",\
-    px_gstate_enum_ptrs, px_gstate_reloc_ptrs)
-#define px_gstate_do_ptrs(m)\
-  m(0,pxs) m(1,base_font)
-#define px_gstate_num_ptrs 2
-#define px_gstate_do_string_ptrs(m)\
-  m(0,halftone.thresholds) m(1,dither_matrix)
-#define px_gstate_num_string_ptrs 2
 
 /* Allocate a px_gstate_t. */
 px_gstate_t *px_gstate_alloc(gs_memory_t *);

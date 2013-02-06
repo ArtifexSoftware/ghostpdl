@@ -124,9 +124,8 @@ struct px_image_enum_s {
   void *info;			/* state structure for driver */
   px_bitmap_enum_t benum;
 };
-gs_private_st_suffix_add2(st_px_image_enum, px_image_enum_t, "px_image_enum_t",
-  px_image_enum_enum_ptrs, px_image_enum_reloc_ptrs, st_color_space,
-  image.ColorSpace, row);
+
+gs_private_st_simple(st_px_image_enum, px_image_enum_t, "px_image_enum_t");
 
 /* ---------------- Utilities ---------------- */
 
@@ -700,9 +699,8 @@ struct px_pattern_enum_s {
   pxePatternPersistence_t persistence;
   px_pattern_t *pattern;
 };
-gs_private_st_ptrs1(st_px_pattern_enum, px_pattern_enum_t,
-  "px_pattern_enum_t", pattern_enum_enum_ptrs, pattern_enum_reloc_ptrs,
-  pattern);
+
+gs_private_st_simple(st_px_pattern_enum, px_pattern_enum_t, "px_pattern_enum_t");
 
 const byte apxBeginRastPattern[] = {
   pxaColorMapping, pxaColorDepth, pxaSourceWidth, pxaSourceHeight,

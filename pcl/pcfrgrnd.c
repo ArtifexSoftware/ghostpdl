@@ -20,8 +20,8 @@
 #include "pcfont.h"
 #include "pcfrgrnd.h"
 
-/* GC routines */
-private_st_frgrnd_t();
+/* RC routines */
+gs_private_st_simple(st_frgrnd_t, pcl_frgrnd_t, "pcl foreground object");
 
 /*
  * Free a pcl foreground object.

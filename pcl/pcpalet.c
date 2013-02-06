@@ -28,9 +28,9 @@
 #include "gxdcconv.h"
 #include "gzstate.h"
 
-/* GC routines */
-private_st_palette_t();
-private_st_pstack_entry_t();
+/* RC routines */
+gs_private_st_simple(st_palette_t, pcl_palette_t, "pcl palette object");
+gs_private_st_simple(st_pstack_entry_t, pstack_entry_t, "palette stack entry");
 
 /*
  * Free a PCL palette.

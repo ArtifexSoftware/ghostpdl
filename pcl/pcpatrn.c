@@ -45,8 +45,8 @@
  */
 static const gs_paint_color    white_paint = {{ 1.0, 0.0, 0.0, 0.0 }};
 
-/* GC routines */
-private_st_ccolor_t();
+/* RC routines */
+gs_private_st_simple(st_ccolor_t, pcl_ccolor_t, "PCL client color");
 
 /*
  * Convert a color value specified as a three-element byte array, or an index

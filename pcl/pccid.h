@@ -139,12 +139,6 @@ typedef struct pcl_cid_data_s {
     }           u;
 } pcl_cid_data_t;
 
-#define private_st_cid_data_t()             \
-    gs_private_st_simple( st_cid_data,      \
-                          pcl_cid_data_t,   \
-                          "pcl_cid_data_t"  \
-                          )
-
 /*
  * Functions for getting configuration parameters from the first six bytes of
  * the configure image data structure.

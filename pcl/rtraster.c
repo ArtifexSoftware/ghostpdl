@@ -94,18 +94,9 @@ typedef struct pcl_raster_s {
 
 } pcl_raster_t;
 
-/* GC routines */
-private_st_seed_row_t();
-private_st_seed_row_t_element();
-
-gs_private_st_ptrs2( st_raster_t,
-                     pcl_raster_t,
-                     "PCL raster object",
-                     raster_enum_ptrs,
-                     raster_reloc_ptrs,
-                     pseed_rows,
-                     cons_buff
-                     );
+gs_private_st_simple(st_seed_row_t, pcl_seed_row_t,"PCL raster seed row");
+gs_private_st_simple(st_seed_row_t_element, pcl_seed_row_t, "PCL seed row array");
+gs_private_st_simple(st_raster_t, pcl_raster_t, "PCL raster object");
 
 /* forward declaration */
 static int     process_zero_rows( gs_state * pgs, pcl_raster_t * prast, int nrows );

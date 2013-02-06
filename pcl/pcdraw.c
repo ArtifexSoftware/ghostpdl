@@ -101,7 +101,7 @@ pcl_set_drawing_color(
  * be used in place of gsave and grestore.
  */
 
-private_st_gstate_ids_t();
+gs_private_st_simple(st_gstate_ids_t, pcl_gstate_ids_t, "PCL graphics state tracker");
 
   int
 pcl_gsave(

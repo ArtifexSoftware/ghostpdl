@@ -65,16 +65,6 @@ struct pcl_palette_s {
 typedef struct pcl_palette_s    pcl_palette_t;
 #endif
 
-#define private_st_palette_t()                  \
-    gs_private_st_ptrs2( st_palette_t,          \
-                         pcl_palette_t,         \
-                         "pcl palette object",  \
-                         palette_enum_ptrs,     \
-                         palette_reloc_ptrs,    \
-                         pindexed,              \
-                         pht                    \
-                         )
-
 /*
  * The usual init, copy,and release macros.
  */
@@ -296,15 +286,6 @@ int pcl_palette_set_view_illuminant(
  * Returns 0 on success, < 0 in the event of an error.
  */
 int pcl_palette_check_complete(pcl_state_t * pcs);
-
-#define private_st_pstack_entry_t()		\
-    gs_private_st_ptrs1( st_pstack_entry_t,	\
-                     pstack_entry_t,		\
-                     "palette stack entry",	\
-                     pstack_enum_ptrs,		\
-                     pstack_reloc_ptrs,		\
-                     ppalet			\
-                     );
 
 /*
  * Entry points to the palette-related commands.

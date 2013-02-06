@@ -85,16 +85,6 @@ struct pcl_frgrnd_s {
 typedef struct pcl_frgrnd_s     pcl_frgrnd_t;
 #endif
 
-#define private_st_frgrnd_t()                       \
-    gs_private_st_ptrs2( st_frgrnd_t,               \
-                         pcl_frgrnd_t,              \
-                         "pcl foreground object",   \
-                         frgrnd_enum_ptrs,          \
-                         frgrnd_reloc_ptrs,         \
-                         pbase,                     \
-                         pht                       \
-                         )
-
 /*
  * The usual init, copy,and release macros.
  */

@@ -19,8 +19,8 @@
 #include "pcpalet.h"
 #include "pclookup.h"
 
-/* GC routines */
-private_st_lookup_tbl_t();
+/* RC routines */
+gs_private_st_simple(st_lookup_tbl_t, pcl_lookup_tbl_t, "pcl color lookup table");
 
 /*
  * Free lookup table.

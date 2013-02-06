@@ -53,15 +53,6 @@ typedef struct pcl_udither_s {
     const pcl__udither_t *  ptbl;
 } pcl_udither_t;
 
-#define private_st_udither_t()                              \
-    gs_private_st_ptrs1( st_udither_t,                      \
-                         pcl_udither_t,                     \
-                         "pcl user defined dither matrix",  \
-                         udither_enum_ptr,                  \
-                         udither_reloc_ptr,                 \
-                         ptbl                               \
-                         )
-
 /*
  * Copy, init, and release macros.
  */

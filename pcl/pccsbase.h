@@ -75,17 +75,6 @@ typedef struct pcl_cs_base_s {
     gs_color_space *        pcspace;
 } pcl_cs_base_t;
 
-#define private_st_cs_base_t()                  \
-    gs_private_st_ptrs3( st_cs_base_t,          \
-                         pcl_cs_base_t,         \
-                         "pcl base color space",\
-                         cs_base_enum_ptrs,     \
-                         cs_base_reloc_ptrs,    \
-                         client_data.plktbl1,   \
-                         client_data.plktbl2,   \
-                         pcspace                \
-                         )
-
 /*
  * Macros to init, copy, and release PCL base color spaces.
  */

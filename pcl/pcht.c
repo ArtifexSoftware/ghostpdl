@@ -32,68 +32,6 @@
 #include "plht.h"
 
 /*
- * GC routines
- */
-static
-ENUM_PTRS_BEGIN(ht_dither_enum_ptrs)
-
-        return 0;
-
-      case 1:
-        {
-            pcl_ht_builtin_dither_t * pdither = (pcl_ht_builtin_dither_t *)vptr;
-
-            if (pdither->type == pcl_halftone_Threshold)
-                ENUM_RETURN(pdither->u.thresh.pdata);
-            else if (pdither->type == pcl_halftone_Table_Dither)
-                ENUM_RETURN(pdither->u.tdither.pdata);
-            else
-                return 0;
-        }
-ENUM_PTRS_END
-
-static
-RELOC_PTRS_BEGIN(ht_dither_reloc_ptrs)
-    pcl_ht_builtin_dither_t *   pdither = (pcl_ht_builtin_dither_t *)vptr;
-
-    if (pdither->type == pcl_halftone_Threshold)
-        RELOC_VAR(pdither->u.thresh.pdata);
-    else if (pdither->type == pcl_halftone_Table_Dither)
-        RELOC_VAR(pdither->u.tdither.pdata);
-RELOC_PTRS_END
-
-private_st_ht_builtin_dither_t();
-
-static
-ENUM_PTRS_BEGIN(ht_enum_ptrs)
-        return 0;
-      ENUM_PTR(0, pcl_ht_t, client_data[0].plktbl);
-      ENUM_PTR(1, pcl_ht_t, client_data[1].plktbl);
-      ENUM_PTR(2, pcl_ht_t, client_data[2].plktbl);
-      ENUM_PTR(3, pcl_ht_t, pdither);
-      ENUM_STRING_PTR(4, pcl_ht_t, thresholds[0]);
-      ENUM_STRING_PTR(5, pcl_ht_t, thresholds[1]);
-      ENUM_STRING_PTR(6, pcl_ht_t, thresholds[2]);
-      ENUM_PTR(7, pcl_ht_t, pfg_ht);
-      ENUM_PTR(8, pcl_ht_t, pim_ht);
-ENUM_PTRS_END
-
-static
-RELOC_PTRS_BEGIN(ht_reloc_ptrs)
-    RELOC_PTR(pcl_ht_t, client_data[0].plktbl);
-    RELOC_PTR(pcl_ht_t, client_data[1].plktbl);
-    RELOC_PTR(pcl_ht_t, client_data[2].plktbl);
-    RELOC_PTR(pcl_ht_t, pdither);
-    RELOC_STRING_PTR(pcl_ht_t, thresholds[0]);
-    RELOC_STRING_PTR(pcl_ht_t, thresholds[1]);
-    RELOC_STRING_PTR(pcl_ht_t, thresholds[2]);
-    RELOC_PTR(pcl_ht_t, pfg_ht);
-    RELOC_PTR(pcl_ht_t, pim_ht);
-RELOC_PTRS_END
-
-private_st_ht_t();
-
-/*
  * Built-in dither information. The ordered and clustered-ordered dither
  * matrices are fixed so as to give predictable results when used in combination
  * with logical operations (raster-ops).
@@ -1259,11 +1197,11 @@ read_dither(
     if (dstring.size < req_size)
         return;
 
-    pdt = gs_alloc_struct( pmem,
-                           pcl_ht_builtin_dither_t,
-                           &st_ht_builtin_dither_t,
-                           "read device dither"
-                           );
+    pdt = (pcl_ht_builtin_dither_t *)
+        gs_alloc_bytes(pmem,
+                       sizeof(pcl_ht_builtin_dither_t),
+                       "read device dither"
+                       );
     if (pdt == 0)
         return;
 
@@ -1585,6 +1523,9 @@ free_pcl_ht(
  *
  * Returns 0 on success, < 0 in event of an error.
  */
+
+gs_private_st_simple(st_ht_t, pcl_ht_t, "pcl halftone object");
+
 static int
 alloc_pcl_ht(
     pcl_ht_t **   ppht,

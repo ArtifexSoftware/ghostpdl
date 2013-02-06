@@ -29,8 +29,9 @@
 #include "pccsbase.h"
 #include "pcstate.h"
 
-/* GC routines */
-private_st_cs_base_t();
+/* for RC structures */
+gs_private_st_simple(st_cs_base_t, pcl_cs_base_t, "pcl base color space");
+
 
 /*
  * Handle min/max values for device-independent color spaces.
