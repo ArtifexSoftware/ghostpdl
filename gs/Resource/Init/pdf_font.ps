@@ -1812,16 +1812,16 @@ currentdict /CMap_read_dict undef
     } {
       //true resolvestream
                 % Stack: filepos fontres font mapstream
-        % Can't know the length of the decompressed stream, so allocate a big buffer...
-      dup 65534 string readstring {
-        % Length exceeded max string size, use an array of two strings
-        1 index 65534 string readstring pop   % maybe a null string - not important.
-        2 array astore
-                % Stack: filepos fontres font mapstream array
-        dup 1 get length 65534 add
-      } {
-        dup length
-      } ifelse
+      [
+      { counttomark 1 add index 32768 string readstring not {
+          counttomark 1 eq {
+            exch pop dup length
+          } {
+            ] dup 0 exch { length add } forall
+          } ifelse
+          exit
+        } if
+      } loop
       2 idiv
         % Stack: filepos fontres font mapstream array/string CIDCount
       3 index exch /CIDCount exch put

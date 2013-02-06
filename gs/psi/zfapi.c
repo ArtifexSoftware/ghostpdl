@@ -1901,11 +1901,12 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                 if (r_has_type(CIDMap, t_array)) {
 
                     /* Too big for single string, so its an array of 2 strings */
-                    code =
-                        string_array_access_proc(pbfont->memory, CIDMap, 1,
+                    code = string_array_access_proc(pbfont->memory, CIDMap, 1,
                                                  client_char_code * gdb, gdb,
                                                  NULL, NULL,
                                                  (const byte **)&Map);
+                    if (code < 0)
+                    	return code;
                 }
                 else {
                     if (CIDMap->tas.rsize < c_code * gdb) {
