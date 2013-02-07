@@ -302,9 +302,17 @@ cmd_write_trapezoid_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 int
 clist_fillpage(gx_device * dev, gs_imager_state *pis, gx_drawing_color *pdcolor)
 {
-    gx_device_clist_writer * const cdev = &((gx_device_clist *)dev)->writer;
-    gx_clist_state * pcls = cdev->states; /* Use any. */
+    gx_device_clist * const cldev = (gx_device_clist *)dev;
+    gx_device_clist_writer * const cdev = &(cldev->writer);
+    gx_clist_state * pcls;
     int code;
+
+    /* flush previous contents */
+    if ((code = clist_close_writer_and_init_reader(cldev) < 0) ||
+        (code = clist_finish_page(dev, true)) < 0)
+        return code;;
+
+    pcls = cdev->states; /* Use any. */
 
     do {
         code = cmd_put_drawing_color(cdev, pcls, pdcolor, NULL, devn_not_tile);
