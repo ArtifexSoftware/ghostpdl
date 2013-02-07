@@ -583,6 +583,11 @@ end readonly def
 } bdef
 
 /BT {
+  currentdict /TextSaveMatrix known {
+    (   **** Ignoring nested BT operator.\n)
+    pdfformaterror
+    ET
+  } if
   currentdict /TextLineMatrix .knownget
     { identmatrix pop TextMatrix identmatrix pop }
     { matrix /TextLineMatrix gput matrix /TextMatrix gput }
