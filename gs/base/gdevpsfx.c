@@ -433,6 +433,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
     bool need_moveto = true;
     bool replace_hints = false;
     bool hints_changed = false;
+    bool width_on_stack = false;
     enum {
         dotsection_in = 0,
         dotsection_out = -1
@@ -572,18 +573,19 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             need_moveto = false;
             CHECK_OP();
             if (first) {
-                if (cis.os_count)
+                if (width_on_stack) {
                     type2_put_fixed(s, *csp); /* width */
+                    /* We need to move all the stored numeric values up by
+                     * one in the stack, eliminating the width, so that later
+                     * processing when we handle the drswing operator emits the correct
+                     * values. This is different to the 'move' case below.
+                     */
+                    cis.os_count--;
+                    for (i = 0; i < cis.os_count; ++i)
+                        cis.ostack[i] = cis.ostack[i+1];
+                }
                 mx += cis.lsb.x + mx0, my += cis.lsb.y + my0;
                 first = false;
-                /* We need to move all the stored numeric values up by
-                 * one in the stack, eliminating the width, so that later
-                 * processing when we handle the drswing operator emits the correct
-                 * values. This is different to the 'move' case below.
-                 */
-                cis.os_count--;
-                for (i = 0; i < cis.os_count; ++i)
-                    cis.ostack[i] = cis.ostack[i+1];
             }
             CHECK_HINTS_CHANGED();
             if (mx == 0) {
@@ -723,6 +725,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             else {
                 cis.ostack[0] -= default_defaultWidthX;
                 cis.os_count = 1;
+                width_on_stack = true;
             }
             if (hstem_hints.count) {
                 if (cis.os_count)
@@ -730,6 +733,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
                 type2_put_stems(s, cis.os_count, &hstem_hints,
                                 (replace_hints ? c2_hstemhm : cx_hstem));
                 cis.os_count = 0;
+                width_on_stack = false;
             }
             if (vstem_hints.count) {
                 if (cis.os_count)
@@ -737,6 +741,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
                 type2_put_stems(s, cis.os_count, &vstem_hints,
                                 (replace_hints ? c2_vstemhm : cx_vstem));
                 cis.os_count = 0;
+                width_on_stack = false;
             }
             continue;
         case CE_OFFSET + ce1_seac:
