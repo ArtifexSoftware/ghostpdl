@@ -76,6 +76,15 @@ s_12_init(stream_state * st)
     ss->bits_per_sample = 12;	/* not needed */
     return 0;
 }
+static int
+s_16_init(stream_state * st)
+{
+    stream_1248_state *const ss = (stream_1248_state *) st;
+
+    ss->left = ss->samples_per_row;
+    ss->bits_per_sample = 16;	/* not needed */
+    return 0;
+}
 
 /* Process one buffer. */
 #define BEGIN_1248\
@@ -207,6 +216,22 @@ s_12_8_process(stream_state * st, stream_cursor_read * pr,
     END_1248;
 }
 
+/* 16-to-8 "expansion" */
+static int
+s_16_8_process(stream_state * st, stream_cursor_read * pr,
+               stream_cursor_write * pw, bool last)
+{
+    BEGIN_1248;
+
+    n = ss->samples_per_row;	/* misuse n to avoid a compiler warning */
+    status = 0;
+    for (; rlimit - p >= 2; ++q) {
+        q[1] = (byte)p[1];                /* Set output to the high byte of the input */
+        p+=2;                   /* Discard the low byte */
+    }
+    END_1248;
+}
+
 /* 8-to-N reduction */
 #define FOREACH_8_N(out, nin)\
         byte out;\
@@ -296,6 +321,9 @@ const stream_template s_4_8_template = {
 };
 const stream_template s_12_8_template = {
     &st_1248_state, s_12_init, s_12_8_process, 1, 2
+};
+const stream_template s_16_8_template = {
+    &st_1248_state, s_16_init, s_16_8_process, 1, 2
 };
 
 const stream_template s_8_1_template = {
@@ -1095,6 +1123,21 @@ s_image_colors_set_dimensions(stream_image_colors_state * ss,
 
 void
 s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
+                               const gs_color_space *pcs, const gs_imager_state *pis,
+                               float *Decode)
+{
+    ss->output_depth = pdev->color_info.num_components;
+    ss->output_component_index = ss->output_depth;
+    ss->output_bits_per_sample = pdev->color_info.comp_bits[0]; /* Same precision for all components. */
+    ss->convert_color = s_image_colors_convert_to_device_color;
+    ss->pdev = pdev;
+    ss->pcs = pcs;
+    ss->pis = pis;
+    memcpy(ss->Decode, Decode, ss->depth * sizeof(Decode[0]) * 2);
+}
+
+void
+s_new_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
                                const gs_color_space *pcs, const gs_imager_state *pis,
                                float *Decode)
 {

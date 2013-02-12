@@ -22,6 +22,7 @@
 #include "gdevpdfo.h"
 #include "gdevpdfg.h"
 #include "gsparamx.h"
+#include "gsicc_manage.h"
 
 /*
  * The pdfwrite device supports the following "real" parameters:
@@ -125,6 +126,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("PreserveSMask", gs_param_type_bool, PreserveSMask),
     pi("PreserveTrMode", gs_param_type_bool, PreserveTrMode),
     pi("NoT3CCITT", gs_param_type_bool, NoT3CCITT),
+    pi("PDFUseOldCMS", gs_param_type_bool, UseOldColor),
     pi("FastWebView", gs_param_type_bool, Linearise),
     pi("FirstPage", gs_param_type_int, FirstPage),
     pi("LastPage", gs_param_type_int, LastPage),
@@ -508,30 +510,70 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     ecode = gdev_psdf_put_params(dev, plist);
     if (ecode < 0)
         goto fail;
-    if ((pdev->params.ColorConversionStrategy == ccs_CMYK &&
-         strcmp(pdev->color_info.cm_name, "DeviceCMYK")) ||
-        (pdev->params.ColorConversionStrategy == ccs_sRGB &&
-          strcmp(pdev->color_info.cm_name, "DeviceRGB")) ||
-        (pdev->params.ColorConversionStrategy == ccs_Gray &&
-          strcmp(pdev->color_info.cm_name, "DeviceGray"))) {
-        emprintf(pdev->memory,
-                 "ColorConversionStrategy is incompatible to ProcessColorModel.\n");
-        ecode = gs_note_error(gs_error_rangecheck);
-        pdev->params.ColorConversionStrategy = save_ccs;
-    }
-    if (pdev->params.ColorConversionStrategy == ccs_UseDeviceIndependentColor) {
-        if (!pdev->UseCIEColor) {
-            emprintf(pdev->memory,
-                     "Set UseCIEColor for UseDeviceIndependentColor to work properly.\n");
-            ecode = gs_note_error(gs_error_rangecheck);
-            pdev->UseCIEColor = true;
+    if (!pdev->UseOldColor) {
+        if (pdev->params.ConvertCMYKImagesToRGB) {
+            if (pdev->params.ColorConversionStrategy == ccs_CMYK) {
+                emprintf(pdev->memory, "ConvertCMYKImagesToRGB is not compatible with ColorConversionStrategy of CMYK\n");
+            } else {
+                if (pdev->params.ColorConversionStrategy == ccs_Gray) {
+                    emprintf(pdev->memory, "ConvertCMYKImagesToRGB is not compatible with ColorConversionStrategy of Gray\n");
+                } else {
+                    if (pdev->icc_struct)
+                        rc_decrement(pdev->icc_struct,
+                                     "reset default profile\n");
+                    pdf_set_process_color_model(pdev,1);
+                    code = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                }
+            }
         }
-    }
-    if (pdev->params.ColorConversionStrategy == ccs_UseDeviceIndependentColorForImages) {
-        if (!pdev->UseCIEColor) {
+        switch (pdev->params.ColorConversionStrategy) {
+            case ccs_LeaveColorUnchanged:
+            case ccs_UseDeviceDependentColor:
+            case ccs_UseDeviceIndependentColor:
+            case ccs_UseDeviceIndependentColorForImages:
+            case ccs_ByObjectType:
+            case ccs_sRGB:
+                break;
+            case ccs_CMYK:
+                if (pdev->icc_struct)
+                    rc_decrement(pdev->icc_struct,
+                                 "reset default profile\n");
+                pdf_set_process_color_model(pdev, 2);
+                code = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                break;
+            case ccs_Gray:
+                if (pdev->icc_struct)
+                    rc_decrement(pdev->icc_struct,
+                                 "reset default profile\n");
+                pdf_set_process_color_model(pdev,0);
+                code = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                break;
+            case ccs_RGB:
+                /* Only bother to do this if we didn't handle it above */
+                if (!pdev->params.ConvertCMYKImagesToRGB) {
+                    if (pdev->icc_struct)
+                        rc_decrement(pdev->icc_struct,
+                                     "reset default profile\n");
+                    pdf_set_process_color_model(pdev,1);
+                    code = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                }
+                break;
+            default:
+                break;
+        }
+    } else {
+        if ((pdev->params.ColorConversionStrategy == ccs_CMYK &&
+             strcmp(pdev->color_info.cm_name, "DeviceCMYK")) ||
+            (pdev->params.ColorConversionStrategy == ccs_sRGB &&
+              strcmp(pdev->color_info.cm_name, "DeviceRGB")) ||
+            (pdev->params.ColorConversionStrategy == ccs_Gray &&
+              strcmp(pdev->color_info.cm_name, "DeviceGray"))) {
             emprintf(pdev->memory,
-                     "UseDeviceDependentColorForImages is not supported. Use UseDeviceIndependentColor.\n");
-            pdev->params.ColorConversionStrategy = ccs_UseDeviceIndependentColor;
+                     "ColorConversionStrategy is incompatible to ProcessColorModel.\n");
+            ecode = gs_note_error(gs_error_rangecheck);
+            pdev->params.ColorConversionStrategy = save_ccs;
+        }
+        if (pdev->params.ColorConversionStrategy == ccs_UseDeviceIndependentColor) {
             if (!pdev->UseCIEColor) {
                 emprintf(pdev->memory,
                          "Set UseCIEColor for UseDeviceIndependentColor to work properly.\n");
@@ -539,20 +581,33 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                 pdev->UseCIEColor = true;
             }
         }
-    }
-    if (pdev->params.ColorConversionStrategy == ccs_UseDeviceDependentColor) {
-        if (!strcmp(pdev->color_info.cm_name, "DeviceCMYK")) {
-            emprintf(pdev->memory,
-                     "Replacing the deprecated device parameter value UseDeviceDependentColor with CMYK.\n");
-            pdev->params.ColorConversionStrategy = ccs_CMYK;
-        } else if (!strcmp(pdev->color_info.cm_name, "DeviceRGB")) {
-            emprintf(pdev->memory,
-                     "Replacing the deprecated device parameter value UseDeviceDependentColor with sRGB.\n");
-            pdev->params.ColorConversionStrategy = ccs_sRGB;
-        } else {
-            emprintf(pdev->memory,
-                     "Replacing the deprecated device parameter value UseDeviceDependentColor with Gray.\n");
-            pdev->params.ColorConversionStrategy = ccs_Gray;
+        if (pdev->params.ColorConversionStrategy == ccs_UseDeviceIndependentColorForImages) {
+            if (!pdev->UseCIEColor) {
+                emprintf(pdev->memory,
+                         "UseDeviceDependentColorForImages is not supported. Use UseDeviceIndependentColor.\n");
+                pdev->params.ColorConversionStrategy = ccs_UseDeviceIndependentColor;
+                if (!pdev->UseCIEColor) {
+                    emprintf(pdev->memory,
+                             "Set UseCIEColor for UseDeviceIndependentColor to work properly.\n");
+                    ecode = gs_note_error(gs_error_rangecheck);
+                    pdev->UseCIEColor = true;
+                }
+            }
+        }
+        if (pdev->params.ColorConversionStrategy == ccs_UseDeviceDependentColor) {
+            if (!strcmp(pdev->color_info.cm_name, "DeviceCMYK")) {
+                emprintf(pdev->memory,
+                         "Replacing the deprecated device parameter value UseDeviceDependentColor with CMYK.\n");
+                pdev->params.ColorConversionStrategy = ccs_CMYK;
+            } else if (!strcmp(pdev->color_info.cm_name, "DeviceRGB")) {
+                emprintf(pdev->memory,
+                         "Replacing the deprecated device parameter value UseDeviceDependentColor with sRGB.\n");
+                pdev->params.ColorConversionStrategy = ccs_sRGB;
+            } else {
+                emprintf(pdev->memory,
+                         "Replacing the deprecated device parameter value UseDeviceDependentColor with Gray.\n");
+                pdev->params.ColorConversionStrategy = ccs_Gray;
+            }
         }
     }
     if (cl < 1.5 && pdev->params.ColorImage.Filter != NULL &&

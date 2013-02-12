@@ -900,11 +900,11 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
  nyi:
     return gx_default_begin_typed_image
         ((gx_device *)pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
-         pinfo);
+        pinfo);
 }
 
 static int
-pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
+old_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
                       const gs_matrix *pmat, const gs_image_common_t *pic,
                       const gs_int_rect * prect,
                       const gx_drawing_color * pdcolor,
@@ -922,6 +922,984 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
   gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                               "pdf_begin_typed_image(image)");
   return code;
+}
+
+static int setup_type1_image(gx_device_pdf *pdev, const gs_image_common_t *pic,
+                             const gx_drawing_color * pdcolor, image_union_t *image,
+                             pdf_typed_image_context_t context)
+{
+    const gs_image_t *pim1 = (const gs_image_t *)pic;
+
+    if (pim1->Alpha != gs_image_alpha_none)
+        return -1;
+    if (pim1->ImageMask) {
+        /* If parameters are invalid, use the fallback implementation. */
+        if (!(gx_dc_is_pattern1_color(pdcolor)))
+            if (pim1->BitsPerComponent != 1 ||
+                !((pim1->Decode[0] == 0.0 && pim1->Decode[1] == 1.0) ||
+                  (pim1->Decode[0] == 1.0 && pim1->Decode[1] == 0.0))
+                )
+                return -1;
+    }
+    image[0].type1 = *pim1;
+    /* If we can write in-line then make it so */
+    return (context == PDF_IMAGE_DEFAULT &&
+        can_write_image_in_line(pdev, pim1));
+}
+
+static int setup_type3_image(gx_device_pdf *pdev, const gs_imager_state * pis,
+                      const gs_matrix *pmat, const gs_image_common_t *pic,
+                      const gs_int_rect * prect,
+                      const gx_drawing_color * pdcolor,
+                      const gx_clip_path * pcpath, gs_memory_t * mem,
+                      gx_image_enum_common_t ** pinfo,
+                      image_union_t *image)
+{
+    const gs_image3_t *pim3 = (const gs_image3_t *)pic;
+    gs_image3_t pim3a;
+    const gs_image_common_t *pic1 = pic;
+    gs_matrix m, mi;
+    const gs_matrix *pmat1 = pmat;
+    int code;
+
+    if (pdev->CompatibilityLevel < 1.3 && !pdev->PatternImagemask) {
+        if (pdf_must_put_clip_path(pdev, pcpath))
+            code = pdf_unclip(pdev);
+        else
+            code = pdf_open_page(pdev, PDF_IN_STREAM);
+        if (code < 0)
+            return code;
+        code = pdf_put_clip_path(pdev, pcpath);
+        if (code < 0)
+            return code;
+        gs_make_identity(&m);
+        pmat1 = &m;
+        m.tx = floor(pis->ctm.tx + 0.5); /* Round the origin against the image size distorsions */
+        m.ty = floor(pis->ctm.ty + 0.5);
+        pim3a = *pim3;
+        gs_matrix_invert(&pim3a.ImageMatrix, &mi);
+        gs_make_identity(&pim3a.ImageMatrix);
+        if (pim3a.Width < pim3a.MaskDict.Width && pim3a.Width > 0) {
+            int sx = (pim3a.MaskDict.Width + pim3a.Width - 1) / pim3a.Width;
+
+            gs_matrix_scale(&mi, 1.0 / sx, 1, &mi);
+            gs_matrix_scale(&pim3a.ImageMatrix, 1.0 / sx, 1, &pim3a.ImageMatrix);
+        }
+        if (pim3a.Height < pim3a.MaskDict.Height && pim3a.Height > 0) {
+            int sy = (pim3a.MaskDict.Height + pim3a.Height - 1) / pim3a.Height;
+
+            gs_matrix_scale(&mi, 1, 1.0 / sy, &mi);
+            gs_matrix_scale(&pim3a.ImageMatrix, 1, 1.0 / sy, &pim3a.ImageMatrix);
+        }
+        gs_matrix_multiply(&mi, &pim3a.MaskDict.ImageMatrix, &pim3a.MaskDict.ImageMatrix);
+        pic1 = (gs_image_common_t *)&pim3a;
+        /* Setting pdev->converting_image_matrix to communicate with pdf_image3_make_mcde. */
+        gs_matrix_multiply(&mi, &ctm_only(pis), &pdev->converting_image_matrix);
+    }
+    /*
+     * We handle ImageType 3 images in a completely different way:
+     * the default implementation sets up the enumerator.
+     */
+    return gx_begin_image3_generic((gx_device *)pdev, pis, pmat1, pic1,
+                                   prect, pdcolor, pcpath, mem,
+                                   pdf_image3_make_mid,
+                                   pdf_image3_make_mcde, pinfo);
+}
+
+static int convert_type4_image(gx_device_pdf *pdev, const gs_imager_state * pis,
+                      const gs_matrix *pmat, const gs_image_common_t *pic,
+                      const gs_int_rect * prect,
+                      const gx_drawing_color * pdcolor,
+                      const gx_clip_path * pcpath, gs_memory_t * mem,
+                      gx_image_enum_common_t ** pinfo,
+                      pdf_typed_image_context_t context, image_union_t *image,
+                      cos_dict_t *pnamed)
+{
+    /* Try to convert the image to a plain masked image. */
+    gx_drawing_color icolor;
+    int code;
+
+    pdev->image_mask_is_SMask = false;
+    if (pdf_convert_image4_to_image1(pdev, pis, pdcolor,
+                                     (const gs_image4_t *)pic,
+                                     &image[0].type1, &icolor) >= 0) {
+        gs_state *pgs = (gs_state *)gx_hld_get_gstate_ptr(pis);
+
+        if (pgs == NULL)
+            return_error(gs_error_unregistered); /* Must not happen. */
+
+        /* Undo the pop of the NI stack if necessary. */
+        if (pnamed)
+            cos_array_add_object(pdev->NI_stack, COS_OBJECT(pnamed));
+        /* HACK: temporary patch the color space, to allow
+           pdf_prepare_imagemask to write the right color for the imagemask. */
+        code = gs_gsave(pgs);
+        if (code < 0)
+            return code;
+        /* {csrc}: const cast warning */
+        code = gs_setcolorspace(pgs, ((const gs_image4_t *)pic)->ColorSpace);
+        if (code < 0)
+            return code;
+        code = pdf_begin_typed_image(pdev, pis, pmat,
+                                     (gs_image_common_t *)&image[0].type1,
+                                     prect, &icolor, pcpath, mem,
+                                     pinfo, context);
+        if (code < 0)
+            return code;
+        return gs_grestore(pgs);
+    }
+    return 1;
+}
+
+static int convert_type4_to_masked_image(gx_device_pdf *pdev, const gs_imager_state * pis,
+                      const gs_image_common_t *pic,
+                      const gs_int_rect * prect,
+                      const gx_drawing_color * pdcolor,
+                      const gx_clip_path * pcpath, gs_memory_t * mem,
+                      gx_image_enum_common_t ** pinfo)
+{
+        gs_matrix m, m1, mi;
+        gs_image4_t pi4 = *(const gs_image4_t *)pic;
+        int code;
+        pdf_lcvd_t *cvd = NULL;
+
+        if (pdf_must_put_clip_path(pdev, pcpath))
+            code = pdf_unclip(pdev);
+        else
+            code = pdf_open_page(pdev, PDF_IN_STREAM);
+        if (code < 0)
+            return code;
+        code = pdf_put_clip_path(pdev, pcpath);
+        if (code < 0)
+            return code;
+        gs_make_identity(&m1);
+        gs_matrix_invert(&pic->ImageMatrix, &mi);
+        gs_matrix_multiply(&mi, &ctm_only(pis), &m);
+        code = pdf_setup_masked_image_converter(pdev, mem, &m, &cvd,
+                             true, 0, 0, pi4.Width, pi4.Height, false);
+        if (code < 0)
+            return code;
+        cvd->mdev.is_open = true; /* fixme: same as above. */
+        cvd->mask->is_open = true; /* fixme: same as above. */
+        cvd->mask_is_empty = false;
+        code = (*dev_proc(cvd->mask, fill_rectangle))((gx_device *)cvd->mask,
+                    0, 0, cvd->mask->width, cvd->mask->height, (gx_color_index)0);
+        if (code < 0)
+            return code;
+        gx_device_retain((gx_device *)cvd, true);
+        gx_device_retain((gx_device *)cvd->mask, true);
+        gs_make_identity(&pi4.ImageMatrix);
+        code = gx_default_begin_typed_image((gx_device *)cvd,
+            pis, &m1, (gs_image_common_t *)&pi4, prect, pdcolor, NULL, mem, pinfo);
+        if (code < 0)
+            return code;
+        (*pinfo)->procs = &pdf_image_cvd_enum_procs;
+        return 0;
+}
+
+static int setup_image_process_colorspace(gx_device_pdf *pdev, image_union_t *image, gs_color_space **pcs_orig,
+                                          const char *sname, cos_value_t *cs_value)
+{
+    int code;
+    gs_color_space *pcs_device = NULL;
+
+    cos_c_string_value(cs_value, sname);
+    *pcs_orig = image->pixel.ColorSpace;
+    code = make_device_color_space(pdev, pdev->pcm_color_info_index, &pcs_device);
+    if (code < 0)
+        return code;
+    image->pixel.ColorSpace = pcs_device;
+    return 0;
+}
+
+/* 0 = write unchanged
+   1 = convert to process
+   2 = write as ICC
+ */
+static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, const gs_color_space *pcs, gs_color_space **pcs_orig,
+                                  const pdf_color_space_names_t *names, cos_value_t *cs_value)
+{
+    int code=0;
+    gs_color_space_index csi;
+    gs_color_space_index csi2;
+    const gs_color_space *pcs2 = pcs;
+
+    csi = csi2 = gs_color_space_get_index(pcs);
+    if (csi == gs_color_space_index_ICC) {
+        csi2 = gsicc_get_default_type(pcs->cmm_icc_profile_data);
+    }
+    /* Figure out what to do if we are outputting to really ancient versions of PDF */
+    /* NB ps2write sets CompatibilityLevel to 1.2 so we cater for it here */
+    if (pdev->CompatibilityLevel <= 1.2) {
+
+        /* If we have an /Indexed space, we need to look at the base space */
+        if (csi2 == gs_color_space_index_Indexed) {
+            pcs2 = pcs->base_space;
+            csi2 = gs_color_space_get_index(pcs2);
+        }
+
+        switch (csi2) {
+            case gs_color_space_index_DeviceGray:
+                if (pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged ||
+                    pdev->params.ColorConversionStrategy == ccs_Gray) {
+                    return 0;
+                }
+                else {
+                    code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceGray, cs_value);
+                    if (code < 0)
+                        return code;
+                    return 1;
+                }
+                break;
+            case gs_color_space_index_DeviceRGB:
+                if (pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged ||
+                    pdev->params.ColorConversionStrategy == ccs_RGB)
+                    return 0;
+                else {
+                    code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceRGB, cs_value);
+                    if (code < 0)
+                        return code;
+                    return 1;
+                }
+                break;
+            case gs_color_space_index_DeviceCMYK:
+                if ((pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged ||
+                    pdev->params.ColorConversionStrategy == ccs_CMYK) && !pdev->params.ConvertCMYKImagesToRGB)
+                    return 0;
+                else {
+                    code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceCMYK, cs_value);
+                    if (code < 0)
+                        return code;
+                    return 1;
+                }
+                break;
+            case gs_color_space_index_CIEA:
+            case gs_color_space_index_CIEABC:
+            case gs_color_space_index_CIEDEF:
+            case gs_color_space_index_CIEDEFG:
+            case gs_color_space_index_Separation:
+                if (pdev->ForOPDFRead) {
+                    switch (pdev->params.ColorConversionStrategy) {
+                        case ccs_ByObjectType:
+                            /* Object type not implemented yet */
+                        case ccs_UseDeviceDependentColor:
+                            /* DeviceDependentColor deprecated */
+                        case ccs_UseDeviceIndependentColorForImages:
+                            /* If only correcting images, then leave unchanged */
+                        case ccs_LeaveColorUnchanged:
+                            if (csi2 == gs_color_space_index_Separation)
+                                return 0;
+                            /* Fall through and convert CIE to the device space */
+                        default:
+                            switch (pdev->pcm_color_info_index) {
+                                case gs_color_space_index_DeviceGray:
+                                    code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceGray, cs_value);
+                                    break;
+                                case gs_color_space_index_DeviceRGB:
+                                    code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceRGB, cs_value);
+                                    break;
+                                case gs_color_space_index_DeviceCMYK:
+                                    code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceCMYK, cs_value);
+                                    break;
+                                default:
+                                    emprintf(pdev->memory, "Unsupported ProcessColorModel.");
+                                    return_error(gs_error_undefined);
+                            }
+                            if (code < 0)
+                                return code;
+                            return 1;
+                            break;
+                    }
+                }
+                else
+                    return 1;
+                break;
+
+            case gs_color_space_index_ICC:
+                /* Note that if csi is ICC, check to see if this was one of
+                   the default substitutes that we introduced for DeviceGray,
+                   DeviceRGB or DeviceCMYK.  If it is, then just write
+                   the default color.  Depending upon the flavor of PDF,
+                   or other options, we may want to actually have all
+                   the colors defined by ICC profiles and not do the following
+                   substituion of the Device space. */
+                csi2 = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+
+                switch (csi2) {
+                    case gs_color_space_index_DeviceGray:
+                        if (pdev->params.ColorConversionStrategy == ccs_Gray ||
+                            pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged)
+                            return 0;
+                        break;
+                    case gs_color_space_index_DeviceRGB:
+                        if (pdev->params.ColorConversionStrategy == ccs_RGB ||
+                            pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged)
+                            return 0;
+                        break;
+                    case gs_color_space_index_DeviceCMYK:
+                        if (pdev->params.ColorConversionStrategy == ccs_CMYK ||
+                            pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged)
+                            return 0;
+                        break;
+                    default:
+                        break;
+                }
+                /* Fall through for non-handled cases */
+            case gs_color_space_index_DeviceN:
+            case gs_color_space_index_DevicePixel:
+            case gs_color_space_index_Indexed:
+                switch (pdev->pcm_color_info_index) {
+                    case gs_color_space_index_DeviceGray:
+                        code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceGray, cs_value);
+                        break;
+                    case gs_color_space_index_DeviceRGB:
+                        code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceRGB, cs_value);
+                        break;
+                    case gs_color_space_index_DeviceCMYK:
+                        code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceCMYK, cs_value);
+                        break;
+                    default:
+                        emprintf(pdev->memory, "Unsupported ProcessColorModel.");
+                        return_error(gs_error_undefined);
+                }
+                if (code < 0)
+                    return code;
+                return 1;
+                break;
+            default:
+                return (gs_note_error(gs_error_rangecheck));
+                break;
+        }
+    } else {
+        switch(pdev->params.ColorConversionStrategy) {
+            case ccs_ByObjectType:
+                /* Object type not implemented yet */
+            case ccs_UseDeviceDependentColor:
+                /* DeviceDependentCOlor deprecated */
+            case ccs_UseDeviceIndependentColorForImages:
+                /* If only correcting images, then leave unchanged */
+            case ccs_LeaveColorUnchanged:
+                return 0;
+                break;
+            case ccs_sRGB:
+            case ccs_UseDeviceIndependentColor:
+                return 2;
+                break;
+            case ccs_CMYK:
+                switch(csi2) {
+                    case gs_color_space_index_DeviceGray:
+                    case gs_color_space_index_DeviceCMYK:
+                        return 0;
+                        break;
+                    case gs_color_space_index_Separation:
+                    case gs_color_space_index_DeviceN:
+                        return 0;
+                        break;
+                    case gs_color_space_index_Indexed:
+                        pcs2 = pcs->base_space;
+                        csi = gs_color_space_get_index(pcs2);
+                        if (csi == gs_color_space_index_ICC)
+                            csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                        switch(csi) {
+                            case gs_color_space_index_DeviceGray:
+                            case gs_color_space_index_DeviceCMYK:
+                                return 0;
+                                break;
+                            case gs_color_space_index_Separation:
+                            case gs_color_space_index_DeviceN:
+                                return 2;
+                                break;
+                            default:
+                                switch (pdev->pcm_color_info_index) {
+                                    case gs_color_space_index_DeviceGray:
+                                        code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceGray, cs_value);
+                                        break;
+                                    case gs_color_space_index_DeviceRGB:
+                                        code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceRGB, cs_value);
+                                        break;
+                                    case gs_color_space_index_DeviceCMYK:
+                                        code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceCMYK, cs_value);
+                                        break;
+                                    default:
+                                        emprintf(pdev->memory, "Unsupported ProcessColorModel.");
+                                        return_error(gs_error_undefined);
+                                }
+                                if (code < 0)
+                                    return code;
+                                return 1;
+                                break;
+                        }
+                        break;
+                    default:
+                        return 0;
+                        break;
+                }
+                break;
+            case ccs_Gray:
+                switch(csi2) {
+                    case gs_color_space_index_DeviceGray:
+                        return 0;
+                        break;
+                    case gs_color_space_index_Separation:
+                    case gs_color_space_index_DeviceN:
+                        return 2;
+                        break;
+                    case gs_color_space_index_Indexed:
+                        pcs2 = pcs->base_space;
+                        csi = gs_color_space_get_index(pcs2);
+                        if (csi == gs_color_space_index_ICC)
+                            csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                        switch(csi) {
+                            case gs_color_space_index_DeviceGray:
+                                return 0;
+                                break;
+                            case gs_color_space_index_Separation:
+                            case gs_color_space_index_DeviceN:
+                                return 2;
+                                break;
+                            default:
+                                return 0;
+                                break;
+                        }
+                        break;
+                    default:
+                        return 0;
+                        break;
+                }
+                break;
+            case ccs_RGB:
+                switch(csi2) {
+                    case gs_color_space_index_DeviceGray:
+                    case gs_color_space_index_DeviceRGB:
+                        return 0;
+                        break;
+                    case gs_color_space_index_Separation:
+                    case gs_color_space_index_DeviceN:
+                        return 2;
+                        break;
+                    case gs_color_space_index_Indexed:
+                        pcs2 = pcs->base_space;
+                        csi = gs_color_space_get_index(pcs2);
+                        if (csi == gs_color_space_index_ICC)
+                            csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                        switch(csi) {
+                            case gs_color_space_index_DeviceGray:
+                            case gs_color_space_index_DeviceRGB:
+                                return 0;
+                                break;
+                            case gs_color_space_index_Separation:
+                            case gs_color_space_index_DeviceN:
+                                return 2;
+                                break;
+                            default:
+                                return 0;
+                                break;
+                        }
+                        break;
+                    default:
+                        return 0;
+                        break;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    return 0;
+}
+
+static int
+new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
+                      const gs_matrix *pmat, const gs_image_common_t *pic,
+                      const gs_int_rect * prect,
+                      const gx_drawing_color * pdcolor,
+                      const gx_clip_path * pcpath, gs_memory_t * mem,
+                      gx_image_enum_common_t ** pinfo,
+                      pdf_typed_image_context_t context)
+{
+    int code, i;
+    unsigned int use_fallback  = 0, in_line = 0, is_mask = 0,
+        force_lossless = 0, convert_to_process_colors = 0, reduce_bits = 0;
+    int width, height;
+    cos_dict_t *pnamed = 0;
+    image_union_t *image;
+    const gs_pixel_image_t *pim;
+    gs_int_rect rect;
+    gs_image_format_t format;
+    const gs_color_space *pcs;
+    int num_components;
+    pdf_image_enum *pie;
+    const pdf_color_space_names_t *names;
+    gs_color_space *pcs_orig = NULL;
+    gs_color_space *pcs_device = NULL;
+    cos_value_t cs_value;
+    const gs_range_t *pranges = 0;
+
+    image = (image_union_t *)gs_malloc(mem->non_gc_memory, 4,
+                       sizeof(image_union_t), "pdf_begin_typed_image(image)");
+    if (image == 0)
+        return_error(gs_error_VMerror);
+
+    /*
+     * Pop the image name from the NI stack.  We must do this, to keep the
+     * stack in sync, even if it turns out we can't handle the image.
+     */
+    {
+        cos_value_t ni_value;
+
+        if (cos_array_unadd(pdev->NI_stack, &ni_value) >= 0)
+            pnamed = (cos_dict_t *)ni_value.contents.object;
+    }
+
+    /* An initialization for pdf_end_and_do_image :
+       We need to delay adding the "Mask" entry into a type 3 image dictionary
+       until the mask is completed due to equal image merging. */
+    pdev->image_mask_id = gs_no_id;
+
+    /* Check for the image types we can handle. */
+    switch (pic->type->index) {
+    case 1:
+        is_mask = ((const gs_image_t *)pic)->ImageMask;
+        code = setup_type1_image(pdev, pic, pdcolor, image, context);
+        if (code < 0) {
+            use_fallback = 1;
+        }
+        else
+            in_line = code;
+        break;
+
+    case 3:
+        pdev->image_mask_is_SMask = false;
+        if (pdev->CompatibilityLevel < 1.2 ||
+            (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
+                   prect->q.x == ((const gs_image3_t *)pic)->Width &&
+                   prect->q.y == ((const gs_image3_t *)pic)->Height))) {
+            gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                              "pdf_begin_typed_image(image)");
+            return (gx_default_begin_typed_image((gx_device *)pdev, pis, pmat, pic, prect, pdcolor,
+                pcpath, mem, pinfo));
+        }
+        gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                          "pdf_begin_typed_image(image)");
+        return (setup_type3_image(pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem, pinfo, image));
+        break;
+
+    case IMAGE3X_IMAGETYPE:
+        gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                              "pdf_begin_typed_image(image)");
+        if (pdev->CompatibilityLevel < 1.4 ||
+            (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
+                       prect->q.x == ((const gs_image3x_t *)pic)->Width &&
+                       prect->q.y == ((const gs_image3x_t *)pic)->Height))) {
+            return (gx_default_begin_typed_image((gx_device *)pdev, pis, pmat, pic, prect, pdcolor,
+                pcpath, mem, pinfo));
+        }
+        pdev->image_mask_is_SMask = true;
+        return gx_begin_image3x_generic((gx_device *)pdev, pis, pmat, pic,
+                                        prect, pdcolor, pcpath, mem,
+                                        pdf_image3x_make_mid,
+                                        pdf_image3x_make_mcde, pinfo);
+        break;
+
+    case 4:
+        code = convert_type4_image(pdev, pis, pmat, pic, prect, pdcolor,
+                      pcpath, mem, pinfo, context, image, pnamed);
+        if (code < 0) {
+            use_fallback = 1;
+        }
+        if (code == 0) {
+            gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                                  "pdf_begin_typed_image(image)");
+            return code;
+        }
+        /* No luck.  Masked images require PDF 1.3 or higher. */
+        if (pdev->CompatibilityLevel < 1.2) {
+            use_fallback = 1;
+        }
+        if (pdev->CompatibilityLevel < 1.3 && !pdev->PatternImagemask) {
+            gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                                  "pdf_begin_typed_image(image)");
+            return (convert_type4_to_masked_image(pdev, pis, pic, prect, pdcolor,
+                      pcpath, mem,pinfo));
+        }
+        image[0].type4 = *(const gs_image4_t *)pic;
+        break;
+
+    default:
+        use_fallback = 1;
+        break;
+    }
+
+    pim = (const gs_pixel_image_t *)pic;
+    format = pim->format;
+    switch (format) {
+    case gs_image_format_chunky:
+    case gs_image_format_component_planar:
+        break;
+    default:
+        use_fallback = 1;
+    }
+    /* AR5 on Windows doesn't support 0-size images. Skipping. */
+    if (pim->Width == 0 || pim->Height == 0)
+        use_fallback = 1;
+    /* PDF doesn't support images with more than 8 bits per component. */
+    switch (pim->BitsPerComponent) {
+        case 1:
+        case 2:
+        case 4:
+        case 8:
+            break;
+        case 12:
+        case 16:
+            use_fallback = 1;
+//            reduce_bits = pim->BitsPerComponent;
+            break;
+        default:
+            gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                              "pdf_begin_typed_image(image)");
+            return_error(gs_error_rangecheck);
+    }
+    if (prect)
+        rect = *prect;
+    else {
+        rect.p.x = rect.p.y = 0;
+        rect.q.x = pim->Width, rect.q.y = pim->Height;
+    }
+    if (rect.p.x != 0 || rect.p.y != 0 ||
+        rect.q.x != pim->Width || rect.q.y != pim->Height ||
+        (is_mask && pim->CombineWithColor))
+        use_fallback = 1;
+
+    if (use_fallback) {
+        gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                              "pdf_begin_typed_image(image)");
+        return gx_default_begin_typed_image
+            ((gx_device *)pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+            pinfo);
+    }
+
+    pcs = pim->ColorSpace;
+    num_components = (is_mask ? 1 : gs_color_space_num_components(pcs));
+
+    if (pdf_must_put_clip_path(pdev, pcpath))
+        code = pdf_unclip(pdev);
+    else
+        code = pdf_open_page(pdev, PDF_IN_STREAM);
+    if (code < 0) {
+        gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                              "pdf_begin_typed_image(image)");
+        return gx_default_begin_typed_image
+            ((gx_device *)pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+            pinfo);
+    }
+
+    if (context == PDF_IMAGE_TYPE3_MASK) {
+        /*
+         * The soft mask for an ImageType 3x image uses a DevicePixel
+         * color space, which pdf_color_space() can't handle.  Patch it
+         * to DeviceGray here.
+         */
+        /* {csrc} make sure this gets freed */
+        pcs = gs_cspace_new_DeviceGray(pdev->memory);
+    } else if (is_mask)
+        code = pdf_prepare_imagemask(pdev, pis, pdcolor);
+    else
+        code = pdf_prepare_image(pdev, pis);
+    if (code < 0) {
+        gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                              "pdf_begin_typed_image(image)");
+        return gx_default_begin_typed_image
+            ((gx_device *)pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+            pinfo);
+    }
+
+    pie = gs_alloc_struct(mem, pdf_image_enum, &st_pdf_image_enum,
+                        "pdf_begin_image");
+    if (pie == 0) {
+        gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                              "pdf_begin_typed_image(image)");
+        return_error(gs_error_VMerror);
+    }
+    memset(pie, 0, sizeof(*pie)); /* cleanup entirely for GC to work in all cases. */
+    *pinfo = (gx_image_enum_common_t *) pie;
+    gx_image_enum_common_init(*pinfo, (const gs_data_image_t *) pim,
+                    ((pdev->CompatibilityLevel >= 1.3) ?
+                            (context == PDF_IMAGE_TYPE3_MASK ?
+                            &pdf_image_object_enum_procs :
+                            &pdf_image_enum_procs) :
+                            context == PDF_IMAGE_TYPE3_MASK ?
+                            &pdf_image_object_enum_procs :
+                            context == PDF_IMAGE_TYPE3_DATA ?
+                            &pdf_image_object_enum_procs2 :
+                            &pdf_image_enum_procs),
+                        (gx_device *)pdev, num_components, format);
+    pie->memory = mem;
+    width = rect.q.x - rect.p.x;
+    pie->width = width;
+    height = rect.q.y - rect.p.y;
+    pie->bits_per_pixel =
+        (reduce_bits ? reduce_bits : pim->BitsPerComponent) * num_components / pie->num_planes;
+    pie->rows_left = height;
+    if (pnamed != 0) /* Don't in-line the image if it is named. */
+        in_line = false;
+    else {
+        double nbytes = (double)(((ulong) pie->width * pie->bits_per_pixel + 7) >> 3) *
+            pie->num_planes * pie->rows_left;
+
+        in_line &= (nbytes < pdev->MaxInlineImageSize);
+    }
+
+    if (pmat == 0)
+        pmat = &ctm_only(pis);
+    {
+        gs_matrix mat;
+        gs_matrix bmat;
+        int code;
+
+        pdf_make_bitmap_matrix(&bmat, -rect.p.x, -rect.p.y,
+                               pim->Width, pim->Height, height);
+        if ((code = gs_matrix_invert(&pim->ImageMatrix, &mat)) < 0 ||
+            (code = gs_matrix_multiply(&bmat, &mat, &mat)) < 0 ||
+            (code = gs_matrix_multiply(&mat, pmat, &pie->mat)) < 0
+            ) {
+            gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                              "pdf_begin_typed_image(image)");
+            gs_free_object(mem, pie, "pdf_begin_image");
+            return code;
+        }
+        /* AR3,AR4 show no image when CTM is singular; AR5 reports an error */
+        if (pie->mat.xx * pie->mat.yy == pie->mat.xy * pie->mat.yx)
+            goto fail_and_fallback;
+    }
+
+    code = pdf_put_clip_path(pdev, pcpath);
+    if (code < 0) {
+        gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                          "pdf_begin_typed_image(image)");
+        gs_free_object(mem, pie, "pdf_begin_image");
+        return code;
+    }
+    pdf_image_writer_init(&pie->writer);
+    /* Note : Possible values for alt_writer_count are 1,2,3,4.
+       1 means no alternative streams.
+       2 means the main image stream and a mask stream while converting
+               an Image Type 4.
+       3 means the main image stream, alternative image compression stream,
+               and the compression chooser.
+       4 meams 3 and a mask stream while convertingh an Image Type 4.
+     */
+    pie->writer.alt_writer_count = (in_line ||
+                                    (pim->Width <= 64 && pim->Height <= 64)
+                                    ? 1 : 2);
+    if ((image[0].pixel.ColorSpace != NULL &&
+        image[0].pixel.ColorSpace->type->index == gs_color_space_index_Indexed
+        && pdev->params.ColorImage.DownsampleType != ds_Subsample) ||
+        pdev->transfer_not_identity)
+        force_lossless = true;
+
+    names = (in_line ? &pdf_color_space_names_short : &pdf_color_space_names);
+
+    /* We don't want to change the colour space of a mask, or an SMask (both of which are Gray) */
+    if (!is_mask) {
+        if (image[0].pixel.ColorSpace != NULL && !(context == PDF_IMAGE_TYPE3_MASK))
+            convert_to_process_colors = setup_image_colorspace(pdev, &image[0], pcs, &pcs_orig, names, &cs_value);
+        if (convert_to_process_colors == 1) {
+            code = make_device_color_space(pdev, pdev->pcm_color_info_index, &pcs_device);
+            if (code < 0)
+                goto fail_and_fallback;
+            image[0].pixel.ColorSpace = pcs_device;
+            code = pdf_color_space_named(pdev, &cs_value, &pranges, pcs_device, names,
+                                     in_line, NULL, 0);
+            if (code < 0)
+                goto fail_and_fallback;
+        } else {
+            if (pcs->cmm_icc_profile_data != NULL &&
+                pcs->cmm_icc_profile_data->islab) {
+                    gscms_set_icc_range((cmm_profile_t **)&(pcs->cmm_icc_profile_data));
+            }
+            code = pdf_color_space_named(pdev, &cs_value, &pranges, pcs, names,
+                                     in_line, NULL, 0);
+            if (code < 0)
+                goto fail_and_fallback;
+        }
+    }
+
+    image[1] = image[0];
+
+    pdev->ParamCompatibilityLevel = pdev->CompatibilityLevel;
+
+    code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
+                    height, pnamed, in_line);
+    if (code < 0)
+        goto fail_and_fallback;
+
+    /* Code below here deals with setting up the multiple data stream writing.
+     * We can have up to 4 stream writers, which we keep in an array. We must
+     * always have at least one which writes the uncompressed stream. If we
+     * are writing compressed streams, we have one for the compressed stream
+     * and one for the compression chooser.
+     * For type 4 images being converted (for old versions of PDF or for ps2write)
+     * we need an additional stream to write a mask, which masks the real
+     * image.
+     * For colour conversion we will place an additional filter in front of all
+     * the streams which does the conversion.
+     */
+    if (in_line) {
+        code = new_setup_lossless_filters((gx_device_psdf *) pdev,
+                                             &pie->writer.binary[0],
+                                             &image[0].pixel, in_line, convert_to_process_colors);
+    } else {
+        if (force_lossless) {
+            /*
+             * Some regrettable PostScript code (such as LanguageLevel 1 output
+             * from Microsoft's PSCRIPT.DLL driver) misuses the transfer
+             * function to accomplish the equivalent of indexed color.
+             * Downsampling (well, only averaging) or JPEG compression are not
+             * compatible with this.  Play it safe by using only lossless
+             * filters if the transfer function(s) is/are other than the
+             * identity and by setting the downsample type to Subsample..
+             */
+            int saved_downsample = pdev->params.ColorImage.DownsampleType;
+
+            pdev->params.ColorImage.DownsampleType = ds_Subsample;
+            code = new_setup_image_filters((gx_device_psdf *) pdev,
+                                          &pie->writer.binary[0], &image[0].pixel,
+                                          pmat, pis, true, in_line, convert_to_process_colors);
+            pdev->params.ColorImage.DownsampleType = saved_downsample;
+        } else {
+            code = new_setup_image_filters((gx_device_psdf *) pdev,
+                                          &pie->writer.binary[0], &image[0].pixel,
+                                          pmat, pis, true, in_line, convert_to_process_colors);
+        }
+    }
+
+    if (code < 0)
+        goto fail_and_fallback;
+
+    if (convert_to_process_colors) {
+        image[0].pixel.ColorSpace = pcs_orig;
+        code = psdf_setup_image_colors_filter(&pie->writer.binary[0],
+                    (gx_device_psdf *)pdev, &image[0].pixel, pis);
+        if (code < 0)
+            goto fail_and_fallback;
+        image[0].pixel.ColorSpace = pcs_device;
+    }
+
+    if (reduce_bits) {
+        code = new_resize_input(&pie->writer.binary[0], pim->Width, gs_color_space_num_components(pim->ColorSpace), reduce_bits, 8);
+        if (code < 0)
+            goto fail_and_fallback;
+    }
+
+    if (pie->writer.alt_writer_count > 1) {
+        code = pdf_make_alt_stream(pdev, &pie->writer.binary[1]);
+        if (code) {
+            goto fail_and_fallback;
+        }
+        code = new_setup_image_filters((gx_device_psdf *) pdev,
+                                  &pie->writer.binary[1], &image[1].pixel,
+                                  pmat, pis, force_lossless, in_line, convert_to_process_colors);
+        if (code == gs_error_rangecheck) {
+
+            for (i=1;i < pie->writer.alt_writer_count; i++) {
+                stream *s = pie->writer.binary[i].strm;
+                cos_stream_t *pcos = cos_stream_from_pipeline(pie->writer.binary[i].strm);
+                s_close_filters(&s, NULL);
+                gs_free_object(pdev->pdf_memory, s, "compressed image stream");
+                pcos->cos_procs->release((cos_object_t *)pcos, "pdf_begin_typed_image_impl");
+                gs_free_object(pdev->pdf_memory, pcos, "compressed image cos_stream");
+            }
+            /* setup_image_compression rejected the alternative compression. */
+            pie->writer.alt_writer_count = 1;
+            memset(pie->writer.binary + 1, 0, sizeof(pie->writer.binary[1]));
+            memset(pie->writer.binary + 2, 0, sizeof(pie->writer.binary[1]));
+        } else if (code) {
+            goto fail_and_fallback;
+        } else if (convert_to_process_colors) {
+            image[1].pixel.ColorSpace = pcs_orig;
+            code = psdf_setup_image_colors_filter(&pie->writer.binary[1],
+                    (gx_device_psdf *)pdev, &image[1].pixel, pis);
+            if (code < 0) {
+                goto fail_and_fallback;
+            }
+            image[1].pixel.ColorSpace = pcs_device;
+        }
+        if (reduce_bits) {
+            code = new_resize_input(&pie->writer.binary[0], pim->Width, gs_color_space_num_components(pim->ColorSpace), reduce_bits, 8);
+            if (code < 0)
+                goto fail_and_fallback;
+        }
+    }
+
+    for (i = 0; i < pie->writer.alt_writer_count; i++) {
+        code = pdf_begin_image_data_decoded(pdev, num_components, pranges, i,
+                             &image[i].pixel, &cs_value, pie);
+        if (code < 0)
+            goto fail_and_fallback;
+    }
+    if (pie->writer.alt_writer_count == 2) {
+        psdf_setup_compression_chooser(&pie->writer.binary[2],
+             (gx_device_psdf *)pdev, pim->Width, pim->Height,
+             num_components, pim->BitsPerComponent);
+        pie->writer.alt_writer_count = 3;
+    }
+    if (pic->type->index == 4 && pdev->CompatibilityLevel < 1.3) {
+        int i;
+
+        /* Create a stream for writing the mask. */
+        i = pie->writer.alt_writer_count;
+        gs_image_t_init_mask_adjust((gs_image_t *)&image[i].type1, true, false);
+        image[i].type1.Width = image[0].pixel.Width;
+        image[i].type1.Height = image[0].pixel.Height;
+        /* Won't use image[2]. */
+        code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
+                    height, NULL, false);
+        if (code)
+            goto fail_and_fallback;
+        code = psdf_setup_image_filters((gx_device_psdf *) pdev,
+                                  &pie->writer.binary[i], &image[i].pixel,
+                                  pmat, pis, force_lossless, in_line);
+        if (code < 0)
+            goto fail_and_fallback;
+        psdf_setup_image_to_mask_filter(&pie->writer.binary[i],
+             (gx_device_psdf *)pdev, pim->Width, pim->Height,
+             num_components, pim->BitsPerComponent, image[i].type4.MaskColor);
+        code = pdf_begin_image_data_decoded(pdev, num_components, pranges, i,
+                             &image[i].pixel, &cs_value, pie);
+        if (code < 0)
+            goto fail_and_fallback;
+        ++pie->writer.alt_writer_count;
+    }
+
+    gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                              "pdf_begin_typed_image(image)");
+    return 0;
+
+fail_and_fallback:
+    gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
+                                      "pdf_begin_typed_image(image)");
+    gs_free_object(mem, pie, "pdf_begin_image");
+    return gx_default_begin_typed_image
+        ((gx_device *)pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
+        pinfo);
+}
+
+static int pdf_begin_typed_image(gx_device_pdf *pdev,
+    const gs_imager_state * pis, const gs_matrix *pmat,
+    const gs_image_common_t *pic, const gs_int_rect * prect,
+    const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+    gs_memory_t * mem, gx_image_enum_common_t ** pinfo,
+    pdf_typed_image_context_t context)
+{
+    if (!pdev->UseOldColor) {
+    return new_pdf_begin_typed_image(pdev, pis, pmat, pic, prect,
+                                 pdcolor, pcpath, mem, pinfo,
+                                 context);
+    } else {
+    return old_pdf_begin_typed_image(pdev, pis, pmat, pic, prect,
+                                 pdcolor, pcpath, mem, pinfo,
+                                 context);
+    }
 }
 
 int

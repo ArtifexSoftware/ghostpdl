@@ -271,6 +271,10 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
     bool scale_inputs = false;
     int i;
 
+    /* This code makes no sense to me, and if I remove it we get better
+     * results. So we'll chop it out for the new colour work.
+     */
+    if (pdev->UseOldColor) {
     /* Check the ranges. */
     if (pprange)
         *pprange = 0;
@@ -286,6 +290,7 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
         }
         else if (rmin > 0.0 || rmax < 1.0)
             std_ranges = false;
+    }
     }
 
     /* Range values are a bit tricky to check.

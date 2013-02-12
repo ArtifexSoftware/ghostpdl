@@ -48,7 +48,7 @@ extern stream_state_proc_put_params(s_CF_put_params, stream_CF_state);
 /*
  * Add a filter to expand or reduce the pixel width if needed.
  * At least one of bpc_in and bpc_out is 8; the other is 1, 2, 4, or 8,
- * except if bpc_out is 8, bpc_in may be 12.
+ * except if bpc_out is 8, bpc_in may be 12 (or 16).
  */
 static int
 pixel_resize(psdf_binary_writer * pbw, int width, int num_components,
@@ -62,9 +62,9 @@ pixel_resize(psdf_binary_writer * pbw, int width, int num_components,
     if (bpc_out == bpc_in)
         return 0;
     if (bpc_in != 8) {
-        static const stream_template *const exts[13] = {
+        static const stream_template *const exts[17] = {
             0, &s_1_8_template, &s_2_8_template, 0, &s_4_8_template,
-            0, 0, 0, 0, 0, 0, 0, &s_12_8_template
+            0, 0, 0, 0, 0, 0, 0, &s_12_8_template, 0, 0, 0, &s_16_8_template
         };
 
         templat = exts[bpc_in];
@@ -105,7 +105,7 @@ convert_color(gx_device *pdev, const gs_color_space *pcs, const gs_imager_state 
     return 0;
 }
 
-/* A hewristic choice of DCT compression parameters - see bug 687174. */
+/* A heuristic choice of DCT compression parameters - see bug 687174. */
 static int
 choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
                   const gs_imager_state * pis,
@@ -742,4 +742,150 @@ psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
         pim->Decode[i * 2 + 1] = 1;
     }
     return 0;
+}
+
+/* Set up compression and downsampling filters for an image. */
+/* Note that this may modify the image parameters. */
+int
+new_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
+                         gs_pixel_image_t * pim, const gs_matrix * pctm,
+                         const gs_imager_state * pis, bool lossless, bool in_line,
+                         bool colour_conversion)
+{
+    /*
+     * The following algorithms are per Adobe Tech Note # 5151,
+     * "Acrobat Distiller Parameters", revised 16 September 1996
+     * for Acrobat(TM) Distiller(TM) 3.0.
+     *
+     * The control structure is a little tricky, because filter
+     * pipelines must be constructed back-to-front.
+     */
+    int code = 0;
+    psdf_image_params params;
+    int bpc = pim->BitsPerComponent;
+    int bpc_out = pim->BitsPerComponent = min(bpc, 8);
+    int ncomp;
+    double resolution;
+
+    /*
+     * The Adobe documentation doesn't say this, but mask images are
+     * compressed on the same basis as 1-bit-deep monochrome images,
+     * except that anti-aliasing (resolution/depth tradeoff) is not
+     * allowed.
+     */
+    if (pim->ColorSpace == NULL) { /* mask image */
+        params = pdev->params.MonoImage;
+        params.Depth = 1;
+        ncomp = 1;
+    } else {
+        ncomp = gs_color_space_num_components(pim->ColorSpace);
+        if (pim->ColorSpace->type->index == gs_color_space_index_Indexed) {
+            params = pdev->params.ColorImage;
+            /* Ensure we don't use JPEG on a /Indexed colour space */
+            params.AutoFilter = false;
+            params.Filter = "FlateEncode";
+        } else {
+            if (ncomp == 1) {
+                if (bpc == 1)
+                    params = pdev->params.MonoImage;
+                else
+                    params = pdev->params.GrayImage;
+                if (params.Depth == -1)
+                    params.Depth = bpc;
+            } else {
+                params = pdev->params.ColorImage;
+            /* params.Depth is reset below */
+            }
+        }
+    }
+
+    /*
+     * We can compute the image resolution by:
+     *    W / (W * ImageMatrix^-1 * CTM / HWResolution).
+     * We can replace W by 1 to simplify the computation.
+     */
+    if (pctm == 0)
+        resolution = -1;
+    else {
+        gs_point pt;
+
+        /* We could do both X and Y, but why bother? */
+        code = gs_distance_transform_inverse(1.0, 0.0, &pim->ImageMatrix, &pt);
+        if (code < 0)
+            return code;
+        gs_distance_transform(pt.x, pt.y, pctm, &pt);
+        resolution = 1.0 / hypot(pt.x / pdev->HWResolution[0],
+                                 pt.y / pdev->HWResolution[1]);
+    }
+    if (ncomp == 1 && pim->ColorSpace && pim->ColorSpace->type->index != gs_color_space_index_Indexed) {
+        /* Monochrome, gray, or mask */
+        /* Check for downsampling. */
+        if (do_downsample(&params, pim, resolution)) {
+            /* Use the downsampled depth, not the original data depth. */
+            if (params.Depth == 1) {
+                params.Filter = pdev->params.MonoImage.Filter;
+                params.filter_template = pdev->params.MonoImage.filter_template;
+                params.Dict = pdev->params.MonoImage.Dict;
+                adjust_auto_filter_strategy_mono(pdev, &params, pdev->params.MonoImage.Dict, pim, in_line);
+            } else {
+                params.Filter = pdev->params.GrayImage.Filter;
+                params.filter_template = pdev->params.GrayImage.filter_template;
+                params.Dict = pdev->params.GrayImage.Dict;
+                adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict, pim, in_line);
+            }
+            code = setup_downsampling(pbw, &params, pim, pis, resolution, lossless);
+        } else {
+            adjust_auto_filter_strategy(pdev, &params, pdev->params.GrayImage.Dict, pim, in_line);
+            code = setup_image_compression(pbw, &params, pim, pis, lossless);
+        }
+        if (code < 0)
+            return code;
+        code = pixel_resize(pbw, pim->Width, ncomp, bpc, bpc_out);
+    } else {
+        /* Color */
+        if (params.Depth == -1)
+            params.Depth = (colour_conversion ? 8 : bpc_out);
+        if (do_downsample(&params, pim, resolution)) {
+            adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict, pim, in_line);
+            code = setup_downsampling(pbw, &params, pim, pis, resolution, lossless);
+        } else {
+            adjust_auto_filter_strategy(pdev, &params, pdev->params.ColorImage.Dict, pim, in_line);
+            code = setup_image_compression(pbw, &params, pim, pis, lossless);
+        }
+        if (code < 0)
+            return code;
+        code = pixel_resize(pbw, pim->Width, ncomp, bpc, bpc_out);
+        if (code < 0)
+            return code;
+    }
+    return code;
+}
+
+int
+new_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
+                            gs_pixel_image_t *pim, bool in_line,
+                            bool colour_conversion)
+{
+    /*
+     * Set up a device with modified parameters for computing the image
+     * compression filters.  Don't allow downsampling or lossy compression.
+     */
+    gx_device_psdf ipdev;
+
+    ipdev = *pdev;
+    ipdev.params.ColorImage.AutoFilter = false;
+    ipdev.params.ColorImage.Downsample = false;
+    ipdev.params.ColorImage.Filter = "FlateEncode";
+    ipdev.params.ColorImage.filter_template = &s_zlibE_template;
+    ipdev.params.ConvertCMYKImagesToRGB = false;
+    ipdev.params.GrayImage.AutoFilter = false;
+    ipdev.params.GrayImage.Downsample = false;
+    ipdev.params.GrayImage.Filter = "FlateEncode";
+    ipdev.params.GrayImage.filter_template = &s_zlibE_template;
+    return new_setup_image_filters(&ipdev, pbw, pim, NULL, NULL, true, in_line, colour_conversion);
+}
+
+int new_resize_input(psdf_binary_writer *pbw, int width, int num_comps, int bpc_in, int bpc_out)
+{
+    return pixel_resize(pbw, width, num_comps, bpc_in, bpc_out);
 }

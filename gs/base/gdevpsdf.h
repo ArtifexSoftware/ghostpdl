@@ -116,12 +116,15 @@ typedef struct psdf_distiller_params_s {
         ccs_UseDeviceIndependentColorForImages,
         ccs_sRGB,
         ccs_CMYK,
-        ccs_Gray
+        ccs_Gray,
+        ccs_RGB,
+        ccs_ByObjectType
     } ColorConversionStrategy;
 #define psdf_ccs_names\
         "LeaveColorUnchanged", "UseDeviceDependentColor",\
         "UseDeviceIndependentColor", "UseDeviceIndependentColorForImages",\
-        "sRGB", "CMYK", "Gray"
+        "sRGB", "CMYK", "Gray", "RGB", "ByObjectType"
+
     bool PreserveHalftoneInfo;
     bool PreserveOverprintSettings;
     enum psdf_transfer_function_info {
@@ -407,11 +410,22 @@ int psdf_setup_image_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
                              const gs_imager_state * pis, bool lossless,
                              bool in_line);
 
+int new_setup_image_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
+                             gs_pixel_image_t *pim, const gs_matrix *pctm,
+                             const gs_imager_state * pis, bool lossless,
+                             bool in_line, bool colour_conversion);
+
 /* Set up compression filters for a lossless image, with no downsampling, */
 /* no color space conversion, and only lossless filters. */
 /* Note that this may modify the image parameters. */
 int psdf_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
                                 gs_pixel_image_t *pim, bool in_line);
+
+int new_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
+                                gs_pixel_image_t *pim, bool in_line, bool colour_conversion);
+
+
+int new_resize_input(psdf_binary_writer *pbw, int width, int num_comps, int bpc_in, int bpc_out);
 
 /* Finish writing binary data. */
 int psdf_end_binary(psdf_binary_writer * pbw);

@@ -34,14 +34,15 @@ typedef struct stream_1248_state_s {
     uint left;			/* # of samples left in current row */
 } stream_1248_state;
 
-/* Convert N (1, 2, 4, 12) bits to 8. */
+/* Convert N (1, 2, 4, 12, 16) bits to 8. */
 extern const stream_template s_1_8_template;
 extern const stream_template s_2_8_template;
 extern const stream_template s_4_8_template;
 extern const stream_template s_12_8_template;
+extern const stream_template s_16_8_template;
 
 /* Reduce 8 bits to N (1, 2, 4). */
-/* We do not currently support converting 8 bits to 12. */
+/* We do not currently support converting 8 bits to 12 or 16. */
 extern const stream_template s_8_1_template;
 extern const stream_template s_8_2_template;
 extern const stream_template s_8_4_template;
@@ -215,14 +216,16 @@ struct stream_image_colors_state_s {
     "stream_image_colors_state", stream_image_colors_enum_ptrs,\
     stream_image_colors_reloc_ptrs, pcs, pdev, pis)
 
-extern const stream_template s_image_colors_template;
-
 void s_image_colors_set_dimensions(stream_image_colors_state * st,
                                int width, int height, int depth, int bits_per_sample);
 
 void s_image_colors_set_mask_colors(stream_image_colors_state * ss, uint *MaskColor);
 
 void s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
+                               const gs_color_space *pcs, const gs_imager_state *pis,
+                               float *Decode);
+
+void s_new_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
                                const gs_color_space *pcs, const gs_imager_state *pis,
                                float *Decode);
 

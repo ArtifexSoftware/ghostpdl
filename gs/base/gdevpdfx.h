@@ -842,6 +842,9 @@ struct gx_device_pdf_s {
                                      * This parameter is present only to allow
                                      * ps2write output to work on those pritners.
                                      */
+    bool UseOldColor;               /* Use the old pdfwrite colour conversions instead of the CMS
+                                     * temporary variable
+                                     */
     bool Linearise;                 /* Whether to Linearizse the file, the next 2 parameter
                                      * are only used if this is true.
                                      */
@@ -859,8 +862,6 @@ struct gx_device_pdf_s {
 
 #define is_in_page(pdev)\
   ((pdev)->contents_id != 0)
-#define is_in_document(pdev)\
-  (is_in_page(pdev) || (pdev)->last_resource != 0)
 
 /* Enumerate the individual pointers in a gx_device_pdf. */
 #define gx_device_pdf_do_ptrs(m)\

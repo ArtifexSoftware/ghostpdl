@@ -272,8 +272,11 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  true,				/* IsDistiller (true even for ps2write!) */
  !PDF_FOR_OPDFREAD,		/* PreserveSMask */
  !PDF_FOR_OPDFREAD,		/* PreserveTrMode */
- false,                         /* NoT3CCITT */
- false,                         /* Linearise */
- 0,                            /* FirstPage */
- 0                             /* LastPage */
+ false,                 /* NoT3CCITT */
+ true,                 /* UseOldColor */
+ false,                 /* Linearise */
+ 0,                     /* FirstPage (from the command line) */
+ 0,                     /* LastPage (from the command line) */
+ 0,                     /* pointer to resourceusage */
+ 0                      /* Size of resourceusage */
 };
