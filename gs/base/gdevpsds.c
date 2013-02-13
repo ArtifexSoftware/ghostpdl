@@ -226,6 +226,10 @@ s_16_8_process(stream_state * st, stream_cursor_read * pr,
     n = ss->samples_per_row;	/* misuse n to avoid a compiler warning */
     status = 0;
     for (; rlimit - p >= 2; ++q) {
+        if (q >= wlimit) {
+            status = 1;
+            break;
+        }
         q[1] = (byte)p[1];                /* Set output to the high byte of the input */
         p+=2;                   /* Discard the low byte */
     }
