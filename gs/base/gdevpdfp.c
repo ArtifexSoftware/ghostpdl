@@ -522,7 +522,9 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                         rc_decrement(pdev->icc_struct,
                                      "reset default profile\n");
                     pdf_set_process_color_model(pdev,1);
-                    code = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                    ecode = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                    if (ecode < 0)
+                        goto fail;
                 }
             }
         }
@@ -539,14 +541,18 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                     rc_decrement(pdev->icc_struct,
                                  "reset default profile\n");
                 pdf_set_process_color_model(pdev, 2);
-                code = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                ecode = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                if (ecode < 0)
+                    goto fail;
                 break;
             case ccs_Gray:
                 if (pdev->icc_struct)
                     rc_decrement(pdev->icc_struct,
                                  "reset default profile\n");
                 pdf_set_process_color_model(pdev,0);
-                code = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                ecode = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                if (ecode < 0)
+                    goto fail;
                 break;
             case ccs_RGB:
                 /* Only bother to do this if we didn't handle it above */
@@ -555,7 +561,9 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                         rc_decrement(pdev->icc_struct,
                                      "reset default profile\n");
                     pdf_set_process_color_model(pdev,1);
-                    code = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                    ecode = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                    if (ecode < 0)
+                        goto fail;
                 }
                 break;
             default:
@@ -631,6 +639,8 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     if (pdev->HaveTrueTypes && pdev->version == psdf_version_level2) {
         pdev->version = psdf_version_level2_with_TT ;
     }
+    if (ecode < 0)
+        goto fail;
     /*
      * Acrobat Reader doesn't handle user-space coordinates larger than
      * MAX_USER_COORD.  To compensate for this, reduce the resolution so
