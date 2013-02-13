@@ -648,10 +648,42 @@ static int new_pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis
                         else
                             code = write_color_as_process(pdev, pis, pcs, pdc, used_process_color, ppscc, pcc);
                         break;
+                    case gs_color_space_index_ICC:
+                        /* Note that if csi is ICC, check to see if this was one of
+                           the default substitutes that we introduced for DeviceGray,
+                           DeviceRGB or DeviceCMYK.  If it is, then just write
+                           the default color.  Depending upon the flavor of PDF,
+                           or other options, we may want to actually have all
+                           the colors defined by ICC profiles and not do the following
+                           substituion of the Device space. */
+                        csi2 = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+
+                        switch (csi2) {
+                            case gs_color_space_index_DeviceGray:
+                                if (pdev->params.ColorConversionStrategy == ccs_Gray ||
+                                    pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged)
+                                    code = write_color_unchanged(pdev, pis, pcc, &temp, psc, ppscc, used_process_color, pcs, pdc);
+                                    return code;
+                                break;
+                            case gs_color_space_index_DeviceRGB:
+                                if (pdev->params.ColorConversionStrategy == ccs_RGB ||
+                                    pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged)
+                                    code = write_color_unchanged(pdev, pis, pcc, &temp, psc, ppscc, used_process_color, pcs, pdc);
+                                    return code;
+                                break;
+                            case gs_color_space_index_DeviceCMYK:
+                                if (pdev->params.ColorConversionStrategy == ccs_CMYK ||
+                                    pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged)
+                                    code = write_color_unchanged(pdev, pis, pcc, &temp, psc, ppscc, used_process_color, pcs, pdc);
+                                    return code;
+                                break;
+                            default:
+                                break;
+                        }
+                        /* Fall through if its not a device substitute, or not one we want to preserve */
                     case gs_color_space_index_DeviceN:
                     case gs_color_space_index_DevicePixel:
                     case gs_color_space_index_Indexed:
-                    case gs_color_space_index_ICC:
                         code = write_color_as_process(pdev, pis, pcs, pdc, used_process_color, ppscc, pcc);
                         break;
                     default:
