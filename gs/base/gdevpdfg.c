@@ -347,10 +347,17 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_imager_state * 
         }
     }
     if (csi == gs_color_space_index_Indexed) {
+        int loop = 0;
+
+        if (pcs->cmm_icc_profile_data != NULL)
+            loop = pcs->cmm_icc_profile_data->num_comps;
+        else
+            loop = gs_color_space_num_components(pcs);
+
         memset (&conc, 0x00, sizeof(frac) * GS_CLIENT_COLOR_MAX_COMPONENTS);
         pcs->type->concretize_color(pcc, pcs, conc, pis, (gx_device *)pdev);
         pcs = pcs->base_space;
-        for (i=0;i<pcs->cmm_icc_profile_data->num_comps;i++)
+        for (i=0;i<loop;i++)
             Source[i] = (unsigned short)(conc[i]);
     } else {
         if (csi2 >= gs_color_space_index_CIEDEFG &&
