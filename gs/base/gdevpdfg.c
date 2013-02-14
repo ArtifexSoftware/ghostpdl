@@ -35,6 +35,7 @@
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
+#include "gscspace.h"
 #include "gsicc_manage.h"
 #include "gsicc_cache.h"
 
