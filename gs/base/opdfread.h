@@ -3061,7 +3061,7 @@ const char *opdfread_ps [] = {
 "{2 copy get\n",
 "dup type dup/arraytype eq exch\n",
 "/packedarraytype eq or{\n",
-"xcheck{\n",
+"dup length 1 ge exch xcheck and{\n",
 "2 copy get\n",
 "dup 0 get type/integertype eq\n",
 "1 index 1 get type dup/arraytype\n",
