@@ -125,7 +125,7 @@ tfax_get_params(gx_device * dev, gs_param_list * plist)
         ecode = code;
     if ((code = param_write_bool(plist, "BigEndian", &tfdev->BigEndian)) < 0)
         ecode = code;
-#if !(TIFFLIB_VERSION >= 20111221)
+#if (TIFFLIB_VERSION >= 20111221)
     if ((code = param_write_bool(plist, "UseBigTiff", &tfdev->UseBigTIFF)) < 0)
         ecode = code;
 #endif
@@ -254,6 +254,7 @@ const gx_device_tfax gs_tifflzw_device = {
     TIFF_DEFAULT_STRIP_SIZE     /* strip size byte count */,
     1                           /* lowest column in the high-order bit, not used */,
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    false                       /* defauilt to *not* UseBigTIFF */,
     COMPRESSION_LZW
 };
 
@@ -268,6 +269,7 @@ const gx_device_tfax gs_tiffpack_device = {
     TIFF_DEFAULT_STRIP_SIZE     /* strip size byte count */,
     1                           /* lowest column in the high-order bit, not used */,
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    false                       /* defauilt to *not* UseBigTIFF */,
     COMPRESSION_PACKBITS
 };
 
