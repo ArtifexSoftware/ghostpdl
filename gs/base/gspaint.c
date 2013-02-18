@@ -359,14 +359,6 @@ do_stroke(gs_state * pgs)
     int code, abits, acode, rcode = 0;
     bool devn;
 
-    /* to distinguish text from vectors we hackly look at the
-       target device 1 bit per component is a cache and this is
-       text else it is a path */
-    if (gx_device_has_color(gs_currentdevice(pgs)))
-        dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_PATH_TAG);
-    else
-        dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_TEXT_TAG);
-
     /* Here we need to distinguish text from vectors to compute the object tag.
        Actually we need to know whether this function is called to rasterize a character,
        or to rasterize a vector graphics to the output device.

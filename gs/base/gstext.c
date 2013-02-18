@@ -251,7 +251,6 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
         return_error(gs_error_undefinedresult); /* sic! : CPSI compatibility */
     if (text->operation & TEXT_DO_DRAW) {
         code = gx_effective_clip_path(pgs, &pcpath);
-        dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_TEXT_TAG);
         if (code < 0)
             return code;
     }
