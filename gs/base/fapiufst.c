@@ -1782,8 +1782,24 @@ get_char(fapi_ufst_server * r, gs_fapi_font * ff, gs_fapi_char_ref * c,
     else if (result) {
         IFOUTLINE *pol = (IFOUTLINE *) result;
 
-        design_escapement[0] = glyph_width[0];
-        design_escapement[1] = glyph_width[1];
+        if (glyph_width[0] == 0x7fff) { /* not found */
+            design_escapement[0] = pol->escapement;
+        }
+        else {
+            design_escapement[0] = glyph_width[0];
+        }
+        if (ff->is_vertical) {
+            if (glyph_width[1] == 0x7fff) { /* not found */
+                design_escapement[1] = pol->advanceHeight;
+            }
+            else {
+                design_escapement[1] = glyph_width[1];
+            }
+        }
+        else {
+            design_escapement[1] = 0;
+        }
+
         du_emx = pol->du_emx;
         du_emy = pol->du_emy;
 
