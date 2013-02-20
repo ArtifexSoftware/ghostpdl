@@ -48,6 +48,8 @@ struct gs_context_state_s {
     int language_level;
     ref array_packing;		/* t_boolean */
     ref binary_object_format;	/* t_integer */
+    long nv_page_count;    /* non-decreasing page counter for /PageCount */
+                           /* It's updated only by currentsystemparams .*/
     long rand_state;		/* (not in Red Book) */
     long usertime_total;	/* total accumulated usertime, */
                                 /* not counting current time if running */

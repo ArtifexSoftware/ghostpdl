@@ -188,12 +188,26 @@ current_Revision(i_ctx_t *i_ctx_p)
 {
     return gs_revision;
 }
+
+static long
+current_PageCount(i_ctx_t *i_ctx_p)
+{
+    gx_device *dev = gs_currentdevice(igs);
+
+    if ((*dev_proc(dev, get_page_device))(dev) != 0)
+        if (dev->ShowpageCount > i_ctx_p->nv_page_count)
+        	i_ctx_p->nv_page_count = dev->ShowpageCount;
+    return 1000 + i_ctx_p->nv_page_count; /* Add 1000 to imitate NV memory */
+}
+
 static const long_param_def_t system_long_params[] =
 {
     {"BuildTime", min_long, max_long, current_BuildTime, NULL},
 {"MaxFontCache", 0, MAX_UINT_PARAM, current_MaxFontCache, set_MaxFontCache},
     {"CurFontCache", 0, MAX_UINT_PARAM, current_CurFontCache, NULL},
     {"Revision", min_long, max_long, current_Revision, NULL},
+    {"PageCount", min_long, max_long, current_PageCount, NULL},
+
     /* Extensions */
     {"MaxGlobalVM", 0, max_long, current_MaxGlobalVM, set_MaxGlobalVM}
 };

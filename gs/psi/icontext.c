@@ -145,6 +145,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
     pcst->language_level = 1;
     make_false(&pcst->array_packing);
     make_int(&pcst->binary_object_format, 0);
+    pcst->nv_page_count = 0;
     pcst->rand_state = rand_state_initial;
     pcst->usertime_total = 0;
     pcst->keep_usertime = false;
