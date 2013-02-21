@@ -1530,15 +1530,15 @@ and <tt>x86_64</tt> binaries in one file, using the <tt>Makefile</tt>
 from <tt>configure</tt>. This can be achieved by using the following invokation of
 <tt>configure</tt>
 <blockquote>
-./configure CC="gcc -arch i386 -arch x86_64" CPP="gcc -E"
+./configure CC="gcc -arch i386 -arch x86_64 -arch ppc" CPP="gcc -E"
 </blockquote>
+<p>
+You can choose the combination of valid architectures (i386/x86_64/ppc) that you
+require.
 <p>
 The separate options for <tt>CC</tt> and <tt>CPP</tt> are required because some of
 the features used by <tt>configure</tt> to explore the capabilities of the preprocessor
 are not compatible with having multiple <tt>-arch</tt> options.
-<p>
-Universal binaries including <tt>PPC</tt> support are not currently supported,
-although building single architecture MacOS X/PPC binaries is.
 <p>
 Finally, there is a <tt>macos-mcp.mak</tt> makefile that can be
 used to set up the Codewarrior shared library component build described
