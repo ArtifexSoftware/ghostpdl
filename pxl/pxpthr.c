@@ -138,6 +138,11 @@ pxPassthrough_init(px_state_t *pxs)
     global_pcs->personality = 0;
     /* for now we do not support intepolation in XL passthrough mode. */
     global_pcs->interpolate = false;
+    /* we don't see a nice way to support the following options with
+       passthrough at this time (NB) */
+    global_pcs->page_set_on_command_line = false;
+    global_pcs->res_set_on_command_line = false;
+    global_pcs->high_level_device = false;
 
     {
         char buf[100];
