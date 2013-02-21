@@ -200,7 +200,7 @@ ARCH_CONF_HEADER=
 
 case `uname` in
         Darwin*)
-          ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/osx-x86-x86_64-gcc.h"
+          ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/osx-x86-x86_64-ppc-gcc.h"
         ;;
         *)
           ARCH_CONF_HEADER=
