@@ -1676,6 +1676,7 @@ static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short
     gs_char unicode;
     int code, cid;
     gs_const_string gnstr;
+    unsigned short fallback = ch;
 
     unicode = font->procs.decode_glyph((gs_font *)font, glyph, ch);
     cid = glyph - GS_MIN_CID_GLYPH;
@@ -1695,79 +1696,101 @@ static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short
             }
         }
         if (unicode == GS_NO_CHAR) {
-            int index = 0;
+            single_glyph_list_t *sentry = (single_glyph_list_t *)&SingleGlyphList;
+            double_glyph_list_t *dentry = (double_glyph_list_t *)&DoubleGlyphList;
+            treble_glyph_list_t *tentry = (treble_glyph_list_t *)TrebleGlyphList;
+            quad_glyph_list_t *qentry = (quad_glyph_list_t *)&QuadGlyphList;
+            int index = -1;
 
             /* Search glyph to single Unicode value table */
-            while (index >= 0 && SingleGlyphList[index].Glyph != 0) {
-                if (SingleGlyphList[index].Glyph[0] < gnstr.data[0])
-                    index++;
-                if (SingleGlyphList[index].Glyph[0] > gnstr.data[0]){
-                    index = -1;
+            while (index >= 0 && sentry->Glyph != 0) {
+                if (sentry->Glyph[0] < gnstr.data[0]) {
+                    sentry++;
+                    continue;
+                }
+                if (sentry->Glyph[0] > gnstr.data[0]){
                     break;
                 }
-                if (strlen(SingleGlyphList[index].Glyph) == gnstr.size) {
-                    if(memcmp(gnstr.data, SingleGlyphList[index].Glyph, gnstr.size))
+                if (strlen(sentry->Glyph) == gnstr.size) {
+                    if(memcmp(gnstr.data, sentry->Glyph, gnstr.size) == 0) {
+                        index = 0;
                         break;
+                    }
                 }
+                sentry++;
             }
             if (index != -1) {
-                *Buffer = SingleGlyphList[index].Unicode;
+                *Buffer = sentry->Unicode;
                 return 1;
             }
             /* Search glyph to double Unicode value table */
-            while (index >= 0 && DoubleGlyphList[index].Glyph != 0) {
-                if (DoubleGlyphList[index].Glyph[0] < gnstr.data[0])
-                    index++;
-                if (DoubleGlyphList[index].Glyph[0] > gnstr.data[0]){
-                    index = -1;
+            while (index >= 0 && dentry->Glyph != 0) {
+                if (dentry->Glyph[0] < gnstr.data[0]) {
+                    dentry++;
+                    continue;
+                }
+                if (dentry->Glyph[0] > gnstr.data[0]){
                     break;
                 }
-                if (strlen(DoubleGlyphList[index].Glyph) == gnstr.size) {
-                    if(memcmp(gnstr.data, DoubleGlyphList[index].Glyph, gnstr.size))
+                if (strlen(dentry->Glyph) == gnstr.size) {
+                    if(memcmp(gnstr.data, dentry->Glyph, gnstr.size) == 0) {
+                        index = 0;
                         break;
+                    }
                 }
+                dentry++;
             }
             if (index != -1) {
-                memcpy(Buffer, DoubleGlyphList[index].Unicode, 2);
+                memcpy(Buffer, dentry->Unicode, 2);
                 return 2;
             }
 
             /* Search glyph to triple Unicode value table */
-            while (index >= 0 && TrebleGlyphList[index].Glyph != 0) {
-                if (TrebleGlyphList[index].Glyph[0] < gnstr.data[0])
-                    index++;
-                if (TrebleGlyphList[index].Glyph[0] > gnstr.data[0]){
-                    index = -1;
+            while (index >= 0 && tentry->Glyph != 0) {
+                if (tentry->Glyph[0] < gnstr.data[0]) {
+                    tentry++;
+                    continue;
+                }
+                if (tentry->Glyph[0] > gnstr.data[0]){
                     break;
                 }
-                if (strlen(TrebleGlyphList[index].Glyph) == gnstr.size) {
-                    if(memcmp(gnstr.data, TrebleGlyphList[index].Glyph, gnstr.size))
+                if (strlen(tentry->Glyph) == gnstr.size) {
+                    if(memcmp(gnstr.data, tentry->Glyph, gnstr.size) == 0) {
+                        index = 0;
                         break;
+                    }
                 }
+                tentry++;
             }
             if (index != -1) {
-                memcpy(Buffer, TrebleGlyphList[index].Unicode, 3);
+                memcpy(Buffer, tentry->Unicode, 3);
                 return 3;
             }
 
             /* Search glyph to quadruple Unicode value table */
-            while (index >= 0 && QuadGlyphList[index].Glyph != 0) {
-                if (QuadGlyphList[index].Glyph[0] < gnstr.data[0])
-                    index++;
-                if (QuadGlyphList[index].Glyph[0] > gnstr.data[0]){
-                    index = -1;
+            while (index >= 0 && qentry->Glyph != 0) {
+                if (qentry->Glyph[0] < gnstr.data[0]) {
+                    qentry++;
+                    continue;
+                }
+                if (qentry->Glyph[0] > gnstr.data[0]){
                     break;
                 }
-                if (strlen(QuadGlyphList[index].Glyph) == gnstr.size) {
-                    if(memcmp(gnstr.data, QuadGlyphList[index].Glyph, gnstr.size))
+                if (strlen(qentry->Glyph) == gnstr.size) {
+                    if(memcmp(gnstr.data, qentry->Glyph, gnstr.size) == 0) {
+                        index = 0;
                         break;
+                    }
                 }
+                qentry++;
             }
             if (index != -1) {
-                memcpy(Buffer, QuadGlyphList[index].Unicode, 4);
+                memcpy(Buffer, qentry->Unicode, 4);
                 return 4;
             }
         }
+        *Buffer = fallback;
+        return 1;
     }
     *Buffer = (unsigned short)unicode;
     return 1;
