@@ -714,12 +714,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
             fixed sx, udx, sy, udy;
             bool is_dash_segment = false;
 
-         d1:if (pseg->type != s_dash && pseg->type != s_gap) {
-                sx = pseg->pt.x;
-                sy = pseg->pt.y;
-                udx = sx - x;
-                udy = sy - y;
-            } else {
+        d1:if (pseg->type == s_dash) {
                 dash_segment *pd = (dash_segment *)pseg;
 
                 sx = pd->pt.x;
@@ -727,6 +722,17 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                 udx = pd->tangent.x;
                 udy = pd->tangent.y;
                 is_dash_segment = true;
+            } else if (pseg->type == s_gap) {
+                sx = pseg->pt.x;
+                sy = pseg->pt.y;
+                udx = sx - x;
+                udy = sy - y;
+                is_dash_segment = true;
+            } else {
+                sx = pseg->pt.x;
+                sy = pseg->pt.y;
+                udx = sx - x;
+                udy = sy - y;
             }
             zero_length &= ((udx | udy) == 0);
             pl.o.p.x = x, pl.o.p.y = y;
