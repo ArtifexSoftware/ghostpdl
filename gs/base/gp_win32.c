@@ -135,6 +135,8 @@ gp_local_arg_encoding_get_codepoint(FILE *file, const char **astr)
         c = *(*astr)++;
         if (c == 0)
             return EOF;
+    } else {
+        return EOF;
     }
 
     arg[0] = c;
