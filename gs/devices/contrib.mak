@@ -16,7 +16,7 @@
 # makefile for contributed device drivers.
 
 # Define the name of this makefile.
-CONTRIB_MAK=$(GLSRC)contrib.mak
+CONTRIB_MAK=$(DEVSRC)contrib.mak
 
 ###### --------------------------- Catalog -------------------------- ######
 
@@ -131,24 +131,24 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 
 ### ------------------- The Hercules Graphics display ------------------- ###
 
-herc_=$(GLOBJ)gdevherc.$(OBJ)
+herc_=$(DEVOBJ)gdevherc.$(OBJ)
 $(DD)herc.dev : $(herc_)
 	$(SETDEV) $(DD)herc $(herc_)
 
-$(GLOBJ)gdevherc.$(OBJ) : $(GLSRC)gdevherc.c $(GDEV) $(dos__h)\
+$(DEVOBJ)gdevherc.$(OBJ) : $(DEVSRC)gdevherc.c $(GDEV) $(dos__h)\
  $(gsmatrix_h) $(gxbitmap_h)
-	$(GLCC) $(GLO_)gdevherc.$(OBJ) $(C_) $(GLSRC)gdevherc.c
+	$(DEVCC) $(DEVO_)gdevherc.$(OBJ) $(C_) $(DEVSRC)gdevherc.c
 
 ### ---------------------- The Private Eye display ---------------------- ###
 ### Note: this driver was contributed by a user:                          ###
 ###   please contact narf@media-lab.media.mit.edu if you have questions.  ###
 
-pe_=$(GLOBJ)gdevpe.$(OBJ)
+pe_=$(DEVOBJ)gdevpe.$(OBJ)
 $(DD)pe.dev : $(pe_)
 	$(SETDEV) $(DD)pe $(pe_)
 
-$(GLOBJ)gdevpe.$(OBJ) : $(GLSRC)gdevpe.c $(GDEV) $(memory__h)
-	$(GLCC) $(GLO_)gdevpe.$(OBJ) $(C_) $(GLSRC)gdevpe.c
+$(DEVOBJ)gdevpe.$(OBJ) : $(DEVSRC)gdevpe.c $(GDEV) $(memory__h)
+	$(DEVCC) $(DEVO_)gdevpe.$(OBJ) $(C_) $(DEVSRC)gdevpe.c
 
 ###### ----------------------- Other displays ------------------------ ######
 
@@ -156,37 +156,37 @@ $(GLOBJ)gdevpe.$(OBJ) : $(GLSRC)gdevpe.c $(GDEV) $(memory__h)
 ### Note: this driver was contributed by a user: please contact           ###
 ###       Andy Fyfe (andy@cs.caltech.edu) if you have questions.          ###
 
-att3b1_=$(GLOBJ)gdev3b1.$(OBJ)
+att3b1_=$(DEVOBJ)gdev3b1.$(OBJ)
 $(DD)att3b1.dev : $(att3b1_)
 	$(SETDEV) $(DD)att3b1 $(att3b1_)
 
-$(GLOBJ)gdev3b1.$(OBJ) : $(GLSRC)gdev3b1.c $(GDEV)
-	$(GLCC) $(GLO_)gdev3b1.$(OBJ) $(C_) $(GLSRC)gdev3b1.c
+$(DEVOBJ)gdev3b1.$(OBJ) : $(DEVSRC)gdev3b1.c $(GDEV)
+	$(DEVCC) $(DEVO_)gdev3b1.$(OBJ) $(C_) $(DEVSRC)gdev3b1.c
 
 ### ------------------- Sony NeWS frame buffer device ------------------ ###
 ### Note: this driver was contributed by a user: please contact          ###
 ###       Mike Smolenski (mike@intertech.com) if you have questions.     ###
 
 # This is implemented as a 'printer' device.
-sonyfb_=$(GLOBJ)gdevsnfb.$(OBJ)
+sonyfb_=$(DEVOBJ)gdevsnfb.$(OBJ)
 $(DD)sonyfb.dev : $(sonyfb_) $(DD)page.dev
 	$(SETPDEV) $(DD)sonyfb $(sonyfb_)
 
-$(GLOBJ)gdevsnfb.$(OBJ) : $(GLSRC)gdevsnfb.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevsnfb.$(OBJ) $(C_) $(GLSRC)gdevsnfb.c
+$(DEVOBJ)gdevsnfb.$(OBJ) : $(DEVSRC)gdevsnfb.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevsnfb.$(OBJ) $(C_) $(DEVSRC)gdevsnfb.c
 
 ### ------------------------ The SunView device ------------------------ ###
 ### Note: this driver is maintained by a user: if you have questions,    ###
 ###       please contact Andreas Stolcke (stolcke@icsi.berkeley.edu).    ###
 
-sunview_=$(GLOBJ)gdevsun.$(OBJ)
+sunview_=$(DEVOBJ)gdevsun.$(OBJ)
 $(DD)sunview.dev : $(sunview_)
 	$(SETDEV) $(DD)sunview $(sunview_)
-	$(ADDMOD) $(GLGEN)sunview -lib suntool sunwindow pixrect
+	$(ADDMOD) $(DEVGENDIR)sunview -lib suntool sunwindow pixrect
 
-$(GLOBJ)gdevsun.$(OBJ) : $(GLSRC)gdevsun.c $(GDEV) $(malloc__h)\
+$(DEVOBJ)gdevsun.$(OBJ) : $(DEVSRC)gdevsun.c $(GDEV) $(malloc__h)\
  $(gscdefs_h) $(gserrors_h) $(gsmatrix_h)
-	$(GLCC) $(GLO_)gdevsun.$(OBJ) $(C_) $(GLSRC)gdevsun.c
+	$(DEVCC) $(DEVO_)gdevsun.$(OBJ) $(C_) $(DEVSRC)gdevsun.c
 
 ###### --------------- Memory-buffered printer devices --------------- ######
 
@@ -199,10 +199,10 @@ $(GLOBJ)gdevsun.$(OBJ) : $(GLSRC)gdevsun.c $(GDEV) $(malloc__h)\
 ###   If you have questions about the Imagewriter LQ driver, please       ###
 ###	contact Scott Barker (barkers@cuug.ab.ca).                        ###
 
-appledmp_=$(GLOBJ)gdevadmp.$(OBJ)
+appledmp_=$(DEVOBJ)gdevadmp.$(OBJ)
 
-$(GLOBJ)gdevadmp.$(OBJ) : $(GLSRC)gdevadmp.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevadmp.$(OBJ) $(C_) $(GLSRC)gdevadmp.c
+$(DEVOBJ)gdevadmp.$(OBJ) : $(DEVSRC)gdevadmp.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevadmp.$(OBJ) $(C_) $(DEVSRC)gdevadmp.c
 
 $(DD)appledmp.dev : $(appledmp_) $(DD)page.dev
 	$(SETPDEV) $(DD)appledmp $(appledmp_)
@@ -218,7 +218,7 @@ $(DD)iwlq.dev : $(appledmp_) $(DD)page.dev
 
 ### ------------ The Canon BubbleJet BJ10e and BJ200 devices ------------ ###
 
-bj10e_=$(GLOBJ)gdevbj10.$(OBJ)
+bj10e_=$(DEVOBJ)gdevbj10.$(OBJ)
 
 $(DD)bj10e.dev : $(bj10e_) $(DD)page.dev
 	$(SETPDEV) $(DD)bj10e $(bj10e_)
@@ -226,20 +226,20 @@ $(DD)bj10e.dev : $(bj10e_) $(DD)page.dev
 $(DD)bj200.dev : $(bj10e_) $(DD)page.dev
 	$(SETPDEV) $(DD)bj200 $(bj10e_)
 
-$(GLOBJ)gdevbj10.$(OBJ) : $(GLSRC)gdevbj10.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevbj10.$(OBJ) $(C_) $(GLSRC)gdevbj10.c
+$(DEVOBJ)gdevbj10.$(OBJ) : $(DEVSRC)gdevbj10.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevbj10.$(OBJ) $(C_) $(DEVSRC)gdevbj10.c
 
 ### ------------- The CalComp Raster Format ----------------------------- ###
 ### Note: this driver was contributed by a user: please contact           ###
 ###       Ernst Muellner (ernst.muellner@oenzl.siemens.de) if you have    ###
 ###       questions.                                                      ###
 
-ccr_=$(GLOBJ)gdevccr.$(OBJ)
+ccr_=$(DEVOBJ)gdevccr.$(OBJ)
 $(DD)ccr.dev : $(ccr_) $(DD)page.dev
 	$(SETPDEV) $(DD)ccr $(ccr_)
 
-$(GLOBJ)gdevccr.$(OBJ) : $(GLSRC)gdevccr.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevccr.$(OBJ) $(C_) $(GLSRC)gdevccr.c
+$(DEVOBJ)gdevccr.$(OBJ) : $(DEVSRC)gdevccr.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevccr.$(OBJ) $(C_) $(DEVSRC)gdevccr.c
 
 ### The H-P DeskJet, PaintJet, and DesignJet family color printer devices.###
 ### Note: there are two different 500C drivers, both contributed by users.###
@@ -255,7 +255,7 @@ $(GLOBJ)gdevccr.$(OBJ) : $(GLSRC)gdevccr.c $(PDEVH)
 ###       by yves.arrouye@usa.net, but he no longer answers questions     ###
 ###       about them.                                                     ###
 
-cdeskjet_=$(GLOBJ)gdevcdj.$(OBJ) $(HPPCL)
+cdeskjet_=$(DEVOBJ)gdevcdj.$(OBJ) $(HPPCL)
 
 $(DD)cdeskjet.dev : $(cdeskjet_) $(DD)page.dev
 	$(SETPDEV) $(DD)cdeskjet $(cdeskjet_)
@@ -305,19 +305,19 @@ $(DD)escp.dev : $(cdeskjet_) $(DD)page.dev
 # -DBitsPerPixel=<number> if you wish the default to be other than 24
 # for the generic drivers (cdj500, cdj550, pjxl300, pjtest, pjxltest).
 
-gdevbjc_h=$(GLSRC)gdevbjc.h
+gdevbjc_h=$(DEVSRC)gdevbjc.h
 
-$(GLOBJ)gdevcdj.$(OBJ) : $(GLSRC)gdevcdj.c $(std_h) $(PDEVH)\
+$(DEVOBJ)gdevcdj.$(OBJ) : $(DEVSRC)gdevcdj.c $(std_h) $(PDEVH)\
  $(gsparam_h) $(gsstate_h) $(gxlum_h)\
  $(gdevbjc_h) $(gdevpcl_h)
-	$(GLCC) $(GLO_)gdevcdj.$(OBJ) $(C_) $(GLSRC)gdevcdj.c
+	$(DEVCC) $(DEVO_)gdevcdj.$(OBJ) $(C_) $(DEVSRC)gdevcdj.c
 
-djet500c_=$(GLOBJ)gdevdjtc.$(OBJ) $(HPPCL)
+djet500c_=$(DEVOBJ)gdevdjtc.$(OBJ) $(HPPCL)
 $(DD)djet500c.dev : $(djet500c_) $(DD)page.dev
 	$(SETPDEV) $(DD)djet500c $(djet500c_)
 
-$(GLOBJ)gdevdjtc.$(OBJ) : $(GLSRC)gdevdjtc.c $(PDEVH) $(malloc__h) $(gdevpcl_h)
-	$(GLCC) $(GLO_)gdevdjtc.$(OBJ) $(C_) $(GLSRC)gdevdjtc.c
+$(DEVOBJ)gdevdjtc.$(OBJ) : $(DEVSRC)gdevdjtc.c $(PDEVH) $(malloc__h) $(gdevpcl_h)
+	$(DEVCC) $(DEVO_)gdevdjtc.$(OBJ) $(C_) $(DEVSRC)gdevdjtc.c
 
 ### -------------------- The H-P Color LaserJet 5/5M -------------------- ###
 
@@ -330,7 +330,7 @@ $(GLOBJ)gdevdjtc.$(OBJ) : $(GLSRC)gdevdjtc.c $(PDEVH) $(malloc__h) $(gdevpcl_h)
 ### wider than it is high.  To print portrait pages, specify the page size
 ### explicitly, e.g. -c letter or -c a4 on the command line.
 
-cljet5_=$(GLOBJ)gdevclj.$(OBJ) $(HPPCL)
+cljet5_=$(DEVOBJ)gdevclj.$(OBJ) $(HPPCL)
 
 $(DD)cljet5.dev : $(DEVS_MAK) $(cljet5_) $(GLD)page.dev
 	$(SETPDEV) $(DD)cljet5 $(cljet5_)
@@ -340,16 +340,16 @@ $(DD)cljet5.dev : $(DEVS_MAK) $(cljet5_) $(GLD)page.dev
 $(DD)cljet5pr.dev : $(DEVS_MAK) $(cljet5_) $(GLD)page.dev
 	$(SETPDEV) $(DD)cljet5pr $(cljet5_)
 
-$(GLOBJ)gdevclj.$(OBJ) : $(GLSRC)gdevclj.c $(math__h) $(PDEVH)\
+$(DEVOBJ)gdevclj.$(OBJ) : $(DEVSRC)gdevclj.c $(math__h) $(PDEVH)\
  $(gx_h) $(gsparam_h) $(gdevpcl_h)
-	$(GLCC) $(GLO_)gdevclj.$(OBJ) $(C_) $(GLSRC)gdevclj.c
+	$(DEVCC) $(DEVO_)gdevclj.$(OBJ) $(C_) $(DEVSRC)gdevclj.c
 
-cljet5c_=$(GLOBJ)gdevcljc.$(OBJ) $(HPPCL)
+cljet5c_=$(DEVOBJ)gdevcljc.$(OBJ) $(HPPCL)
 $(DD)cljet5c.dev : $(DEVS_MAK) $(cljet5c_) $(GLD)page.dev
 	$(SETPDEV) $(DD)cljet5c $(cljet5c_)
 
-$(GLOBJ)gdevcljc.$(OBJ) : $(GLSRC)gdevcljc.c $(math__h) $(PDEVH) $(gdevpcl_h)
-	$(GLCC) $(GLO_)gdevcljc.$(OBJ) $(C_) $(GLSRC)gdevcljc.c
+$(DEVOBJ)gdevcljc.$(OBJ) : $(DEVSRC)gdevcljc.c $(math__h) $(PDEVH) $(gdevpcl_h)
+	$(DEVCC) $(DEVO_)gdevcljc.$(OBJ) $(C_) $(DEVSRC)gdevcljc.c
 
 ### --------------- The H-P LaserJet 3100 software device --------------- ###
 
@@ -359,22 +359,22 @@ $(GLOBJ)gdevcljc.$(OBJ) : $(GLSRC)gdevcljc.c $(math__h) $(PDEVH) $(gdevpcl_h)
 ### NOTE: this driver was contributed by a user: please contact           ###
 ###       Ulrich Schmid (uschmid@mail.hh.provi.de) if you have questions. ###
 
-lj3100sw_=$(GLOBJ)gdevl31s.$(OBJ) $(GLOBJ)gdevmeds.$(OBJ)
+lj3100sw_=$(DEVOBJ)gdevl31s.$(OBJ) $(DEVOBJ)gdevmeds.$(OBJ)
 $(DD)lj3100sw.dev : $(lj3100sw_) $(DD)page.dev
 	$(SETPDEV) $(DD)lj3100sw $(lj3100sw_)
 
-gdevmeds_h=$(GLSRC)gdevmeds.h $(gdevprn_h)
+gdevmeds_h=$(DEVSRC)gdevmeds.h $(gdevprn_h)
 
-$(GLOBJ)gdevl31s.$(OBJ) : $(GLSRC)gdevl31s.c $(gdevmeds_h) $(PDEVH)
-	$(GLCC) $(GLO_)gdevl31s.$(OBJ) $(C_) $(GLSRC)gdevl31s.c
+$(DEVOBJ)gdevl31s.$(OBJ) : $(DEVSRC)gdevl31s.c $(gdevmeds_h) $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevl31s.$(OBJ) $(C_) $(DEVSRC)gdevl31s.c
 
-$(GLOBJ)gdevmeds.$(OBJ) : $(GLSRC)gdevmeds.c $(AK) $(gdevmeds_h)
-	$(GLCC) $(GLO_)gdevmeds.$(OBJ) $(C_) $(GLSRC)gdevmeds.c
+$(DEVOBJ)gdevmeds.$(OBJ) : $(DEVSRC)gdevmeds.c $(AK) $(gdevmeds_h)
+	$(DEVCC) $(DEVO_)gdevmeds.$(OBJ) $(C_) $(DEVSRC)gdevmeds.c
 
 ### ------ CoStar LabelWriter II II/Plus device ------ ###
 ### Contributed by Mike McCauley mikem@open.com.au     ###
 
-coslw_=$(GLOBJ)gdevcslw.$(OBJ)
+coslw_=$(DEVOBJ)gdevcslw.$(OBJ)
 
 $(DD)coslw2p.dev : $(coslw_) $(DD)page.dev
 	$(SETPDEV) $(DD)coslw2p $(coslw_)
@@ -382,19 +382,19 @@ $(DD)coslw2p.dev : $(coslw_) $(DD)page.dev
 $(DD)coslwxl.dev : $(coslw_) $(DD)page.dev
 	$(SETPDEV) $(DD)coslwxl $(coslw_)
 
-$(GLOBJ)gdevcslw.$(OBJ) : $(GLSRC)gdevcslw.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevcslw.$(OBJ) $(C_) $(GLSRC)gdevcslw.c
+$(DEVOBJ)gdevcslw.$(OBJ) : $(DEVSRC)gdevcslw.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevcslw.$(OBJ) $(C_) $(DEVSRC)gdevcslw.c
 
 ### -------------------- The Mitsubishi CP50 printer -------------------- ###
 ### Note: this driver was contributed by a user: please contact           ###
 ###       Michael Hu (michael@ximage.com) if you have questions.          ###
 
-cp50_=$(GLOBJ)gdevcp50.$(OBJ)
+cp50_=$(DEVOBJ)gdevcp50.$(OBJ)
 $(DD)cp50.dev : $(cp50_) $(DD)page.dev
 	$(SETPDEV) $(DD)cp50 $(cp50_)
 
-$(GLOBJ)gdevcp50.$(OBJ) : $(GLSRC)gdevcp50.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevcp50.$(OBJ) $(C_) $(GLSRC)gdevcp50.c
+$(DEVOBJ)gdevcp50.$(OBJ) : $(DEVSRC)gdevcp50.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevcp50.$(OBJ) $(C_) $(DEVSRC)gdevcp50.c
 
 ### ----------------- The generic Epson printer device ----------------- ###
 ### Note: most of this code was contributed by users.  Please contact    ###
@@ -403,7 +403,7 @@ $(GLOBJ)gdevcp50.$(OBJ) : $(GLSRC)gdevcp50.c $(PDEVH)
 ###   eps9high - David Wexelblat (dwex@mtgzfs3.att.com)                  ###
 ###   ibmpro - James W. Birdsall (jwbirdsa@picarefy.picarefy.com)        ###
 
-epson_=$(GLOBJ)gdevepsn.$(OBJ)
+epson_=$(DEVOBJ)gdevepsn.$(OBJ)
 
 $(DD)epson.dev : $(epson_) $(DD)page.dev
 	$(SETPDEV) $(DD)epson $(epson_)
@@ -414,8 +414,8 @@ $(DD)eps9mid.dev : $(epson_) $(DD)page.dev
 $(DD)eps9high.dev : $(epson_) $(DD)page.dev
 	$(SETPDEV) $(DD)eps9high $(epson_)
 
-$(GLOBJ)gdevepsn.$(OBJ) : $(GLSRC)gdevepsn.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevepsn.$(OBJ) $(C_) $(GLSRC)gdevepsn.c
+$(DEVOBJ)gdevepsn.$(OBJ) : $(DEVSRC)gdevepsn.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevepsn.$(OBJ) $(C_) $(DEVSRC)gdevepsn.c
 
 ### ----------------- The IBM Proprinter printer device ---------------- ###
 
@@ -426,12 +426,12 @@ $(DD)ibmpro.dev : $(epson_) $(DD)page.dev
 ### Note: this driver was contributed by users: please contact           ###
 ###       Dave St. Clair (dave@exlog.com) if you have questions.         ###
 
-epsonc_=$(GLOBJ)gdevepsc.$(OBJ)
+epsonc_=$(DEVOBJ)gdevepsc.$(OBJ)
 $(DD)epsonc.dev : $(epsonc_) $(DD)page.dev
 	$(SETPDEV) $(DD)epsonc $(epsonc_)
 
-$(GLOBJ)gdevepsc.$(OBJ) : $(GLSRC)gdevepsc.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevepsc.$(OBJ) $(C_) $(GLSRC)gdevepsc.c
+$(DEVOBJ)gdevepsc.$(OBJ) : $(DEVSRC)gdevepsc.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevepsc.$(OBJ) $(C_) $(DEVSRC)gdevepsc.c
 
 ### ------------- The Epson ESC/P 2 language printer devices ------------- ###
 ### Note: these drivers were contributed by users.                         ###
@@ -440,10 +440,10 @@ $(GLOBJ)gdevepsc.$(OBJ) : $(GLSRC)gdevepsc.c $(PDEVH)
 ### For questions about the Stylus Color drivers, please contact           ###
 ###        Gunther Hess (gunther@elmos.de).                                ###
 
-ESCP2=$(GLOBJ)gdevescp.$(OBJ)
+ESCP2=$(DEVOBJ)gdevescp.$(OBJ)
 
-$(GLOBJ)gdevescp.$(OBJ) : $(GLSRC)gdevescp.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevescp.$(OBJ) $(C_) $(GLSRC)gdevescp.c
+$(DEVOBJ)gdevescp.$(OBJ) : $(DEVSRC)gdevescp.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevescp.$(OBJ) $(C_) $(DEVSRC)gdevescp.c
 
 $(DD)ap3250.dev : $(ESCP2) $(DD)page.dev
 	$(SETPDEV) $(DD)ap3250 $(ESCP2)
@@ -451,39 +451,39 @@ $(DD)ap3250.dev : $(ESCP2) $(DD)page.dev
 $(DD)st800.dev : $(ESCP2) $(DD)page.dev
 	$(SETPDEV) $(DD)st800 $(ESCP2)
 
-stcolor1_=$(GLOBJ)gdevstc.$(OBJ) $(GLOBJ)gdevstc1.$(OBJ) $(GLOBJ)gdevstc2.$(OBJ)
-stcolor2_=$(GLOBJ)gdevstc3.$(OBJ) $(GLOBJ)gdevstc4.$(OBJ)
+stcolor1_=$(DEVOBJ)gdevstc.$(OBJ) $(DEVOBJ)gdevstc1.$(OBJ) $(DEVOBJ)gdevstc2.$(OBJ)
+stcolor2_=$(DEVOBJ)gdevstc3.$(OBJ) $(DEVOBJ)gdevstc4.$(OBJ)
 $(DD)stcolor.dev : $(stcolor1_) $(stcolor2_) $(DD)page.dev
 	$(SETPDEV) $(DD)stcolor $(stcolor1_)
-	$(ADDMOD) $(GLGEN)stcolor -obj $(stcolor2_)
+	$(ADDMOD) $(DD)stcolor -obj $(stcolor2_)
 
-gdevstc_h=$(GLSRC)gdevstc.h $(gdevprn_h) $(gsparam_h) $(gsstate_h)
+gdevstc_h=$(DEVSRC)gdevstc.h $(gdevprn_h) $(gsparam_h) $(gsstate_h)
 
-$(GLOBJ)gdevstc.$(OBJ) : $(GLSRC)gdevstc.c $(gdevstc_h) $(PDEVH)
-	$(GLCC) $(GLO_)gdevstc.$(OBJ) $(C_) $(GLSRC)gdevstc.c
+$(DEVOBJ)gdevstc.$(OBJ) : $(DEVSRC)gdevstc.c $(gdevstc_h) $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevstc.$(OBJ) $(C_) $(DEVSRC)gdevstc.c
 
-$(GLOBJ)gdevstc1.$(OBJ) : $(GLSRC)gdevstc1.c $(gdevstc_h) $(PDEVH)
-	$(GLCC) $(GLO_)gdevstc1.$(OBJ) $(C_) $(GLSRC)gdevstc1.c
+$(DEVOBJ)gdevstc1.$(OBJ) : $(DEVSRC)gdevstc1.c $(gdevstc_h) $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevstc1.$(OBJ) $(C_) $(DEVSRC)gdevstc1.c
 
-$(GLOBJ)gdevstc2.$(OBJ) : $(GLSRC)gdevstc2.c $(gdevstc_h) $(PDEVH)
-	$(GLCC) $(GLO_)gdevstc2.$(OBJ) $(C_) $(GLSRC)gdevstc2.c
+$(DEVOBJ)gdevstc2.$(OBJ) : $(DEVSRC)gdevstc2.c $(gdevstc_h) $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevstc2.$(OBJ) $(C_) $(DEVSRC)gdevstc2.c
 
-$(GLOBJ)gdevstc3.$(OBJ) : $(GLSRC)gdevstc3.c $(gdevstc_h) $(PDEVH)
-	$(GLCC) $(GLO_)gdevstc3.$(OBJ) $(C_) $(GLSRC)gdevstc3.c
+$(DEVOBJ)gdevstc3.$(OBJ) : $(DEVSRC)gdevstc3.c $(gdevstc_h) $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevstc3.$(OBJ) $(C_) $(DEVSRC)gdevstc3.c
 
-$(GLOBJ)gdevstc4.$(OBJ) : $(GLSRC)gdevstc4.c $(gdevstc_h) $(PDEVH)
-	$(GLCC) $(GLO_)gdevstc4.$(OBJ) $(C_) $(GLSRC)gdevstc4.c
+$(DEVOBJ)gdevstc4.$(OBJ) : $(DEVSRC)gdevstc4.c $(gdevstc_h) $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevstc4.$(OBJ) $(C_) $(DEVSRC)gdevstc4.c
 
 ### --------------- Ugly/Update -> Unified Printer Driver ---------------- ###
 ### For questions about this driver, please contact:                       ###
 ###        Gunther Hess (gunther@elmos.de)                                 ###
 
-uniprint_=$(GLOBJ)gdevupd.$(OBJ)
+uniprint_=$(DEVOBJ)gdevupd.$(OBJ)
 $(DD)uniprint.dev : $(uniprint_) $(DD)page.dev
 	$(SETPDEV) $(DD)uniprint $(uniprint_)
 
-$(GLOBJ)gdevupd.$(OBJ) : $(GLSRC)gdevupd.c $(PDEVH) $(gsparam_h)
-	$(GLCC) $(GLO_)gdevupd.$(OBJ) $(C_) $(GLSRC)gdevupd.c
+$(DEVOBJ)gdevupd.$(OBJ) : $(DEVSRC)gdevupd.c $(PDEVH) $(gsparam_h)
+	$(DEVCC) $(DEVO_)gdevupd.$(OBJ) $(C_) $(DEVSRC)gdevupd.c
 
 ### ------------ The H-P PaintJet color printer device ----------------- ###
 ### Note: this driver also supports the DEC LJ250 color printer, which   ###
@@ -491,10 +491,10 @@ $(GLOBJ)gdevupd.$(OBJ) : $(GLSRC)gdevupd.c $(PDEVH) $(gsparam_h)
 ### If you have questions about the XL, please contact Rob Reiss         ###
 ###       (rob@moray.berkeley.edu).                                      ###
 
-PJET=$(GLOBJ)gdevpjet.$(OBJ) $(HPPCL)
+PJET=$(DEVOBJ)gdevpjet.$(OBJ) $(HPPCL)
 
-$(GLOBJ)gdevpjet.$(OBJ) : $(GLSRC)gdevpjet.c $(PDEVH) $(gdevpcl_h)
-	$(GLCC) $(GLO_)gdevpjet.$(OBJ) $(C_) $(GLSRC)gdevpjet.c
+$(DEVOBJ)gdevpjet.$(OBJ) : $(DEVSRC)gdevpjet.c $(PDEVH) $(gdevpcl_h)
+	$(DEVCC) $(DEVO_)gdevpjet.$(OBJ) $(C_) $(DEVSRC)gdevpjet.c
 
 $(DD)lj250.dev : $(PJET) $(DD)page.dev
 	$(SETPDEV) $(DD)lj250 $(PJET)
@@ -512,12 +512,12 @@ $(DD)pjetxl.dev : $(PJET) $(DD)page.dev
 ###       Ross Martin (ross@ross.interwrx.com, martin@walnut.eas.asu.edu) ###
 ###         for questions about usage with the MFC6550MC Fax Machine.     ###
 
-hl7x0_=$(GLOBJ)gdevhl7x.$(OBJ)
+hl7x0_=$(DEVOBJ)gdevhl7x.$(OBJ)
 $(DD)hl7x0.dev : $(hl7x0_) $(DD)page.dev
 	$(SETPDEV) $(DD)hl7x0 $(hl7x0_)
 
-$(GLOBJ)gdevhl7x.$(OBJ) : $(GLSRC)gdevhl7x.c $(PDEVH) $(gdevpcl_h)
-	$(GLCC) $(GLO_)gdevhl7x.$(OBJ) $(C_) $(GLSRC)gdevhl7x.c
+$(DEVOBJ)gdevhl7x.$(OBJ) : $(DEVSRC)gdevhl7x.c $(PDEVH) $(gdevpcl_h)
+	$(DEVCC) $(DEVO_)gdevhl7x.$(OBJ) $(C_) $(DEVSRC)gdevhl7x.c
 
 ### -------------- Imagen ImPress Laser Printer device ----------------- ###
 ### Note: this driver was contributed by a user: please contact          ###
@@ -526,15 +526,15 @@ $(GLOBJ)gdevhl7x.$(OBJ) : $(GLSRC)gdevhl7x.c $(PDEVH) $(gdevpcl_h)
 ### Don't set it if using 'ipr' spooler (default).                       ###
 ### You may also add -DA4 if needed for A4 paper.			 ###
 
-imagen_=$(GLOBJ)gdevimgn.$(OBJ)
+imagen_=$(DEVOBJ)gdevimgn.$(OBJ)
 $(DD)imagen.dev : $(imagen_) $(DD)page.dev
 	$(SETPDEV) $(DD)imagen $(imagen_)
 
 # Uncomment the first line for the ipr spooler, the second line for parallel.
 IMGN_OPT=
 #IMGN_OPT=-DUSE_BYTE_STREAM
-$(GLOBJ)gdevimgn.$(OBJ) : $(GLSRC)gdevimgn.c $(PDEVH)
-	$(GLCC) $(IMGN_OPT) $(GLO_)gdevimgn.$(OBJ) $(C_) $(GLSRC)gdevimgn.c
+$(DEVOBJ)gdevimgn.$(OBJ) : $(DEVSRC)gdevimgn.c $(PDEVH)
+	$(DEVCC) $(IMGN_OPT) $(DEVO_)gdevimgn.$(OBJ) $(C_) $(DEVSRC)gdevimgn.c
 
 ### ------- The IBM 3852 JetPrinter color inkjet printer device -------- ###
 ### Note: this driver was contributed by users: please contact           ###
@@ -543,49 +543,49 @@ $(GLOBJ)gdevimgn.$(OBJ) : $(GLSRC)gdevimgn.c $(PDEVH)
 ###   used in this driver is fixed at 7-1/2 inches wide (the printable   ###
 ###   width of the jetprinter itself.)                                   ###
 
-jetp3852_=$(GLOBJ)gdev3852.$(OBJ)
+jetp3852_=$(DEVOBJ)gdev3852.$(OBJ)
 $(DD)jetp3852.dev : $(jetp3852_) $(DD)page.dev
 	$(SETPDEV) $(DD)jetp3852 $(jetp3852_)
 
-$(GLOBJ)gdev3852.$(OBJ) : $(GLSRC)gdev3852.c $(PDEVH) $(gdevpcl_h)
-	$(GLCC) $(GLO_)gdev3852.$(OBJ) $(C_) $(GLSRC)gdev3852.c
+$(DEVOBJ)gdev3852.$(OBJ) : $(DEVSRC)gdev3852.c $(PDEVH) $(gdevpcl_h)
+	$(DEVCC) $(DEVO_)gdev3852.$(OBJ) $(C_) $(DEVSRC)gdev3852.c
 
 ### ---------- The Canon LBP-8II and LIPS III printer devices ---------- ###
 ### Note: these drivers were contributed by users.                       ###
 ### For questions about these drivers, please contact                    ###
 ###       Lauri Paatero, lauri.paatero@paatero.pp.fi                     ###
 
-lbp8_=$(GLOBJ)gdevlbp8.$(OBJ)
+lbp8_=$(DEVOBJ)gdevlbp8.$(OBJ)
 $(DD)lbp8.dev : $(lbp8_) $(DD)page.dev
 	$(SETPDEV) $(DD)lbp8 $(lbp8_)
 
 $(DD)lips3.dev : $(lbp8_) $(DD)page.dev
 	$(SETPDEV) $(DD)lips3 $(lbp8_)
 
-$(GLOBJ)gdevlbp8.$(OBJ) : $(GLSRC)gdevlbp8.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevlbp8.$(OBJ) $(C_) $(GLSRC)gdevlbp8.c
+$(DEVOBJ)gdevlbp8.$(OBJ) : $(DEVSRC)gdevlbp8.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevlbp8.$(OBJ) $(C_) $(DEVSRC)gdevlbp8.c
 
 ### -------------- The Epson LP-8000 laser printer device -------------- ###
 ### Note: this driver was contributed by a user: please contact Oleg     ###
 ###       Oleg Fat'yanov <faty1@rlem.titech.ac.jp> if you have questions.###
 
-lp8000_=$(GLOBJ)gdevlp8k.$(OBJ)
+lp8000_=$(DEVOBJ)gdevlp8k.$(OBJ)
 $(DD)lp8000.dev : $(lp8000_) $(DD)page.dev
 	$(SETPDEV) $(DD)lp8000 $(lp8000_)
 
-$(GLOBJ)gdevlp8k.$(OBJ) : $(GLSRC)gdevlp8k.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevlp8k.$(OBJ) $(C_) $(GLSRC)gdevlp8k.c
+$(DEVOBJ)gdevlp8k.$(OBJ) : $(DEVSRC)gdevlp8k.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevlp8k.$(OBJ) $(C_) $(DEVSRC)gdevlp8k.c
 
 ### -------------- The C.Itoh M8510 printer device --------------------- ###
 ### Note: this driver was contributed by a user: please contact Bob      ###
 ###       Smith <bob@snuffy.penfield.ny.us> if you have questions.       ###
 
-m8510_=$(GLOBJ)gdev8510.$(OBJ)
+m8510_=$(DEVOBJ)gdev8510.$(OBJ)
 $(DD)m8510.dev : $(m8510_) $(DD)page.dev
 	$(SETPDEV) $(DD)m8510 $(m8510_)
 
-$(GLOBJ)gdev8510.$(OBJ) : $(GLSRC)gdev8510.c $(PDEVH)
-	$(GLCC) $(GLO_)gdev8510.$(OBJ) $(C_) $(GLSRC)gdev8510.c
+$(DEVOBJ)gdev8510.$(OBJ) : $(DEVSRC)gdev8510.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdev8510.$(OBJ) $(C_) $(DEVSRC)gdev8510.c
 
 ### -------------- 24pin Dot-matrix printer with 360DPI ---------------- ###
 ### Note: this driver was contributed by users.  Please contact:         ###
@@ -594,82 +594,82 @@ $(GLOBJ)gdev8510.$(OBJ) : $(GLSRC)gdev8510.c $(PDEVH)
 ###    Christian Felsch (felsch@tu-harburg.d400.de) for                  ###
 ###      questions about the Epson LQ850.                                ###
 
-dm24_=$(GLOBJ)gdevdm24.$(OBJ)
+dm24_=$(DEVOBJ)gdevdm24.$(OBJ)
 $(DD)necp6.dev : $(dm24_) $(DD)page.dev
 	$(SETPDEV) $(DD)necp6 $(dm24_)
 
 $(DD)lq850.dev : $(dm24_) $(DD)page.dev
 	$(SETPDEV) $(DD)lq850 $(dm24_)
 
-$(GLOBJ)gdevdm24.$(OBJ) : $(GLSRC)gdevdm24.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevdm24.$(OBJ) $(C_) $(GLSRC)gdevdm24.c
+$(DEVOBJ)gdevdm24.$(OBJ) : $(DEVSRC)gdevdm24.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevdm24.$(OBJ) $(C_) $(DEVSRC)gdevdm24.c
 
 ### ----------------- Lexmark 5700 printer ----------------------------- ###
 ### Note: this driver was contributed by users.  Please contact:         ###
 ###   Stephen Taylor (setaylor@ma.ultranet.com) if you have questions.   ###
 
-lxm5700m_=$(GLOBJ)gdevlxm.$(OBJ)
+lxm5700m_=$(DEVOBJ)gdevlxm.$(OBJ)
 $(DD)lxm5700m.dev : $(lxm5700m_) $(DD)page.dev
 	$(SETPDEV) $(DD)lxm5700m $(lxm5700m_)
 
-$(GLOBJ)gdevlxm.$(OBJ) : $(GLSRC)gdevlxm.c $(PDEVH) $(gsparams_h)
-	$(GLCC) $(GLO_)gdevlxm.$(OBJ) $(C_) $(GLSRC)gdevlxm.c
+$(DEVOBJ)gdevlxm.$(OBJ) : $(DEVSRC)gdevlxm.c $(PDEVH) $(gsparams_h)
+	$(DEVCC) $(DEVO_)gdevlxm.$(OBJ) $(C_) $(DEVSRC)gdevlxm.c
 
 ### ----------------- The Okidata MicroLine 182 device ----------------- ###
 ### Note: this driver was contributed by a user: please contact          ###
 ###       Maarten Koning (smeg@bnr.ca) if you have questions.            ###
 
-oki182_=$(GLOBJ)gdevo182.$(OBJ)
+oki182_=$(DEVOBJ)gdevo182.$(OBJ)
 $(DD)oki182.dev : $(oki182_) $(DD)page.dev
 	$(SETPDEV) $(DD)oki182 $(oki182_)
 
-$(GLOBJ)gdevo182.$(OBJ) : $(GLSRC)gdevo182.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevo182.$(OBJ) $(C_) $(GLSRC)gdevo182.c
+$(DEVOBJ)gdevo182.$(OBJ) : $(DEVSRC)gdevo182.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevo182.$(OBJ) $(C_) $(DEVSRC)gdevo182.c
 
 ### ------------- The Okidata IBM compatible printer device ------------ ###
 ### Note: this driver was contributed by a user: please contact          ###
 ###       Charles Mack (chasm@netcom.com) if you have questions.         ###
 
-okiibm_=$(GLOBJ)gdevokii.$(OBJ)
+okiibm_=$(DEVOBJ)gdevokii.$(OBJ)
 $(DD)okiibm.dev : $(okiibm_) $(DD)page.dev
 	$(SETPDEV) $(DD)okiibm $(okiibm_)
 
-$(GLOBJ)gdevokii.$(OBJ) : $(GLSRC)gdevokii.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevokii.$(OBJ) $(C_) $(GLSRC)gdevokii.c
+$(DEVOBJ)gdevokii.$(OBJ) : $(DEVSRC)gdevokii.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevokii.$(OBJ) $(C_) $(DEVSRC)gdevokii.c
 
 ### ------------------ The Epson Stylus Photo devices ------------------ ###
 ### This driver was contributed by a user: please contact                ###
 ###	Zoltan Kocsi (zoltan@bendor.com.au) if you have questions.       ###
 
-photoex_=$(GLOBJ)gdevphex.$(OBJ)
+photoex_=$(DEVOBJ)gdevphex.$(OBJ)
 $(DD)photoex.dev : $(photoex_) $(DD)page.dev
 	$(SETPDEV) $(DD)photoex $(photoex_)
 
-$(GLOBJ)gdevphex.$(OBJ) : $(GLSRC)gdevphex.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevphex.$(OBJ) $(C_) $(GLSRC)gdevphex.c
+$(DEVOBJ)gdevphex.$(OBJ) : $(DEVSRC)gdevphex.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevphex.$(OBJ) $(C_) $(DEVSRC)gdevphex.c
 
 ### ------------- The Ricoh 4081 laser printer device ------------------ ###
 ### Note: this driver was contributed by users:                          ###
 ###       please contact kdw@oasis.icl.co.uk if you have questions.      ###
 
-r4081_=$(GLOBJ)gdev4081.$(OBJ)
+r4081_=$(DEVOBJ)gdev4081.$(OBJ)
 $(DD)r4081.dev : $(r4081_) $(DD)page.dev
 	$(SETPDEV) $(DD)r4081 $(r4081_)
 
 
-$(GLOBJ)gdev4081.$(OBJ) : $(GLSRC)gdev4081.c $(PDEVH)
-	$(GLCC) $(GLO_)gdev4081.$(OBJ) $(C_) $(GLSRC)gdev4081.c
+$(DEVOBJ)gdev4081.$(OBJ) : $(DEVSRC)gdev4081.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdev4081.$(OBJ) $(C_) $(DEVSRC)gdev4081.c
 
 ### -------------------- Sony NWP533 printer device -------------------- ###
 ### Note: this driver was contributed by a user: please contact Tero     ###
 ###       Kivinen (kivinen@joker.cs.hut.fi) if you have questions.       ###
 
-nwp533_=$(GLOBJ)gdevn533.$(OBJ)
+nwp533_=$(DEVOBJ)gdevn533.$(OBJ)
 $(DD)nwp533.dev : $(nwp533_) $(DD)page.dev
 	$(SETPDEV) $(DD)nwp533 $(nwp533_)
 
-$(GLOBJ)gdevn533.$(OBJ) : $(GLSRC)gdevn533.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevn533.$(OBJ) $(C_) $(GLSRC)gdevn533.c
+$(DEVOBJ)gdevn533.$(OBJ) : $(DEVSRC)gdevn533.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevn533.$(OBJ) $(C_) $(DEVSRC)gdevn533.c
 
 ### ------------------------- The SPARCprinter ------------------------- ###
 ### Note: this driver was contributed by users: please contact Martin    ###
@@ -677,31 +677,31 @@ $(GLOBJ)gdevn533.$(OBJ) : $(GLSRC)gdevn533.c $(PDEVH)
 ###       He would also like to hear from anyone using the driver.       ###
 ### Please consult the source code for additional documentation.         ###
 
-sparc_=$(GLOBJ)gdevsppr.$(OBJ)
+sparc_=$(DEVOBJ)gdevsppr.$(OBJ)
 $(DD)sparc.dev : $(sparc_) $(DD)page.dev
 	$(SETPDEV) $(DD)sparc $(sparc_)
 
-$(GLOBJ)gdevsppr.$(OBJ) : $(GLSRC)gdevsppr.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevsppr.$(OBJ) $(C_) $(GLSRC)gdevsppr.c
+$(DEVOBJ)gdevsppr.$(OBJ) : $(DEVSRC)gdevsppr.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevsppr.$(OBJ) $(C_) $(DEVSRC)gdevsppr.c
 
 ### ----------------- The StarJet SJ48 device -------------------------- ###
 ### Note: this driver was contributed by a user: if you have questions,  ###
 ###	                      .                                          ###
 ###       please contact Mats Akerblom (f86ma@dd.chalmers.se).           ###
 
-sj48_=$(GLOBJ)gdevsj48.$(OBJ)
+sj48_=$(DEVOBJ)gdevsj48.$(OBJ)
 $(DD)sj48.dev : $(sj48_) $(DD)page.dev
 	$(SETPDEV) $(DD)sj48 $(sj48_)
 
-$(GLOBJ)gdevsj48.$(OBJ) : $(GLSRC)gdevsj48.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevsj48.$(OBJ) $(C_) $(GLSRC)gdevsj48.c
+$(DEVOBJ)gdevsj48.$(OBJ) : $(DEVSRC)gdevsj48.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevsj48.$(OBJ) $(C_) $(DEVSRC)gdevsj48.c
 
 ### ----------------- Tektronix 4396d color printer -------------------- ###
 ### Note: this driver was contributed by a user: please contact          ###
 ###       Karl Hakimian (hakimian@haney.eecs.wsu.edu)                    ###
 ###       if you have questions.                                         ###
 
-t4693d_=$(GLOBJ)gdev4693.$(OBJ)
+t4693d_=$(DEVOBJ)gdev4693.$(OBJ)
 $(DD)t4693d2.dev : $(t4693d_) $(DD)page.dev
 	$(SETPDEV) $(DD)t4693d2 $(t4693d_)
 
@@ -711,19 +711,19 @@ $(DD)t4693d4.dev : $(t4693d_) $(DD)page.dev
 $(DD)t4693d8.dev : $(t4693d_) $(DD)page.dev
 	$(SETPDEV) $(DD)t4693d8 $(t4693d_)
 
-$(GLOBJ)gdev4693.$(OBJ) : $(GLSRC)gdev4693.c $(PDEVH)
-	$(GLCC) $(GLO_)gdev4693.$(OBJ) $(C_) $(GLSRC)gdev4693.c
+$(DEVOBJ)gdev4693.$(OBJ) : $(DEVSRC)gdev4693.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdev4693.$(OBJ) $(C_) $(DEVSRC)gdev4693.c
 
 ### -------------------- Tektronix ink-jet printers -------------------- ###
 ### Note: this driver was contributed by a user: please contact          ###
 ###       Karsten Spang (spang@nbivax.nbi.dk) if you have questions.     ###
 
-tek4696_=$(GLOBJ)gdevtknk.$(OBJ)
+tek4696_=$(DEVOBJ)gdevtknk.$(OBJ)
 $(DD)tek4696.dev : $(tek4696_) $(DD)page.dev
 	$(SETPDEV) $(DD)tek4696 $(tek4696_)
 
-$(GLOBJ)gdevtknk.$(OBJ) : $(GLSRC)gdevtknk.c $(PDEVH) $(malloc__h)
-	$(GLCC) $(GLO_)gdevtknk.$(OBJ) $(C_) $(GLSRC)gdevtknk.c
+$(DEVOBJ)gdevtknk.$(OBJ) : $(DEVSRC)gdevtknk.c $(PDEVH) $(malloc__h)
+	$(DEVCC) $(DEVO_)gdevtknk.$(OBJ) $(C_) $(DEVSRC)gdevtknk.c
 
 ###### ------------------------- Fax devices ------------------------- ######
 
@@ -731,15 +731,15 @@ $(GLOBJ)gdevtknk.$(OBJ) : $(GLSRC)gdevtknk.c $(PDEVH) $(malloc__h)
 ### Note: this driver was contributed by a user: please contact           ###
 ###       Peter Schaefer <peter.schaefer@gmx.de> if you have questions.   ###
 
-cfax_=$(GLOBJ)gdevcfax.$(OBJ)
+cfax_=$(DEVOBJ)gdevcfax.$(OBJ)
 
 $(DD)cfax.dev : $(cfax_) $(DD)fax.dev
 	$(SETDEV) $(DD)cfax $(cfax_)
 	$(ADDMOD) $(DD)cfax -include $(DD)fax
 
-$(GLOBJ)gdevcfax.$(OBJ) : $(GLSRC)gdevcfax.c $(PDEVH)\
+$(DEVOBJ)gdevcfax.$(OBJ) : $(DEVSRC)gdevcfax.c $(PDEVH)\
  $(gdevfax_h) $(scfx_h) $(strimpl_h)
-	$(GLCC) $(GLO_)gdevcfax.$(OBJ) $(C_) $(GLSRC)gdevcfax.c
+	$(DEVCC) $(DEVO_)gdevcfax.$(OBJ) $(C_) $(DEVSRC)gdevcfax.c
 
 ### ------------------------- The DigiFAX device ------------------------ ###
 ###    This driver outputs images in a format suitable for use with       ###
@@ -748,19 +748,19 @@ $(GLOBJ)gdevcfax.$(OBJ) : $(GLSRC)gdevcfax.c $(PDEVH)\
 ### Note: this driver was contributed by a user: please contact           ###
 ###       Rick Richardson (rick@digibd.com) if you have questions.        ###
 
-dfax_=$(GLOBJ)gdevdfax.$(OBJ)
+dfax_=$(DEVOBJ)gdevdfax.$(OBJ)
 
 $(DD)dfaxlow.dev : $(dfax_) $(DD)tfax.dev
 	$(SETDEV) $(DD)dfaxlow $(dfax_)
-	$(ADDMOD) $(GLGEN)dfaxlow -include $(DD)tfax
+	$(ADDMOD) $(DEVGEN)dfaxlow -include $(DD)tfax
 
 $(DD)dfaxhigh.dev : $(dfax_) $(DD)tfax.dev
 	$(SETDEV) $(DD)dfaxhigh $(dfax_)
-	$(ADDMOD) $(GLGEN)dfaxhigh -include $(DD)tfax
+	$(ADDMOD) $(DEVGEN)dfaxhigh -include $(DD)tfax
 
-$(GLOBJ)gdevdfax.$(OBJ) : $(GLSRC)gdevdfax.c $(PDEVH)\
+$(DEVOBJ)gdevdfax.$(OBJ) : $(DEVSRC)gdevdfax.c $(PDEVH)\
  $(gdevfax_h) $(gdevtfax_h) $(scfx_h) $(strimpl_h)
-	$(GLCC) $(GLO_)gdevdfax.$(OBJ) $(C_) $(GLSRC)gdevdfax.c
+	$(DEVCC) $(DEVO_)gdevdfax.$(OBJ) $(C_) $(DEVSRC)gdevdfax.c
 
 ###### --------------------- Raster file formats --------------------- ######
 
@@ -768,36 +768,36 @@ $(GLOBJ)gdevdfax.$(OBJ) : $(GLSRC)gdevdfax.c $(PDEVH)\
 ### Note: this driver was contributed by a user: please contact          ###
 ###       Frederic Petrot (petrot@masi.ibp.fr) if you have questions.    ###
 
-cif_=$(GLOBJ)gdevcif.$(OBJ)
+cif_=$(DEVOBJ)gdevcif.$(OBJ)
 $(DD)cif.dev : $(cif_) $(DD)page.dev
 	$(SETPDEV) $(DD)cif $(cif_)
 
-$(GLOBJ)gdevcif.$(OBJ) : $(GLSRC)gdevcif.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevcif.$(OBJ) $(C_) $(GLSRC)gdevcif.c
+$(DEVOBJ)gdevcif.$(OBJ) : $(DEVSRC)gdevcif.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevcif.$(OBJ) $(C_) $(DEVSRC)gdevcif.c
 
 ### ------------------------- Inferno bitmaps -------------------------- ###
 ### Note: this driver was contributed by a user: please contact          ###
 ###       Russ Cox <rsc@plan9.bell-labs.com> if you have questions.      ###
 
-inferno_=$(GLOBJ)gdevifno.$(OBJ)
+inferno_=$(DEVOBJ)gdevifno.$(OBJ)
 $(DD)inferno.dev : $(inferno_) $(DD)page.dev
 	$(SETPDEV) $(DD)inferno $(inferno_)
 
-$(GLOBJ)gdevifno.$(OBJ) : $(GLSRC)gdevifno.c $(PDEVH)\
+$(DEVOBJ)gdevifno.$(OBJ) : $(DEVSRC)gdevifno.c $(PDEVH)\
  $(gsparam_h)
-	$(GLCC) $(GLO_)gdevifno.$(OBJ) $(C_) $(GLSRC)gdevifno.c
+	$(DEVCC) $(DEVO_)gdevifno.$(OBJ) $(C_) $(DEVSRC)gdevifno.c
 
 ### --------------------------- MGR devices ---------------------------- ###
 ### Note: these drivers were contributed by a user: please contact       ###
 ###       Carsten Emde (ce@ceag.ch) if you have questions.               ###
 
-MGR=$(GLOBJ)gdevmgr.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
+MGR=$(DEVOBJ)gdevmgr.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ)
 
-gdevmgr_h= $(GLSRC)gdevmgr.h
+gdevmgr_h= $(DEVSRC)gdevmgr.h
 
-$(GLOBJ)gdevmgr.$(OBJ) : $(GLSRC)gdevmgr.c $(PDEVH)\
+$(DEVOBJ)gdevmgr.$(OBJ) : $(DEVSRC)gdevmgr.c $(PDEVH)\
  $(gdevmgr_h) $(gdevpccm_h)
-	$(GLCC) $(GLO_)gdevmgr.$(OBJ) $(C_) $(GLSRC)gdevmgr.c
+	$(DEVCC) $(DEVO_)gdevmgr.$(OBJ) $(C_) $(DEVSRC)gdevmgr.c
 
 $(DD)mgrmono.dev : $(MGR) $(DD)page.dev
 	$(SETPDEV) $(DD)mgrmono $(MGR)
@@ -819,25 +819,25 @@ $(DD)mgr8.dev : $(MGR) $(DD)page.dev
 
 ### -------------------------- SGI RGB pixmaps -------------------------- ###
 
-sgirgb_=$(GLOBJ)gdevsgi.$(OBJ)
+sgirgb_=$(DEVOBJ)gdevsgi.$(OBJ)
 $(DD)sgirgb.dev : $(sgirgb_) $(DD)page.dev
 	$(SETPDEV) $(DD)sgirgb $(sgirgb_)
 
-gdevsgi_h=$(GLSRC)gdevsgi.h
+gdevsgi_h=$(DEVSRC)gdevsgi.h
 
-$(GLOBJ)gdevsgi.$(OBJ) : $(GLSRC)gdevsgi.c $(PDEVH) $(gdevsgi_h)
-	$(GLCC) $(GLO_)gdevsgi.$(OBJ) $(C_) $(GLSRC)gdevsgi.c
+$(DEVOBJ)gdevsgi.$(OBJ) : $(DEVSRC)gdevsgi.c $(PDEVH) $(gdevsgi_h)
+	$(DEVCC) $(DEVO_)gdevsgi.$(OBJ) $(C_) $(DEVSRC)gdevsgi.c
 
 ### ---------------- Sun raster files ---------------- ###
 
-sunr_=$(GLOBJ)gdevsunr.$(OBJ)
+sunr_=$(DEVOBJ)gdevsunr.$(OBJ)
 
 # Harlequin variant, 1-bit
 $(DD)sunhmono.dev : $(sunr_) $(DD)page.dev
 	$(SETPDEV) $(DD)sunhmono $(sunr_)
 
-$(GLOBJ)gdevsunr.$(OBJ) : $(GLSRC)gdevsunr.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevsunr.$(OBJ) $(C_) $(GLSRC)gdevsunr.c
+$(DEVOBJ)gdevsunr.$(OBJ) : $(DEVSRC)gdevsunr.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevsunr.$(OBJ) $(C_) $(DEVSRC)gdevsunr.c
 
 
 #########################################################################

@@ -25,7 +25,7 @@ PLOBJ=$(PLOBJDIR)$(D)
 PLO_=$(O_)$(PLOBJ)
 GLGEN=$(GLGENDIR)$(D)
 
-PLCCC=$(CC_) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
+PLCCC=$(CC_) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
 # Define the name of this makefile.
 PL_MAK=$(PLSRC)pl.mak

@@ -43,7 +43,7 @@ GLCPP=$(CPP) $(CO) $(I_)$(GLI_)$(_I)
 
 # Define the compilation rule for Windows interpreter code.
 # This requires PS*_ to be defined, so it has to come after int.mak.
-PSCCWIN=$(CC_WX) $(CCWINFLAGS) $(I_)$(PSI_)$(_I) $(PSF_)
+PSCCWIN=$(CC_WX) $(CCWINFLAGS) $(I_)$(PSI_)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(PSF_)
 
 # Define the name of this makefile.
 WININT_MAK=$(PSSRC)winint.mak

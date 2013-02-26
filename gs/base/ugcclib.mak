@@ -16,8 +16,11 @@
 
 BINDIR=./libobj
 GLSRCDIR=./base
+DEVSRCDIR=./devices
 GLGENDIR=./libobj
 GLOBJDIR=./libobj
+DEVGENDIR=./libobj
+DEVOBJDIR=./libobj
 PSRESDIR=./Resource
 DD=$(GLGENDIR)/
 GLD=$(GLGENDIR)/

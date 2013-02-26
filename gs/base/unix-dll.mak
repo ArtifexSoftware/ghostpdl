@@ -176,7 +176,7 @@ install-so-subtarget: so-subtarget$(FOR_MAC)
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(GS_SONAME_MAJOR)
 	$(INSTALL_DATA) $(PSSRC)iapi.h $(DESTDIR)$(gsincludedir)iapi.h
 	$(INSTALL_DATA) $(PSSRC)ierrors.h $(DESTDIR)$(gsincludedir)ierrors.h
-	$(INSTALL_DATA) $(GLSRC)gdevdsp.h $(DESTDIR)$(gsincludedir)gdevdsp.h
+	$(INSTALL_DATA) $(DEVSRC)gdevdsp.h $(DESTDIR)$(gsincludedir)gdevdsp.h
 
 soinstall:
 	$(MAKE) soinstall-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)

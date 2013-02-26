@@ -51,6 +51,13 @@ GLLCMS2CC=$(CC) $(CFLAGS) $(I_)$(GLI_) $(II)$(LCMS2SRCDIR)$(D)include$(_I) $(GLF
 lcms2_h=$(LCMS2SRCDIR)$(D)include$(D)lcms2.h
 lcms2_plugin_h=$(LCMS2SRCDIR)$(D)include$(D)lcms2_plugin.h
 
+ConvertUTF_h=$(GLSRC)ConvertUTF.h
+gdevdcrd_h=$(GLSRC)gdevdcrd.h
+gdevpccm_h=$(GLSRC)gdevpccm.h
+
+gs_mro_e_h=$(GLSRC)gs_mro_e.h
+gs_mgl_e_h=$(GLSRC)gs_mgl_e.h
+
 # All top-level makefiles define GLD.
 #GLD=$(GLGEN)
 # Define the name of this makefile.
@@ -474,7 +481,7 @@ gxclipm_h=$(GLSRC)gxclipm.h $(gxmclip_h)
 gxctable_h=$(GLSRC)gxctable.h $(gxfixed_h) $(gxfrac_h)
 gxfcache_h=$(GLSRC)gxfcache.h $(gsccode_h) $(gsuid_h) $(gsxfont_h)\
  $(gxbcache_h) $(gxfixed_h) $(gxftype_h)
-gxfcopy_h=$(GLSRC)gxfcopy.h $(gsccode_h)
+
 gxfont_h=$(GLSRC)gxfont.h\
  $(gsccode_h) $(gsfont_h) $(gsgdata_h) $(gsmatrix_h) $(gsnotify_h)\
  $(gsstype_h) $(gsuid_h)\
@@ -588,6 +595,16 @@ gxdtfill_h=$(GLSRC)gxdtfill.h
 ttfoutl_h=$(GLSRC)ttfoutl.h
 gxttfb_h = $(GLSRC)gxttfb.h $(ttfoutl_h)
 gzspotan_h = $(GLSRC)gzspotan.h $(gxdevcli_h)
+
+gdevpxen_h=$(GLSRC)gdevpxen.h
+gdevpxat_h=$(GLSRC)gdevpxat.h
+gdevpxop_h=$(GLSRC)gdevpxop.h
+
+gsequivc_h=$(GLSRC)gsequivc.h
+gdevdevn_h=$(GLSRC)gdevdevn.h $(gsequivc_h)
+
+png__h=$(GLSRC)png_.h $(MAKEFILE)
+x__h=$(GLSRC)x_.h
 
 ### Executable code
 
@@ -1035,6 +1052,15 @@ $(GLOBJ)gsiodevs.$(OBJ) : $(GLSRC)gsiodevs.c $(AK) $(gx_h)\
 
 ###### Internal devices
 
+### Device support
+# PC display color mapping
+$(GLOBJ)gdevpccm.$(OBJ) : $(GLSRC)gdevpccm.c $(AK)\
+ $(gx_h) $(gsmatrix_h) $(gxdevice_h) $(gdevpccm_h)
+	$(GLCC) $(GLO_)gdevpccm.$(OBJ) $(C_) $(GLSRC)gdevpccm.c
+
+$(GLOBJ)ConvertUTF.$(OBJ) : $(GLSRC)ConvertUTF.c $(ConvertUTF_h)
+	$(GLCC) $(GLO_)ConvertUTF.$(OBJ) $(C_) $(GLSRC)ConvertUTF.c
+
 ### Memory devices
 
 $(GLOBJ)gdevmem.$(OBJ) : $(GLSRC)gdevmem.c $(AK) $(gx_h) $(gserrors_h) \
@@ -1130,15 +1156,6 @@ $(GLOBJ)gdevhit.$(OBJ) : $(GLSRC)gdevhit.c $(AK) $(std_h)\
   $(gserrors_h) $(gsmemory_h) $(gstypes_h) $(gxdevice_h)\
  $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevhit.$(OBJ) $(C_) $(GLSRC)gdevhit.c
-
-# ink coverage device  --  a device that records the ink coverage
-# on each page, and discards the page.
-$(GLD)inkcov.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevicov.$(OBJ)
-	$(SETDEV2) $(GLD)inkcov $(GLOBJ)gdevicov.$(OBJ)
-
-$(GLOBJ)gdevicov.$(OBJ) : $(GLSRC)gdevicov.c $(AK) $(MAKEDIRS) \
-  $(arch_h) $(gdevprn_h) $(stdio__h)  $(stdint__h)
-	$(GLCC) $(GLO_)gdevicov.$(OBJ) $(C_) $(GLSRC)gdevicov.c
 
 # A device that stores its data using run-length encoding.
 
@@ -2518,75 +2535,6 @@ $(GLOBJ)gstype2.$(OBJ) : $(GLSRC)gstype2.c $(AK) $(gx_h) $(gserrors_h)\
  $(gxpath_h) $(gxhintn_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gstype2.$(OBJ) $(C_) $(GLSRC)gstype2.c
 
-# ---------------- Font writing ---------------- #
-# This is not really a library facility, but one piece of interpreter test
-# code uses it.
-
-# Support for PostScript and PDF font writing
-
-gdevpsf_h=$(GLSRC)gdevpsf.h $(gsccode_h) $(gsgdata_h)
-
-psf_1=$(GLOBJ)gdevpsf1.$(OBJ) $(GLOBJ)gdevpsf2.$(OBJ) $(GLOBJ)gdevpsfm.$(OBJ)
-psf_2=$(GLOBJ)gdevpsft.$(OBJ) $(GLOBJ)gdevpsfu.$(OBJ) $(GLOBJ)gdevpsfx.$(OBJ)
-psf_3=$(GLOBJ)spsdf.$(OBJ)
-psf_=$(psf_1) $(psf_2) $(psf_3)
-$(GLD)psf.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf_)
-	$(SETMOD) $(DD)psf $(psf_1)
-	$(ADDMOD) $(DD)psf -obj $(psf_2)
-	$(ADDMOD) $(DD)psf -obj $(psf_3)
-
-$(GLOBJ)gdevpsf1.$(OBJ) : $(GLSRC)gdevpsf1.c $(AK) $(gx_h)\
- $(gserrors_h) $(memory__h) $(gsccode_h) $(gsmatrix_h)\
- $(gxfixed_h) $(gxfont_h) $(gxfont1_h) $(gxmatrix_h) $(gxtype1_h)\
- $(sfilter_h) $(sstring_h) $(stream_h) $(strimpl_h)\
- $(gdevpsf_h) $(spprint_h) $(spsdf_h) $(math_h) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gdevpsf1.$(OBJ) $(C_) $(GLSRC)gdevpsf1.c
-
-$(GLOBJ)gdevpsf2.$(OBJ) : $(GLSRC)gdevpsf2.c $(AK) $(gx_h)\
- $(gserrors_h) $(math__h) $(memory__h) $(gxarith_h) $(gsutil_h)\
- $(gsccode_h) $(gscencs_h) $(gscrypt1_h) $(gsmatrix_h)\
- $(gxfcid_h) $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
- $(stream_h) $(gdevpsf_h) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gdevpsf2.$(OBJ) $(C_) $(GLSRC)gdevpsf2.c
-
-$(GLOBJ)gdevpsfm.$(OBJ) : $(GLSRC)gdevpsfm.c $(AK) $(gx_h)\
- $(gserrors_h) $(gdevpsf_h) $(gxfcmap_h) $(spprint_h) $(spsdf_h) $(stream_h)\
- $(MAKEDIRS)
-	$(GLCC) $(GLO_)gdevpsfm.$(OBJ) $(C_) $(GLSRC)gdevpsfm.c
-
-$(GLOBJ)gdevpsft.$(OBJ) : $(GLSRC)gdevpsft.c $(AK) $(gx_h)\
- $(gserrors_h) $(memory__h) $(gscencs_h) $(gsmatrix_h) $(gsutil_h)\
- $(gxfcid_h) $(gxfont_h) $(gxfont42_h) $(gxttf_h)\
- $(spprint_h) $(stream_h) $(gdevpsf_h) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gdevpsft.$(OBJ) $(C_) $(GLSRC)gdevpsft.c
-
-$(GLOBJ)gdevpsfu.$(OBJ) : $(GLSRC)gdevpsfu.c $(AK) $(gx_h)\
- $(gserrors_h) $(memory__h) $(gsmatrix_h) $(gxfont_h) $(gdevpsf_h)\
- $(MAKEDIRS)
-	$(GLCC) $(GLO_)gdevpsfu.$(OBJ) $(C_) $(GLSRC)gdevpsfu.c
-
-$(GLOBJ)gdevpsfx.$(OBJ) : $(GLSRC)gdevpsfx.c $(AK) $(gx_h)\
- $(gserrors_h) $(math__h) $(memory__h)\
- $(gxfixed_h) $(gxfont_h) $(gxfont1_h) $(gxmatrix_h) $(gxtype1_h)\
- $(stream_h) $(gdevpsf_h) $(gxistate_h) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gdevpsfx.$(OBJ) $(C_) $(GLSRC)gdevpsfx.c
-
-# ---------------- Font copying ---------------- #
-
-# This facility is not included in the core library.  Currently it is used
-# only by pdfwrite.
-
-fcopy_=$(GLOBJ)gxfcopy.$(OBJ)
-$(GLD)fcopy.dev : $(DEVS_MAK) $(ECHOGS_XE) $(fcopy_)
-	$(SETMOD) $(GLD)fcopy $(fcopy_)
-
-$(GLOBJ)gxfcopy.$(OBJ) : $(GLSRC)gxfcopy.c $(memory__h) $(AK) $(gx_h)\
- $(gserrors_h) $(gscencs_h) $(gsline_h) $(gspaint_h) $(gspath_h) $(gsstruct_h)\
- $(gsutil_h) $(gschar_h) $(gxfont_h) $(gxfont1_h) $(gxfont42_h) $(gxchar_h)\
- $(gxfcid_h) $(gxfcopy_h) $(gxfcache_h) $(gxistate_h) $(gxtext_h) $(gxtype1_h)\
- $(smd5_h) $(gzstate_h) $(gdevpsf_h) $(stream_h) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gxfcopy.$(OBJ) $(C_) $(GLSRC)gxfcopy.c
-
 # -------- Level 1 color extensions (CMYK color and colorimage) -------- #
 
 cmyklib_=$(GLOBJ)gscolor1.$(OBJ) $(GLOBJ)gsht1.$(OBJ)
@@ -2995,6 +2943,39 @@ $(GLOBJ)gstrap.$(OBJ) : $(GLSRC)gstrap.c $(AK) $(gx_h) $(gserrors_h)\
 traplib_=$(GLOBJ)gsparamx.$(OBJ) $(GLOBJ)gstrap.$(OBJ)
 $(GLD)traplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(traplib_)
 	$(SETMOD) $(GLD)traplib $(traplib_)
+
+### ------------------------ The DeviceN device ------------------------ ###
+# Required by transparency
+
+devn_=$(GLOBJ)gdevdevn.$(OBJ)
+
+$(DD)spotcmyk.dev : $(LIB_MAK) $(devn_) $(GLD)page.dev $(GDEV)
+	$(SETDEV) $(DD)spotcmyk $(devn_)
+
+$(DD)devicen.dev : $(LIB_MAK) $(devn_) $(GLD)page.dev $(GDEV)
+	$(SETDEV) $(DD)devicen $(devn_)
+
+$(GLOBJ)gdevdevn.$(OBJ) : $(GLSRC)gdevdevn.c $(gx_h) $(math__h) $(string__h)\
+ $(gdevprn_h) $(gsparam_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gdevdcrd_h)\
+ $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h) $(gdevp14_h)\
+ $(gxblend_h)
+	$(GLCC) $(GLO_)gdevdevn.$(OBJ) $(C_) $(GLSRC)gdevdevn.c
+
+
+# Provide a sample device CRD.
+# Required by transparency
+$(GLOBJ)gdevdcrd.$(OBJ) : $(GLSRC)gdevdcrd.c $(AK)\
+ $(math__h) $(memory__h) $(string__h)\
+ $(gscrd_h) $(gscrdp_h) $(gserrors_h) $(gsparam_h) $(gscspace_h)\
+ $(gx_h) $(gxdevcli_h) $(gdevdcrd_h)
+	$(GLCC) $(GLO_)gdevdcrd.$(OBJ) $(C_) $(GLSRC)gdevdcrd.c
+
+$(GLOBJ)gsequivc.$(OBJ) : $(GLSRC)gsequivc.c $(math__h)\
+ $(PDEVH) $(gsparam_h) $(gstypes_h) $(gxdconv_h) $(gdevdevn_h)\
+ $(gsequivc_h) $(gzstate_h) $(gsstate_h) $(gscspace_h) $(gxcspace_h)\
+ $(gsicc_manage_h) $(gxdevsop_h)
+	$(GLCC) $(GLO_)gsequivc.$(OBJ) $(C_) $(GLSRC)gsequivc.c
+
 
 # ---------------- Transparency ---------------- #
 

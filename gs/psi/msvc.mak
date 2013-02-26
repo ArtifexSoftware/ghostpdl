@@ -118,9 +118,19 @@ GLSRCDIR=.\base
 !ifndef GLGENDIR
 GLGENDIR=$(DEFAULT_OBJ_DIR)
 !endif
+!ifndef DEVSRCDIR
+DEVSRCDIR=.\devices
+!endif
 !ifndef GLOBJDIR
 GLOBJDIR=$(DEFAULT_OBJ_DIR)
 !endif
+!ifndef DEVGENDIR
+DEVGENDIR=$(DEFAULT_OBJ_DIR)
+!endif
+!ifndef DEVOBJDIR
+DEVOBJDIR=$(DEFAULT_OBJ_DIR)
+!endif
+
 !ifndef PSSRCDIR
 PSSRCDIR=.\psi
 !endif

@@ -53,7 +53,7 @@
 #include "iplugin.h"
 #include "store.h"
 #include "gzstate.h"
-#include "gdevpsf.h"
+/* #include "gdevpsf.h" */
 #include "stream.h"             /* for files.h */
 #include "gscrypt1.h"
 #include "gxfcid.h"

@@ -184,6 +184,14 @@ GLGENDIR=$(GENDIR)
 GLOBJDIR=$(GENDIR)
 !endif
 
+!ifndef DEVGENDIR
+DEVGENDIR=$(GENDIR)
+!endif
+
+!ifndef DEVOBJDIR
+DEVOBJDIR=$(GENDIR)
+!endif
+
 !ifndef PSGENDIR
 PSGENDIR=$(GENDIR)
 !endif

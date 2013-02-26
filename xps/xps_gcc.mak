@@ -60,6 +60,8 @@ PLPLATFORM?=
 # you can define this here, although normally you won't need to do this:
 GLGENDIR?=$(GENDIR)
 GLOBJDIR?=$(GENDIR)
+DEVGENDIR?=$(GENDIR)
+DEVOBJDIR?=$(GENDIR)
 PSGENDIR?=$(GENDIR)
 PSOBJDIR?=$(GENDIR)
 JGENDIR?=$(GENDIR)

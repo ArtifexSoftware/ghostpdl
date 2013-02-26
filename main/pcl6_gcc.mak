@@ -29,6 +29,7 @@ PGGENDIR?=./pgobj
 
 # The sources are taken from these directories:
 GLSRCDIR?=../gs/base
+DEVSRCDIR?=../gs/devices
 PCLSRCDIR?=../pcl
 PLSRCDIR?=../pl
 PXLSRCDIR?=../pxl
@@ -107,6 +108,8 @@ GS?=
 # you can define this here, although normally you won't need to do this:
 GLGENDIR?=$(GENDIR)
 GLOBJDIR?=$(GENDIR)
+DEVGENDIR?=$(GENDIR)
+DEVOBJDIR?=$(GENDIR)
 PLGENDIR?=$(GENDIR)
 PLOBJDIR?=$(GENDIR)
 PXLGENDIR?=$(GENDIR)

@@ -87,10 +87,19 @@ GENDIR=$(GENDIR)64
 AUXDIR=$(GENDIR)\aux_
 !endif
 
+!ifndef DEVGENDIR
+DEVGENDIR=$(GENDIR)
+!endif
+
 # The sources are taken from these directories:
 !ifndef GLSRCDIR
 GLSRCDIR=..\gs\base
 !endif
+
+!ifndef DEVSRCDIR
+DEVSRCDIR=..\gs\devices
+!endif
+
 !ifndef PCLSRCDIR
 PCLSRCDIR=..\pcl
 !endif
@@ -193,6 +202,14 @@ GLGENDIR=$(GENDIR)
 
 !ifndef GLOBJDIR
 GLOBJDIR=$(GENDIR)
+!endif
+
+!ifndef DEVGENDIR
+DEVGENDIR=$(GENDIR)
+!endif
+
+!ifndef DEVOBJDIR
+DEVOBJDIR=$(GENDIR)
 !endif
 
 # Not strictly speaking necessary, but saves a stray mkdir later on.
@@ -501,7 +518,7 @@ config-clean: pl.config-clean pxl.config-clean
 
 
 # Define the compilation rule for Windows interpreter code.
-PLATCCC=$(CC_WX) $(CCWINFLAGS) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I)
+PLATCCC=$(CC_WX) $(CCWINFLAGS) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I)
 
 # Subsystems
 !include $(PLSRCDIR)\pl.mak
@@ -513,7 +530,7 @@ PLATCCC=$(CC_WX) $(CCWINFLAGS) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I)
 #### Note PLCCC brings /Za, which can't compile Windows headers, so we define and use PLCCC_W instead. :
 
 CC_W=$(CC_WX) $(COMPILE_FULL_OPTIMIZED) $(ZM)
-PLCCC_W=$(CC_W) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
+PLCCC_W=$(CC_W) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
 $(PLOBJDIR)\dwtrace.$(OBJ): $(GLSRC)dwtrace.c $(AK)\
  $(dwimg_h) $(dwtrace_h)\

@@ -1781,7 +1781,7 @@ $(PSOBJ)zfapi.$(OBJ) : $(PSSRC)zfapi.c $(OP) $(math__h) $(memory__h) $(string__h
  $(stat__h)\
  $(gp_h) $(gscoord_h) $(gscrypt1_h) $(gsfont_h) $(gspaint_h) $(gspath_h)\
  $(gxchar_h) $(gxchrout_h) $(gximask_h) $(gxdevice_h) $(gxfcache_h) $(gxfcid_h)\
- $(gxfont_h) $(gxfont1_h) $(gxpath_h) $(gzstate_h) $(gdevpsf_h)\
+ $(gxfont_h) $(gxfont1_h) $(gxpath_h) $(gzstate_h) \
  $(bfont_h) $(dstack_h) $(files_h) \
  $(ichar_h) $(idict_h) $(iddict_h) $(idparam_h) $(iname_h) $(ifont_h)\
  $(icid_h) $(igstate_h) $(icharout_h) $(ifapi_h) $(iplugin_h) \
@@ -1842,15 +1842,15 @@ $(PSOBJ)icontext.$(OBJ) : $(PSSRC)icontext.c $(GH)\
  $(stream_h)
 	$(PSCC) $(PSO_)icontext.$(OBJ) $(C_) $(PSSRC)icontext.c
 
-gdevdsp_h=$(GLSRC)gdevdsp.h
-gdevdsp2_h=$(GLSRC)gdevdsp2.h
+gdevdsp_h=$(DEVSRCDIR)$(D)gdevdsp.h
+gdevdsp2_h=$(DEVSRCDIR)$(D)gdevdsp2.h
 
 $(PSOBJ)idisp.$(OBJ) : $(PSSRC)idisp.c $(OP) $(stdio__h) $(gp_h)\
  $(stdpre_h) $(gscdefs_h) $(gsdevice_h) $(gsmemory_h) $(gstypes_h)\
  $(iapi_h) $(iref_h)\
  $(imain_h) $(iminst_h) $(idisp_h) $(ostack_h)\
  $(gx_h) $(gxdevice_h) $(gxdevmem_h) $(gdevdsp_h) $(gdevdsp2_h)
-	$(PSCC) $(PSO_)idisp.$(OBJ) $(C_) $(PSSRC)idisp.c
+	$(PSCC) $(I_)$(DEVSRCDIR) $(PSO_)idisp.$(OBJ) $(C_) $(PSSRC)idisp.c
 
 $(PSOBJ)imainarg.$(OBJ) : $(PSSRC)imainarg.c $(GH)\
  $(ctype__h) $(memory__h) $(string__h)\

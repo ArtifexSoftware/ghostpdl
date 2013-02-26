@@ -28,24 +28,24 @@ gp_mswin_h=$(GLSRC)gp_mswin.h
 gsdll_h=$(GLSRC)gsdll.h
 gsdllwin_h=$(GLSRC)gsdllwin.h
 
-gdevmswn_h=$(GLSRC)gdevmswn.h $(GDEVH)\
+gdevmswn_h=$(DEVSRC)gdevmswn.h $(GDEVH)\
  $(dos__h) $(memory__h) $(string__h) $(windows__h)\
  $(gp_mswin_h)
 
 # This is deprecated and requires the interpreter / PSSRCDIR.
-$(GLOBJ)gdevmswn.$(OBJ): $(GLSRC)gdevmswn.c $(gdevmswn_h) $(gp_h) $(gpcheck_h)\
+$(GLOBJ)gdevmswn.$(OBJ): $(DEVSRC)gdevmswn.c $(gdevmswn_h) $(gp_h) $(gpcheck_h)\
  $(gsdll_h) $(gsdllwin_h) $(gsparam_h) $(gdevpccm_h)
-	$(GLCCWIN) -I$(PSSRCDIR) $(GLO_)gdevmswn.$(OBJ) $(C_) $(GLSRC)gdevmswn.c
+	$(GLCCWIN) -I$(PSSRCDIR) -I$(DEVSRCDIR) $(GLO_)gdevmswn.$(OBJ) $(C_) $(DEVSRC)gdevmswn.c
 
-$(GLOBJ)gdevmsxf.$(OBJ): $(GLSRC)gdevmsxf.c $(ctype__h) $(math__h) $(memory__h) $(string__h)\
+$(GLOBJ)gdevmsxf.$(OBJ): $(DEVSRC)gdevmsxf.c $(ctype__h) $(math__h) $(memory__h) $(string__h)\
  $(gdevmswn_h) $(gsstruct_h) $(gsutil_h) $(gxxfont_h)
-	$(GLCCWIN) $(GLO_)gdevmsxf.$(OBJ) $(C_) $(GLSRC)gdevmsxf.c
+	$(GLCCWIN) $(GLO_)gdevmsxf.$(OBJ) $(C_) $(DEVSRC)gdevmsxf.c
 
 # An implementation using a DIB filled by an image device.
 # This is deprecated and requires the interpreter / PSSRCDIR.
-$(GLOBJ)gdevwdib.$(OBJ): $(GLSRC)gdevwdib.c\
+$(GLOBJ)gdevwdib.$(OBJ): $(DEVSRC)gdevwdib.c\
  $(gdevmswn_h) $(gsdll_h) $(gsdllwin_h) $(gxdevmem_h)
-	$(GLCCWIN) -I$(PSSRCDIR) $(GLO_)gdevwdib.$(OBJ) $(C_) $(GLSRC)gdevwdib.c
+	$(GLCCWIN) -I$(PSSRCDIR) $(GLO_)gdevwdib.$(OBJ) $(C_) $(DEVSRC)gdevwdib.c
 
 mswindll1_=$(GLOBJ)gdevmswn.$(OBJ) $(GLOBJ)gdevmsxf.$(OBJ) $(GLOBJ)gdevwdib.$(OBJ)
 mswindll2_=$(GLOBJ)gdevemap.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
@@ -69,9 +69,9 @@ mswinpr2_=$(GLOBJ)gdevwpr2.$(OBJ)
 $(DD)mswinpr2.dev: $(mswinpr2_) $(GLD)page.dev
 	$(SETPDEV) $(DD)mswinpr2 $(mswinpr2_)
 
-$(GLOBJ)gdevwpr2.$(OBJ): $(GLSRC)gdevwpr2.c $(PDEVH) $(windows__h)\
+$(GLOBJ)gdevwpr2.$(OBJ): $(DEVSRC)gdevwpr2.c $(PDEVH) $(windows__h)\
  $(gdevpccm_h) $(gp_h) $(gp_mswin_h) $(gsicc_manage_h)
-	$(GLCCWIN) $(GLO_)gdevwpr2.$(OBJ) $(C_) $(GLSRC)gdevwpr2.c
+	$(GLCCWIN) $(GLO_)gdevwpr2.$(OBJ) $(C_) $(DEVSRC)gdevwpr2.c
 
 ### --------------------------- The OS/2 printer ------------------------ ###
 

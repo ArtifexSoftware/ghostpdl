@@ -28,8 +28,11 @@
 
 BINDIR=./bin
 GLSRCDIR=./base
+DEVSRCDIR=./devices
 GLGENDIR=./obj
 GLOBJDIR=./obj
+DEVGENDIR=./obj
+DEVOBJDIR=./obj
 PSSRCDIR=./psi
 PSLIBDIR=./lib
 PSRESDIR=./Resource

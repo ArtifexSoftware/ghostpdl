@@ -19,11 +19,6 @@ cd "$srcdir"
 
 echo "Generating configuration files for $package, please wait...."
 
-echo "  creating links to configuration sources"
-rm -f configure.ac Makefile.in
-ln -s base/configure.ac .
-ln -s base/Makefile.in .
-
 echo "  running autoconf"
 autoconf || exit 1
 

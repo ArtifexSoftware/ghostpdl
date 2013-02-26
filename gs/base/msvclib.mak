@@ -100,6 +100,9 @@ BINDIR=.\bin
 !endif
 !ifndef GLSRCDIR
 GLSRCDIR=.\base
+!ifndef DEVSRCDIR
+DEVSRCDIR=.\devices
+!endif
 !ifndef PSRESDIR
 PSRESDIR=.\Resource
 !endif
@@ -118,6 +121,18 @@ GLOBJDIR=.\debugobj
 GLOBJDIR=.\obj
 !endif
 !endif
+
+!ifndef DEVGENDIR
+!if "$(DEBUG)"="1"
+DEVGENDIR=.\debugobj
+!else
+DEVGENDIR=.\obj
+!endif
+
+!ifndef DEVOBJDIR
+DEVOBJDIR=$(DEVGENDIR)
+!endif
+
 
 # Do not edit the next group of lines.
 NUL=

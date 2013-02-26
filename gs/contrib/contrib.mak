@@ -155,13 +155,13 @@ CONTRIBSRC=$(CONTRIBDIR)$(D)
 
 bjc_h=$(CONTRIBSRC)gdevbjc_.h
 
-bjc_=$(GLOBJ)gdevbjc_.$(OBJ) $(GLOBJ)gdevbjca.$(OBJ)
+bjc_=$(DEVOBJ)gdevbjc_.$(OBJ) $(DEVOBJ)gdevbjca.$(OBJ)
 
-$(GLOBJ)gdevbjc_.$(OBJ) : $(CONTRIBSRC)gdevbjc_.c $(PDEVH) $(bjc_h)
-	$(GLCC) $(GLO_)gdevbjc_.$(OBJ) $(C_) $(CONTRIBSRC)gdevbjc_.c
+$(DEVOBJ)gdevbjc_.$(OBJ) : $(CONTRIBSRC)gdevbjc_.c $(PDEVH) $(bjc_h)
+	$(DEVCC) $(DEVO_)gdevbjc_.$(OBJ) $(C_) $(CONTRIBSRC)gdevbjc_.c
 
-$(GLOBJ)gdevbjca.$(OBJ) : $(CONTRIBSRC)gdevbjca.c $(PDEVH) $(bjc_h)
-	$(GLCC) $(GLO_)gdevbjca.$(OBJ) $(C_) $(CONTRIBSRC)gdevbjca.c
+$(DEVOBJ)gdevbjca.$(OBJ) : $(CONTRIBSRC)gdevbjca.c $(PDEVH) $(bjc_h)
+	$(DEVCC) $(DEVO_)gdevbjca.$(OBJ) $(C_) $(CONTRIBSRC)gdevbjca.c
 
 $(DD)bjcmono.dev : $(bjc_) $(DD)page.dev
 	$(SETPDEV) $(DD)bjcmono $(bjc_)
@@ -178,7 +178,7 @@ $(DD)bjccolor.dev : $(bjc_) $(DD)page.dev
 
 ### -------------- cdj850 - HP 850c Driver under development ------------- ###
 
-cdeskjet8_=$(GLOBJ)gdevcd8.$(OBJ) $(HPPCL)
+cdeskjet8_=$(DEVOBJ)gdevcd8.$(OBJ) $(HPPCL)
 
 # Author: Uli Wortmann (uliw@erdw.ethz.ch), Martin Gerbershagen (ger@ulm.temic.de)
 # Printer: HP 670
@@ -200,9 +200,9 @@ $(DD)cdj890.dev : $(cdeskjet8_) $(DD)page.dev
 $(DD)cdj1600.dev : $(cdeskjet8_) $(DD)page.dev
 	$(SETPDEV2) $(DD)cdj1600 $(cdeskjet8_)
 
-$(GLOBJ)gdevcd8.$(OBJ) : $(CONTRIBSRC)gdevcd8.c $(PDEVH) $(math__h)\
+$(DEVOBJ)gdevcd8.$(OBJ) : $(CONTRIBSRC)gdevcd8.c $(PDEVH) $(math__h)\
  $(gsparam_h) $(gxlum_h) $(gdevpcl_h)
-	$(GLCC) $(GLO_)gdevcd8.$(OBJ) $(C_) $(CONTRIBSRC)gdevcd8.c
+	$(DEVCC) $(DEVO_)gdevcd8.$(OBJ) $(C_) $(CONTRIBSRC)gdevcd8.c
 
 
 ### -------------- cdj880 - HP 880c Driver under development ------------- ###
@@ -220,16 +220,16 @@ $(DD)cdj880.dev : $(cdeskjet8_) $(DD)page.dev
 
 ### ------------- cdj970 - HP 970Cxi Driver under development ------------- ###
 
-cdeskjet9_=$(GLOBJ)gdevdj9.$(OBJ) $(HPPCL)
+cdeskjet9_=$(DEVOBJ)gdevdj9.$(OBJ) $(HPPCL)
 
 # Author: Rene Harsch (rene@harsch.net)
 # Printer: HP 970Cxi
 $(DD)cdj970.dev : $(cdeskjet9_) $(DD)page.dev
 	$(SETPDEV2) $(DD)cdj970 $(cdeskjet9_)
 
-$(GLOBJ)gdevdj9.$(OBJ) : $(CONTRIBSRC)gdevdj9.c $(PDEVH) $(math__h) $(string__h)\
+$(DEVOBJ)gdevdj9.$(OBJ) : $(CONTRIBSRC)gdevdj9.c $(PDEVH) $(math__h) $(string__h)\
  $(gsparam_h) $(gxlum_h) $(gdevpcl_h)
-	$(GLCC) $(GLO_)gdevdj9.$(OBJ) $(C_) $(CONTRIBSRC)gdevdj9.c
+	$(DEVCC) $(DEVO_)gdevdj9.$(OBJ) $(C_) $(CONTRIBSRC)gdevdj9.c
  
 
 ### -------------- cdnj500 - HP DesignJet 500 ------------- ###
@@ -252,7 +252,7 @@ $(DD)chp2200.dev : $(cdeskjet8_) $(DD)page.dev
 ### Note : this driver is used by Samsung SmartGDI compatible printers.   ###
 ###
 
-GDIMONO=$(GLOBJ)gdevgdi.$(OBJ) $(HPPCL)
+GDIMONO=$(DEVOBJ)gdevgdi.$(OBJ) $(HPPCL)
 
 $(DD)gdi.dev : $(GDIMONO) $(DD)page.dev
 	$(SETPDEV) $(DD)gdi $(GDIMONO)
@@ -260,15 +260,15 @@ $(DD)gdi.dev : $(GDIMONO) $(DD)page.dev
 $(DD)samsunggdi.dev : $(GDIMONO) $(DD)page.dev
 	$(SETPDEV) $(DD)samsunggdi $(GDIMONO)
 
-$(GLOBJ)gdevgdi.$(OBJ) : $(CONTRIBSRC)gdevgdi.c $(PDEVH) $(gdevpcl_h)
-	$(GLCC) $(GLO_)gdevgdi.$(OBJ) $(C_) $(CONTRIBSRC)gdevgdi.c
+$(DEVOBJ)gdevgdi.$(OBJ) : $(CONTRIBSRC)gdevgdi.c $(PDEVH) $(gdevpcl_h)
+	$(DEVCC) $(DEVO_)gdevgdi.$(OBJ) $(C_) $(CONTRIBSRC)gdevgdi.c
 
 
 ### ---------------- The Brother HL-1240/HL-1250 printers --------------- ###
 ### These printers are ljet4-compatible, plus support for source tray     ###
 ### selection and special 1200x600 dpi mode.                              ###
 
-hl1250_=$(GLOBJ)gdevhl12.$(OBJ) $(HPDLJM)
+hl1250_=$(DEVOBJ)gdevhl12.$(OBJ) $(HPDLJM)
 $(DD)hl1250.dev : $(hl1250_) $(DD)page.dev
 	$(SETPDEV) $(DD)hl1250 $(hl1250_)
 
@@ -277,13 +277,13 @@ $(DD)hl1240.dev : $(hl1250_) $(DD)page.dev
 
 # Author: Marek Michalkiewicz <marekm@linux.org.pl>
 # Printer: Brother HL-1250 (may work with some other models too)
-$(GLOBJ)gdevhl12.$(OBJ) : $(CONTRIBSRC)gdevhl12.c $(PDEVH) $(gdevdljm_h)
-	$(GLCC) $(GLO_)gdevhl12.$(OBJ) $(C_) $(CONTRIBSRC)gdevhl12.c
+$(DEVOBJ)gdevhl12.$(OBJ) : $(CONTRIBSRC)gdevhl12.c $(PDEVH) $(gdevdljm_h)
+	$(DEVCC) $(DEVO_)gdevhl12.$(OBJ) $(C_) $(CONTRIBSRC)gdevhl12.c
 
 
 ### -------- The DEC LN03/DL2100/LA50/LA70/LA75 printer devices -------- ###
 
-ln03_=$(GLOBJ)gdevln03.$(OBJ)
+ln03_=$(DEVOBJ)gdevln03.$(OBJ)
 
 # Author: Ulrich Mueller (ulm@vsnhd1.cern.ch)
 # Printer: DEC LN03
@@ -315,8 +315,8 @@ $(DD)la75.dev : $(ln03_) $(DD)page.dev
 $(DD)la75plus.dev : $(ln03_) $(DD)page.dev
 	$(SETPDEV) $(DD)la75plus $(ln03_)
 
-$(GLOBJ)gdevln03.$(OBJ) : $(CONTRIBSRC)gdevln03.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevln03.$(OBJ) $(C_) $(CONTRIBSRC)gdevln03.c
+$(DEVOBJ)gdevln03.$(OBJ) : $(CONTRIBSRC)gdevln03.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevln03.$(OBJ) $(C_) $(CONTRIBSRC)gdevln03.c
 
 
 ### -------------------------- EPSON Page/Color -------------------------- ###
@@ -327,10 +327,10 @@ ESCV_DIR=$(CONTRIBSRC)eplaser
 ESCV_SRC=$(ESCV_DIR)$(D)
 escv_opts=-DGS_VERSION_MAJOR=$(GS_VERSION_MAJOR)
 
-escv_=$(GLOBJ)gdevescv.$(OBJ)
+escv_=$(DEVOBJ)gdevescv.$(OBJ)
 
-$(GLOBJ)gdevescv.$(OBJ) : $(ESCV_SRC)gdevescv.c $(ESCV_SRC)gdevescv.h $(PDEVH) $(time__h)
-	$(GLCC) -DA4 $(GLO_)gdevescv.$(OBJ) $(C_) $(escv_opts) $(ESCV_SRC)gdevescv.c
+$(DEVOBJ)gdevescv.$(OBJ) : $(ESCV_SRC)gdevescv.c $(ESCV_SRC)gdevescv.h $(PDEVH) $(time__h)
+	$(DEVCC) -DA4 $(DEVO_)gdevescv.$(OBJ) $(C_) $(escv_opts) $(ESCV_SRC)gdevescv.c
 
 $(DD)alc1900.dev : $(escv_) $(DD)page.dev
 	$(SETPDEV) $(DD)alc1900 $(escv_)
@@ -490,32 +490,32 @@ $(DD)eplmono.dev: $(escv_) $(DD)page.dev
 
 # ------ The Lexmark 5700 and 7000 devices ------ #
 
-lex7000_=$(GLOBJ)gdevlx7.$(OBJ)
+lex7000_=$(DEVOBJ)gdevlx7.$(OBJ)
 $(DD)lex7000.dev : $(lex7000_) $(DD)page.dev
 	$(SETPDEV) $(DD)lex7000 $(lex7000_)
 
-lex5700_=$(GLOBJ)gdevlx7.$(OBJ)
+lex5700_=$(DEVOBJ)gdevlx7.$(OBJ)
 $(DD)lex5700.dev : $(lex5700_) $(DD)page.dev
 	$(SETPDEV) $(DD)lex5700 $(lex5700_)
 
-lex3200_=$(GLOBJ)gdevlx7.$(OBJ)
+lex3200_=$(DEVOBJ)gdevlx7.$(OBJ)
 $(DD)lex3200.dev : $(lex3200_) $(DD)page.dev
 	$(SETPDEV) $(DD)lex3200 $(lex3200_)
 
-lex2050_=$(GLOBJ)gdevlx7.$(OBJ)
+lex2050_=$(DEVOBJ)gdevlx7.$(OBJ)
 $(DD)lex2050.dev : $(lex2050_) $(DD)page.dev
 	$(SETPDEV) $(DD)lex2050 $(lex2050_)
 
-$(GLOBJ)gdevlx7.$(OBJ) : $(CONTRIBSRC)gdevlx7.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevlx7.$(OBJ) $(C_) $(CONTRIBSRC)gdevlx7.c
+$(DEVOBJ)gdevlx7.$(OBJ) : $(CONTRIBSRC)gdevlx7.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevlx7.$(OBJ) $(C_) $(CONTRIBSRC)gdevlx7.c
 
 
 ### ----------- Lexmark 3200 device ------------ ###
 
-lxm3200_=$(GLOBJ)gdevlx32.$(OBJ)
+lxm3200_=$(DEVOBJ)gdevlx32.$(OBJ)
 
-$(GLOBJ)gdevlx32.$(OBJ) : $(CONTRIBSRC)gdevlx32.c $(PDEVH) $(gsparam_h)
-	$(GLCC) $(GLO_)gdevlx32.$(OBJ) $(C_) $(CONTRIBSRC)gdevlx32.c
+$(DEVOBJ)gdevlx32.$(OBJ) : $(CONTRIBSRC)gdevlx32.c $(PDEVH) $(gsparam_h)
+	$(DEVCC) $(DEVO_)gdevlx32.$(OBJ) $(C_) $(CONTRIBSRC)gdevlx32.c
 
 $(DD)lxm3200.dev : $(lxm3200_) $(DD)page.dev
 	$(SETPDEV) $(DD)lxm3200 $(lxm3200_)
@@ -527,32 +527,32 @@ LIPS_DIR=$(CONTRIBSRC)lips4
 LIPS_SRC=$(LIPS_DIR)$(D)
 LIPS_OPT=-DGS_VERSION_MAJOR=$(GS_VERSION_MAJOR) $(I_)$(LIPS_SRC) $(II)$(PSSRC)$(_I)
 
-$(GLOBJ)gdevlprn.$(OBJ) : $(LIPS_SRC)gdevlprn.c $(LIPS_SRC)gdevlprn.h\
+$(DEVOBJ)gdevlprn.$(OBJ) : $(LIPS_SRC)gdevlprn.c $(LIPS_SRC)gdevlprn.h\
  $(gdevprn_h) $(PDEVH)
-	$(GLCC) $(GLO_)gdevlprn.$(OBJ) $(LIPS_OPT) $(C_) $(LIPS_SRC)gdevlprn.c
+	$(DEVCC) $(DEVO_)gdevlprn.$(OBJ) $(LIPS_OPT) $(C_) $(LIPS_SRC)gdevlprn.c
 
-lipsr_=$(GLOBJ)gdevl4r.$(OBJ) $(GLOBJ)gdevlips.$(OBJ) $(GLOBJ)gdevlprn.$(OBJ)
+lipsr_=$(DEVOBJ)gdevl4r.$(OBJ) $(DEVOBJ)gdevlips.$(OBJ) $(DEVOBJ)gdevlprn.$(OBJ)
 
-$(GLOBJ)gdevl4r.$(OBJ) : $(LIPS_SRC)gdevl4r.c $(LIPS_SRC)gdevlips.h $(PDEVH)
-	$(GLCC) -DA4 $(GLO_)gdevl4r.$(OBJ) $(LIPS_OPT) $(C_)\
+$(DEVOBJ)gdevl4r.$(OBJ) : $(LIPS_SRC)gdevl4r.c $(LIPS_SRC)gdevlips.h $(PDEVH)
+	$(DEVCC) -DA4 $(DEVO_)gdevl4r.$(OBJ) $(LIPS_OPT) $(C_)\
  $(LIPS_SRC)gdevl4r.c
 
-$(GLOBJ)gdevlips.$(OBJ) : $(GX) $(LIPS_SRC)gdevlips.c $(std_h)
-	$(GLCC) $(GLO_)gdevlips.$(OBJ) $(LIPS_OPT) $(C_) $(LIPS_SRC)gdevlips.c
+$(DEVOBJ)gdevlips.$(OBJ) : $(GX) $(LIPS_SRC)gdevlips.c $(std_h)
+	$(DEVCC) $(DEVO_)gdevlips.$(OBJ) $(LIPS_OPT) $(C_) $(LIPS_SRC)gdevlips.c
 
 $(DD)lips4.dev : $(lipsr_) $(DD)page.dev
 	$(SETPDEV) $(DD)lips4 $(lipsr_)
 
-lipsv_=$(GLOBJ)gdevl4v.$(OBJ) $(GLOBJ)gdevlips.$(OBJ)
+lipsv_=$(DEVOBJ)gdevl4v.$(OBJ) $(DEVOBJ)gdevlips.$(OBJ)
 
 $(DD)lips4v.dev : $(ECHOGS_XE) $(lipsv_) $(DD)vector.dev
 	$(SETDEV) $(DD)lips4v $(lipsv_)
 	$(ADDMOD) $(DD)lips4v -include $(GLD)vector
 
-$(GLOBJ)gdevl4v.$(OBJ) : $(LIPS_SRC)gdevl4v.c $(LIPS_SRC)gdevlips.h $(GDEV)\
+$(DEVOBJ)gdevl4v.$(OBJ) : $(LIPS_SRC)gdevl4v.c $(LIPS_SRC)gdevlips.h $(GDEV)\
  $(math__h) $(gscspace_h) $(gsutil_h) $(gsparam_h) $(gsmatrix_h) $(gdevvec_h)\
  $(ghost_h) $(gzstate_h) $(igstate_h)
-	$(GLCC) -DA4 $(GLO_)gdevl4v.$(OBJ) $(LIPS_OPT) $(C_)\
+	$(DEVCC) -DA4 $(DEVO_)gdevl4v.$(OBJ) $(LIPS_OPT) $(C_)\
  $(LIPS_SRC)gdevl4v.c
 
 ### --------------- Some extra devices: lips2p, bjc880j ---------------- ###
@@ -566,7 +566,7 @@ $(DD)bjc880j.dev : $(lipsr_) $(DD)page.dev
 
 ### ------------ ALPS MD series printer devices ------------ ###
 
-md2k_=$(GLOBJ)gdevmd2k.$(OBJ)
+md2k_=$(DEVOBJ)gdevmd2k.$(OBJ)
 
 $(DD)md2k.dev : $(md2k_) $(DD)page.dev
 	$(SETPDEV) $(DD)md2k $(md2k_)
@@ -574,30 +574,30 @@ $(DD)md2k.dev : $(md2k_) $(DD)page.dev
 $(DD)md5k.dev : $(md2k_) $(DD)page.dev
 	$(SETPDEV) $(DD)md5k $(md2k_)
 
-$(GLOBJ)gdevmd2k.$(OBJ) : $(CONTRIBSRC)gdevmd2k.c $(PDEVH) $(gsparam_h)
-	$(GLCC) $(GLO_)gdevmd2k.$(OBJ) $(C_) $(CONTRIBSRC)gdevmd2k.c
+$(DEVOBJ)gdevmd2k.$(OBJ) : $(CONTRIBSRC)gdevmd2k.c $(PDEVH) $(gsparam_h)
+	$(DEVCC) $(DEVO_)gdevmd2k.$(OBJ) $(C_) $(CONTRIBSRC)gdevmd2k.c
  
 
 ###--------------- IBM Omni Driver Framework --------------------------###
 
 epclr_h1=$(CONTRIBSRC)defs.h
 
-$(DD)omni.dev : $(GLOBJ)gomni.$(OBJ) $(DD)page.dev
-	$(SETPDEV) $(DD)omni $(GLOBJ)gomni.$(OBJ)
+$(DD)omni.dev : $(DEVOBJ)gomni.$(OBJ) $(DD)page.dev
+	$(SETPDEV) $(DD)omni $(DEVOBJ)gomni.$(OBJ)
 
-$(GLOBJ)gomni.$(OBJ) : $(CONTRIBSRC)gomni.c $(epclr_h1) $(PDEVH)
-	$(GLCC) $(GLO_)gomni.$(OBJ) $(C_) $(CONTRIBSRC)gomni.c
+$(DEVOBJ)gomni.$(OBJ) : $(CONTRIBSRC)gomni.c $(epclr_h1) $(PDEVH)
+	$(DEVCC) $(DEVO_)gomni.$(OBJ) $(C_) $(CONTRIBSRC)gomni.c
 
 ### ----------------- The Okidata OkiPage 4w+ device ------------------- ###
 
-oki4w_=$(GLOBJ)gdevop4w.$(OBJ)
+oki4w_=$(DEVOBJ)gdevop4w.$(OBJ)
 $(DD)oki4w.dev : $(oki4w_) $(DD)page.dev
 	$(SETPDEV) $(DD)oki4w $(oki4w_)
 
 # Author: Ivan Schreter (ivan@shadow.sk)
 # Printer: Okidata OkiPage 4w+
-$(GLOBJ)gdevop4w.$(OBJ) : $(CONTRIBSRC)gdevop4w.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevop4w.$(OBJ) $(C_) $(CONTRIBSRC)gdevop4w.c
+$(DEVOBJ)gdevop4w.$(OBJ) : $(CONTRIBSRC)gdevop4w.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevop4w.$(OBJ) $(C_) $(CONTRIBSRC)gdevop4w.c
 
 
 ### ---------------- OpenPrinting Vector Printer Driver ---------------- ###
@@ -606,11 +606,11 @@ OPVP_DIR=$(CONTRIBSRC)opvp
 OPVP_SRC=$(OPVP_DIR)$(D)
 OPVP_OPT=-DGS_VERSION_MAJOR=$(GS_VERSION_MAJOR) $(I_)$(PSSRC)$(_I)
 
-opvp_=$(GLOBJ)gdevopvp.$(OBJ)
+opvp_=$(DEVOBJ)gdevopvp.$(OBJ)
 
-$(GLOBJ)gdevopvp.$(OBJ) : $(OPVP_SRC)gdevopvp.c $(OPVP_SRC)opvp_common.h\
+$(DEVOBJ)gdevopvp.$(OBJ) : $(OPVP_SRC)gdevopvp.c $(OPVP_SRC)opvp_common.h\
  $(PDEVH)
-	$(GLCC) $(GLO_)gdevopvp.$(OBJ) $(OPVP_OPT) $(C_) $(OPVP_SRC)gdevopvp.c
+	$(DEVCC) $(DEVO_)gdevopvp.$(OBJ) $(OPVP_OPT) $(C_) $(OPVP_SRC)gdevopvp.c
 
 $(DD)opvp.dev : $(opvp_) $(DD)page.dev
 	$(SETPDEV) $(DD)opvp $(opvp_)
@@ -696,9 +696,9 @@ eprn_dir=$(CONTRIBSRC)pcl3$(D)eprn
 eprn_src=$(eprn_dir)$(D)
 
 # List of all eprn object files
-eprn_=$(GLOBJ)gdeveprn.$(OBJ) $(GLOBJ)pagecount.$(OBJ) \
-  $(GLOBJ)mediasize.$(OBJ) $(GLOBJ)eprnparm.$(OBJ) $(GLOBJ)eprnrend.$(OBJ) \
-  $(GLOBJ)eprnfs.$(OBJ)
+eprn_=$(DEVOBJ)gdeveprn.$(OBJ) $(DEVOBJ)pagecount.$(OBJ) \
+  $(DEVOBJ)mediasize.$(OBJ) $(DEVOBJ)eprnparm.$(OBJ) $(DEVOBJ)eprnrend.$(OBJ) \
+  $(DEVOBJ)eprnfs.$(OBJ)
 
 # List of eprn headers needed when gdeveprn.h is included:
 eprn_headers=$(eprn_src)mediasize.h $(eprn_src)gdeveprn.h $(PDEVH)
@@ -707,27 +707,27 @@ eprn_headers=$(eprn_src)mediasize.h $(eprn_src)gdeveprn.h $(PDEVH)
 
 # Rules for individual files
 
-$(GLOBJ)mediasize.$(OBJ) : $(std_h) \
+$(DEVOBJ)mediasize.$(OBJ) : $(std_h) \
   $(eprn_src)mediasize.c $(eprn_src)mediasize.h
-	$(GLCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_src)mediasize.c
+	$(DEVCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_src)mediasize.c
 
-$(GLOBJ)gdeveprn.$(OBJ) : $(eprn_headers) $(eprn_src)pagecount.h
-	$(GLCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_src)gdeveprn.c
+$(DEVOBJ)gdeveprn.$(OBJ) : $(eprn_headers) $(eprn_src)pagecount.h
+	$(DEVCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_src)gdeveprn.c
 
-$(GLOBJ)eprnparm.$(OBJ) : $(eprn_src)eprnparm.c $(eprn_headers)
-	$(GLCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_src)eprnparm.c
+$(DEVOBJ)eprnparm.$(OBJ) : $(eprn_src)eprnparm.c $(eprn_headers)
+	$(DEVCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_src)eprnparm.c
 
-$(GLOBJ)eprnrend.$(OBJ) : $(eprn_src)eprnrend.c $(eprn_headers)
-	$(GLCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_src)eprnrend.c
+$(DEVOBJ)eprnrend.$(OBJ) : $(eprn_src)eprnrend.c $(eprn_headers)
+	$(DEVCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_src)eprnrend.c
 
-$(GLOBJ)eprnfs.$(OBJ) : $(eprn_src)eprnfs.c $(eprn_headers)
-	$(GLCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_fs_options) \
+$(DEVOBJ)eprnfs.$(OBJ) : $(eprn_src)eprnfs.c $(eprn_headers)
+	$(DEVCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_fs_options) \
 	  $(eprn_src)eprnfs.c
 
 # File also used by hpdj:
-$(GLOBJ)pagecount.$(OBJ) : $(std_h) \
+$(DEVOBJ)pagecount.$(OBJ) : $(std_h) \
   $(eprn_src)pagecount.c $(eprn_src)pagecount.h
-	$(GLCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_src)pagecount.c
+	$(DEVCC) $(C_) $(O_)$@ $(eprn_opts) $(eprn_src)pagecount.c
 
 #==============================================================================
 
@@ -748,29 +748,29 @@ pcl3_headers=$(eprn_headers) \
   $(pcl3_src)pclgen.h $(pcl3_src)pclcap.h $(pcl3_src)pclsize.h
 
 # List of all object files needed for pcl3
-pcl3_=$(eprn_) $(GLOBJ)gdevpcl3.$(OBJ) $(GLOBJ)pclcap.$(OBJ) \
-  $(GLOBJ)pclgen.$(OBJ) $(GLOBJ)pclcomp.$(OBJ) $(GLOBJ)pclsize.$(OBJ)
+pcl3_=$(eprn_) $(DEVOBJ)gdevpcl3.$(OBJ) $(DEVOBJ)pclcap.$(OBJ) \
+  $(DEVOBJ)pclgen.$(OBJ) $(DEVOBJ)pclcomp.$(OBJ) $(DEVOBJ)pclsize.$(OBJ)
 
 #------------------------------------------------------------------------------
 
 # Rules for individual files
 
-$(GLOBJ)pclgen.$(OBJ) : $(pcl3_src)pclgen.c $(pcl3_src)pclgen.h
-	$(GLCC) $(C_) $(O_)$@ $(pcl3_opts) $(pcl3_src)pclgen.c
+$(DEVOBJ)pclgen.$(OBJ) : $(pcl3_src)pclgen.c $(pcl3_src)pclgen.h
+	$(DEVCC) $(C_) $(O_)$@ $(pcl3_opts) $(pcl3_src)pclgen.c
 
-$(GLOBJ)pclsize.$(OBJ) : $(pcl3_src)pclsize.c $(eprn_src)mediasize.h \
+$(DEVOBJ)pclsize.$(OBJ) : $(pcl3_src)pclsize.c $(eprn_src)mediasize.h \
 	  $(pcl3_src)pclsize.h $(pcl3_src)pclgen.h
-	$(GLCC) $(C_) $(O_)$@ $(pcl3_opts) $(pcl3_src)pclsize.c
+	$(DEVCC) $(C_) $(O_)$@ $(pcl3_opts) $(pcl3_src)pclsize.c
 
-$(GLOBJ)pclcap.$(OBJ) : $(pcl3_src)pclcap.c $(pcl3_headers)
-	$(GLCC) $(C_) $(O_)$@ $(pcl3_opts) $(pcl3_src)pclcap.c
+$(DEVOBJ)pclcap.$(OBJ) : $(pcl3_src)pclcap.c $(pcl3_headers)
+	$(DEVCC) $(C_) $(O_)$@ $(pcl3_opts) $(pcl3_src)pclcap.c
 
-$(GLOBJ)gdevpcl3.$(OBJ) : $(pcl3_src)gdevpcl3.c $(pcl3_headers)
-	$(GLCC) $(C_) $(O_)$@ $(pcl3_opts) $(pcl3_src)gdevpcl3.c
+$(DEVOBJ)gdevpcl3.$(OBJ) : $(pcl3_src)gdevpcl3.c $(pcl3_headers)
+	$(DEVCC) $(C_) $(O_)$@ $(pcl3_opts) $(pcl3_src)gdevpcl3.c
 
 # File also used by hpdj:
-$(GLOBJ)pclcomp.$(OBJ) : $(pcl3_src)pclcomp.c $(pcl3_src)pclgen.h
-	$(GLCC) $(C_) $(O_)$@ $(pcl3_opts) $(pcl3_src)pclcomp.c
+$(DEVOBJ)pclcomp.$(OBJ) : $(pcl3_src)pclcomp.c $(pcl3_src)pclgen.h
+	$(DEVCC) $(C_) $(O_)$@ $(pcl3_opts) $(pcl3_src)pclcomp.c
 
 #------------------------------------------------------------------------------
 
@@ -842,8 +842,8 @@ pcl3opts_=$(pcl3_src)pcl3opts.c $(pcl3_src)pclscan.c $(eprn_src)mediasize.c \
 
 $(BINDIR)$(D)pcl3opts$(XE): $(pcl3opts_)
 	$(CC_) -o $@ -I$(eprn_src) $(pcl3opts_)
-	gencat $(GLOBJ)pcl3opts-en.cat $(pcl3_src)pcl3opts-en.msg
-	#gencat $(GLOBJ)pcl3opts-de.cat $(pcl3_src)pcl3opts-de.msg
+	gencat $(DEVOBJ)pcl3opts-en.cat $(pcl3_src)pcl3opts-en.msg
+	#gencat $(DEVOBJ)pcl3opts-de.cat $(pcl3_src)pcl3opts-de.msg
 
 #------------------------------------------------------------------------------
 
@@ -859,14 +859,14 @@ pcl3-install:
 
 ### ----------------- The Xerox XES printer device --------------------- ###
 
-xes_=$(GLOBJ)gdevxes.$(OBJ)
+xes_=$(DEVOBJ)gdevxes.$(OBJ)
 $(DD)xes.dev : $(xes_) $(DD)page.dev
 	$(SETPDEV) $(DD)xes $(xes_)
 
 # Author: Peter Flass (flass@lbdrscs.bitnet)
 # Printer: Xerox XES (2700, 3700, 4045, etc.)
-$(GLOBJ)gdevxes.$(OBJ) : $(CONTRIBSRC)gdevxes.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevxes.$(OBJ) $(C_) $(CONTRIBSRC)gdevxes.c
+$(DEVOBJ)gdevxes.$(OBJ) : $(CONTRIBSRC)gdevxes.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevxes.$(OBJ) $(C_) $(CONTRIBSRC)gdevxes.c
 
 #########################################################################
 ### --------------------Japanese printer addons --------------------- ###
@@ -877,7 +877,7 @@ JAPSRC=$(JAPDIR)$(D)
 
 ### ----------------- The NEC PC-PR201 printer device ----------------- ###
 
-pr201_=$(GLOBJ)gdevp201.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
+pr201_=$(DEVOBJ)gdevp201.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 
 $(DD)pr201.dev : $(pr201_)
 	$(SETPDEV) $(DD)pr201 $(pr201_)
@@ -891,22 +891,22 @@ $(DD)pr1000.dev : $(pr201_)
 $(DD)pr1000_4.dev : $(pr201_)
 	$(SETPDEV) $(DD)pr1000_4 $(pr201_)
 
-$(GLOBJ)gdevp201.$(OBJ) : $(JAPSRC)gdevp201.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevp201.$(OBJ) $(C_) $(JAPSRC)gdevp201.c
+$(DEVOBJ)gdevp201.$(OBJ) : $(JAPSRC)gdevp201.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevp201.$(OBJ) $(C_) $(JAPSRC)gdevp201.c
 
 ### ----------------- The Star JJ-100 printer device ----------------- ###
 
-jj100_=$(GLOBJ)gdevj100.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
+jj100_=$(DEVOBJ)gdevj100.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 
 $(DD)jj100.dev : $(jj100_)
 	$(SETPDEV) $(DD)jj100 $(jj100_)
 
-$(GLOBJ)gdevj100.$(OBJ) : $(JAPSRC)gdevj100.c $(PDEVH)
-	$(GLCC) $(O_)$@ $(C_) $(JAPSRC)gdevj100.c
+$(DEVOBJ)gdevj100.$(OBJ) : $(JAPSRC)gdevj100.c $(PDEVH)
+	$(DEVCC) $(O_)$@ $(C_) $(JAPSRC)gdevj100.c
 
 ### ----------------- The Canon BubbleJet BJ10v device ----------------- ###
 
-bj10v_=$(GLOBJ)gdev10v.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
+bj10v_=$(DEVOBJ)gdev10v.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 
 $(DD)bj10v.dev : $(bj10v_)
 	$(SETPDEV) $(DD)bj10v $(bj10v_)
@@ -916,16 +916,16 @@ $(DD)bj10vh.dev : $(bj10v_)
 
 # Uncomment the following line if you are using MS-DOS on PC9801 series.
 
-$(GLOBJ)gdev10v.$(OBJ) : $(JAPSRC)gdev10v.c $(PDEVH)
-	$(GLCC) $(O_)$@ $(C_) $(JAPSRC)gdev10v.c
-#	$(GLCC) -DPC9801 $(O_)$@ $(C_) $(JAPSRC)gdev10v.c
+$(DEVOBJ)gdev10v.$(OBJ) : $(JAPSRC)gdev10v.c $(PDEVH)
+	$(DEVCC) $(O_)$@ $(C_) $(JAPSRC)gdev10v.c
+#	$(DEVCC) -DPC9801 $(O_)$@ $(C_) $(JAPSRC)gdev10v.c
 
 
 ### ------------------------- MAG file formats ------------------------- ###
 
-maguro_=$(GLOBJ)gdevmag.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
-$(GLOBJ)gdevmag.$(OBJ) : $(JAPSRC)gdevmag.c $(PDEVH)
-	$(GLCC) $(O_)$@ $(C_) $(JAPSRC)gdevmag.c
+maguro_=$(DEVOBJ)gdevmag.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
+$(DEVOBJ)gdevmag.$(OBJ) : $(JAPSRC)gdevmag.c $(PDEVH)
+	$(DEVCC) $(O_)$@ $(C_) $(JAPSRC)gdevmag.c
 
 $(DD)mag16.dev : $(maguro_)
 	$(SETDEV) $(DD)mag16 $(maguro_)
@@ -934,17 +934,17 @@ $(DD)mag256.dev : $(maguro_)
 	$(SETDEV) $(DD)mag256 $(maguro_)
 
 ### ---------------- Dot matrix printer device ---------------- ###
-dmprt_=$(GLOBJ)gdevdmpr.$(OBJ) $(GLOBJ)dviprlib.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
+dmprt_=$(DEVOBJ)gdevdmpr.$(OBJ) $(DEVOBJ)dviprlib.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 
 $(DD)dmprt.dev : $(dmprt_) $(DD)page.dev
 	$(SETDEV) $(DD)dmprt $(dmprt_)
 	$(ADDMOD) $(DD)dmprt -ps dmp_init
 
-$(GLOBJ)gdevdmpr.$(OBJ) : $(JAPSRC)gdevdmpr.c $(JAPSRC)dviprlib.h $(PDEVH)
-	$(GLCC) $(O_)$@ $(C_) $(JAPSRC)gdevdmpr.c
+$(DEVOBJ)gdevdmpr.$(OBJ) : $(JAPSRC)gdevdmpr.c $(JAPSRC)dviprlib.h $(PDEVH)
+	$(DEVCC) $(O_)$@ $(C_) $(JAPSRC)gdevdmpr.c
 
-$(GLOBJ)dviprlib.$(OBJ) : $(JAPSRC)dviprlib.c $(JAPSRC)dviprlib.h
-	$(GLCC) $(O_)$@ $(C_) $(JAPSRC)dviprlib.c
+$(DEVOBJ)dviprlib.$(OBJ) : $(JAPSRC)dviprlib.c $(JAPSRC)dviprlib.h
+	$(DEVCC) $(O_)$@ $(C_) $(JAPSRC)dviprlib.c
 
 extra-dmprt-install:
 	$(INSTALL_DATA) $(JAPSRC)dmp_init.ps $(DESTDIR)$(gsdatadir)$(D)lib || exit 1
@@ -957,10 +957,10 @@ extra-dmprt-install:
 ## EPSON MachJet driver 
 ##
 
-mj700v2c_=$(GLOBJ)gdevmjc.$(OBJ) $(HPPCL)
+mj700v2c_=$(DEVOBJ)gdevmjc.$(OBJ) $(HPPCL)
 
-$(GLOBJ)gdevmjc.$(OBJ) : $(JAPSRC)gdevmjc.c $(JAPSRC)gdevmjc.h $(PDEVH) $(gdevpcl_h)
-	$(GLCC) -DA4 $(GLO_)gdevmjc.$(OBJ) $(C_) $(JAPSRC)gdevmjc.c
+$(DEVOBJ)gdevmjc.$(OBJ) : $(JAPSRC)gdevmjc.c $(JAPSRC)gdevmjc.h $(PDEVH) $(gdevpcl_h)
+	$(DEVCC) -DA4 $(DEVO_)gdevmjc.$(OBJ) $(C_) $(JAPSRC)gdevmjc.c
 
 $(DD)mj700v2c.dev : $(mj700v2c_) $(DD)page.dev
 	$(SETPDEV) $(DD)mj700v2c $(mj700v2c_)
@@ -976,23 +976,23 @@ $(DD)mj8000c.dev : $(mj700v2c_) $(DD)page.dev
 
 ### ----------------- The Fujitsu FMPR printer device ----------------- ###
 
-fmpr_=$(GLOBJ)gdevfmpr.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
+fmpr_=$(DEVOBJ)gdevfmpr.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 
 $(DD)fmpr.dev : $(fmpr_) $(DD)page.dev
 	$(SETPDEV) $(DD)fmpr $(fmpr_)
 
-$(GLOBJ)gdevfmpr.$(OBJ) : $(JAPSRC)gdevfmpr.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevfmpr.$(OBJ) $(C_) $(JAPSRC)gdevfmpr.c
+$(DEVOBJ)gdevfmpr.$(OBJ) : $(JAPSRC)gdevfmpr.c $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevfmpr.$(OBJ) $(C_) $(JAPSRC)gdevfmpr.c
 
 ### --------------- The Fujitsu FMLBP-2xx printer device --------------- ###
 
-fmlbp_=$(GLOBJ)gdevfmlbp.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
+fmlbp_=$(DEVOBJ)gdevfmlbp.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 
 $(DD)fmlbp.dev : $(fmlbp_) $(DD)page.dev
 	$(SETPDEV) $(DD)fmlbp $(fmlbp_)
 
-$(GLOBJ)gdevfmlbp.$(OBJ) : $(JAPSRC)gdevfmlbp.c $(PDEVH)
-	$(GLCC) -DFMLBP_NOADJUST_MARGIN $(O_)$@ $(C_) $(JAPSRC)gdevfmlbp.c
+$(DEVOBJ)gdevfmlbp.$(OBJ) : $(JAPSRC)gdevfmlbp.c $(PDEVH)
+	$(DEVCC) -DFMLBP_NOADJUST_MARGIN $(O_)$@ $(C_) $(JAPSRC)gdevfmlbp.c
 
 ### ------ The OKI MICROLINE620CL (IPL) printer device ------- ###
 #
@@ -1001,18 +1001,18 @@ $(GLOBJ)gdevfmlbp.$(OBJ) : $(JAPSRC)gdevfmlbp.c $(PDEVH)
 #  $Id: gdevml6.mak,v 1.2 1998/03/16 13:32:33 tagawa Exp $
 #
 
-ml6_=$(GLOBJ)gdevml6.$(OBJ) $(GLOBJ)gdevprn.$(OBJ)
+ml6_=$(DEVOBJ)gdevml6.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 
 $(DD)ml600.dev : $(ml6_) $(DD)page.dev
 	$(SETPDEV) $(DD)ml600 $(ml6_)
 
-$(GLOBJ)gdevml6.$(OBJ) : $(JAPSRC)gdevml6.c $(PDEVH)
-	$(GLCC) $(O_)$@ $(C_) $(JAPSRC)gdevml6.c
+$(DEVOBJ)gdevml6.$(OBJ) : $(JAPSRC)gdevml6.c $(PDEVH)
+	$(DEVCC) $(O_)$@ $(C_) $(JAPSRC)gdevml6.c
 
 
 #----------------------------------------------------------------------#
 
-lbp3x0_=$(GLOBJ)gdevlbp3.$(OBJ)
+lbp3x0_=$(DEVOBJ)gdevlbp3.$(OBJ)
 
 $(DD)lbp310.dev :$(lbp3x0_) $(DD)page.dev
 	$(SETPDEV) $(DD)lbp310 $(lbp3x0_)
@@ -1020,25 +1020,25 @@ $(DD)lbp310.dev :$(lbp3x0_) $(DD)page.dev
 $(DD)lbp320.dev :$(lbp3x0_) $(DD)page.dev
 	$(SETPDEV) $(DD)lbp320 $(lbp3x0_)
 
-$(GLOBJ)gdevlbp3.$(OBJ) : $(JAPSRC)gdevlbp3.c $(PDEVH)
-	$(GLCC) $(O_)$@ $(C_) $(JAPSRC)gdevlbp3.c
+$(DEVOBJ)gdevlbp3.$(OBJ) : $(JAPSRC)gdevlbp3.c $(PDEVH)
+	$(DEVCC) $(O_)$@ $(C_) $(JAPSRC)gdevlbp3.c
 
 ### --- The NEC NPDL language printer device ------ ###
 
-npdl_=$(GLOBJ)gdevnpdl.$(OBJ) $(GLOBJ)gdevlprn.$(OBJ)
+npdl_=$(DEVOBJ)gdevnpdl.$(OBJ) $(DEVOBJ)gdevlprn.$(OBJ)
 
-$(GLOBJ)gdevnpdl.$(OBJ) : $(JAPSRC)gdevnpdl.c $(LIPS_SRC)gdevlprn.h $(PDEVH)
-	$(GLCC) -DA4 $(GLO_)gdevnpdl.$(OBJ) $(LIPS_OPT) $(C_) $(JAPSRC)gdevnpdl.c
+$(DEVOBJ)gdevnpdl.$(OBJ) : $(JAPSRC)gdevnpdl.c $(LIPS_SRC)gdevlprn.h $(PDEVH)
+	$(DEVCC) -DA4 $(DEVO_)gdevnpdl.$(OBJ) $(LIPS_OPT) $(C_) $(JAPSRC)gdevnpdl.c
 
 $(DD)npdl.dev : $(npdl_) $(DD)page.dev
 	$(SETPDEV) $(DD)npdl $(npdl_)
 
 ### ------- EPSON ESC/Page printer device ----------------- ###
 
-escpage_=$(GLOBJ)gdevespg.$(OBJ) $(GLOBJ)gdevlprn.$(OBJ) $(GLOBJ)gdevlips.$(OBJ)
+escpage_=$(DEVOBJ)gdevespg.$(OBJ) $(DEVOBJ)gdevlprn.$(OBJ) $(DEVOBJ)gdevlips.$(OBJ)
 
-$(GLOBJ)gdevespg.$(OBJ) : $(JAPSRC)gdevespg.c $(LIPS_SRC)gdevlprn.h $(PDEVH)
-	$(GLCC) -DA4 $(GLO_)gdevespg.$(OBJ) $(LIPS_OPT) $(C_) $(JAPSRC)gdevespg.c
+$(DEVOBJ)gdevespg.$(OBJ) : $(JAPSRC)gdevespg.c $(LIPS_SRC)gdevlprn.h $(PDEVH)
+	$(DEVCC) -DA4 $(DEVO_)gdevespg.$(OBJ) $(LIPS_OPT) $(C_) $(JAPSRC)gdevespg.c
 
 $(DD)escpage.dev : $(escpage_) $(DD)page.dev
 	$(SETPDEV) $(DD)escpage $(escpage_)
@@ -1048,17 +1048,17 @@ $(DD)lp2000.dev : $(escpage_) $(DD)page.dev
 
 ### --- The RICOH RPDL language printer device ------ ###
 
-rpdl_=$(GLOBJ)gdevrpdl.$(OBJ) $(GLOBJ)gdevlprn.$(OBJ)
-$(GLOBJ)gdevrpdl.$(OBJ) : $(JAPSRC)gdevrpdl.c $(LIPS_SRC)gdevlprn.h $(PDEVH)
-	$(GLCC) $(GLO_)gdevrpdl.$(OBJ) $(LIPS_OPT) $(C_) $(JAPSRC)gdevrpdl.c
+rpdl_=$(DEVOBJ)gdevrpdl.$(OBJ) $(DEVOBJ)gdevlprn.$(OBJ)
+$(DEVOBJ)gdevrpdl.$(OBJ) : $(JAPSRC)gdevrpdl.c $(LIPS_SRC)gdevlprn.h $(PDEVH)
+	$(DEVCC) $(DEVO_)gdevrpdl.$(OBJ) $(LIPS_OPT) $(C_) $(JAPSRC)gdevrpdl.c
 
 $(DD)rpdl.dev : $(rpdl_) $(DD)page.dev
 	$(SETPDEV) $(DD)rpdl $(rpdl_)
 
 ### ---------- RICOH RPDL IV(600dpi) printer devices ---------- ###
-#rpdl_=$(GLOBJ)gdevrpdl.$(OBJ)
-#$(GLOBJ)gdevrpdl.$(OBJ) : $(JAPSRC)gdevrpdl.c
-#	$(GLCC) $(GLO_)gdevrpdl.$(OBJ) $(C_) $(JAPSRC)gdevrpdl.c
+#rpdl_=$(DEVOBJ)gdevrpdl.$(OBJ)
+#$(DEVOBJ)gdevrpdl.$(OBJ) : $(JAPSRC)gdevrpdl.c
+#	$(DEVCC) $(DEVO_)gdevrpdl.$(OBJ) $(C_) $(JAPSRC)gdevrpdl.c
 #
 #$(DD)nx100f.dev : $(rpdl_) $(DD)page.dev
 #	$(SETPDEV2) $(DD)nx100f $(rpdl_)
@@ -1068,7 +1068,7 @@ $(DD)rpdl.dev : $(rpdl_) $(DD)page.dev
 
 ### ------------ The ALPS Micro Dry printer devices ------------ ###
 
-alps_=$(GLOBJ)gdevalps.$(OBJ)
+alps_=$(DEVOBJ)gdevalps.$(OBJ)
 
 $(DD)md50Mono.dev : $(alps_) $(DD)page.dev
 	$(SETPDEV) $(DD)md50Mono $(alps_)
@@ -1079,8 +1079,8 @@ $(DD)md50Eco.dev : $(alps_) $(DD)page.dev
 $(DD)md1xMono.dev : $(alps_) $(DD)page.dev
 	$(SETPDEV) $(DD)md1xMono $(alps_)
 
-$(GLOBJ)gdevalps.$(OBJ) : $(JAPSRC)gdevalps.c $(PDEVH)
-	$(GLCC) $(O_)$@ $(C_) $(JAPSRC)gdevalps.c
+$(DEVOBJ)gdevalps.$(OBJ) : $(JAPSRC)gdevalps.c $(PDEVH)
+	$(DEVCC) $(O_)$@ $(C_) $(JAPSRC)gdevalps.c
 
 #########################################################################
 #########################################################################
