@@ -518,6 +518,7 @@ def
     % a soft mask with .begintransparencygroup because high level devices
     % need to modify the graphic state by storing the soft mask ID.
     % Save the ExtGState (//nodict begin) BEFORE changing the colorspace
+(_______execmaskgroup_start______________) pstack = flush
   //nodict begin
   matrix currentmatrix 4 1 roll
   mark currentcolor counttomark dup 4 add exch roll pop
@@ -560,6 +561,7 @@ def
   .setuseciecolor setcolorspace setcolor
   setmatrix
   end	% restore colorspace, color and ExtGState (end)
+  /SoftMask where pop /SoftMask //true put	% special setting to tell us it has been rendered
 } bdef
 
 % Paint a Form+Group XObject, either for a transparency mask or for a Do.

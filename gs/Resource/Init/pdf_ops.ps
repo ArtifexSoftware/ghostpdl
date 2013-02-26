@@ -319,7 +319,7 @@ nodict readonly pop
   } ifelse
 } bdef
 /.settransparencymask {		% <paramdict> <masknum> .settransparencymask -
-  exch dup //null eq {
+  exch dup type /dicttype ne {
     PDFusingtransparency {
       pop pop
     } {
