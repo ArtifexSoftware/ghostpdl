@@ -1170,6 +1170,7 @@ mementobsc:
 PROFILEDEFS=PROFILE=1
 
 profile:
+profile-target:
 	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS)
 
 profileclean:

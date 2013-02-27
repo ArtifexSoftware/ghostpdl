@@ -106,8 +106,8 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= profile &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= profile &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= profileclean"
 				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;DEBUG=0;TDEBUG=0;DEBUGSYM=1;HAVE_SSE2=1"
