@@ -1568,7 +1568,7 @@ is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const pa
 
         if (s > pfs->smoothness)
             return 0;
-        code = cs_is_linear(cs, pfs->pis, pfs->dev,
+        code = cs_is_linear(cs, pfs->pis, pfs->trans_device,
                 &c0->cc, &c1->cc, NULL, NULL, pfs->smoothness - s, pfs->icclink);
         if (code <= 0)
             return code;
@@ -2142,7 +2142,7 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
             /* fixme: check an inner color ? */
             s01 = max(s0, s1);
             s012 = max(s01, s2);
-            code = cs_is_linear(cs, pfs->pis, pfs->dev,
+            code = cs_is_linear(cs, pfs->pis, pfs->trans_device,
                                 &p0->c->cc, &p1->c->cc, &p2->c->cc, NULL,
                                 pfs->smoothness - s012, pfs->icclink);
             if (code < 0)
