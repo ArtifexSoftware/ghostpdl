@@ -84,12 +84,12 @@ int wchar_to_utf8(char *out, const wchar_t *in)
             } else if (i < 0x800) {
                 *out++ = 0xC0 | ( i>> 6        );
                 *out++ = 0x80 | ( i      & 0x3F);
-                len++;
+                len+=2;
             } else /* if (i < 0x10000) */ {
                 *out++ = 0xE0 | ( i>>12        );
                 *out++ = 0x80 | ((i>> 6) & 0x3F);
                 *out++ = 0x80 | ( i      & 0x3F);
-                len++;
+                len+=3;
             }
         }
         *out = 0;
