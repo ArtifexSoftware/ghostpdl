@@ -1138,6 +1138,15 @@ $(DD)svgwrite.dev : $(DEVS_MAK) $(svgwrite_) $(GDEV) $(GLD)vector.dev
 $(GLOBJ)gdevsvg.$(OBJ) : $(GLSRC)gdevsvg.c $(gx_h) $(gdevvec_h)
 	$(GLCC) $(GLO_)gdevsvg.$(OBJ) $(C_) $(GLSRC)gdevsvg.c
 
+
+xpswrite_=$(GLOBJ)gdevxps.$(OBJ)
+$(DD)xpswrite.dev : $(DEVS_MAK) $(xpswrite_) $(GDEV) $(GLD)vector.dev
+	$(SETDEV2) $(DD)xpswrite $(xpswrite_)
+	$(ADDMOD) $(DD)xpswrite -include $(GLD)vector
+
+$(GLOBJ)gdevxps.$(OBJ) : $(GLSRC)gdevxps.c $(gx_h) $(gdevvec_h)
+	$(GLCC) $(I_)$(TI_)$(_I) $(GLO_)gdevxps.$(OBJ) $(C_) $(GLSRC)gdevxps.c
+
 ###### --------------------- Raster file formats --------------------- ######
 
 ### --------------------- The "plain bits" devices ---------------------- ###

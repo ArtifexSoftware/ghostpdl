@@ -1476,6 +1476,7 @@ P_DEVS0=""
 F_DEVS0=""
 CUPS_DEVS0=""
 SVG_DEVS0=""
+XPS_DEVS0=""
 JBIG2_DEVS=""
 IJS_DEVS0=""
 PNG_DEVS0=""
@@ -1509,6 +1510,7 @@ PBM_DEVS='pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pk
 PS_DEVS='psdf psdcmyk psdrgb pdfwrite pswrite ps2write epswrite psgray psmono psrgb bbox txtwrite inkcov'
 MISC_FDEVS='ccr cif inferno mag16 mag256 mgr4 mgr8 mgrgray2 mgrgray4 mgrgray8 mgrmono miff24 plan9bm sgirgb sunhmono bit bitrgb bitrgbtags bitcmyk devicen spotcmyk xcf'
 SVGDEV='svgwrite'
+XPSDEV='xpswrite'
 
 while test -n "$drivers"; do
         if echo $drivers |grep "," >/dev/null; then
@@ -1538,7 +1540,7 @@ while test -n "$drivers"; do
                 fi
                 ;;
         FILES)
-                F_DEVS0="$F_DEVS0 $BMP_DEVS $FAX_DEVS $JPEG_DEVS $TIFFDEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $MISC_FDEVS $SVGDEV"
+                F_DEVS0="$F_DEVS0 $BMP_DEVS $FAX_DEVS $JPEG_DEVS $TIFFDEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $MISC_FDEVS $SVGDEV $XPSDEV"
                 CUPS_DEVS0="$CUPSDEV"
                 JBIG2_DEVS="$JBIG2DEVS"
                 PNG_DEVS0="$PNGDEVS"
@@ -1628,9 +1630,14 @@ while test -n "$drivers"; do
                 F_DEVS0="$F_DEVS0 $PS_DEVS"
                 ;;
         SVG)
-                # PostScript/PDF writing
+                # SVG writing
                 SVG_DEVS0="$SVGDEV"
                 ;;
+        XPS)
+                # SVG writing
+                XPS_DEVS0="$XPSDEV"
+                ;;
+
         ETS)
                 # ETS Halftoning devices
                 F_DEVS0="$F_DEVS0 $ETS_HALFTONING_DEVS"
@@ -1674,6 +1681,11 @@ if test x$enable_threadsafe = xyes; then
   for ntsdev in $NTS_DEVS ; do
     NTS_EXCLUDES="$(echo \"$SVG_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
     SVG_DEVS0=`echo $SVG_DEVS0 | sed "s/\b$ntsdev\b//g"`
+  done
+
+  for ntsdev in $NTS_DEVS ; do
+    NTS_EXCLUDES="$(echo \"$XPS_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
+    XPS_DEVS0=`echo $XPS_DEVS0 | sed "s/\b$ntsdev\b//g"`
   done
 
   for ntsdev in $NTS_DEVS ; do
@@ -1725,6 +1737,10 @@ if test -n "$SVG_DEVS0"; then
     SVG_DEVS=`(for i in $SVG_DEVS0; do d='$(DD)'${i}.dev; if ( grep '^'$d $noncontribmakefiles  2>&1 >/dev/null) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012\015' '  '`
 fi
 
+if test -n "$XPS_DEVS0"; then
+    XPS_DEVS=`(for i in $XPS_DEVS0; do d='$(DD)'${i}.dev; if ( grep '^'$d $noncontribmakefiles  2>&1 >/dev/null) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012\015' '  '`
+fi
+
 if test -n "$IJS_DEVS0"; then
     IJS_DEVS=`(for i in $IJS_DEVS0; do d='$(DD)'${i}.dev; if ( grep '^'$d $noncontribmakefiles  2>&1 >/dev/null) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012\015' '  '`
 fi
@@ -1741,6 +1757,7 @@ AC_SUBST(P_DEVS)
 AC_SUBST(F_DEVS)
 AC_SUBST(CUPS_DEVS)
 AC_SUBST(SVG_DEVS)
+AC_SUBST(XPS_DEVS)
 AC_SUBST(JBIG2_DEVS)
 AC_SUBST(IJS_DEVS)
 AC_SUBST(PNG_DEVS)
