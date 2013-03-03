@@ -973,7 +973,7 @@ in:                             /* Initialize for a new page. */
                     uint plane_depth = depth;
                     uint pln;
                     byte compression = op & 3;
-		    uint out_bytes;
+                    uint out_bytes;
 
                     cmd_getw(state.rect.width, cbp);
                     cmd_getw(state.rect.height, cbp);
@@ -986,13 +986,12 @@ in:                             /* Initialize for a new page. */
                                                state.rect.height,
                                                op & 3, &width_bytes,
                                                (uint *)&raster);
-		    if (planes > 1)
-		    {
-			    out_bytes = raster * state.rect.height;
-			    plane_height = state.rect.height;
-		    } else {
-			    out_bytes = bytes;
-		    }
+                    if (planes > 1) {
+                        out_bytes = raster * state.rect.height;
+                        plane_height = state.rect.height;
+                    } else {
+                        out_bytes = bytes;
+                    }
                     /* copy_mono and copy_color/alpha */
                     /* ensure that the bits will fit in a single buffer, */
                     /* even after decompression if compressed. */
@@ -1007,19 +1006,18 @@ in:                             /* Initialize for a new page. */
                         goto out;
                     }
 #endif
-                    for (pln = 0; pln < planes; pln++)
-                    {
+                    for (pln = 0; pln < planes; pln++) {
                         byte *plane_bits = data_bits + pln * plane_height * raster;
-                        if (pln)
-                        {
-                            if (cbp >= cbuf.warn_limit)
-                            {
-                                code = top_up_cbuf(&cbuf, &cbp);
-                                if (code < 0)
-                                    return code;
-	                    }
-                            compression = *cbp++;
+
+                        /* Fill the cbuf if needed to get the data for the plane */
+                        if (cbp + out_bytes >= cbuf.warn_limit) {
+                            code = top_up_cbuf(&cbuf, &cbp);
+                            if (code < 0)
+                                return code;
                         }
+                        if (pln)
+                            compression = *cbp++;
+
                         if (compression == cmd_compress_const) {
                             cbp = cmd_read_data(&cbuf, plane_bits, 1, cbp);
                             if (width_bytes > 0 && state.rect.height > 0)

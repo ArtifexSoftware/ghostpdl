@@ -913,7 +913,7 @@ copy:
             int bytes_row = ((w1*bpc+7)/8 + 7) & ~7;
             int maxheight = (cbuf_size - 0x100) / bytes_row / cdev->color_info.num_components;
 
-            if ((cdev->cend - cdev->cnext) < 0x100 + (bytes_row * cdev->color_info.num_components))
+            if ((cdev->cend - cdev->cnext) < 0x100 + (maxheight * bytes_row * cdev->color_info.num_components))
                 cmd_write_buffer(cdev, cmd_opv_end_run);	/* Insure that all planes fit in the bufferspace */
 
             if (re.height > maxheight)
