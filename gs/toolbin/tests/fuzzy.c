@@ -28,6 +28,7 @@ struct _Image {
   int (*close) (Image *self);
   int (*get_scan_line) (Image *self, uchar *buf);
   int (*seek) (Image *self, int y);
+  int (*write) (Image *self, uchar *buf, int size);
   int (*feof_) (Image *self);
   int width;
   int height;
@@ -54,6 +55,112 @@ struct _FuzzyReport {
   double max_color_error;
   double avg_color_error;
 };
+
+int packBits(unsigned char *buffer, unsigned char *outBuffer, int length, int stride) {
+    unsigned char *nextToWrite;
+    int repCount, diffCount, totalBytes, i;
+    unsigned char pixData;
+
+    pixData=(unsigned char) 0;
+    nextToWrite = buffer;
+    repCount = 1;
+    diffCount = 0;
+    totalBytes = 0;
+    while(--length) {
+        pixData = *buffer;
+        buffer+=stride;
+        if (pixData == *buffer) {
+            repCount++;
+        } else {
+            if (repCount > 2 || (repCount>1 && diffCount==0)) {
+                while (diffCount)
+                    if (diffCount > 128) {
+                        totalBytes+=129;
+                        *(outBuffer++)=(unsigned char) 0x7f;
+                        for (i=0; i<128; i++) {
+                            *(outBuffer++)=*nextToWrite;
+                            nextToWrite+=stride;
+                        }
+                        diffCount-=128;
+                    } else {
+                        totalBytes+=diffCount+1;
+                        *(outBuffer++)=(unsigned char) (diffCount-1);
+                        for (i=0; i<diffCount; i++) {
+                            *(outBuffer++)=*nextToWrite;
+                            nextToWrite+=stride;
+                        }
+                        diffCount=0;
+                    }
+                nextToWrite+=repCount*stride;
+                while (repCount) {
+                    totalBytes+=2;
+                    if (repCount > 128)
+                        if (repCount==129) {
+                            *(outBuffer++)=(unsigned char) 0x81;
+                            *(outBuffer++)=pixData;
+                            repCount=0;
+                            diffCount++;
+                            nextToWrite-=stride;
+                        } else {
+                            *(outBuffer++)=(unsigned char) 0x81;
+                            *(outBuffer++)=pixData;
+                            repCount-=128;
+                        }
+                    else {
+                        *(outBuffer++)=(unsigned char) (-(repCount-1));
+                        *(outBuffer++)=pixData;
+                        repCount=0;
+                    }
+                }
+                repCount=1;
+            } else {
+                diffCount+=repCount;
+                repCount=1;
+            }
+        }
+    }
+    if (repCount < 3 && (repCount<2 || diffCount>0)) {
+        diffCount+=repCount;
+        repCount=0;
+    }
+    while (diffCount)
+        if (diffCount > 128) {
+            totalBytes+=129;
+            *(outBuffer++)=(unsigned char) 0x7f;
+            for (i=0; i<128; i++) {
+                *(outBuffer++)=*nextToWrite;
+                nextToWrite+=stride;
+            }
+            diffCount-=128;
+        } else {
+            totalBytes+=diffCount+1;
+            *(outBuffer++)=(unsigned char) (diffCount-1);
+            for (i=0; i<diffCount; i++) {
+                *(outBuffer++)=*nextToWrite;
+                nextToWrite+=stride;
+            }
+            diffCount=0;
+        }
+    while (repCount) {
+        totalBytes+=2;
+        if (repCount > 128) {
+            if (repCount==129) {
+                *(outBuffer++)=(unsigned char) 0x82;
+                *(outBuffer++)=pixData;
+                repCount-=127;
+            } else {
+                *(outBuffer++)=(unsigned char) 0x81;
+                *(outBuffer++)=pixData;
+                repCount-=128;
+            }
+        } else {
+            *(outBuffer++)=(unsigned char) (-(repCount-1));
+            *(outBuffer++)=pixData;
+            repCount=0;
+        }
+    }
+    return totalBytes;
+}
 
 static off_t
 file_length(int file)
@@ -118,6 +225,14 @@ image_get_rgb_scan_line_with_error (Image *image, uchar *buf, int image_index, i
     return code;
 }
 
+typedef struct _ImagePnm ImagePnm;
+
+struct _ImagePnm {
+  Image super;
+  FILE *f;
+  long file_length;
+};
+
 int
 image_close (Image *image)
 {
@@ -130,13 +245,11 @@ no_seek(Image *self, int y)
   return 0;
 }
 
-typedef struct _ImagePnm ImagePnm;
-
-struct _ImagePnm {
-  Image super;
-  FILE *f;
-  long file_length;
-};
+static int
+write(Image *self, uchar *out_buf, int out_buffer_size) {
+  ImagePnm *pnm = (ImagePnm *)self;
+  return(fwrite(out_buf, 1, out_buffer_size, pnm->f) != out_buffer_size);
+}
 
 static int
 image_pnm_close (Image *self)
@@ -166,6 +279,7 @@ create_pnm_image_struct(Image *templ, const char *path)
   pnm->f = f;
   pnm->super = *templ;
   pnm->super.seek = no_seek;
+  pnm->super.write = write;
   pnm->super.bpp = 8;    /* Now support this value only. */
   pnm->super.n_chan = 3; /* Now support this value only. */
   return pnm;
@@ -235,6 +349,7 @@ create_bmp_image(Image *templ, const char *path)
   if (pnm == NULL)
     return NULL;
   pnm->super.seek = seek_bmp_image;
+  pnm->super.write = write;
   pnm->super.raster = raster;
 
   /* BMP file header */
@@ -251,7 +366,7 @@ create_bmp_image(Image *templ, const char *path)
   write_int32(pnm->super.height, pnm->f);
   write_int16(1, pnm->f);	/* planes */
   write_int16(24, pnm->f);	/* bit count */
-  write_int32(0, pnm->f);	/* compression */
+  write_int32(1, pnm->f);	/* compression */
   write_int32(0, pnm->f);	/* size image */
   write_int32(3780, pnm->f);	/* resolution in pixels per meter */
   write_int32(3780, pnm->f);	/* use a default 96 dpi */
@@ -278,6 +393,77 @@ create_bmp_image(Image *templ, const char *path)
 
   return pnm;
 }
+
+static uchar rawCompressionBuffer[65000];
+
+static int
+compressedWrite(Image *self, uchar *out_buf, int out_buffer_size) {
+  ImagePnm *pnm = (ImagePnm *)self;
+  int p;
+  int t;
+  for (p=0;  p<3;  p++) {
+    t=packBits(out_buf+p,rawCompressionBuffer,out_buffer_size/3,3);
+    if (fwrite(rawCompressionBuffer,t,1,pnm->f)!=1) {
+      return(1);
+    }
+  }
+  return(0);
+}
+
+static ImagePnm *
+create_raw_image_struct(Image *templ, const char *path)
+{
+  FILE *f = fopen(path,"w+b");
+  ImagePnm *pnm = (ImagePnm *)malloc(sizeof(ImagePnm));
+
+  if (pnm == NULL) {
+    printf ("Insufficient RAM.\n");
+    return NULL;
+  }
+  if (f == NULL) {
+    printf ("Can't create the file %s\n", path);
+    return NULL;
+  }
+  pnm->f = f;
+  pnm->super = *templ;
+  pnm->super.seek = no_seek;
+  pnm->super.write = compressedWrite;
+  pnm->super.bpp = 8;    /* Now support this value only. */
+  pnm->super.n_chan = 3; /* Now support this value only. */
+  return pnm;
+}
+
+int writeInt(int i, FILE *stream) {
+    putc(i>>8, stream);
+    return (putc(i&0xff, stream));
+}
+
+
+static ImagePnm *
+create_raw_image(Image *templ, const char *path)
+{
+  ImagePnm *pnm = create_raw_image_struct(templ, path);
+
+  if (pnm == NULL)
+    return NULL;
+
+  fwrite((char *) "mhwanh", 1, 6, pnm->f);
+  writeInt(5,pnm->f);  /* version */
+  writeInt(templ->width,pnm->f);
+  writeInt(templ->height,pnm->f);
+  writeInt(0,pnm->f); /* bpp */
+  writeInt(0,pnm->f); /* dpiX */
+  writeInt(0,pnm->f); /* dpiY */
+  writeInt(0,pnm->f); /* gamma */
+  writeInt(1,pnm->f); /* compression */
+  writeInt(0,pnm->f); /* alpha */
+  writeInt(0,pnm->f);
+  writeInt(0,pnm->f);
+  writeInt(0,pnm->f);
+  writeInt(0,pnm->f);
+  return pnm;
+}
+
 
 static int
 image_pnm_get_scan_line (Image *self, uchar *buf)
@@ -380,6 +566,7 @@ alloc_image_file (const char *fn)
   image->super.close = image_pnm_close;
   image->super.get_scan_line = image_pnm_get_scan_line;
   image->super.seek = no_seek;
+  image->super.write = write;
   image->super.feof_ = image_pnm_feof;
   return &image->super;
 }
@@ -465,6 +652,8 @@ check_window (uchar **buf1, uchar **buf2,
     }
   return !(match1 && match2);
 }
+
+
 
 static int
 fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
@@ -604,7 +793,8 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
             free(out_buf);
             out_buf = NULL;
           }
-        else if (fwrite(out_buf, 1, out_buffer_size, image_out->f) != out_buffer_size)
+        else if (image_out->super.write(&image_out->super, out_buf, out_buffer_size))
+
           {
             printf ("I/O Error writing the output image.\n");
             free(out_buf);
@@ -773,10 +963,12 @@ main (int argc, char **argv)
           out_fn[i + 4] = c;
       } else
           sprintf(out_fn + l, "-%03d", page);
-      image_out =
-       (!strcmp(fn[2]+ strlen(fn[2]) - 4, ".bmp") ? create_bmp_image
-                                                  : create_pnm_image)
-           (image1, out_fn);
+      if (!strcmp(fn[2]+ strlen(fn[2]) - 4, ".bmp"))
+        image_out = create_bmp_image(image1, out_fn);
+      else if (!strcmp(fn[2]+ strlen(fn[2]) - 4, ".raw"))
+        image_out = create_raw_image(image1, out_fn);
+      else
+         image_out = create_pnm_image(image1, out_fn);
     } else
       image_out = NULL;
 
