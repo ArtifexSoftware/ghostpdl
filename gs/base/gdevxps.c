@@ -714,6 +714,7 @@ xps_output_page(gx_device *dev, int num_copies, int flush)
         code = xps_open_device(dev);
     }
 
+    if_debug1m('_', dev->memory, "xps_output_page - page=%d\n", xps->page_count);
     vdev->in_page = false;
 
     return code;
@@ -872,7 +873,6 @@ xps_beginpage(gx_device_vector *vdev)
     return code;
 }
 
-        /* Imager state */
 static int
 xps_setlinewidth(gx_device_vector *vdev, floatp width)
 {
@@ -949,9 +949,7 @@ xps_can_handle_hl_color(gx_device_vector *vdev, const gs_imager_state *pis,
     return 0;
 }
 
-        /* Paths */
-/*    gdev_vector_dopath */
-
+/* Paths */
 static bool
 drawing_path(gx_path_type_t type)
 {
@@ -966,6 +964,8 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
     char line[300];
     const char *fmt;
     gx_color_index c;
+
+    (void)gdev_vector_stream((gx_device_vector*)xps);
 
     if_debug9m('_', xps->memory,
                "rect type=%d coords=%g,%g %g,%g %g,%g %g,%g\n", type,
@@ -1048,6 +1048,8 @@ xps_beginpath(gx_device_vector *vdev, gx_path_type_t type)
     gx_color_index c;
     const char *fmt;
     
+    (void)gdev_vector_stream((gx_device_vector*)xps);
+
     /* skip non-drawing paths for now */
     if (!drawing_path(type)) {
         gs_warn1("type not supported %x", type);
