@@ -308,7 +308,7 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_imager_state * 
     gs_color_space_index csi, csi2;
     gs_color_space *pcs2 = (gs_color_space *)pcs;
 
-    csi = csi2 = gs_color_space_get_index(pcs);
+    csi = gs_color_space_get_index(pcs);
 
     if (csi == gs_color_space_index_Indexed ||
         csi == gs_color_space_index_DeviceN ||
