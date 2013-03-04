@@ -915,6 +915,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     default:
         break;
     }
+    if (pdev->UseOldColor) {
     if (pdev->params.ColorConversionStrategy == ccs_CMYK &&
             csi != gs_color_space_index_DeviceCMYK &&
             csi != gs_color_space_index_DeviceGray &&
@@ -937,6 +938,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
           emprintf(pdev->memory,
                  "\nUnable to convert color space to Gray, reverting strategy to LeaveColorUnchanged.\n");
           pdev->params.ColorConversionStrategy = ccs_LeaveColorUnchanged;
+    }
     }
     /* Check whether we already have a PDF object for this color space. */
     if (pcs->id != gs_no_id)
