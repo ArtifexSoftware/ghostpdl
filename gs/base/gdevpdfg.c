@@ -299,72 +299,79 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_imager_state * 
                         const gx_drawing_color *pdc, bool *used_process_color,
                         const psdf_set_color_commands_t *ppscc, gs_client_color *pcc)
 {
-    int code, i;
+    int code, i, j = 0;
     gsicc_link_t *icc_link;
     gsicc_rendering_param_t rendering_params;
     frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     unsigned short Converted[GS_CLIENT_COLOR_MAX_COMPONENTS];
     unsigned short Source[GS_CLIENT_COLOR_MAX_COMPONENTS];
     gs_color_space_index csi, csi2;
+    gs_color_space *pcs2 = (gs_color_space *)pcs;
 
     csi = csi2 = gs_color_space_get_index(pcs);
 
-    if (csi == gs_color_space_index_Indexed) {
-        gs_color_space *pcs2 = pcs->base_space;
-        csi2 = gs_color_space_get_index(pcs2);
-    }
-    if (csi2 == gs_color_space_index_DeviceN ||
-        csi2 == gs_color_space_index_Separation) {
-
+    if (csi == gs_color_space_index_Indexed ||
+        csi == gs_color_space_index_DeviceN ||
+        csi == gs_color_space_index_Separation) {
         const char *command = NULL;
 
+        *used_process_color = true;
+
         memset (&conc, 0x00, sizeof(frac) * GS_CLIENT_COLOR_MAX_COMPONENTS);
         pcs->type->concretize_color(pcc, pcs, conc, pis, (gx_device *)pdev);
-        csi = gs_color_space_get_index(pcs->base_space);
-        if (csi != gs_color_space_index_ICC) {
-            *used_process_color = true;
-            switch (pdev->color_info.num_components) {
-                case 1:
-                    command = ppscc->setgray;
-                    break;
-                case 3:
-                    command = ppscc->setrgbcolor;
-                    break;
-                case 4:
-                    command = ppscc->setcmykcolor;
-                    break;
-            }
-            pprintg1(pdev->strm, "%g", psdf_round((conc[0] / (double)65535), 255, 8));
-            for (i = 1; i < pdev->color_info.num_components; i++) {
-                pprintg1(pdev->strm, " %g", psdf_round((conc[i] / (double)65535), 255, 8));
-            }
-            pprints1(pdev->strm, " %s\n", command);
-            return 0;
-        } else {
-            pcs = pcs->base_space;
-            for (i=0;i<pdev->color_info.num_components;i++)
-                Source[i] = (unsigned short)(conc[i]);
+
+        do{
+            pcs2 = pcs2->base_space;
+            csi2 = gs_color_space_get_index(pcs2);
+        } while(csi2 != gs_color_space_index_ICC && pcs2->base_space);
+        csi2 = gs_color_space_get_index(pcs2);
+
+        switch (csi2) {
+            case gs_color_space_index_DeviceGray:
+            case gs_color_space_index_DeviceRGB:
+            case gs_color_space_index_DeviceCMYK:
+                switch (pdev->color_info.num_components) {
+                    case 1:
+                        command = ppscc->setgray;
+                        break;
+                    case 3:
+                        command = ppscc->setrgbcolor;
+                        break;
+                    case 4:
+                        command = ppscc->setcmykcolor;
+                        break;
+                }
+                pprintg1(pdev->strm, "%g", psdf_round((conc[0] / (double)65535), 255, 8));
+                for (i = 1; i < pdev->color_info.num_components; i++) {
+                    pprintg1(pdev->strm, " %g", psdf_round((conc[i] / (double)65535), 255, 8));
+                }
+                pprints1(pdev->strm, " %s\n", command);
+                return 0;
+                break;
+            case gs_color_space_index_CIEDEFG:
+                j += 1;
+            case gs_color_space_index_CIEDEF:
+            case gs_color_space_index_CIEABC:
+                j += 2;
+            case gs_color_space_index_CIEA:
+                j += 1;
+                for (i=0;i<j;i++)
+                    Source[i] = (unsigned short)(conc[i]);
+                break;
+            case gs_color_space_index_ICC:
+                for (i=0;i<pdev->color_info.num_components;i++)
+                    Source[i] = (unsigned short)(conc[i]);
+                break;
+            default:    /* can't happen, simply silences compiler warnings */
+                break;
         }
-    }
-    if (csi == gs_color_space_index_Indexed) {
-        int loop = 0;
-
-        if (pcs->cmm_icc_profile_data != NULL)
-            loop = pcs->cmm_icc_profile_data->num_comps;
-        else
-            loop = gs_color_space_num_components(pcs);
-
-        memset (&conc, 0x00, sizeof(frac) * GS_CLIENT_COLOR_MAX_COMPONENTS);
-        pcs->type->concretize_color(pcc, pcs, conc, pis, (gx_device *)pdev);
-        pcs = pcs->base_space;
-        for (i=0;i<loop;i++)
-            Source[i] = (unsigned short)(conc[i]);
+        pcs = pcs2;
     } else {
-        if (csi2 >= gs_color_space_index_CIEDEFG &&
-            csi2 <= gs_color_space_index_CIEA) {
+        if (csi >= gs_color_space_index_CIEDEFG &&
+            csi <= gs_color_space_index_CIEA) {
                 int j = 0;
 
-                switch (csi2) {
+                switch (csi) {
                     case gs_color_space_index_CIEDEFG:
                         j += 1;
                     case gs_color_space_index_CIEDEF:
@@ -379,10 +386,40 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_imager_state * 
                 for (i=0;i<j;i++)
                     Source[i] = (unsigned short)(pcc->paint.values[i] * 65535);
         } else {
-            if (csi2 != gs_color_space_index_DeviceN &&
-                csi2 != gs_color_space_index_Separation) {
+            if (csi != gs_color_space_index_DeviceN &&
+                csi != gs_color_space_index_Separation) {
                 for (i=0;i<pcs->cmm_icc_profile_data->num_comps;i++)
                     Source[i] = (unsigned short)(pcc->paint.values[i] * 65535);
+            } else {
+                const char *command = NULL;
+
+                memset (&conc, 0x00, sizeof(frac) * GS_CLIENT_COLOR_MAX_COMPONENTS);
+                pcs->type->concretize_color(pcc, pcs, conc, pis, (gx_device *)pdev);
+                csi = gs_color_space_get_index(pcs->base_space);
+                if (csi != gs_color_space_index_ICC) {
+                    *used_process_color = true;
+                    switch (pdev->color_info.num_components) {
+                        case 1:
+                            command = ppscc->setgray;
+                            break;
+                        case 3:
+                            command = ppscc->setrgbcolor;
+                            break;
+                        case 4:
+                            command = ppscc->setcmykcolor;
+                            break;
+                    }
+                    pprintg1(pdev->strm, "%g", psdf_round((conc[0] / (double)65535), 255, 8));
+                    for (i = 1; i < pdev->color_info.num_components; i++) {
+                        pprintg1(pdev->strm, " %g", psdf_round((conc[i] / (double)65535), 255, 8));
+                    }
+                    pprints1(pdev->strm, " %s\n", command);
+                    return 0;
+                } else {
+                    pcs = pcs->base_space;
+                    for (i=0;i<pdev->color_info.num_components;i++)
+                        Source[i] = (unsigned short)(conc[i]);
+                }
             }
         }
     }
