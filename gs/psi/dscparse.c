@@ -2218,7 +2218,7 @@ dsc_scan_comments(CDSC *dsc)
     }
 
     /* Handle continuation lines.
-     * To simply processing, we assume that contination lines
+     * To simply processing, we assume that continuation lines
      * will only occur if repeat parameters are allowed and that
      * a complete set of these parameters appears on each line.
      * This is more restrictive than the DSC specification, but
@@ -2238,26 +2238,30 @@ dsc_scan_comments(CDSC *dsc)
             return CDSC_ERROR;
     }
     else if (IS_DSC(line, "%%Creator:")) {
+        unsigned int n = continued ? 3 : 10;
         dsc->id = CDSC_CREATOR;
-        dsc->dsc_creator = dsc_add_line(dsc, dsc->line+10, dsc->line_length-10);
+        dsc->dsc_creator = dsc_add_line(dsc, dsc->line + n, dsc->line_length - n);
         if (dsc->dsc_creator==NULL)
             return CDSC_ERROR;
     }
     else if (IS_DSC(line, "%%CreationDate:")) {
+        unsigned int n = continued ? 3 : 15;
         dsc->id = CDSC_CREATIONDATE;
-        dsc->dsc_date = dsc_add_line(dsc, dsc->line+15, dsc->line_length-15);
+        dsc->dsc_date = dsc_add_line(dsc, dsc->line + n, dsc->line_length - n);
         if (dsc->dsc_date==NULL)
             return CDSC_ERROR;
     }
     else if (IS_DSC(line, "%%Title:")) {
+        unsigned int n = continued ? 3 : 8;
         dsc->id = CDSC_TITLE;
-        dsc->dsc_title = dsc_add_line(dsc, dsc->line+8, dsc->line_length-8);
+        dsc->dsc_title = dsc_add_line(dsc, dsc->line + n, dsc->line_length - n);
         if (dsc->dsc_title==NULL)
             return CDSC_ERROR;
     }
     else if (IS_DSC(line, "%%For:")) {
+        unsigned int n = continued ? 3 : 6;
         dsc->id = CDSC_FOR;
-        dsc->dsc_for = dsc_add_line(dsc, dsc->line+6, dsc->line_length-6);
+        dsc->dsc_for = dsc_add_line(dsc, dsc->line + n, dsc->line_length - n);
         if (dsc->dsc_for==NULL)
             return CDSC_ERROR;
     }
