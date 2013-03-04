@@ -669,21 +669,24 @@ static int new_pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis
                         switch (csi2) {
                             case gs_color_space_index_DeviceGray:
                                 if (pdev->params.ColorConversionStrategy == ccs_Gray ||
-                                    pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged)
+                                    pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged) {
                                     code = write_color_unchanged(pdev, pis, pcc, &temp, psc, ppscc, used_process_color, pcs, pdc);
                                     return code;
+                                }
                                 break;
                             case gs_color_space_index_DeviceRGB:
                                 if (pdev->params.ColorConversionStrategy == ccs_RGB ||
-                                    pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged)
+                                    pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged) {
                                     code = write_color_unchanged(pdev, pis, pcc, &temp, psc, ppscc, used_process_color, pcs, pdc);
                                     return code;
+                                }
                                 break;
                             case gs_color_space_index_DeviceCMYK:
                                 if (pdev->params.ColorConversionStrategy == ccs_CMYK ||
-                                    pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged)
+                                    pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged) {
                                     code = write_color_unchanged(pdev, pis, pcc, &temp, psc, ppscc, used_process_color, pcs, pdc);
                                     return code;
+                                }
                                 break;
                             default:
                                 break;
