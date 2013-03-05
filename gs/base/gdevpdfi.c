@@ -1331,7 +1331,10 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                         }
                         break;
                     default:
-                        return 0;
+                        code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceCMYK, cs_value);
+                        if (code < 0)
+                            return code;
+                        return 1;
                         break;
                 }
                 break;
@@ -1358,12 +1361,18 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                                 return 2;
                                 break;
                             default:
-                                return 0;
+                                code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceGray, cs_value);
+                                if (code < 0)
+                                    return code;
+                                return 1;
                                 break;
                         }
                         break;
                     default:
-                        return 0;
+                        code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceGray, cs_value);
+                        if (code < 0)
+                            return code;
+                        return 1;
                         break;
                 }
                 break;
@@ -1392,12 +1401,18 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                                 return 2;
                                 break;
                             default:
-                                return 0;
+                                code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceRGB, cs_value);
+                                if (code < 0)
+                                    return code;
+                                return 1;
                                 break;
                         }
                         break;
                     default:
-                        return 0;
+                        code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceRGB, cs_value);
+                        if (code < 0)
+                            return code;
+                        return 1;
                         break;
                 }
                 break;
