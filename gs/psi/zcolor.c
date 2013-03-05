@@ -3834,7 +3834,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
 {
     os_ptr  op = osp;   /* required by "push" macro */
     int code = 0, num_components, i;
-    ref namesarray, proc, sname, tname, sref, tempref[2];
+    ref namesarray, proc, sname, tname, sref;
     ref_colorspace cspace_old;
     gs_color_space *pcs;
     gs_color_space * pacs;
@@ -3856,6 +3856,8 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
              * procedures and caching results. We need to handle this in yet another
              * layering of continuation procedures.
              */
+        	ref *colorants;
+
             code = array_get(imemory, devicenspace, 4, &sref);
             if (code < 0)
                 return code;
@@ -3863,18 +3865,14 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                 *stage = 0;
                 return 0;
             }
-            if (dict_length(&sref) == 0)
-                return(0);
-
-            code = dict_index_entry(&sref, 0, (ref *)&tempref);
-            if (code < 0)
-                return code;
-            name_string_ref(imemory, &tempref[0], &sname);
-            if (r_size(&sname) != 9 || strncmp((const char *)sname.value.const_bytes, "Colorants", r_size(&sname)) != 0) {
+            if (dict_find_string(&sref, "Colorants", &colorants) < 0) {
                 *stage = 0;
                 return 0;
             }
-
+            if (!r_has_type(colorants, t_dictionary)) {
+                *stage = 0;
+                return 0;
+            }
             *stage = 3;
             *cont = 1;
             check_estack(5);
@@ -3888,7 +3886,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
             esp++;
             /* Store a pointer to the Colorants dictionary
              */
-            ref_assign(esp, &tempref[1]);
+            ref_assign(esp, colorants);
             push_op_estack(devicencolorants_cont);
             return o_push_estack;
         } else {
