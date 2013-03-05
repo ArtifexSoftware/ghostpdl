@@ -1072,7 +1072,7 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
                                              "image_init_color_cache");
         if (need_decode) {
             if (is_indexed) {
-                /* Decode and un-indexed */
+                /* Decode and lookup in index */
                 for (k = 0; k < num_entries; k++) {
                     image_cache_decode(penum, k, &value, decode_scale);
                     gs_cspace_indexed_lookup_bytes(penum->pcs, value, psrc);
@@ -1087,11 +1087,16 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
         } else {
             /* No Decode */
             if (is_indexed) {
-                /* If index uses a table then just use its pointer */
-                if (penum->pcs->params.indexed.use_proc) {
+                /* If index uses a num_entries sized table then just use its pointer */
+                if (penum->pcs->params.indexed.use_proc ||
+                    penum->pcs->params.indexed.hival < (num_entries - 1)) {
                     /* Have to do the slow way */
-                    for (k = 0; k < num_entries; k++) {
+                    for (k = 0; k <= penum->pcs->params.indexed.hival; k++) {
                         gs_cspace_indexed_lookup_bytes(penum->pcs, (float)k, psrc);
+                        memcpy(&(temp_buffer[k * num_src_comp]), psrc, num_src_comp);
+                    }
+                    /* just use psrc results from converting 'hival' to fill the remaining slots */
+                    for (; k < num_entries; k++) {
                         memcpy(&(temp_buffer[k * num_src_comp]), psrc, num_src_comp);
                     }
                 } else {
