@@ -478,7 +478,6 @@ clist_playback_band(clist_playback_action playback_action,
     command_buf_t cbuf;
     /* data_bits is for short copy_* bits and copy_* compressed, */
     /* must be aligned */
-#define data_bits_size cbuf_size
     byte *data_bits = 0;
     const byte *cbp;
     int dev_depth;              /* May vary due to compositing devices */
@@ -996,7 +995,7 @@ in:                             /* Initialize for a new page. */
                     /* ensure that the bits will fit in a single buffer, */
                     /* even after decompression if compressed. */
 #ifdef DEBUG
-                    if (planes * out_bytes > cbuf_size) {
+                    if (planes * out_bytes > data_bits_size) {
                         mlprintf6(mem, "bitmap size exceeds buffer!  width=%d raster=%d height=%d\n    file pos %"PRId64" buf pos %d/%d\n",
                                   state.rect.width, raster,
                                   state.rect.height,

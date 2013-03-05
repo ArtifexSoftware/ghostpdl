@@ -1476,14 +1476,16 @@ important.
 <h4><a name="Pixmap_imaging"></a>Pixmap imaging</h4>
 
 <p>
-Pixmaps are just like bitmaps, except that each pixel occupies more than
-one bit.  All the bits for each pixel are grouped together (this is
-sometimes called "chunky" or "Z" format).  For <code>copy_color</code>,
-the number of bits per pixel is given by the
-<code>color_info.depth</code> parameter in the device structure: the
-legal values are 1, 2, 4, 8, 16, 24, 32, 40, 48, 56, or 64.  The pixel
-values are device color codes (that is, whatever it is that
-<code>encode_color</code> returns).
+Pixmaps are just like bitmaps, except that each pixel may occupy more than
+one bit.  In "chunky" or "Z format", all the bits for each pixel are grouped
+together.  For <code>copy_color</code>, the number of bits per pixel is given
+by the <code>color_info.depth</code> parameter in the device structure. The
+legal values are 1, 2, 4, 8, 16, 24, 32, 40, 48, 56, or 64.  The pixel values
+are device color codes (that is, whatever it is that <code>encode_color</code> returns).
+<br><br>
+If the data is planar, then each plane is contiguous, and the number
+of planes is given by <code>color_info.num_components</code>. The bits per
+component is <code>depth/num_components</code>.
 
 <dl>
 <dt><code>int (*copy_color)(gx_device&nbsp;*,
@@ -1496,6 +1498,23 @@ bits.  If <code>id</code> is different from
 <code>gx_no_bitmap_id</code>, it identifies the bitmap contents
 unambiguously; a call with the same <code>id</code> will always have the
 same <code>data</code>, <code>raster</code>, and data contents.
+</dl>
+
+<dl>
+<dt><code>int (*copy_planes)(gx_device&nbsp;*,
+const&nbsp;unsigned&nbsp;char&nbsp;*data, int&nbsp;data_x, int&nbsp;raster,
+gx_bitmap_id&nbsp;id, int&nbsp;x, int&nbsp;y, int&nbsp;width,
+int&nbsp;height, int&nbsp;plane_height)</code> <b><em>[OPTIONAL]</em></b>
+<dd>Copy an image with data stored in planar format.  The raster is in
+bytes, but <code>x</code> and <code>width</code> are in pixels, not
+bits.  If <code>id</code> is different from <code>gx_no_bitmap_id</code>,
+it identifies the bitmap contents unambiguously; a call with the same
+<code>id</code> will always have the same <code>data</code>, <code>raster</code>,
+and data contents.<br><br>
+Each plane is <code>depth/num_components</code> number of bits and the distance between
+planes is <code>plane_height</code> number of rows. The height is always less
+than or equal to the plane_height.
+</dl>
 
 <p>
 We do not provide a separate procedure for tiling with a pixmap; instead,
@@ -1506,7 +1525,6 @@ for <code>copy_color</code>, the <code>raster</code> and
 <code>height</code> in the "bitmap" are interpreted as for real bitmaps,
 but the <code>x</code> and <code>width</code> are in pixels, not
 bits.
-</dl>
 
 <h4><a name="Compositing"></a>Compositing</h4>
 
@@ -1515,11 +1533,6 @@ In addition to direct writing of opaque pixels, devices must also support
 compositing.  Currently two kinds of compositing are defined
 (<code>RasterOp</code> and alpha-based), but more may be added in the
 future.
-
-<blockquote>
-<b><em>THIS AREA OF THE INTERFACE IS SOMEWHAT UNSTABLE: USE AT YOUR OWN
-RISK.</em></b>
-</blockquote>
 
 <dl>
 <dt><code>int (*copy_alpha)(gx_device&nbsp;*dev,

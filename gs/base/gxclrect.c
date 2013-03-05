@@ -888,13 +888,24 @@ clist_copy_planes(gx_device * dev,
     y0 = ry;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
+#ifdef DEBUG
+    if (plane_height == 0) {
+        dprintf("clist_copy_planes called with plane_height == 0.\n");
+    }
+#endif
     RECT_ENUM_INIT(re, ry, rheight);
     do {
+        int code;
+        gx_cmd_rect rect;
+        int rsize;
+        byte *dp, *dp2;
+        uint csize;
+        byte op = (byte) cmd_op_copy_mono_planes;
         int dx = data_x % (8/bpc);
         int w1 = dx + rwidth;
         const byte *row = data + (re.y - y0) * raster + (data_x / (8/bpc));
-        int code;
-
+        int bytes_row = ((w1*bpc+7)/8 + 7) & ~7;
+        int maxheight = data_bits_size / bytes_row / cdev->color_info.num_components;
 
         RECT_STEP_INIT(re);
         do {
@@ -906,48 +917,35 @@ clist_copy_planes(gx_device * dev,
             goto error_in_rect;
         /* Don't bother to check for a possible cache hit: */
         /* tile_rectangle and fill_mask handle those cases. */
-copy:
+
         /* We require that in the copy_planes case all the planes fit into
-         * a single cbuf. */
-        if (plane_height > 0) {
-            int bytes_row = ((w1*bpc+7)/8 + 7) & ~7;
-            int maxheight = (cbuf_size - 0x100) / bytes_row / cdev->color_info.num_components;
+         * the data_bits area (for the copy_planes call by the clist reader) */
+        if (re.height > maxheight)
+            re.height = maxheight;
 
-            if ((cdev->cend - cdev->cnext) < 0x100 + (maxheight * bytes_row * cdev->color_info.num_components))
-                cmd_write_buffer(cdev, cmd_opv_end_run);	/* Insure that all planes fit in the bufferspace */
+        if (re.height == 0) {
+            /* Not even a single row fits. Revert to a single row and split it in two recursively */
+            int w2 = w1 >> 1;
 
-            if (re.height > maxheight)
-                re.height = maxheight;
-            if (re.height == 0)
-            {
-                /* Split a single (very long) row. */
-                int w2 = w1 >> 1;
-
-                re.height = 1;
-                ++cdev->driver_call_nesting;
-                {
-                    code = clist_copy_planes(dev, row, dx, raster,
-                                             gx_no_bitmap_id, rx, re.y,
-                                             w2, 1, plane_height);
-                    if (code >= 0)
-                        code = clist_copy_planes(dev, row, dx + w2,
-                                                 raster, gx_no_bitmap_id,
-                                                 rx + w2, re.y,
-                                                 w1 - w2, 1, plane_height);
-                }
-                --cdev->driver_call_nesting;
-                if (code < 0 && SET_BAND_CODE(code))
-                    goto error_in_rect;
-                continue;
-            }
+            re.height = 1;
+            ++cdev->driver_call_nesting;
+            code = clist_copy_planes(dev, row, dx, raster,
+                                     gx_no_bitmap_id, rx, re.y,
+                                     w2, 1, plane_height);
+            if (code >= 0)
+                code = clist_copy_planes(dev, row, dx + w2,
+                                         raster, gx_no_bitmap_id,
+                                         rx + w2, re.y,
+                                         w1 - w2, 1, plane_height);
+            --cdev->driver_call_nesting;
+            if (code < 0 && SET_BAND_CODE(code))
+                goto error_in_rect;
+            continue;
         }
-        {
-        gx_cmd_rect rect;
-        int rsize;
-        byte op = (byte) cmd_op_copy_mono_planes;
-        byte *dp, *dp2;
-        uint csize;
-        int code;
+
+        /* 0x100 fudge is arbitrary, but the BufferSpace is large w.r.t. cbuf size so it doesn't matter */
+        if ((cdev->cend - cdev->cnext) < 0x100 + (re.height * bytes_row * cdev->color_info.num_components))
+            cmd_write_buffer(cdev, cmd_opv_end_run);	/* Insure that all planes fit in the bufferspace */
 
         rect.x = rx, rect.y = re.y;
         rect.width = w1, rect.height = re.height;
@@ -973,63 +971,30 @@ copy:
             cmd_putw(plane_height, dp2);
             cmd_put2w(rx, re.y, dp2);
             cmd_put2w(w1, re.height, dp2);
-            if (plane_height > 0) {
-                for (plane = 1; plane < cdev->color_info.num_components && (code >= 0); plane++)
-                {
-                    byte *dummy_dp;
-                    uint csize2;
-                    /* Copy subsequent planes - 1 byte header used to send the
-                     * compression type. */
-                    code = cmd_put_bits(cdev, re.pcls,
-                                        row + plane_height * raster * plane,
-                                        w1*bpc, re.height, raster, 1,
-                                        (bpc == 1 ?
-                                         (orig_id == gx_no_bitmap_id ?
-                                          1 << cmd_compress_rle :
-                                          cmd_mask_compress_any) : 0),
-                                        &dummy_dp, &csize2);
-                    if (code >= 0)
-                        *dummy_dp = code;
+            for (plane = 1; plane < cdev->color_info.num_components && (code >= 0); plane++)
+            {
+                byte *dummy_dp;
+                uint csize2;
+                /* Copy subsequent planes - 1 byte header used to send the
+                 * compression type. */
+                code = cmd_put_bits(cdev, re.pcls,
+                                    row + plane_height * raster * plane,
+                                    w1*bpc, re.height, raster, 1,
+                                    (bpc == 1 ?
+                                     (orig_id == gx_no_bitmap_id ?
+                                      1 << cmd_compress_rle :
+                                      cmd_mask_compress_any) : 0),
+                                    &dummy_dp, &csize2);
+                if (code >= 0)
+                    *dummy_dp = code;
 
-                    csize += csize2;
-                }
+                csize += csize2;
             }
         } while (RECT_RECOVER(code));
         if (code < 0 && !(code == gs_error_limitcheck) && SET_BAND_CODE(code))
             goto error_in_rect;
-        if (code < 0) {
-            /* The bitmap was too large; split up the transfer. */
-            if (re.height > 1) {
-                /*
-                 * Split the transfer by reducing the height.
-                 * See the comment above FOR_RECTS in gxcldev.h.
-                 */
-                re.height >>= 1;
-                goto copy;
-            } else {
-                /* Split a single (very long) row. */
-                int w2 = w1 >> 1;
-
-                ++cdev->driver_call_nesting;
-                {
-                    code = clist_copy_planes(dev, row, dx, raster,
-                                             gx_no_bitmap_id, rx, re.y,
-                                             w2, 1, plane_height);
-                    if (code >= 0)
-                        code = clist_copy_planes(dev, row, dx + w2,
-                                                 raster, gx_no_bitmap_id,
-                                                 rx + w2, re.y,
-                                                 w1 - w2, 1, plane_height);
-                }
-                --cdev->driver_call_nesting;
-                if (code < 0 && SET_BAND_CODE(code))
-                    goto error_in_rect;
-                continue;
-            }
-        }
 
         re.pcls->rect = rect;
-        }
         continue;
 error_in_rect:
         if (!(cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&

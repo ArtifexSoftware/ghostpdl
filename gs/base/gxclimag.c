@@ -1008,7 +1008,7 @@ clist_image_plane_data(gx_image_enum_common_t * info,
             bytes_per_plane = ((bx1 - (pie->rect.p.x + xskip)) * bpp + 7) >> 3;
             bytes_per_row = bytes_per_plane * pie->num_planes;
             rows_per_cmd =
-                (cbuf_size - cmd_largest_size) / max(bytes_per_row, 1);
+                (data_bits_size - cmd_largest_size) / max(bytes_per_row, 1);
 
             if (rows_per_cmd == 0) {
                 /* The reader will have to buffer a row separately. */
