@@ -2027,7 +2027,7 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
   const unsigned p0, const unsigned pe)
 {
     ref *fontinfodict = 0, *privatedict = 0, arg, ops[MAXOP];
-    unsigned int op_i = 0;
+    int op_i = 0;
 
     unsigned c;
     unsigned p = p0;
