@@ -1713,6 +1713,7 @@ new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
             if (code < 0)
                 goto fail_and_fallback;
         } else {
+            convert_to_process_colors = 0;
             if (pcs->cmm_icc_profile_data != NULL &&
                 pcs->cmm_icc_profile_data->islab) {
                     gscms_set_icc_range((cmm_profile_t **)&(pcs->cmm_icc_profile_data));
