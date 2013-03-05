@@ -134,4 +134,8 @@ int set_char_width(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy);
 int gx_default_text_restore_state(gs_text_enum_t *pte);
 int gx_hld_stringwidth_begin(gs_imager_state * pis, gx_path **path);
 
+/* Define the maximum size of a full temporary bitmap when rasterizing, */
+/* in bits (not bytes). */
+#define MAX_CCACHE_TEMP_BITMAP_BITS ((uint)80000)
+
 #endif /* gxchar_INCLUDED */

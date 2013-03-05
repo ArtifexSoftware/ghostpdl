@@ -35,10 +35,6 @@
 #include "gzpath.h"
 #include "gxfcid.h"
 
-/* Define the maximum size of a full temporary bitmap when rasterizing, */
-/* in bits (not bytes). */
-static const uint MAX_TEMP_BITMAP_BITS = 80000;
-
 /* Define whether the show operation uses the character outline data, */
 /* as opposed to just needing the width (or nothing). */
 #define SHOW_USES_OUTLINE(penum)\
@@ -611,7 +607,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
          * full oversampling with compression at the end.
          */
         code = gx_alloc_char_bits(dir, penum->dev_cache,
-                                (iwidth > MAX_TEMP_BITMAP_BITS / iheight &&
+                                (iwidth > MAX_CCACHE_TEMP_BITMAP_BITS / iheight &&
                                  log2_scale.x + log2_scale.y > alpha_bits ?
                                  penum->dev_cache2 : NULL),
                                 iwidth, iheight, &log2_scale, depth, &cc);
