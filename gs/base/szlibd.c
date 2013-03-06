@@ -89,7 +89,7 @@ s_zlibD_process(stream_state * st, stream_cursor_read * pr,
         case Z_STREAM_END:
             return EOFC;
         default:
-            if (!strcmp("incorrect data check", zs->msg))
+            if (zs->msg && !strcmp("incorrect data check", zs->msg))
             {
                 /* Ignore errors when zlib streams fail on the checksum.
                  * Adobe, Apple and xpdf don't fail on pdf:s where this happens,
