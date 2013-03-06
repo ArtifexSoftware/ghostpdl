@@ -1302,7 +1302,7 @@ typedef struct tag_cff_index_t {
 static int
 card8(unsigned int *u, const cff_data_t *o, unsigned p, unsigned pe)
 {
-    if (pe > o->length || p + 1 > pe)
+    if (pe > o->length || p > pe - 1)
         return_error(e_rangecheck); /* out of range access */
     *u = o->blk_ref[p >> o->shift].value.bytes[p & o->mask];
     return 0;
@@ -1311,7 +1311,7 @@ card8(unsigned int *u, const cff_data_t *o, unsigned p, unsigned pe)
 static int
 card16(unsigned int *u, const cff_data_t *o, unsigned p, unsigned pe)
 {
-    if (pe > o->length || p + 2 > pe)
+    if (pe > o->length || p > pe - 2)
         return_error(e_rangecheck); /* out of range access */
     *u = (o->blk_ref[ p      >> o->shift].value.bytes[ p      & o->mask]) << 8 |
           o->blk_ref[(p + 1) >> o->shift].value.bytes[(p + 1) & o->mask];
@@ -1321,7 +1321,7 @@ card16(unsigned int *u, const cff_data_t *o, unsigned p, unsigned pe)
 static int
 card24(unsigned int *u, const cff_data_t *o, unsigned p, unsigned pe)
 {
-    if (pe > o->length || p + 3 > pe)
+    if (pe > o->length || p > pe - 3)
         return_error(e_rangecheck); /* out of range access */
     *u = (o->blk_ref[ p      >> o->shift].value.bytes[ p      & o->mask]) << 16 |
          (o->blk_ref[(p + 1) >> o->shift].value.bytes[(p + 1) & o->mask]) << 8  |
@@ -1331,7 +1331,7 @@ card24(unsigned int *u, const cff_data_t *o, unsigned p, unsigned pe)
 static int
 card32(unsigned int *u, const cff_data_t *o, unsigned p, unsigned pe)
 {
-    if (pe > o->length || p + 4 > pe)
+    if (pe > o->length || p > pe - 4)
         return_error(e_rangecheck); /* out of range access */
     *u = (o->blk_ref[ p      >> o->shift].value.bytes[ p      & o->mask]) << 24 |
          (o->blk_ref[(p + 1) >> o->shift].value.bytes[(p + 1) & o->mask]) << 16 |
@@ -2764,6 +2764,8 @@ zparsecff(i_ctx_t *i_ctx_p)
     p  = 0;
     pe = p + data.length;
 
+    if (pe < 8) /* arbitrary, to avoid underflow in pe - 4 */
+        return_error(e_rangecheck);
     if ((code = card8(&hdr_ver, &data, p, pe)) < 0)
         return code;
     if (hdr_ver != 1)
