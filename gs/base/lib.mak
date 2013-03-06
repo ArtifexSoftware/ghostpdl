@@ -1119,7 +1119,7 @@ $(GLOBJ)gdevmx.$(OBJ) : $(GLSRC)gdevmx.c $(AK) $(gx_h) $(memory__h)\
 	$(GLCC) $(GLO_)gdevmx.$(OBJ) $(C_) $(GLSRC)gdevmx.c
 	
 $(GLOBJ)gdevmpla.$(OBJ) : $(GLSRC)gdevmpla.c $(AK) $(gx_h)\
- $(gserrors_h) $(memory__h) $(gsbitops_h) $(gxdcolor_h)\
+ $(gserrors_h) $(memory__h) $(gsbitops_h) $(gxdcolor_h) $(gxpcolor_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h) $(gdevmem_h) $(gdevmpla_h)\
  $(gxdevsop_h)\
  $(MAKEDIRS)
