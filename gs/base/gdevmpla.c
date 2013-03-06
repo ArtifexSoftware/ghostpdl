@@ -20,6 +20,7 @@
 #include "gsbitops.h"
 #include "gxdevice.h"
 #include "gxdcolor.h"		/* for gx_fill_rectangle_device_rop */
+#include "gxpcolor.h"           /* for gx_dc_devn_masked */
 #include "gxdevmem.h"           /* semi-public definitions */
 #include "gxgetbit.h"
 #include "gdevmem.h"            /* private definitions */
@@ -258,7 +259,8 @@ mem_planar_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     int h = fixed2int(rect->q.y) - y;
 
     /* We can only handle devn cases, so use the default if not */
-    if (pdcolor->type != gx_dc_type_devn) {
+    /* We can get called here from gx_dc_devn_masked_fill_rectangle */
+    if (pdcolor->type != gx_dc_type_devn && pdcolor->type != &gx_dc_devn_masked) {
         return gx_fill_rectangle_device_rop( x, y, w, h, pdcolor, dev, lop_default);
     }
     MEM_SAVE_PARAMS(mdev, save);
