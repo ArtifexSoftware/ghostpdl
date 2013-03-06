@@ -19,6 +19,7 @@
 #include "gserrors.h"
 #include "gsbitops.h"
 #include "gxdevice.h"
+#include "gxdcolor.h"		/* for gx_fill_rectangle_device_rop */
 #include "gxdevmem.h"           /* semi-public definitions */
 #include "gxgetbit.h"
 #include "gdevmem.h"            /* private definitions */
@@ -256,6 +257,10 @@ mem_planar_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     int w = fixed2int(rect->q.x) - x;
     int h = fixed2int(rect->q.y) - y;
 
+    /* We can only handle devn cases, so use the default if not */
+    if (pdcolor->type != gx_dc_type_devn) {
+        return gx_fill_rectangle_device_rop( x, y, w, h, pdcolor, dev, lop_default);
+    }
     MEM_SAVE_PARAMS(mdev, save);
     for (pi = 0; pi < mdev->num_planes; ++pi) {
         int plane_depth = mdev->planes[pi].depth;
@@ -954,16 +959,21 @@ mem_planar_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
             gdev_mem_device_for_bits(plane_depth);
         gx_color_index c1, c0;
 
-        if (pdcolor0->type == gx_dc_type_pure) {
-            c0 = gx_no_color_index;
-        } else {
+        if (pdcolor0->type == gx_dc_type_devn) {
             c0 = (pdcolor0->colors.devn.values[pi]) >> shift & mask;
-        }
-        if (pdcolor1->type == gx_dc_type_pure) {
-            c1 = gx_no_color_index;
         } else {
-            c1 = (pdcolor1->colors.devn.values[pi]) >> shift & mask;
+            c0 = gx_no_color_index;
         }
+        if (pdcolor1->type == gx_dc_type_devn) {
+            c1 = (pdcolor1->colors.devn.values[pi]) >> shift & mask;
+        } else {
+            c1 = gx_no_color_index;
+        }
+#ifdef DEBUG
+        if (c0 == gx_no_color_index && c1 == gx_no_color_index) {
+            dprintf("mem_planar_strip_tile_rect_dev called with two non-devn colors\n");
+        }
+#endif
         MEM_SET_PARAMS(mdev, plane_depth);
         if (c0 == c1)
             dev_proc(mdproto, fill_rectangle)(dev, x, y, w, h, c0);
