@@ -5417,6 +5417,8 @@ static int validatecalrgbspace(i_ctx_t * i_ctx_p, ref **r)
     code = array_get(imemory, space, 1, &calrgbdict);
     if (code < 0)
         return code;
+    if (!r_has_type(&calrgbdict, t_dictionary))
+        return_error(e_typecheck);
     /* Check the white point, which is required */
     code = checkWhitePoint(i_ctx_p, &calrgbdict);
     if (code != 0)
