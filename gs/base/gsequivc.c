@@ -456,7 +456,7 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     int code;
     cmm_dev_profile_t *dev_profile;
     cmm_profile_t *curr_output_profile;
-    cmm_dev_profile_t temp_profile;
+    cmm_dev_profile_t temp_profile = { 0 };	/* Initialize to 0/NULL */
 
     code = dev_proc(pdev, get_profile)(pdev, &dev_profile);
     gsicc_extract_profile(pdev->graphics_type_tag,
@@ -475,13 +475,10 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     temp_profile.usefastcolor = false;  /* This avoids a few headaches */
     temp_profile.prebandthreshold = true;
     temp_profile.supports_devn = false;
-    temp_profile.device_profile[1] = NULL;
-    temp_profile.device_profile[2] = NULL;
-    temp_profile.device_profile[2] = NULL;
-    temp_profile.link_profile = NULL;
-    temp_profile.proof_profile = NULL;
-    temp_profile.spotnames = NULL;
-    temp_profile.oi_profile = NULL;
+    temp_profile.rendercond[0] = render_cond;
+    temp_profile.rendercond[1] = render_cond;
+    temp_profile.rendercond[2] = render_cond;
+    temp_profile.rendercond[3] = render_cond;
     temp_device.icc_struct = &temp_profile;
 
     /* The equivalent CMYK colors are used for
