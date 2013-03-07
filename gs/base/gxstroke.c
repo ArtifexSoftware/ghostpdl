@@ -1668,13 +1668,17 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
         r = (double)(nplp->width.x) /* x2 */ * (plp->width.y) /* y1 */;
 
         if ((l == r) && (join == gs_join_round)) {
-            /* Do a cap, and leave the point on the same side as it was
-             * originally. This is required for paths that come to a stop
-             * and then reverse themselves, but may produce more complexity
-             * than we'd really like at the ends of smooth beziers. */
+            /* Do a cap */
             code = add_pie_cap(ppath, &plp->e);
-            if (code >= 0)
-                code = gx_path_add_line(ppath, plp->e.co.x, plp->e.co.y);
+            if (code >= 0) {
+                /* If the next line is in the opposite direction as the current one
+                 * we want to leave the point on the same side as it was
+                 * originally. This is required for paths that come to a stop
+                 * and then reverse themselves, but may produce more complexity
+                 * than we'd really like at the ends of smooth beziers. */
+                if ((double)(plp->width.x) * nplp->width.x + (double)plp->width.y * nplp->width.y >= 0)
+                    code = gx_path_add_line(ppath, plp->e.co.x, plp->e.co.y);
+            }
         } else if ((l > r) ^ reflected) {
             /* CCW rotation. Join in the forward path. "Underjoin" in the
              * reverse path. */
