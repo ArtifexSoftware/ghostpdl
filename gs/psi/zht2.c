@@ -122,6 +122,8 @@ zsethalftone5(i_ctx_t *i_ctx_p)
          * Verify that we have a valid component.  We may have a
          * /HalfToneType entry.
          */
+        if (!r_has_type(&rvalue[0], t_name))
+            continue;
         if (!r_has_type(&rvalue[1], t_dictionary))
             continue;
 
@@ -181,6 +183,8 @@ zsethalftone5(i_ctx_t *i_ctx_p)
              * Verify that we have a valid component.  We may have a
              * /HalfToneType entry.
              */
+            if (!r_has_type(&rvalue[0], t_name))
+                continue;
             if (!r_has_type(&rvalue[1], t_dictionary))
                 continue;
 
@@ -247,6 +251,8 @@ zsethalftone5(i_ctx_t *i_ctx_p)
                 break;
 
             /* Verify that we have a valid component */
+            if (!r_has_type(&rvalue[0], t_name))
+                continue;
             if (!r_has_type(&rvalue[1], t_dictionary))
                 continue;
 
