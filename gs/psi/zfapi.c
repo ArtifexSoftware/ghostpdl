@@ -96,18 +96,20 @@ sfnts_next_elem(sfnts_reader *r)
 
     if (r->error)
         return;
-    r->index++;
-    code = array_get(r->memory, r->sfnts, r->index, &s);
-    if (code == e_rangecheck) {
-        r->error |= 2;
-    }
-    else if (code < 0) {
-        r->error |= 1;
-    }
-    if (r->error)
-        return;
-    r->p = s.value.const_bytes;
-    r->length = r_size(&s) & ~(uint) 1; /* See Adobe Technical Note # 5012, section 4.2. */
+    do {
+    	r->index++;
+    	code = array_get(r->memory, r->sfnts, r->index, &s);
+    	if (code == e_rangecheck) {
+    		r->error |= 2;
+    	}
+    	else if (code < 0) {
+    		r->error |= 1;
+    	}
+    	if (r->error)
+    		return;
+    	r->p = s.value.const_bytes;
+    	r->length = r_size(&s) & ~(uint) 1; /* See Adobe Technical Note # 5012, section 4.2. */
+    } while (r->length == 0);
     r->offset = 0;
 }
 
