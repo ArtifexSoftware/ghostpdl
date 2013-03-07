@@ -947,6 +947,8 @@ lib_file_open_search_with_combine(gs_file_path_ptr  lib_path, const gs_memory_t 
             code = gs_parse_file_name(&pname, pstr, plen, mem);
             if (code < 0)
                 continue;
+            if (blen < max(pname.len, plen) + flen)
+            	return_error(e_limitcheck);
             memcpy(buffer, pname.fname, pname.len);
             memcpy(buffer+pname.len, fname, flen);
             code = pname.iodev->procs.open_file(pname.iodev, buffer, pname.len + flen, fmode,
