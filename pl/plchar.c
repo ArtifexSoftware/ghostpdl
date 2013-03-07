@@ -112,12 +112,7 @@ pl_bitmap_char_width(const pl_font_t *plfont, const void *pgs, gs_char char_code
     const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
 
     pwidth->x = pwidth->y = 0;
-    if ( !pwidth ) {
-#ifdef DEBUG
-        dmprintf(plfont->pfont->memory, "Warning should not call width function without width\n" );
-#endif
-        return (cdata == 0 ? 1 : 0);
-    }
+
     if ( cdata == 0 ) {
         return 1;
     }
