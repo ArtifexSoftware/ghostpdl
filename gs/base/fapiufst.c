@@ -45,7 +45,7 @@
 #include "gxfapi.h"
 
 #include "gzstate.h"
-#include "gdevpsf.h"
+
 #include "gscrypt1.h"
 #include "gxfcid.h"
 #include "gsstype.h"
