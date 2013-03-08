@@ -1309,9 +1309,9 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
             return gs_note_error(gs_error_VMerror);
         ctx->mask_stack->rc_mask = pdf14_rcmask_new(ctx->memory);
         if (ctx->mask_stack->rc_mask == NULL)
-	    return gs_note_error(gs_error_VMerror);
+            return gs_note_error(gs_error_VMerror);
         ctx->mask_stack->rc_mask->mask_buf = tos;
-     }
+    }
     return 0;
 }
 
@@ -4375,7 +4375,7 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                 } else {
                     art_pdf_composite_pixel_alpha_8_fast_mono(dst_ptr, src,
                                                 blend_mode, pdev->blend_procs, planestride);
-		}
+                }
                 if (alpha_g_off) {
                     int tmp = (255 - dst_ptr[alpha_g_off]) * src_alpha + 0x80;
                     dst_ptr[alpha_g_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
