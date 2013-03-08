@@ -315,7 +315,7 @@
 					>
 				</File>
 				<File
-					RelativePath="..\gs\base\bench.c"
+					RelativePath="base\bench.c"
 					>
 				</File>
 				<File
