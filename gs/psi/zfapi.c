@@ -1783,6 +1783,8 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
          * it to the renderer for a disk based font. But the metrics dictionary may have
          * been constructed using the extended name....
          */
+        if (!r_has_type(&char_name, t_name))
+            return_error(e_invalidfont);
         name_string_ref(imemory, &char_name, &cname_str);
         enc_char_name->data = cname_str.value.bytes;
         enc_char_name->size = r_size(&cname_str);
