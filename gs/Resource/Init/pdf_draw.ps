@@ -471,7 +471,12 @@ end
         resolvefnproc /TransferFunction exch 3 2 roll
       } ifelse
     } if
-    dup /G oget dup /BBox oget /BBox exch 4 2 roll
+    dup /G oget 
+    dup /BBox oget oforce_array
+    1 index /Matrix knownoget {
+      oforce_array .bbox_transform 4 array astore
+    } if
+    /BBox exch 4 2 roll
     % Because we don't execute the group form stream until we find
     % out whether we're actually going to draw through it, we need
     % to save the current gstate with the other parameters, so
