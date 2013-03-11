@@ -665,8 +665,12 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, ulong dictkey)
     pcie = pcs->params.a;
         code = cie_a_param(imemory, CIEdict, pcie, &procs, &has_a_procs,
                                 &has_lmn_procs);
+        if (code < 0)
+            return code;
         /* Push finalize procedure on the execution stack */
         code = cie_cache_push_finish(i_ctx_p, cie_a_finish, (gs_ref_memory_t *)imem, pcie);
+        if (code < 0)
+            return code;
         if (!has_a_procs && !has_lmn_procs) {
             pcie->common.caches.DecodeLMN->floats
                 .params.is_identity = true;
@@ -677,6 +681,8 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, ulong dictkey)
             if (has_a_procs) {
                 code = cie_prepare_iccproc(i_ctx_p, &pcie->RangeA,
                     &procs.Decode.A, &pcie->caches.DecodeA.floats, pcie, imem, "Decode.A");
+                if (code < 0)
+                    return code;
             } else {
                 pcie->caches.DecodeA.floats.params.is_identity = true;
             }
