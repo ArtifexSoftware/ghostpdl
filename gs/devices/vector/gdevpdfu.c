@@ -1695,10 +1695,15 @@ pdf_page_id(gx_device_pdf * pdev, int page_num)
     if (page_num < 1)
         return 0;
     if (page_num >= pdev->num_pages) {	/* Grow the pages array. */
-        uint new_num_pages =
-            max(page_num + 10, pdev->num_pages << 1);
-        pdf_page_t *new_pages =
-            gs_resize_object(pdev->pdf_memory, pdev->pages, new_num_pages,
+        uint new_num_pages;
+        pdf_page_t *new_pages;
+
+        /* Maximum page in PDF is 2^31 - 1. Clamp to that limit here */
+        if (page_num > (1L << 31) - 11)
+            page_num = (1L << 31) - 11;
+        new_num_pages = max(page_num + 10, pdev->num_pages << 1);
+
+        new_pages = gs_resize_object(pdev->pdf_memory, pdev->pages, new_num_pages,
                              "pdf_page_id(resize pages)");
 
         if (new_pages == 0)
