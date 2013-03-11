@@ -689,11 +689,15 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
          * loaded as CIDFont replacements are not incrementally handled. So here, if its a CIDFont, and
          * its not type 1 outlines, and its not a vertical mode fotn, ignore the advance.
          */
-        if (!a_fapi_font->is_type1 && a_fapi_font->is_cid
-            && !a_fapi_font->is_vertical)
-            vadv = 0;
-        else
+        if (a_fapi_font->is_type1
+           || ((a_fapi_font->full_font_buf || a_fapi_font->font_file_path)
+           && a_fapi_font->is_vertical &&  FT_HAS_VERTICAL(ft_face))) {
+
             vadv = ft_face->glyph->linearVertAdvance;
+        }
+        else {
+            vadv = 0;
+        }
 
         a_metrics->bbox_x0 = hx;
         a_metrics->bbox_y0 = hy - h;

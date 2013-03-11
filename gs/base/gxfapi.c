@@ -1506,9 +1506,6 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
         }
     }
 
-    if (!bVertical)
-        metrics.v_escapement = 0;
-
     /* This handles the situation where a charstring has been replaced with a PS procedure.
      * against the rules, but not *that* rare.
      * It's also something that GS does internally to simulate font styles.
