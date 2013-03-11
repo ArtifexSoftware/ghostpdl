@@ -180,29 +180,6 @@ If you can provide them to us without violating any agreements, please let
 us know.  (Some work has already been done on reverse-engineering these
 protocols, but we don't have references to it.)
 
-<h3>Improve 'pswrite' up to the level of 'pdfwrite'.</h3>
-
-<p>
-We would like to improve the high-level PostScript-writing
-<code>pswrite</code> driver to bring it up to parity with the PDF-writing
-driver (including the many improvements in the latter being implemented in
-Ghostscript 7.xx).  Specifically, we want it to write text as text rather
-than bitmaps, and to consistently write images in their original high-level
-form.  <I>We have already started to factor out code that
-should be common to these two drivers, specifically for writing embedded
-fonts and compressed data streams.</I>
-
-<p>
-There is one small part of this project that would be especially valuable
-and could be done independently (although it might have to be partly or
-entirely redone later): compressing images.  Currently the driver only
-compresses character bitmaps, and doesn't compress other images at all.
-<I>It should use the <code>CCITTFaxEncode</code> filter for 1-bit-deep
-images, and plane-separated <code>LZWEncode</code> compression for color
-images.  When generating LL3 PS, the
-<code>Flate</code> compression will work better than miGIF. It may be
-worth trying several methods on each image and use the one that works best.</I>
-
 <h3>High level graphics and text for PCL 5 and PCL XL drivers.</h3>
 
 <p>

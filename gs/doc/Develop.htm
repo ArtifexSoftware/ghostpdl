@@ -1687,7 +1687,7 @@ Other:
 </dl>
 
 <dt>
-PostScript output driver ([e]pswrite):
+Encapsulated PostScript output driver (epswrite):
 <dd>
 <a href="../base/gdevps.c">base/gdevps.c</a>,
 <a href="../base/gdevpsu.c">base/gdevpsu.c</a>,
@@ -4024,7 +4024,7 @@ procedure for an image can invoke <code>save</code> and
 <li>Notification lists for fonts, to handle the sequence allocate .. save
 .. register .. restore.
 
-<li>The parameter lists for pdfwrite and pswrite devices (in <a
+<li>The parameter lists for pdfwrite and epswrite devices (in <a
 href="../base/gdevpsdp.c">base/gdevpsdp.c</a>), because the whole issue of
 local vs. global VM for setpagedevice is, in the words of Ed Taft of Adobe,
 "a mess".

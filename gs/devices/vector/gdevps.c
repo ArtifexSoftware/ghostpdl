@@ -148,19 +148,6 @@ gs_private_st_suffix_add1_final(st_device_pswrite, gx_device_pswrite,
                 psdf_create_compositor\
         }
 
-const gx_device_pswrite gs_pswrite_device = {
-    std_device_dci_type_body(gx_device_pswrite, 0, "pswrite",
-                             &st_device_pswrite,
-                             DEFAULT_WIDTH_10THS * X_DPI / 10,
-                             DEFAULT_HEIGHT_10THS * Y_DPI / 10,
-                             X_DPI, Y_DPI, 3, 24, 255, 255, 256, 256),
-    psw_procs,
-    psdf_initial_values(psdf_version_default, 1 /*true */ ),	/* (ASCII85EncodePages) */
-    PSWRITE_COMMON_VALUES(LanguageLevel_default, /* LanguageLevel */
-                          0 /*false*/, /* ProduceEPS */
-                          PSWRITE_PROCSET_VERSION /* ProcSet_version */)
-};
-
 const gx_device_pswrite gs_epswrite_device = {
     std_device_dci_type_body(gx_device_pswrite, 0, "epswrite",
                              &st_device_pswrite,

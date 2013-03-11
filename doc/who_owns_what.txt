@@ -235,7 +235,7 @@ psl2cs.dev: michael
 psl2lib.dev: michael and alex
 psmono.dev: ken
 psrgb.dev: ken
-pswrite.dev: ken
+pswrite.dev: obsolete
 pxl.dev: henry
 pxlcolor.dev: ray and henry
 pxlmono.dev: ray and henry

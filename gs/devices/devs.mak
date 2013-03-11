@@ -787,10 +787,6 @@ $(DD)epswrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pswrite_) $(GLD)psdf.dev $(GDEV)
 	$(SETDEV2) $(DD)epswrite $(pswrite_)
 	$(ADDMOD) $(DD)epswrite -include $(GLD)psdf
 
-$(DD)pswrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pswrite_) $(GLD)psdf.dev $(GDEV)
-	$(SETDEV2) $(DD)pswrite $(pswrite_)
-	$(ADDMOD) $(DD)pswrite -include $(GLD)psdf
-
 $(DEVOBJ)gdevps.$(OBJ) : $(DEVVECSRC)gdevps.c $(GDEV)\
  $(math__h) $(memory__h) $(string__h) $(time__h)\
  $(gscdefs_h) $(gscspace_h) $(gsline_h) $(gsparam_h) $(gsiparam_h) $(gsmatrix_h)\
