@@ -128,6 +128,7 @@ DEVGENDIR=.\debugobj
 !else
 DEVGENDIR=.\obj
 !endif
+!endif
 
 !ifndef DEVOBJDIR
 DEVOBJDIR=$(DEVGENDIR)
