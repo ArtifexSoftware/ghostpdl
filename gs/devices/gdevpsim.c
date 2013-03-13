@@ -82,28 +82,6 @@ ps_image_write_headers(FILE *f, gx_device_printer *pdev,
  */
 
 /* The device descriptor */
-static dev_proc_print_page(psmono_print_page);
-static dev_proc_close_device(psmono_close);
-
-const gx_device_printer gs_psmono_device =
-prn_device(prn_std_procs, "psmono",
-           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-           X_DPI, Y_DPI,
-           0, 0, 0, 0,		/* margins */
-           1, psmono_print_page);
-
-static const gx_device_procs psgray_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, psmono_close,
-              gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
-
-const gx_device_printer gs_psgray_device = {
-    prn_device_body(gx_device_printer, psgray_procs, "psgray",
-                    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-                    X_DPI, Y_DPI,
-                    0, 0, 0, 0,	/* margins */
-                    1, 8, 255, 0, 256, 1, psmono_print_page)
-};
-
 static const char *const psmono_setup[] = {
                 /* Initialize the strings for filling runs. */
     "/.ImageFills [ 0 1 255 {",
@@ -307,23 +285,6 @@ write_data_run(const byte * data, int count, FILE * f, byte invert)
  * demand for licensing and payment even for freely distributed software
  * rule this out.
  */
-
-/* The device descriptor */
-static dev_proc_print_page(psrgb_print_page);
-static dev_proc_close_device(psrgb_close);
-
-static const gx_device_procs psrgb_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, psrgb_close,
-                gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
-
-const gx_device_printer gs_psrgb_device = {
-    prn_device_body(gx_device_printer, psrgb_procs, "psrgb",
-                    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-                    X_DPI, Y_DPI,
-                    0, 0, 0, 0,	/* margins */
-                    3, 24, 255, 255, 256, 256, psrgb_print_page)
-};
-
 static const char *const psrgb_setup[] = {
     "/rgbimage {",		/* <width> <height> rgbimage - */
     "  gsave 2 copy scale /h exch def /w exch def",

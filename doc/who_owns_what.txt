@@ -229,12 +229,12 @@ psf0lib.dev: ken
 psf0read.dev: ken
 psf1lib.dev: ken
 psf2lib.dev: ken
-psgray.dev: ken
+psgray.dev: obsolete
 psi.dev: ray and henry
 psl2cs.dev: michael
 psl2lib.dev: michael and alex
-psmono.dev: ken
-psrgb.dev: ken
+psmono.dev: obsolete
+psrgb.dev: obsolete
 pswrite.dev: obsolete
 pxl.dev: henry
 pxlcolor.dev: ray and henry

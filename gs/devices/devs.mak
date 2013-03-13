@@ -136,7 +136,6 @@ DEVGEN=$(DEVGENDIR)$(D)
 # High-level file formats:
 #	epswrite	EPS output (like PostScript Distillery)
 #	pdfwrite	PDF output (like Adobe Acrobat Distiller)
-#	pswrite		PostScript output (like PostScript Distillery)
 #	txtwrite	ASCII or Unicode text output
 #	pxlmono 	Black-and-white PCL XL
 #	pxlcolor	Color PCL XL
@@ -198,9 +197,6 @@ DEVGEN=$(DEVGENDIR)$(D)
 #	png256		8-bit color Portable Network Graphics (PNG)
 #	png16m		24-bit color Portable Network Graphics (PNG)
 #	pngalpha	32-bit RGBA color Portable Network Graphics (PNG)
-#	psmono		PostScript (Level 1) monochrome image
-#	psgray		PostScript (Level 1) 8-bit gray image
-#	psrgb		PostScript (Level 2) 24-bit color image
 #	tiffgray	TIFF 8-bit gray, no compression
 #	tiff12nc	TIFF 12-bit RGB, no compression
 #	tiff24nc 	TIFF 24-bit RGB, no compression (NeXT standard format)
@@ -1605,19 +1601,6 @@ $(DEVOBJ)gdevpsim.$(OBJ) : $(DEVSRC)gdevpsim.c $(PDEVH)\
  $(gdevpsu_h)\
  $(sa85x_h) $(srlx_h) $(stream_h) $(strimpl_h)
 	$(DEVCC) $(DEVO_)gdevpsim.$(OBJ) $(C_) $(DEVSRC)gdevpsim.c
-
-# Monochrome, Level 1 output
-
-$(DD)psmono.dev : $(DEVS_MAK) $(psim_) $(GLD)page.dev $(GDEV)
-	$(SETPDEV2) $(DD)psmono $(psim_)
-
-$(DD)psgray.dev : $(DEVS_MAK) $(psim_) $(GLD)page.dev $(GDEV)
-	$(SETPDEV2) $(DD)psgray $(psim_)
-
-# RGB, Level 2 output
-
-$(DD)psrgb.dev : $(DEVS_MAK) $(psim_) $(GLD)page.dev $(GDEV)
-	$(SETPDEV2) $(DD)psrgb $(psim_)
 
 ### --- Minimum Feature Size support functions --- ###
 
