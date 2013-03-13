@@ -1895,3 +1895,18 @@ $(DEVOBJ)gdevcups.$(OBJ) : cups$(D)gdevcups.c $(std_h)
             $(I_)$(DEVSRC) \
             $(I_)$(DEVOBJ) $(I_)$(LCUPSSRCDIR)$(D)libs \
             $(LCUPSSRCDIR)$(D)gdevcups.c
+
+### ---------------------------- Tracing -------------------------------- ###
+
+# A tracing device, also an example of a high-level device.
+
+$(DEVOBJ)gdevtrac.$(OBJ) : $(DEVSRC)gdevtrac.c $(AK) $(gx_h)\
+ $(gserrors_h) $(gscspace_h)\
+ $(gxdevice_h) $(gxdht_h) $(gxfont_h) $(gxiparam_h) $(gxistate_h)\
+ $(gxpaint_h) $(gxtmap_h) $(gzcpath_h) $(gzpath_h) $(MAKEDIRS)
+	$(DEVCC) $(DEVO_)gdevtrac.$(OBJ) $(C_) $(DEVSRC)gdevtrac.c
+
+$(DD)tracedev.dev : $(DEVS_MAK) $(GDEV) $(DEVOBJ)gdevtrac.$(OBJ)
+	$(SETMOD) $(DD)tracedev -dev2 tr_mono tr_rgb tr_cmyk
+	$(ADDMOD) $(DD)tracedev -obj $(DEVOBJ)gdevtrac.$(OBJ)
+

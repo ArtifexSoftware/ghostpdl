@@ -1172,18 +1172,6 @@ $(GLOBJ)gdevplnx.$(OBJ) : $(GLSRC)gdevplnx.c $(AK) $(gx_h)\
  $(gxgetbit_h) $(gxiparam_h) $(gxistate_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevplnx.$(OBJ) $(C_) $(GLSRC)gdevplnx.c
 
-# A tracing device, also an example of a high-level device.
-
-$(GLOBJ)gdevtrac.$(OBJ) : $(GLSRC)gdevtrac.c $(AK) $(gx_h)\
- $(gserrors_h) $(gscspace_h)\
- $(gxdevice_h) $(gxdht_h) $(gxfont_h) $(gxiparam_h) $(gxistate_h)\
- $(gxpaint_h) $(gxtmap_h) $(gzcpath_h) $(gzpath_h) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gdevtrac.$(OBJ) $(C_) $(GLSRC)gdevtrac.c
-
-$(GLD)tracedev.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevtrac.$(OBJ)
-	$(SETMOD) $(GLD)tracedev -dev2 tr_mono tr_rgb tr_cmyk
-	$(ADDMOD) $(GLD)tracedev -obj $(GLOBJ)gdevtrac.$(OBJ)
-
 ### Default driver procedure implementations
 
 $(GLOBJ)gdevdbit.$(OBJ) : $(GLSRC)gdevdbit.c $(AK) $(gx_h)\
