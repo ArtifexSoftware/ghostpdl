@@ -519,7 +519,7 @@ pjl_warn_exists(const gs_memory_t *mem, char *fname)
 {
     FILE *fpdownload;
     /* issue a warning if the file exists */
-    if ( (fpdownload = fopen(fname, gp_fmode_rb) ) != NULL ) {
+    if ( (fpdownload = gp_fopen(fname, gp_fmode_rb) ) != NULL ) {
         fclose(fpdownload);
         dmprintf1(mem, "warning file exists overwriting %s\n", fname);
     }
@@ -541,7 +541,7 @@ pjl_setup_file_for_writing(pjl_parser_state_t *pst, char *pathname, int size, bo
         strcpy(fmode, gp_fmode_wb);
         if (append)
             strcat(fmode, "+");
-        if ( (fp = fopen(fname, gp_fmode_wb)) == NULL) {
+        if ( (fp = gp_fopen(fname, gp_fmode_wb)) == NULL) {
             dmprintf(pst->mem, "warning file open for writing failed\n" );
             return NULL;
         }
@@ -883,7 +883,7 @@ get_fp(pjl_parser_state_t *pst, char *name)
         if ( result[0] == '\0' )
             return 0;
     }
-    return fopen(result, gp_fmode_rb);
+    return gp_fopen(result, gp_fmode_rb);
 }
 
 /* scan for a named resoource in the pcl sandbox 0: or 1: and return

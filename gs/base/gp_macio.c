@@ -14,6 +14,9 @@
 */
 
 
+/* prevent gp.h from defining fopen */
+#define fopen fopen
+
 
 #ifndef __CARBON__
 //#include "MacHeaders"
@@ -54,6 +57,7 @@
 #include <console.h>
 
 #include "gx.h"
+
 #include "gp.h"
 #include "gpmisc.h"
 #include "gxdevice.h"

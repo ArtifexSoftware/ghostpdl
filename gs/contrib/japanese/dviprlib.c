@@ -52,7 +52,7 @@ dviprt_readcfg(char *ifname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
   info.fname = ifname;
   info.line_no = -1;
   if (ifname) {
-    info.file = fopen(ifname,gp_fmode_rb);
+    info.file = gp_fopen(ifname,gp_fmode_rb);
     if (info.file == NULL) {
       dviprt_printcfgerror(&info,"Cannot open.\n",-1);
       return CFG_ERROR_FILE_OPEN;
@@ -496,7 +496,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
   info.line_no = -1;
   info.fname = fname;
   if (fname) {
-    info.file = fopen(fname,"r");
+    info.file = gp_fopen(fname,"r");
     if (info.file == NULL) {
       dviprt_printcfgerror(&info,"Cannot open.\n",-1);
       return CFG_ERROR_FILE_OPEN;

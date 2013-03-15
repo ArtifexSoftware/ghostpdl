@@ -97,7 +97,7 @@ struct gx_io_device_procs_s {
 #define iodev_proc_fopen(proc)\
   int proc(gx_io_device *iodev, const char *fname, const char *access,\
            FILE **pfile, char *rfname, uint rnamelen)
-    iodev_proc_fopen((*fopen));
+    iodev_proc_fopen((*gp_fopen));
 
 #define iodev_proc_fclose(proc)\
   int proc(gx_io_device *iodev, FILE *file)
@@ -158,7 +158,7 @@ iodev_proc_get_params(iodev_no_get_params);
 iodev_proc_put_params(iodev_no_put_params);
 /* The %os% implemention of fopen and fclose. */
 /* These are exported for pipes and for %null. */
-iodev_proc_fopen(iodev_os_fopen);
+iodev_proc_fopen(iodev_os_gp_fopen);
 iodev_proc_fclose(iodev_os_fclose);
 
 /* Get the N'th IODevice. */

@@ -110,7 +110,7 @@
 
 /* Function prototypes */
 static iodev_proc_init(iodev_diskn_init);
-static iodev_proc_fopen(iodev_diskn_fopen);
+static iodev_proc_gp_fopen(iodev_diskn_gp_fopen);
 static iodev_proc_delete_file(diskn_delete);
 static iodev_proc_rename_file(diskn_rename);
 static iodev_proc_file_status(diskn_status);
@@ -127,7 +127,7 @@ const gx_io_device varname = \
 { \
     diskname, "FileSystem", \
     {iodev_diskn_init, iodev_no_open_device, \
-     NULL /* no longer used */ , iodev_diskn_fopen, iodev_os_fclose, \
+     NULL /* no longer used */ , iodev_diskn_gp_fopen, iodev_os_fclose, \
      diskn_delete, diskn_rename, diskn_status, \
      iodev_no_enumerate_files, /* Only until we have a root location */ \
      diskn_enumerate_next, diskn_enumerate_close, \
@@ -198,7 +198,7 @@ iodev_diskn_init(gx_io_device * iodev, gs_memory_t * mem)
 }
 
 static int
-iodev_diskn_fopen(gx_io_device * iodev, const char *fname, const char *access,
+iodev_diskn_gp_fopen(gx_io_device * iodev, const char *fname, const char *access,
                FILE ** pfile, char *rfname, uint rnamelen)
 {
     char realname[gp_file_name_sizeof];
@@ -218,7 +218,7 @@ iodev_diskn_fopen(gx_io_device * iodev, const char *fname, const char *access,
             return_error(gs_error_undefinedfilename);
     }
 
-    return iodev_os_fopen(iodev_default(pstate->memory), realname, access, pfile, rfname, rnamelen);
+    return iodev_os_gp_fopen(iodev_default(pstate->memory), realname, access, pfile, rfname, rnamelen);
 }
 
 static int

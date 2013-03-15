@@ -16,9 +16,13 @@
 
 /* VAX/VMS specific routines for Ghostscript */
 
+/* prevent gp.h from defining fopen */
+#define fopen fopen
+
 #include "string_.h"
 #include "memory_.h"
 #include "gx.h"
+
 #include "gp.h"
 #include "gpmisc.h"
 #include "gsstruct.h"
@@ -259,7 +263,7 @@ gp_open_scratch_file(const gs_memory_t *mem,
         return 0;		/* file name too long */
     strcat(fname, "XXXXXX");
     mktemp(fname);
-    f = fopen(fname, mode);
+    f = gp_fopen(fname, mode);
 
     if (f == NULL)
         emprintf1(mem, "**** Could not open temporary file %s\n", fname);

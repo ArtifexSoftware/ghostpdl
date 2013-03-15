@@ -17,6 +17,9 @@
 /* Common platform-specific routines for OS/2 and MS-DOS */
 /* compiled with GCC/EMX */
 
+/* prevent gp.h from defining fopen */
+#define fopen fopen
+
 #define INCL_DOS
 #define INCL_SPL
 #define INCL_SPLDOSPRINT
@@ -47,6 +50,7 @@
 #include "gsexit.h"
 #include "gsmemory.h"
 #include "gsstruct.h"
+
 #include "gp.h"
 #include "gpmisc.h"
 #include "gsutil.h"
@@ -318,7 +322,7 @@ gp_open_printer(const gs_memory_t *mem,
         pfile = popen(fname + 1, (binary_mode ? "wb" : "w"));
     else
         /* normal file or port */
-        pfile = fopen(fname, (binary_mode ? "wb" : "w"));
+        pfile = gp_fopen(fname, (binary_mode ? "wb" : "w"));
 
     if (pfile == (FILE *) NULL)
         return (FILE *) NULL;
@@ -496,7 +500,7 @@ pm_spool(const gs_memory_t *mem, char *filename, const char *queue)
         emprintf(mem, "Out of memory in pm_spool\n");
         return 1;
     }
-    if ((f = fopen(filename, "rb")) == (FILE *) NULL) {
+    if ((f = gp_fopen(filename, "rb")) == (FILE *) NULL) {
         free(buffer);
         emprintf1(mem, "Can't open temporary file %s\n", filename);
         return 1;

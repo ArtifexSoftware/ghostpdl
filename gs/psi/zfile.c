@@ -864,7 +864,7 @@ iodev_os_open_file(gx_io_device * iodev, const char *fname, uint len,
 {
     return file_open_stream(fname, len, file_access,
                             file_default_buffer_size, ps,
-                            iodev, iodev->procs.fopen, mem);
+                            iodev, iodev->procs.gp_fopen, mem);
 }
 
 /* Make a t_file reference to a stream. */

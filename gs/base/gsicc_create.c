@@ -121,6 +121,8 @@ Note: All profile data must be encoded as big-endian
 #include "string_.h"
 #include "gsmemory.h"
 #include "gx.h"
+#include <gp.h>
+
 #include "gxistate.h"
 #include "gstypes.h"
 #include "gscspace.h"
@@ -452,7 +454,7 @@ save_profile(unsigned char *buffer, char filename[], int buffer_size)
     FILE *fid;
 
     sprintf(full_file_name,"%d)Profile_%s.icc",icc_debug_index,filename);
-    fid = fopen(full_file_name,"wb");
+    fid = gp_fopen(full_file_name,"wb");
     fwrite(buffer,sizeof(unsigned char),buffer_size,fid);
     fclose(fid);
     icc_debug_index++;

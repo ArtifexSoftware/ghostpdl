@@ -20,7 +20,7 @@
 
 static int isfile(char *path)
 {
-    FILE *file = fopen(path, "rb");
+    FILE *file = gp_fopen(path, "rb");
     if (file)
     {
         fclose(file);
@@ -354,7 +354,7 @@ xps_read_dir_part(xps_context_t *ctx, char *name)
     xps_strlcat(buf, name, sizeof buf);
 
     /* All in one piece */
-    file = fopen(buf, "rb");
+    file = gp_fopen(buf, "rb");
     if (file)
     {
         fseek(file, 0, SEEK_END);
@@ -372,11 +372,11 @@ xps_read_dir_part(xps_context_t *ctx, char *name)
     while (1)
     {
         sprintf(buf, "%s%s/[%d].piece", ctx->directory, name, count);
-        file = fopen(buf, "rb");
+        file = gp_fopen(buf, "rb");
         if (!file)
         {
             sprintf(buf, "%s%s/[%d].last.piece", ctx->directory, name, count);
-            file = fopen(buf, "rb");
+            file = gp_fopen(buf, "rb");
         }
         if (!file)
             break;
@@ -397,7 +397,7 @@ xps_read_dir_part(xps_context_t *ctx, char *name)
                 sprintf(buf, "%s%s/[%d].piece", ctx->directory, name, i);
             else
                 sprintf(buf, "%s%s/[%d].last.piece", ctx->directory, name, i);
-            file = fopen(buf, "rb");
+            file = gp_fopen(buf, "rb");
             n = fread(part->data + offset, 1, size - offset, file);
             offset += n;
             fclose(file);
@@ -471,7 +471,7 @@ xps_process_file(xps_context_t *ctx, char *filename)
     int code;
     char *p;
 
-    ctx->file = fopen(filename, "rb");
+    ctx->file = gp_fopen(filename, "rb");
     if (!ctx->file)
         return gs_throw1(-1, "cannot open file: '%s'", filename);
 

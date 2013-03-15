@@ -853,7 +853,7 @@ gdev_dmprt_dviprt_lib_fopen(const char *fnamebase,char *fname)
       strcpy(fname,env);
       strcat(fname, gp_file_name_concat_string(env,strlen(env)));
       strcat(fname,fnamebase);
-      fp = fopen(fname,gp_fmode_rb);
+      fp = gp_fopen(fname,gp_fmode_rb);
     }
   }
   return fp;

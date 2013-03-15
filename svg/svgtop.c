@@ -25,7 +25,7 @@
 #include "gxdevice.h" /* so we can include gxht.h below */
 #include "gxht.h" /* gsht1.h is incomplete, we need storage size of gs_halftone */
 #include "gsht1.h"
-
+#include "gp.h"
 static int svg_install_halftone(svg_context_t *ctx, gx_device *pdevice);
 
 #define SVG_PARSER_MIN_INPUT_SIZE 8192
@@ -248,7 +248,7 @@ svg_imp_process_file(pl_interp_instance_t *pinstance, char *filename)
 
     dmprintf1(ctx->memory, "svg_imp_process_file %s\n", filename);
 
-    file = fopen(filename, "rb");
+    file = gp_fopen(filename, "rb");
     if (!file)
         return gs_error_ioerror;
 

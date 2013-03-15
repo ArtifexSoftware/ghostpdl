@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include "ierrors.h"
 #include "iapi.h"
+#include <gp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -56,9 +57,9 @@ static void *gs_main(void *arg)
     my_stdio stdio;
 
     snprintf(text, sizeof(text), "stdout.%d", threadnum);
-    stdio.stdout = fopen(text, "w");
+    stdio.stdout = gp_fopen(text, "w");
     snprintf(text, sizeof(text), "stderr.%d", threadnum);
-    stdio.stderr = fopen(text, "w");
+    stdio.stderr = gp_fopen(text, "w");
 
     gsargv = malloc(sizeof(*gsargv)*my_argc);
     if (!gsargv)

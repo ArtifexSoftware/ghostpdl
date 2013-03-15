@@ -49,7 +49,7 @@ const gx_io_device gs_iodev_os =
 {
     "%os%", "FileSystem",
     {iodev_no_init, iodev_no_open_device,
-     NULL /*iodev_os_open_file */ , iodev_os_fopen, iodev_os_fclose,
+     NULL /*iodev_os_open_file */ , iodev_os_gp_fopen, iodev_os_fclose,
      os_delete, os_rename, os_status,
      os_enumerate, gp_enumerate_files_next, gp_enumerate_files_close,
      os_get_params, iodev_no_put_params
@@ -190,7 +190,7 @@ iodev_no_put_params(gx_io_device * iodev, gs_param_list * plist)
 
 /* The fopen routine is exported for %null. */
 int
-iodev_os_fopen(gx_io_device * iodev, const char *fname, const char *access,
+iodev_os_gp_fopen(gx_io_device * iodev, const char *fname, const char *access,
                FILE ** pfile, char *rfname, uint rnamelen)
 {
     errno = 0;

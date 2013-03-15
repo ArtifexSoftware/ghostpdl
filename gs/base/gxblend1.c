@@ -17,6 +17,7 @@
 
 #include "memory_.h"
 #include "gx.h"
+#include "gp.h"
 #include "gstparam.h"
 #include "gsrect.h"
 #include "gxblend.h"
@@ -612,7 +613,7 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
     if (buf->data == NULL)
         return 0;
 
-    file = fopen ("c:\\temp\\tmp.png", "wb");
+    file = gp_fopen ("c:\\temp\\tmp.png", "wb");
 
     if_debug0m('v', mem, "[v]pnga_output_page\n");
 

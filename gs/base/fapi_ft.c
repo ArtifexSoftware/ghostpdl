@@ -215,7 +215,7 @@ FF_open_read_stream(gs_memory_t * mem, char *fname, FT_Stream * fts)
             code =
                 file_open_stream(pfn.fname, pfn.len, "r",
                                  file_default_buffer_size, &ps, pfn.iodev,
-                                 pfn.iodev->procs.fopen, mem);
+                                 pfn.iodev->procs.gp_fopen, mem);
             if (code < 0) {
                 goto error_out;
             }

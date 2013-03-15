@@ -2232,7 +2232,7 @@ gsroprun1_h=$(GLSRC)gsroprun1.h
 gsroprun8_h=$(GLSRC)gsroprun8.h
 gsroprun24_h=$(GLSRC)gsroprun24.h
 $(GLOBJ)gsroprun.$(OBJ) : $(GLSRC)gsroprun.c $(std_h) $(stdpre_h) $(gsropt_h)\
- $(gsroprun1_h) $(gsroprun8_h) $(gsroprun24_h) $(arch_h)
+ $(gsroprun1_h) $(gsroprun8_h) $(gsroprun24_h) $(gp_h) $(arch_h)
 	$(GLCC) $(GLO_)gsroprun.$(OBJ) $(C_) $(GLSRC)gsroprun.c
 
 # ---------------- Async rendering ---------------- #
@@ -2443,7 +2443,7 @@ $(GLOBJ)gxp1fill.$(OBJ) : $(GLSRC)gxp1fill.c $(AK) $(gx_h)\
 
 $(GLOBJ)gxpcmap.$(OBJ) : $(GLSRC)gxpcmap.c $(AK) $(gx_h) $(gserrors_h)\
  $(math__h) $(memory__h) $(gspath2_h) $(gxdevsop_h) $(gxp1impl_h)\
- $(gsstruct_h) $(gsutil_h)\
+ $(gsstruct_h) $(gsutil_h) $(gp_h) \
  $(gxcolor2_h) $(gxcspace_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gxfixed_h) $(gxmatrix_h) $(gxpcolor_h) $(gxclist_h) $(gxcldev_h)\
  $(gzstate_h) $(gdevp14_h) $(gdevmpla_h) $(MAKEDIRS)
@@ -2754,7 +2754,7 @@ $(GLOBJ)gsicc_manage.$(OBJ) : $(GLSRC)gsicc_manage.c $(AK) $(gx_h)\
  $(gxistate_h) $(gxcspace_h) $(gscms_h) $(gsicc_manage_h) $(gsicc_cache_h)\
  $(gsicc_profilecache_h) $(gserrors_h) $(string__h) $(gxclist_h) $(gxcldev_h)\
  $(gzstate_h) $(gsicc_create_h) $(gpmisc_h) $(gxdevice_h) $(std_h)\
- $(gsicc_cms_h) $(MAKEDIRS)
+ $(gsicc_cms_h) $(gp_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsicc_manage.$(OBJ) $(C_) $(GLSRC)gsicc_manage.c
 
 $(GLOBJ)gsicc_cache.$(OBJ) : $(GLSRC)gsicc_cache.c $(AK) $(gx_h)\
@@ -2778,7 +2778,7 @@ $(GLOBJ)gsicc_lcms_0.$(OBJ) : $(GLSRC)gsicc_lcms.c\
  $(gsicc_cms_h) $(lcms_h) $(gslibctx_h) $(gserrors_h)
 	$(GLLCMSCC) $(GLO_)gsicc_lcms_0.$(OBJ) $(C_) $(GLSRC)gsicc_lcms.c
 
-$(GLOBJ)gsicc_lcms.$(OBJ) : $(GLOBJ)gsicc_lcms_$(SHARE_LCMS).$(OBJ)
+$(GLOBJ)gsicc_lcms.$(OBJ) : $(GLOBJ)gsicc_lcms_$(SHARE_LCMS).$(OBJ) $(gp_h)
 	$(CP_) $(GLOBJ)gsicc_lcms_$(SHARE_LCMS).$(OBJ) $(GLOBJ)gsicc_lcms.$(OBJ)
 
 
@@ -2790,7 +2790,7 @@ $(GLOBJ)gsicc_lcms2_0.$(OBJ) : $(GLSRC)gsicc_lcms2.c\
  $(gsicc_cms_h) $(lcms2_h) $(gslibctx_h) $(lcms2_plugin_h) $(gserrors_h)
 	$(GLLCMS2CC) $(GLO_)gsicc_lcms2_0.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2.c
 
-$(GLOBJ)gsicc_lcms2.$(OBJ) : $(GLOBJ)gsicc_lcms2_$(SHARE_LCMS).$(OBJ)
+$(GLOBJ)gsicc_lcms2.$(OBJ) : $(GLOBJ)gsicc_lcms2_$(SHARE_LCMS).$(OBJ) $(gp_h)
 	$(CP_) $(GLOBJ)gsicc_lcms2_$(SHARE_LCMS).$(OBJ) $(GLOBJ)gsicc_lcms2.$(OBJ)
 
 # Note that gsicc_create requires compile with lcms to obtain icc34.h
@@ -2988,12 +2988,12 @@ $(GLOBJ)gximag3x.$(OBJ) : $(GLSRC)gximag3x.c $(AK) $(gx_h)\
 
 $(GLOBJ)gxblend.$(OBJ) : $(GLSRC)gxblend.c $(AK) $(gx_h) $(memory__h)\
  $(gstparam_h) $(gxblend_h) $(gxcolor2_h) $(gsicc_cache_h)\
- $(gsicc_manage_h) $(MAKEDIRS)
+ $(gsicc_manage_h) $(gp_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxblend.$(OBJ) $(C_) $(GLSRC)gxblend.c
 
 $(GLOBJ)gxblend1.$(OBJ) : $(GLSRC)gxblend1.c $(AK) $(gx_h) $(memory__h)\
  $(gstparam_h) $(gsrect_h) $(gxdcconv_h) $(gxblend_h) $(gxdevcli_h)\
- $(gxistate_h) $(gdevdevn_h) $(gdevp14_h) $(vdtrace_h) $(png__h)\
+ $(gxistate_h) $(gdevdevn_h) $(gdevp14_h) $(vdtrace_h) $(png__h) $(gp_h)\
  $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxblend1.$(OBJ) $(C_) $(GLSRC)gxblend1.c
 

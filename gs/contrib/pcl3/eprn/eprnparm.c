@@ -63,6 +63,7 @@ static const char
 
 /* Special headers */
 #include "gdeveprn.h"
+#include "gp.h"
 
 /*****************************************************************************/
 
@@ -377,7 +378,7 @@ static int eprn_read_media_data(eprn_Eprn *eprn, gs_memory_t *memory)
   eprn_PageDescription *list = NULL;
 
   /* Open the file */
-  if ((f = fopen(eprn->media_file, "r")) == NULL) {
+  if ((f = gp_fopen(eprn->media_file, "r")) == NULL) {
     eprintf5("%s" ERRPREF "Error opening the media configuration file\n"
       "%s    `%s'\n%s  for reading: %s.\n",
       epref, epref, eprn->media_file, epref, strerror(errno));

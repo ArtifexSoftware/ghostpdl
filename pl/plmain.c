@@ -878,7 +878,7 @@ pl_top_create_device(pl_main_instance_t *pti, int index, bool is_default)
 /* Process the options on the command line. */
 static FILE *
 pl_main_arg_fopen(const char *fname, void *ignore_data)
-{       return fopen(fname, "r");
+{       return gp_fopen(fname, "r");
 }
 
 static void
@@ -1432,7 +1432,7 @@ pl_main_cursor_open(const gs_memory_t *mem,
         if (fname[0] == '-' && fname[1] == 0)
             cursor->strm = mem->gs_lib_ctx->fstdin;
         else
-            cursor->strm = fopen(fname, "rb");
+            cursor->strm = gp_fopen(fname, "rb");
         if (!cursor->strm)
           return gs_error_ioerror;
 

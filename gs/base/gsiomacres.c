@@ -293,7 +293,7 @@ int read_datafork_resource(byte *buf, const char *fname, const uint type, const 
     FILE *in;
     int i;
 
-    in = fopen(fname, "rb");
+    in = gp_fopen(fname, "rb");
     if (in == NULL) {
         if_debug1('s', "[s] couldn't open '%s'\n", fname);
         return 0;

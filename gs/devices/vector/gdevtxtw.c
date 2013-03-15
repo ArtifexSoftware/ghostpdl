@@ -270,7 +270,7 @@ txtwrite_open_device(gx_device * dev)
     tdev->PageData.y_ordered_list = NULL;
     tdev->file = NULL;
 #ifdef TRACE_TXTWRITE
-    tdev->DebugFile = fopen("/temp/txtw_dbg.txt", "wb+");
+    tdev->DebugFile = gp_fopen("/temp/txtw_dbg.txt", "wb+");
 #endif
     return 0;
 }

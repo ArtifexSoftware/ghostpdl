@@ -67,7 +67,7 @@ $(SVGOBJ)svgxml.$(OBJ): $(SVGSRC)svgxml.c $(SVGINCLUDES)
 	$(SVGCCC) $(SVGSRC)svgxml.c $(SVGO_)svgxml.$(OBJ)
 
 
-$(SVG_TOP_OBJ): $(SVGSRC)svgtop.c $(pltop_h) $(SVGGEN)pconf.h $(SVGINCLUDES)
+$(SVG_TOP_OBJ): $(SVGSRC)svgtop.c $(pltop_h) $(SVGGEN)pconf.h $(gp_h) $(SVGINCLUDES)
 	$(CP_) $(SVGGEN)pconf.h $(SVGGEN)pconfig.h
 	$(SVGCCC) $(SVGSRC)svgtop.c $(SVGO_)svgtop.$(OBJ)
 

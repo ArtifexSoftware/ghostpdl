@@ -23,6 +23,7 @@
 #include "scommon.h"
 #include "strmio.h"
 #include "gx.h"
+#include "gp.h"
 #include "gxistate.h"
 #include "gxcspace.h"
 #include "gscms.h"
@@ -2338,7 +2339,7 @@ dump_icc_buffer(int buffersize, char filename[],byte *Buffer)
     FILE *fid;
 
     sprintf(full_file_name,"%d)%s_debug.icc",global_icc_index,filename);
-    fid = fopen(full_file_name,"wb");
+    fid = gp_fopen(full_file_name,"wb");
     fwrite(Buffer,sizeof(unsigned char),buffersize,fid);
     fclose(fid);
 }

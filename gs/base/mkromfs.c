@@ -64,6 +64,9 @@
  *
  */
 
+/* prevent gp.h redefining fopen */
+#define fopen fopen
+
 #include "stdpre.h"
 #include "stdint_.h"
 #include "time_.h"

@@ -25,6 +25,7 @@
 #include "ostack.h"
 #include "store.h"
 #include "gspaint.h"		/* for gs_erasepage */
+#include "gp.h"
 
 /*
  * This file provides a very simple procedural interface to the Ghostscript
@@ -125,7 +126,7 @@ main(int argc, char *argv[])
     int errlen;
     static const char *fnames[] =
     {"golfer.eps", 0};
-    FILE *cin = fopen("stdin.tmp", "w+");
+    FILE *cin = gp_fopen("stdin.tmp", "w+");
     int sout = open("stdout.tmp", O_WRONLY | O_CREAT | O_TRUNC,
                     S_IREAD | S_IWRITE);
     int serr = open("stderr.tmp", O_WRONLY | O_CREAT | O_TRUNC,

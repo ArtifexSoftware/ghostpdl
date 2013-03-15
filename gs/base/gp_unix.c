@@ -215,7 +215,7 @@ gp_open_printer(const gs_memory_t *mem,
 {
     const char *fmode = (binary_mode ? "wb" : "w");
 
-    return (strlen(fname) == 0 ? 0 : fopen(fname, fmode));
+    return (strlen(fname) == 0 ? 0 : gp_fopen(fname, fmode));
 }
 FILE *
 gp_open_printer_64(const gs_memory_t *mem,

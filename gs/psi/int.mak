@@ -1827,7 +1827,7 @@ $(PSOBJ)gs.$(OBJ) : $(PSSRC)gs.c $(GH)\
 
 $(PSOBJ)apitest.$(OBJ) : $(PSSRC)apitest.c $(GH)\
  $(ierrors_h) $(iapi_h) $(imain_h) $(imainarg_h) $(iminst_h) $(gsmalloc_h)\
- $(locale__h)
+ $(locale__h) $(gp_h)
 	$(PSCC) $(PSO_)apitest.$(OBJ) $(C_) $(PSSRC)apitest.c
 
 $(PSOBJ)iapi.$(OBJ) : $(PSSRC)iapi.c $(AK)\

@@ -77,4 +77,8 @@ int unlink(const char *);
 int snprintf(char *buffer, size_t count, const char *format , ...);
 #endif
 
+#ifndef fopen
+#define fopen DO_NOT_USE_FOPEN
+#endif
+
 #endif /* stdio__INCLUDED */

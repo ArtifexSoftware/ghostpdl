@@ -16,10 +16,14 @@
 
 /* "Unix-like" file system platform routines for Ghostscript */
 
+/* prevent gp.h from defining fopen */
+#define fopen fopen
+
 #include "stdio_.h"             /* for FILENAME_MAX */
 #include "memory_.h"
 #include "string_.h"
 #include "gx.h"
+
 #include "gp.h"
 #include "gpmisc.h"
 #include "gsstruct.h"

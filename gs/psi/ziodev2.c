@@ -35,7 +35,7 @@ const gx_io_device gs_iodev_null = {
     "%null%", "Special",
     {
         iodev_no_init, null_open, iodev_no_open_file,
-        iodev_os_fopen, iodev_os_fclose,
+        iodev_os_gp_fopen, iodev_os_fclose,
         iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
         iodev_no_enumerate_files, NULL, NULL,
         iodev_no_get_params, iodev_no_put_params
@@ -51,7 +51,7 @@ null_open(gx_io_device * iodev, const char *access, stream ** ps,
     return file_open_stream(gp_null_file_name,
                             strlen(gp_null_file_name),
                             access, 256 /* arbitrary */ , ps,
-                            iodev, iodev->procs.fopen, mem);
+                            iodev, iodev->procs.gp_fopen, mem);
 }
 
 /* ------ Operators ------ */

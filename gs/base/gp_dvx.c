@@ -124,7 +124,7 @@ gp_open_printer(const gs_memory_t *mem,
         stdprn->_flag = _IOWRT;	/* Make stdprn buffered to improve performance */
         return stdprn;
     } else
-        return fopen(fname, (binary_mode ? "wb" : "w"));
+        return gp_fopen(fname, (binary_mode ? "wb" : "w"));
 }
 
 /* Close the connection to the printer. */

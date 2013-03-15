@@ -18,6 +18,7 @@
 #include "math_.h"
 #include "memory_.h"
 #include "gx.h"
+#include "gp.h"
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsutil.h"             /* for gs_next_ids */
@@ -1153,7 +1154,7 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
         sprintf(full_file_name,"%d)PATTERN_CHUNK_%dx%dx%d.raw",global_pat_index,
                 width,height,max_bands);
     }
-    fid = fopen(full_file_name,"wb");
+    fid = gp_fopen(full_file_name,"wb");
     if (depth >= 8) {
         /* Contone data. */
         if (is_planar) {

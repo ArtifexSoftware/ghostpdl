@@ -345,7 +345,7 @@ int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
         outfn[len-1] = '\0';
     }
 
-    in = fopen(infn, "r");
+    in = gp_fopen(infn, "r");
     if (in == NULL) {
         dlprintf1("pcache: unable to open '%s'\n", infn);
         free(prefix);
@@ -353,7 +353,7 @@ int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
         free(outfn);
         return -1;
     }
-    out = fopen(outfn, "w");
+    out = gp_fopen(outfn, "w");
     if (out == NULL) {
         dlprintf1("pcache: unable to open '%s'\n", outfn);
         fclose(in);
@@ -379,7 +379,7 @@ int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
 
     /* save it to disk */
     path = gp_cache_itempath(prefix, &item);
-    file = fopen(path, "wb");
+    file = gp_fopen(path, "wb");
     free(path);
     if (file != NULL) {
         gp_cache_saveitem(file, &item);
@@ -438,7 +438,7 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
         outfn[len-1] = '\0';
     }
 
-    in = fopen(infn, "r");
+    in = gp_fopen(infn, "r");
     if (in == NULL) {
         dlprintf1("pcache: unable to open '%s'\n", infn);
         free(prefix);
@@ -446,7 +446,7 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
         free(outfn);
         return -1;
     }
-    out = fopen(outfn, "w");
+    out = gp_fopen(outfn, "w");
     if (out == NULL) {
         dlprintf1("pcache: unable to open '%s'\n", outfn);
         fclose(in);
@@ -469,7 +469,7 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
 
     /* look for it on the disk */
     path = gp_cache_itempath(prefix, &item);
-    file = fopen(path, "rb");
+    file = gp_fopen(path, "rb");
     free(path);
     if (file != NULL) {
         hit = gp_cache_loaditem(file, &item, alloc, userdata);

@@ -1030,7 +1030,7 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
         strcpy(fmode, gp_fmode_wb);
         if (positionable)
             strcat(fmode, "+");
-        code = parsed.iodev->procs.fopen(parsed.iodev, parsed.fname, fmode,
+        code = parsed.iodev->procs.gp_fopen(parsed.iodev, parsed.fname, fmode,
                                          pfile, NULL, 0);
         if (code)
             emprintf1(dev->memory,

@@ -29,6 +29,9 @@
 /* DLL version must now be used under MS-Windows */
 /* Russell Lang 16 March 1996 */
 
+/* prevent gp.h from defining fopen */
+#define fopen fopen
+
 #include "stdio_.h"
 #include "string_.h"
 #include "memory_.h"
@@ -41,6 +44,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include "gx.h"
+
 #include "gp.h"
 #include "gpcheck.h"
 #include "gpmisc.h"

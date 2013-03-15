@@ -59,7 +59,7 @@ sfopen(const char *path, const char *mode, gs_memory_t *mem)
     open_file = pfn.iodev->procs.open_file;
     if (open_file == 0)
         code = file_open_stream(pfn.fname, pfn.len, mode, 2048, &s,
-                                pfn.iodev, pfn.iodev->procs.fopen, mem);
+                                pfn.iodev, pfn.iodev->procs.gp_fopen, mem);
     else
         code = open_file(pfn.iodev, pfn.fname, pfn.len, mode, &s, mem);
     if (code < 0)
