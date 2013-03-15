@@ -427,7 +427,7 @@ static int main_utf8(int argc, char *argv[])
 int wmain(int argc, wchar_t *argv[], wchar_t *envp[]) {
     /* Duplicate args as utf8 */
     char **nargv;
-    int i, code;
+    int i, code, cp;
 
     nargv = calloc(argc, sizeof(nargv[0]));
     if (nargv == NULL)
@@ -438,7 +438,16 @@ int wmain(int argc, wchar_t *argv[], wchar_t *envp[]) {
             goto err;
         (void)wchar_to_utf8(nargv[i], argv[i]);
     }
+
+    /* Switch console code page to CP_UTF8 (65001) as we may send utf8 strings
+     * to stdout/stderr.
+     */
+    cp = GetConsoleOutputCP();
+    SetConsoleOutputCP(CP_UTF8);
+
     code = main_utf8(argc, nargv);
+
+    SetConsoleOutputCP(cp);
 
     if (0) {
 err:
