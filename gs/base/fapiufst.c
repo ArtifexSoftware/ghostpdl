@@ -1683,7 +1683,7 @@ get_char(fapi_ufst_server * r, gs_fapi_font * ff, gs_fapi_char_ref * c,
         fc->ExtndFlags |= savehint;
         (void)CGIFfont(FSA fc);
     }
-    if (result == NULL
+    if ((result == NULL && code != ERR_bm_buff && code != ERR_bm_too_big)
         || (code && code != ERR_fixed_space && code != ERR_bm_buff
             && code != ERR_bm_too_big)) {
         /* There is no such char in the font, try the glyph 0 (notdef) : */
