@@ -63,21 +63,24 @@ data_image_params(const gs_memory_t *mem,
 
     check_type(*op, t_dictionary);
     check_dict_read(*op);
-    if ((code = dict_int_param(op, "Width", 0, max_int_in_fixed / 2,
-                               -1, &pim->Width)) < 0 ||
-        (code = dict_int_param(op, "Height", 0, max_int_in_fixed / 2,
-                               -1, &pim->Height)) < 0 ||
-        (code = dict_matrix_param(mem, op, "ImageMatrix",
-                                  &pim->ImageMatrix)) < 0 ||
-        (code = dict_bool_param(op, "MultipleDataSources", false,
-                                &pip->MultipleDataSources)) < 0 ||
-        (code = dict_int_param(op, "BitsPerComponent", 1,
-                               max_bits_per_component, -1,
-                               &pim->BitsPerComponent)) < 0 ||
-        (code = dict_bool_param(op, "Interpolate", false,
-                                &pim->Interpolate)) < 0
-        )
-        return code;
+    code = dict_int_param(op, "Width", 0, max_int_in_fixed/2, -1, &pim->Width);
+    if (code < 0)
+    	return code;
+    code = dict_int_param(op, "Height", 0, max_int_in_fixed/2, -1, &pim->Height);
+    if (code < 0)
+    	return code;
+    code = dict_matrix_param(mem, op, "ImageMatrix", &pim->ImageMatrix);
+    if (code < 0)
+    	return code;
+    code = dict_bool_param(op, "MultipleDataSources", false, &pip->MultipleDataSources);
+    if (code < 0)
+    	return code;
+    code = dict_int_param(op, "BitsPerComponent", 1, max_bits_per_component, -1, &pim->BitsPerComponent);
+    if (code < 0)
+    	return code;
+    code = dict_bool_param(op, "Interpolate", false, &pim->Interpolate);
+    if (code < 0)
+    	return code;
 
     /* Decode size pulled out of here to catch case of Lab color space which
        has a 4 entry range.  We also do NOT want to do Lab decoding IF range

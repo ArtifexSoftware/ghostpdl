@@ -95,6 +95,10 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         penum->interpolate = false;
         return 0;
     }
+    if (penum->Width == 0 || penum->Height == 0) {
+        penum->interpolate = false; /* No need to interpolate and      */
+        return 0;                  /* causes division by 0 if we try. */
+    }
     if ( pcs->cmm_icc_profile_data != NULL ) {
         use_icc = true;
     }

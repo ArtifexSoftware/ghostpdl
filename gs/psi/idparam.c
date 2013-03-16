@@ -68,6 +68,8 @@ dict_int_null_param(const ref * pdict, const char *kstr, int minval,
     } else {
         switch (r_type(pdval)) {
             case t_integer:
+                if (pdval->value.intval < minval || pdval->value.intval > maxval)
+                    return_error(e_rangecheck);
                 ival = pdval->value.intval;
                 break;
             case t_real:
