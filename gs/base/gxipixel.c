@@ -203,6 +203,18 @@ gx_image_enum_alloc(const gs_image_common_t * pic,
     return 0;
 }
 
+/* Convert and restrict to a valid range. */
+static inline fixed float2fixed_rounded_boxed(double src) {
+	float v = floor(src*fixed_scale + 0.5);
+
+	if (v <= min_fixed)
+		return min_fixed;
+	else if (v >= max_fixed)
+		return max_fixed;
+	else
+		return 	(fixed)v;
+}
+
 /*
  * Finish initialization for processing an ImageType 1 or 4 image.
  * Assumes the following members of *penum are set in addition to those
@@ -453,14 +465,14 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
         mty = float2fixed(mat.ty + f) - int2fixed(f);
     }
 
-    row_extent.x = float2fixed_rounded(width * mat.xx);
+    row_extent.x = float2fixed_rounded_boxed(width * mat.xx);
     row_extent.y =
         (is_fzero(mat.xy) ? fixed_0 :
-         float2fixed_rounded(width * mat.xy));
+         float2fixed_rounded_boxed(width * mat.xy));
     col_extent.x =
         (is_fzero(mat.yx) ? fixed_0 :
-         float2fixed_rounded(height * mat.yx));
-    col_extent.y = float2fixed_rounded(height * mat.yy);
+         float2fixed_rounded_boxed(height * mat.yx));
+    col_extent.y = float2fixed_rounded_boxed(height * mat.yy);
     gx_image_enum_common_init((gx_image_enum_common_t *)penum,
                               (const gs_data_image_t *)pim,
                               &image1_enum_procs, dev,
@@ -472,14 +484,14 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
     } else {
         int rw = penum->rect.w, rh = penum->rect.h;
 
-        x_extent.x = float2fixed_rounded(rw * mat.xx);
+        x_extent.x = float2fixed_rounded_boxed(rw * mat.xx);
         x_extent.y =
             (is_fzero(mat.xy) ? fixed_0 :
-             float2fixed_rounded(rw * mat.xy));
+             float2fixed_rounded_boxed(rw * mat.xy));
         y_extent.x =
             (is_fzero(mat.yx) ? fixed_0 :
-             float2fixed_rounded(rh * mat.yx));
-        y_extent.y = float2fixed_rounded(rh * mat.yy);
+             float2fixed_rounded_boxed(rh * mat.yx));
+        y_extent.y = float2fixed_rounded_boxed(rh * mat.yy);
     }
     /* Set icolor0 and icolor1 to point to image clues locations if we have
        1spp or an imagemask, otherwise image clues is not used and

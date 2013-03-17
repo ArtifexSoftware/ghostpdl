@@ -403,8 +403,9 @@ sw:	    if ((data = psrc[1]) != 0) {
             /*
              * We've scanned the last run of 0s.
              * Prepare to fill the final run of 1s.
+             * Use int64_t to avoid overflow.
              */
-            n = fixed2int(xl0 + x_extent) - x0;
+            n = fixed2int((int64_t)xl0 + (int64_t)x_extent) - x0;
         } else {		/* Scan a run of ones. */
             /* We know the current bit is a one. */
             data ^= 0xff;	/* un-invert */
