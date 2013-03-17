@@ -44,8 +44,6 @@
 px_operator_proc(pxEndPage);
 px_operator_proc(pxSetPageDefaultCTM);
 
-/* ---------------- Initialization ---------------- */
-
 /* set the font for the error page */
 static px_font_t *
 px_error_setfont(px_state_t *pxs)

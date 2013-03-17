@@ -81,7 +81,7 @@ is_printable(
 )
 {
     int map_type;
-    bool printable;
+    bool printable = false;
 
     if (literal) /* transparent data */
         printable = true;

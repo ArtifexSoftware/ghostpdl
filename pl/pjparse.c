@@ -789,8 +789,9 @@ var:            defaults = (tok == DEFAULT);
                present or search for the name */
             int size;
             /* ignore format binary stuff */
-            if ( ( tok = pjl_get_token(pst, token) ) == FORMATBINARY )
+            if ( ( tok = pjl_get_token(pst, token) ) == FORMATBINARY ) {
                 ;
+            }
             if ( pjl_get_setting(pst, NAME, token) < 0 )
                 return -1;
             strcpy(pathname, token);
@@ -801,8 +802,9 @@ var:            defaults = (tok == DEFAULT);
         }
         case FSAPPEND: {
             int size;
-            if ( ( tok = pjl_get_token(pst, token) ) == FORMATBINARY )
+            if ( ( tok = pjl_get_token(pst, token) ) == FORMATBINARY ) {
                 ;
+            }
             if ( pjl_get_setting(pst, NAME, token) < 0 )
                 return -1;
             strcpy(pathname, token);
@@ -848,8 +850,9 @@ var:            defaults = (tok == DEFAULT);
         case FSUPLOAD: {
             int size;
             int offset;
-            if ( ( tok = pjl_get_token(pst, token) ) == FORMATBINARY )
+            if ( ( tok = pjl_get_token(pst, token) ) == FORMATBINARY ) {
                 ;
+            }
             if ( pjl_get_setting(pst, NAME, token) < 0 )
                 return -1;
             strcpy(pathname, token);

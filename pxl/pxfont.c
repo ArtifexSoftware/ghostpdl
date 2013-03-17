@@ -44,17 +44,6 @@
 
 #include "plfapi.h"
 
-/* ---------------- Initialization ---------------- */
-
-int
-pxfont_init(px_state_t *pxs)
-{       /* Allocate the font directory now. */
-        pxs->font_dir = gs_font_dir_alloc(pxs->memory);
-        if ( pxs->font_dir == 0 )
-          return_error(errorInsufficientMemory);
-        return 0;
-}
-
 /* ---------------- Operator utilities ---------------- */
 
 static const pl_symbol_map_t *

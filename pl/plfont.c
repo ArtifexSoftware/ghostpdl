@@ -672,7 +672,7 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir, gs_memory_
         pbfont->dir = pdir;
         pbfont->is_resource = false;
         gs_notify_init(&pbfont->notify_list, gs_memory_stable(mem));
-        pbfont->base = pbfont;
+        pbfont->base = (gs_font *)pbfont;
         pbfont->client_data = plfont;
         pbfont->WMode = 0;
         pbfont->PaintType = 0;

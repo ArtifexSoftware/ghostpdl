@@ -217,5 +217,3 @@ $(PXLOBJ)pxl.dev: $(PXL_MAK) $(ECHOGS_XE) $(pxl_other_obj) $(pxl_ops_obj)\
 	$(ADDMOD) $(PXLOBJ)pxl $(pxl_ops_obj1)
 	$(ADDMOD) $(PXLOBJ)pxl $(pxl_ops_obj2)
 	$(ADDMOD) $(PXLOBJ)pxl -include $(PLOBJ)pl $(PLOBJ)pjl $(PLOBJ)$(PXL_FONT_SCALER)
-	$(ADDMOD) $(PXLOBJ)pxl -init pxfont pxerrors
-

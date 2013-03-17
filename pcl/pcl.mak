@@ -725,7 +725,8 @@ $(PCLOBJ)pcpage.$(OBJ): $(PCLSRC)pcpage.c   \
                         $(gspaint_h)        \
                         $(gspath_h)         \
                         $(gxdevice_h)       \
-                        $(pjtop_h)
+                        $(pjtop_h)          \
+                        $(rtgmode_h)
 	$(PCLCCC) $(PCLSRC)pcpage.c $(PCLO_)pcpage.$(OBJ)
 
 # Chapter 6

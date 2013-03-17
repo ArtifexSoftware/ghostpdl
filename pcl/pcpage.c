@@ -39,6 +39,7 @@
 #include "gspath.h"
 #include "gxdevice.h"
 #include "pjtop.h"
+#include "rtgmode.h"
 #include <stdlib.h>             /* for atol() */
 
 /*
