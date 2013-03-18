@@ -371,7 +371,7 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
     const byte *cip, *end;
     crypt_state state;
     int c, hhints = 0, vhints = 0;
-    int code;
+    int code, call_depth = 0;
 
     CLEAR_CSTACK(cstack, csp);
     cip = pgd->bits.data;
@@ -450,6 +450,7 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
             }
             break;
         case c2_callgsubr:
+            call_depth++;
             c = fixed2int_var(*csp) + pdata->gsubrNumberBias;
             code = pdata->procs.subr_data
                 (pfont, c, true, &ipsp[1].cs_data);
@@ -462,6 +463,7 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
             end = ipsp->cs_data.bits.data + ipsp->cs_data.bits.size;
             goto call;
         case c_callsubr:
+            call_depth++;
             c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
             code = pdata->procs.subr_data
                 (pfont, c, false, &ipsp[1].cs_data);
@@ -474,6 +476,10 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
             end = ipsp->cs_data.bits.data + ipsp->cs_data.bits.size;
             goto call;
         case c_return:
+            if (call_depth == 0)
+                return (gs_note_error(gs_error_invalidfont));
+            else
+                call_depth--;
             gs_glyph_data_free(&ipsp->cs_data, "gs_type1_piece_codes");
             --ipsp;
             if (ipsp < ipstack)

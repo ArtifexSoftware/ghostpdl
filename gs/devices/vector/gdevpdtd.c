@@ -727,7 +727,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
         if (code < 0)
             return code;
     }
-    if (pfd->embed) {
+    if (pfd->embed && pfd->base_font->FontFile) {
         code = pdf_write_FontFile_entry(pdev, pfd->base_font);
         if (code < 0)
             return code;
