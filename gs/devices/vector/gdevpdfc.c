@@ -1005,9 +1005,16 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 
         pciec = (const gs_cie_common *)pcie;
         if (!pcie->common.MatrixLMN.is_identity) {
+            if (!pdev->UseOldColor) {
+            code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
+            if (ppranges)
+                *ppranges = &pcie->RangeA;
+            } else {
+
             code = pdf_convert_cie_space(pdev, pca, pcs, "GRAY", pciec,
                                          &pcie->RangeA, ONE_STEP_NOT, NULL,
                                          &ranges);
+            }
             break;
         }
         if (unitary && identityA &&
@@ -1022,9 +1029,16 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
                    ) {
             DO_NOTHING;
         } else {
+            if (!pdev->UseOldColor) {
+            code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
+            if (ppranges)
+                *ppranges = &pcie->RangeA;
+            } else {
+
             code = pdf_convert_cie_space(pdev, pca, pcs, "GRAY", pciec,
                                          &pcie->RangeA, ONE_STEP_NOT, NULL,
                                          &ranges);
+            }
             break;
         }
         code = cos_array_add(pca, cos_c_string_value(&v, "/CalGray"));
@@ -1077,9 +1091,16 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
             code = pdf_put_lab_color_space(pca, pcd, pcie->RangeABC.ranges);
             goto cal;
         } else {
+            if (!pdev->UseOldColor) {
+            code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
+            if (ppranges)
+                *ppranges = pcie->RangeABC.ranges;
+            } else {
+
             code = pdf_convert_cie_space(pdev, pca, pcs, "RGB ", pciec,
                                          pcie->RangeABC.ranges,
                                          one_step, pmat, &ranges);
+            }
             break;
         }
     calrgb:
@@ -1112,17 +1133,31 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     goto cal;
 
     case gs_color_space_index_CIEDEF:
+            if (!pdev->UseOldColor) {
+            code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
+            if (ppranges)
+                *ppranges = pcs->params.def->RangeDEF.ranges;
+            } else {
+
         code = pdf_convert_cie_space(pdev, pca, pcs, "RGB ",
                                      (const gs_cie_common *)pcs->params.def,
                                      pcs->params.def->RangeDEF.ranges,
                                      ONE_STEP_NOT, NULL, &ranges);
+            }
         break;
 
     case gs_color_space_index_CIEDEFG:
+            if (!pdev->UseOldColor) {
+            code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
+            if (ppranges)
+                *ppranges = pcs->params.defg->RangeDEFG.ranges;
+            } else {
+
         code = pdf_convert_cie_space(pdev, pca, pcs, "CMYK",
                                      (const gs_cie_common *)pcs->params.defg,
                                      pcs->params.defg->RangeDEFG.ranges,
                                      ONE_STEP_NOT, NULL, &ranges);
+            }
         break;
 
     case gs_color_space_index_Indexed:

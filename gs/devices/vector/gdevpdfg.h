@@ -130,6 +130,8 @@ void pdf_set_initial_color(gx_device_pdf * pdev, gx_hl_saved_color *saved_fill_c
                     gx_hl_saved_color *saved_stroke_color,
                     bool *fill_used_process_color, bool *stroke_used_process_color);
 
+void rescale_cie_color(gs_range_t *ranges, int num_colorants,
+                    const gs_client_color *src, gs_client_color *des);
 /* Set the fill or stroke color. */
 int pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
                 const gx_drawing_color *pdc, gx_hl_saved_color * psc,

@@ -38,6 +38,7 @@
 #include "gscspace.h"
 #include "gsicc_manage.h"
 #include "gsicc_cache.h"
+#include "gsccolor.h"
 
 /* ---------------- Miscellaneous ---------------- */
 
@@ -452,6 +453,7 @@ static int write_color_unchanged(gx_device_pdf * pdev, const gs_imager_state * p
     gs_color_space_index csi, csi2;
     int code;
     const char *command = NULL;
+    gs_range_t *ranges = 0;
 
     csi = csi2 = gs_color_space_get_index(pcs);
     if (csi == gs_color_space_index_ICC) {
@@ -484,7 +486,7 @@ static int write_color_unchanged(gx_device_pdf * pdev, const gs_imager_state * p
             if (!gx_hld_saved_color_same_cspace(current, psc)) {
                 cos_value_t cs_value;
 
-                code = pdf_color_space_named(pdev, &cs_value, NULL, pcs,
+                code = pdf_color_space_named(pdev, &cs_value, &ranges, pcs,
                                 &pdf_color_space_names, true, NULL, 0);
                 /* fixme : creates redundant PDF objects. */
                 if (code == gs_error_rangecheck) {
@@ -497,6 +499,26 @@ static int write_color_unchanged(gx_device_pdf * pdev, const gs_imager_state * p
                 if (code < 0)
                     return code;
                 pprints1(pdev->strm, " %s\n", ppscc->setcolorspace);
+                if (ranges && (csi2 >= gs_color_space_index_CIEDEFG && csi2 <= gs_color_space_index_CIEA)) {
+                    gs_client_color *dcc = (gs_client_color *)pcc;
+                    switch (csi2) {
+                        case gs_color_space_index_CIEDEFG:
+                            rescale_cie_color(ranges, 4, pcc, dcc);
+                            break;
+                        case gs_color_space_index_CIEDEF:
+                            rescale_cie_color(ranges, 3, pcc, dcc);
+                            break;
+                        case gs_color_space_index_CIEABC:
+                            rescale_cie_color(ranges, 3, pcc, dcc);
+                            break;
+                        case gs_color_space_index_CIEA:
+                            rescale_cie_color(ranges, 1, pcc, dcc);
+                            break;
+                        default:
+                            /* can't happen but silences compiler warnings */
+                            break;
+                    }
+                }
                 *used_process_color = false;
                 code = pdf_write_ccolor(pdev, pis, pcc);
                 if (code < 0)
@@ -550,6 +572,19 @@ static int write_color_as_process_ICC(gx_device_pdf * pdev, const gs_imager_stat
     } else if (*used_process_color)
         return write_color_as_process(pdev, pis, pcs, pdc, used_process_color, ppscc, pcc);
     return 0;
+}
+
+void
+rescale_cie_color(gs_range_t *ranges, int num_colorants,
+                    const gs_client_color *src, gs_client_color *des)
+{
+    int k;
+
+    for (k = 0; k < num_colorants; k++) {
+        des->paint.values[k] =
+            (src->paint.values[k]-ranges[k].rmin)/
+            (ranges[k].rmax-ranges[k].rmin);
+    }
 }
 
 static int new_pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
@@ -869,6 +904,7 @@ static int new_pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis
     *psc = temp;
     return code;
 }
+
 /* Set the fill or stroke color. */
 int
 pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
@@ -885,6 +921,8 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
     int code1 = 0;
     gs_color_space_index csi;
     gs_color_space_index csi2;
+    gs_range_t *ranges = 0;
+
 
     if (!pdev->UseOldColor)
         return new_pdf_reset_color(pdev, pis, pdc, psc, used_process_color, ppscc);
@@ -969,7 +1007,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
                 scn:
                     command = ppscc->setcolorn;
                     if (!gx_hld_saved_color_same_cspace(&temp, psc)) {
-                        code = pdf_color_space_named(pdev, &cs_value, NULL, pcs,
+                        code = pdf_color_space_named(pdev, &cs_value, &ranges, pcs,
                                         &pdf_color_space_names, true, NULL, 0);
                         /* fixme : creates redundant PDF objects. */
                         if (code == gs_error_rangecheck) {
@@ -982,6 +1020,26 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
                         if (code < 0)
                             return code;
                         pprints1(pdev->strm, " %s\n", ppscc->setcolorspace);
+                        if (ranges && (csi2 >= gs_color_space_index_CIEDEFG && csi2 <= gs_color_space_index_CIEA)) {
+                            gs_client_color *dcc = (gs_client_color *)pcc;
+                            switch (csi2) {
+                                case gs_color_space_index_CIEDEFG:
+                                    rescale_cie_color(ranges, 4, pcc, dcc);
+                                    break;
+                                case gs_color_space_index_CIEDEF:
+                                    rescale_cie_color(ranges, 3, pcc, dcc);
+                                    break;
+                                case gs_color_space_index_CIEABC:
+                                    rescale_cie_color(ranges, 3, pcc, dcc);
+                                    break;
+                                case gs_color_space_index_CIEA:
+                                    rescale_cie_color(ranges, 1, pcc, dcc);
+                                    break;
+                                default:
+                                    /* Can't happen, but silences compiler warnings */
+                                    break;
+                            }
+                        }
                     } else if (*used_process_color)
                         goto write_process_color;
                     break;
