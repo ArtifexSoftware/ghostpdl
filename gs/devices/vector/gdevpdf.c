@@ -1231,7 +1231,7 @@ pdf_output_page(gx_device * dev, int num_copies, int flush)
 
 static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int64_t start, gs_offset_t resource_pos)
 {
-    int64_t start_offset = (start - pdev->FirstObjectNumber) * sizeof(ulong);
+    int64_t start_offset = (start - pdev->FirstObjectNumber) * sizeof(gs_offset_t);
 
     gp_fseek_64(tfile, start_offset, SEEK_SET);
     {
