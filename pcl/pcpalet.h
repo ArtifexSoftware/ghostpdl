@@ -53,16 +53,17 @@
  * the way all other identified objects are handled in PCL, but it is the
  * mechanism HP selected.
  */
-struct pcl_palette_s {
-    rc_header           rc;
-    pcl_gsid_t          id;
-    pcl_cs_indexed_t *  pindexed;
-    pcl_ht_t *          pht;
+struct pcl_palette_s
+{
+    rc_header rc;
+    pcl_gsid_t id;
+    pcl_cs_indexed_t *pindexed;
+    pcl_ht_t *pht;
 };
 
 #ifndef pcl_palette_DEFINED
 #define pcl_palette_DEFINED
-typedef struct pcl_palette_s    pcl_palette_t;
+typedef struct pcl_palette_s pcl_palette_t;
 #endif
 
 /*
@@ -129,15 +130,10 @@ typedef struct pcl_palette_s    pcl_palette_t;
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_palette_CR(
-    pcl_state_t *   pcs,
-    floatp          wht0,
-    floatp          wht1,
-    floatp          wht2,
-    floatp          blk0,
-    floatp          blk1,
-    floatp          blk2
-);
+int pcl_palette_CR(pcl_state_t * pcs,
+                   floatp wht0,
+                   floatp wht1,
+                   floatp wht2, floatp blk0, floatp blk1, floatp blk2);
 
 /*
  * Set the number of entries in a color palette. This is needed only for the
@@ -173,10 +169,7 @@ int pcl_palette_PW(pcl_state_t * pcs, int pen, floatp width);
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_palette_set_render_method(
-    pcl_state_t *    pcs,
-    uint             render_method
-);
+int pcl_palette_set_render_method(pcl_state_t * pcs, uint render_method);
 
 /*
  * Set gamma correction information for a palette.
@@ -209,10 +202,7 @@ int pcl_palette_set_gamma(pcl_state_t * pcs, float gamma);
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_palette_set_lookup_tbl(
-    pcl_state_t *       pcs,
-    pcl_lookup_tbl_t *  plktbl
-);
+int pcl_palette_set_lookup_tbl(pcl_state_t * pcs, pcl_lookup_tbl_t * plktbl);
 
 /*
  * Set an entry in a color palette.
@@ -220,11 +210,8 @@ int pcl_palette_set_lookup_tbl(
  * Returns 0 on success, < 0 in the event of an error. The returned code will
  * normally be ignored.
  */
-int pcl_palette_set_color(
-    pcl_state_t *   pcs,
-    int             indx,
-    const float     comps[3]
-);
+int pcl_palette_set_color(pcl_state_t * pcs, int indx, const float comps[3]
+    );
 
 /*
  * Set a palette entry to its default color.
@@ -232,20 +219,14 @@ int pcl_palette_set_color(
  * Returns 0 on success, < 0 in the event of an error. The returned code will
  * normally be ignored.
  */
-int pcl_palette_set_default_color(
-    pcl_state_t *   pcs,
-    int             indx
-);
+int pcl_palette_set_default_color(pcl_state_t * pcs, int indx);
 
 /*
  * Set the user-defined dither matrix.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_palette_set_udither(
-    pcl_state_t *   pcs,
-    pcl_udither_t * pdither
-);
+int pcl_palette_set_udither(pcl_state_t * pcs, pcl_udither_t * pdither);
 
 /*
  * Overwrite the current palette with new a new image data configuration.
@@ -262,22 +243,16 @@ int pcl_palette_set_udither(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_palette_set_cid(
-    pcl_state_t *       pcs,
-    pcl_cid_data_t *    pcid,
-    bool                fixed,
-    bool                gl2
-);
+int pcl_palette_set_cid(pcl_state_t * pcs,
+                        pcl_cid_data_t * pcid, bool fixed, bool gl2);
 
 /*
  * Set the view illuminant for a palette.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_palette_set_view_illuminant(
-    pcl_state_t *       pcs,
-    const gs_vector3 *  pwht_pt
-);
+int pcl_palette_set_view_illuminant(pcl_state_t * pcs,
+                                    const gs_vector3 * pwht_pt);
 
 /*
  * Check that all parts of a PCL palette have been built. If not, build the
@@ -290,12 +265,13 @@ int pcl_palette_check_complete(pcl_state_t * pcs);
 /*
  * Entry points to the palette-related commands.
  */
-extern  const pcl_init_t    pcl_palette_init;
-extern  const pcl_init_t    pcl_color_init;
+extern const pcl_init_t pcl_palette_init;
+
+extern const pcl_init_t pcl_color_init;
 
 /* free default objects (pcs->pdfl_*)
  * called at end of process.
  */
-void pcl_free_default_objects(gs_memory_t *mem, pcl_state_t *pcs);
+void pcl_free_default_objects(gs_memory_t * mem, pcl_state_t * pcs);
 
-#endif		/* pcpalet_INCLUDED */
+#endif /* pcpalet_INCLUDED */

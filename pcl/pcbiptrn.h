@@ -26,38 +26,38 @@
  * "non-const" structures, to facilitate working with systems that install all
  * initialized global data in ROM.
  */
-void pcl_pattern_init_bi_patterns( pcl_state_t *pcs );
+void pcl_pattern_init_bi_patterns(pcl_state_t * pcs);
 
 /*
  * Clear the renderings of the built-in patterns. This may be called during
  * a reset to conserve memory.
  */
-void pcl_pattern_clear_bi_patterns(pcl_state_t *pcs);
+void pcl_pattern_clear_bi_patterns(pcl_state_t * pcs);
 
 /*
  * For a given intensity value, return the corresponding shade pattern. A
  * null return indicates that a solid pattern should be used - the caller
  * must look at the intensity to determine if it is black or white.
  */
-pcl_pattern_t * pcl_pattern_get_shade( pcl_state_t *pcs, int inten);
+pcl_pattern_t *pcl_pattern_get_shade(pcl_state_t * pcs, int inten);
 
 /*
  * For a given index value, return the corresponding cross-hatch pattern. A
  * null return indicates that the pattern is out of range. The caller must
  * determine what to do in this case.
  */
-pcl_pattern_t * pcl_pattern_get_cross(pcl_state_t *pcs, int indx);
+pcl_pattern_t *pcl_pattern_get_cross(pcl_state_t * pcs, int indx);
 
 /*
  * Return a solid, 1 x 1 pattern for use with rasters. See the comments in
  * pcbiptrn.c for why this is necessary.
  */
-pcl_pattern_t * pcl_pattern_get_solid_pattern(pcl_state_t *pcs);
+pcl_pattern_t *pcl_pattern_get_solid_pattern(pcl_state_t * pcs);
 
 /*
  * Return an "unsolid", 1 x 1 pattern for use with GL/2. See the comments in
  * pcbiptrn.c for why this is necessary.
  */
-pcl_pattern_t * pcl_pattern_get_unsolid_pattern(pcl_state_t *pcs);
+pcl_pattern_t *pcl_pattern_get_unsolid_pattern(pcl_state_t * pcs);
 
-#endif  	/* pcbiptrn_INCLUDED */
+#endif /* pcbiptrn_INCLUDED */

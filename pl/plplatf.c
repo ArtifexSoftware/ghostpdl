@@ -32,12 +32,12 @@
 
 /* ------------- Platform de/init --------- */
 void
-pl_platform_init(FILE *debug_out)
+pl_platform_init(FILE * debug_out)
 {
     gp_init();
     /* debug flags we reset this out of gs_lib_init0 which sets these
-         and the allocator we want the debug setting but we do our own
-         allocator */
+       and the allocator we want the debug setting but we do our own
+       allocator */
 #ifdef PACIFY_VALGRIND
     VALGRIND_HG_DISABLE_CHECKING(gs_debug, 128);
 #endif

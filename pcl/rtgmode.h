@@ -24,10 +24,7 @@
 #include "pcommand.h"
 
 /* enter raster graphics mode */
-int     pcl_enter_graphics_mode(
-    pcl_state_t *       pcs,
-    pcl_gmode_entry_t   mode
-);
+int pcl_enter_graphics_mode(pcl_state_t * pcs, pcl_gmode_entry_t mode);
 
 /* exit raster graphics mode */
 int pcl_end_graphics_mode(pcl_state_t * pcs);
@@ -35,7 +32,8 @@ int pcl_end_graphics_mode(pcl_state_t * pcs);
 /* exit because a locked out command was detected. */
 int pcl_end_graphics_mode_implicit(pcl_state_t * pcs, bool ignore_in_rtl);
 
-extern  const pcl_init_t    rtgmode_init;
-extern  const pcl_init_t    rtlrastr_init;
+extern const pcl_init_t rtgmode_init;
 
-#endif			/* rtgmode_INCLUDED */
+extern const pcl_init_t rtlrastr_init;
+
+#endif /* rtgmode_INCLUDED */

@@ -29,9 +29,13 @@
  * Return 0 if OK, 1 if must reopen device, or an error code.
  */
 int put_param1_bool(pcl_state_t *, gs_param_name pkey, bool val);
-int put_param1_float(pcl_state_t *, gs_param_name pkey, floatp val);
-int put_param1_int(pcl_state_t *, gs_param_name pkey, int val);
-int put_param1_float_array(pcl_state_t *, gs_param_name pkey, float val_array[2]);
-int put_param1_string(pcl_state_t *pcs, gs_param_name pkey, const char *val);
 
-#endif				/* pcparam_INCLUDED */
+int put_param1_float(pcl_state_t *, gs_param_name pkey, floatp val);
+
+int put_param1_int(pcl_state_t *, gs_param_name pkey, int val);
+
+int put_param1_float_array(pcl_state_t *, gs_param_name pkey,
+                           float val_array[2]);
+int put_param1_string(pcl_state_t * pcs, gs_param_name pkey, const char *val);
+
+#endif /* pcparam_INCLUDED */

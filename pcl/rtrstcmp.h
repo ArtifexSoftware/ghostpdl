@@ -39,7 +39,8 @@
  * There is no separate format for repeated rows. The desired effect can be
  * achieve by create a buffer of type 3 with a size of 0 bytes.
  */
-typedef enum {
+typedef enum
+{
     NO_COMPRESS = 0,
     RUN_LEN_COMPRESS = 1,
     PACKBITS_COMPRESS = 2,
@@ -68,18 +69,17 @@ typedef enum {
  * it is set, the seed row is known to be blank. However, even if it is not
  * set the seed row may still be blank.
  */
-typedef struct  pcl_seed_row_s {
-    ushort  size;
-    bool    is_blank;
-    byte *  pdata;
+typedef struct pcl_seed_row_s
+{
+    ushort size;
+    bool is_blank;
+    byte *pdata;
 } pcl_seed_row_t;
 
 /*
  * The array of decompression functions.
  */
-extern void (*const pcl_decomp_proc[9 + 1])(pcl_seed_row_t *pout,
-                                            const byte *pin,
-                                            int in_size
-                                           );
+extern void (*const pcl_decomp_proc[9 + 1]) (pcl_seed_row_t * pout,
+                                             const byte * pin, int in_size);
 
-#endif			/* rtrstcmp_INCLUDED */
+#endif /* rtrstcmp_INCLUDED */

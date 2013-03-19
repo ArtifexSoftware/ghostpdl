@@ -55,37 +55,39 @@ static const char *UFSTPLUGINS =
     "%rom%fontdata/mtfonts/pcl45/mt3/plug__xi.fco";
 
 static const char *UFSTDIRPARM = "UFST_SSdir=";
+
 static const char *UFSTPLUGINPARM = "UFST_PlugIn=";
+
 extern const char gp_file_name_list_separator;
 
 /* forward declarations for the pl_ff_stub definition */
 static ulong
-pl_fapi_get_long(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index);
+pl_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index);
 
 static int
-pl_fapi_get_cid (gs_font_base *pbfont, gs_string *charstring, gs_string *name,
-                                 int ccode, gs_string *enc_char_name,char *font_file_path,
-                                 gs_fapi_char_ref *cr, bool bCID);
+pl_fapi_get_cid(gs_font_base * pbfont, gs_string * charstring,
+                gs_string * name, int ccode, gs_string * enc_char_name,
+                char *font_file_path, gs_fapi_char_ref * cr, bool bCID);
 
 static int
-pl_fapi_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
+pl_fapi_get_glyph(gs_fapi_font * ff, int char_code, byte * buf,
                   ushort buf_length);
 
 static ushort
-pl_fapi_serialize_tt_font(gs_fapi_font *ff, void *buf, int buf_size);
+pl_fapi_serialize_tt_font(gs_fapi_font * ff, void *buf, int buf_size);
 
 static int
-pl_get_glyphdirectory_data(gs_fapi_font *ff, int char_code,
-                           const byte **ptr);
+pl_get_glyphdirectory_data(gs_fapi_font * ff, int char_code,
+                           const byte ** ptr);
 
 static int
-pl_fapi_set_cache(gs_text_enum_t *penum, const gs_font_base *pbfont,
-                  const gs_string *char_name, int cid,
-                  const double pwidth[2], const gs_rect *pbbox,
-                  const double Metrics2_sbw_default[4], bool *imagenow);
+pl_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
+                  const gs_string * char_name, int cid,
+                  const double pwidth[2], const gs_rect * pbbox,
+                  const double Metrics2_sbw_default[4], bool * imagenow);
 
 static int
-pl_fapi_get_metrics(gs_fapi_font *ff, gs_string *char_name, int cid,
+pl_fapi_get_metrics(gs_fapi_font * ff, gs_string * char_name, int cid,
                     double *m, bool vertical);
 
 static const gs_fapi_font pl_ff_stub = {
@@ -101,7 +103,7 @@ static const gs_fapi_font pl_ff_stub = {
     false,                      /* is_outline_font */
     false,                      /* is_mtx_skipped */
     false,                      /* is_vertical */
-    {{3,10}, {3,1},{-1,-1},{-1,-1}, {-1,-1}},                 /* ttf_cmap_req */
+    {{3, 10}, {3, 1}, {-1, -1}, {-1, -1}, {-1, -1}},    /* ttf_cmap_req */
     0,                          /* client_ctx_p */
     0,                          /* client_font_data */
     0,                          /* client_font_data2 */
@@ -127,9 +129,10 @@ static const gs_fapi_font pl_ff_stub = {
 };
 
 static ulong
-pl_fapi_get_long(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
+pl_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index)
 {
     gs_font *pfont = (gs_font *) ff->client_font_data;
+
     pl_font_t *plfont = (pl_font_t *) pfont->client_data;
 
     ulong value = -1;
@@ -145,30 +148,32 @@ pl_fapi_get_long(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
 }
 
 static int
-pl_fapi_get_cid (gs_font_base *pbfont, gs_string *charstring, gs_string *name,
-                                 int ccode, gs_string *enc_char_name, char *font_file_path,
-                                 gs_fapi_char_ref *cr, bool bCID)
+pl_fapi_get_cid(gs_font_base * pbfont, gs_string * charstring,
+                gs_string * name, int ccode, gs_string * enc_char_name,
+                char *font_file_path, gs_fapi_char_ref * cr, bool bCID)
 {
     pl_font_t *plfont = pbfont->client_data;
+
     gs_glyph vertical, index = ccode;
-    (void) charstring;
-    (void) name;
-    (void) enc_char_name;
-    (void) font_file_path;
-    (void) bCID;
-    
+
+    (void)charstring;
+    (void)name;
+    (void)enc_char_name;
+    (void)font_file_path;
+    (void)bCID;
+
     if (plfont->allow_vertical_substitutes) {
         vertical = pl_font_vertical_glyph(ccode, plfont);
 
-        if ( vertical != gs_no_glyph )
+        if (vertical != gs_no_glyph)
             index = vertical;
     }
     cr->char_codes[0] = index;
-    return(0);
+    return (0);
 }
 
 static int
-pl_fapi_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
+pl_fapi_get_glyph(gs_fapi_font * ff, int char_code, byte * buf,
                   ushort buf_length)
 {
     gs_font *pfont = (gs_font *) ff->client_font_data;
@@ -176,6 +181,7 @@ pl_fapi_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
     /* Zero is a valid size for a TTF glyph, so init to that.
      */
     int size = 0;
+
     gs_glyph_data_t pdata;
 
     if (pl_tt_get_outline((gs_font_type42 *) pfont, char_code, &pdata) == 0) {
@@ -190,11 +196,14 @@ pl_fapi_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
 }
 
 static ushort
-pl_fapi_serialize_tt_font(gs_fapi_font *ff, void *buf, int buf_size)
+pl_fapi_serialize_tt_font(gs_fapi_font * ff, void *buf, int buf_size)
 {
     gs_font *pfont = (gs_font *) ff->client_font_data;
+
     pl_font_t *plfont = (pl_font_t *) pfont->client_data;
+
     short code = -1;
+
     int offset = (plfont->offsets.GT + (plfont->large_sizes ? 6 : 4));
 
     if (buf_size >= (plfont->header_size - offset)) {
@@ -206,53 +215,58 @@ pl_fapi_serialize_tt_font(gs_fapi_font *ff, void *buf, int buf_size)
 }
 
 static int
-pl_get_glyphdirectory_data(gs_fapi_font *ff, int char_code,
-                           const byte **ptr)
+pl_get_glyphdirectory_data(gs_fapi_font * ff, int char_code,
+                           const byte ** ptr)
 {
     return (0);
 }
 
 static int
-pl_fapi_get_metrics(gs_fapi_font *ff, gs_string *char_name, int cid,
+pl_fapi_get_metrics(gs_fapi_font * ff, gs_string * char_name, int cid,
                     double *m, bool vertical)
 {
     return (0);
 }
 
 static int
-pl_fapi_set_cache(gs_text_enum_t *penum, const gs_font_base *pbfont,
-                  const gs_string *char_name, int cid,
-                  const double pwidth[2], const gs_rect *pbbox,
-                  const double Metrics2_sbw_default[4], bool *imagenow)
+pl_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
+                  const gs_string * char_name, int cid,
+                  const double pwidth[2], const gs_rect * pbbox,
+                  const double Metrics2_sbw_default[4], bool * imagenow)
 {
     gs_state *pgs = (gs_state *) penum->pis;
+
     float w2[6];
+
     int code = 0;
+
     gs_fapi_server *I = pbfont->FAPI;
-    
-    if ((penum->text.operation & TEXT_DO_DRAW) && (pbfont->WMode & 1) && pwidth[0] == 1.0 ) {
+
+    if ((penum->text.operation & TEXT_DO_DRAW) && (pbfont->WMode & 1)
+        && pwidth[0] == 1.0) {
         gs_rect tmp_pbbox;
+
         gs_matrix save_ctm;
-        const gs_matrix id_ctm = {1.0, 0.0, 0.0, 1.0, 0.0, 0.0}; 
+        const gs_matrix id_ctm = { 1.0, 0.0, 0.0, 1.0, 0.0, 0.0 };
         /* This is kind of messy, but the cache entry has already been calculated
            using the in-force matrix. The problem is that we have to call gs_setcachedevice
            with the in-force matrix, not the rotated one, so we have to recalculate the extents
            to be correct for the rotated glyph.
          */
-        
+
         /* save the ctm */
         gs_currentmatrix(pgs, &save_ctm);
         gs_setmatrix(pgs, &id_ctm);
-        
+
         /* magic numbers - we don't completelely understand
-          the translation magic used by HP.  This provides a
-          good approximation */
-        gs_translate(pgs, 1.0/1.15, -(1.0 - 1.0/1.15));
+           the translation magic used by HP.  This provides a
+           good approximation */
+        gs_translate(pgs, 1.0 / 1.15, -(1.0 - 1.0 / 1.15));
         gs_rotate(pgs, 90);
-        
+
         gs_transform(pgs, pbbox->p.x, pbbox->p.y, &tmp_pbbox.p);
         gs_transform(pgs, pbbox->q.x, pbbox->q.y, &tmp_pbbox.q);
-        
+
         w2[0] = pwidth[0];
         w2[1] = pwidth[1];
         w2[2] = tmp_pbbox.p.x;
@@ -261,8 +275,7 @@ pl_fapi_set_cache(gs_text_enum_t *penum, const gs_font_base *pbfont,
         w2[5] = tmp_pbbox.q.y;
 
         gs_setmatrix(pgs, &save_ctm);
-    }
-    else {
+    } else {
         w2[0] = pwidth[0];
         w2[1] = pwidth[1];
         w2[2] = pbbox->p.x;
@@ -272,28 +285,28 @@ pl_fapi_set_cache(gs_text_enum_t *penum, const gs_font_base *pbfont,
     }
 
     if (pbfont->PaintType) {
-        double expand =
-            max(1.415,
-                gs_currentmiterlimit(pgs)) * gs_currentlinewidth(pgs) / 2;
+        double expand = max(1.415,
+                            gs_currentmiterlimit(pgs)) *
+            gs_currentlinewidth(pgs) / 2;
 
         w2[2] -= expand;
         w2[3] -= expand;
         w2[4] += expand;
         w2[5] += expand;
     }
-    
+
     if (I->ff.embolden != 0) {
-          code = gs_setcharwidth((gs_show_enum *)penum, pgs, w2[0], w2[1]);
-    }
-    else {
-        if ((code = gs_setcachedevice((gs_show_enum *)penum, pgs, w2)) < 0) {
-            return(code);
+        code = gs_setcharwidth((gs_show_enum *) penum, pgs, w2[0], w2[1]);
+    } else {
+        if ((code = gs_setcachedevice((gs_show_enum *) penum, pgs, w2)) < 0) {
+            return (code);
         }
     }
 
-    if ((penum->text.operation & TEXT_DO_DRAW) && (pbfont->WMode & 1) && pwidth[0] == 1.0 ) {
+    if ((penum->text.operation & TEXT_DO_DRAW) && (pbfont->WMode & 1)
+        && pwidth[0] == 1.0) {
         *imagenow = false;
-        return(gs_error_unknownerror);
+        return (gs_error_unknownerror);
     }
 
     *imagenow = true;
@@ -301,10 +314,11 @@ pl_fapi_set_cache(gs_text_enum_t *penum, const gs_font_base *pbfont,
 }
 
 static int
-pl_fapi_set_cache_rotate(gs_text_enum_t *penum, const gs_font_base *pbfont,
-                  const gs_string *char_name, int cid,
-                  const double pwidth[2], const gs_rect *pbbox,
-                  const double Metrics2_sbw_default[4], bool *imagenow)
+pl_fapi_set_cache_rotate(gs_text_enum_t * penum, const gs_font_base * pbfont,
+                         const gs_string * char_name, int cid,
+                         const double pwidth[2], const gs_rect * pbbox,
+                         const double Metrics2_sbw_default[4],
+                         bool * imagenow)
 {
     *imagenow = true;
     return (0);
@@ -312,21 +326,25 @@ pl_fapi_set_cache_rotate(gs_text_enum_t *penum, const gs_font_base *pbfont,
 
 
 static int
-pl_fapi_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
+pl_fapi_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
                    gs_char chr, gs_glyph glyph)
 {
     int code;
+
     gs_matrix save_ctm;
-    gs_font_base *pbfont = (gs_font_base *)pfont;
+
+    gs_font_base *pbfont = (gs_font_base *) pfont;
+
     pl_font_t *plfont = (pl_font_t *) pfont->client_data;
+
     gs_fapi_server *I = pbfont->FAPI;
-    
+
     I->ff.embolden = plfont->bold_fraction;
     I->ff.is_mtx_skipped = plfont->is_xl_format;
 
     code =
-        gs_fapi_do_char(pfont, pgs, (gs_text_enum_t *)penum, NULL, false, NULL,
-                        NULL, chr, glyph, 0);
+        gs_fapi_do_char(pfont, pgs, (gs_text_enum_t *) penum, NULL, false,
+                        NULL, NULL, chr, glyph, 0);
 
     if (code == gs_error_unknownerror) {
         gs_fapi_font tmp_ff;
@@ -337,16 +355,16 @@ pl_fapi_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
         gs_currentmatrix(pgs, &save_ctm);
 
         /* magic numbers - we don't completelely understand
-          the translation magic used by HP.  This provides a
-          good approximation */
-        gs_translate(pgs, 1.0/1.15, -(1.0 - 1.0/1.15));
+           the translation magic used by HP.  This provides a
+           good approximation */
+        gs_translate(pgs, 1.0 / 1.15, -(1.0 - 1.0 / 1.15));
         gs_rotate(pgs, 90);
 
         I->ff.fapi_set_cache = pl_fapi_set_cache_rotate;
 
         code =
-            gs_fapi_do_char(pfont, pgs, (gs_text_enum_t *)penum, NULL, false, NULL,
-                        NULL, chr, glyph, 0);
+            gs_fapi_do_char(pfont, pgs, (gs_text_enum_t *) penum, NULL, false,
+                            NULL, NULL, chr, glyph, 0);
 
         I->ff.fapi_set_cache = tmp_ff.fapi_set_cache;
 
@@ -360,22 +378,23 @@ pl_fapi_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 
 /* FIXME: environment variables.... */
 const char *
-pl_fapi_ufst_get_fco_list(gs_memory_t *mem)
+pl_fapi_ufst_get_fco_list(gs_memory_t * mem)
 {
     return (UFSTFCOS);
 }
 
 const char *
-pl_fapi_ufst_get_font_dir(gs_memory_t *mem)
+pl_fapi_ufst_get_font_dir(gs_memory_t * mem)
 {
     return (UFSTFONTDIR);
 }
 
 static void
-pl_get_server_param(gs_fapi_server *I, const char *subtype,
+pl_get_server_param(gs_fapi_server * I, const char *subtype,
                     char **server_param, int *server_param_size)
 {
     int length = 0;
+
     char SEPARATOR_STRING[2];
 
     SEPARATOR_STRING[0] = (char)gp_file_name_list_separator;
@@ -394,8 +413,7 @@ pl_get_server_param(gs_fapi_server *I, const char *subtype,
         strcat((char *)*server_param, (char *)SEPARATOR_STRING);
         strcat((char *)*server_param, (char *)UFSTPLUGINPARM);
         strcat((char *)*server_param, (char *)UFSTPLUGINS);
-    }
-    else {
+    } else {
         *server_param = NULL;
         *server_param_size = length;
     }
@@ -403,21 +421,21 @@ pl_get_server_param(gs_fapi_server *I, const char *subtype,
 
 
 static inline int
-pl_fapi_get_mtype_font_info(gs_font *pfont, gs_fapi_font_info item,
+pl_fapi_get_mtype_font_info(gs_font * pfont, gs_fapi_font_info item,
                             void *data, int *size)
 {
     return (gs_fapi_get_font_info(pfont, item, 0, data, size));
 }
 
 int
-pl_fapi_get_mtype_font_name(gs_font *pfont, byte *data, int *size)
+pl_fapi_get_mtype_font_name(gs_font * pfont, byte * data, int *size)
 {
     return (pl_fapi_get_mtype_font_info
             (pfont, gs_fapi_font_info_name, data, size));
 }
 
 int
-pl_fapi_get_mtype_font_number(gs_font *pfont, int *font_number)
+pl_fapi_get_mtype_font_number(gs_font * pfont, int *font_number)
 {
     int size = (int)sizeof(*font_number);
 
@@ -426,7 +444,7 @@ pl_fapi_get_mtype_font_number(gs_font *pfont, int *font_number)
 }
 
 int
-pl_fapi_get_mtype_font_spaceBand(gs_font *pfont, uint *spaceBand)
+pl_fapi_get_mtype_font_spaceBand(gs_font * pfont, uint * spaceBand)
 {
     int size = (int)sizeof(*spaceBand);
 
@@ -435,7 +453,7 @@ pl_fapi_get_mtype_font_spaceBand(gs_font *pfont, uint *spaceBand)
 }
 
 int
-pl_fapi_get_mtype_font_scaleFactor(gs_font *pfont, uint *scaleFactor)
+pl_fapi_get_mtype_font_scaleFactor(gs_font * pfont, uint * scaleFactor)
 {
     int size = (int)sizeof(*scaleFactor);
 
@@ -444,26 +462,35 @@ pl_fapi_get_mtype_font_scaleFactor(gs_font *pfont, uint *scaleFactor)
 }
 
 static int
-pl_fapi_char_metrics(const pl_font_t *plfont, const void *vpgs,
+pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
                      gs_char char_code, float metrics[4])
 {
     int code = 0;
+
     gs_text_enum_t *penum;
+
     gs_font *pfont = plfont->pfont;
-    gs_font_base *pbfont = (gs_font_base *)pfont;
+
+    gs_font_base *pbfont = (gs_font_base *) pfont;
+
     gs_text_params_t text;
+
     gs_char buf[2];
+
     gs_state *pgs = (gs_state *) vpgs;
+
     /* NAFF: undefined glyph would be better handled inside FAPI */
     gs_char chr = char_code;
+
     gs_glyph unused_glyph = gs_no_glyph;
+
     gs_glyph glyph;
-    gs_matrix  mat;
+
+    gs_matrix mat;
 
     if (pfont->FontType == ft_MicroType) {
         glyph = char_code;
-    }
-    else {
+    } else {
         glyph = pl_tt_encode_char(pfont, chr, unused_glyph);
     }
 
@@ -476,11 +503,9 @@ pl_fapi_char_metrics(const pl_font_t *plfont, const void *vpgs,
 
     /* undefined character */
     if (glyph == 0xffff || glyph == gs_no_glyph) {
-        metrics[0] = metrics[1] = 
-            metrics[2] = metrics[3] = 0;
+        metrics[0] = metrics[1] = metrics[2] = metrics[3] = 0;
         code = 1;
-    }
-    else {
+    } else {
         gs_fapi_server *I = pbfont->FAPI;
 
         gs_gsave(pgs);
@@ -490,7 +515,7 @@ pl_fapi_char_metrics(const pl_font_t *plfont, const void *vpgs,
         mat.xx = 72;
         mat.yy = 72;
         gs_setmatrix(pgs, &mat);
-        
+
         I->ff.is_mtx_skipped = plfont->is_xl_format;
 
         code = gs_moveto(pgs, 0.0, 0.0);
@@ -521,10 +546,11 @@ pl_fapi_char_metrics(const pl_font_t *plfont, const void *vpgs,
 }
 
 static int
-pl_fapi_char_width(const pl_font_t *plfont, const void *pgs, gs_char char_code,
-                   gs_point *pwidth)
+pl_fapi_char_width(const pl_font_t * plfont, const void *pgs,
+                   gs_char char_code, gs_point * pwidth)
 {
     float metrics[4];
+
     int code = 0;
 
     code = pl_fapi_char_metrics(plfont, pgs, char_code, metrics);
@@ -536,25 +562,29 @@ pl_fapi_char_width(const pl_font_t *plfont, const void *pgs, gs_char char_code,
 }
 
 static gs_glyph
-pl_fapi_encode_char(gs_font *pfont, gs_char pchr, gs_glyph_space_t not_used)
+pl_fapi_encode_char(gs_font * pfont, gs_char pchr, gs_glyph_space_t not_used)
 {
     return (gs_glyph) pchr;
 }
 
 int
-pl_fapi_passfont(pl_font_t *plfont, int subfont, char *fapi_request,
-                 char *file_name, byte *font_data, int font_data_len)
+pl_fapi_passfont(pl_font_t * plfont, int subfont, char *fapi_request,
+                 char *file_name, byte * font_data, int font_data_len)
 {
     char *fapi_id = NULL;
+
     int code = 0;
+
     gs_string fdata;
+
     gs_font *pfont = plfont->pfont;
+
     gs_fapi_font local_pl_ff_stub;
 
     if (!gs_fapi_available(pfont->memory, NULL)) {
         return (code);
     }
-    
+
     local_pl_ff_stub = pl_ff_stub;
     local_pl_ff_stub.is_mtx_skipped = plfont->is_xl_format;
 
@@ -565,22 +595,24 @@ pl_fapi_passfont(pl_font_t *plfont, int subfont, char *fapi_request,
      * to pbfont makes as much sense as setting it to NULL.
      */
     gs_fapi_set_servers_client_data(pfont->memory,
-                  (const gs_fapi_font *)&local_pl_ff_stub, pfont);
+                                    (const gs_fapi_font *)&local_pl_ff_stub,
+                                    pfont);
 
     code =
-        gs_fapi_passfont(pfont, subfont, (char *)file_name, &fdata, (char *)fapi_request,
-                         NULL, (char **)&fapi_id,
-                         (gs_fapi_get_server_param_callback)pl_get_server_param);
+        gs_fapi_passfont(pfont, subfont, (char *)file_name, &fdata,
+                         (char *)fapi_request, NULL, (char **)&fapi_id,
+                         (gs_fapi_get_server_param_callback)
+                         pl_get_server_param);
 
     if (pfont->FontType == ft_MicroType && code < 0) {
-        return(code);
+        return (code);
     }
 
     /* For now, we'll fall back to AFS
        We should return an error in the future.
      */
     if (code < 0 || fapi_id == NULL) {
-        return(0);
+        return (0);
     }
 
     pfont->procs.build_char = pl_fapi_build_char;
@@ -594,18 +626,17 @@ pl_fapi_passfont(pl_font_t *plfont, int subfont, char *fapi_request,
 }
 
 bool
-pl_fapi_ufst_available(gs_memory_t *mem)
+pl_fapi_ufst_available(gs_memory_t * mem)
 {
     gs_fapi_server *serv = NULL;
-    int code =
-        gs_fapi_find_server(mem, (char *)"UFST", &serv,
-                            (gs_fapi_get_server_param_callback)
-                            pl_get_server_param);
+
+    int code = gs_fapi_find_server(mem, (char *)"UFST", &serv,
+                                   (gs_fapi_get_server_param_callback)
+                                   pl_get_server_param);
 
     if (code == 0 && serv != NULL) {
         return (true);
-    }
-    else {
+    } else {
         return (false);
     }
 }

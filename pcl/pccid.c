@@ -34,25 +34,25 @@
 
 /* CID accessors */
 pcl_cspace_type_t
-pcl_cid_get_cspace(const pcl_cid_data_t *pcid)
+pcl_cid_get_cspace(const pcl_cid_data_t * pcid)
 {
     return pcid->u.hdr.cspace;
 }
 
 pcl_encoding_type_t
-pcl_cid_get_encoding(const pcl_cid_data_t *pcid)
+pcl_cid_get_encoding(const pcl_cid_data_t * pcid)
 {
     return pcid->u.hdr.encoding;
 }
 
 byte
-pcl_cid_get_bits_per_index(const pcl_cid_data_t *pcid)
+pcl_cid_get_bits_per_index(const pcl_cid_data_t * pcid)
 {
     return pcid->u.hdr.bits_per_index;
 }
 
 byte
-pcl_cid_get_bits_per_primary(const pcl_cid_data_t *pcid, int index)
+pcl_cid_get_bits_per_primary(const pcl_cid_data_t * pcid, int index)
 {
     return pcid->u.hdr.bits_per_primary[index];
 }
@@ -60,21 +60,21 @@ pcl_cid_get_bits_per_primary(const pcl_cid_data_t *pcid, int index)
 
 #define WHITE_CS "White"
 
-static const char * const pcl_csnames[] = {
-    "RGB", "CMY", 
+static const char *const pcl_csnames[] = {
+    "RGB", "CMY",
     "Colorimetric", "CIE",
     "LumChrom"
 };
 
-static const char * const pcl_encnames[] = {
+static const char *const pcl_encnames[] = {
     "Indexed By Plane", "Indexed By Pixel",
     "Direct By Plane", "Direct By Pixel"
 };
 
 const char *
-pcl_cid_cspace_get_debug_name(const gs_memory_t *mem, int index)
+pcl_cid_cspace_get_debug_name(const gs_memory_t * mem, int index)
 {
-    if (index == -1) 
+    if (index == -1)
         return WHITE_CS;
 
     if (index < 0 || index >= countof(pcl_csnames)) {
@@ -86,7 +86,7 @@ pcl_cid_cspace_get_debug_name(const gs_memory_t *mem, int index)
 }
 
 const char *
-pcl_cid_enc_get_debug_name(const gs_memory_t *mem, int index)
+pcl_cid_enc_get_debug_name(const gs_memory_t * mem, int index)
 {
     if (index < 0 || index >= countof(pcl_encnames)) {
         dmprintf(mem, "index out of range\n");
@@ -106,18 +106,17 @@ pcl_cid_enc_get_debug_name(const gs_memory_t *mem, int index)
  * of non-numbers (+-inf, nan); there are not enough non-IEEE processors that
  * this code is likely to run on to make the effort worth-while.
  */
-  static float
-make_float(
-    const byte *    pbuff
-)
+static float
+make_float(const byte * pbuff)
 {
-    union {
-        float   f;
-        uint32  l;
-    }               lf;
+    union
+    {
+        float f;
+        uint32 l;
+    } lf;
 
-    lf.l = (((uint32)pbuff[0]) << 24) + (((uint32)pbuff[1]) << 16)
-           + (((uint32)pbuff[2]) << 8) + pbuff[3];
+    lf.l = (((uint32) pbuff[0]) << 24) + (((uint32) pbuff[1]) << 16)
+        + (((uint32) pbuff[2]) << 8) + pbuff[3];
 
 #if (ARCH_FLOATS_ARE_IEEE && (ARCH_SIZEOF_FLOAT == 4))
     return lf.f;
@@ -125,10 +124,10 @@ make_float(
     if (lf.l == 0L)
         return 0.0;
     else
-        return ldexp( (double)((1L << 23) | (lf.l & ((1L << 23) - 1))),
-                      (((lf.l >> 23) & 0xff) - (127 + 23))
-                      )
-                * ( (lf.l & (1UL << 31)) != 0 ? -1.0 : 1.0 );
+        return ldexp((double)((1L << 23) | (lf.l & ((1L << 23) - 1))),
+                     (((lf.l >> 23) & 0xff) - (127 + 23))
+            )
+            * ((lf.l & (1UL << 31)) != 0 ? -1.0 : 1.0);
 #endif
 }
 
@@ -136,12 +135,8 @@ make_float(
  * Convert an array of 32-bit floats from the HP big-endian form into the
  * native form required by the host processor.
  */
-  static void
-convert_float_array(
-    int             num_floats,
-    const byte *    pinbuff,
-    float *         poutbuff
-)
+static void
+convert_float_array(int num_floats, const byte * pinbuff, float *poutbuff)
 {
     while (num_floats-- > 0) {
         (*poutbuff++) = make_float(pinbuff);;
@@ -152,29 +147,23 @@ convert_float_array(
 /*
  * Convert a 16-bit integer in HP's big-endian order into native byte order.
  */
-  static int
-make_int16(
-    const byte *    pbuff
-)
+static int
+make_int16(const byte * pbuff)
 {
-    ulong           l;
+    ulong l;
 
-    l = (((ulong)pbuff[0]) << 8) + pbuff[1];
-    return (int)((int16)l);
+    l = (((ulong) pbuff[0]) << 8) + pbuff[1];
+    return (int)((int16) l);
 }
 
 /*
  * Convert an array of 16-bit integers from HP's big-endian form to the
  * native byte order required by the host processor.
  */
-  static void
-convert_int16_array(
-    int             num_ints,
-    const byte *    pinbuff,
-    int16 *         poutbuff
-)
+static void
+convert_int16_array(int num_ints, const byte * pinbuff, int16 * poutbuff)
 {
-    while(num_ints-- > 0) {
+    while (num_ints-- > 0) {
         *poutbuff++ = make_int16(pinbuff);
         pinbuff += 2;
     }
@@ -184,13 +173,10 @@ convert_int16_array(
  * Build the  various long-form configure image data structures.
  * Returns 0 on success, < 0 in case of an error.
  */
-  static int
-build_cid_dev_long(
-    pcl_cid_data_t *        pcid,
-    const byte *            pbuff
-)
+static int
+build_cid_dev_long(pcl_cid_data_t * pcid, const byte * pbuff)
 {
-    pcl_cid_dev_long_t *    pdev = &(pcid->u.dev);
+    pcl_cid_dev_long_t *pdev = &(pcid->u.dev);
 
     if (pcid->len != 18)
         return e_Range;
@@ -206,18 +192,16 @@ static void
 normalize_cid_minmax_valrange_long(float *minmax)
 {
     int i;
-    for ( i = 0; i < 6; i++ ) {
+
+    for (i = 0; i < 6; i++) {
         minmax[i] /= 255;
     }
 }
 
-  static int
-build_cid_col_long(
-    pcl_cid_data_t *        pcid,
-    const byte *            pbuff
-)
+static int
+build_cid_col_long(pcl_cid_data_t * pcid, const byte * pbuff)
 {
-    pcl_cid_col_long_t *    pcol = &(pcid->u.col);
+    pcl_cid_col_long_t *pcol = &(pcid->u.col);
 
     if (pcid->len != 86)
         return e_Range;
@@ -228,13 +212,10 @@ build_cid_col_long(
     return 0;
 }
 
-  static int
-build_cid_lab_long(
-    pcl_cid_data_t *        pcid,
-    const byte *            pbuff
-)
+static int
+build_cid_lab_long(pcl_cid_data_t * pcid, const byte * pbuff)
 {
-    pcl_cid_Lab_long_t *    plab = &(pcid->u.lab);
+    pcl_cid_Lab_long_t *plab = &(pcid->u.lab);
 
     if (pcid->len != 30)
         return e_Range;
@@ -242,13 +223,10 @@ build_cid_lab_long(
     return 0;
 }
 
-  static int
-build_cid_lum_long(
-    pcl_cid_data_t *        pcid,
-    const byte *            pbuff
-)
+static int
+build_cid_lum_long(pcl_cid_data_t * pcid, const byte * pbuff)
 {
-    pcl_cid_lum_long_t *    plum = &(pcid->u.lum);
+    pcl_cid_lum_long_t *plum = &(pcid->u.lum);
 
     if (pcid->len != 122)
         return e_Range;
@@ -259,12 +237,12 @@ build_cid_lum_long(
     return 0;
 }
 
-static int (*const build_cid_longform[])( pcl_cid_data_t *, const byte * ) = {
-    build_cid_dev_long, /* pcl_cspace_RGB */
-    build_cid_dev_long, /* pcl_cspace_CMY */
-    build_cid_col_long, /* pcl_cspace_Colorimetric */
-    build_cid_lab_long, /* pcl_cspace_CIELab */
-    build_cid_lum_long  /* pcl_cspace_LumChrom */
+static int (*const build_cid_longform[]) (pcl_cid_data_t *, const byte *) = {
+    build_cid_dev_long,         /* pcl_cspace_RGB */
+        build_cid_dev_long,     /* pcl_cspace_CMY */
+        build_cid_col_long,     /* pcl_cspace_Colorimetric */
+        build_cid_lab_long,     /* pcl_cspace_CIELab */
+        build_cid_lum_long      /* pcl_cspace_LumChrom */
 };
 
 /*
@@ -272,22 +250,21 @@ static int (*const build_cid_longform[])( pcl_cid_data_t *, const byte * ) = {
  *
  * Returns 0 on success, < 0 in case of an error.
  */
-  static int
-check_cid_hdr(
-      pcl_state_t *pcs,
-      pcl_cid_data_t *pcid
-)
+static int
+check_cid_hdr(pcl_state_t * pcs, pcl_cid_data_t * pcid)
 {
     pcl_cid_hdr_t *pcidh = &(pcid->u.hdr);
-    int           i;
 
-    if ((pcidh->cspace >= pcl_cspace_num) || (pcidh->encoding >= pcl_penc_num))
+    int i;
+
+    if ((pcidh->cspace >= pcl_cspace_num)
+        || (pcidh->encoding >= pcl_penc_num))
         return -1;
 
     /* apparently direct by pixel encoding mode defaults bits per
        index to 8 */
     if (pcidh->encoding == pcl_penc_direct_by_pixel)
-      pcidh->bits_per_index = 8;
+        pcidh->bits_per_index = 8;
 
     /*
      * Map zero values. Zero bits per index is equivalent to one bit per index;
@@ -298,38 +275,39 @@ check_cid_hdr(
     for (i = 0; i < countof(pcidh->bits_per_primary); i++) {
         if (pcidh->bits_per_primary[i] == 0)
             pcidh->bits_per_primary[i] = 8;
-        if ( pcs->personality == pcl5e && pcidh->bits_per_primary[i] != 1 )
-            dmprintf(pcs->memory, "pcl5e personality with color primaries\n" );
+        if (pcs->personality == pcl5e && pcidh->bits_per_primary[i] != 1)
+            dmprintf(pcs->memory, "pcl5e personality with color primaries\n");
     }
 
     switch (pcidh->encoding) {
 
-      case pcl_penc_indexed_by_pixel:
-        if ((pcidh->bits_per_index & (pcidh->bits_per_index - 1)) != 0)
-            return -1;
-        /* fall through */
+        case pcl_penc_indexed_by_pixel:
+            if ((pcidh->bits_per_index & (pcidh->bits_per_index - 1)) != 0)
+                return -1;
+            /* fall through */
 
-      case pcl_penc_indexed_by_plane:
-        if (pcidh->bits_per_index > 8)
-            return -1;
-        break;
+        case pcl_penc_indexed_by_plane:
+            if (pcidh->bits_per_index > 8)
+                return -1;
+            break;
 
-      case pcl_penc_direct_by_plane:
-        /* must be device-specific color space */
-        if ((pcidh->cspace != pcl_cspace_RGB) && (pcidh->cspace != pcl_cspace_CMY))
-            return -1;
-        if ( (pcidh->bits_per_primary[0] != 1) ||
-             (pcidh->bits_per_primary[1] != 1) ||
-             (pcidh->bits_per_primary[2] != 1)   )
-            return -1;
-        break;
+        case pcl_penc_direct_by_plane:
+            /* must be device-specific color space */
+            if ((pcidh->cspace != pcl_cspace_RGB)
+                && (pcidh->cspace != pcl_cspace_CMY))
+                return -1;
+            if ((pcidh->bits_per_primary[0] != 1) ||
+                (pcidh->bits_per_primary[1] != 1) ||
+                (pcidh->bits_per_primary[2] != 1))
+                return -1;
+            break;
 
-      case pcl_penc_direct_by_pixel:
-        if ( (pcidh->bits_per_primary[0] != 8) ||
-             (pcidh->bits_per_primary[1] != 8) ||
-             (pcidh->bits_per_primary[2] != 8)   )
-            return -1;
-        break;
+        case pcl_penc_direct_by_pixel:
+            if ((pcidh->bits_per_primary[0] != 8) ||
+                (pcidh->bits_per_primary[1] != 8) ||
+                (pcidh->bits_per_primary[2] != 8))
+                return -1;
+            break;
     }
 
     /*
@@ -337,13 +315,12 @@ check_cid_hdr(
      * is always 8. For the direct by plane/pixel cases, this will already be
      * the case, but the indexed by pixel/plane cases may require modification.
      */
-    if ( (pcidh->encoding < pcl_penc_direct_by_plane) &&
-         (pcidh->cspace > pcl_cspace_CMY)               ) {
+    if ((pcidh->encoding < pcl_penc_direct_by_plane) &&
+        (pcidh->cspace > pcl_cspace_CMY)) {
         pcidh->bits_per_primary[0] = 8;
         pcidh->bits_per_primary[1] = 8;
         pcidh->bits_per_primary[2] = 8;
     }
-
 #ifdef ALL_TO_SRGB
     /* the short form of CIE Lab and "LumChrom" are replaced with sRGB
        on the HP 4600 */
@@ -354,7 +331,8 @@ check_cid_hdr(
 #endif
 
     /* if the device handles color conversion remap the colorimetric color space to rgb */
-    if (pl_device_does_color_conversion() && pcidh->cspace == pcl_cspace_Colorimetric) {
+    if (pl_device_does_color_conversion()
+        && pcidh->cspace == pcl_cspace_Colorimetric) {
         pcidh->cspace = pcl_cspace_RGB;
         pcid->len = 6;
     }
@@ -363,32 +341,41 @@ check_cid_hdr(
 }
 
 static int
-substitute_colorimetric_cs(
-           pcl_state_t *pcs,
-           pcl_cid_data_t *pcid
-)
+substitute_colorimetric_cs(pcl_state_t * pcs, pcl_cid_data_t * pcid)
 {
-    pcl_cid_col_long_t *    pcol = &(pcid->u.col);
+    pcl_cid_col_long_t *pcol = &(pcid->u.col);
+
     /* it might be desirable to make these partameters for the
        substitute color space configurable for now they are set here
        to reasonable values */
     floatp gamma = 2.2;
+
     floatp gain = 1.0;
+
     floatp min1 = 0.0;
+
     floatp min2 = 0.0;
+
     floatp min3 = 0.0;
+
     floatp max1 = 1.0;
+
     floatp max2 = 1.0;
+
     floatp max3 = 1.0;
+
     /* just override the color space we use the other header values
        from the old device dependent color space */
     pcid->original_cspace = pcid->u.hdr.cspace;
     pcid->u.hdr.cspace = pcl_cspace_Colorimetric;
     pcid->len = 122;
 
-    pcol->colmet.nonlin[0].gamma = gamma; pcol->colmet.nonlin[0].gain = gain;
-    pcol->colmet.nonlin[1].gamma = gamma; pcol->colmet.nonlin[1].gain = gain;
-    pcol->colmet.nonlin[2].gamma = gamma; pcol->colmet.nonlin[2].gain = gain;
+    pcol->colmet.nonlin[0].gamma = gamma;
+    pcol->colmet.nonlin[0].gain = gain;
+    pcol->colmet.nonlin[1].gamma = gamma;
+    pcol->colmet.nonlin[1].gain = gain;
+    pcol->colmet.nonlin[2].gamma = gamma;
+    pcol->colmet.nonlin[2].gain = gain;
 
     pcol->minmax.val_range[0].min_val = min1;
     pcol->minmax.val_range[1].min_val = min2;
@@ -399,10 +386,14 @@ substitute_colorimetric_cs(
     pcol->minmax.val_range[2].max_val = max3;
 
     /* reasonable chroma values...  These could be paramaterized as well.  */
-    pcol->colmet.chroma[0].x = 0.640f; pcol->colmet.chroma[0].y = 0.340f; /* red */
-    pcol->colmet.chroma[1].x = 0.310f; pcol->colmet.chroma[1].y = 0.595f; /* green */
-    pcol->colmet.chroma[2].x = 0.155f; pcol->colmet.chroma[2].y = 0.070f; /* blue */
-    pcol->colmet.chroma[3].x = 0.313f; pcol->colmet.chroma[3].y = 0.329f; /* white */
+    pcol->colmet.chroma[0].x = 0.640f;
+    pcol->colmet.chroma[0].y = 0.340f;  /* red */
+    pcol->colmet.chroma[1].x = 0.310f;
+    pcol->colmet.chroma[1].y = 0.595f;  /* green */
+    pcol->colmet.chroma[2].x = 0.155f;
+    pcol->colmet.chroma[2].y = 0.070f;  /* blue */
+    pcol->colmet.chroma[3].x = 0.313f;
+    pcol->colmet.chroma[3].y = 0.329f;  /* white */
     return 0;
 }
 
@@ -412,44 +403,49 @@ substitute_colorimetric_cs(
  *
  * Returns 0 if successful, < 0 in case of error.
  */
-  static int
-install_cid_data(
-    int                 len,        /* length of data */
-    const byte *        pbuff,      /* the data provided with command */
-    pcl_state_t *       pcs,        /* current state */
-    bool                fixed,      /* from set simple color mode */
-    bool                gl2         /* from IN command in GL/2 */
-)
+static int
+install_cid_data(int len,       /* length of data */
+                 const byte * pbuff,    /* the data provided with command */
+                 pcl_state_t * pcs,     /* current state */
+                 bool fixed,    /* from set simple color mode */
+                 bool gl2       /* from IN command in GL/2 */
+    )
 {
-    pcl_cid_data_t      cid;
-    int                 code = 0;
+    pcl_cid_data_t cid;
 
-    if ( len < 6 )
+    int code = 0;
+
+    if (len < 6)
         return e_Range;
     cid.len = len;
     memcpy(&(cid.u.hdr), pbuff, sizeof(pcl_cid_hdr_t));
 
-    if_debug2m('c', pcs->memory, "[c] cid before check color space: %s encoding: %s\n",
-               pcl_cid_cspace_get_debug_name(pcs->memory, pcl_cid_get_cspace(&cid)), 
-               pcl_cid_enc_get_debug_name(pcs->memory, pcl_cid_get_encoding(&cid)));
+    if_debug2m('c', pcs->memory,
+               "[c] cid before check color space: %s encoding: %s\n",
+               pcl_cid_cspace_get_debug_name(pcs->memory,
+                                             pcl_cid_get_cspace(&cid)),
+               pcl_cid_enc_get_debug_name(pcs->memory,
+                                          pcl_cid_get_encoding(&cid)));
 
     /* check the header this will also make corrections if possible */
     code = check_cid_hdr(pcs, &cid);
 
-    if_debug2m('c', pcs->memory, "[c] cid after check color space: %s encoding: %s\n",
-               pcl_cid_cspace_get_debug_name(pcs->memory, pcl_cid_get_cspace(&cid)), 
-               pcl_cid_enc_get_debug_name(pcs->memory, pcl_cid_get_encoding(&cid)));
+    if_debug2m('c', pcs->memory,
+               "[c] cid after check color space: %s encoding: %s\n",
+               pcl_cid_cspace_get_debug_name(pcs->memory,
+                                             pcl_cid_get_cspace(&cid)),
+               pcl_cid_enc_get_debug_name(pcs->memory,
+                                          pcl_cid_get_encoding(&cid)));
 
     if (code >= 0) {
         /* check if we should substitute colometric for a device color space */
-        if ( (pcl_cid_get_cspace(&cid) >= pcl_cspace_RGB) &&
-             (pcl_cid_get_cspace(&cid) <= pcl_cspace_CMY) &&
-             pcs->useciecolor )
+        if ((pcl_cid_get_cspace(&cid) >= pcl_cspace_RGB) &&
+            (pcl_cid_get_cspace(&cid) <= pcl_cspace_CMY) && pcs->useciecolor)
             code = substitute_colorimetric_cs(pcs, &cid);
         else {
             cid.original_cspace = pcl_cspace_num;
             if (cid.len > 6)
-                code = build_cid_longform[pbuff[0]](&cid, pbuff);
+                code = build_cid_longform[pbuff[0]] (&cid, pbuff);
         }
     }
     if (code < 0) {
@@ -465,22 +461,22 @@ install_cid_data(
  *  overwrite the current palette. This routine is separated out because it
  *  is required by both the simple color space command and the reset code.
  */
-  static int
-set_simple_color_mode(
-    int             type,
-    pcl_state_t *   pcs
-)
+static int
+set_simple_color_mode(int type, pcl_state_t * pcs)
 {
-    static const byte   cid_K[6]   = { (byte)pcl_cspace_RGB,
-                                       (byte)pcl_penc_indexed_by_plane,
-                                        1, 1, 1, 1 };
-    static const byte   cid_CMY[6] = { (byte)pcl_cspace_CMY,
-                                       (byte)pcl_penc_indexed_by_plane,
-                                        3, 1, 1, 1 };
-    static const byte   cid_RGB[6] = { (byte)pcl_cspace_RGB,
-                                       (byte)pcl_penc_indexed_by_plane,
-                                        3, 1, 1, 1 };
-    const byte *        pbuff = 0;
+    static const byte cid_K[6] = { (byte) pcl_cspace_RGB,
+        (byte) pcl_penc_indexed_by_plane,
+        1, 1, 1, 1
+    };
+    static const byte cid_CMY[6] = { (byte) pcl_cspace_CMY,
+        (byte) pcl_penc_indexed_by_plane,
+        3, 1, 1, 1
+    };
+    static const byte cid_RGB[6] = { (byte) pcl_cspace_RGB,
+        (byte) pcl_penc_indexed_by_plane,
+        3, 1, 1, 1
+    };
+    const byte *pbuff = 0;
 
     if (type == 1)
         pbuff = cid_K;
@@ -501,20 +497,13 @@ set_simple_color_mode(
  * This command creates only the basic element of the the palette: the cid_data
  * array. Other parts are created as needed.
  */
-  static int
-pcl_configure_image_data(
-    pcl_args_t *        pargs,
-    pcl_state_t *       pcs
-)
+static int
+pcl_configure_image_data(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
+    if (pcs->personality == pcl5e || pcs->raster_state.graphics_mode)
         return 0;
-    return install_cid_data( uint_arg(pargs),
-                             arg_data(pargs),
-                             pcs,
-                             false,
-                             false
-                             );
+    return install_cid_data(uint_arg(pargs),
+                            arg_data(pargs), pcs, false, false);
 }
 
 /*
@@ -523,13 +512,10 @@ pcl_configure_image_data(
  * Simple color space command. Note that all the simple color spaces are
  * variations of the RGB/CMY device-specific color space.
  */
-  static int
-pcl_simple_color_space(
-    pcl_args_t *        pargs,
-    pcl_state_t *       pcs
-)
+static int
+pcl_simple_color_space(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
+    if (pcs->personality == pcl5e || pcs->raster_state.graphics_mode)
         return 0;
     return set_simple_color_mode(int_arg(pargs), pcs);
 }
@@ -545,18 +531,18 @@ pcl_simple_color_space(
  * This routine will convert the whitepoint to the form anticipated by the
  * gs_cie_render structure (i.e., Y = 1.0).
  */
-  static int
-set_view_illuminant(
-    pcl_args_t *        pargs,
-    pcl_state_t *       pcs
-)
+static int
+set_view_illuminant(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    uint                len = uint_arg(pargs);
-    const byte *        pbuff = arg_data(pargs);
-    float               x, y;
-    gs_vector3          wht_pt;
+    uint len = uint_arg(pargs);
 
-    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
+    const byte *pbuff = arg_data(pargs);
+
+    float x, y;
+
+    gs_vector3 wht_pt;
+
+    if (pcs->personality == pcl5e || pcs->raster_state.graphics_mode)
         return 0;
 
     if (len != 8)
@@ -586,22 +572,23 @@ set_view_illuminant(
  *
  * Returns 0 on success, < 0 in case of an error.
  */
-  int
-pcl_cid_IN(
-    pcl_state_t *       pcs
-)
+int
+pcl_cid_IN(pcl_state_t * pcs)
 {
-    static const byte   cid_GL2_Color[6] = { (byte)pcl_cspace_RGB,
-                                             (byte)pcl_penc_indexed_by_plane,
-                                             3, 8, 8, 8 };
+    static const byte cid_GL2_Color[6] = { (byte) pcl_cspace_RGB,
+        (byte) pcl_penc_indexed_by_plane,
+        3, 8, 8, 8
+    };
 
-    static const byte   cid_GL2_Mono[6] =  { (byte)pcl_cspace_RGB,
-                                             (byte)pcl_penc_indexed_by_plane,
-                                             3, 1, 1, 1 };
+    static const byte cid_GL2_Mono[6] = { (byte) pcl_cspace_RGB,
+        (byte) pcl_penc_indexed_by_plane,
+        3, 1, 1, 1
+    };
 
     return install_cid_data(6,
-                            pcs->personality == pcl5e ? cid_GL2_Mono : cid_GL2_Color,
-                            pcs, false, true);
+                            pcs->personality ==
+                            pcl5e ? cid_GL2_Mono : cid_GL2_Color, pcs, false,
+                            true);
 }
 
 /*
@@ -610,11 +597,12 @@ pcl_cid_IN(
  */
 
 int
-pcl_cid_CCITT_raster(pcl_state_t *pcs)
+pcl_cid_CCITT_raster(pcl_state_t * pcs)
 {
-    static const byte cid_ccitt[6] = { (byte)pcl_cspace_RGB,
-                                       (byte)pcl_penc_indexed_by_plane,
-                                       1, 1, 1, 1 };
+    static const byte cid_ccitt[6] = { (byte) pcl_cspace_RGB,
+        (byte) pcl_penc_indexed_by_plane,
+        1, 1, 1, 1
+    };
     return install_cid_data(6, cid_ccitt, pcs, false, true);
 }
 
@@ -623,42 +611,38 @@ pcl_cid_CCITT_raster(pcl_state_t *pcs)
  * required is performed at the palette level. Similarly, there is no reset
  * code, as reset is handled at the palette level.
  */
-  static int
-pcl_cid_do_registration(
-    pcl_parser_state_t *pcl_parser_state,
-    gs_memory_t *   pmem
-)
+static int
+pcl_cid_do_registration(pcl_parser_state_t * pcl_parser_state,
+                        gs_memory_t * pmem)
 {
-    DEFINE_CLASS('*')
-    {
+    DEFINE_CLASS('*') {
         'v', 'W',
-        PCL_COMMAND("Configure Image Data", pcl_configure_image_data, pca_bytes | pca_in_rtl | pca_raster_graphics)
-    },
-    {
+            PCL_COMMAND("Configure Image Data", pcl_configure_image_data,
+                        pca_bytes | pca_in_rtl | pca_raster_graphics)
+    }, {
         'r', 'U',
-        PCL_COMMAND("Simple Color Mode", pcl_simple_color_space, pca_neg_ok | pca_in_rtl | pca_raster_graphics)
-    },
-    {
+            PCL_COMMAND("Simple Color Mode", pcl_simple_color_space,
+                        pca_neg_ok | pca_in_rtl | pca_raster_graphics)
+    }, {
         'i', 'W',
-        PCL_COMMAND("Set Viewing Illuminant", set_view_illuminant, pca_bytes | pca_in_rtl | pca_raster_graphics)
-    },
-    END_CLASS
-    return 0;
+            PCL_COMMAND("Set Viewing Illuminant", set_view_illuminant,
+                        pca_bytes | pca_in_rtl | pca_raster_graphics)
+    }, END_CLASS return 0;
 }
 
 static void
-pcl_cid_do_reset(pcl_state_t *       pcs,
-          pcl_reset_type_t    type
-)
+pcl_cid_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     static const uint mask = (pcl_reset_initial |
-                              pcl_reset_cold |
-                              pcl_reset_printer);
+                              pcl_reset_cold | pcl_reset_printer);
 
-    if ( (type & mask) != 0 ) {
+    if ((type & mask) != 0) {
         pcs->useciecolor = !pjl_proc_compare(pcs->pjls,
-                            pjl_proc_get_envvar(pcs->pjls, "useciecolor"), "on");
+                                             pjl_proc_get_envvar(pcs->pjls,
+                                                                 "useciecolor"),
+                                             "on");
     }
 }
 
-const pcl_init_t pcl_cid_init = { pcl_cid_do_registration, pcl_cid_do_reset, 0 };
+const pcl_init_t pcl_cid_init =
+    { pcl_cid_do_registration, pcl_cid_do_reset, 0 };

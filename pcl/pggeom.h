@@ -21,7 +21,7 @@
 #  define pggeom_INCLUDED
 
 #include "math_.h"
-#include "gstypes.h" /* for gs_point */
+#include "gstypes.h"            /* for gs_point */
 
 /* ------ Useful conversions ------ */
 
@@ -46,19 +46,19 @@ floatp hpgl_compute_angle(floatp dx, floatp dy);
 
 /* compute the center of an arc given 3 points on the arc */
 int hpgl_compute_arc_center(floatp x1, floatp y1, floatp x2,
-                               floatp y2, floatp x3, floatp y3,
-                               floatp *pcx, floatp *pcy);
+                            floatp y2, floatp x3, floatp y3,
+                            floatp * pcx, floatp * pcy);
 
 /* compute the coordinates of a point on an arc */
 int hpgl_compute_arc_coords(floatp radius, floatp center_x,
-                               floatp center_y, floatp angle,
-                               floatp *px, floatp *py);
+                            floatp center_y, floatp angle,
+                            floatp * px, floatp * py);
 
 /* given a start point, angle (degrees) and magnitude of a vector compute its
    endpoints */
 int hpgl_compute_vector_endpoints(floatp magnitude, floatp x, floatp y,
-                                     floatp angle_degrees, floatp *endx,
-                                     floatp *endy);
+                                  floatp angle_degrees, floatp * endx,
+                                  floatp * endy);
 
 /* ------ 3-point arcs ------ */
 
@@ -89,4 +89,4 @@ int hpgl_compute_vector_endpoints(floatp magnitude, floatp x, floatp y,
 /* equal endpoints */
 #define hpgl_3_same_endpoints(x1, y1, x2, y2, x3, y3) \
         (equal2((x1), (x3), (y1), (y3)))
-#endif                                /* pggeom_INCLUDED */
+#endif /* pggeom_INCLUDED */

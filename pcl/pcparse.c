@@ -50,11 +50,10 @@ pcl_register_command(byte * pindex, const pcl_command_definition_t * pcmd,
              && pcl_parser_state->definitions->pcl_command_list[index] ==
              pcmd);
     else
-        pcl_parser_state->definitions->pcl_command_list[pcl_parser_state->
-                                                        definitions->
-                                                        pcl_command_next_index
-                                                        = ++index] =
-            (pcl_command_definition_t *) pcmd;
+        pcl_parser_state->definitions->
+            pcl_command_list
+            [pcl_parser_state->definitions->pcl_command_next_index =
+             ++index] = (pcl_command_definition_t *) pcmd;
     *pindex = index;
     return (prev != 0 && prev != index);
 }
@@ -72,9 +71,9 @@ pcl_define_control_command(int /*char */ chr,
         if_debug1('I', "Invalid control character %d\n", chr);
     else if (
 #endif
-                pcl_register_command(&pcl_parser_state->definitions->
-                                     pcl_control_command_indices[chr], pcmd,
-                                     pcl_parser_state)
+                pcl_register_command(&pcl_parser_state->
+                                     definitions->pcl_control_command_indices
+                                     [chr], pcmd, pcl_parser_state)
 #ifdef DEBUG
         )
         if_debug1('I', "Redefining control character %d\n", chr);
@@ -91,10 +90,10 @@ pcl_define_escape_command(int /*char */ chr,
         if_debug1('I', "Invalid escape character %c\n", chr);
     else if (
 #endif
-                pcl_register_command(&pcl_parser_state->definitions->
-                                     pcl_escape_command_indices[chr -
-                                                                min_escape_2char],
-                                     pcmd, pcl_parser_state)
+                pcl_register_command(&pcl_parser_state->
+                                     definitions->pcl_escape_command_indices
+                                     [chr - min_escape_2char], pcmd,
+                                     pcl_parser_state)
 #ifdef DEBUG
         )
         if_debug1('I', "Redefining ESC %c\n", chr)
@@ -108,7 +107,7 @@ pcl_define_escape_command(int /*char */ chr,
 static const byte pcl_escape_class_indices[max_escape_class -
                                            min_escape_class + 1] = {
     0, 0, 0, 0, 1 /*% */ , 2 /*& */ , 0, 3 /*( */ , 4 /*) */ , 5 /***/ , 0, 0,
-        0, 0, 0
+    0, 0, 0
 };
 
 void
@@ -125,8 +124,8 @@ pcl_define_class_command(int /*char */ class, int /*char */ group,
         if_debug3('I', "Invalid command %c %c %c\n", class, group, command);
     else if (
 #endif
-                pcl_register_command(&pcl_parser_state->definitions->
-                                     pcl_grouped_command_indices
+                pcl_register_command(&pcl_parser_state->
+                                     definitions->pcl_grouped_command_indices
                                      [pcl_escape_class_indices
                                       [class - min_escape_class] - 1]
                                      [group ==
@@ -170,15 +169,16 @@ pcl_get_command_definition(pcl_parser_state_t * pcl_parser_state,
     if (class == 0) {
         if (command >= min_escape_2char && command <= max_escape_2char)
             cdefn = pcl_parser_state->definitions->pcl_command_list
-                [pcl_parser_state->definitions->
-                 pcl_escape_command_indices[command - min_escape_2char]];
+                [pcl_parser_state->
+                 definitions->pcl_escape_command_indices[command -
+                                                         min_escape_2char]];
     } else {
         int class_index = pcl_escape_class_indices[class - min_escape_class];
 
         if (class_index)
             cdefn = pcl_parser_state->definitions->pcl_command_list
-                [pcl_parser_state->definitions->
-                 pcl_grouped_command_indices[class_index - 1]
+                [pcl_parser_state->
+                 definitions->pcl_grouped_command_indices[class_index - 1]
                  [group ? group - min_escape_group + 1 : 0]
                  [command - min_escape_command]
                 ];
@@ -313,11 +313,14 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
 #ifdef DEBUG
                     if (gs_debug_c('i')) {
                         int i;
-                        dmprintf(pcs->memory,"Scanned Data:\n");
-                        for (i=0; i<count; i++) {
-                            dmprintf2(pcs->memory, "%02x%c", pst->args.data[i],
-                                     (i % 16 == 15 || i == count - 1) ?
-                                     '\n' : ' ');
+
+                        dmprintf(pcs->memory, "Scanned Data:\n");
+                        for (i = 0; i < count; i++) {
+                            dmprintf2(pcs->memory, "%02x%c",
+                                      pst->args.data[i], (i % 16 == 15
+                                                          || i ==
+                                                          count -
+                                                          1) ? '\n' : ' ');
                         }
                     }
 #endif
@@ -330,7 +333,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     break;
                 }
             case scanning_display:
-                {                    
+                {
                     /* Display, don't execute, all characters. */
                     chr = *++p;
                     if (chr == ESC) {
@@ -341,12 +344,13 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                         if (p[1] >= min_escape_2char
                             && p[1] <= max_escape_2char
                             && (index =
-                                pst->definitions->
-                                pcl_escape_command_indices[p[1] -
-                                                           min_escape_2char])
+                                pst->
+                                definitions->pcl_escape_command_indices[p[1] -
+                                                                        min_escape_2char])
                             != 0
-                            && pst->definitions->pcl_command_list[index]->
-                            proc == pcl_disable_display_functions) {
+                            && pst->definitions->
+                            pcl_command_list[index]->proc ==
+                            pcl_disable_display_functions) {
                             if (do_display_functions()) {
                                 pst->args.command = chr;
                                 code = pcl_plain_char(&pst->args, pcs);
@@ -407,9 +411,11 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     if (value_is_present(&avalue)) {
                         dmputc(pcs->memory, ' ');
                         if (value_is_signed(&avalue))
-                            dmputc(pcs->memory, (value_is_neg(&avalue) ? '-' : '+'));
+                            dmputc(pcs->memory,
+                                   (value_is_neg(&avalue) ? '-' : '+'));
                         if (value_is_float(&avalue))
-                            dmprintf1(pcs->memory, "%g", avalue.i + avalue.fraction);
+                            dmprintf1(pcs->memory, "%g",
+                                      avalue.i + avalue.fraction);
                         else
                             dmprintf1(pcs->memory, "%u", avalue.i);
                     }
@@ -477,6 +483,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     if ((*(p + 1) == 'I' && *(p + 2) == 'N') ||
                         (*(p + 1) == 'D' && *(p + 2) == 'F')) {
                         pcl_args_t args;
+
                         arg_set_uint(&args, 0);
                         rtl_enter_hpgl_mode(&args, pcs);
                     }
@@ -521,8 +528,9 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                         [chr < 33 ?
                          pst->definitions->pcl_control_command_indices[chr] :
                          pst->definitions->pcl_control_command_indices[1]];
-                    if ((cdefn == 0 || cdefn->proc == pcl_plain_char) && 
-                        !in_macro && !pcs->parse_other && !pcs->raster_state.graphics_mode) {  
+                    if ((cdefn == 0 || cdefn->proc == pcl_plain_char) &&
+                        !in_macro && !pcs->parse_other
+                        && !pcs->raster_state.graphics_mode) {
                         /* Look ahead for a run of plain text.  We can
                            be very conservative about this, because
                            this is only a performance enhancement. */
@@ -558,7 +566,8 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                             --p;
                             continue;
                         }
-                        if_debug1m('i', pcs->memory, "   [%s]\n", cdefn->cname);
+                        if_debug1m('i', pcs->memory, "   [%s]\n",
+                                   cdefn->cname);
                     } else {
                         if (p >= rlimit) {
                             p -= 2;
@@ -571,7 +580,8 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                             chr = 0;
                         }
                         pst->param_group = chr;
-                        if_debug2m('i', pcs->memory, "ESC %c %c\n", pst->param_class, chr);
+                        if_debug2m('i', pcs->memory, "ESC %c %c\n",
+                                   pst->param_class, chr);
                         pst->scan_type = scanning_parameter;
                         param_init();
                         continue;
@@ -583,7 +593,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
             param_init();
             continue;
         }
-        if (!in_macro || (cdefn->actions & pca_in_macro)) {     
+        if (!in_macro || (cdefn->actions & pca_in_macro)) {
             /* This might be the end-of-macro command. */
             /* Make sure all the data through this point */
             /* has been captured in the macro definition. */
@@ -597,10 +607,13 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
             if (!pcs->raster_state.graphics_mode ||
                 (cdefn->actions & pca_raster_graphics) ||
                 (code = pcl_end_graphics_mode_implicit(pcs,
-                      cdefn->actions & pca_dont_lockout_in_rtl)) >= 0) {
-                if ((pcs->personality != rtl) ||
-                    ((pcs->personality == rtl)
-                     && (cdefn->actions & pca_in_rtl)))
+                                                       cdefn->
+                                                       actions &
+                                                       pca_dont_lockout_in_rtl))
+                >= 0) {
+                if ((pcs->personality != rtl) || ((pcs->personality == rtl)
+                                                  && (cdefn->
+                                                      actions & pca_in_rtl)))
                     code = (*cdefn->proc) (&pst->args, pcs);
             }
             /*
@@ -618,13 +631,13 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
 #endif
             } else if (code < 0)
                 break;
-            if (pcs->display_functions) {       
+            if (pcs->display_functions) {
                 /* This calls for a special parsing state. */
                 pst->scan_type = scanning_display;
             }
-            if (pcs->defining_macro && !in_macro) {     
+            if (pcs->defining_macro && !in_macro) {
                 /* We just started a macro definition. */
-                if (pst->scan_type != scanning_none) {  
+                if (pst->scan_type != scanning_none) {
                     /* combinded command started macro */
                     /* start definition of macro with esc& preloaded */
                     static const byte macro_prefix[3] = " \033&";
@@ -634,7 +647,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                 macro_p = p;
             }
             in_macro = pcs->defining_macro;
-        } else {                
+        } else {
             /*
              * If we allocated a buffer for command data,
              * free it now.

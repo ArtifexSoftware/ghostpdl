@@ -31,10 +31,10 @@
  * components.
  */
 static const gs_matrix rot_mtx[4] = {
-    {  1.0,  0.0,  0.0,  1.0,  0.0,  0.0 },     /*   0 degrees */
-    {  0.0, -1.0,  1.0,  0.0,  0.0,  0.0 },     /*  90 degrees */
-    { -1.0,  0.0,  0.0, -1.0,  0.0,  0.0 },     /* 180 degrees */
-    {  0.0,  1.0, -1.0,  0.0,  0.0,  0.0 }      /* 270 degrees */
+    {1.0, 0.0, 0.0, 1.0, 0.0, 0.0},     /*   0 degrees */
+    {0.0, -1.0, 1.0, 0.0, 0.0, 0.0},    /*  90 degrees */
+    {-1.0, 0.0, 0.0, -1.0, 0.0, 0.0},   /* 180 degrees */
+    {0.0, 1.0, -1.0, 0.0, 0.0, 0.0}     /* 270 degrees */
 };
 
 /*
@@ -47,19 +47,19 @@ static const gs_matrix rot_mtx[4] = {
  * NB: This routine ASSUMES that *pmtx1 is non singular. This is always the
  *     case for PCL, but obviously may not be in a more general setting.
  */
-  void
-pcl_invert_mtx(
-    const gs_matrix *   pmtx1,
-    gs_matrix *         pmtx2
-)
+void
+pcl_invert_mtx(const gs_matrix * pmtx1, gs_matrix * pmtx2)
 {
-    float               xx = pmtx1->xx;
-    float               tx = pmtx1->tx;
-    float               ty = pmtx1->ty;
+    float xx = pmtx1->xx;
+
+    float tx = pmtx1->tx;
+
+    float ty = pmtx1->ty;
 
     if (xx == 0.0) {
-        float   xy = pmtx1->xy;
-        float   yx = pmtx1->yx;
+        float xy = pmtx1->xy;
+
+        float yx = pmtx1->yx;
 
         pmtx2->xx = 0.0;
         pmtx2->xy = 1.0 / yx;
@@ -69,7 +69,7 @@ pcl_invert_mtx(
         pmtx2->ty = -tx / yx;
 
     } else {
-        float   yy = pmtx1->yy;
+        float yy = pmtx1->yy;
 
         pmtx2->xx = 1.0 / xx;
         pmtx2->xy = 0.0;
@@ -88,22 +88,20 @@ pcl_invert_mtx(
  * prect1 and prect2 may point to the same rectangle.
  */
 void
-pcl_transform_rect(const gs_memory_t *mem,
-                   const gs_rect *     prect1,
-                   gs_rect *           prect2,
-                   const gs_matrix *   pmtx
-)
+pcl_transform_rect(const gs_memory_t * mem,
+                   const gs_rect * prect1,
+                   gs_rect * prect2, const gs_matrix * pmtx)
 {
     gs_point_transform(prect1->p.x, prect1->p.y, pmtx, &(prect2->p));
     gs_point_transform(prect1->q.x, prect1->q.y, pmtx, &(prect2->q));
     if (prect2->p.x > prect2->q.x) {
-        double  ftmp = prect2->p.x;
+        double ftmp = prect2->p.x;
 
         prect2->p.x = prect2->q.x;
         prect2->q.x = ftmp;
     }
     if (prect2->p.y > prect2->q.y) {
-        double  ftmp = prect2->p.y;
+        double ftmp = prect2->p.y;
 
         prect2->p.y = prect2->q.y;
         prect2->q.y = ftmp;
@@ -128,13 +126,8 @@ pcl_transform_rect(const gs_memory_t *mem,
  * desired change of orientation, and the dimensions of the rectangular
  * region (in the original coordinate system).
  */
-  void
-pcl_make_rotation(
-    int           rot,
-    floatp        width,
-    floatp        height,
-    gs_matrix *   pmtx
-)
+void
+pcl_make_rotation(int rot, floatp width, floatp height, gs_matrix * pmtx)
 {
     *pmtx = rot_mtx[rot & 0x3];
     if (pmtx->xx + pmtx->yx < 0.0)
@@ -186,13 +179,12 @@ pcl_make_rotation(
 /*
  * Convert a floating point number that is nearly an integer to an integer.
  */
-  static floatp
-adjust_param(
-    floatp  val
-)
+static floatp
+adjust_param(floatp val)
 {
-    floatp  fval = floor(val);
-    floatp  cval = ceil(val);
+    floatp fval = floor(val);
+
+    floatp cval = ceil(val);
 
     return (val - fval < .001 ? fval : (cval - val < .001 ? cval : val));
 }
@@ -200,15 +192,13 @@ adjust_param(
 /*
  * Form the transformation matrix required to render a pattern.
  */
-  void
-pcl_xfm_get_pat_xfm(
-    const pcl_state_t *     pcs,
-    pcl_pattern_t *         pptrn,
-    gs_matrix *             pmat
-)
+void
+pcl_xfm_get_pat_xfm(const pcl_state_t * pcs,
+                    pcl_pattern_t * pptrn, gs_matrix * pmat)
 {
-    const pcl_xfm_state_t * pxfmst = &(pcs->xfm_state);
-    int                     rot = (pcs->pat_orient - pxfmst->lp_orient) & 0x3;
+    const pcl_xfm_state_t *pxfmst = &(pcs->xfm_state);
+
+    int rot = (pcs->pat_orient - pxfmst->lp_orient) & 0x3;
 
     *pmat = pxfmst->lp2dev_mtx;
     pmat->tx = pcs->pat_ref_pt.x;
@@ -222,11 +212,9 @@ pcl_xfm_get_pat_xfm(
         gs_matrix_multiply(&(rot_mtx[rot]), pmat, pmat);
 
     /* scale to the appropriate resolution (before print direction rotation) */
-    gs_matrix_scale( pmat,
-                     inch2coord(1.0 / (floatp)pptrn->ppat_data->xres),
-                     inch2coord(1.0 / (floatp)pptrn->ppat_data->yres),
-                     pmat
-                     );
+    gs_matrix_scale(pmat,
+                    inch2coord(1.0 / (floatp) pptrn->ppat_data->xres),
+                    inch2coord(1.0 / (floatp) pptrn->ppat_data->yres), pmat);
 
     /* avoid parameters that are slightly different from integers */
     pmat->xx = adjust_param(pmat->xx);
@@ -243,10 +231,8 @@ pcl_xfm_get_pat_xfm(
  * page parameters change. (This would be better done via a reset, but
  * unfortunately there was no reset created for this category of even.)
  */
-  void
-pcl_xfm_reset_pcl_pat_ref_pt(
-    pcl_state_t *   pcs
-)
+void
+pcl_xfm_reset_pcl_pat_ref_pt(pcl_state_t * pcs)
 {
     pcs->pcl_pat_ref_pt.x = 0.0;
     pcs->pcl_pat_ref_pt.y = 0.0;
@@ -262,22 +248,20 @@ pcl_xfm_reset_pcl_pat_ref_pt(
  * Set up the pattern orientation and reference point for PCL. Note that PCL's
  * pattern reference point is kept in logical page space.
  */
-  void
-pcl_xfm_pcl_set_pat_ref_pt(
-    pcl_state_t *       pcs
-)
+void
+pcl_xfm_pcl_set_pat_ref_pt(pcl_state_t * pcs)
 {
-    pcl_xfm_state_t *   pxfmst = &(pcs->xfm_state);
+    pcl_xfm_state_t *pxfmst = &(pcs->xfm_state);
 
-    gs_point_transform(	pcs->pcl_pat_ref_pt.x,
-                        pcs->pcl_pat_ref_pt.y,
-                        &(pxfmst->lp2dev_mtx),
-                        &(pcs->pat_ref_pt)
-                        );
+    gs_point_transform(pcs->pcl_pat_ref_pt.x,
+                       pcs->pcl_pat_ref_pt.y,
+                       &(pxfmst->lp2dev_mtx), &(pcs->pat_ref_pt)
+        );
     pcs->pat_ref_pt.x = floor(pcs->pat_ref_pt.x + 0.5);
     pcs->pat_ref_pt.y = floor(pcs->pat_ref_pt.y + 0.5);
     pcs->pat_orient = (pxfmst->lp_orient
-                       + (pcs->rotate_patterns ? pxfmst->print_dir : 0)) & 0x3;
+                       +
+                       (pcs->rotate_patterns ? pxfmst->print_dir : 0)) & 0x3;
 }
 
 /*
@@ -285,19 +269,17 @@ pcl_xfm_pcl_set_pat_ref_pt(
  * is taken as being in the current GL space, and the current transform is
  * assumed properly set. The orientation is that of the logical page.
  */
-  void
-pcl_xfm_gl_set_pat_ref_pt(
-    pcl_state_t *   pcs
-)
+void
+pcl_xfm_gl_set_pat_ref_pt(pcl_state_t * pcs)
 {
-    gs_transform( pcs->pgs,
-                  pcs->g.anchor_corner.x,
-                  pcs->g.anchor_corner.y,
-                  &(pcs->pat_ref_pt)
-                  );
+    gs_transform(pcs->pgs,
+                 pcs->g.anchor_corner.x,
+                 pcs->g.anchor_corner.y, &(pcs->pat_ref_pt)
+        );
     pcs->pat_ref_pt.x = floor(pcs->pat_ref_pt.x + 0.5);
     pcs->pat_ref_pt.y = floor(pcs->pat_ref_pt.y + 0.5);
-    pcs->pat_orient = (pcs->xfm_state.lp_orient + (pcs->g.rotation / 90)) & 0x3;
+    pcs->pat_orient =
+        (pcs->xfm_state.lp_orient + (pcs->g.rotation / 90)) & 0x3;
 }
 
 /*
@@ -306,21 +288,17 @@ pcl_xfm_gl_set_pat_ref_pt(
  * Set pattern reference point.
  *
  */
-  static int
-set_pat_ref_pt(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+set_pat_ref_pt(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    uint            rotate = uint_arg(pargs);
+    uint rotate = uint_arg(pargs);
 
     if (rotate <= 1) {
         pcl_break_underline(pcs);
-        gs_point_transform( (floatp)pcs->cap.x,
-                            (floatp)pcs->cap.y,
-                            &(pcs->xfm_state.pd2lp_mtx),
-                            &(pcs->pcl_pat_ref_pt)
-                            );
+        gs_point_transform((floatp) pcs->cap.x,
+                           (floatp) pcs->cap.y,
+                           &(pcs->xfm_state.pd2lp_mtx), &(pcs->pcl_pat_ref_pt)
+            );
         pcs->rotate_patterns = (rotate == 0);
     }
     return 0;
@@ -332,22 +310,15 @@ set_pat_ref_pt(
  * routine is required, as a reset of the logical page will reset the pattern
  * reference point as well.
  */
-  static int
-xfm_do_registration(
-    pcl_parser_state_t *pcl_parser_state,
-    gs_memory_t *   pmem
-)
+static int
+xfm_do_registration(pcl_parser_state_t * pcl_parser_state, gs_memory_t * pmem)
 {
-    DEFINE_CLASS('*')
-    {
+    DEFINE_CLASS('*') {
         'p', 'R',
-        PCL_COMMAND( "Pattern Reference Point",
-                     set_pat_ref_pt,
-                     pca_neg_ok | pca_big_ignore | pca_in_rtl
-                     )
-    },
-    END_CLASS
-    return 0;
+            PCL_COMMAND("Pattern Reference Point",
+                        set_pat_ref_pt,
+                        pca_neg_ok | pca_big_ignore | pca_in_rtl)
+    }, END_CLASS return 0;
 }
 
-const pcl_init_t    pcl_xfm_init = { xfm_do_registration, 0, 0 };
+const pcl_init_t pcl_xfm_init = { xfm_do_registration, 0, 0 };

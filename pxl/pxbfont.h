@@ -23,7 +23,11 @@
  */
 
 extern const int px_bitmap_font_point_size;
+
 extern const int px_bitmap_font_resolution;
+
 extern const byte px_bitmap_font_header[];
+
 extern const uint px_bitmap_font_header_size;
+
 extern const byte px_bitmap_font_char_data[];

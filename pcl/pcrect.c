@@ -44,19 +44,24 @@
  * Note that this code is designed to work with no fill adjustment in the
  * graphic library.
  */
-  static int
-adjust_render_rectangle(
-    pcl_state_t *           pcs
-)
+static int
+adjust_render_rectangle(pcl_state_t * pcs)
 {
-    gs_state *              pgs = pcs->pgs;
-    const pcl_xfm_state_t * pxfmst = &(pcs->xfm_state);
-    coord                   w = pcs->rectangle.x;
-    coord                   h = pcs->rectangle.y;
-    gs_point                dims;
-    gs_rect                 rect;
-    gs_matrix               save_mtx, ident_mtx;
-    int                     code = 0;
+    gs_state *pgs = pcs->pgs;
+
+    const pcl_xfm_state_t *pxfmst = &(pcs->xfm_state);
+
+    coord w = pcs->rectangle.x;
+
+    coord h = pcs->rectangle.y;
+
+    gs_point dims;
+
+    gs_rect rect;
+
+    gs_matrix save_mtx, ident_mtx;
+
+    int code = 0;
 
     /* adjust the width and height to reflect the logical page boundaries */
     if (pcs->cap.x + w > pxfmst->pd_size.x)
@@ -65,12 +70,12 @@ adjust_render_rectangle(
         h = pxfmst->pd_size.y - pcs->cap.y;
 
     /* move the current point to an integral pixel location */
-    gs_transform(pgs, (floatp)pcs->cap.x, (floatp)pcs->cap.y, &(rect.p));
+    gs_transform(pgs, (floatp) pcs->cap.x, (floatp) pcs->cap.y, &(rect.p));
     rect.p.x = floor(rect.p.x + 0.5);
     rect.p.y = floor(rect.p.y + 0.5);
 
     /* set the dimensions to be a multiple of pixels */
-    gs_dtransform(pgs, (floatp)w, (floatp)h, &dims);
+    gs_dtransform(pgs, (floatp) w, (floatp) h, &dims);
     if (dims.x >= 0)
         rect.q.x = rect.p.x + ceil(dims.x);
     else {
@@ -97,8 +102,9 @@ adjust_render_rectangle(
      * pixel in each direction in device space.
      */
     if ((pcs->pp_mode == 1) && (dims.x != 0.0) && (dims.y != 0.0)) {
-        gs_matrix   dflt_mtx;
-        gs_point    disp;
+        gs_matrix dflt_mtx;
+
+        gs_point disp;
 
         gs_defaultmatrix(pgs, &dflt_mtx);
         gs_distance_transform(1.0, 1.0, &dflt_mtx, &disp);
@@ -129,50 +135,38 @@ adjust_render_rectangle(
 /*
  * ESC * c <dp> H
  */
-  static int
-pcl_horiz_rect_size_decipoints(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+pcl_horiz_rect_size_decipoints(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    pcs->rectangle.x = (coord)(any_abs(float_arg(pargs)) * 10);
+    pcs->rectangle.x = (coord) (any_abs(float_arg(pargs)) * 10);
     return 0;
 }
 
 /*
  * ESC * c <units> A
  */
-  static int
-pcl_horiz_rect_size_units(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+pcl_horiz_rect_size_units(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    pcs->rectangle.x = (coord)(any_abs(int_arg(pargs)) * pcs->uom_cp);
+    pcs->rectangle.x = (coord) (any_abs(int_arg(pargs)) * pcs->uom_cp);
     return 0;
 }
 
 /*
  * ESC * c <dp> V
  */
-  static int
-pcl_vert_rect_size_decipoints(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+pcl_vert_rect_size_decipoints(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    pcs->rectangle.y = (coord)any_abs(float_arg(pargs)) * 10;
+    pcs->rectangle.y = (coord) any_abs(float_arg(pargs)) * 10;
     return 0;
 }
 
 /*
  * ESC * c B
  */
-  static int
-pcl_vert_rect_size_units(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+pcl_vert_rect_size_units(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     pcs->rectangle.y = any_abs(int_arg(pargs)) * pcs->uom_cp;
     return 0;
@@ -181,15 +175,14 @@ pcl_vert_rect_size_units(
 /*
  * ESC * c <fill_enum> P
  */
-  static int
-pcl_fill_rect_area(
-    pcl_args_t *            pargs,
-    pcl_state_t *           pcs
-)
+static int
+pcl_fill_rect_area(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    pcl_pattern_source_t    type = (pcl_pattern_source_t)int_arg(pargs);
-    int                     id = pcs->pattern_id;
-    int                     code = 0;
+    pcl_pattern_source_t type = (pcl_pattern_source_t) int_arg(pargs);
+
+    int id = pcs->pattern_id;
+
+    int code = 0;
 
     /*
      * Rectangles have a special property with respect to patterns:
@@ -213,8 +206,8 @@ pcl_fill_rect_area(
         return 0;
 
     /* set up the graphic state; render the rectangle */
-    if ( ((code = pcl_set_drawing_color(pcs, type, id, false)) >= 0) &&
-         ((code = pcl_set_graphics_state(pcs)) >= 0)                   )
+    if (((code = pcl_set_drawing_color(pcs, type, id, false)) >= 0) &&
+        ((code = pcl_set_graphics_state(pcs)) >= 0))
         code = adjust_render_rectangle(pcs);
     return code;
 }
@@ -222,66 +215,48 @@ pcl_fill_rect_area(
 /*
  * Initialization
  */
-  static int
-pcrect_do_registration(
-    pcl_parser_state_t *pcl_parser_state,
-    gs_memory_t *   mem
-)
+static int
+pcrect_do_registration(pcl_parser_state_t * pcl_parser_state,
+                       gs_memory_t * mem)
 {
     /* Register commands */
-    DEFINE_CLASS('*')
-    {
+    DEFINE_CLASS('*') {
         'c', 'H',
-        PCL_COMMAND( "Horizontal Rectangle Size Decipoints",
-                     pcl_horiz_rect_size_decipoints,
-                     pca_neg_error | pca_big_error | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("Horizontal Rectangle Size Decipoints",
+                        pcl_horiz_rect_size_decipoints,
+                        pca_neg_error | pca_big_error | pca_in_rtl)
+    }, {
         'c', 'A',
-        PCL_COMMAND( "Horizontal Rectangle Size Units",
-                      pcl_horiz_rect_size_units,
-                      pca_neg_error | pca_big_error | pca_in_rtl
-                      )
-    },
-    {
+            PCL_COMMAND("Horizontal Rectangle Size Units",
+                        pcl_horiz_rect_size_units,
+                        pca_neg_error | pca_big_error | pca_in_rtl)
+    }, {
         'c', 'V',
-        PCL_COMMAND( "Vertical Rectangle Size Decipoint",
-                     pcl_vert_rect_size_decipoints,
-                     pca_neg_error | pca_big_error | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("Vertical Rectangle Size Decipoint",
+                        pcl_vert_rect_size_decipoints,
+                        pca_neg_error | pca_big_error | pca_in_rtl)
+    }, {
         'c', 'B',
-        PCL_COMMAND( "Vertical Rectangle Size Units",
-                     pcl_vert_rect_size_units,
-                     pca_neg_error | pca_big_error | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("Vertical Rectangle Size Units",
+                        pcl_vert_rect_size_units,
+                        pca_neg_error | pca_big_error | pca_in_rtl)
+    }, {
         'c', 'P',
-        PCL_COMMAND( "Fill Rectangular Area",
-                     pcl_fill_rect_area,
-                     pca_neg_ignore | pca_big_ignore | pca_in_rtl
-                     )
-    },
-    END_CLASS
-    return 0;
+            PCL_COMMAND("Fill Rectangular Area",
+                        pcl_fill_rect_area,
+                        pca_neg_ignore | pca_big_ignore | pca_in_rtl)
+    }, END_CLASS return 0;
 }
 
-  static void
-pcrect_do_reset(
-    pcl_state_t *       pcs,
-    pcl_reset_type_t    type
-)
+static void
+pcrect_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
-    static  const uint  mask = (  pcl_reset_initial
-                                | pcl_reset_printer
-                                | pcl_reset_overlay );
+    static const uint mask = (pcl_reset_initial
+                              | pcl_reset_printer | pcl_reset_overlay);
     if ((type & mask) != 0) {
         pcs->rectangle.x = 0;
         pcs->rectangle.y = 0;
     }
 }
 
-const pcl_init_t    pcrect_init = { pcrect_do_registration, pcrect_do_reset, 0 };
+const pcl_init_t pcrect_init = { pcrect_do_registration, pcrect_do_reset, 0 };

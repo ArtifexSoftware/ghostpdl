@@ -27,26 +27,26 @@
 static const float dflt_pen_width = 14.0;
 
 /* the image data configuration for the default color space */
-static const pcl_cid_hdr_t  dflt_cid_hdr = {
-    pcl_cspace_RGB,                /* color space type */
-    pcl_penc_indexed_by_plane,     /* pixel encoding type */
-    1,                             /* bits per index */
-    { 1, 1, 1 }                        /* bits per primary (3 components) */
+static const pcl_cid_hdr_t dflt_cid_hdr = {
+    pcl_cspace_RGB,             /* color space type */
+    pcl_penc_indexed_by_plane,  /* pixel encoding type */
+    1,                          /* bits per index */
+    {1, 1, 1}                   /* bits per primary (3 components) */
 };
 
-gs_private_st_simple(st_cs_indexed_t, pcl_cs_indexed_t, "pcl indexed color space");
+gs_private_st_simple(st_cs_indexed_t, pcl_cs_indexed_t,
+                     "pcl indexed color space");
 
 /*
  * Find the smallest non-negative integral exponent of 2 larger than
  * or equal to the given number; 8 => 2^3 12 => 2^4
  * Note: in/out should be unsigned.
  */
-  static int
-get_pow_2(
-    int     num
-)
+static int
+get_pow_2(int num)
 {
-    int      i;
+    int i;
+
     unsigned power_2 = 1;
 
     for (i = 0; (unsigned)num > power_2; ++i)
@@ -57,14 +57,10 @@ get_pow_2(
 /*
  * Free a PCL indexed color space structure.
  */
-  static void
-free_indexed_cspace(
-    gs_memory_t *       pmem,
-    void *              pvindexed,
-    client_name_t       cname
-)
+static void
+free_indexed_cspace(gs_memory_t * pmem, void *pvindexed, client_name_t cname)
 {
-    pcl_cs_indexed_t *  pindexed = (pcl_cs_indexed_t *)pvindexed;
+    pcl_cs_indexed_t *pindexed = (pcl_cs_indexed_t *) pvindexed;
 
     pcl_cs_base_release(pindexed->pbase);
     rc_decrement(pindexed->pcspace, "free_indexed_cspace");
@@ -81,29 +77,29 @@ free_indexed_cspace(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  static int
-alloc_indexed_cspace(
-    pcl_cs_indexed_t ** ppindexed,
-    pcl_cs_base_t *     pbase,
-    uint                num_entries,
-    gs_memory_t *       pmem
-)
+static int
+alloc_indexed_cspace(pcl_cs_indexed_t ** ppindexed,
+                     pcl_cs_base_t * pbase,
+                     uint num_entries, gs_memory_t * pmem)
 {
-    pcl_cs_indexed_t *  pindexed = 0;
-    int                 code = 0;
-    byte *              bp = 0;
-    uint                palette_size = 3 * num_entries;
-    int                 i;
+    pcl_cs_indexed_t *pindexed = 0;
 
-    if_debug1m('c', pmem, "[c]alloc_indexed_cspace entries:%d\n", num_entries);
+    int code = 0;
 
-    rc_alloc_struct_1( pindexed,
-                       pcl_cs_indexed_t,
-                       &st_cs_indexed_t,
-                       pmem,
-                       return e_Memory,
-                       "allocate pcl indexed color space"
-                       );
+    byte *bp = 0;
+
+    uint palette_size = 3 * num_entries;
+
+    int i;
+
+    if_debug1m('c', pmem, "[c]alloc_indexed_cspace entries:%d\n",
+               num_entries);
+
+    rc_alloc_struct_1(pindexed,
+                      pcl_cs_indexed_t,
+                      &st_cs_indexed_t,
+                      pmem,
+                      return e_Memory, "allocate pcl indexed color space");
 
     pindexed->rc.free = free_indexed_cspace;
     pindexed->pfixed = false;
@@ -114,27 +110,26 @@ alloc_indexed_cspace(
     pindexed->palette.data = 0;
     pindexed->palette.size = 0;
 
-    bp = gs_alloc_string( pmem,
-                          palette_size,
-                          "allocate pcl indexed color space"
-                          );
+    bp = gs_alloc_string(pmem,
+                         palette_size, "allocate pcl indexed color space");
     if (bp == 0) {
-        free_indexed_cspace(pmem, pindexed, "allocate pcl indexed color space");
+        free_indexed_cspace(pmem, pindexed,
+                            "allocate pcl indexed color space");
         return e_Memory;
     }
     pindexed->palette.data = bp;
     pindexed->palette.size = palette_size;
     for (i = 0; i < num_entries; i++)
         pindexed->pen_widths[i] = dflt_pen_width;
-    
-    code = gs_cspace_build_Indexed( &(pindexed->pcspace),
-                                    pbase->pcspace,
-                                    num_entries,
-                                    (gs_const_string *)&(pindexed->palette),
-                                    pmem
-                                    );
+
+    code = gs_cspace_build_Indexed(&(pindexed->pcspace),
+                                   pbase->pcspace,
+                                   num_entries,
+                                   (gs_const_string *) & (pindexed->palette),
+                                   pmem);
     if (code < 0) {
-        free_indexed_cspace(pmem, pindexed, "allocate pcl indexed color space");
+        free_indexed_cspace(pmem, pindexed,
+                            "allocate pcl indexed color space");
         return code;
     }
 
@@ -143,30 +138,33 @@ alloc_indexed_cspace(
 }
 
 /* Resize the palette of an indexed color space */
-  static int
-resize_indexed_cspace(
-    pcl_cs_indexed_t *  pindexed,
-    uint                num_entries
-)
+static int
+resize_indexed_cspace(pcl_cs_indexed_t * pindexed, uint num_entries)
 {
     byte *pdata;
+
     gs_memory_t *pmem = pindexed->rc.memory;
+
     uint new_size = num_entries * 3;
+
     int i;
+
     uint num_old_entries;
 
     if_debug2m('c', pmem, "[c]resizing_indexed_cspace new:%d old:%d\n",
                num_entries, pindexed->num_entries);
 
-    pdata = gs_resize_string(pmem, pindexed->palette.data, pindexed->palette.size, new_size,
-                             "resize pcl indexed color space");
+    pdata =
+        gs_resize_string(pmem, pindexed->palette.data, pindexed->palette.size,
+                         new_size, "resize pcl indexed color space");
     if (pdata == NULL)
         return gs_error_VMerror;
     num_old_entries = pindexed->num_entries;
     pindexed->num_entries = num_entries;
     pindexed->palette.data = pdata;
     /* NB duplicate data storage */
-    pindexed->palette.size = pindexed->pcspace->params.indexed.lookup.table.size = new_size;
+    pindexed->palette.size =
+        pindexed->pcspace->params.indexed.lookup.table.size = new_size;
     pindexed->pcspace->params.indexed.lookup.table.data = (const byte *)pdata;
     pindexed->palette.data = pdata;
     pindexed->pcspace->params.indexed.hival = num_entries - 1;
@@ -187,15 +185,16 @@ resize_indexed_cspace(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  static int
-unshare_indexed_cspace(
-    pcl_cs_indexed_t ** ppindexed
-)
+static int
+unshare_indexed_cspace(pcl_cs_indexed_t ** ppindexed)
 {
-    pcl_cs_indexed_t *  pindexed = *ppindexed;
-    pcl_cs_indexed_t *  pnew = 0;
-    int                 code = 0;
-    int                 num_entries = pindexed->num_entries;
+    pcl_cs_indexed_t *pindexed = *ppindexed;
+
+    pcl_cs_indexed_t *pnew = 0;
+
+    int code = 0;
+
+    int num_entries = pindexed->num_entries;
 
     /* check if there is anything to do */
     if (pindexed->rc.ref_count == 1)
@@ -203,11 +202,9 @@ unshare_indexed_cspace(
     rc_decrement(pindexed, "unshare PCL indexed color space");
 
     /* allocate a new indexed color space */
-    code = alloc_indexed_cspace( ppindexed,
-                                 pindexed->pbase,
-                                 pindexed->num_entries,
-                                 pindexed->rc.memory
-                                 );
+    code = alloc_indexed_cspace(ppindexed,
+                                pindexed->pbase,
+                                pindexed->num_entries, pindexed->rc.memory);
     if (code < 0)
         return code;
     pnew = *ppindexed;
@@ -218,8 +215,10 @@ unshare_indexed_cspace(
     pnew->original_cspace = pindexed->original_cspace;
     pnew->num_entries = pindexed->num_entries;
     pnew->palette.size = pindexed->palette.size;
-    memcpy(pnew->palette.data, pindexed->palette.data, pindexed->palette.size);
-    memcpy(pnew->pen_widths, pindexed->pen_widths, num_entries * sizeof(float));
+    memcpy(pnew->palette.data, pindexed->palette.data,
+           pindexed->palette.size);
+    memcpy(pnew->pen_widths, pindexed->pen_widths,
+           num_entries * sizeof(float));
     memcpy(pnew->norm, pindexed->norm, 3 * sizeof(pindexed->norm[0]));
     memcpy(pnew->Decode, pindexed->Decode, 6 * sizeof(float));
 
@@ -256,40 +255,33 @@ unshare_indexed_cspace(
 /*
  * Convert a device-independent color intensity value to the range [0, 255].
  */
-  static int
-convert_comp_val(
-    floatp  val,
-    floatp  min_val,
-    floatp  range
-)
+static int
+convert_comp_val(floatp val, floatp min_val, floatp range)
 {
     val = 255.0 * (val - min_val) / range;
-    return ( val < 0.0 ? 0 : (val > 255.0 ? 255 : (int)floor(val + 0.5)) );
+    return (val < 0.0 ? 0 : (val > 255.0 ? 255 : (int)floor(val + 0.5)));
 }
 
 /*
  * Set the default palette for device specific color spaces.
  */
-  static void
-set_dev_specific_default_palette(
-    pcl_cs_base_t *     pbase,      /* ignored in this case */
-    byte *              palette,
-    const byte *        porder,
-    int                 start,
-    int                 num
-)
+static void
+set_dev_specific_default_palette(pcl_cs_base_t * pbase, /* ignored in this case */
+                                 byte * palette,
+                                 const byte * porder, int start, int num)
 {
-    int                 i;
-    static const byte   cmy_default[8 * 3] = {
-                                255, 255, 255,  /* white */
-                                  0, 255, 255,  /* cyan */
-                                255,   0, 255,  /* magenta */
-                                  0,   0, 255,  /* blue */
-                                255, 255,   0,  /* yellow */
-                                  0, 255,   0,  /* green */
-                                255,   0,   0,  /* red */
-                                  0,   0,   0   /* black */
-                            };
+    int i;
+
+    static const byte cmy_default[8 * 3] = {
+        255, 255, 255,          /* white */
+        0, 255, 255,            /* cyan */
+        255, 0, 255,            /* magenta */
+        0, 0, 255,              /* blue */
+        255, 255, 0,            /* yellow */
+        0, 255, 0,              /* green */
+        255, 0, 0,              /* red */
+        0, 0, 0                 /* black */
+    };
 
     /* fill in the num_entries - 1 values from the RGB default */
     for (i = start; i < num + start; i++) {
@@ -310,34 +302,35 @@ set_dev_specific_default_palette(
  *
  * An adjustment is made for the specified ranges.
  */
-  static void
-set_colmet_default_palette(
-    pcl_cs_base_t *     pbase,
-    byte *              palette,
-    const byte *        porder,
-    int                 start,
-    int                 num
-)
+static void
+set_colmet_default_palette(pcl_cs_base_t * pbase,
+                           byte * palette,
+                           const byte * porder, int start, int num)
 {
-    float *             pmin = pbase->client_data.min_val;
-    float *             prange = pbase->client_data.range;
-    int                 i;
-    static const float  colmet_default[8 * 3] = {
-                              1.0,    1.0,    1.0,  /* white */
-                              0.0,    1.0,    1.0,  /* cyan */
-                              1.0,    0.0,    1.0,  /* magenta */
-                              0.0,    0.0,    1.0,  /* blue */
-                              1.0,    1.0,    0.0,  /* yellow */
-                              0.0,    1.0,    0.0,  /* green */
-                              1.0,    0.0,    0.0,  /* red */
-                              0.0,    0.0,    0.0   /* black */
-                        };
+    float *pmin = pbase->client_data.min_val;
+
+    float *prange = pbase->client_data.range;
+
+    int i;
+
+    static const float colmet_default[8 * 3] = {
+        1.0, 1.0, 1.0,          /* white */
+        0.0, 1.0, 1.0,          /* cyan */
+        1.0, 0.0, 1.0,          /* magenta */
+        0.0, 0.0, 1.0,          /* blue */
+        1.0, 1.0, 0.0,          /* yellow */
+        0.0, 1.0, 0.0,          /* green */
+        1.0, 0.0, 0.0,          /* red */
+        0.0, 0.0, 0.0           /* black */
+    };
 
     /* fill in the num_entries - 1 values from the colorimetric default */
     for (i = start; i < start + num; i++) {
-        int             j;
-        byte *          pb = palette + 3 * i;
-        const float *   pdef = colmet_default + 3 * porder[i];
+        int j;
+
+        byte *pb = palette + 3 * i;
+
+        const float *pdef = colmet_default + 3 * porder[i];
 
         for (j = 0; j < 3; j++)
             pb[j] = convert_comp_val(pdef[j], pmin[j], prange[j]);
@@ -360,33 +353,34 @@ set_colmet_default_palette(
  * color lookup table is subsequently installed, but it is as much as can be
  * achieved under the current arrangement.
  */
-  static void
-set_CIELab_default_palette(
-    pcl_cs_base_t *     pbase,
-    byte *              palette,
-    const byte *        porder,
-    int                 start,
-    int                 num
-)
+static void
+set_CIELab_default_palette(pcl_cs_base_t * pbase,
+                           byte * palette,
+                           const byte * porder, int start, int num)
 {
-    float *             pmin = pbase->client_data.min_val;
-    float *             prange = pbase->client_data.range;
-    int                 i;
-    static const float  lab_default[8 * 3] = {
-                            100.0f,    0.0f,    0.0f,  /* white */
-                             91.1f,  -43.4f,  -14.1f,  /* cyan */
-                             61.6f,   91.0f,  -59.2f,  /* magenta */
-                             35.3f,   72.0f, -100.0f,  /* blue */
-                             96.6f,  -21.3f,   95.4f,  /* yellow */
-                             87.0f,  -80.7f,   84.0f,  /* green */
-                             53.2f,   74.4f,   67.7f,  /* red */
-                              0.0f,    0.0f,    0.0f   /* black */
-                        };
+    float *pmin = pbase->client_data.min_val;
+
+    float *prange = pbase->client_data.range;
+
+    int i;
+
+    static const float lab_default[8 * 3] = {
+        100.0f, 0.0f, 0.0f,     /* white */
+        91.1f, -43.4f, -14.1f,  /* cyan */
+        61.6f, 91.0f, -59.2f,   /* magenta */
+        35.3f, 72.0f, -100.0f,  /* blue */
+        96.6f, -21.3f, 95.4f,   /* yellow */
+        87.0f, -80.7f, 84.0f,   /* green */
+        53.2f, 74.4f, 67.7f,    /* red */
+        0.0f, 0.0f, 0.0f        /* black */
+    };
 
     for (i = start; i < start + num; i++) {
-        int             j;
-        byte *          pb = palette + 3 * i;
-        const float *   pdef = lab_default + 3 * porder[i];
+        int j;
+
+        byte *pb = palette + 3 * i;
+
+        const float *pdef = lab_default + 3 * porder[i];
 
         for (j = 0; j < 3; j++)
             pb[j] = convert_comp_val(pdef[j], pmin[j], prange[j]);
@@ -405,29 +399,30 @@ set_CIELab_default_palette(
  *
  * An adjustment is made for the specified ranges.
  */
-  static void
-set_lumchrom_default_palette(
-    pcl_cs_base_t *             pbase,
-    byte *                      palette,
-    const byte *                porder,
-    int                         start,
-    int                         num
-)
+static void
+set_lumchrom_default_palette(pcl_cs_base_t * pbase,
+                             byte * palette,
+                             const byte * porder, int start, int num)
 {
-    gs_matrix3 *                pxfm = gs_cie_abc_MatrixABC(pbase->pcspace);
-    float *                     pmin = pbase->client_data.min_val;
-    float *                     prange = pbase->client_data.range;
-    pcl_mtx3_t                  tmp_mtx;
-    int                         i;
-    static  const pcl_vec3_t    lumchrom_default[8] = {
-        {{ 1.0, 1.0, 1.0 }},    /* white */
-        {{ 0.0, 1.0, 1.0 }},    /* cyan */
-        {{ 1.0, 0.0, 1.0 }},    /* magenta */
-        {{ 0.0, 0.0, 1.0 }},    /* blue */
-        {{ 1.0, 1.0, 0.0 }},    /* yellow */
-        {{ 0.0, 1.0, 0.0 }},    /* green */
-        {{ 1.0, 0.0, 0.0 }},    /* red */
-        {{ 0.0, 0.0, 0.0 }}     /* black */
+    gs_matrix3 *pxfm = gs_cie_abc_MatrixABC(pbase->pcspace);
+
+    float *pmin = pbase->client_data.min_val;
+
+    float *prange = pbase->client_data.range;
+
+    pcl_mtx3_t tmp_mtx;
+
+    int i;
+
+    static const pcl_vec3_t lumchrom_default[8] = {
+        {{1.0, 1.0, 1.0}},      /* white */
+        {{0.0, 1.0, 1.0}},      /* cyan */
+        {{1.0, 0.0, 1.0}},      /* magenta */
+        {{0.0, 0.0, 1.0}},      /* blue */
+        {{1.0, 1.0, 0.0}},      /* yellow */
+        {{0.0, 1.0, 0.0}},      /* green */
+        {{1.0, 0.0, 0.0}},      /* red */
+        {{0.0, 0.0, 0.0}}       /* black */
     };
 
     /* form the primaries to component values matrix */
@@ -435,9 +430,11 @@ set_lumchrom_default_palette(
     pcl_mtx3_invert(&tmp_mtx, &tmp_mtx);
 
     for (i = start; i < start + num; i++) {
-        pcl_vec3_t  compvec;
-        byte *      pb = palette + 3 * i;
-        int         j;
+        pcl_vec3_t compvec;
+
+        byte *pb = palette + 3 * i;
+
+        int j;
 
         pcl_vec3_xform(&(lumchrom_default[porder[i]]), &compvec, &tmp_mtx);
         for (j = 0; j < 3; j++)
@@ -456,29 +453,24 @@ set_lumchrom_default_palette(
  *
  * Returns 0 if successful, < 0 in case of an error.
  */
-  static int
-set_default_entries(
-    pcl_cs_indexed_t  * pindexed,
-    int                 start,
-    int                 num,
-    bool                gl2
-)
+static int
+set_default_entries(pcl_cs_indexed_t * pindexed, int start, int num, bool gl2)
 {
     /* array of procedures to set the default palette entries */
-    static void         (*const set_default_palette[(int)pcl_cspace_num])(
-                                                pcl_cs_base_t * pbase,
-                                                byte *          palette,
-                                                const byte *    porder,
-                                                int             start,
-                                                int             num
-                                                                    ) = {
-                        set_dev_specific_default_palette,   /* RGB */
-                        set_dev_specific_default_palette,   /* CMY */
-                        set_colmet_default_palette,         /* colorimetric RGB */
-                        set_CIELab_default_palette,         /* CIE L*a*b* */
-                        set_lumchrom_default_palette        /* luminance-
-                                                             * chrominance */
-                        };
+    static void (*const
+                 set_default_palette[(int)pcl_cspace_num]) (pcl_cs_base_t *
+                                                            pbase,
+                                                            byte * palette,
+                                                            const byte *
+                                                            porder, int start,
+                                                            int num) = {
+        set_dev_specific_default_palette,       /* RGB */
+            set_dev_specific_default_palette,   /* CMY */
+            set_colmet_default_palette, /* colorimetric RGB */
+            set_CIELab_default_palette, /* CIE L*a*b* */
+            set_lumchrom_default_palette        /* luminance-
+                                                 * chrominance */
+    };
 
     /*
      * For each color space, 8 palette entries are stored in the canonical
@@ -490,23 +482,28 @@ set_default_entries(
      * palette. Separate arrays are provided for the RGB and CMY color spaces,
      * and for GL/2 default colors.
      */
-    static const byte   order_1[] = { 0, 7 };
-    static const byte   cmy_order_2[] = { 0, 1, 2, 7 };
-    static const byte   cmy_order_3[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-    static const byte   rgb_order_2[] = { 7, 6, 5, 0 };
-    static const byte   rgb_order_3[] = { 7, 6, 5, 4, 3, 2, 1, 0 };
-    static const byte   gl2_order_2[] = { 0, 7, 6, 5 };
-    static const byte   gl2_order_3[] = { 0, 7, 6, 5, 4, 3, 2, 1 };
-    static const byte * cmy_order[3] = {order_1, cmy_order_2, cmy_order_3};
-    static const byte * rgb_order[3] = {order_1, rgb_order_2, rgb_order_3};
-    static const byte * gl2_order[3] = {order_1, gl2_order_2, gl2_order_3};
+    static const byte order_1[] = { 0, 7 };
+    static const byte cmy_order_2[] = { 0, 1, 2, 7 };
+    static const byte cmy_order_3[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+    static const byte rgb_order_2[] = { 7, 6, 5, 0 };
+    static const byte rgb_order_3[] = { 7, 6, 5, 4, 3, 2, 1, 0 };
+    static const byte gl2_order_2[] = { 0, 7, 6, 5 };
+    static const byte gl2_order_3[] = { 0, 7, 6, 5, 4, 3, 2, 1 };
+    static const byte *cmy_order[3] = { order_1, cmy_order_2, cmy_order_3 };
+    static const byte *rgb_order[3] = { order_1, rgb_order_2, rgb_order_3 };
+    static const byte *gl2_order[3] = { order_1, gl2_order_2, gl2_order_3 };
 
-    int                 type = pindexed->cid.cspace;
-    int                 orig_type = pindexed->original_cspace;
-    int                 bits = pindexed->cid.bits_per_index - 1;
-    const byte *        porder;
-    int                 cnt = (num + start > 8 ? 8 - start : num);
-    int                 i;
+    int type = pindexed->cid.cspace;
+
+    int orig_type = pindexed->original_cspace;
+
+    int bits = pindexed->cid.bits_per_index - 1;
+
+    const byte *porder;
+
+    int cnt = (num + start > 8 ? 8 - start : num);
+
+    int i;
 
     if (bits > 2)
         bits = 2;
@@ -514,25 +511,26 @@ set_default_entries(
         porder = gl2_order[bits];
     /* check for a rgb or colorimetric.  If the colorimetric is being
        substituted for device CMY use the cmy order */
-    else if (((type == pcl_cspace_RGB) || (type == pcl_cspace_Colorimetric)) && (orig_type != pcl_cspace_CMY) )
+    else if (((type == pcl_cspace_RGB) || (type == pcl_cspace_Colorimetric))
+             && (orig_type != pcl_cspace_CMY))
         porder = rgb_order[bits];
     else
         porder = cmy_order[bits];
 
     /* set the default colors for up to the first 8 entries */
-    set_default_palette[(int)type]( pindexed->pbase,
+    set_default_palette[(int)type] (pindexed->pbase,
                                     pindexed->palette.data,
-                                    porder,
-                                    start,
-                                    cnt
-                                    );
+                                    porder, start, cnt);
 
     /* set the remaining entries to black */
     {
         int s = start + cnt;
+
         int e = start + num;
+
         for (i = s; i < e; i++) {
             byte *bp = pindexed->palette.data + i * 3;
+
             bp[0] = bp[1] = bp[2] = 0;
         }
     }
@@ -593,21 +591,20 @@ set_default_entries(
  * it incorporates normalization information; for the "indexed by"
  * cases its contents are dictated by the size of the palette.
  */
-  int
-pcl_cs_indexed_set_norm_and_Decode(
-    pcl_cs_indexed_t **     ppindexed,
-    floatp                  wht0,
-    floatp                  wht1,
-    floatp                  wht2,
-    floatp                  blk0,
-    floatp                  blk1,
-    floatp                  blk2
-)
+int
+pcl_cs_indexed_set_norm_and_Decode(pcl_cs_indexed_t ** ppindexed,
+                                   floatp wht0,
+                                   floatp wht1,
+                                   floatp wht2,
+                                   floatp blk0, floatp blk1, floatp blk2)
 {
-    pcl_cs_indexed_t *      pindexed = *ppindexed;
-    pcl_encoding_type_t     enc = (pcl_encoding_type_t)pindexed->cid.encoding;
-    pcl_cs_indexed_norm_t * pnorm;
-    int                     code = 0;
+    pcl_cs_indexed_t *pindexed = *ppindexed;
+
+    pcl_encoding_type_t enc = (pcl_encoding_type_t) pindexed->cid.encoding;
+
+    pcl_cs_indexed_norm_t *pnorm;
+
+    int code = 0;
 
     /* ignore request if palette is fixed */
     if (pindexed->pfixed)
@@ -666,22 +663,25 @@ pcl_cs_indexed_set_norm_and_Decode(
      * properly handle out of range values.
      */
     if (enc >= pcl_penc_direct_by_plane) {
-        int     i;
-        float * pdecode = pindexed->Decode;
+        int i;
+
+        float *pdecode = pindexed->Decode;
 
         for (i = 0; i < 3; i++) {
-            int     nbits = pindexed->cid.bits_per_primary[i];
-            floatp  inv_range = pnorm[i].inv_range;
+            int nbits = pindexed->cid.bits_per_primary[i];
+
+            floatp inv_range = pnorm[i].inv_range;
 
             if (inv_range == 0.0)
                 inv_range = 254;
             pdecode[2 * i] = -pnorm[i].blkref * inv_range / 255.0;
-            pdecode[2 * i + 1] = ((float)((1L << nbits) - 1) - pnorm[i].blkref)
-                                    * inv_range / 255.0;
+            pdecode[2 * i + 1] =
+                ((float)((1L << nbits) - 1) - pnorm[i].blkref)
+                * inv_range / 255.0;
         }
     } else {
         pindexed->Decode[0] = 0.0;
-        pindexed->Decode[1] = 0.0;  /* modified subsequently */
+        pindexed->Decode[1] = 0.0;      /* modified subsequently */
     }
     return 0;
 }
@@ -698,17 +698,17 @@ pcl_cs_indexed_set_norm_and_Decode(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  int
-pcl_cs_indexed_set_num_entries(
-    pcl_cs_indexed_t ** ppindexed,
-    int                 new_num,
-    bool                gl2
-)
+int
+pcl_cs_indexed_set_num_entries(pcl_cs_indexed_t ** ppindexed,
+                               int new_num, bool gl2)
 {
-    pcl_cs_indexed_t *  pindexed = *ppindexed;
-    int                 bits = get_pow_2(new_num);
-    int                 old_num = pindexed->num_entries;
-    int                 code = 0;
+    pcl_cs_indexed_t *pindexed = *ppindexed;
+
+    int bits = get_pow_2(new_num);
+
+    int old_num = pindexed->num_entries;
+
+    int code = 0;
 
     /* ignore request if palette is fixed */
     if (pindexed->pfixed)
@@ -716,15 +716,16 @@ pcl_cs_indexed_set_num_entries(
 
     pindexed->is_GL = gl2;
 
-    if_debug3m('c', pindexed->rc.memory, "pcl_cs_indexed_set_num_entries, is gl2:%d, entries old:%d, new:%d\n", gl2, old_num, new_num);
+    if_debug3m('c', pindexed->rc.memory,
+               "pcl_cs_indexed_set_num_entries, is gl2:%d, entries old:%d, new:%d\n",
+               gl2, old_num, new_num);
 
     /*
      * Set new_num to the smallest larger power of 2 less than
      * pcl_cs_indexed_palette_size.
      */
-    bits = ( bits > pcl_cs_indexed_palette_size_log
-                 ? pcl_cs_indexed_palette_size_log
-                 : bits );
+    bits = (bits > pcl_cs_indexed_palette_size_log
+            ? pcl_cs_indexed_palette_size_log : bits);
     new_num = 1L << bits;
 
     /* make sure the palette is unique */
@@ -741,7 +742,7 @@ pcl_cs_indexed_set_num_entries(
     /* resize the palette if necessary */
     if (old_num != new_num)
         resize_indexed_cspace(pindexed, new_num);
-    
+
     /* update the number of entries in the palette */
     pindexed->num_entries = new_num;
 
@@ -765,22 +766,23 @@ pcl_cs_indexed_set_num_entries(
  *
  * Returns 0 if successful, < 0 in the event of an error.
  */
-  int
-pcl_cs_indexed_update_lookup_tbl(
-    pcl_cs_indexed_t ** ppindexed,
-    pcl_lookup_tbl_t *  plktbl
-)
+int
+pcl_cs_indexed_update_lookup_tbl(pcl_cs_indexed_t ** ppindexed,
+                                 pcl_lookup_tbl_t * plktbl)
 {
-    pcl_cs_indexed_t *  pindexed = *ppindexed;
-    pcl_cspace_type_t   cstype = (pcl_cspace_type_t)pindexed->cid.cspace;
-    pcl_cspace_type_t   lktype;
-    int                 code = 0;
+    pcl_cs_indexed_t *pindexed = *ppindexed;
+
+    pcl_cspace_type_t cstype = (pcl_cspace_type_t) pindexed->cid.cspace;
+
+    pcl_cspace_type_t lktype;
+
+    int code = 0;
 
     /* make some simple checks for not-interesting color spaces */
     if (plktbl != 0)
         lktype = pcl_lookup_tbl_get_cspace(plktbl);
-    if ( (plktbl != 0)                                            &&
-         ((cstype < lktype) || (lktype < pcl_cspace_Colorimetric))  )
+    if ((plktbl != 0) &&
+        ((cstype < lktype) || (lktype < pcl_cspace_Colorimetric)))
         return 0;
 
     /* make a unique copy of the indexed color space */
@@ -798,9 +800,11 @@ pcl_cs_indexed_update_lookup_tbl(
        the color space is released. */
     {
         uint size = 3 * pcl_cs_indexed_palette_size;
+
         byte *bp = gs_alloc_string(pindexed->rc.memory, size,
                                    "pcl_cs_indexed_update_lookup_tbl");
-        if ( bp == NULL )
+
+        if (bp == NULL)
             return e_Memory;
         memcpy(bp, pindexed->palette.data, 3 * pcl_cs_indexed_palette_size);
         rc_decrement(pindexed->pcspace, "pcl_cs_indexed_update_lookup_tbl");
@@ -808,12 +812,11 @@ pcl_cs_indexed_update_lookup_tbl(
     }
 
     /* now rebuild it */
-    return gs_cspace_build_Indexed( &(pindexed->pcspace),
-                                    pindexed->pbase->pcspace,
-                                    pcl_cs_indexed_palette_size,
-                                    (gs_const_string *)&(pindexed->palette),
-                                    pindexed->rc.memory
-                                    );
+    return gs_cspace_build_Indexed(&(pindexed->pcspace),
+                                   pindexed->pbase->pcspace,
+                                   pcl_cs_indexed_palette_size,
+                                   (gs_const_string *) & (pindexed->palette),
+                                   pindexed->rc.memory);
 
 }
 
@@ -822,16 +825,16 @@ pcl_cs_indexed_update_lookup_tbl(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  int
-pcl_cs_indexed_set_palette_entry(
-    pcl_cs_indexed_t ** ppindexed,
-    int                 indx,
-    const float         comps[3]
-)
+int
+pcl_cs_indexed_set_palette_entry(pcl_cs_indexed_t ** ppindexed,
+                                 int indx, const float comps[3]
+    )
 {
-    pcl_cs_indexed_t *  pindexed = *ppindexed;
-    int                 code;
-    int                 i;
+    pcl_cs_indexed_t *pindexed = *ppindexed;
+
+    int code;
+
+    int i;
 
     /* ignore request if palette is fixed */
     if (pindexed->pfixed)
@@ -854,8 +857,9 @@ pcl_cs_indexed_set_palette_entry(
     /* normalize and store the entry */
     indx *= 3;
     for (i = 0; i < 3; i++) {
-        pcl_cs_indexed_norm_t * pn = &(pindexed->norm[i]);
-        floatp                  val = comps[i];
+        pcl_cs_indexed_norm_t *pn = &(pindexed->norm[i]);
+
+        floatp val = comps[i];
 
         if (pn->inv_range == 0)
             val = (val >= pn->blkref ? 255.0 : 0.0);
@@ -863,7 +867,7 @@ pcl_cs_indexed_set_palette_entry(
             val = (val - pn->blkref) * pn->inv_range;
             val = (val < 0.0 ? 0.0 : (val > 255.0 ? 255.0 : val));
         }
-        pindexed->palette.data[indx + i] = (byte)val;
+        pindexed->palette.data[indx + i] = (byte) val;
     }
     return 0;
 }
@@ -875,14 +879,13 @@ pcl_cs_indexed_set_palette_entry(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  int
-pcl_cs_indexed_set_default_palette_entry(
-    pcl_cs_indexed_t ** ppindexed,
-    int                 indx
-)
+int
+pcl_cs_indexed_set_default_palette_entry(pcl_cs_indexed_t ** ppindexed,
+                                         int indx)
 {
-    pcl_cs_indexed_t *  pindexed = *ppindexed;
-    int                 code;
+    pcl_cs_indexed_t *pindexed = *ppindexed;
+
+    int code;
 
     /*
      * Verify that the index is in range. This code obeys HP's documentation,
@@ -905,19 +908,17 @@ pcl_cs_indexed_set_default_palette_entry(
  *
  * Returns 0 if successful, < 0 in case of error.
  */
-  int
-pcl_cs_indexed_set_pen_width(
-    pcl_cs_indexed_t ** ppindexed,
-    int                 pen,
-    floatp              width
-)
+int
+pcl_cs_indexed_set_pen_width(pcl_cs_indexed_t ** ppindexed,
+                             int pen, floatp width)
 {
-    pcl_cs_indexed_t *  pindexed = *ppindexed;
-    int                 code;
+    pcl_cs_indexed_t *pindexed = *ppindexed;
+
+    int code;
 
     /* check for out-of-range pen */
     if ((pen < 0) || (pen > pindexed->num_entries))
-        return e_Range;     /* probably should be a different error */
+        return e_Range;         /* probably should be a different error */
 
     if ((code = unshare_indexed_cspace(ppindexed)) < 0)
         return code;
@@ -941,24 +942,27 @@ pcl_cs_indexed_set_pen_width(
  * Returns 0 if successful, < 0 in case of error.
  */
 
-  int
-pcl_cs_indexed_build_cspace(
-    pcl_state_t *           pcs,
-    pcl_cs_indexed_t **     ppindexed,
-    const pcl_cid_data_t *  pcid,
-    bool                    pfixed,
-    bool                    gl2,
-    gs_memory_t *           pmem
-)
+int
+pcl_cs_indexed_build_cspace(pcl_state_t * pcs,
+                            pcl_cs_indexed_t ** ppindexed,
+                            const pcl_cid_data_t * pcid,
+                            bool pfixed, bool gl2, gs_memory_t * pmem)
 {
-    pcl_cs_indexed_t *      pindexed = *ppindexed;
-    pcl_cspace_type_t       type = pcl_cid_get_cspace(pcid);
-    int                     bits = pcl_cid_get_bits_per_index(pcid);
-    floatp                  wht_ref[3];
-    floatp                  blk_ref[3];
-    pcl_cs_base_t *         pbase = 0;
-    bool                    is_default = false;
-    int                     code = 0;
+    pcl_cs_indexed_t *pindexed = *ppindexed;
+
+    pcl_cspace_type_t type = pcl_cid_get_cspace(pcid);
+
+    int bits = pcl_cid_get_bits_per_index(pcid);
+
+    floatp wht_ref[3];
+
+    floatp blk_ref[3];
+
+    pcl_cs_base_t *pbase = 0;
+
+    bool is_default = false;
+
+    int code = 0;
 
     /*
      * Check if the default color space is being requested. Since there are
@@ -968,7 +972,8 @@ pcl_cs_indexed_build_cspace(
     if (pfixed && (pcid->u.hdr.bits_per_index == dflt_cid_hdr.bits_per_index)) {
         is_default = true;
         if (pcs->pdflt_cs_indexed != 0) {
-            if_debug0m('c', pmem, "[c]build request for default color space\n");
+            if_debug0m('c', pmem,
+                       "[c]build request for default color space\n");
             pcl_cs_indexed_copy_from(*ppindexed, pcs->pdflt_cs_indexed);
             return 0;
         }
@@ -976,8 +981,10 @@ pcl_cs_indexed_build_cspace(
 
     /* release the existing color space, if present */
     if (pindexed != 0) {
-        if_debug1m('c', pmem, "[c]releasing index for underlying color space:%s\n",
-                   pcl_cid_cspace_get_debug_name(pmem, pindexed->pbase->type));
+        if_debug1m('c', pmem,
+                   "[c]releasing index for underlying color space:%s\n",
+                   pcl_cid_cspace_get_debug_name(pmem,
+                                                 pindexed->pbase->type));
         rc_decrement(pindexed, "build indexed color space");
     }
 
@@ -1009,15 +1016,16 @@ pcl_cs_indexed_build_cspace(
 
     /* set up the normalization information */
     if ((pcid->len > 6) && (type < pcl_cspace_Colorimetric)) {
-        const pcl_cid_dev_long_t *  pdev = &(pcid->u.dev);
-        int                         i;
+        const pcl_cid_dev_long_t *pdev = &(pcid->u.dev);
+
+        int i;
 
         for (i = 0; i < 3; i++) {
             wht_ref[i] = pdev->white_ref[i];
             blk_ref[i] = pdev->black_ref[i];
         }
     } else {
-        int     i;
+        int i;
 
         for (i = 0; i < 3; i++) {
             wht_ref[i] = (1L << pcl_cid_get_bits_per_primary(pcid, i)) - 1;
@@ -1025,21 +1033,22 @@ pcl_cs_indexed_build_cspace(
         }
 
         /* reverse for the CMY color space */
-        if ( (type == pcl_cspace_CMY) || (pcid->original_cspace == pcl_cspace_CMY) ) {
-            int     i;
+        if ((type == pcl_cspace_CMY)
+            || (pcid->original_cspace == pcl_cspace_CMY)) {
+            int i;
 
             for (i = 0; i < 3; i++) {
-                floatp  ftmp = wht_ref[i];
+                floatp ftmp = wht_ref[i];
 
                 wht_ref[i] = blk_ref[i];
                 blk_ref[i] = ftmp;
             }
         }
     }
-    pcl_cs_indexed_set_norm_and_Decode( ppindexed,
-                                        wht_ref[0], wht_ref[1], wht_ref[2],
-                                        blk_ref[0], blk_ref[1], blk_ref[2]
-                                        );
+    pcl_cs_indexed_set_norm_and_Decode(ppindexed,
+                                       wht_ref[0], wht_ref[1], wht_ref[2],
+                                       blk_ref[0], blk_ref[1], blk_ref[2]
+        );
 
     /* set the palette size and the default palette entries */
     pcl_cs_indexed_set_num_entries(ppindexed, 1L << bits, gl2);
@@ -1060,24 +1069,19 @@ pcl_cs_indexed_build_cspace(
  *
  * Returns 0 on success, < 0
  */
-  int
-pcl_cs_indexed_build_default_cspace(
-    pcl_state_t *               pcs,
-    pcl_cs_indexed_t **         ppindexed,
-    gs_memory_t *               pmem
-)
+int
+pcl_cs_indexed_build_default_cspace(pcl_state_t * pcs,
+                                    pcl_cs_indexed_t ** ppindexed,
+                                    gs_memory_t * pmem)
 {
     if (pcs->pdflt_cs_indexed == 0) {
         pcs->dflt_cid_data.len = 6;
         pcs->dflt_cid_data.u.hdr = dflt_cid_hdr;
         pcs->dflt_cid_data.original_cspace = pcl_cspace_num;
-        return pcl_cs_indexed_build_cspace( pcs,
-                                            ppindexed,
-                                            &pcs->dflt_cid_data,
-                                            true,
-                                            false,
-                                            pmem
-                                            );
+        return pcl_cs_indexed_build_cspace(pcs,
+                                           ppindexed,
+                                           &pcs->dflt_cid_data,
+                                           true, false, pmem);
     } else {
         pcl_cs_indexed_copy_from(*ppindexed, pcs->pdflt_cs_indexed);
         return 0;
@@ -1092,23 +1096,22 @@ pcl_cs_indexed_build_default_cspace(
  * This reoutine is used to build the two-entry indexed color spaces required
  * for creating opaque "uncolored" patterns.
  */
-  int
-pcl_cs_indexed_build_special(
-    pcl_cs_indexed_t **         ppindexed,
-    pcl_cs_base_t *             pbase,
-    const byte *                pcolor1,
-    gs_memory_t *               pmem
-)
+int
+pcl_cs_indexed_build_special(pcl_cs_indexed_t ** ppindexed,
+                             pcl_cs_base_t * pbase,
+                             const byte * pcolor1, gs_memory_t * pmem)
 {
-    static const pcl_cid_hdr_t  cid = { pcl_cspace_White, /* ignored */
-                                        pcl_penc_indexed_by_pixel,
-                                        1,
-                                        { 8, 8, 8}        /* ignored */ };
-    static const floatp         wht_ref[3] = { 255.0, 255.0, 255.0 };
-    static const floatp         blk_ref[3] = { 0.0, 0.0, 0.0 };
+    static const pcl_cid_hdr_t cid = { pcl_cspace_White,        /* ignored */
+        pcl_penc_indexed_by_pixel,
+        1,
+        {8, 8, 8} /* ignored */
+    };
+    static const floatp wht_ref[3] = { 255.0, 255.0, 255.0 };
+    static const floatp blk_ref[3] = { 0.0, 0.0, 0.0 };
 
-    pcl_cs_indexed_t *          pindexed;
-    int                         i, code = 0;
+    pcl_cs_indexed_t *pindexed;
+
+    int i, code = 0;
 
     /* build the indexed color space */
     if ((code = alloc_indexed_cspace(ppindexed, pbase, 2, pmem)) < 0)
@@ -1118,10 +1121,10 @@ pcl_cs_indexed_build_special(
     pindexed->cid = cid;
     pindexed->num_entries = 2;
     /* set up the normalization information - not strictly necessary */
-    pcl_cs_indexed_set_norm_and_Decode( ppindexed,
-                                        wht_ref[0], wht_ref[1], wht_ref[2],
-                                        blk_ref[0], blk_ref[1], blk_ref[2]
-                                        );
+    pcl_cs_indexed_set_norm_and_Decode(ppindexed,
+                                       wht_ref[0], wht_ref[1], wht_ref[2],
+                                       blk_ref[0], blk_ref[1], blk_ref[2]
+        );
     pindexed->Decode[1] = 1;
 
     for (i = 0; i < 3; i++) {
@@ -1142,17 +1145,16 @@ pcl_cs_indexed_build_special(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  int
-pcl_cs_indexed_install(
-    pcl_cs_indexed_t ** ppindexed,
-    pcl_state_t *       pcs
-)
+int
+pcl_cs_indexed_install(pcl_cs_indexed_t ** ppindexed, pcl_state_t * pcs)
 {
-    pcl_cs_indexed_t *  pindexed = *ppindexed;
-    int                 code = 0;
+    pcl_cs_indexed_t *pindexed = *ppindexed;
+
+    int code = 0;
 
     if (pindexed == 0) {
-        code = pcl_cs_indexed_build_default_cspace(pcs, ppindexed, pcs->memory);
+        code =
+            pcl_cs_indexed_build_default_cspace(pcs, ppindexed, pcs->memory);
         if (code < 0)
             return code;
         pindexed = *ppindexed;
@@ -1172,13 +1174,10 @@ pcl_cs_indexed_install(
  * An inverting color lookup table will, however, cause the two approaches to
  * vary.
  */
-  bool
-pcl_cs_indexed_is_white(
-    const pcl_cs_indexed_t *    pindexed,
-    int                         indx
-)
+bool
+pcl_cs_indexed_is_white(const pcl_cs_indexed_t * pindexed, int indx)
 {
-    const byte *                pb = 0;
+    const byte *pb = 0;
 
     if (pindexed == 0)
         return true;
@@ -1197,13 +1196,10 @@ pcl_cs_indexed_is_white(
  * not as easily accomplished, and only in very unusual circumstances will the
  * two produce different results.
  */
-  bool
-pcl_cs_indexed_is_black(
-    const pcl_cs_indexed_t *    pindexed,
-    int                         indx
-)
+bool
+pcl_cs_indexed_is_black(const pcl_cs_indexed_t * pindexed, int indx)
 {
-    const byte *                pb = 0;
+    const byte *pb = 0;
 
     if ((pindexed == 0) || (indx < 0) || (indx >= pindexed->num_entries))
         return false;
@@ -1215,8 +1211,8 @@ pcl_cs_indexed_is_black(
  * One time initialization. This exists only because of the possibility that
  * BSS may not be initialized.
  */
-  void
-pcl_cs_indexed_init(pcl_state_t *pcs)
+void
+pcl_cs_indexed_init(pcl_state_t * pcs)
 {
     pcs->pdflt_cs_indexed = 0;
 }

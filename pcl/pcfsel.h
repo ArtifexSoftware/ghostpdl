@@ -24,19 +24,20 @@
 
 /* Recompute the font from the parameters if necessary. */
 /* This is used by both PCL and HP-GL/2. */
-int pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs, bool intenal_only);
+int pcl_reselect_font(pcl_font_selection_t * pfs, const pcl_state_t * pcs,
+                      bool intenal_only);
 
 /*
  * Select a font by ID, updating the selection parameters.  Return 0
  * normally, 1 if no font was found, or an error code.  The pcl_state_t is
  * used only for the font and symbol set dictionaries.
  */
-int pcl_select_font_by_id(pcl_font_selection_t *pfs, uint id,
-                          pcl_state_t *pcs);
+int pcl_select_font_by_id(pcl_font_selection_t * pfs, uint id,
+                          pcl_state_t * pcs);
 
 /* set font parameters after an id selection */
 void
-pcl_set_id_parameters(const pcl_state_t *pcs,
-                      pcl_font_selection_t *pfs, pl_font_t *fp, uint id);
+pcl_set_id_parameters(const pcl_state_t * pcs,
+                      pcl_font_selection_t * pfs, pl_font_t * fp, uint id);
 
-#endif				/* pcfsel_INCLUDED */
+#endif /* pcfsel_INCLUDED */

@@ -24,19 +24,20 @@
 
 #ifndef pl_font_t_DEFINED
 #  define pl_font_t_DEFINED
-typedef struct pl_font_s    pl_font_t;
+typedef struct pl_font_s pl_font_t;
 #endif
 
-typedef struct pcl_font_selection_s {
+typedef struct pcl_font_selection_s
+{
     /* Parameters used for selection, or loaded from font selected by ID. */
-    pl_font_params_t    params;
+    pl_font_params_t params;
 
     /* Font found by matching or by ID */
-    pl_font_t *         font;
-    uint                selected_id;
+    pl_font_t *font;
+    uint selected_id;
 
     /* The symbol map that goes with it. */
-    pl_symbol_map_t *   map;
+    pl_symbol_map_t *map;
 } pcl_font_selection_t;
 
-#endif			/* pcfontst_INCLUDED */
+#endif /* pcfontst_INCLUDED */

@@ -28,20 +28,22 @@
  * Structure for paper size parameters. Note that these values are all coords
  * (centipoints).
  */
-typedef struct pcl_paper_size_s {
-    coord   width, height;	/* physical page size */
-    coord   offset_portrait;    /* offset of logical page left edge from
+typedef struct pcl_paper_size_s
+{
+    coord width, height;        /* physical page size */
+    coord offset_portrait;      /* offset of logical page left edge from
                                  * the physical page in portrait orientations */
-    coord   offset_landscape;   /* ditto for landscape orientations */
+    coord offset_landscape;     /* ditto for landscape orientations */
 } pcl_paper_size_t;
 
 /*
  * The table of paper sizes
  */
-typedef struct pcl_paper_type_s {
-    uint                    tag;
-    const char *            pname;
-    pcl_paper_size_t        psize;
+typedef struct pcl_paper_type_s
+{
+    uint tag;
+    const char *pname;
+    pcl_paper_size_t psize;
 } pcl_paper_type_t;
 
 /*
@@ -118,28 +120,29 @@ typedef struct pcl_paper_type_s {
  *
  *      dev_print_rect  printable region rectangle, in device space
  */
-typedef struct pcl_xfm_state_s {
+typedef struct pcl_xfm_state_s
+{
 
-    float                       left_offset_cp;
-    float                       top_offset_cp;
+    float left_offset_cp;
+    float top_offset_cp;
 
-    const pcl_paper_size_t *    paper_size;
-    byte                        lp_orient;
-    byte                        print_dir;
+    const pcl_paper_size_t *paper_size;
+    byte lp_orient;
+    byte print_dir;
 
     /* the remaining fields are filled in by update_xfm_state() */
-    gs_matrix                   lp2pg_mtx;
-    gs_matrix                   lp2dev_mtx;
-    gs_matrix                   pd2lp_mtx;
-    gs_matrix                   pd2dev_mtx;
+    gs_matrix lp2pg_mtx;
+    gs_matrix lp2dev_mtx;
+    gs_matrix pd2lp_mtx;
+    gs_matrix pd2dev_mtx;
 
     /* height and width of logical page, in centipoints */
-    coord_point_t                 lp_size;
-    coord_point_t                 pd_size;
+    coord_point_t lp_size;
+    coord_point_t pd_size;
 
     /* printable region in logical page and device space */
-    gs_rect                     lp_print_rect;
-    gs_fixed_rect               dev_print_rect;
+    gs_rect lp_print_rect;
+    gs_fixed_rect dev_print_rect;
 
 } pcl_xfm_state_t;
 
@@ -157,11 +160,12 @@ typedef struct pcl_xfm_state_s {
  * Structure for text region margins. These are all in centipoint relative
  * to the current "pseudo print direction" space.
  */
-typedef struct pcl_margins_s {
-    coord   left;	/* measured from left edge */
-    coord   right;	/* measured from *left* edge */
-    coord   top;	/* measured from top */
-    coord   length;	/* text_length, distance from top to bottom */
+typedef struct pcl_margins_s
+{
+    coord left;                 /* measured from left edge */
+    coord right;                /* measured from *left* edge */
+    coord top;                  /* measured from top */
+    coord length;               /* text_length, distance from top to bottom */
 } pcl_margins_t;
 
-#endif			/* pcxfmst_INCLUDED */
+#endif /* pcxfmst_INCLUDED */

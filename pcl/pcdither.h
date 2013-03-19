@@ -32,12 +32,13 @@
  * NB: don't take sizeof of this structure.
  *
  */
-typedef struct pcl__udither_s {
-    byte             format;
-    byte             nplanes;
-    byte             height[2];
-    byte             width[2];
-    byte             data[1 /* actually height * width * nplanes */ ];
+typedef struct pcl__udither_s
+{
+    byte format;
+    byte nplanes;
+    byte height[2];
+    byte width[2];
+    byte data[1 /* actually height * width * nplanes */ ];
 } pcl__udither_t;
 
 /*
@@ -46,11 +47,12 @@ typedef struct pcl__udither_s {
  * convenient location in which to store endian-adjusted size information
  * about the dither.
  */
-typedef struct pcl_udither_s {
-    rc_header               rc;
-    uint                    height;
-    uint                    width;
-    const pcl__udither_t *  ptbl;
+typedef struct pcl_udither_s
+{
+    rc_header rc;
+    uint height;
+    uint width;
+    const pcl__udither_t *ptbl;
 } pcl_udither_t;
 
 /*
@@ -87,14 +89,12 @@ typedef struct pcl_udither_s {
  * Get a pointer to the appropriate portion of the dither table in a user
  * defined dither structure.
  */
-const byte *pcl_udither_get_threshold(
-    const pcl_udither_t *   pdither,
-    int                     indx
-);
+const byte *pcl_udither_get_threshold(const pcl_udither_t * pdither,
+                                      int indx);
 
 /*
  * External access to the user-defined dither matrix machinery.
  */
-extern  const pcl_init_t    pcl_udither_init;
+extern const pcl_init_t pcl_udither_init;
 
-#endif  	/* pcdither_INCLUDED */
+#endif /* pcdither_INCLUDED */

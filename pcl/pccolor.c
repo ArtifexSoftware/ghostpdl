@@ -37,13 +37,10 @@
 /*
  * ESC * v <cc> A
  */
-  static int
-set_color_comp_1(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+set_color_comp_1(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    if ( pcs->personality == pcl5e )
+    if (pcs->personality == pcl5e)
         return 0;
     if (!pcs->raster_state.graphics_mode)
         pcs->color_comps[0] = float_arg(pargs);
@@ -53,13 +50,10 @@ set_color_comp_1(
 /*
  * ESC * v <cc> B
  */
-  static int
-set_color_comp_2(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+set_color_comp_2(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    if ( pcs->personality == pcl5e )
+    if (pcs->personality == pcl5e)
         return 0;
     if (!pcs->raster_state.graphics_mode)
         pcs->color_comps[1] = float_arg(pargs);
@@ -69,13 +63,10 @@ set_color_comp_2(
 /*
  * ESC * v <cc> C
  */
-  static int
-set_color_comp_3(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+set_color_comp_3(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    if ( pcs->personality == pcl5e )
+    if (pcs->personality == pcl5e)
         return 0;
     if (!pcs->raster_state.graphics_mode)
         pcs->color_comps[2] = float_arg(pargs);
@@ -94,15 +85,12 @@ set_color_comp_3(
  * the color component registers are NOT cleared, while positive indices are
  * interpreted modulo the palette size.
  */
-  static int
-assign_color_index(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+assign_color_index(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    int             indx = int_arg(pargs);
+    int indx = int_arg(pargs);
 
-    if ( pcs->personality == pcl5e )
+    if (pcs->personality == pcl5e)
         return 0;
     if (!pcs->raster_state.graphics_mode) {
         if ((indx >= 0) && (indx < pcl_palette_get_num_entries(pcs->ppalet)))
@@ -117,58 +105,46 @@ assign_color_index(
 /*
  * Initialization
  */
-  static int
-color_do_registration(
-    pcl_parser_state_t *pcl_parser_state,
-    gs_memory_t *   pmem
-)
+static int
+color_do_registration(pcl_parser_state_t * pcl_parser_state,
+                      gs_memory_t * pmem)
 {
     /* Register commands */
-    DEFINE_CLASS('*')
-    {
+    DEFINE_CLASS('*') {
         'v', 'A',
-        PCL_COMMAND( "Color Component 1",
-                     set_color_comp_1,
-                     pca_neg_ok | pca_big_error | pca_raster_graphics | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("Color Component 1",
+                        set_color_comp_1,
+                        pca_neg_ok | pca_big_error | pca_raster_graphics |
+                        pca_in_rtl)
+    }, {
         'v', 'B',
-        PCL_COMMAND( "Color Component 2",
-                     set_color_comp_2,
-                     pca_neg_ok | pca_big_error | pca_raster_graphics | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("Color Component 2",
+                        set_color_comp_2,
+                        pca_neg_ok | pca_big_error | pca_raster_graphics |
+                        pca_in_rtl)
+    }, {
         'v', 'C',
-        PCL_COMMAND( "Color Component 3",
-                     set_color_comp_3,
-                     pca_neg_ok | pca_big_error | pca_raster_graphics | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("Color Component 3",
+                        set_color_comp_3,
+                        pca_neg_ok | pca_big_error | pca_raster_graphics |
+                        pca_in_rtl)
+    }, {
         'v', 'I',
-        PCL_COMMAND( "Assign Color Index",
-                     assign_color_index,
-                     pca_neg_ok | pca_big_ignore | pca_raster_graphics | pca_in_rtl
-                     )
-    },
-    END_CLASS
-    return 0;
+            PCL_COMMAND("Assign Color Index",
+                        assign_color_index,
+                        pca_neg_ok | pca_big_ignore | pca_raster_graphics |
+                        pca_in_rtl)
+    }, END_CLASS return 0;
 }
 
 /*
  * Handle the various forms of reset.
  */
-  static void
-color_do_reset(
-    pcl_state_t *        pcs,
-    pcl_reset_type_t    type
-)
+static void
+color_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
-    static const uint   mask = (   pcl_reset_initial
-                                 | pcl_reset_cold
-                                 | pcl_reset_printer );
+    static const uint mask = (pcl_reset_initial
+                              | pcl_reset_cold | pcl_reset_printer);
 
     if ((type & mask) != 0) {
         pcs->color_comps[0] = 0.0;
@@ -181,4 +157,5 @@ color_do_reset(
  * There is no copy operation for this module, as the color components are
  * just globals.
  */
-const pcl_init_t    pcl_color_init = { color_do_registration, color_do_reset, 0 };
+const pcl_init_t pcl_color_init =
+    { color_do_registration, color_do_reset, 0 };

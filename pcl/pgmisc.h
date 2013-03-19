@@ -20,10 +20,11 @@
 #ifndef pgmisc_INCLUDED
 #  define pgmisc_INCLUDED
 
-void hpgl_set_lost_mode(hpgl_state_t *pgls, hpgl_lost_mode_t lost_mode);
+void hpgl_set_lost_mode(hpgl_state_t * pgls, hpgl_lost_mode_t lost_mode);
+
 /* get the current setting of the edge pen set by CF, NB this should
    be in a different header file */
-int32 hpgl_get_character_edge_pen(hpgl_state_t *pgls);
+int32 hpgl_get_character_edge_pen(hpgl_state_t * pgls);
 
 /* macro to see if we are in lost mode */
 #define hpgl_lost (pgls->g.lost_mode == hpgl_lost_mode_entered)
@@ -36,8 +37,10 @@ int32 hpgl_get_character_edge_pen(hpgl_state_t *pgls);
 #ifdef DEBUG
 
 void hpgl_error(void);
-int hpgl_print_error(const gs_memory_t *mem,
-                     const char *function, const char *file, int line, int code);
+
+int hpgl_print_error(const gs_memory_t * mem,
+                     const char *function, const char *file, int line,
+                     int code);
 
 # ifdef __GNUC__
 #  define hpgl_call_note_error(mem, code)\
@@ -47,7 +50,7 @@ int hpgl_print_error(const gs_memory_t *mem,
      hpgl_print_error(mem, (const char *)0, __FILE__, __LINE__, code)
 # endif
 
-#else				/* !DEBUG */
+#else /* !DEBUG */
 
 #define hpgl_call_note_error(mem, code) (code)
 
@@ -67,7 +70,7 @@ do {						\
 
 /* Ordinary function calls */
 
-#define hpgl_no_check() /* */
+#define hpgl_no_check()         /* */
 
 #define hpgl_call(call)\
   hpgl_call_and_check(pgls->memory, call, hpgl_no_check)
@@ -87,7 +90,8 @@ do {						\
 
 /* We don't have a header file for exporting gl/2 character routines
    yet */
-gs_point hpgl_current_char_scale(const hpgl_state_t *pgls);
-bool hpgl_is_currentfont_stick_or_arc(const hpgl_state_t *pgls);
+gs_point hpgl_current_char_scale(const hpgl_state_t * pgls);
 
-#endif                       /* pgmisc_INCLUDED */
+bool hpgl_is_currentfont_stick_or_arc(const hpgl_state_t * pgls);
+
+#endif /* pgmisc_INCLUDED */

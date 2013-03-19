@@ -20,10 +20,10 @@
 #define rtmisc_INCLUDED
 
 /* Export this so we can call it from HP-GL/2 configurations. */
-int rtl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcs);
+int rtl_enter_pcl_mode(pcl_args_t * pargs, pcl_state_t * pcs);
 
 /* Export this so the PCL parser will call this in RTL mode when it
    does not recognize the input, so it will be interpreted as HPGL/2. */
-int rtl_enter_hpgl_mode(pcl_args_t *pargs, pcl_state_t *pcs);
+int rtl_enter_hpgl_mode(pcl_args_t * pargs, pcl_state_t * pcs);
 
-#endif			/* rtmisc_INCLUDED */
+#endif /* rtmisc_INCLUDED */

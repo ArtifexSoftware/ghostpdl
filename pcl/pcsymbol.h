@@ -29,20 +29,19 @@
  * We want a separate dictionary of symbol sets because there are various
  * operations performed per symbol set (affecting all mappings). */
 
-typedef struct pcl_symbol_set_s {
+typedef struct pcl_symbol_set_s
+{
     pcl_data_storage_t storage;
-    pl_symbol_map_t *maps[plgv_next];	/* (these may be NULL) */
+    pl_symbol_map_t *maps[plgv_next];   /* (these may be NULL) */
 } pcl_symbol_set_t;
 
 /* Check whether a symbol map's character requirements are supported by a
  * font's character complement. */
-bool pcl_check_symbol_support(const byte *symset_req,
-                                 const byte *font_sup);
+bool pcl_check_symbol_support(const byte * symset_req, const byte * font_sup);
 
 /* Find a symbol map, given its ID and glyph vocabulary. */
-pl_symbol_map_t *pcl_find_symbol_map(const pcl_state_t *pcs,
-                                     const byte *id,
-                                     pl_glyph_vocabulary_t gv,
-                                     bool wide16);
+pl_symbol_map_t *pcl_find_symbol_map(const pcl_state_t * pcs,
+                                     const byte * id,
+                                     pl_glyph_vocabulary_t gv, bool wide16);
 
-#endif				/* pcsymbol_INCLUDED */
+#endif /* pcsymbol_INCLUDED */

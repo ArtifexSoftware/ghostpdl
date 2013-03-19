@@ -35,10 +35,8 @@
 /*
  * Intersect a rectangle with the positive quadrant.
  */
-  static void
-intersect_with_positive_quadrant(
-    gs_rect *   prect
-)
+static void
+intersect_with_positive_quadrant(gs_rect * prect)
 {
     if (prect->p.x < 0.0) {
         prect->p.x = 0.0;
@@ -56,29 +54,29 @@ intersect_with_positive_quadrant(
    resolution in this adjustment which might introduce a difficulty
    with assymetric resolutions. */
 static inline coord
-adjust_pres_mode(pcl_state_t *pcs)
+adjust_pres_mode(pcl_state_t * pcs)
 {
 
-    pcl_xfm_state_t *       pxfmst = &(pcs->xfm_state);
-    pcl_raster_state_t *    prstate = &(pcs->raster_state);
-    floatp                  fcoord = 0.0;
+    pcl_xfm_state_t *pxfmst = &(pcs->xfm_state);
+
+    pcl_raster_state_t *prstate = &(pcs->raster_state);
+
+    floatp fcoord = 0.0;
 
     if (prstate->pres_mode_3 && (pxfmst->lp_orient & 1))
-        fcoord = 1.0 * 7200.0/gs_currentdevice(pcs->pgs)->HWResolution[0];
-    return (coord)(fcoord + 0.5);
+        fcoord = 1.0 * 7200.0 / gs_currentdevice(pcs->pgs)->HWResolution[0];
+    return (coord) (fcoord + 0.5);
 }
 
 /*
  * Get the effective printing region in raster space
  */
 static void
-get_raster_print_rect( const gs_memory_t *mem,
-                       const gs_rect *      plp_print_rect,
-                       gs_rect *            prst_print_rect,
-                       const gs_matrix *    prst2lp
-                       )
+get_raster_print_rect(const gs_memory_t * mem,
+                      const gs_rect * plp_print_rect,
+                      gs_rect * prst_print_rect, const gs_matrix * prst2lp)
 {
-    gs_matrix            lp2rst;
+    gs_matrix lp2rst;
 
     pcl_invert_mtx(prst2lp, &lp2rst);
     pcl_transform_rect(mem, plp_print_rect, prst_print_rect, &lp2rst);
@@ -184,35 +182,44 @@ get_raster_print_rect( const gs_memory_t *mem,
  *    the useable source raster width and height.
  *
  */
-   int
-pcl_enter_graphics_mode(
-    pcl_state_t *       pcs,
-    pcl_gmode_entry_t   mode
-)
+int
+pcl_enter_graphics_mode(pcl_state_t * pcs, pcl_gmode_entry_t mode)
 {
-    floatp                  scale_x, scale_y;
-    pcl_xfm_state_t *       pxfmst = &(pcs->xfm_state);
-    pcl_raster_state_t *    prstate = &(pcs->raster_state);
-    float                   gmargin_cp = (float)prstate->gmargin_cp;
-    gs_point                cur_pt;
-    gs_matrix               rst2lp, rst2dev, lp2rst;
-    gs_rect                 print_rect;
-    uint                    src_wid, src_hgt;
-    int                     rot;
-    int                     code = 0;
-    double                  dwid, dhgt;
-    int                     clip_x, clip_y;
+    floatp scale_x, scale_y;
+
+    pcl_xfm_state_t *pxfmst = &(pcs->xfm_state);
+
+    pcl_raster_state_t *prstate = &(pcs->raster_state);
+
+    float gmargin_cp = (float)prstate->gmargin_cp;
+
+    gs_point cur_pt;
+
+    gs_matrix rst2lp, rst2dev, lp2rst;
+
+    gs_rect print_rect;
+
+    uint src_wid, src_hgt;
+
+    int rot;
+
+    int code = 0;
+
+    double dwid, dhgt;
+
+    int clip_x, clip_y;
+
     /*
      * Check if the raster is to be clipped fully; see rtrstst.h for details.
      * Since this is a discontinuous effect, the equality checks below
      * should be made while still in centipoints.
      */
-    if ( pcs->personality == rtl )
+    if (pcs->personality == rtl)
         prstate->clip_all = 0;
     else
-        prstate->clip_all = ( (pcs->cap.x == pxfmst->pd_size.x) ||
-                              (pcs->cap.y == pxfmst->pd_size.y)   );
-    
+        prstate->clip_all = ((pcs->cap.x == pxfmst->pd_size.x) ||
+                             (pcs->cap.y == pxfmst->pd_size.y));
+
     /* create to raster space to logical page space transformation */
     rot = pxfmst->lp_orient + pxfmst->print_dir;
     if (prstate->pres_mode_3)
@@ -233,53 +240,62 @@ pcl_enter_graphics_mode(
     if (((int)mode & 0x1) != 0)
         gmargin_cp = cur_pt.x;
     gs_matrix_translate(&rst2lp, gmargin_cp, cur_pt.y, &rst2lp);
-    prstate->gmargin_cp = (coord)gmargin_cp;
+    prstate->gmargin_cp = (coord) gmargin_cp;
 
     /* isotropic scaling with missing parameter is based on clipped raster dimensions */
 
     /* transform the clipping window to raster space */
-    get_raster_print_rect(pcs->memory, &(pxfmst->lp_print_rect), &print_rect, &rst2lp);
+    get_raster_print_rect(pcs->memory, &(pxfmst->lp_print_rect), &print_rect,
+                          &rst2lp);
     dwid = print_rect.q.x - print_rect.p.x;
     dhgt = print_rect.q.y - print_rect.p.y;
 
-    clip_x = (int)pxfmst->lp_print_rect.p.x;  /* if neg then: */
-    clip_y = (int)pxfmst->lp_print_rect.p.y;  /* = 1200centipoints */
+    clip_x = (int)pxfmst->lp_print_rect.p.x;    /* if neg then: */
+    clip_y = (int)pxfmst->lp_print_rect.p.y;    /* = 1200centipoints */
 
     /* set the matrix scale */
-    if ( !prstate->scale_raster       ||
-         !prstate->src_width_set      ||
-         !prstate->src_height_set     ||
-         (pcs->ppalet->pindexed->pfixed  && mode == IMPLICIT) ) {
-        scale_x = 7200.0 / (floatp)prstate->resolution;
+    if (!prstate->scale_raster ||
+        !prstate->src_width_set ||
+        !prstate->src_height_set ||
+        (pcs->ppalet->pindexed->pfixed && mode == IMPLICIT)) {
+        scale_x = 7200.0 / (floatp) prstate->resolution;
         scale_y = scale_x;
 
     } else if (prstate->dest_width_set) {
-        scale_x = (floatp)prstate->dest_width_cp / (floatp)prstate->src_width;
+        scale_x =
+            (floatp) prstate->dest_width_cp / (floatp) prstate->src_width;
 
-        if ( clip_x < 0 && pxfmst->lp_orient == 3 ) {
-            scale_y = (floatp)(prstate->dest_width_cp - clip_y ) / (floatp)prstate->src_width;
-            if ( rot == 2 && scale_y <=  2* prstate->src_width) /* empirical test 1 */
+        if (clip_x < 0 && pxfmst->lp_orient == 3) {
+            scale_y =
+                (floatp) (prstate->dest_width_cp -
+                          clip_y) / (floatp) prstate->src_width;
+            if (rot == 2 && scale_y <= 2 * prstate->src_width)  /* empirical test 1 */
                 scale_y = scale_x;
-        }
-        else if ( clip_x < 0 && pxfmst->lp_orient == 1 && rot == 3 ) {
-            scale_y = (floatp)(prstate->dest_width_cp - clip_y) / (floatp)prstate->src_width;
+        } else if (clip_x < 0 && pxfmst->lp_orient == 1 && rot == 3) {
+            scale_y =
+                (floatp) (prstate->dest_width_cp -
+                          clip_y) / (floatp) prstate->src_width;
 
-            if ( prstate->dest_width_cp <= 7200 )  /* empirical test 2 */
-                scale_y = (floatp)(prstate->dest_width_cp + clip_y) / (floatp)prstate->src_width;
-        }
-        else
+            if (prstate->dest_width_cp <= 7200) /* empirical test 2 */
+                scale_y =
+                    (floatp) (prstate->dest_width_cp +
+                              clip_y) / (floatp) prstate->src_width;
+        } else
             scale_y = scale_x;
 
         if (prstate->dest_height_set)
-            scale_y = (floatp)prstate->dest_height_cp / (floatp)prstate->src_height;
+            scale_y =
+                (floatp) prstate->dest_height_cp /
+                (floatp) prstate->src_height;
 
     } else if (prstate->dest_height_set) {
-        scale_x = scale_y = (floatp)prstate->dest_height_cp / (floatp)prstate->src_height;
+        scale_x = scale_y =
+            (floatp) prstate->dest_height_cp / (floatp) prstate->src_height;
     } else {
 
         /* select isotropic scaling with no clipping */
-        scale_x = (floatp)dwid / (floatp)prstate->src_width;
-        scale_y = (floatp)dhgt / (floatp)prstate->src_height;
+        scale_x = (floatp) dwid / (floatp) prstate->src_width;
+        scale_y = (floatp) dhgt / (floatp) prstate->src_height;
         if (scale_x > scale_y)
             scale_x = scale_y;
         else
@@ -325,16 +341,18 @@ pcl_enter_graphics_mode(
     pcl_set_graphics_state(pcs);
     pcl_set_drawing_color(pcs, pcl_pattern_raster_cspace, 0, true);
     pcl_gsave(pcs);
-    pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->current_pattern_id, true);
+    pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->current_pattern_id,
+                          true);
     gs_setmatrix(pcs->pgs, &rst2dev);
 
     /* translate the origin of the forward transformation */
     /* tansform the clipping window to raster space; udpate source dimensions */
-    get_raster_print_rect(pcs->memory, &(pxfmst->lp_print_rect), &print_rect, &rst2lp);
+    get_raster_print_rect(pcs->memory, &(pxfmst->lp_print_rect), &print_rect,
+                          &rst2lp);
 
     /* min size is 1 pixel */
-    src_wid = max(1, (uint)(floor(print_rect.q.x) - floor(print_rect.p.x)));
-    src_hgt = max(1, (uint)(floor(print_rect.q.y) - floor(print_rect.p.y)));
+    src_wid = max(1, (uint) (floor(print_rect.q.x) - floor(print_rect.p.x)));
+    src_hgt = max(1, (uint) (floor(print_rect.q.y) - floor(print_rect.p.y)));
     if (prstate->src_width_set && (src_wid > prstate->src_width))
         src_wid = prstate->src_width;
     if (prstate->src_height_set && (src_hgt > prstate->src_height))
@@ -342,7 +360,7 @@ pcl_enter_graphics_mode(
 
     if (src_wid <= 0 || src_hgt <= 0) {
         pcl_grestore(pcs);
-        return 1; /* hack, we want to return a non critical warning */
+        return 1;               /* hack, we want to return a non critical warning */
     }
     /* determine (conservatively) if the region of interest has been
        marked */
@@ -358,13 +376,12 @@ pcl_enter_graphics_mode(
  * End (raster) graphics mode. This may be called explicitly by either of the
  * end graphics mode commands (<esc>*rB or <esc>*rC).
  */
-  int
-pcl_end_graphics_mode(
-    pcl_state_t *   pcs
-)
+int
+pcl_end_graphics_mode(pcl_state_t * pcs)
 {
-    gs_point        cur_pt;
-    gs_matrix       dev2pd;
+    gs_point cur_pt;
+
+    gs_matrix dev2pd;
 
     /* close the raster; exit graphics mode */
     pcl_complete_raster(pcs);
@@ -377,14 +394,10 @@ pcl_end_graphics_mode(
     /* transform the new point back to "pseudo print direction" space */
     pcl_invert_mtx(&(pcs->xfm_state.pd2dev_mtx), &dev2pd);
     gs_point_transform(cur_pt.x, cur_pt.y, &dev2pd, &cur_pt);
-    pcl_set_cap_x(pcs, (coord)(cur_pt.x + 0.5) - adjust_pres_mode(pcs), false, false);
-    return pcl_set_cap_y( pcs,
-                          (coord)(cur_pt.y + 0.5) - pcs->margins.top,
-                          false,
-                          false,
-                          false,
-                          false
-                          );
+    pcl_set_cap_x(pcs, (coord) (cur_pt.x + 0.5) - adjust_pres_mode(pcs),
+                  false, false);
+    return pcl_set_cap_y(pcs, (coord) (cur_pt.y + 0.5) - pcs->margins.top,
+                         false, false, false, false);
 }
 
 /*
@@ -393,15 +406,15 @@ pcl_end_graphics_mode(
  */
 
 int
-pcl_end_graphics_mode_implicit(pcl_state_t *pcs, bool ignore_in_rtl)
+pcl_end_graphics_mode_implicit(pcl_state_t * pcs, bool ignore_in_rtl)
 {
     /* In PCL modes things are straightforward, always exit graphics
        mode when encountering a locked out command */
     if (pcs->personality != rtl)
         return pcl_end_graphics_mode(pcs);
-    
+
     /* RTL mode we don't thoroughly understand, it appears some
-     commands cause graphics to end others don't */
+       commands cause graphics to end others don't */
     if (!ignore_in_rtl)
         return pcl_end_graphics_mode(pcs);
 
@@ -416,14 +429,12 @@ pcl_end_graphics_mode_implicit(pcl_state_t *pcs, bool ignore_in_rtl)
  * The value provided will be rounded up to the nearest legal value or down to 600dpi.
  * 75 100 150 200 300 600 are legal;  120 and 85.7143 are multiples of 75 but not legal.
  */
-  static int
-set_graphics_resolution(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+set_graphics_resolution(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    uint            res = arg_is_present(pargs) ? uint_arg(pargs) : 75;
-    uint            qi = 600 / res;
+    uint res = arg_is_present(pargs) ? uint_arg(pargs) : 75;
+
+    uint qi = 600 / res;
 
     /* HP does not allow 120 dpi or 85.7 dpi as a resolution */
     qi = (qi == 0 ? 1 : (qi > 8 ? 8 : (qi == 7 ? 6 : (qi == 5 ? 4 : qi))));
@@ -443,13 +454,10 @@ set_graphics_resolution(
  * This command is ignored if values other than 0 and 3 are provided, ignoring
  * any sign. The command is also ignored inside graphics mode.
  */
-  static int
-set_graphics_presentation_mode(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+set_graphics_presentation_mode(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    uint            mode = uint_arg(pargs);
+    uint mode = uint_arg(pargs);
 
     if (!pcs->raster_state.graphics_mode) {
         if (mode == 3)
@@ -471,11 +479,8 @@ set_graphics_presentation_mode(
  *
  * This command is ignored in graphics mode.
  */
-  static int
-set_src_raster_width(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+set_src_raster_width(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     if (!pcs->raster_state.graphics_mode) {
         pcs->raster_state.src_width = uint_arg(pargs);
@@ -494,11 +499,8 @@ set_src_raster_width(
  *
  * This command is ignored in graphics mode.
  */
-  static int
-set_src_raster_height(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+set_src_raster_height(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     if (!pcs->raster_state.graphics_mode) {
         pcs->raster_state.src_height = uint_arg(pargs);
@@ -522,24 +524,25 @@ set_src_raster_height(
  * transfered. Hence, the transfer raster data command must perform the required
  * check.
  */
-  static int
-set_compression_method(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+set_compression_method(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    uint            mode = uint_arg(pargs);
+    uint mode = uint_arg(pargs);
 
     if (mode < count_of(pcl_decomp_proc)) {
         pcs->raster_state.compression_mode = mode;
         /* CCITT compression modes are always monochrome - install the
            monochrome palette and restart raster. */
-        if (mode >=6 && mode <= 9) {
+        if (mode >= 6 && mode <= 9) {
             pcl_palette_CCITT_raster(pcs);
             if (pcs->raster_state.graphics_mode) {
-                coord x = pcs->cap.x; coord y = pcs->cap.y;
+                coord x = pcs->cap.x;
+
+                coord y = pcs->cap.y;
+
                 pcl_end_graphics_mode(pcs);
-                pcs->cap.x = x; pcs->cap.y = y;
+                pcs->cap.x = x;
+                pcs->cap.y = y;
                 pcl_enter_graphics_mode(pcs, pcs->raster_state.entry_mode);
             }
         }
@@ -559,20 +562,16 @@ set_compression_method(
  * Though it is not noted in the "PCL 5 Color Technical Reference Manual", this
  * command is ignored in graphics mode.
  */
-  static int
-set_dest_raster_width(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+set_dest_raster_width(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     if (!pcs->raster_state.graphics_mode) {
-        if ( arg_is_present(pargs) ) {
-            uint    dw = (uint)(10 * fabs(float_arg(pargs)));
+        if (arg_is_present(pargs)) {
+            uint dw = (uint) (10 * fabs(float_arg(pargs)));
 
             pcs->raster_state.dest_width_cp = dw;
             pcs->raster_state.dest_width_set = (dw != 0);
-        }
-        else
+        } else
             pcs->raster_state.dest_width_set = false;
     }
     return 0;
@@ -589,20 +588,16 @@ set_dest_raster_width(
  * Though it is not noted in the "PCL 5 Color Technical Reference Manual", this
  * command is ignored in graphics mode.
  */
-  static int
-set_dest_raster_height(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+set_dest_raster_height(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     if (!pcs->raster_state.graphics_mode) {
-        if ( arg_is_present(pargs) ) {
-            uint    dh = (uint)(10 * fabs(float_arg(pargs)));
+        if (arg_is_present(pargs)) {
+            uint dh = (uint) (10 * fabs(float_arg(pargs)));
 
             pcs->raster_state.dest_height_cp = dh;
             pcs->raster_state.dest_height_set = (dh != 0);
-        }
-        else
+        } else
             pcs->raster_state.dest_height_set = false;
     }
     return 0;
@@ -617,14 +612,12 @@ set_dest_raster_height(
  * a discussion of the rather curios manner in which the left raster graphics
  * margin is set below.
  */
-  static int
-start_graphics_mode(
-    pcl_args_t *            pargs,
-    pcl_state_t *           pcs
-)
+static int
+start_graphics_mode(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    pcl_gmode_entry_t       mode = (pcl_gmode_entry_t)uint_arg(pargs);
-    pcl_raster_state_t *    prstate = &(pcs->raster_state);
+    pcl_gmode_entry_t mode = (pcl_gmode_entry_t) uint_arg(pargs);
+
+    pcl_raster_state_t *prstate = &(pcs->raster_state);
 
     if (mode > SCALE_CUR_PTR)
         mode = NO_SCALE_LEFT_MARG;
@@ -646,11 +639,8 @@ start_graphics_mode(
  *
  * End raster graphics mode - old style.
  */
-  static int
-end_graphics_mode_B(
-    pcl_args_t *        pargs,
-    pcl_state_t *       pcs
-)
+static int
+end_graphics_mode_B(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     if (pcs->raster_state.graphics_mode)
         pcl_end_graphics_mode(pcs);
@@ -663,11 +653,8 @@ end_graphics_mode_B(
  * End raster graphics mode - new style. This resets the compression mode and
  * the left grahics margin, in addition to ending graphics mode.
  */
-  static int
-end_graphics_mode_C(
-    pcl_args_t *        pargs,
-    pcl_state_t *       pcs
-)
+static int
+end_graphics_mode_C(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     if (pcs->raster_state.graphics_mode)
         pcl_end_graphics_mode(pcs);
@@ -679,103 +666,85 @@ end_graphics_mode_C(
 /*
  * Initialization
  */
-  static int
-gmode_do_registration(
-    pcl_parser_state_t *pcl_parser_state,
-    gs_memory_t *   pmem    /* ignored */
-)
+static int
+gmode_do_registration(pcl_parser_state_t * pcl_parser_state, gs_memory_t * pmem /* ignored */
+    )
 {
-    DEFINE_CLASS('*')
-    {
+    DEFINE_CLASS('*') {
         't', 'R',
-         PCL_COMMAND( "Raster Graphics Resolution",
-                      set_graphics_resolution,
-                      pca_raster_graphics | pca_neg_ok | pca_big_clamp | pca_in_rtl
-                      )
-    },
-    {
+            PCL_COMMAND("Raster Graphics Resolution",
+                        set_graphics_resolution,
+                        pca_raster_graphics | pca_neg_ok | pca_big_clamp |
+                        pca_in_rtl)
+    }, {
         'r', 'F',
-         PCL_COMMAND( "Raster Graphics Presentation Mode",
-                      set_graphics_presentation_mode,
-                      pca_raster_graphics | pca_neg_ok | pca_big_ignore | pca_in_rtl
-                      )
-    },
-    {
+            PCL_COMMAND("Raster Graphics Presentation Mode",
+                        set_graphics_presentation_mode,
+                        pca_raster_graphics | pca_neg_ok | pca_big_ignore |
+                        pca_in_rtl)
+    }, {
         'r', 'S',
-         PCL_COMMAND( "Source Raster Width",
-                      set_src_raster_width,
-                      pca_raster_graphics | pca_neg_ok | pca_big_clamp | pca_in_rtl
-                      )
-    },
-    {
+            PCL_COMMAND("Source Raster Width",
+                        set_src_raster_width,
+                        pca_raster_graphics | pca_neg_ok | pca_big_clamp |
+                        pca_in_rtl)
+    }, {
         'r', 'T',
-        PCL_COMMAND( "Source Raster_Height",
-                     set_src_raster_height,
-                     pca_raster_graphics | pca_neg_ok | pca_big_clamp | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("Source Raster_Height",
+                        set_src_raster_height,
+                        pca_raster_graphics | pca_neg_ok | pca_big_clamp |
+                        pca_in_rtl)
+    }, {
         'b', 'M',
-        PCL_COMMAND( "Set Compresion Method",
-                     set_compression_method,
-                     pca_raster_graphics | pca_neg_ok | pca_big_ignore | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("Set Compresion Method",
+                        set_compression_method,
+                        pca_raster_graphics | pca_neg_ok | pca_big_ignore |
+                        pca_in_rtl)
+    }, {
         't', 'H',
-        PCL_COMMAND( "Destination Raster Width",
-                     set_dest_raster_width,
-                     pca_raster_graphics | pca_neg_ok | pca_big_ignore | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("Destination Raster Width",
+                        set_dest_raster_width,
+                        pca_raster_graphics | pca_neg_ok | pca_big_ignore |
+                        pca_in_rtl)
+    }, {
         't', 'V',
-        PCL_COMMAND( "Destination Raster Height",
-                     set_dest_raster_height,
-                     pca_raster_graphics | pca_neg_ok | pca_big_ignore | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("Destination Raster Height",
+                        set_dest_raster_height,
+                        pca_raster_graphics | pca_neg_ok | pca_big_ignore |
+                        pca_in_rtl)
+    }, {
         'r', 'A',
-        PCL_COMMAND( "Start Raster Graphics",
-                     start_graphics_mode,
-                     pca_raster_graphics | pca_neg_ok | pca_big_clamp | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("Start Raster Graphics",
+                        start_graphics_mode,
+                        pca_raster_graphics | pca_neg_ok | pca_big_clamp |
+                        pca_in_rtl)
+    }, {
         'r', 'B',
-        PCL_COMMAND( "End Raster Graphics (Old)",
-                     end_graphics_mode_B,
-                     pca_raster_graphics | pca_neg_ok | pca_big_ok | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("End Raster Graphics (Old)",
+                        end_graphics_mode_B,
+                        pca_raster_graphics | pca_neg_ok | pca_big_ok |
+                        pca_in_rtl)
+    }, {
         'r', 'C',
-        PCL_COMMAND( "End Raster Graphics (New)",
-                     end_graphics_mode_C,
-                     pca_raster_graphics | pca_neg_ok | pca_big_ok | pca_in_rtl
-                     )
-    },
-    END_CLASS
-    return 0;
+            PCL_COMMAND("End Raster Graphics (New)",
+                        end_graphics_mode_C,
+                        pca_raster_graphics | pca_neg_ok | pca_big_ok |
+                        pca_in_rtl)
+    }, END_CLASS return 0;
 }
 
-  static void
-gmode_do_reset(
-    pcl_state_t *       pcs,
-    pcl_reset_type_t    type
-)
+static void
+gmode_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
-    static  const uint  mask = (  pcl_reset_initial
-                                | pcl_reset_printer
-                                | pcl_reset_overlay );
+    static const uint mask = (pcl_reset_initial
+                              | pcl_reset_printer | pcl_reset_overlay);
 
     if ((type & mask) != 0) {
-        pcl_raster_state_t *    prstate = &(pcs->raster_state);
+        pcl_raster_state_t *prstate = &(pcs->raster_state);
 
         prstate->gmargin_cp = 0L;
         prstate->resolution = 75;
-        if ( pcs->personality == rtl ) {
+        if (pcs->personality == rtl) {
             prstate->pres_mode_3 = false;
         } else {
             prstate->pres_mode_3 = true;
@@ -792,4 +761,4 @@ gmode_do_reset(
     }
 }
 
-const pcl_init_t    rtgmode_init = { gmode_do_registration, gmode_do_reset, 0 };
+const pcl_init_t rtgmode_init = { gmode_do_registration, gmode_do_reset, 0 };

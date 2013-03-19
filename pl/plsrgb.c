@@ -106,34 +106,34 @@ pl_device_does_color_conversion()
 /* CIEBasedABC definitions */
 /* Decode LMN procedures for srgb color spaces or sRGB gamma transform. */
 inline static float
-pl_decodeLMN(floatp val, const gs_cie_common *pcie)
+pl_decodeLMN(floatp val, const gs_cie_common * pcie)
 {
-    if ( val <= 0.03928 )
+    if (val <= 0.03928)
         return (float)(val / 12.92321);
     else
         return (float)pow((val + 0.055) / 1.055, (double)2.4);
 }
 
 static float
-pl_DecodeLMN_0(floatp val, const gs_cie_common *pcie)
+pl_DecodeLMN_0(floatp val, const gs_cie_common * pcie)
 {
     return pl_decodeLMN(val, pcie);
 }
 
 static float
-pl_DecodeLMN_1(floatp val, const gs_cie_common *pcie)
+pl_DecodeLMN_1(floatp val, const gs_cie_common * pcie)
 {
     return pl_decodeLMN(val, pcie);
 }
 
 static float
-pl_DecodeLMN_2(floatp val, const gs_cie_common *pcie)
+pl_DecodeLMN_2(floatp val, const gs_cie_common * pcie)
 {
     return pl_decodeLMN(val, pcie);
 }
 
 static const gs_cie_common_proc3 pl_DecodeLMN = {
-    { pl_DecodeLMN_0, pl_DecodeLMN_1, pl_DecodeLMN_2 }
+    {pl_DecodeLMN_0, pl_DecodeLMN_1, pl_DecodeLMN_2}
 };
 
 /* LMN matrix for srgb. sRGB to XYZ (D65) matrix (ITU-R BT.709-2 Primaries) */
@@ -153,8 +153,8 @@ static const gs_matrix3 pl_MatrixCRDLMN = {
 };
 
 /* D65 white point */
-static const gs_vector3 pl_WhitePoint = {0.9505f, 1.0f, 1.0890f};
-static const gs_vector3 pl_BlackPoint = {0.0f, 0.0f, 0.0f};
+static const gs_vector3 pl_WhitePoint = { 0.9505f, 1.0f, 1.0890f };
+static const gs_vector3 pl_BlackPoint = { 0.0f, 0.0f, 0.0f };
 
 /* Bradford Cone Space - www.srgb.com */
 static const gs_matrix3 pl_MatrixPQR = {
@@ -172,11 +172,13 @@ static const gs_range3 pl_RangePQR = {
 
 /* tranform pqr */
 static int
-pl_TransformPQR_proc(int indx, floatp val, const gs_cie_wbsd *cs_wbsd,
-                  gs_cie_render *pcrd, float *pnew_val)
+pl_TransformPQR_proc(int indx, floatp val, const gs_cie_wbsd * cs_wbsd,
+                     gs_cie_render * pcrd, float *pnew_val)
 {
     const float *pcrd_wht = (float *)&(cs_wbsd->wd.pqr);
+
     const float *pcs_wht = (float *)&(cs_wbsd->ws.pqr);
+
     *pnew_val = val * pcrd_wht[indx] / pcs_wht[indx];
     return 0;
 }
@@ -184,7 +186,7 @@ pl_TransformPQR_proc(int indx, floatp val, const gs_cie_wbsd *cs_wbsd,
 static const gs_cie_transform_proc3 pl_TransformPQR = {
     pl_TransformPQR_proc,
     NULL,
-    { NULL, 0 },
+    {NULL, 0},
     NULL
 };
 
@@ -192,7 +194,7 @@ static const gs_cie_transform_proc3 pl_TransformPQR = {
 inline static float
 pl_encodeABC(floatp in, const gs_cie_render * pcrd)
 {
-    if ( in <= 0.00304 )
+    if (in <= 0.00304)
         return (float)(in * 12.92321);
     return (float)(pow(in, (1.0 / 2.4)) * 1.055 - 0.055);
 }
@@ -230,25 +232,27 @@ static const gs_cie_render_proc3 pl_EncodeABC_procs = {
  */
 
 static bool
-pl_read_device_CRD(gs_cie_render *pcrd, gs_state *pgs)
+pl_read_device_CRD(gs_cie_render * pcrd, gs_state * pgs)
 {
-    gx_device *     pdev = gs_currentdevice(pgs);
+    gx_device *pdev = gs_currentdevice(pgs);
+
     gs_c_param_list list;
+
     gs_param_string dstring;
-    char            nbuff[64];  /* ample size */
-    int             code = 0;
+
+    char nbuff[64];             /* ample size */
+
+    int code = 0;
 
     /*get the CRDName parameter from the device */
     gs_c_param_list_write(&list, gs_state_memory(pgs));
-    if (param_request((gs_param_list *)&list, "CRDName") < 0)
+    if (param_request((gs_param_list *) & list, "CRDName") < 0)
         return false;
 
-    if ((code = gs_getdeviceparams(pdev, (gs_param_list *)&list)) >= 0) {
+    if ((code = gs_getdeviceparams(pdev, (gs_param_list *) & list)) >= 0) {
         gs_c_param_list_read(&list);
-        if ( (code = param_read_string( (gs_param_list *)&list,
-                                        "CRDName",
-                                        &dstring
-                                        )) == 0 ) {
+        if ((code = param_read_string((gs_param_list *) & list,
+                                      "CRDName", &dstring)) == 0) {
             if (dstring.size > sizeof(nbuff) - 1)
                 code = 1;
             else {
@@ -262,19 +266,16 @@ pl_read_device_CRD(gs_cie_render *pcrd, gs_state *pgs)
         return false;
 
     gs_c_param_list_write(&list, gs_state_memory(pgs));
-    if (param_request((gs_param_list *)&list, nbuff) < 0)
+    if (param_request((gs_param_list *) & list, nbuff) < 0)
         return false;
-    if ((code = gs_getdeviceparams(pdev, (gs_param_list *)&list)) >= 0) {
-        gs_param_dict   dict;
+    if ((code = gs_getdeviceparams(pdev, (gs_param_list *) & list)) >= 0) {
+        gs_param_dict dict;
 
         gs_c_param_list_read(&list);
-        if ( (code = param_begin_read_dict( (gs_param_list *)&list,
-                                            nbuff,
-                                            &dict,
-                                            false
-                                            )) == 0 ) {
+        if ((code = param_begin_read_dict((gs_param_list *) & list,
+                                          nbuff, &dict, false)) == 0) {
             code = param_get_cie_render1(pcrd, dict.list, pdev);
-            param_end_read_dict((gs_param_list *)&list, nbuff, &dict);
+            param_end_read_dict((gs_param_list *) & list, nbuff, &dict);
             if (code > 0)
                 code = 0;
         }
@@ -286,65 +287,57 @@ pl_read_device_CRD(gs_cie_render *pcrd, gs_state *pgs)
 /* statics to see if the crd has been built, in practice the crd is a
    singleton. */
 gs_cie_render *pl_pcrd;
-bool pl_pcrd_built = false; /* the crd has been built */
+
+bool pl_pcrd_built = false;     /* the crd has been built */
 
 static int
-pl_build_crd(gs_state *pgs)
+pl_build_crd(gs_state * pgs)
 {
     int code;
+
     /* nothing to do */
-    if ( pl_pcrd_built == true )
+    if (pl_pcrd_built == true)
         return gs_setcolorrendering(pgs, pl_pcrd);
 
     code = gs_cie_render1_build(&pl_pcrd, gs_state_memory(pgs), "build_crd");
-    if ( code < 0 )
+    if (code < 0)
         return code;
     pl_pcrd_built = true;
 
-    if ( pl_read_device_CRD(pl_pcrd, pgs) ) {
+    if (pl_read_device_CRD(pl_pcrd, pgs)) {
         dmprintf(pgs->memory, "CRD initialized from device\n");
         return 0;
     }
 
-    code = gs_cie_render1_initialize(pgs->memory,
-                                     pl_pcrd,
-                                     NULL,
-                                     &pl_WhitePoint,
-                                     &pl_BlackPoint,
-                                     &pl_MatrixPQR,
-                                     &pl_RangePQR,
-                                     &pl_TransformPQR,
-                                     &pl_MatrixCRDLMN,
-                                     NULL, /* EncodeLMN */
-                                     NULL, /* RangeLMN */
-                                     NULL, /* MatrixABC */
-                                     &pl_EncodeABC_procs,
-                                     NULL,
-                                     NULL);
-    if ( code < 0 )
-        return code; /* should not fail */
+    code = gs_cie_render1_initialize(pgs->memory, pl_pcrd, NULL, &pl_WhitePoint, &pl_BlackPoint, &pl_MatrixPQR, &pl_RangePQR, &pl_TransformPQR, &pl_MatrixCRDLMN, NULL, /* EncodeLMN */
+                                     NULL,      /* RangeLMN */
+                                     NULL,      /* MatrixABC */
+                                     &pl_EncodeABC_procs, NULL, NULL);
+    if (code < 0)
+        return code;            /* should not fail */
     code = gs_setcolorrendering(pgs, pl_pcrd);
     return code;
 }
 
 /* return SRGB color space to the client */
 int
-pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs)
+pl_cspace_init_SRGB(gs_color_space ** ppcs, const gs_state * pgs)
 {
 
     int code;
+
     /* make sure we have a crd set up */
 #ifdef DEVICE_DOES_COLOR_CONVERSION
     *ppcs = gs_cspace_new_DeviceRGB(pgs->memory);
     return 0;
 #endif
 
-    code = pl_build_crd((gs_state *)pgs);
-    if ( code < 0 )
+    code = pl_build_crd((gs_state *) pgs);
+    if (code < 0)
         return code;
 
     code = gs_cspace_build_CIEABC(ppcs, NULL, gs_state_memory(pgs));
-    if ( code < 0 )
+    if (code < 0)
         return code;
     *(gs_cie_DecodeLMN(*ppcs)) = pl_DecodeLMN;
     *(gs_cie_MatrixLMN(*ppcs)) = pl_MatrixLMN;
@@ -355,13 +348,14 @@ pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs)
 
 /* set the srgb color space */
 static int
-pl_setSRGB(gs_state *pgs)
+pl_setSRGB(gs_state * pgs)
 {
     gs_color_space *pcs;
+
     int code;
 
     code = pl_cspace_init_SRGB(&pcs, pgs);
-    if ( code < 0 )
+    if (code < 0)
         return code;
     code = gs_setcolorspace(pgs, pcs);
     rc_decrement(pcs, "ps_setSRGB");
@@ -370,9 +364,10 @@ pl_setSRGB(gs_state *pgs)
 
 /* set an srgb color */
 int
-pl_setSRGBcolor(gs_state *pgs, float r, float g, float b)
+pl_setSRGBcolor(gs_state * pgs, float r, float g, float b)
 {
     int code;
+
     gs_client_color color;
 
 #ifdef DEVICE_DOES_COLOR_CONVERSION
@@ -380,11 +375,11 @@ pl_setSRGBcolor(gs_state *pgs, float r, float g, float b)
 #endif
     /* make sure we have a crd set up */
     code = pl_build_crd(pgs);
-    if ( code < 0 )
+    if (code < 0)
         return code;
 
     code = pl_setSRGB(pgs);
-    if ( code < 0 )
+    if (code < 0)
         return code;
 
     /* set the color */

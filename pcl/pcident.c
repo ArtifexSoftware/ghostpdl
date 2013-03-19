@@ -33,8 +33,8 @@
  * Special handling is also provided to avoid the no_UniqueID value used by
  * the graphic library.
  */
-  pcl_gsid_t
-pcl_next_id(pcl_state_t *pcs)
+pcl_gsid_t
+pcl_next_id(pcl_state_t * pcs)
 {
     if (pcs->next_id == 0)
         pcs->next_id = 16 * 1024 * 1024;

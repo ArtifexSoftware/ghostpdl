@@ -34,22 +34,25 @@
  * (by being deleted or replaced).  The prototype for this procedure is
  * identical to that of gs_free_object (which, however, is a macro.)
  */
-typedef void (*pl_dict_value_free_proc_t)(gs_memory_t *, void *,
-                                          client_name_t);
+typedef void (*pl_dict_value_free_proc_t) (gs_memory_t *, void *,
+                                           client_name_t);
 #ifndef pl_dict_entry_DEFINED
 #  define pl_dict_entry_DEFINED
 typedef struct pl_dict_entry_s pl_dict_entry_t;
 #endif
 typedef struct pl_dict_s pl_dict_t;
-struct pl_dict_s {
-  pl_dict_entry_t *entries;
-  uint entry_count;
-  pl_dict_value_free_proc_t free_proc;
-  pl_dict_t *parent;		/* next dictionary up the stack */
-  gs_memory_t *memory;
+
+struct pl_dict_s
+{
+    pl_dict_entry_t *entries;
+    uint entry_count;
+    pl_dict_value_free_proc_t free_proc;
+    pl_dict_t *parent;          /* next dictionary up the stack */
+    gs_memory_t *memory;
 };
+
 #ifdef extern_st
-extern_st(st_pl_dict);		/* only for embedders */
+extern_st(st_pl_dict);          /* only for embedders */
 #endif
 #define public_st_pl_dict()	/* in pldict.c */\
   gs_public_st_ptrs2(st_pl_dict, pl_dict_t, "pl_dict_t",\
@@ -63,7 +66,7 @@ extern_st(st_pl_dict);		/* only for embedders */
 #define pl_dict_max_short_key 16
 
 /* Initialize a dictionary. */
-void pl_dict_init(pl_dict_t *pdict, gs_memory_t *memory,
+void pl_dict_init(pl_dict_t * pdict, gs_memory_t * memory,
                   pl_dict_value_free_proc_t free_proc);
 
 /*
@@ -72,8 +75,8 @@ void pl_dict_init(pl_dict_t *pdict, gs_memory_t *memory,
  * entry was found.  Return true, setting *pvalue (and, if ppdict is not
  * NULL, *ppdict), if found.
  */
-bool pl_dict_lookup(pl_dict_t *pdict, const byte *kdata, uint ksize,
-                    void **pvalue, bool with_stack, pl_dict_t **ppdict);
+bool pl_dict_lookup(pl_dict_t * pdict, const byte * kdata, uint ksize,
+                    void **pvalue, bool with_stack, pl_dict_t ** ppdict);
 #define pl_dict_find(pdict, kdata, ksize, pvalue)\
   pl_dict_lookup(pdict, kdata, ksize, pvalue, true, (pl_dict_t **)0)
 
@@ -84,7 +87,7 @@ bool pl_dict_lookup(pl_dict_t *pdict, const byte *kdata, uint ksize,
  * Add an entry to a dictionary.  Return 1 if it replaces an existing entry.
  * Return -1 if we couldn't allocate memory.
  */
-int pl_dict_put(pl_dict_t *pdict, const byte *kdata, uint ksize,
+int pl_dict_put(pl_dict_t * pdict, const byte * kdata, uint ksize,
                 void *value);
 
 /*
@@ -103,14 +106,14 @@ int pl_dict_put(pl_dict_t *pdict, const byte *kdata, uint ksize,
  * pl_undef_purge_synonyms() (see below).
  */
 
-int pl_dict_put_synonym(pl_dict_t *pdict, const byte *old_kdata,
-                        uint old_ksize, const byte *new_kdata,
+int pl_dict_put_synonym(pl_dict_t * pdict, const byte * old_kdata,
+                        uint old_ksize, const byte * new_kdata,
                         uint new_ksize);
 
 /*
  * Remove an entry from a dictionary.  Return true if the entry was present.
  */
-bool pl_dict_undef(pl_dict_t *pdict, const byte *kdata, uint ksize);
+bool pl_dict_undef(pl_dict_t * pdict, const byte * kdata, uint ksize);
 
 /*
  * Get or set the parent of a dictionary.
@@ -121,7 +124,7 @@ bool pl_dict_undef(pl_dict_t *pdict, const byte *kdata, uint ksize);
 /*
  * Return the number of entries in a dictionary.
  */
-uint pl_dict_length(const pl_dict_t *pdict, bool with_stack);
+uint pl_dict_length(const pl_dict_t * pdict, bool with_stack);
 
 /*
  * Enumerate a dictionary.  If entries are added during enumeration,
@@ -138,23 +141,25 @@ uint pl_dict_length(const pl_dict_t *pdict, bool with_stack);
  *	while ( pl_dict_enum_next(&denum, &keyvar, &valuevar) )
  *	  ... process <keyvar, valuevar> ...
  */
-typedef struct pl_dict_enum_s {
-  const pl_dict_t *pdict;
-  pl_dict_entry_t *next;
-  bool first;
-  const pl_dict_t *next_dict;
+typedef struct pl_dict_enum_s
+{
+    const pl_dict_t *pdict;
+    pl_dict_entry_t *next;
+    bool first;
+    const pl_dict_t *next_dict;
 } pl_dict_enum_t;
-void pl_dict_enum_stack_begin(const pl_dict_t *pdict, pl_dict_enum_t *penum,
+
+void pl_dict_enum_stack_begin(const pl_dict_t * pdict, pl_dict_enum_t * penum,
                               bool with_stack);
 #define pl_dict_enum_begin(pdict, penum)\
   pl_dict_enum_stack_begin(pdict, penum, true)
-bool pl_dict_enum_next(pl_dict_enum_t *penum, gs_const_string *pkey,
+bool pl_dict_enum_next(pl_dict_enum_t * penum, gs_const_string * pkey,
                        void **pvalue);
 
 /*
  * Release a dictionary by freeing all keys, values, and other storage.
  */
-void pl_dict_release(pl_dict_t *pdict);
+void pl_dict_release(pl_dict_t * pdict);
 
 /*
  * Delete an entry that is a synonym or a canonical entry that has
@@ -162,6 +167,7 @@ void pl_dict_release(pl_dict_t *pdict);
  * that this routine should be used in liueu of pl_dict_undef() if
  * synonyms are potentially used.
  */
-void pl_dict_undef_purge_synonyms(pl_dict_t *pdict, const byte *kdata, uint ksize);
+void pl_dict_undef_purge_synonyms(pl_dict_t * pdict, const byte * kdata,
+                                  uint ksize);
 
-#endif				/* pldict_INCLUDED */
+#endif /* pldict_INCLUDED */

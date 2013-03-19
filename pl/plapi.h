@@ -46,13 +46,13 @@
 # ifndef GSDLLAPI
 #  define GSDLLAPI __stdcall
 # endif
-#endif  /* _Windows */
+#endif /* _Windows */
 
 #if defined(OS2) && defined(__IBMC__)
 # ifndef GSDLLAPI
 #  define GSDLLAPI _System
 # endif
-#endif	/* OS2 && __IBMC */
+#endif /* OS2 && __IBMC */
 
 #ifdef __MACINTOSH__
 # pragma export on
@@ -76,10 +76,8 @@
  * Returns:	  0	success
  *		< 0	error code
  */
-GSDLLEXPORT int GSDLLAPI
-pl_main(int argc, char *argv[]);
+GSDLLEXPORT int GSDLLAPI pl_main(int argc, char *argv[]);
 
-GSDLLEXPORT int GSDLLAPI
-pl_main_aux(int argc, char *argv[], void *disp);
+GSDLLEXPORT int GSDLLAPI pl_main_aux(int argc, char *argv[], void *disp);
 
-#endif				/* plapi_INCLUDED */
+#endif /* plapi_INCLUDED */

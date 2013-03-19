@@ -28,10 +28,11 @@
  * We use the same numbering as for the low 3 bits of the PCL character
  * requirements.
  */
-typedef enum {
-  plgv_MSL = 0,
-  plgv_Unicode = 1,
-  plgv_next
+typedef enum
+{
+    plgv_MSL = 0,
+    plgv_Unicode = 1,
+    plgv_next
 } pl_glyph_vocabulary_t;
 
 #define pl_complement_to_vocab(complement)\
@@ -55,20 +56,21 @@ typedef enum {
  * tified by its id and format.
  */
 
-typedef struct pl_symbol_map_s {
-  byte header_size[2];
-  byte id[2];
-  byte format;
-  byte type;
-  byte first_code[2];
-  byte last_code[2];
-  byte character_requirements[8];
-  byte mapping_type;
-  /*
-   * Note that the codes are stored with native byte order.
-   * If necessary, we byte-swap them after downloading.
-   */
-  ushort codes[256];		/* may be more or less for downloaded maps */
+typedef struct pl_symbol_map_s
+{
+    byte header_size[2];
+    byte id[2];
+    byte format;
+    byte type;
+    byte first_code[2];
+    byte last_code[2];
+    byte character_requirements[8];
+    byte mapping_type;
+    /*
+     * Note that the codes are stored with native byte order.
+     * If necessary, we byte-swap them after downloading.
+     */
+    ushort codes[256];          /* may be more or less for downloaded maps */
 } pl_symbol_map_t;
 
 #define pl_symbol_map_vocabulary(map)\
@@ -79,14 +81,16 @@ typedef struct pl_symbol_map_s {
  * a NULL.
  */
 extern const pl_symbol_map_t *pl_built_in_symbol_maps[];
+
 extern const int pl_built_in_symbol_map_count;
 
 /* lookup symbol in symbol set.  Resident fonts will index implicitly
    if the symbol set in null.  We cheat here and use a ulong instead
    of gs_char to avoid pulling in all the gs_char graphics library
    dependencies. */
-ulong pl_map_symbol(const pl_symbol_map_t *psm, uint chr, bool is_resident_font,
-                    bool is_MSL, bool is_590, const gs_memory_t *mem);
+ulong pl_map_symbol(const pl_symbol_map_t * psm, uint chr,
+                    bool is_resident_font, bool is_MSL, bool is_590,
+                    const gs_memory_t * mem);
 
 /* supported pcl and xl wide encodings - 4 Asian encodings and an an
    undocumented unicode variant which we haven't conclusively
@@ -102,4 +106,4 @@ ulong pl_map_symbol(const pl_symbol_map_t *psm, uint chr, bool is_resident_font,
 #define pl_wide_encoding(ss) \
     ((ss) == 619 || (ss) == 579 || (ss) == 616 || (ss) == 596 || (ss) == 590)
 
-#endif				/* plsymbol_INCLUDED */
+#endif /* plsymbol_INCLUDED */

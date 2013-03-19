@@ -20,7 +20,8 @@
 
 #include "plulp.c"
 
-void pl_get_ulp_character_data(byte **header, byte **character_data)
+void
+pl_get_ulp_character_data(byte ** header, byte ** character_data)
 {
     *header = pl_ulp_header;
     *character_data = pl_ulp_character_data;

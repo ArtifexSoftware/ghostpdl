@@ -26,7 +26,9 @@ gs_memory_t *
 pl_alloc_init()
 {
     gs_memory_t *mem = gs_malloc_init();
+
     gs_memory_t *pl_mem;
+
     int code;
 
     if (mem == NULL)

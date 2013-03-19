@@ -32,22 +32,20 @@
 #include "pcbiptrn.h"
 #include "pcuptrn.h"
 
-gs_private_st_simple(st_pattern_data_t, pcl_pattern_data_t, "PCL/GL pattern data");
+gs_private_st_simple(st_pattern_data_t, pcl_pattern_data_t,
+                     "PCL/GL pattern data");
 gs_private_st_simple(st_pattern_t, pcl_pattern_t, "PCL/GL pattern");
 
 /*
  * Free routine for pattern data structure.
  */
-  static void
-free_pattern_data(
-    gs_memory_t *           pmem,
-    void *                  pvpat_data,
-    client_name_t           cname
-)
+static void
+free_pattern_data(gs_memory_t * pmem, void *pvpat_data, client_name_t cname)
 {
-    pcl_pattern_data_t *    ppat_data = (pcl_pattern_data_t *)pvpat_data;
+    pcl_pattern_data_t *ppat_data = (pcl_pattern_data_t *) pvpat_data;
 
-    if ((ppat_data->storage != pcds_internal) && (ppat_data->pixinfo.data != 0))
+    if ((ppat_data->storage != pcds_internal)
+        && (ppat_data->pixinfo.data != 0))
         gs_free_object(pmem, ppat_data->pixinfo.data, cname);
     gs_free_object(pmem, pvpat_data, cname);
 }
@@ -62,26 +60,19 @@ free_pattern_data(
  * Returns 0 on success, < 0 in the event of an error. In the latter case,
  * *pppat_data will be set to NULL.
  */
-  static int
-build_pattern_data(
-    pcl_pattern_data_t **   pppat_data,
-    const gs_depth_bitmap * ppixinfo,
-    pcl_pattern_type_t      type,
-    int                     xres,
-    int                     yres,
-    gs_memory_t *           pmem
-)
+static int
+build_pattern_data(pcl_pattern_data_t ** pppat_data,
+                   const gs_depth_bitmap * ppixinfo,
+                   pcl_pattern_type_t type,
+                   int xres, int yres, gs_memory_t * pmem)
 {
-    pcl_pattern_data_t *    ppat_data = 0;
+    pcl_pattern_data_t *ppat_data = 0;
 
     *pppat_data = 0;
-    rc_alloc_struct_1( ppat_data,
-                       pcl_pattern_data_t,
-                       &st_pattern_data_t,
-                       pmem,
-                       return e_Memory,
-                       "allocate PCL pattern data"
-                       );
+    rc_alloc_struct_1(ppat_data,
+                      pcl_pattern_data_t,
+                      &st_pattern_data_t,
+                      pmem, return e_Memory, "allocate PCL pattern data");
     ppat_data->rc.free = free_pattern_data;
 
     ppat_data->pixinfo = *ppixinfo;
@@ -98,9 +89,7 @@ build_pattern_data(
  * Free the rendered portion of a pattern.
  */
 static void
-free_pattern_rendering(const gs_memory_t *mem,
-                       pcl_pattern_t * pptrn
-)
+free_pattern_rendering(const gs_memory_t * mem, pcl_pattern_t * pptrn)
 {
     if (pptrn->pcol_ccolor != 0) {
         pcl_ccolor_release(pptrn->pcol_ccolor);
@@ -116,14 +105,11 @@ free_pattern_rendering(const gs_memory_t *mem,
  * Free routine for patterns. This is exported for the benefit of the code
  * that handles PCL built-in patterns.
  */
-  void
-pcl_pattern_free_pattern(
-    gs_memory_t *   pmem,
-    void *          pvptrn,
-    client_name_t   cname
-)
+void
+pcl_pattern_free_pattern(gs_memory_t * pmem,
+                         void *pvptrn, client_name_t cname)
 {
-    pcl_pattern_t * pptrn = (pcl_pattern_t *)pvptrn;
+    pcl_pattern_t *pptrn = (pcl_pattern_t *) pvptrn;
 
     free_pattern_rendering(pmem, pptrn);
     if (pptrn->ppat_data != 0)
@@ -140,25 +126,20 @@ pcl_pattern_free_pattern(
  * Returns 0 if successful, < 0 in the event of an error. In the latter case,
  * *ppptrn will be set to null.
  */
-  int
-pcl_pattern_build_pattern(
-    pcl_pattern_t **        ppptrn,
-    const gs_depth_bitmap * ppixinfo,
-    pcl_pattern_type_t      type,
-    int                     xres,
-    int                     yres,
-    gs_memory_t *           pmem
-)
+int
+pcl_pattern_build_pattern(pcl_pattern_t ** ppptrn,
+                          const gs_depth_bitmap * ppixinfo,
+                          pcl_pattern_type_t type,
+                          int xres, int yres, gs_memory_t * pmem)
 {
-    pcl_pattern_t *         pptrn = 0;
-    int                     code = 0;
+    pcl_pattern_t *pptrn = 0;
+
+    int code = 0;
 
     *ppptrn = 0;
-    pptrn = gs_alloc_struct( pmem,
-                             pcl_pattern_t,
-                             &st_pattern_t,
-                             "create PCL pattern"
-                             );
+    pptrn = gs_alloc_struct(pmem,
+                            pcl_pattern_t,
+                            &st_pattern_t, "create PCL pattern");
     if (pptrn == 0)
         return e_Memory;
 
@@ -168,13 +149,8 @@ pcl_pattern_build_pattern(
     /* provide a sentinel to guarantee the initial pattern is
        rendered */
     pptrn->ref_pt.x = pptrn->ref_pt.y = -1.0;
-    code = build_pattern_data( &(pptrn->ppat_data),
-                               ppixinfo,
-                               type,
-                               xres,
-                               yres,
-                               pmem
-                               );
+    code = build_pattern_data(&(pptrn->ppat_data),
+                              ppixinfo, type, xres, yres, pmem);
     if (code < 0) {
         pcl_pattern_free_pattern(pmem, pptrn, "create PCL pattern");
         return code;
@@ -188,21 +164,17 @@ pcl_pattern_build_pattern(
  * Get a PCL user-defined pattern. A null return indicates the pattern is
  * not defined.
  */
-  pcl_pattern_t *
-pcl_pattern_get_pcl_uptrn( pcl_state_t *pcs, int id )
+pcl_pattern_t *
+pcl_pattern_get_pcl_uptrn(pcl_state_t * pcs, int id)
 {
     if (pcs->last_pcl_uptrn_id != id) {
-        pcl_id_t        key;
+        pcl_id_t key;
 
         pcs->last_pcl_uptrn_id = id;
         id_set_value(key, id);
-        if ( !pl_dict_lookup( &pcs->pcl_patterns,
-                              id_key(key),
-                              2,
-                              (void **)&pcs->plast_pcl_uptrn,
-                              false,
-                              NULL
-                              ) )
+        if (!pl_dict_lookup(&pcs->pcl_patterns,
+                            id_key(key),
+                            2, (void **)&pcs->plast_pcl_uptrn, false, NULL))
             pcs->plast_pcl_uptrn = 0;
     }
 
@@ -216,16 +188,12 @@ pcl_pattern_get_pcl_uptrn( pcl_state_t *pcs, int id )
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  static int
-define_pcl_ptrn(
-    pcl_state_t *   pcs,
-    int             id,
-    pcl_pattern_t * pptrn,
-    bool            gl2
-)
+static int
+define_pcl_ptrn(pcl_state_t * pcs, int id, pcl_pattern_t * pptrn, bool gl2)
 {
-    pcl_id_t        key;
-    pl_dict_t *     pd = (gl2 ? &pcs->gl_patterns : &pcs->pcl_patterns);
+    pcl_id_t key;
+
+    pl_dict_t *pd = (gl2 ? &pcs->gl_patterns : &pcs->pcl_patterns);
 
     id_set_value(key, id);
     if (pptrn == 0)
@@ -236,7 +204,7 @@ define_pcl_ptrn(
     if (gl2) {
         if (pcs->last_gl2_RF_indx == id)
             pcs->plast_gl2_uptrn = pptrn;
-    } else { /* pcl pattern */
+    } else {                    /* pcl pattern */
         if (pcs->last_pcl_uptrn_id == id)
             pcs->plast_pcl_uptrn = pptrn;
     }
@@ -247,18 +215,18 @@ define_pcl_ptrn(
  * Delete all temporary patterns or all patterns, based on the value of
  * the operand.
  */
-  static void
-delete_all_pcl_ptrns(
-    bool            renderings,
-    bool            tmp_only,
-    pcl_state_t *   pcs
-)
+static void
+delete_all_pcl_ptrns(bool renderings, bool tmp_only, pcl_state_t * pcs)
 {
-    pcl_pattern_t * pptrn;
-    pl_dict_enum_t  denum;
+    pcl_pattern_t *pptrn;
+
+    pl_dict_enum_t denum;
+
     gs_const_string plkey;
-    pl_dict_t *     pdict[2];
-    int             i;
+
+    pl_dict_t *pdict[2];
+
+    int i;
 
     pdict[0] = &pcs->pcl_patterns;
     pdict[1] = &pcs->gl_patterns;
@@ -267,9 +235,11 @@ delete_all_pcl_ptrns(
         pl_dict_enum_begin(pdict[i], &denum);
         while (pl_dict_enum_next(&denum, &plkey, (void **)&pptrn)) {
             if (!tmp_only || (pptrn->ppat_data->storage == pcds_temporary)) {
-                pcl_id_t    key;
+                pcl_id_t key;
+
                 id_set_key(key, plkey.data);
-                define_pcl_ptrn(pcs, id_value(key), NULL, (pdict[i] == &pcs->gl_patterns));
+                define_pcl_ptrn(pcs, id_value(key), NULL,
+                                (pdict[i] == &pcs->gl_patterns));
                 /* NB this should be checked - if instead of
                    else-if? */
             } else if (renderings)
@@ -282,21 +252,17 @@ delete_all_pcl_ptrns(
  * Get a GL/2 user defined pattern. A null return indicates there is no pattern
  * defined for the index.
  */
-  pcl_pattern_t *
-pcl_pattern_get_gl_uptrn(pcl_state_t *pcs, int indx)
+pcl_pattern_t *
+pcl_pattern_get_gl_uptrn(pcl_state_t * pcs, int indx)
 {
     if (pcs->last_gl2_RF_indx != indx) {
-        pcl_id_t        key;
+        pcl_id_t key;
 
         pcs->last_gl2_RF_indx = indx;
         id_set_value(key, indx);
-        if ( !pl_dict_lookup( &pcs->gl_patterns,
-                              id_key(key),
-                              2,
-                              (void **)(&pcs->plast_gl2_uptrn),
-                              false,
-                              NULL
-                              ) )
+        if (!pl_dict_lookup(&pcs->gl_patterns,
+                            id_key(key),
+                            2, (void **)(&pcs->plast_gl2_uptrn), false, NULL))
             pcs->plast_gl2_uptrn = 0;
     }
 
@@ -315,41 +281,36 @@ pcl_pattern_get_gl_uptrn(pcl_state_t *pcs, int indx)
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  int
-pcl_pattern_RF(
-    int                     indx,
-    const gs_depth_bitmap * ppixmap,
-    pcl_state_t *           pcs
-)
+int
+pcl_pattern_RF(int indx, const gs_depth_bitmap * ppixmap, pcl_state_t * pcs)
 {
-    pcl_id_t                key;
-    pcl_pattern_t *         pptrn = 0;
+    pcl_id_t key;
+
+    pcl_pattern_t *pptrn = 0;
 
     id_set_value(key, indx);
 
     if (ppixmap != 0) {
-        pcl_pattern_type_t  type = ( ppixmap->pix_depth == 1
-                                           ? pcl_pattern_uncolored
-                                           : pcl_pattern_colored );
+        pcl_pattern_type_t type = (ppixmap->pix_depth == 1
+                                   ? pcl_pattern_uncolored
+                                   : pcl_pattern_colored);
         /* RF appears to use the resolution of the device contrary to
            what the pcl documentation implies */
         gx_device *pdev = gs_currentdevice(pcs->pgs);
-        int code = pcl_pattern_build_pattern( &pptrn,
-                                              ppixmap,
-                                              type,
-                                              (int)pdev->HWResolution[0],
-                                              (int)pdev->HWResolution[1],
-                                              pcs->memory
-                                              );
+
+        int code = pcl_pattern_build_pattern(&pptrn,
+                                             ppixmap,
+                                             type,
+                                             (int)pdev->HWResolution[0],
+                                             (int)pdev->HWResolution[1],
+                                             pcs->memory);
 
         if (code < 0)
             return code;
 
         if (pl_dict_put(&pcs->gl_patterns, id_key(key), 2, pptrn) < 0) {
-            pcl_pattern_free_pattern( pcs->memory,
-                                      pptrn,
-                                      "create GL/2 RF pattern"
-                                      );
+            pcl_pattern_free_pattern(pcs->memory,
+                                     pptrn, "create GL/2 RF pattern");
             return e_Memory;
         }
 
@@ -372,26 +333,28 @@ pcl_pattern_RF(
  *
  * Note: These structures are defined by HP.
  */
-typedef struct pcl_upattern0_s {
-    byte     format;        /* actually pcl_pattern_type_t */
-    byte     cont;          /* continuation; currently unused */
-    byte     depth;         /* bits per pixel; 1 or 8 */
-    byte     dummy;         /* reserved - currently unused */
-    byte     height[2];     /* height in pixels */
-    byte     width[2];      /* width in pixels */
-    byte     data[1];       /* actual size derived from hgiht, width, and bits */
+typedef struct pcl_upattern0_s
+{
+    byte format;                /* actually pcl_pattern_type_t */
+    byte cont;                  /* continuation; currently unused */
+    byte depth;                 /* bits per pixel; 1 or 8 */
+    byte dummy;                 /* reserved - currently unused */
+    byte height[2];             /* height in pixels */
+    byte width[2];              /* width in pixels */
+    byte data[1];               /* actual size derived from hgiht, width, and bits */
 } pcl_upattern0_t;
 
-typedef struct pcl_upattern1_s {
-    byte     format;        /* actually pcl_pattern_type_t */
-    byte     cont;          /* continuation; currently unused */
-    byte     depth;         /* bits per pixel; 1 or 8 */
-    byte     dummy;         /* reserved - currently unused */
-    byte     height[2];     /* height in pixels */
-    byte     width[2];      /* width in pixels */
-    byte     xres[2];       /* width resolution */
-    byte     yres[2];       /* height resolution */
-    byte     data[1];       /* actual size derived from hgiht, width, and bits */
+typedef struct pcl_upattern1_s
+{
+    byte format;                /* actually pcl_pattern_type_t */
+    byte cont;                  /* continuation; currently unused */
+    byte depth;                 /* bits per pixel; 1 or 8 */
+    byte dummy;                 /* reserved - currently unused */
+    byte height[2];             /* height in pixels */
+    byte width[2];              /* width in pixels */
+    byte xres[2];               /* width resolution */
+    byte yres[2];               /* height resolution */
+    byte data[1];               /* actual size derived from hgiht, width, and bits */
 } pcl_upattern1_t;
 
 /*
@@ -399,29 +362,34 @@ typedef struct pcl_upattern1_s {
  *
  * Download Pattern
  */
-  static int
-download_pcl_pattern(
-    pcl_args_t *            pargs,
-    pcl_state_t *           pcs
-)
+static int
+download_pcl_pattern(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    uint                    count = arg_data_size(pargs);
-    const pcl_upattern0_t * puptrn0 = (pcl_upattern0_t *)arg_data(pargs);
-    uint                    format, depth, rsize, ndsize, dsize;
-    gs_depth_bitmap         pixinfo;
-    int                     xres = 300, yres = 300;
-    pcl_pattern_t *         pptrn = 0;
-    int                     code = 0;
+    uint count = arg_data_size(pargs);
+
+    const pcl_upattern0_t *puptrn0 = (pcl_upattern0_t *) arg_data(pargs);
+
+    uint format, depth, rsize, ndsize, dsize;
+
+    gs_depth_bitmap pixinfo;
+
+    int xres = 300, yres = 300;
+
+    pcl_pattern_t *pptrn = 0;
+
+    int code = 0;
 
     if (count < 8)
         return e_Range;
 
     format = puptrn0->format;
     /* non data size - the size of the parameters that describe the data */
-    ndsize = (format == 20 ? sizeof(pcl_upattern1_t) : sizeof(pcl_upattern0_t)) - 1;
+    ndsize =
+        (format ==
+         20 ? sizeof(pcl_upattern1_t) : sizeof(pcl_upattern0_t)) - 1;
     pixinfo.num_comps = 1;
-    pixinfo.size.x = (((uint)puptrn0->width[0]) << 8) + puptrn0->width[1];
-    pixinfo.size.y = (((uint)puptrn0->height[0]) << 8) + puptrn0->height[1];
+    pixinfo.size.x = (((uint) puptrn0->width[0]) << 8) + puptrn0->width[1];
+    pixinfo.size.y = (((uint) puptrn0->height[0]) << 8) + puptrn0->height[1];
     depth = puptrn0->depth & 0xf;
     pixinfo.pix_depth = depth;
     pixinfo.raster = (pixinfo.size.x * depth + 7) / 8;
@@ -432,10 +400,9 @@ download_pcl_pattern(
     if ((format == 0) || (format == 20)) {
         if (depth != 1)
             return e_Range;
-    } else if ( (format != 1)                  ||
-                ((depth != 1) && (depth != 8)) ||
-                (pixinfo.size.x == 0)          ||
-                (pixinfo.size.y == 0)            )
+    } else if ((format != 1) ||
+               ((depth != 1) && (depth != 8)) ||
+               (pixinfo.size.x == 0) || (pixinfo.size.y == 0))
         return e_Range;
 
     if (rsize == 0)
@@ -448,10 +415,10 @@ download_pcl_pattern(
         return e_Memory;
 
     if (format == 20) {
-        pcl_upattern1_t *   puptrn1 = (pcl_upattern1_t *)puptrn0;
+        pcl_upattern1_t *puptrn1 = (pcl_upattern1_t *) puptrn0;
 
-        xres = (((uint)puptrn1->xres[0]) << 8) + puptrn1->xres[1];
-        yres = (((uint)puptrn1->yres[0]) << 8) + puptrn1->yres[1];
+        xres = (((uint) puptrn1->xres[0]) << 8) + puptrn1->xres[1];
+        yres = (((uint) puptrn1->yres[0]) << 8) + puptrn1->yres[1];
         memcpy(pixinfo.data, puptrn1->data, dsize);
     } else {
         memcpy(pixinfo.data, puptrn0->data, dsize);
@@ -460,25 +427,21 @@ download_pcl_pattern(
         memset(pixinfo.data + dsize, 0, rsize - dsize);
 
     /* build the pattern */
-    code = pcl_pattern_build_pattern( &(pptrn),
-                                      &pixinfo,
-                                      (format == 1 ? pcl_pattern_colored
-                                                   : pcl_pattern_uncolored),
-                                      xres,
-                                      yres,
-                                      pcs->memory
-                                      );
+    code = pcl_pattern_build_pattern(&(pptrn),
+                                     &pixinfo,
+                                     (format == 1 ? pcl_pattern_colored
+                                      : pcl_pattern_uncolored),
+                                     xres, yres, pcs->memory);
 
     /* place the pattern into the pattern dictionary */
-    if ( (code < 0)                                            ||
-         ((code = define_pcl_ptrn(pcs, pcs->pattern_id, pptrn, false)) < 0)  ) {
+    if ((code < 0) ||
+        ((code = define_pcl_ptrn(pcs, pcs->pattern_id, pptrn, false)) < 0)) {
         if (pptrn != 0)
-            pcl_pattern_free_pattern(pcs->memory, pptrn, "download PCL pattern");
+            pcl_pattern_free_pattern(pcs->memory, pptrn,
+                                     "download PCL pattern");
         else
-            gs_free_object( pcs->memory,
-                            (void *)pixinfo.data,
-                            "download PCL pattern"
-                            );
+            gs_free_object(pcs->memory,
+                           (void *)pixinfo.data, "download PCL pattern");
     }
 
     return code;
@@ -489,59 +452,57 @@ download_pcl_pattern(
  *
  * Pattern contorl.
  */
-  static int
-pattern_control(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+pattern_control(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    pcl_pattern_t * pptrn = 0;
+    pcl_pattern_t *pptrn = 0;
 
     switch (int_arg(pargs)) {
 
-        /* delete all patterns */
-      case 0:
-        delete_all_pcl_ptrns(false, false, pcs);
-        break;
+            /* delete all patterns */
+        case 0:
+            delete_all_pcl_ptrns(false, false, pcs);
+            break;
 
-        /* delete all temporary patterns */
-      case 1:
-        delete_all_pcl_ptrns(false, true, pcs);
-        break;
+            /* delete all temporary patterns */
+        case 1:
+            delete_all_pcl_ptrns(false, true, pcs);
+            break;
 
-        /* delete last specified pattern */
-      case 2:
-        define_pcl_ptrn(pcs, pcs->pattern_id, NULL, false);
+            /* delete last specified pattern */
+        case 2:
+            define_pcl_ptrn(pcs, pcs->pattern_id, NULL, false);
 
-        /* make last specified pattern temporary */
-      case 4:
-        pptrn = pcl_pattern_get_pcl_uptrn(pcs, pcs->pattern_id);
-        if (pptrn != 0)
-            pptrn->ppat_data->storage = pcds_temporary;
-        break;
+            /* make last specified pattern temporary */
+        case 4:
+            pptrn = pcl_pattern_get_pcl_uptrn(pcs, pcs->pattern_id);
+            if (pptrn != 0)
+                pptrn->ppat_data->storage = pcds_temporary;
+            break;
 
-        /* make last specified pattern permanent */
-      case 5:
-        pptrn = pcl_pattern_get_pcl_uptrn(pcs, pcs->pattern_id);
-        if (pptrn != 0)
-            pptrn->ppat_data->storage = pcds_permanent;
-        break;
+            /* make last specified pattern permanent */
+        case 5:
+            pptrn = pcl_pattern_get_pcl_uptrn(pcs, pcs->pattern_id);
+            if (pptrn != 0)
+                pptrn->ppat_data->storage = pcds_permanent;
+            break;
 
-      default:
-        break;
+        default:
+            break;
     }
 
     return 0;
 }
 
 static int
-upattern_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
-  pcl_copy_operation_t operation)
+upattern_do_copy(pcl_state_t * psaved, const pcl_state_t * pcs,
+                 pcl_copy_operation_t operation)
 {
     int i;
+
     /* copy back any patterns created during macro invocation. */
     if ((operation & pcl_copy_after) != 0) {
-        for(i = 0; i < countof(pcs->bi_pattern_array); i++)
+        for (i = 0; i < countof(pcs->bi_pattern_array); i++)
             psaved->bi_pattern_array[i] = pcs->bi_pattern_array[i];
         psaved->gl_patterns = pcs->gl_patterns;
         psaved->pcl_patterns = pcs->pcl_patterns;
@@ -558,49 +519,44 @@ upattern_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
 /*
  * Initialization and reset routines.
  */
-  static int
-upattern_do_registration(
-    pcl_parser_state_t *pcl_parser_state,
-    gs_memory_t *   pmem
-)
+static int
+upattern_do_registration(pcl_parser_state_t * pcl_parser_state,
+                         gs_memory_t * pmem)
 {
-    DEFINE_CLASS('*')
-    {
+    DEFINE_CLASS('*') {
         'c', 'W',
-        PCL_COMMAND("Download Pattern", download_pcl_pattern,
-                    pca_bytes | pca_in_rtl
-                    )
-    },
-    {
+            PCL_COMMAND("Download Pattern", download_pcl_pattern,
+                        pca_bytes | pca_in_rtl)
+    }, {
         'c', 'Q',
-        PCL_COMMAND( "Pattern Control",
-                     pattern_control,
-                     pca_neg_ignore | pca_big_ignore | pca_in_rtl
-                     )
-    },
-    END_CLASS
-    return 0;
+            PCL_COMMAND("Pattern Control",
+                        pattern_control,
+                        pca_neg_ignore | pca_big_ignore | pca_in_rtl)
+    }, END_CLASS return 0;
 }
 
-  static void
-upattern_do_reset(
-    pcl_state_t *                   pcs,
-    pcl_reset_type_t                type
-)
+static void
+upattern_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     if ((type & pcl_reset_initial) != 0) {
-        pl_dict_init(&pcs->pcl_patterns, pcs->memory, pcl_pattern_free_pattern);
-        pl_dict_init(&pcs->gl_patterns, pcs->memory, pcl_pattern_free_pattern);
+        pl_dict_init(&pcs->pcl_patterns, pcs->memory,
+                     pcl_pattern_free_pattern);
+        pl_dict_init(&pcs->gl_patterns, pcs->memory,
+                     pcl_pattern_free_pattern);
         pcs->last_pcl_uptrn_id = -1;
         pcs->plast_pcl_uptrn = 0;
         pcs->last_gl2_RF_indx = -1;
         pcs->plast_gl2_uptrn = 0;
 
-    } else if ((type & (pcl_reset_cold | pcl_reset_printer | pcl_reset_permanent)) != 0) {
-        delete_all_pcl_ptrns(true, !(type & pcl_reset_permanent) , pcs);
+    } else
+        if ((type &
+             (pcl_reset_cold | pcl_reset_printer | pcl_reset_permanent)) !=
+            0) {
+        delete_all_pcl_ptrns(true, !(type & pcl_reset_permanent), pcs);
         pcl_pattern_clear_bi_patterns(pcs);
         /* GL's IN command takes care of the GL patterns */
     }
 }
 
-const pcl_init_t    pcl_upattern_init = { upattern_do_registration, upattern_do_reset, upattern_do_copy };
+const pcl_init_t pcl_upattern_init =
+    { upattern_do_registration, upattern_do_reset, upattern_do_copy };

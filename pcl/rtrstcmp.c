@@ -32,14 +32,10 @@
 /*
  * Uncompressed data.
  */
-  static void
-uncompress_0(
-    pcl_seed_row_t *    pout,
-    const byte *        pin,
-    int                 in_size
-)
+static void
+uncompress_0(pcl_seed_row_t * pout, const byte * pin, int in_size)
 {
-    int                 nbytes = (in_size > pout->size ? pout->size : in_size);
+    int nbytes = (in_size > pout->size ? pout->size : in_size);
 
     memcpy(pout->pdata, pin, nbytes);
     if (!pout->is_blank)
@@ -50,20 +46,19 @@ uncompress_0(
 /*
  * Run-length compression.
  */
-  static void
-uncompress_1(
-    pcl_seed_row_t *    pout,
-    const byte *        pin,
-    int                 in_size
-)
+static void
+uncompress_1(pcl_seed_row_t * pout, const byte * pin, int in_size)
 {
-    int                 i = in_size / 2;
-    byte *              pb = pout->pdata;
-    byte *              plim = pb + pout->size;
+    int i = in_size / 2;
+
+    byte *pb = pout->pdata;
+
+    byte *plim = pb + pout->size;
 
     while (i-- > 0) {
-        int     cnt = *pin++ + 1;
-        byte    val = *pin++;
+        int cnt = *pin++ + 1;
+
+        byte val = *pin++;
 
         if (cnt > plim - pb)
             cnt = plim - pb;
@@ -78,23 +73,22 @@ uncompress_1(
 /*
  * TIFF "Packbits" compression.
  */
-  static void
-uncompress_2(
-    pcl_seed_row_t *    pout,
-    const byte *        pin,
-    int                 in_size
-)
+static void
+uncompress_2(pcl_seed_row_t * pout, const byte * pin, int in_size)
 {
-    int                 i = in_size;
-    byte *              pb = pout->pdata;
-    byte *              plim = pb + pout->size;
+    int i = in_size;
+
+    byte *pb = pout->pdata;
+
+    byte *plim = pb + pout->size;
 
     while (i-- > 0) {
-        int             cntrl = *pin++;
+        int cntrl = *pin++;
 
         if (cntrl < 128) {
-            uint            cnt = min(cntrl + 1, i);
-            const byte *    ptmp = pin;
+            uint cnt = min(cntrl + 1, i);
+
+            const byte *ptmp = pin;
 
             i -= cnt;
             pin += cnt;
@@ -104,8 +98,9 @@ uncompress_2(
                 *pb++ = *ptmp++;
 
         } else if ((cntrl > 128) && (i-- > 0)) {
-            int     cnt = min(257 - cntrl, plim - pb);
-            int     val = *pin++;
+            int cnt = min(257 - cntrl, plim - pb);
+
+            int val = *pin++;
 
             memset(pb, val, cnt);
             pb += cnt;
@@ -119,25 +114,26 @@ uncompress_2(
 /*
  * Delta row compression
  */
-  static void
-uncompress_3(
-    pcl_seed_row_t *    pout,
-    const byte *        pin,
-    int                 in_size
-)
+static void
+uncompress_3(pcl_seed_row_t * pout, const byte * pin, int in_size)
 {
-    int                 i = in_size;
-    byte *              pb = pout->pdata;
-    byte *              plim = pb + pout->size;
+    int i = in_size;
+
+    byte *pb = pout->pdata;
+
+    byte *plim = pb + pout->size;
 
     while (i-- > 0) {
-        uint            val = *pin++;
-        uint            cnt = (val >> 5) + 1;
-        uint            offset = val & 0x1f;
-        const byte *    ptmp = 0;
+        uint val = *pin++;
+
+        uint cnt = (val >> 5) + 1;
+
+        uint offset = val & 0x1f;
+
+        const byte *ptmp = 0;
 
         if ((offset == 0x1f) && (i-- > 0)) {
-            uint    add_offset;
+            uint add_offset;
 
             do
                 offset += (add_offset = *pin++);
@@ -150,7 +146,7 @@ uncompress_3(
         ptmp = pin;
         pin += cnt;
         if ((pb += offset) >= plim)
-           break;
+            break;
         if (cnt > plim - pb)
             cnt = plim - pb;
         while (cnt-- > 0)
@@ -174,24 +170,27 @@ uncompress_3(
  * as many input bytes as required are read until at leas this many output
  * bytes have been replaced.
  */
-  static void
-uncompress_9(
-    pcl_seed_row_t *    pout,
-    const byte *        pin,
-    int                 in_size
-)
+static void
+uncompress_9(pcl_seed_row_t * pout, const byte * pin, int in_size)
 {
-    int                 i = in_size;
-    byte *              pb = pout->pdata;
-    byte *              plim = pb + pout->size;
+    int i = in_size;
+
+    byte *pb = pout->pdata;
+
+    byte *plim = pb + pout->size;
 
     while (i-- > 0) {
-        uint            val = *pin++;
-        uint            cnt = 0;
-        uint            offset = 0;
-        bool            more_cnt = false;
-        bool            more_offset = false;
-        bool            comp = ((val & 0x80) != 0);
+        uint val = *pin++;
+
+        uint cnt = 0;
+
+        uint offset = 0;
+
+        bool more_cnt = false;
+
+        bool more_offset = false;
+
+        bool comp = ((val & 0x80) != 0);
 
         if (comp) {
             offset = (val >> 5) & 0x3;
@@ -206,13 +205,13 @@ uncompress_9(
         }
 
         while (more_offset && (i-- > 0)) {
-            uint    extra = *pin++;
+            uint extra = *pin++;
 
             more_offset = (extra == 0xff);
             offset += extra;
         }
         while (more_cnt && (i-- > 0)) {
-            uint    extra = *pin++;
+            uint extra = *pin++;
 
             more_cnt = (extra == 0xff);
             offset += extra;
@@ -221,11 +220,12 @@ uncompress_9(
         if ((pb += offset) >= plim)
             break;
         if (comp) {
-            uint    j = i / 2;
+            uint j = i / 2;
 
             while (j-- > 0) {
-                uint    rep_cnt = *pin++;
-                uint    rep_val = *pin++;
+                uint rep_cnt = *pin++;
+
+                uint rep_val = *pin++;
 
                 if (rep_cnt > plim - pb)
                     rep_cnt = plim - pb;
@@ -250,14 +250,7 @@ uncompress_9(
 
 }
 
-void    (*const pcl_decomp_proc[9 + 1])( pcl_seed_row_t *   pout,
-                                         const byte *       pin,
-                                         int                in_size
-                                         ) = {
-    uncompress_0,
-    uncompress_1,
-    uncompress_2,
-    uncompress_3,
-    0, 0, 0, 0, 0,  /* modes 4 - 8 handled separately */
-    uncompress_9
-};
+void (*const pcl_decomp_proc[9 + 1]) (pcl_seed_row_t * pout,
+                                      const byte * pin, int in_size) = {
+    uncompress_0, uncompress_1, uncompress_2, uncompress_3, 0, 0, 0, 0, 0,      /* modes 4 - 8 handled separately */
+uncompress_9};

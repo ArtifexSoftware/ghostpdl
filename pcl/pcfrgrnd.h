@@ -71,18 +71,19 @@
  *   foreground + raster -> fg_color + raster
  * This is an HP bug in the 4550 4600.
  */
-struct pcl_frgrnd_s {
-    rc_header       rc;
-    pcl_gsid_t      id;
-    bool            is_cmy;   /* NB: see HP Bug above */
-    byte            color[3];
-    pcl_cs_base_t * pbase;
-    pcl_ht_t *      pht;
+struct pcl_frgrnd_s
+{
+    rc_header rc;
+    pcl_gsid_t id;
+    bool is_cmy;                /* NB: see HP Bug above */
+    byte color[3];
+    pcl_cs_base_t *pbase;
+    pcl_ht_t *pht;
 };
 
 #ifndef pcl_frgrnd_DEFINED
 #define pcl_frgrnd_DEFINED
-typedef struct pcl_frgrnd_s     pcl_frgrnd_t;
+typedef struct pcl_frgrnd_s pcl_frgrnd_t;
 #endif
 
 /*
@@ -122,7 +123,6 @@ int pcl_frgrnd_set_default_foreground(pcl_state_t * pcs);
  * (white pattern or white foreground color) and transparent pattern
  * is a NOP
  */
-bool
-is_invisible_pattern( pcl_state_t *pcs );
+bool is_invisible_pattern(pcl_state_t * pcs);
 
-#endif  /* pcfrgrnd_INCLUDED */
+#endif /* pcfrgrnd_INCLUDED */

@@ -24,7 +24,7 @@
 void pxpcl_passthroughcontiguous(bool contiguous);
 
 /* end passthrough contiguous mode */
-void pxpcl_endpassthroughcontiguous(px_state_t *pxs);
+void pxpcl_endpassthroughcontiguous(px_state_t * pxs);
 
 /* reset pcl's page */
 void pxpcl_pagestatereset(void);
@@ -35,8 +35,8 @@ void pxpcl_release(void);
 /* set variables in pcl's state that are special to pass through mode,
    these override the default pcl state variables when pcl is
    entered. */
-void pxPassthrough_pcl_state_nonpage_exceptions(px_state_t *pxs);
+void pxPassthrough_pcl_state_nonpage_exceptions(px_state_t * pxs);
 
-int pxpcl_selectfont(px_args_t *par, px_state_t *pxs);
+int pxpcl_selectfont(px_args_t * par, px_state_t * pxs);
 
-#endif                /* pxpthr_INCLUDED */
+#endif /* pxpthr_INCLUDED */

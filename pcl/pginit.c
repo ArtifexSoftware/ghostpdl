@@ -31,19 +31,17 @@
 /*
  * Reset a set of font parameters to their default values.
  */
-  void
-hpgl_default_font_params(
-    pcl_font_selection_t *  pfs
-)
+void
+hpgl_default_font_params(pcl_font_selection_t * pfs)
 {
-    pfs->params.symbol_set = 277;  /* Roman-8 */
+    pfs->params.symbol_set = 277;       /* Roman-8 */
     pfs->params.proportional_spacing = false;
     pl_fp_set_pitch_per_inch(&pfs->params, 9);
-    pfs->params.height_4ths = (int)(11.5*4);
+    pfs->params.height_4ths = (int)(11.5 * 4);
     pfs->params.style = 0;
     pfs->params.stroke_weight = 0;
     pfs->params.typeface_family = 48;   /* stick font */
-    pfs->font = 0;                      /* not looked up yet */
+    pfs->font = 0;              /* not looked up yet */
 }
 
 /*
@@ -57,16 +55,13 @@ hpgl_default_font_params(
  * do not make sense if the horizontal picture frame has never been
  * set.
  */
-  static void
-hpgl_default_coordinate_system(
-    hpgl_state_t *  pcs
-)
+static void
+hpgl_default_coordinate_system(hpgl_state_t * pcs)
 {
-    pcs->g.plot_width = pcs->g.picture_frame_width
-                       = pcs->xfm_state.lp_size.x;
+    pcs->g.plot_width = pcs->g.picture_frame_width = pcs->xfm_state.lp_size.x;
     pcs->g.plot_height = pcs->g.picture_frame_height
-                        = pcs->xfm_state.lp_size.y;
-    if ( pcs->personality == rtl ) {
+        = pcs->xfm_state.lp_size.y;
+    if (pcs->personality == rtl) {
         pcs->g.picture_frame.anchor_point.x = 0;
         pcs->g.picture_frame.anchor_point.y = 0;
     } else {
@@ -81,6 +76,7 @@ hpgl_default_coordinate_system(
                work properly when the default top margin changes (ie. pclxl
                snippet mode). */
             coord margins_extent = (2 * pcs->margins.top);
+
             pcs->g.plot_height -= margins_extent;
             pcs->g.picture_frame_height -= margins_extent;
         }
@@ -92,27 +88,24 @@ hpgl_default_coordinate_system(
     pcs->g.relative_coords = hpgl_plot_absolute;
     {
         gs_point pos;
+
         pos.x = 0.0;
         pos.y = 0.0;
         (void)hpgl_set_current_position(pcs, &pos);
     }
     pcs->g.scaling_type = hpgl_scaling_none;
-    pcs->g.soft_clip_window.rect.p.x =
-        pcs->g.soft_clip_window.rect.p.y = 0;
-    pcs->g.soft_clip_window.rect.q.x =
-        pcs->g.soft_clip_window.rect.q.y = 0;
+    pcs->g.soft_clip_window.rect.p.x = pcs->g.soft_clip_window.rect.p.y = 0;
+    pcs->g.soft_clip_window.rect.q.x = pcs->g.soft_clip_window.rect.q.y = 0;
     return;
 }
 
 /*
  * Reset all the fill patterns to solid fill.
  */
-  void
-hpgl_default_all_fill_patterns(
-    hpgl_state_t *  pgls
-)
+void
+hpgl_default_all_fill_patterns(hpgl_state_t * pgls)
 {
-    int             i;
+    int i;
 
     for (i = 1; i <= 8; ++i) {
         (void)pcl_pattern_RF(i, NULL, pgls);
@@ -120,21 +113,18 @@ hpgl_default_all_fill_patterns(
     }
 }
 
-  void
-hpgl_do_reset(
-    pcl_state_t *       pcs,
-    pcl_reset_type_t    type
-)
+void
+hpgl_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     /* pgframe.c (Chapter 18) */
-    hpgl_args_t         hpgl_args;
+    hpgl_args_t hpgl_args;
 
-    if ((type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_cold)) != 0 ) {
+    if ((type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_cold)) !=
+        0) {
         if ((type & (pcl_reset_initial | pcl_reset_cold)) != 0) {
-            gx_path_alloc_contained( &pcs->g.polygon.buffer.path,
-                                     pcs->memory,
-                                     "hpgl_do_reset polygon buffer"
-                                     );
+            gx_path_alloc_contained(&pcs->g.polygon.buffer.path,
+                                    pcs->memory,
+                                    "hpgl_do_reset polygon buffer");
             gs_setlimitclamp(pcs->pgs, true);
         } else
             gx_path_new(&pcs->g.polygon.buffer.path);
@@ -168,19 +158,20 @@ hpgl_do_reset(
            size.  Oddly HP does not reset the scaling parameters
            when the page size is changed. */
         int scale_type = pcs->g.scaling_type;
+
         hpgl_scaling_params_t params = pcs->g.scaling_params;
 
         hpgl_default_coordinate_system(pcs);
-        
+
         /* restore the scaling parameter. */
         pcs->g.scaling_type = scale_type;
         pcs->g.scaling_params = params;
 
         hpgl_args_setup(&hpgl_args);
         hpgl_IW(&hpgl_args, pcs);
-        hpgl_args_set_int(&hpgl_args,0);
+        hpgl_args_set_int(&hpgl_args, 0);
         hpgl_PM(&hpgl_args, pcs);
-        hpgl_args_set_int(&hpgl_args,2);
+        hpgl_args_set_int(&hpgl_args, 2);
         hpgl_PM(&hpgl_args, pcs);
         hpgl_args_setup(&hpgl_args);
         hpgl_IP(&hpgl_args, pcs);
@@ -202,8 +193,9 @@ hpgl_do_reset(
         dmprintf(pcs->memory, "PCL reset plot received\n");
     }
 
-    if ((type & (pcl_reset_permanent)) != 0 ) {
-        gx_path_free(&pcs->g.polygon.buffer.path, "hpgl_do_reset polygon buffer");
+    if ((type & (pcl_reset_permanent)) != 0) {
+        gx_path_free(&pcs->g.polygon.buffer.path,
+                     "hpgl_do_reset polygon buffer");
         /* if we have allocated memory for a stick font free the memory */
         hpgl_free_stick_fonts(pcs);
     }
@@ -212,20 +204,18 @@ hpgl_do_reset(
 
 /* ------ Copy the HP-GL/2 state for macro call/overlay/exit. */
 
-  static int
-hpgl_do_copy(
-    pcl_state_t *           psaved,
-    const pcl_state_t *     pcs,
-    pcl_copy_operation_t    operation
-)
+static int
+hpgl_do_copy(pcl_state_t * psaved,
+             const pcl_state_t * pcs, pcl_copy_operation_t operation)
 {
     if ((operation & pcl_copy_after) != 0) {
         /* Don't restore the polygon buffer. (Copy from pcs to psaved.)
          * path->segments is reference counted!
          */
-        memcpy(&psaved->g.polygon.buffer.path, &pcs->g.polygon.buffer.path, sizeof(gx_path));
+        memcpy(&psaved->g.polygon.buffer.path, &pcs->g.polygon.buffer.path,
+               sizeof(gx_path));
     }
     return 0;
 }
 
-const pcl_init_t    pginit_init = { 0, hpgl_do_reset, hpgl_do_copy };
+const pcl_init_t pginit_init = { 0, hpgl_do_reset, hpgl_do_copy };

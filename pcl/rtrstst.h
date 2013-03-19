@@ -115,7 +115,8 @@ typedef struct pcl_raster_t pcl_raster_type;
  * Types of entry into graphics mode. Note that implicit entry is distinct
  * from any of the explicit modes.
  */
-typedef enum {
+typedef enum
+{
     NO_SCALE_LEFT_MARG = 0,
     NO_SCALE_CUR_PT = 1,
     SCALE_LEFT_MARG = 2,
@@ -124,41 +125,42 @@ typedef enum {
 } pcl_gmode_entry_t;
 
 
-typedef struct pcl_raster_state_s {
-    pcl_gmode_entry_t entry_mode; /* how we entered gmode */
-    uint              resolution; /* source resolution, dots per inch */
+typedef struct pcl_raster_state_s
+{
+    pcl_gmode_entry_t entry_mode;       /* how we entered gmode */
+    uint resolution;            /* source resolution, dots per inch */
 
     /* various flags */
-    uint    pres_mode_3:1;      /* 1 ==> presentation mode 3 */
-    uint    scale_raster:1;     /* 1 ==> raster scaling enabled */
-    uint    src_width_set:1;    /* source raster width explicitly set */
-    uint    src_height_set:1;   /* source raster height explicitly set */
-    uint    dest_width_set:1;   /* destination width explicitly set */
-    uint    dest_height_set:1;  /* destination height explicitly set */
-    uint    scale_algorithm:1;  /* not currently supported */
-    uint    graphics_mode:1;    /* 1 ==> in graphics mode */
-    uint    compression_mode:8; /* compression mode */
+    uint pres_mode_3:1;         /* 1 ==> presentation mode 3 */
+    uint scale_raster:1;        /* 1 ==> raster scaling enabled */
+    uint src_width_set:1;       /* source raster width explicitly set */
+    uint src_height_set:1;      /* source raster height explicitly set */
+    uint dest_width_set:1;      /* destination width explicitly set */
+    uint dest_height_set:1;     /* destination height explicitly set */
+    uint scale_algorithm:1;     /* not currently supported */
+    uint graphics_mode:1;       /* 1 ==> in graphics mode */
+    uint compression_mode:8;    /* compression mode */
 
     /* for RTL support */
-    int     y_advance;          /* advance is +y (1) or -y (-1) */
+    int y_advance;              /* advance is +y (1) or -y (-1) */
 
     /* source and (if applicable) destination dimensions */
-    uint    src_width;          /* source raster width, samples */
-    uint    src_height;         /* source raster height, scanlines */
-    uint    dest_width_cp;      /* destination width, centi-points */
-    uint    dest_height_cp;     /* destination height, centi-points */
+    uint src_width;             /* source raster width, samples */
+    uint src_height;            /* source raster height, scanlines */
+    uint dest_width_cp;         /* destination width, centi-points */
+    uint dest_height_cp;        /* destination height, centi-points */
 
-    coord   gmargin_cp;         /* "horizontal" displacement of raster origin */
+    coord gmargin_cp;           /* "horizontal" displacement of raster origin */
 
-    int     clip_all;           /* on last entry into raster mode, the raster
+    int clip_all;               /* on last entry into raster mode, the raster
                                  * origin was at the logical page edge, hence
                                  * the raster needs to be clipped */
-    pcl_raster_type *pcur_raster; /* There is at most one image
-                                  * actively under construction in PCL
-                                  * at one time.  This pointer points
-                                  * to that image, if it exists. The
-                                  * pointer will be non-null while in
-                                  * graphic mode.  */
+    pcl_raster_type *pcur_raster;       /* There is at most one image
+                                         * actively under construction in PCL
+                                         * at one time.  This pointer points
+                                         * to that image, if it exists. The
+                                         * pointer will be non-null while in
+                                         * graphic mode.  */
 } pcl_raster_state_t;
 
-#endif			/* rtrstst_INCLUDED */
+#endif /* rtrstst_INCLUDED */

@@ -37,13 +37,14 @@
  * null. The inv_gamma and inv_gain parameters are not used by the CIE L*a*b*
  * color space.
  */
-typedef struct pcl_cs_client_data_s {
-    pcl_lookup_tbl_t *  plktbl1;        /* null ==> identity map */
-    pcl_lookup_tbl_t *  plktbl2;        /* null ==> identity map */
-    float               min_val[3];
-    float               range[3];       /* max_val - min_val */
-    float               inv_gamma[3];   /* 1 / gamma */
-    float               inv_gain[3];    /* 1 / gain */
+typedef struct pcl_cs_client_data_s
+{
+    pcl_lookup_tbl_t *plktbl1;  /* null ==> identity map */
+    pcl_lookup_tbl_t *plktbl2;  /* null ==> identity map */
+    float min_val[3];
+    float range[3];             /* max_val - min_val */
+    float inv_gamma[3];         /* 1 / gamma */
+    float inv_gain[3];          /* 1 / gain */
 } pcl_cs_client_data_t;
 
 /*
@@ -68,11 +69,12 @@ typedef struct pcl_cs_client_data_s {
  * color space, but these are not required by the current PCL 5c
  * specification.)
  */
-typedef struct pcl_cs_base_s {
-    rc_header               rc;
-    pcl_cspace_type_t       type;
-    pcl_cs_client_data_t    client_data;
-    gs_color_space *        pcspace;
+typedef struct pcl_cs_base_s
+{
+    rc_header rc;
+    pcl_cspace_type_t type;
+    pcl_cs_client_data_t client_data;
+    gs_color_space *pcspace;
 } pcl_cs_base_t;
 
 /*
@@ -104,11 +106,8 @@ typedef struct pcl_cs_base_s {
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_cs_base_build_cspace(
-    pcl_cs_base_t **        ppbase,
-    const pcl_cid_data_t *  pcid,
-    gs_memory_t *           pmem
-);
+int pcl_cs_base_build_cspace(pcl_cs_base_t ** ppbase,
+                             const pcl_cid_data_t * pcid, gs_memory_t * pmem);
 
 /*
  * Build a special base color space, used for setting the color white.
@@ -117,11 +116,9 @@ int pcl_cs_base_build_cspace(
  *
  * This routine is usually called once at initialization.
  */
-int pcl_cs_base_build_white_cspace(
-    pcl_state_t *       pcs,
-    pcl_cs_base_t **    ppbase,
-    gs_memory_t *       pmem
-);
+int pcl_cs_base_build_white_cspace(pcl_state_t * pcs,
+                                   pcl_cs_base_t ** ppbase,
+                                   gs_memory_t * pmem);
 
 /*
  * Update the lookup table information for a PCL base color space. This is
@@ -136,10 +133,8 @@ int pcl_cs_base_build_white_cspace(
  * color space, 0 if no modification occurred but there was no error, and < 0
  * in the event of an error.
  */
-int pcl_cs_base_update_lookup_tbl(
-    pcl_cs_base_t **    ppbase,
-    pcl_lookup_tbl_t *  plktbl
-);
+int pcl_cs_base_update_lookup_tbl(pcl_cs_base_t ** ppbase,
+                                  pcl_lookup_tbl_t * plktbl);
 
 /*
  * Install a base color space into the graphic state.
@@ -149,15 +144,12 @@ int pcl_cs_base_update_lookup_tbl(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_cs_base_install(
-    pcl_cs_base_t **    ppbase,
-    pcl_state_t *       pcs
-);
+int pcl_cs_base_install(pcl_cs_base_t ** ppbase, pcl_state_t * pcs);
 
 /*
  * One-time initialization routine. This exists only to handle possible non-
  * initialization of BSS.
  */
-void pcl_cs_base_init(pcl_state_t *pcs);
+void pcl_cs_base_init(pcl_state_t * pcs);
 
-#endif  	/* pccsbase_INCLUDED */
+#endif /* pccsbase_INCLUDED */

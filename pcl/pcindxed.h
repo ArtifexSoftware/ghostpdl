@@ -56,9 +56,10 @@
  * Note that for the CMY color space, the white and black reference points are
  * reversed.
  */
-typedef struct pcl_cs_indexed_norm_s {
-    float   blkref;
-    float   inv_range;  /* 255 / (whtref - blkref) */
+typedef struct pcl_cs_indexed_norm_s
+{
+    float blkref;
+    float inv_range;            /* 255 / (whtref - blkref) */
 } pcl_cs_indexed_norm_t;
 
 /*
@@ -127,19 +128,20 @@ typedef struct pcl_cs_indexed_norm_s {
  * indexed color space.
  */
 
-struct pcl_cs_indexed_s {
-    rc_header               rc;
-    bool                    pfixed;
-    pcl_cid_hdr_t           cid;
-    pcl_cs_base_t *         pbase;
-    gs_color_space *        pcspace;
-    int                     original_cspace;
-    int                     num_entries;
-    gs_string               palette;
-    bool                    is_GL;
-    float                   pen_widths[pcl_cs_indexed_palette_size];
-    pcl_cs_indexed_norm_t   norm[3];
-    float                   Decode[6];
+struct pcl_cs_indexed_s
+{
+    rc_header rc;
+    bool pfixed;
+    pcl_cid_hdr_t cid;
+    pcl_cs_base_t *pbase;
+    gs_color_space *pcspace;
+    int original_cspace;
+    int num_entries;
+    gs_string palette;
+    bool is_GL;
+    float pen_widths[pcl_cs_indexed_palette_size];
+    pcl_cs_indexed_norm_t norm[3];
+    float Decode[6];
 };
 
 #ifndef pcl_cs_indexed_DEFINED
@@ -210,15 +212,11 @@ typedef pcl_cs_indexed_s pcl_cs_indexed_t;
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_cs_indexed_set_norm_and_Decode(
-    pcl_cs_indexed_t ** ppindexed,
-    floatp              wht0,
-    floatp              wht1,
-    floatp              wht2,
-    floatp              blk0,
-    floatp              blk1,
-    floatp              blk2
-);
+int pcl_cs_indexed_set_norm_and_Decode(pcl_cs_indexed_t ** ppindexed,
+                                       floatp wht0,
+                                       floatp wht1,
+                                       floatp wht2,
+                                       floatp blk0, floatp blk1, floatp blk2);
 
 /*
  * Change the number of entries in an PCL indexed color space palette.
@@ -228,32 +226,25 @@ int pcl_cs_indexed_set_norm_and_Decode(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_cs_indexed_set_num_entries(
-    pcl_cs_indexed_t ** ppindexed,
-    int                 new_num,
-    bool                gl2
-);
+int pcl_cs_indexed_set_num_entries(pcl_cs_indexed_t ** ppindexed,
+                                   int new_num, bool gl2);
 
 /*
  * Update the lookup table information for an indexed color space.
  *
  * Returns 0 if successful, < 0 in the event of an error.
  */
-int pcl_cs_indexed_update_lookup_tbl(
-    pcl_cs_indexed_t ** pindexed,
-    pcl_lookup_tbl_t *  plktbl
-);
+int pcl_cs_indexed_update_lookup_tbl(pcl_cs_indexed_t ** pindexed,
+                                     pcl_lookup_tbl_t * plktbl);
 
 /*
  * Update an entry in the palette of a PCL indexed color space.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_cs_indexed_set_palette_entry(
-    pcl_cs_indexed_t ** ppindexed,
-    int                 indx,
-    const float         comps[3]
-);
+int pcl_cs_indexed_set_palette_entry(pcl_cs_indexed_t ** ppindexed,
+                                     int indx, const float comps[3]
+    );
 
 /*
  * Default the contents of a palette entry.
@@ -262,21 +253,16 @@ int pcl_cs_indexed_set_palette_entry(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_cs_indexed_set_default_palette_entry(
-    pcl_cs_indexed_t ** ppindexed,
-    int                 indx
-);
+int pcl_cs_indexed_set_default_palette_entry(pcl_cs_indexed_t ** ppindexed,
+                                             int indx);
 
 /*
  * Set a pen width in a palette. Units used are still TBD.
  *
  * Returns 0 if successful, < 0 in case of error.
  */
-int pcl_cs_indexed_set_pen_width(
-    pcl_cs_indexed_t ** ppindexed,
-    int                 pen,
-    floatp              width
-);
+int pcl_cs_indexed_set_pen_width(pcl_cs_indexed_t ** ppindexed,
+                                 int pen, floatp width);
 
 /*
  * Build a PCL indexed color space.
@@ -285,14 +271,10 @@ int pcl_cs_indexed_set_pen_width(
  *
  * Returns 0 if successful, < 0 in case of error.
  */
-int pcl_cs_indexed_build_cspace(
-    pcl_state_t *           pcs,
-    pcl_cs_indexed_t **     ppindexed,
-    const pcl_cid_data_t *  pcid,
-    bool                    fixed,
-    bool                    gl2,
-    gs_memory_t *           pmem
-);
+int pcl_cs_indexed_build_cspace(pcl_state_t * pcs,
+                                pcl_cs_indexed_t ** ppindexed,
+                                const pcl_cid_data_t * pcid,
+                                bool fixed, bool gl2, gs_memory_t * pmem);
 
 /*
  * Build the default indexed color space. This function is usually called only
@@ -300,11 +282,9 @@ int pcl_cs_indexed_build_cspace(
  *
  * Returns 0 on success, < 0
  */
-int pcl_cs_indexed_build_default_cspace(
-    pcl_state_t *       pcs,
-    pcl_cs_indexed_t ** ppindexed,
-    gs_memory_t *       pmem
-);
+int pcl_cs_indexed_build_default_cspace(pcl_state_t * pcs,
+                                        pcl_cs_indexed_t ** ppindexed,
+                                        gs_memory_t * pmem);
 
 /*
  * Special indexed color space constructor, for building a 2 entry indexed color
@@ -314,12 +294,9 @@ int pcl_cs_indexed_build_default_cspace(
  * This reoutine is used to build the two-entry indexed color spaces required
  * for creating opaque "uncolored" patterns.
  */
-int pcl_cs_indexed_build_special(
-    pcl_cs_indexed_t ** ppindexed,
-    pcl_cs_base_t *     pbase,
-    const byte *        pcolor1,
-    gs_memory_t *       pmem
-);
+int pcl_cs_indexed_build_special(pcl_cs_indexed_t ** ppindexed,
+                                 pcl_cs_base_t * pbase,
+                                 const byte * pcolor1, gs_memory_t * pmem);
 
 /*
  * Install an indexed color space into the graphic state. If not indexed
@@ -327,10 +304,7 @@ int pcl_cs_indexed_build_special(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_cs_indexed_install(
-    pcl_cs_indexed_t ** ppindexed,
-    pcl_state_t *       pcs
-);
+int pcl_cs_indexed_install(pcl_cs_indexed_t ** ppindexed, pcl_state_t * pcs);
 
 /*
  * Two routines to determine if an entry of a color palette is either white
@@ -342,15 +316,9 @@ int pcl_cs_indexed_install(
  * the two give different results, and the former is much simpler to implement
  * in the current system.
  */
-bool pcl_cs_indexed_is_white(
-    const pcl_cs_indexed_t * pindexed,
-    int                      indx
-);
+bool pcl_cs_indexed_is_white(const pcl_cs_indexed_t * pindexed, int indx);
 
-bool pcl_cs_indexed_is_black(
-    const pcl_cs_indexed_t * pindexed,
-    int                      indx
-);
+bool pcl_cs_indexed_is_black(const pcl_cs_indexed_t * pindexed, int indx);
 
 #define pcl_cs_indexed_0_is_white(pindexed) \
     pcl_cs_indexed_is_white(pindexed, 0)
@@ -361,6 +329,6 @@ bool pcl_cs_indexed_is_black(
  * One time initialization. This exists only because of the possibility that
  * BSS may not be initialized.
  */
-void    pcl_cs_indexed_init(pcl_state_t *pcs);
+void pcl_cs_indexed_init(pcl_state_t * pcs);
 
-#endif		/* pcindexed_INCLUDED */
+#endif /* pcindexed_INCLUDED */

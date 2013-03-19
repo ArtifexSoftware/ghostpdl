@@ -24,17 +24,18 @@
  * centipoints (1/7200").
  */
 #if arch_sizeof_int == 2
-typedef long    coord;
+typedef long coord;
 #else
-typedef int     coord;
+typedef int coord;
 #endif
 
 #define pcl_coord_scale 7200
 #define inch2coord(v)   ((coord)((v) * (coord)pcl_coord_scale))
 #define coord2inch(c)   ((c) / (float)pcl_coord_scale)
 
-typedef struct coord_point_s {
-    coord   x, y;
+typedef struct coord_point_s
+{
+    coord x, y;
 } coord_point_t;
 
-#endif			/* pccoord_INCLUDED */
+#endif /* pccoord_INCLUDED */

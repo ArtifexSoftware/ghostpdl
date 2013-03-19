@@ -20,6 +20,6 @@
 #ifndef pctop_INCLUDED
 #  define pctop_INCLUDED
 
-pcl_state_t * pcl_get_gstate(pl_interp_instance_t *instance);
+pcl_state_t *pcl_get_gstate(pl_interp_instance_t * instance);
 
-#endif				/* pctop_INCLUDED */
+#endif /* pctop_INCLUDED */

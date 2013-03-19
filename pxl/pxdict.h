@@ -32,11 +32,13 @@
  */
 
 typedef pl_dict_value_free_proc_t px_dict_value_free_proc;
+
 #ifndef px_dict_entry_DEFINED
 #  define px_dict_entry_DEFINED
 typedef pl_dict_entry_t px_dict_entry_t;
 #endif
 typedef pl_dict_t px_dict_t;
+
 #define st_px_dict st_pl_dict
 #define st_px_dict_max_ptrs st_pl_dict_max_ptrs
 
@@ -75,4 +77,4 @@ typedef pl_dict_t px_dict_t;
 #define px_dict_release(pdict)\
   pl_dict_release(pdict)\
 
-#endif				/* pxdict_INCLUDED */
+#endif /* pxdict_INCLUDED */

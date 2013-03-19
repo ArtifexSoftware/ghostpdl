@@ -46,19 +46,18 @@
 /*
  * Install a font in the graphic state.
  */
-  static void
-set_gs_font(
-    pcl_state_t *   pcs
-)
+static void
+set_gs_font(pcl_state_t * pcs)
 {
-    gs_font *       pfont = (gs_font *)pcs->font->pfont;
+    gs_font *pfont = (gs_font *) pcs->font->pfont;
+
     gs_setfont(pcs->pgs, pfont);
     /* font scaling is reflected directly in the ctm */
     pfont->FontMatrix = pfont->orig_FontMatrix;
 }
 
 bool
-pcl_downloaded_and_bound(pl_font_t *plfont)
+pcl_downloaded_and_bound(pl_font_t * plfont)
 {
     return (plfont->storage != pcds_internal && pl_font_is_bound(plfont));
 }
@@ -73,24 +72,20 @@ pcl_downloaded_and_bound(pl_font_t *plfont)
 /*
  * Check if a character code is considered "printable" by given symbol set.
  */
-  static bool
-is_printable(
-    const pcl_state_t * pcs,
-    gs_char                 chr,
-    bool                    literal
-)
+static bool
+is_printable(const pcl_state_t * pcs, gs_char chr, bool literal)
 {
     int map_type;
+
     bool printable = false;
 
-    if (literal) /* transparent data */
+    if (literal)                /* transparent data */
         printable = true;
     else {
         if (pcs->map == 0 || pcl_downloaded_and_bound(pcs->font)) {
             /* PCL TRM 11-18 */
             map_type = pcs->font->font_type;
-        }
-        else {
+        } else {
             /* PCL TRM 10-7
              * symbol map type overrides, font map type
              */
@@ -98,20 +93,19 @@ is_printable(
         }
 
 #ifndef USE_MAP_TYPE_IN_SPECIFICATION
-        if ( map_type == 0 )
+        if (map_type == 0)
             map_type = 1;
 #endif /* USE_MAP_TYPE_IN_SPECIFICATION */
 
-        if ( map_type == 0 )
+        if (map_type == 0)
             printable = (chr >= ' ') && (chr <= '\177');
-        else if ( map_type == 1 ) {
+        else if (map_type == 1) {
             chr &= 0x7f;
-            printable = (chr >= ' '); /* 0-31 and 128-159 are not printable */
-        }
-        else if ( map_type >= 2 ) {
+            printable = (chr >= ' ');   /* 0-31 and 128-159 are not printable */
+        } else if (map_type >= 2) {
             /* 2 is correct but will force all types above 2 here */
-            if ( (chr == 0) || (chr == '\033') ||
-                 ((chr >= '\007') && (chr <= '\017')) )
+            if ((chr == 0) || (chr == '\033') ||
+                ((chr >= '\007') && (chr <= '\017')))
                 printable = false;
             else
                 printable = true;
@@ -121,52 +115,51 @@ is_printable(
 }
 
 static bool
-substituting_allowed(pcl_state_t *pcs, gs_char mapped_chr)
+substituting_allowed(pcl_state_t * pcs, gs_char mapped_chr)
 {
-    gs_char         remapped_chr; /* NB wrong type */
+    gs_char remapped_chr;       /* NB wrong type */
+
     if (
-        /* msl not yet supported. */
-        (pcs->map && pcs->map->format == 1) ||
-        /* by experiment HP does not support substitution with bitmap fonts */
-        (pcs->font->scaling_technology == plfst_bitmap) ||
-        /* the font must be downloaded */
-        (!(pcs->font->storage & pcds_downloaded)) )
+           /* msl not yet supported. */
+           (pcs->map && pcs->map->format == 1) ||
+           /* by experiment HP does not support substitution with bitmap fonts */
+           (pcs->font->scaling_technology == plfst_bitmap) ||
+           /* the font must be downloaded */
+           (!(pcs->font->storage & pcds_downloaded)))
         return false;
 
     /* mapped chr is something of a misnomer, if the font is bound and
        downloaded it has been identity mappped. */
 
-    remapped_chr = pl_map_symbol(pcs->map, mapped_chr,
-                                 false, /* storage not internal */
+    remapped_chr = pl_map_symbol(pcs->map, mapped_chr, false,   /* storage not internal */
                                  false, /* unicode not msl */
-                                 false  /* is_590 */,
-				 pcs->memory);
+                                 false /* is_590 */ ,
+                                 pcs->memory);
 
     /* now we can assume the characters are unicode */
     if (
-        /* arrows */
-        ((remapped_chr >= 0x2190) && (remapped_chr <= 0x21FF)) ||
-        /* coptic */
-        ((remapped_chr >= 0x0370) && (remapped_chr <= 0x03FF)) ||
-        /* math operators */
-        ((remapped_chr >= 0x2200) && (remapped_chr <= 0x22FF)) ||
-        /* box drawing characters */
-        ((remapped_chr >= 0x2500) && (remapped_chr <= 0x257F)) ||
-        /* block elements (contiguous with box drawing) */
-        ((remapped_chr >= 0x2580) && (remapped_chr <= 0x259F)) ||
-        /* Geometric shapes (contiguos with block elements) */
-        ((remapped_chr >= 0x25A0) && (remapped_chr <= 0x25FF)) ||
-        /* miscellaneous symbols */
-        ((remapped_chr >= 0x2600) && (remapped_chr <= 0x26FF)) ||
-        /* miscellaneous technical */
-        ((remapped_chr >= 0x2300) && (remapped_chr <= 0x23FF)) ||
-        /* general punctuation */
-        ((remapped_chr >= 0x2000) && (remapped_chr <= 0x206F)) ||
-        /* vertical line,  less than, greater than, low line, or micro sign character,  */
-        ((remapped_chr == 0x007C) || (remapped_chr == 0x003C) ||
-
-         (remapped_chr == 0x003E) || (remapped_chr == 0x005F) ||
-         (remapped_chr == 0x00B5))
+           /* arrows */
+           ((remapped_chr >= 0x2190) && (remapped_chr <= 0x21FF)) ||
+           /* coptic */
+           ((remapped_chr >= 0x0370) && (remapped_chr <= 0x03FF)) ||
+           /* math operators */
+           ((remapped_chr >= 0x2200) && (remapped_chr <= 0x22FF)) ||
+           /* box drawing characters */
+           ((remapped_chr >= 0x2500) && (remapped_chr <= 0x257F)) ||
+           /* block elements (contiguous with box drawing) */
+           ((remapped_chr >= 0x2580) && (remapped_chr <= 0x259F)) ||
+           /* Geometric shapes (contiguos with block elements) */
+           ((remapped_chr >= 0x25A0) && (remapped_chr <= 0x25FF)) ||
+           /* miscellaneous symbols */
+           ((remapped_chr >= 0x2600) && (remapped_chr <= 0x26FF)) ||
+           /* miscellaneous technical */
+           ((remapped_chr >= 0x2300) && (remapped_chr <= 0x23FF)) ||
+           /* general punctuation */
+           ((remapped_chr >= 0x2000) && (remapped_chr <= 0x206F)) ||
+           /* vertical line,  less than, greater than, low line, or micro sign character,  */
+           ((remapped_chr == 0x007C) || (remapped_chr == 0x003C) ||
+            (remapped_chr == 0x003E) || (remapped_chr == 0x005F) ||
+            (remapped_chr == 0x00B5))
         )
         return true;
     return false;
@@ -196,27 +189,29 @@ substituting_allowed(pcl_state_t *pcs, gs_char mapped_chr)
  * Returns 0 on success, 2 if the string is exhausted. Note that it is not an
  * error for the string to end in the middle of a 2-byte sequence.
  */
-  static int
-get_next_char(
-    pcl_state_t *   pcs,
-    const byte **   ppb,
-    uint *          plen,
-    gs_char *       pchr,
-    gs_char *       porig_char,
-    bool *          pis_space,
-    bool *          pprint_undefined,
-    bool            literal,
-    gs_point *      pwidth,
-    bool *          unstyled_substitution
-)
+static int
+get_next_char(pcl_state_t * pcs,
+              const byte ** ppb,
+              uint * plen,
+              gs_char * pchr,
+              gs_char * porig_char,
+              bool * pis_space,
+              bool * pprint_undefined,
+              bool literal, gs_point * pwidth, bool * unstyled_substitution)
 {
-    const byte *    pb = *ppb;
-    int             len = *plen;
-    pl_font_t *     plfont = pcs->font;
-    bool            substituting = false;
-    gs_char         chr;
-    gs_char         mapped_chr; /* NB wrong type */
-    bool            db;
+    const byte *pb = *ppb;
+
+    int len = *plen;
+
+    pl_font_t *plfont = pcs->font;
+
+    bool substituting = false;
+
+    gs_char chr;
+
+    gs_char mapped_chr;         /* NB wrong type */
+
+    bool db;
 
     if (len <= 0)
         return 2;
@@ -241,7 +236,7 @@ get_next_char(
     /* map the symbol.  If the font is downloaded and bound there is
        no symbol set.  We do use the symbol set for internal bound
        fonts. NB WE AREN'T HAPPY WITH THIS LABEL & GOTO. */
- r: db = pcl_downloaded_and_bound(plfont);
+  r:db = pcl_downloaded_and_bound(plfont);
     mapped_chr = pl_map_symbol((db ? NULL : pcs->map), chr,
                                plfont->storage == pcds_internal,
                                plfont->font_type == plft_MSL, false,
@@ -249,7 +244,8 @@ get_next_char(
     *pchr = mapped_chr;
     if (mapped_chr == 0xffff) {
         if ((plfont->storage != pcds_internal) &&
-            (pl_font_char_width(plfont, (void *)(pcs->pgs), mapped_chr, pwidth) == 0)) {
+            (pl_font_char_width
+             (plfont, (void *)(pcs->pgs), mapped_chr, pwidth) == 0)) {
             *pprint_undefined = true;
             return 0;
         }
@@ -257,12 +253,13 @@ get_next_char(
         return 0;
     }
 
-        /* NB we assume all internal fonts use unicode */
-    if (plfont->storage == pcds_internal && mapped_chr == 0x0020 && !substituting) {
+    /* NB we assume all internal fonts use unicode */
+    if (plfont->storage == pcds_internal && mapped_chr == 0x0020
+        && !substituting) {
         *pis_space = true;
         *pchr = 0xffff;
         return 0;
-     }
+    }
 
     /* For internal fonts we simulate the font missing the space
        character here.  The character complement is checked to see if
@@ -273,23 +270,24 @@ get_next_char(
     if (plfont->storage == pcds_internal &&
         chr == 0x0020 &&
         plfont->character_complement[5] == 0x3f &&
-        pl_complement_to_vocab(plfont->character_complement) == plgv_Unicode) {
+        pl_complement_to_vocab(plfont->character_complement) ==
+        plgv_Unicode) {
         *pis_space = true;
         *pchr = 0xffff;
         return 0;
-     }
+    }
 
     /* check if the character is in the font and get the character
        width at the same time */
-    if ( *pis_space == false )
-        if ( pl_font_char_width(plfont, (void *)(pcs->pgs), mapped_chr, pwidth) == 0 )
+    if (*pis_space == false)
+        if (pl_font_char_width(plfont, (void *)(pcs->pgs), mapped_chr, pwidth)
+            == 0)
             return 0;
 
     /*
      * Try an unstyled substitution
      */
-    if (!substituting &&
-        substituting_allowed(pcs, db ? mapped_chr : chr)) {
+    if (!substituting && substituting_allowed(pcs, db ? mapped_chr : chr)) {
         pcl_decache_font(pcs, -1, true);
         pcl_recompute_font(pcs, true);
         substituting = true;
@@ -327,25 +325,26 @@ pcl_char_bytelen(byte ch, pcl_text_parsing_method_t tpm)
 
     int bytelen = 1;
 
-        switch(tpm) {
+    switch (tpm) {
         default:
-                /* byte length defaults to 1 */
-                break;
+            /* byte length defaults to 1 */
+            break;
 
         case tpm_21_DBCS7:
-                /* 0x21-0xff are double-byte */
-                bytelen = (ch < 0x21) ? 1 : 2;
-                break;
+            /* 0x21-0xff are double-byte */
+            bytelen = (ch < 0x21) ? 1 : 2;
+            break;
 
         case tpm_31_sjis:
-                /* 0x81-0x9f, 0xe0-0xfc are double-byte */
-                bytelen = (ch < 0x81 || (ch > 0x9f && ch < 0xe0) || ch > 0xfc) ? 1 : 2;
-                break;
+            /* 0x81-0x9f, 0xe0-0xfc are double-byte */
+            bytelen = (ch < 0x81 || (ch > 0x9f && ch < 0xe0)
+                       || ch > 0xfc) ? 1 : 2;
+            break;
 
         case tpm_38_DBCS8:
-                /* 0x80-0xff are double-byte */
-                bytelen = (ch < 0x80) ? 1 : 2;
-                break;
+            /* 0x80-0xff are double-byte */
+            bytelen = (ch < 0x80) ? 1 : 2;
+            break;
         case tpm_83_utf8:
         case tpm_1008_utf8:
             if (ch < 0x80) {
@@ -354,7 +353,7 @@ pcl_char_bytelen(byte ch, pcl_text_parsing_method_t tpm)
                 break;
             }
             if (ch < 0xc2) {
-                bytelen = 0;	/* illegal */
+                bytelen = 0;    /* illegal */
                 break;
             }
             if (ch < 0xe0) {
@@ -382,10 +381,10 @@ pcl_char_bytelen(byte ch, pcl_text_parsing_method_t tpm)
                 bytelen = 6;
                 break;
             }
-            bytelen = 0;	/* illegal */
+            bytelen = 0;        /* illegal */
             break;
-        }
-        return bytelen;
+    }
+    return bytelen;
 }
 /*
  * convert multibyte sequence to unicode (16-bit)
@@ -394,79 +393,83 @@ pcl_char_bytelen(byte ch, pcl_text_parsing_method_t tpm)
  * Returns 0 for invalid byte, byte length > 0 of multibyte character sequence
  */
 gs_char
-pcl_char_get_char(pcl_text_parsing_method_t tpm, const byte ** psrc, int src_len)
+pcl_char_get_char(pcl_text_parsing_method_t tpm, const byte ** psrc,
+                  int src_len)
 /* src_len minimum 1 */
 {
     gs_char chr;
-    const byte * src = *psrc;
+
+    const byte *src = *psrc;
+
     int bytelen = pcl_char_bytelen(src[0], tpm);
-    if (bytelen == 0 || bytelen > src_len)
-    {
+
+    if (bytelen == 0 || bytelen > src_len) {
         return INVALID_UC;
     }
-    switch(tpm) {
-    default:
-        chr = src[0];
-        break;
-
-    case tpm_21_DBCS7:
-        /* 0x21-0xff are double-byte */
-        chr = (src[0] < 0x21) ? src[0] : (src[0] << 8 | src[1]);
-        break;
-
-    case tpm_31_sjis:
-        /* 0x81-0x9f, 0xe0-0xfc are double-byte */
-        chr = (src[0] < 0x81 || (src[0] > 0x9f && src[0] < 0xe0) || src[0] > 0xfc) ? src[0] : (src[0] << 8 | src[1]);
-        break;
-
-    case tpm_38_DBCS8:
-        /* 0x80-0xff are double-byte */
-        chr = (src[0] < 0x80) ? src[0] : (src[0] << 8 | src[1]);
-        break;
-    case tpm_83_utf8:
-    case tpm_1008_utf8:
-        if (src[0] < 0x80) {
-            /* 0xxxxxxx */
+    switch (tpm) {
+        default:
             chr = src[0];
             break;
-        }
-        if (src[0] < 0xc2) {
+
+        case tpm_21_DBCS7:
+            /* 0x21-0xff are double-byte */
+            chr = (src[0] < 0x21) ? src[0] : (src[0] << 8 | src[1]);
+            break;
+
+        case tpm_31_sjis:
+            /* 0x81-0x9f, 0xe0-0xfc are double-byte */
+            chr = (src[0] < 0x81 || (src[0] > 0x9f && src[0] < 0xe0)
+                   || src[0] > 0xfc) ? src[0] : (src[0] << 8 | src[1]);
+            break;
+
+        case tpm_38_DBCS8:
+            /* 0x80-0xff are double-byte */
+            chr = (src[0] < 0x80) ? src[0] : (src[0] << 8 | src[1]);
+            break;
+        case tpm_83_utf8:
+        case tpm_1008_utf8:
+            if (src[0] < 0x80) {
+                /* 0xxxxxxx */
+                chr = src[0];
+                break;
+            }
+            if (src[0] < 0xc2) {
+                chr = INVALID_UC;
+                break;
+            }
+            if (src[0] < 0xe0) {
+                /* 110XXXXx 10xxxxxx */
+                chr = (src[0] & 0x1f);
+                chr = (chr << 6) | (src[1] & 0x3f);
+                break;
+            }
+            if (src[0] < 0xf0) {
+                /* 1110XXXX 10Xxxxxx 10xxxxxx */
+                chr = (src[0] & 0x0f);
+                chr = (chr << 6) | (src[1] & 0x3f);
+                chr = (chr << 6) | (src[2] & 0x3f);
+                break;
+            }
+            if (src[0] < 0xf8) {
+                /* 11110XXX 10XXxxxx 10xxxxxx 10xxxxxx */
+                /* chr is 16 bit: overflow */
+                chr = INVALID_UC;
+                break;
+            }
+            if (src[0] < 0xfc) {
+                /* 111110XX 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
+                /* chr is 16 bit: overflow */
+                chr = INVALID_UC;
+                break;
+            }
+            if (src[0] < 0xfe) {
+                /* 1111110X 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
+                /* chr is 16 bit: overflow */
+                chr = INVALID_UC;
+                break;
+            }
             chr = INVALID_UC;
             break;
-        }
-        if (src[0] < 0xe0) {
-            /* 110XXXXx 10xxxxxx */
-            chr = (src[0] & 0x1f);
-            chr = (chr << 6) | (src[1] & 0x3f);
-            break;
-        }
-        if (src[0] < 0xf0) {
-            /* 1110XXXX 10Xxxxxx 10xxxxxx */
-            chr = (src[0] & 0x0f);
-            chr = (chr << 6) | (src[1] & 0x3f);
-            chr = (chr << 6) | (src[2] & 0x3f);
-            break;
-        }
-        if (src[0] < 0xf8) {
-            /* 11110XXX 10XXxxxx 10xxxxxx 10xxxxxx */
-            /* chr is 16 bit: overflow */
-            chr = INVALID_UC;
-            break;
-        }
-        if (src[0] < 0xfc) {
-            /* 111110XX 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-            /* chr is 16 bit: overflow */
-            chr = INVALID_UC;
-            break;
-        }
-        if (src[0] < 0xfe) {
-            /* 1111110X 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-            /* chr is 16 bit: overflow */
-            chr = INVALID_UC;
-            break;
-        }
-        chr = INVALID_UC;
-        break;
     }
     *psrc += bytelen;
     return chr;
@@ -477,15 +480,16 @@ pcl_char_get_char(pcl_text_parsing_method_t tpm, const byte ** psrc, int src_len
  * part that must be drawn.
  */
 static int
-show_char_foreground(
-    const pcl_state_t * pcs,
-    const gs_char *        pbuff
-)
+show_char_foreground(const pcl_state_t * pcs, const gs_char * pbuff)
 {
     int code = 0;
+
     gs_text_enum_t *penum;
+
     pl_font_t *plfont = pcs->font;
+
     gs_font *pfont = plfont->pfont;
+
     gs_text_params_t text;
 
     /* set vertical writing if -1 which requires double bytes or 1 */
@@ -538,34 +542,42 @@ show_char_foreground(
  * the pattern affects only for the foreground pixels of the source; the back-
  * ground must be rendered as a solid, opaque white.
  */
-  static int
-show_char_background(
-    pcl_state_t *       pcs,
-    const gs_char *        pbuff
-)
+static int
+show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
 {
-    gs_state *          pgs = pcs->pgs;
-    gs_rop3_t           rop = (gs_rop3_t)(pcs->logical_op);
-    const pl_font_t *   plfont = pcs->font;
-    gs_font *           pfont = plfont->pfont;
-    gs_point            pt;
-    int                 code = 0;
+    gs_state *pgs = pcs->pgs;
+
+    gs_rop3_t rop = (gs_rop3_t) (pcs->logical_op);
+
+    const pl_font_t *plfont = pcs->font;
+
+    gs_font *pfont = plfont->pfont;
+
+    gs_point pt;
+
+    int code = 0;
 
     /* save the graphic state and set the background raster operation */
     pcl_gsave(pcs);
     if (pcs->pattern_transparent)
         pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
-    gs_setrasterop(pgs, (gs_rop3_t)rop3_know_S_1((int)rop));
+    gs_setrasterop(pgs, (gs_rop3_t) rop3_know_S_1((int)rop));
     gs_currentpoint(pgs, &pt);
 
     if (plfont->scaling_technology == plfst_bitmap) {
-        gs_char         chr = pbuff[0];
-        gs_glyph        glyph = pfont->procs.encode_char(pfont, chr, gs_no_glyph);
-        const byte *    cdata = pl_font_lookup_glyph(plfont, glyph)->data;
-        int             nbytes;
-        uint            used;
-        gs_image_enum * pen = 0;
-        gs_image1_t     mask;
+        gs_char chr = pbuff[0];
+
+        gs_glyph glyph = pfont->procs.encode_char(pfont, chr, gs_no_glyph);
+
+        const byte *cdata = pl_font_lookup_glyph(plfont, glyph)->data;
+
+        int nbytes;
+
+        uint used;
+
+        gs_image_enum *pen = 0;
+
+        gs_image1_t mask;
 
         /* empty characters have no background */
         if (cdata == 0) {
@@ -574,7 +586,9 @@ show_char_background(
         }
 
         /* allocate the image enumerator */
-        pen = gs_image_enum_alloc(gs_state_memory(pgs), "bitmap font background");
+        pen =
+            gs_image_enum_alloc(gs_state_memory(pgs),
+                                "bitmap font background");
         if (pen == 0) {
             pcl_grestore(pcs);
             return e_Memory;
@@ -600,15 +614,18 @@ show_char_background(
 
     } else {
         gs_text_params_t text;
-        gs_rect     bbox;
-        gs_text_enum_t *    penum;
+
+        gs_rect bbox;
+
+        gs_text_enum_t *penum;
 
         /* clear the path; start the new one from the current point */
         gs_newpath(pgs);
         gs_moveto(pgs, pt.x, pt.y);
         text.data.chars = pbuff;
         text.size = 1;
-        text.operation = TEXT_FROM_CHARS | TEXT_DO_TRUE_CHARPATH | TEXT_RETURN_WIDTH;
+        text.operation =
+            TEXT_FROM_CHARS | TEXT_DO_TRUE_CHARPATH | TEXT_RETURN_WIDTH;
         code = gs_text_begin(pgs, &text, pcs->memory, &penum);
         if (code >= 0)
             code = gs_text_process(penum);
@@ -628,11 +645,15 @@ show_char_background(
 /*
  * get the advance width.
  */
- static floatp
- pcl_get_width(pcl_state_t *pcs, gs_point *advance_vector, const gs_point *pscale, gs_char chr, bool is_space, bool print_undefined)
+static floatp
+pcl_get_width(pcl_state_t * pcs, gs_point * advance_vector,
+              const gs_point * pscale, gs_char chr, bool is_space,
+              bool print_undefined)
 {
-    pcl_font_selection_t *  pfp = &(pcs->font_selection[pcs->font_selected]);
+    pcl_font_selection_t *pfp = &(pcs->font_selection[pcs->font_selected]);
+
     floatp width;
+
     if (chr != 0xffff || print_undefined) {
         if (!pfp->params.proportional_spacing || is_space)
             width = pcl_hmi(pcs);
@@ -640,15 +661,16 @@ show_char_background(
             if (pcs->font->scaling_technology == plfst_TrueType ||
                 pcs->font->scaling_technology == plfst_MicroType) {
                 floatp tmp;
-                tmp = pscale->x / (floatp)pcs->uom_cp + 0.5;
-                tmp -= fmod(tmp, (floatp)1.0);
-                tmp *= (floatp)pcs->uom_cp;
+
+                tmp = pscale->x / (floatp) pcs->uom_cp + 0.5;
+                tmp -= fmod(tmp, (floatp) 1.0);
+                tmp *= (floatp) pcs->uom_cp;
                 width = advance_vector->x * tmp;
 
             } else
                 width = advance_vector->x * pscale->x;
-            width += (floatp)pcs->uom_cp / 2.0;
-            width -= fmod(width, (floatp)pcs->uom_cp);
+            width += (floatp) pcs->uom_cp / 2.0;
+            width -= fmod(width, (floatp) pcs->uom_cp);
         }
     } else if (is_space)
         width = pcl_hmi(pcs);
@@ -713,32 +735,44 @@ show_char_background(
  * (transparent) text command: ESC & p <nbytes> X. This distinction is
  * important for characters that are not mapped by the current symbol set.  */
 
-  static int
-pcl_show_chars_slow(
-    pcl_state_t *           pcs,
-    const gs_point *        pscale,
-    const byte *            str,
-    uint                    size,
-    bool                    literal
-)
+static int
+pcl_show_chars_slow(pcl_state_t * pcs,
+                    const gs_point * pscale,
+                    const byte * str, uint size, bool literal)
 {
-    gs_state *              pgs = pcs->pgs;
-    gs_char                 buff[1];
-    floatp                  rmargin = pcs->margins.right;
-    floatp                  page_size = pcs->xfm_state.pd_size.x;
-    bool                    source_opaque = !pcs->source_transparent;
-    bool                    invisible_pattern = is_invisible_pattern(pcs);
-    bool                    wrap = pcs->end_of_line_wrap;
-    bool                    read_char = false;
-    bool                    is_space = false;
-    bool                    print_undefined = false;
-    bool                    use_rmargin = (pcs->cap.x <= rmargin);
-    gs_char                 chr, orig_chr;
-    int                     code = 0;
-    floatp                  width;
-    gs_point                cpt;
-    gs_point                advance_vector;
-    bool                    unstyled_substitution;
+    gs_state *pgs = pcs->pgs;
+
+    gs_char buff[1];
+
+    floatp rmargin = pcs->margins.right;
+
+    floatp page_size = pcs->xfm_state.pd_size.x;
+
+    bool source_opaque = !pcs->source_transparent;
+
+    bool invisible_pattern = is_invisible_pattern(pcs);
+
+    bool wrap = pcs->end_of_line_wrap;
+
+    bool read_char = false;
+
+    bool is_space = false;
+
+    bool print_undefined = false;
+
+    bool use_rmargin = (pcs->cap.x <= rmargin);
+
+    gs_char chr, orig_chr;
+
+    int code = 0;
+
+    floatp width;
+
+    gs_point cpt;
+
+    gs_point advance_vector;
+
+    bool unstyled_substitution;
 
     cpt.x = pcs->cap.x;
     cpt.y = pcs->cap.y;
@@ -747,14 +781,16 @@ pcl_show_chars_slow(
     while (get_next_char(pcs, &str, &size, &chr,
                          &orig_chr, &is_space, &print_undefined, literal,
                          &advance_vector, &unstyled_substitution) == 0) {
-        floatp  tmp_x;
+        floatp tmp_x;
 
         /* check if a character was found */
         buff[0] = chr;
         read_char = true;
 
         /* round width to integral pcl current units */
-        width = (pcl_get_width(pcs, &advance_vector, pscale, chr, is_space, print_undefined));
+        width =
+            (pcl_get_width
+             (pcs, &advance_vector, pscale, chr, is_space, print_undefined));
 
         /*
          * Check for transitions of the left margin; this check is
@@ -775,16 +811,16 @@ pcl_show_chars_slow(
          */
         if (!pcs->last_was_BS) {
             if (wrap) {
-                if ( (use_rmargin && (cpt.x + width > rmargin)) ||
-                     (cpt.x + width > page_size)                   ) {
+                if ((use_rmargin && (cpt.x + width > rmargin)) ||
+                    (cpt.x + width > page_size)) {
                     /* update the current position for the benefit of
                        CR so it knows where to draw underlines if
                        needed then restore the position.  NB don't
                        like this business of mixing floats and ints -
                        (pcs->cap and cpt). throughout this
                        function. */
-                    pcs->cap.x = (coord)cpt.x;
-                    pcs->cap.y = (coord)cpt.y;
+                    pcs->cap.x = (coord) cpt.x;
+                    pcs->cap.y = (coord) cpt.y;
                     pcl_do_CR(pcs);
                     pcl_do_LF(pcs);
                     cpt.x = pcs->cap.x;
@@ -810,12 +846,12 @@ pcl_show_chars_slow(
         tmp_x = cpt.x;
         if (pcs->last_was_BS) {
             /* hack alert.  It seems if the last width is large, we
-             use the horizontal dimension of the page as a guess, the
-             centering is replaced by returning to the zero
-             coordinate.  It would take quite a bit of time to
-             investigate what the hp is doing in this pathological
-             case, so we have not done a detailed analysis.  This
-             solution prints the tests we have correctly. */
+               use the horizontal dimension of the page as a guess, the
+               centering is replaced by returning to the zero
+               coordinate.  It would take quite a bit of time to
+               investigate what the hp is doing in this pathological
+               case, so we have not done a detailed analysis.  This
+               solution prints the tests we have correctly. */
             if (pcs->last_width > pcs->xfm_state.pd_size.x)
                 tmp_x = 0;
             else
@@ -828,7 +864,7 @@ pcl_show_chars_slow(
             if (source_opaque)
                 code = show_char_background(pcs, buff);
             if (code >= 0)
-            if (!invisible_pattern)
+                if (!invisible_pattern)
                     code = show_char_foreground(pcs, buff);
             if (code < 0)
                 break;
@@ -867,8 +903,8 @@ pcl_show_chars_slow(
     pcs->last_width = width;
 
     /* update the current position */
-    pcs->cap.x = (coord)cpt.x;
-    pcs->cap.y = (coord)cpt.y;
+    pcs->cap.x = (coord) cpt.x;
+    pcs->cap.y = (coord) cpt.y;
 
 #ifdef DEBUG
     if (!read_char) {
@@ -879,7 +915,7 @@ pcl_show_chars_slow(
 }
 
 void
-pcl_font_scale(pcl_state_t *pcs, gs_point *pscale)
+pcl_font_scale(pcl_state_t * pcs, gs_point * pscale)
 {
     /* set up the font transformation */
     if (pcs->font->scaling_technology == plfst_bitmap) {
@@ -892,16 +928,19 @@ pcl_font_scale(pcl_state_t *pcs, gs_point *pscale)
          * it must be scaled by pitch, not by height, relative to
          * the nominal pitch of the outline.
          */
-        pcl_font_selection_t *  pfp = &pcs->font_selection[pcs->font_selected];
+        pcl_font_selection_t *pfp = &pcs->font_selection[pcs->font_selected];
+
         /* AGFA madness - 72.307 points per inch for intellifonts */
-        floatp ppi = (pfp->font->scaling_technology == plfst_Intellifont) ? 72.307 : 72.0;
+        floatp ppi =
+            (pfp->font->scaling_technology ==
+             plfst_Intellifont) ? 72.307 : 72.0;
         if (pfp->font->params.proportional_spacing) {
             pscale->x = pscale->y = pfp->params.height_4ths
                 * 0.25 * 7200.0 / ppi;
         } else {
             pscale->x = pscale->y = pl_fp_pitch_cp(&pfp->params)
-                                 * (1000.0 / pl_fp_pitch_cp(&pfp->font->params))
-                                 * (7200.0 / (100.0 * ppi));
+                * (1000.0 / pl_fp_pitch_cp(&pfp->font->params))
+                * (7200.0 / (100.0 * ppi));
 
             /* hack for a scalable lineprinter font.  If a real
                lineprinter bitmap font is available it will be handled
@@ -926,37 +965,32 @@ pcl_font_scale(pcl_state_t *pcs, gs_point *pscale)
  * (transparent) text command: ESC & p <nbytes> X. This distinction is
  * important for characters that are not mapped by the current symbol set.
  */
-  int
-pcl_text(
-    const byte *    str,
-    uint            size,
-    pcl_state_t *   pcs,
-    bool            literal
-)
+int
+pcl_text(const byte * str, uint size, pcl_state_t * pcs, bool literal)
 {
-    gs_state *      pgs = pcs->pgs;
-    gs_matrix       user_ctm;
-    gs_point        scale;
-    int             code;
+    gs_state *pgs = pcs->pgs;
+
+    gs_matrix user_ctm;
+
+    gs_point scale;
+
+    int code;
 
     /* rtl files can have text in them - we don't print any characters
        in rtl */
     if (pcs->personality == rtl)
         return 0;
     /* set up the current font and HMI */
-    if ((pcs->font == 0) || pcs->font_selection[pcs->font_selected].font == 0)
-    {
+    if ((pcs->font == 0) || pcs->font_selection[pcs->font_selected].font == 0) {
         code = pcl_recompute_font(pcs, false);
         if (code < 0)
             return gs_rethrow_code(code);
     }
 
     /* set up the graphic state */
-    code = pcl_set_drawing_color( pcs,
-                                  pcs->pattern_type,
-                                  pcs->current_pattern_id,
-                                  false
-                                  );
+    code = pcl_set_drawing_color(pcs,
+                                 pcs->pattern_type,
+                                 pcs->current_pattern_id, false);
     if (code >= 0)
         code = pcl_set_graphics_state(pcs);
     if (code < 0)
@@ -978,7 +1012,7 @@ pcl_text(
      * works.
      */
     if (pcs->underline_enabled && pcs->underline_floating) {
-        float   yu = fabs(scale.y) / 5.0;
+        float yu = fabs(scale.y) / 5.0;
 
         if (yu > pcs->underline_position)
             pcs->underline_position = yu;
@@ -1001,36 +1035,32 @@ pcl_text(
 /*
  * Individual non-command/control characters
  */
-  int
-pcl_plain_char(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+int
+pcl_plain_char(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    return pcl_text((const byte *)&(pargs->command), 1, pcs, pcs->display_functions);
+    return pcl_text((const byte *)&(pargs->command), 1, pcs,
+                    pcs->display_functions);
 }
 
 /*
  * draw underline up to current point, adjust status
  */
-  void
-pcl_do_underline(
-    pcl_state_t *   pcs
-)
+void
+pcl_do_underline(pcl_state_t * pcs)
 {
     if (pcs->underline_start.x != pcs->cap.x) {
-        gs_state *  pgs = pcs->pgs;
-        float       y = pcs->underline_start.y + pcs->underline_position;
-        int         code;
+        gs_state *pgs = pcs->pgs;
+
+        float y = pcs->underline_start.y + pcs->underline_position;
+
+        int code;
 
         /* save the grapics state */
         pcl_gsave(pcs);
 
-        code = pcl_set_drawing_color( pcs,
-                                      pcs->pattern_type,
-                                      pcs->current_pattern_id,
-                                      false
-                                      );
+        code = pcl_set_drawing_color(pcs,
+                                     pcs->pattern_type,
+                                     pcs->current_pattern_id, false);
         if (code >= 0)
             code = pcl_set_graphics_state(pcs);
         if (code < 0)
@@ -1064,11 +1094,8 @@ pcl_do_underline(
  *
  * Unparsed text command
  */
-  static int
-pcl_transparent_mode(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+pcl_transparent_mode(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     return pcl_text(arg_data(pargs), uint_arg(pargs), pcs, true);
 }
@@ -1081,13 +1108,10 @@ pcl_transparent_mode(
  * NB: If underlining is already enabled, this command is ignored. Underlining
  *     must be specifically disabled to switch from fixed to floating.
  */
-  static int
-pcl_enable_underline(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+pcl_enable_underline(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    int             type = int_arg(pargs);
+    int type = int_arg(pargs);
 
     /* ignore command if underlining is already enabled */
     if (pcs->underline_enabled)
@@ -1112,11 +1136,8 @@ pcl_enable_underline(
  *
  * Disable underlining
  */
-  static int
-pcl_disable_underline(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+pcl_disable_underline(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     /* apparently disabling underlining has the side effect of
        flushing any pending underlines.  This side effect is not
@@ -1135,40 +1156,38 @@ pcl_disable_underline(
  *
  * Select the text parsing method.
  */
-  static int
-pcl_text_parsing_method(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+pcl_text_parsing_method(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     switch (int_arg(pargs)) {
 
-      case 0: case 1:
-        pcs->text_parsing_method = tpm_0_SBCS;
-        break;
+        case 0:
+        case 1:
+            pcs->text_parsing_method = tpm_0_SBCS;
+            break;
 
-      case 21:
-        pcs->text_parsing_method = tpm_21_DBCS7;
-        break;
+        case 21:
+            pcs->text_parsing_method = tpm_21_DBCS7;
+            break;
 
-      case 31:
-        pcs->text_parsing_method = tpm_31_sjis;
-        break;
+        case 31:
+            pcs->text_parsing_method = tpm_31_sjis;
+            break;
 
-      case 38:
-        pcs->text_parsing_method = tpm_38_DBCS8;
-        break;
+        case 38:
+            pcs->text_parsing_method = tpm_38_DBCS8;
+            break;
 
-      case 83:
-        pcs->text_parsing_method = tpm_83_utf8;
-        break;
+        case 83:
+            pcs->text_parsing_method = tpm_83_utf8;
+            break;
 
-      case 1008:
-        pcs->text_parsing_method = tpm_1008_utf8;
-        break;
+        case 1008:
+            pcs->text_parsing_method = tpm_1008_utf8;
+            break;
 
-      default:
-        return e_Range;
+        default:
+            return e_Range;
     }
 
     return 0;
@@ -1181,23 +1200,20 @@ pcl_text_parsing_method(
  *
  * Set the text path direction - not yet implemented.
  */
-  static int
-pcl_text_path_direction(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+pcl_text_path_direction(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    int             direction = int_arg(pargs);
+    int direction = int_arg(pargs);
 
     switch (direction) {
 
-    case 0:
-    case 1:
-    case -1:
-        break;
+        case 0:
+        case 1:
+        case -1:
+            break;
 
-    default:
-        return e_Range;
+        default:
+            return e_Range;
     }
 
     pcs->text_path = direction;
@@ -1205,67 +1221,44 @@ pcl_text_path_direction(
 }
 
 /* ------ Initialization ------ */
-  static int
-pctext_do_registration(
-    pcl_parser_state_t *pcl_parser_state,
-    gs_memory_t *   mem
-)
+static int
+pctext_do_registration(pcl_parser_state_t * pcl_parser_state,
+                       gs_memory_t * mem)
 {
     /* Register commands */
     DEFINE_CONTROL(0, "(plain char)", pcl_plain_char);
 
-    DEFINE_CLASS('&')
-    {
+    DEFINE_CLASS('&') {
         'p', 'X',
-        PCL_COMMAND("Transparent Mode", pcl_transparent_mode, pca_bytes)
-    },
-    {
+            PCL_COMMAND("Transparent Mode", pcl_transparent_mode, pca_bytes)
+    }, {
         'd', 'D',
-        PCL_COMMAND( "Enable Underline",
-                     pcl_enable_underline,
-                     pca_neg_ignore | pca_big_ignore
-                     )
-    },
-    {
+            PCL_COMMAND("Enable Underline",
+                        pcl_enable_underline, pca_neg_ignore | pca_big_ignore)
+    }, {
         'd', '@',
-        PCL_COMMAND( "Disable Underline",
-                     pcl_disable_underline,
-                     pca_neg_ignore | pca_big_ignore
-                     )
-    },
-    END_CLASS
-
-    DEFINE_CLASS('&')
-    {
+            PCL_COMMAND("Disable Underline",
+                        pcl_disable_underline,
+                        pca_neg_ignore | pca_big_ignore)
+    }, END_CLASS DEFINE_CLASS('&') {
         't', 'P',
-        PCL_COMMAND( "Text Parsing Method",
-                     pcl_text_parsing_method,
-                     pca_neg_error | pca_big_error
-                     )
-    },
-    {
+            PCL_COMMAND("Text Parsing Method",
+                        pcl_text_parsing_method,
+                        pca_neg_error | pca_big_error)
+    }, {
         'c', 'T',
-        PCL_COMMAND( "Text Path Direction",
-                     pcl_text_path_direction,
-                     pca_neg_ok | pca_big_error
-                     )
-    },
-    END_CLASS
-
-    DEFINE_CONTROL(1, "(plain char)", pcl_plain_char);  /* default "command" */
+            PCL_COMMAND("Text Path Direction",
+                        pcl_text_path_direction, pca_neg_ok | pca_big_error)
+    }, END_CLASS DEFINE_CONTROL(1, "(plain char)", pcl_plain_char);     /* default "command" */
 
     return 0;
 }
 
-  static void
-pctext_do_reset(
-    pcl_state_t *       pcs,
-    pcl_reset_type_t    type
-)
+static void
+pctext_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
-    static  const uint  mask = (  pcl_reset_initial
-                                | pcl_reset_printer
-                                | pcl_reset_overlay );
+    static const uint mask = (pcl_reset_initial
+                              | pcl_reset_printer | pcl_reset_overlay);
 
     if ((type & mask) != 0) {
         pcs->underline_enabled = false;
@@ -1276,4 +1269,4 @@ pctext_do_reset(
     }
 }
 
-const pcl_init_t    pctext_init = { pctext_do_registration, pctext_do_reset, 0 };
+const pcl_init_t pctext_init = { pctext_do_registration, pctext_do_reset, 0 };

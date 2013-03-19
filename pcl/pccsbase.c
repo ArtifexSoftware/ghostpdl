@@ -155,44 +155,50 @@ gs_private_st_simple(st_cs_base_t, pcl_cs_base_t, "pcl base color space");
  *         for which chromaticities have been provided (only luminance-
  *         chrominance space)
  */
-static const pcl_cid_minmax_t  cielab_range_default = {
-    { { 0.0f, 100.0f }, { -100.0f, 100.0f }, { -100.0f, 100.0f } }
+static const pcl_cid_minmax_t cielab_range_default = {
+    {{0.0f, 100.0f}, {-100.0f, 100.0f}, {-100.0f, 100.0f}}
 };
 
-static const pcl_cid_minmax_t  colmet_range_default = {
-    { { 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 1.0f } }
+static const pcl_cid_minmax_t colmet_range_default = {
+    {{0.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 1.0f}}
 };
 
-static const pcl_cid_minmax_t  lumchrom_range_default = {
-    { { 0.0f, 1.0f }, { -0.89f, 0.89f }, { -0.70f, 0.70f } }
+static const pcl_cid_minmax_t lumchrom_range_default = {
+    {{0.0f, 1.0f}, {-0.89f, 0.89f}, {-0.70f, 0.70f}}
 };
 
-static const pcl_cid_col_common_t  chroma_default = {
+static const pcl_cid_col_common_t chroma_default = {
     {
-        { 0.640f, 0.340f },   /* "red" primary chromaticity */
-        { 0.310f, 0.595f },   /* "green" primary chromaticity */
-        { 0.155f, 0.070f },   /* "blue" chromaticity */
-        { 0.313f, 0.329f }    /* white chromaticity */
-    },
-    { { 1, 1.0f }, { 1, 1.0f }, { 1, 1.0f } }
+     {0.640f, 0.340f},          /* "red" primary chromaticity */
+     {0.310f, 0.595f},          /* "green" primary chromaticity */
+     {0.155f, 0.070f},          /* "blue" chromaticity */
+     {0.313f, 0.329f}           /* white chromaticity */
+     },
+    {{1, 1.0f}, {1, 1.0f}, {1, 1.0f}}
 };
 
-static const float     lumchrom_xform_default[9] = {
+static const float lumchrom_xform_default[9] = {
     0.30f, 0.59f, 0.11f, -0.30f, -0.59f, 0.89f, 0.70f, -0.59f, -0.11f
 };
 
 /* structure of default values for all color spaces */
-static const struct {
-    const pcl_cid_minmax_t *        pminmax;
-    const pcl_cid_col_common_t *    pchroma;
-    const float *                   pxform;
+static const struct
+{
+    const pcl_cid_minmax_t *pminmax;
+    const pcl_cid_col_common_t *pchroma;
+    const float *pxform;
 } cid_data_default[(int)pcl_cspace_num] = {
-    { 0, 0, 0 },                                    /* pcl_cspace_RGB */
-    { 0, 0, 0 },                                    /* pcl_cspace_CMY */
-    { &colmet_range_default, &chroma_default, 0 },  /* pcl_cspace_Colorimetric */
-    { &cielab_range_default, 0, 0},                 /* pcl_cspace_CIELab */
-    { &lumchrom_range_default, &chroma_default, lumchrom_xform_default }
-                                                    /* pcl_cspace_LumChrom */
+    {
+    0, 0, 0},                   /* pcl_cspace_RGB */
+    {
+    0, 0, 0},                   /* pcl_cspace_CMY */
+    {
+    &colmet_range_default, &chroma_default, 0}, /* pcl_cspace_Colorimetric */
+    {
+    &cielab_range_default, 0, 0},       /* pcl_cspace_CIELab */
+    {
+    &lumchrom_range_default, &chroma_default, lumchrom_xform_default}
+    /* pcl_cspace_LumChrom */
 };
 
 /*
@@ -203,35 +209,32 @@ static const struct {
 /*
  * Set the range parameters for a color space.
  */
-  static void
-set_client_info_range(
-    pcl_cs_client_data_t *      pdata,
-    const pcl_cid_minmax_t *    pminmax
-)
+static void
+set_client_info_range(pcl_cs_client_data_t * pdata,
+                      const pcl_cid_minmax_t * pminmax)
 {
-    int                         i;
+    int i;
 
     for (i = 0; i < 3; i++) {
         pdata->min_val[i] = pminmax->val_range[i].min_val;
         pdata->range[i] = pminmax->val_range[i].max_val
-                           - pminmax->val_range[i].min_val;
+            - pminmax->val_range[i].min_val;
     }
 }
 
 /*
  * Set the gamma/gain information for a color space.
  */
-  static void
-set_client_info_chroma(
-    pcl_cs_client_data_t *          pdata,
-    const pcl_cid_col_common_t *    pchroma
-)
+static void
+set_client_info_chroma(pcl_cs_client_data_t * pdata,
+                       const pcl_cid_col_common_t * pchroma)
 {
-    int                             i;
+    int i;
 
     for (i = 0; i < 3; i++) {
-        floatp  gamma = pchroma->nonlin[i].gamma;
-        floatp  gain = pchroma->nonlin[i].gain;
+        floatp gamma = pchroma->nonlin[i].gamma;
+
+        floatp gain = pchroma->nonlin[i].gain;
 
         pdata->inv_gamma[i] = (gamma == 0.0 ? 1.0 : 1.0 / gamma);
         pdata->inv_gain[i] = (gain == 0.0 ? 1.0 : 1.0 / gain);
@@ -241,16 +244,15 @@ set_client_info_chroma(
 /*
  * Build the client information structure for a color space.
  */
-  static void
-build_client_data(
-    pcl_cs_client_data_t *          pdata,
-    const pcl_cid_data_t *          pcid,
-    gs_memory_t *                   pmem
-)
+static void
+build_client_data(pcl_cs_client_data_t * pdata,
+                  const pcl_cid_data_t * pcid, gs_memory_t * pmem)
 {
-    pcl_cspace_type_t               type = pcl_cid_get_cspace(pcid);
-    const pcl_cid_minmax_t *        pminmax = cid_data_default[type].pminmax;
-    const pcl_cid_col_common_t *    pchroma = cid_data_default[type].pchroma;
+    pcl_cspace_type_t type = pcl_cid_get_cspace(pcid);
+
+    const pcl_cid_minmax_t *pminmax = cid_data_default[type].pminmax;
+
+    const pcl_cid_col_common_t *pchroma = cid_data_default[type].pchroma;
 
     /* see if we have long-form information for device-independent spaces */
     if (pcid->len > 6) {
@@ -276,9 +278,8 @@ build_client_data(
  * Init a client data structure from an existing client data structure.
  */
 static void
-init_client_data_from( pcl_cs_client_data_t *          pnew,
-                       const pcl_cs_client_data_t *    pfrom
-)
+init_client_data_from(pcl_cs_client_data_t * pnew,
+                      const pcl_cs_client_data_t * pfrom)
 {
     *pnew = *pfrom;
     pcl_lookup_tbl_init_from(pnew->plktbl1, pfrom->plktbl1);
@@ -288,12 +289,9 @@ init_client_data_from( pcl_cs_client_data_t *          pnew,
 /*
  * Update the lookup table information in a PCL base color space.
  */
-  static void
-update_lookup_tbls(
-    pcl_cs_client_data_t *  pdata,
-    pcl_lookup_tbl_t *      plktbl1,
-    pcl_lookup_tbl_t *      plktbl2
-)
+static void
+update_lookup_tbls(pcl_cs_client_data_t * pdata,
+                   pcl_lookup_tbl_t * plktbl1, pcl_lookup_tbl_t * plktbl2)
 {
     pcl_lookup_tbl_copy_from(pdata->plktbl1, plktbl1);
     pcl_lookup_tbl_copy_from(pdata->plktbl2, plktbl2);
@@ -452,12 +450,12 @@ update_lookup_tbls(
     }
 
 colmet_DecodeABC_proc(colmet_DecodeABC_0, 0)
-colmet_DecodeABC_proc(colmet_DecodeABC_1, 1)
-colmet_DecodeABC_proc(colmet_DecodeABC_2, 2)
+    colmet_DecodeABC_proc(colmet_DecodeABC_1, 1)
+    colmet_DecodeABC_proc(colmet_DecodeABC_2, 2)
 
-static const gs_cie_abc_proc3  colmet_DecodeABC = {
-    { colmet_DecodeABC_0, colmet_DecodeABC_1, colmet_DecodeABC_2 }
-};
+     static const gs_cie_abc_proc3 colmet_DecodeABC = {
+         {colmet_DecodeABC_0, colmet_DecodeABC_1, colmet_DecodeABC_2}
+     };
 
 /*
  * Build the matrix to convert a calibrated RGB color space to XYZ space; see
@@ -465,21 +463,22 @@ static const gs_cie_abc_proc3  colmet_DecodeABC = {
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  static int
-build_colmet_conv_mtx(
-    const pcl_cid_col_common_t *    pdata,
-    pcl_vec3_t *                    pwhite_pt,
-    pcl_mtx3_t *                    pmtx
-)
+static int
+build_colmet_conv_mtx(const pcl_cid_col_common_t * pdata,
+                      pcl_vec3_t * pwhite_pt, pcl_mtx3_t * pmtx)
 {
-    pcl_vec3_t                      tmp_vec;
-    pcl_mtx3_t                      inv_mtx;
-    const float *                   pf = (float *)pdata->chroma;
-    int                             i, code;
+    pcl_vec3_t tmp_vec;
+
+    pcl_mtx3_t inv_mtx;
+
+    const float *pf = (float *)pdata->chroma;
+
+    int i, code;
 
     for (i = 0; i < 3; i++) {
-        floatp  x = pf[2 * i];
-        floatp  y = pf[2 * i + 1];
+        floatp x = pf[2 * i];
+
+        floatp y = pf[2 * i + 1];
 
         pmtx->a[3 * i] = x / y;
         pmtx->a[3 * i + 1] = 1.0;
@@ -491,7 +490,7 @@ build_colmet_conv_mtx(
     pwhite_pt->vc.v1 = pdata->chroma[3].x / pdata->chroma[3].y;
     pwhite_pt->vc.v2 = 1.0;
     pwhite_pt->vc.v3 = (1.0 - pdata->chroma[3].x - pdata->chroma[3].y)
-                         / pdata->chroma[3].y;
+        / pdata->chroma[3].y;
     pcl_vec3_xform(pwhite_pt, &tmp_vec, &inv_mtx);
 
     for (i = 0; i < 9; i++)
@@ -502,16 +501,16 @@ build_colmet_conv_mtx(
 /*
  * Finish the creation of a colorimetric RGB color space.
  */
-  static int
-finish_colmet_cspace(
-    gs_color_space *                pcspace,
-    const pcl_cid_data_t *          pcid
-)
+static int
+finish_colmet_cspace(gs_color_space * pcspace, const pcl_cid_data_t * pcid)
 {
-    pcl_mtx3_t                      mtxABC;
-    pcl_vec3_t                      white_pt;
-    const pcl_cid_col_common_t *    pcoldata;
-    int                             code = 0;
+    pcl_mtx3_t mtxABC;
+
+    pcl_vec3_t white_pt;
+
+    const pcl_cid_col_common_t *pcoldata;
+
+    int code = 0;
 
     if (pcid->len == 6)
         pcoldata = cid_data_default[pcl_cspace_Colorimetric].pchroma;
@@ -671,15 +670,15 @@ finish_colmet_cspace(
     }
 
 lab_DecodeABC_proc(lab_DecodeABC_0, 0, (val = (val + 16.0) / 116.0))
-lab_DecodeABC_proc(lab_DecodeABC_1, 1, (val /= 500))
-lab_DecodeABC_proc(lab_DecodeABC_2, 2, (val /= 200))
+    lab_DecodeABC_proc(lab_DecodeABC_1, 1, (val /= 500))
+    lab_DecodeABC_proc(lab_DecodeABC_2, 2, (val /= 200))
 
-static const gs_cie_abc_proc3  lab_DecodeABC = {
-    { lab_DecodeABC_0, lab_DecodeABC_1, lab_DecodeABC_2 }
-};
+     static const gs_cie_abc_proc3 lab_DecodeABC = {
+         {lab_DecodeABC_0, lab_DecodeABC_1, lab_DecodeABC_2}
+     };
 
-static const gs_matrix3    lab_MatrixABC = {
-    { 1, 1, 1 }, { 1, 0, 0 }, { 0, 0, -1 },
+static const gs_matrix3 lab_MatrixABC = {
+    {1, 1, 1}, {1, 0, 0}, {0, 0, -1},
     false
 };
 
@@ -705,23 +704,20 @@ static const gs_matrix3    lab_MatrixABC = {
     }
 
 lab_DecodeLMN_proc(lab_DecodeLMN_0, 0)
-lab_DecodeLMN_proc(lab_DecodeLMN_1, 1)
-lab_DecodeLMN_proc(lab_DecodeLMN_2, 2)
+    lab_DecodeLMN_proc(lab_DecodeLMN_1, 1)
+    lab_DecodeLMN_proc(lab_DecodeLMN_2, 2)
 
-static const gs_cie_common_proc3   lab_DecodeLMN = {
-    { lab_DecodeLMN_0, lab_DecodeLMN_1, lab_DecodeLMN_2 }
-};
+     static const gs_cie_common_proc3 lab_DecodeLMN = {
+         {lab_DecodeLMN_0, lab_DecodeLMN_1, lab_DecodeLMN_2}
+     };
 
-static const gs_vector3    lab_WhitePoint = { .9504f, 1.0f, 1.0889f };
+static const gs_vector3 lab_WhitePoint = { .9504f, 1.0f, 1.0889f };
 
 /*
  * Finish the creation of a CIE L*a*b* color space.
  */
-  static int
-finish_lab_cspace(
-    gs_color_space *                pcspace,
-    const pcl_cid_data_t *          pcid
-)
+static int
+finish_lab_cspace(gs_color_space * pcspace, const pcl_cid_data_t * pcid)
 {
     /* RangeABC has the default value */
     *(gs_cie_abc_DecodeABC(pcspace)) = lab_DecodeABC;
@@ -784,12 +780,12 @@ finish_lab_cspace(
     }
 
 lumchrom_DecodeABC_proc(lumchrom_DecodeABC_0, 0)
-lumchrom_DecodeABC_proc(lumchrom_DecodeABC_1, 1)
-lumchrom_DecodeABC_proc(lumchrom_DecodeABC_2, 2)
+    lumchrom_DecodeABC_proc(lumchrom_DecodeABC_1, 1)
+    lumchrom_DecodeABC_proc(lumchrom_DecodeABC_2, 2)
 
-static const gs_cie_abc_proc3  lumchrom_DecodeABC = {
-    { lumchrom_DecodeABC_0, lumchrom_DecodeABC_1, lumchrom_DecodeABC_2 }
-};
+     static const gs_cie_abc_proc3 lumchrom_DecodeABC = {
+         {lumchrom_DecodeABC_0, lumchrom_DecodeABC_1, lumchrom_DecodeABC_2}
+     };
 
 /*
  * The DecodeLMN procedures for luminance-chrominance spaces are similar
@@ -825,12 +821,12 @@ static const gs_cie_abc_proc3  lumchrom_DecodeABC = {
     }
 
 lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_0, 0)
-lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_1, 1)
-lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_2, 2)
+    lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_1, 1)
+    lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_2, 2)
 
-static const gs_cie_common_proc3   lumchrom_DecodeLMN = {
-    { lumchrom_DecodeLMN_0, lumchrom_DecodeLMN_1, lumchrom_DecodeLMN_2 }
-};
+     static const gs_cie_common_proc3 lumchrom_DecodeLMN = {
+         {lumchrom_DecodeLMN_0, lumchrom_DecodeLMN_1, lumchrom_DecodeLMN_2}
+     };
 
 /*
  * Build the MatrixABC value for a luminance/chrominance color space. Note that
@@ -839,18 +835,16 @@ static const gs_cie_common_proc3   lumchrom_DecodeLMN = {
  *
  * Return 0 on success, < 0 in the event of an error.
  */
-  static int
-build_lum_chrom_mtxABC(
-    const float     pin_mtx[9],
-    pcl_mtx3_t *    pmtxABC
-)
+static int
+build_lum_chrom_mtxABC(const float pin_mtx[9], pcl_mtx3_t * pmtxABC)
 {
-    int             i;
-    pcl_mtx3_t      tmp_mtx;
+    int i;
+
+    pcl_mtx3_t tmp_mtx;
 
     /* transpose the input to create a row-order matrix */
     for (i = 0; i < 3; i++) {
-        int     j;
+        int j;
 
         for (j = 0; j < 3; j++)
             tmp_mtx.a[i * 3 + j] = pin_mtx[i + 3 * j];
@@ -862,17 +856,18 @@ build_lum_chrom_mtxABC(
 /*
  * Finish the creation of a luminance-chrominance color space.
  */
-  static int
-finish_lumchrom_cspace(
-    gs_color_space *                pcspace,
-    const pcl_cid_data_t *          pcid
-)
+static int
+finish_lumchrom_cspace(gs_color_space * pcspace, const pcl_cid_data_t * pcid)
 {
-    const float *                   pin_mtx;
-    pcl_mtx3_t                      mtxABC, mtxLMN;
-    pcl_vec3_t                      white_pt;
-    const pcl_cid_col_common_t *    pcoldata;
-    int                             code = 0;
+    const float *pin_mtx;
+
+    pcl_mtx3_t mtxABC, mtxLMN;
+
+    pcl_vec3_t white_pt;
+
+    const pcl_cid_col_common_t *pcoldata;
+
+    int code = 0;
 
     if (pcid->len == 6) {
         pcoldata = cid_data_default[pcl_cspace_LumChrom].pchroma;
@@ -882,8 +877,8 @@ finish_lumchrom_cspace(
         pin_mtx = pcid->u.lum.matrix;
     }
 
-    if ( ((code = build_lum_chrom_mtxABC(pin_mtx, &mtxABC)) < 0)           ||
-         ((code = build_colmet_conv_mtx(pcoldata, &white_pt, &mtxLMN)) < 0)  )
+    if (((code = build_lum_chrom_mtxABC(pin_mtx, &mtxABC)) < 0) ||
+        ((code = build_colmet_conv_mtx(pcoldata, &white_pt, &mtxLMN)) < 0))
         return code;
 
     /* RangeABC has the default value */
@@ -900,14 +895,14 @@ finish_lumchrom_cspace(
     return 0;
 }
 
-static int (*const finish_cspace[(int)pcl_cspace_num])( gs_color_space *,
-                                                        const pcl_cid_data_t *
-                                                        ) = {
-    0,                      /* pcl_cspace_RGB */
-    0,                      /* pcl_cspace_CMY */
-    finish_colmet_cspace,   /* pcl_cspace_Colorimetric */
-    finish_lab_cspace,      /* pcl_cspace_CIELab */
-    finish_lumchrom_cspace  /* pcl_cspace_LumChrom */
+static int (*const finish_cspace[(int)pcl_cspace_num]) (gs_color_space *,
+                                                        const pcl_cid_data_t
+                                                        *) = {
+    0,                          /* pcl_cspace_RGB */
+        0,                      /* pcl_cspace_CMY */
+        finish_colmet_cspace,   /* pcl_cspace_Colorimetric */
+        finish_lab_cspace,      /* pcl_cspace_CIELab */
+        finish_lumchrom_cspace  /* pcl_cspace_LumChrom */
 };
 
 /*
@@ -915,14 +910,10 @@ static int (*const finish_cspace[(int)pcl_cspace_num])( gs_color_space *,
  * GS color space, and frees any lookup tables that might have been
  * used (device independent color spaces only).
  */
-  static void
-free_base_cspace(
-    gs_memory_t *   pmem,
-    void *          pvbase,
-    client_name_t   cname
-)
+static void
+free_base_cspace(gs_memory_t * pmem, void *pvbase, client_name_t cname)
 {
-    pcl_cs_base_t * pbase = (pcl_cs_base_t *)pvbase;
+    pcl_cs_base_t *pbase = (pcl_cs_base_t *) pvbase;
 
     rc_decrement(pbase->pcspace, "free_base_cspace");
     gs_free_object(pmem, pvbase, cname);
@@ -938,24 +929,19 @@ free_base_cspace(
  *
  * Returns 0 on success, e_Memory in the event of a memory error.
  */
-  static int
-alloc_base_cspace(
-    pcl_cs_base_t **    ppbase,
-    pcl_cspace_type_t   type,
-    gs_memory_t *       pmem
-)
+static int
+alloc_base_cspace(pcl_cs_base_t ** ppbase,
+                  pcl_cspace_type_t type, gs_memory_t * pmem)
 {
-    pcl_cs_base_t *     pbase = 0;
-    int                 code = 0;
+    pcl_cs_base_t *pbase = 0;
+
+    int code = 0;
 
     *ppbase = 0;
-    rc_alloc_struct_1( pbase,
-                       pcl_cs_base_t,
-                       &st_cs_base_t,
-                       pmem,
-                       return e_Memory,
-                       "allocate pcl base color space"
-                       );
+    rc_alloc_struct_1(pbase,
+                      pcl_cs_base_t,
+                      &st_cs_base_t,
+                      pmem, return e_Memory, "allocate pcl base color space");
     pbase->rc.free = free_base_cspace;
     pbase->type = type;
     pbase->client_data.plktbl1 = 0;
@@ -967,10 +953,8 @@ alloc_base_cspace(
     else if (type <= pcl_cspace_CMY)
         pbase->pcspace = gs_cspace_new_DeviceRGB(pmem);
     else
-        code = gs_cspace_build_CIEABC( &(pbase->pcspace),
-                                       &(pbase->client_data),
-                                       pmem
-                                       );
+        code = gs_cspace_build_CIEABC(&(pbase->pcspace),
+                                      &(pbase->client_data), pmem);
     if (code < 0 || pbase->pcspace == NULL)
         free_base_cspace(pmem, pbase, "allocate pcl base color space");
     else
@@ -998,13 +982,13 @@ alloc_base_cspace(
  * client data may have been changed).
  */
 static int
-unshare_base_cspace(const gs_memory_t *mem,
-                    pcl_cs_base_t **    ppbase
-)
+unshare_base_cspace(const gs_memory_t * mem, pcl_cs_base_t ** ppbase)
 {
-    pcl_cs_base_t *     pbase = *ppbase;
-    pcl_cs_base_t *     pnew = 0;
-    int                 code;
+    pcl_cs_base_t *pbase = *ppbase;
+
+    pcl_cs_base_t *pnew = 0;
+
+    int code;
 
     /* check if there is anything to do */
     if (pbase->rc.ref_count == 1)
@@ -1021,8 +1005,9 @@ unshare_base_cspace(const gs_memory_t *mem,
 
     /* copy the color space (primarily for CIE color spaces; UGLY!!!) */
     if (pbase->type > pcl_cspace_CMY) {
-        gs_cie_abc *    pcs1 = pbase->pcspace->params.abc;
-        gs_cie_abc *    pcs2 = pnew->pcspace->params.abc;
+        gs_cie_abc *pcs1 = pbase->pcspace->params.abc;
+
+        gs_cie_abc *pcs2 = pnew->pcspace->params.abc;
 
         pcs2->common.install_cspace = pcs1->common.install_cspace;
         pcs2->common.RangeLMN = pcs1->common.RangeLMN;
@@ -1043,16 +1028,15 @@ unshare_base_cspace(const gs_memory_t *mem,
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  int
-pcl_cs_base_build_cspace(
-    pcl_cs_base_t **        ppbase,
-    const pcl_cid_data_t *  pcid,
-    gs_memory_t *           pmem
-)
+int
+pcl_cs_base_build_cspace(pcl_cs_base_t ** ppbase,
+                         const pcl_cid_data_t * pcid, gs_memory_t * pmem)
 {
-    pcl_cs_base_t *         pbase = *ppbase;
-    pcl_cspace_type_t       type = pcl_cid_get_cspace(pcid);
-    int                     code = 0;
+    pcl_cs_base_t *pbase = *ppbase;
+
+    pcl_cspace_type_t type = pcl_cid_get_cspace(pcid);
+
+    int code = 0;
 
     /* release the existing color space, if present */
     if (pbase != 0) {
@@ -1067,8 +1051,8 @@ pcl_cs_base_build_cspace(
     build_client_data(&(pbase->client_data), pcid, pmem);
 
     /* fill in color space parameters */
-    if ( (finish_cspace[type] != 0)                              &&
-         ((code = finish_cspace[type](pbase->pcspace, pcid)) < 0)  )
+    if ((finish_cspace[type] != 0) &&
+        ((code = finish_cspace[type] (pbase->pcspace, pcid)) < 0))
         free_base_cspace(pmem, pbase, "build base pcl color space");
     return code;
 }
@@ -1080,14 +1064,11 @@ pcl_cs_base_build_cspace(
  *
  * This routine is usually called once at initialization.
  */
-  int
-pcl_cs_base_build_white_cspace(
-    pcl_state_t *           pcs,
-    pcl_cs_base_t **        ppbase,
-    gs_memory_t *           pmem
-)
+int
+pcl_cs_base_build_white_cspace(pcl_state_t * pcs,
+                               pcl_cs_base_t ** ppbase, gs_memory_t * pmem)
 {
-    int                     code = 0;
+    int code = 0;
 
     if (pcs->pwhite_cs == 0)
         code = alloc_base_cspace(&pcs->pwhite_cs, pcl_cspace_White, pmem);
@@ -1111,32 +1092,33 @@ pcl_cs_base_build_white_cspace(
  * Space was updated, the current PCL indexed color space (which includes this
  * color space as a base color space) must also be updated.
  */
-  int
-pcl_cs_base_update_lookup_tbl(
-    pcl_cs_base_t **    ppbase,
-    pcl_lookup_tbl_t *  plktbl
-)
+int
+pcl_cs_base_update_lookup_tbl(pcl_cs_base_t ** ppbase,
+                              pcl_lookup_tbl_t * plktbl)
 {
-    pcl_cs_base_t *     pbase = *ppbase;
-    pcl_lookup_tbl_t *  plktbl1 = pbase->client_data.plktbl1;
-    pcl_lookup_tbl_t *  plktbl2 = pbase->client_data.plktbl2;
-    int                 code = 0;
+    pcl_cs_base_t *pbase = *ppbase;
+
+    pcl_lookup_tbl_t *plktbl1 = pbase->client_data.plktbl1;
+
+    pcl_lookup_tbl_t *plktbl2 = pbase->client_data.plktbl2;
+
+    int code = 0;
 
     if (plktbl == 0) {
-        if ( (pbase->client_data.plktbl1 == 0) &&
-             (pbase->client_data.plktbl2 == 0)   )
+        if ((pbase->client_data.plktbl1 == 0) &&
+            (pbase->client_data.plktbl2 == 0))
             return 0;
         plktbl1 = 0;
         plktbl2 = 0;
 
     } else {
-        pcl_cspace_type_t   cstype = pbase->type;
-        pcl_cspace_type_t   lktype = pcl_lookup_tbl_get_cspace(plktbl);
+        pcl_cspace_type_t cstype = pbase->type;
+
+        pcl_cspace_type_t lktype = pcl_lookup_tbl_get_cspace(plktbl);
 
         /* lookup tables for "higher" color spaces are always ignored */
-        if ( (cstype < lktype)          ||
-             (lktype == pcl_cspace_RGB) ||
-             (lktype == pcl_cspace_CMY)   )
+        if ((cstype < lktype) ||
+            (lktype == pcl_cspace_RGB) || (lktype == pcl_cspace_CMY))
             return 0;
 
         /* CIE L*a*b* space and the L*a*b* lookup table must match */
@@ -1154,10 +1136,7 @@ pcl_cs_base_update_lookup_tbl(
     pbase = *ppbase;
 
     /* update the lookup table information */
-    update_lookup_tbls( &(pbase->client_data),
-                        plktbl1,
-                        plktbl2
-                        );
+    update_lookup_tbls(&(pbase->client_data), plktbl1, plktbl2);
 
     return 1;
 }
@@ -1170,11 +1149,8 @@ pcl_cs_base_update_lookup_tbl(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  int
-pcl_cs_base_install(
-    pcl_cs_base_t **    ppbase,
-    pcl_state_t *       pcs
-)
+int
+pcl_cs_base_install(pcl_cs_base_t ** ppbase, pcl_state_t * pcs)
 {
     return gs_setcolorspace(pcs->pgs, (*ppbase)->pcspace);
 }
@@ -1183,8 +1159,8 @@ pcl_cs_base_install(
  * One-time initialization routine. This exists only to handle possible non-
  * initialization of BSS.
  */
-  void
-pcl_cs_base_init(pcl_state_t *pcs)
+void
+pcl_cs_base_init(pcl_state_t * pcs)
 {
     pcs->pwhite_cs = 0;
 }

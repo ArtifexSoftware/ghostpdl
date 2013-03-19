@@ -42,6 +42,7 @@
  * Define an abstract type for the switchable input processor state.
  */
 typedef struct pl_process_state_s pl_process_state_t;
+
 /*
  * Define the type for a parser.  The parser reads data from the input
  * buffer and returns either:
@@ -50,16 +51,18 @@ typedef struct pl_process_state_s pl_process_state_t;
  *	detected.
  *	other <0 value - an error was detected.
  */
-#define e_ExitLanguage (-102)	/* e_InterpreterExit */
+#define e_ExitLanguage (-102)   /* e_InterpreterExit */
 #define pl_process_proc(proc)\
   int proc(pl_process_state_t *process_data, stream_cursor_read *pr)
 typedef pl_process_proc((*pl_process_proc_t));
+
 /*
  * Define the input processor state.  There's hardly anything here....
  */
-struct pl_process_state_s {
-  pl_process_proc_t process;
-  void *process_data;	/* closure data for process procedure */
+struct pl_process_state_s
+{
+    pl_process_proc_t process;
+    void *process_data;         /* closure data for process procedure */
 };
 
-#endif					/* plparse_INCLUDED */
+#endif /* plparse_INCLUDED */

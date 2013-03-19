@@ -53,53 +53,55 @@
 /*
  * Structure to describe a PCL raster
  */
-typedef struct pcl_raster_s {
+typedef struct pcl_raster_s
+{
 
-     /* memory used to allocate this structure */
-     gs_memory_t *       pmem;
+    /* memory used to allocate this structure */
+    gs_memory_t *pmem;
 
-     byte                nplanes;            /* # of planes (seed rows) */
-     byte                bits_per_plane;     /* bits per plane */
-     byte                nsrcs;              /* # of data sources, 1 or 3 */
+    byte nplanes;               /* # of planes (seed rows) */
+    byte bits_per_plane;        /* bits per plane */
+    byte nsrcs;                 /* # of data sources, 1 or 3 */
 
-     uint                transparent:1;      /* 1 ==> source transparency */
-     uint                src_height_set:1;   /* source height was set */
-     uint                indexed:1;          /* != 0 ==> indexed color space */
-     uint                zero_is_white:1;    /* all planes 0 ==> white */
-     uint                zero_is_black:1;    /* all planes 0 ==> solid color */
-     uint                interpolate:1;      /* enable interpolation */
-     int                 wht_indx;           /* white index, for indexed color
-                                                space only */
-     const void *        remap_ary;          /* remap array, if needed */
+    uint transparent:1;         /* 1 ==> source transparency */
+    uint src_height_set:1;      /* source height was set */
+    uint indexed:1;             /* != 0 ==> indexed color space */
+    uint zero_is_white:1;       /* all planes 0 ==> white */
+    uint zero_is_black:1;       /* all planes 0 ==> solid color */
+    uint interpolate:1;         /* enable interpolation */
+    int wht_indx;               /* white index, for indexed color
+                                   space only */
+    const void *remap_ary;      /* remap array, if needed */
 
-     pcl_state_t *       pcs;                /* to avoid n extra operand */
-     pcl_cs_indexed_t *  pindexed;           /* color space */
+    pcl_state_t *pcs;           /* to avoid n extra operand */
+    pcl_cs_indexed_t *pindexed; /* color space */
 
-     gs_image_enum *     pen;                /* image enumerator */
-     uint16              plane_index;        /* next plane to be received */
-     uint16              rows_rendered;      /* # of source rows rendered */
-     uint16              src_width;          /* usable raster width */
-     uint16              src_height;         /* remaining usable raster height */
+    gs_image_enum *pen;         /* image enumerator */
+    uint16 plane_index;         /* next plane to be received */
+    uint16 rows_rendered;       /* # of source rows rendered */
+    uint16 src_width;           /* usable raster width */
+    uint16 src_height;          /* remaining usable raster height */
 
-     /* objects required for opaque source/transparent pattern case */
-     gs_image_enum *     mask_pen;           /* enumerator for mask */
-     pcl_cs_indexed_t *  mask_pindexed;      /* special color space for mask */
-     ulong               white_val;          /* value interpreted as white */
-     void                (*gen_mask_row)( struct pcl_raster_s * prast );
+    /* objects required for opaque source/transparent pattern case */
+    gs_image_enum *mask_pen;    /* enumerator for mask */
+    pcl_cs_indexed_t *mask_pindexed;    /* special color space for mask */
+    ulong white_val;            /* value interpreted as white */
+    void (*gen_mask_row) (struct pcl_raster_s * prast);
 
-     /* buffers */
-     pcl_seed_row_t *    pseed_rows;         /* seed rows, one per plane */
-     byte *              cons_buff;          /* consolidation buffer */
-     byte *              mask_buff;          /* buffer for mask row, if needed */
+    /* buffers */
+    pcl_seed_row_t *pseed_rows; /* seed rows, one per plane */
+    byte *cons_buff;            /* consolidation buffer */
+    byte *mask_buff;            /* buffer for mask row, if needed */
 
 } pcl_raster_t;
 
-gs_private_st_simple(st_seed_row_t, pcl_seed_row_t,"PCL raster seed row");
-gs_private_st_simple(st_seed_row_t_element, pcl_seed_row_t, "PCL seed row array");
+gs_private_st_simple(st_seed_row_t, pcl_seed_row_t, "PCL raster seed row");
+gs_private_st_simple(st_seed_row_t_element, pcl_seed_row_t,
+                     "PCL seed row array");
 gs_private_st_simple(st_raster_t, pcl_raster_t, "PCL raster object");
 
 /* forward declaration */
-static int     process_zero_rows( gs_state * pgs, pcl_raster_t * prast, int nrows );
+static int process_zero_rows(gs_state * pgs, pcl_raster_t * prast, int nrows);
 
 /*
  * Clear the consolidation buffer, allocating it if it does not already
@@ -107,19 +109,16 @@ static int     process_zero_rows( gs_state * pgs, pcl_raster_t * prast, int nrow
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  static int
-clear_cons_buff(
-    pcl_raster_t *  prast
-)
+static int
+clear_cons_buff(pcl_raster_t * prast)
 {
-    byte *          pcons = prast->cons_buff;
-    int             npixels = prast->src_width;
+    byte *pcons = prast->cons_buff;
+
+    int npixels = prast->src_width;
 
     if (pcons == 0) {
-        pcons = gs_alloc_bytes( prast->pmem,
-                                npixels,
-                                "PCL raster consolidation buff"
-                                );
+        pcons = gs_alloc_bytes(prast->pmem,
+                               npixels, "PCL raster consolidation buff");
         if (pcons == 0)
             return e_Memory;
         prast->cons_buff = pcons;
@@ -134,19 +133,15 @@ clear_cons_buff(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  static int
-clear_mask_buff(
-    pcl_raster_t *  prast
-)
+static int
+clear_mask_buff(pcl_raster_t * prast)
 {
-    byte *          pmask = prast->mask_buff;
-    int             nbytes = (prast->src_width + 7) / 8;
+    byte *pmask = prast->mask_buff;
+
+    int nbytes = (prast->src_width + 7) / 8;
 
     if (pmask == 0) {
-        pmask = gs_alloc_bytes( prast->pmem,
-                                nbytes,
-                                "PCL raster mask buffer"
-                                );
+        pmask = gs_alloc_bytes(prast->pmem, nbytes, "PCL raster mask buffer");
         if (pmask == 0)
             return e_Memory;
         prast->mask_buff = pmask;
@@ -162,20 +157,26 @@ clear_mask_buff(
  * library sense). This code takes much advantage of the knowledge that the
  * mutliple source case is always direct and one bit per pixel.
  */
-  static void
-gen_mask_multisrc(
-    pcl_raster_t *  prast
-)
+static void
+gen_mask_multisrc(pcl_raster_t * prast)
 {
-    byte *          ip0 = prast->pseed_rows[0].pdata;
-    byte *          ip1 = prast->pseed_rows[1].pdata;
-    byte *          ip2 = prast->pseed_rows[2].pdata;
-    byte *          op = prast->mask_buff;
-    uint            m0 = (prast->white_val >> 16) & 0xff;
-    uint            m1 = (prast->white_val >> 8) & 0xff;
-    uint            m2 = prast->white_val & 0xff;
-    int             nbytes = prast->pseed_rows[0].size;
-    int             i;
+    byte *ip0 = prast->pseed_rows[0].pdata;
+
+    byte *ip1 = prast->pseed_rows[1].pdata;
+
+    byte *ip2 = prast->pseed_rows[2].pdata;
+
+    byte *op = prast->mask_buff;
+
+    uint m0 = (prast->white_val >> 16) & 0xff;
+
+    uint m1 = (prast->white_val >> 8) & 0xff;
+
+    uint m2 = prast->white_val & 0xff;
+
+    int nbytes = prast->pseed_rows[0].size;
+
+    int i;
 
     for (i = 0; i < nbytes; i++)
         *op++ = (*ip0++ ^ m0) & (*ip1++ ^ m1) & (*ip2++ ^ m2);
@@ -187,18 +188,22 @@ gen_mask_multisrc(
  * number of pixels fit within one byte, and this routine takes advantage of
  * that situation.
  */
-  static void
-gen_mask_subbyte(
-    pcl_raster_t *  prast
-)
+static void
+gen_mask_subbyte(pcl_raster_t * prast)
 {
-    byte *          ip = prast->pseed_rows[0].pdata;
-    byte *          op = prast->mask_buff;
-    int             ishift = prast->bits_per_plane;
-    uint            targ = prast->white_val;
-    int             size = prast->src_width;
-    uint            ival, oval, imask, omask;
-    int             i;
+    byte *ip = prast->pseed_rows[0].pdata;
+
+    byte *op = prast->mask_buff;
+
+    int ishift = prast->bits_per_plane;
+
+    uint targ = prast->white_val;
+
+    int size = prast->src_width;
+
+    uint ival, oval, imask, omask;
+
+    int i;
 
     for (i = 0, ival = 0, oval = 0, imask = 0, omask = 0x80; i < size; i++) {
         if ((imask >>= ishift) == 0) {
@@ -220,18 +225,20 @@ gen_mask_subbyte(
 /*
  * Generate a mask from input data that has one byte per pixel.
  */
-  static void
-gen_mask_1byte(
-    pcl_raster_t *  prast
-)
+static void
+gen_mask_1byte(pcl_raster_t * prast)
 {
-    byte *          ip = (prast->nplanes == 1 ? prast->pseed_rows[0].pdata
-                                              : prast->cons_buff);
-    byte *          op = prast->mask_buff;
-    uint            targ = prast->white_val;
-    int             size = prast->src_width;
-    uint            oval, omask;
-    int             i;
+    byte *ip = (prast->nplanes == 1 ? prast->pseed_rows[0].pdata
+                : prast->cons_buff);
+    byte *op = prast->mask_buff;
+
+    uint targ = prast->white_val;
+
+    int size = prast->src_width;
+
+    uint oval, omask;
+
+    int i;
 
     for (i = 0, oval = 0, omask = 0x80; i < size; i++) {
         if (*ip++ == targ)
@@ -251,20 +258,23 @@ gen_mask_1byte(
  * pixel. The only possible such case in PCL is 8-bits per primary 3 color,
  * so this routine handles only that case.
  */
-  static void
-gen_mask_multibyte(
-    pcl_raster_t *  prast
-)
+static void
+gen_mask_multibyte(pcl_raster_t * prast)
 {
-    byte *          ip = prast->pseed_rows[0].pdata;
-    byte *          op = prast->mask_buff;
-    int             size = prast->src_width;
-    ulong           targ = prast->white_val;
-    uint            oval, omask;
-    int             i;
+    byte *ip = prast->pseed_rows[0].pdata;
+
+    byte *op = prast->mask_buff;
+
+    int size = prast->src_width;
+
+    ulong targ = prast->white_val;
+
+    uint oval, omask;
+
+    int i;
 
     for (i = 0, oval = 0, omask = 0x80; i < size; i++, ip += 3) {
-        ulong   ival = (((ulong)ip[0]) << 16) | (((ulong)ip[1]) << 8) | ip[2];
+        ulong ival = (((ulong) ip[0]) << 16) | (((ulong) ip[1]) << 8) | ip[2];
 
         if (ival == targ)
             oval |= omask;
@@ -291,15 +301,16 @@ gen_mask_multibyte(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  static int
-consolidate_row(
-    pcl_raster_t *  prast
-)
+static int
+consolidate_row(pcl_raster_t * prast)
 {
-    byte *          pcons;
-    uint            nplanes = prast->nplanes;
-    uint            npixels = prast->src_width;
-    int             code, i;
+    byte *pcons;
+
+    uint nplanes = prast->nplanes;
+
+    uint npixels = prast->src_width;
+
+    int code, i;
 
     /* clear the consolidation buffer */
     if ((code = clear_cons_buff(prast)) < 0)
@@ -309,9 +320,11 @@ consolidate_row(
     /* for each plane, "or" in the appropriate bit */
     for (i = 0; i < nplanes; i++) {
         if (!prast->pseed_rows[i].is_blank) {
-            const byte *    ip = prast->pseed_rows[i].pdata;
-            byte *          op = pcons;
-            int             cnt = npixels;
+            const byte *ip = prast->pseed_rows[i].pdata;
+
+            byte *op = pcons;
+
+            int cnt = npixels;
 
             for (; cnt >= 8; ip++, op += 8, cnt -= 8) {
                 uint val = *ip;
@@ -335,11 +348,12 @@ consolidate_row(
                     0x00000101, 0x01000101, 0x00010101, 0x01010101
                 };
 #endif
-                ((bits32 *)op)[0] |= spread[val >> 4] << i;
-                ((bits32 *)op)[1] |= spread[val & 0xf] << i;
+                ((bits32 *) op)[0] |= spread[val >> 4] << i;
+                ((bits32 *) op)[1] |= spread[val & 0xf] << i;
             }
             if (cnt) {
                 uint ishift = 7;
+
                 uint val = *ip;
 
                 do {
@@ -357,26 +371,31 @@ consolidate_row(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  static int
-create_mask_enumerator(
-    pcl_raster_t *              prast
-)
+static int
+create_mask_enumerator(pcl_raster_t * prast)
 {
-    int				transparent = prast->transparent;
+    int transparent = prast->transparent;
+
     /*
      * Most elements of gs_image1_t and gs_image4_t are identical.  The only exception
      * that we care about is MaskColor in gs_image_type4_t.
      */
-    union {
+    union
+    {
         gs_image1_t i1;
         gs_image4_t i4;
-    }				image;
-    gs_image_enum *             pen = gs_image_enum_alloc( prast->pmem,
-                                                           "Create image for PCL raster" );
-    int                         code = 0;
-    const byte *                pcolor = 0;
-    gx_image_enum_common_t *    pie = 0;
-    pcl_state_t *               pcs = prast->pcs;
+    } image;
+
+    gs_image_enum *pen = gs_image_enum_alloc(prast->pmem,
+                                             "Create image for PCL raster");
+
+    int code = 0;
+
+    const byte *pcolor = 0;
+
+    gx_image_enum_common_t *pie = 0;
+
+    pcl_state_t *pcs = prast->pcs;
 
     if (pen == 0)
         return e_Memory;
@@ -387,25 +406,25 @@ create_mask_enumerator(
     if (prast->indexed)
         pcolor = prast->pindexed->palette.data + 3 * prast->wht_indx;
     else {
-        static const byte   cwhite[3] = { 1, 1, 1 };
+        static const byte cwhite[3] = { 1, 1, 1 };
 
         pcolor = cwhite;
     }
-    code = pcl_cs_indexed_build_special( &(prast->mask_pindexed),
-                                         prast->pindexed->pbase,
-                                         pcolor,
-                                         prast->pmem
-                                         );
+    code = pcl_cs_indexed_build_special(&(prast->mask_pindexed),
+                                        prast->pindexed->pbase,
+                                        pcolor, prast->pmem);
 
     if (code >= 0) {
         if (transparent)
-            gs_image4_t_init( (gs_image4_t *) &image, prast->mask_pindexed->pcspace);
+            gs_image4_t_init((gs_image4_t *) & image,
+                             prast->mask_pindexed->pcspace);
         else
-            gs_image_t_init_adjust( (gs_image_t *) &image, prast->mask_pindexed->pcspace, 0);
+            gs_image_t_init_adjust((gs_image_t *) & image,
+                                   prast->mask_pindexed->pcspace, 0);
         image.i1.Width = prast->src_width;
         image.i1.Height = prast->src_height;
 
-        if ( pcs->personality == pcl5e )
+        if (pcs->personality == pcl5e)
             image.i1.CombineWithColor = false;
         else
             image.i1.CombineWithColor = true;
@@ -416,18 +435,15 @@ create_mask_enumerator(
         if (transparent)
             image.i4.MaskColor[0] = 0;
 
-        code = gs_image_begin_typed( (const gs_image_common_t *)&image,
-                                     pcs->pgs,
-                                     true,
-                                     &pie
-                                     );
+        code = gs_image_begin_typed((const gs_image_common_t *)&image,
+                                    pcs->pgs, true, &pie);
 
         if (code >= 0)
-            code = gs_image_common_init( pen,
-                                         pie,
-                                         (gs_data_image_t *)&image,
-                                         gs_currentdevice_inline(pcs->pgs)
-                                         );
+            code = gs_image_common_init(pen,
+                                        pie,
+                                        (gs_data_image_t *) & image,
+                                        gs_currentdevice_inline(pcs->pgs)
+                );
     }
 
     if (code < 0)
@@ -449,31 +465,38 @@ create_mask_enumerator(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  static int
-create_image_enumerator(
-    pcl_raster_t *              prast
-)
+static int
+create_image_enumerator(pcl_raster_t * prast)
 {
-    int                         nplanes = prast->nplanes;
-    int                         b_per_p = prast->bits_per_plane;
-    int                         num_comps = (prast->indexed ? 1 : 3);
-    int                         nsrcs = prast->nsrcs;
+    int nplanes = prast->nplanes;
+
+    int b_per_p = prast->bits_per_plane;
+
+    int num_comps = (prast->indexed ? 1 : 3);
+
+    int nsrcs = prast->nsrcs;
+
     /*
      * Most elements of gs_image1_t and gs_image4_t are identical.  The only exception
      * that we care about is MaskColor in gs_image_type4_t.
      */
-    int				use_image4 = prast->transparent;
-    union {
+    int use_image4 = prast->transparent;
+
+    union
+    {
         gs_image1_t i1;
         gs_image4_t i4;
-    }				image;
-    gs_image_enum *             pen = gs_image_enum_alloc( prast->pmem,
-                                                 "Create image for PCL raster" );
-    gx_image_enum_common_t *    pie = 0;
-    gs_color_space *            pcspace = ( prast->indexed
-                                             ? prast->pindexed->pcspace
-                                             : prast->pindexed->pbase->pcspace );
-    int                         code = 0;
+    } image;
+
+    gs_image_enum *pen = gs_image_enum_alloc(prast->pmem,
+                                             "Create image for PCL raster");
+
+    gx_image_enum_common_t *pie = 0;
+
+    gs_color_space *pcspace = (prast->indexed
+                               ? prast->pindexed->pcspace
+                               : prast->pindexed->pbase->pcspace);
+    int code = 0;
 
     if (pen == 0)
         return e_Memory;
@@ -494,17 +517,17 @@ create_image_enumerator(
         use_image4 = 0;
 
     if (use_image4)
-        gs_image4_t_init( (gs_image4_t *) &image, pcspace);
+        gs_image4_t_init((gs_image4_t *) & image, pcspace);
     else
-        gs_image_t_init_adjust( (gs_image_t *) &image, pcspace, 0);
+        gs_image_t_init_adjust((gs_image_t *) & image, pcspace, 0);
     image.i1.Width = prast->src_width;
     image.i1.Height = prast->src_height;
     image.i1.CombineWithColor = true;
-    image.i1.format = ( nsrcs > 1 ? gs_image_format_component_planar
-                               : gs_image_format_chunky           );
+    image.i1.format = (nsrcs > 1 ? gs_image_format_component_planar
+                       : gs_image_format_chunky);
 
     if (nplanes > nsrcs)
-        image.i1.BitsPerComponent = 8; /* always 8 bits per pixel if consolidated */
+        image.i1.BitsPerComponent = 8;  /* always 8 bits per pixel if consolidated */
     else
         image.i1.BitsPerComponent = (nplanes * b_per_p) / num_comps;
 
@@ -516,7 +539,7 @@ create_image_enumerator(
         image.i1.Decode[0] = 0.0;
         image.i1.Decode[1] = (float)((1 << image.i1.BitsPerComponent) - 1);
     } else {
-        int     i;
+        int i;
 
         for (i = 0; i < num_comps; i++) {
             image.i1.Decode[2 * i] = prast->pindexed->Decode[2 * i];
@@ -527,22 +550,20 @@ create_image_enumerator(
                 if (image.i1.Decode[2 * i] == 1.0)
                     image.i4.MaskColor[i] = 0;
                 else if (image.i1.Decode[2 * i + 1] == 1.0)
-                    image.i4.MaskColor[i] = (1 << image.i1.BitsPerComponent) - 1;
+                    image.i4.MaskColor[i] =
+                        (1 << image.i1.BitsPerComponent) - 1;
             }
         }
     }
 
-    code = gs_image_begin_typed( (const gs_image_common_t *)&image,
-                                 prast->pcs->pgs,
-                                 true,
-                                 &pie
-                                 );
+    code = gs_image_begin_typed((const gs_image_common_t *)&image,
+                                prast->pcs->pgs, true, &pie);
     if (code >= 0)
-        code = gs_image_common_init( pen,
-                                     pie,
-                                     (gs_data_image_t *)&image,
-                                     gs_currentdevice_inline(prast->pcs->pgs)
-                                     );
+        code = gs_image_common_init(pen,
+                                    pie,
+                                    (gs_data_image_t *) & image,
+                                    gs_currentdevice_inline(prast->pcs->pgs)
+            );
     if (code < 0) {
         gs_free_object(prast->pmem, pen, "Create image for PCL raster");
         return code;
@@ -564,18 +585,14 @@ create_image_enumerator(
  *     however, as process_zero_rows will call this routine with complete set
  *     set to false.
  */
-  static void
-close_raster(
-    gs_state *      pgs,
-    pcl_raster_t *  prast,
-    bool            complete
-)
+static void
+close_raster(gs_state * pgs, pcl_raster_t * prast, bool complete)
 {
     /* see if we need to fill in any missing rows */
-    if ( complete                                   &&
-         (prast->src_height > prast->rows_rendered) &&
-         prast->src_height_set                        )
-        (void)process_zero_rows(pgs, prast, prast->src_height - prast->rows_rendered);
+    if (complete &&
+        (prast->src_height > prast->rows_rendered) && prast->src_height_set)
+        (void)process_zero_rows(pgs, prast,
+                                prast->src_height - prast->rows_rendered);
     if (prast->pen != 0) {
         gs_image_cleanup(prast->pen, pgs);
         gs_free_object(prast->pmem, prast->pen, "Close PCL raster");
@@ -586,7 +603,7 @@ close_raster(
         gs_free_object(prast->pmem, prast->mask_pen, "Close PCL raster");
         prast->mask_pen = 0;
     }
-    gs_translate(prast->pcs->pgs, 0.0, (floatp)(prast->rows_rendered));
+    gs_translate(prast->pcs->pgs, 0.0, (floatp) (prast->rows_rendered));
     prast->src_height -= prast->rows_rendered;
     prast->rows_rendered = 0;
 }
@@ -619,51 +636,49 @@ close_raster(
  * this varies from HP's practice, and can give unexpected results if an
  * inverting color lookup table is used.
  */
-  static int
-process_mask_row(
-    pcl_raster_t *  prast
-)
+static int
+process_mask_row(pcl_raster_t * prast)
 {
-    int             code = clear_mask_buff(prast);
-    gs_image_enum * pen = prast->mask_pen;
+    int code = clear_mask_buff(prast);
 
-    if ( (code >= 0)                                                  &&
-         ((pen != 0) || ((code = create_mask_enumerator(prast)) >= 0))  ) {
-        uint            dummy;
-        pcl_state_t *   pcs = prast->pcs;
+    gs_image_enum *pen = prast->mask_pen;
+
+    if ((code >= 0) &&
+        ((pen != 0) || ((code = create_mask_enumerator(prast)) >= 0))) {
+        uint dummy;
+
+        pcl_state_t *pcs = prast->pcs;
 
         pen = prast->mask_pen;
         pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, true);
         prast->gen_mask_row(prast);
-        code = gs_image_next( pen,
-                              prast->mask_buff,
-                              (prast->src_width + 7) / 8,
-                              &dummy
-                              );
+        code = gs_image_next(pen,
+                             prast->mask_buff,
+                             (prast->src_width + 7) / 8, &dummy);
         pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->pattern_id, true);
     }
     return code;
 }
 
-  static int
-process_zero_mask_rows(
-    pcl_raster_t *  prast,
-    int             nrows
-)
+static int
+process_zero_mask_rows(pcl_raster_t * prast, int nrows)
 {
-    int             code = clear_mask_buff(prast);
-    gs_image_enum * pen = prast->mask_pen;
+    int code = clear_mask_buff(prast);
 
-    if ( (code >= 0)                                                  &&
-         ((pen != 0) || ((code = create_mask_enumerator(prast)) >= 0))  ) {
-        uint            dummy;
-        pcl_state_t *   pcs = prast->pcs;
-        int             nbytes = (prast->src_width + 7) / 8;
+    gs_image_enum *pen = prast->mask_pen;
+
+    if ((code >= 0) &&
+        ((pen != 0) || ((code = create_mask_enumerator(prast)) >= 0))) {
+        uint dummy;
+
+        pcl_state_t *pcs = prast->pcs;
+
+        int nbytes = (prast->src_width + 7) / 8;
 
         pen = prast->mask_pen;
         memset(prast->mask_buff, 0xff, nbytes);
         pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, true);
-        gs_setrasterop(pcs->pgs, (gs_rop3_t)rop3_know_S_1((int)0xff));
+        gs_setrasterop(pcs->pgs, (gs_rop3_t) rop3_know_S_1((int)0xff));
         while ((nrows-- > 0) && (code >= 0))
             code = gs_image_next(pen, prast->mask_buff, nbytes, &dummy);
         pcl_set_drawing_color(pcs, pcs->pattern_type, pcs->pattern_id, true);
@@ -703,21 +718,24 @@ process_zero_mask_rows(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  static int
-process_zero_rows(
-    gs_state *          pgs,
-    pcl_raster_t *      prast,
-    int                 nrows
-)
+static int
+process_zero_rows(gs_state * pgs, pcl_raster_t * prast, int nrows)
 {
-    int                 npixels = prast->src_width;
-    int                 nbytes = (npixels * prast->bits_per_plane + 7) / 8;
-    int                 nplanes = prast->nplanes;
-    int                 rem_rows = prast->src_height - prast->rows_rendered;
-    pcl_seed_row_t *    pseed_rows = prast->pseed_rows;
-    int                 code = 0;
-    int                 i;
-    int                 moveto_nrows = nrows;
+    int npixels = prast->src_width;
+
+    int nbytes = (npixels * prast->bits_per_plane + 7) / 8;
+
+    int nplanes = prast->nplanes;
+
+    int rem_rows = prast->src_height - prast->rows_rendered;
+
+    pcl_seed_row_t *pseed_rows = prast->pseed_rows;
+
+    int code = 0;
+
+    int i;
+
+    int moveto_nrows = nrows;
 
     /* don't bother going beyond the end of the image */
     if (nrows > rem_rows) {
@@ -739,30 +757,32 @@ process_zero_rows(
     }
 
     /* render as raster or rectangle */
-    if ( ((nrows * nbytes > 1024) || (prast->pen == 0)) &&
-         (prast->zero_is_white || prast->zero_is_black)   ) {
-        gs_state *  pgs = prast->pcs->pgs;
+    if (((nrows * nbytes > 1024) || (prast->pen == 0)) &&
+        (prast->zero_is_white || prast->zero_is_black)) {
+        gs_state *pgs = prast->pcs->pgs;
 
         close_raster(pgs, prast, false);
-        if ((prast->zero_is_black) || !prast->pcs->source_transparent ) {
+        if ((prast->zero_is_black) || !prast->pcs->source_transparent) {
             gs_rect tmp_rect;
-            bool    invert = prast->zero_is_white;
+
+            bool invert = prast->zero_is_white;
 
             tmp_rect.p.x = 0.0;
             tmp_rect.p.y = 0.0;
             tmp_rect.q.x = (double)npixels;
             tmp_rect.q.y = (double)nrows;
             if (invert) {
-                gs_setrasterop( pgs,
-                                (gs_rop3_t)rop3_invert_S(gs_currentrasterop(pgs))
-                                );
-                gs_rectfill(pgs, &tmp_rect, 1 );
+                gs_setrasterop(pgs,
+                               (gs_rop3_t)
+                               rop3_invert_S(gs_currentrasterop(pgs))
+                    );
+                gs_rectfill(pgs, &tmp_rect, 1);
 
-                gs_setrasterop( pgs,
-                                (gs_rop3_t)rop3_invert_S(gs_currentrasterop(pgs))
-                                );
-            }
-            else
+                gs_setrasterop(pgs,
+                               (gs_rop3_t)
+                               rop3_invert_S(gs_currentrasterop(pgs))
+                    );
+            } else
                 gs_rectfill(pgs, &tmp_rect, 1);
 
         }
@@ -770,16 +790,20 @@ process_zero_rows(
         prast->src_height -= nrows;
         /* NB HP bug CET21.04 pg 7 */
         /* NB text cap move to moveto_nrows, but raster cap moveto nrows */
-        gs_translate(pgs, 0.0, (floatp)moveto_nrows);
+        gs_translate(pgs, 0.0, (floatp) moveto_nrows);
 
         return 0;
 
     } else {
-        int             nsrcs = prast->nsrcs;
-        gs_image_enum * pen = prast->pen;
-        int             cnt = 0;
-        uint            size = 0;
-        const byte *    pb;
+        int nsrcs = prast->nsrcs;
+
+        gs_image_enum *pen = prast->pen;
+
+        int cnt = 0;
+
+        uint size = 0;
+
+        const byte *pb;
 
         if (pen == 0) {
             if ((code = create_image_enumerator(prast)) < 0)
@@ -800,7 +824,7 @@ process_zero_rows(
         }
 
         for (i = 0; i < cnt; i++) {
-            uint    dummy;
+            uint dummy;
 
             if ((code = gs_image_next(pen, pb, size, &dummy)) < 0)
                 return code;
@@ -820,16 +844,17 @@ process_zero_rows(
  * The compression mode is provided to allow this routine to fill in any
  * missing rows. For adaptive compression (mode 5), this will be 0.
  */
-  static int
-process_row(
-    pcl_raster_t *  prast,
-    int             comp_mode   /* modified compression mode */
-)
+static int
+process_row(pcl_raster_t * prast, int comp_mode /* modified compression mode */
+    )
 {
-    int             nplanes = prast->nplanes;
-    gs_image_enum * pen = prast->pen;
-    int             i;
-    int             code = 0;
+    int nplanes = prast->nplanes;
+
+    gs_image_enum *pen = prast->pen;
+
+    int i;
+
+    int code = 0;
 
     /* check if there is anything to do */
     if (prast->rows_rendered >= prast->src_height)
@@ -841,9 +866,9 @@ process_row(
 
     /* handle any planes not provided */
     for (i = prast->plane_index; i < nplanes; i++) {
-        static  const byte  dummy = 0;
+        static const byte dummy = 0;
 
-        (void)pcl_decomp_proc[comp_mode](prast->pseed_rows + i, &dummy, 0);
+        (void)pcl_decomp_proc[comp_mode] (prast->pseed_rows + i, &dummy, 0);
     }
 
     /* create the image enumerator if it does not already exist */
@@ -858,9 +883,11 @@ process_row(
     prast->plane_index = 0;
 
     if (prast->nsrcs == 1) {
-        byte *  pb;
-        int     nbytes, b_per_p;
-        uint    dummy;
+        byte *pb;
+
+        int nbytes, b_per_p;
+
+        uint dummy;
 
         /* consolidate the planes if necessary */
         if (nplanes > prast->nsrcs) {
@@ -885,24 +912,20 @@ process_row(
          * (The macro pcl_cmap_apply_remap_ary checks for
          * prast->remap_ary == 0.)
          */
-        pcl_cmap_apply_remap_ary( prast->remap_ary,
-                                  pb,
-                                  b_per_p,
-                                  prast->src_width
-                                  );
+        pcl_cmap_apply_remap_ary(prast->remap_ary,
+                                 pb, b_per_p, prast->src_width);
 
         code = gs_image_next(pen, pb, nbytes, &dummy);
 
     } else {
-        uint    dummy;
-        int     nsrcs = prast->nsrcs;
+        uint dummy;
+
+        int nsrcs = prast->nsrcs;
 
         for (i = 0; (i < nsrcs) && (code >= 0); i++)
-            code = gs_image_next( pen,
-                                  prast->pseed_rows[i].pdata,
-                                  prast->pseed_rows[i].size,
-                                  &dummy
-                                  );
+            code = gs_image_next(pen,
+                                 prast->pseed_rows[i].pdata,
+                                 prast->pseed_rows[i].size, &dummy);
     }
 
     if ((prast->gen_mask_row != 0) && (code >= 0))
@@ -915,16 +938,14 @@ process_row(
  * Process an input data buffer using no compression with blocks (multiple rows)
  */
 
- static int
-process_block_nocompress(
-    gs_state *          pgs,
-    pcl_raster_t *      prast,
-    const byte *        pin,
-    uint                insize
-)
+static int
+process_block_nocompress(gs_state * pgs,
+                         pcl_raster_t * prast, const byte * pin, uint insize)
 {
     uint32 row_bytes, nrows;
+
     pcl_seed_row_t *pseed_row = prast->pseed_rows;
+
     byte *p;
 
     /* the size of the rows are stored in the first 4 bytes */
@@ -936,14 +957,15 @@ process_block_nocompress(
 
     /* the remaining data after the row size should be divisible by
        the row length to have equal sized rows */
-    if  ((insize - 4) % row_bytes)
+    if ((insize - 4) % row_bytes)
         return gs_throw(e_Range, "Non integral number of rows in raster\n");
 
     nrows = insize / row_bytes;
-    
-    for (p = (byte *)pin + 4; nrows > 0; p += row_bytes, nrows--) {
+
+    for (p = (byte *) pin + 4; nrows > 0; p += row_bytes, nrows--) {
         int code;
-        pcl_decomp_proc[0](pseed_row, p, row_bytes);
+
+        pcl_decomp_proc[0] (pseed_row, p, row_bytes);
         prast->plane_index = 1;
         code = process_row(prast, 0);
         if (code < 0)
@@ -955,102 +977,108 @@ process_block_nocompress(
 static int
 pcl_ccitt_error(stream_state * st, const char *str)
 {
-    (void) gs_throw1(-1, "%s", str);
+    (void)gs_throw1(-1, "%s", str);
     return 0;
 }
 
 
 static int
-process_ccitt_compress(
-    gs_state *           pgs,
-    pcl_raster_t *       prast,
-    const byte *         pin,
-    uint                 insize,
-    pcl_rast_buff_type_t comp
-    
-)
+process_ccitt_compress(gs_state * pgs,
+                       pcl_raster_t * prast,
+                       const byte * pin,
+                       uint insize, pcl_rast_buff_type_t comp)
 {
     stream_CFD_state state;
+
     stream_cursor_read scr;
+
     stream_cursor_write scw;
+
     pcl_seed_row_t *pout = prast->pseed_rows;
+
     uint wrsize;
-    byte * temp_buffer;
+
+    byte *temp_buffer;
 
     if (insize < 4)
         return gs_throw(e_Range, "raster row size not specified");
-    s_init_state((stream_state*)&state, &s_CFD_template, prast->pmem);
+    s_init_state((stream_state *) & state, &s_CFD_template, prast->pmem);
     state.report_error = pcl_ccitt_error;
-    s_CFD_template.set_defaults((stream_state*)&state);
+    s_CFD_template.set_defaults((stream_state *) & state);
     state.BlackIs1 = true;
     state.EndOfLine = false;
     state.EndOfBlock = false;
     state.Columns = pl_get_uint32(pin);
-    state.Rows = 0; /* undetermined */
+    state.Rows = 0;             /* undetermined */
     if (comp == CCITT_GR3_1D_COMPRESS)
         state.K = 0;
     else if (comp == CCITT_GR3_2D_COMPRESS)
         state.K = 1;
     else
         state.K = -1;
-    s_CFD_template.init((stream_state*)&state);
+    s_CFD_template.init((stream_state *) & state);
     scr.ptr = pin + 4 - 1;
     scr.limit = scr.ptr + insize;
 
     wrsize = (state.Columns + 7) / 8;
-    temp_buffer = gs_alloc_bytes( prast->pmem, wrsize, "CCITT temp_buffer");
-    if (temp_buffer == 0) return_error(e_Memory);
+    temp_buffer = gs_alloc_bytes(prast->pmem, wrsize, "CCITT temp_buffer");
+    if (temp_buffer == 0)
+        return_error(e_Memory);
     memset(temp_buffer, 0, wrsize);
 
     scw.ptr = temp_buffer - 1;
     scw.limit = scw.ptr + wrsize;
 
     while (1) {
-        int code = s_CFD_template.process((stream_state*)&state, &scr, &scw, true);
+        int code =
+            s_CFD_template.process((stream_state *) & state, &scr, &scw,
+                                   true);
         switch (code) {
 
-            case 1: /* need output, process the scanline and continue. */
+            case 1:            /* need output, process the scanline and continue. */
                 memcpy(pout->pdata, temp_buffer, min(pout->size, wrsize));
                 process_row(prast, 0);
                 memset(temp_buffer, 0, wrsize);
                 scw.ptr = temp_buffer - 1;
                 scw.limit = scw.ptr + wrsize;
                 break;
-            case EOFC: /* all done */
-                s_CFD_template.release((stream_state*)&state);
+            case EOFC:         /* all done */
+                s_CFD_template.release((stream_state *) & state);
                 return 0;
-            case 0: /* need input is an error - we've given it all the data */
-            case ERRC: /* error */
-                s_CFD_template.release((stream_state*)&state);
+            case 0:            /* need input is an error - we've given it all the data */
+            case ERRC:         /* error */
+                s_CFD_template.release((stream_state *) & state);
                 return gs_rethrow(e_Range, "CCITT decompression failed\n");
             default:
-                return gs_throw(e_Range, "unknown code CCITT decompression\n");
+                return gs_throw(e_Range,
+                                "unknown code CCITT decompression\n");
         }
     }
     /* not reached */
     return -1;
 }
-    
-    
+
+
 
 
 /*
  * Process an input data buffer using adpative compression.
  */
-  static int
-process_adaptive_compress(
-    gs_state *          pgs,
-    pcl_raster_t *      prast,
-    const byte *        pin,
-    uint                insize
-)
+static int
+process_adaptive_compress(gs_state * pgs,
+                          pcl_raster_t * prast, const byte * pin, uint insize)
 {
-    pcl_seed_row_t *    pseed_row = prast->pseed_rows;
-    byte *              pdata = pseed_row->pdata;
-    uint                row_size = pseed_row->size;
-    int                 code = 0;
-    int                 cmd = NO_COMPRESS;
-    uint                param = 0;
+    pcl_seed_row_t *pseed_row = prast->pseed_rows;
+
+    byte *pdata = pseed_row->pdata;
+
+    uint row_size = pseed_row->size;
+
+    int code = 0;
+
+    int cmd = NO_COMPRESS;
+
+    uint param = 0;
 
     prast->plane_index = 0;
     while ((insize >= 3) && (code >= 0)) {
@@ -1060,9 +1088,9 @@ process_adaptive_compress(
         param = (param << 8) + *pin++;
         insize -= 3;
         if (cmd <= 3) {
-            uint    cnt = min(insize, param);
+            uint cnt = min(insize, param);
 
-            pcl_decomp_proc[cmd](pseed_row, pin, cnt);
+            pcl_decomp_proc[cmd] (pseed_row, pin, cnt);
             insize -= cnt;
             pin += cnt;
             prast->plane_index = 1;
@@ -1070,8 +1098,9 @@ process_adaptive_compress(
         } else if (cmd == 4)
             code = process_zero_rows(pgs, prast, param);
         else if (cmd == 5) {
-            uint            rem_rows = prast->src_height - prast->rows_rendered;
-            gs_image_enum * pen = prast->pen;
+            uint rem_rows = prast->src_height - prast->rows_rendered;
+
+            gs_image_enum *pen = prast->pen;
 
             if (param > rem_rows)
                 param = rem_rows;
@@ -1092,7 +1121,7 @@ process_adaptive_compress(
             if (prast->nplanes == 1) {
                 prast->rows_rendered += param;
                 while ((param-- > 0) && (code >= 0)) {
-                    uint    dummy;
+                    uint dummy;
 
                     code = gs_image_next(pen, pdata, row_size, &dummy);
                     if ((prast->gen_mask_row != 0) && (code >= 0))
@@ -1100,7 +1129,7 @@ process_adaptive_compress(
                 }
             } else {
                 prast->plane_index = 1;
-                while ( (param-- > 0) && ((code = process_row(prast, 0) >= 0)) )
+                while ((param-- > 0) && ((code = process_row(prast, 0) >= 0)))
                     prast->plane_index = 1;
                 prast->plane_index = 0;
             }
@@ -1109,8 +1138,7 @@ process_adaptive_compress(
     }
 
     /* clear the seed rows if Delta Row Compression at end of raster block */
-    if (cmd == DELTA_ROW_COMPRESS)
-    {
+    if (cmd == DELTA_ROW_COMPRESS) {
         memset(pdata, 0, row_size);
         pseed_row->is_blank = true;
     }
@@ -1122,25 +1150,25 @@ process_adaptive_compress(
  * Add a raster plane. The second operand indicates whether or not this is the
  * final plane of a row.
  */
-  static int
-add_raster_plane(
-    const byte *    pdata,
-    uint            nbytes,
-    bool            end_row,
-    pcl_state_t *   pcs
-)
+static int
+add_raster_plane(const byte * pdata,
+                 uint nbytes, bool end_row, pcl_state_t * pcs)
 {
-    pcl_raster_t *  prast = (pcl_raster_t *)pcs->raster_state.pcur_raster;
-    int             comp_mode = pcs->raster_state.compression_mode;
-    int             nplanes = 0;
-    int             plane_index = 0;
-    int             code = 0;
+    pcl_raster_t *prast = (pcl_raster_t *) pcs->raster_state.pcur_raster;
+
+    int comp_mode = pcs->raster_state.compression_mode;
+
+    int nplanes = 0;
+
+    int plane_index = 0;
+
+    int code = 0;
 
     /* enter raster mode implicitly if not already there */
     if (prast == 0) {
         if ((code = pcl_enter_graphics_mode(pcs, IMPLICIT)) != 0)
             return code;
-        prast = (pcl_raster_t *)pcs->raster_state.pcur_raster;
+        prast = (pcl_raster_t *) pcs->raster_state.pcur_raster;
     }
 
     /*
@@ -1168,18 +1196,19 @@ add_raster_plane(
      */
     plane_index = prast->plane_index;
     if (plane_index < nplanes) {
-        pcl_seed_row_t *    pseed = prast->pseed_rows + plane_index;
+        pcl_seed_row_t *pseed = prast->pseed_rows + plane_index;
 
         prast->plane_index++;
         if (!PCL_BLOCK_COMP(comp_mode))
-            (void)pcl_decomp_proc[comp_mode](pseed, pdata, nbytes);
+            (void)pcl_decomp_proc[comp_mode] (pseed, pdata, nbytes);
         else if (comp_mode == NO_COMPRESS_BLOCK)
             return process_block_nocompress(pcs->pgs, prast, pdata, nbytes);
         else if (comp_mode == ADAPTIVE_COMPRESS)
             return process_adaptive_compress(pcs->pgs, prast, pdata, nbytes);
         else
-            return process_ccitt_compress(pcs->pgs, prast, pdata, nbytes, comp_mode);
-            
+            return process_ccitt_compress(pcs->pgs, prast, pdata, nbytes,
+                                          comp_mode);
+
     }
     return 0;
 }
@@ -1198,34 +1227,31 @@ add_raster_plane(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  int
-pcl_start_raster(
-    uint                src_width,
-    uint                src_height,
-    pcl_state_t *       pcs
-)
+int
+pcl_start_raster(uint src_width, uint src_height, pcl_state_t * pcs)
 {
-    pcl_raster_t *      prast = (pcl_raster_t *)pcs->raster_state.pcur_raster;
-    pcl_palette_t *     ppalet = pcs->ppalet;
-    pcl_cs_indexed_t *  pindexed = ppalet->pindexed;
+    pcl_raster_t *prast = (pcl_raster_t *) pcs->raster_state.pcur_raster;
+
+    pcl_palette_t *ppalet = pcs->ppalet;
+
+    pcl_cs_indexed_t *pindexed = ppalet->pindexed;
+
     pcl_encoding_type_t penc = pcl_cs_indexed_get_encoding(pindexed);
-    pcl_seed_row_t *    pseed_rows = 0;
+
+    pcl_seed_row_t *pseed_rows = 0;
 
     /* there can only be one raster object present at a time */
     if (prast != 0)
         pcl_complete_raster(pcs);
 
-    prast = gs_alloc_struct( pcs->memory,
-                             pcl_raster_t,
-                             &st_raster_t,
-                             "start PCL raster"
-                             );
+    prast = gs_alloc_struct(pcs->memory,
+                            pcl_raster_t, &st_raster_t, "start PCL raster");
     if (prast == 0)
         return e_Memory;
 
     prast->pmem = pcs->memory;
 
-    if ( pcs->source_transparent || pcs->pattern_transparent)
+    if (pcs->source_transparent || pcs->pattern_transparent)
         prast->transparent = true;
     else
         prast->transparent = false;
@@ -1249,12 +1275,12 @@ pcl_start_raster(
     prast->mask_buff = 0;
 
     if (penc <= pcl_penc_indexed_by_pixel) {
-        int     b_per_i = pcl_cs_indexed_get_bits_per_index(pindexed);
+        int b_per_i = pcl_cs_indexed_get_bits_per_index(pindexed);
 
         if (penc == pcl_penc_indexed_by_plane) {
             prast->nplanes = b_per_i;
             prast->bits_per_plane = 1;
-        } else { /* penc == pcl_penc_indexed_by_pixel */
+        } else {                /* penc == pcl_penc_indexed_by_pixel */
             prast->nplanes = 1;
             prast->bits_per_plane = b_per_i;
         }
@@ -1264,14 +1290,14 @@ pcl_start_raster(
         prast->zero_is_black = pcl_cs_indexed_0_is_black(pindexed);
         prast->remap_ary = pcl_cmap_create_remap_ary(pcs, &(prast->wht_indx));
 
-    } else {    /* penc >= pcl_penc_direct_by_plane */
-        int     b_per_primary = pcl_cs_indexed_get_bits_per_primary(pindexed, 0);
+    } else {                    /* penc >= pcl_penc_direct_by_plane */
+        int b_per_primary = pcl_cs_indexed_get_bits_per_primary(pindexed, 0);
 
         if (penc == pcl_penc_direct_by_plane) {
             prast->nplanes = 3;
             prast->bits_per_plane = b_per_primary;
             prast->nsrcs = 3;
-        } else {    /* penc == pcl_penc_direct_by_pixel */
+        } else {                /* penc == pcl_penc_direct_by_pixel */
             prast->nplanes = 1;
             prast->bits_per_plane = 3 * b_per_primary;
             prast->nsrcs = 1;
@@ -1284,23 +1310,23 @@ pcl_start_raster(
     }
 
     /* allocate the seed row buffers */
-    pseed_rows = gs_alloc_struct_array( prast->pmem,
-                                        prast->nplanes,
-                                        pcl_seed_row_t,
-                                        &st_seed_row_t_element,
-                                        "start PCL raster"
-                                        );
+    pseed_rows = gs_alloc_struct_array(prast->pmem,
+                                       prast->nplanes,
+                                       pcl_seed_row_t,
+                                       &st_seed_row_t_element,
+                                       "start PCL raster");
     if (pseed_rows != 0) {
-        int     seed_row_bytes = (prast->src_width * prast->bits_per_plane + 7)
-                                 / 8;
-        int     nplanes = prast->nplanes;
-        int     i, j;
+        int seed_row_bytes = (prast->src_width * prast->bits_per_plane + 7)
+            / 8;
+
+        int nplanes = prast->nplanes;
+
+        int i, j;
 
         for (i = 0; i < nplanes; i++) {
-            byte *  pdata = gs_alloc_bytes( prast->pmem,
-                                            seed_row_bytes,
-                                            "start PCL raster"
-                                            );
+            byte *pdata = gs_alloc_bytes(prast->pmem,
+                                         seed_row_bytes,
+                                         "start PCL raster");
 
             if (pdata == 0)
                 break;
@@ -1315,10 +1341,8 @@ pcl_start_raster(
 
             /* memory exhaustion; release the already allocated seed rows */
             for (j = 0; j < i; j++)
-                gs_free_object( prast->pmem,
-                                pseed_rows[j].pdata,
-                                "start PCL raster"
-                                );
+                gs_free_object(prast->pmem,
+                               pseed_rows[j].pdata, "start PCL raster");
             gs_free_object(prast->pmem, pseed_rows, "start PCL raster");
             pseed_rows = 0;
         }
@@ -1331,38 +1355,38 @@ pcl_start_raster(
     }
 
     prast->pseed_rows = pseed_rows;
-    pcs->raster_state.pcur_raster = (pcl_raster_type *)prast;
+    pcs->raster_state.pcur_raster = (pcl_raster_type *) prast;
 
     /* see if a mask is required */
-    if ( !pcs->source_transparent                                      &&
-         pcs->pattern_transparent                                      &&
-         (!prast->indexed                                              ||
-          (prast->wht_indx
-                    < (1 << prast->nplanes * prast->bits_per_plane))  )  ) {
+    if (!pcs->source_transparent &&
+        pcs->pattern_transparent &&
+        (!prast->indexed ||
+         (prast->wht_indx < (1 << prast->nplanes * prast->bits_per_plane)))) {
 
         if (!prast->indexed) {
-            ulong   white_val = 0UL;
+            ulong white_val = 0UL;
 
             /* direct by plane or by pixel, one or 8 bits per primary */
             prast->gen_mask_row = (prast->nsrcs > 1 ? gen_mask_multisrc
-                                                    : gen_mask_multibyte);
+                                   : gen_mask_multibyte);
             if (prast->pindexed->Decode[1] == 1.0)
-                white_val |= ((ulong)0xff) << 16;
+                white_val |= ((ulong) 0xff) << 16;
             if (prast->pindexed->Decode[3] == 1.0)
-                white_val |= ((ulong)0xff) << 8;
+                white_val |= ((ulong) 0xff) << 8;
             if (prast->pindexed->Decode[5] == 1.0)
                 white_val |= 0xff;
             prast->white_val = white_val;
 
-        } else if ((prast->nplanes > 1) || (prast->bits_per_plane == 8)){
+        } else if ((prast->nplanes > 1) || (prast->bits_per_plane == 8)) {
 
             /* indexed by plane or direct by pixel, 8 bits per pixel */
             prast->gen_mask_row = gen_mask_1byte;
             prast->white_val = prast->wht_indx;
 
         } else {
-            ulong   white_val = prast->wht_indx;
-            int     n = 8 / prast->bits_per_plane;
+            ulong white_val = prast->wht_indx;
+
+            int n = 8 / prast->bits_per_plane;
 
             /* indexed by pixel, < 8 bits per pixel */
             prast->gen_mask_row = gen_mask_subbyte;
@@ -1378,11 +1402,12 @@ pcl_start_raster(
 /*
  * Complete a raster. This is called when exiting graphics mode.
  */
-  void
-pcl_complete_raster(pcl_state_t *pcs)
+void
+pcl_complete_raster(pcl_state_t * pcs)
 {
-    pcl_raster_t *  prast = (pcl_raster_t *)pcs->raster_state.pcur_raster;
-    int             i;
+    pcl_raster_t *prast = (pcl_raster_t *) pcs->raster_state.pcur_raster;
+
+    int i;
 
     /* if already in raster mode, ignore */
     if (prast == 0)
@@ -1393,10 +1418,8 @@ pcl_complete_raster(pcl_state_t *pcs)
 
     /* free associated objects */
     if (prast->remap_ary != 0) {
-        gs_free_object( prast->pmem,
-                        (void *)prast->remap_ary,
-                        "Complete PCL raster"
-                        );
+        gs_free_object(prast->pmem,
+                       (void *)prast->remap_ary, "Complete PCL raster");
         prast->remap_ary = 0;
     }
 
@@ -1412,10 +1435,9 @@ pcl_complete_raster(pcl_state_t *pcs)
     if (prast->pseed_rows != 0) {
         for (i = 0; i < prast->nplanes; i++) {
             if (prast->pseed_rows[i].pdata != 0)
-                gs_free_object( prast->pmem,
-                                prast->pseed_rows[i].pdata,
-                                "Complete PCL raster"
-                                );
+                gs_free_object(prast->pmem,
+                               prast->pseed_rows[i].pdata,
+                               "Complete PCL raster");
         }
         gs_free_object(prast->pmem, prast->pseed_rows, "Complete PCL raster");
         prast->pseed_rows = 0;
@@ -1436,13 +1458,11 @@ pcl_complete_raster(pcl_state_t *pcs)
  *
  * Add a plane buffer to the current set.
  */
-  static int
-transfer_raster_plane(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+transfer_raster_plane(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    return add_raster_plane(arg_data(pargs), arg_data_size(pargs), false, pcs);
+    return add_raster_plane(arg_data(pargs), arg_data_size(pargs), false,
+                            pcs);
 }
 
 /*
@@ -1451,21 +1471,22 @@ transfer_raster_plane(
  * Add a plane buffer to the current buffered set, and complete the current
  * raster row.
  */
-  static int
-transfer_raster_row(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+transfer_raster_row(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    const byte *    pdata = arg_data(pargs);
-    int             comp_mode = pcs->raster_state.compression_mode;
-    int             code = 0;
+    const byte *pdata = arg_data(pargs);
+
+    int comp_mode = pcs->raster_state.compression_mode;
+
+    int code = 0;
 
     code = add_raster_plane(pdata, arg_data_size(pargs), true, pcs);
 
     /* complete the row (execpt for adaptive compression) */
     if (!PCL_BLOCK_COMP(comp_mode) && code == 0)
-        code = process_row((pcl_raster_t *)pcs->raster_state.pcur_raster, comp_mode);
+        code =
+            process_row((pcl_raster_t *) pcs->raster_state.pcur_raster,
+                        comp_mode);
 
     return code;
 }
@@ -1479,13 +1500,10 @@ transfer_raster_row(
  * Note that any incomplete plane data for the current row is discarded by this
  * command.
  */
-  static int
-raster_y_offset(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+raster_y_offset(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    pcl_raster_t *  prast = (pcl_raster_t *)pcs->raster_state.pcur_raster;
+    pcl_raster_t *prast = (pcl_raster_t *) pcs->raster_state.pcur_raster;
 
     /* ignored outside of graphics mode */
     if ((prast != 0) && (uint_arg(pargs) > 0)) {
@@ -1499,13 +1517,10 @@ raster_y_offset(
  *
  * set raster print direction
  */
-  static int
-set_line_path(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+set_line_path(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    uint            i = uint_arg(pargs);
+    uint i = uint_arg(pargs);
 
     if (i <= 1)
         pcs->raster_state.y_advance = (i == 1 ? -1 : 1);
@@ -1518,55 +1533,42 @@ set_line_path(
  * There is also no explicit reset routine, as the required work is handled
  * at a higher level.
  */
-  static int
-raster_do_registration(
-    pcl_parser_state_t *pcl_parser_state,
-    gs_memory_t *   pmem    /* ignored */
-)
+static int
+raster_do_registration(pcl_parser_state_t * pcl_parser_state, gs_memory_t * pmem        /* ignored */
+    )
 {
-    DEFINE_CLASS('*')
-    {
+    DEFINE_CLASS('*') {
         'b', 'V',
-        PCL_COMMAND( "Transfer Raster Plane",
-                     transfer_raster_plane,
-                     pca_raster_graphics | pca_bytes | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("Transfer Raster Plane",
+                        transfer_raster_plane,
+                        pca_raster_graphics | pca_bytes | pca_in_rtl)
+    }, {
         'b', 'W',
-        PCL_COMMAND( "Transfer Raster Row",
-                     transfer_raster_row,
-                     pca_raster_graphics | pca_bytes | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("Transfer Raster Row",
+                        transfer_raster_row,
+                        pca_raster_graphics | pca_bytes | pca_in_rtl)
+    }, {
         'b', 'Y',
-        PCL_COMMAND( "Raster Y Offset",
-                     raster_y_offset,
-                     pca_raster_graphics | pca_neg_ok | pca_big_clamp | pca_in_rtl
-                     )
-    },
-    {
+            PCL_COMMAND("Raster Y Offset",
+                        raster_y_offset,
+                        pca_raster_graphics | pca_neg_ok | pca_big_clamp |
+                        pca_in_rtl)
+    }, {
         /* NB this command should *only* be exectuted in rtl but we
            use it in both rtl and pcl5 */
         'b', 'L',
-        PCL_COMMAND( "Line Path",
-                     set_line_path,
-                     pca_neg_ok | pca_big_ignore | pca_in_rtl
-                     )
-    },
-    END_CLASS
-    return 0;
+            PCL_COMMAND("Line Path",
+                        set_line_path,
+                        pca_neg_ok | pca_big_ignore | pca_in_rtl)
+    }, END_CLASS return 0;
 }
 
-  static void
-raster_do_reset(
-    pcl_state_t *       pcs,
-    pcl_reset_type_t    type
-)
+static void
+raster_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     if ((type & pcl_reset_initial) != 0)
         pcs->raster_state.pcur_raster = 0;
 }
 
-const pcl_init_t    rtraster_init = { raster_do_registration, raster_do_reset, 0 };
+const pcl_init_t rtraster_init =
+    { raster_do_registration, raster_do_reset, 0 };

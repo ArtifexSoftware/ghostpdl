@@ -20,7 +20,7 @@
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcfont.h"
-#include "gsmatrix.h"		/* for gsstate.h */
+#include "gsmatrix.h"           /* for gsstate.h */
 #include "gsstate.h"
 #include "gsrop.h"
 
@@ -29,13 +29,10 @@
  *
  * Set logical operation.
  */
-  static int
-pcl_logical_operation(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+pcl_logical_operation(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    uint            rop = uint_arg(pargs);
+    uint rop = uint_arg(pargs);
 
     if (pcs->raster_state.graphics_mode)
         return 0;
@@ -55,13 +52,10 @@ pcl_logical_operation(
  * Set prixel placement. Note that this feature is not yet properly
  * implemented.
  */
-  static int
-pcl_pixel_placement(
-    pcl_args_t *    pargs,
-    pcl_state_t *   pcs
-)
+static int
+pcl_pixel_placement(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    uint            i = uint_arg(pargs);
+    uint i = uint_arg(pargs);
 
     if (pcs->raster_state.graphics_mode)
         return 0;
@@ -74,41 +68,31 @@ pcl_pixel_placement(
 /*
  * Initialization
  */
-  static int
-pccprint_do_registration(
-    pcl_parser_state_t *pcl_parser_state,
-    gs_memory_t *   pmem
-)
+static int
+pccprint_do_registration(pcl_parser_state_t * pcl_parser_state,
+                         gs_memory_t * pmem)
 {
     /* Register commands */
-    DEFINE_CLASS('*')
-    {
+    DEFINE_CLASS('*') {
         'l', 'O',
-        PCL_COMMAND( "Logical Operation",
-                     pcl_logical_operation,
-                     pca_neg_ok | pca_big_error | pca_in_rtl | pca_raster_graphics
-                     )
-    },
-    {
+            PCL_COMMAND("Logical Operation",
+                        pcl_logical_operation,
+                        pca_neg_ok | pca_big_error | pca_in_rtl |
+                        pca_raster_graphics)
+    }, {
         'l', 'R',
-        PCL_COMMAND( "Pixel Placement",
-                     pcl_pixel_placement,
-                     pca_neg_ok | pca_big_ignore | pca_in_rtl | pca_raster_graphics
-                     )
-    },
-    END_CLASS
-    return 0;
+            PCL_COMMAND("Pixel Placement",
+                        pcl_pixel_placement,
+                        pca_neg_ok | pca_big_ignore | pca_in_rtl |
+                        pca_raster_graphics)
+    }, END_CLASS return 0;
 }
 
-  static void
-pccprint_do_reset(
-    pcl_state_t *       pcs,
-    pcl_reset_type_t    type
-)
+static void
+pccprint_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
-    static  const uint  mask = (  pcl_reset_initial
-                                | pcl_reset_printer
-                                | pcl_reset_overlay );
+    static const uint mask = (pcl_reset_initial
+                              | pcl_reset_printer | pcl_reset_overlay);
 
     if ((type & mask) != 0) {
         pcs->logical_op = 252;
@@ -116,4 +100,5 @@ pccprint_do_reset(
     }
 }
 
-const pcl_init_t    pccprint_init = { pccprint_do_registration, pccprint_do_reset, 0 };
+const pcl_init_t pccprint_init =
+    { pccprint_do_registration, pccprint_do_reset, 0 };

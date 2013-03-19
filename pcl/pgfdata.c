@@ -22,9 +22,9 @@
 #include "gsstate.h"
 #include "gspath.h"
 #include "gserrors.h"
-#include "gxarith.h"		/* for any_abs */
+#include "gxarith.h"            /* for any_abs */
 #include "pgfdata.h"
-#include "pgmand.h" /* NB add to makefile */
+#include "pgmand.h"             /* NB add to makefile */
 
 /* Font data consists of instructions for each character.
    Fonts are on a 1024x1024 grid. */
@@ -5044,53 +5044,59 @@ const short int arc_font_widths[] = {
 
 /* generate the segments NB void *data is the the graphics state */
 static int
-hpgl_stick_segments(const gs_memory_t *mem, void *data, uint char_index)
+hpgl_stick_segments(const gs_memory_t * mem, void *data, uint char_index)
 {
     /* characters start with 32 - what about char index < 0x20 ?? */
     short table_index_of_char = char_index - 0x20;
+
     /* table of offsets into table which contains the font drawing */
     short offset = stick_font_offsets[table_index_of_char];
+
     /* look up the next characters offset, subtract and the result is
        the number of drawing operations to render the character. */
-    short count = stick_font_offsets[table_index_of_char+1] - offset;
+    short count = stick_font_offsets[table_index_of_char + 1] - offset;
+
     short stop = count + offset;
+
     /* set up tables debending on stick or arc font */
     int i;
 
-    if ( (char_index < 0x20) ||
-         (char_index > 0xff) ||
-         ((char_index > 0x7f) && (char_index < 0xa0)) )
-        return 0; /* no glyph */
+    if ((char_index < 0x20) ||
+        (char_index > 0xff) || ((char_index > 0x7f) && (char_index < 0xa0)))
+        return 0;               /* no glyph */
 
     /* all entries have 3 short entries */
     i = offset;
-    while ( i < stop ) {
-        if ( stick_font_data[i] == FNT_LINETO ) {
-            gs_lineto(data, (floatp)(stick_font_data[i+1]), (floatp)(stick_font_data[i+2]));
+    while (i < stop) {
+        if (stick_font_data[i] == FNT_LINETO) {
+            gs_lineto(data, (floatp) (stick_font_data[i + 1]),
+                      (floatp) (stick_font_data[i + 2]));
             i += 3;
-        }
-        else if ( stick_font_data[i] == FNT_MOVETO ) {
-            gs_moveto(data, (floatp)(stick_font_data[i+1]), (floatp)(stick_font_data[i+2]));
+        } else if (stick_font_data[i] == FNT_MOVETO) {
+            gs_moveto(data, (floatp) (stick_font_data[i + 1]),
+                      (floatp) (stick_font_data[i + 2]));
             i += 3;
-        }
-        else
+        } else
             return_error(gs_error_invalidfont);
     }
 
     /* table must be corrupt if the loop didn't stop at stop */
-    if ( i != stop )
+    if (i != stop)
         return_error(gs_error_invalidfont);
     return 0;
 }
 
 int
-hpgl_531_segments(const gs_memory_t *mem, void *data, void *cdata)
+hpgl_531_segments(const gs_memory_t * mem, void *data, void *cdata)
 {
     /* NB why is the gstate passed as a void *?, missing graphics
        library error checking */
     hpgl_dl_cdata_t *cd = cdata;
+
     bool pen_up = true;
+
     int i = 0;
+
     /* we assume the data is correct at this point - errors should
        have been detected when the DL command was saving the data */
     while (i < cd->index) {
@@ -5099,14 +5105,16 @@ hpgl_531_segments(const gs_memory_t *mem, void *data, void *cdata)
             i++;
         } else {
             floatp x = cd->data[i];
-            floatp y = cd->data[i+1];
+
+            floatp y = cd->data[i + 1];
+
             if (pen_up) {
                 gs_moveto(data, x, y);
                 pen_up = false;
             } else {
                 gs_lineto(data, x, y);
             }
-            i+=2;
+            i += 2;
         }
     }
     return 0;
@@ -5115,47 +5123,53 @@ hpgl_531_segments(const gs_memory_t *mem, void *data, void *cdata)
 /* this procedure has the same cartoon as hpgl_stick_segments() above
    except the drawing operations are different */
 static int
-hpgl_arc_segments(const gs_memory_t *mem, void *data, uint char_index)
+hpgl_arc_segments(const gs_memory_t * mem, void *data, uint char_index)
 {
     /* characters start with 32 - what about char index < 0x20 ?? */
     short table_index_of_char = char_index - 0x20;
+
     /* table of offsets into table which contains the font drawing */
     short offset = arc_font_offsets[table_index_of_char];
+
     /* look up the next characters offset, subtract and the result is
        the number of drawing operations to render the character. */
-    short count = arc_font_offsets[table_index_of_char+1] - offset;
+    short count = arc_font_offsets[table_index_of_char + 1] - offset;
+
     short stop = count + offset;
+
     /* set up tables debending on stick or arc font */
     int i;
+
     /* 3 entries for moveto and lineto and 5 for curveto */
 
-    if ( (char_index < 0x20) ||
-         (char_index > 0xff) ||
-         ((char_index > 0x7f) && (char_index < 0xa0)) )
-        return 0; /* no glyph */
+    if ((char_index < 0x20) ||
+        (char_index > 0xff) || ((char_index > 0x7f) && (char_index < 0xa0)))
+        return 0;               /* no glyph */
 
     i = offset;
-    while ( i < stop ) {
-        if ( arc_font_data[i] == FNT_LINETO ) {
-            gs_lineto(data, (floatp)(arc_font_data[i+1]), (floatp)(arc_font_data[i+2]));
+    while (i < stop) {
+        if (arc_font_data[i] == FNT_LINETO) {
+            gs_lineto(data, (floatp) (arc_font_data[i + 1]),
+                      (floatp) (arc_font_data[i + 2]));
             i += 3;
-        }
-        else if ( arc_font_data[i] == FNT_MOVETO ) {
-            gs_moveto(data, (floatp)(arc_font_data[i+1]), (floatp)(arc_font_data[i+2]));
+        } else if (arc_font_data[i] == FNT_MOVETO) {
+            gs_moveto(data, (floatp) (arc_font_data[i + 1]),
+                      (floatp) (arc_font_data[i + 2]));
             i += 3;
-        }
-        else if ( arc_font_data[i] == FNT_CURVETO ) {
-            gs_curveto(data, (floatp)(arc_font_data[i+1]), (floatp)(arc_font_data[i+2]),
-                       (floatp)(arc_font_data[i+3]), (floatp)(arc_font_data[i+4]),
-                       (floatp)(arc_font_data[i+5]), (floatp)(arc_font_data[i+6]));
+        } else if (arc_font_data[i] == FNT_CURVETO) {
+            gs_curveto(data, (floatp) (arc_font_data[i + 1]),
+                       (floatp) (arc_font_data[i + 2]),
+                       (floatp) (arc_font_data[i + 3]),
+                       (floatp) (arc_font_data[i + 4]),
+                       (floatp) (arc_font_data[i + 5]),
+                       (floatp) (arc_font_data[i + 6]));
             i += 7;
-        }
-        else
+        } else
             return_error(gs_error_invalidfont);
     }
 
     /* table must be corrupt if the loop didn't stop at stop */
-    if ( i != stop )
+    if (i != stop)
         return_error(gs_error_invalidfont);
     return 0;
 }
@@ -5171,26 +5185,28 @@ hpgl_stick_width(uint char_index)
 static int
 hpgl_arc_width(gs_char char_index)
 {
-    if ( char_index < 0x20 || (char_index < 0xa0 && char_index > 0x7f))
+    if (char_index < 0x20 || (char_index < 0xa0 && char_index > 0x7f))
         return arc_font_widths[0];
     return arc_font_widths[char_index - 0x20];
 }
 
 /* interface procedure render the characters */
 int
-hpgl_stick_arc_segments(const gs_memory_t *mem,
-                        void *data, gs_char char_index, hpgl_font_type_t font_type)
+hpgl_stick_arc_segments(const gs_memory_t * mem,
+                        void *data, gs_char char_index,
+                        hpgl_font_type_t font_type)
 {
-    if ( font_type == HPGL_ARC_FONT )
+    if (font_type == HPGL_ARC_FONT)
         return hpgl_arc_segments(mem, data, char_index);
     else
         return hpgl_stick_segments(mem, data, char_index);
 }
 
 /* interface procedure to get the width of the characters */
-int hpgl_stick_arc_width(gs_char char_index, hpgl_font_type_t font_type)
+int
+hpgl_stick_arc_width(gs_char char_index, hpgl_font_type_t font_type)
 {
-    if ( font_type == HPGL_ARC_FONT )
+    if (font_type == HPGL_ARC_FONT)
         return hpgl_arc_width(char_index);
     else
         return hpgl_stick_width(char_index);

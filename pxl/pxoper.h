@@ -79,29 +79,31 @@ typedef struct px_parser_state_s px_parser_state_t;
  * px_parser_state_reloc_ptrs.
  */
 #define max_px_args 20
-typedef struct px_args_s {
-  struct ds_ {
-    ulong position;		/* position in data block, initially 0, */
-                                /* provided for the operator's convenience */
-    uint count;			/* another variable for the operators */
-    uint available;		/* amount of data available in block */
-    bool phase;                 /* upon first call of the operator this will be 0. */
-    const byte *data;
-  } source;
-  /*
-   * ExecStream needs a pointer to the parser state so it can set the
-   * parser's macro-state after returning, and to report the stream's
-   * operator count in case of an error.
-   */
-  px_parser_state_t *parser;
-  px_value_t *pv[max_px_args];
+typedef struct px_args_s
+{
+    struct ds_
+    {
+        ulong position;         /* position in data block, initially 0, */
+        /* provided for the operator's convenience */
+        uint count;             /* another variable for the operators */
+        uint available;         /* amount of data available in block */
+        bool phase;             /* upon first call of the operator this will be 0. */
+        const byte *data;
+    } source;
+    /*
+     * ExecStream needs a pointer to the parser state so it can set the
+     * parser's macro-state after returning, and to report the stream's
+     * operator count in case of an error.
+     */
+    px_parser_state_t *parser;
+    px_value_t *pv[max_px_args];
 } px_args_t;
 
 /*
  * Define the value that an operator returns if it needs more data from the
  * data source.
  */
-#define pxNeedData 42		/* not 0 or 1, and >0 */
+#define pxNeedData 42           /* not 0 or 1, and >0 */
 
 /*
  * contrary to the specification and common sense the pxPassThrough
@@ -113,4 +115,4 @@ typedef struct px_args_s {
 #define px_operator_proc(proc)\
   int proc(px_args_t *, px_state_t *)
 
-#endif				/* pxoper_INCLUDED */
+#endif /* pxoper_INCLUDED */

@@ -44,7 +44,8 @@
  *       a source color even exists. Hence, there is no colored pattern that
  *       is known to give the same result as the opaque uncolored pattern.
  */
-typedef enum {
+typedef enum
+{
     pcl_pattern_uncolored = 0,
     pcl_pattern_colored = 1
 } pcl_pattern_type_t;
@@ -59,13 +60,14 @@ typedef enum {
  * implementation, however, and leaves open the possibility of subsequent
  * implementations that may involve delayed rendering.
  */
-typedef struct pcl_pattern_data_s {
-    gs_depth_bitmap     pixinfo;    /* pixmap information; must be first */
-    pcl_data_storage_t storage;     /* temporary/permanent/internal flag */
-    rc_header           rc;
-    pcl_pattern_type_t  type;       /* pattern type */
-    int                 xres;       /* intended resolution for pattern */
-    int                 yres;
+typedef struct pcl_pattern_data_s
+{
+    gs_depth_bitmap pixinfo;    /* pixmap information; must be first */
+    pcl_data_storage_t storage; /* temporary/permanent/internal flag */
+    rc_header rc;
+    pcl_pattern_type_t type;    /* pattern type */
+    int xres;                   /* intended resolution for pattern */
+    int yres;
 } pcl_pattern_data_t;
 
 /*
@@ -92,7 +94,7 @@ typedef struct pcl_pattern_data_s {
 /* forward declaration */
 #ifndef pcl_ccolor_DEFINED
 #define pcl_ccolor_DEFINED
-typedef struct pcl_ccolor_s     pcl_ccolor_t;
+typedef struct pcl_ccolor_s pcl_ccolor_t;
 #endif
 
 /*
@@ -141,19 +143,20 @@ typedef struct pcl_ccolor_s     pcl_ccolor_t;
  *    The ref_pt field identifies the reference point, in device space, for
  *        which both renderings of the pattern were created.
  */
-typedef struct pcl_pattern_t {
-    pcl_pattern_data_t *    ppat_data;
+typedef struct pcl_pattern_t
+{
+    pcl_pattern_data_t *ppat_data;
 
     /* the mask and colored rendered instances, if any */
-    pcl_ccolor_t *          pcol_ccolor;
-    pcl_ccolor_t *          pmask_ccolor;
+    pcl_ccolor_t *pcol_ccolor;
+    pcl_ccolor_t *pmask_ccolor;
 
     /* "rendered key" */
-    uint                    transp:1;  /* transparency of rendering */
-    uint                    orient:2;  /* orientation of rendering */
-    uint                    pen:8;     /* 0 for PCL or colored patterns */
-    pcl_gsid_t              cache_id;  /* foreground or palette */
-    gs_point                ref_pt;    /* referenc point (device space) */
+    uint transp:1;              /* transparency of rendering */
+    uint orient:2;              /* orientation of rendering */
+    uint pen:8;                 /* 0 for PCL or colored patterns */
+    pcl_gsid_t cache_id;        /* foreground or palette */
+    gs_point ref_pt;            /* referenc point (device space) */
 } pcl_pattern_t;
 
 /*
@@ -214,20 +217,22 @@ typedef struct pcl_pattern_t {
  * to a unique white value. The prast pointer points to this remapped array.
  */
 
-typedef enum {
+typedef enum
+{
     pcl_ccolor_unpatterned = 0,
     pcl_ccolor_mask_pattern,
     pcl_ccolor_colored_pattern
 } pcl_ccolor_type_t;
 
-struct  pcl_ccolor_s {
-    rc_header               rc;
-    pcl_ccolor_type_t       type;
-    pcl_pattern_data_t *    ppat_data;
-    pcl_cs_indexed_t *      pindexed;
-    pcl_cs_base_t *         pbase;
-    const byte *            prast;
-    gs_client_color         ccolor;
+struct pcl_ccolor_s
+{
+    rc_header rc;
+    pcl_ccolor_type_t type;
+    pcl_pattern_data_t *ppat_data;
+    pcl_cs_indexed_t *pindexed;
+    pcl_cs_base_t *pbase;
+    const byte *prast;
+    gs_client_color ccolor;
 };
 
 /*
@@ -267,11 +272,9 @@ struct  pcl_ccolor_s {
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_pattern_RF(
-    int                     ptrn_indx,    /* pattern index */
-    const gs_depth_bitmap * ppixmap,      /* pixmap */
-    pcl_state_t *           pcs
-);
+int pcl_pattern_RF(int ptrn_indx,       /* pattern index */
+                   const gs_depth_bitmap * ppixmap,     /* pixmap */
+                   pcl_state_t * pcs);
 
 /*
  * Procedure to get/set up the current graphic state for the proper "pattern"
@@ -500,7 +503,7 @@ int pcl_pattern_RF(
  * < 0 in the event of an error.
  */
 
-typedef int     (*pcl_pattern_set_proc_t)( pcl_state_t *, int arg1, int arg2 );
+typedef int (*pcl_pattern_set_proc_t) (pcl_state_t *, int arg1, int arg2);
 
 /*
  * Return the pattern set procedure appropriate for the specified pattern
@@ -508,21 +511,18 @@ typedef int     (*pcl_pattern_set_proc_t)( pcl_state_t *, int arg1, int arg2 );
  *
  * A return of NULL indicates a range check error.
  */
-pcl_pattern_set_proc_t pcl_pattern_get_proc_PCL(
-    pcl_pattern_source_t   pattern_source
-);
+pcl_pattern_set_proc_t pcl_pattern_get_proc_PCL(pcl_pattern_source_t
+                                                pattern_source);
 
-pcl_pattern_set_proc_t pcl_pattern_get_proc_FT(
-    hpgl_FT_pattern_source_t    pattern_source
-);
+pcl_pattern_set_proc_t pcl_pattern_get_proc_FT(hpgl_FT_pattern_source_t
+                                               pattern_source);
 
-pcl_pattern_set_proc_t pcl_pattern_get_proc_SV(
-    hpgl_SV_pattern_source_t    pattern_source
-);
+pcl_pattern_set_proc_t pcl_pattern_get_proc_SV(hpgl_SV_pattern_source_t
+                                               pattern_source);
 
 /*
  * Entry point to pattern-related functions.
  */
-extern  const pcl_init_t    pcl_pattern_init;
+extern const pcl_init_t pcl_pattern_init;
 
-#endif  	/* pcpatrn_INCLUDED */
+#endif /* pcpatrn_INCLUDED */

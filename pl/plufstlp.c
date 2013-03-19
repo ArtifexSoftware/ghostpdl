@@ -20,7 +20,8 @@
 #include "gxfapi.h"
 #include "plufstlp.h"
 
-void pl_get_ulp_character_data(byte **header, byte **character_data)
+void
+pl_get_ulp_character_data(byte ** header, byte ** character_data)
 {
     *header = NULL;
     *character_data = NULL;

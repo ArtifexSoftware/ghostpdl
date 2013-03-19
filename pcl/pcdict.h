@@ -22,9 +22,10 @@
 #include "gx.h"
 
 /* Define the type for an ID key used in a dictionary. */
-typedef struct pcl_id_s {
-    uint    value;
-    byte    key[2];	/* key for dictionaries */
+typedef struct pcl_id_s
+{
+    uint value;
+    byte key[2];                /* key for dictionaries */
 } pcl_id_t;
 
 #define id_key(id)      ((id).key)
@@ -38,4 +39,4 @@ typedef struct pcl_id_s {
 #define id_set_value(id, val)   \
     ( (id).value = (val), (id).key[0] = (val) >> 8, (id).key[1] = (byte)(val) )
 
-#endif			/* pcdict_INCLUDED */
+#endif /* pcdict_INCLUDED */

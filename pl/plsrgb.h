@@ -24,10 +24,10 @@
    device. */
 
 /* return an srgb color space to the client */
-int pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs);
+int pl_cspace_init_SRGB(gs_color_space ** ppcs, const gs_state * pgs);
 
 /* set an srgb color */
-int pl_setSRGBcolor(gs_state *pgs, float r, float g, float b);
+int pl_setSRGBcolor(gs_state * pgs, float r, float g, float b);
 
 /* true if device does color conversion as a post process */
 bool pl_device_does_color_conversion(void);

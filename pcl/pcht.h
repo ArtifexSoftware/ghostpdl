@@ -80,21 +80,24 @@
  * Note that this module does NOT take ownership of built-in dither objects;
  * that is the responsibility of the caller.
  */
-typedef struct pcl_ht_builtin_threshold_s {
-    int             nplanes;        /* number of planes */
-    int             height, width;  /* in device pixels */
-    const byte *    pdata;
+typedef struct pcl_ht_builtin_threshold_s
+{
+    int nplanes;                /* number of planes */
+    int height, width;          /* in device pixels */
+    const byte *pdata;
 } pcl_ht_builtin_threshold_t;
 
-typedef struct pcl_ht_builtin_table_dither_s {
-    int             nplanes;        /* number of color planes */
-    int             height, width;  /* in device pixels */
-    int             nlevels;        /* number of levels in a plane; must be
-                                       the same for all planes */
-    const byte *    pdata;          /* width x height x num_levels x nplanes */
+typedef struct pcl_ht_builtin_table_dither_s
+{
+    int nplanes;                /* number of color planes */
+    int height, width;          /* in device pixels */
+    int nlevels;                /* number of levels in a plane; must be
+                                   the same for all planes */
+    const byte *pdata;          /* width x height x num_levels x nplanes */
 } pcl_ht_builtin_table_dither_t;
 
-typedef enum {
+typedef enum
+{
     pcl_halftone_Threshold = 0,
     pcl_halftone_Table_Dither,
     pcl_halftone_num
@@ -102,12 +105,14 @@ typedef enum {
 
 #ifndef pcl_ht_builtin_dither_DEFINED
 #define pcl_ht_builtin_dither_DEFINED
-typedef struct pcl_ht_builtin_dither_s {
+typedef struct pcl_ht_builtin_dither_s
+{
     pcl_halftone_type_t type;
-    union {
-        pcl_ht_builtin_threshold_t      thresh;
-        pcl_ht_builtin_table_dither_t   tdither;
-    }                   u;
+    union
+    {
+        pcl_ht_builtin_threshold_t thresh;
+        pcl_ht_builtin_table_dither_t tdither;
+    } u;
 } pcl_ht_builtin_dither_t;
 #endif
 
@@ -144,9 +149,10 @@ typedef struct pcl_ht_builtin_dither_s {
 #define HT_DEVCSPACE    0x4
 #define HT_IMONLY       0x8
 
-typedef struct rend_info_s {
-    uint                                flags;
-    const pcl_ht_builtin_dither_t *     pbidither;
+typedef struct rend_info_s
+{
+    uint flags;
+    const pcl_ht_builtin_dither_t *pbidither;
 } pcl_rend_info_t;
 
 /*
@@ -162,10 +168,11 @@ typedef struct rend_info_s {
  * required for each component of the (base) color space. The different
  * components are distinguished only by the comp_indx field.
  */
-typedef struct pcl_ht_client_data_s {
-    int                 comp_indx;
-    float               inv_gamma;
-    pcl_lookup_tbl_t *  plktbl;
+typedef struct pcl_ht_client_data_s
+{
+    int comp_indx;
+    float inv_gamma;
+    pcl_lookup_tbl_t *plktbl;
 } pcl_ht_client_data_t;
 
 /*
@@ -187,21 +194,22 @@ typedef struct pcl_ht_client_data_s {
  * the halftone changes. This is used to indicate when structures that depend
  * on the halftone must be updated.
  */
-struct pcl_ht_s {
-    rc_header               rc;
-    pcl_ht_client_data_t    client_data[3];
-    pcl_udither_t *         pdither;
-    gs_string               thresholds[3];
-    uint                    render_method;
-    uint                    orig_render_method;
-    bool                    is_gray_render_method;
-    gs_ht *                 pfg_ht;
-    gs_ht *                 pim_ht;
+struct pcl_ht_s
+{
+    rc_header rc;
+    pcl_ht_client_data_t client_data[3];
+    pcl_udither_t *pdither;
+    gs_string thresholds[3];
+    uint render_method;
+    uint orig_render_method;
+    bool is_gray_render_method;
+    gs_ht *pfg_ht;
+    gs_ht *pim_ht;
 };
 
 #ifndef pcl_ht_DEFINED
 #define pcl_ht_DEFINED
-typedef struct pcl_ht_s         pcl_ht_t;
+typedef struct pcl_ht_s pcl_ht_t;
 #endif
 
 /*
@@ -230,10 +238,7 @@ typedef struct pcl_ht_s         pcl_ht_t;
  * for special render methods. Currently it only creates the built-in dither
  * arrays.
  */
-void pcl_ht_init_render_methods(
-    pcl_state_t *   pcs,
-    gs_memory_t *   pmem
-);
+void pcl_ht_init_render_methods(pcl_state_t * pcs, gs_memory_t * pmem);
 
 /*
  * Set up normal or monochrome print mode. The latter is accomplished by
@@ -245,14 +250,15 @@ void pcl_ht_init_render_methods(
  * Note that the current rendering method must be set before this change
  * will take effect.
  */
-void pcl_ht_set_print_mode(pcl_state_t *pcs, bool monochrome);
+void pcl_ht_set_print_mode(pcl_state_t * pcs, bool monochrome);
 
 /*
  * Set the render method.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_ht_set_render_method(pcl_state_t *pcs, pcl_ht_t ** ppht, uint render_method);
+int pcl_ht_set_render_method(pcl_state_t * pcs, pcl_ht_t ** ppht,
+                             uint render_method);
 
 /**
  * Remap render method to a gray render method iff enabled && palette is all gray
@@ -262,9 +268,7 @@ int pcl_ht_set_render_method(pcl_state_t *pcs, pcl_ht_t ** ppht, uint render_met
  * degenerates to NOP if ENABLE_AUTO_GRAY_RENDER_METHODS is false
  */
 int pcl_ht_remap_render_method(pcl_state_t * pcs,
-                               pcl_ht_t **ppht,
-                               bool is_gray
-                               );
+                               pcl_ht_t ** ppht, bool is_gray);
 
 /**
  * Checks if all palette entries are gray iff enabled.
@@ -275,7 +279,7 @@ int pcl_ht_remap_render_method(pcl_state_t * pcs,
  * all gray palette ONLY has meaning if ENABLE_AUTO_GRAY_RENDER_METHODS is true
  * otherwise this is a NOP that always returns false.
  */
-bool pcl_ht_is_all_gray_palette(pcl_state_t *pcs);
+bool pcl_ht_is_all_gray_palette(pcl_state_t * pcs);
 
 /*
  * Update the gamma parameter.
@@ -291,20 +295,14 @@ int pcl_ht_set_gamma(pcl_ht_t ** ppht, float gamma);
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_ht_set_lookup_tbl(
-    pcl_ht_t **         ppht,
-    pcl_lookup_tbl_t *  plktbl
-);
+int pcl_ht_set_lookup_tbl(pcl_ht_t ** ppht, pcl_lookup_tbl_t * plktbl);
 
 /*
  * Set the user-defined dither matrix for a halftone object.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int     pcl_ht_set_udither(
-    pcl_ht_t **     ppht,
-    pcl_udither_t * pdither
-);
+int pcl_ht_set_udither(pcl_ht_t ** ppht, pcl_udither_t * pdither);
 
 /*
  * Update the current halftone for a change in the color space.
@@ -313,23 +311,18 @@ int     pcl_ht_set_udither(
  * in which a device-independent color space is used with a rendering method
  * that is not compatible with device-independent color spaces.
  */
-int pcl_ht_update_cspace(
-    pcl_state_t *       pcs,
-    pcl_ht_t **         ppht,
-    pcl_cspace_type_t   cstype_old,
-    pcl_cspace_type_t   cstype_new
-);
+int pcl_ht_update_cspace(pcl_state_t * pcs,
+                         pcl_ht_t ** ppht,
+                         pcl_cspace_type_t cstype_old,
+                         pcl_cspace_type_t cstype_new);
 
 /*
  * Create the default halftone, releasing the current halftone if it exists.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_ht_build_default_ht(
-    pcl_state_t *       pcs,
-    pcl_ht_t **         ppht,
-    gs_memory_t *       pmem
-);
+int pcl_ht_build_default_ht(pcl_state_t * pcs,
+                            pcl_ht_t ** ppht, gs_memory_t * pmem);
 
 /*
  * Set the given halftone into the graphic state. If the halftone doesn't
@@ -337,6 +330,6 @@ int pcl_ht_build_default_ht(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_ht_set_halftone(pcl_state_t *pcs);
+int pcl_ht_set_halftone(pcl_state_t * pcs);
 
-#endif  	/* pcht_INCLUDED */
+#endif /* pcht_INCLUDED */

@@ -31,10 +31,11 @@
  */
 #define value_check_proc(proc)\
   int proc(const px_value_t *)
-typedef struct px_attr_value_type_s {
-  ushort mask;
-  ushort limit;
-  value_check_proc((*proc));
+typedef struct px_attr_value_type_s
+{
+    ushort mask;
+    ushort limit;
+           value_check_proc((*proc));
 } px_attr_value_type_t;
 
 extern const px_attr_value_type_t px_attr_value_types[];
@@ -45,23 +46,26 @@ extern const px_attr_value_type_t px_attr_value_types[];
  * required attributes, then 0, then a list of optional attributes,
  * then another 0.
  */
-typedef struct px_operator_definition_s {
-  px_operator_proc((*proc));
-  const byte /*px_attribute*/ *attrs;
+typedef struct px_operator_definition_s
+{
+    px_operator_proc((*proc));
+    const byte /*px_attribute */  * attrs;
 } px_operator_definition_t;
 
 extern const px_operator_definition_t px_operator_definitions[];
 
 /* Define tag and attribute names for debugging. */
 #ifdef DEBUG
-extern const char *px_tag_0_names[0x40];	/* tags 0-3f */
-extern const char *px_tag_c0_names[0x40];	/* tags c0-ff */
+extern const char *px_tag_0_names[0x40];        /* tags 0-3f */
+
+extern const char *px_tag_c0_names[0x40];       /* tags c0-ff */
+
 extern const char *px_attribute_names[];
 #endif
 
 /* Define the table of operator names. */
 /* This is needed even when not debugging, for producing error reports. */
-extern const char *px_operator_names[0x80];	/* tags 40-bf */
+extern const char *px_operator_names[0x80];     /* tags 40-bf */
 
 #define odef(proc, args)\
   extern px_operator_proc(proc);\
@@ -159,4 +163,4 @@ odef(pxSetAdaptiveHalftoning, apxSetAdaptiveHalftoning);
 odef(pxPassthrough, apxPassthrough);
 odef(pxSetColorTrapping, apxSetColorTrapping);
 
-#endif				/* pxptable_INCLUDED */
+#endif /* pxptable_INCLUDED */

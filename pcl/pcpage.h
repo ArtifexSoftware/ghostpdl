@@ -23,53 +23,45 @@
 #include "pcommand.h"
 
 /* set the page output procedure */
-void pcl_set_end_page(int (*procp)(pcl_state_t *, int, int));
+void pcl_set_end_page(int (*procp) (pcl_state_t *, int, int));
 
 /*
  * End a page, either unconditionally or only if there are marks on it.
  * Return 1 if the page was actually printed and erased.
  */
-typedef enum {
+typedef enum
+{
     pcl_print_always,
     pcl_print_if_marked
 } pcl_print_condition_t;
 
-int pcl_end_page(
-    pcl_state_t *           pcs,
-    pcl_print_condition_t   condition
-);
+int pcl_end_page(pcl_state_t * pcs, pcl_print_condition_t condition);
 
-void new_logical_page(
-    pcl_state_t *               pcs,
-    int                         lp_orient,
-    const pcl_paper_size_t *    psize,
-    bool                        reset_initial,
-    bool                        for_passthrough
-);
+void new_logical_page(pcl_state_t * pcs,
+                      int lp_orient,
+                      const pcl_paper_size_t * psize,
+                      bool reset_initial, bool for_passthrough);
 
- int
-pcl_getdevice_initial_matrix(
-     pcl_state_t *       pcs,
-     gs_matrix *         mat
-);
+int pcl_getdevice_initial_matrix(pcl_state_t * pcs, gs_matrix * mat);
 
-bool pcl_page_marked(
-    pcl_state_t *           pcs
-);
+bool pcl_page_marked(pcl_state_t * pcs);
 
-bool pcl_cursor_moved(
-    pcl_state_t *           pcs
-);
+bool pcl_cursor_moved(pcl_state_t * pcs);
 
-void pcl_mark_page_for_path(pcl_state_t *pcs);
-void pcl_mark_page_for_current_pos(pcl_state_t *pcs);
-int new_logical_page_for_passthrough_snippet(pcl_state_t *pcs, int orient, int tag);
-pcl_paper_size_t *pcl_get_default_paper(pcl_state_t *pcs);
-int pcl_new_logical_page_for_passthrough(pcl_state_t *pcs, int orient, gs_point *pdims);
+void pcl_mark_page_for_path(pcl_state_t * pcs);
+
+void pcl_mark_page_for_current_pos(pcl_state_t * pcs);
+
+int new_logical_page_for_passthrough_snippet(pcl_state_t * pcs, int orient,
+                                             int tag);
+pcl_paper_size_t *pcl_get_default_paper(pcl_state_t * pcs);
+
+int pcl_new_logical_page_for_passthrough(pcl_state_t * pcs, int orient,
+                                         gs_point * pdims);
 
 #define pcl_end_page_always(pcs)    pcl_end_page((pcs), pcl_print_always)
 #define pcl_end_page_if_marked(pcs) pcl_end_page((pcs), pcl_print_if_marked)
 
-extern  const pcl_init_t    pcpage_init;
+extern const pcl_init_t pcpage_init;
 
-#endif			/* pcpage_INCLUDED */
+#endif /* pcpage_INCLUDED */

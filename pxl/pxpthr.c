@@ -16,7 +16,7 @@
 
 /* pxpthr.c.c */
 /* PCL XL passtrough mode */
-#include "stdio_.h"                     /* std.h + NULL */
+#include "stdio_.h"             /* std.h + NULL */
 #include "gsdevice.h"
 #include "gstypes.h"
 #include "gspath.h"
@@ -45,7 +45,9 @@
 /* NB - globals needing cleanup
  */
 static pcl_state_t *global_pcs = NULL;
+
 static pcl_parser_state_t global_pcl_parser_state;
+
 static hpgl_parser_state_t global_gl_parser_state;
 
 /* if this is a contiguous passthrough meaning that 2 passtrough
@@ -59,17 +61,20 @@ static bool global_pass_first = true;
 /* store away the current font attributes PCL can't set these,
  * they persist for XL, rotation is missing */
 gs_point global_char_shear;
+
 gs_point global_char_scale;
+
 float global_char_bold_value;
 
 /* forward decl */
 void pxpcl_release(void);
+
 void pxpcl_pagestatereset(void);
 
 /* NB: tests for this function are used to flag pxl snippet mode
  */
 static int
-pcl_end_page_noop(pcl_state_t *pcs, int num_copies, int flush)
+pcl_end_page_noop(pcl_state_t * pcs, int num_copies, int flush)
 {
     return pxPassThrough;
 }
@@ -77,7 +82,7 @@ pcl_end_page_noop(pcl_state_t *pcs, int num_copies, int flush)
 /* set variables other than setting the page device that do not
    default to pcl reset values */
 void
-pxPassthrough_pcl_state_nonpage_exceptions(px_state_t *pxs)
+pxPassthrough_pcl_state_nonpage_exceptions(px_state_t * pxs)
 {
     /* xl cursor -> pcl cursor position */
     gs_point xlcp, pclcp, dp;
@@ -93,40 +98,41 @@ pxPassthrough_pcl_state_nonpage_exceptions(px_state_t *pxs)
         gs_transform(pxs->pgs, xlcp.x, xlcp.y, &dp) ||
         gs_itransform(global_pcs->pgs, dp.x, dp.y, &pclcp)) {
         global_pcs->cap.x = 0;
-        global_pcs->cap.y = inch2coord(2.0/6.0); /* 1/6" off by 2x in resolution. */
+        global_pcs->cap.y = inch2coord(2.0 / 6.0);      /* 1/6" off by 2x in resolution. */
         if (gs_debug_c('i'))
-            dmprintf2(pxs->memory, "passthrough: changing cap NO currentpoint (%d, %d) \n",
+            dmprintf2(pxs->memory,
+                      "passthrough: changing cap NO currentpoint (%d, %d) \n",
                       global_pcs->cap.x, global_pcs->cap.y);
     } else {
-      if (gs_debug_c('i'))
-        dmprintf8(pxs->memory, "passthrough: changing cap from (%d,%d) (%d,%d) (%d, %d) (%d, %d) \n",
-                  global_pcs->cap.x, global_pcs->cap.y,
-                  (coord)xlcp.x, (coord)xlcp.y,
-                  (coord)dp.x, (coord)dp.y,
-                  (coord)pclcp.x, (coord)pclcp.y);
-      global_pcs->cap.x = (coord)pclcp.x;
-      global_pcs->cap.y = (coord)pclcp.y;
+        if (gs_debug_c('i'))
+            dmprintf8(pxs->memory,
+                      "passthrough: changing cap from (%d,%d) (%d,%d) (%d, %d) (%d, %d) \n",
+                      global_pcs->cap.x, global_pcs->cap.y, (coord) xlcp.x,
+                      (coord) xlcp.y, (coord) dp.x, (coord) dp.y,
+                      (coord) pclcp.x, (coord) pclcp.y);
+        global_pcs->cap.x = (coord) pclcp.x;
+        global_pcs->cap.y = (coord) pclcp.y;
     }
     if (global_pcs->underline_enabled)
         global_pcs->underline_start = global_pcs->cap;
 
     /* Hacked copy of font state; rotation doesn't copy? */
-    if ( pxs->pxgs->char_shear.x || pxs->pxgs->char_shear.y ) {
+    if (pxs->pxgs->char_shear.x || pxs->pxgs->char_shear.y) {
         global_char_shear.x = pxs->pxgs->char_shear.x;
         global_char_shear.y = pxs->pxgs->char_shear.y;
     }
-    if ( pxs->pxgs->char_scale.x != 1.0 || pxs->pxgs->char_scale.y != 1.0 ) {
+    if (pxs->pxgs->char_scale.x != 1.0 || pxs->pxgs->char_scale.y != 1.0) {
         global_char_scale.x = pxs->pxgs->char_scale.x;
         global_char_scale.y = pxs->pxgs->char_scale.y;
     }
-    if ( pxs->pxgs->char_bold_value > 0.001 )
+    if (pxs->pxgs->char_bold_value > 0.001)
         global_char_bold_value = pxs->pxgs->char_bold_value;
 
 }
 
 /* retrieve the current pcl state and initialize pcl */
 static int
-pxPassthrough_init(px_state_t *pxs)
+pxPassthrough_init(px_state_t * pxs)
 {
     int code;
 
@@ -146,13 +152,18 @@ pxPassthrough_init(px_state_t *pxs)
 
     {
         char buf[100];
+
         int ret;
+
         stream_cursor_read r;
-        ret = sprintf(buf, "@PJL SET PAPERLENGTH = %d\n@PJL SET PAPERWIDTH = %d\n",
-                      (int)(pxs->media_dims.y * 10 + .5),
-                      (int)(pxs->media_dims.x * 10 + .5));
-        r.ptr = (byte *)buf - 1;
-        r.limit = (byte *)buf + ret - 1;
+
+        ret =
+            sprintf(buf,
+                    "@PJL SET PAPERLENGTH = %d\n@PJL SET PAPERWIDTH = %d\n",
+                    (int)(pxs->media_dims.y * 10 + .5),
+                    (int)(pxs->media_dims.x * 10 + .5));
+        r.ptr = (byte *) buf - 1;
+        r.limit = (byte *) buf + ret - 1;
         pjl_proc_process(pxs->pjls, &r);
     }
 
@@ -167,7 +178,7 @@ pxPassthrough_init(px_state_t *pxs)
        pcl's state */
     global_pcs->page_marked = 0;
     code = gs_setdevice_no_erase(global_pcs->pgs, gs_currentdevice(pxs->pgs));
-    if ( code < 0 )
+    if (code < 0)
         return code;
     /* Also, check if the device profile was set int the global_pcs pgs.
        If not then initialize. Fix for seg fault with T427.BIN .  
@@ -179,7 +190,7 @@ pxPassthrough_init(px_state_t *pxs)
     pcl_do_resets(global_pcs, pcl_reset_initial);
     /* set the parser state and initialize the pcl parser */
     global_pcl_parser_state.definitions = global_pcs->pcl_commands;
-    global_pcl_parser_state.hpgl_parser_state=&global_gl_parser_state;
+    global_pcl_parser_state.hpgl_parser_state = &global_gl_parser_state;
     pcl_process_init(&global_pcl_parser_state);
     /* default 600 to match XL allow PCL to override */
     global_pcs->uom_cp = 7200L / 600L;
@@ -188,11 +199,11 @@ pxPassthrough_init(px_state_t *pxs)
 }
 
 static void
-pxPassthrough_setpagestate(px_state_t *pxs)
+pxPassthrough_setpagestate(px_state_t * pxs)
 {
     /* by definition we are in "snippet mode" if pxl has dirtied
        the page */
-    if ( pxs->have_page ) {
+    if (pxs->have_page) {
         if (gs_debug_c('i'))
             dmprintf(pxs->memory, "passthrough: snippet mode\n");
         /* disable an end page in pcl, also used to flag in snippet mode */
@@ -200,63 +211,71 @@ pxPassthrough_setpagestate(px_state_t *pxs)
         /* set the page size and orientation.  Really just sets
            the page tranformation does not feed a page (see noop
            above) */
-        pcl_new_logical_page_for_passthrough(global_pcs, (int)pxs->orientation,
+        pcl_new_logical_page_for_passthrough(global_pcs,
+                                             (int)pxs->orientation,
                                              &pxs->media_dims);
 
         if (gs_debug_c('i'))
-            dmprintf2(pxs->memory, "passthrough: snippet mode changing orientation from %d to %d\n",
+            dmprintf2(pxs->memory,
+                      "passthrough: snippet mode changing orientation from %d to %d\n",
                       global_pcs->xfm_state.lp_orient, (int)pxs->orientation);
 
-    } else { /* not snippet mode - full page mode */
+    } else {                    /* not snippet mode - full page mode */
         /* pcl can feed the page and presumedely pcl commands will
            be used to set pcl's state. */
         global_pcs->end_page = pcl_end_page_top;
         /* clean the pcl page if it was marked by a previous snippet
            and set to full page mode. */
         global_pcs->page_marked = 0;
-        pcl_new_logical_page_for_passthrough(global_pcs, (int)pxs->orientation, &pxs->media_dims);
+        pcl_new_logical_page_for_passthrough(global_pcs,
+                                             (int)pxs->orientation,
+                                             &pxs->media_dims);
         if (gs_debug_c('i'))
             dmprintf(pxs->memory, "passthrough: full page mode\n");
     }
 }
 
-const byte apxPassthrough[] = {0, 0};
+const byte apxPassthrough[] = { 0, 0 };
 
 int
-pxPassthrough(px_args_t *par, px_state_t *pxs)
+pxPassthrough(px_args_t * par, px_state_t * pxs)
 {
     stream_cursor_read r;
+
     int code = 0;
+
     uint used;
 
     /* apparently if there is no open data source we open one.  By the
        spec this should already be open, in practice it is not. */
-    if ( !pxs->data_source_open ) {
+    if (!pxs->data_source_open) {
         if (gs_debug_c('i'))
-            dmprintf(pxs->memory, "passthrough: data source not open upon entry\n");
+            dmprintf(pxs->memory,
+                     "passthrough: data source not open upon entry\n");
         pxs->data_source_open = true;
         pxs->data_source_big_endian = true;
     }
 
     /* source available is part of the equation to determine if this
        operator is being called for the first time */
-    if ( par->source.available == 0 ) {
+    if (par->source.available == 0) {
         if (par->source.phase == 0) {
             if (gs_debug_c('i'))
-                dmprintf(pxs->memory, "passthrough starting getting more data\n");
+                dmprintf(pxs->memory,
+                         "passthrough starting getting more data\n");
 
-            if ( !global_pcs )
+            if (!global_pcs)
                 pxPassthrough_init(pxs);
 
             /* this is the first passthrough on this page */
-            if ( global_pass_first ) {
+            if (global_pass_first) {
                 pxPassthrough_setpagestate(pxs);
                 pxPassthrough_pcl_state_nonpage_exceptions(pxs);
                 global_pass_first = false;
             } else {
                 /* there was a previous passthrough check if there were
                    any intervening XL commands */
-                if ( global_this_pass_contiguous == false )
+                if (global_this_pass_contiguous == false)
                     pxPassthrough_pcl_state_nonpage_exceptions(pxs);
             }
             par->source.phase = 1;
@@ -277,7 +296,7 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
     par->source.available -= used;
     par->source.data = r.ptr + 1;
 
-    if ( code < 0 ) {
+    if (code < 0) {
         dmprintf1(pxs->memory, "passthrough: error return %d\n", code);
         return code;
     }
@@ -300,7 +319,7 @@ void
 pxpcl_pagestatereset()
 {
     global_pass_first = true;
-    if ( global_pcs ) {
+    if (global_pcs) {
         global_pcs->xfm_state.left_offset_cp = 0.0;
         global_pcs->xfm_state.top_offset_cp = 0.0;
         global_pcs->margins.top = 0;
@@ -313,12 +332,13 @@ pxpcl_release(void)
 {
     if (global_pcs) {
         if (gs_debug_c('i'))
-            dmprintf(global_pcs->memory, "passthrough: releasing global pcl state\n");
+            dmprintf(global_pcs->memory,
+                     "passthrough: releasing global pcl state\n");
         pcl_grestore(global_pcs);
         gs_grestore_only(global_pcs->pgs);
         gs_nulldevice(global_pcs->pgs);
         pcl_do_resets(global_pcs, pcl_reset_permanent);
-        global_pcs->end_page = pcl_end_page_top; /* pcl_end_page handling */
+        global_pcs->end_page = pcl_end_page_top;        /* pcl_end_page handling */
         pxpcl_pagestatereset();
         global_pcs = NULL;
         global_this_pass_contiguous = false;
@@ -341,11 +361,11 @@ pxpcl_passthroughcontiguous(bool cont)
 /* copy state from pcl to pxl after a non-snippet passthrough
  */
 void
-pxpcl_endpassthroughcontiguous(px_state_t *pxs)
+pxpcl_endpassthroughcontiguous(px_state_t * pxs)
 {
-    if ( global_pcs->end_page == pcl_end_page_top &&
-         global_pcs->page_marked &&
-         pxs->orientation != global_pcs->xfm_state.lp_orient ) {
+    if (global_pcs->end_page == pcl_end_page_top &&
+        global_pcs->page_marked &&
+        pxs->orientation != global_pcs->xfm_state.lp_orient) {
 
         /* end of pcl whole job; need to reflect pcl orientation changes */
         pxs->orientation = global_pcs->xfm_state.lp_orient;
@@ -358,28 +378,35 @@ pxpcl_endpassthroughcontiguous(px_state_t *pxs)
     pxs->pxgs->char_scale.y = global_char_scale.y;
     pxs->pxgs->char_bold_value = global_char_bold_value;
 }
-int pxpcl_selectfont(px_args_t *par, px_state_t *pxs)
+int
+pxpcl_selectfont(px_args_t * par, px_state_t * pxs)
 {
     int code;
+
     stream_cursor_read r;
+
     const px_value_t *pstr = par->pv[3];
+
     const byte *str = (const byte *)pstr->value.array.data;
+
     uint len = pstr->value.array.size;
+
     px_gstate_t *pxgs = pxs->pxgs;
+
     pcl_font_selection_t *pfp;
 
-    if ( !global_pcs )
+    if (!global_pcs)
         pxPassthrough_init(pxs);
 
     /* this is the first passthrough on this page */
-    if ( global_pass_first ) {
+    if (global_pass_first) {
         pxPassthrough_setpagestate(pxs);
         pxPassthrough_pcl_state_nonpage_exceptions(pxs);
         global_pass_first = false;
     } else {
         /* there was a previous passthrough check if there were
            any intervening XL commands */
-        if ( global_this_pass_contiguous == false )
+        if (global_this_pass_contiguous == false)
             pxPassthrough_pcl_state_nonpage_exceptions(pxs);
     }
     r.ptr = str - 1;
@@ -405,17 +432,17 @@ int pxpcl_selectfont(px_args_t *par, px_state_t *pxs)
 #define CP_PER_10ths_of_MM  (CP_PER_MM/10.0)
 
         static const floatp centipoints_per_measure[4] = {
-            CP_PER_INCH,          /* eInch */
-            CP_PER_MM,            /* eMillimeter */
-            CP_PER_10ths_of_MM,   /* eTenthsOfAMillimeter */
-            1                     /* pxeMeasure_next, won't reach */
+            CP_PER_INCH,        /* eInch */
+            CP_PER_MM,          /* eMillimeter */
+            CP_PER_10ths_of_MM, /* eTenthsOfAMillimeter */
+            1                   /* pxeMeasure_next, won't reach */
         };
 
         gs_point sz;
+
         pcl_font_scale(global_pcs, &sz);
         pxgs->char_size = sz.x /
-            centipoints_per_measure[pxs->measure] *
-            pxs->units_per_measure.x;
+            centipoints_per_measure[pxs->measure] * pxs->units_per_measure.x;
     }
     pxgs->symbol_set = pfp->params.symbol_set;
 
@@ -439,7 +466,7 @@ int pxpcl_selectfont(px_args_t *par, px_state_t *pxs)
         else
             plf->storage = 0;
 
-        pxgs->base_font = (px_font_t *)plf;
+        pxgs->base_font = (px_font_t *) plf;
     }
     pxgs->char_matrix_set = false;
     return 0;

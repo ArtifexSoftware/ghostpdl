@@ -146,10 +146,11 @@
  *
  * Note: this structure is defined by HP.
  */
-typedef struct pcl__lookup_tbl_s {
-    byte    cspace;     /* actually pcl_cspace_type_t */
-    byte    dummy;
-    byte    data[3 * 256];
+typedef struct pcl__lookup_tbl_s
+{
+    byte cspace;                /* actually pcl_cspace_type_t */
+    byte dummy;
+    byte data[3 * 256];
 } pcl__lookup_tbl_t;
 
 /*
@@ -160,9 +161,10 @@ typedef struct pcl__lookup_tbl_s {
  * two color tables that shares one of these color tables with another
  * instantiation).
  */
-typedef struct pcl_lookup_tbl_s {
-    rc_header                   rc;
-    const pcl__lookup_tbl_t *   ptbl;
+typedef struct pcl_lookup_tbl_s
+{
+    rc_header rc;
+    const pcl__lookup_tbl_t *ptbl;
 } pcl_lookup_tbl_t;
 
 /*
@@ -205,6 +207,6 @@ typedef struct pcl_lookup_tbl_s {
 /*
  * External access to the color lookup table/gamma correction code.
  */
-extern const pcl_init_t   pcl_lookup_tbl_init;
+extern const pcl_init_t pcl_lookup_tbl_init;
 
-#endif      /* pclookup_INCLUDED */
+#endif /* pclookup_INCLUDED */

@@ -20,19 +20,16 @@
 #include "pclookup.h"
 
 /* RC routines */
-gs_private_st_simple(st_lookup_tbl_t, pcl_lookup_tbl_t, "pcl color lookup table");
+gs_private_st_simple(st_lookup_tbl_t, pcl_lookup_tbl_t,
+                     "pcl color lookup table");
 
 /*
  * Free lookup table.
  */
-  static void
-free_lookup_tbl(
-    gs_memory_t *       pmem,
-    void *              pvlktbl,
-    client_name_t       cname
-)
+static void
+free_lookup_tbl(gs_memory_t * pmem, void *pvlktbl, client_name_t cname)
 {
-    pcl_lookup_tbl_t *  plktbl = (pcl_lookup_tbl_t *)pvlktbl;
+    pcl_lookup_tbl_t *plktbl = (pcl_lookup_tbl_t *) pvlktbl;
 
     if (plktbl->ptbl != 0)
         gs_free_object(pmem, (void *)plktbl->ptbl, cname);
@@ -44,18 +41,18 @@ free_lookup_tbl(
  *
  * Set color lookup table.
  */
-  static int
-set_lookup_tbl(
-    pcl_args_t *        pargs,
-    pcl_state_t *       pcs
-)
+static int
+set_lookup_tbl(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    uint                len = uint_arg(pargs);
-    pcl_lookup_tbl_t *  plktbl = 0;
-    pcl__lookup_tbl_t * ptbl = 0;
-    int                 code = 0;
+    uint len = uint_arg(pargs);
 
-    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
+    pcl_lookup_tbl_t *plktbl = 0;
+
+    pcl__lookup_tbl_t *ptbl = 0;
+
+    int code = 0;
+
+    if (pcs->personality == pcl5e || pcs->raster_state.graphics_mode)
         return 0;
 
     /* check for clearing of lookup tables, and for incorrect size */
@@ -64,27 +61,24 @@ set_lookup_tbl(
     else if (len != sizeof(pcl__lookup_tbl_t))
         return e_Range;
 
-    rc_alloc_struct_1( plktbl,
-                       pcl_lookup_tbl_t,
-                       &st_lookup_tbl_t,
-                       pcs->memory,
-                       return e_Memory,
-                       "set color lookup table"
-                       );
+    rc_alloc_struct_1(plktbl,
+                      pcl_lookup_tbl_t,
+                      &st_lookup_tbl_t,
+                      pcs->memory, return e_Memory, "set color lookup table");
     plktbl->rc.free = free_lookup_tbl;
     plktbl->ptbl = 0;
 
     /* either take possession of buffer, or allocate a new one */
     if (pargs->data_on_heap) {
-        ptbl = (pcl__lookup_tbl_t *)arg_data(pargs);
+        ptbl = (pcl__lookup_tbl_t *) arg_data(pargs);
         arg_data(pargs) = 0;
     } else {
-        ptbl = (pcl__lookup_tbl_t *)gs_alloc_bytes( pcs->memory,
+        ptbl = (pcl__lookup_tbl_t *) gs_alloc_bytes(pcs->memory,
                                                     sizeof(pcl__lookup_tbl_t),
-                                                    "set color lookup table"
-                                                    );
+                                                    "set color lookup table");
         if (ptbl == 0) {
-            free_lookup_tbl(plktbl->rc.memory, plktbl, "set color lookup table");
+            free_lookup_tbl(plktbl->rc.memory, plktbl,
+                            "set color lookup table");
             return e_Memory;
         }
         memcpy(ptbl, arg_data(pargs), sizeof(pcl__lookup_tbl_t));
@@ -93,16 +87,17 @@ set_lookup_tbl(
 
     /* for the CMY color space, convert to RGB color space */
     if (pcl_lookup_tbl_get_cspace(plktbl) == pcl_cspace_CMY) {
-        int     i;
+        int i;
 
         for (i = 0; i < 128; i++) {
-            byte    b1 = ptbl->data[i];
-            byte    b2 = ptbl->data[255 - i];
+            byte b1 = ptbl->data[i];
+
+            byte b2 = ptbl->data[255 - i];
 
             ptbl->data[i] = 255 - b2;
             ptbl->data[255 - i] = 255 - b1;
         }
-        ptbl->cspace = (byte)pcl_cspace_RGB;
+        ptbl->cspace = (byte) pcl_cspace_RGB;
     }
 
     /* update the current palette; release our reference to the lookup table */
@@ -116,15 +111,12 @@ set_lookup_tbl(
  *
  * Set gamma correction
  */
-  static int
-set_gamma_correction(
-    pcl_args_t *        pargs,
-    pcl_state_t *       pcs
-)
+static int
+set_gamma_correction(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    float               gamma = float_arg(pargs);
+    float gamma = float_arg(pargs);
 
-    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
+    if (pcs->personality == pcl5e || pcs->raster_state.graphics_mode)
         return 0;
     if ((gamma < 0.0) || (gamma > (float)((1L << 15) - 1)))
         return 0;
@@ -136,26 +128,20 @@ set_gamma_correction(
  * There is no copy or reset code for this module, as both copying and reset
  * are handled by the PCL palette module (using macros defined in pclookup.h).
  */
-  static int
-lookup_do_registration(
-    pcl_parser_state_t *pcl_parser_state,
-    gs_memory_t *   pmem
-)
+static int
+lookup_do_registration(pcl_parser_state_t * pcl_parser_state,
+                       gs_memory_t * pmem)
 {
-    DEFINE_CLASS('*')
-    {
+    DEFINE_CLASS('*') {
         'l', 'W',
-        PCL_COMMAND("Color Lookup Tables", set_lookup_tbl, pca_bytes | pca_raster_graphics)
-    },
-    {
+            PCL_COMMAND("Color Lookup Tables", set_lookup_tbl,
+                        pca_bytes | pca_raster_graphics)
+    }, {
         't', 'I',
-        PCL_COMMAND( "Gamma Correction",
-                     set_gamma_correction,
-                     pca_neg_ignore | pca_big_ignore | pca_raster_graphics
-                     )
-    },
-    END_CLASS
-    return 0;
+            PCL_COMMAND("Gamma Correction",
+                        set_gamma_correction,
+                        pca_neg_ignore | pca_big_ignore | pca_raster_graphics)
+    }, END_CLASS return 0;
 }
 
-const pcl_init_t    pcl_lookup_tbl_init = { lookup_do_registration, 0, 0 };
+const pcl_init_t pcl_lookup_tbl_init = { lookup_do_registration, 0, 0 };

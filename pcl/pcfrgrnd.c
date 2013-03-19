@@ -27,13 +27,9 @@ gs_private_st_simple(st_frgrnd_t, pcl_frgrnd_t, "pcl foreground object");
  * Free a pcl foreground object.
  */
 static void
-free_foreground(
-    gs_memory_t *   pmem,
-    void *          pvfrgrnd,
-    client_name_t   cname
-)
+free_foreground(gs_memory_t * pmem, void *pvfrgrnd, client_name_t cname)
 {
-    pcl_frgrnd_t *  pfrgrnd = (pcl_frgrnd_t *)pvfrgrnd;
+    pcl_frgrnd_t *pfrgrnd = (pcl_frgrnd_t *) pvfrgrnd;
 
     if (pfrgrnd->pbase != 0)
         pcl_cs_base_release(pfrgrnd->pbase);
@@ -47,21 +43,17 @@ free_foreground(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  static int
-alloc_foreground(
-    pcl_state_t *pcs,
-    pcl_frgrnd_t ** ppfrgrnd,
-    gs_memory_t *   pmem
-)
+static int
+alloc_foreground(pcl_state_t * pcs,
+                 pcl_frgrnd_t ** ppfrgrnd, gs_memory_t * pmem)
 {
-    pcl_frgrnd_t *  pfrgrnd = 0;
-    rc_alloc_struct_1( pfrgrnd,
-                       pcl_frgrnd_t,
-                       &st_frgrnd_t,
-                       pmem,
-                       return e_Memory,
-                       "allocate pcl foreground object"
-                       );
+    pcl_frgrnd_t *pfrgrnd = 0;
+
+    rc_alloc_struct_1(pfrgrnd,
+                      pcl_frgrnd_t,
+                      &st_frgrnd_t,
+                      pmem,
+                      return e_Memory, "allocate pcl foreground object");
     pfrgrnd->rc.free = free_foreground;
     pfrgrnd->id = pcl_next_id(pcs);
     pfrgrnd->pbase = 0;
@@ -79,20 +71,21 @@ alloc_foreground(
  *
  * Returns 0 on success, < 0 in the event of an error
  */
-  static int
-build_foreground(
-    pcl_state_t *               pcs,
-    pcl_frgrnd_t **             ppfrgrnd,
-    const pcl_palette_t *       ppalet,
-    int                         pal_entry,
-    gs_memory_t *               pmem
-)
+static int
+build_foreground(pcl_state_t * pcs,
+                 pcl_frgrnd_t ** ppfrgrnd,
+                 const pcl_palette_t * ppalet,
+                 int pal_entry, gs_memory_t * pmem)
 {
-    pcl_frgrnd_t *              pfrgrnd = *ppfrgrnd;
-    const pcl_cs_indexed_t *    pindexed = ppalet->pindexed;
-    int                         num_entries = pindexed->num_entries;
-    bool                        is_default = false;
-    int                         code = 0;
+    pcl_frgrnd_t *pfrgrnd = *ppfrgrnd;
+
+    const pcl_cs_indexed_t *pindexed = ppalet->pindexed;
+
+    int num_entries = pindexed->num_entries;
+
+    bool is_default = false;
+
+    int code = 0;
 
     /*
      * Check for a request for the default foreground. Since there are only
@@ -100,10 +93,8 @@ build_foreground(
      * is fixed and has two entries. The default foreground is black, which is
      * the second of the two entries.
      */
-    if ( (pindexed != 0)    &&
-         (pindexed->pfixed)  &&
-         (num_entries == 2) &&
-         (pal_entry == 1)     ) {
+    if ((pindexed != 0) &&
+        (pindexed->pfixed) && (num_entries == 2) && (pal_entry == 1)) {
         is_default = true;
         if (pcs->pdflt_frgrnd != 0) {
             pcl_frgrnd_copy_from(*ppfrgrnd, pcs->pdflt_frgrnd);
@@ -124,7 +115,8 @@ build_foreground(
     /* pal_entry is interpreted modulo the current palette size */
     if ((pal_entry < 0) || (pal_entry >= num_entries)) {
         if (pindexed->is_GL) {
-            int max_pen = num_entries -1;
+            int max_pen = num_entries - 1;
+
             while (pal_entry > max_pen)
                 pal_entry -= max_pen;
         } else {
@@ -152,23 +144,17 @@ build_foreground(
  * for palettes, and should only be called when the current palette is the
  * default 2-entry palette.
  */
-  int
-pcl_frgrnd_set_default_foreground(
-    pcl_state_t *   pcs
-)
+int
+pcl_frgrnd_set_default_foreground(pcl_state_t * pcs)
 {
-    int             code = 0;
+    int code = 0;
 
     /* check that the palette is complete */
     if ((code = pcl_palette_check_complete(pcs)) < 0)
         return code;
 
-    return build_foreground( pcs,
-                             &(pcs->pfrgrnd),
-                             pcs->ppalet,
-                             1,
-                             pcs->memory
-                             );
+    return build_foreground(pcs,
+                            &(pcs->pfrgrnd), pcs->ppalet, 1, pcs->memory);
 }
 
 /*
@@ -176,27 +162,21 @@ pcl_frgrnd_set_default_foreground(
  *
  * Set foreground. It is not clear the handling of negative values is accurate.
  */
-  static int
-set_foreground(
-    pcl_args_t *        pargs,
-    pcl_state_t *       pcs
-)
+static int
+set_foreground(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    int                 code;
+    int code;
 
-    if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
+    if (pcs->personality == pcl5e || pcs->raster_state.graphics_mode)
         return 0;
 
     /* check that the palette is complete */
     if ((code = pcl_palette_check_complete(pcs)) < 0)
         return code;
 
-    return build_foreground( pcs,
-                             &(pcs->pfrgrnd),
-                             pcs->ppalet,
-                             int_arg(pargs),
-                             pcs->memory
-                             );
+    return build_foreground(pcs,
+                            &(pcs->pfrgrnd),
+                            pcs->ppalet, int_arg(pargs), pcs->memory);
 }
 
 /*
@@ -205,42 +185,35 @@ set_foreground(
  * There is no reset procedure for this module, as the function is accomplished
  * by the palette module.
  */
-   static int
-frgrnd_do_registration(
-    pcl_parser_state_t *pcl_parser_state,
-    gs_memory_t *mem
-)
+static int
+frgrnd_do_registration(pcl_parser_state_t * pcl_parser_state,
+                       gs_memory_t * mem)
 {
-    DEFINE_CLASS('*')
-    {
+    DEFINE_CLASS('*') {
         'v', 'S',
-        PCL_COMMAND("Set Foreground", set_foreground, pca_neg_ok | pca_raster_graphics)
-    },
-    END_CLASS
-    return 0;
+            PCL_COMMAND("Set Foreground", set_foreground,
+                        pca_neg_ok | pca_raster_graphics)
+    }, END_CLASS return 0;
 }
 
 static void
-frgrnd_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
+frgrnd_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
-    if ( type & (pcl_reset_permanent) ) {
+    if (type & (pcl_reset_permanent)) {
         rc_decrement(pcs->pfrgrnd, "foreground reset pfrgrnd");
         rc_decrement(pcs->pdflt_frgrnd, "foreground reset pdflt_frgrnd");
         rc_decrement(pcs->pwhite_cs, "foreground reset p_white_cs");
     }
 }
 
-  static int
-frgrnd_do_copy(
-    pcl_state_t *           psaved,
-    const pcl_state_t *     pcs,
-    pcl_copy_operation_t    operation
-)
+static int
+frgrnd_do_copy(pcl_state_t * psaved,
+               const pcl_state_t * pcs, pcl_copy_operation_t operation)
 {
     if ((operation & (pcl_copy_before_call | pcl_copy_before_overlay)) != 0)
         pcl_frgrnd_init_from(psaved->pfrgrnd, pcs->pfrgrnd);
     else if ((operation & pcl_copy_after) != 0)
-        pcl_frgrnd_release(((pcl_state_t *)pcs)->pfrgrnd);
+        pcl_frgrnd_release(((pcl_state_t *) pcs)->pfrgrnd);
     return 0;
 }
 
@@ -248,17 +221,17 @@ frgrnd_do_copy(
  * is a NOP
  */
 bool
-is_invisible_pattern( pcl_state_t *pcs )
+is_invisible_pattern(pcl_state_t * pcs)
 {
-    if ( pcs->pattern_transparent ) {
-        if (pcs->pattern_type == pcl_pattern_solid_white )
+    if (pcs->pattern_transparent) {
+        if (pcs->pattern_type == pcl_pattern_solid_white)
             return true;
-        if ( pcs->pfrgrnd->color[0] == 0xff &&
-             pcs->pfrgrnd->color[1] == 0xff &&
-             pcs->pfrgrnd->color[2] == 0xff )
-            return true;  /* NB: depends on CMY conversion to internal RGB */
+        if (pcs->pfrgrnd->color[0] == 0xff &&
+            pcs->pfrgrnd->color[1] == 0xff && pcs->pfrgrnd->color[2] == 0xff)
+            return true;        /* NB: depends on CMY conversion to internal RGB */
     }
     return false;
 }
 
-const pcl_init_t    pcl_frgrnd_init = { frgrnd_do_registration, frgrnd_do_reset, frgrnd_do_copy };
+const pcl_init_t pcl_frgrnd_init =
+    { frgrnd_do_registration, frgrnd_do_reset, frgrnd_do_copy };

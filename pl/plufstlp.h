@@ -13,4 +13,4 @@
    CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-void pl_get_ulp_character_data(byte **header, byte **character_data);
+void pl_get_ulp_character_data(byte ** header, byte ** character_data);

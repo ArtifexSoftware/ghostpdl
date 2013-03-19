@@ -45,7 +45,7 @@
  * objects at boot time.
  */
 
-typedef ulong   pcl_gsid_t;
+typedef ulong pcl_gsid_t;
 
 /* Define an opaque type for the PCL state. */
 #ifndef pcl_state_DEFINED
@@ -53,6 +53,6 @@ typedef ulong   pcl_gsid_t;
 typedef struct pcl_state_s pcl_state_t;
 #endif
 
-pcl_gsid_t  pcl_next_id(pcl_state_t *pcs);
+pcl_gsid_t pcl_next_id(pcl_state_t * pcs);
 
-#endif  /* pcident_INCLUDED */
+#endif /* pcident_INCLUDED */

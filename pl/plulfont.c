@@ -56,14 +56,16 @@
 
 /* global warning.  ufst state structure passed to each ufst function */
 IF_STATE IFS;
+
 PIF_STATE pIFS = &IFS;
 
 /* GLOBAL Warning! NB fix me */
 /*
  * fco and plugin handles which must be freed when the interpreter shuts down
  */
-static SW16  fcHndlPlAry[16];
-static bool  plugins_opened = false;
+static SW16 fcHndlPlAry[16];
+
+static bool plugins_opened = false;
 
 /* NB fixme - we might as well require an environment variable for the
    fco names and plugins, these change every UFST release */
@@ -72,72 +74,80 @@ static bool  plugins_opened = false;
    plugins the root data directory.  These are internally separated with
    ':' but environment variable use the gp separator */
 #ifndef UFSTFONTDIR
-const char *UFSTFONTDIR="/usr/local/fontdata5.0/"; /* A bogus linux location */
+const char *UFSTFONTDIR = "/usr/local/fontdata5.0/";    /* A bogus linux location */
 #endif
 
 /* default list of fcos and plugins - relative to UFSTFONTDIR */
-const char *UFSTFCOS="mtfonts/pclps2/mt3/pclp2_xj.fco:mtfonts/pcl45/mt3/wd____xh.fco";
-const char *UFSTPLUGINS="mtfonts/pcl45/mt3/plug__xi.fco";
+const char *UFSTFCOS =
+    "mtfonts/pclps2/mt3/pclp2_xj.fco:mtfonts/pcl45/mt3/wd____xh.fco";
+const char *UFSTPLUGINS = "mtfonts/pcl45/mt3/plug__xi.fco";
 
 /* return a null terminated array of strings on the heap from
    str0:str1:str:.  Use gs separator */
 
-static
-char **build_strs(gs_memory_t *mem, char *str, char separator)
+static char **
+build_strs(gs_memory_t * mem, char *str, char separator)
 {
     int i;
+
     char *start_path = str;
+
     char *end_path = str;
+
     char **list;
 
     /* null str or 0 length string */
-    if (( str == NULL ) || ( str[0] == '\0' ))
+    if ((str == NULL) || (str[0] == '\0'))
         return NULL;
 
-    for (i=0; ;i++) {
+    for (i = 0;; i++) {
         /* find next separator or NULL */
-        while( *end_path != (char)NULL && *end_path != separator )
+        while (*end_path != (char)NULL && *end_path != separator)
             end_path++;
         /* reallocate the list that holds the string pointers */
-        if ( i == 0 )
+        if (i == 0)
             /* first time */
             list =
                 (char **)gs_alloc_bytes(mem,
-                                        ((i+1) + 1) /* terminating null */ * sizeof(char *),
+                                        ((i + 1) +
+                                         1) /* terminating null */
+                                        *sizeof(char *),
                                         "build_strs");
         else
             list = gs_resize_object(mem,
                                     list,
-                                    ((i+1) + 1) /* terminating null */ * sizeof(char *),
+                                    ((i + 1) +
+                                     1) /* terminating null */ *sizeof(char
+                                                                       *),
                                     "build_strs");
-        if ( list == NULL ) {
+        if (list == NULL) {
             /* NB no fall back or freeing of memory already consumed */
-            dmprintf(mem, "Fatal System Failure\n" );
+            dmprintf(mem, "Fatal System Failure\n");
             return NULL;
         }
         /* terminate the list of strings */
         list[i + 1] = (char *)NULL;
         /* allocate space for the string */
         list[i] = gs_alloc_bytes(mem,
-                                 end_path - start_path + 1 /* NULL term */,
+                                 end_path - start_path + 1 /* NULL term */ ,
                                  "build_strs");
 
-        if ( list[i] == NULL ) {
+        if (list[i] == NULL) {
             /* NB no fall back or freeing of memory already consumed */
-            dmprintf(mem, "Fatal System Failure\n" );
+            dmprintf(mem, "Fatal System Failure\n");
             return NULL;
         }
 
         memcpy(list[i], start_path, end_path - start_path);
         list[i][end_path - start_path] = (char)NULL;
 
-        if ( *end_path == (char)NULL )
-            break; /* done */
-        else { /* separator - continue */
+        if (*end_path == (char)NULL)
+            break;              /* done */
+        else {                  /* separator - continue */
             start_path = end_path + 1;
             end_path = start_path;
             /* handle special case of separator ending the list */
-            if ( *end_path == '\0' )
+            if (*end_path == '\0')
                 break;
         }
     }
@@ -145,10 +155,11 @@ char **build_strs(gs_memory_t *mem, char *str, char separator)
 }
 
 static void
-free_strs(gs_memory_t *mem, char **str_of_strs)
+free_strs(gs_memory_t * mem, char **str_of_strs)
 {
     int i;
-    for ( i = 0 ; str_of_strs[i]; i++ )
+
+    for (i = 0; str_of_strs[i]; i++)
         /* free string entry */
         gs_free_object(mem, str_of_strs[i], "free_strs");
     /* free container for freed strings */
@@ -162,12 +173,13 @@ free_strs(gs_memory_t *mem, char **str_of_strs)
 /* these are lists of fco's and plugins relative to the root directory
    they can be set by an environment variable or defaults.  */
 static char **
-pl_ufst_get_list(gs_memory_t *mem, char *key, char *defaultval)
+pl_ufst_get_list(gs_memory_t * mem, char *key, char *defaultval)
 {
     char pathname[MAXPATHLEN];
+
     int pathlen = sizeof(pathname);
 
-    if ( gp_getenv(key, pathname, &pathlen) != 0 )
+    if (gp_getenv(key, pathname, &pathlen) != 0)
         /* no env var use default */
         return build_strs(mem, defaultval, ':');
     else
@@ -179,7 +191,7 @@ pl_ufst_root_dir(char *pathname, int pathlen)
 {
     /* get the ufst root directory, check for an environment variable,
        if not set return default */
-    if ( gp_getenv( "UFSTFONTDIR", pathname, &pathlen) != 0 )
+    if (gp_getenv("UFSTFONTDIR", pathname, &pathlen) != 0)
         strcpy(pathname, UFSTFONTDIR);
     return;
 }
@@ -187,35 +199,47 @@ pl_ufst_root_dir(char *pathname, int pathlen)
 /* check all table entries have a value in the font dictionary */
 #ifdef DEBUG
 static void
-pl_check_fonts(const gs_memory_t *mem, pl_dict_t *pfontdict, bool use_unicode_names_for_keys)
+pl_check_fonts(const gs_memory_t * mem, pl_dict_t * pfontdict,
+               bool use_unicode_names_for_keys)
 {
     int j;
-    for ( j = 0; strlen(resident_table[j].full_font_name); j++ ) {
+
+    for (j = 0; strlen(resident_table[j].full_font_name); j++) {
         void *value;
+
         /* lookup unicode key in the resident table */
-        if ( use_unicode_names_for_keys ) {
-            if ( !pl_dict_lookup(pfontdict,
-                                 resident_table[j].unicode_fontname,
-                                 sizeof(resident_table[j].unicode_fontname),
-                                 &value, true, NULL) /* return data ignored */ ) {
+        if (use_unicode_names_for_keys) {
+            if (!pl_dict_lookup(pfontdict,
+                                resident_table[j].unicode_fontname,
+                                sizeof(resident_table[j].unicode_fontname),
+                                &value, true,
+                                NULL) /* return data ignored */ ) {
                 int i;
+
                 dmprintf(mem, "Font with unicode key: ");
                 for (i = 0;
-                     i < sizeof(resident_table[j].unicode_fontname)/sizeof(resident_table[j].unicode_fontname[0]);
-                     i++) {
-                    dmprintf1(mem, "%c", (char)resident_table[j].unicode_fontname[i]);
+                     i <
+                     sizeof(resident_table[j].unicode_fontname) /
+                     sizeof(resident_table[j].unicode_fontname[0]); i++) {
+                    dmprintf1(mem, "%c",
+                              (char)resident_table[j].unicode_fontname[i]);
                 }
-                dmprintf1(mem, " not available in font dictionary, resident table position: %d\n", j);
+                dmprintf1(mem,
+                          " not available in font dictionary, resident table position: %d\n",
+                          j);
             }
         } else {
             byte key[3];
-            key[2] = (byte)j;
+
+            key[2] = (byte) j;
             key[0] = key[1] = 0;
-            if ( !pl_dict_lookup(pfontdict,
-                                 key,
-                                 sizeof(key),
-                                 &value, true, NULL) /* return data ignored */ )
-                dmprintf2(mem, "%s not available in font dictionary, resident table position: %d\n",
+            if (!pl_dict_lookup(pfontdict,
+                                key,
+                                sizeof(key),
+                                &value, true,
+                                NULL) /* return data ignored */ )
+                dmprintf2(mem,
+                          "%s not available in font dictionary, resident table position: %d\n",
                           resident_table[j].full_font_name, j);
         }
     }
@@ -224,16 +248,23 @@ pl_check_fonts(const gs_memory_t *mem, pl_dict_t *pfontdict, bool use_unicode_na
 #endif
 
 int
-pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontdict,
-                       gs_font_dir *pdir, int storage, bool use_unicode_names_for_keys)
+pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
+                       pl_dict_t * pfontdict, gs_font_dir * pdir, int storage,
+                       bool use_unicode_names_for_keys)
 {
-    int                 i, k;
-    UW16                bSize, status = 0;
-    byte                key[3];
-    UB8                 pthnm[1024];
-    UB8                 ufst_root_dir[1024];
-    char                 **fcos;
-    char                 **plugins;
+    int i, k;
+
+    UW16 bSize, status = 0;
+
+    byte key[3];
+
+    UB8 pthnm[1024];
+
+    UB8 ufst_root_dir[1024];
+
+    char **fcos;
+
+    char **plugins;
 
     /* don't load fonts more than once */
     if (pl_dict_length(pfontdict, true) > 0)
@@ -250,8 +281,10 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
         for (k = 0; plugins[k]; k++) {
             strcpy((char *)pthnm, ufst_root_dir);
             strcat((char *)pthnm, plugins[k]);
-            if ((status = gx_UFST_open_static_fco(pthnm, &fcHndlPlAry[k])) != 0) {
-                dmprintf2(mem, "CGIFfco_Open error %d for %s\n", status, pthnm);
+            if ((status =
+                 gx_UFST_open_static_fco(pthnm, &fcHndlPlAry[k])) != 0) {
+                dmprintf2(mem, "CGIFfco_Open error %d for %s\n", status,
+                          pthnm);
                 return FALSE;
             }
             if ((status = CGIFfco_Plugin(FSA fcHndlPlAry[k])) != 0) {
@@ -277,6 +310,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
     fcos = pl_ufst_get_list(mem, "UFSTFCOS", UFSTFCOS);
     for (k = 0; fcos[k]; k++) {
         SW16 fcoHandle;
+
         /* build and open (get handle) for the k'th fco file name */
         strcpy((char *)pthnm, ufst_root_dir);
         strcat((char *)pthnm, fcos[k]);
@@ -289,51 +323,59 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
             continue;
         }
         /* enumerat the files in this fco */
-        for ( i = 0;
-              CGIFfco_Access(FSA pthnm, i, TFATRIB_KEY, &bSize, NULL) == 0;
-              i++, key[2] += 1 ) {
-            LPSB8   pBuffer = (LPSB8)gs_alloc_bytes( mem,
-                                                     bSize,
-                                                     "TTFONTINFO buffer" );
+        for (i = 0;
+             CGIFfco_Access(FSA pthnm, i, TFATRIB_KEY, &bSize, NULL) == 0;
+             i++, key[2] += 1) {
+            LPSB8 pBuffer = (LPSB8) gs_alloc_bytes(mem,
+                                                   bSize,
+                                                   "TTFONTINFO buffer");
 
             if (pBuffer == 0) {
                 dmprintf1(mem, "VM error for built-in font %d", i);
                 continue;
             }
-            status = CGIFfco_Access( FSA
-                                     pthnm,
-                                     i,
-                                     TFATRIB_KEY,
-                                     &bSize,
-                                     pBuffer );
+            status = CGIFfco_Access(FSA
+                                    pthnm, i, TFATRIB_KEY, &bSize, pBuffer);
             if (status != 0)
                 dmprintf1(mem, "CGIFfco_Access error %d\n", status);
             else {
-                TTFONTINFOTYPE *    pfDesc = (TTFONTINFOTYPE *)pBuffer;
-                LPSB8               pname = pBuffer + pfDesc->psname;
+                TTFONTINFOTYPE *pfDesc = (TTFONTINFOTYPE *) pBuffer;
+
+                LPSB8 pname = pBuffer + pfDesc->psname;
+
                 /* unfortunately agfa has 2 fonts named symbol.  We
                    believe the font with internal number, NB, NB, NB  */
-                LPSB8               symname = "SymbPS";
-                int                 j;
-                bool                found;
-                if ( pfDesc->pcltFontNumber == 24463 )
+                LPSB8 symname = "SymbPS";
+
+                int j;
+
+                bool found;
+
+                if (pfDesc->pcltFontNumber == 24463)
                     pname = symname;
                 for (j = 0; strlen(resident_table[j].full_font_name); j++) {
-                    pl_font_t * plfont;
-                    int         err_cd;
+                    pl_font_t *plfont;
+
+                    int err_cd;
+
                     if (strcmp(resident_table[j].full_font_name, pname) != 0)
                         continue;
 
-                    err_cd = pl_load_mt_font(fcoHandle, pdir, mem, i, &plfont);
- 
+                    err_cd =
+                        pl_load_mt_font(fcoHandle, pdir, mem, i, &plfont);
+
                     if (err_cd != 0)
-                        return gs_throw1(err_cd, "An unrecoverable failure occurred while loading the resident font %s\n", pname);
+                        return gs_throw1(err_cd,
+                                         "An unrecoverable failure occurred while loading the resident font %s\n",
+                                         pname);
                     else {
-                        uint    pitch_cp = (pfDesc->spaceBand * 100.0)
+                        uint pitch_cp = (pfDesc->spaceBand * 100.0)
                             / pfDesc->scaleFactor + 0.5;
+
 #ifdef DEBUG
-                        if (gs_debug_c('=') )
-                            dmprintf2(mem, "Loading %s from fco %s\n", pname, fcos[k] );
+                        if (gs_debug_c('='))
+                            dmprintf2(mem, "Loading %s from fco %s\n", pname,
+                                      fcos[k]);
 #endif
                         /* Record the differing points per inch value
                            for Intellifont derived fonts. */
@@ -344,8 +386,11 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                                 / (pfDesc->scaleFactor * 72.307) + 0.5;
                         }
 #ifdef DEBUG
-                        if (gs_debug_c('=') )
-                            dmprintf3(mem, "scale factor=%d, pitch (cp)=%d per_inch_x100=%d\n", pfDesc->scaleFactor, pitch_cp, (uint)(720000.0/pitch_cp));
+                        if (gs_debug_c('='))
+                            dmprintf3(mem,
+                                      "scale factor=%d, pitch (cp)=%d per_inch_x100=%d\n",
+                                      pfDesc->scaleFactor, pitch_cp,
+                                      (uint) (720000.0 / pitch_cp));
 #endif
 
                         plfont->font_type = resident_table[j].font_type;
@@ -363,43 +408,51 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                         memcpy(plfont->character_complement,
                                resident_table[j].character_complement, 8);
 
-                        if ( use_unicode_names_for_keys )
-                            pl_dict_put( pfontdict, resident_table[j].unicode_fontname, 32, plfont );
+                        if (use_unicode_names_for_keys)
+                            pl_dict_put(pfontdict,
+                                        resident_table[j].unicode_fontname,
+                                        32, plfont);
                         else {
-                            key[2] = (byte)j;
+                            key[2] = (byte) j;
                             key[0] = key[1] = 0;
-                            pl_dict_put( pfontdict, key, sizeof(key), plfont );
+                            pl_dict_put(pfontdict, key, sizeof(key), plfont);
                         }
                     }
                 }
             }
             gs_free_object(mem, pBuffer, "TTFONTINFO buffer");
         }
-    } /* end enumerate fco loop */
+    }                           /* end enumerate fco loop */
     free_strs(mem, fcos);
     /* finally add lineprinter NB return code ignored */
-    (void)pl_load_ufst_lineprinter(mem, pfontdict, pdir, storage, use_unicode_names_for_keys);
+    (void)pl_load_ufst_lineprinter(mem, pfontdict, pdir, storage,
+                                   use_unicode_names_for_keys);
 #ifdef DEBUG
-    if (gs_debug_c('=') )
+    if (gs_debug_c('='))
         pl_check_fonts(mem, pfontdict, use_unicode_names_for_keys);
 #endif
     return TRUE;
 }
 
 int
-pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pdir,
-                         int storage, bool use_unicode_names_for_keys)
+pl_load_ufst_lineprinter(gs_memory_t * mem, pl_dict_t * pfontdict,
+                         gs_font_dir * pdir, int storage,
+                         bool use_unicode_names_for_keys)
 {
     int i;
 
     for (i = 0; strlen(resident_table[i].full_font_name); i++) {
         if (resident_table[i].params.typeface_family == 0) {
             byte *header = NULL;
+
             byte *char_data = NULL;
 
-            pl_font_t *pplfont = pl_alloc_font(mem, "pl_load_ufst_lineprinter pplfont");
-            gs_font_base *pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
-                                                  "pl_load_ufst_lineprinter pfont");
+            pl_font_t *pplfont =
+                pl_alloc_font(mem, "pl_load_ufst_lineprinter pplfont");
+            gs_font_base *pfont =
+                gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
+                                "pl_load_ufst_lineprinter pfont");
+
             int code;
 
             pl_get_ulp_character_data(&header, &char_data);
@@ -407,24 +460,28 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
             /* these shouldn't happen during system setup */
             if (pplfont == 0 || pfont == 0)
                 return -1;
-            if (pl_fill_in_font(pfont, pplfont, pdir, mem, "lineprinter fonts") < 0)
+            if (pl_fill_in_font
+                (pfont, pplfont, pdir, mem, "lineprinter fonts") < 0)
                 return -1;
 
             pl_fill_in_bitmap_font(pfont, gs_next_ids(mem, 1));
             pplfont->params = resident_table[i].params;
-            memcpy(pplfont->character_complement, resident_table[i].character_complement, 8);
+            memcpy(pplfont->character_complement,
+                   resident_table[i].character_complement, 8);
 
-            if ( use_unicode_names_for_keys )
-                pl_dict_put(pfontdict, resident_table[i].unicode_fontname, 32, pplfont );
+            if (use_unicode_names_for_keys)
+                pl_dict_put(pfontdict, resident_table[i].unicode_fontname, 32,
+                            pplfont);
             else {
                 byte key[3];
-                key[2] = (byte)i;
+
+                key[2] = (byte) i;
                 key[0] = key[1] = 0;
                 pl_dict_put(pfontdict, key, sizeof(key), pplfont);
             }
             pplfont->storage = storage; /* should be an internal font */
             pplfont->data_are_permanent = true;
-            pplfont->header = (byte *)header;
+            pplfont->header = (byte *) header;
             pplfont->font_type = plft_8bit_printable;
             pplfont->scaling_technology = plfst_bitmap;
             pplfont->is_xl_format = false;
@@ -432,21 +489,25 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
 
             code = pl_font_alloc_glyph_table(pplfont, 256, mem,
                                              "pl_load_ufst_lineprinter pplfont (glyph table)");
-            if ( code < 0 )
+            if (code < 0)
                 return code;
 
             while (1) {
 
                 uint width = pl_get_uint16(char_data + 12);
+
                 uint height = pl_get_uint16(char_data + 14);
-                uint ccode_plus_header_plus_data = 2 + 16 + (((width + 7) >> 3) * height);
-                uint ucode = pl_map_MSL_to_Unicode(pl_get_uint16(char_data), 0);
+
+                uint ccode_plus_header_plus_data =
+                    2 + 16 + (((width + 7) >> 3) * height);
+                uint ucode =
+                    pl_map_MSL_to_Unicode(pl_get_uint16(char_data), 0);
                 int code = 0;
 
                 /* NB this shouldn't happen but it does, should be
                    looked at */
                 if (ucode != 0xffff)
-                     code = pl_font_add_glyph(pplfont, ucode, char_data + 2);
+                    code = pl_font_add_glyph(pplfont, ucode, char_data + 2);
 
                 if (code < 0)
                     /* shouldn't happen */
@@ -458,7 +519,7 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
                 if (pl_get_uint16(char_data) == 0)
                     break;
             }
-            code = gs_definefont(pdir, (gs_font *)pfont);
+            code = gs_definefont(pdir, (gs_font *) pfont);
             if (code < 0)
                 /* shouldn't happen */
                 return -1;
@@ -471,16 +532,16 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
  * Close the font collection objects for the built-in fonts. This should be
  * done whenever the built-in font dictionary is released.
  */
-  void
-pl_close_built_in_fonts(pl_dict_t *builtinfonts)
+void
+pl_close_built_in_fonts(pl_dict_t * builtinfonts)
 {
-    int     i;
+    int i;
 
     /* close fco's */
     gx_UFST_close_static_fcos();
 
     /* close plugins */
-    for ( i = 0; fcHndlPlAry[i] != -1; i++ ) {
+    for (i = 0; fcHndlPlAry[i] != -1; i++) {
         CGIFfco_Close(FSA fcHndlPlAry[i]);
         dprintf1("closing handle %d\n", fcHndlPlAry[i]);
     }
@@ -490,16 +551,19 @@ pl_close_built_in_fonts(pl_dict_t *builtinfonts)
 /* These are not implemented */
 
 /* load simm fonts given a path */
- int
-pl_load_simm_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pdir, int storage)
+int
+pl_load_simm_fonts(const char *pathname, gs_memory_t * mem,
+                   pl_dict_t * pfontdict, gs_font_dir * pdir, int storage)
 {
     /* not implemented */
     return 0;
 }
 
 /* load simm fonts given a path */
- int
-pl_load_cartridge_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pdir, int storage)
+int
+pl_load_cartridge_fonts(const char *pathname, gs_memory_t * mem,
+                        pl_dict_t * pfontdict, gs_font_dir * pdir,
+                        int storage)
 {
     /* not implemented */
     return 0;

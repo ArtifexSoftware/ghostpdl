@@ -32,29 +32,24 @@
  * Set all necessary graphics state parameters for PCL drawing
  * (currently only CTM and clipping region).
  */
-  int
-pcl_set_graphics_state(
-    pcl_state_t *   pcs
-)
+int
+pcl_set_graphics_state(pcl_state_t * pcs)
 {
-    int             code = pcl_set_ctm(pcs, true);
-    return ( code < 0 ? code : gs_initclip(pcs->pgs) );
+    int code = pcl_set_ctm(pcs, true);
+
+    return (code < 0 ? code : gs_initclip(pcs->pgs));
 }
 
 /*
  * Backwards compatibility function. Now, however, it provides accurate
  * results.
  */
-  int
-pcl_set_ctm(
-    pcl_state_t *   pcs,
-    bool            use_pd
-)
+int
+pcl_set_ctm(pcl_state_t * pcs, bool use_pd)
 {
-    return gs_setmatrix( pcs->pgs,
-                         ( use_pd ? &(pcs->xfm_state.pd2dev_mtx)
-                           : &(pcs->xfm_state.lp2dev_mtx) )
-                         );
+    return gs_setmatrix(pcs->pgs, (use_pd ? &(pcs->xfm_state.pd2dev_mtx)
+                                   : &(pcs->xfm_state.lp2dev_mtx))
+        );
 }
 
 /*
@@ -67,14 +62,11 @@ pcl_set_ctm(
  *
  * PCL no longer uses the graphic library transparency mechanism.
  */
- int
-pcl_set_drawing_color(
-    pcl_state_t *           pcs,
-    pcl_pattern_source_t    type,
-    int                     id,
-    bool                    for_image
-)
-{   int                     code;
+int
+pcl_set_drawing_color(pcl_state_t * pcs,
+                      pcl_pattern_source_t type, int id, bool for_image)
+{
+    int code;
 
     /* use PCL's pattern transparency */
     pcs->pattern_transparent = pcs->pcl_pattern_transparent;
@@ -82,11 +74,11 @@ pcl_set_drawing_color(
     pcl_ht_set_halftone(pcs);
 
     if (type == pcl_pattern_raster_cspace)
-        code = (pcl_pattern_get_proc_PCL(type))(pcs, 0, true);
+        code = (pcl_pattern_get_proc_PCL(type)) (pcs, 0, true);
     else
-        code = (pcl_pattern_get_proc_PCL(type))(pcs, id, (int)for_image);
+        code = (pcl_pattern_get_proc_PCL(type)) (pcs, id, (int)for_image);
     if (code >= 0) {
-        gs_setrasterop(pcs->pgs, (gs_rop3_t)pcs->logical_op);
+        gs_setrasterop(pcs->pgs, (gs_rop3_t) pcs->logical_op);
         gs_setfilladjust(pcs->pgs, 0.0, 0.0);
     }
     return 0;
@@ -101,19 +93,19 @@ pcl_set_drawing_color(
  * be used in place of gsave and grestore.
  */
 
-gs_private_st_simple(st_gstate_ids_t, pcl_gstate_ids_t, "PCL graphics state tracker");
+gs_private_st_simple(st_gstate_ids_t, pcl_gstate_ids_t,
+                     "PCL graphics state tracker");
 
-  int
-pcl_gsave(
-    pcl_state_t *       pcs
-)
+int
+pcl_gsave(pcl_state_t * pcs)
 {
-    int                 code = 0;
-    pcl_gstate_ids_t *  pids = gs_alloc_struct( pcs->memory,
-                                                pcl_gstate_ids_t,
-                                                &st_gstate_ids_t,
-                                                "PCL gsave"
-                                                );
+    int code = 0;
+
+    pcl_gstate_ids_t *pids = gs_alloc_struct(pcs->memory,
+                                             pcl_gstate_ids_t,
+                                             &st_gstate_ids_t,
+                                             "PCL gsave");
+
     if (pids == 0)
         return e_Memory;
 
@@ -131,13 +123,13 @@ pcl_gsave(
     return code;
 }
 
-  int
-pcl_grestore(
-    pcl_state_t *       pcs
-)
+int
+pcl_grestore(pcl_state_t * pcs)
 {
-    pcl_gstate_ids_t *  pids = pcs->pids->prev;
-    int                 code = 0;
+    pcl_gstate_ids_t *pids = pcs->pids->prev;
+
+    int code = 0;
+
     /* check for bottom of graphic state stack */
     if (pcs == 0 || pcs->pids == 0 || pids == 0)
         return e_Range;
@@ -153,17 +145,15 @@ pcl_grestore(
     return code;
 }
 
-  void
-pcl_init_gstate_stk(
-    pcl_state_t *       pcs
-)
+void
+pcl_init_gstate_stk(pcl_state_t * pcs)
 {
-    pcl_gstate_ids_t *  pids = gs_alloc_struct( pcs->memory,
-                                                pcl_gstate_ids_t,
-                                                &st_gstate_ids_t,
-                                                "PCL gsave"
-                                                );
-    if (pids != 0) {    /* otherwise will crash soon enough */
+    pcl_gstate_ids_t *pids = gs_alloc_struct(pcs->memory,
+                                             pcl_gstate_ids_t,
+                                             &st_gstate_ids_t,
+                                             "PCL gsave");
+
+    if (pids != 0) {            /* otherwise will crash soon enough */
         pids->prev = 0;
         pids->pccolor = 0;
         pids->pht = 0;
@@ -172,7 +162,7 @@ pcl_init_gstate_stk(
 }
 
 void
-pcl_free_gstate_stk(pcl_state_t *pcs)
+pcl_free_gstate_stk(pcl_state_t * pcs)
 {
     gs_free_object(pcs->memory, pcs->pids, "PCL grestore");
 }

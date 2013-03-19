@@ -32,12 +32,12 @@
 
 /* ------------- Platform de/init --------- */
 void
-pl_platform_init(FILE *debug_out)
+pl_platform_init(FILE * debug_out)
 {
     gp_init();
     /* debug flags we reset this out of gs_lib_init0 which sets these
-         and the allocator we want the debug setting but we do our own
-         allocator */
+       and the allocator we want the debug setting but we do our own
+       allocator */
 #ifdef PACIFY_VALGRIND
     VALGRIND_HG_DISABLE_CHECKING(gs_debug, 128);
 #endif
@@ -49,23 +49,24 @@ void
 pl_platform_dnit(int exit_status)
 {
     // hack
-    // fflush(gs_stderr);		/* in case of error exit */
+    // fflush(gs_stderr);               /* in case of error exit */
     /* Do platform-specific cleanup. */
     gp_exit(exit_status, 0);
 }
 
 /* ---------------- Stubs ---------------- */
 
-void * /* obj_header_t * */
-gs_reloc_struct_ptr(const void * /* obj_header_t * */ obj, gc_state_t *gcst)
-{	return (void *)obj;
+void *                          /* obj_header_t * */
+gs_reloc_struct_ptr(const void * /* obj_header_t * */ obj, gc_state_t * gcst)
+{
+    return (void *)obj;
 }
 void
-gs_reloc_string(gs_string *sptr, gc_state_t *gcst)
+gs_reloc_string(gs_string * sptr, gc_state_t * gcst)
 {
 }
 void
-gs_reloc_const_string(gs_const_string *sptr, gc_state_t *gcst)
+gs_reloc_const_string(gs_const_string * sptr, gc_state_t * gcst)
 {
 }
 

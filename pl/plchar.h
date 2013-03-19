@@ -20,22 +20,24 @@
 #ifndef plchar_INCLUDED
 #  define plchar_INCLUDED
 
-int pl_image_bitmap_char(gs_image_enum *ienum, const gs_image_t *pim,
-                         const byte *bitmap_data, uint sraster,
-                         int bold, byte *bold_lines, gs_state *pgs);
+int pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
+                         const byte * bitmap_data, uint sraster,
+                         int bold, byte * bold_lines, gs_state * pgs);
 
 
-int pl_tt_get_outline(gs_font_type42 *pfont, uint index, gs_glyph_data_t *pdata);
+int pl_tt_get_outline(gs_font_type42 * pfont, uint index,
+                      gs_glyph_data_t * pdata);
 
-ulong tt_find_table(gs_font_type42 *pfont, const char *tname, uint *plen);
-
-gs_glyph
-pl_tt_encode_char(gs_font *pfont_generic, gs_char chr, gs_glyph_space_t not_used);
+ulong tt_find_table(gs_font_type42 * pfont, const char *tname, uint * plen);
 
 gs_glyph
-pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont);
+pl_tt_encode_char(gs_font * pfont_generic, gs_char chr,
+                  gs_glyph_space_t not_used);
+
+gs_glyph pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t * plfont);
 
 int
-pl_tt_get_outline(gs_font_type42 *pfont, uint index, gs_glyph_data_t *pdata);
+pl_tt_get_outline(gs_font_type42 * pfont, uint index,
+                  gs_glyph_data_t * pdata);
 
-#endif				/* plchar_INCLUDED */
+#endif /* plchar_INCLUDED */
