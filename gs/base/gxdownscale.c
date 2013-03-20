@@ -320,7 +320,7 @@ static void down_core_2(gx_downscaler_t *ds,
     {
         /* Right to Left pass (no min feature size) */
         errors += awidth;
-        inp += awidth*2-1;
+        inp += (awidth-1)*2;
         outp = inp;
         for (x = awidth; x > 0; x--)
         {
@@ -415,7 +415,7 @@ static void down_core_3(gx_downscaler_t *ds,
     {
         /* Right to Left pass (no min feature size) */
         errors += awidth;
-        inp += awidth*3-1;
+        inp += (awidth-1)*3;
         outp = inp;
         for (x = awidth; x > 0; x--)
         {
@@ -514,7 +514,7 @@ static void down_core_4(gx_downscaler_t *ds,
     {
         /* Right to Left pass (no min feature size) */
         errors += awidth;
-        inp += awidth*4-1;
+        inp += (awidth-1)*4;
         outp = inp;
         for (x = awidth; x > 0; x--)
         {
