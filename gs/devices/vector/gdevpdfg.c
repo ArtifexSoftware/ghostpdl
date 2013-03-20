@@ -486,7 +486,7 @@ static int write_color_unchanged(gx_device_pdf * pdev, const gs_imager_state * p
             if (!gx_hld_saved_color_same_cspace(current, psc)) {
                 cos_value_t cs_value;
 
-                code = pdf_color_space_named(pdev, &cs_value, &ranges, pcs,
+                code = pdf_color_space_named(pdev, &cs_value, (const gs_range_t **)&ranges, pcs,
                                 &pdf_color_space_names, true, NULL, 0);
                 /* fixme : creates redundant PDF objects. */
                 if (code == gs_error_rangecheck) {
@@ -1007,7 +1007,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
                 scn:
                     command = ppscc->setcolorn;
                     if (!gx_hld_saved_color_same_cspace(&temp, psc)) {
-                        code = pdf_color_space_named(pdev, &cs_value, &ranges, pcs,
+                        code = pdf_color_space_named(pdev, &cs_value, (const gs_range_t **)&ranges, pcs,
                                         &pdf_color_space_names, true, NULL, 0);
                         /* fixme : creates redundant PDF objects. */
                         if (code == gs_error_rangecheck) {
