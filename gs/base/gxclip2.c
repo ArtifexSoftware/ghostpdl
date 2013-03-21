@@ -136,10 +136,12 @@ tile_clip_initialize(gx_device_tile_clip * cdev, const gx_strip_bitmap * tiles,
 }
 
 void
-tile_clip_release(gx_device_tile_clip *cdev)
+tile_clip_free(gx_device_tile_clip *cdev)
 {
     /* release the target reference */
-    gx_device_set_target((gx_device_forward *)cdev, NULL);
+    if(cdev->finalize)
+        cdev->finalize((gx_device *)cdev);  /* this also sets the target to NULL */
+    gs_free_object(cdev->memory, cdev, "tile_clip_free(cdev)");
 }
 
 /* Set the phase of the tile. */
@@ -165,7 +167,7 @@ tile_clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     /* Have to pack the no color index into the pure device type */
     dcolor0.type = gx_dc_type_pure;
     dcolor0.colors.pure = gx_no_color_index;
-    /* Have to set the dcolor1 to a none mask type */
+    /* Have to set the dcolor1 to a non mask type */
     dcolor1.type = gx_dc_type_devn;
     for (k = 0; k < GS_CLIENT_COLOR_MAX_COMPONENTS; k++) {
         dcolor1.colors.devn.values[k] = pdcolor->colors.devn.values[k];

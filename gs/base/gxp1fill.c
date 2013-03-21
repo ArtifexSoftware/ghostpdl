@@ -50,12 +50,12 @@ typedef struct tile_fill_state_s {
 
     /* Variables set at initialization */
 
-    gx_device_tile_clip cdev;
-    gx_device *pcdev;           /* original device or &cdev */
+    gx_device_tile_clip *cdev;
+    gx_device *pcdev;           /* original device or cdev */
     const gx_strip_bitmap *tmask;
     gs_int_point phase;
     int num_planes;    /* negative if not planar */
-    
+
 
     /* Following are only for uncolored patterns */
 
@@ -88,9 +88,9 @@ typedef struct tile_fill_trans_state_s {
 } tile_fill_trans_state_t;
 
 /* we need some means of detecting if a forwarding clipping device was
-   installed.  If the tile state contains a device different from the
-   target output device it must be the clipping device. */
-#define CLIPDEV_INSTALLED (state.pcdev != dev)
+   installed.  If the tile state cdev pointer is non-NULL, then the
+   target output device must be the clipping device. */
+#define CLIPDEV_INSTALLED (state.cdev != NULL)
 
 /* Initialize the filling state. */
 static int
@@ -109,11 +109,19 @@ tile_fill_init(tile_fill_state_t * ptfs, const gx_device_color * pdevc,
         ptfs->num_planes = -1;
     }
     if (m_tile == 0) {          /* no clipping */
+        ptfs->cdev = NULL;
         ptfs->pcdev = dev;
         ptfs->phase = pdevc->phase;
         return 0;
     }
-    ptfs->pcdev = (gx_device *) & ptfs->cdev;
+    if ((ptfs->cdev = (gx_device_tile_clip *)gs_alloc_struct(dev->memory,
+                                                 gx_device_tile_clip,
+                                                 &st_device_tile_clip,
+                                                 "tile_fill_init(cdev)")) == NULL) {
+        return_error(gs_error_VMerror);
+    }
+    ptfs->cdev->finalize = NULL;
+    ptfs->pcdev = (gx_device *)ptfs->cdev;
     ptfs->tmask = &m_tile->tmask;
     ptfs->phase.x = pdevc->mask.m_phase.x;
     ptfs->phase.y = pdevc->mask.m_phase.y;
@@ -128,7 +136,7 @@ tile_fill_init(tile_fill_state_t * ptfs, const gx_device_color * pdevc,
                   m_tile->tmask.rep_height);
     } else
         px = py = 0;
-    return tile_clip_initialize(&ptfs->cdev, ptfs->tmask, dev, px, py);
+    return tile_clip_initialize(ptfs->cdev, ptfs->tmask, dev, px, py);
 }
 
 /*
@@ -217,8 +225,8 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
             if_debug6m('T', mem, "=>(%d,%d) w,h=(%d,%d) x/yoff=(%d,%d)\n",
                        x, y, w, h, xoff, yoff);
             if (w > 0 && h > 0) {
-                if (ptfs->pcdev == (gx_device *) & ptfs->cdev)
-                    tile_clip_set_phase(&ptfs->cdev,
+                if (ptfs->pcdev == (gx_device *)ptfs->cdev)
+                    tile_clip_set_phase(ptfs->cdev,
                                 imod(xoff - x, ptfs->tmask->rep_width),
                                 imod(yoff - y, ptfs->tmask->rep_height));
                 /* Set the offsets for colored pattern fills */
@@ -353,9 +361,7 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
         set_rop_no_source(rop_source, no_source, dev);
     bits = &ptile->tbits;
 
-    state.cdev.finalize = 0;
-
-    code = tile_fill_init(&state, pdevc, dev, false);
+    code = tile_fill_init(&state, pdevc, dev, false);	/* This _may_ allocate state.cdev */
     if (code < 0)
         return code;
     if (ptile->is_simple && ptile->cdev == NULL) {
@@ -367,7 +373,7 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
                  bits->rep_height);
 
         if (CLIPDEV_INSTALLED)
-            tile_clip_set_phase(&state.cdev, px, py);
+            tile_clip_set_phase(state.cdev, px, py);
         if (source == NULL && lop_no_S_is_T(lop))
             code = (*dev_proc(state.pcdev, strip_tile_rectangle))
                 (state.pcdev, bits, x, y, w, h,
@@ -412,10 +418,10 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
                                  &tbits, tile_pattern_clist);
         }
     }
-    if (CLIPDEV_INSTALLED)
-        tile_clip_release((gx_device_tile_clip *) &state.cdev);
-    if(state.cdev.finalize)
-        state.cdev.finalize((gx_device *)&state.cdev);
+    if (CLIPDEV_INSTALLED) {
+        tile_clip_free((gx_device_tile_clip *)state.cdev);
+        state.cdev = NULL;
+    }
     return code;
 }
 
@@ -472,8 +478,10 @@ gx_dc_pure_masked_fill_rect(const gx_device_color * pdevc,
         code = tile_by_steps(&state, x, y, w, h, ptile, &ptile->tmask,
                              tile_masked_fill);
     }
-    if (CLIPDEV_INSTALLED)
-        tile_clip_release((gx_device_tile_clip *) &state.cdev);
+    if (CLIPDEV_INSTALLED) {
+        tile_clip_free((gx_device_tile_clip *)state.cdev);
+        state.cdev = NULL;
+    }
     return code;
 }
 
@@ -494,16 +502,32 @@ gx_dc_devn_masked_fill_rect(const gx_device_color * pdevc,
     code = tile_fill_init(&state, pdevc, dev, true);
     if (code < 0)
         return code;
-    if (state.pcdev == dev || ptile->is_simple)
-        return (*gx_dc_type_data_devn.fill_rectangle)
-            (pdevc, x, y, w, h, state.pcdev, lop, source);
-    else {
+    if (state.pcdev == dev || ptile->is_simple) {
+        gx_device_color dcolor = *pdevc;
+
+        if (ptile == NULL) {
+        int k;
+
+            /* Have to set the pdevc to a non mask type since the pattern was stored as non-masking */
+            dcolor.type = gx_dc_type_devn;
+            for (k = 0; k < GS_CLIENT_COLOR_MAX_COMPONENTS; k++) {
+                dcolor.colors.devn.values[k] = pdevc->colors.devn.values[k];
+            }
+        }
+        code = (*gx_dc_type_data_devn.fill_rectangle)
+            (&dcolor, x, y, w, h, state.pcdev, lop, source);
+    } else {
         state.lop = lop;
         state.source = source;
         state.fill_rectangle = gx_dc_type_data_devn.fill_rectangle;
-        return tile_by_steps(&state, x, y, w, h, ptile, &ptile->tmask,
+        code = tile_by_steps(&state, x, y, w, h, ptile, &ptile->tmask,
                              tile_masked_fill);
     }
+    if (CLIPDEV_INSTALLED) {
+        tile_clip_free((gx_device_tile_clip *)state.cdev);
+        state.cdev = NULL;
+    }
+    return code;
 }
 
 int
@@ -529,8 +553,10 @@ gx_dc_binary_masked_fill_rect(const gx_device_color * pdevc,
         code = tile_by_steps(&state, x, y, w, h, ptile, &ptile->tmask,
                              tile_masked_fill);
     }
-    if (CLIPDEV_INSTALLED)
-        tile_clip_release((gx_device_tile_clip *) &state.cdev);
+    if (CLIPDEV_INSTALLED) {
+        tile_clip_free((gx_device_tile_clip *)state.cdev);
+        state.cdev = NULL;
+    }
     return code;
 }
 
@@ -557,8 +583,10 @@ gx_dc_colored_masked_fill_rect(const gx_device_color * pdevc,
         code = tile_by_steps(&state, x, y, w, h, ptile, &ptile->tmask,
                              tile_masked_fill);
     }
-    if (CLIPDEV_INSTALLED)
-        tile_clip_release((gx_device_tile_clip *) &state.cdev);
+    if (CLIPDEV_INSTALLED) {
+        tile_clip_free((gx_device_tile_clip *)state.cdev);
+        state.cdev = NULL;
+    }
     return code;
 }
 
@@ -1004,8 +1032,10 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
                 code = tile_by_steps(&state_clist_trans, xmin, ymin, xmax,
                                      ymax, ptile, &tbits, tile_pattern_clist);
 
-            if (code >= 0 && (state_clist_trans.pcdev != dev))
-                tile_clip_release((gx_device_tile_clip *)&state_clist_trans.cdev);
+            if (code >= 0 && (state_clist_trans.cdev != NULL)) {
+                tile_clip_free((gx_device_tile_clip *)state_clist_trans.cdev);
+                state_clist_trans.cdev = NULL;
+            }
 
         }
     }
