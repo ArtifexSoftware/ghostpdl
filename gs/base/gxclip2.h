@@ -42,9 +42,9 @@ int tile_clip_initialize(gx_device_tile_clip * cdev,
                          gx_device * tdev, int px, int py);
 
 /*
- * relase the tile clipping device.
+ * Free the tile clipping device.
  */
-void tile_clip_release(gx_device_tile_clip *cdev);
+void tile_clip_free(gx_device_tile_clip *cdev);
 
 /*
  * Set the phase of the tile -- used in the tiling loop when
