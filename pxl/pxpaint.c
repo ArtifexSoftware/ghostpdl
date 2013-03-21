@@ -36,14 +36,6 @@
 #include "pxptable.h"
 
 /*
- * The published H-P specification says that the single-object painting
- * operators (Chord, Ellipse, Pie, Rectangle, RoundRectangle) leave the
- * path set to the object; however, H-P printers apparently reset the
- * path (but leave the current cursor defined).  To obtain the latter
- * behavior, uncomment the following #define.
- */
-#define NEWPATH_AFTER_PAINT_SHAPE
-/*
  * The published specification says that dash patterns do not scale when
  * the CTM changes; however, H-P printers do scale the dash pattern.
  * To make dash patterns not scale, uncomment the following #define.
@@ -506,12 +498,7 @@ paint_shape(px_args_t * par, px_state_t * pxs, px_operator_proc((*path_op)))
     if ((code = pxNewPath(par, pxs)) < 0 ||
         (code = (*path_op) (par, pxs)) < 0)
         return code;
-    /* See the beginning of the file regarding the following. */
-#ifdef NEWPATH_AFTER_PAINT_SHAPE
     return paint_path(pxs, true);
-#else
-    return paint_path(pxs, false);
-#endif
 }
 
 /* ---------------- Operators ---------------- */
