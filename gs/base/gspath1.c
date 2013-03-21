@@ -590,10 +590,8 @@ gs_upathbbox(gs_state * pgs, gs_rect * pbox, bool include_moveto)
 
 /* Start enumerating a path */
 int
-gs_path_enum_copy_init(gs_path_enum * penum, const gs_state * pgs, bool copy)
+gs_path_enum_copy_init(gs_memory_t *mem, gs_path_enum * penum, const gs_state * pgs, bool copy)
 {
-    gs_memory_t *mem = pgs->memory;
-
     if (copy) {
         gx_path *copied_path =
         gx_path_alloc(mem, "gs_path_enum_init");

@@ -91,10 +91,10 @@ int gs_currentpoint(gs_state *, gs_point *),
 
 /* This interface conditionally makes a copy of the path. */
 gs_path_enum *gs_path_enum_alloc(gs_memory_t *, client_name_t);
-int gs_path_enum_copy_init(gs_path_enum *, const gs_state *, bool);
+int gs_path_enum_copy_init(gs_memory_t *mem, gs_path_enum *, const gs_state *, bool);
 
-#define gs_path_enum_init(penum, pgs)\
-  gs_path_enum_copy_init(penum, pgs, true)
+#define gs_path_enum_init(mem, penum, pgs)\
+  gs_path_enum_copy_init(mem, penum, pgs, true)
 int gs_path_enum_next(gs_path_enum *, gs_point[3]);  /* 0 when done */
 void gs_path_enum_cleanup(gs_path_enum *);
 

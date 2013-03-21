@@ -548,7 +548,7 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
         gx_path *save_path = pgs->path;
 
         pgs->path = ppath;
-        gs_path_enum_copy_init(&penum, pgs, false);
+        gs_path_enum_copy_init(pgs->memory, &penum, pgs, false);
         pgs->path = save_path;
         while ((op = gs_path_enum_next(&penum, pts)) != 0) {
             const char *opstr;
@@ -635,7 +635,7 @@ zgetpath(i_ctx_t *i_ctx_p)
         fts[5] = &pts[2].y;
 
         main_ref = op->value.refs;
-        gs_path_enum_copy_init(&penum, igs, false);
+        gs_path_enum_copy_init(igs->memory, &penum, igs, false);
         pe = gs_path_enum_next(&penum, pts);
         if (pe < 0)
             return pe;

@@ -195,9 +195,10 @@ zpathforall(i_ctx_t *i_ctx_p)
     check_proc(op[-1]);
     check_proc(*op);
     check_estack(8);
+
     if ((penum = gs_path_enum_alloc(imemory, "pathforall")) == 0)
         return_error(e_VMerror);
-    code = gs_path_enum_init(penum, igs);
+    code = gs_path_enum_init(imemory, penum, igs);
     if (code < 0) {
         ifree_object(penum, "path_cleanup");
         return code;
