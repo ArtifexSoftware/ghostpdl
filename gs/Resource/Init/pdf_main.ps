@@ -821,7 +821,15 @@ currentdict /xref-char-dict undef
     } ifelse
   } if
   Trailer /Root oget /PageLabels knownoget {
-     .pdfpagelabels
+    %% Currenlty only the pdfwrite device can handle PageLabels
+    %% because we deal with these using putparams, not pdfmarks
+    %% This is because the pdfmark syntax can't handle all the
+    %% possible page label formats in a PDF file!
+    currentdevice .devicename /pdfwrite eq {
+      .pdfpagelabels
+    } {
+      pop
+    } ifelse
   } if
 } bind def
 
