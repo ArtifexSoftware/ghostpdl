@@ -29,6 +29,8 @@ $(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
 	-if not exist $(PSGENDIR)$(D)cups mkdir $(PSGENDIR)$(D)cups
 	-if not exist $(GLOBJDIR) mkdir $(GLOBJDIR)
 	-if not exist $(GLGENDIR) mkdir $(GLGENDIR)
+	-if not exist $(DEVOBJDIR) mkdir $(DEVOBJDIR)
+	-if not exist $(DEVGENDIR) mkdir $(DEVGENDIR)
 	-if not exist $(AUXDIR) mkdir $(AUXDIR)
 	-if not exist $(BINDIR) mkdir $(BINDIR)
 	echo $(GENOPT) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ > $(GLGENDIR)\ccf32.tr

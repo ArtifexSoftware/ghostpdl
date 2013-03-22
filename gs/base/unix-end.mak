@@ -17,13 +17,15 @@
 
 # Define the rule for building standard configurations.
 directories:
-	@if test "$(BINDIR)"   != "" -a ! -d $(BINDIR);        then mkdir $(BINDIR);        fi
-	@if test "$(GLGENDIR)" != "" -a ! -d $(GLGENDIR);      then mkdir $(GLGENDIR);      fi
-	@if test "$(GLOBJDIR)" != "" -a ! -d $(GLOBJDIR);      then mkdir $(GLOBJDIR);      fi
-	@if test "$(AUXDIR)"   != "" -a ! -d $(AUXDIR);        then mkdir $(AUXDIR);        fi
-	@if test "$(PSGENDIR)" != "" -a ! -d $(PSGENDIR);      then mkdir $(PSGENDIR);      fi
-	@if test "$(PSGENDIR)" != "" -a ! -d $(PSGENDIR)/cups; then mkdir $(PSGENDIR)/cups; fi
-	@if test "$(PSOBJDIR)" != "" -a ! -d $(PSOBJDIR);      then mkdir $(PSOBJDIR);      fi
+	@if test "$(BINDIR)"    != "" -a ! -d $(BINDIR);        then mkdir $(BINDIR);        fi
+	@if test "$(GLGENDIR)"  != "" -a ! -d $(GLGENDIR);      then mkdir $(GLGENDIR);      fi
+	@if test "$(GLOBJDIR)"  != "" -a ! -d $(GLOBJDIR);      then mkdir $(GLOBJDIR);      fi
+	@if test "$(DEVGENDIR)" != "" -a ! -d $(DEVGENDIR);     then mkdir $(DEVGENDIR);     fi
+	@if test "$(DEVOBJDIR)" != "" -a ! -d $(DEVOBJDIR);     then mkdir $(DEVOBJDIR);     fi
+	@if test "$(AUXDIR)"    != "" -a ! -d $(AUXDIR);        then mkdir $(AUXDIR);        fi
+	@if test "$(PSGENDIR)"  != "" -a ! -d $(PSGENDIR);      then mkdir $(PSGENDIR);      fi
+	@if test "$(PSGENDIR)"  != "" -a ! -d $(PSGENDIR)/cups; then mkdir $(PSGENDIR)/cups; fi
+	@if test "$(PSOBJDIR)"  != "" -a ! -d $(PSOBJDIR);      then mkdir $(PSOBJDIR);      fi
 
 # Define a rule for building profiling configurations.
 PGDEFS=GENOPT='-DPROFILE' CFLAGS='$(CFLAGS_PROFILE) $(GCFLAGS) $(XCFLAGS)'\

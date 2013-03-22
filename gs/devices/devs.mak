@@ -21,7 +21,7 @@ DEVSRC=$(DEVSRCDIR)$(D)
 DEVVEC=$(DEVSRC)vector
 DEVVECSRC=$(DEVVEC)$(D)
 
-DEVI_=$(DEVGENDIR) $(II)$(GLSRCDIR) $(II)$(DEVSRCDIR) 
+DEVI_=$(DEVGENDIR) $(II)$(GLSRCDIR) $(II)$(GLGENDIR) $(II)$(DEVSRCDIR) 
 DEVF_=
 
 DEVCCFLAGS=$(I_)$(DEVI_)$(_I) $(I_)$(DEVVEC)$(_I) $(DEVF_)
@@ -396,8 +396,8 @@ $(DEVOBJ)gdevs3ga.$(OBJ) : $(DEVSRC)gdevs3ga.c $(GDEV) $(gdevpcfb_h) $(gdevsvga_
 
 ### ------------------ Display device for DLL platforms ----------------- ###
 
-display_=$(DEVOBJ)gdevdsp.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ) $(DEVOBJ)gdevdevn.$(OBJ) \
-	 $(DEVOBJ)gsequivc.$(OBJ) $(DEVOBJ)gdevdcrd.$(OBJ)
+display_=$(DEVOBJ)gdevdsp.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ) $(GLOBJ)gdevdevn.$(OBJ) \
+	 $(GLOBJ)gsequivc.$(OBJ) $(DEVOBJ)gdevdcrd.$(OBJ)
 $(DD)display.dev : $(display_) $(GDEV)
 	$(SETDEV) $(DD)display $(display_)
 
@@ -1332,7 +1332,7 @@ $(DEVOBJ)gdevxcf.$(OBJ) : $(DEVSRC)gdevxcf.c $(PDEVH) $(math__h)\
 
 ### --------------------------- The PSD device ------------------------- ###
 
-psd_=$(DEVOBJ)gdevpsd.$(OBJ) $(DEVOBJ)gdevdevn.$(OBJ) $(GLOBJ)gsequivc.$(OBJ)
+psd_=$(DEVOBJ)gdevpsd.$(OBJ) $(GLOBJ)gdevdevn.$(OBJ) $(GLOBJ)gsequivc.$(OBJ)
 
 $(DD)psdrgb.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev $(GDEV)
 	$(SETDEV) $(DD)psdrgb $(psd_)
@@ -1465,7 +1465,7 @@ $(DEVOBJ)gdevp2up.$(OBJ) : $(DEVSRC)gdevp2up.c $(AK)\
 ### For more information, see the pam(5), pbm(5), pgm(5), and ppm(5)     ###
 ### man pages.                                                           ###
 
-pxm_=$(DEVOBJ)gdevpbm.$(OBJ) $(DEVOBJ)gdevppla.$(OBJ) $(DEVOBJ)gdevmpla.$(OBJ)
+pxm_=$(DEVOBJ)gdevpbm.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) $(GLOBJ)gdevmpla.$(OBJ)
 
 $(DEVOBJ)gdevpbm.$(OBJ) : $(DEVSRC)gdevpbm.c $(PDEVH)\
  $(gdevmpla_h) $(gdevplnx_h) $(gdevppla_h)\
@@ -1671,6 +1671,12 @@ $(DEVOBJ)gdevtfax.$(OBJ) : $(DEVSRC)gdevtfax.c $(PDEVH)\
 ### ---------------------------- TIFF formats --------------------------- ###
 
 tiffs_=$(DEVOBJ)gdevtifs.$(OBJ) $(DEVOBJ)minftrsz.$(OBJ)
+
+tiffgray_=$(DEVOBJ)gdevtsep.$(OBJ) $(GLOBJ)gsequivc.$(OBJ) $(DEVOBJ)minftrsz.$(OBJ)
+
+tiffsep_=$(tiffgray_) $(GLOBJ)gdevdevn.$(OBJ) $(GLOBJ)gsequivc.$(OBJ) \
+$(GLOBJ)gdevppla.$(OBJ) 
+
 $(DD)tiffs.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffs_) $(GLD)page.dev\
  $(minftrsz_) $(GDEV)
 	$(SETMOD) $(DD)tiffs $(tiffs_)
@@ -1719,8 +1725,6 @@ $(DD)tiffpack.dev : $(DEVS_MAK) $(libtiff_dev) $(DD)tfax.dev $(minftrsz_)\
 
 # TIFF Gray, no compression
 
-tiffgray_=$(DEVOBJ)gdevtsep.$(OBJ) $(DEVOBJ)gsequivc.$(OBJ) $(DEVOBJ)minftrsz.$(OBJ)
-
 $(DD)tiffgray.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffgray_) $(DD)tiffs.dev\
  $(minftrsz_h) $(GDEV)
 	$(SETPDEV2) $(DD)tiffgray $(tiffgray_)
@@ -1733,7 +1737,7 @@ $(DEVOBJ)gdevtsep.$(OBJ) : $(DEVSRC)gdevtsep.c $(PDEVH) $(stdint__h)\
 
 # TIFF Scaled (downscaled gray -> mono), configurable compression
 
-tiffscaled_=$(tiffgray_) $(DEVOBJ)gdevtsep.$(OBJ) $(DEVOBJ)minftrsz.$(OBJ)
+tiffscaled_=$(tiffsep_)
 
 $(DD)tiffscaled.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled_) $(DD)tiffs.dev\
  $(minftrsz_h) $(GDEV)
@@ -1742,7 +1746,7 @@ $(DD)tiffscaled.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled_) $(DD)tiffs.dev\
 
 # TIFF Scaled 8 (downscaled gray -> gray), configurable compression
 
-tiffscaled8_=$(tiffgray_) $(DEVOBJ)gdevtsep.$(OBJ) $(DEVOBJ)minftrsz.$(OBJ)
+tiffscaled8_=$(tiffseop_)
 
 $(DD)tiffscaled8.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled8_)\
  $(DD)tiffs.dev $(minftrsz_h) $(GDEV)
@@ -1751,7 +1755,7 @@ $(DD)tiffscaled8.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled8_)\
 
 # TIFF Scaled 24 (downscaled rgb -> rgb), configurable compression
 
-tiffscaled24_=$(tiffgray_) $(DEVOBJ)gdevtsep.$(OBJ) $(DEVOBJ)minftrsz.$(OBJ)
+tiffscaled24_=$(tiffsep_)
 
 $(DD)tiffscaled24.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled24_)\
  $(DD)tiffs.dev $(minftrsz_h) $(GDEV)
@@ -1760,7 +1764,7 @@ $(DD)tiffscaled24.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled24_)\
 
 # TIFF Scaled 4 (downscaled cmyk -> cmyk), configurable compression
 
-tiffscaled4_=$(tiffgray_) $(DEVOBJ)gdevtsep.$(OBJ) $(DEVOBJ)minftrsz.$(OBJ)
+tiffscaled4_=$(tiffsep_)
 
 $(DD)tiffscaled4.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled4_)\
  $(DD)tiffs.dev $(minftrsz_h) $(GDEV)
@@ -1805,9 +1809,7 @@ $(DD)tiff64nc.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffgray_) $(DD)tiffs.dev\
 #
 # Create separation files (tiffgray) plus CMYK composite (tiff32nc)
 
-tiffsep_=$(tiffgray_) $(DEVOBJ)gdevdevn.$(OBJ) $(DEVOBJ)gsequivc.$(OBJ)
-
-$(DD)tiffsep.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffgray_) $(DD)tiffs.dev\
+$(DD)tiffsep.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffsep_) $(DD)tiffs.dev\
  $(minftrsz_h) $(GDEV)
 	$(SETPDEV2) $(DD)tiffsep $(tiffsep_)
 	$(ADDMOD) $(DD)tiffsep -include $(DD)tiffs $(tiff_i_)
@@ -1815,7 +1817,7 @@ $(DD)tiffsep.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffgray_) $(DD)tiffs.dev\
 #
 # Create separation files (tiff 1-bit) 
 
-$(DD)tiffsep1.dev : $(DEVS_MAK) $(tiffgray_) $(DD)tiffs.dev $(minftrsz_h)\
+$(DD)tiffsep1.dev : $(DEVS_MAK) $(tiffsep_) $(DD)tiffs.dev $(minftrsz_h)\
  $(GDEV)
 	$(SETPDEV2) $(DD)tiffsep1 $(tiffsep_)
 	$(ADDMOD) $(DD)tiffsep1 -include $(DD)tiffs
@@ -1848,7 +1850,7 @@ $(DD)plank.dev : $(DEVS_MAK) $(plan_) $(GLD)page.dev $(GDEV)
 #
 # PLanar Interlaced Buffer device
 
-plib_=$(DEVOBJ)gdevplib.$(OBJ) $(DEVOBJ)gdevppla.$(OBJ) $(DEVOBJ)gdevmpla.$(OBJ)
+plib_=$(DEVOBJ)gdevplib.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) $(GLOBJ)gdevmpla.$(OBJ)
 
 $(DEVOBJ)gdevplib.$(OBJ) : $(DEVSRC)gdevplib.c $(PDEVH)\
  $(gdevmpla_h) $(gdevplnx_h) $(gdevppla_h)\
