@@ -373,8 +373,6 @@ JPX_OPENJPEG_I_=$(JPXSRCDIR)$(D)libopenjpeg
 
 # FEATURE_DEVS_EXTRA and DEVICE_DEVS_EXTRA are explicitly reserved
 # to be set from the command line.
-FEATURE_DEVS_EXTRA=
-DEVICE_DEVS_EXTRA=
 
 DEVS_ALL=$(GLGENDIR)$(D)$(PLATFORM).dev\
  $(FEATURE_DEVS) $(FEATURE_DEVS_EXTRA) \
