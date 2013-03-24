@@ -195,7 +195,6 @@ currentdict /tt_tag_dict .undef
 
 % Define remapping for misnamed glyphs in TrueType 'post' tables.
 % There are probably a lot more than this!
-% Also see /postalias table below.
 /postremap mark
   /Eoverdot /Edotaccent
   /eoverdot /edotaccent
@@ -1200,6 +1199,8 @@ mark
   =string cvs (_) exch concatstrings cvn
 } bind def
 
+% To be removed 9.09.....
+%
 % Provide alternative backward-compatible names for new TTF glyphs.
 % This list was extracted from Adobe's Glyph List 2.0 and consists of
 % glyph names that map to the same Unicode value.
@@ -1395,6 +1396,7 @@ mark
   /yerahbenyomohebrew /yerahbenyomolefthebrew          /yoddagesh /yoddageshhebrew
   /zayindagesh /zayindageshhebrew                      /zdot /zdotaccent
 .dicttomark readonly def
+% .....to be removed 9.09
 
 % - .charkeys /CharStrings <charstrings> /Encoding <encoding>
 % Resets glyphencoding
@@ -1470,21 +1472,80 @@ mark
   TTFDEBUG {
     (CharStrings:)= dup { exch =string cvs print ( ) print //== exec } forall
   } if
-  //postalias {
-    % process pairs of names. If both names are known, do nothing. Otherwise
-    % make the name that is not defined an alias for the one that does exist.
-    % Stack: CharStrings(dict) /name1 /name2
-    2 index 2 index known 3 index 2 index known 1 index xor not {
-      pop pop pop	% both names known or neither known
-    } {
-      % Stack: CharStrings(dict) /name1 /name2 name1_known(bool)
-      { exch } if		% /name1 known -- we need it on top
-      % Stack: CharStrings(dict) /alias_name /known_name
-      TTFDEBUG { (setting alias: ) print 1 index ==only ( to be the same as glyph: ) print dup //== exec } if
-      2 index exch get 2 index 3 1 roll put
-    } ifelse
-  } forall
-  readonly
+
+% To be removed 9.09.....
+  /USEOLDGLYPHALIASING where {/USEOLDGLYPHALIASING get}{false}ifelse
+  {
+    //postalias {
+      % process pairs of names. If both names are known, do nothing. Otherwise
+      % make the name that is not defined an alias for the one that does exist.
+      % Stack: CharStrings(dict) /name1 /name2
+      2 index 2 index known 3 index 2 index known 1 index xor not {
+        pop pop pop       % both names known or neither known
+      } {
+        % Stack: CharStrings(dict) /name1 /name2 name1_known(bool)
+        { exch } if               % /name1 known -- we need it on top
+        % Stack: CharStrings(dict) /alias_name /known_name
+        TTFDEBUG { (setting alias: ) print 1 index ==only ( to be the same as glyph: ) print dup //== exec } if
+        2 index exch get 2 index 3 1 roll put
+      } ifelse
+    } forall
+    readonly
+  }
+%....to be removed 9.09
+  {
+    % Provide all known aliases for each glyph
+
+    % Create an empty code point to glyph dictionary
+    0 dict exch
+    % Build a mapping from code points to known glyphs
+    //AdobeGlyphList {
+      % Stack: CPtoGlyph(dict) CharStrings(dict) /name codepoint
+      2 index 2 index known
+      { exch 3 index 3 1 roll .growput }
+      { pop pop }
+      ifelse
+    } forall
+    % Add aliases for missing names
+    //AdobeGlyphList {
+      % Stack: CPtoGlyph(dict) CharStrings(dict) /name codepoint
+      2 index 2 index known
+      { pop pop }
+      { 2 index 3 1 roll 4 index 1 index .knownget
+        % Try mapping unknown name to equivalent known glyph
+        { TTFDEBUG { (setting alias: ) print 2 index ==only
+                     ( to be the same as glyph: ) print dup //== exec } if
+          exch pop 2 index exch get .growput }
+        % Try mapping unknown name to known uniXXXX glyph
+        { dup 16 4 string cvrs dup length neg 7 add (uni0000) 7 string copy dup
+          4 -2 roll exch putinterval cvn 3 index 1 index .knownget
+          { TTFDEBUG { (setting alias: ) print 3 index ==only
+                       ( to be the same as glyph: ) print 1 index //== exec } if
+            3 1 roll pop pop .growput }
+          % Try mapping unknown name to glyph based on Unicode cmap
+          % Stack: CharStrings(dict) CharStrings(dict) /name codepoint (uniXXXX)
+          { pop 
+            % Only proceed if the cmap is known to be Unicode.
+            % Note that the current check specifically looks for
+            % Windows Unicode which may be an overly strict restriction.
+            cmapsub 0 4 getinterval <00030001> eq
+            { cmapa exch .knownget
+              { TTFDEBUG { (setting alias: ) print 1 index ==only
+                           ( to use glyph index: ) print dup //== exec } if
+                .growput }
+              { pop pop }
+              ifelse }
+            { pop pop pop }
+            ifelse }
+          ifelse }
+        ifelse }
+      ifelse
+    } forall
+    exch pop
+    readonly
+  } ifelse
+
+
   /Encoding [
       have_post {
         0 1 255 {
@@ -1505,7 +1566,9 @@ mark
   TTFDEBUG { (Encoding: ) print dup === flush } if
 } bind def
 
+% to be removed 9.09......
 currentdict /postalias undef
+% .....to be removed 9.09
 
 % <file> .loadttfont <type42font>
 /.loadttfont {
