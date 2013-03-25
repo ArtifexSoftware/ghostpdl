@@ -36,12 +36,6 @@
 #include "pxptable.h"
 
 /*
- * The published specification says that dash patterns do not scale when
- * the CTM changes; however, H-P printers do scale the dash pattern.
- * To make dash patterns not scale, uncomment the following #define.
- */
-/*#define NO_SCALE_DASH_PATTERN*/
-/*
  * The H-P documentation says we are supposed to draw rectangles
  * counter-clockwise on the page, which is clockwise in user space.
  * However, the LaserJet 6 (and probably the LJ 5 as well) draw rectangles
@@ -360,111 +354,63 @@ pxl_allow_rop_for_stroke(gs_state * pgs)
     return false;
 }
 
-/* Paint the current path, optionally resetting it afterwards. */
+/* Paint (stroke and/or fill) the current path. */
 static int
-paint_path(px_state_t * pxs, bool reset)
+paint_path(px_state_t * pxs)
 {
     gs_state *pgs = pxs->pgs;
-
     gx_path *ppath = gx_current_path(pgs);
-
     px_gstate_t *pxgs = pxs->pxgs;
 
     bool will_stroke = pxgs->pen.type != pxpNull;
-
-    gs_point cursor;
+    bool will_fill = pxgs->brush.type != pxpNull;
 
     int code = 0;
 
-    gx_path *save_path = 0;
+    /* nothing to do. */
+    if (!will_fill && !will_stroke)
+        return 0;
 
     if (gx_path_is_void(ppath))
-        return 0;               /* nothing to draw */
-#ifdef NO_SCALE_DASH_PATTERN
-#  define save_for_stroke (!reset || pxgs->dashed)
-#else
-#  define save_for_stroke (!reset)
-#endif
-    if (pxgs->brush.type != pxpNull) {
+        return 0;
+
+    pxs->have_page = true;
+
+    if (will_fill) {
+        gx_path *stroke_path;
+
         int (*fill_proc) (gs_state *) =
             (pxgs->fill_mode == eEvenOdd ? gs_eofill : gs_fill);
 
         if ((code = px_set_paint(&pxgs->brush, pxs)) < 0)
             return code;
-        pxs->have_page = true;
-        if (!will_stroke && reset) {
-            gs_currentpoint(pgs, &cursor);
-            code = (*fill_proc) (pgs);
-            gs_moveto(pgs, cursor.x, cursor.y);
-            return code;
-        }
-        save_path = gx_path_alloc(pxs->memory, "paint_path(save_path)");
-        if (save_path == 0)
-            return_error(errorInsufficientMemory);
-        gx_path_assign_preserve(save_path, ppath);
-        code = (*fill_proc) (pgs);
-        if (code < 0)
-            goto rx;
-        if (!will_stroke)
-            goto rx;
-        if (save_for_stroke)
-            gx_path_assign_preserve(ppath, save_path);
-        else {
-            gx_path_assign_free(ppath, save_path);
-            gx_setcurrentpoint_from_path((gs_imager_state *) pgs, ppath);
-            gs_currentpoint(pgs, &cursor);
-            save_path = 0;
-        }
-    } else if (!will_stroke)
-        return 0;
-    else if (save_for_stroke) {
-        save_path = gx_path_alloc(pxs->memory, "paint_path(save_path)");
-        if (save_path == 0)
-            return_error(errorInsufficientMemory);
-        gx_path_assign_preserve(save_path, ppath);
-    } else
-        gs_currentpoint(pgs, &cursor);
-    /*
-     * The PCL XL documentation from H-P says that dash lengths do not
-     * scale according to the CTM, but according to H-P developer
-     * support, this isn't true.  We went to the trouble of implementing
-     * the published specification, so if it turns out to be right after
-     * all, we execute the following block of code.
-     */
-#ifdef NO_SCALE_DASH_PATTERN
-    /*
-     * If we have a dash pattern that was defined with a different
-     * CTM than the current one, we must pre-expand the dashes.
-     * (Eventually we should expand the library API to handle this.)
-     */
-    if (pxgs->dashed) {
-        gs_matrix mat;
 
-        gs_currentmatrix(pgs, &mat);
-        if (mat.xx != pxgs->dash_matrix.xx ||
-            mat.xy != pxgs->dash_matrix.xy ||
-            mat.yx != pxgs->dash_matrix.yx ||
-            mat.yy != pxgs->dash_matrix.yy) {
-            code = gs_flattenpath(pgs);
-            if (code < 0)
-                goto rx;
-            gs_setmatrix(pgs, &pxgs->dash_matrix);
-            code = gs_dashpath(pgs);
-            gs_setmatrix(pgs, &mat);
-            if (code < 0)
-                goto rx;
+        /* if we are also going to stroke the path, store a copy. */
+        if (will_stroke) {
+            stroke_path = gx_path_alloc_shared(ppath, pxs->memory, "paint_path(save_for_stroke)");
+            if (stroke_path == 0)
+                return_error(errorInsufficientMemory);
+            gx_path_assign_preserve(stroke_path, ppath);
         }
+
+        /* exit here if no stroke or the fill failed. */
+        code = (*fill_proc) (pgs);
+        if (code < 0 || !will_stroke)
+            return code;
+
+        /* restore the path for the stroke, will_stroke and hence
+           stroke_path must be set at this point. */
+        gx_path_assign_free(ppath, stroke_path);
     }
-#endif
+
     /*
      * Per the description in the PCL XL reference documentation,
      * set a standard logical operation and transparency for stroking.
+     * will_stroke is asserted true here.
      */
     {
         gs_rop3_t save_rop = gs_currentrasterop(pgs);
-
         bool save_transparent = gs_currenttexturetransparent(pgs);
-
         bool need_restore_rop = false;
 
         if (pxl_allow_rop_for_stroke(pgs) == false) {
@@ -472,7 +418,6 @@ paint_path(px_state_t * pxs, bool reset)
             gs_settexturetransparent(pgs, false);
             need_restore_rop = true;
         }
-        pxs->have_page = true;
         if ((code = px_set_paint(&pxgs->pen, pxs)) < 0 ||
             (code = gs_stroke(pgs)) < 0)
             DO_NOTHING;
@@ -481,11 +426,6 @@ paint_path(px_state_t * pxs, bool reset)
             gs_settexturetransparent(pgs, save_transparent);
         }
     }
-  rx:if (save_path) {
-        gx_path_assign_free(ppath, save_path);  /* path without a Current point! */
-        gx_setcurrentpoint_from_path((gs_imager_state *) pgs, ppath);
-    } else                      /* Iff save_path is NULL, set currentpoint back to original */
-        gs_moveto(pgs, cursor.x, cursor.y);
     return code;
 }
 
@@ -493,12 +433,32 @@ paint_path(px_state_t * pxs, bool reset)
 static int
 paint_shape(px_args_t * par, px_state_t * pxs, px_operator_proc((*path_op)))
 {
-    int code;
 
+    int code;
+    gs_state *pgs = pxs->pgs;
+    gs_fixed_point fxp;
+
+    /* build the path */
     if ((code = pxNewPath(par, pxs)) < 0 ||
         (code = (*path_op) (par, pxs)) < 0)
         return code;
-    return paint_path(pxs, true);
+
+    /* save position and stroke and or fill the path */
+    code = gx_path_current_point(gx_current_path(pxs->pgs), &fxp);
+    if (code < 0)
+        return code;
+
+    code = paint_path(pxs);
+    if (code < 0)
+        return code;
+
+    /* restore the saved position, and open a new subpath  */
+    code = gx_path_add_point(gx_current_path(pxs->pgs), fxp.x, fxp.y);
+    if (code < 0)
+        return code;
+
+    return gx_setcurrentpoint_from_path((gs_imager_state *) pgs,
+                                        gx_current_path(pxs->pgs));
 }
 
 /* ---------------- Operators ---------------- */
@@ -517,11 +477,28 @@ pxNewPath(px_args_t * par, px_state_t * pxs)
     return gs_newpath(pxs->pgs);
 }
 
+/* Unlike painting single objects the PaintPath operator preserves the
+   path */
 const byte apxPaintPath[] = { 0, 0 };
 int
 pxPaintPath(px_args_t * par, px_state_t * pxs)
 {
-    return paint_path(pxs, false);
+    gx_path *ppath = gx_current_path(pxs->pgs);
+    gx_path *save_path =
+        gx_path_alloc_shared(ppath, pxs->memory, "pxPaintPath");
+    int code;
+
+    if (save_path == 0)
+        return_error(errorInsufficientMemory);
+
+    gx_path_assign_preserve(save_path, ppath);
+    code = paint_path(pxs);
+    gx_path_assign_free(ppath, save_path);
+
+    if (code >= 0)
+        code = gx_setcurrentpoint_from_path((gs_imager_state *)pxs->pgs, ppath);
+    
+    return code;
 }
 
 const byte apxArcPath[] = {
