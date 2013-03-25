@@ -489,7 +489,7 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
             return gs_grestore(pgs);
         }
         /* No luck.  Masked images require PDF 1.3 or higher. */
-        if (pdev->CompatibilityLevel < 1.2)
+        if (pdev->CompatibilityLevel < 1.2 || pdev->params.ColorConversionStrategy != ccs_LeaveColorUnchanged)
             goto nyi;
         if (pdev->CompatibilityLevel < 1.3 && !pdev->PatternImagemask) {
             gs_matrix m, m1, mi;
