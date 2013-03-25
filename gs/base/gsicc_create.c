@@ -1982,7 +1982,7 @@ gsicc_create_fromdefg(const gs_color_space *pcs, unsigned char **pp_buffer_in,
 
     /* Fill in the uncommon stuff */
     gsicc_create_init_luta2bpart(&icc_luta2bparts);
-    header->colorSpace = icSig4colorData;
+    header->colorSpace = icSigCmykData;
     icc_luta2bparts.num_in = 4;
 
     /* The a curves stored as def procs */
@@ -2044,7 +2044,7 @@ gsicc_create_fromdef(const gs_color_space *pcs, unsigned char **pp_buffer_in,
 
     gsicc_create_init_luta2bpart(&icc_luta2bparts);
 
-    header->colorSpace = icSig3colorData;
+    header->colorSpace = icSigRgbData;
     icc_luta2bparts.num_in = 3;
 
     /* The a curves stored as def procs */
