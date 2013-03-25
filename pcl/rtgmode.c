@@ -58,9 +58,7 @@ adjust_pres_mode(pcl_state_t * pcs)
 {
 
     pcl_xfm_state_t *pxfmst = &(pcs->xfm_state);
-
     pcl_raster_state_t *prstate = &(pcs->raster_state);
-
     floatp fcoord = 0.0;
 
     if (prstate->pres_mode_3 && (pxfmst->lp_orient & 1))
@@ -186,27 +184,16 @@ int
 pcl_enter_graphics_mode(pcl_state_t * pcs, pcl_gmode_entry_t mode)
 {
     floatp scale_x, scale_y;
-
     pcl_xfm_state_t *pxfmst = &(pcs->xfm_state);
-
     pcl_raster_state_t *prstate = &(pcs->raster_state);
-
     float gmargin_cp = (float)prstate->gmargin_cp;
-
     gs_point cur_pt;
-
     gs_matrix rst2lp, rst2dev, lp2rst;
-
     gs_rect print_rect;
-
     uint src_wid, src_hgt;
-
     int rot;
-
     int code = 0;
-
     double dwid, dhgt;
-
     int clip_x, clip_y;
 
     /*
@@ -380,9 +367,7 @@ int
 pcl_end_graphics_mode(pcl_state_t * pcs)
 {
     gs_point cur_pt;
-
     gs_matrix dev2pd;
-
     /* close the raster; exit graphics mode */
     pcl_complete_raster(pcs);
     pcs->raster_state.graphics_mode = false;
@@ -433,7 +418,6 @@ static int
 set_graphics_resolution(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint res = arg_is_present(pargs) ? uint_arg(pargs) : 75;
-
     uint qi = 600 / res;
 
     /* HP does not allow 120 dpi or 85.7 dpi as a resolution */
@@ -537,7 +521,6 @@ set_compression_method(pcl_args_t * pargs, pcl_state_t * pcs)
             pcl_palette_CCITT_raster(pcs);
             if (pcs->raster_state.graphics_mode) {
                 coord x = pcs->cap.x;
-
                 coord y = pcs->cap.y;
 
                 pcl_end_graphics_mode(pcs);
@@ -616,7 +599,6 @@ static int
 start_graphics_mode(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     pcl_gmode_entry_t mode = (pcl_gmode_entry_t) uint_arg(pargs);
-
     pcl_raster_state_t *prstate = &(pcs->raster_state);
 
     if (mode > SCALE_CUR_PTR)

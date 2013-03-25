@@ -60,15 +60,11 @@ static int
 download_dither_matrix(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint len = uint_arg(pargs);
-
     pcl_udither_t *pdither = 0;
 
     const pcl__udither_t *ptbl = (pcl__udither_t *) arg_data(pargs);
-
     uint nplanes, h, w, rlen;
-
     int code = 0;
-
     byte *bp;
 
     if (pcs->raster_state.graphics_mode)

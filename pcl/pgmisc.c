@@ -24,7 +24,6 @@ bool
 current_units_out_of_range(hpgl_real_t x)
 {
     const hpgl_real_t max = (1 << 30) - 1;
-
     const hpgl_real_t min = -(1 << 30);
 
     /* Not much to do about the floating point equality checking here

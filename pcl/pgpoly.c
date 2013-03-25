@@ -115,10 +115,8 @@ hpgl_wedge(hpgl_args_t * pargs, hpgl_state_t * pgls)
 
     if (sweep > 359.9 || sweep < -359.9) {
         floatp num_chordsf = 360 / chord;
-
         /* match hp 4600 rounding, precompute since regular arc rounding is different. */
         floatp intpart;
-
         int num_chords =
             (int)((modf(num_chordsf, &intpart) <
                    0.06) ? intpart : intpart + 1);

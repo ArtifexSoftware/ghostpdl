@@ -154,9 +154,7 @@ hpgl_stick_arc_build_char(gs_show_enum * penum, gs_state * pgs,
                           hpgl_font_type_t font_type)
 {
     int width;
-
     gs_matrix save_ctm;
-
     int code;
 
     /* we assert the font is present at this point */
@@ -232,17 +230,11 @@ hpgl_531_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
                     gs_char ignore_chr, gs_glyph ccode)
 {
     gs_matrix save_ctm;
-
     int code;
-
     pcl_id_t ckey;
-
     hpgl_dl_cdata_t *cdata;
-
     gs_point width;
-
     pl_font_t *plfont = (pl_font_t *) pfont->client_data;
-
     pl_dict_t *dl_dict = (pl_dict_t *) plfont->header;
 
     id_set_value(ckey, (ushort) ccode);

@@ -89,11 +89,8 @@ static char **
 build_strs(gs_memory_t * mem, char *str, char separator)
 {
     int i;
-
     char *start_path = str;
-
     char *end_path = str;
-
     char **list;
 
     /* null str or 0 length string */
@@ -253,17 +250,11 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                        bool use_unicode_names_for_keys)
 {
     int i, k;
-
     UW16 bSize, status = 0;
-
     byte key[3];
-
     UB8 pthnm[1024];
-
     UB8 ufst_root_dir[1024];
-
     char **fcos;
-
     char **plugins;
 
     /* don't load fonts more than once */
@@ -340,22 +331,17 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                 dmprintf1(mem, "CGIFfco_Access error %d\n", status);
             else {
                 TTFONTINFOTYPE *pfDesc = (TTFONTINFOTYPE *) pBuffer;
-
                 LPSB8 pname = pBuffer + pfDesc->psname;
-
                 /* unfortunately agfa has 2 fonts named symbol.  We
                    believe the font with internal number, NB, NB, NB  */
                 LPSB8 symname = "SymbPS";
-
                 int j;
-
                 bool found;
 
                 if (pfDesc->pcltFontNumber == 24463)
                     pname = symname;
                 for (j = 0; strlen(resident_table[j].full_font_name); j++) {
                     pl_font_t *plfont;
-
                     int err_cd;
 
                     if (strcmp(resident_table[j].full_font_name, pname) != 0)
@@ -444,15 +430,12 @@ pl_load_ufst_lineprinter(gs_memory_t * mem, pl_dict_t * pfontdict,
     for (i = 0; strlen(resident_table[i].full_font_name); i++) {
         if (resident_table[i].params.typeface_family == 0) {
             byte *header = NULL;
-
             byte *char_data = NULL;
-
             pl_font_t *pplfont =
                 pl_alloc_font(mem, "pl_load_ufst_lineprinter pplfont");
             gs_font_base *pfont =
                 gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
                                 "pl_load_ufst_lineprinter pfont");
-
             int code;
 
             pl_get_ulp_character_data(&header, &char_data);
@@ -493,11 +476,8 @@ pl_load_ufst_lineprinter(gs_memory_t * mem, pl_dict_t * pfontdict,
                 return code;
 
             while (1) {
-
                 uint width = pl_get_uint16(char_data + 12);
-
                 uint height = pl_get_uint16(char_data + 14);
-
                 uint ccode_plus_header_plus_data =
                     2 + 16 + (((width + 7) >> 3) * height);
                 uint ucode =

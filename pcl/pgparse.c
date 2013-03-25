@@ -31,7 +31,6 @@ hpgl_register_command(hpgl_parser_state_t * pgl_parser_state,
                       byte * pindex, const hpgl_command_definition_t * pcmd)
 {
     int index = pgl_parser_state->hpgl_command_next_index;
-
     byte prev = *pindex;
 
     if (prev != 0 && prev <= index &&
@@ -89,9 +88,7 @@ hpgl_process(hpgl_parser_state_t * pst, hpgl_state_t * pgls,
              stream_cursor_read * pr)
 {
     const byte *p = pr->ptr;
-
     const byte *rlimit = pr->limit;
-
     int code = 0;
 
     pst->source.limit = rlimit;
@@ -218,9 +215,7 @@ static const hpgl_value_t *
 hpgl_arg(const gs_memory_t * mem, hpgl_parser_state_t * pst)
 {
     const byte *p;
-
     const byte *rlimit;
-
     hpgl_value_t *pvalue;
 
 #define parg (&pst->arg)
@@ -366,7 +361,6 @@ hpgl_arg_c_real(const gs_memory_t * mem,
                 hpgl_args_t * pargs, hpgl_real_t * pr)
 {
     const hpgl_value_t *pvalue = hpgl_arg(mem, pargs);
-
     hpgl_real_t r;
 
     if (!pvalue)
@@ -394,7 +388,6 @@ bool
 hpgl_arg_c_int(const gs_memory_t * mem, hpgl_args_t * pargs, int *pi)
 {
     const hpgl_value_t *pvalue = hpgl_arg(mem, pargs);
-
     int32 i;
 
     if (!pvalue)

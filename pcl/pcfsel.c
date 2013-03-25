@@ -92,7 +92,6 @@ dmprint_ufst_font_name(const gs_memory_t * mem, const pl_font_t * pfont)
 #define fontnames(agfascreenfontname, agfaname, urwname) agfaname
 #include "plftable.h"
     int i;
-
     bool found = false;
 
     for (i = 0; strlen(resident_table[i].full_font_name); i++) {
@@ -121,7 +120,6 @@ dmprint_font_name(const gs_memory_t * mem, const pl_font_t * pfont)
 #define fontnames(agfascreenfontname, agfaname, urwname) urwname
 #include "plftable.h"
     int i;
-
     bool found = false;
 
     for (i = 0; strlen(resident_table[i].full_font_name); i++) {
@@ -200,7 +198,6 @@ check_support(const pcl_state_t * pcs, uint symbol_set, const pl_font_t * fp,
               pl_symbol_map_t ** mapp, bool id_selection)
 {
     pl_glyph_vocabulary_t gv;
-
     byte id[2];
 
     id[0] = symbol_set >> 8;
@@ -336,9 +333,7 @@ score_match(const pcl_state_t * pcs, const pcl_font_selection_t * pfs,
     {                           /* Worst cases (font value toward zero from request) 0..13.
                                  * Nearest more extreme: 14..21.  21 is exact.  */
         int fwt = fp->params.stroke_weight;
-
         int pwt = pfs->params.stroke_weight;
-
         int delta = pwt - fwt;
 
         /* With a little time, this could be collapsed. */
@@ -442,19 +437,12 @@ pcl_reselect_font(pcl_font_selection_t * pfs, const pcl_state_t * pcs,
 {
     if (pfs->font == 0) {
         pl_dict_enum_t dictp;
-
         gs_const_string key;
-
         void *value;
-
         pl_font_t *best_font = 0;
-
         pl_symbol_map_t *best_map = 0;
-
         pl_symbol_map_t *mapp = 0;
-
         match_score_t best_match;
-
         score_index_t i;
 
 #ifdef DEBUG
@@ -469,7 +457,6 @@ pcl_reselect_font(pcl_font_selection_t * pfs, const pcl_state_t * pcs,
            the fonts with alphanumeric id's */
         if ((int)pfs->selected_id >= 0) {
             byte id_key[2];
-
             void *value;
 
             id_key[0] = pfs->selected_id >> 8;
@@ -490,7 +477,6 @@ pcl_reselect_font(pcl_font_selection_t * pfs, const pcl_state_t * pcs,
         pl_dict_enum_begin(&pcs->soft_fonts, &dictp);
         while (pl_dict_enum_next(&dictp, &key, &value)) {
             pl_font_t *fp = (pl_font_t *) value;
-
             match_score_t match;
 
             if ((internal_only) && fp->storage != pcds_internal)
@@ -582,9 +568,7 @@ int
 pcl_select_font_by_id(pcl_font_selection_t * pfs, uint id, pcl_state_t * pcs)
 {
     byte id_key[2];
-
     void *value;
-
     pl_font_t *fp;
 
     id_key[0] = id >> 8;

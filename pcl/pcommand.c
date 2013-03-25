@@ -88,7 +88,6 @@ int
 put_param1_float(pcl_state_t * pcs, gs_param_name pkey, floatp value)
 {
     gs_c_param_list list;
-
     float fval = value;
 
     gs_c_param_list_write(&list, pcs->memory);
@@ -118,7 +117,6 @@ put_param1_float_array(pcl_state_t * pcs, gs_param_name pkey, float pf[2]
     )
 {
     gs_c_param_list list;
-
     gs_param_float_array pf_array;
 
     pf_array.data = pf;
@@ -135,7 +133,6 @@ int
 put_param1_string(pcl_state_t * pcs, gs_param_name pkey, const char *str)
 {
     gs_c_param_list list;
-
     gs_param_string paramstr;
 
     gs_c_param_list_write(&list, pcs->memory);
@@ -150,7 +147,6 @@ int
 pcl_do_registrations(pcl_state_t * pcs, pcl_parser_state_t * pst)
 {
     const pcl_init_t **init;
-
     int code;
 
     /* initialize gl/2 command counter */
@@ -178,7 +174,6 @@ int
 pcl_do_resets(pcl_state_t * pcs, pcl_reset_type_t type)
 {
     const pcl_init_t **init = pcl_init_table;
-
     int code = 0;
 
     for (; *init && code >= 0; ++init) {

@@ -50,14 +50,11 @@ static void
 uncompress_1(pcl_seed_row_t * pout, const byte * pin, int in_size)
 {
     int i = in_size / 2;
-
     byte *pb = pout->pdata;
-
     byte *plim = pb + pout->size;
 
     while (i-- > 0) {
         int cnt = *pin++ + 1;
-
         byte val = *pin++;
 
         if (cnt > plim - pb)
@@ -77,9 +74,7 @@ static void
 uncompress_2(pcl_seed_row_t * pout, const byte * pin, int in_size)
 {
     int i = in_size;
-
     byte *pb = pout->pdata;
-
     byte *plim = pb + pout->size;
 
     while (i-- > 0) {
@@ -87,7 +82,6 @@ uncompress_2(pcl_seed_row_t * pout, const byte * pin, int in_size)
 
         if (cntrl < 128) {
             uint cnt = min(cntrl + 1, i);
-
             const byte *ptmp = pin;
 
             i -= cnt;
@@ -99,7 +93,6 @@ uncompress_2(pcl_seed_row_t * pout, const byte * pin, int in_size)
 
         } else if ((cntrl > 128) && (i-- > 0)) {
             int cnt = min(257 - cntrl, plim - pb);
-
             int val = *pin++;
 
             memset(pb, val, cnt);
@@ -118,23 +111,17 @@ static void
 uncompress_3(pcl_seed_row_t * pout, const byte * pin, int in_size)
 {
     int i = in_size;
-
     byte *pb = pout->pdata;
-
     byte *plim = pb + pout->size;
 
     while (i-- > 0) {
         uint val = *pin++;
-
         uint cnt = (val >> 5) + 1;
-
         uint offset = val & 0x1f;
-
         const byte *ptmp = 0;
 
         if ((offset == 0x1f) && (i-- > 0)) {
             uint add_offset;
-
             do
                 offset += (add_offset = *pin++);
             while ((add_offset == 0xff) && (i-- > 0));
@@ -174,22 +161,14 @@ static void
 uncompress_9(pcl_seed_row_t * pout, const byte * pin, int in_size)
 {
     int i = in_size;
-
     byte *pb = pout->pdata;
-
     byte *plim = pb + pout->size;
-
     while (i-- > 0) {
         uint val = *pin++;
-
         uint cnt = 0;
-
         uint offset = 0;
-
         bool more_cnt = false;
-
         bool more_offset = false;
-
         bool comp = ((val & 0x80) != 0);
 
         if (comp) {
@@ -224,7 +203,6 @@ uncompress_9(pcl_seed_row_t * pout, const byte * pin, int in_size)
 
             while (j-- > 0) {
                 uint rep_cnt = *pin++;
-
                 uint rep_val = *pin++;
 
                 if (rep_cnt > plim - pb)

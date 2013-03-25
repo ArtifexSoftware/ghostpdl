@@ -64,9 +64,7 @@ int32_t
 integer_elt(const px_value_t * pav, uint index)
 {
     px_data_type_t type = pav->type;
-
     const byte *base = pav->value.array.data;
-
     bool big_endian;
 
     if (type & pxd_ubyte)

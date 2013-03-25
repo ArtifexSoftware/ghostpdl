@@ -40,7 +40,6 @@ hpgl_compute_arc_center(floatp x1, floatp y1, floatp x2, floatp y2,
                         floatp x3, floatp y3, floatp * pcx, floatp * pcy)
 {
     floatp px2, py2, dx2, dy2, px3, py3, dx3, dy3;
-
     double denom, t2;
 
     /*

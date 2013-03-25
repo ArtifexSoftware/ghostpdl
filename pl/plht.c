@@ -36,7 +36,6 @@ pl_set_pcl_halftone(gs_state * pgs, gs_mapping_proc transfer_proc,
 {
 
     int code;
-
     gs_halftone ht;
 
     /* nothing to do for a contone device */

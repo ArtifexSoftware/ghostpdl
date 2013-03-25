@@ -242,7 +242,6 @@ pcl_get_pattern_resolution(pcl_state_t * pcs, gs_point * pattern_res)
     /* get the current resolutions based on the device. */
     {
         gs_point device_res;
-
         gx_device *pdev = gs_currentdevice(pcs->pgs);
 
         device_res.x = pdev->HWResolution[0];

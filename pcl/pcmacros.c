@@ -45,7 +45,6 @@ static int
 do_copies(pcl_state_t * psaved, pcl_state_t * pcs, pcl_copy_operation_t copy)
 {
     const pcl_init_t **init = pcl_init_table;
-
     int code = 0;
 
     for (; *init && code >= 0; ++init)
@@ -59,13 +58,9 @@ pcl_execute_macro(const pcl_macro_t * pmac, pcl_state_t * pcs,
                   pcl_copy_operation_t after)
 {
     pcl_parser_state_t state;
-
     hpgl_parser_state_t gstate;
-
     pcl_state_t saved;
-
     stream_cursor_read r;
-
     int code;
 
 #ifdef DEBUG
@@ -117,11 +112,8 @@ static int                      /* ESC & f <mc_enum> X */
 pcl_macro_control(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     int i = int_arg(pargs);
-
     gs_const_string key;
-
     void *value;
-
     pl_dict_enum_t denum;
 
     if (i == macro_end_definition) {

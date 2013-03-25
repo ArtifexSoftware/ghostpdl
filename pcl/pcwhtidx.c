@@ -50,11 +50,8 @@ build_remap_array8(byte * pmap, /* existing (general) re-map array */
     )
 {
     byte tmp_map[256];
-
     int i;
-
     int pix_per_byte = 8 / b_per_p;
-
     uint mask = (1 << b_per_p) - 1;
 
     /* create the "parallel" mapping table */
@@ -93,13 +90,9 @@ build_remap_array(const byte * ptbl,
                   int *pfirst_white, int b_per_p, bool for_pattern)
 {
     int first_white;
-
     int second_white;
-
     int map_size = (1 << b_per_p);
-
     bool must_map = (map_size > num_entries);
-
     int i;
 
     /* limit consideration to those indices that can be achieved */
@@ -175,15 +168,10 @@ static void remap_raster_ary(const byte * inp,  /* array to read from */
     )
 {
     int nbytes = (npixels * b_per_p + 7) / 8;
-
     ulong mask = (1UL << b_per_p) - 1;
-
     ulong in_accum = 0L;
-
     int in_nbits = 0;
-
     ulong out_accum = 0L;
-
     int out_nbits = 0;
 
     /* check if the the simpler case can be used */
@@ -255,17 +243,11 @@ pcl_cmap_map_raster(const pcl_cs_indexed_t * pindexed,
                     bool must_copy, gs_memory_t * pmem)
 {
     byte remap[pcl_cs_indexed_palette_size];
-
     const byte *pin_rast = 0;
-
     byte *pout_rast = 0;
-
     int pix_depth = pin_pixinfo->pix_depth;
-
     bool fast_mode = ((pix_depth < 8) && (8 % pix_depth == 0));
-
     int npixels = pin_pixinfo->size.x;
-
     int i;
 
     /* see if any remapping is necessary */
@@ -328,11 +310,8 @@ const void *
 pcl_cmap_create_remap_ary(pcl_state_t * pcs, int *pfirst_white)
 {
     byte tmp_remap[pcl_cs_indexed_palette_size];
-
     byte *pmap = 0;
-
     pcl_cs_indexed_t *pindexed = pcs->ppalet->pindexed;
-
     int b_per_p;
 
     /* if a re-map array might be required, build it on the stack first */

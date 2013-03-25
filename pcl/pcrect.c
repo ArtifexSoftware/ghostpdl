@@ -48,19 +48,12 @@ static int
 adjust_render_rectangle(pcl_state_t * pcs)
 {
     gs_state *pgs = pcs->pgs;
-
     const pcl_xfm_state_t *pxfmst = &(pcs->xfm_state);
-
     coord w = pcs->rectangle.x;
-
     coord h = pcs->rectangle.y;
-
     gs_point dims;
-
     gs_rect rect;
-
     gs_matrix save_mtx, ident_mtx;
-
     int code = 0;
 
     /* adjust the width and height to reflect the logical page boundaries */
@@ -103,7 +96,6 @@ adjust_render_rectangle(pcl_state_t * pcs)
      */
     if ((pcs->pp_mode == 1) && (dims.x != 0.0) && (dims.y != 0.0)) {
         gs_matrix dflt_mtx;
-
         gs_point disp;
 
         gs_defaultmatrix(pgs, &dflt_mtx);
@@ -179,9 +171,7 @@ static int
 pcl_fill_rect_area(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     pcl_pattern_source_t type = (pcl_pattern_source_t) int_arg(pargs);
-
     int id = pcs->pattern_id;
-
     int code = 0;
 
     /*

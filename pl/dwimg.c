@@ -396,7 +396,6 @@ void
 register_class(void)
 {
     WNDCLASS wndclass;
-
     HINSTANCE hInstance = GetModuleHandle(NULL);
 
     /* register the window class for graphics */
@@ -418,13 +417,9 @@ void
 image_separations(IMAGE * img)
 {
     char buf[64];
-
     int i;
-
     int exist;
-
     int num_visible = 0;
-
     HMENU sysmenu = GetSystemMenu(img->hwnd, FALSE);
 
     if (((img->format & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_CMYK) ||
@@ -467,7 +462,6 @@ void
 sep_menu(IMAGE * img, int component)
 {
     int i;
-
     int num_visible = 0;
 
     img->devicen[component].visible = !img->devicen[component].visible;
@@ -489,13 +483,9 @@ static void
 create_window(IMAGE * img)
 {
     HMENU sysmenu;
-
     LOGBRUSH lb;
-
     char winposbuf[256];
-
     char window_title[256];
-
     int len = sizeof(winposbuf);
 
     /* create background brush */
@@ -540,7 +530,6 @@ create_window(IMAGE * img)
                                  *   It is useful to compare images generated with different revisions.
                                  */
         char ini_path[MAX_PATH];
-
         DWORD ini_path_length;
 
         ini_path_length = GetModuleFileName(NULL, ini_path, sizeof(ini_path));
@@ -600,9 +589,7 @@ void
 image_update_now(IMAGE * img)
 {
     SYSTEMTIME t1;
-
     SYSTEMTIME t2;
-
     int delta;
 
     if (!IsWindow(img->hwnd))   /* some clod closed the window */
@@ -658,7 +645,6 @@ void
 image_updatesize(IMAGE * img)
 {
     RECT rect;
-
     int nSizeType;
 
     image_separations(img);
@@ -736,9 +722,7 @@ void
 image_16BGR555_to_24BGR(int width, unsigned char *dest, unsigned char *source)
 {
     int i;
-
     WORD w;
-
     unsigned char value;
 
     for (i = 0; i < width; i++) {
@@ -759,9 +743,7 @@ void
 image_16BGR565_to_24BGR(int width, unsigned char *dest, unsigned char *source)
 {
     int i;
-
     WORD w;
-
     unsigned char value;
 
     for (i = 0; i < width; i++) {
@@ -782,9 +764,7 @@ void
 image_16RGB555_to_24BGR(int width, unsigned char *dest, unsigned char *source)
 {
     int i;
-
     WORD w;
-
     unsigned char value;
 
     for (i = 0; i < width; i++) {
@@ -805,9 +785,7 @@ void
 image_16RGB565_to_24BGR(int width, unsigned char *dest, unsigned char *source)
 {
     int i;
-
     WORD w;
-
     unsigned char value;
 
     for (i = 0; i < width; i++) {
@@ -821,27 +799,18 @@ image_16RGB565_to_24BGR(int width, unsigned char *dest, unsigned char *source)
         source += 2;
     }
 }
-
 void
 image_4CMYK_to_24BGR(int width, unsigned char *dest, unsigned char *source,
                      IMAGE_DEVICEN * devicen, int devicen_gray)
 {
     int i;
-
     int cyan, magenta, yellow, black;
-
     int vc = devicen[0].visible;
-
     int vm = devicen[1].visible;
-
     int vy = devicen[2].visible;
-
     int vk = devicen[3].visible;
-
     int vall = vc && vm && vy && vk;
-
     int show_gray = (vc + vm + vy + vk == 1) && devicen_gray;
-
     int value;
 
     for (i = 0; i < width; i++) {
@@ -878,19 +847,12 @@ image_32CMYK_to_24BGR(int width, unsigned char *dest, unsigned char *source,
                       IMAGE_DEVICEN * devicen, int devicen_gray)
 {
     int i;
-
     int cyan, magenta, yellow, black;
-
     int vc = devicen[0].visible;
-
     int vm = devicen[1].visible;
-
     int vy = devicen[2].visible;
-
     int vk = devicen[3].visible;
-
     int vall = vc && vm && vy && vk;
-
     int show_gray = (vc + vm + vy + vk == 1) && devicen_gray;
 
     for (i = 0; i < width; i++) {
@@ -924,15 +886,10 @@ image_devicen_to_24BGR(int width, unsigned char *dest, unsigned char *source,
                        IMAGE_DEVICEN * devicen, int devicen_gray)
 {
     int i, j;
-
     int cyan, magenta, yellow, black;
-
     int num_comp = 0;
-
     int value;
-
     int num_visible = 0;
-
     int show_gray = 0;
 
     for (j = 0; j < IMAGE_DEVICEN_MAX; j++) {
@@ -979,15 +936,10 @@ void
 image_convert_line(IMAGE * img, unsigned char *dest, unsigned char *source)
 {
     unsigned char *d = dest;
-
     unsigned char *s = source;
-
     int width = img->bmih.biWidth;
-
     unsigned int alpha = img->format & DISPLAY_ALPHA_MASK;
-
     BOOL bigendian = (img->format & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN;
-
     int i;
 
     switch (img->format & DISPLAY_COLORS_MASK) {
@@ -1064,27 +1016,16 @@ static HGLOBAL
 copy_dib(IMAGE * img)
 {
     int bitsperpixel;
-
     int bytewidth;
-
     int bitmapsize;
-
     int palcount;
-
     HGLOBAL hglobal;
-
     BYTE *pBits;
-
     BYTE *pLine;
-
     BYTE *pDIB;
-
     BITMAPINFOHEADER *pbmih;
-
     RGBQUAD *pColors;
-
     int i;
-
     BOOL directcopy = FALSE;
 
     /* Allocates memory for the clipboard bitmap */
@@ -1183,11 +1124,8 @@ static HPALETTE
 create_palette(IMAGE * img)
 {
     int i;
-
     int nColors;
-
     HPALETTE palette = NULL;
-
     nColors = img->bmih.biClrUsed;
     if (nColors) {
         LPLOGPALETTE logpalette;
@@ -1247,13 +1185,9 @@ LRESULT CALLBACK
 WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     HDC hdc;
-
     PAINTSTRUCT ps;
-
     RECT rect;
-
     int nVscrollInc, nHscrollInc;
-
     IMAGE *img;
 
     if (message == WM_CREATE) {
@@ -1271,7 +1205,6 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             /* copy to clipboard */
             if (LOWORD(wParam) == M_COPY_CLIP) {
                 HGLOBAL hglobal;
-
                 HPALETTE hpalette;
 
                 if (img->hmutex != INVALID_HANDLE_VALUE)
@@ -1471,11 +1404,8 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             else {
                 /* assume we have a console */
                 INPUT_RECORD ir;
-
                 HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
-
                 DWORD dwWritten = 0;
-
                 DWORD cks = 0;
 
                 ir.EventType = KEY_EVENT;
@@ -1517,7 +1447,6 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         case WM_PAINT:
             {
                 int sx, sy, wx, wy, dx, dy;
-
                 RECT fillrect;
 
                 hdc = BeginPaint(hwnd, &ps);
@@ -1567,17 +1496,11 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 SendMessage(img->hwndtext, message, wParam, lParam);
             else {
                 char *szFile;
-
                 int i, cFiles;
-
                 unsigned int Len, error;
-
                 const char *p;
-
                 const char *szDragPre = "\r(";
-
                 const char *szDragPost = ") run\r";
-
                 HDROP hdrop = (HDROP) wParam;
 
                 cFiles = DragQueryFile(hdrop, (UINT) (-1), (LPSTR) NULL, 0);
@@ -1626,23 +1549,16 @@ static void
 draw(IMAGE * img, HDC hdc, int dx, int dy, int wx, int wy, int sx, int sy)
 {
     HPALETTE oldpalette;
-
     struct bmi_s
     {
         BITMAPINFOHEADER h;
         unsigned short pal_index[256];
     } bmi;
-
     int i;
-
     UINT which_colors;
-
     unsigned char *line = NULL;
-
     long ny;
-
     unsigned char *bits;
-
     BOOL directcopy = FALSE;
 
     if (img->device == NULL)
@@ -1685,7 +1601,6 @@ draw(IMAGE * img, HDC hdc, int dx, int dy, int wx, int wy, int sx, int sy)
         }
     } else if (bmi.h.biBitCount == 32) {
         unsigned int alpha = img->format & DISPLAY_ALPHA_MASK;
-
         DWORD *bmi_colors = (DWORD *) (&bmi.pal_index[0]);
 
         bmi.h.biCompression = BI_BITFIELDS;

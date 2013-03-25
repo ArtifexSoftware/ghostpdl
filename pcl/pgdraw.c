@@ -92,7 +92,6 @@ int
 hpgl_set_pcl_to_plu_ctm(hpgl_state_t * pgls)
 {
     hpgl_real_t fw_plu = (coord_2_plu(pgls->g.picture_frame_width));
-
     hpgl_real_t fh_plu = (coord_2_plu(pgls->g.picture_frame_height));
 
     /* set up the default pcl ctm and from that derive the gl/2
@@ -284,10 +283,8 @@ hpgl_get_line_pattern_length(hpgl_state_t * pgls)
         (pgls->g.scaling_type == hpgl_scaling_isotropic)) {
         /* the box in user space */
         gs_rect isotropic_user_box;
-
         /* box in plotter units we compute 4% of the diagonal of this box */
         gs_rect isotropic_plu_box;
-
         gs_matrix user_to_plu_mat;
 
         hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &user_to_plu_mat));
@@ -320,19 +317,12 @@ static int
 hpgl_set_graphics_dash_state(hpgl_state_t * pgls)
 {
     int entry = abs(pgls->g.line.current.type);
-
     bool adaptive;
-
     const hpgl_line_type_t *pat;
-
     float length;
-
     float pattern[20];
-
     float offset;
-
     int count;
-
     int i;
 
     /* handle the simple case (no dash) and return */
@@ -434,7 +424,6 @@ hpgl_set_graphics_line_attribute_state(hpgl_state_t * pgls,
         gs_join_none            /* 6 no join */
     };
     const float *widths = pcl_palette_get_pen_widths(pgls->ppalet);
-
     floatp pen_wid = widths[hpgl_get_selected_pen(pgls)];
 
     gs_setfilladjust(pgls->pgs, 0.0, 0.0);
@@ -514,13 +503,9 @@ hpgl_set_clipping_region(hpgl_state_t * pgls,
         return 0;
     else {
         gs_fixed_rect fixed_box;
-
         gs_rect pcl_clip_box;
-
         gs_rect dev_clip_box;
-
         gs_matrix save_ctm;
-
         gs_matrix pcl_ctm;
 
         /* get pcl to device ctm and restore the current ctm */
@@ -558,7 +543,6 @@ hpgl_set_clipping_region(hpgl_state_t * pgls,
            frame in pcl coordinates. */
         if (pgls->g.soft_clip_window.active) {
             gs_rect dev_soft_window_box;
-
             gs_matrix ctm;
 
             if (pgls->g.soft_clip_window.isbound && pgls->personality != rtl) {
@@ -671,40 +655,26 @@ static int
 hpgl_polyfill(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
 {
     hpgl_real_t diag_mag, endx, endy;
-
     gs_sincos_t sincos;
-
     gs_point start;
-
 #define sin_dir sincos.sin
 #define cos_dir sincos.cos
-
     gs_rect bbox;
-
     gs_matrix user_to_plu_mat;
-
     hpgl_pen_state_t saved_pen_state;
-
     hpgl_real_t x_fill_increment, y_fill_increment;
-
     hpgl_FT_pattern_source_t type = pgls->g.fill.type;
-
     bool cross = (type == hpgl_FT_pattern_two_lines);
-
     const hpgl_hatch_params_t *params =
         (cross ? &pgls->g.fill.param.crosshatch : &pgls->g.fill.param.hatch);
     gs_point spacing;
-
 #ifdef FILL_IGNORES_PCL_ORIENTATION
     hpgl_real_t direction = params->angle + pgls->xfm_state.lp_orient * 90;
 #else
     hpgl_real_t direction = params->angle;
 #endif
-
     hpgl_real_t unscaled_direction;
-
     float saved_line_pattern_offset = pgls->g.line.current.pattern_offset;
-
     int lines_filled;
 
     /* spacing is always relevant to the scaling of the x-axis.  It
@@ -739,7 +709,6 @@ hpgl_polyfill(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
      */
     {
         const float *widths = pcl_palette_get_pen_widths(pgls->ppalet);
-
         hpgl_real_t line_width = widths[hpgl_get_selected_pen(pgls)];
 
         line_width /= min(fabs(user_to_plu_mat.xx), fabs(user_to_plu_mat.yy));
@@ -1171,7 +1140,6 @@ hpgl_add_point_to_path(hpgl_state_t * pgls,
         = {
     hpgl_plot_function_procedures};
     int code = 0;
-
     gx_path *ppath = gx_current_path(pgls->pgs);
 
     if (gx_path_is_null(ppath)) {
@@ -1285,13 +1253,10 @@ hpgl_add_arc_to_path(hpgl_state_t * pgls, floatp center_x, floatp center_y,
                      hpgl_plot_function_t draw, bool set_ctm)
 {
     floatp num_chordsf = sweep_angle / compute_chord_angle(chord_angle);
-
     int num_chords =
         (int)(num_chordsf >= 0.0 ? ceil(num_chordsf) : floor(num_chordsf));
     floatp integral_chord_angle = fabs(sweep_angle / num_chords);
-
     int i;
-
     floatp arccoord_x, arccoord_y;
 
     if (hpgl_plot_is_draw(draw))
@@ -1378,9 +1343,7 @@ hpgl_add_arc_3point_to_path(hpgl_state_t * pgls, floatp start_x, floatp
     /* normal 3 point arc case */
     {
         hpgl_real_t center_x, center_y, radius;
-
         hpgl_real_t start_angle, inter_angle, end_angle;
-
         hpgl_real_t sweep_angle;
 
         hpgl_call(hpgl_compute_arc_center(start_x, start_y,
@@ -1464,7 +1427,6 @@ int
 hpgl_close_path(hpgl_state_t * pgls)
 {
     gs_fixed_point first, current;
-
     gx_path *ppath = gx_current_path(pgls->pgs);
 
     if (!ppath->current_subpath)
@@ -1496,9 +1458,7 @@ hpgl_set_special_pixel_placement(hpgl_state_t * pgls,
 {
     if (pgls->pp_mode == 1) {
         gs_matrix default_matrix;
-
         gs_point distance, adjust;
-
         gx_path *ppath = gx_current_path(pgls->pgs);
 
         /* arbitrary just need the signs after transformation to
@@ -1532,11 +1492,8 @@ int
 hpgl_draw_current_path(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
 {
     gs_state *pgs = pgls->pgs;
-
     pcl_pattern_set_proc_t set_proc;
-
     int code = 0;
-
     gx_path *ppath = gx_current_path(pgls->pgs);
 
     /* check if we have a current path - we don't need the current
@@ -1696,7 +1653,6 @@ hpgl_draw_current_path(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
              */
             {
                 gs_matrix save_ctm;
-
                 int save_scaling_type = pgls->g.scaling_type;
 
                 hpgl_call(gs_currentmatrix(pgs, &save_ctm));

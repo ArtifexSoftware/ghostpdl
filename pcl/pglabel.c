@@ -176,9 +176,7 @@ hpgl_select_stick_font(hpgl_state_t * pgls)
         &pgls->g.font_selection[pgls->g.font_selected];
     pl_font_t *font = &pgls->g.stick_font[pgls->g.font_selected]
         [pfs->params.proportional_spacing];
-
     gs_font_base *pfont;
-
     int code;
 
     /* Create a gs_font if none has been created yet. */
@@ -232,9 +230,7 @@ hpgl_select_531_font(hpgl_state_t * pgls)
     pcl_font_selection_t *pfs =
         &pgls->g.font_selection[pgls->g.font_selected];
     pl_font_t *font = &pgls->g.dl_531_font[pgls->g.font_selected];
-
     gs_font_base *pfont;
-
     int code;
 
     hpgl_free_531_fonts(pgls);
@@ -273,7 +269,6 @@ hpgl_stick_font_supports(const pcl_state_t * pcs, uint symbol_set)
     pl_glyph_vocabulary_t gv =
         pl_complement_to_vocab(stick_character_complement);
     byte id[2];
-
     pl_symbol_map_t *map;
 
     id[0] = symbol_set >> 8;
@@ -337,11 +332,9 @@ hpgl_get_char_width(const hpgl_state_t * pgls, gs_char ch,
                     hpgl_real_t * width)
 {
     gs_glyph glyph = hpgl_map_symbol(ch, pgls);
-
     const pcl_font_selection_t *pfs =
         &pgls->g.font_selection[pgls->g.font_selected];
     int code = 0;
-
     gs_point gs_width;
 
     if (pgls->g.character.size_mode == hpgl_size_not_set) {
@@ -458,7 +451,6 @@ hpgl_slant_transform_distance(hpgl_state_t * pgls, gs_point * dxy,
 {
     if (pgls->g.character.slant && !pgls->g.bitmap_fonts_allowed) {
         gs_matrix smat;
-
         gs_point tmp_dxy = *dxy;
 
         gs_make_identity(&smat);
@@ -474,13 +466,9 @@ hpgl_rotation_transform_distance(hpgl_state_t * pgls, gs_point * dxy,
                                  gs_point * r_dxy)
 {
     double run = pgls->g.character.direction.x;
-
     double rise = pgls->g.character.direction.y;
-
     int angle = (hpgl_compute_angle(run, rise) * radians_to_degrees) + 0.5;
-
     gs_point tmp_dxy = *dxy;
-
     gs_matrix rmat;
 
     gs_make_rotation((floatp) angle, &rmat);
@@ -496,9 +484,7 @@ hpgl_move_cursor_by_characters(hpgl_state_t * pgls, hpgl_real_t spaces,
                                hpgl_real_t lines, const hpgl_real_t * pwidth)
 {
     double nx, ny;
-
     double dx = 0, dy = 0;
-
     hpgl_call(hpgl_ensure_font(pgls));
 
     lines *= pgls->g.character.line_feed_direction;
@@ -544,7 +530,6 @@ hpgl_move_cursor_by_characters(hpgl_state_t * pgls, hpgl_real_t spaces,
      */
     if (pgls->g.scaling_type != hpgl_scaling_none) {
         gs_matrix mat;
-
         gs_point user_dxy;
 
         hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
@@ -640,7 +625,6 @@ hpgl_buffer_char(hpgl_state_t * pgls, byte ch)
        necessary */
     if (pgls->g.label.buffer_size == pgls->g.label.char_count) {        /* Resize the label buffer, currently by doubling its size. */
         uint new_size = pgls->g.label.buffer_size << 1;
-
         byte *new_mem =
             gs_resize_object(pgls->memory, pgls->g.label.buffer, new_size,
                              "hpgl_resize_label_buffer");
@@ -690,9 +674,7 @@ hpgl_current_char_scale(const hpgl_state_t * pgls)
     const pcl_font_selection_t *pfs =
         &pgls->g.font_selection[pgls->g.font_selected];
     pl_font_t *font = pfs->font;
-
     bool bitmaps_allowed = pgls->g.bitmap_fonts_allowed;
-
     gs_point scale;
 
     if (pgls->g.character.size_mode == hpgl_size_not_set
@@ -751,17 +733,12 @@ static int
 hpgl_print_char(hpgl_state_t * pgls, uint ch)
 {
     int text_path = pgls->g.character.text_path;
-
     const pcl_font_selection_t *pfs =
         &pgls->g.font_selection[pgls->g.font_selected];
     pl_font_t *font = pfs->font;
-
     gs_state *pgs = pgls->pgs;
-
     gs_matrix save_ctm;
-
     gs_font *pfont = pgls->g.font->pfont;
-
     gs_point scale = hpgl_current_char_scale(pgls);
 
     /*
@@ -797,11 +774,8 @@ hpgl_print_char(hpgl_state_t * pgls, uint ch)
 
     if (pfont->PaintType != 0) {
         const float *widths = pcl_palette_get_pen_widths(pgls->ppalet);
-
         float save_width = widths[hpgl_get_selected_pen(pgls)];
-
         int weight = pfs->params.stroke_weight;
-
         floatp nwidth;
 
         if (weight == 9999)
@@ -822,27 +796,16 @@ hpgl_print_char(hpgl_state_t * pgls, uint ch)
      */
     {
         gs_font *pfont = pgls->g.font->pfont;
-
         bool bitmaps_allowed = pgls->g.bitmap_fonts_allowed;
-
         bool use_show = hpgl_use_show(pgls, font);
-
         gs_matrix pre_rmat, advance_mat;
-
         int angle = 0;
-
         gs_text_enum_t *penum;
-
         byte str[2];
-
         int code;
-
         gs_point start_pt, end_pt;
-
         hpgl_real_t space_width;
-
         int space_code;
-
         hpgl_real_t width;
 
         /* Handle size. */
@@ -968,7 +931,6 @@ hpgl_print_char(hpgl_state_t * pgls, uint ch)
             pgls->page_marked = true;
         } else {
             gs_text_params_t text;
-
             gs_char mychar_buff[1];
 
             mychar_buff[0] = hpgl_map_symbol(ch, pgls);
@@ -1103,9 +1065,7 @@ hpgl_get_character_origin_offset(hpgl_state_t * pgls, int origin,
                                  gs_point * offset)
 {
     double pos_x = 0.0, pos_y = 0.0;
-
     double off_x, off_y;
-
     hpgl_real_t adjusted_height = height;
 
 #ifdef CHECK_UNIMPLEMENTED
@@ -1237,7 +1197,6 @@ static gs_char
 hpgl_next_char(hpgl_state_t * pgls, byte ** ppb)
 {
     byte *pb = *ppb;
-
     gs_char chr = *pb++;
 
     if (pgls->g.label.double_byte)
@@ -1252,9 +1211,7 @@ static int
 hpgl_process_buffer(hpgl_state_t * pgls, gs_point * offset)
 {
     hpgl_real_t label_length = 0.0, label_height = 0.0;
-
     bool vertical = hpgl_text_is_vertical(pgls->g.character.text_path);
-
     int i, inc;
 
     /* a peculiar side effect of LABEL parsing double byte characters
@@ -1273,11 +1230,8 @@ hpgl_process_buffer(hpgl_state_t * pgls, gs_point * offset)
 
     {
         hpgl_real_t width = 0.0, height = 0.0;
-
         int save_index = pgls->g.font_selected;
-
         bool first_char_on_line = true;
-
         byte *b = pgls->g.label.buffer;
 
         for (i = 0; i < pgls->g.label.char_count; i += inc) {
@@ -1507,9 +1461,7 @@ int
 hpgl_LB(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     const byte *p = pargs->source.ptr;
-
     const byte *rlimit = pargs->source.limit;
-
     bool print_terminator = pgls->g.label.print_terminator;
 
     if (pargs->phase == 0) {
@@ -1632,9 +1584,7 @@ hpgl_print_symbol_mode_char(hpgl_state_t * pgls)
     /* save the original origin since symbol mode character are
        always centered */
     int saved_origin = pgls->g.label.origin;
-
     gs_point save_pos = pgls->g.pos;
-
     gs_point lo_offsets;
 
     hpgl_call(hpgl_gsave(pgls));

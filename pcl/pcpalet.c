@@ -138,11 +138,8 @@ static int
 unshare_palette(pcl_state_t * pcs)
 {
     pcl_palette_t *ppalet = pcs->ppalet;
-
     pcl_palette_t *pnew = 0;
-
     int code = 0;
-
     pcl_id_t key;
 
     /* check if there is anything to do */
@@ -174,11 +171,8 @@ static int
 build_default_palette(pcl_state_t * pcs)
 {
     pcl_id_t key;
-
     gs_memory_t *pmem = pcs->memory;
-
     pcl_palette_t *ppalet = 0;
-
     int code = 0;
 
     if (pcs->pdflt_palette == 0) {
@@ -265,7 +259,6 @@ push_pop_palette(pcl_args_t * pargs, pcl_state_t * pcs)
 
     } else if (action == 1) {
         pstack_entry_t *pentry = pcs->palette_stack;
-
         int code = 0;
 
         if (pentry != 0) {
@@ -410,7 +403,6 @@ int
 pcl_palette_set_lookup_tbl(pcl_state_t * pcs, pcl_lookup_tbl_t * plktbl)
 {
     int code = unshare_palette(pcs);
-
     pcl_cspace_type_t lktype;
 
     if ((code == 0) && (pcs->ppalet->pindexed == 0))
@@ -445,9 +437,7 @@ pcl_palette_set_color(pcl_state_t * pcs, int indx, const float comps[3]
     )
 {
     int code = unshare_palette(pcs);
-
     bool was_gray;
-
     bool now_gray;
 
     /* if the default color space must be built, it is fixed, so don't bother */
@@ -520,9 +510,7 @@ int
 pcl_palette_PW(pcl_state_t * pcs, int pen, floatp width)
 {
     int code = 0;
-
     pcl_gsid_t palette_id;
-
     pcl_palette_t *ppalet = pcs->ppalet;
 
     if (ppalet != 0) {
@@ -586,11 +574,8 @@ pcl_palette_set_cid(pcl_state_t * pcs,
                     pcl_cid_data_t * pcid, bool fixed, bool gl2)
 {
     int code = unshare_palette(pcs);
-
     pcl_palette_t *ppalet = pcs->ppalet;
-
     pcl_cspace_type_t cstype_new = pcl_cid_get_cspace(pcid);
-
     pcl_cspace_type_t cstype_old;
 
     if (code < 0)
@@ -653,7 +638,6 @@ int
 pcl_palette_check_complete(pcl_state_t * pcs)
 {
     pcl_palette_t *ppalet = pcs->ppalet;
-
     int code = 0;
 
     if ((ppalet != 0) && (ppalet->pindexed != 0) && (ppalet->pht != 0))
@@ -681,7 +665,6 @@ static int
 set_sel_palette_id(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint id = uint_arg(pargs);
-
     pcl_id_t key;
 
     if (pcs->personality == pcl5e || pcs->raster_state.graphics_mode)
@@ -722,11 +705,8 @@ static void
 clear_palette_store(pcl_state_t * pcs)
 {
     pl_dict_enum_t denum;
-
     void *pvalue;
-
     gs_const_string plkey;
-
     int sel_id = pcs->sel_palette_id;
 
     pl_dict_enum_begin(&pcs->palette_store, &denum);
@@ -779,7 +759,6 @@ palette_control(pcl_args_t * pargs, pcl_state_t * pcs)
         case 6:
             if (pcs->ctrl_palette_id != pcs->sel_palette_id) {
                 pcl_id_t key;
-
                 int code = 0;
 
                 /* NB: definitions don't incremente refernece counts */

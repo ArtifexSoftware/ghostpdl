@@ -45,11 +45,8 @@ static int
 set_lookup_tbl(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint len = uint_arg(pargs);
-
     pcl_lookup_tbl_t *plktbl = 0;
-
     pcl__lookup_tbl_t *ptbl = 0;
-
     int code = 0;
 
     if (pcs->personality == pcl5e || pcs->raster_state.graphics_mode)

@@ -113,7 +113,6 @@ static int
 clear_cons_buff(pcl_raster_t * prast)
 {
     byte *pcons = prast->cons_buff;
-
     int npixels = prast->src_width;
 
     if (pcons == 0) {
@@ -137,7 +136,6 @@ static int
 clear_mask_buff(pcl_raster_t * prast)
 {
     byte *pmask = prast->mask_buff;
-
     int nbytes = (prast->src_width + 7) / 8;
 
     if (pmask == 0) {
@@ -161,21 +159,13 @@ static void
 gen_mask_multisrc(pcl_raster_t * prast)
 {
     byte *ip0 = prast->pseed_rows[0].pdata;
-
     byte *ip1 = prast->pseed_rows[1].pdata;
-
     byte *ip2 = prast->pseed_rows[2].pdata;
-
     byte *op = prast->mask_buff;
-
     uint m0 = (prast->white_val >> 16) & 0xff;
-
     uint m1 = (prast->white_val >> 8) & 0xff;
-
     uint m2 = prast->white_val & 0xff;
-
     int nbytes = prast->pseed_rows[0].size;
-
     int i;
 
     for (i = 0; i < nbytes; i++)
@@ -192,17 +182,11 @@ static void
 gen_mask_subbyte(pcl_raster_t * prast)
 {
     byte *ip = prast->pseed_rows[0].pdata;
-
     byte *op = prast->mask_buff;
-
     int ishift = prast->bits_per_plane;
-
     uint targ = prast->white_val;
-
     int size = prast->src_width;
-
     uint ival, oval, imask, omask;
-
     int i;
 
     for (i = 0, ival = 0, oval = 0, imask = 0, omask = 0x80; i < size; i++) {
@@ -231,13 +215,9 @@ gen_mask_1byte(pcl_raster_t * prast)
     byte *ip = (prast->nplanes == 1 ? prast->pseed_rows[0].pdata
                 : prast->cons_buff);
     byte *op = prast->mask_buff;
-
     uint targ = prast->white_val;
-
     int size = prast->src_width;
-
     uint oval, omask;
-
     int i;
 
     for (i = 0, oval = 0, omask = 0x80; i < size; i++) {
@@ -262,15 +242,10 @@ static void
 gen_mask_multibyte(pcl_raster_t * prast)
 {
     byte *ip = prast->pseed_rows[0].pdata;
-
     byte *op = prast->mask_buff;
-
     int size = prast->src_width;
-
     ulong targ = prast->white_val;
-
     uint oval, omask;
-
     int i;
 
     for (i = 0, oval = 0, omask = 0x80; i < size; i++, ip += 3) {
@@ -305,11 +280,8 @@ static int
 consolidate_row(pcl_raster_t * prast)
 {
     byte *pcons;
-
     uint nplanes = prast->nplanes;
-
     uint npixels = prast->src_width;
-
     int code, i;
 
     /* clear the consolidation buffer */
@@ -321,9 +293,7 @@ consolidate_row(pcl_raster_t * prast)
     for (i = 0; i < nplanes; i++) {
         if (!prast->pseed_rows[i].is_blank) {
             const byte *ip = prast->pseed_rows[i].pdata;
-
             byte *op = pcons;
-
             int cnt = npixels;
 
             for (; cnt >= 8; ip++, op += 8, cnt -= 8) {
@@ -353,7 +323,6 @@ consolidate_row(pcl_raster_t * prast)
             }
             if (cnt) {
                 uint ishift = 7;
-
                 uint val = *ip;
 
                 do {
@@ -388,13 +357,9 @@ create_mask_enumerator(pcl_raster_t * prast)
 
     gs_image_enum *pen = gs_image_enum_alloc(prast->pmem,
                                              "Create image for PCL raster");
-
     int code = 0;
-
     const byte *pcolor = 0;
-
     gx_image_enum_common_t *pie = 0;
-
     pcl_state_t *pcs = prast->pcs;
 
     if (pen == 0)
@@ -469,11 +434,8 @@ static int
 create_image_enumerator(pcl_raster_t * prast)
 {
     int nplanes = prast->nplanes;
-
     int b_per_p = prast->bits_per_plane;
-
     int num_comps = (prast->indexed ? 1 : 3);
-
     int nsrcs = prast->nsrcs;
 
     /*
@@ -487,12 +449,9 @@ create_image_enumerator(pcl_raster_t * prast)
         gs_image1_t i1;
         gs_image4_t i4;
     } image;
-
     gs_image_enum *pen = gs_image_enum_alloc(prast->pmem,
                                              "Create image for PCL raster");
-
     gx_image_enum_common_t *pie = 0;
-
     gs_color_space *pcspace = (prast->indexed
                                ? prast->pindexed->pcspace
                                : prast->pindexed->pbase->pcspace);
@@ -640,13 +599,11 @@ static int
 process_mask_row(pcl_raster_t * prast)
 {
     int code = clear_mask_buff(prast);
-
     gs_image_enum *pen = prast->mask_pen;
 
     if ((code >= 0) &&
         ((pen != 0) || ((code = create_mask_enumerator(prast)) >= 0))) {
         uint dummy;
-
         pcl_state_t *pcs = prast->pcs;
 
         pen = prast->mask_pen;
@@ -664,13 +621,11 @@ static int
 process_zero_mask_rows(pcl_raster_t * prast, int nrows)
 {
     int code = clear_mask_buff(prast);
-
     gs_image_enum *pen = prast->mask_pen;
 
     if ((code >= 0) &&
         ((pen != 0) || ((code = create_mask_enumerator(prast)) >= 0))) {
         uint dummy;
-
         pcl_state_t *pcs = prast->pcs;
 
         int nbytes = (prast->src_width + 7) / 8;
@@ -722,19 +677,12 @@ static int
 process_zero_rows(gs_state * pgs, pcl_raster_t * prast, int nrows)
 {
     int npixels = prast->src_width;
-
     int nbytes = (npixels * prast->bits_per_plane + 7) / 8;
-
     int nplanes = prast->nplanes;
-
     int rem_rows = prast->src_height - prast->rows_rendered;
-
     pcl_seed_row_t *pseed_rows = prast->pseed_rows;
-
     int code = 0;
-
     int i;
-
     int moveto_nrows = nrows;
 
     /* don't bother going beyond the end of the image */
@@ -764,7 +712,6 @@ process_zero_rows(gs_state * pgs, pcl_raster_t * prast, int nrows)
         close_raster(pgs, prast, false);
         if ((prast->zero_is_black) || !prast->pcs->source_transparent) {
             gs_rect tmp_rect;
-
             bool invert = prast->zero_is_white;
 
             tmp_rect.p.x = 0.0;
@@ -796,13 +743,9 @@ process_zero_rows(gs_state * pgs, pcl_raster_t * prast, int nrows)
 
     } else {
         int nsrcs = prast->nsrcs;
-
         gs_image_enum *pen = prast->pen;
-
         int cnt = 0;
-
         uint size = 0;
-
         const byte *pb;
 
         if (pen == 0) {
@@ -849,11 +792,8 @@ process_row(pcl_raster_t * prast, int comp_mode /* modified compression mode */
     )
 {
     int nplanes = prast->nplanes;
-
     gs_image_enum *pen = prast->pen;
-
     int i;
-
     int code = 0;
 
     /* check if there is anything to do */
@@ -884,9 +824,7 @@ process_row(pcl_raster_t * prast, int comp_mode /* modified compression mode */
 
     if (prast->nsrcs == 1) {
         byte *pb;
-
         int nbytes, b_per_p;
-
         uint dummy;
 
         /* consolidate the planes if necessary */
@@ -919,7 +857,6 @@ process_row(pcl_raster_t * prast, int comp_mode /* modified compression mode */
 
     } else {
         uint dummy;
-
         int nsrcs = prast->nsrcs;
 
         for (i = 0; (i < nsrcs) && (code >= 0); i++)
@@ -943,9 +880,7 @@ process_block_nocompress(gs_state * pgs,
                          pcl_raster_t * prast, const byte * pin, uint insize)
 {
     uint32 row_bytes, nrows;
-
     pcl_seed_row_t *pseed_row = prast->pseed_rows;
-
     byte *p;
 
     /* the size of the rows are stored in the first 4 bytes */
@@ -989,15 +924,10 @@ process_ccitt_compress(gs_state * pgs,
                        uint insize, pcl_rast_buff_type_t comp)
 {
     stream_CFD_state state;
-
     stream_cursor_read scr;
-
     stream_cursor_write scw;
-
     pcl_seed_row_t *pout = prast->pseed_rows;
-
     uint wrsize;
-
     byte *temp_buffer;
 
     if (insize < 4)
@@ -1069,15 +999,10 @@ process_adaptive_compress(gs_state * pgs,
                           pcl_raster_t * prast, const byte * pin, uint insize)
 {
     pcl_seed_row_t *pseed_row = prast->pseed_rows;
-
     byte *pdata = pseed_row->pdata;
-
     uint row_size = pseed_row->size;
-
     int code = 0;
-
     int cmd = NO_COMPRESS;
-
     uint param = 0;
 
     prast->plane_index = 0;
@@ -1099,7 +1024,6 @@ process_adaptive_compress(gs_state * pgs,
             code = process_zero_rows(pgs, prast, param);
         else if (cmd == 5) {
             uint rem_rows = prast->src_height - prast->rows_rendered;
-
             gs_image_enum *pen = prast->pen;
 
             if (param > rem_rows)
@@ -1155,13 +1079,9 @@ add_raster_plane(const byte * pdata,
                  uint nbytes, bool end_row, pcl_state_t * pcs)
 {
     pcl_raster_t *prast = (pcl_raster_t *) pcs->raster_state.pcur_raster;
-
     int comp_mode = pcs->raster_state.compression_mode;
-
     int nplanes = 0;
-
     int plane_index = 0;
-
     int code = 0;
 
     /* enter raster mode implicitly if not already there */
@@ -1231,13 +1151,9 @@ int
 pcl_start_raster(uint src_width, uint src_height, pcl_state_t * pcs)
 {
     pcl_raster_t *prast = (pcl_raster_t *) pcs->raster_state.pcur_raster;
-
     pcl_palette_t *ppalet = pcs->ppalet;
-
     pcl_cs_indexed_t *pindexed = ppalet->pindexed;
-
     pcl_encoding_type_t penc = pcl_cs_indexed_get_encoding(pindexed);
-
     pcl_seed_row_t *pseed_rows = 0;
 
     /* there can only be one raster object present at a time */
@@ -1320,9 +1236,7 @@ pcl_start_raster(uint src_width, uint src_height, pcl_state_t * pcs)
             / 8;
 
         int nplanes = prast->nplanes;
-
         int i, j;
-
         for (i = 0; i < nplanes; i++) {
             byte *pdata = gs_alloc_bytes(prast->pmem,
                                          seed_row_bytes,
@@ -1385,7 +1299,6 @@ pcl_start_raster(uint src_width, uint src_height, pcl_state_t * pcs)
 
         } else {
             ulong white_val = prast->wht_indx;
-
             int n = 8 / prast->bits_per_plane;
 
             /* indexed by pixel, < 8 bits per pixel */
@@ -1406,7 +1319,6 @@ void
 pcl_complete_raster(pcl_state_t * pcs)
 {
     pcl_raster_t *prast = (pcl_raster_t *) pcs->raster_state.pcur_raster;
-
     int i;
 
     /* if already in raster mode, ignore */
@@ -1475,9 +1387,7 @@ static int
 transfer_raster_row(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     const byte *pdata = arg_data(pargs);
-
     int comp_mode = pcs->raster_state.compression_mode;
-
     int code = 0;
 
     code = add_raster_plane(pdata, arg_data_size(pargs), true, pcs);

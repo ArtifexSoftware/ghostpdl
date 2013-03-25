@@ -89,7 +89,6 @@ static int                      /* ESC & l <sd_enum> S */
 pcl_simplex_duplex_print(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     int code;
-
     bool reopen = false;
 
     /* oddly the command goes to the next page irrespective of
@@ -144,7 +143,6 @@ static int                      /* ESC & a <side_enum> G */
 pcl_duplex_page_side_select(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint i = uint_arg(pargs);
-
     int code;
 
     /* oddly the command goes to the next page irrespective of

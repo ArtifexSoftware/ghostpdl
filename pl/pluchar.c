@@ -92,12 +92,10 @@ pl_init_fc(const pl_font_t * plfont,
            int need_outline, FONTCONTEXT * pfc, bool width_request)
 {
     gs_font *pfont = plfont->pfont;
-
     /* set the current tranformation matrix - EM's... if this is a
        width request we don't necessarily have a current graphics
        state... use identity for resolution and ctm */
     gs_matrix mat;
-
     floatp xres, yres;
 
     if (width_request) {
@@ -122,9 +120,7 @@ pl_init_fc(const pl_font_t * plfont,
     /* calculate point size, set size etc based on current CTM in EM's */
     {
         floatp hx = hypot(mat.xx, mat.xy);
-
         floatp hy = hypot(mat.yx, mat.yy);
-
         /* fixed point scaling */
         floatp mscale = 1L << 16;
 
@@ -177,7 +173,6 @@ static int
 pl_set_ufst_font(const pl_font_t * plfont, FONTCONTEXT * pfc)
 {
     uint status = CGIFfont(FSA pfc);
-
     FONT_METRICS fm;
 
     if (status != 0)
@@ -207,29 +202,20 @@ image_outline_char(PIFOUTLINE pols,
                    gs_font * pfont, bool outline_sub_for_bitmap)
 {
     UW16 il, numLoops = pols->ol.num_loops;
-
     byte *pbase = (byte *) & pols->ol.loop;
-
     int ishift = fixed_fraction_bits + pols->VLCpower;
-
     fixed tx = pmat->tx_fixed, ty = pmat->ty_fixed;
 
     for (il = 0; il < numLoops; il++) {
         OUTLINE_LOOP *ploop = &pols->ol.loop[il];
-
         uint numSegmts = ploop->num_segmts;
-
         byte *pseg = pbase + ploop->segmt_offset;
-
         PINTRVECTOR pcoord = (PINTRVECTOR) (pbase + ploop->coord_offset);
-
         int code;
 
         while (numSegmts-- > 0) {
             int segtype = *pseg++;
-
             int ip, npts;
-
             gs_fixed_point pt[3];
 
             if (segtype == 2 || segtype > 3)
@@ -284,11 +270,8 @@ pl_ufst_char_width(uint char_code,
 {
 
     UW16 chIdloc = char_code;
-
     UW16 fontWidth[2];
-
     int status;
-
     WIDTH_LIST_INPUT_ENTRY fcode;
 
     if (pwidth != NULL)
@@ -303,7 +286,6 @@ pl_ufst_char_width(uint char_code,
         return 1;
     else if (pwidth != NULL) {
         floatp fontw = (floatp) fontWidth[0] / (floatp) fontWidth[1];
-
         int code = gs_distance_transform(fontw, 0.0, &pl_identmtx, pwidth);
 
         return code < 0 ? code : 0;
@@ -320,15 +302,10 @@ pl_ufst_make_char(gs_show_enum * penum,
                   gs_font * pfont, gs_char chr, FONTCONTEXT * pfc)
 {
     gs_imager_state *pis = (gs_imager_state *) pgs;
-
     MEM_HANDLE memhdl;
-
     UW16 status, chIdloc = chr;
-
     gs_matrix sv_ctm, tmp_ctm;
-
     bool outline_sub_for_bitmap = false;
-
     int wasValid;
 
     /* ignore illegitimate characters */
@@ -366,15 +343,10 @@ pl_ufst_make_char(gs_show_enum * penum,
 
     if (FC_ISBITMAP(pfc)) {
         PIFBITMAP psbm = (PIFBITMAP) MEMptr(memhdl);
-
         float wbox[6];
-
         gs_image_t image;
-
         gs_image_enum *ienum;
-
         int code;
-
         gs_point aw;
 
         /* set up the cache device */
@@ -426,13 +398,9 @@ pl_ufst_make_char(gs_show_enum * penum,
 
     } else {                    /* outline */
         PIFOUTLINE pols = (PIFOUTLINE) MEMptr(memhdl);
-
         float scale = pow(2, pols->VLCpower);
-
         float wbox[6];
-
         int code;
-
         gs_point aw;
 
         /* set up the cache device */
@@ -502,7 +470,6 @@ pl_mt_build_char(gs_show_enum * penum,
                  gs_state * pgs, gs_font * pfont, gs_char chr, gs_glyph glyph)
 {
     const pl_font_t *plfont = (const pl_font_t *)pfont->client_data;
-
     FONTCONTEXT fc;
 
     if (pl_set_mt_font(pgs, plfont, gs_show_in_charpath(penum), &fc) != 0)
@@ -592,7 +559,6 @@ pl_mt_char_width(const pl_font_t * plfont,
                  const void *pgs, uint char_code, gs_point * pwidth)
 {
     FONTCONTEXT fc;
-
     int code;
 
     if (list_size > MAX_LIST_SIZE)
@@ -619,7 +585,6 @@ pl_mt_char_metrics(const pl_font_t * plfont, const void *pgs, uint char_code,
                    float metrics[4])
 {
     gs_point width;
-
     metrics[0] = metrics[1] = metrics[2] = metrics[3] = 0;
     if (0 == pl_mt_char_width(plfont, pgs, char_code, &width)) {
         /* width is correct,

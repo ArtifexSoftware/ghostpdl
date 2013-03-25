@@ -52,11 +52,8 @@ px_widen_font_name(px_value_t * pfnv, px_state_t * pxs)
         return 0;               /* already in correct format */
     {
         byte *old_data = (byte *) pfnv->value.array.data;       /* break const */
-
         uint size = pfnv->value.array.size;
-
         char16 *new_data;
-
         uint i;
 
         if (type & pxd_on_heap)
@@ -95,7 +92,6 @@ px_find_existing_font(px_value_t * pfnv, px_font_t ** ppxfont,
                       px_state_t * pxs)
 {
     int code;
-
     void *pxfont;
 
     /* Normalize the font name to Unicode. */
@@ -145,7 +141,6 @@ px_find_font(px_value_t * pfnv, uint symbol_set, px_font_t ** ppxfont,
         /* the documentation states the default font chosen here
            is device dependent */
         const char *default_font = "Courier         ";
-
         char message[px_max_error_line + 1];
 
         default_font_value.type = pxd_ubyte | pxd_array;

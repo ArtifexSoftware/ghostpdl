@@ -276,15 +276,12 @@ pjl_side_effects(pjl_parser_state_t * pst, char *variable, char *value,
         !pjl_compare(variable, "ORIENTATION")) {
 
         pjl_envir_var_t *table = (defaults ? pst->defaults : pst->envir);
-
         int indx = pjl_get_media_index(table[FDEF_PAPER_INDX].value);
-
         int page_length = (!pjl_compare(variable, "ORIENTATION") &&
                            !pjl_compare(value, "LANDSCAPE") ?
                            (int)(pjl_media[indx].width) :
                            (int)(pjl_media[indx].height));
         int formlines = pjl_calc_formlines_new_page_size(page_length);
-
         pjl_envir_var_t var;
 
         sprintf(var.value, "%d", formlines);
@@ -299,7 +296,6 @@ static int
 pjl_set(pjl_parser_state_t * pst, char *variable, char *value, bool defaults)
 {
     pjl_envir_var_t *table = (defaults ? pst->defaults : pst->envir);
-
     int i;
 
     if (defaults)               /* default also sets current environment. */
@@ -322,9 +318,7 @@ static pjl_token_type_t
 pjl_get_token(pjl_parser_state_t * pst, char token[])
 {
     int c;
-
     int start_pos;
-
     /* skip any whitespace if we need to.  */
     while ((c = pst->line[pst->pos]) == ' ' || c == '\t')
         pst->pos++;
@@ -364,7 +358,6 @@ pjl_get_token(pjl_parser_state_t * pst, char token[])
     /* build the token */
     {
         int slength = pst->pos - start_pos;
-
         int i;
 
         /* we allow = to special case for allowing
@@ -400,15 +393,10 @@ pjl_check_font_path(char *path_list, gs_memory_t * mem)
     /* lookup a font path and check if any files (presumably fonts are
        present) */
     char tmp_path[PJL_PATH_NAME_LENGTH + 1];
-
     char *tmp_pathp = tmp_path;
-
     const char pattern[] = "*";
-
     char tmp_path_and_pattern[PJL_PATH_NAME_LENGTH + 1 + 1];    /* pattern + null */
-
     char *dirname;
-
     char fontfilename[MAXPATHLEN + 1];
 
     /* make a tmp copy of the colon delimited path */
@@ -460,9 +448,7 @@ static void
 pjl_reset_fontsource_fontnumbers(pjl_parser_state_t * pst)
 {
     char default_font_number[] = "0";   /* default number if resources are present */
-
     gs_memory_t *mem = pst->mem;
-
     int i;
 
     for (i = 0; pst->font_defaults[i].designator[0]; i++) {
@@ -483,7 +469,6 @@ static void
 pjl_parsed_filename_to_string(char *fnamep, const char *pathname)
 {
     int i;
-
     int size;
 
     *fnamep = 0;                /* in case of bad input */
@@ -560,7 +545,6 @@ pjl_setup_file_for_writing(pjl_parser_state_t * pst, char *pathname, int size,
                            bool append)
 {
     FILE *fp;
-
     char fname[MAXPATHLEN];
 
     pjl_parsed_filename_to_string(fname, pathname);
@@ -660,9 +644,7 @@ pjl_search_for_file(pjl_parser_state_t * pst, char *pathname, char *filename,
                     char *result)
 {
     file_enum *fe;
-
     char fontfilename[MAXPATHLEN];
-
     struct stat stbuf;
 
     /* should check length */
@@ -698,7 +680,6 @@ static int
 pjl_fsdirlist(pjl_parser_state_t * pst, char *pathname, int entry, int count)
 {
     file_enum *fe;
-
     char fontfilename[MAXPATHLEN];
 
     pjl_parsed_filename_to_string(fontfilename, pathname);
@@ -728,11 +709,8 @@ pjl_write_remaining_data(pjl_parser_state_t * pst, const byte ** pptr,
                          const byte ** pplimit)
 {
     const byte *ptr = *pptr;
-
     const byte *plimit = *pplimit;
-
     uint avail = plimit - ptr;
-
     uint bytes_written = min(avail, pst->bytes_to_write);
 
     if (fwrite(ptr, 1, bytes_written, pst->fp) != bytes_written) {
@@ -965,7 +943,6 @@ long int
 pjl_get_named_resource_size(pjl_parser_state_t * pst, char *name)
 {
     long int size;
-
     FILE *fp = get_fp(pst, name);
 
     if (fp == NULL)
@@ -982,7 +959,6 @@ int
 pjl_get_named_resource(pjl_parser_state * pst, char *name, byte * data)
 {
     long int size;
-
     FILE *fp = get_fp(pst, name);
 
     if (fp == NULL)
@@ -1010,7 +986,6 @@ void
 pjl_set_next_fontsource(pjl_parser_state_t * pst)
 {
     int current_source;
-
     pjl_envvar_t *current_font_source = pjl_get_envvar(pst, "fontsource");
 
     /* find the index of the current resource then work backwards
@@ -1045,7 +1020,6 @@ pjl_envvar_t *
 pjl_get_envvar(pjl_parser_state * pst, const char *pjl_var)
 {
     int i;
-
     pjl_envir_var_t *env = pst->envir;
 
     /* lookup up the value */
@@ -1063,9 +1037,7 @@ int
 pjl_process(pjl_parser_state * pst, void *pstate, stream_cursor_read * pr)
 {
     const byte *p = pr->ptr;
-
     const byte *rlimit = pr->limit;
-
     int code = 0;
 
     /* first check if we are writing data to a file as part of the
@@ -1125,7 +1097,6 @@ bool
 pjl_skip_to_uel(stream_cursor_read * pr)
 {
     const byte *p = pr->ptr;
-
     const byte *rlimit = pr->limit;
 
     for (; p < rlimit; ++p)
@@ -1202,7 +1173,6 @@ pjl_map_pjl_sym_to_pcl_sym(const char *symname)
             /* convert the character code to it's integer
                representation.  NB peculiar code! */
             char pcl_symbol[4], chr;
-
             int char_pos;
 
             strcpy(pcl_symbol, symbol_sets[i].pcl_selectcode);
@@ -1373,11 +1343,8 @@ pjl_register_permanent_soft_font_deletion(pjl_parser_state * pst,
            the next priority font source.  BLAME HP not me. */
         {
             bool is_S = !pjl_compare(pjl_get_envvar(pst, "fontsource"), "S");
-
             bool empty = true;
-
             int highest_fontnumber = -1;
-
             int current_fontnumber =
                 pjl_vartoi(pjl_get_envvar(pst, "fontnumber"));
             int i;
@@ -1409,7 +1376,6 @@ pjl_register_permanent_soft_font_addition(pjl_parser_state * pst)
     /* Find an empty slot in the table.  We have no HP documentation
        that says how a soft font gets associated with a font number */
     int font_num;
-
     bool slot_found;
 
     for (font_num = 0; font_num < MAX_PERMANENT_FONTS; font_num++)

@@ -110,7 +110,6 @@ int
 pcl_set_pic_frame_anchor_point(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint i = uint_arg(pargs);
-
     gs_point tmp_pt;
 
     if (i != 0)

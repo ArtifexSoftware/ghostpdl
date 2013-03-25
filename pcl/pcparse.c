@@ -244,9 +244,7 @@ static int
 append_macro(const byte * from, const byte * to, pcl_state_t * pcs)
 {
     uint count = to - from;
-
     uint size = gs_object_size(pcs->memory, pcs->macro_definition);
-
     byte *new_defn =
         gs_resize_object(pcs->memory, pcs->macro_definition, size + count,
                          "append_macro");
@@ -264,15 +262,10 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
             stream_cursor_read * pr)
 {
     const byte *p = pr->ptr;
-
     const byte *rlimit = pr->limit;
-
     int code = 0;
-
     int bytelen = 0;
-
     bool in_macro = pcs->defining_macro;
-
     /* Record how much of the input we've copied into a macro */
     /* in the process of being defined. */
     const byte *macro_p = p;
@@ -290,19 +283,16 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
 
     while (p < rlimit) {
         byte chr;
-
         const pcl_command_definition_t *cdefn = NULL;
 
         switch (pst->scan_type) {
             case scanning_data:
                 {               /* Accumulate command data in a buffer. */
                     uint count = uint_arg(&pst->args);
-
                     uint pos = pst->data_pos;
 
                     if (pos < count) {
                         uint avail = rlimit - p;
-
                         uint copy = min(count - pos, avail);
 
                         memcpy(pst->args.data + pos, p + 1, copy);

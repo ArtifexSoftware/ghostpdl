@@ -57,10 +57,8 @@ process_font(pcl_state_t * pcs, pl_font_t * fp)
         /* TODO we should print out the font name here to be more like
            the HP font page */
         const char *alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
         /* current parameters */
         pl_font_params_t *pfp = &pfs->params;
-
         char buff[150];
 
         code = pcl_text((byte *) alphabet, strlen(alphabet), pcs, false);
@@ -105,13 +103,9 @@ static int
 pcl_print_font_page(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     pl_dict_enum_t font_enum;
-
     gs_const_string key;
-
     void *value;
-
     int pjl_num;
-
     int code;
 
     /* reset the printer for a clean page */
@@ -122,13 +116,9 @@ pcl_print_font_page(pcl_args_t * pargs, pcl_state_t * pcs)
     /* font page header */
     {
         const char *header_str = "PCL Font List";
-
         const char *sample_str = "Sample";
-
         const char *select_str = "Font Selection Command";
-
         uint hlen = strlen(header_str);
-
         /* assume the pcl font list string is 1 inch 7200 units */
         uint pos = pcs->margins.right / 2 - 7200 / 2;
 

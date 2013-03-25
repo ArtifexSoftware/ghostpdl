@@ -38,7 +38,6 @@ int
 hpgl_CO(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     const byte *p = pargs->source.ptr;
-
     const byte *rlimit = pargs->source.limit;
 
     while (p < rlimit) {
@@ -101,7 +100,6 @@ int
 hpgl_ZZ(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     const byte *p = pargs->source.ptr;
-
     const byte *rlimit = pargs->source.limit;
 
     while (p < rlimit) {
@@ -281,7 +279,6 @@ int
 hpgl_IN(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     int code = 0;
-
     hpgl_args_t args;
 
     /* handle the work or an implicit reset */
@@ -312,13 +309,9 @@ static int
 hpgl_picture_frame_coords(hpgl_state_t * pgls, gs_int_rect * gl2_win)
 {
     gs_rect dev_win;            /* device window */
-
     hpgl_real_t x1 = pgls->g.picture_frame.anchor_point.x;
-
     hpgl_real_t y1 = pgls->g.picture_frame.anchor_point.y;
-
     hpgl_real_t x2 = x1 + pgls->g.picture_frame_width;
-
     hpgl_real_t y2 = y1 + pgls->g.picture_frame_height;
 
     pcl_set_ctm(pgls, false);
@@ -331,7 +324,6 @@ hpgl_picture_frame_coords(hpgl_state_t * pgls, gs_int_rect * gl2_win)
      */
     {
         gs_matrix mat;
-
         gs_rect pcl_win;        /* pcl window */
 
         gs_currentmatrix(pgls->pgs, &mat);
@@ -355,9 +347,7 @@ int
 hpgl_IP(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     int32 ptxy[4];
-
     int i;
-
     gs_int_rect win;
 
     /* draw the current path */
@@ -401,11 +391,8 @@ int
 hpgl_IR(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     hpgl_real_t rptxy[4];
-
     int i;
-
     hpgl_args_t args;
-
     gs_int_rect win;
 
     for (i = 0; i < 4 && hpgl_arg_c_real(pgls->memory, pargs, &rptxy[i]);
@@ -439,9 +426,7 @@ int
 hpgl_IW(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     hpgl_real_t wxy[4];
-
     int i;
-
     gs_int_rect win;
 
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
@@ -502,10 +487,8 @@ int
 hpgl_PS(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     hpgl_real_t page_dims[2];
-
     /* we use the pcl paper handling machinery to set the plot size */
     pcl_paper_size_t paper;
-
     int i;
 
     if (pgls->personality != rtl)
@@ -550,7 +533,6 @@ int
 hpgl_RO(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     int angle = 0;
-
     gs_point point, dev_pt;
 
     /* this business is used by both SC and RO -- perhaps it needs
@@ -597,13 +579,9 @@ int
 hpgl_SC(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     hpgl_real_t xy[4];
-
     int i;
-
     int type;
-
     hpgl_scaling_params_t scale_params;
-
     gs_point point, dev_pt, dev_anchor;
 
     scale_params = pgls->g.scaling_params;
@@ -693,11 +671,8 @@ static int
 hpgl_BP(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     hpgl_args_t args;
-
     int32 command = 0;
-
     int32 value = 0;
-
     bool more = true;
 
     while (more) {
@@ -707,7 +682,6 @@ hpgl_BP(hpgl_args_t * pargs, hpgl_state_t * pgls)
         if (command == 1) {
             /* parse string */
             const byte *p = pargs->source.ptr;
-
             const byte *rlimit = pargs->source.limit;
 
             while (p < rlimit) {

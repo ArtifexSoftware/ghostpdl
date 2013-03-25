@@ -109,7 +109,6 @@ unshare_ccolor(pcl_state_t * pcs,
                pcl_ccolor_t ** ppccolor, gs_memory_t * pmem)
 {
     pcl_ccolor_t *pold = *ppccolor;
-
     pcl_ccolor_t *pnew = 0;
 
     if ((pold != NULL) && (pold->rc.ref_count == 1)) {
@@ -164,9 +163,7 @@ set_unpatterned_color(pcl_state_t * pcs,
                       pcl_cs_base_t * pbase, const gs_paint_color * ppaint)
 {
     pcl_ccolor_t *pcur = pcs->pids->pccolor;
-
     int code = 0;
-
     pcl_ccolor_type_t type;
 
     if_debug3m('c', pcs->memory, "[c]set unpatterned color %f %f %f\n",
@@ -222,7 +219,6 @@ static int
 set_patterned_color(pcl_state_t * pcs, pcl_ccolor_t * pnew)
 {
     pcl_ccolor_t *pcur = pcs->pids->pccolor;
-
     int code = 0;
 
     /* check if already set */
@@ -295,7 +291,6 @@ check_pattern_rendering(pcl_state_t * pcs, pcl_pattern_t * pptrn, bool use_frgrn
 
     } else {                    /* mask pattern */
         pcl_cs_indexed_t *pindexed = (use_frgrnd ? 0 : pcs->ppalet->pindexed);
-
         pcl_cs_base_t *pbase = (use_frgrnd ? pcs->pfrgrnd->pbase : 0);
 
         /* check if there is a rendering */
@@ -343,13 +338,9 @@ render_pattern(pcl_state_t * pcs,
                const gs_paint_color * ppaint, int wht_indx, bool remap)
 {
     int code = 0;
-
     pcl_ccolor_t *pccolor = 0;
-
     gs_color_space *pcspace;
-
     gs_matrix mat;
-
     gs_depth_bitmap pixinfo;
 
     /*
@@ -459,19 +450,12 @@ static int
 set_frgrnd_pattern(pcl_state_t * pcs, pcl_pattern_t * pptrn, bool for_image)
 {
     pcl_frgrnd_t *pfrgrnd = pcs->pfrgrnd;
-
     pcl_cs_base_t *pbase = pfrgrnd->pbase;
-
     pcl_cs_indexed_t *pindexed = 0;
-
     pcl_ccolor_type_t type = pcl_ccolor_mask_pattern;
-
     gs_paint_color paint;
-
     bool colored = false;
-
     int code = 0;
-
     int wht_indx = (pcs->pattern_transparent ? 0 : 2);
 
     if (pfrgrnd->pht == pcs->ppalet->pht)
@@ -521,13 +505,9 @@ set_uncolored_palette_pattern(pcl_state_t * pcs,
                               pcl_pattern_t * pptrn, int pen)
 {
     pcl_cs_indexed_t *pindexed = pcs->ppalet->pindexed;
-
     pcl_ccolor_type_t type = pcl_ccolor_mask_pattern;
-
     gs_paint_color paint;
-
     bool colored = !pcs->pattern_transparent;
-
     int code = 0;
 
     convert_index_to_paint(pen, &paint);
@@ -568,9 +548,7 @@ static int
 set_colored_pattern(pcl_state_t * pcs, pcl_pattern_t * pptrn)
 {
     pcl_cs_indexed_t *pindexed = pcs->ppalet->pindexed;
-
     pcl_gsid_t cache_id = pcs->ppalet->id;
-
     int code = 0;
 
     if (check_pattern_rendering(pcs, pptrn, false, 0, true, NULL))
@@ -773,9 +751,7 @@ pattern_set_white(pcl_state_t * pcs, int arg1,  /* ignored */
     )
 {
     int code = 0;
-
     pcl_cs_base_t *pwhite_cs = 0;
-
     pcl_ht_t *pdflt_ht = 0;
 
     if_debug0m('c', pcs->memory, "[c]pattern_set_white\n");
@@ -805,9 +781,7 @@ static int
 pattern_set_pen(pcl_state_t * pcs, int pen, int for_pcl_raster)
 {
     pcl_cs_indexed_t *pindexed = pcs->ppalet->pindexed;
-
     int num_entries = pindexed->num_entries;
-
     int code = 0;
 
     if_debug3m('c', pcs->memory,
@@ -849,9 +823,7 @@ pattern_set_frgrnd(pcl_state_t * pcs, int arg1, /* ignored */
                    int for_image)
 {
     pcl_frgrnd_t *pfrgrnd = pcs->pfrgrnd;
-
     pcl_palette_t *ppalet = pcs->ppalet;
-
     int code = 0;
 
     if_debug1m('c', pcs->memory, "[c]pattern_set_frgrnd for image=%d\n",

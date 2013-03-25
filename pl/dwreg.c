@@ -51,15 +51,10 @@ int
 win_get_reg_value(const char *name, char *ptr, int *plen)
 {
     HKEY hkey;
-
     DWORD cbData, keytype;
-
     BYTE b;
-
     LONG rc;
-
     BYTE *bptr = (BYTE *) ptr;
-
     char key[256];
 
     win_registry_key(key, sizeof(key));
@@ -94,11 +89,8 @@ int
 win_set_reg_value(const char *name, const char *value)
 {
     HKEY hkey;
-
     LONG rc;
-
     char key[256];
-
     DWORD dwDisposition;
 
     win_registry_key(key, sizeof(key));

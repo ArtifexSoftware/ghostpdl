@@ -1809,9 +1809,7 @@ uint
 pl_map_Unicode_to_MSL(uint uni, uint symbol_set)
 {
     uint low = 0;
-
     uint high = pl_map_u2m_size - 1;
-
     uint mid;
 
     /* A symbol map entry of 0xFFFF indicates that no printable
@@ -1844,9 +1842,7 @@ uint
 pl_map_MSL_to_Unicode(uint msl, uint symbol_set)
 {
     uint low = 0;
-
     uint high = pl_map_m2u_size - 1;
-
     uint mid;
 
     /* Binary search, right out of K&R */

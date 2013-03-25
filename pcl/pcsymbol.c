@@ -52,7 +52,6 @@ dump_dl_symbol_set(const gs_memory_t * mem, const pl_symbol_map_t * psm)
               pl_get_uint16(psm->last_code));
     {
         int i;
-
         int num_codes =
             pl_get_uint16(psm->last_code) - pl_get_uint16(psm->first_code) +
             1;
@@ -67,19 +66,12 @@ static int                      /* ESC ( f <count> W */
 pcl_define_symbol_set(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint count = uint_arg(pargs);
-
     const pl_symbol_map_t *psm = (pl_symbol_map_t *) arg_data(pargs);
-
     uint header_size;
-
     uint first_code, last_code;
-
     gs_memory_t *mem = pcs->memory;
-
     pl_symbol_map_t *header;
-
     pcl_symbol_set_t *symsetp;
-
     pl_glyph_vocabulary_t gv;
 
 #define psm_header_size 18
@@ -105,7 +97,6 @@ pcl_define_symbol_set(pcl_args_t * pargs, pcl_state_t * pcs)
     /* NB fixme should check psm->Format to identify the vocabulary. */
     {
         int num_codes = last_code - first_code + 1;
-
         int i;
 
         if (num_codes <= 0 || last_code > 255
@@ -174,9 +165,7 @@ static int                      /* ESC * c <ssc_enum> S */
 pcl_symbol_set_control(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     gs_const_string key;
-
     void *value;
-
     pl_dict_enum_t denum;
 
     switch (int_arg(pargs)) {
@@ -232,7 +221,6 @@ static void                     /* free any symbol maps as well as dict value en
 pcsymbol_dict_value_free(gs_memory_t * mem, void *value, client_name_t cname)
 {
     pcl_symbol_set_t *ssp = (pcl_symbol_set_t *) value;
-
     pl_glyph_vocabulary_t gx;
 
     if (ssp->storage != pcds_internal) {
@@ -248,9 +236,7 @@ static int
 pcl_load_built_in_symbol_sets(pcl_state_t * pcs)
 {
     const pl_symbol_map_t **maplp;
-
     pcl_symbol_set_t *symsetp;
-
     pl_glyph_vocabulary_t gv;
 
     for (maplp = &pl_built_in_symbol_maps[0]; *maplp; maplp++) {

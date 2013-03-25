@@ -145,9 +145,7 @@ begin_bitmap(px_bitmap_params_t * params, px_bitmap_enum_t * benum,
              const px_args_t * par, const px_state_t * pxs)
 {
     px_gstate_t *pxgs = pxs->pxgs;
-
     int depth = "\001\004\010"[par->pv[1]->value.i];
-
     int num_components = (pxgs->color_space == eGray ? 1 : 3);
 
     params->width = par->pv[2]->value.i;
@@ -184,23 +182,14 @@ read_jpeg_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
                       px_args_t * par)
 {
     uint data_per_row = benum->data_per_row;    /* jpeg doesn't pad */
-
     uint avail = par->source.available;
-
     uint end_pos = data_per_row * par->pv[1]->value.i;
-
     uint pos_in_row = par->source.position % data_per_row;
-
     const byte *data = par->source.data;
-
     stream_DCT_state *ss = (&benum->dct_stream_state);
-
     stream_cursor_read r;
-
     stream_cursor_write w;
-
     uint used;
-
     int code = -1;
 
     /* consumed all of the data */
@@ -269,15 +258,10 @@ read_uncompressed_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
                               px_args_t * par)
 {
     int code;
-
     uint avail = par->source.available;
-
     uint data_per_row = benum->data_per_row;
-
     uint pad = 4;               /* default padding */
-
     const byte *data = par->source.data;
-
     uint pos_in_row, data_per_row_padded, used;
 
     /* overrided default padding */
@@ -313,17 +297,11 @@ static int
 read_rle_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par)
 {
     stream_RLD_state *ss = (&benum->rld_stream_state);
-
     uint avail = par->source.available;
-
     const byte *data = par->source.data;
-
     uint pad = 4;
-
     stream_cursor_read r;
-
     stream_cursor_write w;
-
     uint pos_in_row, data_per_row, data_per_row_padded, used;
 
     /* overrided default padding */
@@ -430,15 +408,10 @@ read_deltarow_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
                           px_args_t * par)
 {
     deltarow_state_t *deltarow = &benum->deltarow_state;
-
     uint avail = par->source.available;
-
     const byte *pin = par->source.data;
-
     byte *pout = *pdata + par->source.position % benum->data_per_row;
-
     const byte *pout_start = pout;
-
     bool end_of_row = false;
 
     if (benum->initialized && deltarow->rowwritten == par->pv[1]->value.i) {
@@ -600,17 +573,11 @@ int
 pxBeginImage(px_args_t * par, px_state_t * pxs)
 {
     gs_point origin;
-
     px_bitmap_params_t params;
-
     px_bitmap_enum_t benum;
-
     gs_state *pgs = pxs->pgs;
-
     px_gstate_t *pxgs = pxs->pxgs;
-
     px_image_enum_t *pxenum;
-
     int code;
 
     if (gs_currentpoint(pgs, &origin) < 0)
@@ -709,7 +676,6 @@ pxReadImage(px_args_t * par, px_state_t * pxs)
         return pxNeedData;
     for (;;) {
         byte *data = pxenum->row;
-
         int code = read_bitmap(&pxenum->benum, &data, par);
 
         if (code != 1)
@@ -727,9 +693,7 @@ int
 pxEndImage(px_args_t * par, px_state_t * pxs)
 {
     px_image_enum_t *pxenum = pxs->image_enum;
-
     px_bitmap_enum_t *pbenum = &pxenum->benum;
-
     int code = pl_end_image(pxs->pgs, pxenum->info, true);
 
     gs_free_object(pxs->memory, pxenum->row, "pxEndImage(row)");
@@ -770,19 +734,12 @@ int
 pxBeginRastPattern(px_args_t * par, px_state_t * pxs)
 {
     gs_memory_t *mem = pxs->memory;
-
     px_bitmap_params_t params;
-
     px_pattern_t *pattern;
-
     px_pattern_enum_t *pxenum;
-
     px_bitmap_enum_t benum;
-
     byte *data;
-
     uint psize;
-
     byte *pdata;
 
     int code = begin_bitmap(&params, &benum, par, pxs);
@@ -837,9 +794,7 @@ int
 pxReadRastPattern(px_args_t * par, px_state_t * pxs)
 {
     px_pattern_enum_t *pxenum = pxs->pattern_enum;
-
     int code;
-
     uint input_per_row = round_up(pxenum->benum.data_per_row, 4);
 
     if (par->pv[3])
@@ -859,7 +814,6 @@ pxReadRastPattern(px_args_t * par, px_state_t * pxs)
         byte *data = pxenum->pattern->data +
             (par->pv[0]->value.i + par->source.position / input_per_row)
             * pxenum->benum.data_per_row;
-
         byte *rdata = data;
 
         code = read_bitmap(&pxenum->benum, &rdata, par);
@@ -876,15 +830,11 @@ int
 pxEndRastPattern(px_args_t * par, px_state_t * pxs)
 {
     px_pattern_enum_t *pxenum = pxs->pattern_enum;
-
     /* We extract the key and value from the pattern_enum structure */
     /* and then free the structure, to encourage LIFO allocation. */
     px_pattern_t *pattern = pxenum->pattern;
-
     int32_t id = pxenum->pattern_id;
-
     px_value_t key;
-
     px_dict_t *pdict;
 
     switch (pxenum->persistence) {
@@ -945,18 +895,13 @@ pxScanLineRel(px_args_t * par, px_state_t * pxs)
                                  * the number of x-pairs left in the scan line.
                                  */
     gs_state *pgs = pxs->pgs;
-
     bool big_endian = pxs->data_source_big_endian;
-
     const byte *data = par->source.data;
-
     pxeDataType_t
         xystart_type = (par->source.position >> 28) & 0xf,
         xpair_type = (par->source.position >> 24) & 0xf;
     int code = 0;
-
     int rcount;
-
     gs_rect rlist[20];          /* 20 is arbitrary */
 
     /* Check for initial state. */
@@ -1008,7 +953,6 @@ pxScanLineRel(px_args_t * par, px_state_t * pxs)
         /* Read and process one x-pair. */
         {
             uint x0, x1;
-
             uint used;
 
             switch (xpair_type) {

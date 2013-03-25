@@ -89,7 +89,6 @@ pl_load_mt_font(SW16 handle, gs_font_dir * pdir, gs_memory_t * mem,
                                           &st_gs_font_base,
                                           "pl_mt_load_font(gs_font_base)");
     pl_font_t *plfont = pl_alloc_font(mem, "pl_mt_load_font(pl_font_t)");
-
     int code;
 
     if (pfont == 0 || plfont == 0)

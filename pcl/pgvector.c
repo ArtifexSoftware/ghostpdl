@@ -77,9 +77,7 @@ static int
 hpgl_arc_3_point(hpgl_args_t * pargs, hpgl_state_t * pgls, bool relative)
 {
     hpgl_real_t x_start = pgls->g.pos.x, y_start = pgls->g.pos.y;
-
     hpgl_real_t x_inter, y_inter, x_end, y_end;
-
     hpgl_real_t chord_angle = 5;
 
     if (!hpgl_arg_units(pgls->memory, pargs, &x_inter) ||
@@ -120,7 +118,6 @@ hpgl_bezier(hpgl_args_t * pargs, hpgl_state_t * pgls, bool relative)
 
     for (;;) {
         hpgl_real_t coords[6];
-
         int i;
 
         for (i = 0; i < 6 && hpgl_arg_units(pgls->memory, pargs, &coords[i]);
@@ -279,9 +276,7 @@ int
 hpgl_CI(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     hpgl_real_t radius, chord = 5;
-
     bool reset_ctm = true;
-
     gs_point pos;
 
     if (!hpgl_arg_units(pgls->memory, pargs, &radius))
@@ -386,14 +381,11 @@ hpgl_PE(hpgl_args_t * pargs, hpgl_state_t * pgls)
      * there not being any whitespace within coordinate values....
      */
     const byte *p = pargs->source.ptr;
-
     const byte *rlimit = pargs->source.limit;
-
     /* count points to allow medium size paths, performance optimization
      * point_count_max should be smaller than input buffer
      */
     int point_count = 0;
-
     static const int point_count_max = 100;
 
     if (pargs->phase == 0) {
@@ -423,7 +415,6 @@ hpgl_PE(hpgl_args_t * pargs, hpgl_state_t * pgls)
                 if_debug0m('I', pgls->memory, "\n  PE SP");
                 {
                     int32 pen;
-
                     hpgl_pe_args_ret_t ret = pe_args(pgls->memory, pargs, 1);
 
                     if (ret != pe_okay) {
@@ -451,7 +442,6 @@ hpgl_PE(hpgl_args_t * pargs, hpgl_state_t * pgls)
                 if_debug0m('I', pgls->memory, "\n  PE PD");
                 {
                     int32 fbits;
-
                     hpgl_pe_args_ret_t ret = pe_args(pgls->memory, pargs, 1);
 
                     if (ret != pe_okay) {
@@ -499,9 +489,7 @@ hpgl_PE(hpgl_args_t * pargs, hpgl_state_t * pgls)
                 pargs->source.ptr = p - 1;
                 {
                     int32 xy[2];
-
                     hpgl_args_t args;
-
                     int32 fbits = pgls->g.fraction_bits;
 
                     if (pe_args(pgls->memory, pargs, 2) != pe_okay)
@@ -537,14 +525,11 @@ hpgl_PE(hpgl_args_t * pargs, hpgl_state_t * pgls)
     return e_NeedData;
 }
 /* Get an encoded value from the input. */
-
 static hpgl_pe_args_ret_t
 pe_args(const gs_memory_t * mem, hpgl_args_t * pargs, int count)
 {
     const byte *p = pargs->source.ptr;
-
     const byte *rlimit = pargs->source.limit;
-
     int i;
 
     for (i = pargs->pe_indx; i < count; ++i) {

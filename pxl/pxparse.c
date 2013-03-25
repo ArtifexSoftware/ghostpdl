@@ -200,9 +200,7 @@ px_save_array(px_value_t * pv, px_state_t * pxs, client_name_t cname,
     } else {                    /* Allocate a heap copy.  Only the first nbytes bytes */
         /* of the data are valid. */
         uint num_elements = pv->value.array.size;
-
         uint elt_size = value_size(pv);
-
         byte *copy = gs_alloc_byte_array(pxs->memory, num_elements,
                                          elt_size, cname);
 
@@ -239,15 +237,10 @@ trace_array_data(const gs_memory_t * mem, const char *label,
                  const px_value_t * pav)
 {
     px_data_type_t type = pav->type;
-
     const byte *ptr = pav->value.array.data;
-
     uint count = pav->value.array.size;
-
     bool big_endian = (type & pxd_big_endian) != 0;
-
     bool text = (type & pxd_ubyte) != 0;
-
     uint i;
 
     dmputs(mem, label);
@@ -297,26 +290,17 @@ int
 px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
 {
     const byte *orig_p = pr->ptr;
-
     const byte *next_p = orig_p;        /* start of data not copied to saved */
-
     const byte *p;
-
     const byte *rlimit;
-
     px_value_t *sp = &st->stack[st->stack_count];
 
 #define stack_limit &st->stack[max_stack - 1]
     gs_memory_t *memory = st->memory;
-
     int code = 0;
-
     uint left;
-
     uint min_left;
-
     px_tag_t tag;
-
     const px_tag_syntax_t *syntax = 0;
 
     st->args.parser = st;
@@ -337,7 +321,6 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
   top:if (st->data_left) {     /* We're in the middle of reading an array or data block. */
         if (st->data_proc) {    /* This is a data block. */
             uint avail = min(rlimit - p, st->data_left);
-
             uint used;
 
             st->args.source.available = avail;
@@ -374,11 +357,8 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
             }
         } else {                /* This is an array. */
             uint size = sp->value.array.size;
-
             uint scale = value_size(sp);
-
             uint nbytes = size * scale;
-
             byte *dest =
                 (byte *) sp->value.array.data + nbytes - st->data_left;
 
@@ -454,9 +434,7 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
                     dmprintf1(memory, "   attribute %u ???\n", attr);
             } else {
                 const char *format;
-
                 const char *tname;
-
                 bool operator = false;
 
                 if (tag < 0x40)
@@ -573,13 +551,9 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
                     const px_operator_definition_t *pod =
                         &px_operator_definitions[tag - 0x40];
                     int left = sp - st->stack;
-
                     const byte /*px_attribute_t */  * pal = pod->attrs;
-
                     px_value_t **ppv = st->args.pv;
-
                     bool required = true;
-
                     code = 0;
                     /*
                      * Scan the attributes.  Illegal attributes take priority
@@ -588,7 +562,6 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
                      */
                     for (;; ++pal, ++ppv) {
                         px_attribute_t attr = *pal;
-
                         uint index;
 
                         if (!attr) {    /*
@@ -608,7 +581,6 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
                                 *ppv = 0;
                         } else {        /* Check the attribute data type and value. */
                             px_value_t *pv = *ppv = &st->stack[index];
-
                             const px_attr_value_type_t *pavt =
                                 &px_attr_value_types[attr];
                             int acode;
@@ -735,7 +707,6 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
                 /* Array data */
                 {
                     const byte *dp;
-
                     uint nbytes;
 
                     if (sp == stack_limit) {
@@ -816,7 +787,6 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
             case 31:
                 {
                     px_attribute_t attr;
-
                     const byte *pnext;
 
                     switch (tag) {

@@ -78,7 +78,6 @@ static pl_dict_entry_t **
 pl_dict_lookup_entry(pl_dict_t * pdict, const byte * kdata, uint ksize)
 {
     pl_dict_entry_t **ppde = &pdict->entries;
-
     pl_dict_entry_t *pde;
 
     for (; (pde = *ppde) != 0; ppde = &pde->next) {
@@ -95,7 +94,6 @@ static void
 pl_dict_free(pl_dict_t * pdict, pl_dict_entry_t ** ppde, client_name_t cname)
 {
     pl_dict_entry_t *pde = *ppde;
-
     gs_memory_t *mem = pdict->memory;
 
     *ppde = pde->next;
@@ -133,7 +131,6 @@ pl_dict_lookup(pl_dict_t * pdict, const byte * kdata, uint ksize,
                void **pvalue, bool with_stack, pl_dict_t ** ppdict)
 {
     pl_dict_t *pdcur = pdict;
-
     pl_dict_entry_t **ppde;
 
     while ((ppde = pl_dict_lookup_entry(pdcur, kdata, ksize)) == 0) {
@@ -154,9 +151,7 @@ pl_dict_build_new_entry(pl_dict_t * pdict, const byte * kdata, uint ksize,
                         void *value, pl_dict_entry_t * link)
 {                               /* Make a new entry. */
     byte *kstr;
-
     gs_memory_t *mem = pdict->memory;
-
     pl_dict_entry_t *pde;
 
     pde = gs_alloc_struct(mem, pl_dict_entry_t, &st_pl_dict_entry,
@@ -216,7 +211,6 @@ pl_dict_put_synonym(pl_dict_t * pdict, const byte * old_kdata, uint old_ksize,
     pl_dict_entry_t **old_ppde =
         pl_dict_lookup_entry(pdict, old_kdata, old_ksize);
     pl_dict_entry_t *old_pde;
-
     pl_dict_entry_t **new_ppde =
         pl_dict_lookup_entry(pdict, new_kdata, new_ksize);
     /* old value doesn't exist or new value does exist */
@@ -243,11 +237,8 @@ pl_dict_undef_purge_synonyms(pl_dict_t * pdict, const byte * kdata,
                              uint ksize)
 {
     pl_dict_entry_t **ppde = &pdict->entries;
-
     pl_dict_entry_t **pptarget = pl_dict_lookup_entry(pdict, kdata, ksize);
-
     pl_dict_entry_t *pde;
-
     pl_dict_entry_t *ptarget;
 
     if (!pptarget)

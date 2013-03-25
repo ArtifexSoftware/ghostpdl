@@ -35,7 +35,6 @@ px_state_alloc(gs_memory_t * memory)
     px_state_t *pxs = (px_state_t *) gs_alloc_bytes(memory,
                                                     sizeof(px_state_t),
                                                     "px_state_alloc");
-
     px_gstate_t *pxgs = px_gstate_alloc(memory);
 
     if (pxs == 0 || pxgs == 0) {

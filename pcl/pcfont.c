@@ -89,7 +89,6 @@ int
 pcl_recompute_font(pcl_state_t * pcs, bool internal_only)
 {
     pcl_font_selection_t *pfs = &pcs->font_selection[pcs->font_selected];
-
     int code = pcl_reselect_font(pfs, pcs, internal_only);
 
     if (code < 0)
@@ -104,7 +103,6 @@ static int
 pcl_symbol_set(pcl_args_t * pargs, pcl_state_t * pcs, int set)
 {
     uint num = uint_arg(pargs);
-
     uint symset;
 
     if (num > 1023)
@@ -156,7 +154,6 @@ static int
 pcl_pitch(floatp cpi, pcl_state_t * pcs, int set)
 {
     uint pitch_cp;
-
     pcl_font_selection_t *pfs = &pcs->font_selection[set];
 
     if (cpi < 0.1)
@@ -186,7 +183,6 @@ static int
 pcl_height(pcl_args_t * pargs, pcl_state_t * pcs, int set)
 {
     uint height_4ths = (uint) (float_arg(pargs) * 4 + 0.5);
-
     pcl_font_selection_t *pfs = &pcs->font_selection[set];
 
     pfs->params.height_4ths = height_4ths;
@@ -272,9 +268,7 @@ static int
 pcl_font_selection_id(pcl_args_t * pargs, pcl_state_t * pcs, int set)
 {
     uint id = uint_arg(pargs);
-
     pcl_font_selection_t *pfs = &pcs->font_selection[set];
-
     int code = pcl_select_font_by_id(pfs, id, pcs);
 
     switch (code) {
@@ -354,9 +348,7 @@ static int                      /* ESC & k <mode> S */
 pcl_set_pitch_mode(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     int mode = int_arg(pargs);
-
     floatp cpi;
-
     int code = 0;
 
     /*
@@ -498,17 +490,13 @@ pcl_lookup_pjl_font(pcl_state_t * pcs, int pjl_font_number,
                     pl_font_params_t * params)
 {
     pl_dict_enum_t dictp;
-
     gs_const_string key;
-
     void *value;
-
     bool found_resource = false;
 
     pl_dict_enum_begin(&pcs->soft_fonts, &dictp);
     while (pl_dict_enum_next(&dictp, &key, &value)) {
         pl_font_t *fp = (pl_font_t *) value;
-
         int ds = fp->storage;
 
         if ((int)pcl_data_storage == ds) {
@@ -578,7 +566,6 @@ pcl_set_current_font_environment(pcl_state_t * pcs)
         }
         {
             int code;
-
             pl_font_params_t params;
 
             code = pcl_lookup_pjl_font(pcs,
@@ -647,9 +634,7 @@ static void
 pcl_unload_resident_fonts(pcl_state_t * pcs)
 {
     pl_dict_enum_t dictp;
-
     gs_const_string key;
-
     void *value;
 
     /* we'll try to unload everything.  The procedure should not

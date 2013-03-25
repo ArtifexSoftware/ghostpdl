@@ -1294,15 +1294,10 @@ read_dither(pcl_state_t * pcs,
             int method, gs_param_list * plist, gs_memory_t * pmem)
 {
     pcl_ht_builtin_dither_t *pdt = 0;
-
     int itype;
-
     int height, width;
-
     int nplanes = 1, nlevels = 1;
-
     uint req_size = 0;
-
     gs_param_string dstring;
 
     /* gather the common parameters */
@@ -1379,7 +1374,6 @@ static void
 read_remap_array(pcl_state_t * pcs, gs_param_list * plist, gs_memory_t * pmem)
 {
     gs_param_string dstring;
-
     int i;
 
     if ((param_read_string(plist, "RenderRemap", &dstring) != 0) ||
@@ -1399,9 +1393,7 @@ void
 pcl_ht_init_render_methods(pcl_state_t * pcs, gs_memory_t * pmem)
 {
     int i;
-
     gx_device *pcur_dev = gs_currentdevice(pcs->pgs);
-
     gs_c_param_list list;
 
     if (pcs->pdflt_ht)
@@ -1640,7 +1632,6 @@ static int
 alloc_pcl_ht(pcl_ht_t ** ppht, gs_memory_t * pmem)
 {
     pcl_ht_t *pht = 0;
-
     int i;
 
     rc_alloc_struct_1(pht,
@@ -1690,11 +1681,8 @@ static int
 unshare_pcl_ht(pcl_ht_t ** ppht)
 {
     pcl_ht_t *pht = *ppht;
-
     pcl_ht_t *pnew = 0;
-
     int code = 0;
-
     int i;
 
     /* check if there is anything to do */
@@ -1739,15 +1727,10 @@ pcl_ht_is_all_gray_palette(pcl_state_t * pcs)
     if (pcs->monochrome_mode)
         return true;
     if (ENABLE_AUTO_GRAY_RENDER_METHODS) {
-
         bool is_gray = true;
-
         const byte *pb = 0;
-
         pcl_palette_t *ppalet = pcs->ppalet;
-
         pcl_cs_indexed_t *pindexed = ppalet->pindexed;
-
         int i;
 
         for (i = 0; i < pindexed->num_entries; i++) {
@@ -1774,7 +1757,6 @@ pcl_ht_set_render_method(pcl_state_t * pcs,
                          pcl_ht_t ** ppht, uint render_method)
 {
     int code = 0;
-
     uint color_render_method;
 
     if (render_method >= countof(pcs->rendering_info))
@@ -1809,7 +1791,6 @@ pcl_ht_remap_render_method(pcl_state_t * pcs, pcl_ht_t ** ppht, bool is_gray)
 {
     if (ENABLE_AUTO_GRAY_RENDER_METHODS) {
         uint render_method = (*ppht)->orig_render_method;
-
         int code = 0;
 
         if (is_gray != (*ppht)->is_gray_render_method) {
@@ -1840,11 +1821,8 @@ int
 pcl_ht_set_gamma(pcl_ht_t ** ppht, float gamma)
 {
     pcl_ht_t *pht = *ppht;
-
     float inv_gamma = (gamma == 0.0 ? 1.0 : 1.0 / gamma);
-
     int code = 0;
-
     int i;
 
     /*
@@ -1882,9 +1860,7 @@ int
 pcl_ht_set_lookup_tbl(pcl_ht_t ** ppht, pcl_lookup_tbl_t * plktbl)
 {
     pcl_ht_t *pht = *ppht;
-
     int code = 0;
-
     int i;
 
     /* check if this is a nop clear lookup table command */
@@ -1914,7 +1890,6 @@ int
 pcl_ht_set_udither(pcl_ht_t ** ppht, pcl_udither_t * pdither)
 {
     pcl_ht_t *pht = *ppht;
-
     int code = 0;
 
     /* get a unique copy of the halftone object */
@@ -1940,9 +1915,7 @@ pcl_ht_update_cspace(pcl_state_t * pcs,
                      pcl_cspace_type_t cstype_new)
 {
     pcl_ht_t *pht = *ppht;
-
     uint i = pht->render_method;
-
     uint flags = pcs->rendering_info[i].flags;
 
     if (((pht->pfg_ht == 0) && (pht->pim_ht == 0)) ||
@@ -1992,7 +1965,6 @@ get_rendering_info(pcl_state_t * pcs,
                    uint sel_method, pcl_cspace_type_t cstype, bool for_image)
 {
     pcl_rend_info_t *pinfo = &(pcs->rendering_info[sel_method]);
-
     uint flags = pinfo->flags;
 
     /* check for methods that require device-dependent color spaces */
@@ -2013,7 +1985,6 @@ int
 pcl_ht_set_halftone(pcl_state_t * pcs)
 {
     gs_string thresh;
-
     int code;
 
     if (pcs->halftone_set)

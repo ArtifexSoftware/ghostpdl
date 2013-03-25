@@ -176,7 +176,6 @@ pl_TransformPQR_proc(int indx, floatp val, const gs_cie_wbsd * cs_wbsd,
                      gs_cie_render * pcrd, float *pnew_val)
 {
     const float *pcrd_wht = (float *)&(cs_wbsd->wd.pqr);
-
     const float *pcs_wht = (float *)&(cs_wbsd->ws.pqr);
 
     *pnew_val = val * pcrd_wht[indx] / pcs_wht[indx];
@@ -235,13 +234,9 @@ static bool
 pl_read_device_CRD(gs_cie_render * pcrd, gs_state * pgs)
 {
     gx_device *pdev = gs_currentdevice(pgs);
-
     gs_c_param_list list;
-
     gs_param_string dstring;
-
     char nbuff[64];             /* ample size */
-
     int code = 0;
 
     /*get the CRDName parameter from the device */
@@ -351,7 +346,6 @@ static int
 pl_setSRGB(gs_state * pgs)
 {
     gs_color_space *pcs;
-
     int code;
 
     code = pl_cspace_init_SRGB(&pcs, pgs);
@@ -367,7 +361,6 @@ int
 pl_setSRGBcolor(gs_state * pgs, float r, float g, float b)
 {
     int code;
-
     gs_client_color color;
 
 #ifdef DEVICE_DOES_COLOR_CONVERSION

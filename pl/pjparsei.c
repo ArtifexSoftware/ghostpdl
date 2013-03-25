@@ -158,7 +158,6 @@ pjl_impl_init_job(pl_interp_instance_t * instance       /* interp instance to st
     )
 {
     int code = 0;
-
     pjl_interp_instance_t *pjli = (pjl_interp_instance_t *) instance;
 
     if (pjli->state == 0)
@@ -183,7 +182,6 @@ pjl_impl_process(pl_interp_instance_t * instance,       /* interp instance to pr
     )
 {
     pjl_interp_instance_t *pjli = (pjl_interp_instance_t *) instance;
-
     int code = pjl_process(pjli->state, NULL, cursor);
 
     return code == 1 ? e_ExitLanguage : code;
@@ -223,7 +221,6 @@ pjl_impl_dnit_job(pl_interp_instance_t * instance       /* interp instance to wr
     )
 {
     int code = 0;
-
     return code;
 }
 
@@ -241,7 +238,6 @@ pjl_impl_deallocate_interp_instance(pl_interp_instance_t * instance     /* insta
     )
 {
     pjl_interp_instance_t *pjli = (pjl_interp_instance_t *) instance;
-
     gs_memory_t *mem = pjli->memory;
 
     pjl_process_destroy(pjli->state, mem);
@@ -257,11 +253,9 @@ pjl_impl_deallocate_interp(pl_interp_t * interp /* interpreter to deallocate */
     )
 {
     pjl_interp_t *pi = (pjl_interp_t *) interp;
-
     gs_memory_t *mem = pi->memory;
 
     gs_free_object(mem, pi, "pjl_impl_deallocte_interp(pjl_interp_t)");
-
     return 0;
 }
 
@@ -270,7 +264,6 @@ static pjl_envvar_t *
 pjl_impl_get_envvar(pl_interp_instance_t * pli, const char *pjl_var)
 {
     pjl_interp_instance_t *pjli = (pjl_interp_instance_t *) pli;
-
     return pjl_get_envvar(pjli->state, pjl_var);
 }
 

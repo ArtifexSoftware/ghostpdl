@@ -380,7 +380,6 @@ static int
 pcl_set_icc_params(pl_interp_instance_t * instance, gs_state * pgs)
 {
     gs_param_string p;
-
     int code = 0;
 
     if (instance->pdefault_gray_icc) {
@@ -440,7 +439,6 @@ pcl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to us
 {
     /* NB REVIEW ME -- ROUGH DRAFT */
     int code;
-
     pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
 
     enum
@@ -544,7 +542,6 @@ pcl_impl_init_job(pl_interp_instance_t * instance       /* interp instance to st
     )
 {
     int code = 0;
-
     pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
 
     pcl_process_init(&pcli->pst);
@@ -558,7 +555,6 @@ pcl_impl_process(pl_interp_instance_t * instance,       /* interp instance to pr
     )
 {
     pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
-
     int code = pcl_process(&pcli->pst, &pcli->pcs, cursor);
 
     return code;
@@ -571,7 +567,6 @@ pcl_impl_flush_to_eoj(pl_interp_instance_t * instance,  /* interp instance to fl
     )
 {
     const byte *p = cursor->ptr;
-
     const byte *rlimit = cursor->limit;
 
     /* Skip to, but leave UEL in buffer for PJL to find later */
@@ -596,7 +591,6 @@ pcl_impl_process_eof(pl_interp_instance_t * instance    /* interp instance to pr
     )
 {
     int code;
-
     pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
 
     pcl_process_init(&pcli->pst);
@@ -616,9 +610,7 @@ pcl_impl_report_errors(pl_interp_instance_t * instance, /* interp instance to wr
     )
 {
     pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
-
     byte buf[200];
-
     uint count;
 
     while ((count = pcl_status_read(buf, sizeof(buf), &pcli->pcs)) != 0)
@@ -633,7 +625,6 @@ pcl_impl_dnit_job(pl_interp_instance_t * instance       /* interp instance to wr
     )
 {
     pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
-
     pcl_state_t *pcs = &pcli->pcs;
 
     if (pcs->raster_state.graphics_mode)
@@ -647,7 +638,6 @@ pcl_impl_remove_device(pl_interp_instance_t * instance  /* interp instance to us
     )
 {
     int code;
-
     pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
 
     /* NB use the PXL code */
@@ -676,7 +666,6 @@ pcl_impl_deallocate_interp_instance(pl_interp_instance_t * instance     /* insta
     )
 {
     pcl_interp_instance_t *pcli = (pcl_interp_instance_t *) instance;
-
     gs_memory_t *mem = pcli->memory;
 
     /* free memory used by the parsers */
@@ -719,7 +708,6 @@ pcl_end_page_top(pcl_state_t * pcs, int num_copies, int flush)
     pcl_interp_instance_t *pcli =
         (pcl_interp_instance_t *) (pcs->client_data);
     pl_interp_instance_t *instance = (pl_interp_instance_t *) pcli;
-
     int code = 0;
 
     /* do pre-page action */

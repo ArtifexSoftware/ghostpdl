@@ -5048,16 +5048,12 @@ hpgl_stick_segments(const gs_memory_t * mem, void *data, uint char_index)
 {
     /* characters start with 32 - what about char index < 0x20 ?? */
     short table_index_of_char = char_index - 0x20;
-
     /* table of offsets into table which contains the font drawing */
     short offset = stick_font_offsets[table_index_of_char];
-
     /* look up the next characters offset, subtract and the result is
        the number of drawing operations to render the character. */
     short count = stick_font_offsets[table_index_of_char + 1] - offset;
-
     short stop = count + offset;
-
     /* set up tables debending on stick or arc font */
     int i;
 
@@ -5092,9 +5088,7 @@ hpgl_531_segments(const gs_memory_t * mem, void *data, void *cdata)
     /* NB why is the gstate passed as a void *?, missing graphics
        library error checking */
     hpgl_dl_cdata_t *cd = cdata;
-
     bool pen_up = true;
-
     int i = 0;
 
     /* we assume the data is correct at this point - errors should
@@ -5105,7 +5099,6 @@ hpgl_531_segments(const gs_memory_t * mem, void *data, void *cdata)
             i++;
         } else {
             floatp x = cd->data[i];
-
             floatp y = cd->data[i + 1];
 
             if (pen_up) {
@@ -5127,19 +5120,16 @@ hpgl_arc_segments(const gs_memory_t * mem, void *data, uint char_index)
 {
     /* characters start with 32 - what about char index < 0x20 ?? */
     short table_index_of_char = char_index - 0x20;
-
     /* table of offsets into table which contains the font drawing */
     short offset = arc_font_offsets[table_index_of_char];
 
     /* look up the next characters offset, subtract and the result is
        the number of drawing operations to render the character. */
     short count = arc_font_offsets[table_index_of_char + 1] - offset;
-
     short stop = count + offset;
 
     /* set up tables debending on stick or arc font */
     int i;
-
     /* 3 entries for moveto and lineto and 5 for curveto */
 
     if ((char_index < 0x20) ||

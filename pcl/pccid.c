@@ -254,7 +254,6 @@ static int
 check_cid_hdr(pcl_state_t * pcs, pcl_cid_data_t * pcid)
 {
     pcl_cid_hdr_t *pcidh = &(pcid->u.hdr);
-
     int i;
 
     if ((pcidh->cspace >= pcl_cspace_num)
@@ -344,24 +343,16 @@ static int
 substitute_colorimetric_cs(pcl_state_t * pcs, pcl_cid_data_t * pcid)
 {
     pcl_cid_col_long_t *pcol = &(pcid->u.col);
-
     /* it might be desirable to make these partameters for the
        substitute color space configurable for now they are set here
        to reasonable values */
     floatp gamma = 2.2;
-
     floatp gain = 1.0;
-
     floatp min1 = 0.0;
-
     floatp min2 = 0.0;
-
     floatp min3 = 0.0;
-
     floatp max1 = 1.0;
-
     floatp max2 = 1.0;
-
     floatp max3 = 1.0;
 
     /* just override the color space we use the other header values
@@ -412,7 +403,6 @@ install_cid_data(int len,       /* length of data */
     )
 {
     pcl_cid_data_t cid;
-
     int code = 0;
 
     if (len < 6)
@@ -535,11 +525,8 @@ static int
 set_view_illuminant(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint len = uint_arg(pargs);
-
     const byte *pbuff = arg_data(pargs);
-
     float x, y;
-
     gs_vector3 wht_pt;
 
     if (pcs->personality == pcl5e || pcs->raster_state.graphics_mode)
@@ -579,7 +566,6 @@ pcl_cid_IN(pcl_state_t * pcs)
         (byte) pcl_penc_indexed_by_plane,
         3, 8, 8, 8
     };
-
     static const byte cid_GL2_Mono[6] = { (byte) pcl_cspace_RGB,
         (byte) pcl_penc_indexed_by_plane,
         3, 1, 1, 1

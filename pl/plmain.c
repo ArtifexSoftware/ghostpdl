@@ -190,9 +190,7 @@ static inline int
 get_device_index(const gs_memory_t * mem, const char *value)
 {
     const gx_device *const *dev_list;
-
     int num_devs = gs_lib_device_list(&dev_list, NULL);
-
     int di;
 
     for (di = 0; di < num_devs; ++di)
@@ -222,27 +220,16 @@ GSDLLEXPORT int GSDLLAPI
 pl_main_aux(int argc, char *argv[], void *disp)
 {
     gs_memory_t *mem;
-
     gs_memory_t *pjl_mem;
-
     pl_main_instance_t inst;
-
     arg_list args;
-
     char *filename = NULL;
-
     char err_buf[256];
-
     pl_interp_t *pjl_interp;
-
     pl_interp_instance_t *pjl_instance;
-
     pl_main_universe_t universe;
-
     pl_interp_instance_t *curr_instance = 0;
-
     gs_c_param_list params;
-
     int (*arg_get_codepoint) (FILE * file, const char **astr) = NULL;
 
     mem = pl_alloc_init();
@@ -328,11 +315,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
         byte buf[1 << 13];
 #endif
         pl_top_cursor_t r;
-
         int code = 0;
-
         bool in_pjl = true;
-
         bool new_job = false;
 
         if (pl_init_job(pjl_instance) < 0) {
@@ -349,13 +333,10 @@ pl_main_aux(int argc, char *argv[], void *disp)
                                     &filename) < 0) {
             /* Print error verbage and return */
             int i;
-
             const gx_device **dev_list;
-
             int num_devs =
                 gs_lib_device_list((const gx_device * const **)&dev_list,
                                    NULL);
-
             errprintf(mem, pl_usage, argv[0]);
 
             if (pl_characteristics(&pjl_implementation)->version)
@@ -606,7 +587,6 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
     /* but for now it's simpler to just create all instances up front. */
     for (index = 0; pdl_implementation[index] != 0; ++index) {
         pl_interp_instance_t *instance;
-
         int code;
 
         code = pl_allocate_interp(&universe->pdl_interp_array[index],
@@ -716,7 +696,6 @@ pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select fr
     )
 {
     int params_are_set = 0;
-
     /* requesting the device in the main instance */
     gx_device *desired_device = pti->device;
 
@@ -949,9 +928,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         char **filename)
 {
     int code = 0;
-
     bool help = false;
-
     char *arg;
 
     gs_c_param_list_write_more(params);
@@ -993,15 +970,10 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 {
                     /* We're setting a device parameter to a non-string value. */
                     char *eqp = strchr(arg, '=');
-
                     const char *value;
-
                     int vi;
-
                     float vf;
-
                     bool bval = true;
-
                     char buffer[128];
 
                     if (eqp || (eqp = strchr(arg, '#')))
@@ -1027,7 +999,6 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     /* Search for a non-decimal 'radix' number */
                     else if (strchr(value, '#')) {
                         int base, number = 0;
-
                         char *val = strchr(value, '#');
 
                         *val++ = 0x00;
@@ -1134,7 +1105,6 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
             case 'g':
                 {
                     int geom[2];
-
                     gs_param_int_array ia;
 
                     if (sscanf(arg, "%ux%u", &geom[0], &geom[1]) != 2) {
@@ -1160,13 +1130,10 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 /* set up the read cursor and send it to the pjl parser */
                 {
                     stream_cursor_read cursor;
-
                     /* PJL lines have max length of 80 character + null terminator */
                     byte buf[512];
-
                     /* length of arg + newline (expected by PJL parser) + null */
                     int buf_len = strlen(arg) + 2;
-
                     if ((buf_len) > sizeof(buf)) {
                         dmprintf(pmi->memory, "pjl sequence too long\n");
                         return -1;
@@ -1205,7 +1172,6 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
             case 'K':          /* max memory in K */
                 {
                     int maxk;
-
 #ifdef HEAP_ALLOCATOR_ONLY
                     gs_malloc_memory_t *rawheap =
                         (gs_malloc_memory_t *)
@@ -1227,7 +1193,6 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
             case 'o':
                 {
                     const char *adef;
-
                     gs_param_string str;
 
                     if (arg[0] == 0) {
@@ -1279,7 +1244,6 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
             case 'r':
                 {
                     float res[2];
-
                     gs_param_float_array fa;
 
                     switch (sscanf(arg, "%fx%f", &res[0], &res[1])) {
@@ -1306,9 +1270,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
             case 'S':
                 {               /* We're setting a device or user parameter to a string. */
                     char *eqp;
-
                     const char *value;
-
                     gs_param_string str;
 
                     eqp = strchr(arg, '=');
@@ -1409,7 +1371,6 @@ pl_pjl_select(pl_interp_instance_t * pjl_instance, pl_interp_implementation_t co
     )
 {
     pjl_envvar_t *language;
-
     pl_interp_implementation_t const *const *impl;
 
     language = pjl_proc_get_envvar(pjl_instance, "language");

@@ -71,7 +71,6 @@ int
 hpgl_FT(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     int type = hpgl_FT_pattern_solid_pen1;
-
     hpgl_hatch_params_t *params;
 
     hpgl_arg_int(pgls->memory, pargs, &type);
@@ -102,7 +101,6 @@ hpgl_FT(hpgl_args_t * pargs, hpgl_state_t * pgls)
           hatch:
             {
                 hpgl_real_t spacing = params->spacing;
-
                 hpgl_real_t angle = params->angle;
 
                 if (hpgl_arg_real(pgls->memory, pargs, &spacing)) {
@@ -198,11 +196,8 @@ int
 hpgl_LA(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     int cap = pgls->g.line.cap, join = pgls->g.line.join;
-
     hpgl_real_t miter_limit = pgls->g.miter_limit;
-
     bool no_args = true;
-
     int kind;
 
     while (hpgl_arg_c_int(pgls->memory, pargs, &kind)) {
@@ -336,7 +331,6 @@ hpgl_LT(hpgl_args_t * pargs, hpgl_state_t * pgls)
     {
         /* initialize pattern lengths to current state values */
         hpgl_real_t length = pgls->g.line.current.pattern_length;
-
         int mode = pgls->g.line.current.pattern_length_relative;
 
         /* get/check the pattern length and mode */
@@ -420,13 +414,9 @@ hpgl_PW(hpgl_args_t * pargs, hpgl_state_t * pgls)
      * it gets interpreted.
      */
     hpgl_real_t param = pgls->g.pen.width_relative ? .1 : .35;
-
     hpgl_real_t width_plu;
-
     int pmin = 0;
-
     int pmax = pcl_palette_get_num_entries(pgls->ppalet) - 1;
-
     hpgl_real_t pf_factor = hpgl_width_scale(pgls);
 
     /*
@@ -496,17 +486,12 @@ hpgl_RF_build_mask(byte * data, uint index, uint height, uint width,
                    hpgl_state_t * pgls)
 {
     uint raster = (width + 7) / 8;
-
     byte *mdata = gs_alloc_bytes(pgls->memory,
                                  height * raster,
                                  "hpgl mask raster fill");
-
     byte *pb1 = data;
-
     byte *pb2 = mdata;
-
     int i, code;
-
     gs_depth_bitmap mask;
 
     if (mdata == 0) {
@@ -514,9 +499,7 @@ hpgl_RF_build_mask(byte * data, uint index, uint height, uint width,
     }
     for (i = 0; i < height; i++) {
         int mask = 0x80;
-
         int outval = 0;
-
         int j;
 
         for (j = 0; j < width; j++) {
@@ -549,13 +532,9 @@ int
 hpgl_RF(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     uint index, width, height;
-
     gs_depth_bitmap pixmap;
-
     int code = 0;
-
     bool is_mask = true;
-
     byte *data;
 
     if (pargs->phase == 0) {
@@ -658,7 +637,6 @@ int
 hpgl_SM(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     const byte *p = pargs->source.ptr;
-
     const byte *rlimit = pargs->source.limit;
 
     for (;;) {
@@ -852,9 +830,7 @@ hpgl_UL(hpgl_args_t * pargs, hpgl_state_t * pgls)
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     if (hpgl_arg_c_int(pgls->memory, pargs, &index)) {
         hpgl_real_t gap[20];
-
         double total = 0;
-
         int i, k;
 
         if ((index < -8) || (index > 8) || (index == 0))

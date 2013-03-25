@@ -120,9 +120,7 @@ static int
 pcl_appletalk_configuration(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     const byte *data = arg_data(pargs);
-
     uint count = uint_arg(pargs);
-
     uint i;
 
     if ((count < 2) || (data[0] == ' '))
@@ -217,7 +215,6 @@ rtmisc_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         pcs->configure_appletalk((const byte *)"JOB", 3, (const byte *)"", 0);
     if ((type & pcl_reset_cold) != 0) {
         static const byte prntr_name[] = "HP Color LaserJet 5M";
-
         static const byte dev_type[] = "HP LaserJet 4";
 
         pcs->configure_appletalk((const byte *)"RENAME",

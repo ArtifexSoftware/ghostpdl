@@ -78,13 +78,9 @@ build_foreground(pcl_state_t * pcs,
                  int pal_entry, gs_memory_t * pmem)
 {
     pcl_frgrnd_t *pfrgrnd = *ppfrgrnd;
-
     const pcl_cs_indexed_t *pindexed = ppalet->pindexed;
-
     int num_entries = pindexed->num_entries;
-
     bool is_default = false;
-
     int code = 0;
 
     /*

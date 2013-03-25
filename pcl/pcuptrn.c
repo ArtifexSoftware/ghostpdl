@@ -133,7 +133,6 @@ pcl_pattern_build_pattern(pcl_pattern_t ** ppptrn,
                           int xres, int yres, gs_memory_t * pmem)
 {
     pcl_pattern_t *pptrn = 0;
-
     int code = 0;
 
     *ppptrn = 0;
@@ -192,7 +191,6 @@ static int
 define_pcl_ptrn(pcl_state_t * pcs, int id, pcl_pattern_t * pptrn, bool gl2)
 {
     pcl_id_t key;
-
     pl_dict_t *pd = (gl2 ? &pcs->gl_patterns : &pcs->pcl_patterns);
 
     id_set_value(key, id);
@@ -219,13 +217,9 @@ static void
 delete_all_pcl_ptrns(bool renderings, bool tmp_only, pcl_state_t * pcs)
 {
     pcl_pattern_t *pptrn;
-
     pl_dict_enum_t denum;
-
     gs_const_string plkey;
-
     pl_dict_t *pdict[2];
-
     int i;
 
     pdict[0] = &pcs->pcl_patterns;
@@ -285,7 +279,6 @@ int
 pcl_pattern_RF(int indx, const gs_depth_bitmap * ppixmap, pcl_state_t * pcs)
 {
     pcl_id_t key;
-
     pcl_pattern_t *pptrn = 0;
 
     id_set_value(key, indx);
@@ -297,7 +290,6 @@ pcl_pattern_RF(int indx, const gs_depth_bitmap * ppixmap, pcl_state_t * pcs)
         /* RF appears to use the resolution of the device contrary to
            what the pcl documentation implies */
         gx_device *pdev = gs_currentdevice(pcs->pgs);
-
         int code = pcl_pattern_build_pattern(&pptrn,
                                              ppixmap,
                                              type,
@@ -366,17 +358,11 @@ static int
 download_pcl_pattern(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint count = arg_data_size(pargs);
-
     const pcl_upattern0_t *puptrn0 = (pcl_upattern0_t *) arg_data(pargs);
-
     uint format, depth, rsize, ndsize, dsize;
-
     gs_depth_bitmap pixinfo;
-
     int xres = 300, yres = 300;
-
     pcl_pattern_t *pptrn = 0;
-
     int code = 0;
 
     if (count < 8)

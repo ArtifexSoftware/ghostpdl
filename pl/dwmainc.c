@@ -104,7 +104,6 @@ winthread(void *arg)
             case DISPLAY_CLOSE:
                 {
                     HANDLE hmutex;
-
                     IMAGE *img = (IMAGE *) msg.lParam;
 
                     hmutex = img->hmutex;
@@ -357,18 +356,12 @@ main_utf8(int argc, char *argv[])
 #endif
 {
     int code, code1;
-
     int exit_code;
-
     int exit_status;
-
 #ifndef METRO
     int nargc;
-
     char **nargv;
-
     char dformat[64];
-
     char ddpi[64];
 
     if (!_isatty(fileno(stdin)))
@@ -405,7 +398,6 @@ main_utf8(int argc, char *argv[])
         int format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
             DISPLAY_DEPTH_1 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
         HDC hdc = GetDC(NULL);  /* get hdc for desktop */
-
         int depth =
             GetDeviceCaps(hdc, PLANES) * GetDeviceCaps(hdc, BITSPIXEL);
         sprintf(ddpi, "-dDisplayResolution=%d",
@@ -468,7 +460,6 @@ wmain(int argc, wchar_t * argv[], wchar_t * envp[])
 {
     /* Duplicate args as utf8 */
     char **nargv;
-
     int i, code, cp;
 
     nargv = calloc(argc, sizeof(nargv[0]));

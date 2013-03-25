@@ -155,7 +155,6 @@ int
 px_set_halftone(px_state_t * pxs)
 {
     px_gstate_t *pxgs = pxs->pxgs;
-
     int code;
 
     if (pxgs->halftone.set)
@@ -239,30 +238,19 @@ static int
 px_paint_pattern(const gs_client_color * pcc, gs_state * pgs)
 {
     const gs_client_pattern *ppat = gs_getpattern(pcc);
-
     const px_pattern_t *pattern = ppat->client_data;
-
     const byte *dp = pattern->data;
-
     gs_image_enum *penum;
-
     gs_image_t image;
-
     int code;
-
     int num_components =
         (pattern->params.indexed || pattern->params.color_space == eGray ?
          1 : 3);
     uint rep_width = pattern->params.width;
-
     uint rep_height = pattern->params.height;
-
     uint full_width = (uint) ppat->XStep;
-
     uint full_height = (uint) ppat->YStep;
-
     uint bits_per_row, bytes_per_row;
-
     int x;
 
     code =
@@ -292,7 +280,6 @@ px_paint_pattern(const gs_client_color * pcc, gs_state * pgs)
             break;
         for (y = 0; code >= 0 && y < full_height; ++y) {
             const byte *row = dp + (y % rep_height) * bytes_per_row;
-
             uint used;          /* better named not_used */
 
             code = pl_image_data2(penum, row, bytes_per_row, &used);
@@ -311,15 +298,10 @@ render_pattern(gs_client_color * pcc, const px_pattern_t * pattern,
                px_state_t * pxs)
 {
     px_gstate_t *pxgs = pxs->pxgs;
-
     uint rep_width = pattern->params.width;
-
     uint rep_height = pattern->params.height;
-
     uint full_width, full_height;
-
     gs_state *pgs = pxs->pgs;
-
     gs_client_pattern templat;
 
     /*
@@ -360,9 +342,7 @@ render_pattern(gs_client_color * pcc, const px_pattern_t * pattern,
     templat.client_data = (void *)pattern;
     {
         gs_matrix mat;
-
         gs_point dsize;
-
         int code;
 
         if (porigin)
@@ -452,7 +432,6 @@ static real
 fraction_value(const px_value_t * pv, int i)
 {
     px_data_type_t type = pv->type;
-
     real v;
 
     if (type & pxd_real32)
@@ -508,19 +487,14 @@ static int
 set_source(const px_args_t * par, px_state_t * pxs, px_paint_t * ppt)
 {
     px_gstate_t *pxgs = pxs->pxgs;
-
     int code = 0;
 
     /* pxaPatternSelectID */
     if (par->pv[aPatternSelectID]) {
         px_value_t key;
-
         void *value;
-
         px_pattern_t *pattern;
-
         gs_client_color ccolor;
-
         int code;
 
         if (par->pv[aRGBColor] || par->pv[aGrayLevel]
@@ -564,7 +538,6 @@ set_source(const px_args_t * par, px_state_t * pxs, px_paint_t * ppt)
         return_error(errorIllegalAttributeCombination);
     } else if (par->pv[aRGBColor]) {
         const px_value_t *prgb = par->pv[aRGBColor];
-
         int i;
 
         if (par->pv[aGrayLevel] || par->pv[aNullBrushPen])
@@ -614,7 +587,6 @@ set_source(const px_args_t * par, px_state_t * pxs, px_paint_t * ppt)
         }
         /* NB depth?? - for range checking */
         if (ppt->type == pxpRGB || ppt->type == pxpSRGB) {
-
             ppt->value.rgb[0] =
                 (float)par->pv[aPrimaryArray]->value.array.data[0] / 255.0;
             ppt->value.rgb[1] =
@@ -645,7 +617,6 @@ int
 px_set_paint(const px_paint_t * ppt, px_state_t * pxs)
 {
     gs_state *pgs = pxs->pgs;
-
     px_paint_type_t type;
 
     if (pxs->useciecolor && ppt->type == pxpRGB)
@@ -699,7 +670,6 @@ int
 pxSetColorSpace(px_args_t * par, px_state_t * pxs)
 {
     px_gstate_t *pxgs = pxs->pxgs;
-
     pxeColorSpace_t cspace;
 
     if (par->pv[0])
@@ -790,9 +760,7 @@ int
 pxSetHalftoneMethod(px_args_t * par, px_state_t * pxs)
 {
     gs_state *pgs = pxs->pgs;
-
     px_gstate_t *pxgs = pxs->pxgs;
-
     pxeDitherMatrix_t method;
 
     if (par->pv[6] || par->pv[7] || par->pv[8] || par->pv[9])
@@ -808,13 +776,9 @@ pxSetHalftoneMethod(px_args_t * par, px_state_t * pxs)
         pxs->download_string.size = 0;
     } else if (par->pv[2] && par->pv[3] && par->pv[4]) {        /* Dither matrix */
         uint width = par->pv[3]->value.ia[0];
-
         uint source_width = (width + 3) & ~3;
-
         uint height = par->pv[3]->value.ia[1];
-
         uint size = width * height;
-
         uint source_size = source_width * height;
 
         if (par->source.position == 0) {
@@ -830,9 +794,7 @@ pxSetHalftoneMethod(px_args_t * par, px_state_t * pxs)
         }
         while (par->source.position < source_size) {
             uint source_x = par->source.position % source_width;
-
             uint source_y = par->source.position / source_width;
-
             uint used;
 
             if (par->source.available == 0)
@@ -841,11 +803,8 @@ pxSetHalftoneMethod(px_args_t * par, px_state_t * pxs)
                 used = min(par->source.available, source_width - source_x);
             } else {            /* Read data. */
                 const byte *src = par->source.data;
-
                 byte *dest = pxs->download_string.data;
-
                 uint i;
-
                 int skip;
 
                 used = min(par->source.available, width - source_x);

@@ -198,7 +198,6 @@ pcl_set_cap_x(pcl_state_t * pcs, coord x, bool relative, bool use_margins)
     /* the horizontal text margins are only interesting in transition */
     if (use_margins) {
         coord min_x = pcs->margins.left;
-
         coord max_x = pcs->margins.right;
 
         if ((old_x >= min_x) && (x < min_x))
@@ -227,9 +226,7 @@ pcl_set_cap_y(pcl_state_t * pcs,
               bool use_margins, bool by_row, bool by_row_command)
 {
     coord lim_y = pcs->xfm_state.pd_size.y;
-
     coord max_y = pcs->margins.top + pcs->margins.length;
-
     bool page_eject = by_row && relative;
 
     /* this corresponds to rule 'k' above. */
@@ -260,7 +257,6 @@ pcl_set_cap_y(pcl_state_t * pcs,
         pcs->cap.y = (y <= lim_y ? y : lim_y);
     else {
         coord vmi_cp = pcs->vmi_cp;
-
         coord y0 = pcs->cap.y;
 
         while (y > max_y) {
@@ -384,11 +380,9 @@ coord
 pcl_updated_hmi(pcl_state_t * pcs)
 {
     coord hmi;
-
     const pcl_font_selection_t *pfs =
         &(pcs->font_selection[pcs->font_selected]);
     int code = pcl_recompute_font(pcs, false);
-
     const pl_font_t *plfont = pcs->font;
 
     if (code < 0)
@@ -452,7 +446,6 @@ set_vert_motion_index(pcl_args_t * pargs, pcl_state_t * pcs)
      * convert to pcl_coord_scale (7200), roundup the float prior to truncation.
      */
     coord vcp = (coord) ((fabs(float_arg(pargs)) * 7200.0 / 48.0) + 0.5);
-
     bool cursor_at_home = pcl_cursor_at_home_pos(pcs);
 
 #ifdef HP_VERT_MOTION_NEW
@@ -484,7 +477,6 @@ static int
 set_line_spacing(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint lpi = uint_arg(pargs);
-
     bool cursor_at_home = pcl_cursor_at_home_pos(pcs);
 
     if (lpi == 0)               /* 0 ==> 12 lines per inch */
@@ -573,7 +565,6 @@ cmd_HT(pcl_args_t * pargs,      /* ignored */
        pcl_state_t * pcs)
 {
     coord x = pcs->cap.x - pcs->margins.left;
-
     coord tab;
 
     if (x < 0)
@@ -674,7 +665,6 @@ push_pop_cursor(pcl_args_t * pargs, pcl_state_t * pcs)
 
     } else if ((type == 1) && (pcs->cursor_stk_size > 0)) {
         gs_point *ppt = &(pcs->cursor_stk[--pcs->cursor_stk_size]);
-
         gs_matrix lp2pd;
 
         pcl_invert_mtx(&(pcs->xfm_state.pd2lp_mtx), &lp2pd);

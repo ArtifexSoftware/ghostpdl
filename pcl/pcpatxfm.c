@@ -51,26 +51,20 @@ void
 pcl_invert_mtx(const gs_matrix * pmtx1, gs_matrix * pmtx2)
 {
     float xx = pmtx1->xx;
-
     float tx = pmtx1->tx;
-
     float ty = pmtx1->ty;
 
     if (xx == 0.0) {
         float xy = pmtx1->xy;
-
         float yx = pmtx1->yx;
-
         pmtx2->xx = 0.0;
         pmtx2->xy = 1.0 / yx;
         pmtx2->yx = 1.0 / xy;
         pmtx2->yy = 0.0;
         pmtx2->tx = -ty / xy;
         pmtx2->ty = -tx / yx;
-
     } else {
         float yy = pmtx1->yy;
-
         pmtx2->xx = 1.0 / xx;
         pmtx2->xy = 0.0;
         pmtx2->yx = 0.0;
@@ -183,7 +177,6 @@ static floatp
 adjust_param(floatp val)
 {
     floatp fval = floor(val);
-
     floatp cval = ceil(val);
 
     return (val - fval < .001 ? fval : (cval - val < .001 ? cval : val));
@@ -197,7 +190,6 @@ pcl_xfm_get_pat_xfm(const pcl_state_t * pcs,
                     pcl_pattern_t * pptrn, gs_matrix * pmat)
 {
     const pcl_xfm_state_t *pxfmst = &(pcs->xfm_state);
-
     int rot = (pcs->pat_orient - pxfmst->lp_orient) & 0x3;
 
     *pmat = pxfmst->lp2dev_mtx;

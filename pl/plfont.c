@@ -355,7 +355,6 @@ static int
 pl_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
 {
     uint table_length;
-
     ulong table_offset;
 
     /* guess if the font type is not truetype */
@@ -383,11 +382,8 @@ pl_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
 
     {
         ulong format;
-
         uint numGlyphs;
-
         uint glyph_name_index;
-
         const byte *postp;      /* post table pointer */
 
         ((gs_font_type42 *) pfont)->data.string_proc((gs_font_type42 *) pfont,
@@ -423,10 +419,8 @@ pl_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
             /* not mac */
         } else {
             byte *mydata;
-
             /* and here's the tricky part */
             const byte *pascal_stringp = postp + 34 + (numGlyphs * 2);
-
             /* 0 - 257 lives in the mac table above */
             glyph_name_index -= 258;
             /* The string we want is the index'th pascal string,
@@ -600,7 +594,6 @@ pl_clone_font(const pl_font_t * src, gs_memory_t * mem, client_name_t cname)
                     /* detect if a truetype font is downloaded or
                        internal.  There must be a better way... */
                     gs_font_type42 *pfont_src = (gs_font_type42 *) src->pfont;
-
                     bool downloaded =
                         (pfont_src->data.get_outline == pl_tt_get_outline);
                     if (pfont == 0)
@@ -649,7 +642,6 @@ pl_clone_font(const pl_font_t * src, gs_memory_t * mem, client_name_t cname)
         plfont->glyphs.skip = src->glyphs.skip;
         for (i = 0; i < src->glyphs.size; i++) {
             const byte *data = src->glyphs.table[i].data;
-
             byte *char_data;
 
             plfont->glyphs.table[i].glyph = src->glyphs.table[i].glyph;
@@ -690,7 +682,6 @@ pl_fill_in_font(gs_font * pfont, pl_font_t * plfont, gs_font_dir * pdir,
                 gs_memory_t * mem, const char *font_name)
 {
     int i;
-
     gs_font_base *pbfont = (gs_font_base *) pfont;
 
     plfont->pfont = pfont;
@@ -830,21 +821,13 @@ pl_font_scan_segments(const gs_memory_t * mem,
                       const pl_font_offset_errors_t * pfoe)
 {
     const byte *header = plfont->header;
-
     pl_font_scaling_technology_t fst = header[fst_offset];
-
     int wsize = (large_sizes ? 4 : 2);
-
     const byte *segment = header + start_offset;
-
     const byte *end = header + end_offset;
-
     const byte *null_segment = end - (2 + wsize);
-
     bool found = false;
-
     ulong seg_size;
-
     int illegal_font_data = pfoe->illegal_font_data;
 
 #define return_scan_error(err)\
@@ -866,7 +849,6 @@ pl_font_scan_segments(const gs_memory_t * mem,
     /* Scan the segments. */
     for (; end - segment >= 2 + wsize; segment += 2 + wsize + seg_size) {
         uint seg_id = u16(segment);
-
         const byte *sdata = segment + 2 + wsize;
 
 #define id2(c1,c2) (((uint)(c1) << 8) + (c2))
@@ -898,7 +880,6 @@ pl_font_scan_segments(const gs_memory_t * mem,
                         return_scan_error(pfoe->illegal_BR_segment);
                     {
                         uint xres = pl_get_uint16(sdata);
-
                         uint yres = pl_get_uint16(sdata + 2);
 
                         if (xres == 0 || yres == 0)
@@ -1010,17 +991,11 @@ pl_load_tt_font(stream * in, gs_font_dir * pdir, gs_memory_t * mem,
                 long unique_id, pl_font_t ** pplfont, char *font_name)
 {
     byte *tt_font_datap;
-
     ulong size;
-
     int code;
-
     gs_font_type42 *pfont;
-
     pl_font_t *plfont;
-
     byte *file_name = NULL;
-
     gs_const_string pfname;
 
     if (sfilename(in, &pfname) == 0) {
@@ -1087,7 +1062,6 @@ pl_load_resident_font_data_from_file(gs_memory_t * mem, pl_font_t * plfont)
 {
 
     ulong len, size;
-
     byte *data;
 
     if (plfont->font_file && !plfont->font_file_loaded) {
@@ -1157,9 +1131,7 @@ pl_font_t *
 pl_lookup_font_by_pjl_number(pl_dict_t * pfontdict, int pjl_font_number)
 {
     pl_dict_enum_t dictp;
-
     gs_const_string key;
-
     void *value;
 
     pl_dict_enum_begin(pfontdict, &dictp);

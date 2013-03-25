@@ -100,7 +100,6 @@ int
 pcl_gsave(pcl_state_t * pcs)
 {
     int code = 0;
-
     pcl_gstate_ids_t *pids = gs_alloc_struct(pcs->memory,
                                              pcl_gstate_ids_t,
                                              &st_gstate_ids_t,
@@ -127,7 +126,6 @@ int
 pcl_grestore(pcl_state_t * pcs)
 {
     pcl_gstate_ids_t *pids = pcs->pids->prev;
-
     int code = 0;
 
     /* check for bottom of graphic state stack */

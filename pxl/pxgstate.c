@@ -122,6 +122,7 @@ px_gstate_client_alloc(gs_memory_t * mem)
     px_dict_init(&pxgs->temp_pattern_dict, mem, px_free_pattern);
     return pxgs;
 }
+
 static int
 px_gstate_client_copy_for(void *to, void *from, gs_state_copy_reason_t reason)
 {
@@ -150,11 +151,8 @@ px_gstate_client_copy_for(void *to, void *from, gs_state_copy_reason_t reason)
      */
     {
         gs_string tmat;
-
         gs_string thtt;
-
         pl_dict_t tdict;
-
         gs_string *phtt;
 
         tmat = pxto->dither_matrix;
@@ -214,6 +212,7 @@ px_gstate_client_free(void *old, gs_memory_t * mem)
     px_gstate_rc_adjust(old, -1, mem);
     gs_free_object(mem, old, "px_gstate_free");
 }
+
 static const gs_state_client_procs px_gstate_procs = {
     px_gstate_client_alloc,
     0,                          /* copy -- superseded by copy_for */
@@ -263,7 +262,6 @@ px_initgraphics(px_state_t * pxs)
 
     {
         gs_point inch;
-
         float dpi;
 
         gs_dtransform(pgs, 72.0, 0.0, &inch);
@@ -339,13 +337,9 @@ px_image_color_space(gs_image_t * pim,
 {
 
     int depth = params->depth;
-
     gs_color_space *pbase_pcs = NULL;
-
     gs_color_space *pcs = NULL;
-
     bool cie_space = false;
-
     int code = 0;
 
     switch (params->color_space) {
@@ -389,7 +383,6 @@ px_image_color_space(gs_image_t * pim,
         pcs->params.indexed.lookup.table.size = palette->size;
         {
             uint n = palette->size;
-
             byte *p = gs_alloc_string(pgs->memory, n,
                                       "px_image_color_space(palette)");
 
@@ -442,9 +435,7 @@ int
 pxPopGS(px_args_t * par, px_state_t * pxs)
 {
     gs_state *pgs = pxs->pgs;
-
     px_gstate_t *pxgs = pxs->pxgs;
-
     int code;
 
     /*
@@ -470,9 +461,7 @@ int
 pxPushGS(px_args_t * par, px_state_t * pxs)
 {
     gs_state *pgs = pxs->pgs;
-
     int code = gs_gsave(pgs);
-
     px_gstate_t *pxgs;
 
     if (code < 0)
@@ -569,11 +558,8 @@ int
 pxSetDefaultGS(px_args_t * par, px_state_t * pxs)
 {
     px_parser_state_t *pst = par->parser;
-
     px_parser_state_t st;
-
     stream_cursor_read r;
-
     int code;
 
     st.memory = pxs->memory;
@@ -611,7 +597,6 @@ int
 pxSetCharAngle(px_args_t * par, px_state_t * pxs)
 {
     real angle = real_value(par->pv[0], 0);
-
     px_gstate_t *pxgs = pxs->pxgs;
 
     if (angle != pxgs->char_angle || pxgs->char_transforms[0] != pxct_rotate) {
@@ -645,9 +630,7 @@ int
 pxSetCharScale(px_args_t * par, px_state_t * pxs)
 {
     real x_scale = real_value(par->pv[0], 0);
-
     real y_scale = real_value(par->pv[0], 1);
-
     px_gstate_t *pxgs = pxs->pxgs;
 
     if (x_scale != pxgs->char_scale.x || y_scale != pxgs->char_scale.y ||
@@ -673,9 +656,7 @@ int
 pxSetCharShear(px_args_t * par, px_state_t * pxs)
 {
     real x_shear = real_value(par->pv[0], 0);
-
     real y_shear = real_value(par->pv[0], 1);
-
     px_gstate_t *pxgs = pxs->pxgs;
 
     x_shear = x_shear > SHEAR_LIMIT ? SHEAR_LIMIT : x_shear;
@@ -697,28 +678,17 @@ int
 pxSetClipIntersect(px_args_t * par, px_state_t * pxs)
 {
     gs_state *pgs = pxs->pgs;
-
     pxeClipRegion_t clip_region = par->pv[0]->value.i;
-
     int code;
 
     check_clip_region(par, pxs);
-    /*
-     * The discussion of ClipMode and ClipRegion in the published
-     * specification is confused and incorrect.  Based on testing with
-     * the LaserJet 6MP, we believe that ClipMode works just like
-     * PostScript clip and eoclip, and that ClipRegion applies only to
-     * the *current* path (i.e., support for "outside clipping" in the
-     * library is unnecessary).  If we had only known....
-     */
-#if 0
-    gs_setclipoutside(pgs, false);
-#endif
-    if (clip_region == eExterior) {     /*
-                                         * We know clip_mode is eEvenOdd, so we can complement the
-                                         * region defined by the current path by just adding a
-                                         * rectangle that encloses the entire page.
-                                         */
+
+    if (clip_region == eExterior) {
+        /*
+         * We know clip_mode is eEvenOdd, so we can complement the
+         * region defined by the current path by just adding a
+         * rectangle that encloses the entire page.
+         */
         gs_rect bbox;
 
         code = gs_gsave(pgs);
@@ -738,9 +708,7 @@ pxSetClipIntersect(px_args_t * par, px_state_t * pxs)
     code = (pxs->pxgs->clip_mode == eEvenOdd ? gs_eoclip(pgs) : gs_clip(pgs));
     if (code < 0)
         return code;
-#if 0
-    gs_setclipoutside(pgs, clip_region == eExterior);
-#endif
+
     return gs_newpath(pgs);
 }
 
@@ -751,9 +719,7 @@ int
 pxSetClipRectangle(px_args_t * par, px_state_t * pxs)
 {
     px_args_t args;
-
     gs_state *pgs = pxs->pgs;
-
     int code;
 
     check_clip_region(par, pxs);
@@ -775,6 +741,7 @@ pxSetClipToPage(px_args_t * par, px_state_t * pxs)
 const byte apxSetCursor[] = {
     pxaPoint, 0, 0
 };
+
 int
 pxSetCursor(px_args_t * par, px_state_t * pxs)
 {
@@ -785,6 +752,7 @@ pxSetCursor(px_args_t * par, px_state_t * pxs)
 const byte apxSetCursorRel[] = {
     pxaPoint, 0, 0
 };
+
 int
 pxSetCursorRel(px_args_t * par, px_state_t * pxs)
 {
@@ -793,10 +761,10 @@ pxSetCursorRel(px_args_t * par, px_state_t * pxs)
 }
 
 /* SetHalftoneMethod is in pxink.c */
-
 const byte apxSetFillMode[] = {
     pxaFillMode, 0, 0
 };
+
 int
 pxSetFillMode(px_args_t * par, px_state_t * pxs)
 {
@@ -805,24 +773,20 @@ pxSetFillMode(px_args_t * par, px_state_t * pxs)
 }
 
 /* SetFont is in pxfont.c */
-
 const byte apxSetLineDash[] = {
     0, pxaLineDashStyle, pxaDashOffset, pxaSolidLine, 0
 };
+
 int
 pxSetLineDash(px_args_t * par, px_state_t * pxs)
 {
     px_gstate_t *pxgs = pxs->pxgs;
-
     gs_state *pgs = pxs->pgs;
 
     if (par->pv[0]) {
         float pattern[MAX_DASH_ELEMENTS * 2];
-
         uint size = par->pv[0]->value.array.size;
-
         real offset = (par->pv[1] ? real_value(par->pv[1], 0) : 0.0);
-
         int code;
 
         if (par->pv[2])
@@ -846,7 +810,6 @@ pxSetLineDash(px_args_t * par, px_state_t * pxs)
          */
         {
             uint orig_size = size;
-
             int i;
 
             /* Acquire the pattern, duplicating it if the length is odd. */
@@ -872,9 +835,7 @@ pxSetLineDash(px_args_t * par, px_state_t * pxs)
              */
           elim:for (i = 0; i < size; i += 2) {
                 float draw = pattern[i], skip = pattern[i + 1];
-
                 int inext, iprev;
-
                 float next, prev;
 
                 if (skip > 0)
@@ -930,7 +891,6 @@ pxSetLineDash(px_args_t * par, px_state_t * pxs)
            line pattern on the LJ6 */
         {
             bool skips_have_length = false;
-
             int i;
 
             for (i = 0; i < size; i += 2)
@@ -970,7 +930,6 @@ const byte apxBeginUserDefinedLineCap[] = { 0, 0 };
 int
 pxBeginUserDefinedLineCap(px_args_t * par, px_state_t * pxs)
 {
-
     dmprintf(pxs->memory, "undocumented\n");
     return 0;
 }
@@ -979,7 +938,6 @@ const byte apxEndUserDefinedLineCap[] = { 0, 0 };
 int
 pxEndUserDefinedLineCap(px_args_t * par, px_state_t * pxs)
 {
-
     dmprintf(pxs->memory, "undocumented\n");
     return 0;
 }
@@ -987,6 +945,7 @@ pxEndUserDefinedLineCap(px_args_t * par, px_state_t * pxs)
 const byte apxSetLineJoin[] = {
     pxaLineJoinStyle, 0, 0
 };
+
 int
 pxSetLineJoin(px_args_t * par, px_state_t * pxs)
 {
@@ -998,6 +957,7 @@ pxSetLineJoin(px_args_t * par, px_state_t * pxs)
 const byte apxSetMiterLimit[] = {
     pxaMiterLength, 0, 0
 };
+
 int
 pxSetMiterLimit(px_args_t * par, px_state_t * pxs)
 {
@@ -1042,7 +1002,6 @@ pxSetPageRotation(px_args_t * par, px_state_t * pxs)
 {                               /* Since the Y coordinate of user space is inverted, */
     /* we must negate rotation angles. */
     real angle = -real_value(par->pv[0], 0);
-
     int code = gs_rotate(pxs->pgs, angle);
 
     if (code < 0)
@@ -1050,7 +1009,6 @@ pxSetPageRotation(px_args_t * par, px_state_t * pxs)
     /* Post-multiply the text CTM by the rotation matrix. */
     {
         gs_matrix rmat;
-
         px_gstate_t *pxgs = pxs->pxgs;
 
         gs_make_rotation(angle, &rmat);
@@ -1067,11 +1025,8 @@ int
 pxSetPageScale(px_args_t * par, px_state_t * pxs)
 {
     int code;
-
     real sx = 1;
-
     real sy = 1;
-
     static const real units_conversion_table[3][3] = {
         {1, 25.4f, 254},        /* in -> in, mill, 1/10 mill */
         {0.0394f, 1, 10},       /* mill -> in, mill, 1/10 mill */
@@ -1083,18 +1038,14 @@ pxSetPageScale(px_args_t * par, px_state_t * pxs)
     if (par->pv[1] && par->pv[2]) {
         /* new user measure */
         real nux = real_value(par->pv[2], 0);
-
         real nuy = real_value(par->pv[2], 1);
 
         if (nux != 0 && nuy != 0) {
             /* new measure */
             pxeMeasure_t mt = par->pv[1]->value.i;
-
             /* convert to session units */
             real factor = units_conversion_table[pxs->measure][mt];
-
             real sux = nux * factor;
-
             real suy = nuy * factor;
 
             sx = pxs->units_per_measure.x / sux;
@@ -1117,7 +1068,6 @@ pxSetPageScale(px_args_t * par, px_state_t * pxs)
     /* Post-multiply the text CTM by the scale matrix. */
     {
         gs_matrix smat;
-
         px_gstate_t *pxgs = pxs->pxgs;
 
         gs_make_scaling(sx, sy, &smat);
@@ -1205,7 +1155,6 @@ pxSetCharSubMode(px_args_t * par, px_state_t * pxs)
                                  * is some reason for this.
                                  */
     const px_value_t *psubs = par->pv[0];
-
     pxeCharSubModeArray_t arg;
 
     if (psubs->value.array.size != 1 ||

@@ -33,7 +33,6 @@ tag_stream_name(const px_value_t * psnv, gs_string * pstr,
                 gs_memory_t * mem, client_name_t cname)
 {
     uint size = array_value_size(psnv);
-
     byte *str = gs_alloc_string(mem, size + 1, cname);
 
     if (str == 0)
@@ -71,11 +70,8 @@ int
 pxReadStream(px_args_t * par, px_state_t * pxs)
 {
     ulong len = par->pv[0]->value.i;
-
     ulong copy = min(len - par->source.position, par->source.available);
-
     uint old_size = pxs->stream_def.size;
-
     byte *str;
 
     if (copy == 0)
@@ -115,7 +111,6 @@ int
 pxRemoveStream(px_args_t * par, px_state_t * pxs)
 {
     gs_string str;
-
     void *def;
 
     int code = tag_stream_name(par->pv[0], &str, pxs->memory,
@@ -143,21 +138,13 @@ int
 pxExecStream(px_args_t * par, px_state_t * pxs)
 {
     gs_string str;
-
     void *def;
-
     const byte *def_data;
-
     uint def_size;
-
     bool big_endian;
-
     const byte *start;
-
     px_parser_state_t *pst = par->parser;
-
     px_parser_state_t st;
-
     stream_cursor_read r;
 
     int code = tag_stream_name(par->pv[0], &str, pxs->memory,

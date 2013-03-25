@@ -51,13 +51,9 @@ main(int argc, char *argv[])
 
     for (; *ppmap; ++ppmap) {
         const pl_symbol_map_t *pmap = *ppmap;
-
         uint id = (pmap->id[0] << 8) + pmap->id[1];
-
         int n = id >> 5;
-
         int l = (id & 31) + '@';
-
         uint i;
 
         printf("\n/**** %d%c ****/", n, l);

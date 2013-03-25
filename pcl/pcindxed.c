@@ -46,7 +46,6 @@ static int
 get_pow_2(int num)
 {
     int i;
-
     unsigned power_2 = 1;
 
     for (i = 0; (unsigned)num > power_2; ++i)
@@ -83,13 +82,9 @@ alloc_indexed_cspace(pcl_cs_indexed_t ** ppindexed,
                      uint num_entries, gs_memory_t * pmem)
 {
     pcl_cs_indexed_t *pindexed = 0;
-
     int code = 0;
-
     byte *bp = 0;
-
     uint palette_size = 3 * num_entries;
-
     int i;
 
     if_debug1m('c', pmem, "[c]alloc_indexed_cspace entries:%d\n",
@@ -142,13 +137,9 @@ static int
 resize_indexed_cspace(pcl_cs_indexed_t * pindexed, uint num_entries)
 {
     byte *pdata;
-
     gs_memory_t *pmem = pindexed->rc.memory;
-
     uint new_size = num_entries * 3;
-
     int i;
-
     uint num_old_entries;
 
     if_debug2m('c', pmem, "[c]resizing_indexed_cspace new:%d old:%d\n",
@@ -189,11 +180,8 @@ static int
 unshare_indexed_cspace(pcl_cs_indexed_t ** ppindexed)
 {
     pcl_cs_indexed_t *pindexed = *ppindexed;
-
     pcl_cs_indexed_t *pnew = 0;
-
     int code = 0;
-
     int num_entries = pindexed->num_entries;
 
     /* check if there is anything to do */
@@ -271,7 +259,6 @@ set_dev_specific_default_palette(pcl_cs_base_t * pbase, /* ignored in this case 
                                  const byte * porder, int start, int num)
 {
     int i;
-
     static const byte cmy_default[8 * 3] = {
         255, 255, 255,          /* white */
         0, 255, 255,            /* cyan */
@@ -308,9 +295,7 @@ set_colmet_default_palette(pcl_cs_base_t * pbase,
                            const byte * porder, int start, int num)
 {
     float *pmin = pbase->client_data.min_val;
-
     float *prange = pbase->client_data.range;
-
     int i;
 
     static const float colmet_default[8 * 3] = {
@@ -327,9 +312,7 @@ set_colmet_default_palette(pcl_cs_base_t * pbase,
     /* fill in the num_entries - 1 values from the colorimetric default */
     for (i = start; i < start + num; i++) {
         int j;
-
         byte *pb = palette + 3 * i;
-
         const float *pdef = colmet_default + 3 * porder[i];
 
         for (j = 0; j < 3; j++)
@@ -359,9 +342,7 @@ set_CIELab_default_palette(pcl_cs_base_t * pbase,
                            const byte * porder, int start, int num)
 {
     float *pmin = pbase->client_data.min_val;
-
     float *prange = pbase->client_data.range;
-
     int i;
 
     static const float lab_default[8 * 3] = {
@@ -377,9 +358,7 @@ set_CIELab_default_palette(pcl_cs_base_t * pbase,
 
     for (i = start; i < start + num; i++) {
         int j;
-
         byte *pb = palette + 3 * i;
-
         const float *pdef = lab_default + 3 * porder[i];
 
         for (j = 0; j < 3; j++)
@@ -405,13 +384,9 @@ set_lumchrom_default_palette(pcl_cs_base_t * pbase,
                              const byte * porder, int start, int num)
 {
     gs_matrix3 *pxfm = gs_cie_abc_MatrixABC(pbase->pcspace);
-
     float *pmin = pbase->client_data.min_val;
-
     float *prange = pbase->client_data.range;
-
     pcl_mtx3_t tmp_mtx;
-
     int i;
 
     static const pcl_vec3_t lumchrom_default[8] = {
@@ -431,9 +406,7 @@ set_lumchrom_default_palette(pcl_cs_base_t * pbase,
 
     for (i = start; i < start + num; i++) {
         pcl_vec3_t compvec;
-
         byte *pb = palette + 3 * i;
-
         int j;
 
         pcl_vec3_xform(&(lumchrom_default[porder[i]]), &compvec, &tmp_mtx);
@@ -492,17 +465,11 @@ set_default_entries(pcl_cs_indexed_t * pindexed, int start, int num, bool gl2)
     static const byte *cmy_order[3] = { order_1, cmy_order_2, cmy_order_3 };
     static const byte *rgb_order[3] = { order_1, rgb_order_2, rgb_order_3 };
     static const byte *gl2_order[3] = { order_1, gl2_order_2, gl2_order_3 };
-
     int type = pindexed->cid.cspace;
-
     int orig_type = pindexed->original_cspace;
-
     int bits = pindexed->cid.bits_per_index - 1;
-
     const byte *porder;
-
     int cnt = (num + start > 8 ? 8 - start : num);
-
     int i;
 
     if (bits > 2)
@@ -525,7 +492,6 @@ set_default_entries(pcl_cs_indexed_t * pindexed, int start, int num, bool gl2)
     /* set the remaining entries to black */
     {
         int s = start + cnt;
-
         int e = start + num;
 
         for (i = s; i < e; i++) {
@@ -599,11 +565,8 @@ pcl_cs_indexed_set_norm_and_Decode(pcl_cs_indexed_t ** ppindexed,
                                    floatp blk0, floatp blk1, floatp blk2)
 {
     pcl_cs_indexed_t *pindexed = *ppindexed;
-
     pcl_encoding_type_t enc = (pcl_encoding_type_t) pindexed->cid.encoding;
-
     pcl_cs_indexed_norm_t *pnorm;
-
     int code = 0;
 
     /* ignore request if palette is fixed */
@@ -664,12 +627,10 @@ pcl_cs_indexed_set_norm_and_Decode(pcl_cs_indexed_t ** ppindexed,
      */
     if (enc >= pcl_penc_direct_by_plane) {
         int i;
-
         float *pdecode = pindexed->Decode;
 
         for (i = 0; i < 3; i++) {
             int nbits = pindexed->cid.bits_per_primary[i];
-
             floatp inv_range = pnorm[i].inv_range;
 
             if (inv_range == 0.0)
@@ -703,11 +664,8 @@ pcl_cs_indexed_set_num_entries(pcl_cs_indexed_t ** ppindexed,
                                int new_num, bool gl2)
 {
     pcl_cs_indexed_t *pindexed = *ppindexed;
-
     int bits = get_pow_2(new_num);
-
     int old_num = pindexed->num_entries;
-
     int code = 0;
 
     /* ignore request if palette is fixed */
@@ -771,11 +729,8 @@ pcl_cs_indexed_update_lookup_tbl(pcl_cs_indexed_t ** ppindexed,
                                  pcl_lookup_tbl_t * plktbl)
 {
     pcl_cs_indexed_t *pindexed = *ppindexed;
-
     pcl_cspace_type_t cstype = (pcl_cspace_type_t) pindexed->cid.cspace;
-
     pcl_cspace_type_t lktype;
-
     int code = 0;
 
     /* make some simple checks for not-interesting color spaces */
@@ -800,7 +755,6 @@ pcl_cs_indexed_update_lookup_tbl(pcl_cs_indexed_t ** ppindexed,
        the color space is released. */
     {
         uint size = 3 * pcl_cs_indexed_palette_size;
-
         byte *bp = gs_alloc_string(pindexed->rc.memory, size,
                                    "pcl_cs_indexed_update_lookup_tbl");
 
@@ -831,9 +785,7 @@ pcl_cs_indexed_set_palette_entry(pcl_cs_indexed_t ** ppindexed,
     )
 {
     pcl_cs_indexed_t *pindexed = *ppindexed;
-
     int code;
-
     int i;
 
     /* ignore request if palette is fixed */
@@ -858,7 +810,6 @@ pcl_cs_indexed_set_palette_entry(pcl_cs_indexed_t ** ppindexed,
     indx *= 3;
     for (i = 0; i < 3; i++) {
         pcl_cs_indexed_norm_t *pn = &(pindexed->norm[i]);
-
         floatp val = comps[i];
 
         if (pn->inv_range == 0)
@@ -884,7 +835,6 @@ pcl_cs_indexed_set_default_palette_entry(pcl_cs_indexed_t ** ppindexed,
                                          int indx)
 {
     pcl_cs_indexed_t *pindexed = *ppindexed;
-
     int code;
 
     /*
@@ -913,7 +863,6 @@ pcl_cs_indexed_set_pen_width(pcl_cs_indexed_t ** ppindexed,
                              int pen, floatp width)
 {
     pcl_cs_indexed_t *pindexed = *ppindexed;
-
     int code;
 
     /* check for out-of-range pen */
@@ -949,19 +898,12 @@ pcl_cs_indexed_build_cspace(pcl_state_t * pcs,
                             bool pfixed, bool gl2, gs_memory_t * pmem)
 {
     pcl_cs_indexed_t *pindexed = *ppindexed;
-
     pcl_cspace_type_t type = pcl_cid_get_cspace(pcid);
-
     int bits = pcl_cid_get_bits_per_index(pcid);
-
     floatp wht_ref[3];
-
     floatp blk_ref[3];
-
     pcl_cs_base_t *pbase = 0;
-
     bool is_default = false;
-
     int code = 0;
 
     /*
@@ -1017,7 +959,6 @@ pcl_cs_indexed_build_cspace(pcl_state_t * pcs,
     /* set up the normalization information */
     if ((pcid->len > 6) && (type < pcl_cspace_Colorimetric)) {
         const pcl_cid_dev_long_t *pdev = &(pcid->u.dev);
-
         int i;
 
         for (i = 0; i < 3; i++) {
@@ -1108,9 +1049,7 @@ pcl_cs_indexed_build_special(pcl_cs_indexed_t ** ppindexed,
     };
     static const floatp wht_ref[3] = { 255.0, 255.0, 255.0 };
     static const floatp blk_ref[3] = { 0.0, 0.0, 0.0 };
-
     pcl_cs_indexed_t *pindexed;
-
     int i, code = 0;
 
     /* build the indexed color space */
@@ -1149,7 +1088,6 @@ int
 pcl_cs_indexed_install(pcl_cs_indexed_t ** ppindexed, pcl_state_t * pcs)
 {
     pcl_cs_indexed_t *pindexed = *ppindexed;
-
     int code = 0;
 
     if (pindexed == 0) {

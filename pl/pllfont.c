@@ -60,9 +60,7 @@ is_ttfile(stream * ttfile)
 {
     /* check if an open file a ttfile saving and restoring the file position */
     long pos;                   /* saved file position */
-
     byte buffer[4];             /* version number buffer */
-
     bool is_tt;                 /* true if a tt file */
 
     if ((pos = sftell(ttfile)) < 0)
@@ -93,11 +91,8 @@ get_name_from_tt_file(stream * tt_file, gs_memory_t * mem,
 {
     /* check if an open file a ttfile saving and restoring the file position */
     long pos;                   /* saved file position */
-
     unsigned long len;
-
     char *ptr = pfontfilename;
-
     byte *ptt_font_data;
 
     if ((pos = sftell(tt_file)) < 0)
@@ -124,9 +119,7 @@ get_name_from_tt_file(stream * tt_file, gs_memory_t * mem,
     {
         /* find the "name" table */
         byte *pnum_tables_data = ptt_font_data + 4;
-
         byte *ptable_directory_data = ptt_font_data + 12;
-
         int table;
 
         for (table = 0; table < pl_get_uint16(pnum_tables_data); table++)
@@ -134,10 +127,8 @@ get_name_from_tt_file(stream * tt_file, gs_memory_t * mem,
                 unsigned int offset =
                     pl_get_uint32(ptable_directory_data + (table * 16) + 8);
                 byte *name_table = ptt_font_data + offset;
-
                 /* the offset to the string pool */
                 unsigned short storageOffset = pl_get_uint16(name_table + 4);
-
                 byte *name_recs = name_table + 6;
 
                 {
@@ -315,15 +306,12 @@ pl_load_ufst_lineprinter(gs_memory_t * mem, pl_dict_t * pfontdict,
          && i < pl_built_in_resident_font_table_count; i++) {
         if (resident_table[i].params.typeface_family == 0) {
             const byte *header = NULL;
-
             const byte *char_data = NULL;
-
             pl_font_t *pplfont =
                 pl_alloc_font(mem, "pl_load_ufst_lineprinter pplfont");
             gs_font_base *pfont =
                 gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
                                 "pl_load_ufst_lineprinter pfont");
-
             int code;
 
             pl_get_ulp_character_data((byte **) & header,
@@ -373,9 +361,7 @@ pl_load_ufst_lineprinter(gs_memory_t * mem, pl_dict_t * pfontdict,
             while (1) {
 
                 uint width = pl_get_uint16(char_data + 12);
-
                 uint height = pl_get_uint16(char_data + 14);
-
                 uint ccode_plus_header_plus_data =
                     2 + 16 + (((width + 7) >> 3) * height);
                 uint ucode =
@@ -416,23 +402,14 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
 #include "plftable.h"
 
     int i, k;
-
     short status = 0;
-
     int bSize;
-
     byte key[3];
-
     char pthnm[1024];
-
     char *ufst_root_dir;
-
     char *fco;
-
     pl_font_t *plfont = NULL;
-
     gs_font *pfont = NULL;
-
     gs_font_base *pbfont;
 
     (void)pl_built_in_resident_font_table_count;
@@ -502,17 +479,12 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
                 dmprintf1(mem, "CGIFfco_Access error %d\n", status);
             } else {
                 int font_number = 0;
-
                 /* unfortunately agfa has 2 fonts named symbol.  We
                    believe the font with internal number, NB, NB, NB  */
                 char *symname = (char *)"SymbPS";
-
                 int j;
-
                 uint spaceBand;
-
                 uint scaleFactor;
-
                 bool used = false;
 
                 /* For Microtype fonts, once we get here, these
@@ -654,21 +626,14 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
 #define fontnames(agfascreenfontname, agfaname, urwname) urwname
 #include "plftable.h"
     const font_resident_t *residentp;
-
     /* get rid of this should be keyed by pjl font number */
     byte key[3];
-
     /* max pathname of 1024 including pattern */
     char tmp_path_copy[1024];
-
     char *tmp_pathp;
-
     bool found;
-
     bool found_any = false;
-
     const char pattern[] = "*";
-
     int code = 0;
 
     (void)pl_built_in_resident_font_table_count;
@@ -694,16 +659,11 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
     for (tmp_pathp = tmp_path_copy; (tmp_pathp = strtok(tmp_pathp, ";")) != NULL;       /* NB shouldn't use strtok */
          tmp_pathp = NULL) {
         int code;
-
         file_enum *fe;
-
         stream *in = NULL;
-
         /* handle trailing separator */
         bool append_separator = false;
-
         int separator_length = strlen(gp_file_name_directory_separator());
-
         int offset = strlen(tmp_pathp) - separator_length;
 
         /* make sure the filename string ends in directory separator */
@@ -737,7 +697,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                                                tmp_path_copy,
                                                sizeof(tmp_path_copy))) >= 0) {
             char buffer[1024];
-
             pl_font_t *plfont;
 
             if (code > sizeof(tmp_path_copy)) {

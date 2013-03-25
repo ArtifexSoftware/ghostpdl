@@ -132,11 +132,8 @@ static ulong
 pl_fapi_get_long(gs_fapi_font * ff, gs_fapi_font_feature var_id, int index)
 {
     gs_font *pfont = (gs_font *) ff->client_font_data;
-
     pl_font_t *plfont = (pl_font_t *) pfont->client_data;
-
     ulong value = -1;
-
     (void)index;
 
     if (var_id == gs_fapi_font_feature_TT_size) {
@@ -153,9 +150,7 @@ pl_fapi_get_cid(gs_font_base * pbfont, gs_string * charstring,
                 char *font_file_path, gs_fapi_char_ref * cr, bool bCID)
 {
     pl_font_t *plfont = pbfont->client_data;
-
     gs_glyph vertical, index = ccode;
-
     (void)charstring;
     (void)name;
     (void)enc_char_name;
@@ -177,11 +172,9 @@ pl_fapi_get_glyph(gs_fapi_font * ff, int char_code, byte * buf,
                   ushort buf_length)
 {
     gs_font *pfont = (gs_font *) ff->client_font_data;
-
     /* Zero is a valid size for a TTF glyph, so init to that.
      */
     int size = 0;
-
     gs_glyph_data_t pdata;
 
     if (pl_tt_get_outline((gs_font_type42 *) pfont, char_code, &pdata) == 0) {
@@ -199,11 +192,8 @@ static ushort
 pl_fapi_serialize_tt_font(gs_fapi_font * ff, void *buf, int buf_size)
 {
     gs_font *pfont = (gs_font *) ff->client_font_data;
-
     pl_font_t *plfont = (pl_font_t *) pfont->client_data;
-
     short code = -1;
-
     int offset = (plfont->offsets.GT + (plfont->large_sizes ? 6 : 4));
 
     if (buf_size >= (plfont->header_size - offset)) {
@@ -235,17 +225,13 @@ pl_fapi_set_cache(gs_text_enum_t * penum, const gs_font_base * pbfont,
                   const double Metrics2_sbw_default[4], bool * imagenow)
 {
     gs_state *pgs = (gs_state *) penum->pis;
-
     float w2[6];
-
     int code = 0;
-
     gs_fapi_server *I = pbfont->FAPI;
 
     if ((penum->text.operation & TEXT_DO_DRAW) && (pbfont->WMode & 1)
         && pwidth[0] == 1.0) {
         gs_rect tmp_pbbox;
-
         gs_matrix save_ctm;
         const gs_matrix id_ctm = { 1.0, 0.0, 0.0, 1.0, 0.0, 0.0 };
         /* This is kind of messy, but the cache entry has already been calculated
@@ -330,13 +316,9 @@ pl_fapi_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
                    gs_char chr, gs_glyph glyph)
 {
     int code;
-
     gs_matrix save_ctm;
-
     gs_font_base *pbfont = (gs_font_base *) pfont;
-
     pl_font_t *plfont = (pl_font_t *) pfont->client_data;
-
     gs_fapi_server *I = pbfont->FAPI;
 
     I->ff.embolden = plfont->bold_fraction;
@@ -394,7 +376,6 @@ pl_get_server_param(gs_fapi_server * I, const char *subtype,
                     char **server_param, int *server_param_size)
 {
     int length = 0;
-
     char SEPARATOR_STRING[2];
 
     SEPARATOR_STRING[0] = (char)gp_file_name_list_separator;
@@ -466,26 +447,16 @@ pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
                      gs_char char_code, float metrics[4])
 {
     int code = 0;
-
     gs_text_enum_t *penum;
-
     gs_font *pfont = plfont->pfont;
-
     gs_font_base *pbfont = (gs_font_base *) pfont;
-
     gs_text_params_t text;
-
     gs_char buf[2];
-
     gs_state *pgs = (gs_state *) vpgs;
-
     /* NAFF: undefined glyph would be better handled inside FAPI */
     gs_char chr = char_code;
-
     gs_glyph unused_glyph = gs_no_glyph;
-
     gs_glyph glyph;
-
     gs_matrix mat;
 
     if (pfont->FontType == ft_MicroType) {
@@ -550,7 +521,6 @@ pl_fapi_char_width(const pl_font_t * plfont, const void *pgs,
                    gs_char char_code, gs_point * pwidth)
 {
     float metrics[4];
-
     int code = 0;
 
     code = pl_fapi_char_metrics(plfont, pgs, char_code, metrics);
@@ -572,13 +542,9 @@ pl_fapi_passfont(pl_font_t * plfont, int subfont, char *fapi_request,
                  char *file_name, byte * font_data, int font_data_len)
 {
     char *fapi_id = NULL;
-
     int code = 0;
-
     gs_string fdata;
-
     gs_font *pfont = plfont->pfont;
-
     gs_fapi_font local_pl_ff_stub;
 
     if (!gs_fapi_available(pfont->memory, NULL)) {
@@ -629,7 +595,6 @@ bool
 pl_fapi_ufst_available(gs_memory_t * mem)
 {
     gs_fapi_server *serv = NULL;
-
     int code = gs_fapi_find_server(mem, (char *)"UFST", &serv,
                                    (gs_fapi_get_server_param_callback)
                                    pl_get_server_param);

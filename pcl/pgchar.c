@@ -41,7 +41,6 @@ hpgl_font_definition(hpgl_args_t * pargs, hpgl_state_t * pgls, int index)
                                  * (1 means no parameter changed, >1 means some parameter changed.)
                                  */
     pcl_font_selection_t *pfs = &pgls->g.font_selection[index];
-
 #define pfp (&pfs->params)
     int kind;
 
@@ -187,9 +186,7 @@ static int
 hpgl_select_font_by_id(hpgl_args_t * pargs, hpgl_state_t * pgls, int index)
 {
     pcl_font_selection_t *pfs = &pgls->g.font_selection[index];
-
     int32 id;
-
     int code;
 
     if (!hpgl_arg_c_int(pgls->memory, pargs, &id) || id < 0)
@@ -264,9 +261,7 @@ int
 hpgl_CF(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     int mode = 0;
-
     int npen = pcl_palette_get_num_entries(pgls->ppalet);
-
     int32 pen = 0;
 
     if (hpgl_arg_c_int(pgls->memory, pargs, &mode)) {
@@ -308,11 +303,8 @@ int
 hpgl_DT(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     const byte *p = pargs->source.ptr;
-
     const byte *rlimit = pargs->source.limit;
-
     byte ch = (byte) pargs->phase;
-
     int mode = 1;
 
     /* We use phase to remember the terminator character */
@@ -394,7 +386,6 @@ int
 hpgl_LM(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     int mode = 0, row_number = 0;
-
     int old_mode =
         (pgls->g.label.double_byte ? 1 : 0) +
         (pgls->g.label.write_vertical ? 2 : 0);
@@ -617,7 +608,6 @@ int
 hpgl_DL(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     int code;
-
     hpgl_dl_cdata_t *cdata;
 
     /* first call */

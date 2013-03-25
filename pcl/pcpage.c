@@ -83,9 +83,7 @@ restore_cap_and_margins(pcl_state_t * pcs,
                         const gs_point * pcur_pt, const gs_rect * ptext_rect)
 {
     gs_matrix lp2pd;
-
     gs_point tmp_pt;
-
     gs_rect tmp_rect;
 
     pcl_invert_mtx(&(pcs->xfm_state.pd2lp_mtx), &lp2pd);
@@ -120,19 +118,12 @@ static void
 update_xfm_state(pcl_state_t * pcs, bool reset_initial)
 {
     pcl_xfm_state_t *pxfmst = &(pcs->xfm_state);
-
     const pcl_paper_size_t *psize = pxfmst->paper_size;
-
     coord offset;
-
     gs_matrix pg2dev, pg2lp;
-
     gs_rect print_rect, dev_rect, text_rect;
-
     gs_point cur_pt;
-
     floatp loff = pxfmst->left_offset_cp;
-
     floatp toff = pxfmst->top_offset_cp;
 
     /* preserve the current point and text rectangle in logical page space */
@@ -277,14 +268,11 @@ static void
 reset_vertical_margins(pcl_state_t * pcs, bool for_passthrough)
 {
     pcl_margins_t *pmar = &(pcs->margins);
-
     coord hgt = pcs->xfm_state.pd_size.y;
-
     coord tm = (for_passthrough ?
                 DFLT_TOP_MARGIN_PASSTHROUGH : DFLT_TOP_MARGIN);
     coord bm = (for_passthrough ?
                 DFLT_BOTOM_MARGIN_PASSTHROUGH : DFLT_BOTTOM_MARGIN);
-
     pmar->top = TOP_MARGIN(hgt, tm);
     pmar->length = PAGE_LENGTH(hgt - pmar->top, bm);
 }
@@ -328,15 +316,11 @@ new_page_size(pcl_state_t * pcs,
               bool reset_initial, bool for_passthrough)
 {
     floatp width_pts = psize->width * 0.01;
-
     floatp height_pts = psize->height * 0.01;
-
     float page_size[2];
     static float old_page_size[2] = { 0, 0 };
     gs_state *pgs = pcs->pgs;
-
     gs_matrix mat;
-
     bool changed_page_size;
 
     page_size[0] = width_pts;
@@ -463,14 +447,10 @@ pcl_new_logical_page_for_passthrough(pcl_state_t * pcs, int orient,
                                      gs_point * pdims)
 {
     int i;
-
     pcl_paper_size_t *psize;
-
     /* points to centipoints */
     coord cp_width = (coord) (pdims->x * 100 + 0.5);
-
     coord cp_height = (coord) (pdims->y * 100 + 0.5);
-
     bool found = false;
 
     for (i = 0; i < pcl_paper_type_count; i++) {
@@ -520,9 +500,7 @@ pcl_mark_page_for_current_pos(pcl_state_t * pcs)
        device rectangle for the page */
     {
         gs_fixed_rect page_bbox_fixed = pcs->xfm_state.dev_print_rect;
-
         gs_rect page_bbox_float;
-
         gs_point current_pt, dev_pt;
 
         page_bbox_float.p.x = fixed2float(page_bbox_fixed.p.x);
@@ -545,7 +523,6 @@ pcl_mark_page_for_current_pos(pcl_state_t * pcs)
             dev_pt.y >= page_bbox_float.p.y &&
             dev_pt.x < page_bbox_float.q.x && dev_pt.y < page_bbox_float.q.y)
             pcs->page_marked = true;
-
     }
 }
 
@@ -653,11 +630,8 @@ set_page_size(pcl_args_t * pargs, pcl_state_t * pcs)
        which were filled in when the -g option was processed. */
 
     uint tag = (pcs->page_set_on_command_line ? 101 : uint_arg(pargs));
-
     int i;
-
     int code = 0;
-
     const pcl_paper_size_t *psize = 0;
 
     /* oddly the command goes to the next page irrespective of
@@ -689,7 +663,6 @@ static int
 set_paper_source(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint i = uint_arg(pargs);
-
     /* oddly the command goes to the next page irrespective of
        arguments */
     int code = pcl_end_page_if_marked(pcs);
@@ -745,9 +718,7 @@ static int
 set_logical_page_orientation(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint i = uint_arg(pargs);
-
     int code;
-
     /* the command is ignored if it is value is out of range */
     if (i > 3)
         return 0;
@@ -864,7 +835,6 @@ static int
 set_top_margin(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     coord hgt = pcs->xfm_state.pd_size.y;
-
     coord tmarg = uint_arg(pargs) * pcs->vmi_cp;
 
     if ((pcs->vmi_cp != 0) && (tmarg <= hgt)) {
@@ -1007,11 +977,8 @@ static int
 set_paper_width(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint decipoints = uint_arg(pargs);
-
     bool found = false;
-
     int i;
-
     pcl_paper_size_t *psize;
 
     for (i = 0; i < pcl_paper_type_count; i++) {
@@ -1038,9 +1005,7 @@ static int
 set_paper_length(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint decipoints = uint_arg(pargs);
-
     int i;
-
     pcl_paper_size_t *psize;
 
     for (i = 0; i < pcl_paper_type_count; i++) {
@@ -1161,11 +1126,8 @@ pcl_paper_size_t *
 pcl_get_default_paper(pcl_state_t * pcs)
 {
     int i;
-
     pjl_envvar_t *pwidth = pjl_proc_get_envvar(pcs->pjls, "paperwidth");
-
     pjl_envvar_t *plength = pjl_proc_get_envvar(pcs->pjls, "paperlength");
-
     pjl_envvar_t *psize = pjl_proc_get_envvar(pcs->pjls, "paper");
 
     /* build the state's paper table if it doesn't exist */

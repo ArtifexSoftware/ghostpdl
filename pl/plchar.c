@@ -82,13 +82,9 @@ pl_font_glyph_t *
 pl_font_lookup_glyph(const pl_font_t * plfont, gs_glyph glyph)
 {
     uint size = plfont->glyphs.size;
-
     uint skip = plfont->glyphs.skip;
-
     uint index = glyph % size;
-
     pl_font_glyph_t *pfg;
-
     pl_font_glyph_t *result = 0;
 
     while ((pfg = plfont->glyphs.table + index)->data ?
@@ -145,7 +141,6 @@ pl_bitmap_char_metrics(const pl_font_t * plfont, const void *pgs,
                        gs_char char_code, float metrics[4])
 {
     gs_point width;
-
     const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
 
     /* never a vertical substitute */
@@ -185,9 +180,7 @@ static void
 bits_merge(byte * dest, const byte * src, uint nbytes)
 {
     long *dp = (long *)dest;
-
     const long *sp = (const long *)src;
-
     uint n = (nbytes + sizeof(long) - 1) >> arch_log2_sizeof_long;
 
     for (; n >= 4; sp += 4, dp += 4, n -= 4)
@@ -203,21 +196,13 @@ bits_smear_horizontally(byte * dest, const byte * src, uint width,
                         uint smear_width)
 {
     uint bits_on = 0;
-
     const byte *sp = src;
-
     uint sbyte = *sp;
-
     byte *dp = dest;
-
     uint dbyte = sbyte;
-
     uint sdmask = 0x80;
-
     const byte *zp = src;
-
     uint zmask = 0x80;
-
     uint i = 0;
 
     /* Process the first smear_width bits. */
@@ -303,13 +288,9 @@ pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
                      byte * bold_lines, gs_state * pgs)
 {
     uint dest_bytes = (pim->Width + 7) >> 3;
-
     gx_device *dev = pgs->device;
-
     void *iinfo;
-
     const byte *planes[1];
-
     int code;
 
     code = gx_set_dev_color(pgs);
@@ -323,11 +304,8 @@ pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
         return code;
     if (bold) {                 /* Pass individual smeared lines. */
         uint src_width = pim->Width - bold;
-
         uint src_height = pim->Height - bold;
-
         uint dest_raster = bitmap_raster(pim->Width);
-
         int n1 = bold + 1;
 
 #define merged_line(i) (bold_lines + ((i) % n1 + 1) * dest_raster)
@@ -336,7 +314,6 @@ pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
         planes[0] = bold_lines;
         for (y = 0; y < pim->Height; ++y) {
             int y0 = (y < bold ? 0 : y - bold);
-
             int y1 = min(y + 1, src_height);
 
             if (y < src_height) {
@@ -365,7 +342,6 @@ pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
 
             {                   /* Now construct the output line. */
                 bool first = true;
-
                 int iy;
 
                 for (iy = y1 - 1; iy >= y0; --iy) {
@@ -403,30 +379,20 @@ pl_bitmap_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
                      gs_char chr, gs_glyph glyph)
 {
     pl_font_t *plfont = (pl_font_t *) pfont->client_data;
-
     const byte *cdata = pl_font_lookup_glyph(plfont, glyph)->data;
-
     bool orient = plfont->orient;
 
     if (cdata == 0)
         return 0;
     {
         const byte *params;
-
         const byte *bitmap_data;
-
         int lsb, ascent;
-
         float delta_x;
-
         gs_image_t image;
-
         gs_image_enum *ienum;
-
         int code;
-
         uint bold;
-
         byte *bold_lines = 0;
 
         if (cdata[0] == 0) {    /* PCL XL format */
@@ -492,7 +458,6 @@ pl_bitmap_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
 #ifdef DEBUG
         if (gs_debug_c('B')) {
             int i;
-
             int pixels = round_up(image.Width, 8) * image.Height;
 
             dmprintf7(pgs->memory,
@@ -527,13 +492,9 @@ pl_tt_char_glyph_t *
 pl_tt_lookup_char(const pl_font_t * plfont, gs_glyph glyph)
 {
     uint size = plfont->char_glyphs.size;
-
     uint skip = plfont->char_glyphs.skip;
-
     uint index = glyph % size;
-
     pl_tt_char_glyph_t *ptcg;
-
     pl_tt_char_glyph_t *result = 0;
 
     while ((ptcg = plfont->char_glyphs.table + index)->chr != gs_no_char ?
@@ -563,9 +524,7 @@ gs_glyph
 pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t * plfont)
 {
     long VT = plfont->offsets.VT;
-
     const byte *vtseg;
-
     uint i, len;
 
     if (VT < 0)
@@ -591,11 +550,8 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index,
                   gs_type42_metrics_options_t options, float *sbw)
 {
     pl_font_t *plfont = pfont->client_data;
-
     const pl_font_glyph_t *pfg = 0;
-
     const byte *cdata = 0;
-
     int wmode = gs_type42_metrics_options_wmode(options);
 
     if (plfont->glyphs.table != 0) {
@@ -607,9 +563,7 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index,
 
         if (cdata && (cdata[1] == 1 || cdata[1] == 2)) {
             double factor = 1.0 / pfont->data.unitsPerEm;
-
             uint width;
-
             int lsb;
 
             lsb = pl_get_int16(cdata + 4);
@@ -670,9 +624,7 @@ int
 pl_tt_get_outline(gs_font_type42 * pfont, uint index, gs_glyph_data_t * pdata)
 {
     pl_font_t *plfont = pfont->client_data;
-
     const pl_font_glyph_t *pfg = pl_font_lookup_glyph(plfont, index);
-
     const byte *cdata = pfg->data;
 
     if (cdata == 0) {
@@ -709,13 +661,9 @@ ulong
 tt_find_table(gs_font_type42 * pfont, const char *tname, uint * plen)
 {
     const byte *OffsetTable;
-
     uint numTables;
-
     const byte *TableDirectory;
-
     uint i;
-
     ulong table_dir_offset = 0;
 
     access(0, 12, OffsetTable);
@@ -764,23 +712,16 @@ pl_cmap_lookup(const uint key, const byte * table, uint * pvalue)
         case 4:
             {                   /* Microsoft/Adobe segmented mapping.  What a mess! */
                 uint segCount2 = pl_get_uint16(table + 6);
-
                 const byte *endCount = table + 14;
-
                 const byte *startCount = endCount + segCount2 + 2;
-
                 const byte *idDelta = startCount + segCount2;
-
                 const byte *idRangeOffset = idDelta + segCount2;
-
                 /*const byte *glyphIdArray = idRangeOffset + segCount2; */
                 uint i2;
 
                 for (i2 = 0; i2 < segCount2 - 3; i2 += 2) {
                     int delta, roff;
-
                     uint start = pl_get_uint16(startCount + i2);
-
                     uint glyph;
 
                     if_debug4('J', "[J]start=%u end=%u delta=%d roff=%d\n",
@@ -817,7 +758,6 @@ pl_cmap_lookup(const uint key, const byte * table, uint * pvalue)
         case 6:
             {                   /* Single interval lookup. */
                 uint firstCode = pl_get_uint16(table + 6);
-
                 uint entryCount = pl_get_uint16(table + 8);
 
                 if (key < firstCode || key >= firstCode + entryCount) {
@@ -842,13 +782,9 @@ pl_tt_cmap_encode_char(gs_font_type42 * pfont, ulong cmap_offset,
                        uint cmap_len, gs_char chr)
 {
     const byte *cmap;
-
     const byte *cmap_sub;
-
     const byte *table;
-
     uint value;
-
     int code;
 
     access(cmap_offset, cmap_len, cmap);
@@ -884,7 +820,6 @@ static gs_glyph
 pl_tt_dynamic_encode_char(const gs_font_type42 * pfont, gs_char chr)
 {
     pl_font_t *plfont = pfont->client_data;
-
     const pl_tt_char_glyph_t *ptcg = pl_tt_lookup_char(plfont, chr);
 
     return (ptcg->chr == gs_no_char ? gs_no_glyph : ptcg->glyph);
@@ -898,13 +833,9 @@ static gs_char
 pl_font_galley_character(gs_char chr, const pl_font_t * plfont)
 {
     long GC = plfont->offsets.GC;
-
     const byte *gcseg;
-
     uint b0, b1;
-
     uint i, len;
-
     uint default_char;
 
     if (GC < 0)
@@ -936,18 +867,14 @@ pl_tt_encode_char(gs_font * pfont_generic, gs_char chr,
                   gs_glyph_space_t not_used)
 {
     gs_font_type42 *pfont = (gs_font_type42 *) pfont_generic;
-
     uint cmap_len;
-
     ulong cmap_offset = tt_find_table(pfont, "cmap", &cmap_len);
-
     gs_glyph glyph = (cmap_offset == 0 ?
                       /* This is a downloaded font with no cmap. */
                       pl_tt_dynamic_encode_char(pfont, chr) :
                       pl_tt_cmap_encode_char(pfont, cmap_offset, cmap_len,
                                              chr));
     pl_font_t *plfont = pfont->client_data;
-
     pl_font_glyph_t *pfg;
 
     /* This is used by pl_decode_glyph in plfont.c */
@@ -959,7 +886,6 @@ pl_tt_encode_char(gs_font * pfont_generic, gs_char chr,
     /* If the character is missing, use the galley character instead. */
     if (!pfg->data) {
         gs_char galley_char = pl_font_galley_character(chr, plfont);
-
         if (galley_char != gs_no_char) {
             return
                 (galley_char == 0xffff ? 0 :
@@ -978,7 +904,6 @@ pl_tt_char_metrics(const pl_font_t * plfont, const void *pgs,
                    gs_char char_code, float metrics[4])
 {
     gs_glyph unused_glyph = gs_no_glyph;
-
     gs_glyph glyph =
         pl_tt_encode_char(plfont->pfont, char_code, unused_glyph);
     if (glyph == gs_no_glyph) {
@@ -994,15 +919,10 @@ pl_tt_char_width(const pl_font_t * plfont, const void *pgs, gs_char char_code,
                  gs_point * pwidth)
 {
     gs_font *pfont = plfont->pfont;
-
     gs_char chr = char_code;
-
     gs_glyph unused_glyph = gs_no_glyph;
-
     gs_glyph glyph = pl_tt_encode_char(pfont, chr, unused_glyph);
-
     int code;
-
     float sbw[4];
 
     pwidth->x = pwidth->y = 0;
@@ -1037,25 +957,16 @@ pl_tt_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
 #define pbfont ((gs_font_base *)pfont)
 #define pfont42 ((gs_font_type42 *)pfont)
     int code;
-
     pl_font_t *plfont = (pl_font_t *) pfont->client_data;
-
     float bold_fraction =
         gs_show_in_charpath(penum) != cpm_show ? 0.0 : plfont->bold_fraction;
     uint bold_added;
-
     double scale;
-
     float sbw[4], w2[6];
-
     int ipx, ipy, iqx, iqy;
-
     gx_device_memory *pmdev;
-
     bool ctm_modified = false;
-
     bool bold_device_created = false;
-
     gs_matrix save_ctm;
 
 #define isDownloaded(p42) ((p42)->data.proc_data == 0)
@@ -1099,7 +1010,6 @@ pl_tt_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
         /* Check for a vertical substitute. */
         if (plfont->allow_vertical_substitutes) {
             pl_font_t *plfont = pfont->client_data;
-
             gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
 
             if (vertical != gs_no_glyph) {
@@ -1134,7 +1044,6 @@ pl_tt_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
         bold_added = 0;
     } else {
         gs_matrix mat, smat;
-
         gs_rect sbox;
 
         code = gs_gsave(pgs);
@@ -1219,7 +1128,6 @@ pl_tt_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
 
     {
         gs_image_t image;
-
         gs_image_enum *ienum =
             gs_image_enum_alloc(pgs->memory, "pl_tt_build_char");
         byte *bold_lines =
@@ -1286,7 +1194,6 @@ pl_intelli_merge_box(float wbox[6], const pl_font_t * plfont, gs_glyph glyph)
     if (cdata[3] == 4) {        /* Compound character.  Merge the component boxes; */
         /* use the compound character's escapement. */
         bool found = false;
-
         uint i;
 
         for (i = 0; i < cdata[6]; ++i)
@@ -1301,11 +1208,8 @@ pl_intelli_merge_box(float wbox[6], const pl_font_t * plfont, gs_glyph glyph)
         const intelli_metrics_t *metrics =
             (const intelli_metrics_t *)(cdata + pl_get_uint16(cdata + 2));
         int llx = pl_get_int16(metrics->charSymbolBox[0]);
-
         int lly = pl_get_int16(metrics->charSymbolBox[1]);
-
         int urx = pl_get_int16(metrics->charSymbolBox[2]);
-
         int ury = pl_get_int16(metrics->charSymbolBox[3]);
 
         wbox[0] = (float)(pl_get_int16(metrics->charEscapementBox[2]) -
@@ -1324,15 +1228,10 @@ static int
 pl_intelli_show_char(gs_state * pgs, const pl_font_t * plfont, gs_glyph glyph)
 {
     int code;
-
     const byte *cdata;
-
     pl_font_glyph_t *font_glyph;
-
     const intelli_metrics_t *metrics;
-
     int *xBuffer, *yBuffer;
-
     client_name_t cname = (client_name_t) "pl_intelli_show_char";
 
     font_glyph = pl_font_lookup_glyph(plfont, glyph);
@@ -1345,15 +1244,12 @@ pl_intelli_show_char(gs_state * pgs, const pl_font_t * plfont, gs_glyph glyph)
     }
     if (cdata[3] == 4) {        /* Compound character */
         gs_matrix save_ctm;
-
         int i;
 
         gs_currentmatrix(pgs, &save_ctm);
         for (i = 0; i < cdata[6]; ++i) {
             const byte *edata = cdata + 8 + i * 6;
-
             floatp x_offset = pl_get_int16(edata + 2);
-
             floatp y_offset = pl_get_int16(edata + 4);
 
             gs_translate(pgs, x_offset, y_offset);
@@ -1369,9 +1265,7 @@ pl_intelli_show_char(gs_state * pgs, const pl_font_t * plfont, gs_glyph glyph)
     /* not compound character */
     {
         const byte *outlines;
-
         uint num_loops;
-
         uint i;
 
         cdata += 4;             /* skip PCL character header */
@@ -1386,25 +1280,15 @@ pl_intelli_show_char(gs_state * pgs, const pl_font_t * plfont, gs_glyph glyph)
 
         for (i = 0; i < num_loops; ++i) {
             const byte *xyc = cdata + pl_get_uint16(outlines + 4 + i * 8);
-
             uint num_points;
-
             uint num_aux_points;
-
             const byte *x_coords, *y_coords, *x_coords_last;
-
             const byte *x_aux_coords, *y_aux_coords, *x_aux_coords_last;
-
             int llx, lly, urx, ury;     /* character bounding box */
-
             int x, y;
-
             int xAux, yAux;
-
             int *xScan, *yScan, *xLast;
-
             int pointBufferSize;
-
             uint sz;
 
             num_points = pl_get_uint16(xyc);
@@ -1477,7 +1361,6 @@ pl_intelli_show_char(gs_state * pgs, const pl_font_t * plfont, gs_glyph glyph)
                     if (x_aux_coords < x_aux_coords_last && !(*x_coords & 0x80)) {      /* use an aux point */
                         /* The auxiliary dx and dy values are signed. */
                         int dx = (*x_aux_coords++ ^ 0x80) - 0x80;
-
                         int dy = (*y_aux_coords++ ^ 0x80) - 0x80;
 
                         if_debug2m('1', pgs->memory, "[1]... aux (%d,%d)\n",
@@ -1538,7 +1421,6 @@ pl_intelli_char_width(const pl_font_t * plfont, const void *pgs,
                       gs_char char_code, gs_point * pwidth)
 {
     const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
-
     int wx;
 
     if (!pwidth)
@@ -1574,7 +1456,6 @@ pl_intelli_char_metrics(const pl_font_t * plfont, const void *pgs,
                         gs_char char_code, float metrics[4])
 {
     gs_point width;
-
     const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
 
     metrics[0] = metrics[1] = metrics[2] = metrics[3] = 0;
@@ -1612,9 +1493,7 @@ pl_intelli_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
                       gs_char chr, gs_glyph glyph)
 {
     const pl_font_t *plfont = (const pl_font_t *)pfont->client_data;
-
     float wbox[6];
-
     int code;
 
     wbox[0] = wbox[1] = 0;
@@ -1676,9 +1555,7 @@ void
 pl_tt_finish_init(gs_font_type42 * pfont, bool downloaded)
 {
     float upem = (float)pfont->data.unitsPerEm;
-
     ulong head = tt_find_table(pfont, "head", NULL);
-
     const byte *hdata;
 
     pfont->data.get_glyph_index = pl_tt_get_glyph_index;
@@ -1693,11 +1570,8 @@ pl_tt_finish_init(gs_font_type42 * pfont, bool downloaded)
 #ifdef DEBUG
     if (gs_debug_c('m')) {
         const byte *OffsetTable;
-
         uint numTables;
-
         const byte *TableDirectory;
-
         uint i;
 
         access(0, 12, OffsetTable);
@@ -1736,7 +1610,6 @@ pl_font_alloc_glyph_table(pl_font_t * plfont, uint num_glyphs,
                           gs_memory_t * mem, client_name_t cname)
 {
     uint size = num_glyphs + (num_glyphs >> 2) + 5;
-
     pl_font_glyph_t *glyphs =
         gs_alloc_struct_array(mem, size, pl_font_glyph_t,
                               &st_pl_font_glyph_element, cname);
@@ -1764,9 +1637,7 @@ static int
 expand_glyph_table(pl_font_t * plfont, gs_memory_t * mem)
 {
     pl_glyph_table_t old_table;
-
     int code;
-
     uint i;
 
     old_table = plfont->glyphs;
@@ -1789,7 +1660,6 @@ pl_tt_alloc_char_glyphs(pl_font_t * plfont, uint num_chars, gs_memory_t * mem,
                         client_name_t cname)
 {
     uint size = num_chars + (num_chars >> 2) + 5;
-
     pl_tt_char_glyph_t *char_glyphs = (pl_tt_char_glyph_t *)
         gs_alloc_byte_array(mem, size, sizeof(pl_tt_char_glyph_t), cname);
 
@@ -1816,9 +1686,7 @@ static int
 expand_char_glyph_table(pl_font_t * plfont, gs_memory_t * mem)
 {
     pl_tt_char_glyph_table_t old_table;
-
     int code;
-
     uint i;
 
     old_table = plfont->char_glyphs;
@@ -1853,11 +1721,8 @@ int
 pl_font_add_glyph(pl_font_t * plfont, gs_glyph glyph, const byte * cdata)
 {
     gs_font *pfont = plfont->pfont;
-
     gs_glyph key = glyph;
-
     pl_tt_char_glyph_t *ptcg = 0;
-
     pl_font_glyph_t *pfg;
 
     /*
@@ -1931,11 +1796,8 @@ int
 pl_font_disable_composite_metrics(pl_font_t * plfont, gs_glyph glyph)
 {
     gs_glyph key = glyph;
-
     gs_font_type42 *pfont = (gs_font_type42 *) plfont->pfont;
-
     gs_glyph_data_t glyph_data;
-
     int code;
 
     /* This is the unusual way of looking up a glyph thanks to the pcl
@@ -1974,12 +1836,10 @@ pl_font_disable_composite_metrics(pl_font_t * plfont, gs_glyph glyph)
        gstype42.c */
     {
         uint flags;
-
         byte *next_component = (byte *) glyph_data.bits.data + 10;
 
         do {
             gs_matrix_fixed mat;
-
             byte *last_component = next_component;
 
             memset(&mat, 0, sizeof(mat));       /* arbitrary */
@@ -2000,9 +1860,7 @@ int
 pl_font_remove_glyph(pl_font_t * plfont, gs_glyph glyph)
 {
     gs_font *pfont = plfont->pfont;
-
     gs_glyph key = glyph;
-
     pl_font_glyph_t *pfg;
 
     /* See above regarding downloaded TrueType fonts. */

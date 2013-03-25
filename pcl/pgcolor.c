@@ -34,7 +34,6 @@ static int
 hpgl_PC(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     int32 pen;
-
     int32 npen = pcl_palette_get_num_entries(pgls->ppalet);
 
     if (pgls->personality == pcl5e)
@@ -63,7 +62,6 @@ hpgl_PC(hpgl_args_t * pargs, hpgl_state_t * pgls)
             return pcl_palette_set_default_color(pgls, pen);
     } else {
         int i;
-
         int code;
 
         for (i = 0; i < npen; ++i) {

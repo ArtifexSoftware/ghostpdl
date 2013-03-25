@@ -310,19 +310,14 @@ int
 pxBeginPage(px_args_t * par, px_state_t * pxs)
 {
     gs_state *pgs = pxs->pgs;
-
     gx_device *dev = gs_currentdevice(pgs);
-
     gs_point page_size_pixels;
-
     gs_matrix points2device;
-
     bool no_pv_2 = false;
 
     /* check for 2.1 no parameter special cases */
     {
         int i;
-
         bool have_params = false;
 
         for (i = (par->pv[0] == 0 ? 0 : 1);
@@ -381,7 +376,6 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
     if (par->pv[2]) {
         /* default to letter */
         pxeMediaSize_t ms_enum = eLetterPaper;
-
         int i;
 
         /* could be an array or enumeration */
@@ -458,20 +452,13 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
     /* Pass the media parameters to the device. */
   setd:{
         gs_memory_t *mem = pxs->memory;
-
         gs_c_param_list list;
-
 #define plist ((gs_param_list *)&list)
         gs_param_float_array fa;
-
         float fv[4];
-
         int iv;
-
         bool bv;
-
         int ecode = 0;
-
         int code;
 
         fa.data = fv;
@@ -592,7 +579,6 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
         {                       /* Scale according to session parameters. */
             /* If we can make the scale integral safely, we do. */
             double scale = measure_to_points[pxs->measure];
-
             gs_matrix mat;
 
             if ((code = gs_scale(pgs, scale / pxs->units_per_measure.x,
@@ -612,7 +598,6 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
                                  * rather than earlier, so that the origin is set correctly.
                                  */
         px_args_t args;
-
         px_value_t device_matrix;
 
         memset(args.pv, 0, sizeof(args.pv));
@@ -651,11 +636,8 @@ int
 pxBeginPageFromPassthrough(px_state_t * pxs)
 {
     int code;
-
     gs_state *pgs = pxs->pgs;
-
     gs_point page_size_pixels;
-
     gs_matrix points2device;
 
     px_initgraphics(pxs);
@@ -698,7 +680,6 @@ pxBeginPageFromPassthrough(px_state_t * pxs)
     {                           /* Scale according to session parameters. */
         /* If we can make the scale integral safely, we do. */
         double scale = measure_to_points[pxs->measure];
-
         gs_matrix mat;
 
         if ((code = gs_scale(pgs, scale / pxs->units_per_measure.x,

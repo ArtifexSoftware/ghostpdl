@@ -75,14 +75,11 @@ add_lines(px_args_t * par, px_state_t * pxs,
         return_error(errorMissingAttribute);
     {
         int32_t num_points = par->pv[1]->value.i;
-
         pxeDataType_t type = (pxeDataType_t) par->pv[2]->value.i;
-
         int point_size = (type == eUByte || type == eSByte ? 2 : 4);
 
         while (par->source.position < num_points * point_size) {
             const byte *dp = par->source.data;
-
             int px, py;
 
             if (par->source.available < point_size) {   /* We don't even have one point's worth of source data. */
@@ -147,20 +144,15 @@ add_curves(px_args_t * par, px_state_t * pxs,
         return_error(errorMissingAttribute);
     {
         int32_t num_points = par->pv[0]->value.i;
-
         pxeDataType_t type = (pxeDataType_t) par->pv[1]->value.i;
-
         int point_size = (type == eUByte || type == eSByte ? 2 : 4);
-
         int segment_size = point_size * 3;
 
         if (num_points % 3)
             return_error(errorIllegalDataLength);
         while (par->source.position < num_points * point_size) {
             const byte *dp = par->source.data;
-
             int points[6];
-
             int i;
 
             if (par->source.available < point_size * 3) {       /* We don't even have one point's worth of source data. */
@@ -243,21 +235,13 @@ setup_arc(px_arc_params_t * params, const px_value_t * pbox,
           const px_state_t * pxs, bool ellipse)
 {
     real x1 = real_value(pbox, 0);
-
     real y1 = real_value(pbox, 1);
-
     real x2 = real_value(pbox, 2);
-
     real y2 = real_value(pbox, 3);
-
     real xc = (x1 + x2) * 0.5;
-
     real yc = (y1 + y2) * 0.5;
-
     real xr, yr;
-
     bool rotated;
-
     int code;
 
 #ifdef REFLECT_NEGATIVE_ARCS
@@ -303,18 +287,14 @@ setup_arc(px_arc_params_t * params, const px_value_t * pbox,
 
     if (pp3 && pp4) {
         real dx3 = real_value(pp3, 0) - xc;
-
         real dy3 = real_value(pp3, 1) - yc;
-
         real dx4 = real_value(pp4, 0) - xc;
-
         real dy4 = real_value(pp4, 1) - yc;
 
         if ((dx3 == 0 && dy3 == 0) || (dx4 == 0 && dy4 == 0))
             return_error(errorIllegalAttributeValue);
         {
             double ang3 = atan2(dy3 * xr, dx3 * yr) * radians_to_degrees;
-
             double ang4 = atan2(dy4 * xr, dx4 * yr) * radians_to_degrees;
 
             if (rotated)
@@ -361,12 +341,10 @@ paint_path(px_state_t * pxs)
     gs_state *pgs = pxs->pgs;
     gx_path *ppath = gx_current_path(pgs);
     px_gstate_t *pxgs = pxs->pxgs;
-
     bool will_stroke = pxgs->pen.type != pxpNull;
     bool will_fill = pxgs->brush.type != pxpNull;
 
     int code = 0;
-
     /* nothing to do. */
     if (!will_fill && !will_stroke)
         return 0;
@@ -378,7 +356,6 @@ paint_path(px_state_t * pxs)
 
     if (will_fill) {
         gx_path *stroke_path;
-
         int (*fill_proc) (gs_state *) =
             (pxgs->fill_mode == eEvenOdd ? gs_eofill : gs_fill);
 
@@ -512,9 +489,7 @@ pxArcPath(px_args_t * par, px_state_t * pxs)
                                  * the page, because the Y coordinate is inverted.
                                  */
     bool clockwise = (par->pv[3] != 0 && par->pv[3]->value.i == eClockWise);
-
     px_arc_params_t params;
-
     int code =
         setup_arc(&params, par->pv[0], par->pv[1], par->pv[2], pxs, false);
     int rcode = code;
@@ -578,7 +553,6 @@ int
 pxChordPath(px_args_t * par, px_state_t * pxs)
 {
     px_arc_params_t params;
-
     int code =
         setup_arc(&params, par->pv[0], par->pv[1], par->pv[2], pxs, false);
     int rcode = code;
@@ -618,13 +592,9 @@ int
 pxEllipsePath(px_args_t * par, px_state_t * pxs)
 {
     px_arc_params_t params;
-
     int code = setup_arc(&params, par->pv[0], NULL, NULL, pxs, true);
-
     int rcode = code;
-
     real a_start = 180.0;
-
     real a_end = -180.0;
 
     /* swap start and end angles if counter clockwise ellipse */
@@ -682,7 +652,6 @@ int
 pxPiePath(px_args_t * par, px_state_t * pxs)
 {
     px_arc_params_t params;
-
     int code =
         setup_arc(&params, par->pv[0], par->pv[1], par->pv[2], pxs, false);
     int rcode = code;
@@ -724,13 +693,9 @@ int
 pxRectanglePath(px_args_t * par, px_state_t * pxs)
 {
     floatp x1, y1, x2, y2;
-
     gs_fixed_point p1;
-
     gs_state *pgs = pxs->pgs;
-
     gx_path *ppath = gx_current_path(pgs);
-
     gs_fixed_point lines[3];
 
 #define p2 lines[1]
@@ -794,17 +759,11 @@ int
 pxRoundRectanglePath(px_args_t * par, px_state_t * pxs)
 {
     floatp x1, y1, x2, y2;
-
     real xr = real_value(par->pv[1], 0) * 0.5;
-
     real yr = real_value(par->pv[1], 1) * 0.5;
-
     real xd, yd;
-
     gs_matrix save_ctm;
-
     gs_state *pgs = pxs->pgs;
-
     int code;
 
     set_box_value(x1, y1, x2, y2, par->pv[0]);

@@ -152,9 +152,7 @@ pxPassthrough_init(px_state_t * pxs)
 
     {
         char buf[100];
-
         int ret;
-
         stream_cursor_read r;
 
         ret =
@@ -241,9 +239,7 @@ int
 pxPassthrough(px_args_t * par, px_state_t * pxs)
 {
     stream_cursor_read r;
-
     int code = 0;
-
     uint used;
 
     /* apparently if there is no open data source we open one.  By the
@@ -382,17 +378,11 @@ int
 pxpcl_selectfont(px_args_t * par, px_state_t * pxs)
 {
     int code;
-
     stream_cursor_read r;
-
     const px_value_t *pstr = par->pv[3];
-
     const byte *str = (const byte *)pstr->value.array.data;
-
     uint len = pstr->value.array.size;
-
     px_gstate_t *pxgs = pxs->pxgs;
-
     pcl_font_selection_t *pfp;
 
     if (!global_pcs)

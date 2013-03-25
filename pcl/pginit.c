@@ -158,7 +158,6 @@ hpgl_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
            size.  Oddly HP does not reset the scaling parameters
            when the page size is changed. */
         int scale_type = pcs->g.scaling_type;
-
         hpgl_scaling_params_t params = pcs->g.scaling_params;
 
         hpgl_default_coordinate_system(pcs);

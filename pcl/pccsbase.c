@@ -249,9 +249,7 @@ build_client_data(pcl_cs_client_data_t * pdata,
                   const pcl_cid_data_t * pcid, gs_memory_t * pmem)
 {
     pcl_cspace_type_t type = pcl_cid_get_cspace(pcid);
-
     const pcl_cid_minmax_t *pminmax = cid_data_default[type].pminmax;
-
     const pcl_cid_col_common_t *pchroma = cid_data_default[type].pchroma;
 
     /* see if we have long-form information for device-independent spaces */
@@ -468,16 +466,12 @@ build_colmet_conv_mtx(const pcl_cid_col_common_t * pdata,
                       pcl_vec3_t * pwhite_pt, pcl_mtx3_t * pmtx)
 {
     pcl_vec3_t tmp_vec;
-
     pcl_mtx3_t inv_mtx;
-
     const float *pf = (float *)pdata->chroma;
-
     int i, code;
 
     for (i = 0; i < 3; i++) {
         floatp x = pf[2 * i];
-
         floatp y = pf[2 * i + 1];
 
         pmtx->a[3 * i] = x / y;
@@ -505,11 +499,8 @@ static int
 finish_colmet_cspace(gs_color_space * pcspace, const pcl_cid_data_t * pcid)
 {
     pcl_mtx3_t mtxABC;
-
     pcl_vec3_t white_pt;
-
     const pcl_cid_col_common_t *pcoldata;
-
     int code = 0;
 
     if (pcid->len == 6)
@@ -839,7 +830,6 @@ static int
 build_lum_chrom_mtxABC(const float pin_mtx[9], pcl_mtx3_t * pmtxABC)
 {
     int i;
-
     pcl_mtx3_t tmp_mtx;
 
     /* transpose the input to create a row-order matrix */
@@ -860,13 +850,9 @@ static int
 finish_lumchrom_cspace(gs_color_space * pcspace, const pcl_cid_data_t * pcid)
 {
     const float *pin_mtx;
-
     pcl_mtx3_t mtxABC, mtxLMN;
-
     pcl_vec3_t white_pt;
-
     const pcl_cid_col_common_t *pcoldata;
-
     int code = 0;
 
     if (pcid->len == 6) {
@@ -934,7 +920,6 @@ alloc_base_cspace(pcl_cs_base_t ** ppbase,
                   pcl_cspace_type_t type, gs_memory_t * pmem)
 {
     pcl_cs_base_t *pbase = 0;
-
     int code = 0;
 
     *ppbase = 0;
@@ -985,9 +970,7 @@ static int
 unshare_base_cspace(const gs_memory_t * mem, pcl_cs_base_t ** ppbase)
 {
     pcl_cs_base_t *pbase = *ppbase;
-
     pcl_cs_base_t *pnew = 0;
-
     int code;
 
     /* check if there is anything to do */
@@ -1006,9 +989,7 @@ unshare_base_cspace(const gs_memory_t * mem, pcl_cs_base_t ** ppbase)
     /* copy the color space (primarily for CIE color spaces; UGLY!!!) */
     if (pbase->type > pcl_cspace_CMY) {
         gs_cie_abc *pcs1 = pbase->pcspace->params.abc;
-
         gs_cie_abc *pcs2 = pnew->pcspace->params.abc;
-
         pcs2->common.install_cspace = pcs1->common.install_cspace;
         pcs2->common.RangeLMN = pcs1->common.RangeLMN;
         pcs2->common.DecodeLMN = pcs1->common.DecodeLMN;
@@ -1033,9 +1014,7 @@ pcl_cs_base_build_cspace(pcl_cs_base_t ** ppbase,
                          const pcl_cid_data_t * pcid, gs_memory_t * pmem)
 {
     pcl_cs_base_t *pbase = *ppbase;
-
     pcl_cspace_type_t type = pcl_cid_get_cspace(pcid);
-
     int code = 0;
 
     /* release the existing color space, if present */
@@ -1097,11 +1076,8 @@ pcl_cs_base_update_lookup_tbl(pcl_cs_base_t ** ppbase,
                               pcl_lookup_tbl_t * plktbl)
 {
     pcl_cs_base_t *pbase = *ppbase;
-
     pcl_lookup_tbl_t *plktbl1 = pbase->client_data.plktbl1;
-
     pcl_lookup_tbl_t *plktbl2 = pbase->client_data.plktbl2;
-
     int code = 0;
 
     if (plktbl == 0) {
@@ -1113,7 +1089,6 @@ pcl_cs_base_update_lookup_tbl(pcl_cs_base_t ** ppbase,
 
     } else {
         pcl_cspace_type_t cstype = pbase->type;
-
         pcl_cspace_type_t lktype = pcl_lookup_tbl_get_cspace(plktbl);
 
         /* lookup tables for "higher" color spaces are always ignored */

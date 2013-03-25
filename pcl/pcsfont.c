@@ -110,11 +110,8 @@ static int
 pcl_make_resident_font_copy(pcl_state_t * pcs)
 {
     pl_dict_enum_t dictp;
-
     gs_const_string key;
-
     void *value;
-
     bool found = false;
 
     /* first check for a duplicate key, if found remove it */
@@ -145,9 +142,7 @@ static int                      /* ESC * c <fc_enum> F */
 pcl_font_control(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     gs_const_string key;
-
     void *value;
-
     pl_dict_enum_t denum;
 
     switch (uint_arg(pargs)) {
@@ -251,23 +246,14 @@ static int                      /* ESC ) s <count> W */
 pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint count = uint_arg(pargs);
-
     const byte *data = arg_data(pargs);
-
     pcl_font_header_t *pfh = (pcl_font_header_t *) data;
-
     uint desc_size;
-
     pl_font_scaling_technology_t fst;
-
     gs_memory_t *mem = pcs->memory;
-
     pl_font_t *plfont;
-
     byte *header;
-
     int code;
-
     bool has_checksum;
 
     if (count < 64 && pfh->HeaderFormat != pcfh_bitmap)
@@ -312,7 +298,6 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
        below) is not included. */
     if (has_checksum) {
         ulong sum = 0;
-
         int i;
 
         for (i = count - 1; i >= 64; i--) {
@@ -519,19 +504,12 @@ static int                      /* ESC ( s <count> W */
 pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint count = uint_arg(pargs);
-
     uint font_data_size = count;
-
     const byte *data = arg_data(pargs);
-
     void *value;
-
     pl_font_t *plfont;
-
     pcl_font_header_format_t format;
-
     byte *char_data = 0;
-
     int code;
 
     if (!pl_dict_find_no_stack(&pcs->soft_fonts, current_font_id,
@@ -590,7 +568,6 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
                 /* more error checking of offsets, delta, width and height. */
                 {
                     int toff, loff;
-
                     int deltax;
 
                     loff = pl_get_int16(data + 6);
@@ -614,13 +591,9 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
                     case 2:    /* compressed bitmap */
                         {
                             uint y = 0;
-
                             const byte *src = data + 16;
-
                             const byte *end = data + count;
-
                             uint width_bytes = (width + 7) >> 3;
-
                             byte *row;
 
                             char_data =
@@ -634,9 +607,7 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
                             row = char_data + 16;
                             while (src < end && y < height) {   /* Read the next compressed row. */
                                 uint x;
-
                                 int color = 0;
-
                                 uint reps = *src++;
 
                                 for (x = 0; src < end && x < width; color ^= 1) {       /* Read the next run. */
@@ -682,13 +653,9 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
                         return e_Range;
                     {
                         uint data_size = pl_get_uint16(data + 4);
-
                         uint contour_offset = pl_get_uint16(data + 6);
-
                         uint metric_offset = pl_get_uint16(data + 8);
-
                         uint outline_offset = pl_get_uint16(data + 10);
-
                         uint xy_offset = pl_get_uint16(data + 12);
 
                         /* The contour data excludes 4 initial bytes of header */
@@ -797,9 +764,7 @@ pcl_find_resource(pcl_state_t * pcs,
     {
         /* max alpha name + NULL */
         char alphaname[512 + 1];
-
         long int size;
-
         int c, code;
 
         for (c = 0; c < string_id_size; c++)
@@ -887,7 +852,6 @@ pcl_alphanumeric_id_data(pcl_args_t * pargs, pcl_state_t * pcs)
                    primary.  Same as font id selection but uses the
                    string key instead of a numerical key */
                 void *value;
-
                 pcl_font_selection_t *pfs = &pcs->font_selection[primary];
 
                 if (!pl_dict_find_no_stack(&pcs->soft_fonts,
@@ -903,7 +867,6 @@ pcl_alphanumeric_id_data(pcl_args_t * pargs, pcl_state_t * pcs)
             {
                 /* same as case 2 but sets secondary font */
                 void *value;
-
                 pcl_font_selection_t *pfs = &pcs->font_selection[secondary];
 
                 if (!pl_dict_find_no_stack(&pcs->soft_fonts,

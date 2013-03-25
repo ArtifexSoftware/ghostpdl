@@ -72,9 +72,7 @@ static void
 stprintf(stream * s, const char *fmt, ...)
 {
     uint count;
-
     va_list args;
-
     char buf[1024];
 
     va_start(args, fmt);
@@ -135,7 +133,6 @@ status_print_idlist(stream * s, const ushort * idlist, int nid,
 
     for (i = 0; i < nid; i++) {
         char idstr[6];          /* ddddL and a null */
-
         int n, l;
 
         n = idlist[i] >> 6;
@@ -170,7 +167,6 @@ status_put_font(stream * s, pcl_state_t * pcs,
                 pl_font_t * plfont, int font_set, bool extended)
 {
     char paren = (font_set > 0 ? ')' : '(');
-
     bool proportional = plfont->params.proportional_spacing;
 
     /* first escape sequence: symbol-set selection */
@@ -216,13 +212,9 @@ status_put_font(stream * s, pcl_state_t * pcs,
     stputs(s, "\"\r\n");
     if (!pl_font_is_bound(plfont) && font_set < 0) {
         int nid;
-
         ushort *idlist;
-
         pl_dict_enum_t denum;
-
         gs_const_string key;
-
         void *value;
 
         idlist = (ushort *) gs_alloc_bytes(pcs->memory,
@@ -245,7 +237,6 @@ status_put_font(stream * s, pcl_state_t * pcs,
         pl_dict_enum_begin(&pcs->soft_symbol_sets, &denum);
         while (pl_dict_enum_next(&denum, &key, &value)) {
             pcl_symbol_set_t *ssp = (pcl_symbol_set_t *) value;
-
             pl_glyph_vocabulary_t gx;
 
             for (gx = plgv_MSL; gx < plgv_next; gx++)
@@ -272,7 +263,6 @@ status_put_font(stream * s, pcl_state_t * pcs,
             stputs(s, "DEFID=\"");
             if (plfont->storage & pcds_all_cartridges) {
                 int c;
-
                 int n = (plfont->storage & pcds_all_cartridges) >>
                     pcds_cartridge_shift;
 
@@ -282,7 +272,6 @@ status_put_font(stream * s, pcl_state_t * pcs,
                 stprintf(s, "C%d ", c);
             } else if (plfont->storage & pcds_all_simms) {
                 int m;
-
                 int n = (plfont->storage & pcds_all_simms) >> pcds_simm_shift;
 
                 /* pick out the bit index of the SIMM */
@@ -316,11 +305,8 @@ status_end(stream * s, pcl_state_t * pcs)
     if (sendwp(s)) {            /* Overrun.  Scan back to the last EOL that leaves us */
         /* enough room for the error line. */
         static const char *error_line = "ERROR=INTERNAL ERROR\r\n";
-
         int error_size = strlen(error_line) + 1;
-
         uint limit = gs_object_size(pcs->memory, pcs->status.buffer);
-
         uint wpos = stell(s);
 
         while (limit - wpos < error_size ||
@@ -342,11 +328,8 @@ status_do_fonts(stream * s, pcl_state_t * pcs,
                 pcl_data_storage_t storage, bool extended)
 {
     gs_const_string key;
-
     void *value;
-
     pl_dict_enum_t denum;
-
     int res;
 
     pl_dict_enum_begin(&pcs->soft_fonts, &denum);
@@ -376,9 +359,7 @@ static int
 status_macros(stream * s, pcl_state_t * pcs, pcl_data_storage_t storage)
 {
     gs_const_string key;
-
     void *value;
-
     pl_dict_enum_t denum;
 
     if (storage == 0)
@@ -405,7 +386,6 @@ status_patterns(stream * s, pcl_state_t * pcs, pcl_data_storage_t storage)
 {
     if (storage == 0) {
         int id = pcs->current_pattern_id;
-
         pcl_pattern_t *pptrn = pcl_pattern_get_pcl_uptrn(pcs, id);
 
         if ((pptrn != 0) && (pcs->pattern_type == pcl_pattern_user_defined)) {
@@ -437,9 +417,7 @@ status_check_symbol_set(pcl_state_t * pcs, pl_symbol_map_t * mapp,
                         pcl_data_storage_t storage)
 {
     gs_const_string key;
-
     void *value;
-
     pl_dict_enum_t fenum;
 
     pl_dict_enum_begin(&pcs->soft_fonts, &fenum);
@@ -459,9 +437,7 @@ static int                      /* add symbol set ID to list (insertion), return
 status_add_symbol_id(ushort * idlist, int nid, ushort new_id)
 {
     int i;
-
     ushort *idp;
-
     ushort t1, t2;
 
     for (i = 0, idp = idlist; i < nid; i++)
@@ -483,13 +459,9 @@ static int
 status_symbol_sets(stream * s, pcl_state_t * pcs, pcl_data_storage_t storage)
 {
     gs_const_string key;
-
     void *value;
-
     pl_dict_enum_t denum;
-
     ushort *idlist;
-
     int nid;
 
     if (storage == 0)
@@ -519,7 +491,6 @@ status_symbol_sets(stream * s, pcl_state_t * pcs, pcl_data_storage_t storage)
     pl_dict_enum_begin(&pcs->soft_symbol_sets, &denum);
     while (pl_dict_enum_next(&denum, &key, &value)) {
         pcl_symbol_set_t *ssp = (pcl_symbol_set_t *) value;
-
         pl_glyph_vocabulary_t gx;
 
         for (gx = plgv_MSL; gx < plgv_next; gx++)
@@ -571,18 +542,14 @@ static int                      /* ESC * s <enum> I */
 pcl_inquire_readback_entity(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint i = uint_arg(pargs);
-
     int unit = pcs->location_unit;
-
     stream st;
 
     static const char *entity_types[] = {
         "FONTS", "MACROS", "PATTERNS", "SYMBOLSETS", "FONTS EXTENDED"
     };
     pcl_data_storage_t storage;
-
     int code = 0;
-
     long pos;
 
     if (i > 4)
@@ -758,7 +725,6 @@ pcstatus_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
     if (type & (pcl_reset_initial | pcl_reset_printer)) {
         if (type & pcl_reset_initial) {
             pcs->status.buffer = 0;
-
             pcs->status.write_pos = 0;
             pcs->status.read_pos = 0;
         }
