@@ -355,7 +355,7 @@ paint_path(px_state_t * pxs)
     pxs->have_page = true;
 
     if (will_fill) {
-        gx_path *stroke_path;
+        gx_path *stroke_path = NULL;
         int (*fill_proc) (gs_state *) =
             (pxgs->fill_mode == eEvenOdd ? gs_eofill : gs_fill);
 
@@ -365,15 +365,19 @@ paint_path(px_state_t * pxs)
         /* if we are also going to stroke the path, store a copy. */
         if (will_stroke) {
             stroke_path = gx_path_alloc_shared(ppath, pxs->memory, "paint_path(save_for_stroke)");
-            if (stroke_path == 0)
+            if (stroke_path == NULL)
                 return_error(errorInsufficientMemory);
             gx_path_assign_preserve(stroke_path, ppath);
         }
 
         /* exit here if no stroke or the fill failed. */
         code = (*fill_proc) (pgs);
-        if (code < 0 || !will_stroke)
+        if (code < 0 || !will_stroke) {
+            /* if there is a stroke path free it */
+            if (stroke_path)
+                gx_path_free(stroke_path, "paint_path(error_with_fill)");
             return code;
+        }
 
         /* restore the path for the stroke, will_stroke and hence
            stroke_path must be set at this point. */
