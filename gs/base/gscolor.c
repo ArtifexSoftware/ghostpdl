@@ -210,7 +210,7 @@ gs_currenttransfer(const gs_state * pgs)
 /* ------ Non-operator routines ------ */
 
 /* Set device color = 1 for writing into the character cache. */
-void
+int
 gx_set_device_color_1(gs_state * pgs)
 {
     gs_color_space  *pcs;
@@ -222,7 +222,8 @@ gx_set_device_color_1(gs_state * pgs)
         gs_setcolorspace(pgs, pcs);
         rc_decrement_only_cs(pcs, "gx_set_device_color_1");
     } else {
-        /* {csrc} really need to signal an error here */
+        /* signal an error here */
+        return_error(gs_error_VMerror);
     }
     set_nonclient_dev_color(gs_currentdevicecolor_inline(pgs), 1);
     pgs->log_op = lop_default;
@@ -233,6 +234,7 @@ gx_set_device_color_1(gs_state * pgs)
     if (pgs->effective_overprint_mode == 1)
         (void)gs_do_set_overprint(pgs);
 
+    return 0;
 }
 
 /* ------ Internal routines ------ */

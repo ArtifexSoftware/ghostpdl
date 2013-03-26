@@ -223,8 +223,19 @@ gs_state_alloc(gs_memory_t * mem)
 
     if (pgs == 0)
         return 0;
-    pgs->saved = 0;
     *(gs_imager_state *)pgs = gstate_initial;   /* this sets is_gstate == true */
+    /* Need to set up at least enough to make gs_state_free happy */
+    pgs->saved = 0;
+    pgs->path = NULL;
+    pgs->clip_path = NULL;
+    pgs->clip_stack = NULL;
+    pgs->view_clip = NULL;
+    pgs->effective_clip_path = NULL;
+    pgs->font = NULL;
+    pgs->root_font = NULL;
+    pgs->show_gstate = NULL;
+    pgs->device = NULL;
+    pgs->dfilter_stack = NULL;
 
     /*
      * Just enough of the state is initialized at this point
@@ -247,6 +258,8 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->clip_path = gx_cpath_alloc(mem, "gs_state_alloc(clip_path)");
     pgs->clip_stack = 0;
     pgs->view_clip = gx_cpath_alloc(mem, "gs_state_alloc(view_clip)");
+    if (pgs->view_clip == NULL)
+        goto fail;
     pgs->view_clip->rule = 0;   /* no clipping */
     pgs->effective_clip_id = pgs->clip_path->id;
     pgs->effective_view_clip_id = gs_no_id;
@@ -254,14 +267,24 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->effective_clip_shared = true;
     /* Initialize things so that gx_remap_color won't crash. */
     pgs->color[0].color_space = gs_cspace_new_DeviceGray(pgs->memory);
+    if (pgs->color[0].color_space == NULL)
+        goto fail;
     pgs->color[1].color_space = gs_cspace_new_DeviceGray(pgs->memory);
+    if (pgs->color[1].color_space == NULL)
+        goto fail;
     pgs->in_cachedevice = 0;
     gs_swapcolors_quick(pgs); /* To color 1 */
-    gx_set_device_color_1(pgs); /* sets colorspace and client color */
+    code = gx_set_device_color_1(pgs); /* sets colorspace and client color */
+    if (code < 0)
+        goto fail;
     gs_swapcolors_quick(pgs); /* To color 0 */
-    gx_set_device_color_1(pgs); /* sets colorspace and client color */
+    code = gx_set_device_color_1(pgs); /* sets colorspace and client color */
+    if (code < 0)
+        goto fail;
     pgs->device = 0;            /* setting device adjusts refcts */
-    gs_nulldevice(pgs);
+    code = gs_nulldevice(pgs);
+    if (code < 0)
+        goto fail;
     gs_setalpha(pgs, 1.0);
     gs_settransfer(pgs, gs_identity_transfer);
     gs_setflat(pgs, 1.0);
@@ -875,7 +898,7 @@ gstate_free_parts(const gs_state * parts, gs_memory_t * mem, client_name_t cname
         gx_cpath_free(parts->effective_clip_path, cname);
     gx_cpath_free(parts->clip_path, cname);
     if (parts->path)
-	gx_path_free(parts->path, cname);
+        gx_path_free(parts->path, cname);
 }
 
 /* Allocate the privately allocated parts of a gstate. */

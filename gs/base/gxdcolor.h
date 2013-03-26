@@ -300,7 +300,7 @@ extern  dev_color_proc_get_phase(gx_dc_ht_get_phase);
 
 /* Set up device color 1 for writing into a mask cache */
 /* (e.g., the character cache). */
-void gx_set_device_color_1(gs_state * pgs);
+int gx_set_device_color_1(gs_state * pgs);
 
 /* Remap the color if necessary. */
 int gx_remap_color(gs_state *);

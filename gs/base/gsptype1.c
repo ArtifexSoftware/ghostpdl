@@ -158,7 +158,9 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
             gs_set_logical_op(saved, lop_default);
             break;
         case 2:         /* uncolored */
-            gx_set_device_color_1(saved);
+            code = gx_set_device_color_1(saved);
+            if (code < 0)
+                goto fsaved;
             break;
         default:
             code = gs_note_error(gs_error_rangecheck);

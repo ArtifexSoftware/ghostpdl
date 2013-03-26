@@ -685,9 +685,13 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
         clip_box.q.y = int2fixed(iheight);
         if ((code = gx_clip_to_rectangle(pgs, &clip_box)) < 0)
             return code;
-        gx_set_device_color_1(pgs);     /* write 1's */
+        code = gx_set_device_color_1(pgs);     /* write 1's */
+        if (code < 0)
+            return code;
         gs_swapcolors_quick(pgs);
-        gx_set_device_color_1(pgs);     /* write 1's */
+        code = gx_set_device_color_1(pgs);     /* write 1's */
+        if (code < 0)
+            return code;
         gs_swapcolors_quick(pgs);
         pgs->in_cachedevice = CACHE_DEVICE_CACHING;
     }
