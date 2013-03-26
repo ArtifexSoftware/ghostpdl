@@ -135,7 +135,8 @@ main(int argc, char *argv[])
             exit_status = 255;
     }
 
-    gs_to_exit_with_code(minst->heap, exit_status, code);
+    if (minst)
+        gs_to_exit_with_code(minst->heap, exit_status, code);
     gs_malloc_release(mem);
 
     switch (exit_status) {

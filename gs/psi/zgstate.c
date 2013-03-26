@@ -117,6 +117,8 @@ int_gstate_alloc(const gs_dual_memory_t * dmem)
 
     iigs = gs_alloc_struct((gs_memory_t *)lmem, int_gstate, &st_int_gstate,
                            "int_gstate_alloc(int_gstate)");
+    if (iigs == NULL)
+        return NULL;
     int_gstate_map_refs(iigs, make_null);
     make_empty_array(&iigs->dash_pattern_array, a_all);
     gs_alloc_ref_array(lmem, &proc0, a_readonly + a_executable, 2,
@@ -134,6 +136,8 @@ int_gstate_alloc(const gs_dual_memory_t * dmem)
     prci = gs_alloc_struct((gs_memory_t *)gmem, int_remap_color_info_t,
                            &st_int_remap_color_info,
                            "int_gstate_alloc(remap color info)");
+    if (prci == NULL)
+        return NULL;
     make_struct(&iigs->remap_color_info, imemory_space(gmem), prci);
     clear_pagedevice(iigs);
     gs_state_set_client(pgs, iigs, &istate_procs, true);

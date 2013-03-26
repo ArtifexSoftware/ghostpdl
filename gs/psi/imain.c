@@ -131,6 +131,7 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
               int max_lib_paths)
 {
     ref *paths;
+    ref *array;
 
     /* Do platform-dependent initialization. */
     /* We have to do this as the very first thing, */
@@ -158,9 +159,14 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
         gs_lib_finit(1, e_VMerror, minst->heap);
         return_error(e_VMerror);
     }
+    array = (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
+                                        "lib_path array");
+    if (array == 0) {
+        gs_lib_finit(1, e_VMerror, minst->heap);
+        return_error(e_VMerror);
+    }
     make_array(&minst->lib_path.container, avm_foreign, max_lib_paths,
-               (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
-                                           "lib_path array"));
+               array);
     make_array(&minst->lib_path.list, avm_foreign | a_readonly, 0,
                minst->lib_path.container.value.refs);
     minst->lib_path.env = 0;

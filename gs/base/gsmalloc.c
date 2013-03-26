@@ -581,10 +581,14 @@ gs_malloc_init(void)
 void
 gs_malloc_release(gs_memory_t *mem)
 {
+    gs_malloc_memory_t * malloc_memory_default;
+
+    if (mem == NULL)
+        return;
 #ifdef USE_RETRY_MEMORY_WRAPPER
-    gs_malloc_memory_t * malloc_memory_default = gs_malloc_unwrap(mem);
+    malloc_memory_default = gs_malloc_unwrap(mem);
 #else
-    gs_malloc_memory_t * malloc_memory_default = (gs_malloc_memory_t *)mem;
+    malloc_memory_default = (gs_malloc_memory_t *)mem;
 #endif
     gs_lib_ctx_fin((gs_memory_t *)malloc_memory_default);
 

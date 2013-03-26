@@ -192,13 +192,17 @@ int errwrite_nomem(const char *str, int len)
 int errwrite(const gs_memory_t *mem, const char *str, int len)
 {
     int code;
+    gs_lib_ctx_t *ctx;
     if (len == 0)
         return 0;
-    if (mem->gs_lib_ctx->stderr_fn)
-        return (*mem->gs_lib_ctx->stderr_fn)(mem->gs_lib_ctx->caller_handle, str, len);
+    ctx = mem->gs_lib_ctx;
+    if (ctx == NULL)
+      return 0;
+    if (ctx->stderr_fn)
+        return (*ctx->stderr_fn)(ctx->caller_handle, str, len);
 
-    code = fwrite(str, 1, len, mem->gs_lib_ctx->fstderr);
-    fflush(mem->gs_lib_ctx->fstderr);
+    code = fwrite(str, 1, len, ctx->fstderr);
+    fflush(ctx->fstderr);
     return code;
 }
 
