@@ -2137,14 +2137,14 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
                 return code;
         }
         if (pdev->params.UCRandBGInfo == ucrbg_Preserve) {
-            if (pdev->black_generation_id != pis->black_generation->id) {
+            if (pis->black_generation && pdev->black_generation_id != pis->black_generation->id) {
                 code = pdf_write_transfer_map(pdev, pis->black_generation,
                                               0, false, "", bgs);
                 if (code < 0)
                     return code;
                 pdev->black_generation_id = pis->black_generation->id;
             }
-            if (pdev->undercolor_removal_id != pis->undercolor_removal->id) {
+            if (pis->undercolor_removal && pdev->undercolor_removal_id != pis->undercolor_removal->id) {
                 code = pdf_write_transfer_map(pdev, pis->undercolor_removal,
                                               -1, false, "", ucrs);
                 if (code < 0)
