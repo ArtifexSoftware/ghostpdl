@@ -273,6 +273,11 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     /* pattern and work could be allocated as strings, */
     /* but it's simpler for GC and freeing to allocate them as bytes. */
 
+    pfen->memory = mem;
+    pfen->dstack = 0;
+    pfen->first_time = true;
+    pfen->patlen = patlen;
+    pfen->work = 0;
     pfen->pattern =
         (char *)gs_alloc_bytes(mem, patlen + 1,
                                "gp_enumerate_files(pattern)");
@@ -317,10 +322,6 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
         pfen->worklen = p - work;
     }
 
-    pfen->memory = mem;
-    pfen->dstack = 0;
-    pfen->first_time = true;
-    pfen->patlen = patlen;
     return pfen;
 }
 
