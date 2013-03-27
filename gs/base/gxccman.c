@@ -97,6 +97,8 @@ gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     }
     pdir->fmcache.mmax = mmax;
     pdir->fmcache.mdata = mdata;
+    memset(mdata, 0, mmax * sizeof(*mdata));
+    memset(chars, 0, chsize * sizeof(*chars));
     pdir->ccache.struct_memory = struct_mem;
     pdir->ccache.bits_memory = bits_mem;
     pdir->ccache.bmax = bmax;
