@@ -124,9 +124,13 @@ typedef enum {
     pxaErrorReport = 143,
 
     pxaVUExtension = 145,
+    pxaVUDataLength = 146,
     pxaVUAttr1 = 147,
     pxaVUAttr2,
     pxaVUAttr3,
+    pxaVUAttr4,
+    pxaVUAttr5,
+    pxaVUAttr6,
 
     pxaCharAngle = 161,
     pxaCharCode,

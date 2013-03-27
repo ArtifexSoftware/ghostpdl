@@ -379,8 +379,15 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
     } else if (st->data_proc) { /* An operator is awaiting data. */
         /* Skip white space until we find some. */
         code = 0;               /* in case we exit */
-        while ((left = rlimit - p) != 0) {
-            switch ((tag = p[1])) {
+        /* special case - VendorUnique has a length attribute which
+           we've already parsed and error checked */
+        if (st->data_proc == pxVendorUnique) {
+            st->data_left =
+                st->stack[st->attribute_indices[pxaVUDataLength]].value.i;
+            goto top;
+        } else {
+            while ((left = rlimit - p) != 0) {
+                switch ((tag = p[1])) {
                 case pxtNull:
                 case pxtHT:
                 case pxtLF:
@@ -410,6 +417,7 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
                         code = gs_note_error(errorMissingData);
                         goto x;
                     }
+                }
             }
         }
     }

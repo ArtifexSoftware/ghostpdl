@@ -718,7 +718,9 @@ px_default_end_page(px_state_t * pxs, int num_copies, int flush)
 }
 
 const byte apxVendorUnique[] = {
-    pxaVUExtension, 0, pxaVUAttr1, pxaVUAttr2, pxaVUAttr3, 0
+    pxaVUExtension, 0, pxaVUDataLength, pxaVUAttr1, pxaVUAttr2, pxaVUAttr3,
+    pxaVUAttr4, pxaVUAttr5, pxaVUAttr6, pxaSourceWidth, pxaSourceHeight,
+    pxaStartLine, pxaBlockHeight, 0
 };
 
 /** we do NOTHING with the vendor unique command.
@@ -729,7 +731,20 @@ const byte apxVendorUnique[] = {
 int
 pxVendorUnique(px_args_t * par, px_state_t * pxs)
 {
-    return 0;
+    int code = 0;
+    if (par->pv[1]) {
+        ulong len = par->pv[1]->value.i;
+        ulong copy = min(len - par->source.position,
+                         par->source.available);
+        par->source.data += copy;
+        par->source.available -= copy;
+        par->source.position += copy;
+        if (par->source.position == len)
+            code = 0;
+        else
+            code = pxNeedData;
+    }
+    return code;
 }
 
 const byte apxComment[] = {
