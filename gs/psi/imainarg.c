@@ -549,6 +549,8 @@ run_stdin:
                     return code;
                 len = strlen(adef);
                 str = (char *)gs_alloc_bytes(minst->heap, (uint)len, "-o");
+                if (str == NULL)
+                    return e_VMerror;
                 memcpy(str, adef, len);
                 make_const_string(&value, a_readonly | avm_foreign,
                                   len, (const byte *)str);

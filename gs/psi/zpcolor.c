@@ -58,10 +58,12 @@ private_st_int_pattern();
 static int
 zpcolor_init(i_ctx_t *i_ctx_p)
 {
-    gstate_set_pattern_cache(igs,
-                             gx_pattern_alloc_cache(imemory_system,
-                                               gx_pat_cache_default_tiles(),
-                                              gx_pat_cache_default_bits()));
+    gx_pattern_cache *pc = gx_pattern_alloc_cache(imemory_system,
+                                                  gx_pat_cache_default_tiles(),
+                                                  gx_pat_cache_default_bits());
+    if (pc == NULL)
+	return_error(gs_error_VMerror);
+    gstate_set_pattern_cache(igs, pc);
     return 0;
 }
 

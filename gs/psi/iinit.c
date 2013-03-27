@@ -283,11 +283,15 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
         /* Set up the initial dstack. */
         for (i = 0; i < countof(initial_dstack); i++) {
             const char *dname = initial_dstack[i];
+            ref *r;
 
             ++dsp;
             if (!strcmp(dname, "userdict"))
                 dstack_userdict_index = dsp - dsbot;
-            ref_assign(dsp, make_initial_dict(i_ctx_p, dname, idicts));
+            r = make_initial_dict(i_ctx_p, dname, idicts);
+            if (r == NULL)
+                return_error(e_VMerror);
+            ref_assign(dsp, r);
         }
 
         /* Enter names of referenced initial dictionaries into systemdict. */

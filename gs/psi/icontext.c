@@ -182,8 +182,10 @@ context_state_alloc(gs_context_state_t ** ppcst,
         s = (stream*)gs_alloc_bytes_immovable(mem->non_gc_memory->stable_memory,
                                               sizeof(*s),
                                               "context_state_alloc");
-        if (s == NULL)
+        if (s == NULL) {
+            code = gs_error_VMerror;
             goto x3;
+        }
         pcst->invalid_file_stream = s;
 
         s_init(s, NULL);

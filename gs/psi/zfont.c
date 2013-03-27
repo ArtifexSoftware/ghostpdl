@@ -63,6 +63,8 @@ static int
 zfont_init(i_ctx_t *i_ctx_p)
 {
     ifont_dir = gs_font_dir_alloc2(imemory->stable_memory, imemory->non_gc_memory);
+    if (ifont_dir == NULL)
+        return gs_error_VMerror;
     ifont_dir->ccache.mark_glyph = zfont_mark_glyph_name;
     ifont_dir->global_glyph_code = zfont_global_glyph_code;
     return gs_register_struct_root(imemory, NULL, (void **)&ifont_dir,
