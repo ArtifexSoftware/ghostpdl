@@ -335,7 +335,7 @@ struct gs_font_dir_s {
 int gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
                         gs_font_dir * pdir, uint bmax, uint mmax,
                         uint cmax, uint upper);
-void gx_char_cache_init(gs_font_dir *);
+int gx_char_cache_init(gs_font_dir *);
 void gx_purge_selected_cached_chars(gs_font_dir *,
                                     bool(*)(const gs_memory_t *, cached_char *, void *), void *);
 void gx_compute_char_matrix(const gs_matrix *char_tm, const gs_log2_scale_point *log2_scale,

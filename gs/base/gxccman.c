@@ -105,12 +105,11 @@ gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     pdir->ccache.upper = upper;
     pdir->ccache.table = chars;
     pdir->ccache.table_mask = chsize - 1;
-    gx_char_cache_init(pdir);
-    return 0;
+    return gx_char_cache_init(pdir);
 }
 
 /* Initialize the character cache. */
-void
+int
 gx_char_cache_init(register gs_font_dir * dir)
 {
     int i;
@@ -119,6 +118,8 @@ gx_char_cache_init(register gs_font_dir * dir)
     gs_alloc_bytes_immovable(dir->ccache.bits_memory,
                              sizeof(char_cache_chunk),
                              "initial_chunk");
+    if (cck == NULL)
+        return_error(gs_error_VMerror);
 
     dir->fmcache.msize = 0;
     dir->fmcache.used = dir->fmcache.mmax;
@@ -136,6 +137,7 @@ gx_char_cache_init(register gs_font_dir * dir)
         pair->ttf = 0;
         pair->ttr = 0;
     }
+    return 0;
 }
 
 /* ====== Purging ====== */
