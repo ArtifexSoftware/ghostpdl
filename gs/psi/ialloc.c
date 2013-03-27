@@ -78,11 +78,11 @@ ialloc_init(gs_dual_memory_t *dmem, gs_memory_t * rmem, uint chunk_size,
     ialloc_set_space(dmem, avm_global);
     return 0;
  fail:
-    gs_free_object(rmem, igmem_stable, "ialloc_init failure");
-    gs_free_object(rmem, igmem, "ialloc_init failure");
-    gs_free_object(rmem, ismem, "ialloc_init failure");
-    gs_free_object(rmem, ilmem_stable, "ialloc_init failure");
-    gs_free_object(rmem, ilmem, "ialloc_init failure");
+    ialloc_free_state(igmem_stable);
+    ialloc_free_state(igmem);
+    ialloc_free_state(ismem);
+    ialloc_free_state(ilmem_stable);
+    ialloc_free_state(ilmem);
     return_error(e_VMerror);
 }
 

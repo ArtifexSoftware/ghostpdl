@@ -252,8 +252,11 @@ ialloc_solo(gs_memory_t * parent, gs_memory_type_ptr_t pstype,
     byte *cdata = gs_alloc_bytes_immovable(parent, csize, "ialloc_solo");
     obj_header_t *obj = (obj_header_t *) (cdata + sizeof(chunk_head_t));
 
-    if (cp == 0 || cdata == 0)
+    if (cp == 0 || cdata == 0) {
+        gs_free_object(parent, cp, "ialloc_solo(allocation failure)");
+        gs_free_object(parent, cdata, "ialloc_solo(allocation failure)");
         return 0;
+    }
     alloc_init_chunk(cp, cdata, cdata + csize, false, (chunk_t *) NULL);
     cp->cbot = cp->ctop;
     cp->cprev = cp->cnext = 0;
@@ -263,6 +266,21 @@ ialloc_solo(gs_memory_t * parent, gs_memory_type_ptr_t pstype,
     obj->o_type = pstype;
     *pcp = cp;
     return (void *)(obj + 1);
+}
+
+void
+ialloc_free_state(gs_ref_memory_t *iimem)
+{
+    chunk_t *cp;
+    gs_memory_t *mem;
+    if (iimem == NULL)
+        return;
+    cp = iimem->cfirst;
+    mem = iimem->non_gc_memory;
+    if (cp == NULL)
+        return;
+    gs_free_object(mem, cp->chead, "ialloc_solo(allocation failure)");
+    gs_free_object(mem, cp, "ialloc_solo(allocation failure)");
 }
 
 /*

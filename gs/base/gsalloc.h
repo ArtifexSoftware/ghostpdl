@@ -54,6 +54,12 @@ void gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled);
 gs_ref_memory_t *ialloc_alloc_state(gs_memory_t *, uint);
 
 /*
+ * Function to free a gs_ref_memory_t allocated by ialloc_alloc_state. ONLY
+ * USEFUL FOR ERROR CLEANUP IMMEDIATELY AFTER ALLOCATION!
+ */
+void ialloc_free_state(gs_ref_memory_t *);
+
+/*
  * Add a chunk to an externally controlled allocator.  Such allocators
  * allocate all objects as immovable, are not garbage-collected, and
  * don't attempt to acquire additional memory (or free chunks) on their own.
