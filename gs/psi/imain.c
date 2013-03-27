@@ -246,6 +246,8 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 /* gcc wants prototypes for all external functions. */
 int gs_main_init2aux(gs_main_instance * minst);
 
+static const op_array_table empty_table = { 0 };
+
 /* This is an external function to work around      */
 /* a bug in gcc 4.5.1 optimizer. See bug 692684.    */
 int gs_main_init2aux(gs_main_instance * minst) {
@@ -254,6 +256,10 @@ int gs_main_init2aux(gs_main_instance * minst) {
     if (minst->init_done < 2) {
         int code, exit_code;
         ref error_object, ifa;
+
+        /* Set up enough so that we can safely be garbage collected */
+        i_ctx_p->op_array_table_global = empty_table;
+        i_ctx_p->op_array_table_local = empty_table;
 
         code = zop_init(i_ctx_p);
         if (code < 0)
