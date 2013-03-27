@@ -353,6 +353,8 @@ ctx_initialize(i_ctx_t **pi_ctx_p)
     gs_scheduler_t *psched =
         gs_alloc_struct_immovable((gs_memory_t *) imem, gs_scheduler_t,
                                   &st_scheduler, "gs_scheduler");
+    if (psched == NULL)
+        return_error(gs_error_VMerror);
 
     psched->current = 0;
     psched->active.head_index = psched->active.tail_index = 0;
