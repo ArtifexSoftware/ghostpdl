@@ -296,7 +296,7 @@ main(int argc, char *argv[])
             ry_sq = resolution[1] * resolution[1];
         } else if (argv[at_arg][1] = 's') {
             /* iseed value */
-            j = sscanf(argv[at_arg], "%d", &k);
+            j = sscanf(&argv[at_arg][2], "%d", &k);
             if (j != 0) {
                 srand(k);
             }
@@ -515,7 +515,7 @@ usage_exit:
     printf("\t\tvalues are used for aspect ratio -- actual values arbitrary\n");
     printf("\n\t-s#\tInitial seed for random number generation. Useful to generate");
     printf("\n\t\tdecorrelated threshold arrays to be used with different colors.");
-    printf("\n\t-t#\tsets the choice value threshold in 0.1% units (default 50 = 5%)\n");
+    printf("\n\t-t#\tsets the choice value threshold in 0.1%% units (default 50 = 5%%)\n");
     printf("\n\t-g\t(must be last) Following arguments are passed to Ghostscript if \n");
     printf("\t\tcompiled wuth USE_GS_DISPLAY=1.\n");
     printf("\n");

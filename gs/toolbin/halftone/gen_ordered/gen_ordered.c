@@ -1785,8 +1785,8 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
 
 int compare (const void * a, const void * b)
 {
-    htsc_threshpoint_t *val_a = a;
-    htsc_threshpoint_t *val_b = b;
+    const htsc_threshpoint_t *val_a = a;
+    const htsc_threshpoint_t *val_b = b;
 
   return val_a->value - val_b->value;
 }
