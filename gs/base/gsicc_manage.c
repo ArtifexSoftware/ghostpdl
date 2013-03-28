@@ -1156,6 +1156,8 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     result = (cmm_dev_profile_t *) gs_alloc_bytes(memory->non_gc_memory,
                                             sizeof(cmm_dev_profile_t),
                                             "gsicc_new_device_profile_array");
+    if (result == NULL)
+        return NULL;
     result->memory = memory->non_gc_memory;
 
     for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
