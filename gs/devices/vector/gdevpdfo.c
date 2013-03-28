@@ -1431,7 +1431,7 @@ static int cos_stream_hash(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
             return code;
         pcs0->md5_valid = 1;
     }
-    gs_md5_append(md5, (byte *)&pco0->md5, sizeof(pco0->stream_hash));
+    gs_md5_append(md5, (byte *)&pco0->hash, sizeof(pco0->hash));
     return code;
 }
 
