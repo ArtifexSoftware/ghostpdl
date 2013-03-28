@@ -35,7 +35,7 @@ gc_strings_set_marks(chunk_t * cp, bool mark)
                   (ulong) cp->smark, cp->smark_size, (int)mark);
         memset(cp->smark, 0, cp->smark_size);
         if (mark)
-            gc_mark_string(cp->sbase, cp->climit - cp->sbase, true, cp);
+            gc_mark_string(cp->sbase + HDR_ID_OFFSET, (cp->climit - cp->sbase) - HDR_ID_OFFSET, true, cp);
     }
 }
 
@@ -63,11 +63,11 @@ typedef string_mark_unit bword;
 static bool
 gc_mark_string(const byte * ptr, uint size, bool set, const chunk_t * cp)
 {
-    uint offset = ptr - cp->sbase;
+    uint offset = (ptr - HDR_ID_OFFSET) - cp->sbase;
     bword *bp = (bword *) (cp->smark + ((offset & -bword_bits) >> 3));
     uint bn = offset & (bword_bits - 1);
     bword m = bword_1s << bn;
-    uint left = size;
+    uint left = size + HDR_ID_OFFSET;
     bword marks = 0;
 
     bword_swap_bytes(m);
@@ -136,12 +136,12 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
     if (size == 0)
         return false;
 #define dmprintstr(mem)\
-  dmputc(mem, '('); dmfwrite(mem, ptr, min(size, 20));\
+  dmputc(mem, '('); dmfwrite(mem, ptr - HDR_ID_OFFSET, min(size, 20));\
   dmputs(mem, (size <= 20 ? ")" : "...)"))
-    if (!(cp = gc_locate(ptr, gcst))) {		/* not in a chunk */
+    if (!(cp = gc_locate(ptr - HDR_ID_OFFSET, gcst))) {		/* not in a chunk */
 #ifdef DEBUG
         if (gs_debug_c('5')) {
-            dmlprintf2(gcst->heap, "[5]0x%lx[%u]", (ulong) ptr, size);
+            dmlprintf2(gcst->heap, "[5]0x%lx[%u]", (ulong) ptr - HDR_ID_OFFSET, size);
             dmprintstr(gcst->heap);
             dmputs(gcst->heap, " not in a chunk\n");
         }
@@ -151,9 +151,9 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
     if (cp->smark == 0)		/* not marking strings */
         return false;
 #ifdef DEBUG
-    if (ptr < cp->ctop) {
+    if (ptr - HDR_ID_OFFSET < cp->ctop) {
         lprintf4("String pointer 0x%lx[%u] outside [0x%lx..0x%lx)\n",
-                 (ulong) ptr, size, (ulong) cp->ctop, (ulong) cp->climit);
+                 (ulong) ptr - HDR_ID_OFFSET, size, (ulong) cp->ctop, (ulong) cp->climit);
         return false;
     } else if (ptr + size > cp->climit) {	/*
                                                  * If this is the bottommost string in a chunk that has
@@ -168,11 +168,11 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
                                                  */
         const chunk_t *scp = cp;
 
-        while (ptr == scp->climit && scp->outer != 0)
+        while (ptr - HDR_ID_OFFSET == scp->climit && scp->outer != 0)
             scp = scp->outer;
-        if (ptr + size > scp->climit) {
+        if (ptr - HDR_ID_OFFSET + size > scp->climit) {
             lprintf4("String pointer 0x%lx[%u] outside [0x%lx..0x%lx)\n",
-                     (ulong) ptr, size,
+                     (ulong) ptr - HDR_ID_OFFSET, size,
                      (ulong) scp->ctop, (ulong) scp->climit);
             return false;
         }
@@ -183,7 +183,7 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
     if (gs_debug_c('5')) {
         dmlprintf4(gcst->heap, "[5]%s%smarked 0x%lx[%u]",
                   (marks ? "" : "already "), (set ? "" : "un"),
-                  (ulong) ptr, size);
+                  (ulong) ptr - HDR_ID_OFFSET, size);
         dmprintstr(gcst->heap);
         dmputc(gcst->heap, '\n');
     }
@@ -291,6 +291,8 @@ igc_reloc_string(gs_string * sptr, gc_state_t * gcst)
         return;
     }
     ptr = sptr->data;
+    ptr -= HDR_ID_OFFSET;
+
     if (!(cp = gc_locate(ptr, gcst)))	/* not in a chunk */
         return;
     if (cp->sreloc == 0 || cp->smark == 0)	/* not marking strings */
@@ -320,7 +322,7 @@ igc_reloc_string(gs_string * sptr, gc_state_t * gcst)
     reloc -= byte_count_one_bits(byt);
     if_debug2('5', "[5]relocate string 0x%lx to 0x%lx\n",
               (ulong) ptr, (ulong) (cp->sdest - reloc));
-    sptr->data = cp->sdest - reloc;
+    sptr->data = (cp->sdest - reloc) + HDR_ID_OFFSET;
 }
 void
 igc_reloc_const_string(gs_const_string * sptr, gc_state_t * gcst)
@@ -394,6 +396,7 @@ gc_strings_compact(chunk_t * cp, const gs_memory_t *mem)
                 to -= 8, --bp;
         }
         from = to;
+
         while (from > lo) {
             byte b = *--bp;
 

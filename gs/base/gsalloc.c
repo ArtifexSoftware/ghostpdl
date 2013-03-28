@@ -25,6 +25,20 @@
 #include "stream.h"		/* for clearing stream list */
 #include "malloc_.h" /* For MEMENTO */
 
+#if GS_USE_MEMORY_HEADER_ID
+gs_id hdr_id = 0;
+#ifdef DEBUG
+/**** BIG WARNING: Calling this could be catastrophic if "ptr" does not point
+ **** to a GS "struct" allocation.
+ ****/
+gs_id get_mem_hdr_id (void *ptr)
+{
+    return (*((hdr_id_t *)((byte *)ptr) - HDR_ID_OFFSET));
+}
+#endif
+#endif
+
+
 /*
  * Define whether to try consolidating space before adding a new chunk.
  * The default is not to do this, because it is computationally
@@ -523,6 +537,7 @@ gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled)
                 *pfl = *(obj_header_t **)ptr;\
                 ptr[-1].o_size = size;\
                 ptr[-1].o_type = pstype;\
+                ASSIGN_HDR_ID(ptr);\
                 /* If debugging, clear the block in an attempt to */\
                 /* track down uninitialized data errors. */\
                 gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
@@ -531,6 +546,7 @@ gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled)
         else if (size > max_freelist_size &&\
                  (ptr = large_freelist_alloc(imem, size)) != 0)\
         {	ptr[-1].o_type = pstype;\
+                ASSIGN_HDR_ID(ptr);\
                 /* If debugging, clear the block in an attempt to */\
                 /* track down uninitialized data errors. */\
                 gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
@@ -546,6 +562,7 @@ gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled)
                 ptr->o_size = size;\
                 ptr->o_type = pstype;\
                 ptr++;\
+                ASSIGN_HDR_ID(ptr);\
                 /* If debugging, clear the block in an attempt to */\
                 /* track down uninitialized data errors. */\
                 gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
@@ -973,6 +990,8 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
      */
     chunk_t *cp_orig = imem->pcc;
 
+    nbytes += HDR_ID_OFFSET;
+
 #ifdef MEMENTO
     if (Memento_failThisEvent())
         return NULL;
@@ -989,6 +1008,8 @@ top:
                    (ulong) (imem->cc.ctop - nbytes));
         str = imem->cc.ctop -= nbytes;
         gs_alloc_fill(str, gs_alloc_fill_alloc, nbytes);
+        str += HDR_ID_OFFSET;
+        ASSIGN_HDR_ID(str);
         return str;
     }
     /* Try the next chunk. */
@@ -1032,6 +1053,8 @@ i_alloc_string_immovable(gs_memory_t * mem, uint nbytes, client_name_t cname)
     uint asize;
     chunk_t *cp;
 
+    nbytes += HDR_ID_OFFSET;
+
 #ifdef MEMENTO
     if (Memento_failThisEvent())
         return NULL;
@@ -1048,8 +1071,12 @@ i_alloc_string_immovable(gs_memory_t * mem, uint nbytes, client_name_t cname)
                alloc_trace_space(imem), client_name_string(cname), nbytes,
                (ulong) str);
     gs_alloc_fill(str, gs_alloc_fill_alloc, nbytes);
+    str += HDR_ID_OFFSET;
+    ASSIGN_HDR_ID(str);
+
     return str;
 }
+
 static byte *
 i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
                 client_name_t cname)
@@ -1059,7 +1086,12 @@ i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
 
     if (old_num == new_num)	/* same size returns the same string */
         return data;
-    if (data == imem->cc.ctop &&	/* bottom-most string */
+
+    data -= HDR_ID_OFFSET;
+    old_num += HDR_ID_OFFSET;
+    new_num += HDR_ID_OFFSET;
+
+    if ( data == imem->cc.ctop &&	/* bottom-most string */
         (new_num < old_num ||
          imem->cc.ctop - imem->cc.cbot > new_num - old_num)
         ) {			/* Resize in place. */
@@ -1073,11 +1105,13 @@ i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
         memmove(ptr, data, min(old_num, new_num));
 #ifdef DEBUG
         if (new_num > old_num)
-            gs_alloc_fill(ptr + old_num, gs_alloc_fill_alloc,
-                          new_num - old_num);
+            gs_alloc_fill(ptr + old_num + HDR_ID_OFFSET, gs_alloc_fill_alloc,
+                          new_num - old_num - HDR_ID_OFFSET);
         else
-            gs_alloc_fill(data, gs_alloc_fill_free, old_num - new_num);
+            gs_alloc_fill(data + HDR_ID_OFFSET, gs_alloc_fill_free, old_num - new_num - HDR_ID_OFFSET);
 #endif
+        ptr += HDR_ID_OFFSET;
+        ASSIGN_HDR_ID(ptr);
     } else
         if (new_num < old_num) {
             /* trim the string and create a free space hole */
@@ -1088,13 +1122,20 @@ i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
             if_debug5m('A', mem, "[a%d:<> ]%s(%u->%u) 0x%lx\n",
                        alloc_trace_space(imem), client_name_string(cname),
                        old_num, new_num, (ulong)ptr);
+            ptr += HDR_ID_OFFSET;
+            ASSIGN_HDR_ID(ptr);
         } else {			/* Punt. */
+            data += HDR_ID_OFFSET;
+            old_num -= HDR_ID_OFFSET;
+            new_num -= HDR_ID_OFFSET;
+
             ptr = gs_alloc_string(mem, new_num, cname);
             if (ptr == 0)
                 return 0;
             memcpy(ptr, data, min(old_num, new_num));
             gs_free_string(mem, data, old_num, cname);
         }
+
     return ptr;
 }
 
@@ -1103,18 +1144,23 @@ i_free_string(gs_memory_t * mem, byte * data, uint nbytes,
               client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
-    if (data == imem->cc.ctop) {
-        if_debug4m('A', mem, "[a%d:-> ]%s(%u) 0x%lx\n",
-                   alloc_trace_space(imem), client_name_string(cname), nbytes,
-                   (ulong) data);
-        imem->cc.ctop += nbytes;
-    } else {
-        if_debug4m('A', mem, "[a%d:->#]%s(%u) 0x%lx\n",
-                   alloc_trace_space(imem), client_name_string(cname), nbytes,
-                   (ulong) data);
-        imem->lost.strings += nbytes;
+
+    if (data) {
+        data -= HDR_ID_OFFSET;
+        nbytes += HDR_ID_OFFSET;
+        if (data == imem->cc.ctop) {
+            if_debug4m('A', mem, "[a%d:-> ]%s(%u) 0x%lx\n",
+                       alloc_trace_space(imem), client_name_string(cname), nbytes,
+                       (ulong) data);
+            imem->cc.ctop += nbytes;
+        } else {
+            if_debug4m('A', mem, "[a%d:->#]%s(%u) 0x%lx\n",
+                       alloc_trace_space(imem), client_name_string(cname), nbytes,
+                       (ulong) data);
+            imem->lost.strings += nbytes;
+        }
+        gs_alloc_fill(data, gs_alloc_fill_free, nbytes);
     }
-    gs_alloc_fill(data, gs_alloc_fill_free, nbytes);
 }
 
 static gs_memory_t *
@@ -1386,6 +1432,7 @@ done:
         ptr->d.o.space_id = mem->space_id;
 #   endif
     ptr++;
+    ASSIGN_HDR_ID(ptr);
     gs_alloc_fill(ptr, gs_alloc_fill_alloc, lsize);
     return ptr;
 }

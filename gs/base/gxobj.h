@@ -25,6 +25,37 @@
 #  define IGC_PTR_STABILITY_CHECK 0
 #endif
 
+#ifndef GS_USE_MEMORY_HEADER_ID
+#define GS_USE_MEMORY_HEADER_ID 1
+#endif
+
+#if GS_USE_MEMORY_HEADER_ID
+
+  typedef gs_id hdr_id_t;
+
+  extern hdr_id_t hdr_id;
+
+# define HDR_ID_OFFSET (sizeof(obj_header_t) - offset_of(obj_header_t, d.o.hdr_id))
+
+# ifdef DEBUG
+
+# define ASSIGN_HDR_ID(obj) (*(hdr_id_t *)(((byte *)obj) - HDR_ID_OFFSET)) = hdr_id++
+
+  gs_id get_mem_hdr_id (void *ptr);
+
+# else /* DEBUG */
+
+#  define ASSIGN_HDR_ID(obj_hdr)
+
+# endif /* DEBUG */
+
+#else
+
+# define ASSIGN_HDR_ID(obj_hdr)
+# define HDR_ID_OFFSET 0
+
+#endif /* GS_USE_MEMORY_HEADER_ID */
+
 /* ================ Objects ================ */
 
 /*
@@ -96,6 +127,10 @@ typedef struct obj_header_data_s {
     } t;
 #   if IGC_PTR_STABILITY_CHECK
     unsigned space_id:3; /* r_space_bits + 1 bit for "instability". */
+#   endif
+
+#   if GS_USE_MEMORY_HEADER_ID
+    hdr_id_t hdr_id; /* should be last, to save wasting space in the "strings" case. Makes object easier to trace thru GC */
 #   endif
 } obj_header_data_t;
 
