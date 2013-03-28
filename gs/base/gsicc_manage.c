@@ -1646,7 +1646,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
 {
     cmm_profile_t *result;
     int code;
-    char *nameptr;
+    char *nameptr = NULL;
     gs_memory_t *mem_nongc = memory->non_gc_memory;
 
     result = (cmm_profile_t*) gs_alloc_bytes(mem_nongc, sizeof(cmm_profile_t),
@@ -1657,6 +1657,10 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
     if (namelen > 0) {
         nameptr = (char*) gs_alloc_bytes(mem_nongc, namelen+1,
                              "gsicc_profile_new");
+        if (nameptr == NULL) {
+            gs_free_object(mem_nongc, result, "gsicc_profile_new");
+            return NULL;
+        }
         memcpy(nameptr, pname, namelen);
         nameptr[namelen] = '\0';
         result->name = nameptr;
@@ -1672,6 +1676,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
         code = gsicc_load_profile_buffer(result, s, mem_nongc);
         if (code < 0) {
             gs_free_object(mem_nongc, result, "gsicc_profile_new");
+            gs_free_object(mem_nongc, nameptr, "gsicc_profile_new");
             return NULL;
         }
     } else {
@@ -1688,6 +1693,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
     result->lock = gx_monitor_alloc(mem_nongc);
     if (result->lock == NULL ) {
         gs_free_object(mem_nongc, result, "gsicc_profile_new");
+        gs_free_object(mem_nongc, nameptr, "gsicc_profile_new");
         return(NULL);
     }
     if_debug1m(gs_debug_flag_icc, mem_nongc,
