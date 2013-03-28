@@ -1425,7 +1425,13 @@ static int cos_stream_hash(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
         pcs0->stream_md5_valid = 1;
     }
     gs_md5_append(md5, (byte *)&pco0->stream_hash, sizeof(pco0->stream_hash));
-    code = cos_dict_hash(pco0, (gs_md5_state_t *)&pco0->md5, (gs_md5_byte_t *)pco0->hash, pdev);
+    if (!pco0->md5_valid) {
+        code = cos_dict_hash(pco0, (gs_md5_state_t *)&pco0->md5, (gs_md5_byte_t *)pco0->hash, pdev);
+        if (code < 0)
+            return code;
+        pcs0->md5_valid = 1;
+    }
+    gs_md5_append(md5, (byte *)&pco0->md5, sizeof(pco0->stream_hash));
     return code;
 }
 
