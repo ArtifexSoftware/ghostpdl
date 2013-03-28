@@ -63,9 +63,10 @@ static void rc_free_icc_profile(gs_memory_t * mem, void *ptr_in,
                                 client_name_t cname);
 static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s,
                                      gs_memory_t *memory);
-static stream* gsicc_open_search(const char* pname, int namelen,
-                                 gs_memory_t *mem_gc,
-                                 const char* dirname, int dir_namelen);
+static int gsicc_open_search(const char* pname, int namelen,
+                             gs_memory_t *mem_gc,
+                             const char* dirname, int dir_namelen,
+                             stream **stmp);
 static int64_t gsicc_search_icc_table(clist_icctable_t *icc_table,
                                       int64_t icc_hashcode, int *size);
 static int gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s,
@@ -137,35 +138,35 @@ gsicc_set_iccsmaskprofile(const char *pname,
     cmm_profile_t *icc_profile;
 
     if (icc_manager == NULL) {
-        str = gsicc_open_search(pname, namelen, mem, NULL, 0);
+        code = gsicc_open_search(pname, namelen, mem, NULL, 0, &str);
     } else {
-        str = gsicc_open_search(pname, namelen, mem, mem->gs_lib_ctx->profiledir,
-                                mem->gs_lib_ctx->profiledir_len);
+        code = gsicc_open_search(pname, namelen, mem, mem->gs_lib_ctx->profiledir,
+                                 mem->gs_lib_ctx->profiledir_len, &str);
     }
-    if (str != NULL) {
-        icc_profile = gsicc_profile_new(str, mem, pname, namelen);
-        code = sfclose(str);
-        /* Get the profile handle */
-        icc_profile->profile_handle =
+    if (code < 0 || str == NULL)
+        return NULL;
+    icc_profile = gsicc_profile_new(str, mem, pname, namelen);
+    code = sfclose(str);
+    if (icc_profile == NULL)
+        return NULL;
+    /* Get the profile handle */
+    icc_profile->profile_handle =
             gsicc_get_profile_handle_buffer(icc_profile->buffer,
                                             icc_profile->buffer_size,
                                             mem);
-        /* Compute the hash code of the profile. Everything in the
-           ICC manager will have it's hash code precomputed */
-        gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode),
-                                        icc_profile->buffer_size);
-        icc_profile->hash_is_valid = true;
-        icc_profile->num_comps =
+    /* Compute the hash code of the profile. Everything in the
+       ICC manager will have it's hash code precomputed */
+    gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode),
+                            icc_profile->buffer_size);
+    icc_profile->hash_is_valid = true;
+    icc_profile->num_comps =
             gscms_get_input_channel_count(icc_profile->profile_handle);
-        icc_profile->num_comps_out =
+    icc_profile->num_comps_out =
             gscms_get_output_channel_count(icc_profile->profile_handle);
-        icc_profile->data_cs =
+    icc_profile->data_cs =
             gscms_get_profile_data_space(icc_profile->profile_handle);
-        gscms_set_icc_range(&icc_profile);
-        return icc_profile;
-    } else {
-        return NULL;
-    }
+    gscms_set_icc_range(&icc_profile);
+    return icc_profile;
 }
 
 gsicc_smask_t*
@@ -517,8 +518,10 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
         return 0;
     } else {
         mem = icc_manager->memory->non_gc_memory;
-        str = gsicc_open_search(pname, namelen, mem, mem->gs_lib_ctx->profiledir,
-                                mem->gs_lib_ctx->profiledir_len);
+        code = gsicc_open_search(pname, namelen, mem, mem->gs_lib_ctx->profiledir,
+                                 mem->gs_lib_ctx->profiledir_len, &str);
+        if (code < 0)
+            return code;
     }
     if (str != NULL) {
         /* Get the information in the file */
@@ -587,9 +590,11 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                         break;
                     } else {
                         /* Try to open the file and set the profile */
-                        str = gsicc_open_search(curr_ptr, strlen(curr_ptr), mem, 
-                                                mem->gs_lib_ctx->profiledir,
-                                                mem->gs_lib_ctx->profiledir_len);
+                        code = gsicc_open_search(curr_ptr, strlen(curr_ptr), mem, 
+                                                 mem->gs_lib_ctx->profiledir,
+                                                 mem->gs_lib_ctx->profiledir_len, &str);
+                        if (code < 0)
+                            return code;
                         if (str != NULL) {
                             icc_profile =
                                 gsicc_profile_new(str, mem, curr_ptr, strlen(curr_ptr));
@@ -787,8 +792,10 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
             current_entry = current_entry->next;
         }
     }
-    str = gsicc_open_search(pname, namelen, mem_gc, mem_gc->gs_lib_ctx->profiledir,
-                                mem_gc->gs_lib_ctx->profiledir_len);
+    code = gsicc_open_search(pname, namelen, mem_gc, mem_gc->gs_lib_ctx->profiledir,
+                             mem_gc->gs_lib_ctx->profiledir_len, &str);
+    if (code < 0)
+        return code;
     if (str != NULL) {
         icc_profile = gsicc_profile_new(str, mem_gc, pname, namelen);
         /* Add check so that we detect cases where we are loading a named
@@ -930,14 +937,13 @@ gsicc_get_profile_handle_file(const char* pname, int namelen, gs_memory_t *mem)
     int code;
 
     /* First see if we can get the stream.  NOTE  icc directory not used! */
-    str = gsicc_open_search(pname, namelen, mem, NULL, 0);
-    if (str != NULL) {
-        result = gsicc_profile_new(str, mem, pname, namelen);
-        code = sfclose(str);
-        gsicc_init_profile_info(result);
-        return(result);
-    }
-    return(NULL);
+    code = gsicc_open_search(pname, namelen, mem, NULL, 0, &str);
+    if (code < 0 || str == NULL)
+        return NULL;
+    result = gsicc_profile_new(str, mem, pname, namelen);
+    code = sfclose(str);
+    gsicc_init_profile_info(result);
+    return(result);
 }
 
 /* Given that we already have a profile in a buffer (e.g. generated from a PS object)
@@ -972,9 +978,9 @@ gsicc_init_profile_info(cmm_profile_t *profile)
 /* This is used to try to find the specified or default ICC profiles */
 /* This is where we would enhance the directory searching to use a   */
 /* list of paths separated by ':' (unix) or ';' Windows              */
-static stream*
+static int
 gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
-                  const char* dirname, int dirlen)
+                  const char* dirname, int dirlen, stream**strp)
 {
     char *buffer;
     stream* str;
@@ -988,24 +994,33 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
            A warning is noted.  */
         buffer = (char *) gs_alloc_bytes(mem_gc, namelen + dirlen + 1,
                                      "gsicc_open_search");
+        if (buffer == NULL)
+            return_error(gs_error_VMerror);
         strcpy(buffer, dirname);
         strcat(buffer, pname);
         /* Just to make sure we were null terminated */
         buffer[namelen + dirlen] = '\0';
         str = sfopen(buffer, "rb", mem_gc);
         gs_free_object(mem_gc, buffer, "gsicc_open_search");
-        if (str != NULL) return(str);
+        if (str != NULL) {
+            *strp = str;
+	    return 0;
+        }
     }
 
     /* First just try it like it is */
     str = sfopen(pname, "rb", mem_gc);
-    if (str != NULL)
-        return(str);
+    if (str != NULL) {
+        *strp = str;
+        return 0;
+    }
 
     /* If that fails, try %rom% */ /* FIXME: Not sure this is needed or correct */
                                    /* A better approach might be to have built in defaults */
     buffer = (char *) gs_alloc_bytes(mem_gc, 1 + namelen +
                         strlen(DEFAULT_DIR_ICC),"gsicc_open_search");
+    if (buffer == NULL)
+        return_error(gs_error_VMerror);
     strcpy(buffer, DEFAULT_DIR_ICC);
     strcat(buffer, pname);
     /* Just to make sure we were null terminated */
@@ -1015,7 +1030,8 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
     if (str == NULL) {
         gs_warn1("Could not find %s ",pname);
     }
-    return(str);
+    *strp = str;
+    return 0;
 }
 
 /* Free source object icc array structure.  */
@@ -1446,6 +1462,8 @@ gsicc_init_device_profile_struct(gx_device * dev,
            non-GC memory.  */
         dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
         profile_struct = dev->icc_struct;
+        if (profile_struct == NULL)
+            return_error(gs_error_VMerror);
     }
     /* Either use the incoming or a default */
     if (profile_name == NULL) {
@@ -1453,6 +1471,8 @@ gsicc_init_device_profile_struct(gx_device * dev,
             (char *) gs_alloc_bytes(dev->memory, 
                                     MAX_DEFAULT_ICC_LENGTH,
                                     "gsicc_init_device_profile_struct");
+        if (profile_name == NULL)
+            return_error(gs_error_VMerror);
         switch(dev->color_info.num_components) {
             case 1:
                 strncpy(profile_name, DEFAULT_GRAY_ICC, strlen(DEFAULT_GRAY_ICC));
@@ -1512,9 +1532,11 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
        decremented for any profile that we might be replacing
        in gsicc_init_device_profile_struct */
     if (file_name != '\0') {
-        str = gsicc_open_search(file_name, strlen(file_name), mem,
-                                mem->gs_lib_ctx->profiledir,
-                                mem->gs_lib_ctx->profiledir_len);
+        code = gsicc_open_search(file_name, strlen(file_name), mem,
+                                 mem->gs_lib_ctx->profiledir,
+                                 mem->gs_lib_ctx->profiledir_len, &str);
+        if (code < 0)
+            return code;
         if (str != NULL) {
             icc_profile =
                 gsicc_profile_new(str, mem, file_name, strlen(file_name));

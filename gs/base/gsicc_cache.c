@@ -901,10 +901,11 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
         if (icc_manager->graytok_profile == NULL) {
             icc_manager->graytok_profile =
                 gsicc_set_iccsmaskprofile(GRAY_TO_K, strlen(GRAY_TO_K), 
-                pis->icc_manager, pis->icc_manager->memory->stable_memory);
-                if (icc_manager->graytok_profile == NULL) {
-                    return NULL;
-                }
+                                          pis->icc_manager,
+                                          pis->icc_manager->memory->stable_memory);
+            if (icc_manager->graytok_profile == NULL) {
+                return NULL;
+            }
         }
         if (icc_manager->smask_profiles == NULL) {
             code = gsicc_initialize_iccsmask(icc_manager);
