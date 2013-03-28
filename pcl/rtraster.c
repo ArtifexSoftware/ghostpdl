@@ -77,10 +77,10 @@ typedef struct pcl_raster_s
     pcl_cs_indexed_t *pindexed; /* color space */
 
     gs_image_enum *pen;         /* image enumerator */
-    uint16 plane_index;         /* next plane to be received */
-    uint16 rows_rendered;       /* # of source rows rendered */
-    uint16 src_width;           /* usable raster width */
-    uint16 src_height;          /* remaining usable raster height */
+    uint   plane_index;         /* next plane to be received */
+    uint   rows_rendered;       /* # of source rows rendered */
+    uint   src_width;           /* usable raster width */
+    uint   src_height;          /* remaining usable raster height */
 
     /* objects required for opaque source/transparent pattern case */
     gs_image_enum *mask_pen;    /* enumerator for mask */
