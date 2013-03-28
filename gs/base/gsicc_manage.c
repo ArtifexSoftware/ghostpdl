@@ -1541,6 +1541,8 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
             icc_profile =
                 gsicc_profile_new(str, mem, file_name, strlen(file_name));
             code = sfclose(str);
+            if (icc_profile == NULL)
+                return_error(gs_error_VMerror);
             if (pro_enum < gsPROOFPROFILE) {
                 if_debug1m(gs_debug_flag_icc, mem,
                            "[icc] Setting device profile %d\n", pro_enum);
@@ -1560,6 +1562,8 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                 gsicc_get_profile_handle_buffer(icc_profile->buffer,
                                                 icc_profile->buffer_size,
                                                 mem);
+            if (icc_profile->profile_handle == NULL)
+                return_error(gs_error_unknownerror);
             /* Compute the hash code of the profile. Everything in the
                ICC manager will have it's hash code precomputed */
             gsicc_get_icc_buff_hash(icc_profile->buffer,

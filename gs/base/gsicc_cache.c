@@ -659,12 +659,14 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
     /* insert an empty link that we will reserve so we */
     /* can unlock while building the link contents     */
     (*ret_link) = gsicc_alloc_link(cache_mem->stable_memory, hash);
-    (*ret_link)->icc_link_cache = icc_link_cache;
-    (*ret_link)->next = icc_link_cache->head;
-    icc_link_cache->head = *ret_link;
-    icc_link_cache->num_links++;
-    /* now that we own this link we can release 
-       the lock since it is not valid */
+    if (*ret_link) {
+        (*ret_link)->icc_link_cache = icc_link_cache;
+        (*ret_link)->next = icc_link_cache->head;
+        icc_link_cache->head = *ret_link;
+        icc_link_cache->num_links++;
+        /* now that we own this link we can release
+          the lock since it is not valid */
+    }
     gx_monitor_leave(icc_link_cache->lock);
     return false;
 }
@@ -794,6 +796,9 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
     if (gsicc_alloc_link_entry(icc_link_cache, &link, hash, include_softproof,
                                include_devicelink)) 
         return link;
+    if (link == NULL)
+        return NULL;
+
     /* Now compute the link contents */
     cms_input_profile = gs_input_profile->profile_handle;
     if (cms_input_profile == NULL) {
