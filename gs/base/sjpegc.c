@@ -173,9 +173,10 @@ gs_jpeg_alloc_huff_table(stream_DCT_state * st)
 int
 gs_jpeg_destroy(stream_DCT_state * st)
 {
-    if (setjmp(find_jmp_buf(st->data.common->exit_jmpbuf)))
+    if (st->data.common && setjmp(find_jmp_buf(st->data.common->exit_jmpbuf)))
         return_error(gs_jpeg_log_error(st));
-    jpeg_destroy((j_common_ptr) & st->data.compress->cinfo);
+    if (st->data.compress)
+        jpeg_destroy((j_common_ptr) & st->data.compress->cinfo);
     return 0;
 }
 

@@ -273,8 +273,9 @@ s_DCTE_release(stream_state * st)
     stream_DCT_state *const ss = (stream_DCT_state *) st;
 
     gs_jpeg_destroy(ss);
-    gs_free_object(ss->data.common->memory, ss->data.compress,
-                   "s_DCTE_release");
+    if (ss->data.common)
+        gs_free_object(ss->data.common->memory, ss->data.compress,
+                       "s_DCTE_release");
     /* Switch the template pointer back in case we still need it. */
     st->templat = &s_DCTE_template;
 }
