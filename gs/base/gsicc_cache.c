@@ -805,6 +805,8 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                 gsicc_get_profile_handle_buffer(gs_input_profile->buffer,
                                                 gs_input_profile->buffer_size,
                                                 memory);
+            if (cms_input_profile == NULL)
+                return NULL;
             gs_input_profile->profile_handle = cms_input_profile;
             if (cms_input_profile == NULL)
                 return NULL;
