@@ -58,8 +58,7 @@ pl_allocate_interp_instance(pl_interp_instance_t ** instance,   /* RETURNS insta
 {
     pl_interp_instance_t *pli;
 
-    int code
-        =
+    int code =
         interp->implementation->proc_allocate_interp_instance(instance,
                                                               interp, mem);
     if (code < 0)
@@ -141,13 +140,14 @@ pl_process_file(pl_interp_instance_t * instance, char *filename)
 }
 
 /* Parse a cursor-full of data */
-int                             /* The parser reads data from the input
-                                 * buffer and returns either:
-                                 *      >=0 - OK, more input is needed.
-                                 *      e_ExitLanguage - A UEL or other return to the default parser was
-                                 *      detected.
-                                 *      other <0 value - an error was detected.
-                                 */
+/* The parser reads data from the input
+ * buffer and returns either:
+ *      >=0 - OK, more input is needed.
+ *      e_ExitLanguage - A UEL or other return to the default parser was
+ *      detected.
+ *      other <0 value - an error was detected.
+ */
+int
 pl_process(pl_interp_instance_t * instance,     /* interp instance to process data job in */
            stream_cursor_read * cursor  /* data to process */
     )

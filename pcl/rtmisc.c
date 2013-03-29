@@ -162,28 +162,35 @@ rtmisc_do_registration(pcl_parser_state_t * pcl_parser_state,
     /* Register commands */
     /* Chapter 4 */
     DEFINE_CLASS('%')
-        /* Chapter 18 */
+    /* Chapter 18 */
     {
         0, 'B',
             PCL_COMMAND("Enter HP-GL/2 Mode",
                         rtl_enter_hpgl_mode,
                         pca_neg_ok | pca_big_ok | pca_in_rtl)
-    }, {
+    },
+    {
         0, 'A',
             PCL_COMMAND("Enter PCL Mode",
                         rtl_enter_pcl_mode,
                         pca_neg_ok | pca_big_ok | pca_in_rtl)
-    }, END_CLASS
-        /* Comparison Guide */
-        DEFINE_CLASS('&') {
+    },
+    END_CLASS
+
+    /* Comparison Guide */
+    DEFINE_CLASS('&')
+    {
         'b', 'W',
-            PCL_COMMAND("Appletalk Configuration",
-                        pcl_appletalk_configuration, pca_bytes)
-    }, {
+        PCL_COMMAND("Appletalk Configuration",
+        pcl_appletalk_configuration, pca_bytes)
+    },
+    {
         'a', 'N',
-            PCL_COMMAND("Negative Motion",
-                        pcl_negative_motion, pca_neg_error | pca_big_error)
-    }, END_CLASS return 0;
+        PCL_COMMAND("Negative Motion",
+        pcl_negative_motion, pca_neg_error | pca_big_error)
+    },
+    END_CLASS
+    return 0;
 }
 
 /*

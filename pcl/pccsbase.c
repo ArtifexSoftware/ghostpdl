@@ -188,17 +188,11 @@ static const struct
     const pcl_cid_col_common_t *pchroma;
     const float *pxform;
 } cid_data_default[(int)pcl_cspace_num] = {
-    {
-    0, 0, 0},                   /* pcl_cspace_RGB */
-    {
-    0, 0, 0},                   /* pcl_cspace_CMY */
-    {
-    &colmet_range_default, &chroma_default, 0}, /* pcl_cspace_Colorimetric */
-    {
-    &cielab_range_default, 0, 0},       /* pcl_cspace_CIELab */
-    {
-    &lumchrom_range_default, &chroma_default, lumchrom_xform_default}
-    /* pcl_cspace_LumChrom */
+    {0, 0, 0},                   /* pcl_cspace_RGB */
+    {0, 0, 0},                   /* pcl_cspace_CMY */
+    {&colmet_range_default, &chroma_default, 0}, /* pcl_cspace_Colorimetric */
+    {&cielab_range_default, 0, 0},       /* pcl_cspace_CIELab */
+    {&lumchrom_range_default, &chroma_default, lumchrom_xform_default} /* pcl_cspace_LumChrom */
 };
 
 /*
@@ -695,12 +689,12 @@ static const gs_matrix3 lab_MatrixABC = {
     }
 
 lab_DecodeLMN_proc(lab_DecodeLMN_0, 0)
-    lab_DecodeLMN_proc(lab_DecodeLMN_1, 1)
-    lab_DecodeLMN_proc(lab_DecodeLMN_2, 2)
+lab_DecodeLMN_proc(lab_DecodeLMN_1, 1)
+lab_DecodeLMN_proc(lab_DecodeLMN_2, 2)
 
-     static const gs_cie_common_proc3 lab_DecodeLMN = {
-         {lab_DecodeLMN_0, lab_DecodeLMN_1, lab_DecodeLMN_2}
-     };
+static const gs_cie_common_proc3 lab_DecodeLMN = {
+    {lab_DecodeLMN_0, lab_DecodeLMN_1, lab_DecodeLMN_2}
+};
 
 static const gs_vector3 lab_WhitePoint = { .9504f, 1.0f, 1.0889f };
 
@@ -771,12 +765,12 @@ finish_lab_cspace(gs_color_space * pcspace, const pcl_cid_data_t * pcid)
     }
 
 lumchrom_DecodeABC_proc(lumchrom_DecodeABC_0, 0)
-    lumchrom_DecodeABC_proc(lumchrom_DecodeABC_1, 1)
-    lumchrom_DecodeABC_proc(lumchrom_DecodeABC_2, 2)
+lumchrom_DecodeABC_proc(lumchrom_DecodeABC_1, 1)
+lumchrom_DecodeABC_proc(lumchrom_DecodeABC_2, 2)
 
-     static const gs_cie_abc_proc3 lumchrom_DecodeABC = {
-         {lumchrom_DecodeABC_0, lumchrom_DecodeABC_1, lumchrom_DecodeABC_2}
-     };
+static const gs_cie_abc_proc3 lumchrom_DecodeABC = {
+    {lumchrom_DecodeABC_0, lumchrom_DecodeABC_1, lumchrom_DecodeABC_2}
+};
 
 /*
  * The DecodeLMN procedures for luminance-chrominance spaces are similar
@@ -812,12 +806,12 @@ lumchrom_DecodeABC_proc(lumchrom_DecodeABC_0, 0)
     }
 
 lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_0, 0)
-    lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_1, 1)
-    lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_2, 2)
+lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_1, 1)
+lumchrom_DecodeLMN_proc(lumchrom_DecodeLMN_2, 2)
 
-     static const gs_cie_common_proc3 lumchrom_DecodeLMN = {
-         {lumchrom_DecodeLMN_0, lumchrom_DecodeLMN_1, lumchrom_DecodeLMN_2}
-     };
+static const gs_cie_common_proc3 lumchrom_DecodeLMN = {
+    {lumchrom_DecodeLMN_0, lumchrom_DecodeLMN_1, lumchrom_DecodeLMN_2}
+};
 
 /*
  * Build the MatrixABC value for a luminance/chrominance color space. Note that
@@ -884,11 +878,11 @@ finish_lumchrom_cspace(gs_color_space * pcspace, const pcl_cid_data_t * pcid)
 static int (*const finish_cspace[(int)pcl_cspace_num]) (gs_color_space *,
                                                         const pcl_cid_data_t
                                                         *) = {
-    0,                          /* pcl_cspace_RGB */
-        0,                      /* pcl_cspace_CMY */
-        finish_colmet_cspace,   /* pcl_cspace_Colorimetric */
-        finish_lab_cspace,      /* pcl_cspace_CIELab */
-        finish_lumchrom_cspace  /* pcl_cspace_LumChrom */
+    0,                      /* pcl_cspace_RGB */
+    0,                      /* pcl_cspace_CMY */
+    finish_colmet_cspace,   /* pcl_cspace_Colorimetric */
+    finish_lab_cspace,      /* pcl_cspace_CIELab */
+    finish_lumchrom_cspace  /* pcl_cspace_LumChrom */
 };
 
 /*

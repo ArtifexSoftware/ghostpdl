@@ -1616,7 +1616,9 @@ pglabel_do_registration(pcl_parser_state_t * pcl_parser_state,
         /* LB also has special argument parsing. */
         HPGL_COMMAND('L', 'B', hpgl_LB,
                      hpgl_cdf_polygon | hpgl_cdf_lost_mode_cleared |
-                     hpgl_cdf_pcl_rtl_both), END_HPGL_COMMANDS return 0;
+                     hpgl_cdf_pcl_rtl_both),
+    END_HPGL_COMMANDS
+    return 0;
 }
 
 const pcl_init_t pglabel_init = {

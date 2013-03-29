@@ -230,5 +230,10 @@ uncompress_9(pcl_seed_row_t * pout, const byte * pin, int in_size)
 
 void (*const pcl_decomp_proc[9 + 1]) (pcl_seed_row_t * pout,
                                       const byte * pin, int in_size) = {
-    uncompress_0, uncompress_1, uncompress_2, uncompress_3, 0, 0, 0, 0, 0,      /* modes 4 - 8 handled separately */
-uncompress_9};
+    uncompress_0,
+    uncompress_1,
+    uncompress_2,
+    uncompress_3,
+    0, 0, 0, 0, 0,      /* modes 4 - 8 handled separately */
+    uncompress_9
+};

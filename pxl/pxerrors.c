@@ -131,10 +131,11 @@ px_error_message_line(char message[px_max_error_line + 1], int N,
         strcpy(message, "PCL XL error\n");
         return 1;
     }
-    if (code == errorWarningsReported) {        /*
-                                                 * Generate a line of warnings.
-                                                 * 1 = first line, otherwise N = position in warnings buffer.
-                                                 */
+    if (code == errorWarningsReported) {
+        /*
+         * Generate a line of warnings.
+         * 1 = first line, otherwise N = position in warnings buffer.
+         */
         switch (N) {
             case 1:
                 N = 0;
@@ -250,17 +251,11 @@ int
 px_error_page_show(const char *message, int ytop, px_state_t * pxs)
 {
     gs_state *pgs = pxs->pgs;
-
     int y = ytop;
-
     const char *m = message;
-
     const char *p;
-
     gs_text_enum_t *penum;
-
     gs_text_params_t text;
-
     int code;
 
     /* Normalize for a 10-point font. */

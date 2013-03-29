@@ -76,7 +76,6 @@ static bool
 is_printable(const pcl_state_t * pcs, gs_char chr, bool literal)
 {
     int map_type;
-
     bool printable = false;
 
     if (literal)                /* transparent data */
@@ -200,17 +199,11 @@ get_next_char(pcl_state_t * pcs,
               bool literal, gs_point * pwidth, bool * unstyled_substitution)
 {
     const byte *pb = *ppb;
-
     int len = *plen;
-
     pl_font_t *plfont = pcs->font;
-
     bool substituting = false;
-
     gs_char chr;
-
     gs_char mapped_chr;         /* NB wrong type */
-
     bool db;
 
     if (len <= 0)
@@ -398,9 +391,7 @@ pcl_char_get_char(pcl_text_parsing_method_t tpm, const byte ** psrc,
 /* src_len minimum 1 */
 {
     gs_char chr;
-
     const byte *src = *psrc;
-
     int bytelen = pcl_char_bytelen(src[0], tpm);
 
     if (bytelen == 0 || bytelen > src_len) {
@@ -483,13 +474,9 @@ static int
 show_char_foreground(const pcl_state_t * pcs, const gs_char * pbuff)
 {
     int code = 0;
-
     gs_text_enum_t *penum;
-
     pl_font_t *plfont = pcs->font;
-
     gs_font *pfont = plfont->pfont;
-
     gs_text_params_t text;
 
     /* set vertical writing if -1 which requires double bytes or 1 */
@@ -546,15 +533,10 @@ static int
 show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
 {
     gs_state *pgs = pcs->pgs;
-
     gs_rop3_t rop = (gs_rop3_t) (pcs->logical_op);
-
     const pl_font_t *plfont = pcs->font;
-
     gs_font *pfont = plfont->pfont;
-
     gs_point pt;
-
     int code = 0;
 
     /* save the graphic state and set the background raster operation */
@@ -566,17 +548,11 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
 
     if (plfont->scaling_technology == plfst_bitmap) {
         gs_char chr = pbuff[0];
-
         gs_glyph glyph = pfont->procs.encode_char(pfont, chr, gs_no_glyph);
-
         const byte *cdata = pl_font_lookup_glyph(plfont, glyph)->data;
-
         int nbytes;
-
         uint used;
-
         gs_image_enum *pen = 0;
-
         gs_image1_t mask;
 
         /* empty characters have no background */
@@ -614,9 +590,7 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
 
     } else {
         gs_text_params_t text;
-
         gs_rect bbox;
-
         gs_text_enum_t *penum;
 
         /* clear the path; start the new one from the current point */
@@ -651,7 +625,6 @@ pcl_get_width(pcl_state_t * pcs, gs_point * advance_vector,
               bool print_undefined)
 {
     pcl_font_selection_t *pfp = &(pcs->font_selection[pcs->font_selected]);
-
     floatp width;
 
     if (chr != 0xffff || print_undefined) {
@@ -741,37 +714,21 @@ pcl_show_chars_slow(pcl_state_t * pcs,
                     const byte * str, uint size, bool literal)
 {
     gs_state *pgs = pcs->pgs;
-
     gs_char buff[1];
-
     floatp rmargin = pcs->margins.right;
-
     floatp page_size = pcs->xfm_state.pd_size.x;
-
     bool source_opaque = !pcs->source_transparent;
-
     bool invisible_pattern = is_invisible_pattern(pcs);
-
     bool wrap = pcs->end_of_line_wrap;
-
     bool read_char = false;
-
     bool is_space = false;
-
     bool print_undefined = false;
-
     bool use_rmargin = (pcs->cap.x <= rmargin);
-
     gs_char chr, orig_chr;
-
     int code = 0;
-
     floatp width;
-
     gs_point cpt;
-
     gs_point advance_vector;
-
     bool unstyled_substitution;
 
     cpt.x = pcs->cap.x;
@@ -969,11 +926,8 @@ int
 pcl_text(const byte * str, uint size, pcl_state_t * pcs, bool literal)
 {
     gs_state *pgs = pcs->pgs;
-
     gs_matrix user_ctm;
-
     gs_point scale;
-
     int code;
 
     /* rtl files can have text in them - we don't print any characters
@@ -1050,9 +1004,7 @@ pcl_do_underline(pcl_state_t * pcs)
 {
     if (pcs->underline_start.x != pcs->cap.x) {
         gs_state *pgs = pcs->pgs;
-
         float y = pcs->underline_start.y + pcs->underline_position;
-
         int code;
 
         /* save the grapics state */

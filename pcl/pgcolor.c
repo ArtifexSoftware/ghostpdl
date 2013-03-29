@@ -131,7 +131,8 @@ pgcolor_do_registration(pcl_parser_state_t * pcl_parser_state,
         HPGL_COMMAND('N', 'P', hpgl_NP, hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('P', 'C', hpgl_PC, hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('C', 'R', hpgl_CR, hpgl_cdf_pcl_rtl_both),
-        END_HPGL_COMMANDS return 0;
+    END_HPGL_COMMANDS
+    return 0;
 }
 
 const pcl_init_t pgcolor_init = { pgcolor_do_registration, 0, 0 };

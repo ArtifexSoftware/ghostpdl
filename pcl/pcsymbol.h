@@ -24,10 +24,12 @@
 
 /* The structure for symbol sets (fig 10-1, p. 10-5 of PCL5 TRM) is in
  * plsymbol.h, as a "symbol map".  A symbol map describes the mapping
- * from one symbol set to one glyph vocabulary.  A symbol set may comprise
- * multiple maps (currently at most two, one each for MSL and Unicode).
- * We want a separate dictionary of symbol sets because there are various
- * operations performed per symbol set (affecting all mappings). */
+ * from one symbol set to one glyph vocabulary.  A symbol set may
+ * comprise multiple maps (currently at most two, one each for MSL and
+ * Unicode).  We want a separate dictionary of symbol sets because
+ * there are various operations performed per symbol set (affecting
+ * all mappings).
+ */
 
 typedef struct pcl_symbol_set_s
 {

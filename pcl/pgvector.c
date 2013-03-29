@@ -615,17 +615,47 @@ pgvector_do_registration(pcl_parser_state_t * pcl_parser_state,
 {
     /* Register commands */
     DEFINE_HPGL_COMMANDS(mem)
-        HPGL_COMMAND('A', 'A', hpgl_AA, hpgl_cdf_polygon | hpgl_cdf_lost_mode_cleared | hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('A', 'R', hpgl_AR, hpgl_cdf_polygon | hpgl_cdf_lost_mode_cleared | hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('A', 'T', hpgl_AT, hpgl_cdf_polygon | hpgl_cdf_lost_mode_cleared | hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('B', 'R', hpgl_BR, hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both),      /* argument pattern can repeat */
-        HPGL_COMMAND('B', 'Z', hpgl_BZ, hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both),      /* argument pattern can repeat */
-        HPGL_COMMAND('C', 'I', hpgl_CI, hpgl_cdf_polygon | hpgl_cdf_lost_mode_cleared | hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('P', 'A', hpgl_PA, hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both),      /* argument pattern can repeat */
-        HPGL_COMMAND('P', 'D', hpgl_PD, hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both),      /* argument pattern can repeat */
-        HPGL_COMMAND('P', 'E', hpgl_PE, hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('P', 'R', hpgl_PR, hpgl_cdf_polygon | hpgl_cdf_lost_mode_cleared | hpgl_cdf_pcl_rtl_both),      /* argument pattern can repeat */
-        HPGL_COMMAND('P', 'U', hpgl_PU, hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both),      /* argument pattern can repeat */
+        HPGL_COMMAND('A', 'A',
+                     hpgl_AA,
+                     hpgl_cdf_polygon | hpgl_cdf_lost_mode_cleared | hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('A', 'R',
+                     hpgl_AR,
+                     hpgl_cdf_polygon | hpgl_cdf_lost_mode_cleared | hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('A', 'T',
+                     hpgl_AT,
+                     hpgl_cdf_polygon | hpgl_cdf_lost_mode_cleared | hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('B', 'R',
+                     hpgl_BR,
+                     hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both), /* argument pattern can repeat */
+        HPGL_COMMAND('B', 'Z',
+                     hpgl_BZ,
+                     hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both), /* argument pattern can repeat */
+        HPGL_COMMAND('C', 'I',
+                     hpgl_CI,
+                     hpgl_cdf_polygon | hpgl_cdf_lost_mode_cleared | hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('P', 'A',
+                     hpgl_PA,
+                     hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both), /* argument pattern can repeat */
+        HPGL_COMMAND('P', 'D',
+                     hpgl_PD,
+                     hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both), /* argument pattern can repeat */
+        HPGL_COMMAND('P', 'E',
+                     hpgl_PE,
+                     hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('P', 'R',
+                     hpgl_PR,
+                     hpgl_cdf_polygon | hpgl_cdf_lost_mode_cleared | hpgl_cdf_pcl_rtl_both), /* argument pattern can repeat */
+        HPGL_COMMAND('P', 'U',
+                     hpgl_PU,
+                     hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both), /* argument pattern can repeat */
         HPGL_COMMAND('R', 'T',
                      hpgl_RT,
                      hpgl_cdf_polygon | hpgl_cdf_lost_mode_cleared |
-                     hpgl_cdf_pcl_rtl_both), END_HPGL_COMMANDS return 0;
+                     hpgl_cdf_pcl_rtl_both),
+    END_HPGL_COMMANDS
+    return 0;
 }
+
 const pcl_init_t pgvector_init = {
     pgvector_do_registration, 0
 };

@@ -87,7 +87,8 @@ px_state_init(px_state_t * pxs, gs_state * pgs)
 /* Do one-time finalization at the end of execution. */
 void
 px_state_finit(px_state_t * pxs)
-{                               /* If streams persisted across sessions, we would release them here. */
+{
+    /* If streams persisted across sessions, we would release them here. */
 #if 0
     px_dict_release(&pxs->stream_dict);
 #endif

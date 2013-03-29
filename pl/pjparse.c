@@ -1121,45 +1121,40 @@ static const struct
     const char *symname;
     const char *pcl_selectcode;
 } symbol_sets[] = {
-    {
-    "ROMAN8", "8U"}, {
-    "ISOL1", "0N"}, {
-    "ISOL2", "2N"}, {
-    "ISOL5", "5N"}, {
-    "PC8", "10U"}, {
-    "PC8DN", "11U"}, {
-    "PC850", "12U"}, {
-    "PC852", "17U"}, {
-    "PC8TK", "9T"},             /* pc-8 turkish ?? not sure */
-    {
-    "WINL1", "9U"}, {
-    "WINL2", "9E"}, {
-    "WINL5", "5T"}, {
-    "DESKTOP", "7J"}, {
-    "PSTEXT", "10J"}, {
-    "VNINTL", "13J"}, {
-    "VNUS", "14J"}, {
-    "MSPUBL", "6J"}, {
-    "MATH8", "8M"}, {
-    "PSMATH", "5M"}, {
-    "VNMATH", "6M"}, {
-    "PIFONT", "15U"}, {
-    "LEGAL", "1U"}, {
-    "ISO4", "1E"}, {
-    "ISO6", "0U"}, {
-    "ISO11", "0S"}, {
-    "ISO15", "0I"}, {
-    "ISO17", "2S"}, {
-    "ISO21", "1G"}, {
-    "ISO60", "OD"}, {
-    "ISO69", "1F"}, {
-    "WIN30", NULL},             /* don't know */
-    {
-    "WIN31J", NULL},            /* don't know */
-    {
-    "GB2312", NULL},            /* don't know */
-    {
-    NULL, NULL}
+    {"ROMAN8", "8U"},
+    {"ISOL1", "0N"},
+    {"ISOL2", "2N"},
+    {"ISOL5", "5N"},
+    {"PC8", "10U"},
+    {"PC8DN", "11U"},
+    {"PC850", "12U"},
+    {"PC852", "17U"},
+    {"PC8TK", "9T"},             /* pc-8 turkish ?? not sure */
+    {"WINL1", "9U"},
+    {"WINL2", "9E"},
+    {"WINL5", "5T"},
+    {"DESKTOP", "7J"},
+    {"PSTEXT", "10J"},
+    {"VNINTL", "13J"},
+    {"VNUS", "14J"},
+    {"MSPUBL", "6J"},
+    {"MATH8", "8M"},
+    {"PSMATH", "5M"},
+    {"VNMATH", "6M"},
+    {"PIFONT", "15U"},
+    {"LEGAL", "1U"},
+    {"ISO4", "1E"},
+    {"ISO6", "0U"},
+    {"ISO11", "0S"},
+    {"ISO15", "0I"},
+    {"ISO17", "2S"},
+    {"ISO21", "1G"},
+    {"ISO60", "OD"},
+    {"ISO69", "1F"},
+    {"WIN30", NULL},             /* don't know */
+    {"WIN31J", NULL},            /* don't know */
+    {"GB2312", NULL},            /* don't know */
+    {NULL, NULL}
 };
 
 /* map a pjl symbol table name to a pcl symbol table name */

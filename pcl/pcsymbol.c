@@ -170,17 +170,21 @@ pcl_symbol_set_control(pcl_args_t * pargs, pcl_state_t * pcs)
 
     switch (int_arg(pargs)) {
         case 0:
-            {                   /* Delete all user-defined symbol sets. */
-                /* Note: When deleting symbol set(s), it is easier (safer?)
-                 * to decache and reselect fonts unconditionally.  (Consider,
-                 * for example, deleting a downloaded overload of a built-in
-                 * which might be the default ID.) */
+            {                   
+                /* Delete all user-defined symbol sets. */
+                /* Note: When deleting symbol set(s), it is easier
+                 * (safer?)  to decache and reselect fonts
+                 * unconditionally.  (Consider, for example, deleting
+                 * a downloaded overload of a built-in which might be
+                 * the default ID.) 
+                 */
                 pl_dict_release(&pcs->soft_symbol_sets);
                 pcl_decache_font(pcs, -1, true);
             }
             return 0;
         case 1:
-            {                   /* Delete all temporary symbol sets. */
+            {
+                /* Delete all temporary symbol sets. */
                 pl_dict_enum_stack_begin(&pcs->soft_symbol_sets, &denum,
                                          false);
                 while (pl_dict_enum_next(&denum, &key, &value))
@@ -192,21 +196,24 @@ pcl_symbol_set_control(pcl_args_t * pargs, pcl_state_t * pcs)
             }
             return 0;
         case 2:
-            {                   /* Delete symbol set <symbol_set_id>. */
+            {
+                /* Delete symbol set <symbol_set_id>. */
                 pl_dict_undef(&pcs->soft_symbol_sets,
                               id_key(pcs->symbol_set_id), 2);
                 pcl_decache_font(pcs, -1, true);
             }
             return 0;
         case 4:
-            {                   /* Make <symbol_set_id> temporary. */
+            {
+                /* Make <symbol_set_id> temporary. */
                 if (pl_dict_find(&pcs->soft_symbol_sets,
                                  id_key(pcs->symbol_set_id), 2, &value))
                     ((pcl_symbol_set_t *) value)->storage = pcds_temporary;
             }
             return 0;
         case 5:
-            {                   /* Make <symbol_set_id> permanent. */
+            {
+                /* Make <symbol_set_id> permanent. */
                 if (pl_dict_find(&pcs->soft_symbol_sets,
                                  id_key(pcs->symbol_set_id), 2, &value))
                     ((pcl_symbol_set_t *) value)->storage = pcds_permanent;
@@ -377,7 +384,8 @@ static int
 pcsymbol_do_copy(pcl_state_t * psaved, const pcl_state_t * pcs,
                  pcl_copy_operation_t operation)
 {
-    if (operation & pcl_copy_after) {   /* Don't restore the downloaded symbol set dictionary. */
+    if (operation & pcl_copy_after) {
+        /* Don't restore the downloaded symbol set dictionary. */
         psaved->built_in_symbol_sets = pcs->built_in_symbol_sets;
     }
     return 0;

@@ -891,7 +891,15 @@ pglfill_do_registration(pcl_parser_state_t * pcl_parser_state,
 {
     /* Register commands */
     DEFINE_HPGL_COMMANDS(mem)
-        HPGL_COMMAND('A', 'C', hpgl_AC, hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('F', 'T', hpgl_FT, hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('L', 'A', hpgl_LA, hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('L', 'T', hpgl_LT, hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('M', 'C', hpgl_MC, hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('P', 'W', hpgl_PW, hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('P', 'P', hpgl_PP, hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('R', 'F', hpgl_RF, hpgl_cdf_pcl_rtl_both), /* + additional I parameters */
+        HPGL_COMMAND('A', 'C', hpgl_AC, hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('F', 'T', hpgl_FT, hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('L', 'A', hpgl_LA, hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('L', 'T', hpgl_LT, hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('M', 'C', hpgl_MC, hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('P', 'W', hpgl_PW, hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('P', 'P', hpgl_PP, hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('R', 'F', hpgl_RF, hpgl_cdf_pcl_rtl_both),
+        /* + additional I parameters */
         /*
          * SM has special argument parsing, so it must handle skipping
          * in polygon mode itself.`
@@ -902,7 +910,8 @@ pglfill_do_registration(pcl_parser_state_t * pcl_parser_state,
         HPGL_COMMAND('T', 'R', hpgl_TR, hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('U', 'L', hpgl_UL, hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('W', 'U', hpgl_WU, hpgl_cdf_pcl_rtl_both),
-        END_HPGL_COMMANDS return 0;
+    END_HPGL_COMMANDS
+    return 0;
 }
 
 const pcl_init_t pglfill_init = { pglfill_do_registration, 0, 0 };

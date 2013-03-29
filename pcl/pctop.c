@@ -44,73 +44,39 @@
 
 /* Configuration table for modules */
 extern const pcl_init_t pcparse_init;
-
 extern const pcl_init_t rtmisc_init;
-
 extern const pcl_init_t rtraster_init;
-
 extern const pcl_init_t pcjob_init;
-
 extern const pcl_init_t pcpage_init;
-
 extern const pcl_init_t pcfont_init;
-
 extern const pcl_init_t pctext_init;
-
 extern const pcl_init_t pcsymbol_init;
-
 extern const pcl_init_t pcsfont_init;
-
 extern const pcl_init_t pcmacros_init;
-
 extern const pcl_init_t pcrect_init;
-
 extern const pcl_init_t pcstatus_init;
-
 extern const pcl_init_t pcmisc_init;
-
 extern const pcl_init_t pcursor_init;
-
 extern const pcl_init_t pcl_cid_init;
-
 extern const pcl_init_t pcl_color_init;
-
 extern const pcl_init_t pcl_udither_init;
-
 extern const pcl_init_t pcl_frgrnd_init;
-
 extern const pcl_init_t pcl_lookup_tbl_init;
-
 extern const pcl_init_t pcl_palette_init;
-
 extern const pcl_init_t pcl_pattern_init;
-
 extern const pcl_init_t pcl_xfm_init;
-
 extern const pcl_init_t pcl_upattern_init;
-
 extern const pcl_init_t rtgmode_init;
-
 extern const pcl_init_t pccprint_init;
-
 extern const pcl_init_t pginit_init;
-
 extern const pcl_init_t pgframe_init;
-
 extern const pcl_init_t pgconfig_init;
-
 extern const pcl_init_t pgvector_init;
-
 extern const pcl_init_t pgpoly_init;
-
 extern const pcl_init_t pglfill_init;
-
 extern const pcl_init_t pgchar_init;
-
 extern const pcl_init_t pglabel_init;
-
 extern const pcl_init_t pgcolor_init;
-
 extern const pcl_init_t fontpg_init;
 
 const pcl_init_t *pcl_init_table[] = {

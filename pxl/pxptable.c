@@ -144,287 +144,184 @@ checkUnitsPerMeasure(const px_value_t * pv)
 #undef ok_iff
 
 const px_attr_value_type_t px_attr_value_types[] = {
-/* 0 */ none,
-/* 1 */ none,
-                                        /* 2 */ en(pxeColorDepth_next),
-                                        /* PaletteDepth = 2 */
-                                        /* 3 */ en(pxeColorSpace_next),
-                                        /* ColorSpace */
-                                /* 4 */ zero,
-                                /* NullBrush */
-                                /* 5 */ zero,
-                                /* NullPen */
-                                /* 6 */ arr(ub),
-                                /* PaletteData */
-/* 7 */ none,
-                                /* 8 */ sc(ss),
-                                /* PatternSelectID = 8 */
-                                                /* 9 */ scp(ub | rl, checkGrayLevel),
-                                                /* GrayLevel */
-/* 10 */ none,
-                                                /* 11 */ arrp(ub | rl, checkRGBColor),
-                                                /* RGBColor = 11 */
-                                /* 12 */ xy(ss),
-                                /* PatternOrigin */
-                                                /* 13 */ xyp(us, checkDestinationSize),
-                                                /* NewDestinationSize */
-                                /* 14 */ arr(ub),
-                                /* PrimaryArray = 14 */
-                                        /* 15 */ en(pxeColorDepth_next),
-                                        /* PrimaryDepth = 15 */
-/* 16 */ none,
-                                                        /* 17 */ en(pxeColorimetricColorSpace_next),
-                                                        /* ColorimetricColorSpace = 17 */
-                                /* 18 */ arr(rl),
-                                /* XYChromaticities = 18 */
-                                /* 19 */ arr(rl),
-                                /* WhiteReferencePoint = 19 */
-                                /* 20 */ arr(rl),
-                                /* CRGBMinMax = 20 */
-                                /* 21 */ arr(rl),
-                                /* GammaGain = 21 */
-/* 22 */ none,
-/* 23 */ none,
-/* 24 */ none,
-/* 25 */ none,
-/* 26 */ none,
-/* 27 */ none,
-/* 28 */ none,
-                                        /* 29 */ en(pxeColorTrapping_next),
-                                        /* AllObjects NB ColorTrapping is largest enum */
-                                        /* 30 */ en(pxeColorTrapping_next),
-                                        /* TextObjects = 30 */
-                                        /* 31 */ en(pxeColorTrapping_next),
-                                        /* VectorObjects = 31 */
-                                        /* 32 */ en(pxeColorTrapping_next),
-                                        /* RasterObjects = 32 */
-                                        /* 33 */ en(pxeDitherMatrix_next),
-                                        /* DeviceMatrix = 33 */
-                                                                /* 34 */ enp(pxeDataType_next, checkDitherMatrixDataType),
-                                                                /* DitherMatrixDataType */
-                                /* 35 */ xy(ub | us | ss),
-                                /* DitherOrigin */
-                                /* 36 */ scub(),
-                                /* MediaDestination */
-                                                        /* 37 */ {pxd_scalar | pxd_array | pxd_ubyte, 255},
-                                                        /* MediaSize */
-                                /* 38 */ scub(),
-                                /* MediaSource */
-                                /* 39 */ arr(ub),
-                                /* MediaType */
-                                /* 40 */ scub(),
-                                /* Orientation -- illegal values only produce a warning! */
-                                                /* 41 */ scp(us | ss, checkPageAngle),
-                                                /* PageAngle */
-                                /* 42 */ xy(ub | us | ss),
-                                /* PageOrigin */
-                                                /* 43 */ xyp(ub | us | rl, checkPageScale),
-                                                /* PageScale */
-                                /* 44 */ scub(),
-                                /* ROP3 */
-                                        /* 45 */ en(pxeTxMode_next),
-                                        /* TxMode */
-/* 46 */ none,
-                                /* 47 */ xy(us | rl),
-                                /* CustomMediaSize = 47 */
-                                        /* 48 */ en(pxeMeasure_next),
-                                        /* CustomMediaSizeUnits */
-                                /* 49 */ sc(us),
-                                /* PageCopies */
-                                                /* 50 */ xyp(us, checkDitherMatrixSize),
-                                                /* DitherMatrixSize */
-                                                                /* 51 */ enp(pxeColorDepth_next, checkDitherMatrixDepth),
-                                                                /* DitherMatrixDepth */
-                                                /* 52 */ en(pxeSimplexPageMode_next),
-                                                /* SimplexPageMode */
-                                                /* 53 */ en(pxeDuplexPageMode_next),
-                                                /* DuplexPageMode */
-                                                /* 54 */ en(pxeDuplexPageSide_next),
-                                                /* DuplexPageSide */
-/* 55 */ none,
-/* 56 */ none,
-/* 57 */ none,
-/* 58 */ none,
-/* 59 */ none,
-/* 60 */ none,
-/* 61 */ none,
-/* 62 */ none,
-/* 63 */ none,
-/* 64 */ none,
-                                        /* 65 */ en(pxeArcDirection_next),
-                                        /* ArcDirection = 65 */
-                                /* 66 */ box(ub | us | ss),
-                                /* BoundingBox */
-                                /* 67 */ sc(ub | us | ss),
-                                /* DashOffset */
-                                /* 68 */ xy(ub | us),
-                                /* EllipseDimension */
-                                /* 69 */ xy(ub | us | ss),
-                                /* EndPoint */
-                                        /* 70 */ en(pxeFillMode_next),
-                                        /* FillMode */
-                                        /* 71 */ en(pxeLineCap_next),
-                                        /* LineCapStyle */
-                                        /* 72 */ en(pxeLineJoin_next),
-                                        /* LineJoinStyle */
-                                /* 73 */ sc(ub | us),
-                                /* MiterLength */
-                                /* 74 */ arr(ub | us | ss),
-                                /* LineDashStyle */
-                                /* 75 */ sc(ub | us),
-                                /* PenWidth */
-                                /* 76 */ xy(ub | us | ss),
-                                /* Point */
-                                /* 77 */ sc(ub | us),
-                                /* NumberOfPoints */
-                                /* 78 */ zero,
-                                /* SolidLine */
-                                /* 79 */ xy(ub | us | ss),
-                                /* StartPoint */
-                                        /* 80 */ en(pxeDataType_next),
-                                        /* PointType */
-                                /* 81 */ xy(ub | us | ss),
-                                /* ControlPoint1 */
-                                /* 82 */ xy(ub | us | ss),
-                                /* ControlPoint2 */
-                                        /* 83 */ en(pxeClipRegion_next),
-                                        /* ClipRegion */
-                                        /* 84 */ en(pxeClipMode_next),
-                                        /* ClipMode */
-/* 85 */ none,
-/* 86 */ none,
-/* 87 */ none,
-/* 88 */ none,
-/* 89 */ none,
-/* 90 */ none,
-/* 91 */ none,
-/* 92 */ none,
-/* 93 */ none,
-/* 94 */ none,
-/* 95 */ none,
-/* 96 */ none,
-/* 97 */ none,
-                                        /* 98 */ en(pxeColorDepth_next),
-                                        /* ColorDepth = 98 */
-                                /* 99 */ sc(us),
-                                /* BlockHeight */
-                                        /* 100 */ en(pxeColorMapping_next),
-                                        /* ColorMapping */
-                                        /* 101 */ en(pxeCompressMode_next),
-                                        /* CompressMode */
-                                /* 102 */ box(us),
-                                /* DestinationBox */
-                                                /* 103 */ xyp(us, checkDestinationSize),
-                                                /* DestinationSize */
-                                                /* 104 */ en(pxePatternPersistence_next),
-                                                /* PatternPersistence */
-                                /* 105 */ sc(ss),
-                                /* PatternDefineID */
-/* 106 */ none,
-                                                /* 107 */ scp(us, checkSourceHeight),
-                                                /* SourceHeight = 107 */
-                                                /* 108 */ scp(us, checkSourceWidth),
-                                                /* SourceWidth */
-                                /* 109 */ sc(us),
-                                /* StartLine */
-                                /* 110 */ scub(),
-                                /* PadBytesMultiple */
-                                /* 111 */ sc(ul),
-                                /* BlockByteLength */
-/* 112 */ none,
-/* 113 */ none,
-/* 114 */ none,
-                                /* 115 */ sc(us),
-                                /* NumberOfScanLines = 115 */
-/* 116 */ none,
-/* 117 */ none,
-/* 118 */ none,
-/* 119 */ none,
-/* 120 */ en(pxeColorTreatment_next),
-/* 121 */ none,
-/* 122 */ none,
-/* 123 */ none,
-/* 124 */ none,
-/* 125 */ none,
-/* 126 */ none,
-/* 127 */ none,
-/* 128 */ none,
-                                /* 129 */ arr(ub | us),
-                                /* CommentData = 129 */
-                                        /* 130 */ en(pxeDataOrg_next),
-                                        /* DataOrg */
-/* 131 */ none,
-/* 132 */ none,
-/* 133 */ none,
-                                        /* 134 */ en(pxeMeasure_next),
-                                        /* Measure = 134 */
-/* 135 */ none,
-                                        /* 136 */ en(pxeDataSource_next),
-                                        /* SourceType = 136 */
-                                                        /* 137 */ xyp(us | rl, checkUnitsPerMeasure),
-                                                        /* UnitsPerMeasure */
-/* 138 */ none,
-                                /* 139 */ arr(ub | us),
-                                /* StreamName = 139 */
-                                /* 140 */ sc(ul),
-                                /* StreamDataLength */
-                                /* 141 */ arr(ub | us),
-                                /* PCLSelectFont */
-/* 142 */ none,
-                                        /* 143 */ en(pxeErrorReport_next),
-                                        /* ErrorReport = 143 */
-/* 144 */ none,
-                                /* 145 */ sc(ul),
-                                /* VUExtension = 145 */
-/* 146 */ sc(ul),               /* VUDataLength = 146 */
-                                /* 147 */ sc(ub | us | ul),
-                                /* VUAttr1 = 147 */
-/* 148 */ sc(ub | us | ul),
-/* 149 */ sc(ub | us | ul),
-/* 150 */ sc(ub | us | ul),
-/* 151 */ sc(ub | us | ul),
-/* 152 */ sc(ub | us | ul),
-/* 153 */ none,
-/* 154 */ none,
-/* 155 */ none,
-/* 156 */ none,
-/* 157 */ none,
-/* 158 */ none,
-/* 159 */ none,
-/* 160 */ none,
-                                                        /* 161 */ scp(us | ss | rl, checkCharAngle),
-                                                        /* CharAngle = 161 */
-                                /* 162 */ sc(ub | us),
-                                /* CharCode */
-                                /* 163 */ sc(us | ul),
-                                /* CharDataSize HP spec says us - driver sometimes emits ul */
-                                                        /* 164 */ xyp(ub | us | rl, checkCharScale),
-                                                        /* CharScale */
-                                                        /* 165 */ xyp(ub | us | ss | rl, checkCharShear),
-                                                        /* CharShear */
-                                /* 166 */ sc(ub | us | rl),
-                                /* CharSize */
-                                /* 167 */ sc(us),
-                                /* FontHeaderLength */
-                                /* 168 */ arr(ub | us),
-                                /* FontName */
-                                /* 169 */ zero,
-                                /* FontFormat */
-                                /* 170 */ sc(us),
-                                /* SymbolSet */
-                                /* 171 */ arr(ub | us),
-                                /* TextData */
-                                /* 172 */ arr(ub),
-                                /* CharSubModeArray */
-                                        /* 173 */ en(pxeWritingMode_next),
-                                        /* WritingMode */
-/* 174 */ none,
-                                        /* 175 */ arr(ub | us | ss),
-                                        /* XSpacingData = 175 */
-                                        /* 176 */ arr(ub | us | ss),
-                                        /* YSpacingData */
-                                                /* 177 */ scp(rl, checkCharBoldValue),
-                                                /* CharBoldValue */
+    /* 0 */ none,
+    /* 1 */ none,
+    /* 2 */ en(pxeColorDepth_next), /* PaletteDepth */
+    /* 3 */ en(pxeColorSpace_next), /* ColorSpace */
+    /* 4 */ zero, /* NullBrush */
+    /* 5 */ zero, /* NullPen */
+    /* 6 */ arr(ub), /* PaletteData */
+    /* 7 */ none,
+    /* 8 */ sc(ss), /* PatternSelectID */
+    /* 9 */ scp(ub | rl, checkGrayLevel), /* GrayLevel */
+    /* 10 */ none,
+    /* 11 */ arrp(ub | rl, checkRGBColor), /* RGBColor */
+    /* 12 */ xy(ss), /* PatternOrigin */
+    /* 13 */ xyp(us, checkDestinationSize), /* NewDestinationSize */
+    /* 14 */ arr(ub), /* PrimaryArray */
+    /* 15 */ en(pxeColorDepth_next), /* PrimaryDepth */
+    /* 16 */ none,
+    /* 17 */ en(pxeColorimetricColorSpace_next), /* ColorimetricColorSpace */
+    /* 18 */ arr(rl), /* XYChromaticities */
+    /* 19 */ arr(rl), /* WhiteReferencePoint */
+    /* 20 */ arr(rl), /* CRGBMinMax  */
+    /* 21 */ arr(rl), /* GammaGain  */
+    /* 22 */ none,
+    /* 23 */ none,
+    /* 24 */ none,
+    /* 25 */ none,
+    /* 26 */ none,
+    /* 27 */ none,
+    /* 28 */ none,
+    /* 29 */ en(pxeColorTrapping_next), /* AllObjects NB ColorTrapping is largest enum */
+    /* 30 */ en(pxeColorTrapping_next), /* TextObjects  */
+    /* 31 */ en(pxeColorTrapping_next), /* VectorObjects  */
+    /* 32 */ en(pxeColorTrapping_next), /* RasterObjects  */
+    /* 33 */ en(pxeDitherMatrix_next), /* DeviceMatrix  */
+    /* 34 */ enp(pxeDataType_next, checkDitherMatrixDataType), /* DitherMatrixDataType */
+    /* 35 */ xy(ub | us | ss), /* DitherOrigin */
+    /* 36 */ scub(), /* MediaDestination */
+    /* 37 */ {pxd_scalar | pxd_array | pxd_ubyte, 255}, /* MediaSize */
+    /* 38 */ scub(), /* MediaSource */
+    /* 39 */ arr(ub), /* MediaType */
+    /* 40 */ scub(), /* Orientation -- illegal values only produce a warning! */
+    /* 41 */ scp(us | ss, checkPageAngle), /* PageAngle */
+    /* 42 */ xy(ub | us | ss), /* PageOrigin */
+    /* 43 */ xyp(ub | us | rl, checkPageScale), /* PageScale */
+    /* 44 */ scub(), /* ROP3 */
+    /* 45 */ en(pxeTxMode_next), /* TxMode */
+    /* 46 */ none, 
+    /* 47 */ xy(us | rl), /* CustomMediaSize  */
+    /* 48 */ en(pxeMeasure_next), /* CustomMediaSizeUnits */
+    /* 49 */ sc(us), /* PageCopies */
+    /* 50 */ xyp(us, checkDitherMatrixSize), /* DitherMatrixSize */
+    /* 51 */ enp(pxeColorDepth_next, checkDitherMatrixDepth), /* DitherMatrixDepth */
+    /* 52 */ en(pxeSimplexPageMode_next), /* SimplexPageMode */
+    /* 53 */ en(pxeDuplexPageMode_next), /* DuplexPageMode */
+    /* 54 */ en(pxeDuplexPageSide_next), /* DuplexPageSide */
+    /* 55 */ none,
+    /* 56 */ none,
+    /* 57 */ none,
+    /* 58 */ none,
+    /* 59 */ none,
+    /* 60 */ none,
+    /* 61 */ none,
+    /* 62 */ none,
+    /* 63 */ none,
+    /* 64 */ none,
+    /* 65 */ en(pxeArcDirection_next), /* ArcDirection  */
+    /* 66 */ box(ub | us | ss), /* BoundingBox */
+    /* 67 */ sc(ub | us | ss), /* DashOffset */
+    /* 68 */ xy(ub | us), /* EllipseDimension */
+    /* 69 */ xy(ub | us | ss), /* EndPoint */
+    /* 70 */ en(pxeFillMode_next), /* FillMode */
+    /* 71 */ en(pxeLineCap_next), /* LineCapStyle */
+    /* 72 */ en(pxeLineJoin_next), /* LineJoinStyle */
+    /* 73 */ sc(ub | us), /* MiterLength */
+    /* 74 */ arr(ub | us | ss), /* LineDashStyle */
+    /* 75 */ sc(ub | us), /* PenWidth */
+    /* 76 */ xy(ub | us | ss), /* Point */
+    /* 77 */ sc(ub | us), /* NumberOfPoints */
+    /* 78 */ zero, /* SolidLine */
+    /* 79 */ xy(ub | us | ss), /* StartPoint */
+    /* 80 */ en(pxeDataType_next), /* PointType */
+    /* 81 */ xy(ub | us | ss), /* ControlPoint1 */
+    /* 82 */ xy(ub | us | ss), /* ControlPoint2 */
+    /* 83 */ en(pxeClipRegion_next), /* ClipRegion */
+    /* 84 */ en(pxeClipMode_next), /* ClipMode */
+    /* 85 */ none,
+    /* 86 */ none,
+    /* 87 */ none,
+    /* 88 */ none,
+    /* 89 */ none,
+    /* 90 */ none,
+    /* 91 */ none,
+    /* 92 */ none,
+    /* 93 */ none,
+    /* 94 */ none,
+    /* 95 */ none,
+    /* 96 */ none,
+    /* 97 */ none,
+    /* 98 */ en(pxeColorDepth_next), /* ColorDepth  */
+    /* 99 */ sc(us), /* BlockHeight */
+    /* 100 */ en(pxeColorMapping_next), /* ColorMapping */
+    /* 101 */ en(pxeCompressMode_next), /* CompressMode */
+    /* 102 */ box(us), /* DestinationBox */
+    /* 103 */ xyp(us, checkDestinationSize), /* DestinationSize */
+    /* 104 */ en(pxePatternPersistence_next), /* PatternPersistence */
+    /* 105 */ sc(ss), /* PatternDefineID */
+    /* 106 */ none,
+    /* 107 */ scp(us, checkSourceHeight), /* SourceHeight  */
+    /* 108 */ scp(us, checkSourceWidth), /* SourceWidth */
+    /* 109 */ sc(us), /* StartLine */
+    /* 110 */ scub(), /* PadBytesMultiple */
+    /* 111 */ sc(ul), /* BlockByteLength */
+    /* 112 */ none,
+    /* 113 */ none,
+    /* 114 */ none,
+    /* 115 */ sc(us), /* NumberOfScanLines  */
+    /* 116 */ none,
+    /* 117 */ none,
+    /* 118 */ none,
+    /* 119 */ none,
+    /* 120 */ en(pxeColorTreatment_next), /* ColorTreatment */
+    /* 121 */ none,
+    /* 122 */ none,
+    /* 123 */ none,
+    /* 124 */ none,
+    /* 125 */ none,
+    /* 126 */ none,
+    /* 127 */ none,
+    /* 128 */ none,
+    /* 129 */ arr(ub | us), /* CommentData  */
+    /* 130 */ en(pxeDataOrg_next), /* DataOrg */
+    /* 131 */ none,
+    /* 132 */ none,
+    /* 133 */ none,
+    /* 134 */ en(pxeMeasure_next), /* Measure */
+    /* 135 */ none,
+    /* 136 */ en(pxeDataSource_next), /* DataSource */
+    /* 137 */ xyp(us | rl, checkUnitsPerMeasure), /* UnitsPerMeasure */
+    /* 138 */ none,
+    /* 139 */ arr(ub | us), /* StreamName  */
+    /* 140 */ sc(ul), /* StreamDataLength */
+    /* 141 */ arr(ub | us), /* PCLSelectFont */
+    /* 142 */ none,
+    /* 143 */ en(pxeErrorReport_next), /* ErrorReport */
+    /* 144 */ none,
+    /* 145 */ sc(ul), /* VUExtension  */
+    /* 146 */ sc(ul), /* VUDataLength  */
+    /* 147 */ sc(ub | us | ul), /* VUAttr1  */
+    /* 148 */ sc(ub | us | ul), /* VUAttr2  */
+    /* 149 */ sc(ub | us | ul), /* VUAttr3  */
+    /* 150 */ sc(ub | us | ul), /* VUAttr4  */
+    /* 151 */ sc(ub | us | ul), /* VUAttr5  */
+    /* 152 */ sc(ub | us | ul), /* VUAttr6  */
+    /* 153 */ none,
+    /* 154 */ none,
+    /* 155 */ none,
+    /* 156 */ none,
+    /* 157 */ none,
+    /* 158 */ none,
+    /* 159 */ none,
+    /* 160 */ none,
+    /* 161 */ scp(us | ss | rl, checkCharAngle), /* CharAngle */
+    /* 162 */ sc(ub | us), /* CharCode */
+    /* 163 */ sc(us | ul), /* CharDataSize HP spec says us - driver sometimes emits ul */
+    /* 164 */ xyp(ub | us | rl, checkCharScale), /* CharScale */
+    /* 165 */ xyp(ub | us | ss | rl, checkCharShear), /* CharShear */
+    /* 166 */ sc(ub | us | rl), /* CharSize */
+    /* 167 */ sc(us), /* FontHeaderLength */
+    /* 168 */ arr(ub | us), /* FontName */
+    /* 169 */ zero, /* FontFormat */
+    /* 170 */ sc(us), /* SymbolSet */
+    /* 171 */ arr(ub | us), /* TextData */
+    /* 172 */ arr(ub), /* CharSubModeArray */
+    /* 173 */ en(pxeWritingMode_next), /* WritingMode */
+    /* 174 */ none,
+    /* 175 */ arr(ub | us | ss), /* XSpacingData */
+    /* 176 */ arr(ub | us | ss), /* YSpacingData */
+    /* 177 */ scp(rl, checkCharBoldValue), /* CharBoldValue */
 };
 
 #undef v

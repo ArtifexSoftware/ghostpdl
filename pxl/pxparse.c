@@ -466,11 +466,12 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
             }
         }
 #endif
-        if ((st->macro_state & syntax->state_mask) != syntax->state_value) {    /*
-                                                                                 * We should probably distinguish here between
-                                                                                 * out-of-context operators and illegal tags, but it's too
-                                                                                 * much trouble.
-                                                                                 */
+        if ((st->macro_state & syntax->state_mask) != syntax->state_value) {
+            /*
+             * We should probably distinguish here between
+             * out-of-context operators and illegal tags, but it's too
+             * much trouble.
+             */
             code = gs_note_error(errorIllegalOperatorSequence);
             if (tag >= 0x40 && tag < 0xc0)
                 st->last_operator = tag;

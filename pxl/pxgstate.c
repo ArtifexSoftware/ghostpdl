@@ -73,12 +73,13 @@ extern const gs_color_space_type gs_color_space_type_Pattern;   /* gspcolor.c */
 void
 px_paint_rc_adjust(px_paint_t * ppt, int delta, gs_memory_t * mem)
 {
-    if (ppt->type == pxpPattern) {      /*
-                                         * There is no public API for adjusting the reference count of a
-                                         * gs_client_color, and even the private API requires having a
-                                         * color space available.  We'll need to fix this properly
-                                         * sooner or later, but for the moment, fake it.
-                                         */
+    if (ppt->type == pxpPattern) {
+        /*
+         * There is no public API for adjusting the reference count of a
+         * gs_client_color, and even the private API requires having a
+         * color space available.  We'll need to fix this properly
+         * sooner or later, but for the moment, fake it.
+         */
         gs_color_space cspace;
 
         /*
@@ -543,13 +544,13 @@ SetFillMode
 static const byte pxSetDefaultGSstr[] = {
     192, 2, 248, 3, 106, 200, 193, 3, 0, 0, 0, 0, 248, 11, 99, 193,
     0, 0, 248, 161, 100, 116, 200, 193, 3, 0, 0, 0, 0, 248, 11, 121, 192, 1,
-        248, 75, 122, 192,
+    248, 75, 122, 192,
     0, 248, 45, 124, 192, 0, 248, 45, 120, 192, 252, 248, 44, 123, 192, 0,
-        248, 71, 113, 192,
+    248, 71, 113, 192,
     0, 248, 78, 112, 192, 0, 248, 72, 114, 193, 10, 0, 248, 73, 115, 213, 0,
-        0, 128, 63, 0, 0, 128, 63,
+    0, 128, 63, 0, 0, 128, 63,
     248, 164, 101, 213, 0, 0, 0, 0, 0, 0, 0, 0, 248, 165, 102, 192, 0, 248,
-        33, 109, 192, 0, 248,
+    33, 109, 192, 0, 248,
     84, 127, 105, 133, 192, 0, 248, 70, 110
 };
 
@@ -1149,11 +1150,12 @@ const byte apxSetCharSubMode[] = {
 };
 int
 pxSetCharSubMode(px_args_t * par, px_state_t * pxs)
-{                               /*
-                                 * It isn't clear from the documentation why the attribute is an
-                                 * array rather than just a Boolean, but we have to assume there
-                                 * is some reason for this.
-                                 */
+{
+    /*
+     * It isn't clear from the documentation why the attribute is an
+     * array rather than just a Boolean, but we have to assume there
+     * is some reason for this.
+     */
     const px_value_t *psubs = par->pv[0];
     pxeCharSubModeArray_t arg;
 

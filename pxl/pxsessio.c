@@ -125,7 +125,8 @@ px_put1(gx_device * dev, gs_c_param_list * plist, int ecode)
 /* Adjust one scale factor to an integral value if we can. */
 static double
 px_adjust_scale(double value, double extent)
-{                               /* If we can make the value an integer with a total error */
+{
+    /* If we can make the value an integer with a total error */
     /* of less than 1/2 pixel over the entire page, we do it. */
     double int_value = floor(value + 0.5);
 
@@ -644,10 +645,11 @@ pxBeginPageFromPassthrough(px_state_t * pxs)
     gs_currentmatrix(pgs, &points2device);
     gs_dtransform(pgs, pxs->media_dims.x, pxs->media_dims.y,
                   &page_size_pixels);
-    {                           /*
-                                 * Put the origin at the upper left corner of the page;
-                                 * also account for the orientation.
-                                 */
+    {
+        /*
+         * Put the origin at the upper left corner of the page;
+         * also account for the orientation.
+         */
         gs_matrix orient;
 
         orient.xx = orient.xy = orient.yx = orient.yy =

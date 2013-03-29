@@ -732,18 +732,17 @@ pgconfig_do_registration(pcl_parser_state_t * pcl_parser_state,
         HPGL_COMMAND('I', 'R', hpgl_IR, hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('I', 'W', hpgl_IW, hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('P', 'G', hpgl_PG, hpgl_cdf_pcl_rtl_both),
-        HPGL_COMMAND('P', 'S', hpgl_PS, hpgl_cdf_rtl), HPGL_COMMAND('E', 'C',
-                                                                    hpgl_EC,
-                                                                    hpgl_cdf_rtl),
+        HPGL_COMMAND('P', 'S', hpgl_PS, hpgl_cdf_rtl),
+        HPGL_COMMAND('E', 'C', hpgl_EC, hpgl_cdf_rtl),
         HPGL_COMMAND('R', 'O', hpgl_RO, hpgl_cdf_pcl_rtl_both),
-        HPGL_COMMAND('R', 'P', hpgl_RP, hpgl_cdf_rtl), HPGL_COMMAND('S', 'C',
-                                                                    hpgl_SC,
-                                                                    hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('R', 'P', hpgl_RP, hpgl_cdf_rtl),
+        HPGL_COMMAND('S', 'C', hpgl_SC, hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('B', 'P', hpgl_BP, hpgl_cdf_pcl_rtl_both),
 #ifdef DEBUG
         HPGL_COMMAND('Z', 'Z', hpgl_ZZ, hpgl_cdf_pcl_rtl_both),
 #endif
-        END_HPGL_COMMANDS return 0;
+    END_HPGL_COMMANDS
+    return 0;
 }
 const pcl_init_t pgconfig_init = {
     pgconfig_do_registration, 0

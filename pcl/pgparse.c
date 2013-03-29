@@ -95,7 +95,8 @@ hpgl_process(hpgl_parser_state_t * pst, hpgl_state_t * pgls,
     /* Prepare to catch a longjmp indicating the argument scanner */
     /* needs more data, or encountered an error. */
     code = setjmp(pst->exit_to_parser);
-    if (code) {                 /* The command detected an error, or we need to ask */
+    if (code) {
+        /* The command detected an error, or we need to ask */
         /* the caller for more data.  pst->command != 0. */
         pr->ptr = pst->source.ptr;
         if (code < 0 && code != e_NeedData) {

@@ -389,7 +389,8 @@ pgpoly_do_registration(pcl_parser_state_t * pcl_parser_state,
                      hpgl_cdf_lost_mode_cleared | hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('W', 'G', hpgl_WG,
                      hpgl_cdf_lost_mode_cleared | hpgl_cdf_pcl_rtl_both),
-        END_HPGL_COMMANDS return 0;
+    END_HPGL_COMMANDS
+    return 0;
 }
 const pcl_init_t pgpoly_init = {
     pgpoly_do_registration, 0

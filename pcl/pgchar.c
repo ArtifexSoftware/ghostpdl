@@ -33,13 +33,15 @@
 /* Define font parameters (AD, SD). */
 static int
 hpgl_font_definition(hpgl_args_t * pargs, hpgl_state_t * pgls, int index)
-{                               /*
-                                 * Since these commands take an arbitrary number of arguments,
-                                 * we reset the argument bookkeeping after each group.
-                                 * We reset phase to 1, 2, or 3 after seeing the first pair,
-                                 * so we can tell whether there were any arguments at all.
-                                 * (1 means no parameter changed, >1 means some parameter changed.)
-                                 */
+{
+    /*
+     * Since these commands take an arbitrary number of arguments, we
+     * reset the argument bookkeeping after each group.  We reset
+     * phase to 1, 2, or 3 after seeing the first pair, so we can tell
+     * whether there were any arguments at all.  (1 means no parameter
+     * changed, >1 means some parameter changed.)
+     */
+
     pcl_font_selection_t *pfs = &pgls->g.font_selection[index];
 #define pfp (&pfs->params)
     int kind;
@@ -676,13 +678,23 @@ pgchar_do_registration(pcl_parser_state_t * pcl_parser_state,
         HPGL_COMMAND('D', 'R', hpgl_DR, hpgl_cdf_pcl_rtl_both),
         /* DT has special argument parsing, so it must handle skipping */
         /* in polygon mode itself. */
-        HPGL_COMMAND('D', 'T', hpgl_DT, hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('D', 'V', hpgl_DV, hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('E', 'S', hpgl_ES, hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('F', 'I', hpgl_FI, hpgl_cdf_pcl), HPGL_COMMAND('F', 'N', hpgl_FN, hpgl_cdf_pcl), HPGL_COMMAND('L', 'M', hpgl_LM, hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('L', 'O', hpgl_LO, hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('S', 'A', hpgl_SA, hpgl_cdf_pcl_rtl_both), HPGL_COMMAND('S', 'B', hpgl_SB, hpgl_cdf_pcl), HPGL_COMMAND('S', 'D', hpgl_SD, hpgl_cdf_pcl_rtl_both), /* kind/value pairs */
+        HPGL_COMMAND('D', 'T', hpgl_DT, hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('D', 'V', hpgl_DV, hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('E', 'S', hpgl_ES, hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('F', 'I', hpgl_FI, hpgl_cdf_pcl),
+        HPGL_COMMAND('F', 'N', hpgl_FN, hpgl_cdf_pcl),
+        HPGL_COMMAND('L', 'M', hpgl_LM, hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('L', 'O', hpgl_LO, hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('S', 'A', hpgl_SA, hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('S', 'B', hpgl_SB, hpgl_cdf_pcl),
+        HPGL_COMMAND('S', 'D', hpgl_SD, hpgl_cdf_pcl_rtl_both), /* kind/value pairs */
         HPGL_COMMAND('S', 'I', hpgl_SI, hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('S', 'L', hpgl_SL, hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('S', 'R', hpgl_SR, hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('S', 'S', hpgl_SS, hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('T', 'D', hpgl_TD, hpgl_cdf_pcl_rtl_both),
-        END_HPGL_COMMANDS return 0;
+    END_HPGL_COMMANDS
+    return 0;
 }
 
 static void

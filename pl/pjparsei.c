@@ -374,8 +374,7 @@ pjl_implementation_t pjl_implementation = {
      pjl_impl_deallocate_interp_instance,
      pjl_impl_deallocate_interp,
      pjl_impl_get_device_memory,
-     }
-    ,
+    },
     /* PJL-specific portion */
     pjl_impl_get_envvar,
     pjl_impl_compare,

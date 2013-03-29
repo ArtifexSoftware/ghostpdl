@@ -171,7 +171,8 @@ status_put_font(stream * s, pcl_state_t * pcs,
 
     /* first escape sequence: symbol-set selection */
     stputs(s, "SELECT=\"");
-    if (pl_font_is_bound(plfont) || font_set > 0) {     /* Bound or current font, put out the symbol set. */
+    if (pl_font_is_bound(plfont) || font_set > 0) {
+        /* Bound or current font, put out the symbol set. */
         uint symbol_set = font_set > 0 ?
             pcs->font_selection[font_set].params.symbol_set :
             plfont->params.symbol_set;
@@ -186,9 +187,11 @@ status_put_font(stream * s, pcl_state_t * pcs,
         stputs(s, "h");
         status_put_floating(s, plfont->params.height_4ths / 4.0);
         stputs(s, "v");
-    } else {                    /* Scalable font: output depends on whether selected */
-        if (font_set > 0) {     /* If selected, we have to cheat and reach up for info;
-                                 * plfont is below where the scaled values exist. */
+    } else {
+        /* Scalable font: output depends on whether selected */
+        if (font_set > 0) {
+            /* If selected, we have to cheat and reach up for info;
+             * plfont is below where the scaled values exist. */
             if (proportional) {
                 status_put_floating(s,
                                     pcs->font_selection[font_set].params.
@@ -287,8 +290,9 @@ status_put_font(stream * s, pcl_state_t * pcs,
         /* XXX Put out the font name - we need a way to get the name
          * for fonts that weren't downloaded, hence lack the known
          * header field. */
-        if ((plfont->storage & pcds_downloaded) && plfont->header != NULL) {    /* Wire in the size of the FontName field (16)--it can't
-                                                                                 * change anyway, and this saves work. */
+        if ((plfont->storage & pcds_downloaded) && plfont->header != NULL) {
+            /* Wire in the size of the FontName field (16)--it can't
+             * change anyway, and this saves work. */
             pcl_font_header_t *hdr = (pcl_font_header_t *) (plfont->header);
 
             stprintf(s, "NAME=\"%.16s\"\r\n", hdr->FontName);

@@ -101,8 +101,8 @@ hpgl_compute_arc_coords(floatp radius, floatp center_x, floatp center_y,
     return 0;
 }
 
-/* given a start point, angle (degrees) and magnitude of a vector compute its
-   endpoints */
+/* given a start point, angle (degrees) and magnitude of a vector
+   compute its endpoints */
 int
 hpgl_compute_vector_endpoints(floatp magnitude, floatp x, floatp y,
                               floatp angle_degrees, floatp * endx,

@@ -78,13 +78,14 @@ px_set_char_matrix(px_state_t * pxs)
 
     if (pxfont == 0)
         return_error(errorNoCurrentFont);
-    if (pxfont->scaling_technology == plfst_bitmap) {   /*
-                                                         * Bitmaps don't scale, shear, or rotate; however, we have to
-                                                         * scale them to make the resolution match that of the device.
-                                                         * Note that we disregard the character size, and, in px_text,
-                                                         * all but the translation and orientation components of the
-                                                         * CTM.
-                                                         */
+    if (pxfont->scaling_technology == plfst_bitmap) {
+        /*
+         * Bitmaps don't scale, shear, or rotate; however, we have to
+         * scale them to make the resolution match that of the device.
+         * Note that we disregard the character size, and, in px_text,
+         * all but the translation and orientation components of the
+         * CTM.
+         */
         if (pxgs->char_angle != 0 ||
             pxgs->char_shear.x != 0 || pxgs->char_shear.y != 0 ||
             pxgs->char_scale.x != 1 || pxgs->char_scale.y != 1)
@@ -297,19 +298,12 @@ static void
 px_str_to_gschars(px_args_t * par, px_state_t * pxs, gs_char * pchr)
 {
     const px_value_t *pstr = par->pv[0];
-
     const unsigned char *str = (const unsigned char *)pstr->value.array.data;
-
     uint len = pstr->value.array.size;
-
     int i;
-
     gs_char chr;
-
     const pl_symbol_map_t *psm = pxs->pxgs->symbol_map;
-
     uint symbol_set = pxs->pxgs->symbol_set;
-
     bool db = px_downloaded_and_bound(pxs->pxgs->base_font);
 
     for (i = 0; i < len; i++) {
@@ -333,7 +327,6 @@ px_text_setup(gs_state * pgs, const gs_char * str, uint size,
               bool to_path, bool can_cache)
 {
     gs_text_params_t text;
-
     int code;
 
     text.operation =
@@ -365,27 +358,16 @@ int
 px_text(px_args_t * par, px_state_t * pxs, bool to_path)
 {
     gs_memory_t *mem = pxs->memory;
-
     gs_state *pgs = pxs->pgs;
-
     px_gstate_t *pxgs = pxs->pxgs;
-
     gs_text_enum_t *penum;
-
     const px_value_t *pstr = par->pv[0];
-
     uint len = pstr->value.array.size;
-
     const px_value_t *pxdata = par->pv[1];
-
     const px_value_t *pydata = par->pv[2];
-
     gs_font *pfont = gs_currentfont(pgs);
-
     int code = 0;
-
     gs_char *pchr = 0;
-
     pl_font_t *plfont;
 
     if (pfont == 0)
@@ -454,9 +436,7 @@ px_text(px_args_t * par, px_state_t * pxs, bool to_path)
 
     {
         uint i;
-
         float *fxvals = 0;
-
         float *fyvals = 0;
 
         if (len > 0) {
@@ -502,13 +482,9 @@ int
 pxSetFont(px_args_t * par, px_state_t * pxs)
 {
     px_gstate_t *pxgs = pxs->pxgs;
-
     px_font_t *pxfont;
-
     px_value_t *pfnv;
-
     uint symbol_set;
-
     int code;
 
     if (!par->pv[3]) {
@@ -568,11 +544,8 @@ int
 pxBeginFontHeader(px_args_t * par, px_state_t * pxs)
 {
     px_value_t *pfnv = par->pv[0];
-
     gs_memory_t *mem = pxs->memory;
-
     px_font_t *pxfont;
-
     int code = px_find_existing_font(pfnv, &pxfont, pxs);
 
     if (code >= 0) {
@@ -604,9 +577,7 @@ int
 pxReadFontHeader(px_args_t * par, px_state_t * pxs)
 {
     ulong len = par->pv[0]->value.i;
-
     ulong left = len - par->source.position;
-
     int code = pxNeedData;
 
     if (left > 0) {
@@ -664,7 +635,6 @@ int
 pxEndFontHeader(px_args_t * par, px_state_t * pxs)
 {
     px_font_t *pxfont = pxs->download_font;
-
     int code = px_define_font(pxfont, pxs->download_bytes.data,
                               (ulong) pxs->download_bytes.size,
                               gs_next_ids(pxs->memory, 1), pxs);
@@ -684,9 +654,7 @@ int
 pxBeginChar(px_args_t * par, px_state_t * pxs)
 {
     px_value_t *pfnv = par->pv[0];
-
     px_font_t *pxfont;
-
     int code = px_find_existing_font(pfnv, &pxfont, pxs);
 
     if (code >= 0 && pxfont == 0)
@@ -711,9 +679,7 @@ int
 pxReadChar(px_args_t * par, px_state_t * pxs)
 {
     uint char_code = par->pv[0]->value.i;
-
     uint size = par->pv[1]->value.i;
-
     uint pos = par->source.position;
 
     if (pos == 0) {
@@ -760,15 +726,10 @@ pxReadChar(px_args_t * par, px_state_t * pxs)
                     code = gs_note_error(errorIllegalCharacterData);
                 else {
                     int loff = pl_get_int16(data + 2);
-
                     int toff = pl_get_int16(data + 4);
-
                     uint width = pl_get_uint16(data + 6);
-
                     uint height = pl_get_uint16(data + 8);
-
                     uint bmp_size = ((width + 7) >> 3) * height;
-
                     uint bmp_offset = round_up(10, ARCH_ALIGN_PTR_MOD);
 
                     if (size < 10 || size != 10 + ((width + 7) >> 3) * height)
@@ -834,11 +795,8 @@ int
 pxRemoveFont(px_args_t * par, px_state_t * pxs)
 {
     px_value_t *pfnv = par->pv[0];
-
     px_font_t *pxfont;
-
     int code = px_find_existing_font(pfnv, &pxfont, pxs);
-
     const char *error = 0;
 
     if (code < 0)

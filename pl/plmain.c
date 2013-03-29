@@ -98,8 +98,8 @@ void pl_print_usage(const pl_main_instance_t *, const char *);
 
 /* ---------------- Forward decls ------------------ */
 /* Functions to encapsulate pl_main_universe_t */
-int                             /* 0 ok, else -1 error */
-    pl_main_universe_init(pl_main_universe_t * universe,        /* universe to init */
+/* 0 ok, else -1 error */
+int pl_main_universe_init(pl_main_universe_t * universe,        /* universe to init */
                           char *err_str,        /* RETURNS error str if error */
                           gs_memory_t * mem,    /* deallocator for devices */
                           pl_interp_implementation_t const *const pdl_implementation[], /* implementations to choose from */
@@ -109,18 +109,18 @@ int                             /* 0 ok, else -1 error */
                           pl_page_action_t pl_post_finish_page  /* post-page action */
     );
 
-int                             /* 0 ok, else -1 error */
-    pl_main_universe_dnit(pl_main_universe_t * universe,        /* universe to dnit */
+/* 0 ok, else -1 error */
+int pl_main_universe_dnit(pl_main_universe_t * universe,        /* universe to dnit */
                           char *err_str /* RETRUNS errmsg if error return */
     );
 
-pl_interp_instance_t *          /* rets current interp_instance, 0 if err */
-                     pl_main_universe_select(pl_main_universe_t * universe,     /* universe to select from */
-                                             char *err_str,     /* RETURNS error str if error */
-                                             pl_interp_instance_t * pjl_instance,       /* pjl */
-                                             pl_interp_implementation_t const *desired_implementation,  /* impl to select */
-                                             pl_main_instance_t * pti,  /* inst contains device */
-                                             gs_param_list * params     /* device params to use */
+/* rets current interp_instance, 0 if err */
+pl_interp_instance_t *pl_main_universe_select(pl_main_universe_t * universe,     /* universe to select from */
+                                              char *err_str,     /* RETURNS error str if error */
+                                              pl_interp_instance_t * pjl_instance,       /* pjl */
+                                              pl_interp_implementation_t const *desired_implementation,  /* impl to select */
+                                              pl_main_instance_t * pti,  /* inst contains device */
+                                              gs_param_list * params     /* device params to use */
     );
 
 static pl_interp_implementation_t const *pl_auto_sense(const char *name,        /* stream  */
@@ -932,7 +932,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     char *arg;
 
     gs_c_param_list_write_more(params);
-    while ((arg = (char *)arg_next(pal, &code, pmi->memory)) != 0 && *arg == '-') {     /* just - read from stdin */
+    while ((arg = (char *)arg_next(pal, &code, pmi->memory)) != 0 && *arg == '-') { /* just - read from stdin */
         if (code < 0)
             break;
         if (arg[1] == '\0')

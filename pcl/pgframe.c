@@ -185,35 +185,40 @@ pcl_enter_pcl_mode(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 pgframe_do_registration(pcl_parser_state_t * pcl_parser_state,
                         gs_memory_t * mem)
-{                               /* Register commands */
-    DEFINE_CLASS('*') {
-    'c', 'X',
-            PCL_COMMAND("Horizontal Picture Frame Size Decipoints",
-                            pcl_horiz_pic_frame_size_decipoints,
-                            pca_neg_error | pca_big_error)}, {
-    'c', 'Y',
-            PCL_COMMAND("Vertical Picture Frame Size Decipoints",
-                            pcl_vert_pic_frame_size_decipoints,
-                            pca_neg_error | pca_big_error)}, {
-    'c', 'T',
-            PCL_COMMAND("Set Picture Frame Anchor Point",
-                            pcl_set_pic_frame_anchor_point,
-                            pca_neg_error | pca_big_error)}, {
-    'c', 'K',
-            PCL_COMMAND("HP-GL/2 Plot Horizontal Size",
-                            pcl_hpgl_plot_horiz_size,
-                            pca_neg_error | pca_big_error)}, {
-    'c', 'L',
-            PCL_COMMAND("HP-GL/2 Plot Vertical Size",
-                            pcl_hpgl_plot_vert_size,
-                            pca_neg_error | pca_big_error)},
-        END_CLASS DEFINE_CLASS('%') {
-    0, 'A',
-            PCL_COMMAND("Enter PCL Mode",
-                            pcl_enter_pcl_mode,
-                            pca_neg_ok | pca_big_ok | pca_in_rtl)},
-        END_CLASS return 0;
+{
+    /* Register commands */
+    DEFINE_CLASS('*')
+        {'c', 'X',
+         PCL_COMMAND("Horizontal Picture Frame Size Decipoints",
+                     pcl_horiz_pic_frame_size_decipoints,
+                     pca_neg_error | pca_big_error)},
+        {'c', 'Y',
+         PCL_COMMAND("Vertical Picture Frame Size Decipoints",
+                     pcl_vert_pic_frame_size_decipoints,
+                     pca_neg_error | pca_big_error)},
+        {'c', 'T',
+         PCL_COMMAND("Set Picture Frame Anchor Point",
+                     pcl_set_pic_frame_anchor_point,
+                     pca_neg_error | pca_big_error)},
+        {'c', 'K',
+         PCL_COMMAND("HP-GL/2 Plot Horizontal Size",
+                     pcl_hpgl_plot_horiz_size,
+                     pca_neg_error | pca_big_error)},
+        {'c', 'L',
+         PCL_COMMAND("HP-GL/2 Plot Vertical Size",
+                     pcl_hpgl_plot_vert_size,
+                     pca_neg_error | pca_big_error)},
+    END_CLASS
+
+    DEFINE_CLASS('%')
+        {0, 'A',
+         PCL_COMMAND("Enter PCL Mode",
+                     pcl_enter_pcl_mode,
+                     pca_neg_ok | pca_big_ok | pca_in_rtl)},
+    END_CLASS
+    return 0;
 }
+
 const pcl_init_t pgframe_init = {
     pgframe_do_registration, 0
 };
