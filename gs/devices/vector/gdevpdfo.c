@@ -176,6 +176,7 @@ cos_object_init(cos_object_t *pco, gx_device_pdf *pdev,
         pco->length = 0;
         pco->input_strm = 0;
         pco->md5_valid = 0;
+        pco->stream_md5_valid = 0;
         memset(&pco->hash, 0x00, 16);
     }
 }
