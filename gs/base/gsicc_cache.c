@@ -162,36 +162,34 @@ static gsicc_link_t *
 gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
 {
     gsicc_link_t *result;
-    gx_semaphore_t *wait;
 
     /* The link has to be added in stable memory. We want them
        to be maintained across the gsave and grestore process */
     result = gs_alloc_struct(memory->stable_memory, gsicc_link_t, &st_icc_link,
                              "gsicc_alloc_link");
-    wait = gx_semaphore_alloc(memory->stable_memory);
-    if (wait == NULL) {
-        gs_free_object(memory, result, "gsicc_alloc_link(wait)");
-        result = NULL;
+    if (result == NULL)
+        return NULL;
+    result->wait = gx_semaphore_alloc(memory->stable_memory);
+    if (result->wait == NULL) {
+        gs_free_object(memory->stable_memory, result, "gsicc_alloc_link(wait)");
+        return NULL;
     }
-    if (result != NULL) {
-        /* set up placeholder values */
-        result->next = NULL;
-        result->link_handle = NULL;
-        result->procs.map_buffer = gscms_transform_color_buffer;
-        result->procs.map_color = gscms_transform_color;
-        result->procs.free_link = gscms_release_link;
-        result->hashcode.link_hashcode = hashcode.link_hashcode;
-        result->hashcode.des_hash = 0;
-        result->hashcode.src_hash = 0;
-        result->hashcode.rend_hash = 0;
-        result->ref_count = 1;		/* prevent it from being freed */
-        result->includes_softproof = 0;
-        result->includes_devlink = 0;
-        result->is_identity = false;
-        result->valid = false;		/* not yet complete */
-        result->num_waiting = 0;
-        result->wait = wait;
-    }
+    /* set up placeholder values */
+    result->next = NULL;
+    result->link_handle = NULL;
+    result->procs.map_buffer = gscms_transform_color_buffer;
+    result->procs.map_color = gscms_transform_color;
+    result->procs.free_link = gscms_release_link;
+    result->hashcode.link_hashcode = hashcode.link_hashcode;
+    result->hashcode.des_hash = 0;
+    result->hashcode.src_hash = 0;
+    result->hashcode.rend_hash = 0;
+    result->ref_count = 1;		/* prevent it from being freed */
+    result->includes_softproof = 0;
+    result->includes_devlink = 0;
+    result->is_identity = false;
+    result->valid = false;		/* not yet complete */
+    result->num_waiting = 0;
     return(result);
 }
 
