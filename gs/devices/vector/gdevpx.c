@@ -1617,6 +1617,8 @@ pclxl_copy_color(gx_device * dev,
     /* side-effect from fill/stroke may have set color space to eGray */
     if (dev->color_info.num_components == 3)
         pclxl_set_color_space(xdev, eRGB);
+    else if (dev->color_info.num_components == 1)
+        pclxl_set_color_space(xdev, eGray);
 
     /* write_image_data() needs byte-alignment,
      * and gx_default_copy_* is more efficient than pxlcl_*
