@@ -414,6 +414,7 @@ psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
     dcte_fail:
         gs_jpeg_destroy(ss);
         gs_free_object(mem, jcdp, "setup_image_compression");
+        ss->data.compress = NULL; /* Avoid problems with double frees later */
     rcc_fail:
         gs_c_param_list_release(&rcc_list);
         return code;
