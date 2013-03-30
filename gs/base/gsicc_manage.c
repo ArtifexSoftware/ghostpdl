@@ -2417,6 +2417,8 @@ gs_setdevicenprofileicc(const gs_state * pgs, gs_param_string * pval)
            can have internal spaces). */
         pname = (char *)gs_alloc_bytes(mem, namelen,
                                      "set_devicen_profile_icc");
+        if (pname == NULL)
+            return_error(gs_error_VMerror);
         memcpy(pname,pval->data,namelen-1);
         pname[namelen-1] = 0;
         pstr = strtok(pname, ",;");
@@ -2477,6 +2479,8 @@ gs_setdefaultgrayicc(const gs_state * pgs, gs_param_string * pval)
 
     pname = (char *)gs_alloc_bytes(mem, namelen,
                              "set_default_gray_icc");
+    if (pname == NULL)
+        return_error(gs_error_VMerror);
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
     code = gsicc_set_profile(pgs->icc_manager,
@@ -2557,6 +2561,8 @@ gs_setsrcgtagicc(const gs_state * pgs, gs_param_string * pval)
 
     if (pval->size == 0) return 0;
     pname = (char *)gs_alloc_bytes(mem, namelen, "set_srcgtag_icc");
+    if (pname == NULL)
+        return_error(gs_error_VMerror);
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
     code = gsicc_set_srcgtag_struct(pgs->icc_manager, (const char*) pname, 
@@ -2592,6 +2598,8 @@ gs_setdefaultrgbicc(const gs_state * pgs, gs_param_string * pval)
 
     pname = (char *)gs_alloc_bytes(mem, namelen,
                              "set_default_rgb_icc");
+    if (pname == NULL)
+        return_error(gs_error_VMerror);
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
     code = gsicc_set_profile(pgs->icc_manager,
@@ -2630,6 +2638,8 @@ gs_setnamedprofileicc(const gs_state * pgs, gs_param_string * pval)
     if (pval->size != 0) {
         pname = (char *)gs_alloc_bytes(mem, namelen,
                                  "set_named_profile_icc");
+        if (pname == NULL)
+            return_error(gs_error_VMerror);
         memcpy(pname,pval->data,namelen-1);
         pname[namelen-1] = 0;
         code = gsicc_set_profile(pgs->icc_manager,
@@ -2668,6 +2678,8 @@ gs_setdefaultcmykicc(const gs_state * pgs, gs_param_string * pval)
 
     pname = (char *)gs_alloc_bytes(mem, namelen,
                              "set_default_cmyk_icc");
+    if (pname == NULL)
+        return_error(gs_error_VMerror);
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
     code = gsicc_set_profile(pgs->icc_manager,
@@ -2700,6 +2712,8 @@ gs_setlabicc(const gs_state * pgs, gs_param_string * pval)
 
     pname = (char *)gs_alloc_bytes(mem, namelen,
                              "set_lab_icc");
+    if (pname == NULL)
+        return_error(gs_error_VMerror);
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
     code = gsicc_set_profile(pgs->icc_manager,
