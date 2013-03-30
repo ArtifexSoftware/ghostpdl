@@ -823,7 +823,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     const gs_cie_common *pciec;
     gs_function_t *pfn;
     const gs_range_t *ranges = 0;
-    uint serialized_size;
+    uint serialized_size = 0;
     byte *serialized = NULL, serialized0[100];
     pdf_resource_t *pres = NULL;
     int code;
