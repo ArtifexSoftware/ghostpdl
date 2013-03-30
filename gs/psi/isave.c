@@ -335,7 +335,7 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata, ulong *psid)
             alloc_free_save(lmem, lsave, "alloc_save_state(local save)");
         if (gsave != 0)
             alloc_free_save(gmem, gsave, "alloc_save_state(global save)");
-        return 0;
+        return_error(gs_error_VMerror);
     }
     if (gsave != 0) {
         gsave->client_data = 0;

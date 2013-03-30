@@ -77,6 +77,7 @@ zsave(i_ctx_t *i_ctx_p)
     ialloc_set_space(idmemory, space);
     if (vmsave == 0)
         return_error(e_VMerror);
+    vmsave->gsave = NULL; /* Ensure constructed enough to destroy safely */
     code = alloc_save_state(idmemory, vmsave, &sid);
     if (code < 0)
         return code;
