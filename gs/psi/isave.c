@@ -313,9 +313,14 @@ static alloc_save_t *alloc_save_space(gs_ref_memory_t *mem,
 static void
 alloc_free_save(gs_ref_memory_t *mem, alloc_save_t *save, const char *scn)
 {
+    gs_ref_memory_t save_mem;
+    save_mem = mem->saved->state;
     gs_free_object((gs_memory_t *)mem, save, scn);
     /* Free any inner chunk structures.  This is the easiest way to do it. */
     restore_free(mem);
+    /* Restore the 'saved' state - this pulls our object off the linked
+     * list of states. Without this we hit a SEGV in the gc later. */
+    *mem = save_mem;
 }
 int
 alloc_save_state(gs_dual_memory_t * dmem, void *cdata, ulong *psid)
@@ -331,6 +336,10 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata, ulong *psid)
     alloc_save_t *lsave = alloc_save_space(lmem, dmem, sid);
 
     if (lsave == 0 || (global && gsave == 0)) {
+        /* Only 1 of lsave or gsave will have been allocated, but
+         * nevertheless (in case things change in future), we free
+         * lsave, then gsave, so they 'pop' correctly when restoring
+         * the mem->saved states. */
         if (lsave != 0)
             alloc_free_save(lmem, lsave, "alloc_save_state(local save)");
         if (gsave != 0)
@@ -435,6 +444,7 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
         *mem = save_mem;
         return 0;
     }
+    save->client_data = NULL;
     save->state = save_mem;
     save->spaces = dmem->spaces;
     save->restore_names = (name_memory(mem) == (gs_memory_t *) mem);
