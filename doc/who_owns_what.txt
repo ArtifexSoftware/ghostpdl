@@ -111,9 +111,9 @@ iscale.dev: robin
 isupport.dev: ray
 jasper.dev: alex
 jasper_0.dev: alex
-jbig2.dev: henry
-jbig2dec.dev: henry
-jbig2dec_0.dev: henry
+jbig2.dev: alex
+jbig2dec.dev: alex
+jbig2dec_0.dev: alex
 jpeg.dev: ray and henry
 jpege6.dev: third party
 jpeggray.dev: ray and henry
