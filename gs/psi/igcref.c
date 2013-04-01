@@ -757,6 +757,7 @@ refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, ui
     } else {
         obj_header_t *pfree = (obj_header_t *) ((ref *) dest + 1);
 
+        pfree->o_pad = 0;
         pfree->o_alone = 0;
         pfree->o_size = size - new_size - sizeof(obj_header_t);
         pfree->o_type = &st_bytes;

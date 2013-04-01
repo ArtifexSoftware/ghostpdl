@@ -261,6 +261,7 @@ ialloc_solo(gs_memory_t * parent, gs_memory_type_ptr_t pstype,
     cp->cbot = cp->ctop;
     cp->cprev = cp->cnext = 0;
     /* Construct the object header "by hand". */
+    obj->o_pad = 0;
     obj->o_alone = 1;
     obj->o_size = pstype->ssize;
     obj->o_type = pstype;
@@ -540,6 +541,7 @@ gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled)
              size < imem->large_size\
            )\
         {	imem->cc.cbot = (byte *)ptr + obj_size_round(size);\
+                ptr->o_pad = 0;\
                 ptr->o_alone = 0;\
                 ptr->o_size = size;\
                 ptr->o_type = pstype;\
@@ -1269,6 +1271,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
             return 0;
         ptr = (obj_header_t *) cp->cbot;
         cp->cbot += asize;
+        ptr->o_pad = 0;
         ptr->o_alone = 1;
         ptr->o_size = lsize;
     } else {
@@ -1373,6 +1376,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
         else if (!mem->is_controlled ||
                  (ptr = scavenge_low_free(mem, (uint)lsize)) == 0)
             return 0;	/* allocation failed */
+        ptr->o_pad = 0;
         ptr->o_alone = 0;
         ptr->o_size = (uint) lsize;
     }
@@ -1623,11 +1627,13 @@ trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size, chunk_t *cp)
          * Something very weird is going on.  This probably shouldn't
          * ever happen, but if it does....
          */
+        pre_obj->o_pad = 0;
         pre_obj->o_alone = 0;
     }
     /* make excess into free obj */
     excess_pre->o_type = &st_free;  /* don't confuse GC */
     excess_pre->o_size = excess_size;
+    excess_pre->o_pad = 0;
     excess_pre->o_alone = 0;
     if (excess_size >= obj_align_mod) {
         /* Put excess object on a freelist */

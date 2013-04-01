@@ -1082,6 +1082,7 @@ combine_space(gs_ref_memory_t * mem)
             {
                 obj_header_t *hp = (obj_header_t *) outer->cbot;
 
+                hp->o_pad = 0;
                 hp->o_alone = 0;
                 hp->o_size = (char *)(cp->chead + 1)
                     - (char *)(hp + 1);

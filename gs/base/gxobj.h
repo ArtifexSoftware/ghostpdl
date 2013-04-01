@@ -80,7 +80,7 @@
 typedef struct obj_header_data_s {
     union _f {
         struct _h {
-            unsigned alone:1;
+            unsigned alone:1, pad:obj_mb_bits;
         } h;
         struct _m {
             unsigned _:1, smark:obj_mb_bits;
@@ -142,6 +142,7 @@ struct obj_header_s {		/* must be a struct because of forward reference */
 
 /* Define some reasonable abbreviations for the fields. */
 #define o_alone d.o.f.h.alone
+#define o_pad d.o.f.h.pad
 #define o_back d.o.f.b.back
 #define o_smark d.o.f.m.smark
 #define o_size d.o.size
