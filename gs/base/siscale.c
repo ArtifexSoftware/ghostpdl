@@ -528,6 +528,16 @@ do_init(stream_state        *st,
         return ERRC;
 /****** WRONG ******/
     }
+#ifdef PACIFY_VALGRIND
+    /* When we are scaling a subrectangle of an image, we calculate
+     * the subrectangle, so that it's slightly larger than it needs
+     * to be. Some of these 'extra' pixels are calculated using
+     * bogus values (i.e. ones we don't bother copying/scaling into
+     * the line buffer). These cause valgrind to be upset. To avoid
+     * this, we preset the buffer to known values. */
+    memset((byte *)ss->tmp, 0,
+           ss->max_support * ss->params.WidthOut * ss->params.spp_interp);
+#endif
     /* Pre-calculate filter contributions for a row. */
     calculate_contrib(ss->contrib, ss->items,
                       (double)ss->params.EntireWidthOut / ss->params.EntireWidthIn,
@@ -659,8 +669,9 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
                 row = pr->ptr + 1;
             } else {            /* We're buffering a row in src. */
                 row = ss->src;
-                memcpy((byte *) ss->src + ss->src_offset, pr->ptr + 1,
-                       rcount);
+                if (ss->params.Active)
+                    memcpy((byte *) ss->src + ss->src_offset, pr->ptr + 1,
+                           rcount);
                 ss->src_offset = 0;
             }
             /* Apply filter to zoom horizontally from src to tmp. */
