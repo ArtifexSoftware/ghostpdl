@@ -26,7 +26,7 @@
 #include "gxfapi.h"
 
 #ifdef PACIFY_VALGRIND
-#include <valgrind/helgrind.h>
+#include "valgrind.h"
 #endif
 
 /* Configuration information from gconfig.c. */

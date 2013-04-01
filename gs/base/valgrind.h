@@ -37,6 +37,13 @@
 
 /* Enabled, so get the real header from the system. */
 #include "valgrind/memcheck.h"
+#include "valgrind/helgrind.h"
+
+/* At least some versions of valgrind/helgrind don't define this */
+#ifndef VALGRIND_HG_DISABLE_CHECKING
+#define VALGRIND_HG_DISABLE_CHECKING(addr, len) \
+    DO_NOTHING
+#endif
 
 #else
 
@@ -73,6 +80,9 @@
 #define VALGRIND_GET_VBITS(zza,zzvbits,zznbytes)                     \
     DO_NOTHING
 #define VALGRIND_SET_VBITS(zza,zzvbits,zznbytes)                     \
+    DO_NOTHING
+
+#define VALGRIND_HG_DISABLE_CHECKING(addr, len) \
     DO_NOTHING
 
 #endif /* ENABLE_VALGRIND */

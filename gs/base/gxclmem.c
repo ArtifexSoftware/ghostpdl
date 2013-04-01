@@ -21,7 +21,7 @@
 #include "gxclmem.h"
 
 #ifdef PACIFY_VALGRIND
-#include <valgrind/helgrind.h>
+#include "valgrind.h"
 #endif
 
 /*
