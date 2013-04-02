@@ -525,6 +525,7 @@ int Memento_listBlocksNested(void)
     count = 0;
     size = 0;
     for (b = globals.used.head; b; b = b->next) {
+        VALGRIND_MAKE_MEM_DEFINED(b, sizeof(*b));
         size += b->rawsize;
         count++;
     }
@@ -604,6 +605,14 @@ int Memento_listBlocksNested(void)
     fprintf(stderr, " Total size of blocks = %d\n", size);
 
     MEMENTO_UNDERLYING_FREE(blocks);
+
+    /* Now put the blocks back for valgrind */
+    for (b = globals.used.head; b;) {
+      Memento_BlkHeader *next = b->next;
+      VALGRIND_MAKE_MEM_NOACCESS(b, sizeof(*b));
+      b = next;
+    }
+
     return 0;
 }
 
@@ -901,7 +910,9 @@ void *Memento_label(void *ptr, const char *label)
     if (ptr == NULL)
         return NULL;
     block = MEMBLK_FROMBLK(ptr);
+    VALGRIND_MAKE_MEM_DEFINED(&block->label, sizeof(block->label));
     block->label = label;
+    VALGRIND_MAKE_MEM_NOACCESS(&block->label, sizeof(block->label));
     return ptr;
 }
 
@@ -1037,10 +1048,10 @@ void Memento_free(void *blk)
     if (checkBlock(memblk, "free"))
         return;
 
+    VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
     if (memblk->flags & Memento_Flag_BreakOnFree)
         Memento_breakpoint();
 
-    VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
     globals.alloc -= memblk->rawsize;
     globals.numFrees++;
 
