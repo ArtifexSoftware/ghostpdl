@@ -463,11 +463,8 @@ pcl_new_logical_page_for_passthrough(pcl_state_t * pcs, int orient,
 
     if (!found)
         return -1;
-
     new_logical_page(pcs, orient, psize, false, true);
-
     return 0;
-
 }
 
 /* page marking routines */
@@ -997,6 +994,31 @@ set_paper_width(pcl_args_t * pargs, pcl_state_t * pcs)
     return 0;
 }
 
+int 
+pcl_set_custom_paper_size(pcl_state_t *pcs, pcl_paper_size_t *p)
+{
+    pcl_paper_size_t *psize = NULL;
+    bool found = false;
+    int i;
+
+    for (i = 0; i < pcl_paper_type_count; i++) {
+        if (101 == PAPER_SIZES[i].tag) {
+            psize = &(PAPER_SIZES[i].psize);
+            found = true;
+            break;
+        }
+    }
+    if (found)
+        *psize = *p;
+    else
+        /* this should never happen - the customer paper size is
+           always in the table */
+        return -1;
+    
+    new_logical_page(pcs, 0, psize, false, false);
+
+    return 0;
+}
 /*
  * ESC & f <decipoints> J
  */

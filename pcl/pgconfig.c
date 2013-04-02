@@ -523,8 +523,7 @@ hpgl_PS(hpgl_args_t * pargs, hpgl_state_t * pgls)
     paper.offset_portrait = (coord) 0;
     paper.offset_landscape = (coord) 0;
 
-    new_logical_page(pgls, 0, &paper, false, false);
-    return 0;
+    return pcl_set_custom_paper_size(pgls, &paper);
 }
 
 /* RO angle; */

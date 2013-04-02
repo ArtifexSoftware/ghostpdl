@@ -59,6 +59,10 @@ pcl_paper_size_t *pcl_get_default_paper(pcl_state_t * pcs);
 int pcl_new_logical_page_for_passthrough(pcl_state_t * pcs, int orient,
                                          gs_point * pdims);
 
+/* We export this for HPGL/2 which uses the PCL custom paper
+   size code to set up plots of arbitrary size */
+int pcl_set_custom_paper_size(pcl_state_t *pcs, pcl_paper_size_t *p);
+
 #define pcl_end_page_always(pcs)    pcl_end_page((pcs), pcl_print_always)
 #define pcl_end_page_if_marked(pcs) pcl_end_page((pcs), pcl_print_if_marked)
 
