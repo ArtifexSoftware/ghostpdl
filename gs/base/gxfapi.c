@@ -1026,7 +1026,11 @@ gs_fapi_finish_render(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, gs_f
 
     }
     else {
-        int code = I->get_char_raster(I, &rast);
+        int code;
+
+        memset(&rast, 0x00, sizeof(rast));
+
+        code = I->get_char_raster(I, &rast);
 
         if (!SHOW_IS(penum, TEXT_DO_NONE) && I->use_outline) {
             /* The server provides an outline instead the raster. */
