@@ -1418,7 +1418,7 @@ static int hash_cos_stream(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
 static int cos_stream_hash(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5_byte_t *hash, gx_device_pdf *pdev)
 {
     cos_stream_t *pcs0 = (cos_stream_t *)pco0;
-    int code;
+    int code=0;
     if (!pco0->stream_md5_valid) {
         code = hash_cos_stream(pco0, (gs_md5_state_t *)&pco0->md5, (gs_md5_byte_t *)&pco0->stream_hash, pdev);
         if (code < 0)
