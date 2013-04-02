@@ -705,7 +705,7 @@ $(GLOBJ)gxdcolor.$(OBJ) : $(GLSRC)gxdcolor.c $(AK) $(gx_h)\
 
 $(GLOBJ)gxhldevc.$(OBJ) : $(GLSRC)gxhldevc.c $(AK) $(gx_h)\
  $(gzstate_h) $(gscspace_h) $(gxcspace_h) $(gxhldevc_h) $(memory__h)\
- $(gxpcolor_h) $(gsptype2_h) $(MAKEDIRS)
+ $(gxpcolor_h) $(gsptype2_h) $(gsptype1_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxhldevc.$(OBJ) $(C_) $(GLSRC)gxhldevc.c
 
 $(GLOBJ)gxfill.$(OBJ) : $(GLSRC)gxfill.c $(AK) $(gx_h) $(gserrors_h)\
