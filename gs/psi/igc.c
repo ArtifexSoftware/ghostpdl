@@ -890,9 +890,9 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
                 goto do_refs;
             } else {		/* We assume this is some non-pointer- */
                 /* containing type. */
-                if ((*ptp->mark) (&nep, pstate))
-                    new |= 1;
-                goto ts;
+                /* This was the only formulation of this call/condition/assignment that valgrind did not complain about */
+                new |= ((*ptp->mark) (&nep, pstate)) ? 1 : 0;
+               goto ts;
             }
         }
 
