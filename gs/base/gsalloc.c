@@ -1105,10 +1105,10 @@ i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
         memmove(ptr, data, min(old_num, new_num));
 #ifdef DEBUG
         if (new_num > old_num)
-            gs_alloc_fill(ptr + old_num + HDR_ID_OFFSET, gs_alloc_fill_alloc,
-                          new_num - old_num - HDR_ID_OFFSET);
+            gs_alloc_fill(ptr + old_num, gs_alloc_fill_alloc,
+                          new_num - old_num);
         else
-            gs_alloc_fill(data + HDR_ID_OFFSET, gs_alloc_fill_free, old_num - new_num - HDR_ID_OFFSET);
+            gs_alloc_fill(data, gs_alloc_fill_free, old_num - new_num);
 #endif
         ptr += HDR_ID_OFFSET;
         ASSIGN_HDR_ID(ptr);
