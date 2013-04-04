@@ -41,12 +41,12 @@ extern void gs_alloc_memset(void *, int /*byte */ , ulong);
 #  define gs_alloc_fill(ptr, fill, len)                              \
      BEGIN                                                           \
      if ( gs_alloc_debug ) gs_alloc_memset(ptr, fill, (ulong)(len)); \
-     VALGRIND_MAKE_MEM_UNDEFINED(ptr,(ulong)(len));                  \
+     if ((ptr != NULL) && ((int)(len)) > 0) VALGRIND_MAKE_MEM_UNDEFINED(ptr,(ulong)(len)); \
      END
 #else
 #  define gs_alloc_fill(ptr, fill, len)                              \
      BEGIN                                                           \
-     VALGRIND_MAKE_MEM_UNDEFINED(ptr,(ulong)(len));                  \
+     if ((ptr != NULL) && ((int)(len)) > 0) VALGRIND_MAKE_MEM_UNDEFINED(ptr,(ulong)(len)); \
      END
 #endif
 
