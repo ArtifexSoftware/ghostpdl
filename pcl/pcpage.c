@@ -318,7 +318,7 @@ new_page_size(pcl_state_t * pcs,
     floatp width_pts = psize->width * 0.01;
     floatp height_pts = psize->height * 0.01;
     float page_size[2];
-    static float old_page_size[2] = { 0, 0 };
+    float old_page_size[2];
     gs_state *pgs = pcs->pgs;
     gs_matrix mat;
     bool changed_page_size;
@@ -326,12 +326,8 @@ new_page_size(pcl_state_t * pcs,
     page_size[0] = width_pts;
     page_size[1] = height_pts;
 
-    old_page_size[0] =
-        (float)(pcs->xfm_state.paper_size ? pcs->xfm_state.paper_size->
-                width : 0);
-    old_page_size[1] =
-        (float)(pcs->xfm_state.paper_size ? pcs->xfm_state.paper_size->
-                height : 0);
+    old_page_size[0] = gs_currentdevice(pcs->pgs)->MediaSize[0];
+    old_page_size[1] = gs_currentdevice(pcs->pgs)->MediaSize[1];
 
     put_param1_float_array(pcs, "PageSize", page_size);
 
@@ -362,9 +358,8 @@ new_page_size(pcl_state_t * pcs,
     reset_margins(pcs, for_passthrough);
 
     /* check if update_xfm_state changed the page size */
-    changed_page_size = !(old_page_size[0] == pcs->xfm_state.paper_size->width
-                          && old_page_size[1] ==
-                          pcs->xfm_state.paper_size->height);
+    changed_page_size = !((int)old_page_size[0] == pcs->xfm_state.paper_size->width/100 && 
+                          (int)old_page_size[1] == pcs->xfm_state.paper_size->height/100);
 
     /*
      * make sure underlining is disabled (homing the cursor may cause
@@ -1180,7 +1175,9 @@ pcl_get_default_paper(pcl_state_t * pcs)
                     PAPER_SIZES[i].psize.width = atol(pwidth) * 10L;
                     PAPER_SIZES[i].psize.height = atol(plength) * 10L;
                 }
-                /* just a guess, values copied from letter entry in table PAPER_SIZES */
+                /* just a guess, values copied from letter entry in
+                   table PAPER_SIZES. NB offsets should be 0 for
+                   RTL. */
                 PAPER_SIZES[i].psize.offset_portrait = 75 * 24L;
                 PAPER_SIZES[i].psize.offset_landscape = 60 * 24L;
                 return &(PAPER_SIZES[i].psize);
