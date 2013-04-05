@@ -172,9 +172,8 @@ pxPassthrough_init(px_state_t * pxs)
     pcl_do_resets(global_pcs, pcl_reset_initial);
     pcl_do_resets(global_pcs, pcl_reset_permanent);
 
-    /* mark the page as blank and install xl's page device in
-       pcl's state */
-    global_pcs->page_marked = 0;
+    /* initialize pcl and install xl's page device in pcl's state */
+    pcl_init_state(global_pcs, pxs->memory);
     code = gs_setdevice_no_erase(global_pcs->pgs, gs_currentdevice(pxs->pgs));
     if (code < 0)
         return code;
