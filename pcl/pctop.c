@@ -332,9 +332,13 @@ pcl_get_personality(pl_interp_instance_t * instance, gx_device * device)
         return pcl5c;
     else if (!strcmp(instance->pcl_personality, "PCL5E"))
         return pcl5e;
+    /* 
+     * match RTL or any string containing "GL" we see many variants in
+     * test files: HPGL/2, HPGL2 etc.
+     */
     else if (!strcmp(instance->pcl_personality, "RTL") ||
-             !strcmp(pjl_proc_get_envvar(pcli->pcs.pjls, "language"),
-                     "HP-GL/2"))
+             strstr(pjl_proc_get_envvar(pcli->pcs.pjls, "language"),
+                    "GL"))
         return rtl;
     else if (device->color_info.depth == 1)
         return pcl5e;
