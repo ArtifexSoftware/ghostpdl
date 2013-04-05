@@ -489,7 +489,9 @@ pxSetFont(px_args_t * par, px_state_t * pxs)
 
     if (!par->pv[3]) {
         pfnv = par->pv[0];
-        symbol_set = par->pv[2]->value.i;
+        /* force "find_font" to fail if the symbol set is not
+           specified */
+        symbol_set = (par->pv[2] ? par->pv[2]->value.i : (uint)-1);
         code = px_find_font(pfnv, symbol_set, &pxfont, pxs);
         if (code < 0) {
             switch (code) {
