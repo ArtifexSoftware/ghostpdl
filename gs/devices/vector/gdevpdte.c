@@ -1079,6 +1079,25 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
                 break;
             return code;
         }
+        /* TrueType design grid is 2048x2048 against the nominal PS/PDF grid of
+         * 1000x1000. This can lead to rounding errors when converting to text space
+         * and comparing against any entries in /W or /Widths arrays. We fix the
+         * TrueType widths to the nearest integer here to avoid this.
+         * See Bug #693825
+         */
+        if (FontType == ft_CID_TrueType || FontType == ft_TrueType) {
+            cw.Width.w = floor(cw.Width.w + 0.5);
+            cw.Width.xy.x = floor(cw.Width.xy.x + 0.5);
+            cw.Width.xy.y = floor(cw.Width.xy.y + 0.5);
+            cw.Width.v.x = floor(cw.Width.v.x + 0.5);
+            cw.Width.v.y = floor(cw.Width.v.y + 0.5);
+            cw.real_width.w = floor(cw.real_width.w + 0.5);
+            cw.real_width.xy.x = floor(cw.real_width.xy.x + 0.5);
+            cw.real_width.xy.y = floor(cw.real_width.xy.y + 0.5);
+            cw.real_width.v.x = floor(cw.real_width.v.x + 0.5);
+            cw.real_width.v.y = floor(cw.real_width.v.y + 0.5);
+        }
+
         gs_text_enum_copy_dynamic((gs_text_enum_t *)pte, &pte1, true);
         if (composite || !use_cached_v) {
             if (cw.replaced_v) {
