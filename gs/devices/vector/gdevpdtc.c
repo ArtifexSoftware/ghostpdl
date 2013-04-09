@@ -710,7 +710,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
                 /* Make sure we use the descendant font, not the original type 0 ! */
                 pte->orig_font = subfont;
                 code = process_text_modify_width((pdf_text_enum_t *)pte,
-                    (gs_font *)subfont, &text_state, &str, &wxy, type1_glyphs, false);
+                    (gs_font *)subfont, &text_state, &str, &wxy, type1_glyphs, false, scan.index - index);
                 if (code < 0)
                     return(code);
                 if(font_change) {
@@ -723,7 +723,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
                 pte->orig_font = f;
             } else {
                 code = process_text_modify_width((pdf_text_enum_t *)pte, (gs_font *)font,
-                    &text_state, &str, &wxy, NULL, true);
+                    &text_state, &str, &wxy, NULL, true, scan.index - index);
             }
             if (pte->text.operation & TEXT_REPLACE_WIDTHS) {
                 if (pte->text.x_widths != NULL)

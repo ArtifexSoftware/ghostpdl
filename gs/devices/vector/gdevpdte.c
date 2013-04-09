@@ -637,7 +637,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
         penum->xy_index = 0;
         code = process_text_modify_width(penum, (gs_font *)font, ppts,
                                          (gs_const_string *)pstr,
-                                         &width_pt, (const gs_glyph *)gdata_p, false);
+                                         &width_pt, (const gs_glyph *)gdata_p, false, 1);
         if (penum->text.operation & TEXT_REPLACE_WIDTHS) {
             if (penum->text.x_widths != NULL)
                 penum->text.x_widths -= xy_index * xy_index_step;
@@ -955,7 +955,7 @@ int
 process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
                           pdf_text_process_state_t *ppts,
                           const gs_const_string *pstr,
-                          gs_point *pdpt, const gs_glyph *gdata, bool composite)
+                          gs_point *pdpt, const gs_glyph *gdata, bool composite, int decoded_bytes)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
     int space_char =
@@ -1135,7 +1135,14 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
                                   &ppts->values.matrix, &tpt);
             did.x += tpt.x;
             did.y += tpt.y;
-            if (chr == space_char) {
+            /* If pte->single_byte_space == 0 then we had a widthshow or awidthshow from
+             * PostScript, so we apply the PostScript rules. Otherwise it was from PDF
+             * in which case if the number of bytes in the character code was 1 we apply
+             * word spacing. If it was PDF and we had a multi-byte decode, do not apply
+             * word spacing (how ugly!). Note tht its important this is applied the same to
+             * both the 'did' and 'wanted' calculations (see below).
+             */
+            if (chr == space_char && (!pte->single_byte_space || decoded_bytes == 1)) {
                 gs_distance_transform((font->WMode ? 0 : ppts->values.word_spacing),
                                       (font->WMode ? ppts->values.word_spacing : 0),
                                       &ppts->values.matrix, &tpt);
@@ -1168,7 +1175,10 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
                 wanted.x += tpt.x;
                 wanted.y += tpt.y;
             }
-            if (chr == space_char && pte->text.operation & TEXT_ADD_TO_SPACE_WIDTH) {
+            /* See comment above for 'did' calculations, the application of word spacing must
+             * be the same for did and wanted.
+             */
+            if (chr == space_char && (!pte->single_byte_space || decoded_bytes == 1)) {
                 gs_distance_transform(pte->text.delta_space.x,
                                       pte->text.delta_space.y,
                                       &ctm_only(pte->pis), &tpt);

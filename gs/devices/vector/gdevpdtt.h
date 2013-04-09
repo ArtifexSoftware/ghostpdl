@@ -302,7 +302,7 @@ int pdf_process_string_aux(pdf_text_enum_t *penum, gs_string *pstr,
 int process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
                           pdf_text_process_state_t *ppts,
                           const gs_const_string *pstr,
-                          gs_point *pdpt, const gs_glyph *gdata, bool composite);
+                          gs_point *pdpt, const gs_glyph *gdata, bool composite, int decoded_bytes);
 
 /*
  * Add char code pair to ToUnicode CMap,
