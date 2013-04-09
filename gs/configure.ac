@@ -1152,6 +1152,7 @@ if test x$with_luratech != xno; then
     else
       JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DLINUX"
     fi
+    JBIG2FILEDEVS='$(DD)gdevjbig2.dev'
     JBIG2DEVS='$(PSD)jbig2.dev'
   else
     AC_MSG_RESULT([no])
@@ -1542,7 +1543,7 @@ while test -n "$drivers"; do
         FILES)
                 F_DEVS0="$F_DEVS0 $BMP_DEVS $FAX_DEVS $JPEG_DEVS $TIFFDEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $MISC_FDEVS $SVGDEV $XPSDEV"
                 CUPS_DEVS0="$CUPSDEV"
-                JBIG2_DEVS="$JBIG2DEVS"
+                JBIG2_DEVS="$JBIG2FILEDEVS"
                 PNG_DEVS0="$PNGDEVS"
                 ;;
         APPLE)
