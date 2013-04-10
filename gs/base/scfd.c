@@ -51,15 +51,16 @@ s_CFD_init(stream_state * st)
     ss->lprev = 0;
     if (ss->lbuf == 0)
         return ERRC;		/****** WRONG ******/
-    memset(ss->lbuf, white, raster + 4);  /* + 4 for Valgrind */
+    memset(ss->lbuf, white, raster);
+    memset(ss->lbuf + raster, 0xaa, 4);  /* for Valgrind */
     if (ss->K != 0) {
         ss->lprev = gs_alloc_bytes(st->memory, raster + 4, "CFD lprev");
         if (ss->lprev == 0)
             return ERRC;	/****** WRONG ******/
         /* Clear the initial reference line for 2-D encoding. */
-        memset(ss->lprev, white, raster + 4); /* + 4 for Valgrind */
+        memset(ss->lprev, white, raster);
         /* Ensure that the scan of the reference line will stop. */
-        ss->lprev[raster] = 0xa0;
+        memset(ss->lprev + raster, 0xaa, 4);
     }
     ss->k_left = min(ss->K, 0);
     ss->run_color = 0;
