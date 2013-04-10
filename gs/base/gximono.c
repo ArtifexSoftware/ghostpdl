@@ -394,26 +394,39 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
                 dda_step_add(dxx4, next.x.step);
                 for (;;) {      /* Skip a run of zeros. */
                     while (!psrc[0])
-                        if (!psrc[1]) {
-                            if (!psrc[2]) {
-                                if (!psrc[3]) {
-                                    psrc += 4;
-                                    dda_state_next(next.x.state, dxx4);
-                                    if (psrc >= endp)
-                                        break;
-                                    continue;
+                        if (psrc + 4 <= endp) {
+                            /* We can use fast skipping */
+                            if (!psrc[1]) {
+                                if (!psrc[2]) {
+                                    if (!psrc[3]) {
+                                        psrc += 4;
+                                        dda_state_next(next.x.state, dxx4);
+                                        if (psrc >= endp)
+                                            break;
+                                        continue;
+                                    }
+                                    psrc += 3;
+                                    dda_state_next(next.x.state, dxx3);
+                                    break;
                                 }
-                                psrc += 3;
-                                dda_state_next(next.x.state, dxx3);
+                                psrc += 2;
+                                dda_state_next(next.x.state, dxx2);
+                                break;
+                            } else {
+                                ++psrc;
+                                dda_next(next.x);
                                 break;
                             }
-                            psrc += 2;
-                            dda_state_next(next.x.state, dxx2);
-                            break;
                         } else {
-                            ++psrc;
-                            dda_next(next.x);
-                            break;
+                            /* We're too close to the end - skip 1 at a time */
+                            while (!psrc[0]) {
+                                ++psrc;
+                                dda_next(next.x);
+                                if (psrc >= endp)
+                                    break;
+                            }
+                            if (psrc >= endp)
+                                break;
                         }
                     xrun = xl;
                     if (psrc >= stop)
