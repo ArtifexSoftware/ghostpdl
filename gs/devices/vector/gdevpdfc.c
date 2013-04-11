@@ -1029,7 +1029,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
                    ) {
             DO_NOTHING;
         } else {
-            if (!pdev->UseOldColor) {
+            if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
             code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
             if (ppranges)
                 *ppranges = &pcie->RangeA;
@@ -1091,7 +1091,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
             code = pdf_put_lab_color_space(pca, pcd, pcie->RangeABC.ranges);
             goto cal;
         } else {
-            if (!pdev->UseOldColor) {
+            if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
             code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
             if (ppranges)
                 *ppranges = pcie->RangeABC.ranges;
@@ -1133,7 +1133,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     goto cal;
 
     case gs_color_space_index_CIEDEF:
-            if (!pdev->UseOldColor) {
+            if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
             code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
             if (ppranges)
                 *ppranges = pcs->params.def->RangeDEF.ranges;
@@ -1147,7 +1147,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
         break;
 
     case gs_color_space_index_CIEDEFG:
-            if (!pdev->UseOldColor) {
+            if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
             code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
             if (ppranges)
                 *ppranges = pcs->params.defg->RangeDEFG.ranges;
