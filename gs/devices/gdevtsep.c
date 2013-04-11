@@ -2330,11 +2330,6 @@ cleanup:
             code = code1;
         }
     }
-
-    /* After page is printed free up the separation list since we may have
-       different spots on the next page */
-    free_separation_names(tfdev->memory, &(tfdev->devn_params.separations));
-    tfdev->devn_params.num_separation_order_names = 0;
     return code;
 }
 

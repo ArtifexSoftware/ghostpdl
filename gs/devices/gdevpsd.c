@@ -1446,8 +1446,5 @@ psd_print_page(gx_device_printer *pdev, FILE *file)
     psd_setup(&xc, psd_dev);
     psd_write_header(&xc, psd_dev);
     psd_write_image_data(&xc, pdev);
-    /* Free up the list of spot names as they were only relevent to that page */
-    free_separation_names(pdev->memory, &(psd_dev->devn_params.separations));
-    psd_dev->devn_params.num_separation_order_names = 0;
     return 0;
 }

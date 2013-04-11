@@ -40,6 +40,174 @@
 static int clist_start_render_thread(gx_device *dev, int thread_index, int band);
 static void clist_render_thread(void *param);
 
+/* clone a device and set params and its chunk memory                   */
+/* The chunk_base_mem MUST be thread safe                               */
+/* Return NULL on error, or the cloned device with the dev->memory set  */
+/* to the chunk allocator.                                              */
+/* Exported for use by background printing.                             */
+gx_device *
+setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, bool bg_print)
+{
+    int i, code;
+    char fmode[4];
+    gs_memory_t *thread_mem;
+    gx_device_clist *cldev = (gx_device_clist *)dev;
+    gx_device_printer *pdev = (gx_device_printer *)dev;
+    gx_device_clist_common *cdev = (gx_device_clist_common *)cldev;
+    gx_device *ndev;
+    gx_device_clist *ncldev;
+    gx_device_clist_common *ncdev;
+    gx_device_printer *npdev;
+    gx_device *protodev;
+    gs_c_param_list paramlist;
+    gs_devn_params *pclist_devn_params;
+
+    /* Every thread will have a 'chunk allocator' to reduce the interaction
+     * with the 'base' allocator which has 'mutex' (locking) protection.
+     * This improves performance of the threads.
+     */
+    if ((code = gs_memory_chunk_wrap(&(thread_mem), chunk_base_mem )) < 0) {
+        emprintf1(dev->memory, "chunk_wrap returned error code: %d\n", code);
+        return NULL;
+    }
+    /* Find the prototype for this device (needed so we can copy from it) */
+    for (i=0; (protodev = (gx_device *)gs_getdevice(i)) != NULL; i++)
+        if (strcmp(protodev->dname, dev->dname) == 0)
+            break;
+
+    /* Clone the device from the prototype device */
+    if (protodev == NULL ||
+        (code = gs_copydevice((gx_device **) &ndev, protodev, thread_mem)) < 0) {
+        gs_memory_chunk_release(thread_mem);
+        return NULL;
+    }
+    ncldev = (gx_device_clist *)ndev;
+    ncdev = (gx_device_clist_common *)ndev;
+    npdev = (gx_device_printer *)ndev;
+    gx_device_fill_in_procs(ndev);
+    ((gx_device_printer *)ncdev)->buffer_memory =
+        ncdev->memory =
+            ncdev->bandlist_memory =
+               thread_mem;
+    ndev->PageCount = dev->PageCount;       /* copy to prevent mismatch error */
+    npdev->file = pdev->file;               /* For background printing when doing N copies with %d */
+    strcpy((npdev->fname), (pdev->fname));
+    ndev->color_info = dev->color_info;     /* copy before putdeviceparams */
+#if CMM_THREAD_SAFE
+        ndev->icc_struct = dev->icc_struct;  /* Set before put params */
+        rc_increment(ndev->icc_struct);
+#endif
+    /* get the current device parameters to put into the cloned device */
+    gs_c_param_list_write(&paramlist, dev->memory);
+    if ((code = gs_getdeviceparams(dev, (gs_param_list *)&paramlist)) < 0) {
+        emprintf1(dev->memory,
+                  "Error getting device params, code=%d. Rendering threads not started.\n",
+                  code);
+        goto out_cleanup;
+    }
+    gs_c_param_list_read(&paramlist);
+    if ((code = gs_putdeviceparams(ndev, (gs_param_list *)&paramlist)) < 0)
+        goto out_cleanup;
+    gs_c_param_list_release(&paramlist);
+
+    /* In the case of a separation device, we need to make sure we get the
+       devn params copied over */
+    pclist_devn_params = dev_proc(dev, ret_devn_params)(dev);
+    if (pclist_devn_params != NULL) {
+        code = devn_copy_params(dev, ndev);
+        if (code < 0) {
+#ifdef DEBUG /* suppress a warning on a release build */
+            gs_note_error(gs_error_VMerror);
+#endif
+            goto out_cleanup;
+        }
+    }
+    /* Also make sure supports_devn is set correctly */
+    ndev->icc_struct->supports_devn = cdev->icc_struct->supports_devn;
+    ncdev->page_uses_transparency = cdev->page_uses_transparency;
+    if_debug3m(gs_debug_flag_icc, cdev->memory,
+               "[icc] MT clist device = 0x%p profile = 0x%p handle = 0x%p\n",
+               ncdev,
+               ncdev->icc_struct->device_profile[0],
+               ncdev->icc_struct->device_profile[0]->profile_handle);
+    /* If the device is_planar, then set the flag in the new_device and the procs */
+    if ((ncdev->is_planar = cdev->is_planar))
+        gdev_prn_set_procs_planar(ndev);
+
+    /* gdev_prn_allocate_memory sets the clist for writing, creating new files.
+     * We need  to unlink those files and open the main thread's files, then
+     * reset the clist state for reading/rendering
+     */
+    if ((code = gdev_prn_allocate_memory(ndev, NULL, ndev->width, ndev->height)) < 0)
+        goto out_cleanup;
+
+    /* close and unlink the temp files just created */
+    ncdev->page_info.io_procs->fclose(ncdev->page_info.cfile, ncdev->page_info.cfname, true);
+    ncdev->page_info.io_procs->fclose(ncdev->page_info.bfile, ncdev->page_info.bfname, true);
+    ncdev->page_info.cfile = ncdev->page_info.bfile = NULL;
+
+    /* open the main thread's files for this thread */
+    strcpy(fmode, "r");                 /* read access for threads */
+    strncat(fmode, gp_fmode_binary_suffix, 1);
+    if ((code=cdev->page_info.io_procs->fopen(cdev->page_info.cfname, fmode, &ncdev->page_info.cfile,
+                        thread_mem, thread_mem, true)) < 0 ||
+         (code=cdev->page_info.io_procs->fopen(cdev->page_info.bfname, fmode, &ncdev->page_info.bfile,
+                        thread_mem, thread_mem, false)) < 0)
+        goto out_cleanup;
+
+    strcpy((ncdev->page_info.cfname), (cdev->page_info.cfname));
+    strcpy((ncdev->page_info.bfname), (cdev->page_info.bfname));
+    clist_render_init(ncldev);      /* Initialize clist device for reading */
+    ncdev->page_info.bfile_end_pos = cdev->page_info.bfile_end_pos;
+
+    /* The threads are maintained until clist_finish_page.  At which
+       point, the threads are torn down, the master clist reader device
+       is changed to writer, and the icc_table and the icc_cache_cl freed */
+#if CMM_THREAD_SAFE
+    /* safe to share the link cache */
+    ncdev->icc_cache_cl = cdev->icc_cache_cl;
+    rc_increment(cdev->icc_cache_cl, "setup_render_thread");
+#else
+    /* each thread needs its own link cache */
+    if ((ncdev->icc_cache_cl = gsicc_cache_new(thread_mem)) == NULL)
+        goto out_cleanup;
+#endif
+    if (bg_print && cdev->icc_table != NULL) {
+        /* This is a background printing thread, so it cannot share the icc_table  */
+        /* since this probably was created with a GC'ed allocator and the bg_print */
+        /* thread can't deal with the relocation. Free the cdev->icc_table and get */
+        /* a new one from the clist.                                               */
+        clist_icc_freetable(cdev->icc_table, cdev->memory);
+        cdev->icc_table = NULL;
+        if ((code = clist_read_icctable((gx_device_clist_reader *)ncdev)) < 0)
+            goto out_cleanup;
+    } else {
+    /* Use the same profile table in each thread */
+        ncdev->icc_table = cdev->icc_table;		/* OK for multiple rendering threads */
+    }
+    /* Needed for case when the target has cielab profile and pdf14 device
+       has a RGB profile stored in the profile list of the clist */
+    ncdev->trans_dev_icc_hash = cdev->trans_dev_icc_hash;
+
+    /* success */
+    return ndev;
+
+out_cleanup:
+    /* Close the file handles, but don't delete (unlink) the files */
+    if (ncdev->page_info.bfile != NULL)
+        ncdev->page_info.io_procs->fclose(ncdev->page_info.bfile, ncdev->page_info.bfname, false);
+    if (ncdev->page_info.cfile != NULL)
+        ncdev->page_info.io_procs->fclose(ncdev->page_info.cfile, ncdev->page_info.cfname, false);
+    ncdev->do_not_open_or_close_bandfiles = true; /* we already closed the files */
+
+    if (ndev != NULL) {
+        gdev_prn_free_memory(ndev);
+        gs_free_object(thread_mem, ndev, "setup_device_and_mem_for_thread");
+    }
+    gs_memory_chunk_release(thread_mem);
+    return NULL;
+}
+
 /* Set up and start the render threads */
 static int
 clist_setup_render_threads(gx_device *dev, int y)
@@ -51,12 +219,8 @@ clist_setup_render_threads(gx_device *dev, int y)
     gs_memory_t *mem = cdev->bandlist_memory;
     gs_memory_t *chunk_base_mem = mem->thread_safe_memory;
     gs_memory_status_t mem_status;
-    gx_device *protodev;
-    gs_c_param_list paramlist;
     int i, code, band;
     int band_count = cdev->nbands;
-    char fmode[4];
-    gs_devn_params *pclist_devn_params;
     crdev->num_render_threads = pdev->num_render_threads_requested;
 
     if(gs_debug[':'] != 0)
@@ -83,35 +247,6 @@ clist_setup_render_threads(gx_device *dev, int y)
     crdev->thread_lookahead_direction = (y < (cdev->height - 1)) ? 1 : -1;
     band = y / crdev->page_info.band_params.BandHeight;
 
-    /* Close the files so we can open them in multiple threads */
-    if ((code = cdev->page_info.io_procs->fclose(cdev->page_cfile, cdev->page_cfname, false)) < 0 ||
-        (code = cdev->page_info.io_procs->fclose(cdev->page_bfile, cdev->page_bfname, false)) < 0) {
-        gs_free_object(mem, crdev->render_threads, "clist_setup_render_threads");
-        crdev->render_threads = NULL;
-        emprintf(mem, "Closing clist files prevented threads from starting.\n");
-        return_error(gs_error_unknownerror); /* shouldn't happen */
-    }
-    cdev->page_cfile = cdev->page_bfile = NULL;
-    strcpy(fmode, "r");                 /* read access for threads */
-    strncat(fmode, gp_fmode_binary_suffix, 1);
-    /* Find the prototype for this device (needed so we can copy from it) */
-    for (i=0; (protodev = (gx_device *)gs_getdevice(i)) != NULL; i++)
-        if (strcmp(protodev->dname, dev->dname) == 0)
-            break;
-    if (protodev == NULL) {
-        emprintf(mem,
-                 "Could not find prototype device. Rendering threads not started.\n");
-        return gs_error_rangecheck;
-    }
-
-    gs_c_param_list_write(&paramlist, mem);
-    if ((code = gs_getdeviceparams(dev, (gs_param_list *)&paramlist)) < 0) {
-        emprintf1(mem,
-                  "Error getting device params, code=%d. Rendering threads not started.\n",
-                  code);
-        return code;
-    }
-
     /* If the 'mem' is not thread safe, we need to wrap it in a locking memory */
     gs_memory_status(chunk_base_mem, &mem_status);
     if (mem_status.is_thread_safe == false) {
@@ -122,87 +257,18 @@ clist_setup_render_threads(gx_device *dev, int y)
     for (i=0; (i < crdev->num_render_threads) && (band >= 0) && (band < band_count);
             i++, band += crdev->thread_lookahead_direction) {
         gx_device *ndev;
-        gx_device_clist *ncldev;
-        gx_device_clist_common *ncdev;
         clist_render_thread_control_t *thread = &(crdev->render_threads[i]);
 
-        /* Every thread will have a 'chunk allocator' to reduce the interaction
-         * with the 'base' allocator which has 'mutex' (locking) protection.
-         * This improves performance of the threads.
-         */
-        if ((code = gs_memory_chunk_wrap(&(thread->memory), chunk_base_mem )) < 0) {
-            emprintf1(mem, "chunk_wrap returned error code: %d\n", code);
+        ndev = setup_device_and_mem_for_thread(chunk_base_mem, dev, false);
+        if (ndev == NULL) {
+            code = gs_error_VMerror;	/* set code to an error for cleanup after the loop */
             break;
         }
 
-        thread->band = -1;              /* a value that won't match any valid band */
-        if ((code = gs_copydevice((gx_device **) &ndev, protodev, thread->memory)) < 0) {
-            code = 0;           /* even though we failed, no cleanup needed */
-            break;
-        }
-        ncldev = (gx_device_clist *)ndev;
-        ncdev = (gx_device_clist_common *)ndev;
-        gx_device_fill_in_procs(ndev);
-        ((gx_device_printer *)ncdev)->buffer_memory = ncdev->memory =
-                ncdev->bandlist_memory = thread->memory;
-        gs_c_param_list_read(&paramlist);
-        ndev->PageCount = dev->PageCount;       /* copy to prevent mismatch error */
-        ndev->color_info = cdev->color_info;	/* copy before putdeviceparams */
-#if CMM_THREAD_SAFE
-        ndev->icc_struct = dev->icc_struct;  /* Set before put params */
-        rc_increment(ndev->icc_struct);
-#endif
-        if ((code = gs_putdeviceparams(ndev, (gs_param_list *)&paramlist)) < 0)
-            break;
-        /* In the case of a separation device, we need to make sure we get the
-           devn params copied over */
-        pclist_devn_params = dev_proc(dev, ret_devn_params)(dev);
-        if (pclist_devn_params != NULL) {
-            code = devn_copy_params(dev, (gx_device*) ncdev);
-            if (code < 0) return_error(gs_error_VMerror);
-        }
-        /* Also make sure supports_devn is set correctly */
-        ndev->icc_struct->supports_devn = cdev->icc_struct->supports_devn;
-        ncdev->page_uses_transparency = cdev->page_uses_transparency;
-        if_debug3m(gs_debug_flag_icc, cdev->memory,
-                   "[icc] MT clist device = 0x%x profile = 0x%x handle = 0x%x\n", 
-                   ncdev,
-                   ncdev->icc_struct->device_profile[0],
-                   ncdev->icc_struct->device_profile[0]->profile_handle);
-        /* If the device is_planar, then set the flag in the new_device and the procs */
-        if ((ncdev->is_planar = cdev->is_planar))
-            gdev_prn_set_procs_planar(ndev);
-        /* gdev_prn_allocate_memory sets the clist for writing, creating new files.
-         * We need  to unlink those files and open the main thread's files, then
-         * reset the clist state for reading/rendering
-         */
-        if ((code = gdev_prn_allocate_memory(ndev, NULL, ndev->width, ndev->height)) < 0)
-            break;
-        /* Needed for case when the target has cielab profile and pdf14 device
-           has a RGB profile stored in the profile list of the clist */
-        ncdev->trans_dev_icc_hash = cdev->trans_dev_icc_hash;
         thread->cdev = ndev;
-        /* close and unlink the temp files just created */
-        cdev->page_info.io_procs->fclose(ncdev->page_cfile, ncdev->page_cfname, true);
-        cdev->page_info.io_procs->fclose(ncdev->page_bfile, ncdev->page_bfname, true);
-        /* open the main thread's files for this thread */
-        if ((code=cdev->page_info.io_procs->fopen(cdev->page_cfname, fmode, &ncdev->page_cfile,
-                            thread->memory, thread->memory, true)) < 0 ||
-             (code=cdev->page_info.io_procs->fopen(cdev->page_bfname, fmode, &ncdev->page_bfile,
-                            thread->memory, thread->memory, false)) < 0)
-            break;
-        clist_render_init(ncldev);      /* Initialize clist device for reading */
-        ncdev->page_bfile_end_pos = cdev->page_bfile_end_pos;
-        /* Use the same link cache in each thread and the same profile table.
-           The threads are maintained until clist_finish_page.  At which
-           point, the threads are torn down and the master clist reader device
-           is destroyed along with the icc_table and the icc_cache_cl */
-#if CMM_THREAD_SAFE
-        ncdev->icc_cache_cl = cdev->icc_cache_cl;
-#else
-        ncdev->icc_cache_cl = gsicc_cache_new(thread->memory);
-#endif
-        ncdev->icc_table = cdev->icc_table;
+        thread->memory = ndev->memory;
+        thread->band = -1;              /* a value that won't match any valid band */
+
         /* create the buf device for this thread, and allocate the semaphores */
         if ((code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
                                 &(thread->bdev), ndev,
@@ -218,10 +284,9 @@ clist_setup_render_threads(gx_device *dev, int y)
         if ((code = clist_start_render_thread(dev, i, band)) < 0)
             break;
     }
-    gs_c_param_list_release(&paramlist);
     /* If the code < 0, the last thread creation failed -- clean it up */
     if (code < 0) {
-                band -= crdev->thread_lookahead_direction;	/* update for 'next_band' usage */
+        band -= crdev->thread_lookahead_direction;	/* update for 'next_band' usage */
         /* the following relies on 'free' ignoring NULL pointers */
         gx_semaphore_free(crdev->render_threads[i].sema_group);
         gx_semaphore_free(crdev->render_threads[i].sema_this);
@@ -231,8 +296,8 @@ clist_setup_render_threads(gx_device *dev, int y)
             gx_device_clist_common *thread_cdev = (gx_device_clist_common *)crdev->render_threads[i].cdev;
 
             /* Close the file handles, but don't delete (unlink) the files */
-            thread_cdev->page_info.io_procs->fclose(thread_cdev->page_bfile, thread_cdev->page_bfname, false);
-            thread_cdev->page_info.io_procs->fclose(thread_cdev->page_cfile, thread_cdev->page_cfname, false);
+            thread_cdev->page_info.io_procs->fclose(thread_cdev->page_info.bfile, thread_cdev->page_info.bfname, false);
+            thread_cdev->page_info.io_procs->fclose(thread_cdev->page_info.cfile, thread_cdev->page_info.cfname, false);
             thread_cdev->do_not_open_or_close_bandfiles = true; /* we already closed the files */
 
             gdev_prn_free_memory((gx_device *)thread_cdev);
@@ -259,17 +324,17 @@ clist_setup_render_threads(gx_device *dev, int y)
         gs_free_object(mem, crdev->render_threads, "clist_setup_render_threads");
         crdev->render_threads = NULL;
         /* restore the file pointers */
-        if (cdev->page_cfile == NULL) {
+        if (cdev->page_info.cfile == NULL) {
             char fmode[4];
 
             strcpy(fmode, "a+");        /* file already exists and we want to re-use it */
             strncat(fmode, gp_fmode_binary_suffix, 1);
-            cdev->page_info.io_procs->fopen(cdev->page_cfname, fmode, &cdev->page_cfile,
+            cdev->page_info.io_procs->fopen(cdev->page_info.cfname, fmode, &cdev->page_info.cfile,
                                 mem, cdev->bandlist_memory, true);
-            cdev->page_info.io_procs->fseek(cdev->page_cfile, 0, SEEK_SET, cdev->page_cfname);
-            cdev->page_info.io_procs->fopen(cdev->page_bfname, fmode, &cdev->page_bfile,
+            cdev->page_info.io_procs->fseek(cdev->page_info.cfile, 0, SEEK_SET, cdev->page_info.cfname);
+            cdev->page_info.io_procs->fopen(cdev->page_info.bfname, fmode, &cdev->page_info.bfile,
                                 mem, cdev->bandlist_memory, false);
-            cdev->page_info.io_procs->fseek(cdev->page_bfile, 0, SEEK_SET, cdev->page_bfname);
+            cdev->page_info.io_procs->fseek(cdev->page_info.bfile, 0, SEEK_SET, cdev->page_info.bfname);
         }
         emprintf1(mem, "Rendering threads not started, code=%d.\n", code);
         return_error(code);
@@ -284,6 +349,54 @@ clist_setup_render_threads(gx_device *dev, int y)
     return 0;
 }
 
+/* This is also exported for teardown after background printing */
+void
+teardown_device_and_mem_for_thread(gx_device *dev, gp_thread_id thread_id, bool bg_print)
+{
+    gx_device_clist_common *thread_cdev = (gx_device_clist_common *)dev;
+    gx_device_clist_reader *thread_crdev = (gx_device_clist_reader *)dev;
+    gs_memory_t *thread_memory = dev->memory;
+
+    /* First finish the thread */
+    gp_thread_finish(thread_id);
+
+    if (bg_print) {
+        /* we are cleaning up a background printing thread, so we clean up similarly to */
+        /* what is done  by clist_finish_page, but without re-opening the clist files.  */
+        gs_free_object(thread_cdev->memory, thread_crdev->color_usage_array, "clist_color_usage_array");
+        thread_crdev->color_usage_array = NULL;
+        clist_teardown_render_threads(dev);	/* we may have used multiple threads */
+        /* free the thread's icc_table since this was not done by clist_finish_page */
+        clist_icc_freetable(thread_crdev->icc_table, thread_memory);
+        rc_decrement(thread_crdev->icc_cache_cl, "teardown_render_thread");
+     }
+     /*
+      * Free the BufferSpace, close the band files, optionally unlinking them.
+      * We unlink the files if this call is cleaning up from bg printing.
+     * Note that the BufferSpace is freed using 'ppdev->buf' so the 'data'
+     * pointer doesn't need to be the one that the thread started with
+     */
+    /* If this thread was being used for background printing and NumRenderingThreads > 0 */
+    /* the clist_setup_render_threads may have already closed these files                */
+    if (thread_cdev->page_info.cfile != NULL)
+        thread_cdev->page_info.io_procs->fclose(thread_cdev->page_info.bfile, thread_cdev->page_info.bfname, bg_print);
+    if (thread_cdev->page_info.bfile != NULL)
+        thread_cdev->page_info.io_procs->fclose(thread_cdev->page_info.cfile, thread_cdev->page_info.cfname, bg_print);
+    thread_cdev->do_not_open_or_close_bandfiles = true; /* we already closed the files */
+
+    gdev_prn_free_memory((gx_device *)thread_cdev);
+    /* Free the device copy this thread used.  Note that the
+       deviceN stuff if was allocated and copied earlier for the device
+       will be freed with this call and the icc_struct ref count will be decremented. */
+    gs_free_object(thread_memory, thread_cdev, "clist_teardown_render_threads");
+#ifdef DEBUG
+    dmprintf(thread_memory, "rendering thread ending memory state...\n");
+    gs_memory_chunk_dump_memory(thread_memory);
+    dmprintf(thread_memory, "                                    memory dump done.\n");
+#endif
+    gs_memory_chunk_release(thread_memory);
+}
+
 void
 clist_teardown_render_threads(gx_device *dev)
 {
@@ -294,66 +407,47 @@ clist_teardown_render_threads(gx_device *dev)
     int i;
 
     if (crdev->render_threads != NULL) {
-
         chunk_base_mem = gs_memory_chunk_target(crdev->render_threads[0].memory);
         /* Wait for each thread to finish then free its memory */
         for (i = (crdev->num_render_threads - 1); i >= 0; i--) {
             clist_render_thread_control_t *thread = &(crdev->render_threads[i]);
             gx_device_clist_common *thread_cdev = (gx_device_clist_common *)thread->cdev;
 
-            if (thread->status == RENDER_THREAD_BUSY)
+            if (thread->status == THREAD_BUSY)
                 gx_semaphore_wait(thread->sema_this);
-            gp_thread_finish(thread->thread);
-            thread->thread = NULL;
             /* Free control semaphores */
             gx_semaphore_free(thread->sema_group);
             gx_semaphore_free(thread->sema_this);
             /* destroy the thread's buffer device */
             thread_cdev->buf_procs.destroy_buf_device(thread->bdev);
-            /*
-             * Free the BufferSpace, close the band files
-             * Note that the BufferSpace is freed using 'ppdev->buf' so the 'data'
-             * pointer doesn't need to be the one that the thread started with
-             */
-            /* Close the file handles, but don't delete (unlink) the files */
-            thread_cdev->page_info.io_procs->fclose(thread_cdev->page_bfile, thread_cdev->page_bfname, false);
-            thread_cdev->page_info.io_procs->fclose(thread_cdev->page_cfile, thread_cdev->page_cfname, false);
-            thread_cdev->do_not_open_or_close_bandfiles = true; /* we already closed the files */
+
             /* before freeing this device's memory, swap with cdev if it was the main_thread_data */
             if (thread_cdev->data == crdev->main_thread_data) {
                 thread_cdev->data = cdev->data;
                 cdev->data = crdev->main_thread_data;
             }
-            gdev_prn_free_memory((gx_device *)thread_cdev);
-            /* Free the device copy this thread used.  Note that the
-               deviceN stuff if was allocated and copied earlier for the device
-               will be freed with this call and the icc_struct ref count will be decremented. */
-            gs_free_object(thread->memory, thread_cdev, "clist_teardown_render_threads");
 #ifdef DEBUG
             if (gs_debug[':'])
-                dmprintf2(mem, "%% Thread %d total usertime=%ld msec\n", i, thread->cputime);
-            dmprintf1(thread->memory, "\nthread: %d ending memory state...\n", i);
-            gs_memory_chunk_dump_memory(thread->memory);
-            dmprintf(thread->memory, "                                    memory dump done.\n");
+                dmprintf2(thread->memory, "%% Thread %d total usertime=%ld msec\n", i, thread->cputime);
+            dmprintf1(thread->memory, "\nThread %d ", i);
 #endif
-
-            gs_memory_chunk_release(thread->memory);
+            teardown_device_and_mem_for_thread((gx_device *)thread_cdev, thread->thread, false);
         }
         gs_free_object(mem, crdev->render_threads, "clist_teardown_render_threads");
         crdev->render_threads = NULL;
 
         /* Now re-open the clist temp files so we can write to them */
-        if (cdev->page_cfile == NULL) {
+        if (cdev->page_info.cfile == NULL) {
             char fmode[4];
 
             strcpy(fmode, "a+");        /* file already exists and we want to re-use it */
             strncat(fmode, gp_fmode_binary_suffix, 1);
-            cdev->page_info.io_procs->fopen(cdev->page_cfname, fmode, &cdev->page_cfile,
+            cdev->page_info.io_procs->fopen(cdev->page_info.cfname, fmode, &cdev->page_info.cfile,
                                 mem, cdev->bandlist_memory, true);
-            cdev->page_info.io_procs->fseek(cdev->page_cfile, 0, SEEK_SET, cdev->page_cfname);
-            cdev->page_info.io_procs->fopen(cdev->page_bfname, fmode, &cdev->page_bfile,
+            cdev->page_info.io_procs->fseek(cdev->page_info.cfile, 0, SEEK_SET, cdev->page_info.cfname);
+            cdev->page_info.io_procs->fopen(cdev->page_info.bfname, fmode, &cdev->page_info.bfile,
                                 mem, cdev->bandlist_memory, false);
-            cdev->page_info.io_procs->fseek(cdev->page_bfile, 0, SEEK_SET, cdev->page_bfname);
+            cdev->page_info.io_procs->fseek(cdev->page_info.bfile, 0, SEEK_SET, cdev->page_info.bfname);
         }
     }
 }
@@ -366,7 +460,7 @@ clist_start_render_thread(gx_device *dev, int thread_index, int band)
     int code;
 
     crdev->render_threads[thread_index].band = band;
-    crdev->render_threads[thread_index].status = RENDER_THREAD_BUSY;
+    crdev->render_threads[thread_index].status = THREAD_BUSY;
 
     /* Finally, fire it up */
     code = gp_thread_start(clist_render_thread,
@@ -415,9 +509,9 @@ clist_render_thread(void *data)
     crdev->ymax = band_end_line;
     crdev->offset_map = NULL;
     if (code < 0)
-        thread->status = code;          /* shouldn't happen */
+        thread->status = THREAD_ERROR;          /* shouldn't happen */
     else
-        thread->status = RENDER_THREAD_DONE;    /* OK */
+        thread->status = THREAD_DONE;    /* OK */
 
 #ifdef DEBUG
     gp_get_usertime(endtime);
@@ -466,7 +560,7 @@ clist_get_band_from_thread(gx_device *dev, int band_needed)
         for (i=0; i < crdev->num_render_threads; i++) {
             clist_render_thread_control_t *thread = &(crdev->render_threads[i]);
 
-            if (thread->status == RENDER_THREAD_BUSY)
+            if (thread->status == THREAD_BUSY)
                 gx_semaphore_wait(thread->sema_this);
         }
         crdev->thread_lookahead_direction *= -1;      /* reverse direction (but may be overruled below) */
@@ -492,14 +586,14 @@ clist_get_band_from_thread(gx_device *dev, int band_needed)
     gx_semaphore_wait(thread->sema_this);
     gp_thread_finish(thread->thread);
     thread->thread = NULL;
-    if (thread->status < 0)
-        return thread->status;          /* FAIL */
+    if (thread->status == THREAD_ERROR)
+        return gs_error_unknownerror;          /* FAIL */
 
     /* Swap the data areas to avoid the copy */
     tmp = cdev->data;
     cdev->data = thread_cdev->data;
     thread_cdev->data = tmp;
-    thread->status = RENDER_THREAD_IDLE;        /* the data is no longer valid */
+    thread->status = THREAD_IDLE;        /* the data is no longer valid */
     thread->band = -1;
     /* Update the bounds for this band */
     cdev->ymin =  band_needed * band_height;
@@ -556,16 +650,18 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
     if (line_count <= 0 || prect->p.x >= prect->q.x)
         return 0;
 
-    if (crdev->ymin < 0) {
+    if (crdev->ymin < 0)
         if ((code = clist_close_writer_and_init_reader(cldev)) < 0)
-            return code;
+            return code;	/* can't recover from this */
+
+    if (crdev->ymin == 0 && crdev->ymax == 0 && crdev->render_threads == NULL) {
+        /* Haven't done any rendering yet, try to set up the threads */
         if (clist_setup_render_threads(dev, y) < 0)
             /* problem setting up the threads, revert to single threaded */
             return clist_get_bits_rectangle(dev, prect, params, unread);
-    }
-    else {
+    } else {
         if (crdev->render_threads == NULL) {
-            /* If we get here with with ymin >=0, it's because we closed the threads */
+            /* If we get here with with ymin and ymax > 0 it's because we closed the threads */
             /* while doing a page due to an error. Use single threaded mode.         */
             return clist_get_bits_rectangle(dev, prect, params, unread);
         }
@@ -665,6 +761,8 @@ clist_enable_multi_thread_render(gx_device *dev)
     int code = -1;
     gp_thread_id thread;
 
+    if (dev->procs.get_bits_rectangle == clist_get_bits_rect_mt)
+        return 1;	/* no need to test again */
     /* We need to test gp_thread_start since we may be on a platform  */
     /* built without working threads, i.e., using gp_nsync.c dummy    */
     /* routines. The nosync gp_thread_start returns a -ve error code. */

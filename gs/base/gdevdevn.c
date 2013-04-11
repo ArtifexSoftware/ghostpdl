@@ -305,23 +305,38 @@ int
 devn_get_params(gx_device * pdev, gs_param_list * plist,
     gs_devn_params * pdevn_params, equivalent_cmyk_color_params * pequiv_colors)
 {
-    int code;
+    int code, i = 0, spot_num;
     bool seprs = false;
     gs_param_string_array scna;
     gs_param_string_array sona;
+    gs_param_int_array equiv_cmyk;
+    int equiv_elements[5 * (GX_DEVICE_MAX_SEPARATIONS - MAX_DEVICE_PROCESS_COLORS)] = { 0 }; /* 5 * max_spot_colors */
 
     set_param_array(scna, NULL, 0);
     set_param_array(sona, NULL, 0);
 
+    for (spot_num = 0; spot_num < pdevn_params->separations.num_separations; spot_num++) {
+        equiv_elements[i++] = pequiv_colors->color[spot_num].color_info_valid ? 1 : 0;
+        equiv_elements[i++] = pequiv_colors->color[spot_num].c;
+        equiv_elements[i++] = pequiv_colors->color[spot_num].m;
+        equiv_elements[i++] = pequiv_colors->color[spot_num].y;
+        equiv_elements[i++] = pequiv_colors->color[spot_num].k;
+    }
+    equiv_cmyk.data = equiv_elements;
+    equiv_cmyk.size = i;
+    equiv_cmyk.persistent = false;
+
     if ( (code = sample_device_crd_get_params(pdev, plist, "CRDDefault")) < 0 ||
-         (code =
-            param_write_name_array(plist, "SeparationColorNames", &scna)) < 0 ||
+         (code = param_write_name_array(plist, "SeparationColorNames", &scna)) < 0 ||
          (code = param_write_name_array(plist, "SeparationOrder", &sona)) < 0 ||
          (code = param_write_bool(plist, "Separations", &seprs)) < 0 ||
          (code = param_write_int(plist, "PageSpotColors", &(pdevn_params->page_spot_colors))) < 0)
         return code;
 
-    return 0;
+    if (pdevn_params->separations.num_separations > 0)
+        code = param_write_int_array(plist, ".EquivCMYKColors", &equiv_cmyk);
+
+    return code;
 }
 #undef set_param_array
 
@@ -354,7 +369,7 @@ int
 devn_put_params(gx_device * pdev, gs_param_list * plist,
     gs_devn_params * pdevn_params, equivalent_cmyk_color_params * pequiv_colors)
 {
-    int code = 0, ecode;
+    int code = 0, ecode, i;
     gs_param_name param_name;
     int npcmcolors = pdevn_params->num_std_colorant_names;
     int num_spot = pdevn_params->separations.num_separations;
@@ -364,6 +379,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     int page_spot_colors = pdevn_params->page_spot_colors;
     gs_param_string_array scna;         /* SeparationColorNames array */
     gs_param_string_array sona;         /* SeparationOrder names array */
+    gs_param_int_array equiv_cmyk;      /* equivalent_cmyk_color_params */
 
     /* Get the SeparationOrder names */
     BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationOrder",
@@ -382,6 +398,12 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     } END_ARRAY_PARAM(scna, scne);
     if (scna.data != 0 && scna.size > GX_DEVICE_MAX_SEPARATIONS)
         return_error(gs_error_rangecheck);
+    /* Get the equivalent_cmyk_color_params -- array is N * 5 elements */
+    BEGIN_ARRAY_PARAM(param_read_int_array, ".EquivCMYKColors",
+                                        equiv_cmyk, equiv_cmyk.size, equiv_cmyk_e)
+    {
+        break;
+    } END_ARRAY_PARAM(equiv_cmyk, equiv_cmyk_e);
 
     /* Separations are only valid with a subrtractive color model */
     if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
@@ -390,10 +412,9 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
          * match the process color model colorant names for the device.
          */
         if (scna.data != 0) {
-            int i;
             int num_names = scna.size;
-            fixed_colorant_names_list pcomp_names =
-                pdevn_params->std_colorant_names;
+            fixed_colorant_names_list pcomp_names = pdevn_params->std_colorant_names;
+
             num_spot = pdevn_params->separations.num_separations;
             for (i = 0; i < num_names; i++) {
                 /* Verify that the name is not one of our process colorants */
@@ -421,11 +442,30 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                 i + pdevn_params->num_std_colorant_names;
             pdevn_params->separations.num_separations = num_spot;
         }
+        /* Process any .EquivCMYKColors info */
+        if (equiv_cmyk.data != 0) {
+            int spot_num = 0;
+
+            for (i=0; i < equiv_cmyk.size; i += 5) {	/* valid, C, M, Y, K for each equiv_color */
+                if (equiv_cmyk.data[i] == 0) {
+                    /* This occurs if we've added a spot, but not yet set it's equiv color */
+                    pequiv_colors->color[spot_num].color_info_valid = false;
+                    pequiv_colors->all_color_info_valid = false;
+                } else {
+                    pequiv_colors->color[spot_num].color_info_valid = true;
+                    pequiv_colors->color[spot_num].c = (frac)(equiv_cmyk.data[i+1]);
+                    pequiv_colors->color[spot_num].m = (frac)(equiv_cmyk.data[i+2]);
+                    pequiv_colors->color[spot_num].y = (frac)(equiv_cmyk.data[i+3]);
+                    pequiv_colors->color[spot_num].k = (frac)(equiv_cmyk.data[i+4]);
+                }
+                spot_num++;
+            }
+        }
         /*
          * Process the SeparationOrder names.
          */
         if (sona.data != 0) {
-            int i, comp_num;
+            int comp_num;
 
             num_order = sona.size;
             for (i = 0; i < num_order; i++) {

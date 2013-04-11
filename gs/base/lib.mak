@@ -1905,7 +1905,7 @@ $(GLOBJ)szlibd.$(OBJ) : $(GLOBJ)szlibd_$(SHARE_ZLIB).$(OBJ) $(MAKEDIRS)
 
 gdevprn_h=$(GLSRC)gdevprn.h $(memory__h) $(string__h) $(gp_h) $(gx_h)\
  $(gserrors_h) $(gsmatrix_h) $(gsparam_h) $(gsutil_h)\
- $(gxclist_h) $(gxdevice_h) $(gxdevmem_h) $(gxrplane_h)
+ $(gxclist_h) $(gxdevice_h) $(gxdevmem_h) $(gxrplane_h) $(gxclthrd_h)
 
 page_=$(GLOBJ)gdevprn.$(OBJ) $(downscale_)
 $(GLD)page.dev : $(LIB_MAK) $(ECHOGS_XE) $(page_)
@@ -1915,7 +1915,7 @@ $(GLD)page.dev : $(LIB_MAK) $(ECHOGS_XE) $(page_)
 $(GLOBJ)gdevprn.$(OBJ) : $(GLSRC)gdevprn.c $(ctype__h)\
  $(gdevprn_h) $(gp_h) $(gsdevice_h) $(gsfname_h) $(gsparam_h)\
  $(gxclio_h) $(gxgetbit_h) $(gdevplnx_h) $(gstrans_h) \
- $(gxdownscale_h)
+ $(gxdownscale_h) $(gdevdevn_h)
 	$(GLCC) $(GLO_)gdevprn.$(OBJ) $(C_) $(GLSRC)gdevprn.c
 
 # Planar page devices

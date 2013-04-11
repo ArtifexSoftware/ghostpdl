@@ -397,6 +397,7 @@ static const gx_device_procs plibk_procs =
         0/*false*/,     /* OpenOutputFile */\
         0/*false*/,     /* ReopenPerPage */\
         0/*false*/,     /* page_uses_transparency */\
+        0/*false*/,     /* background_render */\
         0/*false*/, -1, /* Duplex[_set] */\
         0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
         0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\

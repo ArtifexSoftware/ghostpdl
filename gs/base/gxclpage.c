@@ -27,10 +27,8 @@ gdev_prn_save_page(gx_device_printer * pdev, gx_saved_page * page,
     gx_device_clist *cdev = (gx_device_clist *) pdev;
 
     /* Make sure we are banding. */
-    if (!pdev->buffer_space)
+    if (!PRINTER_IS_CLIST(pdev))
         return_error(gs_error_rangecheck);
-    if (strlen(pdev->dname) >= sizeof(page->dname))
-        return_error(gs_error_limitcheck);
     {
         gx_device_clist_writer * const pcldev =
             (gx_device_clist_writer *)pdev;
@@ -42,8 +40,8 @@ gdev_prn_save_page(gx_device_printer * pdev, gx_saved_page * page,
             )
             return code;
         /* Save the device information. */
-        memcpy(&page->device, pdev, sizeof(gx_device));
-        strcpy(page->dname, pdev->dname);
+        strncpy(page->dname, pdev->dname, sizeof(page->dname));
+        page->color_info = pdev->color_info;
         /* Save the page information. */
         page->info = pcldev->page_info;
         page->info.cfile = 0;
@@ -72,7 +70,7 @@ gdev_prn_render_pages(gx_device_printer * pdev,
             /* We would like to fully check the color representation, */
             /* but we don't have enough information to do that. */
             if (strcmp(page->dname, pdev->dname) != 0 ||
-                memcmp(&page->device.color_info, &pdev->color_info,
+                memcmp(&page->color_info, &pdev->color_info,
                        sizeof(pdev->color_info)) != 0
                 )
                 return_error(gs_error_rangecheck);

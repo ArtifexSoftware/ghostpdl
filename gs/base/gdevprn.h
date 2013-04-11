@@ -29,6 +29,7 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gxclist.h"
+#include "gxclthrd.h"		/* for background printing */
 #include "gxrplane.h"
 #include "gsparam.h"
 
@@ -223,6 +224,14 @@ struct gdev_prn_space_params_s {
     gdev_prn_banding_type banding_type;	/* used to force banding or bitmap */
 };
 
+typedef struct bg_print_s {
+    gx_semaphore_t *sema;		/* used by foreground to wait */
+    gx_device *device;			/* printer/clist device for bg printing */
+    gp_thread_id thread_id;
+    int num_copies;
+    int return_code;			/* result from background print thread */
+} bg_print_t;
+
 #define gx_prn_device_common\
         byte skip[max(sizeof(gx_device_memory), sizeof(gx_device_clist)) -\
                   sizeof(gx_device) + sizeof(double) /* padding */];\
@@ -253,6 +262,8 @@ struct gdev_prn_space_params_s {
         gx_device_printer *async_renderer;	/* in async writer, pointer to async renderer */\
         uint clist_disable_mask;	/* mask of clist options to disable */\
                 /* ---- End async rendering support --- */\
+        bool bg_print_requested;	/* request background printing of page from clist */\
+        bg_print_t bg_print;            /* background printing data shared with thread */\
         int num_render_threads_requested;	/* for multiple band rendering threads */\
         gx_device_procs save_procs_while_delaying_erasepage;	/* save device procs while delaying erasepage. */\
         gx_device_procs orig_procs	/* original (std_)procs */
@@ -262,6 +273,9 @@ struct gx_device_printer_s {
     gx_device_common;
     gx_prn_device_common;
 };
+
+/* A useful check to determine if the page is being rendered as a clist */
+#define PRINTER_IS_CLIST(pdev) ((gx_device_printer *)(pdev)->buffer_space != 0)
 
 extern_st(st_device_printer);
 #define public_st_device_printer()	/* in gdevprn.c */\
@@ -423,6 +437,8 @@ extern const gx_device_procs prn_std_procs;
         0/*false*/, duplex_set,	/* Duplex[_set] */\
         0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
         0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\
+        0/*false*/,	/* bg_print_requested */\
+        {  0/*sema*/, 0/*device*/, 0/*thread_id*/, 0/*num_copies*/, 0/*return_code*/ }, /* bg_print */\
         0, 		/* num_render_threads_requested */\
         { 0 },	/* save_procs_while_delaying_erasepage */\
         { 0 }	/* ... orig_procs */

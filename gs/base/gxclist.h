@@ -67,13 +67,15 @@ typedef struct gs_pattern1_instance_s gs_pattern1_instance_t;
 /* ---------------- Public structures ---------------- */
 
 /*
- * Define a saved page object.  This consists of a snapshot of the device
- * structure, information about the page per se, and the num_copies
- * parameter of output_page.
+ * Define a saved page object. This consists of information about the
+ * page's clist and parameters and the num_copies parameter of
+ * output_page. The current device's name, and color_info is saved to
+ * allow gdev_prn_render_pages to make sure that the target device is
+ * compatible.
  */
 typedef struct gx_saved_page_s {
-    gx_device device;
-    char dname[8 + 1];		/* device name for checking */
+    char dname[32];		/* device name for checking */
+    gx_device_color_info color_info;
     gx_band_page_info_t info;
     int num_copies;
 } gx_saved_page;
@@ -193,7 +195,7 @@ typedef struct gx_clist_state_s gx_clist_state;
         clist_icctable_t *icc_table;    /* Table that keeps track of ICC profiles.\
                                            It relates the hashcode to the cfile\
                                            file location. */\
-        gsicc_link_cache_t *icc_cache_cl  /* Link cache */\
+        gsicc_link_cache_t *icc_cache_cl  /* Link cache */
 
 /*
  * Chech whether a clist is used for storing a pattern command stream.
@@ -366,13 +368,6 @@ struct gx_device_clist_writer_s {
                                            access to the graphic state information in those
                                            routines, this is the logical place to put this
                                            information */
-   /* clist_icctable_t *icc_table;  */          /* Table that keeps track of ICC profiles.  It
-                                              relates the hashcode to the cfile file location.
-                                              I did not put this into gx_device_clist_common_members
-                                              since I dont see where those pointers are ever defined
-                                              for GC. */
-   /* gsicc_link_cache_t *icc_cache_cl; */  /* Had to add this into the writer device to avoid problems
-                                           with 64 bit builds.  We need to revisit this */
 };
 
 #ifndef gx_device_clist_writer_DEFINED
