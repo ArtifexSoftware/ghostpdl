@@ -118,6 +118,9 @@ gs_image_class_1_simple(gx_image_enum * penum)
                                          false);
                     return 0;
                 }
+#ifdef PACIFY_VALGRIND
+                memset(penum->line, 0, penum->line_size); /* For the number of scan lined < 8 */
+#endif
                 penum->xi_next = penum->line_xy = fixed2int_var_rounded(ox);
                 if_debug3m('b', penum->memory,
                            "[b]render=landscape, unpack=copy; rect.w=%d, dev_width=%ld, line_size=%ld\n",
