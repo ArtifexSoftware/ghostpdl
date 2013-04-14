@@ -498,7 +498,7 @@ gx_serialize_lookup_table(const gx_color_lookup_table * t, stream * s)
     code = sputs(s, (const byte *)&t->table->size, sizeof(t->table->size), &n);
     if (code < 0)
         return code;
-    return sputs(s, (const byte *)&t->table->data, t->table->size, &n);
+    return sputs(s, (const byte *)t->table->data, t->table->size, &n);
 }
 
 static int
