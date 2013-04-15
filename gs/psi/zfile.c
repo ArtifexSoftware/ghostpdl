@@ -1000,6 +1000,11 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
     gs_main_instance *minst = get_minst_from_memory(mem);
     int code;
 
+    /* Once we've opened the arg file, prevent searching current dir from now on */
+    /* If this causes problems with "strange" scripts and utlities, we have to rethink */
+    if (i_ctx_p)
+        i_ctx_p->starting_arg_file = false;
+
     /* when starting arg files (@ files) iodev_default is not yet set */
     if (iodev == 0)
         iodev = (gx_io_device *)gx_io_device_table[0];
