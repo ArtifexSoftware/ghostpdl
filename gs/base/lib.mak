@@ -105,6 +105,9 @@ std_h=$(GLSRC)std.h $(arch_h) $(stdpre_h)
 
 vmsmath_h=$(GLSRC)vmsmath.h
 
+# declare here for use by string__h
+gssprintf_h=$(GLSRC)gssprintf.h
+
 dos__h=$(GLSRC)dos_.h
 ctype__h=$(GLSRC)ctype_.h $(std_h)
 dirent__h=$(GLSRC)dirent_.h $(std_h) $(gconfig__h)
@@ -117,7 +120,7 @@ math__h=$(GLSRC)math_.h $(std_h) $(vmsmath_h)
 memory__h=$(GLSRC)memory_.h $(std_h)
 setjmp__h=$(GLSRC)setjmp_.h
 stat__h=$(GLSRC)stat_.h $(std_h)
-stdio__h=$(GLSRC)stdio_.h $(std_h)
+stdio__h=$(GLSRC)stdio_.h $(std_h) $(gssprintf_h)
 string__h=$(GLSRC)string_.h $(std_h)
 time__h=$(GLSRC)time_.h $(std_h) $(gconfig__h)
 unistd__h=$(GLSRC)unistd_.h $(std_h)
@@ -158,6 +161,7 @@ gx_h=$(GLSRC)gx.h $(stdio__h) $(gdebug_h)\
  $(gsio_h) $(gsmemory_h) $(gstypes_h) $(gserrors_h)
 gxsync_h=$(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h)
 gxclthrd_h=$(GLSRC)gxclthrd.h $(gxsync_h)
+
 # Out of order
 gsmemlok_h=$(GLSRC)gsmemlok.h $(gsmemory_h) $(gxsync_h)
 gsnotify_h=$(GLSRC)gsnotify.h $(gsstype_h)
@@ -326,6 +330,10 @@ $(AUX)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
  $(gstypes_h) $(gserrors_h) $(gsmemory_h)\
  $(gsrect_h) $(gsuid_h) $(gsutil_h) $(gzstate_h) $(gxdcolor_h) $(MAKEDIRS)
 	$(GLCCAUX) $(AUXO_)gsutil.$(OBJ) $(C_) $(GLSRC)gsutil.c
+
+$(GLOBJ)gssprintf.$(OBJ) : $(GLSRC)gssprintf.c $(gssprintf_h) $(triodef_h) $(trio_h) \
+$(triop_h) $(triostr_h) $(trionan_h)
+	$(GLCC) $(I_)$(TRIOSRCDIR)$(_I) $(GLO_)gssprintf.$(OBJ) $(C_) $(GLSRC)gssprintf.c
 
 # MD5 digest
 md5_h=$(GLSRC)md5.h
@@ -1314,7 +1322,7 @@ LIB10s=$(GLOBJ)gsmalloc.$(OBJ) $(GLOBJ)memento.$(OBJ)  $(GLOBJ)gsmatrix.$(OBJ)
 LIB11s=$(GLOBJ)gsmemory.$(OBJ) $(GLOBJ)gsmemret.$(OBJ) $(GLOBJ)gsmisc.$(OBJ) $(GLOBJ)gsnotify.$(OBJ) $(GLOBJ)gslibctx.$(OBJ)
 LIB12s=$(GLOBJ)gspaint.$(OBJ) $(GLOBJ)gsparam.$(OBJ) $(GLOBJ)gspath.$(OBJ)
 LIB13s=$(GLOBJ)gsserial.$(OBJ) $(GLOBJ)gsstate.$(OBJ) $(GLOBJ)gstext.$(OBJ)\
-  $(GLOBJ)gsutil.$(OBJ)
+  $(GLOBJ)gsutil.$(OBJ) $(TRIOOBJS) $(GLOBJ)gssprintf.$(OBJ) 
 LIB1x=$(GLOBJ)gxacpath.$(OBJ) $(GLOBJ)gxbcache.$(OBJ) $(GLOBJ)gxccache.$(OBJ)
 LIB2x=$(GLOBJ)gxccman.$(OBJ) $(GLOBJ)gxchar.$(OBJ) $(GLOBJ)gxcht.$(OBJ)
 LIB3x=$(GLOBJ)gxclip.$(OBJ) $(GLOBJ)gxcmap.$(OBJ) $(GLOBJ)gxcpath.$(OBJ)

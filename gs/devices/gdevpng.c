@@ -571,7 +571,7 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
     }
     /* add comment */
     strncpy(software_key, "Software", sizeof(software_key));
-    sprintf(software_text, "%s %d.%02d", gs_product,
+    gs_sprintf(software_text, "%s %d.%02d", gs_product,
             (int)(gs_revision / 100), (int)(gs_revision % 100));
     text_png.compression = -1;	/* uncompressed */
     text_png.key = software_key;

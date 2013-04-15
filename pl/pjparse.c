@@ -284,7 +284,7 @@ pjl_side_effects(pjl_parser_state_t * pst, char *variable, char *value,
         int formlines = pjl_calc_formlines_new_page_size(page_length);
         pjl_envir_var_t var;
 
-        sprintf(var.value, "%d", formlines);
+        gs_sprintf(var.value, "%d", formlines);
         pjl_set(pst, (char *)"FORMLINES", var.value, defaults);
     }
     /* fill in other side effects here */

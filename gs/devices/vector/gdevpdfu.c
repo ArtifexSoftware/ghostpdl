@@ -341,14 +341,14 @@ static int write_tt_encodings(stream *s, bool HaveTrueTypes)
         char Buffer[256];
         single_glyph_list_t *entry = (single_glyph_list_t *)&SingleGlyphList;
 
-        sprintf(Buffer, "/AdobeGlyphList mark\n");
+        gs_sprintf(Buffer, "/AdobeGlyphList mark\n");
         stream_write(s, Buffer, strlen(Buffer));
         while (entry->Glyph) {
-            sprintf(Buffer, "/%s 16#%04x\n", entry->Glyph, entry->Unicode);
+            gs_sprintf(Buffer, "/%s 16#%04x\n", entry->Glyph, entry->Unicode);
             stream_write(s, Buffer, strlen(Buffer));
             entry++;
         };
-        sprintf(Buffer, ".dicttomark readonly def\n");
+        gs_sprintf(Buffer, ".dicttomark readonly def\n");
         stream_write(s, Buffer, strlen(Buffer));
 
         index = 0;
@@ -425,24 +425,24 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
                         pagecount++;
                     }
             }
-            sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", (int)urx, (int)ury);
+            gs_sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", (int)urx, (int)ury);
             stream_write(s, (byte *)BBox, strlen(BBox));
-            sprintf(BBox, "%%%%HiResBoundingBox: 0 0 %.2f %.2f\n", urx, ury);
+            gs_sprintf(BBox, "%%%%HiResBoundingBox: 0 0 %.2f %.2f\n", urx, ury);
             stream_write(s, (byte *)BBox, strlen(BBox));
         }
         cre_date_time_len = pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time) - 1);
         cre_date_time[cre_date_time_len] = 0;
-        sprintf(BBox, "%%%%Creator: %s %d (%s)\n", gs_product, (int)gs_revision,
+        gs_sprintf(BBox, "%%%%Creator: %s %d (%s)\n", gs_product, (int)gs_revision,
                 pdev->dname);
         stream_write(s, (byte *)BBox, strlen(BBox));
         stream_puts(s, "%%LanguageLevel: 2\n");
-        sprintf(BBox, "%%%%CreationDate: %s\n", cre_date_time);
+        gs_sprintf(BBox, "%%%%CreationDate: %s\n", cre_date_time);
         stream_write(s, (byte *)BBox, strlen(BBox));
-        sprintf(BBox, "%%%%Pages: %d\n", pages);
+        gs_sprintf(BBox, "%%%%Pages: %d\n", pages);
         stream_write(s, (byte *)BBox, strlen(BBox));
-        sprintf(BBox, "%%%%EndComments\n");
+        gs_sprintf(BBox, "%%%%EndComments\n");
         stream_write(s, (byte *)BBox, strlen(BBox));
-        sprintf(BBox, "%%%%BeginProlog\n");
+        gs_sprintf(BBox, "%%%%BeginProlog\n");
         stream_write(s, (byte *)BBox, strlen(BBox));
         if (pdev->params.CompressPages) {
             /*  When CompressEntireFile is true and ASCII85EncodePages is false,
@@ -493,7 +493,7 @@ pdfwrite_pdf_open_document(gx_device_pdf * pdev)
                 pdev->CompressEntireFile = 0;
             else {
                 stream_write(s, (byte *)"%!\r", 3);
-                sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", width, height);
+                gs_sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", width, height);
                 stream_write(s, (byte *)BBox, strlen(BBox));
                 if (pdev->params.CompressPages || pdev->CompressEntireFile) {
                     /*  When CompressEntireFile is true and ASCII85EncodePages is false,
@@ -1340,7 +1340,7 @@ void
 pdf_reserve_object_id(gx_device_pdf * pdev, pdf_resource_t *pres, long id)
 {
     pres->object->id = (id == 0 ? pdf_obj_ref(pdev) : id);
-    sprintf(pres->rname, "R%ld", pres->object->id);
+    gs_sprintf(pres->rname, "R%ld", pres->object->id);
 }
 
 /* Begin an aside (resource, annotation, ...). */
@@ -1807,9 +1807,9 @@ void
 pdf_store_default_Producer(char buf[PDF_MAX_PRODUCER])
 {
     if ((gs_revision % 100) == 0)
-        sprintf(buf, "(%s %1.1f)", gs_product, gs_revision / 100.0);
+        gs_sprintf(buf, "(%s %1.1f)", gs_product, gs_revision / 100.0);
     else
-        sprintf(buf, "(%s %1.2f)", gs_product, gs_revision / 100.0);
+        gs_sprintf(buf, "(%s %1.2f)", gs_product, gs_revision / 100.0);
 }
 
 /* Write matrix values. */
@@ -1856,7 +1856,7 @@ pdf_put_name_chars_1_2(stream *s, const byte *nstr, uint size)
             case '[': case ']':
             case '{': case '}':
             case '/':
-                sprintf(hex, "#%02x", c);
+                gs_sprintf(hex, "#%02x", c);
                 stream_puts(s, hex);
                 break;
             case 0:

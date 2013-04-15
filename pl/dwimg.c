@@ -1531,7 +1531,7 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             {                   /* Save the text window size */
                 char winposbuf[64];
 
-                sprintf(winposbuf, "%d %d %d %d", img->x, img->y,
+                gs_sprintf(winposbuf, "%d %d %d %d", img->x, img->y,
                         img->cx, img->cy);
                 win_set_reg_value((img->device != NULL ? "Image" : "Tracer"),
                                   winposbuf);

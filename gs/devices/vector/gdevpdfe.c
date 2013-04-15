@@ -205,7 +205,7 @@ pdf_xmp_time(char *buf, int buf_length)
 
     time(&t);
     tms = *localtime(&t);
-    sprintf(buf1,
+    gs_sprintf(buf1,
             "%04d-%02d-%02d",
             tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday);
     strncpy(buf, buf1, buf_length);
@@ -860,7 +860,7 @@ pdf_document_metadata(gx_device_pdf *pdev)
         code = COS_WRITE_OBJECT(pres->object, pdev, resourceNone);
         if (code < 0)
             return code;
-        sprintf(buf, "%ld 0 R", pres->object->id);
+        gs_sprintf(buf, "%ld 0 R", pres->object->id);
         pdf_record_usage(pdev, pres->object->id, resource_usage_part9_structure);
 
         code = cos_dict_put_c_key_object(pdev->Catalog, "/Metadata", pres->object);

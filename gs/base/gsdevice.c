@@ -1020,11 +1020,11 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
         while (*fmt != 'l' && *fmt != '%')
             --fmt;
         if (*fmt == 'l')
-            sprintf(pfname, parsed.fname, count1);
+            gs_sprintf(pfname, parsed.fname, count1);
         else
-            sprintf(pfname, parsed.fname, (int)count1);
+            gs_sprintf(pfname, parsed.fname, (int)count1);
     } else if (parsed.len && strchr(parsed.fname, '%'))	/* filename with "%%" but no "%nnd" */
-        sprintf(pfname, parsed.fname);
+        gs_sprintf(pfname, parsed.fname);
     else
         pfname[0] = 0; /* 0 to use "fname", not "pfname" */
     if (pfname[0]) {

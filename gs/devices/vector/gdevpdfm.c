@@ -153,9 +153,9 @@ pdfmark_make_dest(char dstr[MAX_DEST_STRING], gx_device_pdf * pdev,
     else if (pdfmark_find_key("/Action", pairs, count, &action) &&
              pdf_key_eq(&action, "/GoToR")
         )
-        sprintf(dstr, "[%d ", page - 1);
+        gs_sprintf(dstr, "[%d ", page - 1);
     else
-        sprintf(dstr, "[%ld 0 R ", pdf_page_id(pdev, page));
+        gs_sprintf(dstr, "[%ld 0 R ", pdf_page_id(pdev, page));
     len = strlen(dstr);
     if (len + view_string.size > MAX_DEST_STRING)
         return_error(gs_error_limitcheck);
@@ -757,7 +757,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
         char dstr[1 + (sizeof(long) * 8 / 3 + 1) + 25 + 1];
         long page_id = pdf_page_id(pdev, pdev->next_page + 1);
 
-        sprintf(dstr, "[%ld 0 R /XYZ null null null]", page_id);
+        gs_sprintf(dstr, "[%ld 0 R /XYZ null null null]", page_id);
         cos_dict_put_c_key_string(pcd, "/Dest", (const unsigned char*) dstr,
                                   strlen(dstr));
     }
@@ -1530,7 +1530,7 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
         if (level1_id != gs_no_id) {
             char r[MAX_DEST_STRING];
 
-            sprintf(r, "%ld 0 R", level1_id);
+            gs_sprintf(r, "%ld 0 R", level1_id);
             code = cos_dict_put_c_key_string(cos_stream_dict(pcs), "/Level1",
                                              (byte *)r, strlen(r));
             if (code < 0)

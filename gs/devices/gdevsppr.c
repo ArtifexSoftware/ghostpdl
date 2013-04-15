@@ -101,7 +101,7 @@ err_code_string(int err_code)
   {
   if ((err_code<EMOTOR)||(err_code>ESERIAL))
     {
-    sprintf(err_buffer,"err_code out of range: %d",err_code);
+    gs_sprintf(err_buffer,"err_code out of range: %d",err_code);
     return err_buffer;
     }
   return errmsg[err_code];

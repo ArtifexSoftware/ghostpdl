@@ -72,7 +72,7 @@ process_font(pcl_state_t * pcs, pl_font_t * fp)
 
         /* reset to default font and print the select font string and pjl number */
         /* create the string command for font selection */
-        sprintf(buff, "<esc>(%u<esc>(s%dp%uv%us%db%dT\n",
+        gs_sprintf(buff, "<esc>(%u<esc>(s%dp%uv%us%db%dT\n",
                 pfp->symbol_set, (pfp->proportional_spacing ? 1 : 0),
                 pfp->height_4ths / 10, pfp->style, pfp->stroke_weight,
                 pfp->typeface_family);
@@ -87,7 +87,7 @@ process_font(pcl_state_t * pcs, pl_font_t * fp)
 
         pcl_set_cap_x(pcs, (coord) (pcs->margins.right / (16.0 / 15.0)),
                       false, false);
-        sprintf(buff, "%d", fp->params.pjl_font_number);
+        gs_sprintf(buff, "%d", fp->params.pjl_font_number);
 
         code = pcl_text((byte *) buff, strlen(buff), pcs, false);
         if (code < 0)

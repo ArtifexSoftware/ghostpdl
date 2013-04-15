@@ -2666,7 +2666,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
                 return sid;
             if ((code = make_name_from_sid(i_ctx_p, &name, strings, data, sid)) < 0) {
                char buf[40];
-               int len = sprintf(buf, "sid-%d", sid);
+               int len = gs_sprintf(buf, "sid-%d", sid);
 
                if ((code = name_ref(imemory, (unsigned char *)buf, len, &name, 1)) < 0)
                    return code;

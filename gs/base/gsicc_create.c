@@ -453,7 +453,7 @@ save_profile(unsigned char *buffer, char filename[], int buffer_size)
     char full_file_name[50];
     FILE *fid;
 
-    sprintf(full_file_name,"%d)Profile_%s.icc",icc_debug_index,filename);
+    gs_sprintf(full_file_name,"%d)Profile_%s.icc",icc_debug_index,filename);
     fid = gp_fopen(full_file_name,"wb");
     fwrite(buffer,sizeof(unsigned char),buffer_size,fid);
     fclose(fid);

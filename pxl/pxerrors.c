@@ -166,7 +166,7 @@ px_error_message_line(char message[px_max_error_line + 1], int N,
 
         switch (N) {
             case 1:
-                sprintf(message, "    Subsystem:  %s\n", subsystem);
+                gs_sprintf(message, "    Subsystem:  %s\n", subsystem);
                 break;
             case 2:
                 strcpy(message, "    Error:      ");
@@ -186,10 +186,10 @@ px_error_message_line(char message[px_max_error_line + 1], int N,
                         }
                         strcat(end, "\n");
                     } else if (code >= px_error_first && code < px_error_next)
-                        sprintf(end, "%s\n",
+                        gs_sprintf(end, "%s\n",
                                 px_error_names[code - px_error_first]);
                     else
-                        sprintf(end, "Internal error 0x%x\n", code);
+                        gs_sprintf(end, "Internal error 0x%x\n", code);
                 }
                 break;
             case 3:
@@ -203,19 +203,19 @@ px_error_message_line(char message[px_max_error_line + 1], int N,
                     if (last_operator >= 0x40 && last_operator < 0xc0 &&
                         (oname =
                          px_operator_names[last_operator - 0x40]) != 0)
-                        sprintf(end, "%s\n", oname);
+                        gs_sprintf(end, "%s\n", oname);
                     else
-                        sprintf(end, "0x%02x\n", last_operator);
+                        gs_sprintf(end, "0x%02x\n", last_operator);
                 }
                 break;
             case 4:
                 strcpy(message, "    Position:   ");
                 end = message + strlen(message);
                 if (st->parent_operator_count)
-                    sprintf(end, "%ld;%ld\n", st->parent_operator_count,
+                    gs_sprintf(end, "%ld;%ld\n", st->parent_operator_count,
                             st->operator_count);
                 else
-                    sprintf(end, "%ld\n", st->operator_count);
+                    gs_sprintf(end, "%ld\n", st->operator_count);
                 break;
             default:
                 return -1;

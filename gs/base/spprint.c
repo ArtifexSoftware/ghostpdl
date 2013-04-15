@@ -83,7 +83,7 @@ pprintd1(stream * s, const char *format, int v)
     if (*fp == 0 || fp[1] != 'd')	/* shouldn't happen! */
         lprintf1("Bad format in pprintd1: %s\n", format);
 #endif
-    sprintf(str, "%d", v);
+    gs_sprintf(str, "%d", v);
     pputs_short(s, str);
     return pprintf_scan(s, fp + 2);
 }
@@ -115,12 +115,12 @@ pprintg1(stream * s, const char *format, floatp v)
     if (*fp == 0 || fp[1] != 'g')	/* shouldn't happen! */
         lprintf1("Bad format in pprintg: %s\n", format);
 #endif
-    sprintf(str, "%f", 1.5);
+    gs_sprintf(str, "%f", 1.5);
     dot = str[1]; /* locale-dependent */
-    sprintf(str, "%g", v);
+    gs_sprintf(str, "%g", v);
     if (strchr(str, 'e')) {
         /* Bad news.  Try again using f-format. */
-        sprintf(str, (fabs(v) > 1 ? "%1.1f" : "%1.8f"), v);
+        gs_sprintf(str, (fabs(v) > 1 ? "%1.1f" : "%1.8f"), v);
     }
     /* Juggling locales isn't thread-safe. Posix me harder. */
     if (dot != '.') {
@@ -165,7 +165,7 @@ pprintld1(stream * s, const char *format, long v)
     if (*fp == 0 || fp[1] != 'l' || fp[2] != 'd')	/* shouldn't happen! */
         lprintf1("Bad format in pprintld: %s\n", format);
 #endif
-    sprintf(str, "%ld", v);
+    gs_sprintf(str, "%ld", v);
     pputs_short(s, str);
     return pprintf_scan(s, fp + 3);
 }

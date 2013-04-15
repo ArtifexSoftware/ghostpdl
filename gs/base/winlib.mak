@@ -133,6 +133,7 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 #!include $(COMMONDIR)/pcdefs.mak
 #!include $(COMMONDIR)/generic.mak
 !include $(GLSRCDIR)\gs.mak
+!include $(GLSRCDIR)\trio.mak
 !include $(GLSRCDIR)\lib.mak
 !include $(GLSRCDIR)\freetype.mak
 !if "$(UFST_BRIDGE)"=="1"

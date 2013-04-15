@@ -644,8 +644,8 @@ void main(void)
     argv[1] = ddevice;
     argv[2] = dformat;
 
-        sprintf(ddevice, "-sDEVICE=display");
-    sprintf(dformat, "-dDisplayFormat=%d", display_format);
+    gs_sprintf(ddevice, "-sDEVICE=display");
+    gs_sprintf(dformat, "-dDisplayFormat=%d", display_format);
 
     /* Run Ghostscript */
     if (gsapi_new_instance(&instance, NULL) < 0)

@@ -128,12 +128,12 @@ jj100_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
                 /* Vertical tab to the appropriate position. */
                 while(skip > 15) {
-                        sprintf(prn_buf, "\037%c", 16 + 15);
+                        gs_sprintf(prn_buf, "\037%c", 16 + 15);
                         fputs(prn_buf, pdev->file);
                         skip -= 15;
                 }
                 if(skip > 0) {
-                        sprintf(prn_buf, "\037%c", 16 + skip);
+                        gs_sprintf(prn_buf, "\037%c", 16 + skip);
                         fputs(prn_buf, pdev->file);
                 }
 
@@ -170,13 +170,13 @@ jj100_print_page(gx_device_printer *pdev, FILE *prn_stream)
                 out_beg -= (out_beg - out) % (bytes_per_column * 2);
 
                 /* Dot addressing */
-                sprintf(prn_buf, "\033F%04d",
+                gs_sprintf(prn_buf, "\033F%04d",
                         (out_beg - out) / bytes_per_column / 2);
                 fputs(prn_buf, pdev->file);
 
                 /* Dot graphics */
                 size = out_end - out_beg + 1;
-                sprintf(prn_buf, "\034bP,48,%04d.", size / bytes_per_column);
+                gs_sprintf(prn_buf, "\034bP,48,%04d.", size / bytes_per_column);
                 fputs(prn_buf, pdev->file);
                 fwrite(out_beg, 1, size, pdev->file);
 

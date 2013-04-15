@@ -6466,7 +6466,7 @@ get_param_compressed_color_list_elem(pdf14_clist_device * pdev,
         pkeyname_list_elem->next = *pkeyname_list;
         pkeyname_list_elem->key_name = keyname_buf;
         *pkeyname_list = pkeyname_list_elem;
-        sprintf(keyname_buf, "%s_%d", keyname, i);
+        gs_sprintf(keyname_buf, "%s_%d", keyname, i);
         get_param_compressed_color_list_elem(pdev, plist,
                                 pcomp_list->u.sub_level_ptrs[i], keyname_buf,
                                 pkeyname_list);
@@ -6537,7 +6537,7 @@ put_param_compressed_color_list_elem(gx_device * pdev,
         char buff[50];
         compressed_color_list_t * sub_list_ptr;
 
-        sprintf(buff, "%s_%d", keyname, i);
+        gs_sprintf(buff, "%s_%d", keyname, i);
         put_param_compressed_color_list_elem(pdev, plist,
                                         &sub_list_ptr, buff, num_comps - 1);
         pcomp_list->u.sub_level_ptrs[i] = sub_list_ptr;
@@ -6599,7 +6599,7 @@ get_param_spot_color_names(pdf14_clist_device * pdev,
         pkeyname_list_elem->next = *pkeyname_list;
         pkeyname_list_elem->key_name = keyname_buf;
         *pkeyname_list = pkeyname_list_elem;
-        sprintf(keyname_buf, "PDF14SpotName_%d", i);
+        gs_sprintf(keyname_buf, "PDF14SpotName_%d", i);
         str.size = separations->names[i].size;
         str.data = separations->names[i].data;
         str.persistent = false;
@@ -6635,7 +6635,7 @@ put_param_pdf14_spot_names(gx_device * pdev,
                 char buff[20];
                 byte * sep_name;
 
-                sprintf(buff, "PDF14SpotName_%d", i);
+                gs_sprintf(buff, "PDF14SpotName_%d", i);
                 code = param_read_string(plist, buff, &str);
                 switch (code) {
                     default:

@@ -2116,7 +2116,7 @@ debug_dump_contents(const gs_memory_t *mem, const byte * bot,
             }
             continue;
         }
-        sprintf(label, "0x%lx:", (ulong) block);
+        gs_sprintf(label, "0x%lx:", (ulong) block);
         debug_indent(mem, indent);
         dmputs(mem, label);
         for (i = 0; i < block_size; ++i) {

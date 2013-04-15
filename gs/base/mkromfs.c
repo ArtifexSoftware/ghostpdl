@@ -66,6 +66,8 @@
 
 /* prevent gp.h redefining fopen */
 #define fopen fopen
+/* prevent gp.h redefining sprintf */
+#define sprintf sprintf
 
 #include "stdpre.h"
 #include "stdint_.h"

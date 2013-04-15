@@ -180,7 +180,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     {
         /* Invent a name if we don't know the table format. */
         char buf[32];
-        sprintf(buf, "glyph%d", (int)glyph);
+        gs_sprintf(buf, "glyph%d", (int)glyph);
         pstr->data = (byte*)buf;
         pstr->size = strlen((char*)pstr->data);
         return 0;

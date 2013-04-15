@@ -415,7 +415,7 @@ MapFileOpen(const char * rootpath, const char * filename, const char * attribute
 
     if (strlen(rootpath) + strlen(filename) >= BUFFER_LENGTH)
         return NULL;
-    sprintf(fullname, "%s%s", rootpath, filename);
+    gs_sprintf(fullname, "%s%s", rootpath, filename);
     return gp_fopen(fullname, attributes);
 }
 
@@ -516,7 +516,7 @@ MapFileUnlink(const char * rootpath, const char * filename)
 
     if (strlen(rootpath) + strlen(filename) >= BUFFER_LENGTH)
         return;
-    sprintf(fullname, "%s%s", rootpath, filename);
+    gs_sprintf(fullname, "%s%s", rootpath, filename);
     unlink(fullname);
 }
 
@@ -537,8 +537,8 @@ MapFileRename(const char * rootpath, const char * newfilename, const char * oldf
         return;
     if (strlen(rootpath) + strlen(newfilename) >= BUFFER_LENGTH)
         return;
-    sprintf(oldfullname, "%s%s", rootpath, oldfilename);
-    sprintf(newfullname, "%s%s", rootpath, newfilename);
+    gs_sprintf(oldfullname, "%s%s", rootpath, oldfilename);
+    gs_sprintf(newfullname, "%s%s", rootpath, newfilename);
     rename(oldfullname, newfullname);
 }
 
@@ -711,7 +711,7 @@ map_file_name_get(const char * root_name, const char * Fname, char * osname)
     if (d != -1) {
         /* 20 characters are enough for even a 64 bit integer */
         if ((strlen(root_name) + 20) < BUFFER_LENGTH) {
-            sprintf(osname, "%s%d", root_name, d);
+            gs_sprintf(osname, "%s%d", root_name, d);
             return true;
         }
     }

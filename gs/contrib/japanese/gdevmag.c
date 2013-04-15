@@ -137,8 +137,8 @@ mag_print_page(gx_device_printer *pdev, int depth, FILE *file)
 
     if (user == 0) user = "Unknown";
     strcpy(check,magic);
-    sprintf(check+strlen(check),"%-18s",user);
-    sprintf(check+31," Ghostscript with %s driver\x1a", pdev->dname);
+    gs_sprintf(check+strlen(check),"%-18s",user);
+    gs_sprintf(check+31," Ghostscript with %s driver\x1a", pdev->dname);
 
     /* check sizes of flag and pixel data. */
     pixel_bytes = 0;

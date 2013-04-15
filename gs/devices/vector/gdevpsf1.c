@@ -646,12 +646,12 @@ write_Private(stream *s, gs_font_type1 *pfont,
                                 gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
                             return code;
                         }
-                        sprintf(buf, "dup %d %u -| ", i, code);
+                        gs_sprintf(buf, "dup %d %u -| ", i, code);
                         stream_puts(s, buf);
                         write_CharString(s, stripped, code);
                         gs_free_object(pfont->memory, stripped, "free Subrs copy for OtherSubrs");
                     } else {
-                        sprintf(buf, "dup %d %u -| ", i, gdata.bits.size);
+                        gs_sprintf(buf, "dup %d %u -| ", i, gdata.bits.size);
                         stream_puts(s, buf);
                         write_CharString(s, gdata.bits.data, gdata.bits.size);
                     }

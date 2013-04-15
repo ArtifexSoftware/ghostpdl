@@ -306,6 +306,8 @@ LCUPSISRCDIR=cups
 CUPS_CC=$(CC)
 
 
+TRIOSRCDIR=trio
+
 # Define how to build the library archives.  (These are not used in any
 # standard configuration.)
 
@@ -587,6 +589,7 @@ MAKEDIRSTOP=
 INSTALL_CONTRIB=@INSTALL_CONTRIB@
 include $(GLSRCDIR)/unixhead.mak
 include $(GLSRCDIR)/gs.mak
+include $(GLSRCDIR)/trio.mak
 # psromfs.mak must precede lib.mak
 include $(PSSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak

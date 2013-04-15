@@ -380,7 +380,7 @@ gdev_write_input_media(int index, gs_param_dict * pdict,
     int code;
     gs_param_string as;
 
-    sprintf(key, "%d", index);
+    gs_sprintf(key, "%d", index);
     mdict.size = 4;
     code = param_begin_write_dict(pdict->list, key, &mdict, false);
     if (code < 0)
@@ -468,7 +468,7 @@ gdev_write_output_media(int index, gs_param_dict * pdict,
     gs_param_dict mdict;
     int code;
 
-    sprintf(key, "%d", index);
+    gs_sprintf(key, "%d", index);
     mdict.size = 4;
     code = param_begin_write_dict(pdict->list, key, &mdict, false);
     if (code < 0)

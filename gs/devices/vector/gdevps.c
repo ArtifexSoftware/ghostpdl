@@ -513,7 +513,7 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
     const char *op;
 
     if (index >= 0) {
-        sprintf(str, "%d%c", index / 26, index % 26 + 'A');
+        gs_sprintf(str, "%d%c", index / 26, index % 26 + 'A');
         pprintd2(s, "%d %d ", x, y);
         pprints2(s, "%s %s\n", str, imagestr);
         if (s->end_status == ERRC)
@@ -543,12 +543,12 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
         };
 
         index = image_cache_lookup(pdev, id, width_bits, height, true);
-        sprintf(str, "/%d%c", index / 26, index % 26 + 'A');
+        gs_sprintf(str, "/%d%c", index / 26, index % 26 + 'A');
         stream_puts(s, str);
         if (depth != 1)
             pprintld1(s, " %ld", ((width_bits + 7) >> 3) * (ulong) height);
         op = cached[encode];
-        sprintf(endstr, "\n%s\n", imagestr);
+        gs_sprintf(endstr, "\n%s\n", imagestr);
     }
     if (s->end_status == ERRC)
         return_error(gs_error_ioerror);
@@ -1248,7 +1248,7 @@ psw_copy_color(gx_device * dev,
         return (*dev_proc(dev, fill_rectangle))
             (dev, x, y, w, h, (bits[0] << 16) + (bits[1] << 8) + bits[2]);
     }
-    sprintf(op, "%d Ic", depth / 3);	/* RGB */
+    gs_sprintf(op, "%d Ic", depth / 3);	/* RGB */
     code = gdev_vector_update_clip_path(vdev, NULL);
     if (code < 0)
         return code;

@@ -36,6 +36,11 @@
 
 #define STRICT
 #include <windows.h>
+
+
+/* prevent gp.h redefining sprintf */
+#define sprintf sprintf
+
 #include "stdio_.h"
 
 #include "dwres.h"

@@ -65,7 +65,7 @@ s_jbig2decode_error(void *error_callback_data, const char *msg, Jbig2Severity se
         default: type = "unknown message:"; break;;
     }
     if (seg_idx == -1) segment[0] = '\0';
-    else sprintf(segment, "(segment 0x%02x)", seg_idx);
+    else gs_sprintf(segment, "(segment 0x%02x)", seg_idx);
 
     if (state)
     {

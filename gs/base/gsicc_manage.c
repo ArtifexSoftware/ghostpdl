@@ -551,8 +551,8 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
         srcgtag = gsicc_new_srcgtag_profile(mem);
         /* Now parse through the data opening the profiles that are needed */
         /* First create the format that we should read for the key */
-        sprintf(str_format_key, "%%%ds", GSICC_SRCGTAG_MAX_KEY);
-        sprintf(str_format_file, "%%%ds", FILENAME_MAX);
+        gs_sprintf(str_format_key, "%%%ds", GSICC_SRCGTAG_MAX_KEY);
+        gs_sprintf(str_format_file, "%%%ds", FILENAME_MAX);
         curr_ptr = buffer_ptr;
         /* Initialize that we want color management.  Then if profile is not
            present we know we did not want anything special done with that
@@ -1312,13 +1312,13 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
                         DEFAULT_ICC_PROCESS_LENGTH - 1;  /* -1 due to no comma at end */
             name_str = (char*) gs_alloc_bytes(dev->memory, total_len+1, 
                                                "gsicc_set_device_profile_colorants");
-            sprintf(name_str, DEFAULT_ICC_PROCESS);
+            gs_sprintf(name_str, DEFAULT_ICC_PROCESS);
             for (kk = 0; kk < num_comps-5; kk++) {
-                sprintf(temp_str,"ICC_COLOR_%d,",kk);
+                gs_sprintf(temp_str,"ICC_COLOR_%d,",kk);
                 strcat(name_str,temp_str);
             }
             /* Last one no comma */
-            sprintf(temp_str,"ICC_COLOR_%d",kk);
+            gs_sprintf(temp_str,"ICC_COLOR_%d",kk);
             strcat(name_str,temp_str);
         } 
         str_len = strlen(name_str);
@@ -2374,7 +2374,7 @@ dump_icc_buffer(int buffersize, char filename[],byte *Buffer)
     char full_file_name[50];
     FILE *fid;
 
-    sprintf(full_file_name,"%d)%s_debug.icc",global_icc_index,filename);
+    gs_sprintf(full_file_name,"%d)%s_debug.icc",global_icc_index,filename);
     fid = gp_fopen(full_file_name,"wb");
     fwrite(Buffer,sizeof(unsigned char),buffersize,fid);
     fclose(fid);

@@ -301,7 +301,7 @@ pdf_initialize_ids(gx_device_pdf * pdev)
         timeoffset = any_abs(timeoffset) / 60;
         tms = *localtime(&t);
 
-        sprintf(buf, "(D:%04d%02d%02d%02d%02d%02d%c%02d\'%02d\')",
+        gs_sprintf(buf, "(D:%04d%02d%02d%02d%02d%02d%c%02d\'%02d\')",
             tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
             tms.tm_hour, tms.tm_min, tms.tm_sec,
             timesign, timeoffset / 60, timeoffset % 60);
@@ -1277,7 +1277,7 @@ static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int64_t start, i
              * chances of needing to write white space to pad the file out.
              */
             if (!pdev->Linearise) {
-                sprintf(str, "%010"PRId64" 00000 n \n", pos);
+                gs_sprintf(str, "%010"PRId64" 00000 n \n", pos);
                 stream_puts(pdev->strm, str);
             }
             if (Offsets)
@@ -1310,7 +1310,7 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
         code = fread(&c, 1, 1, linear_params->sfile);
         read++;
     } while (c != '\n' && code > 0);
-    sprintf(Scratch, "%d 0 obj\n", pdev->ResourceUsage[object].NewObjectNumber);
+    gs_sprintf(Scratch, "%d 0 obj\n", pdev->ResourceUsage[object].NewObjectNumber);
     fwrite(Scratch, strlen(Scratch), 1, linear_params->Lin_File.file);
 
     code = fread(&c, 1, 1, linear_params->sfile);
@@ -1359,7 +1359,7 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
             target++;
             sscanf(target, "%d 0 R", &ID);
             fwrite(source, target - source, 1, linear_params->Lin_File.file);
-            sprintf(Buf, "%d 0 R", pdev->ResourceUsage[ID].NewObjectNumber);
+            gs_sprintf(Buf, "%d 0 R", pdev->ResourceUsage[ID].NewObjectNumber);
             fwrite(Buf, strlen(Buf), 1, linear_params->Lin_File.file);
             source = next;
         } else {
@@ -1544,7 +1544,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     }
 #endif
     /* Linearisation. Part 1, file header */
-    sprintf(Header, "%%PDF-%d.%d\n", level / 10, level % 10);
+    gs_sprintf(Header, "%%PDF-%d.%d\n", level / 10, level % 10);
     fwrite(Header, strlen(Header), 1, linear_params->Lin_File.file);
     if (pdev->binary_ok)
         fwrite(Binary, strlen(Binary), 1, linear_params->Lin_File.file);
@@ -1556,16 +1556,16 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
 
     /* Linearisation. Part 2, the Linearisation dictioanry */
     linear_params->LDictOffset = gp_ftell_64(linear_params->Lin_File.file);
-    sprintf(LDict, "%d 0 obj\n<<                                                                                                                        \n",
+    gs_sprintf(LDict, "%d 0 obj\n<<                                                                                                                        \n",
         LDictObj);
     fwrite(LDict, strlen(LDict), 1, linear_params->Lin_File.file);
 
     /* First page cross-reference table here (Part 3) */
     linear_params->FirstxrefOffset = gp_ftell_64(linear_params->Lin_File.file);
-    sprintf(Header, "xref\n%d %d\n", LDictObj, Part1To6 - LDictObj + 1); /* +1 for the primary hint stream */
+    gs_sprintf(Header, "xref\n%d %d\n", LDictObj, Part1To6 - LDictObj + 1); /* +1 for the primary hint stream */
     fwrite(Header, strlen(Header), 1, linear_params->Lin_File.file);
 
-    sprintf(Header, "0000000000 00000 n \n");
+    gs_sprintf(Header, "0000000000 00000 n \n");
 
     for (i = LDictObj;i <= linear_params->LastResource + 2; i++) {
         fwrite(Header, 20, 1, linear_params->Lin_File.file);
@@ -1575,7 +1575,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
      * +1 for the linearisation dict and +1 for the primary hint stream.
      */
     linear_params->FirsttrailerOffset = gp_ftell_64(linear_params->Lin_File.file);
-    sprintf(LDict, "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %d>>\nstartxref\r\n0\n%%%%EOF\n        \n",
+    gs_sprintf(LDict, "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %d>>\nstartxref\r\n0\n%%%%EOF\n        \n",
         linear_params->LastResource + 3, pdev->ResourceUsage[linear_params->Info_id].NewObjectNumber, pdev->ResourceUsage[linear_params->Catalog_id].NewObjectNumber, fileID, fileID, 0);
     fwrite(LDict, strlen(LDict), 1, linear_params->Lin_File.file);
 
@@ -1685,7 +1685,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
         }
     }
     /* insert the primary hint stream */
-    sprintf(LDict, "%d 0 obj\n<</Length           \n/S           >>\nstream\n", HintStreamObj);
+    gs_sprintf(LDict, "%d 0 obj\n<</Length           \n/S           >>\nstream\n", HintStreamObj);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
     HintStreamStart = gp_ftell_64(linear_params->sfile);
@@ -1999,7 +1999,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     flush_hint_stream(linear_params);
     HintLength = gp_ftell_64(linear_params->sfile) - HintStreamStart;
 
-    sprintf(LDict, "\nendstream\nendobj\n");
+    gs_sprintf(LDict, "\nendstream\nendobj\n");
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
     /* Calculate the length of the primary hint stream */
     HintStreamLen = gp_ftell_64(linear_params->sfile) - pdev->ResourceUsage[HintStreamObj].LinearisedOffset;
@@ -2032,23 +2032,23 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
 
     /* Now the file is long enough, write the xref */
     mainxref = gp_ftell_64(linear_params->sfile);
-    sprintf(Header, "xref\n0 %d\n", LDictObj);
+    gs_sprintf(Header, "xref\n0 %d\n", LDictObj);
     fwrite(Header, strlen(Header), 1, linear_params->sfile);
 
     linear_params->T = gp_ftell_64(linear_params->sfile) - 1;
-    sprintf(Header, "0000000000 65535 f \n");
+    gs_sprintf(Header, "0000000000 65535 f \n");
     fwrite(Header, strlen(Header), 1, linear_params->sfile);
 
     for (i = 1;i < LDictObj; i++) {
         for (j = 0; j < pdev->ResourceUsageSize;j++) {
             if (pdev->ResourceUsage[j].NewObjectNumber == i) {
-                sprintf(Header, "%010ld 00000 n \n", pdev->ResourceUsage[j].LinearisedOffset + HintStreamLen);
+                gs_sprintf(Header, "%010ld 00000 n \n", pdev->ResourceUsage[j].LinearisedOffset + HintStreamLen);
                 fwrite(Header, 20, 1, linear_params->sfile);
             }
         }
     }
 
-    sprintf(LDict, "trailer\n<</Size %d>>\nstartxref\n%ld\n%%%%EOF\n",
+    gs_sprintf(LDict, "trailer\n<</Size %d>>\nstartxref\n%ld\n%%%%EOF\n",
         LDictObj, linear_params->FirstxrefOffset);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
@@ -2062,32 +2062,32 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
      * versions.
      */
     gp_fseek_64(linear_params->sfile, linear_params->LDictOffset, SEEK_SET);
-    sprintf(LDict, "%d 0 obj\n<</Linearized 1/L %ld/H[ ", LDictObj, linear_params->FileLength);
+    gs_sprintf(LDict, "%d 0 obj\n<</Linearized 1/L %ld/H[ ", LDictObj, linear_params->FileLength);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
-    sprintf(LDict, "%ld", pdev->ResourceUsage[HintStreamObj].LinearisedOffset);
+    gs_sprintf(LDict, "%ld", pdev->ResourceUsage[HintStreamObj].LinearisedOffset);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
-    sprintf(LDict, " %ld]", HintStreamLen);
+    gs_sprintf(LDict, " %ld]", HintStreamLen);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
     /* Implementation Note 180 in hte PDF Reference 1.7 says that Acrobat
      * gets the 'E' value wrong. So its probably not important....
      */
-    sprintf(LDict, "/O %d/E %ld",pdev->ResourceUsage[pdev->pages[0].Page->id].NewObjectNumber, linear_params->E);
+    gs_sprintf(LDict, "/O %d/E %ld",pdev->ResourceUsage[pdev->pages[0].Page->id].NewObjectNumber, linear_params->E);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
-    sprintf(LDict, "/N %d/T %ld>>\nendobj\n", pdev->next_page, linear_params->T);
+    gs_sprintf(LDict, "/N %d/T %ld>>\nendobj\n", pdev->next_page, linear_params->T);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
     /* Return to the secondary xref and write it again filling
      * in the missing offsets.
      */
     gp_fseek_64(linear_params->sfile, linear_params->FirstxrefOffset, SEEK_SET);
-    sprintf(Header, "xref\n%d %d\n", LDictObj, Part1To6 - LDictObj + 1); /* +1 for the primary hint stream */
+    gs_sprintf(Header, "xref\n%d %d\n", LDictObj, Part1To6 - LDictObj + 1); /* +1 for the primary hint stream */
     fwrite(Header, strlen(Header), 1, linear_params->sfile);
 
     for (i = LDictObj;i <= linear_params->LastResource + 2; i++) {
         for (j = 0; j < pdev->ResourceUsageSize;j++) {
             if (pdev->ResourceUsage[j].NewObjectNumber == i) {
-                sprintf(Header, "%010ld 00000 n \n", pdev->ResourceUsage[j].LinearisedOffset);
+                gs_sprintf(Header, "%010ld 00000 n \n", pdev->ResourceUsage[j].LinearisedOffset);
                 fwrite(Header, 20, 1, linear_params->sfile);
             }
         }
@@ -2097,14 +2097,14 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
      * in the missing values.
      */
     code = gp_fseek_64(linear_params->sfile, linear_params->FirsttrailerOffset, SEEK_SET);
-    sprintf(LDict, "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %ld>>\nstartxref\r\n0\n%%%%EOF\n",
+    gs_sprintf(LDict, "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %ld>>\nstartxref\r\n0\n%%%%EOF\n",
         linear_params->LastResource + 3, pdev->ResourceUsage[linear_params->Info_id].NewObjectNumber, pdev->ResourceUsage[linear_params->Catalog_id].NewObjectNumber, fileID, fileID, (unsigned long)mainxref);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
     code = gp_fseek_64(linear_params->sfile, pdev->ResourceUsage[HintStreamObj].LinearisedOffset, SEEK_SET);
-    sprintf(LDict, "%d 0 obj\n<</Length %10ld", HintStreamObj, HintLength);
+    gs_sprintf(LDict, "%d 0 obj\n<</Length %10ld", HintStreamObj, HintLength);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
-    sprintf(LDict, "\n/S %10ld>>\nstream\n", SharedHintOffset);
+    gs_sprintf(LDict, "\n/S %10ld>>\nstream\n", SharedHintOffset);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
 error:
@@ -2605,7 +2605,7 @@ pdf_close(gx_device * dev)
                 pprintld1(s, "/Encrypt %ld 0 R ", Encrypt_id);
             }
             stream_puts(s, ">>\n");
-            sprintf(xref_str, "startxref\n%"PRId64"\n%%%%EOF\n", xref);
+            gs_sprintf(xref_str, "startxref\n%"PRId64"\n%%%%EOF\n", xref);
             stream_puts(s, xref_str);
         }
     }

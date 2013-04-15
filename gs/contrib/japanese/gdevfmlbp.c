@@ -112,7 +112,7 @@ gdev_fmlbp_paper_size(gx_device_printer *dev, char *paper)
     height_inches = t;
     landscape = 1;
   }
-  sprintf(paper, "%s;%d",
+  gs_sprintf(paper, "%s;%d",
     (height_inches >= 15.9 ? PAPER_SIZE_A3 :
      height_inches >= 11.8 ?
      (width_inches >=  9.2 ? PAPER_SIZE_B4 : PAPER_SIZE_LEGAL) :
@@ -136,7 +136,7 @@ static void goto_xy(FILE *prn_stream,int x,int y)
 
     fputc(CEX,prn_stream);
     fputc('"',prn_stream);
-    sprintf(buff,"%d",x);
+    gs_sprintf((char *)buff,"%d",x);
     while (*p)
       {
         if (!*(p+1)) fputc((*p)+0x30,prn_stream);
@@ -146,7 +146,7 @@ static void goto_xy(FILE *prn_stream,int x,int y)
       }
 
     p=buff;
-    sprintf(buff,"%d",y);
+    gs_sprintf((char *)buff,"%d",y);
     while (*p)
       {
         if (!*(p+1)) fputc((*p)+0x40,prn_stream);

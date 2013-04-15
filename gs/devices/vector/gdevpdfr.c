@@ -140,7 +140,7 @@ pdf_refer_named(gx_device_pdf * pdev, const gs_param_string * pname_orig,
     }
     if (page_number <= 0)
         return code;
-    sprintf(page_name_chars, "{Page%d}", page_number);
+    gs_sprintf(page_name_chars, "{Page%d}", page_number);
     param_string_from_string(pnstr, page_name_chars);
     pname = &pnstr;
     code = pdf_find_named(pdev, pname, ppco);
@@ -452,7 +452,7 @@ pdf_replace_names(gx_device_pdf * pdev, const gs_param_string * from,
 
         size += sname - scan;
         if (pco) {
-            sprintf(ref, " %ld 0 R ", pco->id);
+            gs_sprintf(ref, " %ld 0 R ", pco->id);
             size += strlen(ref);
         }
         scan = next;
@@ -480,7 +480,7 @@ pdf_replace_names(gx_device_pdf * pdev, const gs_param_string * from,
         memcpy(sto, scan, copy);
         sto += copy;
         if (pco) {
-            sprintf(ref, " %ld 0 R ", pco->id);
+            gs_sprintf(ref, " %ld 0 R ", pco->id);
             rlen = strlen(ref);
             memcpy(sto, ref, rlen);
             sto += rlen;

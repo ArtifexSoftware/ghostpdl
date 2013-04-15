@@ -2118,7 +2118,7 @@ spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
     /* Open the output files for the spot colors */
     for(i = 0; i < nspot; i++) {
-        sprintf(spotname, "%ss%d", pdevn->fname, i);
+        gs_sprintf(spotname, "%ss%d", pdevn->fname, i);
         spot_file[i] = gp_fopen(spotname, "wb");
         if (spot_file[i] == NULL) {
             code = gs_error_VMerror;
@@ -2157,7 +2157,7 @@ spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
             return code;
     }
     for(i = 0; i < nspot; i++) {
-        sprintf(spotname, "%ss%d", pdevn->fname, i);
+        gs_sprintf(spotname, "%ss%d", pdevn->fname, i);
         code = devn_write_pcx_file(pdev, spotname, 1, bpc, linelength[i]);
         if (code < 0)
             return code;
@@ -2491,7 +2491,7 @@ devn_write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
     in = gp_fopen(filename, "rb");
     if (!in)
         return_error(gs_error_invalidfileaccess);
-    sprintf(outname, "%s.pcx", filename);
+    gs_sprintf(outname, "%s.pcx", filename);
     out = gp_fopen(outname, "wb");
     if (!out) {
         fclose(in);

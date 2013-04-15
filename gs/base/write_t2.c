@@ -70,7 +70,7 @@ write_type2_float(WRF_output * a_output, double a_float)
     int high = true;
     char c = 0;
 
-    sprintf(buffer, "%f", a_float);
+    gs_sprintf(buffer, "%f", a_float);
     WRF_wbyte(a_output, 30);
     for (;;) {
         char n = 0;

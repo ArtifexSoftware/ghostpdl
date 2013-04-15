@@ -459,17 +459,17 @@ lips4v_set_cap(gx_device * dev, int x, int y)
     int dy = y - pdev->prev_y;
 
     if (dx > 0) {
-        sprintf(cap, "%c%da", LIPS_CSI, dx);
+        gs_sprintf(cap, "%c%da", LIPS_CSI, dx);
         lputs(s, cap);
     } else if (dx < 0) {
-        sprintf(cap, "%c%dj", LIPS_CSI, -dx);
+        gs_sprintf(cap, "%c%dj", LIPS_CSI, -dx);
         lputs(s, cap);
     }
     if (dy > 0) {
-        sprintf(cap, "%c%dk", LIPS_CSI, dy);
+        gs_sprintf(cap, "%c%dk", LIPS_CSI, dy);
         lputs(s, cap);
     } else if (dy < 0) {
-        sprintf(cap, "%c%de", LIPS_CSI, -dy);
+        gs_sprintf(cap, "%c%de", LIPS_CSI, -dy);
         lputs(s, cap);
     }
     pdev->prev_x = x;
@@ -544,10 +544,10 @@ lips4v_copy_text_char(gx_device * dev, const byte * data,
     if (download) {
         if (ccode % 128 == 0 && ccode == pdev->count) {
             /* 文字セット登録補助命令 */
-            sprintf(cset_sub, "%c%dx%c", LIPS_DCS, ccode / 128, LIPS_ST);
+            gs_sprintf(cset_sub, "%c%dx%c", LIPS_DCS, ccode / 128, LIPS_ST);
             lputs(s, cset_sub);
             /* 文字セット登録命令 */
-            sprintf(cset,
+            gs_sprintf(cset,
                     "%c%d;1;0;0;3840;8;400;100;0;0;200;%d;%d;0;0;;;;;%d.p",
                     LIPS_CSI,
                     size + 9, cell_length,	/* Cell Width */
@@ -556,7 +556,7 @@ lips4v_copy_text_char(gx_device * dev, const byte * data,
             lputs(s, cset);
         } else {
             /* 1文字登録命令 */
-            sprintf(cset,
+            gs_sprintf(cset,
                     "%c%d;%d;8;%d.q", LIPS_CSI,
                     size + 9, ccode / 128, (int)dev->x_pixels_per_inch);
             lputs(s, cset);
@@ -575,13 +575,13 @@ lips4v_copy_text_char(gx_device * dev, const byte * data,
     /* 文字セット・アサイン番号選択命令2 */
     if (download) {
         if (pdev->current_font != ccode / 128) {
-            sprintf(cset_number, "%c%d%%v", LIPS_CSI, ccode / 128);
+            gs_sprintf(cset_number, "%c%d%%v", LIPS_CSI, ccode / 128);
             lputs(s, cset_number);
             pdev->current_font = ccode / 128;
         }
     } else {
         if (pdev->current_font != ccode / 128) {
-            sprintf(cset_number, "%c%d%%v", LIPS_CSI, ccode / 128);
+            gs_sprintf(cset_number, "%c%d%%v", LIPS_CSI, ccode / 128);
             lputs(s, cset_number);
             pdev->current_font = ccode / 128;
         }
@@ -592,7 +592,7 @@ lips4v_copy_text_char(gx_device * dev, const byte * data,
         if (pdev->color_info.depth == 8) {
             sputc(s, LIPS_CSI);
             lputs(s, "?10;2;");
-            sprintf(text_color, "%d",
+            gs_sprintf(text_color, "%d",
                     (int)(pdev->color_info.max_gray - pdev->current_color));
         } else {
             int r = (pdev->current_color >> 16) * 1000.0 / 255.0;
@@ -601,7 +601,7 @@ lips4v_copy_text_char(gx_device * dev, const byte * data,
 
             sputc(s, LIPS_CSI);
             lputs(s, "?10;;");
-            sprintf(text_color, "%d;%d;%d", r, g, b);
+            gs_sprintf(text_color, "%d;%d;%d", r, g, b);
         }
         lputs(s, text_color);
         lputs(s, "%p");
@@ -717,16 +717,16 @@ lips4v_beginpage(gx_device_vector * vdev)
                 lputs(s, "@PJL SET RESOLUTION = QUICK\n");
             lputs(s, l4v_file_header2);
             if (pdev->toner_density) {
-                sprintf(toner_d, "@PJL SET TONER-DENSITY=%d\n",
+                gs_sprintf(toner_d, "@PJL SET TONER-DENSITY=%d\n",
                         pdev->toner_density);
                 lputs(s, toner_d);
             }
             if (pdev->toner_saving_set) {
                 lputs(s, "@PJL SET TONER-SAVING=");
                 if (pdev->toner_saving)
-                    sprintf(toner_s, "ON\n");
+                    gs_sprintf(toner_s, "ON\n");
                 else
-                    sprintf(toner_s, "OFF\n");
+                    gs_sprintf(toner_s, "OFF\n");
                 lputs(s, toner_s);
             }
             lputs(s, l4v_file_header3);
@@ -737,7 +737,7 @@ lips4v_beginpage(gx_device_vector * vdev)
             return_error(gs_error_rangecheck);
 
         /* set reaolution (dpi) */
-        sprintf(dpi_char, "%d", dpi);
+        gs_sprintf(dpi_char, "%d", dpi);
         lputs(s, dpi_char);
 
         if (pdev->color_info.depth == 8)
@@ -746,7 +746,7 @@ lips4v_beginpage(gx_device_vector * vdev)
             lputs(s, l4vcolor_file_header);
 
         /* username */
-        sprintf(username, "%c2y%s%c", LIPS_DCS, pdev->Username, LIPS_ST);
+        gs_sprintf(username, "%c2y%s%c", LIPS_DCS, pdev->Username, LIPS_ST);
         lputs(s, username);
     }
     if (strcmp(pdev->mediaType, "PlainPaper") == 0) {
@@ -773,13 +773,13 @@ lips4v_beginpage(gx_device_vector * vdev)
          && strcmp(pdev->mediaType, LIPS_MEDIATYPE_DEFAULT) != 0)) {
         /* Use ManualFeed */
         if (pdev->prev_feed_mode != 10) {
-            sprintf(feedmode, "%c10q", LIPS_CSI);
+            gs_sprintf(feedmode, "%c10q", LIPS_CSI);
             lputs(s, feedmode);
             pdev->prev_feed_mode = 10;
         }
     } else {
         if (pdev->prev_feed_mode != pdev->cassetFeed) {
-            sprintf(feedmode, "%c%dq", LIPS_CSI, pdev->cassetFeed);
+            gs_sprintf(feedmode, "%c%dq", LIPS_CSI, pdev->cassetFeed);
             lputs(s, feedmode);
             pdev->prev_feed_mode = pdev->cassetFeed;
         }
@@ -791,10 +791,10 @@ lips4v_beginpage(gx_device_vector * vdev)
     if (pdev->prev_paper_size != paper_size) {
         if (paper_size == USER_SIZE) {
             /* modified by shige 06/27 2003
-            sprintf(paper, "%c80;%d;%dp", LIPS_CSI, width * 10, height * 10); */
+            gs_sprintf(paper, "%c80;%d;%dp", LIPS_CSI, width * 10, height * 10); */
             /* modified by shige 11/09 2003
-            sprintf(paper, "%c80;%d;%dp", LIPS_CSI, height * 10, width * 10); */
-            sprintf(paper, "%c80;%d;%dp", LIPS_CSI,
+            gs_sprintf(paper, "%c80;%d;%dp", LIPS_CSI, height * 10, width * 10); */
+            gs_sprintf(paper, "%c80;%d;%dp", LIPS_CSI,
                     (height * 10 > LIPS_HEIGHT_MAX_720)?
                     LIPS_HEIGHT_MAX_720 : (height * 10),
                     (width * 10 > LIPS_WIDTH_MAX_720)?
@@ -802,27 +802,27 @@ lips4v_beginpage(gx_device_vector * vdev)
             lputs(s, paper);
         } else if (paper_size == USER_SIZE + LANDSCAPE) {
             /* modified by shige 06/27 2003
-            sprintf(paper, "%c81;%d;%dp", LIPS_CSI, height * 10, width * 10); */
+            gs_sprintf(paper, "%c81;%d;%dp", LIPS_CSI, height * 10, width * 10); */
             /* modified by shige 11/09 2003
-            sprintf(paper, "%c81;%d;%dp", LIPS_CSI, width * 10, height * 10); */
-            sprintf(paper, "%c80;%d;%dp", LIPS_CSI,
+            gs_sprintf(paper, "%c81;%d;%dp", LIPS_CSI, width * 10, height * 10); */
+            gs_sprintf(paper, "%c80;%d;%dp", LIPS_CSI,
                     (width * 10 > LIPS_HEIGHT_MAX_720)?
                     LIPS_HEIGHT_MAX_720 : (width * 10),
                     (height * 10 > LIPS_WIDTH_MAX_720)?
                     LIPS_WIDTH_MAX_720 : (height * 10));
             lputs(s, paper);
         } else {
-            sprintf(paper, "%c%dp", LIPS_CSI, paper_size);
+            gs_sprintf(paper, "%c%dp", LIPS_CSI, paper_size);
             lputs(s, paper);
         }
     } else if (paper_size == USER_SIZE) {
         if (pdev->prev_paper_width != width ||
             pdev->prev_paper_height != height)
                 /* modified by shige 06/27 2003
-                sprintf(paper, "%c80;%d;%dp", LIPS_CSI, width * 10, height * 10); */
+                gs_sprintf(paper, "%c80;%d;%dp", LIPS_CSI, width * 10, height * 10); */
                 /* modified by shige 11/09 2003
-                sprintf(paper, "%c80;%d;%dp", LIPS_CSI, height * 10, width * 10); */
-                sprintf(paper, "%c80;%d;%dp", LIPS_CSI,
+                gs_sprintf(paper, "%c80;%d;%dp", LIPS_CSI, height * 10, width * 10); */
+                gs_sprintf(paper, "%c80;%d;%dp", LIPS_CSI,
                     (height * 10 > LIPS_HEIGHT_MAX_720)?
                     LIPS_HEIGHT_MAX_720 : (height * 10),
                     (width * 10 > LIPS_WIDTH_MAX_720)?
@@ -832,10 +832,10 @@ lips4v_beginpage(gx_device_vector * vdev)
         if (pdev->prev_paper_width != width ||
             pdev->prev_paper_height != height)
                 /* modified by shige 06/27 2003
-                sprintf(paper, "%c81;%d;%dp", LIPS_CSI, height * 10, width * 10); */
+                gs_sprintf(paper, "%c81;%d;%dp", LIPS_CSI, height * 10, width * 10); */
                 /* modified by shige 11/09 2003
-                sprintf(paper, "%c81;%d;%dp", LIPS_CSI, width * 10, height * 10); */
-                sprintf(paper, "%c80;%d;%dp", LIPS_CSI,
+                gs_sprintf(paper, "%c81;%d;%dp", LIPS_CSI, width * 10, height * 10); */
+                gs_sprintf(paper, "%c80;%d;%dp", LIPS_CSI,
                     (width * 10 > LIPS_HEIGHT_MAX_720)?
                     LIPS_HEIGHT_MAX_720 : (width * 10),
                     (height * 10 > LIPS_WIDTH_MAX_720)?
@@ -847,32 +847,32 @@ lips4v_beginpage(gx_device_vector * vdev)
     pdev->prev_paper_height = height;
 
     if (pdev->faceup) {
-        sprintf(faceup_char, "%c11;12;12~", LIPS_CSI);
+        gs_sprintf(faceup_char, "%c11;12;12~", LIPS_CSI);
         lputs(s, faceup_char);
     }
     /* N-up Printing Setting */
     if (pdev->first_page) {
         if (pdev->nup != 1) {
-            sprintf(nup_char, "%c%d1;;%do", LIPS_CSI, pdev->nup, paper_size);
+            gs_sprintf(nup_char, "%c%d1;;%do", LIPS_CSI, pdev->nup, paper_size);
             lputs(s, nup_char);
         }
     }
     /* Duplex Setting */
     if (dupset && dup) {
         if (pdev->prev_duplex_mode == 0 || pdev->prev_duplex_mode == 1) {
-            sprintf(duplex_char, "%c2;#x", LIPS_CSI);	/* duplex */
+            gs_sprintf(duplex_char, "%c2;#x", LIPS_CSI);	/* duplex */
             lputs(s, duplex_char);
             if (!tum) {
                 /* long edge binding */
                 if (pdev->prev_duplex_mode != 2) {
-                    sprintf(tumble_char, "%c0;#w", LIPS_CSI);
+                    gs_sprintf(tumble_char, "%c0;#w", LIPS_CSI);
                     lputs(s, tumble_char);
                 }
                 pdev->prev_duplex_mode = 2;
             } else {
                 /* short edge binding */
                 if (pdev->prev_duplex_mode != 3) {
-                    sprintf(tumble_char, "%c2;#w", LIPS_CSI);
+                    gs_sprintf(tumble_char, "%c2;#w", LIPS_CSI);
                     lputs(s, tumble_char);
                 }
                 pdev->prev_duplex_mode = 3;
@@ -880,7 +880,7 @@ lips4v_beginpage(gx_device_vector * vdev)
         }
     } else if (dupset && !dup) {
         if (pdev->prev_duplex_mode != 1) {
-            sprintf(duplex_char, "%c0;#x", LIPS_CSI);	/* simplex */
+            gs_sprintf(duplex_char, "%c0;#x", LIPS_CSI);	/* simplex */
             lputs(s, duplex_char);
         }
         pdev->prev_duplex_mode = 1;
@@ -893,9 +893,9 @@ lips4v_beginpage(gx_device_vector * vdev)
     /* size unit (dpi) */
     sputc(s, LIPS_CSI);
     lputs(s, "11h");
-    sprintf(unit, "%c?7;%d I", LIPS_CSI, (int)pdev->x_pixels_per_inch);
+    gs_sprintf(unit, "%c?7;%d I", LIPS_CSI, (int)pdev->x_pixels_per_inch);
     lputs(s, unit);
-    sprintf(page_header, "%c[0&}#%c", LIPS_ESC, LIPS_IS2);
+    gs_sprintf(page_header, "%c[0&}#%c", LIPS_ESC, LIPS_IS2);
     lputs(s, page_header);	/* vector mode */
 
     lputs(s, "!0");		/* size unit (dpi) */
@@ -904,10 +904,10 @@ lips4v_beginpage(gx_device_vector * vdev)
     sputc(s, LIPS_IS2);
 
     if (pdev->color_info.depth == 8) {
-        sprintf(l4vmono_page_header, "!13%c$%c", LIPS_IS2, LIPS_IS2);
+        gs_sprintf(l4vmono_page_header, "!13%c$%c", LIPS_IS2, LIPS_IS2);
         lputs(s, l4vmono_page_header);
     } else {
-        sprintf(l4vcolor_page_header, "!11%c$%c", LIPS_IS2, LIPS_IS2);
+        gs_sprintf(l4vcolor_page_header, "!11%c$%c", LIPS_IS2, LIPS_IS2);
         lputs(s, l4vcolor_page_header);
     }
 
@@ -1010,7 +1010,7 @@ lips4v_setlinecap(gx_device_vector * vdev, gs_line_cap cap)
         break;
     }
     /* 線端形状指定命令 */
-    sprintf(c, "}E%d%c", line_cap, LIPS_IS2);
+    gs_sprintf(c, "}E%d%c", line_cap, LIPS_IS2);
     lputs(s, c);
 
     pdev->linecap = cap;
@@ -1050,7 +1050,7 @@ lips4v_setlinejoin(gx_device_vector * vdev, gs_line_join join)
         break;
     }
 
-    sprintf(c, "}F%d%c", lips_join, LIPS_IS2);
+    gs_sprintf(c, "}F%d%c", lips_join, LIPS_IS2);
     lputs(s, c);
 
     return 0;
@@ -1486,7 +1486,7 @@ lips4v_output_page(gx_device * dev, int num_copies, int flush)
     if (num_copies > 255)
         num_copies = 255;
     if (pdev->prev_num_copies != num_copies) {
-        sprintf(str, "%c%dv", LIPS_CSI, num_copies);
+        gs_sprintf(str, "%c%dv", LIPS_CSI, num_copies);
         lputs(s, str);
         pdev->prev_num_copies = num_copies;
     }

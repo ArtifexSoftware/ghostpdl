@@ -2766,7 +2766,7 @@ pdf_choose_output_glyph_hame(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_con
         p = (byte *)gs_alloc_string(pdev->pdf_memory, gnstr->size, "pdf_text_set_cache");
         if (p == NULL)
             return_error(gs_error_VMerror);
-        sprintf(buf, "g%04x", (unsigned int)(glyph & 0xFFFF));
+        gs_sprintf(buf, "g%04x", (unsigned int)(glyph & 0xFFFF));
         memcpy(p, buf, 5);
         gnstr->data = p;
     }

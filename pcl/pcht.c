@@ -1512,7 +1512,7 @@ pcl_ht_init_render_methods(pcl_state_t * pcs, gs_memory_t * pmem)
         if ((pcs->rendering_info[i].flags & HT_FIXED) != 0)
             continue;
         gs_c_param_list_write(&list, pmem);
-        sprintf(nbuff, "Dither_%d", i);
+        gs_sprintf(nbuff, "Dither_%d", i);
         if ((param_request((gs_param_list *) & list, nbuff) >= 0) &&
             (gs_getdeviceparams(pcur_dev, (gs_param_list *) & list) >= 0)) {
             gs_param_dict dict;

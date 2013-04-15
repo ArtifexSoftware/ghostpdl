@@ -387,7 +387,7 @@ static void t1_hinter__paint_glyph(t1_hinter * self, bool aligned)
 
         for(j = beg_pole; j <= end_pole; j++) {
             vd_circle(X(j), Y(j), 3, RGB(0,0,255));
-            sprintf(buf, "%d", j);
+            gs_sprintf(buf, "%d", j);
             vd_text(self->pole[j].gx, self->pole[j].gy, buf, RGB(0,0,0));
             if (self->pole[j + 1].type == offcurve)
                 j+=2;

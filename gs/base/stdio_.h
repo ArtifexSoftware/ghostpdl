@@ -77,6 +77,15 @@ int unlink(const char *);
 int snprintf(char *buffer, size_t count, const char *format , ...);
 #endif
 
+/* for our non-localizing (v)s(n)printf() functions */
+/* only *really* required for floating point conversions */
+#include "gssprintf.h"
+
+#ifndef sprintf
+#define sprintf DO_NOT_USE_SPRINTF
+#endif
+
+
 #ifndef fopen
 #define fopen DO_NOT_USE_FOPEN
 #endif

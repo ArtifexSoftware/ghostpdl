@@ -662,7 +662,7 @@ hl1250_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
            (-120, 0) compared to the one in the ljet4 driver (-180, 36)
            (X, Y coordinates here are specified in 1/720-inch units).  */
 
-        sprintf(page_init, "\033&l-120U\033*r0F\033&u%dD%s", y_dpi, tray_pcl);
+        gs_sprintf(page_init, "\033&l-120U\033*r0F\033&u%dD%s", y_dpi, tray_pcl);
         return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
                                             y_dpi, PCL_LJ4_FEATURES,
                                             page_init, page_init, false);

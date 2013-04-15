@@ -129,7 +129,7 @@ m8510_output_run(gx_device_printer *pdev,
         /* Transfer the line of data. */
         count = out_end - out;
         if (count) {
-                sprintf(tmp, "\033g%03d", count/8);
+                gs_sprintf(tmp, "\033g%03d", count/8);
                 fwrite(tmp, 1, 5, prn_stream);
                 fwrite(out, 1, count, prn_stream);
                 fwrite("\r", 1, 1, prn_stream);

@@ -60,6 +60,9 @@
  *   cups_print_planar()     - Print a page of planar pixels.
  */
 
+/* prevent gp.h redefining fopen */
+#define sprintf sprintf
+
 /*
  * Include necessary headers...
  */

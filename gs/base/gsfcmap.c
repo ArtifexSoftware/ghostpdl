@@ -567,7 +567,7 @@ gs_cmap_ToUnicode_alloc(gs_memory_t *mem, int id, int num_codes, int key_size, g
         char sid[10], *pref = "aux-";
         int sid_len, pref_len = strlen(pref);
 
-        sprintf(sid, "%d", id);
+        gs_sprintf(sid, "%d", id);
         sid_len = strlen(sid);
         name_len = pref_len + sid_len;
         cmap_name = gs_alloc_string(mem, name_len, "gs_cmap_ToUnicode_alloc");

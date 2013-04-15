@@ -699,7 +699,7 @@ pack_long(LPUB8 * p, UL32 v)
 static inline void
 pack_float(LPUB8 * p, float v)
 {
-    sprintf((char *)(*p), "%f", v);
+    gs_sprintf((char *)(*p), "%f", v);
     *p += strlen((const char *)*p) + 1;
 }
 

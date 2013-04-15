@@ -169,6 +169,8 @@ TIFFPLATFORM=unix
 TIFFCONFIG_SUFFIX=.unix
 LIBTIFF_NAME=tiff
 
+TRIOSRCDIR=trio
+
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
@@ -465,6 +467,7 @@ MAKEDIRSTOP=directories
 
 include $(GLSRCDIR)/unixhead.mak
 include $(GLSRCDIR)/gs.mak
+include $(GLSRCDIR)/trio.mak
 # psromfs.mak must precede lib.mak
 include $(PSSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak

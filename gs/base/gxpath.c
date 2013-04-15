@@ -1035,7 +1035,7 @@ gx_print_segment(const gs_memory_t *mem, const segment * pseg)
     double py = fixed2float(pseg->pt.y);
     char out[80];
 
-    sprintf(out, "0x%lx<0x%lx,0x%lx>:%u",
+    gs_sprintf(out, "0x%lx<0x%lx,0x%lx>:%u",
          (ulong) pseg, (ulong) pseg->prev, (ulong) pseg->next, pseg->notes);
     switch (pseg->type) {
         case s_start:{

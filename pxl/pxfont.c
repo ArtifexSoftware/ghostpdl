@@ -514,7 +514,7 @@ pxSetFont(px_args_t * par, px_state_t * pxs)
                     {
                         char setstr[26];        /* 64-bit value plus message */
 
-                        sprintf(setstr, " : %d", symbol_set);
+                        gs_sprintf(setstr, " : %d", symbol_set);
                         strncat(pxs->error_line, setstr,
                                 px_max_error_line - strlen(pxs->error_line));
                         pxs->error_line[px_max_error_line] = 0;
