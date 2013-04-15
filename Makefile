@@ -212,20 +212,14 @@ ls-udebug: ufst
 ls-umemento: ufst
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-memento
 
-ls-uclean:
+ls-uclean: ufst_clean
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
-	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
-	rm -f ufst_built
 
-ls-udebug-clean:
+ls-udebug-clean: ufst_debug_clean
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
-	$(MAKE) -C ufst/rts/lib -f makefile.artifex debug-clean
-	rm -f ufst_built
 
-ls-umemento-clean:
+ls-umemento-clean: ufst_debug_clean
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-clean
-	$(MAKE) -C ufst/rts/lib -f makefile.artifex debug-clean
-	rm -f ufst_built
 
 uproduct: ufst
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product
@@ -236,26 +230,37 @@ udebug: ufst
 umemento: ufst
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-memento
 
-uclean:
+uclean: ufst_clean
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
-	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
-	rm -f ufst_built
 
-udebug-clean:
+udebug-clean: ufst_debug_clean
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-clean
-	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
-	rm -f ufst_built
 
-umemento-clean:
+umemento-clean: ufst_clean
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-clean
-	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
-	rm -f ufst_built
 
 all-debug: pcl-debug udebug ls-debug ls-udebug xps-debug
 
 all-memento: pcl-memento umemento ls-memento ls-umemento xps-memento
 
-all-clean: clean clean-debug clean-memento ls-clean ls-debug-clean ls-memento-clean uclean udebug-clean umemento-clean ls-uclean ls-udebug-clean ls-umemento-clean
-	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
+ufst_clean:
+	if ( test -d ufst ); then $(MAKE) -C ufst/rts/lib -f makefile.artifex clean; fi
+	rm -f ufst_built
+
+ufst_debug_clean:
+	if ( test -d ufst ); then $(MAKE) -C ufst/rts/lib -f makefile.artifex debug-clean; fi
+	rm -f ufst_built
+
+all-clean: ufst_clean clean memento-clean ls-clean ls-debug-clean ls-memento-clean uclean udebug-clean umemento-clean ls-uclean ls-udebug-clean ls-umemento-clean
+
+distclean:  all-clean  
+	rm -rf tiff-config
+	rm -rf autom4te.cache
+	rm -f config.log
+	rm -f config.mak
+	rm -f config.status
+        
+maintainer-clean:  distclean  
+	rm -f configure
 
 .PHONY: all clean test check install uninstall product profile pcl pcl-debug pcl-memento pcl-test pcl-install pcl-uninstall pcl-clean pcl-debug-clean pcl-memento-clean xps xps-debug xps-memento svg svg-debug svg-memento ls-clean ls-debug-clean ls-memento-clean ls-test ls-install ls-product ls-profile ls-udebug ls-umemento udebug umemento ufst mupdf

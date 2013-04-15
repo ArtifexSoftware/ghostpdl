@@ -21,13 +21,14 @@
 
 # (Rename directories.)
 TIFFSRC=$(TIFFSRCDIR)$(D)
+TIFFCONF=$(TIFFCONFDIR)$(D)
 TIFFGEN=$(TIFFGENDIR)$(D)
 TIFFOBJ=$(TIFFOBJDIR)$(D)
 TIFFO_=$(O_)$(TIFFOBJ)
 JPEGGEN=$(JGENDIR)$(D)
 
-TIFFCONFIG=$(TIFFSRC)libtiff$(D)tif_config$(TIFFCONFIG_SUFFIX).h
-TIFFCONF=$(TIFFSRC)libtiff$(D)tiffconf$(TIFFCONFIG_SUFFIX).h
+TIFFCONFIG_H=$(TIFFCONF)libtiff$(D)tif_config$(TIFFCONFIG_SUFFIX).h
+TIFFCONF_H=$(TIFFCONF)libtiff$(D)tiffconf$(TIFFCONFIG_SUFFIX).h
 
 # Define the name of this makefile.
 LIBTIFF_MAK=$(GLSRC)tiff.mak
@@ -49,11 +50,11 @@ tiff_10=$(TIFFOBJ)tif_zip.$(OBJ)
 
 $(TIFFSRC)libtiff$(D)tif_config.unix.h : $(TIFFSRC)libtiff$(D)tif_config.h.in
 	cd $(TIFFSRC) && ./configure
-	$(CP_) $(TIFFSRC)libtiff$(D)tif_config.h $(TIFFSRC)libtiff$(D)tif_config.unix.h
+	$(CP_) $(TIFFCONF)libtiff$(D)tif_config.h $(TIFFCONF)libtiff$(D)tif_config.unix.h
 
 $(TIFFSRC)libtiff$(D)tiffconf.unix.h : $(TIFFSRC)libtiff$(D)tiffconf.h.in
 	cd $(TIFFSRC) && ./configure
-	$(CP_) $(TIFFSRC)libtiff$(D)tiffconf.h $(TIFFSRC)libtiff$(D)tiffconf.unix.h
+	$(CP_) $(TIFFCONF)libtiff$(D)tiffconf.h $(TIFFCONF)libtiff$(D)tiffconf.unix.h
 
 $(TIFFOBJ)tif_aux.$(OBJ) : $(TIFFSRC)/libtiff/tif_aux.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_aux.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_aux.c
@@ -178,11 +179,11 @@ $(TIFFOBJ)tif_win32.$(OBJ) : $(TIFFSRC)/libtiff/tif_win32.c $(TIFFDEP)
 $(TIFFOBJ)tif_unix.$(OBJ) : $(TIFFSRC)/libtiff/tif_unix.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_unix.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_unix.c
 
-$(TIFFGEN)tif_config.h: $(TIFFCONFIG)
-	$(CP_) $(TIFFCONFIG) $(TIFFGEN)tif_config.h
+$(TIFFGEN)tif_config.h: $(TIFFCONFIG_H)
+	$(CP_) $(TIFFCONFIG_H) $(TIFFGEN)tif_config.h
 	
-$(TIFFGEN)tiffconf.h: $(TIFFCONF)
-	$(CP_) $(TIFFCONF) $(TIFFGEN)tiffconf.h
+$(TIFFGEN)tiffconf.h: $(TIFFCONF_H)
+	$(CP_) $(TIFFCONF_H) $(TIFFGEN)tiffconf.h
 	
 # Define the version of libtiff.dev that we are actually using.
 $(TIFFGEN)libtiff.dev : $(TOP_MAKEFILES) $(TIFFGEN)libtiff_$(SHARE_LIBTIFF).dev

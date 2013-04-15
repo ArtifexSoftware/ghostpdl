@@ -103,11 +103,17 @@ dnl --------------------------------------------------
 dnl Run subsidiary configure scripts
 dnl --------------------------------------------------
 LIBTIFFDIR=./gs/tiff
+LIBTIFFCONFDIR=./tiff-config
+
 
 echo
 echo "Running libtiff configure script..."
 olddir=`pwd`
-cd $LIBTIFFDIR && ./configure --disable-jbig --disable-lzma $SUBCONFIG_OPTS
+if ! test -d $LIBTIFFCONFDIR ; then
+  mkdir $LIBTIFFCONFDIR
+fi
+
+cd $LIBTIFFCONFDIR && $olddir/$LIBTIFFDIR/configure --disable-jbig --disable-lzma $SUBCONFIG_OPTS
 status=$?
 if test "$status" -ne 0 ; then
   AC_MSG_ERROR([libtiff configure script failed], $status)

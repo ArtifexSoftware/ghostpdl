@@ -872,12 +872,17 @@ AC_ARG_WITH([system-libtiff], AC_HELP_STRING([--with-system-libtiff],
             [], [with_system_libtiff=check])
 TIFFDEVS=''
 FAX_DEVS=''
+
+LIBTIFFDIR=''
+LIBTIFFCONFDIR=''
+
 TIFFDEVS_ALL='tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflzw tiffpack tiffgray tiffsep tiffsep1 tiffscaled'
 FAX_DEVS_ALL='cfax dfaxlow dfaxhigh fax faxg3 faxg32d faxg4 tiffg3 tiffg32d tiffg4 tfax'
 case "x$with_system_libtiff" in
     xcheck)
         if test -d tiff; then
             LIBTIFFDIR=tiff
+            LIBTIFFCONFDIR=tiff-config
             HAVE_LOCAL_LIBTIFF=1
             SHARE_LIBTIFF=0
         else
@@ -939,6 +944,7 @@ Disabling tiff output devices.])
         if test -d tiff; then
             AC_MSG_RESULT([yes])
             LIBTIFFDIR=tiff
+            LIBTIFFCONFDIR=tiff-config
             SHARE_LIBTIFF=0
             TIFFDEVS="$TIFFDEVS_ALL"
             FAX_DEVS="$FAX_DEVS_ALL"
@@ -954,7 +960,10 @@ if test $SHARE_LIBTIFF -eq 0; then
       echo
       echo "Running libtiff configure script..."
       olddir=`pwd`
-      cd "$LIBTIFFDIR" && ./configure --disable-jbig --disable-lzma $SUBCONFIG_OPTS
+      if ! test -d $LIBTIFFCONFDIR ; then
+        mkdir $LIBTIFFCONFDIR
+      fi
+      cd "$LIBTIFFCONFDIR" && $olddir/$LIBTIFFDIR/configure --disable-jbig --disable-lzma $SUBCONFIG_OPTS
       status=$?
       if test "$status" -ne 0 ; then
         AC_MSG_ERROR([libtiff configure script failed], $status)
@@ -966,6 +975,7 @@ fi
 
 AC_SUBST(SHARE_LIBTIFF)
 AC_SUBST(LIBTIFFDIR)
+AC_SUBST(LIBTIFFCONFDIR)
 
 
 dnl look for CUPS...

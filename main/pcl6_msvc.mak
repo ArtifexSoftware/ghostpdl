@@ -180,6 +180,7 @@ JOBJDIR=$(GENDIR)
 # specify the location and setup of the tiff library
 !ifndef TIFFSRCDIR
 TIFFSRCDIR=..\gs\tiff
+TIFFCONFDIR=$(TIFFSRCDIR)
 TIFFCONFIG_SUFFIX=.vc
 TIFFPLATFORM=win32
 !endif

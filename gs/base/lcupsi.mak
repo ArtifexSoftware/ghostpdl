@@ -32,7 +32,7 @@ LCUPSIO_=$(O_)$(LIBCUPSIOBJ)
 # NB: we can't use the normal $(CC_) here because msvccmd.mak
 # adds /Za which conflicts with the cups source.
 LCUPSI_CC=$(CUPS_CC) $(I_)$(LIBCUPSISRC) $(I_)$(LIBCUPSIGEN)$(D)cups $(I_)$(LCUPSISRCDIR)$(D)libs $(I_)$(GLGENDIR) \
-         $(I_)$(ZSRCDIR) $(I_)$(PNGSRCDIR) $(I_)$(TIFFSRCDIR) $(I_)$(TI_) 
+         $(I_)$(ZSRCDIR) $(I_)$(PNGSRCDIR) $(I_)$(TIFFSRCDIR) $(I_)$(TIFFCONFDIR) $(I_)$(TI_) 
 
 # Define the name of this makefile.
 LCUPSI_MAK=$(GLSRC)lcupsi.mak

@@ -77,6 +77,7 @@ SHARE_JPEG?=0
 # specify the location and setup of the tiff library.
 SHARE_LIBTIFF?=0
 TIFFSRCDIR?=../gs/tiff
+TIFFCONFDIR?=../tiff-config
 TIFFPLATFORM?=unix
 
 # ridiculousness, not worth documenting.
