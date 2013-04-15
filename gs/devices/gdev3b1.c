@@ -538,7 +538,7 @@ att3b1_do_output_page(gx_device *dev, int num_copies, int flush)
         }
 
         ut.ut_num = WTXTSLK1;
-        sprintf(ut.ut_text,
+        gs_sprintf(ut.ut_text,
             "%s %d, top right (%d,%d), size (%d,%d), press '?' for help.",
             flush ? "Showpage" : "Copypage", att3b1dev->page_num, xorigin, yorigin,
             att3b1dev->width, att3b1dev->height);

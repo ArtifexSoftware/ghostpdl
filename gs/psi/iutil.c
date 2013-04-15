@@ -340,10 +340,10 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
             float value = op->value.realval;
             float scanned;
 
-            sprintf(buf, "%g", value);
+            gs_sprintf(buf, "%g", value);
             sscanf(buf, "%f", &scanned);
             if (scanned != value)
-                sprintf(buf, "%.9g", value);
+                gs_sprintf(buf, "%.9g", value);
             ensure_dot(buf);
             goto rs;
         }
@@ -494,7 +494,7 @@ other:
         data = (const byte *)(op->value.boolval ? "true" : "false");
         break;
     case t_integer:
-        sprintf(buf, "%"PRIpsint, op->value.intval);
+        gs_sprintf(buf, "%"PRIpsint, op->value.intval);
         break;
     case t_string:
         check_read(*op);
@@ -529,7 +529,7 @@ other:
             break;
         }
         /* Internal operator, no name. */
-        sprintf(buf, "@0x%lx", (ulong) op->value.opproc);
+        gs_sprintf(buf, "@0x%lx", (ulong) op->value.opproc);
         break;
     }
     case t_real:
@@ -542,7 +542,7 @@ other:
         if (op->value.realval == (float)0.0001) {
             strcpy(buf, "0.0001");
         } else {
-            sprintf(buf, "%g", op->value.realval);
+            gs_sprintf(buf, "%g", op->value.realval);
         }
         ensure_dot(buf);
         break;
@@ -573,9 +573,9 @@ ensure_dot(char *buf)
         sscanf(pe + 1, "%d", &i);
         /* MSVC .net 2005 express doesn't support "%+02d" */
         if (i >= 0)
-            sprintf(pe + 1, "+%02d", i);
+            gs_sprintf(pe + 1, "+%02d", i);
         else
-            sprintf(pe + 1, "-%02d", -i);
+            gs_sprintf(pe + 1, "-%02d", -i);
     } else if (strchr(buf, '.') == NULL) {
         strcat(buf, ".0");
     }

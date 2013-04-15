@@ -648,7 +648,7 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
     info_ptr->color_type = PNG_COLOR_TYPE_RGB_ALPHA;
 
     /* add comment */
-    sprintf(software_text, "%s %d.%02d", gs_product,
+    gs_sprintf(software_text, "%s %d.%02d", gs_product,
             (int)(gs_revision / 100), (int)(gs_revision % 100));
     text_png.compression = -1;	/* uncompressed */
     text_png.key = (char *)software_key;	/* not const, unfortunately */

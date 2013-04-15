@@ -302,7 +302,7 @@ static void get_string_for_int(int in_value, const eprn_StringAndInt *table,
   else {
     static char buffer[22];     /* Must be sufficient for an 'int' */
 
-    sprintf(buffer, "%d", in_value);
+    gs_sprintf(buffer, "%d", in_value);
     assert(strlen(buffer) < sizeof(buffer));
     out_value->data = (const byte *)buffer;
     out_value->size = strlen(buffer);

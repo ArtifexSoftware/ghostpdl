@@ -585,11 +585,11 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index)
                             length += r_size(&string) + 1;
                             break;
                         case t_real:
-                            sprintf(Buffer, "%f", Element.value.realval);
+                            gs_sprintf(Buffer, "%f", Element.value.realval);
                             length += strlen(Buffer) + 1;
                             break;
                         case t_integer:
-                            sprintf(Buffer, "%"PRIpsint, Element.value.intval);
+                            gs_sprintf(Buffer, "%"PRIpsint, Element.value.intval);
                             length += strlen(Buffer) + 1;
                             break;
                         case t_operator:
@@ -825,12 +825,12 @@ FAPI_FF_get_proc(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index,
                             ptr += r_size(&string);
                             break;
                         case t_real:
-                            sprintf(Buf, "%f", Element.value.realval);
+                            gs_sprintf(Buf, "%f", Element.value.realval);
                             strcpy(ptr, Buf);
                             ptr += strlen(Buf);
                             break;
                         case t_integer:
-                            sprintf(Buf, "%"PRIpsint, Element.value.intval);
+                            gs_sprintf(Buf, "%"PRIpsint, Element.value.intval);
                             strcpy(ptr, Buf);
                             ptr += strlen(Buf);
                             break;

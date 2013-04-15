@@ -106,7 +106,7 @@ dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
     goto not_cfg;
   pcfg->version = rbuf[2] | ((uint)rbuf[3] << 8);
   if (pcfg->version > CFG_VERSION) {
-    sprintf(dviprt_message_buffer,
+    gs_sprintf(dviprt_message_buffer,
             "This *.CFG file is too new version(ver.%u).\n",pcfg->version);
     dviprt_printcfgerror(pinfo,dviprt_message_buffer,-1);
     return CFG_ERROR_OTHER;
@@ -129,7 +129,7 @@ dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
     if (n >= CFG_INTEGER_TYPE_COUNT) {
       ptype = "integer";
     unknown_no:
-      sprintf(dviprt_message_buffer,
+      gs_sprintf(dviprt_message_buffer,
               "Unknown %s type value No.%d is found.\n",ptype,n);
       dviprt_printcfgerror(pinfo,dviprt_message_buffer,-1);
       return CFG_ERROR_OTHER;
@@ -346,7 +346,7 @@ dviprt_read_QR_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
             ptr++;
             break;
           default:
-            sprintf(dviprt_message_buffer,"Unknown format %02X",type);
+            gs_sprintf(dviprt_message_buffer,"Unknown format %02X",type);
             dviprt_printcfgerror(pinfo,dviprt_message_buffer,-1);
             goto ex_func;
           }
@@ -587,7 +587,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
     while (*pbuf && isspace(*pbuf)) pbuf++;
     if (pitem->spec_f) {
       dviprt_printcfgerror(&info,NULL,0);
-      sprintf(dviprt_message_buffer,
+      gs_sprintf(dviprt_message_buffer,
               "Item `%s' is specified twice.\n",pitem->name);
       dviprt_printmessage(dviprt_message_buffer,-1);
       code = CFG_ERROR_SYNTAX;
@@ -691,7 +691,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
   code = 0;
   for (pitem = dviprt_items;pitem->name;pitem++) {
     if (!pitem->spec_f && pitem->req_f) {
-      sprintf(dviprt_message_buffer,"%s not found.\n",pitem->name);
+      gs_sprintf(dviprt_message_buffer,"%s not found.\n",pitem->name);
       dviprt_printcfgerror(&info,dviprt_message_buffer,-1);
       code++;
     }
@@ -749,14 +749,14 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
 
   for (pitem = dviprt_items;pitem->type>=0;pitem++) {
     if (pitem->spec_f == 0) {
-      sprintf(dviprt_message_buffer,": %s:",pitem->name);
+      gs_sprintf(dviprt_message_buffer,": %s:",pitem->name);
       switch (pitem->type) {
       case T_INTEGER:
         if (pcfg->integer[pitem->no] >= 0) {
           uint v = pcfg->integer[pitem->no];
           dviprt_printmessage(fname,-1);
           dviprt_printmessage(dviprt_message_buffer,-1);
-          sprintf(dviprt_message_buffer," %d\n",v);
+          gs_sprintf(dviprt_message_buffer," %d\n",v);
           dviprt_printmessage(dviprt_message_buffer,-1);
         }
         break;
@@ -802,7 +802,7 @@ dviprt_set_integer(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
     out_of_range:
       dviprt_printtokenerror(pinfo,buf,strlen(buf),ERROR_OUTOFRANGE);
       dviprt_printcfgerror(pinfo,"",-1);
-      sprintf(dviprt_message_buffer,
+      gs_sprintf(dviprt_message_buffer,
               "(%u <= value <= %u).\n",(uint)min,(uint)max);
       dviprt_printmessage(dviprt_message_buffer,-1);
       return CFG_ERROR_RANGE;
@@ -1108,10 +1108,10 @@ dviprt_set_rpexpr(dviprt_cfg_item_t *pitem,uchar *pbuf,int len,dviprt_cfg_t *pcf
             pitem->no != CFG_AFTER_BIT_IMAGE) {
         unavailable_value:
           dviprt_printcfgerror(pinfo,"",-1);
-          sprintf(dviprt_message_buffer,"Variable `%c' in ",(int)*pbuf);
+          gs_sprintf(dviprt_message_buffer,"Variable `%c' in ",(int)*pbuf);
           dviprt_printmessage(dviprt_message_buffer,-1);
           dviprt_printmessage(pbuf,(int)(pend-pbuf));
-          sprintf(dviprt_message_buffer," cannot be used in %s.\n",pitem->name);
+          gs_sprintf(dviprt_message_buffer," cannot be used in %s.\n",pitem->name);
           dviprt_printmessage(dviprt_message_buffer,-1);
           return CFG_ERROR_RANGE;
         }
@@ -1144,7 +1144,7 @@ dviprt_set_rpexpr(dviprt_cfg_item_t *pitem,uchar *pbuf,int len,dviprt_cfg_t *pcf
     case '^': op = CFG_OP_XOR; break;
     default:
       dviprt_printcfgerror(pinfo,NULL,0);
-      sprintf(dviprt_message_buffer,"Unknown operator %c in ",(int)*pbuf);
+      gs_sprintf(dviprt_message_buffer,"Unknown operator %c in ",(int)*pbuf);
       dviprt_printmessage(dviprt_message_buffer,-1);
       dviprt_printmessage(pbuf,(int)(pend-pbuf));
       dviprt_printmessage(".\n",-1);
@@ -1520,7 +1520,7 @@ dviprt_printcfgerrorheader(dviprt_cfg_i *pinfo)
     dviprt_printmessage(fn,-1);
     dviprt_printmessage(": ",-1);
     if (pinfo->line_no>0) {
-      sprintf(dviprt_message_buffer,"%d: ",pinfo->line_no);
+      gs_sprintf(dviprt_message_buffer,"%d: ",pinfo->line_no);
       dviprt_printmessage(dviprt_message_buffer,-1);
     }
   }
@@ -2210,9 +2210,9 @@ dviprt_output_expr(dviprt_print *pprint,int numb,uint width,uint dsize)
                  if (cols == 0)
                    strcpy(fmtbuf,"%");
                  else
-                   sprintf(fmtbuf,"%%0%d",cols);
+                   gs_sprintf(fmtbuf,"%%0%d",cols);
                  strcat(fmtbuf,f);
-                 sprintf(valbuf,fmtbuf,stack[stack_p]);
+                 gs_sprintf(valbuf,fmtbuf,stack[stack_p]);
                  cols = strlen(valbuf);
                  if (fmt & CFG_FMT_ISO_BIT)
                    valbuf[cols-1] |= 0x10;

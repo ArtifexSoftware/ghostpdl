@@ -323,7 +323,7 @@ zcvsd(i_ctx_t *i_ctx_p)
     len = r_size(op - 1);
     if (len > MAX_CHARS)
         return_error(e_limitcheck);
-    sprintf(buf, "%f", 1.5);
+    gs_sprintf(buf, "%f", 1.5);
     dot = buf[1]; /* locale-dependent */
     memcpy(str, op[-1].value.bytes, len);
     /*
@@ -406,7 +406,7 @@ zdcvs(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     check_write_type(*op, t_string);
-    sprintf(str, "%f", 1.5);
+    gs_sprintf(str, "%f", 1.5);
     dot = str[1]; /* locale-dependent */
     /*
      * To get fully accurate output results for IEEE double-
@@ -420,10 +420,10 @@ zdcvs(i_ctx_t *i_ctx_p)
     {
         double scanned;
 
-        sprintf(str, "%g", num);
+        gs_sprintf(str, "%g", num);
         sscanf(str, "%lf", &scanned);
         if (scanned != num)
-            sprintf(str, "%.16g", num);
+            gs_sprintf(str, "%.16g", num);
     }
     len = strlen(str);
     if (len > r_size(op))

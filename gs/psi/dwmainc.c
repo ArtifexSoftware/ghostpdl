@@ -13,6 +13,8 @@
    CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
+/* prevent gp.h redefining sprintf */
+#define sprintf sprintf
 
 /* dwmainc.c */
 

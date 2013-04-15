@@ -592,31 +592,31 @@ npdl_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copi
         /* Check paper size */
         switch (npdl_get_paper_size((gx_device *) pdev)) {
             case PAPER_SIZE_POSTCARD:
-                sprintf(paper_command, "PC");
+                gs_sprintf(paper_command, "PC");
                 break;
             case PAPER_SIZE_A5:
-                sprintf(paper_command, "A5");
+                gs_sprintf(paper_command, "A5");
                 break;
             case PAPER_SIZE_A4:
-                sprintf(paper_command, "A4");
+                gs_sprintf(paper_command, "A4");
                 break;
             case PAPER_SIZE_A3:
-                sprintf(paper_command, "A3");
+                gs_sprintf(paper_command, "A3");
                 break;
             case PAPER_SIZE_B5:
-                sprintf(paper_command, "B5");
+                gs_sprintf(paper_command, "B5");
                 break;
             case PAPER_SIZE_B4:
-                sprintf(paper_command, "B4");
+                gs_sprintf(paper_command, "B4");
                 break;
             case PAPER_SIZE_LETTER:
-                sprintf(paper_command, "LT");
+                gs_sprintf(paper_command, "LT");
                 break;
             case PAPER_SIZE_ENV4:
-                sprintf(paper_command, "ENV4");
+                gs_sprintf(paper_command, "ENV4");
                 break;
             case PAPER_SIZE_BPOSTCARD:
-                sprintf(paper_command, "UPPC");
+                gs_sprintf(paper_command, "UPPC");
                 break;
         }
 

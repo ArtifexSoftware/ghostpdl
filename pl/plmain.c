@@ -602,7 +602,7 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
         universe->pdl_instance_array[index] = universe->curr_instance;
         if (code < 0) {
             if (err_str)
-                sprintf(err_str, "Unable to create %s interpreter.\n",
+                gs_sprintf(err_str, "Unable to create %s interpreter.\n",
                         pl_characteristics(pdl_implementation[index])->
                         language);
             goto pmui_err;
@@ -617,7 +617,7 @@ pl_main_universe_init(pl_main_universe_t * universe,    /* universe to init */
                                        inst) < 0
             || pl_get_device_memory(instance, &inst->device_memory) < 0) {
             if (err_str)
-                sprintf(err_str, "Unable to init %s interpreter.\n",
+                gs_sprintf(err_str, "Unable to init %s interpreter.\n",
                         pl_characteristics(pdl_implementation[index])->
                         language);
             goto pmui_err;
@@ -650,7 +650,7 @@ pl_main_universe_dnit(pl_main_universe_t * universe,    /* universe to dnit */
     if (universe->curr_instance
         && pl_remove_device(universe->curr_instance) < 0) {
         if (err_str)
-            sprintf(err_str, "Unable to close out PDL instance.\n");
+            gs_sprintf(err_str, "Unable to close out PDL instance.\n");
         return -1;
     }
 
@@ -666,7 +666,7 @@ pl_main_universe_dnit(pl_main_universe_t * universe,    /* universe to dnit */
                 && pl_deallocate_interp(universe->pdl_interp_array[index]) <
                 0)) {
             if (err_str)
-                sprintf(err_str, "Unable to close out %s instance.\n",
+                gs_sprintf(err_str, "Unable to close out %s instance.\n",
                         pl_characteristics(universe->
                                            pdl_implementation[index])->
                         language);
@@ -1488,7 +1488,7 @@ pl_post_finish_page(pl_interp_instance_t * interp, void *closure)
     if (pti->pause) {
         char strbuf[256];
 
-        sprintf(strbuf, "End of page %d, press <enter> to continue.\n",
+        gs_sprintf(strbuf, "End of page %d, press <enter> to continue.\n",
                 pti->page_count);
         pl_log_string(pti->memory, strbuf, 1);
     } else if (gs_debug_c(':'))

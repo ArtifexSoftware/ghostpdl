@@ -1,0 +1,54 @@
+dnl
+dnl Configuration for trio
+dnl
+
+AC_INIT
+AC_CONFIG_SRCDIR([triodef.h])
+AC_PREREQ(2.55) dnl autoconf 2.55 was released in 2002
+
+AC_PROG_CC
+ifdef([AC_PROG_CC_STDC], [AC_PROG_CC_STDC])
+AC_LANG([C])
+
+AC_PROG_INSTALL
+AC_PROG_RANLIB
+
+dnl
+dnl Alpha floating-point compiler option.
+dnl
+
+AC_MSG_CHECKING(for IEEE compilation options)
+AC_CACHE_VAL(ac_cv_ieee_option, [
+  AC_COMPILE_IFELSE(AC_LANG_PROGRAM(,[[[
+    #if !(defined(__alpha) && (defined(__DECC) || defined(__DECCXX) || (defined(__osf__) && defined(__LANGUAGE_C__))) && (defined(VMS) || defined(__VMS)))
+    # error "Option needed"
+    typedef int option_needed[-1];
+    #endif
+    ]]]),
+    ac_cv_ieee_option="/IEEE_MODE=UNDERFLOW_TO_ZERO/FLOAT=IEEE",
+    AC_COMPILE_IFELSE(AC_LANG_PROGRAM(,[[[
+      #if !(defined(__alpha) && (defined(__DECC) || defined(__DECCXX) || (defined(__osf__) && defined(__LANGUAGE_C__) && !defined(__GNUC__))) && !(defined(VMS) || defined(__VMS)) && !defined(_CFE))
+      # error "Option needed"
+      typedef int option_needed[-1];
+      #endif
+      ]]]),
+      ac_cv_ieee_option="-ieee",
+      AC_COMPILE_IFELSE(AC_LANG_PROGRAM(,[[[
+	#if !(defined(__alpha) && (defined(__GNUC__) && (defined(__osf__) || defined(__linux__))))
+	# error "Option needed"
+	typedef int option_needed[-1];
+	#endif
+	]]]),
+	ac_cv_ieee_option="-mieee",
+	ac_cv_ieee_option="none"
+      )
+    )
+  )
+])
+AC_MSG_RESULT($ac_cv_ieee_option)
+if test $ac_cv_ieee_option != none; then
+  CFLAGS="${CFLAGS} ${ac_cv_ieee_option}"
+fi
+
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT

@@ -449,7 +449,7 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
 
         strncpy(softwareValue, gs_product, maxSoftware);
         softwareValue[maxSoftware - 1] = 0;
-        sprintf(revs, " %1.2f", gs_revision / 100.0);
+        gs_sprintf(revs, " %1.2f", gs_revision / 100.0);
         strncat(softwareValue, revs,
                 maxSoftware - strlen(softwareValue) - 1);
 
@@ -462,7 +462,7 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
 
         time(&t);
         tms = *localtime(&t);
-        sprintf(dateTimeValue, "%04d:%02d:%02d %02d:%02d:%02d",
+        gs_sprintf(dateTimeValue, "%04d:%02d:%02d %02d:%02d:%02d",
                 tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
                 tms.tm_hour, tms.tm_min, tms.tm_sec);
 

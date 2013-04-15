@@ -377,7 +377,7 @@ gdev_x_open(gx_device_X * xdev)
             char gstr[40];
             int bitmask;
 
-            sprintf(gstr, "%dx%d+%d+%d", sizehints.width,
+            gs_sprintf(gstr, "%dx%d+%d+%d", sizehints.width,
                     sizehints.height, sizehints.x, sizehints.y);
             bitmask = XWMGeometry(xdev->dpy, DefaultScreen(xdev->dpy),
                                   xdev->geometry, gstr, xdev->borderWidth,

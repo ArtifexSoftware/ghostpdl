@@ -80,6 +80,9 @@ TIFFSRCDIR?=../gs/tiff
 TIFFCONFDIR?=../tiff-config
 TIFFPLATFORM?=unix
 
+# specify the location of the trio source
+TRIOSRCDIR=../gs/trio
+
 # ridiculousness, not worth documenting.
 AK?=
 

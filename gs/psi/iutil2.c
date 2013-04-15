@@ -56,7 +56,7 @@ param_read_password(gs_param_list * plist, const char *kstr, password * ppass)
     code = param_read_long(plist, kstr, &ipass);
     if (code != 0)		/* error or missing */
         return code;
-    sprintf((char *)ppass->data, "%ld", ipass);
+    gs_sprintf((char *)ppass->data, "%ld", ipass);
     ppass->size = strlen((char *)ppass->data);
     return 0;
 }

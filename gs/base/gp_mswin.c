@@ -321,7 +321,7 @@ get_queues(void)
         char buf[256];
 
         free(enumbuffer);
-        sprintf(buf, "EnumPrinters() failed, error code = %d", GetLastError());
+        gs_sprintf(buf, "EnumPrinters() failed, error code = %d", GetLastError());
         MessageBox((HWND) NULL, buf, szAppName, MB_OK | MB_ICONSTOP);
         return NULL;
     }
@@ -428,7 +428,7 @@ gp_printfile_win32(const char *filename, char *port)
     if (!gp_OpenPrinter(port, &printer)) {
         char buf[256];
 
-        sprintf(buf, "OpenPrinter() failed for \042%s\042, error code = %d", port, GetLastError());
+        gs_sprintf(buf, "OpenPrinter() failed for \042%s\042, error code = %d", port, GetLastError());
         MessageBox((HWND) NULL, buf, szAppName, MB_OK | MB_ICONSTOP);
         free(buffer);
         return FALSE;
@@ -441,7 +441,7 @@ gp_printfile_win32(const char *filename, char *port)
     if (!StartDocPrinter(printer, 1, (LPBYTE) & di)) {
         char buf[256];
 
-        sprintf(buf, "StartDocPrinter() failed, error code = %d", GetLastError());
+        gs_sprintf(buf, "StartDocPrinter() failed, error code = %d", GetLastError());
         MessageBox((HWND) NULL, buf, szAppName, MB_OK | MB_ICONSTOP);
         AbortPrinter(printer);
         free(buffer);
@@ -462,7 +462,7 @@ gp_printfile_win32(const char *filename, char *port)
     if (!EndDocPrinter(printer)) {
         char buf[256];
 
-        sprintf(buf, "EndDocPrinter() failed, error code = %d", GetLastError());
+        gs_sprintf(buf, "EndDocPrinter() failed, error code = %d", GetLastError());
         MessageBox((HWND) NULL, buf, szAppName, MB_OK | MB_ICONSTOP);
         AbortPrinter(printer);
         return FALSE;
@@ -470,7 +470,7 @@ gp_printfile_win32(const char *filename, char *port)
     if (!ClosePrinter(printer)) {
         char buf[256];
 
-        sprintf(buf, "ClosePrinter() failed, error code = %d", GetLastError());
+        gs_sprintf(buf, "ClosePrinter() failed, error code = %d", GetLastError());
         MessageBox((HWND) NULL, buf, szAppName, MB_OK | MB_ICONSTOP);
         return FALSE;
     }

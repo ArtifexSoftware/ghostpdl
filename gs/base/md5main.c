@@ -87,7 +87,7 @@ do_test(void)
         gs_md5_append(&state, (const gs_md5_byte_t *)test[i], strlen(test[i]));
         gs_md5_finish(&state, digest);
         for (di = 0; di < 16; ++di)
-            sprintf(hex_output + di * 2, "%02x", digest[di]);
+            gs_sprintf(hex_output + di * 2, "%02x", digest[di]);
         if (strcmp(hex_output, test[i + 1])) {
             printf("MD5 (\"%s\") = ", test[i]);
             puts(hex_output);

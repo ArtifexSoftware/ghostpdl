@@ -338,7 +338,7 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
             strcpy(pdfont->u.type0.Encoding_name,
                     (pcmap->WMode ? "/Identity-V" : "/Identity-H"));
         else
-            sprintf(pdfont->u.type0.Encoding_name, "%ld 0 R",
+            gs_sprintf(pdfont->u.type0.Encoding_name, "%ld 0 R",
                     pdf_resource_id(pcmres));
         pdfont->u.type0.CMapName.data = chars;
         pdfont->u.type0.CMapName.size = size;
@@ -349,7 +349,7 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
              */
             return_error(gs_error_invalidfont);
 
-        sprintf(pdfont->u.type0.Encoding_name, "/%s", *pcmn);
+        gs_sprintf(pdfont->u.type0.Encoding_name, "/%s", *pcmn);
         pdfont->u.type0.CMapName.data = (const byte *)*pcmn;
         pdfont->u.type0.CMapName.size = strlen(*pcmn);
         pdfont->u.type0.cmap_is_standard = true;

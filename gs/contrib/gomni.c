@@ -790,7 +790,7 @@ SetupDevice (gx_device *pgxdev, gs_param_list *plist)
                                             "Devicestring");
           if (pszDeviceLib)
           {
-              sprintf (pszDeviceLib, "%s%s", apszLibraryPaths[i], cOmnilib);
+              gs_sprintf (pszDeviceLib, "%s%s", apszLibraryPaths[i], cOmnilib);
 
               pDev->hmodOmni = g_module_open (pszDeviceLib, (GModuleFlags)0);
 
@@ -817,7 +817,7 @@ SetupDevice (gx_device *pgxdev, gs_param_list *plist)
                                                "Devicestring");
              if (pszDeviceLib)
              {
-                 sprintf (pszDeviceLib, "%s%s", apszLibraryPaths[i], cOmnilib);
+                 gs_sprintf (pszDeviceLib, "%s%s", apszLibraryPaths[i], cOmnilib);
 
                  pModule = g_module_open (pszDeviceLib, (GModuleFlags)0);
 
@@ -1053,7 +1053,7 @@ SetupDevice (gx_device *pgxdev, gs_param_list *plist)
 
             if (pszDeviceLib)
             {
-                sprintf (pszDeviceLib, "%s%s", apszLibraryPaths[i], cDialogName);
+                gs_sprintf (pszDeviceLib, "%s%s", apszLibraryPaths[i], cDialogName);
 
                 if (fDebugOutput) dprintf1 ("attempting to load - %s\n", pszDeviceLib);
 
@@ -1079,7 +1079,7 @@ SetupDevice (gx_device *pgxdev, gs_param_list *plist)
 
                if (pszDeviceLib)
                {
-                   sprintf (pszDeviceLib, "%s%s", apszLibraryPaths[i], cDialogName);
+                   gs_sprintf (pszDeviceLib, "%s%s", apszLibraryPaths[i], cDialogName);
 
                    pModule = g_module_open (pszDeviceLib, (GModuleFlags)0);
 

@@ -72,7 +72,7 @@ WRF_wfloat(WRF_output * a_output, double a_float)
 {
     char buffer[32];
 
-    sprintf(buffer, "%f", a_float);
+    gs_sprintf(buffer, "%f", a_float);
     WRF_wstring(a_output, buffer);
 }
 
@@ -81,6 +81,6 @@ WRF_wint(WRF_output * a_output, long a_int)
 {
     char buffer[32];
 
-    sprintf(buffer, "%ld", a_int);
+    gs_sprintf(buffer, "%ld", a_int);
     WRF_wstring(a_output, buffer);
 }

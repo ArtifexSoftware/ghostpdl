@@ -548,7 +548,7 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
     }
 
     if (!wdev->nocancel) {
-        sprintf(dlgtext, "Printing page %d", (int)(pdev->PageCount) + 1);
+        gs_sprintf(dlgtext, "Printing page %d", (int)(pdev->PageCount) + 1);
         SetWindowText(GetDlgItem(wdev->hDlgModeless, CANCEL_PRINTING), dlgtext);
         ShowWindow(wdev->hDlgModeless, SW_SHOW);
     }
@@ -577,7 +577,7 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
 
         if (!wdev->nocancel) {
             /* inform user of progress */
-            sprintf(dlgtext, "%d%% done", (int)(y * 100L / scan_lines));
+            gs_sprintf(dlgtext, "%d%% done", (int)(y * 100L / scan_lines));
             SetWindowText(GetDlgItem(wdev->hDlgModeless, CANCEL_PCDONE), dlgtext);
         }
         /* process message loop */
@@ -1488,9 +1488,9 @@ win_pr2_print_setup_interaction(gx_device_win_pr2 * wdev, int mode)
 
     wdev->user_changed_settings = TRUE;
     if (wdev->use_old_spool_name) {
-        sprintf(wdev->fname, "\\\\spool\\%s", (char*)(devnames)+(devnames->wDeviceOffset));
+        gs_sprintf(wdev->fname, "\\\\spool\\%s", (char*)(devnames)+(devnames->wDeviceOffset));
     } else {
-        sprintf(wdev->fname, "%%printer%%%s", (char*)(devnames)+(devnames->wDeviceOffset));
+        gs_sprintf(wdev->fname, "%%printer%%%s", (char*)(devnames)+(devnames->wDeviceOffset));
     }
 
     if (mode == 3) {

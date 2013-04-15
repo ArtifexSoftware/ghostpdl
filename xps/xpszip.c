@@ -304,11 +304,11 @@ xps_read_zip_part(xps_context_t *ctx, char *partname)
     size = 0;
     while (1)
     {
-        sprintf(buf, "%s/[%d].piece", name, count);
+        gs_sprintf(buf, "%s/[%d].piece", name, count);
         ent = xps_find_zip_entry(ctx, buf);
         if (!ent)
         {
-            sprintf(buf, "%s/[%d].last.piece", name, count);
+            gs_sprintf(buf, "%s/[%d].last.piece", name, count);
             ent = xps_find_zip_entry(ctx, buf);
         }
         if (!ent)
@@ -325,9 +325,9 @@ xps_read_zip_part(xps_context_t *ctx, char *partname)
         for (i = 0; i < count; i++)
         {
             if (i < count - 1)
-                sprintf(buf, "%s/[%d].piece", name, i);
+                gs_sprintf(buf, "%s/[%d].piece", name, i);
             else
-                sprintf(buf, "%s/[%d].last.piece", name, i);
+                gs_sprintf(buf, "%s/[%d].last.piece", name, i);
             ent = xps_find_zip_entry(ctx, buf);
             xps_read_zip_entry(ctx, ent, part->data + offset);
             offset += ent->usize;
@@ -371,11 +371,11 @@ xps_read_dir_part(xps_context_t *ctx, char *name)
     size = 0;
     while (1)
     {
-        sprintf(buf, "%s%s/[%d].piece", ctx->directory, name, count);
+        gs_sprintf(buf, "%s%s/[%d].piece", ctx->directory, name, count);
         file = gp_fopen(buf, "rb");
         if (!file)
         {
-            sprintf(buf, "%s%s/[%d].last.piece", ctx->directory, name, count);
+            gs_sprintf(buf, "%s%s/[%d].last.piece", ctx->directory, name, count);
             file = gp_fopen(buf, "rb");
         }
         if (!file)
@@ -394,9 +394,9 @@ xps_read_dir_part(xps_context_t *ctx, char *name)
         for (i = 0; i < count; i++)
         {
             if (i < count - 1)
-                sprintf(buf, "%s%s/[%d].piece", ctx->directory, name, i);
+                gs_sprintf(buf, "%s%s/[%d].piece", ctx->directory, name, i);
             else
-                sprintf(buf, "%s%s/[%d].last.piece", ctx->directory, name, i);
+                gs_sprintf(buf, "%s%s/[%d].last.piece", ctx->directory, name, i);
             file = gp_fopen(buf, "rb");
             n = fread(part->data + offset, 1, size - offset, file);
             offset += n;

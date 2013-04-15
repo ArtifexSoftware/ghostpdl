@@ -300,7 +300,7 @@ write_main_dictionary(gs_fapi_font * a_fapi_font, WRF_output * a_output,
         if (x)
             entries++;
 
-        sprintf(Buffer, "/FontInfo %d dict dup begin\n", entries);
+        gs_sprintf(Buffer, "/FontInfo %d dict dup begin\n", entries);
         WRF_wstring(a_output, Buffer);
         x = a_fapi_font->get_word(a_fapi_font,
                                   gs_fapi_font_feature_BlendAxisTypes_count,
@@ -330,7 +330,7 @@ write_main_dictionary(gs_fapi_font * a_fapi_font, WRF_output * a_output,
                     x1 = a_fapi_font->get_float(a_fapi_font,
                                                 gs_fapi_font_feature_BlendDesignPositionsArrayValue,
                                                 i * 8 + j);
-                    sprintf(Buffer, "%f ", x1);
+                    gs_sprintf(Buffer, "%f ", x1);
                     WRF_wstring(a_output, Buffer);
                 }
                 WRF_wstring(a_output, "]");
@@ -352,12 +352,12 @@ write_main_dictionary(gs_fapi_font * a_fapi_font, WRF_output * a_output,
                     x1 = a_fapi_font->get_float(a_fapi_font,
                                                 gs_fapi_font_feature_BlendDesignPositionsArrayValue,
                                                 i * 64 + j * 64);
-                    sprintf(Buffer, "%f ", x1);
+                    gs_sprintf(Buffer, "%f ", x1);
                     WRF_wstring(a_output, Buffer);
                     x1 = a_fapi_font->get_float(a_fapi_font,
                                                 gs_fapi_font_feature_BlendDesignPositionsArrayValue,
                                                 i * 64 + j * 64 + 1);
-                    sprintf(Buffer, "%f ", x1);
+                    gs_sprintf(Buffer, "%f ", x1);
                     WRF_wstring(a_output, Buffer);
                     WRF_wstring(a_output, "]");
                 }
@@ -397,7 +397,7 @@ write_main_dictionary(gs_fapi_font * a_fapi_font, WRF_output * a_output,
         for (i = 0; i < x; i++) {
             x1 = a_fapi_font->get_float(a_fapi_font,
                                         gs_fapi_font_feature_WeightVector, i);
-            sprintf(Buffer, "%f ", x1);
+            gs_sprintf(Buffer, "%f ", x1);
             WRF_wstring(a_output, Buffer);
         }
         WRF_wstring(a_output, "] def\n");

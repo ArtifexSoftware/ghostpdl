@@ -38,7 +38,7 @@
  % %%ViewingOrientation: xx xy yx yy
 */
 
-#include <stdio.h>	/* for sprintf(), not file I/O */
+#include <stdio_.h>	/* for sprintf(), not file I/O */
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -584,7 +584,7 @@ dsc_fixup(CDSC *dsc)
     /* make sure all pages have a label */
     for (i=0; i<dsc->page_count; i++) {
         if (strlen(dsc->page[i].label) == 0) {
-            sprintf(buf, "%d", i+1);
+            gs_sprintf(buf, "%d", i+1);
             if ((dsc->page[i].label = dsc_alloc_string(dsc, buf, (int)strlen(buf)))
                 == (char *)NULL)
                 return CDSC_ERROR;	/* no memory */
@@ -1178,7 +1178,7 @@ dsc_unknown(CDSC *dsc)
     if (dsc->debug_print_fn) {
         char line[DSC_LINE_LENGTH];
         unsigned int length = min(DSC_LINE_LENGTH-1, dsc->line_length);
-        sprintf(line, "Unknown in %s section at line %d:\n  ",
+        gs_sprintf(line, "Unknown in %s section at line %d:\n  ",
             dsc_scan_section_name[dsc->scan_section], dsc->line_count);
         dsc_debug_print(dsc, line);
         strncpy(line, dsc->line, length);
@@ -2673,7 +2673,7 @@ dsc_check_match_prompt(CDSC *dsc, const char *str, int count)
             strncpy(buf, dsc->line, dsc->line_length);
             buf[dsc->line_length] = '\0';
         }
-        sprintf(buf+strlen(buf), "\n%%%%Begin%.40s: / %%%%End%.40s\n", str, str);
+        gs_sprintf(buf+strlen(buf), "\n%%%%Begin%.40s: / %%%%End%.40s\n", str, str);
         return dsc_error(dsc, CDSC_MESSAGE_BEGIN_END, buf, (int)strlen(buf));
     }
     return CDSC_RESPONSE_CANCEL;

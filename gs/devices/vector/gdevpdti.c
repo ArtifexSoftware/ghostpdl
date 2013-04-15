@@ -1180,7 +1180,7 @@ pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, pdf_reso
             if (code < 0)
                 return code;
         }
-        sprintf(buf, "%ld 0 R\n", pres->object->id);
+        gs_sprintf(buf, "%ld 0 R\n", pres->object->id);
         if (v != NULL) {
             if (v->value_type != COS_VALUE_OBJECT &&
                 v->value_type != COS_VALUE_RESOURCE)

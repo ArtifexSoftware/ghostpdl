@@ -199,9 +199,9 @@ gp_getenv(const char *name, char *ptr, int *plen)
             char key[256];
             char dotversion[16];
 
-            sprintf(dotversion, "%d.%02d", (int)(gs_revision / 100),
+            gs_sprintf(dotversion, "%d.%02d", (int)(gs_revision / 100),
                     (int)(gs_revision % 100));
-            sprintf(key, "Software\\%s\\%s", gs_productfamily, dotversion);
+            gs_sprintf(key, "Software\\%s\\%s", gs_productfamily, dotversion);
 #else
             wchar_t key[256];
             wchar_t dotversion[16];
@@ -242,7 +242,7 @@ gp_serialnumber(void)
 #ifdef GS_NO_UTF8
     char key[256];
 
-    sprintf(key, "Software\\Microsoft\\MSLicensing\\HardwareID");
+    gs_sprintf(key, "Software\\Microsoft\\MSLicensing\\HardwareID");
 #else        /* GS_NO_UTF8 */
     wchar_t key[256];
 

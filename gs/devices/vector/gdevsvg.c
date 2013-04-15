@@ -374,22 +374,22 @@ svg_write_header(gx_device_svg *svg)
       return 1;
 
     /* write the initial boilerplate */
-    sprintf(line, "%s\n", XML_DECL);
+    gs_sprintf(line, "%s\n", XML_DECL);
     /* svg_write(svg, line); */
     sputs(s, (byte *)line, strlen(line), &used);
-    sprintf(line, "%s\n", SVG_DOCTYPE);
+    gs_sprintf(line, "%s\n", SVG_DOCTYPE);
     /* svg_write(svg, line); */
     sputs(s, (byte *)line, strlen(line), &used);
-    sprintf(line, "<svg xmlns='%s' version='%s'",
+    gs_sprintf(line, "<svg xmlns='%s' version='%s'",
         SVG_XMLNS, SVG_VERSION);
     /* svg_write(svg, line); */
     sputs(s, (byte *)line, strlen(line), &used);
-    sprintf(line, "\n\twidth='%dpt' height='%dpt'>\n",
+    gs_sprintf(line, "\n\twidth='%dpt' height='%dpt'>\n",
         (int)svg->MediaSize[0], (int)svg->MediaSize[1]);
     sputs(s, (byte *)line, strlen(line), &used);
 
     /* Scale drawing so our coordinates are in pixels */
-    sprintf(line, "<g transform='scale(%lf,%lf)'>\n",
+    gs_sprintf(line, "<g transform='scale(%lf,%lf)'>\n",
         72.0 / svg->HWResolution[0],
         72.0 / svg->HWResolution[1]);
     /* svg_write(svg, line); */
@@ -430,19 +430,19 @@ svg_write_state(gx_device_svg *svg)
     /* write out the new current state */
     svg_write(svg, "<g ");
     if (svg->strokecolor != gx_no_color_index) {
-	sprintf(line, " stroke='#%06x'", svg->strokecolor & 0xffffffL);
+        gs_sprintf(line, " stroke='#%06x'", svg->strokecolor & 0xffffffL);
         svg_write(svg, line);
     } else {
         svg_write(svg, " stroke='none'");
     }
     if (svg->fillcolor != gx_no_color_index) {
-        sprintf(line, " fill='#%06x'", svg->fillcolor & 0xffffffL);
+        gs_sprintf(line, " fill='#%06x'", svg->fillcolor & 0xffffffL);
         svg_write(svg, line);
     } else {
       svg_write(svg, " fill='none'");
     }
     if (svg->linewidth != 1.0) {
-      sprintf(line, " stroke-width='%lf'", svg->linewidth);
+      gs_sprintf(line, " stroke-width='%lf'", svg->linewidth);
       svg_write(svg, line);
     }
     if (svg->linecap != SVG_DEFAULT_LINECAP) {
@@ -476,7 +476,7 @@ svg_write_state(gx_device_svg *svg)
         }
     }
     if (svg->miterlimit != SVG_DEFAULT_MITERLIMIT) {
-        sprintf(line, " stroke-miterlimit='%lf'", svg->miterlimit);
+        gs_sprintf(line, " stroke-miterlimit='%lf'", svg->miterlimit);
         svg_write(svg, line);
     }
     svg_write(svg, ">\n");
@@ -653,7 +653,7 @@ svg_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
         svg_write(svg, "<clipPath>\n");
     }
 
-    sprintf(line, "<rect x='%lf' y='%lf' width='%lf' height='%lf'",
+    gs_sprintf(line, "<rect x='%lf' y='%lf' width='%lf' height='%lf'",
         fixed2float(x0), fixed2float(y0),
         fixed2float(x1 - x0), fixed2float(y1 - y0));
     svg_write(svg, line);
@@ -714,7 +714,7 @@ svg_moveto(gx_device_vector *vdev, floatp x0, floatp y0,
     svg_print_path_type(svg, type);
     if_debug0m('_', svg->memory, "\n");
 
-    sprintf(line, " M%lf,%lf", x, y);
+    gs_sprintf(line, " M%lf,%lf", x, y);
     svg_write(svg, line);
 
     return 0;
@@ -739,7 +739,7 @@ svg_lineto(gx_device_vector *vdev, floatp x0, floatp y0,
     svg_print_path_type(svg, type);
     if_debug0m('_', svg->memory, "\n");
 
-    sprintf(line, " L%lf,%lf", x, y);
+    gs_sprintf(line, " L%lf,%lf", x, y);
     svg_write(svg, line);
 
     return 0;
@@ -766,7 +766,7 @@ svg_curveto(gx_device_vector *vdev, floatp x0, floatp y0,
     svg_print_path_type(svg, type);
     if_debug0m('_', svg->memory, "\n");
 
-    sprintf(line, " C%lf,%lf %lf,%lf %lf,%lf", x1,y1, x2,y2, x3,y3);
+    gs_sprintf(line, " C%lf,%lf %lf,%lf %lf,%lf", x1,y1, x2,y2, x3,y3);
     svg_write(svg, line);
 
     return 0;

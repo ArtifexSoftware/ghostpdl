@@ -674,7 +674,7 @@ gsijs_set_margin_params(gx_device_ijs *ijsdev)
     }
 
     if (code == 0) {
-        sprintf (buf, "%gx%g", ijsdev->MediaSize[0] * (1.0 / 72),
+        gs_sprintf (buf, "%gx%g", ijsdev->MediaSize[0] * (1.0 / 72),
                  ijsdev->MediaSize[1] * (1.0 / 72));
         code = ijs_client_set_param(ijsdev->ctx, 0, "PaperSize",
                                     buf, strlen(buf));
@@ -715,7 +715,7 @@ gsijs_set_margin_params(gx_device_ijs *ijsdev)
             m[1] = ijsdev->MediaSize[1] * (1.0 / 72) -
                 printable_top - printable_height;
             gx_device_set_margins((gx_device *)ijsdev, m, true);
-            sprintf (buf, "%gx%g", printable_left, printable_top);
+            gs_sprintf (buf, "%gx%g", printable_left, printable_top);
             code = ijs_client_set_param(ijsdev->ctx, 0, "TopLeft",
                                         buf, strlen(buf));
         }
@@ -864,7 +864,7 @@ gsijs_open(gx_device *dev)
         /* Note: dup() may not be portable to all interesting IJS
            platforms. In that case, this branch should be #ifdef'ed out.
         */
-        sprintf(buf, "%d", fd);
+        gs_sprintf(buf, "%d", fd);
         ijs_client_set_param(ijsdev->ctx, 0, "OutputFD", buf, strlen(buf));
         close(fd);
     } else {
@@ -1021,9 +1021,9 @@ gsijs_output_page(gx_device *dev, int num_copies, int flush)
     }
 
     /* Required page parameters */
-    sprintf(buf, "%d", n_chan);
+    gs_sprintf(buf, "%d", n_chan);
     gsijs_client_set_param(ijsdev, "NumChan", buf);
-    sprintf(buf, "%d", ijsdev->BitsPerSample);
+    gs_sprintf(buf, "%d", ijsdev->BitsPerSample);
     gsijs_client_set_param(ijsdev, "BitsPerSample", buf);
 
     /* This needs to become more sophisticated for DeviceN. */
@@ -1031,12 +1031,12 @@ gsijs_output_page(gx_device *dev, int num_copies, int flush)
         ((n_chan == 3) ? (krgb_mode ? ((k_bits == 1) ? "KRGB" : "KxRGB") : "DeviceRGB") : "DeviceGray"));
     gsijs_client_set_param(ijsdev, "ColorSpace", buf);
 
-    sprintf(buf, "%d", ijs_width);
+    gs_sprintf(buf, "%d", ijs_width);
     gsijs_client_set_param(ijsdev, "Width", buf);
-    sprintf(buf, "%d", ijs_height);
+    gs_sprintf(buf, "%d", ijs_height);
     gsijs_client_set_param(ijsdev, "Height", buf);
 
-    sprintf(buf, "%gx%g", xres, yres);
+    gs_sprintf(buf, "%gx%g", xres, yres);
     gsijs_client_set_param(ijsdev, "Dpi", buf);
 
 #ifdef KRGB_DEBUG

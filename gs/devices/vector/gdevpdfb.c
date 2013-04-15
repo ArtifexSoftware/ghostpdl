@@ -590,7 +590,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
         if (image_id) {
             char buf[MAX_REF_CHARS + 6 + 1]; /* +6 for /R# Do\n */
 
-            sprintf(buf, "/R%ld Do\n", image_id);
+            gs_sprintf(buf, "/R%ld Do\n", image_id);
             pprintd1(s, "%d>>stream\n", strlen(buf));
             if (pdev->PDFA != 0)
                 pprints1(s, "%s\nendstream\n", buf);

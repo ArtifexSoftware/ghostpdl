@@ -400,7 +400,7 @@ main_utf8(int argc, char *argv[])
         HDC hdc = GetDC(NULL);  /* get hdc for desktop */
         int depth =
             GetDeviceCaps(hdc, PLANES) * GetDeviceCaps(hdc, BITSPIXEL);
-        sprintf(ddpi, "-dDisplayResolution=%d",
+        gs_sprintf(ddpi, "-dDisplayResolution=%d",
                 GetDeviceCaps(hdc, LOGPIXELSY));
         ReleaseDC(NULL, hdc);
         if (depth == 32)
@@ -419,7 +419,7 @@ main_utf8(int argc, char *argv[])
         else if (depth >= 4)
             format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
                 DISPLAY_DEPTH_4 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
-        sprintf(dformat, "-dDisplayFormat=%d", format);
+        gs_sprintf(dformat, "-dDisplayFormat=%d", format);
         nargc = argc + 2;
         nargv = (char **)malloc((nargc + 1) * sizeof(char *));
         nargv[0] = argv[0];

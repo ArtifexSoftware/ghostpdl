@@ -401,7 +401,7 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 
     /* Return the address of this memfile as a string for use in future clist_fopen calls */
     fname[0] = 0xff;        /* a flag that this is a memfile name */
-    sprintf(fname+1, "%p", f);
+    gs_sprintf(fname+1, "%p", f);
 
 #ifdef DEBUG
         tot_compressed = 0;

@@ -151,7 +151,7 @@ pxPassthrough_init(px_state_t * pxs)
         stream_cursor_read r;
 
         ret =
-            sprintf(buf,
+            gs_sprintf(buf,
                     "@PJL SET PAPERLENGTH = %d\n@PJL SET PAPERWIDTH = %d\n",
                     (int)(pxs->media_dims.y * 10 + .5),
                     (int)(pxs->media_dims.x * 10 + .5));

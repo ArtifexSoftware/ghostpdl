@@ -633,16 +633,16 @@ static int escaped_Unicode (unsigned short Unicode, char *Buf)
 {
     switch (Unicode)
     {
-    case 0x3C: sprintf(Buf, "&lt;"); break;
-    case 0x3E: sprintf(Buf, "&gt;"); break;
-    case 0x26: sprintf(Buf, "&amp;"); break;
-    case 0x22: sprintf(Buf, "&quot;"); break;
-    case 0x27: sprintf(Buf, "&apos;"); break;
+    case 0x3C: gs_sprintf(Buf, "&lt;"); break;
+    case 0x3E: gs_sprintf(Buf, "&gt;"); break;
+    case 0x26: gs_sprintf(Buf, "&amp;"); break;
+    case 0x22: gs_sprintf(Buf, "&quot;"); break;
+    case 0x27: gs_sprintf(Buf, "&apos;"); break;
     default:
         if (Unicode >= 32 && Unicode <= 127)
-            sprintf(Buf, "%c", Unicode);
+            gs_sprintf(Buf, "%c", Unicode);
         else
-            sprintf(Buf, "&#x%x;", Unicode);
+            gs_sprintf(Buf, "&#x%x;", Unicode);
         break;
     }
 
@@ -665,13 +665,13 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
         x_entry = tdev->PageData.unsorted_text_list;
         while (x_entry) {
             next_x = x_entry->next;
-            sprintf(TextBuffer, "<span bbox=\"%0.0f %0.0f %0.0f %0.0f\" font=\"%s\" size=\"%0.4f\">\n", x_entry->start.x, x_entry->start.y,
+            gs_sprintf(TextBuffer, "<span bbox=\"%0.0f %0.0f %0.0f %0.0f\" font=\"%s\" size=\"%0.4f\">\n", x_entry->start.x, x_entry->start.y,
                 x_entry->end.x, x_entry->end.y, x_entry->FontName,x_entry->size);
             fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
             xpos = x_entry->start.x;
             for (i=0;i<x_entry->Unicode_Text_Size;i++) {
                 escaped_Unicode(x_entry->Unicode_Text[i], (char *)&Escaped);
-                sprintf(TextBuffer, "<char bbox=\"%0.0f %0.0f %0.0f %0.0f\" c=\"%s\">\n", xpos,
+                gs_sprintf(TextBuffer, "<char bbox=\"%0.0f %0.0f %0.0f %0.0f\" c=\"%s\">\n", xpos,
                     x_entry->start.y, xpos + x_entry->Widths[i], x_entry->end.y, Escaped);
                 fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
                 xpos += x_entry->Widths[i];
@@ -788,13 +788,13 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
                 fwrite("<line>\n", sizeof(unsigned char), 7, tdev->file);
                 x_entry = block_line->x_ordered_list;
                 while(x_entry) {
-                    sprintf(TextBuffer, "<span bbox=\"%0.0f %0.0f %0.0f %0.0f\" font=\"%s\" size=\"%0.4f\">\n", x_entry->start.x, x_entry->start.y,
+                    gs_sprintf(TextBuffer, "<span bbox=\"%0.0f %0.0f %0.0f %0.0f\" font=\"%s\" size=\"%0.4f\">\n", x_entry->start.x, x_entry->start.y,
                         x_entry->end.x, x_entry->end.y, x_entry->FontName,x_entry->size);
                     fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
                     xpos = x_entry->start.x;
                     for (i=0;i<x_entry->Unicode_Text_Size;i++) {
                         escaped_Unicode(x_entry->Unicode_Text[i], (char *)&Escaped);
-                        sprintf(TextBuffer, "<char bbox=\"%0.0f %0.0f %0.0f %0.0f\" c=\"%s\">\n", xpos,
+                        gs_sprintf(TextBuffer, "<char bbox=\"%0.0f %0.0f %0.0f %0.0f\" c=\"%s\">\n", xpos,
                             x_entry->start.y, xpos + x_entry->Widths[i], x_entry->end.y, Escaped);
                         fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
                         xpos += x_entry->Widths[i];

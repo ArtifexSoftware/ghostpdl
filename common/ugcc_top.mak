@@ -49,6 +49,7 @@ WHICH_CMS=lcms2
 
 include $(GLSRCDIR)/unixhead.mak
 include $(GLSRCDIR)/gs.mak
+include $(GLSRCDIR)/trio.mak
 include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
 include $(GLSRCDIR)/jpeg.mak

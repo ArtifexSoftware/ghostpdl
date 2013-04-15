@@ -208,9 +208,9 @@ static int alloc_rb( gs_memory_t *mem, cmyrow **rb, int rows)
       int r;
       for(r=0; r<rows; r++)
         {
-          sprintf((*rb)[r].cname, "C%02x", r);
-          sprintf((*rb)[r].mname, "M%02x", r);
-          sprintf((*rb)[r].yname, "Y%02x", r);
+          gs_sprintf((*rb)[r].cname, "C%02x", r);
+          gs_sprintf((*rb)[r].mname, "M%02x", r);
+          gs_sprintf((*rb)[r].yname, "Y%02x", r);
           (*rb)[r].is_used=0;
         }
       return 0;

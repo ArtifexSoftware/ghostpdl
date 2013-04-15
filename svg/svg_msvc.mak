@@ -115,6 +115,10 @@ TIFFCONFIG_SUFFIX=.vc
 TIFFPLATFORM=win32
 !endif
 
+!ifndef TRIOSRCDIR
+TRIOSRCDIR=..\gs\trio
+!endif
+
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.
 !ifndef PLPLATFORM

@@ -1312,7 +1312,7 @@ pdf_write_transfer_map(gx_device_pdf *pdev, const gx_transfer_map *map,
     gs_function_free(pfn, false, mem);
     if (code < 0)
         return code;
-    sprintf(ids, "%s%s%ld 0 R", key, (key[0] && key[0] != ' ' ? " " : ""), id);
+    gs_sprintf(ids, "%s%s%ld 0 R", key, (key[0] && key[0] != ' ' ? " " : ""), id);
     return 0;
 }
 static int
@@ -1893,7 +1893,7 @@ pdf_update_halftone(gx_device_pdf *pdev, const gs_imager_state *pis,
     }
     if (code < 0)
         return code;
-    sprintf(hts, "%ld 0 R", id);
+    gs_sprintf(hts, "%ld 0 R", id);
     pdev->halftone_id = pis->dev_ht->id;
     return code;
 }
@@ -2030,7 +2030,7 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
         if (pis->soft_mask_id == 0)
             strcpy(buf, "/None");
         else
-            sprintf(buf, "%ld 0 R", pis->soft_mask_id);
+            gs_sprintf(buf, "%ld 0 R", pis->soft_mask_id);
         code = pdf_open_gstate(pdev, ppres);
         if (code < 0)
             return code;
@@ -2186,7 +2186,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
                 code = pdf_open_gstate(pdev, ppres);
                 if (code < 0)
                     return code;
-                sprintf(buf, "[%d %d]", phase.x, phase.y);
+                gs_sprintf(buf, "[%d %d]", phase.x, phase.y);
                 code = cos_dict_put_string_copy(resource_dict(*ppres), "/HTP", buf);
                 if (code < 0)
                     return code;

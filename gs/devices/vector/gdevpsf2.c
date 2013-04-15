@@ -274,7 +274,7 @@ cff_put_real(cff_writer_t *pcw, floatp f)
         byte b = 0xff;
         const char *p;
 
-        sprintf(str, "%g", f);
+        gs_sprintf(str, "%g", f);
         sputc(pcw->strm, CD_REAL);
         for (p = str; ; ++p) {
             int digit;

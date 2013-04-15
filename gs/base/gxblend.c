@@ -1574,7 +1574,7 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
     /* FIXME: GRAY + ALPHA + SHAPE + TAGS will be interpreted as RGB + ALPHA */
     if ((n_chan == 2) || (n_chan == 3)) {
         int x;
-        sprintf(full_file_name,"%02d)%s.pam",global_index,filename);
+        gs_sprintf(full_file_name,"%02d)%s.pam",global_index,filename);
         fid = gp_fopen(full_file_name,"wb");
         fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL 255\nTUPLTYPE GRAYSCALE_ALPHA\nENDHDR\n",
                 width, num_rows);
@@ -1584,7 +1584,7 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
                     fputc(Buffer[z*plane_stride + y*rowstride + x], fid);
         fclose(fid);
         if (n_chan == 3) {
-            sprintf(full_file_name,"%02d)%s_shape.pam",global_index,filename);
+            gs_sprintf(full_file_name,"%02d)%s_shape.pam",global_index,filename);
             fid = gp_fopen(full_file_name,"wb");
             fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 1\nMAXVAL 255\nTUPLTYPE GRAYSCALE\nENDHDR\n",
                     width, num_rows);
@@ -1596,7 +1596,7 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
     }
     if ((n_chan == 4) || (n_chan == 5) || (n_chan == 6)) {
         int x;
-        sprintf(full_file_name,"%02d)%s.pam",global_index,filename);
+        gs_sprintf(full_file_name,"%02d)%s.pam",global_index,filename);
         fid = gp_fopen(full_file_name,"wb");
         fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL 255\nTUPLTYPE RGB_ALPHA\nENDHDR\n",
                 width, num_rows);
@@ -1606,7 +1606,7 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
                     fputc(Buffer[z*plane_stride + y*rowstride + x], fid);
         fclose(fid);
         if (n_chan > 4) {
-            sprintf(full_file_name,"%02d)%s_shape.pam",global_index,filename);
+            gs_sprintf(full_file_name,"%02d)%s_shape.pam",global_index,filename);
             fid = gp_fopen(full_file_name,"wb");
             fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 1\nMAXVAL 255\nTUPLTYPE GRAYSCALE\nENDHDR\n",
                     width, num_rows);
@@ -1616,7 +1616,7 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
             fclose(fid);
         }
         if (n_chan == 6) {
-            sprintf(full_file_name,"%02d)%s_tags.pam",global_index,filename);
+            gs_sprintf(full_file_name,"%02d)%s_tags.pam",global_index,filename);
             fid = gp_fopen(full_file_name,"wb");
             fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 1\nMAXVAL 255\nTUPLTYPE GRAYSCALE\nENDHDR\n",
                     width, num_rows);
@@ -1629,7 +1629,7 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
     }
 #endif
     max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
-    sprintf(full_file_name,"%02d)%s_%dx%dx%d.raw",global_index,filename,width,num_rows,max_bands);
+    gs_sprintf(full_file_name,"%02d)%s_%dx%dx%d.raw",global_index,filename,width,num_rows,max_bands);
     fid = gp_fopen(full_file_name,"wb");
 
     for (z = 0; z < max_bands; ++z) {

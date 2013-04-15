@@ -1184,9 +1184,9 @@ tiffsep1_prn_close(gx_device * pdev)
             while (*fmt != 'l' && *fmt != '%')
                 --fmt;
             if (*fmt == 'l')
-                sprintf(compname, parsed.fname, count1);
+                gs_sprintf(compname, parsed.fname, count1);
             else
-                sprintf(compname, parsed.fname, (int)count1);
+                gs_sprintf(compname, parsed.fname, (int)count1);
             parsed.iodev->procs.delete_file(parsed.iodev, compname);
         } else {
             parsed.iodev->procs.delete_file(parsed.iodev, tfdev->fname);
@@ -1372,7 +1372,7 @@ create_separation_file_name(tiffsep_device * pdev, char * buffer,
                 /* Max of 10 chars in %d format */
             if (max_size < base_filename_length + 11)
                 return_error(gs_error_rangecheck);
-            sprintf(buffer + base_filename_length, "s%d", sep_num);
+            gs_sprintf(buffer + base_filename_length, "s%d", sep_num);
         }
     }
     if (use_sep_name)
@@ -2382,9 +2382,9 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
         while (*fmt != 'l' && *fmt != '%')
             --fmt;
         if (*fmt == 'l')
-            sprintf(compname, parsed.fname, count1);
+            gs_sprintf(compname, parsed.fname, count1);
         else
-            sprintf(compname, parsed.fname, (int)count1);
+            gs_sprintf(compname, parsed.fname, (int)count1);
         parsed.iodev->procs.delete_file(parsed.iodev, compname);
         /* we always need an open printer (it will get deleted in tiffsep1_prn_close */
         if ((code = gdev_prn_open_printer((gx_device *)pdev, 1)) < 0)

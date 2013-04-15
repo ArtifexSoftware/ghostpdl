@@ -184,13 +184,13 @@ fmpr_print_page(gx_device_printer *pdev, FILE *prn_stream)
     }
     out_beg -= (out_beg - out) % bytes_per_column;
 
-    sprintf(prn_buf, "\033[%da",
+    gs_sprintf(prn_buf, "\033[%da",
             (out_beg - out) / bytes_per_column);
     prn_puts(pdev, prn_buf);
 
     /* Dot graphics */
     size = out_end - out_beg + 1;
-    sprintf(prn_buf, "\033Q%d W", size / bytes_per_column);
+    gs_sprintf(prn_buf, "\033Q%d W", size / bytes_per_column);
     prn_puts(pdev, prn_buf);
     prn_write(pdev, out_beg, size);
 

@@ -701,7 +701,7 @@ cos_array_add_int(cos_array_t *pca, int i)
     char str[sizeof(int) * 8 / 3 + 3]; /* sign, rounding, 0 terminator */
     cos_value_t v;
 
-    sprintf(str, "%d", i);
+    gs_sprintf(str, "%d", i);
     return cos_array_add(pca, cos_string_value(&v, (byte *)str, strlen(str)));
 }
 int
@@ -1082,7 +1082,7 @@ cos_dict_put_c_key_int(cos_dict_t *pcd, const char *key, int value)
 {
     char str[sizeof(int) * 8 / 3 + 3]; /* sign, rounding, 0 terminator */
 
-    sprintf(str, "%d", value);
+    gs_sprintf(str, "%d", value);
     return cos_dict_put_c_key_string(pcd, key, (byte *)str, strlen(str));
 }
 int

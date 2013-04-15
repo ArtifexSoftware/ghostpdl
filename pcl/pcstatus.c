@@ -76,7 +76,7 @@ stprintf(stream * s, const char *fmt, ...)
     char buf[1024];
 
     va_start(args, fmt);
-    count = vsprintf(buf, fmt, args);
+    count = gs_vsprintf(buf, fmt, args);
     sputs(s, (const byte *)buf, count, &count);
 }
 
@@ -137,7 +137,7 @@ status_print_idlist(stream * s, const ushort * idlist, int nid,
 
         n = idlist[i] >> 6;
         l = (idlist[i] & 077) + 'A' - 1;
-        sprintf(idstr, "%d%c", n, l);
+        gs_sprintf(idstr, "%d%c", n, l);
         status_put_id(s, title, idstr);
     }
     status_end_id_list(s);
@@ -373,7 +373,7 @@ status_macros(stream * s, pcl_state_t * pcs, pcl_data_storage_t storage)
         if (((pcl_macro_t *) value)->storage & storage) {
             char id_string[6];
 
-            sprintf(id_string, "%u", (key.data[0] << 8) + key.data[1]);
+            gs_sprintf(id_string, "%u", (key.data[0] << 8) + key.data[1]);
             status_put_id(s, "IDLIST", id_string);
         }
     status_end_id_list(s);
@@ -395,7 +395,7 @@ status_patterns(stream * s, pcl_state_t * pcs, pcl_data_storage_t storage)
         if ((pptrn != 0) && (pcs->pattern_type == pcl_pattern_user_defined)) {
             char id_string[6];
 
-            sprintf(id_string, "%u", id);
+            gs_sprintf(id_string, "%u", id);
             status_put_id(s, "IDLIST", id_string);
         }
     } else {
@@ -407,7 +407,7 @@ status_patterns(stream * s, pcl_state_t * pcs, pcl_data_storage_t storage)
             if (pptrn != 0) {
                 char id_string[6];
 
-                sprintf(id_string, "%u", id);
+                gs_sprintf(id_string, "%u", id);
                 status_put_id(s, "IDLIST", id_string);
             }
         }

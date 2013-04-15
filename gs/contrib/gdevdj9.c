@@ -2563,7 +2563,7 @@ static int cdj970_write_header (gx_device *pdev, FILE * prn_stream)
 
         memset (startbuffer, 0, 1260);
 
-        sprintf (&(startbuffer[600]), "\033E\033%%-12345X@PJL JOB NAME = \"GHOST BY RENE HARSCH\"\n@PJL ENTER LANGUAGE=PCL3GUI\n");
+        gs_sprintf (&(startbuffer[600]), "\033E\033%%-12345X@PJL JOB NAME = \"GHOST BY RENE HARSCH\"\n@PJL ENTER LANGUAGE=PCL3GUI\n");
 
         fwrite (startbuffer, sizeof(char), 678, prn_stream);
 

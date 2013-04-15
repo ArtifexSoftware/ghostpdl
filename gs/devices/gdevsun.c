@@ -392,7 +392,7 @@ if ( gs_debug['X'] )
                 /*
                  * Install the colormap.
                  */
-                sprintf(xdev->cmsname, "%s-%d", CMSNAME, getpid());
+                gs_sprintf(xdev->cmsname, "%s-%d", CMSNAME, getpid());
                 pw_setcmsname(xdev->pw, xdev->cmsname);
                 pw_putcolormap(xdev->pw, 0, CMS_SIZE,
                                xdev->red, xdev->green, xdev->blue);

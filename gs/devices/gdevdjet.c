@@ -325,9 +325,9 @@ hpjet_make_init(gx_device_printer *pdev, char *buf, const char *str)
     else if (dev->MediaPosition_set && dev->MediaPosition >= 0)
         paper_source = dev->MediaPosition;
     if (paper_source >= 0)
-        sprintf(buf, "%s\033&l%dH", str, paper_source);
+        gs_sprintf(buf, "%s\033&l%dH", str, paper_source);
     else
-        sprintf(buf, "%s", str);
+        gs_sprintf(buf, "%s", str);
 }
 
 /* The DeskJet can compress (mode 2) */
@@ -363,7 +363,7 @@ fs600_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     char base_init[60];
     char init[80];
 
-    sprintf(base_init, "\033*r0F\033&u%dD", dots_per_inch);
+    gs_sprintf(base_init, "\033*r0F\033&u%dD", dots_per_inch);
     hpjet_make_init(pdev, init, base_init);
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
                                         dots_per_inch, PCL_FS600_FEATURES,
@@ -427,7 +427,7 @@ ljet3d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     bool tumble=dev->Tumble;
 
     hpjet_make_init(pdev, init, "\033&l-180u36Z\033*r0F");
-    sprintf(even_init, "\033&l180u36Z\033*r0F");
+    gs_sprintf(even_init, "\033&l180u36Z\033*r0F");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
                                         300, PCL_LJ3D_FEATURES, init, even_init, tumble);
 }
@@ -442,7 +442,7 @@ ljet4_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     char base_init[60];
     char init[80];
 
-    sprintf(base_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
+    gs_sprintf(base_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
     hpjet_make_init(pdev, init, base_init);
 
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
@@ -474,9 +474,9 @@ ljet4d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
        in duplex mode we set this parameters for each odd page
        (paper tray is set by "hpjet_make_init")
     */
-    sprintf(base_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
+    gs_sprintf(base_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
     hpjet_make_init(pdev, init, base_init);
-    sprintf(even_init, "\033&l180u36Z\033*r0F\033&u%dD", dots_per_inch);
+    gs_sprintf(even_init, "\033&l180u36Z\033*r0F\033&u%dD", dots_per_inch);
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
                                         dots_per_inch, PCL_LJ4D_FEATURES,
                                         init,even_init,tumble);
@@ -491,7 +491,7 @@ ljet4pjl_print_page_copies(gx_device_printer *pdev, FILE *prn_stream,
 {	int dots_per_inch = (int)pdev->y_pixels_per_inch;
         char real_init[60];
 
-        sprintf(real_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
+        gs_sprintf(real_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
         return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
                                         dots_per_inch, PCL_LJ4PJL_FEATURES,
                                         real_init, real_init, false);

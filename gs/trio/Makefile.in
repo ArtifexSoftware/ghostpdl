@@ -1,0 +1,73 @@
+SHELL = @SHELL@
+CC	= @CC@
+CFLAGS	= @CFLAGS@ -I. -DDEBUG
+OBJS	= triostr.o trio.o trionan.o
+TARGETLIB	= libtrio.a
+TARGETINCS	= trio.h triop.h triodef.h trionan.h triostr.h
+LDFLAGS	= -L. -ltrio -lm
+AR	= ar
+RANLIB	= @RANLIB@
+ERASE	= rm -f
+MKDIR	= mkdir -p
+GENDOC	= doxygen
+srcdir	= @srcdir@
+# VPATH doesn't seem to work with /usr/xpg4/bin/make on Solaris
+# (use /usr/ccs/bin/make), and doesn't work on older Solaris make
+# such as Solaris 2.6.
+VPATH = @srcdir@
+
+# Installation settings
+INSTALL		= @INSTALL@
+INSTALL_DATA	= @INSTALL_DATA@
+prefix		= @prefix@
+exec_prefix	= @exec_prefix@
+includedir	= @includedir@
+libdir		= @libdir@
+
+all: $(TARGETLIB) $(TARGET)
+
+.PHONY: all check test install doc clean
+
+$(srcdir)/configure: configure.in
+	cd $(srcdir) && autoconf
+
+Makefile: Makefile.in config.status
+	CONFIG_COMMANDS= CONFIG_LINKS= CONFIG_HEADERS= \
+	CONFIG_FILES=Makefile ./config.status
+
+config.status: configure
+	./config.status --recheck
+
+check:	test
+test:	regression
+	./regression
+
+install:	$(TARGETLIB)
+	$(MKDIR) $(libdir)
+	$(MKDIR) $(includedir)
+	$(INSTALL_DATA) $(TARGETLIB) $(libdir)/$(TARGETLIB)
+	for i in $(TARGETINCS);do \
+	(set -x;$(INSTALL_DATA) $(srcdir)/$$i $(includedir)); \
+	done
+
+regression: regression.o $(TARGETLIB)
+	$(CC) $(CFLAGS) regression.o $(LDFLAGS) -o $@
+
+example: example.o $(TARGETLIB)
+	$(CC) $(CFLAGS) example.o $(LDFLAGS) -o $@
+
+compare: compare.o $(TARGETLIB)
+	$(CC) $(CFLAGS) compare.o $(LDFLAGS) -o $@
+
+userdef: userdef.o $(TARGETLIB)
+	$(CC) $(CFLAGS) userdef.o $(LDFLAGS) -o $@
+
+$(TARGETLIB): $(OBJS)
+	$(AR) ruv $(TARGETLIB) $(OBJS)
+	$(RANLIB) $(TARGETLIB)
+
+doc::
+	(cd $(srcdir) && $(GENDOC) doc/trio.cfg)
+
+clean:
+	$(ERASE) *~ core core.* regression example $(TOBJS) $(OBJS) $(TARGET) $(TARGETLIB) example.o regression.o
