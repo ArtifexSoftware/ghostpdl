@@ -1345,6 +1345,14 @@ currentdict /xref-char-dict undef
 % Arrange the four elements that define a rectangle into a 'normal' order.
 /normrect_elems   % <x1> <y1> <x2> <y2> normrect_elems <llx> <lly> <urx> <ury>
 {
+    4 { % Bug 693919
+      dup type dup /integertype ne exch /realtype ne and {
+         (   **** Warning: replacing malformed number ') pdfformaterror pdfstring cvs pdfformaterror
+         (' with 0.\n) pdfformaterror
+         0
+      } if
+      4 1 roll
+    } repeat
     exch 4 1 roll			% <x2> <x1> <y1> <y2>
     2 copy gt { exch } if		% <x2> <x1> <lly> <ury>
     4 2 roll 2 copy lt { exch } if	% <lly> <ury> <urx> <llx>
