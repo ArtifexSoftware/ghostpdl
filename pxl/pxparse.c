@@ -326,6 +326,14 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
             st->args.source.available = avail;
             st->args.source.data = p + 1;
             code = (*st->data_proc) (&st->args, pxs);
+            /* If we get a 'remap_color' error, it means we are dealing with a
+             * pattern, and the device supports high level patterns. So we must
+             * use our high level pattern implementation.
+             */
+            if (code == gs_error_Remap_Color) {
+                code = px_high_level_pattern(pxs->pgs);
+                code = (*st->data_proc) (&st->args, pxs);
+            }
             used = st->args.source.data - (p + 1);
 #ifdef DEBUG
             if (gs_debug_c('I')) {
@@ -620,6 +628,14 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
                     if (code >= 0) {
                         st->args.source.phase = 0;
                         code = (*pod->proc) (&st->args, pxs);
+                        /* If we get a 'remap_color' error, it means we are dealing with a
+                         * pattern, and the device supports high level patterns. So we must
+                         * use our high level pattern implementation.
+                         */
+                        if (code == gs_error_Remap_Color) {
+                            code = px_high_level_pattern(pxs->pgs);
+                            code = (*pod->proc) (&st->args, pxs);
+                        }
                     }
                     if (code < 0)
                         goto x;

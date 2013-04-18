@@ -388,6 +388,8 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 
     if (code < 0)
         return code;                /* can't happen */
+    if (!base)
+        return 1;
     gs_image_t_init(pim, pcs);
     pdf_make_bitmap_image(pim, x, y, w, h);
     pim->BitsPerComponent = 8;

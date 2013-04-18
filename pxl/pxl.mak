@@ -171,7 +171,8 @@ $(PXLOBJ)pxink.$(OBJ): $(PXLSRC)pxink.c $(math__h) $(stdio__h) $(memory__h)\
  $(gdebug_h) $(gscolor2_h) $(gscoord_h) $(gsimage_h) $(gsmemory_h) $(gspath_h)\
  $(gspath2_h) $(gstypes_h) $(gscie_h) $(gscrd_h) $(gsstate_h)\
  $(gxarith_h) $(gxcspace_h) $(gxdevice_h) $(gxht_h) $(gxstate_h)\
- $(pxoper_h) $(pxptable_h) $(pxstate_h) $(plht_h) $(pldraw_h) $(plsrgb_h)
+ $(pxoper_h) $(pxptable_h) $(pxstate_h) $(plht_h) $(pldraw_h) $(plsrgb_h)\
+ $(gzstate_h) $(gxdevsop_h) $(gxcolor2_h)
 	$(PXLCCC) $(PXLSRC)pxink.c $(PXLO_)pxink.$(OBJ)
 
 $(PXLOBJ)pxpaint.$(OBJ): $(PXLSRC)pxpaint.c $(AK) $(math__h) $(stdio__h)\

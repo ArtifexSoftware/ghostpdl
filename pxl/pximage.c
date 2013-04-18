@@ -904,6 +904,18 @@ pxScanLineRel(px_args_t * par, px_state_t * pxs)
     int rcount;
     gs_rect rlist[20];          /* 20 is arbitrary */
 
+    /* High level pattern support kludge. We need to know if we are executing
+     * a high level pattern before we go consuming any of the input, because if
+     * we are we need to return to the interpreter, set up the high level
+     * pattern and then come back here. Obviously if we've consumed the data
+     * we can't come back and rerun it. So we do a 'no op' rectfill which will
+     * set the color, if it is a high level pattern then we will get an error
+     * which we return.
+     */
+    code = gs_rectfill(pgs, NULL, 0);
+    if (code < 0)
+        return code;
+
     /* Check for initial state. */
     if (par->source.position == 0) {    /* Read XStart/YStart data type. */
         if (par->source.available < 1)

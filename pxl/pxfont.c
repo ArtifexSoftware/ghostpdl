@@ -341,6 +341,9 @@ px_text_setup(gs_state * pgs, const gs_char * str, uint size,
     text.y_widths = y_widths;
     text.widths_size = widths_size;
     code = gs_text_begin(pgs, &text, mem, ppte);
+    if (code < 0)
+        return code;
+
     if (!can_cache) {
         /* NB breaks API, needs a better solution. */
         gs_show_enum *penum = (gs_show_enum *) * ppte;

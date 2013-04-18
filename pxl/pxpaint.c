@@ -399,8 +399,22 @@ paint_path(px_state_t * pxs)
             gs_settexturetransparent(pgs, false);
             need_restore_rop = true;
         }
-        if ((code = px_set_paint(&pxgs->pen, pxs)) < 0 ||
-            (code = gs_stroke(pgs)) < 0)
+        code = px_set_paint(&pxgs->pen, pxs);
+        code = gs_stroke(pgs);
+        /* Bit hacky. Normally we handle this up at the interpreter level, and for
+         * fill (above) that's how it works. However, px_set_paint() will call
+         * gs_setpattern, which means that the high level pattern we've saved will
+         * not be the one we use here. If we simply returned remap_color, as might be
+         * expected, we would throw an error in the interpreter, and even if we didn't,
+         * when we came back we would do the fill again, which is wasteful. Instead we
+         * will cater for the situation here by calling the high level pattern routine
+         * to install the pattern, then do the stroke again.
+         */
+        if (code == gs_error_Remap_Color) {
+            code = px_high_level_pattern(pxs->pgs);
+            code = gs_stroke(pgs);
+        }
+        if (code < 0)
             DO_NOTHING;
         if (need_restore_rop) {
             gs_setrasterop(pgs, save_rop);
