@@ -436,7 +436,7 @@ svg_write_state(gx_device_svg *svg)
         svg_write(svg, " stroke='none'");
     }
     if (svg->fillcolor != gx_no_color_index) {
-        sprintf(line, "#%06x", svg->fillcolor & 0xffffffL);
+        sprintf(line, " fill='#%06x'", svg->fillcolor & 0xffffffL);
         svg_write(svg, line);
     } else {
       svg_write(svg, " fill='none'");
