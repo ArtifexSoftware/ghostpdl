@@ -2146,6 +2146,8 @@ FAPI_char(i_ctx_t *i_ctx_p, bool bBuildGlyph, ref *charstring)
         /* initialise the FAPI font, this includes language specific stuff */
         I->ff = ps_ff_stub;
 
+        I->client_ctx_p = i_ctx_p;
+
         if (bBuildGlyph && !bCID) {
             if (r_type(op) != t_name) {
                 name_enter_string(imemory, ".notdef", op);
