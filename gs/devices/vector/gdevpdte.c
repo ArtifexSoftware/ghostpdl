@@ -743,7 +743,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
         }
         pwidths->Width.w = pdfont->Widths[ch];
         pwidths->Width.v = pdfont->u.simple.v[ch];
-        pwidths->real_width.v.x = pwidths->real_width.v.y;
+        pwidths->real_width.v.x = pwidths->real_width.v.y = 0;
         if (font->FontType == ft_user_defined || font->FontType == ft_PCL_user_defined ||
             font->FontType == ft_GL2_stick_user_defined || font->FontType == ft_GL2_531) {
             pwidths->real_width.w = real_widths[ch * 2];
