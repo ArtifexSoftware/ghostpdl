@@ -154,29 +154,37 @@ if test x"$enable_fapi" != xno; then
   AC_ARG_WITH([ufst], AC_HELP_STRING([--with-ufst=UFST_ROOT_DIR],
              [Use UFST]), [], [with_ufst=no])
 
-  if test -d $with_ufst; then
-    UFST_BRIDGE=1
-    case $with_ufst in
-      /*) UFST_ROOT=$with_ufst ;;
-       *) UFST_ROOT=`pwd`/$with_ufst ;;
-    esac
+  if test x"$with_ufst" != xno; then
+    if test -d $with_ufst; then
+      UFST_BRIDGE=1
+      case $with_ufst in
+        /*) UFST_ROOT=$with_ufst ;;
+         *) UFST_ROOT=`pwd`/$with_ufst ;;
+      esac
 
-    FAPIUFST_MAK="\$(UFST_ROOT)/fapiufst.mak"
-
-    # Check pointer size
-    AC_CHECK_SIZEOF(char*)
-
-    # UFST 5.x uses strcmpi() but on GNU systems the equivalent is
-    # strcasecmp()
-    if test "x$ac_cv_sizeof_charp" = "x8"; then
-      UFST_CFLAGS="-DGCCx86_64 -DO_BINARY=0 -Dstrcmpi=strcasecmp"
-    else
-      if test "x$ac_cv_sizeof_charp" = "x4"; then
-        UFST_CFLAGS="-DGCCx86 -DO_BINARY=0 -Dstrcmpi=strcasecmp"
+      FAPIUFST_MAK="\$(UFST_ROOT)/fapiufst.mak"
+      if ! test -f $UFST_ROOT/fapiufst.mak ; then
+        echo $UFST_ROOT/fapiufst.mak
+        AC_MSG_ERROR([UFST: fapiufst.mak not found])
       fi
-    fi
 
-    UFST_LIB_EXT=.a
+      # Check pointer size
+      AC_CHECK_SIZEOF(char*)
+
+      # UFST 5.x uses strcmpi() but on GNU systems the equivalent is
+      # strcasecmp()
+      if test "x$ac_cv_sizeof_charp" = "x8"; then
+        UFST_CFLAGS="-DGCCx86_64 -DO_BINARY=0 -Dstrcmpi=strcasecmp"
+      else
+        if test "x$ac_cv_sizeof_charp" = "x4"; then
+          UFST_CFLAGS="-DGCCx86 -DO_BINARY=0 -Dstrcmpi=strcasecmp"
+        fi
+      fi
+
+      UFST_LIB_EXT=.a
+    else
+      AC_MSG_ERROR([UFST source directory not found])
+    fi
   fi
 fi
 
