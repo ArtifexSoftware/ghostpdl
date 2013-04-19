@@ -192,10 +192,15 @@ gx_set_dash(gx_dash_params * dash, const float *pattern, uint length,
             float length2 = pattern_length * 2;
 
             dist_left = f_mod(offset, length2);
+            /* Rounding errors can leave dist_left > length2 */
+            dist_left = f_mod(dist_left, length2);
             if (dist_left >= pattern_length)
                 dist_left -= pattern_length, ink = !ink;
-        } else
+        } else {
             dist_left = f_mod(offset, pattern_length);
+            /* Rounding errors can leave dist_left > length */
+            dist_left = f_mod(dist_left, pattern_length);
+        }
         while ((dist_left -= pattern[index]) >= 0 &&
                (dist_left > 0 || pattern[index] != 0)
             )
