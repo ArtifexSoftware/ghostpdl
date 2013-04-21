@@ -617,6 +617,7 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
     }
 
     if (ft_error == FT_Err_Invalid_Argument
+        || ft_error == FT_Err_Invalid_Reference
         || ft_error == FT_Err_Invalid_Glyph_Index
         || (ft_error >= FT_Err_Invalid_Opcode
             && ft_error <= FT_Err_Too_Many_Instruction_Defs)) {
