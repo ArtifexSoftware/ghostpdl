@@ -380,11 +380,20 @@ mem_true24_copy_mono(gx_device * dev,
                     put3(pptr, r0, g0, b0);
                     vd_pixel(int2fixed((pptr - mdev->line_ptrs[y]) / 3), int2fixed(y), RGB(r0, g0, b0));
                 }
+
                 pptr += 3;
-                if ((bit >>= 1) == 0)
-                    bit = 0x80, sbyte = *sptr++;
-            }
-            while (--count > 0);
+                count--;
+
+                if (count == 0)
+                    break;
+
+                if ((bit >>= 1) == 0) {
+                    bit = 0x80;
+                    sbyte = *sptr++;
+                }
+
+            } while (true);
+
             line += sraster;
             inc_ptr(dest, draster);
         }
