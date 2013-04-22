@@ -344,6 +344,18 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
     nocm_link_t *nocm_link;
     gs_memory_t *mem = pis->memory->non_gc_memory;
     const gx_cm_color_map_procs * cm_procs;
+    bool pageneutralcolor = false;
+    cmm_dev_profile_t *dev_profile;
+    int code;
+    gsicc_colorbuffer_t data_cs = gsRGB;
+
+    /* Need to check if we need to monitor for color */
+    if (dev != NULL ) {
+        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+        if (dev_profile != NULL) {
+            pageneutralcolor = dev_profile->pageneutralcolor;
+        }
+     }
 
     /* If the cm_procs are forwarding due to the overprint device or other
        odd thing, drill down now and get the proper ones */
@@ -376,6 +388,9 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
         return NULL;
 
     /* Now compute the link contents */
+    /* Lock the cache as we alter the procs */
+    gx_monitor_enter(pis->icc_link_cache->lock);	
+
     result->procs.map_buffer = gsicc_nocm_transform_color_buffer;
     result->procs.map_color = gsicc_nocm_transform_color;
     result->procs.free_link = gsicc_nocm_freelink;
@@ -404,9 +419,36 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
     nocm_link->cm_procs.map_rgb = cm_procs->map_rgb;
     nocm_link->cm_procs.map_gray = cm_procs->map_gray;
     nocm_link->num_in = src_index;
-    if (result != NULL) {
-        gsicc_set_link_data(result, nocm_link, hash,
-                            pis->icc_link_cache->lock, false, false);
+
+    result->num_input = nocm_link->num_in;
+    result->num_output = nocm_link->num_out;
+    result->link_handle = nocm_link;
+    result->hashcode.link_hashcode = hash.link_hashcode;
+    result->hashcode.des_hash = hash.des_hash;
+    result->hashcode.src_hash = hash.src_hash;
+    result->hashcode.rend_hash = hash.rend_hash;
+    result->includes_softproof = false;
+    result->includes_devlink = false;
+    if (hash.src_hash == hash.des_hash) {
+        result->is_identity = true;
+    } else {
+        result->is_identity = false;
     }
+    result->valid = true;
+
+    /* Set up for monitoring if not gray */
+    if (pageneutralcolor && nocm_link->num_in != 1) {
+        if (nocm_link->num_in == 4)  
+            data_cs = gsCMYK;
+        gsicc_mcm_set_link(result, data_cs);
+    }
+
+    /* Now release any tasks/threads waiting for these contents */
+    while (result->num_waiting > 0) {
+        gx_semaphore_signal(result->wait);
+        result->num_waiting--;
+    }
+    gx_monitor_leave(pis->icc_link_cache->lock);	/* done with updating, let everyone run */
+
     return result;
 }

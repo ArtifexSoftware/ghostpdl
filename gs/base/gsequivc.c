@@ -458,10 +458,13 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     cmm_profile_t *curr_output_profile;
     cmm_dev_profile_t temp_profile = {	/* Initialize to 0's/NULL's */
                           { 0 } /* device_profile[] */, 0 /* proof_profile */,
-                          0 /* link_profile */, 0 /* oi_profile */, { {0} } /* rendercond[] */,
-                          0 /* devicegraytok */, 0 /* usefastcolor */, 0 /* supports_devn */,
-                          0 /* sim_overprint */, 0 /* spotnames */, 0 /* prebandthreshold */,
-                          0 /* memory */, { 0 } /* rc_header */
+                          0 /* link_profile */, 0 /* oi_profile */, 
+                          { {0} } /* rendercond[] */, 0 /* devicegraytok */, 
+                          0 /* graydection */, 0 /* pageneutralcolor */, 
+                          0 /* usefastcolor */, 0 /* supports_devn */,
+                          0 /* sim_overprint */, 0 /* spotnames */, 
+                          0 /* prebandthreshold */, 0 /* memory */, 
+                          { 0 } /* rc_header */
                           };
 
     code = dev_proc(pdev, get_profile)(pdev, &dev_profile);

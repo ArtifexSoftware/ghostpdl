@@ -1866,7 +1866,9 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
             dev_proc((gx_device *) target, get_profile)((gx_device *) target,
                                           &(profile_targ));
         profile_dev14->device_profile[0] = profile_targ->device_profile[0];
-        dev->icc_struct->devicegraytok = profile_targ->devicegraytok;
+        dev->icc_struct->devicegraytok = profile_targ->devicegraytok;        
+        dev->icc_struct->graydetection = profile_targ->graydetection;
+        dev->icc_struct->pageneutralcolor = profile_targ->pageneutralcolor;
         dev->icc_struct->supports_devn = profile_targ->supports_devn;
         gx_monitor_enter(profile_dev14->device_profile[0]->lock);
         rc_increment(profile_dev14->device_profile[0]);
@@ -5092,6 +5094,19 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
         }
     }
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
+}
+
+/* Needed to turn off color monitoring in the target device's profile */
+int 
+gs_pdf14_device_color_mon_off(gx_device *pdev)
+{
+    pdf14_device * p14dev = (pdf14_device *)pdev;
+    gx_device *targ = p14dev->target;
+    cmm_dev_profile_t *dev_profile;
+    int code = dev_proc(targ, get_profile)((gx_device*) targ, &dev_profile);
+
+    dev_profile->pageneutralcolor = false;
+    return code;
 }
 
 int

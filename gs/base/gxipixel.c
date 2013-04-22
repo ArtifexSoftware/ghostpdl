@@ -128,7 +128,6 @@ RELOC_PTRS_END
 /* Forward declarations */
 static int color_draws_b_w(gx_device * dev,
                             const gx_drawing_color * pdcolor);
-static void image_init_map(byte * map, int map_size, const float *decode);
 static void image_init_colors(gx_image_enum * penum, int bps, int spp,
                                gs_image_format_t format,
                                const float *decode,
@@ -1306,12 +1305,11 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
                                        pis, dev, gs_color_select_source);
         }
     }
-
 }
 /* Construct a mapping table for sample values. */
 /* map_size is 2, 4, 16, or 256.  Note that 255 % (map_size - 1) == 0, */
 /* so the division 0xffffL / (map_size - 1) is always exact. */
-static void
+void
 image_init_map(byte * map, int map_size, const float *decode)
 {
     float min_v = decode[0];

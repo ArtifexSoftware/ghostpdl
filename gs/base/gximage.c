@@ -336,7 +336,7 @@ gx_pixel_image_sput(const gs_pixel_image_t *pim, stream *s,
     case gs_image_format_chunky:
     case gs_image_format_component_planar:
         switch (bpc) {
-        case 1: case 2: case 4: case 8: case 12: break;
+        case 1: case 2: case 4: case 8: case 12: case 16: break;
         default: return_error(gs_error_rangecheck);
         }
         break;

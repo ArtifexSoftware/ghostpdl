@@ -2042,7 +2042,8 @@ $(GLOBJ)gxclimag.$(OBJ) : $(GLSRC)gxclimag.c $(AK) $(gx_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gxfmap_h) $(gxiparam_h) $(gxpath_h)\
  $(sisparam_h) $(stream_h) $(strimpl_h) $(gxcomp_h) $(gsserial_h)\
  $(gxdhtserial_h) $(gsptype1_h) $(gsicc_manage_h) $(gsicc_cache_h)\
- $(gxdevsop_h) $(MAKEDIRS)
+ $(gxdevsop_h) $(gscindex_h) $(gsicc_cms_h) $(gxsample_h)\
+ $(gximage_h) $(gxfrac_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxclimag.$(OBJ) $(C_) $(GLSRC)gxclimag.c
 
 $(GLOBJ)gxclpath.$(OBJ) : $(GLSRC)gxclpath.c $(AK) $(gx_h)\
@@ -2715,7 +2716,7 @@ $(GLOBJ)gxctable.$(OBJ) : $(GLSRC)gxctable.c $(AK) $(gx_h)\
 gsicc_=$(GLOBJ)gsicc_manage.$(OBJ) $(GLOBJ)gsicc_cache.$(OBJ)\
  $(GLOBJ)gsicc_$(WHICH_CMS).$(OBJ) $(GLOBJ)gsicc_profilecache.$(OBJ)\
  $(GLOBJ)gsicc_create.$(OBJ)  $(GLOBJ)gsicc_nocm.$(OBJ)\
- $(GLOBJ)gsicc_replacecm.$(OBJ)
+ $(GLOBJ)gsicc_replacecm.$(OBJ) $(GLOBJ)gsicc_monitorcm.$(OBJ)
 
 sicclib_=$(GLOBJ)gsicc.$(OBJ)
 $(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(gsicc_)\
@@ -2736,6 +2737,12 @@ gsicc_cms_h=$(GLSRC)gsicc_cms.h $(gxcvalue_h) $(gscms_h)
 gsicc_manage_h=$(GLSRC)gsicc_manage.h $(gsicc_cms_h)
 gsicc_cache_h=$(GLSRC)gsicc_cache.h
 gsicc_profilecache_h=$(GLSRC)gsicc_profilecache.h
+
+$(GLOBJ)gsicc_monitorcm.$(OBJ) : $(GLSRC)gsicc_monitorcm.c $(AK) $(std_h)\
+ $(stdpre_h) $(gstypes_h) $(gsmemory_h) $(gxdevcli_h)\
+ $(gxcspace_h) $(gsicc_cms_h) $(gxcvalue_h)\
+ $(gsicc_cache_h) $(gxdevsop_h) $(gdevp14_h) $(string__h) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gsicc_monitorcm.$(OBJ) $(C_) $(GLSRC)gsicc_monitorcm.c
 
 $(GLOBJ)gsicc_nocm.$(OBJ) : $(GLSRC)gsicc_nocm.c $(AK) $(std_h) $(gx_h)\
  $(stdpre_h) $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(strmio_h)\

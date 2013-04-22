@@ -1190,6 +1190,8 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     result->oi_profile = NULL;
     result->spotnames = NULL;
     result->devicegraytok = true;  /* Default is to map gray to pure K */
+    result->graydetection = false;
+    result->pageneutralcolor = false;
     result->usefastcolor = false;  /* Default is to not use fast color */
     result->prebandthreshold = true;
     result->supports_devn = false;

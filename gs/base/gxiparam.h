@@ -258,4 +258,7 @@ image_enum_proc_flush(gx_image1_flush);
 /* Free the image enumerator. */
 void gx_image_free_enum(gx_image_enum_common_t **ppenum);
 
+/* Needed in clist image (high level) color monitoring set up */
+void image_init_map(byte * map, int map_size, const float *decode);
+
 #endif /* gxiparam_INCLUDED */

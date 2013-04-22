@@ -79,6 +79,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     gsicc_blackptcomp_t blackptcomps[NUM_DEVICE_PROFILES];
     gsicc_blackpreserve_t blackpreserve[NUM_DEVICE_PROFILES];
     bool devicegraytok = true;  /* Default if device profile stuct not set */
+    bool graydetection = false;
     bool usefastcolor = false;  /* set for unmanaged color */
     bool sim_overprint = false;
     bool prebandthreshold = true;
@@ -168,6 +169,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
                                      dev_profile->link_profile->name);
         }
         devicegraytok = dev_profile->devicegraytok;
+        graydetection = dev_profile->graydetection;
         usefastcolor = dev_profile->usefastcolor;
         sim_overprint = dev_profile->sim_overprint;
         prebandthreshold = dev_profile->prebandthreshold;
@@ -225,6 +227,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         /* Note:  if change is made in NUM_DEVICE_PROFILES we need to name
            that profile here for the device parameter on the command line */
         (code = param_write_bool(plist, "DeviceGrayToK", &devicegraytok)) < 0 ||
+        (code = param_write_bool(plist, "GrayDetection", &graydetection)) < 0 ||
         (code = param_write_bool(plist, "UseFastColor", &usefastcolor)) < 0 ||
         (code = param_write_bool(plist, "SimulateOverprint", &sim_overprint)) < 0 ||
         (code = param_write_bool(plist, "PreBandThreshold", &prebandthreshold)) < 0 ||
@@ -514,6 +517,38 @@ gs_putdeviceparams(gx_device * dev, gs_param_list * plist)
     fill_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
     code = (*dev_proc(dev, put_params)) (dev, plist);
     return (code < 0 ? code : was_open && !dev->is_open ? 1 : code);
+}
+
+static int
+gx_default_put_graydetection(bool graydetection, gx_device * dev) 
+{
+    int code = 0;
+    cmm_dev_profile_t *profile_struct;
+
+    if (dev->procs.get_profile == NULL) {
+        /* This is an odd case where the device has not yet fully been 
+           set up with its procedures yet.  We want to make sure that
+           we catch this so we assume here that we are dealing with 
+           the target device.  For now allocate the profile structure
+           but do not intialize the profile yet as the color info 
+           may not be fully set up at this time.  */
+        if (dev->icc_struct == NULL) {
+            /* Allocate at this time the structure */
+            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+        }
+        dev->icc_struct->graydetection = graydetection;
+        dev->icc_struct->pageneutralcolor = graydetection;
+    } else {
+        code = dev_proc(dev, get_profile)(dev,  &profile_struct);
+        if (profile_struct == NULL) {
+            /* Create now  */
+            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            profile_struct =  dev->icc_struct;
+        }
+        profile_struct->graydetection = graydetection;
+        profile_struct->pageneutralcolor = graydetection;
+    }
+    return code;
 }
   
 static int
@@ -845,6 +880,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     int leadingedge = dev->LeadingEdge;
     int k;
     bool devicegraytok = true;
+    bool graydetection = false;
     bool usefastcolor = false;
     bool sim_overprint = false;
     bool prebandthreshold = false;
@@ -859,6 +895,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
             blackptcomp[k] = dev->icc_struct->rendercond[k].black_point_comp;
             blackpreserve[k] = dev->icc_struct->rendercond[k].preserve_black;
         }
+        graydetection = dev->icc_struct->graydetection;
         devicegraytok = dev->icc_struct->devicegraytok;
         usefastcolor = dev->icc_struct->usefastcolor;
         prebandthreshold = dev->icc_struct->prebandthreshold;
@@ -1133,6 +1170,11 @@ nce:
         ecode = code;
         param_signal_error(plist, param_name, ecode);
     }
+    if ((code = param_read_bool(plist, (param_name = "GrayDetection"), 
+                                                        &graydetection)) < 0) {
+        ecode = code;
+        param_signal_error(plist, param_name, ecode);
+    }
     if ((code = param_read_bool(plist, (param_name = "UseFastColor"), 
                                                         &usefastcolor)) < 0) {
         ecode = code;
@@ -1392,8 +1434,10 @@ nce:
     code = gx_default_put_simulateoverprint(sim_overprint, dev);
     if (code < 0)
         return code;
-    return gx_default_put_prebandthreshold(prebandthreshold, dev);
-}
+    code = gx_default_put_graydetection(graydetection, dev);
+    if (code < 0)
+        return code;
+    return gx_default_put_prebandthreshold(prebandthreshold, dev);}
 
 void
 gx_device_request_leadingedge(gx_device *dev, int le_req)

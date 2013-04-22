@@ -336,6 +336,13 @@ gscms_transform_color(gx_device *dev, gsicc_link_t *icclink,
     cmsDoTransform(hTransform,inputcolor,outputcolor,1);
 }
 
+void
+gscms_get_link_dim(gcmmhlink_t link, int *num_inputs, int *num_outputs)
+{
+    *num_inputs = T_CHANNELS(cmsGetTransformInputFormat(link));
+    *num_outputs = T_CHANNELS(cmsGetTransformOutputFormat(link));
+}
+
 /* Get the link from the CMS. TODO:  Add error checking */
 gcmmhlink_t
 gscms_get_link(gcmmhprofile_t  lcms_srchandle,
