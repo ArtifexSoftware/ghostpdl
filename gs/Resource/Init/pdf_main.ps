@@ -1262,11 +1262,15 @@ currentdict /xref-char-dict undef
     dup 1 def
     dup /Kids knownoget {
       { oforce
-        currentdict 1 index known {
-          (   **** Error: there's a loop in the page tree. Giving up.\n) pdfformaterror
-          /verify_page_tree cvx /syntaxerror signalerror
-        } if
-        verify_page_tree_recursive
+        dup //null ne {
+          currentdict 1 index known {
+            (   **** Error: there's a loop in the page tree. Giving up.\n) pdfformaterror
+            /verify_page_tree cvx /syntaxerror signalerror
+          } if
+          verify_page_tree_recursive
+        } {
+          pop
+        } ifelse
       } forall
     } if
     currentdict exch undef
