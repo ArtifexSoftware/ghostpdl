@@ -2479,16 +2479,8 @@ static int nInstrCount=0;
     int index;
     if ( BOUNDS( args[0], CUR.cvtSize ) )
     {
-#if 0
       CUR.error = TT_Err_Invalid_Reference;
       return;
-#else
-      /* A workaround for the Ghostscript Bug 687604.
-         Ported from FreeType 2 : !FT_LOAD_PEDANTIC by default. */
-      index=args[0];
-      args[0] = 0;
-      DBG_PRINT1(" cvt[%d] stubbed with 0", index);
-#endif
     }
     index=args[0];
     args[0] = CUR_Func_read_cvt( index );
