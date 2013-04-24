@@ -35,6 +35,7 @@
 #include "stdio_.h"
 #include "string_.h"
 #include "memory_.h"
+#include "stat_.h"
 #include "pipe_.h"
 #include <stdlib.h>
 #include <stdarg.h>
