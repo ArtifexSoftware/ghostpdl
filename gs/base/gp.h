@@ -489,6 +489,8 @@ int64_t gp_ftell_64(FILE *strm);
 
 int gp_fseek_64(FILE *strm, int64_t offset, int origin);
 
+bool gp_fseekable (FILE *f);
+
 /* We don't define gp_fread_64, gp_fwrite_64,
    because (1) known platforms allow regular fread, fwrite
    to be applied to a file opened with O_LARGEFILE,

@@ -829,6 +829,21 @@ int gp_fseek_64(FILE *strm, gs_offset_t offset, int origin)
 #endif
 }
 
+bool gp_fseekable (FILE *f)
+{
+    struct stat s;
+    int fno;
+    
+    fno = fileno(f);
+    if (fno < 0)
+        return(false);
+    
+    if (fstat(fno, &s) < 0)
+        return(false);
+
+    return((bool)S_ISREG(s.st_mode));
+}
+
 /* -------------------------  _snprintf -----------------------------*/
 
 /* Microsoft Visual C++ 2005  doesn't properly define snprintf,

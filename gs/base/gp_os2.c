@@ -617,3 +617,18 @@ int gp_fseek_64(FILE *strm, int64_t offset, int origin)
         return -1;
     return fseek(strm, offset1, origin);
 }
+
+bool gp_fseekable (FILE *f)
+{
+    struct stat s;
+    int fno;
+    
+    fno = fileno(f);
+    if (fno < 0)
+        return(false);
+    
+    if (fstat(fno, &s) < 0)
+        return(false);
+
+    return((bool)S_ISREG(s.st_mode));
+}

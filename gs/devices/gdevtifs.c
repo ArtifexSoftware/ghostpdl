@@ -60,6 +60,11 @@ tiff_output_page(gx_device *pdev, int num_copies, int flush)
         if (code < 0)
             return code;
 
+        if (!gp_fseekable(ppdev->file)) {
+            errprintf(pdev->memory, "I/O Error: Output File \"%s\" must be seekable\n", ppdev->fname);
+            return(gs_error_ioerror);
+        }
+
         /* If copypage request, try to do it using buffer_page */
         if ( !flush &&
              (*ppdev->printer_procs.buffer_page)
