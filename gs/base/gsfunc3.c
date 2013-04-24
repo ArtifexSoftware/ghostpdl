@@ -354,8 +354,6 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
         float vv0, vv1;
         double vb0, vb1;
 
-        if (v0 >= b1)
-            continue;
         if (v0 >= b1 - bsmall)
             continue; /* Ignore a small noise */
         vv0 = max(b0, v0);
@@ -366,13 +364,15 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
             return 1;
         if (vv0 < b1 && vv1 > b1) {
             *mask = 1;
-            return 0; /* Consider stitches as monotonity breaks. */
+            return 0; /* Consider stitches as monotony breaks. */
         }
         e0 = pfn->params.Encode[2 * i];
         e1 = pfn->params.Encode[2 * i + 1];
         esmall = (float)1e-6 * any_abs(e1 - e0);
         vb0 = max(vv0, b0);
         vb1 = min(vv1, b1);
+        if (b1 == b0)
+            return 1; /* function is monotonous in a point */
         w0 = (float)(vb0 - b0) * (e1 - e0) / (b1 - b0) + e0;
         w1 = (float)(vb1 - b0) * (e1 - e0) / (b1 - b0) + e0;
         /* Note that w0 > w1 is now possible if e0 > e1. */
