@@ -275,6 +275,7 @@ typedef dev_proc_print_page((*dev_proc_print_page_t));
 /* Standard device procedures for printers */
 dev_proc_open_device(gdev_prn_open);
 dev_proc_output_page(gdev_prn_output_page);
+dev_proc_output_page(gdev_prn_output_page_positionable);
 dev_proc_close_device(gdev_prn_close);
 #define gdev_prn_map_rgb_color gx_default_b_w_map_rgb_color
 #define gdev_prn_map_color_rgb gx_default_b_w_map_color_rgb

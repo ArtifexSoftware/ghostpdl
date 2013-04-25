@@ -60,6 +60,9 @@ int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
                                   int old_width, int old_height,
                                   bool old_page_uses_transparency);
 
+static int
+gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seekable);
+
 extern dev_proc_open_device(pattern_clist_open_device);
 
 /* ------ Open/close ------ */
@@ -785,15 +788,15 @@ gx_default_get_space_params(const gx_device_printer *printer_dev,
 }
 
 /* Generic routine to send the page to the printer. */
-int	/* 0 ok, -ve error, or 1 if successfully upgraded to buffer_page */
-gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
+static int	/* 0 ok, -ve error, or 1 if successfully upgraded to buffer_page */
+gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seekable)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     int outcode = 0, closecode = 0, errcode = 0, endcode;
     bool upgraded_copypage = false;
 
     if (num_copies > 0 || !flush) {
-        int code = gdev_prn_open_printer(pdev, 1);
+        int code = gdev_prn_open_printer_seekable(pdev, 1, seekable);
 
         if (code < 0)
             return code;
@@ -830,6 +833,18 @@ gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
         return endcode;
     endcode = gx_finish_output_page(pdev, num_copies, flush);
     return (endcode < 0 ? endcode : upgraded_copypage ? 1 : 0);
+}
+
+int
+gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
+{
+    return(gdev_prn_output_page_aux(pdev, num_copies, flush, false));
+}
+
+int
+gdev_prn_output_page_positionable(gx_device * pdev, int num_copies, int flush)
+{
+    return(gdev_prn_output_page_aux(pdev, num_copies, flush, true));
 }
 
 /* Print a single copy of a page by calling print_page_copies. */
@@ -962,6 +977,20 @@ gdev_prn_open_printer_seekable(gx_device *pdev, bool binary_mode,
                                               &ppdev->file);
         if (code < 0)
             return code;
+
+        if (seekable && !gp_fseekable(ppdev->file)) {
+            errprintf(pdev->memory, "I/O Error: Output File \"%s\" must be seekable\n", ppdev->fname);
+            if (ppdev->file != pdev->memory->gs_lib_ctx->fstdout
+              && ppdev->file != pdev->memory->gs_lib_ctx->fstderr) {
+
+                code = gx_device_close_output_file(pdev, ppdev->fname, ppdev->file);
+                if (code < 0)
+                    return code;
+            }
+            ppdev->file = NULL;
+
+            return_error(gs_error_ioerror);
+        }
     }
     ppdev->file_is_new = true;
     return 0;

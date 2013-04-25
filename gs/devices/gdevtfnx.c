@@ -36,11 +36,11 @@ static dev_proc_print_page(tiff12_print_page);
 static dev_proc_print_page(tiff_rgb_print_page);
 
 static const gx_device_procs tiff12_procs =
-prn_color_params_procs(tiff_open, tiff_output_page, tiff_close,
+prn_color_params_procs(tiff_open, gdev_prn_output_page_positionable, tiff_close,
                 gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb,
                 tiff_get_params, tiff_put_params);
 static const gx_device_procs tiff24_procs =
-prn_color_params_procs(tiff_open, tiff_output_page, tiff_close,
+prn_color_params_procs(tiff_open, gdev_prn_output_page_positionable, tiff_close,
                 gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb,
                 tiff_get_params, tiff_put_params);
 

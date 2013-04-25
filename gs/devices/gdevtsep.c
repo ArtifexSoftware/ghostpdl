@@ -61,7 +61,7 @@
 static dev_proc_print_page(tiffgray_print_page);
 
 static const gx_device_procs tiffgray_procs =
-prn_color_params_procs(tiff_open, tiff_output_page, tiff_close,
+prn_color_params_procs(tiff_open, gdev_prn_output_page_positionable, tiff_close,
                 gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb,
                 tiff_get_params, tiff_put_params);
 
@@ -86,7 +86,7 @@ static dev_proc_print_page(tiffscaled_print_page);
 
 static const gx_device_procs tiffscaled_procs =
 prn_color_params_procs(tiff_open,
-                       tiff_output_page,
+                       gdev_prn_output_page_positionable,
                        tiff_close,
                        gx_default_gray_map_rgb_color,
                        gx_default_gray_map_color_rgb,
@@ -119,7 +119,7 @@ static dev_proc_print_page(tiffscaled8_print_page);
 
 static const gx_device_procs tiffscaled8_procs =
 prn_color_params_procs(tiff_open,
-                       tiff_output_page,
+                       gdev_prn_output_page_positionable,
                        tiff_close,
                        gx_default_gray_map_rgb_color,
                        gx_default_gray_map_color_rgb,
@@ -152,7 +152,7 @@ static dev_proc_print_page(tiffscaled24_print_page);
 
 static const gx_device_procs tiffscaled24_procs =
 prn_color_params_procs(tiff_open,
-                       tiff_output_page,
+                       gdev_prn_output_page_positionable,
                        tiff_close,
                        gx_default_rgb_map_rgb_color,
                        gx_default_rgb_map_color_rgb,
@@ -184,7 +184,7 @@ const gx_device_tiff gs_tiffscaled24_device = {
 static dev_proc_print_page(tiffscaled4_print_page);
 
 static const gx_device_procs tiffscaled4_procs = {
-    tiff_open, NULL, NULL, tiff_output_page, tiff_close,
+    tiff_open, NULL, NULL, gdev_prn_output_page_positionable, tiff_close,
     NULL, cmyk_8bit_map_color_cmyk, NULL, NULL, NULL, NULL, NULL, NULL,
     tiff_get_params_downscale, tiff_put_params_downscale,
     cmyk_8bit_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
@@ -368,7 +368,7 @@ tiffscaled4_print_page(gx_device_printer * pdev, FILE * file)
 static dev_proc_print_page(tiffcmyk_print_page);
 
 #define cmyk_procs(p_map_color_rgb, p_map_cmyk_color)\
-    tiff_open, NULL, NULL, tiff_output_page, tiff_close,\
+    tiff_open, NULL, NULL, gdev_prn_output_page_positionable, tiff_close,\
     NULL, p_map_color_rgb, NULL, NULL, NULL, NULL, NULL, NULL,\
     tiff_get_params, tiff_put_params,\
     p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device

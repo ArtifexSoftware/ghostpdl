@@ -42,62 +42,6 @@ typedef struct tifs_io_private_t
     gx_device_printer *pdev;
 } tifs_io_private;
 
-/*
- * Open the output seekable, because libtiff doesn't support writing to
- * non-positionable streams. Otherwise, these are the same as
- * gdev_prn_output_page() and gdev_prn_open().
- */
-int
-tiff_output_page(gx_device *pdev, int num_copies, int flush)
-{
-    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
-    int outcode = 0, closecode = 0, errcode = 0, endcode;
-    bool upgraded_copypage = false;
-
-    if (num_copies > 0 || !flush) {
-        int code = gdev_prn_open_printer_positionable(pdev, 1, 1);
-
-        if (code < 0)
-            return code;
-
-        if (!gp_fseekable(ppdev->file)) {
-            errprintf(pdev->memory, "I/O Error: Output File \"%s\" must be seekable\n", ppdev->fname);
-            return(gs_error_ioerror);
-        }
-
-        /* If copypage request, try to do it using buffer_page */
-        if ( !flush &&
-             (*ppdev->printer_procs.buffer_page)
-             (ppdev, ppdev->file, num_copies) >= 0
-             ) {
-            upgraded_copypage = true;
-            flush = true;
-        }
-        else if (num_copies > 0)
-            /* Print the accumulated page description. */
-            outcode =
-                (*ppdev->printer_procs.print_page_copies)(ppdev, ppdev->file,
-                                                          num_copies);
-        fflush(ppdev->file);
-        errcode =
-            (ferror(ppdev->file) ? gs_note_error(gs_error_ioerror) : 0);
-        if (!upgraded_copypage)
-            closecode = gdev_prn_close_printer(pdev);
-    }
-    endcode = (ppdev->buffer_space && !ppdev->is_async_renderer ?
-               clist_finish_page(pdev, flush) : 0);
-
-    if (outcode < 0)
-        return outcode;
-    if (errcode < 0)
-        return errcode;
-    if (closecode < 0)
-        return closecode;
-    if (endcode < 0)
-        return endcode;
-    endcode = gx_finish_output_page(pdev, num_copies, flush);
-    return (endcode < 0 ? endcode : upgraded_copypage ? 1 : 0);
-}
 
 int
 tiff_open(gx_device *pdev)
