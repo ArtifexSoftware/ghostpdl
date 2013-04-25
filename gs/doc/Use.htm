@@ -640,10 +640,11 @@ without losing the content.
 <dl>
 <dt><code>-dUseCropBox</code>
 <dd>Sets the page size to the CropBox rather than the MediaBox.
-Some files have a CropBox that is smaller than the MediaBox and
-may include white space, registration or cutting marks outside
-the CropBox.  Using this option will set the page size
-appropriately for a viewer.
+Unlike the other "page boundary" boxes, CropBox does not have a
+defined meaning, it simply provides a rectangle to which the
+page contents will be clipped (cropped). By convention, it is
+often, but not exclusively, used to aid the positioning of content
+on the (usually larger, in these cases) media.
 </dl>
 
 <dl>

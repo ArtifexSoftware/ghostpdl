@@ -359,7 +359,10 @@ compatibility or special compression is required. The <acronym>TIFF</acronym>
 file format is described in the
 <a href="http://partners.adobe.com/asn/developer/pdfs/tn/TIFF6.pdf" class="offsite">TIFF 6.0 Specification</a> 
 published by Adobe Systems Incorporated.</p>
-
+<p>Note that, due to the structure of the TIFF format, writing TIFF output
+requires that the target file be seekable. Writing to stdout, pipes or other
+similar stream is not supported. Attempting to do so will generate an error.
+</p>
 <p>
 There are two unrelated sets of TIFF drivers.  There are five color TIFF
 drivers that produce uncompressed output:
