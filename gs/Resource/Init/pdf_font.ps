@@ -754,7 +754,10 @@ setglobal
       exch
                 % Analyzes font name and extract "Bold" and "Narrow" properties
                 % which are not described by the FontDescriptor Flags.
-      0 2 index .fontnameproperties 6 and or
+                % We also allow the font name analysis to override the Flags setting
+                % for Italic/Oblique as this gives us results more consistent with
+                % Acrobat.
+      0 2 index .fontnameproperties 7 and or
                 % Rebind the default font name to Helvetica so that
                 % fonts with no properties are handled correctly.
       //.pdfdfndict begin .substitutefontname end
