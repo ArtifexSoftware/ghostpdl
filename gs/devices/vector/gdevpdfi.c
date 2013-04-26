@@ -2530,6 +2530,11 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                which is actually a devn vs. the pattern type for pdfwrite.
                We use this to distingush between the two */
             return 1;
+        case gxdso_needs_invariant_palette:
+            /* Indicates that it is not permissible to change /Indexed colour space
+             * palette entries after the colour space has been set.
+             */
+            return 1;
     }
     return gx_default_dev_spec_op(pdev1, dev_spec_op, data, size);
 }
