@@ -281,7 +281,7 @@ bmpa_reader_output_page(gx_device *pdev, int num_copies, int flush)
      * we need to seek back & forth to support partial rendering.
      */
     if ( num_copies > 0 || !flush ) {
-        int code = gdev_prn_open_printer_positionable(pdev, 1, 1);
+        int code = gdev_prn_open_printer_seekable(pdev, 1, 1);
 
         if ( code < 0 )
             return code;

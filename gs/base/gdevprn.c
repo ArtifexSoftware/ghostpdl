@@ -842,7 +842,7 @@ gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
 }
 
 int
-gdev_prn_output_page_positionable(gx_device * pdev, int num_copies, int flush)
+gdev_prn_output_page_seekable(gx_device * pdev, int num_copies, int flush)
 {
     return(gdev_prn_output_page_aux(pdev, num_copies, flush, true));
 }

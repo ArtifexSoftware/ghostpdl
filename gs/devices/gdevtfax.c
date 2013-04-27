@@ -53,7 +53,7 @@ typedef struct gx_device_tfax_s gx_device_tfax;
 
 /* Define procedures that adjust the paper size. */
 static const gx_device_procs gdev_tfax_std_procs =
-    prn_params_procs(tfax_open, gdev_prn_output_page_positionable, tfax_close,
+    prn_params_procs(tfax_open, gdev_prn_output_page_seekable, tfax_close,
                      tfax_get_params, tfax_put_params);
 
 #define TFAX_DEVICE(dname, print_page, compr)\
