@@ -294,6 +294,8 @@ pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
     int code;
 
     code = gx_set_dev_color(pgs);
+    if (code == gs_error_Remap_Color)
+        code = pixmap_high_level_pattern(pgs);
     if (code != 0)
         return code;
     code = (*dev_proc(dev, begin_image))

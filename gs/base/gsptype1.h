@@ -171,6 +171,11 @@ extern int gs_makebitmappattern_xform(
                                       gs_memory_t * mem
                                       );
 
+/*
+ * High level pattern support for pixmap patterns, if the interpreter supports them.
+ */
+extern int pixmap_high_level_pattern(gs_state * pgs);
+
 #define gs_makebitmappattern(pcc, tile, mask, pgs, mem)                 \
     gs_makebitmappattern_xform(pcc, tile, mask, 0, no_UniqueID, pgs, mem)
 

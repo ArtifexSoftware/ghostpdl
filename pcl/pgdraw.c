@@ -38,6 +38,8 @@
 #include "pcpatrn.h"
 #include "pcpage.h"
 
+#include "gzstate.h"
+#include "gxdcolor.h"
 /* hack to quiet compiler warnings */
 #ifndef abs
 extern int abs(int);
@@ -1063,6 +1065,9 @@ hpgl_set_drawing_color(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
 
     if (code >= 0) {
         gs_setrasterop(pgls->pgs, hpgl_rop(pgls, render_mode));
+        code = gx_set_dev_color(pgls->pgs);
+        if (code == gs_error_Remap_Color)
+            code = pixmap_high_level_pattern(pgls->pgs);
     }
     /* make sure the halftone is set */
     pcl_ht_set_halftone(pgls);

@@ -857,6 +857,127 @@ bitmap_paint(gs_image_enum * pen, gs_data_image_t * pim,
     return code;
 }
 
+int pixmap_high_level_pattern(gs_state * pgs)
+{
+    gs_matrix m;
+    gs_rect bbox;
+    gs_fixed_rect clip_box;
+    int code;
+    gx_device_color *pdc = gs_currentdevicecolor_inline(pgs);
+    const gs_client_pattern *ppat = gs_getpattern(&pdc->ccolor);
+    gs_color_space *pcs;
+    gs_pattern1_instance_t *pinst =
+        (gs_pattern1_instance_t *)gs_currentcolor(pgs)->pattern;
+    const pixmap_info *ppmap = ppat->client_data;
+
+    code = gx_pattern_cache_add_dummy_entry((gs_imager_state *)pgs,
+        pinst, pgs->device->color_info.depth);
+    if (code < 0)
+        return code;
+
+    code = gs_gsave(pgs);
+    if (code < 0)
+        return code;
+
+    dev_proc(pgs->device, get_initial_matrix)(pgs->device, &m);
+    gs_setmatrix(pgs, &m);
+    code = gs_bbox_transform(&ppat->BBox, &ctm_only(pgs), &bbox);
+    if (code < 0) {
+        gs_grestore(pgs);
+            return code;
+    }
+    clip_box.p.x = float2fixed(bbox.p.x);
+    clip_box.p.y = float2fixed(bbox.p.y);
+    clip_box.q.x = float2fixed(bbox.q.x);
+    clip_box.q.y = float2fixed(bbox.q.y);
+    code = gx_clip_to_rectangle(pgs, &clip_box);
+    if (code < 0) {
+        gs_grestore(pgs);
+        return code;
+    }
+    code = dev_proc(pgs->device, dev_spec_op)(pgs->device,
+                                gxdso_pattern_start_accum, pinst, pinst->id);
+    if (code < 0) {
+        gs_grestore(pgs);
+        return code;
+    }
+
+    if (ppmap->pcspace != 0)
+        code = image_PaintProc(&pdc->ccolor, pgs);
+    else {
+        pcs = gs_cspace_new_DeviceGray(pgs->memory);
+        gs_setcolorspace(pgs, pcs);
+        code = mask_PaintProc(&pdc->ccolor, pgs);
+    }
+    if (code < 0)
+        return code;
+
+    code = gs_grestore(pgs);
+    if (code < 0)
+        return code;
+
+    code = dev_proc(pgs->device, dev_spec_op)(pgs->device,
+                          gxdso_pattern_finish_accum, NULL, gx_no_bitmap_id);
+
+    return code;
+}
+
+static int pixmap_remap_mask_pattern(const gs_client_color *pcc, gs_state *pgs)
+{
+    const gs_client_pattern *ppat = gs_getpattern(pcc);
+    int code = 0;
+
+    /* pgs->device is the newly created pattern accumulator, but we want to test the device
+     * that is 'behind' that, the actual output device, so we use the one from
+     * the saved graphics state.
+     */
+    if (pgs->have_pattern_streams)
+        code = dev_proc(pcc->pattern->saved->device, dev_spec_op)(pcc->pattern->saved->device,
+                                gxdso_pattern_can_accum, (void *)ppat, ppat->uid.id);
+
+    if (code == 1) {
+        /* Device handles high-level patterns, so return 'remap'.
+         * This closes the internal accumulator device, as we no longer need
+         * it, and the error trickles back up to the PDL client. The client
+         * must then take action to start the device's accumulator, draw the
+         * pattern, close the device's accumulator and generate a cache entry.
+         * See px_high_level_pattern above.
+         */
+        return_error(gs_error_Remap_Color);
+    } else {
+        mask_PaintProc(pcc, pgs);
+        return 0;
+    }
+}
+
+static int pixmap_remap_image_pattern(const gs_client_color *pcc, gs_state *pgs)
+{
+    const gs_client_pattern *ppat = gs_getpattern(pcc);
+    int code = 0;
+
+    /* pgs->device is the newly created pattern accumulator, but we want to test the device
+     * that is 'behind' that, the actual output device, so we use the one from
+     * the saved graphics state.
+     */
+    if (pgs->have_pattern_streams)
+        code = dev_proc(pcc->pattern->saved->device, dev_spec_op)(pcc->pattern->saved->device,
+                                gxdso_pattern_can_accum, (void *)ppat, ppat->uid.id);
+
+    if (code == 1) {
+        /* Device handles high-level patterns, so return 'remap'.
+         * This closes the internal accumulator device, as we no longer need
+         * it, and the error trickles back up to the PDL client. The client
+         * must then take action to start the device's accumulator, draw the
+         * pattern, close the device's accumulator and generate a cache entry.
+         * See px_high_level_pattern above.
+         */
+        return_error(gs_error_Remap_Color);
+    } else {
+        image_PaintProc(pcc, pgs);
+        return 0;
+    }
+}
+
 /*
  * Make a pattern from a bitmap or pixmap. The pattern may be colored or
  * uncolored, as determined by the mask operand. This code is intended
@@ -919,7 +1040,7 @@ gs_makepixmappattern(
     pat.BBox.q.y = pbitmap->size.y;
     pat.XStep = (float)pbitmap->size.x;
     pat.YStep = (float)pbitmap->size.y;
-    pat.PaintProc = (mask ? mask_PaintProc : image_PaintProc);
+    pat.PaintProc = (mask ? pixmap_remap_mask_pattern : pixmap_remap_image_pattern);
     pat.client_data = ppmap;
 
     /* set the ctm to be the identity */

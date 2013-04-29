@@ -33,6 +33,7 @@
 #include "pcbiptrn.h"
 #include "pcuptrn.h"
 #include "pcpatxfm.h"
+#include "gzstate.h"    /* for gstate */
 
 /*
  * The base color space for setting the color white. Unlike all other color
@@ -802,8 +803,17 @@ pattern_set_pen(pcl_state_t * pcs, int pen, int for_pcl_raster)
         if (!pcs->g.source_transparent &&
             (pcs->logical_op == rop3_default || pcs->logical_op == rop3_T))
             goto skip_unsolid;
-        else
-            return pattern_set_shade_gl(pcs, 1, pen);
+        else {
+            code = pattern_set_shade_gl(pcs, 1, pen);
+            if (code >= 0) {
+                code = gx_set_dev_color(pcs->pgs);
+                if (code == gs_error_Remap_Color) {
+                    code = pixmap_high_level_pattern(pcs->pgs);
+                    return pattern_set_shade_gl(pcs, 1, pen);
+                }
+                return code;
+            }
+        }
     }
 
     /* set halftone and crd from the palette */

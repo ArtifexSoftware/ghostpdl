@@ -28,6 +28,9 @@
 #include "pcpatrn.h"
 #include "pcdraw.h"
 
+#include "gzstate.h"    /* for gstate */
+#include "gxdcolor.h"   /* for gx_set_dev_color */
+
 /*
  * Set all necessary graphics state parameters for PCL drawing
  * (currently only CTM and clipping region).
@@ -80,6 +83,10 @@ pcl_set_drawing_color(pcl_state_t * pcs,
     if (code >= 0) {
         gs_setrasterop(pcs->pgs, (gs_rop3_t) pcs->logical_op);
         gs_setfilladjust(pcs->pgs, 0.0, 0.0);
+        code = gx_set_dev_color(pcs->pgs);
+        if (code == gs_error_Remap_Color)
+            code = pixmap_high_level_pattern(pcs->pgs);
+        return code;
     }
     return 0;
 }
