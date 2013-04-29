@@ -609,7 +609,7 @@ test_IE(void)
 
 /* Return the number of samples after downsampling. */
 int
-s_Downsample_size_out(int size_in, int factor, bool pad)
+s_Downsample_size_out(int size_in, float factor, bool pad)
 {
     return ((pad ? size_in + factor - 1 : size_in) / factor);
 }
@@ -622,6 +622,14 @@ s_Downsample_set_defaults(register stream_state * st)
     s_Downsample_set_defaults_inline(ss);
 }
 
+static int
+s_Downsample_init_common(stream_state * st)
+{
+    stream_Downsample_state *const ss = (stream_Downsample_state *) st;
+    ss->x = ss->y = 0;
+    return 0;
+}
+
 /* ------ Subsample ------ */
 
 gs_private_st_simple(st_Subsample_state, stream_Subsample_state,
@@ -632,9 +640,15 @@ static int
 s_Subsample_init(stream_state * st)
 {
     stream_Subsample_state *const ss = (stream_Subsample_state *) st;
+    int xf = ss->XFactor;
 
-    ss->x = ss->y = 0;
-    return 0;
+    if ((float)xf != ss->XFactor) {
+        dmprintf1(st->memory,
+            "Subsample filter does not support non-integer downsample factor (%f)\n",
+            ss->XFactor);
+        return ERRC;
+    }
+    return s_Downsample_init_common(st);
 }
 
 /* Process one buffer. */
@@ -710,18 +724,26 @@ static int
 s_Average_init(stream_state * st)
 {
     stream_Average_state *const ss = (stream_Average_state *) st;
+    int xf = ss->XFactor;
+
+    if ((float)xf != ss->XFactor) {
+        dmprintf1(st->memory,
+            "Average filter does not support non-integer downsample factor (%f)\n",
+            ss->XFactor);
+        return ERRC;
+    }
 
     ss->sum_size =
-        ss->Colors * ((ss->WidthIn + ss->XFactor - 1) / ss->XFactor);
+        ss->Colors * ((ss->WidthIn + xf - 1) / xf);
     ss->copy_size = ss->sum_size -
-        (ss->padX || (ss->WidthIn % ss->XFactor == 0) ? 0 : ss->Colors);
+        (ss->padX || (ss->WidthIn % xf == 0) ? 0 : ss->Colors);
     ss->sums =
         (uint *)gs_alloc_byte_array(st->memory, ss->sum_size,
                                     sizeof(uint), "Average sums");
     if (ss->sums == 0)
         return ERRC;	/****** WRONG ******/
     memset(ss->sums, 0, ss->sum_size * sizeof(uint));
-    return s_Subsample_init(st);
+    return s_Downsample_init_common(st);
 }
 
 /* Release the state. */
@@ -791,6 +813,162 @@ out:
 const stream_template s_Average_template = {
     &st_Average_state, s_Average_init, s_Average_process, 4, 4,
     s_Average_release, s_Average_set_defaults
+};
+
+/* ------ Bicubic ------ */
+
+gs_private_st_simple(st_Bicubic_state, stream_Bicubic_state,
+                     "stream_Bicubic_state");
+
+/* Set default parameter values (actually, just clear pointers). */
+static void
+s_Bicubic_set_defaults(stream_state * st)
+{
+    stream_Bicubic_state *const ss = (stream_Bicubic_state *) st;
+
+    s_Downsample_set_defaults(st);
+
+    ss->data = NULL;
+}
+
+/* Initialize the state. */
+static int
+s_Bicubic_init(stream_state * st)
+{
+    stream_Bicubic_state *const ss = (stream_Bicubic_state *) st;
+
+    if (ss->WidthIn < 4 || ss->HeightIn < 4)
+        return ERRC;
+
+    /* bicubic interpolation requires 4 lines of data */
+
+    ss->l_size = (ss->WidthIn * ss->Colors);
+    ss->d_size = (ss->l_size * 4);
+    ss->d_len = 0;
+    ss->y_in = 0;
+
+    ss->data = (byte *)gs_alloc_bytes(st->memory, ss->d_size, "Bicubic data");
+    if (ss->data == NULL)
+        return ERRC;	/****** WRONG ******/
+
+    return s_Downsample_init_common(st);
+}
+
+/* Release the state. */
+static void
+s_Bicubic_release(stream_state * st)
+{
+    stream_Bicubic_state *const ss = (stream_Bicubic_state *) st;
+
+    gs_free_object(st->memory, ss->data, "Bicubic data");
+}
+
+static inline byte
+s_Bicubic_data_at(stream_Bicubic_state *const ss, int x, int y, int c)
+{
+    ulong idx;
+    if (y >= ss->HeightIn)
+        y = ss->HeightIn - 1;
+    y -= ss->y_in;
+    idx = ss->l_size * (y < 0 ? 0 : y) +
+        (x < 0 ? 0 : x >= ss->WidthIn ? ss->WidthIn-1 : x) * ss->Colors + c;
+    return (idx < ss->d_len) ? ss->data[idx] : 0;
+}
+
+static inline double
+s_Bicubic_interpolate(double *b, double delta)
+{
+    return b[1] + 0.5 * delta * (b[2] - b[0]
+        + delta * (2.0 * b[0] - 5.0 * b[1] + 4.0 * b[2] - b[3]
+        + delta * (3.0 * (b[1] - b[2]) + b[3] - b[0])));
+}
+
+static void
+s_Bicubic_interpolate_pixel(stream_Bicubic_state *const ss, int x_out,
+    int y_out, byte *out)
+{
+    double v1[4], v2[4], v;
+    double x = x_out * ss->XFactor;
+    double y = y_out * ss->YFactor;
+    double dx = x - floor(x), dy = y - floor(y);
+    int start_x = floor(x) - 1, start_y = floor(y) - 1;
+    int c, i, k;
+
+    for (c = 0; c < ss->Colors; c++) {
+        for (i = 0; i < 4; i++) {
+            for (k = 0; k < 4; k++)
+                v1[k] = s_Bicubic_data_at(ss, start_x + k, start_y + i, c);
+            v2[i] = s_Bicubic_interpolate(v1, dx);
+        }
+        v = s_Bicubic_interpolate(v2, dy);
+        out[c] = (v < 0.0f ? 0 : v > 255.0f ? 255 : (byte)floor(v + 0.5));
+    }
+}
+
+/* Process one buffer. */
+static int
+s_Bicubic_process(stream_state * st, stream_cursor_read * pr,
+                  stream_cursor_write * pw, bool last)
+{
+    stream_Bicubic_state *const ss = (stream_Bicubic_state *) st;
+    int widthOut = s_Downsample_size_out(ss->WidthIn, ss->XFactor, ss->padX);
+    int heightOut = s_Downsample_size_out(ss->HeightIn, ss->YFactor, ss->padY);
+    int req_y;
+
+    for (;;) {
+        /* Find required y-offset in data buffer before doing more work */
+        req_y = floor(ss->y * ss->YFactor) - 1;
+        if (req_y < 0)
+            req_y = 0;
+
+        if (ss->y >= heightOut) {
+            /* output has been produced, ignore remaining input */
+            pr->ptr = pr->limit;
+            return 0;
+        }
+
+        if ((ss->d_len < ss->d_size) && (pr->ptr < pr->limit)) {
+            /* fill buffer using available data from input stream */
+            ulong copy = min(ss->d_size - ss->d_len, pr->limit - pr->ptr);
+            memcpy(ss->data + ss->d_len, pr->ptr + 1, copy);
+            ss->d_len += copy;
+            pr->ptr += copy;
+        }
+
+        while ((ss->y_in < req_y) && (ss->d_len >= ss->l_size)) {
+            /* remove one line from data buffer to reach req_y */
+            memmove(ss->data, ss->data + ss->l_size, ss->d_len - ss->l_size);
+            ss->d_len -= ss->l_size;
+            ss->y_in += 1;
+        }
+
+        if ((ss->d_len < ss->d_size) || (ss->y_in < req_y)) {
+            if (pr->ptr < pr->limit)
+                continue;
+            if (!last)
+                return 0;   /* need more bytes in */
+            if (ss->y_in < req_y)
+                return 0;   /* unable to produce any output */
+        }
+
+        while (ss->x < widthOut) {
+            if (pw->ptr + ss->Colors > pw->limit)
+                return 1; /* need more space out */
+
+            s_Bicubic_interpolate_pixel(ss, ss->x, ss->y, pw->ptr + 1);
+            ss->x++;
+            pw->ptr += ss->Colors;
+        }
+        ss->x = 0;
+        ss->y += 1;
+    }
+
+    return 0;
+}
+
+const stream_template s_Bicubic_template = {
+    &st_Bicubic_state, s_Bicubic_init, s_Bicubic_process, 4, 4,
+    s_Bicubic_release, s_Bicubic_set_defaults
 };
 
 /* ---------------- Image compression chooser ---------------- */

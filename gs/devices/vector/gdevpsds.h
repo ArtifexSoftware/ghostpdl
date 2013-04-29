@@ -115,7 +115,7 @@ extern const stream_template s_IE_template;
                 /* The client sets the following before initialization. */\
         int Colors;\
         int WidthIn, HeightIn;\
-        int XFactor, YFactor;\
+        float XFactor, YFactor;\
         bool AntiAlias;\
         bool padX, padY;	/* keep excess samples */\
                 /* The following are updated dynamically. */\
@@ -127,7 +127,7 @@ typedef struct stream_Downsample_state_s {
 } stream_Downsample_state;
 
 /* Return the number of samples after downsampling. */
-int s_Downsample_size_out(int size_in, int factor, bool pad);
+int s_Downsample_size_out(int size_in, float factor, bool pad);
 
 /* Subsample */
 typedef struct stream_Subsample_state_s {
@@ -147,6 +147,16 @@ typedef struct stream_Average_state_s {
   gs_private_st_ptrs1(st_Average_state, stream_Average_state,\
     "stream_Average_state", avg_enum_ptrs, avg_reloc_ptrs, sums)
 extern const stream_template s_Average_template;
+
+/* Bicubic */
+typedef struct stream_Bicubic_state_s {
+    stream_Downsample_state_common;
+    int y_in;
+    ulong l_size, d_size, d_len;
+    byte *data;
+} stream_Bicubic_state;
+
+extern const stream_template s_Bicubic_template;
 
 /* ---------------- Image compression chooser ---------------- */
 
