@@ -27,6 +27,7 @@
 #include "gxcmap.h"
 #include "gxdcconv.h"
 #include "gzstate.h"
+#include "gxdevsop.h"  /* for special ops */
 
 /* RC routines */
 gs_private_st_simple(st_palette_t, pcl_palette_t, "pcl palette object");
@@ -447,6 +448,12 @@ pcl_palette_set_color(pcl_state_t * pcs, int indx, const float comps[3]
     if (code == 0)
         code = pcl_cs_indexed_set_palette_entry(&(pcs->ppalet->pindexed),
                                                 indx, comps);
+
+    /* Check if the device requires that the palette must not change */
+    if (dev_proc(pcs->pgs->device, dev_spec_op)(pcs->pgs->device,
+                                gxdso_needs_invariant_palette, 0, 0))
+        /* change the ID if so to indicate a difdferent colour space */
+        pcs->ppalet->pindexed->pcspace->id = gs_next_ids(pcs->memory, 1);
 
     if (pcs->monochrome_mode == 0) {
         was_gray = pcs->ppalet->pht->is_gray_render_method;

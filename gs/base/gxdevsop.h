@@ -253,6 +253,14 @@ enum {
      * Return 0 for 'no special treatment', or 1 for the anitdropout
      * downscaler. */
     gxdso_interpolate_antidropout,
+    /* gxdso_needs_invariant_palette:
+     * The PCL interpreter can set a /Indexed coluor space, and then
+     * alter the palette afterwards. For rendering the paletter lookup
+     * is done as required, so this works, but for high level devices
+     * (eg pdfwrite) we can't deal with this. return '0' if the device
+     * doesn't care if the palette changes, and 1 if it does.
+     */
+     gxdso_needs_invariant_palette,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };
