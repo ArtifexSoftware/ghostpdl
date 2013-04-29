@@ -422,7 +422,8 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
             templat = &s_Bicubic_template;
             break;
         default:
-            dmprintf1(pdev->v_memory, "Unsupported downsample type %d, defaulting to Average\n", pdip->DownsampleType);
+            dmprintf1(pdev->v_memory, "Unsupported downsample type %d\n", pdip->DownsampleType);
+            return gs_note_error(gs_error_rangecheck);
     }
 
     if (pdip->DownsampleType != ds_Bicubic) {
