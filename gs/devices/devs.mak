@@ -637,13 +637,13 @@ $(DD)oce9050.dev : $(DEVS_MAK) $(HPMONO) $(GLD)page.dev $(GDEV)
 ###	driver, which often produces much more compact output.
 
 
-gdevpxut_h=$(DEVVECSRC)gdevpxut.h
+gdevpxut_h=$(DEVSRC)gdevpxut.h
 
 
-$(DEVOBJ)gdevpxut.$(OBJ) : $(DEVVECSRC)gdevpxut.c $(math__h) $(string__h)\
+$(DEVOBJ)gdevpxut.$(OBJ) : $(DEVSRC)gdevpxut.c $(math__h) $(string__h)\
  $(gx_h) $(gxdevcli_h) $(stream_h)\
  $(gdevpxat_h) $(gdevpxen_h) $(gdevpxop_h) $(gdevpxut_h) $(GDEV)
-	$(DEVCC) $(DEVO_)gdevpxut.$(OBJ) $(C_) $(DEVVECSRC)gdevpxut.c
+	$(DEVCC) $(DEVO_)gdevpxut.$(OBJ) $(C_) $(DEVSRC)gdevpxut.c
 
 ljet5_=$(DEVOBJ)gdevlj56.$(OBJ) $(DEVOBJ)gdevpxut.$(OBJ) $(HPPCL)
 $(DD)lj5mono.dev : $(DEVS_MAK) $(ljet5_) $(GLD)page.dev $(GDEV)
@@ -652,9 +652,9 @@ $(DD)lj5mono.dev : $(DEVS_MAK) $(ljet5_) $(GLD)page.dev $(GDEV)
 $(DD)lj5gray.dev : $(DEVS_MAK) $(ljet5_) $(GLD)page.dev $(GDEV)
 	$(SETPDEV) $(DD)lj5gray $(ljet5_)
 
-$(DEVOBJ)gdevlj56.$(OBJ) : $(DEVVECSRC)gdevlj56.c $(PDEVH) $(gdevpcl_h)\
+$(DEVOBJ)gdevlj56.$(OBJ) : $(DEVSRC)gdevlj56.c $(PDEVH) $(gdevpcl_h)\
  $(gdevpxat_h) $(gdevpxen_h) $(gdevpxop_h) $(gdevpxut_h) $(stream_h)
-	$(DEVCC) $(DEVO_)gdevlj56.$(OBJ) $(C_) $(DEVVECSRC)gdevlj56.c
+	$(DEVCC) $(DEVO_)gdevlj56.$(OBJ) $(C_) $(DEVSRC)gdevlj56.c
 
 ### -------------------- The ijs client ----------------- ###
 

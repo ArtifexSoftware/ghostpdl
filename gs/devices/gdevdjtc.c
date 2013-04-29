@@ -39,8 +39,9 @@
 /* The device descriptors */
 static dev_proc_print_page(djet500c_print_page);
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static gx_device_procs djet500c_procs =
-  prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+  prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
     gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
 
 const gx_device_printer far_data gs_djet500c_device =

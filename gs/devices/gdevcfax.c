@@ -27,8 +27,9 @@ static dev_proc_close_device(cfax_prn_close);
 /* a special close procedure is required because sff needs  */
 /* an additional "end of document" signature after the last */
 /* "end page" signature */
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs gdev_cfax_std_procs =
-    prn_params_procs(gdev_prn_open, gdev_prn_output_page, cfax_prn_close,
+    prn_params_procs(gdev_prn_open, gdev_prn_bg_output_page, cfax_prn_close,
                      gdev_fax_get_params, gdev_fax_put_params);
 
 const gx_device_fax gs_cfax_device = {

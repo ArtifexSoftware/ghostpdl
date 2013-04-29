@@ -31,8 +31,9 @@
 static dev_proc_map_rgb_color(tekink_map_rgb_color);
 static dev_proc_map_color_rgb(tekink_map_color_rgb);
 static dev_proc_print_page(tekink_print_page);
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static gx_device_procs tekink_procs =
-    prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+    prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
         tekink_map_rgb_color, tekink_map_color_rgb);
 
 /*

@@ -35,6 +35,8 @@
 static dev_proc_print_page(tiff12_print_page);
 static dev_proc_print_page(tiff_rgb_print_page);
 
+/* FIXME: From initial analysis this is NOT safe for bg_printing, but might be fixable */
+
 static const gx_device_procs tiff12_procs =
 prn_color_params_procs(tiff_open, gdev_prn_output_page_seekable, tiff_close,
                 gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb,

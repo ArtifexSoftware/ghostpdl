@@ -66,7 +66,8 @@ static const gx_device_procs jpeg_procs =
     gdev_prn_open,
     jpeg_get_initial_matrix,	/* get_initial_matrix */
     NULL,			/* sync_output */
-    gdev_prn_output_page,
+/* Since the print_page doesn't alter the device, this device can print in the background */
+    gdev_prn_bg_output_page,
     gdev_prn_close,
     gx_default_rgb_map_rgb_color,/* map_rgb_color */
     gx_default_rgb_map_color_rgb,
@@ -102,7 +103,8 @@ static const gx_device_procs jpeggray_procs =
     gdev_prn_open,
     jpeg_get_initial_matrix,	/* get_initial_matrix */
     NULL,			/* sync_output */
-    gdev_prn_output_page,
+/* Since the print_page doesn't alter the device, this device can print in the background */
+    gdev_prn_bg_output_page,
     gdev_prn_close,
     gx_default_gray_map_rgb_color,/* map_rgb_color */
     gx_default_gray_map_color_rgb,
@@ -137,8 +139,9 @@ const gx_device_jpeg gs_jpeggray_device =
 static const gx_device_procs jpegcmyk_procs =
 {	gdev_prn_open,
         gx_default_get_initial_matrix,
+/* Since the print_page doesn't alter the device, this device can print in the background */
         NULL,	/* sync_output */
-        gdev_prn_output_page,
+        gdev_prn_bg_output_page,
         gdev_prn_close,
         NULL,
         jpegcmyk_map_color_rgb,

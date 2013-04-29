@@ -41,8 +41,9 @@ Modified by L. Peter Deutsch <ghost@aladdin.com> 1999-01-10 to remove _ss
 
 /* The device descriptor */
 static dev_proc_print_page(jetp3852_print_page);
+/* Since the 'print_page' does not change the device, this device can print in the background */
 static gx_device_procs jetp3852_procs =
-  prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+  prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
     gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
 const gx_device_printer far_data gs_jetp3852_device =
   prn_device(jetp3852_procs, "jetp3852",

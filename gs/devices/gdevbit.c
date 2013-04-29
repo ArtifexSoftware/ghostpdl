@@ -54,7 +54,8 @@ static dev_proc_put_image(bit_put_image);
 {	gdev_prn_open,\
         gx_default_get_initial_matrix,\
         NULL,	/* sync_output */\
-        gdev_prn_output_page,\
+        /* Since the print_page doesn't alter the device, this device can print in the background */\
+        gdev_prn_bg_output_page,\
         gdev_prn_close,\
         encode_color,	/* map_rgb_color */\
         bit_map_color_rgb,	/* map_color_rgb */\

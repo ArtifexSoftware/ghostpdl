@@ -96,8 +96,9 @@ static dev_proc_map_color_rgb(ccr_map_color_rgb);
 static dev_proc_print_page(ccr_print_page);
 
 /* The device procedures */
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static gx_device_procs ccr_procs =
-    prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+    prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                     ccr_map_rgb_color, ccr_map_color_rgb);
 
 /* The device descriptors themselves */

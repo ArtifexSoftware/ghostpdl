@@ -39,8 +39,9 @@ static dev_proc_get_params(lxm_get_params);
 static dev_proc_put_params(lxm_put_params);
 
 /* set up dispatch table.  I follow gdevdjet in using gdev_prn_output_page */
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs lxm5700m_procs =
-    prn_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+    prn_params_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                      lxm_get_params, lxm_put_params);
 
 /* The device descriptors */

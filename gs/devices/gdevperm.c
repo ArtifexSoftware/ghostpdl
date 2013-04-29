@@ -60,8 +60,9 @@ typedef struct gx_device_perm_s gx_device_perm_t;
 static const gx_device_procs perm_procs = {
     gdev_prn_open,
     NULL,
+/* Since the print_page doesn't alter the device, this device can print in the background */
     NULL,
-    gdev_prn_output_page,
+    gdev_prn_bg_output_page,
     gdev_prn_close,
     NULL,
     NULL,

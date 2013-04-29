@@ -181,7 +181,8 @@ gs_private_st_composite_final(st_psd_device, psd_device,
 {	psd_prn_open,\
         gx_default_get_initial_matrix,\
         NULL,				/* sync_output */\
-        gdev_prn_output_page,		/* output_page */\
+        /* Since the print_page doesn't alter the device, this device can print in the background */\
+        gdev_prn_bg_output_page,		/* output_page */\
         psd_prn_close,			/* close */\
         NULL,				/* map_rgb_color - not used */\
         psd_map_color_rgb,		/* map_color_rgb */\

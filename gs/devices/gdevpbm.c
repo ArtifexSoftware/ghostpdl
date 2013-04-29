@@ -275,7 +275,8 @@ ppm_open(gx_device * pdev)
 static int
 ppm_output_page(gx_device * pdev, int num_copies, int flush)
 {
-    int code = gdev_prn_output_page(pdev, num_copies, flush);
+    /* Safe to start the page in the background */
+    int code = gdev_prn_bg_output_page(pdev, num_copies, flush);
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
 
     if (code < 0)

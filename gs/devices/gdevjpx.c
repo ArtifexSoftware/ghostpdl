@@ -44,8 +44,9 @@ static dev_proc_print_page(jpx_print_page);
 static dev_proc_print_page(jpx_print_page);
 
 /* 24 bit RGB default */
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs jpxrgb_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                        gx_default_rgb_map_rgb_color,
                        gx_default_rgb_map_color_rgb);
 const gx_device_printer gs_jpxrgb_device = {
@@ -58,8 +59,9 @@ const gx_device_printer gs_jpxrgb_device = {
 };
 
 /* 8 bit Grayscale */
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs jpxgray_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                        gx_default_gray_map_rgb_color,
                        gx_default_gray_map_color_rgb);
 const gx_device_printer gs_jpxgray_device = {
@@ -77,8 +79,9 @@ static dev_proc_map_cmyk_color(jpx_cmyk_map_cmyk_color);
 static const gx_device_procs jpxcmyk_procs =
 {       gdev_prn_open,
         gx_default_get_initial_matrix,
+/* Since the print_page doesn't alter the device, this device can print in the background */
         NULL,   /* sync_output */
-        gdev_prn_output_page,
+        gdev_prn_bg_output_page,
         gdev_prn_close,
         NULL,
         jpx_cmyk_map_color_rgb,

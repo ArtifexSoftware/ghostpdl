@@ -35,8 +35,9 @@
 static dev_proc_print_page(pcxmono_print_page);
 
 /* Use the default RGB->color map, so we get black=0, white=1. */
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs pcxmono_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                 gx_default_map_rgb_color, gx_default_map_color_rgb);
 const gx_device_printer gs_pcxmono_device =
 prn_device(pcxmono_procs, "pcxmono",
@@ -49,8 +50,9 @@ prn_device(pcxmono_procs, "pcxmono",
 
 static dev_proc_print_page(pcx256_print_page);
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs pcxgray_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
               gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
 const gx_device_printer gs_pcxgray_device =
 {prn_device_body(gx_device_printer, pcxgray_procs, "pcxgray",
@@ -64,8 +66,9 @@ const gx_device_printer gs_pcxgray_device =
 
 static dev_proc_print_page(pcx16_print_page);
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs pcx16_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                 pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
 const gx_device_printer gs_pcx16_device =
 {prn_device_body(gx_device_printer, pcx16_procs, "pcx16",
@@ -78,8 +81,9 @@ const gx_device_printer gs_pcx16_device =
 /* Chunky 8-bit (SuperVGA-style) color. */
 /* (Uses a fixed palette of 3,3,2 bits.) */
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs pcx256_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                 pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 const gx_device_printer gs_pcx256_device =
 {prn_device_body(gx_device_printer, pcx256_procs, "pcx256",
@@ -93,8 +97,9 @@ const gx_device_printer gs_pcx256_device =
 
 static dev_proc_print_page(pcx24b_print_page);
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs pcx24b_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                 gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 const gx_device_printer gs_pcx24b_device =
 prn_device(pcx24b_procs, "pcx24b",
@@ -112,7 +117,8 @@ static const gx_device_procs pcxcmyk_procs =
     gdev_prn_open,
     NULL,			/* get_initial_matrix */
     NULL,			/* sync_output */
-    gdev_prn_output_page,
+/* Since the print_page doesn't alter the device, this device can print in the background */
+    gdev_prn_bg_output_page,
     gdev_prn_close,
     NULL,			/* map_rgb_color */
     cmyk_1bit_map_color_rgb,

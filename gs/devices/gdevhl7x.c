@@ -244,8 +244,9 @@ static dev_proc_close_device(hl7x0_close);
 static dev_proc_print_page(hl720_print_page);
 static dev_proc_print_page(hl730_print_page);
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs prn_hl_procs =
-  prn_params_procs(hl7x0_open, gdev_prn_output_page, hl7x0_close,
+  prn_params_procs(hl7x0_open, gdev_prn_bg_output_page, hl7x0_close,
                    gdev_prn_get_params, gdev_prn_put_params);
 
 const gx_device_printer far_data gs_hl7x0_device =

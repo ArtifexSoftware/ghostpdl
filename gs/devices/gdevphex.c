@@ -1009,7 +1009,8 @@ static	const HFUNCS	htable[ MAXHTONE ] = {
 static	const gx_device_procs photoex_device_procs = prn_color_params_procs(
 
         photoex_open,					/* Opens the device						*/
-        gdev_prn_output_page,
+/* Since the print_page doesn't alter the device, this device can print in the background */
+        gdev_prn_bg_output_page,
         gdev_prn_close,
         photoex_map_rgb_color,			/* Maps an RGB pixel to device colour	*/
         photoex_map_color_rgb,			/* Maps device colour back to RGB		*/

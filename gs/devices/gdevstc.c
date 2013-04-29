@@ -134,7 +134,8 @@ static gx_device_procs stcolor_procs = {
         stc_open,
         gx_default_get_initial_matrix,
         gx_default_sync_output,
-        gdev_prn_output_page,
+        /* Since the print_page doesn't alter the device, this device can print in the background */
+        gdev_prn_bg_output_page,
         stc_close,
         NULL,
         stc_map_color_cmyk,

@@ -45,8 +45,9 @@
 static dev_proc_open_device(nwp533_open);
 static dev_proc_print_page(nwp533_print_page);
 static dev_proc_close_device(nwp533_close);
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static gx_device_procs nwp533_procs =
-  prn_procs(nwp533_open, gdev_prn_output_page, nwp533_close);
+  prn_procs(nwp533_open, gdev_prn_bg_output_page_seekable, nwp533_close);
 
 const gx_device_printer far_data gs_nwp533_device =
   prn_device(nwp533_procs, "nwp533",

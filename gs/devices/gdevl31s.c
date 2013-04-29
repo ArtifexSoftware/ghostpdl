@@ -78,8 +78,9 @@ static struct {
 static dev_proc_print_page_copies(lj3100sw_print_page_copies);
 static dev_proc_close_device(lj3100sw_close);
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static gx_device_procs prn_lj3100sw_procs =
-    prn_params_procs(gdev_prn_open, gdev_prn_output_page, lj3100sw_close,
+    prn_params_procs(gdev_prn_open, gdev_prn_bg_output_page, lj3100sw_close,
              gdev_prn_get_params, gdev_prn_put_params);
 
 /* workaround to emulate the missing prn_device_margins_copies macro */

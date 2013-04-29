@@ -64,7 +64,7 @@ the graphics data can't match any Okidata commands
 static dev_proc_print_page(oki_print_page);
 
 const gx_device_printer far_data gs_oki182_device =
-  prn_device(prn_std_procs, "oki182",
+  prn_device(prn_bg_procs, "oki182",	/* The print_page proc is compatible with allowing bg printing */
         80,				/* width_10ths, 8.0" */
         110,				/* height_10ths, 11" */
         72,				/* x_dpi */

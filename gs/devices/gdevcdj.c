@@ -453,11 +453,12 @@ typedef struct {
     t, 0., { mf, mt, mws, mw, pq, dt, cc, pc }\
 }
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 #define hp_colour_procs(proc_colour_open, proc_get_params, proc_put_params) {\
         proc_colour_open,\
         gx_default_get_initial_matrix,\
         gx_default_sync_output,\
-        gdev_prn_output_page,\
+        gdev_prn_bg_output_page,\
         gdev_prn_close,\
         gdev_pcl_map_rgb_color,\
         gdev_pcl_map_color_rgb,\
@@ -471,11 +472,12 @@ typedef struct {
         proc_put_params\
 }
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 #define cmyk_colour_procs(proc_colour_open, proc_get_params, proc_put_params) {\
         proc_colour_open,\
         gx_default_get_initial_matrix,\
         gx_default_sync_output,\
-        gdev_prn_output_page,\
+        gdev_prn_bg_output_page,\
         gdev_prn_close,\
         NULL /* map_rgb_color */,\
         NULL /* map_color_rgb */,\

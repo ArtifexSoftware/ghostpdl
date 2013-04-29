@@ -23,8 +23,9 @@ static dev_proc_map_color_rgb(sgi_map_color_rgb);
 
 static dev_proc_print_page(sgi_print_page);
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static gx_device_procs sgi_procs =
-  prn_color_procs(gdev_prn_open, gdev_prn_output_page_seekable, gdev_prn_close,
+  prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page_seekable, gdev_prn_close,
                   sgi_map_rgb_color, sgi_map_color_rgb);
 
 const gx_device_printer far_data gs_sgirgb_device =

@@ -102,8 +102,8 @@ typedef struct gx_printer_device_procs_s {
 
     /*
      * Print the page on the output file.  Required only for devices
-     * where output_page is gdev_prn_output_page; ignored for other
-     * devices.
+     * where output_page is gdev_prn_output_page or gdev_prn_bg_output_page
+     * ignored for other devices (unless their output_page calls those).
      */
 
 #define prn_dev_proc_print_page(proc)\
@@ -290,6 +290,8 @@ typedef dev_proc_print_page((*dev_proc_print_page_t));
 dev_proc_open_device(gdev_prn_open);
 dev_proc_output_page(gdev_prn_output_page);
 dev_proc_output_page(gdev_prn_output_page_seekable);
+dev_proc_output_page(gdev_prn_bg_output_page);
+dev_proc_output_page(gdev_prn_bg_output_page_seekable);
 dev_proc_close_device(gdev_prn_close);
 #define gdev_prn_map_rgb_color gx_default_b_w_map_rgb_color
 #define gdev_prn_map_color_rgb gx_default_b_w_map_color_rgb
@@ -393,6 +395,7 @@ prn_dev_proc_buffer_page(gx_default_buffer_page); /* returns an error */
 /* The standard printer device procedures */
 /* (using gdev_prn_open/output_page/close). */
 extern const gx_device_procs prn_std_procs;
+extern const gx_device_procs prn_bg_procs;
 
 /*
  * Define macros for generating the device structure,

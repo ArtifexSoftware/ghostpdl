@@ -46,7 +46,7 @@ typedef struct sun_rasterfile_s {
 static dev_proc_print_page(sunhmono_print_page);
 
 const gx_device_printer gs_sunhmono_device =
-    prn_device(prn_std_procs, "sunhmono",
+    prn_device(prn_bg_procs, "sunhmono",	/* The print_page proc is compatible with allowing bg printing */
                DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                X_DPI, Y_DPI,
                0, 0, 0, 0,	/* margins */

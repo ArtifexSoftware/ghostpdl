@@ -53,6 +53,8 @@ public_st_device_printer();
 /* Define the standard printer procedure vector. */
 const gx_device_procs prn_std_procs =
     prn_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close);
+const gx_device_procs prn_bg_procs =
+    prn_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close);
 
 /* Forward references */
 int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
@@ -61,7 +63,7 @@ int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
                                   bool old_page_uses_transparency);
 
 static int
-gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seekable);
+gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seekable, bool bg_print_ok);
 
 extern dev_proc_open_device(pattern_clist_open_device);
 extern dev_proc_open_device(clist_open);
@@ -832,14 +834,19 @@ gx_default_get_space_params(const gx_device_printer *printer_dev,
     return;
 }
 
-/* Generic routine to send the page to the printer. */
+/* Common routine to send the page to the printer.                               */
+/* If seekable is true, then the printer outputfile must be seekable.            */
+/* If bg_print_ok is true, the device print_page_copies is compatible with the   */
+/* background printing, i.e., thread safe and does not change the device.        */
 static int	/* 0 ok, -ve error, or 1 if successfully upgraded to buffer_page */
-gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seekable)
+gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seekable, bool bg_print_ok)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     gs_devn_params *pdevn_params;
     int outcode = 0, closecode = 0, errcode = 0, endcode;
     bool upgraded_copypage = false;
+
+    prn_finish_bg_print(ppdev);		/* finish any previous background printing */
 
     if (num_copies > 0 || !flush) {
         int code = gdev_prn_open_printer_seekable(pdev, 1, seekable);
@@ -854,21 +861,14 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
              ) {
             upgraded_copypage = true;
             flush = true;
-        }
-        else if (num_copies > 0) {
+        } else if (num_copies > 0) {
             int threads_enabled = 0;
             int print_foreground = 1;		/* default to foreground printing */
 
-            prn_finish_bg_print(ppdev);		/* finish any previous background printing */
-
-            if (PRINTER_IS_CLIST(ppdev) &&
+            if (bg_print_ok && PRINTER_IS_CLIST(ppdev) &&
                 (ppdev->bg_print_requested || ppdev->num_render_threads_requested > 0)) {
                 threads_enabled = clist_enable_multi_thread_render(pdev);
             }
-            if (ppdev->file == NULL)            /* finish calls close_printer and may have closed the OutputFile */
-                if ((code = gdev_prn_open_printer(pdev, 1)) < 0)
-                    return code;
-
             /* NB: we leave the semaphore allocated until foreground printing or close */
             /* If there was an error, abort on this page -- no good way to handle this */
             /* but it means that the error will be reported AFTER another page was     */
@@ -972,13 +972,25 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
 int
 gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
 {
-    return(gdev_prn_output_page_aux(pdev, num_copies, flush, false));
+    return(gdev_prn_output_page_aux(pdev, num_copies, flush, false, false));
 }
 
 int
 gdev_prn_output_page_seekable(gx_device * pdev, int num_copies, int flush)
 {
-    return(gdev_prn_output_page_aux(pdev, num_copies, flush, true));
+    return(gdev_prn_output_page_aux(pdev, num_copies, flush, true, false));
+}
+
+int
+gdev_prn_bg_output_page(gx_device * pdev, int num_copies, int flush)
+{
+    return(gdev_prn_output_page_aux(pdev, num_copies, flush, false, false));
+}
+
+int
+gdev_prn_bg_output_page_seekable(gx_device * pdev, int num_copies, int flush)
+{
+    return(gdev_prn_output_page_aux(pdev, num_copies, flush, true, false));
 }
 
 /* Print a single copy of a page by calling print_page_copies. */
@@ -1040,6 +1052,7 @@ gx_default_buffer_page(gx_device_printer *pdev, FILE *prn_stream,
 /*
  * Print a page in the background. When printing is complete,
  * post the return code and signal the foreground (semaphore).
+ * This is the procedure that is run in the background thread.
  */
 static void
 prn_print_page_in_background(void *data)

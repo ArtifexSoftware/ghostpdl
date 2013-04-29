@@ -46,8 +46,9 @@ static dev_proc_print_page(sparc_print_page);
 #define SPARC_MARGINS_A4	0.15, 0.12, 0.12, 0.15
 #define SPARC_MARGINS_LETTER	0.15, 0.12, 0.12, 0.15
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 gx_device_procs prn_sparc_procs =
-  prn_procs(sparc_open, gdev_prn_output_page, gdev_prn_close);
+  prn_procs(sparc_open, gdev_prn_bg_output_page, gdev_prn_close);
 
 const gx_device_printer far_data gs_sparc_device =
 prn_device(prn_sparc_procs,

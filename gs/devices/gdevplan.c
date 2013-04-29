@@ -80,7 +80,8 @@ static int plank_print_page(gx_device_printer * pdev, FILE * pstream);
         plan_open,\
         NULL, /* get_initial_matrix */ \
         NULL, /* sync output */ \
-        gdev_prn_output_page, \
+        /* Since the print_page doesn't alter the device, this device can print in the background */\
+        gdev_prn_bg_output_page, \
         plan_close,\
         NULL, /* map_rgb_color */ \
         p_color_rgb, /* map_color_rgb */ \

@@ -74,7 +74,7 @@ static dev_proc_print_page(okiibm_print_page);
 
 /* Okidata IBM device */
 const gx_device_printer far_data gs_okiibm_device =
-  prn_device(prn_std_procs, "okiibm",
+  prn_device(prn_bg_procs, "okiibm",	/* The print_page proc is compatible with allowing bg printing */
         DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI,
         0.25, 0.0, 0.25, 0.0,			/* margins */

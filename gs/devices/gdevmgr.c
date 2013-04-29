@@ -65,16 +65,17 @@ static dev_proc_print_page(mgrN_print_page);
 static dev_proc_print_page(cmgrN_print_page);
 
 /* The device procedures */
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static gx_device_procs mgr_procs =
-    prn_procs(gdev_mgr_open, gdev_prn_output_page, gdev_prn_close);
+    prn_procs(gdev_mgr_open, gdev_prn_bg_output_page, gdev_prn_close);
 static gx_device_procs mgrN_procs =
-    prn_color_procs(gdev_mgr_open, gdev_prn_output_page, gdev_prn_close,
+    prn_color_procs(gdev_mgr_open, gdev_prn_bg_output_page, gdev_prn_close,
         gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
 static gx_device_procs cmgr4_procs =
-    prn_color_procs(gdev_mgr_open, gdev_prn_output_page, gdev_prn_close,
+    prn_color_procs(gdev_mgr_open, gdev_prn_bg_output_page, gdev_prn_close,
         pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
 static gx_device_procs cmgr8_procs =
-    prn_color_procs(gdev_mgr_open, gdev_prn_output_page, gdev_prn_close,
+    prn_color_procs(gdev_mgr_open, gdev_prn_bg_output_page, gdev_prn_close,
         mgr_8bit_map_rgb_color, mgr_8bit_map_color_rgb);
 
 /* The device descriptors themselves */
@@ -109,6 +110,7 @@ mgr_begin_page(gx_device_mgr *bdev, FILE *pstream, mgr_cursor *pcur)
 {	struct b_header head;
         uint line_size =
                 gdev_prn_raster((gx_device_printer *)bdev) + 3;
+        /* FIXME: Note that there does not seem to free for 'data' LEAK ALERT */
         byte *data = (byte *)gs_malloc(bdev->memory, line_size, 1, "mgr_begin_page");
         if ( data == 0 )
                 return_error(gs_error_VMerror);

@@ -114,12 +114,14 @@ static dev_proc_print_page_copies(ljet4pjl_print_page_copies);
 static dev_proc_get_params(hpjet_get_params);
 static dev_proc_put_params(hpjet_put_params);
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs prn_hp_procs =
-prn_params_procs(hpjet_open, gdev_prn_output_page, hpjet_close,
+prn_params_procs(hpjet_open, gdev_prn_bg_output_page, hpjet_close,
                  hpjet_get_params, hpjet_put_params);
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static gx_device_procs prn_ljet4pjl_procs =
-prn_params_procs(hpjet_open, gdev_prn_output_page, ljet4pjl_close,
+prn_params_procs(hpjet_open, gdev_prn_bg_output_page, ljet4pjl_close,
                  gdev_prn_get_params, gdev_prn_put_params);
 
 typedef struct gx_device_hpjet_s gx_device_hpjet;

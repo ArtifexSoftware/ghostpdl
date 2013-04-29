@@ -150,7 +150,8 @@ typedef struct rinkj_device_s {
 {	gdev_prn_open,\
         gx_default_get_initial_matrix,\
         NULL,				/* sync_output */\
-        gdev_prn_output_page,		/* output_page */\
+        /* Since the print_page doesn't alter the device, this device can print in the background */\
+        gdev_prn_bg_output_page,		/* output_page */\
         rinkj_close_device,		/* close */\
         NULL,				/* map_rgb_color - not used */\
         rinkj_map_color_rgb,		/* map_color_rgb */\

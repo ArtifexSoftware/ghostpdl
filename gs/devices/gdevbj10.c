@@ -107,7 +107,8 @@ static dev_proc_open_device(bj200_open);
 static dev_proc_print_page(bj10e_print_page);
 
 static gx_device_procs prn_bj200_procs =
-  prn_procs(bj200_open, gdev_prn_output_page, gdev_prn_close);
+/* Since the print_page doesn't alter the device, this device can print in the background */
+  prn_procs(bj200_open, gdev_prn_bg_output_page, gdev_prn_close);
 
 const gx_device_printer far_data gs_bj200_device =
   prn_device(prn_bj200_procs, "bj200",

@@ -22,7 +22,7 @@
 /* The device descriptor */
 static dev_proc_print_page(r4081_print_page);
 const gx_device_printer far_data gs_r4081_device =
-  prn_device(prn_std_procs, "r4081",
+  prn_device(prn_bg_procs, "r4081",	/* The print_page proc is compatible with allowing bg printing */
         85,				/* width_10ths, 8.5" */
         110,				/* height_10ths, 11" */
         X_DPI, Y_DPI,

@@ -87,7 +87,7 @@ static dev_proc_print_page(escp2_print_page);
 
 /* Stylus 800 device */
 const gx_device_printer far_data gs_st800_device =
-  prn_device(prn_std_procs, "st800",
+  prn_device(prn_bg_procs, "st800",	/* The print_page proc is compatible with allowing bg printing */
         DEFAULT_WIDTH_10THS,
         DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI,
@@ -96,7 +96,7 @@ const gx_device_printer far_data gs_st800_device =
 
 /* AP3250 device */
 const gx_device_printer far_data gs_ap3250_device =
-  prn_device(prn_std_procs, "ap3250",
+  prn_device(prn_bg_procs, "ap3250",	/* The print_page proc is compatible with allowing bg printing */
         DEFAULT_WIDTH_10THS,
         DEFAULT_HEIGHT_10THS,
         X_DPI, Y_DPI,

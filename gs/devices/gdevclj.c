@@ -506,7 +506,8 @@ clj_print_page(
     gdev_prn_open,                  /* open_device */\
     clj_get_initial_matrix,         /* get_initial matrix */\
     NULL,	                    /* sync_output */\
-    gdev_prn_output_page,           /* output_page */\
+/* Since the print_page doesn't alter the device, this device can print in the background */\
+    gdev_prn_bg_output_page,        /* output_page */\
     gdev_prn_close,                 /* close_device */\
     gdev_pcl_3bit_map_rgb_color,    /* map_rgb_color */\
     gdev_pcl_3bit_map_color_rgb,    /* map_color_rgb */\

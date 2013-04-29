@@ -22,8 +22,9 @@ static dev_proc_print_page(t4693d_print_page);
 static dev_proc_map_rgb_color(gdev_t4693d_map_rgb_color);
 static dev_proc_map_color_rgb(gdev_t4693d_map_color_rgb);
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static gx_device_procs t4693d_procs =
-        prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+        prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                 gdev_t4693d_map_rgb_color, gdev_t4693d_map_color_rgb);
 
 #define t4693d_prn_device(name,depth,max_rgb) {prn_device_body( \

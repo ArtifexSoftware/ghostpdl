@@ -33,8 +33,9 @@ static dev_proc_print_page(lj250_print_page);
 static dev_proc_print_page(paintjet_print_page);
 static dev_proc_print_page(pjetxl_print_page);
 static int pj_common_print_page(gx_device_printer *, FILE *, int, const char *);
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static gx_device_procs paintjet_procs =
-  prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+  prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
     gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
 const gx_device_printer far_data gs_lj250_device =
   prn_device(paintjet_procs, "lj250",
@@ -50,8 +51,9 @@ const gx_device_printer far_data gs_paintjet_device =
         X_DPI, Y_DPI,
         0.25, 0, 0.25, 0,		/* margins */
         3, paintjet_print_page);
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static gx_device_procs pjetxl_procs =
-  prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+  prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
     gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
 const gx_device_printer far_data gs_pjetxl_device =
   prn_device(pjetxl_procs, "pjetxl",

@@ -172,6 +172,7 @@ private dev_proc_close_device(cups_close);
 private dev_proc_get_initial_matrix(cups_get_matrix);
 private int cups_get_params(gx_device *, gs_param_list *);
 private dev_proc_open_device(cups_open);
+private dev_proc_output_page(cups_output_page);
 private int cups_print_pages(gx_device_printer *, FILE *, int);
 private int cups_put_params(gx_device *, gs_param_list *);
 private int cups_set_color_info(gx_device *);
@@ -239,7 +240,7 @@ private gx_device_procs	cups_procs =
    cups_open,
    cups_get_matrix,
    cups_sync_output,
-   gdev_prn_output_page,
+   cups_output_page,
    cups_close,
 #ifdef dev_t_proc_encode_color
    NULL,				/* map_rgb_color */
@@ -1178,7 +1179,7 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
   {
     case CUPS_CSPACE_W :
         c0 = (c * 31 + m * 61 + y * 8) / 100 + k;
-	
+
 	if (c0 < 0)
 	  c0 = 0;
 	else if (c0 > frac_1)
@@ -2750,6 +2751,27 @@ cups_open(gx_device *pdev)		/* I - Device info */
 
 
 /*
+ * 'cups_output_page()' - Send one or more pages to the output file.
+ * The changes to the cups->page are done here so that the background
+ * printing should be OK.
+ */
+
+private int				/* O - 0 if everything is OK */
+cups_output_page(gx_device *pdev, int num_copies, int flush)
+{
+  int		code = 0;		/* Error code */
+
+  if ((code = gdev_prn_bg_output_page(pdev, num_copies, flush)) < 0)
+      return code;
+
+  cups->page ++;
+  dmprintf1(pdev->memory, "INFO: Processing page %d...\n", cups->page);
+
+  return (0);
+}
+
+
+/*
  * 'cups_print_pages()' - Send one or more pages to the output file.
  */
 
@@ -2840,7 +2862,7 @@ cups_print_pages(gx_device_printer *pdev,
 
   if (cups->stream == NULL)
   {
-    RasterVersion = ppdFindAttr(cups->PPD, "cupsRasterVersion", NULL); 
+    RasterVersion = ppdFindAttr(cups->PPD, "cupsRasterVersion", NULL);
     if (RasterVersion) {
 #ifdef CUPS_DEBUG2
       dmprintf1(pdev->memory, "DEBUG2: cupsRasterVersion = %s\n",
@@ -2913,13 +2935,7 @@ cups_print_pages(gx_device_printer *pdev,
   gs_free(pdev->memory->non_gc_memory, (char *)src, srcbytes, 1, "cups_print_pages");
   gs_free(pdev->memory->non_gc_memory, (char *)dst, cups->header.cupsBytesPerLine, 1, "cups_print_pages");
 
-  if (code < 0)
-    return (code);
- 
-  cups->page ++;
-  dmprintf1(pdev->memory, "INFO: Processing page %d...\n", cups->page);
-
-  return (0);
+ return (code);
 }
 
 
@@ -2969,7 +2985,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   gs_param_string icc_pro_dummy;
   int old_cmps = cups->color_info.num_components;
   int old_depth = cups->color_info.depth;
-  
+
 #ifdef CUPS_DEBUG
   dmprintf2(pdev->memory, "DEBUG2: cups_put_params(%p, %p)\n", pdev, plist);
 #endif /* CUPS_DEBUG */
@@ -3223,7 +3239,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       dmprintf1(pdev->memory, "DEBUG2: cups->PPD = %p\n", cups->PPD);
 #endif /* CUPS_DEBUG */
 
-      backside = ppdFindAttr(cups->PPD, "cupsBackSide", NULL); 
+      backside = ppdFindAttr(cups->PPD, "cupsBackSide", NULL);
       if (backside) {
 #ifdef CUPS_DEBUG
         dmprintf1(pdev->memory, "DEBUG2: cupsBackSide = %s\n", backside->value);
@@ -3287,7 +3303,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 		(cups->header.Tumble &&
 		 (backside && !strcasecmp(backside->value, "ManualTumble")))) &&
 	       !(cups->page & 1))
-      { 
+      {
 	xflip = 1;
 	if (backsiderequiresflippedmargins &&
 	    !strcasecmp(backsiderequiresflippedmargins->value, "True")) {
@@ -3672,7 +3688,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 #endif /* CUPS_DEBUG */
 
       if ((code = gdev_prn_maybe_realloc_memory((gx_device_printer *)pdev,
-                                                &sp_old, 
+                                                &sp_old,
 						width_old, height_old,
 						transp_old))
 	  < 0)
@@ -3732,7 +3748,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 					  pdev->HWMargins[3]) * sf;
     cups->header.ImagingBoundingBox[3] = (pdev->MediaSize[0] -
 					  pdev->HWMargins[0]) * sf;
-  } 
+  }
   else
   {
     cups->header.cupsPageSize[0] = pdev->MediaSize[0];
@@ -3772,11 +3788,11 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
     cups->header.ImagingBoundingBox[0] = pdev->HWMargins[1];
     cups->header.ImagingBoundingBox[1] = pdev->HWMargins[0];
-    cups->header.ImagingBoundingBox[2] = pdev->MediaSize[1] - 
+    cups->header.ImagingBoundingBox[2] = pdev->MediaSize[1] -
                                          pdev->HWMargins[3];
     cups->header.ImagingBoundingBox[3] = pdev->MediaSize[0] -
                                          pdev->HWMargins[2];
-  } 
+  }
   else
   {
     cups->header.Margins[0] = pdev->HWMargins[0];
@@ -3787,7 +3803,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
     cups->header.ImagingBoundingBox[0] = pdev->HWMargins[0];
     cups->header.ImagingBoundingBox[1] = pdev->HWMargins[3];
-    cups->header.ImagingBoundingBox[2] = pdev->MediaSize[0] - 
+    cups->header.ImagingBoundingBox[2] = pdev->MediaSize[0] -
                                          pdev->HWMargins[2];
     cups->header.ImagingBoundingBox[3] = pdev->MediaSize[1] -
                                          pdev->HWMargins[1];
@@ -4266,11 +4282,11 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
              pdev->icc_struct->device_profile[gsDEFAULTPROFILE]->data_cs != gsRGB)) {
 
           if (pdev->icc_struct) {
-              rc_decrement(pdev->icc_struct, "cups_set_color_info");            
+              rc_decrement(pdev->icc_struct, "cups_set_color_info");
           }
           pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
 
-          code = gsicc_set_device_profile(pdev, pdev->memory, 
+          code = gsicc_set_device_profile(pdev, pdev->memory,
               (char *)DEFAULT_RGB_ICC, gsDEFAULTPROFILE);
           }
         break;
@@ -4284,11 +4300,11 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
              pdev->icc_struct->device_profile[gsDEFAULTPROFILE]->data_cs != gsGRAY)) {
 
           if (pdev->icc_struct) {
-              rc_decrement(pdev->icc_struct, "cups_set_color_info");            
+              rc_decrement(pdev->icc_struct, "cups_set_color_info");
           }
           pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
 
-          code = gsicc_set_device_profile(pdev, pdev->memory->non_gc_memory, 
+          code = gsicc_set_device_profile(pdev, pdev->memory->non_gc_memory,
               (char *)DEFAULT_GRAY_ICC, gsDEFAULTPROFILE);
         }
         break;
@@ -4305,11 +4321,11 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
              pdev->icc_struct->device_profile[gsDEFAULTPROFILE]->data_cs != gsCMYK)) {
 
           if (pdev->icc_struct) {
-              rc_decrement(pdev->icc_struct, "cups_set_color_info");            
+              rc_decrement(pdev->icc_struct, "cups_set_color_info");
           }
           pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
 
-          code = gsicc_set_device_profile(pdev, pdev->memory, 
+          code = gsicc_set_device_profile(pdev, pdev->memory,
               (char *)DEFAULT_CMYK_ICC, gsDEFAULTPROFILE);
           }
         break;
@@ -4351,7 +4367,7 @@ cups_print_chunked(gx_device_printer *pdev,
   int		count;			/* Count for loop */
   int		xflip,			/* Flip scanline? */
                 yflip,			/* Reverse scanline order? */
-                ystart, yend, ystep;    /* Loop control for scanline order */   
+                ystart, yend, ystep;    /* Loop control for scanline order */
   ppd_attr_t    *backside = NULL;
 
 #ifdef CUPS_DEBUG
@@ -4578,7 +4594,7 @@ cups_print_banded(gx_device_printer *pdev,
 		*kptr, *lcptr, *lmptr;	/* ... */
   int		xflip,			/* Flip scanline? */
                 yflip,			/* Reverse scanline order? */
-                ystart, yend, ystep;    /* Loop control for scanline order */   
+                ystart, yend, ystep;    /* Loop control for scanline order */
   ppd_attr_t    *backside = NULL;
 
 #ifdef CUPS_DEBUG

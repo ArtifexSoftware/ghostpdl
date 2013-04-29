@@ -89,7 +89,7 @@ struct gx_device_png_s {
 /* Monochrome. */
 
 const gx_device_png gs_pngmono_device =
-prn_device(prn_std_procs, "pngmono",
+prn_device(prn_bg_procs, "pngmono",	/* The print_page proc is compatible with allowing bg printing */
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -97,8 +97,9 @@ prn_device(prn_std_procs, "pngmono",
 
 /* 4-bit planar (EGA/VGA-style) color. */
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs png16_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                 pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
 const gx_device_png gs_png16_device = {
   prn_device_body(gx_device_png, png16_procs, "png16",
@@ -111,8 +112,9 @@ const gx_device_png gs_png16_device = {
 /* 8-bit (SuperVGA-style) color. */
 /* (Uses a fixed palette of 3,3,2 bits.) */
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs png256_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                 pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 const gx_device_png gs_png256_device = {
   prn_device_body(gx_device_png, png256_procs, "png256",
@@ -124,8 +126,9 @@ const gx_device_png gs_png256_device = {
 
 /* 8-bit gray */
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs pnggray_procs =
-prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+prn_color_params_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                        gx_default_gray_map_rgb_color,
                        gx_default_gray_map_color_rgb,
                        png_get_params_downscale, png_put_params_downscale);
@@ -139,8 +142,9 @@ const gx_device_png gs_pnggray_device =
 
 /* Monochrome (with error diffusion) */
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs pngmonod_procs =
-prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+prn_color_params_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                        gx_default_gray_map_rgb_color,
                        gx_default_gray_map_color_rgb,
                        png_get_params_downscale_mfs,
@@ -155,8 +159,9 @@ const gx_device_png gs_pngmonod_device =
 
 /* 24-bit color. */
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs png16m_procs =
-prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+prn_color_params_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                        gx_default_rgb_map_rgb_color,
                        gx_default_rgb_map_color_rgb,
                        png_get_params_downscale, png_put_params_downscale);
@@ -170,8 +175,9 @@ const gx_device_png gs_png16m_device =
 
 /* 48 bit color. */
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs png48_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+prn_color_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                 gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 const gx_device_png gs_png48_device =
 {prn_device_body(gx_device_png, png48_procs, "png48",
@@ -202,7 +208,8 @@ static const gx_device_procs pngalpha_procs =
         pngalpha_open,
         NULL,	/* get_initial_matrix */
         NULL,	/* sync_output */
-        gdev_prn_output_page,
+        /* Since the print_page doesn't alter the device, this device can print in the background */
+        gdev_prn_bg_output_page,
         gdev_prn_close,
         pngalpha_encode_color,	/* map_rgb_color */
         pngalpha_decode_color,  /* map_color_rgb */

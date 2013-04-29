@@ -227,8 +227,9 @@ static dev_proc_print_page(imagen_print_page);
 static dev_proc_open_device(imagen_prn_open);
 static dev_proc_close_device(imagen_prn_close);
 
+/* Since the print_page doesn't alter the device, this device can print in the background */
 gx_device_procs imagen_procs =
-        prn_procs(imagen_prn_open, gdev_prn_output_page, imagen_prn_close);
+        prn_procs(imagen_prn_open, gdev_prn_bg_output_page, imagen_prn_close);
 
 #define ppdev ((gx_device_printer *)pdev)
 

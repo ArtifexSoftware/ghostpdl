@@ -40,7 +40,8 @@ static dev_proc_print_page(atx24_print_page);
 static dev_proc_print_page(atx38_print_page);
 
 #define ATX_DEVICE(dname, w10, h10, dpi, lrm, btm, print_page)\
-  prn_device_margins(prn_std_procs, dname, w10, h10, dpi, dpi, 0, 0,\
+                     /* The print_page proc is compatible with allowing bg printing */\
+  prn_device_margins(prn_bg_procs, dname, w10, h10, dpi, dpi, 0, 0,\
                      lrm, btm, lrm, btm, 1, print_page)
 
 const gx_device_printer gs_atx23_device = /* real width = 576 pixels */

@@ -38,6 +38,9 @@
  * that will be responsible for allocating and pass us band buffers for us
  * to fill, and to process them as it wishes on completion.
  *
+ * If the band_donor functions are not thread safe, or modify the device, then
+ * the gdev_prn_bg_output_page should be changed to use gdev_prn_output_page.
+ *
  * For debugging/QA purposes this file can be built with the following
  * define enabled, and stub versions of these band donor functions will
  * be included here.
@@ -272,7 +275,8 @@ static int plibk_print_page(gx_device_printer * pdev, FILE * pstream);
         plib_open,\
         NULL, /* get_initial_matrix */ \
         NULL, /* sync output */ \
-        gdev_prn_output_page, \
+        /* Since the print_page doesn't alter the device, this device can print in the background */\
+        gdev_prn_bg_output_page, \
         plib_close,\
         NULL, /* map_rgb_color */ \
         p_color_rgb, /* map_color_rgb */ \

@@ -26,8 +26,9 @@ static dev_proc_print_page(faxg32d_print_page);
 static dev_proc_print_page(faxg4_print_page);
 
 /* Define procedures that adjust the paper size. */
+/* Since the print_page doesn't alter the device, this device can print in the background */
 const gx_device_procs gdev_fax_std_procs =
-    prn_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+    prn_params_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
                      gdev_fax_get_params, gdev_fax_put_params);
 
 #define FAX_DEVICE(dname, print_page)\
