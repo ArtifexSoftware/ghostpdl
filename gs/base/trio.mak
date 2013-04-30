@@ -27,14 +27,25 @@ TRIOSRC=$(TRIOSRCDIR)$(D)
 TRIOOBJ=$(TRIOOBJDIR)$(D)
 TRIOO_=$(O_)$(TRIOOBJ)
 
-# NB: we can't use the normal $(CC_) here because msvccmd.mak
-# adds /Za which conflicts with the lcms source.
-TRIOCC=$(CC) $(CFLAGS) $(D_)TRIO_EMBED_STRING$(_D) $(D_)TRIO_FUNC_TO_FLOAT$(_D) \
-$(D_)TRIO_FUNC_TO_LONG$$(_D) $(D_)TRIO_FUNC_TO_LOWER$(_D) $(I_)$(TRIOSRCDIR)$(_I) $(TRIO_CFLAGS)
+TRIOCFLAGS=$(CFLAGS) $(TRIO_CFLAGS) $(D_)TRIO_EMBED_STRING$(_D) $(D_)TRIO_FEATURE_CLOSURE=0$(_D) \
+$(D_)TRIO_FEATURE_DYNAMICSTRING=0$(_D) $(D_)TRIO_MINIMAL=0$(_D) \
+$(D_)TRIO_FEATURE_USER_DEFINED=0$(_D) $(D_)TRIO_EXTENSION=0$(_D)\
+$(D_)TRIO_FUNC_TO_FLOAT$(_D) $(I_)$(TRIOSRCDIR)$(_I) \
+$(D_)TRIO_MALLOC=no_malloc$(_D) $(D_)TRIO_REALLOC=no_realloc$(_D) $(D_)TRIO_FREE=no_free$(_D)
 
+
+# NB: we can't use the normal $(CC_) here because msvccmd.mak
+# adds /Za which conflicts with the trio source.
+TRIOCC=$(CC) $(TRIOCFLAGS)
 
 TRIOOBJS=$(TRIOOBJ)triostr.$(OBJ) $(TRIOOBJ)trio.$(OBJ) $(TRIOOBJ)trionan.$(OBJ)
-TRIOHDRS=$(TRIOSRC)trio.h $(TRIOSRC)triop.h $(TRIOSRC)triodef.h $(TRIOSRC)trionan.h $(TRIOSRC)triostr.h
+
+triodef_h=$(TRIOSRC)triodef.h
+trio_h=$(TRIOSRC)trio.h
+triop_h=$(TRIOSRC)triop.h
+triostr_h=$(TRIOSRC)triostr.h
+
+TRIOHDRS=$(triodef_h) $(trio_h) $(triop_h) $(triostr_h)
 
 $(TRIOOBJ)triostr.$(OBJ) : $(TRIOSRC)triostr.c $(TRIOHDRS) $(TRIO_MAK)
 	$(TRIOCC) $(TRIOO_)triostr.$(OBJ) $(C_) $(TRIOSRC)triostr.c

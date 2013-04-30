@@ -154,12 +154,13 @@
 #if defined(__STDC_VERSION__)
 # define PREDEF_STANDARD_C90
 #endif
-#if (__STDC_VERSION__ - 0 >= 199409L)
+#if defined (__STDC_VERSION__) && (__STDC_VERSION__ - 0 >= 199409L)
 # define PREDEF_STANDARD_C94
 #endif
-#if (__STDC_VERSION__ - 0 >= 199901L)
+#if defined (__STDC_VERSION__) && (__STDC_VERSION__ - 0 >= 199901L)
 # define PREDEF_STANDARD_C99
 #endif
+
 #if defined(TRIO_COMPILER_SUNPRO) && (TRIO_COMPILER_SUNPRO >= 0x420)
 # if !defined(PREDEF_STANDARD_C94)
 #  define PREDEF_STANDARD_C94
@@ -169,7 +170,7 @@
 #if defined(__cplusplus)
 # define PREDEF_STANDARD_CXX
 #endif
-#if __cplusplus - 0 >= 199711L
+#if defined(__cplusplus) && __cplusplus - 0 >= 199711L
 # define PREDEF_STANDARD_CXX89
 #endif
 
