@@ -684,6 +684,7 @@ bool pdf_compare_text_state_for_charpath(pdf_text_state_t *pts, gx_device_pdf *p
 
     if(font->FontType == ft_user_defined ||
         font->FontType == ft_PCL_user_defined ||
+        font->FontType == ft_MicroType ||
         font->FontType == ft_GL2_stick_user_defined ||
         font->FontType == ft_GL2_531)
         return(false);

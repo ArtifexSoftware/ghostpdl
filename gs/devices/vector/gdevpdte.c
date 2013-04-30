@@ -66,6 +66,7 @@ pdf_process_string_aux(pdf_text_enum_t *penum, gs_string *pstr,
     case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
     case ft_GL2_531:
+    case ft_MicroType:
         break;
     default:
         return_error(gs_error_rangecheck);
@@ -191,6 +192,7 @@ pdf_used_charproc_resources(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
         return 0;
     if (pdfont->FontType == ft_user_defined ||
         pdfont->FontType == ft_PCL_user_defined ||
+        pdfont->FontType == ft_MicroType ||
         pdfont->FontType == ft_GL2_stick_user_defined ||
         pdfont->FontType == ft_GL2_531) {
         pdf_resource_enum_data_t data;
@@ -242,6 +244,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
         return code;	/* can't get name of glyph */
     if (font->FontType != ft_user_defined &&
         font->FontType != ft_PCL_user_defined &&
+        font->FontType != ft_MicroType &&
         font->FontType != ft_GL2_stick_user_defined &&
         font->FontType != ft_GL2_531) {
         /* The standard 14 fonts don't have a FontDescriptor. */
@@ -699,6 +702,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
         pwidths = &widths;
     if ((font->FontType != ft_user_defined &&
         font->FontType != ft_PCL_user_defined &&
+        font->FontType != ft_MicroType &&
         font->FontType != ft_GL2_stick_user_defined &&
         font->FontType != ft_GL2_531) && real_widths[ch] == 0) {
         /* Might be an unused char, or just not cached. */
@@ -731,7 +735,8 @@ pdf_char_widths(gx_device_pdf *const pdev,
         }
     } else {
         if (font->FontType == ft_user_defined || font->FontType == ft_PCL_user_defined ||
-            font->FontType == ft_GL2_stick_user_defined || font->FontType == ft_GL2_531) {
+            font->FontType == ft_MicroType || font->FontType == ft_GL2_stick_user_defined ||
+            font->FontType == ft_GL2_531) {
             if (!(pdfont->used[ch >> 3] & 0x80 >> (ch & 7)))
                 return gs_error_undefined; /* The charproc was not accumulated. */
             if (!pdev->charproc_just_accumulated &&
@@ -745,7 +750,8 @@ pdf_char_widths(gx_device_pdf *const pdev,
         pwidths->Width.v = pdfont->u.simple.v[ch];
         pwidths->real_width.v.x = pwidths->real_width.v.y = 0;
         if (font->FontType == ft_user_defined || font->FontType == ft_PCL_user_defined ||
-            font->FontType == ft_GL2_stick_user_defined || font->FontType == ft_GL2_531) {
+            font->FontType == ft_MicroType || font->FontType == ft_GL2_stick_user_defined ||
+            font->FontType == ft_GL2_531) {
             pwidths->real_width.w = real_widths[ch * 2];
             pwidths->Width.xy.x = pwidths->Width.w;
             pwidths->Width.xy.y = 0;
@@ -780,6 +786,7 @@ pdf_char_widths_to_uts(pdf_font_resource_t *pdfont /* may be NULL for non-Type3 
 {
     if (pdfont && (pdfont->FontType == ft_user_defined ||
         pdfont->FontType == ft_PCL_user_defined ||
+        pdfont->FontType == ft_MicroType ||
         pdfont->FontType == ft_GL2_stick_user_defined ||
         pdfont->FontType == ft_GL2_531)) {
         gs_matrix *pmat = &pdfont->u.simple.s.type3.FontMatrix;
@@ -837,6 +844,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
         if ((font->FontType == ft_user_defined ||
             font->FontType == ft_PCL_user_defined ||
             font->FontType == ft_GL2_stick_user_defined ||
+            font->FontType == ft_MicroType ||
             font->FontType == ft_GL2_531) &&
             (i > 0 || !pdev->charproc_just_accumulated) &&
             !(pdfont->u.simple.s.type3.cached[ch >> 3] & (0x80 >> (ch & 7)))){
@@ -968,6 +976,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 
     if (font->FontType == ft_user_defined ||
         font->FontType == ft_PCL_user_defined ||
+        font->FontType == ft_MicroType ||
         font->FontType == ft_GL2_stick_user_defined ||
         font->FontType == ft_GL2_531) {
         code = pdf_attached_font_resource(pdev, font, &pdfont3, NULL, NULL, NULL, NULL);

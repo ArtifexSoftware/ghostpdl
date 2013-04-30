@@ -445,6 +445,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     case ft_GL2_531:
     case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
+    case ft_MicroType:
     case ft_user_defined:
         break;
         /* Other font types may use a non-standard (not 1000x1000) design grid

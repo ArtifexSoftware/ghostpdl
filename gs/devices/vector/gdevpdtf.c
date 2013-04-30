@@ -70,6 +70,7 @@ case 8: switch (pdfont->FontType) {
  case ft_encrypted2:
  case ft_TrueType:
  case ft_PCL_user_defined:
+ case ft_MicroType:
  case ft_GL2_stick_user_defined:
  case ft_user_defined:
  case ft_GL2_531:
@@ -82,6 +83,7 @@ case 8: switch (pdfont->FontType) {
 }
 case 9: switch (pdfont->FontType) {
  case ft_PCL_user_defined:
+ case ft_MicroType:
  case ft_GL2_stick_user_defined:
  case ft_user_defined:
  case ft_GL2_531:
@@ -94,6 +96,7 @@ case 9: switch (pdfont->FontType) {
 }
 case 10: switch (pdfont->FontType) {
  case ft_PCL_user_defined:
+ case ft_MicroType:
  case ft_GL2_stick_user_defined:
  case ft_user_defined:
  case ft_GL2_531:
@@ -106,6 +109,7 @@ case 10: switch (pdfont->FontType) {
 }
 case 11: switch (pdfont->FontType) {
  case ft_PCL_user_defined:
+ case ft_MicroType:
  case ft_GL2_stick_user_defined:
  case ft_user_defined:
  case ft_GL2_531:
@@ -135,6 +139,7 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
         RELOC_VAR(pdfont->u.type0.DescendantFont);
         break;
     case ft_PCL_user_defined:
+    case ft_MicroType:
     case ft_GL2_stick_user_defined:
     case ft_user_defined:
     case ft_GL2_531:
@@ -441,6 +446,7 @@ int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
             case ft_composite:
                 break;
             case ft_PCL_user_defined:
+            case ft_MicroType:
             case ft_GL2_stick_user_defined:
             case ft_user_defined:
             case ft_GL2_531:
