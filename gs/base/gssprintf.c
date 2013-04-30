@@ -15,7 +15,6 @@
 
 
 /* Simple interface to a sprintf/sscanf without locale */
-#include "stdio_.h"             /* includes std.h */
 #include "gssprintf.h"
 #include "trio.h"
 #include "triop.h"
