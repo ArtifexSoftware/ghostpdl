@@ -136,7 +136,7 @@ static void goto_xy(FILE *prn_stream,int x,int y)
 
     fputc(CEX,prn_stream);
     fputc('"',prn_stream);
-    gs_sprintf(buff,"%d",x);
+    gs_sprintf((char *)buff,"%d",x);
     while (*p)
       {
         if (!*(p+1)) fputc((*p)+0x30,prn_stream);
@@ -146,7 +146,7 @@ static void goto_xy(FILE *prn_stream,int x,int y)
       }
 
     p=buff;
-    gs_sprintf(buff,"%d",y);
+    gs_sprintf((char *)buff,"%d",y);
     while (*p)
       {
         if (!*(p+1)) fputc((*p)+0x40,prn_stream);

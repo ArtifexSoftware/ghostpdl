@@ -81,7 +81,7 @@ lbp310PrintPage(gx_device_printer *pDev, FILE *fp)
         DataSize = CompressImage(pDev, &Box, fp, "\x1b[1;%d;%d;11;%d;.r");
 
         /* ----==== Set size ====---- */
-        gs_sprintf(Buf, "0%ld", DataSize);
+        gs_sprintf((char *)Buf, "0%ld", DataSize);
         i = (DataSize+strlen(Buf)+1)&1;
         /* ----==== escape to LIPS ====---- */
         fprintf(fp, "\x80%s\x80\x80\x80\x80\x0c",Buf+i);
@@ -110,7 +110,7 @@ lbp320PrintPage(gx_device_printer *pDev, FILE *fp)
         DataSize = CompressImage(pDev, &Box, fp, "\x1b[1;%d;%d;11;%d;.&r");
 
         /* ----==== Set size ====---- */
-        gs_sprintf(Buf, "000%ld", DataSize);
+        gs_sprintf((char *)Buf, "000%ld", DataSize);
         i = (DataSize+strlen(Buf)+1)&3;
         /* ----==== escape to LIPS ====---- */
         fprintf(fp, "\x80%s\x80\x80\x80\x80\x0c",Buf+i);
