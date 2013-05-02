@@ -42,8 +42,12 @@
 #include "plht.h"
 #include "pxptable.h"
 #include "gzstate.h"
-#include "gxdevsop.h" /* Special ops, in this case pattern management */
-#include "gxcolor2.h" /* Required for definition of gs_pattern1_instance_t for high level patterns */
+#include "gxdevsop.h"       /* Special ops, in this case pattern management */
+#include "gxcolor2.h"       /* Required for definition of gs_pattern1_instance_t for high level patterns */
+#include "pxgstate.h"       /* Prototype for px_high_level_pattern */
+#include "gxpcolor.h"       /* Prototype for gx_pattern_cache_add_dummy_entry */
+#include "gxpath.h"         /* Prototype for gx_clip_to_rectangle */
+
 /*
  * Contrary to the documentation, SetColorSpace apparently doesn't set the
  * brush or pen to black.  To produce this behavior, uncomment the
@@ -298,7 +302,6 @@ int px_high_level_pattern(gs_state * pgs)
     gs_matrix m;
     gs_rect bbox;
     gs_fixed_rect clip_box;
-    gx_color_tile *ctile;
     int code;
     gx_device_color *pdc = gs_currentdevicecolor_inline(pgs);
     const gs_client_pattern *ppat = gs_getpattern(&pdc->ccolor);

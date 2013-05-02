@@ -196,6 +196,9 @@ int px_image_color_space(gs_image_t * pim,
 /* Set the color in the graphics state to the pen or brush. */
 int px_set_paint(const px_paint_t * ppt, px_state_t * pxs);
 
+/* Capture a pattern as high level in the device */
+int px_high_level_pattern(gs_state * pgs);
+
 /* Set the halftone in the graphics state to the most recently selected one. */
 int px_set_halftone(px_state_t * pxs);
 

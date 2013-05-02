@@ -34,6 +34,7 @@
 #include "pxstate.h"
 #include "pxpthr.h"
 #include "gsstruct.h"
+#include "pxgstate.h"           /* Prototype for px_high_level_pattern */
 
 /*
  * We define the syntax of each possible tag by 4 parameters:
@@ -634,6 +635,8 @@ px_process(px_parser_state_t * st, px_state_t * pxs, stream_cursor_read * pr)
                          */
                         if (code == gs_error_Remap_Color) {
                             code = px_high_level_pattern(pxs->pgs);
+                            if (code < 0)
+                                goto x;
                             code = (*pod->proc) (&st->args, pxs);
                         }
                     }

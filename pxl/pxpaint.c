@@ -34,6 +34,7 @@
 #include "gxmatrix.h"
 #include "gxpath.h"
 #include "pxptable.h"
+#include "pxgstate.h" /* Prototype for px_high_level_pattern */
 
 /*
  * The H-P documentation says we are supposed to draw rectangles
@@ -400,6 +401,8 @@ paint_path(px_state_t * pxs)
             need_restore_rop = true;
         }
         code = px_set_paint(&pxgs->pen, pxs);
+        if (code < 0)
+            DO_NOTHING;
         code = gs_stroke(pgs);
         /* Bit hacky. Normally we handle this up at the interpreter level, and for
          * fill (above) that's how it works. However, px_set_paint() will call
