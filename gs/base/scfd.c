@@ -26,6 +26,16 @@
 
 private_st_CFD_state();
 
+static inline int
+get_run(stream_CFD_state *ss, stream_cursor_read *pr, const cfd_node decode[],
+    int initial_bits, int min_bits, int *runlen, const char *str);
+
+static inline int
+invert_data(stream_CFD_state *ss, stream_cursor_read *pr, int *rlen, byte black_byte);
+
+static inline int
+skip_data(stream_CFD_state *ss, stream_cursor_read *pr, int rlen);
+
 /* Set default parameter values. */
 static void
 s_CFD_set_defaults(register stream_state * st)
@@ -117,85 +127,142 @@ s_CFD_release(stream_state * st)
 #else
 #  define IF_DEBUG(expr) DO_NOTHING
 #endif
-#define get_run(decode, initial_bits, min_bits, runlen, str, locl, outl)\
-    BEGIN\
-        const cfd_node *np;\
-        int clen;\
-\
-        HCD_ENSURE_BITS_ELSE(initial_bits) {\
-            /* We might still have enough bits for the specific code. */\
-            if (bits_left < min_bits) goto outl;\
-            np = &decode[hcd_peek_bits_left() << (initial_bits - bits_left)];\
-            if ((clen = np->code_length) > bits_left) goto outl;\
-            goto locl;\
-        }\
-        np = &decode[peek_bits(initial_bits)];\
-        if ((clen = np->code_length) > initial_bits) {\
-                IF_DEBUG(uint init_bits = peek_bits(initial_bits));\
-                if (!avail_bits(clen)) goto outl;\
-                clen -= initial_bits;\
-                skip_bits(initial_bits);\
-                ensure_bits(clen, outl);		/* can't goto outl */\
-                np = &decode[np->run_length + peek_var_bits(clen)];\
-                if_debug4('W', "%s xcode=0x%x,%d rlen=%d\n", str,\
-                          (init_bits << np->code_length) +\
-                            peek_var_bits(np->code_length),\
-                          initial_bits + np->code_length,\
-                          np->run_length);\
-                skip_bits(np->code_length);\
-        } else {\
-    locl:	if_debug4('W', "%s code=0x%x,%d rlen=%d\n", str,\
-                          peek_var_bits(clen), clen, np->run_length);\
-                skip_bits(clen);\
-        }\
-        runlen = np->run_length;\
-    END
+
+static inline int get_run(stream_CFD_state *ss, stream_cursor_read *pr, const cfd_node decode[],
+           int initial_bits, int min_bits, int *runlen, const char *str)
+{
+    cfd_declare_state;
+    const cfd_node *np;
+    int clen;
+    cfd_load_state();
+
+    HCD_ENSURE_BITS_ELSE(initial_bits) {
+        /* We might still have enough bits for the specific code. */
+        if (bits_left < min_bits)
+            goto outl;
+        np = &decode[hcd_peek_bits_left() << (initial_bits - bits_left)];
+        if ((clen = np->code_length) > bits_left)
+            goto outl;
+        goto locl;
+    }
+    np = &decode[peek_bits(initial_bits)];
+    if ((clen = np->code_length) > initial_bits) {
+            IF_DEBUG(uint init_bits = peek_bits(initial_bits));
+            if (!avail_bits(clen)) goto outl;
+            clen -= initial_bits;
+            skip_bits(initial_bits);
+            ensure_bits(clen, outl);                /* can't goto outl */
+            np = &decode[np->run_length + peek_var_bits(clen)];
+            if_debug4('W', "%s xcode=0x%x,%d rlen=%d\n", str,
+                      (init_bits << np->code_length) +
+                        peek_var_bits(np->code_length),
+                      initial_bits + np->code_length,
+                      np->run_length);
+            skip_bits(np->code_length);
+    } else {
+locl:
+       if_debug4('W', "%s code=0x%x,%d rlen=%d\n", str,
+                      peek_var_bits(clen), clen, np->run_length);
+       skip_bits(clen);
+    }
+    *runlen = np->run_length;
+
+    cfd_store_state();
+    return(0);
+outl:
+    cfd_store_state();
+    return(-1);
+}
+
 
 /* Skip data bits for a white run. */
 /* rlen is either less than 64, or a multiple of 64. */
-#define skip_data(rlen, makeup_label)\
-        if ( (qbit -= rlen) < 0 )\
-        {	q -= qbit >> 3, qbit &= 7;\
-                if ( rlen >= 64 ) goto makeup_label;\
+static inline int skip_data(stream_CFD_state *ss, stream_cursor_read *pr, int rlen)
+{
+    cfd_declare_state;
+    cfd_load_state();
+    (void)rlimit;
+
+    if ( (qbit -= rlen) < 0 )
+    {
+        q -= qbit >> 3, qbit &= 7;
+        if ( rlen >= 64 ) {
+            cfd_store_state();
+            return(-1);
         }
+    }
+    cfd_store_state();
+    return(0);
+}
+
 
 /* Invert data bits for a black run. */
 /* If rlen >= 64, execute makeup_action: this is to handle */
 /* makeup codes efficiently, since these are always a multiple of 64. */
-#define invert_data(rlen, black_byte, makeup_action, d)\
-        if ( rlen > qbit )\
-        {	if (q >= ss->lbuf) *q++ ^= (1 << qbit) - 1; else q++;\
-                rlen -= qbit;\
-                switch ( rlen >> 3 )\
-                {\
-                case 7:		/* original rlen possibly >= 64 */\
-                        if ( rlen + qbit >= 64 ) goto d;\
-                        *q++ = black_byte;\
-                case 6: *q++ = black_byte;\
-                case 5: *q++ = black_byte;\
-                case 4: *q++ = black_byte;\
-                case 3: *q++ = black_byte;\
-                case 2: *q++ = black_byte;\
-                case 1: *q = black_byte;\
-                        rlen &= 7;\
-                        if ( !rlen ) { qbit = 0; break; }\
-                        q++;\
-                case 0:			/* know rlen != 0 */\
-                        qbit = 8 - rlen;\
-                        *q ^= 0xff << qbit;\
-                        break;\
-                default:	/* original rlen >= 64 */\
-d:			memset(q, black_byte, rlen >> 3);\
-                        q += rlen >> 3;\
-                        rlen &= 7;\
-                        if ( !rlen ) qbit = 0, q--;\
-                        else qbit = 8 - rlen, *q ^= 0xff << qbit;\
-                        makeup_action;\
-                }\
-        }\
-        else\
-                qbit -= rlen,\
-                *q ^= ((1 << rlen) - 1) << qbit
+
+static inline int invert_data(stream_CFD_state *ss, stream_cursor_read *pr, int *rlen, byte black_byte)
+{
+    cfd_declare_state;
+    cfd_load_state();
+    (void)rlimit;
+
+    if ( (*rlen) > qbit )
+    {
+        if (q >= ss->lbuf) {
+          *q++ ^= (1 << qbit) - 1;
+        }
+        else {
+            q++;
+        }
+        (*rlen) -= qbit;
+        switch ( (*rlen) >> 3 )
+        {
+          case 7:         /* original rlen possibly >= 64 */
+                  if ( (*rlen) + qbit >= 64 ) {
+                    goto d;
+                  }
+                  *q++ = black_byte;
+          case 6: *q++ = black_byte;
+          case 5: *q++ = black_byte;
+          case 4: *q++ = black_byte;
+          case 3: *q++ = black_byte;
+          case 2: *q++ = black_byte;
+          case 1: *q = black_byte;
+              (*rlen) &= 7;
+              if ( !(*rlen) ) {
+                  qbit = 0;
+                  break;
+              }
+              q++;
+          case 0:                 /* know rlen != 0 */
+              qbit = 8 - (*rlen);
+              *q ^= 0xff << qbit;
+              break;
+          default:        /* original rlen >= 64 */
+d:            memset(q, black_byte, (*rlen) >> 3);
+              q += (*rlen) >> 3;
+              (*rlen) &= 7;
+              if ( !(*rlen) ) {
+                qbit = 0;
+                q--;
+              }
+              else {
+                qbit = 8 - (*rlen);
+                *q ^= 0xff << qbit;
+              }
+              cfd_store_state();
+              return(-1);
+          }
+    }
+    else {
+            qbit -= (*rlen),
+            *q ^= ((1 << (*rlen)) - 1) << qbit;
+
+    }
+    cfd_store_state();
+    return(0);
+}
+
 
 /* Buffer refill for CCITTFaxDecode filter */
 static int cf_decode_eol(stream_CFD_state *, stream_cursor_read *);
@@ -224,6 +291,7 @@ s_CFD_process(stream_state * st, stream_cursor_read * pr,
     {
         hcd_declare_state;
         hcd_load_state();
+        (void)rlimit;
         if_debug8m('w', ss->memory,
                    "[w]CFD_process top: eol_count=%d, k_left=%d, rows_left=%d\n"
                    "    bits=0x%lx, bits_left=%d, read %u, wrote %u%s\n",
@@ -236,6 +304,7 @@ s_CFD_process(stream_state * st, stream_cursor_read * pr,
     if (ss->skipping_damage) {	/* Skip until we reach an EOL. */
         hcd_declare_state;
         int skip;
+        (void)rlimit;
 
         status = 0;
         do {
@@ -450,6 +519,7 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
     int run_color = ss->run_color;
     int status;
     int bcnt;
+    (void)rlimit;
 
     cfd_load_state();
     if_debug1m('w', ss->memory, "[w1]entry run_color = %d\n", ss->run_color);
@@ -462,8 +532,15 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
     if (q_at_stop())
         goto done;
   dw:				/* Decode a white run. */
-    get_run(cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
-            bcnt, "[w1]white", dwl, out0);
+
+    cfd_store_state();
+    status = get_run(ss, pr, cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
+            &bcnt, "[w1]white");
+    cfd_load_state();
+    if (status < 0) {
+        goto out0;
+    }
+
     if (bcnt < 0) {		/* exceptional situation */
         switch (bcnt) {
             case run_uncompressed:	/* Uncompressed data. */
@@ -483,22 +560,43 @@ cf_decode_1d(stream_CFD_state * ss, stream_cursor_read * pr)
                 goto out;
         }
     }
-    skip_data(bcnt, dwx);
+
+    cfd_store_state();
+    status = skip_data(ss, pr, bcnt);
+    cfd_load_state();
+    if (status < 0) {
+        goto dwx;
+    }
+
     if (q_at_stop()) {
         run_color = 0;		/* not inside a run */
         goto done;
     }
     run_color = 1;
-  db:				/* Decode a black run. */
-    get_run(cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
-            bcnt, "[w1]black", dbl, out1);
+  db:			/* Decode a black run. */
+
+    cfd_store_state();
+    status = get_run(ss, pr, cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
+            &bcnt, "[w1]black");
+    cfd_load_state();
+    if (status < 0) {
+        goto out1;
+    }
+
     if (bcnt < 0) {		/* All exceptional codes are invalid here. */
         /****** WRONG, uncompressed IS ALLOWED ******/
         status = ERRC;
         goto out;
     }
+
     /* Invert bits designated by black run. */
-    invert_data(bcnt, black_byte, goto dbx, idb);
+    cfd_store_state();
+    status = invert_data(ss, pr, &bcnt, black_byte);
+    cfd_load_state();
+    if (status < 0) {
+        goto dbx;
+    }
+
     goto top;
   dwx:				/* If we run out of data after a makeup code, */
     /* note that we are still processing a white run. */
@@ -608,8 +706,14 @@ v0:	    skip_bits(1);
             else
                 goto hbb;
         case 0:		/* everything else */
-            get_run(cf_2d_decode, cfd_2d_initial_bits, cfd_2d_min_bits,
-                    rlen, "[w2]", d2l, out0);
+            cfd_store_state();
+            status = get_run(ss, pr, cf_2d_decode, cfd_2d_initial_bits, cfd_2d_min_bits,
+                    &rlen, "[w2]");
+            cfd_load_state();
+            if (status < 0) {
+                goto out0;
+            }
+
             /* rlen may be run2_pass, run_uncompressed, or */
             /* 0..countof(cf2_run_vertical)-1. */
             if (rlen < 0)
@@ -694,7 +798,10 @@ v0:	    skip_bits(1);
             qbit = prev_count & 7;
         } else {		/* Invert data bits. */
             dlen = count - prev_count;
-            invert_data(dlen, black_byte, DO_NOTHING, idd);
+
+            cfd_store_state();
+            (void)invert_data(ss, pr, &dlen, black_byte);
+            cfd_load_state();
         }
         count = prev_count;
         if (rlen >= 0)		/* vertical mode */
@@ -721,42 +828,102 @@ v0:	    skip_bits(1);
      * branch back into it if we run out of input data.
      */
     /* White, then black. */
-  hww:get_run(cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
-              rlen, " white", wwl, outww);
+  hww:
+
+    cfd_store_state();
+    status = get_run(ss, pr, cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
+              &rlen, " white");
+    cfd_load_state();
+    if (status < 0) {
+        goto outww;
+    }
+
     if ((count -= rlen) < end_count) {
         status = ERRC;
         goto out;
     }
-    skip_data(rlen, hww);
+
+    cfd_store_state();
+    status = skip_data(ss, pr, rlen);
+    cfd_load_state();
+    if (status < 0) {
+        goto hww;
+    }
+
     /* Handle the second half of a white-black horizontal code. */
-  hwb:get_run(cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
-              rlen, " black", wbl, outwb);
+  hwb:
+
+    cfd_store_state();
+    status = get_run(ss, pr, cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
+              &rlen, " black");
+    cfd_load_state();
+    if (status < 0){
+        goto outwb;
+    }
+
     if ((count -= rlen) < end_count) {
         status = ERRC;
         goto out;
     }
-    invert_data(rlen, black_byte, goto hwb, ihwb);
+
+    cfd_store_state();
+    status = invert_data(ss, pr, &rlen, black_byte);
+    cfd_load_state();
+    if (status < 0) {
+        goto hwb;
+    }
+
     goto top;
   outww:ss->run_color = -2;
     goto out0;
   outwb:ss->run_color = 1;
     goto out0;
     /* Black, then white. */
-  hbb:get_run(cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
-              rlen, " black", bbl, outbb);
+  hbb:
+
+    cfd_store_state();
+    status = get_run(ss, pr, cf_black_decode, cfd_black_initial_bits, cfd_black_min_bits,
+              &rlen, " black");
+    cfd_load_state();
+    if (status < 0) {
+        goto outbb;
+    }
+
     if ((count -= rlen) < end_count) {
         status = ERRC;
         goto out;
     }
-    invert_data(rlen, black_byte, goto hbb, ihbb);
+
+    cfd_store_state();
+    status = invert_data(ss, pr, &rlen, black_byte);
+    cfd_load_state();
+    if (status < 0) {
+        goto hbb;
+    }
+
     /* Handle the second half of a black-white horizontal code. */
-  hbw:get_run(cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
-              rlen, " white", bwl, outbw);
+  hbw:
+
+    cfd_store_state();
+    status = get_run(ss, pr, cf_white_decode, cfd_white_initial_bits, cfd_white_min_bits,
+              &rlen, " white");
+    cfd_load_state();
+    if (status < 0) {
+        goto outbw;
+    }
+
     if ((count -= rlen) < end_count) {
         status = ERRC;
         goto out;
     }
-    skip_data(rlen, hbw);
+
+    cfd_store_state();
+    status = skip_data(ss, pr, rlen);
+    cfd_load_state();
+    if (status < 0) {
+        goto hbw;
+    }
+
     goto top;
   outbb:ss->run_color = 2;
     goto out0;
