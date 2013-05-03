@@ -30,12 +30,12 @@
 #include "string_.h"
 #include <stdlib.h> /* abs() */
 
-static void gsicc_mcm_transform_general(gx_device *dev, gsicc_link_t *icclink, 
-                                         void *inputcolor, void *outputcolor, 
+static void gsicc_mcm_transform_general(gx_device *dev, gsicc_link_t *icclink,
+                                         void *inputcolor, void *outputcolor,
                                          int num_bytes_in, int num_bytes_out);
 
-/* Functions that should be optimized later to do planar/chunky with 
-   color conversions.  Just putting in something that should work 
+/* Functions that should be optimized later to do planar/chunky with
+   color conversions.  Just putting in something that should work
    right now */
 static void
 gsicc_mcm_planar_to_planar(gx_device *dev, gsicc_link_t *icclink,
@@ -57,14 +57,14 @@ gsicc_mcm_planar_to_planar(gx_device *dev, gsicc_link_t *icclink,
         outputpos[k] = out_buffer_ptr + k * input_buff_desc->plane_stride;
     }
     /* Note to self.  We currently only do this in the transparency buffer
-       case which has byte representation so just stepping through 
+       case which has byte representation so just stepping through
        plane_stride is ok at this time.  */
     for (k = 0; k < input_buff_desc->plane_stride ; k++) {
         for (j = 0; j < input_buff_desc->num_chan; j++) {
             in_color[j] = *(inputpos[j]);
             inputpos[j] += input_buff_desc->bytes_per_chan;
         }
-        gsicc_mcm_transform_general(dev, icclink, (void*) &(in_color[0]), 
+        gsicc_mcm_transform_general(dev, icclink, (void*) &(in_color[0]),
                                          (void*) &(out_color[0]), 1, 1);
         for (j = 0; j < output_buff_desc->num_chan; j++) {
             *(outputpos[j]) = out_color[j];
@@ -112,8 +112,8 @@ gsicc_mcm_chunky_to_planar(gx_device *dev, gsicc_link_t *icclink,
         /* split the 2 byte 1 byte case here to avoid decision in inner loop */
         if (output_buff_desc->bytes_per_chan == 1) {
             for (j = 0; j < input_buff_desc->pixels_per_row; j++) {
-                gsicc_mcm_transform_general(dev, icclink, (void*) inputcolor, 
-                                             (void*) &(outputcolor[0]), num_bytes_in, 
+                gsicc_mcm_transform_general(dev, icclink, (void*) inputcolor,
+                                             (void*) &(outputcolor[0]), num_bytes_in,
                                               num_bytes_out);
                 /* Stuff the output in the proper planar location */
                 for (m = 0; m < output_buff_desc->num_chan; m++) {
@@ -122,11 +122,11 @@ gsicc_mcm_chunky_to_planar(gx_device *dev, gsicc_link_t *icclink,
                 inputcolor += pixel_in_step;
             }
             inputpos += input_buff_desc->row_stride;
-            outputpos += output_buff_desc->row_stride;        
+            outputpos += output_buff_desc->row_stride;
         } else {
             for (j = 0; j < input_buff_desc->pixels_per_row; j++) {
-                gsicc_mcm_transform_general(dev, icclink, (void*) inputcolor, 
-                                             (void*) &(outputcolor[0]), num_bytes_in, 
+                gsicc_mcm_transform_general(dev, icclink, (void*) inputcolor,
+                                             (void*) &(outputcolor[0]), num_bytes_in,
                                               num_bytes_out);
                 /* Stuff the output in the proper planar location */
                 pos_in_short = (unsigned short*) &(outputcolor[0]);
@@ -162,8 +162,8 @@ gsicc_mcm_chunky_to_chunky(gx_device *dev, gsicc_link_t *icclink,
         inputcolor = inputpos;
         outputcolor = outputpos;
         for (j = 0; j < input_buff_desc->pixels_per_row; j++) {
-            gsicc_mcm_transform_general(dev, icclink, (void*) inputcolor, 
-                                         (void*) outputcolor, num_bytes_in, 
+            gsicc_mcm_transform_general(dev, icclink, (void*) inputcolor,
+                                         (void*) outputcolor, num_bytes_in,
                                           num_bytes_out);
             inputcolor += pixel_in_step;
             outputcolor += pixel_out_step;
@@ -182,23 +182,23 @@ gsicc_mcm_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
 {
     if (input_buff_desc->is_planar) {
         if (output_buff_desc->is_planar) {
-            gsicc_mcm_planar_to_planar(dev, icclink, input_buff_desc, 
-                                        output_buff_desc, inputbuffer, 
-                                        outputbuffer);    
+            gsicc_mcm_planar_to_planar(dev, icclink, input_buff_desc,
+                                        output_buff_desc, inputbuffer,
+                                        outputbuffer);
         } else {
-            gsicc_mcm_planar_to_chunky(dev, icclink, input_buff_desc, 
-                                        output_buff_desc, inputbuffer, 
-                                        outputbuffer);    
+            gsicc_mcm_planar_to_chunky(dev, icclink, input_buff_desc,
+                                        output_buff_desc, inputbuffer,
+                                        outputbuffer);
         }
     } else {
         if (output_buff_desc->is_planar) {
-            gsicc_mcm_chunky_to_planar(dev, icclink, input_buff_desc, 
-                                        output_buff_desc, inputbuffer, 
-                                        outputbuffer);    
+            gsicc_mcm_chunky_to_planar(dev, icclink, input_buff_desc,
+                                        output_buff_desc, inputbuffer,
+                                        outputbuffer);
         } else {
-            gsicc_mcm_chunky_to_chunky(dev, icclink, input_buff_desc, 
-                                        output_buff_desc, inputbuffer, 
-                                        outputbuffer);    
+            gsicc_mcm_chunky_to_chunky(dev, icclink, input_buff_desc,
+                                        output_buff_desc, inputbuffer,
+                                        outputbuffer);
         }
     }
     return;
@@ -206,11 +206,11 @@ gsicc_mcm_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
 
 /* This is where we do the monitoring and the conversion if needed */
 static void
-gsicc_mcm_transform_general(gx_device *dev, gsicc_link_t *icclink, 
-                             void *inputcolor, void *outputcolor, 
+gsicc_mcm_transform_general(gx_device *dev, gsicc_link_t *icclink,
+                             void *inputcolor, void *outputcolor,
                              int num_bytes_in, int num_bytes_out)
 {
-    bool is_neutral = false;    
+    bool is_neutral = false;
     unsigned short outputcolor_cm[GX_DEVICE_COLOR_MAX_COMPONENTS];
     void *outputcolor_cm_ptr = (void*) outputcolor_cm;
     cmm_dev_profile_t *dev_profile;
@@ -220,7 +220,7 @@ gsicc_mcm_transform_general(gx_device *dev, gsicc_link_t *icclink,
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
 
     /* Monitor only if gray detection is still true */
-    if (dev_profile->pageneutralcolor) 
+    if (dev_profile->pageneutralcolor)
         is_neutral = icclink->procs.is_color(inputcolor, num_bytes_in);
 
     /* Color found turn off gray detection */
@@ -258,11 +258,11 @@ gsicc_mcm_transform_general(gx_device *dev, gsicc_link_t *icclink,
         }
     } else {
         if (num_bytes_in == num_bytes_out) {
-            icclink->orig_procs.map_color(dev, icclink, inputcolor, outputcolor, 
+            icclink->orig_procs.map_color(dev, icclink, inputcolor, outputcolor,
                                           num_bytes_in);
             return;
         } else {
-            icclink->orig_procs.map_color(dev, icclink, inputcolor, outputcolor_cm_ptr, 
+            icclink->orig_procs.map_color(dev, icclink, inputcolor, outputcolor_cm_ptr,
                                           num_bytes_in);
             if (num_bytes_in == 2) {
                 unsigned short *in_ptr = (unsigned short*) outputcolor_cm_ptr;
@@ -287,7 +287,7 @@ static void
 gsicc_mcm_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
                            void *outputcolor, int num_bytes)
 {
-    gsicc_mcm_transform_general(dev, icclink, inputcolor, outputcolor, 
+    gsicc_mcm_transform_general(dev, icclink, inputcolor, outputcolor,
                                  num_bytes, num_bytes);
 }
 
@@ -298,29 +298,48 @@ bool gsicc_mcm_monitor_rgb(void *inputcolor, int num_bytes)
         int rg_diff = (int) abs((int) rgb_val[0] - (int) rgb_val[1]);
         int rb_diff = (int) abs((int) rgb_val[0] - (int) rgb_val[2]);
         int bg_diff = (int) abs((int) rgb_val[1] - (int) rgb_val[2]);
-        return (rg_diff < DEV_NEUTRAL_8 && rb_diff < DEV_NEUTRAL_8 
+        return (rg_diff < DEV_NEUTRAL_8 && rb_diff < DEV_NEUTRAL_8
                 && bg_diff < DEV_NEUTRAL_8);
     } else {
         unsigned short *rgb_val = (unsigned short*) inputcolor;
         int rg_diff = (int) abs((int) rgb_val[0] - (int) rgb_val[1]);
         int rb_diff = (int) abs((int) rgb_val[0] - (int) rgb_val[2]);
         int bg_diff = (int) abs((int) rgb_val[1] - (int) rgb_val[2]);
-        return (rg_diff < DEV_NEUTRAL_16 && rb_diff < DEV_NEUTRAL_16 
+        return (rg_diff < DEV_NEUTRAL_16 && rb_diff < DEV_NEUTRAL_16
                 && bg_diff < DEV_NEUTRAL_16);
     }
 }
 
 bool gsicc_mcm_monitor_cmyk(void *inputcolor, int num_bytes)
 {
+#ifdef PESSIMISTIC_CMYK_NEUTRAL
     if (num_bytes == 1) {
         byte *cmyk = (byte*) inputcolor;
-        return (cmyk[0] < DEV_NEUTRAL_8 && cmyk[1] < DEV_NEUTRAL_8 
+        return (cmyk[0] < DEV_NEUTRAL_8 && cmyk[1] < DEV_NEUTRAL_8
                 && cmyk[2] < DEV_NEUTRAL_8);
     } else {
         unsigned short *cmyk = (unsigned short*) inputcolor;
-        return (cmyk[0] < DEV_NEUTRAL_16 && cmyk[1] < DEV_NEUTRAL_16 
+        return (cmyk[0] < DEV_NEUTRAL_16 && cmyk[1] < DEV_NEUTRAL_16
                 && cmyk[2] < DEV_NEUTRAL_16);
     }
+#else /* The code below is more similar to RGB in that C = M = Y (or close) */
+      /* will be treated as neutral.                                        */
+    if (num_bytes == 1) {
+        byte *cmyk = (byte*) inputcolor;
+        int cm_diff = (int) abs((int) cmyk[0] - (int) cmyk[1]);
+        int cy_diff = (int) abs((int) cmyk[0] - (int) cmyk[2]);
+        int my_diff = (int) abs((int) cmyk[1] - (int) cmyk[2]);
+        return (cm_diff < DEV_NEUTRAL_8 && cy_diff < DEV_NEUTRAL_8
+                && my_diff < DEV_NEUTRAL_8);
+    } else {
+        unsigned short *cmyk = (unsigned short*) inputcolor;
+        int cm_diff = (int) abs((int) cmyk[0] - (int) cmyk[1]);
+        int cy_diff = (int) abs((int) cmyk[0] - (int) cmyk[2]);
+        int my_diff = (int) abs((int) cmyk[1] - (int) cmyk[2]);
+        return (cm_diff < DEV_NEUTRAL_16 && cy_diff < DEV_NEUTRAL_16
+                && my_diff < DEV_NEUTRAL_16);
+    }
+#endif
 }
 
 bool gsicc_mcm_monitor_lab(void *inputcolor, int num_bytes)
@@ -403,4 +422,3 @@ gsicc_mcm_end_monitor(gsicc_link_cache_t *cache, gx_device *dev)
     }
     gx_monitor_leave(lock);	/* done with updating, let everyone run */
 }
-

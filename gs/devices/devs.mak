@@ -173,6 +173,7 @@ DEVGEN=$(DEVGENDIR)$(D)
 #			if possible
 #	pnmraw		Portable Pixmap (raw format) (RGB), optimizing to PGM or PBM
 #			if possible
+#       pnmcmyk         PAM 32-bit CMYK if colors, otherwise pgmraw.
 #	ppm		Portable Pixmap (plain format) (RGB)
 #	ppmraw		Portable Pixmap (raw format) (RGB)
 #	pkm		Portable inKmap (plain format) (4-bit CMYK => RGB)
@@ -1511,6 +1512,9 @@ $(DD)pnm.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev $(GDEV)
 
 $(DD)pnmraw.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev $(GDEV)
 	$(SETPDEV2) $(DD)pnmraw $(pxm_)
+
+$(DD)pnmcmyk.dev : $(DEVS_MAK) $(pxm_) $(GLD)page.dev $(GDEV)
+	$(SETPDEV2) $(DD)pnmcmyk $(pxm_)
 
 ### Portable inKmap (CMYK internally, converted to PPM=RGB at output time)
 

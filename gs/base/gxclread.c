@@ -760,17 +760,13 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
     gx_placed_page placed_page;
     int code = 0;
     int i;
+    bool save_pageneutralcolor;
 
     if (render_plane)
         crdev->yplane = *render_plane;
     else
         crdev->yplane.index = -1;
     if_debug2m('l', bdev->memory, "[l]rendering bands (%d,%d)\n", band_first, band_last);
-#if 0 /* Disabled because it is slow and appears to have no useful effect. */
-    if (clear)
-        dev_proc(bdev, fill_rectangle)
-            (bdev, 0, 0, bdev->width, bdev->height, gx_device_white(bdev));
-#endif
 
     /*
      * If we aren't rendering saved pages, do the current one.
@@ -785,6 +781,11 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
         ppages = &placed_page;
         num_pages = 1;
     }
+    /* Before playing back the clist, make sure that the gray detection is disabled */
+    /* so we don't slow down the rendering (primarily high level images).           */
+    save_pageneutralcolor = crdev->icc_struct->pageneutralcolor;
+    crdev->icc_struct->pageneutralcolor = false;
+
     for (i = 0; i < num_pages && code >= 0; ++i) {
         const gx_placed_page *ppage = &ppages[i];
 
@@ -812,6 +813,7 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
                                          prect->p.x - ppage->offset.x,
                                          prect->p.y);
     }
+    crdev->icc_struct->pageneutralcolor = save_page_neutral;	/* restore it */
     return code;
 }
 
