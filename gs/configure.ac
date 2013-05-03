@@ -152,19 +152,19 @@ case `uname` in
         Linux*|GNU*)
         if test $ac_cv_prog_gcc = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2"
-            CC_DBG_FLAGS_TO_TRY="-g -O0"
+            CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         ;;
         *BSD)
         if test $ac_cv_prog_gcc = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2"
-            CC_DBG_FLAGS_TO_TRY="-g -O0"
+            CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         ;;
         Darwin*)
         if test $ac_cv_prog_gcc = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2"
-            CC_DBG_FLAGS_TO_TRY="-g -O0"
+            CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         SET_DT_SONAME=""
         SO_FOR_MAC="_1"
@@ -175,7 +175,12 @@ case `uname` in
         if test $ac_cv_prog_gcc = no; then
             SET_DT_SONAME="-h "
         fi
-        CC_DBG_FLAGS_TO_TRY="-g -O0"
+        if test $ac_cv_prog_gcc = yes; then
+            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
+        else
+            CC_DBG_FLAGS_TO_TRY="-g -O0"
+        fi
         ;;
 esac
 
