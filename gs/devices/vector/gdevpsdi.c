@@ -403,7 +403,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
                    floatp resolution, bool lossless)
 {
     gx_device_psdf *pdev = pbw->dev;
-    const stream_template *templat = NULL;
+    const stream_template *templat = &s_Subsample_template;
     float factor = resolution / pdip->Resolution;
     int orig_bpc = pim->BitsPerComponent;
     int orig_width = pim->Width;
