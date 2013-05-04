@@ -27,7 +27,8 @@
 #include "gxcmap.h"
 #include "gxdcconv.h"
 #include "gzstate.h"
-#include "gxdevsop.h"  /* for special ops */
+#include "gxdevsop.h"   /* for special ops */
+#include "gsutil.h"     /* for gs_next_ids */
 
 /* RC routines */
 gs_private_st_simple(st_palette_t, pcl_palette_t, "pcl palette object");
