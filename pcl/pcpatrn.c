@@ -809,6 +809,8 @@ pattern_set_pen(pcl_state_t * pcs, int pen, int for_pcl_raster)
                 code = gx_set_dev_color(pcs->pgs);
                 if (code == gs_error_Remap_Color) {
                     code = pixmap_high_level_pattern(pcs->pgs);
+                    if (code < 0)
+                        return code;
                     return pattern_set_shade_gl(pcs, 1, pen);
                 }
                 return code;

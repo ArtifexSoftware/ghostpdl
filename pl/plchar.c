@@ -49,6 +49,8 @@
 #include "gxttf.h"
 #include "gzstate.h"
 #include "plchar.h"
+/* include the prototype for pixmap_high_level_pattern */
+#include "gsptype1.h"
 
 /* Define whether to cache TrueType characters. */
 /* This would only be disabled for debugging. */
