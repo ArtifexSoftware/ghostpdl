@@ -192,6 +192,11 @@ pdf_end_fontfile(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
 
 /* ---------------- Public ---------------- */
 
+int copied_font_notify(void *proc_data, void *event_data)
+{
+    return gs_purge_font_from_char_caches_completely((gs_font *)proc_data);
+}
+
 /*
  * Allocate and initialize a base font structure, making the required
  * stable copy/ies of the gs_font.  Note that this removes any XXXXXX+
@@ -285,6 +290,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
     code = gs_copy_font((gs_font *)font, orig_matrix, mem, &copied, reserve_glyphs);
     if (code < 0)
         goto fail;
+    gs_notify_register(&copied->notify_list, copied_font_notify, copied);
     {
         /*
          * Adobe Technical Note # 5012 "The Type 42 Font Format Specification" says :
