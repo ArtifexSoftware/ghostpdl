@@ -59,12 +59,11 @@ static bool global_this_pass_contiguous = false;
 static bool global_pass_first = true;
 
 /* store away the current font attributes PCL can't set these,
- * they persist for XL, rotation is missing */
+ * they persist for XL */
 gs_point global_char_shear;
-
 gs_point global_char_scale;
-
 float global_char_bold_value;
+float global_char_angle;
 
 /* forward decl */
 void pxpcl_release(void);
@@ -116,17 +115,13 @@ pxPassthrough_pcl_state_nonpage_exceptions(px_state_t * pxs)
     if (global_pcs->underline_enabled)
         global_pcs->underline_start = global_pcs->cap;
 
-    /* Hacked copy of font state; rotation doesn't copy? */
-    if (pxs->pxgs->char_shear.x || pxs->pxgs->char_shear.y) {
-        global_char_shear.x = pxs->pxgs->char_shear.x;
-        global_char_shear.y = pxs->pxgs->char_shear.y;
-    }
-    if (pxs->pxgs->char_scale.x != 1.0 || pxs->pxgs->char_scale.y != 1.0) {
-        global_char_scale.x = pxs->pxgs->char_scale.x;
-        global_char_scale.y = pxs->pxgs->char_scale.y;
-    }
-    if (pxs->pxgs->char_bold_value > 0.001)
-        global_char_bold_value = pxs->pxgs->char_bold_value;
+
+    global_char_angle = pxs->pxgs->char_angle;
+    global_char_shear.x = pxs->pxgs->char_shear.x;
+    global_char_shear.y = pxs->pxgs->char_shear.y;
+    global_char_scale.x = pxs->pxgs->char_scale.x;
+    global_char_scale.y = pxs->pxgs->char_scale.y;
+    global_char_bold_value = pxs->pxgs->char_bold_value;
 
 }
 
@@ -338,6 +333,7 @@ pxpcl_release(void)
         global_pcs = NULL;
         global_this_pass_contiguous = false;
         global_pass_first = true;
+        global_char_angle = 0;
         global_char_shear.x = 0;
         global_char_shear.y = 0;
         global_char_scale.x = 1.0;
@@ -367,6 +363,7 @@ pxpcl_endpassthroughcontiguous(px_state_t * pxs)
         pxBeginPageFromPassthrough(pxs);
     }
 
+    pxs->pxgs->char_angle = global_char_angle;
     pxs->pxgs->char_shear.x = global_char_shear.x;
     pxs->pxgs->char_shear.y = global_char_shear.y;
     pxs->pxgs->char_scale.x = global_char_scale.x;
