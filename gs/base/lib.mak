@@ -332,7 +332,7 @@ $(AUX)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
 	$(GLCCAUX) $(AUXO_)gsutil.$(OBJ) $(C_) $(GLSRC)gsutil.c
 
 $(GLOBJ)gssprintf.$(OBJ) : $(GLSRC)gssprintf.c $(gssprintf_h) $(triodef_h) $(trio_h) \
-$(triop_h) $(triostr_h)
+$(triop_h) $(triostr_h) $(trionan_h)
 	$(GLCC) $(I_)$(TRIOSRCDIR)$(_I) $(GLO_)gssprintf.$(OBJ) $(C_) $(GLSRC)gssprintf.c
 
 # MD5 digest
