@@ -813,7 +813,7 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
                                          prect->p.x - ppage->offset.x,
                                          prect->p.y);
     }
-    crdev->icc_struct->pageneutralcolor = save_page_neutral;	/* restore it */
+    crdev->icc_struct->pageneutralcolor = save_pageneutralcolor;	/* restore it */
     return code;
 }
 
