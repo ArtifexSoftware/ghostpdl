@@ -1982,7 +1982,7 @@ TRIO_ARGS5((type, format, parameters, arglist, argarray),
   offset = 0;
   parameterPosition = 0;
 #if defined(TRIO_COMPILER_SUPPORTS_MULTIBYTE)
-  (void)mblen(NULL, 0);
+  charlen = mblen(NULL, 0);
 #endif
   
   while (format[offset])
@@ -2866,7 +2866,7 @@ TRIO_ARGS5((self, wstring, flags, width, precision),
 
 #if defined(TRIO_COMPILER_SUPPORTS_MULTIBYTE)
   /* Required by TrioWriteWideStringCharacter */
-  (void)mblen(NULL, 0);
+  length = mblen(NULL, 0);
 #endif
   
   if (wstring == NULL)
@@ -6393,7 +6393,7 @@ TRIO_ARGS4((self, target, flags, width),
 
 #if defined(TRIO_COMPILER_SUPPORTS_MULTIBYTE)
   /* Required by TrioReadWideChar */
-  (void)mblen(NULL, 0);
+  size = mblen(NULL, 0);
 #endif
   
   /*
