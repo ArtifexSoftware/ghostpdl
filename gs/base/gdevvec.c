@@ -1199,14 +1199,28 @@ gdev_vector_fill_parallelogram(gx_device * dev,
     fixed pax = px + ax, pay = py + ay;
     int code = update_fill(vdev, NULL, pdevc, lop);
     gs_fixed_point points[4];
+    bool need_color_reset = false;
 
     if (code < 0)
         return gx_default_fill_parallelogram(dev, px, py, ax, ay, bx, by,
                                              pdevc, lop);
     /* Make sure we aren't being clipped. */
+    if (vdev->clip_path_id != vdev->no_clip_path_id)
+        /* There is a clip path, and when we emit it we will start
+         * by executing a grestore, which will overwrite the colour
+         * we set up above....
+         */
+        need_color_reset = true;
+
     code = gdev_vector_update_clip_path(vdev, NULL);
     if (code < 0)
         return code;
+
+    if (need_color_reset) {
+        code = update_fill(vdev, NULL, pdevc, lop);
+        if (code < 0)
+            return code;
+    }
     if (vdev->bbox_device) {
         code = (*dev_proc(vdev->bbox_device, fill_parallelogram))
             ((gx_device *) vdev->bbox_device, px, py, ax, ay, bx, by,
