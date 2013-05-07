@@ -118,6 +118,7 @@ const char gp_current_directory_name[] = ".";
  * local windows codepage, or -1 for EOF.
  */
 
+#if defined(__WIN32__) && !defined(METRO)
 int
 gp_local_arg_encoding_get_codepoint(FILE *file, const char **astr)
 {
@@ -161,3 +162,4 @@ gp_local_arg_encoding_get_codepoint(FILE *file, const char **astr)
 
     return unicode[0];
 }
+#endif /* __WIN32__ */

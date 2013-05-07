@@ -22,6 +22,9 @@
 /* This is a good place to define GS_NO_UTF8 */
 
 #define STRICT
+#ifdef METRO
+#include <winapifamily.h>
+#endif
 #include <windows.h>
 #include <process.h>
 

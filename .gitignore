@@ -40,6 +40,7 @@ gs/config.log
 gs/config.status
 gs/configure
 gs/configure.ac
+gs/debugobjrt/
 gs/cups/gstopxl
 gs/jbig2dec/.deps/
 gs/jbig2dec/Makefile

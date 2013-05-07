@@ -78,6 +78,9 @@ GENDIR=.\obj
 !endif
 !endif
 !endif
+!ifdef METRO
+GENDIR=$(GENDIR)rt
+!endif
 !ifdef WIN64
 GENDIR=$(GENDIR)64
 !endif

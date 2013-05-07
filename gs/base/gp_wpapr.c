@@ -39,6 +39,9 @@ gp_defaultpapersize(char *ptr, int *plen)
     /* Determine the default paper size using the Windows locale.
      * LOCALE_IPAPERSIZE is only supported on Windows 2000 or later.
      */
+#ifdef METRO
+	paper = "letter";
+#else
     if  (GetLocaleInfo(LOCALE_SYSTEM_DEFAULT, LOCALE_IPAPERSIZE,
             buf, sizeof(buf))) {
         int val = atoi(buf);
@@ -71,6 +74,7 @@ gp_defaultpapersize(char *ptr, int *plen)
             paper = "a4";
         }
     }
+#endif
 
     if (paper) {
         int len = strlen(paper);

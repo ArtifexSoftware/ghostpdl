@@ -64,7 +64,12 @@ gp_semaphore_open(
     win32_semaphore *const winSema = (win32_semaphore *)sema;
 
     if (winSema) {
-        winSema->handle = CreateSemaphore(NULL, 0, max_int, NULL);
+        winSema->handle =
+#ifdef METRO
+            CreateSemaphoreExW(NULL, 0, max_int, NULL, 0, 0);
+#else
+            CreateSemaphore(NULL, 0, max_int, NULL);
+#endif
         return
             (winSema->handle != NULL ? 0 :
              gs_note_error(gs_error_unknownerror));
@@ -93,8 +98,13 @@ gp_semaphore_wait(
     win32_semaphore *const winSema = (win32_semaphore *)sema;
 
     return
-        (WaitForSingleObject(winSema->handle, INFINITE) == WAIT_OBJECT_0
-         ? 0 : gs_error_unknownerror);
+        (
+#ifdef METRO
+        WaitForSingleObjectEx(winSema->handle, INFINITE, FALSE)
+#else
+        WaitForSingleObject(winSema->handle, INFINITE)
+#endif
+          == WAIT_OBJECT_0 ? 0 : gs_error_unknownerror);
 }
 
 int				/* rets 0 ok, -ve error */
@@ -129,7 +139,11 @@ gp_monitor_open(
     win32_monitor *const winMon = (win32_monitor *)mon;
 
     if (mon) {
+#ifdef METRO
+        InitializeCriticalSectionEx(&winMon->lock, 0, 0);	/* returns no status */
+#else
         InitializeCriticalSection(&winMon->lock);	/* returns no status */
+#endif
         return 0;
     } else
         return 1;		/* Win32 critical sections mutsn't be moved */
@@ -272,7 +286,11 @@ void gp_thread_finish(gp_thread_id thread)
 #ifndef FALLBACK_TO_OLD_THREADING_FUNCTIONS
     if (thread == NULL)
         return;
+#ifdef METRO
+    WaitForSingleObjectEx((HANDLE)thread, INFINITE, FALSE);
+#else
     WaitForSingleObject((HANDLE)thread, INFINITE);
+#endif
     CloseHandle((HANDLE)thread);
 #endif
 }

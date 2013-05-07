@@ -172,7 +172,11 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
                 break;
             }
             utf8_to_wchar(pat, pfen->pattern);
+#ifdef METRO
+            pfen->find_handle = FindFirstFileExW(pat, FindExInfoStandard, &(pfen->find_data), FindExSearchNameMatch, NULL, 0);
+#else
             pfen->find_handle = FindFirstFileW(pat, &(pfen->find_data));
+#endif
             free(pat);
 #endif
             if (pfen->find_handle == INVALID_HANDLE_VALUE) {

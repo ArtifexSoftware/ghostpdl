@@ -56,6 +56,26 @@ gsapi_revision(gsapi_revision_t *pr, int rvsize)
     return 0;
 }
 
+#ifdef METRO
+static int GSDLLCALL metro_stdin(void *v, char *buf, int len)
+{
+	return 0;
+}
+
+static int GSDLLCALL metro_stdout(void *v, const char *str, int len)
+{
+#ifdef DEBUG
+	OutputDebugStringWRT(str, len);
+#endif
+	return len;
+}
+
+static int GSDLLCALL metro_stderr(void *v, const char *str, int len)
+{
+	return metro_stdout(v, str, len);
+}
+#endif
+
 /* Create a new instance of Ghostscript.
  * First instance per process call with *pinstance == NULL
  * next instance in a proces call with *pinstance == copy of valid_instance pointer
@@ -97,9 +117,15 @@ gsapi_new_instance(void **pinstance, void *caller_handle)
     mem->gs_lib_ctx->top_of_system = (void*) minst;
     mem->gs_lib_ctx->caller_handle = caller_handle;
     mem->gs_lib_ctx->custom_color_callback = NULL;
+#ifdef METRO
+    mem->gs_lib_ctx->stdin_fn = metro_stdin;
+    mem->gs_lib_ctx->stdout_fn = metro_stdout;
+    mem->gs_lib_ctx->stderr_fn = metro_stderr;
+#else
     mem->gs_lib_ctx->stdin_fn = NULL;
     mem->gs_lib_ctx->stdout_fn = NULL;
     mem->gs_lib_ctx->stderr_fn = NULL;
+#endif
     mem->gs_lib_ctx->poll_fn = NULL;
 
     *pinstance = (void*)(mem->gs_lib_ctx);
@@ -274,7 +300,7 @@ gsapi_set_arg_encoding(void *lib, int encoding)
     }
 #else
     if (encoding == GS_ARG_ENCODING_LOCAL) {
-#if defined(__WIN32__)
+#if defined(__WIN32__) && !defined(METRO)
         /* For windows, we need to set it up so that we convert from 'local'
          * format (in this case whatever codepage is set) to utf8 format. At
          * the moment, all the other OS we care about provide utf8 anyway.

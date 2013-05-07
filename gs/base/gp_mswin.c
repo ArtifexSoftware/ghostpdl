@@ -58,6 +58,7 @@
 #include <shellapi.h>
 #include <winspool.h>
 #include "gp_mswin.h"
+#include "winrtsup.h"
 
 /* Library routines not declared in a standard header */
 extern char *getenv(const char *);
@@ -630,7 +631,11 @@ gp_open_scratch_file(const gs_memory_t *mem,
         int plen = sizeof(sTempDir);
 
         if (gp_gettmpdir(sTempDir, &plen) != 0)
+#if METRO
+            l = GetTempPathWRT(sizeof(sTempDir), sTempDir);
+#else
             l = GetTempPath(sizeof(sTempDir), sTempDir);
+#endif
         else
             l = strlen(sTempDir);
     } else {
@@ -643,7 +648,11 @@ gp_open_scratch_file(const gs_memory_t *mem,
         sTempDir[l-1] = '\\';		/* What Windoze prefers */
 
     if (l <= sizeof(sTempDir)) {
+#ifdef METRO
+        n = GetTempFileNameWRT(sTempDir, prefix, sTempFileName);
+#else
         n = GetTempFileName(sTempDir, prefix, 0, sTempFileName);
+#endif
         if (n == 0) {
             /* If 'prefix' is not a directory, it is a path prefix. */
             int l = strlen(sTempDir), i;
@@ -658,7 +667,11 @@ gp_open_scratch_file(const gs_memory_t *mem,
                 }
             }
             if (i > 0)
+#ifdef METRO
+                n = GetTempFileNameWRT(sTempDir, sTempDir + i, sTempFileName);
+#else
                 n = GetTempFileName(sTempDir, sTempDir + i, 0, sTempFileName);
+#endif
         }
         if (n != 0) {
 #ifdef GS_NO_UTF8
@@ -675,12 +688,20 @@ gp_open_scratch_file(const gs_memory_t *mem,
                 hfile = INVALID_HANDLE_VALUE;
             else {
                 utf8_to_wchar(uni, sTempFileName);
+#ifdef METRO
+                hfile = CreateFile2(uni,
+                                    GENERIC_READ | GENERIC_WRITE | DELETE,
+                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                    CREATE_ALWAYS,
+                                    NULL);
+#else
                 hfile = CreateFileW(uni,
                                     GENERIC_READ | GENERIC_WRITE | DELETE,
                                     FILE_SHARE_READ | FILE_SHARE_WRITE,
                                     NULL, CREATE_ALWAYS,
                                     FILE_ATTRIBUTE_NORMAL /* | FILE_FLAG_DELETE_ON_CLOSE */,
                                     NULL);
+#endif
                 free(uni);
             }
 #endif

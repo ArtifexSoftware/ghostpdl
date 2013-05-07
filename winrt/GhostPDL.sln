@@ -1,0 +1,42 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostscript", "..\gs\ghostscript_rt.vcxproj", "{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|32bit = Debug|32bit
+		Debug|64bit = Debug|64bit
+		Debug-contrib|32bit = Debug-contrib|32bit
+		Debug-contrib|64bit = Debug-contrib|64bit
+		Debug-cups|32bit = Debug-cups|32bit
+		Debug-cups|64bit = Debug-cups|64bit
+		Memento|32bit = Memento|32bit
+		Memento|64bit = Memento|64bit
+		Profile|32bit = Profile|32bit
+		Profile|64bit = Profile|64bit
+		Release|32bit = Release|32bit
+		Release|64bit = Release|64bit
+		Release-contrib|32bit = Release-contrib|32bit
+		Release-contrib|64bit = Release-contrib|64bit
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Debug|32bit.ActiveCfg = Debug|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Debug|64bit.ActiveCfg = Debug|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Debug-contrib|32bit.ActiveCfg = Debug-contrib|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Debug-contrib|64bit.ActiveCfg = Debug-contrib|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Debug-cups|32bit.ActiveCfg = Debug-cups|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Debug-cups|64bit.ActiveCfg = Debug-cups|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Memento|32bit.ActiveCfg = Memento|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Memento|64bit.ActiveCfg = Memento|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Profile|32bit.ActiveCfg = Profile|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Profile|64bit.ActiveCfg = Profile|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Release|32bit.ActiveCfg = Release|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Release|64bit.ActiveCfg = Release|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Release-contrib|32bit.ActiveCfg = Release-contrib|Win32
+		{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}.Release-contrib|64bit.ActiveCfg = Release-contrib|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

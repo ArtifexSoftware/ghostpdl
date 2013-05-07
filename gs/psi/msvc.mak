@@ -87,6 +87,9 @@ DEFAULT_OBJ_DIR=.\obj
 !endif
 !endif
 !endif
+!ifdef METRO
+DEFAULT_OBJ_DIR=$(DEFAULT_OBJ_DIR)rt
+!endif
 !ifdef WIN64
 DEFAULT_OBJ_DIR=$(DEFAULT_OBJ_DIR)64
 !endif
@@ -471,7 +474,7 @@ CFLAGS=$(CFLAGS) -DMEMENTO
 !ifdef METRO
 # Ideally the TIF_PLATFORM_CONSOLE define should only be for libtiff,
 # but we aren't set up to do that easily
-CFLAGS=$(CFLAGS) -DMETRO -DTIF_PLATFORM_CONSOLE
+CFLAGS=$(CFLAGS) -DMETRO -DWINAPI_FAMILY=WINAPI_PARTITION_APP -DTIF_PLATFORM_CONSOLE
 !endif
 
 CFLAGS=$(CFLAGS) $(XCFLAGS) $(UNICODECFLAGS)
@@ -560,6 +563,9 @@ MSVC_VERSION=9
 MSVC_VERSION=10
 !endif
 !if "$(_NMAKE_VER)" == "11.00.50522.1"
+MSVC_VERSION=11
+!endif
+!if "$(_NMAKE_VER)" == "11.00.60315.1"
 MSVC_VERSION=11
 !endif
 !endif
@@ -973,21 +979,24 @@ STDIO_IMPLEMENTATION=c
 !ifndef DEVICE_DEVS
 !ifdef METRO
 DEVICE_DEVS=
+DEVICE_DEVS10=
+DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev
+DEVICE_DEVS13=
 !else
-DEVICE_DEVS=$(DD)display.dev $(DD)mswindll.dev $(DD)mswinpr2.dev
+DEVICE_DEVS=$(DD)display.dev $(DD)mswindll.dev $(DD)mswinpr2.dev $(DD)ijs.dev
+DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
+DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev $(DD)tiff48nc.dev $(DD)tiffgray.dev $(DD)tiff32nc.dev $(DD)tiff64nc.dev $(DD)tiffsep.dev $(DD)tiffsep1.dev $(DD)tiffscaled.dev $(DD)tiffscaled8.dev $(DD)tiffscaled24.dev $(DD)tiffscaled4.dev
+DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pngmonod.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
 !endif
 DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
-DEVICE_DEVS5=$(DD)uniprint.dev $(DD)djet500c.dev $(DD)declj250.dev $(DD)lj250.dev $(DD)ijs.dev
+DEVICE_DEVS5=$(DD)uniprint.dev $(DD)djet500c.dev $(DD)declj250.dev $(DD)lj250.dev
 DEVICE_DEVS6=$(DD)st800.dev $(DD)stcolor.dev $(DD)bj10e.dev $(DD)bj200.dev
 DEVICE_DEVS7=$(DD)t4693d2.dev $(DD)t4693d4.dev $(DD)t4693d8.dev $(DD)tek4696.dev
 DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(DD)pcx24b.dev $(DD)pcxcmyk.dev
 DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pkmraw.dev
-DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
-DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev $(DD)tiff48nc.dev $(DD)tiffgray.dev $(DD)tiff32nc.dev $(DD)tiff64nc.dev $(DD)tiffsep.dev $(DD)tiffsep1.dev $(DD)tiffscaled.dev $(DD)tiffscaled8.dev $(DD)tiffscaled24.dev $(DD)tiffscaled4.dev
 DEVICE_DEVS12=$(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
-DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pngmonod.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)jpegcmyk.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)txtwrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev $(DD)svgwrite.dev $(DD)xpswrite.dev $(DD)inkcov.dev
 DEVICE_DEVS16=$(DD)bbox.dev $(DD)plib.dev $(DD)plibg.dev $(DD)plibm.dev $(DD)plibc.dev $(DD)plibk.dev $(DD)plan.dev $(DD)plang.dev $(DD)planm.dev $(DD)planc.dev $(DD)plank.dev
@@ -1049,20 +1058,28 @@ GSDLL_OBJS=$(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_msdll.$(OBJ)
 $(PSGEN)lib.rsp: $(TOP_MAKEFILES)
 	echo /NODEFAULTLIB:LIBC.lib > $(PSGEN)lib.rsp
 	echo /NODEFAULTLIB:LIBCMT.lib >> $(PSGEN)lib.rsp
+!ifdef METRO
+	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(PSGEN)lib.rsp
+!else
 	echo LIBCMTD.lib >> $(PSGEN)lib.rsp
+!endif
 !else
 $(PSGEN)lib.rsp: $(TOP_MAKEFILES)
 	echo /NODEFAULTLIB:LIBC.lib > $(PSGEN)lib.rsp
 	echo /NODEFAULTLIB:LIBCMTD.lib >> $(PSGEN)lib.rsp
+!ifdef METRO
+	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(PSGEN)lib.rsp
+!else
 	echo LIBCMT.lib >> $(PSGEN)lib.rsp
+!endif
 !endif
 
 
 !if $(MAKEDLL)
 # The graphical small EXE loader
 !ifdef METRO
-# Avoid window usage for Metro for now. This means no GS_XE, only GSCONSOLE_XE
-$(GS_XE): $(GSDLL_DLL) $(GSCONSOLE_XE) $(GLOBJ)gp_wutf8.$(OBJ)
+# For METRO build only the dll
+$(GS_XE): $(GSDLL_DLL)
 
 !else
 $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)gp_wutf8.$(OBJ)
@@ -1093,14 +1110,23 @@ $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.d
 	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(OBJC) $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res $(GLOBJ)gp_wutf8.$(OBJ)
 	del $(PSGEN)gswin.rsp
 
+!ifdef METRO
+METRO_OBJS=$(GLOBJ)winrtsup.$(OBJ) $(GLOBJ)gp_wutf8.$(OBJ)
+
+$(GLOBJ)winrtsup.$(OBJ): $(GLSRCDIR)/winrtsup.cpp
+	cl /c /EHsc /Fo$(GLOBJ)winrtsup.$(OBJ) $(GLSRCDIR)/winrtsup.cpp
+!else
+METRO_OBJS=
+!endif
+
 # The big DLL
-$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_OBJ).res $(PSGEN)lib.rsp $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
+$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_OBJ).res $(PSGEN)lib.rsp $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) $(METRO_OBJS)
 	echo Linking $(GSDLL)  $(GSDLL_DLL) $(METRO)
 	echo /DLL /DEF:$(PSSRCDIR)\$(GSDLL).def /OUT:$(GSDLL_DLL) > $(PSGEN)gswin.rsp
 !if "$(PROFILE)"=="1"
 	echo /PROFILE >> $(PSGEN)gswin.rsp
 !endif
-	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(GSDLL_OBJS) @$(ld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) @$(PSGEN)lib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
+	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(GSDLL_OBJS) @$(ld_tr) $(METRO_OBJS) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) @$(PSGEN)lib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(PSGEN)gswin.rsp
 
 !else

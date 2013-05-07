@@ -30,10 +30,14 @@ DllEntryPoint(HINSTANCE hInst, DWORD fdwReason, LPVOID lpReserved)
     /* Win95:  HIWORD bit 15 is 1 and bit 14 is 1 */
     /* WinNT:  HIWORD bit 15 is 0 and bit 14 is 0 */
     /* WinNT Shell Update Release is WinNT && LOBYTE(LOWORD) >= 4 */
+#ifdef METRO
+	is_win32s = FALSE;
+#else
     DWORD version = GetVersion();
 
     if (((HIWORD(version) & 0x8000) != 0) && ((HIWORD(version) & 0x4000) == 0))
         is_win32s = TRUE;
+#endif
 
     phInstance = hInst;
     return TRUE;
