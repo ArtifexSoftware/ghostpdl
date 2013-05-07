@@ -139,7 +139,7 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 
     if ((features & PCL_HAS_DUPLEX) && dupset && dup) {
        /* We are printing duplex, so change margins as needed */
-       if ((pdev->PageCount%2)==0) {
+       if (( (pdev->PageCount/num_copies)%2)==0) {
           if (features & PCL_CAN_SET_PAPER_SIZE) {
               fprintf(prn_stream, "\033&l%dA", paper_size);
           }
