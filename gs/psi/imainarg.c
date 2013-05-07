@@ -991,6 +991,11 @@ static const char help_devices[] = "Available devices:";
 static const char help_default_device[] = "Default output device:";
 static const char help_emulators[] = "Input formats:";
 static const char help_paths[] = "Search path:";
+#ifdef HAVE_FONTCONFIG
+static const char help_fontconfig[] = "Ghostscript is also using fontconfig to search for font files\n";
+#else
+static const char help_fontconfig[] = "";
+#endif
 
 extern_gx_io_device_table();
 
@@ -1160,6 +1165,7 @@ print_paths(gs_main_instance * minst)
         }
     }
     outprintf(minst->heap, "\n");
+    outprintf(minst->heap, "%s", help_fontconfig);
 }
 
 /* Print the help trailer. */
