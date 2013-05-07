@@ -30,7 +30,7 @@
 #include "gdevpdtb.h"
 #include "gdevpdtf.h"
 #include "smd5.h"
-
+#include "gxfcache.h"   /* for gs_purge_font_from_char_caches_completely */
 /*
  * Adobe's Distiller Parameters documentation for Acrobat Distiller 5
  * says that all fonts other than Type 1 are always subsetted; the
@@ -190,13 +190,12 @@ pdf_end_fontfile(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
     return pdf_close_aside(pdw->pdev);
 }
 
-/* ---------------- Public ---------------- */
-
-int copied_font_notify(void *proc_data, void *event_data)
+static int copied_font_notify(void *proc_data, void *event_data)
 {
     return gs_purge_font_from_char_caches_completely((gs_font *)proc_data);
 }
 
+/* ---------------- Public ---------------- */
 /*
  * Allocate and initialize a base font structure, making the required
  * stable copy/ies of the gs_font.  Note that this removes any XXXXXX+
