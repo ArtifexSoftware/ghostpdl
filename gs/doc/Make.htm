@@ -48,6 +48,7 @@
 <li><a href="#Borland_build">Borland/Inprise environment</a>
 <li><a href="#Microsoft_build">Microsoft environment</a>
 <li><a href="#Microsoft_build_64">Microsoft environment 64-bit</a>
+<li><a href="#Microsoft_build_winrt">Microsoft environment WinRT</a>
 <li><a href="#Self-extracting_executables">Making self-extracting executables</a>
 <li><a href="#Watcom_build">Watcom environment</a>
 <li><a href="#Cygwin32_build">Cygwin32 gcc</a>
@@ -1359,6 +1360,23 @@ You will have to edit <code>psi/winint.mak</code> to define
 <code>WINZIPSE_XE</code> and <code>ZIP_XE</code> respectively as the
 path names of these programs.  See <a href="Release.htm">Release.htm</a> for
 the detailed procedure.
+
+<h3><a name="Microsoft_build_winrt"></a>Microsoft Environment for WinRT</h3>
+
+<p>
+Ghostscript can be built in the form of a win32 DLL for use within a Windows Runtime
+application or Windows Runtime component. Building for WinRT requires use of
+Microsoft Visual Studio 2012. There is a solution file that can be loaded into VS 2012,
+in the directory <code>winrt</code>
+
+<p>
+The WinRT application or component should include <code>iapi.h</code> from
+<code>gs/psi</code> and link with <code>gsdll32metro.lib</code> from
+<code>gs/debugbin</code> or <code>gs/releasebin</code>. Also any app using
+ghostscript either directly or via a component should add <code>gsdll32metro.dll</code>
+as &quot;content&quot;. This inclusion of the dll is necessary so that it
+will be packaged with the app. If one wishes to be able to run the debugger on
+ghostscript then <code>gsdll32metro.pdb</code> should also be added as content.
 
 <h3><a name="Watcom_build"></a>Watcom environment</h3>
 
