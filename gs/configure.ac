@@ -114,7 +114,7 @@ dnl --------------------------------------------------
 
 AC_ARG_ENABLE([contrib], AC_HELP_STRING([--disable-contrib],
     [Do not include contributed drivers]))
-CONTRIBINCLUDE="include contrib/contrib.mak"
+CONTRIBINCLUDE="include $srcdir/contrib/contrib.mak"
 INSTALL_CONTRIB="install-contrib-extras"
 
 case `uname` in
@@ -124,7 +124,7 @@ case `uname` in
     ;;
     *)
 #     This is just an arbitrary file in contrib to check
-      if ! test -f contrib/gdevbjc_.c; then
+      if ! test -f $srcdir/contrib/gdevbjc_.c; then
         enable_contrib=no
       fi
     ;;
@@ -654,7 +654,7 @@ if test x"$enable_fapi" != xno; then
     AC_MSG_CHECKING([for local freetype library source])
     dnl We prefer freetype2 over freetype, so it is easy to override
     dnl the included freetype source with a checkout from upstream.
-    for dir in freetype2 freetype; do
+    for dir in $srccdir/freetype2 $srcdir/freetype; do
       if test -f $dir/src/base/ftbbox.c; then
         AC_MSG_RESULT(yes)
         SHARE_FT=0
@@ -732,14 +732,14 @@ dnl build, so that the D_MAX_BLOCKS_IN_MCU patch will be applied.
 dnl A more sophisticated approach would be to test the shared lib
 dnl to see whether it has already been patched.
 LIBJPEGDIR=src
-if test -f jpeg/jpeglib.h; then
+if test -f $srcdir/jpeg/jpeglib.h; then
         AC_MSG_RESULT([jpeg])
         SHARE_LIBJPEG=0
-        LIBJPEGDIR=jpeg
-elif test -f jpeg-6b/jpeglib.h; then
+        LIBJPEGDIR=$srcdir/jpeg
+elif test -f $srcdir/jpeg-6b/jpeglib.h; then
         AC_MSG_RESULT([jpeg-6b])
         SHARE_LIBJPEG=0
-        LIBJPEGDIR=jpeg-6b
+        LIBJPEGDIR=$srcdir/jpeg-6b
 else
         AC_MSG_RESULT([no])
         AC_CHECK_LIB(jpeg, jpeg_set_defaults, [
@@ -774,10 +774,10 @@ dnl zlib is needed for language level 3, and libpng
 ZLIBDIR=src
 AUX_SHARED_ZLIB=
 
-if test -d zlib; then
+if test -d $srcdir/zlib; then
         AC_MSG_RESULT([yes])
         SHARE_ZLIB=0
-        ZLIBDIR=zlib
+        ZLIBDIR=$srcdir/zlib
 else
         AC_MSG_RESULT([no])
         AC_CHECK_LIB(z, deflate, [
@@ -813,10 +813,10 @@ LIBPNGDIR=src
 PNGDEVS=''
 PNGDEVS_ALL='png48 png16m pnggray pngmono png256 png16 pngalpha'
 AC_MSG_CHECKING([for local png library source])
-if test -f libpng/pngread.c; then
+if test -f $srcdir/libpng/pngread.c; then
         AC_MSG_RESULT([yes])
         SHARE_LIBPNG=0
-        LIBPNGDIR=libpng
+        LIBPNGDIR=$srcdir/libpng
         PNGDEVS="$PNGDEVS_ALL"
 else
         AC_MSG_RESULT([no])
@@ -841,7 +841,7 @@ AC_ARG_WITH([lcms], AC_HELP_STRING([--with-lcms],
 
 if test x$with_lcms != xyes; then
   AC_MSG_CHECKING([for local lcms2 library source])
-  LCMS2DIR=lcms2
+  LCMS2DIR=$srcdir/lcms2
   if test -f $LCMS2DIR/include/lcms2.h; then
         AC_MSG_RESULT([yes])
         SHARELCMS=0
@@ -860,7 +860,7 @@ fi
 
 if test x$WHICHLCMS = x; then
   AC_MSG_CHECKING([for local lcms library source])
-  LCMSDIR=lcms
+  LCMSDIR=$srcdir/lcms
   SHARELCMS=0
   if test -f $LCMSDIR/include/lcms.h; then
         AC_MSG_RESULT([yes])
@@ -895,8 +895,8 @@ TIFFDEVS_ALL='tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflz
 FAX_DEVS_ALL='cfax dfaxlow dfaxhigh fax faxg3 faxg32d faxg4 tiffg3 tiffg32d tiffg4 tfax'
 case "x$with_system_libtiff" in
     xcheck)
-        if test -d tiff; then
-            LIBTIFFDIR=tiff
+        if test -d $srcdir/tiff; then
+            LIBTIFFDIR=$srcdir/tiff
             LIBTIFFCONFDIR=tiff-config
             HAVE_LOCAL_LIBTIFF=1
             SHARE_LIBTIFF=0
@@ -956,9 +956,9 @@ Disabling tiff output devices.])
         ;;
     xno)
         AC_MSG_CHECKING([for local libtiff source])
-        if test -d tiff; then
+        if test -d $srcdir/tiff; then
             AC_MSG_RESULT([yes])
-            LIBTIFFDIR=tiff
+            LIBTIFFDIR=$srcdir/tiff
             LIBTIFFCONFDIR=tiff-config
             SHARE_LIBTIFF=0
             TIFFDEVS="$TIFFDEVS_ALL"
@@ -1029,11 +1029,13 @@ CUPSSERVERROOT=""
 CUPSDATA=""
 CUPSVERSION="0"
 CUPSPDFTORASTER="0"
+CUPS_DIR=""
 
 SHARELCUPS=1
 SHARELCUPSI=1
 
-if ( test -d cups ); then
+if ( test -d $srcdir/cups ); then
+    CUPS_DIR="$srcdir/cups"
     if test x$enable_cups != xno; then
         if test x$with_local_cups != xyes; then
             AC_PATH_PROG(CUPSCONFIG,cups-config)
@@ -1064,7 +1066,7 @@ if ( test -d cups ); then
                   CUPSDATA="`$CUPSCONFIG --datadir`"
                 fi
 
-                CUPSINCLUDE="include cups/cups.mak"
+                CUPSINCLUDE="include $srcdir/cups/cups.mak"
                 CUPSDEV="cups"
                 CUPSVERSION="`$CUPSCONFIG --version`"
                 LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
@@ -1084,7 +1086,6 @@ if ( test -d cups ); then
                 LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
                 LCUPSIINCLUDE="include \$(GLSRCDIR)/lcupsi.mak"
                 CUPSDEV="cups"
-                
             fi
         fi
     fi
@@ -1099,6 +1100,7 @@ AC_SUBST(CUPSSERVERBIN)
 AC_SUBST(CUPSSERVERROOT)
 AC_SUBST(CUPSDATA)
 AC_SUBST(CUPSINSTALL)
+AC_SUBST(CUPS_DIR)
 
 AC_SUBST(SHARELCUPS)
 AC_SUBST(SHARELCUPSI)
@@ -1129,9 +1131,9 @@ dnl set safe defaults
     SHAREIJS=0
 if test x$with_ijs != xno; then
     AC_MSG_CHECKING([for local ijs library source])
-    if test -d ijs; then
+    if test -d $srcdir/ijs; then
         AC_MSG_RESULT([yes])
-        IJSDIR=ijs
+        IJSDIR=$srcdir/ijs
         IJSDEVS='ijs'
     else
         AC_MSG_RESULT([no])
@@ -1192,7 +1194,7 @@ if test "x$JBIG2_DECODER" = x; then
       [disable JBIG2 decode support]))
   if test x$with_jbig2dec != xno; then
     AC_MSG_CHECKING([for local jbig2dec library source])
-    for d in jbig2dec jbig2dec-0.2 jbig2dec-0.3; do
+    for d in $srcdir/jbig2dec  $srcdir/jbig2dec-0.2  $srcdir/jbig2dec-0.3; do
       test -d "$d" && JBIG2DIR=$d && break
     done
     if test "x$JBIG2DIR" != xsrc; then
@@ -1276,11 +1278,11 @@ JPX_AUTOCONF_CFLAGS=
 
 if test x$with_luratech != xno; then
   AC_MSG_CHECKING([for local Luratech JPEG2K library source])
-  if test -d luratech/lwf_jp2; then
+  if test -d $srcdir/luratech/lwf_jp2; then
     AC_MSG_RESULT([yes])
     JPX_DECODER=luratech
     SHARE_JPX=0
-    JPXDIR=luratech/lwf_jp2
+    JPXDIR=$srcdir/luratech/lwf_jp2
     if test "$(uname)" = "Darwin"; then
       JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DMAC -DMAC_OS_X_BUILD"
     else
@@ -1292,7 +1294,7 @@ if test x$with_luratech != xno; then
   fi
 fi
 
-OPENJPEGDIR=openjpeg
+OPENJPEGDIR=$srcdir/openjpeg
 
 AC_ARG_ENABLE([openjpeg], AC_HELP_STRING([--disable-openjpeg],
         [Do not use OpenJPEG for JPX decoding]))
@@ -1737,7 +1739,7 @@ if test x$enable_threadsafe = xyes; then
   NTS_EXCLUDES=`echo "$NTS_EXCLUDES" | tr " " "\n" | sort | uniq | tr "\n" " "`
 fi # x$enable_threadsafe = xyes
 
-noncontribmakefiles=`find . -name '*.mak' -print | grep -v '^\./contrib/'`
+noncontribmakefiles=`find $srcdir -name '*.mak' -print | grep -v '^\./contrib/'`
 
 # No need to include opvp/oprp driver without iconv/libiconv.
 if test -n "$P_DEVS0"; then
