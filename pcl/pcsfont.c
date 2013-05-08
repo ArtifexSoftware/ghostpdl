@@ -321,12 +321,7 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
     plfont->storage = pcds_temporary;
     plfont->data_are_permanent = false;
     if (fst == plfst_Intellifont) {
-        uint gifct_offset;
-
-        if (pfh->HeaderFormat == pcfh_intellifont_bound)
-            gifct_offset = 78;
-        else {
-            gifct_offset = 78 + 8;      /* + 8 for the character complement */
+        if (pfh->HeaderFormat != pcfh_intellifont_bound) {
             /* copy in the compliment while we are here. */
             memcpy(plfont->character_complement, &data[78], 8);
         }

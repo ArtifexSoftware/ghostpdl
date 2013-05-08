@@ -186,8 +186,8 @@ px_write_select_media(stream *s, const gx_device *dev,
       px_put_uba(s, tray, pxaMediaSource);
     /* suppress empty(="plain") type if tray is non-auto */
     if (media_type_set)
-      if ((tray == eAutoSelect) || strlen(media_type))
-        px_put_ubaa(s, media_type, strlen(media_type), pxaMediaType);
+        if ((tray == eAutoSelect) || strlen(media_type))
+          px_put_ubaa(s, (const byte *)media_type, strlen(media_type), pxaMediaType);
 
     if_debug2('|', "duplex %d tumble %d\n", Duplex, Tumble);
     if (Duplex)

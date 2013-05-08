@@ -720,7 +720,6 @@ pcl_show_chars_slow(pcl_state_t * pcs,
     bool source_opaque = !pcs->source_transparent;
     bool invisible_pattern = is_invisible_pattern(pcs);
     bool wrap = pcs->end_of_line_wrap;
-    bool read_char = false;
     bool is_space = false;
     bool print_undefined = false;
     bool use_rmargin = (pcs->cap.x <= rmargin);
@@ -742,7 +741,6 @@ pcl_show_chars_slow(pcl_state_t * pcs,
 
         /* check if a character was found */
         buff[0] = chr;
-        read_char = true;
 
         /* round width to integral pcl current units */
         width =
@@ -863,11 +861,6 @@ pcl_show_chars_slow(pcl_state_t * pcs,
     pcs->cap.x = (coord) cpt.x;
     pcs->cap.y = (coord) cpt.y;
 
-#ifdef DEBUG
-    if (!read_char) {
-        gs_warn("Warning no characters read");
-    }
-#endif
     return code;
 }
 

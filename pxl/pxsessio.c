@@ -467,14 +467,14 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
 
         gs_c_param_list_write(&list, mem);
         iv = pxs->orientation;  /* might not be an int */
-        code = param_write_int(plist, "Orientation", &iv);
+        param_write_int(plist, "Orientation", &iv);
         ecode = px_put1(dev, &list, ecode);
 
         gs_c_param_list_write(&list, mem);
         fv[0] = pxs->media_dims.x;
         fv[1] = pxs->media_dims.y;
         fa.size = 2;
-        code = param_write_float_array(plist, ".MediaSize", &fa);
+        param_write_float_array(plist, ".MediaSize", &fa);
         ecode = px_put1(dev, &list, ecode);
         gs_c_param_list_write(&list, mem);
 
@@ -484,7 +484,7 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
         fv[0] = 0;
         fv[1] = 0;
         fa.size = 2;
-        code = param_write_float_array(plist, "Margins", &fa);
+        param_write_float_array(plist, "Margins", &fa);
         ecode = px_put1(dev, &list, ecode);
 
         iv = pxs->media_source; /* might not be an int */
@@ -492,32 +492,32 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
             px_record_warning("IllegalMediaSource", false, pxs);
         else {
             gs_c_param_list_write(&list, mem);
-            code = param_write_int(plist, ".MediaSource", &iv);
+            param_write_int(plist, ".MediaSource", &iv);
             ecode = px_put1(dev, &list, ecode);
         }
 
         gs_c_param_list_write(&list, mem);
-        code = param_write_bool(plist, "Duplex", &pxs->duplex);
+        param_write_bool(plist, "Duplex", &pxs->duplex);
         ecode = px_put1(dev, &list, ecode);
 
         gs_c_param_list_write(&list, mem);
         bv = pxs->duplex_page_mode == eDuplexHorizontalBinding;
-        code = param_write_bool(plist, "Tumble", &bv);
+        param_write_bool(plist, "Tumble", &bv);
         ecode = px_put1(dev, &list, ecode);
 
         gs_c_param_list_write(&list, mem);
         bv = !pxs->duplex_back_side;
-        code = param_write_bool(plist, "FirstSide", &bv);
+        param_write_bool(plist, "FirstSide", &bv);
         ecode = px_put1(dev, &list, ecode);
 
         gs_c_param_list_write(&list, mem);
         iv = pxs->media_destination;    /* might not be an int */
-        code = param_write_int(plist, ".MediaDestination", &iv);
+        param_write_int(plist, ".MediaDestination", &iv);
         ecode = px_put1(dev, &list, ecode);
 
         gs_c_param_list_write(&list, mem);
         iv = pxs->media_type;   /* might not be an int */
-        code = param_write_int(plist, ".MediaType", &iv);
+        param_write_int(plist, ".MediaType", &iv);
         ecode = px_put1(dev, &list, ecode);
 
         /*

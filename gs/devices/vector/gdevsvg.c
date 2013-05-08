@@ -430,13 +430,13 @@ svg_write_state(gx_device_svg *svg)
     /* write out the new current state */
     svg_write(svg, "<g ");
     if (svg->strokecolor != gx_no_color_index) {
-        gs_sprintf(line, " stroke='#%06x'", svg->strokecolor & 0xffffffL);
+        gs_sprintf(line, " stroke='#%06x'", (uint)(svg->strokecolor & 0xffffffL));
         svg_write(svg, line);
     } else {
         svg_write(svg, " stroke='none'");
     }
     if (svg->fillcolor != gx_no_color_index) {
-        gs_sprintf(line, " fill='#%06x'", svg->fillcolor & 0xffffffL);
+        gs_sprintf(line, " fill='#%06x'", (uint)(svg->fillcolor & 0xffffffL));
         svg_write(svg, line);
     } else {
       svg_write(svg, " fill='none'");
