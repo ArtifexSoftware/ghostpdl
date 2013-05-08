@@ -1712,8 +1712,10 @@ static gx_color_index
 mjc_correct_color(gx_device_printer *pdev, gx_color_index ci)
 {
   gx_color_index c, m, y, k, co;
-  gx_color_index c2, m2, y2, k2;
-  gx_color_index k3, k4, k5, k6, k7, k8;
+  gx_color_index k2, k3, k4;
+#if __WORDSIZE == 64
+  gx_color_index c2, m2, y2, k5, k6, k7, k8;
+#endif
   const uint cmask = 0xff;
   uint dn = mj->density;
   uint mjy = mj->yellow;
