@@ -1637,9 +1637,13 @@ clist_strip_copy_rop2(gx_device * dev,
             D = (rop_operand)re.pcls->color_usage.or;
             re.pcls->color_usage.or |=
                     ((rop_proc_table[color_rop])(D, (rop_operand)S, (rop_operand)T) & all);
-            D = (rop_operand)(re.pcls->color_usage.or>>(8*sizeof(rop_operand)));
+#define DOWN(x) ((rop_operand)(((x)>>(4*sizeof(rop_operand)))>>(4*sizeof(rop_operand))))
+#define UP(x)   ((((gx_color_usage_bits)(x))<<(4*sizeof(rop_operand)))<<(4*sizeof(rop_operand)))
+            D = DOWN(re.pcls->color_usage.or);
             re.pcls->color_usage.or |=
-                    (((gx_color_usage_bits)(rop_proc_table[color_rop])(D, (rop_operand)(S>>(8*sizeof(rop_operand))), (rop_operand)(T>>(8*sizeof(rop_operand)))))<<(8*sizeof(rop_operand))) & all;
+                    UP((rop_proc_table[color_rop])(D, DOWN(S), DOWN(T))) & all;
+#undef DOWN
+#undef UP
         }
         re.pcls->color_usage.slow_rop |= slow_rop;
         if (rop3_uses_T(rop)) {

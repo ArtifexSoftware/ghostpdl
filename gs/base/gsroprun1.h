@@ -62,8 +62,13 @@
 #define CHUNK unsigned int
 #define CHUNKONES 0xFFFFFFFFU
 
+#if ARCH_SIZEOF_PTR == (1<<ARCH_LOG2_SIZEOF_INT)
+#define ROP_PTRDIFF_T int
+#else
+#define ROP_PTRDIFF_T int64_t
+#endif
 #define ADJUST_TO_CHUNK(d, dpos)                      \
-    do { int offset = ((int)d) & ((CHUNKSIZE>>3)-1);  \
+    do { int offset = ((ROP_PTRDIFF_T)d) & ((CHUNKSIZE>>3)-1);  \
          d = (CHUNK *)(void *)(((byte *)(void *)d)-offset);   \
          dpos += offset<<3;                           \
      } while (0)
@@ -358,3 +363,4 @@ static void TEMPLATE_NAME(rop_run_op *op, byte *d_, int len)
 #undef T_CONST
 #undef T_SKEW
 #undef TEMPLATE_NAME
+#undef ROP_PTRDIFF_T
