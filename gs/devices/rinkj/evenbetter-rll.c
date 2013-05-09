@@ -156,7 +156,7 @@ eb_malloc_aligned(int size, int align)
 
   if (alloced == 0)
     return 0;
-  pad = (((int)alloced + 12) & 15) + 4;
+  pad = (((int)(size_t)alloced + 12) & 15) + 4;
   result = (void *)(pad + (char *)alloced);
   ((int *)result)[-1] = pad;
   return result;
