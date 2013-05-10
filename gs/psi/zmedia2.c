@@ -394,7 +394,7 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
             int rotate =
                 (orient >= 0 ? orient :
                  (rx < ry) ^ (medium->q.x < medium->q.y));
-            bool larger =
+            bool larger = (policy == 13) ? 0 :
                 (rotate & 1 ? medium->q.y >= rx && medium->q.x >= ry :
                  medium->q.x >= rx && medium->q.y >= ry);
             bool adjust = false;
@@ -404,6 +404,7 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
                 default:		/* exact match only */
                     return 0;
                 case 3:		/* nearest match, adjust */
+                case 13:        /* non-standard, nearest match, scale down OR up */
                     adjust = true;
                 case 5:		/* nearest match, don't adjust */
                     if (fabs(mismatch) >= fabs(*best_mismatch))
@@ -451,6 +452,8 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
  * dimension (e.g., roll media in one dimension, or displays in both),
  * we must adjust its size in that dimension to match the request.
  * We recognize this by an unreasonably small medium->p.{x,y}.
+ * The PageSize Policy 3 only scales down, so 'scale' will be false if
+ * the medium is larger than the request. Policy 13 scales up OR down.
  */
 static void
 make_adjustment_matrix(const gs_point * request, const gs_rect * medium,
@@ -496,8 +499,7 @@ make_adjustment_matrix(const gs_point * request, const gs_rect * medium,
         double yfactor = my / ry;
         double factor = min(xfactor, yfactor);
 
-        if (factor < 1)
-            gs_matrix_scale(pmat, factor, factor, pmat);
+        gs_matrix_scale(pmat, factor, factor, pmat);
     }
     /* Now translate the origin back, */
     /* using the original, unswapped request. */

@@ -188,6 +188,9 @@ currentdict /TTYPAUSE known   /TTYPAUSE exch def
 currentdict /WRITESYSTEMDICT known   /WRITESYSTEMDICT exch def
 currentdict /RENDERTTNOTDEF known /RENDERTTNOTDEF exch def
 
+% This is a "convenience" option that sets a combination of EPSFitPage, PDFFitPage and PSFitPage
+currentdict /FitPage known { /EPSFitPage //true def /PDFFitPage //true def /PSFitPage //true def } if
+
 % Acquire environment variables.
 currentdict /DEVICE known not
  { (GS_DEVICE) getenv { /DEVICE exch def } if } if

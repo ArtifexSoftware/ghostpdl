@@ -482,6 +482,13 @@ the command line option <code>-dNORANGEPAGESIZE</code> can be used. Using
 this option will result in automatic rotation of the document page if the requested
 page size matches one of the default page sizes.
 
+<p>
+When the <a href="#FIXEDMEDIA"><code>-dFIXEDMEDIA</code> switch</a> is given on the
+command line, the  <code>InputAttributes</code> dictionary will only be populated
+with the single page size. This allows the <code>-dPSFitPage</code> option to fit
+the page size requested in a PostScript file to be rotated, scaled and centered
+for the best fit on the specified page.
+
 <h3><a name="Change_default_size"></a>Changing the installed default paper size</h3>
 
 <p>
@@ -593,15 +600,13 @@ Pages of all documents in PDF collections are numbered sequentionally.
 <dt><code>-dPDFFitPage</code>
 <dd>Rather than selecting a PageSize given by the PDF MediaBox,
 TrimBox (see -dUseTrimBox), ArtBox (see -dUseArtBox), or CropBox (see -dUseCropBox),
-the PDF file will be scaled to fit
-the current device page size (usually the default page size).
+the PDF file will be scaled to fit the current device page size
+(usually the default page size).
 <p>
-This is useful to avoid clipping information on a PDF document when
-sending to a printer that may have unprintable areas at the edge of
-the media larger than allowed for in the document.
+This is useful for creating fixed size images of PDF files that may have
+a variety of page sizes, for example thumbnail images.
 <p>
-This is also useful for creating fixed size images of PDF files
-that may have a variety of page sizes, for example thumbnail images.
+This option is also set by the <code>-dFitPage</code> option.
 </dl>
 
 <dl>
@@ -2481,6 +2486,19 @@ automatically sets <code>-dFIXEDRESOLUTION</code>.
 </dl>
 
 <dl>
+<dt><code>-dPSFitPage</code>
+<dd>The page size from the PostScript file <code>setpagedevice</code> operator,
+or one of the older  <code>statusdict</code> page size operators (such as
+<code>letter</code> or <code>a4</code>) will be rotated, scaled and centered on the
+"best fit" page size from those availiable in the InputAttributes list.
+The <code>-dPSFitPage</code> is most easily used to fit pages when used with the
+<code>-dFIXEDMEDIA</code> option.
+
+<p>
+This option is also set by the <code>-dFitPage</code> option.
+</dl>
+
+<dl>
 <dt><code>-dORIENT1=true
 <br>-dORIENT1=false</code>
 <dd>Defines the meaning of the 0 and 1 orientation values for the
@@ -2513,6 +2531,14 @@ the default size).
 </dd>
 </dl>
 
+<dl>
+<dt><code>-dFitPage</code>
+<dd>This is a "convenience" operator that sets the various options to perform
+page fitting for specific file types.
+<p>
+This option sets the <code>-dEPSFitPage</code>, <code>-dPDFFitPage</code>, and
+the <code>-dFitPage</code> options.
+</dl>
 <h4><a name="Font_related_parameters"></a>Font-related parameters</h4>
 
 <dl>
@@ -2767,7 +2793,9 @@ This is useful when converting an EPS file to a bitmap.
 <dl>
 <dt><code>-dEPSFitPage</code>
 <dd>Resize an EPS file to fit the page.
-This is useful for enlarging an EPS file to fit the paper size when printing.
+This is useful for shrinking or enlarging an EPS file to fit the paper size when printing.
+<p>
+This option is also set by the <code>-dFitPage</code> option.
 </dl>
 
 <dl>

@@ -170,7 +170,12 @@ level2dict begin
   % the default policy to "7" (impose) to avoid numerous problems with
   % printing within CUPS...
   %
-  /PageSize NOMEDIAATTRS { 7 } { 0 } ifelse
+  % If NOMEDIAATTRS is false, the set the default depending on whether
+  % PSFitPage is true. Policy 13 does best fit with page scaling up or down
+  % so it is only useful if FIXEDMEDIA is also specified, or if the set of
+  % media in the InputAttributes dictionary is the actual available choices
+  % and does not include any "range" page sizes.
+  /PageSize NOMEDIAATTRS { 7 } { //systemdict /PSFitPage known { 13 } { 0 } ifelse } ifelse
   /PolicyNotFound 1
   /PolicyReport {
     dup /.LockSafetyParams known {
@@ -201,23 +206,26 @@ level2dict begin
     % This satifies those that have devices built with a4 as the default
     0 mark /PageSize currentdevice /PageSize gsgetdeviceprop .dicttomark
 
-    statusdict /.pagetypenames get {
-      statusdict /.pagetypeprocs get
-      exch get 0 2 getinterval cvlit
-      counttomark 1 sub 2 idiv exch mark exch /PageSize exch
-      % stack: mark --dict-- --dict-- ... key mark /PageSize [x y]
-      % see note above about pagetype executable array contents.
-      .dicttomark
-    } forall
-    % If NORANGEPAGESIZE is defined, (-dNORANGEPAGESIZE), then don't add
-    % the 'match any' PageSize entry
-    systemdict /NORANGEPAGESIZE known not {
-      % Add one last entry which is the 4 element range array (non-standard)
-      counttomark 2 idiv
-        % PageSize with either dimension 0 will be detected in
-        % match_page_size, so we can allow it here
-      mark /PageSize [0 dup 16#7ffff dup] .dicttomark
-    } if
+    % Only populate the other entries if we aren't FIXEDMEDIA
+    FIXEDMEDIA not {
+      statusdict /.pagetypenames get {
+        statusdict /.pagetypeprocs get
+        exch get 0 2 getinterval cvlit
+        counttomark 1 sub 2 idiv exch mark exch /PageSize exch
+        % stack: mark --dict-- --dict-- ... key mark /PageSize [x y]
+        % see note above about pagetype executable array contents.
+        .dicttomark
+      } forall
+      % If NORANGEPAGESIZE is defined, (-dNORANGEPAGESIZE), then don't add
+      % the 'match any' PageSize entry
+      systemdict /NORANGEPAGESIZE known not {
+        % Add one last entry which is the 4 element range array (non-standard)
+        counttomark 2 idiv
+          % PageSize with either dimension 0 will be detected in
+          % match_page_size, so we can allow it here
+        mark /PageSize [0 dup 16#7ffff dup] .dicttomark
+      } if
+    } if % FIXEDMEDIA false
     .dicttomark
   }
   (%MediaSource) 0
@@ -722,8 +730,8 @@ SETPDDEBUG { (Merging.) = pstack flush } if
                 % change HWResolution.
    FIXEDRESOLUTION { dup /HWResolution .undef } if
                 % Hack: if FIXEDMEDIA is true, discard any attempt to change
-                % PageSize or HWSize.
-   FIXEDMEDIA
+                % PageSize or HWSize unless the PageSize Policy 13 (for FitPage).
+   dup /Policies get /PageSize get 13 ne FIXEDMEDIA and 
     { dup /PageSize 4 index /PageSize get put
       dup /HWSize 4 index /HWSize get put
     } if
