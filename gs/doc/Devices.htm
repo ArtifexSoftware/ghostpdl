@@ -749,22 +749,8 @@ use the epswrite device below.</p>
 
 <h3><a name="PS"></a>EPS writer</h3>
 
-<p>The <tt>epswrite</tt> device outputs postscript. This device is now deprecated and
+<p>The <tt>epswrite</tt> device outputs encapsulated postscript. This device is now deprecated and
 should only be used when level 1 PostScript output is required.</p>
-
-<h4>Options</h4>
-
-<blockquote>
-<dl>
-<dt><code>-dLanguageLevel=<em>1 | 1.5 | 2 | 3</em></code> (default is 2)
-<dd>Set the language level of the generated file.
-Language level 1.5 is language level 1 with color extensions. 
-Currently language level 3 generates the same PostScript as 2.
-</dl></blockquote>
-
-<h3><a name="EPS"></a>EPS writer</h3>
-
-<p>The <tt>epswrite</tt> device outputs encapsulated postscript.</p>
 
 <h4>Options</h4>
 
@@ -1620,7 +1606,7 @@ It prints the output in a format like this:
 
 <blockquote>
 <pre><code>%%BoundingBox: 14 37 570 719
-%%HiResBoundingBox: 14.308066 37.547999 569.495061 718.319158
+%%HiResBoundingBox: 14.3ep08066 37.547999 569.495061 718.319158
 </code></pre></blockquote>
 <p></p>
 
