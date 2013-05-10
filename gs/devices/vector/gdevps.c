@@ -1153,14 +1153,16 @@ psw_close_printer(gx_device * dev)
         /* If there is an incomplete page, complete it now. */
         if (vdev->in_page) {
             /*
-             * Flush the stream after writing page trailer.
+             * Flush the stream before writing page trailer, as we write
+             * the trailer directly to the file. Its important that any
+             * pending writes are flushed first.
              */
 
             stream *s = vdev->strm;
+            sflush(s);
             code = psw_write_page_trailer(vdev->file, 1, 1);
             if(code < 0)
                 return code;
-            sflush(s);
 
             dev->PageCount++;
         }
