@@ -3328,10 +3328,28 @@ pdf_text_process(gs_text_enum_t *pte)
          * are added to a type 3 font in the same way as glyphs which need to
          * be rendered.
          */
-        pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
-        code = gs_text_process(pte_default);
-        pdev->pte = NULL;         /* CAUTION: See comment in gdevpdfx.h . */
-        pdev->charproc_just_accumulated = false;
+        {
+            gs_show_enum *penum = (gs_show_enum *)pte_default;
+            int save_can_cache = penum->can_cache;
+            const gs_color_space *pcs;
+            const gs_client_color *pcc;
+            gs_imager_state * pis = pte->pis;
+            gs_state *pgs = (gs_state *)pis;
+
+            /* If we are using a high level pattern, we must not use the cached character, as the
+             * cache hasn't seen the pattern. So set can_cache to < 0, which prevents us consulting
+             * the cache, or storing the result in it.
+             */
+            if (gx_hld_get_color_space_and_ccolor(pis, (const gx_drawing_color *)pgs->color[0].dev_color, &pcs, &pcc) == pattern_color_space)
+                penum->can_cache = -1;
+            pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
+            code = gs_text_process(pte_default);
+
+            penum->can_cache = save_can_cache;
+
+            pdev->pte = NULL;         /* CAUTION: See comment in gdevpdfx.h . */
+            pdev->charproc_just_accumulated = false;
+        }
 
         /* If the BuildChar returned TEXT_PROCESS_RENDER then we want to try and
          * capture this as a type 3 font, so start the accumulator now. Note
