@@ -1169,11 +1169,11 @@ AC_ARG_WITH([luratech], AC_HELP_STRING([--without-luratech],
 
 if test x$with_luratech != xno; then
   AC_MSG_CHECKING([for local Luratech JBIG2 library source])
-  if test -d luratech/ldf_jb2; then
+  if test -d $srcdir/luratech/ldf_jb2; then
     AC_MSG_RESULT([yes])
     JBIG2_DECODER=luratech
     SHARE_JBIG2=0
-    JBIG2DIR=luratech/ldf_jb2
+    JBIG2DIR=$srcdir/luratech/ldf_jb2
     if test "$(uname)" = "Darwin"; then
       JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DMAC -DMAC_OS_X_BUILD"
     else
