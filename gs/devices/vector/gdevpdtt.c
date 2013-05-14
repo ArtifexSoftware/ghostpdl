@@ -3015,6 +3015,20 @@ static void pdf_type3_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
     gs_matrix_scale(pmat, pdev->HWResolution[0] / 72.0, pdev->HWResolution[0] / 72.0, pmat);
 }
 
+static int pdf_query_purge_cached_char(const gs_memory_t *mem, cached_char *cc, void *data)
+{
+    cached_char *to_purge = (cached_char *)data;
+
+
+    if (cc->code == to_purge->code && cc_pair(cc) == cc_pair(to_purge) &&
+        cc->subpix_origin.x == to_purge->subpix_origin.x &&
+        cc->subpix_origin.y == to_purge->subpix_origin.y &&
+        cc->wmode == to_purge->wmode && cc_depth(cc) == cc_depth(to_purge)
+        )
+        return 1;
+    return 0;
+}
+
 /*
  * Continue processing text.  This is the 'process' procedure in the text
  * enumerator.  Per the check in pdf_text_begin, we know the operation is
@@ -3179,6 +3193,30 @@ pdf_text_process(gs_text_enum_t *pte)
                 special_procs.set_cache = pdf_text_set_cache;
                 pte_default->procs = &special_procs;
 
+                {
+                    /* We should not come here if we already have a cached character (except for the special case
+                     * of redefined characters in PCL downloaded fonts). If we do, it means that we are doing
+                     * 'page bursting', ie each page is going to a separate file, and the cache has an entry
+                     * from previous pages, but the PDF font resource doesn't. So empty the cached character
+                     * from the cache, to ensure the character description gets executed.
+                     */
+                    gs_font *rfont = (pte->fstack.depth < 0 ? pte->current_font : pte->fstack.items[0].font);
+                    gs_font *pfont = (pte->fstack.depth < 0 ? pte->current_font :
+                        pte->fstack.items[pte->fstack.depth].font);
+                    int wmode = rfont->WMode;
+                    gs_log2_scale_point log2_scale = {0,0};
+                    gs_fixed_point subpix_origin = {0,0};
+                    cached_fm_pair *pair;
+                    cached_char *cc;
+
+                    code = gx_lookup_fm_pair(pfont, &ctm_only(pte->pis), &log2_scale, false, &pair);
+                    if (code < 0)
+                        return code;
+                    cc = gx_lookup_cached_char(pfont, pair, pte_default->text.data.chars[pte_default->index], wmode, 1, &subpix_origin);
+                    if (cc != 0) {
+                        gx_purge_selected_cached_chars(pfont->dir, pdf_query_purge_cached_char, (void *)cc);
+                    }
+                }
                 /* charproc completion will restore a gstate */
                 gs_gsave(pgs);
                 /* Assigning the imager state pointer to the graphics state pointer
@@ -3257,6 +3295,7 @@ pdf_text_process(gs_text_enum_t *pte)
                     gs_log2_scale_point log2_scale = {0,0};
                     gs_font *rfont = (pte->fstack.depth < 0 ? pte->current_font : pte->fstack.items[0].font);
                     int wmode = rfont->WMode;
+                    pdf_font_resource_t *pdfont;
 
                     /* This code copied from show_cache_setup */
                     gs_memory_t *mem = penum->memory;
@@ -3302,6 +3341,17 @@ pdf_text_process(gs_text_enum_t *pte)
 
                     /* Finally, dispose of the device, which we don't actually need */
                     gx_device_retain((gx_device *)dev, false);
+
+                    /* Its possible for a bitmapped PCL font to not execute setcachedevice (invalid empty glyph)
+                     * which means that the pdfwrite override doesn't see it, and we don't note that the
+                     * glyph is 'cached' in the PDF font resource, but the 'used' flag does get set.
+                     * This causes our detection some problems, so mark it 'cached' here to make sure.
+                     */
+                    code = pdf_attached_font_resource(pdev, (gs_font *)penum->current_font, &pdfont, NULL, NULL, NULL, NULL);
+                    if (code < 0)
+                        return code;
+
+                    pdfont->u.simple.s.type3.cached[cdata[pte->index] >> 3] |= 0x80 >> (cdata[pte->index] & 7);
                 }
                 pte_default->procs = save_procs;
                 size = pte->text.size - pte->index;
