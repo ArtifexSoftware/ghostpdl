@@ -702,15 +702,13 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
 
     {
         /*
-         * Hack: make all embedded subset TrueType fonts "symbolic" to
+         * Hack: make all embedded TrueType fonts "symbolic" to
          * work around undocumented assumptions in Acrobat Reader.
          */
         pdf_font_descriptor_common_t fd;
 
         fd = pfd->common;
-        if (pfd->embed && pfd->FontType == ft_TrueType /*&& !pdev->PDFA*/ &&
-            pdf_do_subset_font(pdev, pfd->base_font, pfd->common.rid)
-            )
+        if (pfd->embed && pfd->FontType == ft_TrueType)
             fd.values.Flags =
                 (fd.values.Flags & ~(FONT_IS_ADOBE_ROMAN)) | FONT_IS_SYMBOLIC;
         code = write_FontDescriptor_common(pdev, &fd, pfd->embed);
