@@ -1641,6 +1641,10 @@
 							>
 						</File>
 						<File
+							RelativePath=".\base\gsicc_monitorcm.c"
+							>
+						</File>
+						<File
 							RelativePath=".\base\gsicc_nocm.c"
 							>
 						</File>
