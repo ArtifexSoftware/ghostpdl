@@ -669,10 +669,8 @@ set_source(const px_args_t * par, px_state_t * pxs, px_paint_t * ppt)
         if (pxgs->color_space != eRGB && pxgs->color_space != eSRGB)
             return_error(errorColorSpaceMismatch);
         px_paint_rc_adjust(ppt, -1, pxs->memory);
-        if (pxs->useciecolor)
-            ppt->type = pxpSRGB;
-        else
-            ppt->type = pxpRGB;
+        ppt->type = pxpRGB;
+
         for (i = 0; i < 3; ++i)
             if (prgb->type & pxd_any_real)
                 ppt->value.rgb[i] = real_elt(prgb, i);
@@ -696,10 +694,7 @@ set_source(const px_args_t * par, px_state_t * pxs, px_paint_t * ppt)
     } else if (par->pv[aPrimaryDepth] && par->pv[aPrimaryArray]) {
         px_paint_rc_adjust(ppt, -1, pxs->memory);
         if (pxgs->color_space == eRGB)
-            if (pxs->useciecolor)
-                ppt->type = pxpSRGB;
-            else
-                ppt->type = pxpRGB;
+            ppt->type = pxpRGB;
         else if (pxgs->color_space == eGray)
             ppt->type = pxpGray;
         else if (pxgs->color_space == eSRGB)
@@ -743,10 +738,7 @@ px_set_paint(const px_paint_t * ppt, px_state_t * pxs)
     gs_state *pgs = pxs->pgs;
     px_paint_type_t type;
 
-    if (pxs->useciecolor && ppt->type == pxpRGB)
-        type = pxpSRGB;
-    else
-        type = ppt->type;
+    type = ppt->type;
     switch (type) {
         case pxpNull:
             gs_setnullcolor(pgs);
@@ -808,9 +800,7 @@ pxSetColorSpace(px_args_t * par, px_state_t * pxs)
            the expected illegal attribute */
         return_error(errorMissingAttribute);
 #endif
-    /* substitute srgb if cie color is in effect */
-    if ((cspace == eRGB) && pxs->useciecolor)
-        cspace = eSRGB;
+
     if (par->pv[6] && par->pv[7]) {
         int ncomp =
             ((cspace == eRGB || cspace == eSRGB || cspace == eCRGB) ? 3 : 1);

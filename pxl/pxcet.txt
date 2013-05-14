@@ -205,12 +205,6 @@ is "locked out" and the previous pattern (in this case the fill for
 the patterned box) is used.  We don't think it worthwhile to emulate
 this bug.
 
-C420.BIN page 9 and C703 page 1.  Rectangles' color incorrect.  In the
-current architecture the result of combining image (source) and
-pattern (texture) may not work correctly using the default
-"UseCIEColor" mode.  To print these rectangles correctly run the
-interpreter with -J"@PJL SET USECIECOLOR=OFF" as a workaround.
-
 C705.BIN page 36. Extra blank page.  We assume this is a bug in the HP
 firmware.  In full page passthrough mode the blank page is suppressed,
 but extracting the relevant embedded pcl produces a blank page on the

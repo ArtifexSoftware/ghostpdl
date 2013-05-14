@@ -79,7 +79,6 @@ struct px_state_s
     pxeMeasure_t measure;
     gs_point units_per_measure;
     pxeErrorReport_t error_report;
-    bool useciecolor;
 
     /* Pattern dictionary */
     px_dict_t session_pattern_dict;

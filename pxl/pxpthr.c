@@ -273,10 +273,6 @@ pxPassthrough(px_args_t * par, px_state_t * pxs)
         return pxNeedData;
     }
 
-    /* NB cie does not work yet.  I am not sure if this state value
-       should come from xl or pjl */
-    global_pcs->useciecolor = 0;
-
     /* set pcl data stream pointers to xl's and process this batch of data. */
     r.ptr = par->source.data - 1;
     r.limit = par->source.data + par->source.available - 1;

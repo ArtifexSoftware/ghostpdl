@@ -417,7 +417,7 @@ install_cid_data(int len,       /* length of data */
                pcl_cid_enc_get_debug_name(pcs->memory,
                                           pcl_cid_get_encoding(&cid)));
 
-    /* check the header this will also make corrections if possible */
+    /* check the header, this will also make corrections if possible */
     code = check_cid_hdr(pcs, &cid);
 
     if_debug2m('c', pcs->memory,
@@ -428,16 +428,11 @@ install_cid_data(int len,       /* length of data */
                                           pcl_cid_get_encoding(&cid)));
 
     if (code >= 0) {
-        /* check if we should substitute colometric for a device color space */
-        if ((pcl_cid_get_cspace(&cid) >= pcl_cspace_RGB) &&
-            (pcl_cid_get_cspace(&cid) <= pcl_cspace_CMY) && pcs->useciecolor)
-            code = substitute_colorimetric_cs(pcs, &cid);
-        else {
-            cid.original_cspace = pcl_cspace_num;
-            if (cid.len > 6)
-                code = build_cid_longform[pbuff[0]] (&cid, pbuff);
-        }
+        cid.original_cspace = pcl_cspace_num;
+        if (cid.len > 6)
+            code = build_cid_longform[pbuff[0]] (&cid, pbuff);
     }
+
     if (code < 0) {
         if (code == -1)
             code = e_Range;
@@ -616,19 +611,5 @@ pcl_cid_do_registration(pcl_parser_state_t * pcl_parser_state,
     }, END_CLASS return 0;
 }
 
-static void
-pcl_cid_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
-{
-    static const uint mask = (pcl_reset_initial |
-                              pcl_reset_cold | pcl_reset_printer);
-
-    if ((type & mask) != 0) {
-        pcs->useciecolor = !pjl_proc_compare(pcs->pjls,
-                                             pjl_proc_get_envvar(pcs->pjls,
-                                                                 "useciecolor"),
-                                             "on");
-    }
-}
-
 const pcl_init_t pcl_cid_init =
-    { pcl_cid_do_registration, pcl_cid_do_reset, 0 };
+    { pcl_cid_do_registration, 0, 0 };

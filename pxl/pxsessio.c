@@ -263,10 +263,6 @@ pxBeginSession(px_args_t * par, px_state_t * pxs)
         pxs->copies = pjl_copies;
         pxs->media_destination = eDefaultDestination;
         pxs->media_type = eDefaultType;
-        pxs->useciecolor = !pjl_proc_compare(pxs->pjls,
-                                             pjl_proc_get_envvar(pxs->pjls,
-                                                                 "useciecolor"),
-                                             "on");
 
         if (!pjl_proc_compare
             (pxs->pjls, pjl_proc_get_envvar(pxs->pjls, "orientation"),

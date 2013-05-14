@@ -93,7 +93,6 @@ static const pjl_envir_var_t pjl_factory_defaults[] = {
     {"manualfeed", "off"},
     {"fontsource", "I"},
     {"fontnumber", "0"},
-    {"useciecolor", "off"},
     {"personality", "pcl5c"},
     {"language", "auto"},
     {"disklock", "off"},

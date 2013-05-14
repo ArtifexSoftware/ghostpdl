@@ -588,14 +588,11 @@ pxBeginImage(px_args_t * par, px_state_t * pxs)
      * appear.
      */
     if (pxs->pxgs->brush.type == pxpNull &&
-        !rop3_uses_T(gs_currentrasterop(pgs))
-        ) {
-        if (pxs->useciecolor)
-            code = pl_setSRGBcolor(pgs, 0.0, 0.0, 0.0);
-        else
-            code = gs_setgray(pgs, 0.0);
-    } else
+        !rop3_uses_T(gs_currentrasterop(pgs)))
+        code = gs_setgray(pgs, 0.0);
+    else
         code = px_set_paint(&pxgs->brush, pxs);
+
     if (code < 0)
         return code;
     /*
