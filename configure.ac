@@ -203,24 +203,40 @@ dnl --------------------------------------------------
 dnl check for big/little endian for LCMS
 dnl --------------------------------------------------
 
+BIGENDIAN=
+
 AC_MSG_CHECKING([for big endian])
 
-AC_RUN_IFELSE(
-  [AC_LANG_PROGRAM([#include <stdio.h>], [
-   static const int one = 1;
-   return (*(char*)&one == 0 ? 0 : 1);
-  ])],
-  [LCMS_BIGENDIAN=1],
-  [LCMS_BIGENDIAN=0])
+AC_ARG_ENABLE([big-endian], AC_HELP_STRING([--enable-big-endian],
+    [Force big endian]), [BIGENDIAN=1])
 
-if test "x$LCMS_BIGENDIAN" != "x0"; then
-  LCMS_ENDIAN="-DUSE_BIG_ENDIAN=$LCMS_BIGENDIAN"
-  LCMS2_ENDIAN="-DCMS_USE_BIG_ENDIAN=$LCMS_BIGENDIAN"
-  AC_MSG_RESULT(yes)
+if test x$BIGENDIAN = x; then
+  AC_ARG_ENABLE([little-endian], AC_HELP_STRING([--enable-little-endian],
+      [Force little endian]), [BIGENDIAN=0])
+fi
+
+if test x$BIGENDIAN = x ; then
+  AC_RUN_IFELSE(
+    [AC_LANG_PROGRAM([#include <stdio.h>], [
+     static const int one = 1;
+     return (*(char*)&one == 0 ? 0 : 1);
+    ])],
+    [BIGENDIAN=1;AC_MSG_RESULT(big)],
+    [BIGENDIAN=0;AC_MSG_RESULT(little)])
+else
+  if test x$BIGENDIAN = x1 ; then
+    AC_MSG_RESULT(big)
+  else
+    AC_MSG_RESULT(little)
+  fi
+fi
+
+if test x$BIGENDIAN = x1 ; then
+  LCMS_ENDIAN="-DUSE_BIG_ENDIAN=$BIGENDIAN"
+  LCMS2_ENDIAN="-DCMS_USE_BIG_ENDIAN=$BIGENDIAN"
 else
   LCMS_ENDIAN=
   LCMS2_ENDIAN=
-  AC_MSG_RESULT(no)
 fi
 
 AC_SUBST(LCMS_ENDIAN)
