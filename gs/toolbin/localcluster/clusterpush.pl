@@ -30,6 +30,7 @@ my $res="";
 my $w32="";
 my $nr="";
 my $pdfwrite="";
+my $singlePagePDF="";
 my $relaxTimeout="";
 my $t1;
 while ($t1=shift) {
@@ -37,6 +38,9 @@ while ($t1=shift) {
     $res="lowres";
   } elsif ($t1 eq "highres") {
     $res="highres";
+  } elsif ($t1 eq "singlePagePDF") {
+    $singlePagePDF="singlePagePDF";
+    $pdfwrite="pdfwrite";
   } elsif ($t1 eq "32") {
     $w32="32";
   } elsif ($t1 eq "nr" || $t1 eq "nonredundnat") {
@@ -188,7 +192,7 @@ if ($product ne "abort" ) { #&& $product ne "bmpcmp") {
 }
 
 open(F,">cluster_command.run");
-print F "$user $product $res $w32 $nr $pdfwrite $relaxTimeout\n";
+print F "$user $product $res $w32 $nr $pdfwrite $relaxTimeout $singlePagePDF\n";
 print F "$command\n";
 print F "$filters\n";
 close(F);
