@@ -457,7 +457,7 @@ BEGINFILES2=$(GLOBJDIR)\$(GS).ilk $(GLOBJDIR)\$(GS).pdb $(GLOBJDIR)\genarch.ilk 
 
 LIB_ONLY=$(GLOBJDIR)\gslib.obj $(GLOBJDIR)\gsnogc.obj $(GLOBJDIR)\gconfig.obj $(GLOBJDIR)\gscdefs.obj $(GLOBJDIR)\gsromfs$(COMPILE_INITS).obj
 MAKEDLL=0
-PLATFORM=mslib32_
+GSPLATFORM=mslib32_
 
 !include $(GLSRCDIR)\version.mak
 !include $(GLSRCDIR)\msvccmd.mak

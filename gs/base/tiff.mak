@@ -36,6 +36,7 @@ LIBTIFF_MAK=$(GLSRC)tiff.mak
 TIFFCC=$(CC_) $(I_)$(TI_) $(II)$(JI_)$(_I) $(PF_)
 
 TIFFDEP = $(AK) $(TIFFGEN)tif_config.h $(TIFFGEN)tiffconf.h
+gstiffio_h=$(GLSRC)gstiffio.h
 
 tiff_1=$(TIFFOBJ)tif_aux.$(OBJ) $(TIFFOBJ)tif_close.$(OBJ) $(TIFFOBJ)tif_codec.$(OBJ) $(TIFFOBJ)tif_color.$(OBJ)
 tiff_2=$(TIFFOBJ)tif_compress.$(OBJ) $(TIFFOBJ)tif_dir.$(OBJ) $(TIFFOBJ)tif_dirinfo.$(OBJ) $(TIFFOBJ)tif_dirread.$(OBJ)
@@ -45,8 +46,10 @@ tiff_5=$(TIFFOBJ)tif_jbig.$(OBJ) $(TIFFOBJ)tif_jpeg.$(OBJ) $(TIFFOBJ)tif_luv.$(O
 tiff_6=$(TIFFOBJ)tif_next.$(OBJ) $(TIFFOBJ)tif_ojpeg.$(OBJ) $(TIFFOBJ)tif_open.$(OBJ) $(TIFFOBJ)tif_packbits.$(OBJ)
 tiff_7=$(TIFFOBJ)tif_pixarlog.$(OBJ) $(TIFFOBJ)tif_predict.$(OBJ) $(TIFFOBJ)tif_print.$(OBJ) $(TIFFOBJ)tif_read.$(OBJ)
 tiff_8=$(TIFFOBJ)tif_strip.$(OBJ) $(TIFFOBJ)tif_swab.$(OBJ) $(TIFFOBJ)tif_thunder.$(OBJ) $(TIFFOBJ)tif_tile.$(OBJ)
-tiff_9=$(TIFFOBJ)tif_$(TIFFPLATFORM).$(OBJ) $(TIFFOBJ)tif_version.$(OBJ) $(TIFFOBJ)tif_warning.$(OBJ) $(TIFFOBJ)tif_write.$(OBJ)
+# tiff_9=$(TIFFOBJ)tif_$(TIFFPLATFORM).$(OBJ) $(TIFFOBJ)tif_version.$(OBJ) $(TIFFOBJ)tif_warning.$(OBJ) $(TIFFOBJ)tif_write.$(OBJ)
+tiff_9=$(TIFFOBJ)tif_version.$(OBJ) $(TIFFOBJ)tif_warning.$(OBJ) $(TIFFOBJ)tif_write.$(OBJ)
 tiff_10=$(TIFFOBJ)tif_zip.$(OBJ)
+tiff_11=$(TIFFOBJ)gstiffio.$(OBJ)
 
 $(TIFFSRC)libtiff$(D)tif_config.unix.h : $(TIFFSRC)libtiff$(D)tif_config.h.in
 	cd $(TIFFSRC) && ./configure
@@ -167,8 +170,8 @@ $(TIFFOBJ)tif_zip.$(OBJ) : $(TIFFSRC)/libtiff/tif_zip.c $(TIFFDEP)
 # tif_win32.c include <windows.h> and needed to be compiled with non-ansi extensions.
 # so it has a different compiler flag compared to other tif_$(TIFFPLATFORM).c .
 # We also have this target before tif_$(TIFFPLATFORM).c for this reason.
-$(TIFFOBJ)tif_win32.$(OBJ) : $(TIFFSRC)/libtiff/tif_win32.c $(TIFFDEP)
-	$(CC) $(I_)$(TI_) $(II)$(JI_)$(_I) $(PF_) $(TIFFO_)tif_win32.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_win32.c
+# $(TIFFOBJ)tif_win32.$(OBJ) : $(TIFFSRC)/libtiff/tif_win32.c $(TIFFDEP)
+#	$(CC) $(I_)$(TI_) $(II)$(JI_)$(_I) $(PF_) $(TIFFO_)tif_win32.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_win32.c
 
 ## Generic target:
 ## we may need to add targets for openvms, mac classics, os2, etc later. For the time
@@ -176,8 +179,14 @@ $(TIFFOBJ)tif_win32.$(OBJ) : $(TIFFSRC)/libtiff/tif_win32.c $(TIFFDEP)
 #$(TIFFOBJ)tif_$(TIFFPLATFORM).$(OBJ) : $(TIFFSRC)/libtiff/tif_$(TIFFPLATFORM).c $(TIFFDEP)
 #	$(TIFFCC) $(TIFFO_)tif_$(TIFFPLATFORM).$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_$(TIFFPLATFORM).c
 
-$(TIFFOBJ)tif_unix.$(OBJ) : $(TIFFSRC)/libtiff/tif_unix.c $(TIFFDEP)
-	$(TIFFCC) $(TIFFO_)tif_unix.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_unix.c
+#$(TIFFOBJ)tif_unix.$(OBJ) : $(TIFFSRC)/libtiff/tif_unix.c $(TIFFDEP)
+#	$(TIFFCC) $(TIFFO_)tif_unix.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_unix.c
+
+# instead of the platform specific files above, we include our own which stubs out
+# the platform specific code, and routes via the Ghostscript I/O functions.
+$(TIFFOBJ)gstiffio.$(OBJ) : $(GLSRC)gstiffio.c $(gstiffio_h) $(PDEVH) $(stdint__h) $(stdio__h) $(time__h)\
+    $(gscdefs_h) $(gstypes_h) $(stream_h) $(strmio_h) $(malloc__h)
+	$(TIFFCC) $(TIFFO_)gstiffio.$(OBJ) $(D_)SHARE_LIBTIFF=$(SHARE_LIBTIFF) $(C_) $(GLSRC)gstiffio.c
 
 $(TIFFGEN)tif_config.h: $(TIFFCONFIG_H)
 	$(CP_) $(TIFFCONFIG_H) $(TIFFGEN)tif_config.h
@@ -191,15 +200,17 @@ $(TIFFGEN)libtiff.dev : $(TOP_MAKEFILES) $(TIFFGEN)libtiff_$(SHARE_LIBTIFF).dev
 
 
 # Define the shared version.
-$(TIFFGEN)libtiff_1.dev : $(TOP_MAKEFILES) $(LIBTIFF_MAK) $(ECHOGS_XE) $(JPEGGEN)jpegd.dev $(JPEGGEN)jpege.dev
-	$(SETMOD) $(TIFFGEN)libtiff_1 -lib $(LIBTIFF_NAME)
+$(TIFFGEN)libtiff_1.dev : $(TOP_MAKEFILES) $(LIBTIFF_MAK) $(ECHOGS_XE) $(JPEGGEN)jpegd.dev $(JPEGGEN)jpege.dev \
+    $(tiff_11)
+	$(SETMOD) $(TIFFGEN)libtiff_1 $(tiff_11)
+	$(ADDMOD) $(TIFFGEN)libtiff_1 -lib $(LIBTIFF_NAME)
 	$(ADDMOD) $(TIFFGEN)libtiff_1 -include $(JPEGGEN)jpegd.dev
 	$(ADDMOD) $(TIFFGEN)libtiff_1 -include $(JPEGGEN)jpege.dev
 
 # Define the non-shared version.
 $(TIFFGEN)libtiff_0.dev : $(LIBTIFF_MAK) $(ECHOGS_XE) \
     $(tiff_1) $(tiff_2) $(tiff_3) $(tiff_4) $(tiff_5) \
-    $(tiff_6) $(tiff_7) $(tiff_8) $(tiff_9) $(tiff_10) \
+    $(tiff_6) $(tiff_7) $(tiff_8) $(tiff_9) $(tiff_10) $(tiff_11) \
     $(JPEGGEN)jpegd.dev $(JPEGGEN)jpege.dev
 	$(SETMOD) $(TIFFGEN)libtiff_0 $(tiff_1)
 	$(ADDMOD) $(TIFFGEN)libtiff_0 $(tiff_2)
@@ -211,6 +222,7 @@ $(TIFFGEN)libtiff_0.dev : $(LIBTIFF_MAK) $(ECHOGS_XE) \
 	$(ADDMOD) $(TIFFGEN)libtiff_0 $(tiff_8)
 	$(ADDMOD) $(TIFFGEN)libtiff_0 $(tiff_9)
 	$(ADDMOD) $(TIFFGEN)libtiff_0 $(tiff_10)
+	$(ADDMOD) $(TIFFGEN)libtiff_0 $(tiff_11)
 	$(ADDMOD) $(TIFFGEN)libtiff_0 -include $(JPEGGEN)jpegd.dev
 	$(ADDMOD) $(TIFFGEN)libtiff_0 -include $(JPEGGEN)jpege.dev
 

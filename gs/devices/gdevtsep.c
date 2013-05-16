@@ -42,6 +42,7 @@
 #include "gdevppla.h"
 #include "gxdownscale.h"
 #include "gp.h"
+#include "gstiffio.h"
 
 /*
  * Some of the code in this module is based upon the gdevtfnx.c module.

@@ -21,6 +21,8 @@
 #include "gdevprn.h"
 #include "gscms.h"
 
+#include "gstiffio.h"
+
 /*
  * Thanks to Alan Barclay <alan@escribe.co.uk> for donating the original
  * version of this code to Ghostscript.

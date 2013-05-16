@@ -56,11 +56,11 @@ CUPS_CC=$(CC) $(CFLAGS) -DWIN32
 
 # Define the platform name.
 
-!ifndef PLATFORM
+!ifndef GSPLATFORM
 !ifdef METRO
-PLATFORM=metro_
+GSPLATFORM=metro_
 !else
-PLATFORM=mswin32_
+GSPLATFORM=mswin32_
 !endif
 !endif
 

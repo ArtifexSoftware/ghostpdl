@@ -928,9 +928,9 @@ case "x$with_system_libtiff" in
                         CFLAGS="$CFLAGS `$PKGCONFIG --cflags libtiff-4`"
                         LIBS="$LIBS `$PKGCONFIG --libs libtiff-4`"
                         HAVE_SYSTEM_LIBTIFF=1
-                fi
+               fi
             fi
-            if test -z "$HAVE_SYSTEM_LIBTIFF"; then
+            if test "x$HAVE_SYSTEM_LIBTIFF" = "x1"; then
             AC_CHECK_LIB(tiff, TIFFOpen,
                      [AC_CHECK_HEADERS(tiff.h, [HAVE_SYSTEM_LIBTIFF=1;SHARE_LIBTIFF=1])],
                      [], [-ljpeg])

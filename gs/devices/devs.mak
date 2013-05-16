@@ -1662,7 +1662,7 @@ gdevtifs_h=$(DEVSRC)gdevtifs.h
 tfax_=$(DEVOBJ)gdevtfax.$(OBJ) $(DEVOBJ)minftrsz.$(OBJ)
 $(DD)tfax.dev : $(DEVS_MAK) $(libtiff_dev) $(tfax_) $(GLD)cfe.dev\
  $(GLD)lzwe.dev $(GLD)rle.dev $(DD)fax.dev $(DD)tiffs.dev $(minftrsz_h)\
- $(GDEV)
+ $(gstiffio_h) $(GDEV)
 	$(SETMOD) $(DD)tfax $(tfax_)
 	$(ADDMOD) $(DD)tfax -include $(GLD)cfe $(GLD)lzwe $(GLD)rle
 	$(ADDMOD) $(DD)tfax -include $(DD)fax $(DD)tiffs $(tiff_i_)
@@ -1687,7 +1687,7 @@ $(DD)tiffs.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffs_) $(GLD)page.dev\
 	$(ADDMOD) $(DD)tiffs -include $(GLD)page $(tiff_i_)
 
 $(DEVOBJ)gdevtifs.$(OBJ) : $(DEVSRC)gdevtifs.c $(PDEVH) $(stdint__h) $(stdio__h) $(time__h)\
- $(gdevtifs_h) $(gscdefs_h) $(gstypes_h) $(stream_h) $(strmio_h)
+ $(gdevtifs_h) $(gscdefs_h) $(gstypes_h) $(stream_h) $(strmio_h) $(gstiffio_h)
 	$(DEVCC) $(I_)$(DEVI_) $(II)$(TI_)$(_I) $(DEVO_)gdevtifs.$(OBJ) $(C_) $(DEVSRC)gdevtifs.c
 
 # Black & white, G3/G4 fax
@@ -1736,7 +1736,7 @@ $(DD)tiffgray.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffgray_) $(DD)tiffs.dev\
 
 $(DEVOBJ)gdevtsep.$(OBJ) : $(DEVSRC)gdevtsep.c $(PDEVH) $(stdint__h)\
  $(gdevtifs_h) $(gdevdevn_h) $(gsequivc_h) $(stdio__h) $(ctype__h)\
- $(gxgetbit_h) $(gdevppla_h) $(gp_h) $(GDEV)
+ $(gxgetbit_h) $(gdevppla_h) $(gp_h) $(gstiffio_h) $(GDEV)
 	$(DEVCC) $(I_)$(TI_)$(_I) $(DEVO_)gdevtsep.$(OBJ) $(C_) $(DEVSRC)gdevtsep.c
 
 # TIFF Scaled (downscaled gray -> mono), configurable compression
@@ -1795,7 +1795,7 @@ $(DD)tiff48nc.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffrgb_) $(DD)tiffs.dev\
 	$(ADDMOD) $(DD)tiff48nc -include $(DD)tiffs $(tiff_i_)
 
 $(DEVOBJ)gdevtfnx.$(OBJ) : $(DEVSRC)gdevtfnx.c $(PDEVH) $(stdint__h)\
- $(gdevtifs_h) $(gscms_h) $(GDEV)
+ $(gdevtifs_h) $(gscms_h) $(gstiffio_h) $(GDEV)
 	$(DEVCC) $(I_)$(TI_)$(_I) $(DEVO_)gdevtfnx.$(OBJ) $(C_) $(DEVSRC)gdevtfnx.c
 
 # TIFF CMYK, no compression

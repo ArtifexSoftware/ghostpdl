@@ -23,6 +23,8 @@
 #include "scfx.h"
 #include "gdevfax.h"
 
+#include "gstiffio.h"
+
 /* ---------------- TIFF/fax output ---------------- */
 
 /* The device descriptors */

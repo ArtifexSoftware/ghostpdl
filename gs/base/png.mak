@@ -22,6 +22,7 @@
 #	PNGOBJDIR - the object directory
 #	SHARE_LIBPNG - 0 to compile libpng, 1 to share
 #	LIBPNG_NAME - if SHARE_LIBPNG=1, the name of the shared library
+#       PNG_CFLAGS
 
 # This partial makefile compiles the png library for use in the Ghostscript
 # PNG drivers.  You can get the source code for this library from:
@@ -59,7 +60,8 @@ PZGEN=$(ZGENDIR)$(D)
 # PI_ and PF_ are defined in gs.mak.
 # NB: we can't use the normal $(CC_) here because msvccmd.mak
 # adds /Za which conflicts with the libpng 1.5.x source.
-PNGCC=$(CC) $(CFLAGS) $(I_)$(PI_)$(_I) $(I_)$(PNGGENDIR)$(_I) $(PF_) $(D_)PNG_NO_ASSEMBLER_CODE$(_D)
+PNGCC=$(CC) $(CFLAGS) $(PNG_CFLAGS) $(I_)$(PI_)$(_I) $(I_)$(PNGGENDIR)$(_I) $(PF_) \
+$(D_)PNG_NO_ASSEMBLER_CODE$(_D)
 
 # Define the name of this makefile.
 LIBPNG_MAK=$(GLSRC)png.mak

@@ -230,7 +230,7 @@ SHARE_JBIG2=0
 
 # Define the platform name.
 
-PLATFORM=os2_
+GSPLATFORM=os2_
 
 # Define the name of the makefile -- used in dependencies.
 

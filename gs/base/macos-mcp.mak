@@ -76,7 +76,7 @@ GS=macgs
 
 # Define the platform name.
 
-PLATFORM=macos_
+GSPLATFORM=macos_
 
 
 # don't use any shared libraries, they are compiled into the Ghostscript Lib
@@ -272,7 +272,7 @@ LD_SET_DT_SONAME=-soname=
 include $(GLSRCDIR)/unixhead.mak
 
 # Redefine the platform name before going on
-PLATFORM=macos_
+GSPLATFORM=macos_
 
 include $(GLSRCDIR)/gs.mak
 # psromfs.mak must precede lib.mak

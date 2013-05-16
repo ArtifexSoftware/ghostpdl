@@ -274,7 +274,7 @@ STDIO_IMPLEMENTATION=c
 
 # Define the platform name.
 
-PLATFORM=openvms_
+GSPLATFORM=openvms_
 
 # Define the name of the makefile -- used in dependencies.
 

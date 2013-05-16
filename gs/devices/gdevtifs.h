@@ -46,12 +46,6 @@ dev_proc_get_params(tiff_get_params_downscale);
 dev_proc_put_params(tiff_put_params);
 dev_proc_put_params(tiff_put_params_downscale);
 
-/*
- * Open a TIFF file for writing from a file descriptor.
- */
-TIFF * tiff_from_filep(gx_device_printer *dev, const char *name,
-                       FILE *filep, int big_endian, bool usebigtiff);
-
 int tiff_print_page(gx_device_printer *dev, TIFF *tif, int min_feature_size);
 
 int tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif,
