@@ -1548,7 +1548,9 @@ and <tt>x86_64</tt> binaries in one file, using the <tt>Makefile</tt>
 from <tt>configure</tt>. This can be achieved by using the following invokation of
 <tt>configure</tt>
 <blockquote>
+<code>
 ./configure CC="gcc -arch i386 -arch x86_64 -arch ppc" CPP="gcc -E"
+</code>
 </blockquote>
 <p>
 You can choose the combination of valid architectures (i386/x86_64/ppc) that you
@@ -1557,6 +1559,18 @@ require.
 The separate options for <tt>CC</tt> and <tt>CPP</tt> are required because some of
 the features used by <tt>configure</tt> to explore the capabilities of the preprocessor
 are not compatible with having multiple <tt>-arch</tt> options.
+<p>
+Building a shared library on MacOS X is the same as for other Unix-like systems, the
+"configure" step is done normally, and the "so" target is given to the make invocation,
+thus:
+<blockquote>
+<code>
+make so
+</code>
+</blockquote>
+The only difference compared to other Unix-like systems is that on OS X the resulting
+shared library is created with the ".dylib" file name extension, instead of the more
+usual ".so".
 <p>
 Finally, there is a <tt>macos-mcp.mak</tt> makefile that can be
 used to set up the Codewarrior shared library component build described
