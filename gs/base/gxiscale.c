@@ -615,7 +615,16 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                 stream_r->ptr = (byte *) psrc - 1;
                 if_debug0m('B', penum->memory, "[B]Remap row:\n[B]");
                 if (is_icc) {
-                    stream_r->ptr = (byte *) pdata - 1;
+                    if (reversed) {
+                        byte *to = penum->line;
+                        for (i = 0; i < pss->params.WidthIn; i++) {
+                            memcpy(to, pdata, -dpd);
+                            to -= dpd;
+                            pdata += dpd;
+                        }
+                    } else {
+                        stream_r->ptr = (byte *) pdata - 1;
+                    }
                 } else {
                     for (i = 0; i < pss->params.WidthIn; i++, 
                          psrc += spp_decode) {
