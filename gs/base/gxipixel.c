@@ -434,6 +434,19 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
         }
         break; /* Out of the while */
     }
+    /* Check for the intersection being null */
+    if (penum->rrect.x + penum->rrect.w <= penum->rect.x  ||
+        penum->rect.x  + penum->rect.w  <= penum->rrect.x ||
+	penum->rrect.y + penum->rrect.h <= penum->rect.h  ||
+        penum->rect.y  + penum->rect.h  <= penum->rrect.h)
+    {
+          /* Something may have gone wrong with the floating point above.
+           * set the region to something sane. */
+        penum->rrect.x = penum->rect.x;
+        penum->rrect.y = penum->rect.y;
+        penum->rrect.w = 0;
+        penum->rrect.h = 0;
+    }
 
     /*penum->matrix = mat;*/
     penum->matrix.xx = mat.xx;
