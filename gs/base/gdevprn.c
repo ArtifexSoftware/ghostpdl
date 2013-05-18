@@ -984,13 +984,13 @@ gdev_prn_output_page_seekable(gx_device * pdev, int num_copies, int flush)
 int
 gdev_prn_bg_output_page(gx_device * pdev, int num_copies, int flush)
 {
-    return(gdev_prn_output_page_aux(pdev, num_copies, flush, false, false));
+    return(gdev_prn_output_page_aux(pdev, num_copies, flush, false, true));
 }
 
 int
 gdev_prn_bg_output_page_seekable(gx_device * pdev, int num_copies, int flush)
 {
-    return(gdev_prn_output_page_aux(pdev, num_copies, flush, true, false));
+    return(gdev_prn_output_page_aux(pdev, num_copies, flush, true, true));
 }
 
 /* Print a single copy of a page by calling print_page_copies. */
