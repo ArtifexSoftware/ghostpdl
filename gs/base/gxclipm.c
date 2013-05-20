@@ -258,7 +258,7 @@ mask_clip_copy_mono(gx_device * dev,
     return 0;
 }
 
-#if 1 //def PACIFY_VALGRIND
+#ifdef PACIFY_VALGRIND
 static inline byte trim(int cx, int mx1, byte v)
 {
     int mask = 8-(mx1-cx); /* mask < 8 */
