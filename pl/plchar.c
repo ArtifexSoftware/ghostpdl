@@ -386,9 +386,9 @@ pl_bitmap_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
     const byte *cdata = pl_font_lookup_glyph(plfont, glyph)->data;
     bool orient = plfont->orient;
 
-    if (cdata == 0)
-        return 0;
-    {
+    if (cdata == 0) {
+        return gs_setcharwidth(penum, pgs, 0, 0);
+    } else {
         const byte *params;
         const byte *bitmap_data;
         int lsb, ascent;
