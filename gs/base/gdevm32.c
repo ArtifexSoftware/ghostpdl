@@ -155,6 +155,10 @@ mem_true32_copy_mono(gx_device * dev,
             int sbyte = (*sptr++ << first_bit) & 0xff;
             int count = w_first;
 
+#ifdef PACIFY_VALGRIND
+	    sbyte &= 0x100-(0x100>>w_first);
+#endif
+
             if (sbyte)
                 do {
                     if (sbyte & 0x80)
