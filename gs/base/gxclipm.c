@@ -258,6 +258,17 @@ mask_clip_copy_mono(gx_device * dev,
     return 0;
 }
 
+#if 1 //def PACIFY_VALGRIND
+static inline byte trim(int cx, int mx1, byte v)
+{
+    int mask = 8-(mx1-cx); /* mask < 8 */
+    mask = (mask > 0 ? (0xff<<mask) : 0xff)>>(cx & 7);
+    return v & mask;
+}
+#else
+#define trim(cx,mx1,v) (v)
+#endif
+
 /*
  * Define the run enumerator for the other copying operations.  We can't use
  * the BitBlt tricks: we have to scan for runs of 1s.  There are obvious
@@ -290,7 +301,7 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
             int tx1, tx, ty;
 
             /* Skip a run of 0s. */
-            len = byte_bit_run_length[cx & 7][*tp ^ 0xff];
+            len = byte_bit_run_length[cx & 7][trim(cx, mx1, *tp) ^ 0xff];
             if (len < 8) {
                 cx += len;
                 if (cx >= mx1)
@@ -298,17 +309,17 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
             } else {
                 cx += len - 8;
                 tp++;
-                while (cx < mx1 && *tp == 0)
+                while (cx < mx1 && trim(cx, mx1, *tp) == 0)
                     cx += 8, tp++;
                 if (cx >= mx1)
                     break;
-                cx += byte_bit_run_length_0[*tp ^ 0xff];
+                cx += byte_bit_run_length_0[trim(cx, mx1, *tp) ^ 0xff];
                 if (cx >= mx1)
                     break;
             }
             tx1 = cx - cdev->phase.x;
             /* Scan a run of 1s. */
-            len = byte_bit_run_length[cx & 7][*tp];
+            len = byte_bit_run_length[cx & 7][trim(cx, mx1, *tp)];
             if (len < 8) {
                 cx += len;
                 if (cx > mx1)
@@ -316,12 +327,13 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
             } else {
                 cx += len - 8;
                 tp++;
-                while (cx < mx1 && *tp == 0xff)
+                while (cx < mx1 && trim(cx, mx1, *tp) == 0xff)
                     cx += 8, tp++;
                 if (cx > mx1)
                     cx = mx1;
                 else {
-                    cx += byte_bit_run_length_0[*tp];
+                    cx += byte_bit_run_length_0[trim(cx, mx1, *tp)];
+#undef trim
                     if (cx > mx1)
                         cx = mx1;
                 }
