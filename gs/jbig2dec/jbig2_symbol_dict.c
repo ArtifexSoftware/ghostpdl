@@ -1084,6 +1084,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   if (flags & 0x0100) {
       jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "segment marks bitmap coding context as used (NYI)");
+      goto cleanup;
   } else {
       int stats_size = params.SDTEMPLATE == 0 ? 65536 :
           params.SDTEMPLATE == 1 ? 8192 : 1024;
