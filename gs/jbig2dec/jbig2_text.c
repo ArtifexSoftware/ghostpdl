@@ -154,13 +154,13 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	    range = 1;
 	  } else {
 	    if (code == 32) {
-	      len = symcodelengths[index-1].PREFLEN;
 	      if (index < 1) {
 		jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 	 	  "error decoding symbol id table: run length with no antecedent!");
 	        code = -1;
-            goto cleanup1;
+                goto cleanup1;
 	      }
+	      len = symcodelengths[index-1].PREFLEN;
 	    } else {
 	      len = 0; /* code == 33 or 34 */
 	    }
