@@ -469,20 +469,28 @@ userdict /.pdfcvstring () put
 
 /.pdfpagelabels {
   dup type /dicttype eq {
-    /Nums oget
-    mark exch
-    0 1 2 index length 1 sub {
-      1 index exch oget
-      exch
-    } for
-    pop
-    counttomark array astore
-    1 dict dup begin exch /Nums exch def end
-    .pdfcvs
-    mark /pdfpagelabels 3 -1 roll .pdfputparams
-    dup type /booleantype ne {
-      /pdfpagelabels .pdfparamerror
-    } if cleartomark
+    dup /Nums knownoget {
+      exch pop
+      mark exch
+      0 1 2 index length 1 sub {
+        1 index exch oget
+        exch
+      } for
+      pop
+      counttomark array astore
+      1 dict dup begin exch /Nums exch def end
+      .pdfcvs
+      mark /pdfpagelabels 3 -1 roll .pdfputparams
+      dup type /booleantype ne {
+        /pdfpagelabels .pdfparamerror
+      } if cleartomark
+    }{
+      /Kids knownoget {
+        (PageLabel tree too complex, ignoring PageLabels\n) print flush
+      }{
+         (Invalid number tree in PageLabels, ignoring PageLabels\n) print flush
+      }ifelse
+    }ifelse
   }{
     /pdfpagelabels .pdfparamerror
   } ifelse
