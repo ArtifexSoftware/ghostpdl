@@ -1180,9 +1180,11 @@ currentdict /eexec_pdf_param_dict .undef
     1 index /Subtype knownoget {
       /CIDFontType2 ne {
         (   **** Warning: Subtype of a TT CID font is not /CIDFontType2\n) pdfformaterror
+        1 index /Subtype /CIDFontType2 put
       } if
     } {
       (   **** Warning: Subtype of a TT CID font is missing.\n) pdfformaterror
+      1 index /Subtype /CIDFontType2 put
     } ifelse
 
     1 index /BaseFont get                 % Use the BaseFont name for the font. Otherwise we
