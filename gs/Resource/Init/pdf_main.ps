@@ -590,9 +590,20 @@ currentdict /xref-char-dict undef
    /Classic-xref //false store
    PDFfile exch setfileposition		% move to start of object
         % Get object number, revision, and 'obj' and discard
-   PDFfile token pop pop
-   PDFfile token pop pop
-   PDFfile token pop pop
+   //false PDFfile token {
+     type /integertype eq {
+       PDFfile token {
+         type /integertype eq {
+           PDFfile token {
+             /obj eq or
+           } if
+         } if
+       } if
+     } if
+   } if
+   not {
+     /readpdf15xref cvx /syntaxerror signalerror
+   } if
         % Get the XRef dicitionary
    /dictlevelcount 0 def PDFfile xrefopdict .pdfrun
         % Verify that we have an XRef dictionary
