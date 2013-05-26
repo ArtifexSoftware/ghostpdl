@@ -379,8 +379,9 @@ cleanup1:
 		rparams.DY = (RDH >> 1) + RDY;
 		rparams.TPGRON = 0;
 		memcpy(rparams.grat, params->sbrat, 4);
-		jbig2_decode_refinement_region(ctx, segment,
+		code = jbig2_decode_refinement_region(ctx, segment,
 		    &rparams, as, refimage, GR_stats);
+		if (code < 0) goto cleanup2;
 		IB = refimage;
 
 		jbig2_image_release(ctx, IBO);
@@ -834,7 +835,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     }
 
     /* 7.4.3.2 (3) */
-    if (!params.SBHUFF && params.SBREFINE) {
+    {
 	int stats_size = params.SBRTEMPLATE ? 1 << 10 : 1 << 13;
 	GR_stats = jbig2_new(ctx, Jbig2ArithCx, stats_size);
     if (GR_stats == NULL)
