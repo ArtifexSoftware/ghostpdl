@@ -467,6 +467,56 @@ userdict /.pdfcvstring () put
     .systemvar exch signalerror
 } bind def
 
+/.CountLeafs {
+  0 exch
+  {
+    oforce dup type /dicttype eq {
+      /Limits knownoget {
+        dup type /arraytype eq {
+          1 get 2 copy lt {
+            exch pop
+          }{
+            pop
+          }ifelse
+        }{
+          (invalid number tree, /Limits not an array\n) print
+          pop pop 0 exit
+        } ifelse
+      }{
+        (invalid number tree, /Limits not defined in intermediate or leaf node\n) print
+        pop pop 0 exit
+      }ifelse
+    } {
+      (invalid number tree, /Kids entry not a dictionary\n) print
+      pop pop 0 exit
+    } ifelse
+  } forall
+} bind def
+
+/.ExtractLeafs
+{
+  {
+    oforce /Nums knownoget {
+      dup length 1 sub 0 2 3 -1 roll {
+                          %% dict array index
+        dup               %% dict array index index
+        2 index exch get  %% dict array index
+        20 string cvs cvn %% dict array index name
+        exch 1 add        %% dict array name index+1
+        2 index exch oget %% dict array name object
+        3 index           %% dict array name object dict
+        3 1 roll          %% dict array dict name object
+        put               %% dict array
+      } for
+      pop               %% array
+    }{
+      /Kids knownoget {
+        .ExtractLeafs
+      } if
+    } ifelse
+  } forall
+} bind def
+
 /.pdfpagelabels {
   dup type /dicttype eq {
     dup /Nums knownoget {
@@ -486,7 +536,28 @@ userdict /.pdfcvstring () put
       } if cleartomark
     }{
       /Kids knownoget {
-        (PageLabel tree too complex, ignoring PageLabels\n) print flush
+        dup .CountLeafs dup 1000 ge {
+          (PageLabel tree too complex, ignoring PageLabels\n) print flush
+          pop pop
+        }{
+          dict exch .ExtractLeafs mark exch dup length 0 1 3 -1 roll {
+            dup 20 string cvs cvn  %% mark dict index name
+            2 index exch .knownget{
+                                   %% mark ... dict index object
+            3 -1 roll              %% mark ... index object dict
+            }{
+              pop
+            }ifelse
+          } for
+          pop
+          counttomark array astore
+          1 dict dup begin exch /Nums exch def end
+          .pdfcvs
+          mark /pdfpagelabels 3 -1 roll .pdfputparams
+          dup type /booleantype ne {
+            /pdfpagelabels .pdfparamerror
+          } if cleartomark
+        }ifelse
       }{
          (Invalid number tree in PageLabels, ignoring PageLabels\n) print flush
       }ifelse
