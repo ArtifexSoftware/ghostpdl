@@ -3675,7 +3675,6 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
     gs_color_space * pacs;
     gs_function_t *pfn = NULL;
     gs_separation_name *names;
-    gs_device_n_map *pmap;
     gs_client_color cc;
 
     if (i_ctx_p->language_level < 3)
@@ -3832,7 +3831,6 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
     if (code < 0)
         return code;
     names = pcs->params.device_n.names;
-    pmap = pcs->params.device_n.map;
     pcs->params.device_n.get_colorname_string = gs_get_colorname_string;
 
     /* Pick up the names of the components */
@@ -5297,7 +5295,7 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                 if (code == 0)
                     return gs_note_error(e_undefined);
                 components = tempref->value.intval;
-                if (components > count_of(range))
+                if (components > count_of(range)/2)
                     return_error(e_rangecheck);
 
                 /* Don't allow ICCBased spaces if NOCIE is true */
