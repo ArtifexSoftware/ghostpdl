@@ -225,10 +225,11 @@ dict_ints_param(const gs_memory_t *mem, const ref * pdict,
 }
 
 /* Get a float array from a dictionary. */
-/* Return the element count if OK, <0 if invalid. */
-/* If the parameter is missing, then if defaultvec is NULL, return 0; */
-/* if defaultvec is not NULL, copy it into fvec (maxlen elements) */
-/* and return maxlen. */
+/* If there are more than len elements, return over_error if it is < 0 */
+/* Otherwise, load len elements. If there are less than len elements, and */
+/* under_error < 0, return the error, otherwise return the count of elements */
+/* If the parameter is not in the dict, then if defaultvec is NULL, return 0; */
+/* if defaultvec is not NULL, copy it into fvec (len elements), and return len */
 int
 dict_float_array_check_param(const gs_memory_t *mem,
                              const ref * pdict, const char *kstr,
@@ -243,14 +244,16 @@ dict_float_array_check_param(const gs_memory_t *mem,
         if (defaultvec == NULL)
             return 0;
         memcpy(fvec, defaultvec, len * sizeof(float));
-
         return len;
     }
+
     if (!r_is_array(pdval))
         return_error(e_typecheck);
     size = r_size(pdval);
-    if (size > len)
+    if (over_error < 0 && size > len)
         return_error(over_error);
+
+    size = min(size, len);		/* don't process more than we have room for */
     code = process_float_array(mem, pdval, size, fvec);
     return (code < 0 ? code :
             size == len || under_error >= 0 ? size :

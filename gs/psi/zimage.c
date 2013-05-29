@@ -58,7 +58,6 @@ data_image_params(const gs_memory_t *mem,
                   bool has_alpha, bool islab)
 {
     int code;
-    int decode_size;
     ref *pds;
 
     check_type(*op, t_dictionary);
@@ -92,23 +91,25 @@ data_image_params(const gs_memory_t *mem,
     if (islab) {
         /* Note that it is possible that only the ab range values are there
            or the lab values.  I have seen both cases.... */
-        code = decode_size = dict_floats_param(mem, op, "Decode", 4,
-                                                    &pim->Decode[2], NULL);
+        code = dict_floats_param(mem, op, "Decode", 4,
+                                 &pim->Decode[2], NULL);
         if (code < 0) {
-            /* Try for all three */
-            code = decode_size = dict_floats_param(mem, op, "Decode", 6,
-                                                        &pim->Decode[0], NULL);
+            /* Try for all three pairs. Ignore more than 6 elements */
+                code = dict_float_array_check_param(mem, op, "Decode", 6,
+                                                    &pim->Decode[0], NULL, e_rangecheck, 0);	/* over_error = 0 */
         } else {
             /* Set the range on the L */
             pim->Decode[0] = 0;
             pim->Decode[1] = 100.0;
         }
-        if (code < 0) return code;
+        if (code < 0)
+            return code;
     } else {
-        code = decode_size = dict_floats_param(mem, op, "Decode",
-                                                    num_components * 2,
-                                                    &pim->Decode[0], NULL);
-        if (code < 0) return code;
+            /* more elements than we need is OK */
+        code = dict_float_array_check_param(mem, op, "Decode", 2 * num_components,
+                                            &pim->Decode[0], NULL, e_rangecheck, 0);	/* over_error = 0 */
+        if (code < 0)
+            return code;
     }
     pip->pDecode = &pim->Decode[0];
     /* Extract and check the data sources. */
