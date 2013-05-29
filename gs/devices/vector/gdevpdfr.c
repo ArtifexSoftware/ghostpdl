@@ -282,14 +282,24 @@ pdf_scan_token(const byte **pscan, const byte * end, const byte **ptoken)
 
     while (p < end && scan_char_decoder[*p] == ctype_space) {
         ++p;
-        if (p[-1] == 0 && p + 1 < end && *p == 0 && p[1] == '/') {
-        /* Special handling for names delimited by a null character. */
-            *ptoken = ++p;
-            while (*p != 0)
-                if (++p >= end)
+        if (p[-1] == 0 && p + 1 < end && p + 2 < end && *p == 0 && p[1] == 0 && p[2] == '/') {
+        /* Special handling for names delimited by a triple start and double end null character. */
+            *ptoken = p + 2;
+            while (*p != 0 || p[1] != 0)
+                if (++p >= end || p + 1 >= end)
                     return_error(gs_error_syntaxerror);	/* no terminator */
-            *pscan = p;
+            *pscan = p + 1;
             return 1;
+        } else {
+            if (p[-1] == 0 && p + 1 < end && *p == 0 && p[2] == '/') {
+            /* Special handling for names delimited by a double start and single end null character. */
+                *ptoken = ++p;
+                while (*p != 0)
+                    if (++p >= end)
+                        return_error(gs_error_syntaxerror);	/* no terminator */
+                *pscan = p;
+                return 1;
+            }
         }
     }
     *ptoken = p;

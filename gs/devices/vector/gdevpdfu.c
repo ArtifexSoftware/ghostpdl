@@ -2119,6 +2119,8 @@ pdf_write_value(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_id 
 {
     if (size > 0 && vstr[0] == '/')
         return pdf_put_name(pdev, vstr + 1, size - 1);
+    else if (size > 5 && vstr[0] == 0 && vstr[1] == 0 && vstr[2] == 0 && vstr[size - 1] == 0 && vstr[size - 2] == 0)
+        return pdf_put_name(pdev, vstr + 4, size - 5);
     else if (size > 3 && vstr[0] == 0 && vstr[1] == 0 && vstr[size - 1] == 0)
         return pdf_put_name(pdev, vstr + 3, size - 4);
     else if (size > 1 && (vstr[0] == '[' || vstr[0] == '{'))
