@@ -21,6 +21,7 @@
 #include <stdlib.h>		/* for getenv */
 #include <string.h>
 #include "gscdefs.h"		/* for gs_productfamily and gs_revision and gs_serialnumber */
+#include "gssprintf.h"		/* for gs_sprintf when GS_NO_UTF8=1 */
 
 #if defined(__WIN32__) && !defined(METRO)
 /*
