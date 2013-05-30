@@ -635,7 +635,7 @@ finished printed page.
 <dl>
 <dt><code>-dUseArtBox</code>
 <dd>Sets the page size to the ArtBox rather than the MediaBox.
-The art box defines the extent of the page's meaningful content 
+The art box defines the extent of the page's meaningful content
 (including potential white space) as intended by the page's creator.
 The art box is likely to be the smallest box. It can be useful
 when one wants to crop the page as much as possible
@@ -2399,8 +2399,12 @@ For more information see the description of the user parameter
 <dl>
 <dt><code>-dUseCIEColor</code>
 <dd>Set UseCIEColor in the page device dictionary, remapping device-dependent
-color values through a CIE color space. This can can improve conversion
-of CMYK documents to RGB.
+color values through a Postscript defined CIE color space.  Document DeviceGray,
+DeviceRGB and DeviceCMYK source colors will be substituted respectively by Postscript
+CIEA, CIEABC and CIEDEFG color spaces.   See the document
+<a href="GS9_Color_Management.pdf">GS9 Color Management</a> for details on how
+this option will interact with Ghostscript's ICC-based color workflow.   If accurate colors
+are desired, it is recommended that an ICC workflow be used.
 </dl>
 
 <dl>
@@ -2859,7 +2863,7 @@ selected from those in the directory specified by ICCProfilesDir (see below).
  Note that if the output device is CMYK + spot colorants, a CMYK
 profile can be used to provide color management for the CMYK colorants only.
 In this case, spot colors will pass through unprocessed assuming the
-device supports those colorants.  It is also possible for these devices to 
+device supports those colorants.  It is also possible for these devices to
 specify NCLR ICC profiles for output.
 </dl>
 
@@ -2869,13 +2873,13 @@ specify NCLR ICC profiles for output.
 be an NCLR profile, which means something that includes non-traditional inks
 like Orange, Violet, etc.   In this case, the list of the colorant names in the
 order that they exist in the profile must be provided with this command line
-option.   Note that if a colorant name that is specified for the profile occurs also within 
+option.   Note that if a colorant name that is specified for the profile occurs also within
 the document (e.g. "Orange" above), then these colorants will be associated with
 the same separation.  It is possible through a compile time option LIMIT_TO_ICC
 defined in gdevdevn.h to restrict the output colorants of the psdcmyk and tiffsep
 device to the colorants of the ICC profile or to allow additional spot colorants
 in the document to be created as different separations.  If restricted, the other
-spot colorants will go through the alternate tint transform and then be mapped to 
+spot colorants will go through the alternate tint transform and then be mapped to
 the color space defined by the NCLR profile.   If an NCLR ICC profile is specified
 and ICCOutputColors is not used, then a set of default names will be used for
 the extra colorants (non-CMYK) in the profile.
@@ -2916,7 +2920,7 @@ This command option is for developer use when an implementation
 for named color management is designed for the function
 gsicc_transform_named_color located in gsicccache.c .  An example
 implementation is currently contained in the code for the handling of both
-Separation and DeviceN colors.  For the general user this command option 
+Separation and DeviceN colors.  For the general user this command option
 should really not be used.
 </dl>
 
@@ -2931,17 +2935,17 @@ Saturation, and Absolute Colorimetric.
 <dl>
 <dt><code>-dBlackPtComp=</code><em>0/1</em>
 <dd>Specify if black point compensation should be used with the
-profile specified above by -sOutputICCProfile.  
+profile specified above by -sOutputICCProfile.
 </dl>
 
 <dl>
 <dt><code>-dKPreserve=</code><em>0/1/2</em>
 <dd>Specify if black preservation should be used when mapping
-from CMYK to CMYK.   When using littleCMS as the CMM, the code 0 
+from CMYK to CMYK.   When using littleCMS as the CMM, the code 0
 corresponds to no preservation, 1 corresponds to the PRESERVE_K_ONLY approach
-described in the littleCMS documentation and 2 corresponds to the 
+described in the littleCMS documentation and 2 corresponds to the
 PRESERVE_K_PLANE approach.   This is only valid when using littleCMS for
-color management. 
+color management.
 </dl>
 
 <dl>
@@ -2963,7 +2967,7 @@ options are the same as specified for -dRenderIntent.
 
 <dl>
 <dt><code>-dGraphicBlackPt=</code><em>0/1</em>
-<dd>Specify if black point compensation should be used for graphic objects.  
+<dd>Specify if black point compensation should be used for graphic objects.
 </dl>
 
 <dl>
@@ -2990,7 +2994,7 @@ pleasing images.
 
 <dl>
 <dt><code>-dImageBlackPt=</code><em>0/1</em>
-<dd>Specify if black point compensation should be used with images.  
+<dd>Specify if black point compensation should be used with images.
 </dl>
 
 <dl>
@@ -3017,7 +3021,7 @@ options are the same as specified for -dRenderIntent.
 
 <dl>
 <dt><code>-dTextBlackPt=</code><em>0/1</em>
-<dd>Specify if black point compensation should be used with text objects. 
+<dd>Specify if black point compensation should be used with text objects.
 </dl>
 
 <dl>
@@ -3087,37 +3091,37 @@ removal mappings.
 <dt><code>-dSimulateOverprint=</code><em>true/false</em>
 <dd>
 This option enables CMYK devices (e.g. tiff32nc) to provide an simulation of
-overprinting. 
+overprinting.
 </dl>
 
 <dl>
 <dt><code>-dUsePDFX3Profile=</code><em>int</em>
 <dd>
-This option enables rendering with an output intent defined in 
+This option enables rendering with an output intent defined in
 the PDF source file.   If this option is included in the command line,
-source device color values (e.g DeviceCMYK, DeviceRGB, or DeviceGray) 
+source device color values (e.g DeviceCMYK, DeviceRGB, or DeviceGray)
 that match the color model of the output intent will be interpreted to
 be in the output intent color space.   In addition, if the output device
-color model matches the output intent color model, then the 
+color model matches the output intent color model, then the
 destination ICC profile will be the output intent ICC profile.
 
 If there is a mismatch between the device color model and the
-output intent, the output intent profile will be used as a 
+output intent, the output intent profile will be used as a
 proofing profile, since that is the intended rendering.
 
-Note that a PDF document can have multiple 
-rendering intents per the PDF specification.  As such, with 
-the option -dUsePDFX3Profile the first output intent 
-encountered will be used.   It is possible to specify 
-a particular output intent where <em>int</em> is an 
-integer (a value of 0 is the same as not specifying a number).  
+Note that a PDF document can have multiple
+rendering intents per the PDF specification.  As such, with
+the option -dUsePDFX3Profile the first output intent
+encountered will be used.   It is possible to specify
+a particular output intent where <em>int</em> is an
+integer (a value of 0 is the same as not specifying a number).
 Probing of the output intents for a particular file
 is possible using extractICCprofiles.ps in ./gs/toolbin.
 
 Finally, note that the ICC profile member entry is an option in
 the output intent dictionary.   In these cases, the output intent
 specifies a registry and a standard profile (e.g. Fogra39).  Ghostscript will
-not make use of these output intents.  Instead, if desired, these standard 
+not make use of these output intents.  Instead, if desired, these standard
 profiles should be used with the commands specified above (e.g. -sOutputICCProfile).
 </dl>
 
@@ -3268,6 +3272,15 @@ then use <code>restore</code> to return to NOSAFER mode. In order to prevent
 the save object from being restored by the foreign file or procedure, the
 <a href="Language.htm#Runandhide"><b>.runandhide</b></a> operator should
 be used to hide the save object from the restricted procedure.
+</dl>
+
+<dl>
+<dt><code>-dPreBandThreshold=true/false</code>
+<dd>If the target device is a halftone device, then images that are 
+normally stored in the command list during banded output will be halftoned during
+the command list writing phase, if the resulting image will result in a smaller 
+command list.   The decision to halftone depends upon the output and source resolution as well as 
+the output and source color space.
 </dl>
 
 <dl>
