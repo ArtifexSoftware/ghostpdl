@@ -1,0 +1,9 @@
+LDLIBS = -lm
+CFLAGS = -g -O2 -Wall -Wmissing-prototypes
+LDFLAGS = -g
+
+test_evenbetter:	test_evenbetter.o evenbetter-rll.o eb_sse2.o
+
+eb_sse2.o:	eb_sse2.s
+	nasm $^ -f elf
+

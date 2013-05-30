@@ -1,0 +1,386 @@
+<html>
+<head>
+<title>Image Plane viewer</title>
+<script>
+
+// Check that we have a modern browser
+if (window.File && window.FileReader && window.FileList && window.Blob) {
+} else {
+    alert("Get a better browser!");
+}
+
+var imageDataBlock = function(block)
+{
+  this.block = block;
+  this.pos = 0;
+  this.width = 100;
+  this.height = 100;
+  this.depth = 1;
+  this.maxval = 255;
+  this.planar = false;
+}
+
+function error(message)
+{
+  alert(message);
+}
+
+imageDataBlock.prototype.getLine = function ()
+{
+  var line="";
+  var c;
+
+  while ((c = this.block[this.pos++]).charCodeAt(0) >= 32)
+    line += c;
+  return line;
+}
+
+imageDataBlock.prototype.updateImage = function()
+{
+  var w = this.width;
+  var h = this.height;
+  var d = this.depth;
+  var x, y, z;
+  var R, G, B;
+  var p = this.pos;
+  var canvas = this.canvas.getContext("2d")
+  var id = canvas.getImageData(0, 0, w, h);
+  var q = 0;
+
+  if (!this.planar)
+  {
+    for (y = h; y > 0; y--)
+    {
+      for (x = w; x > 0; x--)
+      {
+        var C = 0;
+        var M = 0;
+        var Y = 0;
+        var K = 0;
+        for (z = 0; z < d; z++)
+        {
+          var a = this.block.charCodeAt(p++);
+          var pl = this.planes[z];
+          if (pl.enabled)
+          {
+            C += a * pl.c;
+            M += a * pl.m;
+            Y += a * pl.y;
+            K += a * pl.k;
+          }
+        }
+        R = 255 - C - K;
+        if (R < 0) R = 0;
+        G = 255 - M - K;
+        if (G < 0) G = 0;
+        B = 255 - Y - K;
+        if (B < 0) B = 0;
+        id.data[q++] = R;
+        id.data[q++] = G;
+        id.data[q++] = B;
+        id.data[q++] = 255;
+      }
+    }
+  }
+  else
+  {
+    var fwd = w*h;
+    var back = w*h*d-1
+    for (y = h; y > 0; y--)
+    {
+      for (x = w; x > 0; x--)
+      {
+        R = 0;
+        G = 0;
+        B = 0;
+        for (z = 0; z < d; z++)
+        {
+          var a = this.block.charCodeAt(p);
+          p += fwd;
+          var pl = this.planes[z];
+          if (pl.enabled)
+          {
+            R += a * pl.c;
+            G += a * pl.m;
+            B += a * pl.y;
+          }
+        }
+        p -= back;
+        if (R > 255) R = 255;
+        if (G > 255) G = 255;
+        if (B > 255) B = 255;
+        id.data[q++] = R;
+        id.data[q++] = G;
+        id.data[q++] = B;
+        id.data[q++] = 255;
+      }
+    }
+  }
+  canvas.putImageData(id, 0, 0);
+}
+
+imageDataBlock.prototype.setDepth = function(depth_)
+{
+  var i;
+  this.depth = depth_;
+  this.planes = new Array(this.depth);
+  for (i=0; i < this.depth; i++)
+  {
+    this.planes[i] = new Object();
+    this.planes[i].c = 0;
+    this.planes[i].m = 0;
+    this.planes[i].y = 0;
+    this.planes[i].k = 1;
+    this.planes[i].name = "Spot";
+    this.planes[i].enabled = true;
+  }
+  if (this.depth == 1)
+  {
+    this.planes[0].name = "K";
+  }
+  else if (this.planar)
+  {
+    if (this.depth >= 3)
+    {
+      this.planes[0].c = 1;
+      this.planes[0].k = 0;
+      this.planes[0].name = "R";
+      this.planes[1].m = 1;
+      this.planes[1].k = 0;
+      this.planes[1].name = "G";
+      this.planes[2].y = 1;
+      this.planes[2].k = 0;
+      this.planes[2].name = "B";
+      i = 3;
+    }
+    else
+    {
+      this.planes[0].c = 1;
+      this.planes[0].m = 1;
+      this.planes[0].y = 1;
+      this.planes[0].k = 0;
+      this.planes[0].name = "Gray";
+      i = 1;
+    }
+    for (; i < this.depth; i++)
+    {
+      this.planes[i].c = 1;
+      this.planes[i].m = 1;
+      this.planes[i].y = 1;
+      this.planes[i].k = 0;
+      this.planes[i].name = "Plane";
+      this.planes[i].enabled = false;
+    }
+  }
+  else if (this.depth >= 4)
+  {
+    this.planes[0].c = 1;
+    this.planes[0].k = 0;
+    this.planes[0].name = "C";
+    this.planes[1].m = 1;
+    this.planes[1].k = 0;
+    this.planes[1].name = "M";
+    this.planes[2].y = 1;
+    this.planes[2].k = 0;
+    this.planes[2].name = "Y";
+    this.planes[3].name = "K";
+  }
+}
+
+imageDataBlock.prototype.planeChange = function(plane,checked)
+{
+  this.planes[plane].enabled = checked;
+  this.updateImage();
+}
+
+function strip(line)
+{
+  while (line.substring(0,1) == " ")
+    line = line.substring(1);
+  return line;
+}
+
+imageDataBlock.prototype.readPAM = function ()
+{
+  while (1)
+  {
+    var line = this.getLine();
+    if (line.substring(0, 5) == "WIDTH")
+      this.width = parseInt(line.substring(6), 10);
+    else if (line.substring(0, 6) == "HEIGHT")
+      this.height = parseInt(line.substring(7), 10);
+    else if (line.substring(0, 5) == "DEPTH")
+      this.setDepth(parseInt(line.substring(6), 10));
+    else if (line.substring(0, 6) == "MAXVAL")
+      this.maxval = parseInt(line.substring(7), 10);
+    else if (line.substring(0, 8) == "TUPLTYPE")
+    {
+      if (line.substring(9,13) == "CMYK")
+      {}
+      else if (line.substring(9,13) == "DEVN")
+      {}
+      else
+        return error("Not a CMYK or DEVN file!");
+    }
+    else if (line.substring(0, 1) == "#")
+    {
+      line = strip(line.substring(1));
+      if (line.split(" ")[0] == "PLANE")
+      {
+        line = strip(line.substring((line+" ").indexOf(" ")));
+        var p = parseInt(line, 10);
+        line = strip(line.substring((line+" ").indexOf(" ")));
+        this.planes[p].name = line.split(" ")[0];
+        line = strip(line.substring((line+" ").indexOf(" ")));
+        this.planes[p].c = parseFloat(line);
+        line = strip(line.substring((line+" ").indexOf(" ")));
+        this.planes[p].m = parseFloat(line);
+        line = strip(line.substring((line+" ").indexOf(" ")));
+        this.planes[p].y = parseFloat(line);
+        line = strip(line.substring((line+" ").indexOf(" ")));
+        this.planes[p].k = parseFloat(line);
+      }
+    }
+    else if (line.substring(0, 1) == "#")
+    {
+    }
+    else if (line.substring(0, 6) == "ENDHDR")
+      break;
+    else
+      return error("Unknown header field: "+line);
+  }
+}
+
+imageDataBlock.prototype.readPGM = function ()
+{
+  var i = 0;
+  var line = "";
+  while (i < 3)
+  {
+    if (line == "")
+      line = this.getLine();
+    else if (line.substring(0, 1) == "#")
+      line = "";
+    else if (line.substring(0, 1) == " ")
+      line = line.substring(1);
+    else if (line.substring(0, 1) == "\t")
+      line = line.substring(1);
+    else
+    {
+      if (i == 0)
+        this.width = parseInt(line, 10);
+      else if (i == 1)
+        this.height = parseInt(line, 10);
+      else if (i == 2)
+        this.maxval = parseInt(line, 10);
+      i++;
+      var idx = line.indexOf(" ");
+      if (idx >= 0)
+        line = line.substring(idx+1);
+      else
+        line = "";
+    }
+  }
+  this.setDepth(1);
+
+  var m = this.pos;
+  var n = "";
+  for (i = this.width * this.height; i > 0; i--)
+  {
+    n += String.fromCharCode(this.block.charCodeAt(m++)^255);
+  }
+  this.block = n;
+  this.pos = 0;
+}
+
+imageDataBlock.prototype.readRAW = function (name)
+{
+  this.planar = true;
+  name = name.substring(name.indexOf(name, "_")+1);
+  this.width = parseInt(name,10);
+  name = name.substring(name.indexOf(name, "x")+1);
+  this.height = parseInt(name,10);
+  name = name.substring(name.indexOf(name, "x")+1);
+  this.maxval = 255;
+  this.setDepth = this.setDepth(parseInt(name, 10));
+}
+
+function imageView(file, event)
+{
+  var viewsdiv = document.getElementById('views');
+  var viewdiv = document.createElement('div');
+  viewsdiv.appendChild(viewdiv);
+
+  var data = new imageDataBlock(event.target.result);
+  var line = "";
+  if (file.name.indexOf("raw") >= 0)
+  {
+    data.readRAW(file.name);
+  }
+  else
+  {
+    line = data.getLine();
+    if (line == "P7")
+      data.readPAM();
+    else if (line == "P5")
+      data.readPGM();
+    else
+      return error("Not a PAM/PGM file!");
+  }
+
+  var fixdiv = document.createElement('div');
+  fixdiv.setAttribute("style", "display:block; position:fixed; top:0px;right:0px;width:auto;height:auto;");
+  var text = file.name + " W="+data.width+" H="+data.height+" D="+data.depth;
+  fixdiv.appendChild(document.createTextNode(text));
+  fixdiv.appendChild(document.createElement('br'));
+  var form = document.createElement('form');
+  fixdiv.appendChild(form);
+  for (i=0; i < data.depth; i++)
+  {
+    var span = document.createElement('span');
+    var button = document.createElement('input');
+    var label = document.createElement('label');
+    button.setAttribute("type", "checkbox");
+    button.setAttribute("name", "plane"+i);
+    button.setAttribute("value", "yes");
+    button.setAttribute("onchange", "this.data.planeChange("+i+", this.checked)");
+    button.checked = 1;
+    button.data = data;
+    label.innerHTML=data.planes[i].name;
+    span.appendChild(button);
+    span.appendChild(label);
+    form.appendChild(span);
+  }
+  viewdiv.appendChild(fixdiv);
+
+  data.canvas = document.createElement('canvas');
+  data.canvas.setAttribute("width", data.width);
+  data.canvas.setAttribute("height", data.height);
+  viewdiv.appendChild(data.canvas);
+
+  data.updateImage();
+}
+
+function handleFileSelect(event)
+{
+  var files = event.target.files;
+  var f, i;
+
+  for (i=0; f=files[i]; i++)
+  {
+    var reader = new FileReader();
+    reader.onload = (function (theFile) { return function (e) { imageView(theFile, e); } })(f);
+    reader.readAsBinaryString(f);
+  }
+}
+
+</script>
+</head>
+<body>
+<input type="file" id="files" name="files[]">Select a .pam or .pgm</input>
+<div id=views>
+<script>
+  document.getElementById('files').addEventListener('change', handleFileSelect, false);
+</script>
+</body>
+</html>
