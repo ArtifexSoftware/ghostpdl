@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2011, Richard Hughes
+Copyright (c) 2011-2013, Richard Hughes
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -32,3 +32,4 @@ MIT Open Source License  -  http://www.opensource.org/
 char  **colord_get_qualifier_for_ppd      (ppd_file_t *ppd);
 char   *colord_get_profile_for_device_id  (const char *device_id,
                                            const char **qualifier_tuple);
+int     colord_get_inhibit_for_device_id  (const char *device_id);

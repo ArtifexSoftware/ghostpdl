@@ -2,7 +2,7 @@
 
 Copyright (c) 2008, Till Kamppeter
 Copyright (c) 2011, Tim Waugh
-Copyright (c) 2011, Richard Hughes
+Copyright (c) 2011-2013, Richard Hughes
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -525,6 +525,7 @@ main (int argc, char **argv, char *envp[])
   GsDocType doc_type;
   gs_page_header h;
   int fd;
+  int device_inhibited;
   int i;
   int n;
   int num_options;
@@ -594,6 +595,13 @@ main (int argc, char **argv, char *envp[])
     goto out;
   }
 
+  /* support colord and the "color-management=off" option */
+  device_inhibited = colord_get_inhibit_for_device_id (getenv("PRINTER"));
+  t = cupsGetOption("color-management", num_options, options);
+  if (t != NULL && strcmp(t, "off") == 0)
+    device_inhibited = TRUE;
+  if (device_inhibited)
+    fprintf(stderr, "DEBUG: Device is inhibited, no CM performed\n");
   qualifier = colord_get_qualifier_for_ppd (ppd);
   if (qualifier != NULL) {
 
@@ -630,6 +638,8 @@ main (int argc, char **argv, char *envp[])
   cupsArrayAdd(gs_args, strdup("-dNOINTERPOLATE"));
   if (doc_type == GS_DOC_TYPE_PS)
     cupsArrayAdd(gs_args, strdup("-dNOMEDIAATTRS"));
+  if (device_inhibited)
+    cupsArrayAdd(gs_args, strdup("-dUseFastColor"));
   cupsArrayAdd(gs_args, strdup("-sDEVICE=cups"));
   cupsArrayAdd(gs_args, strdup("-sstdout=%stderr"));
   cupsArrayAdd(gs_args, strdup("-sOutputFile=%stdout"));

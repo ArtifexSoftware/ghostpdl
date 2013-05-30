@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2011, Tim Waugh
-Copyright (c) 2011, Richard Hughes
+Copyright (c) 2011-2013, Richard Hughes
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -262,11 +262,10 @@ out:
 }
 
 static char *
-get_profile_for_device_id (DBusConnection *con,
-                           const char *device_id,
-                           const char **qualifier_tuple)
+get_device_path_for_device_id (DBusConnection *con,
+                               const char *device_id)
 {
-  char *profile = NULL;
+  char *device_path = NULL;
   const char *device_path_tmp;
   DBusError error;
   DBusMessageIter args;
@@ -302,20 +301,21 @@ get_profile_for_device_id (DBusConnection *con,
   }
   dbus_message_iter_get_basic(&args, &device_path_tmp);
   fprintf(stderr, "DEBUG: Found device %s\n", device_path_tmp);
-  profile = get_profile_for_device_path(con, device_path_tmp, qualifier_tuple);
+  device_path = strdup(device_path_tmp);
 out:
   if (message != NULL)
     dbus_message_unref(message);
   if (reply != NULL)
     dbus_message_unref(reply);
-  return profile;
+  return device_path;
 }
 
 char *
 colord_get_profile_for_device_id (const char *device_id,
-                              const char **qualifier_tuple)
+				  const char **qualifier_tuple)
 {
   DBusConnection *con = NULL;
+  char *device_path = NULL;
   char *filename = NULL;
 
   if (device_id == NULL) {
@@ -330,17 +330,116 @@ colord_get_profile_for_device_id (const char *device_id,
     goto out;
   }
 
+  /* find the device */
+  device_path = get_device_path_for_device_id (con, device_id);
+  if (device_path == NULL) {
+    fprintf(stderr, "DEBUG: Failed to get find device %s\n", device_id);
+    goto out;
+  }
+
   /* get the best profile for the device */
-  filename = get_profile_for_device_id (con, device_id, qualifier_tuple);
+  filename = get_profile_for_device_path(con, device_path, qualifier_tuple);
   if (filename == NULL) {
-    fprintf(stderr, "DEBUG: Failed to get profile filename!\n");
+    fprintf(stderr, "DEBUG: Failed to get profile filename for %s\n", device_id);
     goto out;
   }
   fprintf(stderr, "DEBUG: Use profile filename: '%s'\n", filename);
 out:
+  free(device_path);
   if (con != NULL)
     dbus_connection_unref(con);
   return filename;
+}
+
+int
+get_profile_inhibitors (DBusConnection *con, const char *object_path)
+{
+  char *tmp;
+  const char *interface = "org.freedesktop.ColorManager.Device";
+  const char *property = "ProfilingInhibitors";
+  DBusError error;
+  DBusMessageIter args;
+  DBusMessageIter sub;
+  DBusMessageIter sub2;
+  DBusMessage *message = NULL;
+  DBusMessage *reply = NULL;
+  int inhibitors = 0;
+
+  message = dbus_message_new_method_call("org.freedesktop.ColorManager",
+                                         object_path,
+                                         "org.freedesktop.DBus.Properties",
+                                         "Get");
+
+  dbus_message_iter_init_append(message, &args);
+  dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &interface);
+  dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &property);
+
+  /* send syncronous */
+  dbus_error_init(&error);
+  fprintf(stderr, "DEBUG: Calling %s.Get(%s)\n", interface, property);
+  reply = dbus_connection_send_with_reply_and_block(con,
+                                                    message,
+                                                    -1,
+                                                    &error);
+  if (reply == NULL) {
+    fprintf(stderr, "DEBUG: Failed to send: %s:%s\n",
+           error.name, error.message);
+    dbus_error_free(&error);
+    goto out;
+  }
+
+  /* get reply data */
+  dbus_message_iter_init(reply, &args);
+  if (dbus_message_iter_get_arg_type(&args) != DBUS_TYPE_VARIANT) {
+    fprintf(stderr, "DEBUG: Incorrect reply type\n");
+    goto out;
+  }
+
+  /* count the size of the array */
+  dbus_message_iter_recurse(&args, &sub2);
+  dbus_message_iter_recurse(&sub2, &sub);
+  while (dbus_message_iter_get_arg_type(&sub) != DBUS_TYPE_INVALID) {
+    dbus_message_iter_get_basic(&sub, &tmp);
+    fprintf(stderr, "DEBUG: Inhibitor %s exists\n", tmp);
+    dbus_message_iter_next(&sub);
+    inhibitors++;
+  }
+out:
+  if (message != NULL)
+    dbus_message_unref(message);
+  if (reply != NULL)
+    dbus_message_unref(reply);
+  return inhibitors;
+}
+
+int
+colord_get_inhibit_for_device_id (const char *device_id)
+{
+  DBusConnection *con;
+  char *device_path = NULL;
+  int has_inhibitors = FALSE;
+
+  /* connect to system bus */
+  con = dbus_bus_get(DBUS_BUS_SYSTEM, NULL);
+  if (con == NULL) {
+    fprintf(stderr, "ERROR: Failed to connect to system bus\n");
+    goto out;
+  }
+
+  /* find the device */
+  device_path = get_device_path_for_device_id (con, device_id);
+  if (device_path == NULL) {
+    fprintf(stderr, "DEBUG: Failed to get find device %s\n", device_id);
+    goto out;
+  }
+
+  /* get the best profile for the device */
+  has_inhibitors = get_profile_inhibitors(con, device_path);
+out:
+  free(device_path);
+  if (con != NULL)
+    dbus_connection_unref(con);
+  return has_inhibitors;
 }
 
 #else
@@ -351,6 +450,13 @@ colord_get_profile_for_device_id (const char *device_id,
 {
   fprintf(stderr, "WARN: not compiled with DBus support\n");
   return NULL;
+}
+
+int
+colord_get_inhibit_for_device_id (const char *device_id)
+{
+  fprintf(stderr, "WARN: not compiled with DBus support\n");
+  return 0;
 }
 
 #endif
