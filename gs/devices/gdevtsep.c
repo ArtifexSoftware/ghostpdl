@@ -926,15 +926,37 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
         case 1:
             break;
     }
+
+    switch (code = param_read_long(plist, (param_name = "BitsPerComponent"), &bpc)) {
+        case 0:
+            if ((bpc == 1) || (bpc == 8)) {
+                pdevn->BitsPerComponent = bpc;
+                break;
+            }
+            code = gs_error_rangecheck;
+        default:
+            param_signal_error(plist, param_name, code);
+            return code;
+        case 1:
+            break;
+    }
+
     /* Read Compression */
     switch (code = param_read_string(plist, (param_name = "Compression"), &comprstr)) {
         case 0:
-            if ((code = tiff_compression_id(&pdevn->Compression, &comprstr)) < 0 ||
-                !tiff_compression_allowed(pdevn->Compression,
-                                          pdevn->devn_params.bitspercomponent))
-            {
+            if ((code = tiff_compression_id(&pdevn->Compression, &comprstr)) < 0) {
+
+                errprintf(pdevn->memory, "Unknown compression setting\n");
+
                 param_signal_error(plist, param_name, code);
                 return code;
+            }
+
+            if (!tiff_compression_allowed(pdevn->Compression, pdevn->BitsPerComponent)) {
+                errprintf(pdevn->memory, "Invalid compression setting for this bitdepth\n");
+
+                param_signal_error(plist, param_name, gs_error_rangecheck);
+                return gs_error_rangecheck;
             }
             break;
         case 1:
@@ -977,19 +999,6 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
         case 0:
             if ((mfs >= 0) && (mfs <= 4)) {
                 pdevn->MinFeatureSize = mfs;
-                break;
-            }
-            code = gs_error_rangecheck;
-        case 1:
-            break;
-        default:
-            param_signal_error(plist, param_name, code);
-            return code;
-    }
-    switch (code = param_read_long(plist, (param_name = "BitsPerComponent"), &bpc)) {
-        case 0:
-            if ((bpc == 1) || (bpc == 8)) {
-                pdevn->BitsPerComponent = bpc;
                 break;
             }
             code = gs_error_rangecheck;
@@ -2048,14 +2057,6 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     int width = gx_downscaler_scale(tfdev->width, factor);
     int height = gx_downscaler_scale(tfdev->height, factor);
 
-    /* Sanity check the compression format */
-    if (dst_bpc != 8 && (tfdev->Compression==COMPRESSION_LZW ||
-                         tfdev->Compression==COMPRESSION_PACKBITS))
-        tfdev->Compression = COMPRESSION_NONE;
-    if (dst_bpc != 1 && (tfdev->Compression==COMPRESSION_CCITTRLE ||
-                         tfdev->Compression==COMPRESSION_CCITTFAX3 ||
-                         tfdev->Compression==COMPRESSION_CCITTFAX4))
-        tfdev->Compression = COMPRESSION_NONE;
 
     /* Print the names of the spot colors */
     if (num_order == 0) {
@@ -2092,17 +2093,15 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 
     }
     code = tiff_set_fields_for_printer(pdev, tfdev->tiff_comp, factor, 0);
-    if (dst_bpc == 1 && (tfdev->Compression==COMPRESSION_NONE ||
-                         tfdev->Compression==COMPRESSION_CCITTRLE ||
-                         tfdev->Compression==COMPRESSION_CCITTFAX3 ||
-                         tfdev->Compression==COMPRESSION_CCITTFAX4))
-        tiff_set_cmyk_fields(pdev, tfdev->tiff_comp, 1, tfdev->Compression, tfdev->MaxStripSize);
-    else if (dst_bpc == 8 && (tfdev->Compression==COMPRESSION_NONE ||
-                              tfdev->Compression==COMPRESSION_LZW ||
-                              tfdev->Compression==COMPRESSION_PACKBITS))
-        tiff_set_cmyk_fields(pdev, tfdev->tiff_comp, 8, tfdev->Compression, tfdev->MaxStripSize);
-    else
-      tiff_set_cmyk_fields(pdev, tfdev->tiff_comp, dst_bpc, COMPRESSION_LZW, tfdev->MaxStripSize);
+
+    if (dst_bpc == 1 || dst_bpc == 8) {
+        tiff_set_cmyk_fields(pdev, tfdev->tiff_comp, dst_bpc, tfdev->Compression, tfdev->MaxStripSize);
+    }
+    else {
+        /* Catch-all just for safety's sake */
+        tiff_set_cmyk_fields(pdev, tfdev->tiff_comp, dst_bpc, COMPRESSION_NONE, tfdev->MaxStripSize);
+    }
+
     pdev->color_info.depth = save_depth;
     if (code < 0)
         return code;

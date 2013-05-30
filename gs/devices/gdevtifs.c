@@ -160,13 +160,18 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
     /* Read Compression */
     switch (code = param_read_string(plist, (param_name = "Compression"), &comprstr)) {
         case 0:
-            if ((ecode = tiff_compression_id(&compr, &comprstr)) < 0 ||
-                !tiff_compression_allowed(compr, (which & 1 ? 1 : dev->color_info.depth)))
-            {
-                errprintf(tfdev->memory,
-                          (ecode < 0 ? "Unknown compression setting\n" :
-                           "Invalid compression setting for this bitdepth\n"));
+            if ((ecode = tiff_compression_id(&compr, &comprstr)) < 0) {
+
+                errprintf(tfdev->memory, "Unknown compression setting\n");
                 param_signal_error(plist, param_name, ecode);
+                return ecode;
+            }
+
+            if ( !tiff_compression_allowed(compr, (which & 1 ? 1 : (dev->color_info.depth / dev->color_info.num_components)))) {
+
+                errprintf(tfdev->memory, "Invalid compression setting for this bitdepth\n");
+                param_signal_error(plist, param_name, gs_error_rangecheck);
+                return gs_error_rangecheck;
             }
             break;
         case 1:
@@ -644,9 +649,15 @@ tiff_compression_id(uint16 *id, gs_param_string *param)
 
 int tiff_compression_allowed(uint16 compression, byte depth)
 {
-    return depth == 1 || (compression != COMPRESSION_CCITTRLE &&
-                          compression != COMPRESSION_CCITTFAX3 &&
-                          compression != COMPRESSION_CCITTFAX4);
+    return ((depth == 1 && (compression == COMPRESSION_NONE ||
+                          compression == COMPRESSION_CCITTRLE ||
+                          compression == COMPRESSION_CCITTFAX3 ||
+                          compression == COMPRESSION_CCITTFAX4 ||
+                          compression == COMPRESSION_LZW ||
+                          compression == COMPRESSION_PACKBITS))
+         || (depth == 8 && (compression == COMPRESSION_NONE ||
+                          compression == COMPRESSION_LZW ||
+                          compression == COMPRESSION_PACKBITS)));
 
 }
 
