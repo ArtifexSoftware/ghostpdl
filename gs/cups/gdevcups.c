@@ -2755,8 +2755,8 @@ cups_open(gx_device *pdev)		/* I - Device info */
 
 /*
  * 'cups_output_page()' - Send one or more pages to the output file.
- * The changes to the cups->page are done here so that the background
- * printing should be OK.
+ * The changes to the cups->page are done here for background printing
+ * but testing shows some regressions, so BGPrint is not used for now.
  */
 
 private int				/* O - 0 if everything is OK */
@@ -2764,7 +2764,9 @@ cups_output_page(gx_device *pdev, int num_copies, int flush)
 {
   int		code = 0;		/* Error code */
 
-  if ((code = gdev_prn_bg_output_page(pdev, num_copies, flush)) < 0)
+  /* FIXME: We would like to support BGPrint=true and call gdev_prn_bg_output_page */
+  /* but there must still be other things that prevent this. */
+  if ((code = gdev_prn_output_page(pdev, num_copies, flush)) < 0)
       return code;
 
   cups->page ++;
