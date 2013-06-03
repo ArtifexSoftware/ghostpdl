@@ -624,11 +624,8 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
             new_box.q = new_box.p;
             changed = 1;
         } else {
-            if (params != NULL) {
-                /* Called from gx_default_fill_path for converting
-                   a filling path into a clipping path.
-                   Apply same adjustment as for filling the path. */
-                gs_fixed_point adjust = params->adjust;
+            {   /* Apply same adjustment as for filling the path. */
+                gs_fixed_point adjust = params != NULL ? params->adjust : pis->fill_adjust;
                 fixed adjust_xl, adjust_xu, adjust_yl, adjust_yu;
 
                 if (adjust.x == -1)
