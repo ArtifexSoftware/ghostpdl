@@ -754,7 +754,7 @@ retry:
             *onCurve++ = flag = ttfReader__Byte(r);
             if (flag & REPEAT_FLAGS) {
                 count = ttfReader__Byte(r);
-                for (--count; count >= 0; --count)
+                for (--count; count >= 0 && onCurve < stop; --count)
                     *onCurve++ = flag;
             }
         }
