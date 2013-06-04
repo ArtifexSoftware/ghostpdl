@@ -2566,6 +2566,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
     gs_matrix_scale(&scale_o, 1000.0, 1000.0, &scale_o);
     pwidths->Width.v.x = pwidths->Width.v.y = 0;
     pwidths->real_width.v.x = pwidths->real_width.v.y = 0;
+    pwidths->real_width.w = pwidths->real_width.xy.x = pwidths->real_width.xy.y = 0;
     pwidths->replaced_v = false;
     if (glyph == GS_NO_GLYPH)
         return get_missing_width(cfont, wmode, &scale_c, pwidths);
