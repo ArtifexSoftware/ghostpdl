@@ -19,6 +19,11 @@
 #ifndef gdevpdfc_INCLUDED
 #  define gdevpdfc_INCLUDED
 
+int pdf_delete_sampled_base_space_function(gx_device_pdf *pdev, gs_function_t *pfn);
+int pdf_delete_base_space_function(gx_device_pdf *pdev, gs_function_t *pfn);
+int pdf_make_sampled_base_space_function(gx_device_pdf *pdev, gs_function_t **pfn, int nSrcComp, int nDstComp, byte *data);
+int pdf_make_base_space_function(gx_device_pdf *pdev, gs_function_t **pfn, int ncomp, float *data_low, float *data_high);
+
 /* ------ Exported by gdevpdfc.c for gdevpdfk.c ------ */
 
 /* Define the special cases for CIEBased spaces. */

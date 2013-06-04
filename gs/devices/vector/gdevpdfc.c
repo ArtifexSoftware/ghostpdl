@@ -18,7 +18,7 @@
 #include "math_.h"
 #include "memory_.h"
 #include "gx.h"
-#include "gscspace.h"		/* for gscie.h */
+#include "gscspace.h"   /* for gscie.h */
 #include "gscdevn.h"
 #include "gscie.h"
 #include "gscindex.h"
@@ -26,8 +26,9 @@
 #include "stream.h"
 #include "gsicc.h"
 #include "gserrors.h"
-#include "gsfunc.h"		/* required for colour space function evaluation */
-#include "gsfunc3.h"		/* Required to create a replacement lineat interpolation function */
+#include "gsfunc.h"	    /* required for colour space function evaluation */
+#include "gsfunc3.h"    /* Required to create a replacement linear interpolation function */
+#include "gsfunc0.h"    /* Required to create a sampled function for DeviceN alternate replacement */
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
 #include "gdevpdfc.h"
@@ -336,7 +337,18 @@ pdf_cspace_init_Device(gs_memory_t *mem, gs_color_space **ppcs,
     return 0;
 }
 
-static int pdf_delete_base_space_function(gx_device_pdf *pdev, gs_function_t *pfn)
+int pdf_delete_sampled_base_space_function(gx_device_pdf *pdev, gs_function_t *pfn)
+{
+    gs_function_Sd_params_t *params = (gs_function_Sd_params_t *)&pfn->params;
+
+    gs_free_object(pdev->memory, (void *)params->Domain, "pdf_delete_function");
+    gs_free_object(pdev->memory, (void *)params->Range, "pdf_delete_function");
+    gs_free_string(pdev->memory, (void *)params->DataSource.data.str.data, params->DataSource.data.str.size, "pdf_dselete_function");
+    gs_free_object(pdev->memory, (void *)pfn, "pdf_delete_function");
+    return 0;
+}
+
+int pdf_delete_base_space_function(gx_device_pdf *pdev, gs_function_t *pfn)
 {
     gs_function_ElIn_params_t *params = (gs_function_ElIn_params_t *)&pfn->params;
 
@@ -348,7 +360,58 @@ static int pdf_delete_base_space_function(gx_device_pdf *pdev, gs_function_t *pf
     return 0;
 }
 
-static int pdf_make_base_space_function(gx_device_pdf *pdev, gs_function_t **pfn,
+int pdf_make_sampled_base_space_function(gx_device_pdf *pdev, gs_function_t **pfn,
+                                        int nSrcComp, int nDstComp, byte *data)
+{
+    gs_function_Sd_params_t params;
+    void *ptr1, *ptr2;
+    int i, code;
+    gs_const_string str;
+
+    str.data = gs_alloc_string(pdev->memory, nDstComp * nSrcComp * 2 * sizeof(float), "pdf_DeviceN");
+    str.size = nDstComp * pow(2, nSrcComp);
+    memcpy((void *)str.data, data, str.size);
+
+    params.m = nSrcComp;
+    params.n = nDstComp;
+    params.Order = 1;
+    params.BitsPerSample = 8;
+
+    ptr1 = gs_alloc_byte_array(pdev->memory, nSrcComp, sizeof(int), "pdf_make_function(Domain)");
+    for (i=0;i<nSrcComp;i++) {
+        ((int *)ptr1)[i] = 2;
+    }
+    params.Size = (const int *)ptr1;
+
+    ptr1 = (float *)
+        gs_alloc_byte_array(pdev->memory, 2 * nSrcComp, sizeof(float), "pdf_make_function(Domain)");
+    if (ptr1 == 0) {
+        return gs_note_error(gs_error_VMerror);
+    }
+    ptr2 = (float *)
+        gs_alloc_byte_array(pdev->memory, 2 * nDstComp, sizeof(float), "pdf_make_function(Range)");
+    if (ptr2 == 0) {
+        gs_free_object(pdev->memory, (void *)ptr1, "pdf_make_function(Range)");
+        return gs_note_error(gs_error_VMerror);
+    }
+    for (i=0;i<nSrcComp;i++) {
+        ((float *)ptr1)[i*2] = 0.0f;
+        ((float *)ptr1)[(i*2) + 1] = 1.0f;
+    }
+    for (i=0;i<nDstComp;i++) {
+        ((float *)ptr2)[i*2] = 0.0f;
+        ((float *)ptr2)[(i*2) + 1] = 1.0f;
+    }
+    params.Domain = ptr1;
+    params.Range = ptr2;
+    params.Encode = params.Decode = NULL;
+    data_source_init_string(&params.DataSource, str);
+
+    code = gs_function_Sd_init(pfn, &params, pdev->memory);
+    return code;
+}
+
+int pdf_make_base_space_function(gx_device_pdf *pdev, gs_function_t **pfn,
                                         int ncomp, float *data_low, float *data_high)
 {
     gs_function_ElIn_params_t params;
