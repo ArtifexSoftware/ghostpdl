@@ -198,7 +198,7 @@ rb:
                 ss->offset_map_length++;
             }
 #	    endif
-            if_debug5m('l', st->memory,
+            if_debug5m('l', ss->local_memory,
                       "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u\n",
                       bmin, bmax,
                       (long)(io_procs->ftell(bfile) - sizeof(ss->b_this)), (long)pos, left);
