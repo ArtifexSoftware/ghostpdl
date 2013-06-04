@@ -2225,9 +2225,9 @@ write_image_end_all(gx_device *dev, const clist_image_enum *pie)
 
     /*
      * We need to check specially for images lying entirely outside the
-     * page, since FOR_RECTS doesn't do this.
+     * page, since the RECT writing logic doesn't do this.
      */
-    if (rheight <= 0)
+    if (pie->ymax < 0 || ry > dev->height)
         return 0;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
