@@ -140,8 +140,10 @@ pdfmark_make_dest(char dstr[MAX_DEST_STRING], gx_device_pdf * pdev,
     if (present || RequirePage)
         page = pdfmark_page_number(pdev, &page_string);
 
-    if (page < pdev->FirstPage || (pdev->LastPage != 0 && page > pdev->LastPage))
+    if (page < pdev->FirstPage || (pdev->LastPage != 0 && page > pdev->LastPage)) {
+        emprintf1(pdev->memory, "Destination page %d lies outside the valid page range.\n", page);
         return -1;
+    }
     else
         if (pdev->FirstPage != 0)
             page = (page - pdev->FirstPage) + 1;
@@ -1783,7 +1785,11 @@ pdfmark_DOCVIEW(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
     if (count & 1)
         return_error(gs_error_rangecheck);
-    if (pdfmark_make_dest(dest, pdev, "/Page", "/View", pairs, count, 0)) {
+    code = pdfmark_make_dest(dest, pdev, "/Page", "/View", pairs, count, 0);
+    if (code < 0)
+        return gs_note_error(gs_error_rangecheck);
+
+    if (code == 0) {
         int i;
 
         code = cos_dict_put_c_key_string(pdev->Catalog, "/OpenAction",
