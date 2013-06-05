@@ -621,7 +621,6 @@ static int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state
             pcs2 = pcs2->base_space;
             csi2 = gs_color_space_get_index(pcs2);
         } while(csi2 != gs_color_space_index_ICC && pcs2->base_space);
-        csi2 = gs_color_space_get_index(pcs2);
 
         rendering_params.black_point_comp = pis->blackptcomp;
         rendering_params.graphics_type_tag = pdev->graphics_type_tag;
@@ -709,6 +708,10 @@ static int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state
         }
         COS_OBJECT_VALUE(&v, psna);
         code = cos_array_add(pca, &v);
+        if (code <0) {
+            COS_FREE(pca, "convert DeviceN");
+            return_error(gs_error_VMerror);
+        }
 
         if (pcs->params.device_n.colorants != NULL) {
             cos_dict_t *colorants  = cos_dict_alloc(pdev, "pdf_color_space(DeviceN)");
@@ -869,7 +872,6 @@ static int convert_separation_alternate(gx_device_pdf * pdev, const gs_imager_st
             pcs2 = pcs2->base_space;
             csi2 = gs_color_space_get_index(pcs2);
         } while(csi2 != gs_color_space_index_ICC && pcs2->base_space);
-        csi2 = gs_color_space_get_index(pcs2);
 
         memset(&cc.paint.values, 0x00, GS_CLIENT_COLOR_MAX_COMPONENTS);
         cc.paint.values[0] = 0;
