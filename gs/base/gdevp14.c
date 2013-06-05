@@ -859,7 +859,9 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
         goto exit;
     if (maskbuf != NULL && maskbuf->data == NULL && maskbuf->alpha == 255)
         goto exit;
-    if (maskbuf != NULL) {
+    /* We can only do this clipping if we have a soft mask AND if the alpha outside
+       the soft mask is zero */
+    if (maskbuf != NULL && maskbuf->alpha == 0) {
         y0 = max(y0, maskbuf->rect.p.y);
         y1 = min(y1, maskbuf->rect.q.y);
         x0 = max(x0, maskbuf->rect.p.x);
@@ -4153,7 +4155,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
                               gs_imager_state *pis, gs_memory_t *mem)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
-    byte bg_alpha = 255;
+    byte bg_alpha = 0;   /* By default the background alpha (area outside mask) is zero */
     byte *transfer_fn = (byte *)gs_alloc_bytes(pdev->ctx->memory, 256,
                                                "pdf14_begin_transparency_mask");
     gs_int_rect rect;
@@ -4166,6 +4168,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     code = compute_group_device_int_rect(pdev, &rect, pbbox, pis);
     if (code < 0)
         return code;
+    /* If we have background components the background alpha may be nonzero */
     if (ptmp->Background_components)
         bg_alpha = (int)(255 * ptmp->GrayBackground + 0.5);
     if_debug1m('v', dev->memory,

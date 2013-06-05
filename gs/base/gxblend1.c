@@ -208,7 +208,8 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
         (y0 - tos->rect.p.y) * tos->rowstride;
     byte *nos_ptr = nos->data + x0 - nos->rect.p.x +
         (y0 - nos->rect.p.y) * nos->rowstride;
-    byte *mask_ptr = NULL;
+    byte *mask_row_ptr = NULL;
+    byte *mask_curr_ptr = NULL;
     int tos_planestride = tos->planestride;
     int nos_planestride = nos->planestride;
     int mask_planestride = 0x0badf00d; /* Quiet compiler. */
@@ -231,6 +232,10 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     byte *mask_tr_fn = NULL; /* Quiet compiler. */
     gx_color_index comps;
     bool has_mask = false;
+    bool in_mask_rect_y = false;
+    bool in_mask_rect = false;
+    byte pix_alpha;
+
 #if RAW_DUMP
     byte *composed_ptr = NULL;
 #endif
@@ -251,24 +256,26 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
         nos_alpha_g_ptr = NULL;
 
     if (maskbuf != NULL) {
+        int tmp;
+
         mask_tr_fn = maskbuf->transfer_fn;
+        /* Make sure we are in the mask buffer */
         if (maskbuf->data != NULL) {
-            mask_ptr = maskbuf->data + x0 - maskbuf->rect.p.x +
+            mask_row_ptr = maskbuf->data + x0 - maskbuf->rect.p.x +
                     (y0 - maskbuf->rect.p.y) * maskbuf->rowstride;
             mask_planestride = maskbuf->planestride;
             has_mask = true;
-        } else {
-            /* We may have a case, where we are outside the maskbuf rect. */
-            /* We would have avoided creating the maskbuf->data */
-            /* In that case, we should use the background alpha value */
-            /* See discussion on the BC entry in the PDF spec */
-            int tmp;
-            mask_bg_alpha = maskbuf->alpha;
-            /* Adjust alpha by the mask background alpha */
-            mask_bg_alpha = mask_tr_fn[mask_bg_alpha];
-            tmp = alpha * mask_bg_alpha + 0x80;
-            alpha = (tmp + (tmp >> 8)) >> 8;
-        }
+        } 
+        /* We may have a case, where we are outside the maskbuf rect. */
+        /* We would have avoided creating the maskbuf->data */
+        /* In that case, we should use the background alpha value */
+        /* See discussion on the BC entry in the PDF spec.   */
+        mask_bg_alpha = maskbuf->alpha;
+        /* Adjust alpha by the mask background alpha.   This is only used
+           if we are outside the soft mask rect during the filling operation */
+        mask_bg_alpha = mask_tr_fn[mask_bg_alpha];
+        tmp = alpha * mask_bg_alpha + 0x80;
+        mask_bg_alpha = (tmp + (tmp >> 8)) >> 8;
     }
     n_chan--;
 #if RAW_DUMP
@@ -279,15 +286,30 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     dump_raw_buffer(y1-y0, width, nos->n_planes,
                 nos_planestride, nos->rowstride,
                 "cImageNOS",nos_ptr);
-    if (mask_ptr != NULL){
-        dump_raw_buffer(y1-y0, width, maskbuf->n_planes,
+    if (maskbuf !=NULL && maskbuf->data != NULL){
+        dump_raw_buffer(maskbuf->rect.q.y - maskbuf->rect.p.y, 
+                        maskbuf->rect.q.x - maskbuf->rect.p.x, maskbuf->n_planes,
                         maskbuf->planestride, maskbuf->rowstride,
-                        "dMask",mask_ptr);
+                        "dMask", maskbuf->data);
     }
 #endif
     for (y = y1-y0; y > 0; --y) {
-        for (x = width; x > 0; --x) {
-            byte pix_alpha = alpha;
+        mask_curr_ptr = mask_row_ptr;
+        if (has_mask && y1 - y >= maskbuf->rect.p.y && y1 - y < maskbuf->rect.q.y) {
+            in_mask_rect_y = true;
+        } else {
+            in_mask_rect_y = false;
+        }
+        for (x = 0; x < width; x++) {
+            if (in_mask_rect_y && has_mask && x0 + x >= maskbuf->rect.p.x && x0 + x < maskbuf->rect.q.x) {
+                in_mask_rect = true;
+            } else {
+                in_mask_rect = false;
+            }
+            if (in_mask_rect || maskbuf == NULL)
+                pix_alpha = alpha;
+            else
+                pix_alpha = mask_bg_alpha;
 
             /* Complement the components for subtractive color spaces */
             if (additive) {
@@ -303,14 +325,19 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                 tos_pixel[n_chan] = tos_ptr[n_chan * tos_planestride];
                 nos_pixel[n_chan] = nos_ptr[n_chan * nos_planestride];
             }
-            if (mask_ptr != NULL) {
-                byte mask = mask_tr_fn[*mask_ptr++];
-                int tmp = pix_alpha * mask + 0x80;
-                pix_alpha = (tmp + (tmp >> 8)) >> 8;
-#		    if VD_PAINT_MASK
-                    vd_pixel(int2fixed(width-1-x), int2fixed(y1-y), mask);
-#		    endif
+            if (mask_curr_ptr != NULL) {
+                if (in_mask_rect) {
+                    byte mask = mask_tr_fn[*mask_curr_ptr++];
+                    int tmp = pix_alpha * mask + 0x80;
+                    pix_alpha = (tmp + (tmp >> 8)) >> 8;
+                } else {
+                    mask_curr_ptr++;
+                }
             }
+#		    if VD_PAINT_MASK
+                    vd_pixel(int2fixed(x), int2fixed(y1-y), mask);
+#		    endif
+                
             if (nos_knockout) {
                 byte *nos_shape_ptr = nos_shape_offset ?
                     &nos_ptr[nos_shape_offset] : NULL;
@@ -386,12 +413,12 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                 nos_ptr[n_chan * nos_planestride] = nos_pixel[n_chan];
             }
 #		if VD_PAINT_COLORS
-                vd_pixel(int2fixed(width-1-x), int2fixed(y1-y), n_chan == 0 ?
+                vd_pixel(int2fixed(x), int2fixed(y1-y), n_chan == 0 ?
                     (nos_pixel[0] << 16) + (nos_pixel[0] << 8) + nos_pixel[0] :
                     (nos_pixel[0] << 16) + (nos_pixel[1] << 8) + nos_pixel[2]);
 #		endif
 #		if VD_PAINT_ALPHA
-                vd_pixel(int2fixed(width-1-x), int2fixed(y1-y),
+                vd_pixel(int2fixed(x), int2fixed(y1-y),
                     (nos_pixel[n_chan] << 16) + (nos_pixel[n_chan] << 8) +
                      nos_pixel[n_chan]);
 #		endif
@@ -404,8 +431,8 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
         nos_ptr += nos->rowstride - width;
         if (nos_alpha_g_ptr != NULL)
             nos_alpha_g_ptr += nos->rowstride - width;
-        if (mask_ptr != NULL)
-            mask_ptr += maskbuf->rowstride - width;
+        if (mask_row_ptr != NULL)
+            mask_row_ptr += maskbuf->rowstride;
     }
     /* Lets look at composed result */
 #if RAW_DUMP
