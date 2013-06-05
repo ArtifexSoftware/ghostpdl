@@ -186,11 +186,18 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     int num_des_comps;
     cmm_dev_profile_t *dev_profile;
     int code;
-    gx_color_polarity_t pol;
+    gx_color_polarity_t pol = GX_CINFO_POLARITY_UNKNOWN;
     int mask_col_high_level = 0;
+    int interpolate_control = penum->dev->interpolate_control;
+    int abs_interp_limit = max(1, any_abs(interpolate_control));
+    int limited_WidthOut, limited_HeightOut;
 
-    if (penum->interpolate == interp_off)
+    if (interpolate_control < 0)
+        penum->interpolate = interp_on;		/* not the same as "interp_force" -- threshold still used */
+    if (interpolate_control == interp_off || penum->interpolate == interp_off) {
+        penum->interpolate = interp_off;
         return 0;
+    }
     if (penum->masked && (mask_col_high_level = mask_suitable_for_interpolation(penum)) < 0) {
         penum->interpolate = interp_off;
         return 0;
@@ -221,18 +228,26 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         penum->y_extent.x == INT_MIN || penum->y_extent.x == INT_MAX ||
         penum->y_extent.y == INT_MIN || penum->y_extent.y == INT_MAX)
     {
-        /* A calculation has overflowed. Bale */
+        /* A calculation has overflowed. Bail */
         return 0;
     }
+
     if (penum->masked) {
+        abs_interp_limit = 1;		/* ignore this for masked images for now */
         use_icc = false;
         num_des_comps = 1;
+        if (pcs)
+            pol = cs_polarity(pcs);
+        else
+            pol = GX_CINFO_POLARITY_ADDITIVE;
     } else {
-        if ( pcs->cmm_icc_profile_data != NULL ) {
+        if (pcs == NULL)
+            return 0;		/* can't handle this */
+        if (pcs->cmm_icc_profile_data != NULL) {
             use_icc = true;
         }
-        if ( pcs->type->index == gs_color_space_index_Indexed) {
-            if ( pcs->base_space->cmm_icc_profile_data != NULL) {
+        if (pcs->type->index == gs_color_space_index_Indexed) {
+            if (pcs->base_space->cmm_icc_profile_data != NULL) {
                 use_icc = true;
             }
         }
@@ -250,7 +265,6 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         num_des_comps = gsicc_get_device_profile_comps(dev_profile);
         if (num_des_comps != penum->dev->color_info.num_components ||
             dev_profile->usefastcolor == true) {
-
             use_icc = false;
         }
         /* If the device has some unique color mapping procs due to its color space,
@@ -284,6 +298,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         return 0;
     }
 #endif
+    iss.abs_interp_limit = abs_interp_limit;
     if (penum->masked) {
         iss.BitsPerComponentOut = 8;
         iss.MaxValueOut = 0xff;
@@ -315,10 +330,6 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
                                                                dw / penum->Width))
                           - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.x *
                                                                dw / penum->Width));
-        iss.PatchHeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.y + penum->rrect.h) *
-                                                                dh / penum->Height))
-                           - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.y *
-                                                                dh / penum->Height));
         iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)iss.LeftMarginIn *
                                                                dw / penum->Width));
     } else {
@@ -338,15 +349,10 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
                                                                dh / penum->Width))
                           - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.x *
                                                                dh / penum->Width));
-        iss.PatchHeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.y + penum->rrect.h) *
-                                                                dw / penum->Height))
-                           - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.y *
-                                                                dw / penum->Height));
         iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)iss.LeftMarginIn *
                                                                dh / penum->Width));
     }
     iss.PatchWidthOut = any_abs(iss.PatchWidthOut);
-    iss.PatchHeightOut = any_abs(iss.PatchHeightOut);
     if (iss.LeftMarginOut + iss.PatchWidthOut >= iss.WidthOut) {
         iss.LeftMarginOut = iss.WidthOut - iss.PatchWidthOut;
         if (iss.LeftMarginOut < 0) {
@@ -361,6 +367,8 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     iss.HeightIn = penum->rect.h;
     iss.WidthOut = any_abs(iss.WidthOut);
     iss.HeightOut = any_abs(iss.HeightOut);
+    limited_WidthOut = (iss.WidthOut + abs_interp_limit - 1)/abs_interp_limit;
+    limited_HeightOut = (iss.HeightOut + abs_interp_limit - 1)/abs_interp_limit;
     if ((penum->posture == image_portrait ? penum->dst_width : penum->dst_height) < 0)
         iss.LeftMarginOut = iss.WidthOut - iss.LeftMarginOut - iss.PatchWidthOut;
     /* For interpolator cores that don't set Active, have us always active */
@@ -384,6 +392,39 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
             iss.spp_decode = cs_num_components(pcs);
         }
     }
+    /* Set up the filter template. May be changed for "Special" downscaling */
+#ifdef USE_MITCHELL_FILTER
+    templat = &s_IScale_template;
+#else
+    templat = &s_IIEncode_template;
+#endif
+
+    if ((iss.WidthOut < iss.WidthIn) &&
+        (iss.HeightOut < iss.HeightIn) &&       /* downsampling */
+        (pol != GX_CINFO_POLARITY_UNKNOWN) &&
+        (dev_proc(penum->dev, dev_spec_op)(penum->dev, gxdso_interpolate_antidropout, NULL, 0) > 0)) {
+        /* Special case handling for when we are downsampling to a dithered
+        * device.  The point of this non-linear downsampling is to preserve
+        * dark pixels from the source image to avoid dropout. The color
+        * polarity is used for this. */
+        templat = &s_ISpecialDownScale_template;
+    } else {
+        /* No interpolation unless we exceed the device selected minimum */
+        int threshold = dev_proc(penum->dev, dev_spec_op)(penum->dev, gxdso_interpolate_threshold, NULL, 0);
+
+        if ((iss.WidthOut == iss.WidthIn && iss.HeightOut == iss.HeightIn) ||
+            ((penum->interpolate != interp_force) &&
+                (threshold > 0) &&
+                (iss.WidthOut < iss.WidthIn * threshold) &&
+                (iss.HeightOut < iss.HeightIn * threshold))) {
+            penum->interpolate = interp_off;
+            return 0;       /* don't interpolate if not scaled up enough */
+        }
+    }
+    /* The SpecialDownScale filter needs polarity, either ADDITIVE or SUBTRACTIVE */
+    /* UNKNOWN case (such as for palette colors) has been handled above */
+    iss.ColorPolarityAdditive = (pol == GX_CINFO_POLARITY_ADDITIVE);
+
     if (iss.HeightOut > iss.EntireHeightIn && use_icc) {
         iss.early_cm = true;
         iss.spp_interp = num_des_comps;
@@ -436,43 +477,13 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
                            align_bitmap_mod);
         /* Size to allocate space to store the input as frac type */
     }
-#ifdef USE_MITCHELL_FILTER
-    templat = &s_IScale_template;
-#else
-    templat = &s_IIEncode_template;
-#endif
-    if (!pcs)
-        pol = GX_CINFO_POLARITY_ADDITIVE;
-    else
-        pol = cs_polarity(pcs);
-    if ((iss.WidthOut < iss.WidthIn) &&
-        (iss.HeightOut < iss.HeightIn) &&       /* downsampling */
-        (pol != GX_CINFO_POLARITY_UNKNOWN) &&
-        (dev_proc(penum->dev, dev_spec_op)(penum->dev, gxdso_interpolate_antidropout, NULL, 0) > 0)) {
-        /* Special case handling for when we are downsampling (to a dithered
-         * device.  The point of this non-linear downsampling is to preserve
-         * dark pixels from the source image to avoid dropout. The color
-         * polarity is used for this. */
-        templat = &s_ISpecialDownScale_template;
-    } else {
-        int threshold = dev_proc(penum->dev, dev_spec_op)(penum->dev, gxdso_interpolate_threshold, NULL, 0);
-        if ((iss.WidthOut == iss.WidthIn && iss.HeightOut == iss.HeightIn) ||
-            ((penum->interpolate != interp_force) &&
-             (threshold > 0) &&
-             (iss.WidthOut < iss.WidthIn * threshold) &&
-             (iss.HeightOut < iss.HeightIn * threshold))) {
-            penum->interpolate = interp_off;
-            return 0;       /* no interpolation / downsampling */
-        }
-    }
-    /* The SpecialDownScale filter needs polarity, either ADDITIVE or SUBTRACTIVE */
-    /* UNKNOWN case (such as for palette colors) has been handled above */
-    iss.ColorPolarityAdditive = (pol == GX_CINFO_POLARITY_ADDITIVE);
-    /* Allocate a buffer for one source/destination line. */
+    /* Allocate a buffer for one source/destination line.			*/
+    /* NB: The out_size is for full device res, regardless of abs_interp_limit	*/
+    /*     since we will expand into that area in the x-loop			*/
     {
-        uint out_size =
-            iss.WidthOut * max(iss.spp_interp * (iss.BitsPerComponentOut / 8),
-                               ARCH_SIZEOF_COLOR_INDEX);
+        uint out_size = iss.WidthOut * max(iss.spp_interp * ((iss.BitsPerComponentOut) / 8),
+                                   ARCH_SIZEOF_COLOR_INDEX);
+
         /* Allocate based upon frac size (as BitsPerComponentOut=16) output scan
            line input plus output. The outsize may have an adjustment for
            word boundary on it. Need to account for that now */
@@ -518,6 +529,12 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         penum->xyi.y = penum->yi0 + fixed2int_pixround_perfect(
                                  (fixed)((int64_t)x0 *
                                          penum->dst_height / penum->Width));
+    }
+    /* If the InterpolationControl specifies interpolation to less than full device res	*/
+    /* Set up a scaling DDA to control scaling back to desired image size.		*/
+    if (abs_interp_limit > 1) {
+        dda_init(pss->params.scale_dda.x, 0, iss.WidthOut, limited_WidthOut);
+        dda_init(pss->params.scale_dda.y, 0, iss.HeightOut, limited_HeightOut);
     }
     if_debug0m('b', penum->memory, "[b]render=interpolate\n");
     if (penum->masked) {
@@ -662,8 +679,6 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                             p -= spp_decode, q += spp_decode, ++i)
                             memcpy(q, p, spp_decode);
                         stream_r->ptr = out - 1;
-                        out += round_up(pss->params.WidthIn *
-                                        spp_decode, align_bitmap_mod);
                     }
                 } else {
                     /* We need to do some decoding. Data will remain in 8 bits
@@ -691,8 +706,6 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                         }
                         pdata += dpd;
                     }
-                    out += round_up(pss->params.WidthIn * spp_decode,
-                                    align_bitmap_mod);
                 }
             } else {
                 /* indexed 8 bit color values, possibly a device indep. or
@@ -753,12 +766,6 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                     pdata += dpd;    /* Can't have just ++
                                         since we could be going backwards */
                 }
-                /* We need to set the output to the end of the input buffer
-                   moving it to the next desired word boundary.  This must
-                   be accounted for in the memory allocation of
-                   gs_image_class_0_interpolate */
-                out += round_up(pss->params.WidthIn * spp_decode,
-                                align_bitmap_mod);
             }
         } else {
             /* More than 8-bits/color values */
@@ -811,8 +818,6 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                         }
                     }
                 }
-                out += round_up(pss->params.WidthIn * spp_decode * sizeof(frac),
-                                align_bitmap_mod);
                 if_debug0m('B', penum->memory, "\n");
             } else {
                 /* indexed and more than 8bps.  Need to get to the base space */
@@ -842,12 +847,6 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                     gs_cspace_indexed_lookup_frac(pcs, decode_value,psrc);
                     pdata += dpd;
                 }
-                /* We need to set the output to the end of the input buffer
-                   moving it to the next desired word boundary.  This must
-                   be accounted for in the memory allocation of
-                   gs_image_class_0_interpolate */
-                out += round_up(pss->params.WidthIn * spp_decode,
-                                align_bitmap_mod);
             } /* end of else on indexed */
         }  /* end of else on more than 8 bps */
         stream_r->limit = stream_r->ptr + row_size;
@@ -863,7 +862,7 @@ static int handle_colors(gx_image_enum *penum, const frac *psrc, int spp_decode,
     const gs_color_space *pconcs;
     const gs_gstate *pgs = penum->pgs;
     const gs_color_space *pcs = penum->pcs;
-    bool device_color;
+    bool device_color = false;
     bool is_index_space;
     int code = 0;
     cmm_dev_profile_t *dev_profile;
@@ -958,6 +957,34 @@ static int handle_colors(gx_image_enum *penum, const frac *psrc, int spp_decode,
     return code;
 }
 
+/* returns the expanded width using the dda.x */
+static int
+interpolate_scaled_expanded_width(int delta_x, stream_image_scale_state *pss)
+{
+    gx_dda_fixed_point tmp_dda = pss->params.scale_dda;
+    int start_x = dda_current(tmp_dda.x);
+
+    do {
+        dda_next(tmp_dda.x);
+    } while (--delta_x > 0);
+
+    return dda_current(tmp_dda.x) - start_x;
+}
+
+/* returns the expanded height using the dda.y */
+static int
+interpolate_scaled_expanded_height(int delta_y, stream_image_scale_state *pss)
+{
+    gx_dda_fixed_point tmp_dda = pss->params.scale_dda;
+    int start_y = dda_current(tmp_dda.y);
+
+    do {
+        dda_next(tmp_dda.y);
+    } while (--delta_y > 0);
+
+    return dda_current(tmp_dda.y) - start_y;
+}
+
 static int
 image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                          int data_x, uint iw, int h, gx_device * dev)
@@ -970,6 +997,8 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
     stream_cursor_write stream_w;
     byte *out = penum->line;
     bool islab = false;
+    int abs_interp_limit = pss->params.abs_interp_limit;
+    int limited_PatchWidthOut = (pss->params.PatchWidthOut + abs_interp_limit - 1) / abs_interp_limit;
 
     if (!penum->masked && pcs->cmm_icc_profile_data != NULL) {
         islab = pcs->cmm_icc_profile_data->islab;
@@ -978,12 +1007,13 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
     initial_decode(penum, buffer, data_x, h, &stream_r, false);
     /*
      * Process input and/or collect output.  By construction, the pixels are
-     * 1-for-1 with the device, but the Y coordinate might be inverted.
+     * 1-for-1 with the device if the abs(interpolate_control) is 1  but the
+     * Y coordinate might be inverted.
      */
     {
         int xo = penum->xyi.x;
         int yo = penum->xyi.y;
-        int width = pss->params.WidthOut;
+        int width = (pss->params.WidthOut + abs_interp_limit - 1) / abs_interp_limit;
         int sizeofPixelOut = pss->params.BitsPerComponentOut / 8;
         int dy;
         int bpp = dev->color_info.depth;
@@ -999,12 +1029,14 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
             const frac *psrc;
             gx_device_color devc;
             int status, code;
-
             byte *l_dptr = out;
             int l_dbit = 0;
-            byte l_dbyte = ((l_dbit) ? (byte)(*(l_dptr) & (0xff00 >> (l_dbit))) : 0);
+            byte l_dbyte = 0;
             int l_xprev = (xo);
-            stream_w.limit = out + width *
+            int scaled_x_prev = 0;
+            gx_dda_fixed save_x_dda = pss->params.scale_dda.x;
+
+            stream_w.limit = out + pss->params.WidthOut *
                 max(spp_decode * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
             stream_w.ptr = stream_w.limit - width * spp_decode * sizeofPixelOut;
             psrc = (const frac *)(stream_w.ptr + 1);
@@ -1018,47 +1050,69 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
             if (status < 0 && status != EOFC)
                 return_error(gs_error_ioerror);
             if (stream_w.ptr == stream_w.limit) {
-                int xe = xo + pss->params.PatchWidthOut;
+                int xe = xo + limited_PatchWidthOut;
+                int scaled_w = 0;		/* accumulate scaled up width */
 
                 /* Are we active? (i.e. in the render rectangle) */
                 if (!pss->params.Active)
                     goto inactive;
                 if_debug1m('B', penum->memory, "[B]Interpolated row %d:\n[B]",
                            penum->line_xy);
-                psrc += pss->params.LeftMarginOut * spp_decode;
+                psrc += ((pss->params.LeftMarginOut + abs_interp_limit - 1) / abs_interp_limit) * spp_decode;
                 for (x = xo; x < xe;) {
                     code = handle_colors(penum, psrc, spp_decode, &devc, islab, dev);
                     if (code < 0)
                         return code;
                     if (color_is_pure(&devc)) {
-                        /* Just pack colors into a scan line. */
                         gx_color_index color = devc.colors.pure;
+                        int expand = 1;
+
+                        if (abs_interp_limit > 1) {
+                            expand = interpolate_scaled_expanded_width(1, pss);
+                        }
+                        /* Just pack colors into a scan line. */
                         /* Skip runs quickly for the common cases. */
                         switch (spp_decode) {
                             case 1:
                                 do {
-                                    if (sizeof(color) > 4) {
-                                        if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                            return_error(gs_error_rangecheck);
-                                    }
-                                    else {
-                                        if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                            return_error(gs_error_rangecheck);
-                                    }
+                                    scaled_w += expand;
+                                    while (expand-- > 0) {
+                                        if (sizeof(color) > 4) {
+                                            if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                                return_error(gs_error_rangecheck);
+                                        }
+                                        else {
+                                            if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                                return_error(gs_error_rangecheck);
+                                        }
+                                    };
                                     x++, psrc += 1;
+                                    if (abs_interp_limit > 1) {
+                                        dda_next(pss->params.scale_dda.x);
+                                        expand = interpolate_scaled_expanded_width(1, pss);
+                                    } else
+                                        expand = 1;
                                 } while (x < xe && psrc[-1] == psrc[0]);
                                 break;
                             case 3:
                                 do {
-                                    if (sizeof(color) > 4) {
-                                        if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                            return_error(gs_error_rangecheck);
-                                    }
-                                    else {
-                                        if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                            return_error(gs_error_rangecheck);
-                                    }
+                                    scaled_w += expand;
+                                    while (expand-- > 0) {
+                                        if (sizeof(color) > 4) {
+                                            if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                                return_error(gs_error_rangecheck);
+                                        }
+                                        else {
+                                            if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                                return_error(gs_error_rangecheck);
+                                        }
+                                    };
                                     x++, psrc += 3;
+                                    if (abs_interp_limit > 1) {
+                                        dda_next(pss->params.scale_dda.x);
+                                        expand = interpolate_scaled_expanded_width(1, pss);
+                                    } else
+                                        expand = 1;
                                 } while (x < xe &&
                                          psrc[-3] == psrc[0] &&
                                          psrc[-2] == psrc[1] &&
@@ -1066,6 +1120,32 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                                 break;
                             case 4:
                                 do {
+                                    scaled_w += expand;
+                                    while (expand-- > 0) {
+                                        if (sizeof(color) > 4) {
+                                            if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                                return_error(gs_error_rangecheck);
+                                        }
+                                        else {
+                                            if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                                return_error(gs_error_rangecheck);
+                                        }
+                                    };
+                                    x++, psrc += 4;
+                                    if (abs_interp_limit > 1) {
+                                        dda_next(pss->params.scale_dda.x);
+                                        expand = interpolate_scaled_expanded_width(1, pss);
+                                    } else
+                                        expand = 1;
+                                } while (x < xe &&
+                                         psrc[-4] == psrc[0] &&
+                                         psrc[-3] == psrc[1] &&
+                                         psrc[-2] == psrc[2] &&
+                                         psrc[-1] == psrc[3]);
+                                break;
+                            default:	/* no run length check for these spp cases */
+                                scaled_w += expand;
+                                while (expand-- > 0) {
                                     if (sizeof(color) > 4) {
                                         if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
                                             return_error(gs_error_rangecheck);
@@ -1074,35 +1154,42 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                                         if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
                                             return_error(gs_error_rangecheck);
                                     }
-                                    x++, psrc += 4;
-                                } while (x < xe &&
-                                         psrc[-4] == psrc[0] &&
-                                         psrc[-3] == psrc[1] &&
-                                         psrc[-2] == psrc[2] &&
-                                         psrc[-1] == psrc[3]);
-                                break;
-                            default:
-                                if (sizeof(color) > 4) {
-                                    if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                        return_error(gs_error_rangecheck);
-                                }
-                                else {
-                                    if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                        return_error(gs_error_rangecheck);
-                                }
+                                };
                                 x++, psrc += spp_decode;
+                                if (abs_interp_limit > 1) {
+                                    dda_next(pss->params.scale_dda.x);
+                                    expand = interpolate_scaled_expanded_width(1, pss);
+                                } else
+                                    expand = 1;
                         }
                     } else {
-                        int rcode, i, rep = 0;
+                        int rcode, rep = 0;
 
                         /* do _COPY in case any pure colors were accumulated above */
                         if ( x > l_xprev ) {
                             sample_store_flush(l_dptr, l_dbit, l_dbyte);
-                            code = (*dev_proc(dev, copy_color))
-                              (dev, out, l_xprev - xo, raster,
-                               gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
-                            if (code < 0)
-                                return code;
+                            if (abs_interp_limit <= 1) {
+                                code = (*dev_proc(dev, copy_color))
+                                  (dev, out, l_xprev - xo, raster,
+                                   gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+                                if (code < 0)
+                                    return code;
+                            } else {
+                                /* scale up in X and Y */
+                                int scaled_x = xo + scaled_x_prev;
+                                int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
+                                int scaled_h = interpolate_scaled_expanded_height(1, pss);
+
+                                for (; scaled_h > 0; --scaled_h) {
+                                    code = (*dev_proc(dev, copy_color))
+                                      (dev, out, scaled_x_prev, raster,
+                                       gx_no_bitmap_id, scaled_x, scaled_y, scaled_w, 1);
+                                    if (code < 0)
+                                        return code;
+                                    scaled_y += dy;
+                                }
+                                scaled_x_prev = dda_current(pss->params.scale_dda.x);
+                            }
                         }
                         /* as above, see if we can accumulate any runs */
                         switch (spp_decode) {
@@ -1134,27 +1221,62 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                                 psrc += spp_decode;
                                 break;
                         }
-                        rcode = gx_fill_rectangle_device_rop(x, ry, rep, 1, &devc, dev, lop);
-                        if (rcode < 0)
-                            return rcode;
-                        for (i = 0; i < rep; i++) {
-                            sample_store_skip_next(&l_dptr, &l_dbit, bpp, &l_dbyte);
+                        if (abs_interp_limit <= 1) {
+                            scaled_w = rep;
+                            rcode = gx_fill_rectangle_device_rop(x, ry, rep, 1, &devc, dev, lop);
+                            if (rcode < 0)
+                                return rcode;
+                        } else {
+                            int scaled_x = xo + scaled_x_prev;
+                            int scaled_y = yo + (dy *dda_current(pss->params.scale_dda.y));
+                            int scaled_h = interpolate_scaled_expanded_height(1, pss);
+
+                            scaled_w = interpolate_scaled_expanded_width(rep, pss);
+                            rcode = gx_fill_rectangle_device_rop(scaled_x, scaled_y, scaled_w, scaled_h,
+                                                                 &devc, dev, lop);
+                            if (rcode < 0)
+                                return rcode;
+                            dda_advance(pss->params.scale_dda.x, rep);
+                            scaled_x_prev = dda_current(pss->params.scale_dda.x);
                         }
+                        while (scaled_w-- > 0)
+                            sample_store_skip_next(&l_dptr, &l_dbit, bpp, &l_dbyte);
+                        scaled_w = 0;
                         l_xprev = x + rep;
                         x += rep;
                     }
-                }
+                }  /* End on x loop */
                 if ( x > l_xprev ) {
                     sample_store_flush(l_dptr, l_dbit, l_dbyte);
-                    code = (*dev_proc(dev, copy_color))
-                      (dev, out, l_xprev - xo, raster,
-                       gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
-                    if (code < 0)
-                        return code;
+                    if (abs_interp_limit <= 1) {
+                        code = (*dev_proc(dev, copy_color))
+                          (dev, out, l_xprev - xo, raster,
+                           gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+                        if (code < 0)
+                            return code;
+                    } else {
+                        /* scale up in X and Y */
+                        int scaled_x = xo + scaled_x_prev;
+                        int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
+                        int scaled_h = interpolate_scaled_expanded_height(1, pss);
+
+                        for (; scaled_h > 0; --scaled_h) {
+                            code = (*dev_proc(dev, copy_color))
+                              (dev, out, scaled_x_prev, raster,
+                               gx_no_bitmap_id, scaled_x, scaled_y, scaled_w, 1);
+                            if (code < 0)
+                                return code;
+                            scaled_y += dy;
+                        }
+                    }
                 }
                 /*if_debug1m('w', dev->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 inactive:
                 penum->line_xy++;
+                if (abs_interp_limit > 1) {
+                    dda_next(pss->params.scale_dda.y);
+                    pss->params.scale_dda.x = save_x_dda;	/* reset X to start of line */
+                }
                 if_debug0m('B', dev->memory, "\n");
             }
             if ((status == 0 && stream_r.ptr == stream_r.limit) || status == EOFC)
@@ -1338,6 +1460,8 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
     byte *out = penum->line;
     stream_cursor_read stream_r;
     stream_cursor_write stream_w;
+    int abs_interp_limit = pss->params.abs_interp_limit;
+    int limited_PatchWidthOut = (pss->params.PatchWidthOut + abs_interp_limit - 1) / abs_interp_limit;
 
     if (penum->icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during gs_image_class_0_interpolate");
@@ -1351,7 +1475,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
     {
         int xo = penum->xyi.x;
         int yo = penum->xyi.y;
-        int width = pss->params.WidthOut;
+        int width = (pss->params.WidthOut + abs_interp_limit - 1) / abs_interp_limit;
         int width_in = pss->params.WidthIn;
         int sizeofPixelOut = pss->params.BitsPerComponentOut / 8;
         int dy;
@@ -1411,10 +1535,10 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                 /* Set up the buffer descriptors. */
                 gsicc_init_buffer(&input_buff_desc, spp_decode, 2,
                               false, false, false, 0, width * spp_decode,
-                              1, pss->params.PatchWidthOut);
+                              1, limited_PatchWidthOut);
                 gsicc_init_buffer(&output_buff_desc, spp_cm, 2,
                               false, false, false, 0, width * spp_cm,
-                              1, pss->params.PatchWidthOut);
+                              1, limited_PatchWidthOut);
             }
         }
         for (;;) {
@@ -1423,13 +1547,15 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
             const unsigned short *pinterp;
             gx_device_color devc;
             int status;
-
             byte *l_dptr = out;
             int l_dbit = 0;
-            byte l_dbyte = ((l_dbit) ? (byte)(*(l_dptr) & (0xff00 >> (l_dbit))) : 0);
+            byte l_dbyte = 0;
             int l_xprev = (xo);
-            stream_w.limit = out + width *
-                max(spp_interp * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
+            int scaled_x_prev = 0;
+            gx_dda_fixed save_x_dda = pss->params.scale_dda.x;
+
+            stream_w.limit = out + pss->params.WidthOut *
+                max(spp_decode * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
             stream_w.ptr = stream_w.limit - width * spp_interp * sizeofPixelOut;
             pinterp = (const unsigned short *)(stream_w.ptr + 1);
             /* This is where the rescale takes place; this will consume the
@@ -1442,7 +1568,8 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
             if (status < 0 && status != EOFC)
                 return_error(gs_error_ioerror);
             if (stream_w.ptr == stream_w.limit) {
-                int xe = xo + pss->params.PatchWidthOut;
+                int xe = xo + limited_PatchWidthOut;
+                int scaled_w = 0;		/* accumulate scaled up width */
 
                 /* Are we active? (i.e. in the render rectangle) */
                 if (!pss->params.Active)
@@ -1454,12 +1581,12 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                 if (penum->icc_link->is_identity || pss->params.early_cm) {
                     /* Fastest case. No CM needed */
                     p_cm_interp = (unsigned short *) pinterp;
-                    p_cm_interp += pss->params.LeftMarginOut * spp_cm;
+                    p_cm_interp += (pss->params.LeftMarginOut / abs_interp_limit) * spp_cm;
                 } else {
                     /* Transform */
-                    pinterp += pss->params.LeftMarginOut * spp_decode;
+                    pinterp += (pss->params.LeftMarginOut / abs_interp_limit) * spp_decode;
                     p_cm_interp = (unsigned short *) p_cm_buff;
-                    p_cm_interp += pss->params.LeftMarginOut * spp_cm;
+                    p_cm_interp += ((pss->params.LeftMarginOut + abs_interp_limit - 1) / abs_interp_limit) * spp_cm;
                     (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
                                                         &input_buff_desc,
                                                         &output_buff_desc,
@@ -1479,40 +1606,86 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                     /* Get the device color */
                     get_device_color(penum, p_cm_interp, &devc, &color, dev);
                     if (color_is_pure(&devc)) {
-                        /* Just pack colors into a scan line. */
                         gx_color_index color = devc.colors.pure;
+                        int expand = 1;
+
+                        if (abs_interp_limit > 1) {
+                            expand = interpolate_scaled_expanded_width(1, pss);
+                        }
+                        /* Just pack colors into a scan line. */
                         /* Skip runs quickly for the common cases. */
                         switch (spp_cm) {
                             case 1:
                                 do {
-                                    if (sizeof(color) > 4) {
-                                        if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                            return_error(gs_error_rangecheck);
-                                    }
-                                    else {
-                                        if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                            return_error(gs_error_rangecheck);
-                                    }
+                                    scaled_w += expand;
+                                    while (expand-- > 0) {
+                                        if (sizeof(color) > 4) {
+                                            if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                                return_error(gs_error_rangecheck);
+                                        }
+                                        else {
+                                            if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                                return_error(gs_error_rangecheck);
+                                        }
+                                    };
                                     x++, p_cm_interp += 1;
+                                    if (abs_interp_limit > 1) {
+                                        dda_next(pss->params.scale_dda.x);
+                                        expand = interpolate_scaled_expanded_width(1, pss);
+                                    } else
+                                        expand = 1;
                                 } while (x < xe && p_cm_interp[-1] == p_cm_interp[0]);
                                 break;
                             case 3:
                                 do {
-                                    if (sizeof(color) > 4) {
-                                        if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                            return_error(gs_error_rangecheck);
-                                    }
-                                    else {
-                                        if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                            return_error(gs_error_rangecheck);
-                                    }
+                                    scaled_w += expand;
+                                    while (expand-- > 0) {
+                                        if (sizeof(color) > 4) {
+                                            if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                                return_error(gs_error_rangecheck);
+                                        }
+                                        else {
+                                            if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                                return_error(gs_error_rangecheck);
+                                        }
+                                    };
                                     x++, p_cm_interp += 3;
+                                    if (abs_interp_limit > 1) {
+                                        dda_next(pss->params.scale_dda.x);
+                                        expand = interpolate_scaled_expanded_width(1, pss);
+                                    } else
+                                        expand = 1;
                                 } while (x < xe && p_cm_interp[-3] == p_cm_interp[0] &&
                                      p_cm_interp[-2] == p_cm_interp[1] &&
                                      p_cm_interp[-1] == p_cm_interp[2]);
                                 break;
                             case 4:
                                 do {
+                                    scaled_w += expand;
+                                    while (expand-- > 0) {
+                                        if (sizeof(color) > 4) {
+                                            if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                                return_error(gs_error_rangecheck);
+                                        }
+                                        else {
+                                            if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
+                                                return_error(gs_error_rangecheck);
+                                        }
+                                    };
+                                    x++, p_cm_interp += 4;
+                                    if (abs_interp_limit > 1) {
+                                        dda_next(pss->params.scale_dda.x);
+                                        expand = interpolate_scaled_expanded_width(1, pss);
+                                    } else
+                                        expand = 1;
+                                } while (x < xe && p_cm_interp[-4] == p_cm_interp[0] &&
+                                     p_cm_interp[-3] == p_cm_interp[1] &&
+                                     p_cm_interp[-2] == p_cm_interp[2] &&
+                                     p_cm_interp[-1] == p_cm_interp[3]);
+                                break;
+                            default:
+                                scaled_w += expand;
+                                while (expand-- > 0) {
                                     if (sizeof(color) > 4) {
                                         if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
                                             return_error(gs_error_rangecheck);
@@ -1521,34 +1694,42 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                                         if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
                                             return_error(gs_error_rangecheck);
                                     }
-                                    x++, p_cm_interp += 4;
-                                } while (x < xe && p_cm_interp[-4] == p_cm_interp[0] &&
-                                     p_cm_interp[-3] == p_cm_interp[1] &&
-                                     p_cm_interp[-2] == p_cm_interp[2] &&
-                                     p_cm_interp[-1] == p_cm_interp[3]);
-                                break;
-                            default:
-                                if (sizeof(color) > 4) {
-                                    if (sample_store_next64(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                        return_error(gs_error_rangecheck);
-                                }
-                                else {
-                                    if (sample_store_next32(color, &l_dptr, &l_dbit, bpp, &l_dbyte) < 0)
-                                        return_error(gs_error_rangecheck);
-                                }
+                                };
                                 x++, p_cm_interp += spp_cm;
+                                if (abs_interp_limit > 1) {
+                                    dda_next(pss->params.scale_dda.x);
+                                    expand = interpolate_scaled_expanded_width(1, pss);
+                                } else
+                                    expand = 1;
                         }
                     } else {
-                        int rcode, i, rep = 0;
+                        int rcode, rep = 0;
 
                         /* do _COPY in case any pure colors were accumulated above*/
                         if ( x > l_xprev ) {
                             sample_store_flush(l_dptr, l_dbit, l_dbyte);
-                            code = (*dev_proc(dev, copy_color))
-                              (dev, out, l_xprev - xo, raster,
-                               gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
-                            if (code < 0)
-                                return code;
+                            if (abs_interp_limit <= 1) {
+                                code = (*dev_proc(dev, copy_color))
+                                  (dev, out, l_xprev - xo, raster,
+                                   gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+                                if (code < 0)
+                                    return code;
+                            } else {
+                                /* scale up in X and Y */
+                                int scaled_x = xo + scaled_x_prev;
+                                int scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
+                                int scaled_h = interpolate_scaled_expanded_height(1, pss);
+
+                                for (; scaled_h > 0; --scaled_h) {
+                                    code = (*dev_proc(dev, copy_color))
+                                      (dev, out, scaled_x_prev, raster,
+                                       gx_no_bitmap_id, scaled_x, scaled_y, scaled_w, 1);
+                                    if (code < 0)
+                                        return code;
+                                    scaled_y += dy;
+                                }
+                                scaled_x_prev = dda_current(pss->params.scale_dda.x);
+                            }
                         }
                         /* as above, see if we can accumulate any runs */
                         switch (spp_cm) {
@@ -1576,27 +1757,62 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                                 rep = 1, p_cm_interp += spp_cm;
                                 break;
                         }
-                        rcode = gx_fill_rectangle_device_rop(x, ry, rep, 1, &devc, dev, lop);
-                        if (rcode < 0)
-                            return rcode;
-                        for (i = 0; i < rep; i++) {
-                            sample_store_skip_next(&l_dptr, &l_dbit, bpp, &l_dbyte);
+                        if (abs_interp_limit <= 1) {
+                            scaled_w = rep;
+                            rcode = gx_fill_rectangle_device_rop(x, ry, rep, 1, &devc, dev, lop);
+                            if (rcode < 0)
+                                return rcode;
+                        } else {
+                            int scaled_x = xo + scaled_x_prev;
+                            int scaled_y = yo + (dy *dda_current(pss->params.scale_dda.y));
+                            int scaled_h = interpolate_scaled_expanded_height(1, pss);
+
+                            scaled_w = interpolate_scaled_expanded_width(rep, pss);
+                            rcode = gx_fill_rectangle_device_rop(scaled_x, scaled_y, scaled_w, scaled_h,
+                                                                 &devc, dev, lop);
+                            if (rcode < 0)
+                                return rcode;
+                            dda_advance(pss->params.scale_dda.x, rep);
+                            scaled_x_prev = dda_current(pss->params.scale_dda.x);
                         }
+                        while (scaled_w-- > 0)
+                            sample_store_skip_next(&l_dptr, &l_dbit, bpp, &l_dbyte);
+                        scaled_w = 0;
                         l_xprev = x + rep;
                         x += rep;
                     }
                 }  /* End on x loop */
                 if ( x > l_xprev ) {
                     sample_store_flush(l_dptr, l_dbit, l_dbyte);
-                    code = (*dev_proc(dev, copy_color))
-                      (dev, out, l_xprev - xo, raster,
-                       gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
-                    if (code < 0)
-                        return code;
+                    if (abs_interp_limit <= 1) {
+                        code = (*dev_proc(dev, copy_color))
+                          (dev, out, l_xprev - xo, raster,
+                           gx_no_bitmap_id, l_xprev, ry, x - l_xprev, 1);
+                        if (code < 0)
+                            return code;
+                    } else {
+                        /* scale up in X and Y */
+                        int scaled_x = xo + scaled_x_prev;
+                        int scaled_y = yo + (dy *dda_current(pss->params.scale_dda.y));
+                        int scaled_h = interpolate_scaled_expanded_height(1, pss);
+
+                        for (; scaled_h > 0; --scaled_h) {
+                            code = (*dev_proc(dev, copy_color))
+                              (dev, out, scaled_x_prev, raster,
+                               gx_no_bitmap_id, scaled_x, scaled_y, scaled_w, 1);
+                            if (code < 0)
+                                return code;
+                            scaled_y += dy;
+                        }
+                    }
                 }
                 /*if_debug1m('w', penum->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 inactive:
                 penum->line_xy++;
+                if (abs_interp_limit > 1) {
+                    dda_next(pss->params.scale_dda.y);
+                    pss->params.scale_dda.x = save_x_dda;	/* reset X to start of line */
+                }
                 if_debug0m('B', penum->memory, "\n");
             }
             if ((status == 0 && stream_r.ptr == stream_r.limit) || status == EOFC)
@@ -1625,6 +1841,7 @@ image_render_interpolate_landscape(gx_image_enum * penum,
     stream_cursor_write stream_w;
     byte *out = penum->line;
     bool islab = false;
+    int abs_interp_limit = pss->params.abs_interp_limit;
 
     if (pcs->cmm_icc_profile_data != NULL) {
         islab = pcs->cmm_icc_profile_data->islab;
@@ -1638,7 +1855,7 @@ image_render_interpolate_landscape(gx_image_enum * penum,
     {
         int xo = penum->xyi.y;
         int yo = penum->xyi.x;
-        int width = pss->params.WidthOut;
+        int width = (pss->params.WidthOut + abs_interp_limit - 1) / abs_interp_limit;
         int sizeofPixelOut = pss->params.BitsPerComponentOut / 8;
         int dy;
 
@@ -1652,7 +1869,12 @@ image_render_interpolate_landscape(gx_image_enum * penum,
             const frac *psrc;
             gx_device_color devc;
             int status, code;
+            int scaled_w = 0;
+            gx_dda_fixed save_x_dda;
 
+            if (abs_interp_limit > 1) {
+                save_x_dda = pss->params.scale_dda.x;
+            }
             stream_w.limit = out + width *
                 max(spp_decode * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
             stream_w.ptr = stream_w.limit - width * spp_decode * sizeofPixelOut;
@@ -1667,14 +1889,14 @@ image_render_interpolate_landscape(gx_image_enum * penum,
             if (status < 0 && status != EOFC)
                 return_error(gs_error_ioerror);
             if (stream_w.ptr == stream_w.limit) {
-                int xe = xo + pss->params.PatchWidthOut;
+                int xe = xo + (pss->params.PatchWidthOut + abs_interp_limit - 1) / abs_interp_limit;
 
                 /* Are we active? (i.e. in the render rectangle) */
                 if (!pss->params.Active)
                     goto inactive;
                 if_debug1m('B', penum->memory, "[B]Interpolated (rotated) row %d:\n[B]",
                            penum->line_xy);
-                psrc += pss->params.LeftMarginOut * spp_decode;
+                psrc += (pss->params.LeftMarginOut / abs_interp_limit) * spp_decode;
                 for (x = xo; x < xe;) {
                     code = handle_colors(penum, psrc, spp_decode, &devc, islab, dev);
                     if (code < 0)
@@ -1715,15 +1937,32 @@ image_render_interpolate_landscape(gx_image_enum * penum,
                                 psrc += spp_decode;
                                 break;
                         }
-                        rcode = gx_fill_rectangle_device_rop(ry, x, 1, rep, &devc, dev, lop);
-                        if (rcode < 0)
-                            return rcode;
+                        if (abs_interp_limit <= 1) {
+                            rcode = gx_fill_rectangle_device_rop(ry, x, 1, rep, &devc, dev, lop);
+                            if (rcode < 0)
+                                return rcode;
+                        } else {
+                            int scaled_x = xo + dda_current(pss->params.scale_dda.x);
+                            int scaled_y = yo + (dy *dda_current(pss->params.scale_dda.y));
+                            int scaled_h = interpolate_scaled_expanded_height(1, pss);
+
+                            scaled_w = interpolate_scaled_expanded_width(rep, pss);
+                            rcode = gx_fill_rectangle_device_rop(scaled_y, scaled_x, scaled_h, scaled_w,
+                                                                 &devc, dev, lop);
+                            if (rcode < 0)
+                                return rcode;
+                            dda_advance(pss->params.scale_dda.x, rep);
+                        }
                         x += rep;
                     }
                 }
                 /*if_debug1m('w', dev->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 inactive:
                 penum->line_xy++;
+                if (abs_interp_limit > 1) {
+                    dda_next(pss->params.scale_dda.y);
+                    pss->params.scale_dda.x = save_x_dda;	/* reset X to start of line */
+                }
                 if_debug0m('B', dev->memory, "\n");
             }
             if ((status == 0 && stream_r.ptr == stream_r.limit) || status == EOFC)
@@ -1903,6 +2142,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
     byte *out = penum->line;
     stream_cursor_read stream_r;
     stream_cursor_write stream_w;
+    int abs_interp_limit = pss->params.abs_interp_limit;
 
     if (penum->icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during gs_image_class_0_interpolate");
@@ -1916,7 +2156,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
     {
         int xo = penum->xyi.y;
         int yo = penum->xyi.x;
-        int width = pss->params.WidthOut;
+        int width = (pss->params.WidthOut + abs_interp_limit - 1) / abs_interp_limit;
         int width_in = pss->params.WidthIn;
         int sizeofPixelOut = pss->params.BitsPerComponentOut / 8;
         int dy;
@@ -1988,7 +2228,12 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
             const unsigned short *pinterp;
             gx_device_color devc;
             int status;
+            int scaled_w = 0;
+            gx_dda_fixed save_x_dda;
 
+            if (abs_interp_limit > 1) {
+                save_x_dda = pss->params.scale_dda.x;
+            }
             stream_w.limit = out + width *
                 max(spp_interp * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
             stream_w.ptr = stream_w.limit - width * spp_interp * sizeofPixelOut;
@@ -2003,7 +2248,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
             if (status < 0 && status != EOFC)
                 return_error(gs_error_ioerror);
             if (stream_w.ptr == stream_w.limit) {
-                int xe = xo + pss->params.PatchWidthOut;
+                int xe = xo + (pss->params.PatchWidthOut + abs_interp_limit - 1) / abs_interp_limit;
 
                 /* Are we active? (i.e. in the render rectangle) */
                 if (!pss->params.Active)
@@ -2024,7 +2269,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                                                         (void*) pinterp,
                                                         (void*) p_cm_interp);
                 }
-                p_cm_interp += pss->params.LeftMarginOut * spp_cm;
+                p_cm_interp += (pss->params.LeftMarginOut / abs_interp_limit) * spp_cm;
                 for (x = xo; x < xe;) {
 #ifdef DEBUG
                     if (gs_debug_c('B')) {
@@ -2069,15 +2314,32 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                                 break;
                         }
 
-                        rcode = gx_fill_rectangle_device_rop(ry, x, 1, rep, &devc, dev, lop);
-                        if (rcode < 0)
-                            return rcode;
+                        if (abs_interp_limit <= 1) {
+                            rcode = gx_fill_rectangle_device_rop(ry, x, 1, rep, &devc, dev, lop);
+                            if (rcode < 0)
+                                return rcode;
+                        } else {
+                            int scaled_x = xo + dda_current(pss->params.scale_dda.x);
+                            int scaled_y = yo + (dy *dda_current(pss->params.scale_dda.y));
+                            int scaled_h = interpolate_scaled_expanded_height(1, pss);
+
+                            scaled_w = interpolate_scaled_expanded_width(rep, pss);
+                            rcode = gx_fill_rectangle_device_rop(scaled_y, scaled_x, scaled_h, scaled_w,
+                                                                 &devc, dev, lop);
+                            if (rcode < 0)
+                                return rcode;
+                            dda_advance(pss->params.scale_dda.x, rep);
+                        }
                         x += rep;
                     }
                 }  /* End on x loop */
                 /*if_debug1m('w', penum->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 inactive:
                 penum->line_xy++;
+                if (abs_interp_limit > 1) {
+                    dda_next(pss->params.scale_dda.y);
+                    pss->params.scale_dda.x = save_x_dda;	/* reset X to start of line */
+                }
                 if_debug0m('B', penum->memory, "\n");
             }
             if ((status == 0 && stream_r.ptr == stream_r.limit) || status == EOFC)

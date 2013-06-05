@@ -132,6 +132,7 @@
         }, /*space_params*/\
         0/*Profile Array*/,\
         0/* graphics_type_tag default GS_UNTOUCHED_TAG */,\
+        1/* interpolate_control default 1, uses image /Interpolate flag, full device resolution */,\
         { gx_default_install, gx_default_begin_page, gx_default_end_page }
 /*
  * We need a number of different variants of the std_device_ macro simply

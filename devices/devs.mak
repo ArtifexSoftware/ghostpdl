@@ -625,7 +625,7 @@ $(DEVOBJ)gdevpsdi.$(OBJ) : $(DEVVECSRC)gdevpsdi.c $(GXERR)\
  $(jpeglib__h) $(math__h) $(stdio__h)\
  $(gscspace_h)\
  $(scfx_h) $(slzwx_h) $(spngpx_h)\
- $(strimpl_h) $(szlibx_h)\
+ $(strimpl_h) $(szlibx_h) $(sisparam_h)\
  $(gdevpsdf_h) $(gdevpsds_h) $(gxdevmem_h) $(gxcspace_h) $(gxparamx_h)\
  $(sjbig2_luratech_h) $(sjpx_luratech_h) $(gsicc_manage_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(GDEVLWFJB2JPXCC) $(DEVO_)gdevpsdi.$(OBJ) $(C_) $(DEVVECSRC)gdevpsdi.c

@@ -20,6 +20,8 @@
 #ifndef sisparam_INCLUDED
 #  define sisparam_INCLUDED
 
+#include "gxfixed.h"	/* for fixed */
+#include "gxdda.h"	/* for gx_dda_fixed_point */
 /*
  * Image scaling streams all use a common set of parameters to define the
  * input and output data.  That is what we define here.
@@ -56,33 +58,35 @@
  * Finally, we may actually only be rendering a smaller 'patch' of this
  * due to restriction by a clip path etc (say 16x16) - this size is
  * PatchWidthIn by PatchHeightIn, and would scale to be PatchWidthOut by
- * PatchHeightOut.
+ * PatchHeightOut. We don't really need PatchHeightOut.
  */
 typedef struct stream_image_scale_params_s {
     int spp_decode;		/* >= 1 */
     int spp_interp;             /* If we do CM first, may not equal spp_decode */
                                 /* 0 < MaxValueIn < 1 << BitsPerComponentIn */
-    int PatchWidthIn, PatchHeightIn;	/* The sizes we need to render > 0 */
-    int PatchWidthOut, PatchHeightOut;	/* The sizes we need to render > 0 */
     int BitsPerComponentIn;	/* bits per input value, 8 or 16 */
     uint MaxValueIn;		/* max value of input component, */
     int BitsPerComponentOut;	/* bits per output value, 8 or 16 */
     uint MaxValueOut;		/* max value of output component, */
                                 /* 0 < MaxValueOut < 1 << BitsPerComponentOut*/
-    int WidthIn, HeightIn;	/* The sizes for which we get data > 0 */
-    int WidthOut, HeightOut;	/* > 0 */
     bool ColorPolarityAdditive;	/* needed by SpecialDownScale filter */
+    bool early_cm;              /* If this is set, then we will perform
+                                   color managment before interpolating */
     int src_y_offset;		/* Offset of the subimage (data) in the source image. */
+    int abs_interp_limit;	/* limitation of how far to interpolate */
     int EntireWidthIn;		/* Height of entire input image. */
     int EntireHeightIn;		/* Height of entire input image. */
     int EntireWidthOut;		/* Height of entire output image. */
     int EntireHeightOut;	/* Height of entire output image. */
-    bool early_cm;              /* If this is set, then we will perform
-                                   color managment before interpolating */
+    int WidthIn, HeightIn;	/* The sizes for which we get data > 0 */
+    int WidthOut, HeightOut;	/* > 0 */
+    int PatchWidthIn, PatchHeightIn;	/* The sizes we need to render > 0 */
+    int PatchWidthOut;		/* The width we need to render > 0 */
     int LeftMarginIn;
     int LeftMarginOut;
     int TopMargin;
     int Active;
+    gx_dda_fixed_point scale_dda;	/* used to scale limited interpolation up to actual size */
 } stream_image_scale_params_t;
 
 /* Define a generic image scaling stream state. */

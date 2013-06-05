@@ -277,6 +277,7 @@ gx_dc_ht_binary_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 {
     gx_rop_source_t no_source;
 
+    fit_fill(dev, x, y, w, h);
     /* Load the halftone cache for the color */
     gx_dc_ht_binary_load_cache(pdevc);
     /*

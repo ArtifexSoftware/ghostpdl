@@ -821,6 +821,8 @@ typedef struct gdev_pagelist_s {
         gdev_space_params space_params;\
         cmm_dev_profile_t *icc_struct;  /* object dependent profiles */\
         gs_graphics_type_tag_t   graphics_type_tag;   /* e.g. vector, image or text */\
+        int interpolate_control;      /* default 1 (use image /Interpolate value), 0 is NOINTERPOLATE. */\
+                                      /* > 1 limits interpolation, < 0 forces interpolation */\
         gx_page_device_procs page_procs;       /* must be last */\
                 /* end of std_device_body */\
         gx_device_procs procs	/* object procedures */

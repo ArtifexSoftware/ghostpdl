@@ -235,6 +235,10 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "BufferSpace") == 0) {
         return param_write_long(plist, "BufferSpace", &dev->space_params.BufferSpace);
     }
+    if (strcmp(Param, "InterpolateControl") == 0) {
+        int interpolate_control = dev->interpolate_control;
+        return param_write_int(plist, "InterpolateControl", &interpolate_control);
+    }
     if (strcmp(Param, "LeadingEdge") == 0) {
         if (dev->LeadingEdge & LEADINGEDGE_SET_MASK) {
             int leadingedge = dev->LeadingEdge & LEADINGEDGE_MASK;
@@ -699,7 +703,8 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_long(plist, "BandBufferSpace", &dev->space_params.band.BandBufferSpace)) < 0 ||
         (code = param_write_int(plist, "BandHeight", &dev->space_params.band.BandHeight)) < 0 ||
         (code = param_write_int(plist, "BandWidth", &dev->space_params.band.BandWidth)) < 0 ||
-        (code = param_write_long(plist, "BufferSpace", &dev->space_params.BufferSpace)) < 0
+        (code = param_write_long(plist, "BufferSpace", &dev->space_params.BufferSpace)) < 0 ||
+        (code = param_write_int(plist, "InterpolateControl", &dev->interpolate_control)) < 0
         )
         return code;
 
@@ -1345,6 +1350,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     int tab = dev->color_info.anti_alias.text_bits;
     int gab = dev->color_info.anti_alias.graphics_bits;
     int mpbm = dev->MaxPatternBitmap;
+    int ic = dev->interpolate_control;
     bool page_uses_transparency = dev->page_uses_transparency;
     gdev_space_params sp = dev->space_params;
     gdev_space_params save_sp = dev->space_params;
@@ -1703,6 +1709,8 @@ nce:
         ecode = code;
     if ((code = param_read_int(plist, "MaxPatternBitmap", &mpbm)) < 0)
         ecode = code;
+    if ((code = param_read_int(plist, "InterpolateControl", &ic)) < 0)
+        ecode = code;
     if ((code = param_read_bool(plist, (param_name = "PageUsesTransparency"),
                                 &page_uses_transparency)) < 0) {
         ecode = code;
@@ -1988,6 +1996,7 @@ label:\
                         dev->color_info.max_color), gab);
     dev->LockSafetyParams = locksafe;
     dev->MaxPatternBitmap = mpbm;
+    dev->interpolate_control = ic;
     dev->space_params = sp;
     dev->page_uses_transparency = page_uses_transparency;
     gx_device_decache_colors(dev);

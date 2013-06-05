@@ -2381,36 +2381,59 @@ resolution in dots per inch.
 </dl>
 
 <dl>
-<dt><code>-dDOINTERPOLATE</code>
-<dd>Turns on image interpolation for all images, improving image quality for
-scaled images at the expense of speed.  Note that
-<code>-dNOINTERPOLATE</code> overrides <code>-dDOINTERPOLATE</code> if
-both are specified.
-<p>
-<code>-dNOINTERPOLATE</code> does nearest neighbour scaling
-(Bresenham's line algorithm through the image, plotting the closest
-texture coord at each pixel).  If we are downscaling this results
-in some source pixels not appearing at all in the destination. If
-we are upscaling, at least some source pixels cover more than one
-destination pixel.
+<dt><code>-dInterpolateControl=</code><em>control_value</em>
+<dd>This allows control of the image interpolation.
 
 <p>
-In all but special cases <code>-dDOINTERPOLATE</code> uses a Mitchell
-filter function to scale the contributions for each output pixel;
-upscaling, every output pixel ends up being the weighted sum of 16
-input pixels, downscaling more. Every source pixel has an effect
-on the output pixels.
+By default <code>InterpolateControl</code> is 1 and the image rendering
+for images that have <code>/Interpolate true</code> are interpolated to
+the full device resolution. Otherwise, images are rendered using the nearest
+neighbour scaling (Bresenham's line algorithm through the image, plotting
+the closest texture coord at each pixel).  When downscaling this results
+in some source pixels not appearing at all in the destination. When upscaling,
+each source pixels will cover at least one destination pixel.
 
 <p>
-Computationally, <code>-dDOINTERPOLATE</code> is much heavier work
-than <code>-dNOINTERPOLATE</code></code> (lots of floating point
-muliplies and adds for every output pixel vs simple integer additions,
-subtractions, and shifts).
+When the <em>control_value</em> is 0 no interpolation is performed, whether
+or not the file has images with <code>/Interpolate true</code>.
 
 <p>
-The exact algorithm used is from Graphics Gems 3, Chapter I.2 General
-Filtered Image Rescaling.
+When the <em>control_value</em> is greater than 1 interpolation is performed for
+images with <code>/Interpolate true</code> as long as the image scaling
+factor on either axis is larger than the <em>control_value</em>. Also, the
+interpolation only produces images that have <em>(device resolution / control_value)</em>
+maximum resolution rather than full device resolution. This allows for a performance
+vs. quality tradeoff since the number of pixels produced by the interpolation
+will be a fraction of the interpolated pixels at full device resolution. Every source
+pixel will contribute partially to the destination pixels.
 
+<p>
+When the <code>InterpolateControl</code> <em>control_value</em> is less than 0
+interpolation is <b>forced</b> as if all images have <code>/Interpolate true</code>,
+and the interpolation is controlled by the absolute value of the <em>control_value</em>
+as described above. Thus, <code>-dInterpolateControl=-1</code> forces all images
+to be interpolated at full device resolution.
+
+<p>
+Computationally, image interpolation is much more demanding than without
+interpolation  (lots of floating point muliplies and adds for every output
+pixel vs simple integer additions, subtractions, and shifts).
+
+<p>
+In all but special cases image interpolation uses a Mitchell filter function
+to scale the contributions for each output pixel. When upscaling, every output
+pixel ends up being the weighted sum of 16 input pixels, When downscaling more
+source pixels will contribute to the interpolated pixels. Every source pixel has
+some effect on the output pixels.
+</dl>
+<dl>
+<code>-dDOINTERPOLATE</code>
+<dd>This option still works, but is deprecated, and is the equivalent of
+<code>-dInterpolateControl=-1</code>.
+</dl>
+<dl>
+<code>-dNOINTERPOLATE</code> This option still works, but is deprecated and is
+the equivalent of <code>-dInterpolateControl=0</code>
 </dl>
 
 <dl>
@@ -3415,10 +3438,10 @@ be used to hide the save object from the restricted procedure.
 
 <dl>
 <dt><code>-dPreBandThreshold=true/false</code>
-<dd>If the target device is a halftone device, then images that are 
+<dd>If the target device is a halftone device, then images that are
 normally stored in the command list during banded output will be halftoned during
-the command list writing phase, if the resulting image will result in a smaller 
-command list.   The decision to halftone depends upon the output and source resolution as well as 
+the command list writing phase, if the resulting image will result in a smaller
+command list.   The decision to halftone depends upon the output and source resolution as well as
 the output and source color space.
 </dl>
 

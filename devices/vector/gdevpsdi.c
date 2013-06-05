@@ -526,7 +526,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
         ss->params.EntireWidthIn = ss->params.WidthIn = ss->params.PatchWidthIn = pim->Width;
         ss->params.EntireHeightIn = ss->params.HeightIn = ss->params.PatchHeightIn = pim->Height;
         ss->params.EntireWidthOut = ss->params.WidthOut = ss->params.PatchWidthOut = s_Downsample_size_out(pim->Width, factor, false);
-        ss->params.EntireHeightOut = ss->params.HeightOut = ss->params.PatchHeightOut = s_Downsample_size_out(pim->Height, factor, false);
+        ss->params.EntireHeightOut = ss->params.HeightOut =  s_Downsample_size_out(pim->Height, factor, false);
 
         /* Bug #697944 The code below to apply the downsampling filter always
          * resizes the input data to the filter with 8BPC and then resizes the output back to whatever

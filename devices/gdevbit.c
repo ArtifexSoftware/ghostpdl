@@ -318,6 +318,7 @@ const gx_device_bit gs_bitrgbtags_device =
         }, /*space_params*/
         0, /*icc_struct*/
         GS_UNKNOWN_TAG,         /* this device supports tags */
+        1,			/* default interpolate_control */
         {
             gx_default_install,
             gx_default_begin_page,

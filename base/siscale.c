@@ -412,11 +412,15 @@ static void s_IScale_release(stream_state * st);
 static void
 calculate_dst_contrib(stream_IScale_state * ss, int y)
 {
-    uint row_size = ss->params.WidthOut * ss->params.spp_interp;
+
+    int abs_interp_limit = ss->params.abs_interp_limit;
+    int limited_WidthOut = (ss->params.WidthOut + abs_interp_limit - 1) / abs_interp_limit;
+    int limited_EntireHeightOut = (ss->params.EntireHeightOut + abs_interp_limit - 1) / abs_interp_limit;
+    uint row_size = limited_WidthOut * ss->params.spp_interp;
     int last_index =
     calculate_contrib(&ss->dst_next_list, ss->dst_items,
-                      (double)ss->params.EntireHeightOut / ss->params.EntireHeightIn,
-                      y, ss->src_y_offset, ss->params.EntireHeightOut, ss->params.EntireHeightIn,
+                      (double)limited_EntireHeightOut / ss->params.EntireHeightIn,
+                      y, ss->src_y_offset, limited_EntireHeightOut, ss->params.EntireHeightIn,
                       1, ss->params.HeightIn, ss->max_support, row_size,
                       (double)ss->params.MaxValueOut / 255, ss->filter_width,
                       ss->filter, ss->min_scale);
@@ -445,7 +449,7 @@ calculate_dst_contrib(stream_IScale_state * ss, int y)
     if_debug0m('W', ss->memory, "\n");
 }
 
-/* Set default parameter values (actually, just clear pointers). */
+/* Set default parameter values (actually, just clear pointers)	*/
 static void
 s_IScale_set_defaults(stream_state * st)
 {
@@ -473,6 +477,11 @@ do_init(stream_state        *st,
 {
     stream_IScale_state *const ss = (stream_IScale_state *) st;
     gs_memory_t *mem = ss->memory;
+    int abs_interp_limit = ss->params.abs_interp_limit;
+    int limited_WidthOut = (ss->params.WidthOut + abs_interp_limit - 1) / abs_interp_limit;
+    int limited_HeightOut = (ss->params.HeightOut + abs_interp_limit - 1) / abs_interp_limit;
+    int limited_EntireWidthOut = (ss->params.EntireWidthOut + abs_interp_limit - 1) / abs_interp_limit;
+    int limited_EntireHeightOut = (ss->params.EntireHeightOut + abs_interp_limit - 1) / abs_interp_limit;
 
     ss->sizeofPixelIn = ss->params.BitsPerComponentIn / 8;
     ss->sizeofPixelOut = ss->params.BitsPerComponentOut / 8;
@@ -483,32 +492,30 @@ do_init(stream_state        *st,
     ss->src_offset = 0;
     ss->dst_y = 0;
     ss->src_y_offset = ss->params.src_y_offset;
-    ss->dst_size = 
-        ss->params.WidthOut * ss->sizeofPixelOut * ss->params.spp_interp;
+    ss->dst_size = limited_WidthOut * ss->sizeofPixelOut * ss->params.spp_interp;
     ss->dst_offset = 0;
 
     /* create intermediate image to hold horizontal zoom */
-    ss->max_support  = vert->contrib_pixels((double)ss->params.EntireHeightOut/
-                                            ss->params.EntireHeightIn);
+    ss->max_support  = vert->contrib_pixels((double)limited_EntireHeightOut /
+                                            (abs_interp_limit * ss->params.EntireHeightIn));
     ss->filter_width = vert->filter_width;
     ss->filter       = vert->filter;
     ss->min_scale    = vert->min_scale;
     ss->tmp = (byte *) gs_alloc_byte_array(mem,
                                            ss->max_support,
-                                           (ss->params.WidthOut *
-                                            ss->params.spp_interp),
+                                           (limited_WidthOut * ss->params.spp_interp),
                                            "image_scale tmp");
     ss->contrib = (CLIST *) gs_alloc_byte_array(mem,
-                                                max(ss->params.WidthOut,
-                                                    ss->params.HeightOut),
+                                                max(limited_WidthOut,
+                                                    limited_HeightOut),
                                                 sizeof(CLIST),
                                                 "image_scale contrib");
     ss->items = (CONTRIB *)
                     gs_alloc_byte_array(mem,
                                         (horiz->contrib_pixels(
-                                            (double)ss->params.EntireWidthOut /
+                                            (double)limited_EntireWidthOut /
                                             ss->params.EntireWidthIn) *
-                                         ss->params.WidthOut),
+                                            limited_WidthOut),
                                          sizeof(CONTRIB),
                                          "image_scale contrib[*]");
     ss->dst_items = (CONTRIB *) gs_alloc_byte_array(mem,
@@ -516,7 +523,7 @@ do_init(stream_state        *st,
                                                     sizeof(CONTRIB), "image_scale contrib_dst[*]");
     /* Allocate buffers for 1 row of source and destination. */
     ss->dst = 
-        gs_alloc_byte_array(mem, ss->params.WidthOut * ss->params.spp_interp,
+        gs_alloc_byte_array(mem, limited_WidthOut * ss->params.spp_interp,
                             ss->sizeofPixelOut, "image_scale dst");
     ss->src = 
         gs_alloc_byte_array(mem, ss->params.WidthIn * ss->params.spp_interp,
@@ -536,13 +543,13 @@ do_init(stream_state        *st,
      * the line buffer). These cause valgrind to be upset. To avoid
      * this, we preset the buffer to known values. */
     memset((byte *)ss->tmp, 0,
-           ss->max_support * ss->params.WidthOut * ss->params.spp_interp);
+           ss->max_support * limited_WidthOut * ss->params.spp_interp);
 #endif
     /* Pre-calculate filter contributions for a row. */
     calculate_contrib(ss->contrib, ss->items,
-                      (double)ss->params.EntireWidthOut / ss->params.EntireWidthIn,
-                      0, 0, ss->params.WidthOut, ss->params.WidthIn,
-                      ss->params.WidthOut, ss->params.WidthIn, ss->params.WidthIn,
+                      (double)limited_EntireWidthOut / ss->params.EntireWidthIn,
+                      0, 0, limited_WidthOut, ss->params.WidthIn,
+                      limited_WidthOut, ss->params.WidthIn, ss->params.WidthIn,
                       ss->params.spp_interp, 255. / ss->params.MaxValueIn,
                       horiz->filter_width, horiz->filter, horiz->min_scale);
 
@@ -550,7 +557,6 @@ do_init(stream_state        *st,
     calculate_dst_contrib(ss, 0);
 
     return 0;
-
 }
 
 static const filter_defn_s Mitchell_defn =
@@ -575,13 +581,16 @@ s_IScale_init(stream_state * st)
     stream_IScale_state *const ss = (stream_IScale_state *) st;
     const filter_defn_s *horiz = &Mitchell_defn;
     const filter_defn_s *vert  = &Mitchell_defn;
+    int abs_interp_limit = ss->params.abs_interp_limit;
+    int limited_EntireWidthOut = (ss->params.EntireWidthOut + abs_interp_limit - 1) / abs_interp_limit;
+    int limited_EntireHeightOut = (ss->params.EntireHeightOut + abs_interp_limit - 1) / abs_interp_limit;
 
     /* By default we use the mitchell filter, but if we are scaling down
      * (either on the horizontal or the vertical axis) then use the simple
      * interpolation filter for that axis. */
-    if (ss->params.EntireWidthOut < ss->params.EntireWidthIn)
+    if (limited_EntireWidthOut < ss->params.EntireWidthIn)
         horiz = &Interp_defn;
-    if (ss->params.EntireHeightOut < ss->params.EntireHeightIn)
+    if (limited_EntireHeightOut < ss->params.EntireHeightIn)
         vert = &Interp_defn;
 
     return do_init(st, horiz, vert);
@@ -593,6 +602,11 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
                  stream_cursor_write * pw, bool last)
 {
     stream_IScale_state *const ss = (stream_IScale_state *) st;
+    int abs_interp_limit = ss->params.abs_interp_limit;
+    int limited_WidthOut = (ss->params.WidthOut + abs_interp_limit - 1) / abs_interp_limit;
+    int limited_HeightOut = (ss->params.HeightOut + abs_interp_limit - 1) / abs_interp_limit;
+    int limited_PatchWidthOut = (ss->params.PatchWidthOut + abs_interp_limit - 1) / abs_interp_limit;
+    int limited_LeftMarginOut = (ss->params.LeftMarginOut) / abs_interp_limit;
 
     /* Check whether we need to deliver any output. */
 
@@ -604,7 +618,7 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
         /* to generate a vertically scaled output row. */
         uint wleft = pw->limit - pw->ptr;
 
-        if (ss->dst_y == ss->params.HeightOut)
+        if (ss->dst_y == limited_HeightOut)
             return EOFC;
         if (wleft == 0)
             return 1;
@@ -623,9 +637,9 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
                        ss->sizeofPixelOut, /* 1 (8 bit) or 2 (16bit) output */
                        ss->params.MaxValueOut, /* output value scale */
                        ss->tmp, /* Line buffer */
-                       ss->params.LeftMarginOut, /* Skip */
-                       ss->params.PatchWidthOut, /* How many pixels to produce */
-                       ss->params.WidthOut, /* Stride */
+                       limited_LeftMarginOut, /* Skip */
+                       limited_PatchWidthOut, /* How many pixels to produce */
+                       limited_WidthOut, /* Stride */
                        ss->params.spp_interp, /* Color count */
                        &ss->dst_next_list, ss->dst_items);
             /* Idiotic C coercion rules allow T* and void* to be */
@@ -647,7 +661,7 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
         }
         /* Advance to the next output row. */
       adv:++ss->dst_y;
-        if (ss->dst_y != ss->params.HeightOut)
+        if (ss->dst_y != limited_HeightOut)
             calculate_dst_contrib(ss, ss->dst_y);
     }
 
@@ -680,11 +694,11 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
             if (ss->params.Active)
                 zoom_x(/* Where to scale to (dst line address in tmp buffer) */
                        ss->tmp + (ss->src_y % ss->max_support) *
-                       ss->params.WidthOut * ss->params.spp_interp,
+                       limited_WidthOut * ss->params.spp_interp,
                        row, /* Where to scale from */
                        ss->sizeofPixelIn, /* 1 (8 bit) or 2 (16bit) */
-                       ss->params.LeftMarginOut, /* Line skip */
-                       ss->params.PatchWidthOut, /* How many pixels to produce */
+                       limited_LeftMarginOut, /* Line skip */
+                       limited_PatchWidthOut, /* How many pixels to produce */
                        ss->params.spp_interp, /* Color count */
                        ss->contrib, ss->items);
             pr->ptr += rcount;
