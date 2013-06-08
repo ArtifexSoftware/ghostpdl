@@ -608,14 +608,17 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_state * pgs)
 {
     gx_device *             dev = pgs->device;
     gx_device_color_info *  pcinfo = (dev == 0 ? 0 : &dev->color_info);
+    cmm_dev_profile_t *dev_profile;
+    int code = dev_proc(dev, get_profile)(dev, &dev_profile);
 
     /* check if we require special handling */
     if ( !pgs->overprint                      ||
          pgs->overprint_mode != 1             ||
          pcinfo == 0                          ||
          pcs->cmm_icc_profile_data->data_cs != gsCMYK ||
-         pcinfo->opmode == GX_CINFO_OPMODE_NOT  )
-        return gx_spot_colors_set_overprint(pcs, pgs);
+         pcinfo->opmode == GX_CINFO_OPMODE_NOT  ) {
+            return gx_spot_colors_set_overprint(pcs, pgs);
+    }
 
     if (pcinfo->opmode == GX_CINFO_OPMODE_RGB || 
         pcinfo->opmode == GC_CINFO_OPMODE_RGB_SET) {

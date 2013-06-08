@@ -81,7 +81,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     bool devicegraytok = true;  /* Default if device profile stuct not set */
     bool graydetection = false;
     bool usefastcolor = false;  /* set for unmanaged color */
-    bool sim_overprint = false;
+    bool sim_overprint = true;  /* By default simulate overprinting */
     bool prebandthreshold = true;
     int k;
     gs_param_float_array msa, ibba, hwra, ma;
@@ -882,7 +882,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     bool devicegraytok = true;
     bool graydetection = false;
     bool usefastcolor = false;
-    bool sim_overprint = false;
+    bool sim_overprint = true;
     bool prebandthreshold = false;
     int  profile_types[NUM_DEVICE_PROFILES] = {gsDEFAULTPROFILE,
                                                gsGRAPHICPROFILE,

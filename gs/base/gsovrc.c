@@ -125,6 +125,7 @@ c_overprint_equal(const gs_composite_t * pct0, const gs_composite_t * pct1)
  */
 #define OVERPRINT_ANY_COMPS     1
 #define OVERPRINT_SPOT_COMPS    2
+#define OVERPRINT_BLEND         4
 
 /*
  * Convert an overprint compositor to string form for use by the command
@@ -140,15 +141,15 @@ c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize, gx_devi
     /* encoded the booleans in a single byte */
     if (pparams->retain_any_comps) {
         flags |= OVERPRINT_ANY_COMPS;
-
-        /* write out the component bits only if necessary (and possible) */
-        if (pparams->retain_spot_comps && !pparams->blendspot)
+        if (pparams->blendspot)
+            flags |= OVERPRINT_BLEND;
+        if (pparams->retain_spot_comps)
             flags |= OVERPRINT_SPOT_COMPS;
-        else {
-            uint    tmp_size = (avail > 0 ? avail - 1 : 0);
-            int     code = write_color_index( pparams->drawn_comps,
-                                              data + 1,
-                                              &tmp_size );
+        /* write out the component bits only if necessary (and possible) */
+        if (!pparams->retain_spot_comps || pparams->blendspot) {
+            uint tmp_size = (avail > 0 ? avail - 1 : 0);
+            int code = write_color_index(pparams->drawn_comps, data + 1, 
+                                             &tmp_size);
             /* It would be nice to do have an If RGB OP case, then write out 
                K value, but on the reader side, there is no way to find this
                out so we will always write it out if we are writing the
@@ -199,11 +200,11 @@ c_overprint_read(
     params.retain_any_comps = (flags & OVERPRINT_ANY_COMPS) != 0;
     params.retain_spot_comps = (flags & OVERPRINT_SPOT_COMPS) != 0;
     params.idle = 0;
-    params.blendspot = false;
+    params.blendspot = (flags & OVERPRINT_BLEND) != 0;
     params.k_value = 0;
 
     /* check if the drawn_comps array is present */
-    if (params.retain_any_comps && !params.retain_spot_comps) {
+    if (params.retain_any_comps && (!params.retain_spot_comps || params.blendspot)) {
         code = read_color_index(&params.drawn_comps, data + 1, size - 1);
         if (code < 0)
             return code;
@@ -1181,21 +1182,25 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
                 return code;
             }
             if (blendspot) {
-                /* Skip the plane if this component is not to be drawn.  We have
-                   to do a get bits for each plane due to the fact that we have
-                   to do a copy_planes at the end.  If we had a copy_plane 
-                   operation we would just get the ones need and set those. */
-                if ((comps & 0x01) == 1) {
-                    /* Not sure if a loop or a memset is better here */
-                    memset(gb_params.data[k], 
-                           ((pdcolor->colors.devn.values[k]) >> shift & mask), w);
+                /* We need to blend the CMYK colorants as we are simulating
+                   the overprint of a spot colorant with its equivalent CMYK
+                   colorants */
+                if ((comps &  0x01) == 1) {
+                    int kk;
+                    byte *cp = gb_params.data[k];
+                    byte new_val = ((pdcolor->colors.devn.values[k]) >> shift & mask);
+                    for (kk = 0; kk < w; kk++, cp++) {
+                        int temp = (255 - *cp) * (255 - new_val);
+                        temp = temp >> 8;
+                        *cp = (255-temp);
+                    }
                 }
                 comps >>= 1;
             } else {
                 /* Skip the plane if this component is not to be drawn.  We have
                    to do a get bits for each plane due to the fact that we have
                    to do a copy_planes at the end.  If we had a copy_plane 
-                   operation we would just get the ones need and set those. */
+                   operation we would just get the ones needed and set those. */
                 if ((comps & 0x01) == 1) {
                     /* Not sure if a loop or a memset is better here */
                     memset(gb_params.data[k], 

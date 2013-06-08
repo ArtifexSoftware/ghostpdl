@@ -40,6 +40,7 @@
 #include "gsicc_manage.h"
 #include "gsicc.h"
 #include "gsicc_cache.h"
+#include "gxdevice.h"
 
 /* ---------------- Color space ---------------- */
 
@@ -688,14 +689,16 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_state * pgs)
     if (pcmap->use_alt_cspace) {
         const gs_color_space_type* base_type = pcs->base_space->type;
 
-        if (dev_profile->sim_overprint)
+        if (dev_profile->sim_overprint &&
+            dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE &&
+            !gx_device_must_halftone(dev))
             return gx_simulated_set_overprint(pcs->base_space, pgs);
         else {
             /* If the base space is DeviceCMYK, handle overprint as DeviceCMYK */
             if ( base_type->index == gs_color_space_index_DeviceCMYK )
-                    return base_type->set_overprint( pcs->base_space, pgs );
+                return base_type->set_overprint( pcs->base_space, pgs );
             else
-                    return gx_spot_colors_set_overprint( pcs->base_space, pgs);
+                return gx_spot_colors_set_overprint( pcs->base_space, pgs);
         }
     }
     else {
@@ -707,6 +710,7 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_state * pgs)
             params.retain_spot_comps = false;
             params.drawn_comps = 0;
             params.k_value = 0;
+            /* We should not have to blend if we don't need the alternate tint transform */
             params.blendspot = false;
             for (i = 0; i < ncomps; i++) {
                 int     mcomp = pcmap->color_map[i];
