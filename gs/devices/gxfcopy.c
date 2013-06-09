@@ -1058,6 +1058,8 @@ copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
     gs_type1_state cis;
     gs_imager_state gis;
 
+    memset(&cis, 0x00, sizeof(cis));
+
     gdata.memory = pfont1->memory;
     code = pfont1->data.procs.glyph_data(pfont1, glyph, &gdata);
     if (code < 0)
