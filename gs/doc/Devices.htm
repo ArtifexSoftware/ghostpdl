@@ -210,7 +210,7 @@ respond to the following:</p>
 <dt><code>-dDownScaleFactor=</code><b><em>integer</em></b>
 <dd>This causes the internal rendering to be scaled down by the given (small
 integer) factor before being output. For example, the following will produce
-a 200dpi output png from a 300dpi internal rendering:
+a 200dpi output png from a 600dpi internal rendering:
 <blockquote>
 <pre>
  <kbd>gs -sDEVICE=png16m -r600 -dDownScaleFactor=3 -o tiger.png\
@@ -518,22 +518,34 @@ The tiffscaled device renders internally at the specified resolution to an
 1bpp output. The compression can be set using -sCompression= as described
 below.
 
+<a name="tiffscaled4"></a><dt><code>tiffscaled4</code>
+<dd>
+The tiffscaled4 device renders internally at the specified resolution to an
+8 bit cmyk image. This is then scaled down by an integer scale factor
+(set by -dDownScaleFactor= described below) and then error diffused to give
+4bpp cmyk output. The compression can be set using -sCompression= as described
+below.
+
 <a name="tiffscaled8"></a><dt><code>tiffscaled8</code>
 <dd>
 The tiffscaled8 device renders internally at the specified resolution to an
 8 bit greyscale image. This is then scaled down by an integer scale factor
-(set by -dDownScaleFactor= described below) and then error diffused to give
-8bpp output (error diffusion at this stage is probably pointless and may
-be removed in future versions). The compression can be set using
+(set by -dDownScaleFactor= described below). The compression can be set using
 -sCompression= as described below.
 
 <a name="tiffscaled24"></a><dt><code>tiffscaled24</code>
 <dd>
 The tiffscaled24 device renders internally at the specified resolution to a
 24 bit rgb image. This is then scaled down by an integer scale factor
-(set by -dDownScaleFactor= described below) and then error diffused to give
-24bpp output (error diffusion at this stage is probably pointless and may
-be removed in future versons). The compression can be set using
+(set by -dDownScaleFactor= described below). The compression can be set using
+-sCompression= as described below.
+
+
+<a name="tiffscaled32"></a><dt><code>tiffscaled32</code>
+<dd>
+The tiffscaled32 device renders internally at the specified resolution to a
+32 bit cmyk image. This is then scaled down by an integer scale factor
+(set by -dDownScaleFactor= described below). The compression can be set using
 -sCompression= as described below.
 
 </dl>
@@ -666,15 +678,16 @@ accepted for compatibility) will behave as for 2.
 </dl></blockquote>
 
 <p>
-The <tt>tiffscaled</tt>, <tt>tiffscaled8</tt> and <tt>tiffscaled24</tt> TIFF
+The <tt>tiffscaled</tt>, <tt>tiffscaled4</tt>, <tt>tiffscaled8</tt>,
+<tt>tiffscaled24</tt> and <tt>tiffscaled32</tt> TIFF
 drivers also provide this parameter:
 
 <blockquote><dl>
 <dt><code>-dDownScaleFactor=<em>factor</em></code> (small non-negative integer; default = 1)
 <dd>If this option set then the page is downscaled by the given factor on both
 axes before error diffusion takes place. For example rendering with
-<tt>-r600</tt> and then specifying <tt>-dDownScaleFactor=3</tt> will produce a
-200dpi image.
+<tt>-r600</tt> and then specifying <tt>-dDownScaleFactor=3</tt> will produce
+a 200dpi image.
 </dl></blockquote>
 
 

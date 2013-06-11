@@ -211,6 +211,7 @@ DEVGEN=$(DEVGENDIR)$(D)
 #	tiffscaled	TIFF (monochrome output, integer downsampled and dithered from grayscale rendering)
 #	tiffscaled8	TIFF (greyscale output, integer downsampled and dithered from grayscale rendering)
 #	tiffscaled24	TIFF (rgb output, integer downsampled and dithered from rgb rendering)
+#	tiffscaled32	TIFF (cmyk output, integer downsampled and dithered from cmyk rendering)
 #	tiffscaled4	TIFF (cmyk output, integer downsampled and dithered from cmyk rendering)
 
 # Note that MS Windows-specific drivers are defined in pcwin.mak, not here,
@@ -1765,6 +1766,15 @@ $(DD)tiffscaled24.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled24_)\
  $(DD)tiffs.dev $(minftrsz_h) $(GDEV)
 	$(SETPDEV2) $(DD)tiffscaled24 $(tiffscaled8_)
 	$(ADDMOD) $(DD)tiffscaled24 -include $(DD)tiffs $(tiff_i_)
+
+# TIFF Scaled 32 (downscaled cmyk -> cmyk), configurable compression
+
+tiffscaled32_=$(tiffsep_)
+
+$(DD)tiffscaled32.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled32_)\
+ $(DD)tiffs.dev $(minftrsz_h) $(GDEV)
+	$(SETPDEV2) $(DD)tiffscaled32 $(tiffscaled8_)
+	$(ADDMOD) $(DD)tiffscaled32 -include $(DD)tiffs $(tiff_i_)
 
 # TIFF Scaled 4 (downscaled cmyk -> cmyk), configurable compression
 

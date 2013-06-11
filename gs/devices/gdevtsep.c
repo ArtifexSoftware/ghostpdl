@@ -25,6 +25,8 @@
  *                   8-bit Gray internal rendering)
  * tiffscaled24 device:24-bit RGB TIFF device (dithered downscaled output
  *                   from 24-bit RGB internal rendering)
+ * tiffscaled32 device:32-bit CMYK TIFF device (downscaled output
+ *                   from 32-bit CMYK internal rendering)
  * tiffscaled4 device:4-bit CMYK TIFF device (dithered downscaled output
  *                   from 32-bit CMYK internal rendering)
  */
@@ -173,6 +175,37 @@ const gx_device_tiff gs_tiffscaled24_device = {
                     24,         /* bits per sample */
                     255, 255, 256, 256,
                     tiffscaled24_print_page),
+    arch_is_big_endian,/* default to native endian (i.e. use big endian iff the platform is so */
+    false,             /* default to not bigtiff */
+    COMPRESSION_NONE,
+    TIFF_DEFAULT_STRIP_SIZE,
+    TIFF_DEFAULT_DOWNSCALE,
+    0, /* Adjust size */
+    1  /* MinFeatureSize */
+};
+
+/* ------ The tiffscaled32 device ------ */
+
+static dev_proc_print_page(tiffscaled32_print_page);
+
+static const gx_device_procs tiffscaled32_procs = {
+    tiff_open, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
+    NULL, cmyk_8bit_map_color_cmyk, NULL, NULL, NULL, NULL, NULL, NULL,
+    tiff_get_params_downscale, tiff_put_params_downscale,
+    cmyk_8bit_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
+};
+
+const gx_device_tiff gs_tiffscaled32_device = {
+    prn_device_body(gx_device_tiff,
+                    tiffscaled32_procs,
+                    "tiffscaled32",
+                    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                    600, 600,   /* 600 dpi by default */
+                    0, 0, 0, 0, /* Margins */
+                    4,          /* num components */
+                    32,         /* bits per sample */
+                    255, 255, 256, 256,
+                    tiffscaled32_print_page),
     arch_is_big_endian,/* default to native endian (i.e. use big endian iff the platform is so */
     false,             /* default to not bigtiff */
     COMPRESSION_NONE,
@@ -341,6 +374,29 @@ tiff_set_cmyk_fields(gx_device_printer *pdev, TIFF *tif,
     TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 4);
 
     tiff_set_compression(pdev, tif, compression, max_strip_size);
+}
+
+static int
+tiffscaled32_print_page(gx_device_printer * pdev, FILE * file)
+{
+    gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
+    int code;
+
+    code = gdev_tiff_begin_page(tfdev, file);
+    if (code < 0)
+        return code;
+
+    tiff_set_cmyk_fields(pdev,
+                         tfdev->tif,
+                         8,
+                         tfdev->Compression,
+                         tfdev->MaxStripSize);
+
+    return tiff_downscale_and_print_page(pdev, tfdev->tif,
+                                         tfdev->DownScaleFactor,
+                                         tfdev->MinFeatureSize,
+                                         tfdev->AdjustWidth,
+                                         8, 4);
 }
 
 static int

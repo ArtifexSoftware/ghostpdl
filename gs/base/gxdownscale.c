@@ -1423,6 +1423,100 @@ static void down_core24(gx_downscaler_t *ds,
     }
 }
 
+/* CMYK downscale (no error diffusion) code */
+
+static void down_core32(gx_downscaler_t *ds,
+                        byte            *outp,
+                        byte            *in_buffer,
+                        int              row,
+                        int              plane,
+                        int              span)
+{
+    int   x, xx, y, value;
+    int   pad_white;
+    byte *inp;
+    int   width  = ds->width;
+    int   awidth = ds->awidth;
+    int   factor = ds->factor;
+    int   div    = factor*factor;
+
+    pad_white = (awidth - width) * factor * 4;
+    if (pad_white < 0)
+        pad_white = 0;
+
+    if (pad_white)
+    {
+        inp = in_buffer + width*factor*4;
+        for (y = factor; y > 0; y--)
+        {
+            memset(inp, 0xFF, pad_white);
+            inp += span;
+        }
+    }
+
+    inp = in_buffer;
+    {
+        /* Left to Right pass (no min feature size) */
+        const int back  = span * factor - 4;
+        const int back2 = factor * 4 - 1;
+        for (x = awidth; x > 0; x--)
+        {
+            /* C */
+            value = 0;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += *inp;
+                    inp += span;
+                }
+                inp -= back;
+            }
+            inp -= back2;
+            *outp++ = (value+(div>>1))/div;
+            /* M */
+            value = 0;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += *inp;
+                    inp += span;
+                }
+                inp -= back;
+            }
+            inp -= back2;
+            *outp++ = (value+(div>>1))/div;
+            /* Y */
+            value = 0;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += *inp;
+                    inp += span;
+                }
+                inp -= back;
+            }
+            inp -= back2;
+            *outp++ = (value+(div>>1))/div;
+            /* K */
+            value = 0;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += *inp;
+                    inp += span;
+                }
+                inp -= back;
+            }
+            inp -= 3;
+            *outp++ = (value+(div>>1))/div;
+        }
+    }
+}
+
 static void decode_factor(int factor, int *up, int *down)
 {
     if (factor == 32)
@@ -1651,6 +1745,8 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
     }
     else if ((src_bpc == 8) && (dst_bpc == 8) && (num_comps == 3))
         core = &down_core24;
+    else if ((src_bpc == 8) && (dst_bpc == 8) && (num_comps == 4))
+         core = &down_core32;
     else {
         code = gs_note_error(gs_error_rangecheck);
         goto cleanup;

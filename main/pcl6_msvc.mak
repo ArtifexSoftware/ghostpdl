@@ -466,7 +466,7 @@ DEVICE_DEVS=$(DD)\display.dev\
  $(DD)\tiffcrle.dev $(DD)\tiffg3.dev $(DD)\tiffg32d.dev $(DD)\tiffg4.dev\
  $(DD)\tifflzw.dev $(DD)\tiffpack.dev $(DD)\tiffgray.dev $(DD)\tiffscaled.dev \
  $(DD)\tiff12nc.dev $(DD)\tiff24nc.dev\
- $(DD)\tiffscaled4.dev $(DD)\tiffscaled8.dev $(DD)\tiffscaled24.dev\
+ $(DD)\tiffscaled4.dev $(DD)\tiffscaled8.dev $(DD)\tiffscaled24.dev $(DD)\tiffscaled32.dev\
  $(DD)\png16m.dev $(DD)\pngmono.dev $(DD)\pngmonod.dev $(DD)\jpeg.dev \
  $(DD)\pdfwrite.dev $(DD)\ps2write.dev $(DD)\txtwrite.dev \
  $(DD)\xpswrite.dev \
