@@ -282,7 +282,7 @@ int pdf14_get_buffer_information(const gx_device * dev,
 /* Not static due to call from pattern logic */
 int pdf14_disable_device(gx_device * dev);
 
-/* Needed so that we can turn off the monitoring in the target device */
-int gs_pdf14_device_color_mon_off(gx_device *pdev);
+/* Needed so that we can set the monitoring in the target device */
+int gs_pdf14_device_color_mon_set(gx_device *pdev, bool monitoring);
 
 #endif /* gdevp14_INCLUDED */

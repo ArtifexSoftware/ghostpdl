@@ -36,8 +36,9 @@
 bool gsicc_mcm_monitor_rgb(void *inputcolor, int num_bytes);
 bool gsicc_mcm_monitor_cmyk(void *inputcolor, int num_bytes);
 bool gsicc_mcm_monitor_lab(void *inputcolor, int num_bytes);
-void gsicc_mcm_set_link(gsicc_link_t* link, gsicc_colorbuffer_t data_cs);
+void gsicc_mcm_set_link(gsicc_link_t* link);
 void gsicc_mcm_end_monitor(gsicc_link_cache_t *cache, gx_device *dev);
+void gsicc_mcm_begin_monitor(gsicc_link_cache_t *cache, gx_device *dev);
 gsicc_link_t* gsicc_rcm_get_link(const gs_imager_state *pis, gx_device *dev, 
                                  gsicc_colorbuffer_t data_cs);
 gsicc_link_t* gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev, 

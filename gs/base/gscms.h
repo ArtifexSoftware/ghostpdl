@@ -427,6 +427,7 @@ struct gsicc_link_s {
     bool valid;		/* true once link is completely built and usable */
     bool is_monitored;
     gscms_procs_t orig_procs;  /* procs to use after monitoring */
+    gsicc_colorbuffer_t data_cs; /* needed for begin_monitor after end_monitor */
     int num_input;  /* Need so we can monitor properly */
     int num_output; /* Need so we can monitor properly */
 };

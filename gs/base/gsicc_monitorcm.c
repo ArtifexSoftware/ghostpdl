@@ -359,7 +359,7 @@ bool gsicc_mcm_monitor_lab(void *inputcolor, int num_bytes)
 
 /* Set the link up to monitor */
 void
-gsicc_mcm_set_link(gsicc_link_t* link, gsicc_colorbuffer_t data_cs)
+gsicc_mcm_set_link(gsicc_link_t* link)
 {
     link->orig_procs = link->procs;
     link->is_monitored = true;
@@ -368,7 +368,7 @@ gsicc_mcm_set_link(gsicc_link_t* link, gsicc_colorbuffer_t data_cs)
     link->procs.map_buffer = gsicc_mcm_transform_color_buffer;
     link->procs.map_color = gsicc_mcm_transform_color;
 
-    switch (data_cs) {
+    switch (link->data_cs) {
         case gsRGB:
             link->procs.is_color = gsicc_mcm_monitor_rgb;
             break;
@@ -402,7 +402,7 @@ gsicc_mcm_end_monitor(gsicc_link_cache_t *cache, gx_device *dev)
        profile in the target device also.  This is a special case since the
        pdf14 device has its own profile different from the target device */
     if (dev_proc(dev, dev_spec_op)(dev, gxdso_is_pdf14_device, NULL, 0)) {
-        code = gs_pdf14_device_color_mon_off(dev);
+        code = gs_pdf14_device_color_mon_set(dev, false);
     }
 
     curr = cache->head;
@@ -413,6 +413,44 @@ gsicc_mcm_end_monitor(gsicc_link_cache_t *cache, gx_device *dev)
                 curr->is_identity = true;
             curr->is_monitored = false;
         }
+        /* Now release any tasks/threads waiting for these contents */
+        while (curr->num_waiting > 0) {
+            gx_semaphore_signal(curr->wait);
+            curr->num_waiting--;
+        }
+        curr = curr->next;
+    }
+    gx_monitor_leave(lock);	/* done with updating, let everyone run */
+}
+
+/* Conversely to the above, this gets restores monitoring, needed after
+ * monitoring was turned off above (for the next page)
+*/
+void
+gsicc_mcm_begin_monitor(gsicc_link_cache_t *cache, gx_device *dev)
+{
+    gx_monitor_t *lock = cache->lock;
+    gsicc_link_t *curr;
+    int code;
+    cmm_dev_profile_t *dev_profile;
+
+    /* Lock the cache as we remove monitoring from the links */
+    gx_monitor_enter(lock);
+
+    /* Get the device profile */
+    code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    dev_profile->pageneutralcolor = true;
+    /* If this device is a pdf14 device, then we may need to take care of the
+       profile in the target device also.  This is a special case since the
+       pdf14 device has its own profile different from the target device */
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_is_pdf14_device, NULL, 0)) {
+        code = gs_pdf14_device_color_mon_set(dev, true);
+    }
+
+    curr = cache->head;
+    while (curr != NULL ) {
+        if (curr->data_cs != gsGRAY)
+            gsicc_mcm_set_link(curr);
         /* Now release any tasks/threads waiting for these contents */
         while (curr->num_waiting > 0) {
             gx_semaphore_signal(curr->wait);

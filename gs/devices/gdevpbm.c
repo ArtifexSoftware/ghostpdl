@@ -291,6 +291,7 @@ static int
 pnmcmyk_open(gx_device *pdev)
 {
     pdev->icc_struct->graydetection = true;
+    pdev->icc_struct->pageneutralcolor = true;   /* enable detection */
 
     return ppm_open(pdev);
 }

@@ -400,7 +400,7 @@ gsicc_rcm_get_link(const gs_imager_state *pis, gx_device *dev,
 
     /* Set up for monitoring non gray color spaces */
     if (pageneutralcolor && data_cs != gsGRAY)
-        gsicc_mcm_set_link(result, data_cs);
+        gsicc_mcm_set_link(result);
 
     /* Now release any tasks/threads waiting for these contents */
     while (result->num_waiting > 0) {

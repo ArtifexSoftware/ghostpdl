@@ -136,6 +136,7 @@ int
 gs_output_page(gs_state * pgs, int num_copies, int flush)
 {
     gx_device *dev = gs_currentdevice(pgs);
+    cmm_dev_profile_t *dev_profile;
     int code;
 
     /* for devices that hook 'fill_path' in order to pick up imager state */
@@ -158,7 +159,15 @@ gs_output_page(gs_state * pgs, int num_copies, int flush)
 
     if (dev->IgnoreNumCopies)
         num_copies = 1;
-    return (*dev_proc(dev, output_page)) (dev, num_copies, flush);
+    if ((code = (*dev_proc(dev, output_page)) (dev, num_copies, flush)) < 0)
+        return code;
+
+    code = dev_proc(dev, get_profile)(dev, &(dev_profile));
+    if (dev_profile->graydetection && !dev_profile->pageneutralcolor) {
+        dev_profile->pageneutralcolor = true;             /* start detecting again */
+        gsicc_mcm_begin_monitor(pgs->icc_link_cache, dev);
+    }
+    return code;
 }
 
 /*

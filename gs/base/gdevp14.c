@@ -5099,9 +5099,9 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
-/* Needed to turn off color monitoring in the target device's profile */
+/* Needed to set color monitoring in the target device's profile */
 int 
-gs_pdf14_device_color_mon_off(gx_device *pdev)
+gs_pdf14_device_color_mon_set(gx_device *pdev, bool monitoring)
 {
     pdf14_device * p14dev = (pdf14_device *)pdev;
     gx_device *targ = p14dev->target;

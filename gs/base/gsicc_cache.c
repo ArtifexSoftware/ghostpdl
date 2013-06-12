@@ -221,8 +221,9 @@ gsicc_set_link_data(gsicc_link_t *icc_link, void *link_handle,
     icc_link->valid = true;
 
     /* Set up for monitoring */
+    icc_link->data_cs = data_cs;
     if (pageneutralcolor) 
-        gsicc_mcm_set_link(icc_link, data_cs);
+        gsicc_mcm_set_link(icc_link);
 
     /* Now release any tasks/threads waiting for these contents */
     while (icc_link->num_waiting > 0) {

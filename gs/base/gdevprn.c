@@ -954,7 +954,6 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
         free_separation_names(pdev->memory, &(pdevn_params->separations));
         pdevn_params->num_separation_order_names = 0;
     }
-    pdev->icc_struct->pageneutralcolor = pdev->icc_struct->graydetection;          /* start detecting again */
     endcode = (PRINTER_IS_CLIST(ppdev) && !ppdev->is_async_renderer ?
                clist_finish_page(pdev, flush) : 0);
 
