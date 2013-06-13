@@ -33,6 +33,14 @@ typedef enum {
   gs_jpx_cs_indexed /* PDF image wants raw index values */
 } gs_jpx_cs;
 
+typedef struct stream_block_s
+{
+	unsigned char *data;
+	unsigned long size;
+	unsigned long pos;
+	unsigned long fill;
+} stream_block;
+
 /* Stream state for the jpx codec using openjpeg
  * We rely on our finalization call to free the
  * associated handle and pointers.
@@ -40,26 +48,25 @@ typedef enum {
 typedef struct stream_jpxd_state_s
 {
     stream_state_common;	/* a define from scommon.h */
-	opj_dinfo_t *opj_dinfo_p;
-	opj_image_t *image;
-	int width, height, bpp;
-	bool samescale;
+    opj_codec_t *codec;
+    opj_stream_t *stream;
+    opj_image_t *image;
+    int width, height, bpp;
+    bool samescale;
 
-	gs_jpx_cs colorspace;	/* requested output colorspace */
+    gs_jpx_cs colorspace;	/* requested output colorspace */
     bool alpha; /* return opacity channel */
 
-    unsigned char *inbuf;	/* input data buffer */
-    unsigned long inbuf_size;
-    unsigned long inbuf_fill;
+    stream_block sb;
 
-	unsigned long totalbytes; /* output total */
-	unsigned long out_offset; /* output bytes already returned previously */
-	unsigned long img_offset; /* offset in the image data buffer for each channel, only used when output bpp%8 !=0 */
+    unsigned long totalbytes; /* output total */
+    unsigned long out_offset; /* output bytes already returned previously */
+    unsigned long img_offset; /* offset in the image data buffer for each channel, only used when output bpp%8 !=0 */
 
-	int **pdata; /* pointers to image data */
-	int out_numcomps; /* real number of channels to use */
-	int alpha_comp; /* input index of alpha channel */
-	int *sign_comps; /* compensate for signed data (signed => unsigned) */
+    int **pdata; /* pointers to image data */
+    int out_numcomps; /* real number of channels to use */
+    int alpha_comp; /* input index of alpha channel */
+    int *sign_comps; /* compensate for signed data (signed => unsigned) */
 } stream_jpxd_state;
 
 extern const stream_template s_jpxd_template;

@@ -1,7 +1,4 @@
 /*
- * Copyright (c) 2002-2007, Communications and Remote Sensing Laboratory, Universite catholique de Louvain (UCL), Belgium
- * Copyright (c) 2002-2007, Professor Benoit Macq
- * Copyright (c) 2003-2007, Francois-Olivier Devaux and Antonin Descampe
  * Copyright (c) 2005, Herve Drolon, FreeImage Team
  * All rights reserved.
  *
@@ -26,62 +23,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#ifndef __OPJ_CLOCK_H
+#define __OPJ_CLOCK_H
+/**
+@file opj_clock.h
+@brief Internal function for timing
 
-#include "opj_includes.h"
-
-/* 
-==========================================================
-   local functions
-==========================================================
+The functions in OPJ_CLOCK.C are internal utilities mainly used for timing.
 */
 
+/** @defgroup MISC MISC - Miscellaneous internal functions */
+/*@{*/
 
-/* 
-==========================================================
-   RAW encoding interface
-==========================================================
+/** @name Exported functions */
+/*@{*/
+/* ----------------------------------------------------------------------- */
+
+/**
+Difference in successive opj_clock() calls tells you the elapsed time
+@return Returns time in seconds
 */
+OPJ_FLOAT64 opj_clock(void);
 
-opj_raw_t* opj_raw_create(void) {
-	opj_raw_t *raw = (opj_raw_t*)opj_malloc(sizeof(opj_raw_t));
-	return raw;
-}
+/* ----------------------------------------------------------------------- */
+/*@}*/
 
-void opj_raw_destroy(opj_raw_t *raw) {
-	if(raw) {
-		opj_free(raw);
-	}
-}
+/*@}*/
 
-OPJ_UINT32 opj_raw_numbytes(opj_raw_t *raw) {
-	return raw->bp - raw->start;
-}
-
-void opj_raw_init_dec(opj_raw_t *raw, OPJ_BYTE *bp, OPJ_UINT32 len) {
-	raw->start = bp;
-	raw->lenmax = len;
-	raw->len = 0;
-	raw->c = 0;
-	raw->ct = 0;
-}
-
-OPJ_UINT32 opj_raw_decode(opj_raw_t *raw) {
-	OPJ_UINT32 d;
-	if (raw->ct == 0) {
-		raw->ct = 8;
-		if (raw->len == raw->lenmax) {
-			raw->c = 0xff;
-		} else {
-			if (raw->c == 0xff) {
-				raw->ct = 7;
-			}
-			raw->c = *(raw->start + raw->len);
-			raw->len++;
-		}
-	}
-	raw->ct--;
-	d = (raw->c >> raw->ct) & 0x01;
-	
-	return d;
-}
+#endif /* __OPJ_CLOCK_H */
 

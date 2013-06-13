@@ -1362,6 +1362,13 @@ if test x$with_luratech != xno; then
 fi
 
 OPENJPEGDIR=$srcdir/openjpeg
+JPX_AUTOCONF_CFLAGS=
+
+if test "x$ac_cv_header_stdint_h" = xyes; then
+  CFLAGS_OPJ_HAVE_STDINT_H="-DOPJ_HAVE_STDINT_H"
+else
+  CFLAGS_OPJ_HAVE_STDINT_H=""
+fi
 
 JPX_SSE_CFLAGS=""
 
@@ -1385,9 +1392,9 @@ if test "x$JPX_DECODER" = "x"; then
       AC_CHECK_FUNCS([memalign], [have_memalign=1])
 
       if test "x$have_memalign" = "x1"; then
-        JPX_AUTOCONF_CFLAGS="-DUSE_OPENJPEG_JP2 $JPX_SSE_CFLAGS"
+        JPX_AUTOCONF_CFLAGS="-DUSE_OPENJPEG_JP2 $CFLAGS_OPJ_HAVE_STDINT_H"
       else
-        JPX_AUTOCONF_CFLAGS="-DUSE_OPENJPEG_JP2 $JPX_SSE_CFLAGS -D\"memalign(a,b)=malloc(b)\""
+        JPX_AUTOCONF_CFLAGS="-DUSE_OPENJPEG_JP2 $CFLAGS_OPJ_HAVE_STDINT_H -D\"memalign(a,b)=malloc(b)\""
       fi
 
       JPXDEVS='$(PSD)jpx.dev'

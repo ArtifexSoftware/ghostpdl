@@ -29,7 +29,62 @@ gs_private_st_simple(st_jpxd_state, stream_jpxd_state,
 
 static int s_opjd_accumulate_input(stream_jpxd_state *state, stream_cursor_read * pr);
 
-/* initialize the steam.
+OPJ_SIZE_T stream_read(void * p_buffer, OPJ_SIZE_T p_nb_bytes, void * p_user_data)
+{
+	stream_block *sb = (stream_block *)p_user_data;
+	OPJ_SIZE_T len;
+
+	len = sb->size - sb->pos;
+	if (len < 0)
+		len = 0;
+	if (len == 0)
+		return (OPJ_SIZE_T)-1;  /* End of file! */
+	if ((OPJ_SIZE_T)len > p_nb_bytes)
+		len = p_nb_bytes;
+	memcpy(p_buffer, sb->data + sb->pos, len);
+	sb->pos += len;
+	return len;
+}
+
+OPJ_OFF_T stream_skip(OPJ_OFF_T skip, void * p_user_data)
+{
+	stream_block *sb = (stream_block *)p_user_data;
+
+	if (skip > sb->size - sb->pos)
+		skip = sb->size - sb->pos;
+	sb->pos += skip;
+	return sb->pos;
+}
+
+OPJ_BOOL stream_seek(OPJ_OFF_T seek_pos, void * p_user_data)
+{
+	stream_block *sb = (stream_block *)p_user_data;
+
+	if (seek_pos > sb->size)
+		return OPJ_FALSE;
+	sb->pos = seek_pos;
+	return OPJ_TRUE;
+}
+
+static void sjpx_error_callback(const char *msg, void *ptr)
+{
+	dlprintf1("openjpeg error: %s", msg);
+}
+
+static void sjpx_info_callback(const char *msg, void *ptr)
+{
+#ifdef DEBUG
+	/* prevent too many messages during normal build */
+	dlprintf1("openjpeg info: %s", msg);
+#endif
+}
+
+static void sjpx_warning_callback(const char *msg, void *ptr)
+{
+	dlprintf1("openjpeg warning: %s", msg);
+}
+
+/* initialize the stream.
    this involves allocating the stream and image structures, and
    initializing the decoder.
  */
@@ -37,27 +92,49 @@ static int
 s_opjd_init(stream_state * ss)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
-	opj_dparameters_t parameters;	/* decompression parameters */
-
-    /* get a decoder handle */
-    state->opj_dinfo_p = opj_create_decompress(CODEC_JP2);
-
-    if (state->opj_dinfo_p == NULL)
-            return_error(gs_error_VMerror);
-
-    /* catch events using our callbacks and give a local context */
- /* opj_set_event_mgr((opj_common_ptr)dinfo, &event_mgr, stderr); */
+    opj_dparameters_t parameters;	/* decompression parameters */
 
     /* set decoding parameters to default values */
     opj_set_default_decoder_parameters(&parameters);
 
+    /* get a decoder handle */
+    state->codec = opj_create_decompress(OPJ_CODEC_JP2);
+    if (state->codec == NULL)
+        return_error(gs_error_VMerror);
+
+    /* catch events using our callbacks */
+    opj_set_error_handler(state->codec, sjpx_error_callback, stderr);
+    opj_set_info_handler(state->codec, sjpx_info_callback, stderr);
+    opj_set_warning_handler(state->codec, sjpx_warning_callback, stderr);
+
+    if (state->colorspace == gs_jpx_cs_indexed) {
+        parameters.flags |= OPJ_DPARAMETERS_IGNORE_PCLR_CMAP_CDEF_FLAG;
+    }
+
     /* setup the decoder decoding parameters using user parameters */
-    opj_setup_decoder(state->opj_dinfo_p, &parameters);
+    if (!opj_setup_decoder(state->codec, &parameters))
+    {
+        dlprintf("openjpeg: failed to setup the decoder!\n");
+        return ERRC;
+    }
+
+    /* open a byte stream */
+    state->stream = opj_stream_default_create(OPJ_TRUE);
+    if (state->stream == NULL)
+    {
+        dlprintf("openjpeg: failed to open a byte stream!\n");
+        return ERRC;
+    }
+
+    opj_stream_set_read_function(state->stream, stream_read);
+    opj_stream_set_skip_function(state->stream, stream_skip);
+    opj_stream_set_seek_function(state->stream, stream_seek);
 
     state->image = NULL;
-    state->inbuf = NULL;
-    state->inbuf_size = 0;
-    state->inbuf_fill = 0;
+    state->sb.data= NULL;
+    state->sb.size = 0;
+    state->sb.pos = 0;
+    state->sb.fill = 0;
     state->out_offset = 0;
     state->img_offset = 0;
     state->pdata = NULL;
@@ -148,29 +225,25 @@ s_jpxd_ycc_to_rgb(stream_jpxd_state *state)
 
 static int decode_image(stream_jpxd_state * const state)
 {
-    opj_cio_t *cio = NULL;
     int numprimcomp = 0, alpha_comp = -1, compno, rowbytes;
 
-    /* open a byte stream */
-    cio = opj_cio_open((opj_common_ptr)state->opj_dinfo_p, state->inbuf, state->inbuf_fill);
-    if (cio == NULL)
-            return ERRC;
+    /* read header */
+    if (!opj_read_header(state->stream, state->codec, &(state->image)))
+    {
+    	dlprintf("openjpeg: failed to read header\n");
+    	return ERRC;
+    }
 
     /* decode the stream and fill the image structure */
-    state->image = opj_decode(state->opj_dinfo_p, cio, state->colorspace == gs_jpx_cs_indexed);
-    if(state->image == NULL)
+    if (!opj_decode(state->codec, state->stream, state->image))
     {
         dlprintf("openjpeg: failed to decode image!\n");
-        opj_cio_close(cio);
         return ERRC;
     }
 
-    /* close the byte stream */
-    opj_cio_close(cio);
-
     /* check dimension and prec */
     if (state->image->numcomps == 0)
-            return ERRC;
+        return ERRC;
 
     state->width = state->image->comps[0].w;
     state->height = state->image->comps[0].h;
@@ -189,26 +262,22 @@ static int decode_image(stream_jpxd_state * const state)
             state->samescale = false;
     }
 
-
-    /* find alpha component and regular color component by channel definition */
-    for(compno = 0; compno < state->image->numcomps; compno++)
+    /* find alpha component and regular colour component by channel definition */
+    for (compno = 0; compno < state->image->numcomps; compno++)
     {
-        if (state->image->comps[compno].typ == CTYPE_COLOR)
+        if (state->image->comps[compno].alpha == 0x00)
             numprimcomp++;
-        else if (state->image->comps[compno].typ == CTYPE_OPACITY)
+        else if (state->image->comps[compno].alpha == 0x01)
             alpha_comp = compno;
     }
 
     /* color space and number of components */
     switch(state->image->color_space)
     {
-        case CLRSPC_GRAY:
+        case OPJ_CLRSPC_GRAY:
             state->colorspace = gs_jpx_cs_gray;
             break;
-        case CLRSPC_CMYK:
-            state->colorspace = gs_jpx_cs_cmyk;
-            break;
-        case CLRSPC_UNKNOWN: /* make the best guess based on number of channels */
+        case OPJ_CLRSPC_UNKNOWN: /* make the best guess based on number of channels */
         {
             if (numprimcomp < 3)
             {
@@ -224,7 +293,7 @@ static int decode_image(stream_jpxd_state * const state)
             }
             break;
         }
-        default: /* CLRSPC_SRGB, CLRSPC_SYCC, CLRSPC_ERGB, CLRSPC_EYCC */
+        default: /* OPJ_CLRSPC_SRGB, OPJ_CLRSPC_SYCC, OPJ_CLRSPC_EYCC */
             state->colorspace = gs_jpx_cs_rgb;
     }
 
@@ -246,7 +315,7 @@ static int decode_image(stream_jpxd_state * const state)
     state->totalbytes = rowbytes*state->height;
 
     /* convert input from YCC to RGB */
-    if (state->image->color_space == CLRSPC_SYCC || state->image->color_space == CLRSPC_EYCC)
+    if (state->image->color_space == OPJ_CLRSPC_SYCC || state->image->color_space == OPJ_CLRSPC_EYCC)
         s_jpxd_ycc_to_rgb(state);
 
     state->pdata = (int **)gs_alloc_byte_array(state->memory->non_gc_memory, sizeof(int*)*state->image->numcomps, 1, "decode_image(pdata)");
@@ -457,20 +526,24 @@ s_opjd_process(stream_state * ss, stream_cursor_read * pr,
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
     long in_size = pr->limit - pr->ptr;
 
-    if (state->opj_dinfo_p == NULL)
+    if (state->codec == NULL)
 	return ERRC;
 
     if (in_size > 0) 
     {
         /* buffer available data */
-        s_opjd_accumulate_input(state, pr);
+        int code = s_opjd_accumulate_input(state, pr);
+        if (code < 0) return code;
     }
 
     if (last == 1) 
     {
         if (state->image == NULL)
         {
-            int ret = decode_image(state);
+            int ret = ERRC;
+            opj_stream_set_user_data(state->stream, &(state->sb));
+            opj_stream_set_user_data_length(state->stream, state->sb.size);
+            ret = decode_image(state);
             if (ret != 0)
                 return ret;
         }
@@ -504,14 +577,18 @@ s_opjd_release(stream_state *ss)
     /* free image data structure */
     if (state->image)
         opj_image_destroy(state->image);
+    
+    /* free stream */
+    if (state->stream)
+        opj_stream_destroy(state->stream);
 		
     /* free decoder handle */
-    if (state->opj_dinfo_p)
-	opj_destroy_decompress(state->opj_dinfo_p);
+    if (state->codec)
+	opj_destroy_codec(state->codec);
 
     /* free input buffer */
-    if (state->inbuf)
-        gs_free_object(state->memory->non_gc_memory, state->inbuf, "s_opjd_release(inbuf)");
+    if (state->sb.data)
+        gs_free_object(state->memory->non_gc_memory, state->sb.data, "s_opjd_release(sb.data)");
 
     if (state->pdata)
         gs_free_object(state->memory->non_gc_memory, state->pdata, "s_opjd_release(pdata)");
@@ -527,31 +604,31 @@ s_opjd_accumulate_input(stream_jpxd_state *state, stream_cursor_read * pr)
     long in_size = pr->limit - pr->ptr;
 
     /* grow the input buffer if needed */
-    if (state->inbuf_size < state->inbuf_fill + in_size) 
+    if (state->sb.size < state->sb.fill + in_size)
     {
         unsigned char *new_buf;
-        unsigned long new_size = state->inbuf_size==0 ? in_size : state->inbuf_size;
+        unsigned long new_size = state->sb.size==0 ? in_size : state->sb.size;
 
-        while (new_size < state->inbuf_fill + in_size)
+        while (new_size < state->sb.fill + in_size)
             new_size = new_size << 1;
 
         if_debug1('s', "[s]opj growing input buffer to %lu bytes\n",
                 new_size);
-        if (state->inbuf == NULL)
+        if (state->sb.data == NULL)
             new_buf = (byte *) gs_alloc_byte_array(state->memory->non_gc_memory, new_size, 1, "s_opjd_accumulate_input(alloc)");
         else
-            new_buf = (byte *) gs_resize_object(state->memory->non_gc_memory, state->inbuf, new_size, "s_opjd_accumulate_input(resize)");
+            new_buf = (byte *) gs_resize_object(state->memory->non_gc_memory, state->sb.data, new_size, "s_opjd_accumulate_input(resize)");
         if (new_buf == NULL) return_error( gs_error_VMerror);
 
-        state->inbuf = new_buf;
-        state->inbuf_size = new_size;
+        state->sb.data = new_buf;
+        state->sb.size = new_size;
     }
 
     /* copy the available input into our buffer */
     /* note that the gs stream library uses offset-by-one
         indexing of its buffers while we use zero indexing */
-    memcpy(state->inbuf + state->inbuf_fill, pr->ptr + 1, in_size);
-    state->inbuf_fill += in_size;
+    memcpy(state->sb.data + state->sb.fill, pr->ptr + 1, in_size);
+    state->sb.fill += in_size;
     pr->ptr += in_size;
 
     return 0;
@@ -565,5 +642,5 @@ const stream_template s_jpxd_template = {
     1024, 1024,   /* min in and out buffer sizes we can handle
                      should be ~32k,64k for efficiency? */
     s_opjd_release,
-	s_opjd_set_defaults
+    s_opjd_set_defaults
 };

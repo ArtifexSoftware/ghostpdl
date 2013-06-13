@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Herve Drolon, FreeImage Team
+ * Copyright (c) 2012, Mathieu Malaterre <mathieu.malaterre@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,41 +23,21 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __IMAGE_H
-#define __IMAGE_H
-/**
-@file image.h
-@brief Implementation of operations on images (IMAGE)
+#ifndef OPJ_INTTYPES_H
+#define OPJ_INTTYPES_H
 
-The functions in IMAGE.C have for goal to realize operations on images.
-*/
+#include "opj_config_private.h"
+#ifdef OPJ_HAVE_INTTYPES_H
+#include <inttypes.h>
+#else
+#if defined(_WIN32)
+#define PRId64 "I64d"
+#define PRIi64 "I64i"
+#define PRIu64 "I64u"
+#define PRIx64 "I64x"
+#else
+#error unsupported platform
+#endif
+#endif
 
-struct opj_image;
-struct opj_cp;
-
-/** @defgroup IMAGE IMAGE - Implementation of operations on images */
-/*@{*/
-
-/**
- * Create an empty image
- *
- * @return returns an empty image if successful, returns NULL otherwise
- */
-opj_image_t* opj_image_create0(void);
-
-
-
-/**
- * Updates the components characteristics of the image from the coding parameters.
- *
- * @param p_image_header		the image header to update.
- * @param p_cp					the coding parameters from which to update the image.
- */
-void opj_image_comp_header_update(opj_image_t * p_image, const struct opj_cp* p_cp);
-
-void opj_copy_image_header(const opj_image_t* p_image_src, opj_image_t* p_image_dest);
-
-/*@}*/
-
-#endif /* __IMAGE_H */
-
+#endif /* OPJ_INTTYPES_H */

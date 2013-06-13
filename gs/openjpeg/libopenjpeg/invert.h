@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Herve Drolon, FreeImage Team
+ * Copyright (c) 2008, Jerome Fimes, Communications & Systemes <jerome.fimes@c-s.fr>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -23,41 +23,37 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __IMAGE_H
-#define __IMAGE_H
-/**
-@file image.h
-@brief Implementation of operations on images (IMAGE)
 
-The functions in IMAGE.C have for goal to realize operations on images.
+#ifndef __INVERT_H
+#define __INVERT_H
+/**
+@file invert.h
+@brief Implementation of the matrix inversion
+
+The function in INVERT.H compute a matrix inversion with a LUP method
 */
 
-struct opj_image;
-struct opj_cp;
-
-/** @defgroup IMAGE IMAGE - Implementation of operations on images */
+/** @defgroup INVERT INVERT - Implementation of a matrix inversion */
 /*@{*/
+/** @name Exported functions */
+/*@{*/
+/* ----------------------------------------------------------------------- */
 
 /**
- * Create an empty image
+ * Calculates a n x n double matrix inversion with a LUP method. Data is aligned, rows after rows (or columns after columns).
+ * The function does not take ownership of any memory block, data must be fred by the user.
  *
- * @return returns an empty image if successful, returns NULL otherwise
+ * @param pSrcMatrix	the matrix to invert.
+ * @param pDestMatrix	data to store the inverted matrix. 
+ * @param n size of the matrix
+ * @return OPJ_TRUE if the inversion is successful, OPJ_FALSE if the matrix is singular.
  */
-opj_image_t* opj_image_create0(void);
-
-
-
-/**
- * Updates the components characteristics of the image from the coding parameters.
- *
- * @param p_image_header		the image header to update.
- * @param p_cp					the coding parameters from which to update the image.
- */
-void opj_image_comp_header_update(opj_image_t * p_image, const struct opj_cp* p_cp);
-
-void opj_copy_image_header(const opj_image_t* p_image_src, opj_image_t* p_image_dest);
+OPJ_BOOL opj_matrix_inversion_f(OPJ_FLOAT32 * pSrcMatrix,
+                                OPJ_FLOAT32 * pDestMatrix, 
+                                OPJ_UINT32 nb_compo);
+/* ----------------------------------------------------------------------- */
+/*@}*/
 
 /*@}*/
 
-#endif /* __IMAGE_H */
-
+#endif /* __INVERT_H */ 
