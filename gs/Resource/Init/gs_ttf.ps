@@ -1783,12 +1783,12 @@ currentdict /postalias undef
   } if
 } bind def
 
-% <subcmap> <chartoglyphmap> .pdfmapchars /CharStrings <charstrings>
+% <chartoglyphmap> <subcmap> <AGL> .pdfmapchars /CharStrings <charstrings>
 /.pdfmapchars {
   exch cmaparray /cmapencoding exch def     % c2g
   /CharStrings 0 dict                       % c2g /CS <<>>
 
-  % Add glyphs of <chartoglyphmap>*<subcmap> :
+  % Add glyphs of <AGL>*<subcmap> :
   3 2 roll {                               % /CS <<>> v
     dup type /arraytype eq {               % /CS <<>> /name []
       { 3 copy //.addglyph exec
@@ -1810,6 +1810,19 @@ currentdict /postalias undef
     } if
     pop pop
   } for
+
+  % Finally, add glyphs from the prebuilt_encoding with lowest priority
+  % this is a catch-all for poorly matched font/PDF combos
+  3 2 roll {                               % /CS <<>> v
+    dup type /arraytype eq {               % /CS <<>> /name []
+      { 3 copy //.addglyph exec
+        pop
+      } forall
+    } {
+      3 copy //.addglyph exec pop
+    } ifelse
+    pop
+  } forall
 
   dup /.notdef 0 put
 
@@ -1897,11 +1910,13 @@ currentdict /postalias undef
         } forall
         exch pop                                                   % <<pbe>>
         TTFDEBUG { dup (<<\n) print { exch (    ) print =only (\t) print //== exec } forall (>>\n) print flush } if
+        exch AdobeGlyphList
         .pdfmapchars
         /Encoding prebuilt_encoding
       } {
         % Likely this branch is now obsolete.
         TTFDEBUG { (Using cmap 3.1 for non-symbolic.) = } if
+        0 dict exch
         AdobeGlyphList .pdfmapchars
         /Encoding /WinAnsiEncoding .findencoding
           % WinAnsiEncoding is just a stub here.
@@ -1911,6 +1926,7 @@ currentdict /postalias undef
     } {
       <00010000> .findcmap {
         TTFDEBUG { (Using cmap 1.0 for non-symbolic.) = } if
+        0 dict exch
         .romanmacdict .pdfmapchars
         /Encoding
         prebuilt_encoding //null ne {
