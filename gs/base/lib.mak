@@ -3168,15 +3168,15 @@ MKROMFS_COMMON_DEPS=$(stdpre_h) $(stdint__h) $(gsiorom_h) $(arch_h)\
 gsioram_h=$(GLSRC)gsioram.h $(GLSRC)ramfs.h
 ramfs_=$(GLOBJ)gsioram.$(OBJ) $(GLOBJ)ramfs.$(OBJ)
 $(GLD)ramfs.dev : $(LIB_MAK) $(ECHOGS_XE) $(ramfs_)
-    $(SETMOD) $(GLD)ramfs $(ramfs_)
-    $(ADDMOD) $(GLD)ramfs -iodev ram
-    $(ADDMOD) $(GLD)ramfs -obj $(GLOBJ)ramfs.$(OBJ)
+	$(SETMOD) $(GLD)ramfs $(ramfs_)
+	$(ADDMOD) $(GLD)ramfs -iodev ram
+	$(ADDMOD) $(GLD)ramfs -obj $(GLOBJ)ramfs.$(OBJ)
 
 $(GLOBJ)ramfs.$(OBJ) : $(GLSRC)ramfs.c
-    $(GLCC) $(GLO_)ramfs.$(OBJ) $(C_) $(GLSRC)ramfs.c
+	$(GLCC) $(GLO_)ramfs.$(OBJ) $(C_) $(GLSRC)ramfs.c
 
 $(GLOBJ)gsioram.$(OBJ) : $(GLSRC)gsioram.c
-    $(GLCC) $(GLO_)gsioram.$(OBJ) $(C_) $(GLSRC)gsioram.c
+	$(GLCC) $(GLO_)gsioram.$(OBJ) $(C_) $(GLSRC)gsioram.c
 
 
 # ---------------- Support for %disk IODevices ---------------- #
