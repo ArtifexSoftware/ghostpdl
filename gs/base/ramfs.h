@@ -3,18 +3,18 @@
 
 #define RAMFS_BLOCKSIZE 1024
 
-typedef struct _         ;
+typedef struct _ramfs ramfs;
 typedef struct _ramdirent ramdirent;
 typedef struct _ramhandle ramhandle;
-typedef struct _    _enum     _enum;
+typedef struct _ramfs_enum ramfs_enum;
 
 /*
-      _new: NOMEM
-      _open: NOTFOUND
-      _unlink: NOTFOUND
-      _enum_new: NOMEM
-      _enum_next: none
-      _enum_end: none
+  ramfs_new: NOMEM
+  ramfs_open: NOTFOUND
+  ramfs_unlink: NOTFOUND
+  ramfs_enum_new: NOMEM
+  ramfs_enum_next: none
+  ramfs_enum_end: none
   ramfile_read: none
   ramfile_write: NOSPACE, NOMEM, NOACCESS
   ramfile_seek: none
@@ -39,17 +39,17 @@ typedef struct _    _enum     _enum;
 #define RAMFS_SEEK_CUR 1
 #define RAMFS_SEEK_END 2
 
-     *     _new(gs_memory_t *mem, int size); /* size is in KiB */
-void     _destroy(gs_memory_t *,      * fs);
-int     _error(const      * fs);
-ramhandle *     _open(gs_memory_t *mem,      * fs,const char * filename,int mode);
-int     _blocksize(     * fs);
-int     _blocksfree(     * fs);
-int     _unlink(     * fs,const char *filename);
-int     _rename(     * fs,const char *oldname,const char *newname);
-    _enum *     _enum_new(     * fs);
-char*     _enum_next(    _enum * e);
-void     _enum_end(    _enum * e);
+ramfs * ramfs_new(gs_memory_t *mem, int size); /* size is in KiB */
+void ramfs_destroy(gs_memory_t *, ramfs * fs);
+int ramfs_error(const ramfs * fs);
+ramhandle * ramfs_open(gs_memory_t *mem, ramfs * fs,const char * filename,int mode);
+int ramfs_blocksize(ramfs * fs);
+int ramfs_blocksfree(ramfs * fs);
+int ramfs_unlink(ramfs * fs,const char *filename);
+int ramfs_rename(ramfs * fs,const char *oldname,const char *newname);
+ramfs_enum * ramfs_enum_new(ramfs * fs);
+char* ramfs_enum_next(ramfs_enum * e);
+void ramfs_enum_end(ramfs_enum * e);
 int ramfile_read(ramhandle * handle,void * buf,int len);
 int ramfile_write(ramhandle * handle,const void * buf,int len);
 int ramfile_seek(ramhandle * handle,int pos,int whence);
