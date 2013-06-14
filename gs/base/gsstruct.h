@@ -693,8 +693,10 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
     GC_OBJ_ELT(stype, e1)\
   };\
   gs__st_basic_final(scope_st, stname, stype, sname, penum, preloc, pfinal)
+
 #define gs_public_st_ptrs1_final(stname, stype, sname, penum, preloc, pfinal, e1)\
   gs__st_ptrs1_final(public_st, stname, stype, sname, penum, preloc, pfinal, e1)
+
 #define gs_private_st_ptrs1_final(stname, stype, sname, penum, preloc, pfinal, e1)\
   gs__st_ptrs1_final(private_st, stname, stype, sname, penum, preloc, pfinal, e1)
 
@@ -750,9 +752,11 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
   BASIC_PTRS(penum) {\
     GC_OBJ_ELT2(stype, e1, e2)\
   };\
-  gs__st_basic_final(scope_st, stname, stype, sname, pfinal, penum, preloc)
+  gs__st_basic_final(scope_st, stname, stype, sname, penum, preloc, pfinal)
+
 #define gs_public_st_ptrs2_final(stname, stype, sname, penum, preloc, pfinal, e1, e2)\
   gs__st_ptrs2_final(public_st, stname, stype, sname, penum, preloc, pfinal, e1, e2)
+
 #define gs_private_st_ptrs2_final(stname, stype, sname, penum, preloc, pfinal, e1, e2)\
   gs__st_ptrs2_final(private_st, stname, stype, sname, penum, preloc, pfinal, e1, e2)
 
