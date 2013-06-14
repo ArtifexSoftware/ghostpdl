@@ -21,12 +21,13 @@
 typedef struct _ramfs {
     struct _ramdirent * files;
     struct _ramfs_enum* active_enums;
+    gs_memory_t *memory;
     int blocksfree;
     int last_error;
 };
 
-gs_private_st_ptrs2(st_ramfs, struct _ramfs, "gsram_ramfs",
-    _ramfs_enum_ptrs, _ramfs_reloc_ptrs, files, active_enums);
+gs_private_st_ptrs3(st_ramfs, struct _ramfs, "gsram_ramfs",
+    _ramfs_enum_ptrs, _ramfs_reloc_ptrs, files, active_enums, memory);
 
 struct _ramdirent {
     char* filename;
@@ -72,7 +73,8 @@ static void unlink_node(ramfile * inode);
 static int ramfile_truncate(ramhandle * handle,int size);
 
 
-ramfs * ramfs_new(gs_memory_t *mem, int size) {
+ramfs * ramfs_new(gs_memory_t *mem, int size)
+{
     ramfs * fs = gs_alloc_struct(mem, ramfs, &st_ramfs,
     "ramfs_new"
     );
@@ -86,6 +88,7 @@ ramfs * ramfs_new(gs_memory_t *mem, int size) {
     fs->active_enums = NULL;
     fs->blocksfree = size;
     fs->last_error = 0;
+    fs->memory = mem;
     return fs;
 }
 
@@ -113,8 +116,11 @@ void ramfs_destroy(gs_memory_t *mem, ramfs * fs) {
 
 int ramfs_error(const ramfs* fs) { return fs->last_error; }
 
-static int resize(ramfile * file,int size) {
+static int resize(ramfile * file,int size)
+{
     int newblocks = (size+RAMFS_BLOCKSIZE-1)/RAMFS_BLOCKSIZE;
+    void *buf;
+
     if(newblocks > file->blocks) {
         /* allocate blocks for file as necessary */
 
@@ -130,11 +136,18 @@ static int resize(ramfile * file,int size) {
                 if(!newsize) newsize = 1;
                 while(newsize < newblocks) newsize *= 2;
             }
-            file->data = realloc(file->data,newsize * sizeof(char*));
+            buf = gs_alloc_bytes(file->fs->memory, newsize * sizeof(char*), "ramfs resize");
+            if (!buf)
+                return gs_note_error(gs_error_VMerror);
+            memcpy(buf, file->data, file->blocklist_size);
+            gs_free_object(file->fs->memory, file->data, "ramfs resize, free buffer");
+            file->data = buf;
+//            file->data = realloc(file->data,newsize * sizeof(char*));
             file->blocklist_size = newsize;
         }
         while(file->blocks<newblocks) {
-            char * block = file->data[file->blocks] = malloc(RAMFS_BLOCKSIZE);
+//            char * block = file->data[file->blocks] = malloc(RAMFS_BLOCKSIZE);
+            char * block = file->data[file->blocks] = (char *)gs_alloc_bytes(file->fs->memory, RAMFS_BLOCKSIZE, "ramfs resize");
             if(!block) {
                 return -RAMFS_NOMEM;
             }
@@ -145,7 +158,8 @@ static int resize(ramfile * file,int size) {
         /* don't bother shrinking the block array */
         file->fs->blocksfree += (file->blocks-newblocks);
         while(file->blocks > newblocks) {
-            free(file->data[--file->blocks]);
+            gs_free_object(file->fs->memory, file->data[--file->blocks], "ramfs resize");
+//            free(file->data[--file->blocks]);
         }
     }
     file->size = size;
@@ -178,13 +192,20 @@ ramhandle * ramfs_open(gs_memory_t *mem, ramfs* fs,const char * filename,int mod
             fs->last_error = RAMFS_NOTFOUND;
             return NULL;
         }
-        this = malloc(sizeof(ramdirent));
-        file = malloc(sizeof(ramfile));
-        dirent_filename = malloc(strlen(filename)+1);
+
+        this = gs_alloc_struct(fs->memory, ramdirent, &st_ramdirent, "new ram directory entry");
+        file = gs_alloc_struct(fs->memory, ramfile, &st_ramfile, "new ram file");
+        dirent_filename = (char *)gs_alloc_bytes(fs->memory, strlen(filename) + 1, "ramfs filename");
+//        malloc(sizeof(ramdirent));
+//        file = malloc(sizeof(ramfile));
+//        dirent_filename = malloc(strlen(filename)+1);
         if(!(this && file && dirent_filename)) {
-            free(this);
-            free(file);
-            free(dirent_filename);
+            gs_free_object(fs->memory, this, "error, cleanup directory entry");
+            gs_free_object(fs->memory, file, "error, cleanup ram file");
+            gs_free_object(fs->memory, dirent_filename, "error, cleanup ram filename");
+//            free(this);
+//            free(file);
+//            free(dirent_filename);
             fs->last_error = RAMFS_NOMEM;
             return NULL;
         }
@@ -203,7 +224,8 @@ ramhandle * ramfs_open(gs_memory_t *mem, ramfs* fs,const char * filename,int mod
     file = this->inode;
     file->refcount++;
 
-    handle = malloc(sizeof(ramhandle));
+    handle = gs_alloc_struct(fs->memory, ramhandle, &st_ramhandle, "new ram directory entry");
+//    handle = malloc(sizeof(ramhandle));
     if(!handle) {
         fs->last_error = RAMFS_NOMEM;
         return NULL;
@@ -230,11 +252,14 @@ static void unlink_node(ramfile * inode) {
 
     /* remove the file and its data */
     for(c=0;c<inode->blocks;c++) {
-        free(inode->data[c]);
+        gs_free_object(inode->fs->memory, inode->data[c], "unlink node");
+//        free(inode->data[c]);
     }
     inode->fs->blocksfree += c;
-    free(inode->data);
-    free(inode);
+    gs_free_object(inode->fs->memory, inode->data, "unlink node");
+    gs_free_object(inode->fs->memory, inode, "unlink node");
+//    free(inode->data);
+//    free(inode);
 }
 
 int ramfs_unlink(ramfs * fs,const char *filename) {
@@ -253,7 +278,8 @@ int ramfs_unlink(ramfs * fs,const char *filename) {
     }
 
     unlink_node(this->inode);
-    free(this->filename);
+    gs_free_object(fs->memory, this->filename, "unlink");
+//    free(this->filename);
     (*last) = this->next;
 
     e = fs->active_enums;
@@ -262,7 +288,8 @@ int ramfs_unlink(ramfs * fs,const char *filename) {
         if(e->current == this) e->current = this->next;
         e = e->next;
     }
-    free(this);
+    gs_free_object(fs->memory, this, "unlink");
+//    free(this);
     return 0;
 }
 
@@ -280,7 +307,8 @@ int ramfs_rename(ramfs * fs,const char* oldname,const char* newname) {
     /* just in case */
     if(strcmp(oldname,newname) == 0) return 0;
 
-    newnamebuf = realloc(this->filename,strlen(newname)+1);
+    newnamebuf = (char *)gs_alloc_bytes(fs->memory, strlen(newname)+1, "ramfs rename");
+//    newnamebuf = realloc(this->filename,strlen(newname)+1);
     if(!newnamebuf) {
         fs->last_error = RAMFS_NOMEM;
         return -1;
@@ -290,14 +318,17 @@ int ramfs_rename(ramfs * fs,const char* oldname,const char* newname) {
     ramfs_unlink(fs,newname);
 
     strcpy(newnamebuf,newname);
+    gs_free_object(fs->memory, this->filename, "ramfs rename");
     this->filename = newnamebuf;
     return 0;
 }
 
-ramfs_enum * ramfs_enum_new(ramfs * fs) {
+ramfs_enum * ramfs_enum_new(ramfs * fs)
+{
     ramfs_enum * e;
 
-    e = malloc(sizeof(ramfs_enum));
+    e = gs_alloc_struct(fs->memory, ramfs_enum, &st_ramfs_enum, "new ramfs enumerator");
+//    e = malloc(sizeof(ramfs_enum));
     if(!e) {
         fs->last_error = RAMFS_NOMEM;
         return NULL;
@@ -327,7 +358,8 @@ void ramfs_enum_end(ramfs_enum * e) {
         }
         last = &(e->next);
     }
-    free(e);
+    gs_free_object(e->fs->memory, e, "free ramfs enumerator");
+//    free(e);
 }
 
 int ramfile_read(ramhandle * handle,void * buf,int len) {
@@ -441,7 +473,8 @@ static int ramfile_truncate(ramhandle * handle,int size) {
 void ramfile_close(ramhandle * handle) {
     ramfile * file = handle->file;
     unlink_node(file);
-    free(handle);
+    gs_free_object(handle->file->fs->memory, handle, "ramfs close");
+//    free(handle);
 }
 
 int ramfile_tell(ramhandle* handle) {

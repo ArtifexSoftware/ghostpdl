@@ -57,14 +57,14 @@ const gx_io_device gs_iodev_ram = {
 };
 
 typedef struct ramfs_state_s {
-    char *t;
+    gs_memory_t *memory;
     ramfs* fs;
 } ramfs_state;
 
 #define GETRAMFS(state) (((ramfs_state*)(state))->fs)
 
 gs_private_st_ptrs2_final(st_ramfs_state, struct ramfs_state_s,
-    "ramfs_state", ramfs_state_enum_ptrs, ramfs_state_reloc_ptrs, ram_finalize, t, fs);
+    "ramfs_state", ramfs_state_enum_ptrs, ramfs_state_reloc_ptrs, ram_finalize, memory, fs);
 
 typedef struct gsram_enum_s {
     char *pattern;
@@ -381,6 +381,7 @@ iodev_ram_init(gx_io_device * iodev, gs_memory_t * mem)
     );
     if (fs && state) {
     state->fs = fs;
+    state->memory = mem;
     iodev->state = state;
     return 0;
     }
@@ -425,7 +426,7 @@ ram_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
     ramfs* fs = GETRAMFS(iodev->state);
     int blocksize = ramfs_blocksize(fs);
 
-    f = ramfs_open(fs,fname,RAMFS_READ);
+    f = ramfs_open(((ramfs_state *)iodev->state)->memory, fs,fname,RAMFS_READ);
     if(!f) return_error(ramfs_errno_to_code(ramfs_error(fs)));
 
     memset(pstat, 0, sizeof(*pstat));
