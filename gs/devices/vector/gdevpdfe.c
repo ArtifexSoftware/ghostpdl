@@ -834,7 +834,7 @@ pdf_document_metadata(gx_device_pdf *pdev)
     if (pdev->ParseDSCCommentsForDocInfo || pdev->PreserveEPSInfo) {
         pdf_resource_t *pres;
         char buf[20];
-        byte digest[6];
+        byte digest[6] = {0,0,0,0,0,0};
         int code;
         int options = DATA_STREAM_NOT_BINARY;
 
