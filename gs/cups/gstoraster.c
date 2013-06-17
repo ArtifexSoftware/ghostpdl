@@ -38,6 +38,8 @@ MIT Open Source License  -  http://www.opensource.org/
 #include <cups/raster.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <signal.h>
+#include <errno.h>
 
 #include "colord.h"
 
@@ -423,7 +425,10 @@ gs_spawn (const char *filename,
 
   /* Feed job data into Ghostscript */
   while ((n = fread(buf, 1, BUFSIZ, fp)) > 0) {
-    if (write(fds[1], buf, n) != n) {
+    int count = write(fds[1], buf, n);
+    if (count != n) {
+      if (count == -1)
+        fprintf(stderr, "ERROR: write failed: %s\n", strerror(errno));
       fprintf(stderr, "ERROR: Can't feed job data into Ghostscript\n");
       goto out;
     }
@@ -510,6 +515,12 @@ out:
   return icc_profile;
 }
 
+static void
+child_reaper (int signum)
+{
+  wait(NULL);
+}
+
 int
 main (int argc, char **argv, char *envp[])
 {
@@ -531,12 +542,21 @@ main (int argc, char **argv, char *envp[])
   int num_options;
   int status = 1;
   ppd_file_t *ppd = NULL;
+  struct sigaction sa;
 
   if (argc < 6 || argc > 7) {
     fprintf(stderr, "ERROR: %s job-id user title copies options [file]\n",
       argv[0]);
     goto out;
   }
+
+  memset(&sa, 0, sizeof(sa));
+  /* Ignore SIGPIPE and have write return an error instead */
+  sa.sa_handler = SIG_IGN;
+  sigaction(SIGPIPE, &sa, NULL);
+
+  sa.sa_handler = child_reaper;
+  sigaction(SIGCHLD, &sa, NULL);
 
   num_options = cupsParseOptions(argv[5], 0, &options);
 
