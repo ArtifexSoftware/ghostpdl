@@ -562,7 +562,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type 
     gs_const_string fnstr;
     pdf_data_writer_t writer;
     byte digest[6] = {0,0,0,0,0,0};
-    int code;
+    int code, code1 = 0;
     int options=0;
 
     if (pbfont->written)
@@ -640,14 +640,18 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type 
                                 WRITE_TYPE1_EEXEC_PAD | WRITE_TYPE1_ASCIIHEX,
                                 NULL, 0, &fnstr, lengths);
             if (lengths[0] > 0) {
-                if (code < 0)
-                    return code;
+                if (code < 0) {
+                    code1 = code;
+                    goto finish;
+                }
                 code = cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object,
                             "/Length1", lengths[0]);
             }
             if (lengths[1] > 0) {
-                if (code < 0)
-                    return code;
+                if (code < 0) {
+                    code1 = code;
+                    goto finish;
+                }
                 code = cos_dict_put_c_key_int((cos_dict_t *)writer.pres->object,
                             "/Length2", lengths[1]);
                 if (code < 0)
@@ -671,6 +675,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type 
                                         TYPE2_OPTIONS |
                             (pdev->CompatibilityLevel < 1.3 ? WRITE_TYPE2_AR3 : 0),
                                         NULL, 0, &fnstr, FontBBox);
+            code1 = code;
         }
         goto finish;
 
@@ -739,6 +744,9 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type 
         code = gs_note_error(gs_error_rangecheck);
     }
 
+    if (code >=0 && code1 < 0) {
+        code = code1;
+    }
     pbfont->written = true;
     return code;
 }
