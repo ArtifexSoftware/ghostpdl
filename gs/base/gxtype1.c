@@ -451,12 +451,19 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
             break;
         case c2_callgsubr:
             call_depth++;
-            c = fixed2int_var(*csp) + pdata->gsubrNumberBias;
+            if (csp < &(cstack[0])) {
+                c = pdata->gsubrNumberBias;
+            }
+            else {
+                c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
+            }
             code = pdata->procs.subr_data
                 (pfont, c, true, &ipsp[1].cs_data);
             if (code < 0)
                 return_error(code);
-            --csp;
+            if (csp >= &(cstack[0])) {
+                --csp;
+            }
             ipsp->ip = cip, ipsp->dstate = state, ipsp->ip_end = end;
             ++ipsp;
             cip = ipsp->cs_data.bits.data;
@@ -464,12 +471,19 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
             goto call;
         case c_callsubr:
             call_depth++;
-            c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
+            if (csp < &(cstack[0])) {
+                c = pdata->subroutineNumberBias;
+            }
+            else {
+                c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
+            }
             code = pdata->procs.subr_data
                 (pfont, c, false, &ipsp[1].cs_data);
             if (code < 0)
                 return_error(code);
-            --csp;
+            if (csp >= &(cstack[0])) {
+                --csp;
+            }
             ipsp->ip = cip, ipsp->dstate = state, ipsp->ip_end = end;
             ++ipsp;
             cip = ipsp->cs_data.bits.data;
@@ -527,7 +541,8 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
                 default:
                     goto out;
                 case 3:
-                    csp -= 2;
+                    if (csp >= &(cstack[1]))
+                        csp -= 2;
                     goto top;
                 case 12:
                 case 13:
