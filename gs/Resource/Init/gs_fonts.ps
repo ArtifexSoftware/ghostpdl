@@ -873,6 +873,7 @@ $error /SubstituteFont { } put
 % scanning of FONTPATH.
 /.dofindfont {   %  mark <fontname> .dofindfont % mark <alias> ... <font>
   .tryfindfont not {
+
                         % We didn't find the font.  If we haven't scanned
                         % all the directories in FONTPATH, scan the next one
                         % now and look for the font again.
@@ -986,16 +987,17 @@ $error /SubstituteFont { } put
   /.genericrfn where {
     pop
     pop dup .fonttempstring /FontResourceDir getsystemparam .genericrfn
-    //false .loadfontloop {
+    {//false .loadfontloop} .internalstopped {//false} if {
       //true
     } {
       dup .nametostring
-      //true .loadfontloop
+      {//true .loadfontloop} .internalstopped {//false} if
     } ifelse
   } {
-    //true .loadfontloop
+    {//true .loadfontloop} .internalstopped {//false} if
   } ifelse
 } bind def
+
 /.loadfontloop {        % <fontname> <filename> <libflag> .loadfontloop
                         %   <font> true
                         % -or-
