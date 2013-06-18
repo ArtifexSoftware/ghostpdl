@@ -458,7 +458,7 @@ pdfdict begin
    pop				% We do not need the position.
    0				% Initialize xref table error counter
    { PDFfile token pop		% first object # or trailer
-     dup /trailer eq { pop exit } if
+     dup /trailer eq { pop Objects llength 0 eq {/setxrefentry cvx /syntaxerror signalerror} {exit} ifelse } if
      PDFfile token pop		% entry count
  
      % remaining must be whitespace only (otherwise this xref Size was invalid.
