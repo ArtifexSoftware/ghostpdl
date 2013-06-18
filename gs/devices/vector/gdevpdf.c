@@ -2781,8 +2781,8 @@ pdf_close(gx_device * dev)
                     cos_release(pres->object, "free function dict");
                     gs_free_object(pdev->pdf_memory, pres->object, "free function resources");
                     pres->object = 0;
-                    pnext = pres->next;
                 }
+                pnext = pres->next;
                 pres = pnext;
             }
         }
