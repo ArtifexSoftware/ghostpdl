@@ -616,7 +616,8 @@ main (int argc, char **argv, char *envp[])
   }
 
   /* support colord and the "color-management=off" option */
-  device_inhibited = colord_get_inhibit_for_device_id (getenv("PRINTER"));
+  snprintf (tmpstr, sizeof(tmpstr), "cups-%s", getenv("PRINTER"));
+  device_inhibited = colord_get_inhibit_for_device_id (tmpstr);
   t = cupsGetOption("color-management", num_options, options);
   if (t != NULL && strcmp(t, "off") == 0)
     device_inhibited = TRUE;
