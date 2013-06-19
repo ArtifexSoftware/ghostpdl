@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 2; indent-tabs-mode: s; c-basic-offset: 8 -*-
+/*
 
 Copyright (c) 2008, Till Kamppeter
 Copyright (c) 2011, Tim Waugh
@@ -643,8 +643,7 @@ main (int argc, char **argv, char *envp[])
 
   /* Ghostscript parameters */
   gs_args = cupsArrayNew(NULL, NULL);
-  if (!gs_args)
-  {
+  if (!gs_args) {
     fprintf(stderr, "ERROR: Unable to allocate memory for Ghostscript arguments array\n");
     exit(1);
   }
@@ -667,19 +666,19 @@ main (int argc, char **argv, char *envp[])
   cupsArrayAdd(gs_args, strdup("-sstdout=%stderr"));
   cupsArrayAdd(gs_args, strdup("-sOutputFile=%stdout"));
 
-	cupsRasterInterpretPPD(&h,ppd,num_options,options,0);
+  cupsRasterInterpretPPD(&h,ppd,num_options,options,0);
 
   /* setPDF specific options */
   if (doc_type == GS_DOC_TYPE_PDF) {
     parse_pdf_header_options(fp, &h);
   }
 
-	/* fixed other values that pdftopdf handles */
-	h.MirrorPrint = CUPS_FALSE;
-	h.Orientation = CUPS_ORIENT_0;
+  /* fixed other values that pdftopdf handles */
+  h.MirrorPrint = CUPS_FALSE;
+  h.Orientation = CUPS_ORIENT_0;
 
-	/* get all the data from the header and pass it to ghostscript */
-	add_pdf_header_options (&h, gs_args);
+  /* get all the data from the header and pass it to ghostscript */
+  add_pdf_header_options (&h, gs_args);
 
   /* CUPS font path */
   if ((t = getenv("CUPS_FONTPATH")) == NULL)
