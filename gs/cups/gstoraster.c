@@ -627,7 +627,9 @@ main (int argc, char **argv, char *envp[])
 
     fprintf(stderr, "DEBUG: PPD uses qualifier '%s.%s.%s'\n",
             qualifier[0], qualifier[1], qualifier[2]);
-    icc_profile = colord_get_profile_for_device_id (getenv("PRINTER"),
+
+    snprintf (tmpstr, sizeof(tmpstr), "cups-%s", getenv("PRINTER"));
+    icc_profile = colord_get_profile_for_device_id (tmpstr,
                                                     (const char**) qualifier);
 
     /* fall back to the PPD */
@@ -685,7 +687,7 @@ main (int argc, char **argv, char *envp[])
   cupsArrayAdd(gs_args, strdup(tmpstr));
 
   /* set the device output ICC profile */
-  if(icc_profile != NULL) {
+  if(icc_profile != NULL && icc_profile[0] != '\0') {
     snprintf(tmpstr, sizeof(tmpstr), "-sOutputICCProfile=%s", icc_profile);
     cupsArrayAdd(gs_args, strdup(tmpstr));
   }
