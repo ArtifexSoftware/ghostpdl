@@ -286,6 +286,39 @@ else
   fi
 fi
 
+dnl --------------------------------------------------
+dnl check for sse2 intrinsics
+dnl --------------------------------------------------
+
+AC_MSG_CHECKING([sse2 support])
+save_cflags=$CFLAGS
+CFLAGS="$CFLAGS $OPT_CFLAGS"
+
+HAVE_SSE2=""
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([#include <emmintrin.h>], [
+  __m128i input1;
+  unsigned char buf1[[128]];
+  input1 = _mm_loadu_si128((const __m128i *)buf1);
+  return(0);
+  ])],
+  [HAVE_SSE2="-DHAVE_SSE2"], [HAVE_SSE2=""])
+
+AC_ARG_ENABLE([sse2], AC_HELP_STRING([--disable-sse2],
+       [Do not use sse2 instrinsics]), [
+             if test "x$enable_sse2" = xno; then
+                HAVE_SSE2=""
+             fi])
+
+if test "x$HAVE_SSE2" != x; then
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
+
+AC_SUBST(HAVE_SSE2)
+CFLAGS=$save_cflags
+
 
 dnl --------------------------------------------------
 dnl Enable thread safe build
@@ -1313,6 +1346,14 @@ fi
 
 OPENJPEGDIR=$srcdir/openjpeg
 
+JPX_SSE_CFLAGS=""
+
+if test "x$HAVE_SSE2" = "x" ; then
+  if test $ac_cv_prog_gcc = yes; then
+    JPX_SSE_CFLAGS="-U__SSE__"
+  fi
+fi
+
 AC_ARG_ENABLE([openjpeg], AC_HELP_STRING([--disable-openjpeg],
         [Do not use OpenJPEG for JPX decoding]))
 
@@ -1327,9 +1368,9 @@ if test "x$JPX_DECODER" = "x"; then
       AC_CHECK_FUNCS([memalign], [have_memalign=1])
 
       if test "x$have_memalign" = "x1"; then
-        JPX_AUTOCONF_CFLAGS="-DUSE_OPENJPEG_JP2"
+        JPX_AUTOCONF_CFLAGS="-DUSE_OPENJPEG_JP2 $JPX_SSE_CFLAGS"
       else
-        JPX_AUTOCONF_CFLAGS="-DUSE_OPENJPEG_JP2 -D\"memalign(a,b)=malloc(b)\""
+        JPX_AUTOCONF_CFLAGS="-DUSE_OPENJPEG_JP2 $JPX_SSE_CFLAGS -D\"memalign(a,b)=malloc(b)\""
       fi
 
       JPXDEVS='$(PSD)jpx.dev'
@@ -1999,39 +2040,6 @@ dnl --------------------------------------------------
 AC_CHECK_FUNC([sqrtf], [SQRTF_SUBST=], [SQRTF_SUBST="-Dsqrtf=\"(float)sqrt\""])
 
 AC_SUBST(SQRTF_SUBST)
-
-dnl --------------------------------------------------
-dnl check for sse2 intrinsics
-dnl --------------------------------------------------
-
-AC_MSG_CHECKING([sse2 support])
-save_cflags=$CFLAGS
-CFLAGS="$CFLAGS $OPT_CFLAGS"
-
-HAVE_SSE2=""
-AC_LINK_IFELSE(
-  [AC_LANG_PROGRAM([#include <emmintrin.h>], [
-  __m128i input1;
-  unsigned char buf1[[128]];
-  input1 = _mm_loadu_si128((const __m128i *)buf1);
-  return(0);
-  ])],
-  [HAVE_SSE2="-DHAVE_SSE2"], [HAVE_SSE2=""])
-
-AC_ARG_ENABLE([sse2], AC_HELP_STRING([--disable-sse2],
-       [Do not use sse2 instrinsics]), [
-             if test "x$enable_sse2" = xno; then
-                HAVE_SSE2=""
-             fi])
-
-if test "x$HAVE_SSE2" != x; then
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-fi
-
-AC_SUBST(HAVE_SSE2)
-CFLAGS=$save_cflags
 
 dnl --------------------------------------------------
 dnl check for byte swap intrinsics
