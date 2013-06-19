@@ -89,11 +89,16 @@ struct gx_device_png_s {
 /* Monochrome. */
 
 const gx_device_png gs_pngmono_device =
-prn_device(prn_bg_procs, "pngmono",	/* The print_page proc is compatible with allowing bg printing */
+{ /* The print_page proc is compatible with allowing bg printing */
+  prn_device_body(gx_device_png, prn_bg_procs, "pngmono",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
-           1, png_print_page);
+           3, 4, 1, 1, 2, 2, png_print_page),
+    1, /* downscale_factor */
+    0  /* min_feature_size */
+};
+
 
 /* 4-bit planar (EGA/VGA-style) color. */
 
@@ -106,7 +111,9 @@ const gx_device_png gs_png16_device = {
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
-           3, 4, 1, 1, 2, 2, png_print_page)
+           3, 4, 1, 1, 2, 2, png_print_page),
+    1, /* downscale_factor */
+    0  /* min_feature_size */
 };
 
 /* 8-bit (SuperVGA-style) color. */
@@ -121,7 +128,9 @@ const gx_device_png gs_png256_device = {
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
-           3, 8, 5, 5, 6, 6, png_print_page)
+           3, 8, 5, 5, 6, 6, png_print_page),
+    1, /* downscale_factor */
+    0  /* min_feature_size */
 };
 
 /* 8-bit gray */
@@ -137,7 +146,9 @@ const gx_device_png gs_pnggray_device =
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
-                 1, 8, 255, 0, 256, 0, png_print_page)
+                 1, 8, 255, 0, 256, 0, png_print_page),
+    1, /* downscale_factor */
+    0  /* min_feature_size */
 };
 
 /* Monochrome (with error diffusion) */
@@ -154,7 +165,9 @@ const gx_device_png gs_pngmonod_device =
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
-                 1, 8, 255, 0, 256, 0, png_print_page_monod)
+                 1, 8, 255, 0, 256, 0, png_print_page_monod),
+    1, /* downscale_factor */
+    0  /* min_feature_size */
 };
 
 /* 24-bit color. */
@@ -170,7 +183,9 @@ const gx_device_png gs_png16m_device =
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
-                 3, 24, 255, 255, 256, 256, png_print_page)
+                 3, 24, 255, 255, 256, 256, png_print_page),
+    1, /* downscale_factor */
+    0  /* min_feature_size */
 };
 
 /* 48 bit color. */
@@ -184,7 +199,9 @@ const gx_device_png gs_png48_device =
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
-                 3, 48, 0, 65535, 1, 65536, png_print_page)
+                 3, 48, 0, 65535, 1, 65536, png_print_page),
+    1, /* downscale_factor */
+    0  /* min_feature_size */
 };
 
 /* 32-bit RGBA */
