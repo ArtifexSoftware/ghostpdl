@@ -2122,6 +2122,7 @@ AUXDIRPOSTFIX=""
 case `uname` in
     MINGW*)
     AUXDIRPOSTFIX="_"
+    CFLAGS="-DGS_NO_UTF8=1 $CFLAGS"
     ;;
 esac
 AC_SUBST(AUXDIRPOSTFIX)
