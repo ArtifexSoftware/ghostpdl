@@ -716,6 +716,7 @@ v0:	    skip_bits(1);
 
             /* rlen may be run2_pass, run_uncompressed, or */
             /* 0..countof(cf2_run_vertical)-1. */
+rlen_lt_zero:
             if (rlen < 0)
                 switch (rlen) {
                     case run2_pass:
@@ -842,6 +843,7 @@ v0:	    skip_bits(1);
         status = ERRC;
         goto out;
     }
+    if (rlen < 0) goto rlen_lt_zero;
 
     cfd_store_state();
     status = skip_data(ss, pr, rlen);
@@ -865,6 +867,7 @@ v0:	    skip_bits(1);
         status = ERRC;
         goto out;
     }
+    if (rlen < 0) goto rlen_lt_zero;
 
     cfd_store_state();
     status = invert_data(ss, pr, &rlen, black_byte);
@@ -893,6 +896,7 @@ v0:	    skip_bits(1);
         status = ERRC;
         goto out;
     }
+    if (rlen < 0) goto rlen_lt_zero;
 
     cfd_store_state();
     status = invert_data(ss, pr, &rlen, black_byte);
@@ -916,6 +920,7 @@ v0:	    skip_bits(1);
         status = ERRC;
         goto out;
     }
+    if (rlen < 0) goto rlen_lt_zero;
 
     cfd_store_state();
     status = skip_data(ss, pr, rlen);
