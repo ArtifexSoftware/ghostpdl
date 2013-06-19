@@ -997,16 +997,30 @@ currentdict /no_debug_dict undef
 currentdict /pdf_rules_dict undef
 
 /applyfilters {		% <parms> <source> <filternames> applyfilters <stream>
-  2 index //null eq {
+  2 index //null eq
+  {
     { filtername add_A85_param filter }
-  } {
-    {		% Stack: parms source filtername
-      2 index 0 oget dup type /dicttype ne { pop } {
-        exch filtername dup /JBIG2Decode eq { exch jbig2cachectx exch } if
-      } ifelse add_A85_param filter
-      exch dup length 1 sub 1 exch getinterval exch
+  }
+  {
+    dup length 3 index length ne         %% compare lengths of DecodeParmas and Filter arrays
+    {                                    %% if they aren't the same, ignore the decode params
+      (   **** Warning: ignoring stream /DecodeParams array as its length is different to the Filters array.\n) pdfformaterror
+      3 -1 roll pop //null 3 1 roll
+      { filtername add_A85_param filter }
     }
-  } ifelse forall exch pop
+    {
+      {		% Stack: parms source filtername
+        2 index 0 oget dup type /dicttype ne
+        { pop }
+        {
+          exch filtername dup /JBIG2Decode eq { exch jbig2cachectx exch } if
+        } ifelse
+        add_A85_param filter
+        exch dup length 1 sub 1 exch getinterval exch
+      }
+    } ifelse
+  } ifelse
+  forall exch pop
 } bind def
 
 % JBIG2 streams have an optional 'globals' stream obj for
