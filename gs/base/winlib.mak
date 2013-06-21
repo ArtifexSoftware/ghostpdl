@@ -206,15 +206,25 @@ $(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
 	$(GLCCWIN) $(GLO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
 
 # The Metro platform
+!ifdef METRO
+METRO_OBJS=$(GLOBJ)winrtsup.$(OBJ) $(GLOBJ)gp_wutf8.$(OBJ)
+
+$(GLOBJ)winrtsup.$(OBJ): $(GLSRCDIR)/winrtsup.cpp
+	cl /c /EHsc /Fo$(GLOBJ)winrtsup.$(OBJ) $(GLSRCDIR)/winrtsup.cpp
+!else
+METRO_OBJS=
+!endif
+
 
 metro__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ) $(GLOBJ)gp_wpapr.$(OBJ)\
-  $(GLOBJ)gp_stdia.$(OBJ)
+  $(GLOBJ)gp_stdia.$(OBJ) $(METRO_OBJS)
 #$(GLOBJ)gp_wutf8.$(OBJ)
 metro_inc=$(GLD)nosync.dev $(GLD)winplat.dev
 
 $(GLGEN)metro_.dev:  $(metro__) $(ECHOGS_XE) $(metro_inc)
 	$(SETMOD) $(GLGEN)metro_ $(metro__)
 	$(ADDMOD) $(GLGEN)metro_ -include $(metro_inc)
+
 
 # Define MS-Windows handles (file system) as a separable feature.
 
