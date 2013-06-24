@@ -83,7 +83,7 @@ const char gp_fmode_wb[] = "wb";
 
 /* ------ File enumeration ------ */
 
-struct file_enum_s {
+struct directory_enum_s {
 #ifdef GS_NO_UTF8
     WIN32_FIND_DATA find_data;
 #else
@@ -97,9 +97,58 @@ struct file_enum_s {
     /* :, / or \ */
     int first_time;
     gs_memory_t *memory;
+    struct directory_enum_s *previous;
 };
-gs_private_st_ptrs1(st_file_enum, struct file_enum_s, "file_enum",
-                    file_enum_enum_ptrs, file_enum_reloc_ptrs, pattern);
+gs_private_st_ptrs2(st_directory_enum, struct directory_enum_s, "directory_enum",
+                    directory_enum_enum_ptrs, directory_enum_reloc_ptrs, pattern, previous);
+
+typedef struct directory_enum_s directory_enum;
+
+struct file_enum_s {
+    struct directory_enum_s *current;
+};
+gs_private_st_ptrs1(st_file_enum, struct file_enum_s, "directory_enum",
+                    file_enum_enum_ptrs, file_enum_reloc_ptrs, current);
+
+static int enumerate_directory_init(gs_memory_t *mem, directory_enum *pden, const char *directory, int dir_size, char *filename, const char *pattern, int pat_size)
+{
+    int length = dir_size + pat_size;
+
+    if (filename)
+        length += strlen(filename);
+
+    length = length * 2 + 3;
+
+    /* pattern could be allocated as a string, */
+    /* but it's simpler for GC and freeing to allocate it as bytes. */
+    pden->pattern = (char *)gs_alloc_bytes(mem, length,
+                                     "gp_enumerate_files(pattern)");
+    if (pden->pattern == 0)
+        return -1;
+
+    memcpy(pden->pattern, directory, dir_size);
+    if (directory[dir_size - 1] != '/') {
+        pden->pattern[dir_size++] = '/';
+    }
+    if (filename) {
+        memcpy(&pden->pattern[dir_size], filename, strlen(filename));
+        dir_size += strlen(filename);
+        pden->pattern[dir_size++] = '/';
+    }
+
+    memcpy(&(pden->pattern[dir_size]), pattern, pat_size);
+    pden->pattern[dir_size + pat_size] = 0;
+
+    pden->head_size = dir_size;
+    pden->patlen = dir_size + pat_size;
+    pden->pat_size = length;
+    pden->memory = mem;
+    pden->first_time = 1;
+    memset(&pden->find_data, 0, sizeof(pden->find_data));
+    pden->find_handle = INVALID_HANDLE_VALUE;
+    pden->previous = 0L;
+    return 0;
+}
 
 /* Initialize an enumeration.  Note that * and ? in a directory */
 /* don't work with the OS call currently used. The '\' escape	*/
@@ -107,45 +156,36 @@ gs_private_st_ptrs1(st_file_enum, struct file_enum_s, "file_enum",
 file_enum *
 gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 {
-    file_enum *pfen = gs_alloc_struct(mem, file_enum, &st_file_enum, "gp_enumerate_files");
+    directory_enum *pden;
+    file_enum *pfen;
     int pat_size = 2 * patlen + 1;
     char *pattern;
     int hsize = 0;
     int i, j;
 
-    if (pfen == 0)
+    pden = gs_alloc_struct(mem, directory_enum, &st_directory_enum, "gp_enumerate_files");
+    if (pden == 0)
         return 0;
-    /* pattern could be allocated as a string, */
-    /* but it's simpler for GC and freeing to allocate it as bytes. */
-    pattern = (char *)gs_alloc_bytes(mem, pat_size,
-                                     "gp_enumerate_files(pattern)");
-    if (pattern == 0)
+    pfen = gs_alloc_struct(mem, file_enum, &st_file_enum, "gp_enumerate_files");
+    if (pfen == 0) {
+        gs_free_object(mem, pden, "free directory enumerator on error");
         return 0;
-    /* translate the template into a pattern discarding the escape  */
-    /* char '\' (not needed by the OS Find...File logic). Note that */
-    /* a final '\' in the string is also discarded.		    */
-    for (i = 0, j=0; i < patlen; i++) {
-        if (pat[i] == '\\') {
-            i++;
-            if (i == patlen)
-                break;		/* '\' at end ignored */
-        }
-        pattern[j++]=pat[i];
     }
+    pfen->current = pden;
+
     /* Scan for last path separator to determine 'head_size' (directory part) */
-    for (i = 0; i < j; i++) {
-        if(pattern[i] == '/' || pattern[i] == '\\' || pattern[i] == ':')
-        hsize = i+1;
+    for (i = 0; i < patlen; i++) {
+        if(pat[i] == '/' || pat[i] == '\\' || pat[i] == ':')
+        hsize = i + 1;
     }
-    pattern[j] = 0;
-    pfen->pattern = pattern;
-    pfen->patlen = j;
-    pfen->pat_size = pat_size;
-    pfen->head_size = hsize;
-    pfen->memory = mem;
-    pfen->first_time = 1;
-    memset(&pfen->find_data, 0, sizeof(pfen->find_data));
-    pfen->find_handle = INVALID_HANDLE_VALUE;
+
+    if (enumerate_directory_init(mem, pden, pat, hsize, NULL, &pat[hsize], patlen - hsize) < 0)
+    {
+        gs_free_object(mem, pden, "free directory enumerator on error");
+        gs_free_object(mem, pfen, "free file enumerator on error");
+        return 0;
+    }
+
     return pfen;
 }
 
@@ -153,57 +193,116 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 uint
 gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 {
+    directory_enum *new_denum = NULL, *pden = pfen->current;
     int code = 0;
     uint len;
 #ifdef GS_NO_UTF8
     char *outfname;
 #else
-    char outfname[(sizeof(pfen->find_data.cFileName)*3+1)/2];
+    char outfname[(sizeof(pden->find_data.cFileName)*3+1)/2];
 #endif
     for(;;) {
-        if (pfen->first_time) {
+        if (pden->first_time) {
 #ifdef GS_NO_UTF8
-            pfen->find_handle = FindFirstFile(pfen->pattern, &(pfen->find_data));
+            pden->find_handle = FindFirstFile(pden->pattern, &(pden->find_data));
 #else
             wchar_t *pat;
-            pat = malloc(utf8_to_wchar(NULL, pfen->pattern)*sizeof(wchar_t));
+            pat = malloc(utf8_to_wchar(NULL, pden->pattern)*sizeof(wchar_t));
             if (pat == NULL) {
                 code = -1;
                 break;
             }
-            utf8_to_wchar(pat, pfen->pattern);
+            utf8_to_wchar(pat, pden->pattern);
 #ifdef METRO
-            pfen->find_handle = FindFirstFileExW(pat, FindExInfoStandard, &(pfen->find_data), FindExSearchNameMatch, NULL, 0);
+            pden->find_handle = FindFirstFileExW(pat, FindExInfoStandard, &(pden->find_data), FindExSearchNameMatch, NULL, 0);
 #else
-            pfen->find_handle = FindFirstFileW(pat, &(pfen->find_data));
+            pden->find_handle = FindFirstFileW(pat, &(pden->find_data));
 #endif
             free(pat);
 #endif
-            if (pfen->find_handle == INVALID_HANDLE_VALUE) {
-                code = -1;
-                break;
+            if (pden->find_handle == INVALID_HANDLE_VALUE) {
+                if (pden->previous) {
+                    FindClose(pden->find_handle);
+                    gs_free_object(pden->memory, pden->pattern,
+                       "gp_enumerate_files_close(pattern)");
+                    new_denum = pden->previous;
+                    gs_free_object(pden->memory, pden, "gp_enumerate_files_close");
+                    pden = new_denum;
+                    pfen->current = pden;
+                    continue;
+                } else {
+                    code = -1;
+                    break;
+                }
             }
-            pfen->first_time = 0;
+            pden->first_time = 0;
         } else {
 #ifdef GS_NO_UTF8
-            if (!FindNextFile(pfen->find_handle, &(pfen->find_data))) {
+            if (!FindNextFile(pden->find_handle, &(pden->find_data))) {
 #else
-            if (!FindNextFileW(pfen->find_handle, &(pfen->find_data))) {
+            if (!FindNextFileW(pden->find_handle, &(pden->find_data))) {
 #endif
-                code = -1;
-                break;
+                if (pden->previous) {
+                    FindClose(pden->find_handle);
+                    gs_free_object(pden->memory, pden->pattern,
+                       "gp_enumerate_files_close(pattern)");
+                    new_denum = pden->previous;
+                    gs_free_object(pden->memory, pden, "gp_enumerate_files_close");
+                    pden = new_denum;
+                    pfen->current = pden;
+                    continue;
+                } else {
+                    code = -1;
+                    break;
+                }
             }
         }
 #ifdef GS_NO_UTF8
-        if ( strcmp(".",  pfen->find_data.cFileName)
-          && strcmp("..", pfen->find_data.cFileName)
-          && (pfen->find_data.dwFileAttributes != FILE_ATTRIBUTE_DIRECTORY))
-            break;
+        if ( strcmp(".",  pden->find_data.cFileName)
+            && strcmp("..", pden->find_data.cFileName)) {
+                if (pden->find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
+                    new_denum = gs_alloc_struct(pden->memory, directory_enum, &st_directory_enum, "gp_enumerate_files");
+                    if (new_denum != 0) {
+                        if (enumerate_directory_init(pden->memory, new_denum, pden->pattern, pden->head_size,
+                            pden->find_data.cFileName, &pden->pattern[pden->head_size], pden->pat_size - pden->head_size) < 0)
+                        {
+                            gs_free_object(pden->memory, new_denum, "free directory enumerator on error");
+                        }
+                        new_denum->previous = pden;
+                        pden = new_denum;
+                        pfen->current = pden;
+                    }
+                }
+                else
+                    break;
+        }
 #else
-        if ( wcscmp(L".",  pfen->find_data.cFileName)
-          && wcscmp(L"..", pfen->find_data.cFileName)
-          && (pfen->find_data.dwFileAttributes != FILE_ATTRIBUTE_DIRECTORY))
-            break;
+        if ( wcscmp(L".",  pden->find_data.cFileName)
+            && wcscmp(L"..", pden->find_data.cFileName)) {
+                if (pden->find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+                    new_denum = gs_alloc_struct(pden->memory, directory_enum, &st_directory_enum, "gp_enumerate_files");
+                    if (new_denum != 0) {
+                        char *fname;
+                        fname = gs_alloc_bytes(pden->memory, wchar_to_utf8(NULL, pden->find_data.cFileName)*sizeof(wchar_t), "temporary wchar buffer");
+                        if (fname == NULL) {
+                            gs_free_object(pden->memory, new_denum, "free directory enumerator on error");
+                        } else {
+                            wchar_to_utf8(fname, pden->find_data.cFileName);
+                            if (enumerate_directory_init(pden->memory, new_denum, pden->pattern, pden->head_size,
+                                fname, &pden->pattern[pden->head_size], pden->pat_size - pden->head_size) < 0)
+                            {
+                                gs_free_object(pden->memory, new_denum, "free directory enumerator on error");
+                            }
+                            gs_free_object(pden->memory, fname, "free temporary wchar buffer");
+                            new_denum->previous = pden;
+                            pden = new_denum;
+                            pfen->current = pden;
+                        }
+                    }
+                }
+                else
+                    break;
+        }
 #endif
     }
 
@@ -212,22 +311,22 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
         return ~(uint) 0;
     }
 #ifdef GS_NO_UTF8
-    outfname = pfen->find_data.cFileName;
+    outfname = pden->find_data.cFileName;
 #else
-    wchar_to_utf8(outfname, pfen->find_data.cFileName);
+    wchar_to_utf8(outfname, pden->find_data.cFileName);
 #endif
     len = strlen(outfname);
 
-    if (pfen->head_size + len < maxlen) {
-        memcpy(ptr, pfen->pattern, pfen->head_size);
-        strcpy(ptr + pfen->head_size, outfname);
-        return pfen->head_size + len;
+    if (pden->head_size + len < maxlen) {
+        memcpy(ptr, pden->pattern, pden->head_size);
+        strcpy(ptr + pden->head_size, outfname);
+        return pden->head_size + len;
     }
-    if (pfen->head_size >= maxlen)
+    if (pden->head_size >= maxlen)
         return 0;		/* no hope at all */
 
-    memcpy(ptr, pfen->pattern, pfen->head_size);
-    strncpy(ptr + pfen->head_size, outfname, maxlen - pfen->head_size - 1);
+    memcpy(ptr, pden->pattern, pden->head_size);
+    strncpy(ptr + pden->head_size, outfname, maxlen - pden->head_size - 1);
     return maxlen;
 }
 
@@ -235,12 +334,18 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 void
 gp_enumerate_files_close(file_enum * pfen)
 {
-    gs_memory_t *mem = pfen->memory;
+    directory_enum *ptenum, *pden = pfen->current;
+    gs_memory_t *mem = pden->memory;
 
-    if (pfen->find_handle != INVALID_HANDLE_VALUE)
-        FindClose(pfen->find_handle);
-    gs_free_object(mem, pfen->pattern,
+    while (pden) {
+        if (pden->find_handle != INVALID_HANDLE_VALUE)
+            FindClose(pden->find_handle);
+        gs_free_object(mem, pden->pattern,
                    "gp_enumerate_files_close(pattern)");
+        ptenum = pden->previous;
+        gs_free_object(mem, pden, "gp_enumerate_files_close");
+        pden = ptenum;
+    };
     gs_free_object(mem, pfen, "gp_enumerate_files_close");
 }
 
