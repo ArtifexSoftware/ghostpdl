@@ -41,21 +41,17 @@
 % Closes the file in either case.
 /.findnonttfontvalue /.findfontvalue load def
 /.findfontvalue {
-  1 index read {
-    2 index 1 index unread
-    % beginning with binary 0 or 't' (TrueType), or 'O' (OpenType)
-    dup 0 eq 1 index (O) 0 get eq or exch (t) 0 get eq or {
+  1 index .is_ttf_or_otf {
                 % If this is a font at all, it's a TrueType font.
       dup /FontType eq {
         pop closefile 42 //true
       } {
         dup /FontName eq { pop .findttfontname } { pop closefile //false } ifelse
       } ifelse
-    } {
+  } {
                 % Not a TrueType font.
       .findnonttfontvalue
-    } ifelse
-  } { pop closefile //false } ifelse
+  } ifelse
 } bind def
 
 % <file> .findttfontname <fname> true
@@ -65,7 +61,9 @@
   //true 0 .loadttfonttables
   tabdict /name .knownget {
     dup 8 getu32 f exch setfileposition
-    12 getu32 string f exch readstring pop
+    12 getu32
+    dup 65535 gt { pop 65535 } if % protect against extremely large name
+    string f exch readstring pop
     dup
     6 findname not {
       4 findname	% Try FullName
@@ -82,6 +80,7 @@
 % Load a font file that might be a TrueType font.
 
 /tt_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 >> readonly def
+/ttf_otf_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 (OTTO) 0>> readonly def
 
 % <file> .loadfontfile -
 /.loadnonttfontfile /.loadfontfile load def
@@ -95,7 +94,13 @@
   } ifelse
 } bind def
 
+% <file> .is_ttf_or_otf <bool>
+/.is_ttf_or_otf {
+    dup 0 setfileposition (1234) .peekstring { //ttf_otf_tag_dict exch known } { //false } ifelse
+} bind def
+
 currentdict /tt_tag_dict .undef
+currentdict /ttf_otf_tag_dict .undef
 
 % ---------------- Automatic Type 42 generation ---------------- %
 
