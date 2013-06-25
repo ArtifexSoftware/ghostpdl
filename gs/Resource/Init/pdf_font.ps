@@ -2182,7 +2182,8 @@ drawopdict begin
     3 index 6 index eq and           % ... llx lly urx ury | ury!=0 (urx!=0 && llx==urx)
     exch 2 index 5 index eq and or { % ... llx lly urx ury | (urx!=0 && llx==urx) || (ury!=0 && lly==ury)
       % The bounding box is empty and likely incorrect. Don't cache.
-      pop pop pop pop .adjustcharwidth setcharwidth
+      pop pop pop pop
+      //d0 exec
     } {
       6 -2 roll .adjustcharwidth 6 2 roll setcachedevice
     } ifelse
