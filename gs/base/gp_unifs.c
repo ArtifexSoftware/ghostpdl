@@ -361,11 +361,13 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
             worklen = p - work;
         } else
             worklen = 0;
-        p = rchr(pattern, '/', pathead);
-        if (p != 0)
-            pathead = p - pattern;
-        else
-            pathead = 0;
+        if (pathead != pfen->patlen) {
+            p = rchr(pattern, '/', pathead);
+            if (p != 0)
+                pathead = p - pattern;
+            else
+                pathead = 0;
+        }
 
         if (popdir(pfen)) {     /* Back up the directory tree. */
             if_debug1m('e', pfen->memory, "[e]file_enum:Dir popped '%s'\n", work);
@@ -399,7 +401,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
         goto top;
 
     /* Perhaps descend into subdirectories */
-    if (pathead < pfen->patlen) {
+    if (pathead < maxlen) {
         DIR *dp;
 
         if (((stat(work, &stbuf) >= 0)
@@ -409,7 +411,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
          * we'll be able to list it anyway.
          * If it isn't or we can't, no harm done. */
              : 0))
-            goto top;
+            goto winner;
 
         if (pfen->patlen == pathead + 1) {      /* Listing "foo/?/" -- return this entry */
             /* if it's a directory. */
