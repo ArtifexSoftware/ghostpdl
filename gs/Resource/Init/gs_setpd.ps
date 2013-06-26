@@ -660,7 +660,11 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
 % ---------------- setpagedevice itself ---------------- %
 
 /setpagedevice
- {		% We mustn't pop the argument until the very end,
+ {
+                % ensure that we are always in local VM mode to avoid
+                % mismatches.
+   currentglobal exch false setglobal
+                % We mustn't pop the argument until the very end,
                 % so that the pseudo-operator machinery can restore the stack
                 % if an error occurs.
    mark 1 index currentpagedevice
@@ -886,6 +890,7 @@ SETPDDEBUG { (Installing.) = pstack flush } if
   } {
     .postinstall
   } ifelse
+  setglobal           % return to original VM allocation mode
 } odef
 
 % We break out the code after calling the Install procedure into a
