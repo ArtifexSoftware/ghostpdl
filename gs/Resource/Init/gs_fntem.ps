@@ -267,30 +267,6 @@ currentdict end def
  ISOLatin1Encoding /ISOLatin1Encoding
  SymbolEncoding /SymbolEncoding
  DingbatsEncoding /DingbatsEncoding
- /resourceforall where {
-   pop (*) { dup cvn
-     EncodingDirectory exch .knownget not {
-       % A work around bug 688710 on Linux :
-       % findencoding can't load resource files until gs_init.ps executes .fixresources .
-       % It will happen after gs_init.ps runs INITFILES,
-       % from which the current file runs.
-       % Windows build has no such problem.
-       (.svn) anchorsearch {
-         % HACK : skip .svn or */* names, which are subdirectories.
-         pop pop
-       } {
-         (/) search {
-           pop pop pop
-         } {
-           cvn dup /Encoding findresource
-         } ifelse
-       } ifelse
-     } {
-       exch cvn exch
-     } ifelse
-     exch
-   } 1024 string /Encoding resourceforall
- } if
 .dicttomark def
 
 /ChooseDecoding  % <font> ChooseDecoding <font>
