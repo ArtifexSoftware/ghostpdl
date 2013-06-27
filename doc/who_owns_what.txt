@@ -2,7 +2,7 @@ afs.dev: henry
 async.dev: obsolete
 bbox.dev: ray
 bboxutil.dev: ray
-bcp.dev: alex
+bcp.dev: henry
 bit.dev: ray and henry
 bitcmyk.dev: ray and henry
 bitrgb.dev: ray and henry
@@ -21,15 +21,15 @@ bmpgray.dev: ray and henry
 bmpmono.dev: ray and henry
 bmpsep1.dev: ray and henry
 bmpsep8.dev: ray and henry
-btoken.dev: alex
+btoken.dev: ken
 cdeskjet.dev: ray and henry
 cdj550.dev: ray and henry
 cdjcolor.dev: ray and henry
 cdjmono.dev: ray and henry
 cfax.dev: ray and henry
-cfd.dev: alex
-cfe.dev alex
-cfe.dev: alex
+cfd.dev: henry
+cfe.dev henry
+cfe.dev: henry
 cff.dev: ken
 cidfont.dev: ken
 cidlib.dev: ken
@@ -51,9 +51,9 @@ compfont.dev: ken
 crc32.dev: ken
 cspixel.dev: michael
 cspixlib.dev: michael
-dct.dev: alex
-dctd.dev: alex
-dcte.dev: alex
+dct.dev: henry
+dctd.dev: henry
+dcte.dev: henry
 deskjet.dev: ray and henry
 devcmap.dev: obsolete
 devicen.dev: michael
@@ -66,10 +66,10 @@ dps2read.dev: ?
 dpsand2.dev: ?
 dpslib.dev: ?
 dpsnext.dev ?
-dscparse.dev: alex
+dscparse.dev: ken
 eps9high.dev: ?
 eps9mid.dev: ?
-epsf.dev: alex
+epsf.dev: ken
 epson.dev: henry
 epsonc.dev: henry
 epswrite.dev: ken
@@ -82,16 +82,16 @@ faxg3.dev: ray and henry
 faxg32d.dev: ray and henry
 faxg4.dev: ray and henry
 fcopy.dev: ken
-fdecode.dev: alex
-filter.dev: alex
-fimscale.dev: alex
+fdecode.dev: ken
+filter.dev: ken
+fimscale.dev: ken
 fmd5.dev: ken
-frsd.dev: alex
-func.dev: alex
-func4.dev: alex
-func4lib.dev: alex
-funclib.dev: alex
-fzlib.dev: alex
+frsd.dev: ken
+func.dev: ken
+func4.dev: ken
+func4lib.dev: ken
+funclib.dev: ken
+fzlib.dev: ken
 gsiodevs.dev: ray and henry
 gsnogc.dev: obsolete
 gxfapiu.dev: chris
@@ -109,25 +109,25 @@ imdi.dev: obsolete
 iodevice.dev: ray and henry
 iscale.dev: robin
 isupport.dev: ray
-jasper.dev: alex
-jasper_0.dev: alex
-jbig2.dev: alex
-jbig2dec.dev: alex
-jbig2dec_0.dev: alex
+jasper.dev: henry
+jasper_0.dev: henry
+jbig2.dev: henry
+jbig2dec.dev: henry
+jbig2dec_0.dev: henry
 jpeg.dev: ray and henry
 jpege6.dev: third party
 jpeggray.dev: ray and henry
-jpx.dev: alex
-jpx_jasper.dev: alex
+jpx.dev: henry
+jpx_jasper.dev: henry
 laserjet.dev: ray and henry
 ldf_jb2.dev: henry
 libcore.dev:
 
     gsalloc, gsmalloc, gsmemlok, gsmemory, gsmemret: ray
 
-    stream strmio: alex
+    stream strmio: ray
 
-    gsistate: alex
+    gsistate: ken
 
     gsalpha, gscolor, gshtscr, gscspace, gsovrc, gsht, gscicach,
     gxoprect, gxdcconv, gxcmap, gxdcolor, gxht, gxhldev, gxhtbit: michael
@@ -160,9 +160,9 @@ ljet4.dev: ray and henry
 ljet4d.dev: ray and henry
 ljetplus.dev: ray and henry
 lpg.dev: third party
-luratech_jp2.dev: ken
-lzwd.dev: alex
-lzwe.dev: alex
+luratech_jp2.dev: henry
+lzwd.dev: henry
+lzwe.dev: henry
 macglyph.dev: chris
 macres.dev: chris
 macroman.dev: chris
@@ -184,11 +184,11 @@ pcx256.dev: ray and henry
 pcxcmyk.dev: ray and henry
 pcxgray.dev: ray and henry
 pcxmono.dev: ray and henry
-pdf.dev: alex
-pdffonts.dev: alex
-pdfread.dev: alex
+pdf.dev: ken
+pdffonts.dev: ken
+pdfread.dev: ken
 pdfwrite.dev: ken
-pdiff.dev: alex
+pdiff.dev: henry
 pdtext.dev: ken
 pdxtext.dev: ken
 pgm.dev: ray and henry
@@ -213,14 +213,14 @@ pngalpha.dev: michael
 pnggray.dev: henry
 pnggray.dev henry
 pngmono.dev: henry
-pngp.dev: alex
+pngp.dev: henry
 pnm.dev: ray and henry
 pnmraw.dev: ray and henry
 posync.dev: ?
 ppm.dev: ray and henry
 ppmraw.dev: ray and henry
 ps2write.dev: ken
-psbase.dev: alex
+psbase.dev: ken
 psdcmyk.dev: michael
 psdf.dev: ken
 psdrgb.dev: ray and henry
@@ -232,48 +232,48 @@ psf2lib.dev: ken
 psgray.dev: obsolete
 psi.dev: ray and henry
 psl2cs.dev: michael
-psl2lib.dev: michael and alex
+psl2lib.dev: michael and ken
 psmono.dev: obsolete
 psrgb.dev: obsolete
 pswrite.dev: obsolete
 pxl.dev: henry
 pxlcolor.dev: ray and henry
 pxlmono.dev: ray and henry
-rld.dev: alex
-rle.dev: alex
+rld.dev: henry
+rle.dev: henry
 romfs0.dev: ray and henry
 romfs1.dev: ray and henry
 roplib.dev: robin
 rtlbase.dev: henry
 rtlbasec.dev: henry
-sarc4.dev: alex
-sdctd.dev: alex
-sdcte.dev: alex
-sddparam.dev: alex
-seexec.dev: alex
+sarc4.dev: henry
+sdctd.dev: henry
+sdcte.dev: henry
+sddparam.dev: henry
+seexec.dev: ken
 sepr.dev: michael
 seprlib.dev: michael
 sfile.dev: ray and henry
 shadelib.dev: michael
 sicclib.dev: michael
-simscale.dev: alex
+simscale.dev: robin
 sjbig2.dev: henry
 sjbig2_.dev: henry
 sjbig2_jbig2dec.dev: henry
 sjbig2_luratech.dev: henry
-sjpx.dev: alex
+sjpx.dev: henry
 sjpx_jasper.dev
-sjpx_jasper.dev: alex
-sjpx_luratech.dev: alex
-slzwd.dev: alex
-slzwe.dev: alex
+sjpx_jasper.dev: henry
+sjpx_luratech.dev: henry
+slzwd.dev: henry
+slzwe.dev: henry
 smd5.dev: henry
 spotcmyk.dev: michael
 stcolor.dev: ?
-strdline.dev: alex
+strdline.dev: ken
 svgwrite.dev: henry
-szlibd.dev: alex
-szlibe.dev: alex
+szlibd.dev: henry
+szlibe.dev: henry
 tfax.dev: ray and henry
 tiff12nc.dev: ray and henry
 tiff24nc.dev: ray and henry
@@ -314,7 +314,7 @@ x11gray4.dev: henry
 x11mono.dev: henry
 xcf.dev: henry
 xps.dev: tor
-zfrsd.dev: alex
+zfrsd.dev: henry
 zlibd.dev: third party
 zlibe.dev: third party
 
@@ -328,7 +328,7 @@ images:robin
 memory:ray
 makefiles:chris
 pcl, pxl, pl:henry
-pdf interpreter:alex
+pdf interpreter:ken
 ps, pdf, eps write:ken
 paths:robin
 xps:tor
