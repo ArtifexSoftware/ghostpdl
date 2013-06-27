@@ -920,7 +920,7 @@ palette_do_registration(pcl_parser_state_t * pcl_parser_state,
         't', 'J',
             PCL_COMMAND("Render Algorithm",
                         set_render_algorithm,
-                        pca_neg_ok | pca_big_ignore | pca_in_rtl)
+                        pca_neg_ok | pca_big_ignore | pca_in_rtl | pca_dont_lockout_in_rtl)
     }, END_CLASS DEFINE_CLASS('&') {
         'b', 'M',
             PCL_COMMAND("Monochrome Printing",
