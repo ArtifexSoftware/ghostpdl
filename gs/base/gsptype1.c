@@ -416,8 +416,10 @@ clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
      * xstep and ystep, make sure they are not negative, or we will be in
      * a very long loop indeed.
      */
-    xstep = abs(xstep);
-    ystep = abs(ystep);
+    if (xstep < 0)
+        xstep *= -1;
+    if (ystep < 0)
+        ystep *= -1;
     /*
      * Convert the page dimensions from device coordinates into the
      * pattern coordinate frame.
