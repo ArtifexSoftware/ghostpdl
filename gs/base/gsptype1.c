@@ -412,6 +412,12 @@ clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
      * by working in the pattern coordinate space.  This is logically
      * simpler since XStep and YStep are on axis in the pattern space.
      */
+    /* But, since we are starting below bottom left, and 'incrementing' by
+     * xstep and ystep, make sure they are not negative, or we will be in
+     * a very long loop indeed.
+     */
+    xstep = abs(xstep);
+    ystep = abs(ystep);
     /*
      * Convert the page dimensions from device coordinates into the
      * pattern coordinate frame.
