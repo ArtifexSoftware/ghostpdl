@@ -323,12 +323,23 @@ zmakewordimagedevice(i_ctx_t *i_ctx_p)
     return code;
 }
 
+static void invalidate_stack_devices(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = op = osbot;
+    while (op != ostop) {
+        if (r_has_type(op, t_device))
+            op->value.pdevice = 0;
+        op++;
+    }
+}
+
 /* - nulldevice - */
 /* Note that nulldevice clears the current pagedevice. */
 static int
 znulldevice(i_ctx_t *i_ctx_p)
 {
     gs_nulldevice(igs);
+    invalidate_stack_devices(i_ctx_p);
     clear_pagedevice(istate);
     return 0;
 }
@@ -464,12 +475,16 @@ zsetdevice(i_ctx_t *i_ctx_p)
        here.  The language switching machinery installs a shared
        device. */
 
+    if (op->value.pdevice == 0)
+        return gs_note_error(gs_error_undefined);
+
     code = gs_setdevice_no_erase(igs, op->value.pdevice);
     if (code < 0)
         return code;
 
 #endif
     make_bool(op, code != 0);	/* erase page if 1 */
+    invalidate_stack_devices(i_ctx_p);
     clear_pagedevice(istate);
     return code;
 }
