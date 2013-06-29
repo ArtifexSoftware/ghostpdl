@@ -1698,7 +1698,7 @@ static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short
         if (unicode == GS_NO_CHAR) {
             single_glyph_list_t *sentry = (single_glyph_list_t *)&SingleGlyphList;
             double_glyph_list_t *dentry = (double_glyph_list_t *)&DoubleGlyphList;
-            treble_glyph_list_t *tentry = (treble_glyph_list_t *)TrebleGlyphList;
+            treble_glyph_list_t *tentry = (treble_glyph_list_t *)&TrebleGlyphList;
             quad_glyph_list_t *qentry = (quad_glyph_list_t *)&QuadGlyphList;
             int index = -1;
 
