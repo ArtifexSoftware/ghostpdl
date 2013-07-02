@@ -884,7 +884,8 @@ CPU_TYPE=486
 !endif
 HAVE_SSE2=1
 CFLAGS=$(CFLAGS) /DHAVE_SSE2
-JPX_SSE_CFLAGS=/D__SSE__
+# add "/D__SSE__" here, but causes crashes just now
+JPX_SSE_CFLAGS=
 !endif
 !endif
 
