@@ -661,9 +661,31 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
 
 /setpagedevice
  {
+                % To avoid VM mismatches caused by copying subsidiary
+                % dictionaries to local VM (see WorPerfect bug in
+                % .makecurrentpagedevice) we want to make the dict
+                % returned by currentpagedevice local. However, if we
+                % run with -dSAFER we get a call to setpagedevice from
+                % .setsafe in gs_init.ps during startup. The dict returned
+                % by currentpagdevice is stored to the graphics state by
+                % .setpagedevice below, and returned by currentpagdevice.
+                % The Display PostScript code insists that the savedinitialgstate
+                % not have any pointers to local VM objects, so if we simply
+                % make the dict local then we fail in gs_dps.ps. The only
+                % solution is to make sure the VM mode is global during
+                % startup (to satisfy gs_dps.ps) and local thereafter
+                % (to satisfy the WordPerfect bug).
+   dup dup length 1 eq exch /.LockSafetyParams known and {
+     currentglobal exch true setglobal
+   } {
                 % ensure that we are always in local VM mode to avoid
-                % mismatches.
-   currentglobal exch false setglobal
+                % mismatches. This is because we always create child
+                % dictionaries in local VM, regardless of the current VM state,
+                % (see .makecurrentpagdevice) and we can't store local objects
+                % in a global object, so we must ensure teh dictionary returned
+                % from currentpagedevice is in local VM.
+     currentglobal exch false setglobal
+   } ifelse
                 % We mustn't pop the argument until the very end,
                 % so that the pseudo-operator machinery can restore the stack
                 % if an error occurs.
