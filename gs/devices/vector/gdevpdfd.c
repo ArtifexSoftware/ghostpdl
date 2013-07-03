@@ -368,7 +368,7 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
             return code;
     }
     if (new_id != pdev->no_clip_path_id) {
-        const gs_fixed_rect rect;
+        gs_fixed_rect rect;
 
         /* Use q to allow the new clipping path to unwind.  */
         code = pdf_save_viewer_state(pdev, s);
