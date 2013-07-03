@@ -368,18 +368,18 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
             return code;
     }
     if (new_id != pdev->no_clip_path_id) {
-        const gs_fixed_rect *rect = cpath_is_rectangle(pcpath);
+        const gs_fixed_rect rect;
 
         /* Use q to allow the new clipping path to unwind.  */
         code = pdf_save_viewer_state(pdev, s);
         if (code < 0)
             return code;
-        if (rect != NULL) {
+        if (cpath_is_rectangle(pcpath, &rect)) {
             /* Use unrounded coordinates. */
             pprintg4(s, "%g %g %g %g re",
-                fixed2float(rect->p.x), fixed2float(rect->p.y),
-                fixed2float(rect->q.x - rect->p.x),
-                fixed2float(rect->q.y - rect->p.y));
+                fixed2float(rect.p.x), fixed2float(rect.p.y),
+                fixed2float(rect.q.x - rect.p.x),
+                fixed2float(rect.q.y - rect.p.y));
             pprints1(s, " %s n\n", (pcpath->rule <= 0 ? "W" : "W*"));
         } else {
             gdev_vector_dopath_state_t state;

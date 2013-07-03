@@ -371,7 +371,7 @@ bool
     gx_cpath_outer_box(const gx_clip_path *, gs_fixed_rect *),
     gx_cpath_includes_rectangle(const gx_clip_path *, fixed, fixed,
                                 fixed, fixed);
-const gs_fixed_rect *cpath_is_rectangle(const gx_clip_path * pcpath);
+gx_path_rectangular_type cpath_is_rectangle(const gx_clip_path * pcpath, gs_fixed_rect *rect);
 bool gx_cpath_rect_visible(gx_clip_path * pcpath, gs_int_rect *prect);
 int gx_cpath_copy(const gx_clip_path * from, gx_clip_path * pcpath);
 
