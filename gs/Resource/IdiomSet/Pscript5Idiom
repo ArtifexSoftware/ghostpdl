@@ -1,0 +1,87 @@
+%%
+%% Idioms for the Windows PSCRIPT5 PostScript driver
+%%
+
+currentuserparams /IdiomRecognition get
+<</IdiomRecognition false>> setuserparams
+
+/Pscript5Idiom
+<<
+%% replacements for the artificial bold routines. When the current device supports text rendering modes we set the mode to 2 (fill and stroke)
+%% and only show the text once, which improves seaching with pdfwrite. The parameter 'sBdx' is always calculated as the intended print resolution/300.
+%% We can't do that in PDF so we just use a heuristically derived fixed value.
+  /xsB [
+    {2 copy 2 copy 2 copy gsave sBdx 0 rmoveto xshow grestore gsave 0 sBdx rmoveto xshow grestore gsave sBdx sBdx rmoveto xshow grestore xshow} bind
+    {
+      currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
+      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+      { gsave sBdx 2 div dup 0.05 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode xshow currentpoint grestore moveto}
+      {2 copy 2 copy 2 copy gsave sBdx 0 rmoveto xshow grestore gsave 0 sBdx rmoveto xshow grestore gsave sBdx dup rmoveto xshow grestore xshow} bind
+      ifelse
+    } bind
+ ]
+  /ysB [
+    {2 copy 2 copy 2 copy gsave sBdx 0 rmoveto yshow grestore gsave 0 sBdx rmoveto yshow grestore gsave sBdx sBdx rmoveto yshow grestore yshow} bind
+    {
+      currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
+      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+      { gsave sBdx 2 div dup 0.05 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode yshow currentpoint grestore moveto}
+      {2 copy 2 copy 2 copy gsave sBdx 0 rmoveto yshow grestore gsave 0 sBdx rmoveto yshow grestore gsave sBdx dup rmoveto yshow grestore yshow} bind
+      ifelse
+    } bind
+ ]
+  /zsB [
+    {2 copy 2 copy 2 copy gsave sBdx 0 rmoveto xyshow grestore gsave 0 sBdx rmoveto xyshow grestore gsave sBdx sBdx rmoveto xyshow grestore xyshow} bind
+    {
+      currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
+      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+      { gsave sBdx 2 div dup 0.05 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode xyshow currentpoint grestore moveto}
+      {2 copy 2 copy 2 copy gsave sBdx 0 rmoveto xyshow grestore gsave 0 sBdx rmoveto xyshow grestore gsave sBdx dup rmoveto xyshow grestore xyshow} bind
+      ifelse
+    } bind
+ ]
+ /sB [
+    {1 copy 2 copy gsave sBdx 0 rmoveto show grestore gsave 0 sBdx rmoveto show grestore gsave sBdx sBdx rmoveto show grestore show} bind
+    {
+      currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
+      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+      { gsave sBdx 2 div dup 0.05 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode show currentpoint grestore moveto}
+      {1 copy 2 copy gsave sBdx 0 rmoveto show grestore gsave 0 sBdx rmoveto show grestore gsave sBdx dup rmoveto show grestore show} bind
+      ifelse
+    } bind
+  ]
+  /asB [
+    {3 copy 3 copy 3 copy gsave sBdx 0 rmoveto ashow grestore gsave 0 sBdx rmoveto ashow grestore gsave sBdx sBdx rmoveto ashow grestore ashow} bind
+    {
+      currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
+      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+      { gsave sBdx 2 div dup 0.05 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode ashow currentpoint grestore moveto}
+      {3 copy 3 copy 3 copy gsave sBdx 0 rmoveto ashow grestore gsave 0 sBdx rmoveto ashow grestore gsave sBdx dup rmoveto ashow grestore ashow} bind
+      ifelse
+    } bind
+   ]
+  /wsB [
+    {3 copy 3 copy 3 copy gsave sBdx 0 rmoveto widthshow grestore gsave 0 sBdx rmoveto widthshow grestore gsave sBdx sBdx rmoveto widthshow grestore widthshow} bind
+    {
+      currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
+      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+      { gsave sBdx 2 div dup 0.05 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode widthshow currentpoint grestore moveto}
+      {3 copy 3 copy 3 copy gsave sBdx 0 rmoveto widthshow grestore gsave 0 sBdx rmoveto widthshow grestore gsave sBdx dup rmoveto widthshow grestore widthshow} bind
+      ifelse
+    } bind
+   ]
+
+  /awsB [
+    {3 copy 3 copy 3 copy gsave sBdx 0 rmoveto awidthshow grestore gsave 0 sBdx rmoveto awidthshow grestore gsave sBdx sBdx rmoveto awidthshow grestore awidthshow} bind
+    {
+      currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
+      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+      { gsave sBdx 2 div dup 0.05 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode awidthshow currentpoint grestore moveto}
+      {3 copy 3 copy 3 copy gsave sBdx 0 rmoveto awidthshow grestore gsave 0 sBdx rmoveto awidthshow grestore gsave sBdx dup rmoveto awidthshow grestore awidthshow} bind
+      ifelse
+    } bind
+   ]
+>>
+/IdiomSet defineresource pop
+
+<</IdiomRecognition 3 -1 roll>> setuserparams

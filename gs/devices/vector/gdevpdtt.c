@@ -2461,7 +2461,7 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
                 return code;
         }
 
-        code = pdf_open_contents(pdev, PDF_IN_STRING);
+        code = pdf_open_contents(pdev, PDF_IN_STREAM);
         if (code < 0)
             return code;
 
@@ -2469,6 +2469,10 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
         if (code >= 0)
             code = gdev_vector_prepare_stroke((gx_device_vector *)pdev,
                                               pis, NULL, NULL, 1);
+
+        code = pdf_open_contents(pdev, PDF_IN_STRING);
+        if (code < 0)
+            return code;
 
         pis->line_params.half_width = save_width;
         if (code < 0)
