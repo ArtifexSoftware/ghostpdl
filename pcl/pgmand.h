@@ -319,6 +319,8 @@ int hpgl_IR(hpgl_args_t * pargs, hpgl_state_t * pgls);
 
 int hpgl_IW(hpgl_args_t * pargs, hpgl_state_t * pgls);
 
+int hpgl_FR(hpgl_args_t * pargs, hpgl_state_t * pgls);
+
 int hpgl_PG(hpgl_args_t * pargs, hpgl_state_t * pgls);
 
 int hpgl_PS(hpgl_args_t * pargs, hpgl_state_t * pgls);

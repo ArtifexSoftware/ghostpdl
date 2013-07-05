@@ -482,6 +482,14 @@ hpgl_EC(hpgl_args_t * pargs, hpgl_state_t * pgls)
     return e_Unimplemented;
 }
 
+int
+hpgl_FR(hpgl_args_t * pargs, hpgl_state_t * pgls)
+{
+    hpgl_args_t args;
+    hpgl_args_setup(&args);
+    return hpgl_PG(&args, pgls);
+}
+
 /* PS;  NB this is only a partial implementation. */
 int
 hpgl_PS(hpgl_args_t * pargs, hpgl_state_t * pgls)
@@ -726,6 +734,7 @@ pgconfig_do_registration(pcl_parser_state_t * pcl_parser_state,
         HPGL_COMMAND('C', 'O', hpgl_CO,
                      hpgl_cdf_polygon | hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('D', 'F', hpgl_DF, hpgl_cdf_pcl_rtl_both),
+        HPGL_COMMAND('F', 'R', hpgl_FR, hpgl_cdf_rtl),
         HPGL_COMMAND('I', 'N', hpgl_IN, hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('I', 'P', hpgl_IP, hpgl_cdf_pcl_rtl_both),
         HPGL_COMMAND('I', 'R', hpgl_IR, hpgl_cdf_pcl_rtl_both),
