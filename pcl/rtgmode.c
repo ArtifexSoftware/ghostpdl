@@ -393,6 +393,11 @@ pcl_end_graphics_mode(pcl_state_t * pcs)
 int
 pcl_end_graphics_mode_implicit(pcl_state_t * pcs, bool ignore_in_rtl)
 {
+    
+#ifdef DEBUG
+    if_debug0('I', "Graphics exited implicitly\n");
+#endif
+
     /* In PCL modes things are straightforward, always exit graphics
        mode when encountering a locked out command */
     if (pcs->personality != rtl)
