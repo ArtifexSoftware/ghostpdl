@@ -580,21 +580,8 @@ pcl_end_page(pcl_state_t * pcs, pcl_print_condition_t condition)
 
     if (pcs->end_page == pcl_end_page_top)
         code = gs_erasepage(pcs->pgs);
+
     pcs->page_marked = false;
-    /* force new logical page, allows external resolution changes.
-     * see -dFirstPage -dLastPage
-     * NB would be faster if we didn't do this every page.
-     *
-     * NB setting a new logical page defaults settings
-     * that should carry over from the previous page
-     * this error occurs only on documents that don't do any initilizations per page
-     * hence only the viewer applications will see the speedup and the error
-     */
-    if (!pjl_proc_compare
-        (pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "viewer"), "on")) {
-        new_logical_page(pcs, pcs->xfm_state.lp_orient,
-                         pcs->xfm_state.paper_size, false, false);
-    }
 
     /*
      * Advance of a page may move from a page front to a page back. This may

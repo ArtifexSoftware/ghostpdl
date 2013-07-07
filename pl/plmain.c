@@ -795,29 +795,6 @@ pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select fr
                        "Unable to install device into PDL interp.\n");
             return 0;
         }
-        /* potentially downgrade the resolution */
-        if ((pti->page_count + 1) < pti->first_page) {
-            if (!pti->saved_hwres) {
-                gx_device *pdev = universe->curr_device;
-
-                pti->saved_hwres = true;
-                pti->hwres[0] = pdev->HWResolution[0];
-                pti->hwres[1] = pdev->HWResolution[1];
-
-                if (!pjl_proc_compare(pjl_instance,
-                                      pjl_proc_get_envvar(pjl_instance,
-                                                          "viewer"), "on")) {
-                    /* NB: new_logical_page shouldn't be called for every page
-                     */
-                    pti->viewer = true; /* cache pjl variable on language select */
-                    gx_device_set_resolution(pdev, 10, 10);
-                } else {
-                    pti->viewer = false;
-                    gx_device_set_resolution(pti->device,
-                                             pti->hwres[0], pti->hwres[1]);
-                }
-            }
-        }
     }
 
     /* Set latest params into device. Write them all in case any changed */
@@ -853,7 +830,6 @@ pl_main_init_instance(pl_main_instance_t * pti, gs_memory_t * mem)
     pti->first_page = 1;
     pti->last_page = max_int;
     pti->page_count = 0;
-    pti->saved_hwres = false;
     pti->interpolate = false;
     pti->page_set_on_command_line = false;
     pti->res_set_on_command_line = false;
@@ -1434,16 +1410,6 @@ pl_pre_finish_page(pl_interp_instance_t * interp, void *closure)
     /* up the page count */
     ++(pti->page_count);
 
-    /* if the next page is in range we want to restore the resolution */
-    if ((pti->page_count + 1) >= pti->first_page &&
-        (pti->page_count + 1) <= pti->last_page) {
-        /* check if we downgraded the resolution */
-        if (pti->saved_hwres) {
-            pti->saved_hwres = false;
-            gx_device_set_resolution(pti->device,
-                                     pti->hwres[0], pti->hwres[1]);
-        }
-    }
     /* nothing to do now if we are in range */
     if (pti->page_count >= pti->first_page
         && pti->page_count <= pti->last_page)
@@ -1451,30 +1417,7 @@ pl_pre_finish_page(pl_interp_instance_t * interp, void *closure)
 
     if (pti->page_count > pti->last_page)
         return e_ExitLanguage;
-    /* finally if the next page is out of range -- must be before
-       the first page if we are here.  We have to render the page
-       but can optimize by downgrading the resolution. */
-    if ((pti->page_count + 1) < pti->first_page) {
-        /* If we haven't saved the hardware resolution save the
-           default resolution for the device and set the
-           diminished resolution if it hasn't been done
-           already. NB what if language sets resolution? */
-        if (!pti->saved_hwres) {
-            gx_device *pdev = pti->device;
 
-            pti->saved_hwres = true;
-            pti->hwres[0] = pdev->HWResolution[0];
-            pti->hwres[1] = pdev->HWResolution[1];
-            if (pti->viewer) {
-                /* NB: new_logical_page shouldn't be called for every page
-                 * viewer optimizations sometimes fail!
-                 */
-                gx_device_set_resolution(pdev, 10, 10);
-            } else
-                gx_device_set_resolution(pti->device,
-                                         pti->hwres[0], pti->hwres[1]);
-        }
-    }
     /* out of range don't allow printing the page */
     return 1;
 }
