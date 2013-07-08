@@ -24,14 +24,6 @@
 #include "pccid.h"
 #include "plsrgb.h"
 
-/* The HP Color Laserjet 4550 and forward replace all requests for
-   device independent color spaces with sRGB.  Luminance-Chrominance
-   and CIE Lab along with all their parameters are simply ignored and
-   sRGB is installed.  Comment out the following definition to follow
-   the specification and not emulate the printers */
-
-#define ALL_TO_SRGB
-
 /* CID accessors */
 pcl_cspace_type_t
 pcl_cid_get_cspace(const pcl_cid_data_t * pcid)
@@ -320,14 +312,14 @@ check_cid_hdr(pcl_state_t * pcs, pcl_cid_data_t * pcid)
         pcidh->bits_per_primary[1] = 8;
         pcidh->bits_per_primary[2] = 8;
     }
-#ifdef ALL_TO_SRGB
+
     /* the short form of CIE Lab and "LumChrom" are replaced with sRGB
-       on the HP 4600 */
+     *  on modern HP color printers
+     */
     if (pcidh->cspace > pcl_cspace_Colorimetric) {
         pcidh->cspace = pcl_cspace_Colorimetric;
         pcid->len = 6;
     }
-#endif
 
     /* if the device handles color conversion remap the colorimetric color space to rgb */
     if (pl_device_does_color_conversion()
@@ -336,55 +328,6 @@ check_cid_hdr(pcl_state_t * pcs, pcl_cid_data_t * pcid)
         pcid->len = 6;
     }
 
-    return 0;
-}
-
-static int
-substitute_colorimetric_cs(pcl_state_t * pcs, pcl_cid_data_t * pcid)
-{
-    pcl_cid_col_long_t *pcol = &(pcid->u.col);
-    /* it might be desirable to make these partameters for the
-       substitute color space configurable for now they are set here
-       to reasonable values */
-    floatp gamma = 2.2;
-    floatp gain = 1.0;
-    floatp min1 = 0.0;
-    floatp min2 = 0.0;
-    floatp min3 = 0.0;
-    floatp max1 = 1.0;
-    floatp max2 = 1.0;
-    floatp max3 = 1.0;
-
-    /* just override the color space we use the other header values
-       from the old device dependent color space */
-    pcid->original_cspace = pcid->u.hdr.cspace;
-    pcid->u.hdr.cspace = pcl_cspace_Colorimetric;
-    pcid->len = 122;
-
-    pcol->colmet.nonlin[0].gamma = gamma;
-    pcol->colmet.nonlin[0].gain = gain;
-    pcol->colmet.nonlin[1].gamma = gamma;
-    pcol->colmet.nonlin[1].gain = gain;
-    pcol->colmet.nonlin[2].gamma = gamma;
-    pcol->colmet.nonlin[2].gain = gain;
-
-    pcol->minmax.val_range[0].min_val = min1;
-    pcol->minmax.val_range[1].min_val = min2;
-    pcol->minmax.val_range[2].min_val = min3;
-
-    pcol->minmax.val_range[0].max_val = max1;
-    pcol->minmax.val_range[1].max_val = max2;
-    pcol->minmax.val_range[2].max_val = max3;
-
-    /* reasonable chroma values...  These could be paramaterized as well.  */
-    pcol->colmet.chroma[0].x = 0.640f;
-    pcol->colmet.chroma[0].y = 0.340f;  /* red */
-    pcol->colmet.chroma[1].x = 0.310f;
-    pcol->colmet.chroma[1].y = 0.595f;  /* green */
-    pcol->colmet.chroma[2].x = 0.155f;
-    pcol->colmet.chroma[2].y = 0.070f;  /* blue */
-    pcol->colmet.chroma[3].x = 0.313f;
-    pcol->colmet.chroma[3].y = 0.329f;  /* white */
     return 0;
 }
 
