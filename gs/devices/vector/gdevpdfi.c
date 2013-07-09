@@ -338,6 +338,7 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
     bool convert_to_process_colors = false;
     gs_color_space *pcs_device = NULL;
     gs_color_space *pcs_orig = NULL;
+    int BPC_orig = 1, BPC_device = 8;
     pdf_lcvd_t *cvd = NULL;
     bool force_lossless = false;
 
@@ -734,10 +735,12 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
         }
         cos_c_string_value(&cs_value, sname);
         pcs_orig = image[0].pixel.ColorSpace;
+        BPC_orig = image[0].pixel.BitsPerComponent;
         code = make_device_color_space(pdev, pdev->pcm_color_info_index, &pcs_device);
         if (code < 0)
             goto fail;
         image[0].pixel.ColorSpace = pcs_device;
+        image[0].pixel.BitsPerComponent = BPC_device = 8;
     }
     pdev->ParamCompatibilityLevel = pdev->CompatibilityLevel;
 
@@ -781,6 +784,7 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
                                           pmat, pis, true, in_line);
             pdev->params.ColorImage.DownsampleType = saved_downsample;
         } else {
+            if (!convert_to_process_colors)
             code = psdf_setup_image_filters((gx_device_psdf *) pdev,
                                           &pie->writer.binary[0], &image[0].pixel,
                                           pmat, pis, true, in_line);
@@ -794,11 +798,13 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
 
     if (convert_to_process_colors) {
         image[0].pixel.ColorSpace = pcs_orig;
+        image[0].pixel.BitsPerComponent = BPC_orig;
         code = psdf_setup_image_colors_filter(&pie->writer.binary[0],
                     (gx_device_psdf *)pdev, &image[0].pixel, pis);
         if (code < 0)
             goto fail;
         image[0].pixel.ColorSpace = pcs_device;
+        image[0].pixel.BitsPerComponent = BPC_device;
     }
 
     /* See the comment above about reference counting of the colour space */
@@ -807,8 +813,10 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
         code = pdf_make_alt_stream(pdev, &pie->writer.binary[1]);
         if (code)
             goto fail;
-        if (convert_to_process_colors)
+        if (convert_to_process_colors) {
             image[1].pixel.ColorSpace = pcs_device;
+            image[1].pixel.BitsPerComponent = BPC_device;
+        }
         code = psdf_setup_image_filters((gx_device_psdf *) pdev,
                                   &pie->writer.binary[1], &image[1].pixel,
                                   pmat, pis, force_lossless, in_line);
@@ -832,7 +840,12 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
             goto fail;
         }
         else if (convert_to_process_colors) {
+            int Width = image[1].pixel.Width;
+            int Height = image[1].pixel.Height;
             image[1].pixel.ColorSpace = pcs_orig;
+            image[1].pixel.BitsPerComponent = BPC_orig;
+            image[1].pixel.Width = image[0].pixel.Width;
+            image[1].pixel.Height = image[0].pixel.Height;
             code = psdf_setup_image_colors_filter(&pie->writer.binary[1],
                     (gx_device_psdf *)pdev, &image[1].pixel, pis);
             if (code < 0) {
@@ -840,7 +853,10 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
                     rc_decrement_only_cs(pim->ColorSpace, "psdf_setup_image_filters");
                 goto fail;
             }
+            image[1].pixel.Width = Width;
+            image[1].pixel.Height = Height;
             image[1].pixel.ColorSpace = pcs_device;
+            image[1].pixel.BitsPerComponent = BPC_device;
         }
     }
     if (image[1].pixel.ColorSpace == pim->ColorSpace)
