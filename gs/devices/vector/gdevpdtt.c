@@ -2466,9 +2466,12 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
             return code;
 
         code = pdf_prepare_stroke(pdev, pis);
-        if (code >= 0)
+        if (code >= 0) {
             code = gdev_vector_prepare_stroke((gx_device_vector *)pdev,
                                               pis, NULL, NULL, 1);
+            if (code < 0)
+                return code;
+        }
 
         code = pdf_open_contents(pdev, PDF_IN_STRING);
         if (code < 0)
