@@ -588,6 +588,15 @@ end readonly def
     pdfformaterror
     ET
   } if
+
+  % If we are in a W/W* "context", pack away the dictionary
+  % into a temporary place, and pop it off the dict stack
+  currentdict /n known {
+    currentdict end
+    /.W exch def
+    currentdict /n known == flush
+  } if
+
   currentdict /TextLineMatrix .knownget
     { identmatrix pop TextMatrix identmatrix pop }
     { matrix /TextLineMatrix gput matrix /TextMatrix gput }
@@ -603,6 +612,14 @@ end readonly def
     TextRenderingMode 4 ge { .currentfilladjust 0 .setfilladjust clip newpath .setfilladjust} if
     TextSaveMatrix setmatrix
     currentdict /TextSaveMatrix undef
+
+    % if we were in a W/W* context, grab the dict, undefine temp entry for it,
+    % and push it back on the dict stack
+    currentdict /.W known {
+      .W
+      currentdict /.W undef
+      begin
+    } if
   } {
      (   **** Ignoring spurious ET operator.\n)
      pdfformaterror
