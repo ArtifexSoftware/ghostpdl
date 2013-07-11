@@ -2785,6 +2785,26 @@ ignore a request to print multiple copies, giving more consistent
 behaviour.
 </dl>
 
+<h4><a name="Deferred Page  Rendering"></a>Deferred Page Rendering</h4>
+<dl>
+<dd>Raster printers and image formats that can use the "command list" (clist)
+to store a representation of the page prior to rendering can use the
+<code>--saved-pages=</code><em>string</em> on the command line for
+deferred rendering of pages.
+<p>
+Pages that are <em>saved</em> instead of printed are retained until the
+list of saved pages is emptied by the <code>flush</code> command of the
+<code>saved-pages=</code> command string.
+<p>
+Pages can be printed in reverse or normal order, or selected pages,
+including all even or all odd, and multiple collated copies can be produced.
+Since pages are saved until the <code>flush</code> command, pages can be
+printed multiple times, in any order.
+<p>
+Refer to the <a href="SavedPages.htm">SavedPages</a> document for
+details.
+</dl>
+
 <h4><a name="EPS_parameters"></a>EPS parameters</h4>
 
 <dl>

@@ -28,7 +28,7 @@ prn_planar_dev_spec_op(gx_device *pdev, int dev_spec_op,
 
     if (dev_spec_op == gxdso_is_native_planar)
         return dev->color_info.depth / dev->color_info.num_components;
-    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
+    return gdev_prn_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
 /* Set the buf_procs in a printer device to planar mode. */

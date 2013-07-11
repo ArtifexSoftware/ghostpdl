@@ -33,6 +33,9 @@
 #include "gp.h"
 #include "gsdevice.h"
 #include "gxdevice.h"
+#include "gxdevsop.h"       /* for gxdso_* */
+#include "gxclpage.h"
+#include "gdevprn.h"
 #include "gsparam.h"
 #include "gslib.h"
 #include "pjtop.h"
@@ -528,7 +531,18 @@ pl_main_aux(int argc, char *argv[], void *disp)
     }
 
     /* ----- End Main loop ----- */
+#ifndef OMIT_SAVED_PAGES_TEST
+    /* If we were accumulating saved-pages, print them now */
+    if (inst.saved_pages_test_mode) {
+        gx_device *pdev = inst.device;
 
+        if (gx_saved_pages_param_process((gx_device_printer *)pdev,
+                                  (byte *)"print normal flush", 18) < 0) {
+            errprintf(mem, "Unable to print saved-pages.\n");
+            return -1;
+        }
+     }
+#endif /* OMIT_SAVED_PAGES_TEST */
     /* Dnit PDLs */
     if (pl_main_universe_dnit(&universe, err_buf)) {
         errprintf(mem, "%s", err_buf);
@@ -839,6 +853,9 @@ pl_main_init_instance(pl_main_instance_t * pti, gs_memory_t * mem)
     pti->page_set_on_command_line = false;
     pti->res_set_on_command_line = false;
     pti->high_level_device = false;
+#ifndef OMIT_SAVED_PAGES_TEST
+    pti->saved_pages_test_mode = false;
+#endif
     pti->piccdir = NULL;
     pti->pdefault_gray_icc = NULL;
     pti->pdefault_rgb_icc = NULL;
@@ -927,6 +944,54 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 } else if (strncmp(arg, "debug=", 6) == 0) {
                     gs_debug_flags_parse(pmi->memory, arg + 6);
                     break;
+                } else if (strncmp(arg, "saved-pages=", 12) == 0) {
+                    gx_device *pdev = pmi->device;
+                    gx_device_printer *ppdev = pdev;
+
+                    /* open the device if not yet open */
+                    if (pdev->is_open == 0 && (code = gs_opendevice(pdev)) < 0) {
+                        return code;
+                    }
+                    if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) == 0) {
+                        errprintf("   --saved-pages not supported by the '%s' device.\n",
+                                  pdev->dname);
+                        return -1;
+                    }
+                    code = gx_saved_pages_param_process(ppdev, arg+12, strlen(arg+12));
+                    if (code >= 0 && ppdev->saved_pages_list == NULL && !PRINTER_IS_CLIST(ppdev)) {
+                        /* If no longer in saved-pages-mode, and no longer in clist mode, erase the page */
+                        gx_color_index color;
+                        gx_color_value rgb_white[3] = { 65535, 65535, 65535 };
+                        gx_color_value cmyk_white[4] = { 0, 0, 0, 0 };
+
+                        if (pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+                            color = dev_proc(pdev, map_rgb_color)(pdev, rgb_white);
+                        else
+                            color = dev_proc(pdev, map_cmyk_color)(pdev, cmyk_white);
+                        code = dev_proc(pdev, fill_rectangle)(pdev, 0, 0, pdev->width, pdev->height, color);
+                    }
+                    if (code < 0)
+                        return code;
+                    break;
+#ifndef OMIT_SAVED_PAGES_TEST
+                /* The following code is only to allow regression testing of saved-pages */
+                } else if (strncmp(arg, "saved-pages-test", 16) == 0) {
+                    gx_device *pdev = pmi->device;
+
+                    if ((code = gs_opendevice(pdev)) < 0)
+                        return code;
+
+                    if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) == 0) {
+                        errprintf("   --saved-pages-test not supported by the '%s' device.\n",
+                                  pdev->dname);
+                        break;			/* just ignore it */
+                    }
+                    code = gx_saved_pages_param_process((gx_device_printer *)pdev, (byte *)"begin", 5);
+                    if (code < 0)
+                        return code;
+                    pmi->saved_pages_test_mode = true;
+                    break;
+#endif /* OMIT_SAVED_PAGES_TEST */
                 }
                 /* FALLTHROUGH */
             default:

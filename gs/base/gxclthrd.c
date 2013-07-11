@@ -177,7 +177,7 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
         /* since this probably was created with a GC'ed allocator and the bg_print */
         /* thread can't deal with the relocation. Free the cdev->icc_table and get */
         /* a new one from the clist.                                               */
-        clist_icc_freetable(cdev->icc_table, cdev->memory);
+        clist_free_icc_table(cdev->icc_table, cdev->memory);
         cdev->icc_table = NULL;
         if ((code = clist_read_icctable((gx_device_clist_reader *)ncdev)) < 0)
             goto out_cleanup;
@@ -367,7 +367,8 @@ teardown_device_and_mem_for_thread(gx_device *dev, gp_thread_id thread_id, bool 
         thread_crdev->color_usage_array = NULL;
         clist_teardown_render_threads(dev);	/* we may have used multiple threads */
         /* free the thread's icc_table since this was not done by clist_finish_page */
-        clist_icc_freetable(thread_crdev->icc_table, thread_memory);
+        clist_free_icc_table(thread_crdev->icc_table, thread_memory);
+        thread_crdev->icc_table = NULL;
         rc_decrement(thread_crdev->icc_cache_cl, "teardown_render_thread");
      }
      /*
@@ -403,11 +404,10 @@ clist_teardown_render_threads(gx_device *dev)
     gx_device_clist *cldev = (gx_device_clist *)dev;
     gx_device_clist_common *cdev = (gx_device_clist_common *)dev;
     gx_device_clist_reader *crdev = &cldev->reader;
-    gs_memory_t *mem = cdev->bandlist_memory, *chunk_base_mem;
+    gs_memory_t *mem = cdev->bandlist_memory;
     int i;
 
     if (crdev->render_threads != NULL) {
-        chunk_base_mem = gs_memory_chunk_target(crdev->render_threads[0].memory);
         /* Wait for each thread to finish then free its memory */
         for (i = (crdev->num_render_threads - 1); i >= 0; i--) {
             clist_render_thread_control_t *thread = &(crdev->render_threads[i]);

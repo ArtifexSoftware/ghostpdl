@@ -75,9 +75,20 @@ typedef struct gs_pattern1_instance_s gs_pattern1_instance_t;
  */
 typedef struct gx_saved_page_s {
     char dname[32];		/* device name for checking */
-    gx_device_color_info color_info;
-    gx_band_page_info_t info;
-    int num_copies;
+    gx_device_color_info color_info;	/* also for checking */
+    /* Elements from gx_band_page_info that we need */
+    char cfname[gp_file_name_sizeof];	/* command file name */
+    char bfname[gp_file_name_sizeof];	/* block file name */
+    const clist_io_procs_t *io_procs;
+    uint tile_cache_size;	/* size of tile cache */
+    int64_t bfile_end_pos;		/* ftell at end of bfile */
+    gx_band_params_t band_params;  /* parameters used when writing band list */
+                                /* (actual values, no 0s) */
+    gs_memory_t *mem;		/* allocator for paramlist */
+    /* device params are expected to include info to set the icc_struct and the devn_params */
+    /* as well as color_info (if it is able to change as the 'bit' devices can).            */
+    int paramlist_len;
+    byte *paramlist;		/* serialized device param list */
 } gx_saved_page;
 
 /*
@@ -176,8 +187,8 @@ typedef struct gx_clist_state_s gx_clist_state;
         gx_band_params_t band_params;	/* band buffering parameters */\
         bool do_not_open_or_close_bandfiles;	/* if true, do not open/close bandfiles */\
         bool page_uses_transparency;	/* if true then page uses PDF 1.4 transparency */\
-        int is_planar;                  /* if non zero then we have a planar device
-                                         * with is_planar bits per component. */\
+        int is_planar;                  /* if non zero then we have a planar device */\
+                                        /* with is_planar bits per component. */\
                 /* Following are used for both writing and reading. */\
         gx_bits_cache_chunk chunk;	/* the only chunk of bits */\
         gx_bits_cache bits;\
@@ -526,7 +537,7 @@ int clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode,
                        cmm_profile_t *icc_profile);
 
 /* Free the table and its entries */
-int clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory);
+int clist_free_icc_table(clist_icctable_t *icc_table, gs_memory_t *memory);
 
 /* Generic read function used with ICC and could be used with others.
    A different of this and clist_get_data is that here we reset the

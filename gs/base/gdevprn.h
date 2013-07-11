@@ -30,6 +30,7 @@
 #include "gxdevmem.h"
 #include "gxclist.h"
 #include "gxclthrd.h"		/* for background printing */
+#include "gxclpage.h"		/* for saved_pages */
 #include "gxrplane.h"
 #include "gsparam.h"
 
@@ -265,6 +266,7 @@ typedef struct bg_print_s {
         bool bg_print_requested;	/* request background printing of page from clist */\
         bg_print_t bg_print;            /* background printing data shared with thread */\
         int num_render_threads_requested;	/* for multiple band rendering threads */\
+        gx_saved_pages_list *saved_pages_list;	/* list when we are saving pages instead of printing */\
         gx_device_procs save_procs_while_delaying_erasepage;	/* save device procs while delaying erasepage. */\
         gx_device_procs orig_procs	/* original (std_)procs */
 
@@ -297,6 +299,7 @@ dev_proc_close_device(gdev_prn_close);
 #define gdev_prn_map_color_rgb gx_default_b_w_map_color_rgb
 dev_proc_get_params(gdev_prn_get_params);
 dev_proc_put_params(gdev_prn_put_params);
+dev_proc_dev_spec_op(gdev_prn_dev_spec_op);
 
 /* Default printer-specific procedures */
 /* VMS limits procedure names to 31 characters. */
@@ -386,7 +389,7 @@ prn_dev_proc_buffer_page(gx_default_buffer_page); /* returns an error */
         NULL,  /* push_transparency_state */\
         NULL,  /* pop_transparency_state */\
         NULL,  /* put_image */\
-        NULL,  /* dev_spec_op */\
+        gdev_prn_dev_spec_op,  /* dev_spec_op */\
         NULL,  /* copy plane */\
         gx_default_get_profile, /* get_profile */\
         gx_default_set_graphics_type_tag /* set_graphics_type_tag */\
@@ -438,11 +441,21 @@ extern const gx_device_procs prn_bg_procs;
         0/*false*/,	/* ReopenPerPage */\
         0/*false*/,	/* page_uses_transparency */\
         0/*false*/, duplex_set,	/* Duplex[_set] */\
-        0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
-        0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\
+        0/*false*/,	/* file_is_new */\
+        0,	        /* *file */\
+        0,		/* buffer_space */\
+        0,		/* *buf */\
+        0,		/* *buffer_memory */\
+        0,		/* *bandlist_memory */\
+        0,		/* *free_up_bandlist_memory */\
+        0,		/* *page_queue; */\
+        0/*false*/,	/* is_async_renderer */\
+        0,		/* *async_renderer */\
+        0,		/* clist_disable_mask */\
         0/*false*/,	/* bg_print_requested */\
         {  0/*sema*/, 0/*device*/, 0/*thread_id*/, 0/*num_copies*/, 0/*return_code*/ }, /* bg_print */\
         0, 		/* num_render_threads_requested */\
+        0,              /* saved_pages_list */\
         { 0 },	/* save_procs_while_delaying_erasepage */\
         { 0 }	/* ... orig_procs */
 #define prn_device_body_rest_(print_page)\

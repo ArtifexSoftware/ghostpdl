@@ -74,13 +74,12 @@ struct gs_main_instance_s {
                                 /* Get next 'unicode' codepoint (in
                                  * GS_NO_UTF8 builds, these will actually
                                  * just be 8 bit clean values). */
-#if 1
-    /* needs to be removed */
     display_callback *display;	/* callback structure for display device */
-#endif
-
     /* The following are updated dynamically. */
     i_ctx_t *i_ctx_p;		/* current interpreter context state */
+#ifndef OMIT_SAVED_PAGES_TEST
+    bool saved_pages_test_mode;	/* for regression testing of saved-pages */
+#endif
 };
 
 /*
@@ -88,7 +87,9 @@ struct gs_main_instance_s {
  * must include gconfig.h, because of SEARCH_HERE_FIRST.
  */
 #define gs_main_instance_default_init_values\
-  0, 20000, 0, 0, -1, 0, SEARCH_HERE_FIRST, 1
+  0/* heap */, 20000/* chunk_size */, 0/* name_table_size */, 0/* run_buffer_size */,\
+  -1/* init_done */, 0/* user_errors */, SEARCH_HERE_FIRST/* duh */, 1/* run_start */,
+
 extern const gs_main_instance gs_main_instance_init_values;
 
 #endif /* iminst_INCLUDED */

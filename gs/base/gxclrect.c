@@ -24,6 +24,8 @@
 #include "gxclpath.h"
 #include "gxdevsop.h"
 
+extern dev_proc_dev_spec_op(gdev_prn_dev_spec_op);
+
 /* ---------------- Writing utilities ---------------- */
 
 #define cmd_set_rect(rect)\
@@ -601,8 +603,6 @@ clist_fill_linear_color_triangle(gx_device * dev, const gs_fill_attributes *fa,
 int
 clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
 {
-    gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)data;
-    gx_bitmap_id id = (gx_bitmap_id)size;
     gx_device_clist_common * const cdev = &((gx_device_clist *)pdev)->common;
 
     if (dev_spec_op == gxdso_pattern_handles_clip_path)
@@ -621,7 +621,8 @@ clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
             return 0;
         }
     }
-    return gx_default_dev_spec_op(pdev, dev_spec_op, pinst, id);
+    /* forward to our super class */
+    return gdev_prn_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
 #define dev_proc_pattern_manage(proc)\

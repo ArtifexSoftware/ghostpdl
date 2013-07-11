@@ -1275,8 +1275,10 @@ nce:
         ecode = code;
     if ((code = param_check_int(plist, "GrayValues", GrayValues, true)) < 0)
         ecode = code;
-    if ((code = param_check_long(plist, "PageCount", dev->PageCount, true)) < 0)
-        ecode = code;
+
+    /* with saved-pages, PageCount can't be checked. No harm in letting it change */
+    IGNORE_INT_PARAM("PageCount")
+
     if ((code = param_check_int(plist, "RedValues", RGBValues, true)) < 0)
         ecode = code;
     if ((code = param_check_int(plist, "GreenValues", RGBValues, true)) < 0)
@@ -1437,7 +1439,8 @@ nce:
     code = gx_default_put_graydetection(graydetection, dev);
     if (code < 0)
         return code;
-    return gx_default_put_prebandthreshold(prebandthreshold, dev);}
+    return gx_default_put_prebandthreshold(prebandthreshold, dev);
+}
 
 void
 gx_device_request_leadingedge(gx_device *dev, int le_req)

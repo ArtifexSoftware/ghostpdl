@@ -58,7 +58,9 @@ typedef struct pl_main_instance_s
     bool page_set_on_command_line;
     bool res_set_on_command_line;
     bool high_level_device;
-
+#ifndef OMIT_SAVED_PAGES_TEST
+    bool saved_pages_test_mode;
+#endif
     /* we have to store these in the main instance until the languages
        state is sufficiently initialized to set the parameters. */
     char *piccdir;

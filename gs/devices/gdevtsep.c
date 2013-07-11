@@ -1140,8 +1140,9 @@ tiffseps_output_page(gx_device *pdev, int num_copies, int flush)
         /* Print the accumulated page description. */
         outcode = (*ppdev->printer_procs.print_page_copies)(ppdev, ppdev->file, num_copies);
     }
-    endcode = (ppdev->buffer_space && !ppdev->is_async_renderer ?
-               clist_finish_page(pdev, flush) : 0);
+    endcode = (PRINTER_IS_CLIST(ppdev) &&
+              !((gx_device_clist_common *)ppdev)->do_not_open_or_close_bandfiles ?
+              clist_finish_page(pdev, flush) : 0);
 
     if (outcode < 0)
         return (outcode);

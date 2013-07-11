@@ -233,7 +233,7 @@ enum {
      *      data = NULL
      *      size = 0
      * Returns 1 if the device supports devicen colors.  example tiffsep.
-     */    
+     */
     gxdso_supports_devn,
     /* gxdso_supports_hlcolor:
      * for devices that can handle pattern and other high level structures
@@ -260,7 +260,11 @@ enum {
      * (eg pdfwrite) we can't deal with this. return '0' if the device
      * doesn't care if the palette changes, and 1 if it does.
      */
-     gxdso_needs_invariant_palette,
+    gxdso_needs_invariant_palette,
+    /* gxdso_supports_saved_pages:
+     * gx_device_printer devices can support this saving pages as clist
+     */
+    gxdso_supports_saved_pages,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

@@ -86,12 +86,12 @@ pcx2up_print_page(gx_device_printer * pdev, FILE * file)
 
     if (!pdev2->have_odd_page) {	/* This is the odd page, just save it. */
         pdev2->have_odd_page = true;
-        return gdev_prn_save_page(pdev, &pdev2->odd_page, 1);
+        return gdev_prn_save_page(pdev, &pdev2->odd_page);
     } else {			/* This is the even page, do 2-up output. */
         gx_saved_page even_page;
         gx_placed_page pages[2];
         int x_offset = (int)(pdev->HWResolution[0] * 0.5);
-        int code = gdev_prn_save_page(pdev, &even_page, 1);
+        int code = gdev_prn_save_page(pdev, &even_page);
         int prdev_size = prdev_template->params_size;
         gx_device_printer *prdev;
 
@@ -120,7 +120,7 @@ pcx2up_print_page(gx_device_printer * pdev, FILE * file)
         prdev->printer_procs.print_page =
             gs_pcx256_device.printer_procs.print_page;
         prdev->space_params.band =
-            pages[0].page->info.band_params;	/* either one will do */
+            pages[0].page->band_params;		/* either one will do */
         prdev->space_params.MaxBitmap = 0;
         prdev->space_params.BufferSpace =
             prdev->space_params.band.BandBufferSpace;

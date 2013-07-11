@@ -329,7 +329,8 @@ $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(string__h)\
  $(gsmemory_h) $(plalloc_h) $(gsmalloc_h) $(gsmchunk_h) $(gsstruct_h) $(gxalloc_h)\
  $(gsalloc_h) $(gsargs_h) $(gp_h) $(gsdevice_h) $(gslib_h) $(gslibctx_h)\
  $(gxdevice_h) $(gsparam_h) $(pjtop_h) $(plapi_h) $(plparse_h) $(plplatf_h)\
- $(plmain_h) $(pltop_h) $(pltoputl_h) $(gsargs_h) $(dwtrace_h) $(vdtrace_h)
+ $(plmain_h) $(pltop_h) $(pltoputl_h) $(gsargs_h) $(dwtrace_h) $(vdtrace_h)\
+ $(gxclpage_h) $(gdevprn_h)
 	$(PLCCC) $(PLSRC)plmain.c $(PLO_)plmain.$(OBJ)
 
 # Real top level; provides main that just calls pl_main

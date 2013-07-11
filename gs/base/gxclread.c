@@ -383,25 +383,42 @@ static int
 clist_find_pseudoband(gx_device_clist_reader *crdev, int band, cmd_block *cb)
 {
 
-    clist_file_ptr bfile = crdev->page_info.bfile;
-    int64_t save_pos = crdev->page_info.bfile_end_pos;
+    gx_band_page_info_t *page_info = &(crdev->page_info);
+    clist_file_ptr bfile = page_info->bfile;
+    int64_t save_pos = page_info->bfile_end_pos;
     int64_t start_pos;
+    int code;
 
+    if (bfile == NULL) {
+        /* files haven't been opened yet. Do it now */
+        char fmode[4];
+
+        strcpy(fmode, "r");
+        strncat(fmode, gp_fmode_binary_suffix, 1);
+        if ((code=page_info->io_procs->fopen(page_info->cfname, fmode,
+                            &page_info->cfile,
+                            crdev->memory, crdev->memory, true)) < 0 ||
+             (code=page_info->io_procs->fopen(page_info->bfname, fmode,
+                            &page_info->bfile,
+                            crdev->memory, crdev->memory, false)) < 0)
+            return code;
+            bfile = page_info->bfile;
+    }
     /* Go to the start of the last command block */
-    start_pos = crdev->page_info.bfile_end_pos - sizeof(cmd_block);
-    crdev->page_info.io_procs->fseek(bfile, start_pos, SEEK_SET, crdev->page_info.bfname);
+    start_pos = page_info->bfile_end_pos - sizeof(cmd_block);
+    page_info->io_procs->fseek(bfile, start_pos, SEEK_SET, page_info->bfname);
     while( 1 ) {
-        crdev->page_info.io_procs->fread_chars(cb, sizeof(cmd_block), bfile);
+        page_info->io_procs->fread_chars(cb, sizeof(cmd_block), bfile);
         if (cb->band_max == band && cb->band_min == band) {
-            crdev->page_info.io_procs->fseek(bfile, save_pos, SEEK_SET, crdev->page_info.bfname);
+            page_info->io_procs->fseek(bfile, save_pos, SEEK_SET, page_info->bfname);
             return(0);  /* Found it */
         }
         start_pos -= sizeof(cmd_block);
         if (start_pos < 0) {
-           crdev->page_info.io_procs->fseek(bfile, save_pos, SEEK_SET, crdev->page_info.bfname);
+           page_info->io_procs->fseek(bfile, save_pos, SEEK_SET, page_info->bfname);
            return(-1);  /* Did not find it before getting into other stuff in normal bands */
         }
-        crdev->page_info.io_procs->fseek(bfile, start_pos, SEEK_SET, crdev->page_info.bfname);
+        page_info->io_procs->fseek(bfile, start_pos, SEEK_SET, page_info->bfname);
     }
 }
 
@@ -536,9 +553,9 @@ clist_render_init(gx_device_clist *dev)
 
     crdev->ymin = crdev->ymax = 0;
     crdev->yplane.index = -1;
-    /* For normal rasterizing, pages and num_pages are zero. */
+    /* For normal rasterizing, pages and num_pages is 1. */
     crdev->pages = 0;
-    crdev->num_pages = 0;
+    crdev->num_pages = 1;		/* always at least one page */
     crdev->offset_map = NULL;
     crdev->icc_table = NULL;
     crdev->color_usage_array = NULL;
@@ -756,8 +773,8 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
     int band_height = crdev->page_band_height;
     int band_first = prect->p.y / band_height;
     int band_last = (prect->q.y - 1) / band_height;
-    gx_saved_page current_page;
-    gx_placed_page placed_page;
+    gx_band_page_info_t *pinfo;
+    gx_band_page_info_t page_info;
     int code = 0;
     int i;
     bool save_pageneutralcolor;
@@ -768,49 +785,59 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
         crdev->yplane.index = -1;
     if_debug2m('l', bdev->memory, "[l]rendering bands (%d,%d)\n", band_first, band_last);
 
-    /*
-     * If we aren't rendering saved pages, do the current one.
-     * Note that this is the only case in which we may encounter
-     * a gx_saved_page with non-zero cfile or bfile.
-     */
     ppages = crdev->pages;
-    if (ppages == 0) {
-        current_page.info = crdev->page_info;
-        placed_page.page = &current_page;
-        placed_page.offset.x = placed_page.offset.y = 0;
-        ppages = &placed_page;
-        num_pages = 1;
-    }
+
     /* Before playing back the clist, make sure that the gray detection is disabled */
     /* so we don't slow down the rendering (primarily high level images).           */
     save_pageneutralcolor = crdev->icc_struct->pageneutralcolor;
     crdev->icc_struct->pageneutralcolor = false;
 
     for (i = 0; i < num_pages && code >= 0; ++i) {
-        const gx_placed_page *ppage = &ppages[i];
+        if (ppages == NULL) {
+                /*
+                 * If we aren't rendering saved pages, do the current one.
+                 * Note that this is the only case in which we may encounter
+                 * a gx_saved_page with non-zero cfile or bfile.
+                 */
+                bdev->band_offset_x = 0;
+                bdev->band_offset_y = band_first * band_height;
+                pinfo = &(crdev->page_info);
+        } else {
+            const gx_placed_page *ppage = &ppages[i];
 
-        /*
-         * Set the band_offset_? values in case the buffer device
-         * needs this. Example, a device may need to adjust the
-         * phase of the dithering based on the page position, NOT
-         * the position within the band buffer to avoid band stitch
-         * lines in the dither pattern. The old wtsimdi device did this
-         *
-         * The band_offset_x is not important for placed pages that
-         * are nested on a 'master' page (imposition) since each
-         * page expects to be dithered independently, but setting
-         * this allows pages to be contiguous without a dithering
-         * shift.
-         *
-         * The following sets the band_offset_? relative to the
-         * master page.
-         */
-        bdev->band_offset_x = ppage->offset.x;
-        bdev->band_offset_y = ppage->offset.y + (band_first * band_height);
+            /* Store the page information. */
+            page_info.cfile = page_info.bfile = NULL;
+            strncpy(page_info.cfname, ppage->page->cfname, sizeof(page_info.cfname));
+            strncpy(page_info.bfname, ppage->page->bfname, sizeof(page_info.bfname));
+            page_info.io_procs = ppage->page->io_procs;
+            page_info.tile_cache_size = ppage->page->tile_cache_size;
+            page_info.bfile_end_pos = ppage->page->bfile_end_pos;
+            page_info.band_params = ppage->page->band_params;
+            pinfo = &page_info;
+
+            /*
+             * Set the band_offset_? values in case the buffer device
+             * needs this. Example, a device may need to adjust the
+             * phase of the dithering based on the page position, NOT
+             * the position within the band buffer to avoid band stitch
+             * lines in the dither pattern. The old wtsimdi device did this
+             *
+             * The band_offset_x is not important for placed pages that
+             * are nested on a 'master' page (imposition) since each
+             * page expects to be dithered independently, but setting
+             * this allows pages to be contiguous without a dithering
+             * shift.
+             *
+             * The following sets the band_offset_? relative to the
+             * master page.
+             */
+            bdev->band_offset_x = ppage->offset.x;
+            bdev->band_offset_y = ppage->offset.y + (band_first * band_height);
+        }
         code = clist_playback_file_bands(playback_action_render,
-                                         crdev, &ppage->page->info,
+                                         crdev, pinfo,
                                          bdev, band_first, band_last,
-                                         prect->p.x - ppage->offset.x,
+                                         prect->p.x - bdev->band_offset_x,
                                          prect->p.y);
     }
     crdev->icc_struct->pageneutralcolor = save_pageneutralcolor;	/* restore it */

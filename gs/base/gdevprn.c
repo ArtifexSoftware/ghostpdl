@@ -20,6 +20,7 @@
 #include "gp.h"
 #include "gdevdevn.h"           /* for gs_devn_params_s */
 #include "gsdevice.h"		/* for gs_deviceinitialmatrix */
+#include "gxdevsop.h"		/* for gxdso_* */
 #include "gsfname.h"
 #include "gsparam.h"
 #include "gxclio.h"
@@ -130,7 +131,20 @@ gdev_prn_close(gx_device * pdev)
         code = gx_device_close_output_file(pdev, ppdev->fname, ppdev->file);
         ppdev->file = NULL;
     }
+    if (ppdev->saved_pages_list != NULL) {
+        gx_saved_pages_list_free(ppdev->saved_pages_list);
+        ppdev->saved_pages_list = NULL;
+    }
     return code;
+}
+
+int
+gdev_prn_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
+{
+    if (dev_spec_op == gxdso_supports_saved_pages)
+        return 1;
+
+    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
 static int		/* returns 0 ok, else -ve error cde */
@@ -181,7 +195,8 @@ open_c:
     clist_init_io_procs(pclist_dev, ppdev->BLS_force_memory);
     clist_init_params(pclist_dev, base, space, pdev,
                       ppdev->printer_procs.buf_procs,
-                      space_params->band, ppdev->is_async_renderer,
+                      space_params->band,
+                      false, /* do_not_open_or_close_bandfiles */
                       (ppdev->bandlist_memory == 0 ? pdev->memory->non_gc_memory:
                        ppdev->bandlist_memory),
                       ppdev->free_up_bandlist_memory,
@@ -350,6 +365,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
             is_command_list = save_is_command_list;
         else {
             is_command_list = space_params.banding_type == BandingAlways ||
+                ppdev->saved_pages_list != NULL ||
                 mem_space >= space_params.MaxBitmap ||
                 !size_ok;	    /* too big to allocate */
         }
@@ -538,6 +554,7 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
     int code = gx_default_get_params(pdev, plist);
     gs_param_string ofns;
     gs_param_string bls;
+    gs_param_string saved_pages;
 
     if (code < 0 ||
         (code = param_write_long(plist, "BandBufferSpace", &ppdev->space_params.band.BandBufferSpace)) < 0 ||
@@ -575,7 +592,15 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
     ofns.data = (const byte *)ppdev->fname,
         ofns.size = strlen(ppdev->fname),
         ofns.persistent = false;
-    return param_write_string(plist, "OutputFile", &ofns);
+    if ((code = param_write_string(plist, "OutputFile", &ofns)) < 0)
+        return code;
+
+    /* Always return an empty string for saved-pages so that get_params followed */
+    /* by put_params will have no effect.                                       */
+    saved_pages.data = (const byte *)"";
+    saved_pages.size = 0;
+    saved_pages.persistent = false;
+    return param_write_string(plist, "saved-pages", &saved_pages);
 }
 
 /* Validate an OutputFile name by checking any %-formats. */
@@ -612,7 +637,9 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     gs_param_string ofs;
     gs_param_string bls;
     gs_param_dict mdict;
+    gs_param_string saved_pages;
 
+    saved_pages.size = 0;
     sp = ppdev->space_params;
     save_sp = sp;
 
@@ -766,6 +793,16 @@ label:\
             break;
     }
 
+    switch (code = param_read_string(plist, (param_name = "saved-pages"),
+                                                        &saved_pages)) {
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 0:
+        case 1:
+            break;
+    }
+
 
     if (ecode < 0)
         return ecode;
@@ -794,7 +831,7 @@ label:\
     /* Formerly, would not reallocate if device is not open: */
     /* we had to patch this out (see News for 5.50). */
     code = gdev_prn_maybe_realloc_memory(ppdev, &save_sp, width, height,
-                                                old_page_uses_transparency);
+                                         old_page_uses_transparency);
     if (code < 0)
         return code;
 
@@ -821,6 +858,13 @@ label:\
         if (code < 0)
             return code;
     }
+
+    /* Processing the saved_pages string MAY have side effects, such as printing, */
+    /* allocating or freeing a list. This is (sort of) a write-only parameter, so */
+    /* the get_params will always return an empty string (a no-op action).        */
+    if (saved_pages.data != 0 && saved_pages.size != 0) {
+        return gx_saved_pages_param_process(ppdev, (byte *)saved_pages.data, saved_pages.size);
+    }
     return 0;
 }
 
@@ -838,6 +882,8 @@ gx_default_get_space_params(const gx_device_printer *printer_dev,
 /* If seekable is true, then the printer outputfile must be seekable.            */
 /* If bg_print_ok is true, the device print_page_copies is compatible with the   */
 /* background printing, i.e., thread safe and does not change the device.        */
+/* If the printer device is in 'saved_pages' mode, then background printing is   */
+/* irrelevant and is ignored. In this case, pages are saved to the list.         */
 static int	/* 0 ok, -ve error, or 1 if successfully upgraded to buffer_page */
 gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seekable, bool bg_print_ok)
 {
@@ -861,7 +907,13 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
              ) {
             upgraded_copypage = true;
             flush = true;
-        } else if (num_copies > 0) {
+
+        } else if (num_copies > 0 && ppdev->saved_pages_list != NULL) {
+            /* We are putting pages on a list */
+            if ((code = gx_saved_pages_list_add(ppdev)) < 0)
+                return code;
+
+        } else if (num_copies > 0) {	/* && pdev->saved_pages_list == NULL */
             int threads_enabled = 0;
             int print_foreground = 1;		/* default to foreground printing */
 
@@ -881,9 +933,7 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
             while (ppdev->bg_print_requested && threads_enabled) {
                 gx_device *ndev;
                 gx_device_printer *npdev;
-                gx_device_clist_reader *ncrdev;
                 gx_device_clist_reader *crdev = (gx_device_clist_reader *)ppdev;
-                gs_devn_params *pdevn_params;
 
                 if ((code = clist_close_writer_and_init_reader((gx_device_clist *)ppdev)) < 0)
                     /* should not happen -- do foreground print */
@@ -900,7 +950,6 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                 ppdev->bg_print.device = ndev;
                 ppdev->bg_print.num_copies = num_copies;
                 npdev = (gx_device_printer *)ndev;
-                ncrdev = (gx_device_clist_reader *)ndev;
                 npdev->bg_print_requested = 0;
                 npdev->num_render_threads_requested = ppdev->num_render_threads_requested;
 
@@ -954,8 +1003,9 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
         free_separation_names(pdev->memory, &(pdevn_params->separations));
         pdevn_params->num_separation_order_names = 0;
     }
-    endcode = (PRINTER_IS_CLIST(ppdev) && !ppdev->is_async_renderer ?
-               clist_finish_page(pdev, flush) : 0);
+    endcode = (PRINTER_IS_CLIST(ppdev) &&
+              !((gx_device_clist_common *)ppdev)->do_not_open_or_close_bandfiles ?
+              clist_finish_page(pdev, flush) : 0);
 
     if (outcode < 0)
         return outcode;
@@ -1291,6 +1341,15 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
         /* The following is a special hack for setting up printer devices. */
         assign_dev_procs(mdev, mdproto);
         check_device_separable((gx_device *)mdev);
+        /* In order for saved-pages to work, we need to hook the dev_spec_op */
+        if (mdev->procs.dev_spec_op == NULL)
+            set_dev_proc(mdev, dev_spec_op, gdev_prn_dev_spec_op);
+#ifdef DEBUG
+        /* scanning sources didn't show anything, but if a device gets changed or added */
+        /* that has its own dev_spec_op, it should call the gdev_prn_spec_op as well    */
+        else
+            errprintf(mdev->memory, "Warning: printer device has private dev_spec_op\n");
+#endif
         gx_device_fill_in_procs((gx_device *)mdev);
     } else {
         gs_make_mem_device(mdev, mdproto, mem, (color_usage == NULL ? 1 : 0),

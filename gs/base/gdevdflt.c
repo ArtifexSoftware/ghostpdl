@@ -929,6 +929,7 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         case gxdso_is_native_planar:
         case gxdso_supports_devn:
         case gxdso_supports_hlcolor:
+        case gxdso_supports_saved_pages:
         case gxdso_needs_invariant_palette:
             return 0;
         case gxdso_pattern_shfill_doesnt_need_path:

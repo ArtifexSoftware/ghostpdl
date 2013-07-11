@@ -1856,7 +1856,7 @@ $(PSOBJ)imainarg.$(OBJ) : $(PSSRC)imainarg.c $(GH)\
  $(ctype__h) $(memory__h) $(string__h)\
  $(gp_h)\
  $(gsargs_h) $(gscdefs_h) $(gsdevice_h) $(gsmalloc_h) $(gsmdebug_h)\
- $(gxdevice_h) $(gxdevmem_h)\
+ $(gxclpage_h) $(gdevprn_h) $(gxdevice_h) $(gxdevmem_h)\
  $(ierrors_h) $(estack_h) $(files_h)\
  $(iapi_h) $(ialloc_h) $(iconf_h) $(imain_h) $(imainarg_h) $(iminst_h)\
  $(iname_h) $(interp_h) $(iscan_h) $(iutil_h) $(ivmspace_h)\

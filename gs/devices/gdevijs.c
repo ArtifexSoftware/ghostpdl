@@ -1095,8 +1095,9 @@ gsijs_output_page(gx_device *dev, int num_copies, int flush)
 
     gs_free_object(pdev->memory, data, "gsijs_output_page");
 
-    endcode = (pdev->buffer_space && !pdev->is_async_renderer ?
-               clist_finish_page(dev, flush) : 0);
+    endcode = (PRINTER_IS_CLIST(pdev) &&
+              !((gx_device_clist_common *)pdev)->do_not_open_or_close_bandfiles ?
+              clist_finish_page((gx_device *)pdev, flush) : 0);
 
     if (endcode < 0)
         return endcode;

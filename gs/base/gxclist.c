@@ -776,7 +776,8 @@ clist_finish_page(gx_device *dev, bool flush)
            the above call to clist_teardown_render_threads.  Since they
            all maintained a copy of the cache and the table there should not
            be any issues. */
-        clist_icc_freetable(crdev->icc_table, crdev->memory);
+        clist_free_icc_table(crdev->icc_table, crdev->memory);
+        crdev->icc_table = NULL;
         rc_decrement(crdev->icc_cache_cl,"clist_finish_page");
     }
     if (flush) {
@@ -817,7 +818,7 @@ clist_end_page(gx_device_clist_writer * cldev)
         /* Save the table */
         code = clist_icc_writetable(cldev);
         /* Free the table */
-        clist_icc_freetable(cldev->icc_table, cldev->memory);
+        clist_free_icc_table(cldev->icc_table, cldev->memory);
         cldev->icc_table = NULL;
     }
     if (code >= 0)
@@ -1028,7 +1029,7 @@ clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode)
 
 /* Free the table */
 int
-clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory)
+clist_free_icc_table(clist_icctable_t *icc_table, gs_memory_t *memory)
 {
     int number_entries;
     clist_icctable_entry_t *curr_entry, *next_entry;
@@ -1040,10 +1041,10 @@ clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory)
     curr_entry = icc_table->head;
     for (k = 0; k < number_entries; k++) {
         next_entry = curr_entry->next;
-        gs_free_object(icc_table->memory, curr_entry, "clist_icc_freetable");
+        gs_free_object(icc_table->memory, curr_entry, "clist_free_icc_table");
         curr_entry = next_entry;
     }
-    gs_free_object(icc_table->memory, icc_table, "clist_icc_freetable");
+    gs_free_object(icc_table->memory, icc_table, "clist_free_icc_table");
     return(0);
 }
 
