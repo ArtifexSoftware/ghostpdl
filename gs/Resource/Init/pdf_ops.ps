@@ -244,11 +244,27 @@ nodict readonly pop
 /RG { 3 array astore cvx //csdevrgb scput } bdef
 /k { 4 array astore cvx //csdevcmyk fcput } bdef
 /K { 4 array astore cvx //csdevcmyk scput } bdef
-/cs { csset fcput } bdef
-/CS { csset scput } bdef
+%%
+%% Bug #694412, we set the colour space immediately now. Previously we
+%% only set the colour space and colour when a stroke or fill took place.
+%% if that happened inside a gsave/grestore we could end up setting the
+%% same colour space many times, which is a problem if its an expensive
+%% space, like ICCBased.
+%%
+/cs { csset dup setgcolorspace fcput } bdef
+/CS { csset dup .swapcolors setgcolorspace .swapcolors scput } bdef
 /ri { //.renderingintentdict exch .knownget { .setrenderingintent } if } bdef
 % We have to break up sc according to the number of operands.
+%%
+%% Also Bug #694412, we need to set the actual colour in response to the
+%% PDF operators as well. However, the transparenmcy code also uses the
+%% original calls (sc, SC, sc1, SC1, sc* and SC*) and so we create
+%% a duplicate set which do the same as the originals, but se the current
+%% colour as well.
+%%
+/sc1_and_set { /FillColor gput FillColor FillColorSpace setgcolor} bdef
 /sc1 { /FillColor gput } bdef
+/SC1_and_set {/StrokeColor gput .swapcolors StrokeColor StrokeColorSpace setgcolor .swapcolors } bdef
 /SC1 { /StrokeColor gput } bdef
 % We have to avoid storing into a color array associated with an outer
 % gsave level, so we do a kind of "copy on write".
@@ -271,6 +287,14 @@ nodict readonly pop
     dup type /arraytype eq { length }{ pop 1 } ifelse
     array astore cvx /StrokeColor gput
   } ifelse
+} bdef
+/sc*_and_set {
+  sc*
+  FillColor FillColorSpace setgcolor
+} bdef
+/SC*_and_set {
+  SC*
+  .swapcolors StrokeColor StrokeColorSpace setgcolor .swapcolors
 } bdef
 
 % ---------------- Overprint/transparency setting ---------------- %

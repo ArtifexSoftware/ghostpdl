@@ -1029,7 +1029,7 @@ drawopdict begin
   /sc { .incachedevice {
           .pdfcount { pop } repeat //ignore_color_op pdfformaterror
         } {
-          scresolve { sc* } { sc1 } ifelse
+          scresolve { sc*_and_set } { sc1_and_set } ifelse
         } ifelse
       } bdef
 
@@ -1073,7 +1073,7 @@ drawopdict begin
   /SC { .incachedevice {
           .pdfcount { pop } repeat //ignore_color_op pdfformaterror
         } {
-          scresolve { SC* } { SC1 } ifelse
+          scresolve { SC*_and_set } { SC1_and_set } ifelse
         } ifelse
       } bdef
 
