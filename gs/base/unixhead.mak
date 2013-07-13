@@ -42,8 +42,6 @@ NO_OP=@:
 O_=-o $(NULL)
 OBJ=o
 Q=
-XE=
-XEAUX=
 
 # Define the current directory prefix and command invocations.
 

@@ -147,6 +147,9 @@ CAPOPT= @HAVE_MKSTEMP@ @HAVE_FILE64@ @HAVE_FSEEKO@ @HAVE_MKSTEMP64@ @HAVE_FONTCO
 # Define the name of the executable file.
 
 GS=@GS@@EXEEXT@
+GS_SO_BASE=@GS@
+XE=@EXEEXT@
+XEAUX=@EXEEXT@
 
 # Define the directories for debugging and profiling binaries, relative to
 # the standard binaries.
@@ -377,6 +380,8 @@ AC_LDFLAGS=@X_LDFLAGS@
 
 LDFLAGS=@LDFLAGS@ $(AC_LDFLAGS) $(XLDFLAGS)
 
+LDFLAGS_SO=@DYNAMIC_LDFLAGS@
+
 # Define any extra libraries to link into the executable.
 # ISC Unix 2.2 wants -linet.
 # SCO Unix needs -lsocket if you aren't including the X11 driver.
@@ -442,7 +447,9 @@ SOC_LOADER	=	@SOC_LOADER@
 # on virtually every Unix-a-like system, this is "so",
 # but Apple just had to be different, so it's now set
 # by configure
-DYNANIC_LIB_EXT =       @DYNANIC_LIB_EXT@
+SO_LIB_EXT=@SO_LIB_EXT@
+DLL_EXT=@DLL_EXT@
+SO_LIB_VERSION_SEPARATOR=@SO_LIB_VERSION_SEPARATOR@
 
 #CAIRO_CFLAGS	=	@CAIRO_CFLAGS@
 #CAIRO_LIBS	=	@CAIRO_LIBS@
@@ -574,7 +581,6 @@ CCAUX_NO_WARN=$(CCAUX_)
 CC_SHARED=$(CC_) @DYNAMIC_CFLAGS@
 
 LD_SET_DT_SONAME=@SET_DT_SONAME@
-FOR_MAC=@SO_FOR_MAC@
 
 # MAKEDIRS = the dependency on ALL object files (must be the last one on
 # the line. Requires GNU make to make it an 'order only' dependency

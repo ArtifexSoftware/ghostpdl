@@ -33,29 +33,34 @@ SODEBUGDIRPREFIX=sodebug
 # Shared object names
 
 # simple loader (no support for display device)
-GSSOC_XENAME=$(GS)c$(XE)
+GSSOC_XENAME=$(GS_SO_BASE)c$(XE)
 GSSOC_XE=$(BINDIR)/$(GSSOC_XENAME)
 GSSOC=$(BINDIR)/$(GSSOC_XENAME)
 
 # loader suporting display device using Gtk+
-GSSOX_XENAME=$(GS)x$(XE)
+GSSOX_XENAME=$(GS_SO_BASE)x$(XE)
 GSSOX_XE=$(BINDIR)/$(GSSOX_XENAME)
 GSSOX=$(BINDIR)/$(GSSOX_XENAME)
 
 # shared library
-GS_SONAME_BASE=lib$(GS)
+GS_SONAME_BASE=lib$(GS_SO_BASE)
 
 # GNU/Linux
-GS_SOEXT=$(DYNANIC_LIB_EXT)
-GS_SONAME=$(GS_SONAME_BASE).$(GS_SOEXT)
-GS_SONAME_MAJOR=$(GS_SONAME).$(GS_VERSION_MAJOR)
-GS_SONAME_MAJOR_MINOR=$(GS_SONAME).$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR)
+GS_SOEXT=$(SO_LIB_EXT)
+GS_DLLEXT=$(DLL_EXT)
+
+GS_SONAME=$(GS_SONAME_BASE)$(GS_SOEXT)$(GS_DLLEXT)
+
+GS_SONAME_MAJOR=$(GS_SONAME_BASE)$(GS_SOEXT)$(SO_LIB_VERSION_SEPARATOR)$(GS_VERSION_MAJOR)$(GS_DLLEXT)
+
+GS_SONAME_MAJOR_MINOR=$(GS_SONAME_BASE)$(GS_SOEXT)$(SO_LIB_VERSION_SEPARATOR)$(GS_VERSION_MAJOR)$(SO_LIB_VERSION_SEPARATOR)$(GS_VERSION_MINOR)$(GS_DLLEXT)
+
 #LDFLAGS_SO=-shared -Wl,-soname=$(GS_SONAME_MAJOR)
 
 # NOTE: the value of LD_SET_DT_SONAME for, for example, Solaris ld, must contain the
 # trailing space to separation it from the value of the option. For GNU ld and
 # similar linkers it must containt the trailing "=" 
-LDFLAGS_SO=-shared -Wl,$(LD_SET_DT_SONAME)$(LDFLAGS_SO_PREFIX)$(GS_SONAME_MAJOR)
+# LDFLAGS_SO=-shared -Wl,$(LD_SET_DT_SONAME)$(LDFLAGS_SO_PREFIX)$(GS_SONAME_MAJOR)
 
 
 # MacOS X
@@ -64,7 +69,7 @@ LDFLAGS_SO=-shared -Wl,$(LD_SET_DT_SONAME)$(LDFLAGS_SO_PREFIX)$(GS_SONAME_MAJOR)
 #GS_SONAME_MAJOR=$(GS_SONAME_BASE).$(GS_VERSION_MAJOR).$(GS_SOEXT)
 #GS_SONAME_MAJOR_MINOR=$(GS_SONAME_BASE).$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR).$(GS_SOEXT)
 #LDFLAGS_SO=-dynamiclib -flat_namespace
-LDFLAGS_SO_MAC=-dynamiclib -install_name $(GS_SONAME_MAJOR_MINOR)
+#LDFLAGS_SO_MAC=-dynamiclib -install_name $(GS_SONAME_MAJOR_MINOR)
 #LDFLAGS_SO=-dynamiclib -install_name $(FRAMEWORK_NAME)
 
 GS_SO=$(BINDIR)/$(GS_SONAME)
@@ -86,11 +91,11 @@ $(GS_SO_MAJOR): $(GS_SO_MAJOR_MINOR)
 # Build the small Ghostscript loaders, with Gtk+ and without
 $(GSSOC_XE): $(GS_SO) $(PSSRC)$(SOC_LOADER)
 	$(GLCC) -g -o $(GSSOC_XE) $(PSSRC)dxmainc.c \
-	-L$(BINDIR) -l$(GS)
+	-L$(BINDIR) -l$(GS_SO_BASE)
 
 $(GSSOX_XE): $(GS_SO) $(PSSRC)$(SOC_LOADER)
 	$(GLCC) -g $(SOC_CFLAGS) -o $(GSSOX_XE) $(PSSRC)$(SOC_LOADER) \
-	-L$(BINDIR) -l$(GS) $(SOC_LIBS)
+	-L$(BINDIR) -l$(GS_SO_BASE) $(SOC_LIBS)
 
 # ------------------------- Recursive make targets ------------------------- #
 
@@ -114,14 +119,14 @@ so:
 	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
 	  then echo "Warning: this target requires gmake";\
 	fi
-	$(MAKE) so-subtarget$(FOR_MAC) BUILDDIRPREFIX=$(SODIRPREFIX)
+	$(MAKE) so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 
 # Debug shared object
 sodebug:
 	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
 	  then echo "Warning: this target requires gmake";\
 	fi
-	$(MAKE) so-subtarget$(FOR_MAC) GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
+	$(MAKE) so-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
 
 so-subtarget:
 	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
@@ -137,29 +142,13 @@ so-subtarget:
 	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 $(GSSOC_XE) $(GSSOX_XE)
 
-# special so-subtarget for MAC OS X
-so-subtarget_1:
-	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
-	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
-	 directories
-	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
-	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
-	 $(AUXDIR)/echogs$(XEAUX) $(AUXDIR)/genarch$(XEAUX)
-	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO_MAC)'\
-	 CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)'\
-	 prefix=$(prefix)
-	$(MAKE) $(SODEFS_FINAL) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
-	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
-	 $(GSSOC_XE) $(GSSOX_XE)
-
-
 install-so:
 	$(MAKE) install-so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 
 install-sodebug:
 	$(MAKE) install-so-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
 
-install-so-subtarget: so-subtarget$(FOR_MAC)
+install-so-subtarget: so-subtarget
 	-mkdir -p $(DESTDIR)$(prefix)
 	-mkdir -p $(DESTDIR)$(datadir)
 	-mkdir -p $(DESTDIR)$(gsdir)

@@ -146,7 +146,6 @@ dnl --------------------------------------------------
 
 CC_OPT_FLAGS_TO_TRY="-O"
 SET_DT_SONAME="-soname="
-SO_FOR_MAC=""
 
 case `uname` in
         Linux*|GNU*)
@@ -167,7 +166,6 @@ case `uname` in
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
         fi
         SET_DT_SONAME=""
-        SO_FOR_MAC="_1"
         ;;
         SunOS)
         CC_OPT_FLAGS_TO_TRY="-O2"
@@ -185,7 +183,6 @@ case `uname` in
 esac
 
 AC_SUBST(SET_DT_SONAME)
-AC_SUBST(SO_FOR_MAC)
 
 
 if test $ac_cv_prog_gcc = yes; then
@@ -1858,40 +1855,50 @@ DYNAMIC_FLAGS=""
 DYNAMIC_LDFLAGS=""
 DYNAMIC_LIBS=""
 INSTALL_SHARED=""
-DYNANIC_LIB_EXT="so"
+SO_LIB_EXT=".so"
+DLL_EXT=""
+SO_LIB_VERSION_SEPARATOR="."
 
 case `uname` in
         Linux*|GNU*)
-        DYNAMIC_CFLAGS="-fPIC"
-        DYNAMIC_LDFLAGS="-fPIC -shared"
-        if test $ac_cv_prog_gcc = yes; then
+          DYNAMIC_CFLAGS="-fPIC"
+          DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
+          if test $ac_cv_prog_gcc = yes; then
             # GCC high level flag
             DYNAMIC_LIBS="-rdynamic -ldl"
-        else
+          else
             DYNAMIC_LIBS=""
-        fi
-        DYNANIC_LIB_EXT="so"
+          fi
+          SO_LIB_EXT=".so"
+        ;;
+        MINGW*)
+          DYNAMIC_CFLAGS=""
+          DYNAMIC_LDFLAGS="-shared  -Wl,--out-implib=\$(BINDIR)/lib\$(GS_SO_BASE).dll.a -Wl,--export-all-symbols -Wl,--enable-auto-import"
+          SO_LIB_EXT=""
+          DLL_EXT=".dll"
+          SO_LIB_VERSION_SEPARATOR="-"
         ;;
         *BSD)
-        DYNAMIC_CFLAGS="-fPIC"
-        DYNAMIC_LDFLAGS="-fPIC -shared"
-        DYNAMIC_LIBS=""
-        DYNANIC_LIB_EXT="so"
+          DYNAMIC_CFLAGS="-fPIC"
+          DYNAMIC_LDFLAGS="-shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
+          DYNAMIC_LIBS=""
+          SO_LIB_EXT=".so"
         ;;
         Darwin*)
-        DYNAMIC_LDFLAGS="-dynamiclib"
-        DYNAMIC_LIBS=""
-        DYNANIC_LIB_EXT="dylib"
+          DYNAMIC_LDFLAGS="-dynamiclib -install_name \$(GS_SONAME_MAJOR_MINOR)"
+          DYNAMIC_LIBS=""
+          SO_LIB_EXT=".dylib"
         ;;
         SunOS)
-        if test $ac_cv_prog_gcc = yes; then
+          if test $ac_cv_prog_gcc = yes; then
             DYNAMIC_CFLAGS="-fPIC"
-        else
+          else
             DYNAMIC_CFLAGS="-KPIC"
-        fi
-        DYNAMIC_LDFLAGS="-G"
-        DYNAMIC_LIBS=""
-        DYNANIC_LIB_EXT="so"
+          fi
+
+          DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
+          DYNAMIC_LIBS=""
+          SO_LIB_EXT=".so"
         ;;
 esac
 
@@ -1946,7 +1953,9 @@ AC_SUBST(DYNAMIC_LDFLAGS)
 AC_SUBST(DYNAMIC_LIBS)
 AC_SUBST(INSTALL_SHARED)
 AC_SUBST(X11_DEVS)
-AC_SUBST(DYNANIC_LIB_EXT)
+AC_SUBST(SO_LIB_EXT)
+AC_SUBST(DLL_EXT)
+AC_SUBST(SO_LIB_VERSION_SEPARATOR)
 
 dnl look for default font path...
 AC_ARG_WITH([fontpath],  AC_HELP_STRING([--with-fontpath],
