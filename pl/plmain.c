@@ -397,9 +397,9 @@ pl_main_aux(int argc, char *argv[], void *disp)
             /* end of data - if we are not back in pjl the job has
                ended in the middle of the data stream. */
             if (pl_main_cursor_next(&r) <= 0) {
-                if_debug0m('|', mem, "End of of data\n");
+                if_debug0m('I', mem, "End of of data\n");
                 if (!in_pjl) {
-                    if_debug0m('|', mem,
+                    if_debug0m('I', mem,
                                "end of data stream found in middle of job\n");
                     pl_process_eof(curr_instance);
                     if (close_job(&universe, &inst) < 0) {
@@ -410,10 +410,10 @@ pl_main_aux(int argc, char *argv[], void *disp)
                 break;
             }
             if (in_pjl) {
-                if_debug0m('|', mem, "Processing pjl\n");
+                if_debug0m('I', mem, "Processing pjl\n");
                 code = pl_process(pjl_instance, &r.cursor);
                 if (code == e_ExitLanguage) {
-                    if_debug0m('|', mem, "Exiting pjl\n");
+                    if_debug0m('I', mem, "Exiting pjl\n");
                     in_pjl = false;
                     new_job = true;
                 }
@@ -424,7 +424,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
                     return -1;
                 }
 
-                if_debug0m('|', mem, "Selecting PDL\n");
+                if_debug0m('I', mem, "Selecting PDL\n");
                 curr_instance = pl_main_universe_select(&universe, err_buf,
                                                         pjl_instance,
                                                         pl_select_implementation
@@ -441,7 +441,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
                     dmprintf(mem, "Unable to init PDL job.\n");
                     return -1;
                 }
-                if_debug1m('|', mem, "selected and initializing (%s)\n",
+                if_debug1m('I', mem, "selected and initializing (%s)\n",
                            pl_characteristics(curr_instance->interp->
                                               implementation)->language);
                 new_job = false;
@@ -453,7 +453,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
                    time. */
                 if (curr_instance->interp->implementation->proc_process_file
                     && r.strm != mem->gs_lib_ctx->fstdin) {
-                    if_debug1m('|', mem, "processing job from file (%s)\n",
+                    if_debug1m('I', mem, "processing job from file (%s)\n",
                                filename);
                     code = pl_process_file(curr_instance, filename);
                     if (code < 0) {
@@ -465,18 +465,18 @@ pl_main_aux(int argc, char *argv[], void *disp)
                         dmprintf(mem, "Unable to deinit PJL.\n");
                         return -1;
                     }
-                    if_debug0m('|', mem,
+                    if_debug0m('I', mem,
                                "exiting job and proceeding to next file\n");
                     break;      /* break out of the loop to process the next file */
                 }
 
                 code = pl_process(curr_instance, &r.cursor);
-                if_debug1m('|', mem, "processing (%s) job\n",
+                if_debug1m('I', mem, "processing (%s) job\n",
                            pl_characteristics(curr_instance->interp->
                                               implementation)->language);
                 if (code == e_ExitLanguage) {
                     in_pjl = true;
-                    if_debug1m('|', mem, "exiting (%s) job back to pjl\n",
+                    if_debug1m('I', mem, "exiting (%s) job back to pjl\n",
                                pl_characteristics(curr_instance->interp->
                                                   implementation)->language);
                     if (close_job(&universe, &inst) < 0) {
@@ -489,18 +489,22 @@ pl_main_aux(int argc, char *argv[], void *disp)
                     }
                     pl_renew_cursor_status(&r);
                 } else if (code < 0) {  /* error and not exit language */
+                    int show = 1;
                     dmprintf1(mem,
                               "Warning interpreter exited with error code %d\n",
                               code);
                     dmprintf(mem, "Flushing to end of job\n");
                     /* flush eoj may require more data */
                     while ((pl_flush_to_eoj(curr_instance, &r.cursor)) == 0) {
-                        if_debug1m('|', mem, "flushing to eoj for (%s) job\n",
-                                   pl_characteristics(curr_instance->interp->
-                                                      implementation)->
-                                   language);
+                        if (show) {
+                            if_debug1m('I', mem, "flushing to eoj for (%s) job\n",
+                                       pl_characteristics(curr_instance->interp->
+                                                          implementation)->
+                                       language);
+                            show  = 0;
+                        }
                         if (pl_main_cursor_next(&r) <= 0) {
-                            if_debug0m('|', mem,
+                            if_debug0m('I', mem,
                                        "end of data found while flushing\n");
                             break;
                         }

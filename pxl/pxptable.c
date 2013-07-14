@@ -260,7 +260,7 @@ const px_attr_value_type_t px_attr_value_types[] = {
     /* 113 */ none,
     /* 114 */ none,
     /* 115 */ sc(us), /* NumberOfScanLines  */
-    /* 116 */ none,
+    /* 116 */ xy(us), /* PrintableArea */
     /* 117 */ none,
     /* 118 */ none,
     /* 119 */ none,
@@ -404,10 +404,9 @@ const char *px_attribute_names[] = {
     0, "SourceType", "UnitsPerMeasure", 0, "StreamName",
 /*140*/
     "StreamDataLength", 0, 0, "ErrorReport", "PCLSelectFont",
-    "VUExtension", "VUDataLength", "VUAttr1", "VUAttr2", "VUAttr3", "VUAttr4",
-    "VUAttr5", "VUAttr6",
+    "VUExtension", "VUDataLength", "VUAttr1", "VUAttr2", "VUAttr3",
 /*150*/
-    0, 0, 0, 0, 0,
+    "VUAttr4", "VUAttr5", "VUAttr6", 0, 0,
     0, 0, 0, 0, 0,
 /*160*/
     0, "CharAngle", "CharCode", "CharDataSize", "CharScale",
