@@ -532,7 +532,7 @@ read_headless_jpeg_bitmap_data(byte ** pdata,
 	if ((code == EOFC) && (used > 0))
 	    code = 1;
 	if_debug2('w', "data generated: %d/%d\n", used, data_per_row);
-	pos_in_row += used;
+	/* pos_in_row += used; */
 	par->source.position += used;
     }
     used = r.ptr + 1 - data;
