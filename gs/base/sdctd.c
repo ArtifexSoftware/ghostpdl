@@ -190,23 +190,33 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
                     return 0;
                     /*case JPEG_HEADER_OK: */
             }
-            /* If we have a ColorTransform parameter, and it's not
-             * overridden by an Adobe marker in the data, set colorspace.
+
+            /* 
+             * Default the color transform if not set and check for
+             * the Adobe marker and use Adobe's transform if the
+             * marker is set.
              */
-            if (ss->ColorTransform >= 0 &&
-                !jddp->dinfo.saw_Adobe_marker) {
-                switch (jddp->dinfo.num_components) {
-                    case 3:
-                        jddp->dinfo.jpeg_color_space =
-                            (ss->ColorTransform ? JCS_YCbCr : JCS_RGB);
+            if (ss->ColorTransform == -1) {
+                if (jddp->dinfo.num_components == 3)
+                    ss->ColorTransform = 1;
+                else
+                    ss->ColorTransform = 0;
+            }
+            
+            if (jddp->dinfo.saw_Adobe_marker)
+                ss->ColorTransform = jddp->dinfo.Adobe_transform;
+            
+            switch (jddp->dinfo.num_components) {
+            case 3:
+                jddp->dinfo.jpeg_color_space =
+                    (ss->ColorTransform ? JCS_YCbCr : JCS_RGB);
                         /* out_color_space will default to JCS_RGB */
                         break;
-                    case 4:
-                        jddp->dinfo.jpeg_color_space =
-                            (ss->ColorTransform ? JCS_YCCK : JCS_CMYK);
-                        /* out_color_space will default to JCS_CMYK */
-                        break;
-                }
+            case 4:
+                jddp->dinfo.jpeg_color_space =
+                    (ss->ColorTransform ? JCS_YCCK : JCS_CMYK);
+                /* out_color_space will default to JCS_CMYK */
+                break;
             }
             ss->phase = 2;
             /* falls through */
