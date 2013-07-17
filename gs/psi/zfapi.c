@@ -1909,8 +1909,6 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                                                  client_char_code * gdb, gdb,
                                                  NULL, NULL,
                                                  (const byte **)&Map);
-                    if (code < 0)
-                    	return code;
                 }
                 else {
                     if (CIDMap->tas.rsize < c_code * gdb) {
@@ -1920,8 +1918,20 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                 }
                 cr->char_codes[0] = 0;
 
-                for (i = 0; i < gdb; i++) {
-                    cr->char_codes[0] = (cr->char_codes[0] << 8) + Map[i];
+                if (code >= 0) {
+                    for (i = 0; i < gdb; i++) {
+                        cr->char_codes[0] = (cr->char_codes[0] << 8) + Map[i];
+                    }
+                }
+                else {
+                    ref *cstr, *refcode;
+                    code = dict_find_string(pdr, "CharStrings", &cstr);
+                    if (code > 0) {
+                        code = dict_find_string(cstr, ".notdef", &refcode);
+                        if (code > 0) {
+                            cr->char_codes[0] = refcode->value.intval;
+                        }
+                    }
                 }
             }
             else
