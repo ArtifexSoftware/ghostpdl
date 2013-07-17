@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug-contrib|ARM">
+      <Configuration>Debug-contrib</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug-contrib|Win32">
       <Configuration>Debug-contrib</Configuration>
       <Platform>Win32</Platform>
@@ -8,6 +12,10 @@
     <ProjectConfiguration Include="Debug-contrib|x64">
       <Configuration>Debug-contrib</Configuration>
       <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug-cups|ARM">
+      <Configuration>Debug-cups</Configuration>
+      <Platform>ARM</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Debug-cups|Win32">
       <Configuration>Debug-cups</Configuration>
@@ -17,6 +25,10 @@
       <Configuration>Debug-cups</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|ARM">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -24,6 +36,10 @@
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Memento|ARM">
+      <Configuration>Memento</Configuration>
+      <Platform>ARM</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Memento|Win32">
       <Configuration>Memento</Configuration>
@@ -33,6 +49,10 @@
       <Configuration>Memento</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Profile|ARM">
+      <Configuration>Profile</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Profile|Win32">
       <Configuration>Profile</Configuration>
       <Platform>Win32</Platform>
@@ -41,6 +61,10 @@
       <Configuration>Profile</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release-contrib|ARM">
+      <Configuration>Release-contrib</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release-contrib|Win32">
       <Configuration>Release-contrib</Configuration>
       <Platform>Win32</Platform>
@@ -48,6 +72,10 @@
     <ProjectConfiguration Include="Release-contrib|x64">
       <Configuration>Release-contrib</Configuration>
       <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM">
+      <Configuration>Release</Configuration>
+      <Platform>ARM</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
@@ -69,7 +97,15 @@
     <ConfigurationType>Makefile</ConfigurationType>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|ARM'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|ARM'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
@@ -77,7 +113,15 @@
     <ConfigurationType>Makefile</ConfigurationType>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|ARM'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|ARM'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
@@ -85,11 +129,23 @@
     <ConfigurationType>Makefile</ConfigurationType>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|ARM'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
     <ConfigurationType>Makefile</ConfigurationType>
     <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
@@ -127,22 +183,43 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|ARM'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|ARM'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|ARM'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Memento|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Memento|ARM'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Profile|ARM'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|x64'" Label="PropertySheets">
@@ -179,6 +256,13 @@
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 debugclean</NMakeCleanCommandLine>
+    <NMakeOutput />
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>debugobjrt64\</OutDir>
     <IntDir>debugobjrt64\</IntDir>
@@ -196,6 +280,13 @@
     <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
+    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
+    <NMakeOutput />
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>objrt64\</OutDir>
@@ -215,6 +306,13 @@
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;DEBUG=0;TDEBUG=0;DEBUGSYM=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|ARM'">
+    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 profilebsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 profilebsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 profileclean</NMakeCleanCommandLine>
+    <NMakeOutput />
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;DEBUG=0;TDEBUG=0;DEBUGSYM=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
     <OutDir>profobjrt64\</OutDir>
     <IntDir>profobjrt64\</IntDir>
@@ -232,6 +330,13 @@
     <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 mementoclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;MEMENTO=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|ARM'">
+    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 mementobsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 mementobsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 mementoclean</NMakeCleanCommandLine>
+    <NMakeOutput />
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;MEMENTO=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|x64'">
     <OutDir>memobjrt64\</OutDir>
@@ -251,6 +356,13 @@
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|ARM'">
+    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debugclean</NMakeCleanCommandLine>
+    <NMakeOutput />
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|x64'">
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
@@ -269,6 +381,13 @@
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|ARM'">
+    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debugclean</NMakeCleanCommandLine>
+    <NMakeOutput />
+    <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|x64'">
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
@@ -286,6 +405,13 @@
     <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|ARM'">
+    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
+    <NMakeOutput />
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|x64'">
     <OutDir>$(Platform)\$(Configuration)\</OutDir>

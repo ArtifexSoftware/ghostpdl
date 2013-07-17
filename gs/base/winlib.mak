@@ -195,6 +195,9 @@ $(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
 $(GLOBJ)gp_wutf8.$(OBJ): $(GLSRC)gp_wutf8.c $(windows__h)
 	$(GLCCWIN) $(GLO_)gp_wutf8.$(OBJ) $(C_) $(GLSRC)gp_wutf8.c
 
+$(AUX)gp_wutf8.$(OBJ): $(GLSRC)gp_wutf8.c $(windows__h)
+	$(GLCCAUX) $(AUXO_)gp_wutf8.$(OBJ) $(C_) $(GLSRC)gp_wutf8.c
+
 $(GLOBJ)gp_wgetv.$(OBJ): $(GLSRC)gp_wgetv.c $(AK) $(gscdefs_h)
 	$(GLCCWIN) $(GLO_)gp_wgetv.$(OBJ) $(C_) $(GLSRC)gp_wgetv.c
 
@@ -210,7 +213,7 @@ $(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
 METRO_OBJS=$(GLOBJ)winrtsup.$(OBJ) $(GLOBJ)gp_wutf8.$(OBJ)
 
 $(GLOBJ)winrtsup.$(OBJ): $(GLSRCDIR)/winrtsup.cpp
-	cl /c /EHsc /Fo$(GLOBJ)winrtsup.$(OBJ) $(GLSRCDIR)/winrtsup.cpp
+	$(GLCCWIN) /EHsc $(GLO_)winrtsup.$(OBJ) $(C_) $(GLSRCDIR)/winrtsup.cpp
 !else
 METRO_OBJS=
 !endif

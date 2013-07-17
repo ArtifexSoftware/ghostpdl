@@ -29,10 +29,20 @@ $(GLOBJ)gp_ntfs.$(OBJ): $(GLSRC)gp_ntfs.c $(AK)\
  $(gp_h) $(gpmisc_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)
 	$(GLCCWIN) $(GLO_)gp_ntfs.$(OBJ) $(C_) $(GLSRC)gp_ntfs.c
 
+$(AUX)gp_ntfs.$(OBJ): $(GLSRC)gp_ntfs.c $(AK)\
+ $(dos__h) $(memory__h) $(stdio__h) $(string__h) $(windows__h)\
+ $(gp_h) $(gpmisc_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)
+	$(GLCCAUX) $(AUXO_)gp_ntfs.$(OBJ) $(C_) $(GLSRC)gp_ntfs.c
+
 $(GLOBJ)gp_win32.$(OBJ): $(GLSRC)gp_win32.c $(AK)\
  $(dos__h) $(malloc__h) $(stdio__h) $(string__h) $(windows__h)\
  $(gp_h) $(gsmemory_h) $(gstypes_h)
 	$(GLCCWIN) $(GLO_)gp_win32.$(OBJ) $(C_) $(GLSRC)gp_win32.c
+
+$(AUX)gp_win32.$(OBJ): $(GLSRC)gp_win32.c $(AK)\
+ $(dos__h) $(malloc__h) $(stdio__h) $(string__h) $(windows__h)\
+ $(gp_h) $(gsmemory_h) $(gstypes_h)
+	$(GLCCAUX) $(AUXO_)gp_win32.$(OBJ) $(C_) $(GLSRC)gp_win32.c
 
 # Define the Windows thread / synchronization module.
 

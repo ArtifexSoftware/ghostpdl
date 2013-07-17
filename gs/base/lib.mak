@@ -303,7 +303,7 @@ $(AUX)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(AK) $(gx_h) $(gserrors_h)\
  $(ctype__h) $(malloc__h) $(math__h) $(memory__h) $(string__h)\
  $(gpcheck_h) $(gxfarith_h) $(gxfixed_h) $(stdint__h) $(stdio__h)\
  $(MAKEDIRS)
-	$(GLCCAUX) $(AUXO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
+	$(GLCCAUX) $(C_) $(AUXO_)gsmisc.$(OBJ) $(GLSRC)gsmisc.c
 
 $(GLOBJ)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gsmemory_h)\
   $(gslibctx_h) $(stdio__h) $(string__h) $(gsicc_manage_h)
@@ -311,7 +311,7 @@ $(GLOBJ)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gsmemory_h)\
 
 $(AUX)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gsmemory_h)\
   $(gslibctx_h) $(stdio__h) $(string__h) $(gsicc_manage_h)
-	$(GLCCAUX) $(AUXO_)gslibctx.$(OBJ) $(C_) $(GLSRC)gslibctx.c
+	$(GLCCAUX) $(C_) $(AUXO_)gslibctx.$(OBJ) $(GLSRC)gslibctx.c
 
 $(GLOBJ)gsnotify.$(OBJ) : $(GLSRC)gsnotify.c $(AK) $(gx_h)\
  $(gserrors_h) $(gsnotify_h) $(gsstruct_h) $(MAKEDIRS)
@@ -329,7 +329,7 @@ $(GLOBJ)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h)\
 $(AUX)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
  $(gstypes_h) $(gserrors_h) $(gsmemory_h)\
  $(gsrect_h) $(gsuid_h) $(gsutil_h) $(gzstate_h) $(gxdcolor_h) $(MAKEDIRS)
-	$(GLCCAUX) $(AUXO_)gsutil.$(OBJ) $(C_) $(GLSRC)gsutil.c
+	$(GLCCAUX) $(C_) $(AUXO_)gsutil.$(OBJ) $(GLSRC)gsutil.c
 
 $(GLOBJ)gssprintf.$(OBJ) : $(GLSRC)gssprintf.c $(gssprintf_h) $(triodef_h) $(trio_h) \
 $(triop_h) $(triostr_h) $(trionan_h)
@@ -636,7 +636,7 @@ $(AUX)gscdefs.$(OBJ) : $(GLSRC)gscdef.c\
  $(std_h) $(gscdefs_h) $(gconfigd_h) $(TOP_MAKEFILES) $(MAKEDIRS)
 	$(RM_) $(AUX)gscdefs.c
 	$(CP_) $(GLSRC)gscdef.c $(AUX)gscdefs.c
-	$(GLCCAUX) $(AUXO_)gscdefs.$(OBJ) $(C_) $(AUX)gscdefs.c
+	$(GLCCAUX) $(C_) $(AUXO_)gscdefs.$(OBJ) $(AUX)gscdefs.c
 
 $(GLOBJ)gxacpath.$(OBJ) : $(GLSRC)gxacpath.c $(AK) $(gx_h)\
  $(gserrors_h) $(gsdcolor_h) $(gsrop_h) $(gsstate_h) $(gsstruct_h) $(gsutil_h)\

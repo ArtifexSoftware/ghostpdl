@@ -26,6 +26,8 @@
 # Made pre-configurable by JD 6/4/98
 # Revised to use subdirectories 1998-11-13 by lpd.
 
+SNURF=$(VS110COMNTOOLS)
+
 # Note: If you are planning to make self-extracting executables,
 # see winint.mak to find out about third-party software you will need.
 
@@ -60,7 +62,11 @@ DEBUGSYM=1
 !ifdef WIN64
 TARGET_ARCH_FILE=$(GLSRCDIR)\..\arch\windows-x64-msvc.h
 !else
+!ifdef ARM
+TARGET_ARCH_FILE=$(GLSRCDIR)\..\arch\windows-arm-msvc.h
+!else
 TARGET_ARCH_FILE=$(GLSRCDIR)\..\arch\windows-x86-msvc.h
+!endif
 !endif
 !endif
 
@@ -250,7 +256,11 @@ BUILD_SYSTEM=32
 !ifdef WIN64
 GS=gswin64
 !else
+!ifdef ARM
+GS=gswinARM
+!else
 GS=gswin32
+!endif
 !endif
 !endif
 !ifndef GSCONSOLE
@@ -261,7 +271,11 @@ GSCONSOLE=$(GS)c
 !ifdef WIN64
 GSDLL=gsdll64metro
 !else
+!ifdef ARM
+GSDLL=gsdllARM32metro
+!else
 GSDLL=gsdll32metro
+!endif
 !endif
 !else
 !ifdef WIN64
@@ -735,6 +749,34 @@ LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\L
 !endif
 !endif
 
+!if "$(ARM)"=="1"
+VCINSTDIR=$(VS110COMNTOOLS)..\..\VC\
+
+!ifndef WINSDKVER
+WINSDKVER=8.0
+!endif
+
+!ifndef WINSDKDIR
+WINSDKDIR=$(VS110COMNTOOLS)..\..\..\Windows Kits\$(WINSDKVER)\
+!endif
+
+COMPAUX__="$(VCINSTDIR)\bin\cl.exe"
+COMPAUXCFLAGS=/I"$(VCINSTDIR)\INCLUDE" /I"$(VCINSTDIR)\ATLMFC\INCLUDE" \
+/I"$(WINSDKDIR)\include\shared" /I"$(WINSDKDIR)\include\um" \
+/I"$(WINDSKDIR)include\winrt"
+
+COMPAUXLDFLAGS=/LIBPATH:"$(VCINSTDIR)\LIB" \
+/LIBPATH:"$(VCINSTDIR)\ATLMFC\LIB" \
+/LIBPATH:"$(WINSDKDIR)\lib\win8\um\x86"
+
+COMPAUX=$(COMPAUX__) $(COMPAUXCFLAGS)
+
+!else
+
+COMPAUXLDFLAGS=""
+
+!endif
+
 # Some environments don't want to specify the path names for the tools at all.
 # Typical definitions for such an environment would be:
 #   MSINCDIR= LIBDIR= COMP=cl COMPAUX=cl RCOMP=rc LINK=link
@@ -874,6 +916,7 @@ CPU_TYPE=486
 # We'll assume that if you have an x86 machine, you've got a modern
 # enough one to have SSE2 instructions. If you don't, then predefine
 # DONT_HAVE_SSE2 when calling this makefile
+!ifndef ARM
 !if "$(CPU_FAMILY)" == "i386"
 !ifndef DONT_HAVE_SSE2
 !ifndef HAVE_SSE2
@@ -886,6 +929,7 @@ HAVE_SSE2=1
 CFLAGS=$(CFLAGS) /DHAVE_SSE2
 # add "/D__SSE__" here, but causes crashes just now
 JPX_SSE_CFLAGS=
+!endif
 !endif
 !endif
 
