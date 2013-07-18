@@ -234,7 +234,7 @@ typedef struct {
     cmsUInt16Number Country;
 
     cmsUInt32Number StrW;       // Offset to current unicode string
-    cmsUInt32Number Len;        // Lenght in bytes
+    cmsUInt32Number Len;        // Length in bytes
 
 } _cmsMLUentry;
 
@@ -301,9 +301,11 @@ typedef struct _cms_iccprofile_struct {
     cmsColorSpaceSignature   ColorSpace;
     cmsColorSpaceSignature   PCS;
     cmsUInt32Number          RenderingIntent;
+
     cmsUInt32Number          flags;
     cmsUInt32Number          manufacturer, model;
     cmsUInt64Number          attributes;
+    cmsUInt32Number          creator;
 
     cmsProfileID             ProfileID;
 
@@ -555,6 +557,10 @@ typedef struct _cmstransform_struct {
     // Informational only
     cmsColorSpaceSignature EntryColorSpace;
     cmsColorSpaceSignature ExitColorSpace;
+
+    // White points (informative only)
+    cmsCIEXYZ EntryWhitePoint;
+    cmsCIEXYZ ExitWhitePoint;
 
     // Profiles used to create the transform
     cmsSEQ* Sequence;

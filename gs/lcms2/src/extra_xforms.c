@@ -27,17 +27,37 @@
 #include "lcms2_extras.h"
 #include "lcms2_internal.h"
 
-// No gamut check, Caché, 16 bits, 4 bytes
+// No gamut check, no cache, 16 bits
+#define FUNCTION_NAME PrecalculatedXFORM
+#include "extra_xform.h"
+
+// Gamut check, no cache, 16 bits
+#define FUNCTION_NAME PrecalculatedXFORMGamutCheck
+#define GAMUTCHECK
+#include "extra_xform.h"
+
+// No gamut check, cache, 16 bits,
+#define FUNCTION_NAME CachedXFORM
+#define CACHED
+#include "extra_xform.h"
+
+// All those nice features together
+#define FUNCTION_NAME CachedXFORMGamutCheck
+#define CACHED
+#define GAMUTCHECK
+#include "extra_xform.h"
+
+// No gamut check, Cache, 16 bits, 4 bytes
 #define FUNCTION_NAME CachedXFORM4
 #define CACHED
 #define INBYTES 4
-#include "cmsxform.h"
+#include "extra_xform.h"
 
-// No gamut check, Caché, 16 bits, 8 bytes
+// No gamut check, Cache, 16 bits, 8 bytes
 #define FUNCTION_NAME CachedXFORM8
 #define CACHED
 #define INBYTES 8
-#include "cmsxform.h"
+#include "extra_xform.h"
 
 // Special one for common case.
 #define FUNCTION_NAME CachedXFORM3to1
@@ -53,7 +73,7 @@ do {                                                      \
 do {                             \
     *(D)++ = FROM_16_TO_8(*(S)); \
 } while (0);
-#include "cmsxform.h"
+#include "extra_xform.h"
 
 static
 cmsBool cmsExtrasTransformFactory(_cmsTransformFn     *xform,
@@ -64,8 +84,14 @@ cmsBool cmsExtrasTransformFactory(_cmsTransformFn     *xform,
                                   cmsUInt32Number     *OutputFormat,
                                   cmsUInt32Number     *dwFlags)
 {
-    if ((*InputFormat & (cmsFLAGS_NULLTRANSFORM | cmsFLAGS_GAMUTCHECK | cmsFLAGS_NOCACHE)) == 0 &&
-        (T_FLOAT(*InputFormat) == 0)) {
+    int mask;
+
+    /* No float support in here! */
+    if (T_FLOAT(*InputFormat) != 0)
+        return 0;
+
+    mask = *InputFormat & (cmsFLAGS_NULLTRANSFORM | cmsFLAGS_GAMUTCHECK | cmsFLAGS_NOCACHE);
+    if (mask == 0) {
         if ((*InputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(3)|BYTES_SH(1)) &&
             (*OutputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(1)|BYTES_SH(1))) {
             *xform = CachedXFORM3to1;
@@ -81,9 +107,26 @@ cmsBool cmsExtrasTransformFactory(_cmsTransformFn     *xform,
                 *xform = CachedXFORM8;
                 *dwFlags |= cmsFLAGS_CAN_CHANGE_FORMATTER;
                 return 1;
-            }
+            } else {
+                *xform = CachedXFORM;
+                *dwFlags |= cmsFLAGS_CAN_CHANGE_FORMATTER;
+                return 1;
+	    }
         }
+    } else if (mask == cmsFLAGS_GAMUTCHECK) {
+         *xform = CachedXFORMGamutCheck;
+         *dwFlags |= cmsFLAGS_CAN_CHANGE_FORMATTER;
+         return 1;
+    } else if (mask == cmsFLAGS_NOCACHE) {
+         *xform = PrecalculatedXFORM;
+         *dwFlags |= cmsFLAGS_CAN_CHANGE_FORMATTER;
+         return 1;
+    } else if (mask == (cmsFLAGS_GAMUTCHECK | cmsFLAGS_NOCACHE)) {
+         *xform = PrecalculatedXFORMGamutCheck;
+         *dwFlags |= cmsFLAGS_CAN_CHANGE_FORMATTER;
+         return 1;
     }
+
     return 0;
 }
 
@@ -98,7 +141,7 @@ static cmsPluginTransform extraTransforms =
     &cmsExtrasTransformFactory
 };
 
-cmsBool cmsRegisterExtraTransforms(void)
+cmsBool cmsRegisterExtraTransforms(cmsContext *ctx)
 {
-    return cmsPlugin(&extraTransforms);
+    return cmsPluginTHR(ctx, &extraTransforms);
 }

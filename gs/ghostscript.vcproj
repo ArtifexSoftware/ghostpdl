@@ -7257,11 +7257,19 @@
 					>
 				</File>
 				<File
-					RelativePath=".\lcms2\src\cmsxform.h"
+					RelativePath=".\lcms2\src\extra_xform.h"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\extra_xforms.c"
 					>
 				</File>
 				<File
 					RelativePath=".\lcms2\include\lcms2.h"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\include\lcms2_extras.h"
 					>
 				</File>
 				<File

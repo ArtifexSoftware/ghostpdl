@@ -37,7 +37,7 @@ extern "C" {
 #   endif
 #endif
 
-cmsBool cmsRegisterExtraTransforms(void);
+cmsBool cmsRegisterExtraTransforms(cmsContext *ctx);
 
 #ifndef CMS_USE_CPP_API
 #   ifdef __cplusplus

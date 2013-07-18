@@ -19,6 +19,7 @@
 #include "gsicc_cms.h"
 #include "lcms2.h"
 #include "lcms2_plugin.h"
+#include "lcms2_extras.h"
 #include "gslibctx.h"
 #include "gserrors.h"
 #include "gp.h"
@@ -585,6 +586,8 @@ gscms_create(gs_memory_t *memory)
      * We can then retrieve it anywhere else by calling:
      *   gs_lib_ctx_get_cms_context(memory);
      * LCMS currently uses no such state. */
+    /* Disable our optimisations for the first commit */
+    /* cmsRegisterExtraTransforms(memory); */
     return 0;
 }
 

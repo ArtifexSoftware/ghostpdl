@@ -241,7 +241,7 @@ cmsBool  ComputeAbsoluteIntent(cmsFloat64Number AdaptationState,
             // m2 holds CHAD from output white to D50 times abs. col. scaling
 
             // Observer is not adapted, undo the chromatic adaptation
-            _cmsMAT3per(m, &m3, ChromaticAdaptationMatrixOut);
+            _cmsMAT3per(m, &m2, ChromaticAdaptationMatrixOut);
 
             m3 = *ChromaticAdaptationMatrixIn;
             if (!_cmsMAT3inverse(&m3, &m4)) return FALSE;
@@ -382,63 +382,61 @@ cmsBool AddConversion(cmsPipeline* Result, cmsColorSpaceSignature InPCS, cmsColo
     // Handle PCS mismatches. A specialized stage is added to the LUT in such case
     switch (InPCS) {
 
-        case cmsSigXYZData: // Input profile operates in XYZ
+    case cmsSigXYZData: // Input profile operates in XYZ
 
-            switch (OutPCS) {
+        switch (OutPCS) {
 
-            case cmsSigXYZData:  // XYZ -> XYZ
-                if (!IsEmptyLayer(m, off) &&
-                    !cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl)))
+        case cmsSigXYZData:  // XYZ -> XYZ
+            if (!IsEmptyLayer(m, off) &&
+                !cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl)))
+                return FALSE;
+            break;
+
+        case cmsSigLabData:  // XYZ -> Lab
+            if (!IsEmptyLayer(m, off) &&
+                !cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl)))
+                return FALSE;
+            if (!cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocXYZ2Lab(Result ->ContextID)))
+                return FALSE;
+            break;
+
+        default:
+            return FALSE;   // Colorspace mismatch
+        }
+        break;
+
+    case cmsSigLabData: // Input profile operates in Lab
+
+        switch (OutPCS) {
+
+        case cmsSigXYZData:  // Lab -> XYZ
+
+            if (!cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocLab2XYZ(Result ->ContextID)))
+                return FALSE;
+            if (!IsEmptyLayer(m, off) &&
+                !cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl)))
+                return FALSE;
+            break;
+
+        case cmsSigLabData:  // Lab -> Lab
+
+            if (!IsEmptyLayer(m, off)) {
+                if (!cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocLab2XYZ(Result ->ContextID)) ||
+                    !cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl)) ||
+                    !cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocXYZ2Lab(Result ->ContextID)))
                     return FALSE;
-                break;
-
-            case cmsSigLabData:  // XYZ -> Lab
-                if (!IsEmptyLayer(m, off) &&
-                    !cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl)))
-                    return FALSE;
-                if (!cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocXYZ2Lab(Result ->ContextID)))
-                    return FALSE;
-                break;
-
-            default:
-                return FALSE;   // Colorspace mismatch
-                }
-                break;
-
-
-        case cmsSigLabData: // Input profile operates in Lab
-
-            switch (OutPCS) {
-
-            case cmsSigXYZData:  // Lab -> XYZ
-
-                if (!cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocLab2XYZ(Result ->ContextID)))
-                    return FALSE;
-                if (!IsEmptyLayer(m, off) &&
-                    !cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl)))
-                    return FALSE;
-                break;
-
-            case cmsSigLabData:  // Lab -> Lab
-
-                if (!IsEmptyLayer(m, off)) {
-                    if (!cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocLab2XYZ(Result ->ContextID)) ||
-                        !cmsPipelineInsertStage(Result, cmsAT_END, cmsStageAllocMatrix(Result ->ContextID, 3, 3, m_as_dbl, off_as_dbl)) ||
-                        !cmsPipelineInsertStage(Result, cmsAT_END, _cmsStageAllocXYZ2Lab(Result ->ContextID)))
-			return FALSE;
-                }
-                break;
-
-            default:
-                return FALSE;  // Mismatch
             }
             break;
 
-
-            // On colorspaces other than PCS, check for same space
         default:
-            if (InPCS != OutPCS) return FALSE;
-            break;
+            return FALSE;  // Mismatch
+        }
+        break;
+
+        // On colorspaces other than PCS, check for same space
+    default:
+        if (InPCS != OutPCS) return FALSE;
+        break;
     }
 
     return TRUE;
@@ -573,7 +571,9 @@ cmsPipeline* DefaultICCintents(cmsContext       ContextID,
         // Concatenate to the output LUT
         if (!cmsPipelineCat(Result, Lut))
             goto Error;
+
         cmsPipelineFree(Lut);
+        Lut = NULL;
 
         // Update current space
         CurrentColorSpace = ColorSpaceOut;
@@ -583,7 +583,7 @@ cmsPipeline* DefaultICCintents(cmsContext       ContextID,
 
 Error:
 
-    cmsPipelineFree(Lut);
+    if (Lut != NULL) cmsPipelineFree(Lut);
     if (Result != NULL) cmsPipelineFree(Result);
     return NULL;
 

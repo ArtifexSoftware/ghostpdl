@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2011 Marti Maria Saguer
+//  Copyright (c) 1998-2013 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -23,7 +23,7 @@
 //
 //---------------------------------------------------------------------------------
 //
-// Version 2.4
+// Version 2.5
 //
 
 #ifndef _lcms2_H
@@ -72,7 +72,7 @@ extern "C" {
 #endif
 
 // Version/release
-#define LCMS_VERSION        2040
+#define LCMS_VERSION        2050
 
 // I will give the chance of redefining basic types for compilers that are not fully C99 compliant
 #ifndef CMS_BASIC_TYPES_ALREADY_DEFINED
@@ -338,6 +338,7 @@ typedef enum {
     cmsSigPreview1Tag                       = 0x70726531,  // 'pre1'
     cmsSigPreview2Tag                       = 0x70726532,  // 'pre2'
     cmsSigProfileDescriptionTag             = 0x64657363,  // 'desc'
+    cmsSigProfileDescriptionMLTag           = 0x6473636d,  // 'dscm'
     cmsSigProfileSequenceDescTag            = 0x70736571,  // 'pseq'
     cmsSigProfileSequenceIdTag              = 0x70736964,  // 'psid'
     cmsSigPs2CRD0Tag                        = 0x70736430,  // 'psd0'
@@ -1246,6 +1247,13 @@ CMSAPI cmsBool           CMSEXPORT cmsMLUgetTranslation(const cmsMLU* mlu,
                                                          const char LanguageCode[3], const char CountryCode[3],
                                                          char ObtainedLanguage[3], char ObtainedCountry[3]);
 
+CMSAPI cmsUInt32Number   CMSEXPORT cmsMLUtranslationsCount(const cmsMLU* mlu);
+
+CMSAPI cmsBool           CMSEXPORT cmsMLUtranslationsCodes(const cmsMLU* mlu,
+                                                             cmsUInt32Number idx,
+                                                             char LanguageCode[3],
+                                                             char CountryCode[3]);
+ 
 // Undercolorremoval & black generation -------------------------------------------------------------------------------------
 
 typedef struct {
@@ -1396,6 +1404,7 @@ CMSAPI cmsUInt32Number   CMSEXPORT cmsGetHeaderRenderingIntent(cmsHPROFILE hProf
 CMSAPI void              CMSEXPORT cmsSetHeaderFlags(cmsHPROFILE hProfile, cmsUInt32Number Flags);
 CMSAPI cmsUInt32Number   CMSEXPORT cmsGetHeaderManufacturer(cmsHPROFILE hProfile);
 CMSAPI void              CMSEXPORT cmsSetHeaderManufacturer(cmsHPROFILE hProfile, cmsUInt32Number manufacturer);
+CMSAPI cmsUInt32Number   CMSEXPORT cmsGetHeaderCreator(cmsHPROFILE hProfile);
 CMSAPI cmsUInt32Number   CMSEXPORT cmsGetHeaderModel(cmsHPROFILE hProfile);
 CMSAPI void              CMSEXPORT cmsSetHeaderModel(cmsHPROFILE hProfile, cmsUInt32Number model);
 CMSAPI void              CMSEXPORT cmsSetHeaderAttributes(cmsHPROFILE hProfile, cmsUInt64Number Flags);

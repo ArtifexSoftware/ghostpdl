@@ -216,7 +216,8 @@ void FUNCTION_NAME(_cmsTRANSFORM* p,
 
             evalGamut(currIn, &wOutOfGamut, p->GamutCheck->Data);
             if (wOutOfGamut >= 1)
-                memcpy(wOut, (void *)Alarm, sizeof(cmsUInt16Number) * cmsMAXCHANNELS);
+                /* RJW: Could be faster? copy once to a local buffer? */
+                cmsGetAlarmCodes(wOut); 
             else
 #endif /* FLOAT_XFORM */
 #endif /* GAMUTCHECK */

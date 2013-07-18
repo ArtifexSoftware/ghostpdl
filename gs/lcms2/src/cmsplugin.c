@@ -97,11 +97,12 @@ void CMSEXPORT  _cmsAdjustEndianess64(cmsUInt64Number* Result, cmsUInt64Number* 
 
 #else
     _cmsAssert(Result != NULL);
+
 #  ifdef CMS_DONT_USE_INT64
     (*Result)[0] = QWord[0];
     (*Result)[1] = QWord[1];
 #  else
-    *Result = QWord;
+    *Result = *QWord;
 #  endif
 #endif
 }
