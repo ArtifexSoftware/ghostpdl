@@ -177,12 +177,6 @@ typedef struct gx_device_X_s {
      * for get_bits_rectangle.
      */
     int MaxTempImage;
-    /*
-     * Define the maximum buffered updates before doing a screen write.
-     */
-    int MaxBufferedTotal;		/* sum of individual areas */
-    int MaxBufferedArea;		/* area of merged bounding box */
-    int MaxBufferedCount;		/* number of writes */
 
     /*
      * Buffered text awaiting display.

@@ -779,10 +779,7 @@ gdev_x_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_bool(plist, ".IsPageDevice", &xdev->IsPageDevice)) < 0 ||
         (code = param_write_long(plist, "MaxBitmap", &xdev->MaxBitmap)) < 0 ||
         (code = param_write_int(plist, "MaxTempPixmap", &xdev->MaxTempPixmap)) < 0 ||
-        (code = param_write_int(plist, "MaxTempImage", &xdev->MaxTempImage)) < 0 ||
-        (code = param_write_int(plist, "MaxBufferedTotal", &xdev->MaxBufferedTotal)) < 0 ||
-        (code = param_write_int(plist, "MaxBufferedArea", &xdev->MaxBufferedArea)) < 0 ||
-        (code = param_write_int(plist, "MaxBufferedCount", &xdev->MaxBufferedCount)) < 0
+        (code = param_write_int(plist, "MaxTempImage", &xdev->MaxTempImage)) < 0
         )
         DO_NOTHING;
     return code;
@@ -815,9 +812,6 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
     ecode = param_put_long(plist, "MaxBitmap", &values.MaxBitmap, ecode);
     ecode = param_put_int(plist, "MaxTempPixmap", &values.MaxTempPixmap, ecode);
     ecode = param_put_int(plist, "MaxTempImage", &values.MaxTempImage, ecode);
-    ecode = param_put_int(plist, "MaxBufferedTotal", &values.MaxBufferedTotal, ecode);
-    ecode = param_put_int(plist, "MaxBufferedArea", &values.MaxBufferedArea, ecode);
-    ecode = param_put_int(plist, "MaxBufferedCount", &values.MaxBufferedCount, ecode);
 
     if (ecode < 0)
         return ecode;
@@ -914,9 +908,6 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
     }
     xdev->MaxTempPixmap = values.MaxTempPixmap;
     xdev->MaxTempImage = values.MaxTempImage;
-    xdev->MaxBufferedTotal = values.MaxBufferedTotal;
-    xdev->MaxBufferedArea = values.MaxBufferedArea;
-    xdev->MaxBufferedCount = values.MaxBufferedCount;
     
     if (clear_window || xdev->MaxBitmap != values.MaxBitmap) {
         /****** DO MORE FOR RESETTING MaxBitmap ******/

@@ -199,9 +199,6 @@ const gx_device_X this_device = { \
     0 /*false*/,		/* AlwaysUpdate */ \
     20000,			/* MaxTempPixmap */ \
     5000,			/* MaxTempImage */ \
-    100000,			/* MaxBufferedTotal */ \
-    100000,			/* MaxBufferedArea */ \
-    max_int,			/* MaxBufferedCount */ \
  \
     {				/* text */ \
         0,			/* item_count */ \
@@ -1098,11 +1095,7 @@ x_update_add(gx_device_X * xdev, int xo, int yo, int w, int h)
     xdev->update.count++;
     xdev->update.area = new_up_area;
     xdev->update.total += added;
-    if (!xdev->AlwaysUpdate &&
-        xdev->update.count < xdev->MaxBufferedCount &&
-        xdev->update.area < xdev->MaxBufferedArea &&
-        xdev->update.total < xdev->MaxBufferedTotal
-        ) {
+    if (!xdev->AlwaysUpdate) {
         /*
          * Test whether adding this rectangle would result in too much being
          * copied unnecessarily.  The fraction of new_up_area used in the
