@@ -739,7 +739,7 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
       N = gx_cie_cache_size - 1;
 
       R = B - A;
-      h(v) = N * (v - A) / R;		/* the index of v in the cache */
+      h(v) = N * (v - A) / R;		// the index of v in the cache
       X = h(0).
 
       If X is not an integer, we can decrease A and/increase B to make it
