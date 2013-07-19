@@ -2881,9 +2881,9 @@ static void t1_hinter__interpolate_other_poles(t1_hinter * self)
 
                         Then we compute :
 
-                        q1 = m0 / d, r1 = m0 % d, m1 = r1 << 12;   // r1 < 2^19, m0 < 2^12
-                        q2 = m1 / d, r2 = m1 % d, m2 = r2 << 12;   // r2 < 2^19, m1 < 2^12
-                        q3 = m2 / d, r3 = m2 % d, m3 = r3 << 12;   // r3 < 2^19, m2 < 2^12
+                        q1 = m0 / d, r1 = m0 % d, m1 = r1 << 12;   /* r1 < 2^19, m0 < 2^12 */
+                        q2 = m1 / d, r2 = m1 % d, m2 = r2 << 12;   /* r2 < 2^19, m1 < 2^12 */
+                        q3 = m2 / d, r3 = m2 % d, m3 = r3 << 12;   /* r3 < 2^19, m2 < 2^12 */
                         and so on.
 
                         We have :

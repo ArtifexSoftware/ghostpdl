@@ -656,7 +656,7 @@ gx_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
         code = gs_cspace_build_ICC(&nclr_pcs, NULL, pgs->memory);
         nclr_pcs->cmm_icc_profile_data = pcs->cmm_icc_profile_data;
         rc_increment(pcs->cmm_icc_profile_data);
-        rc_increment_cs(nclr_pcs); // Suspicious - RJW
+        rc_increment_cs(nclr_pcs); /* Suspicious - RJW */
         rc_decrement_cs(pcs->base_space, "gx_install_DeviceN");
         pcs->base_space = nclr_pcs;
     }

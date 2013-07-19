@@ -46,7 +46,7 @@ s_opjd_init(stream_state * ss)
             return_error(gs_error_VMerror);
 
     /* catch events using our callbacks and give a local context */
-    //opj_set_event_mgr((opj_common_ptr)dinfo, &event_mgr, stderr);
+ /* opj_set_event_mgr((opj_common_ptr)dinfo, &event_mgr, stderr); */
 
     /* set decoding parameters to default values */
     opj_set_default_decoder_parameters(&parameters);
@@ -179,7 +179,7 @@ static int decode_image(stream_jpxd_state * const state)
     for(compno = 1; compno < state->image->numcomps; compno++)
     {
         if (state->bpp != state->image->comps[compno].prec)
-            return ERRC; // Not supported.
+            return ERRC; /* Not supported. */
         if (state->width < state->image->comps[compno].w)
             state->width = state->image->comps[compno].w;
         if (state->height < state->image->comps[compno].h)
