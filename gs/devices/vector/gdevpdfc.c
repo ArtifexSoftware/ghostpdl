@@ -369,7 +369,7 @@ int pdf_make_sampled_base_space_function(gx_device_pdf *pdev, gs_function_t **pf
     gs_const_string str;
 
     str.data = gs_alloc_string(pdev->memory, nDstComp * nSrcComp * 2 * sizeof(float), "pdf_DeviceN");
-    str.size = nDstComp * pow(2, nSrcComp);
+    str.size = nDstComp * (uint)pow(2, nSrcComp);
     memcpy((void *)str.data, data, str.size);
 
     params.m = nSrcComp;
@@ -655,9 +655,9 @@ pdf_separation_color_space(gx_device_pdf *pdev,
  * Create an Indexed color space.  This is a single-use procedure,
  * broken out only for readability.
  */
-static int
+int
 pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
-                        const gs_color_space *pcs, cos_array_t *pca)
+                        const gs_color_space *pcs, cos_array_t *pca, cos_value_t *cos_base)
 {
     const gs_indexed_params *pip = &pcs->params.indexed;
     const gs_color_space *base_space = pcs->base_space;
@@ -768,6 +768,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
      * in PDF, unlike PostScript, the values from the lookup table are
      * scaled automatically.
      */
+    if (pdev->UseOldColor || cos_base == NULL) {
     if ((code = pdf_color_space_named(pdev, pvalue, NULL, base_space,
                                 &pdf_color_space_names, false, NULL, 0)) < 0 ||
         (code = cos_array_add(pca,
@@ -781,6 +782,12 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
                                                        string_used))) < 0
         )
         return code;
+    } else {
+        code = cos_array_add(pca, cos_c_string_value(&v, pdf_color_space_names.Indexed));
+        code = cos_array_add(pca, cos_base);
+        code = cos_array_add_int(pca, pip->hival);
+        code = cos_array_add_no_copy(pca, cos_string_value(&v, table, string_used));
+    }
     return 0;
 }
 
@@ -1224,7 +1231,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
         break;
 
     case gs_color_space_index_Indexed:
-        code = pdf_indexed_color_space(pdev, pvalue, pcs, pca);
+        code = pdf_indexed_color_space(pdev, pvalue, pcs, pca, NULL);
         break;
 
     case gs_color_space_index_DeviceN:
