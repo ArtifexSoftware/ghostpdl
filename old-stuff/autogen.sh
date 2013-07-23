@@ -1,8 +1,20 @@
 #!/bin/sh
-# Run this to set up the build system: configure, makefiles, etc.
+# Copyright (C) 2001-2012 Artifex Software, Inc.
+# All Rights Reserved.
+#
+# This software is provided AS-IS with no warranty, either express or
+# implied.
+#
+# This software is distributed under license and may not be copied,
+# modified or distributed except as expressly authorized under the terms
+# of the license contained in the file LICENSE in this distribution.
+#
+# Refer to licensing information at http://www.artifex.com or contact
+# Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134, San Rafael,
+# CA  94903, U.S.A., +1(415)492-9861, for further information.
+#
 
-
-package="ghostscript"
+package="ghostpdl"
 
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
@@ -19,6 +31,8 @@ cd "$srcdir"
 
 echo "Generating configuration files for $package, please wait...."
 
+rm -f Makefile.config
+
 echo "  running autoconf"
 autoconf || exit 1
 
@@ -29,4 +43,4 @@ else
 	echo "running ./configure $@"
 fi
 
-$srcdir/configure "$@" && echo
+./configure "$@" && echo
