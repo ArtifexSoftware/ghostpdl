@@ -1131,6 +1131,8 @@ static int setup_image_process_colorspace(gx_device_pdf *pdev, image_union_t *im
 /* 0 = write unchanged
    1 = convert to process
    2 = write as ICC
+   3 = convert base space (Separation)
+   4 = convert base space (DeviceN)
  */
 static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, const gs_color_space *pcs, gs_color_space **pcs_orig,
                                   const pdf_color_space_names_t *names, cos_value_t *cs_value)
@@ -1308,8 +1310,28 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                         return 0;
                         break;
                     case gs_color_space_index_Separation:
+                        pcs2 = pcs;
+                        while (pcs2->base_space)
+                            pcs2 = pcs2->base_space;
+                        csi = gs_color_space_get_index(pcs2);
+                        if (csi == gs_color_space_index_ICC)
+                            csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                        if (csi == gs_color_space_index_DeviceCMYK)
+                            return 0;
+                        else
+                            return 3;
+                        break;
                     case gs_color_space_index_DeviceN:
-                        return 0;
+                        pcs2 = pcs;
+                        while (pcs2->base_space)
+                            pcs2 = pcs2->base_space;
+                        csi = gs_color_space_get_index(pcs2);
+                        if (csi == gs_color_space_index_ICC)
+                            csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                        if (csi == gs_color_space_index_DeviceCMYK)
+                            return 0;
+                        else
+                            return 4;
                         break;
                     case gs_color_space_index_Indexed:
                         pcs2 = pcs->base_space;
@@ -1322,8 +1344,28 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                                 return 0;
                                 break;
                             case gs_color_space_index_Separation:
+                                pcs2 = pcs;
+                                while (pcs2->base_space)
+                                    pcs2 = pcs2->base_space;
+                                csi = gs_color_space_get_index(pcs2);
+                                if (csi == gs_color_space_index_ICC)
+                                    csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                                if (csi == gs_color_space_index_DeviceCMYK)
+                                    return 0;
+                                else
+                                    return 3;
+                                break;
                             case gs_color_space_index_DeviceN:
-                                return 2;
+                                pcs2 = pcs;
+                                while (pcs2->base_space)
+                                    pcs2 = pcs2->base_space;
+                                csi = gs_color_space_get_index(pcs2);
+                                if (csi == gs_color_space_index_ICC)
+                                    csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                                if (csi == gs_color_space_index_DeviceCMYK)
+                                    return 0;
+                                else
+                                    return 4;
                                 break;
                             default:
                                 switch (pdev->pcm_color_info_index) {
@@ -1360,8 +1402,28 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                         return 0;
                         break;
                     case gs_color_space_index_Separation:
+                        pcs2 = pcs;
+                        while (pcs2->base_space)
+                            pcs2 = pcs2->base_space;
+                        csi = gs_color_space_get_index(pcs2);
+                        if (csi == gs_color_space_index_ICC)
+                            csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                        if (csi == gs_color_space_index_DeviceGray)
+                            return 0;
+                        else
+                            return 3;
+                        break;
                     case gs_color_space_index_DeviceN:
-                        return 2;
+                        pcs2 = pcs;
+                        while (pcs2->base_space)
+                            pcs2 = pcs2->base_space;
+                        csi = gs_color_space_get_index(pcs2);
+                        if (csi == gs_color_space_index_ICC)
+                            csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                        if (csi == gs_color_space_index_DeviceGray)
+                            return 0;
+                        else
+                            return 4;
                         break;
                     case gs_color_space_index_Indexed:
                         pcs2 = pcs->base_space;
@@ -1373,8 +1435,28 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                                 return 0;
                                 break;
                             case gs_color_space_index_Separation:
+                                pcs2 = pcs;
+                                while (pcs2->base_space)
+                                    pcs2 = pcs2->base_space;
+                                csi = gs_color_space_get_index(pcs2);
+                                if (csi == gs_color_space_index_ICC)
+                                    csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                                if (csi == gs_color_space_index_DeviceGray)
+                                    return 0;
+                                else
+                                    return 3;
+                                break;
                             case gs_color_space_index_DeviceN:
-                                return 2;
+                                pcs2 = pcs;
+                                while (pcs2->base_space)
+                                    pcs2 = pcs2->base_space;
+                                csi = gs_color_space_get_index(pcs2);
+                                if (csi == gs_color_space_index_ICC)
+                                    csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                                if (csi == gs_color_space_index_DeviceGray)
+                                    return 0;
+                                else
+                                    return 4;
                                 break;
                             default:
                                 code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceGray, cs_value);
@@ -1399,8 +1481,28 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                         return 0;
                         break;
                     case gs_color_space_index_Separation:
+                        pcs2 = pcs;
+                        while (pcs2->base_space)
+                            pcs2 = pcs2->base_space;
+                        csi = gs_color_space_get_index(pcs2);
+                        if (csi == gs_color_space_index_ICC)
+                            csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                        if (csi == gs_color_space_index_DeviceRGB)
+                            return 0;
+                        else
+                            return 3;
+                        break;
                     case gs_color_space_index_DeviceN:
-                        return 2;
+                        pcs2 = pcs;
+                        while (pcs2->base_space)
+                            pcs2 = pcs2->base_space;
+                        csi = gs_color_space_get_index(pcs2);
+                        if (csi == gs_color_space_index_ICC)
+                            csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                        if (csi == gs_color_space_index_DeviceRGB)
+                            return 0;
+                        else
+                            return 4;
                         break;
                     case gs_color_space_index_Indexed:
                         pcs2 = pcs->base_space;
@@ -1413,8 +1515,28 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                                 return 0;
                                 break;
                             case gs_color_space_index_Separation:
+                                pcs2 = pcs;
+                                while (pcs2->base_space)
+                                    pcs2 = pcs2->base_space;
+                                csi = gs_color_space_get_index(pcs2);
+                                if (csi == gs_color_space_index_ICC)
+                                    csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                                if (csi == gs_color_space_index_DeviceRGB)
+                                    return 0;
+                                else
+                                    return 3;
+                                break;
                             case gs_color_space_index_DeviceN:
-                                return 2;
+                                pcs2 = pcs;
+                                while (pcs2->base_space)
+                                    pcs2 = pcs2->base_space;
+                                csi = gs_color_space_get_index(pcs2);
+                                if (csi == gs_color_space_index_ICC)
+                                    csi = gsicc_get_default_type(pcs2->cmm_icc_profile_data);
+                                if (csi == gs_color_space_index_DeviceRGB)
+                                    return 0;
+                                else
+                                    return 4;
                                 break;
                             default:
                                 code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceRGB, cs_value);
@@ -1734,6 +1856,16 @@ new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     if (!is_mask) {
         if (image[0].pixel.ColorSpace != NULL && !(context == PDF_IMAGE_TYPE3_MASK))
             convert_to_process_colors = setup_image_colorspace(pdev, &image[0], pcs, &pcs_orig, names, &cs_value);
+        if (convert_to_process_colors == 4) {
+            code = convert_DeviceN_alternate(pdev, pis, pcs, NULL, NULL, NULL, NULL, &cs_value, in_line);
+            if (code < 0)
+                goto fail_and_fallback;
+        }
+        if (convert_to_process_colors == 3) {
+            code = convert_separation_alternate(pdev, pis, pcs, NULL, NULL, NULL, NULL, &cs_value, in_line);
+            if (code < 0)
+                goto fail_and_fallback;
+        }
         if (convert_to_process_colors == 1) {
             code = make_device_color_space(pdev, pdev->pcm_color_info_index, &pcs_device);
             if (code < 0)

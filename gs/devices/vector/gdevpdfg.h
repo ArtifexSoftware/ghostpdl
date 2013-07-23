@@ -105,6 +105,12 @@ int free_color_space(gx_device_pdf *pdev, pdf_resource_t *pres);
 int pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
                         const gs_color_space *pcs, cos_array_t *pca, cos_value_t *cos_base);
 
+int convert_separation_alternate(gx_device_pdf * pdev, const gs_imager_state * pis, const gs_color_space *pcs,
+                        const gx_drawing_color *pdc, bool *used_process_color,
+                        const psdf_set_color_commands_t *ppscc, gs_client_color *pcc, cos_value_t *pvalue, bool by_name);
+int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis, const gs_color_space *pcs,
+                        const gx_drawing_color *pdc, bool *used_process_color,
+                        const psdf_set_color_commands_t *ppscc, gs_client_color *pcc, cos_value_t *pvalue, bool by_name);
 /* Create colored and uncolored Pattern color spaces. */
 int pdf_cs_Pattern_colored(gx_device_pdf *pdev, cos_value_t *pvalue);
 int pdf_cs_Pattern_uncolored(gx_device_pdf *pdev, cos_value_t *pvalue);
