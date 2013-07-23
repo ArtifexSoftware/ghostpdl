@@ -18,17 +18,17 @@
 #	GSSRCDIR - the GS library source directory
 #	PLSRCDIR - the PCL* support library source directory
 #	PLOBJDIR - the object directory for the PCL support library
-#	PCLSRCDIR - the source directory
-#	PCLGENDIR - the directory for source files generated during building
-#	PCLOBJDIR - the object / executable directory
+#	PCL5SRCDIR - the source directory
+#	PCL5GENDIR - the directory for source files generated during building
+#	PCL5OBJDIR - the object / executable directory
 # PLOBJ       = $(PLOBJDIR)$(D)
 
-PCLSRC      = $(PCLSRCDIR)$(D)
-PCLGEN      = $(PCLGENDIR)$(D)
-PCLOBJ      = $(PCLOBJDIR)$(D)
+PCLSRC      = $(PCL5SRCDIR)$(D)
+PCLGEN      = $(PCL5GENDIR)$(D)
+PCLOBJ      = $(PCL5OBJDIR)$(D)
 PCLO_       = $(O_)$(PCLOBJ)
 
-PCLCCC  = $(CC_) $(I_)$(PCLSRCDIR)$(_I) $(I_)$(PCLGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(C_)
+PCLCCC  = $(CC_) $(I_)$(PCL5SRCDIR)$(_I) $(I_)$(PCL5GENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(C_)
 
 # Define the name of this makefile.
 PCL_MAK     = $(PCLSRC)pcl.mak

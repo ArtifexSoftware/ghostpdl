@@ -37,6 +37,9 @@ xps.config-clean: clean_gs
 	$(RM_) $(XPSOBJ)*.dev
 	$(RM_) $(XPSOBJ)devs.tr5
 
+XPS_TOP_OBJ=$(XPSOBJDIR)/xpstop.$(OBJ)
+XPS_TOP_OBJS= $(XPS_TOP_OBJ) $(GLOBJ)gconfig.$(OBJ)
+
 XPSINCLUDES=$(XPSSRC)*.h $(XPSOBJ)arch.h $(XPSOBJ)jpeglib_.h
 
 $(XPSOBJ)xpsmem.$(OBJ): $(XPSSRC)xpsmem.c $(XPSINCLUDES)
@@ -54,7 +57,7 @@ $(XPSOBJ)xpshash.$(OBJ): $(XPSSRC)xpshash.c $(XPSINCLUDES)
 $(XPSOBJ)xpsjpeg.$(OBJ): $(XPSSRC)xpsjpeg.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsjpeg.c $(XPSO_)xpsjpeg.$(OBJ)
 
-$(XPSOBJ)xpspng.$(OBJ): $(XPSSRC)xpspng.c $(XPSINCLUDES) $(PNGSRCDIR)$(D)png.h
+$(XPSOBJ)xpspng.$(OBJ): $(XPSSRC)xpspng.c $(XPSINCLUDES) $(PNGSRCDIR)$(D)png.h $(PNGGENDIR)$(D)libpng.dev
 	$(XPSCCC) $(I_)$(PNGSRCDIR)$(_I) $(XPSSRC)xpspng.c $(XPSO_)xpspng.$(OBJ)
 
 $(XPSOBJ)xpstiff.$(OBJ): $(XPSSRC)xpstiff.c $(XPSINCLUDES)
@@ -121,7 +124,8 @@ $(XPSOBJ)xpsfapi.$(OBJ): $(XPSSRC)xpsfapi.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsfapi.c $(XPSO_)xpsfapi.$(OBJ)
 
 
-$(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(pconfig_h) $(pltop_h) $(XPSINCLUDES)
+$(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(pltop_h) $(XPSINCLUDES) $(GLOBJ)gconfig.$(OBJ) <
+                $(pconfig_h)
 	$(XPSCCC) $(XPSSRC)xpstop.c $(XPSO_)xpstop.$(OBJ)
 
 XPS_OBJS=\
@@ -153,10 +157,13 @@ XPS_OBJS=\
     $(XPSOBJ)xpscff.$(OBJ) \
     $(XPSOBJ)xpsfapi.$(OBJ)
 
+
+
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is
 # required and shouldn't be and PLOBJ==XPSGEN is required.
 
-$(XPSOBJ)xps.dev: $(XPS_MAK) $(ECHOGS_XE) $(XPS_OBJS) $(XPSGEN)expat.dev $(XPSGEN)jpegxr.dev \
-		  $(XPSGEN)pl.dev $(XPSGEN)$(PL_SCALER).dev $(XPSGEN)pjl.dev
+$(XPSOBJ)xps.dev: $(XPS_MAK) $(ECHOGS_XE) $(XPS_OBJS)  $(XPSOBJDIR)$(D)expat.dev $(XPSOBJDIR)$(D)jpegxr.dev \
+                  $(XPSGEN)pl.dev $(XPSGEN)$(PL_SCALER).dev $(XPSGEN)pjl.dev
 	$(SETMOD) $(XPSOBJ)xps $(XPS_OBJS)
-	$(ADDMOD) $(XPSOBJ)xps -include $(XPSGEN)expat $(XPSGEN)jpegxr $(XPSGEN)pl $(XPSGEN)$(PL_SCALER) $(XPSGEN)pjl.dev
+	$(ADDMOD) $(XPSOBJ)xps -include $(XPSGEN)pl $(XPSGEN)$(PL_SCALER) $(XPSGEN)pjl.dev \
+                                                                $(XPSOBJDIR)$(D)expat.dev $(XPSOBJDIR)$(D)jpegxr.dev

@@ -20,12 +20,20 @@
 #	PLSRCDIR - the source directory
 #	PLOBJDIR - the object / executable directory
 
+MAIN_OBJ?=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
+REALMAIN_OBJ?=$(PLOBJDIR)/realmain.$(OBJ)
+REALMAIN_SRC?=realmain
+PCL_TOP_OBJ?=$(PCL5OBJDIR)/pctop.$(OBJ)
+PXL_TOP_OBJ?=$(PXLOBJDIR)/pxtop.$(OBJ)
+TOP_OBJ?=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(GLOBJ)gconfig.$(OBJ)
+
 PLSRC=$(PLSRCDIR)$(D)
 PLOBJ=$(PLOBJDIR)$(D)
 PLO_=$(O_)$(PLOBJ)
 GLGEN=$(GLGENDIR)$(D)
 
 PLCCC=$(CC_) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
+PLATCCC=$(PLCCC)
 
 # Define the name of this makefile.
 PL_MAK=$(PLSRC)pl.mak
@@ -41,6 +49,10 @@ pl.config-clean:
 ########### Common definitions ######
 pltop_h=$(PLSRC)pltop.h $(scommon_h) $(gsgc_h)
 pltoputl_h=$(PLSRC)pltoputl.h $(scommon_h)
+
+PL_SCALER=afs
+PCL_FONT_SCALER=$(PL_SCALER)
+PXL_FONT_SCALER=$(PL_SCALER)
 
 
 ################ Shared library include definitions ################
@@ -82,6 +94,10 @@ PJL_VOLUME_0=/tmp/pjl0
 PJL_VOLUME_1=/tmp/pjl1
 
 plver_h=$(PLOBJ)plver.h
+
+# FIXME: move elsewhere
+$(GLGEN)pconf.h $(GLGEN)/ldconf.tr: $(TARGET_DEVS) $(AUXDIR)/genconf$(XE)
+	$(AUXDIR)/genconf -n - $(TARGET_DEVS) -h $(GLGEN)/pconf.h -p "%s&s&&" -o $(GLGEN)/ldconf.tr
 
 $(PLOBJ)plver.h: $(PLSRC)pl.mak
 	$(AUX)echogs$(XE) -e .h -w $(PLOBJ)plver -n -x 23 "define PJLVERSION"
@@ -313,12 +329,14 @@ $(PLOBJ)bfs.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj1) $(pl_obj2)
 ### END BROKEN ###
 
 $(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj) $(PLOBJ)fapi_pl.dev \
-                $(PLOBJ)plufstlp$(UFST_BRIDGE).$(OBJ)
+                $(GLOBJ)plufstlp$(UFST_BRIDGE).$(OBJ) $(GLOBJ)gsargs.$(OBJ)
 	$(SETMOD) $(PLOBJ)pl $(pl_obj1)
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj2)
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj3)
 	$(ADDMOD) $(PLOBJ)pl $(PLOBJ)plufstlp$(UFST_BRIDGE).$(OBJ)
-	$(ADDMOD) $(PLOBJ)pl -include $(PLOBJ)fapi_pl.dev
+	$(ADDMOD) $(PLOBJ)pl $(GLOBJ)gscdefs.$(OBJ)
+	$(ADDMOD) $(PLOBJ)pl $(GLOBJ)gsargs.$(OBJ)
+	$(ADDMOD) $(PLOBJ)pl -include $(PLOBJ)fapi_pl
 	$(ADDMOD) $(PLOBJ)pl -include $(PLOBJ)$(PL_SCALER)
 
 ###### Command-line driver's main program #####

@@ -27,29 +27,74 @@ directories:
 	@if test "$(PSGENDIR)"  != "" -a ! -d $(PSGENDIR)/cups; then mkdir $(PSGENDIR)/cups; fi
 	@if test "$(PSOBJDIR)"  != "" -a ! -d $(PSOBJDIR);      then mkdir $(PSOBJDIR);      fi
 
+
+gpcl6:
+	$(MAKE) BUILDDIRPREFIX=pcl PRODUCT_STRING=pcl .pcl6subtarget
+
+gpcl6clean:
+	$(MAKE) BUILDDIRPREFIX=pcl PRODUCT_STRING=pcl cleansub
+
+gxps:
+	$(MAKE) BUILDDIRPREFIX=xps PRODUCT_STRING=xps .xpssubtarget
+
+gxpsclean:
+	$(MAKE) BUILDDIRPREFIX=xps PRODUCT_STRING=xps cleansub
+
+
+
 # Define a rule for building profiling configurations.
 PGDEFS=GENOPT='-DPROFILE' CFLAGS='$(CFLAGS_PROFILE) $(GCFLAGS) $(XCFLAGS)'\
- LDFLAGS='$(XLDFLAGS) -pg' XLIBS='Xt SM ICE Xext X11'\
- BUILDDIRPREFIX=$(PGDIRPREFIX)
+ LDFLAGS='$(XLDFLAGS) -pg' XLIBS='Xt SM ICE Xext X11'
 
 pg:
-	$(MAKE) $(PGDEFS) default
+	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) default
 
 pgclean:
-	$(MAKE) $(PGDEFS) clean
+	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) cleansub
+
+gpcl6pg:
+	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=pcl$(PGDIRPREFIX) PRODUCT_STRING=pcl .pcl6subtarget
+
+gpcl6pgclean:
+	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=pcl$(PGDIRPREFIX) PRODUCT_STRING=pcl cleansub
+
+gxpspg:
+	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=xps(PGDIRPREFIX) PRODUCT_STRING=xps .xpssubtarget
+
+gxpspgclean:
+	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=xps$(PGDIRPREFIX) PRODUCT_STRING=xps cleansub
 
 # Define a rule for building debugging configurations.
-DEBUGDEFS=GENOPT='-DDEBUG' CFLAGS='$(CFLAGS_DEBUG) $(GCFLAGS) $(XCFLAGS)'\
- BUILDDIRPREFIX=$(DEBUGDIRPREFIX)
+DEBUGDEFS=GENOPT='-DDEBUG' CFLAGS='$(CFLAGS_DEBUG) $(GCFLAGS) $(XCFLAGS)'
+
 
 debug:
-	$(MAKE) $(DEBUGDEFS) default
+	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) default
 
 debug-apitest:
-	$(MAKE) $(DEBUGDEFS) apitest
+	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) apitest
 
 debugclean:
-	$(MAKE) $(DEBUGDEFS) clean
+	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) cleansub
+
+
+gpcl6debug:
+	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=pcl$(DEBUGDIRPREFIX) PRODUCT_STRING=pcl .pcl6subtarget
+
+#pcl6-debug-apitest:
+#	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=pcl$(DEBUGDIRPREFIX) apitest
+
+pcl6debugclean:
+	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=pcl$(DEBUGDIRPREFIX) PRODUCT_STRING=pcl cleansub
+
+gxpsdebug:
+	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=xps$(DEBUGDIRPREFIX) PRODUCT_STRING=xps .xpssubtarget
+
+#pcl6-debug-apitest:
+#	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=xps$(DEBUGDIRPREFIX) apitest
+
+gxpsdebugclean:
+	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=xps$(DEBUGDIRPREFIX) PRODUCT_STRING=xps cleansub
 
 # Define a rule for building memento configurations.
 MEMENTODEFS=GENOPT='-DMEMENTO -DDEBUG' \
@@ -60,7 +105,10 @@ memento:
 	$(MAKE) $(MEMENTODEFS) default
 
 mementoclean:
-	$(MAKE) $(MEMENTODEFS) clean
+	$(MAKE) $(MEMENTODEFS) cleansub
+
+pcl_xps_clean: gpcl6clean gxpsclean
+	$(NO_OP)
 
 # Emacs tags maintenance.
 

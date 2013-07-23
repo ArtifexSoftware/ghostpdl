@@ -31,7 +31,7 @@ PXLGEN=$(PXLGENDIR)$(D)
 PXLOBJ=$(PXLOBJDIR)$(D)
 PXLO_=$(O_)$(PXLOBJ)
 
-PXLCCC=$(CC_) $(I_)$(PXLSRCDIR)$(_I) $(I_)$(PXLGENDIR)$(_I) $(I_)$(PCLSRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
+PXLCCC=$(CC_) $(I_)$(PXLSRCDIR)$(_I) $(I_)$(PXLGENDIR)$(_I) $(I_)$(PCL5SRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
 # Define the name of this makefile.
 PXL_MAK=$(PXLSRC)pxl.mak
@@ -213,7 +213,7 @@ $(PXL_TOP_OBJ): $(PXLSRC)pxtop.c $(AK) $(stdio__h)\
  $(gsstate_h) $(gsfont_h) $(gsstruct_h) $(gspaint_h) $(gstypes_h) $(gxalloc_h) $(gxstate_h)\
  $(gsnogc_h) $(pltop_h) $(plparse_h)\
  $(pxattr_h) $(pxerrors_h) $(pxoper_h) $(pxparse_h) $(pxptable_h) $(pxstate_h)\
- $(pxfont_h) $(pxvalue_h) $(PXLGEN)pconf.h $(plfont_h) $(pconfig_h) $(plmain_h)
+ $(pxfont_h) $(pxvalue_h) $(plfont_h) $(pconfig_h) $(plmain_h)
 	$(PXLCCC) $(PXLSRC)pxtop.c $(PXLO_)pxtop.$(OBJ)
 
 # Note that we must initialize pxfont before pxerrors.

@@ -36,6 +36,24 @@ PSLIBDIR=@srcdir@/lib
 PSRESDIR=@srcdir@/Resource
 PSGENDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
 PSOBJDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+
+PCL5SRCDIR=@srcdir@/pcl/pcl
+PCL5GENDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+PCL5OBJDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+
+PXLSRCDIR=@srcdir@/pcl/pxl
+PXLGENDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+PXLOBJDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+
+PLSRCDIR=@srcdir@/pcl/pl
+PLGENDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+PLOBJDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+
+XPSSRCDIR=@srcdir@/xps
+XPSGENDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+XPSOBJDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+
+
 CONTRIBDIR=@srcdir@/contrib
 
 # Do not edit the next group of lines.
@@ -44,6 +62,9 @@ include $(GLSRCDIR)/version.mak
 DD=$(GLGENDIR)/
 GLD=$(GLGENDIR)/
 PSD=$(PSGENDIR)/
+
+PCL5D=$(PCL5GENDIR)/
+XPSD=$(XPSGENDIR)/
 
 # ------ Generic options ------ #
 
@@ -150,6 +171,14 @@ GS=@GS@@EXEEXT@
 GS_SO_BASE=@GS@
 XE=@EXEEXT@
 XEAUX=@EXEEXT@
+
+# FIXME: use configure to set (as above)
+PCL=gpcl6
+XPS=gxps
+
+# FIXME: use configure to set
+PCL_XPS_TARGETS=gpcl6 gxps
+PCL_XPS_CLEAN=pcl_xps_clean
 
 # Define the directories for debugging and profiling binaries, relative to
 # the standard binaries.
@@ -275,6 +304,19 @@ LCMS2_CFLAGS=-DSHARE_LCMS=$(SHARE_LCMS) @LCMS2_ENDIAN@ @SQRTF_SUBST@  @LCMS2_PTR
 # Which CMS are we using?
 # Options are currently lcms or lcms2
 WHICH_CMS=@WHICHLCMS@
+
+
+EXPATSRCDIR=./expat
+EXPAT_CFLAGS=-DHAVE_MEMMOVE
+EXPATGENDIR=$(GLGENDIR)
+EXPATOBJDIR=$(GLOBJDIR)
+EXPATINCDIR = $(EXPATSRCDIR)$(D)lib
+SHARE_EXPAT=0
+
+JPEGXR_SRCDIR=./jpegxr
+SHARE_JPEGXR=0
+JPEGXR_GENDIR=$(GLGENDIR)
+JPEGXR_OBJDIR=$(GLOBJDIR)
 
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
@@ -594,6 +636,16 @@ include $(GLSRCDIR)/gs.mak
 include $(PSSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
+
+# FIXME: use configure to pull in
+include $(PLSRCDIR)/pl.mak
+include $(PCL5SRCDIR)/pcl.mak
+include $(PCL5SRCDIR)/pcl_top.mak
+include $(PXLSRCDIR)/pxl.mak
+
+include $(XPSSRCDIR)/xps.mak
+
+
 include $(GLSRCDIR)/freetype.mak
 include @FAPIUFST_MAK@
 include $(GLSRCDIR)/jpeg.mak
@@ -605,6 +657,11 @@ include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/ldf_jb2.mak
 include $(GLSRCDIR)/lwf_jp2.mak
 include $(GLSRCDIR)/openjpeg.mak
+
+# FIXME: use configure to pull in
+include $(GLSRCDIR)/jpegxr.mak
+include $(GLSRCDIR)/expat.mak
+
 include $(GLSRCDIR)/$(WHICH_CMS).mak
 include $(GLSRCDIR)/ijs.mak
 @LCUPSINCLUDE@

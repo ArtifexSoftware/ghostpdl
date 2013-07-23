@@ -252,6 +252,9 @@ GS_MAK=$(GLSRCDIR)$(D)gs.mak
 
 # Define the names of the executables.
 GS_XE=$(BINDIR)$(D)$(GS)$(XE)
+PCL_XE=$(BINDIR)$(D)$(PCL)$(XE)
+XPS_XE=$(BINDIR)$(D)$(XPS)$(XE)
+
 AUX=$(AUXDIR)$(D)
 ECHOGS_XE=$(AUX)echogs$(XEAUX)
 GENARCH_XE=$(AUX)genarch$(XEAUX)
@@ -267,7 +270,7 @@ gconfxx_h=$(GLGENDIR)$(D)gconfxx.h
 gconfigf_h=$(GLGENDIR)$(D)gconfxc.h
 gconfigd_h=$(GLGENDIR)$(D)gconfigd.h
 
-all default : $(GS_XE) $(GS_SHARED_OBJS) $(MAKEDIRSTOP) $(MAKEDIRS)
+all default : $(GS_XE) $(PCL_XPS_TARGETS) $(GS_SHARED_OBJS) $(MAKEDIRSTOP) $(MAKEDIRS)
 	$(NO_OP)
 
 # the distclean and maintainer-clean targets (if any)
@@ -277,12 +280,14 @@ all default : $(GS_XE) $(GS_SHARED_OBJS) $(MAKEDIRSTOP) $(MAKEDIRS)
 realclean : clean
 	$(NO_OP)
 
-clean : mostlyclean
+cleansub : mostlyclean
 	$(RM_) $(GSGEN)arch.h
 	$(RM_) $(GS_XE)
 	$(RM_) $(GS_SHARED_OBJS)
 	$(RMN_) -r $(BINDIR) $(GLGENDIR) $(GLOBJDIR) $(PSGENDIR) $(PSOBJDIR)
 
+clean : cleansub  $(PCL_XPS_CLEAN)
+	$(NO_OP)
 #****** FOLLOWING IS WRONG, NEEDS TO BE PER-SUBSYSTEM ******
 mostlyclean : config-clean
 	$(RMN_) $(GSOBJ)*.$(OBJ) $(GSOBJ)*.a $(GSOBJ)core $(GSOBJ)gmon.out
@@ -376,8 +381,34 @@ JPX_OPENJPEG_I_=$(JPXSRCDIR)$(D)src$(D)lib$(D)openjp2
 # FEATURE_DEVS_EXTRA and DEVICE_DEVS_EXTRA are explicitly reserved
 # to be set from the command line.
 
+GSPLAT_DEVS_ALL=$(GLGENDIR)$(D)$(GSPLATFORM).dev
+
+DEVICE_DEVS_ALL=$(DEVICE_DEVS) $(DEVICE_DEVS1) \
+ $(DEVICE_DEVS2) $(DEVICE_DEVS3) $(DEVICE_DEVS4) $(DEVICE_DEVS5) \
+ $(DEVICE_DEVS6) $(DEVICE_DEVS7) $(DEVICE_DEVS8) $(DEVICE_DEVS9) \
+ $(DEVICE_DEVS10) $(DEVICE_DEVS11) $(DEVICE_DEVS12) $(DEVICE_DEVS13) \
+ $(DEVICE_DEVS14) $(DEVICE_DEVS15) $(DEVICE_DEVS16) $(DEVICE_DEVS17) \
+ $(DEVICE_DEVS18) $(DEVICE_DEVS19) $(DEVICE_DEVS20) $(DEVICE_DEVS21) \
+ $(DEVICE_DEVS_EXTRA) $(GLD)romfs$(COMPILE_INITS).dev 
+
+PSI_DEVS_ALL=$(GSPLAT_DEVS_ALL) \
+ $(PSI_FEATURE_DEVS) \
+ $(FEATURE_DEVS) \
+ $(FEATURE_DEVS_EXTRA) \
+ $(DEVICE_DEVS_ALL)
+
+PCL_DEVS_ALL=$(GSPLAT_DEVS_ALL) \
+ $(FEATURE_DEVS) \
+ $(FEATURE_DEVS_EXTRA) \
+ $(DEVICE_DEVS_ALL)
+
+XPS_DEVS_ALL=$(GSPLAT_DEVS_ALL) \
+ $(FEATURE_DEVS) \
+ $(FEATURE_DEVS_EXTRA) \
+ $(DEVICE_DEVS_ALL)
+
 DEVS_ALL=$(GLGENDIR)$(D)$(GSPLATFORM).dev\
- $(FEATURE_DEVS) $(FEATURE_DEVS_EXTRA) \
+ $(FEATURE_DEVS_EXTRA) \
  $(DEVICE_DEVS) $(DEVICE_DEVS1) \
  $(DEVICE_DEVS2) $(DEVICE_DEVS3) $(DEVICE_DEVS4) $(DEVICE_DEVS5) \
  $(DEVICE_DEVS6) $(DEVICE_DEVS7) $(DEVICE_DEVS8) $(DEVICE_DEVS9) \
@@ -386,11 +417,22 @@ DEVS_ALL=$(GLGENDIR)$(D)$(GSPLATFORM).dev\
  $(DEVICE_DEVS18) $(DEVICE_DEVS19) $(DEVICE_DEVS20) $(DEVICE_DEVS21) \
  $(DEVICE_DEVS_EXTRA) $(GLD)romfs$(COMPILE_INITS).dev 
 
+$(GLGENDIR)$(D)fdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
+	$(EXP)$(ECHOGS_XE) -w $(GLGENDIR)$(D)fdevs.tr -+ $(PSI_FEATURE_DEVS)
+
+$(GLGENDIR)$(D)pclfdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
+	$(EXP)$(ECHOGS_XE) -w $(GLGENDIR)$(D)pclfdevs.tr -+ ""
+
+$(GLGENDIR)$(D)xpsfdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
+	$(EXP)$(ECHOGS_XE) -w $(GLGENDIR)$(D)xpsfdevs.tr -+ ""
+
 devs_tr=$(GLGENDIR)$(D)devs.tr
-$(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
+# NOTE that PRODUCT_STRING is empty for Ghostscript
+$(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE) $(GLGENDIR)$(D)$(PRODUCT_STRING)fdevs.tr
 	$(EXP)$(ECHOGS_XE) -w $(devs_tr) - -include $(GLGENDIR)$(D)$(GSPLATFORM)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(FEATURE_DEVS)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(FEATURE_DEVS_EXTRA)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -n -R $(GLGENDIR)$(D)$(PRODUCT_STRING)fdevs.tr
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS1)
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS2)
@@ -422,10 +464,25 @@ $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
 # it isn't just literal text.
 GCONFIG_EXTRAS=
 
+$(GLGENDIR)$(D)productld.tr: $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(PSI_DEVS_ALL) \
+                                               $(GLGENDIR)$(D)libcore.dev
+	$(EXP)$(ECHOGS_XE) -w -n $(GLGENDIR)$(D)productld.tr -+
+
+$(GLGENDIR)$(D)pclproductld.tr: $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(PCL_DEVS_ALL) \
+                                                   $(PCL_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
+	$(EXP)$(GENCONF_XE) -n pcl $(PCL_FEATURE_DEVS) -p "%s&s&&" -o $(GLGENDIR)$(D)pclproductld.tr
+
+$(GLGENDIR)$(D)xpsproductld.tr: $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(XPS_DEVS_ALL) \
+                                                   $(XPS_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
+	$(EXP)$(GENCONF_XE) -n xps $(XPS_FEATURE_DEVS) -p "%s&s&&" -o $(GLGENDIR)$(D)xpsproductld.tr
+
+#  $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(DEVS_ALL) $(GLGENDIR)$(D)libcore.dev
 ld_tr=$(GLGENDIR)$(D)ld.tr
 $(ld_tr) : \
-  $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(DEVS_ALL) $(GLGENDIR)$(D)libcore.dev
+  $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(GLGENDIR)$(D)libcore.dev \
+  $(GLGENDIR)$(D)$(PRODUCT_STRING)productld.tr
 	$(EXP)$(GENCONF_XE) $(devs_tr) -h $(gconfxx_h) $(CONFILES) $(CONFLDTR) $(ld_tr)
+	$(EXP)$(ECHOGS_XE) -a $(ld_tr) -n -R $(GLGENDIR)$(D)$(PRODUCT_STRING)productld.tr
 	$(EXP)$(ECHOGS_XE) -a $(gconfxx_h) $(GCONFIG_EXTRAS)
 
 $(gconfxx_h) : $(ld_tr)

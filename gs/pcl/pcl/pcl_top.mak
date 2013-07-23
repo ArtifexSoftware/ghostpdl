@@ -18,17 +18,17 @@
 
 # This file must be preceded by pcl.mak.
 
-default: $(TARGET_XE)$(XE)
-	@echo Done.
+#default: $(TARGET_XE)$(XE)
+#	@echo Done.
 
-clean: config-clean clean-not-config-clean
+#clean: config-clean clean-not-config-clean
 
-clean-not-config-clean: pl.clean-not-config-clean pcl.clean-not-config-clean
-	$(RM_) $(TARGET_XE)$(XE)
+#clean-not-config-clean: pl.clean-not-config-clean pcl.clean-not-config-clean
+#	$(RM_) $(TARGET_XE)$(XE)
 
-config-clean: pl.config-clean pcl.config-clean
-	$(RMN_) *.tr $(GD)devs.tr $(GD)ld.tr
-	$(RMN_) $(PCLGEN)pconf.h $(PCLGEN)pconfig.h
+#config-clean: pl.config-clean pcl.config-clean
+#	$(RMN_) *.tr $(GD)devs.tr $(GD)ld.tr
+#	$(RMN_) $(PCLGEN)pconf.h $(PCLGEN)pconfig.h
 
 #### Implementation stub
 
