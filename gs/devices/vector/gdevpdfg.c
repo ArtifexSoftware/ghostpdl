@@ -289,6 +289,10 @@ is_cspace_allowed_in_strategy(gx_device_pdf * pdev, gs_color_space_index csi)
             csi != gs_color_space_index_DeviceRGB &&
             csi != gs_color_space_index_DeviceGray)
         return false;
+    if (pdev->params.ColorConversionStrategy == ccs_RGB &&
+            csi != gs_color_space_index_DeviceRGB &&
+            csi != gs_color_space_index_DeviceGray)
+        return false;
     if (pdev->params.ColorConversionStrategy == ccs_Gray &&
             csi != gs_color_space_index_DeviceGray)
         return false;
