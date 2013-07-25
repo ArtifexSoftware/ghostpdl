@@ -89,44 +89,52 @@ cmsBool cmsExtrasTransformFactory(_cmsTransformFn     *xform,
     /* No float support in here! */
     if (T_FLOAT(*InputFormat) != 0)
         return 0;
-
-    mask = *InputFormat & (cmsFLAGS_NULLTRANSFORM | cmsFLAGS_GAMUTCHECK | cmsFLAGS_NOCACHE);
+    mask = *dwFlags & (cmsFLAGS_NULLTRANSFORM | cmsFLAGS_GAMUTCHECK | cmsFLAGS_NOCACHE);
     if (mask == 0) {
         if ((*InputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(3)|BYTES_SH(1)) &&
             (*OutputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(1)|BYTES_SH(1))) {
-            *xform = CachedXFORM3to1;
+            *xform = CachedXFORM3to1; /* Verified OK */
             *dwFlags |= cmsFLAGS_CAN_CHANGE_FORMATTER;
 	    return 1;
 	} else {
+            /* Disabled for now as these seem to cause problems. Testing
+             * seems to indicate that it's not the actual transform code that
+             * is wrong, but rather that (radical!) differences arise because
+             * of different pipeline optimisations. Pipeline optimisation is
+             * never done when we work as a Transform factory. */
+#if 0
             int inwords = T_CHANNELS(*InputFormat);
             if (inwords <= 2) {
                 *xform = CachedXFORM4;
                 *dwFlags |= cmsFLAGS_CAN_CHANGE_FORMATTER;
                 return 1;
-            } else if (inwords <= 4) {
+            }
+            else if (inwords <= 4) {
                 *xform = CachedXFORM8;
                 *dwFlags |= cmsFLAGS_CAN_CHANGE_FORMATTER;
                 return 1;
-            } else {
+            }
+            else {
                 *xform = CachedXFORM;
                 *dwFlags |= cmsFLAGS_CAN_CHANGE_FORMATTER;
                 return 1;
 	    }
+#endif
         }
-    } else if (mask == cmsFLAGS_GAMUTCHECK) {
-         *xform = CachedXFORMGamutCheck;
+    }
+    else if (mask == cmsFLAGS_GAMUTCHECK) {
+         *xform = CachedXFORMGamutCheck; /* Verified OK */
          *dwFlags |= cmsFLAGS_CAN_CHANGE_FORMATTER;
          return 1;
     } else if (mask == cmsFLAGS_NOCACHE) {
-         *xform = PrecalculatedXFORM;
+         *xform = PrecalculatedXFORM; /* Verified OK */
          *dwFlags |= cmsFLAGS_CAN_CHANGE_FORMATTER;
          return 1;
     } else if (mask == (cmsFLAGS_GAMUTCHECK | cmsFLAGS_NOCACHE)) {
-         *xform = PrecalculatedXFORMGamutCheck;
+         *xform = PrecalculatedXFORMGamutCheck; /* Verified OK */
          *dwFlags |= cmsFLAGS_CAN_CHANGE_FORMATTER;
          return 1;
     }
-
     return 0;
 }
 

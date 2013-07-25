@@ -579,15 +579,14 @@ gscms_create(gs_memory_t *memory)
 {
     /* Set our own error handling function */
     cmsSetLogErrorHandler(gscms_error);
-    cmsPluginTHR(memory, &gs_cms_memhandler);
+    cmsPluginTHR(memory, (void *)&gs_cms_memhandler);
     /* If we had created any persitent state that we needed access to in the
      * other functions, we should store that by calling:
      *   gs_lib_ctx_set_cms_context(memory, state);
      * We can then retrieve it anywhere else by calling:
      *   gs_lib_ctx_get_cms_context(memory);
      * LCMS currently uses no such state. */
-    /* Disable our optimisations for the first commit */
-    /* cmsRegisterExtraTransforms(memory); */
+    cmsRegisterExtraTransforms((cmsContext *)memory);
     return 0;
 }
 

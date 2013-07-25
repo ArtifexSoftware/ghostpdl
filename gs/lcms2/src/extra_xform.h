@@ -244,12 +244,12 @@ void FUNCTION_NAME(_cmsTRANSFORM* p,
 #ifdef NO_UNPACK
     memcpy(p->Cache.CacheOut,prevIn,INBYTES);
 #else
-    memcpy(prevIn, p->Cache.CacheIn, sizeof(XFORM_TYPE) * cmsMAXCHANNELS);
+    memcpy(p->Cache.CacheIn, prevIn, sizeof(XFORM_TYPE) * cmsMAXCHANNELS);
 #endif
 #ifdef NO_PACK
     COPY_MATCHED(prevOut,p->Cache.CacheOut);
 #else
-    memcpy(wOut, p->Cache.CacheOut, sizeof(XFORM_TYPE) * cmsMAXCHANNELS);
+    memcpy(p->Cache.CacheOut, wOut, sizeof(XFORM_TYPE) * cmsMAXCHANNELS);
 #endif /* NO_PACK */
 #endif /* CACHED */
 }
