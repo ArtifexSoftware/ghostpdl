@@ -200,27 +200,8 @@ void NullXFORM(_cmsTRANSFORM* p,
 
 
 // No gamut check, no cache, 16 bits
-static
-void PrecalculatedXFORM(_cmsTRANSFORM* p,
-                        const void* in,
-                        void* out, cmsUInt32Number Size, cmsUInt32Number Stride)
-{
-    register cmsUInt8Number* accum;
-    register cmsUInt8Number* output;
-    cmsUInt16Number wIn[cmsMAXCHANNELS], wOut[cmsMAXCHANNELS];
-    cmsUInt32Number i, n;
-
-    accum  = (cmsUInt8Number*)  in;
-    output = (cmsUInt8Number*)  out;
-    n = Size;
-
-    for (i=0; i < n; i++) {
-
-        accum = p -> FromInput(p, wIn, accum, Stride);
-        p ->Lut ->Eval16Fn(wIn, wOut, p -> Lut->Data);
-        output = p -> ToOutput(p, wOut, output, Stride);
-    }
-}
+#define FUNCTION_NAME PrecalculatedXFORM
+#include "extra_xform.h"
 
 
 // Auxiliar: Handle precalculated gamut check
@@ -244,114 +225,48 @@ void TransformOnePixelWithGamutCheck(_cmsTRANSFORM* p,
 }
 
 // Gamut check, No caché, 16 bits.
-static
-void PrecalculatedXFORMGamutCheck(_cmsTRANSFORM* p,
-                                  const void* in,
-                                  void* out, cmsUInt32Number Size, cmsUInt32Number Stride)
-{
-    cmsUInt8Number* accum;
-    cmsUInt8Number* output;
-    cmsUInt16Number wIn[cmsMAXCHANNELS], wOut[cmsMAXCHANNELS];
-    cmsUInt32Number i, n;
-
-    accum  = (cmsUInt8Number*)  in;
-    output = (cmsUInt8Number*)  out;
-    n = Size;                    // Buffer len
-
-    for (i=0; i < n; i++) {
-
-        accum = p -> FromInput(p, wIn, accum, Stride);
-        TransformOnePixelWithGamutCheck(p, wIn, wOut);
-        output = p -> ToOutput(p, wOut, output, Stride);
-    }
-}
-
+#define FUNCTION_NAME PrecalculatedXFORMGamutCheck
+#define GAMUTCHECK
+#include "extra_xform.h"
 
 // No gamut check, Caché, 16 bits,
-static
-void CachedXFORM(_cmsTRANSFORM* p,
-                 const void* in,
-                 void* out, cmsUInt32Number Size, cmsUInt32Number Stride)
-{
-    cmsUInt8Number* accum;
-    cmsUInt8Number* output;
-    cmsUInt16Number wIn[cmsMAXCHANNELS], wOut[cmsMAXCHANNELS];
-    cmsUInt32Number i, n;
-    _cmsCACHE Cache;
-
-    accum  = (cmsUInt8Number*)  in;
-    output = (cmsUInt8Number*)  out;
-    n = Size;                    // Buffer len
-
-    // Empty buffers for quick memcmp
-    memset(wIn,  0, sizeof(wIn));
-    memset(wOut, 0, sizeof(wOut));
-
-    // Get copy of zero cache
-    memcpy(&Cache, &p ->Cache, sizeof(Cache));
-
-    for (i=0; i < n; i++) {
-
-        accum = p -> FromInput(p, wIn, accum, Stride);
-
-        if (memcmp(wIn, Cache.CacheIn, sizeof(Cache.CacheIn)) == 0) {
-
-            memcpy(wOut, Cache.CacheOut, sizeof(Cache.CacheOut));
-        }
-        else {
-
-            p ->Lut ->Eval16Fn(wIn, wOut, p -> Lut->Data);
-
-            memcpy(Cache.CacheIn,  wIn,  sizeof(Cache.CacheIn));
-            memcpy(Cache.CacheOut, wOut, sizeof(Cache.CacheOut));
-        }
-
-        output = p -> ToOutput(p, wOut, output, Stride);
-    }
-
-}
-
+#define FUNCTION_NAME CachedXFORM
+#define CACHED
+#include "extra_xform.h"
 
 // All those nice features together
-static
-void CachedXFORMGamutCheck(_cmsTRANSFORM* p,
-                           const void* in,
-                           void* out, cmsUInt32Number Size, cmsUInt32Number Stride)
-{
-       cmsUInt8Number* accum;
-       cmsUInt8Number* output;
-       cmsUInt16Number wIn[cmsMAXCHANNELS], wOut[cmsMAXCHANNELS];
-       cmsUInt32Number i, n;
-       _cmsCACHE Cache;
+#define FUNCTION_NAME CachedXFORMGamutCheck
+#define CACHED
+#define GAMUTCHECK
+#include "extra_xform.h"
 
-       accum  = (cmsUInt8Number*)  in;
-       output = (cmsUInt8Number*)  out;
-       n = Size;                    // Buffer len
+// No gamut check, Cache, 16 bits, 4 bytes
+#define FUNCTION_NAME CachedXFORM4
+#define CACHED
+#define INBYTES 4
+#include "extra_xform.h"
 
-       // Empty buffers for quick memcmp
-       memset(wIn,  0, sizeof(cmsUInt16Number) * cmsMAXCHANNELS);
-       memset(wOut, 0, sizeof(cmsUInt16Number) * cmsMAXCHANNELS);
+// No gamut check, Cache, 16 bits, 8 bytes
+#define FUNCTION_NAME CachedXFORM8
+#define CACHED
+#define INBYTES 8
+#include "extra_xform.h"
 
-       // Get copy of zero cache
-       memcpy(&Cache, &p ->Cache, sizeof(Cache));
-
-       for (i=0; i < n; i++) {
-
-            accum = p -> FromInput(p, wIn, accum, Stride);
-
-            if (memcmp(wIn, Cache.CacheIn, sizeof(Cache.CacheIn)) == 0) {
-                    memcpy(wOut, Cache.CacheOut, sizeof(Cache.CacheOut));
-            }
-            else {
-                    TransformOnePixelWithGamutCheck(p, wIn, wOut);
-                    memcpy(Cache.CacheIn, wIn, sizeof(Cache.CacheIn));
-                    memcpy(Cache.CacheOut, wOut, sizeof(Cache.CacheOut));
-            }
-
-            output = p -> ToOutput(p, wOut, output, Stride);
-       }
-
-}
+// Special one for common case.
+#define FUNCTION_NAME CachedXFORM3to1
+#define CACHED
+#define INBYTES 6
+#define UNPACK(T,D,S,Z)                                   \
+do {                                                      \
+       (D)[0] = FROM_8_TO_16(*(S)); (S)++;     /* R */    \
+       (D)[1] = FROM_8_TO_16(*(S)); (S)++;     /* G */    \
+       (D)[2] = FROM_8_TO_16(*(S)); (S)++;     /* B */    \
+} while (0)
+#define PACK(T,S,D,Z)            \
+do {                             \
+    *(D)++ = FROM_16_TO_8(*(S)); \
+} while (0);
+#include "extra_xform.h"
 
 // -------------------------------------------------------------------------------------------------------------
 
@@ -538,7 +453,20 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
                 if (*dwFlags & cmsFLAGS_GAMUTCHECK)
                     p ->xform = CachedXFORMGamutCheck;    // Gamut check, caché
                 else
-                    p ->xform = CachedXFORM;  // No gamut check, caché
+                {
+                    if ((*InputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(3)|BYTES_SH(1)) &&
+                        (*OutputFormat & ~COLORSPACE_SH(31)) == (CHANNELS_SH(1)|BYTES_SH(1))) {
+                        p->xform = CachedXFORM3to1;
+                    } else {
+                        int inwords = T_CHANNELS(*InputFormat);
+                        if (inwords <= 2)
+                            p->xform = CachedXFORM4;
+                        else if (inwords <= 4)
+                            p->xform = CachedXFORM8;
+                        else
+                            p ->xform = CachedXFORM;  // No gamut check, caché
+                    }
+                }
 
             }
         }

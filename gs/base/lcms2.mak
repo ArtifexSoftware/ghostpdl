@@ -63,8 +63,7 @@ lcms2_OBJS=\
 	$(LCMS2OBJ)cmstypes.$(OBJ) \
 	$(LCMS2OBJ)cmsvirt.$(OBJ) \
 	$(LCMS2OBJ)cmswtpnt.$(OBJ) \
-	$(LCMS2OBJ)cmsxform.$(OBJ) \
-	$(LCMS2OBJ)extra_xforms.$(OBJ)
+	$(LCMS2OBJ)cmsxform.$(OBJ)
 
 lcms2_HDRS=\
         $(LCMS2SRCDIR)$(D)include$(D)lcms2.h \
@@ -169,6 +168,3 @@ $(LCMS2OBJ)cmsvirt.$(OBJ) : $(LCMS2SRC)cmsvirt.c $(lcms2_HDRS)
 
 $(LCMS2OBJ)cmsxform.$(OBJ) : $(LCMS2SRC)cmsxform.c $(lcms2_HDRS)
 	$(LCMS2_CC) $(LCMS2O_)cmsxform.$(OBJ) $(C_) $(LCMS2SRC)cmsxform.c
-
-$(LCMS2OBJ)extra_xforms.$(OBJ) : $(LCMS2SRC)extra_xforms.c $(lcms2_HDRS) $(LCMS2SRC)extra_xform.h
-	$(LCMS2_CC) $(LCMS2O_)extra_xforms.$(OBJ) $(C_) $(LCMS2SRC)extra_xforms.c
