@@ -2096,7 +2096,7 @@ $(GLD)clmemory.dev : $(LIB_MAK) $(ECHOGS_XE) $(clmemory_) $(GLD)s$(BAND_LIST_COM
 gxclmem_h=$(GLSRC)gxclmem.h $(gxclio_h) $(strimpl_h)
 
 $(GLOBJ)gxclmem.$(OBJ) : $(GLSRC)gxclmem.c $(AK) $(gx_h) $(gserrors_h)\
- $(LIB_MAK) $(memory__h) $(gxclmem_h) $(MAKEDIRS) $(valgrind_h)
+ $(LIB_MAK) $(memory__h) $(gxclmem_h) $(gssprintf_h) $(MAKEDIRS) $(valgrind_h)
 	$(GLCC) $(GLO_)gxclmem.$(OBJ) $(C_) $(GLSRC)gxclmem.c
 
 # Implement the compression method for RAM-based band lists.

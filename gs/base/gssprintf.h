@@ -30,4 +30,6 @@ gs_vsprintf(char *zBuf, const char *zFormat, va_list ap);
 int
 gs_sprintf(char *zBuf, const char *zFormat, ...);
 
+int
+gs_sscanf(char *buf, const char *format, ...);
 #endif

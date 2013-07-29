@@ -58,3 +58,16 @@ gs_sprintf(char *buf, const char *format, ...)
 
     return(len);
 }
+
+int
+gs_sscanf(char *buf, const char *format, ...)
+{
+    int len;
+    va_list ap;
+
+    va_start(ap, format);
+    len = trio_vsscanf(buf, format, ap);
+    va_end(ap);
+
+    return(len);
+}
