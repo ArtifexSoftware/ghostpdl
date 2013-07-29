@@ -257,8 +257,6 @@ static dev_proc_close_device(plib_close);
 static dev_proc_get_params(plib_get_params);
 static dev_proc_put_params(plib_put_params);
 
-static  dev_proc_dev_spec_op(plib_dev_spec_op);
-
 /* And of course we need our own print-page routines. */
 static dev_proc_print_page(plib_print_page);
 
