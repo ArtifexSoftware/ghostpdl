@@ -3866,7 +3866,10 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
     if (code < 0)
         return code;
     istate->colorspace[0].procs.special.device_n.tint_transform = proc;
-    gs_cspace_set_devn_function(pcs, pfn);
+    code = gs_cspace_set_devn_function(pcs, pfn);
+    if (code < 0) {
+        return code;
+    }
     code = gs_setcolorspace(igs, pcs);
     /* release reference from construction */
     rc_decrement_only_cs(pcs, "setdevicenspace");
