@@ -26,8 +26,6 @@
 # Made pre-configurable by JD 6/4/98
 # Revised to use subdirectories 1998-11-13 by lpd.
 
-SNURF=$(VS110COMNTOOLS)
-
 # Note: If you are planning to make self-extracting executables,
 # see winint.mak to find out about third-party software you will need.
 
