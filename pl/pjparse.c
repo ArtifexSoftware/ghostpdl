@@ -1028,6 +1028,15 @@ pjl_get_envvar(pjl_parser_state * pst, const char *pjl_var)
     return NULL;
 }
 
+/*
+ * Detect illegal characters when preprocessing each line of PJL.
+ */
+static inline bool
+legal_pjl_char(const byte ch)
+{
+    return (ch >= 32 || isspace(ch));
+}
+
 /* -- public functions - see pjparse.h for interface documentation -- */
 
 /* Process a buffer of PJL commands. */
@@ -1079,6 +1088,12 @@ pjl_process(pjl_parser_state * pst, void *pstate, stream_cursor_read * pr)
             pst->pos = 0;
             continue;
         }
+        
+        if (!legal_pjl_char(p[1])) {
+            code = 1;
+            break;
+        }
+
         /* Copy the PJL line into the parser's line buffer. */
         /* Always leave room for a terminator. */
         if (pst->pos < countof(pst->line) - 1)
