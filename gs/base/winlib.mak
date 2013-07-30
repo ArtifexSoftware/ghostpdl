@@ -126,7 +126,7 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
  $(GLOBJDIR)\*.res $(GLOBJDIR)\*.ico\
  $(BINDIR)\$(GSDLL).dll $(BINDIR)\$(GSCONSOLE).exe\
  $(BINDIR)\setupgs.exe $(BINDIR)\uninstgs.exe\
- $(GLOBJDIR)\cups\*.h\
+ $(GLOBJDIR)\cups\*.h $(AUXDIR)\*.sbr $(AUXDIR)\*.pdb \
  $(BEGINFILES2)
 
 # Include the generic makefiles.
