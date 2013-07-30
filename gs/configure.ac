@@ -1051,10 +1051,6 @@ AC_ARG_WITH([local-cups], AC_HELP_STRING([--with-local-cups],
                                              [Force using the GS supplied cups code - only useful for debugging]),
             [with_local_cups=yes], [with_local_cups=no])
 
-AC_ARG_WITH([install-cups], AC_HELP_STRING([--with-install-cups],
-                                             [Install the cups conversion tools]),
-            [CUPSINSTALL=install-cups], [CUPSINSTALL=])
-
 AC_ARG_WITH([cups-serverbin],  AC_HELP_STRING([--with-cups-serverbin],
     [override the "cups-config --serverbin" path]), CUPS_SERVERBIN="$withval", CUPS_SERVERBIN="")
 
