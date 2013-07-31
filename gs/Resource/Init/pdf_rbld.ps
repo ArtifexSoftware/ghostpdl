@@ -210,6 +210,11 @@
      % move the file to this position and read startxref and position
      PDFfile exch setfileposition PDFfile token
      pop pop PDFfile token pop
+     dup type /integertype eq not {
+       pop
+       % startxref not followed by integer.  We will search the end of the file for trailer.
+       PDFfilelen
+     } if
   } {
      % startxref not found.  We will search the end of the file for trailer.
      pop pop PDFfilelen

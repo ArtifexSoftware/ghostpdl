@@ -115,48 +115,45 @@ systemdict begin
     dup 2 string .peekstring pop dup (%!) eq exch (%%) eq or {
       cvx .runps
     } {
-      dup 1023 string .peekstring pop dup length 400 ge {
-        % "1024 string" exceeds current %stdin buffer
-        % Valid PDF file cannot be smaller than 400 bytes.
-        (%PDF-) search {
-          3 1 roll pop pop
-          dup (%!PS) search not {
-            length 0 ne {
-              1 index exch readstring pop pop
-              (%stderr) (w) file dup
-              (   **** Warning: File has some garbage before %PDF- .\n)
-              writestring flushfile
-            } {
-              pop
-            } ifelse
-            dup (%stdin) (r) file eq {
-              % Copy PDF from stdin to temporary file then run it.
-              //null (w+) /.tempfile .systemvar exec exch 3 1 roll
-              % stack: tempname stdin tempfile
-              64000 string
-              {
-                % stack: tempname stdin tempfile string
-                2 index 1 index readstring
-                exch 3 index exch writestring
-                not { exit } if
-              }
-              loop
-              pop exch closefile
-              % stack: tempname tempfile
-              dup 0 setfileposition
-              dup runpdf
-              closefile deletefile
-            } {
-              runpdf
-            } ifelse
+      dup 1023 string .peekstring pop
+      % "1024 string" exceeds current %stdin buffer
+      % Valid PDF file cannot be smaller than 400 bytes.
+      (%PDF-) search {
+        3 1 roll pop pop
+        dup (%!PS) search not {
+          length 0 ne {
+            1 index exch readstring pop pop
+            (%stderr) (w) file dup
+            (   **** Warning: File has some garbage before %PDF- .\n)
+            writestring flushfile
           } {
-            pop pop pop pop cvx .runps % (%!PS) found first
+            pop
+          } ifelse
+          dup (%stdin) (r) file eq {
+            % Copy PDF from stdin to temporary file then run it.
+            //null (w+) /.tempfile .systemvar exec exch 3 1 roll
+            % stack: tempname stdin tempfile
+            64000 string
+            {
+              % stack: tempname stdin tempfile string
+              2 index 1 index readstring
+              exch 3 index exch writestring
+              not { exit } if
+            }
+            loop
+            pop exch closefile
+            % stack: tempname tempfile
+            dup 0 setfileposition
+            dup runpdf
+            closefile deletefile
+          } {
+            runpdf
           } ifelse
         } {
-          pop cvx .runps % (%PDF-) not found
+          pop pop pop pop cvx .runps % (%!PS) found first
         } ifelse
       } {
-        pop cvx .runps   % too short for PDF
+        pop cvx .runps % (%PDF-) not found
       } ifelse
     } ifelse
   } {
