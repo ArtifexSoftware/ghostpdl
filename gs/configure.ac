@@ -2143,11 +2143,6 @@ AC_SUBST(GCFLAGS)
 
 AC_OUTPUT(Makefile)
 
-if ( test -d cups ); then
-AC_OUTPUT(cups/gstopxl)
-chmod +x cups/gstopxl
-fi
-
 if test "x$AFS" = "x1"; then
    AC_MSG_WARN([Using "native" font scaler which is now deprecated (rather than freetype),])
    AC_MSG_WARN([Support for this will be removed in a future release])
