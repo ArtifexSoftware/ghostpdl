@@ -332,16 +332,17 @@ currentdict /runpdfstring .undef
 % - pdf_collection_files [ /temp_file_name ... /temp_file_name
 /pdf_collection_files {
   mark
-  Trailer /Root oget
-  dup /Collection oknown {
-    /Names knownoget {
-      /EmbeddedFiles knownoget {
-        pdf_collection_names
+  Trailer /Root knownoget {
+    dup /Collection oknown {
+      /Names knownoget {
+        /EmbeddedFiles knownoget {
+          pdf_collection_names
+        } if
       } if
-    } if
-  } {
-    pop
-  } ifelse
+    } {
+      pop
+    } ifelse
+  } if
 } bind def
 
 /runpdf {		% <file> runpdf -
@@ -720,9 +721,11 @@ currentdict /xref-char-dict undef
   writeoutputintents
   .writepdfmarks {
         % Copy bookmarks (outline) to the output.
-    Trailer /Root oget /Outlines knownoget {
+    Trailer /Root knownoget {
+    /Outlines knownoget {
       /First knownoget {
-        { dup writeoutline /Next knownoget not { exit } if } loop
+          { dup writeoutline /Next knownoget not { exit } if } loop
+        } if
       } if
     } if
     Trailer /Info knownoget {
@@ -737,7 +740,8 @@ currentdict /xref-char-dict undef
     } if
   } if
   % Initialize OC groups
-  Trailer /Root oget /OCProperties knownoget {
+  Trailer /Root knownoget {
+    /OCProperties knownoget {
     % By default, OCGs are 'on'; mark only 'off' OCGs.
     % If, contrary to the spec, BaseState is OFF, mark all OCGs
     % and unmark ON ones. Bug 691491.
@@ -774,10 +778,12 @@ currentdict /xref-char-dict undef
     } if
     pop
   } if
+  } if
 
   % Enumerate all AcroForm fielda and link all separate widgets
   % to the parent field.
-  Trailer /Root oget /AcroForm knownoget {
+  Trailer /Root knownoget {
+    /AcroForm knownoget {
     dup /NeedAppearances knownoget not { //false } if {
       /NeedAppearances //true def
       dup
@@ -791,6 +797,7 @@ currentdict /xref-char-dict undef
     } {
       pop
     } ifelse
+  } if
   } if
   
   % Use OutputIntent ICC profile
@@ -828,7 +835,7 @@ currentdict /xref-char-dict undef
       } ifelse
     } ifelse
   } if
-  Trailer /Root oget /PageLabels knownoget {
+  Trailer /Root knownoget { /PageLabels knownoget {
     %% Currenlty only the pdfwrite device can handle PageLabels
     %% because we deal with these using putparams, not pdfmarks
     %% This is because the pdfmark syntax can't handle all the
@@ -838,6 +845,7 @@ currentdict /xref-char-dict undef
     } {
       pop
     } ifelse
+  } if
   } if
 } bind def
 
@@ -1225,66 +1233,76 @@ currentdict /xref-char-dict undef
 
 % Get the total number of pages in the document.
 /pdfpagecount		% - pdfpagecount <int>
- { Trailer /Root oget /Pages oget
-   dup /Count knownoget {
-     dup type /integertype eq { dup 0 le } { //true } ifelse {
-       pop
-       dup /Kids knownoget {
+ { Trailer /Root knownoget {
+    /Pages knownoget {
+     dup /Count knownoget {
+       dup type /integertype eq { dup 0 le } { //true } ifelse {
          pop
-         (   **** Warning:  Invalid Page count.\n) pdfformaterror
-         % find the last page and use that as the Count
-         1 1 999999999 {
-           dup pdffindpage?
-           exch pop
-           //null eq { exit } { pop } ifelse
-         } for
-         1 sub		% decrement to last page that we were able to find
-         2 copy /Count exch put
-       } {
-         0 % return 0 and keep 0 page count.
-         (   **** Warning:  PDF document has no pages.\n) pdfformaterror
-       } ifelse
-     } if
-     exch pop
-   } {
-       dup /Type oget /Page eq {
-         << exch 1 array astore /Kids exch /Count 1 /Type /Pages >>
-         Trailer /Root oget /Pages 3 -1 roll put
-         1
-         (   **** Warning:  No /Pages node. The document root directly point a page.\n)
-         pdfformaterror
+         dup /Kids knownoget {
+           pop
+           (   **** Warning:  Invalid Page count.\n) pdfformaterror
+           % find the last page and use that as the Count
+           1 1 999999999 {
+             dup pdffindpage?
+             exch pop
+             //null eq { exit } { pop } ifelse
+           } for
+           1 sub		% decrement to last page that we were able to find
+           2 copy /Count exch put
+         } {
+           0 % return 0 and keep 0 page count.
+           (   **** Warning:  PDF document has no pages.\n) pdfformaterror
+         } ifelse
+       } if
+       exch pop
      } {
-       (   **** Warning:  Page count not found; assuming 1.\n)
-       pdfformaterror
-       pop 1
+         dup /Type oget /Page eq {
+           << exch 1 array astore /Kids exch /Count 1 /Type /Pages >>
+           Trailer /Root oget /Pages 3 -1 roll put
+           1
+           (   **** Warning:  No /Pages node. The document root directly point a page.\n)
+           pdfformaterror
+       } {
+         (   **** Warning:  Page count not found; assuming 1.\n)
+         pdfformaterror
+         pop 1
+       } ifelse
      } ifelse
-   } ifelse
+     } {
+     0
+     }ifelse
+  }{
+   0
+  } ifelse
  } bind def
 
 % Check for loops in the 'page tree' but accept an acyclic graph.
 % - verify_page_tree -
 /verify_page_tree {
-  Trailer /Root oget /Pages oget
-  10 dict begin
-  /verify_page_tree_recursive {
-    dup 1 def
-    dup /Kids knownoget {
-      { oforce
-        dup //null ne {
-          currentdict 1 index known {
-            (   **** Error: there's a loop in the page tree. Giving up.\n) pdfformaterror
-            /verify_page_tree cvx /syntaxerror signalerror
-          } if
-          verify_page_tree_recursive
-        } {
-          pop
-        } ifelse
-      } forall
+  Trailer /Root knownoget {
+    /Pages knownoget {
+      10 dict begin
+      /verify_page_tree_recursive {
+        dup 1 def
+        dup /Kids knownoget {
+          { oforce
+            dup //null ne {
+              currentdict 1 index known {
+                (   **** Error: there's a loop in the page tree. Giving up.\n) pdfformaterror
+                /verify_page_tree cvx /syntaxerror signalerror
+              } if
+              verify_page_tree_recursive
+            } {
+              pop
+            } ifelse
+          } forall
+        } if
+        currentdict exch undef
+      } def
+      verify_page_tree_recursive
+      end
     } if
-    currentdict exch undef
-  } def
-  verify_page_tree_recursive
-  end
+  } if
 } bind def
 
 /pdffindpage? {		% <int> pdffindpage? 1 null 	(page not found)

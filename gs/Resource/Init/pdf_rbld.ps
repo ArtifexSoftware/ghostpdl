@@ -228,12 +228,13 @@
   dup 0 eq {
     pop
     (   **** Error:  Trailer is not found.\n) pdfformaterror
-  } if
+  }{
   % get the trailer
   PDFfile exch setfileposition		% set to the specified trailer location
   /dictlevelcount 0 def
   PDFfile traileropdict .pdfrun		% read trailer info
   /Trailer exch def
+  } ifelse
 } bind def
 
 % This routine will determine if there is stuff after the %%EOF.  There is
