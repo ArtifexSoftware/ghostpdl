@@ -555,19 +555,21 @@ currentdict /token_nofail_dict .undef
 } bind def
 
 /endobj {		% <object#> <generation#> <object> endobj <object>
-  2 index type /integertype ne 2 index type /integertype ne or {
-    3 {
-      dup
-      dup index type /integertype eq
-      exch 1 add index type /integertype eq or {
-        1 sub { pop } repeat //null
+  {
+    2 index type /integertype ne 2 index type /integertype ne or {
+      count 3 gt {
+        (   **** Warning: obj definition followed by multiple tokens, attempting to recover.\n) pdfformaterror
+        pop
+      } {
+        //null
         (   **** Warning: ignoring obj followed by multiple tokens.\n) pdfformaterror
         exit
-      } {
-        1 add
       } ifelse
-    } loop
-  } if
+    } {
+      exit
+    } ifelse
+  } loop
+
   3 1 roll
                 % Read the xref entry if we haven't yet done so.
                 % This is only needed for generation # checking.
