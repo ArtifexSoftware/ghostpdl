@@ -322,7 +322,7 @@ $(PSOBJ)zcontrol.$(OBJ) : $(PSSRC)zcontrol.c $(OP) $(string__h)\
 
 $(PSOBJ)zdict.$(OBJ) : $(PSSRC)zdict.c $(OP)\
  $(dstack_h) $(iddict_h) $(ilevel_h) $(iname_h) $(ipacked_h) $(ivmspace_h)\
- $(store_h)
+ $(store_h) $(iscan_h)
 	$(PSCC) $(PSO_)zdict.$(OBJ) $(C_) $(PSSRC)zdict.c
 
 $(PSOBJ)zfile.$(OBJ) : $(PSSRC)zfile.c $(OP)\

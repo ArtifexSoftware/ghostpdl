@@ -24,6 +24,7 @@
 #include "ipacked.h"		/* for inline dict lookup */
 #include "ivmspace.h"
 #include "store.h"
+#include "iscan.h"              /* for SCAN_PDF_RULES */
 
 /* <int> dict <dict> */
 int
@@ -382,15 +383,27 @@ zdicttomark(i_ctx_t *i_ctx_p)
     code = dict_create(count2 >> 1, &rdict);
     if (code < 0)
         return code;
-    /* << /a 1 /a 2 >> => << /a 1 >>, i.e., */
-    /* we must enter the keys in top-to-bottom order. */
-    for (idx = 0; idx < count2; idx += 2) {
-        code = idict_put(&rdict,
-                         ref_stack_index(&o_stack, idx + 1),
-                         ref_stack_index(&o_stack, idx));
-        if (code < 0) {		/* There's no way to free the dictionary -- too bad. */
-            return code;
-        }
+    if ((i_ctx_p->scanner_options & SCAN_PDF_RULES) != 0) {
+       for (idx = count2; idx > 0; idx -= 2) {
+           code = idict_put(&rdict,
+                            ref_stack_index(&o_stack, idx - 1),
+                            ref_stack_index(&o_stack, idx - 2));
+           if (code < 0) {         /* There's no way to free the dictionary -- too bad. */
+               return code;
+           }
+       }
+    }
+    else {
+       /* << /a 1 /a 2 >> => << /a 1 >>, i.e., */
+       /* we must enter the keys in top-to-bottom order. */
+       for (idx = 0; idx < count2; idx += 2) {
+           code = idict_put(&rdict,
+                            ref_stack_index(&o_stack, idx + 1),
+                            ref_stack_index(&o_stack, idx));
+           if (code < 0) {         /* There's no way to free the dictionary -- too bad. */
+               return code;
+           }
+       }
     }
     ref_stack_pop(&o_stack, count2);
     ref_assign(osp, &rdict);
