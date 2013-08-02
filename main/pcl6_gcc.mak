@@ -189,6 +189,7 @@ ifeq ($(PL_SCALER), ufst)
     UFSTDISCFONTDIR=\"$(UFST_ROOT)/fontdata/\"
   endif
   EXTRALIBS?= $(UFST_LIB)if_lib.a $(UFST_LIB)fco_lib.a $(UFST_LIB)tt_lib.a  $(UFST_LIB)if_lib.a
+
 endif # PL_SCALER
 
 ifeq ("$(UFST_BRIDGE)", "1")
@@ -203,6 +204,7 @@ ifeq ("$(UFST_BRIDGE)", "1")
     UFSTFONTDIR?=/usr/local/fontdata5.0/
     UFSTDISCFONTDIR=\"$(UFST_ROOT)/fontdata/\"
   endif
+  PCLXL_URW_ROMFS_ARGS=
 else
 
 # Flags for artifex scaler

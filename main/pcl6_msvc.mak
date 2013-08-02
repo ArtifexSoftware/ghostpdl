@@ -305,6 +305,10 @@ UFST_BRIDGE=
 UFST_ROOT=$(GLSRCDIR)/../ufst
 !endif
 
+!if $(UFST_BRIDGE)==1
+PCLXL_ROMFS_ARGS=
+!endif
+
 UFST_LIB_EXT=
 
 UFST_ROMFS_ARGS=-b \
