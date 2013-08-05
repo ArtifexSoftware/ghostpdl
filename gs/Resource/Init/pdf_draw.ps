@@ -636,7 +636,7 @@ def
   /DataSource DataSource mark
     /Intent 1
     /AsyncRead //true
-  .dicttomark .reusablestreamdecode def
+  .dicttomark {.reusablestreamdecode} stopped {pop} if def
   PDFfile exch setfileposition
   currentdict end currentdict end
   5 dict begin
@@ -1646,7 +1646,7 @@ currentdict /last-ditch-bpc-csp undef
     /DataSource DataSource mark
       /Intent 1
       /AsyncRead //true
-    .dicttomark .reusablestreamdecode def
+    .dicttomark {.reusablestreamdecode} stopped {pop} if def
     PDFfile exch setfileposition
     currentdict end currentdict end
     5 dict begin
