@@ -735,8 +735,13 @@ currentdict /xref-char-dict undef
     Trailer /Root knownoget {
     /Outlines knownoget {
       /First knownoget {
-          { dup writeoutline /Next knownoget not { exit } if } loop
-        } if
+          dup type /dicttype eq {
+            { dup writeoutline /Next knownoget not { exit } if
+              dup type /dicttype eq not {exit} if
+            } loop
+          }
+          {pop} ifelse
+        }if
       } if
     } if
     Trailer /Info knownoget {
