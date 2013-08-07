@@ -188,6 +188,7 @@ currentdict /runpdfstring .undef
    GS_PDF_ProcSet begin
    pdfdict begin
    pdfopen begin
+   /CumulativePageCount currentpagedevice /PageCount get def
 } bind def
 
 /runpdfpagerange {	% - runpdfpagerange <firstpage#> <lastpage#>
@@ -1501,7 +1502,7 @@ end readonly def
                pop % the "false" flag
                dup pdf_cached_PDF2PS_matrix exch
                dup /Rotate pget not { 0 } if 90 idiv exch
-               pdfpagenumber
+               pdfpagenumber CumulativePageCount add
                //true % now we have a page# and a transformation matrix
              } if
            } if
@@ -1516,6 +1517,7 @@ end readonly def
            3 -1 roll
          } {
            dup type /integertype eq {
+             CumulativePageCount add
              /Page exch 1 add 4 2 roll
            } {
              pop
@@ -1529,10 +1531,10 @@ end readonly def
 } bind def
 % <pagedict> mark ... -proc- <page#> <error>
 /namedactions 8 dict dup begin
-  /FirstPage { 1 //false } def
-  /LastPage { pdfpagecount //false } def
-  /NextPage { counttomark 2 add index pdfpagenumber 1 add dup pdfpagecount gt } bind def
-  /PrevPage { counttomark 2 add index pdfpagenumber 1 sub dup 1 lt } bind def
+  /FirstPage { 1 /CumulativePageCount get add //false } def
+  /LastPage { pdfpagecount /CumulativePageCount get add //false } def
+  /NextPage { counttomark 2 add index pdfpagenumber 1 add dup pdfpagecount gt exch /CumulativePageCount get add exch} bind def
+  /PrevPage { counttomark 2 add index pdfpagenumber 1 sub dup 1 lt exch /CumulativePageCount get add exch} bind def
 end readonly def
 % <pagedict> <annotdict> -proc- -
 /annottypes 5 dict dup begin
