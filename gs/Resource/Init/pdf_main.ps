@@ -1531,10 +1531,10 @@ end readonly def
 } bind def
 % <pagedict> mark ... -proc- <page#> <error>
 /namedactions 8 dict dup begin
-  /FirstPage { 1 /CumulativePageCount get add //false } def
-  /LastPage { pdfpagecount /CumulativePageCount get add //false } def
-  /NextPage { counttomark 2 add index pdfpagenumber 1 add dup pdfpagecount gt exch /CumulativePageCount get add exch} bind def
-  /PrevPage { counttomark 2 add index pdfpagenumber 1 sub dup 1 lt exch /CumulativePageCount get add exch} bind def
+  /FirstPage { 1 CumulativePageCount add //false } def
+  /LastPage { pdfpagecount CumulativePageCount add //false } def
+  /NextPage { counttomark 2 add index pdfpagenumber 1 add dup pdfpagecount gt exch CumulativePageCount add exch} bind def
+  /PrevPage { counttomark 2 add index pdfpagenumber 1 sub dup 1 lt exch CumulativePageCount add exch} bind def
 end readonly def
 % <pagedict> <annotdict> -proc- -
 /annottypes 5 dict dup begin
