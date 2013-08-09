@@ -58,73 +58,36 @@ overview</a>.
 
 <h2><a name="Version9.08"></a>Version 9.08 (2013-08-08)</h2>
 
-<p>This is the seventh full release in the stable 9.x series.
+<p>This is the eighth full release in the stable 9.x series, and is
+primarily a maintenance release.
 
 <p> Highlights in this release include:
 <ul>
 <li>
-<p> As of this release (9.07), Ghostscript and GhostPDL are distributed under
-the GNU Affero General Public License (AGPL).
+<p> Background printing (BGPrint)is a new feature allowing an accumulated page
+clist to be rendered by one or more rendering threads whilst the interpreter
+(in the "main" thread) continues to accumulate the subsequent page's clist.
+For certain classes of file this can result in a useful performance increase.
+See: <a href="Language.htm#Banding_parameters">Banding Parameters</a>
 </li>
 <li>
-<p> Ghostscript now has the option to be built as thread safe. Note that
-not all devices are thread safe. See the GS_THREADSAFE option in:
-<a href="API.htm#new_instance">GS_THREADSAFE</a>
+<p> GrayDetection allows suitably written devices to detect "color" input
+in near neutral tones (i.e. near monochrome) and to convert "on-the-fly" to
+pure grayscale, whilst retaining the ability to print full color on demand.
+This is primarily aimed at workflows where saving ink (especially color inks)
+is required.
+See: <a href="Language.htm#Device_parameters">Device Parameters</a>
 </li>
 <li>
-<p> The pdfwrite devices now supports linearized (or optimized for fast web
-view) output directly ("-dFastWebView")
+<p> LittleCMS2 and libpng have both been updated to the latest versions.
 </li>
 <li>
-<p> The Font API (FAPI) has been moved from the Postscript interpreter (psi)
-into the graphics library (base), and extended to support the other languages
-(PCL/PXL/XPS). All interpreters now use Freetype by default to render all
-viable font types.
+<p> Support has been added to build the Ghostscript DLL for WinRT for x86,
+x64 and ARM (Requires MS Visual Studio 2012 Pro).
 </li>
 <li>
-<p> Ghostscript has been extended to support Postscript string and array
-objects with >64k entries.
-</li>
-<li>
-<p> Ghostscript has been extended to support file sizes >4Gb - in particular
-reading and writing PDF files. As a side effect of this, Ghostscript also now
-supports 64 bit Postscript integer objects.
-</li>
-<li>
-<p> All CMYK devices can now support simulated overprint of spot colors using
-the &quot;-dSimulateOverprint&quot; command line option.
-</li>
-<li>
-<p> Support for use of DeviceN ICC color profiles as the output profile with
-the tiffsep and psdcmyk devices.
-</li>
-<li>
-<p> Support for customized named color handling with DeviceN colors
-</li>
-<li>
-<p> Support for black point compensation
-</li>
-<li>
-<p> Support for K preservation in CMYK to CMYK conversions
-</li>
-<li>
-<p> Support for DeviceLink profiles for graphic, image and text objects
-</li>
-<li>
-<p> Support for custom color replacement
-</li>
-<li>
-<p> Increased control in specifying color conversions as a function of object type
-<p> Full details of the color management features can be found in:
-<a href="GS9_Color_Management.pdf">GS9_Color_Management.pdf</a>
-</li>
-<li>
-<p> Provide BigTIFF output option: the tiff devices can write BigTIFF files
-using the &quot;-dUseBigTIFF&quot; option. This requires libtiff version >=4.0.0 (the
-option is ignored for versions <4.0.0)
-</li>
-<li>
-<p> LittleCMS updated to 2.4
+<p> Processing of Windows command line arguments into UTF8 (as presaged a few
+releases ago) has been enhaned and enabled by default.
 </li>
 <li>
 <p>Plus the usual round of bug fixes, compatibility changes, and incremental improvements.
@@ -133,11 +96,11 @@ option is ignored for versions <4.0.0)
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 
-<h3><a name="9.07_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="9.08_Incompatible_changes"></a>Incompatible changes</h3>
 <p>
 No recorded incompatible changes.
 
-<h3><a name="9.07_changelog"></a>Changelog</h3>
+<h3><a name="9.08_changelog"></a>Changelog</h3>
 
 <p>See the <a href="History9.htm">history file</a> for complete log 
 of changes.
