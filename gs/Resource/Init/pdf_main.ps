@@ -734,15 +734,20 @@ currentdict /xref-char-dict undef
   .writepdfmarks {
         % Copy bookmarks (outline) to the output.
     Trailer /Root knownoget {
-    /Outlines knownoget {
-      /First knownoget {
-          dup type /dicttype eq {
-            { dup writeoutline /Next knownoget not { exit } if
-              dup type /dicttype eq not {exit} if
-            } loop
-          }
-          {pop} ifelse
-        }if
+     /Outlines knownoget {
+       /NO_PDFMARK_OUTLINES where {pop NO_PDFMARK_OUTLINES not}{true}ifelse
+       {
+        /First knownoget {
+            dup type /dicttype eq {
+              { dup writeoutline /Next knownoget not { exit } if
+                dup type /dicttype eq not {exit} if
+              } loop
+            }
+            {pop} ifelse
+          }if
+        } {
+          pop
+        }ifelse
       } if
     } if
     Trailer /Info knownoget {
@@ -753,7 +758,7 @@ currentdict /xref-char-dict undef
         2 copy knownoget { 3 -1 roll } { pop } ifelse
       } forall
       pop
-      dup mark ne { /DOCINFO pdfmark } { pop } ifelse
+      dup mark ne { {/DOCINFO pdfmark} stopped {cleartomark} if } { pop } ifelse
     } if
   } if
   % Initialize OC groups
@@ -937,6 +942,15 @@ currentdict /xref-char-dict undef
                 % Guess whether the output device is a printer.
      /Printed currentpagedevice /OutputFile known def
    } ifelse
+   currentpagedevice /OutputFile known {
+     currentpagedevice /OutputFile get (%d) search {
+       pop pop pop
+       /NO_PDFMARK_OUTLINES true def
+       /NO_PDFMARK_DESTS true def
+     } {
+       pop
+     }ifelse
+   } if
    /PSLevel1 where { pop } { /PSLevel1 //false def } ifelse
    % NB: PDFfile is used outside of the PDF code to determine that a
    % PDF job is being processed; to not change or hide this key.
@@ -1168,8 +1182,8 @@ currentdict /xref-char-dict undef
       (   **** Warning: Outline has invalid link that was discarded.\n)
       pdfformaterror
     } {
-      /Title knownoget { 
-        /Title exch /OUT pdfmark
+      /Title knownoget {
+        {/Title exch /OUT pdfmark} stopped {cleartomark} if
       } {
         cleartomark
         (   **** Warning: Outline without /Title attribute was discarded.\n)
@@ -1542,9 +1556,11 @@ end readonly def
     mark exch
      { /Rect /Open /Contents /F}
      { 2 copy knownoget { 3 -1 roll } { pop } ifelse }
-    forall pop /ANN pdfmark
+    forall pop {/ANN pdfmark} stopped {cleartomark} if
   } bind def
   /Link {
+    /NO_PDFMARK_DESTS where {pop NO_PDFMARK_DESTS not}{true}ifelse
+    {
     mark exch
     dup /BS knownoget { << exch { oforce } forall >> /BS exch 3 -1 roll } if
     dup /F knownoget { /F exch 3 -1 roll } if
@@ -1589,8 +1605,9 @@ end readonly def
       (   **** Warning: Link annotation points out of the document page range.\n)
       pdfformaterror
     } {
-      pop /LNK pdfmark
+      pop {/LNK pdfmark} stopped {cleartomark} if
     } ifelse
+    }{pop} ifelse
   } bind def
 end readonly def
 
@@ -1849,13 +1866,13 @@ currentdict /PDF2PS_matrix_key undef
         oforce_elems
         2 { Page pdf_cached_PDF2PS_matrix transform 4 2 roll } repeat
         normrect_elems 4 index 5 1 roll fix_empty_rect_elems 4 array astore
-        mark 3 1 roll /PAGE pdfmark
+        mark 3 1 roll {/PAGE pdfmark} stopped {cleartomark} if
       } {
         pop
       } ifelse
     } forall
 
-        % Copy annotations and links.
+    % Copy annotations and links.
     dup /Annots knownoget {
       0 1 2 index length 1 sub
        { 1 index exch oget

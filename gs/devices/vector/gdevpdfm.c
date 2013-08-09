@@ -502,6 +502,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
                         coerce_dest = false;
                 } else {
                     emprintf(pdev->memory, "   **** Warning: Outline has invalid link that was discarded.\n");
+                    return gs_note_error(gs_error_rangecheck);
                 }
             }
         } else if (pdf_key_eq(pair, "/Subtype"))
