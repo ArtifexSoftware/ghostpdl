@@ -481,7 +481,14 @@ end
     % out whether we're actually going to draw through it, we need
     % to save the current gstate with the other parameters, so
     % we can subsequently execute it in the correct graphics state.
+    % We need to concatenate the Matrix in this gstate as per the PDF
+    % spec 7.5.4 (p. 552 in the PDF 1.7 Ref) (bug 694455).
+    gsave
+    dup /Matrix knownoget {
+      matrix currentmatrix matrix concatmatrix setmatrix
+    } if
     /GroupGState gstate currentgstate 6 2 roll
+    grestore
     /GroupMat matrix currentmatrix 8 2 roll
     /GroupExtGState 1 dict
     //SetGroupExtGStateDict
