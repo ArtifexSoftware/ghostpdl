@@ -306,12 +306,24 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
             } else {
                 in_mask_rect = false;
             }
-            if (in_mask_rect || maskbuf == NULL)
-                pix_alpha = alpha;
-            else
-                pix_alpha = mask_bg_alpha;
 
-            /* Complement the components for subtractive color spaces */
+            pix_alpha = alpha;
+            /* If we have a soft mask, then we have some special handling of the 
+               group alpha value */
+            if (has_mask) {
+                if (!in_mask_rect) {
+                    /* Special case where we have a soft mask but are outside the
+                        range of the soft mask and must use the background alpha value */
+                    pix_alpha = mask_bg_alpha;
+                } else {
+                    /* If we are isolated, do not double apply the alpha */
+                    if (tos_isolated) {
+                        pix_alpha = 0xff;
+                    }
+                }
+            }
+
+             /* Complement the components for subtractive color spaces */
             if (additive) {
                 for (i = 0; i <= n_chan; ++i) {
                     tos_pixel[i] = tos_ptr[i * tos_planestride];
