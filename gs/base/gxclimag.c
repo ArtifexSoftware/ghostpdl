@@ -17,6 +17,7 @@
 /* Higher-level image operations for band lists */
 #include "math_.h"
 #include "memory_.h"
+#include "string_.h"		/* for strcmp */
 #include "gx.h"
 #include "gserrors.h"
 #include "gscspace.h"
@@ -916,10 +917,13 @@ clist_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
         if (cmd_largest_size + bytes_per_row > cdev->cend - cdev->cbuf)
             goto use_default;
     }
-    if (pim->Interpolate)
+    if (pim->Interpolate) {
+        if (strcmp("pattern-clist",dev->dname) == 0)
+            goto use_default;
         pie->support.x = pie->support.y = MAX_ISCALE_SUPPORT + 1;
-    else
+    } else {
         pie->support.x = pie->support.y = 0;
+    }
     sbox.p.x = pie->rect.p.x - pie->support.x;
     sbox.p.y = pie->rect.p.y - pie->support.y;
     sbox.q.x = pie->rect.q.x + pie->support.x;
