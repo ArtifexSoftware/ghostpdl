@@ -30,6 +30,23 @@ setundercolorremoval
 % CPSI doesn't define "Localization" resource.
 /Localization /Category undefineresource
 
+% Quality Logic test 09-59.ps tries to set each listed /OutputDevice.
+% This can cause problems with some devices (eg mswinpr2 on Windows)
+% so for the CET files we define the OutputDevice resource as
+% being empty. We need to redefine /.definecategory as that definition
+% gets destroyed at the end of gs_res.ps
+/OutputDevice /Category undefineresource
+
+/.definecategory	% <name> -mark- <key1> ... <valuen> .definecategory -
+ { counttomark 2 idiv 2 add		% .Instances, Category
+   /Generic /Category findresource dup maxlength 3 -1 roll add
+   dict .copydict begin
+   counttomark 2 idiv { def } repeat pop	% pop the mark
+   currentdict end /Category defineresource pop
+ } bind def
+
+/OutputDevice mark /InstanceType /dicttype .definecategory
+
 % Redefine Font category to return -1 (unknown) VM usage
 % in all cases to avoid differences between hosts.
 /Font /Category findresource

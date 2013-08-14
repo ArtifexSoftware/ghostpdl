@@ -312,16 +312,20 @@ devn_get_params(gx_device * pdev, gs_param_list * plist,
     gs_param_int_array equiv_cmyk;
     int equiv_elements[5 * (GX_DEVICE_MAX_SEPARATIONS - MAX_DEVICE_PROCESS_COLORS)] = { 0 }; /* 5 * max_spot_colors */
 
+
     set_param_array(scna, NULL, 0);
     set_param_array(sona, NULL, 0);
 
-    for (spot_num = 0; spot_num < pdevn_params->separations.num_separations; spot_num++) {
-        equiv_elements[i++] = pequiv_colors->color[spot_num].color_info_valid ? 1 : 0;
-        equiv_elements[i++] = pequiv_colors->color[spot_num].c;
-        equiv_elements[i++] = pequiv_colors->color[spot_num].m;
-        equiv_elements[i++] = pequiv_colors->color[spot_num].y;
-        equiv_elements[i++] = pequiv_colors->color[spot_num].k;
+    if (pequiv_colors != NULL) {
+        for (spot_num = 0; spot_num < pdevn_params->separations.num_separations; spot_num++) {
+            equiv_elements[i++] = pequiv_colors->color[spot_num].color_info_valid ? 1 : 0;
+            equiv_elements[i++] = pequiv_colors->color[spot_num].c;
+            equiv_elements[i++] = pequiv_colors->color[spot_num].m;
+            equiv_elements[i++] = pequiv_colors->color[spot_num].y;
+            equiv_elements[i++] = pequiv_colors->color[spot_num].k;
+        }
     }
+
     equiv_cmyk.data = equiv_elements;
     equiv_cmyk.size = i;
     equiv_cmyk.persistent = false;

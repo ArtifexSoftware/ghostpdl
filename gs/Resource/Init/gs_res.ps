@@ -794,7 +794,6 @@ counttomark 2 idiv
 /ControlLanguage mark /InstanceType /dicttype .definecategory
 /HWOptions mark /InstanceType /dicttype .definecategory
 /Localization mark /InstanceType /dicttype .definecategory
-/OutputDevice mark /InstanceType /dicttype .definecategory
 /PDL mark /InstanceType /dicttype .definecategory
 % CIDFont, CIDMap, and CMap are defined in gs_cidfn.ps
 % FontSet is defined in gs_cff.ps
@@ -802,6 +801,27 @@ counttomark 2 idiv
 % InkParams and TrapParams are defined in gs_trap.ps
 
 (END MISC) VMDEBUG
+
+% Define the OutputDevice category.
+/OutputDevice mark
+/InstanceType /dicttype
+/.Instances mark
+%% devicedict is not created yet so here we employ a technique similar to
+%% that used to create it, in order to get the device names. We run a loop
+%% executing .getdevice with incremental numbers until we get an error.
+%% The devicedict creation only stops on a rangecheck, we stop on any error.
+%% We need to use .internalstopped, not stopped or we get an invalidacces
+%% later in this file. Instances of /OutputDevice are dictionaries, and the
+%% only required key is a /PageSize. The array of 4 numbers are minimum to
+%% maximum and are matches for the Adobe Acrobat Distiller values.
+0
+{
+  {dup .getdevice .devicename cvn 1 dict dup /PageSize [1 1 14400 14400] put [exch readonly 0 -1] 3 -1 roll 1 add} loop
+} .internalstopped pop
+%% Remove the count, and the duplicate, from the stack
+pop pop
+.dicttomark
+.definecategory
 
 % Define the ColorSpace category.
 
