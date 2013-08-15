@@ -84,6 +84,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     int num_des_comps;
     cmm_dev_profile_t *dev_profile;
     int code;
+    gx_color_polarity_t pol;
 
     if (!penum->interpolate)
         return 0;
@@ -304,9 +305,10 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 #else
     templat = &s_IIEncode_template;
 #endif
+    pol = cs_polarity(pcs);
     if ((iss.WidthOut < iss.WidthIn) &&
         (iss.HeightOut < iss.HeightIn) &&       /* downsampling */
-        (penum->dev->color_info.polarity != GX_CINFO_POLARITY_UNKNOWN) &&
+        (pol != GX_CINFO_POLARITY_UNKNOWN) &&
         (dev_proc(penum->dev, dev_spec_op)(penum->dev, gxdso_interpolate_antidropout, NULL, 0) > 0)) {
         /* Special case handling for when we are downsampling (to a dithered
          * device.  The point of this non-linear downsampling is to preserve
@@ -324,8 +326,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     }
     /* The SpecialDownScale filter needs polarity, either ADDITIVE or SUBTRACTIVE */
     /* UNKNOWN case (such as for palette colors) has been handled above */
-    iss.ColorPolarityAdditive =
-        penum->dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE;
+    iss.ColorPolarityAdditive = (pol == GX_CINFO_POLARITY_ADDITIVE);
     /* Allocate a buffer for one source/destination line. */
     {
         uint out_size =

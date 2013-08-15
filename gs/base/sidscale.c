@@ -88,23 +88,34 @@ idownscale_x(void /* PixelIn */ * tmp, const void /* PixelIn */ *src, stream_ISp
             ss->dda_x = ss->dda_x_init;
             if_debug1m('W', ss->memory, "[W]idownscale_x color %d:", c);
 
-            for ( i = 0; i < WidthIn; tp += Colors) {
-                int endx;
-                dda_next_assign(ss->dda_x, endx);
-                if (firstline)
-                    *tp = *pp;
-                else {
-                    if ((polarity_additive && (*pp < *tp)) ||
-                        (!polarity_additive && (*pp > *tp)) )
+            if (polarity_additive) {
+                for ( i = 0; i < WidthIn; tp += Colors) {
+                    int endx;
+                    dda_next_assign(ss->dda_x, endx);
+                    if (firstline || *pp < *tp)
                         *tp = *pp;
+                    i++; pp += Colors;
+                    while (i < endx) {
+                       if (*pp < *tp)
+                            *tp = *pp;
+                       i++; pp += Colors;
+                    }
+                    if_debug1m('W', ss->memory, " %d", *tp);
                 }
-                i++; pp += Colors;
-                while (i < endx) {
-                   if (*pp < *tp)
+            } else {
+                for ( i = 0; i < WidthIn; tp += Colors) {
+                    int endx;
+                    dda_next_assign(ss->dda_x, endx);
+                    if (firstline || *pp > *tp)
                         *tp = *pp;
-                   i++; pp += Colors;
+                    i++; pp += Colors;
+                    while (i < endx) {
+                        if (*pp > *tp)
+                            *tp = *pp;
+                        i++; pp += Colors;
+                    }
+                    if_debug1m('W', ss->memory, " %d", *tp);
                 }
-                if_debug1m('W', ss->memory, " %d", *tp);
             }
             if_debug0m('W', ss->memory, "\n");
         }
@@ -116,23 +127,34 @@ idownscale_x(void /* PixelIn */ * tmp, const void /* PixelIn */ *src, stream_ISp
             ss->dda_x = ss->dda_x_init;
             if_debug1m('W', ss->memory, "[W]idownscale_x color %d:", c);
 
-            for ( i = 0; i < WidthIn; tp += Colors) {
-                int endx;
-                dda_next_assign(ss->dda_x,endx);
-                if (firstline)
-                    *tp = *pp;
-                else {
-                    if ((polarity_additive && (*pp < *tp)) ||
-                        (!polarity_additive && (*pp > *tp)) )
+            if (polarity_additive) {
+                for ( i = 0; i < WidthIn; tp += Colors) {
+                    int endx;
+                    dda_next_assign(ss->dda_x,endx);
+                    if (firstline || *pp < *tp)
                         *tp = *pp;
+                    i++; pp += Colors;
+                    while (i < endx) {
+                        if (*pp < *tp)
+                            *tp = *pp;
+                        i++; pp += Colors;
+                    }
+                    if_debug1m('W', ss->memory, " %d", *tp);
                 }
-                i++; pp += Colors;
-                while (i < endx) {
-                   if (*pp < *tp)
+            } else {
+                for ( i = 0; i < WidthIn; tp += Colors) {
+                    int endx;
+                    dda_next_assign(ss->dda_x,endx);
+                    if (firstline || *pp > *tp)
                         *tp = *pp;
-                   i++; pp += Colors;
+                    i++; pp += Colors;
+                    while (i < endx) {
+                        if (*pp > *tp)
+                            *tp = *pp;
+                        i++; pp += Colors;
+                    }
+                    if_debug1m('W', ss->memory, " %d", *tp);
                 }
-                if_debug1m('W', ss->memory, " %d", *tp);
             }
             if_debug0m('W', ss->memory, "\n");
         }
