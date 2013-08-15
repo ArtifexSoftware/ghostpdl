@@ -48,7 +48,10 @@ grestore
    grestore
  } bind def
 << /EndPage [
-   /showcaption load /exec load
+   %%
+   %% Only print the caption if 'reason' is not 2 (device deactivation)
+   %%
+   /dup load /exec load 2 /ne load /exec load [ /showcaption load /exec load ] cvx /if load /exec load
    currentpagedevice /EndPage get /exec load
    ] cvx
 >> setpagedevice
