@@ -263,6 +263,9 @@ s_ISpecialDownScale_process(stream_state * st, stream_cursor_read * pr,
     /* Check whether we need to deliver any output. */
 
 top:
+    ss->params.Active = (ss->src_y >= ss->params.TopMargin &&
+                         ss->src_y <= ss->params.TopMargin + ss->params.PatchHeightIn);
+
     if (cur_y > ss->dst_y) {
         /* Deliver some or all of the current scaled row. */
         /* to generate a vertically scaled output row. */
@@ -282,7 +285,8 @@ top:
                 row = ss->dst;
             }
             /* Apply filter to zoom vertically from tmp to dst. */
-            idownscale_y(row, ss->tmp, ss);
+            if (ss->params.Active)
+                idownscale_y(row, ss->tmp, ss);
             /* Idiotic C coercion rules allow T* and void* to be */
             /* inter-assigned freely, but not compared! */
             if ((void *)row != ss->dst)		/* no buffering */
@@ -291,7 +295,8 @@ top:
             uint wcount = ss->dst_size - ss->dst_offset;
             uint ncopy = min(wleft, wcount);
 
-            memcpy(pw->ptr + 1, (byte *) ss->dst + ss->dst_offset, ncopy);
+            if (ss->params.Active)
+                memcpy(pw->ptr + 1, (byte *) ss->dst + ss->dst_offset, ncopy);
             pw->ptr += ncopy;
             ss->dst_offset += ncopy;
             if (ncopy != wcount)
@@ -320,20 +325,23 @@ adv:	++(ss->dst_y);
                 row = pr->ptr + 1;
             } else {		/* We're buffering a row in src. */
                 row = ss->src;
-                memcpy((byte *) ss->src + ss->src_offset, pr->ptr + 1,
-                       rcount);
+                if (ss->params.Active)
+                    memcpy((byte *) ss->src + ss->src_offset, pr->ptr + 1,
+                           rcount);
                 ss->src_offset = 0;
             }
             /* Apply filter to zoom horizontally from src to tmp. */
             if_debug2m('w', ss->memory, "[w]idownscale_x y = %d to tmp row %d\n",
                        ss->src_y, (ss->src_y % MAX_ISCALE_SUPPORT));
-            idownscale_x(ss->tmp, row, ss);
+            if (ss->params.Active)
+                idownscale_x(ss->tmp, row, ss);
             pr->ptr += rcount;
             ++(ss->src_y);
             dda_next_assign(ss->dda_y,cur_y);
             goto top;
         } else {		/* We don't have a complete row.  Copy data to src buffer. */
-            memcpy((byte *) ss->src + ss->src_offset, pr->ptr + 1, rleft);
+            if (ss->params.Active)
+                memcpy((byte *) ss->src + ss->src_offset, pr->ptr + 1, rleft);
             ss->src_offset += rleft;
             pr->ptr += rleft;
             return 0;
