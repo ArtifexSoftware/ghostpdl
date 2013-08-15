@@ -840,7 +840,7 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
  * In the case of FreeType this means creating the FreeType library object.
  */
 static gs_fapi_retcode
-ensure_open(gs_fapi_server * a_server, const char * server_param,
+gs_fapi_ft_ensure_open(gs_fapi_server * a_server, const char * server_param,
             int server_param_size)
 {
     ff_server *s = (ff_server *) a_server;
@@ -858,7 +858,7 @@ ensure_open(gs_fapi_server * a_server, const char * server_param,
 
         ft_error = FT_New_Library(s->ftmemory, &s->freetype_library);
         if (ft_error) {
-            gs_free(s->mem, s->ftmemory, 0, 0, "ensure_open");
+            gs_free(s->mem, s->ftmemory, 0, 0, "gs_fapi_ft_ensure_open");
         }
         else {
             FT_Add_Default_Modules(s->freetype_library);
@@ -1134,7 +1134,7 @@ transform_decompose(FT_Matrix * a_transform, FT_UInt * xresp, FT_UInt * yresp,
  * Open a font and set its size.
  */
 static gs_fapi_retcode
-get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
+gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                 const gs_fapi_font_scale * a_font_scale,
                 const char *a_map, gs_fapi_descendant_code a_descendant_code)
 {
@@ -1155,7 +1155,7 @@ get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
         s->outline_glyph = NULL;
     }
 
-    /* dpf("get_scaled_font enter: is_type1=%d is_cid=%d font_file_path='%s' a_descendant_code=%d\n",
+    /* dpf("gs_fapi_ft_get_scaled_font enter: is_type1=%d is_cid=%d font_file_path='%s' a_descendant_code=%d\n",
        a_font->is_type1, a_font->is_cid, a_font->font_file_path ? a_font->font_file_path : "", a_descendant_code); */
 
     /* If this font is the top level font of an embedded CID type 0 font (font type 9)
@@ -1165,7 +1165,7 @@ get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
     if (a_font->is_cid && a_font->is_type1 && a_font->font_file_path == NULL
         && (a_descendant_code == gs_fapi_toplevel_begin
             || a_descendant_code == gs_fapi_toplevel_complete)) {
-        /* dpf("get_scaled_font return 0\n"); */
+        /* dpf("gs_fapi_ft_get_scaled_font return 0\n"); */
         return 0;
     }
 
@@ -1178,14 +1178,14 @@ get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
         int own_font_data_len = -1;
         FT_Stream ft_strm = NULL;
 
-        /* dpf("get_scaled_font creating face\n"); */
+        /* dpf("gs_fapi_ft_get_scaled_font creating face\n"); */
 
         if (a_font->full_font_buf) {
 
             own_font_data =
                 gs_malloc(((gs_memory_t *) (s->ftmemory->user)),
                           a_font->full_font_buf_len, 1,
-                          "get_scaled_font - full font buf");
+                          "gs_fapi_ft_get_scaled_font - full font buf");
             if (!own_font_data) {
                 return_error(gs_error_VMerror);
             }
@@ -1395,7 +1395,7 @@ get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
         }
     }
 
-    /* dpf("get_scaled_font return %d\n", a_font->server_font_data ? 0 : -1); */
+    /* dpf("gs_fapi_ft_get_scaled_font return %d\n", a_font->server_font_data ? 0 : -1); */
     return a_font->server_font_data ? 0 : -1;
 }
 
@@ -1406,7 +1406,7 @@ get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
  * in lib/gs_res.ps.
  */
 static gs_fapi_retcode
-get_decodingID(gs_fapi_server * a_server, gs_fapi_font * a_font,
+gs_fapi_ft_get_decodingID(gs_fapi_server * a_server, gs_fapi_font * a_font,
                const char **a_decoding_id)
 {
     *a_decoding_id = "Unicode";
@@ -1417,7 +1417,7 @@ get_decodingID(gs_fapi_server * a_server, gs_fapi_font * a_font,
  * Get the font bounding box in font units.
  */
 static gs_fapi_retcode
-get_font_bbox(gs_fapi_server * a_server, gs_fapi_font * a_font, int a_box[4])
+gs_fapi_ft_get_font_bbox(gs_fapi_server * a_server, gs_fapi_font * a_font, int a_box[4])
 {
     ff_face *face = (ff_face *) a_font->server_font_data;
 
@@ -1433,7 +1433,7 @@ get_font_bbox(gs_fapi_server * a_server, gs_fapi_font * a_font, int a_box[4])
  * or fixed-width.
  */
 static gs_fapi_retcode
-get_font_proportional_feature(gs_fapi_server * a_server,
+gs_fapi_ft_get_font_proportional_feature(gs_fapi_server * a_server,
                               gs_fapi_font * a_font, bool * a_proportional)
 {
     *a_proportional = true;
@@ -1447,7 +1447,7 @@ get_font_proportional_feature(gs_fapi_server * a_server,
  * return code.
  */
 static gs_fapi_retcode
-can_retrieve_char_by_name(gs_fapi_server * a_server, gs_fapi_font * a_font,
+gs_fapi_ft_can_retrieve_char_by_name(gs_fapi_server * a_server, gs_fapi_font * a_font,
                           gs_fapi_char_ref * a_char_ref, bool * a_result)
 {
     ff_face *face = (ff_face *) a_font->server_font_data;
@@ -1471,7 +1471,7 @@ can_retrieve_char_by_name(gs_fapi_server * a_server, gs_fapi_font * a_font,
  * Return non-zero if the metrics can be replaced.
  */
 static gs_fapi_retcode
-can_replace_metrics(gs_fapi_server * a_server, gs_fapi_font * a_font,
+gs_fapi_ft_can_replace_metrics(gs_fapi_server * a_server, gs_fapi_font * a_font,
                     gs_fapi_char_ref * a_char_ref, int *a_result)
 {
     /* Replace metrics only if the metrics are supplied in font units. */
@@ -1483,7 +1483,7 @@ can_replace_metrics(gs_fapi_server * a_server, gs_fapi_font * a_font,
  * Retrieve the metrics of a_char_ref and put them in a_metrics.
  */
 static gs_fapi_retcode
-get_char_width(gs_fapi_server * a_server, gs_fapi_font * a_font,
+gs_fapi_ft_get_char_width(gs_fapi_server * a_server, gs_fapi_font * a_font,
                gs_fapi_char_ref * a_char_ref, gs_fapi_metrics * a_metrics)
 {
     ff_server *s = (ff_server *) a_server;
@@ -1494,7 +1494,7 @@ get_char_width(gs_fapi_server * a_server, gs_fapi_font * a_font,
 }
 
 static gs_fapi_retcode
-get_fontmatrix(gs_fapi_server * server, gs_matrix * m)
+gs_fapi_ft_get_fontmatrix(gs_fapi_server * server, gs_matrix * m)
 {
     m->xx = 1.0;
     m->xy = 0.0;
@@ -1508,10 +1508,10 @@ get_fontmatrix(gs_fapi_server * server, gs_matrix * m)
 /*
  * Rasterize the character a_char and return its metrics. Do not return the
  * bitmap but store this. It can be retrieved by a subsequent call to
- * get_char_raster.
+ * gs_fapi_ft_get_char_raster.
  */
 static gs_fapi_retcode
-get_char_raster_metrics(gs_fapi_server * a_server, gs_fapi_font * a_font,
+gs_fapi_ft_get_char_raster_metrics(gs_fapi_server * a_server, gs_fapi_font * a_font,
                         gs_fapi_char_ref * a_char_ref,
                         gs_fapi_metrics * a_metrics)
 {
@@ -1524,10 +1524,10 @@ get_char_raster_metrics(gs_fapi_server * a_server, gs_fapi_font * a_font,
 }
 
 /*
- * Return the bitmap created by the last call to get_char_raster_metrics.
+ * Return the bitmap created by the last call to gs_fapi_ft_get_char_raster_metrics.
  */
 static gs_fapi_retcode
-get_char_raster(gs_fapi_server * a_server, gs_fapi_raster * a_raster)
+gs_fapi_ft_get_char_raster(gs_fapi_server * a_server, gs_fapi_raster * a_raster)
 {
     ff_server *s = (ff_server *) a_server;
 
@@ -1547,10 +1547,10 @@ get_char_raster(gs_fapi_server * a_server, gs_fapi_raster * a_raster)
 /*
  * Create an outline for the character a_char and return its metrics. Do not
  * return the outline but store this.
- * It can be retrieved by a subsequent call to get_char_outline.
+ * It can be retrieved by a subsequent call to gs_fapi_ft_get_char_outline.
  */
 static gs_fapi_retcode
-get_char_outline_metrics(gs_fapi_server * a_server, gs_fapi_font * a_font,
+gs_fapi_ft_get_char_outline_metrics(gs_fapi_server * a_server, gs_fapi_font * a_font,
                          gs_fapi_char_ref * a_char_ref,
                          gs_fapi_metrics * a_metrics)
 {
@@ -1606,7 +1606,7 @@ conic_to(const FT_Vector * aControl, const FT_Vector * aTo, void *aObject)
     int64_t Control1x, Control1y, Control2x, Control2y;
     floatp sx, sy;
 
-    /* More complivated than above, we need to do arithmetic on the
+    /* More complicated than above, we need to do arithmetic on the
      * co-ordinates, so we want them as floats and we will convert the
      * result into 16.16 fixed precision for FAPI
      *
@@ -1676,10 +1676,10 @@ static const FT_Outline_Funcs TheFtOutlineFuncs = {
 };
 
 /*
- * Return the outline created by the last call to get_char_outline_metrics.
+ * Return the outline created by the last call to gs_fapi_ft_get_char_outline_metrics.
  */
 static gs_fapi_retcode
-get_char_outline(gs_fapi_server * a_server, gs_fapi_path * a_path)
+gs_fapi_ft_get_char_outline(gs_fapi_server * a_server, gs_fapi_path * a_path)
 {
     ff_server *s = (ff_server *) a_server;
     FF_path_info p;
@@ -1706,7 +1706,7 @@ get_char_outline(gs_fapi_server * a_server, gs_fapi_path * a_path)
 }
 
 static gs_fapi_retcode
-release_char_data(gs_fapi_server * a_server)
+gs_fapi_ft_release_char_data(gs_fapi_server * a_server)
 {
     ff_server *s = (ff_server *) a_server;
 
@@ -1726,7 +1726,7 @@ release_char_data(gs_fapi_server * a_server)
 }
 
 static gs_fapi_retcode
-release_typeface(gs_fapi_server * a_server, void *a_server_font_data)
+gs_fapi_ft_release_typeface(gs_fapi_server * a_server, void *a_server_font_data)
 {
     ff_face *face = (ff_face *) a_server_font_data;
 
@@ -1735,7 +1735,7 @@ release_typeface(gs_fapi_server * a_server, void *a_server_font_data)
 }
 
 static gs_fapi_retcode
-check_cmap_for_GID(gs_fapi_server * server, uint * index)
+gs_fapi_ft_check_cmap_for_GID(gs_fapi_server * server, uint * index)
 {
     ff_face *face = (ff_face *) (server->ff.server_font_data);
     FT_Face ft_face = face->ft_face;
@@ -1761,23 +1761,23 @@ static const gs_fapi_server freetypeserver = {
     0,
     false,
     {1, 0, 0, 1, 0, 0},
-    ensure_open,
-    get_scaled_font,
-    get_decodingID,
-    get_font_bbox,
-    get_font_proportional_feature,
-    can_retrieve_char_by_name,
-    can_replace_metrics,
+    gs_fapi_ft_ensure_open,
+    gs_fapi_ft_get_scaled_font,
+    gs_fapi_ft_get_decodingID,
+    gs_fapi_ft_get_font_bbox,
+    gs_fapi_ft_get_font_proportional_feature,
+    gs_fapi_ft_can_retrieve_char_by_name,
+    gs_fapi_ft_can_replace_metrics,
     NULL,                       /* can_simulate_style */
-    get_fontmatrix,
-    get_char_width,
-    get_char_raster_metrics,
-    get_char_raster,
-    get_char_outline_metrics,
-    get_char_outline,
-    release_char_data,
-    release_typeface,
-    check_cmap_for_GID,
+    gs_fapi_ft_get_fontmatrix,
+    gs_fapi_ft_get_char_width,
+    gs_fapi_ft_get_char_raster_metrics,
+    gs_fapi_ft_get_char_raster,
+    gs_fapi_ft_get_char_outline_metrics,
+    gs_fapi_ft_get_char_outline,
+    gs_fapi_ft_release_char_data,
+    gs_fapi_ft_release_typeface,
+    gs_fapi_ft_check_cmap_for_GID,
     NULL                        /* get_font_info */
 };
 
