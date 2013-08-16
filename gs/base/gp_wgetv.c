@@ -16,12 +16,20 @@
 
 /* MS Windows implementation of gp_getenv, and gp_serialnumber */
 
+#ifdef GS_NO_UTF8 /* We want the real sprintf, so unhide it */
+#define sprintf
+#endif
+
 #include "windows_.h"
+
+#ifdef GS_NO_UTF8
+#undef sprintf
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>		/* for getenv */
 #include <string.h>
 #include "gscdefs.h"		/* for gs_productfamily and gs_revision and gs_serialnumber */
-#include "gssprintf.h"		/* for gs_sprintf when GS_NO_UTF8=1 */
 
 #if defined(__WIN32__) && !defined(METRO)
 /*
@@ -200,9 +208,9 @@ gp_getenv(const char *name, char *ptr, int *plen)
             char key[256];
             char dotversion[16];
 
-            gs_sprintf(dotversion, "%d.%02d", (int)(gs_revision / 100),
+            sprintf(dotversion, "%d.%02d", (int)(gs_revision / 100),
                     (int)(gs_revision % 100));
-            gs_sprintf(key, "Software\\%s\\%s", gs_productfamily, dotversion);
+            sprintf(key, "Software\\%s\\%s", gs_productfamily, dotversion);
 #else
             wchar_t key[256];
             wchar_t dotversion[16];
@@ -243,7 +251,7 @@ gp_serialnumber(void)
 #ifdef GS_NO_UTF8
     char key[256];
 
-    gs_sprintf(key, "Software\\Microsoft\\MSLicensing\\HardwareID");
+    sprintf(key, "Software\\Microsoft\\MSLicensing\\HardwareID");
 #else        /* GS_NO_UTF8 */
     wchar_t key[256];
 
