@@ -29,7 +29,7 @@ TOC to see how to edit it for visual conciseness.
 <h2>Table of contents</h2>
 
 <blockquote><ul>
-<li><a href="#Version9.08">Version 9.08 (2013-08-08)</a>
+<li><a href="#Version9.09">Version 9.09 (2013-08-16)</a>
 <li><a href="#Version9.07">Version 9.07 (2013-02-14)</a>
 <li><a href="#Version9.06">Version 9.06 (2012-07-31)</a>
 <li><a href="#Version9.05">Version 9.05 (2012-02-08)</a>
@@ -68,7 +68,7 @@ overview</a>.
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
-<h2><a name="Version9.08"></a>Version 9.08 (2013-08-08)</h2>
+<h2><a name="Version9.09"></a>Version 9.09 (2013-08-16)</h2>
 
 <p>This is the eighth full release in the stable 9.x series, and is
 primarily a maintenance release.
@@ -76,7 +76,7 @@ primarily a maintenance release.
 <p> Highlights in this release include:
 <ul>
 <li>
-<p> Background printing (BGPrint)is a new feature allowing an accumulated page
+<p> Background printing (BGPrint) is a new feature allowing an accumulated page
 clist to be rendered by one or more rendering threads whilst the interpreter
 (in the "main" thread) continues to accumulate the subsequent page's clist.
 For certain classes of file this can result in a useful performance increase.
@@ -99,7 +99,7 @@ x64 and ARM (Requires MS Visual Studio 2012 Pro).
 </li>
 <li>
 <p> Processing of Windows command line arguments into UTF8 (as presaged a few
-releases ago) has been enhaned and enabled by default.
+releases ago) has been enhanced and enabled by default.
 </li>
 <li>
 <p> The URW Postscript font set has been updated to the latest version, fixing
@@ -112,11 +112,141 @@ many compatibility problems with the Adobe fonts.
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 
-<h3><a name="9.08_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="9.09_Incompatible_changes"></a>Incompatible changes</h3>
 <p>
 No recorded incompatible changes.
 
-<h3><a name="9.08_changelog"></a>Changelog</h3>
+<h3><a name="9.09_changelog"></a>Changelog</h3>
+<p><strong>2013-08-16 14:00:43 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=397abe5622f0a1a9963617fbf1509015563be6fc">397abe5622f0a1a9963617fbf1509015563be6fc</a>
+<blockquote>
+<p>
+    Address gp_wgetv not finding *any* environment variables unless compiled with GS_NO_UTF8<br>
+<br>
+    The string being passed in as the 'name' was a regular 1 byte C char array.<br>
+    But _wgetenv expects to be given a wide character string to find and<br>
+    treats the argument as such. This mean environment variables never matched.<br>
+<br>
+    This commit mimics the code for the registry variables, and converts the<br>
+    name to a wchar before passing to _wgetenv.<br>
+<br>
+    CLUSTER_UNTESTED<br>
+<br>
+gs/base/gp_wgetv.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-16 12:47:36 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=8b5a86bad386569f921d0322bf113fa82b3d4529">8b5a86bad386569f921d0322bf113fa82b3d4529</a>
+<blockquote>
+<p>
+    Fix GS_NO_UTF8 build problem with gs_sprintf.<br>
+<br>
+    CLUSTER_UNTESTED<br>
+<br>
+gs/base/gp_wgetv.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-16 07:58:57 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=182beda4d5199210c4c796c8c501e6e4bb5aa2de">182beda4d5199210c4c796c8c501e6e4bb5aa2de</a>
+<blockquote>
+<p>
+    PS Interpreter - yet more meddling with VM allocation and setpagedevice<br>
+<br>
+    Bug #694525 &quot;GSView 5.0 does not work with GPL Ghostscript 9.08&quot;<br>
+<br>
+    Rather horrifyingly GSView uses undocumented internal operations of<br>
+    Ghostscript. In this case the changes to VM allocation mode during setpagedevice<br>
+    were being circumvented.<br>
+<br>
+    This commit changes the way we detect a setpagedevice during startup, previously<br>
+    we check that the dictionary contained one key called /.LockSafetyParams<br>
+    and if so assumed that this meant we were in startup, so we set the VM<br>
+    allocation mode to global for the benefit of Display PostScxript.<br>
+<br>
+    GSView ended up triggering that test, which caused a VM allocation error.<br>
+<br>
+    We now look for the key /.LockSafetyParamsGlobal instead. If this is present<br>
+    we set the VM allocation mode to global and *replace* the key with<br>
+    /.LockSafetyParams instead. This allows accurate detection of the startup<br>
+    condition.<br>
+<br>
+    No differences expected, GSView 5 seems to work and the original bug still<br>
+    is fixed.<br>
+<br>
+gs/Resource/Init/gs_init.ps<br>
+gs/Resource/Init/gs_setpd.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-15 12:23:23 +0100
+</strong>
+<br>Robin Watts &lt;robin.watts@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=dde6d480e632eefbe5ccd42bc52b456582514a2a">dde6d480e632eefbe5ccd42bc52b456582514a2a</a>
+<blockquote>
+<p>
+    Bug 694451: Solve problems with interpolated landscape images.<br>
+<br>
+    The portrait image code accumulates pixels into scanlines, and then<br>
+    plots the whole scanline at once. The landscape image code follows<br>
+    this lead by accumulating pixels into 'scancolumns' and then plots<br>
+    the whole column at once.<br>
+<br>
+    Unfortunately this accumulation for columns goes wrong in the case<br>
+    where we are working at &lt; 8 bpp (as the transposition of rows to<br>
+    columns fails). This causes images with runs of identical pixels in<br>
+    to be 'squished' vertically.<br>
+<br>
+    We work around this here in the &lt; 8 bpp case by repeating the writes<br>
+    of each pixel so whole bytes are filled. This is suboptimal, but<br>
+    doing anything else is tricky with the macros the way they are.<br>
+<br>
+gs/base/gxiscale.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-09 17:02:40 -0700
+</strong>
+<br>Ray Johnston &lt;ray.johnston@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=fd89aa38fb8a8af11ac6100ee5eebd9ce61091e3">fd89aa38fb8a8af11ac6100ee5eebd9ce61091e3</a>
+<blockquote>
+<p>
+    Fix bug 694455. Incorrect CTM when rendering SMasks.<br>
+<br>
+    The clippath was incorrect due to the CTM. As specified in 7.5.4 of the PDF spec:<br>
+<br>
+    The mask's coordinate system is defined by concatenating the transformation<br>
+    matrix specified by the Matrix entry in the transparency group's form dictionary<br>
+    (see Section 4.9.1, &quot;Form Dictionaries&quot;) with the current transformation matrix<br>
+    at the moment the soft mask is established in the graphics state with the gs<br>
+    operator.<br>
+<br>
+    This fixes the customer's file and also results in a progression on<br>
+    comparefiles/Bug693681.pdf where extra data was previously showing.<br>
+<br>
+gs/Resource/Init/pdf_draw.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-13 00:04:57 -0700
+</strong>
+<br>Michael Vrhel &lt;michael.vrhel@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=8599c5c660638bb1778fb84485c29034b70d25f6">8599c5c660638bb1778fb84485c29034b70d25f6</a>
+<blockquote>
+<p>
+    Fix for problem with double application of alpha when composing isolated groups.<br>
+<br>
+gs/base/gxblend1.c<br>
+<p>
+</blockquote>
+<hr>
 <p><strong>2013-08-08 14:53:48 +0100
 </strong>
 <br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
@@ -91481,7 +91611,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.08, 14 August 2013
+<small>Ghostscript version 9.09, 16 August 2013
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
