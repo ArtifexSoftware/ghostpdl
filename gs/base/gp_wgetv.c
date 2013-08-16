@@ -170,7 +170,18 @@ gp_getenv(const char *name, char *ptr, int *plen)
         return -1;
     }
 #else
-    const wchar_t *str = _wgetenv(name);
+    wchar_t *wname;
+    wchar_t *str;
+
+    wname = malloc(utf8_to_wchar(NULL, name)*sizeof(wchar_t));
+    if (wname == NULL) {
+        return -1;
+    }
+    utf8_to_wchar(wname, name);
+
+    str = _wgetenv(wname);
+
+    free(wname);
 
     if (str) {
         /* wchar_to_utf8 returns INCLUDING terminator */
