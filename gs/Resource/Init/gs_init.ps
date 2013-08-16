@@ -1989,7 +1989,7 @@ systemdict /EPSBoundingBoxInit known { EPSBoundingBoxInit } if
 readonly def
 .setglobal
 
-/.locksafe {
+/.locksafe_userparams {
   SAFETY /safe get not {
     <<
       /PermitFileReading [
@@ -2013,12 +2013,34 @@ readonly def
     >> setuserparams
   }
   if
+} bind def
+
+/.locksafe {
+  .locksafe_userparams
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
   % properties and pagedevice .LockSafetyParams in agreement even
   % after a restore that changes the value to false.
   currentglobal currentpagedevice gcheck setglobal % use correct VM space
   << /.LockSafetyParams //true >> setpagedevice
+  setglobal
+  //SAFETY /safe //true .forceput % overrides readonly
+} .bind executeonly odef
+
+%% This is only used during startup. Its required so that
+%% we can detect in setpagdevice that we are in fact in startup
+%% and allocate a *global* instead of local VM. We need it to be
+%% global to satisfy Display PostScript (see start of /setpagdevice
+%% in gs_setpd.ps)
+%%
+/.locksafeglobal {
+  .locksafe_userparams
+  % setpagedevice has the side effect of clearing the page, but
+  % we will just document that. Using setpagedevice keeps the device
+  % properties and pagedevice .LockSafetyParams in agreement even
+  % after a restore that changes the value to false.
+  currentglobal currentpagedevice gcheck setglobal % use correct VM space
+  << /.LockSafetyParamsGlobal //true >> setpagedevice
   setglobal
   //SAFETY /safe //true .forceput % overrides readonly
 } .bind executeonly odef
@@ -2033,7 +2055,7 @@ readonly def
     >> setuserparams
   }
   if
-  .locksafe
+  .locksafeglobal
 } .bind executeonly odef
 
 /deletefile {
