@@ -675,8 +675,11 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
                 % solution is to make sure the VM mode is global during
                 % startup (to satisfy gs_dps.ps) and local thereafter
                 % (to satisfy the WordPerfect bug).
-   dup dup length 1 eq exch /.LockSafetyParams known and {
+   dup dup length 1 eq exch /.LockSafetyParamsGlobal known and {
      currentglobal exch true setglobal
+     dup /.LockSafetyParamsGlobal get
+     1 index /.LockSafetyParamsGlobal undef
+     1 index /.LockSafetyParams 3 -1 roll put
    } {
                 % ensure that we are always in local VM mode to avoid
                 % mismatches. This is because we always create child
