@@ -105,10 +105,11 @@ gs_private_st_ptrs2(st_directory_enum, struct directory_enum_s, "directory_enum"
 typedef struct directory_enum_s directory_enum;
 
 struct file_enum_s {
+    char *pattern;
     struct directory_enum_s *current;
 };
-gs_private_st_ptrs1(st_file_enum, struct file_enum_s, "directory_enum",
-                    file_enum_enum_ptrs, file_enum_reloc_ptrs, current);
+gs_private_st_ptrs2(st_file_enum, struct file_enum_s, "directory_enum",
+                    file_enum_enum_ptrs, file_enum_reloc_ptrs, pattern, current);
 
 static int enumerate_directory_init(gs_memory_t *mem, directory_enum *pden, const char *directory, int dir_size, char *filename, const char *pattern, int pat_size)
 {
@@ -173,13 +174,35 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     }
     pfen->current = pden;
 
+    /* pattern could be allocated as a string, */
+    /* but it's simpler for GC and freeing to allocate it as bytes. */
+    pattern = (char *)gs_alloc_bytes(mem, pat_size,
+                                     "gp_enumerate_files(pattern)");
+    if (pattern == 0)
+        return 0;
+
+    /* translate the template into a pattern discarding the escape  */
+    /* char '\' (not needed by the OS Find...File logic). Note that */
+    /* a final '\' in the string is also discarded.                */
+    for (i = 0, j=0; i < patlen; i++) {
+        if (pat[i] == '\\') {
+            i++;
+            if (i == patlen)
+                break;         /* '\' at end ignored */
+        }
+        pattern[j++]=pat[i];
+    }
+    pfen->pattern = pattern;
+    pat = pfen->pattern;
+    patlen = j;
+
     /* Scan for last path separator to determine 'head_size' (directory part) */
     for (i = 0; i < patlen; i++) {
         if(pat[i] == '/' || pat[i] == '\\' || pat[i] == ':')
         hsize = i + 1;
     }
 
-    if (enumerate_directory_init(mem, pden, pat, hsize, NULL, &pat[hsize], patlen - hsize) < 0)
+    if (enumerate_directory_init(mem, pden, pfen->pattern, hsize, NULL, &pat[hsize], patlen - hsize) < 0)
     {
         gs_free_object(mem, pden, "free directory enumerator on error");
         gs_free_object(mem, pfen, "free file enumerator on error");
@@ -347,6 +370,8 @@ gp_enumerate_files_close(file_enum * pfen)
         pden = ptenum;
     };
     gs_free_object(mem, pfen, "gp_enumerate_files_close");
+/*    gs_free_object(mem, pfen->pattern,
+         "gp_enumerate_files_close(pattern)");*/
 }
 
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */
