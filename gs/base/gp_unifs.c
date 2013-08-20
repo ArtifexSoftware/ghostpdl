@@ -477,7 +477,8 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
     /* We have a winner! */
     pfen->worklen = worklen;
     pfen->pathead = pathead;
-    memcpy(ptr, work, len);
+    memcpy(ptr, work, len > maxlen ? maxlen : len);
+
     return len;
 }
 
