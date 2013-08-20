@@ -128,7 +128,7 @@ static int enumerate_directory_init(gs_memory_t *mem, directory_enum *pden, cons
         return -1;
 
     memcpy(pden->pattern, directory, dir_size);
-    if (directory[dir_size - 1] != '/') {
+    if (dir_size > 1 && directory[dir_size - 1] != '/') {
         pden->pattern[dir_size++] = '/';
     }
     if (filename) {
@@ -344,13 +344,9 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
         memcpy(ptr, pden->pattern, pden->head_size);
         strcpy(ptr + pden->head_size, outfname);
         return pden->head_size + len;
+    } else {
+        return (pden->head_size + len);
     }
-    if (pden->head_size >= maxlen)
-        return 0;		/* no hope at all */
-
-    memcpy(ptr, pden->pattern, pden->head_size);
-    strncpy(ptr + pden->head_size, outfname, maxlen - pden->head_size - 1);
-    return maxlen;
 }
 
 /* Clean up the file enumeration. */
