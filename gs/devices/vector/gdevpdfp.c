@@ -748,7 +748,6 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
         const gs_param_string *pkey = &pma->data[i];
         const gs_param_string *pvalue = &pma->data[i + 1];
         const char *key;
-        int code;
 
         /*
          * %%For, %%Creator, and %%Title are recognized only if either
