@@ -186,7 +186,7 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     /* translate the template into a pattern. Note that */
     /* a final '\' or '/' in the string is discarded.                */
     for (i = 0, j=0; i < patlen; i++) {
-        if (j > 0 && pattern[j-1] == '/' || pattern[j-1] == '\\') {
+        if (j > 0 && (pattern[j-1] == '/' || pattern[j-1] == '\\')) {
             while (pat[i] == '/' || pat[i] == '\\') {
                 i++;
                 if (i == patlen)
