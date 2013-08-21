@@ -106,6 +106,7 @@ typedef struct directory_enum_s directory_enum;
 
 struct file_enum_s {
     char *pattern;
+    bool illegal;
     struct directory_enum_s *current;
 };
 gs_private_st_ptrs2(st_file_enum, struct file_enum_s, "directory_enum",
@@ -128,7 +129,7 @@ static int enumerate_directory_init(gs_memory_t *mem, directory_enum *pden, cons
         return -1;
 
     memcpy(pden->pattern, directory, dir_size);
-    if (dir_size > 1 && directory[dir_size - 1] != '/') {
+    if (dir_size > 1 && directory[dir_size - 1] != '/' && directory[dir_size - 1] != '\\') {
         pden->pattern[dir_size++] = '/';
     }
     if (filename) {
@@ -173,6 +174,7 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
         return 0;
     }
     pfen->current = pden;
+    pfen->illegal = false;
 
     /* pattern could be allocated as a string, */
     /* but it's simpler for GC and freeing to allocate it as bytes. */
@@ -181,17 +183,19 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     if (pattern == 0)
         return 0;
 
-    /* translate the template into a pattern discarding the escape  */
-    /* char '\' (not needed by the OS Find...File logic). Note that */
-    /* a final '\' in the string is also discarded.                */
+    /* translate the template into a pattern. Note that */
+    /* a final '\' or '/' in the string is discarded.                */
     for (i = 0, j=0; i < patlen; i++) {
-        if (pat[i] == '\\') {
-            i++;
-            if (i == patlen)
-                break;         /* '\' at end ignored */
+        if (j > 0 && pattern[j-1] == '/' || pattern[j-1] == '\\') {
+            while (pat[i] == '/' || pat[i] == '\\') {
+                i++;
+                if (i == patlen)
+                    break;         /* '\' at end ignored */
+            }
         }
         pattern[j++]=pat[i];
     }
+
     pfen->pattern = pattern;
     pat = pfen->pattern;
     patlen = j;
@@ -202,8 +206,17 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
         hsize = i + 1;
     }
 
+    /* Scan for illegal characters in the directory path */
+    for (i=0; i < hsize; i++) {
+        if (pat[i] == '*' || pat[i] == '?')
+            /* We can't abort cleanly from here so we store the flag for later */
+            /* See gp_enumerate_files_next() below. */
+            pfen->illegal = true;
+    }
+
     if (enumerate_directory_init(mem, pden, pfen->pattern, hsize, NULL, &pat[hsize], patlen - hsize) < 0)
     {
+        gs_free_object(mem, pattern, "free file enumerator pattern buffer on error");
         gs_free_object(mem, pden, "free directory enumerator on error");
         gs_free_object(mem, pfen, "free file enumerator on error");
         return 0;
@@ -224,6 +237,11 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 #else
     char outfname[(sizeof(pden->find_data.cFileName)*3+1)/2];
 #endif
+    if (pfen->illegal) {
+        gp_enumerate_files_close(pfen);
+        return ~(uint) 0;
+    }
+
     for(;;) {
         if (pden->first_time) {
 #ifdef GS_NO_UTF8
@@ -312,7 +330,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
                         } else {
                             wchar_to_utf8(fname, pden->find_data.cFileName);
                             if (enumerate_directory_init(pden->memory, new_denum, pden->pattern, pden->head_size,
-                                fname, &pden->pattern[pden->head_size], pden->pat_size - pden->head_size) < 0)
+                                fname, "*", 1) < 0)
                             {
                                 gs_free_object(pden->memory, new_denum, "free directory enumerator on error");
                             }
