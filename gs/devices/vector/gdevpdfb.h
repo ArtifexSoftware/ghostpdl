@@ -219,9 +219,8 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  -1,                            /* PageLabels_current_page */
  0,                             /* PageLabels_current_label */
  0,				/* */
- {				/* vgstack[2] */
-    {0}, {0}
- },
+ 0,             /* vgstack */
+ 0,             /* vgstack_size */
  0,				/* vgstack_depth */
  0,				/* vgstack_bottom */
  {0},				/* vg_initial */

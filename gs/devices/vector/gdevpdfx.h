@@ -745,10 +745,9 @@ struct gx_device_pdf_s {
     gs_text_enum_t *pte;
     /*
      * The viewer's graphic state stack.
-     * We restrict its length with the strongest PDF spec limitation.
-     * Usually 5 levels is enough, but patterns and charprocs may be nested recursively.
      */
-    pdf_viewer_state vgstack[11];
+    pdf_viewer_state *vgstack;
+    int vgstack_size;
     int vgstack_depth;
     int vgstack_bottom;                 /* Stack bottom for the current substream. */
     pdf_viewer_state vg_initial; /* Initial values for viewer's graphic state */
@@ -882,8 +881,8 @@ struct gx_device_pdf_s {
  m(32,pres_soft_mask_dict) m(33,PDFXTrimBoxToMediaBoxOffset.data)\
  m(34,PDFXBleedBoxToTrimBoxOffset.data) m(35, DSCEncodingToUnicode.data)\
  m(36,Identity_ToUnicode_CMaps[0]) m(37,Identity_ToUnicode_CMaps[1])\
- m(38,ResourceUsage)
-#define gx_device_pdf_num_ptrs 39
+ m(38,ResourceUsage) m(39,vgstack)
+#define gx_device_pdf_num_ptrs 40
 #define gx_device_pdf_do_param_strings(m)\
     m(0, OwnerPassword) m(1, UserPassword) m(2, NoEncrypt)\
     m(3, DocumentUUID) m(4, InstanceUUID)

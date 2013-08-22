@@ -638,6 +638,13 @@ pdf_open(gx_device * dev)
         cos_dict_alloc(pdev, "pdf_open(global_named_objects)");
     /* Initialize internal structures that don't have IDs. */
     pdev->NI_stack = cos_array_alloc(pdev, "pdf_open(NI stack)");
+    pdev->vgstack = (pdf_viewer_state *)gs_alloc_bytes(pdev->pdf_memory, 11 * sizeof(pdf_viewer_state), "pdf_open(graphics state stack)");
+    if (pdev->vgstack == 0) {
+        code = gs_error_VMerror;
+        goto fail;
+    }
+    memset(pdev->vgstack, 0x00, 11 * sizeof(pdf_viewer_state));
+    pdev->vgstack_size = 11;
     pdev->Namespace_stack = cos_array_alloc(pdev, "pdf_open(Namespace stack)");
     pdf_initialize_ids(pdev);
     code = pdf_compute_fileID(pdev);
@@ -662,7 +669,7 @@ pdf_open(gx_device * dev)
     pdev->outlines_id = 0;
     pdev->next_page = 0;
     pdev->text = pdf_text_data_alloc(mem);
-    pdev->sbstack_size = count_of(pdev->vgstack); /* Overestimated a few. */
+    pdev->sbstack_size = pdev->vgstack_size; /* Overestimated a few. */
     pdev->sbstack = gs_alloc_struct_array(mem, pdev->sbstack_size, pdf_substream_save,
                                  &st_pdf_substream_save_element, "pdf_open");
     pdev->pages =
@@ -2876,6 +2883,8 @@ pdf_close(gx_device * dev)
     cos_release((cos_object_t *)pdev->NI_stack, "Release Name Index stack");
     gs_free_object(mem, pdev->NI_stack, "Free Name Index stack");
     pdev->NI_stack = 0;
+
+    gs_free_object(pdev->pdf_memory, pdev->vgstack, "pdf_close(graphics state stack)");
 
     cos_release((cos_object_t *)pdev->Namespace_stack, "release Name space stack");
     gs_free_object(mem, pdev->Namespace_stack, "Free Name space stack");

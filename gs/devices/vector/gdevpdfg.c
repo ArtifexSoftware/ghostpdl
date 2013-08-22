@@ -57,8 +57,18 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
 {
     const int i = pdev->vgstack_depth;
 
-    if (pdev->vgstack_depth >= count_of(pdev->vgstack))
-        return_error(gs_error_unregistered); /* Must not happen. */
+    if (pdev->vgstack_depth >= pdev->vgstack_size) {
+        pdf_viewer_state *new_vgstack = (pdf_viewer_state *)gs_alloc_bytes(pdev->pdf_memory,
+            (pdev->vgstack_size + 5) * sizeof(pdf_viewer_state), "increase graphics state stack size");
+        if (new_vgstack == 0)
+            return_error(gs_error_VMerror);
+        memset(new_vgstack, 0x00, (pdev->vgstack_size + 5) * sizeof(pdf_viewer_state));
+        memcpy(new_vgstack, pdev->vgstack, pdev->vgstack_size * sizeof(pdf_viewer_state));
+        gs_free_object(pdev->pdf_memory, pdev->vgstack, "resize graphics state stack, free old stack)");
+        pdev->vgstack = new_vgstack;
+        pdev->vgstack_size += 5;
+    }
+
     pdev->vgstack[i].transfer_ids[0] = pdev->transfer_ids[0];
     pdev->vgstack[i].transfer_ids[1] = pdev->transfer_ids[1];
     pdev->vgstack[i].transfer_ids[2] = pdev->transfer_ids[2];
