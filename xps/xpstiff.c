@@ -1055,13 +1055,20 @@ xps_decode_tiff_header(xps_context_t *ctx, xps_tiff_t *tiff, byte *buf, int len)
 int
 xps_decode_tiff(xps_context_t *ctx, byte *buf, int len, xps_image_t *image)
 {
-    int error;
+    int error = gs_okay;
     xps_tiff_t tiffst;
     xps_tiff_t *tiff = &tiffst;
 
     error = xps_decode_tiff_header(ctx, tiff, buf, len);
     if (error)
         return gs_rethrow(error, "cannot decode tiff header");
+
+    if (!tiff->stripbytecounts)
+    {
+        error = gs_error_unknownerror;
+        gs_throw(error, "stripbytecounts is NULL");
+        goto cleanup;
+    }
 
     /*
      * Decode the image strips
@@ -1092,12 +1099,12 @@ xps_decode_tiff(xps_context_t *ctx, byte *buf, int len, xps_image_t *image)
     /*
      * Clean up scratch memory
      */
-
+cleanup:
     if (tiff->colormap) xps_free(ctx, tiff->colormap);
     if (tiff->stripoffsets) xps_free(ctx, tiff->stripoffsets);
     if (tiff->stripbytecounts) xps_free(ctx, tiff->stripbytecounts);
 
-    return gs_okay;
+    return error;
 }
 
 int
