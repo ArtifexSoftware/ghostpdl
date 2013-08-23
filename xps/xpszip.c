@@ -329,8 +329,13 @@ xps_read_zip_part(xps_context_t *ctx, char *partname)
             else
                 gs_sprintf(buf, "%s/[%d].last.piece", name, i);
             ent = xps_find_zip_entry(ctx, buf);
-            xps_read_zip_entry(ctx, ent, part->data + offset);
-            offset += ent->usize;
+            if (!ent)
+                gs_warn("missing piece");
+            else
+            {
+                xps_read_zip_entry(ctx, ent, part->data + offset);
+                offset += ent->usize;
+            }
         }
         return part;
     }
