@@ -380,10 +380,10 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
             }
             memset(buf1, 0x00, (j * sizeof(UTF16)) + 2);
             for (i = 0; i < j; i++) {
-                if (buf0[i] <= 0x7f || buf0[0] >= 0xAE) {
-                    if (buf0[0] == 0x7f) {
+                if (buf0[i] <= 0x7f || buf0[i] >= 0xAE) {
+                    if (buf0[i] == 0x7f) {
                         emprintf1(pdev->memory, "PDFDocEncoding %x cannot be represented in Unicode\n",
-                            buf0[0]);
+                            buf0[i]);
                     } else
                         buf1[(i * 2) + 3] = buf0[i];
                 } else {
