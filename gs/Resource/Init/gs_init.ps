@@ -2055,8 +2055,22 @@ readonly def
     >> setuserparams
   }
   if
-  .locksafeglobal
+  .locksafe
 } .bind executeonly odef
+
+%% See /.locksafeglobal above.
+%%
+/.setsafeglobal {
+  SAFETY /safe get not {
+    <<
+      /PermitFileReading [ ]
+      /PermitFileWriting [ ]
+      /PermitFileControl [ ]
+    >> setuserparams
+  }
+  if
+  .locksafeglobal
+} bind executeonly odef
 
 /deletefile {
   dup { deletefile } stopped {
@@ -2081,7 +2095,7 @@ readonly def
 } .bind executeonly odef
 
 % If we are running in SAFER mode, lock things down
-SAFER { .setsafe } if
+SAFER { .setsafeglobal } if
 
 % If we delayed binding, make it possible to do it later.
 /.bindnow {
