@@ -246,7 +246,7 @@ xps_canvas_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root
     {
         if (!strcmp(xps_tag(node), "Canvas.Resources"))
         {
-            if (xps_resource_dictionary_has_transparency(ctx, base_uri, xps_down(node)))
+            if (xps_down(node) && xps_resource_dictionary_has_transparency(ctx, base_uri, xps_down(node)))
                 return 1;
         }
 
