@@ -1909,7 +1909,7 @@ put				% Policies in pagedevice
 % so that .getuseciecolor has the correct value (see gs_setpd.ps)
 /setpagedevice where {
   pop systemdict /UseCIEColor known {
-    mark /UseCIEColor UseCIEColor .dicttomark setpagedevice
+    mark /UseCIEColor UseCIEColor /..StartupGlobal //true .dicttomark setpagedevice
   } if
 } if
 
@@ -2040,7 +2040,9 @@ readonly def
   % properties and pagedevice .LockSafetyParams in agreement even
   % after a restore that changes the value to false.
   currentglobal currentpagedevice gcheck setglobal % use correct VM space
-  << /.LockSafetyParamsGlobal //true >> setpagedevice
+  << /.LockSafetyParams //true
+    /..StartupGlobal //true
+  >> setpagedevice
   setglobal
   //SAFETY /safe //true .forceput % overrides readonly
 } .bind executeonly odef
@@ -2176,6 +2178,13 @@ $error /.nosetlocal //false put
 
 (END GLOBAL) VMDEBUG
 
+%% .savelocalstate is part of Display PostScript (if included). Part of the function of
+%% the .savelocalstate routine is to store the 'initial saved gstate' (savedinitialgstate)
+%% in systemdict. The code in dps1.c, gstate_check_space, disallows writing or creating
+%% gstates in global VM in certain conditions. If we execute setpagedevice before we
+%% reach this point, we must ensure that we do so using /..StartupGlobal so that
+%% the dictionary is defined in global VM, because the gstate contains a pointer to the
+%% device dictionary, and if that is allocated in local VM we will fail the gstate check.
 /.savelocalstate where {
         % If we might create new contexts, save away copies of all dictionaries
         % referenced from systemdict that are stored in local VM,
