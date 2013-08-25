@@ -53,7 +53,7 @@ static const gs_color_space_type gs_color_space_type_DeviceGray = {
     gx_spot_colors_set_overprint,
     NULL, gx_no_adjust_color_count,
     gx_serialize_cspace_type,
-    gx_cspace_is_linear_default
+    gx_cspace_is_linear_default, gx_polarity_additive
 };
 static const gs_color_space_type gs_color_space_type_DeviceRGB = {
     gs_color_space_index_DeviceRGB, true, true,
@@ -65,7 +65,7 @@ static const gs_color_space_type gs_color_space_type_DeviceRGB = {
     gx_spot_colors_set_overprint,
     NULL, gx_no_adjust_color_count,
     gx_serialize_cspace_type,
-    gx_cspace_is_linear_default
+    gx_cspace_is_linear_default, gx_polarity_additive
 };
 
 static cs_proc_set_overprint(gx_set_overprint_DeviceCMYK);
@@ -80,7 +80,7 @@ static const gs_color_space_type gs_color_space_type_DeviceCMYK = {
     gx_set_overprint_DeviceCMYK,
     NULL, gx_no_adjust_color_count,
     gx_serialize_cspace_type,
-    gx_cspace_is_linear_default
+    gx_cspace_is_linear_default, gx_polarity_subtractive
 };
 
 /* Structure descriptors */
@@ -294,6 +294,24 @@ int
 gx_num_components_4(const gs_color_space * pcs)
 {
     return 4;
+}
+
+gx_color_polarity_t
+gx_polarity_subtractive(const gs_color_space * pcs)
+{
+    return GX_CINFO_POLARITY_SUBTRACTIVE;
+}
+
+gx_color_polarity_t
+gx_polarity_additive(const gs_color_space * pcs)
+{
+    return GX_CINFO_POLARITY_ADDITIVE;
+}
+
+gx_color_polarity_t
+gx_polarity_unknown(const gs_color_space * pcs)
+{
+    return GX_CINFO_POLARITY_UNKNOWN;
 }
 
 /*

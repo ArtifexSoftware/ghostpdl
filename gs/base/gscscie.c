@@ -58,7 +58,7 @@ const gs_color_space_type gs_color_space_type_CIEDEFG = {
     gx_spot_colors_set_overprint,
     gx_final_CIEDEFG, gx_no_adjust_color_count,
     gx_serialize_CIEDEFG,
-    gx_cspace_is_linear_default
+    gx_cspace_is_linear_default, gx_polarity_subtractive
 };
 
 /* CIEBasedDEF */
@@ -78,7 +78,7 @@ const gs_color_space_type gs_color_space_type_CIEDEF = {
     gx_spot_colors_set_overprint,
     gx_final_CIEDEF, gx_no_adjust_color_count,
     gx_serialize_CIEDEF,
-    gx_cspace_is_linear_default
+    gx_cspace_is_linear_default, gx_polarity_subtractive
 };
 
 /* CIEBasedABC */
@@ -97,7 +97,7 @@ const gs_color_space_type gs_color_space_type_CIEABC = {
     gx_spot_colors_set_overprint,
     gx_final_CIEABC, gx_no_adjust_color_count,
     gx_serialize_CIEABC,
-    gx_cspace_is_linear_default
+    gx_cspace_is_linear_default, gx_polarity_additive
 };
 
 /* CIEBasedA */
@@ -117,7 +117,7 @@ const gs_color_space_type gs_color_space_type_CIEA = {
     gx_spot_colors_set_overprint,
     gx_final_CIEA, gx_no_adjust_color_count,
     gx_serialize_CIEA,
-    gx_cspace_is_linear_default
+    gx_cspace_is_linear_default, gx_polarity_additive
 };
 
 /* Determine the concrete space underlying a CIEBased space. */

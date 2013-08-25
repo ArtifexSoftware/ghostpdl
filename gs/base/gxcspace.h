@@ -211,6 +211,15 @@ struct gs_color_space_type_s {
 #define cs_is_linear(pcs, pis, dev, c0, c1, c2, c3, smoothness, icclink)\
   (*(pcs)->type->is_linear)(pcs, pis, dev, c0, c1, c2, c3, smoothness, icclink)
         cs_proc_is_linear((*is_linear));
+
+    /* Define the polarity of a color space.  We will use gx_color_polarity_t
+       with spaces such as patterns returning GX_CINFO_POLARITY_UNKNOWN */
+
+#define cs_proc_polarity(proc)\
+  gx_color_polarity_t proc(const gs_color_space *)
+#define cs_polarity(pcs)\
+  (*(pcs)->type->polarity)(pcs)
+        cs_proc_polarity((*polarity));
 };
 
 extern_st(st_base_color_space);
@@ -222,6 +231,9 @@ extern_st(st_base_color_space);
 cs_proc_num_components(gx_num_components_1);
 cs_proc_num_components(gx_num_components_3);
 cs_proc_num_components(gx_num_components_4);
+cs_proc_polarity(gx_polarity_subtractive);
+cs_proc_polarity(gx_polarity_additive);
+cs_proc_polarity(gx_polarity_unknown);
 cs_proc_init_color(gx_init_paint_1);
 cs_proc_init_color(gx_init_paint_3);
 cs_proc_init_color(gx_init_paint_4);

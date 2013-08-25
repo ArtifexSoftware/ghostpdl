@@ -43,7 +43,7 @@ static const gs_color_space_type gs_color_space_type_DevicePixel = {
     gx_set_overprint_DevicePixel,
     NULL, gx_no_adjust_color_count,
     gx_serialize_DevicePixel,
-    gx_cspace_is_linear_default
+    gx_cspace_is_linear_default, gx_polarity_unknown
 };
 
 /* Create a DevicePixel color space. */

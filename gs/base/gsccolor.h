@@ -101,4 +101,15 @@ typedef enum {
     OTHER
 } gs_transparency_color_t;
 
+
+/*
+ * Color model component polarity. An "unknown" value has been added to
+ * this enumeration.  This is used for devices and color spaces.
+ */
+typedef enum {
+    GX_CINFO_POLARITY_UNKNOWN = -1,
+    GX_CINFO_POLARITY_SUBTRACTIVE = 0,
+    GX_CINFO_POLARITY_ADDITIVE
+} gx_color_polarity_t;
+
 #endif /* gsccolor_INCLUDED */

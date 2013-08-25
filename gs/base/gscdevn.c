@@ -62,6 +62,8 @@ static cs_proc_install_cspace(gx_install_DeviceN);
 static cs_proc_set_overprint(gx_set_overprint_DeviceN);
 static cs_proc_final(gx_final_DeviceN);
 static cs_proc_serialize(gx_serialize_DeviceN);
+static cs_proc_polarity(gx_polarity_DeviceN);
+
 const gs_color_space_type gs_color_space_type_DeviceN = {
     gs_color_space_index_DeviceN, true, false,
     &st_color_space_DeviceN, gx_num_components_DeviceN,
@@ -72,7 +74,7 @@ const gs_color_space_type gs_color_space_type_DeviceN = {
     gx_set_overprint_DeviceN,
     gx_final_DeviceN, gx_no_adjust_color_count,
     gx_serialize_DeviceN,
-    gx_cspace_is_linear_default
+    gx_cspace_is_linear_default, gx_polarity_DeviceN
 };
 
 /* GC procedures */
@@ -293,6 +295,18 @@ static int
 gx_num_components_DeviceN(const gs_color_space * pcs)
 {
     return pcs->params.device_n.num_components;
+}
+
+/* Determine best guess of polarity */
+static gx_color_polarity_t
+gx_polarity_DeviceN(const gs_color_space * pcs)
+{
+    /* DeviceN initializes to 1.0 like a separation so
+       for now, treat this as subtractive.  It is possible
+       that we may have to do a special test for Red, Green
+       and Blue but for now, I believe the following is
+       correct */
+    return GX_CINFO_POLARITY_SUBTRACTIVE;
 }
 
 /* Initialize a DeviceN color. */

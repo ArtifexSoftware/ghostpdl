@@ -54,6 +54,7 @@ static cs_proc_final(gx_final_ICC);
 static cs_proc_serialize(gx_serialize_ICC);
 static cs_proc_is_linear(gx_cspace_is_linear_ICC);
 static cs_proc_set_overprint(gx_set_overprint_ICC);
+static cs_proc_polarity(gx_polarity_ICC);
 cs_proc_remap_color(gx_remap_ICC_imagelab);
 
 const gs_color_space_type gs_color_space_type_ICC = {
@@ -73,7 +74,8 @@ const gs_color_space_type gs_color_space_type_ICC = {
     gx_final_ICC,                   /* final */
     gx_no_adjust_color_count,       /* adjust_color_count */
     gx_serialize_ICC,               /* serialize */
-    gx_cspace_is_linear_ICC
+    gx_cspace_is_linear_ICC,
+    gx_polarity_ICC
 };
 
 static inline void
@@ -233,6 +235,27 @@ static int
 gx_num_components_ICC(const gs_color_space * pcs)
 {
     return pcs->cmm_icc_profile_data->num_comps;
+}
+
+/* Get the polarity of the ICC Based space */
+static gx_color_polarity_t
+gx_polarity_ICC(const gs_color_space * pcs)
+{
+    switch (pcs->cmm_icc_profile_data->data_cs) {
+        case gsUNDEFINED:
+        case gsNAMED:
+            return GX_CINFO_POLARITY_UNKNOWN;
+        case gsGRAY:
+        case gsRGB:
+        case gsCIELAB:
+        case gsCIEXYZ:
+            return GX_CINFO_POLARITY_ADDITIVE;
+        case gsCMYK:
+        case gsNCHANNEL:
+            return GX_CINFO_POLARITY_SUBTRACTIVE;
+        default:
+            return GX_CINFO_POLARITY_UNKNOWN;
+    }
 }
 
 /*

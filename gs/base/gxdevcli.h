@@ -237,16 +237,6 @@ typedef enum {
 } gx_color_enc_sep_lin_t;
 
 /*
- * Color model component polarity. An "unknown" value has been added to
- * this enumeration.
- */
-typedef enum {
-    GX_CINFO_POLARITY_UNKNOWN = -1,
-    GX_CINFO_POLARITY_SUBTRACTIVE = 0,
-    GX_CINFO_POLARITY_ADDITIVE
-} gx_color_polarity_t;
-
-/*
  * Enumerator to indicate if a color model will support overprint mode.
  *
  * Only "DeviceCMYK" color space support this option, but we interpret

@@ -177,6 +177,7 @@ static cs_proc_install_cspace(gx_install_Indexed);
 static cs_proc_set_overprint(gx_set_overprint_Indexed);
 static cs_proc_final(gx_final_Indexed);
 static cs_proc_serialize(gx_serialize_Indexed);
+static cs_proc_polarity(gx_polarity_Indexed);
 const gs_color_space_type gs_color_space_type_Indexed = {
     gs_color_space_index_Indexed, false, false,
     &st_color_space_Indexed, gx_num_components_1,
@@ -188,7 +189,7 @@ const gs_color_space_type gs_color_space_type_Indexed = {
     gx_set_overprint_Indexed,
     gx_final_Indexed, gx_no_adjust_color_count,
     gx_serialize_Indexed,
-    gx_cspace_is_linear_default
+    gx_cspace_is_linear_default, gx_polarity_Indexed
 };
 
 /* GC procedures. */
@@ -223,6 +224,14 @@ static RELOC_PTRS_WITH(cs_Indexed_reloc_ptrs, gs_color_space *pcs)
 RELOC_PTRS_END
 
 /* Color space installation for an Indexed color space. */
+
+/* Return polarity of base space */
+static gx_color_polarity_t
+gx_polarity_Indexed(const gs_color_space * pcs)
+{
+    return (*pcs->base_space->type->polarity)
+        ((const gs_color_space *)pcs->base_space);
+}
 
 static int
 gx_install_Indexed(gs_color_space * pcs, gs_state * pgs)

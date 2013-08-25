@@ -65,7 +65,7 @@ const gs_color_space_type gs_color_space_type_Pattern = {
     gx_set_overprint_Pattern,
     gx_final_Pattern, gx_adjust_color_Pattern,
     gx_serialize_Pattern,
-    gx_cspace_no_linear
+    gx_cspace_no_linear, gx_polarity_unknown
 };
 
 /* Initialize a generic pattern template. */
