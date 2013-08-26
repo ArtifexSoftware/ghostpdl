@@ -145,8 +145,15 @@ extern const char *const *const cmd_sub_op_names[16];
  */
 #define cmd_max_intsize(siz)\
   (((siz) * 8 + 6) / 7)
+
+/* NB: Assume that the largest size is for dash patterns. Larger that this
+ *     need to be read from the cbuf in a loop.
+ */
 #define cmd_largest_size\
-  (2 + (1 + cmd_max_dash) * sizeof(float))
+  (2 + sizeof(float)		/* dot_length */\
+     + sizeof(float)           /* offset */\
+     + (cmd_max_dash * sizeof(float))\
+  )
 
 /* ---------------- Command parameters ---------------- */
 

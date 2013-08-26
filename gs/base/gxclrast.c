@@ -160,6 +160,11 @@ top_up_cbuf(command_buf_t *pcb, const byte **pcbp)
     stream_state *st = pcb->s->state;
 #   endif
 
+    if (pcb->end - cbp >= pcb->size) {
+        errprintf(pcb->s->memory, "Clist I/O error: cbp past end of buffer\n");
+        return (gs_error_ioerror);
+    }
+
     if (seofp(pcb->s)) {
         /* Can't use offset_map, because s_close resets s->state. Don't top up. */
         pcb->end_status = pcb->s->end_status;
