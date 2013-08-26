@@ -45,7 +45,7 @@ const char *const gs_productfamily = GS_PRODUCTFAMILY;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-        GS_PRODUCTFAMILY " GIT PRERELEASE"
+        GS_PRODUCTFAMILY " RELEASE CANDIDATE 1"
 #endif
 const char *const gs_product = GS_PRODUCT;
 
