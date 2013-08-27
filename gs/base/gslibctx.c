@@ -132,6 +132,9 @@ void gs_lib_ctx_fin( gs_memory_t *mem )
     if (!mem || !mem->gs_lib_ctx)
         return;
     gscms_destroy(mem);
+    gs_free_object(mem->thread_safe_memory, mem->gs_lib_ctx->profiledir,
+        "gsicc_set_icc_directory");
+    gs_free_object(mem->thread_safe_memory, mem->gs_lib_ctx, "gs_lib_ctx_init");
 }
 
 gs_lib_ctx_t *gs_lib_ctx_get_interp_instance(const gs_memory_t *mem)

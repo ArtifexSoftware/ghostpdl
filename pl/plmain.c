@@ -554,6 +554,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
     if (gs_debug_c('A'))
         dmprintf(mem, "Final time");
     pl_platform_dnit(0);
+    gs_malloc_release(mem);
     return 0;
 }
 
