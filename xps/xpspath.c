@@ -473,6 +473,8 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
 
         default:
             /* eek */
+            if (old == cmd) /* avoid infinite loop */
+                i++;
             break;
         }
 
