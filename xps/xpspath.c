@@ -315,154 +315,205 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
         switch (cmd)
         {
         case 'F':
-            ctx->fill_rule = atoi(args[i]);
-            i ++;
+            if (i + 1 <= n)
+            {
+                ctx->fill_rule = atoi(args[i]);
+                i++;
+            }
             break;
 
         case 'M':
-            gs_moveto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-            //dmprintf2(ctx->memory, "moveto %g %g\n", atof(args[i]), atof(args[i+1]));
-            i += 2;
+            if (i + 2 <= n)
+            {
+                gs_moveto(ctx->pgs, atof(args[i]), atof(args[i+1]));
+                //dmprintf2(ctx->memory, "moveto %g %g\n", atof(args[i]), atof(args[i+1]));
+                i += 2;
+            }
             break;
         case 'm':
-            gs_rmoveto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-            //dmprintf2(ctx->memory, "rmoveto %g %g\n", atof(args[i]), atof(args[i+1]));
-            i += 2;
+            if (i + 2 <= n)
+            {
+                gs_rmoveto(ctx->pgs, atof(args[i]), atof(args[i+1]));
+                //dmprintf2(ctx->memory, "rmoveto %g %g\n", atof(args[i]), atof(args[i+1]));
+                i += 2;
+            }
             break;
 
         case 'L':
-            gs_lineto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-            //dmprintf2(ctx->memory, "lineto %g %g\n", atof(args[i]), atof(args[i+1]));
-            i += 2;
+            if (i + 2 <= n)
+            {
+                gs_lineto(ctx->pgs, atof(args[i]), atof(args[i+1]));
+                //dmprintf2(ctx->memory, "lineto %g %g\n", atof(args[i]), atof(args[i+1]));
+                i += 2;
+            }
             break;
         case 'l':
-            gs_rlineto(ctx->pgs, atof(args[i]), atof(args[i+1]));
-            //dmprintf2(ctx->memory, "rlineto %g %g\n", atof(args[i]), atof(args[i+1]));
-            i += 2;
+            if (i + 2 <= n)
+            {
+                gs_rlineto(ctx->pgs, atof(args[i]), atof(args[i+1]));
+                //dmprintf2(ctx->memory, "rlineto %g %g\n", atof(args[i]), atof(args[i+1]));
+                i += 2;
+            }
             break;
 
         case 'H':
-            gs_currentpoint(ctx->pgs, &pt);
-            gs_lineto(ctx->pgs, atof(args[i]), pt.y);
-            //dmprintf1(ctx->memory, "hlineto %g\n", atof(args[i]));
-            i += 1;
+            if (i + 1 <= n)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                gs_lineto(ctx->pgs, atof(args[i]), pt.y);
+                //dmprintf1(ctx->memory, "hlineto %g\n", atof(args[i]));
+                i += 1;
+            }
             break;
         case 'h':
-            gs_rlineto(ctx->pgs, atof(args[i]), 0.0);
-            //dmprintf1(ctx->memory, "rhlineto %g\n", atof(args[i]));
-            i += 1;
+            if (i + 1 <= n)
+            {
+                gs_rlineto(ctx->pgs, atof(args[i]), 0.0);
+                //dmprintf1(ctx->memory, "rhlineto %g\n", atof(args[i]));
+                i += 1;
+            }
             break;
 
         case 'V':
-            gs_currentpoint(ctx->pgs, &pt);
-            gs_lineto(ctx->pgs, pt.x, atof(args[i]));
-            //dmprintf1(ctx->memory, "vlineto %g\n", atof(args[i]));
-            i += 1;
+            if (i + 1 <= n)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                gs_lineto(ctx->pgs, pt.x, atof(args[i]));
+                //dmprintf1(ctx->memory, "vlineto %g\n", atof(args[i]));
+                i += 1;
+            }
             break;
         case 'v':
-            gs_rlineto(ctx->pgs, 0.0, atof(args[i]));
-            //dmprintf1(ctx->memory, "rvlineto %g\n", atof(args[i]));
-            i += 1;
+            if (i + 1 <= n)
+            {
+                gs_rlineto(ctx->pgs, 0.0, atof(args[i]));
+                //dmprintf1(ctx->memory, "rvlineto %g\n", atof(args[i]));
+                i += 1;
+            }
             break;
 
         case 'C':
-            x1 = atof(args[i+0]);
-            y1 = atof(args[i+1]);
-            x2 = atof(args[i+2]);
-            y2 = atof(args[i+3]);
-            x3 = atof(args[i+4]);
-            y3 = atof(args[i+5]);
-            gs_curveto(ctx->pgs, x1, y1, x2, y2, x3, y3);
-            i += 6;
-            reset_smooth = 0;
-            smooth_x = x3 - x2;
-            smooth_y = y3 - y2;
+            if (i + 6 <= n)
+            {
+                x1 = atof(args[i+0]);
+                y1 = atof(args[i+1]);
+                x2 = atof(args[i+2]);
+                y2 = atof(args[i+3]);
+                x3 = atof(args[i+4]);
+                y3 = atof(args[i+5]);
+                gs_curveto(ctx->pgs, x1, y1, x2, y2, x3, y3);
+                i += 6;
+                reset_smooth = 0;
+                smooth_x = x3 - x2;
+                smooth_y = y3 - y2;
+            }
             break;
 
         case 'c':
-            gs_currentpoint(ctx->pgs, &pt);
-            x1 = atof(args[i+0]) + pt.x;
-            y1 = atof(args[i+1]) + pt.y;
-            x2 = atof(args[i+2]) + pt.x;
-            y2 = atof(args[i+3]) + pt.y;
-            x3 = atof(args[i+4]) + pt.x;
-            y3 = atof(args[i+5]) + pt.y;
-            gs_curveto(ctx->pgs, x1, y1, x2, y2, x3, y3);
-            i += 6;
-            reset_smooth = 0;
-            smooth_x = x3 - x2;
-            smooth_y = y3 - y2;
+            if (i + 6 <= n)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                x1 = atof(args[i+0]) + pt.x;
+                y1 = atof(args[i+1]) + pt.y;
+                x2 = atof(args[i+2]) + pt.x;
+                y2 = atof(args[i+3]) + pt.y;
+                x3 = atof(args[i+4]) + pt.x;
+                y3 = atof(args[i+5]) + pt.y;
+                gs_curveto(ctx->pgs, x1, y1, x2, y2, x3, y3);
+                i += 6;
+                reset_smooth = 0;
+                smooth_x = x3 - x2;
+                smooth_y = y3 - y2;
+            }
             break;
 
         case 'S':
-            gs_currentpoint(ctx->pgs, &pt);
-            x1 = atof(args[i+0]);
-            y1 = atof(args[i+1]);
-            x2 = atof(args[i+2]);
-            y2 = atof(args[i+3]);
-            //dmprintf2(ctx->memory, "smooth %g %g\n", smooth_x, smooth_y);
-            gs_curveto(ctx->pgs, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
-            i += 4;
-            reset_smooth = 0;
-            smooth_x = x2 - x1;
-            smooth_y = y2 - y1;
+            if (i + 4 <= n)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                x1 = atof(args[i+0]);
+                y1 = atof(args[i+1]);
+                x2 = atof(args[i+2]);
+                y2 = atof(args[i+3]);
+                //dmprintf2(ctx->memory, "smooth %g %g\n", smooth_x, smooth_y);
+                gs_curveto(ctx->pgs, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
+                i += 4;
+                reset_smooth = 0;
+                smooth_x = x2 - x1;
+                smooth_y = y2 - y1;
+            }
             break;
 
         case 's':
-            gs_currentpoint(ctx->pgs, &pt);
-            x1 = atof(args[i+0]) + pt.x;
-            y1 = atof(args[i+1]) + pt.y;
-            x2 = atof(args[i+2]) + pt.x;
-            y2 = atof(args[i+3]) + pt.y;
-            //dmprintf2(ctx->memory, "smooth %g %g\n", smooth_x, smooth_y);
-            gs_curveto(ctx->pgs, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
-            i += 4;
-            reset_smooth = 0;
-            smooth_x = x2 - x1;
-            smooth_y = y2 - y1;
+            if (i + 4 <= n)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                x1 = atof(args[i+0]) + pt.x;
+                y1 = atof(args[i+1]) + pt.y;
+                x2 = atof(args[i+2]) + pt.x;
+                y2 = atof(args[i+3]) + pt.y;
+                //dmprintf2(ctx->memory, "smooth %g %g\n", smooth_x, smooth_y);
+                gs_curveto(ctx->pgs, pt.x + smooth_x, pt.y + smooth_y, x1, y1, x2, y2);
+                i += 4;
+                reset_smooth = 0;
+                smooth_x = x2 - x1;
+                smooth_y = y2 - y1;
+            }
             break;
 
         case 'Q':
-            gs_currentpoint(ctx->pgs, &pt);
-            x1 = atof(args[i+0]);
-            y1 = atof(args[i+1]);
-            x2 = atof(args[i+2]);
-            y2 = atof(args[i+3]);
-            //dmprintf4(ctx->memory, "conicto %g %g %g %g\n", x1, y1, x2, y2);
-            gs_curveto(ctx->pgs,
-                    (pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
-                    (x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
-                    x2, y2);
-            i += 4;
+            if (i + 4 <= n)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                x1 = atof(args[i+0]);
+                y1 = atof(args[i+1]);
+                x2 = atof(args[i+2]);
+                y2 = atof(args[i+3]);
+                //dmprintf4(ctx->memory, "conicto %g %g %g %g\n", x1, y1, x2, y2);
+                gs_curveto(ctx->pgs,
+                        (pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
+                        (x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
+                        x2, y2);
+                i += 4;
+            }
             break;
         case 'q':
-            gs_currentpoint(ctx->pgs, &pt);
-            x1 = atof(args[i+0]) + pt.x;
-            y1 = atof(args[i+1]) + pt.y;
-            x2 = atof(args[i+2]) + pt.x;
-            y2 = atof(args[i+3]) + pt.y;
-            //dmprintf4(ctx->memory, "conicto %g %g %g %g\n", x1, y1, x2, y2);
-            gs_curveto(ctx->pgs,
-                    (pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
-                    (x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
-                    x2, y2);
-            i += 4;
+            if (i + 4 <= n)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                x1 = atof(args[i+0]) + pt.x;
+                y1 = atof(args[i+1]) + pt.y;
+                x2 = atof(args[i+2]) + pt.x;
+                y2 = atof(args[i+3]) + pt.y;
+                //dmprintf4(ctx->memory, "conicto %g %g %g %g\n", x1, y1, x2, y2);
+                gs_curveto(ctx->pgs,
+                        (pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
+                        (x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
+                        x2, y2);
+                i += 4;
+            }
             break;
 
         case 'A':
-            xps_draw_arc(ctx,
-                    atof(args[i+0]), atof(args[i+1]), atof(args[i+2]),
-                    atoi(args[i+3]), atoi(args[i+4]),
-                    atof(args[i+5]), atof(args[i+6]));
-            i += 7;
+            if (i + 7 <= n)
+            {
+                xps_draw_arc(ctx,
+                        atof(args[i+0]), atof(args[i+1]), atof(args[i+2]),
+                        atoi(args[i+3]), atoi(args[i+4]),
+                        atof(args[i+5]), atof(args[i+6]));
+                i += 7;
+            }
             break;
         case 'a':
-            gs_currentpoint(ctx->pgs, &pt);
-            xps_draw_arc(ctx,
-                    atof(args[i+0]), atof(args[i+1]), atof(args[i+2]),
-                    atoi(args[i+3]), atoi(args[i+4]),
-                    atof(args[i+5]) + pt.x, atof(args[i+6]) + pt.y);
-            i += 7;
+            if (i + 7 <= n)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                xps_draw_arc(ctx,
+                        atof(args[i+0]), atof(args[i+1]), atof(args[i+2]),
+                        atoi(args[i+3]), atoi(args[i+4]),
+                        atof(args[i+5]) + pt.x, atof(args[i+6]) + pt.y);
+                i += 7;
+            }
             break;
 
         case 'Z':
