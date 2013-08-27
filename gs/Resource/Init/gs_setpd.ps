@@ -688,6 +688,19 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
                 % from currentpagedevice is in local VM.
      currentglobal exch false setglobal
    } ifelse
+
+   %% We used to execute endpage after .tsrysetparams, but that actually alters
+   %% the page device dictionary (in particular /PageSize) this is not correct.
+   %% Testing with Adobe Acrobat Distiller shows that EndPage is ececuted if the
+   %% page device dictionary is empty, and indeed even if setpagedevice returns
+   %% an error (caught by stopped), so it seems pretty clear that we should
+   %% run any required EndPage very early in the setpagedevice process.
+   %% Bug 690667.
+   2 .endpage
+   { 1 //true .outputpage
+     (>>setpagedevice, press <return> to continue<<\n) .confirm
+   }
+   if
                 % We mustn't pop the argument until the very end,
                 % so that the pseudo-operator machinery can restore the stack
                 % if an error occurs.
@@ -830,11 +843,7 @@ SETPDDEBUG { (Recovering.) = pstack flush } if
                 % Stack: mark ... <merged> <failed> <device> <eraseflag>
 SETPDDEBUG { (Installing.) = pstack flush } if
 
-   pop 2 .endpage
-    { 1 //true .outputpage
-      (>>setpagedevice, press <return> to continue<<\n) .confirm
-    }
-   if
+    pop
                 % .setdevice clears the current page device!
    .currentpagedevice pop exch
    .setdevice pop

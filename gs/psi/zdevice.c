@@ -470,6 +470,7 @@ zsetdevice(i_ctx_t *i_ctx_p)
         if(op->value.pdevice != dev) 	  /* don't allow a different device    */
             return_error(e_invalidaccess);
     }
+    dev->ShowpageCount = 0;
 #ifndef PSI_INCLUDED
     /* the language switching build shouldn't install a new device
        here.  The language switching machinery installs a shared
