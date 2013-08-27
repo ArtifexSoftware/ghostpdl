@@ -49,8 +49,11 @@ xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_i
             code = xps_parse_resource_dictionary(ctx, &new_dict, base_uri, xps_down(node));
             if (code)
                 return gs_rethrow(code, "cannot load Canvas.Resources");
-            new_dict->parent = dict;
-            dict = new_dict;
+            if (new_dict)
+            {
+                new_dict->parent = dict;
+                dict = new_dict;
+            }
         }
 
         if (!strcmp(xps_tag(node), "Canvas.RenderTransform"))

@@ -167,6 +167,10 @@ xps_parse_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, char *
     {
         head->base_uri = xps_strdup(ctx, base_uri);
     }
+    else
+    {
+        gs_warn("empty resource dictionary");
+    }
 
     *dictp = head;
     return gs_okay;
