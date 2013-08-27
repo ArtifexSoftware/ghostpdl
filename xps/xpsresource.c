@@ -74,7 +74,7 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp,
 {
     char part_name[1024];
     char part_uri[1024];
-    xps_resource_t *dict;
+    xps_resource_t *dict = *dictp;
     xps_part_t *part;
     xps_item_t *xml;
     char *s;
@@ -132,6 +132,12 @@ xps_parse_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, char *
     char *source;
     char *key;
     int code;
+
+    if (*dictp)
+    {
+        gs_warn("multiple resource dictionaries; ignoring all but the first");
+        return gs_okay;
+    }
 
     source = xps_att(root, "Source");
     if (source)
