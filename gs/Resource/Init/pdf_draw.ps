@@ -159,6 +159,20 @@ pdfdict begin
 % ---------------- Shadings ---------------- %
 
 /shrdict mark
+  /Coords {
+    aload
+    5 1 roll
+    4 { % Bug 694542
+      dup type dup /integertype ne exch /realtype ne and {
+         (   **** Warning: replacing malformed number ') pdfformaterror pdfstring cvs pdfformaterror
+         (' with 0.\n) pdfformaterror
+         0
+      } if
+      4 1 roll
+    } repeat
+    5 -1 roll
+    astore
+  } bind
   /BBox {
     dup dup dup aload pop normrect_elems
     5 -1 roll astore
