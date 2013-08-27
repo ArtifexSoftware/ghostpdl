@@ -1454,6 +1454,18 @@ U16(const byte *p)
 }
 
 static int
+same_maxp_values(gs_font_type42 *font0, gs_font_type42 *font1)
+{
+    gs_type42_data *d0 = &font0->data, *d1 = &font1->data;
+
+    if (d0->maxPoints != d1->maxPoints)
+        return 0;
+    if (d0->maxContours != d1->maxContours)
+        return 0;
+    return 1;
+}
+
+static int
 same_type42_hinting(gs_font_type42 *font0, gs_font_type42 *font1)
 {
     gs_type42_data *d0 = &font0->data, *d1 = &font1->data;
@@ -2394,6 +2406,9 @@ gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont,
                 break;
             case ft_TrueType:
                 code = same_type42_hinting((gs_font_type42 *)cfont,
+                                        (gs_font_type42 *)ofont);
+                if (code > 0)
+                    code = same_maxp_values((gs_font_type42 *)cfont,
                                         (gs_font_type42 *)ofont);
                 break;
             case ft_CID_encrypted:
