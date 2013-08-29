@@ -185,6 +185,12 @@ xps_load_sfnt_name(xps_font_t *font, char *namep)
     count = u16(namedata + 2);
     stringoffset = u16(namedata + 4);
 
+    if (length < 6 + (count * 12))
+    {
+        gs_warn("name table too short");
+        return;
+    }
+
     for (i = 0; i < count; i++)
     {
         byte *record = namedata + 6 + i * 12;
