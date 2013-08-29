@@ -1090,11 +1090,11 @@ pnmcmyk_print_page(gx_device_printer *pdev, FILE *pstream)
                 /* For now we assume that the CMYK may have gone through an ICC profile */
                 /* so we do a more complex conversion from CMYK to K. If we are using   */
                 /* FastColor, we may be able to do this more efficiently.               */
-                cmy = ( ((255 - *pcmyk++) * lum_red_weight) +
-                        ((255 - *pcmyk++) * lum_green_weight) +
-                        ((255 - *pcmyk++) * lum_blue_weight) +
-                        (lum_all_weights / 2))
-                        / lum_all_weights;
+                cmy  = ((255 - *pcmyk++) * lum_red_weight);
+                cmy += ((255 - *pcmyk++) * lum_green_weight);
+                cmy += ((255 - *pcmyk++) * lum_blue_weight);
+                cmy += (lum_all_weights / 2);
+                cmy /= lum_all_weights;
 
                 k = *pcmyk++;
                 if (k > cmy)
