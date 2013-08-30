@@ -2272,11 +2272,21 @@ end
 } bdef
 
 /drawwidget {			% <scalefactor_x> <scalefactor_y> <annot> drawwidget -
-  dup /UpdatedAP known not {
-    dup can-regenerate-ap {
-      dup /AP undef
-    } if
-  } if
+
+%% This code checks to see if we can geenrate an appearance stream for the
+%% given widget, and if we can it ignores the given Appearance stream, so that
+%% we generate one instead. This seems wrong to me, if we've been given an
+%% appearance stream we should use it, no synthesize something else. Several
+%% files in our regression test suite render 'incorrectly' when compared to
+%% Acrobat with this removed, clearly Acrobat always ignores appearances. However
+%% several other files are rendered better when we *don't* ignore the Appearance
+%% So on balance I'm choosing to honour the appearance.
+%%
+%  dup /UpdatedAP known not {
+%    dup can-regenerate-ap {
+%      dup /AP undef
+%    } if
+%  } if
   dup /AP knownoget {
     dup /N known not {
       (   **** Appearance dictionary (AP) lacks the mandatory normal (N) appearance.\n)

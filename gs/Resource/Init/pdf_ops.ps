@@ -1197,6 +1197,46 @@ end readonly def
 % within a single BT/ET pair, but it's a start.
 /tW { } bdef
 
+%% split a string containing \r or \n into multiple strings)
+%% \r\n is also handled.
+%% (string) .splitstring (string1) (string2) .....
+/.splitstring {
+  0 exch                       %% start_index string
+  dup length 1 sub             %% start_index string (string length - 1)
+  0 1 3 -1 roll                %% start_index string 0 1 (string_length -1)
+  {                            %% start_index string loop_index
+    dup                        %% start_index string loop_index loop_index
+    2 index exch get           %% start_index string loop_index character
+    dup 10 eq exch 13 eq or {  %% start_index string loop_index
+      dup 3 index              %% start_index string loop_index loop_index start_index
+      sub                      %% start_index string loop_index (loop_index - start_index)
+      dup 0 gt {               %% \r\n will give us a 0 length string so ignore it
+        3 index exch           %% start_index string loop_index start_index (loop_index - start_index)
+        3 index 3 1 roll       %% start_index string loop_index string start_index (loop_index - start_index)
+        getinterval            %% start_index string loop_index sub_string
+        4 1 roll               %% sub_string start_index string loop_index
+        1 add
+        3 -1 roll              %% sub_string string loop_index start_index
+        pop exch               %% sub_string loop_index string %% loop_index becomes new start_index
+      }{
+        pop                    %% start_index string loop_index
+        1 add 3 1 roll exch    %% loop_index string start_index
+        pop                    %% loop_index string %% loop_index becomes new start index
+      } ifelse
+    }{
+      pop                      %% start_index string
+    } ifelse
+  } for
+                               %% start_index string
+  dup length 2 index sub dup   %% start_index string (length - start_index) (length - start_index)
+  0 gt {                       %% we have characters left %% start_index string (length - start_index)
+    3 -1 roll exch             %% string start_index (length - start_index)
+    getinterval                %% sub_string
+  } {
+    pop pop pop
+  } ifelse
+} bind def
+
 % Text formatting and painting for the AcroForm field without appearance streams.
 /Tform {                % <MaxLen> (V) <Ff> <Q> Tform -
   clippath pathbbox 4 2 roll pop pop                        % MaxLen (V) Ff Q dx dy
@@ -1205,10 +1245,50 @@ end readonly def
   dup 0 ne { div } { pop pop 0 } ifelse                     % MaxLen (V) Ff Q dx dy yy desc/asc
   1 index mul                                               % MaxLen (V) Ff Q dx dy yy desc/asc*yy
 
-  4 index 16#1000 and 0 ne { % multiline
-    8 { pop } repeat (Multiline form fields are not yet implemented.) =
+  5 index 16#1000 and 0 ne { % multiline
+    %% First lets see how many lines we have, make a copy of the string
+    6 index mark exch .splitstring                      % MaxLen (V) Ff Q dx dy yy desc/asc*yy [ () () ...
+    counttomark 1 add 4 add index                       % MaxLen (V) Ff Q dx dy yy desc/asc*yy [ () () ... count Q
+    dup 0 eq {
+      pop                                               % remove extra copy of Q
+      counttomark dup 2 add 2 add index exch div        % MaxLen (V) Ff Q dx dy yy desc/asc*yy [ () () ... line_height
+      counttomark 1 add 1 roll                          % MaxLen (V) Ff Q dx dy yy desc/asc*yy line_height [ () () ...
+      2 0 moveto                                        % start at bottom left of rect
+      counttomark 1 1 3 -1 roll {                       % for every string
+        pop gsave Show grestore                         % pop loop counter, show string (saving current point)
+        counttomark 1 add index 0 exch rmoveto          % get line height, move that amount vertically.
+      } for
+      pop pop
+    }{
+      1 eq {
+        counttomark dup 2 add 2 add index exch div        % MaxLen (V) Ff Q dx dy yy desc/asc*yy [ () () ... line_height
+        counttomark 1 add 1 roll                          % MaxLen (V) Ff Q dx dy yy desc/asc*yy line_height [ () () ...
+        2 0 moveto                                        % start at bottom left of rect
+        counttomark 1 1 3 -1 roll {                       % for every string
+          pop gsave                                       % pop loop counter
+          dup stringwidth pop counttomark 5 add index     % get rectangle width
+          exch sub 2 div 0 rmoveto                        % subtract width of string, divide by 2 move that amount
+          Show grestore                                   % show string
+          counttomark 1 add index 0 exch rmoveto          % get line height, move that amount vertically.
+        } for
+        pop pop
+      }{
+        counttomark dup 2 add 2 add index exch div        % MaxLen (V) Ff Q dx dy yy desc/asc*yy [ () () ... line_height
+        counttomark 1 add 1 roll                          % MaxLen (V) Ff Q dx dy yy desc/asc*yy line_height [ () () ...
+        2 0 moveto                                        % start at bottom left of rect
+        counttomark 1 1 3 -1 roll {                       % for every string
+          pop gsave                                       % pop loop counter
+          dup stringwidth pop counttomark 5 add index     % get rectangle width
+          exch sub 2 sub 0 rmoveto                        % subtract width of string,move that amount
+          Show grestore                                   % show string
+          counttomark 1 add index 0 exch rmoveto          % get line height, move that amount vertically.
+        } for
+        pop pop
+      }ifelse
+    }ifelse
+    8 { pop } repeat
   } {
-    4 index 16#1000000 and 0 ne { % comb
+    5 index 16#1000000 and 0 ne { % comb
       8 { pop } repeat (Combed form fields are not yet implemented.) =
     } { % plain text
       3 1 roll sub add 2 div             % MaxLen (V) Ff Q dx (dy-yy+desc)/2
