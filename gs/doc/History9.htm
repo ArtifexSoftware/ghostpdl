@@ -29,6 +29,7 @@ TOC to see how to edit it for visual conciseness.
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Version9.10">Version 9.10 (2013-08-27)</a>
 <li><a href="#Version9.09">Version 9.09 (2013-08-21)</a>
 <li><a href="#Version9.07">Version 9.07 (2013-02-14)</a>
 <li><a href="#Version9.06">Version 9.06 (2012-07-31)</a>
@@ -68,9 +69,9 @@ overview</a>.
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
-<h2><a name="Version9.09"></a>Version 9.09 (2013-08-21)</h2>
+<h2><a name="Version9.10"></a>Version 9.10 (2013-08-27)</h2>
 
-<p>This is the eighth full release in the stable 9.x series, and is
+<p>This is the ninth full release in the stable 9.x series, and is
 primarily a maintenance release.
 
 <p> Highlights in this release include:
@@ -112,11 +113,1259 @@ many compatibility problems with the Adobe fonts.
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 
-<h3><a name="9.09_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="9.10_Incompatible_changes"></a>Incompatible changes</h3>
 <p>
 No recorded incompatible changes.
 
-<h3><a name="9.09_changelog"></a>Changelog</h3>
+<h3><a name="9.10_changelog"></a>Changelog</h3>
+<p><strong>2013-08-29 16:47:29 +0100
+</strong>
+<br>Robin Watts &lt;robin.watts@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=b8d4701f17205624ebffe3d4630c9df87ac095b0">b8d4701f17205624ebffe3d4630c9df87ac095b0</a>
+<blockquote>
+<p>
+    Bug 694546: Fix undefined behaviour in gdevpbm.<br>
+<br>
+    Thanks to jsmeix for reporting this.<br>
+<br>
+gs/devices/gdevpbm.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-26 14:29:57 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=466d8f67a5b1ada99d05777ba33fab48a7d74bc9">466d8f67a5b1ada99d05777ba33fab48a7d74bc9</a>
+<blockquote>
+<p>
+    Change product string for release candidate<br>
+<br>
+gs/base/gscdef.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-25 20:52:36 -0700
+</strong>
+<br>Ray Johnston &lt;ray.johnston@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=4a319086dd71dbcc3ec71b70277734595647784d">4a319086dd71dbcc3ec71b70277734595647784d</a>
+<blockquote>
+<p>
+    Fix bug 694539.	Reading off the end of the cbuf when dash pattern len is max.<br>
+<br>
+    The max length dash pattern (currently 11) was used frequently in this file,<br>
+    and in at least one case, this tripped over a memmove that is way too large in<br>
+    the top_up_cbuf because the pointer was past the end of the buffer, and the<br>
+    unsigned int count was 0xffffffff. The root cause was that the cmd_largest_size<br>
+    used to set the warn_limit did not account for both the dot_length and the<br>
+    offset.<br>
+<br>
+    I corrected cmd_largest_size, added some comments, and added an error message<br>
+    and ioerror return to top_up_cbuf.<br>
+<br>
+gs/base/gxcldev.h<br>
+gs/base/gxclrast.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-24 10:36:20 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=2001f469b539a5ccce301ace5d6384b6b7e46888">2001f469b539a5ccce301ace5d6384b6b7e46888</a>
+<blockquote>
+<p>
+    Fix -dUseCIEColor (part of the whole VM allocation problem)<br>
+<br>
+    See commit ae930279498a5961fcf5d70ffe86864883609cbc for a lengthy explanation)<br>
+    of the background to this problem.<br>
+<br>
+    The fix for the original problem involved always creating the device dictionary<br>
+    for setpagdevice in local VM.<br>
+<br>
+    Following on from that we discover the following in zdsp1.c<br>
+<br>
+    gstate_check_space(i_ctx_t *i_ctx_p, int_gstate *isp, uint space)<br>
+    {<br>
+        /*<br>
+         * ****** WORKAROUND ALERT ******<br>
+         * This code doesn't check the space of the non-refs, or copy their<br>
+         * contents, so it can create dangling references from global VM to<br>
+         * local VM.  Because of this, we simply disallow writing into gstates<br>
+         * in global VM (including creating them in the first place) if the<br>
+         * save level is greater than 0.<br>
+         * ****** WORKAROUND ALERT ******<br>
+<br>
+    Now, if we execute the Display PostScript .savelocalstate routine, its vital<br>
+    that the gstate and all its contents be in global VM in order to satisfy<br>
+    the test in zdps1.c.<br>
+<br>
+    So, any calls to setpagedevice before the call to .savelocal must allocate<br>
+    the page device dictionary in global VM (as a pointer to the device dictionary<br>
+    is saved in the gstate)<br>
+<br>
+    Thus we need a way to tell setpagedevice to allocate its dictionary in global<br>
+    VM, even though we usually want it in local VM.<br>
+<br>
+    This commit adds a somewhat hacky method for this, we insert a specific key<br>
+    /..StartupGlobal in the page device dictionary. If setpagedevice finds this<br>
+    key in the dictionary we allocate the dict in global VM, and remove the key.<br>
+<br>
+    We then use this key in a couple of places in gs_init.ps where we execute<br>
+    setpagedevice *before* we've reached .savelocalstate.<br>
+<br>
+    This fixes all the myriad problems with allocation states and gives us a way<br>
+    to add any more that are required.<br>
+<br>
+    I've put a comment into gs_init.ps immediately before /.savelocalstate so<br>
+    at least in the future it will be easier to figure out where this is required.<br>
+<br>
+    I've searched all the initialisation files looking to see if there are any<br>
+    other likely places (the INITFILES string is parsed before we get to<br>
+    .savelocalstate) and they all look acceptable. None of the routines actually<br>
+    execute setpagedevice.<br>
+<br>
+    No cluster differences expected as none of this is tested<br>
+<br>
+gs/Resource/Init/gs_init.ps<br>
+gs/Resource/Init/gs_setpd.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-23 09:15:32 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=c1510d726063080559e9597db7d4a686f2ca4eae">c1510d726063080559e9597db7d4a686f2ca4eae</a>
+<blockquote>
+<p>
+    correct some typos in PDFDocEncoding to UTF8 conversion<br>
+<br>
+    Bug #694535 &quot;Typo in charset conversion in gdevpdfe.c&quot;<br>
+<br>
+    Credit (and thanks) to Tim Waugh at Red Hat for the fix, applied here.<br>
+<br>
+    No differences expected, we clearly don't have any examples that exercise<br>
+    this particular case in our test suite.<br>
+<br>
+gs/devices/vector/gdevpdfe.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-23 08:42:46 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=ae930279498a5961fcf5d70ffe86864883609cbc">ae930279498a5961fcf5d70ffe86864883609cbc</a>
+<blockquote>
+<p>
+    More work related to VM mode, setpagdevice and startup conditions<br>
+<br>
+    This has a lengthy bug tail attached to it, the summary follows, prior<br>
+    commits of interest are (ordered by date, earliest first):<br>
+    073f7be1671e7fa2dbbc75984e593d2279bb05d7<br>
+    939e32ff3c8841507aed80435269457f3caac6f5<br>
+    774231a7db63439c72313050a750b219491c172f<br>
+    39b494d41a814e6b27a5828030e58e0b239044fb<br>
+<br>
+    Initially the bug report was #687702 &quot;gs8.15 setpagedevice /invalidaccess&quot;,<br>
+    the problem was caused by a 'fix' for WordPerfect files which assumed a local<br>
+    VM writeable dictionary returned by currentpagedevice. The fix was to create<br>
+    a local VM copy of the dictioanry, because its acceptable to store global<br>
+    objects in local VM, but not vice versa. (073f7be1671e7fa2dbbc75984e593d2279bb05d7)<br>
+<br>
+    However, if we start with -dSAFER then, quite early in gs_init.ps, we call<br>
+    /.setsafe (which called /.locksafe) which ends up executing setpagdevice<br>
+    in order to set /LockSafetyParams. This causes the page device dictionary to<br>
+    be allocated in local VM. This should not cause any problems, but.....<br>
+    setpagedevice stores a pointer to the returned dictionary in the graphics<br>
+    state, the Display PostScript initialisation code insists that all objects<br>
+    in the 'savedinitialgstate' be in global VM, and we just allocated the dict<br>
+    in local VM, so we get an error.<br>
+<br>
+    This was fixed in setpagedevice by checking for a 1 element dictioanry<br>
+    with the specific key '/LockSafetyParams', and creating a global VM dict<br>
+    instead of a local one. (939e32ff3c8841507aed80435269457f3caac6f5)<br>
+<br>
+    We then discovered that GSView sends PostScript containing '.locksafe',<br>
+    which triggers the check in sepagedevice and sets the VM allocation mode<br>
+    to global, causing an invalidaccess error. GSView should not be using<br>
+    undocumented internal routines but it was decided to fix this, even though<br>
+    a release had just been completed. This was done by creating a new routine<br>
+    '.locksafeglobal' which sets a key called /LockSafetyParamsGlobal and<br>
+    having setpagedevice check for that key, if discovered it creates a global<br>
+    VM dictionary and replaces the key with /LockSafetyParams. Finally /.locksafety<br>
+    was returned to its original state. (774231a7db63439c72313050a750b219491c172f)<br>
+<br>
+    A new release was completed, and it then transpired that, despite having<br>
+    tested gv briefly, under certain conditions it executes a script (pdf2dsc)<br>
+    which uses pdf2dsc.ps, which calls .setsafe. This didn't seem terribly<br>
+    important and so the line was removed from the PS file.<br>
+<br>
+    Ray pointed out that the .setsafe routine is (minimally) documented in<br>
+    use.htm, and it seems is important to the Unix community because of the<br>
+    'SAFER' switch. So this commit restores /.setsafe (and the line in pdf2dsc.ps)<br>
+    and creates a new /.setsafeglobal. This is *only* executed in gs_init.ps,<br>
+    its presence is solely for the benefit of DPS so that the initial gstate<br>
+    is allocated in global VM, and must not be used anywhere else.<br>
+<br>
+    Hopefully we can finally say goodbye to all this mess now.<br>
+<br>
+gs/Resource/Init/gs_init.ps<br>
+gs/lib/pdf2dsc.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-22 16:07:29 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=39b494d41a814e6b27a5828030e58e0b239044fb">39b494d41a814e6b27a5828030e58e0b239044fb</a>
+<blockquote>
+<p>
+    remove a '.setsafe' from the PS file it doesn't work any more and nobody<br>
+    should be using undocumented internal routines anyway.<br>
+<br>
+    We should probably remove pdf2dsc altogether, it relies on using parts<br>
+    of the PDF interpreter which, as far as I'm concerned, are subject to<br>
+    change without notice.<br>
+<br>
+gs/lib/pdf2dsc.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-22 13:33:14 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=dfd7fc9fe152245256e437141dd7780c8313c971">dfd7fc9fe152245256e437141dd7780c8313c971</a>
+<blockquote>
+<p>
+    pdfwrite - make the saved gstate stack dynamically allocated instead of static array<br>
+<br>
+    Bug #693591 &quot;Infinite loop writing pdf file&quot;<br>
+    Bug #694531 &quot; &quot;*** File has unbalanced q/Q&quot; infinite loop on seemingly valid file&quot;<br>
+<br>
+    The stack of saved gstates in pdfwrite was a statically allocated array of 11<br>
+    elements. Cairo produces PDF files with insane (and pointless) levels of<br>
+    Form XObject nesting which can easily break this limit (as well as causing all<br>
+    PDF consumers to render the files slowly)<br>
+<br>
+    This commit replaces the fixed size array with a dynamically allocated array.<br>
+    For performance reasons we still allocate 11 elements initially, and if we<br>
+    exhaust the storage, we reallocate 5 elements larger.<br>
+<br>
+    This also shows a progression in the test file 'inefficient_tiling.pdf' this<br>
+    file is produced by LaTeX but I guess it may be using Cairo behind the<br>
+    scenes.<br>
+<br>
+gs/devices/vector/gdevpdf.c<br>
+gs/devices/vector/gdevpdfb.h<br>
+gs/devices/vector/gdevpdfg.c<br>
+gs/devices/vector/gdevpdfx.h<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-16 10:35:58 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=868bcc0c697619a276e725fd851b5f52079e64a5">868bcc0c697619a276e725fd851b5f52079e64a5</a>
+<blockquote>
+<p>
+    Bring master up to date with 9.09 release branch<br>
+<br>
+    update docs, version numbers, dates and product string<br>
+<br>
+    Update product string, dates and changelog for 9.09 release.<br>
+<br>
+    No cluster differences.<br>
+<br>
+gs/base/version.mak<br>
+gs/doc/API.htm<br>
+gs/doc/C-style.htm<br>
+gs/doc/Commprod.htm<br>
+gs/doc/DLL.htm<br>
+gs/doc/Deprecated.htm<br>
+gs/doc/Details8.htm<br>
+gs/doc/Details9.htm<br>
+gs/doc/Develop.htm<br>
+gs/doc/Devices.htm<br>
+gs/doc/Drivers.htm<br>
+gs/doc/Fonts.htm<br>
+gs/doc/Helpers.htm<br>
+gs/doc/History1.htm<br>
+gs/doc/History2.htm<br>
+gs/doc/History3.htm<br>
+gs/doc/History4.htm<br>
+gs/doc/History5.htm<br>
+gs/doc/History6.htm<br>
+gs/doc/History7.htm<br>
+gs/doc/History8.htm<br>
+gs/doc/History9.htm<br>
+gs/doc/Install.htm<br>
+gs/doc/Issues.htm<br>
+gs/doc/Language.htm<br>
+gs/doc/Lib.htm<br>
+gs/doc/Make.htm<br>
+gs/doc/News.htm<br>
+gs/doc/Projects.htm<br>
+gs/doc/Ps-style.htm<br>
+gs/doc/Ps2epsi.htm<br>
+gs/doc/Ps2pdf.htm<br>
+gs/doc/Ps2ps2.htm<br>
+gs/doc/Psfiles.htm<br>
+gs/doc/Readme.htm<br>
+gs/doc/Release.htm<br>
+gs/doc/Source.htm<br>
+gs/doc/Unix-lpr.htm<br>
+gs/doc/Use.htm<br>
+gs/doc/WhatIsGS.htm<br>
+gs/doc/Xfonts.htm<br>
+gs/doc/gs-vms.hlp<br>
+gs/doc/thirdparty.htm<br>
+gs/man/dvipdf.1<br>
+gs/man/font2c.1<br>
+gs/man/gs.1<br>
+gs/man/gslp.1<br>
+gs/man/gsnd.1<br>
+gs/man/pdf2dsc.1<br>
+gs/man/pdf2ps.1<br>
+gs/man/pf2afm.1<br>
+gs/man/pfbtopfa.1<br>
+gs/man/printafm.1<br>
+gs/man/ps2ascii.1<br>
+gs/man/ps2epsi.1<br>
+gs/man/ps2pdf.1<br>
+gs/man/ps2pdfwr.1<br>
+gs/man/ps2ps.1<br>
+gs/man/wftopfa.1<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-21 14:26:57 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=243c299262d0e5ebac46f517e749a3d45cbe9c46">243c299262d0e5ebac46f517e749a3d45cbe9c46</a>
+<blockquote>
+<p>
+    Fix a compiler warning which exhibited a real problem<br>
+<br>
+    In gdevpdfp.c remove a redefinition of 'code'. The 'for' loop uses the<br>
+    outer definition of 'code', but the inner definition is set by<br>
+    cos_dict_put_c_key_string() This means that the inner definition is never<br>
+    used, and the outer one used to control the loop is never changed, defeatimg<br>
+    the purpose.<br>
+<br>
+    The other new compiler warnings in pdfwrite are either not valid (some warnings<br>
+    are incorrect) or benign and fixing them introduces other warnings.<br>
+<br>
+gs/devices/vector/gdevpdfp.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-21 13:23:52 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=077435083eb0d8acb91686ba8b745ec8371e16fd">077435083eb0d8acb91686ba8b745ec8371e16fd</a>
+<blockquote>
+<p>
+    Correct the evaluation order in filenameforall processing<br>
+<br>
+gs/base/gp_ntfs.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-21 10:13:59 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=735589e5b16cf3d31c6bf73ebd75259db9d18f3c">735589e5b16cf3d31c6bf73ebd75259db9d18f3c</a>
+<blockquote>
+<p>
+    Yet more work on NTFS file enumeration<br>
+<br>
+    Bug #686853, SaGS comment #9<br>
+<br>
+    We now match the pattern template only at the top level of the recursion,<br>
+    any directories which match the pattern are enumerated, but their entire<br>
+    contents are listed.<br>
+<br>
+    Multiple path separators are now removed at each level. It should now be<br>
+    impossible to reach a situation where a returned file has '\/' or similar<br>
+    contained within it.<br>
+<br>
+    Illegal characters ('*' and '?') in the path will now cause no matches to<br>
+    be returned. These are of course valid after the final separator of the<br>
+    path and will match filename patterns at that level.<br>
+<br>
+    I've checked this with various paths utilising multiple path separators,<br>
+    mixed use of separators, illegal escaped characters in the path and a modest<br>
+    variety of patterns. All this with COMPILE_INITS=0 and COMPILE_INITS=1 and<br>
+    in both cases with GS_NO_UTF8=1 and without specifying GS_NO_UTF8. All seems<br>
+    to be OK in all cases. None of this is tested by the cluster of course.<br>
+<br>
+    CLUSTER_UNTESTED<br>
+<br>
+gs/base/gp_ntfs.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-20 10:21:09 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=b0c3a494395db460cbb8e28a6896eebccc6b797a">b0c3a494395db460cbb8e28a6896eebccc6b797a</a>
+<blockquote>
+<p>
+    Ensure we don't overflow the filename buffer.<br>
+<br>
+    No cluster differences.<br>
+<br>
+gs/base/gp_unifs.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-20 10:23:02 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=c1544d825be1f87ed0821ef0163d08595b5fc0e6">c1544d825be1f87ed0821ef0163d08595b5fc0e6</a>
+<blockquote>
+<p>
+    Make the Windows implementation of filenameforall match the Unix version<br>
+<br>
+    The Unix version of filenameforall starts in the current working directory<br>
+    when no directory is specified.<br>
+<br>
+    When the pattern length exceeds the available string we should return a<br>
+    rangecheck error, not an empty string.<br>
+<br>
+    When the filename exceeds the available string we should return a<br>
+    rangecheck error, not a truncated string.<br>
+<br>
+    CLUSTER_UNTESTED<br>
+<br>
+gs/base/gp_ntfs.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-19 15:06:12 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=d6921b5c5ab2af44c48e0084e4a31bcd7512f183">d6921b5c5ab2af44c48e0084e4a31bcd7512f183</a>
+<blockquote>
+<p>
+    Allow use of '\\' for filenameforall and friends on Windows<br>
+<br>
+    The commit to allow recursive directory enumeration f13bfba removed the<br>
+    code which translated '\\' into '\', which could lead to incorrect filenames<br>
+    being returned.<br>
+<br>
+    This fix restores that functionality, but we still think everyone would be<br>
+    better advised to use the PostScript '/' separator instead, which works as<br>
+    well as '\' does.<br>
+<br>
+    CLUSTER_UNTESTED<br>
+<br>
+gs/base/gp_ntfs.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-18 21:05:00 +0100
+</strong>
+<br>Shailesh Mistry &lt;shailesh.mistry@hotmail.co.uk&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=613554e16d315c8db89653775c1fdcf682f238fe">613554e16d315c8db89653775c1fdcf682f238fe</a>
+<blockquote>
+<p>
+    Add quotes around values for a conditional for VS build.<br>
+<br>
+    CLUSTER_UNTESTED<br>
+<br>
+main/pcl6_msvc.mak<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-16 14:00:43 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=7d93cf893d1d2fac826e3c5f81ea92123425216e">7d93cf893d1d2fac826e3c5f81ea92123425216e</a>
+<blockquote>
+<p>
+    Address gp_wgetv not finding *any* environment variables unless compiled with GS_NO_UTF8<br>
+<br>
+    The string being passed in as the 'name' was a regular 1 byte C char array.<br>
+    But _wgetenv expects to be given a wide character string to find and<br>
+    treats the argument as such. This mean environment variables never matched.<br>
+<br>
+    This commit mimics the code for the registry variables, and converts the<br>
+    name to a wchar before passing to _wgetenv.<br>
+<br>
+    CLUSTER_UNTESTED<br>
+<br>
+gs/base/gp_wgetv.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-02 09:32:00 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=ae09189f11f59c2d350cca820c880cd48a0657d0">ae09189f11f59c2d350cca820c880cd48a0657d0</a>
+<blockquote>
+<p>
+    Fix a couple of very minor UFST build issues.<br>
+<br>
+    Automatically drop the default Truetype fonts if we're integrating the UFST<br>
+    (with it's attendant MT fonts).<br>
+<br>
+    No cluster differences.<br>
+<br>
+main/pcl6_gcc.mak<br>
+main/pcl6_msvc.mak<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-16 12:47:36 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=e67e098fa0b5bf7570453c15ccc98fabf1e561dc">e67e098fa0b5bf7570453c15ccc98fabf1e561dc</a>
+<blockquote>
+<p>
+    Fix GS_NO_UTF8 build problem with gs_sprintf.<br>
+<br>
+    CLUSTER_UNTESTED<br>
+<br>
+gs/base/gp_wgetv.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-16 07:58:57 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=774231a7db63439c72313050a750b219491c172f">774231a7db63439c72313050a750b219491c172f</a>
+<blockquote>
+<p>
+    PS Interpreter - yet more meddling with VM allocation and setpagedevice<br>
+<br>
+    Bug #694525 &quot;GSView 5.0 does not work with GPL Ghostscript 9.08&quot;<br>
+<br>
+    Rather horrifyingly GSView uses undocumented internal operations of<br>
+    Ghostscript. In this case the changes to VM allocation mode during setpagedevice<br>
+    were being circumvented.<br>
+<br>
+    This commit changes the way we detect a setpagedevice during startup, previously<br>
+    we check that the dictionary contained one key called /.LockSafetyParams<br>
+    and if so assumed that this meant we were in startup, so we set the VM<br>
+    allocation mode to global for the benefit of Display PostScxript.<br>
+<br>
+    GSView ended up triggering that test, which caused a VM allocation error.<br>
+<br>
+    We now look for the key /.LockSafetyParamsGlobal instead. If this is present<br>
+    we set the VM allocation mode to global and *replace* the key with<br>
+    /.LockSafetyParams instead. This allows accurate detection of the startup<br>
+    condition.<br>
+<br>
+    No differences expected, GSView 5 seems to work and the original bug still<br>
+    is fixed.<br>
+<br>
+gs/Resource/Init/gs_init.ps<br>
+gs/Resource/Init/gs_setpd.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-15 19:56:59 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=4be79a96fe22c988cc4d9edfedac75e6f46e15fa">4be79a96fe22c988cc4d9edfedac75e6f46e15fa</a>
+<blockquote>
+<p>
+    Bump version number.<br>
+<br>
+    The usual cluster differences.<br>
+<br>
+gs/Resource/Init/gs_init.ps<br>
+gs/base/version.mak<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-15 16:53:17 +0100
+</strong>
+<br>Robin Watts &lt;robin.watts@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=43e4db79a40b2ac73eac2bf3732f2e2dcc122d12">43e4db79a40b2ac73eac2bf3732f2e2dcc122d12</a>
+<blockquote>
+<p>
+    Update special antidropout downscaler code.<br>
+<br>
+    In hunting for bug 694451, it looked like the problem was in the<br>
+    special antidropout downscaler for a while, but this turned out<br>
+    not to be the culprit.<br>
+<br>
+    Nonetheless, the code had not been updated to take advantage of the<br>
+    'Active' region optimisations, so we do that here.<br>
+<br>
+gs/base/sidscale.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-15 16:09:24 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=f86ac4209753ea0e9e06a9f4c22a19a8447b5fb5">f86ac4209753ea0e9e06a9f4c22a19a8447b5fb5</a>
+<blockquote>
+<p>
+    Some chenges fed back from customer #661 and.....<br>
+<br>
+    some function naming tidy ups I've been meaning to do for some time.<br>
+<br>
+    The changes from #661 make the code a bit more flexible for different<br>
+    configurations of the font rendering library.<br>
+<br>
+    No cluster differences.<br>
+<br>
+gs/base/fapi_ft.c<br>
+gs/base/fapiufst.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-15 09:06:30 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=6ba5abfa7325ae980bba37fdc71582eeca152a87">6ba5abfa7325ae980bba37fdc71582eeca152a87</a>
+<blockquote>
+<p>
+    update caption.ps so that it does not mark the page on device deactivation<br>
+<br>
+    Bug #694517 &quot;additional page with caption.ps&quot;<br>
+<br>
+    The EndPage procedure in caption.ps marks the page in the file with the<br>
+    defined caption regadless of the reason code for the EndPage. This means<br>
+    that it marks the page even on device deactivation.<br>
+<br>
+    Since commit 3894e9c8a3ab125c82048da3bf81515500bb2da0 pdfwrite will emit<br>
+    pages that are marked, even if no showpage is executed (this is to match<br>
+    observed Acrobat Distiller behaviour) and this means that an extra 'blank'<br>
+    page is emitted on device deactivation.<br>
+<br>
+    This commit simply modifies caption.ps so that it only writes the caption<br>
+    if the reason for calling EndPage is *not* device deactivatyion.<br>
+<br>
+gs/lib/caption.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-07-31 07:45:02 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=a65df0454d1a8de06d2d342100408482c9ec101b">a65df0454d1a8de06d2d342100408482c9ec101b</a>
+<blockquote>
+<p>
+    Bring master up to date with 9.08 release branch.<br>
+<br>
+    Change product string for release candidate.<br>
+<br>
+    No unexpected cluster differences.<br>
+<br>
+    Update version and product strings for release candidate.<br>
+<br>
+    Update news and history for 9.08 release.<br>
+<br>
+    Update release date for 9.08 release.<br>
+<br>
+gs/base/gscdef.c<br>
+gs/base/version.mak<br>
+gs/doc/API.htm<br>
+gs/doc/C-style.htm<br>
+gs/doc/Commprod.htm<br>
+gs/doc/DLL.htm<br>
+gs/doc/Deprecated.htm<br>
+gs/doc/Details8.htm<br>
+gs/doc/Details9.htm<br>
+gs/doc/Develop.htm<br>
+gs/doc/Devices.htm<br>
+gs/doc/Drivers.htm<br>
+gs/doc/Fonts.htm<br>
+gs/doc/Helpers.htm<br>
+gs/doc/History1.htm<br>
+gs/doc/History2.htm<br>
+gs/doc/History3.htm<br>
+gs/doc/History4.htm<br>
+gs/doc/History5.htm<br>
+gs/doc/History6.htm<br>
+gs/doc/History7.htm<br>
+gs/doc/History8.htm<br>
+gs/doc/History9.htm<br>
+gs/doc/Install.htm<br>
+gs/doc/Issues.htm<br>
+gs/doc/Language.htm<br>
+gs/doc/Lib.htm<br>
+gs/doc/Make.htm<br>
+gs/doc/News.htm<br>
+gs/doc/Projects.htm<br>
+gs/doc/Ps-style.htm<br>
+gs/doc/Ps2epsi.htm<br>
+gs/doc/Ps2pdf.htm<br>
+gs/doc/Ps2ps2.htm<br>
+gs/doc/Psfiles.htm<br>
+gs/doc/Readme.htm<br>
+gs/doc/Release.htm<br>
+gs/doc/Source.htm<br>
+gs/doc/Unix-lpr.htm<br>
+gs/doc/Use.htm<br>
+gs/doc/WhatIsGS.htm<br>
+gs/doc/Xfonts.htm<br>
+gs/doc/gs-vms.hlp<br>
+gs/doc/thirdparty.htm<br>
+gs/man/dvipdf.1<br>
+gs/man/font2c.1<br>
+gs/man/gs.1<br>
+gs/man/gslp.1<br>
+gs/man/gsnd.1<br>
+gs/man/pdf2dsc.1<br>
+gs/man/pdf2ps.1<br>
+gs/man/pf2afm.1<br>
+gs/man/pfbtopfa.1<br>
+gs/man/printafm.1<br>
+gs/man/ps2ascii.1<br>
+gs/man/ps2epsi.1<br>
+gs/man/ps2pdf.1<br>
+gs/man/ps2pdfwr.1<br>
+gs/man/ps2ps.1<br>
+gs/man/wftopfa.1<br>
+gs/psi/winint.mak<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-14 16:42:49 +0100
+</strong>
+<br>Robin Watts &lt;robin.watts@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=c07d6c816052686d29efdee5e94567066baaf75a">c07d6c816052686d29efdee5e94567066baaf75a</a>
+<blockquote>
+<p>
+    Remove stray cluster products.<br>
+<br>
+    These should never have been committed.<br>
+<br>
+clustercmd<br>
+clusterdatestamp<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-14 08:59:31 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=2c369110313fda917820faf3657dee55158b538b">2c369110313fda917820faf3657dee55158b538b</a>
+<blockquote>
+<p>
+    PS Interpreter - populate the /OutputDevice resource<br>
+<br>
+    Bug #689500 &quot;/OutputDevice category is empty&quot;<br>
+<br>
+    This commit uses the devices built into the executable to populate the<br>
+    /OutputDevice resource. The bug thread suggests using devicedict but we<br>
+    can't do that in gs_res.ps because it isn't set up until later. So we<br>
+    duplicate the code used to populate devicedict.<br>
+<br>
+    According to the PLRM the only required member of the OutputDevice resource<br>
+    instance is the PageSize, I've chosen to copy the same values as Adobe Acrobat<br>
+    Distiller, but these can be changed if this proves to be a limitation.<br>
+<br>
+    Two additional changes were required, exposed by the Quality Logic test file<br>
+    09-59.ps<br>
+<br>
+    In gdevdevn.c devn_get_params() it is possible for the function to be called<br>
+    with pequiv_colors set to NULL, this caused a seg fault. Modified the code<br>
+    so that it doesn't attempt to dereference a NULL pointer.<br>
+<br>
+    The file 09-59.ps uses setpagedevice to set each possible instance of the<br>
+    OutputDevice resources, this can cause problems with some devices as it<br>
+    doesn't actually send a file. In particular with the mswinpr2 device on<br>
+    Windows, but it also caused errors on Linux. Since this is a CET file,<br>
+    gs_cet.ps was modified to delete the OutputDevice resource category and<br>
+    create a new empty one.<br>
+<br>
+    Expected Differences<br>
+    430-01.ps enumerates all the entries in /OutputDevice and so has a *lot*<br>
+    more data to print.<br>
+<br>
+gs/Resource/Init/gs_cet.ps<br>
+gs/Resource/Init/gs_res.ps<br>
+gs/base/gdevdevn.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-13 00:04:57 -0700
+</strong>
+<br>Michael Vrhel &lt;michael.vrhel@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=b89761f06d297f8555f346e9c0a7850fc549c668">b89761f06d297f8555f346e9c0a7850fc549c668</a>
+<blockquote>
+<p>
+    Fix for problem with double application of alpha when composing isolated groups.<br>
+<br>
+gs/base/gxblend1.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-13 13:48:52 -0700
+</strong>
+<br>Ray Johnston &lt;ray.johnston@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=6c7d9d1191ed4afad16f7bc4089a43bb18190a96">6c7d9d1191ed4afad16f7bc4089a43bb18190a96</a>
+<blockquote>
+<p>
+    Fix bug 694514. Don't use clist HL images in pattern-clist when interpolated.<br>
+<br>
+    Since patterns that are put in the clist are large, interpolating multiple<br>
+    times for every band intersected by the pattern can kill performance.<br>
+<br>
+clustercmd<br>
+clusterdatestamp<br>
+gs/base/gxclimag.c<br>
+gs/base/lib.mak<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-13 15:30:55 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=d7c310e59953aacdeb642ce202c0911071a80d31">d7c310e59953aacdeb642ce202c0911071a80d31</a>
+<blockquote>
+<p>
+    Bug 694513: force chars to signed on AIX with Luratech<br>
+<br>
+    The Lutatech JBIG2 decoder requires signed chars, so add the requisit flags for<br>
+    for the Luratech build to ensure that happens.<br>
+<br>
+    No cluster differences.<br>
+<br>
+gs/configure.ac<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-09 17:02:40 -0700
+</strong>
+<br>Ray Johnston &lt;ray.johnston@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=e9f0f0eb05ee0abea13deabab6617d20e1913e83">e9f0f0eb05ee0abea13deabab6617d20e1913e83</a>
+<blockquote>
+<p>
+    Fix bug 694455. Incorrect CTM when rendering SMasks.<br>
+<br>
+    The clippath was incorrect due to the CTM. As specified in 7.5.4 of the PDF spec:<br>
+<br>
+    The mask's coordinate system is defined by concatenating the transformation<br>
+    matrix specified by the Matrix entry in the transparency group's form dictionary<br>
+    (see Section 4.9.1, &quot;Form Dictionaries&quot;) with the current transformation matrix<br>
+    at the moment the soft mask is established in the graphics state with the gs<br>
+    operator.<br>
+<br>
+    This fixes the customer's file and also results in a progression on<br>
+    comparefiles/Bug693681.pdf where extra data was previously showing.<br>
+<br>
+gs/Resource/Init/pdf_draw.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-09 16:00:23 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=e72c03d49e6c0e107afa32b5b2b8a6cf9d43b663">e72c03d49e6c0e107afa32b5b2b8a6cf9d43b663</a>
+<blockquote>
+<p>
+    PDF Interpreter - undo commit 946f63b5748a5a19c369a1d42e653c69cd57075e<br>
+<br>
+    Marcos wants to have files produce an error, so we don't run them in a<br>
+    stopped context any more.<br>
+<br>
+    In fact it appears that later work means none of these files exit the<br>
+    interpreter on error any more, they do produce PostScript error messages<br>
+    though.<br>
+<br>
+    1305_-_crypt_filter_length_ignored.pdf.pdf<br>
+    1479_-_does_not_render.pdf<br>
+    1931_-_crypt_version_5_revision_6.pdf<br>
+    692248_-_recursive_ObjStm_ref.pdf<br>
+    692248_-_wrong_ObjStm_ref.pdf.pdf<br>
+    694313_-_double-free_during_reparation_fails_.pdf<br>
+    694313_-_empty_xref.pdf<br>
+    Adobe_LiveCycle_DRM_protection_sample_Adobe.APS_-_adbe.pdrl.v0_fails_.pdf<br>
+    MSVR_176_-_missing_range_check_in_pdf_repair_fails_.pdf<br>
+    MSVR_201_-_missing_CIDSystemInfo.pdf<br>
+    annotations_without_font.pdf<br>
+    double_indirect_reference.pdf<br>
+    huge_cmap_values.pdf<br>
+    recursive_indirect_reference.pdf<br>
+    recursive_outline.pdf<br>
+    repairing_leaks_object.pdf<br>
+    x_-_SumatraPDF1.1DOS.pdf<br>
+<br>
+<br>
+    all now produce errors again<br>
+<br>
+gs/Resource/Init/pdf_main.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-09 15:15:53 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=44800428c346804af98b1d9b2e86b6d8e61b858b">44800428c346804af98b1d9b2e86b6d8e61b858b</a>
+<blockquote>
+<p>
+    Delete the ._.DS_Store .DS_Store files.....<br>
+<br>
+    which cause problems decompressing release archives on OS X.<br>
+<br>
+gs/lcms2/Projects/mac/.DS_Store<br>
+gs/lcms2/Projects/mac/._.DS_Store<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-09 13:50:19 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=010e9990d734a8a2361663338b1fbd605d0ca052">010e9990d734a8a2361663338b1fbd605d0ca052</a>
+<blockquote>
+<p>
+    PDF interpreter and pdfwrite - better handling of Outlines and Dests<br>
+<br>
+    Bug #690253 &quot;'pdfmark destination page' error while splitting a PDF: confusing output and invalid links.&quot;<br>
+<br>
+    Several parts to this, we had already removed the 'ERROR' from the message<br>
+    emitted when a DEST or OUT pdfmark pointed to a page outside the valid range.<br>
+<br>
+    This commit makes pdfmark produce an error when an Outline has an invalid<br>
+    range (DEST laready did). We also wrap pdfmark invocations in 'stopped' so<br>
+    that we can trap the error. This allows us to elide Links and Outlines to<br>
+    invalid pages (previously the links remained, but did nothing useful).<br>
+<br>
+    Since the bug was raised, we now also use the '%d' syntax to split PDF<br>
+    files. This would still produce invalid links, because the page number<br>
+    would not be invalid.<br>
+<br>
+    We now check the OutputFile when opening a PDF file, and if it contains<br>
+    '%d' we set a couple of flags which will skip Outline and Dest link creation<br>
+    as these would never be correct.<br>
+<br>
+gs/Resource/Init/pdf_main.ps<br>
+gs/devices/vector/gdevpdfm.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-08 08:50:23 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=a850d6c6d14f3a40bb8d40e471bf4822ead8580d">a850d6c6d14f3a40bb8d40e471bf4822ead8580d</a>
+<blockquote>
+<p>
+    PDF Interpreter - update to 073f460af5bb37edb1849c5d6235048598100437<br>
+<br>
+    Bug #694508 &quot;Regression: error writing PDF file starting with<br>
+    72b397ecb4f5be3fdbf6da4a90a306d259ec3e93&quot;<br>
+<br>
+    The commit 073f460af5bb37edb1849c5d6235048598100437 had an error in the<br>
+    handling of named actions, which I didn't previously have a test case for.<br>
+    NB the commit in the bug title is incorrect, I'm not clear on why Marcos<br>
+    thought this was the commit which introduced the error.<br>
+<br>
+    This commit fixes that and allows me to test the named actions, which now<br>
+    work correctly.<br>
+<br>
+gs/Resource/Init/pdf_main.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-07 13:18:16 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=073f460af5bb37edb1849c5d6235048598100437">073f460af5bb37edb1849c5d6235048598100437</a>
+<blockquote>
+<p>
+    PDF interpreter - improve handling of pdfmarks when we have multiple input files<br>
+<br>
+    Bug #688542 &quot;Bookmarks Get Lost In PDF&quot;<br>
+    Bug #688829 &quot;Merging PDF files using gs: outlines and links not updated&quot;<br>
+<br>
+    The pdfmarks generated by the PDF interpreter for Outlines and Links use the<br>
+    page number relative to the start of the current input file. For single<br>
+    input files this works fine, but when we have multiple input files, we end<br>
+    up with outlines and links pointing to the wrong place.<br>
+<br>
+    To resolve this we need to know, at the start of any PDF file, how many pages<br>
+    have already been processed, and then we will add this value to the nominal<br>
+    page number when creating the pdfmarks.<br>
+<br>
+    Hin-Tak provided a solution (#688829) that used globaldict, which Alex rejected<br>
+    for that reason. This commit executes currentpagedevice at the start of every<br>
+    PDF input file, and stores in in /CumulativePageCount. We can then use this<br>
+    to generate pdfmarks which are correct.<br>
+<br>
+    Even if PDF and PostScript input files are mingled, the PDF-generated pdfmarks<br>
+    will still be correct.<br>
+<br>
+    We won't make any attempt to correct PostScript input, if you are creating a<br>
+    PostScript program, you should get it right. If you really must merge, then<br>
+    use pdfwrite to create the individual PDF files, and then merge those.<br>
+<br>
+    It is possible that other types of generated pdfmark will need similar<br>
+    alteration, we'll tackle those as they turn up.<br>
+<br>
+gs/Resource/Init/pdf_main.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-05 17:42:53 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=22e66c90bf173e4787717137a25833b4aa823993">22e66c90bf173e4787717137a25833b4aa823993</a>
+<blockquote>
+<p>
+    PDF interpreter - increased checking of Outlines, to avoid errors<br>
+<br>
+    Bug #694503 &quot;Regression: output pdf file blank starting with 0c8150ab6b2b8ceaa17cc1b1933d523764ffe114&quot;<br>
+<br>
+    After attempting to recover from broken objects, it was possible to<br>
+    throw an error when processing Outlines, because the recovered object<br>
+    was of the wrong type. This could cause PDF files with broken /Outlines to<br>
+    fail with pdfwrite, where previously they would write a file, but drop the<br>
+    /Outlines. (this only occurs wiht pdfwrite, because we ignore Outlines<br>
+    when rendering)<br>
+<br>
+    This commit restores the previous behaviour by checking the type of the returned<br>
+    object.<br>
+<br>
+gs/Resource/Init/pdf_main.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-05 13:46:02 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=72b397ecb4f5be3fdbf6da4a90a306d259ec3e93">72b397ecb4f5be3fdbf6da4a90a306d259ec3e93</a>
+<blockquote>
+<p>
+    PDF interpreter run .reusablestreamdecode in 'stopped' to handle errors<br>
+<br>
+    Bug #694437 &quot; Infinitely many warnings: **** File has unbalanced q/Q operators (too many Q's) ****&quot;<br>
+<br>
+    The infinite recursion is due to not updating the current file position, and<br>
+    rerunning the same code, which results in the same error.<br>
+<br>
+    To handle this we wrap the exeuction of reusablestreamdecode in a 'stopped'<br>
+    context, so that we cna capture the error, and move the file pointer as<br>
+    required. The job still throws warnings, but the resulting PDF is the same<br>
+    as displayed by Acrobat with the original file.<br>
+<br>
+gs/Resource/Init/pdf_draw.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-02 22:26:09 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=dc77b50bdb6abe88446dc7cdb9d7bd77a90dbfea">dc77b50bdb6abe88446dc7cdb9d7bd77a90dbfea</a>
+<blockquote>
+<p>
+    Bug 694502: reverse of dictomark for PDFs<br>
+<br>
+    The order with which the key/value pairs in a &lt;&lt;&gt;&gt; (apparently) differs between<br>
+    Postscript and PDF. Postscript pushes the objects onto the stack, then pops<br>
+    them in pairs, so the order is reversed compared to the order they were<br>
+    encountered. PDF handles them in the order they were encountered.<br>
+<br>
+    This is, of course, only a problem when there are duplicate keys.<br>
+<br>
+    Thus in PS &quot;&lt;&lt; /a 1 /a 2&gt;&gt;&quot; the key &quot;/a&quot; ends up with the value &quot;1&quot;. In PDF, &quot;/a&quot; gets<br>
+    the value &quot;2&quot;.<br>
+<br>
+    No cluster differences.<br>
+<br>
+gs/psi/int.mak<br>
+gs/psi/zdict.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-02 16:51:33 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=d22c7a5b454ca8e021eb6b71c87627bfb8546edb">d22c7a5b454ca8e021eb6b71c87627bfb8546edb</a>
+<blockquote>
+<p>
+    Improve use of stopped to guard against PDF interpreter exit<br>
+<br>
+    Improvements to commit 946f63b5748a5a19c369a1d42e653c69cd57075e:<br>
+<br>
+    1) Add an error message so that the file does not silently fail to process.<br>
+<br>
+    2) Check PDFSTOPONERROR and do not run in a stopped context if this is set.<br>
+<br>
+gs/Resource/Init/pdf_main.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-02 15:13:18 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=946f63b5748a5a19c369a1d42e653c69cd57075e">946f63b5748a5a19c369a1d42e653c69cd57075e</a>
+<blockquote>
+<p>
+    run PDF files totally in a stopped context to prevent interpreter exit on error<br>
+<br>
+    What it sys on the tin..... Several recent bug reports cause the interpreter<br>
+    to exit if it provokes a PostScript error. Running the PDF file in a stopped<br>
+    context prevents that from happening.<br>
+<br>
+    Bug #694472, but many others up to #694449 are affected similarly.<br>
+<br>
+gs/Resource/Init/pdf_main.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-02 11:15:09 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=709c87fb7837993cb96eaa508c66381c1696ebdf">709c87fb7837993cb96eaa508c66381c1696ebdf</a>
+<blockquote>
+<p>
+    add extra error checking of the Trailer dictionary<br>
+<br>
+    Bug #694474 the file is badly damaged, and Acrobat won't open it. The only<br>
+    problem from our perspective is that the error generated causes the<br>
+    interpreter to exit (because there is no Trailer dict). Added more checks<br>
+    before use to ensure we don't generate errors with missing (empty) trailer<br>
+    dictionaries.<br>
+<br>
+    A number of other files no longer cause errors when run with the cluster.<br>
+<br>
+gs/Resource/Init/pdf_main.ps<br>
+gs/Resource/Init/pdf_rbld.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-02 09:39:17 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=0c8150ab6b2b8ceaa17cc1b1933d523764ffe114">0c8150ab6b2b8ceaa17cc1b1933d523764ffe114</a>
+<blockquote>
+<p>
+    Attempt to handle broken object definitions (garbage on stack)<br>
+<br>
+    If we have certain kinds of broken object definitions we can end up with<br>
+    more than one object on the stack when we encounter an endobj (or a new<br>
+    object definition before encountering an endobj for the previous object).<br>
+    Previously we would throw an error and ignore the object (define it as null)<br>
+    now we attempt to recover by removing objects from the stack until we have<br>
+    a stack of the form 'n n object' where the 'n' represents an integer.<br>
+<br>
+    The bug #694443 now runs to completion although the output is empty. Given<br>
+    how badly broken this file is I don't propose to do any more with it.<br>
+<br>
+gs/Resource/Init/pdf_base.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-07-31 15:09:47 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=2667fbaa1c6c5ba84acc04ccc5b7b97723c09ad1">2667fbaa1c6c5ba84acc04ccc5b7b97723c09ad1</a>
+<blockquote>
+<p>
+    PDF interpreter - remove lower limit on PDF files, improve broken file handling<br>
+<br>
+    At some time in the past we set a lower limit of 400 bytes for PDF files,<br>
+    regarding anything less as invalid. While this may or may not be true, it<br>
+    prevents us repairing broken files that small. Removed the limit.<br>
+<br>
+    When repairing a broken xref, we attempt to use the last startxref to find<br>
+    the tgrailer dictionary. If the startxref is followed by anything other than<br>
+    an integer we should ignore it.<br>
+<br>
+    These both arise from Bug #694443 &quot;/undefined in xref&quot;. The bug is not fixed<br>
+    because the file exhibits still more faults.<br>
+<br>
+    Expected differences:<br>
+    The files 694317_-_minimal.pdf, broken_EOF_object_overwrites_good_object,<br>
+    missing_endobj_swallows_following_obj and missing_page_tree.pdf no longer<br>
+    produce errors.<br>
+<br>
+gs/Resource/Init/pdf_main.ps<br>
+gs/Resource/Init/pdf_rbld.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-07-31 07:41:57 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=91a5d41eb1fea65adb1110ffa2a3b769263b7635">91a5d41eb1fea65adb1110ffa2a3b769263b7635</a>
+<blockquote>
+<p>
+    Bump version for pending release.<br>
+<br>
+    No unexpected cluster differences<br>
+<br>
+gs/Resource/Init/gs_init.ps<br>
+gs/base/version.mak<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-21 14:15:15 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=952b06580b96045a6b052af9a1842d9f770ccd1b">952b06580b96045a6b052af9a1842d9f770ccd1b</a>
+<blockquote>
+<p>
+    Update product string, dates and changelog for 9.09 release.<br>
+<br>
+gs/base/gscdef.c<br>
+gs/base/version.mak<br>
+gs/doc/API.htm<br>
+gs/doc/C-style.htm<br>
+gs/doc/Commprod.htm<br>
+gs/doc/DLL.htm<br>
+gs/doc/Deprecated.htm<br>
+gs/doc/Details8.htm<br>
+gs/doc/Details9.htm<br>
+gs/doc/Develop.htm<br>
+gs/doc/Devices.htm<br>
+gs/doc/Drivers.htm<br>
+gs/doc/Fonts.htm<br>
+gs/doc/Helpers.htm<br>
+gs/doc/History1.htm<br>
+gs/doc/History2.htm<br>
+gs/doc/History3.htm<br>
+gs/doc/History4.htm<br>
+gs/doc/History5.htm<br>
+gs/doc/History6.htm<br>
+gs/doc/History7.htm<br>
+gs/doc/History8.htm<br>
+gs/doc/History9.htm<br>
+gs/doc/Install.htm<br>
+gs/doc/Issues.htm<br>
+gs/doc/Language.htm<br>
+gs/doc/Lib.htm<br>
+gs/doc/Make.htm<br>
+gs/doc/News.htm<br>
+gs/doc/Projects.htm<br>
+gs/doc/Ps-style.htm<br>
+gs/doc/Ps2epsi.htm<br>
+gs/doc/Ps2pdf.htm<br>
+gs/doc/Ps2ps2.htm<br>
+gs/doc/Psfiles.htm<br>
+gs/doc/Readme.htm<br>
+gs/doc/Release.htm<br>
+gs/doc/Source.htm<br>
+gs/doc/Unix-lpr.htm<br>
+gs/doc/Use.htm<br>
+gs/doc/WhatIsGS.htm<br>
+gs/doc/Xfonts.htm<br>
+gs/doc/gs-vms.hlp<br>
+gs/doc/thirdparty.htm<br>
+gs/man/dvipdf.1<br>
+gs/man/font2c.1<br>
+gs/man/gs.1<br>
+gs/man/gslp.1<br>
+gs/man/gsnd.1<br>
+gs/man/pdf2dsc.1<br>
+gs/man/pdf2ps.1<br>
+gs/man/pf2afm.1<br>
+gs/man/pfbtopfa.1<br>
+gs/man/printafm.1<br>
+gs/man/ps2ascii.1<br>
+gs/man/ps2epsi.1<br>
+gs/man/ps2pdf.1<br>
+gs/man/ps2pdfwr.1<br>
+gs/man/ps2ps.1<br>
+gs/man/wftopfa.1<br>
+<p>
+</blockquote>
+<hr>
 <p><strong>2013-08-20 10:21:09 +0100
 </strong>
 <br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
@@ -173,6 +1422,89 @@ gs/base/gp_ntfs.c<br>
     CLUSTER_UNTESTED<br>
 <br>
 gs/base/gp_ntfs.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-16 10:35:58 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=36c5b40dd44d7ef8de4aeba40c5d6c817882b594">36c5b40dd44d7ef8de4aeba40c5d6c817882b594</a>
+<blockquote>
+<p>
+    update docs, version numbers, dates and product string<br>
+<br>
+gs/Resource/Init/gs_init.ps<br>
+gs/base/version.mak<br>
+gs/doc/API.htm<br>
+gs/doc/C-style.htm<br>
+gs/doc/Commprod.htm<br>
+gs/doc/DLL.htm<br>
+gs/doc/Deprecated.htm<br>
+gs/doc/Details8.htm<br>
+gs/doc/Details9.htm<br>
+gs/doc/Develop.htm<br>
+gs/doc/Devices.htm<br>
+gs/doc/Drivers.htm<br>
+gs/doc/Fonts.htm<br>
+gs/doc/Helpers.htm<br>
+gs/doc/History1.htm<br>
+gs/doc/History2.htm<br>
+gs/doc/History3.htm<br>
+gs/doc/History4.htm<br>
+gs/doc/History5.htm<br>
+gs/doc/History6.htm<br>
+gs/doc/History7.htm<br>
+gs/doc/History8.htm<br>
+gs/doc/History9.htm<br>
+gs/doc/Install.htm<br>
+gs/doc/Issues.htm<br>
+gs/doc/Language.htm<br>
+gs/doc/Lib.htm<br>
+gs/doc/Make.htm<br>
+gs/doc/News.htm<br>
+gs/doc/Projects.htm<br>
+gs/doc/Ps-style.htm<br>
+gs/doc/Ps2epsi.htm<br>
+gs/doc/Ps2pdf.htm<br>
+gs/doc/Ps2ps2.htm<br>
+gs/doc/Psfiles.htm<br>
+gs/doc/Readme.htm<br>
+gs/doc/Release.htm<br>
+gs/doc/Source.htm<br>
+gs/doc/Unix-lpr.htm<br>
+gs/doc/Use.htm<br>
+gs/doc/WhatIsGS.htm<br>
+gs/doc/Xfonts.htm<br>
+gs/doc/gs-vms.hlp<br>
+gs/doc/thirdparty.htm<br>
+gs/man/dvipdf.1<br>
+gs/man/font2c.1<br>
+gs/man/gs.1<br>
+gs/man/gslp.1<br>
+gs/man/gsnd.1<br>
+gs/man/pdf2dsc.1<br>
+gs/man/pdf2ps.1<br>
+gs/man/pf2afm.1<br>
+gs/man/pfbtopfa.1<br>
+gs/man/printafm.1<br>
+gs/man/ps2ascii.1<br>
+gs/man/ps2epsi.1<br>
+gs/man/ps2pdf.1<br>
+gs/man/ps2pdfwr.1<br>
+gs/man/ps2ps.1<br>
+gs/man/wftopfa.1<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-16 10:26:47 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=e1c028424f6900412241c076f11f4d9f2409cdb0">e1c028424f6900412241c076f11f4d9f2409cdb0</a>
+<blockquote>
+<p>
+    Set product string for release candidate 1<br>
+<br>
+gs/base/gscdef.c<br>
 <p>
 </blockquote>
 <hr>
@@ -271,38 +1603,246 @@ gs/base/gxiscale.c<br>
 <p>
 </blockquote>
 <hr>
-<p><strong>2013-08-09 17:02:40 -0700
+<p><strong>2013-08-14 14:43:00 +0100
 </strong>
-<br>Ray Johnston &lt;ray.johnston@artifex.com&gt;<br>
-<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=fd89aa38fb8a8af11ac6100ee5eebd9ce61091e3">fd89aa38fb8a8af11ac6100ee5eebd9ce61091e3</a>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=951be31dd84da8f355bfada103ce7e62d5e8c3b2">951be31dd84da8f355bfada103ce7e62d5e8c3b2</a>
 <blockquote>
 <p>
-    Fix bug 694455. Incorrect CTM when rendering SMasks.<br>
+    Update release date for 9.08 release.<br>
 <br>
-    The clippath was incorrect due to the CTM. As specified in 7.5.4 of the PDF spec:<br>
-<br>
-    The mask's coordinate system is defined by concatenating the transformation<br>
-    matrix specified by the Matrix entry in the transparency group's form dictionary<br>
-    (see Section 4.9.1, &quot;Form Dictionaries&quot;) with the current transformation matrix<br>
-    at the moment the soft mask is established in the graphics state with the gs<br>
-    operator.<br>
-<br>
-    This fixes the customer's file and also results in a progression on<br>
-    comparefiles/Bug693681.pdf where extra data was previously showing.<br>
-<br>
-gs/Resource/Init/pdf_draw.ps<br>
+gs/base/gscdef.c<br>
+gs/base/version.mak<br>
+gs/doc/API.htm<br>
+gs/doc/C-style.htm<br>
+gs/doc/Commprod.htm<br>
+gs/doc/DLL.htm<br>
+gs/doc/Deprecated.htm<br>
+gs/doc/Details8.htm<br>
+gs/doc/Details9.htm<br>
+gs/doc/Develop.htm<br>
+gs/doc/Devices.htm<br>
+gs/doc/Drivers.htm<br>
+gs/doc/Fonts.htm<br>
+gs/doc/Helpers.htm<br>
+gs/doc/History1.htm<br>
+gs/doc/History2.htm<br>
+gs/doc/History3.htm<br>
+gs/doc/History4.htm<br>
+gs/doc/History5.htm<br>
+gs/doc/History6.htm<br>
+gs/doc/History7.htm<br>
+gs/doc/History8.htm<br>
+gs/doc/History9.htm<br>
+gs/doc/Install.htm<br>
+gs/doc/Issues.htm<br>
+gs/doc/Language.htm<br>
+gs/doc/Lib.htm<br>
+gs/doc/Make.htm<br>
+gs/doc/News.htm<br>
+gs/doc/Projects.htm<br>
+gs/doc/Ps-style.htm<br>
+gs/doc/Ps2epsi.htm<br>
+gs/doc/Ps2pdf.htm<br>
+gs/doc/Ps2ps2.htm<br>
+gs/doc/Psfiles.htm<br>
+gs/doc/Readme.htm<br>
+gs/doc/Release.htm<br>
+gs/doc/Source.htm<br>
+gs/doc/Unix-lpr.htm<br>
+gs/doc/Use.htm<br>
+gs/doc/WhatIsGS.htm<br>
+gs/doc/Xfonts.htm<br>
+gs/doc/gs-vms.hlp<br>
+gs/doc/thirdparty.htm<br>
+gs/man/dvipdf.1<br>
+gs/man/font2c.1<br>
+gs/man/gs.1<br>
+gs/man/gslp.1<br>
+gs/man/gsnd.1<br>
+gs/man/pdf2dsc.1<br>
+gs/man/pdf2ps.1<br>
+gs/man/pf2afm.1<br>
+gs/man/pfbtopfa.1<br>
+gs/man/printafm.1<br>
+gs/man/ps2ascii.1<br>
+gs/man/ps2epsi.1<br>
+gs/man/ps2pdf.1<br>
+gs/man/ps2pdfwr.1<br>
+gs/man/ps2ps.1<br>
+gs/man/wftopfa.1<br>
 <p>
 </blockquote>
 <hr>
-<p><strong>2013-08-13 00:04:57 -0700
+<p><strong>2013-08-09 15:15:53 +0100
 </strong>
-<br>Michael Vrhel &lt;michael.vrhel@artifex.com&gt;<br>
-<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=8599c5c660638bb1778fb84485c29034b70d25f6">8599c5c660638bb1778fb84485c29034b70d25f6</a>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=d3d413364f81c379754b7738c58bb7b74b7ed3c4">d3d413364f81c379754b7738c58bb7b74b7ed3c4</a>
 <blockquote>
 <p>
-    Fix for problem with double application of alpha when composing isolated groups.<br>
+    Delete the ._.DS_Store .DS_Store files.....<br>
 <br>
-gs/base/gxblend1.c<br>
+    which cause problems decompressing release archives on OS X.<br>
+<br>
+gs/lcms2/Projects/mac/.DS_Store<br>
+gs/lcms2/Projects/mac/._.DS_Store<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-09 09:10:37 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=e656ce0949b0e8cb8bebc22c820b279b9c2eefa0">e656ce0949b0e8cb8bebc22c820b279b9c2eefa0</a>
+<blockquote>
+<p>
+    Update news and history for 9.08 release.<br>
+<br>
+gs/doc/History9.htm<br>
+gs/doc/News.htm<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-08 14:53:48 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=80d7e88123fe9df85cdaeb345c133e3043ddda15">80d7e88123fe9df85cdaeb345c133e3043ddda15</a>
+<blockquote>
+<p>
+    Update version and product strings for release candidate.<br>
+<br>
+gs/base/version.mak<br>
+gs/doc/API.htm<br>
+gs/doc/C-style.htm<br>
+gs/doc/Commprod.htm<br>
+gs/doc/DLL.htm<br>
+gs/doc/Deprecated.htm<br>
+gs/doc/Details8.htm<br>
+gs/doc/Details9.htm<br>
+gs/doc/Develop.htm<br>
+gs/doc/Devices.htm<br>
+gs/doc/Drivers.htm<br>
+gs/doc/Fonts.htm<br>
+gs/doc/Helpers.htm<br>
+gs/doc/History1.htm<br>
+gs/doc/History2.htm<br>
+gs/doc/History3.htm<br>
+gs/doc/History4.htm<br>
+gs/doc/History5.htm<br>
+gs/doc/History6.htm<br>
+gs/doc/History7.htm<br>
+gs/doc/History8.htm<br>
+gs/doc/History9.htm<br>
+gs/doc/Install.htm<br>
+gs/doc/Issues.htm<br>
+gs/doc/Language.htm<br>
+gs/doc/Lib.htm<br>
+gs/doc/Make.htm<br>
+gs/doc/News.htm<br>
+gs/doc/Projects.htm<br>
+gs/doc/Ps-style.htm<br>
+gs/doc/Ps2epsi.htm<br>
+gs/doc/Ps2pdf.htm<br>
+gs/doc/Ps2ps2.htm<br>
+gs/doc/Psfiles.htm<br>
+gs/doc/Readme.htm<br>
+gs/doc/Release.htm<br>
+gs/doc/Source.htm<br>
+gs/doc/Unix-lpr.htm<br>
+gs/doc/Use.htm<br>
+gs/doc/WhatIsGS.htm<br>
+gs/doc/Xfonts.htm<br>
+gs/doc/gs-vms.hlp<br>
+gs/doc/thirdparty.htm<br>
+gs/man/dvipdf.1<br>
+gs/man/font2c.1<br>
+gs/man/gs.1<br>
+gs/man/gslp.1<br>
+gs/man/gsnd.1<br>
+gs/man/pdf2dsc.1<br>
+gs/man/pdf2ps.1<br>
+gs/man/pf2afm.1<br>
+gs/man/pfbtopfa.1<br>
+gs/man/printafm.1<br>
+gs/man/ps2ascii.1<br>
+gs/man/ps2epsi.1<br>
+gs/man/ps2pdf.1<br>
+gs/man/ps2pdfwr.1<br>
+gs/man/ps2ps.1<br>
+gs/man/wftopfa.1<br>
+gs/psi/winint.mak<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-07-31 07:45:02 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=b836761d02ca5829e9ff3f5a64437c3bf29b10db">b836761d02ca5829e9ff3f5a64437c3bf29b10db</a>
+<blockquote>
+<p>
+    Change product string for release candidate.<br>
+<br>
+    No unexpected cluster differences.<br>
+<br>
+gs/base/gscdef.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-20 10:21:09 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=ba1dedf24849295e107df180a291eba99bb33531">ba1dedf24849295e107df180a291eba99bb33531</a>
+<blockquote>
+<p>
+    Ensure we don't overflow the filename buffer.<br>
+<br>
+    No cluster differences.<br>
+<br>
+gs/base/gp_unifs.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-20 10:23:02 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=36088d57f45958b3647b21f5ee3908377f113682">36088d57f45958b3647b21f5ee3908377f113682</a>
+<blockquote>
+<p>
+    Make the Windows implementation of filenameforall match the Unix version<br>
+<br>
+    The Unix version of filenameforall starts in the current working directory<br>
+    when no directory is specified.<br>
+<br>
+    When the pattern length exceeds the available string we should return a<br>
+    rangecheck error, not an empty string.<br>
+<br>
+    When the filename exceeds the available string we should return a<br>
+    rangecheck error, not a truncated string.<br>
+<br>
+    CLUSTER_UNTESTED<br>
+<br>
+gs/base/gp_ntfs.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2013-08-19 15:06:12 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=167ca10abb0a90c4a28a381223afd6fb80347282">167ca10abb0a90c4a28a381223afd6fb80347282</a>
+<blockquote>
+<p>
+    Allow use of '\\' for filenameforall and friends on Windows<br>
+<br>
+    The commit to allow recursive directory enumeration f13bfba removed the<br>
+    code which translated '\\' into '\', which could lead to incorrect filenames<br>
+    being returned.<br>
+<br>
+    This fix restores that functionality, but we still think everyone would be<br>
+    better advised to use the PostScript '/' separator instead, which works as<br>
+    well as '\' does.<br>
+<br>
+    CLUSTER_UNTESTED<br>
+<br>
+gs/base/gp_ntfs.c<br>
 <p>
 </blockquote>
 <hr>
@@ -10078,6 +11618,11 @@ gs/base/unix-dll.mak<br>
 </blockquote>
 <hr>
 <hr size=20>
+<h2><a name="Version9.09"></a>Version 9.09 (2013-02-14)</h2>
+
+<p>The 9.09 release was quickly superseded by 9.10 after a bug was found that prevented
+-dUeCIEColor from working was discovered. Please use 9.10.
+
 <h2><a name="Version9.07"></a>Version 9.07 (2013-02-14)</h2>
 
 <p>This is the seventh full release in the stable 9.x series.
@@ -91670,7 +93215,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.09, 21 August 2013
+<small>Ghostscript version 9.10, 30 August 2013
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
