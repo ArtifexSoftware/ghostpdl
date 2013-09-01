@@ -442,7 +442,10 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 		  code = jbig2_decode_generic_region(ctx, segment, &region_params,
               as, image, GB_stats);
-          if (code < 0) goto cleanup4;
+          if (code < 0) {
+              jbig2_image_release(ctx, image);
+              goto cleanup4;
+          }
 
           SDNEWSYMS->glyphs[NSYMSDECODED] = image;
 	      } else {
@@ -950,7 +953,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
         break;
       case 2:
       default:
-	return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+	jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 	    "symbol dictionary specified invalid huffman table");
 	break;
     }
