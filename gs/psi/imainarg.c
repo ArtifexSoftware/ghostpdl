@@ -26,6 +26,7 @@
 #include "gscdefs.h"
 #include "gsmalloc.h"           /* for gs_malloc_limit */
 #include "gsmdebug.h"
+#include "gspaint.h"		/* for gs_erasepage */
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gsdevice.h"

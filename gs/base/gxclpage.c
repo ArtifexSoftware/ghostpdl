@@ -338,7 +338,7 @@ param_parse_token(byte *param, int param_left, int *token_size)
     return token;
 }
 
-int
+static int
 gx_saved_page_load(gx_device_printer *pdev, gx_saved_page *page)
 {
     int code;
