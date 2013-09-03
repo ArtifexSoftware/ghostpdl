@@ -114,6 +114,10 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
        profile output size.  For example sep device with CMYK profile should
        not go through the fast method */
     code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
+    if (code) {
+        penum->interpolate = false;
+        return 0;
+    }
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     if (num_des_comps != penum->dev->color_info.num_components) {
         use_icc = false;
@@ -440,12 +444,8 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                bool need_decode, stream_cursor_read *stream_r, bool is_icc) 
 {
     stream_image_scale_state *pss = penum->scaler;
-    const gs_imager_state *pis = penum->pis;
     const gs_color_space *pcs = penum->pcs;
-    gs_logical_operation_t lop = penum->log_op;
     int spp_decode = pss->params.spp_decode;
-    stream_cursor_write w;
-    unsigned char index_space;
     byte *out = penum->line;
     int reversed = (penum->posture == image_portrait ? penum->matrix.xx : penum->matrix.xy) < 0;
 
@@ -457,7 +457,6 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
         const int raw_size = (pcs->type->index == gs_color_space_index_Indexed ?
                               1 : spp_decode);
         const unsigned char *bdata = buffer + data_x * raw_size * sizeofPixelIn;
-        index_space = 0;
         /* We have the following cases to worry about
           1) Device 8 bit color but not indexed (e.g. ICC).
              Apply CMM after interpolation if needed.
@@ -545,7 +544,6 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                 max_range = (penum->map[0].decode_factor < 0 ?
                     penum->map[0].decode_base :
                 penum->map[0].decode_base + 255.0 * penum->map[0].decode_factor);
-                index_space = 1;
                 /* flip the horizontal direction if indicated by the matrix value */
                 if (reversed) {
                     pdata += (pss->params.WidthIn - 1) * dpd;
@@ -659,7 +657,6 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                 int dpd = dc * (bps <= 8 ? 1 : sizeof(frac));
                 float decode_value;
 
-                index_space = 1;
                 /* flip the horizontal direction if indicated by the matrix value */
                 if (reversed) {
                     pdata += (pss->params.WidthIn - 1) * dpd;
@@ -689,7 +686,6 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
         stream_r->limit = stream_r->ptr + row_size;
     } else {                    /* h == 0 */
         stream_r->ptr = 0, stream_r->limit = 0;
-        index_space = 0;
     }
 }
 
@@ -949,6 +945,8 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
         int num_bytes_decode = pss->params.BitsPerComponentIn / 8;
 
         code = dev_proc(dev, get_profile)(dev, &dev_profile);
+        if (code)
+            return code;
         spp_cm = gsicc_get_device_profile_comps(dev_profile);
         if (penum->matrix.yy > 0)
             dy = 1;
@@ -1166,9 +1164,6 @@ image_render_interpolate_landscape(gx_image_enum * penum,
         int dy;
         const gs_color_space *pconcs;
         const gs_color_space *pactual_cs;
-        int bpp = dev->color_info.depth;
-        uint raster = (bpp+7)>>3;
-        int bpp_rep = 8/bpp;
         bool device_color;
 
         if (penum->matrix.yx > 0)
@@ -1182,7 +1177,6 @@ image_render_interpolate_landscape(gx_image_enum * penum,
             gx_device_color devc;
             int status, code;
 
-            DECLARE_LINE_ACCUM_COPY(out, bpp, xo);
             stream_w.limit = out + width *
                 max(spp_decode * sizeofPixelOut, arch_sizeof_color_index) - 1;
             stream_w.ptr = stream_w.limit - width * spp_decode * sizeofPixelOut;
@@ -1271,106 +1265,20 @@ image_render_interpolate_landscape(gx_image_enum * penum,
                     }
                     if (code < 0)
                         return code;
-                    if (color_is_pure(&devc)) {
-                        /* Just pack colors into a scan line. */
-                        gx_color_index color = devc.colors.pure;
-                        if (bpp >= 8) {
-                            /* Skip runs quickly for the common cases. */
-                            switch (spp_decode) {
-                                case 1:
-                                    do {
-                                        LINE_ACCUM(color, bpp);
-                                        vd_pixel(int2fixed(x), int2fixed(ry), color);
-                                        x++, psrc += 1;
-                                    } while (x < xe && psrc[-1] == psrc[0]);
-                                    break;
-                                case 3:
-                                    do {
-                                        LINE_ACCUM(color, bpp);
-                                        vd_pixel(int2fixed(x), int2fixed(ry), color);
-                                        x++, psrc += 3;
-                                    } while (x < xe &&
-                                             psrc[-3] == psrc[0] &&
-                                             psrc[-2] == psrc[1] &&
-                                             psrc[-1] == psrc[2]);
-                                    break;
-                                case 4:
-                                    do {
-                                        LINE_ACCUM(color, bpp);
-                                        x++, psrc += 4;
-                                    } while (x < xe &&
-                                             psrc[-4] == psrc[0] &&
-                                             psrc[-3] == psrc[1] &&
-                                             psrc[-2] == psrc[2] &&
-                                             psrc[-1] == psrc[3]);
-                                    break;
-                                default:
-                                    LINE_ACCUM(color, bpp);
-                                    x++, psrc += spp_decode;
-                            }
-                        } else {
-                            /* Skip runs quickly for the common cases. */
-                            switch (spp_decode) {
-                                case 1:
-                                    do {
-                                        int count = bpp_rep;
-                                        do {
-                                            LINE_ACCUM(color, bpp);
-                                        } while (--count);
-                                        vd_pixel(int2fixed(x), int2fixed(ry), color);
-                                        x++, psrc += 1;
-                                    } while (x < xe && psrc[-1] == psrc[0]);
-                                    break;
-                                case 3:
-                                    do {
-                                        int count = bpp_rep;
-                                        do {
-                                            LINE_ACCUM(color, bpp);
-                                        } while (--count);
-                                        vd_pixel(int2fixed(x), int2fixed(ry), color);
-                                        x++, psrc += 3;
-                                    } while (x < xe &&
-                                             psrc[-3] == psrc[0] &&
-                                             psrc[-2] == psrc[1] &&
-                                             psrc[-1] == psrc[2]);
-                                    break;
-                                case 4:
-                                    do {
-                                        int count = bpp_rep;
-                                        do {
-                                            LINE_ACCUM(color, bpp);
-                                        } while (--count);
-                                        x++, psrc += 4;
-                                    } while (x < xe &&
-                                             psrc[-4] == psrc[0] &&
-                                             psrc[-3] == psrc[1] &&
-                                             psrc[-2] == psrc[2] &&
-                                             psrc[-1] == psrc[3]);
-                                    break;
-                                default:
-                                {
-                                    int count = bpp_rep;
-                                    do {
-                                        LINE_ACCUM(color, bpp);
-                                    } while (--count);
-                                    x++, psrc += spp_decode;
-                                }
-                            }
-                        }
-                    } else {
+                    /* Cannot collate runs of pixels for landscape cases.
+                     * Every pixel gets sent directly. Even if we tried to
+                     * collate runs, they'd end up being split up in most
+                     * cases within copy_color_unaligned anyway. */
+                    {
                         int rcode;
 
-                        LINE_ACCUM_COPY_TRANS(dev, out, bpp, xo, x, raster, ry);
                         rcode = gx_fill_rectangle_device_rop(ry, x, 1, 1,
                                                              &devc, dev, lop);
                         if (rcode < 0)
                             return rcode;
-                        LINE_ACCUM_SKIP(bpp);
-                        l_xprev = x + 1;
                         x++, psrc += spp_decode;
                     }
                 }
-                LINE_ACCUM_COPY_TRANS(dev, out, bpp, xo, x, raster, ry);
                 /*if_debug1m('w', dev->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 inactive:
                 penum->line_xy++;
@@ -1430,9 +1338,6 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
         int width_in = pss->params.WidthIn;
         int sizeofPixelOut = pss->params.BitsPerComponentOut / 8;
         int dy;
-        int bpp = dev->color_info.depth;
-        uint raster = (bpp+7)>>3;
-        int bpp_rep = 8/bpp;
         unsigned short *p_cm_interp;
         byte *p_cm_buff = NULL;
         byte *psrc;
@@ -1447,6 +1352,10 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
         int num_bytes_decode = pss->params.BitsPerComponentIn / 8;
 
         code = dev_proc(dev, get_profile)(dev, &dev_profile);
+        if (code) {
+            penum->interpolate = false;
+            return 0;
+        }
         spp_cm = gsicc_get_device_profile_comps(dev_profile);
         if (penum->matrix.yx > 0)
             dy = 1;
@@ -1498,7 +1407,6 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
             gx_device_color devc;
             int status;
 
-            DECLARE_LINE_ACCUM_COPY(out, bpp, xo);
             stream_w.limit = out + width *
                 max(spp_interp * sizeofPixelOut, arch_sizeof_color_index) - 1;
             stream_w.ptr = stream_w.limit - width * spp_interp * sizeofPixelOut;
@@ -1560,103 +1468,20 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                         if (color != gx_no_color_index)
                             color_set_pure(&devc, color);
                     }
-                    if (color_is_pure(&devc)) {
-                        /* Just pack colors into a scan line. */
-                        gx_color_index color = devc.colors.pure;
-                        if (bpp >= 8)
-                        {
-                            /* Skip runs quickly for the common cases. */
-                            switch (spp_cm) {
-                                case 1:
-                                    do {
-                                        LINE_ACCUM(color, bpp);
-                                        vd_pixel(int2fixed(x), int2fixed(ry), color);
-                                        x++, p_cm_interp += 1;
-                                    } while (x < xe && p_cm_interp[-1] == p_cm_interp[0]);
-                                    break;
-                                case 3:
-                                    do {
-                                        LINE_ACCUM(color, bpp);
-                                        vd_pixel(int2fixed(x), int2fixed(ry), color);
-                                        x++, p_cm_interp += 3;
-                                    } while (x < xe && p_cm_interp[-3] == p_cm_interp[0] &&
-                                         p_cm_interp[-2] == p_cm_interp[1] &&
-                                         p_cm_interp[-1] == p_cm_interp[2]);
-                                    break;
-                                case 4:
-                                    do {
-                                        LINE_ACCUM(color, bpp);
-                                        x++, p_cm_interp += 4;
-                                    } while (x < xe && p_cm_interp[-4] == p_cm_interp[0] &&
-                                         p_cm_interp[-3] == p_cm_interp[1] &&
-                                         p_cm_interp[-2] == p_cm_interp[2] &&
-                                         p_cm_interp[-1] == p_cm_interp[3]);
-                                    break;
-                                default:
-                                    LINE_ACCUM(color, bpp);
-                                    x++, p_cm_interp += spp_cm;
-                            }
-                        } else {
-                            /* Skip runs quickly for the common cases. */
-                            switch (spp_cm) {
-                                case 1:
-                                    do {
-                                        int count = bpp_rep;
-                                        do {
-                                            LINE_ACCUM(color, bpp);
-                                        } while (--count);
-                                        vd_pixel(int2fixed(x), int2fixed(ry), color);
-                                        x++, p_cm_interp += 1;
-                                    } while (x < xe && p_cm_interp[-1] == p_cm_interp[0]);
-                                    break;
-                                case 3:
-                                    do {
-                                        int count = bpp_rep;
-                                        do {
-                                            LINE_ACCUM(color, bpp);
-                                        } while (--count);
-                                        vd_pixel(int2fixed(x), int2fixed(ry), color);
-                                        x++, p_cm_interp += 3;
-                                    } while (x < xe && p_cm_interp[-3] == p_cm_interp[0] &&
-                                         p_cm_interp[-2] == p_cm_interp[1] &&
-                                         p_cm_interp[-1] == p_cm_interp[2]);
-                                    break;
-                                case 4:
-                                    do {
-                                        int count = bpp_rep;
-                                        do {
-                                            LINE_ACCUM(color, bpp);
-                                        } while (--count);
-                                        x++, p_cm_interp += 4;
-                                    } while (x < xe && p_cm_interp[-4] == p_cm_interp[0] &&
-                                         p_cm_interp[-3] == p_cm_interp[1] &&
-                                         p_cm_interp[-2] == p_cm_interp[2] &&
-                                         p_cm_interp[-1] == p_cm_interp[3]);
-                                    break;
-                                default:
-                                {
-                                    int count = bpp_rep;
-                                    do {
-                                        LINE_ACCUM(color, bpp);
-                                    } while (--count);
-                                    x++, p_cm_interp += spp_cm;
-                                }
-                            }
-                        }
-                    } else {
+                    /* Cannot collate runs of pixels for landscape cases.
+                     * Every pixel gets sent directly. Even if we tried to
+                     * collate runs, they'd end up being split up in most
+                     * cases within copy_color_unaligned anyway. */
+                    {
                         int rcode;
 
-                        LINE_ACCUM_COPY_TRANS(dev, out, bpp, xo, x, raster, ry);
                         rcode = gx_fill_rectangle_device_rop(ry, x, 1, 1,
                                                              &devc, dev, lop);
                         if (rcode < 0)
                             return rcode;
-                        LINE_ACCUM_SKIP(bpp);
-                        l_xprev = x + 1;
                         x++, p_cm_interp += spp_cm;
                     }
                 }  /* End on x loop */
-                LINE_ACCUM_COPY_TRANS(dev, out, bpp, xo, x, raster, ry);
                 /*if_debug1m('w', penum->memory, "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
 inactive:
                 penum->line_xy++;
