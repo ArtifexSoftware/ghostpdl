@@ -696,7 +696,15 @@ if
             2 index /ImageType get 1 eq and
             2 index /BitsPerComponent get 1 eq and
             2 index /Interpolate .knownget not { //false } if and
-            //filterdict /ImscaleDecode known and {
+            //filterdict /ImscaleDecode known and
+            %%
+            %% Don't apply ImScaleDecode to interpolate imagemasks if
+            %% the current device is a high level device.
+            %%
+            currentdevice 1 dict dup /HighLevelDevice dup put .getdeviceparams
+            dup type /booleantype eq not {cleartomark //true}{3 1 roll cleartomark not}ifelse
+            and
+            {
               % Apply interpolated imagemask scaling filter
               exch .currentglobal exch dup .gcheck .setglobal
               dup length dict .copydict
