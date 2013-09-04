@@ -428,11 +428,6 @@ pcl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to us
     if ((code = gs_setdevice_no_erase(pcli->pcs.pgs, device)) < 0)      /* can't erase yet */
         goto pisdEnd;
 
-    /* Initialize device ICC profile  */
-    code = gsicc_init_device_profile_struct(device, NULL, 0);
-    if (code < 0)
-        goto pisdEnd;
-
     stage = Sinitg;
     /* Do inits of gstate that may be reset by setdevice */
     /* PCL no longer uses the graphic library transparency mechanism */

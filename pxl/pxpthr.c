@@ -172,11 +172,7 @@ pxPassthrough_init(px_state_t * pxs)
     code = gs_setdevice_no_erase(global_pcs->pgs, gs_currentdevice(pxs->pgs));
     if (code < 0)
         return code;
-    /* Also, check if the device profile was set int the global_pcs pgs.
-       If not then initialize. Fix for seg fault with T427.BIN .  
-       NEED TO TEST IF THIS IS STILL NEEDED WITH THE CHANGES IN THE
-       DEVICE ICC PROFILE */
-    gsicc_init_device_profile_struct(gs_currentdevice(pxs->pgs), NULL, 0);
+
     /* yet another reset with the new page device */
     global_pcs->xfm_state.paper_size = pcl_get_default_paper(global_pcs);
     pcl_do_resets(global_pcs, pcl_reset_initial);
