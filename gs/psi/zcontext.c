@@ -173,9 +173,9 @@ index_context(const gs_scheduler_t *psched, long index)
     gs_context_t *pctx;
 
     if (index == 0)
-        return 0;
+        return NULL;
     pctx = psched->table[index % CTX_TABLE_SIZE];
-    while (pctx != 0 && pctx->index != index)
+    while (pctx != NULL && pctx->index != index)
         pctx = pctx->table_next;
     return pctx;
 }
@@ -669,6 +669,12 @@ do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
             }
         }
     }
+    zcontext_init(&pctx->state);
+
+    pctx->state.reschedule_proc = ctx_reschedule;
+    pctx->state.time_slice_proc = ctx_time_slice;
+    pctx->state.time_slice_ticks = reschedule_interval;
+
     pctx->state.op_array_table_global = i_ctx_p->op_array_table_global;
     pctx->state.op_array_table_local  = i_ctx_p->op_array_table_local;
     pctx->state.language_level = i_ctx_p->language_level;
