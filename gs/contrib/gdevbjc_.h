@@ -16,9 +16,13 @@
  *
  *   If this program is being distributed under the terms of the GPL, you
  *   should have received a copy of the GPL along with this program, normally
- *   in a plain ASCII text file named COPYING; if not, write to the Free
- *   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111
- *   U.S.A.
+ *   in a plain ASCII text file named COPYING; if not, write to the:
+ *
+ *   Free Software Foundation, Inc.,
+ *   51 Franklin Street, Fifth Floor
+ *   Boston, MA 02110-1301
+ *   USA
+ *
  */
 
 /* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
