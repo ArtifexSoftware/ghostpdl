@@ -979,7 +979,7 @@ JPX_CFLAGS = $JPX_CFLAGS -DUSE_OPENJPEG_JP2
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)mspoll.dev $(PSD)fapi_ps.dev $(PSD)jbig2.dev $(PSD)jpx.dev $(PSD)winutf8.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)mspoll.dev $(PSD)fapi_ps.dev $(PSD)jbig2.dev $(PSD)jpx.dev $(PSD)winutf8.dev $(PSD)ramfs.dev
 !ifndef METRO
 FEATURE_DEVS=$(FEATURE_DEVS) $(PSD)msprinter.dev $(GLD)pipe.dev
 !endif

@@ -3165,6 +3165,21 @@ MKROMFS_ZLIB_OBJS=$(AUX)compress.$(OBJ) $(AUX)deflate.$(OBJ) \
 MKROMFS_COMMON_DEPS=$(stdpre_h) $(stdint__h) $(gsiorom_h) $(arch_h)\
 	$(gsmemret_h) $(gsmalloc_h) $(gsstype_h) $(gp_h) $(time__h)
 
+# ---------------- Support for %ram% IODevice ----------------- #
+gsioram_h=$(GLSRC)gsioram.h $(GLSRC)ramfs.h
+ramfs_=$(GLOBJ)gsioram.$(OBJ) $(GLOBJ)ramfs.$(OBJ)
+$(GLD)ramfs.dev : $(LIB_MAK) $(ECHOGS_XE) $(ramfs_)
+	$(SETMOD) $(GLD)ramfs $(ramfs_)
+	$(ADDMOD) $(GLD)ramfs -iodev ram
+	$(ADDMOD) $(GLD)ramfs -obj $(GLOBJ)ramfs.$(OBJ)
+
+$(GLOBJ)ramfs.$(OBJ) : $(GLSRC)ramfs.c
+	$(GLCC) $(GLO_)ramfs.$(OBJ) $(C_) $(GLSRC)ramfs.c
+
+$(GLOBJ)gsioram.$(OBJ) : $(GLSRC)gsioram.c
+	$(GLCC) $(GLO_)gsioram.$(OBJ) $(C_) $(GLSRC)gsioram.c
+
+
 # ---------------- Support for %disk IODevices ---------------- #
 # The following module is included only if the diskn.dev FEATURE is included
 $(GLOBJ)gsiodisk.$(OBJ) : $(GLSRC)gsiodisk.c $(AK) $(gx_h)\
