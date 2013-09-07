@@ -595,7 +595,7 @@ typedef enum {
  * (3 if RGB, 4 if CMYK).
  */
 #define GX_CIE_REMAP_FINISH_PROC(proc)\
-  int proc(cie_cached_vector3 vec3, frac *pconc,\
+  int proc(cie_cached_vector3 vec3, frac *pconc, float *xyz,\
            const gs_imager_state *pis, const gs_color_space *pcs)
 
 struct gx_cie_joint_caches_s {

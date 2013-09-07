@@ -312,11 +312,11 @@ gx_remap_concrete_icc_devicen(const frac * pconc, const gs_color_space * pcs,
            up the equivalent CMYK colors for the spot colors that are present.
            This allows us to have some sort of composite viewing of the spot
            colors as they would colorimetrically appear. */
-        gsicc_set_devicen_equiv_colors(dev, pis, dev_profile->device_profile[0]);
+        code = gsicc_set_devicen_equiv_colors(dev, pis, dev_profile->device_profile[0]);
         dev_profile->spotnames->equiv_cmyk_set = true;
     }
     gx_remap_concrete_devicen(pconc, pdc, pis, dev, select);
-    return 0;
+    return code;
 }
 
 /* If the color is already concretized, then we are in the color space

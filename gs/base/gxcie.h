@@ -71,7 +71,7 @@ int gx_cie_check_rendering(const gs_color_space * pcs, frac * pconc, const gs_im
  * structure.
  */
 extern  int     gx_cie_remap_finish( cie_cached_vector3,
-                                     frac *,
+                                     frac *, float *,
                                      const gs_imager_state *,
                                      const gs_color_space * );
 /* Make sure the prototype matches the one defined in gscie.h. */
@@ -135,13 +135,13 @@ cs_proc_concrete_space(gx_concrete_space_CIE);
 /* Special operations used in the creation of ICC color spaces from PS
    spaces.  These are used to map from PS color to CIEXYZ */
 int gx_psconcretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
-                      frac * pconc, const gs_imager_state * pis);
+                      frac * pconc, float * xyz, const gs_imager_state * pis);
 int gx_psconcretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
-                     frac * pconc, const gs_imager_state * pis);
+                     frac * pconc, float * xyz, const gs_imager_state * pis);
 int gx_psconcretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
-                     frac * pconc, const gs_imager_state * pis);
+                     frac * pconc, float * xyz, const gs_imager_state * pis);
 int gx_psconcretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
-                     frac * pconc, const gs_imager_state * pis);
+                     frac * pconc, float * xyz, const gs_imager_state * pis);
 bool check_range(gs_range *ranges, int num_colorants);
 bool check_cie_range( const gs_color_space * pcs );
 gs_range* get_cie_range( const gs_color_space * pcs );

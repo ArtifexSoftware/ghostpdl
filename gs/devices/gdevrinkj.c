@@ -476,7 +476,7 @@ rinkj_open_profile(rinkj_device *rdev)
 
         /* Call with a NULL destination profile since we are using a device link profile here */
         rdev->icc_link = gscms_get_link(rdev->link_profile,
-                                        NULL, &rendering_params, rdev->memory);
+                                        NULL, &rendering_params, 0, rdev->memory);
 
         if (rdev->icc_link == NULL)
             return gs_throw(-1, "Could not create link handle for rinkj device");

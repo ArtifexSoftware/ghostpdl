@@ -713,6 +713,7 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
     cmm_profile_t *devlink_profile = NULL;
     bool src_dev_link = gs_input_profile->isdevlink;
     bool pageneutralcolor = false;
+    int cms_flags = 0;
 
     /* Determine if we are using a soft proof or device link profile */
     if (dev != NULL ) {
@@ -813,6 +814,12 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
 
     /* Now compute the link contents */
     cms_input_profile = gs_input_profile->profile_handle;
+    /*  Check if the source was generated from a PS CIE color space.  If yes, 
+        then we need to make sure that the CMM does not do something like 
+        force a white point mapping like lcms does */
+    if (gsicc_profile_from_ps(gs_input_profile)) {
+        cms_flags = cms_flags | gscms_avoid_white_fix_flag(); 
+    } 
     if (cms_input_profile == NULL) {
         if (gs_input_profile->buffer != NULL) {
             cms_input_profile =
@@ -935,6 +942,7 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             icc_manager->smask_profiles->smask_gray->profile_handle;
         cms_output_profile = 
             icc_manager->graytok_profile->profile_handle;
+        cms_flags = 0;  /* Turn off any flag setting */
     }
     /* Get the link with the proof and or device link profile */
     if (include_softproof || include_devicelink || src_dev_link) {
@@ -943,7 +951,7 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                                                    cms_output_profile,
                                                    cms_devlink_profile,
                                                    rendering_params,
-                                                   src_dev_link,
+                                                   src_dev_link, cms_flags,
                                                    cache_mem->non_gc_memory);
         if (include_softproof) {
             gx_monitor_leave(proof_profile->lock);
@@ -953,7 +961,8 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
         }
     } else {
         link_handle = gscms_get_link(cms_input_profile, cms_output_profile,
-                                     rendering_params, cache_mem->non_gc_memory);
+                                     rendering_params, cms_flags, 
+                                     cache_mem->non_gc_memory);
     }
     if (!src_dev_link) {
         gx_monitor_leave(gs_output_profile->lock);
@@ -1360,4 +1369,3 @@ gsicc_get_device_profile_comps(cmm_dev_profile_t *dev_profile)
        return dev_profile->link_profile->num_comps_out;
     }
 }
-

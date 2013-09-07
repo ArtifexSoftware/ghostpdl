@@ -88,7 +88,7 @@ int gsicc_set_device_blackptcomp(gx_device *dev,
 int gsicc_set_device_blackpreserve(gx_device *dev, 
                                    gsicc_blackpreserve_t blackpreserve,
                                    gsicc_profile_types_t profile_type);
-void gsicc_set_devicen_equiv_colors(gx_device *dev, const gs_imager_state * pis,
+int gsicc_set_devicen_equiv_colors(gx_device *dev, const gs_imager_state * pis,
                                     cmm_profile_t *profile);
 int gsicc_set_device_profile_colorants(gx_device *dev, char *name_str);
 int gsicc_init_device_profile_struct(gx_device * dev,  char *profile_name,
@@ -122,6 +122,7 @@ cmm_profile_t* gsicc_read_serial_icc(gx_device * dev, int64_t icc_hashcode);
 cmm_profile_t* gsicc_finddevicen(const gs_color_space *pcs,
                                  gsicc_manager_t *icc_manager);
 gs_color_space_index gsicc_get_default_type(cmm_profile_t *profile_data);
+bool gsicc_profile_from_ps(cmm_profile_t *profile_data);
 cmm_dev_profile_t* gsicc_new_device_profile_array(gs_memory_t *memory);
 void gs_setoverrideicc(gs_imager_state *pis, bool value);
 bool gs_currentoverrideicc(const gs_imager_state *pis);

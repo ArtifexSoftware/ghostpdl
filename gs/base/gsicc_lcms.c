@@ -273,7 +273,7 @@ gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
 gcmmhlink_t
 gscms_get_link(gcmmhprofile_t  lcms_srchandle,
                gcmmhprofile_t lcms_deshandle,
-               gsicc_rendering_param_t *rendering_params,
+               gsicc_rendering_param_t *rendering_params, int cmm_flags,
                gs_memory_t *mem)
 {
     DWORD src_data_type,des_data_type;
@@ -306,7 +306,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
 /* Create the link */
     return(cmsCreateTransform(lcms_srchandle, src_data_type, lcms_deshandle,
                         des_data_type, rendering_params->rendering_intent,
-               (cmsFLAGS_BLACKPOINTCOMPENSATION | cmsFLAGS_HIGHRESPRECALC |
+               (cmm_flags | cmsFLAGS_BLACKPOINTCOMPENSATION | cmsFLAGS_HIGHRESPRECALC |
                 cmsFLAGS_NOTCACHE )));
     /* cmsFLAGS_HIGHRESPRECALC)  cmsFLAGS_NOTPRECALC  cmsFLAGS_LOWRESPRECALC*/
 }
@@ -319,7 +319,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
                              gcmmhprofile_t lcms_deshandle, 
                              gcmmhprofile_t lcms_devlinkhandle, 
                              gsicc_rendering_param_t *rendering_params,
-                             bool src_dev_link,
+                             bool src_dev_link, int cmm_flags,
                              gs_memory_t *mem)
 {
     DWORD src_data_type,des_data_type;
@@ -364,7 +364,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
     }
     return(cmsCreateMultiprofileTransform(hProfiles, nProfiles, src_data_type, 
                                           des_data_type, rendering_params->rendering_intent, 
-                                          (cmsFLAGS_BLACKPOINTCOMPENSATION | 
+                                          (cmm_flags | cmsFLAGS_BLACKPOINTCOMPENSATION | 
                                            cmsFLAGS_HIGHRESPRECALC |
                                            cmsFLAGS_NOTCACHE)));
 }

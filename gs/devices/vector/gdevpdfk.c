@@ -73,7 +73,7 @@ cie_to_xyz(const double *in, double out[3], const gs_color_space *pcs,
 
     gs_color_space_index cs_index;
     const gs_vector3 *const pWhitePoint = &pciec->points.WhitePoint;
-    double xyz_float[3];
+    float xyz_float[3];
 
     cs_index = gs_color_space_get_index(pcs);
     /* Need a device profile */
@@ -100,16 +100,16 @@ cie_to_xyz(const double *in, double out[3], const gs_color_space *pcs,
 
     switch (cs_index) {
         case gs_color_space_index_CIEA:
-            gx_psconcretize_CIEA(&cc, pcs, xyz, pis);
+            gx_psconcretize_CIEA(&cc, pcs, xyz, xyz_float, pis);
             break;
         case gs_color_space_index_CIEABC:
-            gx_psconcretize_CIEABC(&cc, pcs, xyz, pis);
+            gx_psconcretize_CIEABC(&cc, pcs, xyz, xyz_float, pis);
             break;
         case gs_color_space_index_CIEDEF:
-            gx_psconcretize_CIEDEF(&cc, pcs, xyz, pis);
+            gx_psconcretize_CIEDEF(&cc, pcs, xyz, xyz_float, pis);
             break;
         case gs_color_space_index_CIEDEFG:
-           gx_psconcretize_CIEDEFG(&cc, pcs, xyz, pis);
+           gx_psconcretize_CIEDEFG(&cc, pcs, xyz, xyz_float, pis);
            break;
         default:
             break;
@@ -121,14 +121,9 @@ cie_to_xyz(const double *in, double out[3], const gs_color_space *pcs,
         /* Use the resulting Y value to scale the wp Illumination.
         note that we scale to the whitepoint here.  Matrix out
         handles mapping to CIE D50.  This forces an achromatic result */
-        xyz_float[1] = frac2float(xyz[1]);
         xyz_float[0] = pWhitePoint->u * xyz_float[1];
         xyz_float[2] = pWhitePoint->w * xyz_float[1];
-    } else {
-        xyz_float[0] = frac2float(xyz[0]);
-        xyz_float[1] = frac2float(xyz[1]);
-        xyz_float[2] = frac2float(xyz[2]);
-    }
+    } 
 
     /* Do wp mapping to D50 in XYZ for now.  We should do bradford correction.
        Will add that in next release */

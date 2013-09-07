@@ -149,7 +149,6 @@ add_xyzdata(unsigned char *input_ptr, icS15Fixed16Number temp_XYZ[]);
 #define NUMBER_COMMON_TAGS 2
 #define icMultiUnicodeText 0x6d6c7563           /* 'mluc' v4 text type */
 #define icMultiFunctionAtoBType 0x6d414220      /* 'mAB ' v4 lutAtoBtype type */
-#define icSigChromaticAdaptationTag 0x63686164  /* 'chad' */
 #define D50_X 0.9642f
 #define D50_Y 1.0f
 #define D50_Z 0.8249f
@@ -211,7 +210,19 @@ typedef struct {
 static int
 get_padding(int x)
 {
-    return( (4 -x%4)%4 );
+    return (4 -x%4)%4;
+}
+
+/* Scale the matrix to the ICC encoding */
+static void
+gsicc_scale_matrix(gs_matrix3 *matrix)
+{
+    float *temp = &(matrix->cu.u);
+    int k;
+
+    for (k = 0; k < 9; k++) {
+        temp[k] = temp[k] / (1.0 + (32767.0/32768.0));
+    }
 }
 
 /* For some weird reason I cant link to the one in gscie.c */
@@ -239,11 +250,9 @@ gsicc_make_diag_matrix(gs_matrix3 *matrix, gs_vector3 * vec)
     matrix->is_identity = (vec->u == 1.0)&&(vec->v == 1.0)&&(vec->w == 1.0);
 }
 
-/* This function maps a gs matrix type to an ICC CLUT.
-   This is required due to the multiple matrix and 1-D LUT
-   forms for postscript management, which the ICC does not
-   support (at least the older versions).  clut is allocated
-   externally */
+/* This function maps a gs matrix type to an ICC CLUT. This is required due to the 
+   multiple matrix and 1-D LUT forms for postscript management, which the ICC does not
+   support (at least the older versions).  clut is allocated externally */
 static void
 gsicc_matrix3_to_mlut(gs_matrix3 *mat, unsigned short *clut)
 {
@@ -297,7 +306,15 @@ double2u1Fixed15Number(float number_in)
     if (value > 65535) {
         value = 65535;
     }
-    return((u1Fixed15Number) value);
+    return (u1Fixed15Number) value;
+}
+
+static void 
+apply_adaption(float matrix[], float in[], float out[])
+{
+    out[0] = matrix[0] * in[0] + matrix[1] * in[1] + matrix[2] * in[2];
+    out[1] = matrix[3] * in[0] + matrix[4] * in[1] + matrix[5] * in[2];
+    out[2] = matrix[6] * in[0] + matrix[7] * in[1] + matrix[8] * in[2];
 }
 
 /* This function mashes all the elements together into a single CLUT
@@ -305,7 +322,8 @@ double2u1Fixed15Number(float number_in)
    guaranteed to work. */
 static int
 gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
-                  gs_vector3 *white_point, bool range_adjust, gs_memory_t *memory)
+                  gs_vector3 *white_point, bool range_adjust, float cam[],
+                  gs_memory_t *memory)
 {
     gs_imager_state *pis;
     int code;
@@ -325,9 +343,10 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
     /* This completes the joint cache inefficiently so that
        we can sample through it and get our table entries */
     code = gx_cie_to_xyz_alloc(&pis, pcs, memory);
-    cs_index = gs_color_space_get_index(pcs);
     if (code < 0)
-        return code;
+        gs_rethrow(code, "Allocation of cie to xyz transform failed");
+    cs_index = gs_color_space_get_index(pcs);
+
     /* Create the sample indices across the input ranges
        for each color component.  When the concretization/remap occurs
        to be fed into this icc profile, we may will need to apply a linear
@@ -335,6 +354,12 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
     for (i = 0; i < num_components; i++) {
         input_samples[i] = (float*) gs_alloc_bytes(memory,
                                 sizeof(float)*table_size,"gsicc_create_clut");
+        if (input_samples[i] == NULL) {
+            for (j = 0; j < i; j++) {
+                gs_free_object(memory, input_samples[j], "gsicc_create_clut");
+            }
+            gs_throw(gs_error_VMerror, "Allocation of input_sample arrays failed");
+        }
         fltptr = input_samples[i];
         curr_range = &(ranges[i]);
         for (j = 0; j < table_size; j++ ) {
@@ -386,36 +411,35 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
            the ICC mapping like the procs associated with the color space */
         switch (cs_index) {
             case gs_color_space_index_CIEA:
-                gx_psconcretize_CIEA(&cc, pcs, xyz, pis);
+                gx_psconcretize_CIEA(&cc, pcs, xyz, xyz_float, pis);
                 /* AR forces this case to always be achromatic.  We will
                    do the same even though it does not match the PS
                    specification */
                 /* Use the resulting Y value to scale the D50 Illumination.
                    note that we scale to the whitepoint here.  Matrix out
                    handles mapping to CIE D50 */
-                xyz_float[1] = frac2float(xyz[1]);
                 xyz_float[0] = white_point->u * xyz_float[1];
                 xyz_float[2] = white_point->w * xyz_float[1];
                 break;
             case gs_color_space_index_CIEABC:
-                gx_psconcretize_CIEABC(&cc, pcs, xyz, pis);
+                gx_psconcretize_CIEABC(&cc, pcs, xyz, xyz_float, pis);
                 break;
             case gs_color_space_index_CIEDEF:
-                gx_psconcretize_CIEDEF(&cc, pcs, xyz, pis);
+                gx_psconcretize_CIEDEF(&cc, pcs, xyz, xyz_float, pis);
                 break;
             case gs_color_space_index_CIEDEFG:
-               gx_psconcretize_CIEDEFG(&cc, pcs, xyz, pis);
+               gx_psconcretize_CIEDEFG(&cc, pcs, xyz, xyz_float, pis);
                break;
             default:
                 break;
         }
+        /* We need to map these values to D50 illuminant so that things work
+           correctly with ICC profile */
+        //apply_adaption(cam, xyz_float, xyz_adapt);
+
         /* Correct for range of ICC CIEXYZ table data */
         for (j = 0; j < 3; j++) {
-            if ( cs_index == gs_color_space_index_CIEA) {
-                temp = xyz_float[j]/(1 + 32767.0/32768);
-            } else {
-                temp = frac2float(xyz[j])/(1 + 32767.0/32768);
-            }
+            temp = xyz_float[j]/(1 + 32767.0/32768);
             if (temp < 0) temp = 0;
             if (temp > 1) temp = 1;
            *ptr_short ++= (unsigned int)(temp * 65535);
@@ -425,7 +449,7 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
     for (i = 0; i < num_components; i++) {
         gs_free_object(memory, input_samples[i], "gsicc_create_clut");
     }
-    return(0);
+    return 0;
 }
 
 /* This function maps a gs vector type to an ICC CLUT.
@@ -436,13 +460,23 @@ static void
 gsicc_vec_to_mlut(gs_vector3 *vec, unsigned short *clut)
 {
     unsigned short *curr_ptr = clut;
+    int temp;
 
     *curr_ptr ++= 0;
     *curr_ptr ++= 0;
     *curr_ptr ++= 0;
-    *curr_ptr ++= double2u1Fixed15Number(vec->u);
-    *curr_ptr ++= double2u1Fixed15Number(vec->v);
-    *curr_ptr ++= double2u1Fixed15Number(vec->w);
+    temp = vec->u * 65535;
+    if (temp > 65535) temp = 65535;
+    if (temp < 0) temp = 0;
+    *curr_ptr ++= temp;
+    temp = vec->v * 65535;
+    if (temp > 65535) temp = 65535;
+    if (temp < 0) temp = 0;
+    *curr_ptr ++= temp;
+    temp = vec->w * 65535;
+    if (temp > 65535) temp = 65535;
+    if (temp < 0) temp = 0;
+    *curr_ptr ++= temp;
 }
 
 #if SAVEICCPROFILE
@@ -503,7 +537,7 @@ double2XYZtype(float number_in)
 
     s = (short) number_in;
     m = (unsigned short) ((number_in - s) * 65536.0);
-    return((icS15Fixed16Number) ((s << 16) | m) );
+    return (icS15Fixed16Number) ((s << 16) | m);
 }
 
 static icS15Fixed16Number
@@ -520,21 +554,18 @@ double2icS15Fixed16Number(float number_in)
         m = (unsigned short) ((number - s) * 65536.0);
         temp = (icS15Fixed16Number) ((s << 16) | m);
         temp = -temp;
-        return(temp);
+        return temp;
     } else {
         s = (short) number_in;
         m = (unsigned short) ((number_in - s) * 65536.0);
-        return((icS15Fixed16Number) ((s << 16) | m) );
+        return (icS15Fixed16Number) ((s << 16) | m);
     }
 }
 
 static unsigned short
 float2u8Fixed8(float number_in)
 {
-    unsigned short m;
-
-    m = (unsigned short) (number_in * 256);
-    return( m );
+    return (unsigned short) (number_in * 256);
 }
 
 static
@@ -883,6 +914,26 @@ gsicc_create_compute_cam( gs_vector3 *white_src, gs_vector3 *white_des,
     matrixmult(&(cat02matrixinv[0]), 3, 3, &(temp_matrix[0]), 3, 3, &(cam[0]));
 }
 
+static int
+gsicc_compute_cam(gsicc_lutatob *icc_luta2bparts, gs_memory_t *memory)
+{
+    float *cam;
+    gs_vector3 d50;
+
+    d50.u = D50_X;
+    d50.v = D50_Y;
+    d50.w = D50_Z;
+
+    /* Calculate the chromatic adaptation matrix */
+    icc_luta2bparts->cam = (float*) gs_alloc_bytes(memory, 
+                                        9 * sizeof(float), "gsicc_create_fromabc");
+    if (icc_luta2bparts->cam == NULL) {
+        gs_throw(gs_error_VMerror, "Allocation of ICC cam failed");
+    }
+    gsicc_create_compute_cam(icc_luta2bparts->white_point, &(d50), icc_luta2bparts->cam);
+    return 0;
+}
+
 /* Hardcoded chad for D65 to D50. This should be computed on the fly
    based upon the PS specified white point and ICC D50. We don't use
    the chad tag with littleCMS since it takes care of the chromatic
@@ -1027,7 +1078,7 @@ getsize_lutAtoBtype(gsicc_lutatob *lutatobparts)
             data_offset += (numin*(IDENT_CURVE_SIZE*2+12));
         }
     }
-    return(data_offset);
+    return data_offset;
 }
 
 /* Note:  ICC V4 fomat allows ONLY these forms
@@ -1201,10 +1252,12 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
         num_tags = 5;  /* common (2) + GrayTRC,bkpt,wtpt */
         TRC_Tags[0] = icSigGrayTRCTag;
     } else {
-        return(NULL);
+        return NULL;
     }
     tag_list = (gsicc_tag*) gs_alloc_bytes(memory,
                     sizeof(gsicc_tag)*num_tags,"gsicc_create_from_cal");
+    if (tag_list == NULL)
+        return NULL;
     /* Let us precompute the sizes of everything and all our offsets */
     profile_size += TAG_SIZE*num_tags;
     profile_size += 4; /* number of tags.... */
@@ -1229,6 +1282,10 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
        buffer data is in non-gc memory */
     buffer = gs_alloc_bytes(memory->non_gc_memory,
                             profile_size, "gsicc_create_from_cal");
+    if (buffer == NULL) {
+        gs_free_object(memory, tag_list, "gsicc_create_from_cal");
+        return NULL;
+    }
     curr_ptr = buffer;
     /* The header */
     header->size = profile_size;
@@ -1266,7 +1323,7 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
     /* Now the gamma values */
-    for ( k = 0; k < num_colors; k++ ) {
+    for (k = 0; k < num_colors; k++) {
         encode_gamma = float2u8Fixed8(gamma[k]);
         add_gammadata(curr_ptr, encode_gamma, icSigCurveType);
         curr_ptr += tag_list[tag_location].size;
@@ -1296,7 +1353,7 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
     else
         save_profile(buffer,"from_calGray",profile_size);
 #endif
-    return(result);
+    return result;
 }
 
 static void
@@ -1350,12 +1407,12 @@ gsicc_create_initialize_clut(gsicc_clut *clut)
 }
 
 /* A common form used for most of the PS CIE color spaces */
-static void
+static int
 create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
-                      gsicc_lutatob *lutatobparts, bool yonly,
+                      gsicc_lutatob *lutatobparts, bool yonly, bool mashedLUT,
                       gs_memory_t *memory)
 {
-    int num_tags = 6;  /* common (2), AToB0Tag,bkpt, wtpt and chad.*/
+    int num_tags = 5;  /* common (2), AToB0Tag,bkpt, wtpt */
     int k;
     gsicc_tag *tag_list;
     int profile_size, last_tag, tag_location, tag_size;
@@ -1367,8 +1424,11 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
     float lmn_vector[3],d50_cieA[3];
 
     profile_size = HEADER_SIZE;
-    tag_list = (gsicc_tag*) gs_alloc_bytes(memory,sizeof(gsicc_tag)*num_tags,
+    tag_list = (gsicc_tag*) gs_alloc_bytes(memory, sizeof(gsicc_tag)*num_tags,
                                             "create_lutAtoBprofile");
+    if (tag_list == NULL)
+        gs_throw(gs_error_VMerror, "Allocation of ICC tag list failed");
+
     /* Let us precompute the sizes of everything and all our offsets */
     profile_size += TAG_SIZE*num_tags;
     profile_size += 4; /* number of tags.... */
@@ -1376,8 +1436,6 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
     init_common_tags(tag_list, num_tags, &last_tag);
     init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
     init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
-
-    init_tag(tag_list, &last_tag, icSigChromaticAdaptationTag, 9*4); /* chad tag */
 
     /* Get the tag size of the A2B0 with the lutAtoBType */
     /* Compensate for init_tag() adding DATATYPE_SIZE */
@@ -1390,8 +1448,12 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
     /* End of tag table information */
     /* Now we can go ahead and fill our buffer with the data.  Profile
        is in non-gc memory */
-    buffer = gs_alloc_bytes(memory->non_gc_memory, profile_size,
-        "create_lutAtoBprofile");
+    buffer = gs_alloc_bytes(memory->non_gc_memory, profile_size, 
+                            "create_lutAtoBprofile");
+    if (buffer == NULL) {
+        gs_free_object(memory, tag_list, "create_lutAtoBprofile");
+        gs_throw(gs_error_VMerror, "Allocation of ICC buffer failed");
+    }
     curr_ptr = buffer;
     /* The header */
     header->size = profile_size;
@@ -1414,25 +1476,26 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
     d50.u = D50_X;
     d50.v = D50_Y;
     d50.w = D50_Z;
-    cam = (float*) gs_alloc_bytes(memory,9*sizeof(float),"create_lutAtoBprofile");
+    cam = (float*) gs_alloc_bytes(memory, 9 * sizeof(float), "create_lutAtoBprofile");
+    if (cam == NULL) {
+        gs_free_object(memory, tag_list, "create_lutAtoBprofile");
+        gs_free_object(memory->non_gc_memory, buffer, "create_lutAtoBprofile");
+        gs_throw(gs_error_VMerror, "Allocation of ICC cam failed");
+    }
     gsicc_create_compute_cam(lutatobparts->white_point, &(d50), cam);
     lutatobparts->cam = cam;
     get_D50(temp_XYZ); /* See Appendix D6 in spec */
-    /* get_XYZ(temp_XYZ,lutatobparts->white_point); */
-    add_xyzdata(curr_ptr,temp_XYZ);
+    add_xyzdata(curr_ptr, temp_XYZ);
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
-    get_XYZ(temp_XYZ,lutatobparts->black_point);
-    add_xyzdata(curr_ptr,temp_XYZ);
-    curr_ptr += tag_list[tag_location].size;
-    tag_location++;
-    add_chad_data(curr_ptr, cam);
+    get_XYZ(temp_XYZ, lutatobparts->black_point);
+    add_xyzdata(curr_ptr, temp_XYZ);
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
     /* Multiply the matrix in the AtoB object by the cam so that the data
        is in D50 */
     if (lutatobparts->matrix == NULL) {
-        gsicc_create_copy_matrix3(cam,&(temp_matrix.cu.u));
+        gsicc_create_copy_matrix3(cam, &(temp_matrix.cu.u));
         lutatobparts->matrix = &temp_matrix;
     } else {
         if (yonly) {
@@ -1448,10 +1511,18 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
             lmn_vector[0] = lutatobparts->matrix->cv.u;
             lmn_vector[1] = lutatobparts->matrix->cv.v;
             lmn_vector[2] = lutatobparts->matrix->cv.w;
-            d50_cieA[0] = D50_X;
-            d50_cieA[1] = D50_Y;
-            d50_cieA[2] = D50_Z;
-            matrixmult(&(d50_cieA[0]),3,1,&(lmn_vector[0]), 1, 3,
+            if (mashedLUT) {
+                /* Table data already scaled */
+                d50_cieA[0] = D50_X;
+                d50_cieA[1] = D50_Y;
+                d50_cieA[2] = D50_Z;
+            } else {
+                /* Need to do final scaling to ICC CIEXYZ range */
+                d50_cieA[0] = D50_X / (1.0 + (32767.0/32768.0)) ;
+                d50_cieA[1] = D50_Y / (1.0 + (32767.0/32768.0));
+                d50_cieA[2] = D50_Z / (1.0 + (32767.0/32768.0));
+            }
+            matrixmult(&(d50_cieA[0]), 3, 1, &(lmn_vector[0]), 1, 3,
                         &(lutatobparts->matrix->cu.u));
         } else {
             matrixmult(cam, 3, 3, &(lutatobparts->matrix->cu.u), 3, 3,
@@ -1465,13 +1536,13 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
     add_lutAtoBtype(curr_ptr, lutatobparts);
     *pp_buffer_in = buffer;
     gs_free_object(memory, tag_list, "create_lutAtoBprofile");
-
+    return 0;
 }
 
 /* Shared code between all the PS types whereby we mash together all the
    components into a single CLUT.  Not preferable in general but necessary
    when the PS components do not map easily into the ICC forms */
-static void
+static int
 gsicc_create_mashed_clut(gsicc_lutatob *icc_luta2bparts,
                          icHeader *header, gx_color_lookup_table *Table,
                          const gs_color_space *pcs, gs_range *ranges,
@@ -1486,8 +1557,10 @@ gsicc_create_mashed_clut(gsicc_lutatob *icc_luta2bparts,
 
    /* A table is going to be mashed form of all the transform */
     /* Allocate space for the clut */
-    clut = (gsicc_clut*) gs_alloc_bytes(memory,sizeof(gsicc_clut),
+    clut = (gsicc_clut*) gs_alloc_bytes(memory, sizeof(gsicc_clut),
                                 "gsicc_create_mashed_clut");
+    if (clut == NULL)
+        gs_throw(gs_error_VMerror, "Allocation of ICC clut failed");
     icc_luta2bparts->clut = clut;
     if ( icc_luta2bparts->num_in == 1 ) {
         /* Use a larger sample for 1-D input */
@@ -1509,12 +1582,19 @@ gsicc_create_mashed_clut(gsicc_lutatob *icc_luta2bparts,
     clut->clut_word_width = 2;  /* 16 bit */
     gsicc_create_initialize_clut(clut);
     /* Allocate space for the table data */
-    clut->data_short =
-        (unsigned short*) gs_alloc_bytes(memory,
+    clut->data_short = (unsigned short*) gs_alloc_bytes(memory,
         clut->clut_num_entries*3*sizeof(unsigned short),"gsicc_create_mashed_clut");
+    if (clut->data_short == NULL) {
+        gs_free_object(memory, clut, "gsicc_create_mashed_clut");
+        gs_throw(gs_error_VMerror, "Allocation of ICC clut short data failed");
+    }
     /* Create the table */
     code = gsicc_create_clut(pcs, clut, ranges, icc_luta2bparts->white_point,
-                             range_adjust, memory);
+                             range_adjust, icc_luta2bparts->cam, memory);
+    if (code < 0) {
+        gs_free_object(memory, clut, "gsicc_create_mashed_clut");
+        gs_rethrow(code, "Creation of ICC clut failed");
+    }
     /* Initialize other parts. Also make sure acurves are reset since
        they have been mashed into the table. */
     gs_free_object(memory, icc_luta2bparts->a_curves, "gsicc_create_mashed_clut");
@@ -1528,17 +1608,20 @@ gsicc_create_mashed_clut(gsicc_lutatob *icc_luta2bparts,
     icc_luta2bparts->matrix = &ident_matrix;
     /* Now create the profile */
     if (icc_luta2bparts->num_in == 1 ) {
-        create_lutAtoBprofile(pp_buffer_in, header, icc_luta2bparts, true, memory);
+        code = create_lutAtoBprofile(pp_buffer_in, header, icc_luta2bparts, true, 
+                                     true, memory);
     } else {
-        create_lutAtoBprofile(pp_buffer_in, header, icc_luta2bparts, false, memory);
+        code = create_lutAtoBprofile(pp_buffer_in, header, icc_luta2bparts, false, 
+                                     true, memory);
     }
-
+    return code;
 }
 
 /* Shared code by ABC, DEF and DEFG compaction of ABC/LMN parts.  This is used
-   when we either MatrixABC is identity, LMN Decode is identity or MatrixLMN
-   is identity */
-static void
+   when either MatrixABC is identity, LMN Decode is identity or MatrixLMN
+   is identity.  This allows us to map into the ICC form and not have to mash
+   into a full CLUT */
+static int
 gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN,
                        gs_matrix3 *matrixABC, bool has_abc_procs,
                        bool has_lmn_procs, gx_cie_vector_cache *abc_caches,
@@ -1569,13 +1652,14 @@ gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN,
         merge_abc_lmn_curves(abc_caches, lmn_caches);
         has_lmn_procs = false;
     }
-    /* Figure out what curves get mapped to where.  The only time
-       we will use the b curves is if matrixABC is not the identity and we have
-       lmn procs */
+    /* Figure out what curves get mapped to where.  The only time we will use the b 
+       curves is if matrixABC is not the identity and we have lmn procs */
     if ( !(matrixABC->is_identity) && has_lmn_procs) {
         /* A matrix followed by a curve */
         atob_parts->b_curves = (float*) gs_alloc_bytes(memory,
                             3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
+        if (atob_parts->b_curves == NULL) 
+            gs_throw(gs_error_VMerror, "Allocation of ICC b curves failed");
         curr_pos = atob_parts->b_curves;
         memcpy(curr_pos,&(lmn_caches[0].floats.values[0]),CURVE_SIZE*sizeof(float));
         curr_pos += CURVE_SIZE;
@@ -1586,6 +1670,10 @@ gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN,
             /* Also a curve before the matrix */
             atob_parts->m_curves = (float*) gs_alloc_bytes(memory,
                             3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
+            if (atob_parts->m_curves == NULL) {
+                gs_free_object(memory, atob_parts->b_curves, "gsicc_create_abc_merge");
+                gs_throw(gs_error_VMerror, "Allocation of ICC m curves failed");
+            }
             curr_pos = atob_parts->m_curves;
             memcpy(curr_pos,&(abc_caches[0].floats.values[0]),CURVE_SIZE*sizeof(float));
             curr_pos += CURVE_SIZE;
@@ -1594,10 +1682,14 @@ gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN,
             memcpy(curr_pos,&(abc_caches[2].floats.values[0]),CURVE_SIZE*sizeof(float));
         }
     } else {
-        /* Only one set of curves before a matrix */
+        /* Only one set of curves before a matrix.  Need to check this to make sure
+           there is not an issue here and we have has_abc_procs true and
+           has_lmn_procs true */
         if (has_abc_procs) {
             atob_parts->m_curves = (float*) gs_alloc_bytes(memory,
                             3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
+            if (atob_parts->m_curves == NULL)
+                gs_throw(gs_error_VMerror, "Allocation of ICC m curves failed");
             curr_pos = atob_parts->m_curves;
             memcpy(curr_pos,&(abc_caches[0].floats.values[0]),CURVE_SIZE*sizeof(float));
             curr_pos += CURVE_SIZE;
@@ -1608,6 +1700,8 @@ gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN,
         if (has_lmn_procs) {
             atob_parts->m_curves = (float*) gs_alloc_bytes(memory,
                                 3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
+            if (atob_parts->m_curves == NULL)
+                gs_throw(gs_error_VMerror, "Allocation of ICC m curves failed");
             curr_pos = atob_parts->m_curves;
             memcpy(curr_pos,&(lmn_caches[0].floats.values[0]),CURVE_SIZE*sizeof(float));
             curr_pos += CURVE_SIZE;
@@ -1623,8 +1717,9 @@ gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN,
        to the mapping of X=Y by the identity table.  If there are b_curves
        these have an output that is 16 bit. */
     if (atob_parts->b_curves == NULL) {
-        scale_matrix(&(atob_parts->matrix->cu.u),2.0);
+        scale_matrix(&(atob_parts->matrix->cu.u), 2.0);
     }
+    return 0;
 }
 
 /* The ABC color space is modeled using the V4 lutAtoBType which has the
@@ -1654,6 +1749,13 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
                          (lmn_caches)[2].floats.params.is_identity));
     gs_cie_abc *pcie = pcs->params.abc;
     bool input_range_ok;
+    int code;
+    float *cam;
+    gs_vector3 d50;
+
+    d50.u = D50_X;
+    d50.v = D50_Y;
+    d50.w = D50_Z;
 
     gsicc_create_init_luta2bpart(&icc_luta2bparts);
     gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
@@ -1672,6 +1774,12 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     icc_luta2bparts.white_point = &(pcie->common.points.WhitePoint);
     icc_luta2bparts.black_point = &(pcie->common.points.BlackPoint);
 
+    /* Calculate the chromatic adaptation matrix */
+    code = gsicc_compute_cam(&icc_luta2bparts, memory);
+    if (code < 0) {
+        gs_rethrow(code, "Create ICC from CIEABC failed");
+    }
+
     /* Detect if the space is CIELAB. We don't have access to pis here though */
     /* *islab = cie_is_lab(pcie); This is not working yet */
     *islab = false;
@@ -1683,26 +1791,33 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
        matrix. Also, if ABC is identity we can mash the ABC and LMN
        decode procs.  If we have an ABC matrix, LMN procs and an LMN
        matrix we will need to create a small (2x2x2) CLUT for the ICC format. */
-    input_range_ok = check_range(&(pcie->RangeABC.ranges[0]),3);
+    input_range_ok = check_range(&(pcie->RangeABC.ranges[0]), 3);
     if (!input_range_ok) {
         /* We have a range problem at input */
-        gsicc_create_mashed_clut(&icc_luta2bparts, header, NULL, pcs,
+        code = gsicc_create_mashed_clut(&icc_luta2bparts, header, NULL, pcs,
                                  &(pcie->RangeABC.ranges[0]), pp_buffer_in,
                                  profile_size_out, true, memory);
+        if (code < 0)
+            gs_rethrow(code, "Failed in ICC creation from ABC mashed. CLUT");
     } else {
         if (pcie->MatrixABC.is_identity || !has_lmn_procs ||
                             pcie->common.MatrixLMN.is_identity) {
             /* The merging of these parts into the curves/matrix/curves of the
                lutAtoBtype portion can be used by abc, def and defg */
             icc_luta2bparts.matrix = &matrix_input_trans;
-            gsicc_create_abc_merge(&(icc_luta2bparts), &(pcie->common.MatrixLMN),
+            code = gsicc_create_abc_merge(&(icc_luta2bparts), &(pcie->common.MatrixLMN),
                                     &(pcie->MatrixABC), has_abc_procs,
                                     has_lmn_procs, pcie->caches.DecodeABC.caches,
                                     pcie->common.caches.DecodeLMN, memory);
+            if (code < 0)
+                gs_rethrow(code, "Failed in ICC creation from ABC. Merge");
             icc_luta2bparts.clut =  NULL;
             /* Create the profile.  This is for the common generic form we will use
                for almost everything. */
-            create_lutAtoBprofile(pp_buffer_in, header,&icc_luta2bparts,false, memory);
+            code = create_lutAtoBprofile(pp_buffer_in, header, &icc_luta2bparts, false, 
+                                         false, memory);
+            if (code < 0)
+                gs_rethrow(code, "Failed in ICC creation from ABC. Profile");
         } else {
             /* This will be a bit more complex as we have an ABC matrix, LMN decode
                and an LMN matrix.  We will need to create an MLUT to handle this properly.
@@ -1712,6 +1827,9 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
             if (has_abc_procs) {
                 icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,
                                 3*CURVE_SIZE*sizeof(float),"gsicc_create_fromabc");
+                if (icc_luta2bparts.a_curves == NULL)
+                    gs_throw(gs_error_VMerror, "Allocation of ICC a curves failed");
+
                 curr_pos = icc_luta2bparts.a_curves;
                 memcpy(curr_pos,&(pcie->caches.DecodeABC.caches->floats.values[0]),
                                 CURVE_SIZE*sizeof(float));
@@ -1725,6 +1843,11 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
             if (has_lmn_procs) {
                 icc_luta2bparts.m_curves = (float*) gs_alloc_bytes(memory,
                                 3*CURVE_SIZE*sizeof(float),"gsicc_create_fromabc");
+                if (icc_luta2bparts.m_curves == NULL) {
+                    gs_free_object(memory, icc_luta2bparts.a_curves, 
+                                   "gsicc_create_fromabc");
+                    gs_throw(gs_error_VMerror, "Allocation of ICC m curves failed");
+                }
                 curr_pos = icc_luta2bparts.m_curves;
                 memcpy(curr_pos,&(pcie->common.caches.DecodeLMN->floats.values[0]),
                                 CURVE_SIZE*sizeof(float));
@@ -1738,6 +1861,13 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
             /* Convert ABC matrix to 2x2x2 MLUT type */
             icc_luta2bparts.clut = (gsicc_clut*) gs_alloc_bytes(memory,
                                         sizeof(gsicc_clut),"gsicc_create_fromabc");
+            if (icc_luta2bparts.m_curves == NULL) {
+                gs_free_object(memory, icc_luta2bparts.a_curves, 
+                               "gsicc_create_fromabc");
+                gs_free_object(memory, icc_luta2bparts.m_curves, 
+                               "gsicc_create_fromabc");
+                gs_throw(gs_error_VMerror, "Allocation of ICC clut failed");
+            }
             for (k = 0; k < 3; k++) {
                 icc_luta2bparts.clut->clut_dims[k] = 2;
             }
@@ -1749,12 +1879,24 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
             icc_luta2bparts.clut->data_short =
                             (unsigned short*) gs_alloc_bytes(memory,
                             8*3*sizeof(short),"gsicc_create_fromabc");
+            if (icc_luta2bparts.clut->data_short == NULL) {
+                gs_free_object(memory, icc_luta2bparts.a_curves, 
+                               "gsicc_create_fromabc");
+                gs_free_object(memory, icc_luta2bparts.m_curves, 
+                               "gsicc_create_fromabc");
+                gs_free_object(memory, icc_luta2bparts.clut, 
+                               "gsicc_create_fromabc");
+                gs_throw(gs_error_VMerror, "Allocation of ICC clut data failed");
+            }
             gsicc_matrix3_to_mlut(&(pcie->MatrixABC), icc_luta2bparts.clut->data_short);
             /* LMN Matrix */
             cie_matrix_transpose3(&(pcie->common.MatrixLMN), &matrix_input_trans);
             icc_luta2bparts.matrix = &matrix_input_trans;
             /* Create the profile */
-            create_lutAtoBprofile(pp_buffer_in, header, &icc_luta2bparts, false, memory);
+            code = create_lutAtoBprofile(pp_buffer_in, header, &icc_luta2bparts, 
+                                         false, false, memory);
+            if (code < 0)
+                return code;
         }
     }
     gsicc_create_free_luta2bpart(memory, &icc_luta2bparts);
@@ -1764,7 +1906,7 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     if(debug_catch)
         save_profile(*pp_buffer_in,"fromabc",header->size);
 #endif
-    return(0);
+    return 0;
 }
 
 int
@@ -1787,6 +1929,13 @@ gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     bool common_range_ok;
     gs_cie_a *pcie = pcs->params.a;
     bool input_range_ok;
+    int code;
+    float *cam;
+    gs_vector3 d50;
+
+    d50.u = D50_X;
+    d50.v = D50_Y;
+    d50.w = D50_Z;
 
     gsicc_create_init_luta2bpart(&icc_luta2bparts);
     /* Fill in the common stuff */
@@ -1801,6 +1950,12 @@ gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     icc_luta2bparts.num_in = 1;
     icc_luta2bparts.white_point = &(pcie->common.points.WhitePoint);
     icc_luta2bparts.black_point = &(pcie->common.points.BlackPoint);
+
+    code = gsicc_compute_cam(&icc_luta2bparts, memory);
+    if (code < 0) {
+        gs_rethrow(code, "Create from CIEA failed");
+    }
+
     /* Check the range values.  If the internal ranges are outside of
        0 to 1 then we will need to sample as a full CLUT.  The input
        range can be different, but we we will correct for this.  Finally
@@ -1809,9 +1964,11 @@ gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     common_range_ok = check_range(&(pcie->common.RangeLMN.ranges[0]),3);
     if (!common_range_ok) {
         input_range_ok = check_range(&(pcie->RangeA),1);
-        gsicc_create_mashed_clut(&icc_luta2bparts, header, NULL, pcs,
+        code = gsicc_create_mashed_clut(&icc_luta2bparts, header, NULL, pcs,
                                  &(pcie->RangeA), pp_buffer_in, profile_size_out,
                                  !input_range_ok, memory);
+        if (code < 0) 
+            gs_rethrow(code, "Failed to create ICC mashed CLUT");
     } else {
         /* We do not need to create a massive CLUT.  Try to maintain
            the objects as best we can */
@@ -1822,13 +1979,19 @@ gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
         if (has_a_proc) {
             icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,
                 CURVE_SIZE*sizeof(float),"gsicc_create_froma");
-                memcpy(icc_luta2bparts.a_curves,
+            if (icc_luta2bparts.a_curves == NULL)
+                gs_throw(gs_error_VMerror, "Allocation of ICC a curves failed");
+            memcpy(icc_luta2bparts.a_curves,
                     &(pcie->caches.DecodeA.floats.values[0]),
                     CURVE_SIZE*sizeof(float));
         }
         if (has_lmn_procs) {
             icc_luta2bparts.m_curves = (float*) gs_alloc_bytes(memory,
                 3*CURVE_SIZE*sizeof(float),"gsicc_create_froma");
+            if (icc_luta2bparts.m_curves == NULL) {
+                gs_free_object(memory, icc_luta2bparts.a_curves, "gsicc_create_froma");
+                gs_throw(gs_error_VMerror, "Allocation of ICC m curves failed");
+            }
             curr_pos = icc_luta2bparts.m_curves;
             memcpy(curr_pos,&(pcie->common.caches.DecodeLMN->floats.values[0]),
                         CURVE_SIZE*sizeof(float));
@@ -1842,6 +2005,11 @@ gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
         /* Convert diagonal A matrix to 2x1 MLUT type */
         icc_luta2bparts.clut = (gsicc_clut*) gs_alloc_bytes(memory,
             sizeof(gsicc_clut),"gsicc_create_froma"); /* 2 grid points 3 outputs */
+        if (icc_luta2bparts.clut == NULL) {
+            gs_free_object(memory, icc_luta2bparts.a_curves, "gsicc_create_froma");
+            gs_free_object(memory, icc_luta2bparts.m_curves, "gsicc_create_froma");
+            gs_throw(gs_error_VMerror, "Allocation of ICC clut failed");
+        }
         icc_luta2bparts.clut->clut_dims[0] = 2;
         icc_luta2bparts.clut->clut_num_input = 1;
         icc_luta2bparts.clut->clut_num_output = 3;
@@ -1849,7 +2017,14 @@ gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
         gsicc_create_initialize_clut(icc_luta2bparts.clut);
         /* 2 grid points 3 outputs */
         icc_luta2bparts.clut->data_short = (unsigned short*)
-                    gs_alloc_bytes(memory,2*3*sizeof(short),"gsicc_create_froma");
+                    gs_alloc_bytes(memory, 2 * 3 * sizeof(short), 
+                   "gsicc_create_froma");
+        if (icc_luta2bparts.clut == NULL) {
+            gs_free_object(memory, icc_luta2bparts.a_curves, "gsicc_create_froma");
+            gs_free_object(memory, icc_luta2bparts.m_curves, "gsicc_create_froma");
+            gs_free_object(memory, icc_luta2bparts.clut, "gsicc_create_froma");
+            gs_throw(gs_error_VMerror, "Allocation of ICC clut data failed");
+        }
         /*  Studies of CIEBasedA spaces
             and AR rendering of these reveals that they only look
             at the product sum of the MatrixA and the 2nd column of
@@ -1859,13 +2034,17 @@ gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
             and a black point of 0 is used. */
         gsicc_vec_to_mlut(&(pcie->MatrixA), icc_luta2bparts.clut->data_short);
         cie_matrix_transpose3(&(pcie->common.MatrixLMN), &matrix_input);
+        /* Encoding to ICC range happens in create_lutAtoBprofile */
         icc_luta2bparts.matrix = &matrix_input;
         icc_luta2bparts.num_in = 1;
         icc_luta2bparts.num_out = 3;
         /* Create the profile */
         /* Note Adobe only looks at the Y value for CIEBasedA spaces.
            we will do the same */
-        create_lutAtoBprofile(pp_buffer_in, header, &icc_luta2bparts, true, memory);
+        code = create_lutAtoBprofile(pp_buffer_in, header, &icc_luta2bparts, true, 
+                                     false, memory);
+        if (code < 0)
+            gs_rethrow(code, "Failed to create ICC AtoB Profile");
     }
     *profile_size_out = header->size;
     gsicc_create_free_luta2bpart(memory, &icc_luta2bparts);
@@ -1874,7 +2053,7 @@ gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     if(debug_catch)
         save_profile(*pp_buffer_in,"froma",header->size);
 #endif
-    return(0);
+    return 0;
 }
 
 /* Common code shared by def and defg generation */
@@ -1889,6 +2068,7 @@ gsicc_create_defg_common(gs_cie_abc *pcie, gsicc_lutatob *icc_luta2bparts,
     gs_matrix3 matrix_input_trans;
     int k;
     bool input_range_ok;
+    int code;
 
     gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
     gsicc_matrix_init(&(pcie->MatrixABC));          /* Need this set now */
@@ -1902,6 +2082,12 @@ gsicc_create_defg_common(gs_cie_abc *pcie, gsicc_lutatob *icc_luta2bparts,
     icc_luta2bparts->num_out = 3;
     icc_luta2bparts->white_point = &(pcie->common.points.WhitePoint);
     icc_luta2bparts->black_point = &(pcie->common.points.BlackPoint);
+
+    /* Calculate the chromatic adaptation matrix */
+    code = gsicc_compute_cam(icc_luta2bparts, memory);
+    if (code < 0) {
+        gs_rethrow(code, "Create ICC from CIEABC failed");
+    }
 
     /* question now is, can we keep the table as it is, or do we need to merge
      some of the def(g) parts.  Some merging or operators into the table must occur
@@ -1920,20 +2106,28 @@ gsicc_create_defg_common(gs_cie_abc *pcie, gsicc_lutatob *icc_luta2bparts,
         } else {
             input_range_ok = check_range(&(pcs->params.defg->RangeDEFG.ranges[0]),4);
         }
-        gsicc_create_mashed_clut(icc_luta2bparts, header, Table,
+        code = gsicc_create_mashed_clut(icc_luta2bparts, header, Table,
                             pcs, ranges, pp_buffer_in, profile_size_out,
                             !input_range_ok, memory);
+        if (code < 0)
+            gs_rethrow(code, "Failed to create ICC clut");
     } else {
         /* Table can stay as is. Handle the ABC/LMN portions via the curves
            matrix curves operation */
         icc_luta2bparts->matrix = &matrix_input_trans;
-        gsicc_create_abc_merge(icc_luta2bparts, &(pcie->common.MatrixLMN),
+        code = gsicc_create_abc_merge(icc_luta2bparts, &(pcie->common.MatrixLMN),
                                 &(pcie->MatrixABC), has_abc_procs,
                                 has_lmn_procs, pcie->caches.DecodeABC.caches,
                                 pcie->common.caches.DecodeLMN, memory);
+        if (code < 0)
+            gs_rethrow(code, "Failed to create ICC abc merge");
+
         /* Get the table data */
         icc_luta2bparts->clut = (gsicc_clut*) gs_alloc_bytes(memory,
                             sizeof(gsicc_clut),"gsicc_create_defg_common");
+        if (icc_luta2bparts->clut == NULL)
+            gs_throw(gs_error_VMerror, "Allocation of ICC clut failed");
+
         for (k = 0; k < icc_luta2bparts->num_in; k++) {
             icc_luta2bparts->clut->clut_dims[k] = Table->dims[k];
         }
@@ -1944,11 +2138,14 @@ gsicc_create_defg_common(gs_cie_abc *pcie, gsicc_lutatob *icc_luta2bparts,
         /* Get the PS table data directly */
         icc_luta2bparts->clut->data_byte = (byte*) Table->table->data;
         /* Create the profile. */
-        create_lutAtoBprofile(pp_buffer_in, header, icc_luta2bparts, false, memory);
+        code = create_lutAtoBprofile(pp_buffer_in, header, icc_luta2bparts, false, 
+                                     false, memory);
+        if (code < 0)
+            gs_rethrow(code, "Failed to create ICC lutAtoB");
     }
     gsicc_create_free_luta2bpart(memory, icc_luta2bparts);
     *profile_size_out = header->size;
-    return(0);
+    return 0;
 }
 
 /* If we have an ABC matrix, a DecodeLMN and an LMN matrix we have to mash
@@ -1989,6 +2186,8 @@ gsicc_create_fromdefg(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     if (has_defg_procs) {
         icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,
             4*CURVE_SIZE*sizeof(float),"gsicc_create_fromdefg");
+        if (icc_luta2bparts.a_curves == NULL)
+            gs_throw(gs_error_VMerror, "Allocation of ICC a curves failed");
         curr_pos = icc_luta2bparts.a_curves;
         memcpy(curr_pos,&(pcie->caches_defg.DecodeDEFG->floats.values[0]),
                 CURVE_SIZE*sizeof(float));
@@ -2013,7 +2212,7 @@ gsicc_create_fromdefg(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     if(debug_catch)
         save_profile(*pp_buffer_in,"fromdefg",header->size);
 #endif
-    return(code);
+    return code;
 }
 
 int
@@ -2051,6 +2250,8 @@ gsicc_create_fromdef(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     if (has_def_procs) {
         icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,
                         3*CURVE_SIZE*sizeof(float),"gsicc_create_fromdef");
+    if (icc_luta2bparts.a_curves == NULL)
+        gs_throw(gs_error_VMerror, "Allocation of ICC a curves failed");
         curr_pos = icc_luta2bparts.a_curves;
         memcpy(curr_pos,&(pcie->caches_def.DecodeDEF->floats.values[0]),
                 CURVE_SIZE*sizeof(float));
@@ -2070,7 +2271,7 @@ gsicc_create_fromdef(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     if(debug_catch)
         save_profile(*pp_buffer_in,"fromdef",header->size);
 #endif
-    return(code);
+    return code;
 }
 
 void

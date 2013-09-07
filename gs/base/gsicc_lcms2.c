@@ -336,6 +336,14 @@ gscms_transform_color(gx_device *dev, gsicc_link_t *icclink,
     cmsDoTransform(hTransform,inputcolor,outputcolor,1);
 }
 
+/* Get the flag to avoid having to the cmm do any white fix up, it such a flag
+   exists for the cmm */
+int
+gscms_avoid_white_fix_flag()
+{
+    return cmsFLAGS_NOWHITEONWHITEFIXUP;
+}
+
 void
 gscms_get_link_dim(gcmmhlink_t link, int *num_inputs, int *num_outputs)
 {
@@ -347,7 +355,7 @@ gscms_get_link_dim(gcmmhlink_t link, int *num_inputs, int *num_outputs)
 gcmmhlink_t
 gscms_get_link(gcmmhprofile_t  lcms_srchandle,
                gcmmhprofile_t lcms_deshandle,
-               gsicc_rendering_param_t *rendering_params,
+               gsicc_rendering_param_t *rendering_params, int cmm_flags,
                gs_memory_t *memory)
 {
     cmsUInt32Number src_data_type,des_data_type;
@@ -427,7 +435,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     return cmsCreateTransformTHR((cmsContext)memory,
                lcms_srchandle, src_data_type,
                lcms_deshandle, des_data_type,
-               rendering_params->rendering_intent,flag);
+               rendering_params->rendering_intent, flag | cmm_flags);
     /* cmsFLAGS_HIGHRESPRECALC)  cmsFLAGS_NOTPRECALC  cmsFLAGS_LOWRESPRECALC*/
 }
 
@@ -441,7 +449,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
                              gcmmhprofile_t lcms_deshandle, 
                              gcmmhprofile_t lcms_devlinkhandle, 
                              gsicc_rendering_param_t *rendering_params,
-                             bool src_dev_link,
+                             bool src_dev_link, int cmm_flags,
                              gs_memory_t *memory)
 {
     cmsUInt32Number src_data_type,des_data_type;
@@ -467,7 +475,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
         cmsHTRANSFORM temptransform;
 
         temptransform = gscms_get_link(lcms_srchandle, lcms_proofhandle, 
-                                      rendering_params, memory);
+                                      rendering_params, cmm_flags, memory);
         /* Now mash that to a device link profile */
         flag = cmsFLAGS_HIGHRESPRECALC;
         if (rendering_params->black_point_comp == gsBLACKPTCOMP_ON || 
