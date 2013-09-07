@@ -1155,14 +1155,36 @@ currentdict /xref-char-dict undef
           { oforce } forall
           .dicttomark
           3 2 roll
-        } {
-          dup /D knownoget {
-            exch pop exch dup length dict copy dup /Dest 4 -1 roll put
-          } {
-            /N knownoget {                % Assume /S /Named
-               namedactions exch .knownget { exec } if
-             } if
-          } ifelse
+        }
+        {
+          dup /S knownoget {
+            dup /GoTo eq {
+              pop
+              dup /D knownoget {
+                exch pop exch dup length dict copy dup /Dest 4 -1 roll put
+              } if
+            }
+            {
+              dup /GoToR eq {
+                pop
+                dup /NewWindow knownoget {
+                  2 index dup length dict copy dup /NewWindow 4 -1 roll put 3 1 roll exch pop
+                } if
+                dup /F knownoget {
+                  2 index dup length dict copy dup /F 4 -1 roll put 3 1 roll exch pop
+                } if
+                dup /D knownoget {
+                  exch pop exch dup length dict copy dup /Dest 4 -1 roll put
+                } if
+              }{
+                /Named eq {
+                  /N knownoget {                % Assume /S /Named
+                      namedactions exch .knownget { exec } if
+                  } if
+                } if
+              } ifelse
+            } ifelse
+          } if
         } ifelse
       } if
       linkdest
@@ -1493,6 +1515,12 @@ end readonly def
 
 /linkdest {		% <link|outline> linkdest
                         %   ([/Page <n>] /View <view> | ) <link|outline>
+  dup /NewWindow knownoget {
+    /NewWindow exch 3 -1 roll
+  } if
+  dup /F knownoget {
+    /F exch 3 -1 roll
+  } if
   dup /Dest knownoget
     { resolvedest
       dup type /dicttype eq { /D knownoget not { //null } if } if
