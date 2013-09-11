@@ -3174,7 +3174,7 @@ $(GLD)ramfs.dev : $(LIB_MAK) $(ECHOGS_XE) $(ramfs_)
 	$(ADDMOD) $(GLD)ramfs -obj $(GLOBJ)ramfs.$(OBJ)
 
 $(GLOBJ)ramfs.$(OBJ) : $(GLSRC)ramfs.c $(gp_h) $(gscdefs_h) $(gserrors_h)\
-  $(gsparam_h) $(gsstruct_h) $(gx_h) $(ramfs_h)$(string__h) $(unistd__h)
+  $(gsparam_h) $(gsstruct_h) $(gx_h) $(ramfs_h) $(string__h) $(unistd__h)
 	$(GLCC) $(GLO_)ramfs.$(OBJ) $(C_) $(GLSRC)ramfs.c
 
 $(GLOBJ)gsioram.$(OBJ) : $(GLSRC)gsioram.c $(gp_h) $(gscdefs_h) $(gserrors_h)\
