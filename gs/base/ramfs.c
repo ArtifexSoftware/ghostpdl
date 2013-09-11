@@ -7,7 +7,6 @@
 
 #include "unistd_.h"
 #include "string_.h"
-#include "malloc_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gp.h"
@@ -24,7 +23,7 @@ typedef struct _ramfs {
     gs_memory_t *memory;
     int blocksfree;
     int last_error;
-};
+}__ramfs;
 
 gs_private_st_ptrs3(st_ramfs, struct _ramfs, "gsram_ramfs",
     _ramfs_enum_ptrs, _ramfs_reloc_ptrs, files, active_enums, memory);
@@ -106,11 +105,11 @@ void ramfs_destroy(gs_memory_t *mem, ramfs * fs)
     ent = fs->files;
     while(ent) {
         ramdirent* prev;
-        free(ent->filename);
+        gs_free_object(mem, ent->filename, "ramfs_destroy, filename");
         unlink_node(ent->inode);
         prev = ent;
         ent = ent->next;
-        free(prev);
+        gs_free_object(mem, prev, "ramfs_destroy, entry");
     }
     gs_free_object(mem, fs, "ramfs_destroy");
 }
@@ -382,7 +381,7 @@ int ramfile_write(ramhandle * handle,const void * buf,int len)
     int left;
     char *t = (char *)buf;
 
-    if(!handle->mode & RAMFS_WRITE) {
+    if((!handle->mode) & RAMFS_WRITE) {
         handle->last_error = RAMFS_NOACCESS;
         return -1;
     }

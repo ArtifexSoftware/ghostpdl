@@ -3166,17 +3166,20 @@ MKROMFS_COMMON_DEPS=$(stdpre_h) $(stdint__h) $(gsiorom_h) $(arch_h)\
 	$(gsmemret_h) $(gsmalloc_h) $(gsstype_h) $(gp_h) $(time__h)
 
 # ---------------- Support for %ram% IODevice ----------------- #
-gsioram_h=$(GLSRC)gsioram.h $(GLSRC)ramfs.h
+gsioram_h=$(GLSRC)gsioram.h
 ramfs_=$(GLOBJ)gsioram.$(OBJ) $(GLOBJ)ramfs.$(OBJ)
 $(GLD)ramfs.dev : $(LIB_MAK) $(ECHOGS_XE) $(ramfs_)
 	$(SETMOD) $(GLD)ramfs $(ramfs_)
 	$(ADDMOD) $(GLD)ramfs -iodev ram
 	$(ADDMOD) $(GLD)ramfs -obj $(GLOBJ)ramfs.$(OBJ)
 
-$(GLOBJ)ramfs.$(OBJ) : $(GLSRC)ramfs.c
+$(GLOBJ)ramfs.$(OBJ) : $(GLSRC)ramfs.c $(gp_h) $(gscdefs_h) $(gserrors_h)\
+  $(gsparam_h) $(gsstruct_h) $(gx_h) $(ramfs_h)$(string__h) $(unistd__h)
 	$(GLCC) $(GLO_)ramfs.$(OBJ) $(C_) $(GLSRC)ramfs.c
 
-$(GLOBJ)gsioram.$(OBJ) : $(GLSRC)gsioram.c
+$(GLOBJ)gsioram.$(OBJ) : $(GLSRC)gsioram.c $(gp_h) $(gscdefs_h) $(gserrors_h)\
+  $(gsparam_h) $(gsstruct_h) $(gsutil_h) $(gx_h) $(gxiodev_h) $(ramfs_h)\
+  $(stream_h) $(string__h) $(unistd__h)
 	$(GLCC) $(GLO_)gsioram.$(OBJ) $(C_) $(GLSRC)gsioram.c
 
 

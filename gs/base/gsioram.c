@@ -31,7 +31,6 @@
 #include "gsutil.h"
 #include "stream.h"
 #include "ramfs.h"
-#include <malloc.h>
 
 /* Function prototypes */
 static iodev_proc_init(iodev_ram_init);
@@ -43,7 +42,6 @@ static iodev_proc_enumerate_files(ram_enumerate_init);
 static iodev_proc_enumerate_next(ram_enumerate_next);
 static iodev_proc_enumerate_close(ram_enumerate_close);
 static iodev_proc_get_params(ram_get_params);
-static iodev_proc_put_params(ram_put_params);
 static void ram_finalize(const gs_memory_t *memory, void * vptr);
 
 const gx_io_device gs_iodev_ram = {
@@ -130,18 +128,24 @@ ram_open_file(gx_io_device * iodev, const char *fname, uint len,
     char * namestr = NULL;
 
     /* Is there a more efficient way to do this? */
-    namestr = malloc(len+1);
-    if(!namestr) return_error(gs_error_VMerror);
+    namestr = (char *)gs_alloc_bytes(mem, len + 1, "temporary filename string");
+    if(!namestr)
+        return_error(gs_error_VMerror);
     strncpy(namestr,fname,len);
     namestr[len] = 0;
 
-    if (!iodev) /*iodev = iodev_default;*/
+    if (!iodev) {/*iodev = iodev_default;*/
+        gs_free_object(mem, namestr, "free temporary filename string");
         return gs_note_error(gs_error_invalidaccess);
+    }
     code = file_prepare_stream(fname, len, file_access, DEFAULT_BUFFER_SIZE,
     ps, fmode, mem
     );
     if (code < 0) goto error;
-    if (fname == 0) return 0;
+    if (fname == 0) {
+        gs_free_object(mem, namestr, "free temporary filename string");
+        return 0;
+    }
 
     if (fmode[0] != 'r' || fmode[1] == '+') openmode |= RAMFS_WRITE;
     if (fmode[0] != 'r') openmode |= RAMFS_CREATE;
@@ -168,7 +172,7 @@ ram_open_file(gx_io_device * iodev, const char *fname, uint len,
     (*ps)->save_close = (*ps)->procs.close;
     (*ps)->procs.close = file_close_file;
  error:
-    free(namestr);
+    gs_free_object(mem, namestr, "free temporary filename string");
     /* XXX free stream stuff? */
     return code;
 }
@@ -424,7 +428,6 @@ ram_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
 {
     ramhandle * f;
     ramfs* fs = GETRAMFS(iodev->state);
-    int blocksize = ramfs_blocksize(fs);
 
     f = ramfs_open(((ramfs_state *)iodev->state)->memory, fs,fname,RAMFS_READ);
     if(!f) return_error(ramfs_errno_to_code(ramfs_error(fs)));
@@ -483,7 +486,7 @@ ram_enumerate_next(file_enum *pfen, char *ptr, uint maxlen)
     gsram_enum *penum = (gsram_enum *)pfen;
 
     char * filename;
-    while (filename = ramfs_enum_next(penum->e)) {
+    while ((filename = ramfs_enum_next(penum->e))) {
     if (string_match((byte *)filename, strlen(filename),
         (byte *)penum->pattern,
         strlen(penum->pattern), 0)) {
