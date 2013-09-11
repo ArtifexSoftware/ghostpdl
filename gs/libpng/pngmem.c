@@ -31,7 +31,7 @@ png_destroy_png_struct(png_structrp png_ptr)
        */
       png_struct dummy_struct = *png_ptr;
       memset(png_ptr, 0, (sizeof *png_ptr));
-      png_free(&dummy_struct, png_ptr);
+      png_free(&dummy_struct, png_ptr->png_struct_free_ptr);
 
 #     ifdef PNG_SETJMP_SUPPORTED
          /* We may have a jmp_buf left to deallocate. */

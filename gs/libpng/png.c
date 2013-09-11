@@ -286,8 +286,14 @@ png_create_png_struct,(png_const_charp user_png_ver, png_voidp error_ptr,
           */
          if (png_user_version_check(&create_struct, user_png_ver))
          {
-            png_structrp png_ptr = png_voidcast(png_structrp,
-               png_malloc_warn(&create_struct, (sizeof *png_ptr)));
+#define PNG_STRUCT_ALIGNMENT 32
+            png_structrp png_ptr;
+            void *png_ptr_unaligned = png_malloc_warn(&create_struct, (sizeof *png_ptr) + PNG_STRUCT_ALIGNMENT);
+            int align = ((int)png_ptr_unaligned) & (PNG_STRUCT_ALIGNMENT-1);
+
+            if (align > 0)
+                align = PNG_STRUCT_ALIGNMENT-align;
+            png_ptr = png_voidcast(png_structrp, (void *)&((char *)png_ptr_unaligned)[align]);
 
             if (png_ptr != NULL)
             {
@@ -306,6 +312,7 @@ png_create_png_struct,(png_const_charp user_png_ver, png_voidp error_ptr,
 #              endif
 
                *png_ptr = create_struct;
+               png_ptr->png_struct_free_ptr = png_ptr_unaligned;
 
                /* This is the successful return point */
                return png_ptr;

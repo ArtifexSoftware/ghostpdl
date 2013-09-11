@@ -485,5 +485,8 @@ struct png_struct_def
    png_colorspace   colorspace;
 #endif
 #endif
+
+/* New member added by RJW to work around setjmp alignment issues */
+   void *png_struct_free_ptr; /* Ptr to unaligned address for this struct */
 };
 #endif /* PNGSTRUCT_H */
