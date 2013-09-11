@@ -3518,6 +3518,7 @@ pdf14_begin_transparency_group(gx_device *dev,
 
     if (code < 0)
         return code;
+
     code = pdf14_push_transparency_group(pdev->ctx, &rect,
                                          isolated, ptgp->Knockout,
                                          (byte)floor (255 * alpha + 0.5),

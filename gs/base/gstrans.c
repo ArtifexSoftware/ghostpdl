@@ -161,7 +161,8 @@ gs_state_update_pdf14trans(gs_state * pgs, gs_pdf14trans_params_t * pparams)
     gx_device * dev = pgs->device;
     gx_device *pdf14dev = NULL;
     int code;
-
+    int curr_num = dev->color_info.num_components;
+    
     /*
      * Send the PDF 1.4 create compositor action specified by the parameters.
      */
@@ -173,6 +174,13 @@ gs_state_update_pdf14trans(gs_state * pgs, gs_pdf14trans_params_t * pparams)
     if (code >= 0 && pdf14dev != dev) {
         gx_set_device_only(pgs, pdf14dev);
     }
+
+    /* If we had a color space change and we are in overprint, then we need to 
+       update the drawn_comps */
+    if (pgs->overprint && curr_num != pdf14dev->color_info.num_components) {
+        code = gs_do_set_overprint(pgs);
+    }
+
     return code;
 }
 
