@@ -305,75 +305,20 @@ currentdict /token_nofail_dict .undef
 
 % ================================ Objects ================================ %
 
-% Since we may have more than 64K objects, we have to use a 2-D array to
-% hold them (and the parallel Generations structure).
-/lshift 9 def
-/lnshift lshift neg def
-/lsubmask 1 lshift bitshift 1 sub def
-/lsublen lsubmask 1 add def
-/larray {	% - larray <larray>
-  [ [] ]
-} bind def
-/lstring {	% - lstring <lstring>
-  [ () ]
-} bind def
-/ltype {	% <lseq> type <type>
-  0 get type
-} bind def
-/lget {		% <lseq> <index> lget <value>
-  dup //lsubmask and 3 1 roll //lnshift bitshift get exch get
-} bind def
-/lput {		% <lseq> <index> <value> lput -
-  3 1 roll
-  dup //lsubmask and 4 1 roll //lnshift bitshift get
-  3 1 roll put
-} bind def
-/llength {	% <lseq> llength <length>
-  dup length 1 sub dup //lshift bitshift
-  3 1 roll get length add
-} bind def
-% lgrowto assumes newlength > llength(lseq)
-/growto {	% <string/array> <length> growto <string'/array'>
-  1 index type /stringtype eq { string } { array } ifelse
-  2 copy copy pop exch pop
-} bind def
-/lgrowto {	% <lseq> <newlength> lgrowto <lseq'>
-    dup //lsubmask add //lnshift bitshift dup 3 index length gt {
-        % Add more sub-arrays.  Start by completing the last existing one.
-                % Stack: lseq newlen newtoplen
-    3 -1 roll dup llength 1 sub //lsubmask or 1 add lgrowto
-                % Stack: newlen newtoplen lseq
-    [ exch aload pop
-    counttomark 2 add -1 roll		% newtoplen
-    counttomark sub { dup 0 0 getinterval lsublen growto } repeat
-    dup 0 0 getinterval ] exch
-  } {
-    pop
-  } ifelse
-        % Expand the last sub-array.
-  1 sub //lsubmask and 1 add
-  exch dup dup length 1 sub 2 copy
-                % Stack: newsublen lseq lseq len-1 lseq len-1
-  get 5 -1 roll growto put
-} bind def
-/lforall {	% <lseq> <proc> lforall -
-  /forall cvx 2 packedarray cvx forall
-} bind def
-
 % We keep track of PDF objects using the following PostScript variables:
 %
-%	Generations (lstring): Generations[N] holds 1+ the current
+%	Generations (string): Generations[N] holds 1+ the current
 %	    generation number for object number N.  (As far as we can tell,
 %	    this is needed only for error checking.)  For free objects,
 %	    Generations[N] is 0.
 %
-%	Objects (larray): If object N is loaded, Objects[N] is the actual
+%	Objects (array): If object N is loaded, Objects[N] is the actual
 %	    object; otherwise, Objects[N] is an executable integer giving
 %	    the file offset of the object's location in the file.  If
 %	    ObjectStream[N] is non-zero then Objects[N] contains the index
 %	    into the object stream instead of the file offset of the object.
 %
-%	ObjectStream (larray): If object N is in an object stream then
+%	ObjectStream (array): If object N is in an object stream then
 %	    ObjectStream[N] holds the object number of the object stream.
 %	    Otherwise ObjectStream[N] contains 0.  If ObjectStream[N]
 %	    is non-zero then Objects[N] contains  the index into the object
@@ -384,34 +329,34 @@ currentdict /token_nofail_dict .undef
 %	    (except that GlobalObjects itself is stored in global VM,
 %	    so the entry will not be deleted at the end of the page).
 %
-%	IsGlobal (lstring): IsGlobal[N] = 1 iff object N was resolved in
+%	IsGlobal (string): IsGlobal[N] = 1 iff object N was resolved in
 %	    global VM.  This is an accelerator to avoid having to do a
 %	    dictionary lookup in GlobalObjects when resolving every object.
 
 % Initialize the PDF object tables.
 /initPDFobjects {		% - initPDFobjects -
-  /ObjectStream larray def
-  /Objects larray def
-  /Generations lstring def
+  /ObjectStream 0 array def
+  /Objects 0 array def
+  /Generations 0 string def
   .currentglobal //true .setglobal
   /GlobalObjects 20 dict def
   .setglobal
-  /IsGlobal lstring def
+  /IsGlobal 0 string def
 } bind def
 
 % Grow the tables to a specified size.
 /growPDFobjects {		% <minsize> growPDFobjects -
-  dup ObjectStream llength gt {
-    dup ObjectStream exch lgrowto /ObjectStream exch def
+  dup ObjectStream length gt {
+    dup ObjectStream exch array dup 3 1 roll copy pop /ObjectStream exch def
   } if
-  dup Objects llength gt {
-    dup Objects exch lgrowto /Objects exch def
+  dup Objects length gt {
+    dup Objects exch array dup 3 1 roll copy pop /Objects exch def
   } if
-  dup Generations llength gt {
-    dup Generations exch lgrowto /Generations exch def
+  dup Generations length gt {
+    dup Generations exch string dup 3 1 roll copy pop /Generations exch def
   } if
-  dup IsGlobal llength gt {
-    dup IsGlobal exch lgrowto /IsGlobal exch def
+  dup IsGlobal length gt {
+    dup IsGlobal exch string dup 3 1 roll copy pop /IsGlobal exch def
   } if
   pop
 } bind def
@@ -426,15 +371,15 @@ currentdict /token_nofail_dict .undef
 % whether an object has been resolved.
 /resolved? {		% <object#> resolved? <value> true
                         % <object#> resolved? false
-  Objects 1 index lget dup xcheck {	% Check if executable
+  Objects 1 index get dup xcheck {	% Check if executable
     dup type /integertype eq {		% Check if an integer
                 % Check whether the object is in GlobalObjects.
-      pop IsGlobal 1 index lget 0 eq {	% 0 --> Not in GlabalObjects
+      pop IsGlobal 1 index get 0 eq {	% 0 --> Not in GlabalObjects
         pop //false			% The object is not resolved
       } {				% The object is in GlobalObjects
                 % Update Objects from GlobalObjects
         PDFDEBUG { (%Global=>local: ) print dup //== exec } if
-        GlobalObjects 1 index get dup Objects 4 1 roll lput //true
+        GlobalObjects 1 index get dup Objects 4 1 roll put //true
       } ifelse
     } {				% Else object is executable but not integer
       exch pop //true		% Therefore must be executable dict. (stream)
@@ -514,11 +459,11 @@ currentdict /token_nofail_dict .undef
 % Note:  The values in Generations is the generation number plus 1.
 % If the value in Generations is zero then the object is free.
 /checkgeneration {  % <object#> <generation#> checkgeneration <object#> <OK>
-  Generations 2 index lget 1 sub 1 index eq {	% If generation # match ...
+  Generations 2 index get 1 sub 1 index eq {	% If generation # match ...
     pop //true					% Then return true
   } {					% Else not a match ...
     QUIET not {				% Create warning message if not QUIET
-      Generations 2 index lget 0 eq {	% Check if object is free ...
+      Generations 2 index get 0 eq {	% Check if object is free ...
         (   **** Warning: reference to free object: )
         2 index =string cvs concatstrings ( ) concatstrings	% put obj #
         exch =string cvs concatstrings ( R\n) concatstrings	% put gen #
@@ -527,7 +472,7 @@ currentdict /token_nofail_dict .undef
         2 index =string cvs concatstrings ( ) concatstrings	% put obj #
         exch =string cvs concatstrings				% put gen #
         (, xref gen#: ) concatstrings 1 index Generations  % put xref gen #
-        exch lget 1 sub =string cvs concatstrings (\n) concatstrings
+        exch get 1 sub =string cvs concatstrings (\n) concatstrings
       } ifelse
       pdfformaterror			% Output warning message
     } {					% Else QUIET ...
@@ -584,7 +529,7 @@ currentdict /token_nofail_dict .undef
       GlobalObjects 1 index 3 index put
       IsGlobal 1 index 1 put
     } if
-    Objects exch 2 index lput
+    Objects exch 2 index put
   } {
     pop pop //null
   } ifelse
@@ -663,7 +608,7 @@ currentdict /token_nofail_dict .undef
       6 index exch readstring pop	% Read object
       /ReusableStreamDecode filter 	% Convert string into a stream
       resolveobjstreamopdict .pdfrun	% Get PDF object
-      Objects exch 2 index exch lput	 % Put object into Objects array
+      Objects exch 2 index exch put	 % Put object into Objects array
       pop pop			% Remove object # and loop index
     } ifelse
   } for
@@ -676,7 +621,7 @@ currentdict /token_nofail_dict .undef
   dup resolved? not {		% If we do not already have this object
     exch	 		% Get our object stream
     resolveobjstreamopdict .pdfrun	% Get PDF object
-    Objects exch 2 index exch lput	% Put object into Objects array
+    Objects exch 2 index exch put	% Put object into Objects array
   } if
   pop pop pop pop		% Clear stack
 } bind def
@@ -731,7 +676,7 @@ currentdict /token_nofail_dict .undef
                 % Stack: strm# objstreamdict N [obj#] [objects] loopindex
     dup 3 index exch get 	% Get our current object number
                 % Stack: strm# objstreamdict N [obj#] [objects] loopindex obj#
-    dup ObjectStream exch lget 7 index eq {
+    dup ObjectStream exch get 7 index eq {
       dup resolved? {		% If we already have this object
         pop pop			% Remove object and object number
       } {			% Else if we do not have this object
@@ -739,7 +684,7 @@ currentdict /token_nofail_dict .undef
         Objects exch 3 index	% Put the object into Objects
         3 index get
         PDFDEBUG { dup === flush } if
-        lput
+        put
       } ifelse
     } {
       pop	% Ignore old object; remove object number.
@@ -785,10 +730,10 @@ currentdict /no_debug_dict undef
       exch pop exch pop           % then clear stack and return object
     } {                           % Else if not resolved ...
       PDFfile fileposition 3 1 roll       % Save current file position
-      1 index Objects exch lget           % Get location of object from xref
+      1 index Objects exch get           % Get location of object from xref
       3 1 roll checkgeneration {          % Verify the generation number
                         % Stack: savepos objpos obj#
-         ObjectStream 1 index lget dup 0 eq { % Check if obj in not an objstream
+         ObjectStream 1 index get dup 0 eq { % Check if obj in not an objstream
            pop exch PDFoffset add PDFfile exch setfileposition
            PDFfile token pop 2 copy ne
             { (   **** Unrecoverable error in xref!\n) pdfformaterror

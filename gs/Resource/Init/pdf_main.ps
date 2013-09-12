@@ -458,7 +458,7 @@ pdfdict begin
    pop				% We do not need the position.
    0				% Initialize xref table error counter
    { PDFfile token pop		% first object # or trailer
-     dup /trailer eq { pop Objects llength 0 eq {/setxrefentry cvx /syntaxerror signalerror} {exit} ifelse } if
+     dup /trailer eq { pop Objects length 0 eq {/setxrefentry cvx /syntaxerror signalerror} {exit} ifelse } if
      PDFfile token pop		% entry count
  
      % remaining must be whitespace only (otherwise this xref Size was invalid.
@@ -865,17 +865,17 @@ currentdict /xref-char-dict undef
 % the correct object number and generation number.
 /verify_xref				% - verify_xref -
 { PDFfilelen
-  1 1 Objects llength 1 sub	% stack: filesize 1 1 <number of objects - 1>
+  1 1 Objects length 1 sub	% stack: filesize 1 1 <number of objects - 1>
   {	% Check if the object is free (i.e. not used).  The values in
         % Generations is the generation number plus 1.  If the value in
         % Generations is zero then the object is free.
         % Stack:  <filesize> <obj num>
-    Generations 1 index lget 		% Get the genration number
+    Generations 1 index get 		% Get the genration number
     0 ne {				% Skip if object number is free
-      ObjectStream 1 index lget 	% Check if object is in objectstream
+      ObjectStream 1 index get 	% Check if object is in objectstream
       0 eq {	% We only check objects not in an objectstream
         {	% Use stop context since we may get an error if object is invalid
-          dup Objects exch lget 	% Get the object location
+          dup Objects exch get 	% Get the object location
           PDFoffset add dup 3 index ge	% Compare object location to file size
           { pop //true }			% Rebuild if location not in file
           { PDFfile exch setfileposition % Go to the object location
@@ -884,7 +884,7 @@ currentdict /xref-char-dict undef
             2 index eq {		% Verify object number
               PDFfile token pop		% Read generation number from file
               Generations 3 index	% Get specified generaton number
-              lget 1 sub		% Gen numbs are stored with 1 added.
+              get 1 sub		% Gen numbs are stored with 1 added.
               eq { 			% Verify generation number
                 PDFfile token pop
                 /obj eq { % Verify 'obj' text
@@ -980,7 +980,7 @@ currentdict /xref-char-dict undef
         % Read the last cross-reference table.
    count /pdfemptycount exch def
    /Trailer << >> def		% Initialize to an emptry dict.
-   { initPDFobjects findxref readxref } .internalstopped {
+   {initPDFobjects findxref readxref} .internalstopped {
      recover_xref_data		% Read failed.  Attempt to recover xref data.
      search_trailer		% Search for the primary trailer
    } {
@@ -1014,7 +1014,7 @@ currentdict /xref-char-dict undef
      } loop			% Loop to previous trailer
    } ifelse			% Ifelse readxref stopped
 
-   /NumObjects Objects llength def  % To check that obj# < NumObjects
+   /NumObjects Objects length def  % To check that obj# < NumObjects
 
    % Scan numbers in the range 2147483648..4294967295 in Encrypt dictionary
    % as unsigned integers for compatibility with Acrobat Reader. Bug 689010.
