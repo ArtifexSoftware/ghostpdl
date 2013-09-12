@@ -999,8 +999,9 @@ scan_contour(line_list *ll, contour_cursor *q)
 #ifdef FILL_ZERO_WIDTH
                     (fo->adjust_below | fo->adjust_above) != 0) {
 #else
+                    (fo->adjust_below + fo->adjust_above >= (fixed_1 - fixed_epsilon) ||
                     fixed2int_pixround(p.pseg->pt.y - fo->adjust_below) <
-                    fixed2int_pixround(p.pseg->pt.y + fo->adjust_above)) {
+                    fixed2int_pixround(p.pseg->pt.y + fo->adjust_above))) {
 #endif
                 /* Add it here to avoid double processing in process_h_segments. */
                 code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
