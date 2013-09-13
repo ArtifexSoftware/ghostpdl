@@ -1063,8 +1063,8 @@ pl_tt_build_char(gs_show_enum * penum, gs_state * pgs, gs_font * pfont,
         ipx = (int)sbox.p.x, ipy = (int)sbox.p.y;
         iqx = (int)ceil(sbox.q.x), iqy = (int)ceil(sbox.q.y);
         /* Set up the memory device for the bitmap.  NB should check code. */
-        gs_make_mem_mono_device_with_copydevice(&pmdev,
-                                                pgs->memory, pgs->device);
+        gs_make_mem_mono_device_with_copydevice(&pmdev, pgs->memory, pgs->device);
+
         bold_device_created = true;
         /* due to rounding, bold added (integer) can be zero while
            bold fraction (float) is non zero in which case we add

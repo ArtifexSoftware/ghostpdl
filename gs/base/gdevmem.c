@@ -278,6 +278,9 @@ gs_make_mem_mono_device_with_copydevice(gx_device_memory ** ppdev, gs_memory_t *
 
     set_dev_proc(pdev, get_page_device, gx_default_get_page_device);
     gx_device_set_target((gx_device_forward *)pdev, target);
+    /* Should this be forwarding, monochrome profile, or not set? MJV. */
+    set_dev_proc(pdev, get_profile, gx_forward_get_profile);
+
     gdev_mem_mono_set_inverted(pdev, true);
     check_device_separable((gx_device *)pdev);
     gx_device_fill_in_procs((gx_device *)pdev);
@@ -298,7 +301,7 @@ gs_make_mem_mono_device(gx_device_memory * dev, gs_memory_t * mem,
     gdev_mem_mono_set_inverted(dev, true);
     check_device_separable((gx_device *)dev);
     gx_device_fill_in_procs((gx_device *)dev);
-    /* Should this be forwarding or monochrome profile? */
+    /* Should this be forwarding, monochrome profile, or not set? MJV */
     set_dev_proc(dev, get_profile, gx_forward_get_profile);
     set_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
     /* initialize to same tag as target */
