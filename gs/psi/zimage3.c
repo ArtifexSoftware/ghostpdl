@@ -77,6 +77,8 @@ zimage3(i_ctx_t *i_ctx_p)
                 sizeof(ip_data.DataSource[0]));
         ip_data.DataSource[0] = ip_mask.DataSource[0];
     }
+    /* We never interpolate images with masks */
+    image.Interpolate = 0;
     return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image,
                         &ip_data.DataSource[0],
                         image.CombineWithColor, 1);
