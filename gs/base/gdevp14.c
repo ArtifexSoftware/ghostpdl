@@ -2565,9 +2565,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
             dev = (gx_device *)&clipdev;
             phase.x = pdevc->phase.x;
             phase.y = pdevc->phase.y;
-            ok = gx_trans_pattern_fill_rect(rect.p.x, rect.p.y,
-                                            rect.q.x - rect.p.x,
-                                            rect.q.y - rect.p.y,
+            ok = gx_trans_pattern_fill_rect(rect.p.x, rect.p.y, rect.q.x, rect.q.y,
                                             ptile, fill_trans_buffer, phase,
                                             dev, pdevc);
         }
@@ -2616,16 +2614,25 @@ pdf14_pattern_trans_render(gx_image_enum * penum, const byte * buffer, int data_
         } else {
             /* Used if we are on clist reading phase.  If we had high level
                image in clist */
+            cmm_dev_profile_t *dev_profile;
+            code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+
+            /* Also, if we are in clist, the imaging code may have installed a
+               clipper device on heap here with pdf14 device as target */
+            if (penum->clip_image) {
+                gx_device_forward * fdev = (gx_device_forward *)dev;
+                p14dev = (pdf14_device *) (fdev->target);
+            }
             code = pdf14_pop_transparency_group(NULL, p14dev->ctx, p14dev->blend_procs,
-                    p14dev->color_info.num_components,
-                    dev->icc_struct->device_profile[0], (gx_device *) p14dev);
+                    p14dev->color_info.num_components, dev_profile->device_profile[0], 
+                    (gx_device *) p14dev);
         }
         pdcolor->colors.pattern.p_tile->trans_group_popped = true;
         gs_free_object(pis->memory, ptile->ttrans->fill_trans_buffer,
                        "pdf14_pattern_trans_render");
         ptile->ttrans->fill_trans_buffer = NULL;  /* Avoid GC issues */
     }
-    return(code);
+    return code;
 }
 
 /* This function is used to get things in place for filling a mask image

@@ -946,16 +946,24 @@ gx_dc_pat_trans_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     phase.x = pdevc->phase.x;
     phase.y = pdevc->phase.y;
 
+#if 0
+    if_debug8m('v', ptile->ttrans->mem,
+            "[v]gx_dc_pat_trans_fill_rectangle, Fill: (%d, %d), %d x %d To Buffer: (%d, %d), %d x %d \n",
+            x, y, w, h,  ptile->ttrans->fill_trans_buffer->rect.p.x, 
+            ptile->ttrans->fill_trans_buffer->rect.p.y, 
+            ptile->ttrans->fill_trans_buffer->rect.q.x - 
+            ptile->ttrans->fill_trans_buffer->rect.p.x,
+            ptile->ttrans->fill_trans_buffer->rect.q.y - 
+            ptile->ttrans->fill_trans_buffer->rect.p.y);
+#endif
     code = gx_trans_pattern_fill_rect(x, y, x+w, y+h, ptile,
                                       ptile->ttrans->fill_trans_buffer, phase,
                                       dev, pdevc);
-
     return code;
 }
 
 /* This fills the transparency buffer rectangles with a pattern buffer
    that includes transparency */
-
 int
 gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
                            gx_color_tile *ptile,
@@ -963,21 +971,21 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
                            gs_int_point phase, gx_device *dev,
                            const gx_device_color * pdevc)
 {
-
     tile_fill_trans_state_t state_trans;
     tile_fill_state_t state_clist_trans;
     int code = 0;
+    int w = xmax - xmin;
+    int h = ymax - ymin;
+    int xmax_new, ymax_new;
 
     if (ptile == 0)             /* null pattern */
         return 0;
-
-    /* Fit fill */
-    if ( (xmin | ymin) < 0 ) {
-        if ( xmin < 0 )
-            xmin = 0;
-        if ( ymin < 0 )
-            ymin = 0;
-    }
+   
+    fit_fill_xywh(dev, xmin, ymin, w, h);
+    if (w < 0 || h < 0) 
+        return 0;
+    xmax = w + xmin;
+    ymax = h + ymin;
 
     /* Initialize the fill state */
     state_trans.phase.x = phase.x;
@@ -1039,5 +1047,5 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
 
         }
     }
-    return(code);
+    return code;
 }
