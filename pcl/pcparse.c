@@ -471,9 +471,10 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     /* now check if these commands DF or IN, likely
                        candidates to start an HPGL file. */
                     if ((*(p + 1) == 'I' && *(p + 2) == 'N') ||
-                        (*(p + 1) == 'D' && *(p + 2) == 'F')) {
-                        pcl_args_t args;
+                        (*(p + 1) == 'D' && *(p + 2) == 'F') ||
+                        (*(p + 1) == 'B' && *(p + 2) == 'P')) {
 
+                        pcl_args_t args;
                         arg_set_uint(&args, 0);
                         rtl_enter_hpgl_mode(&args, pcs);
                     }
