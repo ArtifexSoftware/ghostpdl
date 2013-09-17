@@ -767,7 +767,12 @@ struct gx_device_pdf_s {
      */
     int FormDepth;
 
-    /* Nasty hack. OPDFread.ps resets the grpahics state to the identity before
+    /* Determine if we have a high level form. We want to do things differently
+     * sometimes, if we are capturing a form
+     */
+    int HighLevelForm;
+
+    /* Nasty hack. OPDFread.ps resets the graphics state to the identity before
      * replaying the Pattern PaintProc, but if the Pattern is nested inside a
      * previous pattern, this doesn't work. We use this to keep track of whether
      * we are nested, and if we are (and are ps2write, not pdfwrite) we track the

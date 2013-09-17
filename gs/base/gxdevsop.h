@@ -265,6 +265,11 @@ enum {
      * gx_device_printer devices can support this saving pages as clist
      */
     gxdso_supports_saved_pages,
+    /* Form handling, we need one to start and one to stop a form
+     * its up to the device to recognise duplicate execution of forms.
+     */
+    gxdso_form_begin,
+    gxdso_form_end,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

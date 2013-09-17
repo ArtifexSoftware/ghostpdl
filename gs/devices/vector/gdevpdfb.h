@@ -229,6 +229,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* sbstack_depth */
  0,				/* sbstack */
  0,				/* FormDepth */
+ 0,             /* HighLevelForm */
  0,				/* PatternDepth */
  {0,0,0,0,0,0},                 /* AccumulatedPatternMatrix */
  0,				/* substream_Resources */

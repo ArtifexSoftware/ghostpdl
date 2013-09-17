@@ -198,6 +198,16 @@ output. <em>device_color_space</em> may be <code>/DeviceGray</code>,
 value is <code>/DeviceRGB</code>.  Note that this does not affect images:
 see <a href="#Limitations">Limitations</a> below.
 
+<dt><code>-dUNROLLFORMS</code><dd>When converting from PostScript,
+pdfwrite (and ps2write) preserve the use of Form resources as Form
+XObjects in the output. Some badly written PostScript can cause this
+to produce incorrect output (the Quality Logic CET tests for example).
+By setting this flag, forms will be unrolled and stored in the output
+each time they are used, which avoids the problems. Note that the output
+file will of course be larger this way.
+We do not attempt to preserve Form XObjects from PDF files, unless they
+are associaed with transparency groups.
+
 </dl>
 
 <p>

@@ -918,6 +918,8 @@ int
 gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
 {
     switch(dev_spec_op) {
+        case gxdso_form_begin:
+        case gxdso_form_end:
         case gxdso_pattern_can_accum:
         case gxdso_pattern_start_accum:
         case gxdso_pattern_finish_accum:

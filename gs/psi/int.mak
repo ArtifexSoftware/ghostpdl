@@ -944,13 +944,13 @@ $(PSD)psl2.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(PSD)filter.dev $(PSD)iodevice.dev $(PSD)pagedev.dev $(PSD)pattern.dev\
  $(PSD)psl1.dev $(GLD)psl2lib.dev $(PSD)psl2read.dev\
  $(PSD)sepr.dev $(PSD)type32.dev $(PSD)type42.dev\
- $(PSD)fimscale.dev
+ $(PSD)fimscale.dev $(PSD)form.dev
 	$(SETMOD) $(PSD)psl2 -include $(PSD)dpsand2
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)cidfont $(PSD)cie $(PSD)cmapread $(PSD)compfont
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)dct $(PSD)filter $(PSD)iodevice
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)pagedev $(PSD)pattern $(PSD)psl1 $(GLD)psl2lib $(PSD)psl2read
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)sepr $(PSD)type32 $(PSD)type42
-	$(ADDMOD) $(PSD)psl2 -include $(PSD)fimscale
+	$(ADDMOD) $(PSD)psl2 -include $(PSD)fimscale $(PSD)form
 	$(ADDMOD) $(PSD)psl2 -emulator PostScript PostScriptLevel2
 
 # Define basic Level 2 language support.
@@ -1724,6 +1724,18 @@ $(GLD)diskn.dev : $(LIB_MAK) $(ECHOGS_XE) $(diskn_)
 	$(SETMOD) $(GLD)diskn $(diskn_)
 	$(ADDMOD) $(GLD)diskn -iodev disk0 disk1 disk2 disk3 disk4 disk5 disk6
 	$(ADDMOD) $(GLD)diskn -ps gs_diskn
+
+# ------------------ Support high level Forms ------------------ #
+form_=$(GLOBJ)zform.$(OBJ)
+$(GLD)form.dev : $(LIB_MAK) $(ECHOGS_XE) $(form_)
+	$(SETMOD) $(PSD)form $(form_)
+	$(ADDMOD) $(PSD)form -oper zform
+
+$(PSOBJ)zform.$(OBJ) : $(PSSRC)zform.c $(OP) $(ghost_h) $(oper_h)\
+  $(gxdevice_h) $(ialloc_h) $(idict_h) $(idparam_h) $(igstate_h)\
+  $(gxdevsop_h) $(gscoord_h) $(gsform1_h) $(gspath_h) $(gxpath_h)\
+  $(gzstate_h)
+	$(PSCC) $(PSO_)zform.$(OBJ) $(C_) $(PSSRC)zform.c
 
 # ================================ PDF ================================ #
 
