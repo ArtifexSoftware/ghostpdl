@@ -639,7 +639,7 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     gs_param_dict mdict;
     gs_param_string saved_pages;
 
-    saved_pages.size = 0;
+    memset(&saved_pages, 0, sizeof(gs_param_string));
     sp = ppdev->space_params;
     save_sp = sp;
 

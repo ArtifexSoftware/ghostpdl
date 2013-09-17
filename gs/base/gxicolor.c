@@ -465,6 +465,8 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
         /* Get the buffer into the device color space */
         code = image_color_icc_prep(penum, psrc, w, dev, &spp_cm, &psrc_cm,
                                     &psrc_cm_start,  &bufend, true);
+        if (code < 0)
+            return code;
         /* Also, if need apply the transfer function at this time.  This
            should be reworked so that we are not doing all these conversions */
         if (penum->icc_setup.has_transfer) {
