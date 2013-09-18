@@ -1564,6 +1564,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     int num_rows_left;
     gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile;
+    cmm_dev_profile_t *target_profile;
 
     if_debug0m('v', dev->memory, "[v]pdf14_put_image\n");
     rect_intersect(rect, buf->dirty);
@@ -1577,6 +1578,15 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     if (width <= 0 || height <= 0 || buf->data == NULL)
         return 0;
     buf_ptr = buf->data + rect.p.y * buf->rowstride + rect.p.x;
+
+    /* Check that target is OK.  From fuzzing results the target could have been
+       destroyed, for e.g if it were a pattern accumulator that was closed 
+       prematurely (Bug 694154).  We should always
+       be able to to get an ICC profile from the target. */
+    code = dev_proc(target, get_profile)(target,  &target_profile);
+    if (target_profile == NULL) 
+        return gs_throw_code(gs_error_Fatal);
+
     /* See if the target device has a put_image command.  If
        yes then see if it can handle the image data directly.
        If it cannot, then we will need to use the begin_typed_image
@@ -3091,7 +3101,7 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
                     /* clist playback. Putting the image (band in the case of the */
                     /* clist) only needs to use the default ROP to copy the data  */
                     new_is.log_op = rop3_default;
-                    p14dev->pdf14_procs->put_image(pdev, &new_is, p14dev->target);
+                    code = p14dev->pdf14_procs->put_image(pdev, &new_is, p14dev->target);
                 }
                     /* Before we disable the device release any deviceN structures.
                        free_devicen is set if the pdf14 device had inherited its
@@ -3173,7 +3183,7 @@ pdf14_forward_create_compositor(gx_device * dev, gx_device * * pcdev,
  * and return. Since the gs_pdf14_device only supports the high-level routines
  * of the interface, don't bother trying to handle any other compositor.
  */
-static	int
+static int
 pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
         const gs_composite_t * pct, gs_imager_state * pis,
         gs_memory_t * mem, gx_device *cdev)
