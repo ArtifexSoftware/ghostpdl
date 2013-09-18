@@ -708,7 +708,7 @@ gs_setoverprint(gs_state * pgs, bool ovp)
         } else {
             dev_proc(dev, get_profile)(dev,  &profile_struct);
         }
-        if (profile_struct->sim_overprint == false) return;
+        if (profile_struct != NULL && profile_struct->sim_overprint == false) return;
     }
     pgs->overprint = ovp;
     if (prior_ovp != ovp)
