@@ -230,10 +230,12 @@ gx_begin_image3x_generic(gx_device * dev,
                         (int)ceil(mrect.q.x) - origin[i].x,
                         (int)ceil(mrect.q.y) - origin[i].y,
                         penum->mask[i].depth, mem);
-        code = dev_proc(dev, get_profile)(dev, &mdev->icc_struct);
-        rc_increment(mdev->icc_struct);
         if (code < 0)
             goto out1;
+        code = dev_proc(dev, get_profile)(dev, &mdev->icc_struct);
+        if (code < 0)
+            goto out1;  /* Device not yet open */
+        rc_increment(mdev->icc_struct);
         penum->mask[i].mdev = mdev;
         gs_image_t_init(&mask[i].image, pmcs);
         mask[i].image.ColorSpace = pmcs;
