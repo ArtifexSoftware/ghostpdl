@@ -1458,9 +1458,9 @@ same_maxp_values(gs_font_type42 *font0, gs_font_type42 *font1)
 {
     gs_type42_data *d0 = &font0->data, *d1 = &font1->data;
 
-    if (d0->maxPoints != d1->maxPoints)
+    if (d0->maxPoints < d1->maxPoints)
         return 0;
-    if (d0->maxContours != d1->maxContours)
+    if (d0->maxContours < d1->maxContours)
         return 0;
     return 1;
 }
@@ -2426,6 +2426,9 @@ gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont,
                     return 0;
                 code = same_cid2_hinting((const gs_font_cid2 *)cfont,
                                          (const gs_font_cid2 *)ofont);
+                if (code > 0)
+                    code = same_maxp_values((gs_font_type42 *)cfont,
+                                        (gs_font_type42 *)ofont);
                 break;
             default:
                 return_error(gs_error_unregistered); /* Must not happen. */
