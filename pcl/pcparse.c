@@ -472,7 +472,8 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                        candidates to start an HPGL file. */
                     if ((*(p + 1) == 'I' && *(p + 2) == 'N') ||
                         (*(p + 1) == 'D' && *(p + 2) == 'F') ||
-                        (*(p + 1) == 'B' && *(p + 2) == 'P')) {
+                        (*(p + 1) == 'B' && *(p + 2) == 'P') ||
+                        (*(p + 1) == 'S' && *(p + 2) == 'P')) {
 
                         pcl_args_t args;
                         arg_set_uint(&args, 0);
