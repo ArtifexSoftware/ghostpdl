@@ -190,6 +190,7 @@ static  dev_proc_ret_devn_params(pdf14_ret_devn_params);
 static  dev_proc_copy_alpha(pdf14_copy_alpha);
 static  dev_proc_copy_planes(pdf14_copy_planes);
 static  dev_proc_copy_alpha_hl_color(pdf14_copy_alpha_hl_color);
+static  dev_proc_discard_transparency_layer(pdf14_discard_trans_layer);
 
 static	const gx_color_map_procs *
     pdf14_get_cmap_procs(const gs_imager_state *, const gx_device *);
@@ -251,7 +252,7 @@ static	const gx_color_map_procs *
         pdf14_end_transparency_group,\
         pdf14_begin_transparency_mask,\
         pdf14_end_transparency_mask,\
-        NULL,				/* discard_transparency_layer */\
+        pdf14_discard_trans_layer,\
         get_color_mapping_procs,	/* get_color_mapping_procs */\
         get_color_comp_index,		/* get_color_comp_index */\
         encode_color,			/* encode_color */\
@@ -1210,7 +1211,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
         /* Due to the fact that on certain systems we may have issues recovering */
         /* the data after a resize */
         new_data_buf = gs_alloc_bytes(ctx->memory, tos->planestride,
-                                        "pdf14_buf_new");
+                                        "pdf14_pop_transparency_mask");
         if (new_data_buf == NULL)
             return_error(gs_error_VMerror);
         /* Initialize with 0.  Need to do this since in Smask_Luminosity_Mapping
@@ -1295,7 +1296,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
             }
         }
         /* Free the old object, NULL test was above */
-        gs_free_object(ctx->memory, tos->data, "pdf14_buf_free");
+        gs_free_object(ctx->memory, tos->data, "pdf14_pop_transparency_mask");
         tos->data = new_data_buf;
         /* Data is single channel now */
         tos->n_chan = 1;
@@ -1365,7 +1366,6 @@ pdf14_push_transparency_state(gx_device *dev, gs_imager_state *pis)
 static int
 pdf14_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
 {
-
     /* Pop the soft mask.  It is no longer needed. Likely due to
        a Q that has occurred. */
     pdf14_device *pdev = (pdf14_device *)dev;
@@ -1376,7 +1376,7 @@ pdf14_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
     /* rc decrement the current link after we break it from
        the list, then free the stack element.  Don't do
        anything if there is no mask present. */
-    if ( ctx->mask_stack != NULL ) {
+    if (ctx->mask_stack != NULL) {
         old_mask = ctx->mask_stack;
         ctx->mask_stack = ctx->mask_stack->previous;
         if (old_mask->rc_mask) {
@@ -1826,6 +1826,66 @@ pdf14_close(gx_device *dev)
     if (pdev->ctx) {
         pdf14_ctx_free(pdev->ctx);
         pdev->ctx = NULL;
+    }
+    return 0;
+}
+
+/* This is called when something has gone wrong and the interpreter received a
+   stop while in the middle of doing something with the PDF14 device.  We need 
+   to clean up and end this in a graceful manner */
+static int
+pdf14_discard_trans_layer(gx_device *dev, gs_imager_state * pis)
+{
+    pdf14_device *pdev = (pdf14_device *)dev;
+    /* The things that need to be cleaned up */
+    pdf14_ctx *ctx = pdev->ctx;
+    pdf14_smaskcolor_t *smaskcolor = pdev->smaskcolor;
+    pdf14_parent_color_t *group_procs = pdev->trans_group_parent_cmap_procs;
+
+    /* Free up the smask color */
+    if (smaskcolor != NULL) {
+        smaskcolor->ref_count = 1;
+        pdf14_decrement_smask_color(pis, dev);
+        pdev->smaskcolor = NULL;
+    }
+
+    /* Free up the nested color procs and decrement the profiles */
+    if (group_procs != NULL) {
+        while (group_procs->previous != NULL)
+            pdf14_pop_parent_color(dev, pis);
+        gs_free_object(dev->memory, group_procs, "pdf14_discard_trans_layer");
+        pdev->trans_group_parent_cmap_procs = NULL;
+    }
+
+    /* Start the contex clean up */
+    if (ctx != NULL) {
+        pdf14_buf *buf, *next;
+        pdf14_parent_color_t *procs, *prev_procs;
+
+        if (ctx->mask_stack != NULL) {
+            pdf14_free_mask_stack(ctx->mask_stack, ctx->memory);
+            gs_free_object(ctx->memory, ctx->mask_stack, "pdf14_discard_trans_layer");
+            ctx->mask_stack = NULL;
+        }
+
+        /* Now the stack of buffers */
+        for (buf = ctx->stack; buf != NULL; buf = next) {
+            next = buf->saved;
+
+            gs_free_object(ctx->memory, buf->transfer_fn, "pdf14_discard_trans_layer");
+            gs_free_object(ctx->memory, buf->data, "pdf14_discard_trans_layer");
+            /* During the soft mask push, the mask_stack was copied (not moved) from
+               the ctx to the tos mask_stack. We are done with this now so it is safe 
+               to free this one object */
+            gs_free_object(ctx->memory, buf->mask_stack, "pdf14_discard_trans_layer");
+            for (procs = buf->parent_color_info_procs; procs != NULL; procs = prev_procs) {
+                prev_procs = procs->previous;
+                gs_free_object(ctx->memory, procs, "pdf14_discard_trans_layer");
+            }
+            gs_free_object(ctx->memory, buf, "pdf14_discard_trans_layer");
+        }
+        /* Finally the context itself */
+        gs_free_object (ctx->memory, ctx, "pdf14_discard_trans_layer");
     }
     return 0;
 }
@@ -3086,6 +3146,16 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
                 pdf14_recreate_device(mem, pis, pdev, pdf14pct);
             }
             break;
+        case PDF14_ABORT_DEVICE:
+            /* Something has gone very wrong.  Let transparency device clean up
+               what ever it has allocated and then we are shutting it down */
+            code = gx_abort_trans_device(pis, pdev);
+            if (p14dev->free_devicen) {
+                devn_free_params(pdev);
+            }
+            pdf14_disable_device(pdev);
+            pdf14_close(pdev);
+            break;
         case PDF14_POP_DEVICE:
             if (!(params.is_pattern)) {
                 if_debug0m('v', pdev->memory,
@@ -3103,13 +3173,13 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
                     new_is.log_op = rop3_default;
                     code = p14dev->pdf14_procs->put_image(pdev, &new_is, p14dev->target);
                 }
-                    /* Before we disable the device release any deviceN structures.
-                       free_devicen is set if the pdf14 device had inherited its
-                       deviceN parameters from the target clist device.  In this
-                       case they should not be freed */
-                    if (p14dev->free_devicen) {
-                        devn_free_params(pdev);
-                    }
+                /* Before we disable the device release any deviceN structures.
+                    free_devicen is set if the pdf14 device had inherited its
+                    deviceN parameters from the target clist device.  In this
+                    case they should not be freed */
+                if (p14dev->free_devicen) {
+                    devn_free_params(pdev);
+                }
                 pdf14_disable_device(pdev);
                 pdf14_close(pdev);
             }
@@ -5526,6 +5596,8 @@ c_pdf14trans_read(gs_composite_t * * ppct, const byte *	data,
             read_value(data, params.num_spot_colors);
             read_value(data, params.is_pattern);
             break;
+        case PDF14_ABORT_DEVICE:
+            break;
         case PDF14_POP_DEVICE:
             read_value(data, params.is_pattern);
             break;
@@ -5769,6 +5841,8 @@ c_pdf14trans_is_closing(const gs_composite_t * composite_action, gs_composite_t 
     switch (op0) {
         default: return_error(gs_error_unregistered); /* Must not happen. */
         case PDF14_PUSH_DEVICE:
+            return 0;
+        case PDF14_ABORT_DEVICE:
             return 0;
         case PDF14_POP_DEVICE:
             if (*ppcte == NULL)
@@ -6922,6 +6996,8 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 *pcdev = dev;
                 return code;
                 break;
+            case PDF14_ABORT_DEVICE:
+                break;
             default:
                 break;		/* Pass remaining ops to target */
         }
@@ -7442,6 +7518,9 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
         case PDF14_POP_TRANS_STATE:
             code = 0; /* A place for breakpoint. */
             break;
+        case PDF14_ABORT_DEVICE:
+            code = 0;
+            break;
         case PDF14_PUSH_SMASK_COLOR:
             return 0;
             break;
@@ -7604,7 +7683,7 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight,
     switch (pdf14pct->params.pdf14_op) {
         case PDF14_PUSH_DEVICE: return ALLBANDS; /* Applies to all bands. */
         case PDF14_POP_DEVICE:  return ALLBANDS; /* Applies to all bands. */
-
+        case PDF14_ABORT_DEVICE: return ALLBANDS; /* Applies to all bands */
         case PDF14_BEGIN_TRANS_GROUP:
             {	gs_int_rect rect;
                 int code;

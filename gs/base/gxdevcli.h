@@ -1207,11 +1207,13 @@ typedef struct gs_param_list_s gs_param_list;
   dev_t_proc_end_transparency_mask(proc, gx_device)
 
 /*
-  Pop the transparency stack, discarding the top element, which may be
-  either a group or a mask.  Set *ppts to 0 iff the stack is now empty.
+  This will clean up the entire device allocations as something went
+  wrong in the middle of reading in the source content while we are dealing with
+  a transparency device.
 */
 #define dev_t_proc_discard_transparency_layer(proc, dev_t)\
-  int proc(gx_device *dev)
+  int proc(gx_device *dev,\
+    gs_imager_state *pis)
 #define dev_proc_discard_transparency_layer(proc)\
   dev_t_proc_discard_transparency_layer(proc, gx_device)
 

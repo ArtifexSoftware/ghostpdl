@@ -30,6 +30,7 @@
 typedef enum {
     PDF14_PUSH_DEVICE,
     PDF14_POP_DEVICE,
+    PDF14_ABORT_DEVICE,
     PDF14_BEGIN_TRANS_GROUP,
     PDF14_END_TRANS_GROUP,
     PDF14_BEGIN_TRANS_MASK,
@@ -155,6 +156,8 @@ int gs_push_pdf14trans_device(gs_state * pgs, bool is_pattern);
 
 int gs_pop_pdf14trans_device(gs_state * pgs, bool is_pattern);
 
+int gs_abort_pdf14trans_device(gs_state * pgs);
+
 void gs_trans_group_params_init(gs_transparency_group_params_t *ptgp);
 
 int gs_update_trans_marking_params(gs_state * pgs);
@@ -188,6 +191,9 @@ int gx_begin_transparency_mask(gs_imager_state * pis, gx_device * pdev,
 
 int gx_end_transparency_mask(gs_imager_state * pis, gx_device * pdev,
                                 const gs_pdf14trans_params_t * pparams);
+
+int gx_abort_trans_device(gs_imager_state * pis, gx_device * pdev);
+
 
 /* These are used for watching for q Smask Q events.  We need to
    send special compositor commands to keep the bands in sync

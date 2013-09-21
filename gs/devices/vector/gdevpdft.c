@@ -364,6 +364,8 @@ gdev_pdf_create_compositor(gx_device *dev,
                 return 0;
             case PDF14_POP_DEVICE:
                 return 0;
+            case PDF14_ABORT_DEVICE:
+                return 0;
             case PDF14_BEGIN_TRANS_GROUP:
                 return pdf_begin_transparency_group(pis, pdev, params);
             case PDF14_END_TRANS_GROUP:

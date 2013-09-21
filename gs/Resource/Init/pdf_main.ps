@@ -1944,8 +1944,8 @@ currentdict /PDF2PS_matrix_key undef
         showpagecontents
       } ifelse
     } stopped {
-      % todo: discard
-      .poppdf14devicefilter
+      % abort the transparency device 
+      .abortpdf14devicefilter
       /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
       stop
     } if .poppdf14devicefilter

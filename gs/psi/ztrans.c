@@ -451,6 +451,13 @@ zpoppdf14devicefilter(i_ctx_t *i_ctx_p)
     return gs_pop_pdf14trans_device(igs, false);
 }
 
+/* Something has gone terribly wrong */
+static int
+zabortpdf14devicefilter(i_ctx_t *i_ctx_p)
+{
+    return gs_abort_pdf14trans_device(igs);
+}
+
 /* This is used to communicate to the transparency compositor
    when a q (save extended graphic state) occurs.  Since
    the softmask is part of the graphic state we need to know
@@ -502,5 +509,6 @@ const op_def ztrans2_op_defs[] = {
     {"1.image3x", zimage3x},
     {"1.pushpdf14devicefilter", zpushpdf14devicefilter},
     {"0.poppdf14devicefilter", zpoppdf14devicefilter},
+    {"0.abortpdf14devicefilter", zabortpdf14devicefilter},
     op_def_end(0)
 };
