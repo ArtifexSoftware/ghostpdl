@@ -137,13 +137,11 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
             expected = 4;
             break;
         case gsNCHANNEL:
-            expected = 0;
-            break;
         case gsNAMED:            /* Silence warnings */
         case gsUNDEFINED:        /* Silence warnings */
             break;
     }
-    if (expected && ncomps != expected) {
+    if (!expected || ncomps != expected) {
         rc_decrement(picc_profile,"seticc");
         rc_decrement(pcs,"seticc");
         return_error(e_rangecheck);
