@@ -819,6 +819,8 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
     bool overprint = pdev->overprint;
     gx_color_index drawn_comps = pdev->drawn_comps;
     bool blendspot = pdev->blendspot;
+    bool nonicc_conversion = true;
+
 
 #ifdef DEBUG
     pdf14_debug_mask_stack_state(ctx);
@@ -902,6 +904,7 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
             num_noncolor_planes = tos->n_planes - curr_num_color_comp;
             num_newcolor_planes = nos->parent_color_info_procs->num_components;
             new_num_planes = num_noncolor_planes + num_newcolor_planes;
+
             /* See if we are doing ICC based conversion */
             if (nos->parent_color_info_procs->icc_profile != NULL &&
                 curr_icc_profile != NULL) {
@@ -921,64 +924,69 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
                 icc_link = gsicc_get_link_profile(pis, dev, curr_icc_profile,
                                     nos->parent_color_info_procs->icc_profile,
                                     &rendering_params, pis->memory, false);
-                /* If the link is the identity, then we don't need to do
-                   any color conversions */
-                if ( !(icc_link->is_identity) ) {
-                    /* Before we do any allocations check if we can get away with
-                       reusing the existing buffer if it is the same size ( if it is
-                       smaller go ahead and allocate).  We could reuse it in this
-                       case too.  We need to do a bit of testing to determine what
-                       would be best.  */
-                    /* FIXME: RJW: Could we get away with just color converting
-                     * the area that's actually active (i.e. dirty, not rect)?
-                     */
-                    if( num_newcolor_planes != curr_num_color_comp ) {
-                        /* Different size.  We will need to allocate */
-                        new_data_buf = gs_alloc_bytes(ctx->memory,
-                                            tos->planestride*new_num_planes,
-                                                "pdf14_buf_new");
-                        if (new_data_buf == NULL)
-                            return_error(gs_error_VMerror);
-                        /* Copy over the noncolor planes. */
-                        memcpy(new_data_buf + tos->planestride * num_newcolor_planes,
-                               tos->data + tos->planestride * curr_num_color_comp,
-                               tos->planestride * num_noncolor_planes);
-                    } else {
-                        /* In place color conversion! */
-                        new_data_buf = tos->data;
+                if (icc_link != NULL) {
+                    /* if problem with link we will do non-ICC approach */
+                    nonicc_conversion = false;
+                    /* If the link is the identity, then we don't need to do
+                       any color conversions */
+                    if ( !(icc_link->is_identity) ) {
+                        /* Before we do any allocations check if we can get away with
+                           reusing the existing buffer if it is the same size ( if it is
+                           smaller go ahead and allocate).  We could reuse it in this
+                           case too.  We need to do a bit of testing to determine what
+                           would be best.  */
+                        /* FIXME: RJW: Could we get away with just color converting
+                         * the area that's actually active (i.e. dirty, not rect)?
+                         */
+                        if( num_newcolor_planes != curr_num_color_comp ) {
+                            /* Different size.  We will need to allocate */
+                            new_data_buf = gs_alloc_bytes(ctx->memory,
+                                                tos->planestride*new_num_planes,
+                                                    "pdf14_buf_new");
+                            if (new_data_buf == NULL)
+                                return_error(gs_error_VMerror);
+                            /* Copy over the noncolor planes. */
+                            memcpy(new_data_buf + tos->planestride * num_newcolor_planes,
+                                   tos->data + tos->planestride * curr_num_color_comp,
+                                   tos->planestride * num_noncolor_planes);
+                        } else {
+                            /* In place color conversion! */
+                            new_data_buf = tos->data;
+                        }
+                        /* Set up the buffer descriptors. Note that pdf14 always has
+                           the alpha channels at the back end (last planes).
+                           We will just handle that here and let the CMM know
+                           nothing about it */
+                        num_rows = tos->rect.q.y - tos->rect.p.y;
+                        num_cols = tos->rect.q.x - tos->rect.p.x;
+                        gsicc_init_buffer(&input_buff_desc, curr_num_color_comp, 1,
+                                          false, false, true,
+                                          tos->planestride, tos->rowstride,
+                                          num_rows, num_cols);
+                        gsicc_init_buffer(&output_buff_desc,
+                                          nos->parent_color_info_procs->num_components,
+                                          1, false, false, true, tos->planestride,
+                                          tos->rowstride, num_rows, num_cols);
+                        /* Transform the data. Since the pdf14 device should be
+                           using RGB, CMYK or Gray buffers, this transform
+                           does not need to worry about the cmap procs of
+                           the target device.  Those are handled when we do
+                           the pdf14 put image operation */
+                        (icc_link->procs.map_buffer)(dev, icc_link, &input_buff_desc,
+                                                     &output_buff_desc, tos->data,
+                                                     new_data_buf);
                     }
-                    /* Set up the buffer descriptors. Note that pdf14 always has
-                       the alpha channels at the back end (last planes).
-                       We will just handle that here and let the CMM know
-                       nothing about it */
-                    num_rows = tos->rect.q.y - tos->rect.p.y;
-                    num_cols = tos->rect.q.x - tos->rect.p.x;
-                    gsicc_init_buffer(&input_buff_desc, curr_num_color_comp, 1,
-                                      false, false, true,
-                                      tos->planestride, tos->rowstride,
-                                      num_rows, num_cols);
-                    gsicc_init_buffer(&output_buff_desc,
-                                      nos->parent_color_info_procs->num_components,
-                                      1, false, false, true, tos->planestride,
-                                      tos->rowstride, num_rows, num_cols);
-                    /* Transform the data. Since the pdf14 device should be
-                       using RGB, CMYK or Gray buffers, this transform
-                       does not need to worry about the cmap procs of
-                       the target device.  Those are handled when we do
-                       the pdf14 put image operation */
-                    (icc_link->procs.map_buffer)(dev, icc_link, &input_buff_desc,
-                                                 &output_buff_desc, tos->data,
-                                                 new_data_buf);
+                    /* Release the link */
+                    gsicc_release_link(icc_link);
+                    /* free the old object if the color spaces were different sizes */
+                    if( !(icc_link->is_identity) &&
+                        num_newcolor_planes != curr_num_color_comp ) {
+                        gs_free_object(ctx->memory, tos->data, "pdf14_buf_free");
+                        tos->data = new_data_buf;
+                    }
                 }
-                /* Release the link */
-                gsicc_release_link(icc_link);
-                /* free the old object if the color spaces were different sizes */
-                if( !(icc_link->is_identity) &&
-                    num_newcolor_planes != curr_num_color_comp ) {
-                    gs_free_object(ctx->memory, tos->data, "pdf14_buf_free");
-                    tos->data = new_data_buf;
-                }
-            } else {
+            } 
+            if (nonicc_conversion) {
                 /* Non ICC based transform */
                 new_data_buf = gs_alloc_bytes(ctx->memory,
                                     tos->planestride*new_num_planes,"pdf14_buf_new");
