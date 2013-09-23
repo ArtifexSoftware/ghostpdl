@@ -18,6 +18,8 @@
 
 #include "memory_.h"
 #include "gx.h"
+#include "gsstruct.h"
+#include "gxobj.h"
 #include "gsstype.h"
 #include "gserrors.h"
 #include "gsmchunk.h"
@@ -99,7 +101,7 @@ typedef struct chunk_mem_node_s {
     struct chunk_mem_node_s *next;
     chunk_obj_node_t *objlist;	/* head of objects in this chunk (no order) */
     chunk_obj_node_t *freelist;		/* free list (ordered) */
-    /* chunk data follows immediately */
+    /* chunk data follows on the next obj_align_mod aligned boundary */
 } chunk_mem_node_t;
 
 typedef struct gs_memory_chunk_s {
@@ -114,6 +116,8 @@ typedef struct gs_memory_chunk_s {
     int	     in_use;		/* 0 for idle, 1 in alloc, -1 in free */
 #endif
 } gs_memory_chunk_t;
+
+#define SIZEOF_ROUND_ALIGN(a) ROUND_UP(sizeof(a), obj_align_mod)
 
 /* ---------- Public constructors/destructors ---------- */
 
@@ -272,9 +276,9 @@ extern const gs_memory_struct_type_t st_bytes;
 inline static uint
 round_up_to_align(uint size)
 {
-    uint num_node_headers = (size + sizeof(chunk_obj_node_t) - 1) / sizeof(chunk_obj_node_t);
+    uint num_node_headers = (size + SIZEOF_ROUND_ALIGN(chunk_obj_node_t) - 1) / SIZEOF_ROUND_ALIGN(chunk_obj_node_t);
 
-    return num_node_headers * sizeof(chunk_obj_node_t);
+    return num_node_headers * SIZEOF_ROUND_ALIGN(chunk_obj_node_t);
 }
 
 #ifdef MEMENTO
@@ -302,7 +306,7 @@ chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, bool is_multiple_o
     /* Allocate enough for the chunk header, and the size_needed */
     /* The size needed already includes the object header from caller */
     /* and is already rounded up to the obj_node_t sized elements */
-    uint chunk_size = size_needed + sizeof(chunk_mem_node_t);
+    uint chunk_size = size_needed + SIZEOF_ROUND_ALIGN(chunk_mem_node_t);
 
     /* caller tells us whether or not to use a single object chunk */
     if (is_multiple_object_chunk && (chunk_size < MULTIPLE_OBJ_CHUNK_SIZE)) {
@@ -331,7 +335,7 @@ chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, bool is_multiple_o
     node->largest_free = chunk_size - sizeof(chunk_mem_node_t);
     node->is_multiple_object_chunk = is_multiple_object_chunk;
     node->objlist = NULL;
-    node->freelist = (chunk_obj_node_t *)((byte *)(node) + sizeof(chunk_mem_node_t));
+    node->freelist = (chunk_obj_node_t *)((byte *)(node) + SIZEOF_ROUND_ALIGN(chunk_mem_node_t));
     node->freelist->next = NULL;
     node->freelist->size = node->largest_free;
 
@@ -419,7 +423,7 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
                 cmem->in_use < 0 ? "free" : "alloc");
     cmem->in_use = 1;	/* alloc */
 #endif
-    newsize = round_up_to_align(size + sizeof(chunk_obj_node_t));	/* space we will need */
+    newsize = round_up_to_align(size + SIZEOF_ROUND_ALIGN(chunk_obj_node_t));	/* space we will need */
     is_multiple_object_size = ! IS_SINGLE_OBJ_SIZE(newsize);
 
     if ( is_multiple_object_size ) {
@@ -486,8 +490,8 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
     }
 
 #ifdef DEBUG
-    memset((byte *)(newobj) + sizeof(chunk_obj_node_t), 0xa1, newsize - sizeof(chunk_obj_node_t));
-    memset((byte *)(newobj) + sizeof(chunk_obj_node_t), 0xac, size);
+    memset((byte *)(newobj) + SIZEOF_ROUND_ALIGN(chunk_obj_node_t), 0xa1, newsize - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
+    memset((byte *)(newobj) + SIZEOF_ROUND_ALIGN(chunk_obj_node_t), 0xac, size);
     newobj->sequence = cmem->sequence_counter++;
 #endif
 
@@ -511,7 +515,7 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
                    client_name_string(cname), size, (ulong) newobj);
     cmem->in_use = 0; 	/* idle */
 #endif
-    return (byte *)(newobj) + sizeof(chunk_obj_node_t);
+    return (byte *)(newobj) + SIZEOF_ROUND_ALIGN(chunk_obj_node_t);
 }
 
 static byte *
@@ -606,13 +610,13 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         return;
     {
         /* back up to obj header */
-        chunk_obj_node_t *obj = ((chunk_obj_node_t *)ptr) - 1;
+        chunk_obj_node_t *obj = (chunk_obj_node_t *)(((byte *)ptr) - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
         struct_proc_finalize((*finalize)) = obj->type->finalize;
         chunk_mem_node_t *current;
         chunk_obj_node_t *free_obj, *prev_free;
         chunk_obj_node_t *scan_obj, *prev_obj;
         /* space we will free */
-        uint freed_size = round_up_to_align(obj->size + sizeof(chunk_obj_node_t));
+        uint freed_size = round_up_to_align(obj->size + SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
 
         if ( finalize != NULL )
             finalize(mem, ptr);
@@ -748,7 +752,7 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
             }
         }
 #ifdef DEBUG
-memset((byte *)(obj) + sizeof(chunk_obj_node_t), 0xf1, obj->size - sizeof(chunk_obj_node_t));
+memset((byte *)(obj) + SIZEOF_ROUND_ALIGN(chunk_obj_node_t), 0xf1, obj->size - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
 #endif
         if (current->largest_free < obj->size)
             current->largest_free = obj->size;
@@ -758,7 +762,7 @@ memset((byte *)(obj) + sizeof(chunk_obj_node_t), 0xf1, obj->size - sizeof(chunk_
             if (current->size != current->freelist->size + sizeof(chunk_mem_node_t))
                 dmprintf2(cmem->target,
 		          "chunk freelist size not correct, is: %d, should be: %d\n",
-                          round_up_to_align(current->freelist->size + sizeof(chunk_mem_node_t)), current->size);
+                          round_up_to_align(current->freelist->size + SIZEOF_ROUND_ALIGN(chunk_mem_node_t)), current->size);
             chunk_mem_node_remove(cmem, current);
         }
 #ifdef DEBUG
