@@ -128,7 +128,7 @@ RELOC_PTRS_END
 /* Forward declarations */
 static int color_draws_b_w(gx_device * dev,
                             const gx_drawing_color * pdcolor);
-static void image_init_colors(gx_image_enum * penum, int bps, int spp,
+static int image_init_colors(gx_image_enum * penum, int bps, int spp,
                                gs_image_format_t format,
                                const float *decode,
                                const gs_imager_state * pis, gx_device * dev,
@@ -566,8 +566,10 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
             device_color = (*pcst->concrete_space) (pcs, pis) == pcs;
         }
 
-        image_init_colors(penum, bps, spp, format, decode, pis, dev,
+        code = image_init_colors(penum, bps, spp, format, decode, pis, dev,
                           pcs, &device_color);
+        if (code < 0) 
+            return gs_throw(code, "Image colors initialization failed");
         /* If we have a CIE based color space and the icc equivalent profile
            is not yet set, go ahead and handle that now.  It may already
            be done due to the above init_colors which may go through remap. */
@@ -1208,13 +1210,13 @@ image_init_clues(gx_image_enum * penum, int bps, int spp)
 }
 
 /* Initialize the color mapping tables for a non-mask image. */
-static void
+static int
 image_init_colors(gx_image_enum * penum, int bps, int spp,
                   gs_image_format_t format, const float *decode /*[spp*2] */ ,
                   const gs_imager_state * pis, gx_device * dev,
                   const gs_color_space * pcs, bool * pdcb)
 {
-    int ci, decode_type;
+    int ci, decode_type, code;
     static const float default_decode[] = {
         0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
     };
@@ -1311,13 +1313,18 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
 
             /* Image clues are used in this case */
             cc.paint.values[0] = real_decode[0];
-            (*pcs->type->remap_color) (&cc, pcs, penum->icolor0,
+            code = (*pcs->type->remap_color) (&cc, pcs, penum->icolor0,
                                        pis, dev, gs_color_select_source);
+            if (code < 0) 
+                return code;
             cc.paint.values[0] = real_decode[1];
-            (*pcs->type->remap_color) (&cc, pcs, penum->icolor1,
+            code = (*pcs->type->remap_color) (&cc, pcs, penum->icolor1,
                                        pis, dev, gs_color_select_source);
+            if (code < 0) 
+                return code;
         }
     }
+    return 0;
 }
 /* Construct a mapping table for sample values. */
 /* map_size is 2, 4, 16, or 256.  Note that 255 % (map_size - 1) == 0, */
