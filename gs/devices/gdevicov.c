@@ -73,6 +73,65 @@ cov_write_page(gx_device_printer *pdev, FILE *file)
             m = (double)m_pix / total_pix;
             y = (double)y_pix / total_pix;
             k = (double)k_pix / total_pix;
+	    }
+
+        fprintf (file, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
+            c, m, y, k, code ? "ERROR" : "OK");
+    }
+
+    return 0;
+}
+
+/*  cov_write_page2 gave ink coverage values not ratecoverage */
+
+static int cov_write_page_ink(gx_device_printer *pdev, FILE *file)
+{
+    int code = 0;
+    int raster = gdev_prn_raster(pdev);
+    int height = pdev->height;
+	double dc_pix=0;
+	double dm_pix=0;
+	double dy_pix=0;
+	double dk_pix=0;
+
+    byte *line = gs_alloc_bytes(pdev->memory, raster, "ink coverage plugin buffer");
+    int y;
+    uint64_t  total_pix = 0;
+
+    for (y = 0; y < height; y++) {
+        byte *row, *end;
+
+        code = gdev_prn_get_bits(pdev, y, line, &row);
+        if (code < 0)
+            break;
+        end = row + raster;
+
+        for (; row < end; row += 4) {
+          
+			dc_pix += row[0];
+
+            dm_pix += row[1];
+
+			dy_pix += row[2];
+            
+			dk_pix += row[3];
+
+			++total_pix;
+        }
+    }
+
+    if (pdev->width * height != total_pix)
+        code = 1;
+
+    gs_free_object(pdev->memory, line, "ink coverage plugin buffer");
+
+    {
+        double c = -1., m = -1., y = -1., k = -1.;
+        if (code == 0) {
+            c = (dc_pix*100) / (total_pix*255);
+            m = (dm_pix*100) / (total_pix*255);
+            y = (dy_pix*100) / (total_pix*255);
+            k = (dk_pix*100) / (total_pix*255);
         }
 
         fprintf (file, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
@@ -113,4 +172,11 @@ const gx_device_printer gs_inkcov_device = prn_device(
     75, 75,	/* dpi */
     0, 0, 0, 0,	/* margins */
     32, cov_write_page);
+
+const gx_device_printer gs_ink_cov_device = prn_device(
+    cov_procs, "ink_cov",
+    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+    75, 75,	/* dpi */
+    0, 0, 0, 0,	/* margins */
+    32, cov_write_page_ink);
 

@@ -1891,6 +1891,9 @@ $(DD)plibk.dev : $(DEVS_MAK) $(plib_) $(GLD)page.dev $(GDEV)
 $(DD)inkcov.dev : $(ECHOGS_XE) $(LIB_MAK) $(DEVOBJ)gdevicov.$(OBJ)
 	$(SETDEV2) $(DD)inkcov $(DEVOBJ)gdevicov.$(OBJ)
 
+$(DD)ink_cov.dev : $(ECHOGS_XE) $(LIB_MAK) $(DEVOBJ)gdevicov.$(OBJ)
+	$(SETDEV2) $(DD)ink_cov $(DEVOBJ)gdevicov.$(OBJ)
+
 $(DEVOBJ)gdevicov.$(OBJ) : $(DEVSRC)gdevicov.c $(AK) $(MAKEDIRS) \
   $(arch_h) $(gdevprn_h) $(stdio__h)  $(stdint__h)
 	$(DEVCC) $(DEVO_)gdevicov.$(OBJ) $(C_) $(DEVSRC)gdevicov.c
