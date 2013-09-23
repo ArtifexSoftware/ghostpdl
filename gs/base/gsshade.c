@@ -462,11 +462,12 @@ gs_shading_do_fill_rectangle(const gs_shading_t *psh,
 
         cc = *psh->params.Background;
         (*pcs->type->restrict_color)(&cc, pcs);
-        (*pcs->type->remap_color)(&cc, pcs, &dev_color, pis,
-                                  dev, gs_color_select_texture);
+        code = (*pcs->type->remap_color)(&cc, pcs, &dev_color, pis,
+                                         dev, gs_color_select_texture);
 
         /****** WRONG IF NON-IDEMPOTENT RasterOp ******/
-        code = gx_shade_background(dev, &path_box, &dev_color, pis->log_op);
+        if (code >= 0)
+            code = gx_shade_background(dev, &path_box, &dev_color, pis->log_op);
     }
     if (code >= 0) {
         path_rect.p.x = fixed2float(path_box.p.x);
