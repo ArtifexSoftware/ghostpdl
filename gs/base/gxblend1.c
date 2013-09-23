@@ -355,8 +355,17 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                     &nos_ptr[nos_shape_offset] : NULL;
                 byte *nos_tag_ptr = nos_tag_offset ?
                     &nos_ptr[nos_tag_offset] : NULL;
-                byte tos_shape = tos_ptr[tos_shape_offset];
-                byte tos_tag = tos_ptr[tos_tag_offset];
+                byte tos_shape, tos_tag;
+
+                if (tos->has_shape) 
+                    tos_shape = tos_ptr[tos_shape_offset];
+                else
+                    tos_shape = 255;
+                if (tos->has_tags)
+                    tos_tag = tos_ptr[tos_tag_offset];
+                else
+                    tos_tag = 255;
+
                 art_pdf_composite_knockout_isolated_8(nos_pixel,
                                                     nos_shape_ptr,
                                                     nos_tag_ptr,
