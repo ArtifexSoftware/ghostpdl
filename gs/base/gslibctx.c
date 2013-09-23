@@ -127,14 +127,31 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     return 0;
 }
 
+static void remove_ctx_pointers(gs_memory_t *mem)
+{
+    mem->gs_lib_ctx = NULL;
+    if (mem->stable_memory && mem->stable_memory != mem)
+        remove_ctx_pointers(mem->stable_memory);
+    if (mem->non_gc_memory && mem->non_gc_memory != mem)
+        remove_ctx_pointers(mem->non_gc_memory);
+    if (mem->thread_safe_memory && mem->thread_safe_memory != mem)
+        remove_ctx_pointers(mem->thread_safe_memory);
+}
+
 void gs_lib_ctx_fin( gs_memory_t *mem )
 {
+    gs_lib_ctx_t *ctx;
     if (!mem || !mem->gs_lib_ctx)
         return;
     gscms_destroy(mem);
     gs_free_object(mem->thread_safe_memory, mem->gs_lib_ctx->profiledir,
         "gsicc_set_icc_directory");
-    gs_free_object(mem->thread_safe_memory, mem->gs_lib_ctx, "gs_lib_ctx_init");
+#ifndef GS_THREADSAFE
+    mem_err_print = NULL;
+#endif
+    ctx = mem->gs_lib_ctx;
+    remove_ctx_pointers(mem);
+    gs_free_object(mem->thread_safe_memory, ctx, "gs_lib_ctx_init");
 }
 
 gs_lib_ctx_t *gs_lib_ctx_get_interp_instance(const gs_memory_t *mem)
@@ -198,6 +215,15 @@ int errwrite(const gs_memory_t *mem, const char *str, int len)
     gs_lib_ctx_t *ctx;
     if (len == 0)
         return 0;
+    if (mem == NULL) {
+#ifdef GS_THREADSAFE
+        return 0;
+#else
+        mem = mem_err_print;
+        if (mem == NULL)
+            return 0;
+#endif
+    }
     ctx = mem->gs_lib_ctx;
     if (ctx == NULL)
       return 0;
