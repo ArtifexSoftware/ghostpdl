@@ -932,6 +932,10 @@ process_ccitt_compress(gs_state * pgs,
 
     if (insize < 4)
         return gs_throw(e_Range, "raster row size not specified");
+
+    if ((int)pl_get_uint32(pin) < 0)
+        return gs_throw(e_Range, "Image columns overflow CFD filter");
+
     s_init_state((stream_state *) & state, &s_CFD_template, prast->pmem);
     state.report_error = pcl_ccitt_error;
     s_CFD_template.set_defaults((stream_state *) & state);
