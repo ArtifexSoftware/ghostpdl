@@ -86,4 +86,23 @@ userdict /.smoothness currentsmoothness put
 } bind odef
 /currentsmoothness { userdict /.smoothness get } bind odef % for 09-55.PS, 09-57.PS .
 
+% slightly nasty hack to give consistent cluster results
+/ofnfa systemdict /filenameforall get def
+
+/filenameforall
+{
+  2 index dup length 1 eq
+  {
+    (*) eq
+    {
+      3 -1 roll pop ( ) 3 1 roll
+    } if
+  }
+  {
+    pop
+  } ifelse
+  ofnfa
+} bind def
+% end of slightly nasty hack to give consistent cluster results
+
 //false 0 startjob pop		% re-enter encapsulated mode
