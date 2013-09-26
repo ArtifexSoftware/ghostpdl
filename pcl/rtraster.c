@@ -892,7 +892,7 @@ process_block_nocompress(gs_state * pgs,
 
     /* the remaining data after the row size should be divisible by
        the row length to have equal sized rows */
-    if ((insize - 4) % row_bytes)
+    if (row_bytes == 0 || ((insize - 4) % row_bytes))
         return gs_throw(e_Range, "Non integral number of rows in raster\n");
 
     nrows = insize / row_bytes;
