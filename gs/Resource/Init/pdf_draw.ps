@@ -1265,6 +1265,11 @@ end
     def                                      % file len-14 (14)
     10 get 16#7F and 1 add
     dup 12 eq { pop 16 } if
+    %% JasPer has been seen to produce images with a declared
+    %% BPC of 128 which is invalid for PDF and for JPEG2000
+    %% Acrobat, of course, renders it as expected.....
+    %% Bug #694621
+    dup 128 eq {pop 8} if
     /BitsPerComponent exch def               % file len-14
   } bdef
 
