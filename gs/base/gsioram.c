@@ -464,7 +464,7 @@ ram_enumerate_init(gx_io_device *iodev, const char *pat, uint patlen,
     }
     if (penum) gs_free_object(mem,penum,"ramfs_enum_init(ramfs_enum)");
     if (pattern)
-    gs_free_object(mem, penum->pattern, "ramfs_enum_init(pattern)");
+    gs_free_object(mem, pattern, "ramfs_enum_init(pattern)");
     if(e) ramfs_enum_end(e);
     return NULL;
 }

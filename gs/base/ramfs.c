@@ -79,7 +79,6 @@ ramfs * ramfs_new(gs_memory_t *mem, int size)
     );
 
     if (fs == NULL) {
-        fs->last_error = RAMFS_NOMEM;
         return NULL;
     }
     size = size/(RAMFS_BLOCKSIZE/1024);
@@ -371,7 +370,6 @@ int ramfile_read(ramhandle * handle,void * buf,int len)
         left -= x;
         t += x;
     }
-    buf = (void *)t;
     return len;
 }
 
@@ -417,7 +415,6 @@ int ramfile_write(ramhandle * handle,const void * buf,int len)
         left -= x;
         t += x;
     }
-    buf = (void *)t;
     return len;
 }
 
