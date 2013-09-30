@@ -763,10 +763,9 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
         gs_input_profile->buffer == NULL &&
         gs_input_profile->dev != NULL) {
 
-        /* ICC profile should be in clist. This is
-        the first call to it.  Note that the profiles are not
-        really shared amongst threads like the links are.  Hence
-        the memory is for the local thread's chunk */
+        /* ICC profile should be in clist. This is the first call to it.  Note that 
+           the profiles are not really shared amongst threads like the links are.  
+           Hence the memory is for the local thread's chunk */
         cms_input_profile =
             gsicc_get_profile_handle_clist(gs_input_profile,
                                            gs_input_profile->memory);

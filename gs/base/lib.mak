@@ -3010,7 +3010,7 @@ $(GLOBJ)gxblend.$(OBJ) : $(GLSRC)gxblend.c $(AK) $(gx_h) $(memory__h)\
 $(GLOBJ)gxblend1.$(OBJ) : $(GLSRC)gxblend1.c $(AK) $(gx_h) $(memory__h)\
  $(gstparam_h) $(gsrect_h) $(gxdcconv_h) $(gxblend_h) $(gxdevcli_h)\
  $(gxistate_h) $(gdevdevn_h) $(gdevp14_h) $(vdtrace_h) $(png__h) $(gp_h)\
- $(MAKEDIRS)
+ $(gsicc_cache_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxblend1.$(OBJ) $(C_) $(GLSRC)gxblend1.c
 
 $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(AK) $(gx_h) $(gserrors_h)\

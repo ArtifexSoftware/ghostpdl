@@ -127,7 +127,7 @@ typedef struct pdf14_ctx_s pdf14_ctx;
 
 struct pdf14_buf_s {
     pdf14_buf *saved;
-
+    byte *backdrop;  /* This is needed for proper non-isolated knockout support */
     bool isolated;
     bool knockout;
     byte alpha;

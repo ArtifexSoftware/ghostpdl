@@ -174,7 +174,6 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_state * pgs)
                     gs_overprint_set_drawn_comp( params.drawn_comps, mcomp);
             }
         }
-
         pgs->effective_overprint_mode = 0;
         return gs_state_update_overprint(pgs, &params);
     }

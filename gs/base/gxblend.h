@@ -304,6 +304,25 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
         const pdf14_nonseparable_blending_procs_t * pblend_procs);
 
 /**
+ * art_pdf_composite_knockout_group_8: Composite group pixel.
+ * @backdrop: Backdrop of original parent group.
+ * @tos_shape: So that we know to copy the backdrop or not even if a_s is zero
+ * @dst: Where to store pixel.
+ * @dst_alpha_g: Optional pointer to alpha g value.
+ * @alpha: Alpha mask value.
+ * @blend_mode: Blend mode for compositing.
+ * @pblend_procs: Procs for handling non separable blending modes.
+ *
+ * Note: this is only for knockout nonisolated groups. 
+ *
+ * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
+ **/
+void
+art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst, 
+        byte *dst_alpha_g, const byte *src, int n_chan, byte alpha, 
+        gs_blend_mode_t blend_mode,
+        const pdf14_nonseparable_blending_procs_t * pblend_procs);
+/**
  * art_pdf_composite_knockout_simple_8: Simple knockout compositing.
  * @dst: Destination pixel.
  * @dst_shape: Shape associated with @dst.
@@ -359,31 +378,6 @@ art_pdf_composite_knockout_isolated_8(byte *dst,
                                       byte alpha_mask, byte shape_mask,
                                       bool has_mask);
 
-/**
- * art_pdf_composite_knockout_8: General knockout compositing.
- * @dst: Destination pixel.
- * @dst_alpha_g: Pointer to alpha g value associated with @dst.
- * @backdrop: Backdrop pixel (initial backdrop of knockout group).
- * @src: Source pixel.
- * @n_chan: Number of channels.
- * @shape: Shape.
- * @alpha_mask: Alpha mask.
- * @shape_mask: Shape mask.
- * @blend_mode: Blend mode for compositing.
- * @pblend_procs: Procs for handling non separable blending modes.
- *
- * This function handles compositing in the case where the knockout
- * group is non-isolated. If the @src pixels themselves come from a
- * non-isolated group, they should be uncomposited before calling this
- * routine.
- **/
-void
-art_pdf_composite_knockout_8(byte *dst,
-                byte *dst_alpha_g, const byte *backdrop, const byte *src,
-                int n_chan, byte shape, byte alpha_mask,
-                byte shape_mask, gs_blend_mode_t blend_mode,
-                const pdf14_nonseparable_blending_procs_t * pblend_procs);
-
 /*
  * Routines for handling the non separable blending modes.
  */
@@ -414,7 +408,12 @@ void pdf14_unpack_compressed(int num_comp, gx_color_index color,
 void pdf14_unpack_custom(int num_comp, gx_color_index color,
                                 pdf14_device * p14dev, byte * out);
 
-void pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape);
+void pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool knockout_buff);
+
+int pdf14_preserve_backdrop_cm(pdf14_buf *buf, cmm_profile_t *group_profile, 
+                               pdf14_buf *tos, cmm_profile_t *tos_profile, 
+                               gs_memory_t *memory, gs_imager_state *pis, 
+                               gx_device *dev, bool knockout_buff);
 
 void pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
               int x0, int x1, int y0, int y1, int n_chan, bool additive,

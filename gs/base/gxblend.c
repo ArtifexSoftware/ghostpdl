@@ -576,8 +576,8 @@ const byte art_blend_soft_light_8[256] = {
 
 void
 art_blend_pixel_8(byte *dst, const byte *backdrop,
-                const byte *src, int n_chan, gs_blend_mode_t blend_mode,
-                const pdf14_nonseparable_blending_procs_t * pblend_procs)
+                  const byte *src, int n_chan, gs_blend_mode_t blend_mode,
+                  const pdf14_nonseparable_blending_procs_t * pblend_procs)
 {
     int i;
     byte b, s;
@@ -888,6 +888,73 @@ art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask)
     }
 }
 
+static void
+art_pdf_knockout_composite_pixel_alpha_8(byte *backdrop, byte tos_shape, byte *dst, 
+                        const byte *src, int n_chan, gs_blend_mode_t blend_mode,
+                        const pdf14_nonseparable_blending_procs_t * pblend_procs)
+{
+    byte a_b, a_s;
+    unsigned int a_r;
+    int tmp;
+    int src_scale;
+    int c_b, c_s;
+    int i;
+
+    a_s = src[n_chan];
+    a_b = backdrop[n_chan];
+    if (a_s == 0) {
+        /* source alpha is zero, if we have a src shape value there then copy 
+           the backdrop, else leave it alone */
+        if (tos_shape)
+           memcpy(dst, backdrop, n_chan + 1);
+        return;
+    }
+
+    /* In this case a_s is not zero */
+    if (a_b == 0) {
+        /* backdrop alpha is zero but not source alpha, just copy source pixels and 
+           avoid computation. */
+        memcpy(dst, src, n_chan + 1);
+        return;
+    }
+
+    /* Result alpha is Union of backdrop and source alpha */
+    tmp = (0xff - a_b) * (0xff - a_s) + 0x80;
+    a_r = 0xff - (((tmp >> 8) + tmp) >> 8);
+    /* todo: verify that a_r is nonzero in all cases */
+
+    /* Compute a_s / a_r in 16.16 format */
+    src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
+
+    if (blend_mode == BLEND_MODE_Normal) {
+        /* Do simple compositing of source over backdrop */
+        for (i = 0; i < n_chan; i++) {
+            c_s = src[i];
+            c_b = backdrop[i];
+            tmp = (c_b << 16) + src_scale * (c_s - c_b) + 0x8000;
+            dst[i] = tmp >> 16;
+        }
+    } else {
+        /* Do compositing with blending */
+        byte blend[ART_MAX_CHAN];
+
+        art_blend_pixel_8(blend, backdrop, src, n_chan, blend_mode, pblend_procs);
+        for (i = 0; i < n_chan; i++) {
+            int c_bl;		/* Result of blend function */
+            int c_mix;		/* Blend result mixed with source color */
+
+            c_s = src[i];
+            c_b = dst[i];
+            c_bl = blend[i];
+            tmp = a_b * (c_bl - ((int)c_s)) + 0x80;
+            c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
+            tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
+            dst[i] = tmp >> 16;
+        }
+    }
+    dst[n_chan] = a_r;
+}
+
 void
 art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
         gs_blend_mode_t blend_mode,
@@ -1063,109 +1130,6 @@ art_pdf_composite_pixel_alpha_8_fast_mono(byte *dst, const byte *src,
     dst[stride] = a_r;
 }
 
-#if 0
-/**
- * art_pdf_composite_pixel_knockout_8: Composite two pixels with knockout.
- * @dst: Where to store resulting pixel, also immediate backdrop.
- * @backdrop: Initial backdrop color.
- * @src: Source pixel color.
- * @n_chan: Number of channels.
- * @blend_mode: Blend mode.
- *
- * Composites two pixels using the compositing operation specialized
- * for knockout groups (Section 5.5). A few things to keep in mind:
- *
- * 1. This is a reference implementation, not a high-performance one.
- *
- * 2. All pixels are assumed to have a single alpha channel.
- *
- * 3. Zero is black, one is white.
- *
- * Also note that src and dst are expected to be allocated aligned to
- * 32 bit boundaries, ie bytes from [0] to [(n_chan + 3) & -4] may
- * be accessed.
- *
- * All pixel values have both alpha and shape channels, ie with those
- * included the total number of channels is @n_chan + 2.
- *
- * An invariant: shape >= alpha.
- **/
-void
-art_pdf_composite_pixel_knockout_8(byte *dst,
-                                   const byte *backdrop, const byte *src,
-                                   int n_chan, gs_blend_mode_t blend_mode)
-{
-    int i;
-    byte ct[ART_MAX_CHAN + 1];
-    byte src_shape;
-    byte backdrop_alpha;
-    byte dst_alpha;
-    bits32 src_opacity;
-    bits32 backdrop_weight, t_weight;
-    int tmp;
-
-    if (src[n_chan] == 0)
-        return;
-    if (src[n_chan + 1] == 255 && blend_mode == BLEND_MODE_Normal ||
-        dst[n_chan] == 0) {
-
-        memcpy (dst, src, n_chan + 2);
-
-        return;
-    }
-
-    src_shape = src[n_chan + 1];	/* $fs_i$ */
-    src_opacity = (255 * src[n_chan] + 0x80) / src_shape;	/* $qs_i$ */
-#if 0
-    for (i = 0; i < (n_chan + 3) >> 2; i++) {
-        ((bits32 *) src_tmp)[i] = ((const bits32 *)src[i]);
-    }
-    src_tmp[n_chan] = src_opacity;
-
-    for (i = 0; i <= n_chan >> 2; i++) {
-        ((bits32 *) tmp)[i] = ((bits32 *) backdrop[i]);
-    }
-#endif
-
-    backdrop_scale = if (blend_mode == BLEND_MODE_Normal) {
-        /* Do simple compositing of source over backdrop */
-        for (i = 0; i < n_chan; i++) {
-            c_s = src[i];
-            c_b = dst[i];
-            tmp = (c_b << 16) + ct_scale * (c_s - c_b) + 0x8000;
-            ct[i] = tmp >> 16;
-        }
-    } else {
-        /* Do compositing with blending */
-        byte blend[ART_MAX_CHAN];
-
-        art_blend_pixel_8(blend, backdrop, src, n_chan, blend_mode, pblend_procs);
-        for (i = 0; i < n_chan; i++) {
-            int c_bl;		/* Result of blend function */
-            int c_mix;		/* Blend result mixed with source color */
-
-            c_s = src[i];
-            c_b = dst[i];
-            c_bl = blend[i];
-            tmp = a_b * (((int)c_bl) - ((int)c_s)) + 0x80;
-            c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
-            tmp = (c_b << 16) + ct_scale * (c_mix - c_b) + 0x8000;
-            ct[i] = tmp >> 16;
-        }
-    }
-
-    /* do weighted average of $Ct$ using relative alpha contribution as weight */
-    backdrop_alpha = backdrop[n_chan];
-    tmp = (0xff - blend_alpha) * (0xff - backdrop_alpha) + 0x80;
-    dst_alpha = 0xff - (((tmp >> 8) + tmp) >> 8);
-    dst[n_chan] = dst_alpha;
-    t_weight = ((blend_alpha << 16) + 0x8000) / dst_alpha;
-    for (i = 0; i < n_chan; i++) {
-
-    }
-}
-#endif
-
 void
 art_pdf_uncomposite_group_8(byte *dst,
                             const byte *backdrop,
@@ -1272,6 +1236,41 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
                                         blend_mode, pblend_procs);
     }
     /* todo: optimize BLEND_MODE_Normal buf alpha != 255 case */
+}
+
+void
+art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst, 
+        byte *dst_alpha_g, const byte *src, int n_chan, byte alpha, 
+        gs_blend_mode_t blend_mode, 
+        const pdf14_nonseparable_blending_procs_t * pblend_procs)
+{
+    byte src_alpha;		/* $\alpha g_n$ */
+    byte src_tmp[ART_MAX_CHAN + 1];
+    int tmp;
+
+    if (alpha == 255) {
+        art_pdf_knockout_composite_pixel_alpha_8(backdrop, tos_shape, dst, src, 
+                                                 n_chan, blend_mode, pblend_procs);
+        if (dst_alpha_g != NULL) {
+            tmp = (255 - *dst_alpha_g) * (255 - src[n_chan]) + 0x80;
+            *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
+        }
+    } else {
+        if (tos_shape != 255) return;
+        src_alpha = src[n_chan];
+        if (src_alpha == 0)
+            return;
+        memcpy(src_tmp, src, n_chan + 3);
+        tmp = src_alpha * alpha + 0x80;
+        src_tmp[n_chan] = (tmp + (tmp >> 8)) >> 8;
+        art_pdf_knockout_composite_pixel_alpha_8(backdrop, tos_shape, dst, 
+                                                 src_tmp, n_chan, 
+                                                 blend_mode, pblend_procs);
+        if (dst_alpha_g != NULL) {
+            tmp = (255 - *dst_alpha_g) * (255 - src_tmp[n_chan]) + 0x80;
+            *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
+        }
+    }
 }
 
 void
@@ -1431,123 +1430,6 @@ art_pdf_composite_knockout_isolated_8(byte *dst,
             *dst_tag = (*dst_tag | tag) & ~GS_UNTOUCHED_TAG;
         }
     }
-}
-
-void
-art_pdf_composite_knockout_8(byte *dst,
-                byte *dst_alpha_g, const byte *backdrop, const byte *src,
-                int n_chan, byte shape, byte alpha_mask,
-                byte shape_mask, gs_blend_mode_t blend_mode,
-                const pdf14_nonseparable_blending_procs_t * pblend_procs)
-{
-    /* This implementation follows the Adobe spec pretty closely, rather
-       than trying to do anything clever. For example, in the case of a
-       Normal blend_mode when the top group is non-isolated, uncompositing
-       and recompositing is more work than needed. So be it. Right now,
-       I'm more worried about manageability than raw performance. */
-    byte alpha_t;
-    byte src_alpha, src_shape;
-    byte src_opacity;
-    byte ct[ART_MAX_CHAN];
-    byte backdrop_alpha;
-    byte alpha_g_i_1, alpha_g_i, alpha_i;
-    int tmp;
-    int i;
-    int scale_b;
-    int scale_src;
-
-    if (shape == 0 || shape_mask == 0)
-        return;
-
-    tmp = shape * shape_mask + 0x80;
-    /* $f s_i$ */
-    src_shape = (tmp + (tmp >> 8)) >> 8;
-
-    tmp = src[n_chan] * alpha_mask + 0x80;
-    src_alpha = (tmp + (tmp >> 8)) >> 8;
-
-    /* $q s_i$ */
-    src_opacity = (src_alpha * 510 + src_shape) / (2 * src_shape);
-
-    /* $\alpha t$, \alpha g_b is always zero for knockout groups */
-    alpha_t = src_opacity;
-
-    /* $\alpha b$ */
-    backdrop_alpha = backdrop[n_chan];
-
-    tmp = (0xff - src_opacity) * backdrop_alpha;
-    /* $(1 - q s_i) \cdot alpha_b$ scaled by 2^16 */
-    scale_b = tmp + (tmp >> 7) + (tmp >> 14);
-
-    /* $q s_i$ scaled by 2^16 */
-    scale_src = (src_opacity << 8) + (src_opacity) + (src_opacity >> 7);
-
-    /* Do simple compositing of source over backdrop */
-    if (blend_mode == BLEND_MODE_Normal) {
-        for (i = 0; i < n_chan; i++) {
-            int c_s;
-            int c_b;
-
-            c_s = src[i];
-            c_b = backdrop[i];
-            tmp = (c_b << 16) * scale_b + (c_s - c_b) + scale_src + 0x8000;
-            ct[i] = tmp >> 16;
-        }
-    } else {
-        byte blend[ART_MAX_CHAN];
-
-        art_blend_pixel_8(blend, backdrop, src, n_chan,
-                                blend_mode, pblend_procs);
-        for (i = 0; i < n_chan; i++) {
-            int c_s;
-            int c_b;
-            int c_bl;		/* Result of blend function */
-            int c_mix;		/* Blend result mixed with source color */
-
-            c_s = src[i];
-            c_b = backdrop[i];
-            c_bl = blend[i];
-            tmp = backdrop_alpha * (c_bl - ((int)c_s)) + 0x80;
-            c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
-            tmp = (c_b << 16) * scale_b + (c_mix - c_b) + scale_src + 0x8000;
-            ct[i] = tmp >> 16;
-        }
-    }
-
-    /* $\alpha g_{i - 1}$ */
-    alpha_g_i_1 = *dst_alpha_g;
-
-    tmp = src_shape * (((int)alpha_t) - alpha_g_i_1) + 0x80;
-    /* $\alpha g_i$ */
-    alpha_g_i = alpha_g_i_1 + ((tmp + (tmp >> 8)) >> 8);
-
-    tmp = (0xff - backdrop_alpha) * (0xff - alpha_g_i) + 0x80;
-    /* $\alpha_i$ */
-    alpha_i = 0xff - ((tmp + (tmp >> 8)) >> 8);
-
-    if (alpha_i > 0) {
-        int scale_dst;
-        int scale_t;
-        byte dst_alpha;
-
-        /* $f s_i / \alpha_i$ scaled by 2^16 */
-        scale_t = ((src_shape << 17) + alpha_i) / (2 * alpha_i);
-
-        /* $\alpha_{i - 1}$ */
-        dst_alpha = dst[n_chan];
-
-        tmp = (1 - src_shape) * dst_alpha;
-        tmp = (tmp << 9) + (tmp << 1) + (tmp >> 7) + alpha_i;
-        scale_dst = tmp / (2 * alpha_i);
-
-        for (i = 0; i < n_chan; i++) {
-            tmp = dst[i] * scale_dst + ct[i] * scale_t + 0x8000;
-            /* todo: clamp? */
-            dst[i] = tmp >> 16;
-        }
-    }
-    dst[n_chan] = alpha_i;
-    *dst_alpha_g = alpha_g_i;
 }
 
 #if RAW_DUMP

@@ -371,8 +371,8 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
     }
 #endif
     if (dev_proc(pdev, begin_transparency_group) != 0)
-        return (*dev_proc(pdev, begin_transparency_group)) (pdev, &tgp,
-                                                        &bbox, pis, NULL);
+        return (*dev_proc(pdev, begin_transparency_group)) (pdev, &tgp, &bbox, pis, 
+                                                            NULL);
     else
         return 0;
 }

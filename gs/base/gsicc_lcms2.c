@@ -16,6 +16,7 @@
 
 /* gsicc interface to littleCMS */
 
+#include "memory_.h"
 #include "lcms2.h"
 #include "lcms2_plugin.h"
 #include "gslibctx.h"
@@ -215,10 +216,9 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                              void *outputbuffer)
 {
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM)icclink->link_handle;
-    cmsUInt32Number dwInputFormat,dwOutputFormat, num_src_lcms, num_des_lcms;
-    int planar,numbytes,big_endian,hasalpha,k;
+    cmsUInt32Number dwInputFormat, dwOutputFormat, num_src_lcms, num_des_lcms;
+    int planar,numbytes, big_endian, hasalpha, k;
     unsigned char *inputpos, *outputpos;
-    int numchannels;
 #if DUMP_CMS_BUFFER
     FILE *fid_in, *fid_out;
 #endif
@@ -280,20 +280,73 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
        this row by row adjusting for our stride.  Output buffer must already
        be allocated. ToDo:  Check issues with plane and row stride and word
        boundry */
-    inputpos = (unsigned char *) inputbuffer;
-    outputpos = (unsigned char *) outputbuffer;
+    inputpos = (byte *) inputbuffer;
+    outputpos = (byte *) outputbuffer;
     if(input_buff_desc->is_planar){
-        /* Do entire buffer.  Care must be taken here
-           with respect to row stride, word boundry and number
-           of source versus output channels.  We may
-           need to take a closer look at this. */
-        cmsDoTransform(hTransform,inputpos,outputpos,
-                        input_buff_desc->plane_stride);
+        /* Determine if we can do this in one operation or if we have to break 
+           it up.  Essentially if the width * height = plane_stride then yes.  If
+           we are doing some subsection of a plane then no. */
+        if (input_buff_desc->num_rows * input_buff_desc->pixels_per_row ==
+            input_buff_desc->plane_stride  && 
+            output_buff_desc->num_rows * output_buff_desc->pixels_per_row ==
+            output_buff_desc->plane_stride) {
+            /* Do entire buffer.*/
+            cmsDoTransform(hTransform, inputpos, outputpos, 
+                           input_buff_desc->plane_stride);
+        } else {
+            /* We have to do this row by row, with memory transfers */
+            byte *temp_des, *temp_src;
+            int source_size = input_buff_desc->bytes_per_chan * 
+                              input_buff_desc->pixels_per_row;
+
+            int des_size = output_buff_desc->bytes_per_chan * 
+                           output_buff_desc->pixels_per_row;
+            int y, i;
+
+            temp_src = (byte*) gs_alloc_bytes(icclink->icc_link_cache->memory, 
+                                              source_size * input_buff_desc->num_chan, 
+                                              "gscms_transform_color_buffer");
+            if (temp_src == NULL)
+                return;
+            temp_des = (byte*) gs_alloc_bytes(icclink->icc_link_cache->memory, 
+                                              des_size * output_buff_desc->num_chan, 
+                                              "gscms_transform_color_buffer");
+            if (temp_des == NULL)
+                return;
+            for (y = 0; y < input_buff_desc->num_rows; y++) {
+                byte *src_cm = temp_src;
+                byte *src_buff = inputpos;
+                byte *des_cm = temp_des;
+                byte *des_buff = outputpos;
+
+                /* Put into planar temp buffer */
+                for (i = 0; i < input_buff_desc->num_chan; i ++) {
+                    memcpy(src_cm, src_buff, source_size);
+                    src_cm += source_size;
+                    src_buff += input_buff_desc->plane_stride;
+                }
+                /* Transform */
+                cmsDoTransform(hTransform, temp_src, temp_des, 
+                               input_buff_desc->pixels_per_row);
+                /* Get out of temp planar buffer */
+                for (i = 0; i < output_buff_desc->num_chan; i ++) {
+                    memcpy(des_buff, des_cm, des_size);
+                    des_cm += des_size;
+                    des_buff += output_buff_desc->plane_stride;
+                }
+                inputpos += input_buff_desc->row_stride;
+                outputpos += output_buff_desc->row_stride;
+            }
+            gs_free_object(icclink->icc_link_cache->memory, temp_src, 
+                           "gscms_transform_color_buffer");
+            gs_free_object(icclink->icc_link_cache->memory, temp_des, 
+                           "gscms_transform_color_buffer");
+        }
     } else {
         /* Do row by row. */
         for(k = 0; k < input_buff_desc->num_rows ; k++){
-            cmsDoTransform(hTransform,inputpos,outputpos,
-                            input_buff_desc->pixels_per_row);
+            cmsDoTransform(hTransform, inputpos, outputpos, 
+                           input_buff_desc->pixels_per_row);
             inputpos += input_buff_desc->row_stride;
             outputpos += output_buff_desc->row_stride;
         }
@@ -314,10 +367,8 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
    of elements of size gx_device_color. It is up to the caller to make sure
    the proper allocations for the colors are there. */
 void
-gscms_transform_color(gx_device *dev, gsicc_link_t *icclink,
-                             void *inputcolor,
-                             void *outputcolor,
-                             int num_bytes)
+gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
+                             void *outputcolor, int num_bytes)
 {
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM)icclink->link_handle;
     cmsUInt32Number dwInputFormat,dwOutputFormat;
@@ -616,10 +667,9 @@ void
 gscms_release_profile(void *profile)
 {
     cmsHPROFILE profile_handle;
-    cmsBool notok;
 
     profile_handle = (cmsHPROFILE) profile;
-    notok = cmsCloseProfile(profile_handle);
+    cmsCloseProfile(profile_handle);
 }
 
 /* Named color, color management */
