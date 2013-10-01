@@ -499,7 +499,6 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 
 #ifdef DEBUG
     if (gs_debug_c('o')) {
-        int count = pgs_lp->dash.pattern_size;
         int i;
 
         dmlprintf4(ppath->memory, "[o]half_width=%f, start_cap=%d, end_cap=%d, dash_cap=%d,\n",
@@ -508,8 +507,8 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
         dmlprintf3(ppath->memory, "   join=%d, miter_limit=%f, miter_check=%f,\n",
                    (int)pgs_lp->join, pgs_lp->miter_limit,
                    pgs_lp->miter_check);
-        dmlprintf1(ppath->memory, "   dash pattern=%d", count);
-        for (i = 0; i < count; i++)
+        dmlprintf1(ppath->memory, "   dash pattern=%d", dash_count);
+        for (i = 0; i < dash_count; i++)
             dmprintf1(ppath->memory, ",%f", pgs_lp->dash.pattern[i]);
         dmputs(ppath->memory, ",\n");
         dmlprintf4(ppath->memory, "\toffset=%f, init(ink_on=%d, index=%d, dist_left=%f)\n",
@@ -676,11 +675,33 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
         spath = &fpath;
     }
     if (dash_count) {
-        gx_path_init_local(&dpath, ppath->memory);
-        code = gx_path_add_dash_expansion(spath, &dpath, pis);
-        if (code < 0)
-            goto exf;
-        spath = &dpath;
+        float max_dash_len = 0;
+        float expand_squared;
+        int i;
+        float adjust = pis->fill_adjust.x;
+        if (adjust > pis->fill_adjust.y)
+            adjust = pis->fill_adjust.y;
+        for (i = 0; i < dash_count; i++) {
+            if (max_dash_len < pgs_lp->dash.pattern[i])
+                max_dash_len = pgs_lp->dash.pattern[i];
+        }
+        expand_squared = pis->ctm.xx * pis->ctm.yy - pis->ctm.xy * pis->ctm.yx;
+        if (expand_squared < 0)
+            expand_squared = -expand_squared;
+        expand_squared *= max_dash_len * max_dash_len;
+        /* Wide lines in curves can show dashes up, so fudge to allow for
+         * this. */
+        if (pis->line_params.half_width > 1)
+            adjust /= pis->line_params.half_width;
+        if (expand_squared*65536.0f >= (float)(adjust*adjust)) {
+            gx_path_init_local(&dpath, ppath->memory);
+            code = gx_path_add_dash_expansion(spath, &dpath, pis);
+            if (code < 0)
+                goto exf;
+            spath = &dpath;
+        } else {
+            dash_count = 0;
+        }
     }
     if (to_path == 0) {
         /* We might try to defer this if it's expensive.... */

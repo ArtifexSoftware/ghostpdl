@@ -716,5 +716,3 @@ gs_matrix_compare(const gs_matrix *pmat1, const gs_matrix *pmat2) {
     return(1);
   return(0);
 }
-
-
