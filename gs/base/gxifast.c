@@ -611,8 +611,6 @@ image_render_simple(gx_image_enum * penum, const byte * buffer, int data_x,
             return 1;
         /****** MAY BE UNALIGNED ******/
         line = scan_line + (line_ix >> 3);
-        if (dxx < 0)
-            ix -= line_width;
         for (dy = 1; dy < ih; dy++) {
             int code = (*copy_mono)
                 (dev, line, line_x, line_size, gx_no_bitmap_id,
