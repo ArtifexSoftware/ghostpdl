@@ -15,6 +15,9 @@
 
 
 /* Command line parsing and dispatching */
+
+/* #define FORCE_SAVED_PAGES_TEST */ /* to force saved-pages-test mode */
+
 #include "ctype_.h"
 #include "memory_.h"
 #include "string_.h"
@@ -327,6 +330,22 @@ run_stdin:
             code = gs_main_init2(minst);        /* Finish initialization */
             if (code < 0)
                 return code;
+
+#ifdef FORCE_SAVED_PAGES_TEST
+    /* The following code is only to allow regression testing of saved-pages */
+    {
+    gx_device *pdev;
+
+        /* get the current device */
+        pdev = gs_currentdevice(minst->i_ctx_p->pgs);
+        if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) != 0) {
+            code = gx_saved_pages_param_process((gx_device_printer *)pdev, (byte *)"begin", 5);
+            if (code < 0)
+                return code;
+            minst->saved_pages_test_mode = true;
+        }
+    }
+#endif /* FORCE _SAVED_PAGES_TEST */
 
             code = run_string(minst, ".runstdin", runFlush);
             if (code < 0)
@@ -900,6 +919,22 @@ static int
 argproc(gs_main_instance * minst, const char *arg)
 {
     int code = gs_main_init1(minst);            /* need i_ctx_p to proceed */
+#ifdef FORCE_SAVED_PAGES_TEST
+    /* The following code is only to allow regression testing of saved-pages */
+    gx_device *pdev;
+
+    /* Since we need the device set up, finish initialization */
+    if ((code = gs_main_init2(minst)) < 0)
+        return code;
+    /* get the current device */
+    pdev = gs_currentdevice(minst->i_ctx_p->pgs);
+    if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) != 0) {
+        code = gx_saved_pages_param_process((gx_device_printer *)pdev, (byte *)"begin", 5);
+        if (code < 0)
+            return code;
+        minst->saved_pages_test_mode = true;
+    }
+#endif /* FORCE _SAVED_PAGES_TEST */
 
     if (code < 0)
         return code;

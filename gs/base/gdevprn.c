@@ -891,29 +891,26 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
     gs_devn_params *pdevn_params;
     int outcode = 0, closecode = 0, errcode = 0, endcode;
     bool upgraded_copypage = false;
+    int code;
 
     prn_finish_bg_print(ppdev);		/* finish any previous background printing */
 
-    if (num_copies > 0 || !flush) {
-        int code = gdev_prn_open_printer_seekable(pdev, 1, seekable);
+    if (num_copies > 0 && ppdev->saved_pages_list != NULL) {
+        /* We are putting pages on a list */
+        if ((code = gx_saved_pages_list_add(ppdev)) < 0)
+            return code;
 
-        if (code < 0)
+    } else if (num_copies > 0 || !flush) {
+        if ((code = gdev_prn_open_printer_seekable(pdev, 1, seekable)) < 0)
             return code;
 
         /* If copypage request, try to do it using buffer_page */
         if ( !flush &&
-             (*ppdev->printer_procs.buffer_page)
-             (ppdev, ppdev->file, num_copies) >= 0
-             ) {
+             (*ppdev->printer_procs.buffer_page)(ppdev, ppdev->file, num_copies) >= 0) {
             upgraded_copypage = true;
             flush = true;
 
-        } else if (num_copies > 0 && ppdev->saved_pages_list != NULL) {
-            /* We are putting pages on a list */
-            if ((code = gx_saved_pages_list_add(ppdev)) < 0)
-                return code;
-
-        } else if (num_copies > 0) {	/* && pdev->saved_pages_list == NULL */
+        } else if (num_copies > 0) {
             int threads_enabled = 0;
             int print_foreground = 1;		/* default to foreground printing */
 

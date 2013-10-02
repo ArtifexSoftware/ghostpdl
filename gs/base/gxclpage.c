@@ -719,13 +719,13 @@ gx_saved_pages_list_print(gx_device_printer *pdev, gx_saved_pages_list *list,
     }
 out:
     /* restore the device parameters saved upon entry */
-    gx_saved_page_load(pdev, &saved_page);
-
     *printed_count = pdev->PageCount - list->PageCount;
     list->PageCount = pdev->PageCount;		/* retain for subsequent print action */
     pdev->saved_pages_list = list;
     pdev->bg_print_requested = save_bg_print;
     crdev->do_not_open_or_close_bandfiles = save_bandfile_open_close;
+    /* load must be after we've set saved_pages_list which forces clist mode. */
+    gx_saved_page_load(pdev, &saved_page);
 
 
     /* Finally, do the finish page which will reset the clist to empty and write mode */
