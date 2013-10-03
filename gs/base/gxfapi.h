@@ -150,6 +150,7 @@ struct gs_fapi_font_s
     bool is_outline_font;
     bool is_mtx_skipped;        /* Ugly. Only UFST needs. */
     bool is_vertical;
+    bool metrics_only;  /* can save the expense of loading entire glyph */
     gs_fapi_ttf_cmap_request ttf_cmap_req[GS_FAPI_NUM_TTF_CMAP_REQ]; /* Lets client request a specific cmap to be set. Also, a couple of fallbacks */
     void *client_ctx_p;
     void *client_font_data;

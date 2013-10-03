@@ -1159,8 +1159,7 @@ gs_fapi_finish_render(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, gs_f
 #define GET_S16_MSB(p) (int)((GET_U16_MSB(p) ^ 0x8000) - 0x8000)
 
 #define MTX_EQ(mtx1,mtx2) (mtx1->xx == mtx2->xx && mtx1->xy == mtx2->xy && \
-                           mtx1->yx == mtx2->yx && mtx1->yy == mtx2->yy && \
-                           mtx1->tx == mtx2->tx && mtx1->ty == mtx2->ty)
+                           mtx1->yx == mtx2->yx && mtx1->yy == mtx2->yy)
 
 int
 gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font_file_path,
@@ -1256,6 +1255,7 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
     I->ff.is_type1 = bIsType1GlyphData;
     I->ff.is_cid = bCID;
     I->ff.is_outline_font = pbfont->PaintType != 0;
+    I->ff.metrics_only = fapi_gs_char_show_width_only(penum);
 
     if (!I->ff.is_mtx_skipped)
         I->ff.is_mtx_skipped = (gs_fapi_get_metrics_count(&I->ff) != 0);
@@ -1470,8 +1470,8 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
     }
     memset(&metrics, 0x00, sizeof(metrics));
     /* Take metrics from font : */
-    if (fapi_gs_char_show_width_only(penum)) {
-        code = I->get_char_width(I, &I->ff, &cr, &metrics);
+    if (I->ff.metrics_only) {
+        code = I->get_char_outline_metrics(I, &I->ff, &cr, &metrics);
         /* A VMerror could be a real out of memory, or the glyph being too big for a bitmap
          * so it's worth retrying as an outline glyph
          */
@@ -1635,7 +1635,7 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
      */
 
     /* Don't allow caching if we're only returning the metrics */
-    if (fapi_gs_char_show_width_only(penum)) {
+    if (I->ff.metrics_only) {
         pgs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;
     }
 

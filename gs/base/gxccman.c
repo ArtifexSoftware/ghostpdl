@@ -358,7 +358,12 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
                                 char_tm, log2_scale, design_grid);
             if (code < 0)
                 return code;
-        }
+    }
+    else {
+       if (font->FontType == ft_TrueType) {
+           pair->design_grid = design_grid;
+       }
+    }
     pair->memory = 0;
     if_debug8m('k', dir->memory,
                "[k]adding pair 0x%lx: font=0x%lx [%g %g %g %g] UID %ld, 0x%lx\n",

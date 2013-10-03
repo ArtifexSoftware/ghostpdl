@@ -62,6 +62,7 @@ static const gs_fapi_font pl_ff_stub = {
     false,                      /* is_outline_font */
     false,                      /* is_mtx_skipped */
     false,                      /* is_vertical */
+    false,                      /* metrics_only */
     {
     {3,10}, {3,1},{3,5},{3,4},\
       {3,3},{3,2},{3,0},{1,0},

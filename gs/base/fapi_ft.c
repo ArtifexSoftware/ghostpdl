@@ -86,6 +86,7 @@ typedef struct ff_face_s
     /* Non-null if font data is owned by this object. */
     unsigned char *font_data;
     int font_data_len;
+    bool data_owned;
 } ff_face;
 
 /* Here we define the struct FT_Incremental that is used as an opaque type
@@ -162,7 +163,7 @@ FF_stream_read(FT_Stream str, unsigned long offset, unsigned char *buffer,
         status = sgets(ps, buffer, count, &rlen);
 
         if (status < 0 && status != EOFC)
-            return (-1);
+            return_error (-1);
     }
     return (rlen);
 }
@@ -253,7 +254,7 @@ FF_open_read_stream(gs_memory_t * mem, char *fname, FT_Stream * fts)
 static ff_face *
 new_face(gs_fapi_server * a_server, FT_Face a_ft_face,
          FT_Incremental_InterfaceRec * a_ft_inc_int, FT_Stream ftstrm,
-         unsigned char *a_font_data, int a_font_data_len)
+         unsigned char *a_font_data, int a_font_data_len, bool data_owned)
 {
     ff_server *s = (ff_server *) a_server;
 
@@ -264,6 +265,7 @@ new_face(gs_fapi_server * a_server, FT_Face a_ft_face,
         face->ft_inc_int = a_ft_inc_int;
         face->font_data = a_font_data;
         face->font_data_len = a_font_data_len;
+        face->data_owned = data_owned;
         face->ftstrm = ftstrm;
     }
     return face;
@@ -286,7 +288,8 @@ delete_face(gs_fapi_server * a_server, ff_face * a_face)
         FT_Done_Face(a_face->ft_face);
 
         FF_free(s->ftmemory, a_face->ft_inc_int);
-        FF_free(s->ftmemory, a_face->font_data);
+        if (a_face->data_owned)
+            FF_free(s->ftmemory, a_face->font_data);
         if (a_face->ftstrm) {
             FF_free(s->ftmemory, a_face->ftstrm);
         }
@@ -330,7 +333,6 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data * a_data)
 {
     gs_fapi_font *ff = a_info->fapi_font;
     int length = 0;
-    ff_face *face = (ff_face *) ff->server_font_data;
 
     /* Tell the FAPI interface that we need to decrypt the glyph data. */
     ff->need_decrypt = true;
@@ -710,7 +712,7 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
         a_metrics->em_y = ft_face->units_per_EM;
     }
 
-    if ((!ft_error || !ft_error_fb) && a_bitmap == true) {
+    if ((!ft_error || !ft_error_fb)) {
 
         FT_BBox cbox;
 
@@ -729,7 +731,7 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
         w = (FT_UInt) ((cbox.xMax - cbox.xMin) >> 6);
         h = (FT_UInt) ((cbox.yMax - cbox.yMin) >> 6);
 
-        if (ft_face->glyph->format != FT_GLYPH_FORMAT_BITMAP
+        if (!a_fapi_font->metrics_only && a_bitmap == true && ft_face->glyph->format != FT_GLYPH_FORMAT_BITMAP
             && ft_face->glyph->format != FT_GLYPH_FORMAT_COMPOSITE) {
             if ((bitmap_raster(w) * h) < max_bitmap) {
                 FT_Render_Mode mode = FT_RENDER_MODE_MONO;
@@ -743,26 +745,28 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
         }
     }
 
-    if ((!ft_error || !ft_error_fb) && a_glyph) {
-        ft_error = FT_Get_Glyph(ft_face->glyph, a_glyph);
-    }
-    else {
-        if (ft_face->glyph->format == FT_GLYPH_FORMAT_BITMAP) {
-            FT_BitmapGlyph bmg;
-
-            ft_error = FT_Get_Glyph(ft_face->glyph, (FT_Glyph *) & bmg);
-            if (!ft_error) {
-                FT_Bitmap_Done(s->freetype_library, &bmg->bitmap);
-                FF_free(s->ftmemory, bmg);
-            }
+    if (!a_fapi_font->metrics_only) {
+        if ((!ft_error || !ft_error_fb) && a_glyph) {
+            ft_error = FT_Get_Glyph(ft_face->glyph, a_glyph);
         }
         else {
-            FT_OutlineGlyph olg;
+            if (ft_face->glyph->format == FT_GLYPH_FORMAT_BITMAP) {
+                FT_BitmapGlyph bmg;
 
-            ft_error = FT_Get_Glyph(ft_face->glyph, (FT_Glyph *) & olg);
-            if (!ft_error) {
-                FT_Outline_Done(s->freetype_library, &olg->outline);
-                FF_free(s->ftmemory, olg);
+                ft_error = FT_Get_Glyph(ft_face->glyph, (FT_Glyph *) & bmg);
+                if (!ft_error) {
+                    FT_Bitmap_Done(s->freetype_library, &bmg->bitmap);
+                    FF_free(s->ftmemory, bmg);
+                }
+            }
+            else {
+                FT_OutlineGlyph olg;
+
+                ft_error = FT_Get_Glyph(ft_face->glyph, (FT_Glyph *) & olg);
+                if (!ft_error) {
+                    FT_Outline_Done(s->freetype_library, &olg->outline);
+                    FF_free(s->ftmemory, olg);
+                }
             }
         }
     }
@@ -1143,6 +1147,7 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
     FT_Error ft_error = 0;
     int i, j;
     FT_CharMap cmap = NULL;
+    bool data_owned = true;
 
     if (s->bitmap_glyph) {
         FT_Bitmap_Done(s->freetype_library, &s->bitmap_glyph->bitmap);
@@ -1319,7 +1324,7 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
         if (ft_face) {
             face =
                 new_face(a_server, ft_face, ft_inc_int, ft_strm,
-                         own_font_data, own_font_data_len);
+                         own_font_data, own_font_data_len, data_owned);
             if (!face) {
                 FF_free(s->ftmemory, own_font_data);
                 FT_Done_Face(ft_face);
@@ -1427,6 +1432,7 @@ gs_fapi_ft_get_font_bbox(gs_fapi_server * a_server, gs_fapi_font * a_font, int a
     a_box[3] = face->ft_face->bbox.yMax;
 
     unitsPerEm[0] = unitsPerEm[1] = face->ft_face->units_per_EM;
+
     return 0;
 }
 

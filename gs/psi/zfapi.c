@@ -1266,6 +1266,7 @@ static const gs_fapi_font ps_ff_stub = {
     false,                      /* is_outline_font */
     false,                      /* is_mtx_skipped */
     false,                      /* is_vertical */
+    false,                      /* metrics_only */
     {{-1, -1}},                 /* ttf_cmap_req */
     0,                          /* client_ctx_p */
     0,                          /* client_font_data */

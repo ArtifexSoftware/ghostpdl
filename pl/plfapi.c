@@ -103,6 +103,7 @@ static const gs_fapi_font pl_ff_stub = {
     false,                      /* is_outline_font */
     false,                      /* is_mtx_skipped */
     false,                      /* is_vertical */
+    false,                      /* metrics_only */
     {{3, 10}, {3, 1}, {-1, -1}, {-1, -1}, {-1, -1}},    /* ttf_cmap_req */
     0,                          /* client_ctx_p */
     0,                          /* client_font_data */
@@ -442,22 +443,54 @@ pl_fapi_get_mtype_font_scaleFactor(gs_font * pfont, uint * scaleFactor)
             (pfont, gs_fapi_font_info_design_units, scaleFactor, &size));
 }
 
+static text_enum_proc_is_width_only(pl_show_text_is_width_only);
+
+static const gs_text_enum_procs_t null_text_procs = {
+    NULL, NULL,
+    pl_show_text_is_width_only, NULL,
+    NULL, NULL,
+    NULL
+};
+
+static bool
+pl_show_text_is_width_only(const gs_text_enum_t *pte)
+{
+    return(true);
+}
+
+static int
+pl_fapi_set_cache_metrics(gs_text_enum_t * penum, const gs_font_base * pbfont,
+                         const gs_string * char_name, int cid,
+                         const double pwidth[2], const gs_rect * pbbox,
+                         const double Metrics2_sbw_default[4],
+                         bool * imagenow)
+{
+    penum->returned.total_width.x = pwidth[0];
+    penum->returned.total_width.y = pwidth[1];
+
+    *imagenow = false;
+    return (gs_error_unknownerror);
+}
+
 static int
 pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
                      gs_char char_code, float metrics[4])
 {
     int code = 0;
     gs_text_enum_t *penum;
+    gs_text_enum_t penum1;
     gs_font *pfont = plfont->pfont;
     gs_font_base *pbfont = (gs_font_base *) pfont;
     gs_text_params_t text;
     gs_char buf[2];
-    gs_state *pgs = (gs_state *) vpgs;
+    gs_state *rpgs = (gs_state *) vpgs;
     /* NAFF: undefined glyph would be better handled inside FAPI */
     gs_char chr = char_code;
     gs_glyph unused_glyph = gs_no_glyph;
     gs_glyph glyph;
-    gs_matrix mat;
+    gs_matrix mat = {72.0, 0.0, 0.0, 72.0, 0.0, 0.0};
+    gs_matrix fmat;
+    gs_fapi_font tmp_ff;
 
     if (pfont->FontType == ft_MicroType) {
         glyph = char_code;
@@ -478,18 +511,30 @@ pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
         code = 1;
     } else {
         gs_fapi_server *I = pbfont->FAPI;
+        gs_state lpgs;
+        gs_state *pgs = &lpgs;
 
-        gs_gsave(pgs);
+        /* This is kind of naff, but it's *much* cheaper to copy
+         * the parts of the gstate we need, than gsave/grestore
+         */
+        memset(pgs, 0x00, sizeof(lpgs));
+        pgs->is_gstate = rpgs->is_gstate;
+        pgs->memory = rpgs->memory;
+        pgs->ctm = rpgs->ctm;
+        pgs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;
+        pgs->device = rpgs->device;
+        pgs->log_op = rpgs->log_op;
+        *(pgs->color) = *(rpgs->color);
+
+        tmp_ff.fapi_set_cache = I->ff.fapi_set_cache;
+        I->ff.fapi_set_cache = pl_fapi_set_cache_metrics;
+
+        gs_setmatrix(pgs, &mat);
+        fmat = pfont->FontMatrix;
         pfont->FontMatrix = pfont->orig_FontMatrix;
         (void)gs_setfont(pgs, pfont);
-        memset(&mat, 0x00, sizeof(gs_matrix));
-        mat.xx = 72;
-        mat.yy = 72;
-        gs_setmatrix(pgs, &mat);
 
         I->ff.is_mtx_skipped = plfont->is_xl_format;
-
-        code = gs_moveto(pgs, 0.0, 0.0);
 
         buf[0] = char_code;
         buf[1] = '\0';
@@ -498,20 +543,25 @@ pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
         text.data.chars = buf;
         text.size = 1;
 
-        if (code >= 0)
-            code = gs_text_begin(pgs, &text, pfont->memory, &penum);
+        code = gs_text_enum_init(&penum1, &null_text_procs,
+                             NULL, NULL, &text, pfont,
+                             NULL, NULL, NULL, pfont->memory);
+        penum1.pis = pgs;
 
-        if (code >= 0)
-            code = gs_text_process(penum);
+        code = gs_fapi_do_char(pfont, pgs, &penum1, plfont->font_file, false,
+                        NULL, NULL, char_code, glyph, 0);
 
-        if (code >= 0) {
+        if (code >= 0 || code == gs_error_unknownerror) {
             metrics[0] = metrics[1] = 0;
-            metrics[2] = penum->returned.total_width.x;
-            metrics[3] = penum->returned.total_width.y;
+            metrics[2] = penum1.returned.total_width.x;
+            metrics[3] = penum1.returned.total_width.y;
+            if (code < 0)
+                code = 0;
         }
 
-        gs_text_release(penum, "show_char_foreground");
-        gs_grestore(pgs);
+        pfont->FontMatrix = fmat;
+
+        I->ff.fapi_set_cache = tmp_ff.fapi_set_cache;
     }
     return (code);
 }
