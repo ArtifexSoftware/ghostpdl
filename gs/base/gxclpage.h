@@ -35,6 +35,7 @@ typedef struct gx_saved_pages_list_s {
     int PageCount;		        /* Page Count to start with on next 'print' action */
     int count;				/* number of pages in the list */
     int collated_copies;		/* how many copies of the job to print */
+    int save_banding_type;		/* to restore when we "end" */
     gx_saved_pages_list_element *head;
     gx_saved_pages_list_element *tail;
     gs_memory_t *mem;			/* allocator used for this struct and list_elements */

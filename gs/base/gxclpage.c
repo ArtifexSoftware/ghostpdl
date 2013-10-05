@@ -350,14 +350,17 @@ gx_saved_page_load(gx_device_printer *pdev, gx_saved_page *page)
     if ((code = gs_param_list_unserialize((gs_param_list *)&paramlist, page->paramlist)) < 0)
         goto out;
     gs_c_param_list_read(&paramlist);
-    if ((code = gs_putdeviceparams((gx_device *)pdev, (gs_param_list *)&paramlist)) < 0) {
-        gs_c_param_list_release(&paramlist);
+    code = gs_putdeviceparams((gx_device *)pdev, (gs_param_list *)&paramlist);
+    gs_c_param_list_release(&paramlist);
+    if (code < 0) {
         goto out;
     }
-    gs_c_param_list_release(&paramlist);
+    if (code > 0)
+        if ((code = gs_opendevice((gx_device *)pdev)) < 0)
+            goto out;
 
     /* If the device is now a writer, that means putparams realloced the device */
-    /* so we need to get back to reader mode and remove the extra clisst files  */
+    /* so we need to get back to reader mode and remove the extra clist files  */
     if (CLIST_IS_WRITER((gx_device_clist *)pdev)) {
         clist_close_writer_and_init_reader((gx_device_clist *)crdev);
         /* close and unlink the temp files just created */
@@ -379,6 +382,7 @@ gx_saved_page_load(gx_device_printer *pdev, gx_saved_page *page)
     crdev->num_pages = 1;		/* single page at a time */
     crdev->offset_map = NULL;
     crdev->render_threads = NULL;
+    crdev->ymin = crdev->ymax = 0;      /* invalidate buffer contents to force rasterizing */
 
     /* We probably don't need to copy in the filenames, but do it in case something expects it */
     strncpy(crdev->page_info.cfname, page->cfname, sizeof(crdev->page_info.cfname));
@@ -737,6 +741,8 @@ out:
 /*
  * Caller should make sure that this device supports saved_pages:
  * dev_proc(dev, dev_spec_op)(dev, gxdso_supports_saved_pages, NULL, 0) == 1
+ *
+ * Returns < 0 if error, 1 if erasepage needed, 0 if no action needed.
  */
 int
 gx_saved_pages_param_process(gx_device_printer *pdev, byte *param, int param_size)
@@ -746,6 +752,7 @@ gx_saved_pages_param_process(gx_device_printer *pdev, byte *param, int param_siz
     byte *token;
     int token_size, code, printed_count, collated_copies = 1;
     int tmp_num;			/* during token scanning loop */
+    int erasepage_needed = 0;
 
     while ((token = param_parse_token(param_scan, param_left, &token_size)) != NULL) {
 
@@ -756,20 +763,25 @@ gx_saved_pages_param_process(gx_device_printer *pdev, byte *param, int param_siz
                     return_error(gs_error_VMerror);
 
                 /* We need to change to clist mode. Always uses clist when saving pages */
-                code = gdev_prn_reallocate_memory((gx_device *)pdev, &pdev->space_params, pdev->width, pdev->height);
-                if (code < 0)
+                pdev->saved_pages_list->save_banding_type = pdev->space_params.banding_type;
+                pdev->space_params.banding_type = BandingAlways;
+                if ((code = gdev_prn_reallocate_memory((gx_device *)pdev, &pdev->space_params, pdev->width, pdev->height)) < 0)
                     return code;
+                erasepage_needed = 1;
             }
             break;
 
           case PARAM_END:
             if (pdev->saved_pages_list != NULL) {
+                /* restore to what was set before the "begin" */
+                pdev->space_params.banding_type = pdev->saved_pages_list->save_banding_type;
                 gx_saved_pages_list_free(pdev->saved_pages_list);
                 pdev->saved_pages_list = NULL;
                 /* We may need to change from clist mode since we forced clist when saving pages */
                 code = gdev_prn_reallocate_memory((gx_device *)pdev, &pdev->space_params, pdev->width, pdev->height);
                 if (code < 0)
                     return code;
+                erasepage_needed = 1;       /* make sure next page is erased */
             }
             break;
 
@@ -852,5 +864,5 @@ gx_saved_pages_param_process(gx_device_printer *pdev, byte *param, int param_siz
         param_scan = token + token_size;
 
     }
-    return 0;
+    return erasepage_needed;
 }

@@ -938,8 +938,8 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         return -1;
                     }
                     code = gx_saved_pages_param_process(ppdev, arg+12, strlen(arg+12));
-                    if (code >= 0 && ppdev->saved_pages_list == NULL && !PRINTER_IS_CLIST(ppdev)) {
-                        /* If no longer in saved-pages-mode, and no longer in clist mode, erase the page */
+                    if (code > 0) {
+                        /* erase the page */
                         gx_color_index color;
                         gx_color_value rgb_white[3] = { 65535, 65535, 65535 };
                         gx_color_value cmyk_white[4] = { 0, 0, 0, 0 };
@@ -967,6 +967,18 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         break;			/* just ignore it */
                     }
                     code = gx_saved_pages_param_process((gx_device_printer *)pdev, (byte *)"begin", 5);
+                    if (code > 0) {
+                        /* erase the page */
+                        gx_color_index color;
+                        gx_color_value rgb_white[3] = { 65535, 65535, 65535 };
+                        gx_color_value cmyk_white[4] = { 0, 0, 0, 0 };
+
+                        if (pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+                            color = dev_proc(pdev, map_rgb_color)(pdev, rgb_white);
+                        else
+                            color = dev_proc(pdev, map_cmyk_color)(pdev, cmyk_white);
+                        code = dev_proc(pdev, fill_rectangle)(pdev, 0, 0, pdev->width, pdev->height, color);
+                    }
                     if (code < 0)
                         return code;
                     pmi->saved_pages_test_mode = true;
