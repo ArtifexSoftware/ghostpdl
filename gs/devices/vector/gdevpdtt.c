@@ -2575,6 +2575,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
     pwidths->real_width.v.x = pwidths->real_width.v.y = 0;
     pwidths->real_width.w = pwidths->real_width.xy.x = pwidths->real_width.xy.y = 0;
     pwidths->replaced_v = false;
+    pwidths->ignore_wmode = false;
     if (glyph == GS_NO_GLYPH)
         return get_missing_width(cfont, wmode, &scale_c, pwidths);
     code = cfont->procs.glyph_info((gs_font *)cfont, glyph, NULL,
@@ -2700,8 +2701,11 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
     else if (code < 0)
         return code;
     else {
-        if ((info.members & (GLYPH_INFO_VVECTOR0 | GLYPH_INFO_VVECTOR1)) != 0)
+        if ((info.members & (GLYPH_INFO_VVECTOR0 | GLYPH_INFO_VVECTOR1)) != 0) {
             pwidths->replaced_v = true;
+            if ((info.members & GLYPH_INFO_VVECTOR1) == 0 && wmode == 1)
+                pwidths->ignore_wmode = true;
+        }
         else
             info.v.x = info.v.y = 0;
         code = store_glyph_width(&pwidths->real_width, wmode, &scale_o, &info);

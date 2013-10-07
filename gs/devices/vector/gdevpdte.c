@@ -730,7 +730,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
             pdfont->Widths[ch] = pwidths->Width.w;
             real_widths[ch] = pwidths->real_width.w;
         } else {
-            if (font->WMode == 0 && !pwidths->replaced_v)
+            if ((font->WMode == 0 || pwidths->ignore_wmode) && !pwidths->replaced_v)
                 pdfont->Widths[ch] = pwidths->real_width.w;
         }
     } else {
@@ -749,6 +749,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
         pwidths->Width.w = pdfont->Widths[ch];
         pwidths->Width.v = pdfont->u.simple.v[ch];
         pwidths->real_width.v.x = pwidths->real_width.v.y = 0;
+        pwidths->ignore_wmode = false;
         if (font->FontType == ft_user_defined || font->FontType == ft_PCL_user_defined ||
             font->FontType == ft_MicroType || font->FontType == ft_GL2_stick_user_defined ||
             font->FontType == ft_GL2_531) {
@@ -1116,7 +1117,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
             }
         } else
             v = ppts->values.pdfont->u.simple.v[chr];
-        if (font->WMode) {
+        if (font->WMode && !cw.ignore_wmode) {
             /* With WMode 1 v-vector is (WMode 1 origin) - (WMode 0 origin).
                The glyph shifts in the opposite direction.  */
             v.x = - v.x;
@@ -1159,8 +1160,8 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
             gs_distance_transform(cw.Width.xy.x * ppts->values.size,
                                   cw.Width.xy.y * ppts->values.size,
                                   &ppts->values.matrix, &did);
-            gs_distance_transform((font->WMode ? 0 : ppts->values.character_spacing),
-                                  (font->WMode ? ppts->values.character_spacing : 0),
+            gs_distance_transform(((font->WMode && !cw.ignore_wmode) ? 0 : ppts->values.character_spacing),
+                                  ((font->WMode && !cw.ignore_wmode) ? ppts->values.character_spacing : 0),
                                   &ppts->values.matrix, &tpt);
             did.x += tpt.x;
             did.y += tpt.y;
@@ -1172,8 +1173,8 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
              * both the 'did' and 'wanted' calculations (see below).
              */
             if (chr == space_char && (!pte->single_byte_space || decoded_bytes == 1)) {
-                gs_distance_transform((font->WMode ? 0 : ppts->values.word_spacing),
-                                      (font->WMode ? ppts->values.word_spacing : 0),
+                gs_distance_transform(((font->WMode && !cw.ignore_wmode)? 0 : ppts->values.word_spacing),
+                                      ((font->WMode && !cw.ignore_wmode) ? ppts->values.word_spacing : 0),
                                       &ppts->values.matrix, &tpt);
                 did.x += tpt.x;
                 did.y += tpt.y;
