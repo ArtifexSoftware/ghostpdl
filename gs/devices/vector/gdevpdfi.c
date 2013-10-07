@@ -2648,7 +2648,8 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 arry[1] = tmplate->BBox.p.y;
                 arry[2] = tmplate->BBox.q.x;
                 arry[3] = tmplate->BBox.q.y;
-                code = cos_dict_put_c_key_floats(pcd, "/BBox", arry, 4);
+                if (code >= 0)
+                    code = cos_dict_put_c_key_floats(pcd, "/BBox", arry, 4);
                 if (code < 0)
                     return code;
 
