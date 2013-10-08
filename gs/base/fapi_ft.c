@@ -1417,7 +1417,7 @@ gs_fapi_ft_get_decodingID(gs_fapi_server * a_server, gs_fapi_font * a_font,
  * Get the font bounding box in font units.
  */
 static gs_fapi_retcode
-gs_fapi_ft_get_font_bbox(gs_fapi_server * a_server, gs_fapi_font * a_font, int a_box[4])
+gs_fapi_ft_get_font_bbox(gs_fapi_server * a_server, gs_fapi_font * a_font, int a_box[4], int unitsPerEm[2])
 {
     ff_face *face = (ff_face *) a_font->server_font_data;
 
@@ -1425,6 +1425,8 @@ gs_fapi_ft_get_font_bbox(gs_fapi_server * a_server, gs_fapi_font * a_font, int a
     a_box[1] = face->ft_face->bbox.yMin;
     a_box[2] = face->ft_face->bbox.xMax;
     a_box[3] = face->ft_face->bbox.yMax;
+
+    unitsPerEm[0] = unitsPerEm[1] = face->ft_face->units_per_EM;
     return 0;
 }
 

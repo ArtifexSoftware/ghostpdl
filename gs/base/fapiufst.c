@@ -1330,7 +1330,7 @@ gs_fapi_ufst_get_decodingID(gs_fapi_server * server, gs_fapi_font * ff,
 }
 
 static gs_fapi_retcode
-gs_fapi_ufst_get_font_bbox(gs_fapi_server * server, gs_fapi_font * ff, int BBox[4])
+gs_fapi_ufst_get_font_bbox(gs_fapi_server * server, gs_fapi_font * ff, int BBox[4], int unitsPerEm[2])
 {
     fapi_ufst_server *r = If_to_I(server);
     SW16 VLCPower = 0;
@@ -1352,6 +1352,9 @@ gs_fapi_ufst_get_font_bbox(gs_fapi_server * server, gs_fapi_font * ff, int BBox[
     BBox[1] >>= VLCPower;
     BBox[2] >>= VLCPower;
     BBox[3] >>= VLCPower;
+
+    unitsPerEm[0] = unitsPerEm[1] = 1;
+
     return 0;
 }
 
