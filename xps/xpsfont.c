@@ -168,8 +168,10 @@ xps_load_sfnt_name(xps_font_t *font, char *namep)
     byte *namedata;
     int offset, length;
     int format, count, stringoffset;
-    int i;
+    int found;
+    int i, k;
 
+    found = 0;
     strcpy(namep, "Unknown");
 
     offset = xps_find_sfnt_table(font, "name", &length);
@@ -201,14 +203,49 @@ xps_load_sfnt_name(xps_font_t *font, char *namep)
         length = u16(record + 8);
         offset = u16(record + 10);
 
-        /* Mac Roman English */
-        if (pid == 1 && eid == 0 && langid == 0)
+        /* Full font name or postscript name */
+        if (nameid == 4 || nameid == 6)
         {
-            /* Full font name or postscript name */
-            if (nameid == 4 || nameid == 6)
+            if (pid == 1 && eid == 0 && langid == 0) /* mac roman, english */
             {
-                memcpy(namep, namedata + stringoffset + offset, length);
-                namep[length] = 0;
+                if (found < 3)
+                {
+                    memcpy(namep, namedata + stringoffset + offset, length);
+                    namep[length] = 0;
+                    found = 3;
+                }
+            }
+
+            if (pid == 3 && eid == 1 && langid == 0x409) /* windows unicode ucs-2, US */
+            {
+                if (found < 2)
+                {
+                    unsigned char *s = namedata + stringoffset + offset;
+                    int n = length / 2;
+                    for (k = 0; k < n; k ++)
+                    {
+                        int c = u16(s + k * 2);
+                        namep[k] = isprint(c) ? c : '?';
+                    }
+                    namep[k] = 0;
+                    found = 2;
+                }
+            }
+
+            if (pid == 3 && eid == 10 && langid == 0x409) /* windows unicode ucs-4, US */
+            {
+                if (found < 1)
+                {
+                    unsigned char *s = namedata + stringoffset + offset;
+                    int n = length / 4;
+                    for (k = 0; k < n; k ++)
+                    {
+                        int c = u32(s + k * 4);
+                        namep[k] = isprint(c) ? c : '?';
+                    }
+                    namep[k] = 0;
+                    found = 1;
+                }
             }
         }
     }
