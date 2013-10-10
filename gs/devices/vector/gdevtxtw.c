@@ -534,7 +534,7 @@ static int write_simple_text(unsigned short *text, int count, gx_device_txtwrite
                         fwrite (UTF8, sizeof(unsigned char), 1, tdev->file);
                     } else {
                         if (*UTF16 < 0x800) {
-                            UTF8[0] = (*UTF16 >> 11) + 0xC0;
+                            UTF8[0] = (*UTF16 >> 6) + 0xC0;
                             UTF8[1] = (*UTF16 & 0x3F) + 0x80;
                             fwrite (UTF8, sizeof(unsigned char), 2, tdev->file);
                         } else {
@@ -823,6 +823,7 @@ txtwrite_output_page(gx_device * dev, int num_copies, int flush)
     page_text_list_t *y_list;
     gs_parsed_file_name_t parsed;
     const char *fmt;
+    const char BOM[] = {0xFE, 0xFF};
 
     if (!tdev->file) {
         /* Either this is the first page, or we're doing one file per page */
@@ -841,6 +842,7 @@ txtwrite_output_page(gx_device * dev, int num_copies, int flush)
             break;
 
         case 2:
+            fwrite (BOM, sizeof(unsigned char), 2, tdev->file);
         case 3:
             code = simple_text_output(tdev);
             if (code < 0)
