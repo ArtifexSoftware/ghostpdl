@@ -862,6 +862,12 @@ struct gx_device_pdf_s {
                                      * pages
                                      */
     int ResourceUsageSize;          /* Size of the above array, currently */
+    bool InOutputPage;              /* Used when closing the file, if this is true then we were
+                                     * called from output_page and should emit a page even if there
+                                     * are no marks. If false, then we probably were called from
+                                     * closedevice and, if there are no marks, we should delete
+                                     * the last file *if* we are emitting one file per page.
+                                     */
 };
 
 #define is_in_page(pdev)\

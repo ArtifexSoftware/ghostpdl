@@ -278,5 +278,6 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,                     /* FirstPage (from the command line) */
  0,                     /* LastPage (from the command line) */
  0,                     /* pointer to resourceusage */
- 0                      /* Size of resourceusage */
+ 0,                     /* Size of resourceusage */
+ false                  /* called from output_page */
 };

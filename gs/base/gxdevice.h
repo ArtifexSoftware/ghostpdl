@@ -459,6 +459,9 @@ int gx_device_open_output_file(const gx_device * dev, char *fname,
 int gx_device_close_output_file(const gx_device * dev, const char *fname,
                                 FILE *file);
 
+/* Delete the current output file for a device (file must be closed first) */
+int gx_device_delete_output_file(const gx_device * dev, const char *fname);
+
 /*
  * Define the number of levels for a colorant above which we do not halftone.
  */

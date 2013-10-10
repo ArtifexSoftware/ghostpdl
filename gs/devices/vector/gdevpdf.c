@@ -606,6 +606,8 @@ pdf_open(gx_device * dev)
     gs_memory_t *mem = pdev->pdf_memory = gs_memory_stable(pdev->memory);
     int code;
 
+    pdev->InOutputPage = false;
+
     if ((code = pdf_open_temp_file(pdev, &pdev->xref)) < 0 ||
         (code = pdf_open_temp_stream(pdev, &pdev->asides)) < 0 ||
         (code = pdf_open_temp_stream(pdev, &pdev->streams)) < 0 ||
@@ -1229,6 +1231,7 @@ pdf_output_page(gx_device * dev, int num_copies, int flush)
         return code;
 
     if (gx_outputfile_is_separate_pages(((gx_device_vector *)dev)->fname, dev->memory)) {
+        pdev->InOutputPage = true;
         if ((code = pdf_close(dev)) < 0)
             return code;
         code = pdf_open(dev);
@@ -2241,6 +2244,19 @@ pdf_close(gx_device * dev)
      * marks.
      */
     if (pdev->next_page == 0) {
+        /* If we didn't get called from pdf_output_page, and we are doign file-per-page
+         * output, then the call from close_device will leave an empty file which we don't
+         * want. So here we delete teh file.
+         */
+        if (!pdev->InOutputPage && gx_outputfile_is_separate_pages(pdev->fname, pdev->memory)) {
+            code = gdev_vector_close_file((gx_device_vector *) pdev);
+            if (code != 0)
+                return code;
+            code = gx_device_delete_output_file((const gx_device *)pdev, pdev->fname);
+            if (code != 0)
+                return gs_note_error(gs_error_ioerror);
+            return code;
+        }
         code = pdf_open_page(pdev, PDF_IN_STREAM);
 
         if (code < 0)

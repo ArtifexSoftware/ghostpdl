@@ -1001,6 +1001,40 @@ gx_outputfile_is_separate_pages(const char *fname, gs_memory_t *memory)
     return (code >= 0 && fmt != 0);
 }
 
+/* Delete the current output file for a device (file must be closed first) */
+int gx_device_delete_output_file(const gx_device * dev, const char *fname)
+{
+    gs_parsed_file_name_t parsed;
+    const char *fmt;
+    char pfname[gp_file_name_sizeof];
+    int code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname),
+                                         dev->memory);
+
+    if (code < 0)
+        return code;
+    if (parsed.iodev && !strcmp(parsed.iodev->dname, "%stdout%"))
+        return 0;
+
+    if (fmt) {						/* filename includes "%nnd" */
+        long count1 = dev->PageCount + 1;
+
+        while (*fmt != 'l' && *fmt != '%')
+            --fmt;
+        if (*fmt == 'l')
+            gs_sprintf(pfname, parsed.fname, count1);
+        else
+            gs_sprintf(pfname, parsed.fname, (int)count1);
+    } else if (parsed.len && strchr(parsed.fname, '%'))	/* filename with "%%" but no "%nnd" */
+        gs_sprintf(pfname, parsed.fname);
+    else
+        pfname[0] = 0; /* 0 to use "fname", not "pfname" */
+    if (pfname[0]) {
+        parsed.fname = pfname;
+        parsed.len = strlen(parsed.fname);
+    }
+    return (parsed.iodev->procs.delete_file((gx_io_device *)(&parsed.iodev), (const char *)parsed.fname));
+}
+
 /* Open the output file for a device. */
 int
 gx_device_open_output_file(const gx_device * dev, char *fname,
