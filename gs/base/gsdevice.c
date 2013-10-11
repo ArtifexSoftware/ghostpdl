@@ -1032,7 +1032,9 @@ int gx_device_delete_output_file(const gx_device * dev, const char *fname)
         parsed.fname = pfname;
         parsed.len = strlen(parsed.fname);
     }
-    return (parsed.iodev->procs.delete_file((gx_io_device *)(&parsed.iodev), (const char *)parsed.fname));
+    if (parsed.iodev)
+        return (parsed.iodev->procs.delete_file((gx_io_device *)(&parsed.iodev), (const char *)parsed.fname));
+    return_error(gs_error_invalidfileaccess);
 }
 
 /* Open the output file for a device. */
