@@ -2207,49 +2207,36 @@ may be overridden by the command line argument
 <dt><a name="GridFitTT"></a>
 <code>GridFitTT &lt;integer&gt;</code>
 <dd>Control the use of True Type grid fitting.
-Ghostscript implements a reduced True Type bytecode interpreter,
-which can interpret the subset of True Type glyph instructions
-not covered by Apple's patents. This allows proper rasterization
-of the Dynalab fonts.
+Ghostscript, by default, uses Freetype for rendering Truetype (and most other) glyphs
+(but other scaler/renderer libraries can be used), thus has access to a complete Truetype
+bytecode interpreter.
 <p>
-The reduced interpreter can't properly grid fit
-fonts with patented instructions. Therefore Ghostscript implements
-another grid fitting method for True Type fonts, based on a spot topology analysis.
-<p>
-This parameter controls the action of the reduced interpreter and the grid fitter:
+This parameter controls the hinting of Truetype glyphs.
 <ul>
 <li>
-A value of 0 disables grid fitting for all True Type fonts. This is a backward compatibility mode.
+A value of 0 disables grid fitting for all True Type fonts (not generally recommended).
 </li>
 
 <li>
-A value of 1 enables the grid fitting for glyphs that don't involve
-patented instructions, using the reduced True Type bytecode interpreter.
-When a patented instruction is encountered, a warning is printed to stderr,
-and the glyph is rendered ignoring the entire grid fitting program.
+A value of 1 enables the grid fitting using the native Truetype hinting bytecode
+program(s). Fonts or glyphs with faulty bytecode program(s) will be rendered unhinted.
 </li>
 
 <li>
-A value of 2 invokes the topological grid fitter. This value is recommended
-for common use.
+A value 2 is scaler/renderer dependent (generally, if no alternative hinting engine is available
+this will be equivalent to 1). With the Freetype (our default) this enables Freetype's built-in
+autohinter.
 </li>
 
 <li>
-A value of 3 specifies that the bytecode interpreter to be used
-to grid fit glyphs that have no patented instructions,
-and other glyphs are grid fitted topologically. This mode may
-improve the rendering of some fonts, but in general the best result
-is not guaranteed.
+With Freetype, a value of 3 is effectively equivalent to 1.
 </li>
 </ul>
 <p>
-This parameter defaults to 2, but this
+This parameter defaults to 1, but this
 may be overridden on the command line with
 <code>-dGridFitTT=n</code>.
 <p>
-The reduced bytecode interpreter is based in part of the work of the
-<a href="http://freetype.org/">FreeType</a> Team.
-The topological grid fitting is a new original Ghostscript method.
 </dl>
 
 <hr>

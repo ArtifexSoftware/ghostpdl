@@ -604,6 +604,16 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
         /* maintain consistency better.  (FT_LOAD_NO_BITMAP) */
         a_fapi_font->char_data = saved_char_data;
         if (!a_fapi_font->is_mtx_skipped && !a_fapi_font->is_type1) {
+            /* grid_fit == 1 is the default - use font's native hints
+             * with freetype, 1 & 3 are, in practice, the same.
+             */
+
+            if (a_server->grid_fit == 0) {
+                load_flags = FT_LOAD_NO_HINTING | FT_LOAD_NO_AUTOHINT;
+            }
+            else if (a_server->grid_fit == 2) {
+                load_flags = FT_LOAD_FORCE_AUTOHINT;
+            }
             load_flags |= FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN;
         }
         else {
@@ -1768,6 +1778,7 @@ static const gs_fapi_server freetypeserver = {
     {0},
     0,
     false,
+    1,
     {1, 0, 0, 1, 0, 0},
     gs_fapi_ft_ensure_open,
     gs_fapi_ft_get_scaled_font,

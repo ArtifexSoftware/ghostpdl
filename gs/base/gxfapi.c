@@ -1230,6 +1230,8 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
             (pbfont->dir->ccache.upper >> 1) : MAX_CCACHE_TEMP_BITMAP_BITS;
     }
 
+    I->grid_fit = pbfont->dir->grid_fit_tt;
+
     /* Compute the scale : */
     if (!SHOW_IS(penum, TEXT_DO_NONE) && !I->use_outline) {
         gs_currentcharmatrix(pgs, NULL, 1);     /* make char_tm valid */

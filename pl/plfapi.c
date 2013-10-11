@@ -477,7 +477,6 @@ pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
                      gs_char char_code, float metrics[4])
 {
     int code = 0;
-    gs_text_enum_t *penum;
     gs_text_enum_t penum1;
     gs_font *pfont = plfont->pfont;
     gs_font_base *pbfont = (gs_font_base *) pfont;
@@ -543,22 +542,23 @@ pl_fapi_char_metrics(const pl_font_t * plfont, const void *vpgs,
         text.data.chars = buf;
         text.size = 1;
 
-        code = gs_text_enum_init(&penum1, &null_text_procs,
+        if ((code = gs_text_enum_init(&penum1, &null_text_procs,
                              NULL, NULL, &text, pfont,
-                             NULL, NULL, NULL, pfont->memory);
-        penum1.pis = pgs;
+                             NULL, NULL, NULL, pfont->memory)) >= 0) {
 
-        code = gs_fapi_do_char(pfont, pgs, &penum1, plfont->font_file, false,
+            penum1.pis = (gs_imager_state *)pgs;
+
+            code = gs_fapi_do_char(pfont, pgs, &penum1, plfont->font_file, false,
                         NULL, NULL, char_code, glyph, 0);
 
-        if (code >= 0 || code == gs_error_unknownerror) {
-            metrics[0] = metrics[1] = 0;
-            metrics[2] = penum1.returned.total_width.x;
-            metrics[3] = penum1.returned.total_width.y;
-            if (code < 0)
-                code = 0;
+            if (code >= 0 || code == gs_error_unknownerror) {
+                metrics[0] = metrics[1] = 0;
+                metrics[2] = penum1.returned.total_width.x;
+                metrics[3] = penum1.returned.total_width.y;
+                if (code < 0)
+                    code = 0;
+            }
         }
-
         pfont->FontMatrix = fmat;
 
         I->ff.fapi_set_cache = tmp_ff.fapi_set_cache;

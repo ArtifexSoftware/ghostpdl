@@ -2100,6 +2100,7 @@ static const gs_fapi_server ufstserver = {
     {0},
     0,
     false,
+    1,
     {1, 0, 0, 1, 0, 0},
     gs_fapi_ufst_ensure_open,
     gs_fapi_ufst_get_scaled_font,
