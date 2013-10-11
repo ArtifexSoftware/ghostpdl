@@ -244,26 +244,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
 
     gs_lib_init1(pjl_mem);
 
-    {
-        int i;
-
-        /* Noddy options check for "-dDisableFAPI" or "-DDisableFAPI"
-         * This is here for two reasons: first we need to handle it before
-         * the interpreter starts. Second, it's temporary, we'll remove it
-         * once FAPI has matured a little.
-         * We don't need to remove the param, the later option parsing will
-         * just ignore it.
-         */
-        for (i = 1; i < argc; i++) {
-            if (!strncmp(argv[i], "-dDisableFAPI", 13)
-                || !strncmp(argv[i], "-DDisableFAPI", 13)) {
-
-                gs_fapi_finit(mem);
-                break;
-            }
-        }
-    }
-
     /* Create a memory allocator to allocate various states from */
     {
         /*
