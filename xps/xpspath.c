@@ -69,14 +69,16 @@ xps_fill(xps_context_t *ctx)
     if (gs_currentopacityalpha(ctx->pgs) < 0.001)
         gs_newpath(ctx->pgs);
     else if (ctx->fill_rule == 0) {
-        if (gs_eofill(ctx->pgs) == gs_error_Remap_Color)
+        if (gs_eofill(ctx->pgs) == gs_error_Remap_Color){
             xps_high_level_pattern(ctx);
-        gs_eofill(ctx->pgs);
+            gs_eofill(ctx->pgs);
+        }
     }
     else {
-        if (gs_fill(ctx->pgs) == gs_error_Remap_Color)
+        if (gs_fill(ctx->pgs) == gs_error_Remap_Color){
             xps_high_level_pattern(ctx);
-        gs_fill(ctx->pgs);
+            gs_fill(ctx->pgs);
+        }
     }
 }
 
