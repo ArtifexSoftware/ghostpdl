@@ -617,8 +617,8 @@ pdf14_buf_free(pdf14_buf *buf, gs_memory_t *memory)
     gs_free_object(memory, buf->transfer_fn, "pdf14_buf_free");
     gs_free_object(memory, buf->data, "pdf14_buf_free");
     gs_free_object(memory, buf->parent_color_info_procs, "pdf14_buf_free");
-    gs_free_object(memory, buf, "pdf14_buf_free");
     gs_free_object(memory, buf->backdrop, "pdf14_buf_free");
+    gs_free_object(memory, buf, "pdf14_buf_free");
 }
 
 static void
