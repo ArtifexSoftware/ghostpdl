@@ -938,6 +938,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
             gs_transparency_mask_params_t params;
             gs_transparency_group_params_t tgp;
 
+            gs_setblendmode(ctx->pgs, BLEND_MODE_Normal);
             gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
             gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
             /* I dont like this, but dont want to change interface of draw */
