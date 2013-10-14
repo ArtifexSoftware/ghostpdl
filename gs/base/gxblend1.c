@@ -355,6 +355,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     bool tos_has_tag = tos->has_tags;
     int tos_tag_offset = tos_planestride * (tos->n_planes - 1);
     int nos_shape_offset = n_chan * nos_planestride;
+    int nos_alpha_g_offset = nos_shape_offset + (nos->has_shape ? nos_planestride : 0);
     int nos_tag_offset = nos_planestride * (nos->n_planes - 1);
     byte *mask_tr_fn = NULL; /* Quiet compiler. */
     gx_color_index comps;
@@ -378,9 +379,9 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
         nos_shape_offset = 0;
     if (!nos->has_tags)
         nos_tag_offset = 0;
-    if (nos->has_alpha_g)
-        nos_alpha_g_ptr = nos_ptr + n_chan * nos_planestride;
-    else
+    if (nos->has_alpha_g) {
+        nos_alpha_g_ptr = nos_ptr + nos_alpha_g_offset;
+    } else
         nos_alpha_g_ptr = NULL;
     if (nos->backdrop != NULL) {
         has_backdrop = true;
