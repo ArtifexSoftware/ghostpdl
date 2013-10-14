@@ -143,13 +143,21 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
            suppress an ununiformity by subtracting the image of {0,0,0},
            and then check for giagonal domination.  */
         cc.paint.values[0] = cc.paint.values[1] = cc.paint.values[2] = MIN_FLOAT;
-        convert_color((gx_device *)&mdev, pcs, pis, &cc, c[3]);
+        code = convert_color((gx_device *)&mdev, pcs, pis, &cc, c[3]);
+        if (code < 0)
+            return code;
         cc.paint.values[0] = MAX_FLOAT; cc.paint.values[1] = MIN_FLOAT; cc.paint.values[2] = MIN_FLOAT;
-        convert_color((gx_device *)&mdev, pcs, pis, &cc, c[0]);
+        code = convert_color((gx_device *)&mdev, pcs, pis, &cc, c[0]);
+        if (code < 0)
+            return code;
         cc.paint.values[0] = MIN_FLOAT; cc.paint.values[1] = MAX_FLOAT; cc.paint.values[2] = MIN_FLOAT;
-        convert_color((gx_device *)&mdev, pcs, pis, &cc, c[1]);
+        code = convert_color((gx_device *)&mdev, pcs, pis, &cc, c[1]);
+        if (code < 0)
+            return code;
         cc.paint.values[0] = MIN_FLOAT; cc.paint.values[1] = MIN_FLOAT; cc.paint.values[2] = MAX_FLOAT;
-        convert_color((gx_device *)&mdev, pcs, pis, &cc, c[2]);
+        code = convert_color((gx_device *)&mdev, pcs, pis, &cc, c[2]);
+        if (code < 0)
+            return code;
         c[0][0] -= c[3][0]; c[0][1] -= c[3][1]; c[0][2] -= c[3][2];
         c[1][0] -= c[3][0]; c[1][1] -= c[3][1]; c[1][2] -= c[3][2];
         c[2][0] -= c[3][0]; c[2][1] -= c[3][1]; c[2][2] -= c[3][2];
