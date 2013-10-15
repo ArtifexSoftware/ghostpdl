@@ -518,6 +518,7 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
                 background.gray = 0;
                 bg_needed = true;
             }
+            errdiff = 1;
             break;
         case 48:
             bit_depth = 16;
@@ -771,7 +772,9 @@ pngalpha_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_pngalpha *ppdev = (gx_device_pngalpha *)pdev;
     int background;
-    int code;
+    int code, ecode;
+    int dsf = ppdev->downscale_factor;
+    const char *param_name;
 
     /* BackgroundColor in format 16#RRGGBB is used for bKGD chunk */
     switch(code = param_read_int(plist, "BackgroundColor", &background)) {
@@ -786,9 +789,22 @@ pngalpha_put_params(gx_device * pdev, gs_param_list * plist)
             break;
     }
 
+    switch (ecode = param_read_int(plist, (param_name = "DownScaleFactor"), &dsf)) {
+        case 0:
+            if (dsf >= 1)
+                break;
+            ecode = gs_error_rangecheck;
+        default:
+            code = ecode;
+            param_signal_error(plist, param_name, ecode);
+        case 1:
+            break;
+    }
+
     if (code == 0) {
         code = gdev_prn_put_params(pdev, plist);
     }
+    ppdev->downscale_factor = dsf;
     return code;
 }
 
@@ -798,9 +814,16 @@ pngalpha_get_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_pngalpha *ppdev = (gx_device_pngalpha *)pdev;
     int code = gdev_prn_get_params(pdev, plist);
+    int ecode;
     if (code >= 0)
         code = param_write_int(plist, "BackgroundColor",
                                 &(ppdev->background));
+    ecode = 0;
+    if (ppdev->downscale_factor < 1)
+        ppdev->downscale_factor = 1;
+    if ((ecode = param_write_int(plist, "DownScaleFactor", &ppdev->downscale_factor)) < 0)
+        code = ecode;
+
     return code;
 }
 
