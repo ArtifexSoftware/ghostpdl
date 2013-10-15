@@ -481,9 +481,14 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     } else {
         dev = dev_in;
     }
-    if ( input_colorspace->cmm_icc_profile_data == NULL ) {
-        /* Use default type */
-        gs_input_profile = gsicc_get_gscs_profile(input_colorspace, pis->icc_manager);
+    if (input_colorspace->cmm_icc_profile_data == NULL) {
+        if (input_colorspace->icc_equivalent != NULL) {
+            gs_input_profile = input_colorspace->icc_equivalent->cmm_icc_profile_data;        
+        } else {
+            /* Use default type */
+            gs_input_profile = gsicc_get_gscs_profile(input_colorspace, 
+                                                      pis->icc_manager);
+        }
     } else {
         gs_input_profile = input_colorspace->cmm_icc_profile_data;
     }

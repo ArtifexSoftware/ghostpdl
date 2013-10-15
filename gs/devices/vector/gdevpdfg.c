@@ -460,7 +460,8 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_imager_state * 
     gsicc_release_link(icc_link);
     ((gx_drawing_color *)pdc)->colors.pure = 0;
     for (i = 0;i < pdev->color_info.num_components;i++)
-         ((gx_drawing_color *)pdc)->colors.pure = (pdc->colors.pure << 8) + (Converted[i] / 255);
+         ((gx_drawing_color *)pdc)->colors.pure = (pdc->colors.pure << 8) + 
+                                                                (Converted[i] / 256);
     code = psdf_set_color((gx_device_vector *)pdev, pdc, ppscc);
     if (code < 0)
         return code;
