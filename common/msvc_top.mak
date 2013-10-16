@@ -73,10 +73,14 @@ FTSRCDIR=$(GLSRCDIR)$(D)..$(D)freetype
 CFLAGS=$(CFLAGS) -DMEMENTO
 !endif
 
+# we assume a large color index is needed for PS and PDF in the
+# language switch build.
+
 !if "$(PSICFLAGS)" == "/DPSI_INCLUDED"
 # 1 --> Use 64 bits for gx_color_index.  This is required only for
 # non standard devices or DeviceN process color model devices.
 USE_LARGE_COLOR_INDEX=1
+!endif
 
 !if $(USE_LARGE_COLOR_INDEX) == 1
 # Definitions to force gx_color_index to 64 bits
@@ -85,7 +89,6 @@ GX_COLOR_INDEX_TYPE=$(LARGEST_UINTEGER_TYPE)
 
 CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
 !endif
-!endif # psi included.
 
 !include $(COMMONDIR)\msvcdefs.mak
 !include $(COMMONDIR)\pcdefs.mak
@@ -194,6 +197,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	UFST_CFLAGS="$(UFST_CFLAGS)" UFSTROMFONTDIR="$(UFSTROMFONTDIR)" UFSTDISCFONTDIR="$(UFSTDISCFONTDIR)"\
 	FT_BRIDGE=$(FT_BRIDGE) SHARE_FT=$(SHARE_FT) FTSRCDIR=$(FTSRCDIR) FT_CFLAGS=$(FT_CFLAGS) FT_LIBS=$(FT_LIBS) \
 	PSD="$(GENDIR)/" \
+	USE_LARGE_COLOR_INDEX="$(USE_LARGE_COLOR_INDEX)" \
 	FEATURE_DEVS="$(FEATURE_DEVS)" DEVICE_DEVS="$(DEVICE_DEVS)" \
 	BAND_LIST_STORAGE=$(BAND_LIST_STORAGE) BAND_LIST_COMPRESSOR=$(BAND_LIST_COMPRESSOR) \
 	GLOBJ=$(GLOBJ) GLGEN=$(GLGEN) \

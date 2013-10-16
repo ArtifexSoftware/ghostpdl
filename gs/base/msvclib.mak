@@ -85,6 +85,15 @@ TDEBUG=1
 CFLAGS=$(CFLAGS) -DMEMENTO
 !endif
 
+!if $(USE_LARGE_COLOR_INDEX) == 1
+# Definitions to force gx_color_index to 64 bits
+LARGEST_UINTEGER_TYPE=unsigned __int64
+GX_COLOR_INDEX_TYPE=$(LARGEST_UINTEGER_TYPE)
+
+CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
+!endif
+
+
 # Define the name of the executable file.
 
 !ifndef GS

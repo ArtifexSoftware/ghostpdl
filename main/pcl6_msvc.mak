@@ -388,8 +388,8 @@ PCLXL_ROMFS_ARGS= -c -P ../urwfonts -d ttfonts /*.ttf
 # a 64 bit type is needed for devicen color space/model support but
 # carries a performance burden.  Change unsigned long to unsigned long
 # long to enable large color indices.
-!ifndef GX_COLOR_INDEX_DEFINE
-GX_COLOR_INDEX_DEFINE=-DGX_COLOR_INDEX_TYPE="unsigned long"
+!ifndef USE_LARGE_COLOR_INDEX
+USE_LARGE_COLOR_INDEX=0
 !endif
 
 # Debugging options
