@@ -383,8 +383,13 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_imager_state * 
                     Source[i] = (unsigned short)(conc[i]);
                 break;
             case gs_color_space_index_ICC:
-                for (i=0;i<pdev->color_info.num_components;i++)
-                    Source[i] = (unsigned short)(conc[i]);
+/*                for (i=0;i<pdev->color_info.num_components;i++)
+                    Source[i] = (unsigned short)(conc[i]);*/
+                for (i = 0;i < pdev->color_info.num_components;i++)
+                    ((gx_drawing_color *)pdc)->colors.pure = (pdc->colors.pure << 8) +
+                                                                (conc[i] / 256);
+                code = psdf_set_color((gx_device_vector *)pdev, pdc, ppscc);
+                return code;
                 break;
             default:    /* can't happen, simply silences compiler warnings */
                 break;
