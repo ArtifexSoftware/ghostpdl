@@ -897,9 +897,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     byte *serialized = NULL, serialized0[100];
     pdf_resource_t *pres = NULL;
     int code;
-#ifdef DEPRECATED_906
-    bool islab = false;
-#endif
+    bool is_lab = false;
 
     /* If color space is CIE based and we have compatibility then go ahead and use the ICC alternative */
     if ((pdev->CompatibilityLevel < 1.3) || !gs_color_space_is_PSCIE(pcs_in) ) {
@@ -1076,12 +1074,16 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
         pciec = (const gs_cie_common *)pcie;
         if (!pcie->common.MatrixLMN.is_identity) {
             if (!pdev->UseOldColor) {
-            code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
-            if (ppranges)
-                *ppranges = &pcie->RangeA;
+                if (pcs->icc_equivalent == 0) {
+                    code = gs_colorspace_set_icc_equivalent(pcs, &is_lab, pdev->memory);
+                    if (code < 0)
+                        return code;
+                }
+                code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
+                if (ppranges)
+                    *ppranges = &pcie->RangeA;
             } else {
-
-            code = pdf_convert_cie_space(pdev, pca, pcs, "GRAY", pciec,
+                code = pdf_convert_cie_space(pdev, pca, pcs, "GRAY", pciec,
                                          &pcie->RangeA, ONE_STEP_NOT, NULL,
                                          &ranges);
             }
@@ -1100,12 +1102,16 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
             DO_NOTHING;
         } else {
             if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
-            code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
-            if (ppranges)
-                *ppranges = &pcie->RangeA;
+                if (pcs->icc_equivalent == 0) {
+                    code = gs_colorspace_set_icc_equivalent(pcs, &is_lab, pdev->memory);
+                    if (code < 0)
+                        return code;
+                }
+                code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
+                if (ppranges)
+                    *ppranges = &pcie->RangeA;
             } else {
-
-            code = pdf_convert_cie_space(pdev, pca, pcs, "GRAY", pciec,
+                code = pdf_convert_cie_space(pdev, pca, pcs, "GRAY", pciec,
                                          &pcie->RangeA, ONE_STEP_NOT, NULL,
                                          &ranges);
             }
@@ -1162,12 +1168,16 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
             goto cal;
         } else {
             if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
-            code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
-            if (ppranges)
-                *ppranges = pcie->RangeABC.ranges;
+                if (pcs->icc_equivalent == 0) {
+                    code = gs_colorspace_set_icc_equivalent(pcs, &is_lab, pdev->memory);
+                    if (code < 0)
+                        return code;
+                }
+                code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
+                if (ppranges)
+                    *ppranges = pcie->RangeABC.ranges;
             } else {
-
-            code = pdf_convert_cie_space(pdev, pca, pcs, "RGB ", pciec,
+                code = pdf_convert_cie_space(pdev, pca, pcs, "RGB ", pciec,
                                          pcie->RangeABC.ranges,
                                          one_step, pmat, &ranges);
             }
@@ -1204,12 +1214,16 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 
     case gs_color_space_index_CIEDEF:
             if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
-            code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
-            if (ppranges)
-                *ppranges = pcs->params.def->RangeDEF.ranges;
+                if (pcs->icc_equivalent == 0) {
+                    code = gs_colorspace_set_icc_equivalent(pcs, &is_lab, pdev->memory);
+                    if (code < 0)
+                        return code;
+                }
+                code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
+                if (ppranges)
+                    *ppranges = pcs->params.def->RangeDEF.ranges;
             } else {
-
-        code = pdf_convert_cie_space(pdev, pca, pcs, "RGB ",
+                code = pdf_convert_cie_space(pdev, pca, pcs, "RGB ",
                                      (const gs_cie_common *)pcs->params.def,
                                      pcs->params.def->RangeDEF.ranges,
                                      ONE_STEP_NOT, NULL, &ranges);
@@ -1218,12 +1232,16 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 
     case gs_color_space_index_CIEDEFG:
             if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
-            code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
-            if (ppranges)
-                *ppranges = pcs->params.defg->RangeDEFG.ranges;
+                if (pcs->icc_equivalent == 0) {
+                    code = gs_colorspace_set_icc_equivalent(pcs, &is_lab, pdev->memory);
+                    if (code < 0)
+                        return code;
+                }
+                code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
+                if (ppranges)
+                    *ppranges = pcs->params.defg->RangeDEFG.ranges;
             } else {
-
-        code = pdf_convert_cie_space(pdev, pca, pcs, "CMYK",
+                code = pdf_convert_cie_space(pdev, pca, pcs, "CMYK",
                                      (const gs_cie_common *)pcs->params.defg,
                                      pcs->params.defg->RangeDEFG.ranges,
                                      ONE_STEP_NOT, NULL, &ranges);
