@@ -871,7 +871,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                     if (code < 0)
                         return code;
 
-                    if (page) {
+                    if (page && page->Page) {
                         v_trimbox = cos_dict_find_c_key(page->Page, "/TrimBox");
                         v_bleedbox = cos_dict_find_c_key(page->Page, "/BleedBox");
                         v_artbox = cos_dict_find_c_key(page->Page, "/ArtBox");
