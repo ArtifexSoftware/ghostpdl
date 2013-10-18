@@ -971,7 +971,8 @@ clist_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
                 int bsize = ((pie->bps > 8 ? (pim->Width) * 2 : pim->Width) + 15) * num_components;
                 pie->buffer = gs_alloc_bytes(mem, bsize, "image buffer");
                 if (pie->buffer == 0) {
-                    gs_free_object(mem, pie->buffer, "clist_begin_typed_image");
+                    gs_free_object(mem, pie, "clist_begin_typed_image");
+                    *pinfo = NULL;
                     return_error(gs_error_VMerror);
                 }
             }
@@ -1098,6 +1099,7 @@ use_default:
     if (pie != NULL)
         gs_free_object(mem, pie->buffer, "clist_begin_typed_image");
     gs_free_object(mem, pie, "clist_begin_typed_image");
+    *pinfo = NULL;
 
     if (pis->has_transparency){
         return -1;
