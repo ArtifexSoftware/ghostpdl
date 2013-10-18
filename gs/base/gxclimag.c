@@ -1064,8 +1064,8 @@ clist_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
         if (pcpath) {
             gs_fixed_rect obox;
             gx_cpath_outer_box(pcpath, &obox);
-            pie->ymin = max(y0, fixed2int(obox.p.y));
-            pie->ymax = min(y1, fixed2int(obox.q.y));
+            pie->ymin = max(0, max(y0, fixed2int(obox.p.y)));
+            pie->ymax = min(min(y1, fixed2int(obox.q.y)), dev->height);
         } else {
             pie->ymin = max(y0, 0);
             pie->ymax = min(y1, dev->height);
