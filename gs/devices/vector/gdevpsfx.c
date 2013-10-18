@@ -239,9 +239,12 @@ type1_next(gs_type1_state *pcis)
             ++ipsp;
             goto load;
         case c_return:
-            gs_glyph_data_free(&ipsp->cs_data, "type1_next");
-            pcis->ips_count--;
-            --ipsp;
+            if (pcis->ips_count > 1) {
+                gs_glyph_data_free(&ipsp->cs_data, "type1_next");
+                pcis->ips_count--;
+                --ipsp;
+            } else
+                return_error(gs_error_invalidfont);
             goto load;
         case c_undoc15:
             /* See gstype1.h for information on this opcode. */
