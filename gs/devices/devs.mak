@@ -1594,6 +1594,20 @@ $(DD)pngalpha.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev $(GDEV)
 	$(SETPDEV2) $(DD)pngalpha $(png_)
 	$(ADDMOD) $(DD)pngalpha $(png_i_)
 
+### --------------- Portable Network Graphics file format --------------- ###
+### Requires zlib 0.95 (or more recent versions).                         ###
+### See zlib.mak for more details.                                        ###
+
+fpng_=$(DEVOBJ)gdevfpng.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ)
+
+$(DEVOBJ)gdevfpng.$(OBJ) : $(DEVSRC)gdevfpng.c\
+ $(gdevprn_h) $(gdevpccm_h) $(gscdefs_h) $(zlib_h)
+	$(CC_) $(I_)$(DEVI_) $(II)$(PI_)$(_I) $(PCF_) $(GLF_) $(DEVO_)gdevfpng.$(OBJ) $(C_) $(DEVSRC)gdevfpng.c
+
+$(DD)fpng.dev : $(DEVS_MAK) $(fpng_) $(GLD)page.dev $(GDEV)
+	$(SETPDEV2) $(DD)fpng $(fpng_)
+	$(ADDMOD) $(DD)fpng $(fpng_i_)
+
 ### ---------------------- PostScript image format ---------------------- ###
 ### These devices make it possible to print monochrome Level 2 files on a ###
 ###   Level 1 printer, by converting them to a bitmap in PostScript       ###
