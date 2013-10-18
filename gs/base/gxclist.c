@@ -205,6 +205,7 @@ const gx_device_procs gs_clist_device_procs = {
     clist_strip_copy_rop2,
     clist_strip_tile_rect_devn,
     clist_copy_alpha_hl_color,
+    clist_process_page,
 };
 
 /*------------------- Choose the implementation -----------------------

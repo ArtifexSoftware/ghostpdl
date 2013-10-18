@@ -327,6 +327,7 @@ dev_proc_dev_spec_op(clist_dev_spec_op);
 dev_proc_copy_planes(clist_copy_planes);
 dev_proc_fill_rectangle_hl_color(clist_fill_rectangle_hl_color);
 dev_proc_copy_alpha_hl_color(clist_copy_alpha_hl_color);
+dev_proc_process_page(clist_process_page);
 
 /* In gxclimag.c */
 dev_proc_fill_mask(clist_fill_mask);

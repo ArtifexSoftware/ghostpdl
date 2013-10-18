@@ -1466,6 +1466,27 @@ typedef struct gs_devn_params_s gs_devn_params;
 #define dev_proc_copy_alpha_hl_color(proc)\
   dev_t_proc_copy_alpha_hl_color(proc, gx_device)
 
+typedef struct gx_process_page_options_s gx_process_page_options_t;
+
+struct gx_process_page_options_s
+{
+    int (*init_buffer_fn)(void *arg, gx_device *dev, gs_memory_t *memory, int w, int h, void **buffer);
+    void (*free_buffer_fn)(void *arg, gx_device *dev, gs_memory_t *memory, void *buffer);
+    int (*process_fn)(void *arg, gx_device *dev, gx_device *bdev, const gs_int_rect *rect, void *buffer);
+    int (*output_fn)(void *arg, gx_device *dev, void *buffer);
+    void *arg;
+    int options; /* A mask of GX_PROCPAGE_... options bits */
+};
+
+/* If GX_PROCPAGE_BOTTOM_UP, then we run from band n-1 to band 0, rather than
+ * 0 to n-1. */
+#define GX_PROCPAGE_BOTTOM_UP 1
+
+#define dev_t_proc_process_page(proc, dev_t)\
+  int proc(dev_t *dev, gx_process_page_options_t *options)
+#define dev_proc_process_page(proc)\
+  dev_t_proc_process_page(proc, gx_device)
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -1541,6 +1562,7 @@ typedef struct gs_devn_params_s gs_devn_params;
         dev_t_proc_strip_copy_rop2((*strip_copy_rop2), dev_t);\
         dev_t_proc_strip_tile_rect_devn((*strip_tile_rect_devn), dev_t);\
         dev_t_proc_copy_alpha_hl_color((*copy_alpha_hl_color), dev_t);\
+        dev_t_proc_process_page((*process_page), dev_t);\
 }
 
 /*

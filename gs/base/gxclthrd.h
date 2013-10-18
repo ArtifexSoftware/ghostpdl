@@ -59,6 +59,10 @@ struct clist_render_thread_control_s {
     gx_device *bdev;	/* this thread's buffer device */
     int band;
     gp_thread_id thread;
+
+    /* For process_page mode */
+    gx_process_page_options_t *options;
+    void *buffer;
 #ifdef DEBUG
     ulong cputime;
 #endif

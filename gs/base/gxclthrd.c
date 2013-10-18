@@ -210,7 +210,7 @@ out_cleanup:
 
 /* Set up and start the render threads */
 static int
-clist_setup_render_threads(gx_device *dev, int y)
+clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *options)
 {
     gx_device_printer *pdev = (gx_device_printer *)dev;
     gx_device_clist *cldev = (gx_device_clist *)dev;
@@ -219,8 +219,10 @@ clist_setup_render_threads(gx_device *dev, int y)
     gs_memory_t *mem = cdev->bandlist_memory;
     gs_memory_t *chunk_base_mem = mem->thread_safe_memory;
     gs_memory_status_t mem_status;
-    int i, code, band;
+    int i, band;
+    int code = 0;
     int band_count = cdev->nbands;
+    int band_height = crdev->page_info.band_params.BandHeight;
     crdev->num_render_threads = pdev->num_render_threads_requested;
 
     if(gs_debug[':'] != 0)
@@ -245,7 +247,7 @@ clist_setup_render_threads(gx_device *dev, int y)
     /* Based on the line number requested, decide the order of band rendering */
     /* Almost all devices go in increasing line order (except the bmp* devices ) */
     crdev->thread_lookahead_direction = (y < (cdev->height - 1)) ? 1 : -1;
-    band = y / crdev->page_info.band_params.BandHeight;
+    band = y / band_height;
 
     /* If the 'mem' is not thread safe, we need to wrap it in a locking memory */
     gs_memory_status(chunk_base_mem, &mem_status);
@@ -268,6 +270,13 @@ clist_setup_render_threads(gx_device *dev, int y)
         thread->cdev = ndev;
         thread->memory = ndev->memory;
         thread->band = -1;              /* a value that won't match any valid band */
+        thread->options = options;
+        thread->buffer = NULL;
+        if (options && options->init_buffer_fn) {
+            code = options->init_buffer_fn(options->arg, dev, thread->memory, dev->width, band_height, &thread->buffer);
+            if (code < 0)
+                break;
+        }
 
         /* create the buf device for this thread, and allocate the semaphores */
         if ((code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
@@ -303,6 +312,10 @@ clist_setup_render_threads(gx_device *dev, int y)
             gdev_prn_free_memory((gx_device *)thread_cdev);
             gs_free_object(crdev->render_threads[i].memory, thread_cdev,
             "clist_setup_render_threads");
+        }
+        if (crdev->render_threads[i].buffer != NULL && options->free_buffer_fn != NULL) {
+            options->free_buffer_fn(options->arg, dev, crdev->render_threads[i].memory, crdev->render_threads[i].buffer);
+            crdev->render_threads[i].buffer = NULL;
         }
         if (crdev->render_threads[i].memory != NULL) {
             gs_memory_chunk_release(crdev->render_threads[i].memory);
@@ -421,6 +434,14 @@ clist_teardown_render_threads(gx_device *dev)
             /* destroy the thread's buffer device */
             thread_cdev->buf_procs.destroy_buf_device(thread->bdev);
 
+            if (thread->options) {
+                if (thread->options->free_buffer_fn && thread->buffer) {
+                    thread->options->free_buffer_fn(thread->options->arg, dev, thread->memory, thread->buffer);
+                    thread->buffer = NULL;
+                }
+                thread->options = NULL;
+            }
+
             /* before freeing this device's memory, swap with cdev if it was the main_thread_data */
             if (thread_cdev->data == crdev->main_thread_data) {
                 thread_cdev->data = cdev->data;
@@ -504,6 +525,10 @@ clist_render_thread(void *data)
     band_rect.q.y = band_end_line;
     if (code >= 0)
         code = clist_render_rectangle(cldev, &band_rect, bdev, NULL, true);
+
+    if (code >= 0 && thread->options && thread->options->process_fn)
+        code = thread->options->process_fn(thread->options->arg, dev, bdev, &band_rect, thread->buffer);
+
     /* Reset the band boundaries now */
     crdev->ymin = band_begin_line;
     crdev->ymax = band_end_line;
@@ -536,7 +561,7 @@ clist_render_thread(void *data)
  * next band remaining to do (if any)
  */
 static int
-clist_get_band_from_thread(gx_device *dev, int band_needed)
+clist_get_band_from_thread(gx_device *dev, int band_needed, gx_process_page_options_t *options)
 {
     gx_device_clist *cldev = (gx_device_clist *)dev;
     gx_device_clist_common *cdev = (gx_device_clist_common *)dev;
@@ -588,6 +613,12 @@ clist_get_band_from_thread(gx_device *dev, int band_needed)
     thread->thread = NULL;
     if (thread->status == THREAD_ERROR)
         return gs_error_unknownerror;          /* FAIL */
+
+    if (options && options->output_fn) {
+        code = options->output_fn(options->arg, dev, thread->buffer);
+        if (code < 0)
+            return code;
+    }
 
     /* Swap the data areas to avoid the copy */
     tmp = cdev->data;
@@ -656,7 +687,7 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
 
     if (crdev->ymin == 0 && crdev->ymax == 0 && crdev->render_threads == NULL) {
         /* Haven't done any rendering yet, try to set up the threads */
-        if (clist_setup_render_threads(dev, y) < 0)
+        if (clist_setup_render_threads(dev, y, NULL) < 0)
             /* problem setting up the threads, revert to single threaded */
             return clist_get_bits_rectangle(dev, prect, params, unread);
     } else {
@@ -668,7 +699,7 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
     }
     /* If we already have the band's data, just return it */
     if (y < crdev->ymin || end_y > crdev->ymax)
-        code = clist_get_band_from_thread(dev, band);
+        code = clist_get_band_from_thread(dev, band, NULL);
     if (code < 0)
         goto free_thread_out;
     mdata = crdev->data + crdev->page_tile_cache_size;
@@ -750,6 +781,121 @@ free_thread_out:
     return code;
 }
 
+int
+clist_process_page(gx_device *dev, gx_process_page_options_t *options)
+{
+    gx_device_clist *cldev = (gx_device_clist *)dev;
+    gx_device_clist_reader *crdev = &cldev->reader;
+    gx_device_clist_common *cdev = (gx_device_clist_common *)dev;
+    int y;
+    int line_count;
+    int band_height = crdev->page_band_height;
+    gs_int_rect band_rect;
+    int lines_rasterized;
+    gx_device *bdev;
+    gx_render_plane_t render_plane;
+    int my;
+    int code;
+    void *buffer = NULL;
+
+    if (0 > (code = clist_close_writer_and_init_reader(cldev)))
+        return code;
+
+    if (options->init_buffer_fn) {
+        code = options->init_buffer_fn(options->arg, dev, dev->memory, dev->width, band_height, &buffer);
+        if (code < 0)
+            return code;
+    }
+
+    render_plane.index = -1;
+    for (y = 0; y < dev->height; y += lines_rasterized)
+    {
+        line_count = band_height;
+        if (line_count > dev->height - y)
+            line_count = dev->height - y;
+        code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
+                                      &bdev, cdev->target, y, &render_plane,
+                                      dev->memory,
+                                      &(crdev->color_usage_array[y/band_height]));
+        if (code < 0)
+            return code;
+        code = clist_rasterize_lines(dev, y, line_count, bdev, &render_plane, &my);
+        if (code >= 0)
+        {
+            lines_rasterized = min(code, line_count);
+
+            /* Return as much of the rectangle as falls within the rasterized lines. */
+            band_rect.p.x = 0;
+            band_rect.p.y = y;
+            band_rect.q.x = dev->width;
+            band_rect.q.y = y + lines_rasterized;
+            if (options->process_fn)
+                code = options->process_fn(options->arg, dev, bdev, &band_rect, buffer);
+        }
+        if (code >= 0 && options->output_fn)
+            code = options->output_fn(options->arg, dev, buffer);
+        cdev->buf_procs.destroy_buf_device(bdev);
+        if (code < 0)
+            break;
+    }
+
+    if (options->free_buffer_fn) {
+        options->free_buffer_fn(options->arg, dev, dev->memory, buffer);
+    }
+
+    return code;
+}
+
+static int
+clist_process_page_mt(gx_device *dev, gx_process_page_options_t *options)
+{
+    gx_device_printer *pdev = (gx_device_printer *)dev;
+    gx_device_clist *cldev = (gx_device_clist *)dev;
+    gx_device_clist_reader *crdev = &cldev->reader;
+    int band_height = crdev->page_info.band_params.BandHeight;
+    int band;
+    int num_bands = (dev->height + band_height-1)/band_height;
+    int code;
+    int reverse = !!(options->options & GX_PROCPAGE_BOTTOM_UP);
+
+    /* This page might not want multiple threads */
+    /* Also we don't support plane extraction using multiple threads */
+    if (pdev->num_render_threads_requested < 1)
+        return clist_process_page(dev, options);
+
+    if ((code = clist_close_writer_and_init_reader(cldev)) < 0)
+        return code;	/* can't recover from this */
+
+    /* Haven't done any rendering yet, try to set up the threads */
+    if (clist_setup_render_threads(dev, reverse ? dev->height-1 : 0, options) < 0)
+        /* problem setting up the threads, revert to single threaded */
+        return clist_process_page(dev, options);
+
+    if (reverse)
+    {
+        for (band = num_bands-1; band > 0; band--)
+        {
+            code = clist_get_band_from_thread(dev, band, options);
+            if (code < 0)
+                goto free_thread_out;
+        }
+    }
+    else
+    {
+        for (band = 0; band < num_bands; band++)
+        {
+            code = clist_get_band_from_thread(dev, band, options);
+            if (code < 0)
+                goto free_thread_out;
+        }
+    }
+
+    /* Always free up thread stuff before exiting*/
+free_thread_out:
+    clist_teardown_render_threads(dev);
+    return code;
+}
+
 static void
 test_threads(void *dummy)
 {
@@ -771,6 +917,7 @@ clist_enable_multi_thread_render(gx_device *dev)
     }
     gp_thread_finish(thread);
     set_dev_proc(dev, get_bits_rectangle, clist_get_bits_rect_mt);
+    set_dev_proc(dev, process_page, clist_process_page_mt);
 
     return 1;
 }
