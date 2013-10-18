@@ -270,6 +270,11 @@ enum {
      */
     gxdso_form_begin,
     gxdso_form_end,
+    /* gxdso_adjust_bandheight:
+     * Adjust the bandheight given in 'size' (normally downwards). Typically
+     * to round it to a multiple of a given number.
+     */
+    gxdso_adjust_bandheight,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

@@ -432,6 +432,11 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
          * is completely determined.
          */
         ulong band_data_size;
+        int adjusted;
+
+        adjusted = (dev_proc(dev, dev_spec_op)(dev, gxdso_adjust_bandheight, NULL, band_height));
+        if (adjusted > 0)
+            band_height = adjusted;
 
         if (gdev_mem_data_size(&bdev, band_width, band_height, &band_data_size) < 0 ||
             band_data_size >= band_space) {
@@ -441,6 +446,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
         }
         bits_size = min(band_space - band_data_size, data_size >> 1);
     } else {
+        int adjusted;
         /*
          * Choose the largest band height that will fit in the
          * rendering-time buffer.
@@ -454,6 +460,9 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
                 pbdev->finalize(pbdev);
             return_error(gs_error_rangecheck);
         }
+        adjusted = (dev_proc(dev, dev_spec_op)(dev, gxdso_adjust_bandheight, NULL, band_height));
+        if (adjusted > 0)
+            band_height = adjusted;
     }
     cdev->ins_count = 0;
     code = clist_init_tile_cache(dev, data, bits_size);
