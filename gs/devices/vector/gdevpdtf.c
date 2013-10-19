@@ -834,7 +834,7 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
 {
     pdf_font_resource_t *pdsubf = pdfont;
     gs_string fname;
-    uint size, extra = 0;
+    uint size;
     byte *data;
 
     if (pdfont->FontType == ft_composite) {
@@ -845,8 +845,6 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
         if (code < 0)
             return code;
         fname = pdsubf->BaseFont;
-        if (pdsubf->FontType == ft_CID_encrypted || pdsubf->FontType == ft_CID_TrueType)
-            extra = 1 + pdfont->u.type0.CMapName.size;
     }
     else if (pdfont->FontDescriptor == 0) {
         /* Type 3 font, or has its BaseFont computed in some other way. */
@@ -854,18 +852,16 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
     } else
         fname = *pdf_font_descriptor_base_name(pdsubf->FontDescriptor);
     size = fname.size;
-    data = gs_alloc_string(pdev->pdf_memory, size + extra,
+    data = gs_alloc_string(pdev->pdf_memory, size,
                            "pdf_compute_BaseFont");
     if (data == 0)
         return_error(gs_error_VMerror);
     memcpy(data, fname.data, size);
     switch (pdfont->FontType) {
     case ft_composite:
-        if (extra) {
-            data[size] = '-';
-            memcpy(data + size + 1, pdfont->u.type0.CMapName.data, extra - 1);
-            size += extra;
-        }
+        /* Previously we copied the name of the original CMap onto the font name
+         * but this doesn't make any sense.
+         */
         break;
     case ft_encrypted:
     case ft_encrypted2:
