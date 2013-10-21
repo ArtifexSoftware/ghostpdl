@@ -44,6 +44,7 @@
   <li><a href="#Driver_instance_allocation">Driver instance allocation</a>
 </ul>
 <li><a href="#Printer_drivers">Printer drivers</a>
+<li><a href="#Printer_drivers_mt">Printer drivers (Multi-threaded)</a>
 <li><a href="#Driver_procedures">Driver procedures</a>
 <ul>
   <li><a href="#Life_cycle">Life cycle</a>
@@ -982,8 +983,12 @@ int (*print_page_copies)(gx_device_printer *, FILE *, int)</pre>
 <p>
 This procedure must read out the rendered image from the device and write
 whatever is appropriate to the file.  To read back one or more scan lines
-of the image, the <code>print_page</code> procedure must call one of the
-following procedures:
+of the image, the <code>print_page</code> procedure must call one of
+several procedures. Traditionally devices have called 
+<tt>gdev_prn_copy_scan_lines</tt>, <tt>gdev_prn_get_bits</tt>, or
+the generic <tt>get_bits_rectangle</tt> device entry point. Alternatively
+devices may now call the new <tt>process_page</tt> entrypoint, which can
+have significant performance advantages in <a href="#Printer_drivers_mt">multi-threaded</a> situations.
 
 <blockquote>
 <pre>int gdev_prn_copy_scan_lines(gx_device_printer *pdev, int y, byte *str,
@@ -1012,10 +1017,10 @@ will be aligned.  (See the description of the <code>get_bits</code>
 procedure below for more details.)
 
 <p>
-In either case, each row of the image is stored in the form described in
-the comment under <code>gx_tile_bitmap</code> above; each pixel takes
-the number of bits specified as <code>color_info.depth</code> in the
-device structure, and holds values returned by the device's
+In either of these two cases, each row of the image is stored in the
+form described in the comment under <code>gx_tile_bitmap</code> above;
+each pixel takes the number of bits specified as <code>color_info.depth</code>
+in the device structure, and holds values returned by the device's
 <code>encode_color</code> procedure.
 
 <p>
@@ -1027,8 +1032,9 @@ required to hold a scan line by calling:
 </blockquote>
 
 <p>
-For a very simple concrete example, we suggest reading the code in
-<code>bit_print_page</code> in <a href="../base/gdevbit.c">gdevbit.c</a>.
+For a very simple concrete example of this pattern of use, we suggest
+reading the code in <code>bit_print_page</code> in
+<a href="../base/gdevbit.c">gdevbit.c</a>.
 
 <p>
 If the device provides <code>print_page</code>, Ghostscript will call
@@ -1037,6 +1043,140 @@ desired number of copies; if the device provides
 <code>print_page_copies</code>, Ghostscript will call
 <code>print_page_copies</code> once per page, passing it the desired
 number of copies.
+
+<h2><a name="Printer_drivers_mt"></a>Printer drivers (Multi-threaded)</h2>
+
+<p><strong>This interface is new, and subject to change without notice.</strong></p>
+
+<p>Ghostscript has supported multi-threaded rendering (controlled by the
+<a href="Language.htm#Banding_parameters"><tt>-dNumRenderingThreads</tt></a>
+command line option) since version 8.64. This uses multiple threads
+of execution to accelerate the rendering phase of operations, but driver
+specific operations (such as compression) have not been able to benefit in
+the same way.</p>
+
+<p>As from Ghostscript 9.11 onwards, a new device function, <tt>process_page</tt>
+has been introduced to solve this. A printer driver will be called via the
+<tt>print_page</tt> or <tt>print_page_copies</tt> entry point as before, but
+rather than requesting a scan line or rectangle of pixels at a time (by
+calling <tt>get_bits</tt> or <tt>get_bits_rectangle</tt> respectively), the
+driver can now invite Ghostscript to "process the page" in whatever sized
+chunks it chooses.</p>
+
+<p>While the benefits of <tt>process_page</tt> come from its use with
+multiple rendering threads, it will work perfectly well in single threaded
+mode too. Devices do not need to implement both schemes.</p>
+
+<blockquote>
+<pre>int (*process_page)(gx_device *dev, gx_process_page_options_t *options)</pre>
+</blockquote>
+
+<p>The device should fill out a <tt>gx_process_page_options_t</tt>
+structure and pass the address of this to the <tt>process_page</tt>
+function. The entries within this structure will control exactly how
+Ghostscript will process the page. For forwards compatibility devices
+should ensure that any unknown fields/option bits within the structure
+are initialised to 0.</p>
+
+<blockquote>
+<pre>typedef struct gx_process_page_options_s gx_process_page_options_t;
+
+struct gx_process_page_options_s
+{
+    int (*init_buffer_fn)(void *arg, gx_device *dev, gs_memory_t *memory, int w, int h, void **buffer);
+    void (*free_buffer_fn)(void *arg, gx_device *dev, gs_memory_t *memory, void *buffer);
+    int (*process_fn)(void *arg, gx_device *dev, gx_device *bdev, const gs_int_rect *rect, void *buffer);
+    int (*output_fn)(void *arg, gx_device *dev, void *buffer);
+    void *arg;
+    int options; /* A mask of GX_PROCPAGE_... options bits */
+};</pre>
+</blockquote>
+
+<p>Ghostscript is free to process the page in 1 or more sections. The potential
+benefits of <tt>process_page</tt> come when Ghostscript chooses to use more than
+1 section (or "band") and shares the job of rendering these bands between a set
+of rendering threads. The overall scheme of operation is as follows:</p>
+
+<ul>
+<li>Ghostscript will call <tt>init_buffer_fn</tt> in turn, once for each rendering
+thread in use. This function should (as far as possible) allocate any buffering
+that may be required to cope with a band of the given size.</li>
+
+<li>For each band rendered, Ghostscript will call <tt>process_fn</tt> to
+process the given rectangle of the page into the buffer. To achieve this
+<tt>process_fn</tt> is passed a buffer device that contains the rendered
+version of that rectangle (with the y range adjusted to start from 0).
+<tt>process_fn</tt> should call <tt>get_bits_rectangle</tt> as usual to
+extract the rendered area. If the options to this call are set correctly
+(using <tt>GB_RETURN_POINTER</tt>) no copying or additional storage will
+be required. All the calls to <tt>process_fn</tt> will be for
+non-overlapping rectangles that cover the page, hence <tt>process_fn</tt>
+may overwrite the storage used in the returned buffer device as part
+of the processing. Several calls to <tt>process_fn</tt> may take place
+simultaneously in different threads, and there is no guarantee that they
+will happen 'in order'.</li>
+
+<li>Ghostscript will call <tt>output_fn</tt> for each band in turn,
+passing in the processed buffer containing the output of the
+<tt>process_fn</tt> stage. These calls are guaranteed to happen 'in order',
+and will be interleaved arbitrarily with the <tt>process_fn</tt> calls.
+Once an <tt>output_fn</tt> returns, the buffer may instantly be reused
+for another <tt>process_fn</tt> calls.</li>
+
+<li>Once the page has been processed, Ghostscript will call
+<tt>free_buffer_fn</tt> for each allocated buffer to allow the device to
+clean up.</li>
+</ul>
+
+<p>At the time of writing the only defined bit in the options word is
+<tt>GX_PROCPAGE_BOTTOM_UP</tt> which signifies that Ghostscript should
+render bands from the bottom of the page to the top, rather than the
+default top to bottom.</p>
+
+<p>The height of the bands used by Ghostscript when rendering the page
+can either be specified by the device itself (using the <tt>band_params</tt>
+structure), or can be calculated by Ghostscript based upon the space
+available to it. It can sometimes be much easier/more efficient to code
+a device if the band height can be relied upon to take only particular
+values - for instance, a device that downscales its output will prefer
+the height to be a multiple of the downscale used, or a device that uses
+DCT based compression may prefer a multiple of 8.</p>
+
+<p>To accommodate such needs, before Ghostscript sets up its buffers,
+it will perform a <tt>gxdso_adjust_bandheight</tt> call. A device can
+catch this call to adjust the calculated band height to a value it would
+prefer. To avoid invalidating the calculated memory bounds this should
+generally be a 'fine' adjustment, and always downwards.</p>
+
+<p>A simple example of how to use process_page may be found as the
+<tt>fpng</tt> device. Within this device:</p>
+
+<ul>
+<li>The <tt>init_buffer_fn</tt> allocates a buffer large enough to
+hold the compressed version of each band.</li>
+
+<li>The <tt>process_fn</tt> applies the sub/paeth filters to the
+buffered image, then compresses each band with zlib.</li>
+
+<li>The <tt>output_fn</tt> simply writes each compressed buffer to
+the file.</li>
+
+<li>The <tt>free_buffer_fn</tt> frees the buffers.</li>
+
+<li>In addition, the downscaler is called to demonstrate that it is
+possible to 'chain' process_page functions.</li>
+</ul>
+
+<p>The <tt>fpng</tt> device is broadly equivalent to the <tt>png16m</tt>
+device, but performs much better when multiple threads are in use.
+Compression is potentially worse than with <tt>png16m</tt> due to
+each band being compressed separately.</tt>.
+
+<p>While the <tt>print_page</tt> entry point is specific to printer
+devices, the <tt>process_page</tt> device entry point is not. It will,
+however, only be useful for devices that involve rendering the page.
+As such, neither -dNumRenderingThreads or <tt>process_page</tt> will
+help accelerate devices such as <tt>pdfwrite</tt> or <tt>pswrite</tt>.
 
 <hr>
 
