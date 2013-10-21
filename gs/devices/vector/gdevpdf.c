@@ -2857,6 +2857,10 @@ pdf_close(gx_device * dev)
 
     /* Free named objects. */
 
+    cos_release((cos_object_t *)pdev->NI_stack, "Release Name Index stack");
+    gs_free_object(mem, pdev->NI_stack, "Free Name Index stack");
+    pdev->NI_stack = 0;
+
     cos_dict_objects_delete(pdev->local_named_objects);
     COS_FREE(pdev->local_named_objects, "pdf_close(local_named_objects)");
     pdev->local_named_objects = 0;
@@ -2895,10 +2899,6 @@ pdf_close(gx_device * dev)
     cos_release((cos_object_t *)pdev->Pages, "release Pages dict");
     gs_free_object(mem, pdev->Pages, "Free Pages dict");
     pdev->Pages = 0;
-
-    cos_release((cos_object_t *)pdev->NI_stack, "Release Name Index stack");
-    gs_free_object(mem, pdev->NI_stack, "Free Name Index stack");
-    pdev->NI_stack = 0;
 
     gs_free_object(pdev->pdf_memory, pdev->vgstack, "pdf_close(graphics state stack)");
 
