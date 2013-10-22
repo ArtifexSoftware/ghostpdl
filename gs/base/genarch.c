@@ -181,7 +181,7 @@ main(int argc, char *argv[])
     define_int(f, "ARCH_ALIGN_INT_MOD", OFFSET_IN(si, i));
     define_int(f, "ARCH_ALIGN_LONG_MOD", OFFSET_IN(sl, l));
 
-#if defined (sparc)
+#if defined (sparc) || defined (__hpux)
 # ifndef __BIGGEST_ALIGNMENT__
 #  define __BIGGEST_ALIGNMENT__ 8
 # endif
