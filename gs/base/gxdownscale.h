@@ -117,4 +117,16 @@ gx_downscaler_copy_scan_lines(gx_downscaler_t *ds, int y,
 int
 gx_downscaler_scale(int width, int factor);
 
+int
+gx_downscaler_scale_rounded(int width, int factor);
+
+int gx_downscaler_adjust_bandheight(int factor, int band_height);
+
+/* Downscaling call to the process_page (downscaler also works on the
+ * rendering threads and chains calls through to supplied options functions).
+ */
+int gx_downscaler_process_page(gx_device                 *dev,
+                               gx_process_page_options_t *options,
+                               int                        factor);
+
 #endif

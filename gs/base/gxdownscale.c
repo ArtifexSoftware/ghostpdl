@@ -1536,6 +1536,23 @@ gx_downscaler_scale(int width, int factor)
     return (width*up)/down;
 }
 
+int gx_downscaler_adjust_bandheight(int factor, int band_height)
+{
+    int up, down;
+
+    decode_factor(factor, &up, &down);
+    return (band_height/down)*down;
+}
+
+int
+gx_downscaler_scale_rounded(int width, int factor)
+{
+    int up, down;
+
+    decode_factor(factor, &up, &down);
+    return (width*up + down-1)/down;
+}
+
 int gx_downscaler_init_planar(gx_downscaler_t      *ds,
                               gx_device            *dev,
                               gs_get_bits_params_t *params,
@@ -1573,15 +1590,19 @@ int gx_downscaler_init_planar(gx_downscaler_t      *ds,
     {
         ds->params.data[i] = gs_alloc_bytes(dev->memory, span * downfactor,
                                             "gx_downscaler(planar_data)");
-        if (ds->params.data[i] == NULL)
+        if (ds->params.data[i] == NULL) {
+            code = gs_note_error(gs_error_VMerror);
             goto cleanup;
+        }
     }
-    if (upfactor)
+    if (upfactor > 1)
     {
         ds->scaled_data = gs_alloc_bytes(dev->memory, ds->scaled_span * upfactor * num_comps,
                                          "gx_downscaler(scaled_data)");
-        if (ds->scaled_data == NULL)
+        if (ds->scaled_data == NULL) {
+            code = gs_note_error(gs_error_VMerror);
             goto cleanup;
+        }
     }
 
     if ((src_bpc == 8) && (dst_bpc == 8) && (factor == 32))
@@ -1641,8 +1662,7 @@ int gx_downscaler_init_planar(gx_downscaler_t      *ds,
         ds->errors = (int *)gs_alloc_bytes(dev->memory,
                                            num_comps*(width+3)*sizeof(int),
                                            "gx_downscaler(errors)");
-        if (ds->errors == NULL)
-        {
+        if (ds->errors == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto cleanup;
         }
@@ -1957,4 +1977,206 @@ gx_downscaler_copy_scan_lines(gx_downscaler_t *ds, int y,
             return code;
     }
     return count;
+}
+
+typedef struct downscaler_process_page_arg_s
+{
+    gx_process_page_options_t *orig_options;
+    int upfactor;
+    int downfactor;
+    gx_downscaler_t ds;
+}
+downscaler_process_page_arg_t;
+
+typedef struct downscaler_process_page_buffer_s
+{
+    gx_device *bdev;
+    void *orig_buffer;
+}
+downscaler_process_page_buffer_t;
+
+static int downscaler_init_fn(void *arg_, gx_device *dev, gs_memory_t *memory, int w, int h, void **pbuffer)
+{
+    downscaler_process_page_arg_t *arg = (downscaler_process_page_arg_t *)arg_;
+    downscaler_process_page_buffer_t *buffer;
+    int code = 0;
+
+    buffer = (downscaler_process_page_buffer_t *)gs_alloc_bytes(memory, sizeof(*buffer), "downscaler process_page buffer");
+    if (buffer == NULL)
+        return gs_error_VMerror;
+    memset(buffer, 0, sizeof(*buffer));
+
+    if (arg->upfactor > arg->downfactor) {
+        code = gx_default_create_buf_device(&buffer->bdev, dev,
+                          (h*arg->upfactor + arg->downfactor-1)/arg->downfactor,
+                          NULL, memory, NULL);
+        if (code < 0) {
+            gs_free_object(memory, buffer, "downscaler process_page buffer");
+            return code;
+        }
+    }
+
+    if (arg->orig_options && arg->orig_options->init_buffer_fn) {
+        code = arg->orig_options->init_buffer_fn(arg->orig_options->arg, dev, memory,
+                                                 (w * arg->upfactor + arg->downfactor-1)/arg->downfactor,
+                                                 (h * arg->upfactor + arg->downfactor-1)/arg->downfactor,
+                                                 &buffer->orig_buffer);
+        if (code < 0) {
+            if (buffer->bdev)
+                dev_proc(dev, close_device)(dev);
+            gs_free_object(memory, buffer, "downscaler process_page buffer");
+            return code;
+        }
+    }
+
+    *pbuffer = (void *)buffer;
+    return code;
+}
+
+static int downscaler_process_fn(void *arg_, gx_device *dev, gx_device *bdev, const gs_int_rect *rect, void *buffer_)
+{
+    downscaler_process_page_arg_t *arg = (downscaler_process_page_arg_t *)arg_;
+    downscaler_process_page_buffer_t *buffer = (downscaler_process_page_buffer_t *)buffer_;
+    int code, raster_in, raster_out;
+    gs_get_bits_params_t params;
+    gs_int_rect in_rect, out_rect;
+    byte *in_ptr, *out_ptr;
+
+    in_rect.p.x = 0;
+    in_rect.p.y = 0;
+    in_rect.q.x = rect->q.x - rect->p.x;
+    in_rect.q.y = rect->q.y - rect->p.y;
+    out_rect.p.x = 0;
+    out_rect.p.y = 0;
+    out_rect.q.x = (in_rect.q.x * arg->upfactor + arg->downfactor-1) / arg->downfactor;
+    out_rect.q.y = (in_rect.q.y * arg->upfactor + arg->downfactor-1) / arg->downfactor;
+
+    /* Where do we get the data from? */
+    params.options = GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_PACKING_CHUNKY | GB_RETURN_POINTER | GB_ALIGN_ANY | GB_OFFSET_0 | GB_RASTER_ANY;
+    code = dev_proc(bdev, get_bits_rectangle)(bdev, &in_rect, &params, NULL);
+    if (code < 0)
+        return code;
+    raster_in = params.raster;
+    in_ptr = params.data[0];
+
+    /* Where do we write it to? */
+    if (buffer->bdev) {
+        code = dev_proc(bdev, get_bits_rectangle)(buffer->bdev, &out_rect, &params, NULL);
+        if (code < 0)
+            return code;
+        raster_out = params.raster;
+        out_ptr = params.data[0];
+    } else {
+        raster_out = raster_in;
+        out_ptr = params.data[0];
+    }
+
+    /* Do the downscale */
+    if (arg->ds.down_core) {
+        int y;
+        for (y = rect->p.y; y < rect->q.y; y += arg->downfactor)
+        {
+            arg->ds.down_core(&arg->ds, out_ptr, in_ptr, y, 0, arg->ds.span);
+            in_ptr += arg->ds.span * arg->downfactor;
+            out_ptr += raster_out * arg->upfactor;
+        }
+    }
+
+    /* Pass on to further processing */
+    if (code >= 0 && arg->orig_options && arg->orig_options->process_fn) {
+        out_rect.p.y = rect->p.y*arg->upfactor/arg->downfactor;
+        out_rect.q.y += out_rect.p.y;
+        code = arg->orig_options->process_fn(arg->orig_options->arg, dev,
+                                             (buffer->bdev ? buffer->bdev : bdev),
+                                             &out_rect, buffer->orig_buffer);
+    }
+    return code;
+}
+
+static void
+downscaler_free_fn(void *arg_, gx_device *dev, gs_memory_t *memory, void *buffer_)
+{
+    downscaler_process_page_arg_t *arg = (downscaler_process_page_arg_t *)arg_;
+    downscaler_process_page_buffer_t *buffer = (downscaler_process_page_buffer_t *)buffer_;
+
+    arg->orig_options->free_buffer_fn(arg->orig_options->arg, dev, memory,
+                                      buffer->orig_buffer);
+    if (buffer->bdev)
+        dev_proc(dev, close_device)(dev);
+    gs_free_object(memory, buffer, "downscaler process_page buffer");
+}
+
+static int
+downscaler_output_fn(void *arg_, gx_device *dev, void *buffer_)
+{
+    downscaler_process_page_arg_t *arg = (downscaler_process_page_arg_t *)arg_;
+    downscaler_process_page_buffer_t *buffer = (downscaler_process_page_buffer_t *)buffer_;
+
+    return arg->orig_options->output_fn(arg->orig_options->arg, dev,
+                                        buffer->orig_buffer);
+}
+
+/* No error diffusion with process_page as bands need to be handled
+ * separately. */
+int gx_downscaler_process_page(gx_device                 *dev,
+                               gx_process_page_options_t *options,
+                               int                        factor)
+{
+    downscaler_process_page_arg_t arg = { 0 };
+    gx_process_page_options_t my_options = { 0 };
+    int num_comps = dev->color_info.num_components;
+    int src_bpc = dev->color_info.comp_bits[0];
+    int scaled_w;
+    gx_downscale_core *core;
+
+    arg.orig_options = options;
+    decode_factor(factor, &arg.upfactor, &arg.downfactor);
+    arg.ds.dev = dev;
+    arg.ds.width = (dev->width * arg.upfactor + arg.downfactor-1)/arg.downfactor;
+    arg.ds.awidth = arg.ds.width;
+    arg.ds.span = bitmap_raster(dev->width * num_comps * src_bpc);
+    scaled_w = (dev->width * arg.upfactor + arg.downfactor-1)/arg.downfactor;
+    arg.ds.factor = factor;
+    arg.ds.src_bpc = src_bpc;
+    arg.ds.scaled_span = bitmap_raster(scaled_w * num_comps * src_bpc);
+    arg.ds.num_planes = 0;
+
+    /* Choose an appropriate core */
+    if (factor > 8)
+    {
+        return gs_note_error(gs_error_rangecheck);
+    }
+    else if ((src_bpc == 16) && (num_comps == 1))
+    {
+        core = &down_core16;
+    }
+    else if (factor == 1)
+        core = NULL;
+    else if ((src_bpc == 8) && (num_comps == 1))
+    {
+        if (factor == 4)
+            core = &down_core8_4;
+        else if (factor == 3)
+            core = &down_core8_3;
+        else if (factor == 2)
+            core = &down_core8_2;
+        else
+            core = &down_core8;
+    }
+    else if ((src_bpc == 8) && (num_comps == 3))
+        core = &down_core24;
+    else if ((src_bpc == 8) && (num_comps == 4))
+         core = &down_core32;
+    else {
+        return gs_note_error(gs_error_rangecheck);
+    }
+    arg.ds.down_core = core;
+
+    my_options.init_buffer_fn = downscaler_init_fn;
+    my_options.process_fn = downscaler_process_fn;
+    my_options.output_fn = downscaler_output_fn;
+    my_options.free_buffer_fn = downscaler_free_fn;
+    my_options.arg = &arg;
+
+    return dev_proc(dev, process_page)(dev, &my_options);
 }
