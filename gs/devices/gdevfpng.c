@@ -21,6 +21,8 @@
 #include "gscdefs.h"
 #include "gxgetbit.h"
 #include "zlib.h"
+#include "gxdownscale.h"
+#include "gxdevsop.h"
 
 /* ------ The device descriptors ------ */
 
@@ -36,16 +38,144 @@ typedef struct gx_device_fpng_s gx_device_fpng;
 struct gx_device_fpng_s {
     gx_device_common;
     gx_prn_device_common;
+    int downscale_factor;
 };
+
+static int
+fpng_get_params(gx_device * dev, gs_param_list * plist)
+{
+    gx_device_fpng *pdev = (gx_device_fpng *)dev;
+    int code, ecode;
+
+    ecode = 0;
+    if (pdev->downscale_factor < 1)
+        pdev->downscale_factor = 1;
+    if ((code = param_write_int(plist, "DownScaleFactor", &pdev->downscale_factor)) < 0)
+        ecode = code;
+
+    code = gdev_prn_get_params(dev, plist);
+    if (code < 0)
+        ecode = code;
+
+    return ecode;
+}
+
+static int
+fpng_put_params(gx_device *dev, gs_param_list *plist)
+{
+    gx_device_fpng *pdev = (gx_device_fpng *)dev;
+    int code, ecode;
+    int dsf = pdev->downscale_factor;
+    const char *param_name;
+
+    ecode = 0;
+    switch (code = param_read_int(plist, (param_name = "DownScaleFactor"), &dsf)) {
+        case 0:
+            if (dsf >= 1)
+                break;
+            code = gs_error_rangecheck;
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 1:
+            break;
+    }
+
+    code = gdev_prn_put_params(dev, plist);
+    if (code < 0)
+        ecode = code;
+
+    pdev->downscale_factor = dsf;
+
+    return ecode;
+}
+
+int
+fpng_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
+{
+    gx_device_fpng *fdev = (gx_device_fpng *)pdev;
+
+    if (dev_spec_op == gxdso_adjust_bandheight)
+        return gx_downscaler_adjust_bandheight(fdev->downscale_factor, size);
+
+    return gdev_prn_dev_spec_op(pdev, dev_spec_op, data, size);
+}
 
 /* 24-bit color. */
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs fpng_procs =
-prn_color_params_procs(gdev_prn_open, gdev_prn_bg_output_page, gdev_prn_close,
-                       gx_default_rgb_map_rgb_color,
-                       gx_default_rgb_map_color_rgb,
-                       gdev_prn_get_params, gdev_prn_put_params);
+{
+        gdev_prn_open,
+        NULL,	/* get_initial_matrix */
+        NULL,	/* sync_output */
+        gdev_prn_bg_output_page,
+        gdev_prn_close,
+        gx_default_rgb_map_rgb_color,
+        gx_default_rgb_map_color_rgb,
+        NULL,	/* fill_rectangle */
+        NULL,	/* tile_rectangle */
+        NULL,	/* copy_mono */
+        NULL,	/* copy_color */
+        NULL,	/* draw_line */
+        NULL,	/* get_bits */
+        fpng_get_params,
+        fpng_put_params,
+        NULL,	/* map_cmyk_color */
+        NULL,	/* get_xfont_procs */
+        NULL,	/* get_xfont_device */
+        NULL,	/* map_rgb_alpha_color */
+        gx_page_device_get_page_device,
+        NULL,	/* get_alpha_bits */
+        NULL,	/* copy_alpha */
+        NULL,	/* get_band */
+        NULL,	/* copy_rop */
+        NULL,	/* fill_path */
+        NULL,	/* stroke_path */
+        NULL,	/* fill_mask */
+        NULL,	/* fill_trapezoid */
+        NULL,	/* fill_parallelogram */
+        NULL,	/* fill_triangle */
+        NULL,	/* draw_thin_line */
+        NULL,	/* begin_image */
+        NULL,	/* image_data */
+        NULL,	/* end_image */
+        NULL,	/* strip_tile_rectangle */
+        NULL,	/* strip_copy_rop, */
+        NULL,	/* get_clipping_box */
+        NULL,	/* begin_typed_image */
+        NULL,	/* get_bits_rectangle */
+        NULL,	/* map_color_rgb_alpha */
+        NULL,	/* create_compositor */
+        NULL,	/* get_hardware_params */
+        NULL,	/* text_begin */
+        NULL,	/* finish_copydevice */
+        NULL,	/* begin_transparency_group */
+        NULL,	/* end_transparency_group */
+        NULL,	/* begin_transparency_mask */
+        NULL,	/* end_transparency_mask */
+        NULL,  /* discard_transparency_layer */
+        NULL,  /* get_color_mapping_procs */
+        NULL,  /* get_color_comp_index */
+        NULL,  /* encode_color */
+        NULL,  /* decode_color */
+        NULL,  /* pattern_manage */
+        NULL,  /* fill_rectangle_hl_color */
+        NULL,  /* include_color_space */
+        NULL,  /* fill_linear_color_scanline */
+        NULL,  /* fill_linear_color_trapezoid */
+        NULL,  /* fill_linear_color_triangle */
+        NULL,  /* update_spot_equivalent_colors */
+        NULL,  /* ret_devn_params */
+        NULL,  /* fillpage */
+        NULL,  /* push_transparency_state */
+        NULL,  /* pop_transparency_state */
+        NULL,  /* put_image */
+        fpng_dev_spec_op,  /* dev_spec_op */
+        NULL,  /* copy plane */
+        gx_default_get_profile, /* get_profile */
+        gx_default_set_graphics_type_tag /* set_graphics_type_tag */
+};
 const gx_device_fpng gs_fpng_device =
 {prn_device_body(gx_device_fpng, fpng_procs, "fpng",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -157,26 +287,30 @@ static inline int paeth_predict(const unsigned char *d, int raster)
 static int fpng_process(void *arg, gx_device *dev, gx_device *bdev, const gs_int_rect *rect, void *buffer_)
 {
     int code;
+    gx_device_fpng *fdev = (gx_device_fpng *)dev;
     gs_get_bits_params_t params;
     int unread;
-    int raster = bitmap_raster(dev->width * 3 * 8);
-    int h = rect->q.y - rect->p.y;
     int w = rect->q.x - rect->p.x;
+    int raster = bitmap_raster(bdev->width * 3 * 8);
+    int h = rect->q.y - rect->p.y;
     int x, y;
     unsigned char *p;
     unsigned char sub = 1;
     unsigned char paeth = 4;
     int firstband = (rect->p.y == 0);
-    int lastband = (rect->q.y == dev->height-1);
+    int lastband;
     gs_int_rect my_rect;
     z_stream stream;
     int err;
+    int page_height = gx_downscaler_scale_rounded(dev->height, fdev->downscale_factor);
     fpng_buffer_t *buffer = (fpng_buffer_t *)buffer_;
 
     if (h <= 0 || w <= 0)
         return 0;
 
-    params.options = GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_PACKING_CHUNKY | GB_RETURN_POINTER | GB_ALIGN_ANY | GB_OFFSET_0 | GB_RASTER_STANDARD;
+    lastband = (rect->q.y == page_height-1);
+
+    params.options = GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_PACKING_CHUNKY | GB_RETURN_POINTER | GB_ALIGN_ANY | GB_OFFSET_0 | GB_RASTER_ANY;
     my_rect.p.x = 0;
     my_rect.p.y = 0;
     my_rect.q.x = w;
@@ -273,8 +407,9 @@ static int fpng_output(void *arg, gx_device *dev, void *buffer_)
 
 /* Write out a page in PNG format. */
 static int
-fpng_print_page(gx_device_printer * pdev, FILE * file)
+fpng_print_page(gx_device_printer *pdev, FILE *file)
 {
+    gx_device_fpng *fdev = (gx_device_fpng *)pdev;
     gs_memory_t *mem = pdev->memory;
     static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
     unsigned char head[13];
@@ -283,8 +418,8 @@ fpng_print_page(gx_device_printer * pdev, FILE * file)
     fwrite(pngsig, 1, 8, file); /* Signature */
 
     /* IHDR chunk */
-    big32(&head[0], pdev->width);
-    big32(&head[4], pdev->height);
+    big32(&head[0], gx_downscaler_scale_rounded(pdev->width, fdev->downscale_factor));
+    big32(&head[4], gx_downscaler_scale_rounded(pdev->height, fdev->downscale_factor));
     head[8] = 8; /* 8bpc */
     head[9] = 2; /* rgb */
     head[10] = 0; /* compression */
@@ -298,5 +433,5 @@ fpng_print_page(gx_device_printer * pdev, FILE * file)
     process.output_fn = fpng_output;
     process.arg = file;
 
-    return dev_proc(pdev, process_page)(pdev, &process);
+    return gx_downscaler_process_page(pdev, &process, fdev->downscale_factor);
 }
