@@ -41,6 +41,7 @@
 #include "gsicc.h"
 #include "gsicc_cache.h"
 #include "gxdevice.h"
+#include "gxcie.h"
 
 /* ---------------- Color space ---------------- */
 
@@ -499,7 +500,9 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
             return tcode;
         /* First check if this was PS based. */
         if (gs_color_space_is_PSCIE(pacs)) {
-            /* If we have not yet create the profile do that now */
+            /* We may have to rescale data to 0 to 1 range */
+            rescale_cie_colors(pacs, &cc);
+            /* If we have not yet created the profile do that now */
             if (pacs->icc_equivalent == NULL) {
                 gs_colorspace_set_icc_equivalent(pacs, &(is_lab), pis->memory);
             }

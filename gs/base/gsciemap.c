@@ -114,34 +114,34 @@ check_range(gs_range *ranges, int num_colorants)
 
 /* Returns false if range is not 0 1 */
 bool
-check_cie_range( const gs_color_space * pcs )
+check_cie_range(const gs_color_space * pcs)
 {
-    switch(gs_color_space_get_index(pcs)){
+    switch(gs_color_space_get_index(pcs)) {
         case gs_color_space_index_CIEDEFG:
-            return(check_range(&(pcs->params.defg->RangeDEFG.ranges[0]), 4));
+            return check_range(&(pcs->params.defg->RangeDEFG.ranges[0]), 4) ;
         case gs_color_space_index_CIEDEF:
-            return(check_range(&(pcs->params.def->RangeDEF.ranges[0]), 3));
+            return check_range(&(pcs->params.def->RangeDEF.ranges[0]), 3);
         case gs_color_space_index_CIEABC:
-            return(check_range(&(pcs->params.abc->RangeABC.ranges[0]), 3));
+            return check_range(&(pcs->params.abc->RangeABC.ranges[0]), 3);
         case gs_color_space_index_CIEA:
-            return(check_range(&(pcs->params.a->RangeA), 1));
+            return check_range(&(pcs->params.a->RangeA), 1);
         default:
             return true;
     }
 }
 
 gs_range*
-get_cie_range( const gs_color_space * pcs )
+get_cie_range(const gs_color_space * pcs)
 {
-    switch(gs_color_space_get_index(pcs)){
+    switch(gs_color_space_get_index(pcs)) {
         case gs_color_space_index_CIEDEFG:
-            return(&(pcs->params.defg->RangeDEFG.ranges[0]));
+            return &(pcs->params.defg->RangeDEFG.ranges[0]);
         case gs_color_space_index_CIEDEF:
-            return(&(pcs->params.def->RangeDEF.ranges[0]));
+            return &(pcs->params.def->RangeDEF.ranges[0]);
         case gs_color_space_index_CIEABC:
-            return(&(pcs->params.abc->RangeABC.ranges[0]));
+            return &(pcs->params.abc->RangeABC.ranges[0]);
         case gs_color_space_index_CIEA:
-            return(&(pcs->params.a->RangeA));
+            return &(pcs->params.a->RangeA);
         default:
             return NULL;
     }
@@ -154,10 +154,46 @@ rescale_input_color(gs_range *ranges, int num_colorants,
     int k;
 
     for (k = 0; k < num_colorants; k++) {
-        des->paint.values[k] =
-            (src->paint.values[k]-ranges[k].rmin)/
-            (ranges[k].rmax-ranges[k].rmin);
+        des->paint.values[k] = (src->paint.values[k] - ranges[k].rmin) /
+                               (ranges[k].rmax - ranges[k].rmin);
     }
+}
+
+/* Returns true if rescale was done */
+bool
+rescale_cie_colors(const gs_color_space * pcs, gs_client_color *cc)
+{
+    int num, k;
+    gs_range *ranges;
+
+    if (!check_cie_range(pcs)) {
+        switch(gs_color_space_get_index(pcs)) {
+            case gs_color_space_index_CIEDEFG:
+                num = 4;
+                ranges = &(pcs->params.defg->RangeDEFG.ranges[0]);
+                break;
+            case gs_color_space_index_CIEDEF:
+                num = 3;
+                ranges = &(pcs->params.def->RangeDEF.ranges[0]);
+                break;
+            case gs_color_space_index_CIEABC:
+                num = 3;
+                ranges = &(pcs->params.abc->RangeABC.ranges[0]);
+                break;
+            case gs_color_space_index_CIEA:
+                num = 1;
+                ranges = &(pcs->params.a->RangeA);
+                break;
+            default:
+                return false;
+        }
+        for (k = 0; k < num; k++) {
+            cc->paint.values[k] = (cc->paint.values[k] - ranges[k].rmin) /
+                                    (ranges[k].rmax - ranges[k].rmin);
+        }
+        return true;
+    }
+    return false;
 }
 
 /*
