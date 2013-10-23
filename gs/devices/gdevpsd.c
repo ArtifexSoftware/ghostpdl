@@ -300,27 +300,18 @@ const psd_device gs_psdrgb_device =
 };
 
 /*
- * Select the default number of components based upon the number of bits
- * that we have in a gx_color_index.  If we have 64 bits then we can compress
- * the colorant data.  This allows us to handle more colorants.  However the
- * compressed encoding is not separable.  If we do not have 64 bits then we
- * use a simple non-compressable encoding.
- */
-#define NC ARCH_SIZEOF_GX_COLOR_INDEX
-#define SL GX_CINFO_SEP_LIN
-#define ENCODE_COLOR psd_encode_color
-#define DECODE_COLOR psd_decode_color
-#define GCIB (ARCH_SIZEOF_GX_COLOR_INDEX * 8)
-
-/*
  * PSD device with CMYK process color model and spot color support.
  */
 static const gx_device_procs spot_cmyk_procs
-        = device_procs(get_psd_color_mapping_procs, ENCODE_COLOR, DECODE_COLOR);
+        = device_procs(get_psd_color_mapping_procs, psd_encode_color, psd_decode_color);
 
 const psd_device gs_psdcmyk_device =
 {
-    psd_device_body(spot_cmyk_procs, "psdcmyk", NC, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, 255, 255, SL, "DeviceCMYK"),
+    psd_device_body(spot_cmyk_procs, "psdcmyk",
+                    ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
+                    GX_CINFO_POLARITY_SUBTRACTIVE,
+                    ARCH_SIZEOF_GX_COLOR_INDEX * 8, /* 8 bits per component (albeit in planes) */
+                    255, 255, GX_CINFO_SEP_LIN, "DeviceCMYK"),
     /* devn_params specific parameters */
     { 8,	/* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,	/* Names of color model colorants */
@@ -337,11 +328,6 @@ const psd_device gs_psdcmyk_device =
     1,                          /* downscale_factor */
     GS_SOFT_MAX_SPOTS           /* max_spots */
 };
-
-#undef NC
-#undef SL
-#undef ENCODE_COLOR
-#undef DECODE_COLOR
 
 /* Open the psd devices */
 int
