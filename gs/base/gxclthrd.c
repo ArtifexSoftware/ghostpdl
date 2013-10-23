@@ -313,7 +313,7 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
             gs_free_object(crdev->render_threads[i].memory, thread_cdev,
             "clist_setup_render_threads");
         }
-        if (crdev->render_threads[i].buffer != NULL && options->free_buffer_fn != NULL) {
+        if (crdev->render_threads[i].buffer != NULL && options && options->free_buffer_fn != NULL) {
             options->free_buffer_fn(options->arg, dev, crdev->render_threads[i].memory, crdev->render_threads[i].buffer);
             crdev->render_threads[i].buffer = NULL;
         }
