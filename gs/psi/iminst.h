@@ -77,9 +77,8 @@ struct gs_main_instance_s {
     display_callback *display;	/* callback structure for display device */
     /* The following are updated dynamically. */
     i_ctx_t *i_ctx_p;		/* current interpreter context state */
-#ifndef OMIT_SAVED_PAGES_TEST
+    byte *saved_pages_initial_arg;	/* used to defer processing of --saved-pages=begin... */
     bool saved_pages_test_mode;	/* for regression testing of saved-pages */
-#endif
 };
 
 /*
