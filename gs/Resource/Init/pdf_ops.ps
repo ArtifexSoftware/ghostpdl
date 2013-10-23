@@ -1241,7 +1241,20 @@ end readonly def
 /Tform {                % <MaxLen> (V) <Ff> <Q> Tform -
   clippath pathbbox 4 2 roll pop pop                        % MaxLen (V) Ff Q dx dy
   currentfont /ScaleMatrix .knownget { 3 get } { 1 } ifelse % MaxLen (V) Ff Q dx dy yy
-  currentfont /FontBBox get dup 1 get neg exch 3 get        % MaxLen (V) Ff Q dx dy yy desc asc
+
+  currentfont /FontBBox .knownget
+  not
+  {
+    currentfont dup /FontType get
+    0 eq
+    {
+     /FDepVector get 0 get /FontBBox get}
+    {
+      pop null % force an error
+    } ifelse
+  }if
+  dup 1 get neg exch 3 get        % MaxLen (V) Ff Q dx dy yy desc asc
+
   dup 0 ne { div } { pop pop 0 } ifelse                     % MaxLen (V) Ff Q dx dy yy desc/asc
   1 index mul                                               % MaxLen (V) Ff Q dx dy yy desc/asc*yy
 
