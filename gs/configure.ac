@@ -411,31 +411,60 @@ if test "x$ac_cv_header_inttypes_h" = xyes; then
         GCFLAGS="$GCFLAGS -DHAVE_INTTYPES_H=1"
 fi
 
-dnl try to find a 64 bit type for devicen color index
-uint64_type="none"
- AC_CHECK_SIZEOF(unsigned long int)
- if test $ac_cv_sizeof_unsigned_long_int = 8; then
-        uint64_type="unsigned long int"
- else
-  AC_CHECK_SIZEOF(unsigned long long)
-  if test $ac_cv_sizeof_unsigned_long_long = 8; then
-        uint64_type="unsigned long long"
-  else
-   AC_CHECK_SIZEOF(unsigned __int64)
-   if test $ac_cv_sizeof_unsigned___int64 = 8; then
-        uint64_type="unsigned __int64"
+large_color_index=1
+
+AC_ARG_WITH([large_color_index],, large_color_index="$with_large_color_index")
+
+if test x"$large_color_index" != "x0"; then
+  dnl try to find a 64 bit type for devicen color index
+  color_ind_type="none"
+   AC_CHECK_SIZEOF(unsigned long int)
+   if test $ac_cv_sizeof_unsigned_long_int = 8; then
+          color_ind_type="unsigned long int"
    else
-    AC_CHECK_SIZEOF(u_int64_t)
-    if test $ac_cv_sizeof_u_int64_t = 8; then
-        uint64_type="u_int64_t"
+    AC_CHECK_SIZEOF(unsigned long long)
+    if test $ac_cv_sizeof_unsigned_long_long = 8; then
+          color_ind_type="unsigned long long"
+    else
+     AC_CHECK_SIZEOF(unsigned __int64)
+     if test $ac_cv_sizeof_unsigned___int64 = 8; then
+          color_ind_type="unsigned __int64"
+     else
+      AC_CHECK_SIZEOF(u_int64_t)
+      if test $ac_cv_sizeof_u_int64_t = 8; then
+          color_ind_type="u_int64_t"
+      fi
+     fi
     fi
    fi
-  fi
- fi
-dnl we don't need to do anything if a 64-bit type wasn't found
-dnl the code falls back to a (probably 32-bit) default
-if test "$uint64_type" != "none"; then
-        GCFLAGS="$GCFLAGS -DGX_COLOR_INDEX_TYPE=\"$uint64_type\""
+else
+  dnl try to find a 32 bit type for devicen color index
+  color_ind_type="none"
+   AC_CHECK_SIZEOF(unsigned long int)
+   if test $ac_cv_sizeof_unsigned_long_int = 4; then
+          color_ind_type="unsigned long int"
+   else
+    AC_CHECK_SIZEOF(unsigned int)
+    if test $ac_cv_sizeof_unsigned_int = 4; then
+          color_ind_type="unsigned int"
+    else
+     AC_CHECK_SIZEOF(unsigned __int32)
+     if test $ac_cv_sizeof_unsigned___int32 = 4; then
+          color_ind_type="unsigned __int32"
+     else
+      AC_CHECK_SIZEOF(u_int32_t)
+      if test $ac_cv_sizeof_u_int32_t = 4; then
+          color_ind_type="u_int32_t"
+      fi
+     fi
+    fi
+   fi
+fi
+
+dnl if a suitable type wasn't found above, we fall back to
+dnl a default in genarch.
+if test "$color_ind_type" != "none"; then
+        GCFLAGS="$GCFLAGS -DGX_COLOR_INDEX_TYPE=\"$color_ind_type\""
 fi
 
 dnl --------------------------------------------------

@@ -149,12 +149,13 @@ PCL_TOP_OBJ?=$(PCLOBJDIR)/pctop.$(OBJ)
 PXL_TOP_OBJ?=$(PXLOBJDIR)/pxtop.$(OBJ)
 TOP_OBJ?=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 
+include ../config.mak
+
 # a 64 bit type is needed for devicen color space/model support but
 # carries a performance burden.  Change unsigned long to unsigned long
 # long to enable large color indices.
 GX_COLOR_INDEX_DEFINE?=-DGX_COLOR_INDEX_TYPE="unsigned long"
 
-include ../config.mak
 
 # In theory XL and PCL could be built with different font scalers so
 # we provide 2 font scaler variables.
