@@ -1350,7 +1350,7 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
         gx_device_fill_in_procs((gx_device *)mdev);
     } else {
         gs_make_mem_device(mdev, mdproto, mem, (color_usage == NULL ? 1 : 0),
-                           (target == (gx_device *)mdev ? NULL : target));
+                           target);
     }
     mdev->width = target->width;
     mdev->band_y = y;
