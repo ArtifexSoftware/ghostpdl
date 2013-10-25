@@ -1391,7 +1391,6 @@ if test x$with_luratech != xno; then
 fi
 
 OPENJPEGDIR=$srcdir/openjpeg
-JPX_AUTOCONF_CFLAGS=
 
 if test "x$ac_cv_header_stdint_h" = xyes; then
   CFLAGS_OPJ_HAVE_STDINT_H="-DOPJ_HAVE_STDINT_H"
