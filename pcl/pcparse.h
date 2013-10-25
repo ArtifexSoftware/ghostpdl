@@ -76,6 +76,7 @@ struct pcl_parser_state_s
 {
     /* Internal state */
     pcl_scan_type_t scan_type;
+    bool garbage_in_parameter;
     pcl_args_t args;
     double scale;               /* for accumulating floating numbers */
     byte param_class, param_group;      /* for parameterized commands */
