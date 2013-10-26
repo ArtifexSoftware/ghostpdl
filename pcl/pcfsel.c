@@ -372,8 +372,8 @@ score_match(const pcl_state_t * pcs, const pcl_font_selection_t * pfs,
             score[score_typeface] = 2;
         else {
             diff =
-                (pfs->params.typeface_family & 0x7ff) -
-                (fp->params.typeface_family & 0x7ff);
+                (pfs->params.typeface_family & 0xfff) -
+                (fp->params.typeface_family & 0xfff);
             if (diff == 0)
                 score[score_typeface] = 1;
             else
