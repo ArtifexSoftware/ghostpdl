@@ -103,7 +103,7 @@ struct hpgl_args_s
     /* terminator */
     const hpgl_command_definition_t *command;   /* command being executed, */
     /* 0 if none */
-    jmp_buf exit_to_parser;     /* longjmp here if we ran out of data */
+    jmp_buf *exit_to_parser;     /* longjmp here if we ran out of data */
     /* while scanning an argument, or we */
     /* found a syntax error */
     struct arg_

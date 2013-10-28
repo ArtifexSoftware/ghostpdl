@@ -90,15 +90,23 @@ hpgl_process(hpgl_parser_state_t * pst, hpgl_state_t * pgls,
     const byte *p = pr->ptr;
     const byte *rlimit = pr->limit;
     int code = 0;
+    jmp_buf exit_to_parser;
+
+    /* We do this slightly naff setup of the buffer so the
+     * buffer is sure to be currectly aligned - 64 bit MSVS 2010+
+     * build requires the jmp_buf to be aligned to 16 bytes.
+     */
+    pst->exit_to_parser = &exit_to_parser;
 
     pst->source.limit = rlimit;
     /* Prepare to catch a longjmp indicating the argument scanner */
     /* needs more data, or encountered an error. */
-    code = setjmp(pst->exit_to_parser);
+    code = setjmp(*(pst->exit_to_parser));
     if (code) {
         /* The command detected an error, or we need to ask */
         /* the caller for more data.  pst->command != 0. */
         pr->ptr = pst->source.ptr;
+        pst->exit_to_parser = NULL;
         if (code < 0 && code != e_NeedData) {
             pst->command = 0;   /* cancel command */
             if_debug0m('i', pgls->memory, "\n");
@@ -204,6 +212,7 @@ hpgl_process(hpgl_parser_state_t * pst, hpgl_state_t * pgls,
         }
     }
   x:pr->ptr = p;
+    pst->exit_to_parser = NULL;
     return (code == e_NeedData ? 0 : code);
 }
 
@@ -324,7 +333,7 @@ hpgl_arg(const gs_memory_t * mem, hpgl_parser_state_t * pst)
     }
     /* We ran out of data before reaching a terminator. */
     pst->source.ptr = p;
-    longjmp(pst->exit_to_parser, e_NeedData);
+    longjmp(*(pst->exit_to_parser), e_NeedData);
     /* NOTREACHED */
   out:pst->source.ptr = p;
     switch (parg->have_value) {
@@ -419,6 +428,7 @@ hpgl_init_command_index(hpgl_parser_state_t ** pgl_parser_state,
     if (pgst == 0)
         return -1;
 
+    pgst->exit_to_parser = NULL;
     pgst->hpgl_command_next_index = 0;
     /* NB fix me the parser should not depend on this behavior the
        previous design had these in bss which was automatically
