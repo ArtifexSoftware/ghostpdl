@@ -576,7 +576,7 @@ static void *
 chunk_resize_object(gs_memory_t * mem, void *ptr, uint new_num_elements, client_name_t cname)
 {
     /* This isn't particularly efficient, but it is rarely used */
-    chunk_obj_node_t *obj = ((chunk_obj_node_t *)ptr) - 1;
+    chunk_obj_node_t *obj = (chunk_obj_node_t *)(((byte *)ptr) - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
     ulong new_size = (obj->type->ssize * new_num_elements);
     ulong old_size = obj->size;
     /* get the type from the old object */
@@ -839,7 +839,7 @@ chunk_consolidate_free(gs_memory_t *mem)
 static uint
 chunk_object_size(gs_memory_t * mem, const void *ptr)
 {
-    chunk_obj_node_t *obj = ((chunk_obj_node_t *)ptr) - 1;
+    chunk_obj_node_t *obj = (chunk_obj_node_t *)(((byte *)ptr) - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
 
     return obj->size;
 }
@@ -847,7 +847,7 @@ chunk_object_size(gs_memory_t * mem, const void *ptr)
 static gs_memory_type_ptr_t
 chunk_object_type(const gs_memory_t * mem, const void *ptr)
 {
-    chunk_obj_node_t *obj = ((chunk_obj_node_t *)ptr) - 1;
+    chunk_obj_node_t *obj = (chunk_obj_node_t *)(((byte *)ptr) - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
     return obj->type;
 }
 
