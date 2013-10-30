@@ -185,12 +185,13 @@ currentdict /known_symbolic_fonts undef
       exch pop /Subtype knownoget {/Type1C eq}{//false} ifelse
       exch /Flags knownoget {4 and 4 eq not}{false}ifelse and
     } {//false} ifelse
+
     1 index /FontType get 2 eq and
     {
-        StandardEncoding 2 index getencoding
+        2 index /Encoding knownoget {pop StandardEncoding 2 index getencoding} { //null } ifelse
     }
     {
-      1 index /Encoding known {
+      2 index /Encoding known {
         dup /Encoding knownoget { 2 index getencoding } { //null } ifelse
       } {
         //null
