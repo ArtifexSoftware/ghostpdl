@@ -24,7 +24,7 @@
 #include "gxclpath.h"
 #include "gxdevsop.h"
 
-extern dev_proc_dev_spec_op(gdev_prn_dev_spec_op);
+extern dev_proc_dev_spec_op(gdev_prn_forwarding_dev_spec_op);
 
 /* ---------------- Writing utilities ---------------- */
 
@@ -600,6 +600,8 @@ clist_fill_linear_color_triangle(gx_device * dev, const gs_fill_attributes *fa,
     return 1;
 }
 
+extern dev_proc_open_device(pattern_clist_open_device);
+
 int
 clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
 {
@@ -622,7 +624,9 @@ clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         }
     }
     /* forward to our super class */
-    return gdev_prn_dev_spec_op(pdev, dev_spec_op, data, size);
+    if (cdev->is_printer)
+        return gdev_prn_forwarding_dev_spec_op(pdev, dev_spec_op, data, size);
+    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
 #define dev_proc_pattern_manage(proc)\

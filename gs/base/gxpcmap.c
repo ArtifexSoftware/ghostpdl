@@ -344,6 +344,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         cwdev->height = pinst->size.y;
         cwdev->LeadingEdge = tdev->LeadingEdge;
         cwdev->is_planar = pinst->is_planar;
+        cwdev->is_printer = 0;
         /* Fields left zeroed :
         float MediaSize[2];
         float ImagingBBox[4];

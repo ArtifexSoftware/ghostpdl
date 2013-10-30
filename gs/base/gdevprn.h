@@ -299,6 +299,7 @@ dev_proc_close_device(gdev_prn_close);
 #define gdev_prn_map_color_rgb gx_default_b_w_map_color_rgb
 dev_proc_get_params(gdev_prn_get_params);
 dev_proc_put_params(gdev_prn_put_params);
+dev_proc_dev_spec_op(gdev_prn_forwarding_dev_spec_op);
 dev_proc_dev_spec_op(gdev_prn_dev_spec_op);
 
 /* Default printer-specific procedures */

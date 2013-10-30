@@ -139,6 +139,16 @@ gdev_prn_close(gx_device * pdev)
 }
 
 int
+gdev_prn_forwarding_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
+{
+    gx_device_printer *ppdev = (gx_device_printer *)pdev;
+
+    if (ppdev->orig_procs.dev_spec_op)
+        return ppdev->orig_procs.dev_spec_op(pdev, dev_spec_op, data, size);
+    return gdev_prn_dev_spec_op(pdev, dev_spec_op, data, size);
+}
+
+int
 gdev_prn_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
 {
     if (dev_spec_op == gxdso_supports_saved_pages)
@@ -192,6 +202,7 @@ BACKTRACE(pdev);
 open_c:
     ppdev->buf = base;
     ppdev->buffer_space = space;
+    pclist_dev->common.is_printer = 1;
     clist_init_io_procs(pclist_dev, ppdev->BLS_force_memory);
     clist_init_params(pclist_dev, base, space, pdev,
                       ppdev->printer_procs.buf_procs,
