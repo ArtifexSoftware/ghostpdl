@@ -572,8 +572,17 @@ MSVC_VERSION=10
 !if "$(_NMAKE_VER)" == "11.00.50522.1"
 MSVC_VERSION=11
 !endif
+!if "$(_NMAKE_VER)" == "11.00.50727.1"
+MSVC_VERSION=11
+!endif
 !if "$(_NMAKE_VER)" == "11.00.60315.1"
 MSVC_VERSION=11
+!endif
+!if "$(_NMAKE_VER)" == "11.00.60610.1"
+MSVC_VERSION=11
+!endif
+!if "$(_NMAKE_VER)" == "12.00.21005.1"
+MSVC_VERSION=12
 !endif
 !endif
 
@@ -723,6 +732,90 @@ RCDIR=$(MSSDK)\bin
 RCDIR=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0\bin
 !else
 RCDIR=C:\Program Files\Microsoft SDKs\Windows\v7.0\bin
+!endif
+! endif
+COMPBASE=$(DEVSTUDIO)\VC
+SHAREDBASE=$(DEVSTUDIO)\VC
+!ifdef WIN64
+!if $(BUILD_SYSTEM) == 64
+COMPDIR64=$(COMPBASE)\bin\amd64
+LINKLIBPATH=/LIBPATH:"$(MSSDK)\lib\x64" /LIBPATH:"$(COMPBASE)\lib\amd64"
+!else
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\x64"
+!endif
+!endif
+!endif
+!endif
+
+!if $(MSVC_VERSION) == 11
+! ifndef DEVSTUDIO
+!if $(BUILD_SYSTEM) == 64
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 11.0
+!else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 11.0
+!endif
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+# There are at least 4 different values:
+# "v6.0"=Vista, "v6.0A"=Visual Studio 2008,
+# "v6.1"=Windows Server 2008, "v7.0"=Windows 7
+! ifdef MSSDK
+!  ifdef WIN64
+RCDIR=$(MSSDK)\bin\x64
+!  else
+RCDIR=$(MSSDK)\bin
+!  endif
+! else
+!if $(BUILD_SYSTEM) == 64
+RCDIR=C:\Program Files (x86)\Windows Kits\8.0\bin\x64
+!else
+RCDIR=C:\Program Files\Windows Kits\8.0\bin\x86
+!endif
+! endif
+COMPBASE=$(DEVSTUDIO)\VC
+SHAREDBASE=$(DEVSTUDIO)\VC
+!ifdef WIN64
+!if $(BUILD_SYSTEM) == 64
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(MSSDK)\lib\x64" /LIBPATH:"$(COMPBASE)\lib\amd64"
+!else
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\x64"
+!endif
+!endif
+!endif
+!endif
+
+!if $(MSVC_VERSION) == 12
+! ifndef DEVSTUDIO
+!if $(BUILD_SYSTEM) == 64
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 12.0
+!else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 12.0
+!endif
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+# There are at least 4 different values:
+# "v6.0"=Vista, "v6.0A"=Visual Studio 2008,
+# "v6.1"=Windows Server 2008, "v7.0"=Windows 7
+! ifdef MSSDK
+!  ifdef WIN64
+RCDIR=$(MSSDK)\bin\x64
+!  else
+RCDIR=$(MSSDK)\bin
+!  endif
+! else
+!if $(BUILD_SYSTEM) == 64
+RCDIR=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Bin
+!else
+RCDIR=C:\Program Files\Microsoft SDKs\Windows\v7.1A\Bin
 !endif
 ! endif
 COMPBASE=$(DEVSTUDIO)\VC
