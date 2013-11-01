@@ -563,6 +563,9 @@ gx_device_init_on_stack(gx_device * dev, const gx_device * proto,
     memcpy(dev, proto, proto->params_size);
     dev->memory = mem;
     dev->retained = 0;
+    dev->pad = proto->pad;
+    dev->log2_align_mod = proto->log2_align_mod;
+    dev->num_planes = proto->num_planes;
     rc_init(dev, NULL, 0);
 }
 

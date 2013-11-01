@@ -108,6 +108,7 @@ make_mid_default(gx_device **pmidev, gx_device *dev, int width, int height,
     midev->bitmap_memory = mem;
     midev->width = width;
     midev->height = height;
+    midev->raster = gx_device_raster(midev, 1);
     check_device_separable((gx_device *)midev);
     gx_device_fill_in_procs((gx_device *)midev);
     code = dev_proc(midev, open_device)((gx_device *)midev);

@@ -702,20 +702,6 @@ clist_close_output_file(gx_device *dev)
     return clist_close_page_info(&cdev->page_info);
 }
 
-static void
-clist_set_planar(gx_device *dev)
-{
-    gx_device_clist_common * cdev = &((gx_device_clist *)dev)->common;
-    int ret;
-
-    ret = dev_proc(dev, dev_spec_op)(dev, gxdso_is_native_planar, NULL, 0);
-    if (ret > 0) {
-        cdev->is_planar = ret;
-    } else {
-        cdev->is_planar = 0;
-    }
-}
-
 /* Open the device by initializing the device state and opening the */
 /* scratch files. */
 int
@@ -728,7 +714,7 @@ clist_open(gx_device *dev)
 
     cdev->permanent_error = 0;
     cdev->is_open = false;
-    clist_set_planar(dev);
+    cdev->is_planar = cdev->num_planes > 0;
     code = clist_init(dev);
     if (code < 0)
         return code;

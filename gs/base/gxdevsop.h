@@ -203,13 +203,6 @@ enum {
      */
     gxdso_is_pdf14_device,
 
-    /* gxdso_is_native_planar:
-     *      data = NULL
-     *      size = 0
-     * Returns the number of bits per plane if the device's native format is planar
-     */
-    gxdso_is_native_planar,
-
     /* gxdso_device_child:
      *      data = pointer to gxdso_device_child_request struct
      *      size = sizeof(gxdso_device_child_request)

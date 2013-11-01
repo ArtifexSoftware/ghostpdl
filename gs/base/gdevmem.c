@@ -298,6 +298,7 @@ gs_make_mem_mono_device(gx_device_memory * dev, gs_memory_t * mem,
                    mem, true);
     set_dev_proc(dev, get_page_device, gx_default_get_page_device);
     gx_device_set_target((gx_device_forward *)dev, target);
+    dev->raster = gx_device_raster(dev, 1);
     gdev_mem_mono_set_inverted(dev, true);
     check_device_separable((gx_device *)dev);
     gx_device_fill_in_procs((gx_device *)dev);
@@ -460,7 +461,7 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
         gdev_mem_bits_size(mdev, mdev->width, mdev->height, &size);
         mdev->line_ptrs = (byte **)(mdev->base + size);
     }
-    mdev->raster = gdev_mem_raster(mdev); /* RJW: Wrong for planar */
+    mdev->raster = gx_device_raster(mdev, 1);//gdev_mem_raster(mdev); /* RJW: Wrong for planar */
     return gdev_mem_set_line_ptrs(mdev, NULL, 0, NULL, setup_height);
 }
 /*

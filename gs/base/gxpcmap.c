@@ -258,12 +258,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
                                 tdev->MaxPatternBitmap;
     int ret;
 
-    ret = dev_proc(tdev, dev_spec_op)(tdev, gxdso_is_native_planar, NULL, 0);
-    if (ret > 0) {
-        pinst->is_planar = ret;
-    } else {
-        pinst->is_planar = false;
-    }
+    pinst->is_planar = tdev->num_planes > 0;
     /*
      * If the target device can accumulate a pattern stream and the language
      * client supports high level patterns (ps and pdf only) we don't need a
@@ -396,6 +391,9 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         cwdev->graphics_type_tag = tdev->graphics_type_tag;	/* initialize to same as target */
         fdev = (gx_device_forward *)cdev;
     }
+    fdev->log2_align_mod = tdev->log2_align_mod;
+    fdev->pad = tdev->pad;
+    fdev->num_planes = tdev->num_planes;
     check_device_separable((gx_device *)fdev);
     gx_device_forward_fill_in_procs(fdev);
     return fdev;
@@ -502,7 +500,6 @@ pattern_accum_open(gx_device * dev)
                 if (bits == 0)
                     code = gs_note_error(gs_error_VMerror);
                 else {
-                    int depth;
                     gs_make_mem_device(bits,
                             gdev_mem_device_for_bits(padev->color_info.depth),
                                        mem, -1, target);
@@ -510,12 +507,12 @@ pattern_accum_open(gx_device * dev)
 #undef PDSET
                     bits->color_info = padev->color_info;
                     bits->bitmap_memory = mem;
-                    depth = dev_proc(target, dev_spec_op)(target, gxdso_is_native_planar, NULL, 0);
-                    if (depth > 0)
+                    if (target->num_planes > 0)
                     {
                         gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
                         int num_comp = padev->color_info.num_components;
                         int i;
+                        int depth = target->color_info.depth / target->num_planes;
                         for (i = 0; i < num_comp; i++)
                         {
                             planes[i].shift = depth * (num_comp - 1 - i);
@@ -1147,7 +1144,7 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
     byte *curr_ptr = Buffer;
     int plane_offset;
 
-    is_planar = dev_proc(mdev, dev_spec_op)(mdev, gxdso_is_native_planar, NULL, 0) > 0;
+    is_planar = mdev->num_planes > 0;
     max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
     if (is_planar) {
         gs_sprintf(full_file_name,"%d)PATTERN_PLANE_%dx%dx%d.raw",global_pat_index,

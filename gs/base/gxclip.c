@@ -138,6 +138,9 @@ gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, g
     dev->HWResolution[1] = target->HWResolution[1];
     dev->sgr = target->sgr;
     dev->target = target;
+    dev->pad = target->pad;
+    dev->log2_align_mod = target->log2_align_mod;
+    dev->num_planes = target->num_planes;
     dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
     /* There is no finalization for device on stack so no rc increment */
     (*dev_proc(dev, open_device)) ((gx_device *)dev);
@@ -175,6 +178,9 @@ gx_make_clip_device_on_stack_if_needed(gx_device_clip * dev, const gx_clip_path 
     dev->HWResolution[1] = target->HWResolution[1];
     dev->sgr = target->sgr;
     dev->target = target;
+    dev->pad = target->pad;
+    dev->log2_align_mod = target->log2_align_mod;
+    dev->num_planes = target->num_planes;
     dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
     /* There is no finalization for device on stack so no rc increment */
     (*dev_proc(dev, open_device)) ((gx_device *)dev);
@@ -191,6 +197,9 @@ gx_make_clip_device_in_heap(gx_device_clip * dev, const gx_clip_path *pcpath, gx
     dev->HWResolution[0] = target->HWResolution[0];
     dev->HWResolution[1] = target->HWResolution[1];
     dev->sgr = target->sgr;
+    dev->pad = target->pad;
+    dev->log2_align_mod = target->log2_align_mod;
+    dev->num_planes = target->num_planes;
     gx_device_set_target((gx_device_forward *)dev, target);
     gx_device_retain((gx_device *)dev, true); /* will free explicitly */
     (*dev_proc(dev, open_device)) ((gx_device *)dev);

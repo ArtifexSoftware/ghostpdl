@@ -611,8 +611,6 @@ clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         return 1;
     if (dev_spec_op == gxdso_pattern_shfill_doesnt_need_path)
         return 1;
-    if (dev_spec_op == gxdso_is_native_planar)
-        return cdev->is_planar;
     if (dev_spec_op == gxdso_supports_devn) {
         cmm_dev_profile_t *dev_profile;
         int code;
