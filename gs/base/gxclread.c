@@ -287,9 +287,7 @@ top_up_offset_map(stream_state * st, const byte *buf, const byte *ptr, const byt
 static int
 clist_plane_raster(const gx_device *dev, const gx_render_plane_t *render_plane)
 {
-    return bitmap_raster(dev->width *
-                         (render_plane && render_plane->index >= 0 ?
-                          render_plane->depth : dev->color_info.depth));
+    return gx_device_raster_plane(dev, render_plane);
 }
 
 /* Select full-pixel rendering if required for RasterOp. */

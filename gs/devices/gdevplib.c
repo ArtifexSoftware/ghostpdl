@@ -733,6 +733,7 @@ plib_open(gx_device * pdev)
     code = gdev_prn_open(pdev);
     if (code < 0)
         return code;
+    pdev->num_planes = pdev->color_info.num_components;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     set_linear_color_bits_mask_shift(pdev);
 

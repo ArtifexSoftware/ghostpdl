@@ -262,6 +262,9 @@ const gx_device_bit gs_bitrgbtags_device =
         },
         (int)((float)(85) * (X_DPI) / 10 + 0.5),
         (int)((float)(110) * (Y_DPI) / 10 + 0.5),
+        0, /* Pad */
+        0, /* Align */
+        0, /* Num planes */
         0,
         {
             (float)(((((int)((float)(85) * (X_DPI) / 10 + 0.5)) * 72.0 + 0.5) - 0.5) / (X_DPI)) ,

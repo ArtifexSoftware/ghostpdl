@@ -39,6 +39,7 @@
 #include "gsnamecl.h"
 #include "gp.h"
 #include "gscms.h"
+#include "gxrplane.h"
 
 /* See Drivers.htm for documentation of the driver interface. */
 
@@ -706,10 +707,13 @@ typedef struct gx_device_cached_colors_s {
         gx_device_cached_colors_t cached_colors;\
         int width;			/* width in pixels */\
         int height;			/* height in pixels */\
+        int pad;                        /* pad to use for buffers; 0 for default */\
+        int log2_align_mod;             /* align to use for buffers; 0 for default */\
+        int num_planes;                 /* num_planes for planar; 0 for chunky */\
         int LeadingEdge;                /* see below */\
         float MediaSize[2];		/* media dimensions in points */\
         float ImagingBBox[4];		/* imageable region in points */\
-          bool ImagingBBox_set;\
+        bool ImagingBBox_set;\
         float HWResolution[2];		/* resolution, dots per inch */\
         float MarginsHWResolution[2];	/* resolution for Margins */\
         float Margins[2];		/* offset of physical page corner */\
@@ -1738,8 +1742,12 @@ void gx_device_set_target(gx_device_forward *fdev, gx_device *target);
 void gx_device_retain(gx_device *dev, bool retained);
 
 /* Calculate the raster (number of bytes in a scan line), */
-/* with byte or word padding. */
+/* with byte or device padding. */
 uint gx_device_raster(const gx_device * dev, bool pad_to_word);
+
+/* Calculate the raster (with device padding) optionally for a given
+ * render_plane (may be NULL). */
+uint gx_device_raster_plane(const gx_device * dev, const gx_render_plane_t *render_plane);
 
 /* Adjust the resolution for devices that only have a fixed set of */
 /* geometries, so that the apparent size in inches remains constant. */

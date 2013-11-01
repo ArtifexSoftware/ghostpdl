@@ -50,8 +50,11 @@ gdev_prn_set_procs_planar(gx_device *dev)
 int
 gdev_prn_open_planar(gx_device *dev, bool upb)
 {
-    if (upb)
+    if (upb) {
         gdev_prn_set_procs_planar(dev);
+        if (dev->num_planes == 0)
+            dev->num_planes = dev->color_info.num_components;
+    }
     return gdev_prn_open(dev);
 }
 

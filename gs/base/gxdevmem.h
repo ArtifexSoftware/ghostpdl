@@ -96,7 +96,6 @@ struct gx_device_memory_s {
      * means this is a chunky device.  Note that for planar devices, we
      * require color_info.depth = the sum of the individual plane depths.
      */
-    int num_planes;
     gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
     /*
      * End of client-initializable fields.
@@ -161,7 +160,6 @@ extern_st(st_device_memory);
         true,			/* foreign_bits (default) */\
         0,			/* line_pointer_memory */\
         true,			/* foreign_line_pointers (default) */\
-        0,			/* num_planes (default) */\
         { { 0 } },		/* planes (only used for planar) */\
         { identity_matrix_body },	/* initial matrix (filled in) */\
         (byte **)0,		/* line_ptrs (filled in by mem_open) */\

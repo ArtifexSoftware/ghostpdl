@@ -94,7 +94,7 @@
  */
 #define std_device_part2_(width, height, x_dpi, y_dpi)\
         { gx_no_color_index, gx_no_color_index },\
-          width, height, 0/*TrayOrientation*/,\
+          width, height, 0/*Pad*/, 0/*align*/, 0/*Num planes*/, 0/*TrayOrientation*/,\
         { (float)((((width) * 72.0 + 0.5) - 0.5) / (x_dpi))/*MediaSize[0]*/,\
           (float)((((height) * 72.0 + 0.5) - 0.5) / (y_dpi))/*MediaSize[1]*/},\
         { 0, 0, 0, 0 }/*ImagingBBox*/, 0/*ImagingBBox_set*/,\

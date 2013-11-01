@@ -671,14 +671,47 @@ gx_set_device_only(gs_state * pgs, gx_device * dev)
     rc_assign(pgs->device, dev, "gx_set_device_only");
 }
 
-/* Compute the size of one scan line for a device, */
-/* with or without padding to a word boundary. */
+/* Compute the size of one scan line for a device. */
+/* If pad = 0 return the line width in bytes. If pad = 1,
+ * return the actual raster value (the number of bytes to offset from
+ * a byte on one scanline to the same byte on the scanline below.) */
 uint
 gx_device_raster(const gx_device * dev, bool pad)
 {
     ulong bits = (ulong) dev->width * dev->color_info.depth;
+    ulong raster;
+    int l2align;
 
-    return (pad ? bitmap_raster(bits) : (uint) ((bits + 7) >> 3));
+    if (dev->num_planes > 0)
+        bits /= dev->num_planes;
+
+    raster = (uint)((bits + 7) >> 3);
+    if (!pad)
+        return raster;
+    if (dev->pad > 0)
+        raster += dev->pad;
+    l2align = dev->log2_align_mod;
+    if (l2align < log2_align_bitmap_mod)
+        l2align = log2_align_bitmap_mod;
+    return (uint)(((bits + (8 << l2align) - 1) >> (l2align + 3)) << l2align);
+}
+
+uint
+gx_device_raster_plane(const gx_device * dev, const gx_render_plane_t *render_plane)
+{
+    ulong bpc = (render_plane && render_plane->index >= 0 ?
+                 render_plane->depth : dev->color_info.depth/max(1,dev->num_planes));
+    ulong bits = (ulong) dev->width * bpc;
+    ulong raster;
+    int l2align;
+
+    raster = (uint)((bits + 7) >> 3);
+    if (dev->pad > 0)
+        raster += dev->pad;
+    l2align = dev->log2_align_mod;
+    if (l2align < log2_align_bitmap_mod)
+        l2align = log2_align_bitmap_mod;
+    return (uint)(((bits + (8 << l2align) - 1) >> (l2align + 3)) << l2align);
 }
 
 /* Adjust the resolution for devices that only have a fixed set of */

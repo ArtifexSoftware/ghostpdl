@@ -1365,6 +1365,8 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
     }
     mdev->width = target->width;
     mdev->band_y = y;
+    mdev->log2_align_mod = target->log2_align_mod;
+    mdev->pad = target->pad;
     /*
      * The matrix in the memory device is irrelevant,
      * because all we do with the device is call the device-level
