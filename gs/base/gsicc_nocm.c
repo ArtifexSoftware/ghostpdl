@@ -325,10 +325,12 @@ gsicc_nocm_copy_curve(gx_transfer_map *in_map, gs_memory_t *mem)
     } else {
         out_map = (gx_transfer_map*) gs_alloc_bytes(mem, sizeof(gx_transfer_map),
                             "gsicc_nocm_copy_curve");
-        out_map->proc = in_map->proc;
-        memcpy(&(out_map->values[0]), &(in_map->values[0]),
-                sizeof(frac) * transfer_map_size);
-        out_map->id = gs_no_id;
+        if (out_map) {
+            out_map->proc = in_map->proc;
+            memcpy(&(out_map->values[0]), &(in_map->values[0]),
+                    sizeof(frac) * transfer_map_size);
+            out_map->id = gs_no_id;
+        }
         return out_map;
     }
 }
@@ -397,6 +399,8 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
     result->hashcode = hash;
     nocm_link = (nocm_link_t *) gs_alloc_bytes(mem, sizeof(nocm_link_t),
                                                "gsicc_nocm_get_link");
+    if (nocm_link == NULL)
+        return NULL;
     result->link_handle = (void*) nocm_link;
     nocm_link->memory = mem;
     /* Create a dummy imager state and populate the ucr/bg values.  This
@@ -408,6 +412,8 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
         nocm_link->pis = (gs_imager_state*)
                           gs_alloc_bytes(mem, sizeof(gs_imager_state),
                                          "gsicc_nocm_get_link");
+        if (nocm_link->pis == NULL)
+            return NULL;
         nocm_link->pis->black_generation = (gx_transfer_map*)
                             gsicc_nocm_copy_curve(pis->black_generation, mem);
         nocm_link->pis->undercolor_removal = (gx_transfer_map*)

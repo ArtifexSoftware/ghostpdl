@@ -1123,7 +1123,7 @@ gsicc_transform_named_color(const float tint_values[],
                     (gsicc_namedcolortable_t*) gs_malloc(pis->memory->stable_memory, 1,
                                                     sizeof(gsicc_namedcolortable_t),
                                                     "gsicc_transform_named_color");
-                if (namedcolor_table == NULL) return(-1);
+                if (namedcolor_table == NULL) return(gs_error_VMerror);
                 /* Parse buffer and load the structure we will be searching */
                 buffptr = (char*) named_profile->buffer;
                 buffer_count = named_profile->buffer_size;
@@ -1150,7 +1150,7 @@ gsicc_transform_named_color(const float tint_values[],
                     gs_free(pis->memory, namedcolor_table, 1,
                             sizeof(gsicc_namedcolortable_t),
                             "gsicc_transform_named_color");
-                    return (-1);
+                    return (gs_error_VMerror);
                 }
                 namedcolor_table->number_entries = num_entries;
                 namedcolor_table->named_color = namedcolor_data;
@@ -1177,6 +1177,8 @@ gsicc_transform_named_color(const float tint_values[],
                         (char*) gs_malloc(pis->memory->stable_memory,1,
                                           curr_name_size+1,
                                           "gsicc_transform_named_color");
+                    if (namedcolor_data[k].colorant_name == NULL)
+                        return gs_error_VMerror;
                     strncpy(namedcolor_data[k].colorant_name,temp_ptr,
                             namedcolor_data[k].name_size+1);
                     for (j = 0; j < 3; j++) {

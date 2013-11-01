@@ -99,6 +99,9 @@ gsicc_add_cs(gs_state * pgs, gs_color_space * colorspace, ulong dictkey)
        to be maintained across the gsave and grestore process */
     result = gs_alloc_struct(memory->stable_memory, gsicc_profile_entry_t,
                                 &st_profile_entry, "gsicc_add_cs");
+    if (result == NULL)
+        return;			/* FIXME */
+
     /* If needed, remove an entry (the last one) */
     if (profile_cache->num_entries >= ICC_CACHE_MAXPROFILE) {
         gsicc_remove_cs_entry(profile_cache);

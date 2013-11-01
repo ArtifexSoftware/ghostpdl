@@ -504,9 +504,10 @@ void* _cmsMalloc(unsigned int size)
 
 void* _cmsCalloc(unsigned int nelts, unsigned int size)
 {
-    void *ptr;
+    void *ptr = gs_alloc_byte_array(gs_lib_ctx_get_non_gc_memory_t(), nelts, size, "lcms");
 
-    ptr = gs_alloc_byte_array(gs_lib_ctx_get_non_gc_memory_t(), nelts, size, "lcms");
+    if (ptr != NULL)
+        memset(ptr, 0, nelts * size);
     gs_warn2("lcms calloc (%d) at 0x%x",nelts*size,ptr);
     return ptr;
 }
@@ -528,7 +529,11 @@ void* _cmsMalloc(unsigned int size)
 
 void* _cmsCalloc(unsigned int nelts, unsigned int size)
 {
-    return gs_alloc_byte_array(gs_lib_ctx_get_non_gc_memory_t(), nelts, size, "lcms");
+    void *ptr = gs_alloc_byte_array(gs_lib_ctx_get_non_gc_memory_t(), nelts, size, "lcms");
+
+    if (ptr != NULL)
+        memset(ptr, 0, nelts * size);
+    return ptr;
 }
 
 void _cmsFree(void *ptr)

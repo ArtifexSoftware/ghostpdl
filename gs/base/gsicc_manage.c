@@ -196,7 +196,7 @@ gsicc_initialize_iccsmask(gsicc_manager_t *icc_manager)
        the smask_profiles object */
     icc_manager->smask_profiles = gsicc_new_iccsmask(stable_mem);
     if (icc_manager->smask_profiles == NULL)
-        return gs_throw(-1, "insufficient memory to allocate smask profiles");
+        return gs_throw(gs_error_VMerror, "insufficient memory to allocate smask profiles");
     /* Load the gray, rgb, and cmyk profiles */
     if ((icc_manager->smask_profiles->smask_gray =
         gsicc_set_iccsmaskprofile(SMASK_GRAY_ICC, strlen(SMASK_GRAY_ICC),
@@ -230,7 +230,7 @@ gsicc_new_devicen(gsicc_manager_t *icc_manager)
         gs_alloc_struct(icc_manager->memory, gsicc_devicen_entry_t,
                 &st_gsicc_devicen_entry, "gsicc_new_devicen");
     if (device_n_entry == NULL)
-        return gs_throw(-1, "insufficient memory to allocate device n profile");
+        return gs_throw(gs_error_VMerror, "insufficient memory to allocate device n profile");
     device_n_entry->next = NULL;
     device_n_entry->iccprofile = NULL;
 /* Check if we already have one in the manager */
@@ -240,7 +240,7 @@ gsicc_new_devicen(gsicc_manager_t *icc_manager)
             gsicc_devicen_t, &st_gsicc_devicen, "gsicc_new_devicen");
 
         if (icc_manager->device_n == NULL)
-            return gs_throw(-1, "insufficient memory to allocate device n profile");
+            return gs_throw(gs_error_VMerror, "insufficient memory to allocate device n profile");
 
         icc_manager->device_n->head = device_n_entry;
         icc_manager->device_n->final = device_n_entry;
@@ -496,12 +496,12 @@ gsicc_fill_srcgtag_item(gsicc_rendering_param_t *r_params, bool cmyk)
 
 static int
 gsicc_check_device_link(cmm_profile_t *icc_profile)
-{   
+{
     bool value;
 
     value = gscms_is_device_link(icc_profile->profile_handle);
     icc_profile->isdevlink = value;
-    
+
     return value;
 }
 
@@ -547,10 +547,10 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                                pname);
         }
         /* Allocate the buffer, stuff with the data */
-        buffer_ptr = (char*) gs_alloc_bytes(mem, info_size+1, 
+        buffer_ptr = (char*) gs_alloc_bytes(mem, info_size+1,
                                             "gsicc_set_srcgtag_struct");
         if (buffer_ptr == NULL) {
-            return gs_throw1(-1, "setting of %s src obj color info failed",
+            return gs_throw1(gs_error_VMerror, "setting of %s src obj color info failed",
                                pname);
         }
         num_bytes = sfread(buffer_ptr,sizeof(unsigned char), info_size, str);
@@ -588,7 +588,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
             for (k = 0; k < GSICC_NUM_SRCGTAG_KEYS; k++) {
                 if (strncmp(curr_ptr, srcgtag_keys[k], strlen(srcgtag_keys[k])) == 0 ) {
                     /* Check if the curr_ptr is None which indicates that this
-                       object is not to be color managed.  Also, if the 
+                       object is not to be color managed.  Also, if the
                        curr_ptr is Replace which indicates we will be doing
                        direct replacement of the colors.  */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
@@ -598,13 +598,13 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                         icc_profile = NULL;
                         break;
                     } else if ((strncmp(curr_ptr, GSICC_SRCTAG_REPLACE, strlen(GSICC_SRCTAG_REPLACE)) == 0 &&
-                        strlen(curr_ptr) == strlen(GSICC_SRCTAG_REPLACE))) { 
+                        strlen(curr_ptr) == strlen(GSICC_SRCTAG_REPLACE))) {
                         cmm = gsCMM_REPLACE;
                         icc_profile = NULL;
                         break;
                     } else {
                         /* Try to open the file and set the profile */
-                        code = gsicc_open_search(curr_ptr, strlen(curr_ptr), mem, 
+                        code = gsicc_open_search(curr_ptr, strlen(curr_ptr), mem,
                                                  mem->gs_lib_ctx->profiledir,
                                                  mem->gs_lib_ctx->profiledir_len, &str);
                         if (code < 0)
@@ -615,7 +615,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                             code = sfclose(str);
                             gsicc_init_profile_info(icc_profile);
                             cmm = gsCMM_DEFAULT;
-                            /* Check if this object is a devicelink profile. 
+                            /* Check if this object is a devicelink profile.
                                If it is then the intent, blackpoint etc. are not
                                read nor used when dealing with these profiles */
                             gsicc_check_device_link(icc_profile);
@@ -700,6 +700,8 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
     srcgtag->name_length = strlen(pname);
     srcgtag->name = (char*) gs_alloc_bytes(mem, srcgtag->name_length,
                                   "gsicc_set_srcgtag_struct");
+    if (srcgtag->name == NULL)
+        return gs_throw(gs_error_VMerror, "Insufficient memory for tag name");
     strncpy(srcgtag->name, pname, srcgtag->name_length);
     icc_manager->srcgtag_profile = srcgtag;
     return 0;
@@ -786,7 +788,7 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
             if( memcmp(pname, icc_profile->name, namelen) == 0)
                 return 0;
         }
-        if (strncmp(icc_profile->name, OI_PROFILE, 
+        if (strncmp(icc_profile->name, OI_PROFILE,
                     strlen(icc_profile->name)) == 0) {
                 return 0;
         }
@@ -829,6 +831,8 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
             *manager_default_profile = icc_profile;
             nameptr = (char*) gs_alloc_bytes(icc_profile->memory, namelen+1,
                                              "gsicc_set_profile");
+            if (nameptr == NULL)
+                return gs_throw(gs_error_VMerror, "Insufficient memory for profile name");
             memcpy(nameptr, pname, namelen);
             nameptr[namelen] = '\0';
             icc_profile->name = nameptr;
@@ -851,7 +855,7 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
                index in the table is the first name */
             gsicc_get_devicen_names(icc_profile, icc_manager->memory);
         }
-        /* Delay the loading of the handle buffer until we need the profile. 
+        /* Delay the loading of the handle buffer until we need the profile.
            But set some basic stuff that we need */
         icc_profile->num_comps = num_comps;
         icc_profile->num_comps_out = 3;
@@ -868,7 +872,7 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
    the *only* profiles that are delayed in this manner.  All embedded profiles
    and internally generated profiles have their handles found immediately */
 int
-gsicc_initialize_default_profile(cmm_profile_t *icc_profile) 
+gsicc_initialize_default_profile(cmm_profile_t *icc_profile)
 {
     gsicc_profile_t defaulttype = icc_profile->default_match;
     gsicc_colorbuffer_t default_space = gsUNDEFINED;
@@ -877,12 +881,12 @@ gsicc_initialize_default_profile(cmm_profile_t *icc_profile)
 
     /* Get the profile handle if it is not already set */
     if (icc_profile->profile_handle != NULL) {
-        icc_profile->profile_handle = 
+        icc_profile->profile_handle =
                         gsicc_get_profile_handle_buffer(icc_profile->buffer,
                                                         icc_profile->buffer_size,
                                                         icc_profile->memory);
         if (icc_profile->profile_handle == NULL) {
-            return gs_rethrow1(-1, "allocation of profile %s handle failed", 
+            return gs_rethrow1(gs_error_VMerror, "allocation of profile %s handle failed",
                                icc_profile->name);
         }
     }
@@ -900,10 +904,10 @@ gsicc_initialize_default_profile(cmm_profile_t *icc_profile)
         gscms_get_output_channel_count(icc_profile->profile_handle);
     icc_profile->data_cs =
         gscms_get_profile_data_space(icc_profile->profile_handle);
-    if_debug0m(gs_debug_flag_icc,mem,"[icc] Setting ICC profile in Manager\n"); 
+    if_debug0m(gs_debug_flag_icc,mem,"[icc] Setting ICC profile in Manager\n");
     switch(defaulttype) {
         case DEFAULT_GRAY:
-            if_debug0m(gs_debug_flag_icc,mem,"[icc] Default Gray\n"); 
+            if_debug0m(gs_debug_flag_icc,mem,"[icc] Default Gray\n");
             default_space = gsGRAY;
             break;
         case DEFAULT_RGB:
@@ -915,21 +919,21 @@ gsicc_initialize_default_profile(cmm_profile_t *icc_profile)
             default_space = gsCMYK;
              break;
         case NAMED_TYPE:
-            if_debug0m(gs_debug_flag_icc,mem,"[icc] Named Color\n"); 
+            if_debug0m(gs_debug_flag_icc,mem,"[icc] Named Color\n");
             break;
         case LAB_TYPE:
-            if_debug0m(gs_debug_flag_icc,mem,"[icc] CIELAB Profile\n"); 
+            if_debug0m(gs_debug_flag_icc,mem,"[icc] CIELAB Profile\n");
             break;
         case DEVICEN_TYPE:
-            if_debug0m(gs_debug_flag_icc,mem,"[icc] DeviceN Profile\n"); 
+            if_debug0m(gs_debug_flag_icc,mem,"[icc] DeviceN Profile\n");
             break;
         case DEFAULT_NONE:
         default:
             return 0;
             break;
     }
-    if_debug1m(gs_debug_flag_icc,mem,"[icc] name = %s\n", icc_profile->name); 
-    if_debug1m(gs_debug_flag_icc,mem,"[icc] num_comps = %d\n", icc_profile->num_comps); 
+    if_debug1m(gs_debug_flag_icc,mem,"[icc] name = %s\n", icc_profile->name);
+    if_debug1m(gs_debug_flag_icc,mem,"[icc] num_comps = %d\n", icc_profile->num_comps);
     /* Check that we have the proper color space for the ICC
        profiles that can be externally set */
     if (default_space != gsUNDEFINED ||
@@ -1087,6 +1091,8 @@ gsicc_new_srcgtag_profile(gs_memory_t *memory)
     result = (cmm_srcgtag_profile_t *) gs_alloc_bytes(memory->non_gc_memory,
                                             sizeof(cmm_srcgtag_profile_t),
                                             "gsicc_new_srcgtag_profile");
+    if (result == NULL)
+        return NULL;
     result->memory = memory->non_gc_memory;
 
     for (k = 0; k < NUM_SOURCE_PROFILES; k++) {
@@ -1111,7 +1117,7 @@ gsicc_new_srcgtag_profile(gs_memory_t *memory)
 }
 
 static void
-gsicc_free_spotnames(gsicc_namelist_t *spotnames, gs_memory_t * mem) 
+gsicc_free_spotnames(gsicc_namelist_t *spotnames, gs_memory_t * mem)
 {
     int k;
     gsicc_colorname_t *curr_name, *next_name;
@@ -1166,7 +1172,7 @@ rc_free_profile_array(gs_memory_t * mem, void *ptr_in, client_name_t cname)
         if (icc_struct->spotnames != NULL) {
             if_debug0m(gs_debug_flag_icc, mem_nongc, "[icc] Releasing spotnames\n");
             /* Free the linked list in this object */
-            gsicc_free_spotnames(icc_struct->spotnames, mem_nongc); 
+            gsicc_free_spotnames(icc_struct->spotnames, mem_nongc);
             /* Free the main object */
             gs_free_object(mem_nongc, icc_struct->spotnames, "rc_free_profile_array");
         }
@@ -1220,7 +1226,7 @@ gsicc_set_device_blackpreserve(gx_device *dev, gsicc_blackpreserve_t blackpreser
 {
     int code;
     cmm_dev_profile_t *profile_struct;
-   
+
     if (dev->procs.get_profile == NULL) {
         profile_struct = dev->icc_struct;
     } else {
@@ -1240,7 +1246,7 @@ gsicc_set_device_profile_intent(gx_device *dev, gsicc_rendering_intents_t intent
 {
     int code;
     cmm_dev_profile_t *profile_struct;
-   
+
     if (dev->procs.get_profile == NULL) {
         profile_struct = dev->icc_struct;
     } else {
@@ -1260,7 +1266,7 @@ gsicc_set_device_blackptcomp(gx_device *dev, gsicc_blackptcomp_t blackptcomp,
 {
     int code = 0;
     cmm_dev_profile_t *profile_struct;
-   
+
     if (dev->procs.get_profile == NULL) {
         profile_struct = dev->icc_struct;
     } else {
@@ -1282,6 +1288,8 @@ gsicc_set_devicen_equiv_colors(gx_device *dev, const gs_imager_state * pis,
     gs_state temp_state = *((gs_state*)pis);
     gs_color_space *pcspace = gs_cspace_alloc(pis->memory->non_gc_memory,
                                               &gs_color_space_type_ICC);
+    if (pcspace == NULL)
+        return gs_throw(gs_error_VMerror, "Insufficient memory for devn equiv colors");
     pcspace->cmm_icc_profile_data = profile;
     temp_state.color[0].color_space = pcspace;
     return dev_proc(dev, update_spot_equivalent_colors)(dev, &temp_state);
@@ -1290,15 +1298,15 @@ gsicc_set_devicen_equiv_colors(gx_device *dev, const gs_imager_state * pis,
 #define DEFAULT_ICC_PROCESS "Cyan, Magenta, Yellow, Black,"
 #define DEFAULT_ICC_PROCESS_LENGTH 30
 #define DEFAULT_ICC_COLORANT_NAME "ICC_COLOR_"
-#define DEFAULT_ICC_COLORANT_LENGTH 12   
+#define DEFAULT_ICC_COLORANT_LENGTH 12
 /* allow at most 16 colorants */
-/* This sets the colorants structure up in the device profile for when 
+/* This sets the colorants structure up in the device profile for when
    we are dealing with DeviceN type output profiles.  Note
    that this feature is only used with the tiffsep and psdcmyk devices.
    If name_str is null it will use default names for the colorants */
 int
 gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
-{   
+{
     int code;
     cmm_dev_profile_t *profile_struct;
     gsicc_colorname_t *name_entry;
@@ -1327,8 +1335,10 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
             /* Assume first 4 are CMYK */
             total_len = ((DEFAULT_ICC_COLORANT_LENGTH + 1) * (num_comps-4)) +
                         DEFAULT_ICC_PROCESS_LENGTH - 1;  /* -1 due to no comma at end */
-            name_str = (char*) gs_alloc_bytes(dev->memory, total_len+1, 
+            name_str = (char*) gs_alloc_bytes(dev->memory, total_len+1,
                                                "gsicc_set_device_profile_colorants");
+            if (name_str == NULL)
+                return gs_throw(gs_error_VMerror, "Insufficient memory for colorant name");
             gs_sprintf(name_str, DEFAULT_ICC_PROCESS);
             for (kk = 0; kk < num_comps-5; kk++) {
                 gs_sprintf(temp_str,"ICC_COLOR_%d,",kk);
@@ -1337,14 +1347,14 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
             /* Last one no comma */
             gs_sprintf(temp_str,"ICC_COLOR_%d",kk);
             strcat(name_str,temp_str);
-        } 
+        }
         str_len = strlen(name_str);
         if (profile_struct->spotnames != NULL &&
             profile_struct->spotnames->name_str != NULL &&
             strlen(profile_struct->spotnames->name_str) == str_len) {
             if (strncmp(name_str, profile_struct->spotnames->name_str, str_len) == 0) {
-                if (free_str) 
-                    gs_free_object(dev->memory, name_str, 
+                if (free_str)
+                    gs_free_object(dev->memory, name_str,
                                             "gsicc_set_device_profile_colorants");
                 return 0;
             }
@@ -1353,16 +1363,18 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
         /* We need to free the existing one if there was one */
         if (profile_struct->spotnames != NULL) {
             /* Free the linked list in this object */
-            gsicc_free_spotnames(profile_struct->spotnames, mem); 
+            gsicc_free_spotnames(profile_struct->spotnames, mem);
             /* Free the main object */
-            gs_free_object(mem, profile_struct->spotnames, 
+            gs_free_object(mem, profile_struct->spotnames,
                            "gsicc_set_device_profile_colorants");
         }
         /* Allocate structure for managing names */
         spot_names = gsicc_new_namelist(mem);
         profile_struct->spotnames = spot_names;
-        spot_names->name_str = (char*) gs_alloc_bytes(mem, str_len+1, 
+        spot_names->name_str = (char*) gs_alloc_bytes(mem, str_len+1,
                                                "gsicc_set_device_profile_colorants");
+        if (spot_names->name_str == NULL)
+            return gs_throw(gs_error_VMerror, "Insufficient memory for spot name");
         memcpy(spot_names->name_str, name_str, strlen(name_str));
         spot_names->name_str[str_len] = 0;
         curr_entry = &(spot_names->head);
@@ -1385,8 +1397,10 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
             /* Set our current entry to this one */
             *curr_entry = name_entry;
             name_entry->length = strlen(temp_ptr);
-            name_entry->name = (char *) gs_alloc_bytes(mem, name_entry->length, 
+            name_entry->name = (char *) gs_alloc_bytes(mem, name_entry->length,
                                         "gsicc_set_device_profile_colorants");
+            if (spot_names->name_str == NULL)
+                return gs_throw(gs_error_VMerror, "Insufficient memory for spot name");
             memcpy(name_entry->name, temp_ptr, name_entry->length);
             /* Get the next entry location */
             curr_entry = &((*curr_entry)->next);
@@ -1394,35 +1408,37 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
             pch = strtok(NULL, ",");
         }
         spot_names->count = count;
-        /* Create the color map.  Query the device to find out where these 
+        /* Create the color map.  Query the device to find out where these
            colorants are located.   It is possible that the device may
-           not be opened yet.  In which case, we need to make sure that 
-           when it is opened that it checks this entry and gets itself 
+           not be opened yet.  In which case, we need to make sure that
+           when it is opened that it checks this entry and gets itself
            properly initialized if it is a separation device. */
-        spot_names->color_map = 
-            (gs_devicen_color_map*) gs_alloc_bytes(mem, 
+        spot_names->color_map =
+            (gs_devicen_color_map*) gs_alloc_bytes(mem,
                                                    sizeof(gs_devicen_color_map),
                                                    "gsicc_set_device_profile_colorants");
+        if (spot_names->color_map == NULL)
+            return gs_throw(gs_error_VMerror, "Insufficient memory for spot color map");
         spot_names->color_map->num_colorants = count;
         spot_names->color_map->num_components = count;
 
         name_entry = spot_names->head;
         for (k = 0; k < count; k++) {
             int colorant_number = (*dev_proc(dev, get_color_comp_index))
-                    (dev, (const char *)name_entry->name, name_entry->length, 
+                    (dev, (const char *)name_entry->name, name_entry->length,
                      SEPARATION_NAME);
             name_entry = name_entry->next;
             spot_names->color_map->color_map[k] = colorant_number;
         }
         /* We need to set the equivalent CMYK color for this colorant.  This is
            done by faking out the update spot equivalent call with a special
-           imager state and color space that makes it seem like the 
+           imager state and color space that makes it seem like the
            spot color is a separation color space.  Unfortunately, we need the
-           graphic state to do this so we save it for later when we try to do 
+           graphic state to do this so we save it for later when we try to do
            our first mapping.  We then use this flag to know if we did it yet */
         spot_names->equiv_cmyk_set = false;
-        if (free_str) 
-            gs_free_object(dev->memory, name_str, 
+        if (free_str)
+            gs_free_object(dev->memory, name_str,
                            "gsicc_set_device_profile_colorants");
     }
     return code;
@@ -1447,14 +1463,14 @@ gsicc_init_device_profile_struct(gx_device * dev,
     if (profile_struct != NULL) {
         /* Get the profile of interest */
         if (profile_type < gsPROOFPROFILE) {
-            curr_profile = profile_struct->device_profile[profile_type];      
+            curr_profile = profile_struct->device_profile[profile_type];
         } else {
             /* The proof or link profile */
             if (profile_type == gsPROOFPROFILE) {
-                curr_profile = profile_struct->proof_profile;      
+                curr_profile = profile_struct->proof_profile;
             } else {
-                curr_profile = profile_struct->link_profile; 
-            } 
+                curr_profile = profile_struct->link_profile;
+            }
         }
         /* See if we have the same profile in this location */
         if (curr_profile != NULL) {
@@ -1463,9 +1479,9 @@ gsicc_init_device_profile_struct(gx_device * dev,
             if (profile_name != NULL) {
                 if (strncmp(curr_profile->name, profile_name,
                             strlen(profile_name)) != 0 &&
-                    strncmp(curr_profile->name, OI_PROFILE, 
+                    strncmp(curr_profile->name, OI_PROFILE,
                             strlen(curr_profile->name)) != 0) {
-                    /* A change in the profile.  rc decrement this one as it 
+                    /* A change in the profile.  rc decrement this one as it
                        will be replaced */
                     rc_decrement(dev->icc_struct->device_profile[profile_type],
                                  "gsicc_init_device_profile_struct");
@@ -1486,8 +1502,8 @@ gsicc_init_device_profile_struct(gx_device * dev,
     }
     /* Either use the incoming or a default */
     if (profile_name == NULL) {
-        profile_name = 
-            (char *) gs_alloc_bytes(dev->memory, 
+        profile_name =
+            (char *) gs_alloc_bytes(dev->memory,
                                     MAX_DEFAULT_ICC_LENGTH,
                                     "gsicc_init_device_profile_struct");
         if (profile_name == NULL)
@@ -1511,27 +1527,27 @@ gsicc_init_device_profile_struct(gx_device * dev,
                 break;
         }
         /* Go ahead and set the profile */
-        code = gsicc_set_device_profile(dev, dev->memory, profile_name, 
+        code = gsicc_set_device_profile(dev, dev->memory, profile_name,
                                         profile_type);
-        gs_free_object(dev->memory, profile_name, 
+        gs_free_object(dev->memory, profile_name,
                        "gsicc_init_device_profile_struct");
         return code;
     } else {
         /* Go ahead and set the profile */
-        code = gsicc_set_device_profile(dev, dev->memory, profile_name, 
+        code = gsicc_set_device_profile(dev, dev->memory, profile_name,
                                         profile_type);
         return code;
     }
 }
 
-/* This is used in getting a list of colorant names for the intepreters 
+/* This is used in getting a list of colorant names for the intepreters
    device parameter list. */
 char* gsicc_get_dev_icccolorants(cmm_dev_profile_t *dev_profile)
 {
-    if (dev_profile == NULL || dev_profile->spotnames == NULL || 
-        dev_profile->spotnames->name_str == NULL) 
+    if (dev_profile == NULL || dev_profile->spotnames == NULL ||
+        dev_profile->spotnames->name_str == NULL)
         return 0;
-    else 
+    else
         return dev_profile->spotnames->name_str;
 }
 
@@ -1540,7 +1556,7 @@ char* gsicc_get_dev_icccolorants(cmm_dev_profile_t *dev_profile)
     really occur only one time, but may occur twice if a color model is
     specified or a nondefault profile is specified on the command line */
 int
-gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem, 
+gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                          char *file_name, gsicc_profile_types_t pro_enum)
 {
     cmm_profile_t *icc_profile;
@@ -1574,7 +1590,7 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                 } else {
                     if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting link profile\n");
                     pdev->icc_struct->link_profile = icc_profile;
-                } 
+                }
             }
             /* Get the profile handle */
             icc_profile->profile_handle =
@@ -1592,7 +1608,7 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
             /* Get the number of channels in the output profile */
             icc_profile->num_comps =
                 gscms_get_input_channel_count(icc_profile->profile_handle);
-            if_debug1m(gs_debug_flag_icc, mem, "[icc] Profile has %d components\n", 
+            if_debug1m(gs_debug_flag_icc, mem, "[icc] Profile has %d components\n",
                        icc_profile->num_comps);
             icc_profile->num_comps_out =
                 gscms_get_output_channel_count(icc_profile->profile_handle);
@@ -1606,19 +1622,19 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                output profile */
             switch (icc_profile->num_comps) {
                 case 1:
-                    if (strncmp(icc_profile->name, DEFAULT_GRAY_ICC, 
+                    if (strncmp(icc_profile->name, DEFAULT_GRAY_ICC,
                     strlen(icc_profile->name)) == 0) {
                         icc_profile->default_match = DEFAULT_GRAY;
                     }
                     break;
                 case 3:
-                    if (strncmp(icc_profile->name, DEFAULT_RGB_ICC, 
+                    if (strncmp(icc_profile->name, DEFAULT_RGB_ICC,
                     strlen(icc_profile->name)) == 0) {
                         icc_profile->default_match = DEFAULT_RGB;
                     }
                     break;
                 case 4:
-                    if (strncmp(icc_profile->name, DEFAULT_CMYK_ICC, 
+                    if (strncmp(icc_profile->name, DEFAULT_CMYK_ICC,
                     strlen(icc_profile->name)) == 0) {
                         icc_profile->default_match = DEFAULT_CMYK;
                     }
@@ -1628,7 +1644,7 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                     gsicc_set_device_profile_colorants(pdev, NULL);
                     break;
             }
-            if_debug1m(gs_debug_flag_icc, mem, "[icc] Profile data CS is %d\n", 
+            if_debug1m(gs_debug_flag_icc, mem, "[icc] Profile data CS is %d\n",
                        icc_profile->data_cs);
         } else
             return gs_rethrow(-1, "cannot find device profile");
@@ -1759,7 +1775,7 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
            deallocate that now */
         if (profile->spotnames != NULL) {
             /* Free the linked list in this object */
-            gsicc_free_spotnames(profile->spotnames, mem_nongc); 
+            gsicc_free_spotnames(profile->spotnames, mem_nongc);
             /* Free the main object */
             gs_free_object(mem_nongc, profile->spotnames, "rc_free_icc_profile");
         }
@@ -1805,7 +1821,7 @@ gsicc_init_iccmanager(gs_state * pgs)
     const char *pname;
     int namelen;
     gsicc_manager_t *iccmanager = pgs->icc_manager;
-    cmm_profile_t *profile; 
+    cmm_profile_t *profile;
 
     for (k = 0; k < 4; k++) {
         pname = default_profile_params[k].path;
@@ -1919,12 +1935,12 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s,
     profile_size = sftell(s);
     code = srewind(s);
     if (profile_size < ICC_HEADER_SIZE)
-        return -1;
+        return gs_error_VMerror;
     /* Allocate the buffer, stuff with the profile */
    buffer_ptr = gs_alloc_bytes(memory, profile_size,
                                         "gsicc_load_profile");
    if (buffer_ptr == NULL)
-        return -1;
+        return gs_throw(gs_error_VMerror, "Insufficient memory for profile buffer");
    num_bytes = sfread(buffer_ptr,sizeof(unsigned char),profile_size,s);
    if( num_bytes != profile_size) {
        gs_free_object(memory, buffer_ptr, "gsicc_load_profile");
@@ -1952,7 +1968,7 @@ gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s,
    buffer_ptr = gs_alloc_bytes(memory, profile_size,
                                         "gsicc_load_profile");
    if (buffer_ptr == NULL)
-        return -1;
+        return gs_throw(gs_error_VMerror, "Insufficient memory for profile buffer");
    num_bytes = sfread(buffer_ptr,sizeof(unsigned char),profile_size,s);
    if( num_bytes != profile_size) {
        gs_free_object(memory, buffer_ptr, "gsicc_load_profile");
@@ -2150,7 +2166,7 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer, int profile_size, gs_memo
                         &islab);
             if (code < 0) {
                 gs_warn("Failed to create ICC profile from CIEABC");
-                rc_decrement(gs_colorspace->cmm_icc_profile_data, 
+                rc_decrement(gs_colorspace->cmm_icc_profile_data,
                              "gsicc_get_gscs_profile");
                 return NULL;
             }
@@ -2246,7 +2262,7 @@ gsicc_read_serial_icc(gx_device *dev, int64_t icc_hashcode)
         return NULL;
 
     /* Get the serialized portion of the ICC profile information */
-    clist_read_chunk(pcrdev, position, GSICC_SERIALIZED_SIZE, 
+    clist_read_chunk(pcrdev, position, GSICC_SERIALIZED_SIZE,
                     (unsigned char *) profile);
     return profile;
 }
@@ -2284,7 +2300,7 @@ void
 gsicc_get_srcprofile(gsicc_colorbuffer_t data_cs,
                      gs_graphics_type_tag_t graphics_type_tag,
                      cmm_srcgtag_profile_t *srcgtag_profile,
-                     cmm_profile_t **profile, gsicc_rendering_param_t *render_cond) 
+                     cmm_profile_t **profile, gsicc_rendering_param_t *render_cond)
 {
     (*profile) = NULL;
     (*render_cond).rendering_intent = gsPERCEPTUAL;
@@ -2418,7 +2434,7 @@ gs_currentdevicenicc(const gs_state * pgs, gs_param_string * pval)
         pval->data = (const byte *) rfs;
         pval->persistent = true;
     } else {
-        pval->data = 
+        pval->data =
             (const byte *) (pgs->icc_manager->device_n->head->iccprofile->name);
         pval->persistent = false;
     }
@@ -2591,7 +2607,7 @@ gs_setsrcgtagicc(const gs_state * pgs, gs_param_string * pval)
         return_error(gs_error_VMerror);
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
-    code = gsicc_set_srcgtag_struct(pgs->icc_manager, (const char*) pname, 
+    code = gsicc_set_srcgtag_struct(pgs->icc_manager, (const char*) pname,
                                    namelen);
     gs_free_object(mem, pname, "set_srcgtag_icc");
     if (code < 0)

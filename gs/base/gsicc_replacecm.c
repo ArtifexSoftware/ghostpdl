@@ -355,6 +355,8 @@ gsicc_rcm_get_link(const gs_imager_state *pis, gx_device *dev,
     result->is_identity = false;
     rcm_link = (rcm_link_t *) gs_alloc_bytes(mem, sizeof(rcm_link_t),
                                                "gsicc_rcm_get_link");
+    if (rcm_link == NULL)
+        return NULL;
     result->link_handle = (void*) rcm_link;
     rcm_link->memory = mem;
     rcm_link->num_out = min(dev->color_info.num_components, 
