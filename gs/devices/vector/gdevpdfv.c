@@ -337,7 +337,7 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
          */
         *ppres = 0;
         set_nonclient_dev_color(&dc_pure, gx_dc_pure_color(pdc));
-        return psdf_set_color((gx_device_vector *)pdev, &dc_pure, ppscc);
+        return psdf_set_color((gx_device_vector *)pdev, &dc_pure, ppscc, pdev->UseOldColor);
     } else {
         cos_value_t v;
         stream *s = pdev->strm;
@@ -376,7 +376,7 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
         if (have_pattern_streams)
             return 0;
         set_nonclient_dev_color(&dc_pure, gx_dc_pure_color(pdc));
-        return psdf_set_color((gx_device_vector *)pdev, &dc_pure, &no_scc);
+        return psdf_set_color((gx_device_vector *)pdev, &dc_pure, &no_scc, pdev->UseOldColor);
     }
 }
 

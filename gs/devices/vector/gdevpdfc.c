@@ -1080,8 +1080,8 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
                         return code;
                 }
                 code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
-                if (ppranges)
-                    *ppranges = &pcie->RangeA;
+                if (pcs->params.a->RangeA.rmin < 0.0 || pcs->params.a->RangeA.rmax > 1.0)
+                        ranges = &pcs->params.a->RangeA;
             } else {
                 code = pdf_convert_cie_space(pdev, pca, pcs, "GRAY", pciec,
                                          &pcie->RangeA, ONE_STEP_NOT, NULL,
@@ -1108,8 +1108,8 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
                         return code;
                 }
                 code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
-                if (ppranges)
-                    *ppranges = &pcie->RangeA;
+                if (pcs->params.a->RangeA.rmin < 0.0 || pcs->params.a->RangeA.rmax > 1.0)
+                        ranges = &pcs->params.a->RangeA;
             } else {
                 code = pdf_convert_cie_space(pdev, pca, pcs, "GRAY", pciec,
                                          &pcie->RangeA, ONE_STEP_NOT, NULL,
@@ -1168,14 +1168,20 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
             goto cal;
         } else {
             if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
+                int i;
+
                 if (pcs->icc_equivalent == 0) {
                     code = gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &is_lab, pdev->memory);
                     if (code < 0)
                         return code;
                 }
                 code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
-                if (ppranges)
-                    *ppranges = pcie->RangeABC.ranges;
+                for (i = 0; i < 3; ++i) {
+                    double rmin = pcs->params.abc->RangeABC.ranges[i].rmin, rmax = pcs->params.abc->RangeABC.ranges[i].rmax;
+
+                    if (rmin < 0.0 || rmax > 1.0)
+                        ranges = pcs->params.abc->RangeABC.ranges;
+                }
             } else {
                 code = pdf_convert_cie_space(pdev, pca, pcs, "RGB ", pciec,
                                          pcie->RangeABC.ranges,
@@ -1214,14 +1220,19 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 
     case gs_color_space_index_CIEDEF:
             if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
+                int i;
                 if (pcs->icc_equivalent == 0) {
                     code = gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &is_lab, pdev->memory);
                     if (code < 0)
                         return code;
                 }
                 code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
-                if (ppranges)
-                    *ppranges = pcs->params.def->RangeDEF.ranges;
+                for (i = 0; i < 3; ++i) {
+                    double rmin = pcs->params.def->RangeDEF.ranges[i].rmin, rmax = pcs->params.def->RangeDEF.ranges[i].rmax;
+
+                    if (rmin < 0.0 || rmax > 1.0)
+                        ranges = pcs->params.def->RangeDEF.ranges;
+                }
             } else {
                 code = pdf_convert_cie_space(pdev, pca, pcs, "RGB ",
                                      (const gs_cie_common *)pcs->params.def,
@@ -1232,14 +1243,19 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 
     case gs_color_space_index_CIEDEFG:
             if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
+                int i;
                 if (pcs->icc_equivalent == 0) {
                     code = gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &is_lab, pdev->memory);
                     if (code < 0)
                         return code;
                 }
                 code = pdf_iccbased_color_space(pdev, pvalue, pcs->icc_equivalent, pca);
-                if (ppranges)
-                    *ppranges = pcs->params.defg->RangeDEFG.ranges;
+                for (i = 0; i < 4; ++i) {
+                    double rmin = pcs->params.defg->RangeDEFG.ranges[i].rmin, rmax = pcs->params.defg->RangeDEFG.ranges[i].rmax;
+
+                    if (rmin < 0.0 || rmax > 1.0)
+                        ranges = pcs->params.defg->RangeDEFG.ranges;
+                }
             } else {
                 code = pdf_convert_cie_space(pdev, pca, pcs, "CMYK",
                                      (const gs_cie_common *)pcs->params.defg,

@@ -481,7 +481,7 @@ gx_color_index psdf_adjust_color_index(gx_device_vector *vdev,
 
 /* Set the fill or stroke color. */
 int psdf_set_color(gx_device_vector *vdev, const gx_drawing_color *pdc,
-                   const psdf_set_color_commands_t *ppscc);
+                   const psdf_set_color_commands_t *ppscc, bool UseOldColor);
 /* Round a double value to a specified precision. */
 double psdf_round(double v, int precision, int radix);
 
