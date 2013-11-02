@@ -1878,10 +1878,6 @@ new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
                 goto fail_and_fallback;
         } else {
             convert_to_process_colors = 0;
-            if (pcs->cmm_icc_profile_data != NULL &&
-                pcs->cmm_icc_profile_data->islab) {
-                    gscms_set_icc_range((cmm_profile_t **)&(pcs->cmm_icc_profile_data));
-            }
             code = pdf_color_space_named(pdev, &cs_value, &pranges, pcs, names,
                                      in_line, NULL, 0);
             if (code < 0)
