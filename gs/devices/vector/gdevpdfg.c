@@ -324,12 +324,8 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_imager_state * 
                         const gx_drawing_color *pdc, bool *used_process_color,
                         const psdf_set_color_commands_t *ppscc, gs_client_color *pcc)
 {
-    int code, i, j = 0;
-    gsicc_link_t *icc_link;
-    gsicc_rendering_param_t rendering_params;
+    int code, i;
     frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    unsigned short Converted[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    unsigned short Source[GS_CLIENT_COLOR_MAX_COMPONENTS];
     gs_color_space_index csi, csi2;
     gs_color_space *pcs2 = (gs_color_space *)pcs;
     gx_drawing_color dc;
@@ -411,8 +407,6 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_imager_state * 
                 *used_process_color = true;
                 return code;
         } else {
-            const char *command = NULL;
-
             memset (&conc, 0x00, sizeof(frac) * GS_CLIENT_COLOR_MAX_COMPONENTS);
             /* Special case handling for Lab spaces */
             if (pcs->cmm_icc_profile_data->data_cs == gsCIELAB || pcs->cmm_icc_profile_data->islab) {

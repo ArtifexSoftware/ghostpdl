@@ -28,6 +28,7 @@
 #include "sjpeg.h"
 #include "spprint.h"
 #include "gsovrc.h"
+#include "gsicc_cache.h"
 
 /* Structure descriptors */
 public_st_device_psdf();
