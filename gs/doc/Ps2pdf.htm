@@ -646,6 +646,11 @@ parameter <code>ProcessColorModel</code> to be set to
 The old Ghostscript-specific value <code>UseDeviceDependentColor</code> 
 is now depricated. It is automaticly replaced with <code>sRGB</code>,
 <code>CMYK</code>, or <code>Gray</code>.
+With the new color conversion code active it is no longer neccesary to
+set <code>ProcessColorModel</code> when selecting <code>Gray</code>, <code>RGB</code> or <code>CMYK</code>. It is also no
+longer neccesary to set <code>UseCIEColor</code> for <code>UseDeviceIndependentColor</code> to
+work properly, and the use of <code>UseCIEColor</code> is now strongly discouraged. <code>sRGB</code>
+is not supported, use <code>RGB</code> instead.
 <p>
 <a name="note_7">(note 7)</a>
  The default image parameter dictionary is
@@ -719,6 +724,41 @@ where the file <b>params.in</b> contains:
 <blockquote><code>-c '&lt;&lt;/AlwaysEmbed [/Helvetica /Times-Roman]&gt;&gt; setdistillerparams' -f
 in.ps</code></blockquote>
 
+<hr>
+<h2><a name="Color"></a>Color Conversion and management</h2>
+<p>
+As of the 9.11 pre-release, the colour management in pdfwrite has been substantially
+altered so that it now uses the same Color Management System as rendering (the default
+is LCMS2). This considerably improves the color handling in both pdfwrite and ps2write,
+particularly in the areas of Spearation and DeviceN color spaces, and Indexed color
+spaces with images. Despite lengthy careful testing it is possible that there will be
+bugs in this initial implementation and so the following switch is available.
+</p>
+
+<dl>
+<dt><code>-dPDFUseOldCMS=</code><em>boolean</em>
+<dd>Defaults to false, when true this uses the old system for color conversions.
+</dl>
+<p>If you do encoutner any problems with the new color conversion code, please do open a bug report. This switch
+is temporary and will be removed in future releases, do not rely on its availability.</p>
+<p>
+The <code>ColorConversionStrategy</code> switch can now be set to <code>LeaveColorUnchanged</code>, <code>Gray</code>, <code>RGB</code>, <code>CMYK</code> or
+<code>UseDeviceIndependentColor</code>. Note that, particularly for ps2write, <code>LeaveColorUnchanged</code> may still need to convert
+colors into a different space (ICCbased colors cannot be represented in PostScript for example). In
+this case the color space chosen will be whatever the current ProcessColorModel is set to, so it is
+worth setting this as well, if it is important that the color space be controlled.
+</p>
+<p>ps2write cannot currently convert into device-independent color spaces, and so <code>UseDeviceIndependentColor</code>should not be used with ps2write.
+</p>
+<p>All other colour spaces are converted approproately. Separation and DeviceN spaces will be preserved if possible (ps2write cannot preserve DeviceN)
+and if the alternate space is not appropriate a new alternate space will be created. Eg a [/Separation (MyColor) /DeviceRGB {...}]
+when the <code>ColorConversionStrategy</code> is set to <code>CMYK</code> would be converted to [/Separation (MyColor) /DeviceCMYK {...}]
+The new tint transform would be created by sampling the original tint transform, converting the RGB values into CMYK, and then creating
+a function to linearly interpolate between those values.</p>
+<p>Finally, because the PDF/A-1 specificatin requires that ICC profiles be Version 2, and we do not yet have a means to
+guarantee that the profiles we create will be version 2 profiles, if you select PDF/A-1 conformance the code will
+automatically use the old CMS.
+</p>
 <hr>
 
 <h2><a name="PPD"></a>Ghostscript PDF Printer Description</h2>

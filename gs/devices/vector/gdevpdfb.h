@@ -273,7 +273,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  !PDF_FOR_OPDFREAD,		/* PreserveSMask */
  !PDF_FOR_OPDFREAD,		/* PreserveTrMode */
  false,                 /* NoT3CCITT */
- true,                 /* UseOldColor */
+ false,                 /* UseOldColor */
  false,                 /* Linearise */
  0,                     /* FirstPage (from the command line) */
  0,                     /* LastPage (from the command line) */
