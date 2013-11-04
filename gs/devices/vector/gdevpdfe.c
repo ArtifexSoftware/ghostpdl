@@ -502,7 +502,7 @@ pdf_xmp_write_docinfo_item(gx_device_pdf *pdev, stream *s, const char *key, cons
 
     if (v != NULL && (v->value_type == COS_VALUE_SCALAR ||
                         v->value_type == COS_VALUE_CONST)) {
-        if (v->contents.chars.size > 2 && v->contents.chars.data[0] == '(')
+        if (v->contents.chars.size >= 2 && v->contents.chars.data[0] == '(')
             return pdf_xmp_write_translated(pdev, s, v->contents.chars.data + 1,
                         v->contents.chars.size - 2, write);
         else
@@ -758,7 +758,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
                 }
                 pdf_xml_tag_close(s, "dc:title");
 
-                if (cos_dict_find(pdev->Info, (const byte *)"/Creator", 8)) {
+                if (cos_dict_find(pdev->Info, (const byte *)"/Author", 7)) {
                     pdf_xml_tag_open(s, "dc:creator");
                     {   /* According to the PDF/A specification
                            "it shall be represented by an ordered Text array of
@@ -768,7 +768,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
                         {
                             pdf_xml_tag_open(s, "rdf:li");
                             {
-                                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Creator", "Unknown",
+                                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Author", "Unknown",
                                             pdf_xml_data_write);
                                 if (code < 0)
                                     return code;
