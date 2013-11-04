@@ -1332,8 +1332,12 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
 
     if (plane_index >= 0)
         depth = render_plane->depth;
-    else
+    else {
         depth = target->color_info.depth;
+        if (target->num_planes > 0)
+            depth /= target->num_planes;
+    }
+
     mdproto = gdev_mem_device_for_bits(depth);
     if (mdproto == 0)
         return_error(gs_error_rangecheck);
@@ -1367,6 +1371,7 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
     mdev->band_y = y;
     mdev->log2_align_mod = target->log2_align_mod;
     mdev->pad = target->pad;
+    mdev->num_planes = target->num_planes;
     /*
      * The matrix in the memory device is irrelevant,
      * because all we do with the device is call the device-level
@@ -1411,7 +1416,9 @@ gx_default_size_buf_device(gx_device_buf_space_t *space, gx_device *target,
         (render_plane && render_plane->index >= 0 ? render_plane->depth :
          target->color_info.depth);
     mdev.width = target->width;
-    mdev.num_planes = 0;
+    mdev.num_planes = target->num_planes;
+    mdev.pad = target->pad;
+    mdev.log2_align_mod = target->log2_align_mod;
     if (gdev_mem_bits_size(&mdev, target->width, height, &(space->bits)) < 0)
         return_error(gs_error_VMerror);
     space->line_ptrs = gdev_mem_line_ptrs_size(&mdev, target->width, height);
@@ -1421,7 +1428,7 @@ gx_default_size_buf_device(gx_device_buf_space_t *space, gx_device *target,
 
 /* Set up the buffer device. */
 int
-gx_default_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
+gx_default_setup_buf_device(gx_device *bdev, byte *buffer, int raster,
                             byte **line_ptrs, int y, int setup_height,
                             int full_height)
 {
@@ -1429,12 +1436,8 @@ gx_default_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
         (gs_device_is_memory(bdev) ? (gx_device_memory *)bdev :
          (gx_device_memory *)(((gx_device_plane_extract *)bdev)->plane_dev));
     byte **ptrs = line_ptrs;
-    int raster = bytes_per_line;
     int code;
 
-    /****** HACK ******/
-    if ((gx_device *)mdev == bdev && mdev->num_planes)
-        raster = bitmap_raster(mdev->planes[0].depth * mdev->width);
     if (ptrs == 0) {
         /*
          * Before allocating a new line pointer array, if there is a previous
@@ -1460,7 +1463,7 @@ gx_default_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
         mdev->foreign_line_pointers = false;
     }
     mdev->height = full_height;
-    code = gdev_mem_set_line_ptrs(mdev, buffer + raster * y, bytes_per_line,
+    code = gdev_mem_set_line_ptrs(mdev, buffer + raster * y, raster,
                                   ptrs, setup_height);
     mdev->height = setup_height;
     bdev->height = setup_height; /* do here in case mdev == bdev */

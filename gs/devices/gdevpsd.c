@@ -339,6 +339,11 @@ psd_prn_open(gx_device * pdev)
     bool force_pdf, limit_icc, force_ps;
     cmm_dev_profile_t *profile_struct;
 
+#ifdef TEST_PAD_AND_ALIGN
+    pdev->pad = 5;
+    pdev->log2_align_mod = 6;
+#endif
+
     /* There are 2 approaches to the use of a DeviceN ICC output profile.  
        One is to simply limit our device to only output the colorants
        defined in the output ICC profile.   The other is to use the 

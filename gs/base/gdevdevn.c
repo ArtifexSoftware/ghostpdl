@@ -561,13 +561,14 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                     ? npcmcolors + num_spot + page_spot_colors
                     : pdev->color_info.max_components;
 
-            if (pdev->num_planes > 0)
-                pdev->num_planes = pdev->color_info.num_components;
-
             if (pdev->color_info.num_components >
                     pdev->color_info.max_components)
                 pdev->color_info.num_components =
                         pdev->color_info.max_components;
+
+            if (pdev->num_planes > 0)
+                pdev->num_planes = pdev->color_info.num_components;
+
 #if !USE_COMPRESSED_ENCODING
             /*
              * See earlier comment about the depth and non compressed

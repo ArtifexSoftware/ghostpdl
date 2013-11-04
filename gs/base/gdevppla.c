@@ -139,12 +139,15 @@ gdev_prn_size_buf_planar(gx_device_buf_space_t *space, gx_device *target,
         return gx_default_size_buf_device(space, target, render_plane,
                                           height, for_band);
     mdev.color_info = target->color_info;
+    mdev.pad = target->pad;
+    mdev.log2_align_mod = target->log2_align_mod;
+    mdev.num_planes = target->num_planes;
     code = gdev_prn_set_planar(&mdev, target);
     if (code < 0)
         return code;
     if (gdev_mem_bits_size(&mdev, target->width, height, &(space->bits)) < 0)
         return_error(gs_error_VMerror);
     space->line_ptrs = gdev_mem_line_ptrs_size(&mdev, target->width, height);
-    space->raster = bitmap_raster(target->width * mdev.planes[0].depth);
+    space->raster = bitmap_raster_pad_align(target->width * mdev.planes[0].depth, mdev.pad, mdev.log2_align_mod);
     return 0;
 }

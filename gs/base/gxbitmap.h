@@ -65,6 +65,13 @@ typedef gs_bitmap_id gx_bitmap_id;
   ((uint)((((width_bits) + (align_bitmap_mod * 8 - 1))\
     >> (log2_align_bitmap_mod + 3)) << log2_align_bitmap_mod))
 
+#define bitmap_raster_pad_align_(width_bits, pad, log2_align)\
+  ((uint)((((width_bits) + (pad<<3) + ((8<<log2_align) - 1))\
+    >> (log2_align + 3)) << log2_align))
+
+#define bitmap_raster_pad_align(width_bits, pad, log2_align)\
+    bitmap_raster_pad_align_(width_bits, pad, (log2_align < log2_align_bitmap_mod ? log2_align_bitmap_mod : log2_align))
+
 /*
  * Define the gx analogue of the basic bitmap structure.  Note that since
  * all scan lines must be aligned, the requirement on raster is:

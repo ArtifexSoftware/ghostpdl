@@ -93,6 +93,9 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     npdev->file = pdev->file;               /* For background printing when doing N copies with %d */
     strcpy((npdev->fname), (pdev->fname));
     ndev->color_info = dev->color_info;     /* copy before putdeviceparams */
+    ndev->pad = dev->pad;
+    ndev->log2_align_mod = dev->log2_align_mod;
+    ndev->num_planes = dev->num_planes;
 #if CMM_THREAD_SAFE
         ndev->icc_struct = dev->icc_struct;  /* Set before put params */
         rc_increment(ndev->icc_struct);
@@ -501,7 +504,7 @@ clist_render_thread(void *data)
     gx_device *bdev = thread->bdev;
     gs_int_rect band_rect;
     byte *mdata = crdev->data + crdev->page_tile_cache_size;
-    uint raster = bitmap_raster(dev->width * dev->color_info.depth);
+    uint raster = gx_device_raster_plane(dev, NULL);
     int code;
     int band_height = crdev->page_band_height;
     int band = thread->band;

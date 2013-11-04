@@ -206,7 +206,9 @@ typedef struct mem_save_params_s {
  * at least 2 line pointers to use. Otherwise, we fall back to the old
  * method.
  */
-/* FIXME: Find a nicer way of calculating raster. */
+/* FIXME: Find a nicer way of calculating raster. This is only required if
+ * we allow the plane_depth to vary per plane, and the rest of the code
+ * assumes that it never does. This can probably be simplified now. */
 #define MEM_SET_PARAMS(mdev, plane_depth)\
   (mdev->color_info.depth = plane_depth, /* maybe not needed */\
    mdev->base = mdev->line_ptrs[0],\

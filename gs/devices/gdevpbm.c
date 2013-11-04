@@ -272,7 +272,14 @@ static int
 ppm_open(gx_device * pdev)
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
-    int code = gdev_prn_open_planar(pdev, bdev->UsePlanarBuffer);
+    int code;
+
+#ifdef TEST_PAD_AND_ALIGN
+    pdev->pad = 5;
+    pdev->log2_align_mod = 6;
+#endif
+
+    code = gdev_prn_open_planar(pdev, bdev->UsePlanarBuffer);
 
     if (code < 0)
         return code;
