@@ -248,6 +248,7 @@ pdf_end_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev)
         sputc(pdev->strm,'/');
         sputs(pdev->strm, (const byte *)pres->rname, strlen(pres->rname), &ignore);
         sputs(pdev->strm, (const byte *)" Do\n", 4, &ignore);
+        code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pres);
         return 0;
     }
 }
