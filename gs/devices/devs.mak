@@ -1943,3 +1943,12 @@ $(DD)tracedev.dev : $(DEVS_MAK) $(GDEV) $(DEVOBJ)gdevtrac.$(OBJ)
 	$(SETMOD) $(DD)tracedev -dev2 tr_mono tr_rgb tr_cmyk
 	$(ADDMOD) $(DD)tracedev -obj $(DEVOBJ)gdevtrac.$(OBJ)
 
+###@@@--------------- CMYKOG device --------------------------###
+
+cmykog_=$(GLOBJ)gdevcmykog.$(OBJ)
+
+$(DD)cmykog.dev : $(cmykog_) $(DD)page.dev
+	$(SETPDEV) $(DD)cmykog $(cmykog_)
+
+$(GLOBJ)gdevcmykog.$(OBJ) : $(DEVSRC)gdevcmykog.c $(gdevcmykog_h)
+	$(GLCC) $(GLO_)gdevcmykog.$(OBJ) $(C_) $(DEVSRC)gdevcmykog.c
