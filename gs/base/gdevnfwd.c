@@ -618,7 +618,7 @@ gx_forward_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
         return gx_default_strip_tile_rect_devn(dev, tiles, x, y, w, h, pdcolor0, 
                                                pdcolor1, px, py);
     else
-        return dev_proc(tdev, strip_tile_rect_devn)(dev, tiles, x, y, w, h, 
+        return dev_proc(tdev, strip_tile_rect_devn)(tdev, tiles, x, y, w, h, 
                                                     pdcolor0, pdcolor1, px, py);
 }
 
