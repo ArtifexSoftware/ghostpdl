@@ -243,8 +243,8 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         left -= portion_size;
     } while (left);
 
-    /* should properly calculate color_usage, but for now just punt */
-    pcls->color_usage.or = gx_color_usage_all(cldev);
+    /* attempt to properly calculate color_usage */
+    pcls->color_usage.or |= cmd_drawing_color_usage(cldev, pdcolor);
 
     /* record the color we have just serialized color */
     pdcolor->type->save_dc(pdcolor, &pcls->sdc);
@@ -274,7 +274,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 }
 
 /* Compute the colors used by a drawing color. */
-gx_color_index
+gx_color_usage_bits
 cmd_drawing_color_usage(gx_device_clist_writer *cldev,
                         const gx_drawing_color * pdcolor)
 {
@@ -286,6 +286,12 @@ cmd_drawing_color_usage(gx_device_clist_writer *cldev,
                                     gx_color_index2usage((gx_device *)cldev, gx_dc_binary_color1(pdcolor)));
     else if (gx_dc_is_colored_halftone(pdcolor))
         return gx_color_index2usage((gx_device *)cldev, colored_halftone_color_usage(cldev, pdcolor));
+    else if (gx_dc_is_devn(pdcolor)) {
+        gx_color_usage_bits bits = 0;
+
+        gx_dc_devn_get_nonzero_comps(pdcolor, (gx_device *)cldev, (int *)&bits);
+        return bits;
+    }
     else
         return gx_color_usage_all(cldev);
 }

@@ -1010,43 +1010,30 @@ clist_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
     if (!masked) {
         /*
          * Calculate (conservatively) the set of colors that this image
-         * might generate.  For single-component images with up to 4 bits
-         * per pixel, standard Decode values, and no Interpolate, we
-         * generate all the possible colors now; otherwise, we assume that
-         * any color might be generated.  It is possible to do better than
-         * this, but we won't bother unless there's evidence that it's
-         * worthwhile.
+         * might generate.  For single-component images we can sample
+         * this. We generate all the possible colors now; otherwise,
+         * we assume that any color might be generated.  It is possible
+         * to do better than this, but we won't bother unless there's
+         * evidence that it's worthwhile.
          */
         gx_color_usage_bits all = gx_color_usage_all(cdev);
 
-        if (bits_per_pixel > 4 || pim->Interpolate || num_components > 1)
+        if (num_components > 1)
             color_usage = all;
         else {
-            int max_value = (1 << bits_per_pixel) - 1;
-            float dmin = pim->Decode[0], dmax = pim->Decode[1];
-            float dtemp;
+            const gs_color_space *pcs = pim->ColorSpace;
+            cs_proc_remap_color((*remap_color)) = pcs->type->remap_color;
+            gs_client_color cc;
+            gx_drawing_color dcolor;
+            int i;
+            int max_value = indexed ? pcs->params.indexed.hival : 1;
 
-            if (dmax < dmin)
-                dtemp = dmax, dmax = dmin, dmin = dtemp;
-            if (dmin != 0 ||
-                dmax != (indexed ? max_value : 1)
-                ) {
-                color_usage = all;
-            } else {
-                /* Enumerate the possible pixel values. */
-                const gs_color_space *pcs = pim->ColorSpace;
-                cs_proc_remap_color((*remap_color)) = pcs->type->remap_color;
-                gs_client_color cc;
-                gx_drawing_color dcolor;
-                int i;
-                double denom = (indexed ? 1 : max_value);
-
-                for (i = 0; i <= max_value; ++i) {
-                    cc.paint.values[0] = (double)i / denom;
-                    remap_color(&cc, pcs, &dcolor, pis, dev,
-                                gs_color_select_source);
-                    color_usage |= cmd_drawing_color_usage(cdev, &dcolor);
-                }
+            for (i = 0; i <= max_value; ++i) {
+                /* Enumerate the indexed colors, or just Black (DeviceGray = 0) */
+                cc.paint.values[0] = (double)i;
+                remap_color(&cc, pcs, &dcolor, pis, dev,
+                            gs_color_select_source);
+                color_usage |= cmd_drawing_color_usage(cdev, &dcolor);
             }
         }
     }

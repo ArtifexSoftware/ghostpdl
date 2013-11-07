@@ -389,6 +389,7 @@ clist_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     int code;
     int rx, ry, rwidth, rheight;
     cmd_rects_enum_t re;
+    gx_color_usage_bits color_usage = cmd_drawing_color_usage(cdev, pdcolor);
 
     rx = fixed2int(rect->p.x);
     ry = fixed2int(rect->p.y);
@@ -414,7 +415,7 @@ clist_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         RECT_STEP_INIT(re);
-        re.pcls->color_usage.or = gx_color_usage_all(cdev);
+        re.pcls->color_usage.or |= color_usage;
         do {
             code = cmd_disable_lop(cdev, re.pcls);
             code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re,
@@ -642,6 +643,7 @@ clist_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tile,
     int depth = 1;
     int code;
     cmd_rects_enum_t re;
+    gx_color_usage_bits color_usage = cmd_drawing_color_usage(cdev, pdcolor0);
 
     crop_fill(cdev, rx, ry, rwidth, rheight);
     if (rwidth <= 0 || rheight <= 0)
@@ -659,12 +661,13 @@ clist_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tile,
 
         clist_update_trans_bbox(cdev, &bbox);
     }
+    color_usage |= cmd_drawing_color_usage(cdev, pdcolor1);
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         ulong offset_temp;
 
         RECT_STEP_INIT(re);
-        re.pcls->color_usage.or = gx_color_usage_all(cdev);
+        re.pcls->color_usage.or |= color_usage;
         do {
             code = cmd_disable_lop(cdev, re.pcls);
         } while (RECT_RECOVER(code));

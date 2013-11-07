@@ -183,18 +183,28 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     } else if ((ncdev->icc_cache_cl = gsicc_cache_new(thread_mem)) == NULL)
         goto out_cleanup;
 #endif
-    if (bg_print && cdev->icc_table != NULL) {
-        /* This is a background printing thread, so it cannot share the icc_table  */
-        /* since this probably was created with a GC'ed allocator and the bg_print */
-        /* thread can't deal with the relocation. Free the cdev->icc_table and get */
-        /* a new one from the clist.                                               */
-        clist_free_icc_table(cdev->icc_table, cdev->memory);
-        cdev->icc_table = NULL;
-        if ((code = clist_read_icctable((gx_device_clist_reader *)ncdev)) < 0)
+    if (bg_print) {
+        gx_device_clist_reader *ncrdev = (gx_device_clist_reader *)ncdev;
+
+        if (cdev->icc_table != NULL) {
+            /* This is a background printing thread, so it cannot share the icc_table  */
+            /* since this probably was created with a GC'ed allocator and the bg_print */
+            /* thread can't deal with the relocation. Free the cdev->icc_table and get */
+            /* a new one from the clist.                                               */
+            clist_free_icc_table(cdev->icc_table, cdev->memory);
+            cdev->icc_table = NULL;
+            if ((code = clist_read_icctable((gx_device_clist_reader *)ncdev)) < 0)
+                goto out_cleanup;
+        }
+        /* Similarly for the color_usage_array, when the foreground device switches to */
+        /* writer mode, the foreground's array will be freed.                          */
+        if ((code = clist_read_color_usage_array(ncrdev)) < 0)
             goto out_cleanup;
     } else {
-    /* Use the same profile table in each thread */
+    /* Use the same profile table and color usage array in each thread */
         ncdev->icc_table = cdev->icc_table;		/* OK for multiple rendering threads */
+        ((gx_device_clist_reader *)ncdev)->color_usage_array =
+                ((gx_device_clist_reader *)cdev)->color_usage_array;
     }
     /* Needed for case when the target has cielab profile and pdf14 device
        has a RGB profile stored in the profile list of the clist */
@@ -405,12 +415,14 @@ teardown_device_and_mem_for_thread(gx_device *dev, gp_thread_id thread_id, bool 
     if (bg_print) {
         /* we are cleaning up a background printing thread, so we clean up similarly to */
         /* what is done  by clist_finish_page, but without re-opening the clist files.  */
-        gs_free_object(thread_cdev->memory, thread_crdev->color_usage_array, "clist_color_usage_array");
-        thread_crdev->color_usage_array = NULL;
         clist_teardown_render_threads(dev);	/* we may have used multiple threads */
         /* free the thread's icc_table since this was not done by clist_finish_page */
         clist_free_icc_table(thread_crdev->icc_table, thread_memory);
         thread_crdev->icc_table = NULL;
+        /* NB: gdev_prn_free_memory below will free the color_usage_array */
+    } else {
+        /* make sure this doesn't get freed by gdev_prn_free_memory below */
+        ((gx_device_clist_reader *)thread_cdev)->color_usage_array = NULL;
     }
     rc_decrement(thread_crdev->icc_cache_cl, "teardown_render_thread");
     thread_crdev->icc_cache_cl = NULL;
