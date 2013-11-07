@@ -504,6 +504,7 @@ clist_render_thread(void *data)
     gx_device *bdev = thread->bdev;
     gs_int_rect band_rect;
     byte *mdata = crdev->data + crdev->page_tile_cache_size;
+    byte *mlines = crdev->data + crdev->page_line_ptrs_offset;
     uint raster = gx_device_raster_plane(dev, NULL);
     int code;
     int band_height = crdev->page_band_height;
@@ -521,7 +522,7 @@ clist_render_thread(void *data)
     band_num_lines = band_end_line - band_begin_line;
 
     code = crdev->buf_procs.setup_buf_device
-            (bdev, mdata, raster, NULL, 0, band_num_lines, band_num_lines);
+            (bdev, mdata, raster, mlines, 0, band_num_lines, band_num_lines);
     band_rect.p.x = 0;
     band_rect.p.y = band_begin_line;
     band_rect.q.x = dev->width;

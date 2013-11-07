@@ -464,6 +464,10 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
         if (adjusted > 0)
             band_height = adjusted;
     }
+    /* The above calculated bits_size's include space for line ptrs. What is
+     * the offset for the line_ptrs within the buffer? */
+    if (gdev_mem_bits_size(&bdev, band_width, band_height, &cdev->page_line_ptrs_offset) < 0)
+        return_error(gs_error_VMerror);
     cdev->ins_count = 0;
     code = clist_init_tile_cache(dev, data, bits_size);
     if (code < 0) {
