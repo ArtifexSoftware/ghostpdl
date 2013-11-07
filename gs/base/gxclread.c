@@ -703,6 +703,7 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count,
     gx_device *target = crdev->target;
     uint raster = clist_plane_raster(target, render_plane);
     byte *mdata = crdev->data + crdev->page_tile_cache_size;
+    byte *mlines = mdata + crdev->page_line_ptrs_offset;
     int plane_index = (render_plane ? render_plane->index : -1);
     int code;
 
@@ -727,7 +728,7 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count,
         if (y < 0 || y > dev->height)
             return_error(gs_error_rangecheck);
         code = crdev->buf_procs.setup_buf_device
-            (bdev, mdata, raster, NULL, 0, band_num_lines, band_num_lines);
+            (bdev, mdata, raster, (byte **)mlines, 0, band_num_lines, band_num_lines);
         band_rect.p.x = 0;
         band_rect.p.y = band_begin_line;
         band_rect.q.x = dev->width;
@@ -747,7 +748,7 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count,
     if (line_count > crdev->ymax - y)
         line_count = crdev->ymax - y;
     code = crdev->buf_procs.setup_buf_device
-        (bdev, mdata, raster, NULL, y - crdev->ymin, line_count,
+        (bdev, mdata, raster, (byte **)mlines, y - crdev->ymin, line_count,
          crdev->ymax - crdev->ymin);
     if (code < 0)
         return code;
