@@ -2281,7 +2281,8 @@ idata:                  data_size = 0;
             rc_decrement(target, "gxclrast(target compositor)");
         } else {
             /* Ref count was 1. close the device and then free it */
-            dev_proc(target, close_device)(target);
+            if (target->is_open)
+                dev_proc(target, close_device)(target);
             gs_free_object(target->memory, target, "gxclrast discard compositor");
         }
         target = orig_target;
