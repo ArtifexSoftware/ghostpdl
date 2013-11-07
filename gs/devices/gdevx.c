@@ -1041,27 +1041,41 @@ static void
 update_do_flush(gx_device_X * xdev)
 {
     flush_text(xdev);
+    if (xdev->update.box.q.x == min_int_in_fixed || xdev->update.box.q.y == min_int_in_fixed)
+        return;
+    if (xdev->update.box.p.x == max_int_in_fixed || xdev->update.box.p.y == max_int_in_fixed)
+        return;
     if (xdev->update.count != 0) {
         int x = xdev->update.box.p.x, y = xdev->update.box.p.y;
         int w = xdev->update.box.q.x - x, h = xdev->update.box.q.y - y;
+        const gx_device_memory *mdev = NULL;
 
-        fit_fill_xywh(xdev, x, y, w, h);
+        /*
+         * Copy from memory image to X server if any.
+         */
+        if (xdev->is_buffered) {
+            /*
+             * The bbox device may have set the target to NULL
+             * temporarily.  If this is the case, defer the screen
+             * update.
+             */
+            if (!(mdev = (const gx_device_memory *)xdev->target))
+                return;
+        }
+
+        /*
+         * mdev->width and mdev->height arn't the same as
+         * xdev->width and xdev->height ... at least for gv
+         */
+        if (mdev)
+            fit_fill_xywh(mdev, x, y, w, h);
+        else
+            fit_fill_xywh(xdev, x, y, w, h);
+
         if (w > 0 && h > 0) {
-            if (xdev->is_buffered) {
-                /* Copy from memory image to X server. */
-                const gx_device_memory *mdev =
-                    (const gx_device_memory *)xdev->target;
-
-                /*
-                 * The bbox device may have set the target to NULL
-                 * temporarily.  If this is the case, defer the screen
-                 * update.
-                 */
-                if (mdev == NULL)
-                    return;	/* don't reset */
+            if (mdev)
                 x_copy_image(xdev, mdev->line_ptrs[y], x, mdev->raster,
                              x, y, w, h);
-            }
             if (xdev->bpixmap) {
                 /* Copy from X backing pixmap to screen. */
 
