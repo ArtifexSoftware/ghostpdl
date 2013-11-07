@@ -1579,9 +1579,10 @@ set_metrics(fapi_ufst_server * r, gs_fapi_metrics * metrics,
 }
 
 static gs_fapi_retcode
-get_char(fapi_ufst_server * r, gs_fapi_font * ff, gs_fapi_char_ref * c,
-         gs_fapi_path * p, gs_fapi_metrics * metrics, UW16 format)
+get_char(gs_fapi_server *server, gs_fapi_font *ff, gs_fapi_char_ref *c,
+         gs_fapi_path *p, gs_fapi_metrics *metrics, UW16 format)
 {
+    fapi_ufst_server *r = If_to_I(server);
     UW16 code = 0, code2 = 0;
     UL32 cc = (UL32) c->char_codes[0];
     SL32 design_bbox[4];
@@ -1604,6 +1605,15 @@ get_char(fapi_ufst_server * r, gs_fapi_font * ff, gs_fapi_char_ref * c,
     FSA_FROM_SERVER;
 
     design_escapement[0] = design_escapement[1] = 0;
+
+    /* NAFF! UFST requires that we recreate the MT font "object"
+     * each call (although, it should not!). So we want to defeat
+     * the optimisation that normally prevents that in gs_fapi_do_char()
+     * by blanking out the cached scale.
+     */
+    if(d->font_type == FC_FCO_TYPE) {
+        memset(&(server->face.ctm), 0x00, sizeof(server->face.ctm));
+    }
 
     if (ff->is_type1) {
         /* If a charstring in a Type 1 has been replaced with a PS procedure
@@ -1816,8 +1826,14 @@ get_char(fapi_ufst_server * r, gs_fapi_font * ff, gs_fapi_char_ref * c,
             design_escapement[1] = 0;
         }
 
-        du_emx = pol->du_emx;
-        du_emy = pol->du_emy;
+        if (pol->du_emx > 0 && pol->du_emy > 0) {
+            du_emx = pol->du_emx;
+            du_emy = pol->du_emy;
+        }
+        else {
+            du_emx = pIFS->cs.du_emx;
+            du_emy = pIFS->cs.du_emy;
+        }
 
         design_bbox[0] = pol->left;
         design_bbox[1] = pol->bottom;
@@ -1925,13 +1941,13 @@ get_char(fapi_ufst_server * r, gs_fapi_font * ff, gs_fapi_char_ref * c,
 }
 
 static gs_fapi_retcode
-gs_fapi_ufst_get_char_outline_metrics(gs_fapi_server * server, gs_fapi_font * ff,
+gs_fapi_ufst_get_char_outline_metrics(gs_fapi_server *server, gs_fapi_font * ff,
                          gs_fapi_char_ref * c, gs_fapi_metrics * metrics)
 {
     fapi_ufst_server *r = If_to_I(server);
 
     gs_fapi_ufst_release_char_data_inline(r);
-    return get_char(r, ff, c, NULL, metrics, FC_CUBIC_TYPE);
+    return get_char(server, ff, c, NULL, metrics, FC_CUBIC_TYPE);
     /*  UFST cannot render enough metrics information without generating raster or outline.
        r->char_data keeps an outline after calling this function.
      */
@@ -1953,7 +1969,7 @@ gs_fapi_ufst_get_char_raster_metrics(gs_fapi_server * server, gs_fapi_font * ff,
     int code;
 
     gs_fapi_ufst_release_char_data_inline(r);
-    code = get_char(r, ff, c, NULL, metrics, FC_BITMAP_TYPE);
+    code = get_char(server, ff, c, NULL, metrics, FC_BITMAP_TYPE);
     if (code == ERR_bm_buff || code == ERR_bm_too_big)  /* Too big character ? */
         return (gs_error_VMerror);
     return code;
@@ -1971,7 +1987,7 @@ gs_fapi_ufst_get_char_width(gs_fapi_server * server, gs_fapi_font * ff,
 
     gs_fapi_ufst_release_char_data_inline(r);
     code =
-        get_char(r, ff, c, NULL, metrics,
+        get_char(server, ff, c, NULL, metrics,
                  server->use_outline ? FC_CUBIC_TYPE : FC_BITMAP_TYPE);
     if (code == ERR_bm_buff || code == ERR_bm_too_big)  /* Too big character ? */
         return (gs_error_VMerror);
