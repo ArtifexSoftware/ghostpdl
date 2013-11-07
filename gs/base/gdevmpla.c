@@ -42,16 +42,11 @@ static dev_proc_get_bits_rectangle(mem_planar_get_bits_rectangle);
 static dev_proc_fill_rectangle_hl_color(mem_planar_fill_rectangle_hl_color);
 static dev_proc_put_image(mem_planar_put_image);
 
-/* It's a bit nasty to have to fork the planar dev_spec_op like this, but
- * the forwarding nature of the device means that the function pointer test
- * for the map_cmyk_color call fails if we let it fall through to the
- * default device. */
 static int
 mem_planar_dev_spec_op(gx_device *pdev, int dev_spec_op,
                        void *data, int size)
 {
     cmm_dev_profile_t *dev_profile;
-    gx_device_memory *mdev = (gx_device_memory *)pdev;
 
     if (dev_spec_op == gxdso_supports_devn) {
         dev_proc(pdev, get_profile)(pdev, &dev_profile);
@@ -66,8 +61,6 @@ static int
 mem_planar_dev_spec_op_cmyk4(gx_device *pdev, int dev_spec_op,
                              void *data, int size)
 {
-    gx_device_memory *mdev = (gx_device_memory *)pdev;
-
     if (dev_spec_op == gxdso_is_std_cmyk_1bit)
         return 1;
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);

@@ -983,7 +983,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
         gs_make_mem_mono_device(mask, mem, (gx_device *)pdev);
         mask->width = cvd->mdev.width;
         mask->height = cvd->mdev.height;
-        mask->raster = gx_device_raster(mask, 1);
+        mask->raster = gx_device_raster((gx_device *)mask, 1);
         mask->bitmap_memory = mem;
         code = (*dev_proc(mask, open_device))((gx_device *)mask);
         if (code < 0)

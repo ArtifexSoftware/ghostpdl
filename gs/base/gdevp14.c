@@ -5541,7 +5541,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             put_value(pbuf, pparams->shape.alpha);
             put_value(pbuf, pparams->bbox);
             mask_id = pparams->mask_id;
-            put_value(pbuf, pparams->mask_id);
+            put_value(pbuf, mask_id);
             /* Color space information maybe ICC based
                in this case we need to store the ICC
                profile or the ID if it is cached already */
@@ -5575,7 +5575,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             *pbuf++ = pparams->Background_components;
             put_value(pbuf, pparams->bbox);
             mask_id = pparams->mask_id;
-            put_value(pbuf, pparams->mask_id);
+            put_value(pbuf, mask_id);
             if (pparams->Background_components) {
                 const int l = sizeof(pparams->Background[0]) * pparams->Background_components;
 

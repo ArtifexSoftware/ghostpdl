@@ -354,6 +354,8 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
     /* Need to check if we need to monitor for color */
     if (dev != NULL ) {
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+        if (code < 0)
+            return NULL;
         if (dev_profile != NULL) {
             pageneutralcolor = dev_profile->pageneutralcolor;
         }

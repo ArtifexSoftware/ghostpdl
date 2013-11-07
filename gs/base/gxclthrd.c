@@ -522,7 +522,7 @@ clist_render_thread(void *data)
     band_num_lines = band_end_line - band_begin_line;
 
     code = crdev->buf_procs.setup_buf_device
-            (bdev, mdata, raster, mlines, 0, band_num_lines, band_num_lines);
+            (bdev, mdata, raster, (byte **)mlines, 0, band_num_lines, band_num_lines);
     band_rect.p.x = 0;
     band_rect.p.y = band_begin_line;
     band_rect.q.x = dev->width;

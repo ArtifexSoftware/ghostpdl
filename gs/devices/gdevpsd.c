@@ -1345,13 +1345,10 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
     gcmmhlink_t link = xdev->output_icc_link; */
     byte * unpacked;
     int num_comp = xc->num_channels;
-    gs_int_rect rect;
     gs_get_bits_params_t params;
     gx_downscaler_t ds = { NULL };
     psd_device *psd_dev = (psd_device *)pdev;
 
-    rect.q.x = pdev->width;
-    rect.p.x = 0;
     /* Return planar data */
     params.options = (GB_RETURN_POINTER | GB_RETURN_COPY |
          GB_ALIGN_STANDARD | GB_OFFSET_0 | GB_RASTER_STANDARD |
@@ -1383,8 +1380,6 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
         int data_pos = xc->chnl_to_position[chan_idx];
         if (data_pos >= 0) {
             for (j = 0; j < xc->height; ++j) {
-                rect.p.y = j;   
-                rect.q.y = j + 1;
                 code = gx_downscaler_get_bits_rectangle(&ds, &params, j);
                 if (code < 0)
                     goto cleanup;

@@ -539,7 +539,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
         pdev->retained = retained;
         pdev->width = iwidth;
         pdev->height = iheight;
-        pdev->raster = gx_device_raster(pdev, 1);
+        pdev->raster = gx_device_raster((gx_device *)pdev, 1);
         gdev_mem_bitmap_size(pdev, &isize);	/* Assume less than max_ulong */
         pdev->HWResolution[0] = HWResolution0;
         pdev->HWResolution[1] = HWResolution1;

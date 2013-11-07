@@ -884,7 +884,7 @@ gsicc_initialize_default_profile(cmm_profile_t *icc_profile)
         icc_profile->profile_handle =
                         gsicc_get_profile_handle_buffer(icc_profile->buffer,
                                                         icc_profile->buffer_size,
-                                                        icc_profile->memory);
+                                                        mem);
         if (icc_profile->profile_handle == NULL) {
             return gs_rethrow1(gs_error_VMerror, "allocation of profile %s handle failed",
                                icc_profile->name);
@@ -1923,17 +1923,23 @@ gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s,
 {
     int                     num_bytes,profile_size;
     unsigned char           *buffer_ptr;
-    int                     code = 0;
+    int                     code;
 
     code = srewind(s);  /* Work around for issue with sfread return 0 bytes
                         and not doing a retry if there is an issue.  This
                         is a bug in the stream logic or strmio layer.  Occurs
                         with smask_withicc.pdf on linux 64 bit system */
+    if (code < 0)
+        return code;
     /* Get the size from doing a seek to the end and then a rewind instead
        of relying upon the profile size indicated in the header */
     code = sfseek(s,0,SEEK_END);
+    if (code < 0)
+        return code;
     profile_size = sftell(s);
     code = srewind(s);
+    if (code < 0)
+        return code;
     if (profile_size < ICC_HEADER_SIZE)
         return gs_error_VMerror;
     /* Allocate the buffer, stuff with the profile */
@@ -1958,26 +1964,33 @@ gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s,
 {
     int                     num_bytes,profile_size;
     unsigned char           *buffer_ptr;
-    int                     code = 0;
+    int                     code;
 
     code = srewind(s);
+    if (code < 0)
+        return code;
     code = sfseek(s,0,SEEK_END);
+    if (code < 0)
+        return code;
     profile_size = sftell(s);
     code = srewind(s);
+    if (code < 0)
+        return code;
     /* Allocate the buffer, stuff with the profile */
-   buffer_ptr = gs_alloc_bytes(memory, profile_size,
+    buffer_ptr = gs_alloc_bytes(memory, profile_size,
                                         "gsicc_load_profile");
-   if (buffer_ptr == NULL)
+    if (buffer_ptr == NULL)
         return gs_throw(gs_error_VMerror, "Insufficient memory for profile buffer");
-   num_bytes = sfread(buffer_ptr,sizeof(unsigned char),profile_size,s);
-   if( num_bytes != profile_size) {
-       gs_free_object(memory, buffer_ptr, "gsicc_load_profile");
-       return -1;
-   }
-   profile->buffer = buffer_ptr;
-   profile->buffer_size = num_bytes;
-   return 0;
+    num_bytes = sfread(buffer_ptr,sizeof(unsigned char),profile_size,s);
+    if( num_bytes != profile_size) {
+        gs_free_object(memory, buffer_ptr, "gsicc_load_profile");
+        return -1;
+    }
+    profile->buffer = buffer_ptr;
+    profile->buffer_size = num_bytes;
+    return 0;
 }
+
 /* Check if the embedded profile is the same as any of the default profiles */
 static void
 gsicc_set_default_cs_value(cmm_profile_t *picc_profile, gs_imager_state *pis)

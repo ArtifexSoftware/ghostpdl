@@ -298,7 +298,7 @@ gs_make_mem_mono_device(gx_device_memory * dev, gs_memory_t * mem,
                    mem, true);
     set_dev_proc(dev, get_page_device, gx_default_get_page_device);
     gx_device_set_target((gx_device_forward *)dev, target);
-    dev->raster = gx_device_raster(dev, 1);
+    dev->raster = gx_device_raster((gx_device *)dev, 1);
     gdev_mem_mono_set_inverted(dev, true);
     check_device_separable((gx_device *)dev);
     gx_device_fill_in_procs((gx_device *)dev);
@@ -467,7 +467,7 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
         gdev_mem_bits_size(mdev, mdev->width, mdev->height, &size);
         mdev->line_ptrs = (byte **)(mdev->base + size);
     }
-    mdev->raster = gx_device_raster(mdev, 1);
+    mdev->raster = gx_device_raster((gx_device *)mdev, 1);
     return gdev_mem_set_line_ptrs(mdev, NULL, 0, NULL, setup_height);
 }
 /*
@@ -481,8 +481,6 @@ gdev_mem_set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
                        byte **line_ptrs, int setup_height)
 {
     int num_planes = mdev->num_planes;
-    gx_render_plane_t plane1;
-    const gx_render_plane_t *planes;
     byte **pline;
     byte *data;
     int pi;
@@ -510,10 +508,7 @@ gdev_mem_set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
     if (num_planes) {
         if (base && !mdev->plane_depth)
             return_error(gs_error_rangecheck);
-        planes = mdev->planes;
     } else {
-        planes = &plane1;
-        plane1.depth = mdev->color_info.depth;
         num_planes = 1;
     }
 
