@@ -1160,7 +1160,7 @@ int main(int argc, char *argv[])
     use_gui = gtk_init_check(&argc, &argv);
 
     /* insert display device parameters as first arguments */
-    gs_sprintf(dformat, "-dDisplayFormat=%d",
+    sprintf(dformat, "-dDisplayFormat=%d",
             DISPLAY_COLORS_RGB | DISPLAY_ALPHA_NONE | DISPLAY_DEPTH_8 |
             DISPLAY_BIGENDIAN | DISPLAY_TOPFIRST);
     nargc = argc + 1;
