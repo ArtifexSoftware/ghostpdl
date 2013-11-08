@@ -4150,6 +4150,8 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
             pdev->blend_procs = pdevproto->blend_procs;
             pdev->color_info.polarity = new_polarity;
             pdev->color_info.num_components = new_num_comps;
+            if (pdev->num_planes > 0)
+                pdev->num_planes = pdev->color_info.num_components;
             pdev->color_info.max_color = 255;
             pdev->color_info.max_gray = 255;
             pdev->pdf14_procs = new_14procs;
