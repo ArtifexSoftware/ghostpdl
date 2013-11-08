@@ -3968,6 +3968,8 @@ pdf14_update_device_color_procs(gx_device *dev,
         pdev->blend_procs = pdevproto->blend_procs;
         pdev->color_info.polarity = new_polarity;
         pdev->color_info.num_components = new_num_comps;
+        if (pdev->num_planes > 0)
+            pdev->num_planes = pdev->color_info.num_components;
         pdev->ctx->additive = new_additive;
         pdev->pdf14_procs = new_14procs;
         if (has_tags) {
