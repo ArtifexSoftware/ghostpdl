@@ -49,8 +49,8 @@ RELOC_PTRS_WITH(device_memory_reloc_ptrs, gx_device_memory *mptr)
         int y;
         int h = mptr->height;
 
-        if (mptr->num_planes > 0)
-            h *= mptr->num_planes;
+        if (mptr->is_planar)
+            h *= mptr->color_info.num_components;
 
         RELOC_PTR(gx_device_memory, base);
         reloc = base_old - mptr->base;
@@ -334,7 +334,7 @@ gdev_mem_mono_set_inverted(gx_device_memory * dev, bool black_is_1)
 int
 gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, ulong *psize)
 {
-    int num_planes = dev->num_planes;
+    int num_planes = dev->is_planar ? dev->color_info.num_components : 0;
     gx_render_plane_t plane1;
     const gx_render_plane_t *planes;
     ulong size;
@@ -358,7 +358,7 @@ gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, ulong *p
 ulong
 gdev_mem_line_ptrs_size(const gx_device_memory * dev, int width, int height)
 {
-    return (ulong)height * sizeof(byte *) * max(dev->num_planes, 1);
+    return (ulong)height * sizeof(byte *) * (dev->is_planar ? dev->color_info.num_components : 1);
 }
 int
 gdev_mem_data_size(const gx_device_memory * dev, int width, int height, ulong *psize)
@@ -394,13 +394,13 @@ gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size,
          */
         max_height = size / (bitmap_raster_pad_align(width
                 * dev->color_info.depth + ESTIMATED_PDF14_ROW_SPACE(width, dev->color_info.num_components),
-                dev->pad, dev->log2_align_mod) + sizeof(byte *) * max(dev->num_planes, 1));
+                dev->pad, dev->log2_align_mod) + sizeof(byte *) * (dev->is_planar ? dev->color_info.num_components : 1));
         height = (int)min(max_height, max_int);
     } else {
         /* For non PDF 1.4 transparency, we can do an exact calculation */
         max_height = size /
             (bitmap_raster_pad_align(width * dev->color_info.depth, dev->pad, dev->log2_align_mod) +
-             sizeof(byte *) * max(dev->num_planes, 1));
+             sizeof(byte *) * (dev->is_planar ? dev->color_info.num_components : 1));
         height = (int)min(max_height, max_int);
         /*
          * Because of alignment rounding, the just-computed height might
@@ -424,7 +424,7 @@ mem_open(gx_device * dev)
     gx_device_memory *const mdev = (gx_device_memory *)dev;
 
     /* Check that we aren't trying to open a planar device as chunky. */
-    if (mdev->num_planes)
+    if (mdev->is_planar)
         return_error(gs_error_rangecheck);
     return gdev_mem_open_scan_lines(mdev, dev->height);
 }
@@ -456,7 +456,7 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
 
         mdev->line_ptrs = (byte **)
             gs_alloc_byte_array(mdev->line_pointer_memory, mdev->height,
-                                sizeof(byte *) * max(mdev->num_planes, 1),
+                                sizeof(byte *) * (mdev->is_planar ? mdev->color_info.num_components : 1),
                                 "gdev_mem_open_scan_lines");
         if (mdev->line_ptrs == 0)
             return_error(gs_error_VMerror);
@@ -480,7 +480,7 @@ int
 gdev_mem_set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
                        byte **line_ptrs, int setup_height)
 {
-    int num_planes = mdev->num_planes;
+    int num_planes = (mdev->is_planar ? mdev->color_info.num_components : 0);
     byte **pline;
     byte *data;
     int pi;

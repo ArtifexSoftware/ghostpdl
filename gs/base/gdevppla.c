@@ -41,7 +41,7 @@ gdev_prn_open_planar(gx_device *dev, bool upb)
 {
     if (upb) {
         gdev_prn_set_procs_planar(dev);
-        dev->num_planes = dev->color_info.num_components;
+        dev->is_planar = 1;
     }
     return gdev_prn_open(dev);
 }
@@ -131,7 +131,7 @@ gdev_prn_size_buf_planar(gx_device_buf_space_t *space, gx_device *target,
     mdev.color_info = target->color_info;
     mdev.pad = target->pad;
     mdev.log2_align_mod = target->log2_align_mod;
-    mdev.num_planes = target->num_planes;
+    mdev.is_planar = target->is_planar;
     code = gdev_prn_set_planar(&mdev, target);
     if (code < 0)
         return code;

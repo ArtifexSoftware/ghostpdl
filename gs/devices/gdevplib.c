@@ -585,7 +585,7 @@ static int
 set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
               byte **line_ptrs, int setup_height)
 {
-    int num_planes = mdev->num_planes;
+    int num_planes = mdev->color_info.num_components;
     gx_render_plane_t plane1;
     const gx_render_plane_t *planes;
     int pi;
@@ -638,8 +638,8 @@ plib_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
          */
         line_ptrs = (byte **)
             gs_alloc_byte_array(mdev->memory,
-                                (mdev->num_planes ?
-                                 full_height * mdev->num_planes :
+                                (mdev->is_planar ?
+                                 full_height * mdev->color_info.num_components :
                                  setup_height),
                                 sizeof(byte *), "setup_buf_device");
         if (line_ptrs == 0)
@@ -647,11 +647,11 @@ plib_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
         mdev->line_pointer_memory = mdev->memory;
         mdev->foreign_line_pointers = false;
         mdev->line_ptrs = line_ptrs;
-        mdev->raster = bandBufferStride * mdev->num_planes;
+        mdev->raster = bandBufferStride * (mdev->is_planar ? mdev->color_info.num_components : 1);
     }
     mdev->height = full_height;
     code = set_line_ptrs(mdev,
-                         bandBufferBase + bandBufferStride*mdev->num_planes*y,
+                         bandBufferBase + bandBufferStride*(mdev->is_planar ? mdev->color_info.num_components : 1)*y,
                          bandBufferStride,
                          line_ptrs,
                          setup_height);
@@ -733,7 +733,7 @@ plib_open(gx_device * pdev)
     code = gdev_prn_open(pdev);
     if (code < 0)
         return code;
-    pdev->num_planes = pdev->color_info.num_components;
+    pdev->is_planar = 1;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     set_linear_color_bits_mask_shift(pdev);
 

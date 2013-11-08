@@ -159,7 +159,7 @@ gx_default_strip_copy_rop2(gx_device * dev,
     pmdev->height = block_height;
     pmdev->bitmap_memory = mem;
     pmdev->color_info = dev->color_info;
-    if (dev->num_planes > 0)
+    if (dev->is_planar)
     {
         gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
         int num_comp = dev->color_info.num_components;
@@ -480,7 +480,7 @@ pack_planar_from_standard(gx_device_memory * dev, int y, int destx,
         return;
     }
 
-    for (plane = 0; plane < dev->num_planes; plane++) {
+    for (plane = 0; plane < dev->color_info.num_components; plane++) {
         byte *dest = scan_line_base(dev, y + plane * dev->height);
         dp[plane] = dest + (bit_x >> 3);
         buf[plane] = (shift == 8 ? 0 : *dp[plane] & (0xff00 >> shift));
@@ -550,22 +550,22 @@ pack_planar_from_standard(gx_device_memory * dev, int y, int destx,
                 /* We have pdepth*num_planes bits in 'pixel'. We need to copy
                  * them (topmost bits first) into the buffer, packing them at
                  * shift position. */
-                int pshift = pdepth*(dev->num_planes-1);
+                int pshift = pdepth*(dev->color_info.num_components-1);
 #endif
                 /* Can we fit another pdepth bits into our buffer? */
                 shift -= pdepth;
                 if (shift < 0) {
                     /* No, so flush the buffer to the planes. */
-                    for (plane = 0; plane < dev->num_planes; plane++)
+                    for (plane = 0; plane < dev->color_info.num_components; plane++)
                         *dp[plane]++ = buf[plane];
                     shift += 8;
                 }
                 /* Copy the next pdepth bits into each planes buffer */
 #ifdef ORIGINAL_CODE_KEPT_FOR_REFERENCE
-                for (plane = 0; plane < dev->num_planes; pshift+=8,plane++)
+                for (plane = 0; plane < dev->color_info.num_components; pshift+=8,plane++)
                     buf[plane] += (byte)(((pixel>>pshift) & pmask)<<shift);
 #else
-                for (plane = 0; plane < dev->num_planes; pshift-=pdepth,plane++)
+                for (plane = 0; plane < dev->color_info.num_components; pshift-=pdepth,plane++)
                     buf[plane] += (byte)(((pixel>>pshift) & pmask)<<shift);
 #endif
                 break;
@@ -574,11 +574,11 @@ pack_planar_from_standard(gx_device_memory * dev, int y, int destx,
     }
     if (width > 0 && depth <= 8) {
         if (shift == 0)
-            for (plane = 0; plane < dev->num_planes; plane++)
+            for (plane = 0; plane < dev->color_info.num_components; plane++)
                 *dp[plane] = buf[plane];
         else {
             int mask = (1<<shift)-1;
-            for (plane = 0; plane < dev->num_planes; plane++)
+            for (plane = 0; plane < dev->color_info.num_components; plane++)
                 *dp[plane] = (*dp[plane] & mask) + buf[plane];
         }
     }
@@ -692,7 +692,7 @@ mem_default_strip_copy_rop(gx_device * dev,
 
     /* We know the device is a memory device, so we can store the
      * result directly into its scan lines, unless it is planar. */
-    if (tdev->num_planes <= 1) {
+    if (!tdev->is_planar || tdev->color_info.num_components <= 1) {
         if ((rop_depth == 24) && (dev_proc(dev, dev_spec_op)(dev,
                                       gxdso_is_std_cmyk_1bit, NULL, 0) > 0)) {
             pack = pack_cmyk_1bit_from_standard;

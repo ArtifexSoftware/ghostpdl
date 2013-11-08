@@ -257,7 +257,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     int max_pattern_bitmap = tdev->MaxPatternBitmap == 0 ? MaxPatternBitmap_DEFAULT :
                                 tdev->MaxPatternBitmap;
 
-    pinst->is_planar = tdev->num_planes > 0;
+    pinst->is_planar = tdev->is_planar;
     /*
      * If the target device can accumulate a pattern stream and the language
      * client supports high level patterns (ps and pdf only) we don't need a
@@ -392,7 +392,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     }
     fdev->log2_align_mod = tdev->log2_align_mod;
     fdev->pad = tdev->pad;
-    fdev->num_planes = tdev->num_planes;
+    fdev->is_planar = tdev->is_planar;
     check_device_separable((gx_device *)fdev);
     gx_device_forward_fill_in_procs(fdev);
     return fdev;
@@ -506,12 +506,12 @@ pattern_accum_open(gx_device * dev)
 #undef PDSET
                     bits->color_info = padev->color_info;
                     bits->bitmap_memory = mem;
-                    if (target->num_planes > 0)
+                    if (target->is_planar > 0)
                     {
                         gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
                         int num_comp = padev->color_info.num_components;
                         int i;
-                        int depth = target->color_info.depth / target->num_planes;
+                        int depth = target->color_info.depth / target->color_info.num_components;
                         for (i = 0; i < num_comp; i++)
                         {
                             planes[i].shift = depth * (num_comp - 1 - i);
@@ -1143,7 +1143,7 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
     byte *curr_ptr = Buffer;
     int plane_offset;
 
-    is_planar = mdev->num_planes > 0;
+    is_planar = mdev->is_planar;
     max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
     if (is_planar) {
         gs_sprintf(full_file_name,"%d)PATTERN_PLANE_%dx%dx%d.raw",global_pat_index,
@@ -1219,7 +1219,7 @@ make_bitmap(register gx_strip_bitmap * pbm, const gx_device_memory * mdev,
     pbm->rep_height = pbm->size.y = mdev->height;
     pbm->id = id;
     pbm->rep_shift = pbm->shift = 0;
-    pbm->num_planes = (mdev->num_planes > 1 ? mdev->num_planes : 1);
+    pbm->num_planes = (mdev->is_planar ? mdev->color_info.num_components : 1);
 
         /* Lets dump this for debug purposes */
 

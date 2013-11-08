@@ -565,7 +565,7 @@ gx_device_init_on_stack(gx_device * dev, const gx_device * proto,
     dev->retained = 0;
     dev->pad = proto->pad;
     dev->log2_align_mod = proto->log2_align_mod;
-    dev->num_planes = proto->num_planes;
+    dev->is_planar = proto->is_planar;
     rc_init(dev, NULL, 0);
 }
 
@@ -685,8 +685,8 @@ gx_device_raster(const gx_device * dev, bool pad)
     ulong raster;
     int l2align;
 
-    if (dev->num_planes > 0)
-        bits /= dev->num_planes;
+    if (dev->is_planar)
+        bits /= dev->color_info.num_components;
 
     raster = (uint)((bits + 7) >> 3);
     if (!pad)
@@ -703,7 +703,7 @@ uint
 gx_device_raster_plane(const gx_device * dev, const gx_render_plane_t *render_plane)
 {
     ulong bpc = (render_plane && render_plane->index >= 0 ?
-                 render_plane->depth : dev->color_info.depth/max(1,dev->num_planes));
+        render_plane->depth : dev->color_info.depth/(dev->is_planar ? dev->color_info.num_components : 1));
     ulong bits = (ulong) dev->width * bpc;
     ulong raster;
     int l2align;

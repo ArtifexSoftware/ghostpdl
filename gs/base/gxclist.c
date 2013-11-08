@@ -718,7 +718,6 @@ clist_open(gx_device *dev)
 
     cdev->permanent_error = 0;
     cdev->is_open = false;
-    cdev->is_planar = cdev->num_planes > 0;
     code = clist_init(dev);
     if (code < 0)
         return code;

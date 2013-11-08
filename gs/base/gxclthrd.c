@@ -95,7 +95,7 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     ndev->color_info = dev->color_info;     /* copy before putdeviceparams */
     ndev->pad = dev->pad;
     ndev->log2_align_mod = dev->log2_align_mod;
-    ndev->num_planes = dev->num_planes;
+    ndev->is_planar = dev->is_planar;
 #if CMM_THREAD_SAFE
         ndev->icc_struct = dev->icc_struct;  /* Set before put params */
         rc_increment(ndev->icc_struct);

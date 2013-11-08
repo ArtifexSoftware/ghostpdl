@@ -1366,7 +1366,7 @@ c_overprint_create_default_compositor(
     gx_device_set_target((gx_device_forward *)opdev, tdev);
     opdev->pad = tdev->pad;
     opdev->log2_align_mod = tdev->log2_align_mod;
-    opdev->num_planes = tdev->num_planes;
+    opdev->is_planar = tdev->is_planar;
 
     params = ovrpct->params;
     params.idle = ovrpct->idle;

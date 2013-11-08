@@ -3203,7 +3203,7 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_imager_state	* pis,
     pdev->color_info = dev_proto->color_info;
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
-    pdev->num_planes = target->num_planes;
+    pdev->is_planar = target->is_planar;
     pdev->procs = dev_proto->procs;
     dev->static_procs = dev_proto->static_procs;
     gx_device_set_procs(dev);
@@ -3968,8 +3968,6 @@ pdf14_update_device_color_procs(gx_device *dev,
         pdev->blend_procs = pdevproto->blend_procs;
         pdev->color_info.polarity = new_polarity;
         pdev->color_info.num_components = new_num_comps;
-        if (pdev->num_planes > 0)
-            pdev->num_planes = pdev->color_info.num_components;
         pdev->ctx->additive = new_additive;
         pdev->pdf14_procs = new_14procs;
         if (has_tags) {
@@ -4150,8 +4148,6 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
             pdev->blend_procs = pdevproto->blend_procs;
             pdev->color_info.polarity = new_polarity;
             pdev->color_info.num_components = new_num_comps;
-            if (pdev->num_planes > 0)
-                pdev->num_planes = pdev->color_info.num_components;
             pdev->color_info.max_color = 255;
             pdev->color_info.max_gray = 255;
             pdev->pdf14_procs = new_14procs;
@@ -5345,7 +5341,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     gx_device_set_target((gx_device_forward *)p14dev, target);
     p14dev->pad = target->pad;
     p14dev->log2_align_mod = target->log2_align_mod;
-    p14dev->num_planes = target->num_planes;
+    p14dev->is_planar = target->is_planar;
     /* If the target profile was CIELAB, then overide with default RGB for
        proper blending.  During put_image we will convert from RGB to
        CIELAB.  Need to check that we have a default profile, which
@@ -6475,7 +6471,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
     pdev->color_info.depth = pdev->color_info.num_components * 8;
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
-    pdev->num_planes = target->num_planes;
+    pdev->is_planar = target->is_planar;
     /* If we have a tag device then go ahead and do a special encoder decoder
        for the pdf14 device to make sure we maintain this information in the
        encoded color information.  We could use the target device's methods but
@@ -6570,7 +6566,7 @@ pdf14_recreate_clist_device(gs_memory_t	*mem, gs_imager_state *	pis,
     pdev->procs = dev_proto->procs;
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
-    pdev->num_planes = target->num_planes;
+    pdev->is_planar = target->is_planar;
     gx_device_fill_in_procs(dev);
     check_device_separable((gx_device *)pdev);
     return code;

@@ -566,9 +566,6 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                 pdev->color_info.num_components =
                         pdev->color_info.max_components;
 
-            if (pdev->num_planes > 0)
-                pdev->num_planes = pdev->color_info.num_components;
-
 #if !USE_COMPRESSED_ENCODING
             /*
              * See earlier comment about the depth and non compressed
@@ -772,8 +769,6 @@ devn_printer_put_params(gx_device * pdev, gs_param_list * plist,
     /* If we have an error then restore original data. */
     if (code < 0) {
         pdev->color_info = save_info;
-        if (pdev->num_planes > 0)
-            pdev->num_planes = pdev->color_info.num_components;
         *pdevn_params = saved_devn_params;
         if (pequiv_colors != NULL)
            *pequiv_colors = saved_equiv_colors;

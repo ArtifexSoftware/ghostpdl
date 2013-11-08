@@ -75,7 +75,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
     int num_des_comps;
     cmm_dev_profile_t *dev_profile;
     bool dev_color_ok = false;
-    bool is_planar_dev = penum->dev->num_planes > 0;
+    bool is_planar_dev = penum->dev->is_planar;
             
     if (penum->spp == 1) {
         /* At this point in time, only use the ht approach if our device

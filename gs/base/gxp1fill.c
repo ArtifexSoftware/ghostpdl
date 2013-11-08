@@ -102,7 +102,7 @@ tile_fill_init(tile_fill_state_t * ptfs, const gx_device_color * pdevc,
     bool is_planar;
 
     ptfs->pdevc = pdevc;
-    is_planar = dev->num_planes > 0;
+    is_planar = dev->is_planar;
     if (is_planar) {
         ptfs->num_planes = dev->color_info.num_components;
     } else {

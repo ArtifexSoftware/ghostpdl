@@ -709,7 +709,7 @@ typedef struct gx_device_cached_colors_s {
         int height;			/* height in pixels */\
         int pad;                        /* pad to use for buffers; 0 for default */\
         int log2_align_mod;             /* align to use for buffers; 0 for default */\
-        int num_planes;                 /* num_planes for planar; 0 for chunky */\
+        int is_planar;                  /* 1 planar, 0 for chunky */\
         int LeadingEdge;                /* see below */\
         float MediaSize[2];		/* media dimensions in points */\
         float ImagingBBox[4];		/* imageable region in points */\

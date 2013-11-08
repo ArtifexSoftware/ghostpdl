@@ -1334,8 +1334,8 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
         depth = render_plane->depth;
     else {
         depth = target->color_info.depth;
-        if (target->num_planes > 0)
-            depth /= target->num_planes;
+        if (target->is_planar)
+            depth /= target->color_info.num_components;
     }
 
     mdproto = gdev_mem_device_for_bits(depth);
@@ -1371,7 +1371,7 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
     mdev->band_y = y;
     mdev->log2_align_mod = target->log2_align_mod;
     mdev->pad = target->pad;
-    mdev->num_planes = target->num_planes;
+    mdev->is_planar = target->is_planar;
     /*
      * The matrix in the memory device is irrelevant,
      * because all we do with the device is call the device-level
@@ -1416,7 +1416,7 @@ gx_default_size_buf_device(gx_device_buf_space_t *space, gx_device *target,
         (render_plane && render_plane->index >= 0 ? render_plane->depth :
          target->color_info.depth);
     mdev.width = target->width;
-    mdev.num_planes = target->num_planes;
+    mdev.is_planar = target->is_planar;
     mdev.pad = target->pad;
     mdev.log2_align_mod = target->log2_align_mod;
     if (gdev_mem_bits_size(&mdev, target->width, height, &(space->bits)) < 0)
@@ -1453,8 +1453,8 @@ gx_default_setup_buf_device(gx_device *bdev, byte *buffer, int raster,
          */
         ptrs = (byte **)
             gs_alloc_byte_array(mdev->memory,
-                                (mdev->num_planes ?
-                                 full_height * mdev->num_planes :
+                                (mdev->is_planar ?
+                                 full_height * mdev->color_info.num_components :
                                  setup_height),
                                 sizeof(byte *), "setup_buf_device");
         if (ptrs == 0)
