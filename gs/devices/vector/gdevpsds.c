@@ -737,6 +737,8 @@ s_Average_init(stream_state * st)
         ss->Colors * ((ss->WidthIn + xf - 1) / xf);
     ss->copy_size = ss->sum_size -
         (ss->padX || (ss->WidthIn % xf == 0) ? 0 : ss->Colors);
+    if (ss->sums)
+        gs_free_object(st->memory, ss->sums, "Average sums");
     ss->sums =
         (uint *)gs_alloc_byte_array(st->memory, ss->sum_size,
                                     sizeof(uint), "Average sums");
@@ -847,6 +849,8 @@ s_Bicubic_init(stream_state * st)
     ss->d_len = 0;
     ss->y_in = 0;
 
+    if (ss->data)
+        gs_free_object(st->memory, ss->data, "Bicubic data");
     ss->data = (byte *)gs_alloc_bytes(st->memory, ss->d_size, "Bicubic data");
     if (ss->data == NULL)
         return ERRC;	/****** WRONG ******/
