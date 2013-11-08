@@ -1107,25 +1107,11 @@ $(PSOBJ)zfilter2.$(OBJ) : $(PSSRC)zfilter2.c $(OP) $(memory__h)\
 	$(PSCC) $(PSO_)zfilter2.$(OBJ) $(C_) $(PSSRC)zfilter2.c
 
 # Extensions beyond Level 2 standard.
-xfilter_=$(PSOBJ)sbhc.$(OBJ) $(PSOBJ)sbwbs.$(OBJ) $(PSOBJ)shcgen.$(OBJ)\
- $(PSOBJ)smtf.$(OBJ) $(PSOBJ)zfilterx.$(OBJ)
+xfilter_=$(GLD)smtf.$(OBJ) $(PSOBJ)zfilterx.$(OBJ)
 $(PSD)xfilter.dev : $(INT_MAK) $(ECHOGS_XE) $(xfilter_) $(GLD)pngp.dev
 	$(SETMOD) $(PSD)xfilter $(xfilter_)
 	$(ADDMOD) $(PSD)xfilter -include $(GLD)pngp
 	$(ADDMOD) $(PSD)xfilter -oper zfilterx
-
-$(PSOBJ)sbhc.$(OBJ) : $(PSSRC)sbhc.c $(AK) $(memory__h) $(stdio__h)\
- $(gdebug_h) $(sbhc_h) $(shcgen_h) $(strimpl_h)
-	$(PSCC) $(PSO_)sbhc.$(OBJ) $(C_) $(PSSRC)sbhc.c
-
-$(PSOBJ)sbwbs.$(OBJ) : $(PSSRC)sbwbs.c $(AK) $(stdio__h) $(memory__h)\
- $(gdebug_h) $(sbwbs_h) $(sfilter_h) $(strimpl_h)
-	$(PSCC) $(PSO_)sbwbs.$(OBJ) $(C_) $(PSSRC)sbwbs.c
-
-$(PSOBJ)shcgen.$(OBJ) : $(PSSRC)shcgen.c $(AK) $(memory__h) $(stdio__h)\
- $(gdebug_h) $(gserrors_h) $(gsmemory_h)\
- $(scommon_h) $(shc_h) $(shcgen_h)
-	$(PSCC) $(PSO_)shcgen.$(OBJ) $(C_) $(PSSRC)shcgen.c
 
 $(PSOBJ)smtf.$(OBJ) : $(PSSRC)smtf.c $(AK) $(stdio__h)\
  $(smtf_h) $(strimpl_h)
@@ -1133,8 +1119,7 @@ $(PSOBJ)smtf.$(OBJ) : $(PSSRC)smtf.c $(AK) $(stdio__h)\
 
 $(PSOBJ)zfilterx.$(OBJ) : $(PSSRC)zfilterx.c $(OP) $(memory__h)\
  $(gsstruct_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifilter_h)\
- $(store_h) $(sfilter_h) $(sbhc_h) $(sbtx_h) $(sbwbs_h) $(shcgen_h)\
- $(smtf_h) $(strimpl_h)
+ $(store_h) $(sfilter_h) $(sbtx_h) $(smtf_h) $(strimpl_h)
 	$(PSCC) $(PSO_)zfilterx.$(OBJ) $(C_) $(PSSRC)zfilterx.c
 
 # MD5 digest filter

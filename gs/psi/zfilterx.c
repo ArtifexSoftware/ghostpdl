@@ -25,116 +25,11 @@
 #include "store.h"
 #include "strimpl.h"
 #include "sfilter.h"
-#include "sbwbs.h"
-#include "sbhc.h"
 #include "sbtx.h"
 #include "shcgen.h"
 #include "smtf.h"
 #include "ifilter.h"
 
-/* ------ Bounded Huffman code filters ------ */
-
-/* Common setup for encoding and decoding filters */
-static int
-bhc_setup(os_ptr op, stream_BHC_state * pbhcs)
-{
-    int code;
-    int num_counts;
-    int data[max_hc_length + 1 + 256 + max_zero_run + 1];
-    uint dsize;
-    int i;
-    uint num_values, accum;
-    ushort *counts;
-    ushort *values;
-
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
-    if ((code = dict_bool_param(op, "FirstBitLowOrder", false,
-                                &pbhcs->FirstBitLowOrder)) < 0 ||
-        (code = dict_int_param(op, "MaxCodeLength", 1, max_hc_length,
-                               max_hc_length, &num_counts)) < 0 ||
-        (code = dict_bool_param(op, "EndOfData", true,
-                                &pbhcs->EndOfData)) < 0 ||
-        (code = dict_uint_param(op, "EncodeZeroRuns", 2, 256,
-                                256, &pbhcs->EncodeZeroRuns)) < 0 ||
-    /* Note: the code returned from the following call */
-    /* is actually the number of elements in the array. */
-        (code = dict_int_array_param(imemory, op, "Tables", countof(data),
-                                     data)) <= 0
-        )
-        return (code < 0 ? code : gs_note_error(e_rangecheck));
-    dsize = code;
-    if (dsize <= num_counts + 2)
-        return_error(e_rangecheck);
-    for (i = 0, num_values = 0, accum = 0; i <= num_counts;
-         i++, accum <<= 1
-        ) {
-        int count = data[i];
-
-        if (count < 0)
-            return_error(e_rangecheck);
-        num_values += count;
-        accum += count;
-    }
-    if (dsize != num_counts + 1 + num_values ||
-        accum != 1 << (num_counts + 1) ||
-        pbhcs->EncodeZeroRuns >
-        (pbhcs->EndOfData ? num_values - 1 : num_values)
-        )
-        return_error(e_rangecheck);
-    for (; i < num_counts + 1 + num_values; i++) {
-        int value = data[i];
-
-        if (value < 0 || value >= num_values)
-            return_error(e_rangecheck);
-    }
-    pbhcs->definition.counts = counts =
-        (ushort *) ialloc_byte_array(num_counts + 1, sizeof(ushort),
-                                     "bhc_setup(counts)");
-    pbhcs->definition.values = values =
-        (ushort *) ialloc_byte_array(num_values, sizeof(ushort),
-                                     "bhc_setup(values)");
-    if (counts == 0 || values == 0) {
-        ifree_object(values, "bhc_setup(values)");
-        ifree_object(counts, "bhc_setup(counts)");
-        return_error(e_VMerror);
-    }
-    for (i = 0; i <= num_counts; i++)
-        counts[i] = data[i];
-    pbhcs->definition.counts = counts;
-    pbhcs->definition.num_counts = num_counts;
-    for (i = 0; i < num_values; i++)
-        values[i] = data[i + num_counts + 1];
-    pbhcs->definition.values = values;
-    pbhcs->definition.num_values = num_values;
-    return 0;
-}
-
-/* <target> <dict> BoundedHuffmanEncode/filter <file> */
-static int
-zBHCE(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    stream_BHCE_state bhcs;
-    int code = bhc_setup(op, (stream_BHC_state *)&bhcs);
-
-    if (code < 0)
-        return code;
-    return filter_write(op, 0, &s_BHCE_template, (stream_state *)&bhcs, 0);
-}
-
-/* <source> <dict> BoundedHuffmanDecode/filter <file> */
-static int
-zBHCD(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    stream_BHCD_state bhcs;
-    int code = bhc_setup(op, (stream_BHC_state *)&bhcs);
-
-    if (code < 0)
-        return code;
-    return filter_read(i_ctx_p, 0, &s_BHCD_template, (stream_state *)&bhcs, 0);
-}
 
 /* <array> <max_length> .computecodes <array> */
 /* The first max_length+1 elements of the array will be filled in with */
@@ -200,49 +95,6 @@ zcomputecodes(i_ctx_t *i_ctx_p)
     return code;
 }
 
-/* ------ Burrows/Wheeler block sorting filters ------ */
-
-/* Common setup for encoding and decoding filters */
-static int
-bwbs_setup(os_ptr op, stream_BWBS_state * pbwbss)
-{
-    int code =
-        dict_int_param(op, "BlockSize", 1, max_int / sizeof(int) - 10, 16384,
-                       &pbwbss->BlockSize);
-
-    if (code < 0)
-        return code;
-    return 0;
-}
-
-/* <target> <dict> BWBlockSortEncode/filter <file> */
-static int
-zBWBSE(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    stream_BWBSE_state bwbss;
-    int code;
-
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
-    code = bwbs_setup(op, (stream_BWBS_state *)&bwbss);
-    if (code < 0)
-        return code;
-    return filter_write(op, 0, &s_BWBSE_template, (stream_state *)&bwbss, 0);
-}
-
-/* <source> <dict> BWBlockSortDecode/filter <file> */
-static int
-zBWBSD(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    stream_BWBSD_state bwbss;
-    int code = bwbs_setup(op, (stream_BWBS_state *)&bwbss);
-
-    if (code < 0)
-        return code;
-    return filter_read(i_ctx_p, 0, &s_BWBSD_template, (stream_state *)&bwbss, 0);
-}
 
 /* ------ Byte translation filters ------ */
 
@@ -314,10 +166,6 @@ const op_def zfilterx_op_defs[] =
     {"2.computecodes", zcomputecodes},	/* not a filter */
     op_def_begin_filter(),
                 /* Non-standard filters */
-    {"2BoundedHuffmanEncode", zBHCE},
-    {"2BoundedHuffmanDecode", zBHCD},
-    {"2BWBlockSortEncode", zBWBSE},
-    {"2BWBlockSortDecode", zBWBSD},
     {"2ByteTranslateEncode", zBTE},
     {"2ByteTranslateDecode", zBTD},
     {"1MoveToFrontEncode", zMTFE},
