@@ -433,5 +433,5 @@ fpng_print_page(gx_device_printer *pdev, FILE *file)
     process.output_fn = fpng_output;
     process.arg = file;
 
-    return gx_downscaler_process_page(pdev, &process, fdev->downscale_factor);
+    return gx_downscaler_process_page((gx_device *)pdev, &process, fdev->downscale_factor);
 }
