@@ -46,7 +46,7 @@ static void clist_render_thread(void *param);
 /* to the chunk allocator.                                              */
 /* Exported for use by background printing.                             */
 gx_device *
-setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, bool bg_print)
+setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, bool bg_print, gsicc_link_cache_t **cachep)
 {
     int i, code;
     char fmode[4];
@@ -172,7 +172,15 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     rc_increment(cdev->icc_cache_cl, "setup_render_thread");
 #else
     /* each thread needs its own link cache */
-    if ((ncdev->icc_cache_cl = gsicc_cache_new(thread_mem)) == NULL)
+    if (cachep != NULL) {
+        if (*cachep == NULL) {
+            /* We don't have one cached that we can reuse, so make one. */
+            if ((*cachep = gsicc_cache_new(thread_mem->thread_safe_memory)) == NULL)
+                goto out_cleanup;
+        }
+        rc_increment(*cachep);
+        ncdev->icc_cache_cl = *cachep;
+    } else if ((ncdev->icc_cache_cl = gsicc_cache_new(thread_mem)) == NULL)
         goto out_cleanup;
 #endif
     if (bg_print && cdev->icc_table != NULL) {
@@ -258,13 +266,30 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
             return_error(gs_error_VMerror);
     }
 
+    /* If we don't have one large enough already, create an icc cache list */
+    if (crdev->num_render_threads > crdev->icc_cache_list_len) {
+        void *old = crdev->icc_cache_list;
+        crdev->icc_cache_list = gs_alloc_byte_array(mem, crdev->num_render_threads,
+                                                    sizeof(void*), "clist_render_setup_threads");
+        if (crdev->icc_cache_list == NULL) {
+            crdev->icc_cache_list = NULL;
+            return_error(gs_error_VMerror);
+        }
+        if (crdev->icc_cache_list_len > 0)
+            memcpy(crdev->icc_cache_list, old, sizeof(void *)*crdev->icc_cache_list_len);
+        memset(&crdev->icc_cache_list[crdev->icc_cache_list_len], 0,
+            (crdev->num_render_threads - crdev->icc_cache_list_len) * sizeof(void *));
+        crdev->icc_cache_list_len = crdev->num_render_threads;
+        gs_free_object(mem, old, "clist_render_setup_threads");
+    }
+
     /* Loop creating the devices and semaphores for each thread, then start them */
     for (i=0; (i < crdev->num_render_threads) && (band >= 0) && (band < band_count);
             i++, band += crdev->thread_lookahead_direction) {
         gx_device *ndev;
         clist_render_thread_control_t *thread = &(crdev->render_threads[i]);
 
-        ndev = setup_device_and_mem_for_thread(chunk_base_mem, dev, false);
+        ndev = setup_device_and_mem_for_thread(chunk_base_mem, dev, false, &crdev->icc_cache_list[i]);
         if (ndev == NULL) {
             code = gs_error_VMerror;	/* set code to an error for cleanup after the loop */
             break;

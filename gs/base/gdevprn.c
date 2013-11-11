@@ -951,7 +951,7 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                     if (((ppdev->bg_print.sema = gx_semaphore_alloc(ppdev->memory->non_gc_memory)) == NULL))
                         break;			/* couldn't create the semaphore */
 
-                ndev = setup_device_and_mem_for_thread(pdev->memory->thread_safe_memory, pdev, true);
+                ndev = setup_device_and_mem_for_thread(pdev->memory->thread_safe_memory, pdev, true, NULL);
                 if (ndev == NULL) {
                     break;
                 }

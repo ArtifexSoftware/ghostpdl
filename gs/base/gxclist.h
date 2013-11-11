@@ -205,7 +205,9 @@ typedef struct gx_clist_state_s gx_clist_state;
         clist_icctable_t *icc_table;    /* Table that keeps track of ICC profiles.\
                                            It relates the hashcode to the cfile\
                                            file location. */\
-        gsicc_link_cache_t *icc_cache_cl  /* Link cache */
+        gsicc_link_cache_t *icc_cache_cl; /* Link cache */\
+        int icc_cache_list_len;         /* Length of list of caches, one per rendering thread */\
+        gsicc_link_cache_t **icc_cache_list  /* Link cache list */\
 
 /*
  * Chech whether a clist is used for storing a pattern command stream.

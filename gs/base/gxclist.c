@@ -55,6 +55,8 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
         return (ret ? ret : ENUM_OBJ(0));
     }
     index -= st_device_forward_max_ptrs;
+    /* RJW: We do not enumerate icc_cache_cl or icc_cache_list as they
+     * are allocated in non gc space */
     if (CLIST_IS_WRITER(cdev)) {
         switch (index) {
         case 0: return ENUM_OBJ((cdev->writer.image_enum_id != gs_no_id ?
@@ -64,7 +66,6 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
         case 2: return ENUM_OBJ(cdev->writer.pinst);
         case 3: return ENUM_OBJ(cdev->writer.cropping_stack);
         case 4: return ENUM_OBJ(cdev->writer.icc_table);
-        case 5: return ENUM_OBJ(cdev->writer.icc_cache_cl);
         default:
         return ENUM_USING(st_imager_state, &cdev->writer.imager_state,
                   sizeof(gs_imager_state), index - 5);
@@ -83,8 +84,6 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
         else if (index == 1)
             return ENUM_OBJ(cdev->reader.icc_table);
         else if (index == 2)
-            return ENUM_OBJ(cdev->reader.icc_cache_cl);
-        else if (index == 3)
             return ENUM_OBJ(cdev->reader.color_usage_array);
         else
             return 0;
@@ -93,6 +92,7 @@ ENUM_PTRS_END
 static
 RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
 {
+    int i;
     RELOC_PREFIX(st_device_forward);
     if (CLIST_IS_WRITER(cdev)) {
         if (cdev->writer.image_enum_id != gs_no_id) {
@@ -102,7 +102,6 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
         RELOC_VAR(cdev->writer.pinst);
         RELOC_VAR(cdev->writer.cropping_stack);
         RELOC_VAR(cdev->writer.icc_table);
-        RELOC_VAR(cdev->writer.icc_cache_cl);
         RELOC_USING(st_imager_state, &cdev->writer.imager_state,
             sizeof(gs_imager_state));
     } else {
@@ -112,7 +111,6 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
          */
         RELOC_VAR(cdev->reader.offset_map);
         RELOC_VAR(cdev->reader.icc_table);
-        RELOC_VAR(cdev->reader.icc_cache_cl);
         RELOC_VAR(cdev->reader.color_usage_array);
     }
 } RELOC_PTRS_END
@@ -721,6 +719,8 @@ clist_open(gx_device *dev)
     code = clist_init(dev);
     if (code < 0)
         return code;
+    cdev->icc_cache_list_len = 0;
+    cdev->icc_cache_list = NULL;
     code = clist_open_output_file(dev);
     if ( code >= 0)
         code = clist_emit_page_header(dev);
@@ -732,8 +732,16 @@ clist_open(gx_device *dev)
 static int
 clist_close(gx_device *dev)
 {
+    int i;
     gx_device_clist_writer * const cdev =
         &((gx_device_clist *)dev)->writer;
+
+    for(i = 0; i < cdev->icc_cache_list_len; i++) {
+        rc_decrement(cdev->icc_cache_list[i], "clist_close");
+    }
+    cdev->icc_cache_list_len = 0;
+    gs_free_object(cdev->memory->thread_safe_memory, cdev->icc_cache_list, "clist_close");
+    cdev->icc_cache_list = NULL;
 
     if (cdev->do_not_open_or_close_bandfiles)
         return 0;
