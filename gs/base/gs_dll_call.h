@@ -27,7 +27,15 @@
 
 #ifdef _Windows
 # ifndef GSDLLEXPORT
-#  define GSDLLEXPORT __declspec(dllexport)
+/* We don't need both the "__declspec(dllexport)" declaration
+ * and the listing in the .def file - having both results in
+ * a linker warning on x64 builds (but is incorrect on x86, too)
+ */
+#  if 0
+#    define GSDLLEXPORT __declspec(dllexport)
+#  else
+#    define GSDLLEXPORT
+#  endif
 # endif
 # ifndef GSDLLAPI
 #  define GSDLLAPI __stdcall
