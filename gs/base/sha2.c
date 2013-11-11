@@ -240,7 +240,7 @@ typedef u_int64_t sha2_word64;	/* Exactly 8 bytes */
  * library -- they are intended for private internal visibility/use
  * only.
  */
-void SHA512_Last(SHA512_CTX*);
+void pSHA512_Last(SHA512_CTX*);
 void pSHA256_Transform(SHA256_CTX*, const sha2_word32*);
 void pSHA512_Transform(SHA512_CTX*, const sha2_word64*);
 
@@ -646,7 +646,7 @@ void pSHA256_Final(sha2_byte digest[], SHA256_CTX* context) {
         usedspace = 0;
 }
 
-char *SHA256_End(SHA256_CTX* context, char buffer[]) {
+char *pSHA256_End(SHA256_CTX* context, char buffer[]) {
         sha2_byte	digest[SHA256_DIGEST_LENGTH], *d = digest;
         int		i;
 
@@ -669,16 +669,16 @@ char *SHA256_End(SHA256_CTX* context, char buffer[]) {
         return buffer;
 }
 
-char* SHA256_Data(const sha2_byte* data, size_t len, char digest[SHA256_DIGEST_STRING_LENGTH]) {
+char* pSHA256_Data(const sha2_byte* data, size_t len, char digest[SHA256_DIGEST_STRING_LENGTH]) {
         SHA256_CTX	context;
 
         pSHA256_Init(&context);
         pSHA256_Update(&context, data, len);
-        return SHA256_End(&context, digest);
+        return pSHA256_End(&context, digest);
 }
 
 /*** SHA-512: *********************************************************/
-void SHA512_Init(SHA512_CTX* context) {
+void pSHA512_Init(SHA512_CTX* context) {
         if (context == (SHA512_CTX*)0) {
                 return;
         }
@@ -855,7 +855,7 @@ void pSHA512_Transform(SHA512_CTX* context, const sha2_word64* data) {
 
 #endif /* SHA2_UNROLL_TRANSFORM */
 
-void SHA512_Update(SHA512_CTX* context, const sha2_byte *data, size_t len) {
+void pSHA512_Update(SHA512_CTX* context, const sha2_byte *data, size_t len) {
         unsigned int	freespace, usedspace;
 
         if (len == 0) {
@@ -903,7 +903,7 @@ void SHA512_Update(SHA512_CTX* context, const sha2_byte *data, size_t len) {
         usedspace = freespace = 0;
 }
 
-void SHA512_Last(SHA512_CTX* context) {
+void pSHA512_Last(SHA512_CTX* context) {
         unsigned int	usedspace;
 
         usedspace = (context->bitcount[0] >> 3) % SHA512_BLOCK_LENGTH;
@@ -944,7 +944,7 @@ void SHA512_Last(SHA512_CTX* context) {
         pSHA512_Transform(context, (sha2_word64*)context->buffer);
 }
 
-void SHA512_Final(sha2_byte digest[], SHA512_CTX* context) {
+void pSHA512_Final(sha2_byte digest[], SHA512_CTX* context) {
         sha2_word64	*d = (sha2_word64*)digest;
 
         /* Sanity check: */
@@ -952,7 +952,7 @@ void SHA512_Final(sha2_byte digest[], SHA512_CTX* context) {
 
         /* If no digest buffer is passed, we don't bother doing this: */
         if (digest != (sha2_byte*)0) {
-                SHA512_Last(context);
+                pSHA512_Last(context);
 
                 /* Save the hash data for output: */
 #if BYTE_ORDER == LITTLE_ENDIAN
@@ -973,7 +973,7 @@ void SHA512_Final(sha2_byte digest[], SHA512_CTX* context) {
         MEMSET_BZERO(context, sizeof(*context));
 }
 
-char *SHA512_End(SHA512_CTX* context, char buffer[]) {
+char *pSHA512_End(SHA512_CTX* context, char buffer[]) {
         sha2_byte	digest[SHA512_DIGEST_LENGTH], *d = digest;
         int		i;
 
@@ -981,7 +981,7 @@ char *SHA512_End(SHA512_CTX* context, char buffer[]) {
         assert(context != (SHA512_CTX*)0);
 
         if (buffer != (char*)0) {
-                SHA512_Final(digest, context);
+                pSHA512_Final(digest, context);
 
                 for (i = 0; i < SHA512_DIGEST_LENGTH; i++) {
                         *buffer++ = sha2_hex_digits[(*d & 0xf0) >> 4];
@@ -996,16 +996,16 @@ char *SHA512_End(SHA512_CTX* context, char buffer[]) {
         return buffer;
 }
 
-char* SHA512_Data(const sha2_byte* data, size_t len, char digest[SHA512_DIGEST_STRING_LENGTH]) {
+char* pSHA512_Data(const sha2_byte* data, size_t len, char digest[SHA512_DIGEST_STRING_LENGTH]) {
         SHA512_CTX	context;
 
-        SHA512_Init(&context);
-        SHA512_Update(&context, data, len);
-        return SHA512_End(&context, digest);
+        pSHA512_Init(&context);
+        pSHA512_Update(&context, data, len);
+        return pSHA512_End(&context, digest);
 }
 
 /*** SHA-384: *********************************************************/
-void SHA384_Init(SHA384_CTX* context) {
+void pSHA384_Init(SHA384_CTX* context) {
         if (context == (SHA384_CTX*)0) {
                 return;
         }
@@ -1014,11 +1014,11 @@ void SHA384_Init(SHA384_CTX* context) {
         context->bitcount[0] = context->bitcount[1] = 0;
 }
 
-void SHA384_Update(SHA384_CTX* context, const sha2_byte* data, size_t len) {
-        SHA512_Update((SHA512_CTX*)context, data, len);
+void pSHA384_Update(SHA384_CTX* context, const sha2_byte* data, size_t len) {
+        pSHA512_Update((SHA512_CTX*)context, data, len);
 }
 
-void SHA384_Final(sha2_byte digest[], SHA384_CTX* context) {
+void pSHA384_Final(sha2_byte digest[], SHA384_CTX* context) {
         sha2_word64	*d = (sha2_word64*)digest;
 
         /* Sanity check: */
@@ -1026,7 +1026,7 @@ void SHA384_Final(sha2_byte digest[], SHA384_CTX* context) {
 
         /* If no digest buffer is passed, we don't bother doing this: */
         if (digest != (sha2_byte*)0) {
-                SHA512_Last((SHA512_CTX*)context);
+                pSHA512_Last((SHA512_CTX*)context);
 
                 /* Save the hash data for output: */
 #if BYTE_ORDER == LITTLE_ENDIAN
@@ -1047,7 +1047,7 @@ void SHA384_Final(sha2_byte digest[], SHA384_CTX* context) {
         MEMSET_BZERO(context, sizeof(*context));
 }
 
-char *SHA384_End(SHA384_CTX* context, char buffer[]) {
+char *pSHA384_End(SHA384_CTX* context, char buffer[]) {
         sha2_byte	digest[SHA384_DIGEST_LENGTH], *d = digest;
         int		i;
 
@@ -1055,7 +1055,7 @@ char *SHA384_End(SHA384_CTX* context, char buffer[]) {
         assert(context != (SHA384_CTX*)0);
 
         if (buffer != (char*)0) {
-                SHA384_Final(digest, context);
+                pSHA384_Final(digest, context);
 
                 for (i = 0; i < SHA384_DIGEST_LENGTH; i++) {
                         *buffer++ = sha2_hex_digits[(*d & 0xf0) >> 4];
@@ -1070,10 +1070,10 @@ char *SHA384_End(SHA384_CTX* context, char buffer[]) {
         return buffer;
 }
 
-char* SHA384_Data(const sha2_byte* data, size_t len, char digest[SHA384_DIGEST_STRING_LENGTH]) {
+char* pSHA384_Data(const sha2_byte* data, size_t len, char digest[SHA384_DIGEST_STRING_LENGTH]) {
         SHA384_CTX	context;
 
-        SHA384_Init(&context);
-        SHA384_Update(&context, data, len);
-        return SHA384_End(&context, digest);
+        pSHA384_Init(&context);
+        pSHA384_Update(&context, data, len);
+        return pSHA384_End(&context, digest);
 }
