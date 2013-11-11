@@ -1080,7 +1080,8 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
         return 0;
     code = pdf_setfillcolor((gx_device_vector *)pdev, pis, pdcolor);
     if (code == gs_error_rangecheck) {
-        const bool convert_to_image = (pdev->CompatibilityLevel <= 1.2 &&
+        const bool convert_to_image = ((pdev->CompatibilityLevel <= 1.2 ||
+                pdev->params.ColorConversionStrategy != ccs_LeaveColorUnchanged) &&
                 gx_dc_is_pattern2_color(pdcolor));
 
         if (!convert_to_image) {
