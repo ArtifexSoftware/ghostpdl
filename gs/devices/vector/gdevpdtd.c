@@ -810,7 +810,7 @@ pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_resource_t *p
     if (pdfont->u.cidfont.CIDToGIDMap == NULL)
         return_error(gs_error_VMerror);
     memset(pdfont->u.cidfont.CIDToGIDMap, 0, length_CIDToGIDMap);
-    if(pdev->PDFA == 1) {
+    if(pdev->PDFA) {
         for (ch = FirstChar; ch <= LastChar; ch++) {
             if (Encoding[ch].glyph != GS_NO_GLYPH) {
                 gs_glyph glyph = pfont->procs.encode_char(pfont, ch, GLYPH_SPACE_INDEX);
