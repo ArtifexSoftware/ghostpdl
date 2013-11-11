@@ -31,6 +31,12 @@ AC_INIT
 AC_LANG(C)
 AC_CONFIG_SRCDIR([pcl/pcjob.c])
 
+dnl Inherit compiler flags from the environment...
+CFLAGS="${CFLAGS:=}"
+CPPFLAGS="${CPPFLAGS:=}"
+CXXFLAGS="${CXXFLAGS:=}"
+LDFLAGS="${LDFLAGS:=}"
+
 # Checks for programs.
 AC_PROG_CC
 
@@ -54,6 +60,11 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_CHECK_TYPES([ptrdiff_t])
+
+dnl --------------------------
+dnl Check for non-optional lib
+dnl --------------------------
+AC_CHECK_LIB(m, cos)
 
 # Checks for library functions.
 AC_FUNC_ERROR_AT_LINE
@@ -300,6 +311,34 @@ fi
 
 AC_SUBST(LCMS_ENDIAN)
 AC_SUBST(LCMS2_ENDIAN)
+
+dnl --------------------------------------------------
+dnl decide if we have to "hack" sqrtf() for lcms2
+dnl --------------------------------------------------
+
+AC_CHECK_FUNC([sqrtf], [SQRTF_SUBST=], [SQRTF_SUBST="-Dsqrtf=\"(float)sqrt\""])
+
+AC_SUBST(SQRTF_SUBST)
+
+
+dnl --------------------------------------------------
+dnl currently just for trio
+dnl --------------------------------------------------
+
+AC_CHECK_FUNC([floorl], [TRIO_NO_FLOORL=""], [TRIO_NO_FLOORL="-DTRIO_NO_FLOORL"])
+
+AC_CHECK_FUNC([ceill], [TRIO_NO_CEILL=""], [TRIO_NO_CEILL="-DTRIO_NO_CEILL"])
+
+AC_CHECK_FUNC([powl], [TRIO_NO_POWL=""], [TRIO_NO_POWL="-DTRIO_NO_POWL"])
+
+AC_CHECK_FUNC([fmodl], [TRIO_NO_FMODL=""], [TRIO_NO_FMODL="-DTRIO_NO_FMODL"])
+
+AC_CHECK_FUNC([log10l], [TRIO_NO_LOG10L=""], [TRIO_NO_LOG10L="-DTRIO_NO_LOG10L"])
+
+AC_TRIO_CFLAGS="$TRIO_NO_FLOORL $TRIO_NO_CEILL $TRIO_NO_POWL $TRIO_NO_FMODL $TRIO_NO_LOG10L"
+
+
+AC_SUBST(AC_TRIO_CFLAGS)
 
 dnl --------------------------------------------------
 dnl check for sse2 intrinsics

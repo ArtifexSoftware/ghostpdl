@@ -307,6 +307,8 @@ CUPS_CC=$(CC)
 
 
 TRIOSRCDIR=@srcdir@/trio
+AC_TRIO_CFLAGS=@AC_TRIO_CFLAGS@
+TRIO_CFLAGS=$(TRIO_XCFLAGS) $(AC_TRIO_CFLAGS)
 
 # Define how to build the library archives.  (These are not used in any
 # standard configuration.)
