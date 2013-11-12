@@ -25,6 +25,7 @@ my %products=('abort' =>1,
 my $user;
 my $product="";
 my $filters="";
+my $extras="";
 my $command="";
 my $res="";
 my $w32="";
@@ -53,6 +54,8 @@ while ($t1=shift) {
     $command.=$t1.' ';
   } elsif ($t1 =~ m/filter=.*/) {
     $filters.=$t1.' ';
+  } elsif ($t1 =~ m/extras=.*/) {
+    $extras.=$t1.' ';
   } elsif (exists $products{$t1}) {
     $product.=$t1.' ';
   } elsif ($t1 =~ m/ /) {
@@ -195,6 +198,7 @@ open(F,">cluster_command.run");
 print F "$user $product $res $w32 $nr $pdfwrite $relaxTimeout $singlePagePDF\n";
 print F "$command\n";
 print F "$filters\n";
+print F "$extras\n";
 close(F);
 
 $cmd="rsync -avxcz".
@@ -208,6 +212,8 @@ if ($product ne "abort") {
   print STDERR "\ndequeueing\n";
 }
 print "$cmd\n" if ($verbose);
+#print "filters=$filters\n";
+#print "extras=$extras\n";
 `$cmd`;
 
 unlink "cluster_command.run";
