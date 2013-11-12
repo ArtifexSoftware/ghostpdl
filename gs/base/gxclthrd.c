@@ -385,11 +385,11 @@ teardown_device_and_mem_for_thread(gx_device *dev, gp_thread_id thread_id, bool 
         /* free the thread's icc_table since this was not done by clist_finish_page */
         clist_free_icc_table(thread_crdev->icc_table, thread_memory);
         thread_crdev->icc_table = NULL;
-        rc_decrement(thread_crdev->icc_cache_cl, "teardown_render_thread");
-     }
-     /*
-      * Free the BufferSpace, close the band files, optionally unlinking them.
-      * We unlink the files if this call is cleaning up from bg printing.
+    }
+    rc_decrement(thread_crdev->icc_cache_cl, "teardown_render_thread");
+    /*
+     * Free the BufferSpace, close the band files, optionally unlinking them.
+     * We unlink the files if this call is cleaning up from bg printing.
      * Note that the BufferSpace is freed using 'ppdev->buf' so the 'data'
      * pointer doesn't need to be the one that the thread started with
      */
