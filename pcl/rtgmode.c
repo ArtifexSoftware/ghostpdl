@@ -31,6 +31,7 @@
 #include "rtraster.h"
 #include "rtrstcmp.h"
 #include "rtgmode.h"
+#include <stdlib.h>             /* for atof() */
 
 /*
  * Intersect a rectangle with the positive quadrant.
@@ -735,8 +736,19 @@ gmode_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         pcl_raster_state_t *prstate = &(pcs->raster_state);
 
         prstate->gmargin_cp = 0L;
+
+        /* 
+         * The raster resolution default is device dependent, we've
+         * decided to use 75 dpi for regular PCL mode and the PJL
+         * resolution for HPGL/2 rtl mode based on our experience with
+         * various HP products, but we doubt it is always correct.
+         */ 
+
         prstate->resolution = 75;
         if (pcs->personality == rtl) {
+            float res = atof(pjl_proc_get_envvar(pcs->pjls, "resolution"));
+            if (res != 0)
+                prstate->resolution = res;
             prstate->pres_mode_3 = false;
         } else {
             prstate->pres_mode_3 = true;
