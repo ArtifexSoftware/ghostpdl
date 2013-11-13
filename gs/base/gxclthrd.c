@@ -412,6 +412,7 @@ teardown_device_and_mem_for_thread(gx_device *dev, gp_thread_id thread_id, bool 
         thread_crdev->icc_table = NULL;
     }
     rc_decrement(thread_crdev->icc_cache_cl, "teardown_render_thread");
+    thread_crdev->icc_cache_cl = NULL;
     /*
      * Free the BufferSpace, close the band files, optionally unlinking them.
      * We unlink the files if this call is cleaning up from bg printing.

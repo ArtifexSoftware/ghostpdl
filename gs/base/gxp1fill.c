@@ -334,7 +334,7 @@ tile_pattern_clist(const tile_fill_state_t * ptfs,
         code = clist_read_icctable(crdev);
     /* Also allocate the icc cache for the clist reader */
     if ( crdev->icc_cache_cl == NULL )
-        crdev->icc_cache_cl = gsicc_cache_new(crdev->memory);
+        crdev->icc_cache_cl = gsicc_cache_new(crdev->memory->thread_safe_memory);
     if_debug0m('L', dev->memory, "Pattern clist playback begin\n");
     code = clist_playback_file_bands(playback_action_render,
                 crdev, &crdev->page_info, dev, 0, 0, ptfs->xoff - x, ptfs->yoff - y);

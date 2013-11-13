@@ -433,6 +433,7 @@ gx_output_saved_page(gx_device_printer *pdev, gx_saved_page *page)
     clist_free_icc_table(crdev->icc_table, crdev->memory);
     crdev->icc_table = NULL;
     rc_decrement(crdev->icc_cache_cl,"clist_finish_page");
+    crdev->icc_cache_cl = NULL;
 
     /* Close the clist files */
     code = crdev->page_info.io_procs->fclose(crdev->page_info.cfile, crdev->page_info.cfname, false);

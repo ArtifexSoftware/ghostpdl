@@ -786,6 +786,7 @@ clist_finish_page(gx_device *dev, bool flush)
         clist_free_icc_table(crdev->icc_table, crdev->memory);
         crdev->icc_table = NULL;
         rc_decrement(crdev->icc_cache_cl,"clist_finish_page");
+        crdev->icc_cache_cl = NULL;
     }
     if (flush) {
         if (cdev->page_cfile != 0)
