@@ -530,7 +530,7 @@ clist_render_thread(void *data)
     gx_device *bdev = thread->bdev;
     gs_int_rect band_rect;
     byte *mdata = crdev->data + crdev->page_tile_cache_size;
-    byte *mlines = mdata + crdev->page_line_ptrs_offset;
+    byte *mlines = (crdev->page_line_ptrs_offset == 0 ? NULL : mdata + crdev->page_line_ptrs_offset);
     uint raster = gx_device_raster_plane(dev, NULL);
     int code;
     int band_height = crdev->page_band_height;

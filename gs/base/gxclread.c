@@ -703,7 +703,7 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count,
     gx_device *target = crdev->target;
     uint raster = clist_plane_raster(target, render_plane);
     byte *mdata = crdev->data + crdev->page_tile_cache_size;
-    byte *mlines = mdata + crdev->page_line_ptrs_offset;
+    byte *mlines = (crdev->page_line_ptrs_offset == 0 ? NULL : mdata + crdev->page_line_ptrs_offset);
     int plane_index = (render_plane ? render_plane->index : -1);
     int code;
 
