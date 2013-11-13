@@ -168,10 +168,41 @@ currentdict /num-chars-dict .undef
         (   **** Missing whitespace after 'endobj'.\n) pdfformaterror
         pop pop pop exch pop /endobj get exec
       } {
+        %% First, lets try and see if this 'might' be a broken number
+        %% we look for 0-9 as well as '.' ',' and '-' to permit those
+        %% locales in which the separator is a comma, as well as negative
+        %% numbers. We've seena t least one tool replace '0' with '-' *sometimes*
+        true exch
+        dup length 1 sub 0 1 3 -1 roll {
+          1 index exch get
+          dup 44 lt {
+            pop exch pop false exch exit
+          }{
+            dup 57 gt {
+              pop exch pop false exch exit
+            }{
+              dup 47 eq {
+                pop exch pop false exch exit
+              }{
+                pop
+              } ifelse
+            } ifelse
+          } ifelse
+        } for
         pop
-        1 index /m known {  % stream context, operators are possible
-          .pdftokenerror
-        } { % data context, just make the name literal
+        {
+          %% If it looks like a number, try to deal with it as such
+          dup {.pdftokenerror} stopped
+          { pop
+            %% But if it fails, fall back to converting into a anem.
+            %% This will propagate through and cause different
+            %% fallback code to try and take care ot if.
+            cvlit exch pop exch pop
+          }{
+            exch pop
+          } ifelse
+        }{
+          %% Doesn't look like a number, convert it into a name
           cvlit exch pop exch pop
         } ifelse
       } ifelse
