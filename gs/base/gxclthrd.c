@@ -694,7 +694,7 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
     int lines_rasterized;
     gx_device *bdev;
     byte *mdata;
-    uint raster = bitmap_raster(dev->width * dev->color_info.depth);
+    uint raster = gx_device_raster(dev, 1);
     int my;
     int code = 0;
 
