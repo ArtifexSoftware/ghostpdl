@@ -132,15 +132,7 @@ gx_get_bits_return_pointer(gx_device * dev, int x, int h,
          * the device wants something else, it should implement
          * get_bits_rectangle itself.
          */
-        uint dev_raster =
-            (both & GB_PACKING_CHUNKY ?
-               gx_device_raster(dev, true) :
-             both & GB_PACKING_PLANAR ?
-               bitmap_raster(dev->color_info.depth /
-                             dev->color_info.num_components * dev->width) :
-             both & GB_PACKING_BIT_PLANAR ?
-               bitmap_raster(dev->width) :
-             0 /* not possible */);
+        uint dev_raster = gx_device_raster(dev, true);
         uint raster =
             (options & (GB_RASTER_STANDARD | GB_RASTER_ANY) ? dev_raster :
              params->raster);
