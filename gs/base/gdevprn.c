@@ -450,7 +450,6 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
                 ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of procs */
                 return_error(code);
             }
-            pmemdev->base = base;
         }
         if (ecode == 0)
             break;
