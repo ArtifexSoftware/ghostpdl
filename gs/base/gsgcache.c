@@ -47,7 +47,7 @@ struct gs_glyph_cache_elem_s {
     uint lock_count;
     gs_glyph_cache_elem *next;
 };
-gs_public_st_composite(st_glyph_cache_elem, gs_glyph_cache_elem, "gs_glyph_cache_elem",
+gs_private_st_composite(st_glyph_cache_elem, gs_glyph_cache_elem, "gs_glyph_cache_elem",
     gs_glyph_cache_elem_enum_ptrs, gs_glyph_cache_elem_reloc_ptrs);
 
 static
