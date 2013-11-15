@@ -88,6 +88,8 @@
 #include "gxdevcli.h"
 #include "gdevdevn.h"
 #include "gdevprn.h"
+#include "gsequivc.h"
+#include "gdevdevnprn.h"
 #include "gxgetbit.h"
 #include "gxdevsop.h"
 
@@ -104,12 +106,7 @@
 
 /* First we have the device structure definition. */
 struct gx_device_cmykog_s {
-  /* All Ghostscript devices start with the gx_device_common fields */
-  gx_device_common;
-  /* All "printer" (prn) devices then have the gx_prn_device_common fields */
-  gx_prn_device_common;
-  /* We are a "device n" device, so we need a set of parameters stored */
-  gs_devn_params devn_params;
+  gx_devn_prn_device_common;
 };
 
 typedef struct gx_device_cmykog_s gx_device_cmykog;
@@ -342,32 +339,18 @@ psd_write_header(psd_write_ctx *xc, const gx_device_cmykog *pdev)
 static
 ENUM_PTRS_WITH(cmykog_device_enum_ptrs, gx_device_cmykog *pdev)
 {
-  if (index == 0)
-    ENUM_RETURN(pdev->devn_params.compressed_color_list);
-  index--;
-  if (index == 0)
-    ENUM_RETURN(pdev->devn_params.pdf14_compressed_color_list);
-  index--;
-  if (index < pdev->devn_params.separations.num_separations)
-    ENUM_RETURN(pdev->devn_params.separations.names[index].data);
-  ENUM_PREFIX(st_device_printer,
-              pdev->devn_params.separations.num_separations);
+  ENUM_PREFIX(st_gx_devn_prn_device, 0);
+  /* Any extra pointers added to our device after the gx_devn_prn_device
+   * fields would be enumerated here. */
   return 0;
 }
 ENUM_PTRS_END
 
 static RELOC_PTRS_WITH(cmykog_device_reloc_ptrs, gx_device_cmykog *pdev)
 {
-  RELOC_PREFIX(st_device_printer);
-  {
-    int i;
-
-    for (i = 0; i < pdev->devn_params.separations.num_separations; ++i) {
-      RELOC_PTR(gx_device_cmykog, devn_params.separations.names[i].data);
-    }
-  }
-  RELOC_PTR(gx_device_cmykog, devn_params.compressed_color_list);
-  RELOC_PTR(gx_device_cmykog, devn_params.pdf14_compressed_color_list);
+  RELOC_PREFIX(st_gx_devn_prn_device);
+  /* Any extra pointers added to our device after the gx_devn_prn_device
+   * fields would be relocated here. */
 }
 RELOC_PTRS_END
 
@@ -377,9 +360,7 @@ RELOC_PTRS_END
 static void
 cmykog_device_finalize(const gs_memory_t *cmem, void *vpdev)
 {
-  /* We need to deallocate the compressed_color_list and the names. */
-  devn_free_params((gx_device*) vpdev);
-  gx_device_finalize(cmem, vpdev);
+  gx_devn_prn_device_finalize(cmem, vpdev);
 }
 
 gs_private_st_composite_final(st_cmykog_device, gx_device_cmykog,
@@ -399,157 +380,6 @@ cmykog_ret_devn_params(gx_device * dev)
   gx_device_cmykog * pdev = (gx_device_cmykog *)dev;
 
   return &pdev->devn_params;
-}
-
-/*
- * This routine will check to see if the color component name  match those
- * that are available amoung the current device's color components.
- *
- * Parameters:
- *   dev - pointer to device data structure.
- *   pname - pointer to name (zero termination not required)
- *   nlength - length of the name
- *
- * This routine returns a positive value (0 to n) which is the device colorant
- * number if the name is found.  It returns GX_DEVICE_COLOR_MAX_COMPONENTS if
- * the colorant is not being used due to a SeparationOrder device parameter.
- * It returns a negative value if not found.
- */
-static int
-cmykog_get_color_comp_index(gx_device * dev, const char * pname,
-                         int name_size, int component_type)
-{
-  gx_device_cmykog *pdev = (gx_device_cmykog *)dev;
-
-  if (strncmp(pname, "None", name_size) == 0) return -1;
-  return devn_get_color_comp_index(dev,
-                                   &(pdev->devn_params),
-                                   NULL,
-                                   pname,
-                                   name_size,
-                                   component_type,
-                                   ENABLE_AUTO_SPOT_COLORS);
-}
-
-/* Color mapping routines for the spotcmyk device */
-static void
-cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
-{
-  gx_device_cmykog *xdev = (gx_device_cmykog *)dev;
-  int n = xdev->devn_params.separations.num_separations;
-  int i;
-
-  /* If no profile given, assume CMYK */
-  out[0] = c;
-  out[1] = m;
-  out[2] = y;
-  out[3] = k;
-  for(i = 0; i < n; i++)			/* Clear spot colors */
-    out[4 + i] = 0;
-}
-
-static void
-gray_cs_to_spotn_cm(gx_device * dev, frac gray, frac out[])
-{
-  cmyk_cs_to_spotn_cm(dev, 0, 0, 0, (frac)(frac_1 - gray), out);
-}
-
-static void
-rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
-                   frac r, frac g, frac b, frac out[])
-{
-  gx_device_cmykog *xdev = (gx_device_cmykog *)dev;
-  frac cmyk[4];
-
-  color_rgb_to_cmyk(r, g, b, pis, cmyk, dev->memory);
-  cmyk_cs_to_spotn_cm(dev, cmyk[0], cmyk[1], cmyk[2], cmyk[3], out);
-}
-
-static const gx_cm_color_map_procs cmykog_color_map_procs = {
-  gray_cs_to_spotn_cm, rgb_cs_to_spotn_cm, cmyk_cs_to_spotn_cm
-};
-
-static const gx_cm_color_map_procs *
-get_cmykog_spot_color_mapping_procs(const gx_device * dev)
-{
-  return &cmykog_color_map_procs;
-}
-
-/* Encode a list of colorant values into a gx_color_index_value. */
-static gx_color_index
-cmykog_encode_color(gx_device *dev, const gx_color_value colors[])
-{
-  int bpc = ((gx_device_cmykog *)dev)->devn_params.bitspercomponent;
-  gx_color_index color = 0;
-  int i = 0;
-  int ncomp = dev->color_info.num_components;
-  COLROUND_VARS;
-
-  COLROUND_SETUP(bpc);
-  for (; i<ncomp; i++) {
-    color <<= bpc;
-    color |= COLROUND_ROUND(colors[i]);
-  }
-  return (color == gx_no_color_index ? color ^ 1 : color);
-}
-
-/* Decode a gx_color_index value back to a list of colorant values. */
-static int
-cmykog_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
-{
-  int bpc = ((gx_device_cmykog *)dev)->devn_params.bitspercomponent;
-  int mask = (1 << bpc) - 1;
-  int i = 0;
-  int ncomp = dev->color_info.num_components;
-  COLDUP_VARS;
-
-  COLDUP_SETUP(bpc);
-  for (; i<ncomp; i++) {
-    out[ncomp - i - 1] = COLDUP_DUP(color & mask);
-    color >>= bpc;
-  }
-  return 0;
-}
-
-/* Next we have device functions that get and put params. Our device has no
- * parameters other than the basic ones, and the prn ones, so we just pass
- * on the calls to the standard places. If we introduced more complexity to
- * the device, we'd add more code here. */
-
-/* Get parameters. */
-static int
-cmykog_get_params(gx_device * pdev, gs_param_list * plist)
-{
-  gx_device_cmykog *dev = (gx_device_cmykog *)pdev;
-  int code, ecode = 0;
-
-  code = gdev_prn_get_params(pdev, plist);
-  if (code < 0)
-    ecode = code;
-
-  code = devn_get_params(pdev, plist, &dev->devn_params, NULL);
-  if (code < 0)
-    ecode = code;
-
-  return ecode;
-}
-
-/* Set parameters. */
-static int
-cmykog_put_params(gx_device * pdev, gs_param_list * plist)
-{
-  gx_device_cmykog *dev = (gx_device_cmykog *)pdev;
-  int code, ecode = 0;
-
-  code = gdev_prn_put_params(pdev, plist);
-  if (code < 0)
-    ecode = code;
-
-  code = devn_printer_put_params(pdev, plist, &dev->devn_params, NULL);
-  if (code < 0)
-    ecode = code;
-
-  return ecode;
 }
 
 /* Next, we have calls to open and close the device */
@@ -1024,8 +854,8 @@ prn_done:
         NULL,                           /* copy_color */\
         NULL,                           /* draw_line */\
         NULL,                           /* get_bits */\
-        cmykog_get_params,              /* get_params */\
-        cmykog_put_params,              /* put_params */\
+        gx_devn_prn_get_params,         /* get_params */\
+        gx_devn_prn_put_params,         /* put_params */\
         NULL,                           /* map_cmyk_color - not used */\
         NULL,                           /* get_xfont_procs */\
         NULL,                           /* get_xfont_device */\
@@ -1060,10 +890,10 @@ prn_done:
         NULL,                           /* begin_transparency_mask */\
         NULL,                           /* end_transparency_mask */\
         NULL,                           /* discard_transparency_layer */\
-        get_color_mapping_procs,        /* get_color_mapping_procs */\
-        cmykog_get_color_comp_index,       /* get_color_comp_index */\
-        cmykog_encode_color,               /* encode_color */\
-        cmykog_decode_color,               /* decode_color */\
+        gx_devn_prn_get_color_mapping_procs,/* get_color_mapping_procs */\
+        gx_devn_prn_get_color_comp_index,/* get_color_comp_index */\
+        gx_devn_prn_encode_color,       /* encode_color */\
+        gx_devn_prn_decode_color,       /* decode_color */\
         NULL,                           /* pattern_manage */\
         NULL,                           /* fill_rectangle_hl_color */\
         NULL,				/* include_color_space */\
