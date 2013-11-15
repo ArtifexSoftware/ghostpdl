@@ -29,6 +29,7 @@
 #include "gsequivc.h"
 #include "gxblend.h"
 #include "gdevp14.h"
+#include "gdevdevnprn.h"
 
 /*
  * Utility routines for common DeviceN related parameters:
@@ -1650,28 +1651,12 @@ devn_unpack_row(gx_device * dev, int num_comp, gs_devn_params * pdevn_params,
 
 /* The device descriptor */
 static dev_proc_open_device(spotcmyk_prn_open);
-static dev_proc_get_params(spotcmyk_get_params);
-static dev_proc_put_params(spotcmyk_put_params);
 static dev_proc_print_page(spotcmyk_print_page);
-static dev_proc_get_color_mapping_procs(get_spotcmyk_color_mapping_procs);
-static dev_proc_get_color_mapping_procs(get_devicen_color_mapping_procs);
-static dev_proc_get_color_comp_index(spotcmyk_get_color_comp_index);
-static dev_proc_encode_color(spotcmyk_encode_color);
-static dev_proc_decode_color(spotcmyk_decode_color);
-
-/*
- * A structure definition for a DeviceN type device
- */
-typedef struct spotcmyk_device_s {
-    gx_device_common;
-    gx_prn_device_common;
-    gs_devn_params devn_params;
-} spotcmyk_device;
 
 /* GC procedures */
 
 static
-ENUM_PTRS_WITH(spotcmyk_device_enum_ptrs, spotcmyk_device *pdev)
+ENUM_PTRS_WITH(gx_devn_prn_device_enum_ptrs, gx_devn_prn_device *pdev)
 {
     if (index < pdev->devn_params.separations.num_separations)
         ENUM_RETURN(pdev->devn_params.separations.names[index].data);
@@ -1680,36 +1665,43 @@ ENUM_PTRS_WITH(spotcmyk_device_enum_ptrs, spotcmyk_device *pdev)
 }
 
 ENUM_PTRS_END
-static RELOC_PTRS_WITH(spotcmyk_device_reloc_ptrs, spotcmyk_device *pdev)
+static RELOC_PTRS_WITH(gx_devn_prn_device_reloc_ptrs, gx_devn_prn_device *pdev)
 {
     RELOC_PREFIX(st_device_printer);
     {
         int i;
 
         for (i = 0; i < pdev->devn_params.separations.num_separations; ++i) {
-            RELOC_PTR(spotcmyk_device, devn_params.separations.names[i].data);
+            RELOC_PTR(gx_devn_prn_device, devn_params.separations.names[i].data);
         }
     }
 }
 RELOC_PTRS_END
 
-/* Even though spotcmyk_device_finalize is the same as gx_device_finalize, */
-/* we need to implement it separately because st_composite_final */
-/* declares all 3 procedures as private. */
-static void
-spotcmyk_device_finalize(const gs_memory_t *cmem, void *vpdev)
+void
+gx_devn_prn_device_finalize(const gs_memory_t *cmem, void *vpdev)
 {
+    devn_free_params((gx_device*) vpdev);
     gx_device_finalize(cmem, vpdev);
 }
 
-gs_private_st_composite_final(st_spotcmyk_device, spotcmyk_device,
-    "spotcmyk_device", spotcmyk_device_enum_ptrs, spotcmyk_device_reloc_ptrs,
-    spotcmyk_device_finalize);
+/* Even though gx_devn_prn_device_finalize is the same as gx_device_finalize, */
+/* we need to implement it separately because st_composite_final */
+/* declares all 3 procedures as private. */
+static void
+static_gx_devn_prn_device_finalize(const gs_memory_t *cmem, void *vpdev)
+{
+    gx_devn_prn_device_finalize(cmem, vpdev);
+}
+
+gs_public_st_composite_final(st_gx_devn_prn_device, gx_devn_prn_device,
+    "gx_devn_prn_device", gx_devn_prn_device_enum_ptrs, gx_devn_prn_device_reloc_ptrs,
+    static_gx_devn_prn_device_finalize);
 
 /*
  * Macro definition for DeviceN procedures
  */
-#define device_procs(get_color_mapping_procs)\
+#define device_procs()\
 {       spotcmyk_prn_open,\
         gx_default_get_initial_matrix,\
         NULL,                           /* sync_output */\
@@ -1723,8 +1715,8 @@ gs_private_st_composite_final(st_spotcmyk_device, spotcmyk_device,
         NULL,                           /* copy_color */\
         NULL,                           /* draw_line */\
         NULL,                           /* get_bits */\
-        spotcmyk_get_params,            /* get_params */\
-        spotcmyk_put_params,            /* put_params */\
+        gx_devn_prn_get_params,         /* get_params */\
+        gx_devn_prn_put_params,         /* put_params */\
         NULL,                           /* map_cmyk_color - not used */\
         NULL,                           /* get_xfont_procs */\
         NULL,                           /* get_xfont_device */\
@@ -1759,12 +1751,18 @@ gs_private_st_composite_final(st_spotcmyk_device, spotcmyk_device,
         NULL,                           /* begin_transparency_mask */\
         NULL,                           /* end_transparency_mask */\
         NULL,                           /* discard_transparency_layer */\
-        get_color_mapping_procs,        /* get_color_mapping_procs */\
-        spotcmyk_get_color_comp_index,  /* get_color_comp_index */\
-        spotcmyk_encode_color,          /* encode_color */\
-        spotcmyk_decode_color,          /* decode_color */\
+        gx_devn_prn_get_color_mapping_procs,/* get_color_mapping_procs */\
+        gx_devn_prn_get_color_comp_index,/* get_color_comp_index */\
+        gx_devn_prn_encode_color,       /* encode_color */\
+        gx_devn_prn_decode_color,       /* decode_color */\
         NULL,                           /* pattern_manage */\
-        NULL                            /* fill_rectangle_hl_color */\
+        NULL,                           /* fill_rectangle_hl_color */\
+        NULL,                           /* include_color_space */\
+        NULL,                           /* fill_linear_color_scanline */\
+        NULL,                           /* fill_linear_color_trapezoid */\
+        NULL,                           /* fill_linear_color_triangle */\
+        gx_devn_prn_update_spot_equivalent_colors,/* update_spot_equivalent_colors */\
+        gx_devn_prn_ret_devn_params     /* ret_devn_params */\
 }
 
 fixed_colorant_name DeviceCMYKComponents[] = {
@@ -1775,9 +1773,9 @@ fixed_colorant_name DeviceCMYKComponents[] = {
         0               /* List terminator */
 };
 
-#define spotcmyk_device_body(procs, dname, ncomp, pol, depth, mg, mc, cn)\
-    std_device_full_body_type_extended(spotcmyk_device, &procs, dname,\
-          &st_spotcmyk_device,\
+#define gx_devn_prn_device_body(procs, dname, ncomp, pol, depth, mg, mc, cn)\
+    std_device_full_body_type_extended(gx_devn_prn_device, &procs, dname,\
+          &st_gx_devn_prn_device,\
           (int)((long)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10),\
           (int)((long)(DEFAULT_HEIGHT_10THS) * (Y_DPI) / 10),\
           X_DPI, Y_DPI,\
@@ -1797,11 +1795,11 @@ fixed_colorant_name DeviceCMYKComponents[] = {
 /*
  * Example device with CMYK and spot color support
  */
-static const gx_device_procs spot_cmyk_procs = device_procs(get_spotcmyk_color_mapping_procs);
+static const gx_device_procs spot_cmyk_procs = device_procs();
 
-const spotcmyk_device gs_spotcmyk_device =
+const gx_devn_prn_device gs_spotcmyk_device =
 {
-    spotcmyk_device_body(spot_cmyk_procs, "spotcmyk", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 4, 1, 1, "DeviceCMYK"),
+    gx_devn_prn_device_body(spot_cmyk_procs, "spotcmyk", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 4, 1, 1, "DeviceCMYK"),
     /* DeviceN device specific parameters */
     { 1,                        /* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,     /* Names of color model colorants */
@@ -1817,11 +1815,11 @@ const spotcmyk_device gs_spotcmyk_device =
 /*
  * Example DeviceN color device
  */
-static const gx_device_procs devicen_procs = device_procs(get_devicen_color_mapping_procs);
+static const gx_device_procs devicen_procs = device_procs();
 
-const spotcmyk_device gs_devicen_device =
+const gx_devn_prn_device gs_devicen_device =
 {
-    spotcmyk_device_body(devicen_procs, "devicen", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 32, 255, 255, "DeviceCMYK"),
+    gx_devn_prn_device_body(devicen_procs, "devicen", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 32, 255, 255, "DeviceCMYK"),
     /* DeviceN device specific parameters */
     { 8,                        /* Bits per color - must match ncomp, depth, etc. above */
       NULL,                     /* No names for standard DeviceN color model */
@@ -1850,7 +1848,7 @@ spotcmyk_prn_open(gx_device * pdev)
 static void
 gray_cs_to_spotcmyk_cm(gx_device * dev, frac gray, frac out[])
 {
-    int * map = ((spotcmyk_device *) dev)->devn_params.separation_order_map;
+    int * map = ((gx_devn_prn_device *) dev)->devn_params.separation_order_map;
 
     gray_cs_to_devn_cm(dev, map, gray, out);
 }
@@ -1859,7 +1857,7 @@ static void
 rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_imager_state *pis,
                                    frac r, frac g, frac b, frac out[])
 {
-    int * map = ((spotcmyk_device *) dev)->devn_params.separation_order_map;
+    int * map = ((gx_devn_prn_device *) dev)->devn_params.separation_order_map;
 
     rgb_cs_to_devn_cm(dev, map, pis, r, g, b, out);
 }
@@ -1867,7 +1865,7 @@ rgb_cs_to_spotcmyk_cm(gx_device * dev, const gs_imager_state *pis,
 static void
 cmyk_cs_to_spotcmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
-    int * map = ((spotcmyk_device *) dev)->devn_params.separation_order_map;
+    int * map = ((gx_devn_prn_device *) dev)->devn_params.separation_order_map;
 
     cmyk_cs_to_devn_cm(dev, map, c, m, y, k, out);
 }
@@ -1876,16 +1874,8 @@ static const gx_cm_color_map_procs spotCMYK_procs = {
     gray_cs_to_spotcmyk_cm, rgb_cs_to_spotcmyk_cm, cmyk_cs_to_spotcmyk_cm
 };
 
-static const gx_cm_color_map_procs *
-get_spotcmyk_color_mapping_procs(const gx_device * dev)
-{
-    return &spotCMYK_procs;
-}
-
-/* Also use the spotcmyk procs for the devicen device. */
-
-static const gx_cm_color_map_procs *
-get_devicen_color_mapping_procs(const gx_device * dev)
+const gx_cm_color_map_procs *
+gx_devn_prn_get_color_mapping_procs(const gx_device * dev)
 {
     return &spotCMYK_procs;
 }
@@ -1893,10 +1883,10 @@ get_devicen_color_mapping_procs(const gx_device * dev)
 /*
  * Encode a list of colorant values into a gx_color_index_value.
  */
-static gx_color_index
-spotcmyk_encode_color(gx_device *dev, const gx_color_value colors[])
+gx_color_index
+gx_devn_prn_encode_color(gx_device *dev, const gx_color_value colors[])
 {
-    int bpc = ((spotcmyk_device *)dev)->devn_params.bitspercomponent;
+    int bpc = ((gx_devn_prn_device *)dev)->devn_params.bitspercomponent;
     gx_color_index color = 0;
     int i = 0;
     int ncomp = dev->color_info.num_components;
@@ -1913,10 +1903,10 @@ spotcmyk_encode_color(gx_device *dev, const gx_color_value colors[])
 /*
  * Decode a gx_color_index value back to a list of colorant values.
  */
-static int
-spotcmyk_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
+int
+gx_devn_prn_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
 {
-    int bpc = ((spotcmyk_device *)dev)->devn_params.bitspercomponent;
+    int bpc = ((gx_devn_prn_device *)dev)->devn_params.bitspercomponent;
     int mask = (1 << bpc) - 1;
     int i = 0;
     int ncomp = dev->color_info.num_components;
@@ -1931,23 +1921,50 @@ spotcmyk_decode_color(gx_device * dev, gx_color_index color, gx_color_value * ou
 }
 
 /* Get parameters. */
-static int
-spotcmyk_get_params(gx_device * pdev, gs_param_list * plist)
+int
+gx_devn_prn_get_params(gx_device *dev, gs_param_list *plist)
 {
-    int code = gdev_prn_get_params(pdev, plist);
+    gx_devn_prn_device *pdev = (gx_devn_prn_device *)dev;
+    int code = gdev_prn_get_params(dev, plist);
 
     if (code < 0)
         return code;
-    return devn_get_params(pdev, plist,
-        &(((spotcmyk_device *)pdev)->devn_params), NULL);
+    return devn_get_params(dev, plist, &pdev->devn_params,
+                           &pdev->equiv_cmyk_colors);
 }
 
 /* Set parameters. */
-static int
-spotcmyk_put_params(gx_device * pdev, gs_param_list * plist)
+int
+gx_devn_prn_put_params(gx_device *dev, gs_param_list *plist)
 {
-    return devn_printer_put_params(pdev, plist,
-        &(((spotcmyk_device *)pdev)->devn_params), NULL);
+    gx_devn_prn_device *pdev = (gx_devn_prn_device *)dev;
+
+    return devn_printer_put_params(dev, plist, &pdev->devn_params,
+                                   &pdev->equiv_cmyk_colors);
+}
+
+/*
+ *  Device proc for returning a pointer to DeviceN parameter structure
+ */
+gs_devn_params *
+gx_devn_prn_ret_devn_params(gx_device * dev)
+{
+    gx_devn_prn_device *pdev = (gx_devn_prn_device *)dev;
+
+    return &pdev->devn_params;
+}
+
+/*
+ *  Device proc for updating the equivalent CMYK color for spot colors.
+ */
+int
+gx_devn_prn_update_spot_equivalent_colors(gx_device *dev, const gs_state * pgs)
+{
+    gx_devn_prn_device *pdev = (gx_devn_prn_device *)dev;
+
+    update_spot_equivalent_cmyk_colors(dev, pgs, &pdev->devn_params,
+                                       &pdev->equiv_cmyk_colors);
+    return 0;
 }
 
 /*
@@ -1964,13 +1981,19 @@ spotcmyk_put_params(gx_device * pdev, gs_param_list * plist)
  * the colorant is not being used due to a SeparationOrder device parameter.
  * It returns a negative value if not found.
  */
-static int
-spotcmyk_get_color_comp_index(gx_device * dev, const char * pname,
+int
+gx_devn_prn_get_color_comp_index(gx_device * dev, const char * pname,
                                         int name_size, int component_type)
 {
+    gx_devn_prn_device *pdev = (gx_devn_prn_device *)dev;
+
     return devn_get_color_comp_index(dev,
-                &(((spotcmyk_device *)dev)->devn_params), NULL,
-                pname, name_size, component_type, ENABLE_AUTO_SPOT_COLORS);
+                                     &pdev->devn_params,
+                                     &pdev->equiv_cmyk_colors,
+                                     pname,
+                                     name_size,
+                                     component_type,
+                                     ENABLE_AUTO_SPOT_COLORS);
 }
 
 /*
@@ -2088,7 +2111,7 @@ spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     byte *in = gs_alloc_bytes(pdev->memory, line_size, "spotcmyk_print_page(in)");
     byte *buf = gs_alloc_bytes(pdev->memory, line_size + 3, "spotcmyk_print_page(buf)");
-    const spotcmyk_device * pdevn = (spotcmyk_device *) pdev;
+    const gx_devn_prn_device * pdevn = (gx_devn_prn_device *) pdev;
     int npcmcolors = pdevn->devn_params.num_std_colorant_names;
     int ncomp = pdevn->color_info.num_components;
     int depth = pdevn->color_info.depth;

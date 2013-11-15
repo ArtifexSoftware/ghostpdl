@@ -33,6 +33,7 @@
 #include "gxgetbit.h"
 #include "gdevppla.h"
 #include "gxdownscale.h"
+#include "gdevdevnprn.h"
 
 #ifndef cmm_gcmmhlink_DEFINED
     #define cmm_gcmmhlink_DEFINED
@@ -87,14 +88,7 @@ typedef enum {
  * A structure definition for a DeviceN type device
  */
 typedef struct psd_device_s {
-    gx_device_common;
-    gx_prn_device_common;
-
-    /*        ... device-specific parameters ... */
-
-    gs_devn_params devn_params;		/* DeviceN generated parameters */
-
-    equivalent_cmyk_color_params equiv_cmyk_colors;
+    gx_devn_prn_device_common;
 
     psd_color_model color_model;
 
@@ -129,45 +123,24 @@ typedef struct psd_device_s {
 static
 ENUM_PTRS_WITH(psd_device_enum_ptrs, psd_device *pdev)
 {
-    if (index == 0)
-        ENUM_RETURN(pdev->devn_params.compressed_color_list);
-    index--;
-    if (index == 0)
-        ENUM_RETURN(pdev->devn_params.pdf14_compressed_color_list);
-    index--;
-    if (index < pdev->devn_params.separations.num_separations)
-        ENUM_RETURN(pdev->devn_params.separations.names[index].data);
-    ENUM_PREFIX(st_device_printer,
-                    pdev->devn_params.separations.num_separations);
+    ENUM_PREFIX(st_gx_devn_prn_device, 0);
     return 0;
 }
 ENUM_PTRS_END
 
 static RELOC_PTRS_WITH(psd_device_reloc_ptrs, psd_device *pdev)
 {
-    RELOC_PREFIX(st_device_printer);
-    {
-        int i;
-
-        for (i = 0; i < pdev->devn_params.separations.num_separations; ++i) {
-            RELOC_PTR(psd_device, devn_params.separations.names[i].data);
-        }
-    }
-    RELOC_PTR(psd_device, devn_params.compressed_color_list);
-    RELOC_PTR(psd_device, devn_params.pdf14_compressed_color_list);
+    RELOC_PREFIX(st_gx_devn_prn_device);
 }
 RELOC_PTRS_END
 
-/* Even though psd_device_finalize is the same as gx_device_finalize, */
-/* we need to implement it separately because st_composite_final */
-/* declares all 3 procedures as private. */
+/* Even though psd_device_finalize is the same as gx_devn_prn_device_finalize,
+ * we need to implement it separately because st_composite_final
+ * declares all 3 procedures as private. */
 static void
 psd_device_finalize(const gs_memory_t *cmem, void *vpdev)
 {
-    /* We need to deallocate the compressed_color_list.
-       and the names. */
-    devn_free_params((gx_device*) vpdev);
-    gx_device_finalize(cmem, vpdev);
+    gx_devn_prn_device_finalize(cmem, vpdev);
 }
 
 gs_private_st_composite_final(st_psd_device, psd_device,

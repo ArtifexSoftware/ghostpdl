@@ -610,6 +610,7 @@ gdevpxop_h=$(GLSRC)gdevpxop.h
 
 gsequivc_h=$(GLSRC)gsequivc.h
 gdevdevn_h=$(GLSRC)gdevdevn.h $(gsequivc_h)
+gdevdevnprn_h=$(GLSRC)gdevdevn.h $(gsequivc_h)
 
 png__h=$(GLSRC)png_.h $(MAKEFILE)
 x__h=$(GLSRC)x_.h
@@ -2962,7 +2963,7 @@ $(DD)devicen.dev : $(LIB_MAK) $(devn_) $(GLD)page.dev $(GDEV)
 $(GLOBJ)gdevdevn.$(OBJ) : $(GLSRC)gdevdevn.c $(gx_h) $(math__h) $(string__h)\
  $(gdevprn_h) $(gsparam_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gdevdcrd_h)\
  $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h) $(gdevp14_h)\
- $(gxblend_h)
+ $(gxblend_h) $(gdevdevnprn_h)
 	$(GLCC) $(GLO_)gdevdevn.$(OBJ) $(C_) $(GLSRC)gdevdevn.c
 
 

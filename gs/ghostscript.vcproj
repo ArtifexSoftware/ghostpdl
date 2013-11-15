@@ -5122,6 +5122,10 @@
 						>
 					</File>
 					<File
+						RelativePath=".\base\gdevdevnprn.h"
+						>
+					</File>
+					<File
 						RelativePath=".\base\gdevmem.h"
 						>
 					</File>
