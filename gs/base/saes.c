@@ -174,7 +174,7 @@ s_aes_process(stream_state * ss, stream_cursor_read * pr,
        complain. */
     if (status == EOFC) {
       gs_throw(gs_error_rangecheck, "aes stream isn't a multiple of 16 bytes");
-      return ERRC;
+      return 0;
     }
 
     return status;
