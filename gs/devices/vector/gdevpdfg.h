@@ -99,7 +99,7 @@ int pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
                     const gs_range_t **ppranges,
                     const gs_color_space *pcs,
                     const pdf_color_space_names_t *pcsn,
-                    bool by_name, const byte *res_name, int name_length);
+                    bool by_name, const byte *res_name, int name_length, bool keepICC);
 
 int free_color_space(gx_device_pdf *pdev, pdf_resource_t *pres);
 int pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,

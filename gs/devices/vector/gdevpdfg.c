@@ -493,7 +493,7 @@ static int write_color_unchanged(gx_device_pdf * pdev, const gs_imager_state * p
                 cos_value_t cs_value;
 
                 code = pdf_color_space_named(pdev, &cs_value, (const gs_range_t **)&ranges, pcs,
-                                &pdf_color_space_names, true, NULL, 0);
+                                &pdf_color_space_names, true, NULL, 0, false);
                 /* fixme : creates redundant PDF objects. */
                 if (code == gs_error_rangecheck) {
                     /* The color space can't write to PDF. This should never happen */
@@ -555,7 +555,7 @@ static int write_color_as_process_ICC(gx_device_pdf * pdev, const gs_imager_stat
 
     if (!gx_hld_saved_color_same_cspace(current, psc)) {
         code = pdf_color_space_named(pdev, &cs_value, NULL, pcs,
-                        &pdf_color_space_names, true, NULL, 0);
+                        &pdf_color_space_names, true, NULL, 0, true);
         /* fixme : creates redundant PDF objects. */
         if (code == gs_error_rangecheck) {
             /* The color space can't write to PDF. This should never happen */
@@ -745,7 +745,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
                     COS_FREE(pca, "convert DeviceN");
                     return code;
                 }
-                code = pdf_color_space_named(pdev, &v_separation, NULL, csa->cspace, &pdf_color_space_names, false, NULL, 0);
+                code = pdf_color_space_named(pdev, &v_separation, NULL, csa->cspace, &pdf_color_space_names, false, NULL, 0, false);
                 if (code < 0) {
                     COS_FREE(pca, "convert DeviceN");
                     return code;
@@ -1698,7 +1698,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
                     command = ppscc->setcolorn;
                     if (!gx_hld_saved_color_same_cspace(&temp, psc)) {
                         code = pdf_color_space_named(pdev, &cs_value, (const gs_range_t **)&ranges, pcs,
-                                        &pdf_color_space_names, true, NULL, 0);
+                                        &pdf_color_space_names, true, NULL, 0, false);
                         /* fixme : creates redundant PDF objects. */
                         if (code == gs_error_rangecheck) {
                             /* The color space can't write to PDF. */

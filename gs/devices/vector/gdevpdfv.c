@@ -467,7 +467,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
      * space is always a Device space.
      */
     code = pdf_color_space_named(pdev, &cs_value, NULL, pcs_Device,
-                           &pdf_color_space_names, true, NULL, 0);
+                           &pdf_color_space_names, true, NULL, 0, false);
     if (code < 0)
         return code;
     if (!have_pattern_streams) {
@@ -535,7 +535,7 @@ pdf_put_shading_common(cos_dict_t *pscd, const gs_shading_t *psh,
         (psh->params.AntiAlias &&
          (code = cos_dict_put_c_strings(pscd, "/AntiAlias", "true")) < 0) ||
         (code = pdf_color_space_named(pscd->pdev, &cs_value, ppranges, pcs,
-                                &pdf_color_space_names, false, NULL, 0)) < 0 ||
+                                &pdf_color_space_names, false, NULL, 0, false)) < 0 ||
         (code = cos_dict_put_c_key(pscd, "/ColorSpace", &cs_value)) < 0
         )
         return code;
@@ -919,6 +919,12 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
     return code;
 }
 
+static int
+nocheck(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
+{
+    return 1;
+}
+
 /* Write a PatternType 2 (shading pattern) color. */
 int
 pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
@@ -929,7 +935,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
         (gs_pattern2_instance_t *)pdc->ccolor.pattern;
     const gs_shading_t *psh = pinst->templat.Shading;
     cos_value_t v;
-    pdf_resource_t *pres;
+    pdf_resource_t *pres, *pres1;
     pdf_resource_t *psres;
     cos_dict_t *pcd;
     cos_object_t *psco;
@@ -943,7 +949,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     code = pdf_alloc_resource(pdev, resourcePattern, gs_no_id, ppres, 0L);
     if (code < 0)
         return code;
-    pres = *ppres;
+    pres1 = pres = *ppres;
     cos_become(pres->object, cos_type_dict);
     pcd = (cos_dict_t *)pres->object;
     code = pdf_alloc_resource(pdev, resourceShading, gs_no_id, &psres, 0L);
@@ -1009,5 +1015,5 @@ gdev_pdf_include_color_space(gx_device *dev, gs_color_space *cspace, const byte 
     cos_value_t cs_value;
 
     return pdf_color_space_named(pdev, &cs_value, NULL, cspace,
-                                &pdf_color_space_names, true, res_name, name_length);
+                                &pdf_color_space_names, true, res_name, name_length, false);
 }

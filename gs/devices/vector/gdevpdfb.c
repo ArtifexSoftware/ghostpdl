@@ -279,7 +279,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
          * space is always a Device space.
          */
         code = pdf_color_space_named(pdev, &cs_value, NULL, pcs,
-                               &writer.pin->color_spaces, in_line, NULL, 0);
+                               &writer.pin->color_spaces, in_line, NULL, 0, false);
         if (code < 0)
             return code;
         pcsvalue = &cs_value;
@@ -433,7 +433,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     pdev->ParamCompatibilityLevel = pdev->CompatibilityLevel;
     if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
         (code = pdf_color_space_named(pdev, &cs_value, NULL, pcs,
-                                &piw->pin->color_spaces, in_line, NULL, 0)) < 0 ||
+                                &piw->pin->color_spaces, in_line, NULL, 0, false)) < 0 ||
         (for_pattern < 2 || nbytes < 512000 ?
             (code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,
                         &piw->binary[0], (gs_pixel_image_t *)pim, false)) :

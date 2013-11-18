@@ -641,7 +641,7 @@ pdf_separation_color_space(gx_device_pdf *pdev,
 
     if ((code = cos_array_add(pca, cos_c_string_value(&v, csname))) < 0 ||
         (code = cos_array_add_no_copy(pca, snames)) < 0 ||
-        (code = pdf_color_space_named(pdev, &v, &ranges, alt_space, pcsn, false, NULL, 0)) < 0 ||
+        (code = pdf_color_space_named(pdev, &v, &ranges, alt_space, pcsn, false, NULL, 0, false)) < 0 ||
         (code = cos_array_add(pca, &v)) < 0 ||
         (code = pdf_function_scaled(pdev, pfn, ranges, &v)) < 0 ||
         (code = cos_array_add(pca, &v)) < 0 ||
@@ -770,7 +770,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
      */
     if (pdev->UseOldColor || cos_base == NULL) {
     if ((code = pdf_color_space_named(pdev, pvalue, NULL, base_space,
-                                &pdf_color_space_names, false, NULL, 0)) < 0 ||
+                                &pdf_color_space_names, false, NULL, 0, false)) < 0 ||
         (code = cos_array_add(pca,
                               cos_c_string_value(&v,
                                                  pdf_color_space_names.Indexed
@@ -883,7 +883,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
                 const gs_range_t **ppranges,
                 const gs_color_space *pcs_in,
                 const pdf_color_space_names_t *pcsn,
-                bool by_name, const byte *res_name, int name_length)
+                bool by_name, const byte *res_name, int name_length, bool keepICC)
 {
     const gs_color_space *pcs;
     gs_color_space_index csi;
@@ -926,7 +926,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
        or other options, we may want to actually have all
        the colors defined by ICC profiles and not do the following
        substituion of the Device space. */
-    if (csi == gs_color_space_index_ICC) {
+    if (csi == gs_color_space_index_ICC && !keepICC) {
         csi = gsicc_get_default_type(pcs->cmm_icc_profile_data);
     }
     if (ppranges)
@@ -961,7 +961,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
             if (pcs->base_space != NULL) {
             return pdf_color_space_named( pdev, pvalue, ppranges,
                                     pcs->base_space,
-                                    pcsn, by_name, NULL, 0);
+                                    pcsn, by_name, NULL, 0, keepICC);
             } else {
                 switch( cs_num_components(pcs) )  {
                     case 1:
@@ -1320,7 +1320,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
                                   csa->colorant_name, &name_string, &name_string_length);
                     if (code < 0)
                         return code;
-                    code = pdf_color_space_named(pdev, &v_separation, NULL, csa->cspace, pcsn, false, NULL, 0);
+                    code = pdf_color_space_named(pdev, &v_separation, NULL, csa->cspace, pcsn, false, NULL, 0, keepICC);
                     if (code < 0)
                         return code;
                     code = pdf_string_to_cos_name(pdev, name_string, name_string_length, &v_colorant_name);
@@ -1371,7 +1371,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     case gs_color_space_index_Pattern:
         if ((code = pdf_color_space_named(pdev, pvalue, ppranges,
                                     pcs->base_space,
-                                    &pdf_color_space_names, false, NULL, 0)) < 0 ||
+                                    &pdf_color_space_names, false, NULL, 0, false)) < 0 ||
             (code = cos_array_add(pca,
                                   cos_c_string_value(&v, "/Pattern"))) < 0 ||
             (code = cos_array_add(pca, pvalue)) < 0
@@ -1514,7 +1514,7 @@ pdf_cs_Pattern_uncolored_hl(gx_device_pdf *pdev,
                 const gs_color_space *pcs, cos_value_t *pvalue)
 {
     /* Only for high level colors. */
-    return pdf_color_space_named(pdev, pvalue, NULL, pcs, &pdf_color_space_names, true, NULL, 0);
+    return pdf_color_space_named(pdev, pvalue, NULL, pcs, &pdf_color_space_names, true, NULL, 0, false);
 }
 
 /* Set the ProcSets bits corresponding to an image color space. */
