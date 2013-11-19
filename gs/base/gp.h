@@ -306,7 +306,7 @@ const char *gp_file_name_parent(void);
 /* Answer whether the platform allows parent refenences. */
 /*	unix, Win, Mac: yes */
 /*	VMS:	no.         */
-bool gp_file_name_is_partent_allowed(void);
+bool gp_file_name_is_parent_allowed(void);
 
 /* Answer whether an empty item is meanful in file names on the platform. */
 /*	unix, Win:  no	    */

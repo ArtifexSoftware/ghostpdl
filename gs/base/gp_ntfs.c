@@ -450,7 +450,7 @@ const char *gp_file_name_current(void)
 {   return ".";
 }
 
-bool gp_file_name_is_partent_allowed(void)
+bool gp_file_name_is_parent_allowed(void)
 {   return true;
 }
 

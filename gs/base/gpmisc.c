@@ -248,7 +248,7 @@ gp_file_name_combine_generic(const char *prefix, uint plen, const char *fname, u
                 case 0:
                     /* We have no infix, start with parent. */
                     if ((no_sibling && ipe == fname + flen && flen != 0) ||
-                            !gp_file_name_is_partent_allowed())
+                            !gp_file_name_is_parent_allowed())
                         return gp_combine_cant_handle;
                     /* Falls through. */
                 case 2:
