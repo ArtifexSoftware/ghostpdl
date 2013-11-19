@@ -1079,7 +1079,7 @@ psd_write_32(psd_write_ctx *xc, bits32 v)
 static fixed_colorant_name
 get_sep_name(gx_devn_prn_device *pdev, int n)
 {
-    fixed_colorant_name p;
+    fixed_colorant_name p = NULL;
     int i;
 
     for (i = 0; i <= n; i++) {
