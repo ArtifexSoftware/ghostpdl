@@ -1023,7 +1023,7 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, FILE *file, int w, int h)
      * model channels are simply filled with white.  For spot colors we only
      * image the requested channels. 
      */
-    for (i = 0; i < xc->base_bytes_pp + xc->n_extra_channels; i++) {
+    for (i = 0; i < xc->num_channels + xc->n_extra_channels; i++) {
         xc->chnl_to_position[i] = i;
         xc->chnl_to_orig_sep[i] = i;
     }

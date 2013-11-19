@@ -593,8 +593,9 @@ cmykog_print_page(gx_device_printer * pdev, FILE * prn_stream)
     fseek(arg.spot_file[i], 0, SEEK_SET);
     while (!feof(arg.spot_file[i])) {
       n = fread(tmp, 1, 4096, arg.spot_file[i]);
-      if (n > 0)
-        fwrite(tmp, 1, n, prn_stream);
+      if (n == 0)
+          break;
+      fwrite(tmp, 1, n, prn_stream);
     }
   }
 #endif
