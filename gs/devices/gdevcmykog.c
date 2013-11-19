@@ -92,6 +92,7 @@
 #include "gdevdevnprn.h"
 #include "gxgetbit.h"
 #include "gxdevsop.h"
+#include "gdevppla.h"
 
 /* And for the SSE code */
 #ifdef USE_SSE4
@@ -173,16 +174,16 @@ cmykog_open(gx_device * pdev)
 {
   gx_device_cmykog *dev = (gx_device_cmykog *)pdev;
 
-  pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
-  pdev->icc_struct->supports_devn = true;
+  dev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+  dev->icc_struct->supports_devn = true;
 
   /* Here we set the device so that any buffers set up will be aligned to a
    * multiple of 1<<5 = 32. This is so the SSE code can safely load 32 bytes
    * at a time from a scanline.
    *
    * See (2) at the top of this file. */
-  pdev->pad = 0; /* No additional padding requirements */
-  pdev->log2_align_mod = 5; /* But we do want lines aligned to a multiple of 32 */
+  dev->pad = 0; /* No additional padding requirements */
+  dev->log2_align_mod = 5; /* But we do want lines aligned to a multiple of 32 */
 
   /* Finally, we open the device requesting the underlying buffers to be
    * planar, rather than chunky. See (1) at the top of this file. */
@@ -206,8 +207,6 @@ cmykog_close(gx_device * pdev)
 static int
 cmykog_dev_spec_op(gx_device *dev_, int op, void *data, int datasize)
 {
-  gx_device_cmykog *dev = (gx_device_cmykog *)dev_;
-
   if (op == gxdso_adjust_bandheight) {
     /* Any band height is fine, as long as it is even */
     return datasize & ~1;
@@ -243,6 +242,7 @@ typedef struct cmykog_process_buffer_s {
 static int
 cmykog_init_buffer(void *arg_, gx_device *dev_, gs_memory_t *memory, int w, int h, void **bufferp)
 {
+  /* arg and dev here are unused, currently, but here as an example */
   cmykog_process_arg_t *arg = (cmykog_process_arg_t *)arg_;
   gx_device_cmykog *dev = (gx_device_cmykog *)dev_;
   cmykog_process_buffer_t *buffer;
@@ -262,6 +262,7 @@ cmykog_init_buffer(void *arg_, gx_device *dev_, gs_memory_t *memory, int w, int 
 static void
 cmykog_free_buffer(void *arg_, gx_device *dev_, gs_memory_t *memory, void *buffer_)
 {
+  /* arg and dev here are unused, currently, but here as an example */
   cmykog_process_arg_t *arg = (cmykog_process_arg_t *)arg_;
   gx_device_cmykog *dev = (gx_device_cmykog *)dev_;
   cmykog_process_buffer_t *buffer = (cmykog_process_buffer_t *)buffer_;
@@ -306,7 +307,6 @@ static void average_plane(byte *image, int width, int height, int raster)
 static void average_plane(byte* image, int width, int height, int raster)
 {
   int x, y;
-  __m128i zero = _mm_setzero_si128 ();
   __m128i mm0, mm1;
   __m128i mm2, mm3;
   __m128i invert = _mm_set1_epi8 ( -1 );
@@ -518,13 +518,10 @@ cmykog_output(void *arg_, gx_device *dev_, void *buffer_)
   cmykog_process_arg_t *arg = (cmykog_process_arg_t *)arg_;
   gx_device_cmykog *dev = (gx_device_cmykog *)dev_;
   cmykog_process_buffer_t *buffer = (cmykog_process_buffer_t *)buffer_;
-  gs_get_bits_params_t params;
   int i;
-  gs_int_rect my_rect;
   int w = buffer->w;
   int h = buffer->h;
   int raster = arg->dev_raster;
-  byte **data = buffer->params.data;
 
   /* Output each plane in turn to file */
   for (i = 0; i < dev->color_info.num_components; i++) {
@@ -544,14 +541,11 @@ static int
 cmykog_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   gx_device_cmykog * pdevn = (gx_device_cmykog *) pdev;
-  int npcmcolors = pdevn->devn_params.num_std_colorant_names;
   int ncomp = pdevn->color_info.num_components;
-  int width = pdev->width;
-  int height = pdev->height;
-  cmykog_process_arg_t arg = { 0 };
+  cmykog_process_arg_t arg = { { 0 } };
   gx_process_page_options_t options;
   int code, i;
-  psd_write_ctx psd_ctx = { 0 };
+  psd_write_ctx psd_ctx;
 
   /* Calculate the raster that will be used for each bands data;
    * gx_device_raster_plane takes care of any alignment or padding
@@ -560,11 +554,12 @@ cmykog_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
 #ifndef NO_OUTPUT
   /* Output the psd headers */
-  code = psd_setup(&psd_ctx, pdevn, prn_stream, pdev->width>>1, pdev->height>>1);
+  code = psd_setup(&psd_ctx, (gx_devn_prn_device *)pdevn,
+                   prn_stream, pdev->width>>1, pdev->height>>1);
   if (code < 0)
       return code;
 
-  code = psd_write_header(&psd_ctx, pdevn);
+  code = psd_write_header(&psd_ctx, (gx_devn_prn_device *)pdevn);
   if (code < 0)
       return code;
 
@@ -720,11 +715,11 @@ fixed_colorant_name DevCMYKOGComponents[] = {
         prn_device_body_rest_(cmykog_print_page)
 
 /*
- * CMYKOG 8bits
+ * PSDCMYKOG 8bits
  */
 static const gx_device_procs cmykog_procs = device_procs(get_cmykog_spot_color_mapping_procs);
 
-const gx_device_cmykog gs_cmykog_device =
+const gx_device_cmykog gs_psdcmykog_device =
 {
   CMYKOG_DEVICE(cmykog_procs, "psdcmykog", 6, GX_CINFO_POLARITY_SUBTRACTIVE, 48, 255, 255, "DeviceCMYK", 600, 600),
   /* device specific parameters */

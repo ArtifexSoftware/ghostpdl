@@ -610,7 +610,7 @@ gdevpxop_h=$(GLSRC)gdevpxop.h
 
 gsequivc_h=$(GLSRC)gsequivc.h
 gdevdevn_h=$(GLSRC)gdevdevn.h $(gsequivc_h)
-gdevdevnprn_h=$(GLSRC)gdevdevn.h $(gsequivc_h)
+gdevdevnprn_h=$(GLSRC)gdevdevnprn.h
 
 png__h=$(GLSRC)png_.h $(MAKEFILE)
 x__h=$(GLSRC)x_.h

@@ -38,7 +38,7 @@ typedef struct gx_devn_prn_device_s {
  * Garbage collection structure descriptor and finalizer.
  */
 extern_st(st_gx_devn_prn_device);
-struct_proc_finalize(gx_devn_prn_finalize);
+struct_proc_finalize(gx_devn_prn_device_finalize);
 
 /*
  * Basic device procedures for instances of the above device.

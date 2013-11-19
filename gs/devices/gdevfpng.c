@@ -90,7 +90,7 @@ fpng_put_params(gx_device *dev, gs_param_list *plist)
     return ecode;
 }
 
-int
+static int
 fpng_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
 {
     gx_device_fpng *fdev = (gx_device_fpng *)pdev;
@@ -235,14 +235,14 @@ static void write_big32(int v, FILE *file)
     fputc(v>>0, file);
 }
 
-static void putchunk(char *tag, unsigned char *data, int size, FILE *file)
+static void putchunk(const char *tag, const unsigned char *data, int size, FILE *file)
 {
     unsigned int sum;
     write_big32(size, file);
     fwrite(tag, 1, 4, file);
     fwrite(data, 1, size, file);
     sum = crc32(0, NULL, 0);
-    sum = crc32(sum, (unsigned char*)tag, 4);
+    sum = crc32(sum, (const unsigned char*)tag, 4);
     sum = crc32(sum, data, size);
     write_big32(sum, file);
 }
@@ -289,7 +289,6 @@ static int fpng_process(void *arg, gx_device *dev, gx_device *bdev, const gs_int
     int code;
     gx_device_fpng *fdev = (gx_device_fpng *)dev;
     gs_get_bits_params_t params;
-    int unread;
     int w = rect->q.x - rect->p.x;
     int raster = bitmap_raster(bdev->width * 3 * 8);
     int h = rect->q.y - rect->p.y;
@@ -410,7 +409,6 @@ static int
 fpng_print_page(gx_device_printer *pdev, FILE *file)
 {
     gx_device_fpng *fdev = (gx_device_fpng *)pdev;
-    gs_memory_t *mem = pdev->memory;
     static const unsigned char pngsig[8] = { 137, 80, 78, 71, 13, 10, 26, 10 };
     unsigned char head[13];
     gx_process_page_options_t process = { 0 };

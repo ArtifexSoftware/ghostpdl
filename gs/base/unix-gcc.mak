@@ -422,7 +422,7 @@ DEVICE_DEVS17=$(DD)plan.dev $(DD)planm.dev $(DD)plang.dev $(DD)planc.dev $(DD)pl
 DEVICE_DEVS18=
 DEVICE_DEVS19=
 DEVICE_DEVS20=$(DD)cljet5.dev $(DD)cljet5c.dev $(DD)pamcmyk32.dev $(DD)pamcmyk4.dev
-DEVICE_DEVS21=$(DD)spotcmyk.dev $(DD)devicen.dev $(DD)xcf.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev
+DEVICE_DEVS21=$(DD)spotcmyk.dev $(DD)devicen.dev $(DD)xcf.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev $(DD)psdcmykog.dev $(DD)fpng.dev
 
 # Shared library target to build.
 # Note that the two vga devices are Linux specific, and requires svgalib

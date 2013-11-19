@@ -365,7 +365,7 @@ DEVICE_DEVS17=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pkm
 DEVICE_DEVS18=
 DEVICE_DEVS19=
 DEVICE_DEVS20=
-DEVICE_DEVS21=$(DD)spotcmyk.dev $(DD)devicen.dev $(DD)xcf.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev $(DD)pamcmyk32.dev
+DEVICE_DEVS21=$(DD)spotcmyk.dev $(DD)devicen.dev $(DD)xcf.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev $(DD)pamcmyk32.dev $(DD)psdcmykog.dev $(DD)fpng.dev
 
 # ---------------------------- End of options --------------------------- #
 
