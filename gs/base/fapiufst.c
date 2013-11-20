@@ -117,7 +117,12 @@ EXTERN IF_STATE if_state;
 static fapi_ufst_server *static_server_ptr_for_ufst_callback = 0;
 #endif
 
+#if PCLEO_RDR  &&  BYTEORDER==LOHI
 GLOBAL UW16 PCLswapHdr(FSP LPUB8 p, UW16 gifct);        /* UFST header doesn't define it. */
+#define UFST_PCLswapHdr(p, gifct) PCLswapHdr(FSP p, gifct)
+#else
+#define UFST_PCLswapHdr(p, gifct)
+#endif
 
 typedef struct pcleo_glyph_list_elem_s pcleo_glyph_list_elem;
 struct pcleo_glyph_list_elem_s
@@ -988,9 +993,7 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
             d->font_id = assign_font_id();
         }
         h = (PCLETTO_FHDR *) (buf + sizeof(ufst_common_font_data));
-        /* For some reason the bytes of fontDescriptorSize need swapped here
-           (PCLswapHdr() doesn't do it as needed), but only for TTF fonts - duh!?!?
-         */
+
         if (ff->is_type1) {
             h->fontDescriptorSize = PCLETTOFONTHDRSIZE;
         }
@@ -1047,7 +1050,8 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
         /*  fixme : This code assumes 1-byte alignment for PCLETTO_FHDR structure.
            Use PACK_* macros to improve.
          */
-        PCLswapHdr(FSA(UB8 *) h, 0);
+        UFST_PCLswapHdr((UB8 *) h, 0);
+
         if (ff->is_type1) {
             LPUB8 fontdata = (LPUB8) h + PCLETTOFONTHDRSIZE;
 

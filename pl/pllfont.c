@@ -408,6 +408,7 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
     char pthnm[1024];
     char *ufst_root_dir;
     char *fco;
+    char *fco_start, *fco_lim;
     pl_font_t *plfont = NULL;
     gs_font *pfont = NULL;
     gs_font_base *pbfont;
@@ -431,13 +432,15 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
      *
      */
     ufst_root_dir = (char *)pl_fapi_ufst_get_font_dir(mem);
-    fco = (char *)pl_fapi_ufst_get_fco_list(mem);
-    for (k = 0; strlen(fco) > 0; k++) {
+    fco_start = fco = (char *)pl_fapi_ufst_get_fco_list(mem);
+    fco_lim = fco_start + strlen(fco_start) + 1;
+
+    for (k = 0; strlen(fco) > 0 && fco < fco_lim; k++) {
         status = 0;
         /* build and open (get handle) for the k'th fco file name */
         strcpy((char *)pthnm, ufst_root_dir);
 
-        for (i = 2; fco[i] != gp_file_name_list_separator && fco[i]; i++);
+        for (i = 2; fco[i] != gp_file_name_list_separator && (&fco[i]) < fco_lim; i++);
 
         strncat(pthnm, fco, i);
         fco += (i + 1);
