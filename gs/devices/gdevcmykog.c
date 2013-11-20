@@ -155,17 +155,6 @@ gs_private_st_composite_final(st_cmykog_device, gx_device_cmykog,
 /* Printer Driver Functions 		*/
 /*--------------------------------------*/
 
-/* The first set of device functions are to do with color handling. */
-
-/* Return a pointer to DeviceN parameter structure */
-static gs_devn_params *
-cmykog_ret_devn_params(gx_device * dev)
-{
-  gx_device_cmykog * pdev = (gx_device_cmykog *)dev;
-
-  return &pdev->devn_params;
-}
-
 /* Next, we have calls to open and close the device */
 
 /* Open the printer */
@@ -678,7 +667,7 @@ prn_done:
         NULL,				/* fill_linear_color_trapezoid */\
         NULL,				/* fill_linear_color_triangle */\
         NULL,                           /* update_spot_equivalent_colors */\
-        cmykog_ret_devn_params,		/* ret_devn_params */\
+        gx_devn_prn_ret_devn_params,    /* ret_devn_params */\
         NULL,                           /* fillpage */\
         NULL,                           /* push_transparency_state */\
         NULL,                           /* pop_transparency_state */\
