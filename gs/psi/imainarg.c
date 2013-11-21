@@ -355,7 +355,7 @@ run_stdin:
                 if (minst->init_done < 2) {
                     if (minst->saved_pages_initial_arg == NULL) {
                         /* Tuck the parameters away for later when init2 is done */
-                        minst->saved_pages_initial_arg = arg+12;
+                        minst->saved_pages_initial_arg = (char *)arg+12;
                     } else {
                         outprintf(minst->heap,
                                   "   Only one --saved-pages=... command allowed before processing input\n");

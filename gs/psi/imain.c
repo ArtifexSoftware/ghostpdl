@@ -17,8 +17,6 @@
 /* Common support for interpreter front ends */
 
 
-/* #define FORCE_SAVED_PAGES_TEST */ /* to force saved-pages-test mode */
-
 #include "malloc_.h"
 #include "memory_.h"
 #include "string_.h"
@@ -28,6 +26,7 @@
 #include "gslib.h"
 #include "gsmatrix.h"           /* for gxdevice.h */
 #include "gsutil.h"             /* for bytes_compare */
+#include "gspaint.h"		/* for gs_erasepage */
 #include "gxdevice.h"
 #include "gxdevsop.h"		/* for gxdso_* enums */
 #include "gxclpage.h"
@@ -337,10 +336,6 @@ gs_main_init2(gs_main_instance * minst)
        gx_device *pdev = gs_currentdevice(minst->i_ctx_p->pgs);	/* get the current device */
        gx_device_printer *ppdev = (gx_device_printer *)pdev;
 
-#ifdef FORCE_SAVED_PAGES_TEST
-        /* The following code is only to allow regression testing of saved-pages */
-        minst->saved_pages_test_mode = true;
-#endif
         if (minst->saved_pages_test_mode) {
             if ((dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) == 0)) {
                 /* no warning or error if saved-pages-test mode is used, just disable it */
