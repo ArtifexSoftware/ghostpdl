@@ -495,15 +495,22 @@ gdev_mem_set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
      * we don't have any buffer already, and take these on. Assume that the
      * base has been allocated with sufficient padding to allow for any
      * alignment required. */
-    if (base != NULL) {
+    if (base == NULL) {
+        base = mdev->base;
+        raster = mdev->raster;
+    } else {
+        mdev->base = base;
+        mdev->raster = raster;
+    }
+
+    /* Now, pad and align as required. */
+    if (mdev->log2_align_mod > log2_align_bitmap_mod) {
         int align = 1<<mdev->log2_align_mod;
         align = (-(int)base) & (align-1);
-        mdev->base = base + align;
-        mdev->raster = raster;
+        data = base + align;
     } else {
-        raster = mdev->raster;
+        data = mdev->base;
     }
-    data = mdev->base;
 
     if (num_planes) {
         if (base && !mdev->plane_depth)
