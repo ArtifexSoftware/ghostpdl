@@ -1877,11 +1877,19 @@ new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
             if (code < 0)
                 goto fail_and_fallback;
         } else {
-            convert_to_process_colors = 0;
-            code = pdf_color_space_named(pdev, &cs_value, &pranges, pcs, names,
+            if (convert_to_process_colors == 2) {
+                convert_to_process_colors = 0;
+                code = pdf_color_space_named(pdev, &cs_value, &pranges, pcs, names,
+                                     in_line, NULL, 0, true);
+                if (code < 0)
+                    goto fail_and_fallback;
+            } else {
+                convert_to_process_colors = 0;
+                code = pdf_color_space_named(pdev, &cs_value, &pranges, pcs, names,
                                      in_line, NULL, 0, false);
-            if (code < 0)
-                goto fail_and_fallback;
+                if (code < 0)
+                    goto fail_and_fallback;
+            }
         }
     }
 
