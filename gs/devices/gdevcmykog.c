@@ -183,11 +183,6 @@ cmykog_open(gx_device * pdev)
 static int
 cmykog_close(gx_device * pdev)
 {
-  int code;
-
-  if((code = gdev_prn_open_printer(pdev, 1)) < 0)
-    return code;
-
   return gdev_prn_close(pdev);
 }
 
