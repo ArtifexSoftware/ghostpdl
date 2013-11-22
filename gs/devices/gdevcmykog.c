@@ -552,7 +552,7 @@ cmykog_print_page(gx_device_printer * pdev, FILE * prn_stream)
    * We will then copy this data into the target file at the end. */
   arg.spot_file[0] = prn_stream;
   for(i = 1; i < ncomp; i++) {
-    arg.spot_file[i] = gp_open_scratch_file(pdev->memory, gp_scratch_file_name_prefix, &arg.spot_name[i][0], "wb");
+    arg.spot_file[i] = gp_open_scratch_file(pdev->memory, gp_scratch_file_name_prefix, &arg.spot_name[i][0], "w+b");
     if (arg.spot_file[i] == NULL) {
       code = gs_error_invalidfileaccess;
       goto prn_done;
@@ -577,8 +577,6 @@ cmykog_print_page(gx_device_printer * pdev, FILE * prn_stream)
     fseek(arg.spot_file[i], 0, SEEK_SET);
     while (!feof(arg.spot_file[i])) {
       n = fread(tmp, 1, 4096, arg.spot_file[i]);
-      if (n == 0)
-          break;
       fwrite(tmp, 1, n, prn_stream);
     }
   }
