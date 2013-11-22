@@ -580,6 +580,11 @@ cmykog_print_page(gx_device_printer * pdev, FILE * prn_stream)
       fwrite(tmp, 1, n, prn_stream);
     }
   }
+  /* If Ghostscript knows that all 6 planes aren't used, it may
+   * truncate ncomp. Write the extra planes as appropriate. */
+  for (; i < pdev->color_info.max_components; i++) {
+    write_empty_plane(prn_stream, pdev->width>>1, pdev->height>>1);
+  }
 #endif
 
 prn_done:
