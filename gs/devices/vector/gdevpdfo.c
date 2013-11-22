@@ -1392,8 +1392,12 @@ static int hash_cos_stream(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
     cos_stream_piece_t *pcsp = pcs->pieces;
     FILE *sfile = pdev->streams.file;
     byte *ptr;
-    int64_t position_save = gp_ftell_64(sfile);
+    int64_t position_save;
     int result;
+
+    sflush(pdev->strm);
+    sflush(pdev->streams.strm);
+    position_save = gp_ftell_64(sfile);
 
     if (!pcsp)
         return -1;
