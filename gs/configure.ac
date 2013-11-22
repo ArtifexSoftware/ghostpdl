@@ -180,6 +180,13 @@ case `uname` in
             CC_DBG_FLAGS_TO_TRY="-g -O0"
         fi
         ;;
+        AIX)
+        if test $ac_cv_prog_gcc = yes; then
+            CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
+            SET_DT_SONAME="so"
+        fi
+        ;;
 esac
 
 AC_SUBST(SET_DT_SONAME)
@@ -1953,6 +1960,18 @@ case `uname` in
 
           DYNAMIC_LDFLAGS="-G -shared -Wl,\$(LD_SET_DT_SONAME)\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
           DYNAMIC_LIBS=""
+          SO_LIB_EXT=".so"
+        ;;
+        AIX)
+          DYNAMIC_CFLAGS="-fPIC"
+          GCFLAGS="-Wl,-brtl $GCFLAGS"
+          DYNAMIC_LDFLAGS="-shared -Wl,-brtl,-G -fPIC"
+          if test $ac_cv_prog_gcc = yes; then
+            # GCC high level flag
+            DYNAMIC_LIBS="-ldl"
+          else
+            DYNAMIC_LIBS=""
+          fi
           SO_LIB_EXT=".so"
         ;;
 esac
