@@ -16,6 +16,8 @@
 
 /* (Internal) interface to iinit.c */
 
+#define DEBUG_TRACE_PS_OPERATORS
+
 #ifndef iinit_INCLUDED
 #  define iinit_INCLUDED
 

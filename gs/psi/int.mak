@@ -1863,7 +1863,7 @@ $(PSOBJ)imainarg.$(OBJ) : $(PSSRC)imainarg.c $(GH)\
 
 $(PSOBJ)imain.$(OBJ) : $(PSSRC)imain.c $(GH) $(memory__h) $(string__h)\
  $(gp_h) $(gscdefs_h) $(gslib_h) $(gsmatrix_h) $(gsutil_h)\
- $(gxalloc_h) $(gxdevice_h) $(gzstate_h)\
+ $(gspaint_h) $(gxclpage_h) $(gxalloc_h) $(gxdevice_h) $(gzstate_h)\
  $(dstack_h) $(ierrors_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(iconf_h) $(idebug_h) $(idict_h) $(idisp_h) $(iinit_h)\
  $(iname_h) $(interp_h) $(iplugin_h) $(isave_h) $(iscan_h) $(ivmspace_h)\

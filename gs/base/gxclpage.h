@@ -90,7 +90,10 @@ int gx_saved_pages_list_add(gx_device_printer * pdev);
  */
 void gx_saved_pages_list_free(gx_saved_pages_list *list);
 
-/* Process the param control string. */
+/*
+ * Process the param control string.
+ * Returns < 0 if an error, > 0 if OK, but erasepage is needed, otherwise 0.
+ */
 int gx_saved_pages_param_process(gx_device_printer *pdev, byte *param, int param_size);
 
 /*

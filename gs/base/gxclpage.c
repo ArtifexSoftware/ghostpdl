@@ -767,7 +767,7 @@ gx_saved_pages_param_process(gx_device_printer *pdev, byte *param, int param_siz
                 pdev->space_params.banding_type = BandingAlways;
                 if ((code = gdev_prn_reallocate_memory((gx_device *)pdev, &pdev->space_params, pdev->width, pdev->height)) < 0)
                     return code;
-                erasepage_needed = 1;
+                erasepage_needed |= 1;
             }
             break;
 
@@ -781,7 +781,7 @@ gx_saved_pages_param_process(gx_device_printer *pdev, byte *param, int param_siz
                 code = gdev_prn_reallocate_memory((gx_device *)pdev, &pdev->space_params, pdev->width, pdev->height);
                 if (code < 0)
                     return code;
-                erasepage_needed = 1;       /* make sure next page is erased */
+                erasepage_needed |= 1;       /* make sure next page is erased */
             }
             break;
 
@@ -801,13 +801,7 @@ gx_saved_pages_param_process(gx_device_printer *pdev, byte *param, int param_siz
           case PARAM_COPIES:			/* copies requires a number next */
             /* make sure that we have a list */
             if (pdev->saved_pages_list == NULL) {
-                if ((pdev->saved_pages_list = gx_saved_pages_list_new(pdev)) == NULL)
-                    return_error(gs_error_VMerror);
-
-                /* We need to change to clist mode. Always uses clist when saving pages */
-                code = gdev_prn_reallocate_memory((gx_device *)pdev, &pdev->space_params, pdev->width, pdev->height);
-                if (code < 0)
-                    return code;
+                return_error(gs_error_rangecheck);	/* copies not allowed before a 'begin' */
             }
             /* Move to past 'copies' token */
             param_left -= token - param_scan + token_size;
@@ -836,6 +830,7 @@ gx_saved_pages_param_process(gx_device_printer *pdev, byte *param, int param_siz
                 if ((code = gx_saved_pages_list_print(pdev, pdev->saved_pages_list,
                                                  param_scan, param_left, &printed_count)) < 0)
                     return code;
+                erasepage_needed |= 1;       /* make sure next page is erased */
             }
             /* adjust for all of the print parameters */
             token_size += code;

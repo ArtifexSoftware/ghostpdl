@@ -244,10 +244,12 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 
                     /* get the current device */
                     pdev = gs_currentdevice(minst->i_ctx_p->pgs);
-                    code = gx_saved_pages_param_process((gx_device_printer *)pdev,
-                               (byte *)"print normal flush", 18);
-                    if (code < 0)   /* we don't need to worry about erasepage with "print" or "flush" */
+                    if ((code = gx_saved_pages_param_process((gx_device_printer *)pdev,
+                               (byte *)"print normal flush", 18)) < 0)
                         return code;
+                    if (code > 0)
+                        if ((code = gs_erasepage(minst->i_ctx_p->pgs)) < 0)
+                            return code;
                 }
         }
     }
@@ -335,10 +337,12 @@ run_stdin:
 
                 /* get the current device */
                 pdev = gs_currentdevice(minst->i_ctx_p->pgs);
-                code = gx_saved_pages_param_process((gx_device_printer *)pdev,
-                           (byte *)"print normal flush", 18);
-                if (code < 0)   /* we don't need to worry about erasepage with "print" or "flush" */
+                if ((code = gx_saved_pages_param_process((gx_device_printer *)pdev,
+                           (byte *)"print normal flush", 18)) < 0)
                     return code;
+                if (code > 0)
+                    if ((code = gs_erasepage(minst->i_ctx_p->pgs)) < 0)
+                        return code;
             }
             break;
         case '-':               /* run with command line args */
@@ -501,10 +505,13 @@ run_stdin:
 
                     /* get the current device */
                     pdev = gs_currentdevice(minst->i_ctx_p->pgs);
-                    code = gx_saved_pages_param_process((gx_device_printer *)pdev,
-                               (byte *)"print normal flush", 18);
-                    if (code < 0)   /* we don't need to worry about erasepage with "print" or "flush" */
                         return code;
+                    if ((code = gx_saved_pages_param_process((gx_device_printer *)pdev,
+                               (byte *)"print normal flush", 18)) < 0)
+                        return code;
+                    if (code > 0)
+                        if ((code = gs_erasepage(minst->i_ctx_p->pgs)) < 0)
+                            return code;
                 }
             }
             break;
@@ -525,10 +532,12 @@ run_stdin:
 
                     /* get the current device */
                     pdev = gs_currentdevice(minst->i_ctx_p->pgs);
-                    code = gx_saved_pages_param_process((gx_device_printer *)pdev,
-                               (byte *)"print normal flush", 18);
-                    if (code < 0)   /* we don't need to worry about erasepage with "print" or "flush" */
+                    if ((code = gx_saved_pages_param_process((gx_device_printer *)pdev,
+                               (byte *)"print normal flush", 18)) < 0)
                         return code;
+                    if (code > 0)
+                        if ((code = gs_erasepage(minst->i_ctx_p->pgs)) < 0)
+                            return code;
                 }
             }
             break;
