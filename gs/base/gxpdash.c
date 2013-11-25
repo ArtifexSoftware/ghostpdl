@@ -116,7 +116,12 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 
             zero_length = false;
             dx = udx, dy = udy;	/* scaled as fixed */
-            gs_imager_idtransform(pis, dx, dy, &d);
+            code = gs_imager_idtransform(pis, dx, dy, &d);
+            if (code < 0) {
+                d.x = 0; d.y = 0;
+                /* Swallow the error */
+                code = 0;
+            }
             length = hypot(d.x, d.y) * (1.0 / fixed_1);
             if (gs_imager_currentdashadapt(pis)) {
                 double reps = length / dash->pattern_length;

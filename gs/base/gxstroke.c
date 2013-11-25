@@ -888,14 +888,21 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                     gs_point dpt;       /* unscaled */
                     float wl;
 
-                    gs_imager_idtransform(pis,
-                                          (float)udx, (float)udy, &dpt);
-                    wl = line_width_and_scale /
-                        hypot(dpt.x, dpt.y);
-                    /* Construct the width vector in */
-                    /* user space, still unscaled. */
-                    dpt.x *= wl;
-                    dpt.y *= wl;
+                    code = gs_imager_idtransform(pis,
+                                                 (float)udx, (float)udy,
+                                                 &dpt);
+                    if (code < 0) {
+                        dpt.x = 0; dpt.y = 0;
+                        /* Swallow the error */
+                        code = 0;
+                    } else {
+                        wl = line_width_and_scale /
+                            hypot(dpt.x, dpt.y);
+                        /* Construct the width vector in */
+                        /* user space, still unscaled. */
+                        dpt.x *= wl;
+                        dpt.y *= wl;
+                    }
 
                     /*
                      * We now compute both perpendicular
