@@ -22,6 +22,7 @@
 #include "gsccolor.h"		/* for GS_CLIENT_COLOR_MAX_COMPONENTS */
 #include "gsmatrix.h"
 #include "gsstype.h"		/* for extern_st */
+#include "gxbitmap.h"
 
 /* ---------------- Image parameters ---------------- */
 
@@ -309,8 +310,8 @@ void gs_image_t_init_mask_adjust(gs_image_t * pim, bool write_1s,
  * are guaranteed that align_bitmap_mod is a multiple of 16.
  */
 #define LAND_BITS_MIN 16
-#if LAND_BITS_MIN < align_bitmap_mod
-#define LAND_BITS align_bitmap_mod
+#if LAND_BITS_MIN < (align_bitmap_mod*8)
+#define LAND_BITS (align_bitmap_mod*8)
 #else
 #define LAND_BITS LAND_BITS_MIN
 #endif
