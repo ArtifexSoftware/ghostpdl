@@ -479,7 +479,9 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
                 pl_fapi_passfont(plfont, i, (char *)"UFST", pthnm, NULL, 0);
 
             if (status != 0) {
+#ifdef DEBUG
                 dmprintf1(mem, "CGIFfco_Access error %d\n", status);
+#endif
             } else {
                 int font_number = 0;
                 /* unfortunately agfa has 2 fonts named symbol.  We
@@ -646,14 +648,14 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                                       use_unicode_names_for_keys))) {
         return (code);
     }
+    /* don't load fonts more than once */
+    if (pl_dict_length(pfontdict, true) > 0) {
+        return 1;
+    }
 
     if (pathname == NULL) {
         /* no font pathname */
         return 0;
-    }
-    /* don't load fonts more than once */
-    if (pl_dict_length(pfontdict, true) > 0) {
-        return 1;
     }
 
     /* Enumerate through the files in the path */
