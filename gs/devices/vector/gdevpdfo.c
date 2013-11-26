@@ -1431,9 +1431,11 @@ static int cos_stream_hash(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
     }
     gs_md5_append(md5, (byte *)&pco0->stream_hash, sizeof(pco0->stream_hash));
     if (!pco0->md5_valid) {
+        gs_md5_init((gs_md5_state_t *)&pco0->md5);
         code = cos_dict_hash(pco0, (gs_md5_state_t *)&pco0->md5, (gs_md5_byte_t *)pco0->hash, pdev);
         if (code < 0)
             return code;
+        gs_md5_finish((gs_md5_state_t *)&pco0->md5, (gs_md5_byte_t *)pco0->hash);
         pcs0->md5_valid = 1;
     }
     gs_md5_append(md5, (byte *)&pco0->hash, sizeof(pco0->hash));
@@ -1446,18 +1448,20 @@ cos_stream_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_p
     cos_stream_t *pcs0 = (cos_stream_t *)pco0;
     cos_stream_t *pcs1 = (cos_stream_t *)pco1;
     int code;
+    gs_md5_state_t md5;
+    gs_md5_byte_t hash[16];
+
+    gs_md5_init(&md5);
 
     if (!pco0->stream_md5_valid) {
-        code = cos_stream_hash(pco0, (gs_md5_state_t *)&pco0->md5, (gs_md5_byte_t *)&pco0->stream_hash, pdev);
+        code = cos_stream_hash(pco0, &md5, (gs_md5_byte_t *)hash, pdev);
         if (code < 0)
             return false;
-        pcs0->stream_md5_valid = 1;
     }
     if (!pco1->stream_md5_valid) {
-        code = cos_stream_hash(pco1, (gs_md5_state_t *)&pco1->md5, (gs_md5_byte_t *)&pco1->stream_hash, pdev);
+        code = cos_stream_hash(pco1, &md5, (gs_md5_byte_t *)hash, pdev);
         if (code < 0)
             return false;
-        pcs1->stream_md5_valid = 1;
     }
     if (memcmp(&pcs0->stream_hash, &pcs1->stream_hash, 16) != 0)
         return false;
