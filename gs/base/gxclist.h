@@ -24,6 +24,7 @@
 #include "gxband.h"
 #include "gxbcache.h"
 #include "gxclio.h"
+#include "gxcolor2.h"		/* for pattern1_instance */
 #include "gxdevbuf.h"
 #include "gxistate.h"
 #include "gxrplane.h"
@@ -58,11 +59,6 @@
  * in the buffer and are for the same range; if the answer to any of these
  * questions is negative, we flush the buffer.
  */
-
-#ifndef gs_pattern1_instance_t_DEFINED
-#  define gs_pattern1_instance_t_DEFINED
-typedef struct gs_pattern1_instance_s gs_pattern1_instance_t;
-#endif
 
 /* ---------------- Public structures ---------------- */
 
@@ -130,6 +126,7 @@ typedef struct {
     /*   0 means unused */
     /* reading: offset from cdev->chunk.data */
 } tile_hash;
+
 typedef struct {
     gx_cached_bits_common;
     /* To save space, instead of storing rep_width and rep_height, */
@@ -186,7 +183,6 @@ typedef struct gx_clist_state_s gx_clist_state;
         uint data_size;			/* size of buffer */\
         gx_band_params_t band_params;	/* band buffering parameters */\
         bool do_not_open_or_close_bandfiles;	/* if true, do not open/close bandfiles */\
-        bool page_uses_transparency;	/* if true then page uses PDF 1.4 transparency */\
         int is_printer;                 /* if true, then clist is based on a prn device */\
                 /* Following are used for both writing and reading. */\
         gx_bits_cache_chunk chunk;	/* the only chunk of bits */\
@@ -207,13 +203,7 @@ typedef struct gx_clist_state_s gx_clist_state;
                                            file location. */\
         gsicc_link_cache_t *icc_cache_cl; /* Link cache */\
         int icc_cache_list_len;         /* Length of list of caches, one per rendering thread */\
-        gsicc_link_cache_t **icc_cache_list  /* Link cache list */\
-
-/*
- * Chech whether a clist is used for storing a pattern command stream.
- * Useful for both reader and writer.
- */
-#define IS_CLIST_FOR_PATTERN(cdev) (cdev->procs.open_device == pattern_clist_open_device)
+        gsicc_link_cache_t **icc_cache_list  /* Link cache list */
 
 /* Define a structure to hold where the ICC profiles are stored in the clist
    Profiles are added into psuedo bands of the clist, these are bands that exist beyond
@@ -227,17 +217,14 @@ typedef struct gx_clist_state_s gx_clist_state;
 typedef struct clist_icc_serial_entry_s clist_icc_serial_entry_t;
 
 struct clist_icc_serial_entry_s {
-
     int64_t hashcode;              /* A hash code for the icc profile */
     int64_t file_position;        /* File position in cfile of the profile with header */
     int size;
-
 };
 
 typedef struct clist_icctable_entry_s clist_icctable_entry_t;
 
 struct clist_icctable_entry_s {
-
     clist_icc_serial_entry_t serial_data;
     clist_icctable_entry_t *next;  /* The next entry in the table */
     cmm_profile_t *icc_profile;    /* The profile.  In non-gc memory. This is
@@ -507,6 +494,14 @@ int clist_render_rectangle(gx_device_clist *cdev,
 /* Optimization of PDF 1.4 transparency requires a trans_bbox for each band */
 /* This function updates the clist writer states with the bbox provided. */
 void clist_update_trans_bbox(gx_device_clist_writer *dev, gs_int_rect *bbox);
+
+/* Make a clist device for accumulating. Used for pattern-clist as well as */
+/* for pdf14 pages that are too large to be done in page mode.             */
+gx_device_clist *
+clist_make_accum_device(gx_device *target, const char *dname, void *base, int space,
+                        gx_device_buf_procs_t *buf_procs, gx_band_params_t *band_params,
+                        bool use_memory_clist, bool uses_transparency,
+                        gs_pattern1_instance_t *pinst);
 
 /* Retrieve total size for cfile and bfile. */
 int clist_data_size(const gx_device_clist *cdev, int select);

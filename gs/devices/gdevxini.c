@@ -555,7 +555,7 @@ x_set_buffer(gx_device_X * xdev)
      * buffer is independent of save/restore.
      */
     gs_memory_t *mem = gs_memory_stable(xdev->memory);
-    bool buffered = xdev->MaxBitmap > 0;
+    bool buffered = xdev->space_params.MaxBitmap > 0;
     const gx_device_procs *procs;
 
  setup:
@@ -599,7 +599,7 @@ x_set_buffer(gx_device_X * xdev)
             ulong space;
 
             if (gdev_mem_data_size(mdev, xdev->width, xdev->height, &space) < 0 ||
-                space > xdev->MaxBitmap) {
+                space > xdev->space_params.MaxBitmap) {
                 buffered = false;
                 goto setup;
             }
@@ -777,7 +777,6 @@ gdev_x_get_params(gx_device * dev, gs_param_list * plist)
     if (code < 0 ||
         (code = param_write_long(plist, "WindowID", &id)) < 0 ||
         (code = param_write_bool(plist, ".IsPageDevice", &xdev->IsPageDevice)) < 0 ||
-        (code = param_write_long(plist, "MaxBitmap", &xdev->MaxBitmap)) < 0 ||
         (code = param_write_int(plist, "MaxTempPixmap", &xdev->MaxTempPixmap)) < 0 ||
         (code = param_write_int(plist, "MaxTempImage", &xdev->MaxTempImage)) < 0
         )
@@ -797,6 +796,7 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
      * is_open, width, height, HWResolution, IsPageDevice, Max*.
      */
     gx_device_X values;
+    int orig_MaxBitmap = xdev->space_params.MaxBitmap;
 
     long pwin = (long)xdev->pwin;
     bool save_is_page = xdev->IsPageDevice;
@@ -809,7 +809,6 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 
     ecode = param_put_long(plist, "WindowID", &pwin, ecode);
     ecode = param_put_bool(plist, ".IsPageDevice", &values.IsPageDevice, ecode);
-    ecode = param_put_long(plist, "MaxBitmap", &values.MaxBitmap, ecode);
     ecode = param_put_int(plist, "MaxTempPixmap", &values.MaxTempPixmap, ecode);
     ecode = param_put_int(plist, "MaxTempImage", &values.MaxTempImage, ecode);
 
@@ -909,9 +908,7 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
     xdev->MaxTempPixmap = values.MaxTempPixmap;
     xdev->MaxTempImage = values.MaxTempImage;
     
-    if (clear_window || xdev->MaxBitmap != values.MaxBitmap) {
-        /****** DO MORE FOR RESETTING MaxBitmap ******/
-        xdev->MaxBitmap = values.MaxBitmap;
+    if (clear_window || xdev->space_params.MaxBitmap != orig_MaxBitmap) {
         if (xdev->is_open)
             gdev_x_clear_window(xdev);
     }

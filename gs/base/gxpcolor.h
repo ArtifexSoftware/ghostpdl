@@ -295,6 +295,9 @@ gx_device_forward * gx_pattern_accum_alloc(gs_memory_t * mem,
                        gs_memory_t * stoarge_memory,
                        gs_pattern1_instance_t *pinst, client_name_t cname);
 
+/* Return true if pattern accumulator device (not pattern-clist) */
+bool gx_device_is_pattern_accum(gx_device *dev);
+
 /* Given the size of a new pattern tile, free entries from the cache until  */
 /* enough space is available (or nothing left to free).			    */
 /* This will allow 1 oversized entry					    */
@@ -329,6 +332,9 @@ void gx_pattern_cache_winnow(gx_pattern_cache *,
                              void *);
 
 bool gx_pattern_tile_is_clist(gx_color_tile *ptile);
+
+/* Return true if pattern-clist device (not pattern accumulator) */
+bool gx_device_is_pattern_clist(gx_device *dev);
 
 dev_proc_open_device(pattern_clist_open_device);
 

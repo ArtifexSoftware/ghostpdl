@@ -683,6 +683,38 @@ typedef struct gx_stroked_gradient_recognizer_s {
 typedef struct gx_device_cached_colors_s {
     gx_color_index black, white;
 } gx_device_cached_colors_t;
+
+/*
+ * Define the parameters controlling banding.
+ */
+/* if you make any additions/changes to this structure you need to make
+   the appropriate additions/changes to the compare_gdev_prn_space_params()
+   function in gdevprn.c */
+typedef struct gx_band_params_s {
+    int BandWidth;		/* (optional) band width in pixels */
+    int BandHeight;		/* (optional) */
+    long BandBufferSpace;	/* (optional) */
+} gx_band_params_t;
+
+#define BAND_PARAMS_INITIAL_VALUES 0, 0, 0
+
+typedef enum {
+    BandingAuto = 0,
+    BandingAlways,
+    BandingNever
+} gdev_banding_type;
+
+/* if you make any additions/changes to this structure you need to make
+   the appropriate additions/changes to the compare_gdev_prn_space_params()
+   function in gdevprn.c */
+typedef struct gdev_space_params_s {
+    long MaxBitmap;		/* max size of non-buffered bitmap */
+    long BufferSpace;		/* space to use for buffer */
+    gx_band_params_t band;	/* see gxband.h */
+    bool params_are_read_only;	/* true if put_params may not modify this struct */
+    gdev_banding_type banding_type;	/* used to force banding or bitmap */
+} gdev_space_params;
+
 #define gx_device_common\
         int params_size;		/* OBSOLETE if stype != 0: */\
                                         /* size of this structure */\
@@ -732,6 +764,8 @@ typedef struct gx_device_cached_colors_s {
         long band_offset_y;		/* for rendering that is phase sensitive (old wtsimdi) */\
         gx_stroked_gradient_recognizer_t sgr;\
         int MaxPatternBitmap;		/* Threshold for switching to pattern_clist mode */\
+        bool page_uses_transparency;    /* PDF 1.4 transparency is used. */\
+        gdev_space_params space_params;\
         cmm_dev_profile_t *icc_struct;  /* object dependent profiles */\
         gs_graphics_type_tag_t   graphics_type_tag;   /* e.g. vector, image or text */\
         gx_page_device_procs page_procs;       /* must be last */\

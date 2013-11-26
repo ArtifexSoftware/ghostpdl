@@ -1024,6 +1024,7 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
     }
     gs_imager_state_copied((gs_imager_state *)pgs);
     /* Don't do anything to clip_stack. */
+
     rc_increment(pgs->device);
     *parts.color[0].ccolor    = *pfrom->color[0].ccolor;
     *parts.color[0].dev_color = *pfrom->color[0].dev_color;

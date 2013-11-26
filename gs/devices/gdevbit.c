@@ -254,7 +254,7 @@ const gx_device_bit gs_bitrgbtags_device =
             ( "DeviceRGBT" ),            /* color model name */
             GX_CINFO_OPMODE_UNKNOWN ,   /* overprint mode */
             0,                           /* process comps */
-            0                            /* icc_locations */    
+            0                            /* icc_locations */
         },
         {
             ((gx_color_index)(~0)),
@@ -284,18 +284,24 @@ const gx_device_bit gs_bitrgbtags_device =
          (float)((0) * 72.0),
          (float)((0) * 72.0),
          (float)((0) * 72.0)},
-        0 ,
-        0 ,
-        1 ,
-        0 ,
-        0 ,
-        0 ,
-        0 ,
-        0,
-        0,
-        {false},
-        0,
-        0,
+        0 , /*PAgeCount*/
+        0 , /*ShowPageCount*/
+        1 , /*NumCopies*/
+        0 , /*NumCopiesSet*/
+        0 , /*IgnoreNumCopies*/
+        0 , /*UseCIEColor*/
+        0 , /*LockSafetyParams*/
+        0,  /*band_offset_x*/
+        0,  /*band_offset_*/
+        {false}, /*sgr*/
+        0, /*MaxPatternBitmap*/
+        0, /*page_uses_transparency*/
+        { MAX_BITMAP, BUFFER_SPACE,
+          { BAND_PARAMS_INITIAL_VALUES },
+          0/*false*/, /* params_are_read_only */
+          BandingAuto /* banding_type */
+        }, /*space_params*/
+        0, /*icc_struct*/
         GS_UNKNOWN_TAG,         /* this device supports tags */
         {
             gx_default_install,
@@ -315,12 +321,6 @@ const gx_device_bit gs_bitrgbtags_device =
           gx_default_open_render_device,
           gx_default_close_render_device,
           gx_default_buffer_page },
-        {
-            PRN_MAX_BITMAP,
-            PRN_BUFFER_SPACE,
-            { 0, 0, 0 },
-            0 ,
-            BandingAuto },
         { 0 },
         0 ,
         0 ,

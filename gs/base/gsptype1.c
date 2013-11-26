@@ -2124,8 +2124,6 @@ gx_dc_pattern_read(
                                &inst, "gx_dc_pattern_read");
             if (ptile->cdev == NULL)
                 return_error(gs_error_VMerror);
-            ptile->cdev->common.band_params.page_uses_transparency =
-                                                         !!(buf.flags & TILE_USES_TRANSP);
             ptile->cdev->common.page_uses_transparency = !!(buf.flags & TILE_USES_TRANSP);
             code = dev_proc(&ptile->cdev->writer, open_device)((gx_device *)&ptile->cdev->writer);
             if (code < 0)

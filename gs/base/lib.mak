@@ -513,11 +513,11 @@ gxistate_h=$(GLSRC)gxistate.h\
  $(gscsel_h) $(gsrefct_h) $(gsropt_h) $(gstparam_h) $(gxcvalue_h) $(gxcmap_h)\
  $(gxfixed_h) $(gxline_h) $(gxmatrix_h) $(gxtmap_h) $(gscspace_h) $(gstrans_h)\
  $(gsnamecl_h) $(gscms_h)
-gxclist_h=$(GLSRC)gxclist.h $(gscspace_h)\
- $(gxband_h) $(gxbcache_h) $(gxclio_h) $(gxdevbuf_h) $(gxistate_h)\
- $(gxrplane_h) $(gscms_h)
 gxcolor2_h=$(GLSRC)gxcolor2.h\
  $(gscolor2_h) $(gsmatrix_h) $(gsrefct_h) $(gxbitmap_h)
+gxclist_h=$(GLSRC)gxclist.h $(gscspace_h)\
+ $(gxband_h) $(gxbcache_h) $(gxclio_h) $(gxdevbuf_h) $(gxistate_h)\
+ $(gxrplane_h) $(gscms_h) $(gxcolor2_h)
 gxcspace_h=$(GLSRC)gxcspace.h\
  $(gscspace_h) $(gsccolor_h) $(gscsel_h) $(gxfrac_h) $(gxcindex_h)
 gxht_h=$(GLSRC)gxht.h $(gsht1_h) $(gsrefct_h) $(gxhttype_h) $(gxtmap_h) $(gscspace_h)
@@ -2006,7 +2006,7 @@ $(GLOBJ)gxclist.$(OBJ) : $(GLSRC)gxclist.c $(AK) $(gx_h) $(gserrors_h)\
 	$(GLCC) $(GLO_)gxclist.$(OBJ) $(C_) $(GLSRC)gxclist.c
 
 $(GLOBJ)gxclbits.$(OBJ) : $(GLSRC)gxclbits.c $(AK) $(gx_h)\
- $(gserrors_h) $(memory__h) $(gpcheck_h) $(gdevprn_h)\
+ $(gserrors_h) $(memory__h) $(gpcheck_h) $(gdevprn_h) $(gxpcolor_h)\
  $(gsbitops_h) $(gxcldev_h) $(gxdevice_h) $(gxdevmem_h) $(gxfmap_h)\
  $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxclbits.$(OBJ) $(C_) $(GLSRC)gxclbits.c
@@ -2048,7 +2048,7 @@ $(GLOBJ)gxclrect.$(OBJ) : $(GLSRC)gxclrect.c $(AK) $(gx_h)\
 
 $(GLOBJ)gxclimag.$(OBJ) : $(GLSRC)gxclimag.c $(AK) $(gx_h)\
  $(gserrors_h) $(math__h) $(memory__h) $(string__h) $(gscdefs_h) $(gscspace_h)\
- $(gxarith_h) $(gxcldev_h) $(gxclpath_h) $(gxcspace_h)\
+ $(gxarith_h) $(gxcldev_h) $(gxclpath_h) $(gxcspace_h) $(gxpcolor_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gxfmap_h) $(gxiparam_h) $(gxpath_h)\
  $(sisparam_h) $(stream_h) $(strimpl_h) $(gxcomp_h) $(gsserial_h)\
  $(gxdhtserial_h) $(gsptype1_h) $(gsicc_manage_h) $(gsicc_cache_h)\
@@ -3018,12 +3018,12 @@ $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(AK) $(gx_h) $(gserrors_h)\
  $(math__h) $(memory__h) $(gscdefs_h) $(gxdevice_h) $(gsdevice_h)\
  $(gsstruct_h) $(gscoord_h) $(gxistate_h) $(gxdcolor_h) $(gxiparam_h)\
  $(gstparam_h) $(gxblend_h) $(gxtext_h) $(gsdfilt_h) $(gsimage_h)\
- $(gsrect_h) $(gzstate_h) $(gdevdevn_h) $(gdevp14_h) $(gsovrc_h) $(gxcmap_h)\
+ $(gsrect_h) $(gzstate_h) $(gdevdevn_h) $(gdevp14_h) $(gdevprn_h) $(gsovrc_h) $(gxcmap_h)\
  $(gscolor1_h) $(gstrans_h) $(gsutil_h) $(gxcldev_h) $(gxclpath_h)\
  $(gxdcconv_h) $(vdtrace_h) $(gscolorbuffer_h) $(gsptype2_h) $(gxpcolor_h)\
  $(gsptype1_h) $(gzcpath_h) $(gxpaint_h) $(gsicc_manage_h) $(gxclist_h)\
  $(gxiclass_h) $(gximage_h) $(gsmatrix_h) $(gsicc_cache_h) $(gxdevsop_h)\
- $(gsicc_h) $(MAKEDIRS)
+ $(gsicc_h) $(gdevmem_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevp14.$(OBJ) $(C_) $(GLSRC)gdevp14.c
 
 translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\

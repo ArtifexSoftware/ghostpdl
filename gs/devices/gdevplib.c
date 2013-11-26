@@ -387,14 +387,6 @@ static const gx_device_procs plibk_procs =
            gx_default_close_render_device,\
            gx_default_buffer_page\
          },\
-         { PRN_MAX_BITMAP, PRN_BUFFER_SPACE,\
-             { 0, /* page_uses_transparency */\
-               0, /* Bandwidth */\
-               MINBANDHEIGHT, /* BandHeight */\
-               0 /* BandBufferSpace */},\
-           0/*false*/,  /* params_are_read_only */\
-           BandingAlways        /* banding_type */\
-         },\
          { 0 },         /* fname */\
         0/*false*/,     /* OpenOutputFile */\
         0/*false*/,     /* ReopenPerPage */\

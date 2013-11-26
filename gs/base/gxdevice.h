@@ -63,6 +63,22 @@
 #  define DEFAULT_HEIGHT_10THS DEFAULT_HEIGHT_10THS_US_LETTER
 #endif
 
+/* Define parameters for machines with little dinky RAMs.... */
+#if arch_small_memory
+#   define MAX_BITMAP 32000
+#   define BUFFER_SPACE 25000
+#   define MIN_MEMORY_LEFT 32000
+#else
+#   define MAX_BITMAP 10000000L /* reasonable on most modern hosts */
+#   define BUFFER_SPACE 4000000L
+#   define MIN_MEMORY_LEFT 500000L
+#endif
+#define MIN_BUFFER_SPACE 10000	/* give up if less than this */
+
+#ifndef MaxPatternBitmap_DEFAULT
+#  define MaxPatternBitmap_DEFAULT MAX_BITMAP
+#endif
+
 /* ---------------- Device structure ---------------- */
 
 /*
@@ -104,7 +120,13 @@
 #define std_device_part3_()\
         0/*PageCount*/, 0/*ShowpageCount*/, 1/*NumCopies*/, 0/*NumCopies_set*/,\
         0/*IgnoreNumCopies*/, 0/*UseCIEColor*/, 0/*LockSafetyParams*/,\
-        0/*band_offset_x*/, 0/*band_offset_y*/, {false}/* sgr */, 0/* MaxPatternBitmap */,\
+        0/*band_offset_x*/, 0/*band_offset_y*/, {false}/* sgr */,\
+        0/* MaxPatternBitmap */, 0/*page_uses_transparency*/,\
+        { MAX_BITMAP, BUFFER_SPACE,\
+             { BAND_PARAMS_INITIAL_VALUES },\
+           0/*false*/, /* params_are_read_only */\
+           BandingAuto /* banding_type */\
+        }, /*space_params*/\
         0/*Profile Array*/,\
         0/* graphics_type_tag default GS_UNKNOWN_TAG */,\
         { gx_default_install, gx_default_begin_page, gx_default_end_page }

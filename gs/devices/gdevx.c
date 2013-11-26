@@ -76,7 +76,7 @@ static dev_proc_get_bits_rectangle(x_get_bits_rectangle);
 /*extern dev_proc_get_xfont_procs(gdev_x_finish_copydevice);*/
 
 /* The device descriptor */
-#define x_device(this_device, dev_body, max_bitmap) \
+#define x_device(this_device, dev_body) \
 const gx_device_X this_device = { \
     dev_body, \
     {				/* std_procs */ \
@@ -128,7 +128,6 @@ const gx_device_X this_device = { \
     gx_device_bbox_common_initial(0 /*false*/, 1 /*true*/, 1 /*true*/), \
     0 /*false*/,		/* is_buffered */ \
     1 /*true*/,			/* IsPageDevice */ \
-    max_bitmap,			/* MaxBitmap */ \
     NULL,			/* buffer */ \
     0,				/* buffer_size */ \
     {				/* image */ \
@@ -216,16 +215,14 @@ x_device(gs_x11_device,
                                      FAKE_RES * DEFAULT_WIDTH_10THS / 10,
                                      FAKE_RES * DEFAULT_HEIGHT_10THS / 10,	/* x and y extent (nominal) */
                                      FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
-                                     24, 255, 256 ),
-         0)
+                                     24, 255, 256 ))
 
 x_device(gs_x11alpha_device,
          std_device_dci_alpha_type_body(gx_device_X, 0, "x11alpha", &st_device_X,
                                         FAKE_RES * DEFAULT_WIDTH_10THS / 10,
                                         FAKE_RES * DEFAULT_HEIGHT_10THS / 10,	/* x and y extent (nominal) */
                                         FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
-                                        3, 24, 255, 255, 256, 256, 4, 4 ),
-         50000000)
+                                        3, 24, 255, 255, 256, 256, 4, 4 ))
 
 /* If XPutImage doesn't work, do it ourselves. */
 static int alt_put_image(gx_device * dev, Display * dpy, Drawable win,
@@ -246,7 +243,12 @@ static int
 x_open(gx_device * dev)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
-    int code = gdev_x_open(xdev);
+    int code;
+
+    if (xdev->color_info.anti_alias.text_bits > 1 ||
+        xdev->color_info.anti_alias.graphics_bits > 1)
+        xdev->space_params.MaxBitmap = 50000000;		/* default MaxBitmap when using AA */
+    code = gdev_x_open(xdev);
 
     if (code < 0)
         return code;

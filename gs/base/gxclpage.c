@@ -405,7 +405,7 @@ gx_output_saved_page(gx_device_printer *pdev, gx_saved_page *page)
 {
     int code;
     /* Note that banding_type is NOT a device parameter handled in the paramlist */
-    gdev_prn_banding_type save_banding_type = pdev->space_params.banding_type;
+    gdev_banding_type save_banding_type = pdev->space_params.banding_type;
     gx_device_clist_reader *crdev = (gx_device_clist_reader *)pdev;
 
     pdev->space_params.banding_type = BandingAlways;

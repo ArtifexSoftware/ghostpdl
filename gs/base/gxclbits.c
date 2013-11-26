@@ -25,6 +25,7 @@
 #include "gdevprn.h"            /* for BLS_force_memory */
 #include "gxcldev.h"
 #include "gxfmap.h"
+#include "gxpcolor.h"		/* for gx_device_is_pattern_clist */
 
 /*
  * Define when, if ever, to write character bitmaps in all bands.
@@ -600,7 +601,7 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         int band_index = pcls - cldev->states;
         byte *bptr = ts_mask(loc.tile) + (band_index >> 3);
         byte bmask = 1 << (band_index & 7);
-        bool for_pattern = IS_CLIST_FOR_PATTERN(cldev);
+        bool for_pattern = gx_device_is_pattern_clist((gx_device *)cldev);
 
         if (*bptr & bmask) {	/* Already known.  Just set the index. */
             if (pcls->tile_index == loc.index)

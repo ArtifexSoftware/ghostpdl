@@ -24,6 +24,7 @@
 #include "gscdefs.h"            /* for image type table */
 #include "gxarith.h"
 #include "gxcspace.h"
+#include "gxpcolor.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"           /* must precede gxcldev.h */
 #include "gxcldev.h"
@@ -71,7 +72,6 @@ palette_has_color(const gs_color_space *pcs, const gs_pixel_image_t * const pim)
     int num_entries = 1 << bps;
     int k;
     byte psrc[4];
-    int code;
 
     switch(base_type) {
 
@@ -122,7 +122,7 @@ palette_has_color(const gs_color_space *pcs, const gs_pixel_image_t * const pim)
     }
     /* Now go through the palette with the check color function */
     for (k = 0; k < num_entries; k++) {
-        code = gs_cspace_indexed_lookup_bytes(pcs, (float) k, psrc);
+        (void)gs_cspace_indexed_lookup_bytes(pcs, (float) k, psrc); /* this always returns 0 */
         if (!is_neutral(psrc, 1)) {
             /* Has color end this now */
             return true;
@@ -149,9 +149,7 @@ clist_fill_mask(gx_device * dev,
     int orig_x = rx;            /* ditto */
     int orig_width = rwidth;    /* ditto */
     int orig_height = rheight;  /* ditto */
-    int log2_depth = ilog2(depth);
     int y0;
-    int data_x_bit;
     byte copy_op =
         (depth > 1 ? cmd_op_copy_color_alpha :
          cmd_op_copy_mono_planes + cmd_copy_ht_color);  /* Plane not needed here */
@@ -188,7 +186,6 @@ clist_fill_mask(gx_device * dev,
 
     if (cmd_check_clip_path(cdev, pcpath))
         cmd_clear_known(cdev, clip_path_known);
-    data_x_bit = data_x << log2_depth;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
     /* If needed, update the trans_bbox */
@@ -918,7 +915,7 @@ clist_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
             goto use_default;
     }
     if (pim->Interpolate) {
-        if (strcmp("pattern-clist",dev->dname) == 0)
+        if (gx_device_is_pattern_clist(dev))
             goto use_default;
         pie->support.x = pie->support.y = MAX_ISCALE_SUPPORT + 1;
     } else {
@@ -2188,14 +2185,14 @@ cmd_image_plane_data_mon(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             /* Here we need to unpack and actually look at the image data
                to see if we have any non-neutral colors */
             int pdata_x;
-            byte *data_ptr = planes[0].data + i * planes[0].raster + offsets[0] + offset;
-            byte *buffer = (*pie_c->unpack)(pie_c->buffer, &pdata_x, data_ptr, 0, dsize, pie_c->map,
-                                            pie_c->spread, pie_c->spp);
+            byte *data_ptr =  (byte *)(planes[0].data + i * planes[0].raster + offsets[0] + offset);
+            byte *buffer = (byte *)(*pie_c->unpack)(pie_c->buffer, &pdata_x, data_ptr, 0, dsize, pie_c->map,
+                                                    pie_c->spread, pie_c->spp);
 
             for (plane = 1; plane < pie->num_planes; ++plane) {
                 /* unpack planes after the first (if any), relying on spread to place the */
                 /* data at the correct spacing, with the buffer start adjusted for each plane */
-                data_ptr = planes[plane].data + i * planes[plane].raster + offsets[plane] + offset;
+                data_ptr = (byte *)(planes[plane].data + i * planes[plane].raster + offsets[plane] + offset);
                 (*pie_c->unpack)(pie_c->buffer + (data_size * plane), &pdata_x, data_ptr, 0,
                                  dsize, pie_c->map, pie_c->spread, pie_c->spp);
             }

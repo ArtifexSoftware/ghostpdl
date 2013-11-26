@@ -21,21 +21,6 @@
 
 #include "gxclio.h"
 
-/*
- * Define the parameters controlling banding.
- */
-/* if you make any additions/changes to this structure you need to make
-   the appropriate additions/changes to the compare_gdev_prn_space_params()
-   function in gdevprn.c */
-typedef struct gx_band_params_s {
-    bool page_uses_transparency; /* PDF 1.4 transparency is used on the page */
-    int BandWidth;		/* (optional) band width in pixels */
-    int BandHeight;		/* (optional) */
-    long BandBufferSpace;	/* (optional) */
-} gx_band_params_t;
-
-#define BAND_PARAMS_INITIAL_VALUES 0, 0, 0, 0
-
 /* We hold color usage as a bitfield that needs to be at least as wide as
  * a gx_color_index - so for simplicity define it that way, even though
  * the two are not equal. */

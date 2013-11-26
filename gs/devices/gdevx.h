@@ -41,7 +41,6 @@ typedef struct gx_device_X_s {
      */
     bool is_buffered;
     bool IsPageDevice;
-    long MaxBitmap;
     byte *buffer;		/* full-window image */
     long buffer_size;
 

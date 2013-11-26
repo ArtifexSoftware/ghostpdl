@@ -118,8 +118,8 @@ static int
 check_for_nontrans_pattern(gs_state *pgs, unsigned char *comp_name)
 {
     gx_device * dev = pgs->device;
-    bool is_patt_clist = (strcmp("pattern-clist",dev->dname) == 0);
-    bool is_patt_acum = (strcmp("pattern accumulator",dev->dname) == 0);
+    bool is_patt_clist = gx_device_is_pattern_clist(dev);
+    bool is_patt_acum = gx_device_is_pattern_accum(dev);
 
     /* Check if we are collecting data for a pattern that has no
        transparency.  In that case, we need to ignore the state changes */

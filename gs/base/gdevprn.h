@@ -36,49 +36,32 @@
 
 /*
  * Define the parameters for the printer rendering method.
- * If the entire bitmap fits in PRN_MAX_BITMAP, and there is at least
+ * If the entire bitmap fits in MAX_BITMAP, and there is at least
  * PRN_MIN_MEMORY_LEFT memory left after allocating it, render in RAM,
  * otherwise use a command list with a size of PRN_BUFFER_SPACE.
  * (These are parameters that can be changed by a client program.)
  */
-/* Define parameters for machines with little dinky RAMs.... */
-#define PRN_MAX_BITMAP_SMALL 32000
-#define PRN_BUFFER_SPACE_SMALL 25000
-#define PRN_MIN_MEMORY_LEFT_SMALL 32000
-/* Define parameters for machines with great big hulking RAMs.... */
-#define PRN_MAX_BITMAP_LARGE 10000000L
-#define PRN_BUFFER_SPACE_LARGE 4000000L
-#define PRN_MIN_MEMORY_LEFT_LARGE 500000L
-/* Define parameters valid on all machines. */
-#define PRN_MIN_BUFFER_SPACE 10000	/* give up if less than this */
-/* Now define conditional parameters. */
-#if arch_small_memory
-#  define PRN_MAX_BITMAP PRN_MAX_BITMAP_SMALL
-#  define PRN_BUFFER_SPACE PRN_BUFFER_SPACE_SMALL
-#  define PRN_MIN_MEMORY_LEFT PRN_MIN_MEMORY_LEFT_SMALL
-#else
-/****** These should really be conditional on gs_debug_c('.') if
- ****** DEBUG is defined, but they're used in static initializers,
- ****** so we can't do it.
- ******/
-#  if 0				/****** #  ifdef DEBUG ***** */
-#    define PRN_MAX_BITMAP\
-       (gs_debug_c('.') ? PRN_MAX_BITMAP_SMALL : PRN_MAX_BITMAP_LARGE)
-#    define PRN_BUFFER_SPACE\
-       (gs_debug_c('.') ? PRN_BUFFER_SPACE_SMALL : PRN_BUFFER_SPACE_LARGE)
-#    define PRN_MIN_MEMORY_LEFT\
-       (gs_debug_c('.') ? PRN_MIN_MEMORY_LEFT_SMALL : PRN_MIN_MEMORY_LEFT_LARGE)
-#  else
-#    define PRN_MAX_BITMAP PRN_MAX_BITMAP_LARGE
-#    define PRN_BUFFER_SPACE PRN_BUFFER_SPACE_LARGE
-#    define PRN_MIN_MEMORY_LEFT PRN_MIN_MEMORY_LEFT_LARGE
-#  endif
-#endif
+#define PRN_MAX_BITMAP MAX_BITMAP	/* see gxdevice.h */
+#define PRN_BUFFER_SPACE BUFFER_SPACE	/* see gxdevice.h */
+#define PRN_MIN_MEMORY_LEFT MIN_MEMORY_LEFT	/* see gxdevice.h */
+#define PRN_MIN_BUFFER_SPACE MIN_BUFFER_SPACE	/* see gxdevice.h */
 
 /* Define the abstract type for a printer device. */
 #ifndef gx_device_printer_DEFINED
 #  define gx_device_printer_DEFINED
 typedef struct gx_device_printer_s gx_device_printer;
+#endif
+
+/* Define the abstract type for parameters describing buffer space. */
+#ifndef gdev_prn_space_params_DEFINED
+#  define gdev_prn_space_params_DEFINED
+typedef struct gdev_space_params_s gdev_prn_space_params;
+#endif
+
+/* Define the abstract type for parameters describing buffer space. */
+#ifndef gdev_prn_banding_type_DEFINED
+#  define gdev_prn_banding_type_DEFINED
+typedef struct gdev_banding_type gdev_prn_banding_type;
 #endif
 
 /* Define the abstract type for some band device procedures' arguments. */
@@ -88,12 +71,6 @@ typedef struct gdev_prn_start_render_params_s gdev_prn_start_render_params;
 #ifndef gx_page_queue_DEFINED
 #  define gx_page_queue_DEFINED
 typedef struct gx_page_queue_s gx_page_queue_t;
-#endif
-
-/* Define the abstract type for parameters describing buffer space. */
-#ifndef gdev_prn_space_params_DEFINED
-#  define gdev_prn_space_params_DEFINED
-typedef struct gdev_prn_space_params_s gdev_prn_space_params;
 #endif
 
 /*
@@ -207,23 +184,8 @@ typedef struct gx_printer_device_procs_s {
 /* This must be preceded by gx_device_common. */
 /* Printer devices are actually a union of a memory device */
 /* and a clist device, plus some additional state. */
-#define prn_fname_sizeof gp_file_name_sizeof
-typedef enum {
-    BandingAuto = 0,
-    BandingAlways,
-    BandingNever
-} gdev_prn_banding_type;
 
-/* if you make any additions/changes to this structure you need to make
-   the appropriate additions/changes to the compare_gdev_prn_space_params()
-   function in gdevprn.c */
-struct gdev_prn_space_params_s {
-    long MaxBitmap;		/* max size of non-buffered bitmap */
-    long BufferSpace;		/* space to use for buffer */
-    gx_band_params_t band;	/* see gxband.h */
-    bool params_are_read_only;	/* true if put_params may not modify this struct */
-    gdev_prn_banding_type banding_type;	/* used to force banding or bitmap */
-};
+#define prn_fname_sizeof gp_file_name_sizeof
 
 typedef struct bg_print_s {
     gx_semaphore_t *sema;		/* used by foreground to wait */
@@ -239,13 +201,11 @@ typedef struct bg_print_s {
         gx_printer_device_procs printer_procs;\
                 /* ------ Device parameters that must be set ------ */\
                 /* ------ before calling the device open routine. ------ */\
-        gdev_prn_space_params space_params;\
         char fname[prn_fname_sizeof];	/* OutputFile */\
         bool BLS_force_memory;\
                 /* ------ Other device parameters ------ */\
         bool OpenOutputFile;\
         bool ReopenPerPage;\
-        bool page_uses_transparency; /* PDF 1.4 transparency is used on page */\
         bool Duplex;\
         int Duplex_set;		        /* -1 = not supported */\
                 /* ------ End of parameters ------ */\
@@ -431,16 +391,10 @@ extern const gx_device_procs prn_bg_procs;
            gx_default_close_render_device,\
            gx_default_buffer_page\
          },\
-         { PRN_MAX_BITMAP, PRN_BUFFER_SPACE,\
-             { BAND_PARAMS_INITIAL_VALUES },\
-           0/*false*/,	/* params_are_read_only */\
-           BandingAuto	/* banding_type */\
-         },\
          { 0 },		/* fname */\
         0/*false*/,     /* BLS_force_memory */\
         0/*false*/,	/* OpenOutputFile */\
         0/*false*/,	/* ReopenPerPage */\
-        0/*false*/,	/* page_uses_transparency */\
         0/*false*/, duplex_set,	/* Duplex[_set] */\
         0/*false*/,	/* file_is_new */\
         0,	        /* *file */\

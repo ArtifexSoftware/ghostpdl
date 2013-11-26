@@ -121,7 +121,7 @@ private_st_clist_icctable();
 
 /* Forward declarations of driver procedures */
 dev_proc_open_device(clist_open);
-static dev_proc_output_page(clist_output_page);
+dev_proc_output_page(clist_output_page);
 static dev_proc_close_device(clist_close);
 static dev_proc_get_band(clist_get_band);
 /* Driver procedures defined in other files are declared in gxcldev.h. */
@@ -756,7 +756,7 @@ clist_close(gx_device *dev)
 }
 
 /* The output_page procedure should never be called! */
-static int
+int
 clist_output_page(gx_device * dev, int num_copies, int flush)
 {
     return_error(gs_error_Fatal);
@@ -1369,4 +1369,87 @@ clist_put_data(const gx_device_clist *cdev, int select, int64_t offset, const by
     /* This assumes that fwrite_chars doesn't return prematurely
        when the buffer is not fully written, except with an error. */
     return pinfo->io_procs->fwrite_chars(buf, length, pfile);
+}
+
+gx_device_clist *
+clist_make_accum_device(gx_device *target, const char *dname, void *base, int space,
+                        gx_device_buf_procs_t *buf_procs, gx_band_params_t *band_params,
+                        bool use_memory_clist, bool uses_transparency,
+                        gs_pattern1_instance_t *pinst)
+{
+        gs_memory_t *mem = target->memory;
+        gx_device_clist *cdev = gs_alloc_struct(mem, gx_device_clist,
+                        &st_device_clist, "clist_make_accum_device");
+        gx_device_clist_writer *cwdev = (gx_device_clist_writer *)cdev;
+
+        if (cdev == 0)
+            return 0;
+        memset(cdev, 0, sizeof(*cdev));
+        cwdev->params_size = sizeof(gx_device_clist);
+        cwdev->static_procs = NULL;
+        cwdev->dname = dname;
+        cwdev->memory = mem;
+        cwdev->stype = &st_device_clist;
+        cwdev->stype_is_dynamic = false;
+        rc_init(cwdev, mem, 1);
+        cwdev->retained = true;
+        cwdev->is_open = false;
+        cwdev->color_info = target->color_info;
+        cwdev->pinst = pinst;
+        cwdev->cached_colors = target->cached_colors;
+        if (pinst != NULL) {
+            cwdev->width = pinst->size.x;
+            cwdev->height = pinst->size.y;
+            cwdev->band_params.BandHeight = pinst->size.y;
+        } else {
+            cwdev->width = target->width;
+            cwdev->height = target->height;
+        }
+        cwdev->LeadingEdge = target->LeadingEdge;
+        cwdev->is_planar = target->is_planar;
+        cwdev->HWResolution[0] = target->HWResolution[0];
+        cwdev->HWResolution[1] = target->HWResolution[1];
+        cwdev->icc_cache_cl = NULL;
+        cwdev->icc_table = NULL;
+        cwdev->UseCIEColor = target->UseCIEColor;
+        cwdev->LockSafetyParams = true;
+        cwdev->procs = gs_clist_device_procs;
+        gx_device_copy_color_params((gx_device *)cwdev, target);
+        rc_assign(cwdev->target, target, "clist_make_accum_device");
+        clist_init_io_procs(cdev, use_memory_clist);
+        cwdev->data = base;
+        cwdev->data_size = space;
+        memcpy (&(cwdev->buf_procs), buf_procs, sizeof(gx_device_buf_procs_t));
+        cwdev->page_uses_transparency = uses_transparency;
+        cwdev->band_params.BandWidth = cwdev->width;
+        cwdev->band_params.BandBufferSpace = 0;
+        cwdev->do_not_open_or_close_bandfiles = false;
+        cwdev->bandlist_memory = mem->non_gc_memory;
+        set_dev_proc(cwdev, get_clipping_box, gx_default_get_clipping_box);
+        set_dev_proc(cwdev, get_profile, gx_forward_get_profile);
+        set_dev_proc(cwdev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
+        cwdev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
+
+        /* to be set by caller: cwdev->finalize = finalize; */
+
+        /* Fields left zeroed :
+            int   max_fill_band;
+            int   is_printer;
+            float MediaSize[2];
+            float ImagingBBox[4];
+            bool  ImagingBBox_set;
+            float MarginsHWResolution[2];
+            float Margins[2];
+            float HWMargins[4];
+            long  PageCount;
+            long  ShowpageCount;
+            int   NumCopies;
+            bool  NumCopies_set;
+            bool  IgnoreNumCopies;
+            int   disable_mask;
+            gx_page_device_procs page_procs;
+            proc_free_up_bandlist_memory *free_up_bandlist_memory;
+
+        */
+        return cdev;
 }

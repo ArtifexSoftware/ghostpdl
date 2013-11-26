@@ -687,7 +687,7 @@ in:                             /* Initialize for a new page. */
                     case cmd_opv_set_tile_size:
                         cbuf.ptr = cbp;
                         code = read_set_tile_size(&cbuf, &tile_bits,
-                                    IS_CLIST_FOR_PATTERN(cdev));
+                                    gx_device_is_pattern_clist((gx_device *)cdev));
                         cbp = cbuf.ptr;
                         if (code < 0)
                             goto out;

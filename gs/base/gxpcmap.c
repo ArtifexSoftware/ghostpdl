@@ -179,12 +179,6 @@ static const gx_device_pattern_accum gs_pattern_accum_device =
  0, 0, 0, 0                     /* bitmap_memory, bits, mask, instance */
 };
 
-static int
-dummy_free_up_bandlist_memory(gx_device *cldev, bool b)
-{
-    return 0;
-}
-
 int
 pattern_clist_open_device(gx_device *dev)
 {
@@ -234,14 +228,20 @@ gx_pattern_size_estimate(gs_pattern1_instance_t *pinst, int has_tags)
     return (int)size;
 }
 
-#ifndef MaxPatternBitmap_DEFAULT
-#  define MaxPatternBitmap_DEFAULT (8*1024*1024) /* reasonable on most modern hosts */
-#endif
-
 static void gx_pattern_accum_finalize_cw(gx_device * dev)
 {
     gx_device_clist_writer *cwdev = (gx_device_clist_writer *)dev;
     rc_decrement_only(cwdev->target, "gx_pattern_accum_finalize_cw");
+}
+
+bool gx_device_is_pattern_accum(gx_device *dev)
+{
+    return dev->procs.open_device == pattern_accum_open;
+}
+
+bool gx_device_is_pattern_clist(gx_device *dev)
+{
+    return dev->procs.open_device == pattern_clist_open_device;
 }
 
 /* Allocate a pattern accumulator, with an initial refct of 0. */
@@ -296,98 +296,30 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     } else {
         gx_device_buf_procs_t buf_procs = {dummy_create_buf_device,
         dummy_size_buf_device, dummy_setup_buf_device, dummy_destroy_buf_device};
-        gx_device_clist *cdev = gs_alloc_struct(mem, gx_device_clist,
-                        &st_device_clist, cname);
-        gx_device_clist_writer *cwdev = (gx_device_clist_writer *)cdev;
+        gx_device_clist *cdev;
+        gx_device_clist_writer *cwdev;
         const int data_size = 1024*32;
-        byte *data;
+        gx_band_params_t band_params = { 0 };
+        byte *data  = gs_alloc_bytes(storage_memory->non_gc_memory, data_size, cname);
 
-        if (cdev == 0)
+        if (data == NULL)
             return 0;
-        /* We're not shure how big area do we need here.
-           Definitely we need 1 state in 'states'.
-           Not sure whether we need to create tile_cache, etc..
-           Note it is allocated in non-gc memory,
-           because the garbager descriptor for
-           gx_device_clist do not enumerate 'data'
-           and its subfields, assuming they do not relocate.
-           We place command list files to non-gc memory
-           due to same reason.
-         */
-        data = gs_alloc_bytes(storage_memory->non_gc_memory, data_size, cname);
-        if (data == NULL) {
-            gs_free_object(mem, cdev, cname);
-            return 0;
-        }
         pinst->is_clist = true;
-        memset(cdev, 0, sizeof(*cdev));
-        cwdev->params_size = sizeof(gx_device_clist);
-        cwdev->static_procs = NULL;
-        cwdev->dname = "pattern-clist";
-        cwdev->memory = mem;
-        cwdev->stype = &st_device_clist;
-        cwdev->stype_is_dynamic = false;
-        cwdev->finalize = gx_pattern_accum_finalize_cw;
-        rc_init(cwdev, mem, 1);
-        cwdev->retained = true;
-        cwdev->is_open = false;
-        cwdev->max_fill_band = 0;
-        cwdev->color_info = tdev->color_info;
-        cwdev->cached_colors = tdev->cached_colors;
-        cwdev->width = pinst->size.x;
-        cwdev->height = pinst->size.y;
-        cwdev->LeadingEdge = tdev->LeadingEdge;
-        cwdev->is_planar = pinst->is_planar;
-        cwdev->is_printer = 0;
-        /* Fields left zeroed :
-        float MediaSize[2];
-        float ImagingBBox[4];
-        bool ImagingBBox_set;
-        */
-        cwdev->HWResolution[0] = tdev->HWResolution[0];
-        cwdev->HWResolution[1] = tdev->HWResolution[1];
-        /* Fields left zeroed :
-        float MarginsHWResolution[2];
-        float Margins[2];
-        float HWMargins[4];
-        long PageCount;
-        long ShowpageCount;
-        int NumCopies;
-        bool NumCopies_set;
-        bool IgnoreNumCopies;
-        */
-        cwdev->icc_cache_cl = NULL;
-        cwdev->icc_table = NULL;
-        cwdev->UseCIEColor = tdev->UseCIEColor;
-        cwdev->LockSafetyParams = true;
-        /* gx_page_device_procs page_procs; */
-        cwdev->procs = gs_clist_device_procs;
-        cwdev->procs.open_device = pattern_clist_open_device;
-        gx_device_copy_color_params((gx_device *)cwdev, tdev);
-        rc_assign(cwdev->target, tdev, "gx_pattern_accum_alloc");
-        clist_init_io_procs(cdev, true);
-        cwdev->data = data;
-        cwdev->data_size = data_size;
-        cwdev->buf_procs = buf_procs;
-        if ( pinst->templat.uses_transparency) {
-            cwdev->band_params.page_uses_transparency = true;
-            cwdev->page_uses_transparency = true;
-        } else {
-            cwdev->band_params.page_uses_transparency = false;
-            cwdev->page_uses_transparency = false;
+        /* NB: band_params.page_uses_transparency is set in clist_make_accum_device */
+        band_params.BandWidth = pinst->size.x;
+        band_params.BandHeight = pinst->size.y;
+        band_params.BandBufferSpace = 0;
+
+        cdev = clist_make_accum_device(tdev, "pattern-clist", data, data_size,
+                                       &buf_procs, &band_params, true, /* use_memory_clist */
+                                       pinst->templat.uses_transparency, pinst);
+        if (cdev == 0) {
+            gs_free_object(storage_memory->non_gc_memory, data, cname);
+            return 0;
         }
-        cwdev->band_params.BandWidth = pinst->size.x;
-        cwdev->band_params.BandHeight = pinst->size.y;
-        cwdev->band_params.BandBufferSpace = 0;
-        cwdev->do_not_open_or_close_bandfiles = false;
-        cwdev->bandlist_memory = storage_memory->non_gc_memory;
-        cwdev->free_up_bandlist_memory = dummy_free_up_bandlist_memory;
-        cwdev->disable_mask = 0;
-        cwdev->pinst = pinst;
-        set_dev_proc(cwdev, get_clipping_box, gx_default_get_clipping_box);
-        set_dev_proc(cwdev, get_profile, gx_forward_get_profile);
-        set_dev_proc(cwdev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
-        cwdev->graphics_type_tag = tdev->graphics_type_tag;	/* initialize to same as target */
+        cwdev = (gx_device_clist_writer *)cdev;
+        cwdev->finalize = gx_pattern_accum_finalize_cw;
+        cwdev->procs.open_device = pattern_clist_open_device;
         fdev = (gx_device_forward *)cdev;
     }
     fdev->log2_align_mod = tdev->log2_align_mod;

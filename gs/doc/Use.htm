@@ -3337,6 +3337,13 @@ For raster printers and image format (jpeg*, tiff*, png* ...) devices,
 performance can be 'tuned' by adjusting some of the parameters related
 to banding (clist) options (refer to: <a href="Language.htm#Banding_parameters">
 Banding Parameters</a>).
+<p>
+All devices may use a display list ("clist") and use banding when processing
+PDF 1.4 transparency. This prevents allocation of excessively large amounts of
+memory for the transparency buffer stack. The <code>-dMaxBitmap=</code> option
+is used to control when to use the display list, and the other banding parameters
+mentioned above control the band size.
+
 <p>In general, page buffer mode is faster than banded/clist mode (a full page
 buffer is used when <code>-dMaxBitmap=#</code> is large enough for the entire
 raster image) since there is no need to write, then interpret the clist data.
@@ -3642,8 +3649,6 @@ identifiable garbage values
 <dt><code>+</code><dd>use minimum-size stack blocks
 <dt><code>,</code><dd>don't use path-based banding
 <dt><code>`</code><dd>don't use high-level banded images
-<dt><code>.</code><dd>use small-memory table sizes even on large-memory
-machines
 <dt><code>?</code><dd>validate pointers before, during and after garbage
 collection, also before and after save and restore; also make other
 allocator validity checks

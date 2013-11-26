@@ -567,18 +567,12 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
     gs_param_string saved_pages;
 
     if (code < 0 ||
-        (code = param_write_long(plist, "BandBufferSpace", &ppdev->space_params.band.BandBufferSpace)) < 0 ||
-        (code = param_write_int(plist, "BandHeight", &ppdev->space_params.band.BandHeight)) < 0 ||
-        (code = param_write_int(plist, "BandWidth", &ppdev->space_params.band.BandWidth)) < 0 ||
-        (code = param_write_long(plist, "BufferSpace", &ppdev->space_params.BufferSpace)) < 0 ||
         (ppdev->Duplex_set >= 0 &&
         (code = (ppdev->Duplex_set ?
                   param_write_bool(plist, "Duplex", &ppdev->Duplex) :
                   param_write_null(plist, "Duplex"))) < 0) ||
-        (code = param_write_long(plist, "MaxBitmap", &ppdev->space_params.MaxBitmap)) < 0 ||
         (code = param_write_int(plist, "NumRenderingThreads", &ppdev->num_render_threads_requested)) < 0 ||
         (code = param_write_bool(plist, "OpenOutputFile", &ppdev->OpenOutputFile)) < 0 ||
-        (code = param_write_bool(plist, "PageUsesTransparency", &ppdev->page_uses_transparency)) < 0 ||
         (code = param_write_bool(plist, "BGPrint", &ppdev->bg_print_requested)) < 0 ||
         (code = param_write_bool(plist, "ReopenPerPage", &ppdev->ReopenPerPage)) < 0
         )
@@ -635,7 +629,6 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     bool is_open = pdev->is_open;
     bool oof = ppdev->OpenOutputFile;
     bool rpp = ppdev->ReopenPerPage;
-    bool page_uses_transparency = ppdev->page_uses_transparency;
     bool old_page_uses_transparency = ppdev->page_uses_transparency;
     bool bg_print_requested = ppdev->bg_print_requested;
     bool duplex;
@@ -643,15 +636,14 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     int width = pdev->width;
     int height = pdev->height;
     int nthreads = ppdev->num_render_threads_requested;
-    gdev_prn_space_params sp, save_sp;
+    gdev_prn_space_params save_sp;
     gs_param_string ofs;
     gs_param_string bls;
     gs_param_dict mdict;
     gs_param_string saved_pages;
 
     memset(&saved_pages, 0, sizeof(gs_param_string));
-    sp = ppdev->space_params;
-    save_sp = sp;
+    save_sp = ppdev->space_params;
 
     switch (code = param_read_bool(plist, (param_name = "OpenOutputFile"), &oof)) {
         default:
@@ -663,16 +655,6 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     }
 
     switch (code = param_read_bool(plist, (param_name = "ReopenPerPage"), &rpp)) {
-        default:
-            ecode = code;
-            param_signal_error(plist, param_name, ecode);
-        case 0:
-        case 1:
-            break;
-    }
-
-    switch (code = param_read_bool(plist, (param_name = "PageUsesTransparency"),
-                                                        &page_uses_transparency)) {
         default:
             ecode = code;
             param_signal_error(plist, param_name, ecode);
@@ -697,40 +679,6 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
             case 1:
                 ;
         }
-#define CHECK_PARAM_CASES(member, bad, label)\
-    case 0:\
-        if ((sp.params_are_read_only ? sp.member != save_sp.member : bad))\
-            ecode = gs_error_rangecheck;\
-        else\
-            break;\
-        goto label;\
-    default:\
-        ecode = code;\
-label:\
-        param_signal_error(plist, param_name, ecode);\
-    case 1:\
-        break
-
-    switch (code = param_read_long(plist, (param_name = "MaxBitmap"), &sp.MaxBitmap)) {
-        CHECK_PARAM_CASES(MaxBitmap, sp.MaxBitmap < 0, mbe);
-    }
-
-    switch (code = param_read_long(plist, (param_name = "BufferSpace"), &sp.BufferSpace)) {
-        CHECK_PARAM_CASES(BufferSpace, sp.BufferSpace < 10000, bse);
-    }
-
-    switch (code = param_read_int(plist, (param_name = "BandWidth"), &sp.band.BandWidth)) {
-        CHECK_PARAM_CASES(band.BandWidth, sp.band.BandWidth < 0, bwe);
-    }
-
-    switch (code = param_read_int(plist, (param_name = "BandHeight"), &sp.band.BandHeight)) {
-        CHECK_PARAM_CASES(band.BandHeight, sp.band.BandHeight < 0, bhe);
-    }
-
-    switch (code = param_read_long(plist, (param_name = "BandBufferSpace"), &sp.band.BandBufferSpace)) {
-        CHECK_PARAM_CASES(band.BandBufferSpace, sp.band.BandBufferSpace < 0, bbse);
-    }
-
     switch (code = param_read_string(plist, (param_name = "BandListStorage"), &bls)) {
         case 0:
             /* Only accept 'file' if the file procs are include in the build */
@@ -825,13 +773,11 @@ label:\
 
     ppdev->OpenOutputFile = oof;
     ppdev->ReopenPerPage = rpp;
-    ppdev->page_uses_transparency = page_uses_transparency;
     ppdev->bg_print_requested = bg_print_requested;
     if (duplex_set >= 0) {
         ppdev->Duplex = duplex;
         ppdev->Duplex_set = duplex_set;
     }
-    ppdev->space_params = sp;
     ppdev->num_render_threads_requested = nthreads;
     if (bls.data != 0) {
         ppdev->BLS_force_memory = (bls.data[0] == 'm');
@@ -1606,8 +1552,6 @@ compare_gdev_prn_space_params(const gdev_prn_space_params sp1,
   if (sp1.MaxBitmap != sp2.MaxBitmap)
     return(1);
   if (sp1.BufferSpace != sp2.BufferSpace)
-    return(1);
-  if (sp1.band.page_uses_transparency != sp2.band.page_uses_transparency)
     return(1);
   if (sp1.band.BandWidth != sp2.band.BandWidth)
     return(1);
