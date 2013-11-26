@@ -919,12 +919,6 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
     return code;
 }
 
-static int
-nocheck(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
-{
-    return 1;
-}
-
 /* Write a PatternType 2 (shading pattern) color. */
 int
 pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
@@ -975,6 +969,13 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
             /* We won't use this shading, we fall back because we couldn't write it */
             psres->where_used = 0;
     }
+    if (psres->where_used) {
+        code = pdf_substitute_resource(pdev, &psres, resourceShading, NULL, false);
+        if (code < 0)
+            return code;
+        psco = psres->object;
+        psres->where_used |= pdev->used_mask;
+    }
     /*
      * In PDF, the Matrix is the transformation from the pattern space to
      * the *default* user coordinate space, not the current space.
@@ -1000,6 +1001,12 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
         /****** ExtGState ******/
         )
         return code;
+    code = pdf_substitute_resource(pdev, &pres, resourcePattern, NULL, false);
+    if (code < 0)
+        return code;
+    pres->where_used |= pdev->used_mask;
+    *ppres = pres;
+
     cos_value_write(&v, pdev);
     pprints1(pdev->strm, " %s\n", ppscc->setcolorspace);
     return code1;
