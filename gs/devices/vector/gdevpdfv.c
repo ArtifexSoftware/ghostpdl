@@ -929,7 +929,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
         (gs_pattern2_instance_t *)pdc->ccolor.pattern;
     const gs_shading_t *psh = pinst->templat.Shading;
     cos_value_t v;
-    pdf_resource_t *pres, *pres1;
+    pdf_resource_t *pres;
     pdf_resource_t *psres;
     cos_dict_t *pcd;
     cos_object_t *psco;
@@ -943,7 +943,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     code = pdf_alloc_resource(pdev, resourcePattern, gs_no_id, ppres, 0L);
     if (code < 0)
         return code;
-    pres1 = pres = *ppres;
+    pres = *ppres;
     cos_become(pres->object, cos_type_dict);
     pcd = (cos_dict_t *)pres->object;
     code = pdf_alloc_resource(pdev, resourceShading, gs_no_id, &psres, 0L);
