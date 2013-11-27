@@ -3630,6 +3630,17 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
                 margins[0], margins[1], margins[2], margins[3]);
 #endif /* CUPS_DEBUG */
     }
+    else
+    {
+      /* If we do not have a PPD file, make sure that margins given via the
+	 input file or via something like
+	 "-c '<</.HWMargins[12 12 12 12] /Margins[0 0]>>setpagedevice'"
+	 on the command line are conserved */
+      margins[0] = pdev->HWMargins[0] / 72.0;
+      margins[1] = pdev->HWMargins[1] / 72.0;
+      margins[2] = pdev->HWMargins[2] / 72.0;
+      margins[3] = pdev->HWMargins[3] / 72.0;
+    }
 
    /*
     * Set the margins to update the bitmap size...
@@ -3733,85 +3744,125 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     cups->header.cupsPageSize[0] = pdev->MediaSize[1];
     cups->header.cupsPageSize[1] = pdev->MediaSize[0];
 
-    cups->header.cupsImagingBBox[0] = pdev->HWMargins[1];
-    cups->header.cupsImagingBBox[1] = pdev->HWMargins[2];
-    cups->header.cupsImagingBBox[2] = pdev->MediaSize[1] - pdev->HWMargins[3];
-    cups->header.cupsImagingBBox[3] = pdev->MediaSize[0] - pdev->HWMargins[0];
-
     if ((sf = cups->header.cupsBorderlessScalingFactor) < 1.0)
       sf = 1.0;
 
-    cups->header.Margins[0] = pdev->HWMargins[1] * sf;
-    cups->header.Margins[1] = pdev->HWMargins[2] * sf;
+    cups->header.PageSize[0] = (pdev->MediaSize[1] * sf) + 0.5;
+    cups->header.PageSize[1] = (pdev->MediaSize[0] * sf) + 0.5;
 
-    cups->header.PageSize[0] = pdev->MediaSize[1] * sf;
-    cups->header.PageSize[1] = pdev->MediaSize[0] * sf;
-
-    cups->header.ImagingBoundingBox[0] = pdev->HWMargins[1] * sf;
-    cups->header.ImagingBoundingBox[1] = pdev->HWMargins[2] * sf;
-    cups->header.ImagingBoundingBox[2] = (pdev->MediaSize[1] -
-					  pdev->HWMargins[3]) * sf;
-    cups->header.ImagingBoundingBox[3] = (pdev->MediaSize[0] -
-					  pdev->HWMargins[0]) * sf;
+    if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
+    {
+      cups->header.Margins[0] = (pdev->HWMargins[1] * sf) + 0.5;
+      cups->header.Margins[1] = (pdev->HWMargins[2] * sf) + 0.5;
+      cups->header.ImagingBoundingBox[0] = (pdev->HWMargins[1] * sf) + 0.5;
+      cups->header.ImagingBoundingBox[1] = (pdev->HWMargins[2] * sf) + 0.5;
+      cups->header.ImagingBoundingBox[2] = ((pdev->MediaSize[1] -
+					     pdev->HWMargins[3]) * sf) + 0.5;
+      cups->header.ImagingBoundingBox[3] = ((pdev->MediaSize[0] -
+					     pdev->HWMargins[0]) * sf) + 0.5;
+      cups->header.cupsImagingBBox[0] = pdev->HWMargins[1];
+      cups->header.cupsImagingBBox[1] = pdev->HWMargins[2];
+      cups->header.cupsImagingBBox[2] = pdev->MediaSize[1] - pdev->HWMargins[3];
+      cups->header.cupsImagingBBox[3] = pdev->MediaSize[0] - pdev->HWMargins[0];
+    }
+    else
+    {
+      for (i = 0; i < 2; i ++)
+	cups->header.Margins[i] = 0;
+      for (i = 0; i < 4; i ++)
+      {
+	cups->header.ImagingBoundingBox[i] = 0;
+	cups->header.cupsImagingBBox[i] = 0.0;
+      }
+    }
   }
   else
   {
     cups->header.cupsPageSize[0] = pdev->MediaSize[0];
     cups->header.cupsPageSize[1] = pdev->MediaSize[1];
 
-    cups->header.cupsImagingBBox[0] = pdev->HWMargins[0];
-    cups->header.cupsImagingBBox[1] = pdev->HWMargins[1];
-    cups->header.cupsImagingBBox[2] = pdev->MediaSize[0] - pdev->HWMargins[2];
-    cups->header.cupsImagingBBox[3] = pdev->MediaSize[1] - pdev->HWMargins[3];
-
     if ((sf = cups->header.cupsBorderlessScalingFactor) < 1.0)
       sf = 1.0;
 
-    cups->header.Margins[0] = pdev->HWMargins[0] * sf;
-    cups->header.Margins[1] = pdev->HWMargins[1] * sf;
+    cups->header.PageSize[0] = (pdev->MediaSize[0] * sf) + 0.5;
+    cups->header.PageSize[1] = (pdev->MediaSize[1] * sf) + 0.5;
 
-    cups->header.PageSize[0] = pdev->MediaSize[0] * sf;
-    cups->header.PageSize[1] = pdev->MediaSize[1] * sf;
-
-    cups->header.ImagingBoundingBox[0] = pdev->HWMargins[0] * sf;
-    cups->header.ImagingBoundingBox[1] = pdev->HWMargins[1] * sf;
-    cups->header.ImagingBoundingBox[2] = (pdev->MediaSize[0] -
-					  pdev->HWMargins[2]) * sf;
-    cups->header.ImagingBoundingBox[3] = (pdev->MediaSize[1] -
-					  pdev->HWMargins[3]) * sf;
+    if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
+    {
+      cups->header.Margins[0] = (pdev->HWMargins[0] * sf) + 0.5;
+      cups->header.Margins[1] = (pdev->HWMargins[1] * sf) + 0.5;
+      cups->header.ImagingBoundingBox[0] = (pdev->HWMargins[0] * sf) + 0.5;
+      cups->header.ImagingBoundingBox[1] = (pdev->HWMargins[1] * sf) + 0.5;
+      cups->header.ImagingBoundingBox[2] = ((pdev->MediaSize[0] -
+					     pdev->HWMargins[2]) * sf) + 0.5;
+      cups->header.ImagingBoundingBox[3] = ((pdev->MediaSize[1] -
+					     pdev->HWMargins[3]) * sf) + 0.5;
+      cups->header.cupsImagingBBox[0] = pdev->HWMargins[0];
+      cups->header.cupsImagingBBox[1] = pdev->HWMargins[1];
+      cups->header.cupsImagingBBox[2] = pdev->MediaSize[0] - pdev->HWMargins[2];
+      cups->header.cupsImagingBBox[3] = pdev->MediaSize[1] - pdev->HWMargins[3];
+    }
+    else
+    {
+      for (i = 0; i < 2; i ++)
+	cups->header.Margins[i] = 0;
+      for (i = 0; i < 4; i ++)
+      {
+	cups->header.ImagingBoundingBox[i] = 0;
+	cups->header.cupsImagingBBox[i] = 0.0;
+      }
+    }
   }
 
 #else
 
   if (cups->landscape)
   {
-    cups->header.Margins[0] = pdev->HWMargins[1];
-    cups->header.Margins[1] = pdev->HWMargins[2];
+    cups->header.PageSize[0] = pdev->MediaSize[1] + 0.5;
+    cups->header.PageSize[1] = pdev->MediaSize[0] + 0.5;
 
-    cups->header.PageSize[0] = pdev->MediaSize[1];
-    cups->header.PageSize[1] = pdev->MediaSize[0];
-
-    cups->header.ImagingBoundingBox[0] = pdev->HWMargins[1];
-    cups->header.ImagingBoundingBox[1] = pdev->HWMargins[0];
-    cups->header.ImagingBoundingBox[2] = pdev->MediaSize[1] -
-                                         pdev->HWMargins[3];
-    cups->header.ImagingBoundingBox[3] = pdev->MediaSize[0] -
-                                         pdev->HWMargins[2];
+    if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
+    {
+      cups->header.Margins[0] = (pdev->HWMargins[1]) + 0.5;
+      cups->header.Margins[1] = (pdev->HWMargins[2]) + 0.5;
+      cups->header.ImagingBoundingBox[0] = (pdev->HWMargins[1]) + 0.5;
+      cups->header.ImagingBoundingBox[1] = (pdev->HWMargins[0]) + 0.5;
+      cups->header.ImagingBoundingBox[2] = (pdev->MediaSize[1] -
+					    pdev->HWMargins[3]) + 0.5;
+      cups->header.ImagingBoundingBox[3] = (pdev->MediaSize[0] -
+					    pdev->HWMargins[2]) + 0.5;
+    }
+    else
+    {
+      for (i = 0; i < 2; i ++)
+	cups->header.Margins[i] = 0;
+      for (i = 0; i < 4; i ++)
+	cups->header.ImagingBoundingBox[i] = 0;
+    }
   }
   else
   {
-    cups->header.Margins[0] = pdev->HWMargins[0];
-    cups->header.Margins[1] = pdev->HWMargins[1];
+    cups->header.PageSize[0] = pdev->MediaSize[0] + 0.5;
+    cups->header.PageSize[1] = pdev->MediaSize[1] + 0.5;
 
-    cups->header.PageSize[0] = pdev->MediaSize[0];
-    cups->header.PageSize[1] = pdev->MediaSize[1];
-
-    cups->header.ImagingBoundingBox[0] = pdev->HWMargins[0];
-    cups->header.ImagingBoundingBox[1] = pdev->HWMargins[3];
-    cups->header.ImagingBoundingBox[2] = pdev->MediaSize[0] -
-                                         pdev->HWMargins[2];
-    cups->header.ImagingBoundingBox[3] = pdev->MediaSize[1] -
-                                         pdev->HWMargins[1];
+    if (strcasecmp(cups->header.MediaClass, "PwgRaster") != 0)
+    {
+      cups->header.Margins[0] = (pdev->HWMargins[0]) + 0.5;
+      cups->header.Margins[1] = (pdev->HWMargins[1]) + 0.5;
+      cups->header.ImagingBoundingBox[0] = (pdev->HWMargins[0]) + 0.5;
+      cups->header.ImagingBoundingBox[1] = (pdev->HWMargins[3]) + 0.5;
+      cups->header.ImagingBoundingBox[2] = (pdev->MediaSize[0] -
+					    pdev->HWMargins[2]) + 0.5;
+      cups->header.ImagingBoundingBox[3] = (pdev->MediaSize[1] -
+					    pdev->HWMargins[1]) + 0.5;
+    }
+    else
+    {
+      for (i = 0; i < 2; i ++)
+	cups->header.Margins[i] = 0;
+      for (i = 0; i < 4; i ++)
+	cups->header.ImagingBoundingBox[i] = 0;
+    }
   }
 
 #endif /* CUPS_RASTER_SYNCv1 */
