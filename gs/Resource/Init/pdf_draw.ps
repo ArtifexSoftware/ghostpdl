@@ -2358,18 +2358,23 @@ end
                 % Stack: scalex scaley annot appearance true
                 % Stack: scalex scaley annot false
     {
+      dup type /dicttype eq {
                 % Draw appearance
                 % Initialize graphic following "7.4.4 Appearance Streams"
-      q graphicsbeginpage textbeginpage
-      1 index annotrect pop pop translate
-      3 index 3 index scale	% Apply scale factors
-      dup /BBox knownoget {
-        1 index /Matrix knownoget not { {1 0 0 1 0 0} } if
-        .bbox_transform pop pop
-        % Compensate for non-zero origin of BBox
-        neg exch neg exch translate
-      } if
-      DoForm Q
+        q graphicsbeginpage textbeginpage
+        1 index annotrect pop pop translate
+        3 index 3 index scale	% Apply scale factors
+        dup /BBox knownoget {
+          1 index /Matrix knownoget not { {1 0 0 1 0 0} } if
+          .bbox_transform pop pop
+          % Compensate for non-zero origin of BBox
+          neg exch neg exch translate
+        } if
+        DoForm Q
+      } {
+        (   **** Annotation's appearance is not a dictionary.\n)
+        pdfformaterror
+      } ifelse
     } if
   } {
     dup /MK knownoget {    % mk
