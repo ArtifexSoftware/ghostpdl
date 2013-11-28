@@ -952,8 +952,9 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
         break;
       case 2:
       default:
-        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 	    "symbol dictionary specified invalid huffman table");
+        goto cleanup; /* Jump direct to cleanup to avoid 2 errors being given */
     }
     if (params.SDHUFFDW == NULL)
     {
