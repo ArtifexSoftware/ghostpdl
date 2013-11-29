@@ -1835,6 +1835,7 @@ txtwrite_process_cmap_text(gs_text_enum_t *pte)
                         penum->cdevproc_callout ? penum->cdevproc_result : NULL);
                 if (code == TEXT_PROCESS_CDEVPROC) {
                     penum->cdevproc_callout = true;
+                    pte->returned.current_glyph = glyph;
                     scan.returned.current_glyph = glyph;
                     pte->current_font = subfont;
                     scan.current_font = subfont;
