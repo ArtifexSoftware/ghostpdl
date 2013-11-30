@@ -156,6 +156,9 @@ typedef struct stream_Bicubic_state_s {
     byte *data;
 } stream_Bicubic_state;
 
+#define private_st_Bicubic_state()	/* in gdevpsds.c */\
+  gs_private_st_ptrs1(st_Bicubic_state, stream_Bicubic_state,\
+    "stream_Bicubic_state", bcb_enum_ptrs, bcb_reloc_ptrs, data)
 extern const stream_template s_Bicubic_template;
 
 /* ---------------- Image compression chooser ---------------- */

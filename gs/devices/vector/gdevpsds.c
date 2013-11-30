@@ -819,8 +819,7 @@ const stream_template s_Average_template = {
 
 /* ------ Bicubic ------ */
 
-gs_private_st_simple(st_Bicubic_state, stream_Bicubic_state,
-                     "stream_Bicubic_state");
+private_st_Bicubic_state();
 
 /* Set default parameter values (actually, just clear pointers). */
 static void
