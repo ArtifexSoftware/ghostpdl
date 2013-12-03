@@ -21,6 +21,7 @@
 #include "ierrors.h"
 #include "gscdefs.h"
 #include "gstypes.h"
+#include "gdebug.h"
 #include "iapi.h"	/* Public API */
 #include "iref.h"
 #include "iminst.h"
@@ -143,6 +144,16 @@ gsapi_delete_instance(void *lib)
     if ((ctx != NULL)) {
         gs_main_instance *minst = get_minst_from_memory(ctx->memory);
 
+        /* Use gs_debug['a'] if gs_debug[':'] is set to dump the heap stats */
+        if (gs_debug[':']) {
+            void *temp;
+            char save_debug_a = gs_debug['a'];
+
+            gs_debug['a'] = 1;
+            temp = (char *)gs_alloc_bytes_immovable(ctx->memory, 8, "gsapi_delete_instance");
+            gs_debug['a'] = save_debug_a;
+            gs_free_object(ctx->memory, temp, "gsapi_delete_instance");
+        }
         ctx->caller_handle = NULL;
         ctx->stdin_fn = NULL;
         ctx->stdout_fn = NULL;
