@@ -1920,6 +1920,11 @@ pdfmark_SP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     pdf_put_matrix(pdev, "q ", pctm, "cm");
     pprintld1(pdev->strm, "/R%ld Do Q\n", pco->id);
     pco->pres->where_used |= pdev->used_mask;
+
+    code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pco->pres);
+    if (code < 0)
+        return code;
+
     return 0;
 }
 
