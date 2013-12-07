@@ -188,6 +188,8 @@ currentdict /TTYPAUSE known   /TTYPAUSE exch def
 currentdict /WRITESYSTEMDICT known   /WRITESYSTEMDICT exch def
 currentdict /RENDERTTNOTDEF known /RENDERTTNOTDEF exch def
 
+% We rely on PSFitPage to actually implement EPSFitPage
+currentdict /EPSFitPage known { /PSFitPage //true def } if
 % This is a "convenience" option that sets a combination of EPSFitPage, PDFFitPage and PSFitPage
 currentdict /FitPage known { /EPSFitPage //true def /PDFFitPage //true def /PSFitPage //true def } if
 
