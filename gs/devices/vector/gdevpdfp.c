@@ -622,19 +622,19 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
             }
         }
     }
-    if (cl < 1.5 && pdev->params.ColorImage.Filter != NULL &&
+    if (cl < 1.5f && pdev->params.ColorImage.Filter != NULL &&
             !strcmp(pdev->params.ColorImage.Filter, "JPXEncode")) {
         emprintf(pdev->memory,
                  "JPXEncode requires CompatibilityLevel >= 1.5 .\n");
         ecode = gs_note_error(gs_error_rangecheck);
     }
-    if (cl < 1.5 && pdev->params.GrayImage.Filter != NULL &&
+    if (cl < 1.5f && pdev->params.GrayImage.Filter != NULL &&
             !strcmp(pdev->params.GrayImage.Filter, "JPXEncode")) {
         emprintf(pdev->memory,
                  "JPXEncode requires CompatibilityLevel >= 1.5 .\n");
         ecode = gs_note_error(gs_error_rangecheck);
     }
-    if (cl < 1.4  && pdev->params.MonoImage.Filter != NULL &&
+    if (cl < 1.4f && pdev->params.MonoImage.Filter != NULL &&
             !strcmp(pdev->params.MonoImage.Filter, "JBIG2Encode")) {
         emprintf(pdev->memory,
                  "JBIG2Encode requires CompatibilityLevel >= 1.4 .\n");
