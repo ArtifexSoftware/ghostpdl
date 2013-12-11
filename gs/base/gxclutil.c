@@ -178,7 +178,7 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
         cb.band_min = band_min;
         cb.band_max = band_max;
         cb.pos = cldev->page_info.io_procs->ftell(cfile);
-        if_debug3m('l', cldev->memory, "[l]writing for bands (%d,%d) at %ld K %d \n",
+        if_debug3m('l', cldev->memory, "[l]writing for bands (%d,%d) at %ld\n",
                   band_min, band_max, (long)cb.pos);
         cldev->page_info.io_procs->fwrite_chars(&cb, sizeof(cb), bfile);
         if (cp != 0) {
