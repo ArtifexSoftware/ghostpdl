@@ -1774,7 +1774,15 @@ currentdict /CMap_read_dict undef
             % if the above fails, try just using the CIDFallBack font directly
             stopped
             {
-              pop pop
+              pop
+              % First, since it didn't work, remove the entry from the CIDFont category
+              % .map dictionary.
+              currentglobal exch
+              /CIDFont /Category findresource /.map get
+              dup gcheck setglobal
+              exch undef
+              setglobal
+
               (Warning: falling back to Identity ordering\n) print flush
               /CIDFallBack /CIDFont findresource
             } if

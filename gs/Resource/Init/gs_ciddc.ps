@@ -180,7 +180,8 @@ begin
   /.MakeInstance    % <name> .MakeInstance <inst>
   { dup                                              % /Name /Name
     //.CMapChooser exch .knownget not {
-      (Can't build /) print =string cvs print ( /CIDDecoding resource. See gs_ciddc.ps . ) =
+      (Can't build /) print =string cvs print
+      ( /CIDDecoding resource. See gs_ciddc.ps . ) = flush
       /findresource cvx /undefinedresource signalerror
     } if                                             % /Name [CMaps]
     exch pop                                         % [CMaps]
@@ -189,7 +190,8 @@ begin
     3 2 roll {                                       % <CMapCategory> <PCI> /CMapName
       3 2 roll begin                                 % <PCI> /CMapName
       dup .ResourceFile not {
-        (Can't find CMap ) print =string cvs print ( building a CIDDecoding resource. ) =
+        (Can't find CMap ) print =string cvs print
+        ( building a CIDDecoding resource. ) = flush
         /findresource cvx /undefinedresource signalerror
       } if
       currentdict end exch                           % <PCI> /CMapName <CMapCategory> file
