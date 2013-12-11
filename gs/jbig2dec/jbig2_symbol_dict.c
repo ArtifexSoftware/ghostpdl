@@ -1049,9 +1049,19 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   params.SDNUMNEWSYMS = jbig2_get_uint32(segment_data + offset + 4);
   offset += 8;
 
-  jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
-	      "symbol dictionary, flags=%04x, %u exported syms, %u new syms",
-	      flags, params.SDNUMEXSYMS, params.SDNUMNEWSYMS);
+  if (params.SDNUMEXSYMS == 0 || params.SDNUMNEWSYMS == 0)
+  {
+    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+      "empty symbol dictionary, flags=%04x, %u exported syms, %u new syms",
+      flags, params.SDNUMEXSYMS, params.SDNUMNEWSYMS);
+    goto cleanup;
+  }
+  else
+  {
+    jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
+      "symbol dictionary, flags=%04x, %u exported syms, %u new syms",
+      flags, params.SDNUMEXSYMS, params.SDNUMNEWSYMS);
+  }
 
   /* 7.4.2.2 (2) */
   {
