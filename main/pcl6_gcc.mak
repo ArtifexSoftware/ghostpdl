@@ -226,7 +226,7 @@ PCLXL_ROMFS_ARGS=$(PCLXL_URW_ROMFS_ARGS)
 HAVE_STDINT_H_DEFINE?=-DHAVE_STDINT_H
 HAVE_NO_STRICT_ALIASING_WARNING?=-Wno-strict-aliasing
 
-GCFLAGS?=-Wall -Wundef -Wstrict-prototypes -Wmissing-declarations \
+GCFLAGS?=$(ACCFLAGS) -Wall -Wundef -Wstrict-prototypes -Wmissing-declarations \
          -Wmissing-prototypes -Wpointer-arith \
          -Wwrite-strings $(HAVE_NO_STRICT_ALIASING_WARNING) \
          -fno-builtin -fno-common $(CONFDEFS) \
