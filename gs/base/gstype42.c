@@ -238,6 +238,8 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
             pfont->data.trueNumGlyphs = U16(maxp + 4);
             pfont->data.maxPoints = U16(maxp + 6);
             pfont->data.maxContours = U16(maxp + 8);
+            pfont->data.maxCPoints = U16(maxp + 12);
+            pfont->data.maxCContours = U16(maxp + 16);
         } else if (!memcmp(tab, "name", 4)) {
             pfont->data.name_offset = offset;
         } else if (!memcmp(tab, "vhea", 4)) {

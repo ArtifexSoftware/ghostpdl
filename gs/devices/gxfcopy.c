@@ -1462,6 +1462,10 @@ same_maxp_values(gs_font_type42 *font0, gs_font_type42 *font1)
         return 0;
     if (d0->maxContours < d1->maxContours)
         return 0;
+    if (d0->maxCPoints < d1->maxCPoints)
+        return 0;
+    if (d0->maxCContours < d1->maxCContours)
+        return 0;
     return 1;
 }
 

@@ -110,6 +110,8 @@ struct gs_type42_data_s {
     uint trueNumGlyphs;		/* from maxp */
     uint maxPoints;         /* from maxp (used by pdfwrite) */
     uint maxContours;       /* from maxp (used by pdfwrite) */
+    uint maxCPoints;        /* from maxp (used by pdfwrite) */
+    uint maxCContours;      /* from maxp (used by pdfwrite) */
     uint *len_glyphs;		/* built from the loca table */
     gs_glyph_cache *gdcache;
     bool warning_patented;
