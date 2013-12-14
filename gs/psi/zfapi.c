@@ -1529,7 +1529,7 @@ zFAPIrebuildfont(i_ctx_t *i_ctx_p)
         strncpy((char *)FAPI_ID, (const char *)pchars, len);
         FAPI_ID[len] = 0;
 
-        gs_fapi_set_servers_client_data(imemory, NULL, i_ctx_p);
+        gs_fapi_set_servers_client_data(imemory, &ps_ff_stub, i_ctx_p);
 
         code =
             gs_fapi_find_server(imemory, FAPI_ID,
