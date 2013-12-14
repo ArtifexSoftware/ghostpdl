@@ -1473,7 +1473,7 @@ mark
       } ifelse
     } for exch pop
                 % If there is no .notdef entry, map it to glyph 0.
-  dup /.notdef known not { dup /.notdef 0 put } if
+  dup /.notdef~GS known not { dup /.notdef~GS 0 put } if
   TTFDEBUG {
     (CharStrings:)= dup { exch =string cvs print ( ) print //== exec } forall
   } if
@@ -1829,7 +1829,7 @@ currentdict /postalias undef
     pop
   } forall
 
-  dup /.notdef 0 put
+  dup /.notdef~GS 0 put
 
 } bind def
 
@@ -1936,6 +1936,14 @@ currentdict /postalias undef
         /Encoding
         prebuilt_encoding //null ne {
           prebuilt_encoding
+          % Replace /.notdef with something we can recognise internally and elide the hollow rectangle notdef
+          [ exch
+            {
+              dup /.notdef eq {
+                pop /.notdef~GS
+              } if
+            } forall
+          ]
         } {
           /MacRomanEncodingForTrueType .findencoding
         } ifelse

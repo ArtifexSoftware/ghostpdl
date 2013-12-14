@@ -1156,9 +1156,7 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
         /* We should only render the TT notdef if we've been told to - logic lifted from zchar42.c */
         if (!i_ctx_p->RenderTTNotdef
             &&
-            ((ff->char_data_len == 7
-              && strncmp((const char *)ff->char_data, ".notdef", 7) == 0)
-             || (ff->char_data_len > 9
+            ((ff->char_data_len > 9
                  && strncmp((const char *)ff->char_data, ".notdef~GS",
                             10) == 0))) {
             glyph_length = 0;
