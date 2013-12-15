@@ -13,21 +13,21 @@
 # CA  94903, U.S.A., +1(415)492-9861, for further information.
 #
 
-all: pcl xps svg ls-product
+all: pcl xps svg
 
-all-lib: pcl-lib xps-lib svg-lib ls-lib
+all-lib: pcl-lib xps-lib svg-lib
 
-debug: pcl-debug xps-debug svg-debug ls-debug
+debug: pcl-debug xps-debug svg-debug
 
-memento: pcl-memento xps-memento svg-memento ls-memento
+memento: pcl-memento xps-memento svg-memento
 
-clean: pcl-clean xps-clean svg-clean ls-clean
+clean: pcl-clean xps-clean svg-clean
 
-debug-clean: pcl-debug-clean xps-debug-clean svg-debug-clean ls-debug-clean
+debug-clean: pcl-debug-clean xps-debug-clean svg-debug-clean
 
-memento-clean: pcl-memento-clean xps-memento-clean svg-memento-clean ls-memento-clean
+memento-clean: pcl-memento-clean xps-memento-clean svg-memento-clean
 
-test: pcl-test ls-test xps-test svg-test
+test: pcl-test xps-test svg-test
 
 # only pcl has an install target at this point
 install: pcl-install
