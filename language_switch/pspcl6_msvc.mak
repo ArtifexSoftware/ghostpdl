@@ -142,9 +142,17 @@ DD=$(GLGENDIR)
 
 
 # Executable path\name w/o the .EXE extension
+!if "$(UNSUPPORTED)"=="1"
 !ifndef TARGET_XE
 TARGET_XE=$(GENDIR)\pspcl6
 !endif
+!else
+all:
+	@echo ******* NOTE: the language_switch build is a proof of concept and is, therefore, unsupported.
+	@echo ******* If you wish to try it, add UNSUPPORTED=1 to your nmake command line.
+!endif
+
+
 !ifndef PSI_TOP_OBJ
 PSI_TOP_OBJ=$(PSIOBJDIR)\psitop.$(OBJ)
 !endif

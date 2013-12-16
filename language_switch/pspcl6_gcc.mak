@@ -52,7 +52,13 @@ ZOBJDIR?=$(GENDIR)
 PSD?=$(GENDIR)/
 
 # Executable path\name w/o the .EXE extension
+ifeq ("$(UNSUPPORTED)", "1")
 TARGET_XE?=$(GENDIR)/pspcl6
+else
+$(info ****** NOTE: The language_switch build is a proof of concept and therefore is unsupported.)
+$(info ****** If you wish to try it, add UNSUPPORTED=1 to your make command line.)
+$(error )
+endif
 
 # Main file's name
 PSI_TOP_OBJ?=$(PSIOBJDIR)/psitop.$(OBJ)
