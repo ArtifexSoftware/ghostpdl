@@ -1447,6 +1447,7 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
     bool is_inverting = false;
     int num_repeat, shift;
     int row_kk, col_kk, kk;
+    int off;
 
     /* We can have simple or complete orders.  Simple ones tile the threshold
        with shifts.   To handle those we simply loop over the number of 
@@ -1505,6 +1506,9 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
     hsize = d_order->num_levels;
     nshades = hsize * max_value + 1;
 
+    off = 128 / d_order->num_levels;
+    if (d_order->num_levels < 128)
+        init_value -= off-1;
     for( i = 0; i < d_order->num_bits; i++ ) {
         thresh[i] = init_value;
     }
@@ -1513,17 +1517,14 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
     while (l < d_order->num_levels) {
         /* If we have some dots to turn on then proceed */
         if (d_order->levels[l] > d_order->levels[prev_l]) {
-            t_level = (256 * l) / d_order->num_levels;
+            t_level = (256 * l) / d_order->num_levels - off;
             t_level_adjust = byte2frac(t_level) * nshades / (frac_1_long + 1);
             delta = t_level_adjust - t_level;
+            t_level -= delta_sum;
             if (delta > delta_sum) {
                 /* We had a change in our value.  We need to do some adjustments.
-                   This particular level stays were it is and subsequent ones
-                   will be offset by delta_sum. */
-                t_level -= delta_sum;
+                   Subsequent levels ones will be offset by delta_sum. */
                 delta_sum += delta;
-            } else {
-                t_level -= delta_sum;
             }
             /* If needed, map through the inverse of the transfer function */
             if (have_transfer) {
