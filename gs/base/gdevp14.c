@@ -2408,7 +2408,7 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                     if (overprint) {
                         if (blendspot) {
                             /* Overprint simulation of spot colorants */
-                            for (k = 0; k < num_comp; ++i) {
+                            for (k = 0; k < num_comp; ++k) {
                                 int temp = 
                                     (255 - dst_ptr[k * planestride]) * dst[k];
                                 temp = temp >> 8;
