@@ -457,6 +457,8 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
         max(font->u.simple.s.type3.FontBBox.q.y, y_offset + h);
     font->u.simple.s.type3.max_y_offset =
         max(font->u.simple.s.type3.max_y_offset, h + (h >> 2));
+    pcp->real_width.x = w;
+    pcp->real_width.y = y_offset + h;
     *ppcp = pcp;
     return 0;
 }
@@ -532,6 +534,7 @@ pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
     values.render_mode = 0;
     values.word_spacing = 0;
     pdf_set_text_state_values(pdev, &values);
+    pdf_bitmap_char_update_bbox(pdev, pcp->x_offset, pcp->y_offset, pcp->real_width.x, pcp->real_width.y);
     pdf_append_chars(pdev, &ch, 1, pdfont->Widths[ch] * pimat->xx, 0.0, false);
     return 0;
 }

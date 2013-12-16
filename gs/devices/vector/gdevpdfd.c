@@ -51,6 +51,36 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
     int code;
 
+    if (pdev->Eps2Write) {
+        float x0, y0, x1, y1;
+        gs_rect *Box;
+
+        if (!pdev->accumulating_charproc) {
+            Box = &pdev->BBox;
+            x0 = x / (pdev->HWResolution[0] / 72.0);
+            y0 = y / (pdev->HWResolution[1] / 72.0);
+            x1 = x0 + (w / (pdev->HWResolution[0] / 72.0));
+            y1 = y0 + (h / (pdev->HWResolution[1] / 72.0));
+        }
+        else {
+            Box = &pdev->charproc_BBox;
+            x0 = x / 100;
+            y0 = y / 100;
+            x1 = x0 + (w / 100);
+            y1 = y0 + (h / 100);
+        }
+
+        if (Box->p.x > x0)
+            Box->p.x = x0;
+        if (Box->p.y > y0)
+            Box->p.y = y0;
+        if (Box->q.x < x1)
+            Box->q.x = x1;
+        if (Box->q.y < y1)
+            Box->q.y = y1;
+        if (pdev->AccumulatingBBox)
+            return 0;
+    }
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
         return code;
@@ -1052,6 +1082,15 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
     bool have_path;
     gs_fixed_rect box = {{0, 0}, {0, 0}}, box1;
 
+    if (pdev->Eps2Write) {
+        pdev->AccumulatingBBox++;
+        code = gx_default_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
+        pdev->AccumulatingBBox--;
+        if (code < 0)
+            return code;
+        if (pdev->AccumulatingBBox)
+            return 0;
+    }
     have_path = !gx_path_is_void(ppath);
     if (!have_path && !pdev->vg_initial_set) {
         /* See lib/gs_pdfwr.ps about "initial graphic state". */
@@ -1382,6 +1421,14 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     s = pdev->strm;
     stream_puts(s, (code ? "s" : "S"));
     stream_puts(s, (set_ctm ? " Q\n" : "\n"));
+    if (pdev->Eps2Write) {
+        pdev->AccumulatingBBox++;
+        code = gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
+                                      pcpath);
+        pdev->AccumulatingBBox--;
+        if (code < 0)
+            return code;
+    }
     return 0;
 }
 
@@ -1428,6 +1475,23 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
                 fixed2float(box1.q.x - box1.p.x) / scale, fixed2float(box1.q.y - box1.p.y) / scale);
         if (psmat)
             stream_puts(pdev->strm, "Q\n");
+        if (pdev->Eps2Write) {
+            gs_rect *Box;
+
+            if (!pdev->accumulating_charproc)
+                Box = &pdev->BBox;
+            else
+                Box = &pdev->charproc_BBox;
+
+            if (fixed2float(box1.p.x) / (pdev->HWResolution[0] / 72.0) < Box->p.x)
+                Box->p.x = fixed2float(box1.p.x) / (pdev->HWResolution[0] / 72.0);
+            if (fixed2float(box1.p.y) / (pdev->HWResolution[1] / 72.0) < Box->p.y)
+                Box->p.y = fixed2float(box1.p.y) / (pdev->HWResolution[1] / 72.0);
+            if (fixed2float(box1.q.x) / (pdev->HWResolution[0] / 72.0) > Box->q.x)
+                Box->q.x = fixed2float(box1.q.x) / (pdev->HWResolution[0] / 72.0) - Box->p.x;
+            if (fixed2float(box1.q.y) / (pdev->HWResolution[1] / 72.0) > Box->q.y)
+                Box->q.y = fixed2float(box1.q.y) / (pdev->HWResolution[1] / 72.0) - Box->p.y;
+		}
         return 0;
     } else {
         gx_fill_params params;

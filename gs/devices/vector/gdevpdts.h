@@ -119,6 +119,7 @@ int pdf_text_distance_transform(floatp wx, floatp wy,
  */
 void pdf_text_position(const gx_device_pdf *pdev, gs_point *ppt);
 
+int pdf_bitmap_char_update_bbox(gx_device_pdf * pdev,int x_offset, int y_offset, double x, double y);
 /*
  * Append characters to text being accumulated, giving their advance width
  * in device space.

@@ -403,7 +403,10 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
         int code, status, cre_date_time_len;
         char BBox[256];
 
-        stream_write(s, (byte *)"%!PS-Adobe-3.0\n", 15);
+        if (pdev->Eps2Write)
+            stream_write(s, (byte *)"%!PS-Adobe-3.0 EPSF-3.0\n", 24);
+        else
+            stream_write(s, (byte *)"%!PS-Adobe-3.0\n", 15);
         /* We need to calculate the document BoundingBox which is a 'high water'
          * mark derived from the BoundingBox of all the individual pages.
          */
@@ -425,9 +428,15 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
                         pagecount++;
                     }
             }
-            gs_sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", (int)urx, (int)ury);
+            if (!pdev->Eps2Write || pdev->BBox.p.x > pdev->BBox.q.x || pdev->BBox.p.y > pdev->BBox.q.y)
+                gs_sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", (int)urx, (int)ury);
+            else
+                gs_sprintf(BBox, "%%%%BoundingBox: %d %d %d %d\n", (int)floor(pdev->BBox.p.x), (int)floor(pdev->BBox.p.y), (int)ceil(pdev->BBox.q.x), (int)ceil(pdev->BBox.q.y));
             stream_write(s, (byte *)BBox, strlen(BBox));
-            gs_sprintf(BBox, "%%%%HiResBoundingBox: 0 0 %.2f %.2f\n", urx, ury);
+            if (!pdev->Eps2Write || pdev->BBox.p.x > pdev->BBox.q.x || pdev->BBox.p.y > pdev->BBox.q.y)
+                gs_sprintf(BBox, "%%%%HiResBoundingBox: 0 0 %.2f %.2f\n", urx, ury);
+            else
+                gs_sprintf(BBox, "%%%%HiResBoundingBox: %.2f %.2f %.2f %.2f\n", pdev->BBox.p.x, pdev->BBox.p.y, pdev->BBox.q.x, pdev->BBox.q.y);
             stream_write(s, (byte *)BBox, strlen(BBox));
         }
         cre_date_time_len = pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time) - 1);
@@ -460,7 +469,13 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
                 return code;
         }
         stream_puts(s, "/DSC_OPDFREAD true def\n");
-        stream_puts(s, "/SetPageSize true def\n");
+        if (pdev->Eps2Write) {
+            stream_puts(s, "/SetPageSize false def\n");
+            stream_puts(s, "/EPS2Write true def\n");
+        } else {
+            stream_puts(s, "/SetPageSize true def\n");
+            stream_puts(s, "/EPS2Write false def\n");
+        }
 
         code = copy_procsets(s, pdev->HaveTrueTypes, false);
         if (code < 0)
@@ -1655,7 +1670,6 @@ void
 pdf_copy_data(stream *s, FILE *file, gs_offset_t count, stream_arcfour_state *ss)
 {
     gs_offset_t r, left = count;
-    long code;
     byte buf[sbuf_size];
 
     while (left > 0) {
@@ -1663,7 +1677,7 @@ pdf_copy_data(stream *s, FILE *file, gs_offset_t count, stream_arcfour_state *ss
 
         r = fread(buf, 1, copy, file);
         if (r < 1) {
-            code = gs_note_error(gs_error_ioerror);
+            gs_note_error(gs_error_ioerror);
             return;
         }
         if (ss)
@@ -1678,7 +1692,7 @@ pdf_copy_data(stream *s, FILE *file, gs_offset_t count, stream_arcfour_state *ss
 void
 pdf_copy_data_safe(stream *s, FILE *file, gs_offset_t position, long count)
 {
-    long r, left = count, code;
+    long r, left = count;
 
     while (left > 0) {
         byte buf[sbuf_size];
@@ -1688,7 +1702,7 @@ pdf_copy_data_safe(stream *s, FILE *file, gs_offset_t position, long count)
         gp_fseek_64(file, position + count - left, SEEK_SET);
         r = fread(buf, 1, copy, file);
         if (r < 1) {
-            code = gs_note_error(gs_error_ioerror);
+            gs_note_error(gs_error_ioerror);
             return;
         }
         gp_fseek_64(file, end_pos, SEEK_SET);

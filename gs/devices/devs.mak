@@ -842,6 +842,12 @@ $(DD)ps2write.dev : $(DEVS_MAK) $(DD)pdfwrite.dev $(GDEV)
 	$(SETDEV2) $(DD)ps2write
 	$(ADDMOD) $(DD)ps2write -include $(DD)pdfwrite.dev
 
+# Since eps2write actually is a clone of pdfwrite,
+# we just depend on it.
+$(DD)eps2write.dev : $(DEVS_MAK) $(DD)pdfwrite.dev $(GDEV)
+	$(SETDEV2) $(DD)eps2write
+	$(ADDMOD) $(DD)eps2write -include $(DD)pdfwrite.dev
+
 # Note that for ps2pdf operation, we need to parse DSC comments to set
 # the Orientation (Page dict /Rotate value). This is not part of the
 # pdfwrite device, but part of the PS interpreter so that the pdfwrite

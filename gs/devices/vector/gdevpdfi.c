@@ -37,6 +37,7 @@
 #include "gxdevsop.h"
 #include "gsicc_manage.h"
 #include "gsform1.h"
+#include "gxpath.h"
 
 /* Forward references */
 static image_enum_proc_plane_data(pdf_image_plane_data);
@@ -1724,6 +1725,74 @@ new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
         (is_mask && pim->CombineWithColor))
         use_fallback = 1;
 
+    if (pdev->Eps2Write) {
+        gs_rect sbox, dbox, *Box;
+        gs_point corners[4];
+        gs_fixed_rect ibox;
+        gs_matrix * pmat1 = (gs_matrix *)pmat;
+        gs_matrix mat;
+
+        if (!pdev->accumulating_charproc)
+            Box = &pdev->BBox;
+        else
+            Box = &pdev->charproc_BBox;
+        if (pmat1 == 0)
+            pmat1 = (gs_matrix *)&ctm_only(pis);
+        if ((code = gs_matrix_invert(&pic->ImageMatrix, &mat)) < 0 ||
+            (code = gs_matrix_multiply(&mat, pmat1, &mat)) < 0)
+            return code;
+        sbox.p.x = rect.p.x;
+        sbox.p.y = rect.p.y;
+        sbox.q.x = rect.q.x;
+        sbox.q.y = rect.q.y;
+        gs_bbox_transform_only(&sbox, &mat, corners);
+        gs_points_bbox(corners, &dbox);
+        ibox.p.x = float2fixed(dbox.p.x);
+        ibox.p.y = float2fixed(dbox.p.y);
+        ibox.q.x = float2fixed(dbox.q.x);
+        ibox.q.y = float2fixed(dbox.q.y);
+        if (pcpath != NULL &&
+            !gx_cpath_includes_rectangle(pcpath, ibox.p.x, ibox.p.y,
+            ibox.q.x, ibox.q.y)
+            ) {
+            /* Let the target do the drawing, but drive two triangles */
+            /* through the clipping path to get an accurate bounding box. */
+            gx_device_clip cdev;
+            gx_drawing_color devc;
+
+            fixed x0 = float2fixed(corners[0].x), y0 = float2fixed(corners[0].y);
+            fixed bx2 = float2fixed(corners[2].x) - x0, by2 = float2fixed(corners[2].y) - y0;
+
+            pdev->AccumulatingBBox++;
+            gx_make_clip_device_on_stack(&cdev, pcpath, (gx_device *)pdev);
+            set_nonclient_dev_color(&devc, gx_device_black((gx_device *)pdev));  /* any non-white color will do */
+            gx_default_fill_triangle((gx_device *) & cdev, x0, y0,
+                float2fixed(corners[1].x) - x0,
+                float2fixed(corners[1].y) - y0,
+                bx2, by2, &devc, lop_default);
+            gx_default_fill_triangle((gx_device *) & cdev, x0, y0,
+                float2fixed(corners[3].x) - x0,
+                float2fixed(corners[3].y) - y0,
+                bx2, by2, &devc, lop_default);
+            pdev->AccumulatingBBox--;
+        } else {
+            /* Just use the bounding box. */
+            float x0, y0, x1, y1;
+            x0 = fixed2float(ibox.p.x) / (pdev->HWResolution[0] / 72.0);
+            y0 = fixed2float(ibox.p.y) / (pdev->HWResolution[1] / 72.0);
+            x1 = fixed2float(ibox.q.x) / (pdev->HWResolution[0] / 72.0);
+            y1 = fixed2float(ibox.q.y) / (pdev->HWResolution[1] / 72.0);
+            if (Box->p.x > x0)
+                Box->p.x = x0;
+            if (Box->p.y > y0)
+                Box->p.y = y0;
+            if (Box->q.x < x1)
+                Box->q.x = x1;
+            if (Box->q.y < y1)
+                Box->q.y = y1;
+        }
+    }
+
     if (use_fallback) {
         gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
                                               "pdf_begin_typed_image(image)");
@@ -2169,6 +2238,7 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
 {
     pdf_image_enum *pie = (pdf_image_enum *) info;
     int i;
+
     for (i = 0; i < pie->writer.alt_writer_count; i++) {
         int code = pdf_image_plane_data_alt(info, planes, height, rows_used, i);
         if (code)
@@ -2177,6 +2247,7 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
     pie->rows_left -= *rows_used;
     if (pie->writer.alt_writer_count > 2)
         pdf_choose_compression(&pie->writer, false);
+
     return !pie->rows_left;
 }
 

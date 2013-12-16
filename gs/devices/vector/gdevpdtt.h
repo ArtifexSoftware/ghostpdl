@@ -146,6 +146,7 @@ typedef struct pdf_glyph_widths_s {
     pdf_glyph_width_t real_width;	/* possibly modified, for rendering */
     bool replaced_v;
     bool ignore_wmode;
+    gs_rect BBox;                   /* Only used by eps2write */
 } pdf_glyph_widths_t;
 
 /* ---------------- Procedures ---------------- */

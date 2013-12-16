@@ -32,6 +32,8 @@
 #include "gdevpdts.h"
 #include "gdevpdtt.h"
 
+#include "gximage.h"
+#include "gxcpath.h"
 /* ---------------- Non-CMap-based composite font ---------------- */
 
 /*
@@ -355,6 +357,35 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
         pdfont->u.type0.cmap_is_standard = true;
     }
     pdfont->u.type0.WMode = pcmap->WMode;
+    return 0;
+}
+
+static int estimate_fontbbox(pdf_text_enum_t *pte, gs_font_base *font,
+                          const gs_matrix *pfmat,
+                          gs_rect *text_bbox)
+{
+    gs_matrix m;
+    gs_point p0, p1, p2, p3;
+
+    if (font->FontBBox.p.x == font->FontBBox.q.x ||
+        font->FontBBox.p.y == font->FontBBox.q.y)
+        return_error(gs_error_undefined);
+    if (pfmat == 0)
+        pfmat = &font->FontMatrix;
+    m = ctm_only(pte->pis);
+    m.tx = fixed2float(pte->origin.x);
+    m.ty = fixed2float(pte->origin.y);
+    gs_matrix_multiply(pfmat, &m, &m);
+
+    gs_point_transform(font->FontBBox.p.x, font->FontBBox.p.y, &m, &p0);
+    gs_point_transform(font->FontBBox.p.x, font->FontBBox.q.y, &m, &p1);
+    gs_point_transform(font->FontBBox.q.x, font->FontBBox.p.y, &m, &p2);
+    gs_point_transform(font->FontBBox.q.x, font->FontBBox.q.y, &m, &p3);
+    text_bbox->p.x = min(min(p0.x, p1.x), min(p1.x, p2.x));
+    text_bbox->p.y = min(min(p0.y, p1.y), min(p1.y, p2.y));
+    text_bbox->q.x = max(max(p0.x, p1.x), max(p1.x, p2.x));
+    text_bbox->q.y = max(max(p0.y, p1.y), max(p1.y, p2.y));
+
     return 0;
 }
 
@@ -740,6 +771,35 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
             }
             pte->index = break_index;
             pte->xy_index = break_xy_index;
+            if (pdev->Eps2Write) {
+                gs_rect text_bbox;
+                gx_device_clip cdev;
+                gx_drawing_color devc;
+                fixed x0, y0, bx2, by2;
+
+                text_bbox.q.x = text_bbox.p.y = text_bbox.q.y = 0;
+                estimate_fontbbox(pte, (gs_font_base *)font, NULL, &text_bbox);
+                text_bbox.p.x = fixed2float(pte->origin.x);
+                text_bbox.q.x = text_bbox.p.x + wxy.x;
+
+                x0 = float2fixed(text_bbox.p.x);
+                y0 = float2fixed(text_bbox.p.y);
+                bx2 = float2fixed(text_bbox.q.x) - x0;
+                by2 = float2fixed(text_bbox.q.y) - y0;
+
+                pdev->AccumulatingBBox++;
+                gx_make_clip_device_on_stack(&cdev, pte->pcpath, (gx_device *)pdev);
+                set_nonclient_dev_color(&devc, gx_device_black((gx_device *)pdev));  /* any non-white color will do */
+                gx_default_fill_triangle((gx_device *) pdev, x0, y0,
+                                         float2fixed(text_bbox.p.x) - x0,
+                                         float2fixed(text_bbox.q.y) - y0,
+                                         bx2, by2, &devc, lop_default);
+                gx_default_fill_triangle((gx_device *) & cdev, x0, y0,
+                                         float2fixed(text_bbox.q.x) - x0,
+                                         float2fixed(text_bbox.p.y) - y0,
+                                         bx2, by2, &devc, lop_default);
+                pdev->AccumulatingBBox--;
+            }
             code = pdf_shift_text_currentpoint(pte, &wxy);
             if (code < 0)
                 return code;

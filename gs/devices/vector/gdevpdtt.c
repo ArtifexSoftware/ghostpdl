@@ -277,6 +277,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
             gs_matrix_multiply((gs_matrix *)&pdev->charproc_ctm, (gs_matrix *)&penum->pis->ctm, &m);
             gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
             penum->charproc_accum = false;
+            pdev->accumulating_charproc = false;
         }
     }
     if (pdev->PS_accumulator && penum->pte_default) {
@@ -559,6 +560,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
         penum->rc.free = rc_free_text_enum;
         penum->pte_default = 0;
         penum->charproc_accum = false;
+        pdev->accumulating_charproc = false;
         penum->cdevproc_callout = false;
         penum->returned.total_width.x = penum->returned.total_width.y = 0;
         penum->cgp = NULL;
@@ -617,6 +619,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
     penum->rc.free = rc_free_text_enum;
     penum->pte_default = 0;
     penum->charproc_accum = false;
+    pdev->accumulating_charproc = false;
     penum->cdevproc_callout = false;
     penum->returned.total_width.x = penum->returned.total_width.y = 0;
     penum->cgp = NULL;
@@ -2878,6 +2881,11 @@ static int install_PS_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *
         pdev->font3 = (pdf_resource_t *)pdfont;
         pdev->substream_Resources = pdfont->u.simple.s.type3.Resources;
         penum->charproc_accum = true;
+        pdev->accumulating_charproc = true;
+        pdev->charproc_BBox.p.x = 10000;
+        pdev->charproc_BBox.p.y = 10000;
+        pdev->charproc_BBox.q.x = 0;
+        pdev->charproc_BBox.q.y = 0;
         return TEXT_PROCESS_RENDER;
     }
     return 0;
@@ -2937,6 +2945,7 @@ static int install_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *pte
         pdev->font3 = (pdf_resource_t *)pdfont;
         pdev->substream_Resources = pdfont->u.simple.s.type3.Resources;
         penum->charproc_accum = true;
+        pdev->accumulating_charproc = true;
         return TEXT_PROCESS_RENDER;
     }
     return 0;
@@ -2991,6 +3000,7 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
                 pte_default->returned.current_glyph, penum->output_char_code, &gnstr);
     if (code < 0)
         return code;
+    pdev->accumulating_charproc = false;
     penum->charproc_accum = false;
     code = gx_default_text_restore_state(pte_default);
     if (code < 0)

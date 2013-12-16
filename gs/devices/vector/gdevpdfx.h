@@ -576,6 +576,7 @@ struct gx_device_pdf_s {
     gs_param_string InstanceUUID;
     int DocumentTimeSeq;
     bool ForOPDFRead;          /* PS2WRITE only. */
+    bool Eps2Write;            /* EPS2WRITE only */
     bool CompressEntireFile;  /* PS2WRITE only. */
     bool ResourcesBeforeUsage; /* PS2WRITE only. */
     bool HavePDFWidths;        /* PS2WRITE only. */
@@ -614,6 +615,8 @@ struct gx_device_pdf_s {
     uint EncryptionV;
     /* Values derived from DSC comments */
     bool is_EPS;
+    int AccumulatingBBox;
+    gs_rect BBox;
     pdf_page_dsc_info_t doc_dsc_info; /* document default */
     pdf_page_dsc_info_t page_dsc_info; /* current page */
     /* Additional graphics state */
@@ -789,6 +792,8 @@ struct gx_device_pdf_s {
     pdf_resource_t *font3; /* The owner of the accumulated charstring. */
     pdf_resource_t *accumulating_substream_resource;
     gs_matrix_fixed charproc_ctm;
+    bool accumulating_charproc;
+    gs_rect charproc_BBox;
     bool charproc_just_accumulated; /* A flag for controlling
                         the glyph variation recognition.
                         Used only with uncached charprocs. */

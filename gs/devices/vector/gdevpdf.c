@@ -137,6 +137,7 @@ static dev_proc_close_device(pdf_close);
 #define PDF_DEVICE_IDENT gs_pdfwrite_device
 #define PDF_DEVICE_MaxInlineImageSize 4000
 #define PDF_FOR_OPDFREAD 0
+#define PDF_FOR_EPS2WRITE 0
 
 #include "gdevpdfb.h"
 
@@ -149,6 +150,20 @@ static dev_proc_close_device(pdf_close);
 #define PDF_DEVICE_IDENT gs_ps2write_device
 #define PDF_DEVICE_MaxInlineImageSize max_long
 #define PDF_FOR_OPDFREAD 1
+#define PDF_FOR_EPS2WRITE 0
+
+#include "gdevpdfb.h"
+
+#undef PDF_DEVICE_NAME
+#undef PDF_DEVICE_IDENT
+#undef PDF_DEVICE_MaxInlineImageSize
+#undef PDF_FOR_OPDFREAD
+
+#define PDF_DEVICE_NAME "eps2write"
+#define PDF_DEVICE_IDENT gs_eps2write_device
+#define PDF_DEVICE_MaxInlineImageSize max_long
+#define PDF_FOR_OPDFREAD 1
+#define PDF_FOR_EPS2WRITE 1
 
 #include "gdevpdfb.h"
 
@@ -706,6 +721,10 @@ pdf_open(gx_device * dev)
     pdev->PageLabels_current_label = 0;
     pdev->pte = NULL;
     pdf_reset_page(pdev);
+    pdev->BBox.p.x = pdev->width;
+    pdev->BBox.p.y = pdev->height;
+    pdev->BBox.q.x = 0;
+    pdev->BBox.q.y = 0;
     return 0;
   fail:
     gdev_vector_close_file((gx_device_vector *) pdev);
@@ -2539,7 +2558,8 @@ pdf_close(gx_device * dev)
 
                     pprintd2(pdev->strm, "%%%%Page: %d %d\n",
                         pagecount, pagecount);
-                    pprintd2(pdev->strm, "%%%%PageBoundingBox: 0 0 %d %d\n", (int)page->MediaBox.x, (int)page->MediaBox.y);
+                    if (!pdev->Eps2Write)
+                        pprintd2(pdev->strm, "%%%%PageBoundingBox: %d 0 %d %d\n", (int)page->MediaBox.x, (int)page->MediaBox.y);
                     stream_puts(pdev->strm, "%%BeginPageSetup\n");
                     stream_puts(pdev->strm, "/pagesave save def\n");
                     pdf_write_page(pdev, pagecount++);

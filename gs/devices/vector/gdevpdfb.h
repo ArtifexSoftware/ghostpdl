@@ -125,6 +125,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  {0, 0, 0},			/* InstanceUUID */
  0,				/* DocumentTimeSeq */
  PDF_FOR_OPDFREAD,		/* ForOPDFRead */
+ PDF_FOR_EPS2WRITE,     /* is_eps2write */
  false,				/* CompressEntireFile */
  0 /*false*/,			/* ResourcesBeforeUsage */
  1 /*true*/,			/* HavePDFWidths */
@@ -155,6 +156,8 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  {0},				/* EncryptionKey */
  0,				/* EncryptionV */
  0 /*false*/,			/* is_EPS */
+ 0,             /* AccumulatingBBox */
+ {{0,0},{0,0}},		/* BBox */
  {-1, -1},			/* doc_dsc_info */
  {-1, -1},			/* page_dsc_info */
  0 /*false*/,			/* fill_overprint */
@@ -239,6 +242,8 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* font3 */
  0,				/* accumulating_substream_resource */
  {0,0,0,0,0,0,0,0,0},		/* charproc_ctm */
+ 0,             /* accumulating_charproc */
+ {{0, 0}, {0, 0}},  /* Charproc BBox */
  0,				/* charproc_just_accumulated */
  1,             /* PS_accumulator */
  0,				/* accumulating_a_global_object */
