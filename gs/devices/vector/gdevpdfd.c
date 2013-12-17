@@ -1491,7 +1491,7 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
                 Box->q.x = fixed2float(box1.q.x) / (pdev->HWResolution[0] / 72.0) - Box->p.x;
             if (fixed2float(box1.q.y) / (pdev->HWResolution[1] / 72.0) > Box->q.y)
                 Box->q.y = fixed2float(box1.q.y) / (pdev->HWResolution[1] / 72.0) - Box->p.y;
-		}
+        }
         return 0;
     } else {
         gx_fill_params params;
