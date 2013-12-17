@@ -426,7 +426,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
     bool traditional = CPSI_mode | params->traditional;
     stroke_line_proc_t line_proc =
                ((to_path == 0 && !gx_dc_is_pattern1_color_clist_based(pdevc))
-                      ? stroke_fill :
+                      ? (lop_is_idempotent(pis->log_op) ? stroke_fill : stroke_add) :
                         (traditional ? stroke_add_compat : stroke_add_fast));
     gs_fixed_rect ibox, cbox;
     gx_device_clip cdev;
@@ -1423,6 +1423,7 @@ stroke_fill(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
     const fixed litox = plp->e.p.x;
     const fixed litoy = plp->e.p.y;
 
+    /* assert(lop_is_idempotent(pis->log_op)); */
     if (plp->thin) {
         /* Minimum-width line, don't have to be careful with caps/joins. */
         return (*dev_proc(dev, draw_thin_line))(dev, lix, liy, litox, litoy,
@@ -1448,7 +1449,6 @@ stroke_fill(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
             && (join == gs_join_bevel || join == gs_join_miter ||
                 join == gs_join_none)
             && (pis->fill_adjust.x | pis->fill_adjust.y) == 0
-            && lop_is_idempotent(pis->log_op)
             ) {
             gs_fixed_point points[6];
             int npoints, code;
