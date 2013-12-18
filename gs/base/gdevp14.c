@@ -2807,6 +2807,9 @@ pdf14_pattern_trans_render(gx_image_enum * penum, const byte * buffer, int data_
 
             p14dev = find_pdf14_device(dev);
 
+			if_debug2m('?', p14dev->ctx->memory,
+				"[?] Popping trans group pattern fill, uid = %ld id = %ld \n",
+				ptile->uid.id, ptile->id);
             code = pdf14_pop_transparency_group(NULL, p14dev->ctx, p14dev->blend_procs,
                     p14dev->color_info.num_components, dev_profile->device_profile[0], 
                     (gx_device *) p14dev);
@@ -2887,6 +2890,9 @@ pdf14_patt_trans_image_fill(gx_device * dev, const gs_imager_state * pis,
     if (code < 0)
         return code;
     if (!(pim->Width == 0 || pim->Height == 0)) {
+		if_debug2m('?', p14dev->ctx->memory,
+			"[v*] Pushing trans group patt_trans_image_fill, uid = %ld id = %ld \n", 
+			ptile->uid.id, ptile->id);
         code = pdf14_push_transparency_group(p14dev->ctx, &group_rect, 1, 0, 255,255,
                                              pis->blend_mode, 0, 0, 
                                              ptile->ttrans->n_chan-1, false, NULL,
