@@ -101,8 +101,8 @@ typedef struct gx_device_pclxl_s {
     int state_rotated; /* 0, 1, 2, -1, mutiple of 90 deg */
     int CompressMode; /* std PXL enum: None=0, RLE=1, DeltaRow=3; JPEG=2 not used */
     bool scaled;
-    floatp x_scale; /* chosen so that max(x) is scaled to 0x7FFF, to give max distinction between x values */
-    floatp y_scale;
+    double x_scale; /* chosen so that max(x) is scaled to 0x7FFF, to give max distinction between x values */
+    double y_scale;
     bool pen_null;
     bool brush_null;
 } gx_device_pclxl;
@@ -382,7 +382,7 @@ pclxl_set_page_origin(stream *s, int x, int y)
 }
 
 static void
-pclxl_set_page_scale(gx_device_pclxl * xdev, floatp x_scale, floatp y_scale)
+pclxl_set_page_scale(gx_device_pclxl * xdev, double x_scale, double y_scale)
 {
     stream *s = pclxl_stream(xdev);
     if (xdev->scaled) {
@@ -413,19 +413,19 @@ static int
 pclxl_set_cursor(gx_device_pclxl * xdev, int x, int y)
 {
     stream *s = pclxl_stream(xdev);
-    floatp x_scale = 1;
-    floatp y_scale = 1;
+    double x_scale = 1;
+    double y_scale = 1;
     /* Points must be one of ubyte/uint16/sint16;
        Here we play with PageScale (one of ubyte/uint16/real32_xy) to go higher.
        This gives us 32768 x 3.4e38 in UnitsPerMeasure.
        If we ever need to go higher, we play with UnitsPerMeasure. */
     if (abs(x) > 0x7FFF) {
-        x_scale = ((floatp) abs(x))/0x7FFF;
+        x_scale = ((double) abs(x))/0x7FFF;
         x = (x > 0 ? 0x7FFF : -0x7FFF);
         xdev->scaled = true;
     }
     if (abs(y) > 0x7FFF) {
-        y_scale = ((floatp) abs(y))/0x7FFF;
+        y_scale = ((double) abs(y))/0x7FFF;
         y = (y > 0 ? 0x7FFF : -0x7FFF);
         xdev->scaled = true;
     }
@@ -458,8 +458,8 @@ pclxl_flush_points(gx_device_pclxl * xdev)
         pxeDataType_t data_type;
         int i, di;
         byte diffs[NUM_POINTS * 2];
-        floatp x_scale = 1;
-        floatp y_scale = 1;
+        double x_scale = 1;
+        double y_scale = 1;
         int temp_origin_x = 0, temp_origin_y = 0;
         int count_smalls = 0;
 
@@ -485,8 +485,8 @@ pclxl_flush_points(gx_device_pclxl * xdev)
                     pclxl_set_page_origin(s, temp_origin_x, temp_origin_y);
                 }
                 for (i = 0; i < count; ++i) {
-                    x_scale = max(((floatp) abs(xdev->points.data[i].x - temp_origin_x))/0x7FFF , x_scale);
-                    y_scale = max(((floatp) abs(xdev->points.data[i].y - temp_origin_y))/0x7FFF , y_scale);
+                    x_scale = max(((double) abs(xdev->points.data[i].x - temp_origin_x))/0x7FFF , x_scale);
+                    y_scale = max(((double) abs(xdev->points.data[i].y - temp_origin_y))/0x7FFF , y_scale);
                 }
                 for (i = 0; i < count; ++i) {
                     xdev->points.data[i].x = (int)((xdev->points.data[i].x - temp_origin_x)/x_scale + 0.5);
@@ -1044,7 +1044,7 @@ pclxl_beginpage(gx_device_vector * vdev)
 }
 
 static int
-pclxl_setlinewidth(gx_device_vector * vdev, floatp width)
+pclxl_setlinewidth(gx_device_vector * vdev, double width)
 {
     stream *s = gdev_vector_stream(vdev);
 
@@ -1082,7 +1082,7 @@ pclxl_setlinejoin(gx_device_vector * vdev, gs_line_join join)
 }
 
 static int
-pclxl_setmiterlimit(gx_device_vector * vdev, floatp limit)
+pclxl_setmiterlimit(gx_device_vector * vdev, double limit)
 {
     stream *s = gdev_vector_stream(vdev);
     /*
@@ -1098,7 +1098,7 @@ pclxl_setmiterlimit(gx_device_vector * vdev, floatp limit)
 
 static int
 pclxl_setdash(gx_device_vector * vdev, const float *pattern, uint count,
-              floatp offset)
+              double offset)
 {
     stream *s = gdev_vector_stream(vdev);
 
@@ -1220,7 +1220,7 @@ pclxl_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 }
 
 static int
-pclxl_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
+pclxl_moveto(gx_device_vector * vdev, double x0, double y0, double x, double y,
              gx_path_type_t type)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
@@ -1234,7 +1234,7 @@ pclxl_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 }
 
 static int
-pclxl_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
+pclxl_lineto(gx_device_vector * vdev, double x0, double y0, double x, double y,
              gx_path_type_t type)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
@@ -1260,8 +1260,8 @@ pclxl_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 }
 
 static int
-pclxl_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
-           floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
+pclxl_curveto(gx_device_vector * vdev, double x0, double y0,
+           double x1, double y1, double x2, double y2, double x3, double y3,
               gx_path_type_t type)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
@@ -1291,8 +1291,8 @@ pclxl_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 }
 
 static int
-pclxl_closepath(gx_device_vector * vdev, floatp x, floatp y,
-                floatp x_start, floatp y_start, gx_path_type_t type)
+pclxl_closepath(gx_device_vector * vdev, double x, double y,
+                double x_start, double y_start, gx_path_type_t type)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
     stream *s = gdev_vector_stream(vdev);

@@ -694,8 +694,8 @@ void
 gx_default_get_initial_matrix(gx_device * dev, register gs_matrix * pmat)
 {
     /* NB this device has no paper margins */
-    floatp fs_res = dev->HWResolution[0] / 72.0;
-    floatp ss_res = dev->HWResolution[1] / 72.0;
+    double fs_res = dev->HWResolution[0] / 72.0;
+    double ss_res = dev->HWResolution[1] / 72.0;
 
     switch(dev->LeadingEdge & LEADINGEDGE_MASK) {
     case 1: /* 90 degrees */

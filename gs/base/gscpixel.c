@@ -79,7 +79,7 @@ static void
 gx_restrict_DevicePixel(gs_client_color * pcc, const gs_color_space * pcs)
 {
     /****** NOT ENOUGH BITS IN float OR frac ******/
-    floatp pixel = pcc->paint.values[0];
+    double pixel = pcc->paint.values[0];
     ulong max_value = (1L << pcs->params.pixel.depth) - 1;
 
     pcc->paint.values[0] = (pixel < 0 ? 0 : min(pixel, max_value));

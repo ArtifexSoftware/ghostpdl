@@ -30,7 +30,7 @@ struct gs_indexed_map_s {
     rc_header rc;
     union {
         int (*lookup_index)(const gs_color_space *, int, float *);
-        int (*tint_transform)(const gs_separation_params *, floatp, float *);
+        int (*tint_transform)(const gs_separation_params *, double, float *);
     } proc;
     void *proc_data;
     uint num_values;	/* base_space->type->num_components * (hival + 1) */

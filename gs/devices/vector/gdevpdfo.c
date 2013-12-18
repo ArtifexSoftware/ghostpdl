@@ -705,7 +705,7 @@ cos_array_add_int(cos_array_t *pca, int i)
     return cos_array_add(pca, cos_string_value(&v, (byte *)str, strlen(str)));
 }
 int
-cos_array_add_real(cos_array_t *pca, floatp r)
+cos_array_add_real(cos_array_t *pca, double r)
 {
     byte str[50];		/****** ADHOC ******/
     stream s;
@@ -1093,7 +1093,7 @@ cos_dict_put_c_key_bool(cos_dict_t *pcd, const char *key, bool value)
                               (value ? 4 : 5));
 }
 int
-cos_dict_put_c_key_real(cos_dict_t *pcd, const char *key, floatp value)
+cos_dict_put_c_key_real(cos_dict_t *pcd, const char *key, double value)
 {
     byte str[50];		/****** ADHOC ******/
     stream s;

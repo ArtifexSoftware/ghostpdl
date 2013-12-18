@@ -80,7 +80,7 @@ int pjl_map_pjl_sym_to_pcl_sym(const pjl_envvar_t * symname);
 int pjl_vartoi(const pjl_envvar_t * s);
 
 /* pjl envioronment variable to float. */
-floatp pjl_vartof(const pjl_envvar_t * s);
+double pjl_vartof(const pjl_envvar_t * s);
 
 /* convert a pjl designated fontsource to a subdirectory pathname.  */
 char *pjl_fontsource_to_path(const pjl_parser_state * pjls,

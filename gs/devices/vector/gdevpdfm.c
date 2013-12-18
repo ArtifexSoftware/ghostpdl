@@ -859,7 +859,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                     char buf[100];
                     int size, code;
                     float temp[4]; /* the type is float for sscanf. */
-                    floatp pagebox[4] = {0, 0};
+                    double pagebox[4] = {0, 0};
 
                     pagebox[2] = pdev->MediaSize[0];
                     pagebox[3] = pdev->MediaSize[1];

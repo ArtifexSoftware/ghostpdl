@@ -1948,7 +1948,7 @@ pcl_ht_build_default_ht(pcl_state_t * pcs,
 
 /* Define a transfer function without gamma correction. */
 static float
-identity_transfer(floatp tint, const gx_transfer_map * ignore_map)
+identity_transfer(double tint, const gx_transfer_map * ignore_map)
 {
     return tint;
 }

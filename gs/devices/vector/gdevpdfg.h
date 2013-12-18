@@ -241,7 +241,7 @@ void pdf_make_bitmap_matrix(gs_matrix * pmat, int x, int y, int w, int h,
 
 /* Put out the gsave and matrix for an image. */
 void pdf_put_image_matrix(gx_device_pdf * pdev, const gs_matrix * pmat,
-                          floatp y_scale);
+                          double y_scale);
 
 /* Put out a reference to an image resource. */
 int pdf_do_image_by_id(gx_device_pdf * pdev, double scale,

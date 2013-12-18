@@ -371,7 +371,7 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
                     ulong pitch_1024th_dots =
                         ((ulong) pl_get_uint16(pfh->Pitch) << 8) +
                         pfh->PitchExtended;
-                    floatp pitch_cp = (floatp)
+                    double pitch_cp = (double)
                         (pitch_1024th_dots / 1024.0     /* dots */
                          / plfont->resolution.x /* => inches */
                          * 7200.0);

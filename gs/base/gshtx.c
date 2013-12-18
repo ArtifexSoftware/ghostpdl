@@ -47,7 +47,7 @@ free_comps(
  */
 static float
 null_closure_transfer(
-                         floatp val,
+                         double val,
                          const gx_transfer_map * pmap_dummy,	/* NOTUSED */
                          const void *dummy	/* NOTUSED */
 )
@@ -116,9 +116,9 @@ int
 gs_ht_set_spot_comp(
                        gs_ht * pht,
                        int comp,
-                       floatp freq,
-                       floatp angle,
-                       float (*spot_func) (floatp, floatp),
+                       double freq,
+                       double angle,
+                       float (*spot_func) (double, double),
                        bool accurate,
                        gs_ht_transfer_proc transfer,
                        const void *client_data

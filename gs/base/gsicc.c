@@ -284,8 +284,8 @@ gx_restrict_ICC(gs_client_color * pcc, const gs_color_space * pcs)
     const gs_range *    ranges = pcs->cmm_icc_profile_data->Range.ranges;
 
     for (i = 0; i < ncomps; ++i) {
-        floatp  v = pcc->paint.values[i];
-        floatp  rmin = ranges[i].rmin, rmax = ranges[i].rmax;
+        double  v = pcc->paint.values[i];
+        double  rmin = ranges[i].rmin, rmax = ranges[i].rmax;
 
         if (v < rmin)
             pcc->paint.values[i] = rmin;

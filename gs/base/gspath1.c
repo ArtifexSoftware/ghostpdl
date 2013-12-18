@@ -60,7 +60,7 @@ typedef struct arc_curve_params_s {
 /* Forward declarations */
 static int arc_add(const arc_curve_params_t *arc, bool is_quadrant);
 static int gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
-            floatp axc, floatp ayc, floatp arad, floatp aang1, floatp aang2,
+            double axc, double ayc, double arad, double aang1, double aang2,
                   bool add_line, gs_point *p3);
 
 int
@@ -76,8 +76,8 @@ gx_setcurrentpoint_from_path(gs_imager_state *pis, gx_path *path)
 }
 
 static inline int
-gs_arc_add_inline(gs_state *pgs, bool cw, floatp xc, floatp yc, floatp rad,
-                    floatp a1, floatp a2, bool add)
+gs_arc_add_inline(gs_state *pgs, bool cw, double xc, double yc, double rad,
+                    double a1, double a2, bool add)
 {
     gs_point p3;
     int code = gs_imager_arc_add(pgs->path, (gs_imager_state *)pgs, cw, xc, yc, rad, a1, a2, add, &p3);
@@ -96,21 +96,21 @@ gs_arc_add_inline(gs_state *pgs, bool cw, floatp xc, floatp yc, floatp rad,
 
 int
 gs_arc(gs_state * pgs,
-       floatp xc, floatp yc, floatp r, floatp ang1, floatp ang2)
+       double xc, double yc, double r, double ang1, double ang2)
 {
     return gs_arc_add_inline(pgs, false, xc, yc, r, ang1, ang2, true);
 }
 
 int
 gs_arcn(gs_state * pgs,
-        floatp xc, floatp yc, floatp r, floatp ang1, floatp ang2)
+        double xc, double yc, double r, double ang1, double ang2)
 {
     return gs_arc_add_inline(pgs, true, xc, yc, r, ang1, ang2, true);
 }
 
 int
-gs_arc_add(gs_state * pgs, bool clockwise, floatp axc, floatp ayc,
-           floatp arad, floatp aang1, floatp aang2, bool add_line)
+gs_arc_add(gs_state * pgs, bool clockwise, double axc, double ayc,
+           double arad, double aang1, double aang2, bool add_line)
 {
     return gs_arc_add_inline(pgs, clockwise, axc, ayc, arad,
                              aang1, aang2, add_line);
@@ -201,7 +201,7 @@ next_arc_quadrant(arc_curve_params_t * arc, double anext)
 
 static int
 gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockwise,
-            floatp axc, floatp ayc, floatp arad, floatp aang1, floatp aang2,
+            double axc, double ayc, double arad, double aang1, double aang2,
                   bool add_line, gs_point *p3)
 {
     double ar = arad;
@@ -309,7 +309,7 @@ last:
 
 int
 gs_arcto(gs_state * pgs,
-floatp ax1, floatp ay1, floatp ax2, floatp ay2, floatp arad, float retxy[4])
+double ax1, double ay1, double ax2, double ay2, double arad, float retxy[4])
 {
     double xt0, yt0, xt2, yt2;
     gs_point up0;
@@ -388,7 +388,7 @@ arc_add(const arc_curve_params_t * arc, bool is_quadrant)
     gs_imager_state *pis = arc->pis;
     double x0 = arc->p0.x, y0 = arc->p0.y;
     double xt = arc->pt.x, yt = arc->pt.y;
-    floatp fraction;
+    double fraction;
     gs_fixed_point p0, p2, p3, pt;
     int code;
 
@@ -440,7 +440,7 @@ arc_add(const arc_curve_params_t * arc, bool is_quadrant)
         }
     } else {
         double r = arc->radius;
-        floatp dx = xt - x0, dy = yt - y0;
+        double dx = xt - x0, dy = yt - y0;
         double dist = dx * dx + dy * dy;
         double r2 = r * r;
 

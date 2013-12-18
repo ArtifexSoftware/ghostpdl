@@ -795,7 +795,7 @@ gz_path_bbox_add_curve_notes(gx_path * ppath,
  */
 int
 gx_path_add_partial_arc_notes(gx_path * ppath,
-fixed x3, fixed y3, fixed xt, fixed yt, floatp fraction, segment_notes notes)
+fixed x3, fixed y3, fixed xt, fixed yt, double fraction, segment_notes notes)
 {
     fixed x0 = ppath->position.x, y0 = ppath->position.y;
 

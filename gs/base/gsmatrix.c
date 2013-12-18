@@ -39,7 +39,7 @@ gs_make_identity(gs_matrix * pmat)
 
 /* Create a translation matrix */
 int
-gs_make_translation(floatp dx, floatp dy, gs_matrix * pmat)
+gs_make_translation(double dx, double dy, gs_matrix * pmat)
 {
     *pmat = gs_identity_matrix;
     pmat->tx = dx;
@@ -49,7 +49,7 @@ gs_make_translation(floatp dx, floatp dy, gs_matrix * pmat)
 
 /* Create a scaling matrix */
 int
-gs_make_scaling(floatp sx, floatp sy, gs_matrix * pmat)
+gs_make_scaling(double sx, double sy, gs_matrix * pmat)
 {
     *pmat = gs_identity_matrix;
     pmat->xx = sx;
@@ -60,7 +60,7 @@ gs_make_scaling(floatp sx, floatp sy, gs_matrix * pmat)
 /* Create a rotation matrix. */
 /* The angle is in degrees. */
 int
-gs_make_rotation(floatp ang, gs_matrix * pmat)
+gs_make_rotation(double ang, gs_matrix * pmat)
 {
     gs_sincos_t sincos;
 
@@ -222,7 +222,7 @@ gs_matrix_invert_to_double(const gs_matrix * pm, gs_matrix_double * pmr)
 
 /* Translate a matrix, possibly in place. */
 int
-gs_matrix_translate(const gs_matrix * pm, floatp dx, floatp dy, gs_matrix * pmr)
+gs_matrix_translate(const gs_matrix * pm, double dx, double dy, gs_matrix * pmr)
 {
     gs_point trans;
     int code = gs_distance_transform(dx, dy, pm, &trans);
@@ -238,7 +238,7 @@ gs_matrix_translate(const gs_matrix * pm, floatp dx, floatp dy, gs_matrix * pmr)
 
 /* Scale a matrix, possibly in place. */
 int
-gs_matrix_scale(const gs_matrix * pm, floatp sx, floatp sy, gs_matrix * pmr)
+gs_matrix_scale(const gs_matrix * pm, double sx, double sy, gs_matrix * pmr)
 {
     pmr->xx = pm->xx * sx;
     pmr->xy = pm->xy * sx;
@@ -253,7 +253,7 @@ gs_matrix_scale(const gs_matrix * pm, floatp sx, floatp sy, gs_matrix * pmr)
 
 /* Rotate a matrix, possibly in place.  The angle is in degrees. */
 int
-gs_matrix_rotate(const gs_matrix * pm, floatp ang, gs_matrix * pmr)
+gs_matrix_rotate(const gs_matrix * pm, double ang, gs_matrix * pmr)
 {
     double mxx, mxy;
     gs_sincos_t sincos;
@@ -278,7 +278,7 @@ gs_matrix_rotate(const gs_matrix * pm, floatp ang, gs_matrix * pmr)
 
 /* Transform a point. */
 int
-gs_point_transform(floatp x, floatp y, const gs_matrix * pmat,
+gs_point_transform(double x, double y, const gs_matrix * pmat,
                    gs_point * ppt)
 {
     /*
@@ -297,7 +297,7 @@ gs_point_transform(floatp x, floatp y, const gs_matrix * pmat,
 /* Inverse-transform a point. */
 /* Return gs_error_undefinedresult if the matrix is not invertible. */
 int
-gs_point_transform_inverse(floatp x, floatp y, const gs_matrix * pmat,
+gs_point_transform_inverse(double x, double y, const gs_matrix * pmat,
                            gs_point * ppt)
 {
     if (is_xxyy(pmat)) {
@@ -325,7 +325,7 @@ gs_point_transform_inverse(floatp x, floatp y, const gs_matrix * pmat,
 
 /* Transform a distance. */
 int
-gs_distance_transform(floatp dx, floatp dy, const gs_matrix * pmat,
+gs_distance_transform(double dx, double dy, const gs_matrix * pmat,
                       gs_point * pdpt)
 {
     pdpt->x = dx * pmat->xx;
@@ -340,7 +340,7 @@ gs_distance_transform(floatp dx, floatp dy, const gs_matrix * pmat,
 /* Inverse-transform a distance. */
 /* Return gs_error_undefinedresult if the matrix is not invertible. */
 int
-gs_distance_transform_inverse(floatp dx, floatp dy,
+gs_distance_transform_inverse(double dx, double dy,
                               const gs_matrix * pmat, gs_point * pdpt)
 {
     if (is_xxyy(pmat)) {
@@ -391,7 +391,7 @@ gs_points_bbox(const gs_point pts[4], gs_rect * pbox)
 static int
 bbox_transform_either_only(const gs_rect * pbox_in, const gs_matrix * pmat,
                            gs_point pts[4],
-     int (*point_xform) (floatp, floatp, const gs_matrix *, gs_point *))
+     int (*point_xform) (double, double, const gs_matrix *, gs_point *))
 {
     int code;
 
@@ -407,7 +407,7 @@ bbox_transform_either_only(const gs_rect * pbox_in, const gs_matrix * pmat,
 static int
 bbox_transform_either(const gs_rect * pbox_in, const gs_matrix * pmat,
                       gs_rect * pbox_out,
-     int (*point_xform) (floatp, floatp, const gs_matrix *, gs_point *))
+     int (*point_xform) (double, double, const gs_matrix *, gs_point *))
 {
     int code;
 
@@ -468,7 +468,7 @@ gs_matrix_fixed_from_matrix(gs_matrix_fixed *pfmat, const gs_matrix *pmat)
 /* Transform a point with a fixed-point result. */
 int
 gs_point_transform2fixed(const gs_matrix_fixed * pmat,
-                         floatp x, floatp y, gs_fixed_point * ppt)
+                         double x, double y, gs_fixed_point * ppt)
 {
     fixed px, py, t;
     double xtemp, ytemp;
@@ -534,7 +534,7 @@ gs_point_transform2fixed(const gs_matrix_fixed * pmat,
    see comment in clamp_point_aux. */
 int
 gs_point_transform2fixed_rounding(const gs_matrix_fixed * pmat,
-                         floatp x, floatp y, gs_fixed_point * ppt)
+                         double x, double y, gs_fixed_point * ppt)
 {
     gs_point fpt;
 
@@ -550,7 +550,7 @@ gs_point_transform2fixed_rounding(const gs_matrix_fixed * pmat,
 /* Transform a distance with a fixed-point result. */
 int
 gs_distance_transform2fixed(const gs_matrix_fixed * pmat,
-                            floatp dx, floatp dy, gs_fixed_point * ppt)
+                            double dx, double dy, gs_fixed_point * ppt)
 {
     fixed px, py, t;
     double xtemp, ytemp;

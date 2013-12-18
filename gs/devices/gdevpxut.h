@@ -77,10 +77,10 @@ void px_put_ssp(stream * s, int ix, int iy);
 
 void px_put_l(stream * s, ulong l);
 
-void px_put_r(stream * s, floatp r);  /* no tag */
-void px_put_rl(stream * s, floatp r);  /* pxt_real32 tag */
-void px_put_rp(stream * s, floatp rx, floatp ry);
-void px_put_rpa(stream * s, floatp rx, floatp ry, px_attribute_t a);
+void px_put_r(stream * s, double r);  /* no tag */
+void px_put_rl(stream * s, double r);  /* pxt_real32 tag */
+void px_put_rp(stream * s, double rx, double ry);
+void px_put_rpa(stream * s, double rx, double ry, px_attribute_t a);
 
 void px_put_ubaa(stream * s, const byte * data, uint count, px_attribute_t a);
 

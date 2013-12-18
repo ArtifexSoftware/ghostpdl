@@ -224,7 +224,7 @@ gs_settocharmatrix(gs_state * pgs)
 }
 
 int
-gs_translate(gs_state * pgs, floatp dx, floatp dy)
+gs_translate(gs_state * pgs, double dx, double dy)
 {
     gs_point pt;
     int code;
@@ -244,7 +244,7 @@ gs_translate(gs_state * pgs, floatp dx, floatp dy)
 }
 
 int
-gs_translate_untransformed(gs_state * pgs, floatp dx, floatp dy)
+gs_translate_untransformed(gs_state * pgs, double dx, double dy)
 {
     gs_point pt;
     int code;
@@ -262,7 +262,7 @@ gs_translate_untransformed(gs_state * pgs, floatp dx, floatp dy)
 }
 
 int
-gs_scale(gs_state * pgs, floatp sx, floatp sy)
+gs_scale(gs_state * pgs, double sx, double sy)
 {
     pgs->ctm.xx *= sx;
     pgs->ctm.xy *= sx;
@@ -277,7 +277,7 @@ gs_scale(gs_state * pgs, floatp sx, floatp sy)
 }
 
 int
-gs_rotate(gs_state * pgs, floatp ang)
+gs_rotate(gs_state * pgs, double ang)
 {
     int code = gs_matrix_rotate(&ctm_only(pgs), ang,
                                 &ctm_only_writable(pgs));
@@ -312,19 +312,19 @@ gs_concat(gs_state * pgs, const gs_matrix * pmat)
 #define is_skewed(pmat) (!(is_xxyy(pmat) || is_xyyx(pmat)))
 
 int
-gs_transform(gs_state * pgs, floatp x, floatp y, gs_point * pt)
+gs_transform(gs_state * pgs, double x, double y, gs_point * pt)
 {
     return gs_point_transform(x, y, &ctm_only(pgs), pt);
 }
 
 int
-gs_dtransform(gs_state * pgs, floatp dx, floatp dy, gs_point * pt)
+gs_dtransform(gs_state * pgs, double dx, double dy, gs_point * pt)
 {
     return gs_distance_transform(dx, dy, &ctm_only(pgs), pt);
 }
 
 int
-gs_itransform(gs_state * pgs, floatp x, floatp y, gs_point * pt)
+gs_itransform(gs_state * pgs, double x, double y, gs_point * pt)
 {				/* If the matrix isn't skewed, we get more accurate results */
     /* by using transform_inverse than by using the inverse matrix. */
     if (!is_skewed(&pgs->ctm)) {
@@ -336,7 +336,7 @@ gs_itransform(gs_state * pgs, floatp x, floatp y, gs_point * pt)
 }
 
 int
-gs_idtransform(gs_state * pgs, floatp dx, floatp dy, gs_point * pt)
+gs_idtransform(gs_state * pgs, double dx, double dy, gs_point * pt)
 {				/* If the matrix isn't skewed, we get more accurate results */
     /* by using transform_inverse than by using the inverse matrix. */
     if (!is_skewed(&pgs->ctm)) {
@@ -349,7 +349,7 @@ gs_idtransform(gs_state * pgs, floatp dx, floatp dy, gs_point * pt)
 }
 
 int
-gs_imager_idtransform(const gs_imager_state * pis, floatp dx, floatp dy,
+gs_imager_idtransform(const gs_imager_state * pis, double dx, double dy,
                       gs_point * pt)
 {
     return gs_distance_transform_inverse(dx, dy, &ctm_only(pis), pt);

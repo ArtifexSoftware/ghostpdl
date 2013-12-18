@@ -175,8 +175,8 @@ get_paper_size(
 static void
 clj_get_initial_matrix( gx_device *pdev, gs_matrix *pmat)
 {
-    floatp      	fs_res = pdev->HWResolution[0] / 72.0;
-    floatp      	ss_res = pdev->HWResolution[1] / 72.0;
+    double      	fs_res = pdev->HWResolution[0] / 72.0;
+    double      	ss_res = pdev->HWResolution[1] / 72.0;
     const clj_paper_size *psize;
 
     psize = get_paper_size(pdev->MediaSize, NULL);
@@ -416,8 +416,8 @@ clj_print_page(
     byte *                  cdata[3];
     int                     blank_lines = 0;
     int                     i;
-    floatp                  fs_res = pdev->HWResolution[0] / 72.0;
-    floatp                  ss_res = pdev->HWResolution[1] / 72.0;
+    double                  fs_res = pdev->HWResolution[0] / 72.0;
+    double                  ss_res = pdev->HWResolution[1] / 72.0;
     int			    imageable_width, imageable_height;
 
     /* no paper size at this point is a serious error */

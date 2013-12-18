@@ -32,7 +32,7 @@
 
 /* setlinewidth */
 int
-gs_setlinewidth(gs_state * pgs, floatp width)
+gs_setlinewidth(gs_state * pgs, double width)
 {
     gx_set_line_width(pgs_lp, width);
     return 0;
@@ -115,7 +115,7 @@ gs_currentlinejoin(const gs_state * pgs)
 
 /* setmiterlimit */
 int
-gx_set_miter_limit(gx_line_params * plp, floatp limit)
+gx_set_miter_limit(gx_line_params * plp, double limit)
 {
     if (limit < 1.0)
         return_error(gs_error_rangecheck);
@@ -140,7 +140,7 @@ gx_set_miter_limit(gx_line_params * plp, floatp limit)
     return 0;
 }
 int
-gs_setmiterlimit(gs_state * pgs, floatp limit)
+gs_setmiterlimit(gs_state * pgs, double limit)
 {
     return gx_set_miter_limit(pgs_lp, limit);
 }
@@ -155,7 +155,7 @@ gs_currentmiterlimit(const gs_state * pgs)
 /* setdash */
 int
 gx_set_dash(gx_dash_params * dash, const float *pattern, uint length,
-            floatp offset, gs_memory_t * mem)
+            double offset, gs_memory_t * mem)
 {
     uint n = length;
     const float *dfrom = pattern;
@@ -228,7 +228,7 @@ gx_set_dash(gx_dash_params * dash, const float *pattern, uint length,
     return 0;
 }
 int
-gs_setdash(gs_state * pgs, const float *pattern, uint length, floatp offset)
+gs_setdash(gs_state * pgs, const float *pattern, uint length, double offset)
 {
     return gx_set_dash(&pgs_lp->dash, pattern, length, offset,
                        pgs->memory);
@@ -262,7 +262,7 @@ gs_currentlineparams(const gs_imager_state * pis)
 
 /* setflat */
 int
-gs_imager_setflat(gs_imager_state * pis, floatp flat)
+gs_imager_setflat(gs_imager_state * pis, double flat)
 {
     if (flat <= 0.2)
         flat = 0.2;
@@ -272,7 +272,7 @@ gs_imager_setflat(gs_imager_state * pis, floatp flat)
     return 0;
 }
 int
-gs_setflat(gs_state * pgs, floatp flat)
+gs_setflat(gs_state * pgs, double flat)
 {
     return gs_imager_setflat((gs_imager_state *) pgs, flat);
 }
@@ -362,7 +362,7 @@ gs_currentaccuratecurves(const gs_state * pgs)
 
 /* setdotlength */
 int
-gx_set_dot_length(gx_line_params * plp, floatp length, bool absolute)
+gx_set_dot_length(gx_line_params * plp, double length, bool absolute)
 {
     if (length < 0)
         return_error(gs_error_rangecheck);
@@ -371,7 +371,7 @@ gx_set_dot_length(gx_line_params * plp, floatp length, bool absolute)
     return 0;
 }
 int
-gs_setdotlength(gs_state * pgs, floatp length, bool absolute)
+gs_setdotlength(gs_state * pgs, double length, bool absolute)
 {
     return gx_set_dot_length(pgs_lp, length, absolute);
 }

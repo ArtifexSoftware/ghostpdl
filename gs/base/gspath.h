@@ -36,21 +36,21 @@
 
 /* Path constructors */
 int gs_newpath(gs_state *),
-    gs_moveto(gs_state *, floatp, floatp),
-    gs_rmoveto(gs_state *, floatp, floatp),
-    gs_lineto(gs_state *, floatp, floatp),
-    gs_rlineto(gs_state *, floatp, floatp),
-    gs_arc(gs_state *, floatp, floatp, floatp, floatp, floatp),
-    gs_arcn(gs_state *, floatp, floatp, floatp, floatp, floatp),
+    gs_moveto(gs_state *, double, double),
+    gs_rmoveto(gs_state *, double, double),
+    gs_lineto(gs_state *, double, double),
+    gs_rlineto(gs_state *, double, double),
+    gs_arc(gs_state *, double, double, double, double, double),
+    gs_arcn(gs_state *, double, double, double, double, double),
     /*
      * Because of an obscure bug in the IBM RS/6000 compiler, one (but not
-     * both) bool argument(s) for gs_arc_add must come before the floatp
+     * both) bool argument(s) for gs_arc_add must come before the double
      * arguments.
      */
-    gs_arc_add(gs_state *, bool, floatp, floatp, floatp, floatp, floatp, bool),
-    gs_arcto(gs_state *, floatp, floatp, floatp, floatp, floatp, float[4]),
-    gs_curveto(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp),
-    gs_rcurveto(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp),
+    gs_arc_add(gs_state *, bool, double, double, double, double, double, bool),
+    gs_arcto(gs_state *, double, double, double, double, double, float[4]),
+    gs_curveto(gs_state *, double, double, double, double, double, double),
+    gs_rcurveto(gs_state *, double, double, double, double, double, double),
     gs_closepath(gs_state *);
 
 #ifndef gs_imager_state_DEFINED

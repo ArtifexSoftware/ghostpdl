@@ -53,7 +53,7 @@ int dict_uint_param(const ref * pdict, const char *kstr,
                     uint minval, uint maxval, uint defaultval,
                     uint * pvalue);
 int dict_float_param(const ref * pdict, const char *kstr,
-                     floatp defaultval, float *pvalue);
+                     double defaultval, float *pvalue);
 /*
  * There are 3 variants of the procedures for getting array parameters.
  * All return the element count if the parameter is present and of the

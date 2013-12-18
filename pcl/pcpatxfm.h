@@ -40,7 +40,7 @@ void pcl_transform_rect(const gs_memory_t * mem,
  * quadrant (with the origin at one corner of the rectangle).
  */
 void pcl_make_rotation(int rot,
-                       floatp width, floatp height, gs_matrix * pmtx);
+                       double width, double height, gs_matrix * pmtx);
 
 /*
  * Form the transformation matrix required to render a pattern.

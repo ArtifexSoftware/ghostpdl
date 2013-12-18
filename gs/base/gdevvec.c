@@ -39,7 +39,7 @@ public_st_vector_image_enum();
 /* ================ Default implementations of vector procs ================ */
 
 int
-gdev_vector_setflat(gx_device_vector * vdev, floatp flatness)
+gdev_vector_setflat(gx_device_vector * vdev, double flatness)
 {
     return 0;
 }
@@ -82,9 +82,9 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
         ) {
         gs_point p, q;
 
-        gs_point_transform_inverse((floatp)rbox.p.x, (floatp)rbox.p.y,
+        gs_point_transform_inverse((double)rbox.p.x, (double)rbox.p.y,
                                    &state.scale_mat, &p);
-        gs_point_transform_inverse((floatp)rbox.q.x, (floatp)rbox.q.y,
+        gs_point_transform_inverse((double)rbox.q.x, (double)rbox.q.y,
                                    &state.scale_mat, &q);
         code = vdev_proc(vdev, dorect)(vdev, (fixed)p.x, (fixed)p.y,
                                        (fixed)q.x, (fixed)q.y, type);
@@ -434,7 +434,7 @@ gdev_vector_prepare_fill(gx_device_vector * vdev, const gs_imager_state * pis,
 
 /* Compare two dash patterns. */
 static bool
-dash_pattern_eq(const float *stored, const gx_dash_params * set, floatp scale)
+dash_pattern_eq(const float *stored, const gx_dash_params * set, double scale)
 {
     int i;
 
@@ -450,7 +450,7 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
                            const gs_imager_state * pis,	/* may be NULL */
                            const gx_stroke_params * params, /* may be NULL */
                            const gx_drawing_color * pdcolor, /* may be NULL */
-                           floatp scale)
+                           double scale)
 {
     if (pis) {
         int pattern_size = pis->line_params.dash.pattern_size;

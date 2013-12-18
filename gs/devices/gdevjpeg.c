@@ -359,8 +359,8 @@ static void
 jpeg_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 {
     gx_device_jpeg *pdev = (gx_device_jpeg *)dev;
-    floatp fs_res = (dev->HWResolution[0] / 72.0) * pdev->ViewScale.x;
-    floatp ss_res = (dev->HWResolution[1] / 72.0) * pdev->ViewScale.y;
+    double fs_res = (dev->HWResolution[0] / 72.0) * pdev->ViewScale.x;
+    double ss_res = (dev->HWResolution[1] / 72.0) * pdev->ViewScale.y;
 
     /* NB this device has no paper margins */
 

@@ -22,9 +22,9 @@
 #include "gxtmap.h"
 
 /* Color and gray interface */
-int gs_setgray(gs_state *, floatp);
+int gs_setgray(gs_state *, double);
 int gs_currentgray(const gs_state *, float *);
-int gs_setrgbcolor(gs_state *, floatp, floatp, floatp);
+int gs_setrgbcolor(gs_state *, double, double, double);
 int gs_currentrgbcolor(const gs_state *, float[3]);
 int gs_setnullcolor(gs_state *);
 

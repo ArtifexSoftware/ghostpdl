@@ -742,7 +742,7 @@ gsijs_set_resolution(gx_device_ijs *ijsdev)
 {
     char buf[256];
     int code;
-    floatp x_dpi, y_dpi;
+    double x_dpi, y_dpi;
     int width = ijsdev->width;
     int height = ijsdev->height;
     bool save_is_open = ijsdev->is_open;

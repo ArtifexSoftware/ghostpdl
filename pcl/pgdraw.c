@@ -190,7 +190,7 @@ int
 hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t * pgls,
                                    gs_matrix * pmat)
 {
-    floatp origin_x = pgls->g.P1.x, origin_y = pgls->g.P1.y;
+    double origin_x = pgls->g.P1.x, origin_y = pgls->g.P1.y;
 
     switch (pgls->g.scaling_type) {
         case hpgl_scaling_none:
@@ -209,11 +209,11 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t * pgls,
             /*case hpgl_scaling_anisotropic: */
             /*case hpgl_scaling_isotropic: */
             {
-                floatp window_x = pgls->g.P2.x - origin_x,
+                double window_x = pgls->g.P2.x - origin_x,
                     range_x = pgls->g.scaling_params.pmax.x -
                     pgls->g.scaling_params.pmin.x,
                     scale_x = window_x / range_x;
-                floatp window_y = pgls->g.P2.y - origin_y,
+                double window_y = pgls->g.P2.y - origin_y,
                     range_y = pgls->g.scaling_params.pmax.y -
                     pgls->g.scaling_params.pmin.y,
                     scale_y = window_y / range_y;
@@ -276,7 +276,7 @@ hpgl_set_ctm(hpgl_state_t * pgls)
    isotropic scaling we need 4% of the distance of the plotter unit
    equivalent of the scaling SC coordinates xmin, xmax, ymin, and
    ymax.. */
-static floatp
+static double
 hpgl_get_line_pattern_length(hpgl_state_t * pgls)
 {
     /* dispense with the unusual "isotropic relative" case first.  The
@@ -426,7 +426,7 @@ hpgl_set_graphics_line_attribute_state(hpgl_state_t * pgls,
         gs_join_none            /* 6 no join */
     };
     const float *widths = pcl_palette_get_pen_widths(pgls->ppalet);
-    floatp pen_wid = widths[hpgl_get_selected_pen(pgls)];
+    double pen_wid = widths[hpgl_get_selected_pen(pgls)];
 
     gs_setfilladjust(pgls->pgs, 0.0, 0.0);
 
@@ -1115,7 +1115,7 @@ hpgl_set_current_position(hpgl_state_t * pgls, gs_point * pt)
 }
 
 static int
-update_pos(hpgl_state_t * pgls, floatp x, floatp y, hpgl_plot_function_t func)
+update_pos(hpgl_state_t * pgls, double x, double y, hpgl_plot_function_t func)
 {
     gs_point point;
 
@@ -1138,10 +1138,10 @@ update_pos(hpgl_state_t * pgls, floatp x, floatp y, hpgl_plot_function_t func)
 
 int
 hpgl_add_point_to_path(hpgl_state_t * pgls,
-                       floatp x,
-                       floatp y, hpgl_plot_function_t func, bool set_ctm)
+                       double x,
+                       double y, hpgl_plot_function_t func, bool set_ctm)
 {
-    static int (*const gs_procs[]) (gs_state *, floatp, floatp)
+    static int (*const gs_procs[]) (gs_state *, double, double)
         = {
     hpgl_plot_function_procedures};
     int code = 0;
@@ -1233,10 +1233,10 @@ hpgl_add_pcl_point_to_path(hpgl_state_t * pgls, const gs_point * pcl_pt)
     return 0;
 }
 
-static floatp
-compute_chord_angle(floatp chord_angle)
+static double
+compute_chord_angle(double chord_angle)
 {
-    floatp ca = fmod(chord_angle, 360);
+    double ca = fmod(chord_angle, 360);
 
     if (ca >= 0) {
         if (ca > 180)
@@ -1252,17 +1252,17 @@ compute_chord_angle(floatp chord_angle)
 }
 
 int
-hpgl_add_arc_to_path(hpgl_state_t * pgls, floatp center_x, floatp center_y,
-                     floatp radius, floatp start_angle, floatp sweep_angle,
-                     floatp chord_angle, bool start_moveto,
+hpgl_add_arc_to_path(hpgl_state_t * pgls, double center_x, double center_y,
+                     double radius, double start_angle, double sweep_angle,
+                     double chord_angle, bool start_moveto,
                      hpgl_plot_function_t draw, bool set_ctm)
 {
-    floatp num_chordsf = sweep_angle / compute_chord_angle(chord_angle);
+    double num_chordsf = sweep_angle / compute_chord_angle(chord_angle);
     int num_chords =
         (int)(num_chordsf >= 0.0 ? ceil(num_chordsf) : floor(num_chordsf));
-    floatp integral_chord_angle = fabs(sweep_angle / num_chords);
+    double integral_chord_angle = fabs(sweep_angle / num_chords);
     int i;
-    floatp arccoord_x, arccoord_y;
+    double arccoord_x, arccoord_y;
 
     if (hpgl_plot_is_draw(draw))
         pgls->g.have_drawn_in_path = true;
@@ -1301,9 +1301,9 @@ hpgl_add_arc_to_path(hpgl_state_t * pgls, floatp center_x, floatp center_y,
 
 /* add a 3 point arc to the path */
 int
-hpgl_add_arc_3point_to_path(hpgl_state_t * pgls, floatp start_x, floatp
-                            start_y, floatp inter_x, floatp inter_y,
-                            floatp end_x, floatp end_y, floatp chord_angle,
+hpgl_add_arc_3point_to_path(hpgl_state_t * pgls, double start_x, double
+                            start_y, double inter_x, double inter_y,
+                            double end_x, double end_y, double chord_angle,
                             hpgl_plot_function_t draw)
 {
     /* handle unusual cases as per pcltrm */
@@ -1399,9 +1399,9 @@ hpgl_add_arc_3point_to_path(hpgl_state_t * pgls, floatp start_x, floatp
    gs_moveto() and gs_lineto(). */
 
 int
-hpgl_add_bezier_to_path(hpgl_state_t * pgls, floatp x1, floatp y1,
-                        floatp x2, floatp y2, floatp x3, floatp y3,
-                        floatp x4, floatp y4, hpgl_plot_function_t draw)
+hpgl_add_bezier_to_path(hpgl_state_t * pgls, double x1, double y1,
+                        double x2, double y2, double x3, double y3,
+                        double x4, double y4, hpgl_plot_function_t draw)
 {
     gx_path *ppath = gx_current_path(pgls->pgs);
 

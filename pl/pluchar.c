@@ -96,7 +96,7 @@ pl_init_fc(const pl_font_t * plfont,
        width request we don't necessarily have a current graphics
        state... use identity for resolution and ctm */
     gs_matrix mat;
-    floatp xres, yres;
+    double xres, yres;
 
     if (width_request) {
         gs_make_identity(&mat);
@@ -119,10 +119,10 @@ pl_init_fc(const pl_font_t * plfont,
     pfc->fc_type = FC_MAT2_TYPE;
     /* calculate point size, set size etc based on current CTM in EM's */
     {
-        floatp hx = hypot(mat.xx, mat.xy);
-        floatp hy = hypot(mat.yx, mat.yy);
+        double hx = hypot(mat.xx, mat.xy);
+        double hy = hypot(mat.yx, mat.yy);
         /* fixed point scaling */
-        floatp mscale = 1L << 16;
+        double mscale = 1L << 16;
 
         pfc->s.m2.matrix_scale = 16;
         pfc->s.m2.point_size = (int)((hy * plfont->pts_per_inch / yres) + 0.5) * 8;     /* 1/8ths */
@@ -285,7 +285,7 @@ pl_ufst_char_width(uint char_code,
     if (fontWidth[0] == ERR_char_unavailable || fontWidth[1] == 0)
         return 1;
     else if (pwidth != NULL) {
-        floatp fontw = (floatp) fontWidth[0] / (floatp) fontWidth[1];
+        double fontw = (double) fontWidth[0] / (double) fontWidth[1];
         int code = gs_distance_transform(fontw, 0.0, &pl_identmtx, pwidth);
 
         return code < 0 ? code : 0;
@@ -350,7 +350,7 @@ pl_ufst_make_char(gs_show_enum * penum,
         gs_point aw;
 
         /* set up the cache device */
-        gs_distance_transform((floatp) psbm->escapement / psbm->du_emx,
+        gs_distance_transform((double) psbm->escapement / psbm->du_emx,
                               0.0, &sv_ctm, &aw);
 
         wbox[0] = aw.x;
@@ -404,7 +404,7 @@ pl_ufst_make_char(gs_show_enum * penum,
         gs_point aw;
 
         /* set up the cache device */
-        gs_distance_transform((floatp) pols->escapement / pols->du_emx,
+        gs_distance_transform((double) pols->escapement / pols->du_emx,
                               0.0, &sv_ctm, &aw);
         wbox[0] = aw.x;
         wbox[1] = aw.y;

@@ -47,13 +47,13 @@ typedef struct gs_matrix_fixed_s gs_matrix_fixed;
 int gs_matrix_fixed_from_matrix(gs_matrix_fixed *, const gs_matrix *);
 
 /* Coordinate transformations to fixed point. */
-int gs_point_transform2fixed(const gs_matrix_fixed *, floatp, floatp,
+int gs_point_transform2fixed(const gs_matrix_fixed *, double, double,
                              gs_fixed_point *);
-int gs_distance_transform2fixed(const gs_matrix_fixed *, floatp, floatp,
+int gs_distance_transform2fixed(const gs_matrix_fixed *, double, double,
                                 gs_fixed_point *);
 #if PRECISE_CURRENTPOINT
 int gs_point_transform2fixed_rounding(const gs_matrix_fixed * pmat,
-                         floatp x, floatp y, gs_fixed_point * ppt);
+                         double x, double y, gs_fixed_point * ppt);
 #endif
 
 /*

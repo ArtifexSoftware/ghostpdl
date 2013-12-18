@@ -569,7 +569,7 @@ gs_screen_currentpoint(gs_screen_enum * penum, gs_point * ppt)
 
 /* Record next halftone sample */
 int
-gs_screen_next(gs_screen_enum * penum, floatp value)
+gs_screen_next(gs_screen_enum * penum, double value)
 {
     ht_sample_t sample;
     int width = penum->order.width;

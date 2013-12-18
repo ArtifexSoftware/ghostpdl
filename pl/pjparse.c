@@ -259,7 +259,7 @@ pjl_calc_formlines_new_page_size(int page_length)
        1 inch of margin - so the empirical results look plausible.
      */
 
-    floatp formlines = (page_length - 300.0) / 50.0;
+    double formlines = (page_length - 300.0) / 50.0;
 
     return (int)(formlines + 0.5);
 }
@@ -1200,7 +1200,7 @@ pjl_vartoi(const pjl_envvar_t * s)
 }
 
 /* environment variable to float */
-floatp
+double
 pjl_vartof(const pjl_envvar_t * s)
 {
     return atof(s);

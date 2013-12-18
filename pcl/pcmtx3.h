@@ -54,18 +54,18 @@ typedef union
 {
     struct
     {
-        floatp v1, v2, v3;
+        double v1, v2, v3;
     } vc;
-    floatp va[3];
+    double va[3];
 } pcl_vec3_t;
 
 typedef union
 {
     struct
     {
-        floatp a11, a12, a13, a21, a22, a23, a31, a32, a33;
+        double a11, a12, a13, a21, a22, a23, a31, a32, a33;
     } c;
-    floatp a[9];
+    double a[9];
 } pcl_mtx3_t;
 
 /*

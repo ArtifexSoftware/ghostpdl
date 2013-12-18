@@ -319,7 +319,7 @@ gs_show_begin(gs_state * pgs, const byte * str, uint size,
     return gs_text_begin(pgs, &text, mem, ppte);
 }
 int
-gs_ashow_begin(gs_state * pgs, floatp ax, floatp ay, const byte * str, uint size,
+gs_ashow_begin(gs_state * pgs, double ax, double ay, const byte * str, uint size,
                gs_memory_t * mem, gs_text_enum_t ** ppte)
 {
     gs_text_params_t text;
@@ -332,7 +332,7 @@ gs_ashow_begin(gs_state * pgs, floatp ax, floatp ay, const byte * str, uint size
     return gs_text_begin(pgs, &text, mem, ppte);
 }
 int
-gs_widthshow_begin(gs_state * pgs, floatp cx, floatp cy, gs_char chr,
+gs_widthshow_begin(gs_state * pgs, double cx, double cy, gs_char chr,
                    const byte * str, uint size,
                    gs_memory_t * mem, gs_text_enum_t ** ppte)
 {
@@ -347,8 +347,8 @@ gs_widthshow_begin(gs_state * pgs, floatp cx, floatp cy, gs_char chr,
     return gs_text_begin(pgs, &text, mem, ppte);
 }
 int
-gs_awidthshow_begin(gs_state * pgs, floatp cx, floatp cy, gs_char chr,
-                    floatp ax, floatp ay, const byte * str, uint size,
+gs_awidthshow_begin(gs_state * pgs, double cx, double cy, gs_char chr,
+                    double ax, double ay, const byte * str, uint size,
                     gs_memory_t * mem, gs_text_enum_t ** ppte)
 {
     gs_text_params_t text;

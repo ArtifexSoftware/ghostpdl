@@ -171,15 +171,15 @@ static int
     psw_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
                fixed y1, gx_path_type_t type),
     psw_beginpath(gx_device_vector * vdev, gx_path_type_t type),
-    psw_moveto(gx_device_vector * vdev, floatp x0, floatp y0,
-               floatp x, floatp y, gx_path_type_t type),
-    psw_lineto(gx_device_vector * vdev, floatp x0, floatp y0,
-               floatp x, floatp y, gx_path_type_t type),
-    psw_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
-                floatp x1, floatp y1, floatp x2, floatp y2,
-                floatp x3, floatp y3, gx_path_type_t type),
-    psw_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
-                  floatp x_start, floatp y_start, gx_path_type_t type),
+    psw_moveto(gx_device_vector * vdev, double x0, double y0,
+               double x, double y, gx_path_type_t type),
+    psw_lineto(gx_device_vector * vdev, double x0, double y0,
+               double x, double y, gx_path_type_t type),
+    psw_curveto(gx_device_vector * vdev, double x0, double y0,
+                double x1, double y1, double x2, double y2,
+                double x3, double y3, gx_path_type_t type),
+    psw_closepath(gx_device_vector * vdev, double x0, double y0,
+                  double x_start, double y_start, gx_path_type_t type),
     psw_endpath(gx_device_vector * vdev, gx_path_type_t type);
 static const gx_device_vector_procs psw_vector_procs = {
         /* Page management */
@@ -729,12 +729,12 @@ psw_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
  * since this is 10 times more precise than any existing output device.
  */
 static inline double
-round_coord2(floatp v)
+round_coord2(double v)
 {
     return floor(v * 100 + 0.5) / 100.0;
 }
 static void
-print_coord2(stream * s, floatp x, floatp y, const char *str)
+print_coord2(stream * s, double x, double y, const char *str)
 {
     pprintg2(s, "%g %g ", round_coord2(x), round_coord2(y));
     if (str != 0)
@@ -772,7 +772,7 @@ psw_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 }
 
 static int
-psw_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
+psw_moveto(gx_device_vector * vdev, double x0, double y0, double x, double y,
            gx_path_type_t type)
 {
     stream *s = gdev_vector_stream(vdev);
@@ -796,7 +796,7 @@ psw_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 }
 
 static int
-psw_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
+psw_lineto(gx_device_vector * vdev, double x0, double y0, double x, double y,
            gx_path_type_t type)
 {
     double dx = x - x0, dy = y - y0;
@@ -836,8 +836,8 @@ psw_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 }
 
 static int
-psw_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
-            floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
+psw_curveto(gx_device_vector * vdev, double x0, double y0,
+            double x1, double y1, double x2, double y2, double x3, double y3,
             gx_path_type_t type)
 {
     stream *s = gdev_vector_stream(vdev);
@@ -869,8 +869,8 @@ psw_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 }
 
 static int
-psw_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
-              floatp x_start, floatp y_start, gx_path_type_t type)
+psw_closepath(gx_device_vector * vdev, double x0, double y0,
+              double x_start, double y_start, gx_path_type_t type)
 {
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
 

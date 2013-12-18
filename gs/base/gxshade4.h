@@ -191,7 +191,7 @@ int mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fix
 int patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
            const gs_fixed_point interior[4],
            void (*transform) (gs_fixed_point *, const patch_curve_t[4],
-                              const gs_fixed_point[4], floatp, floatp));
+                              const gs_fixed_point[4], double, double));
 
 int constant_color_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool self_intersecting);
 

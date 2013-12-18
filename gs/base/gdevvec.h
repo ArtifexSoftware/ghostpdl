@@ -105,13 +105,13 @@ typedef struct gx_device_vector_procs_s {
        output_page method to request that beginpage be called again
        when drawing next occurs. */
     /* Imager state */
-    int (*setlinewidth) (gx_device_vector * vdev, floatp width);
+    int (*setlinewidth) (gx_device_vector * vdev, double width);
     int (*setlinecap) (gx_device_vector * vdev, gs_line_cap cap);
     int (*setlinejoin) (gx_device_vector * vdev, gs_line_join join);
-    int (*setmiterlimit) (gx_device_vector * vdev, floatp limit);
+    int (*setmiterlimit) (gx_device_vector * vdev, double limit);
     int (*setdash) (gx_device_vector * vdev, const float *pattern,
-                    uint count, floatp offset);
-    int (*setflat) (gx_device_vector * vdev, floatp flatness);
+                    uint count, double offset);
+    int (*setflat) (gx_device_vector * vdev, double flatness);
     int (*setlogop) (gx_device_vector * vdev, gs_logical_operation_t lop,
                      gs_logical_operation_t diff);
     /* Other state */
@@ -128,21 +128,21 @@ typedef struct gx_device_vector_procs_s {
     int (*dorect) (gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
                    fixed y1, gx_path_type_t type);
     int (*beginpath) (gx_device_vector * vdev, gx_path_type_t type);
-    int (*moveto) (gx_device_vector * vdev, floatp x0, floatp y0,
-                   floatp x, floatp y, gx_path_type_t type);
-    int (*lineto) (gx_device_vector * vdev, floatp x0, floatp y0,
-                   floatp x, floatp y, gx_path_type_t type);
-    int (*curveto) (gx_device_vector * vdev, floatp x0, floatp y0,
-                    floatp x1, floatp y1, floatp x2, floatp y2,
-                    floatp x3, floatp y3, gx_path_type_t type);
-    int (*closepath) (gx_device_vector * vdev, floatp x0, floatp y0,
-                      floatp x_start, floatp y_start, gx_path_type_t type);
+    int (*moveto) (gx_device_vector * vdev, double x0, double y0,
+                   double x, double y, gx_path_type_t type);
+    int (*lineto) (gx_device_vector * vdev, double x0, double y0,
+                   double x, double y, gx_path_type_t type);
+    int (*curveto) (gx_device_vector * vdev, double x0, double y0,
+                    double x1, double y1, double x2, double y2,
+                    double x3, double y3, gx_path_type_t type);
+    int (*closepath) (gx_device_vector * vdev, double x0, double y0,
+                      double x_start, double y_start, gx_path_type_t type);
     int (*endpath) (gx_device_vector * vdev, gx_path_type_t type);
 } gx_device_vector_procs;
 
 /* Default implementations of procedures */
 /* setflat does nothing */
-int gdev_vector_setflat(gx_device_vector * vdev, floatp flatness);
+int gdev_vector_setflat(gx_device_vector * vdev, double flatness);
 
 /* dopath may call dorect, beginpath, moveto/lineto/curveto/closepath, */
 /* endpath */
@@ -277,7 +277,7 @@ int gdev_vector_prepare_stroke(gx_device_vector * vdev,
                                const gs_imager_state * pis,
                                const gx_stroke_params * params,
                                const gx_drawing_color * pdcolor,
-                               floatp scale);
+                               double scale);
 
 /*
  * Compute the scale for transforming the line width and dash pattern for a

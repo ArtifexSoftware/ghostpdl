@@ -131,9 +131,9 @@ typedef struct pcl_palette_s pcl_palette_t;
  * Returns 0 on success, < 0 in the event of an error.
  */
 int pcl_palette_CR(pcl_state_t * pcs,
-                   floatp wht0,
-                   floatp wht1,
-                   floatp wht2, floatp blk0, floatp blk1, floatp blk2);
+                   double wht0,
+                   double wht1,
+                   double wht2, double blk0, double blk1, double blk2);
 
 /*
  * Set the number of entries in a color palette. This is needed only for the
@@ -150,7 +150,7 @@ int pcl_palette_NP(pcl_state_t * pcs, int num_entries);
  *
  * Returns 0 on success, < 0 in the even of an error;
  */
-int pcl_palette_PW(pcl_state_t * pcs, int pen, floatp width);
+int pcl_palette_PW(pcl_state_t * pcs, int pen, double width);
 
 /*
  * Support for the GL/2 IN command. This is actually implemented in pccid.c,

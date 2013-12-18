@@ -85,7 +85,7 @@ put_param1_bool(pcl_state_t * pcs, gs_param_name pkey, bool value)
  * Set a float parameter.
  */
 int
-put_param1_float(pcl_state_t * pcs, gs_param_name pkey, floatp value)
+put_param1_float(pcl_state_t * pcs, gs_param_name pkey, double value)
 {
     gs_c_param_list list;
     float fval = value;

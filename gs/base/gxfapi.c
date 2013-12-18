@@ -883,7 +883,7 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_state *pgs, gs_show_enum *penum,
         /* Make a matrix that will place the image */
         /* at (x,y) with no transformation. */
         gs_image_t_init_mask(&image, true);
-        gs_make_translation((floatp) - x, (floatp) (- y + ascent), &image.ImageMatrix);
+        gs_make_translation((double) - x, (double) (- y + ascent), &image.ImageMatrix);
         gs_matrix_multiply(&ctm_only(penum_pgs), &image.ImageMatrix, &image.ImageMatrix);
         image.Width = w + bold;
         image.Height = h + bold;

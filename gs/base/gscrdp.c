@@ -385,7 +385,7 @@ typedef struct encode_data_s {
 
 /* Define procedures that retrieve the Encode values read from the list. */
 static float
-encode_from_data(floatp v, const float values[gx_cie_cache_size],
+encode_from_data(double v, const float values[gx_cie_cache_size],
                  const gs_range * range)
 {
     return (v <= range->rmin ? values[0] :
@@ -398,7 +398,7 @@ encode_from_data(floatp v, const float values[gx_cie_cache_size],
  * my craw, but I've got a mandate not to use macros....
  */
 static float
-encode_lmn_0_from_data(floatp v, const gs_cie_render * pcrd)
+encode_lmn_0_from_data(double v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
 
@@ -406,7 +406,7 @@ encode_lmn_0_from_data(floatp v, const gs_cie_render * pcrd)
                             &pcrd->DomainLMN.ranges[0]);
 }
 static float
-encode_lmn_1_from_data(floatp v, const gs_cie_render * pcrd)
+encode_lmn_1_from_data(double v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
 
@@ -414,7 +414,7 @@ encode_lmn_1_from_data(floatp v, const gs_cie_render * pcrd)
                             &pcrd->DomainLMN.ranges[1]);
 }
 static float
-encode_lmn_2_from_data(floatp v, const gs_cie_render * pcrd)
+encode_lmn_2_from_data(double v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
 
@@ -422,7 +422,7 @@ encode_lmn_2_from_data(floatp v, const gs_cie_render * pcrd)
                             &pcrd->DomainLMN.ranges[2]);
 }
 static float
-encode_abc_0_from_data(floatp v, const gs_cie_render * pcrd)
+encode_abc_0_from_data(double v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
 
@@ -430,7 +430,7 @@ encode_abc_0_from_data(floatp v, const gs_cie_render * pcrd)
                             &pcrd->DomainABC.ranges[0]);
 }
 static float
-encode_abc_1_from_data(floatp v, const gs_cie_render * pcrd)
+encode_abc_1_from_data(double v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
 
@@ -438,7 +438,7 @@ encode_abc_1_from_data(floatp v, const gs_cie_render * pcrd)
                             &pcrd->DomainABC.ranges[1]);
 }
 static float
-encode_abc_2_from_data(floatp v, const gs_cie_render * pcrd)
+encode_abc_2_from_data(double v, const gs_cie_render * pcrd)
 {
     const encode_data_t *data = pcrd->client_data;
 

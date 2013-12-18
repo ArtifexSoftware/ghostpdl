@@ -241,7 +241,7 @@ pdf_make_bitmap_matrix(gs_matrix * pmat, int x, int y, int w, int h,
  */
 void
 pdf_put_image_matrix(gx_device_pdf * pdev, const gs_matrix * pmat,
-                     floatp y_scale)
+                     double y_scale)
 {
     gs_matrix imat = {1, 0, 0, 1, 0 ,0};
 

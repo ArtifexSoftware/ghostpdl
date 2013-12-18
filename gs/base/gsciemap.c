@@ -1024,7 +1024,7 @@ gx_cie_real_remap_finish(cie_cached_vector3 vec3, frac * pconc, float * xyz,
  * this is a bug that we will have to address someday.
  */
 static frac
-float2frac_clamp(floatp x)
+float2frac_clamp(double x)
 {
     return float2frac((x <= 0 ? 0 : x >= 1 ? 1 : x));
 }

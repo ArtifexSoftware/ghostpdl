@@ -31,7 +31,7 @@
 #include "gzht.h"
 
 /* Imports from gscolor.c */
-void load_transfer_map(gs_state *, gx_transfer_map *, floatp);
+void load_transfer_map(gs_state *, gx_transfer_map *, double);
 
 /* Imported from gsht.c */
 void gx_set_effective_transfer(gs_state *);
@@ -41,7 +41,7 @@ void gx_set_effective_transfer(gs_state *);
 
 /* setcmykcolor */
 int
-gs_setcmykcolor(gs_state * pgs, floatp c, floatp m, floatp y, floatp k)
+gs_setcmykcolor(gs_state * pgs, double c, double m, double y, double k)
 {
     gs_color_space      *pcs;
     int                 code;

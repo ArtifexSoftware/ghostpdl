@@ -22,7 +22,7 @@
 
 /* setalpha */
 int
-gs_setalpha(gs_state * pgs, floatp alpha)
+gs_setalpha(gs_state * pgs, double alpha)
 {
     pgs->alpha =
         (gx_color_value) (alpha < 0 ? 0 : alpha > 1 ? gx_max_color_value :

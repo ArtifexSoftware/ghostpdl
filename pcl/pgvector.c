@@ -347,10 +347,10 @@ enum
 };
 
 /* convert pe fixed to float accounting for fractional bits */
-static inline floatp
+static inline double
 pe_fixed2float(int32 x, int32 fbits)
 {
-    return ((floatp) x * (1.0 / pow(2, fbits)));
+    return ((double) x * (1.0 / pow(2, fbits)));
 }
 
 typedef enum

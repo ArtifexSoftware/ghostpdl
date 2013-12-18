@@ -26,20 +26,20 @@
 /* ------ Lines, angles, arcs, and chords ------ */
 
 /* compute the angle between 0 and 2*PI given the slope */
-floatp
-hpgl_compute_angle(floatp dx, floatp dy)
+double
+hpgl_compute_angle(double dx, double dy)
 {
-    floatp alpha = atan2(dy, dx);
+    double alpha = atan2(dy, dx);
 
     return (alpha < 0 ? alpha + M_PI * 2.0 : alpha);
 }
 
 /* compute the center of an arc given 3 points on the arc */
 int
-hpgl_compute_arc_center(floatp x1, floatp y1, floatp x2, floatp y2,
-                        floatp x3, floatp y3, floatp * pcx, floatp * pcy)
+hpgl_compute_arc_center(double x1, double y1, double x2, double y2,
+                        double x3, double y3, double * pcx, double * pcy)
 {
-    floatp px2, py2, dx2, dy2, px3, py3, dx3, dy3;
+    double px2, py2, dx2, dy2, px3, py3, dx3, dy3;
     double denom, t2;
 
     /*
@@ -90,8 +90,8 @@ hpgl_compute_arc_center(floatp x1, floatp y1, floatp x2, floatp y2,
 
 /* compute the coordinates of a point on an arc */
 int
-hpgl_compute_arc_coords(floatp radius, floatp center_x, floatp center_y,
-                        floatp angle, floatp * px, floatp * py)
+hpgl_compute_arc_coords(double radius, double center_x, double center_y,
+                        double angle, double * px, double * py)
 {
     gs_sincos_t sincos;
 
@@ -104,9 +104,9 @@ hpgl_compute_arc_coords(floatp radius, floatp center_x, floatp center_y,
 /* given a start point, angle (degrees) and magnitude of a vector
    compute its endpoints */
 int
-hpgl_compute_vector_endpoints(floatp magnitude, floatp x, floatp y,
-                              floatp angle_degrees, floatp * endx,
-                              floatp * endy)
+hpgl_compute_vector_endpoints(double magnitude, double x, double y,
+                              double angle_degrees, double * endx,
+                              double * endy)
 {
     return hpgl_compute_arc_coords(magnitude, x, y,
                                    angle_degrees, endx, endy);

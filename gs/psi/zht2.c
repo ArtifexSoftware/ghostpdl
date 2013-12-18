@@ -57,7 +57,7 @@ gs_get_colorname_string(const gs_memory_t *mem, gs_separation_name colorname_ind
 
 /* Dummy spot function */
 static float
-spot1_dummy(floatp x, floatp y)
+spot1_dummy(double x, double y)
 {
     return (x + y) / 2;
 }
@@ -431,7 +431,7 @@ dict_spot_params(const ref * pdict, gs_spot_halftone * psp,
 
 /* Set actual frequency and angle in a dictionary. */
 static int
-dict_real_result(i_ctx_t *i_ctx_p, ref * pdict, const char *kstr, floatp val)
+dict_real_result(i_ctx_t *i_ctx_p, ref * pdict, const char *kstr, double val)
 {
     int code = 0;
     ref *ignore;

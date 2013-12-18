@@ -31,14 +31,14 @@
  * ith row and jth column of the given matrix, multiplied by -1 if
  * (i + j) is odd.
  */
-static floatp
+static double
 calc_cofactor(int i, int j, const pcl_mtx3_t * pmtx)
 {
     int i1 = (i == 0 ? 1 : 0);
     int i2 = (i == 2 ? 1 : 2);
     int j1 = (j == 0 ? 1 : 0);
     int j2 = (j == 2 ? 1 : 2);
-    floatp cf = pmtx->a[3 * i1 + j1] * pmtx->a[3 * i2 + j2]
+    double cf = pmtx->a[3 * i1 + j1] * pmtx->a[3 * i2 + j2]
         - pmtx->a[3 * i1 + j2] * pmtx->a[3 * i2 + j1];
 
     return (((i + j) & 0x1) != 0) ? -cf : cf;
@@ -119,7 +119,7 @@ int
 pcl_mtx3_invert(const pcl_mtx3_t * pinmtx, pcl_mtx3_t * poutmtx)
 {
     pcl_mtx3_t cf_mtx;
-    floatp det;
+    double det;
     int i;
 
     make_cofactor_mtx(pinmtx, &cf_mtx);
@@ -175,7 +175,7 @@ pcl_mtx3_mul(const pcl_mtx3_t * pinmtx1,
 
         for (j = 0; j < 3; j++) {
             int k;
-            floatp val = 0.0;
+            double val = 0.0;
 
             for (k = 0; k < 3; k++)
                 val += pinmtx1->a[3 * i + k] * pinmtx2->a[3 * k + j];

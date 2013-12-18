@@ -27,7 +27,7 @@
  * Type 1 fonts, 1.0 for TrueType fonts.
  */
 double
-gs_char_flatness(const gs_imager_state *pis, floatp default_scale)
+gs_char_flatness(const gs_imager_state *pis, double default_scale)
 {
     /*
      * Set the flatness to a value that is likely to produce reasonably

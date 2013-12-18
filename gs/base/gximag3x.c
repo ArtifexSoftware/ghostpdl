@@ -361,7 +361,7 @@ gx_begin_image3x_generic(gx_device * dev,
     return code;
 }
 static bool
-check_image3x_extent(floatp mask_coeff, floatp data_coeff)
+check_image3x_extent(double mask_coeff, double data_coeff)
 {
     if (mask_coeff == 0)
         return data_coeff == 0;

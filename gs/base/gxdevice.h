@@ -587,7 +587,7 @@ int gdev_begin_input_media(gs_param_list * mlist, gs_param_dict * pdict,
                            int count);
 
 int gdev_write_input_page_size(int index, gs_param_dict * pdict,
-                               floatp width_points, floatp height_points);
+                               double width_points, double height_points);
 
 int gdev_write_input_media(int index, gs_param_dict * pdict,
                            const gdev_input_media_t * pim);

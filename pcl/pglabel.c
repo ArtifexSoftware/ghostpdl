@@ -84,12 +84,12 @@ hpgl_is_currentfont_stick_or_arc(const hpgl_state_t * pgls)
 }
 
 /* convert points 2 plu - agfa uses 72.307 points per inch */
-static floatp
-hpgl_points_2_plu(const hpgl_state_t * pgls, floatp points)
+static double
+hpgl_points_2_plu(const hpgl_state_t * pgls, double points)
 {
     const pcl_font_selection_t *pfs =
         &pgls->g.font_selection[pgls->g.font_selected];
-    floatp ppi = 72.0;
+    double ppi = 72.0;
 
     if (pfs->font->scaling_technology == plfst_Intellifont)
         ppi = 72.307;
@@ -471,7 +471,7 @@ hpgl_rotation_transform_distance(hpgl_state_t * pgls, gs_point * dxy,
     gs_point tmp_dxy = *dxy;
     gs_matrix rmat;
 
-    gs_make_rotation((floatp) angle, &rmat);
+    gs_make_rotation((double) angle, &rmat);
     hpgl_call(gs_distance_transform(tmp_dxy.x, tmp_dxy.y, &rmat, r_dxy));
     return 0;
 }
@@ -776,7 +776,7 @@ hpgl_print_char(hpgl_state_t * pgls, uint ch)
         const float *widths = pcl_palette_get_pen_widths(pgls->ppalet);
         float save_width = widths[hpgl_get_selected_pen(pgls)];
         int weight = pfs->params.stroke_weight;
-        floatp nwidth;
+        double nwidth;
 
         if (weight == 9999)
             nwidth = save_width;
@@ -887,7 +887,7 @@ hpgl_print_char(hpgl_state_t * pgls, uint ch)
         gs_currentmatrix(pgs, &advance_mat);
         if (angle >= 0) {
             gs_setmatrix(pgs, &pre_rmat);
-            gs_rotate(pgs, (floatp) angle);
+            gs_rotate(pgs, (double) angle);
         }
 
         str[0] = ch;
@@ -1149,11 +1149,11 @@ hpgl_get_character_origin_offset(hpgl_state_t * pgls, int origin,
 
                    gs_currentmatrix(pgls->pgs, &save_ctm);
                    pcl_set_ctm(pgls, false);
-                   hpgl_call(gs_transform(pgls->pgs, (floatp)pgls->cap.x,
-                   (floatp)pgls->cap.y, &pcl_pos_dev));
+                   hpgl_call(gs_transform(pgls->pgs, (double)pgls->cap.x,
+                   (double)pgls->cap.y, &pcl_pos_dev));
                    gs_setmatrix(pgls->pgs, &save_ctm);
-                   hpgl_call(gs_itransform(pgls->pgs, (floatp)pcl_pos_dev.x,
-                   (floatp)pcl_pos_dev.y, &label_origin));
+                   hpgl_call(gs_itransform(pgls->pgs, (double)pcl_pos_dev.x,
+                   (double)pcl_pos_dev.y, &label_origin));
                    pos_x = -(pgls->g.pos.x - label_origin.x);
                    pos_y = (pgls->g.pos.y - label_origin.y);
                  */

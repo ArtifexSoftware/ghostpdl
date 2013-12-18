@@ -211,7 +211,7 @@ int gs_main_run_string_end(gs_main_instance * minst, int user_errors,
  */
 int gs_push_boolean(gs_main_instance * minst, bool value);
 int gs_push_integer(gs_main_instance * minst, long value);
-int gs_push_real(gs_main_instance * minst, floatp value);
+int gs_push_real(gs_main_instance * minst, double value);
 int gs_push_string(gs_main_instance * minst, byte * chars, uint length,
                    bool read_only);
 

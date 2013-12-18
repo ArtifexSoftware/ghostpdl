@@ -99,11 +99,11 @@ gx_no_adjust_color_count(const gs_client_color * pcc,
 }
 
 /* Forward declarations */
-void load_transfer_map(gs_state *, gx_transfer_map *, floatp);
+void load_transfer_map(gs_state *, gx_transfer_map *, double);
 
 /* setgray */
 int
-gs_setgray(gs_state * pgs, floatp gray)
+gs_setgray(gs_state * pgs, double gray)
 {
     gs_color_space      *pcs;
     int                 code;
@@ -125,7 +125,7 @@ gs_setgray(gs_state * pgs, floatp gray)
 
 /* setrgbcolor */
 int
-gs_setrgbcolor(gs_state * pgs, floatp r, floatp g, floatp b)
+gs_setrgbcolor(gs_state * pgs, double r, double g, double b)
 {
     gs_color_space      *pcs;
     int                 code;
@@ -244,13 +244,13 @@ gx_set_device_color_1(gs_state * pgs)
  * Note that we must deal with both old (proc) and new (closure) maps.
  */
 static float
-transfer_use_proc(floatp value, const gx_transfer_map * pmap,
+transfer_use_proc(double value, const gx_transfer_map * pmap,
                   const void *ignore_proc_data)
 {
     return (*pmap->proc) (value, pmap);
 }
 void
-load_transfer_map(gs_state * pgs, gx_transfer_map * pmap, floatp min_value)
+load_transfer_map(gs_state * pgs, gx_transfer_map * pmap, double min_value)
 {
     gs_mapping_closure_proc_t proc;
     const void *proc_data;

@@ -768,7 +768,7 @@ get_XYZ(icS15Fixed16Number XYZ[], gs_vector3 *vector)
 }
 
 static void
-get_XYZ_floatptr(icS15Fixed16Number XYZ[], float *vector)
+get_XYZ_doubletr(icS15Fixed16Number XYZ[], float *vector)
 {
     XYZ[0] = double2XYZtype(vector[0]);
     XYZ[1] = double2XYZtype(vector[1]);
@@ -1305,7 +1305,7 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
     /* The matrix */
     if (num_colors == 3) {
         for ( k = 0; k < 3; k++ ) {
-            get_XYZ_floatptr(temp_XYZ,&(matrix[k*3]));
+            get_XYZ_doubletr(temp_XYZ,&(matrix[k*3]));
             add_xyzdata(curr_ptr,temp_XYZ);
             curr_ptr += tag_list[tag_location].size;
             tag_location++;
@@ -1313,12 +1313,12 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
     }
     /* White and black points */
     /* Need to adjust for the D65/D50 issue */
-    get_XYZ_floatptr(temp_XYZ,white);
+    get_XYZ_doubletr(temp_XYZ,white);
     add_xyzdata(curr_ptr,temp_XYZ);
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
     /* Black point */
-    get_XYZ_floatptr(temp_XYZ,black);
+    get_XYZ_doubletr(temp_XYZ,black);
     add_xyzdata(curr_ptr,temp_XYZ);
     curr_ptr += tag_list[tag_location].size;
     tag_location++;

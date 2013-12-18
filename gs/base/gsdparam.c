@@ -427,7 +427,7 @@ gdev_write_input_media(int index, gs_param_dict * pdict,
 
 int
 gdev_write_input_page_size(int index, gs_param_dict * pdict,
-                           floatp width_points, floatp height_points)
+                           double width_points, double height_points)
 {
     gdev_input_media_t media;
 

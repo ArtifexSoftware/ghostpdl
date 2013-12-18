@@ -35,7 +35,7 @@ private_st_int_remap_color_info();
 /* ------ Utilities ------ */
 
 static int
-zset_real(i_ctx_t *i_ctx_p, int (*set_proc)(gs_state *, floatp))
+zset_real(i_ctx_t *i_ctx_p, int (*set_proc)(gs_state *, double))
 {
     os_ptr op = osp;
     double param;

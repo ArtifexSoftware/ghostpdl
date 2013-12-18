@@ -73,7 +73,7 @@ make_other_poles(patch_curve_t curve[4])
 /* Transform a point with a fixed-point result. */
 static void
 gs_point_transform2fixed_clamped(const gs_matrix_fixed * pmat,
-                         floatp x, floatp y, gs_fixed_point * ppt)
+                         double x, double y, gs_fixed_point * ppt)
 {
     gs_point fpt;
 
@@ -700,9 +700,9 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
         double t0, double t1, bool Extend0, bool Extend1)
 {
     float x0 = psh->params.Coords[0], y0 = psh->params.Coords[1];
-    floatp r0 = psh->params.Coords[2];
+    double r0 = psh->params.Coords[2];
     float x1 = psh->params.Coords[3], y1 = psh->params.Coords[4];
-    floatp r1 = psh->params.Coords[5];
+    double r1 = psh->params.Coords[5];
     double dx = x1 - x0, dy = y1 - y0, dr = any_abs(r1 - r0);
     double d = hypot(dx, dy), r;
     int code;
@@ -1049,7 +1049,7 @@ compute_radial_shading_span_extended(radial_shading_attrs_t *rsa, double r0, dou
 }
 
 static int
-compute_radial_shading_span(radial_shading_attrs_t *rsa, float x0, float y0, floatp r0, float x1, float y1, floatp r1, const gs_rect * rect)
+compute_radial_shading_span(radial_shading_attrs_t *rsa, float x0, float y0, double r0, float x1, float y1, double r1, const gs_rect * rect)
 {
     /* If the shading area is much larger than the path bbox,
        we want to shorten the shading for a faster rendering.
@@ -1164,7 +1164,7 @@ compute_radial_shading_span(radial_shading_attrs_t *rsa, float x0, float y0, flo
 }
 
 static bool
-shorten_radial_shading(float *x0, float *y0, floatp *r0, float *d0, float *x1, float *y1, floatp *r1, float *d1, double span_[2])
+shorten_radial_shading(float *x0, float *y0, double *r0, float *d0, float *x1, float *y1, double *r1, float *d1, double span_[2])
 {
     double s0 = span_[0], s1 = span_[1], w;
 
@@ -1229,9 +1229,9 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     const gs_shading_R_t *const psh = (const gs_shading_R_t *)psh0;
     float d0 = psh->params.Domain[0], d1 = psh->params.Domain[1];
     float x0 = psh->params.Coords[0], y0 = psh->params.Coords[1];
-    floatp r0 = psh->params.Coords[2];
+    double r0 = psh->params.Coords[2];
     float x1 = psh->params.Coords[3], y1 = psh->params.Coords[4];
-    floatp r1 = psh->params.Coords[5];
+    double r1 = psh->params.Coords[5];
     radial_shading_attrs_t rsa;
     int span_type; /* <0 - don't shorten, 1 - extent0, 2 - first contact, 4 - last contact, 8 - extent1. */
     int code;
@@ -1273,7 +1273,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
             code = R_extensions(&pfs1, psh, rect, d0, d1, psh->params.Extend[0], false);
         if ((code >= 0) && (span_type & 2)) {
             float X0 = x0, Y0 = y0, D0 = d0, X1 = x1, Y1 = y1, D1 = d1;
-            floatp R0 = r0, R1 = r1;
+            double R0 = r0, R1 = r1;
 
             if ((span_type & 4) && rsa.span[0][1] >= rsa.span[1][0]) {
                 double united[2];
@@ -1290,7 +1290,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
         if (code >= 0 && second_interval) {
             if (span_type & 4) {
                 float X0 = x0, Y0 = y0, D0 = d0, X1 = x1, Y1 = y1, D1 = d1;
-                floatp R0 = r0, R1 = r1;
+                double R0 = r0, R1 = r1;
 
                 shorten_radial_shading(&X0, &Y0, &R0, &D0, &X1, &Y1, &R1, &D1, rsa.span[1]);
                 code = R_tensor_annulus(&pfs1, X0, Y0, R0, D0, X1, Y1, R1, D1);

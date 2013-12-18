@@ -48,7 +48,7 @@ extern stream_state_proc_put_params(s_DCTE_put_params, stream_DCT_state);
 /* ---------------- Vector implementation procedures ---------------- */
 
 int
-psdf_setlinewidth(gx_device_vector * vdev, floatp width)
+psdf_setlinewidth(gx_device_vector * vdev, double width)
 {
     pprintg1(gdev_vector_stream(vdev), "%g w\n", width);
     return 0;
@@ -107,7 +107,7 @@ psdf_setlinejoin(gx_device_vector * vdev, gs_line_join join)
 }
 
 int
-psdf_setmiterlimit(gx_device_vector * vdev, floatp limit)
+psdf_setmiterlimit(gx_device_vector * vdev, double limit)
 {
     pprintg1(gdev_vector_stream(vdev), "%g M\n", limit);
     return 0;
@@ -115,7 +115,7 @@ psdf_setmiterlimit(gx_device_vector * vdev, floatp limit)
 
 int
 psdf_setdash(gx_device_vector * vdev, const float *pattern, uint count,
-             floatp offset)
+             double offset)
 {
     stream *s = gdev_vector_stream(vdev);
     int i;
@@ -128,7 +128,7 @@ psdf_setdash(gx_device_vector * vdev, const float *pattern, uint count,
 }
 
 int
-psdf_setflat(gx_device_vector * vdev, floatp flatness)
+psdf_setflat(gx_device_vector * vdev, double flatness)
 {
     pprintg1(gdev_vector_stream(vdev), "%g i\n", flatness);
     return 0;
@@ -163,7 +163,7 @@ psdf_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 }
 
 int
-psdf_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
+psdf_moveto(gx_device_vector * vdev, double x0, double y0, double x, double y,
             gx_path_type_t type)
 {
     pprintg2(gdev_vector_stream(vdev), "%g %g m\n", x, y);
@@ -171,7 +171,7 @@ psdf_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 }
 
 int
-psdf_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
+psdf_lineto(gx_device_vector * vdev, double x0, double y0, double x, double y,
             gx_path_type_t type)
 {
     pprintg2(gdev_vector_stream(vdev), "%g %g l\n", x, y);
@@ -179,8 +179,8 @@ psdf_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 }
 
 int
-psdf_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
-           floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
+psdf_curveto(gx_device_vector * vdev, double x0, double y0,
+           double x1, double y1, double x2, double y2, double x3, double y3,
              gx_path_type_t type)
 {
     if (x1 == x0 && y1 == y0 && x2 == x3 && y2 == y3)
@@ -198,8 +198,8 @@ psdf_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 }
 
 int
-psdf_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
-               floatp x_start, floatp y_start, gx_path_type_t type)
+psdf_closepath(gx_device_vector * vdev, double x0, double y0,
+               double x_start, double y_start, gx_path_type_t type)
 {
     stream_puts(gdev_vector_stream(vdev), "h\n");
     return 0;

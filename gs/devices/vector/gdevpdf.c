@@ -951,7 +951,7 @@ pdf_close_page(gx_device_pdf * pdev, int num_copies)
 
 /* Write the page object. */
 static double
-round_box_coord(floatp xy)
+round_box_coord(double xy)
 {
     return (int)(xy * 100 + 0.5) / 100.0;
 }
@@ -960,7 +960,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 {
     long page_id = pdf_page_id(pdev, page_num);
     pdf_page_t *page = &pdev->pages[page_num - 1];
-    floatp mediabox[4] = {0, 0};
+    double mediabox[4] = {0, 0};
     stream *s;
 
     mediabox[2] = round_box_coord(page->MediaBox.x);
@@ -974,7 +974,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
         const cos_value_t *v_artbox = cos_dict_find_c_key(page->Page, "/ArtBox");
         const cos_value_t *v_cropbox = cos_dict_find_c_key(page->Page, "/CropBox");
         const cos_value_t *v_bleedbox = cos_dict_find_c_key(page->Page, "/BleedBox");
-        floatp trimbox[4] = {0, 0}, bleedbox[4] = {0, 0};
+        double trimbox[4] = {0, 0}, bleedbox[4] = {0, 0};
         bool print_bleedbox = false;
 
         trimbox[2] = bleedbox[2] = mediabox[2];

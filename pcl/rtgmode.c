@@ -60,7 +60,7 @@ adjust_pres_mode(pcl_state_t * pcs)
 
     pcl_xfm_state_t *pxfmst = &(pcs->xfm_state);
     pcl_raster_state_t *prstate = &(pcs->raster_state);
-    floatp fcoord = 0.0;
+    double fcoord = 0.0;
 
     if (prstate->pres_mode_3 && (pxfmst->lp_orient & 1))
         fcoord = 1.0 * 7200.0 / gs_currentdevice(pcs->pgs)->HWResolution[0];
@@ -184,7 +184,7 @@ get_raster_print_rect(const gs_memory_t * mem,
 int
 pcl_enter_graphics_mode(pcl_state_t * pcs, pcl_gmode_entry_t mode)
 {
-    floatp scale_x, scale_y;
+    double scale_x, scale_y;
     pcl_xfm_state_t *pxfmst = &(pcs->xfm_state);
     pcl_raster_state_t *prstate = &(pcs->raster_state);
     float gmargin_cp = (float)prstate->gmargin_cp;
@@ -246,44 +246,44 @@ pcl_enter_graphics_mode(pcl_state_t * pcs, pcl_gmode_entry_t mode)
         !prstate->src_width_set ||
         !prstate->src_height_set ||
         (pcs->ppalet->pindexed->pfixed && mode == IMPLICIT)) {
-        scale_x = 7200.0 / (floatp) prstate->resolution;
+        scale_x = 7200.0 / (double) prstate->resolution;
         scale_y = scale_x;
 
     } else if (prstate->dest_width_set) {
         scale_x =
-            (floatp) prstate->dest_width_cp / (floatp) prstate->src_width;
+            (double) prstate->dest_width_cp / (double) prstate->src_width;
 
         if (clip_x < 0 && pxfmst->lp_orient == 3) {
             scale_y =
-                (floatp) (prstate->dest_width_cp -
-                          clip_y) / (floatp) prstate->src_width;
+                (double) (prstate->dest_width_cp -
+                          clip_y) / (double) prstate->src_width;
             if (rot == 2 && scale_y <= 2 * prstate->src_width)  /* empirical test 1 */
                 scale_y = scale_x;
         } else if (clip_x < 0 && pxfmst->lp_orient == 1 && rot == 3) {
             scale_y =
-                (floatp) (prstate->dest_width_cp -
-                          clip_y) / (floatp) prstate->src_width;
+                (double) (prstate->dest_width_cp -
+                          clip_y) / (double) prstate->src_width;
 
             if (prstate->dest_width_cp <= 7200) /* empirical test 2 */
                 scale_y =
-                    (floatp) (prstate->dest_width_cp +
-                              clip_y) / (floatp) prstate->src_width;
+                    (double) (prstate->dest_width_cp +
+                              clip_y) / (double) prstate->src_width;
         } else
             scale_y = scale_x;
 
         if (prstate->dest_height_set)
             scale_y =
-                (floatp) prstate->dest_height_cp /
-                (floatp) prstate->src_height;
+                (double) prstate->dest_height_cp /
+                (double) prstate->src_height;
 
     } else if (prstate->dest_height_set) {
         scale_x = scale_y =
-            (floatp) prstate->dest_height_cp / (floatp) prstate->src_height;
+            (double) prstate->dest_height_cp / (double) prstate->src_height;
     } else {
 
         /* select isotropic scaling with no clipping */
-        scale_x = (floatp) dwid / (floatp) prstate->src_width;
-        scale_y = (floatp) dhgt / (floatp) prstate->src_height;
+        scale_x = (double) dwid / (double) prstate->src_width;
+        scale_y = (double) dhgt / (double) prstate->src_height;
         if (scale_x > scale_y)
             scale_x = scale_y;
         else

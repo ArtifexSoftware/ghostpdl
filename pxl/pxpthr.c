@@ -409,7 +409,7 @@ pxpcl_selectfont(px_args_t * par, px_state_t * pxs)
 #define CP_PER_MM           (7200.0/25.4)
 #define CP_PER_10ths_of_MM  (CP_PER_MM/10.0)
 
-        static const floatp centipoints_per_measure[4] = {
+        static const double centipoints_per_measure[4] = {
             CP_PER_INCH,        /* eInch */
             CP_PER_MM,          /* eMillimeter */
             CP_PER_10ths_of_MM, /* eTenthsOfAMillimeter */

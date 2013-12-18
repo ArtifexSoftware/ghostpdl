@@ -93,7 +93,7 @@ gs_setcachedevice2_float(gs_show_enum * penum, gs_state * pgs, const float *pw2)
 /* non-displaying (stringwidth or cshow). */
 int
 gs_setcharwidth(gs_show_enum * penum, gs_state * pgs,
-                floatp wx, floatp wy)
+                double wx, double wy)
 {
     double w[2];
 

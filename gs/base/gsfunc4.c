@@ -62,7 +62,7 @@ typedef struct calc_value_s {
 
 /* Store a float. */
 static inline void
-store_float(calc_value_t *vsp, floatp f)
+store_float(calc_value_t *vsp, double f)
 {
     vsp->value.f = f;
     vsp->type = CVT_FLOAT;
@@ -242,12 +242,12 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
             /* Coerce and re-dispatch */
 
         case PtCr_int_to_float:
-            store_float(vsp, (floatp)vsp->value.i);
+            store_float(vsp, (double)vsp->value.i);
             --p; goto sw;
         case PtCr_int2_to_float:
-            store_float(vsp, (floatp)vsp->value.i);
+            store_float(vsp, (double)vsp->value.i);
         case PtCr_2nd_int_to_float:
-            store_float(vsp - 1, (floatp)vsp[-1].value.i);
+            store_float(vsp - 1, (double)vsp[-1].value.i);
             --p; goto sw;
 
             /* Arithmetic operators */
@@ -351,7 +351,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
         case PtCr_neg_int:
         neg_int:
             if (vsp->value.i == min_int)
-                store_float(vsp, (floatp)vsp->value.i); /* =self negated */
+                store_float(vsp, (double)vsp->value.i); /* =self negated */
             else
                 vsp->value.i = -vsp->value.i;
             continue;

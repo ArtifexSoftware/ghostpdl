@@ -264,7 +264,7 @@ cff_put_bool_value(cff_writer_t *pcw, bool b, int op)
     cff_put_op(pcw, op);
 }
 static void
-cff_put_real(cff_writer_t *pcw, floatp f)
+cff_put_real(cff_writer_t *pcw, double f)
 {
     if (f == (int)f)
         cff_put_int(pcw, (int)f);
@@ -314,13 +314,13 @@ cff_put_real(cff_writer_t *pcw, floatp f)
     }
 }
 static void
-cff_put_real_value(cff_writer_t *pcw, floatp f, int op)
+cff_put_real_value(cff_writer_t *pcw, double f, int op)
 {
     cff_put_real(pcw, f);
     cff_put_op(pcw, op);
 }
 static void
-cff_put_real_if_ne(cff_writer_t *pcw, floatp f, floatp f_default, int op)
+cff_put_real_if_ne(cff_writer_t *pcw, double f, double f_default, int op)
 {
     if ((float)f != (float)f_default)
         cff_put_real_value(pcw, f, op);

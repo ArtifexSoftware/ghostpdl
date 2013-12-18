@@ -40,7 +40,7 @@
 /* ------ Utilities ------ */
 
 static int
-set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(gs_state *, floatp))
+set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(gs_state *, double))
 {
     os_ptr op = osp;
     double value;
@@ -247,7 +247,7 @@ zendtransparencygroup(i_ctx_t *i_ctx_p)
 
 /* <cs_set?> <paramdict> <llx> <lly> <urx> <ury> .begintransparencymaskgroup -	*/
 /*             cs_set == false if we are inheriting the colorspace		*/
-static int tf_using_function(floatp, float *, void *);
+static int tf_using_function(double, float *, void *);
 static int
 zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
 {
@@ -323,7 +323,7 @@ zbegintransparencymaskimage(i_ctx_t *i_ctx_p)
 
 /* Implement the TransferFunction using a Function. */
 static int
-tf_using_function(floatp in_val, float *out, void *proc_data)
+tf_using_function(double in_val, float *out, void *proc_data)
 {
     float in = in_val;
     gs_function_t *const pfn = proc_data;

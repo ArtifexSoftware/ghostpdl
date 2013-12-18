@@ -442,7 +442,7 @@ gs_font_find_similar(const gs_font_dir * pdir, const gs_font **ppfont,
 
 /* scalefont */
 int
-gs_scalefont(gs_font_dir * pdir, const gs_font * pfont, floatp scale,
+gs_scalefont(gs_font_dir * pdir, const gs_font * pfont, double scale,
              gs_font ** ppfont)
 {
     gs_matrix mat;

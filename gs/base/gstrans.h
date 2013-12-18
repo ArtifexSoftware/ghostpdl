@@ -141,9 +141,9 @@ typedef struct gs_pdf14trans_s {
 /* Access transparency-related graphics state elements. */
 int gs_setblendmode(gs_state *, gs_blend_mode_t);
 gs_blend_mode_t gs_currentblendmode(const gs_state *);
-int gs_setopacityalpha(gs_state *, floatp);
+int gs_setopacityalpha(gs_state *, double);
 float gs_currentopacityalpha(const gs_state *);
-int gs_setshapealpha(gs_state *, floatp);
+int gs_setshapealpha(gs_state *, double);
 float gs_currentshapealpha(const gs_state *);
 int gs_settextknockout(gs_state *, bool);
 bool gs_currenttextknockout(const gs_state *);

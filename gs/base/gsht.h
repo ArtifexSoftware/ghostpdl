@@ -23,7 +23,7 @@
 typedef struct gs_screen_halftone_s {
     float frequency;
     float angle;
-    float (*spot_function) (floatp, floatp);
+    float (*spot_function) (double, double);
     /* setscreen or sethalftone sets these: */
     /* (a Level 2 feature, but we include them in Level 1) */
     float actual_frequency;
@@ -62,7 +62,7 @@ typedef struct gs_screen_enum_s gs_screen_enum;
 gs_screen_enum *gs_screen_enum_alloc(gs_memory_t *, client_name_t);
 int gs_screen_init(gs_screen_enum *, gs_state *, gs_screen_halftone *);
 int gs_screen_currentpoint(gs_screen_enum *, gs_point *);
-int gs_screen_next(gs_screen_enum *, floatp);
+int gs_screen_next(gs_screen_enum *, double);
 int gs_screen_install(gs_screen_enum *);
 
 #endif /* gsht_INCLUDED */

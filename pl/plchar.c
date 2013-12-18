@@ -1253,8 +1253,8 @@ pl_intelli_show_char(gs_state * pgs, const pl_font_t * plfont, gs_glyph glyph)
         gs_currentmatrix(pgs, &save_ctm);
         for (i = 0; i < cdata[6]; ++i) {
             const byte *edata = cdata + 8 + i * 6;
-            floatp x_offset = pl_get_int16(edata + 2);
-            floatp y_offset = pl_get_int16(edata + 4);
+            double x_offset = pl_get_int16(edata + 2);
+            double y_offset = pl_get_int16(edata + 4);
 
             gs_translate(pgs, x_offset, y_offset);
             code = pl_intelli_show_char(pgs, plfont, pl_get_uint16(edata));
@@ -1395,13 +1395,13 @@ pl_intelli_show_char(gs_state * pgs, const pl_font_t * plfont, gs_glyph glyph)
             xScan = xBuffer;
             yScan = yBuffer;
             if (xLast > xBuffer) {
-                code = gs_moveto(pgs, (floatp) * xScan++, (floatp) * yScan++);
+                code = gs_moveto(pgs, (double) * xScan++, (double) * yScan++);
                 if (code < 0)
                     goto cleanup;
             }
 
             for (; xScan < xLast;) {
-                code = gs_lineto(pgs, (floatp) * xScan++, (floatp) * yScan++);
+                code = gs_lineto(pgs, (double) * xScan++, (double) * yScan++);
                 if (code < 0)
                     goto cleanup;
             }
@@ -1451,7 +1451,7 @@ pl_intelli_char_width(const pl_font_t * plfont, const void *pgs,
             pwidth->x = pwidth->y = 0;
             return 0;
     }
-    pwidth->x = (floatp) wx / 8782.0;
+    pwidth->x = (double) wx / 8782.0;
     return 0;
 }
 

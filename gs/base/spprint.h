@@ -41,15 +41,15 @@ int stream_puts(stream * s, const char *str);
  * These functions return a pointer to the next %-element of the format, or
  * to the terminating 0.
  */
-const char *pprintg1(stream * s, const char *format, floatp v);
-const char *pprintg2(stream * s, const char *format, floatp v1, floatp v2);
+const char *pprintg1(stream * s, const char *format, double v);
+const char *pprintg2(stream * s, const char *format, double v1, double v2);
 const char *pprintg3(stream * s, const char *format,
-                     floatp v1, floatp v2, floatp v3);
+                     double v1, double v2, double v3);
 const char *pprintg4(stream * s, const char *format,
-                     floatp v1, floatp v2, floatp v3, floatp v4);
+                     double v1, double v2, double v3, double v4);
 const char *pprintg6(stream * s, const char *format,
-                     floatp v1, floatp v2, floatp v3, floatp v4,
-                     floatp v5, floatp v6);
+                     double v1, double v2, double v3, double v4,
+                     double v5, double v6);
 
 /*
  * The rest of these printing functions exist solely because the ANSI C

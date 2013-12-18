@@ -1620,9 +1620,9 @@ static int
 conic_to(const FT_Vector * aControl, const FT_Vector * aTo, void *aObject)
 {
     FF_path_info *p = (FF_path_info *) aObject;
-    floatp x, y, Controlx, Controly;
+    double x, y, Controlx, Controly;
     int64_t Control1x, Control1y, Control2x, Control2y;
-    floatp sx, sy;
+    double sx, sy;
 
     /* More complicated than above, we need to do arithmetic on the
      * co-ordinates, so we want them as floats and we will convert the
@@ -1640,8 +1640,8 @@ conic_to(const FT_Vector * aControl, const FT_Vector * aTo, void *aObject)
      * gives the same curve as the original quadratic.
      */
 
-    sx = (floatp) (p->x >> 32);
-    sy = (floatp) (p->y >> 32);
+    sx = (double) (p->x >> 32);
+    sy = (double) (p->y >> 32);
 
     x = aTo->x / 64.0;
     p->x = ((int64_t) float2fixed(x)) << 24;

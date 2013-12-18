@@ -106,7 +106,7 @@ pl_device_does_color_conversion()
 /* CIEBasedABC definitions */
 /* Decode LMN procedures for srgb color spaces or sRGB gamma transform. */
 inline static float
-pl_decodeLMN(floatp val, const gs_cie_common * pcie)
+pl_decodeLMN(double val, const gs_cie_common * pcie)
 {
     if (val <= 0.03928)
         return (float)(val / 12.92321);
@@ -115,19 +115,19 @@ pl_decodeLMN(floatp val, const gs_cie_common * pcie)
 }
 
 static float
-pl_DecodeLMN_0(floatp val, const gs_cie_common * pcie)
+pl_DecodeLMN_0(double val, const gs_cie_common * pcie)
 {
     return pl_decodeLMN(val, pcie);
 }
 
 static float
-pl_DecodeLMN_1(floatp val, const gs_cie_common * pcie)
+pl_DecodeLMN_1(double val, const gs_cie_common * pcie)
 {
     return pl_decodeLMN(val, pcie);
 }
 
 static float
-pl_DecodeLMN_2(floatp val, const gs_cie_common * pcie)
+pl_DecodeLMN_2(double val, const gs_cie_common * pcie)
 {
     return pl_decodeLMN(val, pcie);
 }
@@ -172,7 +172,7 @@ static const gs_range3 pl_RangePQR = {
 
 /* tranform pqr */
 static int
-pl_TransformPQR_proc(int indx, floatp val, const gs_cie_wbsd * cs_wbsd,
+pl_TransformPQR_proc(int indx, double val, const gs_cie_wbsd * cs_wbsd,
                      gs_cie_render * pcrd, float *pnew_val)
 {
     const float *pcrd_wht = (float *)&(cs_wbsd->wd.pqr);
@@ -191,7 +191,7 @@ static const gs_cie_transform_proc3 pl_TransformPQR = {
 
 /* ABC - inverse srgb gamma transform */
 inline static float
-pl_encodeABC(floatp in, const gs_cie_render * pcrd)
+pl_encodeABC(double in, const gs_cie_render * pcrd)
 {
     if (in <= 0.00304)
         return (float)(in * 12.92321);
@@ -199,19 +199,19 @@ pl_encodeABC(floatp in, const gs_cie_render * pcrd)
 }
 
 static float
-pl_EncodeABC_0(floatp in, const gs_cie_render * pcrd)
+pl_EncodeABC_0(double in, const gs_cie_render * pcrd)
 {
     return pl_encodeABC(in, pcrd);
 }
 
 static float
-pl_EncodeABC_1(floatp in, const gs_cie_render * pcrd)
+pl_EncodeABC_1(double in, const gs_cie_render * pcrd)
 {
     return pl_encodeABC(in, pcrd);
 }
 
 static float
-pl_EncodeABC_2(floatp in, const gs_cie_render * pcrd)
+pl_EncodeABC_2(double in, const gs_cie_render * pcrd)
 {
     return pl_encodeABC(in, pcrd);
 }

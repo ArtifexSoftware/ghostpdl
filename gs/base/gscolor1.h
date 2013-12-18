@@ -21,7 +21,7 @@
 #  define gscolor1_INCLUDED
 
 /* Color and gray interface */
-int gs_setcmykcolor(gs_state *, floatp, floatp, floatp, floatp),
+int gs_setcmykcolor(gs_state *, double, double, double, double),
     gs_currentcmykcolor(const gs_state *, float[4]),
     gs_setblackgeneration(gs_state *, gs_mapping_proc),
     gs_setblackgeneration_remap(gs_state *, gs_mapping_proc, bool);

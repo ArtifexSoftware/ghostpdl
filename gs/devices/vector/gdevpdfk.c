@@ -41,7 +41,7 @@ pdf_cie_add_ranges(cos_dict_t *pcd, const gs_range *prange, int n, bool clamp)
     if (pca == 0)
         return_error(gs_error_VMerror);
     for (i = 0; i < n; ++i) {
-        floatp rmin = prange[i].rmin, rmax = prange[i].rmax;
+        double rmin = prange[i].rmin, rmax = prange[i].rmax;
 
         if (clamp) {
             if (rmin < 0) rmin = 0;
@@ -404,7 +404,7 @@ set_uint32(byte bytes[4], uint value)
     bytes[3] = (byte)value;
 }
 static void
-set_XYZ(byte bytes[4], floatp value)
+set_XYZ(byte bytes[4], double value)
 {
     set_uint32(bytes, (uint)(int)(value * 65536));
 }
@@ -419,7 +419,7 @@ add_table_xyz3(profile_table_t **ppnt, const char *tag, byte bytes[20],
     DISCARD(add_table(ppnt, tag, bytes, 20));
 }
 static void
-set_sample16(byte *p, floatp v)
+set_sample16(byte *p, double v)
 {
     int value = (int)(v * 65535);
 

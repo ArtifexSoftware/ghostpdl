@@ -833,7 +833,7 @@ gs_initgraphics(gs_state * pgs)
 
 /* setfilladjust */
 int
-gs_setfilladjust(gs_state * pgs, floatp adjust_x, floatp adjust_y)
+gs_setfilladjust(gs_state * pgs, double adjust_x, double adjust_y)
 {
 #define CLAMP_TO_HALF(v)\
     ((v) <= 0 ? fixed_0 : (v) >= 0.5 ? fixed_half : float2fixed(v));

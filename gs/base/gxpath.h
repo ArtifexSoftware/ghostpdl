@@ -161,7 +161,7 @@ int gx_path_new(gx_path *),
     gx_path_add_rectangle(gx_path *, fixed, fixed, fixed, fixed),
     gx_path_add_char_path(gx_path *, gx_path *, gs_char_path_mode),
     gx_path_add_curve_notes(gx_path *, fixed, fixed, fixed, fixed, fixed, fixed, segment_notes),
-    gx_path_add_partial_arc_notes(gx_path *, fixed, fixed, fixed, fixed, floatp, segment_notes),
+    gx_path_add_partial_arc_notes(gx_path *, fixed, fixed, fixed, fixed, double, segment_notes),
     gx_path_add_path(gx_path *, gx_path *),
     gx_path_close_subpath_notes(gx_path *, segment_notes),
           /* We have to remove the 'subpath' from the following name */
@@ -277,7 +277,7 @@ gx_path_enum_notes(const gs_path_enum *);
 bool gx_path_enum_backup(gs_path_enum *);
 
 /* An auxiliary function to add a path point with a specified transformation. */
-int gs_moveto_aux(gs_imager_state *pis, gx_path *ppath, floatp x, floatp y);
+int gs_moveto_aux(gs_imager_state *pis, gx_path *ppath, double x, double y);
 int gx_setcurrentpoint_from_path(gs_imager_state *pis, gx_path *path);
 
 /* Path optimization for the filling algorithm. */

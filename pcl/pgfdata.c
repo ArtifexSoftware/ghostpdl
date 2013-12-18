@@ -5065,12 +5065,12 @@ hpgl_stick_segments(const gs_memory_t * mem, void *data, uint char_index)
     i = offset;
     while (i < stop) {
         if (stick_font_data[i] == FNT_LINETO) {
-            gs_lineto(data, (floatp) (stick_font_data[i + 1]),
-                      (floatp) (stick_font_data[i + 2]));
+            gs_lineto(data, (double) (stick_font_data[i + 1]),
+                      (double) (stick_font_data[i + 2]));
             i += 3;
         } else if (stick_font_data[i] == FNT_MOVETO) {
-            gs_moveto(data, (floatp) (stick_font_data[i + 1]),
-                      (floatp) (stick_font_data[i + 2]));
+            gs_moveto(data, (double) (stick_font_data[i + 1]),
+                      (double) (stick_font_data[i + 2]));
             i += 3;
         } else
             return_error(gs_error_invalidfont);
@@ -5098,8 +5098,8 @@ hpgl_531_segments(const gs_memory_t * mem, void *data, void *cdata)
             pen_up = true;
             i++;
         } else {
-            floatp x = cd->data[i];
-            floatp y = cd->data[i + 1];
+            double x = cd->data[i];
+            double y = cd->data[i + 1];
 
             if (pen_up) {
                 gs_moveto(data, x, y);
@@ -5139,20 +5139,20 @@ hpgl_arc_segments(const gs_memory_t * mem, void *data, uint char_index)
     i = offset;
     while (i < stop) {
         if (arc_font_data[i] == FNT_LINETO) {
-            gs_lineto(data, (floatp) (arc_font_data[i + 1]),
-                      (floatp) (arc_font_data[i + 2]));
+            gs_lineto(data, (double) (arc_font_data[i + 1]),
+                      (double) (arc_font_data[i + 2]));
             i += 3;
         } else if (arc_font_data[i] == FNT_MOVETO) {
-            gs_moveto(data, (floatp) (arc_font_data[i + 1]),
-                      (floatp) (arc_font_data[i + 2]));
+            gs_moveto(data, (double) (arc_font_data[i + 1]),
+                      (double) (arc_font_data[i + 2]));
             i += 3;
         } else if (arc_font_data[i] == FNT_CURVETO) {
-            gs_curveto(data, (floatp) (arc_font_data[i + 1]),
-                       (floatp) (arc_font_data[i + 2]),
-                       (floatp) (arc_font_data[i + 3]),
-                       (floatp) (arc_font_data[i + 4]),
-                       (floatp) (arc_font_data[i + 5]),
-                       (floatp) (arc_font_data[i + 6]));
+            gs_curveto(data, (double) (arc_font_data[i + 1]),
+                       (double) (arc_font_data[i + 2]),
+                       (double) (arc_font_data[i + 3]),
+                       (double) (arc_font_data[i + 4]),
+                       (double) (arc_font_data[i + 5]),
+                       (double) (arc_font_data[i + 6]));
             i += 7;
         } else
             return_error(gs_error_invalidfont);

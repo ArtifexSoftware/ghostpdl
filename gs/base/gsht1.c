@@ -27,7 +27,7 @@
 
 
 /* Imports from gscolor.c */
-void load_transfer_map(gs_state *, gx_transfer_map *, floatp);
+void load_transfer_map(gs_state *, gx_transfer_map *, double);
 
 /* Forward declarations */
 static int process_spot(gx_ht_order *, gs_state *,

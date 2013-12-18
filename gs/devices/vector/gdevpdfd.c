@@ -102,7 +102,7 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 /* ------ Vector device implementation ------ */
 
 static int
-pdf_setlinewidth(gx_device_vector * vdev, floatp width)
+pdf_setlinewidth(gx_device_vector * vdev, double width)
 {
     /* Acrobat Reader doesn't accept negative line widths. */
     return psdf_setlinewidth(vdev, fabs(width));
@@ -464,7 +464,7 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
  */
 static bool
 make_rect_scaling(const gx_device_pdf *pdev, const gs_fixed_rect *bbox,
-                  floatp prescale, double *pscale)
+                  double prescale, double *pscale)
 {
     double bmin, bmax;
 

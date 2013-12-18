@@ -2021,7 +2021,7 @@ pdf_write_transfer(gx_device_pdf *pdev, const gx_transfer_map *map,
  * results.  Currently we only do this for a few of the functions.
  */
 #define HT_FUNC(name, expr)\
-  static floatp name(floatp xd, floatp yd) {\
+  static double name(double xd, double yd) {\
     float x = (float)xd, y = (float)yd;\
     return d2f(expr);\
   }
@@ -2032,13 +2032,13 @@ pdf_write_transfer(gx_device_pdf *pdev, const gx_transfer_map *map,
  * use 'inline', it doesn't work.
  */
 static float
-d2f(floatp d)
+d2f(double d)
 {
     float f = (float)d;
     return f;
 }
-static floatp
-ht_Round(floatp xf, floatp yf)
+static double
+ht_Round(double xf, double yf)
 {
     float x = (float)xf, y = (float)yf;
     float xabs = fabs(x), yabs = fabs(y);
@@ -2048,8 +2048,8 @@ ht_Round(floatp xf, floatp yf)
     xabs -= 1, yabs -= 1;
     return d2f(d2f(d2f(xabs * xabs) + d2f(yabs * yabs)) - 1);
 }
-static floatp
-ht_Diamond(floatp xf, floatp yf)
+static double
+ht_Diamond(double xf, double yf)
 {
     float x = (float)xf, y = (float)yf;
     float xabs = fabs(x), yabs = fabs(y);
@@ -2061,8 +2061,8 @@ ht_Diamond(floatp xf, floatp yf)
     xabs -= 1, yabs -= 1;
     return d2f(d2f(d2f(xabs * xabs) + d2f(yabs * yabs)) - 1);
 }
-static floatp
-ht_Ellipse(floatp xf, floatp yf)
+static double
+ht_Ellipse(double xf, double yf)
 {
     float x = (float)xf, y = (float)yf;
     float xabs = fabs(x), yabs = fabs(y);
@@ -2115,7 +2115,7 @@ HT_FUNC(ht_Double, (d2fsin_d(x * 180) + d2fsin_d(y * 360)) / 2)
 HT_FUNC(ht_InvertedDouble, -(d2fsin_d(x * 180) + d2fsin_d(y * 360)) / 2)
 typedef struct ht_function_s {
     const char *fname;
-    floatp (*proc)(floatp, floatp);
+    double (*proc)(double, double);
 } ht_function_t;
 static const ht_function_t ht_functions[] = {
     {"Round", ht_Round},
@@ -2259,7 +2259,7 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
         if (code < 0)
             goto notrec;
         for (i = 0; i < countof(ht_functions); ++i) {
-            floatp (*spot_proc)(floatp, floatp) = ht_functions[i].proc;
+            double (*spot_proc)(double, double) = ht_functions[i].proc;
             gs_point pt;
 
             gs_screen_enum_init_memory(&senum, &order, NULL, &psht->screen,
@@ -2711,7 +2711,7 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
                  pdf_resource_t **ppres)
 {
     bool ais;
-    floatp alpha;
+    double alpha;
     int code;
 
     if (pdev->state.soft_mask_id != pis->soft_mask_id) {

@@ -182,7 +182,7 @@ gx_begin_image3(gx_device * dev,
  * Begin a generic ImageType 3 image, with client handling the creation of
  * the mask image and mask clip devices.
  */
-static bool check_image3_extent(floatp mask_coeff, floatp data_coeff);
+static bool check_image3_extent(double mask_coeff, double data_coeff);
 int
 gx_begin_image3_generic(gx_device * dev,
                         const gs_imager_state *pis, const gs_matrix *pmat,
@@ -459,7 +459,7 @@ gx_begin_image3_generic(gx_device * dev,
     return code;
 }
 static bool
-check_image3_extent(floatp mask_coeff, floatp data_coeff)
+check_image3_extent(double mask_coeff, double data_coeff)
 {
     if (mask_coeff == 0)
         return data_coeff == 0;

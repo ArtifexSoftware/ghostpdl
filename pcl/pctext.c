@@ -619,13 +619,13 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
 /*
  * get the advance width.
  */
-static floatp
+static double
 pcl_get_width(pcl_state_t * pcs, gs_point * advance_vector,
               const gs_point * pscale, gs_char chr, bool is_space,
               bool print_undefined)
 {
     pcl_font_selection_t *pfp = &(pcs->font_selection[pcs->font_selected]);
-    floatp width;
+    double width;
 
     if (chr != 0xffff || print_undefined) {
         if (!pfp->params.proportional_spacing || is_space)
@@ -633,17 +633,17 @@ pcl_get_width(pcl_state_t * pcs, gs_point * advance_vector,
         else {
             if (pcs->font->scaling_technology == plfst_TrueType ||
                 pcs->font->scaling_technology == plfst_MicroType) {
-                floatp tmp;
+                double tmp;
 
-                tmp = pscale->x / (floatp) pcs->uom_cp + 0.5;
-                tmp -= fmod(tmp, (floatp) 1.0);
-                tmp *= (floatp) pcs->uom_cp;
+                tmp = pscale->x / (double) pcs->uom_cp + 0.5;
+                tmp -= fmod(tmp, (double) 1.0);
+                tmp *= (double) pcs->uom_cp;
                 width = advance_vector->x * tmp;
 
             } else
                 width = advance_vector->x * pscale->x;
-            width += (floatp) pcs->uom_cp / 2.0;
-            width -= fmod(width, (floatp) pcs->uom_cp);
+            width += (double) pcs->uom_cp / 2.0;
+            width -= fmod(width, (double) pcs->uom_cp);
         }
     } else if (is_space)
         width = pcl_hmi(pcs);
@@ -715,8 +715,8 @@ pcl_show_chars_slow(pcl_state_t * pcs,
 {
     gs_state *pgs = pcs->pgs;
     gs_char buff[1];
-    floatp rmargin = pcs->margins.right;
-    floatp page_size = pcs->xfm_state.pd_size.x;
+    double rmargin = pcs->margins.right;
+    double page_size = pcs->xfm_state.pd_size.x;
     bool source_opaque = !pcs->source_transparent;
     bool invisible_pattern = is_invisible_pattern(pcs);
     bool wrap = pcs->end_of_line_wrap;
@@ -725,7 +725,7 @@ pcl_show_chars_slow(pcl_state_t * pcs,
     bool use_rmargin = (pcs->cap.x <= rmargin);
     gs_char chr, orig_chr;
     int code = 0;
-    floatp width;
+    double width;
     gs_point cpt;
     gs_point advance_vector;
     bool unstyled_substitution;
@@ -737,7 +737,7 @@ pcl_show_chars_slow(pcl_state_t * pcs,
     while (get_next_char(pcs, &str, &size, &chr,
                          &orig_chr, &is_space, &print_undefined, literal,
                          &advance_vector, &unstyled_substitution) == 0) {
-        floatp tmp_x;
+        double tmp_x;
 
         /* check if a character was found */
         buff[0] = chr;
@@ -881,7 +881,7 @@ pcl_font_scale(pcl_state_t * pcs, gs_point * pscale)
         pcl_font_selection_t *pfp = &pcs->font_selection[pcs->font_selected];
 
         /* AGFA madness - 72.307 points per inch for intellifonts */
-        floatp ppi =
+        double ppi =
             (pfp->font->scaling_technology ==
              plfst_Intellifont) ? 72.307 : 72.0;
         if (pfp->font->params.proportional_spacing) {

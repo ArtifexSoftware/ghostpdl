@@ -150,101 +150,101 @@ if_debug_matrix3(const char *str, const gs_matrix3 *mat)
 /* Default transformation procedures. */
 
 float
-a_identity(floatp in, const gs_cie_a * pcie)
+a_identity(double in, const gs_cie_a * pcie)
 {
     return in;
 }
 static float
-a_from_cache(floatp in, const gs_cie_a * pcie)
+a_from_cache(double in, const gs_cie_a * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches.DecodeA.floats);
 }
 
 float
-abc_identity(floatp in, const gs_cie_abc * pcie)
+abc_identity(double in, const gs_cie_abc * pcie)
 {
     return in;
 }
 static float
-abc_from_cache_0(floatp in, const gs_cie_abc * pcie)
+abc_from_cache_0(double in, const gs_cie_abc * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches.DecodeABC.caches[0].floats);
 }
 static float
-abc_from_cache_1(floatp in, const gs_cie_abc * pcie)
+abc_from_cache_1(double in, const gs_cie_abc * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches.DecodeABC.caches[1].floats);
 }
 static float
-abc_from_cache_2(floatp in, const gs_cie_abc * pcie)
+abc_from_cache_2(double in, const gs_cie_abc * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches.DecodeABC.caches[2].floats);
 }
 
 static float
-def_identity(floatp in, const gs_cie_def * pcie)
+def_identity(double in, const gs_cie_def * pcie)
 {
     return in;
 }
 static float
-def_from_cache_0(floatp in, const gs_cie_def * pcie)
+def_from_cache_0(double in, const gs_cie_def * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches_def.DecodeDEF[0].floats);
 }
 static float
-def_from_cache_1(floatp in, const gs_cie_def * pcie)
+def_from_cache_1(double in, const gs_cie_def * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches_def.DecodeDEF[1].floats);
 }
 static float
-def_from_cache_2(floatp in, const gs_cie_def * pcie)
+def_from_cache_2(double in, const gs_cie_def * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches_def.DecodeDEF[2].floats);
 }
 
 static float
-defg_identity(floatp in, const gs_cie_defg * pcie)
+defg_identity(double in, const gs_cie_defg * pcie)
 {
     return in;
 }
 static float
-defg_from_cache_0(floatp in, const gs_cie_defg * pcie)
+defg_from_cache_0(double in, const gs_cie_defg * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches_defg.DecodeDEFG[0].floats);
 }
 static float
-defg_from_cache_1(floatp in, const gs_cie_defg * pcie)
+defg_from_cache_1(double in, const gs_cie_defg * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches_defg.DecodeDEFG[1].floats);
 }
 static float
-defg_from_cache_2(floatp in, const gs_cie_defg * pcie)
+defg_from_cache_2(double in, const gs_cie_defg * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches_defg.DecodeDEFG[2].floats);
 }
 static float
-defg_from_cache_3(floatp in, const gs_cie_defg * pcie)
+defg_from_cache_3(double in, const gs_cie_defg * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches_defg.DecodeDEFG[3].floats);
 }
 
 float
-common_identity(floatp in, const gs_cie_common * pcie)
+common_identity(double in, const gs_cie_common * pcie)
 {
     return in;
 }
 static float
-lmn_from_cache_0(floatp in, const gs_cie_common * pcie)
+lmn_from_cache_0(double in, const gs_cie_common * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches.DecodeLMN[0].floats);
 }
 static float
-lmn_from_cache_1(floatp in, const gs_cie_common * pcie)
+lmn_from_cache_1(double in, const gs_cie_common * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches.DecodeLMN[1].floats);
 }
 static float
-lmn_from_cache_2(floatp in, const gs_cie_common * pcie)
+lmn_from_cache_2(double in, const gs_cie_common * pcie)
 {
     return gs_cie_cached_value(in, &pcie->caches.DecodeLMN[2].floats);
 }
@@ -252,7 +252,7 @@ lmn_from_cache_2(floatp in, const gs_cie_common * pcie)
 /* Transformation procedures for accessing an already-loaded cache. */
 
 float
-gs_cie_cached_value(floatp in, const cie_cache_floats *pcache)
+gs_cie_cached_value(double in, const cie_cache_floats *pcache)
 {
     /*
      * We need to get the same results when we sample an already-loaded
@@ -371,9 +371,9 @@ gx_restrict_CIEA(gs_client_color * pcc, const gs_color_space * pcs)
 /* ------ Install a CIE color space ------ */
 
 static void cie_cache_mult(gx_cie_vector_cache *, const gs_vector3 *,
-                            const cie_cache_floats *, floatp);
+                            const cie_cache_floats *, double);
 static bool cie_cache_mult3(gx_cie_vector_cache3_t *,
-                             const gs_matrix3 *, floatp);
+                             const gs_matrix3 *, double);
 
 int
 gx_install_cie_abc(gs_cie_abc *pcie, gs_state * pgs)
@@ -540,7 +540,7 @@ typedef struct cie_cache_range_temp_s {
 } cie_cache_range_temp_t;
 static inline void
 check_interpolation_required(cie_cache_range_temp_t *pccr,
-                             cie_cached_value cur, int i, floatp threshold)
+                             cie_cached_value cur, int i, double threshold)
 {
     cie_cached_value prev = pccr->prev;
 
@@ -553,7 +553,7 @@ check_interpolation_required(cie_cache_range_temp_t *pccr,
     pccr->prev = cur;
 }
 static void
-cie_cache_set_interpolation(gx_cie_vector_cache *pcache, floatp threshold)
+cie_cache_set_interpolation(gx_cie_vector_cache *pcache, double threshold)
 {
     cie_cached_value base = pcache->vecs.params.base;
     cie_cached_value factor = pcache->vecs.params.factor;
@@ -594,7 +594,7 @@ cie_cache_set_interpolation(gx_cie_vector_cache *pcache, floatp threshold)
  */
 static void
 cie_cache_mult(gx_cie_vector_cache * pcache, const gs_vector3 * pvec,
-               const cie_cache_floats * pcf, floatp threshold)
+               const cie_cache_floats * pcf, double threshold)
 {
     float u = pvec->u, v = pvec->v, w = pvec->w;
     int i;
@@ -648,7 +648,7 @@ cie_cache3_set_interpolation(gx_cie_vector_cache3_t * pvc)
  */
 static bool
 cie_cache_mult3(gx_cie_vector_cache3_t * pvc, const gs_matrix3 * pmat,
-                floatp threshold)
+                double threshold)
 {
     cie_cache_mult(&pvc->caches[0], &pmat->cu, &pvc->caches[0].floats, threshold);
     cie_cache_mult(&pvc->caches[1], &pmat->cv, &pvc->caches[1].floats, threshold);
@@ -911,7 +911,7 @@ gs_cie_render_sample(gs_cie_render * pcrd)
 
 /* Transform a set of ranges. */
 static void
-cie_transform_range(const gs_range3 * in, floatp mu, floatp mv, floatp mw,
+cie_transform_range(const gs_range3 * in, double mu, double mv, double mw,
                     gs_range * out)
 {
     float umin = mu * in->ranges[0].rmin, umax = mu * in->ranges[0].rmax;

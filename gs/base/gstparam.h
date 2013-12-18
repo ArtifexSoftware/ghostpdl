@@ -94,7 +94,7 @@ typedef struct gs_transparency_mask_params_s {
     int Background_components;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
     float GrayBackground;
-    int (*TransferFunction)(floatp in, float *out, void *proc_data);
+    int (*TransferFunction)(double in, float *out, void *proc_data);
     gs_function_t *TransferFunction_data;
     bool replacing;
     int64_t icc_hashcode;                    /* Needed when we are doing clist reading */

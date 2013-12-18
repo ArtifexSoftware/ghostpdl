@@ -32,7 +32,7 @@
 
 /* Dummy spot function */
 static float
-spot_dummy(floatp x, floatp y)
+spot_dummy(double x, double y)
 {
     return (x + y) / 2;
 }

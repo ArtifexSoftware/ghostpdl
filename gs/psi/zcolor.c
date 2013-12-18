@@ -693,7 +693,7 @@ zcolor_remap_one(
 
 /* Store the result of remapping a component. */
 static int
-zcolor_remap_one_store(i_ctx_t *i_ctx_p, floatp min_value)
+zcolor_remap_one_store(i_ctx_t *i_ctx_p, double min_value)
 {
     int i;
     gx_transfer_map *pmap = r_ptr(esp, gx_transfer_map);
@@ -5110,7 +5110,7 @@ static int setcalgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     ref graydict;
     int code = 0;
     float                   gamma, white[3], black[3];
-    floatp                  dflt_gamma = 1.0;
+    double                  dflt_gamma = 1.0;
     static const float      dflt_black[3] = {0,0,0}, dflt_white[3] = {0,0,0};
     gs_client_color cc;
 

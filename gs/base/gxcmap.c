@@ -1486,7 +1486,7 @@ cmap_direct_is_halftoned(const gs_imager_state * pis, gx_device * dev)
 
 /* Define an identity transfer function. */
 float
-gs_identity_transfer(floatp value, const gx_transfer_map * pmap)
+gs_identity_transfer(double value, const gx_transfer_map * pmap)
 {
     return (float) value;
 }
@@ -1494,7 +1494,7 @@ gs_identity_transfer(floatp value, const gx_transfer_map * pmap)
 /* Define the generic transfer function for the library layer. */
 /* This just returns what's already in the map. */
 float
-gs_mapped_transfer(floatp value, const gx_transfer_map * pmap)
+gs_mapped_transfer(double value, const gx_transfer_map * pmap)
 {
     return gx_map_color_float(pmap, value);
 }

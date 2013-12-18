@@ -147,7 +147,7 @@ dict_uint_param(const ref * pdict, const char *kstr,
 /* Return 0 if found, 1 if defaulted, <0 if wrong type. */
 int
 dict_float_param(const ref * pdict, const char *kstr,
-                 floatp defaultval, float *pvalue)
+                 double defaultval, float *pvalue)
 {
     ref *pdval;
 

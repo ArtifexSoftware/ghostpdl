@@ -696,7 +696,7 @@ gs_push_integer(gs_main_instance * minst, long value)
 }
 
 int
-gs_push_real(gs_main_instance * minst, floatp value)
+gs_push_real(gs_main_instance * minst, double value)
 {
     ref vref;
 

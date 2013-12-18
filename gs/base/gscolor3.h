@@ -25,7 +25,7 @@
 typedef struct gs_shading_s gs_shading_t;
 #endif
 
-int gs_setsmoothness(gs_state *, floatp);
+int gs_setsmoothness(gs_state *, double);
 float gs_currentsmoothness(const gs_state *);
 int gs_shfill(gs_state *, const gs_shading_t *);
 

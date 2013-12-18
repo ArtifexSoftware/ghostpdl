@@ -394,9 +394,9 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 /* Determine whether an image should be downsampled. */
 static bool
 do_downsample(const psdf_image_params *pdip, const gs_pixel_image_t *pim,
-              floatp resolution)
+              double resolution)
 {
-    floatp factor = resolution / pdip->Resolution;
+    double factor = resolution / pdip->Resolution;
 
     return (pdip->Downsample && factor >= pdip->DownsampleThreshold &&
             factor <= pim->Width && factor <= pim->Height);
@@ -408,7 +408,7 @@ do_downsample(const psdf_image_params *pdip, const gs_pixel_image_t *pim,
 static int
 setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
                    gs_pixel_image_t * pim, const gs_imager_state * pis,
-                   floatp resolution, bool lossless)
+                   double resolution, bool lossless)
 {
     gx_device_psdf *pdev = pbw->dev;
     const stream_template *templat = &s_Subsample_template;

@@ -49,7 +49,7 @@
 
 /* Set the bounding box for the current path. */
 int
-gs_setbbox(gs_state * pgs, floatp llx, floatp lly, floatp urx, floatp ury)
+gs_setbbox(gs_state * pgs, double llx, double lly, double urx, double ury)
 {
     gs_rect ubox, dbox;
     gs_fixed_rect obox, bbox;
@@ -103,7 +103,7 @@ gs_rectappend_compat(gs_state * pgs, const gs_rect * pr, uint count, bool clip)
     bool CPSI_mode = gs_currentcpsimode(pgs->memory);
 
     for (; count != 0; count--, pr++) {
-        floatp px = pr->p.x, py = pr->p.y, qx = pr->q.x, qy = pr->q.y;
+        double px = pr->p.x, py = pr->p.y, qx = pr->q.x, qy = pr->q.y;
         int code;
 
         if (CPSI_mode) {

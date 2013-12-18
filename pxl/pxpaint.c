@@ -61,7 +61,7 @@ px_operator_proc(pxNewPath);
 /* Attributes: pxaEndPoint, pxaNumberOfPoints, pxaPointType. */
 static int
 add_lines(px_args_t * par, px_state_t * pxs,
-          int (*line_proc) (gs_state *, floatp, floatp))
+          int (*line_proc) (gs_state *, double, double))
 {
     int code = 0;
 
@@ -106,7 +106,7 @@ add_lines(px_args_t * par, px_state_t * pxs,
                 default:       /* can't happen, pacify compiler */
                     return_error(errorIllegalAttributeValue);
             }
-            code = (*line_proc) (pxs->pgs, (floatp) px, (floatp) py);
+            code = (*line_proc) (pxs->pgs, (double) px, (double) py);
             if (code < 0)
                 break;
             par->source.position += point_size;
@@ -122,8 +122,8 @@ add_lines(px_args_t * par, px_state_t * pxs,
 /* pxaControlPoint2, pxaEndPoint. */
 static int
 add_curves(px_args_t * par, px_state_t * pxs,
-           int (*curve_proc) (gs_state *, floatp, floatp, floatp, floatp,
-                              floatp, floatp))
+           int (*curve_proc) (gs_state *, double, double, double, double,
+                              double, double))
 {
     int code = 0;
 
@@ -182,9 +182,9 @@ add_curves(px_args_t * par, px_state_t * pxs,
                     return_error(errorIllegalAttributeValue);
             }
             code = (*curve_proc) (pxs->pgs,
-                                  (floatp) points[0], (floatp) points[1],
-                                  (floatp) points[2], (floatp) points[3],
-                                  (floatp) points[4], (floatp) points[5]);
+                                  (double) points[0], (double) points[1],
+                                  (double) points[2], (double) points[3],
+                                  (double) points[4], (double) points[5]);
             if (code < 0)
                 break;
             par->source.position += segment_size;
@@ -713,7 +713,7 @@ const byte apxRectanglePath[] = {
 int
 pxRectanglePath(px_args_t * par, px_state_t * pxs)
 {
-    floatp x1, y1, x2, y2;
+    double x1, y1, x2, y2;
     gs_fixed_point p1;
     gs_state *pgs = pxs->pgs;
     gx_path *ppath = gx_current_path(pgs);
@@ -728,13 +728,13 @@ pxRectanglePath(px_args_t * par, px_state_t * pxs)
      * Rectangles are always drawn in a canonical order.
      */
     if (x1 > x2) {
-        floatp t = x1;
+        double t = x1;
 
         x1 = x2;
         x2 = t;
     }
     if (y1 > y2) {
-        floatp t = y1;
+        double t = y1;
 
         y1 = y2;
         y2 = t;
@@ -779,7 +779,7 @@ const byte apxRoundRectanglePath[] = {
 int
 pxRoundRectanglePath(px_args_t * par, px_state_t * pxs)
 {
-    floatp x1, y1, x2, y2;
+    double x1, y1, x2, y2;
     real xr = real_value(par->pv[1], 0) * 0.5;
     real yr = real_value(par->pv[1], 1) * 0.5;
     real xd, yd;

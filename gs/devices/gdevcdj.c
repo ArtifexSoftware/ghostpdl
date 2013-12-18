@@ -170,7 +170,7 @@ e:	param_signal_error(plist, oname, code);\
   }
 
 static int cdj_param_check_bytes(gs_param_list *, gs_param_name, const byte *, uint, bool);
-static int cdj_param_check_float(gs_param_list *, gs_param_name, floatp, bool);
+static int cdj_param_check_float(gs_param_list *, gs_param_name, double, bool);
 #define cdj_param_check_string(plist, pname, str, is_defined)\
   cdj_param_check_bytes(plist, pname, (const byte *)(str), strlen(str),\
                         is_defined)
@@ -3566,7 +3566,7 @@ e:              param_signal_error(plist, pname, code);
 /* This is original code. */
 
 static int
-cdj_param_check_float(gs_param_list *plist, gs_param_name pname, floatp fval,
+cdj_param_check_float(gs_param_list *plist, gs_param_name pname, double fval,
                       bool is_defined)
 {       int code;
         float new_value;

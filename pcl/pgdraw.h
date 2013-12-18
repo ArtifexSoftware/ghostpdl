@@ -60,33 +60,33 @@ int hpgl_update_carriage_return_pos(hpgl_state_t * pgls);
 int hpgl_set_current_position(hpgl_state_t * pgls, gs_point * pt);
 
 /* puts a point into the path using the operation specified by func */
-int hpgl_add_point_to_path(hpgl_state_t * pgls, floatp x, floatp y,
+int hpgl_add_point_to_path(hpgl_state_t * pgls, double x, double y,
                            hpgl_plot_function_t func, bool set_ctm);
 
 /* puts an arc into the current path.  start moveto indicates that we
    use moveto to go from the arc center to arc circumference. */
-int hpgl_add_arc_to_path(hpgl_state_t * pgls, floatp center_x,
-                         floatp center_y, floatp radius,
-                         floatp start_angle, floatp sweep_angle,
-                         floatp chord_angle, bool start_moveto,
+int hpgl_add_arc_to_path(hpgl_state_t * pgls, double center_x,
+                         double center_y, double radius,
+                         double start_angle, double sweep_angle,
+                         double chord_angle, bool start_moveto,
                          hpgl_plot_function_t draw, bool set_ctm);
 
 /* puts a 3 point arc into the current path.  Note that the
    decomposition is a bit different for 3 point arcs since the polygon
    wedge routines use this function as well */
-int hpgl_add_arc_3point_to_path(hpgl_state_t * pgls, floatp start_x, floatp
-                                start_y, floatp inter_x, floatp inter_y,
-                                floatp end_x, floatp end_y,
-                                floatp chord_angle,
+int hpgl_add_arc_3point_to_path(hpgl_state_t * pgls, double start_x, double
+                                start_y, double inter_x, double inter_y,
+                                double end_x, double end_y,
+                                double chord_angle,
                                 hpgl_plot_function_t draw);
 
 int hpgl_close_path(hpgl_state_t * pgls);
 
 /* put bezier into the current path */
-int hpgl_add_bezier_to_path(hpgl_state_t * pgls, floatp x1,
-                            floatp y1, floatp x2, floatp y2,
-                            floatp x3, floatp y3, floatp x4,
-                            floatp y4, hpgl_plot_function_t draw);
+int hpgl_add_bezier_to_path(hpgl_state_t * pgls, double x1,
+                            double y1, double x2, double y2,
+                            double x3, double y3, double x4,
+                            double y4, hpgl_plot_function_t draw);
 
 /* clears the current path with stroke or fill */
 int hpgl_draw_current_path(hpgl_state_t * pgls,

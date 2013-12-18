@@ -1764,10 +1764,10 @@ void gx_device_set_margins(gx_device * dev, const float *margins /*[4] */ ,
 void gx_device_set_width_height(gx_device * dev, int width, int height);
 
 /* Set the resolution (in pixels per inch), updating width and height. */
-void gx_device_set_resolution(gx_device * dev, floatp x_dpi, floatp y_dpi);
+void gx_device_set_resolution(gx_device * dev, double x_dpi, double y_dpi);
 
 /* Set the MediaSize (in 1/72" units), updating width and height. */
-void gx_device_set_media_size(gx_device * dev, floatp media_width, floatp media_height);
+void gx_device_set_media_size(gx_device * dev, double media_width, double media_height);
 
 /****** BACKWARD COMPATIBILITY ******/
 #define gx_device_set_page_size(dev, w, h)\

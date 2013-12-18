@@ -96,11 +96,11 @@ frac gx_color_frac_map(frac, const frac *);		/* in gxcmap.c */
 
 /* Define a mapping procedure that just looks up the value in the cache. */
 /* (It is equivalent to gx_map_color_float with the arguments swapped.) */
-float gs_mapped_transfer(floatp, const gx_transfer_map *);
+float gs_mapped_transfer(double, const gx_transfer_map *);
 
 /* Define an identity mapping procedure. */
 /* Don't store this directly in proc/closure.proc: */
 /* use gx_set_identity_transfer. */
-float gs_identity_transfer(floatp, const gx_transfer_map *);
+float gs_identity_transfer(double, const gx_transfer_map *);
 
 #endif /* gxfmap_INCLUDED */

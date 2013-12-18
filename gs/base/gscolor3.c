@@ -33,7 +33,7 @@
 
 /* setsmoothness */
 int
-gs_setsmoothness(gs_state * pgs, floatp smoothness)
+gs_setsmoothness(gs_state * pgs, double smoothness)
 {
     pgs->smoothness =
         (smoothness < 0 ? 0 : smoothness > 1 ? 1 : smoothness);

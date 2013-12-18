@@ -70,9 +70,9 @@ typedef int (*pjl_proc_vartoi_t) (pl_interp_instance_t * pli,
 int pjl_proc_vartoi(pl_interp_instance_t * pli, const pjl_envvar_t * s);
 
 /* pjl envioronment variable to float. */
-typedef floatp(*pjl_proc_vartof_t) (pl_interp_instance_t * pli,
+typedef double(*pjl_proc_vartof_t) (pl_interp_instance_t * pli,
                                     const pjl_envvar_t * s);
-floatp pjl_proc_vartof(pl_interp_instance_t * pli, const pjl_envvar_t * s);
+double pjl_proc_vartof(pl_interp_instance_t * pli, const pjl_envvar_t * s);
 
 /* convert a pjl designated fontsource to a subdirectory pathname. */
 typedef char *(*pjl_proc_fontsource_to_path_t) (pl_interp_instance_t * pli,

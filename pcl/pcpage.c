@@ -123,8 +123,8 @@ update_xfm_state(pcl_state_t * pcs, bool reset_initial)
     gs_matrix pg2dev, pg2lp;
     gs_rect print_rect, dev_rect, text_rect;
     gs_point cur_pt;
-    floatp loff = pxfmst->left_offset_cp;
-    floatp toff = pxfmst->top_offset_cp;
+    double loff = pxfmst->left_offset_cp;
+    double toff = pxfmst->top_offset_cp;
 
     /* preserve the current point and text rectangle in logical page space */
     if (!reset_initial)
@@ -145,8 +145,8 @@ update_xfm_state(pcl_state_t * pcs, bool reset_initial)
      * }
      */
     pcl_make_rotation(pxfmst->lp_orient,
-                      (floatp) (psize->width),
-                      (floatp) (psize->height), &(pxfmst->lp2pg_mtx)
+                      (double) (psize->width),
+                      (double) (psize->height), &(pxfmst->lp2pg_mtx)
         );
     pxfmst->lp2pg_mtx.tx += loff;
     pxfmst->lp2pg_mtx.ty += toff;
@@ -162,7 +162,7 @@ update_xfm_state(pcl_state_t * pcs, bool reset_initial)
         offset -= inch2coord(1.0 / 10.0);
 
     gs_matrix_translate(&(pxfmst->lp2pg_mtx),
-                        (floatp) offset, 0.0, &(pxfmst->lp2pg_mtx)
+                        (double) offset, 0.0, &(pxfmst->lp2pg_mtx)
         );
     if ((pxfmst->lp_orient & 0x1) != 0) {
         pxfmst->lp_size.x = psize->height - 2 * offset;
@@ -180,8 +180,8 @@ update_xfm_state(pcl_state_t * pcs, bool reset_initial)
     pxfmst->lp2dev_mtx.ty = round(pxfmst->lp2dev_mtx.ty);
     /* the "pseudo page direction to logical page/device transformations */
     pcl_make_rotation(pxfmst->print_dir,
-                      (floatp) pxfmst->lp_size.x,
-                      (floatp) pxfmst->lp_size.y, &(pxfmst->pd2lp_mtx)
+                      (double) pxfmst->lp_size.x,
+                      (double) pxfmst->lp_size.y, &(pxfmst->pd2lp_mtx)
         );
     gs_matrix_multiply(&(pxfmst->pd2lp_mtx),
                        &(pxfmst->lp2dev_mtx), &(pxfmst->pd2dev_mtx)
@@ -315,8 +315,8 @@ new_page_size(pcl_state_t * pcs,
               const pcl_paper_size_t * psize,
               bool reset_initial, bool for_passthrough)
 {
-    floatp width_pts = psize->width * 0.01;
-    floatp height_pts = psize->height * 0.01;
+    double width_pts = psize->width * 0.01;
+    double height_pts = psize->height * 0.01;
     float page_size[2];
     float old_page_size[2];
     gs_state *pgs = pcs->pgs;

@@ -213,10 +213,10 @@ typedef pcl_cs_indexed_s pcl_cs_indexed_t;
  * Returns 0 on success, < 0 in the event of an error.
  */
 int pcl_cs_indexed_set_norm_and_Decode(pcl_cs_indexed_t ** ppindexed,
-                                       floatp wht0,
-                                       floatp wht1,
-                                       floatp wht2,
-                                       floatp blk0, floatp blk1, floatp blk2);
+                                       double wht0,
+                                       double wht1,
+                                       double wht2,
+                                       double blk0, double blk1, double blk2);
 
 /*
  * Change the number of entries in an PCL indexed color space palette.
@@ -262,7 +262,7 @@ int pcl_cs_indexed_set_default_palette_entry(pcl_cs_indexed_t ** ppindexed,
  * Returns 0 if successful, < 0 in case of error.
  */
 int pcl_cs_indexed_set_pen_width(pcl_cs_indexed_t ** ppindexed,
-                                 int pen, floatp width);
+                                 int pen, double width);
 
 /*
  * Build a PCL indexed color space.

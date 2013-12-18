@@ -337,7 +337,7 @@ patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t *pfs)
  */
 static void
 patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
-       const patch_color_t * ppc1, const patch_fill_state_t *pfs, floatp t)
+       const patch_color_t * ppc1, const patch_fill_state_t *pfs, double t)
 {
     /* The old code gives -IND on Intel. */
     if (pfs->Function) {
@@ -383,7 +383,7 @@ patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
 static void
 curve_eval(gs_fixed_point * pt, const gs_fixed_point * p0,
            const gs_fixed_point * p1, const gs_fixed_point * p2,
-           const gs_fixed_point * p3, floatp t)
+           const gs_fixed_point * p3, double t)
 {
     fixed a, b, c, d;
     fixed t01, t12;
@@ -405,7 +405,7 @@ curve_eval(gs_fixed_point * pt, const gs_fixed_point * p0,
 /* Calculate the device-space coordinate corresponding to (u,v). */
 static void
 Cp_transform(gs_fixed_point * pt, const patch_curve_t curve[4],
-             const gs_fixed_point ignore_interior[4], floatp u, floatp v)
+             const gs_fixed_point ignore_interior[4], double u, double v)
 {
     double co_u = 1.0 - u, co_v = 1.0 - v;
     gs_fixed_point c1u, d1v, c2u, d2v;
@@ -488,7 +488,7 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 /* Calculate the device-space coordinate corresponding to (u,v). */
 static void
 Tpp_transform(gs_fixed_point * pt, const patch_curve_t curve[4],
-              const gs_fixed_point interior[4], floatp u, floatp v)
+              const gs_fixed_point interior[4], double u, double v)
 {
     double Bu[4], Bv[4];
     gs_fixed_point pts[4][4];
@@ -4261,7 +4261,7 @@ int
 patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
            const gs_fixed_point interior[4],
            void (*transform) (gs_fixed_point *, const patch_curve_t[4],
-                              const gs_fixed_point[4], floatp, floatp))
+                              const gs_fixed_point[4], double, double))
 {
     tensor_patch p;
     patch_color_t *c[4];

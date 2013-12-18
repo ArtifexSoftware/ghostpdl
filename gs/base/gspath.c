@@ -83,7 +83,7 @@ gx_current_path(const gs_state * pgs)
 /* ------ Points and lines ------ */
 
 static inline void
-clamp_point(gs_fixed_point * ppt, floatp x, floatp y)
+clamp_point(gs_fixed_point * ppt, double x, double y)
 {
     ppt->x = clamp_coord(x);
     ppt->y = clamp_coord(y);
@@ -99,7 +99,7 @@ gs_currentpoint(gs_state * pgs, gs_point * ppt)
 }
 
 static inline int
-gs_point_transform_compat(floatp x, floatp y, const gs_matrix_fixed *m, gs_point *pt)
+gs_point_transform_compat(double x, double y, const gs_matrix_fixed *m, gs_point *pt)
 {
 #if !PRECISE_CURRENTPOINT
     gs_fixed_point p;
@@ -116,7 +116,7 @@ gs_point_transform_compat(floatp x, floatp y, const gs_matrix_fixed *m, gs_point
 }
 
 static inline int
-gs_distance_transform_compat(floatp x, floatp y, const gs_matrix_fixed *m, gs_point *pt)
+gs_distance_transform_compat(double x, double y, const gs_matrix_fixed *m, gs_point *pt)
 {
 #if !PRECISE_CURRENTPOINT
     gs_fixed_point p;
@@ -133,7 +133,7 @@ gs_distance_transform_compat(floatp x, floatp y, const gs_matrix_fixed *m, gs_po
 }
 
 static inline int
-clamp_point_aux(bool clamp_coordinates, gs_fixed_point *ppt, floatp x, floatp y)
+clamp_point_aux(bool clamp_coordinates, gs_fixed_point *ppt, double x, double y)
 {
     if (!f_fits_in_bits(x, fixed_int_bits) || !f_fits_in_bits(y, fixed_int_bits)) {
         if (!clamp_coordinates)
@@ -149,7 +149,7 @@ clamp_point_aux(bool clamp_coordinates, gs_fixed_point *ppt, floatp x, floatp y)
 }
 
 int
-gs_moveto_aux(gs_imager_state *pis, gx_path *ppath, floatp x, floatp y)
+gs_moveto_aux(gs_imager_state *pis, gx_path *ppath, double x, double y)
 {
     gs_fixed_point pt;
     int code;
@@ -178,7 +178,7 @@ gs_moveto_aux(gs_imager_state *pis, gx_path *ppath, floatp x, floatp y)
 }
 
 int
-gs_moveto(gs_state * pgs, floatp x, floatp y)
+gs_moveto(gs_state * pgs, double x, double y)
 {
     gs_point pt;
     int code = gs_point_transform_compat(x, y, &pgs->ctm, &pt);
@@ -189,7 +189,7 @@ gs_moveto(gs_state * pgs, floatp x, floatp y)
 }
 
 int
-gs_rmoveto(gs_state * pgs, floatp x, floatp y)
+gs_rmoveto(gs_state * pgs, double x, double y)
 {
     gs_point dd;
     int code;
@@ -205,7 +205,7 @@ gs_rmoveto(gs_state * pgs, floatp x, floatp y)
 }
 
 static inline int
-gs_lineto_aux(gs_state * pgs, floatp x, floatp y)
+gs_lineto_aux(gs_state * pgs, double x, double y)
 {
     gx_path *ppath = pgs->path;
     gs_fixed_point pt;
@@ -222,7 +222,7 @@ gs_lineto_aux(gs_state * pgs, floatp x, floatp y)
 }
 
 int
-gs_lineto(gs_state * pgs, floatp x, floatp y)
+gs_lineto(gs_state * pgs, double x, double y)
 {
     gs_point pt;
     int code = gs_point_transform_compat(x, y, &pgs->ctm, &pt);
@@ -233,7 +233,7 @@ gs_lineto(gs_state * pgs, floatp x, floatp y)
 }
 
 int
-gs_rlineto(gs_state * pgs, floatp x, floatp y)
+gs_rlineto(gs_state * pgs, double x, double y)
 {
     gs_point dd;
     int code;
@@ -252,7 +252,7 @@ gs_rlineto(gs_state * pgs, floatp x, floatp y)
 
 static inline int
 gs_curveto_aux(gs_state * pgs,
-           floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3)
+           double x1, double y1, double x2, double y2, double x3, double y3)
 {
     gs_fixed_point p1, p2, p3;
     int code;
@@ -276,7 +276,7 @@ gs_curveto_aux(gs_state * pgs,
 
 int
 gs_curveto(gs_state * pgs,
-           floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3)
+           double x1, double y1, double x2, double y2, double x3, double y3)
 {
     gs_point pt1, pt2, pt3;
     int code;
@@ -295,7 +295,7 @@ gs_curveto(gs_state * pgs,
 
 int
 gs_rcurveto(gs_state * pgs,
-     floatp dx1, floatp dy1, floatp dx2, floatp dy2, floatp dx3, floatp dy3)
+     double dx1, double dy1, double dx2, double dy2, double dx3, double dy3)
 {
     gs_point dd1, dd2, dd3;
     int code;

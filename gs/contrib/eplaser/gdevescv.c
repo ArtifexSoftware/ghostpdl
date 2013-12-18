@@ -228,7 +228,7 @@ gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
         0,			/*   int           prev_y; */\
         0,			/*   gx_color_index        prev_color; */\
         0,			/*   gx_color_index        current_color; */\
-        3,			/*   floatp        lwidth; */\
+        3,			/*   double        lwidth; */\
         0,			/*   long          cap; */\
         3,			/*   long          join; */\
         0,			/*   long          reverse_x; */\
@@ -333,8 +333,8 @@ static int escv_beginpage(P1(gx_device_vector * vdev));
 static int escv_setfillcolor(P2(gx_device_vector * vdev, const gx_drawing_color * pdc));
 static int escv_setstrokecolor(P2(gx_device_vector * vdev, const gx_drawing_color * pdc));
 static int escv_setdash(P4(gx_device_vector * vdev, const float *pattern,
-                            uint count, floatp offset));
-static int escv_setflat(P2(gx_device_vector * vdev, floatp flatness));
+                            uint count, double offset));
+static int escv_setflat(P2(gx_device_vector * vdev, double flatness));
 static int escv_setlogop(P3(gx_device_vector * vdev, gs_logical_operation_t lop,
                              gs_logical_operation_t diff));
 static int escv_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
@@ -342,34 +342,34 @@ static int escv_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed
 static int escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
                                gx_path_type_t type);
 static int escv_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type));
-static int escv_moveto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
-                           floatp x, floatp y, gx_path_type_t type));
-static int escv_lineto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
-                           floatp x, floatp y, gx_path_type_t type));
-static int escv_curveto(P10(gx_device_vector * vdev, floatp x0, floatp y0,
-                             floatp x1, floatp y1, floatp x2, floatp y2,
-                             floatp x3, floatp y3, gx_path_type_t type));
-static int escv_closepath(P6(gx_device_vector * vdev, floatp x, floatp y,
-                              floatp x_start, floatp y_start, gx_path_type_t type));
+static int escv_moveto(P6(gx_device_vector * vdev, double x0, double y0,
+                           double x, double y, gx_path_type_t type));
+static int escv_lineto(P6(gx_device_vector * vdev, double x0, double y0,
+                           double x, double y, gx_path_type_t type));
+static int escv_curveto(P10(gx_device_vector * vdev, double x0, double y0,
+                             double x1, double y1, double x2, double y2,
+                             double x3, double y3, gx_path_type_t type));
+static int escv_closepath(P6(gx_device_vector * vdev, double x, double y,
+                              double x_start, double y_start, gx_path_type_t type));
 
 static int escv_endpath(P2(gx_device_vector * vdev, gx_path_type_t type));
-static int escv_setlinewidth(gx_device_vector * vdev, floatp width);
+static int escv_setlinewidth(gx_device_vector * vdev, double width);
 static int escv_setlinecap(gx_device_vector * vdev, gs_line_cap cap);
 static int escv_setlinejoin(gx_device_vector * vdev, gs_line_join join);
-static int escv_setmiterlimit(gx_device_vector * vdev, floatp limit);
+static int escv_setmiterlimit(gx_device_vector * vdev, double limit);
 
 #else /* 6 <= GS_VERSION_MAJOR */
 
 /* Page management */
 static int escv_beginpage (gx_device_vector * vdev);
 /* Imager state */
-static int escv_setlinewidth (gx_device_vector * vdev, floatp width);
+static int escv_setlinewidth (gx_device_vector * vdev, double width);
 static int escv_setlinecap (gx_device_vector * vdev, gs_line_cap cap);
 static int escv_setlinejoin (gx_device_vector * vdev, gs_line_join join);
-static int escv_setmiterlimit (gx_device_vector * vdev, floatp limit);
+static int escv_setmiterlimit (gx_device_vector * vdev, double limit);
 static int escv_setdash (gx_device_vector * vdev, const float *pattern,
-                          uint count, floatp offset);
-static int escv_setflat (gx_device_vector * vdev, floatp flatness);
+                          uint count, double offset);
+static int escv_setflat (gx_device_vector * vdev, double flatness);
 static int escv_setlogop (gx_device_vector * vdev, gs_logical_operation_t lop,
                            gs_logical_operation_t diff);
 /* Other state */
@@ -391,15 +391,15 @@ static int escv_vector_dopath (gx_device_vector * vdev, const gx_path * ppath,
 static int escv_vector_dorect (gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
                                 fixed y1, gx_path_type_t type);
 static int escv_beginpath (gx_device_vector * vdev, gx_path_type_t type);
-static int escv_moveto (gx_device_vector * vdev, floatp x0, floatp y0,
-                         floatp x, floatp y, gx_path_type_t type);
-static int escv_lineto (gx_device_vector * vdev, floatp x0, floatp y0,
-                         floatp x, floatp y, gx_path_type_t type);
-static int escv_curveto (gx_device_vector * vdev, floatp x0, floatp y0,
-                          floatp x1, floatp y1, floatp x2, floatp y2,
-                          floatp x3, floatp y3, gx_path_type_t type);
-static int escv_closepath (gx_device_vector * vdev, floatp x0, floatp y0,
-                            floatp x_start, floatp y_start, gx_path_type_t type);
+static int escv_moveto (gx_device_vector * vdev, double x0, double y0,
+                         double x, double y, gx_path_type_t type);
+static int escv_lineto (gx_device_vector * vdev, double x0, double y0,
+                         double x, double y, gx_path_type_t type);
+static int escv_curveto (gx_device_vector * vdev, double x0, double y0,
+                          double x1, double y1, double x2, double y2,
+                          double x3, double y3, gx_path_type_t type);
+static int escv_closepath (gx_device_vector * vdev, double x0, double y0,
+                            double x_start, double y_start, gx_path_type_t type);
 static int escv_endpath (gx_device_vector * vdev, gx_path_type_t type);
 
 #endif /* GS_VERSION_MAJOR */
@@ -1296,7 +1296,7 @@ escv_beginpage(gx_device_vector * vdev)
 }
 
 static int
-escv_setlinewidth(gx_device_vector * vdev, floatp width)
+escv_setlinewidth(gx_device_vector * vdev, double width)
 {
   stream			*s = gdev_vector_stream(vdev);
   gx_device_escv *const	pdev = (gx_device_escv *) vdev;
@@ -1304,7 +1304,7 @@ escv_setlinewidth(gx_device_vector * vdev, floatp width)
 
 #if GS_VERSION_MAJOR == 5
   /* Scale を掛けているのは, Ghostscript 5.10/5.50 のバグのため */
-  floatp xscale, yscale;
+  double xscale, yscale;
 
   xscale = fabs(igs->ctm.xx);
   yscale = fabs(igs->ctm.xy);
@@ -1382,7 +1382,7 @@ escv_setlinejoin(gx_device_vector * vdev, gs_line_join join)
 }
 
 static int
-escv_setmiterlimit(gx_device_vector * vdev, floatp limit)
+escv_setmiterlimit(gx_device_vector * vdev, double limit)
 {
   stream			*s = gdev_vector_stream(vdev);
   gx_device_escv *const	pdev = (gx_device_escv *) vdev;
@@ -1508,7 +1508,7 @@ escv_setstrokecolor(gx_device_vector * vdev,
 
 /* 線種指定命令 */
 static int
-escv_setdash(gx_device_vector * vdev, const float *pattern, uint count, floatp offset)
+escv_setdash(gx_device_vector * vdev, const float *pattern, uint count, double offset)
 {
   stream			*s = gdev_vector_stream(vdev);
   int				i;
@@ -1570,7 +1570,7 @@ escv_setdash(gx_device_vector * vdev, const float *pattern, uint count, floatp o
 
 /* パス平滑度指定 */
 static int
-escv_setflat(gx_device_vector * vdev, floatp flatness)
+escv_setflat(gx_device_vector * vdev, double flatness)
 {
   return 0;
 }
@@ -1602,7 +1602,7 @@ escv_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 
 static int
 escv_moveto(gx_device_vector * vdev,
-            floatp x0, floatp y0, floatp x1, floatp y1, gx_path_type_t type)
+            double x0, double y0, double x1, double y1, gx_path_type_t type)
 {
   stream	*s = gdev_vector_stream(vdev);
   char	obuf[64];
@@ -1616,7 +1616,7 @@ escv_moveto(gx_device_vector * vdev,
 
 static int
 escv_lineto(gx_device_vector * vdev,
-            floatp x0, floatp y0, floatp x1, floatp y1, gx_path_type_t type)
+            double x0, double y0, double x1, double y1, gx_path_type_t type)
 {
   stream	*s = gdev_vector_stream(vdev);
   gx_device_escv *pdev = (gx_device_escv *) vdev;
@@ -1630,8 +1630,8 @@ escv_lineto(gx_device_vector * vdev,
 }
 
 static int
-escv_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
-             floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
+escv_curveto(gx_device_vector * vdev, double x0, double y0,
+             double x1, double y1, double x2, double y2, double x3, double y3,
              gx_path_type_t type)
 {
   stream	*s = gdev_vector_stream(vdev);
@@ -1648,8 +1648,8 @@ escv_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 }
 
 static int
-escv_closepath(gx_device_vector * vdev, floatp x, floatp y,
-               floatp x_start, floatp y_start, gx_path_type_t type)
+escv_closepath(gx_device_vector * vdev, double x, double y,
+               double x_start, double y_start, gx_path_type_t type)
 {
   stream	*s = gdev_vector_stream(vdev);
 

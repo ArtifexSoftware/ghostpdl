@@ -94,7 +94,7 @@ public_st_pdf_color_space();
 #define CC_KEY_B CC_KEY(CC_INDEX_B)
 
 static bool
-cie_values_are_exponential(floatp v0, floatp va, floatp vb, floatp k,
+cie_values_are_exponential(double v0, double va, double vb, double k,
                            float *pexpt)
 {
     double p;

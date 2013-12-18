@@ -63,12 +63,12 @@ adjust_render_rectangle(pcl_state_t * pcs)
         h = pxfmst->pd_size.y - pcs->cap.y;
 
     /* move the current point to an integral pixel location */
-    gs_transform(pgs, (floatp) pcs->cap.x, (floatp) pcs->cap.y, &(rect.p));
+    gs_transform(pgs, (double) pcs->cap.x, (double) pcs->cap.y, &(rect.p));
     rect.p.x = floor(rect.p.x + 0.5);
     rect.p.y = floor(rect.p.y + 0.5);
 
     /* set the dimensions to be a multiple of pixels */
-    gs_dtransform(pgs, (floatp) w, (floatp) h, &dims);
+    gs_dtransform(pgs, (double) w, (double) h, &dims);
     if (dims.x >= 0)
         rect.q.x = rect.p.x + ceil(dims.x);
     else {

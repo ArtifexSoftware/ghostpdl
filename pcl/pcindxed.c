@@ -244,7 +244,7 @@ unshare_indexed_cspace(pcl_cs_indexed_t ** ppindexed)
  * Convert a device-independent color intensity value to the range [0, 255].
  */
 static int
-convert_comp_val(floatp val, floatp min_val, floatp range)
+convert_comp_val(double val, double min_val, double range)
 {
     val = 255.0 * (val - min_val) / range;
     return (val < 0.0 ? 0 : (val > 255.0 ? 255 : (int)floor(val + 0.5)));
@@ -559,10 +559,10 @@ set_default_entries(pcl_cs_indexed_t * pindexed, int start, int num, bool gl2)
  */
 int
 pcl_cs_indexed_set_norm_and_Decode(pcl_cs_indexed_t ** ppindexed,
-                                   floatp wht0,
-                                   floatp wht1,
-                                   floatp wht2,
-                                   floatp blk0, floatp blk1, floatp blk2)
+                                   double wht0,
+                                   double wht1,
+                                   double wht2,
+                                   double blk0, double blk1, double blk2)
 {
     pcl_cs_indexed_t *pindexed = *ppindexed;
     pcl_encoding_type_t enc = (pcl_encoding_type_t) pindexed->cid.encoding;
@@ -631,7 +631,7 @@ pcl_cs_indexed_set_norm_and_Decode(pcl_cs_indexed_t ** ppindexed,
 
         for (i = 0; i < 3; i++) {
             int nbits = pindexed->cid.bits_per_primary[i];
-            floatp inv_range = pnorm[i].inv_range;
+            double inv_range = pnorm[i].inv_range;
 
             if (inv_range == 0.0)
                 inv_range = 254;
@@ -810,7 +810,7 @@ pcl_cs_indexed_set_palette_entry(pcl_cs_indexed_t ** ppindexed,
     indx *= 3;
     for (i = 0; i < 3; i++) {
         pcl_cs_indexed_norm_t *pn = &(pindexed->norm[i]);
-        floatp val = comps[i];
+        double val = comps[i];
 
         if (pn->inv_range == 0)
             val = (val >= pn->blkref ? 255.0 : 0.0);
@@ -860,7 +860,7 @@ pcl_cs_indexed_set_default_palette_entry(pcl_cs_indexed_t ** ppindexed,
  */
 int
 pcl_cs_indexed_set_pen_width(pcl_cs_indexed_t ** ppindexed,
-                             int pen, floatp width)
+                             int pen, double width)
 {
     pcl_cs_indexed_t *pindexed = *ppindexed;
     int code;
@@ -900,8 +900,8 @@ pcl_cs_indexed_build_cspace(pcl_state_t * pcs,
     pcl_cs_indexed_t *pindexed = *ppindexed;
     pcl_cspace_type_t type = pcl_cid_get_cspace(pcid);
     int bits = pcl_cid_get_bits_per_index(pcid);
-    floatp wht_ref[3];
-    floatp blk_ref[3];
+    double wht_ref[3];
+    double blk_ref[3];
     pcl_cs_base_t *pbase = 0;
     bool is_default = false;
     int code = 0;
@@ -979,7 +979,7 @@ pcl_cs_indexed_build_cspace(pcl_state_t * pcs,
             int i;
 
             for (i = 0; i < 3; i++) {
-                floatp ftmp = wht_ref[i];
+                double ftmp = wht_ref[i];
 
                 wht_ref[i] = blk_ref[i];
                 blk_ref[i] = ftmp;
@@ -1047,8 +1047,8 @@ pcl_cs_indexed_build_special(pcl_cs_indexed_t ** ppindexed,
         1,
         {8, 8, 8} /* ignored */
     };
-    static const floatp wht_ref[3] = { 255.0, 255.0, 255.0 };
-    static const floatp blk_ref[3] = { 0.0, 0.0, 0.0 };
+    static const double wht_ref[3] = { 255.0, 255.0, 255.0 };
+    static const double blk_ref[3] = { 0.0, 0.0, 0.0 };
     pcl_cs_indexed_t *pindexed;
     int i, code = 0;
 

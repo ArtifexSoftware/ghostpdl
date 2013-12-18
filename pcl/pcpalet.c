@@ -293,9 +293,9 @@ push_pop_palette(pcl_args_t * pargs, pcl_state_t * pcs)
 
 int
 pcl_palette_CR(pcl_state_t * pcs,
-               floatp wht0,
-               floatp wht1,
-               floatp wht2, floatp blk0, floatp blk1, floatp blk2)
+               double wht0,
+               double wht1,
+               double wht2, double blk0, double blk1, double blk2)
 {
     int code = unshare_palette(pcs);
 
@@ -515,7 +515,7 @@ pcl_palette_set_default_color(pcl_state_t * pcs, int indx)
  * Returns 0 on success, < 0 in the even of an error;
  */
 int
-pcl_palette_PW(pcl_state_t * pcs, int pen, floatp width)
+pcl_palette_PW(pcl_state_t * pcs, int pen, double width)
 {
     int code = 0;
     pcl_gsid_t palette_id;

@@ -141,8 +141,8 @@ typedef struct  gx_device_oprp_s {
 
 /* point (internal) */
 typedef struct {
-    floatp x;
-    floatp y;
+    double x;
+    double y;
 } _fPoint;
 
 /* ----- private function prototypes ----- */
@@ -227,12 +227,12 @@ static char cspace_available[] = {
 
 /* vector driver procs */
 static  int opvp_beginpage(gx_device_vector *);
-static  int opvp_setlinewidth(gx_device_vector *, floatp);
+static  int opvp_setlinewidth(gx_device_vector *, double);
 static  int opvp_setlinecap(gx_device_vector *, gs_line_cap);
 static  int opvp_setlinejoin(gx_device_vector *, gs_line_join);
-static  int opvp_setmiterlimit(gx_device_vector *, floatp);
-static  int opvp_setdash(gx_device_vector *, const float *, uint, floatp);
-static  int opvp_setflat(gx_device_vector *, floatp);
+static  int opvp_setmiterlimit(gx_device_vector *, double);
+static  int opvp_setdash(gx_device_vector *, const float *, uint, double);
+static  int opvp_setflat(gx_device_vector *, double);
 static  int opvp_setlogop(gx_device_vector *, gs_logical_operation_t,
                           gs_logical_operation_t);
 #if GS_VERSION_MAJOR >= 8
@@ -248,13 +248,13 @@ static  int opvp_vector_dopath(gx_device_vector *, const gx_path *,
 static  int opvp_vector_dorect(gx_device_vector *, fixed, fixed, fixed, fixed,
                                gx_path_type_t);
 static  int opvp_beginpath(gx_device_vector *, gx_path_type_t);
-static  int opvp_moveto(gx_device_vector *, floatp, floatp, floatp, floatp,
+static  int opvp_moveto(gx_device_vector *, double, double, double, double,
                         gx_path_type_t);
-static  int opvp_lineto(gx_device_vector *, floatp, floatp, floatp, floatp,
+static  int opvp_lineto(gx_device_vector *, double, double, double, double,
                         gx_path_type_t);
-static  int opvp_curveto(gx_device_vector *, floatp, floatp, floatp, floatp,
-                         floatp, floatp, floatp, floatp, gx_path_type_t);
-static  int opvp_closepath(gx_device_vector *, floatp, floatp, floatp, floatp,
+static  int opvp_curveto(gx_device_vector *, double, double, double, double,
+                         double, double, double, double, gx_path_type_t);
+static  int opvp_closepath(gx_device_vector *, double, double, double, double,
                            gx_path_type_t);
 static  int opvp_endpath(gx_device_vector *, gx_path_type_t);
 
@@ -4491,7 +4491,7 @@ opvp_beginpage(gx_device_vector *vdev)
  * set line width
  */
 static  int
-opvp_setlinewidth(gx_device_vector *vdev, floatp width)
+opvp_setlinewidth(gx_device_vector *vdev, double width)
 {
     gx_device_opvp *pdev = (gx_device_opvp *)vdev;
     opvp_result_t r = -1;
@@ -4600,7 +4600,7 @@ opvp_setlinejoin(gx_device_vector *vdev, gs_line_join join)
  * set miter limit
  */
 static  int
-opvp_setmiterlimit(gx_device_vector *vdev, floatp limit)
+opvp_setmiterlimit(gx_device_vector *vdev, double limit)
 {
     gx_device_opvp *pdev = (gx_device_opvp *)vdev;
     opvp_result_t r = -1;
@@ -4630,7 +4630,7 @@ opvp_setdash(
     gx_device_vector *vdev,
     const float *pattern,
     uint count,
-    floatp offset)
+    double offset)
 {
     gx_device_opvp *pdev = (gx_device_opvp *)vdev;
     opvp_result_t r = -1;
@@ -4697,7 +4697,7 @@ opvp_setdash(
  * set flat
  */
 static  int
-opvp_setflat(gx_device_vector *vdev, floatp flatness)
+opvp_setflat(gx_device_vector *vdev, double flatness)
 {
     gx_device_opvp *pdev = (gx_device_opvp *)vdev;
     int ecode = 0;
@@ -5177,10 +5177,10 @@ opvp_beginpath(gx_device_vector *vdev, gx_path_type_t type)
 static  int
 opvp_moveto(
     gx_device_vector *vdev,
-    floatp x0,
-    floatp y0,
-    floatp x1,
-    floatp y1,
+    double x0,
+    double y0,
+    double x1,
+    double y1,
     gx_path_type_t type)
 {
     gx_device_opvp *pdev = (gx_device_opvp *)vdev;
@@ -5210,10 +5210,10 @@ opvp_moveto(
 static  int
 opvp_lineto(
     gx_device_vector *vdev,
-    floatp x0,
-    floatp y0,
-    floatp x1,
-    floatp y1,
+    double x0,
+    double y0,
+    double x1,
+    double y1,
     gx_path_type_t type)
 {
     gx_device_opvp *pdev = (gx_device_opvp *)vdev;
@@ -5245,14 +5245,14 @@ opvp_lineto(
 static  int
 opvp_curveto(
     gx_device_vector *vdev,
-    floatp x0,
-    floatp y0,
-    floatp x1,
-    floatp y1,
-    floatp x2,
-    floatp y2,
-    floatp x3,
-    floatp y3,
+    double x0,
+    double y0,
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+    double x3,
+    double y3,
     gx_path_type_t type)
 {
     gx_device_opvp *pdev = (gx_device_opvp *)vdev;
@@ -5296,10 +5296,10 @@ opvp_curveto(
 static  int
 opvp_closepath(
     gx_device_vector *vdev,
-    floatp x,
-    floatp y,
-    floatp x_start,
-    floatp y_start,
+    double x,
+    double y,
+    double x_start,
+    double y_start,
     gx_path_type_t type)
 {
     gx_device_opvp *pdev = (gx_device_opvp *)vdev;

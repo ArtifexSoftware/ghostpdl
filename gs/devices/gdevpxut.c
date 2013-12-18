@@ -367,7 +367,7 @@ px_put_l(stream * s, ulong l)
 */
 
 void
-px_put_r(stream * s, floatp r)
+px_put_r(stream * s, double r)
 {				/* Convert to single-precision IEEE float. */
     int exp;
     long mantissa = (long)(frexp(r, &exp) * 0x1000000);
@@ -387,14 +387,14 @@ px_put_r(stream * s, floatp r)
     spputc(s, (byte) ((exp + 126) >> 1));
 }
 void
-px_put_rl(stream * s, floatp r)
+px_put_rl(stream * s, double r)
 {
     spputc(s, pxt_real32);
     px_put_r(s, r);
 }
 
 void
-px_put_rp(stream * s, floatp rx, floatp ry)
+px_put_rp(stream * s, double rx, double ry)
 {
     spputc(s, pxt_real32_xy);
     px_put_r(s, rx);
@@ -402,7 +402,7 @@ px_put_rp(stream * s, floatp rx, floatp ry)
 }
 
 void
-px_put_rpa(stream * s, floatp rx, floatp ry, px_attribute_t a)
+px_put_rpa(stream * s, double rx, double ry, px_attribute_t a)
 {
     px_put_rp(s, rx, ry);
     px_put_a(s, a);

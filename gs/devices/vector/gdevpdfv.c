@@ -649,7 +649,7 @@ pdf_put_scalar_shading(cos_dict_t *pscd, const gs_shading_t *psh,
 
 /* Add a floating point range to an array. */
 static int
-pdf_array_add_real2(cos_array_t *pca, floatp lower, floatp upper)
+pdf_array_add_real2(cos_array_t *pca, double lower, double upper)
 {
     int code = cos_array_add_real(pca, lower);
 
@@ -669,7 +669,7 @@ typedef struct pdf_mesh_data_params_s {
 
 /* Put a clamped value into a data stream.  num_bytes < sizeof(int). */
 static void
-put_clamped(byte *p, floatp v, int num_bytes)
+put_clamped(byte *p, double v, int num_bytes)
 {
     int limit = 1 << (num_bytes * 8);
     int i, shift;
@@ -684,7 +684,7 @@ put_clamped(byte *p, floatp v, int num_bytes)
         *p++ = (byte)(i >> shift);
 }
 static inline void
-put_clamped_coord(byte *p, floatp v, int num_bytes)
+put_clamped_coord(byte *p, double v, int num_bytes)
 {
     put_clamped(p, ENCODE_MESH_COORDINATE(v), num_bytes);
 }

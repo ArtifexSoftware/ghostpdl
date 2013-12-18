@@ -89,9 +89,9 @@ extern int gs_ht_build(gs_ht ** ppht, uint num_comps, gs_memory_t * pmem);
 extern int gs_ht_set_spot_comp(
                                      gs_ht * pht,
                                      int component_index,
-                                     floatp freq,
-                                     floatp angle,
-                                     float (*spot_func) (floatp, floatp),
+                                     double freq,
+                                     double angle,
+                                     float (*spot_func) (double, double),
                                      bool accurate,
                                      gs_ht_transfer_proc transfer,
                                      const void *client_data

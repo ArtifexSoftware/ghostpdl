@@ -234,8 +234,8 @@ static int lips4v_setfillcolor(gx_device_vector * vdev, const gs_imager_state * 
 static int lips4v_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis,
                                                                         const gx_drawing_color * pdc);
 static int lips4v_setdash(gx_device_vector * vdev, const float *pattern,
-                              uint count, floatp offset);
-static int lips4v_setflat(gx_device_vector * vdev, floatp flatness);
+                              uint count, double offset);
+static int lips4v_setflat(gx_device_vector * vdev, double flatness);
 static int
 lips4v_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
                  gs_logical_operation_t diff);
@@ -245,18 +245,18 @@ static int
 
 lips4v_beginpath(gx_device_vector * vdev, gx_path_type_t type);
 static int
-lips4v_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
-               floatp y, gx_path_type_t type);
+lips4v_moveto(gx_device_vector * vdev, double x0, double y0, double x,
+               double y, gx_path_type_t type);
 static int
-lips4v_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
-               floatp y, gx_path_type_t type);
+lips4v_lineto(gx_device_vector * vdev, double x0, double y0, double x,
+               double y, gx_path_type_t type);
 static int
-lips4v_curveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x1,
-                floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
+lips4v_curveto(gx_device_vector * vdev, double x0, double y0, double x1,
+                double y1, double x2, double y2, double x3, double y3,
                 gx_path_type_t type);
 static int
-lips4v_closepath(gx_device_vector * vdev, floatp x, floatp y, floatp x_start,
-                  floatp y_start, gx_path_type_t type);
+lips4v_closepath(gx_device_vector * vdev, double x, double y, double x_start,
+                  double y_start, gx_path_type_t type);
 
 static int lips4v_endpath(gx_device_vector * vdev, gx_path_type_t type);
 #else
@@ -266,8 +266,8 @@ static int lips4v_setfillcolor(P2(gx_device_vector * vdev,
 static int lips4v_setstrokecolor(P2(gx_device_vector * vdev,
                                      const gx_drawing_color * pdc));
 static int lips4v_setdash(P4(gx_device_vector * vdev, const float *pattern,
-                              uint count, floatp offset));
-static int lips4v_setflat(P2(gx_device_vector * vdev, floatp flatness));
+                              uint count, double offset));
+static int lips4v_setflat(P2(gx_device_vector * vdev, double flatness));
 static int
 lips4v_setlogop(P3
 
@@ -278,28 +278,28 @@ static int
 lips4v_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type));
 static int
 lips4v_moveto(P6
-              (gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
-               floatp y, gx_path_type_t type));
+              (gx_device_vector * vdev, double x0, double y0, double x,
+               double y, gx_path_type_t type));
 static int
 lips4v_lineto(P6
-              (gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
-               floatp y, gx_path_type_t type));
+              (gx_device_vector * vdev, double x0, double y0, double x,
+               double y, gx_path_type_t type));
 static int
 lips4v_curveto(P10
-               (gx_device_vector * vdev, floatp x0, floatp y0, floatp x1,
-                floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
+               (gx_device_vector * vdev, double x0, double y0, double x1,
+                double y1, double x2, double y2, double x3, double y3,
                 gx_path_type_t type));
 static int
 lips4v_closepath(P6
-                 (gx_device_vector * vdev, floatp x, floatp y, floatp x_start,
-                  floatp y_start, gx_path_type_t type));
+                 (gx_device_vector * vdev, double x, double y, double x_start,
+                  double y_start, gx_path_type_t type));
 
 static int lips4v_endpath(P2(gx_device_vector * vdev, gx_path_type_t type));
 #endif
-static int lips4v_setlinewidth(gx_device_vector * vdev, floatp width);
+static int lips4v_setlinewidth(gx_device_vector * vdev, double width);
 static int lips4v_setlinecap(gx_device_vector * vdev, gs_line_cap cap);
 static int lips4v_setlinejoin(gx_device_vector * vdev, gs_line_join join);
-static int lips4v_setmiterlimit(gx_device_vector * vdev, floatp limit);
+static int lips4v_setmiterlimit(gx_device_vector * vdev, double limit);
 static const gx_device_vector_procs lips4v_vector_procs = {
     /* Page management */
     lips4v_beginpage,
@@ -951,14 +951,14 @@ lips4v_beginpage(gx_device_vector * vdev)
 }
 
 static int
-lips4v_setlinewidth(gx_device_vector * vdev, floatp width)
+lips4v_setlinewidth(gx_device_vector * vdev, double width)
 {
     stream *s = gdev_vector_stream(vdev);
     gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
 
 #if 0
     /* Scale を掛けているのは, Ghostscript 5.10/5.50 のバグのため */
-    floatp xscale, yscale;
+    double xscale, yscale;
 
     xscale = fabs(igs->ctm.xx);
     yscale = fabs(igs->ctm.xy);
@@ -1057,11 +1057,11 @@ lips4v_setlinejoin(gx_device_vector * vdev, gs_line_join join)
 }
 
 static int
-lips4v_setmiterlimit(gx_device_vector * vdev, floatp limit)
+lips4v_setmiterlimit(gx_device_vector * vdev, double limit)
 {
     stream *s = gdev_vector_stream(vdev);
     gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
-    floatp lips_miterlimit;
+    double lips_miterlimit;
 
     if (pdev->TextMode) {
         sputc(s, LIPS_CSI);
@@ -1190,7 +1190,7 @@ lips4v_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 /* 線種指定命令 */
 static int
 lips4v_setdash(gx_device_vector * vdev, const float *pattern, uint count,
-               floatp offset)
+               double offset)
 {
     stream *s = gdev_vector_stream(vdev);
     gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
@@ -1260,7 +1260,7 @@ lips4v_setdash(gx_device_vector * vdev, const float *pattern, uint count,
 
 /* パス平滑度指定 */
 static int
-lips4v_setflat(gx_device_vector * vdev, floatp flatness)
+lips4v_setflat(gx_device_vector * vdev, double flatness)
 {
     stream *s = gdev_vector_stream(vdev);
     gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
@@ -1318,8 +1318,8 @@ lips4v_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 }
 
 static int
-lips4v_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
-              floatp y, gx_path_type_t type)
+lips4v_moveto(gx_device_vector * vdev, double x0, double y0, double x,
+              double y, gx_path_type_t type)
 {
     stream *s = gdev_vector_stream(vdev);
 
@@ -1333,8 +1333,8 @@ lips4v_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
 }
 
 static int
-lips4v_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
-              floatp y, gx_path_type_t type)
+lips4v_lineto(gx_device_vector * vdev, double x0, double y0, double x,
+              double y, gx_path_type_t type)
 {
     stream *s = gdev_vector_stream(vdev);
     gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
@@ -1355,9 +1355,9 @@ lips4v_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
 }
 
 static int
-lips4v_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
-               floatp x1, floatp y1, floatp x2, floatp y2, floatp x3,
-               floatp y3, gx_path_type_t type)
+lips4v_curveto(gx_device_vector * vdev, double x0, double y0,
+               double x1, double y1, double x2, double y2, double x3,
+               double y3, gx_path_type_t type)
 {
     stream *s = gdev_vector_stream(vdev);
 
@@ -1375,8 +1375,8 @@ lips4v_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 }
 
 static int
-lips4v_closepath(gx_device_vector * vdev, floatp x, floatp y,
-                 floatp x_start, floatp y_start, gx_path_type_t type)
+lips4v_closepath(gx_device_vector * vdev, double x, double y,
+                 double x_start, double y_start, gx_path_type_t type)
 {
     stream *s = gdev_vector_stream(vdev);
 
@@ -1864,7 +1864,7 @@ lips4v_copy_mono(gx_device * dev, const byte * data,
     int dpi = dev->x_pixels_per_inch;
     gx_drawing_color color;
     int code = 0;
-    floatp r, g, b;
+    double r, g, b;
 
     if (id != gs_no_id && zero == gx_no_color_index &&
         one != gx_no_color_index && data_x == 0) {

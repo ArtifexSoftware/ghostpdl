@@ -21,7 +21,7 @@
 #  define gspath2_INCLUDED
 
 /* Miscellaneous */
-int gs_setbbox(gs_state *, floatp, floatp, floatp, floatp);
+int gs_setbbox(gs_state *, double, double, double, double);
 
 /* Rectangles */
 int gs_rectappend(gs_state *, const gs_rect *, uint);

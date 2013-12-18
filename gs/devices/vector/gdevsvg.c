@@ -138,16 +138,16 @@ const gx_device_svg gs_svgwrite_device = {
 static int
 svg_beginpage(gx_device_vector *vdev);
 static int
-svg_setlinewidth(gx_device_vector *vdev, floatp width);
+svg_setlinewidth(gx_device_vector *vdev, double width);
 static int
 svg_setlinecap(gx_device_vector *vdev, gs_line_cap cap);
 static int
 svg_setlinejoin(gx_device_vector *vdev, gs_line_join join);
 static int
-svg_setmiterlimit(gx_device_vector *vdev, floatp limit);
+svg_setmiterlimit(gx_device_vector *vdev, double limit);
 static int
 svg_setdash(gx_device_vector *vdev, const float *pattern,
-            uint count, floatp offset);
+            uint count, double offset);
 static int
 svg_setlogop(gx_device_vector *vdev, gs_logical_operation_t lop,
              gs_logical_operation_t diff);
@@ -169,18 +169,18 @@ static int
 svg_beginpath(gx_device_vector *vdev, gx_path_type_t type);
 
 static int
-svg_moveto(gx_device_vector *vdev, floatp x0, floatp y0,
-           floatp x, floatp y, gx_path_type_t type);
+svg_moveto(gx_device_vector *vdev, double x0, double y0,
+           double x, double y, gx_path_type_t type);
 static int
-svg_lineto(gx_device_vector *vdev, floatp x0, floatp y0,
-           floatp x, floatp y, gx_path_type_t type);
+svg_lineto(gx_device_vector *vdev, double x0, double y0,
+           double x, double y, gx_path_type_t type);
 static int
-svg_curveto(gx_device_vector *vdev, floatp x0, floatp y0,
-            floatp x1, floatp y1, floatp x2, floatp y2,
-            floatp x3, floatp y3, gx_path_type_t type);
+svg_curveto(gx_device_vector *vdev, double x0, double y0,
+            double x1, double y1, double x2, double y2,
+            double x3, double y3, gx_path_type_t type);
 static int
-svg_closepath(gx_device_vector *vdev, floatp x, floatp y,
-              floatp x_start, floatp y_start, gx_path_type_t type);
+svg_closepath(gx_device_vector *vdev, double x, double y,
+              double x_start, double y_start, gx_path_type_t type);
 static int
 svg_endpath(gx_device_vector *vdev, gx_path_type_t type);
 
@@ -502,7 +502,7 @@ svg_beginpage(gx_device_vector *vdev)
 
         /* Imager state */
 static int
-svg_setlinewidth(gx_device_vector *vdev, floatp width)
+svg_setlinewidth(gx_device_vector *vdev, double width)
 {
     gx_device_svg *svg = (gx_device_svg *)vdev;
 
@@ -546,14 +546,14 @@ svg_setlinejoin(gx_device_vector *vdev, gs_line_join join)
     return 0;
 }
 static int
-svg_setmiterlimit(gx_device_vector *vdev, floatp limit)
+svg_setmiterlimit(gx_device_vector *vdev, double limit)
 {
     if_debug1m('_', vdev->memory, "svg_setmiterlimit(%lf)\n", limit);
     return 0;
 }
 static int
 svg_setdash(gx_device_vector *vdev, const float *pattern,
-            uint count, floatp offset)
+            uint count, double offset)
 {
     if_debug0m('_', vdev->memory, "svg_setdash\n");
     return 0;
@@ -696,8 +696,8 @@ svg_beginpath(gx_device_vector *vdev, gx_path_type_t type)
 }
 
 static int
-svg_moveto(gx_device_vector *vdev, floatp x0, floatp y0,
-           floatp x, floatp y, gx_path_type_t type)
+svg_moveto(gx_device_vector *vdev, double x0, double y0,
+           double x, double y, gx_path_type_t type)
 {
     gx_device_svg *svg = (gx_device_svg *)vdev;
     char line[SVG_LINESIZE];
@@ -721,8 +721,8 @@ svg_moveto(gx_device_vector *vdev, floatp x0, floatp y0,
 }
 
 static int
-svg_lineto(gx_device_vector *vdev, floatp x0, floatp y0,
-           floatp x, floatp y, gx_path_type_t type)
+svg_lineto(gx_device_vector *vdev, double x0, double y0,
+           double x, double y, gx_path_type_t type)
 {
     gx_device_svg *svg = (gx_device_svg *)vdev;
     char line[SVG_LINESIZE];
@@ -746,9 +746,9 @@ svg_lineto(gx_device_vector *vdev, floatp x0, floatp y0,
 }
 
 static int
-svg_curveto(gx_device_vector *vdev, floatp x0, floatp y0,
-            floatp x1, floatp y1, floatp x2, floatp y2,
-            floatp x3, floatp y3, gx_path_type_t type)
+svg_curveto(gx_device_vector *vdev, double x0, double y0,
+            double x1, double y1, double x2, double y2,
+            double x3, double y3, gx_path_type_t type)
 {
     gx_device_svg *svg = (gx_device_svg *)vdev;
     char line[SVG_LINESIZE];
@@ -773,8 +773,8 @@ svg_curveto(gx_device_vector *vdev, floatp x0, floatp y0,
 }
 
 static int
-svg_closepath(gx_device_vector *vdev, floatp x, floatp y,
-              floatp x_start, floatp y_start, gx_path_type_t type)
+svg_closepath(gx_device_vector *vdev, double x, double y,
+              double x_start, double y_start, gx_path_type_t type)
 {
     gx_device_svg *svg = (gx_device_svg *)vdev;
 

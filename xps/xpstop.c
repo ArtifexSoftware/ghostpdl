@@ -551,7 +551,7 @@ xps_show_page(xps_context_t *ctx, int num_copies, int flush)
  */
 
 static float
-identity_transfer(floatp tint, const gx_transfer_map *ignore_map)
+identity_transfer(double tint, const gx_transfer_map *ignore_map)
 {
     return tint;
 }

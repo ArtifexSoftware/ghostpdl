@@ -99,7 +99,7 @@ int
 hpgl_CR(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
 
-    floatp b_ref_r, b_ref_g, b_ref_b, w_ref_r, w_ref_g, w_ref_b;
+    double b_ref_r, b_ref_g, b_ref_b, w_ref_r, w_ref_g, w_ref_b;
 
     if (pgls->personality == pcl5e)
         return 0;

@@ -63,7 +63,7 @@ int gs_font_find_similar(const gs_font_dir * pdir, const gs_font **ppfont,
 
 /* gs_scalefont and gs_makefont return 0 if the scaled font */
 /* was already in the cache, 1 if a new font was created. */
-int gs_scalefont(gs_font_dir *, const gs_font *, floatp, gs_font **);
+int gs_scalefont(gs_font_dir *, const gs_font *, double, gs_font **);
 int gs_makefont(gs_font_dir *, const gs_font *, const gs_matrix *, gs_font **);
 int gs_setfont(gs_state *, gs_font *);
 gs_font *gs_currentfont(const gs_state *);

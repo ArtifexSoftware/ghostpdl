@@ -79,7 +79,7 @@ static int (*tests[]) (gs_state *, gs_memory_t *) =
 extern_gs_lib_device_list();
 
 /* Forward references */
-static float odsf(floatp, floatp);
+static float odsf(double, double);
 
 /* return index in gs device list -1 if not found */
 static inline int
@@ -226,7 +226,7 @@ main(int argc, const char *argv[])
 }
 /* Ordered dither spot function */
 static float
-odsf(floatp x, floatp y)
+odsf(double x, double y)
 {
     static const byte dither[256] =
     {
@@ -255,7 +255,7 @@ odsf(floatp x, floatp y)
 
 /* Fill a rectangle. */
 static int
-fill_rect1(gs_state * pgs, floatp x, floatp y, floatp w, floatp h)
+fill_rect1(gs_state * pgs, double x, double y, double w, double h)
 {
     gs_rect r;
 
@@ -302,7 +302,7 @@ gs_abort(const gs_memory_t *mem)
 /* Return the number with the magnitude of x and the sign of y. */
 /* This is a BSD addition to libm; not all compilers have it. */
 static double
-gs_copysign(floatp x, floatp y)
+gs_copysign(double x, double y)
 {
    return ( y >= 0  ? fabs(x) : -fabs(x) );
 }
@@ -767,7 +767,7 @@ spectrum(gs_state * pgs, int n)
             }
 }
 static float
-render_abc(floatp v, const gs_cie_render * ignore_crd)
+render_abc(double v, const gs_cie_render * ignore_crd)
 {
     return v / 2;
 }
@@ -1205,7 +1205,7 @@ test9(gs_state * pgs, gs_memory_t * mem)
         gs_text_params_t text_params;
         gs_text_enum_t *penum;
         byte *mystr = "The quick brown fox";
-        floatp FontRenderingEmSize = 20; /* XPS terminology */
+        double FontRenderingEmSize = 20; /* XPS terminology */
         gs_matrix fmat; /* font matrix */
         int code;
         {

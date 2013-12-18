@@ -291,7 +291,7 @@ pjl_impl_vartoi(pl_interp_instance_t * pli, const pjl_envvar_t * s)
 }
 
 /* pjl envioronment variable to float. */
-static floatp
+static double
 pjl_impl_vartof(pl_interp_instance_t * pli, const pjl_envvar_t * s)
 {
     return pjl_vartof(s);

@@ -55,7 +55,7 @@ pjl_proc_vartoi(pl_interp_instance_t * pli, const pjl_envvar_t * s)
 }
 
 /* pjl envioronment variable to float. */
-floatp
+double
 pjl_proc_vartof(pl_interp_instance_t * pli, const pjl_envvar_t * s)
 {
     return ((pjl_implementation_t *) pli->interp->implementation)

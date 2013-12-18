@@ -116,7 +116,7 @@ gs_private_st_ptrs2(st_pdf_text_state, pdf_text_state_t,  "pdf_text_state_t",
  * pdf_append_chars.)  Requires pts->buffer.count_chars > 0.
  */
 static int
-append_text_move(pdf_text_state_t *pts, floatp dw)
+append_text_move(pdf_text_state_t *pts, double dw)
 {
     int count = pts->buffer.count_moves;
     int pos = pts->buffer.count_chars;
@@ -150,7 +150,7 @@ append_text_move(pdf_text_state_t *pts, floatp dw)
  * Set *pdist to the distance (dx,dy), in the space defined by *pmat.
  */
 static int
-set_text_distance(gs_point *pdist, floatp dx, floatp dy, const gs_matrix *pmat)
+set_text_distance(gs_point *pdist, double dx, double dy, const gs_matrix *pmat)
 {
     int code = gs_distance_transform_inverse(dx, dy, pmat, pdist);
     double rounded;
@@ -595,7 +595,7 @@ pdf_set_text_state_values(gx_device_pdf *pdev,
  * scaling implied by the font size) to device space.
  */
 int
-pdf_text_distance_transform(floatp wx, floatp wy, const pdf_text_state_t *pts,
+pdf_text_distance_transform(double wx, double wy, const pdf_text_state_t *pts,
                             gs_point *ppt)
 {
     return gs_distance_transform(wx, wy, &pts->in.matrix, ppt);
@@ -641,7 +641,7 @@ int pdf_bitmap_char_update_bbox(gx_device_pdf * pdev,int x_offset, int y_offset,
  */
 int
 pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,
-                 floatp wx, floatp wy, bool nobreak)
+                 double wx, double wy, bool nobreak)
 {
     pdf_text_state_t *pts = pdev->text->text_state;
     const byte *p = str;

@@ -186,7 +186,7 @@ static int (*const fn_get_samples[]) (const gs_function_Sd_t * pfn,
  * (thanks to Raph Levien for the reference).
  */
 static double
-interpolate_cubic(floatp x, floatp f0, floatp f1, floatp f2, floatp f3)
+interpolate_cubic(double x, double f0, double f1, double f2, double f3)
 {
     /*
      * The parameter 'a' affects the contribution of the high-frequency
@@ -219,7 +219,7 @@ interpolate_cubic(floatp x, floatp f0, floatp f1, floatp f2, floatp f3)
  * match what we believe is Acrobat Reader's behavior.
  */
 static inline double
-interpolate_quadratic(floatp x, floatp f0, floatp f1, floatp f2)
+interpolate_quadratic(double x, double f0, double f1, double f2)
 {
     return interpolate_cubic(x + 1, f0, f0, f1, f2);
 }

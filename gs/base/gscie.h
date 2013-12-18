@@ -200,29 +200,29 @@ typedef struct gs_range4_s {
 typedef struct gs_cie_common_s gs_cie_common;
 typedef struct gs_cie_wbsd_s gs_cie_wbsd;
 
-typedef float (*gs_cie_a_proc) (floatp, const gs_cie_a *);
+typedef float (*gs_cie_a_proc) (double, const gs_cie_a *);
 
-typedef float (*gs_cie_abc_proc) (floatp, const gs_cie_abc *);
+typedef float (*gs_cie_abc_proc) (double, const gs_cie_abc *);
 typedef struct gs_cie_abc_proc3_s {
     gs_cie_abc_proc procs[3];
 } gs_cie_abc_proc3;
 
-typedef float (*gs_cie_def_proc) (floatp, const gs_cie_def *);
+typedef float (*gs_cie_def_proc) (double, const gs_cie_def *);
 typedef struct gs_cie_def_proc3_s {
     gs_cie_def_proc procs[3];
 } gs_cie_def_proc3;
 
-typedef float (*gs_cie_defg_proc) (floatp, const gs_cie_defg *);
+typedef float (*gs_cie_defg_proc) (double, const gs_cie_defg *);
 typedef struct gs_cie_defg_proc4_s {
     gs_cie_defg_proc procs[4];
 } gs_cie_defg_proc4;
 
-typedef float (*gs_cie_common_proc) (floatp, const gs_cie_common *);
+typedef float (*gs_cie_common_proc) (double, const gs_cie_common *);
 typedef struct gs_cie_common_proc3_s {
     gs_cie_common_proc procs[3];
 } gs_cie_common_proc3;
 
-typedef float (*gs_cie_render_proc) (floatp, const gs_cie_render *);
+typedef float (*gs_cie_render_proc) (double, const gs_cie_render *);
 typedef struct gs_cie_render_proc3_s {
     gs_cie_render_proc procs[3];
 } gs_cie_render_proc3;
@@ -251,7 +251,7 @@ typedef struct gs_cie_render_proc3_s {
  * Note also that since TransformPQR can fail (if the driver doesn't
  * recognize the proc_name), it must return a failure code.
  */
-typedef int (*gs_cie_transform_proc)(int, floatp, const gs_cie_wbsd *,
+typedef int (*gs_cie_transform_proc)(int, double, const gs_cie_wbsd *,
                                      gs_cie_render *, float *);
 typedef struct gs_cie_transform_proc3_s {
     gs_cie_transform_proc proc;
@@ -685,7 +685,7 @@ gx_cie_joint_caches *gx_currentciecaches(gs_state *);
 const gs_cie_common *gs_cie_cs_common(const gs_state *);
 int gs_cie_cs_complete(gs_state *, bool);
 int gs_cie_jc_complete(const gs_imager_state *, const gs_color_space *);
-float gs_cie_cached_value(floatp, const cie_cache_floats *);
+float gs_cie_cached_value(double, const cie_cache_floats *);
 int gx_install_cie_abc(gs_cie_abc *, gs_state *);
 
 #define CIE_CLAMP_INDEX(index)\
@@ -841,9 +841,9 @@ bool gx_color_space_needs_cie_caches(const gs_color_space * pcs);
 
 /* made available for gsicc_create */
 
-float common_identity(floatp in, const gs_cie_common * pcie);
-float abc_identity(floatp in, const gs_cie_abc * pcie);
-float a_identity(floatp in, const gs_cie_a * pcie);
+float common_identity(double in, const gs_cie_common * pcie);
+float abc_identity(double in, const gs_cie_abc * pcie);
+float a_identity(double in, const gs_cie_a * pcie);
 void cie_mult3(const gs_vector3 * in, register const gs_matrix3 * mat,
           gs_vector3 * out);
 void cie_matrix_mult3(const gs_matrix3 *, const gs_matrix3 *,

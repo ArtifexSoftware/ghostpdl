@@ -55,7 +55,7 @@ RELOC_PTRS_END
 /* Default CRD procedures. */
 
 static int
-tpqr_identity(int index, floatp in, const gs_cie_wbsd * pwbsd,
+tpqr_identity(int index, double in, const gs_cie_wbsd * pwbsd,
               gs_cie_render * pcrd, float *out)
 {
     *out = in;
@@ -63,7 +63,7 @@ tpqr_identity(int index, floatp in, const gs_cie_wbsd * pwbsd,
 }
 
 static int
-tpqr_from_cache(int index, floatp in, const gs_cie_wbsd * pwbsd,
+tpqr_from_cache(int index, double in, const gs_cie_wbsd * pwbsd,
                 gs_cie_render * pcrd, float *out)
 {
     /*
@@ -76,7 +76,7 @@ tpqr_from_cache(int index, floatp in, const gs_cie_wbsd * pwbsd,
 }
 
 static float
-render_identity(floatp in, const gs_cie_render * pcrd)
+render_identity(double in, const gs_cie_render * pcrd)
 {
     return in;
 }
@@ -89,32 +89,32 @@ render_table_identity(byte in, const gs_cie_render * pcrd)
 /* Transformation procedures that just consult the cache. */
 
 static float
-EncodeABC_cached_A(floatp in, const gs_cie_render * pcrd)
+EncodeABC_cached_A(double in, const gs_cie_render * pcrd)
 {
     return gs_cie_cached_value(in, &pcrd->caches.EncodeABC[0].floats);
 }
 static float
-EncodeABC_cached_B(floatp in, const gs_cie_render * pcrd)
+EncodeABC_cached_B(double in, const gs_cie_render * pcrd)
 {
     return gs_cie_cached_value(in, &pcrd->caches.EncodeABC[1].floats);
 }
 static float
-EncodeABC_cached_C(floatp in, const gs_cie_render * pcrd)
+EncodeABC_cached_C(double in, const gs_cie_render * pcrd)
 {
     return gs_cie_cached_value(in, &pcrd->caches.EncodeABC[2].floats);
 }
 static float
-EncodeLMN_cached_L(floatp in, const gs_cie_render * pcrd)
+EncodeLMN_cached_L(double in, const gs_cie_render * pcrd)
 {
     return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN.caches[0].floats);
 }
 static float
-EncodeLMN_cached_M(floatp in, const gs_cie_render * pcrd)
+EncodeLMN_cached_M(double in, const gs_cie_render * pcrd)
 {
     return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN.caches[1].floats);
 }
 static float
-EncodeLMN_cached_N(floatp in, const gs_cie_render * pcrd)
+EncodeLMN_cached_N(double in, const gs_cie_render * pcrd)
 {
     return gs_cie_cached_value(in, &pcrd->caches.EncodeLMN.caches[2].floats);
 }
@@ -184,7 +184,7 @@ tpqr_do_lookup(gs_cie_render *pcrd, const gx_device *dev_proto)
     return code;
 }
 static int
-tpqr_lookup(int index, floatp in, const gs_cie_wbsd * pwbsd,
+tpqr_lookup(int index, double in, const gs_cie_wbsd * pwbsd,
             gs_cie_render * pcrd, float *out)
 {
     const gx_device *const *dev_list;

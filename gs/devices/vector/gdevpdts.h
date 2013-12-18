@@ -109,7 +109,7 @@ int pdf_set_text_state_values(gx_device_pdf *pdev,
  * Transform a distance from unscaled text space (text space ignoring the
  * scaling implied by the font size) to device space.
  */
-int pdf_text_distance_transform(floatp wx, floatp wy,
+int pdf_text_distance_transform(double wx, double wy,
                                 const pdf_text_state_t *pts,
                                 gs_point *ppt);
 
@@ -125,7 +125,7 @@ int pdf_bitmap_char_update_bbox(gx_device_pdf * pdev,int x_offset, int y_offset,
  * in device space.
  */
 int pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,
-                     floatp wx, floatp wy, bool nobreak);
+                     double wx, double wy, bool nobreak);
 
 bool pdf_compare_text_state_for_charpath(pdf_text_state_t *pts, gx_device_pdf *pdev,
                              gs_imager_state *pis, gs_font *font,

@@ -65,7 +65,7 @@ gs_currentblendmode(const gs_state *pgs)
 }
 
 int
-gs_setopacityalpha(gs_state *pgs, floatp alpha)
+gs_setopacityalpha(gs_state *pgs, double alpha)
 {
     if_debug2m('v', pgs->memory, "[v](0x%lx)opacity.alpha = %g\n", (ulong)pgs, alpha);
     pgs->opacity.alpha = (alpha < 0.0 ? 0.0 : alpha > 1.0 ? 1.0 : alpha);
@@ -79,7 +79,7 @@ gs_currentopacityalpha(const gs_state *pgs)
 }
 
 int
-gs_setshapealpha(gs_state *pgs, floatp alpha)
+gs_setshapealpha(gs_state *pgs, double alpha)
 {
     if_debug2m('v', pgs->memory, "[v](0x%lx)shape.alpha = %g\n", (ulong)pgs, alpha);
     pgs->shape.alpha = (alpha < 0.0 ? 0.0 : alpha > 1.0 ? 1.0 : alpha);
@@ -494,7 +494,7 @@ gx_push_transparency_state(gs_imager_state * pis, gx_device * pdev)
  * Handler for identity mask transfer functions.
  */
 static int
-mask_transfer_identity(floatp in, float *out, void *proc_data)
+mask_transfer_identity(double in, float *out, void *proc_data)
 {
     *out = (float) in;
     return 0;

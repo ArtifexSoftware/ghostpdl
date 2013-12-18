@@ -333,7 +333,7 @@ cmd_check_clip_path(gx_device_clist_writer * cldev, const gx_clip_path * pcpath)
   shape_alpha_known | fill_adjust_known | alpha_known | clip_path_known)
 static void
 cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
-                     floatp flatness, const gs_fixed_point *padjust,
+                     double flatness, const gs_fixed_point *padjust,
                      const gx_clip_path *pcpath, uint *punknown)
 {
     /*

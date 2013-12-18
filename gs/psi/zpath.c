@@ -25,9 +25,9 @@
 
 /* Forward references */
 static int common_to(i_ctx_t *,
-                      int (*)(gs_state *, floatp, floatp));
+                      int (*)(gs_state *, double, double));
 static int common_curve(i_ctx_t *,
-  int (*)(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp));
+  int (*)(gs_state *, double, double, double, double, double, double));
 
 /* - newpath - */
 static int
@@ -83,7 +83,7 @@ zrlineto(i_ctx_t *i_ctx_p)
 /* Common code for [r](move/line)to */
 static int
 common_to(i_ctx_t *i_ctx_p,
-          int (*add_proc)(gs_state *, floatp, floatp))
+          int (*add_proc)(gs_state *, double, double))
 {
     os_ptr op = osp;
     double opxy[2];
@@ -114,7 +114,7 @@ zrcurveto(i_ctx_t *i_ctx_p)
 /* Common code for [r]curveto */
 static int
 common_curve(i_ctx_t *i_ctx_p,
-             int (*add_proc)(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp))
+             int (*add_proc)(gs_state *, double, double, double, double, double, double))
 {
     os_ptr op = osp;
     double opxy[6];

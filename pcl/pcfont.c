@@ -151,7 +151,7 @@ pcl_secondary_spacing(pcl_args_t * pargs, pcl_state_t * pcs)
 }
 
 static int
-pcl_pitch(floatp cpi, pcl_state_t * pcs, int set)
+pcl_pitch(double cpi, pcl_state_t * pcs, int set)
 {
     uint pitch_cp;
     pcl_font_selection_t *pfs = &pcs->font_selection[set];
@@ -348,7 +348,7 @@ static int                      /* ESC & k <mode> S */
 pcl_set_pitch_mode(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     int mode = int_arg(pargs);
-    floatp cpi;
+    double cpi;
     int code = 0;
 
     /*

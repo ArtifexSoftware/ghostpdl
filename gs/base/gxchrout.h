@@ -30,6 +30,6 @@ typedef struct gs_imager_state_s gs_imager_state;
  * The second argument is the default scaling for the font: 0.001 for
  * Type 1 fonts, 1.0 for TrueType fonts.
  */
-double gs_char_flatness(const gs_imager_state *pis, floatp default_scale);
+double gs_char_flatness(const gs_imager_state *pis, double default_scale);
 
 #endif /* gxchrout_INCLUDED */

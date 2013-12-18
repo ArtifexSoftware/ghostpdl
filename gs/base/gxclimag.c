@@ -1840,7 +1840,7 @@ cmd_put_color_mapping(gx_device_clist_writer * cldev,
 #define I_FLOOR(x) ((int)floor(x))
 #define I_CEIL(x) ((int)ceil(x))
 static void
-box_merge_point(gs_int_rect * pbox, floatp x, floatp y)
+box_merge_point(gs_int_rect * pbox, double x, double y)
 {
     int t;
 
@@ -1973,12 +1973,12 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
                 if_debug3m('b', dev->memory, "   (px) t=%g => (%d,%g)\n",
                            t, px, pa.y + t * dy);
                 if (in_range(t, pa.y + t * dy, py, qy))
-                    box_merge_point(pbox, (floatp) px, t);
+                    box_merge_point(pbox, (double) px, t);
                 t = (qx - pa.x) / dx;
                 if_debug3m('b', dev->memory, "   (qx) t=%g => (%d,%g)\n",
                            t, qx, pa.y + t * dy);
                 if (in_range(t, pa.y + t * dy, py, qy))
-                    box_merge_point(pbox, (floatp) qx, t);
+                    box_merge_point(pbox, (double) qx, t);
             }
             if (dy != 0) {
                 double t = (py - pa.y) / dy;
@@ -1986,12 +1986,12 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
                 if_debug3m('b', dev->memory, "   (py) t=%g => (%g,%d)\n",
                            t, pa.x + t * dx, py);
                 if (in_range(t, pa.x + t * dx, px, qx))
-                    box_merge_point(pbox, t, (floatp) py);
+                    box_merge_point(pbox, t, (double) py);
                 t = (qy - pa.y) / dy;
                 if_debug3m('b', dev->memory, "   (qy) t=%g => (%g,%d)\n",
                            t, pa.x + t * dx, qy);
                 if (in_range(t, pa.x + t * dx, px, qx))
-                    box_merge_point(pbox, t, (floatp) qy);
+                    box_merge_point(pbox, t, (double) qy);
             }
 #undef in_range
         }

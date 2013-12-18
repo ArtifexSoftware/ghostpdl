@@ -226,9 +226,9 @@ set_client_info_chroma(pcl_cs_client_data_t * pdata,
     int i;
 
     for (i = 0; i < 3; i++) {
-        floatp gamma = pchroma->nonlin[i].gamma;
+        double gamma = pchroma->nonlin[i].gamma;
 
-        floatp gain = pchroma->nonlin[i].gain;
+        double gain = pchroma->nonlin[i].gain;
 
         pdata->inv_gamma[i] = (gamma == 0.0 ? 1.0 : 1.0 / gamma);
         pdata->inv_gain[i] = (gain == 0.0 ? 1.0 : 1.0 / gain);
@@ -417,15 +417,15 @@ update_lookup_tbls(pcl_cs_client_data_t * pdata,
 #define colmet_DecodeABC_proc(procname, indx)                               \
       static float                                                         \
     procname(                                                               \
-        floatp                          val,                                \
+        double                          val,                                \
         const gs_cie_abc *              pabc                                \
     )                                                                       \
     {                                                                       \
         const pcl_cs_client_data_t *    pdata =                             \
                                              (const pcl_cs_client_data_t *) \
                                              pabc->common.client_data;      \
-        floatp                          inv_gamma = pdata->inv_gamma[indx]; \
-        floatp                          inv_gain = pdata->inv_gain[indx];   \
+        double                          inv_gamma = pdata->inv_gamma[indx]; \
+        double                          inv_gain = pdata->inv_gain[indx];   \
                                                                             \
         convert_val( val,                                                   \
                      pdata->min_val[indx],                                  \
@@ -465,8 +465,8 @@ build_colmet_conv_mtx(const pcl_cid_col_common_t * pdata,
     int i, code;
 
     for (i = 0; i < 3; i++) {
-        floatp x = pf[2 * i];
-        floatp y = pf[2 * i + 1];
+        double x = pf[2 * i];
+        double y = pf[2 * i + 1];
 
         pmtx->a[3 * i] = x / y;
         pmtx->a[3 * i + 1] = 1.0;
@@ -637,7 +637,7 @@ finish_colmet_cspace(gs_color_space * pcspace, const pcl_cid_data_t * pcid)
 #define lab_DecodeABC_proc(procname, indx, conv_code)                       \
       static float                                                         \
     procname(                                                               \
-        floatp                          val,                                \
+        double                          val,                                \
         const gs_cie_abc *              pabc                                \
     )                                                                       \
     {                                                                       \
@@ -676,7 +676,7 @@ static const gs_matrix3 lab_MatrixABC = {
 #define lab_DecodeLMN_proc(procname, indx)                          \
       static float                                                 \
     procname(                                                       \
-        floatp                  val,                                \
+        double                  val,                                \
         const gs_cie_common *   pcie                                \
     )                                                               \
     {                                                               \
@@ -748,7 +748,7 @@ finish_lab_cspace(gs_color_space * pcspace, const pcl_cid_data_t * pcid)
 #define lumchrom_DecodeABC_proc(procname, indx)                             \
       static float                                                         \
     procname(                                                               \
-        floatp                          val,                                \
+        double                          val,                                \
         const gs_cie_abc *              pabc                                \
     )                                                                       \
     {                                                                       \
@@ -780,15 +780,15 @@ static const gs_cie_abc_proc3 lumchrom_DecodeABC = {
 #define lumchrom_DecodeLMN_proc(procname, indx)                             \
       static float                                                         \
     procname(                                                               \
-        floatp                          val,                                \
+        double                          val,                                \
         const gs_cie_common *           pcie                                \
     )                                                                       \
     {                                                                       \
         const pcl_cs_client_data_t *    pdata =                             \
                                               (const pcl_cs_client_data_t *)\
                                               pcie->client_data;            \
-        floatp                          inv_gamma = pdata->inv_gamma[indx]; \
-        floatp                          inv_gain = pdata->inv_gain[indx];   \
+        double                          inv_gamma = pdata->inv_gamma[indx]; \
+        double                          inv_gain = pdata->inv_gain[indx];   \
                                                                             \
         convert_val( val,                                                   \
                      0.0,                                                   \

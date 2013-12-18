@@ -141,7 +141,7 @@ typedef struct gx_device_escv_s {
   int           prev_y;
   gx_color_index        prev_color;
   gx_color_index        current_color;
-  floatp        lwidth;
+  double        lwidth;
   long          cap;
   long          join;
   long          reverse_x;

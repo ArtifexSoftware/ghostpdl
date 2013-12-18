@@ -121,7 +121,7 @@ pcl_transform_rect(const gs_memory_t * mem,
  * region (in the original coordinate system).
  */
 void
-pcl_make_rotation(int rot, floatp width, floatp height, gs_matrix * pmtx)
+pcl_make_rotation(int rot, double width, double height, gs_matrix * pmtx)
 {
     *pmtx = rot_mtx[rot & 0x3];
     if (pmtx->xx + pmtx->yx < 0.0)
@@ -173,11 +173,11 @@ pcl_make_rotation(int rot, floatp width, floatp height, gs_matrix * pmtx)
 /*
  * Convert a floating point number that is nearly an integer to an integer.
  */
-static floatp
-adjust_param(floatp val)
+static double
+adjust_param(double val)
 {
-    floatp fval = floor(val);
-    floatp cval = ceil(val);
+    double fval = floor(val);
+    double cval = ceil(val);
 
     return (val - fval < .001 ? fval : (cval - val < .001 ? cval : val));
 }
@@ -205,8 +205,8 @@ pcl_xfm_get_pat_xfm(const pcl_state_t * pcs,
 
     /* scale to the appropriate resolution (before print direction rotation) */
     gs_matrix_scale(pmat,
-                    inch2coord(1.0 / (floatp) pptrn->ppat_data->xres),
-                    inch2coord(1.0 / (floatp) pptrn->ppat_data->yres), pmat);
+                    inch2coord(1.0 / (double) pptrn->ppat_data->xres),
+                    inch2coord(1.0 / (double) pptrn->ppat_data->yres), pmat);
 
     /* avoid parameters that are slightly different from integers */
     pmat->xx = adjust_param(pmat->xx);
@@ -287,8 +287,8 @@ set_pat_ref_pt(pcl_args_t * pargs, pcl_state_t * pcs)
 
     if (rotate <= 1) {
         pcl_break_underline(pcs);
-        gs_point_transform((floatp) pcs->cap.x,
-                           (floatp) pcs->cap.y,
+        gs_point_transform((double) pcs->cap.x,
+                           (double) pcs->cap.y,
                            &(pcs->xfm_state.pd2lp_mtx), &(pcs->pcl_pat_ref_pt)
             );
         pcs->rotate_patterns = (rotate == 0);

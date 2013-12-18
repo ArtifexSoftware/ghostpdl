@@ -87,7 +87,7 @@ int gs_currentscreenphase(const gs_state *, gs_int_point *, gs_color_select_t);
 int gx_imager_setscreenphase(gs_imager_state *, int, int, gs_color_select_t);
 
 /* Miscellaneous */
-int gs_setfilladjust(gs_state *, floatp, floatp);
+int gs_setfilladjust(gs_state *, double, double);
 int gs_currentfilladjust(const gs_state *, gs_point *);
 void gs_setlimitclamp(gs_state *, bool);
 bool gs_currentlimitclamp(const gs_state *);

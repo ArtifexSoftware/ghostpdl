@@ -191,16 +191,16 @@ const gx_device_xps gs_xpswrite_device = {
 static int
 xps_beginpage(gx_device_vector *vdev);
 static int
-xps_setlinewidth(gx_device_vector *vdev, floatp width);
+xps_setlinewidth(gx_device_vector *vdev, double width);
 static int
 xps_setlinecap(gx_device_vector *vdev, gs_line_cap cap);
 static int
 xps_setlinejoin(gx_device_vector *vdev, gs_line_join join);
 static int
-xps_setmiterlimit(gx_device_vector *vdev, floatp limit);
+xps_setmiterlimit(gx_device_vector *vdev, double limit);
 static int
 xps_setdash(gx_device_vector *vdev, const float *pattern,
-            uint count, floatp offset);
+            uint count, double offset);
 static int
 xps_setlogop(gx_device_vector *vdev, gs_logical_operation_t lop,
              gs_logical_operation_t diff);
@@ -222,18 +222,18 @@ static int
 xps_beginpath(gx_device_vector *vdev, gx_path_type_t type);
 
 static int
-xps_moveto(gx_device_vector *vdev, floatp x0, floatp y0,
-           floatp x, floatp y, gx_path_type_t type);
+xps_moveto(gx_device_vector *vdev, double x0, double y0,
+           double x, double y, gx_path_type_t type);
 static int
-xps_lineto(gx_device_vector *vdev, floatp x0, floatp y0,
-           floatp x, floatp y, gx_path_type_t type);
+xps_lineto(gx_device_vector *vdev, double x0, double y0,
+           double x, double y, gx_path_type_t type);
 static int
-xps_curveto(gx_device_vector *vdev, floatp x0, floatp y0,
-            floatp x1, floatp y1, floatp x2, floatp y2,
-            floatp x3, floatp y3, gx_path_type_t type);
+xps_curveto(gx_device_vector *vdev, double x0, double y0,
+            double x1, double y1, double x2, double y2,
+            double x3, double y3, gx_path_type_t type);
 static int
-xps_closepath(gx_device_vector *vdev, floatp x, floatp y,
-              floatp x_start, floatp y_start, gx_path_type_t type);
+xps_closepath(gx_device_vector *vdev, double x, double y,
+              double x_start, double y_start, gx_path_type_t type);
 static int
 xps_endpath(gx_device_vector *vdev, gx_path_type_t type);
 
@@ -874,7 +874,7 @@ xps_beginpage(gx_device_vector *vdev)
 }
 
 static int
-xps_setlinewidth(gx_device_vector *vdev, floatp width)
+xps_setlinewidth(gx_device_vector *vdev, double width)
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
 
@@ -915,14 +915,14 @@ xps_setlinejoin(gx_device_vector *vdev, gs_line_join join)
     return 0;
 }
 static int
-xps_setmiterlimit(gx_device_vector *vdev, floatp limit)
+xps_setmiterlimit(gx_device_vector *vdev, double limit)
 {
     if_debug1m('_', vdev->memory, "xps_setmiterlimit(%lf)\n", limit);
     return 0;
 }
 static int
 xps_setdash(gx_device_vector *vdev, const float *pattern,
-            uint count, floatp offset)
+            uint count, double offset)
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
     if_debug2m('_', vdev->memory, "xps_setdash count:%d offset:%g\n", count, offset);
@@ -1080,8 +1080,8 @@ xps_beginpath(gx_device_vector *vdev, gx_path_type_t type)
 }
 
 static int
-xps_moveto(gx_device_vector *vdev, floatp x0, floatp y0,
-           floatp x, floatp y, gx_path_type_t type)
+xps_moveto(gx_device_vector *vdev, double x0, double y0,
+           double x, double y, gx_path_type_t type)
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
     char line[300];
@@ -1101,8 +1101,8 @@ xps_moveto(gx_device_vector *vdev, floatp x0, floatp y0,
 }
 
 static int
-xps_lineto(gx_device_vector *vdev, floatp x0, floatp y0,
-           floatp x, floatp y, gx_path_type_t type)
+xps_lineto(gx_device_vector *vdev, double x0, double y0,
+           double x, double y, gx_path_type_t type)
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
     char line[200];
@@ -1121,9 +1121,9 @@ xps_lineto(gx_device_vector *vdev, floatp x0, floatp y0,
 }
 
 static int
-xps_curveto(gx_device_vector *vdev, floatp x0, floatp y0,
-            floatp x1, floatp y1, floatp x2, floatp y2,
-            floatp x3, floatp y3, gx_path_type_t type)
+xps_curveto(gx_device_vector *vdev, double x0, double y0,
+            double x1, double y1, double x2, double y2,
+            double x3, double y3, gx_path_type_t type)
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
     char line[200];
@@ -1143,8 +1143,8 @@ xps_curveto(gx_device_vector *vdev, floatp x0, floatp y0,
 }
 
 static int
-xps_closepath(gx_device_vector *vdev, floatp x, floatp y,
-              floatp x_start, floatp y_start, gx_path_type_t type)
+xps_closepath(gx_device_vector *vdev, double x, double y,
+              double x_start, double y_start, gx_path_type_t type)
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
 

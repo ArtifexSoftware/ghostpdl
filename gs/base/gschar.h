@@ -94,7 +94,7 @@ int gs_setcachedevice2_float(gs_show_enum *, gs_state *, const float * /*[10] */
 int gs_setcachedevice2_double(gs_show_enum *, gs_state *, const double * /*[10] */ );
 #define gs_setcachedevice2(penum, pgs, pw2)\
   gs_setcachedevice2_float(penum, pgs, pw2)
-int gs_setcharwidth(gs_show_enum *, gs_state *, floatp, floatp);
+int gs_setcharwidth(gs_show_enum *, gs_state *, double, double);
 
 /* Return true if we only need the width from the rasterizer */
 /* and can short-circuit the full rendering of the character, */

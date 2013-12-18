@@ -30,7 +30,7 @@
  */
 int put_param1_bool(pcl_state_t *, gs_param_name pkey, bool val);
 
-int put_param1_float(pcl_state_t *, gs_param_name pkey, floatp val);
+int put_param1_float(pcl_state_t *, gs_param_name pkey, double val);
 
 int put_param1_int(pcl_state_t *, gs_param_name pkey, int val);
 

@@ -106,7 +106,7 @@ pprintd4(stream * s, const char *format, int v1, int v2, int v3, int v4)
 /* Print (a) floating point number(s) using a format. */
 /* See gdevpdfx.h for why this is needed. */
 const char *
-pprintg1(stream * s, const char *format, floatp v)
+pprintg1(stream * s, const char *format, double v)
 {
     const char *fp = pprintf_scan(s, format);
     char dot, str[150];
@@ -132,24 +132,24 @@ pprintg1(stream * s, const char *format, floatp v)
     return pprintf_scan(s, fp + 2);
 }
 const char *
-pprintg2(stream * s, const char *format, floatp v1, floatp v2)
+pprintg2(stream * s, const char *format, double v1, double v2)
 {
     return pprintg1(s, pprintg1(s, format, v1), v2);
 }
 const char *
-pprintg3(stream * s, const char *format, floatp v1, floatp v2, floatp v3)
+pprintg3(stream * s, const char *format, double v1, double v2, double v3)
 {
     return pprintg2(s, pprintg1(s, format, v1), v2, v3);
 }
 const char *
-pprintg4(stream * s, const char *format, floatp v1, floatp v2, floatp v3,
-         floatp v4)
+pprintg4(stream * s, const char *format, double v1, double v2, double v3,
+         double v4)
 {
     return pprintg2(s, pprintg2(s, format, v1, v2), v3, v4);
 }
 const char *
-pprintg6(stream * s, const char *format, floatp v1, floatp v2, floatp v3,
-         floatp v4, floatp v5, floatp v6)
+pprintg6(stream * s, const char *format, double v1, double v2, double v3,
+         double v4, double v5, double v6)
 {
     return pprintg3(s, pprintg3(s, format, v1, v2, v3), v4, v5, v6);
 }

@@ -562,7 +562,7 @@ close_raster(gs_state * pgs, pcl_raster_t * prast, bool complete)
         gs_free_object(prast->pmem, prast->mask_pen, "Close PCL raster");
         prast->mask_pen = 0;
     }
-    gs_translate(prast->pcs->pgs, 0.0, (floatp) (prast->rows_rendered));
+    gs_translate(prast->pcs->pgs, 0.0, (double) (prast->rows_rendered));
     prast->src_height -= prast->rows_rendered;
     prast->rows_rendered = 0;
 }
@@ -737,7 +737,7 @@ process_zero_rows(gs_state * pgs, pcl_raster_t * prast, int nrows)
         prast->src_height -= nrows;
         /* NB HP bug CET21.04 pg 7 */
         /* NB text cap move to moveto_nrows, but raster cap moveto nrows */
-        gs_translate(pgs, 0.0, (floatp) moveto_nrows);
+        gs_translate(pgs, 0.0, (double) moveto_nrows);
 
         return 0;
 
