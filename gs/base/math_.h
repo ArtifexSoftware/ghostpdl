@@ -58,6 +58,11 @@
      ((0x1000000 - 1.0) * 0x1000000 * 0x1000000 * 0x10000000 * 0x10000000)
 #endif
 
+/* IEEE, FLT_EPSILON */
+#ifndef FLT_EPSILON
+#define FLT_EPSILON     1.192092896e-07F        /* smallest such that 1.0+FLT_EPSILON != 1.0 */
+#endif
+
 /* we use our own hypot() since the system one is not consistent between Linux and Mac OS X, also ours is faster */
 #undef  hypot
 #define hypot(x,y) sqrt((double)(x)*(x)+(double)(y)*(y))
