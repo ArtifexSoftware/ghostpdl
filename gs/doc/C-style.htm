@@ -516,8 +516,7 @@ convert between double and single precision.
 <li>Don't declare parameters as being of type <code>float</code>,
 <code>short</code>, or <code>char</code>.  If you do this and forget
 to include the prototype at a call site, ANSI compilers will generate
-incompatible calling sequences.  Use <code>floatp</code> (a synonym for
-<code>double</code>, mnemonic for "float parameter") instead of
+incompatible calling sequences.  Use <code>double</code> instead of
 <code>float</code>, and use <code>int</code> or <code>uint</code>
 instead of <code>short</code> or <code>char</code>.
 
@@ -617,13 +616,6 @@ In addition, the use of <code>byte *</code> indicates a
 Ghostscript-style string, with explicit length given separately, as
 opposed to a null terminated C-style string, which is <code>char
 *</code>.
-
-<dt><code>floatp</code>
-
-<dd>This is a synonym for <code>double</code>.  It should be used for,
-and only for, procedure parameters that would otherwise be
-<code>float</code>.  (As noted above, procedure parameters should not be
-declared as <code>float</code>.)
 
 <dt><code>bits8, bits16, bits32</code>
 
