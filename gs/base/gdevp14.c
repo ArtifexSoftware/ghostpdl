@@ -2744,6 +2744,19 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
     return code;
 }
 
+/* Useful function that should probably go elsewhere.
+ * Call this function to find the topmost pdf14 device in the device chain,
+ * or NULL if there is not one.
+ */
+static pdf14_device *find_pdf14_device(gx_device *dev)
+{
+    pdf14_device *pdev;
+
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_is_pdf14_device, &pdev, sizeof(pdev)) <= 0)
+        return NULL;
+    return pdev;
+}
+
 /* Imager render for pattern transparency filling.  This is just here to catch
    the final flush, at which time we will pop the group and reset a few items */
 static	int
@@ -2773,12 +2786,8 @@ pdf14_pattern_trans_render(gx_image_enum * penum, const byte * buffer, int data_
             cmm_dev_profile_t *dev_profile;
             code = dev_proc(dev, get_profile)(dev,  &dev_profile);
 
-            /* Also, if we are in clist, the imaging code may have installed a
-               clipper device on heap here with pdf14 device as target */
-            if (penum->clip_image) {
-                gx_device_forward * fdev = (gx_device_forward *)dev;
-                p14dev = (pdf14_device *) (fdev->target);
-            }
+            p14dev = find_pdf14_device(dev);
+
             code = pdf14_pop_transparency_group(NULL, p14dev->ctx, p14dev->blend_procs,
                     p14dev->color_info.num_components, dev_profile->device_profile[0], 
                     (gx_device *) p14dev);
@@ -5275,8 +5284,11 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
 {
     if (dev_spec_op == gxdso_pattern_shfill_doesnt_need_path)
         return 1;
-    if (dev_spec_op == gxdso_is_pdf14_device)
+    if (dev_spec_op == gxdso_is_pdf14_device) {
+        if (data != NULL && size == sizeof(gx_device *))
+            *(gx_device **)data = pdev;
         return 1;
+    }
     if (dev_spec_op == gxdso_device_child) {
         pdf14_device *dev = (pdf14_device *)pdev;
         gxdso_device_child_request *d = (gxdso_device_child_request *)data;

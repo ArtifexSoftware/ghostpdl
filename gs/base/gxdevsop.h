@@ -197,9 +197,15 @@ enum {
     gxdso_is_std_cmyk_1bit,
 
     /* gxdso_is_pdf14_device:
+     * Either:
      *     data = NULL
      *     size = 0
-     * Returns 1 if the device is a pdf14 device .
+     *   Returns 1 if the device is a pdf14 device .
+     * Or:
+     *     data = pointer to a place to store a pdf14_device *
+     *     size = sizeof(pdf14_device *).
+     *   Returns 1 if the device is a pdf14 device, and fills data with the
+     *   pointer to the pdf14 device (may be a child of the original device)
      */
     gxdso_is_pdf14_device,
 

@@ -401,7 +401,7 @@ gsicc_mcm_end_monitor(gsicc_link_cache_t *cache, gx_device *dev)
     /* If this device is a pdf14 device, then we may need to take care of the
        profile in the target device also.  This is a special case since the
        pdf14 device has its own profile different from the target device */
-    if (dev_proc(dev, dev_spec_op)(dev, gxdso_is_pdf14_device, NULL, 0)) {
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_is_pdf14_device, NULL, 0) > 0) {
         gs_pdf14_device_color_mon_set(dev, false);
     }
 
@@ -443,7 +443,7 @@ gsicc_mcm_begin_monitor(gsicc_link_cache_t *cache, gx_device *dev)
     /* If this device is a pdf14 device, then we may need to take care of the
        profile in the target device also.  This is a special case since the
        pdf14 device has its own profile different from the target device */
-    if (dev_proc(dev, dev_spec_op)(dev, gxdso_is_pdf14_device, NULL, 0)) {
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_is_pdf14_device, NULL, 0) > 0) {
         gs_pdf14_device_color_mon_set(dev, true);
     }
 
