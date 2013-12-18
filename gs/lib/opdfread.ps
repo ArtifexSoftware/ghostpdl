@@ -896,13 +896,27 @@ currentdict end readonly def
       0 0                                               % dummy page size values if not known
     }ifelse
                                                         % bw bh px0 py0 bw bh bool bw bh Width Height
-    round cvi 2 index round cvi                         % bw bh px0 py0 bw bh bool bw bh Width bool
+    round cvi 2 index round cvi eq                      % bw bh px0 py0 bw bh bool bw bh Width bool
     exch round cvi 3 index round cvi eq and             % bw bh px0 py0 bw bh bool bw bh bool
     {                                                   % Page Size unchanged, do not emit setpagedevice
       pop pop                                           % bw bh px0 py0 bw bh bool
     } {
-      2 array astore                                    % bw bh px0 py0 bw bh bool []
-      << exch /PageSize exch >> setpagedevice           % bw bh px0 py0 bw bh bool
+      /MediaRequested where {
+                                                        % bw bh px0 py0 bw bh
+        /MediaRequested get aload pop                   % bw bh px0 py0 bw bh Width Height
+        round cvi 2 index round cvi eq                  % bw bh px0 py0 bw bh bool bw bh Width bool
+        exch round cvi 3 index round cvi eq and         % bw bh px0 py0 bw bh bool bw bh bool
+        {pop pop false}                                         % We already requested this media size, so don't re-request
+        {true} ifelse                                   % Media request different to last request
+      } {
+        true                                            % No stored media request, so apply setpagedevice
+      } ifelse
+      {
+        2 array astore                                    % bw bh px0 py0 bw bh bool []
+        dup /MediaRequested exch def
+        << exch /PageSize exch >> setpagedevice           % bw bh px0 py0 bw bh bool
+        /pagesave save def
+      } if
     } ifelse
     userdict /PDFR_InitialGS gstate put
     setglobal                                           % bw bh px0 py0 bw bh
