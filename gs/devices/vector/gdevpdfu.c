@@ -1208,7 +1208,8 @@ pdf_substitute_resource(gx_device_pdf *pdev, pdf_resource_t **ppres,
         pdf_forget_resource(pdev, pres1, rtype);
         return 0;
     } else {
-        pdf_reserve_object_id(pdev, pres1, gs_no_id);
+        if (pres1->object->id < 0)
+            pdf_reserve_object_id(pdev, pres1, gs_no_id);
         if (write) {
             code = cos_write_object(pres1->object, pdev, rtype);
             if (code < 0)
