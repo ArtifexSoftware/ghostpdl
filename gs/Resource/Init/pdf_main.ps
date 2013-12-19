@@ -1967,8 +1967,26 @@ currentdict /PDF2PS_matrix_key undef
     end
   } loop {
     StreamRunAborted not {
-      (   **** Warning: File has unbalanced q/Q operators \(too many q's\)\n)
-      pdfformaterror
+      (\n   **** File has unbalanced q/Q operators \(too many Q's\) ****\n)
+
+      pdfdict /.Qqwarning_issued .knownget
+      {
+        {
+          pop
+        }
+        {
+          currentglobal pdfdict gcheck .setglobal
+          pdfdict /.Qqwarning_issued //true .forceput
+          .setglobal
+          pdfformaterror
+        } ifelse
+      }
+      {
+        currentglobal pdfdict gcheck .setglobal
+        pdfdict /.Qqwarning_issued //true .forceput
+        .setglobal
+        pdfformaterror
+      } ifelse
     } if
   } if
   pop
@@ -1976,6 +1994,9 @@ currentdict /PDF2PS_matrix_key undef
   (after exec) VMDEBUG
   Repaired		% pass Repaired state around the restore
   PDFSave restore
+  currentglobal pdfdict gcheck .setglobal
+  pdfdict /.Qqwarning_issued //false .forceput
+  .setglobal
   /Repaired exch def
 } bind def
 

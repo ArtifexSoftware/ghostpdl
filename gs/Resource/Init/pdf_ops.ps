@@ -125,8 +125,27 @@ nodict readonly pop
   } {
     //true	% formaterror -- not a gsave dict
   } ifelse
-  { (\n   **** File has unbalanced q/Q operators \(too many Q's\) ****\n)
-    pdfformaterror
+  {
+    (\n   **** File has unbalanced q/Q operators \(too many Q's\) ****\n)
+
+    pdfdict /.Qqwarning_issued .knownget
+    {
+      {
+        pop
+      }
+      {
+        currentglobal pdfdict gcheck .setglobal
+        pdfdict /.Qqwarning_issued //true .forceput
+        .setglobal
+        pdfformaterror
+      } ifelse
+    }
+    {
+      currentglobal pdfdict gcheck .setglobal
+      pdfdict /.Qqwarning_issued //true .forceput
+      .setglobal
+      pdfformaterror
+    } ifelse
   } if
 } bdef
 
