@@ -352,12 +352,12 @@ private gx_device_procs	cups_procs =
                                         /* cupsString */\
     "",                                 /* cupsMarkerType */\
     "",                                 /* cupsRenderingIntent */\
-    ""                                  /* cupsPageSizeName */\
+    ""                                  /* cupsPageSizeName */
 #else
 #define RASTER_SYNCv1_ENTRIES
-#endif /* CUPS_RASTER_SYNCv1 */\
+#endif /* CUPS_RASTER_SYNCv1 */
 
-#define gs_xxx_device(dname, mediaclass)				\
+#define gs_xxx_device(dname, mediaclass)\
   prn_device_body_copies(gx_device_cups,/* type */\
                          cups_procs,	/* procedures */\
 			 dname,		/* device name */\
