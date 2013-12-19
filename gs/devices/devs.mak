@@ -1928,6 +1928,10 @@ $(DD)cups.dev : $(DEVS_MAK) $(lcups_dev) $(lcupsi_dev) $(cups_) $(GDEV)
 	$(SETPDEV2) $(DD)cups $(cups_)
 	$(ADDMOD) $(DD)cups -include $(lcups_dev)
 	$(ADDMOD) $(DD)cups -include $(lcupsi_dev)
+$(DD)pwgraster.dev : $(DEVS_MAK) $(lcups_dev) $(lcupsi_dev) $(cups_) $(GDEV)
+	$(SETPDEV2) $(DD)pwgraster $(cups_)
+	$(ADDMOD) $(DD)pwgraster -include $(lcups_dev)
+	$(ADDMOD) $(DD)pwgraster -include $(lcupsi_dev)
 
 $(DEVOBJ)gdevcups.$(OBJ) : $(LCUPSSRCDIR)$(D)gdevcups.c $(std_h)
 	$(CUPS_CC) $(DEVO_)gdevcups.$(OBJ) $(C_) $(CFLAGS) $(I_)$(GLSRC) \

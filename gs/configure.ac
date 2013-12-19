@@ -1146,7 +1146,7 @@ if ( test -d $srcdir/cups ); then
                 fi
 
                 CUPSINCLUDE="include $srcdir/cups/cups.mak"
-                CUPSDEV="cups"
+                CUPSDEV="cups pwgraster"
                 CUPSVERSION="`$CUPSCONFIG --version`"
                 LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
                 LCUPSIINCLUDE="include \$(GLSRCDIR)/lcupsi.mak"
@@ -1164,7 +1164,7 @@ if ( test -d $srcdir/cups ); then
                 LCUPSBUILDTYPE=linux
                 LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
                 LCUPSIINCLUDE="include \$(GLSRCDIR)/lcupsi.mak"
-                CUPSDEV="cups"
+                CUPSDEV="cups pwgraster"
             fi
         fi
     fi
