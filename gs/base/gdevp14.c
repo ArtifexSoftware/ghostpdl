@@ -7116,10 +7116,12 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                      * processing: gs -r300 -o out.pbm -sDEVICE=pbmraw
                      * ghostpcl/tests_private/pdf/sumatra/1900_-_cairo_transparency_inefficiency.pdf
                      */
-                    (void)pdf14_update_device_color_procs_push_c(dev,
+                    code = pdf14_update_device_color_procs_push_c(dev,
                                   pdf14pct->params.group_color,
                                   pdf14pct->params.icc_hash, pis,
                                   pdf14pct->params.iccprofile);
+                    if (code < 0)
+                        return code;
                 }
                 break;
             case PDF14_BEGIN_TRANS_MASK:
