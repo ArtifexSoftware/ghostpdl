@@ -1049,6 +1049,8 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
                                                     num_rows_left, rowstride,
                                                     planestride,
                                                     alpha_offset, tag_offset);
+                if (code < 0)
+                    return code;
                 num_rows_left = num_rows_left - code;
             }
             return 0;
@@ -1136,6 +1138,8 @@ gx_put_blended_image_custom(gx_device *target, byte *buf_ptr,
             color = dev_proc(target, encode_color)(target, cv);
             code = dev_proc(target, fill_rectangle)(target, x + x0,
                                                             y + y0, 1, 1, color);
+            if (code < 0)
+                return code;
         }
 
         buf_ptr += rowstride;
