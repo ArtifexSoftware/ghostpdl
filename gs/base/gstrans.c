@@ -167,11 +167,13 @@ gs_state_update_pdf14trans(gs_state * pgs, gs_pdf14trans_params_t * pparams)
      * Send the PDF 1.4 create compositor action specified by the parameters.
      */
     code = send_pdf14trans(pis, dev, &pdf14dev, pparams, pgs->memory);
+    if (code < 0)
+        return code;
     /*
      * If we created a new PDF 1.4 compositor device then we need to install it
      * into the graphics state.
      */
-    if (code >= 0 && pdf14dev != dev) {
+    if (pdf14dev != dev) {
         gx_set_device_only(pgs, pdf14dev);
     }
 
@@ -740,6 +742,8 @@ gs_push_pdf14trans_device(gs_state * pgs, bool is_pattern)
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(pgs->device, get_profile)(pgs->device,  &dev_profile);
+    if (code < 0)
+        return code;
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile, 
                           &render_cond); 
     params.pdf14_op = PDF14_PUSH_DEVICE;
