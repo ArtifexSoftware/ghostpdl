@@ -3709,7 +3709,7 @@ pdf14_begin_transparency_group(gx_device *dev,
             gx_device_clist_reader *pcrdev = (gx_device_clist_reader *)(pdev->pclist_device);
             group_profile = gsicc_read_serial_icc((gx_device *) pcrdev, ptgp->icc_hashcode);
             if (group_profile == NULL)
-                return gs_rethrow(-1, "ICC data not found in clist");
+                return gs_throw(gs_error_unknownerror, "ICC data not found in clist");
             /* Keep a pointer to the clist device */
             group_profile->dev = (gx_device *) pcrdev;
             new_icc = true;
@@ -3913,7 +3913,7 @@ pdf14_update_device_color_procs(gx_device *dev,
                     iccprofile = gsicc_read_serial_icc((gx_device *) pcrdev,
                                                        icc_hashcode);
                     if (iccprofile == NULL)
-                        return gs_rethrow(-1, "ICC data not found in clist");
+                        return gs_throw(-1, "ICC data not found in clist");
                     /* Keep a pointer to the clist device */
                     iccprofile->dev = (gx_device *) pcrdev;
                 } else {
@@ -4062,10 +4062,8 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
     gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile;
 
-    if (group_color == ICC && icc_profile == NULL) {
-        return gs_rethrow(gs_error_undefinedresult,
-            "Missing ICC data");
-    }
+    if (group_color == ICC && icc_profile == NULL)
+        return gs_throw(gs_error_undefinedresult, "Missing ICC data");
     if_debug0m('v', cldev->memory, "[v]pdf14_update_device_color_procs_push_c\n");
    /* Check if we need to alter the device procs at this stage.  Many of the procs
       are based upon the color space of the device.  We want to remain in the
@@ -4167,10 +4165,13 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                         }
                         break;
                     default:
-                        return gs_rethrow(gs_error_undefinedresult,
-                            "ICC Number of colorants illegal");
+                        return gs_throw(gs_error_undefinedresult, 
+                                        "ICC Number of colorants illegal");
                     }
                 }
+                break;
+            case UNKNOWN:
+                return 0;
                 break;
             default:
                 return_error(gs_error_rangecheck);
