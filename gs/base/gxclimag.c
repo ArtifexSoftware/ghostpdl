@@ -1266,6 +1266,13 @@ clist_image_plane_data(gx_image_enum_common_t * info,
                 goto error_in_rect;
             if (pie->uses_color) {
                 do {
+                    /* We want to write the color taking into account the entire image so */
+                    /* we set re.rect_nbands from pie->ymin and pie->ymax so that we will */
+                    /* make the decision to write 'all_bands' the same for the whole image */
+                    /* This is slightly more efficient, and is required for patterns with */
+                    /* transparency that push the group at the begin_image step.          */
+                    re.rect_nbands = ((pie->ymax + re.band_height - 1) / re.band_height) -
+                                     ((pie->ymin) / re.band_height);
                     code = cmd_put_drawing_color(cdev, re.pcls, &pie->dcolor,
                                                  &re, devn_not_tile);
                 } while (RECT_RECOVER(code));
@@ -1754,7 +1761,6 @@ cmd_put_color_mapping(gx_device_clist_writer * cldev,
     /* Now put out the transfer functions. */
     {
         uint which = 0;
-        bool all_same = true;
         bool send_default_comp = false;
         int i;
         gs_id default_comp_id, xfer_ids[4];
@@ -1778,8 +1784,6 @@ cmd_put_color_mapping(gx_device_clist_writer * cldev,
         for (i = 0; i < countof(cldev->transfer_ids); ++i) {
             if (xfer_ids[i] != cldev->transfer_ids[i])
                 which |= 1 << i;
-            if (xfer_ids[i] != default_comp_id)
-                all_same = false;
             if (xfer_ids[i] == default_comp_id &&
                 cldev->transfer_ids[i] != default_comp_id)
                 send_default_comp = true;

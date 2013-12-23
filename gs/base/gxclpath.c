@@ -152,7 +152,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         return 0;
     else if (code < 0 && code != gs_error_rangecheck)
         return code;
-    if (!all_bands && dc_size * pre->nbands > 1024*1024 /* arbitrary */)
+    if (!all_bands && dc_size * pre->rect_nbands > 1024*1024 /* arbitrary */)
         all_bands = true;
     is_pattern = gx_dc_is_pattern1_color(pdcolor);
     if (is_pattern)
