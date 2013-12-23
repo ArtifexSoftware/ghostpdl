@@ -47,7 +47,7 @@
 
 /* Define the maximum depth of an outline tree. */
 /* Note that there is no limit on the breadth of the tree. */
-#define MAX_OUTLINE_DEPTH 32
+#define INITIAL_MAX_OUTLINE_DEPTH 32
 
 /* Define the maximum size of a destination array string. */
 #define MAX_DEST_STRING 80
@@ -688,8 +688,9 @@ struct gx_device_pdf_s {
     pdf_resource_t *last_resource;
     pdf_resource_t *OneByteIdentityH;
     gs_id IdentityCIDSystemInfo_id;
-    pdf_outline_level_t outline_levels[MAX_OUTLINE_DEPTH];
+    pdf_outline_level_t *outline_levels;
     int outline_depth;
+    int max_outline_depth;
     int closed_outline_depth;
     int outlines_open;
     pdf_article_t *articles;
@@ -897,8 +898,9 @@ struct gx_device_pdf_s {
  m(32,pres_soft_mask_dict) m(33,PDFXTrimBoxToMediaBoxOffset.data)\
  m(34,PDFXBleedBoxToTrimBoxOffset.data) m(35, DSCEncodingToUnicode.data)\
  m(36,Identity_ToUnicode_CMaps[0]) m(37,Identity_ToUnicode_CMaps[1])\
- m(38,ResourceUsage) m(39,vgstack)
-#define gx_device_pdf_num_ptrs 40
+ m(38,ResourceUsage) m(39,vgstack)\
+ m(40, outline_levels)
+#define gx_device_pdf_num_ptrs 41
 #define gx_device_pdf_do_param_strings(m)\
     m(0, OwnerPassword) m(1, UserPassword) m(2, NoEncrypt)\
     m(3, DocumentUUID) m(4, InstanceUUID)
@@ -906,11 +908,6 @@ struct gx_device_pdf_s {
 #define gx_device_pdf_do_const_strings(m)\
     m(0, objname)
 #define gx_device_pdf_num_const_strings 1
-#define st_device_pdf_max_ptrs\
-  (st_device_psdf_max_ptrs + gx_device_pdf_num_ptrs +\
-   gx_device_pdf_num_param_strings + gx_device_pdf_num_const_strings +\
-   NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS /* resources[].chains[] */ +\
-   MAX_OUTLINE_DEPTH * 2 /* outline_levels[].{first,last}.action */
 
 #define private_st_device_pdfwrite()        /* in gdevpdf.c */\
   gs_private_st_composite_final(st_device_pdfwrite, gx_device_pdf,\

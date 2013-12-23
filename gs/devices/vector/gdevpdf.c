@@ -65,10 +65,10 @@ ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
     if (index < NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS)
         ENUM_RETURN(pdev->resources[index / NUM_RESOURCE_CHAINS].chains[index % NUM_RESOURCE_CHAINS]);
     index -= NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS;
-    if (index <= pdev->outline_depth)
+    if (index <= pdev->outline_depth && pdev->outline_levels)
         ENUM_RETURN(pdev->outline_levels[index].first.action);
     index -= pdev->outline_depth + 1;
-    if (index <= pdev->outline_depth)
+    if (index <= pdev->outline_depth && pdev->outline_levels)
         ENUM_RETURN(pdev->outline_levels[index].last.action);
     index -= pdev->outline_depth + 1;
     ENUM_PREFIX(st_device_psdf, 0);
@@ -102,9 +102,11 @@ static RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
         for (i = 0; i < NUM_RESOURCE_TYPES; ++i)
             for (j = 0; j < NUM_RESOURCE_CHAINS; ++j)
                 RELOC_PTR(gx_device_pdf, resources[i].chains[j]);
-        for (i = 0; i <= pdev->outline_depth; ++i) {
-            RELOC_PTR(gx_device_pdf, outline_levels[i].first.action);
-            RELOC_PTR(gx_device_pdf, outline_levels[i].last.action);
+        if (pdev->outline_levels) {
+            for (i = 0; i <= pdev->outline_depth; ++i) {
+                RELOC_PTR(gx_device_pdf, outline_levels[i].first.action);
+                RELOC_PTR(gx_device_pdf, outline_levels[i].last.action);
+            }
         }
     }
 }
@@ -706,6 +708,9 @@ pdf_open(gx_device * dev)
             for (j = 0; j < NUM_RESOURCE_CHAINS; ++j)
                 pdev->resources[i].chains[j] = 0;
     }
+    pdev->outline_levels = (pdf_outline_level_t *)gs_alloc_bytes(pdev->memory, INITIAL_MAX_OUTLINE_DEPTH * sizeof(pdf_outline_level_t), "outline_levels array");
+    memset(pdev->outline_levels, 0x00, INITIAL_MAX_OUTLINE_DEPTH * sizeof(pdf_outline_level_t));
+    pdev->max_outline_depth = INITIAL_MAX_OUTLINE_DEPTH;
     pdev->outline_levels[0].first.id = 0;
     pdev->outline_levels[0].left = max_int;
     pdev->outline_levels[0].first.action = 0;
@@ -2929,7 +2934,10 @@ pdf_close(gx_device * dev)
     pdev->Catalog = 0;
     pdev->Info = 0;
 
-    memset(&pdev->outline_levels, 0x00, MAX_OUTLINE_DEPTH * sizeof(pdf_outline_level_t));
+    gs_free_object(mem, pdev->outline_levels, "outline_levels array");
+    pdev->outline_levels = 0;
+    pdev->outline_depth = -1;
+    pdev->max_outline_depth = 0;
 
     {
         /* pdf_open_dcument could set up filters for entire document.

@@ -195,16 +195,15 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  1,				/* used_mask */
  {
      {
-         {0}}},			/* resources */
- {0},				/* cs_Patterns */
- {0},				/* Identity_ToUnicode_CMaps */
+         {0}}},	/* resources */
+ {0},			/* cs_Patterns */
+ {0},			/* Identity_ToUnicode_CMaps */
  0,				/* last_resource */
  0,				/* OneByteIdentityH */
- gs_no_id,			/* IdentityCIDSystemInfo_id */
- {
-     {
-         {0}}},			/* outline_levels */
- 0,				/* outline_depth */
+ gs_no_id,		/* IdentityCIDSystemInfo_id */
+ 0,             /* outline_levels */
+ -1,			/* outline_depth */
+ 0,             /* max_outline_depth */
  0,				/* closed_outline_depth */
  0,				/* outlines_open */
  0,				/* articles */
