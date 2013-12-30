@@ -82,7 +82,7 @@ gscms_get_clrtname(gcmmhprofile_t profile, int colorcount, gs_memory_t *memory)
     lcms_names = cmsReadColorantTable(profile, icSigColorantTableTag);
     if (colorcount+1 > lcms_names->nColors) return(NULL);
     length = strlen(lcms_names->List[colorcount].Name);
-    name = (char*) gs_alloc_bytes(memory, length, "gscms_get_clrtname");
+    name = (char*) gs_alloc_bytes(memory, length + 1, "gscms_get_clrtname");
     if (name)
         strcpy(name, lcms_names->List[colorcount].Name);
     return name;

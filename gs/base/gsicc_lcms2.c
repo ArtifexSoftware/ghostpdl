@@ -155,7 +155,7 @@ gscms_get_clrtname(gcmmhprofile_t profile, int colorcount, gs_memory_t *memory)
                           NULL) == 0)
         return NULL;
     length = strlen(name);
-    buf = (char*) gs_alloc_bytes(memory, length, "gscms_get_clrtname");
+    buf = (char*) gs_alloc_bytes(memory, length + 1, "gscms_get_clrtname");
     if (buf)
         strcpy(buf, name);
     return buf;

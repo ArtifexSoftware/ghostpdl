@@ -79,16 +79,16 @@ static void gsicc_free_spotnames(gsicc_namelist_t *spotnames, gs_memory_t * mem)
 gs_private_st_ptrs2(st_gsicc_colorname, gsicc_colorname_t, "gsicc_colorname",
                     gsicc_colorname_enum_ptrs, gsicc_colorname_reloc_ptrs, name, next);
 
-gs_private_st_ptrs1(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
+gs_private_st_ptrs2(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
                     gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
-                    smask_profiles);
+                    smask_profiles, device_n);
 
 gs_private_st_ptrs2(st_gsicc_devicen, gsicc_devicen_t, "gsicc_devicen",
                 gsicc_devicen_enum_ptrs, gsicc_devicen_reloc_ptrs, head, final);
 
-gs_private_st_ptrs2(st_gsicc_devicen_entry, gsicc_devicen_entry_t,
+gs_private_st_ptrs1(st_gsicc_devicen_entry, gsicc_devicen_entry_t,
                     "gsicc_devicen_entry", gsicc_devicen_entry_enum_ptrs,
-                    gsicc_devicen_entry_reloc_ptrs, iccprofile, next);
+                    gsicc_devicen_entry_reloc_ptrs, next);
 
 static const gs_color_space_type gs_color_space_type_icc = {
     gs_color_space_index_ICC,       /* index */
@@ -758,14 +758,8 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
                  default_space = gsCIELAB;
                  break;
             case DEVICEN_TYPE:
-                code = gsicc_new_devicen(icc_manager);
-                 default_space = gsNCHANNEL;
-                if (code == 0) {
-                    manager_default_profile =
-                        &(icc_manager->device_n->final->iccprofile);
-                } else {
-                    return code;
-                }
+                manager_default_profile = NULL;
+                default_space = gsNCHANNEL;
                 break;
             case DEFAULT_NONE:
             default:
@@ -780,7 +774,7 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
        increment, since that is done when the imager state is duplicated.  It
        could be the same, due to a resetting of the user params. To avoid
        recreating the profile data, we compare the string names. */
-    if ((*manager_default_profile) != NULL) {
+    if (defaulttype != DEVICEN_TYPE && (*manager_default_profile) != NULL) {
         /* Check if this is what we already have.  Also check if it is the
            output intent profile.  */
         icc_profile = *manager_default_profile;
@@ -796,17 +790,24 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
     }
     /* We need to do a special check for DeviceN since we have a linked list of
        profiles and we can have multiple specifications */
-    if ( defaulttype == DEVICEN_TYPE ) {
-        gsicc_devicen_entry_t *current_entry = icc_manager->device_n->head;
-        for ( k = 0; k < icc_manager->device_n->count; k++ ) {
-            if ( current_entry->iccprofile != NULL ) {
-                icc_profile = current_entry->iccprofile;
-                if ( namelen == icc_profile->name_length )
-                    if( memcmp(pname, icc_profile->name, namelen) == 0)
+    if (defaulttype == DEVICEN_TYPE) {
+        if (icc_manager->device_n != NULL) {
+            gsicc_devicen_entry_t *current_entry = icc_manager->device_n->head;
+            for (k = 0; k < icc_manager->device_n->count; k++) {
+                if (current_entry->iccprofile != NULL) {
+                    icc_profile = current_entry->iccprofile;
+                    if (namelen == icc_profile->name_length)
+                    if (memcmp(pname, icc_profile->name, namelen) == 0)
                         return 0;
+                }
+                current_entry = current_entry->next;
             }
-            current_entry = current_entry->next;
         }
+        /* An entry was not found.  We need to create a new one to use */
+        code = gsicc_new_devicen(icc_manager);
+        if (code < 0)
+            return code;
+        manager_default_profile = &(icc_manager->device_n->final->iccprofile);
     }
     code = gsicc_open_search(pname, namelen, mem_gc, mem_gc->gs_lib_ctx->profiledir,
                              mem_gc->gs_lib_ctx->profiledir_len, &str);
