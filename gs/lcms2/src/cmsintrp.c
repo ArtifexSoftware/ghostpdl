@@ -33,32 +33,58 @@
 static cmsInterpFunction DefaultInterpolatorsFactory(cmsUInt32Number nInputChannels, cmsUInt32Number nOutputChannels, cmsUInt32Number dwFlags);
 
 // This is the default factory
-static cmsInterpFnFactory Interpolators = DefaultInterpolatorsFactory;
+_cmsInterpPluginChunkType _cmsInterpPluginChunk = { NULL };
+
+// The interpolation plug-in memory chunk allocator/dup
+void _cmsAllocInterpPluginChunk(struct _cmsContext_struct* ctx, const struct _cmsContext_struct* src)
+{
+    void* from;
+
+    _cmsAssert(ctx != NULL);
+
+    if (src != NULL) {
+        from = src ->chunks[InterpPlugin];       
+    }
+    else { 
+        static _cmsInterpPluginChunkType InterpPluginChunk = { NULL };
+
+        from = &InterpPluginChunk;
+    }
+
+    _cmsAssert(from != NULL);
+    ctx ->chunks[InterpPlugin] = _cmsSubAllocDup(ctx ->MemPool, from, sizeof(_cmsInterpPluginChunkType));
+}
 
 
 // Main plug-in entry
-cmsBool  _cmsRegisterInterpPlugin(cmsPluginBase* Data)
+cmsBool  _cmsRegisterInterpPlugin(cmsContext ContextID, cmsPluginBase* Data)
 {
     cmsPluginInterpolation* Plugin = (cmsPluginInterpolation*) Data;
+    _cmsInterpPluginChunkType* ptr = (_cmsInterpPluginChunkType*) _cmsContextGetClientChunk(ContextID, InterpPlugin);
 
     if (Data == NULL) {
 
-        Interpolators = DefaultInterpolatorsFactory;
+        ptr ->Interpolators = NULL;
         return TRUE;
     }
 
     // Set replacement functions
-    Interpolators = Plugin ->InterpolatorsFactory;
+    ptr ->Interpolators = Plugin ->InterpolatorsFactory;
     return TRUE;
 }
 
 
 // Set the interpolation method
-cmsBool _cmsSetInterpolationRoutine(cmsInterpParams* p)
-{
-    // Invoke factory, possibly in the Plug-in
-    p ->Interpolation = Interpolators(p -> nInputs, p ->nOutputs, p ->dwFlags);
+cmsBool _cmsSetInterpolationRoutine(cmsContext ContextID, cmsInterpParams* p)
+{      
+    _cmsInterpPluginChunkType* ptr = (_cmsInterpPluginChunkType*) _cmsContextGetClientChunk(ContextID, InterpPlugin);
 
+    p ->Interpolation.Lerp16 = NULL;
+
+   // Invoke factory, possibly in the Plug-in
+    if (ptr ->Interpolators != NULL)
+        p ->Interpolation = ptr->Interpolators(p -> nInputs, p ->nOutputs, p ->dwFlags);
+    
     // If unsupported by the plug-in, go for the LittleCMS default.
     // If happens only if an extern plug-in is being used
     if (p ->Interpolation.Lerp16 == NULL)
@@ -68,6 +94,7 @@ cmsBool _cmsSetInterpolationRoutine(cmsInterpParams* p)
     if (p ->Interpolation.Lerp16 == NULL) {
             return FALSE;
     }
+
     return TRUE;
 }
 
@@ -112,7 +139,7 @@ cmsInterpParams* _cmsComputeInterpParamsEx(cmsContext ContextID,
         p ->opta[i] = p ->opta[i-1] * nSamples[InputChan-i];
 
 
-    if (!_cmsSetInterpolationRoutine(p)) {
+    if (!_cmsSetInterpolationRoutine(ContextID, p)) {
          cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unsupported interpolation (%d->%d channels)", InputChan, OutputChan);
         _cmsFree(ContextID, p);
         return NULL;
@@ -185,6 +212,11 @@ void LinLerp1D(register const cmsUInt16Number Value[],
     Output[0] = LinearInterp(rest, y0, y1);
 }
 
+// To prevent out of bounds indexing
+cmsINLINE cmsFloat32Number fclamp(cmsFloat32Number v) 
+{
+    return v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v);
+}
 
 // Floating-point version of 1D interpolation
 static
@@ -197,13 +229,15 @@ void LinLerp1Dfloat(const cmsFloat32Number Value[],
        int cell0, cell1;
        const cmsFloat32Number* LutTable = (cmsFloat32Number*) p ->Table;
 
+       val2 = fclamp(Value[0]);
+
        // if last value...
-       if (Value[0] == 1.0) {
+       if (val2 == 1.0) {
            Output[0] = LutTable[p -> Domain[0]];
            return;
        }
 
-       val2 = p -> Domain[0] * Value[0];
+       val2 *= p -> Domain[0];
 
        cell0 = (int) floor(val2);
        cell1 = (int) ceil(val2);
@@ -262,13 +296,15 @@ void Eval1InputFloat(const cmsFloat32Number Value[],
     cmsUInt32Number OutChan;
     const cmsFloat32Number* LutTable = (cmsFloat32Number*) p ->Table;
 
+    val2 = fclamp(Value[0]);
+
         // if last value...
-       if (Value[0] == 1.0) {
+       if (val2 == 1.0) {
            Output[0] = LutTable[p -> Domain[0]];
            return;
        }
 
-       val2 = p -> Domain[0] * Value[0];
+       val2 *= p -> Domain[0];
 
        cell0 = (int) floor(val2);
        cell1 = (int) ceil(val2);
@@ -309,8 +345,8 @@ void BilinearInterpFloat(const cmsFloat32Number Input[],
         dxy;
 
     TotalOut   = p -> nOutputs;
-    px = Input[0] * p->Domain[0];
-    py = Input[1] * p->Domain[1];
+    px = fclamp(Input[0]) * p->Domain[0];
+    py = fclamp(Input[1]) * p->Domain[1];
 
     x0 = (int) _cmsQuickFloor(px); fx = px - (cmsFloat32Number) x0;
     y0 = (int) _cmsQuickFloor(py); fy = py - (cmsFloat32Number) y0;
@@ -424,20 +460,9 @@ void TrilinearInterpFloat(const cmsFloat32Number Input[],
     TotalOut   = p -> nOutputs;
 
     // We need some clipping here
-    px = Input[0];
-    py = Input[1];
-    pz = Input[2];
-
-    if (px < 0) px = 0;
-    if (px > 1) px = 1;
-    if (py < 0) py = 0;
-    if (py > 1) py = 1;
-    if (pz < 0) pz = 0;
-    if (pz > 1) pz = 1;
-
-    px *= p->Domain[0];
-    py *= p->Domain[1];
-    pz *= p->Domain[2];
+    px = fclamp(Input[0]) * p->Domain[0];
+    py = fclamp(Input[1]) * p->Domain[1];
+    pz = fclamp(Input[2]) * p->Domain[2];
 
     x0 = (int) _cmsQuickFloor(px); fx = px - (cmsFloat32Number) x0;
     y0 = (int) _cmsQuickFloor(py); fy = py - (cmsFloat32Number) y0;
@@ -579,20 +604,9 @@ void TetrahedralInterpFloat(const cmsFloat32Number Input[],
     TotalOut   = p -> nOutputs;
 
     // We need some clipping here
-    px = Input[0];
-    py = Input[1];
-    pz = Input[2];
-
-    if (px < 0) px = 0;
-    if (px > 1) px = 1;
-    if (py < 0) py = 0;
-    if (py > 1) py = 1;
-    if (pz < 0) pz = 0;
-    if (pz > 1) pz = 1;
-
-    px *= p->Domain[0];
-    py *= p->Domain[1];
-    pz *= p->Domain[2];
+    px = fclamp(Input[0]) * p->Domain[0];
+    py = fclamp(Input[1]) * p->Domain[1];
+    pz = fclamp(Input[2]) * p->Domain[2];
 
     x0 = (int) _cmsQuickFloor(px); rx = (px - (cmsFloat32Number) x0);
     y0 = (int) _cmsQuickFloor(py); ry = (py - (cmsFloat32Number) y0);
@@ -1009,8 +1023,7 @@ void Eval4InputsFloat(const cmsFloat32Number Input[],
        cmsFloat32Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
        cmsInterpParams p1;
 
-
-       pk = Input[0] * p->Domain[0];
+       pk = fclamp(Input[0]) * p->Domain[0];
        k0 = _cmsQuickFloor(pk);
        rest = pk - (cmsFloat32Number) k0;
 
@@ -1097,7 +1110,7 @@ void Eval5InputsFloat(const cmsFloat32Number Input[],
        cmsFloat32Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
        cmsInterpParams p1;
 
-       pk = Input[0] * p->Domain[0];
+       pk = fclamp(Input[0]) * p->Domain[0];
        k0 = _cmsQuickFloor(pk);
        rest = pk - (cmsFloat32Number) k0;
 
@@ -1184,7 +1197,7 @@ void Eval6InputsFloat(const cmsFloat32Number Input[],
        cmsFloat32Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
        cmsInterpParams p1;
 
-       pk = Input[0] * p->Domain[0];
+       pk = fclamp(Input[0]) * p->Domain[0];
        k0 = _cmsQuickFloor(pk);
        rest = pk - (cmsFloat32Number) k0;
 
@@ -1269,7 +1282,7 @@ void Eval7InputsFloat(const cmsFloat32Number Input[],
        cmsFloat32Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
        cmsInterpParams p1;
 
-       pk = Input[0] * p->Domain[0];
+       pk = fclamp(Input[0]) * p->Domain[0];
        k0 = _cmsQuickFloor(pk);
        rest = pk - (cmsFloat32Number) k0;
 
@@ -1354,7 +1367,7 @@ void Eval8InputsFloat(const cmsFloat32Number Input[],
        cmsFloat32Number Tmp1[MAX_STAGE_CHANNELS], Tmp2[MAX_STAGE_CHANNELS];
        cmsInterpParams p1;
 
-       pk = Input[0] * p->Domain[0];
+       pk = fclamp(Input[0]) * p->Domain[0];
        k0 = _cmsQuickFloor(pk);
        rest = pk - (cmsFloat32Number) k0;
 

@@ -7,7 +7,10 @@ AC_PREREQ(2.60)
 #
 # Set the package name and version
 #
-AC_INIT(lcms2,2.5)
+AC_INIT(lcms2,2.6)
+
+# Specify directory where m4 macros may be found.
+AC_CONFIG_MACRO_DIR([m4])
 
 #
 # Libtool library revision control info
@@ -31,7 +34,7 @@ AC_INIT(lcms2,2.5)
 #     then set age to 0.
 #
 LIBRARY_CURRENT=2
-LIBRARY_REVISION=5
+LIBRARY_REVISION=6
 LIBRARY_AGE=0
 
 AC_SUBST(LIBRARY_CURRENT)dnl
@@ -43,23 +46,6 @@ AC_CANONICAL_HOST
 
 AM_INIT_AUTOMAKE([foreign 1.7.2 no-define dist-zip])
 
-# Disable JPEG.
-AC_ARG_WITH(jpeg,
-	      [  --without-jpeg          disable JPEG support],
-	      [with_jpeg=$withval],
-	      [with_jpeg='yes'])
-
-# Disable TIFF.
-AC_ARG_WITH(tiff,
-	      [  --without-tiff          disable TIFF support],
-	      [with_tiff=$withval],
-	      [with_tiff='yes'])
-
-# Disable ZLIB
-AC_ARG_WITH(zlib,
-	      [  --without-zlib          disable ZLIB support],
-	      [with_zlib=$withval],
-	      [with_zlib='yes'])
 
 # Check for programs
 AC_PROG_CC_STDC
@@ -101,6 +87,86 @@ AC_SUBST(inline)
 # Motorola and SPARC CPUs), define `WORDS_BIGENDIAN'.
 AC_C_BIGENDIAN
 
+# Point to JPEG installed in DIR or disable JPEG with --without-jpeg.
+AC_ARG_WITH(jpeg,
+            [  --with-jpeg=DIR         use jpeg installed in DIR],
+            [
+            if [ test "x$withval" = "xno" ]; then
+              [with_jpeg='no']
+            else
+              if [ test "x$withval" != "xyes" ]; then
+                with_jpeg=$withval
+                JPEG_DIR=$withval
+                CPPFLAGS="$CPPFLAGS -I$JPEG_DIR/include"
+                LDFLAGS="$LDFLAGS -L$JPEG_DIR/lib"
+              fi
+              [with_jpeg='yes']
+            fi
+            ],
+	        [with_jpeg='yes'])
+
+# Point to TIFF installed in DIR or disable TIFF with --without-tiff.
+AC_ARG_WITH(tiff,
+            [  --with-tiff=DIR         use tiff installed in DIR],
+            [
+            if [ test "x$withval" = "xno" ]; then
+              [with_tiff='no']
+            else
+              if [ test "x$withval" != "xyes" ]; then
+                with_tiff=$withval
+                TIFF_DIR=$withval
+                CPPFLAGS="$CPPFLAGS -I$TIFF_DIR/include"
+                LDFLAGS="$LDFLAGS -L$TIFF_DIR/lib"
+              fi
+              [with_tiff='yes']  
+            fi
+            ],
+	        [with_tiff='yes'])
+
+# Disable ZLIB
+AC_ARG_WITH(zlib,
+	      [  --without-zlib          disable ZLIB support],
+	      [with_zlib=$withval],
+	      [with_zlib='yes'])
+
+#
+# Determine POSIX threads settings
+#
+# Enable support for POSIX thread APIs
+AC_ARG_WITH(threads,
+	      AS_HELP_STRING([--without-threads],
+                             [disable POSIX threads API support]),
+	      [with_threads=$withval],
+	      [with_threads='yes'])
+
+have_threads=no
+if test "$with_threads" != 'no'
+then
+
+  ACX_PTHREAD()
+ 
+  if test "$acx_pthread_ok" = yes
+  then
+    have_threads=yes
+
+    DEF_THREAD="$PTHREAD_CFLAGS"
+    CFLAGS="$CFLAGS $DEF_THREAD"
+    CXXFLAGS="$CXXFLAGS $DEF_THREAD"
+
+    if test "$CC" != "$PTHREAD_CC"
+    then
+      AC_MSG_WARN([Replacing compiler $CC with compiler $PTHREAD_CC to support pthreads.])
+      CC="$PTHREAD_CC"
+    fi
+    if test "$CXX" != "$PTHREAD_CXX"
+    then
+      AC_MSG_WARN([Replacing compiler $CXX with compiler $PTHREAD_CXX to support pthreads.])
+      CXX="$PTHREAD_CXX"
+    fi
+  fi
+fi
+
+
 #
 # Find math library
 #
@@ -110,13 +176,34 @@ LIBS="$LIB_MATH $LIBS"
 AC_SUBST(LIB_MATH)
 
 #
+# Find Posix threads library
+#
+LIB_THREAD=''
+if test "$with_threads" != 'no' && test "$have_threads" = 'yes'
+then
+  for lib in pthread pthreads
+  do
+    if test "x$PTHREAD_LIBS" = "x" ; then
+      AC_CHECK_LIB([$lib],pthread_mutex_lock,[PTHREAD_LIBS=-l$lib],,)
+    fi
+  done
+
+  LIB_THREAD="$PTHREAD_LIBS"
+  LIBS="$LIBS $LIB_THREAD"
+  AC_DEFINE(HasTHREADS,1,[Define if you have pthreads library])
+else
+  AC_DEFINE(HasTHREADS,0,[Define if you dont have pthreads library])
+fi
+AC_SUBST(LIB_THREAD)
+
+#
 # Check for JPEG
 #
 have_jpeg='no'
 LIB_JPEG=''
 if test ! "$with_jpeg" = 'no'
 then
-    AC_MSG_CHECKING(for JPEG support )
+    AC_MSG_CHECKING([for JPEG support])
     AC_MSG_RESULT()
     failed=0;
     passed=0;
@@ -221,7 +308,7 @@ have_tiff='no'
 LIB_TIFF=''
 if test ! "$with_tiff" = 'no'
 then
-    AC_MSG_CHECKING(for TIFF support )
+    AC_MSG_CHECKING([for TIFF support])
     AC_MSG_RESULT()
     failed=0;
     passed=0;
@@ -252,18 +339,19 @@ fi
 AM_CONDITIONAL(HasTIFF, test "$have_tiff" = 'yes')
 AC_SUBST(LIB_TIFF)
 
+
 # Libraries that the LCMS library depends on
-LCMS_LIB_DEPLIBS="$LIB_MATH"
+LCMS_LIB_DEPLIBS="$LIB_MATH $LIB_THREAD"
 LCMS_LIB_DEPLIBS=`echo $LCMS_LIB_DEPLIBS | sed -e 's/  */ /g'`
 AC_SUBST(LCMS_LIB_DEPLIBS)
 
 # Libraries that the jpegicc program depends on
-JPEGICC_DEPLIBS="$LIB_JPEG $LIB_MATH"
+JPEGICC_DEPLIBS="$LIB_JPEG $LIB_MATH $LIB_THREAD"
 JPEGICC_DEPLIBS=`echo $JPEGICC_DEPLIBS | sed -e 's/  */ /g'`
 AC_SUBST(JPEGICC_DEPLIBS)
 
 # Libraries that the tifficc program depends on
-TIFFICC_DEPLIBS="$LIB_TIFF $LIB_JPEG $LIB_ZLIB $LIB_MATH"
+TIFFICC_DEPLIBS="$LIB_TIFF $LIB_JPEG $LIB_ZLIB $LIB_MATH $LIB_THREAD"
 TIFFICC_DEPLIBS=`echo $TIFFICC_DEPLIBS | sed -e 's/  */ /g'`
 AC_SUBST(TIFFICC_DEPLIBS)
 

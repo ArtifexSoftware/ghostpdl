@@ -240,6 +240,9 @@ void FUNCTION_NAME(_cmsTRANSFORM* p,
 #endif
         PACK(p,wOut,output,Stride);
     } while (--n);
+    /* The following code is only safe if we know that a given transform is
+     * called on one thread a time. */
+#if 0
 #ifdef CACHED
 #ifdef NO_UNPACK
     memcpy(p->Cache.CacheOut,prevIn,INBYTES);
@@ -252,6 +255,7 @@ void FUNCTION_NAME(_cmsTRANSFORM* p,
     memcpy(p->Cache.CacheOut, wOut, sizeof(XFORM_TYPE) * cmsMAXCHANNELS);
 #endif /* NO_PACK */
 #endif /* CACHED */
+#endif
 }
 
 #undef wIn0

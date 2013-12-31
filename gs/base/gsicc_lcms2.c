@@ -24,6 +24,12 @@
 #include "gp.h"
 #include "gsicc_cms.h"
 
+#define USE_LCMS2_LOCKING
+
+#ifdef USE_LCMS2_LOCKING
+#include "gxsync.h"
+#endif
+
 #define DUMP_CMS_BUFFER 0
 #define DEBUG_LCMS_MEM 0
 #define LCMS_BYTES_MASK 0x7
@@ -45,7 +51,7 @@ static
 void *gs_lcms2_malloc(cmsContext id, unsigned int size)
 {
     void *ptr;
-    gs_memory_t *mem = (gs_memory_t *)id;
+    gs_memory_t *mem = (gs_memory_t *)cmsGetContextUserData(id);
 
 #if defined(SHARE_LCMS) && SHARE_LCMS==1
     ptr = malloc(size);
@@ -62,7 +68,7 @@ void *gs_lcms2_malloc(cmsContext id, unsigned int size)
 static
 void gs_lcms2_free(cmsContext id, void *ptr)
 {
-    gs_memory_t *mem = (gs_memory_t *)id;
+    gs_memory_t *mem = (gs_memory_t *)cmsGetContextUserData(id);
     if (ptr != NULL) {
 #if DEBUG_LCMS_MEM
         gs_warn1("lcms free at 0x%x",ptr);
@@ -79,7 +85,7 @@ void gs_lcms2_free(cmsContext id, void *ptr)
 static
 void *gs_lcms2_realloc(cmsContext id, void *ptr, unsigned int size)
 {
-    gs_memory_t *mem = (gs_memory_t *)id;
+    gs_memory_t *mem = (gs_memory_t *)cmsGetContextUserData(id);
     void *ptr2;
 
     if (ptr == 0)
@@ -114,8 +120,52 @@ static cmsPluginMemHandler gs_cms_memhandler =
     gs_lcms2_realloc,
     NULL,
     NULL,
-    NULL
+    NULL,
 };
+
+#ifdef USE_LCMS2_LOCKING
+
+static
+void *gs_lcms2_createMutex(cmsContext id)
+{
+    gs_memory_t *mem = (gs_memory_t *)cmsGetContextUserData(id);
+
+    return gx_monitor_alloc(mem);
+}
+
+static
+void gs_lcms2_destroyMutex(cmsContext id, void* mtx)
+{
+    gx_monitor_free((gx_monitor_t *)mtx);
+}
+
+static
+cmsBool gs_lcms2_lockMutex(cmsContext id, void* mtx)
+{
+    return !gx_monitor_enter((gx_monitor_t *)mtx);
+}
+
+static
+void gs_lcms2_unlockMutex(cmsContext id, void* mtx)
+{
+    gx_monitor_leave((gx_monitor_t *)mtx);
+}
+
+static cmsPluginMutex gs_cms_mutexhandler =
+{
+    {
+        cmsPluginMagicNumber,
+        2060,
+        cmsPluginMutexSig,
+        NULL
+    },
+    gs_lcms2_createMutex,
+    gs_lcms2_destroyMutex,
+    gs_lcms2_lockMutex,
+    gs_lcms2_unlockMutex
+};
+
+#endif
 
 /* Get the number of channels for the profile.
   Input count */
@@ -218,15 +268,19 @@ gcmmhprofile_t
 gscms_get_profile_handle_mem(gs_memory_t *mem, unsigned char *buffer, 
                              unsigned int input_size)
 {
-    cmsSetLogErrorHandler(gscms_error);
-    return(cmsOpenProfileFromMemTHR((cmsContext)mem,buffer,input_size));
+    cmsContext ctx = gs_lib_ctx_get_cms_context(mem);
+
+    cmsSetLogErrorHandlerTHR(ctx, gscms_error);
+    return(cmsOpenProfileFromMemTHR(ctx,buffer,input_size));
 }
 
 /* Get ICC Profile handle from file ptr */
 gcmmhprofile_t
 gscms_get_profile_handle_file(gs_memory_t *mem,const char *filename)
 {
-    return(cmsOpenProfileFromFileTHR((cmsContext)mem, filename, "r"));
+    cmsContext ctx = gs_lib_ctx_get_cms_context(mem);
+
+    return(cmsOpenProfileFromFileTHR(ctx, filename, "r"));
 }
 
 /* Transform an entire buffer */
@@ -436,6 +490,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     int src_nChannels,des_nChannels;
     int lcms_src_color_space, lcms_des_color_space;
     unsigned int flag;
+    cmsContext ctx = gs_lib_ctx_get_cms_context(memory);
 
     /* Check for case of request for a transfrom from a device link profile
        in that case, the destination profile is NULL */
@@ -505,7 +560,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
         }
     }
     /* Create the link */
-    return cmsCreateTransformTHR((cmsContext)memory,
+    return cmsCreateTransformTHR(ctx,
                lcms_srchandle, src_data_type,
                lcms_deshandle, des_data_type,
                rendering_params->rendering_intent, flag | cmm_flags);
@@ -532,6 +587,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
     cmsHPROFILE hProfiles[5]; 
     int nProfiles = 0;
     unsigned int flag;
+    cmsContext ctx = gs_lib_ctx_get_cms_context(memory);
 
     /* Check if the rendering intent is something other than relative colorimetric
        and  if we have a proofing profile.  In this case we need to create the 
@@ -594,7 +650,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
             flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
         }
         /* Use relative colorimetric here */
-        temptransform = cmsCreateMultiprofileTransformTHR((cmsContext)memory,
+        temptransform = cmsCreateMultiprofileTransformTHR(ctx,
                     hProfiles, nProfiles, src_data_type,
                     des_data_type, gsRELATIVECOLORIMETRIC, flag);
         cmsCloseProfile(src_to_proof);
@@ -647,7 +703,7 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
             || rendering_params->black_point_comp == gsBLACKPTCOMP_ON_OR) {
             flag = (flag | cmsFLAGS_BLACKPOINTCOMPENSATION);
         }
-        return cmsCreateMultiprofileTransformTHR((cmsContext)memory,
+        return cmsCreateMultiprofileTransformTHR(ctx,
                     hProfiles, nProfiles, src_data_type,
                     des_data_type, rendering_params->rendering_intent, flag);
     }
@@ -657,15 +713,19 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
 int
 gscms_create(gs_memory_t *memory)
 {
+    cmsContext ctx;
+
     /* Set our own error handling function */
-    cmsSetLogErrorHandler(gscms_error);
-    cmsPluginTHR(memory, (void *)&gs_cms_memhandler);
-    /* If we had created any persitent state that we needed access to in the
-     * other functions, we should store that by calling:
-     *   gs_lib_ctx_set_cms_context(memory, state);
-     * We can then retrieve it anywhere else by calling:
-     *   gs_lib_ctx_get_cms_context(memory);
-     * LCMS currently uses no such state. */
+    ctx = cmsCreateContext((void *)&gs_cms_memhandler, memory);
+    if (ctx == NULL)
+        return gs_error_VMerror;
+
+#ifdef USE_LCMS2_LOCKING
+    cmsPluginTHR(ctx, (void *)&gs_cms_mutexhandler);
+#endif
+
+    cmsSetLogErrorHandlerTHR(ctx, gscms_error);
+    gs_lib_ctx_set_cms_context(memory, ctx);
     return 0;
 }
 
@@ -673,7 +733,12 @@ gscms_create(gs_memory_t *memory)
 void
 gscms_destroy(gs_memory_t *memory)
 {
-    /* Nothing to do here for lcms */
+    cmsContext ctx = gs_lib_ctx_get_cms_context(memory);
+    if (ctx == NULL)
+        return;
+
+    cmsDeleteContext(ctx);
+    gs_lib_ctx_set_cms_context(memory, NULL);
 }
 
 /* Have the CMS release the link */
@@ -750,6 +815,7 @@ gscms_get_name2device_link(gsicc_link_t *icclink,
     cmsUInt32Number dwOutputFormat;
     cmsUInt32Number lcms_proof_flag;
     int number_colors;
+    cmsContext ctx = gs_lib_ctx_get_cms_context(memory);
 
     /* NOTE:  We need to add a test here to check that we even HAVE
     device values in here and NOT just CIELAB values */
@@ -760,7 +826,7 @@ gscms_get_name2device_link(gsicc_link_t *icclink,
     }
     /* Create the transform */
     /* ToDo:  Adjust rendering intent */
-    hTransform = cmsCreateProofingTransformTHR(memory,
+    hTransform = cmsCreateProofingTransformTHR(ctx,
                                             lcms_srchandle, TYPE_NAMED_COLOR_INDEX,
                                             lcms_deshandle, TYPE_CMYK_8,
                                             lcms_proofhandle,INTENT_PERCEPTUAL,
