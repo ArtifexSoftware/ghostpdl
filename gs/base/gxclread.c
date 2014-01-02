@@ -792,6 +792,9 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
     crdev->icc_struct->pageneutralcolor = false;
 
     for (i = 0; i < num_pages && code >= 0; ++i) {
+        bool pdf14_needed = false;
+        int band;
+
         if (ppages == NULL) {
                 /*
                  * If we aren't rendering saved pages, do the current one.
@@ -833,7 +836,13 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
             bdev->band_offset_x = ppage->offset.x;
             bdev->band_offset_y = ppage->offset.y + (band_first * band_height);
         }
-        code = clist_playback_file_bands(playback_action_render,
+        /* if any of the requested bands need transparency, use it for all of them */
+        for (band=band_first; band <= band_last; band++)
+            pdf14_needed |= (crdev->color_usage_array[band].trans_bbox.p.y <=
+            crdev->color_usage_array[band].trans_bbox.q.y) ? true : false;
+
+        code = clist_playback_file_bands(pdf14_needed ?
+                                         playback_action_render : playback_action_render_no_pdf14,
                                          crdev, pinfo,
                                          bdev, band_first, band_last,
                                          prect->p.x - bdev->band_offset_x,

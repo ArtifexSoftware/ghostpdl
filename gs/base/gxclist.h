@@ -340,6 +340,7 @@ struct gx_device_clist_writer_s {
                                 /* the page level BM, shape or opacity alpha needs tranaparency */
     int pdf14_trans_group_level;/* 0 when at page level group -- push increments, pop decrements */
     int pdf14_smask_level;	/* 0 when at SMask None -- push increments, pop decrements */
+    bool page_pdf14_needed;	/* save page level pdf14_needed state */
 
     float dash_pattern[cmd_max_dash];	/* current dash pattern */
     const gx_clip_path *clip_path;	/* current clip path, */

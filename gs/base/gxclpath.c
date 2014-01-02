@@ -28,6 +28,7 @@
 #include "gxclpath.h"
 #include "gxcolor2.h"
 #include "gxdcolor.h"
+#include "gxpcolor.h"
 #include "gxpaint.h"		/* for gx_fill/stroke_params */
 #include "gzpath.h"
 #include "gzcpath.h"
@@ -134,7 +135,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
      *
      * The complete cmd_opv_ext_put_drawing_color consists of:
      *  comand code (2 bytes)
-     *  tile index value or non tile color (1) 
+     *  tile index value or non tile color (1)
      *  device color type index (1)
      *  length of serialized device color (enc_u_sizew(dc_size))
      *  the serialized device color itself (dc_size)
@@ -256,6 +257,23 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         /* HACK: since gx_dc_pattern_write identifies pattern by tile id,
            replace the client's pattern id with tile id in the saved color.  */
         pcls->sdc.colors.pattern.id = pattern_id;
+        if (pattern_id &&
+            (gx_pattern1_get_transptr(pdcolor) != NULL ||
+             gx_pattern1_clist_has_trans(pdcolor))) {
+            /* update either this band or all bands with the trans_bbox */
+            if (all_bands) {
+                pcls->color_usage.trans_bbox.p.x = 0;
+                pcls->color_usage.trans_bbox.q.x = cldev->width;  /* no other information available */
+                pcls->color_usage.trans_bbox.p.y = 0;
+                pcls->color_usage.trans_bbox.q.y = cldev->height;
+                clist_update_trans_bbox(cldev, &(pcls->color_usage.trans_bbox));
+            } else {
+                pcls->color_usage.trans_bbox.p.x = 0;
+                pcls->color_usage.trans_bbox.q.x = cldev->width;  /* no other information available */
+                pcls->color_usage.trans_bbox.p.y = pre->y;
+                pcls->color_usage.trans_bbox.q.y = pre->yend;
+            }
+        }
     }
     if (is_pattern && all_bands) {
         /* Distribute the written pattern params to all bands.
@@ -807,7 +825,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
                 (code = cmd_update_lop(cdev, re.pcls, lop)) < 0
                 )
                 return code;
-            code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, 
+            code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re,
                                          devn_not_tile);
             if (code == gs_error_unregistered)
                 return code;

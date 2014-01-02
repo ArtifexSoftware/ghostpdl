@@ -46,6 +46,7 @@ typedef enum {
 {\
     "PDF14_PUSH_DEVICE      ",\
     "PDF14_POP_DEVICE       ",\
+    "PDF14_ABORT_DEVICE     ",\
     "PDF14_BEGIN_TRANS_GROUP",\
     "PDF14_END_TRANS_GROUP  ",\
     "PDF14_BEGIN_TRANS_MASK ",\

@@ -5534,6 +5534,10 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
     cmm_profile_t *icc_profile;
     gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile;
+    /* We maintain and update working copies until we actually write the clist */
+    int pdf14_needed = cdev->pdf14_needed;
+    int trans_group_level = cdev->pdf14_trans_group_level;
+    int smask_level = cdev->pdf14_smask_level;
 
     code = dev_proc((gx_device *) cdev, get_profile)((gx_device *) cdev,
                                                      &dev_profile);
@@ -5546,9 +5550,9 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
         default:			/* Should not occur. */
             break;
         case PDF14_PUSH_DEVICE:
-            cdev->pdf14_needed = false;		/* reset pdf14_needed */
-            cdev->pdf14_trans_group_level = 0;
+            trans_group_level = 0;
             cdev->pdf14_smask_level = 0;
+            cdev->page_pdf14_needed = false;
             put_value(pbuf, pparams->num_spot_colors);
             put_value(pbuf, pparams->is_pattern);
             /* If we happen to be going to a color space like CIELAB then
@@ -5570,19 +5574,19 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             }
             break;
         case PDF14_POP_DEVICE:
-            cdev->pdf14_needed = false;		/* reset pdf14_needed */
-            cdev->pdf14_trans_group_level = 0;
-            cdev->pdf14_smask_level = 0;
+            pdf14_needed = false;		/* reset pdf14_needed */
+            trans_group_level = 0;
+            smask_level = 0;
             put_value(pbuf, pparams->is_pattern);
             break;
         case PDF14_END_TRANS_GROUP:
-            cdev->pdf14_trans_group_level--;	/* if now at page level, pdf14_needed will be updated */
-            if (cdev->pdf14_smask_level == 0 && cdev->pdf14_trans_group_level == 0)
-                cdev->pdf14_needed = false;
+            trans_group_level--;	/* if now at page level, pdf14_needed will be updated */
+            if (smask_level == 0 && trans_group_level == 0)
+                pdf14_needed = cdev->page_pdf14_needed;
             break;			/* No data */
         case PDF14_BEGIN_TRANS_GROUP:
-            cdev->pdf14_needed = true;		/* the compositor will be needed while reading */
-            cdev->pdf14_trans_group_level++;
+            pdf14_needed = true;		/* the compositor will be needed while reading */
+            trans_group_level++;
             code = c_pdf14trans_write_ctm(&pbuf, pparams);
             if (code < 0)
                 return code;
@@ -5615,8 +5619,8 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             }
             break;
         case PDF14_BEGIN_TRANS_MASK:
-            cdev->pdf14_needed = true;		/* the compositor will be needed while reading */
-            cdev->pdf14_smask_level++;
+            pdf14_needed = true;		/* the compositor will be needed while reading */
+            smask_level++;
             code = c_pdf14trans_write_ctm(&pbuf, pparams);
             if (code < 0)
                 return code;
@@ -5659,16 +5663,18 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             }
             break;
         case PDF14_END_TRANS_MASK:
-            cdev->pdf14_smask_level--;
-            if (cdev->pdf14_smask_level == 0 && cdev->pdf14_trans_group_level == 0)
-                cdev->pdf14_needed = false;
+            smask_level--;
+            if (smask_level == 0 && trans_group_level == 0)
+                pdf14_needed = cdev->page_pdf14_needed;
             break;
         case PDF14_SET_BLEND_PARAMS:
             if (pparams->blend_mode != BLEND_MODE_Normal || pparams->opacity.alpha != 1.0 ||
                 pparams->shape.alpha != 1.0)
-                cdev->pdf14_needed = true;		/* the compositor will be needed while reading */
-            else if (cdev->pdf14_trans_group_level == 0)
-                cdev->pdf14_needed = false;		/* reset pdf14_needed */
+                pdf14_needed = true;		/* the compositor will be needed while reading */
+            else if (smask_level == 0 && trans_group_level == 0)
+                pdf14_needed = false;		/* At page level, set back to false */
+            if (smask_level == 0 && trans_group_level == 0)
+                cdev->page_pdf14_needed = pdf14_needed;         /* save for after popping to page level */
             *pbuf++ = pparams->changed;
             if (pparams->changed & PDF14_SET_BLEND_MODE)
                 *pbuf++ = pparams->blend_mode;
@@ -5720,6 +5726,9 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
     if_debug3m('v', cdev->memory,
                "[v] c_pdf14trans_write: opcode = %s mask_id=%d need = %d\n",
                pdf14_opcode_names[opcode], mask_id, need);
+    cdev->pdf14_needed = pdf14_needed;          /* all OK to update */
+    cdev->pdf14_trans_group_level = trans_group_level;
+    cdev->pdf14_smask_level = smask_level;
     return 0;
 }
 
