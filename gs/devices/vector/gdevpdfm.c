@@ -1164,11 +1164,11 @@ pdfmark_OUT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     if (sub_count != 0 && depth == pdev->max_outline_depth - 1) {
         pdf_outline_level_t *new_ptr;
 
-        new_ptr = (pdf_outline_level_t *)gs_alloc_bytes(pdev->memory, (pdev->max_outline_depth + INITIAL_MAX_OUTLINE_DEPTH) * sizeof(pdf_outline_level_t) * sizeof(pdf_outline_level_t), "outline_levels array");
+        new_ptr = (pdf_outline_level_t *)gs_alloc_bytes(pdev->pdf_memory, (pdev->max_outline_depth + INITIAL_MAX_OUTLINE_DEPTH) * sizeof(pdf_outline_level_t) * sizeof(pdf_outline_level_t), "outline_levels array");
         if (!new_ptr)
             return_error(gs_error_VMerror);
         memcpy (new_ptr, pdev->outline_levels, pdev->max_outline_depth * sizeof(pdf_outline_level_t));
-        gs_free_object(pdev->memory, pdev->outline_levels, "outline_levels array");
+        gs_free_object(pdev->pdf_memory, pdev->outline_levels, "outline_levels array");
         pdev->outline_levels = new_ptr;
         pdev->max_outline_depth += INITIAL_MAX_OUTLINE_DEPTH;
         plevel = &pdev->outline_levels[depth];

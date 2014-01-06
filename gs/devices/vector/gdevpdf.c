@@ -708,7 +708,7 @@ pdf_open(gx_device * dev)
             for (j = 0; j < NUM_RESOURCE_CHAINS; ++j)
                 pdev->resources[i].chains[j] = 0;
     }
-    pdev->outline_levels = (pdf_outline_level_t *)gs_alloc_bytes(pdev->memory, INITIAL_MAX_OUTLINE_DEPTH * sizeof(pdf_outline_level_t), "outline_levels array");
+    pdev->outline_levels = (pdf_outline_level_t *)gs_alloc_bytes(mem, INITIAL_MAX_OUTLINE_DEPTH * sizeof(pdf_outline_level_t), "outline_levels array");
     memset(pdev->outline_levels, 0x00, INITIAL_MAX_OUTLINE_DEPTH * sizeof(pdf_outline_level_t));
     pdev->max_outline_depth = INITIAL_MAX_OUTLINE_DEPTH;
     pdev->outline_levels[0].first.id = 0;
