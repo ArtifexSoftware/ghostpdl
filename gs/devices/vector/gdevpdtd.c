@@ -266,7 +266,7 @@ int pdf_font_descriptor_free(gx_device_pdf *pdev, pdf_resource_t *pres)
 
     gs_free_copied_font(copied);
     if (pbfont && pbfont->font_name.size) {
-        gs_free_string(pdev->memory, pbfont->font_name.data, pbfont->font_name.size, "Free BaseFont FontName string");
+        gs_free_string(pdev->pdf_memory, pbfont->font_name.data, pbfont->font_name.size, "Free BaseFont FontName string");
         pbfont->font_name.data = (byte *)0L;
         pbfont->font_name.size = 0;
     }
