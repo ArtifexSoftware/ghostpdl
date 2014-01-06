@@ -160,6 +160,7 @@ static dev_proc_close_device(pdf_close);
 #undef PDF_DEVICE_IDENT
 #undef PDF_DEVICE_MaxInlineImageSize
 #undef PDF_FOR_OPDFREAD
+#undef PDF_FOR_EPS2WRITE
 
 #define PDF_DEVICE_NAME "eps2write"
 #define PDF_DEVICE_IDENT gs_eps2write_device
@@ -173,6 +174,7 @@ static dev_proc_close_device(pdf_close);
 #undef PDF_DEVICE_IDENT
 #undef PDF_DEVICE_MaxInlineImageSize
 #undef PDF_FOR_OPDFREAD
+#undef PDF_FOR_EPS2WRITE
 /* ---------------- Device open/close ---------------- */
 
 /* Close and remove temporary files. */
