@@ -630,6 +630,9 @@ struct gx_device_pdf_s {
     /* Following are set when device is opened. */
     pdf_compression_type compression;
     pdf_compression_type compression_at_page_start;
+    /* pdf_memory is 'stable' memory, it is not subject to save and restore
+     * and is the allocator which should be used for pretty much ewverything
+     */
 #define pdf_memory v_memory
     /*
      * The xref temporary file is logically an array of longs.
