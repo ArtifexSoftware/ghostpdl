@@ -1405,8 +1405,13 @@ static int hash_cos_stream(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
     gs_md5_init(md5);
     while(pcsp) {
         ptr = gs_malloc(pdev->memory, sizeof (byte), pcsp->size, "hash_cos_stream");
+        if (ptr == 0L) {
+            result = gs_note_error(gs_error_VMerror);
+            return result;
+        }
         gp_fseek_64(sfile, pcsp->position, SEEK_SET);
         if (fread(ptr, 1, pcsp->size, sfile) != pcsp->size) {
+            gs_free(pdev->memory, ptr, sizeof (byte), pcsp->size, "hash_cos_stream");
             result = gs_note_error(gs_error_ioerror);
             return result;
         }
