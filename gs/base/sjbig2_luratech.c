@@ -573,7 +573,11 @@ s_jbig2encode_process(stream_state * ss, stream_cursor_read * pr,
         else return EOFC; /* all done */
     }
 
-    /* something went wrong above */
+    /* no data. */
+    if (in_size == 0 && !last)
+        return 0;
+
+    /* something went wrong above. */
     return ERRC;
 }
 
