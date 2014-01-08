@@ -3308,6 +3308,27 @@ dsc_scan_trailer(CDSC *dsc)
     /*  %%EOF */
     char *line = dsc->line;
     GSBOOL continued = FALSE;
+
+    if (dsc->endtrailer && IS_DSC(line, "%!PS-Adobe")) {
+        unsigned char *p = dsc->line;
+
+        dsc->endtrailer = 0;
+        dsc->dsc_version = dsc_add_line(dsc, dsc->line, dsc->line_length);
+        if (COMPARE(p, "%!PS-Adobe")) {
+            dsc->dsc = TRUE;
+            dsc->begincomments = DSC_START(dsc);
+            if (dsc->dsc_version == NULL)
+                return CDSC_ERROR;	/* no memory */
+            p = (unsigned char *)dsc->line + 14;
+            while (IS_WHITE(*p))
+                p++;
+            if (COMPARE(p, "EPSF-"))
+                dsc->epsf = TRUE;
+            dsc->scan_section = scan_comments;
+            return CDSC_PSADOBE;
+        }
+    }
+
     dsc->id = CDSC_OK;
 
     if (dsc->scan_section == scan_pre_trailer) {
