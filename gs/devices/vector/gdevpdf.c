@@ -732,6 +732,10 @@ pdf_open(gx_device * dev)
     pdev->BBox.p.y = pdev->height;
     pdev->BBox.q.x = 0;
     pdev->BBox.q.y = 0;
+
+    if(pdev->UseCIEColor) {
+        emprintf(pdev->memory, "\n\nUse of -dUseCIEColor detected!\nSince the release of version 9.11 of Ghostscript we recommend you do not set\n-dUseCIEColor with the pdfwrite/ps2write device family.\n\n");
+    }
     return 0;
   fail:
     gdev_vector_close_file((gx_device_vector *) pdev);
