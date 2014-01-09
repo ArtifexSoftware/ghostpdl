@@ -3310,7 +3310,7 @@ dsc_scan_trailer(CDSC *dsc)
     GSBOOL continued = FALSE;
 
     if (dsc->endtrailer && IS_DSC(line, "%!PS-Adobe")) {
-        unsigned char *p = dsc->line;
+        unsigned char *p = (unsigned char *)dsc->line;
 
         dsc->endtrailer = 0;
         dsc->dsc_version = dsc_add_line(dsc, dsc->line, dsc->line_length);
