@@ -934,6 +934,10 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
         pdf_glyph_widths_t cw; /* in PDF text space */
         gs_char ch = pstr->data[i];
 
+        /* Initialise some variables */
+        cw.real_width.xy.x = cw.real_width.xy.y = cw.Width.xy.x = cw.Width.xy.y = 0;
+        cw.BBox.p.x = cw.BBox.p.y = cw.BBox.q.x = cw.BBox.q.y = 0;
+
         {  const gs_glyph *gdata_i = (gdata != NULL ? gdata + i : 0);
 
             code = pdf_encode_string_element(pdev, (gs_font *)font, pdfont, ch, gdata_i);
