@@ -2329,7 +2329,7 @@ gs_copy_font_complete(gs_font *font, gs_font *copied)
                   index != 0);
             ) {
             if (font->FontType == ft_TrueType &&
-                    glyph >= GS_MIN_CID_GLYPH && glyph < GS_MIN_GLYPH_INDEX)
+                    ((glyph >= GS_MIN_CID_GLYPH && glyph < GS_MIN_GLYPH_INDEX) || glyph == GS_NO_GLYPH))
                 return_error(gs_error_invalidfont); /* bug 688370. */
             code = gs_copy_glyph(font, glyph, copied);
         }
