@@ -315,4 +315,8 @@ typedef enum
 #define ESC 0x1b
 #define SP 0x20
 
+#ifdef DEBUG
+void pcl_debug_dump_data(gs_memory_t *mem, const byte *d, int len);
+#endif
+
 #endif /* pcommand_INCLUDED */

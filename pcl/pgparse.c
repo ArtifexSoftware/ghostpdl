@@ -340,11 +340,11 @@ hpgl_arg(const gs_memory_t * mem, hpgl_parser_state_t * pst)
         case 0:                /* no argument */
             return NULL;
         case 1:                /* integer */
-            if_debug1m('I', mem, "  %ld", (long)pvalue->v_n.i);
+            if_debug1m('i', mem, "  %ld", (long)pvalue->v_n.i);
             pvalue->is_real = false;
             break;
         default /* case 2 */ : /* real */
-            if_debug1m('I', mem, "  %g", pvalue->v_n.r);
+            if_debug1m('i', mem, "  %g", pvalue->v_n.r);
             pvalue->is_real = true;
     }
     hpgl_arg_init(pst);

@@ -256,6 +256,12 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
     int code;
     bool has_checksum;
 
+#ifdef DEBUG
+    if (gs_debug_c('i')) {
+        pcl_debug_dump_data(pcs->memory, arg_data(pargs), uint_arg(pargs));
+    }
+#endif
+
     if (count < 64 && pfh->HeaderFormat != pcfh_bitmap)
         return e_Range;         /* pcfh_bitmap defaults short headers to 0 except underline position = 5; */
     desc_size =
@@ -506,6 +512,12 @@ pcl_character_data(pcl_args_t * pargs, pcl_state_t * pcs)
     pcl_font_header_format_t format;
     byte *char_data = 0;
     int code;
+
+#ifdef DEBUG
+    if (gs_debug_c('i')) {
+        pcl_debug_dump_data(pcs->memory, arg_data(pargs), uint_arg(pargs));
+    }
+#endif
 
     if (!pl_dict_find_no_stack(&pcs->soft_fonts, current_font_id,
                                current_font_id_size, &value))
@@ -795,6 +807,13 @@ pcl_alphanumeric_id_data(pcl_args_t * pargs, pcl_state_t * pcs)
 
     const alphanumeric_data_t *alpha_data =
         (const alphanumeric_data_t *)arg_data(pargs);
+
+#ifdef DEBUG
+    if (gs_debug_c('i')) {
+        pcl_debug_dump_data(pcs->memory, arg_data(pargs), uint_arg(pargs));
+    }
+#endif
+
     int string_id_size = (count - 1);   /* size of id data size - operation size */
 
     if (count == 0)

@@ -920,6 +920,12 @@ set_logical_page(pcl_args_t * pargs, pcl_state_t * pcs)
         (pcl_logical_page_t *) arg_data(pargs);
     pcl_paper_size_t *pcur_paper;
 
+#ifdef DEBUG
+    if (gs_debug_c('i')) {
+        pcl_debug_dump_data(pcs->memory, arg_data(pargs), uint_arg(pargs));
+    }
+#endif
+
     /* the currently selected paper size */
     pcur_paper = (pcl_paper_size_t *) pcs->xfm_state.paper_size;
 

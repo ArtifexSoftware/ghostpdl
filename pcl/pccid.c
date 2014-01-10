@@ -430,6 +430,11 @@ pcl_configure_image_data(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     if (pcs->personality == pcl5e || pcs->raster_state.graphics_mode)
         return 0;
+#ifdef DEBUG
+    if (gs_debug_c('i')) {
+        pcl_debug_dump_data(pcs->memory, arg_data(pargs), uint_arg(pargs));
+    }
+#endif
     return install_cid_data(uint_arg(pargs),
                             arg_data(pargs), pcs, false, false);
 }

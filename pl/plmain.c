@@ -375,7 +375,7 @@ pl_main_aux(int argc, char *argv[], void *disp)
         new_job = false;
         in_pjl = true;
         for (;;) {
-            if_debug1m('i', mem, "[i][file pos=%ld]\n",
+            if_debug1m('I', mem, "[i][file pos=%ld]\n",
                        pl_main_cursor_position(&r));
             /* end of data - if we are not back in pjl the job has
                ended in the middle of the data stream. */

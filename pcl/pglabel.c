@@ -1485,7 +1485,7 @@ hpgl_LB(hpgl_args_t * pargs, hpgl_state_t * pgls)
         GL_LB_HAVE_16BITS = !GL_LB_HAVE_16BITS;
         GL_LB_PREV_CH = GL_LB_CH;
         GL_LB_CH = *++p;
-        if_debug1m('I', pgls->memory,
+        if_debug1m('i', pgls->memory,
                    (GL_LB_CH == '\\' ? " \\%c" : GL_LB_CH >= 33
                     && GL_LB_CH <= 126 ? " %c" : " \\%03o"), GL_LB_CH);
         if (is_terminator(pgls, GL_LB_PREV_CH, GL_LB_CH, GL_LB_HAVE_16BITS)) {

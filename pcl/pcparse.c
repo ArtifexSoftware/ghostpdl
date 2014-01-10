@@ -256,6 +256,18 @@ append_macro(const byte * from, const byte * to, pcl_state_t * pcs)
     return 0;
 }
 
+#ifdef DEBUG
+static void
+debug_dump_char(gs_memory_t *mem, char chr)
+{
+    dmprintf1(mem, (chr >= 33 && chr <= 126 ?
+                    "%c" : "\\%03o"), (unsigned char)chr);
+    if (chr == '\\')
+        dmprintf1(mem, "%c", '\\');
+    return;
+}
+#endif
+
 /* Process a buffer of PCL commands. */
 int
 pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
@@ -300,20 +312,6 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                         p += copy;
                         continue;
                     }
-#ifdef DEBUG
-                    if (gs_debug_c('i')) {
-                        int i;
-
-                        dmprintf(pcs->memory, "Scanned Data:\n");
-                        for (i = 0; i < count; i++) {
-                            dmprintf2(pcs->memory, "%02x%c",
-                                      pst->args.data[i], (i % 16 == 15
-                                                          || i ==
-                                                          count -
-                                                          1) ? '\n' : ' ');
-                        }
-                    }
-#endif
                     /* Invoke the command. */
                     cdefn = pcl_get_command_definition(pst,
                                                        pst->param_class,
@@ -410,8 +408,10 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                 }
 #ifdef DEBUG
                 if (gs_debug_c('i')) {
-                    dmprintf2(pcs->memory, "(ESC %c %c)",
-                              pst->param_class, pst->param_group);
+                    dmprintf(pcs->memory, "ESC ");
+                    debug_dump_char(pcs->memory, pst->param_class);
+                    dmprintf(pcs->memory, " ");
+                    debug_dump_char(pcs->memory, pst->param_group);
                     if (value_is_present(&avalue)) {
                         dmputc(pcs->memory, ' ');
                         if (value_is_signed(&avalue))
@@ -526,10 +526,13 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     p += (bytelen - 1);
                     cdefn = NULL;
                 } else if (chr != ESC) {
-                    if_debug1m('i', pcs->memory,
-                               (chr == '\\' ? "\\%c\n" :
-                                chr >= 33 && chr <= 126 ?
-                                "%c\n" : "\\%03o\n"), chr);
+#ifdef DEBUG
+                    if (gs_debug_c('i')) {
+                        if_debug1m('i', pcs->memory, "[i%d] ", bytelen);
+                        debug_dump_char(pcs->memory, chr);
+                        if_debug0m('i', pcs->memory, "\n");
+                    }
+#endif
                     cdefn = pst->definitions->pcl_command_list
                         [chr < 33 ?
                          pst->definitions->pcl_control_command_indices[chr] :
@@ -543,7 +546,13 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                         const byte *str = p;
 
                         while (p < rlimit && p[1] >= 32 && p[1] <= 127) {
-                            if_debug1m('i', pcs->memory, "%c", p[1]);
+#ifdef DEBUG
+                            if (gs_debug_c('i')) {
+                                if (p == str)
+                                    if_debug1m('i', pcs->memory, "[i%d] ", bytelen);
+                                debug_dump_char(pcs->memory, p[1]);
+                            }
+#endif
                             ++p;
                         }
 
@@ -561,19 +570,27 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     }
                     chr = *++p;
                     if (chr < min_escape_class || chr > max_escape_class) {
-                        if_debug1m('i', pcs->memory,
-                                   (chr >= 33 && chr <= 126 ?
-                                    "ESC %c\n" : "ESC \\%03o\n"), chr);
                         cdefn = pcl_get_command_definition(pst, 0, 0, chr);
                         if (!cdefn) {
                             /* Skip the ESC, back up
                                to the char following the
                                ESC. */
                             --p;
+#ifdef DEBUG
+                            if (gs_debug_c('i')) {
+                                debug_dump_char(pcs->memory, '\033');
+                            }
+#endif
                             continue;
                         }
-                        if_debug1m('i', pcs->memory, "   [%s]\n",
-                                   cdefn->cname);
+#ifdef DEBUG
+                        if (gs_debug_c('i')) {
+                            dmprintf(pcs->memory, "ESC ");
+                            debug_dump_char(pcs->memory, chr);
+                            dmprintf(pcs->memory, "\n");
+                            dmprintf1(pcs->memory, "   [%s]\n", cdefn->cname);
+                        }
+#endif
                     } else {
                         if (p >= rlimit) {
                             p -= 2;
@@ -586,8 +603,6 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                             chr = 0;
                         }
                         pst->param_group = chr;
-                        if_debug2m('i', pcs->memory, "ESC %c %c\n",
-                                   pst->param_class, chr);
                         pst->scan_type = scanning_parameter;
                         pst->garbage_in_parameter = false;
                         param_init();

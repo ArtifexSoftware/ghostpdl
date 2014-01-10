@@ -1377,6 +1377,11 @@ pcl_complete_raster(pcl_state_t * pcs)
 static int
 transfer_raster_plane(pcl_args_t * pargs, pcl_state_t * pcs)
 {
+#ifdef DEBUG
+    if (gs_debug_c('i')) {
+        pcl_debug_dump_data(pcs->memory, arg_data(pargs), uint_arg(pargs));
+    }
+#endif
     return add_raster_plane(arg_data(pargs), arg_data_size(pargs), false,
                             pcs);
 }
@@ -1393,6 +1398,12 @@ transfer_raster_row(pcl_args_t * pargs, pcl_state_t * pcs)
     const byte *pdata = arg_data(pargs);
     int comp_mode = pcs->raster_state.compression_mode;
     int code = 0;
+
+#ifdef DEBUG
+    if (gs_debug_c('i')) {
+        pcl_debug_dump_data(pcs->memory, arg_data(pargs), uint_arg(pargs));
+    }
+#endif
 
     code = add_raster_plane(pdata, arg_data_size(pargs), true, pcs);
 

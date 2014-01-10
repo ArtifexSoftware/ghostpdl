@@ -231,3 +231,21 @@ pcl_init_state(pcl_state_t * pcs, gs_memory_t * pmem)
 
     pcs->hpgl_mode = -1;
 }
+
+#ifdef DEBUG
+void
+pcl_debug_dump_data(gs_memory_t *mem, const byte *d, int len)
+{
+    int i;
+
+    dmprintf(mem, "BEGIN RAW DATA\n");
+    for (i = 0; i < len; i++) {
+        dmprintf2(mem, "%02x%c",
+                  d[i],
+                  (i % 16 == 15 || i == len - 1) ? '\n' : ' ');
+    }
+    dmprintf(mem, "END RAW DATA\n");
+    return;
+}
+
+#endif

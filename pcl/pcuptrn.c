@@ -365,6 +365,12 @@ download_pcl_pattern(pcl_args_t * pargs, pcl_state_t * pcs)
     pcl_pattern_t *pptrn = 0;
     int code = 0;
 
+#ifdef DEBUG
+    if (gs_debug_c('i')) {
+        pcl_debug_dump_data(pcs->memory, arg_data(pargs), uint_arg(pargs));
+    }
+#endif
+
     if (count < 8)
         return e_Range;
 

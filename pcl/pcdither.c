@@ -67,6 +67,12 @@ download_dither_matrix(pcl_args_t * pargs, pcl_state_t * pcs)
     int code = 0;
     byte *bp;
 
+#ifdef DEBUG
+    if (gs_debug_c('i')) {
+        pcl_debug_dump_data(pcs->memory, arg_data(pargs), uint_arg(pargs));
+    }
+#endif
+
     if (pcs->raster_state.graphics_mode)
         return 0;
     /* check for legitimate parameter values */

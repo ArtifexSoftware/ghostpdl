@@ -74,6 +74,12 @@ pcl_define_symbol_set(pcl_args_t * pargs, pcl_state_t * pcs)
     pcl_symbol_set_t *symsetp;
     pl_glyph_vocabulary_t gv;
 
+#ifdef DEBUG
+    if (gs_debug_c('i')) {
+        pcl_debug_dump_data(pcs->memory, arg_data(pargs), uint_arg(pargs));
+    }
+#endif
+
 #define psm_header_size 18
     if (count < psm_header_size)
         return e_Range;

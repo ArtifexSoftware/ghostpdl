@@ -412,7 +412,7 @@ hpgl_PE(hpgl_args_t * pargs, hpgl_state_t * pgls)
                     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
                 return 0;
             case ':':
-                if_debug0m('I', pgls->memory, "\n  PE SP");
+                if_debug0m('i', pgls->memory, "\n  PE SP");
                 {
                     int32 pen;
                     hpgl_pe_args_ret_t ret = pe_args(pgls->memory, pargs, 1);
@@ -435,11 +435,11 @@ hpgl_PE(hpgl_args_t * pargs, hpgl_state_t * pgls)
                 p = pargs->source.ptr;
                 continue;
             case '<':
-                if_debug0m('I', pgls->memory, "\n  PE PU");
+                if_debug0m('i', pgls->memory, "\n  PE PU");
                 pargs->phase |= pe_pen_up;
                 continue;
             case '>':
-                if_debug0m('I', pgls->memory, "\n  PE PD");
+                if_debug0m('i', pgls->memory, "\n  PE PD");
                 {
                     int32 fbits;
                     hpgl_pe_args_ret_t ret = pe_args(pgls->memory, pargs, 1);
@@ -458,11 +458,11 @@ hpgl_PE(hpgl_args_t * pargs, hpgl_state_t * pgls)
                 p = pargs->source.ptr;
                 continue;
             case '=':
-                if_debug0m('I', pgls->memory, "  PE ABS");
+                if_debug0m('i', pgls->memory, "  PE ABS");
                 pargs->phase |= pe_absolute;
                 continue;
             case '7':
-                if_debug0m('I', pgls->memory, "\n  PE 7bit");
+                if_debug0m('i', pgls->memory, "\n  PE 7bit");
                 pargs->phase |= pe_7bit;
                 continue;
             case ESC:
@@ -567,7 +567,7 @@ pe_args(const gs_memory_t * mem, hpgl_args_t * pargs, int count)
             }
         }
         VALUE = (VALUE & 1 ? -(VALUE >> 1) : VALUE >> 1);
-        if_debug1m('I', mem, "  [%ld]", (long)VALUE);
+        if_debug1m('i', mem, "  [%ld]", (long)VALUE);
     }
     pargs->source.ptr = p;
     return pe_okay;

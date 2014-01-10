@@ -1191,6 +1191,12 @@ set_driver_configuration(pcl_args_t * pargs,    /* ignored */
     driver_configuration_t *driver =
         (driver_configuration_t *) arg_data(pargs);
 
+#ifdef DEBUG
+    if (gs_debug_c('i')) {
+        pcl_debug_dump_data(pcs->memory, arg_data(pargs), uint_arg(pargs));
+    }
+#endif
+
     if (pcs->personality == pcl5e)
         return 0;
 
