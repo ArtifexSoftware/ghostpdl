@@ -677,6 +677,7 @@ static void
 compute_subimage(int width, int height, int raster, byte *base,
                  int x0, int y0, long MaxClipPathSize, int *x1, int *y1)
 {
+    int bytes = (width + 7) / 8;
     /* Returns a semiopen range : [x0:x1)*[y0:y1). */
     if (x0 != 0) {
         long count;
@@ -704,7 +705,7 @@ compute_subimage(int width, int height, int raster, byte *base,
             count1 -= count;
             yy = y + 1;
             for (; yy < height; yy++)
-                if (memcmp(base + raster * y, base + raster * yy, raster))
+                if (memcmp(base + raster * y, base + raster * yy, bytes))
                     break;
             y = yy;
 
@@ -763,14 +764,14 @@ static int
 mask_to_clip(gx_device_pdf *pdev, int width, int height,
              int raster, byte *base, int x0, int y0, int x1, int y1)
 {
-    int y, yy, code = 0;
+    int y, yy, code = 0, bytes = (width + 7) / 8;
     bool has_segments = false;
 
     for (y = y0; y < y1 && code >= 0;) {
         yy = y + 1;
         if (x0 == 0) {
         for (; yy < y1; yy++)
-            if (memcmp(base + raster * y, base + raster * yy, raster))
+            if (memcmp(base + raster * y, base + raster * yy, bytes))
                 break;
         }
         code = image_line_to_clip(pdev, base + raster * y, x0, x1, y, yy, has_segments);
