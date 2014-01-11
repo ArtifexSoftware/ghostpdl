@@ -84,12 +84,33 @@ static void sjpx_warning_callback(const char *msg, void *ptr)
 	dlprintf1("openjpeg warning: %s", msg);
 }
 
-/* initialize the stream.
-   this involves allocating the stream and image structures, and
+/* initialize the stream */
+static int
+s_opjd_init(stream_state * ss)
+{
+    stream_jpxd_state *const state = (stream_jpxd_state *) ss;
+    state->codec = NULL;
+
+    state->image = NULL;
+    state->sb.data= NULL;
+    state->sb.size = 0;
+    state->sb.pos = 0;
+    state->sb.fill = 0;
+    state->out_offset = 0;
+    state->img_offset = 0;
+    state->pdata = NULL;
+    state->sign_comps = NULL;
+    state->stream = NULL;
+
+    return 0;
+}
+
+/* setting the codec format,
+   allocating the stream and image structures, and
    initializing the decoder.
  */
 static int
-s_opjd_init(stream_state * ss)
+s_opjd_set_codec_format(stream_state * ss, OPJ_CODEC_FORMAT format)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
     opj_dparameters_t parameters;	/* decompression parameters */
@@ -98,7 +119,7 @@ s_opjd_init(stream_state * ss)
     opj_set_default_decoder_parameters(&parameters);
 
     /* get a decoder handle */
-    state->codec = opj_create_decompress(OPJ_CODEC_JP2);
+    state->codec = opj_create_decompress(format);
     if (state->codec == NULL)
         return_error(gs_error_VMerror);
 
@@ -129,16 +150,6 @@ s_opjd_init(stream_state * ss)
     opj_stream_set_read_function(state->stream, stream_read);
     opj_stream_set_skip_function(state->stream, stream_skip);
     opj_stream_set_seek_function(state->stream, stream_seek);
-
-    state->image = NULL;
-    state->sb.data= NULL;
-    state->sb.size = 0;
-    state->sb.pos = 0;
-    state->sb.fill = 0;
-    state->out_offset = 0;
-    state->img_offset = 0;
-    state->pdata = NULL;
-    state->sign_comps = NULL;
 
     return 0;
 }
@@ -526,14 +537,21 @@ s_opjd_process(stream_state * ss, stream_cursor_read * pr,
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
     long in_size = pr->limit - pr->ptr;
 
-    if (state->codec == NULL)
-	return ERRC;
-
     if (in_size > 0) 
     {
         /* buffer available data */
         int code = s_opjd_accumulate_input(state, pr);
         if (code < 0) return code;
+
+        if (state->codec == NULL) {
+            /* state->sb.size is non-zero after successful
+               accumulate_input(); 1 is probably extremely rare */
+            if (state->sb.data[0] == 0xFF && ((state->sb.size == 1) || (state->sb.data[1] == 0x4F)))
+                code = s_opjd_set_codec_format(ss, OPJ_CODEC_J2K);
+            else
+                code = s_opjd_set_codec_format(ss, OPJ_CODEC_JP2);
+            if (code < 0) return code;
+        }
     }
 
     if (last == 1) 
@@ -573,6 +591,10 @@ static void
 s_opjd_release(stream_state *ss)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
+
+    /* empty stream or failed to accumulate */
+    if (state->codec == NULL)
+        return;
 
     /* free image data structure */
     if (state->image)
