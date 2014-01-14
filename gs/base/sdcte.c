@@ -266,22 +266,8 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
     return ERRC;
 }
 
-/* Release the stream */
-static void
-s_DCTE_release(stream_state * st)
-{
-    stream_DCT_state *const ss = (stream_DCT_state *) st;
-
-    gs_jpeg_destroy(ss);
-    if (ss->data.common)
-        gs_free_object(ss->data.common->memory, ss->data.compress,
-                       "s_DCTE_release");
-    /* Switch the template pointer back in case we still need it. */
-    st->templat = &s_DCTE_template;
-}
-
 /* Stream template */
 const stream_template s_DCTE_template =
-{&st_DCT_state, s_DCTE_init, s_DCTE_process, 1000, 4000, s_DCTE_release,
+{&st_DCT_state, s_DCTE_init, s_DCTE_process, 1000, 4000, NULL,
  s_DCTE_set_defaults
 };

@@ -19,6 +19,12 @@
 #include "jpeglib_.h"
 #include "strimpl.h"
 #include "sdct.h"
+#include "sjpeg.h"
+
+extern const stream_template s_DCTE_template;
+extern const stream_template s_DCTD_template;
+
+static void stream_dct_finalize(const gs_memory_t *cmem, void *vptr);
 
 public_st_DCT_state();
 
@@ -39,4 +45,32 @@ s_DCT_set_defaults(stream_state * st)
     /* Clear pointers */
     ss->Markers.data = 0;
     ss->Markers.size = 0;
+}
+
+static void
+stream_dct_finalize(const gs_memory_t *cmem, void *vptr)
+{
+    stream_state *const st = vptr;
+    stream_DCT_state *const ss = (stream_DCT_state *) st;
+    (void)cmem; /* unused */
+
+    if (st->templat->process == s_DCTE_template.process) {
+        gs_jpeg_destroy(ss);
+        if (ss->data.common)
+            gs_free_object(ss->data.common->memory, ss->data.compress,
+                           "s_DCTE_release");
+        /* Switch the template pointer back in case we still need it. */
+        st->templat = &s_DCTE_template;
+    }
+    else {
+        gs_jpeg_destroy(ss);
+        if (ss->data.decompress->scanline_buffer != NULL)
+            gs_free_object(gs_memory_stable(ss->data.common->memory),
+                           ss->data.decompress->scanline_buffer,
+                           "s_DCTD_release(scanline_buffer)");
+        gs_free_object(ss->data.common->memory, ss->data.decompress,
+                       "s_DCTD_release");
+        /* Switch the template pointer back in case we still need it. */
+        st->templat = &s_DCTD_template;
+    }
 }

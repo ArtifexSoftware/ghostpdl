@@ -294,6 +294,9 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
     st = s_alloc_state(mem, templat->stype, "setup_image_compression");
     if (st == 0)
         return_error(gs_error_VMerror);
+
+    st->templat = templat;
+
     if (templat->set_defaults)
         (*templat->set_defaults) (st);
     if (templat == &s_CFE_template) {
@@ -322,6 +325,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
                 code = gs_note_error(gs_error_VMerror);
                 goto fail;
             }
+            st->templat = templat;
             if (templat->set_defaults)
                 (*templat->set_defaults) (st);
             {
@@ -708,6 +712,8 @@ psdf_setup_compression_chooser(psdf_binary_writer *pbw, gx_device_psdf *pdev,
 
     if (ss == 0)
         return_error(gs_error_VMerror);
+    ss->templat = &s_compr_chooser_template;
+
     pbw->memory = pdev->memory;
     pbw->strm = pdev->strm; /* just a stub - will not write to it. */
     pbw->dev = pdev;

@@ -1513,7 +1513,7 @@ sdcparam_h=$(GLSRC)sdcparam.h
 sdctc_=$(GLOBJ)sdctc.$(OBJ) $(GLOBJ)sjpegc.$(OBJ)
 
 $(GLOBJ)sdctc.$(OBJ) : $(GLSRC)sdctc.c $(AK) $(stdio__h) $(jpeglib__h)\
- $(strimpl_h) $(sdct_h) $(MAKEDIRS)
+ $(strimpl_h) $(sdct_h) $(sjpeg_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)sdctc.$(OBJ) $(C_) $(GLSRC)sdctc.c
 
 $(GLOBJ)sjpegc_1.$(OBJ) : $(GLSRC)sjpegc.c $(AK) $(stdio__h) $(string__h)\
@@ -1523,7 +1523,7 @@ $(GLOBJ)sjpegc_1.$(OBJ) : $(GLSRC)sjpegc.c $(AK) $(stdio__h) $(string__h)\
 
 $(GLOBJ)sjpegc_0.$(OBJ) : $(GLSRC)sjpegc.c $(AK) $(stdio__h) $(string__h)\
  $(gx_h) $(jerror__h) $(jpeglib__h) $(gconfig__h) $(JSRCDIR)$(D)jmemsys.h\
- $(gserrors_h) $(sjpeg_h) $(sdct_h) $(strimpl_h) $(MAKEDIRS)
+ $(gserrors_h) $(sjpeg_h) $(sdct_h) $(strimpl_h) $(gsmchunk_h) $(MAKEDIRS)
 	$(GLJCC) $(GLO_)sjpegc_0.$(OBJ) $(C_) $(GLSRC)sjpegc.c
 
 $(GLOBJ)sjpegc.$(OBJ) : $(GLOBJ)sjpegc_$(SHARE_JPEG).$(OBJ)

@@ -26,24 +26,20 @@
 /* ------ DCT filters ------ */
 
 /*
- * We don't want to allocate JPEG's private data directly from
- * the C heap, but we must allocate it as immovable; and to avoid
- * garbage collection issues, we must keep GC-traceable pointers
- * to every block allocated.
- */
-typedef struct jpeg_block_s jpeg_block_t;
-struct jpeg_block_s {
-    jpeg_block_t *next;
-    void *data;
-};
-#define private_st_jpeg_block()	/* in sjpegc.c */\
-  gs_private_st_ptrs2(st_jpeg_block, jpeg_block_t, "jpeg_block_t",\
-    jpeg_block_enum_ptrs, jpeg_block_reloc_ptrs, next, data)
-
-/*
  * Define the stream state.
  * The jpeg_xxx_data structs are allocated in immovable memory
  * to simplify use of the IJG library.
+ */
+/* The pointer "blocks" has been replaced with "dummy" as it is no longer needed,
+ * but "dummy" is there in its place to maintain consistency in allocations
+ * between the decode and encode filters: both are allocated with alloc_struct
+ * (which is used to allocate structures with pointers known to the garbage collector),
+ * removing "dummy" would mean alloc_struct for decoding filters, and alloc_bytes
+ * for encoding filters (with no pointers known to the garbage collector).
+ *
+ * dummy can be enumerated/reloc'ed by the garbage collection but as
+ * dummy == NULL *always*
+ * the garbage collector will just skip over it.
  */
 #define jpeg_stream_data_common\
                 /* We put a copy of the stream template here, because */\
@@ -51,8 +47,9 @@ struct jpeg_block_s {
         stream_template templat;\
         struct jpeg_error_mgr err;\
         gsfix_jmp_buf exit_jmpbuf;\
-        gs_memory_t *memory;	/* heap for library allocations */\
-        jpeg_block_t *blocks;   /* ptr to allocated data block list */\
+        gs_memory_t *memory;	/* heap */\
+        gs_memory_t *cmem;	/* chunk allocator for library allocations */\
+        byte *dummy;   /* see comment above */\
                 /* The following are documented in Adobe TN 5116. */\
         int Picky;		/* 0 or 1 */\
         int Relax		/* 0 or 1 */
@@ -66,7 +63,7 @@ typedef struct jpeg_stream_data_s {
 BEGIN\
   (pdata)->Picky = 0;\
   (pdata)->Relax = 0;\
-  (pdata)->blocks = 0;\
+  (pdata)->dummy = 0;\
 END
 
 typedef struct jpeg_compress_data_s {
@@ -81,7 +78,7 @@ typedef struct jpeg_compress_data_s {
 extern_st(st_jpeg_compress_data);
 #define public_st_jpeg_compress_data()	/* in sdcte.c */\
   gs_public_st_ptrs1(st_jpeg_compress_data, jpeg_compress_data,\
-    "JPEG compress data", jpeg_compress_data_enum_ptrs, jpeg_compress_data_reloc_ptrs, blocks)
+    "JPEG compress data", jpeg_compress_data_enum_ptrs, jpeg_compress_data_reloc_ptrs, dummy)
 
 typedef struct jpeg_decompress_data_s {
     jpeg_stream_data_common;
@@ -99,7 +96,7 @@ typedef struct jpeg_decompress_data_s {
 #define private_st_jpeg_decompress_data()	/* in zfdctd.c */\
   gs_private_st_ptrs2(st_jpeg_decompress_data, jpeg_decompress_data,\
     "JPEG decompress data", jpeg_decompress_data_enum_ptrs,\
-    jpeg_decompress_data_reloc_ptrs, blocks, scanline_buffer)
+    jpeg_decompress_data_reloc_ptrs, dummy, scanline_buffer)
 
 /* The stream state itself.  This is kept in garbage-collectable memory. */
 typedef struct stream_DCT_state_s {
@@ -134,8 +131,8 @@ typedef struct stream_DCT_state_s {
 /* the encoding and decoding filters. */
 extern_st(st_DCT_state);
 #define public_st_DCT_state()	/* in sdctc.c */\
-  gs_public_st_const_strings1_ptrs1(st_DCT_state, stream_DCT_state,\
-    "DCTEncode/Decode state", dct_enum_ptrs, dct_reloc_ptrs, Markers, data.common)
+  gs_public_st_const_strings1_ptrs1_final(st_DCT_state, stream_DCT_state,\
+    "DCTEncode/Decode state", dct_enum_ptrs, dct_reloc_ptrs, stream_dct_finalize, Markers, data.common)
 /*
  * NOTE: the client *must* invoke the set_defaults procedure in the
  * template before calling the init procedure.

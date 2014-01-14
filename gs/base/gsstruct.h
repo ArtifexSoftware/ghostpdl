@@ -970,6 +970,16 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 #define gs_private_st_const_strings1_ptrs1(stname, stype, sname, penum, preloc, e1, e2)\
   gs__st_const_strings1_ptrs1(private_st, stname, stype, sname, penum, preloc, e1, e2)
 
+#define gs__st_const_strings1_ptrs1_final(scope_st, stname, stype, sname, penum, preloc, pfinal, e1, e2)\
+  BASIC_PTRS(penum) {\
+    GC_CONST_STRING_ELT(stype, e1), GC_OBJ_ELT(stype, e2)\
+  };\
+  gs__st_basic_final(scope_st, stname, stype, sname, penum, preloc, pfinal)
+#define gs_public_st_const_strings1_ptrs1_final(stname, stype, sname, penum, preloc, pfinal, e1, e2)\
+  gs__st_const_strings1_ptrs1_final(public_st, stname, stype, sname, penum, preloc, pfinal, e1, e2)
+#define gs_private_st_const_strings1_ptrs1_final(stname, stype, sname, penum, preloc, e1, e2)\
+  gs__st_const_strings1_ptrs1_final(private_st, stname, stype, sname, penum, preloc, pfinal, e1, e2)
+
         /* Structures with 1 const string and 4 pointers. */
 
 #define gs__st_strings1_ptrs4(scope_st, stname, stype, sname, penum, preloc, e1, e2, e3, e4, e5)\

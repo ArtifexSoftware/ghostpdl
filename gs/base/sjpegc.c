@@ -24,6 +24,7 @@
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"
+#include "gsmchunk.h"
 
 /*
   Ghostscript uses a non-public interface to libjpeg in order to
@@ -73,8 +74,6 @@ jpeg_mem_term(j_common_ptr cinfo);
 #include "jmemsys.h"		/* for prototypes */
 #endif
 #endif /* SHAREJPEG == 0 */
-
-private_st_jpeg_block();
 
 /*
  * Error handling routines (these replace corresponding IJG routines from
@@ -199,42 +198,17 @@ cinfo2jcd(j_common_ptr cinfo)
 static void *
 jpeg_alloc(j_common_ptr cinfo, size_t size, const char *info)
 {
-    jpeg_compress_data *jcd = cinfo2jcd(cinfo);
-    gs_memory_t *mem = jcd->memory;
+    gs_memory_t *mem = cinfo2jcd(cinfo)->cmem;
 
-    jpeg_block_t *p = gs_alloc_struct_immovable(mem, jpeg_block_t,
-                        &st_jpeg_block, "jpeg_alloc(block)");
-    void *data = gs_alloc_bytes_immovable(mem, size, info);
-
-    if (p == 0 || data == 0) {
-        gs_free_object(mem, data, info);
-        gs_free_object(mem, p, "jpeg_alloc(block)");
-        return 0;
-    }
-    p->data = data;
-    p->next = jcd->blocks;
-    jcd->blocks = p;
-    return data;
+    return(gs_alloc_bytes(mem, size, info));
 }
 
 static void
 jpeg_free(j_common_ptr cinfo, void *data, const char *info)
 {
-    jpeg_compress_data *jcd = cinfo2jcd(cinfo);
-    gs_memory_t *mem = jcd->memory;
-    jpeg_block_t  *p  =  jcd->blocks;
-    jpeg_block_t **pp = &jcd->blocks;
+    gs_memory_t *mem = cinfo2jcd(cinfo)->cmem;
 
     gs_free_object(mem, data, info);
-    while(p && p->data != data)
-      { pp = &p->next;
-        p = p->next;
-      }
-    if(p == 0)
-      lprintf1("Freeing unrecorded JPEG data 0x%lx!\n", (ulong)data);
-    else
-      *pp = p->next;
-    gs_free_object(mem, p, "jpeg_free(block)");
 }
 
 void *
@@ -278,12 +252,24 @@ jpeg_open_backing_store(j_common_ptr cinfo, backing_store_ptr info,
 long
 jpeg_mem_init(j_common_ptr cinfo)
 {
+    jpeg_compress_data *jcd = cinfo2jcd(cinfo);
+    gs_memory_t *mem = jcd->memory->non_gc_memory;
+    int code = 0;
+    gs_memory_t *cmem = NULL;
+
+    code = gs_memory_chunk_wrap(&(cmem), mem);
+    if (code != 0) {
+        return (code);
+    }
+    jcd->cmem = cmem;
     return 0;			/* just set max_memory_to_use to 0 */
 }
 
 void
 jpeg_mem_term(j_common_ptr cinfo)
 {
-    /* no work */
+    jpeg_compress_data *jcd = cinfo2jcd(cinfo);
+    gs_memory_chunk_release(jcd->cmem);
+    jcd->cmem = NULL;
 }
 #endif /* SHAREJPEG == 0 */
