@@ -106,6 +106,10 @@ typedef struct dsc_data_s {
 static void dsc_finalize(const gs_memory_t *cmem, void *vptr);
 gs_private_st_simple_final(st_dsc_data_t, dsc_data_t, "dsc_data_struct", dsc_finalize);
 
+static void *zDSC_memalloc (size_t size, void *closure_data);
+static void zDSC_memfree(void *ptr, void *closure_data);
+
+
 /* Define the key name for storing the instance pointer in a dictionary. */
 static const char * const dsc_dict_name = "DSC_struct";
 
@@ -120,6 +124,20 @@ dsc_error_handler(void *caller_data, CDSC *dsc, unsigned int explanation,
                   const char *line, unsigned int line_len)
 {
     return CDSC_OK;
+}
+
+static void *zDSC_memalloc (size_t size, void *closure_data)
+{
+    gs_memory_t *cmem = (gs_memory_t *)closure_data;
+
+    return(gs_alloc_bytes(cmem, size, "zDSC_memalloc: DSC parsing memory alloc"));
+}
+
+static void zDSC_memfree(void *ptr, void *closure_data)
+{
+    gs_memory_t *cmem = (gs_memory_t *)closure_data;
+
+    gs_free_object(cmem, ptr, "zDSC_memfree: DSC parsing memory free");
 }
 
 /*
@@ -140,7 +158,9 @@ zinitialize_dsc_parser(i_ctx_t *i_ctx_p)
     if (!data)
         return_error(e_VMerror);
     data->document_level = 0;
-    data->dsc_data_ptr = dsc_init((void *) "Ghostscript DSC parsing");
+
+    data->dsc_data_ptr = dsc_init_with_alloc((void *) "Ghostscript DSC parsing",
+                           zDSC_memalloc, zDSC_memfree, (void *)mem->non_gc_memory);
     if (!data->dsc_data_ptr)
         return_error(e_VMerror);
     dsc_set_error_function(data->dsc_data_ptr, dsc_error_handler);
