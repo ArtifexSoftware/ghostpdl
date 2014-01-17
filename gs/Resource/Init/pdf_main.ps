@@ -1796,8 +1796,18 @@ currentdict /PDF2PS_matrix_key undef
 /pdfshowpage_setpage {	% <pagedict> pdfshowpage_setpage <pagedict>
   6 dict begin		% for setpagedevice
         % Stack: pdfpagedict
+  % This comment is no longer true, and is maintained here for history only:
+  %
   % UseCIEColor is always true for PDF; see the comment in runpdf above
-  /UseCIEColor //true def
+  %
+  % We now test the page to see if it defines any Default* colour spaces and
+  % only set UseCIEColor if it does. This prevents a spurious warning from
+  % pdfwrite about not using UseCIEColor with pdfwrite.
+  %
+    pdfshowpage_detect_cspacesub {
+      /UseCIEColor //true def
+    } if
+
   /Orientation 0 def
   currentpagedevice
         % Stack: pdfpagedict currentpagedevicedict
@@ -2345,6 +2355,37 @@ currentdict /PDF2PS_matrix_key undef
 } bind def
 
 % ------ ColorSpace substitution support ------ %
+
+%
+% <pagedict> pdfshowpage_detect_cspacesub <pagedict> <boolean>
+%
+% this is used simply to detect whether the current page has any
+% Default* color spaces defined. If it does then we want pdfshowpage_setpage
+% to set UseCIEColor to true so that the Default* space is used. If the
+% page doesn't use any Default* spaces, then we *don't* want to set
+% UseCIEColor as that will confuse a warning in pdfwrite about
+% not using UseCIEColor with pdfwrite.
+%
+/pdfshowpage_detect_cspacesub {
+  //false
+  /DefaultGray 2 index /ColorSpace //rget exec {
+    resolvecolorspace csncomp 1 eq {
+      pop //true
+    } if
+  } if
+
+  /DefaultRGB 2 index /ColorSpace //rget exec {
+    resolvecolorspace csncomp 3 eq {
+      pop //true
+    } if
+  } if
+
+  /DefaultCMYK 2 index /ColorSpace //rget exec {
+    resolvecolorspace csncomp 4 eq {
+      pop //true
+    } if
+  } if
+} bind def
 
 %
 %  <pagedict>   pdfshowpage_setcspacesub   <pagedict>
