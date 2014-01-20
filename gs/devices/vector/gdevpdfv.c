@@ -940,13 +940,13 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 
     if (code < 0)
         return code;
-    code = pdf_alloc_resource(pdev, resourcePattern, gs_no_id, ppres, 0L);
+    code = pdf_alloc_resource(pdev, resourcePattern, gs_no_id, ppres, -1);
     if (code < 0)
         return code;
     pres = *ppres;
     cos_become(pres->object, cos_type_dict);
     pcd = (cos_dict_t *)pres->object;
-    code = pdf_alloc_resource(pdev, resourceShading, gs_no_id, &psres, 0L);
+    code = pdf_alloc_resource(pdev, resourceShading, gs_no_id, &psres, -1);
     if (code < 0)
         return code;
     psco = psres->object;

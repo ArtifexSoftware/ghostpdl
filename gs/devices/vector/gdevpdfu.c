@@ -1189,6 +1189,12 @@ nocheck(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *pres1)
 }
 
 /* Substitute a resource with a same one. */
+/* NB we cannot substitute resources which have already had an
+   id assigned to them, because they already have an entry in the
+   xref table. If we want to substiute a resource then it should
+   have been allocated with an initial id of -1.
+   (see pdf_alloc_resource)
+*/
 int
 pdf_substitute_resource(gx_device_pdf *pdev, pdf_resource_t **ppres,
         pdf_resource_type_t rtype,
@@ -1460,6 +1466,17 @@ pdf_begin_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id rid,
 }
 
 /* Allocate a resource, but don't open the stream. */
+/* If the passed in id 'id' is -1 then in pdf_alloc_aside
+   We *don't* reserve an object id (if its 0 or more we do).
+   This has important consequences; once an id is created we
+   can't 'cancel' it, it will always be written to the xref.
+   So if we want to not write duplicates we should create
+   the object with an 'id' of -1, and when we finish writing it
+   we should call 'pdf_substitute_resource'. If that finds a
+   duplicate then it will throw away the new one ands use the old.
+   If it doesn't find a duplicate then it will create an object
+   id for the new resource.
+*/
 int
 pdf_alloc_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id rid,
                    pdf_resource_t ** ppres, long id)
