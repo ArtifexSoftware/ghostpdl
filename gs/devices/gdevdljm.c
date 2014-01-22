@@ -82,6 +82,7 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     int penalty_from2to3 = strlen(from2to3);
     int penalty_from3to2 = strlen(from3to2);
     int paper_size = gdev_pcl_paper_size((gx_device *) pdev);
+    int page_orientation = gdev_pcl_page_orientation((gx_device *) pdev);
     int code = 0;
     bool dup = pdev->Duplex;
     bool dupset = pdev->Duplex_set >= 0;
@@ -109,6 +110,7 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
         fputs("\033E", prn_stream);	/* reset printer */
         /* If the printer supports it, set the paper size */
         /* based on the actual requested size. */
+        fprintf(prn_stream, "\033&l%dO", page_orientation);
         if (features & PCL_CAN_SET_PAPER_SIZE) {
             fprintf(prn_stream, "\033&l%dA", paper_size);
         }
@@ -140,18 +142,20 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     if ((features & PCL_HAS_DUPLEX) && dupset && dup) {
        /* We are printing duplex, so change margins as needed */
        if (( (pdev->PageCount/num_copies)%2)==0) {
+          fprintf(prn_stream, "\033&l%dO", page_orientation);
           if (features & PCL_CAN_SET_PAPER_SIZE) {
               fprintf(prn_stream, "\033&l%dA", paper_size);
           }
-          fputs("\033&l0o0l0E", prn_stream);
+          fputs("\033&l0l0E", prn_stream);
           fputs(odd_page_init, prn_stream);
        } else
           fputs(even_page_init, prn_stream);
     } else {
+        fprintf(prn_stream, "\033&l%dO", page_orientation);
         if (features & PCL_CAN_SET_PAPER_SIZE){
             fprintf(prn_stream, "\033&l%dA", paper_size);
         }
-        fputs("\033&l0o0l0E", prn_stream);
+        fputs("\033&l0l0E", prn_stream);
         fputs(odd_page_init, prn_stream);
     }
 

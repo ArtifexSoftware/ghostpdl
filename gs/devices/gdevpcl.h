@@ -50,6 +50,12 @@
 /* Get the paper size code, based on width and height. */
 int gdev_pcl_paper_size(gx_device *);
 
+#define PAGE_ORIENTATION_PORTRAIT     0
+#define PAGE_ORIENTATION_LANDSCAPE    1
+
+/* Get the page orientation, based on width and height. */
+int gdev_pcl_page_orientation(gx_device * dev);
+
 /* Color mapping procedures for 3-bit-per-pixel RGB printers */
 dev_proc_map_rgb_color(gdev_pcl_3bit_map_rgb_color);
 dev_proc_map_color_rgb(gdev_pcl_3bit_map_color_rgb);

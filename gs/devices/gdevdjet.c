@@ -443,6 +443,8 @@ ljet4_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     char init[80];
 
     gs_sprintf(base_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
+    if (gdev_pcl_page_orientation((gx_device *) pdev) == PAGE_ORIENTATION_LANDSCAPE)
+        gs_sprintf(base_init, "\033&l0u140Z\033*r0F\033&u%dD", dots_per_inch);
     hpjet_make_init(pdev, init, base_init);
 
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,

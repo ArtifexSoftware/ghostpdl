@@ -34,6 +34,12 @@ gdev_pcl_paper_size(gx_device * dev)
     float new_width_difference, new_height_difference;
     int code = PAPER_SIZE_LETTER;
 
+    if (dev->width > dev->height) {
+        /* Landscape orientation, switch width and height to find paper size */
+        width_inches = dev->height / dev->y_pixels_per_inch;
+        height_inches = dev->width / dev->x_pixels_per_inch;
+    }
+
     /* Since we're telling the printer when to eject and start a new
        page, the paper height doesn't matter a great deal, as long as
        we ensure that it's at least as high as we want our pages to
@@ -86,6 +92,18 @@ gdev_pcl_paper_size(gx_device * dev)
 #undef CHECK_PAPER_SIZE
 
     return code;
+}
+
+/* ------ Get page orientation ------ */
+
+/* Get the page orientation, based on width and height. */
+int
+gdev_pcl_page_orientation(gx_device * dev)
+{
+    if (dev->height >= dev->width)
+        return PAGE_ORIENTATION_PORTRAIT;
+    else
+        return PAGE_ORIENTATION_LANDSCAPE;
 }
 
 /* ------ Color mapping ------ */
