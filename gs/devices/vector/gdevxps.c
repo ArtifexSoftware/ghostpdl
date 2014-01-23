@@ -749,6 +749,7 @@ xps_close_device(gx_device *dev)
     code = gdev_vector_close_file((gx_device_vector*)dev);
     if (code < 0)
         return gs_rethrow_code(code);
+
     if (strlen((const char *)xps->PrinterName)) {
         int reason;
         code = XPSPrint(xps->fname, (char *)xps->PrinterName, &reason);
@@ -795,8 +796,14 @@ xps_close_device(gx_device *dev)
                 case -14:
                     eprintf("ERROR: unexpected failure\n");
                     break;
+                case -15:
+                case -16:
+                    eprintf("ERROR: XpsPrint.dll does not exist or is missing a required method\n");
+                    break;
             }
+            return(gs_throw_code(gs_error_invalidaccess));
         }
+        return(0);
     }
 #else
     return gdev_vector_close_file((gx_device_vector*)dev);

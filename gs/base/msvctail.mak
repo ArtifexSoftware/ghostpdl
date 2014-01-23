@@ -83,6 +83,9 @@ $(LIBCTR): $(TOP_MAKEFILES)
 	echo winspool.lib >>$(LIBCTR)
 	echo advapi32.lib >>$(LIBCTR)
 	echo ws2_32.lib >>$(LIBCTR)
+!if "$(XPSPRINT)"!=""
+	echo ole32.lib >>$(LIBCTR)
+!endif
 !endif
 
 # end of msvctail.mak

@@ -15,6 +15,19 @@
 #undef gs_note_error
 #define gs_note_error(error) return(error)
 
+typedef HRESULT (CALLBACK* StartXpsPrintJobType)(
+    /* [string][in] */ __RPC__in_string LPCWSTR printerName,
+    /* [string][in] */ __RPC__in_string LPCWSTR jobName,
+    /* [string][in] */ __RPC__in_string LPCWSTR outputFileName,
+    /* [in] */ __RPC__in HANDLE progressEvent,
+    /* [in] */ __RPC__in HANDLE completionEvent,
+    /* [size_is][in] */ __RPC__in_ecount_full(printablePagesOnCount) UINT8 *printablePagesOn,
+    /* [in] */ UINT32 printablePagesOnCount,
+    /* [out] */ __RPC__deref_out_opt IXpsPrintJob **xpsPrintJob,
+    /* [out] */ __RPC__deref_out_opt IXpsPrintJobStream **documentStream,
+    /* [out] */ __RPC__deref_out_opt IXpsPrintJobStream **printTicketStream
+);
+
 extern "C" int XPSPrint(char *FileName, char *PrinterName, int *result)
 {
     HRESULT hr = S_OK;
@@ -33,6 +46,28 @@ extern "C" int XPSPrint(char *FileName, char *PrinterName, int *result)
     IStream *pCapabilities;
     BSTR *pbstrErrorMessage = NULL;
     int code = 0;
+    StartXpsPrintJobType StartXpsPrintJobPtr = NULL;
+
+    HINSTANCE dllHandle = NULL;
+
+    /*
+      Loading the DLL at run-time makes life easier with the build
+      system (no need to link in the ".lib" file), and allows us to
+      use the same executable on old Windows systems (XP and earlier)
+      without XpsPrint.dll, and those with it (Vista and later).
+     */
+    if (!(dllHandle = LoadLibrary(TEXT("XpsPrint.dll"))))
+    {
+        *result = 0x80029C4A;
+        return -15;
+    }
+
+    StartXpsPrintJobPtr = (StartXpsPrintJobType)GetProcAddress(dllHandle, "StartXpsPrintJob");
+    if (!StartXpsPrintJobPtr)
+    {
+        *result = 0x80029C4A;
+        return -16;
+    }
 
     if (FAILED(hr = CoInitializeEx(0, COINIT_MULTITHREADED)))
     {
@@ -59,7 +94,7 @@ extern "C" int XPSPrint(char *FileName, char *PrinterName, int *result)
 
         code = MultiByteToWideChar(CP_ACP, 0, PrinterName, -1, MBStr, 64);
         if (code != 0) {
-            if (FAILED(hr = StartXpsPrintJob(
+            if (FAILED(hr = StartXpsPrintJobPtr(
                         (LPCWSTR)MBStr,
                         NULL,
                         NULL,
@@ -232,6 +267,7 @@ extern "C" int XPSPrint(char *FileName, char *PrinterName, int *result)
         completionEvent = NULL;
     }
 
+    (void)FreeLibrary(dllHandle);
     CoUninitialize();
 
     return code;

@@ -244,9 +244,65 @@ WIN32=0
 # We can build either 32-bit or 64-bit target on a 64-bit platform
 # but the location of the binaries differs. Would be nice if the
 # detection of the platform could be automatic.
-#!ifndef BUILD_SYSTEM
+!ifndef BUILD_SYSTEM
+!if "$(PROCESSOR_ARCHITEW6432)"=="AMD64" || "$(PROCESSOR_ARCHITECTURE)"=="AMD64"
+BUILD_SYSTEM=64
+PGMFILES=$(SYSTEMDRIVE)\Program Files
+PGMFILESx86=$(SYSTEMDRIVE)\Program Files (x86)
+!else
 BUILD_SYSTEM=32
-#!endif
+PGMFILES=$(SYSTEMDRIVE)\Program Files
+PGMFILESx86=$(SYSTEMDRIVE)\Program Files
+!endif
+!endif
+
+!ifndef MSWINSDKPATH
+!if exist ("$(PGMFILESx86)\Microsoft SDKs\Windows")
+!if exist ("$(PGMFILESx86)\Microsoft SDKs\Windows\v7.1A")
+MSWINSDKPATH=$(PGMFILESx86)\Microsoft SDKs\Windows\v7.1A
+!else
+!if exist ("$(PGMFILESx86)\Microsoft SDKs\Windows\v7.1")
+MSWINSDKPATH=$(PGMFILESx86)\Microsoft SDKs\Windows\v7.1
+!else
+!if exist ("$(PGMFILESx86)\Microsoft SDKs\Windows\v7.0A")
+MSWINSDKPATH=$(PGMFILESx86)\Microsoft SDKs\Windows\v7.0A
+!else
+!if exist ("$(PGMFILESx86)\Microsoft SDKs\Windows\v7.0")
+MSWINSDKPATH=$(PGMFILESx86)\Microsoft SDKs\Windows\v7.0
+!endif
+!endif
+!endif
+!endif
+!else
+!if exist ("$(PGMFILES)\Microsoft SDKs\Windows")
+!if exist ("$(PGMFILES)\Microsoft SDKs\Windows\v7.1A")
+MSWINSDKPATH=$(PGMFILES)\Microsoft SDKs\Windows\v7.1A
+!else
+!if exist ("$(PGMFILES)\Microsoft SDKs\Windows\v7.1")
+MSWINSDKPATH=$(PGMFILES)\Microsoft SDKs\Windows\v7.1
+!else
+!if exist ("$(PGMFILES)\Microsoft SDKs\Windows\v7.0A")
+MSWINSDKPATH=$(PGMFILES)\Microsoft SDKs\Windows\v7.0A
+!else
+!if exist ("$(PGMFILES)\Microsoft SDKs\Windows\v7.0")
+MSWINSDKPATH=$(PGMFILES)\Microsoft SDKs\Windows\v7.0
+!endif
+!endif
+!endif
+!endif
+!endif
+!endif
+!endif
+
+XPSPRINTCFLAGS=
+XPSPRINT=0
+
+!ifdef MSWINSDKPATH
+!if exist ("$(MSWINSDKPATH)\Include\XpsPrint.h")
+XPSPRINTCFLAGS=/DXPSPRINT=1 /I"$(MSWINSDKPATH)\Include"
+XPSPRINT=1
+!endif
+!endif
 
 # Define the name of the executable file.
 

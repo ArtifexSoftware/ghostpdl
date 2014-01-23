@@ -26,6 +26,7 @@ DEVF_=
 
 DEVCCFLAGS=$(I_)$(DEVI_)$(_I) $(I_)$(DEVVEC)$(_I) $(DEVF_)
 DEVCC=$(CC_) $(DEVCCFLAGS)
+XPSDEVCC=$(CC_) $(XPSPRINTCFLAGS) $(DEVCCFLAGS)
 
 DEVJCC=$(GLJCC)
 DEVCCSHARED=$(GLCCSHARED)
@@ -1210,7 +1211,7 @@ $(DD)xpswrite.dev : $(DEVS_MAK) $(xpswrite_) $(GDEV) $(GLD)vector.dev
 	$(ADDMOD) $(DD)xpswrite -include $(GLD)vector
 
 $(DEVOBJ)gdevxps.$(OBJ) : $(DEVVECSRC)gdevxps.c $(gx_h) $(gdevvec_h)
-	$(GLCC) $(I_)$(TI_)$(_I) $(GLO_)gdevxps.$(OBJ) $(C_) $(DEVVECSRC)gdevxps.c
+	$(XPSDEVCC) $(I_)$(TI_)$(_I) $(GLO_)gdevxps.$(OBJ) $(C_) $(DEVVECSRC)gdevxps.c
 
 ###### --------------------- Raster file formats --------------------- ######
 
