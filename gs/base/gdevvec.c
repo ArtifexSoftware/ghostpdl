@@ -984,8 +984,10 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
              * beginning of the file: changing the file name after writing
              * any pages should be an error.
              */
-            if (ofns.size > fname_size)
+            if (ofns.size > fname_size) {
+                eprintf1("\nERROR: Output filename too long (maximum %d bytes).\n", fname_size);
                 ecode = gs_error_limitcheck;
+            }
             else if (!bytes_compare(ofns.data, ofns.size,
                                     (const byte *)vdev->fname,
                                     strlen(vdev->fname))
