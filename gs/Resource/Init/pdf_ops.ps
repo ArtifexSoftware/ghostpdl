@@ -117,7 +117,12 @@ nodict readonly pop
       % of the PDF graphics state; see 4.4.1 of PDF reference 3rd ed.
       % Collecting the path with one ctm and re-playing it with another ctm
       % transforms the path exactly as PDF needs.
-      .getpath grestore newpath { exec } forall
+      {.getpath} stopped {
+      (   **** Warning: unable to preserve current path, probable degenerate CTM.\n) pdfformaterror
+      grestore newpath
+      }{
+      grestore newpath { exec } forall
+      } ifelse
       //false
     } {
       //true
@@ -615,7 +620,7 @@ end readonly def
 /settextposition {
                 % Update the TextMatrix translation.
   gsave TextSaveMatrix setmatrix
-  currentpoint TextRise sub TextMatrix 4 2 getinterval astore pop
+  {currentpoint} stopped not { TextRise sub TextMatrix 4 2 getinterval astore pop
                 % We would like to do "grestore currentpoint translate"
                 % here, but some PDF files set a singular text matrix
                 % (0 0 0 0 <x> <y> Tm), so we can't do this.
@@ -623,6 +628,10 @@ end readonly def
   grestore
   TextTempMatrix currentmatrix 4 2 getinterval astore pop
   TextTempMatrix setmatrix
+  } {
+      (   **** Warning: ignoring currentpoint error, probable degenerate CTM.\n) pdfformaterror
+    grestore
+  } ifelse
 } bdef
 
 /BT {
