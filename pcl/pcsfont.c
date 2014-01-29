@@ -808,13 +808,13 @@ pcl_alphanumeric_id_data(pcl_args_t * pargs, pcl_state_t * pcs)
     const alphanumeric_data_t *alpha_data =
         (const alphanumeric_data_t *)arg_data(pargs);
 
+    int string_id_size = (count - 1);   /* size of id data size - operation size */
+
 #ifdef DEBUG
     if (gs_debug_c('i')) {
         pcl_debug_dump_data(pcs->memory, arg_data(pargs), uint_arg(pargs));
     }
 #endif
-
-    int string_id_size = (count - 1);   /* size of id data size - operation size */
 
     if (count == 0)
         return 0;
