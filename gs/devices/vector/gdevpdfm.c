@@ -1361,6 +1361,42 @@ pdfmark_ARTICLE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     return 0;
 }
 
+/* EMBED pdfmark */
+static int
+pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+             const gs_matrix * pctm, const gs_param_string * objname)
+{
+    gs_param_string key;
+    cos_value_t value;
+    cos_dict_t *ddict;
+    int i, code;
+
+    if (pdev->CompatibilityLevel < 1.2)
+        return_error(gs_error_undefined);
+    if (!pdfmark_find_key("/Name", pairs, count, &key))
+        return_error(gs_error_rangecheck);
+    if (!pdev->EmbeddedFiles) {
+        pdev->EmbeddedFiles = cos_dict_alloc(pdev, "pdfmark_EMBED(EmbeddedFiles)");
+        if (pdev->EmbeddedFiles == 0)
+            return_error(gs_error_VMerror);
+        pdev->EmbeddedFiles->id = pdf_obj_ref(pdev);
+    }
+
+    code = pdf_make_named_dict(pdev, objname, &ddict, false);
+
+    if (code < 0)
+        return code;
+    for (i = 0; code >= 0 && i < count; i += 2)
+        if (!pdf_key_eq(&pairs[i], "/Name")
+            )
+            code = pdfmark_put_pair(ddict, &pairs[i]);
+    if (code < 0)
+        return code;
+    COS_OBJECT_VALUE(&value, ddict);
+
+    return cos_dict_put(pdev->EmbeddedFiles, key.data, key.size, &value);
+}
+
 /* DEST pdfmark */
 static int
 pdfmark_DEST(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
@@ -2311,6 +2347,7 @@ static const pdfmark_name mark_names[] =
     {"OUT",          pdfmark_OUT,         0},
     {"ARTICLE",      pdfmark_ARTICLE,     0},
     {"DEST",         pdfmark_DEST,        PDFMARK_NAMEABLE},
+    {"EMBED",        pdfmark_EMBED,       PDFMARK_NAMEABLE},
     {"PS",           pdfmark_PS,          PDFMARK_NAMEABLE},
     {"PAGES",        pdfmark_PAGES,       0},
     {"PAGE",         pdfmark_PAGE,        0},

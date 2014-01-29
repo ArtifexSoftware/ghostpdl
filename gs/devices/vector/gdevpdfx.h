@@ -136,6 +136,7 @@ typedef enum {
     resourceMetadata,
     resourceICC,
     resourceAnnotation,
+    resourceEmbeddedFiles,
     resourceNone        /* Special, used when this isn't a resource at all
                          * eg when we execute a resource we've just written, such as
                          * a Pattern.
@@ -698,6 +699,7 @@ struct gx_device_pdf_s {
     int outlines_open;
     pdf_article_t *articles;
     cos_dict_t *Dests;
+    cos_dict_t *EmbeddedFiles;
     byte fileID[16];
     /* Use a single time moment for all UUIDs to minimize an indeterminizm. */
     long uuid_time[2];
@@ -902,8 +904,8 @@ struct gx_device_pdf_s {
  m(34,PDFXBleedBoxToTrimBoxOffset.data) m(35, DSCEncodingToUnicode.data)\
  m(36,Identity_ToUnicode_CMaps[0]) m(37,Identity_ToUnicode_CMaps[1])\
  m(38,ResourceUsage) m(39,vgstack)\
- m(40, outline_levels)
-#define gx_device_pdf_num_ptrs 41
+ m(40, outline_levels) m(41, EmbeddedFiles)
+#define gx_device_pdf_num_ptrs 42
 #define gx_device_pdf_do_param_strings(m)\
     m(0, OwnerPassword) m(1, UserPassword) m(2, NoEncrypt)\
     m(3, DocumentUUID) m(4, InstanceUUID)

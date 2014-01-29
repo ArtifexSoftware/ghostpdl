@@ -933,6 +933,240 @@ cos_dict_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
     return 0;
 }
 
+static int find_last_dict_entry(const cos_dict_t *d, const cos_dict_element_t **element)
+{
+    const cos_dict_element_t *pcde = d->elements, *Last;
+    int code, length, length1, length2;
+
+    *element = 0L;
+
+    Last = pcde;
+    if (Last->key.data[0] == '/') {
+        length1 = Last->key.size - 1;
+    } else {
+        if (pcde->key.data[0] == '(') {
+            length1 = Last->key.size - 2;
+        } else {
+            return_error(gs_error_typecheck);
+        }
+    }
+
+    pcde = pcde->next;
+    while (pcde){
+        if (pcde->key.data[0] == '/') {
+            length2 = pcde->key.size - 1;
+        } else {
+            if (pcde->key.data[0] == '(') {
+                length2 = pcde->key.size - 2;
+            } else {
+                return_error(gs_error_typecheck);
+            }
+        }
+
+        if (length2 < length1)
+            length = length2;
+        else
+            length = length1;
+        code = strncmp((const char *)&pcde->key.data[1], (const char *)&Last->key.data[1], length);
+        if (code == 0) {
+            if (pcde->key.size > Last->key.size) {
+                Last = pcde;
+                length1 = length2;
+            }
+        } else if (code > 0) {
+            Last = pcde;
+            length1 = length2;
+        }
+        pcde = pcde->next;
+    }
+    *element = Last;
+    return 0;
+}
+
+static int find_first_dict_entry(const cos_dict_t *d, const cos_dict_element_t **element)
+{
+    const cos_dict_element_t *pcde = d->elements, *First;
+    int code, length, length1, length2;
+
+    *element = 0L;
+
+    First = pcde;
+    if (First->key.data[0] == '/') {
+        length1 = First->key.size - 1;
+    } else {
+        if (pcde->key.data[0] == '(') {
+            length1 = First->key.size - 2;
+        } else {
+            return_error(gs_error_typecheck);
+        }
+    }
+
+    pcde = pcde->next;
+    while (pcde){
+        if (pcde->key.data[0] == '/') {
+            length2 = pcde->key.size - 1;
+        } else {
+            if (pcde->key.data[0] == '(') {
+                length2 = pcde->key.size - 2;
+            } else {
+                return_error(gs_error_typecheck);
+            }
+        }
+
+        if (length2 < length1)
+            length = length2;
+        else
+            length = length1;
+        code = strncmp((const char *)&pcde->key.data[1], (const char *)&First->key.data[1], length);
+        if (code == 0) {
+            if (pcde->key.size < First->key.size) {
+                First = pcde;
+                length1 = length2;
+            }
+        } else if (code < 0) {
+            First = pcde;
+            length1 = length2;
+        }
+        pcde = pcde->next;
+    }
+    *element = First;
+    return 0;
+}
+
+static int find_next_dict_entry(const cos_dict_t *d, const cos_dict_element_t **element)
+{
+    const cos_dict_element_t *pcde = d->elements, *Current = *element, *Next = 0L;
+    int code, length, length1, length2, length3;
+
+    if (Current->key.data[0] == '/') {
+        length1 = Current->key.size - 1;
+    } else {
+        if (Current->key.data[0] == '(') {
+            length1 = Current->key.size - 2;
+        } else {
+            return_error(gs_error_typecheck);
+        }
+    }
+
+    while (pcde) {
+        if (pcde->key.data[0] == '/') {
+            length2 = pcde->key.size - 1;
+        } else {
+            if (pcde->key.data[0] == '(') {
+                length2 = pcde->key.size - 2;
+            } else {
+                return_error(gs_error_typecheck);
+            }
+        }
+
+        if (length2 < length1)
+            length = length2;
+        else
+            length = length1;
+        code = strncmp((const char *)&pcde->key.data[1], (const char *)&Current->key.data[1], length);
+        if (code > 0 || (code == 0 && length2 > length1)) {
+            if (Next) {
+                if (length3 < length2)
+                    length = length3;
+                else
+                    length = length2;
+                code = strncmp((const char *)&pcde->key.data[1], (const char *)&Next->key.data[1], length);
+                if (code < 0 || (code == 0 && length3 > length2)) {
+                    Next = pcde;
+                    if (Next->key.data[0] == '/') {
+                        length3 = pcde->key.size - 1;
+                    } else {
+                        if (Next->key.data[0] == '(') {
+                            length3 = pcde->key.size - 2;
+                        } else {
+                            return_error(gs_error_typecheck);
+                        }
+                    }
+                }
+            } else {
+                Next = pcde;
+                if (Next->key.data[0] == '/') {
+                    length3 = pcde->key.size - 1;
+                } else {
+                    if (Next->key.data[0] == '(') {
+                        length3 = pcde->key.size - 2;
+                    } else {
+                        return_error(gs_error_typecheck);
+                    }
+                }
+            }
+        }
+        pcde = pcde->next;
+    }
+    *element = Next;
+    return 0;
+}
+
+static int write_key_as_string(stream *s, const cos_dict_element_t *element)
+{
+    if (element->key.data[0] == '/') {
+        spputc(s, '(');
+        stream_write(s, &element->key.data[1], element->key.size - 1);
+        spputc(s, ')');
+    } else {
+        stream_write(s, element->key.data, element->key.size);
+    }
+    return 0;
+}
+
+int
+cos_write_dict_as_ordered_array(cos_object_t *pco, gx_device_pdf *pdev, pdf_resource_type_t type)
+{
+    stream *s;
+    int code;
+    const cos_dict_t *d;
+    const cos_dict_element_t *pcde, *First, *Last;
+
+    if (cos_type(pco) != cos_type_dict)
+        return_error(gs_error_typecheck);
+
+    d = (const cos_dict_t *)pco;
+
+    if (pco->id == 0 || pco->written)
+        return_error(gs_error_Fatal);
+    pdf_open_separate(pdev, pco->id, type);
+
+    s = pdev->strm;
+    pcde = d->elements;
+    if (!pcde){
+        stream_puts(s, "<<>>\n");
+        return 0;
+    }
+
+    code = find_first_dict_entry(d, &First);
+    if (code < 0)
+        return code;
+
+    code = find_last_dict_entry(d, &Last);
+    if (code < 0)
+        return code;
+
+    stream_puts(s, "<<\n/Limits [\n");
+    write_key_as_string(s, First);
+    if (First != Last) {
+        spputc(s, '\n');
+        write_key_as_string(s, Last);
+    }
+    stream_puts(s, "\n]\n");
+    stream_puts(s, "/Names [");
+    do {
+        stream_puts(s, "\n");
+        write_key_as_string(s, First);
+        cos_value_write_spaced(&First->value, pdev, true, -1);
+        find_next_dict_entry(d, &First);
+    } while (First);
+    stream_puts(s, "]\n>>\n");
+
+    pdf_end_separate(pdev, type);
+    pco->written = true;
+    return code;
+}
+
 /* Write/delete definitions of named objects. */
 /* This is a special-purpose facility for pdf_close. */
 int

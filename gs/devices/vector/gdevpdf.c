@@ -722,6 +722,7 @@ pdf_open(gx_device * dev)
     pdev->outlines_open = 0;
     pdev->articles = 0;
     pdev->Dests = 0;
+    pdev->EmbeddedFiles = 0;
     /* {global,local}_named_objects was initialized above */
     pdev->PageLabels = 0;
     pdev->PageLabels_current_page = 0;
@@ -2440,9 +2441,22 @@ pdf_close(gx_device * dev)
 
         /* Write named destinations.  (We can't free them yet.) */
 
-        if (pdev->Dests) {
-            pdf_record_usage(pdev, pdev->Dests->id, resource_usage_part9_structure);
-            COS_WRITE_OBJECT(pdev->Dests, pdev, resourceDests);
+        if (pdev->CompatibilityLevel < 1.2) {
+            if (pdev->Dests) {
+                pdf_record_usage(pdev, pdev->Dests->id, resource_usage_part9_structure);
+                COS_WRITE_OBJECT(pdev->Dests, pdev, resourceDests);
+            }
+        } else {
+            if (pdev->Dests) {
+                pdf_record_usage(pdev, pdev->Dests->id, resource_usage_part9_structure);
+                cos_write_dict_as_ordered_array((cos_object_t *)pdev->Dests, pdev, resourceDests);
+            }
+            /* Write Embedded files.  (We can't free them yet.) */
+
+            if (pdev->EmbeddedFiles) {
+                pdf_record_usage(pdev, pdev->EmbeddedFiles->id, resource_usage_part9_structure);
+                cos_write_dict_as_ordered_array((cos_object_t *)pdev->EmbeddedFiles, pdev, resourceEmbeddedFiles);
+            }
         }
 
         /* Write the PageLabel array */
@@ -2491,8 +2505,21 @@ pdf_close(gx_device * dev)
             pprintld1(s, "/Threads %ld 0 R\n", Threads_id);
             pdf_record_usage(pdev, Threads_id, resource_usage_part1_structure);
         }
-        if (pdev->Dests)
-            pprintld1(s, "/Dests %ld 0 R\n", pdev->Dests->id);
+        if (pdev->CompatibilityLevel < 1.2) {
+            if (pdev->Dests)
+                pprintld1(s, "/Dests %ld 0 R\n", pdev->Dests->id);
+            if (pdev->EmbeddedFiles)
+                pprintld1(s, "/EmbeddedFiles %ld 0 R\n", pdev->EmbeddedFiles->id);
+        } else {
+            if (pdev->Dests || pdev->EmbeddedFiles) {
+                stream_puts(s, "/Names <<\n");
+                if (pdev->Dests)
+                    pprintld1(s, "/Dests %ld 0 R\n", pdev->Dests->id);
+                if (pdev->EmbeddedFiles)
+                    pprintld1(s, "/EmbeddedFiles %ld 0 R\n", pdev->EmbeddedFiles->id);
+                stream_puts(s, ">>\n");
+            }
+        }
         if (pdev->PageLabels)
             pprintld1(s, "/PageLabels << /Nums  %ld 0 R >>\n",
                   pdev->PageLabels->id);
@@ -2502,6 +2529,10 @@ pdf_close(gx_device * dev)
         if (pdev->Dests) {
             COS_FREE(pdev->Dests, "pdf_close(Dests)");
             pdev->Dests = 0;
+        }
+        if (pdev->EmbeddedFiles) {
+            COS_FREE(pdev->EmbeddedFiles, "pdf_close(EmbeddFiles)");
+            pdev->EmbeddedFiles = 0;
         }
         if (pdev->PageLabels) {
             COS_FREE(pdev->PageLabels, "pdf_close(PageLabels)");

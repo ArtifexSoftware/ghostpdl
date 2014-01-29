@@ -208,6 +208,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* outlines_open */
  0,				/* articles */
  0,				/* Dests */
+ 0,				/* EmbeddedFiles */
  {0},				/* fileID */
          {0, 0},		/* uuid_time */
  0,				/* global_named_objects */

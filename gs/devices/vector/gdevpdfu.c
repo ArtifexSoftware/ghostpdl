@@ -725,6 +725,10 @@ pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
                 /* This should not be possible, not valid in PostScript */
                 pprintld1(s, "%%%%BeginResource: file (PDF Dests obj_%ld)\n", id);
                 break;
+            case resourceEmbeddedFiles:
+                /* This should not be possible, not valid in PostScript */
+                pprintld1(s, "%%%%BeginResource: file (PDF EmbeddedFiles obj_%ld)\n", id);
+                break;
             case resourceLabels:
                 /* This should not be possible, not valid in PostScript */
                 pprintld1(s, "%%%%BeginResource: file (PDF Page Labels obj_%ld)\n", id);
