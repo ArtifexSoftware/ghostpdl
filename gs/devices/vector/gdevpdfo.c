@@ -1148,10 +1148,8 @@ cos_write_dict_as_ordered_array(cos_object_t *pco, gx_device_pdf *pdev, pdf_reso
 
     stream_puts(s, "<<\n/Limits [\n");
     write_key_as_string(s, First);
-    if (First != Last) {
-        spputc(s, '\n');
-        write_key_as_string(s, Last);
-    }
+    stream_puts(s, "\n");
+    write_key_as_string(s, Last);
     stream_puts(s, "\n]\n");
     stream_puts(s, "/Names [");
     do {

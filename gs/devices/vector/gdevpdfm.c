@@ -1371,9 +1371,11 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     cos_dict_t *ddict;
     int i, code;
 
-    if (pdev->CompatibilityLevel < 1.2)
+    if (pdev->CompatibilityLevel < 1.4)
         return_error(gs_error_undefined);
     if (!pdfmark_find_key("/Name", pairs, count, &key))
+        return_error(gs_error_rangecheck);
+    if (!pdfmark_find_key("/FS", pairs, count, &key))
         return_error(gs_error_rangecheck);
     if (!pdev->EmbeddedFiles) {
         pdev->EmbeddedFiles = cos_dict_alloc(pdev, "pdfmark_EMBED(EmbeddedFiles)");
@@ -1382,19 +1384,13 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
         pdev->EmbeddedFiles->id = pdf_obj_ref(pdev);
     }
 
-    code = pdf_make_named_dict(pdev, objname, &ddict, false);
-
-    if (code < 0)
-        return code;
-    for (i = 0; code >= 0 && i < count; i += 2)
-        if (!pdf_key_eq(&pairs[i], "/Name")
-            )
-            code = pdfmark_put_pair(ddict, &pairs[i]);
-    if (code < 0)
-        return code;
-    COS_OBJECT_VALUE(&value, ddict);
-
-    return cos_dict_put(pdev->EmbeddedFiles, key.data, key.size, &value);
+    for (i = 0; code >= 0 && i < count; i += 2) {
+        if (pdf_key_eq(&pairs[i], "/FS")) {
+            return cos_dict_put_string(pdev->EmbeddedFiles, key.data, key.size,
+                               pairs[i+1].data, pairs[i+1].size);
+        }
+    }
+    return 0;
 }
 
 /* DEST pdfmark */

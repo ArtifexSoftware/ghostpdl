@@ -2508,15 +2508,13 @@ pdf_close(gx_device * dev)
         if (pdev->CompatibilityLevel < 1.2) {
             if (pdev->Dests)
                 pprintld1(s, "/Dests %ld 0 R\n", pdev->Dests->id);
-            if (pdev->EmbeddedFiles)
-                pprintld1(s, "/EmbeddedFiles %ld 0 R\n", pdev->EmbeddedFiles->id);
         } else {
             if (pdev->Dests || pdev->EmbeddedFiles) {
                 stream_puts(s, "/Names <<\n");
                 if (pdev->Dests)
-                    pprintld1(s, "/Dests %ld 0 R\n", pdev->Dests->id);
+                    pprintld1(s, "/Dests <</Kids [%ld 0 R]>>\n", pdev->Dests->id);
                 if (pdev->EmbeddedFiles)
-                    pprintld1(s, "/EmbeddedFiles %ld 0 R\n", pdev->EmbeddedFiles->id);
+                    pprintld1(s, "/EmbeddedFiles << /Kids [%ld 0 R]>>\n", pdev->EmbeddedFiles->id);
                 stream_puts(s, ">>\n");
             }
         }
