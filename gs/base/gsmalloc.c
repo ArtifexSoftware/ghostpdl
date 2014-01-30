@@ -585,6 +585,18 @@ gs_malloc_release(gs_memory_t *mem)
 
     if (mem == NULL)
         return;
+
+    /* Use gs_debug['a'] if gs_debug[':'] is set to dump the heap stats */
+    if (gs_debug[':']) {
+        void *temp;
+        char save_debug_a = gs_debug['a'];
+
+        gs_debug['a'] = 1;
+        temp = (char *)gs_alloc_bytes_immovable(mem, 8, "gs_malloc_release");
+        gs_debug['a'] = save_debug_a;
+        gs_free_object(mem, temp, "gs_malloc_release");
+    }
+
 #ifdef USE_RETRY_MEMORY_WRAPPER
     malloc_memory_default = gs_malloc_unwrap(mem);
 #else
