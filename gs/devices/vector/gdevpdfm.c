@@ -1373,9 +1373,9 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
     if (pdev->CompatibilityLevel < 1.4)
         return_error(gs_error_undefined);
-    if (!pdfmark_find_key("/Name", pairs, count, &key))
-        return_error(gs_error_rangecheck);
     if (!pdfmark_find_key("/FS", pairs, count, &key))
+        return_error(gs_error_rangecheck);
+    if (!pdfmark_find_key("/Name", pairs, count, &key))
         return_error(gs_error_rangecheck);
     if (!pdev->EmbeddedFiles) {
         pdev->EmbeddedFiles = cos_dict_alloc(pdev, "pdfmark_EMBED(EmbeddedFiles)");

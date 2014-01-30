@@ -1135,16 +1135,21 @@ cos_write_dict_as_ordered_array(cos_object_t *pco, gx_device_pdf *pdev, pdf_reso
     pcde = d->elements;
     if (!pcde){
         stream_puts(s, "<<>>\n");
+        pdf_end_separate(pdev, type);
         return 0;
     }
 
     code = find_first_dict_entry(d, &First);
-    if (code < 0)
+    if (code < 0) {
+        pdf_end_separate(pdev, type);
         return code;
+    }
 
     code = find_last_dict_entry(d, &Last);
-    if (code < 0)
+    if (code < 0) {
+        pdf_end_separate(pdev, type);
         return code;
+    }
 
     stream_puts(s, "<<\n/Limits [\n");
     write_key_as_string(s, First);
