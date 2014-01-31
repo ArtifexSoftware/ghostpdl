@@ -75,8 +75,19 @@ cov_write_page(gx_device_printer *pdev, FILE *file)
             k = (double)k_pix / total_pix;
 	    }
 
-        fprintf (file, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
-            c, m, y, k, code ? "ERROR" : "OK");
+        
+        if (IS_LIBCTX_STDOUT(pdev->memory, file)) {
+            outprintf(pdev->memory, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
+                c, m, y, k, code ? "ERROR" : "OK");
+        }
+        else if (IS_LIBCTX_STDERR(pdev->memory, file)) {
+            errprintf(pdev->memory, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
+                c, m, y, k, code ? "ERROR" : "OK");
+        }
+        else {
+            fprintf (file, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
+                c, m, y, k, code ? "ERROR" : "OK");
+        }
     }
 
     return 0;
@@ -134,8 +145,18 @@ static int cov_write_page_ink(gx_device_printer *pdev, FILE *file)
             k = (dk_pix*100) / (total_pix*255);
         }
 
-        fprintf (file, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
-            c, m, y, k, code ? "ERROR" : "OK");
+        if (IS_LIBCTX_STDOUT(pdev->memory, file)) {
+            outprintf(pdev->memory, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
+                c, m, y, k, code ? "ERROR" : "OK");
+        }
+        else if (IS_LIBCTX_STDERR(pdev->memory, file)) {
+            errprintf(pdev->memory, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
+                c, m, y, k, code ? "ERROR" : "OK");
+        }
+        else {
+            fprintf (file, "%8.5f %8.5f %8.5f %8.5f CMYK %s\n",
+                c, m, y, k, code ? "ERROR" : "OK");
+        }
     }
 
     return 0;

@@ -1152,8 +1152,8 @@ gdev_prn_open_printer_seekable(gx_device *pdev, bool binary_mode,
 
         if (seekable && !gp_fseekable(ppdev->file)) {
             errprintf(pdev->memory, "I/O Error: Output File \"%s\" must be seekable\n", ppdev->fname);
-            if (ppdev->file != pdev->memory->gs_lib_ctx->fstdout
-              && ppdev->file != pdev->memory->gs_lib_ctx->fstderr) {
+            if (!IS_LIBCTX_STDOUT(pdev->memory, ppdev->file)
+              && !IS_LIBCTX_STDERR(pdev->memory ,ppdev->file)) {
 
                 code = gx_device_close_output_file(pdev, ppdev->fname, ppdev->file);
                 if (code < 0)

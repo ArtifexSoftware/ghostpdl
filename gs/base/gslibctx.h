@@ -108,4 +108,7 @@ gs_memory_t * gs_lib_ctx_get_non_gc_memory_t(void);
 void gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
                         int dir_namelen);
 
+#define IS_LIBCTX_STDOUT(mem, f) (f == mem->gs_lib_ctx->fstdout)
+#define IS_LIBCTX_STDERR(mem, f) (f == mem->gs_lib_ctx->fstderr)
+
 #endif /* GSLIBCTX_H */
