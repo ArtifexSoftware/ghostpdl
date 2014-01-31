@@ -1291,10 +1291,10 @@ static int new_pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis
                             case ccs_LeaveColorUnchanged:
                                 code = write_color_unchanged(pdev, pis, pcc, &temp, psc, ppscc, used_process_color, pcs, pdc);
                                 break;
-                            case ccs_sRGB:
                             case ccs_UseDeviceIndependentColor:
                                 code = write_color_as_process(pdev, pis, pcs, pdc, used_process_color, ppscc, pcc);
                                 break;
+                            case ccs_sRGB:
                             default:
                                 code = convert_separation_alternate(pdev, pis, pcs, pdc, used_process_color, ppscc, pcc, NULL, false);
                                 break;
@@ -1311,10 +1311,10 @@ static int new_pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis
                             case ccs_LeaveColorUnchanged:
                                 code = write_color_unchanged(pdev, pis, pcc, &temp, psc, ppscc, used_process_color, pcs, pdc);
                                 break;
-                            case ccs_sRGB:
                             case ccs_UseDeviceIndependentColor:
                                 code = write_color_as_process(pdev, pis, pcs, pdc, used_process_color, ppscc, pcc);
                                 break;
+                            case ccs_sRGB:
                             default:
                                 code = convert_DeviceN_alternate(pdev, pis, pcs, pdc, used_process_color, ppscc, pcc, NULL, false);
                                 break;
@@ -1378,7 +1378,6 @@ static int new_pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis
                     case ccs_LeaveColorUnchanged:
                         code = write_color_unchanged(pdev, pis, pcc, &temp, psc, ppscc, used_process_color, pcs, pdc);
                         break;
-                    case ccs_sRGB:
                     case ccs_UseDeviceIndependentColor:
                             code = write_color_as_process_ICC(pdev, pis, pcs, pdc, psc, used_process_color, ppscc, pcc, &temp);
                         break;
@@ -1512,6 +1511,7 @@ static int new_pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis
                                 break;
                         }
                         break;
+                    case ccs_sRGB:
                     case ccs_RGB:
                         switch(csi2) {
                             case gs_color_space_index_DeviceGray:

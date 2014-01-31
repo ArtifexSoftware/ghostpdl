@@ -538,7 +538,6 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
             case ccs_UseDeviceIndependentColor:
             case ccs_UseDeviceIndependentColorForImages:
             case ccs_ByObjectType:
-            case ccs_sRGB:
                 break;
             case ccs_CMYK:
                 if (pdev->icc_struct)
@@ -558,6 +557,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                 if (ecode < 0)
                     goto fail;
                 break;
+            case ccs_sRGB:
             case ccs_RGB:
                 /* Only bother to do this if we didn't handle it above */
                 if (!pdev->params.ConvertCMYKImagesToRGB) {
@@ -576,7 +576,8 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     } else {
         if ((pdev->params.ColorConversionStrategy == ccs_CMYK &&
              strcmp(pdev->color_info.cm_name, "DeviceCMYK")) ||
-            (pdev->params.ColorConversionStrategy == ccs_sRGB &&
+            ((pdev->params.ColorConversionStrategy == ccs_sRGB ||
+             pdev->params.ColorConversionStrategy == ccs_sRGB) &&
               strcmp(pdev->color_info.cm_name, "DeviceRGB")) ||
             (pdev->params.ColorConversionStrategy == ccs_Gray &&
               strcmp(pdev->color_info.cm_name, "DeviceGray"))) {

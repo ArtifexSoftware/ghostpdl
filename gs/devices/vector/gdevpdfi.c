@@ -1301,7 +1301,6 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
             case ccs_LeaveColorUnchanged:
                 return 0;
                 break;
-            case ccs_sRGB:
             case ccs_UseDeviceIndependentColor:
                 return 2;
                 break;
@@ -1476,6 +1475,7 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                         break;
                 }
                 break;
+            case ccs_sRGB:
             case ccs_RGB:
                 switch(csi2) {
                     case gs_color_space_index_DeviceGray:
