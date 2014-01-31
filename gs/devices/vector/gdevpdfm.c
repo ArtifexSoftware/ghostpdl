@@ -1367,8 +1367,6 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
              const gs_matrix * pctm, const gs_param_string * objname)
 {
     gs_param_string key;
-    cos_value_t value;
-    cos_dict_t *ddict;
     int i, code;
 
     if (pdev->CompatibilityLevel < 1.4)
