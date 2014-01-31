@@ -514,8 +514,8 @@ const gx_device_pdf14_accum pdf14_accum_Gray = {
                     &st_pdf14_accum,
                     0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
                     0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
-                    3/*depth*/, 24/*depth*/, 0/*max_gray*/, 255/*max_color*/,
-                    1/*dither_grays*/, 256/*dither_colors*/,
+                    1/*ncomp*/, 8/*depth*/, 255/*max_gray*/, 0/*max_color*/,
+                    256/*dither_grays*/, 0/*dither_colors*/,
                     no_print_page),
     0/*save_p14dev*/
 };
@@ -529,7 +529,7 @@ const gx_device_pdf14_accum pdf14_accum_RGB = {
                     &st_pdf14_accum,
                     0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
                     0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
-                    3/*depth*/, 24/*depth*/, 0/*max_gray*/, 255/*max_color*/,
+                    3/*ncomp*/, 24/*depth*/, 0/*max_gray*/, 255/*max_color*/,
                     1/*dither_grays*/, 256/*dither_colors*/,
                     no_print_page),
     0/*save_p14dev*/
@@ -544,7 +544,7 @@ const gx_device_pdf14_accum pdf14_accum_CMYK = {
                     &st_pdf14_accum,
                     0/*width*/, 0/*height*/, 300/*xdpi*/, 300/*ydpi*/,
                     0/*lm*/, 0/*bm*/, 0/*rm*/, 0/*tm*/,
-                    3/*depth*/, 32/*depth*/, 0/*max_gray*/, 255/*max_color*/,
+                    4/*ncomp*/, 32/*depth*/, 0/*max_gray*/, 255/*max_color*/,
                     1/*dither_grays*/, 256/*dither_colors*/,
                     no_print_page),
     0/*save_p14dev*/
