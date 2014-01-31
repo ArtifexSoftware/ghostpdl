@@ -598,7 +598,7 @@ Pages of all documents in PDF collections are numbered sequentionally.
 
  <dl>
 <dt><code>-dPDFFitPage</code>
-<dd>Rather than selecting a PageSize given by the PDF MediaBox,
+<dd>Rather than selecting a PageSize given by the PDF MediaBox, BleedBox (see -dUseBleedBox),
 TrimBox (see -dUseTrimBox), ArtBox (see -dUseArtBox), or CropBox (see -dUseCropBox),
 the PDF file will be scaled to fit the current device page size
 (usually the default page size).
@@ -620,6 +620,16 @@ file's "screen" options.  If neither of these is specified, the output will
 use the screen options for any output device that doesn't have an
 <code>OutputFile</code> parameter, and the printer options for
 devices that do have this parameter.
+</dl>
+
+<dl>
+<dt><code>-dUseBleedBox</code>
+<dd>Sets the page size to the BleedBox rather than the MediaBox.
+defines the region to which the contents of the page should be
+clipped when output in a production environment. This may include
+any extra bleed area needed to accommodate the physical limitations
+of cutting, folding, and trimming equipment. The actual printed page
+may include printing marks that fall outside the bleed box.
 </dl>
 
 <dl>

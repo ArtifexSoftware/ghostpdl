@@ -1659,6 +1659,11 @@ end readonly def
 } bind def
 
 /get_any_box { % <pagedict> get_any_box <box name> <box>
+  //systemdict /UseBleedBox .knownget dup { and } if {
+    dup /BleedBox pget {
+      /BleedBox exch
+    } if
+  } if
   //systemdict /UseTrimBox .knownget dup { and } if {
     dup /TrimBox pget {
       /TrimBox exch
