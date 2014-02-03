@@ -144,15 +144,15 @@ gsapi_delete_instance(void *lib)
     if ((ctx != NULL)) {
         gs_main_instance *minst = get_minst_from_memory(ctx->memory);
 
-        /* Release the memory (frees up everything) */
-        gs_malloc_release(minst->heap);
-
         ctx->caller_handle = NULL;
         ctx->stdin_fn = NULL;
         ctx->stdout_fn = NULL;
         ctx->stderr_fn = NULL;
         ctx->poll_fn = NULL;
         minst->display = NULL;
+
+        /* Release the memory (frees up everything) */
+        gs_malloc_release(minst->heap);
 
 #ifndef GS_THREADSAFE
         --gsapi_instance_counter;
