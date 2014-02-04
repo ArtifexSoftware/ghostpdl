@@ -298,6 +298,7 @@ zip_new_info_node(gx_device_xps *xps_dev, const char *filename)
 {
     gx_device *dev = (gx_device *)xps_dev;
     gs_memory_t *mem = dev->memory;
+    int lenstr;
 
     /* NB should use GC */
     gx_device_xps_zinfo_t *info = 
@@ -322,7 +323,10 @@ zip_new_info_node(gx_device_xps *xps_dev, const char *filename)
         xps_dev->f2i_tail = f2i;
     }
 
-    f2i->filename = strdup(filename);
+    lenstr = strlen(filename);
+    f2i->filename = (char*)gs_alloc_bytes(mem->non_gc_memory, lenstr + 1, "zinfo_filename");
+    strcpy(f2i->filename, filename);
+        
     info->data.fp = 0;
     info->data.count = 0;
     if (gs_debug_c('_')) {
