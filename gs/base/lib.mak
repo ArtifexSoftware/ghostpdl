@@ -188,7 +188,7 @@ gxrplane_h=$(GLSRC)gxrplane.h
 gsrect_h=$(GLSRC)gsrect.h $(gxfixed_h)
 gxalloc_h=$(GLSRC)gxalloc.h $(gsalloc_h) $(gxobj_h)
 gxbitops_h=$(GLSRC)gxbitops.h $(gsbitops_h)
-gxcindex_h=$(GLSRC)gxcindex.h $(gsbitops_h)
+gxcindex_h=$(GLSRC)gxcindex.h $(gsbitops_h) $(stdint__h)
 gxfont42_h=$(GLSRC)gxfont42.h
 gstrans_h=$(GLSRC)gstrans.h $(gstparam_h) $(gxcomp_h) $(gsmatrix_h) $(gxblend_h)
 

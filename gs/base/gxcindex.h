@@ -19,6 +19,7 @@
 #ifndef gxcindex_INCLUDED
 #  define gxcindex_INCLUDED
 
+#include "stdint_.h"		/* for uint64_t and uint32_t */
 #include "gsbitops.h"		/* for sample_store macros */
 
 /*
@@ -54,11 +55,16 @@ typedef struct { ulong value[2]; } gx_color_index_data;
 
 /* Define the type for device color index (pixel value) data. */
 #ifdef GX_COLOR_INDEX_TYPE
+enum { ARCH_SIZEOF_GX_COLOR_INDEX__must_equal__sizeof_GX_COLOR_INDEX_TYPE = 1/!!(ARCH_SIZEOF_GX_COLOR_INDEX == sizeof(GX_COLOR_INDEX_TYPE)) };
 typedef GX_COLOR_INDEX_TYPE gx_color_index_data;
 #else
-/* this default must be kept in sync with the one in genarch.c
-   or ARCH_SIZEOF_GX_COLOR_INDEX will be incorrect */
-typedef ulong gx_color_index_data;
+/* Usually this is set by the makefile, but if not, set
+   it using the ARCH_SIZEOF_GX_COLOR_INDEX */
+#  if ARCH_SIZEOF_GX_COLOR_INDEX == 8
+      typedef uint64_t gx_color_index_data;
+#  else
+      typedef uint32_t gx_color_index_data;
+#  endif
 #endif
 
 #endif /* (!)TEST_CINDEX_STRUCT */

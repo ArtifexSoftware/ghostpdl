@@ -554,6 +554,14 @@ CFLAGS=$(CFLAGS) $(XCFLAGS) $(UNICODECFLAGS)
 # non standard devices or DeviceN process color model devices.
 USE_LARGE_COLOR_INDEX=1
 
+!if $(USE_LARGE_COLOR_INDEX) == 1
+# Definitions to force gx_color_index to 64 bits
+LARGEST_UINTEGER_TYPE=unsigned __int64
+GX_COLOR_INDEX_TYPE=$(LARGEST_UINTEGER_TYPE)
+
+CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
+!endif
+
 # -W3 generates too much noise.
 !ifndef WARNOPT
 WARNOPT=-W2
