@@ -2673,6 +2673,8 @@ pdf_close(gx_device * dev)
                 break;
             start_section = end_section + 1;
             end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
+            if (end_section < 0)
+                return end_section;
             pprintld2(s, "%ld %ld\n", start_section, end_section - start_section);
         } while (1);
 
