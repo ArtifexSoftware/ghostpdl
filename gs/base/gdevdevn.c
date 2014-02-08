@@ -392,8 +392,10 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     {
         break;
     } END_ARRAY_PARAM(sona, sone);
-    if (sona.data != 0 && sona.size > GX_DEVICE_COLOR_MAX_COMPONENTS)
+    if (sona.data != 0 && sona.size > GX_DEVICE_COLOR_MAX_COMPONENTS) {
+        param_signal_error(plist, "SeparationOrder", gs_error_rangecheck);
         return_error(gs_error_rangecheck);
+    }
 
     /* Get the SeparationColorNames */
     BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames",
@@ -401,8 +403,10 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     {
         break;
     } END_ARRAY_PARAM(scna, scne);
-    if (scna.data != 0 && scna.size > GX_DEVICE_MAX_SEPARATIONS)
+    if (scna.data != 0 && scna.size > GX_DEVICE_MAX_SEPARATIONS) {
+        param_signal_error(plist, "SeparationColorNames", gs_error_rangecheck);
         return_error(gs_error_rangecheck);
+    }
     /* Get the equivalent_cmyk_color_params -- array is N * 5 elements */
     BEGIN_ARRAY_PARAM(param_read_int_array, ".EquivCMYKColors",
                                         equiv_cmyk, equiv_cmyk.size, equiv_cmyk_e)
@@ -481,9 +485,16 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                 if ((comp_num = (*dev_proc(pdev, get_color_comp_index))
                                 (pdev, (const char *)sona.data[i].data,
                                 sona.data[i].size, SEPARATION_NAME)) < 0) {
+                    param_signal_error(plist, "SeparationOrder", gs_error_rangecheck);
                     return_error(gs_error_rangecheck);
                 }
                 pdevn_params->separation_order_map[i] = comp_num;
+                /* If the device enabled AUTO_SPOT_COLORS some separations may */
+                /* have been added. Adjust num_spots if so.                    */
+                if (num_spot != pdevn_params->separations.num_separations) {
+                    num_spot = pdevn_params->separations.num_separations;
+                    num_spot_changed = true;
+                }
             }
         }
         /*
@@ -501,8 +512,10 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             case 1:
                 break;
             case 0:
-                if (max_sep < 1 || max_sep > GX_DEVICE_COLOR_MAX_COMPONENTS)
+                if (max_sep < 1 || max_sep > GX_DEVICE_COLOR_MAX_COMPONENTS) {
+                    param_signal_error(plist, "MaxSeparations", gs_error_rangecheck);
                     return_error(gs_error_rangecheck);
+                }
         }
         /*
          * The PDF interpreter scans the resources for pages to try to
@@ -522,8 +535,10 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             case 1:
                 break;
             case 0:
-                if (page_spot_colors < -1)
+                if (page_spot_colors < -1) {
+                    param_signal_error(plist, "PageSpotColors", gs_error_rangecheck);
                     return_error(gs_error_rangecheck);
+                }
                 if (page_spot_colors > GX_DEVICE_COLOR_MAX_COMPONENTS - MAX_DEVICE_PROCESS_COLORS)
                     page_spot_colors = GX_DEVICE_COLOR_MAX_COMPONENTS - MAX_DEVICE_PROCESS_COLORS;
                     /* Need to leave room for the process colors in GX_DEVICE_COLOR_MAX_COMPONENTS  */
