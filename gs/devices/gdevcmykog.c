@@ -174,6 +174,10 @@ cmykog_open(gx_device * pdev)
   dev->pad = 0; /* No additional padding requirements */
   dev->log2_align_mod = 5; /* But we do want lines aligned to a multiple of 32 */
 
+  /* Lock the num_components and depth for this device */
+  dev->color_info.num_components = 6;
+  dev->color_info.depth = 48;
+
   /* Finally, we open the device requesting the underlying buffers to be
    * planar, rather than chunky. See (1) at the top of this file. */
   return gdev_prn_open_planar(pdev, true);
@@ -196,6 +200,62 @@ cmykog_dev_spec_op(gx_device *dev_, int op, void *data, int datasize)
     return datasize & ~1;
   }
   return gx_default_dev_spec_op(dev_, op, data, datasize);
+}
+
+/*
+ * This routine will check to see if the color component name  match those
+ * that are available amoung the current device's color components.
+ *
+ * Parameters:
+ *   dev - pointer to device data structure.
+ *   pname - pointer to name (zero termination not required)
+ *   nlength - length of the name
+ *
+ * This routine returns a positive value (0 to n) which is the device colorant
+ * number if the name is found.  It returns GX_DEVICE_COLOR_MAX_COMPONENTS if
+ * the colorant is not being used due to a SeparationOrder device parameter.
+ * It returns a negative value if not found.
+ */
+static int
+cmykog_get_color_comp_index(gx_device * dev, const char * pname,
+                                int name_size, int component_type)
+{
+    int index;
+    gx_device_cmykog *pdev = (gx_device_cmykog *)dev;
+
+    if (strncmp(pname, "None", name_size) == 0)
+        return -1;
+
+    index = devn_get_color_comp_index(dev,
+                &(pdev->devn_params), &(pdev->equiv_cmyk_colors),
+                pname, name_size, component_type, NO_AUTO_SPOT_COLORS);
+    return index;
+}
+
+/* Set parameters.  We don't allow setting SeparationOrder, so we */
+/* throw an error if that is present.                             */
+static int
+cmykog_put_params(gx_device * pdev, gs_param_list * plist)
+{
+    int code;
+    gs_param_string_array sona;         /* SeparationOrder names array */
+    gs_param_name param_name;
+
+    sona.data = 0;
+    switch (code = param_read_name_array(plist, (param_name = "SeparationOrder"), &sona)) {
+      default:
+        param_signal_error(plist, param_name, code);
+        return_error(code);
+      case 1:
+        sona.data = 0;          /* mark as not filled */
+      case 0:
+        break;			/* sona.data and sona.size were set */
+    }
+    if (sona.data != 0) {
+        param_signal_error(plist, "SeparationOrder", gs_error_undefined);
+        return_error(gs_error_undefined);
+    }
+    return gx_devn_prn_put_params(pdev, plist);
 }
 
 /* Next we have the code and structures required to support process_page
@@ -226,9 +286,11 @@ typedef struct cmykog_process_buffer_s {
 static int
 cmykog_init_buffer(void *arg_, gx_device *dev_, gs_memory_t *memory, int w, int h, void **bufferp)
 {
+#ifdef INCLUDE_EXAMPLE_CODE /* disabled by default to prevent compiler warnings */
   /* arg and dev here are unused, currently, but here as an example */
   cmykog_process_arg_t *arg = (cmykog_process_arg_t *)arg_;
   gx_device_cmykog *dev = (gx_device_cmykog *)dev_;
+#endif
   cmykog_process_buffer_t *buffer;
 
   *bufferp = NULL;
@@ -246,9 +308,11 @@ cmykog_init_buffer(void *arg_, gx_device *dev_, gs_memory_t *memory, int w, int 
 static void
 cmykog_free_buffer(void *arg_, gx_device *dev_, gs_memory_t *memory, void *buffer_)
 {
+#ifdef INCLUDE_EXAMPLE_CODE /* disabled by default to prevent compiler warnings */
   /* arg and dev here are unused, currently, but here as an example */
   cmykog_process_arg_t *arg = (cmykog_process_arg_t *)arg_;
   gx_device_cmykog *dev = (gx_device_cmykog *)dev_;
+#endif
   cmykog_process_buffer_t *buffer = (cmykog_process_buffer_t *)buffer_;
 
   if (buffer) {
@@ -276,7 +340,7 @@ static void average_plane(byte *image, int width, int height, int raster)
     byte *out = imageOut;
     for (x = 0; x < width; x += 2) {
       int v;
-            
+
       v  = in[raster];
       v += *in++;
       v += in[raster];
@@ -619,7 +683,7 @@ prn_done:
         NULL,                           /* draw_line */\
         NULL,                           /* get_bits */\
         gx_devn_prn_get_params,         /* get_params */\
-        gx_devn_prn_put_params,         /* put_params */\
+        cmykog_put_params,              /* put_params */\
         NULL,                           /* map_cmyk_color - not used */\
         NULL,                           /* get_xfont_procs */\
         NULL,                           /* get_xfont_device */\
@@ -655,7 +719,7 @@ prn_done:
         NULL,                           /* end_transparency_mask */\
         NULL,                           /* discard_transparency_layer */\
         gx_devn_prn_get_color_mapping_procs,/* get_color_mapping_procs */\
-        gx_devn_prn_get_color_comp_index,/* get_color_comp_index */\
+        cmykog_get_color_comp_index,    /* get_color_comp_index */\
         gx_devn_prn_encode_color,       /* encode_color */\
         gx_devn_prn_decode_color,       /* decode_color */\
         NULL,                           /* pattern_manage */\
