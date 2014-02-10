@@ -1,22 +1,31 @@
 %!
 % This is a sample prefix file for creating a PDF/A document.
 % Feel free to modify entries marked with "Customize".
-
 % This assumes an ICC profile to reside in the file (ISO Coated sb.icc),
 % unless the user modifies the corresponding line below.
 
 % Define entries in the document Info dictionary :
-
-/ICCProfile (ISO Coated sb.icc)   % Customize.
+/ICCProfile (srgb.icc) % Customise
 def
 
-[ /Title (Title)                  % Customize.
+[ /Title (Title)       % Customise
   /DOCINFO pdfmark
 
 % Define an ICC profile :
 
 [/_objdef {icc_PDFA} /type /stream /OBJ pdfmark
-[{icc_PDFA} <</N systemdict /ProcessColorModel get /DeviceGray eq {1} {4} ifelse >> /PUT pdfmark
+[{icc_PDFA}
+<<
+  /N currentpagedevice /ProcessColorModel known {
+    currentpagedevice /ProcessColorModel get dup /DeviceGray eq
+    {pop 1} {
+      /DeviceRGB eq
+      {3}{4} ifelse
+    } ifelse
+  } {
+    (ERROR, unable to determine ProcessColorModel) == flush
+  } ifelse
+>> /PUT pdfmark
 [{icc_PDFA} ICCProfile (r) file /PUT pdfmark
 
 % Define the output intent dictionary :
@@ -26,6 +35,6 @@ def
   /Type /OutputIntent             % Must be so (the standard requires).
   /S /GTS_PDFA1                   % Must be so (the standard requires).
   /DestOutputProfile {icc_PDFA}            % Must be so (see above).
-  /OutputConditionIdentifier (CGATS TR001)      % Customize
+  /OutputConditionIdentifier (sRGB)      % Customize
 >> /PUT pdfmark
 [{Catalog} <</OutputIntents [ {OutputIntent_PDFA} ]>> /PUT pdfmark
