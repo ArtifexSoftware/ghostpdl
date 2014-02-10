@@ -572,11 +572,15 @@ static int write_color_as_process_ICC(gx_device_pdf * pdev, const gs_imager_stat
         for (i = 1; i < pcs->type->num_components(pcs); i++) {
             pprintg1(pdev->strm, " %g", psdf_round(pcc->paint.values[i], 255, 8));
         }
-        if (code < 0)
-            return code;
         pprints1(pdev->strm, " %s\n", ppscc->setcolorn);
-    } else if (*used_process_color)
-        return write_color_as_process(pdev, pis, pcs, pdc, used_process_color, ppscc, pcc);
+    } else {
+        *used_process_color = false;
+        pprintg1(pdev->strm, "%g", psdf_round(pcc->paint.values[0], 255, 8));
+        for (i = 1; i < pcs->type->num_components(pcs); i++) {
+            pprintg1(pdev->strm, " %g", psdf_round(pcc->paint.values[i], 255, 8));
+        }
+        pprints1(pdev->strm, " %s\n", ppscc->setcolorn);
+    }
     return 0;
 }
 
