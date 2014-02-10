@@ -63,9 +63,13 @@
   % translate to new origin at lower left of clippath
   3 index 3 index translate
   % Figure out if rotate is needed.
+  1 index 4 index sub 1 index 4 index sub eq not {
   1 index 4 index sub 1 index 4 index sub gt	% bbox page-clipbox page-is-landscape
-  6 index 10 index sub 6 index 10 index sub gt % bbox page-clipbox page-is-landscape bbox-is-landscape
-  xor	9 1 roll	% compute need-rotate.
+  6 index 9 index sub 6 index 9 index sub gt % bbox page-clipbox page-is-landscape bbox-is-landscape
+  xor}{
+    false
+  }ifelse
+  9 1 roll	% compute need-rotate.
   % stack: rotate-needed bbox page-clipbox
   % calculate scale to fit smaller of width or height
   exch 4 -1 roll sub 3 1 roll exch sub
