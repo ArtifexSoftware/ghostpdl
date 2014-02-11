@@ -385,12 +385,20 @@ systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
         pop pop pop
       }{
         % we could open the font file
-        .findfontname
-        not { dup 0 get } if  % stack: (newname) [ (name) (path) ]
-        % DEBUG { (  found ) print dup print (\n) print flush } if
-        % add entry to the fontmap
-        1 index exch 0 exch dup type /nametype ne {cvn} if put
-        aload pop .definefontmap
+        mark 2 1 roll
+        {.findfontname} stopped
+        {
+          cleartomark
+          pop pop
+        }
+        {
+          3 -1 roll pop
+          not { dup 0 get } if  % stack: (newname) [ (name) (path) ]
+          % DEBUG { (  found ) print dup print (\n) print flush } if
+          % add entry to the fontmap
+          1 index exch 0 exch dup type /nametype ne {cvn} if put
+          aload pop .definefontmap
+        } ifelse
       } ifelse
     } forall
   } if
