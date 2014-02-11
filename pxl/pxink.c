@@ -38,7 +38,6 @@
 #include "gxht.h"
 #include "gxstate.h"
 #include "pldraw.h"
-#include "plsrgb.h"
 #include "plht.h"
 #include "pxptable.h"
 #include "gzstate.h"
@@ -354,15 +353,10 @@ int px_high_level_pattern(gs_state * pgs)
             }
             break;
         case eRGB:
-            pcs = gs_cspace_new_DeviceRGB(pgs->memory);
-            if (pcs == NULL) {
-                gs_grestore(pgs);
-                return_error(errorInsufficientMemory);
-            }
-            break;
         case eSRGB:
         case eCRGB:
-            if (pl_cspace_init_SRGB(&pcs, pgs) < 0) {
+            pcs = gs_cspace_new_DeviceRGB(pgs->memory);
+            if (pcs == NULL) {
                 gs_grestore(pgs);
                 return_error(errorInsufficientMemory);
             }
@@ -517,14 +511,10 @@ render_pattern(gs_client_color * pcc, const px_pattern_t * pattern,
                         return_error(errorInsufficientMemory);
                     break;
                 case eRGB:
-                    pcs = gs_cspace_new_DeviceRGB(pxgs->memory);
-                    if (pcs == NULL)
-                        return_error(errorInsufficientMemory);
-                    break;
                 case eSRGB:
                 case eCRGB:
-                    if (pl_cspace_init_SRGB(&pcs, pgs) < 0)
-                        /* should not happen */
+                    pcs = gs_cspace_new_DeviceRGB(pxgs->memory);
+                    if (pcs == NULL)
                         return_error(errorInsufficientMemory);
                     break;
                 default:
@@ -751,9 +741,10 @@ px_set_paint(const px_paint_t * ppt, px_state_t * pxs)
         case pxpPattern:
             return gs_setpattern(pgs, &ppt->value.pattern.color);
         case pxpSRGB:
-            return pl_setSRGBcolor(pgs,
-                                   ppt->value.rgb[0],
-                                   ppt->value.rgb[1], ppt->value.rgb[2]);
+            return gs_setrgbcolor(pgs,
+                                  ppt->value.rgb[0],
+                                  ppt->value.rgb[1],
+                                  ppt->value.rgb[2]);
         default:               /* can't happen */
             return_error(errorIllegalAttributeValue);
     }

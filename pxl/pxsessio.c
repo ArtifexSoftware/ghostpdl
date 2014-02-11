@@ -40,7 +40,6 @@
 #include "gxstate.h"
 #include "pjtop.h"
 #include "pllfont.h"
-#include "plsrgb.h"
 #include "pxptable.h"
 #include "pxvendor.h"
 

@@ -40,7 +40,6 @@
 #include "gxpath.h"
 #include "gzstate.h"
 #include "gscolor2.h"
-#include "plsrgb.h"
 #include "pxptable.h"
 
 /*
@@ -358,10 +357,8 @@ px_image_color_space(gs_image_t * pim,
             break;
         case eSRGB:
         case eCRGB:
-            if (pl_cspace_init_SRGB(&pbase_pcs, pgs) < 0)
-                /* should not happen */
-                return_error(errorInsufficientMemory);
             cie_space = true;
+            pbase_pcs = gs_cspace_new_DeviceRGB(pgs->memory);
             pbase_pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
             pbase_pcs->type = &gs_color_space_type_ICC;
             rc_increment(pbase_pcs->cmm_icc_profile_data);
@@ -406,7 +403,7 @@ px_image_color_space(gs_image_t * pim,
         pim->Decode[1] = (float)((1 << depth) - 1);
     /* NB - this needs investigation */
     if (cie_space && !px_is_currentcolor_pattern(pgs)) {
-        code = pl_setSRGBcolor((gs_state *) pgs, 0.0, 0.0, 0.0);
+        code = gs_setrgbcolor((gs_state *) pgs, 0.0, 0.0, 0.0);
     }
     return code;
 }

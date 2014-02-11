@@ -22,7 +22,6 @@
 #include "pcstate.h"
 #include "pcpalet.h"
 #include "pccid.h"
-#include "plsrgb.h"
 
 /* CID accessors */
 pcl_cspace_type_t
@@ -321,9 +320,8 @@ check_cid_hdr(pcl_state_t * pcs, pcl_cid_data_t * pcid)
         pcid->len = 6;
     }
 
-    /* if the device handles color conversion remap the colorimetric color space to rgb */
-    if (pl_device_does_color_conversion()
-        && pcidh->cspace == pcl_cspace_Colorimetric) {
+    /* remap the colorimetric color space to rgb */
+    if (pcidh->cspace == pcl_cspace_Colorimetric) {
         pcidh->cspace = pcl_cspace_RGB;
         pcid->len = 6;
     }

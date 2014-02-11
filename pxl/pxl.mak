@@ -156,7 +156,7 @@ $(PXLOBJ)pxgstate.$(OBJ): $(PXLSRC)pxgstate.c $(AK) $(math__h) $(memory__h) $(st
  $(gscoord_h) $(gsimage_h) $(gsmemory_h) $(gspath_h) $(gspath2_h) $(gsrop_h)\
  $(gsstate_h) $(gsstruct_h)  $(gdebug_h) $(gscie_h) $(gscolor2_h) $(gstypes_h)\
  $(gsicc_manage_h) $(gxcspace_h) $(gxpath_h) $(gzstate_h)\
- $(pxoper_h) $(pxptable_h) $(pxstate_h)  $(pxparse_h) $(plsrgb_h)
+ $(pxoper_h) $(pxptable_h) $(pxstate_h)  $(pxparse_h)
 	$(PXLCCC) $(PXLSRC)pxgstate.c $(PXLO_)pxgstate.$(OBJ)
 
 $(PXLOBJ)pximage.$(OBJ): $(PXLSRC)pximage.c $(AK) $(std_h)\
@@ -165,14 +165,14 @@ $(PXLOBJ)pximage.$(OBJ): $(PXLSRC)pximage.c $(AK) $(std_h)\
  $(gxbitmap_h) $(gxcspace_h) $(gxdevice_h) $(gxcolor2_h) $(gxpcolor_h)\
  $(scommon_h) $(srlx_h) $(strimpl_h) $(gxdcolor_h) \
  $(pldraw_h) $(jpeglib__h) $(sdct_h) $(sjpeg_h)\
- $(pxerrors_h) $(pxptable_h) $(pxoper_h) $(pxstate_h) $(plsrgb_h) $(gdebug_h)
+ $(pxerrors_h) $(pxptable_h) $(pxoper_h) $(pxstate_h) $(gdebug_h)
 	$(PXLCCC) $(PXLSRC)pximage.c $(PXLO_)pximage.$(OBJ)
 
 $(PXLOBJ)pxink.$(OBJ): $(PXLSRC)pxink.c $(math__h) $(stdio__h) $(memory__h)\
  $(gdebug_h) $(gscolor2_h) $(gscoord_h) $(gsimage_h) $(gsmemory_h) $(gspath_h)\
  $(gspath2_h) $(gstypes_h) $(gscie_h) $(gscrd_h) $(gsstate_h)\
  $(gxarith_h) $(gxcspace_h) $(gxdevice_h) $(gxht_h) $(gxstate_h)\
- $(pxoper_h) $(pxptable_h) $(pxstate_h) $(plht_h) $(pldraw_h) $(plsrgb_h)\
+ $(pxoper_h) $(pxptable_h) $(pxstate_h) $(plht_h) $(pldraw_h)\
  $(gzstate_h) $(gxdevsop_h) $(gxcolor2_h)
 	$(PXLCCC) $(PXLSRC)pxink.c $(PXLO_)pxink.$(OBJ)
 
@@ -183,7 +183,7 @@ $(PXLOBJ)pxpaint.$(OBJ): $(PXLSRC)pxpaint.c $(AK) $(math__h) $(stdio__h)\
 	$(PXLCCC) $(PXLSRC)pxpaint.c $(PXLO_)pxpaint.$(OBJ)
 
 $(PXLOBJ)pxsessio.$(OBJ): $(PXLSRC)pxsessio.c $(AK) $(math__h) $(stdio__h)\
- $(string__h) $(plsrgb_h) $(pxoper_h) $(pxstate_h) $(pxfont_h) \
+ $(string__h) $(pxoper_h) $(pxstate_h) $(pxfont_h) \
  $(pjparse_h) $(gschar_h) $(gscoord_h) $(gserrors_h) $(gspaint_h) $(gsparam_h)\
  $(gsstate_h) $(gxfixed_h) $(gxpath_h) $(gxpcolor_h) $(gxfcache_h)\
  $(gxdevice_h) $(gxstate_h) $(gxdcolor_h) $(pjtop_h) $(pllfont_h) $(pxptable_h)\

@@ -424,8 +424,7 @@ $(PCLOBJ)pccid.$(OBJ): $(PCLSRC)pccid.c     \
                        $(pcommand_h)        \
                        $(pcstate_h)         \
                        $(pcpalet_h)         \
-                       $(pccid_h)           \
-                       $(plsrgb_h)
+                       $(pccid_h)
 	$(PCLCCC) $(PCLSRC)pccid.c $(PCLO_)pccid.$(OBJ)
 
 $(PCLOBJ)pccolor.$(OBJ): $(PCLSRC)pccolor.c \
