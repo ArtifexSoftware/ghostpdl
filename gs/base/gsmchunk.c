@@ -83,12 +83,19 @@ static const gs_memory_procs_t chunk_procs =
 
 typedef struct chunk_obj_node_s {
     struct chunk_obj_node_s *next;
+    struct chunk_obj_node_s *prev;
+    struct chunk_mem_node_s *chunk;
     gs_memory_type_ptr_t type;
     uint size;			/* objlist: client size */
 #ifdef DEBUG
     unsigned long sequence;
 #endif
 } chunk_obj_node_t;
+
+typedef struct chunk_freelist_node_s {
+    struct chunk_freelist_node_s *next;
+    uint size;			/* size of entire freelist block */
+} chunk_freelist_node_t;
 
 /*
  * Note: All objects within a chunk are 'aligned' since we round_up_to_align
@@ -97,10 +104,13 @@ typedef struct chunk_obj_node_s {
 typedef struct chunk_mem_node_s {
     uint size;
     uint largest_free;			/* quick check when allocating */
+                                        /* NB: largest_free INCLUDES the size of the obj_node */
     bool is_multiple_object_chunk;	/* tells us which list this chunk is on */
     struct chunk_mem_node_s *next;
+    struct chunk_mem_node_s *prev;
     chunk_obj_node_t *objlist;	/* head of objects in this chunk (no order) */
-    chunk_obj_node_t *freelist;		/* free list (ordered) */
+    chunk_freelist_node_t *freelist;    /* free list (ordered) */
+                                        /* size INCLUDES freelist_node structure */
     /* chunk data follows on the next obj_align_mod aligned boundary */
 } chunk_mem_node_t;
 
@@ -321,21 +331,23 @@ chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, bool is_multiple_o
         cmem->max_used = cmem->used;
 #endif
     node->size = chunk_size;	/* how much we allocated */
-    node->largest_free = chunk_size - sizeof(chunk_mem_node_t);
+    node->largest_free = chunk_size - SIZEOF_ROUND_ALIGN(chunk_mem_node_t);
     node->is_multiple_object_chunk = is_multiple_object_chunk;
     node->objlist = NULL;
-    node->freelist = (chunk_obj_node_t *)((byte *)(node) + SIZEOF_ROUND_ALIGN(chunk_mem_node_t));
+    node->freelist = (chunk_freelist_node_t *)((byte *)(node) + SIZEOF_ROUND_ALIGN(chunk_mem_node_t));
     node->freelist->next = NULL;
     node->freelist->size = node->largest_free;
 
     /* Put the node at the head of the list (so=single object, mo=multiple object) */
     /* only multiple objects will be have any room in them */
+    node->prev = NULL;			/* head of list always has prev == NULL */
     if (is_multiple_object_chunk) {
         if (cmem->head_mo_chunk == NULL) {
             cmem->head_mo_chunk = node;
             node->next = NULL;
         } else {
             node->next = cmem->head_mo_chunk;
+            cmem->head_mo_chunk->prev = node;
             cmem->head_mo_chunk = node;
         }
     } else {
@@ -344,6 +356,7 @@ chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, bool is_multiple_o
             node->next = NULL;
         } else {
             node->next = cmem->head_so_chunk;
+            cmem->head_so_chunk->prev = node;
             cmem->head_so_chunk = node;
         }
     }
@@ -371,24 +384,19 @@ chunk_mem_node_remove(gs_memory_chunk_t *cmem, chunk_mem_node_t *addr)
     }
     if (head == addr) {
         *p_head = head->next;
+        if (head->next != NULL)
+            head->next->prev = NULL;
         gs_free_object(target, head, "chunk_mem_node_remove");
     } else {
         chunk_mem_node_t *current;
-        bool found = false;
 
-        /* scan the list, stopping in front of element */
-        for (current = head; current != NULL; current = current->next) {
-            if ( current->next && (current->next == addr) ) {
-                current->next = current->next->next;	/* de-link it */
-                gs_free_object(target, addr, "chunk_mem_node_remove");
-                found = true;
-                break;
-            }
+        current = addr->prev;
+        current->next = addr->next;
+        if (addr->next != NULL) {
+            addr->next->prev = current;
         }
-        if ( !found ) {
-            dmprintf1(target, "FAIL freeing wild pointer freed address 0x%lx not found\n", (ulong)addr );
-            return -1;
-        }
+        gs_free_object(target, addr, "chunk_mem_node_remove");
+
     }
     return 0;
 }
@@ -401,7 +409,7 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
     chunk_mem_node_t *head = cmem->head_mo_chunk;	/* we only scan chunks with space in them */
     uint newsize, free_size;
     chunk_obj_node_t *newobj = NULL;
-    chunk_obj_node_t *free_obj, *prev_free, *new_free;
+    chunk_freelist_node_t *free_obj, *prev_free, *new_free;
     chunk_mem_node_t *current = NULL;
     bool rescan_free_list = false;
     bool is_multiple_object_size;
@@ -458,9 +466,10 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
 
     /* Make an object in the free_obj we found above, reducing it's size */
     /* and adjusting the free list preserving alignment	*/
-    newobj = free_obj;
+    newobj = (chunk_obj_node_t *)free_obj;
     free_size = free_obj->size - newsize;	/* amount remaining */
-    new_free = (chunk_obj_node_t *)((byte *)(free_obj) + newsize);	/* start of remaining free area */
+    new_free = (chunk_freelist_node_t *)((byte *)(free_obj) + newsize);	/* start of remaining free area */
+
     if (free_size >= sizeof(chunk_obj_node_t)) {
         if (prev_free != NULL)
             prev_free->next = new_free;
@@ -468,6 +477,11 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
             current->freelist = new_free;
         new_free->next = free_obj->next;
         new_free->size = free_size;
+        if (rescan_free_list && current->freelist->next == NULL) {
+            /* Object was allocated from the single freelist entry, so adjust largest */
+            current->largest_free = free_size;
+            rescan_free_list = false;
+        }
     } else {
        /* Not enough space remaining, just skip around it */
         if (prev_free != NULL)
@@ -476,6 +490,8 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
             current->freelist = free_obj->next;
     }
 
+
+
 #ifdef DEBUG
     memset((byte *)(newobj) + SIZEOF_ROUND_ALIGN(chunk_obj_node_t), 0xa1, newsize - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
     memset((byte *)(newobj) + SIZEOF_ROUND_ALIGN(chunk_obj_node_t), 0xac, size);
@@ -483,6 +499,10 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
 #endif
 
     newobj->next = current->objlist;	/* link to start of list */
+    newobj->chunk = current;
+    newobj->prev = NULL;
+    if (current->objlist)
+        current->objlist->prev = newobj;
     current->objlist = newobj;
     newobj->size = size;		/* client requested size */
     newobj->type = type;		/* and client desired type */
@@ -597,13 +617,14 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         return;
     {
         /* back up to obj header */
-        chunk_obj_node_t *obj = (chunk_obj_node_t *)(((byte *)ptr) - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
+        int obj_node_size = SIZEOF_ROUND_ALIGN(chunk_obj_node_t);
+        chunk_obj_node_t *obj = (chunk_obj_node_t *)(((byte *)ptr) - obj_node_size);
         struct_proc_finalize((*finalize)) = obj->type->finalize;
         chunk_mem_node_t *current;
-        chunk_obj_node_t *free_obj, *prev_free;
-        chunk_obj_node_t *scan_obj, *prev_obj;
+        chunk_freelist_node_t *free_obj, *prev_free, *new_free;
+        chunk_obj_node_t *prev_obj;
         /* space we will free */
-        uint freed_size = round_up_to_align(obj->size + SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
+        uint freed_size = round_up_to_align(obj->size + obj_node_size);
 
         if ( finalize != NULL )
             finalize(mem, ptr);
@@ -615,50 +636,11 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         cmem->in_use = -1;	/* free */
 #endif
         /* finalize may change the head_**_chunk doing free of stuff */
-        current = IS_SINGLE_OBJ_SIZE(freed_size) ?
-                                        cmem->head_so_chunk : cmem->head_mo_chunk;
-        /* Find the chunk containing this object */
-        for ( ; current != NULL; current = current->next) {
-            if (((byte *)obj > (byte *)current) && ((byte *)obj < (byte *)(current) + current->size))
-                break;
-        }
-        if (current == NULL) {
-            /* We _may_have searched the wrong list -- if so find out. */
-            current = cmem->head_so_chunk;
-            /* Find the chunk containing this object */
-            for ( ; current != NULL; current = current->next) {
-                if (((byte *)obj > (byte *)current) && ((byte *)obj < (byte *)(current) + current->size)) {
-                    dmprintf1(cmem->target,
-                              "chunk_free_obj: OOPS! found it on the single_object list, size=%d\n",
-                              obj->size);
-                    break;
-                }
-            }
-            if (current == NULL) {
-                current = cmem->head_mo_chunk;
-                /* Find the chunk containing this object */
-                for ( ; current != NULL; current = current->next) {
-                    if (((byte *)obj > (byte *)current) && ((byte *)obj < (byte *)(current) + current->size)) {
-                        dmprintf1(cmem->target,
-                                  "chunk_free_obj: OOPS! found it on the multiple_object list, size=%d\n",
-                                  obj->size);
-                        break;
-                    }
-                }
-            }
-            if (current == NULL) {
-                /* Object not found in any chunk */
-                dmprintf2(cmem->target,
-                          "chunk_free_obj failed, object 0x%lx not in any chunk, size=%d\n",
-                          ((ulong)obj), obj->size);
-#ifdef DEBUG
-                cmem->in_use = 0; 	/* idle */
-#endif
-                return;
-            }
-        }
+        current = obj->chunk;
+
         /* For large objects, they were given their own chunk -- just remove the node */
-        if (IS_SINGLE_OBJ_SIZE(freed_size)) {
+        /* For multiple object chunks, we can remove the node if the objlist will become empty */
+        if (current->is_multiple_object_chunk == 0 || current->objlist->next == NULL) {
             chunk_mem_node_remove(cmem, current);
 #ifdef DEBUG
             cmem->in_use = 0; 	/* idle */
@@ -666,61 +648,50 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
             return;
         }
 
-        /* Scan obj list to find this element */
-        prev_obj = NULL;	/* object is head, linked to mem node */
-        for (scan_obj = current->objlist; scan_obj != NULL; scan_obj = scan_obj->next) {
-            if (scan_obj == obj)
-                break;
-            prev_obj = scan_obj;
-        }
-        if (scan_obj == NULL) {
-            /* Object not found in expected chunk */
-            dmprintf3(cmem->target,
-                      "chunk_free_obj failed, object 0x%lx not in chunk at 0x%lx, size = %d\n",
-                      ((ulong)obj), ((ulong)current), current->size);
-#ifdef DEBUG
-            cmem->in_use = 0; 	/* idle */
-#endif
-            return;
-        }
+        prev_obj = obj->prev;
         /* link around the object being freed */
-        if (prev_obj == NULL)
+        if (prev_obj == NULL) {
             current->objlist = obj->next;
-        else
+            if (obj->next)
+                obj->next->prev = NULL;
+        } else {
             prev_obj->next = obj->next;
+            if (obj->next)
+                obj->next->prev = prev_obj;
+        }
 
         if_debug3m('A', cmem->target, "[a-]chunk_free_object(%s) 0x%lx(%u)\n",
                   client_name_string(cname), (ulong) ptr, obj->size);
 
         /* Add this object's space (including the header) to the free list */
-
         /* Scan free list to find where this element goes */
-        obj->size = freed_size;	    /* adjust size to include chunk_obj_node and pad */
-
         prev_free = NULL;
+        new_free = (chunk_freelist_node_t *)obj;
+        new_free->size = freed_size;        /* set the size of this free block */
         for (free_obj = current->freelist; free_obj != NULL; free_obj = free_obj->next) {
-            if (obj < free_obj)
+            if (new_free < free_obj)
                 break;
             prev_free = free_obj;
         }
         if (prev_free == NULL) {
             /* this object is before any other free objects */
-            obj->next = current->freelist;
-            current->freelist = obj;
+            new_free->next = current->freelist;
+            current->freelist = new_free;
         } else {
-            obj->next = free_obj;
-            prev_free->next = obj;
+            new_free->next = free_obj;
+            prev_free->next = new_free;
         }
         /* If the end of this object is adjacent to the next free space,
          * merge the two. Next we'll merge with predecessor (prev_free)
          */
         if (free_obj != NULL) {
-            byte *after_obj = (byte*)(obj) + freed_size;
+            byte *after_obj = (byte*)(new_free) + freed_size;
 
-            if (free_obj <= (chunk_obj_node_t *)after_obj) {
+            if (free_obj <= (chunk_freelist_node_t *)after_obj) {
                 /* Object is adjacent to following free space block -- merge it */
-                obj->next = free_obj->next;	/* link around the one being absorbed */
-                obj->size = (byte *)(free_obj) - (byte *)(obj) + free_obj->size;
+                new_free->next = free_obj->next;	/* link around the one being absorbed */
+                /* as noted elsewhere, freelist node size is entire block size */
+                new_free->size = (byte *)(free_obj) - (byte *)(new_free) + free_obj->size;
             }
         }
         /* the prev_free object precedes this object that is now free,
@@ -729,29 +700,22 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         if (prev_free != NULL) {
             byte *after_free = (byte*)(prev_free) + prev_free->size;
 
-            if (obj <= (chunk_obj_node_t *)after_free) {
+            if (new_free <= (chunk_freelist_node_t *)after_free) {
                 /* Object is adjacent to prior free space block -- merge it */
                 /* NB: this is the common case with LIFO alloc-free patterns */
                 /* (LIFO: Last-allocated, first freed) */
-                prev_free->size = (byte *)(obj) - (byte *)(prev_free) + obj->size;
-                prev_free->next = obj->next;		/* link around 'obj' area */
-                obj = prev_free;
+                prev_free->size = (byte *)(new_free) - (byte *)(prev_free) + new_free->size;
+                prev_free->next = new_free->next;		/* link around 'new_free' area */
+                new_free = prev_free;
             }
         }
 #ifdef DEBUG
-memset((byte *)(obj) + SIZEOF_ROUND_ALIGN(chunk_obj_node_t), 0xf1, obj->size - SIZEOF_ROUND_ALIGN(chunk_obj_node_t));
+memset((byte *)(new_free) + SIZEOF_ROUND_ALIGN(chunk_freelist_node_t), 0xf1,
+       new_free->size - SIZEOF_ROUND_ALIGN(chunk_freelist_node_t));
 #endif
-        if (current->largest_free < obj->size)
-            current->largest_free = obj->size;
+        if (current->largest_free < new_free->size)
+            current->largest_free = new_free->size;
 
-        /* If this chunk is now totally empty, free it */
-        if (current->objlist == NULL) {
-            if (current->size != current->freelist->size + sizeof(chunk_mem_node_t))
-                dmprintf2(cmem->target,
-		          "chunk freelist size not correct, is: %d, should be: %d\n",
-                          round_up_to_align(current->freelist->size + SIZEOF_ROUND_ALIGN(chunk_mem_node_t)), current->size);
-            chunk_mem_node_remove(cmem, current);
-        }
 #ifdef DEBUG
         cmem->in_use = 0; 	/* idle */
 #endif
@@ -792,7 +756,7 @@ chunk_status(gs_memory_t * mem, gs_memory_status_t * pstat)
 {
     gs_memory_chunk_t *cmem = (gs_memory_chunk_t *)mem;
     chunk_mem_node_t *current = cmem->head_mo_chunk;	/* we only scan chunks with space in them */
-    chunk_obj_node_t *free_obj;		/* free list object node */
+    chunk_freelist_node_t *free_obj;		/* free list object node */
     int tot_free = 0;
 
     pstat->allocated = cmem->used;
