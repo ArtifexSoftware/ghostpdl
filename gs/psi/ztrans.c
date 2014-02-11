@@ -36,6 +36,7 @@
 #include "gdevdevn.h"
 #include "gxblend.h"
 #include "gdevp14.h"
+#include "gsicc_cms.h"
 
 /* ------ Utilities ------ */
 
@@ -228,8 +229,19 @@ zbegintransparencygroup(i_ctx_t *i_ctx_p)
     if (dict_find_string(dop, "CS", &dummy) <= 0) {
         params.ColorSpace = NULL;
     } else {
-        /* the PDF interpreter set the colorspace, so use it */
+        /* the PDF interpreter sets the colorspace, so use it */
         params.ColorSpace = gs_currentcolorspace(igs);
+        /* Lets make sure that it is not an ICC color space that came from 
+           a PS CIE color space or a PS color space. These are 1-way color
+           spaces and cannot be used for group color spaces */
+        if (gs_color_space_is_PSCIE(params.ColorSpace))
+            params.ColorSpace = NULL;
+        else if (gs_color_space_is_ICC(params.ColorSpace) &&
+            params.ColorSpace->cmm_icc_profile_data != NULL &&
+            params.ColorSpace->cmm_icc_profile_data->profile_handle != NULL) {
+            if (gscms_is_input(params.ColorSpace->cmm_icc_profile_data->profile_handle))
+                params.ColorSpace = NULL;
+        }
     }
     code = gs_begin_transparency_group(igs, &params, &bbox);
     if (code < 0)
@@ -292,6 +304,17 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
     /* Is the colorspace set for this mask ? */
     if (op[-5].value.boolval) {
                 params.ColorSpace = gs_currentcolorspace(igs);
+                /* Lets make sure that it is not an ICC color space that came from
+                a PS CIE color space or a PS color space. These are 1-way color
+                spaces and cannot be used for group color spaces */
+                if (gs_color_space_is_PSCIE(params.ColorSpace))
+                    params.ColorSpace = NULL;
+                else if (gs_color_space_is_ICC(params.ColorSpace) &&
+                    params.ColorSpace->cmm_icc_profile_data != NULL &&
+                    params.ColorSpace->cmm_icc_profile_data->profile_handle != NULL) {
+                    if (gscms_is_input(params.ColorSpace->cmm_icc_profile_data->profile_handle))
+                        params.ColorSpace = NULL;
+                }
     } else {
         params.ColorSpace = NULL;
     }

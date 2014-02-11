@@ -168,6 +168,13 @@ gscms_is_device_link(gcmmhprofile_t profile)
     return (cmsGetDeviceClass(profile) == cmsSigLinkClass);
 }
 
+/* Check if the profile is a input type */
+bool
+gscms_is_input(gcmmhprofile_t profile)
+{
+    return (cmsGetDeviceClass(profile) == cmsSigInputClass);
+}
+
 /* Get the device space associated with this profile */
 gsicc_colorbuffer_t
 gscms_get_profile_data_space(gcmmhprofile_t profile)
