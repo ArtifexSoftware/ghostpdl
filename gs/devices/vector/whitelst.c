@@ -571,5 +571,9 @@ int IsInWhiteList (const char *Name, int size)
         else
         high = mid - 1;
     }
+    if (low == high) {
+        if (whitelist_strncmp(EmbeddingWhiteList[low], Name, size) == 0)
+            return 1;
+    }
     return 0;
 }
