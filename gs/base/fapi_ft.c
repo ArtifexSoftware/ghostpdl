@@ -87,6 +87,7 @@ typedef struct ff_face_s
     unsigned char *font_data;
     int font_data_len;
     bool data_owned;
+    ff_server *server;
 } ff_face;
 
 /* Here we define the struct FT_Incremental that is used as an opaque type
@@ -267,6 +268,7 @@ new_face(gs_fapi_server * a_server, FT_Face a_ft_face,
         face->font_data_len = a_font_data_len;
         face->data_owned = data_owned;
         face->ftstrm = ftstrm;
+        face->server = a_server;
     }
     return face;
 }
@@ -280,7 +282,7 @@ delete_face(gs_fapi_server * a_server, ff_face * a_face)
             FT_Incremental a_info = a_face->ft_inc_int->object;
 
             if (a_info->glyph_data) {
-                gs_free(a_info->fapi_font->memory, a_info->glyph_data, 0, 0, "delete_face");
+                gs_free(s->mem, a_info->glyph_data, 0, 0, "delete_face");
             }
             a_info->glyph_data = NULL;
             a_info->glyph_data_length = 0;
@@ -333,6 +335,8 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data * a_data)
 {
     gs_fapi_font *ff = a_info->fapi_font;
     int length = 0;
+    ff_face *face = (ff_face *) ff->server_font_data;
+    gs_memory_t *mem = (gs_memory_t *) face->server->mem;
 
     /* Tell the FAPI interface that we need to decrypt the glyph data. */
     ff->need_decrypt = true;
@@ -347,13 +351,13 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data * a_data)
         if (length == 65535)
             return FT_Err_Invalid_Glyph_Index;
 
-        buffer = gs_malloc((gs_memory_t *) a_info->fapi_font->memory, length, 1, "get_fapi_glyph_data");
+        buffer = gs_malloc(mem, length, 1, "get_fapi_glyph_data");
         if (!buffer)
             return FT_Err_Out_Of_Memory;
 
         length = ff->get_glyph(ff, a_index, buffer, length);
         if (length == 65535) {
-            gs_free((gs_memory_t *) a_info->fapi_font->memory, buffer, 0, 0,
+            gs_free((gs_memory_t *) mem, buffer, 0, 0,
                     "get_fapi_glyph_data");
             return FT_Err_Invalid_Glyph_Index;
         }
@@ -378,13 +382,12 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data * a_data)
         /* If the buffer was too small enlarge it and try again. */
         if (length > a_info->glyph_data_length) {
             if (a_info->glyph_data) {
-                gs_free((gs_memory_t *) a_info->fapi_font->memory,
+                gs_free((gs_memory_t *) mem,
                         a_info->glyph_data, 0, 0, "get_fapi_glyph_data");
             }
 
             a_info->glyph_data =
-                gs_malloc((gs_memory_t *) a_info->fapi_font->memory, length,
-                          1, "get_fapi_glyph_data");
+                gs_malloc(mem, length, 1, "get_fapi_glyph_data");
 
             if (!a_info->glyph_data) {
                 a_info->glyph_data_length = 0;
@@ -410,11 +413,14 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data * a_data)
 static void
 free_fapi_glyph_data(FT_Incremental a_info, FT_Data * a_data)
 {
+    gs_fapi_font *ff = a_info->fapi_font;
+    ff_face *face = (ff_face *) ff->server_font_data;
+    gs_memory_t *mem = (gs_memory_t *) face->server->mem;
+
     if (a_data->pointer == (const FT_Byte *)a_info->glyph_data)
         a_info->glyph_data_in_use = false;
     else
-        gs_free((gs_memory_t *) a_info->fapi_font->memory,
-                (FT_Byte *) a_data->pointer, 0, 0, "free_fapi_glyph_data");
+        gs_free(mem, (FT_Byte *) a_data->pointer, 0, 0, "free_fapi_glyph_data");
 }
 
 static FT_Error
@@ -1816,8 +1822,7 @@ gs_fapi_ft_init(gs_memory_t * mem, gs_fapi_server ** server)
 
 
     serv =
-        (ff_server *) gs_alloc_bytes_immovable(cmem, sizeof(ff_server),
-                                               "gs_fapi_ft_init");
+        (ff_server *) gs_alloc_bytes_immovable(cmem, sizeof(ff_server), "gs_fapi_ft_init");
     if (!serv) {
         return_error(gs_error_VMerror);
     }
