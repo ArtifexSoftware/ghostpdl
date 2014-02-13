@@ -111,6 +111,9 @@ rc_free_proc(rc_free_text_enum);
     /* byte code of 32, not for a multi-byte code of 32. So, for example */ \
     /* not for character code <0020>. */ \
     bool single_byte_space; \
+    /* We also need to know how many bytes of the string we used in order to */ \
+    /* decode this character. So that we can tell if a space is <0020> or <20> */ \
+    int bytes_decoded; \
     gs_point FontBBox_as_Metrics2;  /* used with FontType 9,11 && WMode 1 */\
     ulong text_enum_id; /* debug purpose only - not used by algorythm. */\
     /* The following is controlled by a device. */\
