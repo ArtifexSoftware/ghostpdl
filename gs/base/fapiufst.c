@@ -895,7 +895,7 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
         return (gs_error_invalidaccess);
 #else
         /* If we have the Freetype server available, always use it for non-FCO fonts */
-        if (gs_fapi_available(r->mem, (char *)"Freetype")) {
+        if (gs_fapi_available(r->mem, (char *)"FreeType")) {
             return (gs_error_invalidaccess);
         }
 
@@ -935,7 +935,7 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
             return (gs_error_invalidaccess);
 #else
             /* If we have the Freetype server available, always use it for non-FCO fonts */
-            if (gs_fapi_available(r->mem, (char *)"Freetype")) {
+            if (gs_fapi_available(r->mem, (char *)"FreeType")) {
                 return (gs_error_invalidaccess);
             }
 #endif
