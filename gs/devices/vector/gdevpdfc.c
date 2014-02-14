@@ -1073,7 +1073,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 
         pciec = (const gs_cie_common *)pcie;
         if (!pcie->common.MatrixLMN.is_identity) {
-            if (!pdev->UseOldColor) {
+            if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
                 if (pcs->icc_equivalent == 0) {
                     code = gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &is_lab, pdev->memory);
                     if (code < 0)

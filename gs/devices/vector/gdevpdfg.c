@@ -496,8 +496,18 @@ static int write_color_unchanged(gx_device_pdf * pdev, const gs_imager_state * p
                                 &pdf_color_space_names, true, NULL, 0, false);
                 /* fixme : creates redundant PDF objects. */
                 if (code == gs_error_rangecheck) {
+                    *used_process_color = true;
+                    if (pdev->ForOPDFRead) {
+                    int save = 0;
                     /* The color space can't write to PDF. This should never happen */
-                    return write_color_as_process(pdev, pis, pcs, pdc, used_process_color, ppscc, pcc);
+                    save = pdev->UseOldColor;
+                    pdev->UseOldColor = 1;
+                    code = psdf_set_color((gx_device_vector *)pdev, pdc, ppscc, pdev->UseOldColor);
+                    pdev->UseOldColor = save;
+                    } else {
+                    code = write_color_as_process(pdev, pis, pcs, pdc, used_process_color, ppscc, pcc);
+                    }
+                    return code;
                 }
                 if (code < 0)
                     return code;
@@ -530,8 +540,20 @@ static int write_color_unchanged(gx_device_pdf * pdev, const gs_imager_state * p
                 if (code < 0)
                     return code;
                 pprints1(pdev->strm, " %s\n", ppscc->setcolorn);
-            } else if (*used_process_color)
-                return write_color_as_process(pdev, pis, pcs, pdc, used_process_color, ppscc, pcc);
+            } else if (*used_process_color) {
+                    *used_process_color = true;
+                    if (pdev->ForOPDFRead) {
+                    int save = 0;
+                    /* The color space can't write to PDF. This should never happen */
+                    save = pdev->UseOldColor;
+                    pdev->UseOldColor = 1;
+                    code = psdf_set_color((gx_device_vector *)pdev, pdc, ppscc, pdev->UseOldColor);
+                    pdev->UseOldColor = save;
+                    } else {
+                    code = write_color_as_process(pdev, pis, pcs, pdc, used_process_color, ppscc, pcc);
+                    }
+                    return code;
+            }
             else {
                 code = pdf_write_ccolor(pdev, pis, pcc);
                 if (code < 0)
