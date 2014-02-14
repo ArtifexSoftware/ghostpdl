@@ -507,7 +507,7 @@ set_src_raster_height(pcl_args_t * pargs, pcl_state_t * pcs)
 /*
  * ESC * b # M
  *
- * Set compresson method.
+ * Set compression method.
  *
  * This command is unique among PCL commands in that it is interpreted both
  * inside and outside of graphics mode, and its execution neither starts nor
@@ -683,13 +683,13 @@ gmode_do_registration(pcl_parser_state_t * pcl_parser_state, gs_memory_t * pmem 
                         pca_in_rtl)
     }, {
         'r', 'T',
-            PCL_COMMAND("Source Raster_Height",
+            PCL_COMMAND("Source Raster Height",
                         set_src_raster_height,
                         pca_raster_graphics | pca_neg_ok | pca_big_clamp |
                         pca_in_rtl)
     }, {
         'b', 'M',
-            PCL_COMMAND("Set Compresion Method",
+            PCL_COMMAND("Set Compression Method",
                         set_compression_method,
                         pca_raster_graphics | pca_neg_ok | pca_big_ignore |
                         pca_in_rtl)

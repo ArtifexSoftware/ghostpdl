@@ -23,7 +23,7 @@
 #include "pccsbase.h"
 #include "pcpalet.h"
 
-/* default GL/2 pen width, in plotter units (1016 ploter units per inch) */
+/* default GL/2 pen width, in plotter units (1016 plotter units per inch) */
 static const float dflt_pen_width = 14.0;
 
 /* the image data configuration for the default color space */

@@ -360,7 +360,7 @@ art_pdf_knockoutisolated_group_8(byte *dst, const byte *src, int n_chan);
  * @src: Source pixel.
  * @n_chan: Number of channels.
  * @shape: Shape.
- * @shape: Tag.
+ * @tag: Tag.
  * @alpha_mask: Alpha mask.
  * @shape_mask: Shape mask.
  *

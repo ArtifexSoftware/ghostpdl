@@ -1075,7 +1075,7 @@ process_adaptive_compress(gs_state * pgs,
 }
 
 /*
- * Add a raster plane. The second operand indicates whether or not this is the
+ * Add a raster plane. The bool end_row operand indicates whether or not this is the
  * final plane of a row.
  */
 static int
