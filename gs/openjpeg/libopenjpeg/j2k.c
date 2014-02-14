@@ -3987,10 +3987,12 @@ OPJ_BOOL opj_j2k_read_sot ( opj_j2k_t *p_j2k,
                 if (l_num_parts != 0) { /* Number of tile-part header is provided by this tile-part header */
                         /* Useful to manage the case of textGBR.jp2 file because two values of TNSot are allowed: the correct numbers of
                          * tile-parts for that tile and zero (A.4.2 of 15444-1 : 2002). */
-                        if (l_tcp->m_nb_tile_parts) {
-                                if (l_current_part >= l_tcp->m_nb_tile_parts){
-                                        l_num_parts = l_current_part + 1;
-                                }
+                        if (l_num_parts < l_tcp->m_nb_tile_parts) {
+                                l_num_parts = l_tcp->m_nb_tile_parts;
+                        }
+                        if (l_current_part >= l_num_parts) {
+                                /* testcase 451.pdf.SIGSEGV.ce9.3723 */
+                                l_num_parts = l_current_part + 1;
                         }
                         l_tcp->m_nb_tile_parts = l_num_parts;
                 }
