@@ -140,16 +140,23 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
 
         code = inflateInit2(&stream, -15);
         if (code != Z_OK)
+        {
+            xps_free(ctx, inbuf);
             return gs_throw1(-1, "zlib inflateInit2 error: %s", stream.msg);
+        }
         code = inflate(&stream, Z_FINISH);
         if (code != Z_STREAM_END)
         {
             inflateEnd(&stream);
+            xps_free(ctx, inbuf);
             return gs_throw1(-1, "zlib inflate error: %s", stream.msg);
         }
         code = inflateEnd(&stream);
         if (code != Z_OK)
+        {
+            xps_free(ctx, inbuf);
             return gs_throw1(-1, "zlib inflateEnd error: %s", stream.msg);
+        }
 
         xps_free(ctx, inbuf);
     }
@@ -437,7 +444,10 @@ xps_read_and_process_metadata_part(xps_context_t *ctx, char *name)
 
     code = xps_parse_metadata(ctx, part);
     if (code)
+    {
+        xps_free_part(ctx, part);
         return gs_rethrow1(code, "cannot process metadata part '%s'", name);
+    }
 
     xps_free_part(ctx, part);
 
@@ -456,7 +466,10 @@ xps_read_and_process_page_part(xps_context_t *ctx, char *name)
 
     code = xps_parse_fixed_page(ctx, part);
     if (code)
+    {
+        xps_free_part(ctx, part);
         return gs_rethrow1(code, "cannot parse fixed page part '%s'", name);
+    }
 
     xps_free_part(ctx, part);
 
@@ -519,10 +532,15 @@ xps_process_file(xps_context_t *ctx, char *filename)
 
         code = xps_parse_fixed_page(ctx, part);
         if (code)
-            return gs_rethrow1(code, "cannot parse fixed page part '%s'", part->name);
+        {
+            code = gs_rethrow1(code, "cannot parse fixed page part '%s'", part->name);
+            xps_free_part(ctx, part);
+            goto cleanup;
+        }
 
         xps_free_part(ctx, part);
-        return gs_okay;
+        code = gs_okay;
+        goto cleanup;
     }
 
     if (strstr(filename, "/_rels/.rels") || strstr(filename, "\\_rels\\.rels"))
@@ -539,38 +557,58 @@ xps_process_file(xps_context_t *ctx, char *filename)
     {
         code = xps_find_and_read_zip_dir(ctx);
         if (code < 0)
-            return gs_rethrow(code, "cannot read zip central directory");
+        {
+            code = gs_rethrow(code, "cannot read zip central directory");
+            goto cleanup;
+        }
     }
 
     code = xps_read_and_process_metadata_part(ctx, "/_rels/.rels");
     if (code)
-        return gs_rethrow(code, "cannot process root relationship part");
+    {
+        code = gs_rethrow(code, "cannot process root relationship part");
+        goto cleanup;
+    }
 
     if (!ctx->start_part)
-        return gs_throw(-1, "cannot find fixed document sequence start part");
+    {
+        code = gs_rethrow(-1, "cannot find fixed document sequence start part");
+        goto cleanup;
+    }
 
     code = xps_read_and_process_metadata_part(ctx, ctx->start_part);
     if (code)
-        return gs_rethrow(code, "cannot process FixedDocumentSequence part");
+    {
+        code = gs_rethrow(code, "cannot process FixedDocumentSequence part");
+        goto cleanup;
+    }
 
     for (doc = ctx->first_fixdoc; doc; doc = doc->next)
     {
         code = xps_read_and_process_metadata_part(ctx, doc->name);
         if (code)
-            return gs_rethrow(code, "cannot process FixedDocument part");
+        {
+            code = gs_rethrow(code, "cannot process FixedDocument part");
+            goto cleanup;
+        }
     }
 
     for (page = ctx->first_page; page; page = page->next)
     {
         code = xps_read_and_process_page_part(ctx, page->name);
         if (code)
-            return gs_rethrow(code, "cannot process FixedPage part");
+        {
+            code = gs_rethrow(code, "cannot process FixedPage part");
+            goto cleanup;
+        }
     }
 
+    code = gs_okay;
+
+cleanup:
     if (ctx->directory)
         xps_free(ctx, ctx->directory);
     if (ctx->file)
         fclose(ctx->file);
-
-    return gs_okay;
+    return code;
 }
