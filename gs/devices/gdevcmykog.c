@@ -174,10 +174,6 @@ cmykog_open(gx_device * pdev)
   dev->pad = 0; /* No additional padding requirements */
   dev->log2_align_mod = 5; /* But we do want lines aligned to a multiple of 32 */
 
-  /* Lock the num_components and depth for this device */
-  dev->color_info.num_components = 6;
-  dev->color_info.depth = 48;
-
   /* Finally, we open the device requesting the underlying buffers to be
    * planar, rather than chunky. See (1) at the top of this file. */
   return gdev_prn_open_planar(pdev, true);
