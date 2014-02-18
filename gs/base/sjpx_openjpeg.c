@@ -29,7 +29,7 @@ gs_private_st_simple(st_jpxd_state, stream_jpxd_state,
 
 static int s_opjd_accumulate_input(stream_jpxd_state *state, stream_cursor_read * pr);
 
-OPJ_SIZE_T stream_read(void * p_buffer, OPJ_SIZE_T p_nb_bytes, void * p_user_data)
+static OPJ_SIZE_T sjpx_stream_read(void * p_buffer, OPJ_SIZE_T p_nb_bytes, void * p_user_data)
 {
 	stream_block *sb = (stream_block *)p_user_data;
 	OPJ_SIZE_T len;
@@ -46,7 +46,7 @@ OPJ_SIZE_T stream_read(void * p_buffer, OPJ_SIZE_T p_nb_bytes, void * p_user_dat
 	return len;
 }
 
-OPJ_OFF_T stream_skip(OPJ_OFF_T skip, void * p_user_data)
+static OPJ_OFF_T sjpx_stream_skip(OPJ_OFF_T skip, void * p_user_data)
 {
 	stream_block *sb = (stream_block *)p_user_data;
 
@@ -56,7 +56,7 @@ OPJ_OFF_T stream_skip(OPJ_OFF_T skip, void * p_user_data)
 	return sb->pos;
 }
 
-OPJ_BOOL stream_seek(OPJ_OFF_T seek_pos, void * p_user_data)
+static OPJ_BOOL sjpx_stream_seek(OPJ_OFF_T seek_pos, void * p_user_data)
 {
 	stream_block *sb = (stream_block *)p_user_data;
 
@@ -147,9 +147,9 @@ s_opjd_set_codec_format(stream_state * ss, OPJ_CODEC_FORMAT format)
         return ERRC;
     }
 
-    opj_stream_set_read_function(state->stream, stream_read);
-    opj_stream_set_skip_function(state->stream, stream_skip);
-    opj_stream_set_seek_function(state->stream, stream_seek);
+    opj_stream_set_read_function(state->stream, sjpx_stream_read);
+    opj_stream_set_skip_function(state->stream, sjpx_stream_skip);
+    opj_stream_set_seek_function(state->stream, sjpx_stream_seek);
 
     return 0;
 }
