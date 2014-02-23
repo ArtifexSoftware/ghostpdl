@@ -778,6 +778,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
             rc_decrement(ctile->cdev->common.icc_cache_cl,
                             "gx_pattern_cache_free_entry");
             ctile->cdev->common.icc_cache_cl = NULL;
+            ctile->cdev->writer.pinst = NULL;
             temp_device = (gx_device *)ctile->cdev;
             gx_device_retain(temp_device, false);
             ctile->cdev = NULL;

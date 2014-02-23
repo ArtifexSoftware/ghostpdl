@@ -205,6 +205,7 @@ ialloc_validate_spaces(const gs_dual_memory_t * dmem)
     state.spaces = dmem->spaces;
     state.loc.memory = state.space_local;
     state.loc.cp = 0;
+    state.heap = dmem->current->non_gc_memory;  /* valid 'heap' needed for printing */
 
     /* Save everything we need to reset temporarily. */
 
