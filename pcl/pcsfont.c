@@ -41,9 +41,7 @@
 #include "gxfont.h"
 #include "gxfont42.h"
 
-/* comment out to return an error instead of continuing when
-   processing a corrupt download font. */
-#define IGNORE_CORRUPT_FONT
+#define IGNORE_BAD_HEADER_FORMAT_SPECIFIER
 
 /* Emulate bug in HP printer where component metrics are ignored. */
 #define DISABLE_USE_MY_METRICS
@@ -289,7 +287,7 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
             has_checksum = true;
             break;
         default:
-#ifdef IGNORE_CORRUPT_FONT
+#ifdef IGNORE_BAD_HEADER_FORMAT_SPECIFIER
             return 0;
 #else
             return_error(gs_error_invalidfont);
@@ -313,7 +311,7 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
 
         if (sum != 0) {
             dmprintf1(pcs->memory, "corrupt font sum=%ld\n", sum);
-            return e_Range;
+            return_error(gs_error_invalidfont);
         }
     }
     /* Delete any previous font with this ID. */
