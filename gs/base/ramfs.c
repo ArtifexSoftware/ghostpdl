@@ -74,7 +74,7 @@ static int ramfile_truncate(ramhandle * handle,int size);
 
 ramfs * ramfs_new(gs_memory_t *mem, int size)
 {
-    ramfs * fs = gs_alloc_struct(mem, ramfs, &st_ramfs,
+    ramfs * fs = gs_alloc_struct(mem->stable_memory, ramfs, &st_ramfs,
     "ramfs_new"
     );
 
@@ -135,7 +135,7 @@ static int resize(ramfile * file,int size)
                 if(!newsize) newsize = 1;
                 while(newsize < newblocks) newsize *= 2;
             }
-            buf = gs_alloc_bytes(file->fs->memory, newsize * sizeof(char*), "ramfs resize");
+            buf = gs_alloc_bytes(file->fs->memory->stable_memory, newsize * sizeof(char*), "ramfs resize");
             if (!buf)
                 return gs_note_error(gs_error_VMerror);
             memcpy(buf, file->data, file->blocklist_size);
@@ -144,7 +144,7 @@ static int resize(ramfile * file,int size)
             file->blocklist_size = newsize;
         }
         while(file->blocks<newblocks) {
-            char * block = file->data[file->blocks] = (char *)gs_alloc_bytes(file->fs->memory, RAMFS_BLOCKSIZE, "ramfs resize");
+            char * block = file->data[file->blocks] = (char *)gs_alloc_bytes(file->fs->memory->stable_memory, RAMFS_BLOCKSIZE, "ramfs resize");
             if(!block) {
                 return -RAMFS_NOMEM;
             }
@@ -191,9 +191,9 @@ ramhandle * ramfs_open(gs_memory_t *mem, ramfs* fs,const char * filename,int mod
             return NULL;
         }
 
-        this = gs_alloc_struct(fs->memory, ramdirent, &st_ramdirent, "new ram directory entry");
-        file = gs_alloc_struct(fs->memory, ramfile, &st_ramfile, "new ram file");
-        dirent_filename = (char *)gs_alloc_bytes(fs->memory, strlen(filename) + 1, "ramfs filename");
+        this = gs_alloc_struct(fs->memory->stable_memory, ramdirent, &st_ramdirent, "new ram directory entry");
+        file = gs_alloc_struct(fs->memory->stable_memory, ramfile, &st_ramfile, "new ram file");
+        dirent_filename = (char *)gs_alloc_bytes(fs->memory->stable_memory, strlen(filename) + 1, "ramfs filename");
         if(!(this && file && dirent_filename)) {
             gs_free_object(fs->memory, this, "error, cleanup directory entry");
             gs_free_object(fs->memory, file, "error, cleanup ram file");
@@ -216,7 +216,7 @@ ramhandle * ramfs_open(gs_memory_t *mem, ramfs* fs,const char * filename,int mod
     file = this->inode;
     file->refcount++;
 
-    handle = gs_alloc_struct(fs->memory, ramhandle, &st_ramhandle, "new ram directory entry");
+    handle = gs_alloc_struct(fs->memory->stable_memory, ramhandle, &st_ramhandle, "new ram directory entry");
     if(!handle) {
         fs->last_error = RAMFS_NOMEM;
         return NULL;
@@ -296,7 +296,7 @@ int ramfs_rename(ramfs * fs,const char* oldname,const char* newname)
     /* just in case */
     if(strcmp(oldname,newname) == 0) return 0;
 
-    newnamebuf = (char *)gs_alloc_bytes(fs->memory, strlen(newname)+1, "ramfs rename");
+    newnamebuf = (char *)gs_alloc_bytes(fs->memory->stable_memory, strlen(newname)+1, "ramfs rename");
     if(!newnamebuf) {
         fs->last_error = RAMFS_NOMEM;
         return -1;
@@ -315,7 +315,7 @@ ramfs_enum * ramfs_enum_new(ramfs * fs)
 {
     ramfs_enum * e;
 
-    e = gs_alloc_struct(fs->memory, ramfs_enum, &st_ramfs_enum, "new ramfs enumerator");
+    e = gs_alloc_struct(fs->memory->stable_memory, ramfs_enum, &st_ramfs_enum, "new ramfs enumerator");
     if(!e) {
         fs->last_error = RAMFS_NOMEM;
         return NULL;
