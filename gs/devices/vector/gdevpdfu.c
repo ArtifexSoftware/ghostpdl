@@ -473,7 +473,8 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
             stream_puts(s, "/SetPageSize false def\n");
             stream_puts(s, "/EPS2Write true def\n");
         } else {
-            stream_puts(s, "/SetPageSize true def\n");
+            if (pdev->SetPageSize)
+                stream_puts(s, "/SetPageSize true def\n");
             stream_puts(s, "/EPS2Write false def\n");
         }
 

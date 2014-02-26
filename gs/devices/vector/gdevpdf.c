@@ -2589,6 +2589,17 @@ pdf_close(gx_device * dev)
         /* All resources and procsets written, end the prolog */
         stream_puts(pdev->strm, "%%EndProlog\n");
 
+        if (pdev->params.PSDocOptions.data) {
+            int i;
+            char *p = (char *)pdev->params.PSDocOptions.data;
+
+            stream_puts(pdev->strm, "%%BeginSetup\n");
+            for (i=0;i<pdev->params.PSDocOptions.size;i++)
+                stream_putc(s, *p++);
+            stream_puts(pdev->strm, "\n");
+            stream_puts(pdev->strm, "\n%%EndSetup\n");
+        }
+
         if (pdev->ResourcesBeforeUsage)
             pdf_reverse_resource_chain(pdev, resourcePage);
         for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
@@ -2602,10 +2613,21 @@ pdf_close(gx_device * dev)
                     pprintd2(pdev->strm, "%%%%Page: %d %d\n",
                         pagecount, pagecount);
                     if (!pdev->Eps2Write)
-                        pprintd2(pdev->strm, "%%%%PageBoundingBox: %d 0 %d %d\n", (int)page->MediaBox.x, (int)page->MediaBox.y);
+                        pprintd2(pdev->strm, "%%%%PageBoundingBox: 0 0 %d %d\n", (int)page->MediaBox.x, (int)page->MediaBox.y);
                     stream_puts(pdev->strm, "%%BeginPageSetup\n");
                     stream_puts(pdev->strm, "/pagesave save def\n");
+
+                    if (pdev->params.PSPageOptions.size) {
+                        int i, index = (pagecount - 1) % pdev->params.PSPageOptions.size;
+                        char *p = (char *)pdev->params.PSPageOptions.data[index].data;
+
+                        for (i=0;i<pdev->params.PSPageOptions.data[index].size;i++)
+                            stream_putc(s, *p++);
+                        stream_puts(pdev->strm, "\n");
+                    }
+
                     pdf_write_page(pdev, pagecount++);
+
                     stream_puts(pdev->strm, "%%EndPageSetup\n");
                     pprintld1(pdev->strm, "%ld 0 obj\n", pres->object->id);
                     code = cos_write(pres->object, pdev, pres->object->id);

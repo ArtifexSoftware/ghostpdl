@@ -23,8 +23,7 @@
 <li><a href="#Overview">Overview</a>
 <li><a href="#Usage">Usage</a>
 <li><a href="#Options">Options</a>
-<li><a href="#PPD">Ghostscript PS2 Printer Description</a>
-<li><a href="#printer_control">Controlling the printer behavior</a>
+<li><a href="#printer_control">Controlling device-specific behavior</a>
 <li><a href="#Limitations">Limitations</a>
 </ul></blockquote>
 
@@ -45,8 +44,8 @@ overview</a>.
 
 <h2><a name="Overview"></a>Overview</h2>
 
-<code>ps2ps2</code> is a script for converting a PDF or a Postscript Level 3 into
-Postscript Level 2.
+<code>ps2ps2</code> is a script for converting a PDF or Language Level 3 PostScript into
+Postscript Language Level 2.
 
 <p>
 <code>ps2ps2</code> is implemented as a very small command script (batch
@@ -79,28 +78,20 @@ valid for use with Ghostscript's PostScript and PDF interpreter (see
 <a href="Use.htm#Switches">here</a> for a complete list).
 
 <p>
-Since <code>ps2write</code> makes use of some printer 
-parameters when converting high level objects into Level 2 objects,
-we strongly recommend setting those values appropriately for the
+Some input features (eg PDF transparency) cannot be reproduced in level 2
+PostScript, and in these case the <code>ps2write</code> device will render
+the affected area (or page) to a bitmap image. In this case the <a  href="Use.htm#Output_resolution">Output resolution</a>
+affcts the size and quality of the rendered image, therefore we strongly recommend setting this value appropriately for the
 target printer or other output device.
-In particular, it is important that
-<a  href="Use.htm#Output_resolution">Output resolution</a>,
-<a href="Use.htm#FIXEDMEDIA"><code>-dFIXEDMEDIA</code></a>, and
-<code>ProcessColorModel</code> to be set correctly.
 
 <p>
 <em>
 <b>Important :</b>
-If the target printer can't handle a particular font type,
+If PostScript level 2 can't handle a particular font type,
 ps2write converts the fonts into a bitmap fonts representation,
 using the resolution specified when ps2write is invoked.
 In particular this can happen with CID fonts, which are not Postscript Level 2 objects.
 In general these are converted to multiple instances of other font types)
-Therefore the page device parameter <code>PageSize</code>
-must match the target printer, and we recommend setting
-the <code>PageSize</code> entry of the <code>Policies</code>
-dictionary to 3, in order to provide correct page scaling
-in the Postscript interpreter when ps2write is invoked.
 </em>
 
 <p>
@@ -116,13 +107,13 @@ parameters from within the PostScript input file.
 <p>
 The <code>ps2write</code> device handles the same set of distiller 
 parameters as
-are handled by the <code>pdfwrite</code> device. See the 
+are handled by the <code>pdfwrite</code> device (and 2 unique extensions, see below). See the
 <a href="Ps2pdf.htm#Options">PostScript-to-PDF converter</a> 
 documentation for a complete description of how to use them to
 control the document conversion.
 
 <p>
-The following options may be important for <code>ps2ps2</code> due to the target printer features:
+The following options may be important for <code>ps2ps2</code> due to the target interpreter features:
 <dl>
 <dt><code>-dPatternImagemask=</code><em>boolean</em>,
 <dt><code>-dMaxClipPathSize=</code><em>integer</em>,
@@ -152,6 +143,29 @@ with these exceptions:
 <dt><code>/ASCII85EncodePages</code> <em>true</em>,
 </dl>
 
+<a name="DistillerParams"></a>
+<p>
+There are also two additional (not Adobe-standard) Distiller parameters, specific to ps2write:
+<dl>
+<dt>
+<code>/PSDocOptions</code><em> string</em>
+<dd>No default value. If defined, the contents of the string will be emitted in the output PostScript prolog
+enclosed within %%BeginSetup and %%EndSetup comments. This is intended as a means of introducing device-specific document wide
+setup or configuration options into the output. Default media selection, printer resolution etc might be included here.
+</dd>
+<code>/PSPageOptions</code><em> array of strings</em>
+<dd>No default value. If defined, the contents of the strings in the array will be emitted in the output PostScript at the start
+of each page, one string per page, enclosed within %%BeginPageSetup and %%EndPageSetup comments. This is intended as a means of introducing device-specific
+setup or configuration options into the output on a page by page basis. The strings are used from the array sequentially, if there are more
+pages than strings then we 'wrap round' and start again with the first string. This makes it convenient to do setup for even/odd pages
+by simply including 2 strings in the array.
+</dt>
+</dl>
+<p>
+NB the strings contained in PSDocOptions, and the PSPageOptions array, are written verbatim to the output. No error checking is (or can be) performed on these strings
+and it is the users responsibility to ensure they contain well formed PostScript which does not cause errors on the target device.
+</p>
+</p>
 <p>
 There are also the  following ps2write specific options :
 <p>
@@ -159,7 +173,7 @@ There are also the  following ps2write specific options :
 <dl>
 <dt>
 <code>-dProduceDSC=</code><em>boolean</em>
-<dd> Default value is true. When this value is true the output PostScript file will be constructed in a way which is compatible with the Adobe Document Structuring Convention, and will include a set of comments appropriate for use by document managers which enables features such as page extraction, N-up printing and so on to be performed. When set to false, the output file will no be DSC-compliant, but will contain a valid PDF file wrapped up in a PostScript header. This is a change as of version 9.01 of Ghostscript, previously there was no DSC-compliant output from ps2write, and the behviour was as the case when <code>ProduceDSC</code> is false.
+<dd> Default value is true. When this value is true the output PostScript file will be constructed in a way which is compatible with the Adobe Document Structuring Convention, and will include a set of comments appropriate for use by document managers. This enables features such as page extraction, N-up printing and so on to be performed. When set to false, the output file will not be DSC-compliant. Older versions of Ghostscript cannot produce DSC-compliant output from ps2write, and the behviour for these older versions matches the case when <code>ProduceDSC</code> is false.
 </dl>
 
 <dl>
@@ -176,26 +190,21 @@ Default value is <code>false</code>.
 Note: It is not possible to set <code>CompressEntireFile</code> when <code>ProduceDSC</code> is true as a single compressed object cannot conform to the DSC. It is possible to set <code>CompressPages</code> which will also compress the ps2write ProcSet.
 
 
-<h2><a name="PPD"></a>Ghostscript PS2 Printer Description</h2>
-<p>
-Not implemented yet.
-<hr>
-
-<h2><a name="printer_control"></a>Controlling the printer behavior</h2>
+<h2><a name="printer_control"></a>Controlling device-specific behavior</h2>
 
 <p>
-A few options can be used to control the behavior of the printer or 
-program that reads the result of ps2ps2. These options cannot be used if <code>ProduceDSC</code> is true, as they break the page-independence required for DSC files.
+A few options can be used to influence the behavior of a printer or
+PostScript interpreter that reads the result of ps2ps2.
 
 <dl>
 <dt><code>-dRotatePages=</code><em>boolean</em>. 
 <dd>The printer will rotate pages 
-for a better fitting into the real page size. Default value : <em>false</em>.
+for a better fit with the physical size. Default value : <em>false</em>.
 Must be <em>false</em> if <code>-dSetPageSize=true</code>.
 
 <dt><code>-dFitPages=</code><em>boolean</em>. 
 <dd>The printer will scale pages down
-to fit into the real page size. The rendering quality may be poor due to the scaling,
+to better fit the physical page size. The rendering quality may be poor due to the scaling,
 especially for fonts which Ghostscript had converted into bitmaps 
 (see the <em>ps2write</em> device parameter <code>HaveTrueTypes</code>;
 See <a href="#Options">Options</a> about the <code>PageSize</code> entry of the <code>Policies</code>
@@ -211,7 +220,7 @@ Must be <em>false</em> if <code>-dSetPageSize=true</code> or <code>-dFitPages=tr
 <dt><code>-dSetPageSize=</code><em>boolean</em>. 
 <dd>The printer will try to set page size from the job. 
 Only use with printers which can handle random <em>PageSize</em>.
-Must be <em>false</em> if <code>-dRotatePages=true</code>, <code>-dCenterPages=true</code> or <code>-dFitPages=true</code>.
+Defaults to <em>true</em>, must be <em>false</em> if <code>-dRotatePages=true</code>, <code>-dCenterPages=true</code> or <code>-dFitPages=true</code>.
 
 <dt><code>-dDoNumCopies=</code><em>boolean</em>.
 <dd>The PostScript emitted by ps2write will try to use copypage to create the number of copies originally requested. Note that this relies on the level 2 semantics for copypage
@@ -234,19 +243,12 @@ will not attempt any form of media selection.
 In this case the behaviour can then be modified by setting the keys, either by modifying the resulting 
 PostScript or setting the values in some other manner on the target device.
 
+<p>
+See also the distiller params PSDocOptions and PSPageOptions mentioned <a href="Ps2ps2.htm#DistillerParams">above.</p>
 <hr>
 
 
 <h2><a name="Limitations"></a>Limitations</h2>
-
-<p>
-Attempting to generate a device independent Postscript Level 2 is a bad idea.
-Postscript Level 2 data are device dependent by definition. Let Ghostscript know
-the features of the specific printer as described in 
-<a href="#Options">Options</a> while generating a printer job.
-
-<p>
-
 
 <p>
 <code>ps2ps2</code> provides a simplified interface to the Ghostscript

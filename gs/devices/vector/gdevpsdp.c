@@ -964,6 +964,15 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
             psdf_put_enum(plist, "CannotEmbedFontPolicy",
                           (int)params.CannotEmbedFontPolicy,
                           CannotEmbedFontPolicy_names, &ecode);
+        if (ecode < 0)
+            return ecode;
+
+        /* ps2write-specific output configuration options */
+        ecode = psdf_read_string_param(plist, "PSDocOptions",
+                                       (gs_const_string *)&params.PSDocOptions, mem, ecode);
+        if (ecode < 0)
+            return ecode;
+        ecode  = param_read_embed_array(plist, "PSPageOptions", &params.PSPageOptions);
     }
     if (ecode < 0)
         return ecode;

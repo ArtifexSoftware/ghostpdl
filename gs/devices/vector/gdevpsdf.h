@@ -169,7 +169,8 @@ typedef struct psdf_distiller_params_s {
     bool EmbedAllFonts;
     int MaxSubsetPct;
     bool SubsetFonts;
-
+    gs_param_string PSDocOptions;
+    gs_param_string_array PSPageOptions;
 } psdf_distiller_params;
 
 /* Declare templates for default image compression filters. */
@@ -257,7 +258,11 @@ extern const stream_template s_zlibE_template;
     cefp_Warning,   /* CannotEmbedFontPolicy */ \
     1,		    /* EmbedAllFonts (true) */ \
     100,	    /* Max Subset Percent */ \
-    1		    /* Subset Fonts (true) */
+    1		    /* Subset Fonts (true) */\
+
+#define psdf_PSOption_param_defaults\
+    {0},        /* PSDocOptions */\
+    {0}         /* PSPageOptions */
 
 /* Define PostScript/PDF versions, corresponding roughly to Adobe versions. */
 typedef enum {
@@ -296,7 +301,8 @@ typedef struct gx_device_psdf_s {
            psdf_color_image_param_defaults,\
            psdf_gray_image_param_defaults,\
            psdf_mono_image_param_defaults,\
-           psdf_font_param_defaults\
+           psdf_font_param_defaults,\
+           psdf_PSOption_param_defaults\
          }
 /* st_device_psdf is never instantiated per se, but we still need to */
 /* extern its descriptor for the sake of subclasses. */
@@ -314,12 +320,14 @@ extern_st(st_device_psdf);
     GC_OBJ_ELT2(gx_device_psdf, params.MonoImage.ACSDict,\
                 params.MonoImage.Dict),\
     GC_OBJ_ELT2(gx_device_psdf, params.AlwaysEmbed.data,\
-                params.NeverEmbed.data)\
+                params.NeverEmbed.data),\
+    GC_CONST_STRING_ELT(gx_device_psdf, params.PSDocOptions),\
+    GC_OBJ_ELT(gx_device_psdf, params.PSPageOptions.data)\
   };\
   gs_public_st_basic_super_final(st_device_psdf, gx_device_psdf,\
     "gx_device_psdf", device_psdf_ptrs, device_psdf_data,\
     &st_device_vector, 0, gx_device_finalize)
-#define st_device_psdf_max_ptrs (st_device_vector_max_ptrs + 12)
+#define st_device_psdf_max_ptrs (st_device_vector_max_ptrs + 14)
 
 /* Get/put parameters. */
 dev_proc_get_params(gdev_psdf_get_params);
