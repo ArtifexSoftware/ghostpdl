@@ -175,8 +175,8 @@ gs_image_class_4_color(gx_image_enum * penum)
                then we will may use the thresholding if it is a halftone
                device*/
             is_planar_dev = penum->dev->is_planar;
-            if ((penum->dev->color_info.num_components == 1 || is_planar_dev) &&
-                 penum->bps == 8 ) {
+            if (((penum->dev->color_info.num_components == 1 && penum->dev->color_info.depth == 1) ||
+                 is_planar_dev) && penum->bps == 8 ) {
                 code = gxht_thresh_image_init(penum);
                 if (code == 0) {
                      return &image_render_color_thresh;
