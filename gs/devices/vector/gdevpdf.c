@@ -1437,7 +1437,7 @@ static int flush_hint_stream(pdf_linearisation_t *linear_params)
     return code;
 }
 
-static int write_hint_stream(pdf_linearisation_t *linear_params, unsigned int *val, char size_bits)
+static int write_hint_stream(pdf_linearisation_t *linear_params, gs_offset_t val, char size_bits)
 {
     unsigned int input_mask, output_mask;
 
@@ -1447,7 +1447,7 @@ static int write_hint_stream(pdf_linearisation_t *linear_params, unsigned int *v
     while(size_bits) {
         input_mask = 1 << (size_bits - 1);
         output_mask = 0x80 >> linear_params->HintBits;
-        if (input_mask & *val)
+        if (input_mask & val)
             linear_params->HintBuffer[linear_params->HintByte] |= output_mask;
         else
             linear_params->HintBuffer[linear_params->HintByte] &= ~output_mask;
@@ -1844,8 +1844,8 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
             linear_params->PageHintHeader.MostSharedObjects = hint->NumSharedObjects;
     }
 
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->PageHintHeader.LeastObjectsPerPage, 32);
-    write_hint_stream(linear_params, (unsigned int *)&pdev->ResourceUsage[pdev->pages[0].Page->id].LinearisedOffset, 32);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->PageHintHeader.LeastObjectsPerPage, 32);
+    write_hint_stream(linear_params, (gs_offset_t)pdev->ResourceUsage[pdev->pages[0].Page->id].LinearisedOffset, 32);
     i = (linear_params->PageHintHeader.MostObjectsPerPage - linear_params->PageHintHeader.MostObjectsPerPage + 1);
     j = 0;
     while (i) {
@@ -1853,8 +1853,8 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
         j++;
     }
     linear_params->PageHintHeader.ObjectNumBits = j;
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->PageHintHeader.ObjectNumBits, 16);
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->PageHintHeader.LeastPageLength, 32);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->PageHintHeader.ObjectNumBits, 16);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->PageHintHeader.LeastPageLength, 32);
     i = (linear_params->PageHintHeader.MostPageLength - linear_params->PageHintHeader.LeastPageLength + 1);
     j = 0;
     while (i) {
@@ -1862,8 +1862,8 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
         j++;
     }
     linear_params->PageHintHeader.PageLengthNumBits = j;
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->PageHintHeader.PageLengthNumBits, 16);
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->PageHintHeader.LeastPageOffset, 32);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->PageHintHeader.PageLengthNumBits, 16);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->PageHintHeader.LeastPageOffset, 32);
     i = (linear_params->PageHintHeader.MostPageOffset - linear_params->PageHintHeader.LeastPageOffset + 1);
     j = 0;
     while (i) {
@@ -1871,8 +1871,8 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
         j++;
     }
     linear_params->PageHintHeader.PageOffsetNumBits = j;
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->PageHintHeader.PageOffsetNumBits, 16);
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->PageHintHeader.LeastContentLength, 32);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->PageHintHeader.PageOffsetNumBits, 16);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->PageHintHeader.LeastContentLength, 32);
     i = (linear_params->PageHintHeader.MostContentLength - linear_params->PageHintHeader.LeastContentLength + 1);
     j = 0;
     while (i) {
@@ -1880,8 +1880,8 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
         j++;
     }
     linear_params->PageHintHeader.ContentLengthNumBits = j;
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->PageHintHeader.ContentLengthNumBits, 16);
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->PageHintHeader.MostSharedObjects, 16);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->PageHintHeader.ContentLengthNumBits, 16);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->PageHintHeader.MostSharedObjects, 16);
     i = (linear_params->PageHintHeader.LargestSharedObject + 1);
     j = 0;
     while (i) {
@@ -1889,14 +1889,14 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
         j++;
     }
     linear_params->PageHintHeader.SharedObjectNumBits = j;
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->PageHintHeader.SharedObjectNumBits, 16);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->PageHintHeader.SharedObjectNumBits, 16);
     j = 1;
-    write_hint_stream(linear_params, (unsigned int *)&j, 16);
-    write_hint_stream(linear_params, (unsigned int *)&j, 16);
+    write_hint_stream(linear_params, (gs_offset_t)j, 16);
+    write_hint_stream(linear_params, (gs_offset_t)j, 16);
 
 #ifdef LINEAR_DEBUGGING
     dmprintf1(pdev->pdf_memory, "LeastObjectsPerPage %d\n", linear_params->PageHintHeader.LeastObjectsPerPage);
-    dmprintf1(pdev->pdf_memory, "Page 1 Offset %ld\n", pdev->ResourceUsage[pdev->pages[0].Page->id].LinearisedOffset);
+    dmprintf1(pdev->pdf_memory, "Page 1 Offset %"PRId64"\n", pdev->ResourceUsage[pdev->pages[0].Page->id].LinearisedOffset);
     dmprintf1(pdev->pdf_memory, "ObjectNumBits %d\n", linear_params->PageHintHeader.ObjectNumBits);
     dmprintf1(pdev->pdf_memory, "LeastPageLength %d\n", linear_params->PageHintHeader.LeastPageLength);
     dmprintf1(pdev->pdf_memory, "MostPagelength %d\n", linear_params->PageHintHeader.MostPageLength);
@@ -1919,7 +1919,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
         int Num;
 
         Num = hint->NumUniqueObjects - linear_params->PageHintHeader.LeastObjectsPerPage;
-        write_hint_stream(linear_params, (unsigned int *)&Num, linear_params->PageHintHeader.ObjectNumBits);
+        write_hint_stream(linear_params, (gs_offset_t)Num, linear_params->PageHintHeader.ObjectNumBits);
         dmprintf2(pdev->pdf_memory, "Page %d NumUniqueObjects %d\n", i, Num);
     }
     for (i=0;i < pdev->next_page;i++) {
@@ -1927,18 +1927,18 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
         int Num;
 
         Num = hint->PageLength - linear_params->PageHintHeader.LeastPageLength;
-        write_hint_stream(linear_params, (unsigned int *)&Num, linear_params->PageHintHeader.PageLengthNumBits);
+        write_hint_stream(linear_params, (gs_offset_t)Num, linear_params->PageHintHeader.PageLengthNumBits);
         dmprintf2(pdev->pdf_memory, "Page %d PageLength %d\n", i, Num);
     }
     for (i=0;i < pdev->next_page;i++) {
         page_hint_stream_t *hint = &linear_params->PageHints[i];
 
         if (i == 0) {
-            write_hint_stream(linear_params, (unsigned int *)&i, linear_params->PageHintHeader.SharedObjectNumBits);
+            write_hint_stream(linear_params, (gs_offset_t)i, linear_params->PageHintHeader.SharedObjectNumBits);
             dmprintf2(pdev->pdf_memory, "Page %d NumSharedObjects %d\n", i, 1);
         }
         else {
-            write_hint_stream(linear_params, (unsigned int *)&hint->NumSharedObjects, linear_params->PageHintHeader.SharedObjectNumBits);
+            write_hint_stream(linear_params, (gs_offset_t)hint->NumSharedObjects, linear_params->PageHintHeader.SharedObjectNumBits);
             dmprintf2(pdev->pdf_memory, "Page %d NumSharedObjects %d\n", i, hint->NumSharedObjects);
         }
     }
@@ -1946,16 +1946,16 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
         page_hint_stream_t *hint = &linear_params->PageHints[i];
 
         for (j=0;j < hint->NumSharedObjects;j++) {
-            write_hint_stream(linear_params, (unsigned int *)&hint->SharedObjectRef[j], linear_params->PageHintHeader.SharedObjectNumBits);
+            write_hint_stream(linear_params, (gs_offset_t)hint->SharedObjectRef[j], linear_params->PageHintHeader.SharedObjectNumBits);
             dmprintf3(pdev->pdf_memory, "Page %d SharedObject %d ObjectRef %d\n", i, j, hint->SharedObjectRef[j]);
         }
     }
-    j = 1;
+
     for (i=0;i < pdev->next_page;i++) {
         page_hint_stream_t *hint = &linear_params->PageHints[i];
 
         for (j=0;j < hint->NumSharedObjects;j++) {
-            write_hint_stream(linear_params, (unsigned int *)&j, 1);
+            write_hint_stream(linear_params, (gs_offset_t)j, 1);
             dmprintf2(pdev->pdf_memory, "Page %d SharedObject %d Position Numerator 1\n", i, j);
         }
     }
@@ -1964,7 +1964,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
         int Num;
 
         Num = hint->ContentOffset - linear_params->PageHintHeader.LeastPageOffset;
-        write_hint_stream(linear_params, (unsigned int *)&Num, linear_params->PageHintHeader.PageOffsetNumBits);
+        write_hint_stream(linear_params, (gs_offset_t)Num, linear_params->PageHintHeader.PageOffsetNumBits);
         dmprintf2(pdev->pdf_memory, "Page %d ContentStreamOffset %d\n", i, Num);
     }
     for (i=1;i < pdev->next_page;i++) {
@@ -1972,7 +1972,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
         int Num;
 
         Num = hint->ContentLength - linear_params->PageHintHeader.LeastContentLength;
-        write_hint_stream(linear_params, (unsigned int *)&Num, linear_params->PageHintHeader.ContentLengthNumBits);
+        write_hint_stream(linear_params, (gs_offset_t)Num, linear_params->PageHintHeader.ContentLengthNumBits);
         dmprintf2(pdev->pdf_memory, "Page %d ContentStreamLength %d\n", i, Num);
     }
     flush_hint_stream(linear_params);
@@ -1988,30 +1988,30 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
             linear_params->SharedHintHeader.FirstObjectOffset = linear_params->SharedHints[1].ObjectOffset;
         }
         if (linear_params->SharedHints[i].ObjectLength < linear_params->SharedHintHeader.LeastObjectLength) {
-            linear_params->SharedHints[i].ObjectLength = linear_params->SharedHintHeader.LeastObjectLength;
+            linear_params->SharedHintHeader.LeastObjectLength = linear_params->SharedHints[i].ObjectLength;
         }
         if (linear_params->SharedHints[i].ObjectLength > linear_params->SharedHintHeader.MostObjectLength) {
-            linear_params->SharedHints[i].ObjectLength = linear_params->SharedHintHeader.MostObjectLength;
+            linear_params->SharedHintHeader.MostObjectLength = linear_params->SharedHints[i].ObjectLength;
         }
     }
 
     linear_params->SharedHintHeader.FirstPageEntries = linear_params->NumPage1Resources;
     linear_params->SharedHintHeader.NumSharedObjects = linear_params->NumSharedResources + linear_params->SharedHintHeader.FirstPageEntries;
 
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->SharedHintHeader.FirstSharedObject, 32);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->SharedHintHeader.FirstSharedObject, 32);
     dmprintf1(pdev->pdf_memory, "\nFirstSharedObject %d\n", linear_params->SharedHintHeader.FirstSharedObject);
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->SharedHintHeader.FirstObjectOffset, 32);
-    dmprintf1(pdev->pdf_memory, "FirstObjectOffset %ld\n", linear_params->SharedHintHeader.FirstObjectOffset);
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->SharedHintHeader.FirstPageEntries, 32);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->SharedHintHeader.FirstObjectOffset, 32);
+    dmprintf1(pdev->pdf_memory, "FirstObjectOffset %"PRId64"\n", linear_params->SharedHintHeader.FirstObjectOffset);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->SharedHintHeader.FirstPageEntries, 32);
     dmprintf1(pdev->pdf_memory, "FirstPageEntries %d\n", linear_params->SharedHintHeader.FirstPageEntries);
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->SharedHintHeader.NumSharedObjects, 32);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->SharedHintHeader.NumSharedObjects, 32);
     dmprintf1(pdev->pdf_memory, "NumSharedObjects %d\n", linear_params->SharedHintHeader.NumSharedObjects);
     j = 1;
-    write_hint_stream(linear_params, (unsigned int *)&j, 32);
+    write_hint_stream(linear_params, (gs_offset_t)j, 32);
     dmprintf(pdev->pdf_memory, "GreatestObjectsNumBits 1\n");
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->SharedHintHeader.FirstObjectOffset, 16);
-    dmprintf1(pdev->pdf_memory, "FirstObjectOffset %ld\n", linear_params->SharedHintHeader.FirstObjectOffset);
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->SharedHintHeader.LeastObjectLength, 32);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->SharedHintHeader.FirstObjectOffset, 16);
+    dmprintf1(pdev->pdf_memory, "FirstObjectOffset %"PRId64"\n", linear_params->SharedHintHeader.FirstObjectOffset);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->SharedHintHeader.LeastObjectLength, 32);
     dmprintf1(pdev->pdf_memory, "LeastObjectLength %d\n", linear_params->SharedHintHeader.LeastObjectLength);
 
     i = (linear_params->SharedHintHeader.MostObjectLength - linear_params->SharedHintHeader.LeastObjectLength + 1) / 2;
@@ -2021,22 +2021,22 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
         j++;
     }
     linear_params->SharedHintHeader.LengthNumBits = j + 1;
-    write_hint_stream(linear_params, (unsigned int *)&linear_params->SharedHintHeader.LengthNumBits, 16);
+    write_hint_stream(linear_params, (gs_offset_t)linear_params->SharedHintHeader.LengthNumBits, 16);
 
     for (i = 0; i< linear_params->NumSharedHints; i++) {
         unsigned int Length = linear_params->SharedHints[i].ObjectLength - linear_params->SharedHintHeader.LeastObjectLength;
 
-        write_hint_stream(linear_params, (unsigned int *)&Length, linear_params->SharedHintHeader.LengthNumBits);
+        write_hint_stream(linear_params, (gs_offset_t)Length, linear_params->SharedHintHeader.LengthNumBits);
         dmprintf2(pdev->pdf_memory, "Shared Object group %d, Length %d\n", i, Length);
     }
 
     j = 0;
     for (i = 0; i< linear_params->NumSharedHints; i++) {
-        write_hint_stream(linear_params, (unsigned int *)&j, 1);
+        write_hint_stream(linear_params, (gs_offset_t)j, 1);
         dmprintf1(pdev->pdf_memory, "Shared Object group %d, SignatureFlag false\n", i);
     }
     for (i = 0; i< linear_params->NumSharedHints; i++) {
-        write_hint_stream(linear_params, (unsigned int *)&j, 1);
+        write_hint_stream(linear_params, (gs_offset_t)j, 1);
         dmprintf1(pdev->pdf_memory, "Shared Object group %d, NumObjects 1\n", i);
     }
 
@@ -2086,13 +2086,13 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     for (i = 1;i < LDictObj; i++) {
         for (j = 0; j < pdev->ResourceUsageSize;j++) {
             if (pdev->ResourceUsage[j].NewObjectNumber == i) {
-                gs_sprintf(Header, "%010ld 00000 n \n", pdev->ResourceUsage[j].LinearisedOffset + HintStreamLen);
+                gs_sprintf(Header, "%010"PRId64" 00000 n \n", pdev->ResourceUsage[j].LinearisedOffset + HintStreamLen);
                 fwrite(Header, 20, 1, linear_params->sfile);
             }
         }
     }
 
-    gs_sprintf(LDict, "trailer\n<</Size %d>>\nstartxref\n%ld\n%%%%EOF\n",
+    gs_sprintf(LDict, "trailer\n<</Size %d>>\nstartxref\n%"PRId64"\n%%%%EOF\n",
         LDictObj, linear_params->FirstxrefOffset);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
@@ -2106,19 +2106,19 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
      * versions.
      */
     gp_fseek_64(linear_params->sfile, linear_params->LDictOffset, SEEK_SET);
-    gs_sprintf(LDict, "%d 0 obj\n<</Linearized 1/L %ld/H[ ", LDictObj, linear_params->FileLength);
+    gs_sprintf(LDict, "%d 0 obj\n<</Linearized 1/L %"PRId64"/H[ ", LDictObj, linear_params->FileLength);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
-    gs_sprintf(LDict, "%ld", pdev->ResourceUsage[HintStreamObj].LinearisedOffset);
+    gs_sprintf(LDict, "%"PRId64"", pdev->ResourceUsage[HintStreamObj].LinearisedOffset);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
-    gs_sprintf(LDict, " %ld]", HintStreamLen);
+    gs_sprintf(LDict, " %"PRId64"]", HintStreamLen);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
     /* Implementation Note 180 in hte PDF Reference 1.7 says that Acrobat
      * gets the 'E' value wrong. So its probably not important....
      */
-    gs_sprintf(LDict, "/O %d/E %ld",pdev->ResourceUsage[pdev->pages[0].Page->id].NewObjectNumber, linear_params->E);
+    gs_sprintf(LDict, "/O %d/E %"PRId64"",pdev->ResourceUsage[pdev->pages[0].Page->id].NewObjectNumber, linear_params->E);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
-    gs_sprintf(LDict, "/N %d/T %ld>>\nendobj\n", pdev->next_page, linear_params->T);
+    gs_sprintf(LDict, "/N %d/T %"PRId64">>\nendobj\n", pdev->next_page, linear_params->T);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
     /* Return to the secondary xref and write it again filling
@@ -2131,7 +2131,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     for (i = LDictObj;i <= linear_params->LastResource + 2; i++) {
         for (j = 0; j < pdev->ResourceUsageSize;j++) {
             if (pdev->ResourceUsage[j].NewObjectNumber == i) {
-                gs_sprintf(Header, "%010ld 00000 n \n", pdev->ResourceUsage[j].LinearisedOffset);
+                gs_sprintf(Header, "%010"PRId64" 00000 n \n", pdev->ResourceUsage[j].LinearisedOffset);
                 fwrite(Header, 20, 1, linear_params->sfile);
             }
         }
@@ -2141,14 +2141,14 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
      * in the missing values.
      */
     code = gp_fseek_64(linear_params->sfile, linear_params->FirsttrailerOffset, SEEK_SET);
-    gs_sprintf(LDict, "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %ld>>\nstartxref\r\n0\n%%%%EOF\n",
-        linear_params->LastResource + 3, pdev->ResourceUsage[linear_params->Info_id].NewObjectNumber, pdev->ResourceUsage[linear_params->Catalog_id].NewObjectNumber, fileID, fileID, (unsigned long)mainxref);
+    gs_sprintf(LDict, "\ntrailer\n<</Size %ld/Info %d 0 R/Root %d 0 R/ID[%s%s]/Prev %"PRId64">>\nstartxref\r\n0\n%%%%EOF\n",
+        linear_params->LastResource + 3, pdev->ResourceUsage[linear_params->Info_id].NewObjectNumber, pdev->ResourceUsage[linear_params->Catalog_id].NewObjectNumber, fileID, fileID, mainxref);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
     code = gp_fseek_64(linear_params->sfile, pdev->ResourceUsage[HintStreamObj].LinearisedOffset, SEEK_SET);
-    gs_sprintf(LDict, "%d 0 obj\n<</Length %10ld", HintStreamObj, HintLength);
+    gs_sprintf(LDict, "%d 0 obj\n<</Length %10"PRId64"", HintStreamObj, HintLength);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
-    gs_sprintf(LDict, "\n/S %10ld>>\nstream\n", SharedHintOffset);
+    gs_sprintf(LDict, "\n/S %10"PRId64">>\nstream\n", SharedHintOffset);
     fwrite(LDict, strlen(LDict), 1, linear_params->sfile);
 
 error:
@@ -2682,10 +2682,10 @@ pdf_close(gx_device * dev)
             linear_params.xref = xref;
 
         if (pdev->FirstObjectNumber == 1)
-            pprintld1(s, "xref\n0 %ld\n0000000000 65535 f \n",
+            pprintld1(s, "xref\n0 %"PRId64"\n0000000000 65535 f \n",
                   end_section);
         else
-            pprintld2(s, "xref\n0 1\n0000000000 65535 f \n%ld %ld\n",
+            pprintld2(s, "xref\n0 1\n0000000000 65535 f \n%"PRId64" %"PRId64"\n",
                   start_section,
                   end_section - start_section);
 
@@ -2697,7 +2697,7 @@ pdf_close(gx_device * dev)
             end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
             if (end_section < 0)
                 return end_section;
-            pprintld2(s, "%ld %ld\n", start_section, end_section - start_section);
+            pprintld2(s, "%"PRId64" %"PRId64"\n", start_section, end_section - start_section);
         } while (1);
 
         /* Write the trailer. */
