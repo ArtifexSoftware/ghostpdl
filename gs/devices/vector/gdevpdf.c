@@ -2263,6 +2263,8 @@ pdf_close(gx_device * dev)
     long Threads_id = 0;
     int code = 0, code1, pagecount=0;
     int64_t start_section, end_section;
+    char str[256];
+
 
     pdf_linearisation_t linear_params;
     memset(&linear_params, 0x00, sizeof(linear_params));
@@ -2681,13 +2683,17 @@ pdf_close(gx_device * dev)
         if (pdev->Linearise)
             linear_params.xref = xref;
 
-        if (pdev->FirstObjectNumber == 1)
-            pprintld1(s, "xref\n0 %"PRId64"\n0000000000 65535 f \n",
+        if (pdev->FirstObjectNumber == 1) {
+            gs_sprintf(str, "xref\n0 %"PRId64"\n0000000000 65535 f \n",
                   end_section);
-        else
-            pprintld2(s, "xref\n0 1\n0000000000 65535 f \n%"PRId64" %"PRId64"\n",
+            stream_puts(s, str);
+        }
+        else {
+            gs_sprintf(str, "xref\n0 1\n0000000000 65535 f \n%"PRId64" %"PRId64"\n",
                   start_section,
                   end_section - start_section);
+            stream_puts(s, str);
+        }
 
         do {
             write_xref_section(pdev, tfile, start_section, end_section, resource_pos, linear_params.Offsets);
@@ -2697,7 +2703,8 @@ pdf_close(gx_device * dev)
             end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
             if (end_section < 0)
                 return end_section;
-            pprintld2(s, "%"PRId64" %"PRId64"\n", start_section, end_section - start_section);
+            gs_sprintf(str, "%"PRId64" %"PRId64"\n", start_section, end_section - start_section);
+            stream_puts(s, str);
         } while (1);
 
         /* Write the trailer. */
