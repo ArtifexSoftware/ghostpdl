@@ -748,7 +748,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
     {	const cos_object_t *pco = (const cos_object_t *)pdf_get_FontFile_object(pfd->base_font);
         if (pco != NULL) {
             if (pdev->is_ps2write)
-                pprintld1(s, "%%BeginResource: file (PDF FontFile obj_%ld)\n", pco->id);
+                pprintld1(s, "%%%%BeginResource: file (PDF FontFile obj_%ld)\n", pco->id);
             code = COS_WRITE_OBJECT(pco, pdev, resourceNone);
             if (code < 0)
                 return code;
