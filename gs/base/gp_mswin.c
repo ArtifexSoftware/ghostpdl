@@ -625,21 +625,35 @@ gp_open_scratch_file(const gs_memory_t *mem,
     FILE *f = NULL;
     char sTempDir[_MAX_PATH];
     char sTempFileName[_MAX_PATH];
+#if defined(METRO) || !defined(GS_NO_UTF8)
+    wchar_t wTempDir[_MAX_PATH];
+    wchar_t wTempFileName[_MAX_PATH];
+    wchar_t wPrefix[_MAX_PATH];
+#endif
 
     memset(fname, 0, gp_file_name_sizeof);
     if (!gp_file_name_is_absolute(prefix, strlen(prefix))) {
-        int plen = sizeof(sTempDir);
+        int plen = _MAX_PATH;
 
-        if (gp_gettmpdir(sTempDir, &plen) != 0)
-#if METRO
-            l = GetTempPathWRT(sizeof(sTempDir), sTempDir);
+        /* gp_gettmpdir will always return a UTF8 encoded string unless
+         * GS_NO_UTF8 is defined, due to the windows specific version of
+         * gp_getenv being called (in gp_wgetv.c, not gp_getnv.c) */
+        if (gp_gettmpdir(sTempDir, &plen) != 0) {
+#ifdef METRO
+            /* METRO always uses UTF8 for 'ascii' - there is no concept of
+             * local encoding, so GS_NO_UTF8 makes no difference here. */
+            l = GetTempPathWRT(_MAX_PATH, wTempDir);
+            l = wchar_to_utf8(sTempDir, wTempDir);
+#elif defined(GS_NO_UTF8)
+            l = GetTempPathA(_MAX_PATH, sTempDir);
 #else
-            l = GetTempPath(sizeof(sTempDir), sTempDir);
+            GetTempPathW(_MAX_PATH, wTempDir);
+            l = wchar_to_utf8(sTempDir, wTempDir);
 #endif
-        else
+        } else
             l = strlen(sTempDir);
     } else {
-        strncpy(sTempDir, prefix, sizeof(sTempDir));
+        strncpy(sTempDir, prefix, _MAX_PATH);
         prefix = "";
         l = strlen(sTempDir);
     }
@@ -647,11 +661,19 @@ gp_open_scratch_file(const gs_memory_t *mem,
     if (sTempDir[l-1] == '/')
         sTempDir[l-1] = '\\';		/* What Windoze prefers */
 
-    if (l <= sizeof(sTempDir)) {
+    if (l <= _MAX_PATH) {
 #ifdef METRO
-        n = GetTempFileNameWRT(sTempDir, prefix, sTempFileName);
+        utf8_to_wchar(wTempDir, sTempDir);
+        utf8_to_wchar(wPrefix, prefix);
+        n = GetTempFileNameWRT(wTempDir, wPrefix, wTempFileName);
+        n = wchar_to_utf8(sTempFileName, wTempFileName);
+#elif defined(GS_NO_UTF8)
+        n = GetTempFileNameA(sTempDir, prefix, 0, sTempFileName);
 #else
-        n = GetTempFileName(sTempDir, prefix, 0, sTempFileName);
+        utf8_to_wchar(wTempDir, sTempDir);
+        utf8_to_wchar(wPrefix, prefix);
+        GetTempFileNameW(wTempDir, wPrefix, 0, wTempFileName);
+        n = wchar_to_utf8(sTempFileName, wTempFileName);
 #endif
         if (n == 0) {
             /* If 'prefix' is not a directory, it is a path prefix. */
@@ -666,12 +688,19 @@ gp_open_scratch_file(const gs_memory_t *mem,
                     break;
                 }
             }
-            if (i > 0)
+            if (i > 0) {
 #ifdef METRO
-                n = GetTempFileNameWRT(sTempDir, sTempDir + i, sTempFileName);
+                utf8_to_wchar(wPrefix, sTempDir + i);
+                GetTempFileNameWRT(wTempDir, wPrefix, wTempFileName);
+                n = wchar_to_utf8(sTempFileName, wTempFileName);
+#elif defined(GS_NO_UTF8)
+                n = GetTempFileNameA(sTempDir, sTempDir + i, 0, sTempFileName);
 #else
-                n = GetTempFileName(sTempDir, sTempDir + i, 0, sTempFileName);
+                utf8_to_wchar(wPrefix, sTempDir + i);
+                GetTempFileNameW(wTempDir, wPrefix, 0, wTempFileName);
+                n = wchar_to_utf8(sTempFileName, wTempFileName);
 #endif
+            }
         }
         if (n != 0) {
 #ifdef GS_NO_UTF8

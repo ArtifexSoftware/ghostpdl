@@ -20,7 +20,7 @@
 #include <wrl/client.h>
 #include <wrl/wrappers/corewrappers.h>
 
-extern "C" DWORD GetTempPathWRT(DWORD nBufferLength, LPSTR lpBuffer)
+extern "C" DWORD GetTempPathWRT(DWORD nBufferLength, LPWSTR lpBuffer)
 {
     try
     {
@@ -55,11 +55,10 @@ extern "C" DWORD GetTempPathWRT(DWORD nBufferLength, LPSTR lpBuffer)
         UINT32 length;
         PCWSTR value = WindowsGetStringRawBuffer(folderName, &length);
         std::wstring ws(value);
-        std::string s;
-        s.assign(ws.begin(), ws.end());
-        strncpy(lpBuffer, s.c_str(), nBufferLength);
+        wcsncpy(lpBuffer, ws.c_str(), nBufferLength);
+        lpBuffer[nBufferLength-1] = 0;
         WindowsDeleteString(folderName);
-        return s.length();
+        return ws.length();
     }
     catch(...)
     {
@@ -67,12 +66,12 @@ extern "C" DWORD GetTempPathWRT(DWORD nBufferLength, LPSTR lpBuffer)
     }
 }
 
-extern "C" UINT GetTempFileNameWRT(LPCSTR lpPathName, LPCSTR lpPrefixString, LPSTR lpTempFileName)
+extern "C" UINT GetTempFileNameWRT(LPCWSTR lpPathName, LPCWSTR lpPrefixString, LPWSTR lpTempFileName)
 {
     try
     {
-       std::string path(lpPathName);
-       std::string prefix(lpPrefixString);
+       std::wstring path(lpPathName);
+       std::wstring prefix(lpPrefixString);
        FILETIME systemTimeAsFileTime;
 
        if (!path.empty() && path.back() != '\\')
@@ -88,24 +87,21 @@ extern "C" UINT GetTempFileNameWRT(LPCSTR lpPathName, LPCSTR lpPrefixString, LPS
        {
            // Create file name of at most 13 characters, using at most 10
            // digits of time, and as many of the prefix characters as can fit
-           std::stringstream str;
-           str << (UINT)time;
-           std::string num(str.str());
+           std::wstring num(std::to_wstring((UINT)time));
            if (num.length() > 10)
                num = num.substr(num.length() - 10);
-           std::string pf(prefix);
+           std::wstring pf(prefix);
            if (num.length() + pf.length() > 13)
                pf.resize(13 - num.length());
-           std::string fullpath = path+pf+num;
+           std::wstring fullpath = path+pf+num;
 
            // Test that the file doesn't already exist
-           std::wstring wfullpath(fullpath.begin(), fullpath.end());
            LPWIN32_FIND_DATA find_data;
-           HANDLE h = FindFirstFileExW(wfullpath.c_str(), FindExInfoStandard, &find_data, FindExSearchNameMatch, NULL, 0);
+           HANDLE h = FindFirstFileExW(fullpath.c_str(), FindExInfoStandard, &find_data, FindExSearchNameMatch, NULL, 0);
            if (h == INVALID_HANDLE_VALUE)
            {
                // File doesn't exist
-               strcpy(lpTempFileName, fullpath.c_str());
+               wcscpy(lpTempFileName, fullpath.c_str());
                return fullpath.length();
            }
 

@@ -15,8 +15,8 @@
 
 #include "windows_.h"
 
-DWORD GetTempPathWRT(DWORD nBufferLength, LPSTR lpBuffer);
+DWORD GetTempPathWRT(DWORD nBufferLength, LPWSTR lpBuffer);
 
-UINT GetTempFileNameWRT(LPCSTR lpPathName, LPCSTR lpPrefixString, LPSTR lpTempFileName);
+UINT GetTempFileNameWRT(LPCWSTR lpPathName, LPCWSTR lpPrefixString, LPWSTR lpTempFileName);
 
 void OutputDebugStringWRT(LPCSTR str, DWORD len);
