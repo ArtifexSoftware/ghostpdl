@@ -73,7 +73,7 @@ extern "C" UINT GetTempFileNameWRT(LPCSTR lpPathName, LPCSTR lpPrefixString, LPS
     {
        std::string path(lpPathName);
        std::string prefix(lpPrefixString);
-       LPFILETIME lpSystemTimeAsFileTime;
+       FILETIME systemTimeAsFileTime;
 
        if (!path.empty() && path.back() != '\\')
            path.push_back('\\');
@@ -81,9 +81,9 @@ extern "C" UINT GetTempFileNameWRT(LPCSTR lpPathName, LPCSTR lpPrefixString, LPS
        if (path.length() > _MAX_PATH - 14)
            return ERROR_BUFFER_OVERFLOW;
 
-       GetSystemTimeAsFileTime(lpSystemTimeAsFileTime);
+       GetSystemTimeAsFileTime(&systemTimeAsFileTime);
 
-       DWORD time = lpSystemTimeAsFileTime->dwLowDateTime;
+       DWORD time = systemTimeAsFileTime.dwLowDateTime;
        while(true)
        {
            // Create file name of at most 13 characters, using at most 10
