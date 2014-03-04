@@ -2392,6 +2392,10 @@ currentdict /PDF2PS_matrix_key undef
       pop //true
     } if
   } if
+
+  currentdevice 1 dict dup /HighLevelDevice dup put .getdeviceparams
+  dup type /booleantype eq not {cleartomark}{3 1 roll cleartomark not exch pop}ifelse
+
 } bind def
 
 %
