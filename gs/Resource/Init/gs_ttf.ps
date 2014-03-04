@@ -1473,7 +1473,7 @@ mark
       } ifelse
     } for exch pop
                 % If there is no .notdef entry, map it to glyph 0.
-  dup /.notdef~GS known not { dup /.notdef~GS 0 put } if
+  dup /.notdef known not { dup /.notdef 0 put } if
   TTFDEBUG {
     (CharStrings:)= dup { exch =string cvs print ( ) print //== exec } forall
   } if
@@ -1829,12 +1829,13 @@ currentdict /postalias undef
     pop
   } forall
 
-  dup /.notdef~GS 0 put
+  dup /.notdef 0 put
 
 } bind def
 
 % <subtable> .pdfmapsymbolic  /Encoding [] /CharStrings <<>>
 /.pdfmapsymbolic {
+  //true /.render_notdef gput
   cmaparray
   dup length 1 add dict begin
   [ 64 { /.notdef /.notdef /.notdef /.notdef } repeat ]
@@ -1893,7 +1894,7 @@ currentdict /postalias undef
     <00030001> .findcmap {
       prebuilt_encoding //null ne {
         TTFDEBUG { (Using cmap 3.1 with prebuilt_encoding for non-symbolic.) = } if
-
+        //true /.render_notdef gput
         % The character code in /prebuilt_encoding[] is not guaranteed to be
         % compatible with the Microsoft UCS2 TrueType cmap subtable.
         % If the glyphname is known by AdobeGlyphList, the charcode for the glyph
@@ -1936,14 +1937,6 @@ currentdict /postalias undef
         /Encoding
         prebuilt_encoding //null ne {
           prebuilt_encoding
-          % Replace /.notdef with something we can recognise internally and elide the hollow rectangle notdef
-          [ exch
-            {
-              dup /.notdef eq {
-                pop /.notdef~GS
-              } if
-            } forall
-          ]
         } {
           /MacRomanEncodingForTrueType .findencoding
         } ifelse
@@ -1967,6 +1960,8 @@ currentdict /postalias undef
   TTFDEBUG { (.loadpdfttfont Encoding=) print dup //== exec } if
   /prebuilt_encoding gput     % for .pdfcharkeys
   /is_symbolic gput
+  % init key for whether to display the TTF notdef
+  //false /.render_notdef gput
   //false 0 .loadttfonttables
   .makesfnts
   tabdict /cmap known not {
@@ -2006,11 +2001,12 @@ currentdict /postalias undef
   .ttkeys
   /FontType 42
   /PaintType 0
+  /.render_notdef .render_notdef
   TTFDEBUG {
     (numloca=) print numloca =
   } if
   .dicttomark
   dup /FontName font_name put        % replace any definition of /FontName
   end end
-  .completefont
+ .completefont
 } bind def
