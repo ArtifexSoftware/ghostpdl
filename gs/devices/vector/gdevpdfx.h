@@ -137,6 +137,7 @@ typedef enum {
     resourceICC,
     resourceAnnotation,
     resourceEmbeddedFiles,
+    resourceFontFile,
     resourceNone        /* Special, used when this isn't a resource at all
                          * eg when we execute a resource we've just written, such as
                          * a Pattern.

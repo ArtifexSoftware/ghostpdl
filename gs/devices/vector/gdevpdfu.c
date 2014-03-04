@@ -762,6 +762,10 @@ pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
                 /* This should not be possible, not valid in PostScript */
                 pprintld1(s, "%%%%BeginResource: file (PDF Annotation obj_%ld)\n", id);
                 break;
+            case resourceFontFile:
+                /* This should not be possible, not valid in PostScript */
+                pprintld1(s, "%%%%BeginResource: file (PDF FontFile obj_%ld)\n", id);
+                break;
             default:
                 pprintld1(s, "%%%%BeginResource: file (PDF object obj_%ld)\n", id);
                 break;
