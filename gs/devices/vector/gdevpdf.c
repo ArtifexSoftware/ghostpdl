@@ -2261,6 +2261,7 @@ pdf_close(gx_device * dev)
     long Catalog_id = pdev->Catalog->id, Info_id = pdev->Info->id,
         Pages_id = pdev->Pages->id, Encrypt_id = 0;
     long Threads_id = 0;
+    bool partial_page = (pdev->contents_id != 0 && pdev->next_page != 0);
     int code = 0, code1, pagecount=0;
     int64_t start_section, end_section;
     char str[256];
@@ -2393,6 +2394,9 @@ pdf_close(gx_device * dev)
 
         s = pdev->strm;
         stream_puts(s, "<< /Type /Pages /Kids [\n");
+        /* Omit the last page if it was incomplete. */
+        if (partial_page)
+            --(pdev->next_page);
         {
             int i;
 
