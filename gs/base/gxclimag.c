@@ -895,6 +895,7 @@ clist_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
                 pie->color_space.icc_info.icc_num_components =
                     src_profile->num_comps;
                 pie->color_space.icc_info.is_lab = src_profile->islab;
+                pie->color_space.icc_info.default_match = src_profile->default_match;
                 pie->color_space.icc_info.data_cs = src_profile->data_cs;
                 src_profile->rend_cond = stored_rendering_cond;
                 render_is_valid = src_profile->rend_is_valid;

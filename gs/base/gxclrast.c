@@ -2711,6 +2711,7 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
         picc_profile->hashcode = icc_information.icc_hash;
         picc_profile->hash_is_valid = true;
         picc_profile->islab = icc_information.is_lab;
+        picc_profile->default_match = icc_information.default_match;
         picc_profile->data_cs = icc_information.data_cs;
         /* Store the clist reader address in the profile
            structure so that we can get to the buffer

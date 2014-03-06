@@ -289,6 +289,7 @@ typedef struct clist_icc_color_s {
     int64_t icc_hash;           /* hash code for icc profile */
     byte icc_num_components;   /* needed to avoid having to read icc data early */
     bool is_lab;               /* also needed early */
+    gsicc_profile_t default_match;     /* used by gsicc_get_link early for usefastcolor mode */
     gsicc_colorbuffer_t data_cs;
 } clist_icc_color_t;
 
