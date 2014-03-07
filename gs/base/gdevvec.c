@@ -457,24 +457,26 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
         float dash_offset = pis->line_params.dash.offset * scale;
         float half_width = pis->line_params.half_width * scale;
 
-        if (pattern_size > max_dash)
-            return_error(gs_error_limitcheck);
         if (dash_offset != vdev->state.line_params.dash.offset ||
             pattern_size != vdev->state.line_params.dash.pattern_size ||
             (pattern_size != 0 &&
              !dash_pattern_eq(vdev->dash_pattern, &pis->line_params.dash,
                               scale))
             ) {
-            float pattern[max_dash];
+            float *pattern;
             int i, code;
 
+            pattern = gs_alloc_bytes(vdev->memory->stable_memory, pattern_size * sizeof(float), "vector allocate dash pattern");
             for (i = 0; i < pattern_size; ++i)
                 pattern[i] = pis->line_params.dash.pattern[i] * scale;
             code = (*vdev_proc(vdev, setdash))
                 (vdev, pattern, pattern_size, dash_offset);
             if (code < 0)
                 return code;
-            memcpy(vdev->dash_pattern, pattern, pattern_size * sizeof(float));
+            if (vdev->dash_pattern)
+                gs_free_object(vdev->memory->stable_memory, vdev->dash_pattern, "vector free old dash pattern");
+            vdev->dash_pattern = pattern;
+            vdev->dash_pattern_size = pattern_size;
 
             vdev->state.line_params.dash.pattern_size = pattern_size;
             vdev->state.line_params.dash.offset = dash_offset;
@@ -816,6 +818,10 @@ gdev_vector_close_file(gx_device_vector * vdev)
     FILE *f = vdev->file;
     int err;
 
+    if (vdev->dash_pattern) {
+        gs_free_object(vdev->memory->stable_memory, vdev->dash_pattern, "vector free dash pattern");
+        vdev->dash_pattern = 0;
+    }
     if (vdev->bbox_device) {
         rc_decrement(vdev->bbox_device->icc_struct, "vector_close(bbox_device->icc_struct");
         vdev->bbox_device->icc_struct = NULL;

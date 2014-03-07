@@ -66,9 +66,6 @@ typedef struct gx_device_vector_s gx_device_vector;
 /* Define the maximum size of the output file name. */
 #define fname_size (gp_file_name_sizeof - 1)
 
-/* Define the longest dash pattern we can remember. */
-#define max_dash 11
-
 /*
  * Define procedures for writing common output elements.  Not all devices
  * will support all of these elements.  Note that these procedures normally
@@ -168,7 +165,8 @@ int gdev_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0,
         int open_options;	/* see below */\
                 /* Graphics state */\
         gs_imager_state state;\
-        float dash_pattern[max_dash];\
+        float *dash_pattern;\
+        uint dash_pattern_size;\
         bool fill_used_process_color;\
         bool stroke_used_process_color;\
         gx_hl_saved_color saved_fill_color;\
@@ -194,7 +192,8 @@ int gdev_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0,
         0,		/* strmbuf_size */\
         0,		/* open_options */\
          { 0 },		/* state */\
-         { 0 },		/* dash_pattern */\
+        0,      /* dash_pattern */\
+        0,      /* dash pattern size */\
         true,		/* fill_used_process_color */\
         true,		/* stroke_used_process_color */\
          { 0 },		/* fill_color ****** WRONG ****** */\
@@ -216,10 +215,10 @@ struct gx_device_vector_s {
 /* extern its descriptor for the sake of subclasses. */
 extern_st(st_device_vector);
 #define public_st_device_vector()	/* in gdevvec.c */\
-  gs_public_st_suffix_add3_final(st_device_vector, gx_device_vector,\
+  gs_public_st_suffix_add4_final(st_device_vector, gx_device_vector,\
     "gx_device_vector", device_vector_enum_ptrs,\
     device_vector_reloc_ptrs, gx_device_finalize, st_device, strm, strmbuf,\
-    bbox_device)
+    dash_pattern, bbox_device)
 #define st_device_vector_max_ptrs (st_device_max_ptrs + 3)
 
 /* ================ Utility procedures ================ */

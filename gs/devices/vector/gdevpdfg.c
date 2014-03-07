@@ -94,8 +94,19 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
     pdev->vgstack[i].saved_stroke_color = pdev->saved_stroke_color;
     pdev->vgstack[i].line_params = pdev->state.line_params;
     pdev->vgstack[i].line_params.dash.pattern = 0; /* Use pdev->dash_pattern instead. */
-    memcpy(pdev->vgstack[i].dash_pattern, pdev->dash_pattern,
-                sizeof(pdev->vgstack[i].dash_pattern));
+    if (pdev->dash_pattern) {
+        if (pdev->vgstack[i].dash_pattern)
+            gs_free_object(pdev->memory->non_gc_memory, pdev->vgstack[i].dash_pattern, "free gstate copy dash");
+        pdev->vgstack[i].dash_pattern = (float *)gs_alloc_bytes(pdev->memory->non_gc_memory, pdev->dash_pattern_size * sizeof(float), "gstate copy dash");
+        memcpy(pdev->vgstack[i].dash_pattern, pdev->dash_pattern, pdev->dash_pattern_size * sizeof(float));
+        pdev->vgstack[i].dash_pattern_size = pdev->dash_pattern_size;
+    } else {
+        if (pdev->vgstack[i].dash_pattern) {
+            gs_free_object(pdev->memory->non_gc_memory, pdev->vgstack[i].dash_pattern, "free gstate copy dash");
+            pdev->vgstack[i].dash_pattern = 0;
+            pdev->vgstack[i].dash_pattern_size = 0;
+        }
+    }
     pdev->vgstack_depth++;
     if (s)
         stream_puts(s, "q\n");
@@ -129,8 +140,18 @@ pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
     pdev->saved_fill_color = s->saved_fill_color;
     pdev->saved_stroke_color = s->saved_stroke_color;
     pdev->state.line_params = s->line_params;
-    memcpy(pdev->dash_pattern, s->dash_pattern,
-                sizeof(s->dash_pattern));
+    if (s->dash_pattern) {
+        if (pdev->dash_pattern)
+            gs_free_object(pdev->memory->stable_memory, pdev->dash_pattern, "vector free dash pattern");
+        pdev->dash_pattern = (float *)gs_alloc_bytes(pdev->memory->stable_memory, s->dash_pattern_size * sizeof(float), "vector allocate dash pattern");
+        pdev->dash_pattern_size  = s->dash_pattern_size;
+    } else {
+        if (pdev->dash_pattern) {
+            gs_free_object(pdev->memory->stable_memory, pdev->dash_pattern, "vector free dash pattern");
+            pdev->dash_pattern = 0;
+            pdev->dash_pattern_size = 0;
+        }
+    }
 }
 
 /* Restore the viewer's graphic state. */
@@ -201,7 +222,8 @@ pdf_viewer_state_from_imager_state_aux(pdf_viewer_state *pvs, const gs_imager_st
     pvs->line_params.dot_length_absolute = pis->line_params.dot_length_absolute;
     pvs->line_params.dot_orientation = pis->line_params.dot_orientation;
     memset(&pvs->line_params.dash, 0 , sizeof(pvs->line_params.dash));
-    memset(pvs->dash_pattern, 0, sizeof(pvs->dash_pattern));
+    pvs->dash_pattern = 0;
+    pvs->dash_pattern_size = 0;
 }
 
 /* Copy viewer state from images state. */

@@ -2998,6 +2998,11 @@ pdf_close(gx_device * dev)
     gs_free_object(mem, pdev->Pages, "Free Pages dict");
     pdev->Pages = 0;
 
+    {
+        int i;
+        for (i=0;i < pdev->vgstack_depth;i++)
+            gs_free_object(pdev->memory->non_gc_memory, pdev->vgstack[i].dash_pattern, "pdfwrite final free stored dash in gstate");
+    }
     gs_free_object(pdev->pdf_memory, pdev->vgstack, "pdf_close(graphics state stack)");
 
     cos_release((cos_object_t *)pdev->Namespace_stack, "release Name space stack");

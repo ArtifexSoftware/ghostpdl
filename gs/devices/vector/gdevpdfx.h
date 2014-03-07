@@ -502,7 +502,8 @@ typedef struct pdf_viewer_state_s {
     gx_hl_saved_color saved_fill_color;
     gx_hl_saved_color saved_stroke_color;
     gx_line_params line_params;
-    float dash_pattern[max_dash];
+    float *dash_pattern;
+    uint dash_pattern_size;
     gs_id soft_mask_id;
 } pdf_viewer_state;
 

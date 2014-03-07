@@ -522,7 +522,6 @@ userdict /.echo.mode //true put
         0 .argindex type dup /integertype eq exch /realtype eq or not {
           /setdash .systemvar /typecheck signalerror
         } if
-        1 .argindex length 11 gt { /setdash .systemvar /limitcheck signalerror } if
         //setdash
 } odef
 /setdevice
