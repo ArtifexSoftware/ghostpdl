@@ -466,7 +466,7 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
             float *pattern;
             int i, code;
 
-            pattern = gs_alloc_bytes(vdev->memory->stable_memory, pattern_size * sizeof(float), "vector allocate dash pattern");
+            pattern = (float *)gs_alloc_bytes(vdev->memory->stable_memory, pattern_size * sizeof(float), "vector allocate dash pattern");
             for (i = 0; i < pattern_size; ++i)
                 pattern[i] = pis->line_params.dash.pattern[i] * scale;
             code = (*vdev_proc(vdev, setdash))
