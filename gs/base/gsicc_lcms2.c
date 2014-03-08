@@ -47,7 +47,12 @@ void *gs_lcms2_malloc(cmsContext id, unsigned int size)
     void *ptr;
     gs_memory_t *mem = (gs_memory_t *)id;
 
+#if defined(SHARE_LCMS) && SHARE_LCMS==1
+    ptr = malloc(size);
+#else
     ptr = gs_alloc_bytes(mem, size, "lcms");
+#endif
+
 #if DEBUG_LCMS_MEM
     gs_warn2("lcms malloc (%d) at 0x%x",size,ptr);
 #endif
@@ -62,7 +67,12 @@ void gs_lcms2_free(cmsContext id, void *ptr)
 #if DEBUG_LCMS_MEM
         gs_warn1("lcms free at 0x%x",ptr);
 #endif
+
+#if defined(SHARE_LCMS) && SHARE_LCMS==1
+        free(ptr);
+#else
         gs_free_object(mem, ptr, "lcms");
+#endif
     }
 }
 
@@ -79,7 +89,12 @@ void *gs_lcms2_realloc(cmsContext id, void *ptr, unsigned int size)
         gs_lcms2_free(id, ptr);
         return NULL;
     }
+#if defined(SHARE_LCMS) && SHARE_LCMS==1
+    ptr2 = realloc(ptr, size);
+#else
     ptr2 = gs_resize_object(mem, ptr, size, "lcms");
+#endif
+
 #if DEBUG_LCMS_MEM
     gs_warn3("lcms realloc (%x,%d) at 0x%x",ptr,size,ptr2);
 #endif

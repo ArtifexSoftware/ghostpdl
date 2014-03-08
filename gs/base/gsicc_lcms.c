@@ -497,14 +497,24 @@ void* _cmsMalloc(unsigned int size)
 {
     void *ptr;
 
+#if defined(SHARE_LCMS) && SHARE_LCMS==1
+    ptr = malloc(size);
+#else
     ptr = gs_alloc_bytes(gs_lib_ctx_get_non_gc_memory_t(), size, "lcms");
+#endif
     gs_warn2("lcms malloc (%d) at 0x%x",size,ptr);
     return ptr;
 }
 
 void* _cmsCalloc(unsigned int nelts, unsigned int size)
 {
-    void *ptr = gs_alloc_byte_array(gs_lib_ctx_get_non_gc_memory_t(), nelts, size, "lcms");
+    void *ptr;
+
+#if defined(SHARE_LCMS) && SHARE_LCMS==1
+    ptr = malloc(nelts * size);
+#else
+    ptr = gs_alloc_byte_array(gs_lib_ctx_get_non_gc_memory_t(), nelts, size, "lcms");
+#endif
 
     if (ptr != NULL)
         memset(ptr, 0, nelts * size);
@@ -516,7 +526,11 @@ void _cmsFree(void *ptr)
 {
     if (ptr != NULL) {
         gs_warn1("lcms free at 0x%x",ptr);
+#if defined(SHARE_LCMS) && SHARE_LCMS==1
+        free(ptr);
+#else
         gs_free_object(gs_lib_ctx_get_non_gc_memory_t(), ptr, "lcms");
+#endif
     }
 }
 
@@ -524,12 +538,22 @@ void _cmsFree(void *ptr)
 
 void* _cmsMalloc(unsigned int size)
 {
+#if defined(SHARE_LCMS) && SHARE_LCMS==1
+    return malloc(size);
+#else
     return gs_alloc_bytes(gs_lib_ctx_get_non_gc_memory_t(), size, "lcms");
+#endif
 }
 
 void* _cmsCalloc(unsigned int nelts, unsigned int size)
 {
-    void *ptr = gs_alloc_byte_array(gs_lib_ctx_get_non_gc_memory_t(), nelts, size, "lcms");
+    void *ptr;
+
+#if defined(SHARE_LCMS) && SHARE_LCMS==1
+    ptr = malloc(nelts * size);
+#else
+    ptr = gs_alloc_byte_array(gs_lib_ctx_get_non_gc_memory_t(), nelts, size, "lcms");
+#endif
 
     if (ptr != NULL)
         memset(ptr, 0, nelts * size);
@@ -538,7 +562,11 @@ void* _cmsCalloc(unsigned int nelts, unsigned int size)
 
 void _cmsFree(void *ptr)
 {
+#if defined(SHARE_LCMS) && SHARE_LCMS==1
+    free(ptr);
+#else
     if (ptr != NULL)
         gs_free_object(gs_lib_ctx_get_non_gc_memory_t(), ptr, "lcms");
+#endif
 }
 #endif
