@@ -1620,7 +1620,6 @@ dnl Check which drivers we'd like to support.
 P_DEVS0=""
 F_DEVS0=""
 CUPS_DEVS0=""
-SVG_DEVS0=""
 XPS_DEVS0=""
 JBIG2_DEVS=""
 IJS_DEVS0=""
@@ -1774,10 +1773,6 @@ while test -n "$drivers"; do
                 # PostScript/PDF writing
                 F_DEVS0="$F_DEVS0 $PS_DEVS"
                 ;;
-        SVG)
-                # SVG writing
-                SVG_DEVS0="$SVGDEV"
-                ;;
         XPS)
                 # SVG writing
                 XPS_DEVS0="$XPSDEV"
@@ -1821,11 +1816,6 @@ if test x$enable_threadsafe = xyes; then
   for ntsdev in $NTS_DEVS ; do
     NTS_EXCLUDES="$(echo \"$CUPS_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
     CUPS_DEVS0=`echo $CUPS_DEVS0 | sed "s/\b$ntsdev\b//g"`
-  done
-
-  for ntsdev in $NTS_DEVS ; do
-    NTS_EXCLUDES="$(echo \"$SVG_DEVS0{[@]:0}\" | grep -o $ntsdev) $NTS_EXCLUDES"
-    SVG_DEVS0=`echo $SVG_DEVS0 | sed "s/\b$ntsdev\b//g"`
   done
 
   for ntsdev in $NTS_DEVS ; do
@@ -1878,10 +1868,6 @@ if test -n "$CUPS_DEVS0"; then
     CUPS_DEVS=`(for i in $CUPS_DEVS0; do d='$(DD)'${i}.dev; if ( grep '^'$d $noncontribmakefiles  2>&1 >/dev/null) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012\015' '  '`
 fi
 
-if test -n "$SVG_DEVS0"; then
-    SVG_DEVS=`(for i in $SVG_DEVS0; do d='$(DD)'${i}.dev; if ( grep '^'$d $noncontribmakefiles  2>&1 >/dev/null) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012\015' '  '`
-fi
-
 if test -n "$XPS_DEVS0"; then
     XPS_DEVS=`(for i in $XPS_DEVS0; do d='$(DD)'${i}.dev; if ( grep '^'$d $noncontribmakefiles  2>&1 >/dev/null) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012\015' '  '`
 fi
@@ -1901,7 +1887,6 @@ fi
 AC_SUBST(P_DEVS)
 AC_SUBST(F_DEVS)
 AC_SUBST(CUPS_DEVS)
-AC_SUBST(SVG_DEVS)
 AC_SUBST(XPS_DEVS)
 AC_SUBST(JBIG2_DEVS)
 AC_SUBST(IJS_DEVS)

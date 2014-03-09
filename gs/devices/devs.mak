@@ -1194,17 +1194,6 @@ $(DEVOBJ)gdevpx.$(OBJ) : $(DEVVECSRC)gdevpx.c\
  $(srlx_h) $(strimpl_h)
 	$(DEVCC) $(DEVO_)gdevpx.$(OBJ) $(C_) $(DEVVECSRC)gdevpx.c
 
-# Scalable Vector Graphics (SVG) output device
-
-svgwrite_=$(DEVOBJ)gdevsvg.$(OBJ)
-$(DD)svgwrite.dev : $(DEVS_MAK) $(svgwrite_) $(GDEV) $(GLD)vector.dev
-	$(SETDEV2) $(DD)svgwrite $(svgwrite_)
-	$(ADDMOD) $(DD)svgwrite -include $(GLD)vector
-
-$(DEVOBJ)gdevsvg.$(OBJ) : $(DEVVECSRC)gdevsvg.c $(gx_h) $(gdevvec_h)
-	$(DEVCC) $(DEVO_)gdevsvg.$(OBJ) $(C_) $(DEVVECSRC)gdevsvg.c
-
-
 xpswrite_=$(DEVOBJ)gdevxps.$(OBJ)
 $(DD)xpswrite.dev : $(DEVS_MAK) $(xpswrite_) $(GDEV) $(GLD)vector.dev
 	$(SETDEV2) $(DD)xpswrite $(xpswrite_)
