@@ -13,21 +13,21 @@
 # CA  94903, U.S.A., +1(415)492-9861, for further information.
 #
 
-all: pcl xps svg
+all: pcl xps
 
-all-lib: pcl-lib xps-lib svg-lib
+all-lib: pcl-lib xps-lib
 
-debug: pcl-debug xps-debug svg-debug
+debug: pcl-debug xps-debug
 
-memento: pcl-memento xps-memento svg-memento
+memento: pcl-memento xps-memento
 
-clean: pcl-clean xps-clean svg-clean
+clean: pcl-clean xps-clean
 
-debug-clean: pcl-debug-clean xps-debug-clean svg-debug-clean
+debug-clean: pcl-debug-clean xps-debug-clean
 
-memento-clean: pcl-memento-clean xps-memento-clean svg-memento-clean
+memento-clean: pcl-memento-clean xps-memento-clean
 
-test: pcl-test xps-test svg-test
+test: pcl-test xps-test
 
 # only pcl has an install target at this point
 install: pcl-install
@@ -109,30 +109,6 @@ xps-memento-clean:
 
 xps-test:
 	./xps/obj/gxps tools/tiger.xps
-
-svg-debug:
-	$(MAKE) -C svg -f svg_gcc.mak pdl-debug GENDIR="./debugobj"
-
-svg-memento:
-	$(MAKE) -C svg -f svg_gcc.mak pdl-memento GENDIR="./memobj"
-
-svg:
-	$(MAKE) -C svg -f svg_gcc.mak pdl-product # build SVG
-
-svg-lib:
-	$(MAKE) -C svg -f svg_gcc.mak pdl-product-lib # build SVG lib
-
-svg-clean:
-	$(MAKE) -C svg -f svg_gcc.mak pdl-clean
-
-svg-debug-clean:
-	$(MAKE) -C svg -f svg_gcc.mak pdl-clean GENDIR="./debugobj"
-
-svg-memento-clean:
-	$(MAKE) -C svg -f svg_gcc.mak pdl-clean GENDIR="./memobj"
-
-svg-test:
-	./svg/obj/gsvg tools/tiger.svg
 
 mupdf-debug:
 	$(MAKE) -C mupdf -f bovine_gcc.mak pdl-debug GENDIR="./debugobj"
@@ -263,4 +239,4 @@ distclean:  all-clean
 maintainer-clean:  distclean  
 	rm -f configure
 
-.PHONY: all clean test check install uninstall product profile pcl pcl-debug pcl-memento pcl-test pcl-install pcl-uninstall pcl-clean pcl-debug-clean pcl-memento-clean xps xps-debug xps-memento svg svg-debug svg-memento ls-clean ls-debug-clean ls-memento-clean ls-test ls-install ls-product ls-profile ls-udebug ls-umemento udebug umemento ufst mupdf
+.PHONY: all clean test check install uninstall product profile pcl pcl-debug pcl-memento pcl-test pcl-install pcl-uninstall pcl-clean pcl-debug-clean pcl-memento-clean xps xps-debug xps-memento ls-clean ls-debug-clean ls-memento-clean ls-test ls-install ls-product ls-profile ls-udebug ls-umemento udebug umemento ufst mupdf
