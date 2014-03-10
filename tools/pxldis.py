@@ -730,14 +730,14 @@ class pxl_dis:
 
     def dump(self, src):
         N=0
-        result=''
+        result=[]
         while src:
             s,src = src[:16],src[16:]
             hexa = ' '.join(["%02X"% ord_(x) for x in s])
             s = ''.join(printables[ord_(x)] for x in s)
             result += "%04X   %-*s   %s\n" % (N, 16*3, hexa, s)
             N+=16
-        return result
+        return ''.join(result)
 
 
     # check for embedded tags.
