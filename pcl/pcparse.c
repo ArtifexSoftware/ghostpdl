@@ -296,7 +296,6 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
     while (p < rlimit) {
         byte chr;
         const pcl_command_definition_t *cdefn = NULL;
-
         switch (pst->scan_type) {
             case scanning_data:
                 {               /* Accumulate command data in a buffer. */
@@ -317,7 +316,10 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                                                        pst->param_class,
                                                        pst->param_group,
                                                        pst->args.command);
-                    pst->scan_type = scanning_none;
+                    if (pst->short_hand)
+                        pst->scan_type = scanning_parameter;
+                    else
+                        pst->scan_type = scanning_none;
                     break;
                 }
             case scanning_display:
@@ -426,11 +428,13 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     dmprintf1(pcs->memory, " %c\n", chr);
                 }
 #endif
+                pst->short_hand = false;
                 if (chr >= min_escape_command + 32 &&
-                    chr <= max_escape_command + 32)
+                    chr <= max_escape_command + 32) {
+                    pst->short_hand = true;
                     chr -= 32;
-                else if (chr >= min_escape_command &&
-                         chr <= max_escape_command)
+                } else if (chr >= min_escape_command &&
+                           chr <= max_escape_command)
                     pst->scan_type = scanning_none;
                 else {
                     pst->scan_type = scanning_none;

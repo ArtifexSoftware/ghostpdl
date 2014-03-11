@@ -76,6 +76,7 @@ struct pcl_parser_state_s
 {
     /* Internal state */
     pcl_scan_type_t scan_type;
+    bool short_hand;
     bool garbage_in_parameter;
     pcl_args_t args;
     double scale;               /* for accumulating floating numbers */
@@ -86,7 +87,7 @@ struct pcl_parser_state_s
 };
 
 #define pcl_parser_init_inline(pst)\
-  ((pst)->scan_type = scanning_none, (pst)->args.data = 0, (pst)->args.data_on_heap = false)
+    ((pst)->scan_type = scanning_none, (pst)->args.data = 0, (pst)->args.data_on_heap = false, (pst)->short_hand = false)
 
 /* Define the prefix of a macro definition. */
 typedef struct pcl_macro_s
