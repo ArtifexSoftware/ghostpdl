@@ -1222,6 +1222,7 @@ pkm_print_row_4(gx_device_printer * pdev, byte * data, int depth,
     return 0;
 }
 /* Print a row where each pixel occupies 1 or more bytes (depth >= 8). */
+/* Note that the output is scaled up to 255 max value.                 */
 static int
 pkm_print_row(gx_device_printer * pdev, byte * data, int depth,
               FILE * pstream)
@@ -1229,7 +1230,6 @@ pkm_print_row(gx_device_printer * pdev, byte * data, int depth,
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
     byte *bp;
     uint x;
-    ulong max_value = pdev->color_info.max_color;
 
     for (bp = data, x = 0; x < pdev->width;) {
         bits32 pixel = 0;
@@ -1255,9 +1255,9 @@ pkm_print_row(gx_device_printer * pdev, byte * data, int depth,
         }
         ++x;
         pkm_map_color_rgb((gx_device *) pdev, pixel, rgb);
-        r = rgb[0] * max_value / gx_max_color_value;
-        g = rgb[1] * max_value / gx_max_color_value;
-        b = rgb[2] * max_value / gx_max_color_value;
+        r = rgb[0] * 0xff / gx_max_color_value;
+        g = rgb[1] * 0xff / gx_max_color_value;
+        b = rgb[2] * 0xff / gx_max_color_value;
         if (bdev->is_raw) {
             if (putc(r, pstream) == EOF)
                 return_error(gs_error_ioerror);
