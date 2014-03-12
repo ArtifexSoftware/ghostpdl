@@ -276,8 +276,8 @@ devn_get_color_comp_index(gx_device * dev, gs_devn_params * pdevn_params,
         gs_separations * separations = &pdevn_params->separations;
         int sep_num = separations->num_separations++;
         /* We have a new spot colorant - put in stable memory to avoid "restore" */
-        sep_name = gs_alloc_bytes(dev->memory->stable_memory,
-                        name_size, "devn_get_color_comp_index");
+        sep_name = gs_alloc_bytes(dev->memory->stable_memory, name_size, "devn_get_color_comp_index");
+
         memcpy(sep_name, pname, name_size);
         separations->names[sep_num].size = name_size;
         separations->names[sep_num].data = sep_name;
@@ -2140,10 +2140,10 @@ spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int pcmlinelength = 0; /* Initialize against indeterminizm in case of pdev->height == 0. */
     int linelength[GX_DEVICE_COLOR_MAX_COMPONENTS];
     byte *data;
-    char spotname[gp_file_name_sizeof];
+    char *spotname = (char *)gs_alloc_bytes(pdev->memory, gp_file_name_sizeof, "spotcmyk_print_page(spotname)");
 
-    if (in == NULL || buf == NULL) {
-        code = gs_error_VMerror;
+    if (in == NULL || buf == NULL || spotname == NULL) {
+        code = gs_note_error(gs_error_VMerror);
         goto prn_done;
     }
     /*
@@ -2164,7 +2164,7 @@ spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
         gs_sprintf(spotname, "%ss%d", pdevn->fname, i);
         spot_file[i] = gp_fopen(spotname, "wb");
         if (spot_file[i] == NULL) {
-            code = gs_error_VMerror;
+            code = gs_note_error(gs_error_VMerror);
             goto prn_done;
         }
     }
@@ -2197,13 +2197,13 @@ spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
         code = devn_write_pcx_file(pdev, (char *) &pdevn->fname,
                                 npcmcolors, bpc, pcmlinelength);
         if (code < 0)
-            return code;
+            goto prn_done;
     }
     for(i = 0; i < nspot; i++) {
         gs_sprintf(spotname, "%ss%d", pdevn->fname, i);
         code = devn_write_pcx_file(pdev, spotname, 1, bpc, linelength[i]);
         if (code < 0)
-            return code;
+            goto prn_done;
     }
 
     /* Clean up and exit */
@@ -2216,6 +2216,8 @@ spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
         gs_free_object(pdev->memory, in, "spotcmyk_print_page(in)");
     if (buf != NULL)
         gs_free_object(pdev->memory, buf, "spotcmyk_print_page(buf)");
+    if (spotname != NULL)
+        gs_free_object(pdev->memory, spotname, "spotcmyk_print_page(spotname)");
     return code;
 }
 
@@ -2526,19 +2528,26 @@ devn_write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
     pcx_header header;
     int code;
     bool planar;
-    char outname[gp_file_name_sizeof];
-    FILE * in;
-    FILE * out;
+    char *outname = (char *)gs_alloc_bytes(pdev->memory, gp_file_name_sizeof, "devn_write_pcx_file(outname)");
+    FILE * in = NULL;
+    FILE * out = NULL;
     int depth = bpc_to_depth(ncomp, bpc);
 
+    if (outname == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+	goto done;
+    }
+
     in = gp_fopen(filename, "rb");
-    if (!in)
-        return_error(gs_error_invalidfileaccess);
+    if (!in) {
+        code = gs_note_error(gs_error_invalidfileaccess);
+	goto done;
+    }
     gs_sprintf(outname, "%s.pcx", filename);
     out = gp_fopen(outname, "wb");
     if (!out) {
-        fclose(in);
-        return_error(gs_error_invalidfileaccess);
+        code = gs_note_error(gs_error_invalidfileaccess);
+	goto done;
     }
 
     planar = devn_setup_pcx_header(pdev, &header, ncomp, bpc);
@@ -2546,8 +2555,15 @@ devn_write_pcx_file(gx_device_printer * pdev, char * filename, int ncomp,
     if (code >= 0)
         code = devn_finish_pcx_file(pdev, out, &header, ncomp, bpc);
 
-    fclose(in);
-    fclose(out);
+done:
+    if (in)
+      fclose(in);
+    if (out)
+      fclose(out);
+      
+    if (outname)
+      gs_free_object(pdev->memory, outname, "spotcmyk_print_page(outname)");
+
     return code;
 }
 

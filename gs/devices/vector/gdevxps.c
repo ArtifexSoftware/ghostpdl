@@ -376,12 +376,23 @@ zip_append_data(gs_memory_t *mem, gx_device_xps_zinfo_t *info, byte *data, uint 
     /* if there is no data then this is the first call for this
        archive file, open a temporary file to store the data. */
     if (info->data.count == 0) {
-        char filename[gp_file_name_sizeof];
-        FILE *fp = gp_open_scratch_file(mem, "xpsdata-",
+        char *filename =
+          (char *)gs_alloc_bytes(mem, gp_file_name_sizeof, "zip_append_data(filename)");
+        FILE *fp;
+        
+        if (!filename) {
+            return(gs_throw_code(gs_error_VMerror));
+        }
+        
+        fp = gp_open_scratch_file(mem, "xpsdata-",
                                         filename, "wb+");
-        if (fp == NULL)
+
+        if (fp == NULL) {
+            gs_free_object(mem, filename, "zip_append_data(filename)");
             return gs_throw_code(gs_error_Fatal);
+        }
         unlink(filename);
+        gs_free_object(mem, filename, "zip_append_data(filename)");
         info->data.fp = fp;
     }
 

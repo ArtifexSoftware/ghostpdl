@@ -1042,14 +1042,22 @@ int gx_device_delete_output_file(const gx_device * dev, const char *fname)
 {
     gs_parsed_file_name_t parsed;
     const char *fmt;
-    char pfname[gp_file_name_sizeof];
-    int code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname),
-                                         dev->memory);
+    char *pfname = (char *)gs_alloc_bytes(dev->memory, gp_file_name_sizeof, "gx_device_delete_output_file(pfname)");
+    int code;
 
-    if (code < 0)
-        return code;
+    if (pfname == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+	goto done;
+    }
+    
+    code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname),
+                                         dev->memory);
+    if (code < 0) {
+        goto done;
+    }
+
     if (parsed.iodev && !strcmp(parsed.iodev->dname, "%stdout%"))
-        return 0;
+        goto done;
 
     if (fmt) {						/* filename includes "%nnd" */
         long count1 = dev->PageCount + 1;
@@ -1069,8 +1077,15 @@ int gx_device_delete_output_file(const gx_device * dev, const char *fname)
         parsed.len = strlen(parsed.fname);
     }
     if (parsed.iodev)
-        return (parsed.iodev->procs.delete_file((gx_io_device *)(&parsed.iodev), (const char *)parsed.fname));
-    return_error(gs_error_invalidfileaccess);
+        code = parsed.iodev->procs.delete_file((gx_io_device *)(&parsed.iodev), (const char *)parsed.fname);
+    else
+        code = gs_note_error(gs_error_invalidfileaccess);
+
+done:
+    if (pfname != NULL)
+        gs_free_object(dev->memory, pfname, "gx_device_delete_output_file(pfname)");
+
+    return(code);
 }
 
 /* Open the output file for a device. */
@@ -1080,18 +1095,28 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
 {
     gs_parsed_file_name_t parsed;
     const char *fmt;
-    char pfname[gp_file_name_sizeof];
-    int code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname),
-                                         dev->memory);
+    char *pfname = (char *)gs_alloc_bytes(dev->memory, gp_file_name_sizeof, "gx_device_open_output_file(pfname)");
+    int code;
+    
+    if (pfname == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+	goto done;
+     }
 
-    if (code < 0)
-        return code;
+    code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname), dev->memory);
+    if (code < 0) {
+        goto done;
+    }
+
     if (parsed.iodev && !strcmp(parsed.iodev->dname, "%stdout%")) {
-        if (parsed.fname)
-            return_error(gs_error_undefinedfilename);
+        if (parsed.fname) {
+            code = gs_note_error(gs_error_undefinedfilename);
+	    goto done;
+	}
         *pfile = dev->memory->gs_lib_ctx->fstdout;
         /* Force stdout to binary. */
-        return gp_setmode_binary(*pfile, true);
+        code = gp_setmode_binary(*pfile, true);
+	goto done;
     } else if (parsed.iodev && !strcmp(parsed.iodev->dname, "%pipe%")) {
         positionable = false;
     }
@@ -1115,8 +1140,10 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
     if (positionable || (parsed.iodev && parsed.iodev != iodev_default(dev->memory))) {
         char fmode[4];
 
-        if (!parsed.fname)
-            return_error(gs_error_undefinedfilename);
+        if (!parsed.fname) {
+            code = gs_note_error(gs_error_undefinedfilename);
+	    goto done;
+	}
         strcpy(fmode, gp_fmode_wb);
         if (positionable)
             strcat(fmode, "+");
@@ -1126,15 +1153,21 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
             emprintf1(dev->memory,
                       "**** Could not open the file %s .\n",
                       parsed.fname);
-        return code;
     }
-    *pfile = gp_open_printer(dev->memory, (pfname[0] ? pfname : fname), binary);
-    if (*pfile)
-        return 0;
-    emprintf1(dev->memory,
-              "**** Could not open the file %s .\n",
-              (pfname[0] ? pfname : fname));
-    return_error(gs_error_invalidfileaccess);
+    else {
+        *pfile = gp_open_printer(dev->memory, (pfname[0] ? pfname : fname), binary);
+        if (!(*pfile)) {
+            emprintf1(dev->memory, "**** Could not open the file %s .\n", (pfname[0] ? pfname : fname));
+
+            code = gs_note_error(gs_error_invalidfileaccess);
+        }
+    }
+
+done:
+    if (pfname != NULL)
+        gs_free_object(dev->memory, pfname, "gx_device_open_output_file(pfname)");
+
+    return(code);
 }
 
 /* Close the output file for a device. */

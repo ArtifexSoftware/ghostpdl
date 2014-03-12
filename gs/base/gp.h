@@ -177,8 +177,13 @@ const char *gp_getenv_display(void);
  * parameter, but it would break too many clients to make this change now.)
  * Note that this is the size of the buffer, not the maximum number of
  * characters: the latter is one less, because of the terminating \0.
+ *
+ * This used to be 260, the same as the MAX_PATH value on Windows,
+ * but although MAX_PATH still exists on Windows, it is no longer
+ * the maximum length of a path - doh??
+ * We now use 4k as a reasonable limit for most environments.
  */
-#define gp_file_name_sizeof 260 /* == MAX_PATH on Windows */
+#define gp_file_name_sizeof 4096
 
 /* Define the character used for separating file names in a list. */
 extern const char gp_file_name_list_separator;

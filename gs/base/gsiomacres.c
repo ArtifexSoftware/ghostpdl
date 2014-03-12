@@ -369,16 +369,21 @@ static int
 iodev_macresource_open_file(gx_io_device *iodev, const char *fname, uint namelen,
     const char *access, stream **ps, gs_memory_t *mem)
 {
-    char filename[gp_file_name_sizeof];
+    char filename = gs_alloc_bytes(dev->memory, gp_file_name_sizeof, "iodev_macresource_open_file(filename)");
     char *res_type_string, *res_id_string;
     uint type;
     ushort id;
     bool datafork = 0;
-    int size;
+    int size, code;
     byte *buf;
 
     /* return NULL if there's an error */
     *ps = NULL;
+    
+    if (filename == NULL) {
+      code = gs_note_error(gs_error_VMerror);
+      goto done;
+    }
 
     strncpy(filename, fname, min(namelen, gp_file_name_sizeof));
     if (namelen < gp_file_name_sizeof) filename[namelen] = '\0';
@@ -387,13 +392,15 @@ iodev_macresource_open_file(gx_io_device *iodev, const char *fname, uint namelen
     res_type_string = strrchr(filename, '#');
     if (res_type_string == NULL) {
         if_debug0('s', "[s] couldn't find resource type separator\n");
-        return_error(e_invalidfileaccess);
+        code = gs_note_error(e_invalidfileaccess);
+	goto done;
     }
     *res_type_string++ = '\0';
     res_id_string = strrchr(res_type_string, '+');
     if (res_id_string == NULL) {
         if_debug0('s', "couldn't find resource id separator\n");
-        return_error(e_invalidfileaccess);
+        code = gs_note_error(e_invalidfileaccess);
+	goto done;
     }
     *res_id_string++ = '\0';
     type = res_string2type(res_type_string);
@@ -411,7 +418,8 @@ iodev_macresource_open_file(gx_io_device *iodev, const char *fname, uint namelen
             datafork = true;
         } else {
             if_debug0('s', "could not get resource size\n");
-            return_error(e_invalidfileaccess);
+            code = gs_note_error(e_invalidfileaccess);
+	    goto done;
         }
     }
     if_debug1('s', "[s] got resource size %d bytes\n", size);
@@ -419,7 +427,8 @@ iodev_macresource_open_file(gx_io_device *iodev, const char *fname, uint namelen
     buf = gs_alloc_string(mem, size, "macresource buffer");
     if (buf == NULL) {
         if_debug0('s', "macresource: could not allocate buffer for resource data\n");
-        return_error(e_VMerror);
+        code = gs_note_error(e_VMerror);
+	goto done;
     }
     /* call again to get the resource data */
     if (!datafork) {
@@ -432,6 +441,9 @@ iodev_macresource_open_file(gx_io_device *iodev, const char *fname, uint namelen
     *ps = s_alloc(mem, "macresource");
     sread_string(*ps, buf, size);
 
-    /* return success */
-    return 0;
+done:
+    if (pfname != NULL)
+        gs_free_object(dev->memory, filename, "iodev_macresource_open_file(filename)");
+
+    return (code);
 }

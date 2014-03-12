@@ -168,27 +168,37 @@ int
 xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
 {
     FILE *file;
-    char name[gp_file_name_sizeof];
+    char *name = xps_alloc(ctx, gp_file_name_sizeof);
     struct state state;
     jxr_container_t container;
     jxr_image_t image;
     int offset, alpha_offset;
     int rc;
+    
+    if (!name) {
+        return gs_throw(gs_error_VMerror, "cannot allocate scratch file name buffer");
+    }
 
     memset(output, 0, sizeof(*output));
 
     file = gp_open_scratch_file(ctx->memory, "jpegxr-scratch-", name, "wb+");
-    if (!file)
+    if (!file) {
+        xps_free(ctx, name);
         return gs_throw(gs_error_invalidfileaccess, "cannot open scratch file");
+    }
     rc = fwrite(buf, 1, len, file);
-    if (rc != len)
+    if (rc != len) {
+        xps_free(ctx, name);
         return gs_throw(gs_error_invalidfileaccess, "cannot write to scratch file");
+    }
     fseek(file, 0, SEEK_SET);
 
     container = jxr_create_container();
     rc = jxr_read_image_container(container, file);
-    if (rc < 0)
+    if (rc < 0) {
+        xps_free(ctx, name);
         return gs_throw1(-1, "jxr_read_image_container: %s", jxr_error_string(rc));
+    }
 
     offset = jxrc_image_offset(container, 0);
     alpha_offset = jxrc_alpha_offset(container, 0);
@@ -215,8 +225,10 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
 
     fseek(file, offset, SEEK_SET);
     rc = jxr_read_image_bitstream(image, file);
-    if (rc < 0)
+    if (rc < 0) {
+        xps_free(ctx, name);
         return gs_throw1(-1, "jxr_read_image_bitstream: %s", jxr_error_string(rc));
+    }
 
     jxr_destroy(image);
 
@@ -241,8 +253,10 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
 
         fseek(file, alpha_offset, SEEK_SET);
         rc = jxr_read_image_bitstream(image, file);
-        if (rc < 0)
+        if (rc < 0) {
+            xps_free(ctx, name);
             return gs_throw1(-1, "jxr_read_image_bitstream: %s", jxr_error_string(rc));
+        }
 
         jxr_destroy(image);
     }
@@ -251,6 +265,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
 
     fclose(file);
     unlink(name);
+    xps_free(ctx, name);
 
     return gs_okay;
 }

@@ -24,7 +24,7 @@
 #include "gserrors.h"
 #include "gsparams.h"
 
-#define MAX_PARAM_KEY 255
+#define MAX_PARAM_KEY gp_file_name_sizeof
 
 /* ---------------- Serializer ---------------- */
 
@@ -42,6 +42,11 @@ gs_param_list_puts(stream *dest, gs_param_list *list)
     int code = 0;
     gs_param_enumerator_t key_enum;
     gs_param_key_t key;
+    char *string_key = gs_alloc_bytes(dest->memory, MAX_PARAM_KEY + 1, "gs_param_list_puts(string_key)");
+    
+    if (!string_key) {
+        return_error(gs_error_VMerror);
+    }
 
     param_init_enumerator(&key_enum);
 
@@ -72,7 +77,6 @@ gs_param_list_puts(stream *dest, gs_param_list *list)
 
         /* Get next datum & put its type & key to stream */
         gs_param_typed_value value;
-        char string_key[MAX_PARAM_KEY + 1];
 
         if (sizeof(string_key) < key.size + 1) {
             code = gs_note_error(gs_error_rangecheck);
@@ -155,6 +159,8 @@ string_array:	sput_word(dest, size);
             break;
     }
 
+    gs_free_object(dest->memory, string_key, "gs_param_list_puts(string_key)");
+
     /* Write end marker, which is an (illegal) 0 key length */
     return (code < 0 ? code : sput_word(dest, 0));
 }
@@ -200,6 +206,11 @@ int
 gs_param_list_gets(stream *src, gs_param_list *list, gs_memory_t *mem)
 {
     int code = 0;
+    char *string_key = gs_alloc_bytes(dest->memory, MAX_PARAM_KEY + 1, "gs_param_list_gets(string_key)");
+    
+    if (!string_key) {
+        return_error(gs_error_VMerror);
+    }
 
     do {
         gs_param_typed_value typed;
@@ -210,7 +221,6 @@ gs_param_list_gets(stream *src, gs_param_list *list, gs_memory_t *mem)
         void *data;
         uint size;
         gs_param_type type;
-        char string_key[MAX_PARAM_KEY + 1];
 
         /* key length 0 indicates end of data */
         if ((code = sget_word(src, &key_sizeof)) < 0 ||
@@ -339,6 +349,8 @@ put:	if (code < 0)
             code = param_write_typed(list, string_key, &typed);
     }
     while (code >= 0);
+
+    gs_free_object(dest->memory, string_key, "gs_param_list_gets(string_key)");
 
     return code;
 }
