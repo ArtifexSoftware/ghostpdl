@@ -28,6 +28,9 @@
 #include "gdevvec.h"
 #include "strimpl.h"
 #include "srlx.h"
+#include "jpeglib_.h"
+#include "sdct.h"
+#include "sjpeg.h"
 #include "gdevpxat.h"
 #include "gdevpxen.h"
 #include "gdevpxop.h"
@@ -99,7 +102,7 @@ typedef struct gx_device_pclxl_s {
     } chars;
     bool font_set;
     int state_rotated; /* 0, 1, 2, -1, mutiple of 90 deg */
-    int CompressMode; /* std PXL enum: None=0, RLE=1, DeltaRow=3; JPEG=2 not used */
+    int CompressMode; /* std PXL enum: None=0, RLE=1, JPEG=2, DeltaRow=3 */
     bool scaled;
     double x_scale; /* chosen so that max(x) is scaled to 0x7FFF, to give max distinction between x values */
     double y_scale;
@@ -715,6 +718,118 @@ pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * base, int data_b
         px_put_bytes(s, (const byte *)"\000\000\000\000", -(int)width_bytes & 3);
     }
 }
+
+static void
+pclxl_write_image_data_JPEG(gx_device_pclxl * xdev, const byte * base,
+			    int data_bit, uint raster, uint width_bits, int y,
+			    int height)
+{
+    stream *s = pclxl_stream(xdev);
+    uint width_bytes = (width_bits + 7) >> 3;
+    int i;
+    int count;
+    int code;
+
+    /* cannot handle data_bit not multiple of 8, but we don't invoke this routine that way */
+    int offset = data_bit >> 3;
+    const byte *data = base + offset;
+    jpeg_compress_data *jcdp =
+	gs_alloc_struct_immovable(xdev->v_memory, jpeg_compress_data,
+				  &st_jpeg_compress_data,
+				  "pclxl_write_image_data_JPEG(jpeg_compress_data)");
+    stream_DCT_state state;
+    stream_cursor_read r;
+    stream_cursor_write w;
+    /* Approx. The worse case is ~ header + width_bytes * height.
+       Apparently minimal SOI/DHT/DQT/SOS/EOI is 341 bytes. TO CHECK. */
+    int buffersize = 341 + width_bytes * height;
+
+    byte *buf = gs_alloc_bytes(xdev->v_memory, buffersize,
+			       "pclxl_write_image_data_JPEG(buf)");
+    /* RLE can write uncompressed without extra-allocation */
+    if ((buf == 0) || (jcdp == 0)) {
+	goto failed_so_use_rle_instead;
+    }
+    /* Create the DCT encoder state. */
+    jcdp->templat = s_DCTE_template;
+    s_init_state((stream_state *) & state, &jcdp->templat, 0);
+    if (state.templat->set_defaults) {
+	state.memory = xdev->v_memory;
+	(*state.templat->set_defaults) ((stream_state *) & state);
+	state.memory = NULL;
+    }
+    state.ColorTransform = (xdev->color_info.num_components == 3 ? 1 : 0);
+    state.data.compress = jcdp;
+    state.icc_profile = NULL;
+    jcdp->memory = state.jpeg_memory = xdev->v_memory;
+    if ((code = gs_jpeg_create_compress(&state)) < 0)
+	goto cleanup_and_use_rle;
+    /* image-specific info */
+    jcdp->cinfo.image_width = width_bytes / xdev->color_info.num_components;
+    jcdp->cinfo.image_height = height;
+    switch (xdev->color_info.num_components) {
+	case 3:
+	    jcdp->cinfo.input_components = 3;
+	    jcdp->cinfo.in_color_space = JCS_RGB;
+	    break;
+	case 1:
+	    jcdp->cinfo.input_components = 1;
+	    jcdp->cinfo.in_color_space = JCS_GRAYSCALE;
+	    break;
+        default:
+            goto cleanup_and_use_rle;
+            break;
+    }
+    /* Set compression parameters. */
+    if ((code = gs_jpeg_set_defaults(&state)) < 0)
+	goto cleanup_and_use_rle;
+
+    if (state.templat->init)
+	(*state.templat->init) ((stream_state *)&state);
+    state.scan_line_size = jcdp->cinfo.input_components *
+	jcdp->cinfo.image_width;
+    jcdp->templat.min_in_size =
+	max(s_DCTE_template.min_in_size, state.scan_line_size);
+    jcdp->templat.min_out_size =
+	max(s_DCTE_template.min_out_size, state.Markers.size);
+
+    w.ptr = buf - 1;
+    w.limit = w.ptr + buffersize;
+    for (i = 0; i < height; ++i) {
+	r.ptr = data + i * raster - 1;
+        r.limit = r.ptr + width_bytes;
+	if (((code = (*state.templat->process)
+              ((stream_state *) & state, &r, &w, false)) != 0 && code != EOFC) || r.ptr != r.limit)
+            goto cleanup_and_use_rle;
+    }
+    count = w.ptr + 1 - buf;
+    px_put_usa(s, y, pxaStartLine);
+    px_put_usa(s, height, pxaBlockHeight);
+    px_put_ub(s, eJPEGCompression);
+    px_put_ac(s, pxaCompressMode, pxtReadImage);
+    px_put_data_length(s, count);
+    px_put_bytes(s, buf, count);
+
+    gs_free_object(xdev->v_memory, buf,
+		   "pclxl_write_image_data_JPEG(buf)");
+    if (jcdp)
+        gs_jpeg_destroy(&state); /* frees *jcdp */
+    return;
+
+  cleanup_and_use_rle:
+    /* cleans up - something went wrong after allocation */
+    gs_free_object(xdev->v_memory, buf,
+		   "pclxl_write_image_data_JPEG(buf)");
+    if (jcdp)
+        gs_jpeg_destroy(&state); /* frees *jcdp */
+    /* fall through to redo in RLE */
+  failed_so_use_rle_instead:
+    /* the RLE routine can write without new allocation - use as fallback. */
+    pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits, y,
+			       height);
+    return;
+}
+
 /* DeltaRow compression (also called "mode 3"):
    drawn heavily from gdevcljc.c:cljc_print_page(),
    This is simplier since PCL XL does not allow
@@ -769,24 +884,38 @@ pclxl_write_image_data_DeltaRow(gx_device_pclxl * xdev, const byte * base, int d
     return;
 }
 
+/* calling from copy_mono/copy_color/fill_mask should never do lossy compression */
 static void
-pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
-                       uint raster, uint width_bits, int y, int height)
+pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data,
+		       int data_bit, uint raster, uint width_bits, int y,
+		       int height, bool allow_lossy)
 {
-    /* If we only have 1 line, it does not make sense to do DeltaRow */
+    /* If we only have 1 line, it does not make sense to do JPEG/DeltaRow */
     if (height < 2) {
-        pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits, y, height);
-        return;
+	pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits,
+				   y, height);
+	return;
     }
 
-    switch(xdev->CompressMode){
-    case eDeltaRowCompression:
-        pclxl_write_image_data_DeltaRow(xdev, data, data_bit, raster, width_bits, y, height);
-        break;
-    case eRLECompression:
-    default:
-        pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits, y, height);
-        break;
+    switch (xdev->CompressMode) {
+	case eDeltaRowCompression:
+	    pclxl_write_image_data_DeltaRow(xdev, data, data_bit, raster,
+					    width_bits, y, height);
+	    break;
+	case eJPEGCompression:
+	    /* JPEG should not be used for mask or other data */
+	    if (allow_lossy)
+		pclxl_write_image_data_JPEG(xdev, data, data_bit, raster,
+					    width_bits, y, height);
+	    else
+		pclxl_write_image_data_RLE(xdev, data, data_bit, raster,
+					   width_bits, y, height);
+	    break;
+	case eRLECompression:
+	default:
+	    pclxl_write_image_data_RLE(xdev, data, data_bit, raster,
+				       width_bits, y, height);
+	    break;
     }
 }
 
@@ -1590,7 +1719,7 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
         PX_PUT_LIT(s, mi_);
     }
     pclxl_write_begin_image(xdev, w, h, w, h);
-    pclxl_write_image_data(xdev, data, data_x, raster, w, 0, h);
+    pclxl_write_image_data(xdev, data, data_x, raster, w, 0, h, false);
     pclxl_write_end_image(xdev);
     return 0;
 }
@@ -1652,7 +1781,7 @@ pclxl_copy_color(gx_device * dev,
     }
     pclxl_write_begin_image(xdev, w, h, w, h);
     pclxl_write_image_data(xdev, base, source_bit, raster,
-                           w * dev->color_info.depth, 0, h);
+                           w * dev->color_info.depth, 0, h, false);
     pclxl_write_end_image(xdev);
     return 0;
 }
@@ -1719,7 +1848,7 @@ pclxl_fill_mask(gx_device * dev,
         PX_PUT_LIT(s, mi_);
     }
     pclxl_write_begin_image(xdev, w, h, w, h);
-    pclxl_write_image_data(xdev, data, data_x, raster, w, 0, h);
+    pclxl_write_image_data(xdev, data, data_x, raster, w, 0, h, false);
     pclxl_write_end_image(xdev);
     return 0;
 }
@@ -2080,8 +2209,10 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
         PX_PUT_LIT(s, ii_);
     }
     pclxl_write_begin_image(xdev, pie->width, h, dw, dh);
+    /* 8-bit gray image may compress with jpeg, but we
+       cannot tell if it is 8-bit gray or 8-bit indexed */
     pclxl_write_image_data(xdev, pie->rows.data + offset_lastflippedstrip, 0, rows_raster,
-                           rows_raster << 3, 0, h);
+                           rows_raster << 3, 0, h, (pie->bits_per_pixel==24 ? true : false));
     pclxl_write_end_image(xdev);
     return 0;
 }

@@ -1191,7 +1191,7 @@ $(DEVOBJ)gdevpx.$(OBJ) : $(DEVVECSRC)gdevpx.c\
  $(gx_h) $(gsccolor_h) $(gsdcolor_h) $(gxiparam_h) $(gserrors_h)\
  $(gxcspace_h) $(gxdevice_h) $(gxpath_h)\
  $(gdevpxat_h) $(gdevpxen_h) $(gdevpxop_h) $(gdevpxut_h) $(gdevvec_h)\
- $(srlx_h) $(strimpl_h)
+ $(srlx_h) $(strimpl_h) $(jpeglib__h) $(sdct_h) $(sjpeg_h)
 	$(DEVCC) $(DEVO_)gdevpx.$(OBJ) $(C_) $(DEVVECSRC)gdevpx.c
 
 xpswrite_=$(DEVOBJ)gdevxps.$(OBJ)

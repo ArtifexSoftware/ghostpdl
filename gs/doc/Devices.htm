@@ -771,8 +771,10 @@ a graphic language understood by many recent laser printers.
 <h4>Options</h4>
 <blockquote>
 <dl>
-<dt><code>-dCompressMode=<em>1 | 3</em></code> (default is 1)
-<dd>Set the compression algorithm used for bitmap graphics. RLE=1, DeltaRow=3. (JPEG=2 is unimplemented)
+<dt><code>-dCompressMode=<em>1 | 2 | 3</em></code> (default is 1)
+<dd>Set the compression algorithm used for bitmap graphics. RLE=1, JPEG=2, DeltaRow=3.
+When JPEG=2 is on, it is applied only to full-color images; indexed-color graphics
+and masks continues to be compressed with RLE.
 </dl></blockquote>
 
 <h3><a name="TXT"></a>Text output</h3>
