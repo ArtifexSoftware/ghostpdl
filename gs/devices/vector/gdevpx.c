@@ -38,6 +38,7 @@
 #include "gxlum.h"
 #include "gdevpcl.h" /* for gdev_pcl_mode3compress() */
 #include "gsicc_manage.h"
+#include "gsicc_cache.h"
 #include <stdlib.h> /* abs() */
 
 /* ---------------- Device definition ---------------- */
@@ -108,6 +109,7 @@ typedef struct gx_device_pclxl_s {
     double y_scale;
     bool pen_null;
     bool brush_null;
+    bool iccTransform;
 } gx_device_pclxl;
 
 gs_public_st_suffix_add0_final(st_device_pclxl, gx_device_pclxl,
@@ -343,6 +345,22 @@ pclxl_can_handle_color_space(const gs_color_space * pcs)
     return !(index == gs_color_space_index_Separation ||
              index == gs_color_space_index_Pattern ||
              index == gs_color_space_index_ICC);
+}
+
+/* Test whether we can icclink-transform an image. */
+static bool
+pclxl_can_icctransform(const gs_image_t * pim)
+{
+    const gs_color_space *pcs = pim->ColorSpace;
+    int bits_per_pixel =
+	(pim->ImageMask ? 1 :
+	 pim->BitsPerComponent * gs_color_space_num_components(pcs));
+
+    if ((gs_color_space_get_index(pcs) == gs_color_space_index_ICC)
+	&& (bits_per_pixel == 24))
+	return true;
+
+    return false;
 }
 
 /* Set brush, pen, and mode for painting a path. */
@@ -1529,6 +1547,7 @@ pclxl_open_device(gx_device * dev)
     xdev->MediaPosition = eAutoSelect;
     xdev->MediaType_old[0] = '\0';
     xdev->MediaType[0] = '\0';
+    /* xdev->iccTransform = false; */ /* set true/false here to ignore command line */
     return 0;
 }
 
@@ -1889,6 +1908,7 @@ typedef struct pclxl_image_enum_s {
         uint raster;
     } rows;
     bool flipped;
+  gsicc_link_t *icclink;
 } pclxl_image_enum_t;
 gs_private_st_suffix_add1(st_pclxl_image_enum, pclxl_image_enum_t,
                           "pclxl_image_enum_t", pclxl_image_enum_enum_ptrs,
@@ -1935,9 +1955,10 @@ pclxl_begin_image(gx_device * dev,
          !((mat.xx == 0) && (mat.yy == 0) && (mat.xy * mat.yx != 0))) ||
         (pim->ImageMask ?
          (!gx_dc_is_pure(pdcolor) || pim->CombineWithColor) :
-         (!pclxl_can_handle_color_space(pim->ColorSpace) ||
-          (bits_per_pixel != 1 && bits_per_pixel != 4 &&
-           bits_per_pixel != 8 && bits_per_pixel !=24))) ||
+         ((!pclxl_can_handle_color_space(pcs) ||
+           (bits_per_pixel != 1 && bits_per_pixel != 4 &&
+            bits_per_pixel != 8 && bits_per_pixel !=24))
+          && !(pclxl_can_icctransform(pim) && xdev->iccTransform) )) ||
         format != gs_image_format_chunky || pim->Interpolate ||
         prect
         )
@@ -2043,6 +2064,17 @@ pclxl_begin_image(gx_device * dev,
     pie->rows.num_rows = num_rows;
     pie->rows.first_y = 0;
     pie->rows.raster = row_raster;
+    if (!pclxl_can_handle_color_space(pcs)
+	&& pclxl_can_icctransform(pim) && pcs->cmm_icc_profile_data) {
+	gsicc_rendering_param_t rendering_params;
+
+	rendering_params.black_point_comp = pis->blackptcomp;
+	rendering_params.graphics_type_tag = GS_IMAGE_TAG;
+	rendering_params.rendering_intent = pis->renderingintent;
+	pie->icclink = gsicc_get_link(pis, dev, pcs, NULL /*des */ ,
+				      &rendering_params, pis->memory);
+    } else
+	pie->icclink = NULL;
     *pinfo = (gx_image_enum_common_t *) pie;
     {
         gs_logical_operation_t lop = pis->log_op;
@@ -2184,11 +2216,12 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
         px_put_ub(s, eBit_values[8]);
         PX_PUT_LIT(s, ci_);
         if (xdev->color_info.depth==8) {
+          rows_raster/=3;
+          if (!pie->icclink) {
           byte *in=pie->rows.data + offset_lastflippedstrip;
           byte *out=pie->rows.data + offset_lastflippedstrip;
           int i;
           int j;
-          rows_raster/=3;
           for (j=0;  j<h;  j++) {
             for (i=0;  i<rows_raster;  i++) {
               *out = (byte)( ((*(in+0) * (ulong) lum_red_weight) +
@@ -2198,6 +2231,7 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
               in+=3;
               out++;
             }
+          }
           }
         }
     } else {
@@ -2241,10 +2275,32 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
                 return code;
             pie->rows.first_y = pie->y;
         }
+        if (!pie->icclink)
         memcpy(pie->rows.data +
                  pie->rows.raster * (pie->flipped ? (pie->rows.num_rows - (pie->y - pie->rows.first_y) -1) :(pie->y - pie->rows.first_y)),
                planes[0].data + planes[0].raster * i + (data_bit >> 3),
                pie->rows.raster);
+        else {
+          gsicc_bufferdesc_t input_buff_desc;
+          gsicc_bufferdesc_t output_buff_desc;
+          int pixels_per_row = pie->rows.raster / 3 ;
+          int out_raster_stride = pixels_per_row * info->dev->color_info.num_components;
+          gsicc_init_buffer(&input_buff_desc, 3 /*num_chan*/, 1 /*bytes_per_chan*/,
+                            false/*has_alpha*/, false/*alpha_first*/, false /*is_planar*/,
+                            0 /*plane_stride*/, pie->rows.raster /*row_stride*/,
+                            1/*num_rows*/, pixels_per_row /*pixels_per_row*/);
+          gsicc_init_buffer(&output_buff_desc, info->dev->color_info.num_components, 1,
+                            false, false, false,
+                            0, out_raster_stride,
+                            1, pixels_per_row);
+          gscms_transform_color_buffer(info->dev, pie->icclink,
+                                       &input_buff_desc,
+                                       &output_buff_desc,
+                                       (void *)(planes[0].data + planes[0].raster * i + (data_bit >> 3)), /*src*/
+                                       pie->rows.data +
+                                       out_raster_stride * (pie->flipped ? (pie->rows.num_rows - (pie->y - pie->rows.first_y) -1) : (pie->y - pie->rows.first_y)) /*des*/
+                                       );
+        }
     }
     *rows_used = height;
     return pie->y >= pie->height;
@@ -2335,6 +2391,9 @@ pclxl_get_params(gx_device     *dev,	/* I - Device info */
 
   if ((code = param_write_int(plist, "CompressMode",
                               &(xdev->CompressMode))) < 0)
+    return (code);
+
+  if ((code = param_write_bool(plist, "iccTransform", &(xdev->iccTransform))) < 0)
     return (code);
 
   return (0);
@@ -2442,6 +2501,7 @@ pclxl_put_params(gx_device     *dev,	/* I - Device info */
   }
   booloption(Tumble, "Tumble")
   intoption(CompressMode, "CompressMode", int)
+  booloption(iccTransform, "iccTransform")
 
  /*
   * Then process standard page device parameters...
