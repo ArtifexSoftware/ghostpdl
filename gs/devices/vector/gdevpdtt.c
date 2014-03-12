@@ -661,28 +661,7 @@ private_st_pdf_font_cache_elem();
 static ulong
 pdf_font_cache_elem_id(gs_font *font)
 {
-#ifdef DEPRECATED_906
-    /*
-     *        For compatibility with Ghostscript rasterizer's
-     *        cache logic we use UniqueID to identify fonts.
-     *  Note that with buggy documents, which don't
-     *        undefine UniqueID redefining a font,
-     *        Ghostscript PS interpreter can occasionaly
-     *        replace cache elements on insufficient cache size,
-     *        taking glyphs from random fonts with random metrics,
-     *        therefore the compatibility isn't complete.
-     */
-    /*
-     *        This branch is incompatible with pdf_notify_remove_font.
-     */
-    if (font->FontType == ft_composite || font->PaintType != 0 ||
-        !uid_is_valid(&(((gs_font_base *)font)->UID)))
-        return font->id;
-    else
-        return ((gs_font_base *)font)->UID.id;
-#else
     return font->id;
-#endif
 }
 
 pdf_font_cache_elem_t **
@@ -2667,13 +2646,8 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
         }
     }
     pwidths->Width.v = v;
-#ifdef DEPRECATED_906
-    if (code > 0)
-        pwidths->Width.xy.x = pwidths->Width.xy.y = pwidths->Width.w = 0;
-#else /* Skip only if not paralel to the axis. */
     if (code > 0 && !pdf_is_CID_font(ofont))
         pwidths->Width.xy.x = pwidths->Width.xy.y = pwidths->Width.w = 0;
-#endif
     if (cdevproc_result == NULL) {
         info.members = 0;
         code = ofont->procs.glyph_info(ofont, glyph, NULL,

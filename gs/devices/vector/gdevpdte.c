@@ -124,18 +124,12 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
                 key_size = 2;
             } else if (font->FontType == ft_CID_TrueType || font->FontType == ft_composite) {
                 key_size = 2;
-#ifdef DEPRECATED_906
-                gs_font_cid2 *pfcid = (gs_font_cid2 *)font;
-
-                num_codes = pfcid->cidata.common.CIDCount;
-#else
                 /* Since PScript5.dll creates GlyphNames2Unicode with character codes
                    instead CIDs, and with the WinCharSetFFFF-H2 CMap
                    character codes appears from the range 0-0xFFFF (Bug 687954),
                    we must use the maximal character code value for the ToUnicode
                    code count. */
                 num_codes = 65536;
-#endif
             }
             code = gs_cmap_ToUnicode_alloc(pdev->pdf_memory, pdfont->rid, num_codes, key_size,
                                             &pdfont->cmap_ToUnicode);
@@ -1040,30 +1034,6 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
 
     return widths_differ;
 }
-
-#ifdef DEPRECATED_906
-/*
- * Retrieve glyph origing shift for WMode = 1 in design units.
- */
-static void
-pdf_glyph_origin(pdf_font_resource_t *pdfont, int ch, int WMode, gs_point *p)
-{
-    /* For CID fonts PDF viewers provide glyph origin shift automatically.
-     * Therefore we only need to do for non-CID fonts.
-     */
-    switch (pdfont->FontType) {
-        case ft_encrypted:
-        case ft_encrypted2:
-        case ft_TrueType:
-        case ft_user_defined:
-            *p = pdfont->u.simple.v[ch];
-            break;
-        default:
-            p->x = p->y = 0;
-            break;
-    }
-}
-#endif
 
 /*
  * Emulate TEXT_ADD_TO_ALL_WIDTHS and/or TEXT_ADD_TO_SPACE_WIDTH,

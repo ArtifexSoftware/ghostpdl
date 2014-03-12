@@ -684,53 +684,6 @@ pdf_finish_resources(gx_device_pdf *pdev, pdf_resource_type_t type,
     return 0;
 }
 
-#ifdef DEPRECATED_906
-int
-pdf_close_text_document(gx_device_pdf *pdev)
-{
-    int code;
-
-    /*
-     * Finish the descriptors and write any embedded fonts, but don't
-     * write the descriptors yet; then write the fonts; finally write
-     * the descriptors.
-     */
-
-    pdf_clean_standard_fonts(pdev);
-    code = pdf_free_font_cache(pdev);
-    if (code < 0)
-        return code;
-
-    code = pdf_write_resource_objects(pdev, resourceCharProc);
-    if (code < 0)
-        return code;
-
-    code = pdf_finish_resources(pdev, resourceFont, pdf_convert_truetype_font);
-    if (code < 0)
-        return code;
-
-    code = pdf_finish_resources(pdev, resourceFontDescriptor, pdf_finish_FontDescriptor);
-    if (code < 0)
-        return code;
-
-    code = write_font_resources(pdev, &pdev->resources[resourceCIDFont]);
-    if (code < 0)
-        return code;
-
-    code = write_font_resources(pdev, &pdev->resources[resourceFont]);
-    if (code < 0)
-        return code;
-
-    code = pdf_finish_resources(pdev, resourceFontDescriptor, pdf_write_FontDescriptor);
-    if (code < 0)
-        return code;
-
-    /* If required, write the Encoding for Type 3 bitmap fonts. */
-
-    return pdf_write_bitmap_fonts_Encoding(pdev);
-}
-#endif
-
 /* ================ CMap resource writing ================ */
 
 /*

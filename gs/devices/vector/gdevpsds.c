@@ -551,60 +551,6 @@ const stream_template s_IE_template = {
     0 /* NULL */, s_IE_set_defaults
 };
 
-#ifdef DEPRECATED_906
-
-/* Test code */
-void
-test_IE(void)
-{
-    const stream_templat *const template = &s_IE_template;
-    stream_IE_state state;
-    stream_state *const ss = (stream_state *)&state;
-    static const float decode[6] = {1, 0, 1, 0, 1, 0};
-    static const byte in[] = {
-        /*
-         * Each row is 3 pixels x 3 components x 4 bits.  Processing the
-         * first two rows doesn't cause an error; processing all 3 rows
-         * does.
-         */
-        0x12, 0x35, 0x67, 0x9a, 0xb0,
-        0x56, 0x7d, 0xef, 0x12, 0x30,
-        0x88, 0x88, 0x88, 0x88, 0x80
-    };
-    byte table[3 * 5];
-    int n;
-
-    templat->set_defaults(ss);
-    state.BitsPerComponent = 4;
-    state.NumComponents = 3;
-    state.Width = 3;
-    state.BitsPerIndex = 2;
-    state.Decode = decode;
-    gs_bytestring_from_bytes(&state.Table, table, 0, sizeof(table));
-    for (n = 10; n <= 15; n += 5) {
-        stream_cursor_read r;
-        stream_cursor_write w;
-        byte out[100];
-        int status;
-
-        s_IE_init(ss);
-        r.ptr = in; --r.ptr;
-        r.limit = r.ptr + n;
-        w.ptr = out; --w.ptr;
-        w.limit = w.ptr + sizeof(out);
-        memset(table, 0xcc, sizeof(table));
-        memset(out, 0xff, sizeof(out));
-        dmprintf1(ss->memory, "processing %d bytes\n", n);
-        status = templat->process(ss, &r, &w, true);
-        dmprintf3(ss->memory, "%d bytes read, %d bytes written, status = %d\n",
-                 (int)(r.ptr + 1 - in), (int)(w.ptr + 1 - out), status);
-        debug_dump_bytes(ss->memory, table, table + sizeof(table), "table");
-        debug_dump_bytes(ss->memory, out, w.ptr + 1, "out");
-    }
-}
-
-#endif
-
 /* ---------------- Downsampling ---------------- */
 
 /* Return the number of samples after downsampling. */

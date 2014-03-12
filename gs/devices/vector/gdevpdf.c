@@ -366,9 +366,6 @@ pdf_compute_fileID(gx_device_pdf * pdev)
         return code;
     sclose(s);
     gs_free_object(mem, s, "pdf_compute_fileID");
-#ifdef DEPRECATED_906
-    memcpy(pdev->fileID, "xxxxxxxxxxxxxxxx", sizeof(pdev->fileID)); /* Debug */
-#endif
     return 0;
 }
 
@@ -800,16 +797,6 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
             (page != NULL ? &page->text_rotation : &pdev->text_rotation);
         int angle = -1;
 
-#ifdef DEPRECATED_906
-        /* Bug 687800 together with Bug687489.ps . */
-        const gs_point *pbox = &(page != NULL ? page : &pdev->pages[0])->MediaBox;
-
-        if (dsc_orientation >= 0 && pbox->x > pbox->y) {
-            /* The page is in landscape format. Adjust the rotation accordingly. */
-            dsc_orientation ^= 1;
-        }
-#endif
-
         /* Combine DSC rotation with text rotation : */
         if (dsc_orientation == 0) {
             if (ptr->Rotate == 0 || ptr->Rotate == 180)
@@ -895,32 +882,6 @@ pdf_close_page(gx_device_pdf * pdev, int num_copies)
         code = pdf_write_resource_objects(pdev, resourceFunction);
         if (code < 0)
             return code;
-
-        /* Save viewer's memory with cleaning resources. */
-
-#ifdef DEPRECATED_906
-        if (pdev->MaxViewerMemorySize < 10000000) {
-            /* fixme: the condition above and the cleaning algorithm
-                may be improved with counting stored resource size
-                and creating multiple streams per page. */
-
-            if (pdev->ForOPDFRead) {
-                pdf_resource_t *pres = pdf_find_resource_by_resource_id(pdev, resourcePage, pdev->contents_id);
-
-                if (pres != NULL) {
-                    code = cos_dict_put_c_strings((cos_dict_t *)pres->object, "/.CleanResources", "/All");
-                    if (code < 0)
-                        return code;
-                }
-            }
-            code = pdf_close_text_document(pdev);
-            if (code < 0)
-                return code;
-            code = pdf_write_and_free_all_resource_objects(pdev);
-            if (code < 0)
-                return code;
-        }
-#endif
 
         /* Close use of text on the page. */
 
@@ -2330,11 +2291,6 @@ pdf_close(gx_device * dev)
     code1 = pdf_free_resource_objects(pdev, resourceSoftMaskDict);
     if (code >= 0)
         code = code1;
-#ifdef DEPRECATED_906
-    code1 = pdf_close_text_document(pdev);
-    if (code >= 0)
-        code = code1;
-#endif
     /* This was in pdf_close_document, but that made no sense, so moved here
      * for more consistency (and ease of finding it). This code deals with
      * emitting fonts and FontDescriptors
@@ -3041,10 +2997,6 @@ pdf_close(gx_device * dev)
         emprintf2(pdev->memory, "ERROR: A pdfmark destination page %d "
                   "points beyond the last page %d.\n",
                   pdev->max_referred_page, pdev->next_page);
-#ifdef DEPRECATED_906 /* Temporary disabled due to Bug 687686. */
-        if (code >= 0)
-            code = gs_note_error(gs_error_rangecheck);
-#endif
     }
     code = pdf_close_files(pdev, code);
     if (code < 0)
