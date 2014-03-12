@@ -805,21 +805,26 @@ To create a PDF/X-3 document from a Postscript or a PDF file, you should :
 <li> Specify the <code>pdfwrite</code> device or use the <code>ps2pdf</code> script.
 <li> Specify the <code>-dPDFX</code> option. It provides the document conformity 
      and forces <code>-dCompatibilityLevel=1.3</code>.
-<li> Specify <code>-sProcessColorModel=DeviceGray</code> or <code>-sProcessColorModel=DeviceCMYK</code>
-     (<code>DeviceRGB</code> is not allowed). You must specify a ProcessColorModel, even if you plan
-     to create a device-independent colour PDF file using -dUseCIEColor.
-<li> Specify the <code>-dUseCIEColor</code> option if necessary (see below).
+<li> Specify <code>-sColorConversionStrategy=/Gray</code>, <code>-sColorConversionStrategy=/CMYK</code>
+     or <code>-sColorConversionStrategy=/UseDeviceIndependentColor</code>(<code>RGB</code> is not allowed).
+     If you plan to create a device-independent colour PDF file then you should set the ProcessColorModel
+     using <code>-sProcessColorModel=DeviceGray</code> or <code>-sProcessColorModel=DeviceCMYK</code>.
 <li> Specify a PDF/X definition file before running the input document.
      It provides additional information to be included into the output document.
      A sample PDF/X definition file may be found in <code>gs/lib/PDFX_def.ps</code>.
 <li> If a registered printing condition is applicable, specify its identifier 
      in the PDF/X definition file. Otherwise provide an ICC profile and 
-     specify it in the PDF/X definition file as explained below. 
+     specify it in the PDF/X definition file as explained below.
 <li> Provide a <code>DefaultRGB</code> resource file in the ColorSpace resource category.
      Either define it in the PDF/X definition file, or provide
      a definition of <code>gs/Resource/ColorSpace/DefaultRGB</code> .
      <code>gs/Resource/ColorSpace/DefaultRGB</code> is usually 
      distributed with Ghostscript, its content may not necessarily satisfy your needs, see below.
+<li> Specify, using <code>-sOutputICCProfile</code>, an ICC profile which represents the color
+     space (either CMYK or Gray) of the final file. This is the same ICC profile used in the
+     PDF/X definition file as the ICCProfile. Even if you are using a standard OutputCondition and
+     do not need to specify an ICCProfile, you must still set OutputICCProfile with an appropriate
+     ICC profile in order for proper color conversion.
 </ul>
 
 <p>
@@ -862,30 +867,6 @@ define a title with DSC comments. Otherwise remove entire line from definition f
 <dt><code>Info</code> <em>string</em>
 <dd>Defines an <code>Info</code> value for the output intent dictionary.
 </dl>
-
-<p>
-The PDF/X-3 standard requires colors to be adjusted at the
-document generation time, Ghostscript <em>does not</em> perform any
-special color conversion. Either colors to be adjusted in advance,
-or a proper color conversion to be specified in <code>DefaultGray</code>,
-<code>DefaultRGB</code>,  <code>DefaultCMYK</code> resources of the  
-<code>ColorSpace</code> resource category.
-
-<P>
-If you want any color to be converted into CIE color,
-the <code>-dUseCIEColor</code> option to be specified
-in the command line. If it is not specified, 
-only RGB colors are converted into CIE colors
-with using the <code>DefaultRGB</code> color space resource,
-but <code>DeviceGray</code> and <code>DeviceCMYK</code>
-colors are passed identically.
-
-<p>Please note that if a graphic object can't embed into the output format,
-Ghostscript converts it into low level objects, using a device color space
-specified in the <code>ProcessColorModel</code> option.
-If you need to adjust those resulting colors, you may substitute
-them with CIE colors, <em>running Ghostscript at second time </em>.
-Performing both actions in a single pass is a subject of further improvements.
 
 <p>Ghostscript distribution does not contain an ICC profile to be used
 for creating a PDF/X-3 document. Users should either create an appropriate one themselves,
@@ -932,7 +913,7 @@ It accepts a four-value array in the same format as the
 
 Here is a sample command line to invoke Ghostscript for generating a PDF/X-3 document :
 <blockquote><code>
-gs -dPDFX -dBATCH -dNOPAUSE -dNOOUTERSAVE -dUseCIEColor -sDEVICE=pdfwrite -sOutputFile=out-x3.pdf PDFX_def.ps input.ps
+gs -dPDFX -dBATCH -dNOPAUSE -dNOOUTERSAVE -sColorConverionStrategy=/CMYK -sOutputICCProfile="ISO Coated sb.icc" -sDEVICE=pdfwrite -sOutputFile=out-x3.pdf PDFX_def.ps input.ps
 </code></blockquote>
 
 <p>
@@ -947,11 +928,14 @@ with the following exceptions :
 
 <ul>
 <li> Specify the <code>pdfwrite</code> device or use the <code>ps2pdf</code> script.
-<li> Specify the <code>-dPDFA</code> option to specify PDF/A-1 or PDF/A-2.
-<li> Specify <code>-sProcessColorModel=DeviceGray</code>,  <code>-sProcessColorModel=DeviceRGB</code> or <code>-sProcessColorModel=DeviceCMYK</code>
-     You must specify a ProcessColorModel, even if you plan
-     to create a device-independent colour PDF file using -dUseCIEColor.
-<li> Specify the <code>-dUseCIEColor</code> option if necessary (see PDF/X above).
+<li> Specify the <code>-dPDFA</code> option to specify PDF/A-1, or <code>-dPDFA=2</code> for PDF/A-2.
+<li> Specify <code>-sColorConversionStrategy=/RGB</code>, <code>-sColorConversionStrategy=/CMYK</code>
+     or <code>-sColorConversionStrategy=/UseDeviceIndependentColor</code>.
+     If you plan to create a device-independent colour PDF file then you should set the ProcessColorModel
+     using <code>-sProcessColorModel=DeviceRGB</code> or <code>-sProcessColorModel=DeviceCMYK</code>.
+<li> Specify, using <code>-sOutputICCProfile</code>, an ICC profile which represents the color
+     space (either CMYK or RGB) of the final file. This is the same ICC profile used in the
+     PDF/X definition file as the ICCProfile.
 <li> Specify a PDF/A definition file before running the input document.
      It provides additional information to be included in the output document.
      A sample PDF/A definition file may be found in <code>gs/lib/PDFA_def.ps</code>.
@@ -980,7 +964,7 @@ depending on the nature of the PDF/A incompatibility.
 
 Here is a sample command line to invoke Ghostscript for generating a PDF/A document :
 <blockquote><code>
-gs -dPDFA=1 -dBATCH -dNOPAUSE -dNOOUTERSAVE -dUseCIEColor -sProcessColorModel=DeviceCMYK -sDEVICE=pdfwrite -sOutputFile=out-a.pdf PDFA_def.ps input.ps
+gs -dPDFA=1 -dBATCH -dNOPAUSE -dNOOUTERSAVE -sColorConversionStrategy=/RGB -sOutputICCProfile=srgb.icc -sDEVICE=pdfwrite -sOutputFile=out-a.pdf PDFA_def.ps input.ps
 </code></blockquote>
 
 <p>

@@ -100,6 +100,9 @@ slow.
 <p>
 Bug <a href="http://bugs.ghostscript.com/show_bug.cgi?id=615165"
 class="offsite">#615165</a>, September 26, 2002.
+<p>NB. The epswrite device is deprecated as of the 9.12 release, the eps2write device
+should be used instead which does not suffer these limitations.
+</p>
 <hr>
 <h2><a name="Minor_bugs"></a>Minor Bugs.</h2>
 
@@ -130,76 +133,7 @@ from pdfmark's.
 </I>
 <p>
 March 25, 2001.
-<h3>ps2pdf ignores transfer functions in shaded fill</h3>
-ps2pdf ignores transfer functions in the shaded fill but 
-uses them for vector objects. The following sample program 
-has 2 shaded fills and 2 rectangles that should have the 
-same color as the left end of the shaded fill.
-<blockquote><pre>
 
-%!
-&lt;&lt;/PageSize [612 200] /Policies&lt;&lt;/PageSize 1&gt;&gt; &gt;&gt;setpagedevice 
-612 1 scale 
-/grad 
-{ gsave 
-  0 0 1 100 rectclip 
-  &lt;&lt;
-	  /ColorSpace [/DeviceCMYK] 
-	  /Domain [0 1] 
-	  /Coords [0 0 1 0] 
-	  /Extend [false false] 
-	  /Function 
-	  &lt;&lt; /FunctionType 3 
-		  /Domain [ 0 1] 
-		  /Functions 
-		  [ &lt;&lt;
-			  /FunctionType 2 
-			  /N 1 
-			  /C0 [ 0 0.5 0 0 ] 
-			  /Domain [ 0 1] 
-			  /C1 [0.5 0 0 0] 
-		  &gt;&gt; ] 
-		  /Bounds [] 
-		  /Encode [0 1] 
-	  &gt;&gt; 
-	  /ShadingType 2 
-  &gt;&gt; shfill 
-
-  0 0.5 0 0 setcmykcolor 
-  0 0 0.1 50 rectfill 
-  grestore 
-} def 
-
-grad 
-{1 exch 2 div sub} settransfer 
-0 100 translate 
-grad 
-showpage 
-
-</pre></blockquote>
-Bug <a href="http://bugs.ghostscript.com/show_bug.cgi?id=232334"
-class="offsite">#232334</a>, February 14, 2001.
-
-<h3>ResourceFileName gives wrong result with Font category.</h3>
-The following sequence:
-
-<blockquote><pre>
-/Font /Category findresource begin 
-/CharterBT-Roman 255 string ResourceFileName = 
-end 
-</pre></blockquote>
-
-Gives the results:
-<pre>
-        /Resource/Font/CharterBT-Roman 
-</pre>
-
-This should be a valid platform specific file name and path such as:
-<pre>
-        f:/afpl/fonts/bchr.pfa 
-</pre>
-Bug <a href="http://bugs.ghostscript.com/show_bug.cgi?id=233403"
-class="offsite">#233403</a>, February 21, 2001.
 <h3>GS doesn't handle names of separations with HalftoneType 5.</h3>
 PLRM3 says, that HalftoneType 5 may use user defined 
 names of separations. Neither zht2.c nor cmd_put_drawing_color in
@@ -246,49 +180,6 @@ filter and to be put into the 'tables' array.</i>
 Bug <a href="http://bugs.ghostscript.com/show_bug.cgi?id=615620"
 class="offsite">#615620</a>, September 27, 2002.
 
-<h3> save restore fails from the command line </h3>
-
-<p>
-Entering 'save' followed by 'restore' from the interactive
-Ghostscript prompt (on separate lines) generates an /invalidrestore
-exception. It shouldn't. This is a long standing issue.
-
-<p>
-The problem is that the string that is used
-for command line input by the 'executive'
-processing still exists when the 'restore'
-happens, but this string is brought into
-existence after the 'save' operation, thus
-an causing an invalidrestore.
-
-<p>
-Bug <a href="http://bugs.ghostscript.com/show_bug.cgi?id=603689"
-class="offsite">#603689</a>, September 2, 2002.
-
-<h3> Failure to repair incorrect component ids in JPEG images </h3>
-
-<p>There are PDF files in the wild containing JPEG images with
-incorrect component id tags. Ghostscript currently displays these
-files incorrectly, but in the past the files displayed fine. The
-problem is not in Ghostscript itself, though, but in the libjpeg
-library.
-
-<p>Behavior changed in recent libjpeg versions; libjpeg version 6a
-ignored the component ids. As of version 6b, libjpeg interprets the id
-tags, but creates garbage output when they're invalid. We developed a
-<a
-href="http://ghostscript.com/pipermail/gs-code-review/2004-June/004579.html"
-class="offsite">patch
-to libjpeg 6b</a> which makes the decoding more robust. We are not
-aware of anybody maintaining new libjpeg releases, so we include the
-patch here in the hope that people can apply it themselves, and that
-in the event that there is a future libjpeg update, that it will
-include this patch as well. Linux distributions are especially
-encouraged to apply this patch to the system libjpeg package.
-
-<p>Bug <a href="http://bugs.ghostscript.com/show_bug.cgi?id=406643"
-class="offsite">#686980</a>, July 31, 2003.
-
 <hr>
 
 <h2><a name="Driver_Issues"></a>Driver Issues.</h2>
@@ -329,22 +220,6 @@ the corner of the printable area, and if the latterm whether the page should
 be clipped or scaled.
 </I>
 <p>
-
-<h3> User request for pdfwrite to convert all colors.</h3>
-
-<p>
-Currently, pdfwrite only converts fill/stroke/text/imagemask colors to the
-color space defined by ProcessColorModel, not colors in images.  A user
-requested that it convert all colors, including images.  (Feature request
-<a href="http://bugs.ghostscript.com/show_bug.cgi?id=485498"
-class="offsite">#485498</a>)
-<p>
-<i>
-ProcessColorModel is a stopgap until pdfwrite handles device-dependent
-vector/text/mask colors properly -- i.e., no longer converts them to a
-single color space.  I.e., this request is for a significant enhancement,
-not a bug fix.
-</i>
 
 <hr>
 
@@ -476,30 +351,6 @@ keep consistent, because the same logic algorithms must be implemented
 in two different ways. The problem is likely to be in lib/gs_fonts.ps,
 lib/gs_res.ps, and lib/gs_cidcm.ps.
 </i>
-<h3> There's no %ram% device.</h3>
-GS doesn't have %ram% device reguired on all Level 3 products. 
-It is documented in PS Supplement 3010 and 3011 dated August 30, 1999 
-<br>
-Bug <a href="http://bugs.ghostscript.com/show_bug.cgi?id=226943"
-class="offsite">#226943</a>, December 27, 2000.
-<p>
-<I>
-This should be implemented using the (disk) file system rather than
-actual RAM, at least initially, since that will be easy.
-<br>
-On Unix, it should be implemented with a directory /tmp/&#36;&#36;/ (where
-&#36;&#36; is the process id), which Ghostscript should delete when it exits.
-</I>
-
-<h3> pdfwrite doesn't recognise the image type by content</h3>
-Currently pdfwrite uses JPEG compression for any 8 bit per component
-images &gt;= 64 pixels in both dimensions.
-<p>
-<I>
-pdfwrite needs to be changed to use a reasonable algorithm for deciding
-between JPEG and Flate compression, probably based on sharp vs. smooth
-color transitions in the image; in case of uncertainty, it should use Flate.
-</I>
 <p>
 Bug <a href="http://bugs.ghostscript.com/show_bug.cgi?id=226391"
 class="offsite">#226391</a>, December 19, 2000.
