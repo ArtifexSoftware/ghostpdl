@@ -613,7 +613,11 @@ currentdict /xref-char-dict undef
      /readpdf15xref cvx /syntaxerror signalerror
    } if
         % Ensure that we we have room in the objects array, etc.
-   dup /Size get growPDFobjects
+   dup /Size get 1 index /Index .knownget {
+     %% if we have a /Index, remember to add the starting index on to the size
+     0 get add
+   } if
+   growPDFobjects
         % Create a stream for the XRef data
    PDFfile token pop pop		% Skip over 'stream'
    dup stream //false resolvestream
