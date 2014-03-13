@@ -1779,6 +1779,10 @@ void gx_device_retain(gx_device *dev, bool retained);
 /* with byte or device padding. */
 uint gx_device_raster(const gx_device * dev, bool pad_to_word);
 
+/* Calculate the raster (number of bytes in a scan line), */
+/* with byte or device padding forcing chunky format. */
+uint gx_device_raster_chunky(const gx_device * dev, bool pad);
+
 /* Calculate the raster (with device padding) optionally for a given
  * render_plane (may be NULL). */
 uint gx_device_raster_plane(const gx_device * dev, const gx_render_plane_t *render_plane);

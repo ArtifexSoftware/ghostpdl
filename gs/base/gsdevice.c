@@ -700,6 +700,23 @@ gx_device_raster(const gx_device * dev, bool pad)
 }
 
 uint
+gx_device_raster_chunky(const gx_device * dev, bool pad)
+{
+    ulong bits = (ulong) dev->width * dev->color_info.depth;
+    ulong raster;
+    int l2align;
+
+    raster = (uint)((bits + 7) >> 3);
+    if (!pad)
+        return raster;
+    if (dev->pad > 0)
+        raster += dev->pad;
+    l2align = dev->log2_align_mod;
+    if (l2align < log2_align_bitmap_mod)
+        l2align = log2_align_bitmap_mod;
+    return (uint)(((bits + (8 << l2align) - 1) >> (l2align + 3)) << l2align);
+}
+uint
 gx_device_raster_plane(const gx_device * dev, const gx_render_plane_t *render_plane)
 {
     ulong bpc = (render_plane && render_plane->index >= 0 ?

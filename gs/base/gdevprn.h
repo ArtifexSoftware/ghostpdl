@@ -542,6 +542,8 @@ bool gdev_prn_file_is_new(const gx_device_printer *pdev);
  */
 #define gdev_prn_raster(pdev) gx_device_raster((gx_device *)(pdev), 0)
 
+#define gdev_prn_raster_chunky(pdev) gx_device_raster_chunky((gx_device *)(pdev), 0)
+
 /*
  * Determine (conservatively) what colors are used in a given range of scan
  * lines, and return the actual range of scan lines to which the result

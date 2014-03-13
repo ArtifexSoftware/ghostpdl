@@ -645,7 +645,7 @@ pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
              int (*row_proc) (gx_device_printer *, byte *, int, FILE *))
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
-    uint raster = gdev_prn_raster(pdev);
+    uint raster = gdev_prn_raster_chunky(pdev);
     byte *data = gs_alloc_bytes(pdev->memory, raster, "pbm_print_page_loop");
     int lnum = 0;
     int code = 0;
@@ -1042,7 +1042,7 @@ pnmcmyk_print_page(gx_device_printer *pdev, FILE *pstream)
     if (pdev->icc_struct->graydetection == true && pdev->icc_struct->pageneutralcolor == true) {
         /* Here we need to convert the data from CMYK to K (gray) then print */
         gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
-        uint raster = gdev_prn_raster(pdev);	/* enough space for the CMYK data */
+        uint raster = gdev_prn_raster_chunky(pdev);	/* enough space for the CMYK data */
         byte *data = gs_alloc_bytes(pdev->memory, raster, "pbm_print_page_loop");
         int lnum = 0;
         int code = 0;
