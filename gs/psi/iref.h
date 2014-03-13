@@ -421,9 +421,14 @@ typedef int (*op_proc_t)(i_ctx_t *i_ctx_p);
  * Note that because of the way packed arrays are represented,
  * the type_attrs member must be the first one in the ref structure.
  */
+ /* The _pad entry ensures that the struct ref_s is the required size
+  * (16 bytes) even with compilers that tightly pack structures - the
+  * size requirement is imposed by the garbarge collector
+  */
 struct tas_s {
 /* type_attrs is a single element for fast dispatching in the interpreter */
     ushort type_attrs;
+    ushort _pad;
     uint32_t rsize;
 };
 struct ref_s {
