@@ -61,71 +61,47 @@
      ifelse
    } if
 
-% To be removed 9.09.....
-   /USEOLDGLYPHALIASING where {/USEOLDGLYPHALIASING get}{false}ifelse
-   {
-     dup /CharStrings get dup dup
-     //t1_glyph_equivalence {     % <<>> <<>> <<>> /gl1 /gl2
-       2 index 2 index known {
-         2 index 1 index known {
-           pop pop
-         } {
-           3 1 roll get //.growput superexec dup dup
-         } ifelse
-       } {
-         2 index 1 index known {
-           exch 3 1 roll get //.growput superexec dup dup
-         } {
-           pop pop
-         } ifelse
-       } ifelse
+   dup /CharStrings get
+
+   % Provide all known aliases for each glyph if
+   % substitution is allowed (pf2afm.ps has code
+   % to disables it by modifying t1_glyph_equivalence).
+
+   t1_glyph_equivalence length 0 ne {
+     % Create an empty code point to glyph dictionary
+     0 dict exch
+     % Build a mapping from code points to known glyphs
+     AdobeGlyphList {
+       % Stack: CPtoGlyph(dict) CharStrings(dict) /name codepoint
+       2 index 2 index known
+       { exch 3 index 3 1 roll .growput }
+       { pop pop }
+       ifelse
      } forall
-     pop pop pop
-   }
-%....to be removed 9.09
-   {
-     dup /CharStrings get
-
-     % Provide all known aliases for each glyph if
-     % substitution is allowed (pf2afm.ps has code
-     % to disables it by modifying t1_glyph_equivalence).
-
-     t1_glyph_equivalence length 0 ne {
-       % Create an empty code point to glyph dictionary
-       0 dict exch
-       % Build a mapping from code points to known glyphs
-       AdobeGlyphList {
-         % Stack: CPtoGlyph(dict) CharStrings(dict) /name codepoint
-         2 index 2 index known
-         { exch 3 index 3 1 roll .growput }
-         { pop pop }
-         ifelse
-       } forall
-       % Add aliases for missing names
-       AdobeGlyphList {
-         % Stack: CPtoGlyph(dict) CharStrings(dict) /name codepoint
-         2 index 2 index known
-         { pop pop }
-         { 2 index 3 1 roll 4 index 1 index .knownget
-           % Try mapping unknown name to equivalent known glyph
-           { CCFONTDEBUG { (setting alias: ) print 2 index ==only
-                           ( to be the same as glyph: ) print dup //== exec } if
-             exch pop 2 index exch get //.growput superexec }
-           % Try mapping unknown name to known uniXXXX glyph
-           { dup 16 4 string cvrs dup length neg 7 add (uni0000) 7 string copy dup
-             4 -2 roll exch putinterval cvn 3 index 1 index .knownget
-             { CCFONTDEBUG { (setting alias: ) print 3 index ==only
-                             ( to be the same as glyph: ) print 1 index //== exec } if
-               3 1 roll pop pop //.growput superexec }
-             { pop pop pop pop }
-             ifelse }
+     % Add aliases for missing names
+     AdobeGlyphList {
+       % Stack: CPtoGlyph(dict) CharStrings(dict) /name codepoint
+       2 index 2 index known
+       { pop pop }
+       { 2 index 3 1 roll 4 index 1 index .knownget
+         % Try mapping unknown name to equivalent known glyph
+         { CCFONTDEBUG { (setting alias: ) print 2 index ==only
+                         ( to be the same as glyph: ) print dup //== exec } if
+           exch pop 2 index exch get //.growput superexec }
+         % Try mapping unknown name to known uniXXXX glyph
+         { dup 16 4 string cvrs dup length neg 7 add (uni0000) 7 string copy dup
+           4 -2 roll exch putinterval cvn 3 index 1 index .knownget
+           { CCFONTDEBUG { (setting alias: ) print 3 index ==only
+                           ( to be the same as glyph: ) print 1 index //== exec } if
+             3 1 roll pop pop //.growput superexec }
+           { pop pop pop pop }
            ifelse }
-         ifelse
-       } forall
-       pop
-     } if
+         ifelse }
+       ifelse
+     } forall
      pop
-   } ifelse
+   } if
+   pop
 
    //.buildfont1
    3 2 roll .setglobal
