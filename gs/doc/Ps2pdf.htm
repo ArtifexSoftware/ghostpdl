@@ -25,6 +25,7 @@
 <li><a href="#Usage">Usage</a>
 <li><a href="#Orientation">Setting page orientation</a>
 <li><a href="#Options">Options</a>
+<li><a href="#Color_Conversion_and_Management">Color Conversion and Management</a>
 <li><a href="#PDFX">Creating a PDF/X-3 document</a>
 <li><a href="#PDFA">Creating a PDF/A document</a>
 <li><a href="#Limitations">Limitations</a>
@@ -272,11 +273,11 @@ will not work correctly with this flag.
 
 <dt><code>-dPreserveSeparation</code>
 <dd>This takes a Boolean argument, when set to true (the default) any /Separation
-colour spaces in the input PostScript or PDF file will be preserved as /Separation
-colour spaces in the output. When false, the alternate space specified by the 
-original colour space will be used instead.
+color spaces in the input PostScript or PDF file will be preserved as /Separation
+color spaces in the output. When false, the alternate space specified by the 
+original color space will be used instead.
 <dt><code>-dPreserveDeviceN</code>
-<dd>Behaves as per PreserveSeparation above except that it deals with DeviceN colour
+<dd>Behaves as per PreserveSeparation above except that it deals with DeviceN color
 spaces.
 
 <dt><code>-dDetectDuplicateImages</code>
@@ -725,9 +726,9 @@ where the file <b>params.in</b> contains:
 in.ps</code></blockquote>
 
 <hr>
-<h2><a name="Color"></a>Color Conversion and management</h2>
+<h2><a name="Color_Conversion_and_Management"></a>Color Conversion and Management</h2>
 <p>
-As of the 9.11 pre-release, the colour management in pdfwrite has been substantially
+As of the 9.11 pre-release, the color management in pdfwrite has been substantially
 altered so that it now uses the same Color Management System as rendering (the default
 is LCMS2). This considerably improves the color handling in both pdfwrite and ps2write,
 particularly in the areas of Spearation and DeviceN color spaces, and Indexed color
@@ -750,7 +751,7 @@ worth setting this as well, if it is important that the color space be controlle
 </p>
 <p>ps2write cannot currently convert into device-independent color spaces, and so <code>UseDeviceIndependentColor</code>should not be used with ps2write.
 </p>
-<p>All other colour spaces are converted approproately. Separation and DeviceN spaces will be preserved if possible (ps2write cannot preserve DeviceN)
+<p>All other color spaces are converted approproately. Separation and DeviceN spaces will be preserved if possible (ps2write cannot preserve DeviceN)
 and if the alternate space is not appropriate a new alternate space will be created. Eg a [/Separation (MyColor) /DeviceRGB {...}]
 when the <code>ColorConversionStrategy</code> is set to <code>CMYK</code> would be converted to [/Separation (MyColor) /DeviceCMYK {...}]
 The new tint transform would be created by sampling the original tint transform, converting the RGB values into CMYK, and then creating
@@ -807,7 +808,7 @@ To create a PDF/X-3 document from a Postscript or a PDF file, you should :
      and forces <code>-dCompatibilityLevel=1.3</code>.
 <li> Specify <code>-sColorConversionStrategy=/Gray</code>, <code>-sColorConversionStrategy=/CMYK</code>
      or <code>-sColorConversionStrategy=/UseDeviceIndependentColor</code>(<code>RGB</code> is not allowed).
-     If you plan to create a device-independent colour PDF file then you should set the ProcessColorModel
+     If you plan to create a device-independent color PDF file then you should set the ProcessColorModel
      using <code>-sProcessColorModel=DeviceGray</code> or <code>-sProcessColorModel=DeviceCMYK</code>.
 <li> Specify a PDF/X definition file before running the input document.
      It provides additional information to be included into the output document.
@@ -931,7 +932,7 @@ with the following exceptions :
 <li> Specify the <code>-dPDFA</code> option to specify PDF/A-1, or <code>-dPDFA=2</code> for PDF/A-2.
 <li> Specify <code>-sColorConversionStrategy=/RGB</code>, <code>-sColorConversionStrategy=/CMYK</code>
      or <code>-sColorConversionStrategy=/UseDeviceIndependentColor</code>.
-     If you plan to create a device-independent colour PDF file then you should set the ProcessColorModel
+     If you plan to create a device-independent color PDF file then you should set the ProcessColorModel
      using <code>-sProcessColorModel=DeviceRGB</code> or <code>-sProcessColorModel=DeviceCMYK</code>.
 <li> Specify, using <code>-sOutputICCProfile</code>, an ICC profile which represents the color
      space (either CMYK or RGB) of the final file. This is the same ICC profile used in the
