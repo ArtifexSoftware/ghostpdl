@@ -71,7 +71,6 @@ gs_image_class_4_color(gx_image_enum * penum)
 #else
     bool use_fast_thresh = false;
 #endif
-    bool is_planar_dev = false;
 
     if (penum->use_mask_color) {
         /*
@@ -119,11 +118,12 @@ gs_image_class_4_color(gx_image_enum * penum)
         gsicc_rendering_param_t rendering_params;
         int k;
         int src_num_comp = cs_num_components(penum->pcs);
-        int des_num_comp;
+        int des_num_comp, bpc;
         cmm_dev_profile_t *dev_profile;
 
         code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
         des_num_comp = gsicc_get_device_profile_comps(dev_profile);
+        bpc = penum->dev->color_info.depth / des_num_comp;	/* bits per component */
         penum->icc_setup.need_decode = false;
         /* Check if we need to do any decoding.  If yes, then that will slow us down */
         for (k = 0; k < src_num_comp; k++) {
@@ -173,10 +173,10 @@ gs_image_class_4_color(gx_image_enum * penum)
 
             /* If num components is 1 or if we are going to CMYK planar device
                then we will may use the thresholding if it is a halftone
-               device*/
-            is_planar_dev = penum->dev->is_planar;
-            if (((penum->dev->color_info.num_components == 1 && penum->dev->color_info.depth == 1) ||
-                 is_planar_dev) && penum->bps == 8 ) {
+               device IFF we have one bit per component */
+            if ((bpc == 1) &&
+                (penum->dev->color_info.num_components == 1 || penum->dev->is_planar) &&
+                penum->bps == 8) {
                 code = gxht_thresh_image_init(penum);
                 if (code == 0) {
                      return &image_render_color_thresh;
