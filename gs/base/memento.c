@@ -1010,6 +1010,7 @@ static int checkBlock(Memento_BlkHeader *memblk, const char *action)
         /* Failure! */
         fprintf(stderr, "Attempt to %s block ", action);
         showBlock(memblk, 32);
+        fprintf(stderr, "\n");
         Memento_breakpoint();
         return 1;
     } else if (data.preCorrupt || data.postCorrupt) {
