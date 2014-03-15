@@ -917,7 +917,6 @@ gsicc_create_compute_cam( gs_vector3 *white_src, gs_vector3 *white_des,
 static int
 gsicc_compute_cam(gsicc_lutatob *icc_luta2bparts, gs_memory_t *memory)
 {
-    float *cam;
     gs_vector3 d50;
 
     d50.u = D50_X;
@@ -1750,7 +1749,6 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     gs_cie_abc *pcie = pcs->params.abc;
     bool input_range_ok;
     int code;
-    float *cam;
     gs_vector3 d50;
 
     d50.u = D50_X;
@@ -1930,7 +1928,6 @@ gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     gs_cie_a *pcie = pcs->params.a;
     bool input_range_ok;
     int code;
-    float *cam;
     gs_vector3 d50;
 
     d50.u = D50_X;

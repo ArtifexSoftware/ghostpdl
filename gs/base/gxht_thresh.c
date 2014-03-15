@@ -803,7 +803,6 @@ static void
 reset_landscape_buffer(ht_landscape_info_t *ht_landscape, byte *contone_align,
                        int data_length, int num_used)
 {
-    int k;
     int delta;
     int curr_x_pos = ht_landscape->xstart;
 

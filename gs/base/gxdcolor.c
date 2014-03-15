@@ -624,8 +624,6 @@ gx_dc_devn_write(
     byte *                          pdata,
     uint *                          psize )
 {
-    int k;
-
     /* Due to the fact that the devn color type can vary
        being cmd_opv_ext_put_drawing_color, cmd_opv_ext_put_tile_devn_color0,
        cmd_opv_ext_put_tile_devn_color1, or cmd_opv_ext_put_drawing_color

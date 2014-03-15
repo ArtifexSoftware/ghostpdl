@@ -425,7 +425,6 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
          * at the end of Fonts chapter.
          */
 
-        const byte *str = pstr->data + save_index;
         uint ssize = pstr->size - save_index;
         int chr_size_shortest =
                 gs_cmap_get_shortest_chr(&pcmap->def, pfidx);
@@ -437,6 +436,7 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
 #ifndef GS_THREADSAFE
 #ifdef DEBUG
             if (gs_debug_c('J')) {
+                const byte *str = pstr->data + save_index;
                 dlprintf1("[J]GCDN() no partial match, skip %d byte (",
                                                chr_size_shortest);
                 debug_print_string_hex_nomem(str, chr_size_shortest);

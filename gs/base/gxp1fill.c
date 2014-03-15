@@ -976,7 +976,6 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
     int code = 0;
     int w = xmax - xmin;
     int h = ymax - ymin;
-    int xmax_new, ymax_new;
 
     if (ptile == 0)             /* null pattern */
         return 0;

@@ -636,6 +636,8 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_state * pgs)
     cmm_dev_profile_t *dev_profile;
     int code = dev_proc(dev, get_profile)(dev, &dev_profile);
 
+    if (code < 0)
+        return code;
     /* check if we require special handling */
     if ( !pgs->overprint                      ||
          pgs->overprint_mode != 1             ||
