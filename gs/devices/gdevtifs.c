@@ -515,7 +515,7 @@ int tiff_compression_allowed(uint16 compression, byte depth)
                           compression == COMPRESSION_CCITTFAX4 ||
                           compression == COMPRESSION_LZW ||
                           compression == COMPRESSION_PACKBITS))
-         || (depth == 8 && (compression == COMPRESSION_NONE ||
+           || ((depth == 8 || depth == 16) && (compression == COMPRESSION_NONE ||
                           compression == COMPRESSION_LZW ||
                           compression == COMPRESSION_PACKBITS)));
 

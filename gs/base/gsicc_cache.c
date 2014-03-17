@@ -946,6 +946,8 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             icc_manager->smask_profiles->smask_gray->profile_handle;
         cms_output_profile = 
             icc_manager->graytok_profile->profile_handle;
+        /* Turn off bp compensation in this case as there is a bug in lcms */
+        rendering_params->black_point_comp = false;
         cms_flags = 0;  /* Turn off any flag setting */
     }
     /* Get the link with the proof and or device link profile */
