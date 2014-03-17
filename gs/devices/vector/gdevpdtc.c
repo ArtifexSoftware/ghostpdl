@@ -502,6 +502,13 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
             if (subfont->FontType == ft_user_defined &&
                 (break_index > start_index || !pdev->charproc_just_accumulated) &&
                 !(pdsubf->u.simple.s.type3.cached[cid >> 3] & (0x80 >> (cid & 7)))) {
+                if (subfont0 && subfont0->FontType != ft_user_defined)
+                    /* This is hacky. By pretending to be in a type 3 font doing a charpath we force
+                     * text handling to fall right back to bitmap glyphs. This is because we can't handle
+                     * CIDFonts with mixed type 1/3 descendants. Ugly but it produces correct output for
+                     * what is after all a dumb setup.
+                     */
+                    pdev->type3charpath = 1;
                 pte->current_font = subfont;
                 return gs_error_undefined;
             }
