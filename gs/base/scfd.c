@@ -26,6 +26,8 @@
 
 private_st_CFD_state();
 
+#define CFD_BUFFER_SLOP 4
+
 static inline int
 get_run(stream_CFD_state *ss, stream_cursor_read *pr, const cfd_node decode[],
     int initial_bits, int min_bits, int *runlen, const char *str);
@@ -57,20 +59,20 @@ s_CFD_init(stream_state * st)
     s_hcd_init_inline(ss);
     /* Because skip_white_pixels can look as many as 4 bytes ahead, */
     /* we need to allow 4 extra bytes at the end of the row buffers. */
-    ss->lbuf = gs_alloc_bytes(st->memory, raster + 4, "CFD lbuf");
+    ss->lbuf = gs_alloc_bytes(st->memory, raster + CFD_BUFFER_SLOP, "CFD lbuf");
     ss->lprev = 0;
     if (ss->lbuf == 0)
         return ERRC;		/****** WRONG ******/
     memset(ss->lbuf, white, raster);
-    memset(ss->lbuf + raster, 0xaa, 4);  /* for Valgrind */
+    memset(ss->lbuf + raster, 0xaa, CFD_BUFFER_SLOP);  /* for Valgrind */
     if (ss->K != 0) {
-        ss->lprev = gs_alloc_bytes(st->memory, raster + 4, "CFD lprev");
+        ss->lprev = gs_alloc_bytes(st->memory, raster + CFD_BUFFER_SLOP, "CFD lprev");
         if (ss->lprev == 0)
             return ERRC;	/****** WRONG ******/
         /* Clear the initial reference line for 2-D encoding. */
         memset(ss->lprev, white, raster);
         /* Ensure that the scan of the reference line will stop. */
-        memset(ss->lprev + raster, 0xaa, 4);
+        memset(ss->lprev + raster, 0xaa, CFD_BUFFER_SLOP);
     }
     ss->k_left = min(ss->K, 0);
     ss->run_color = 0;
@@ -206,8 +208,16 @@ static inline int invert_data(stream_CFD_state *ss, stream_cursor_read *pr, int 
     cfd_load_state();
     (void)rlimit;
 
+    if (q >= ss->lbuf + ss->raster + CFD_BUFFER_SLOP) {
+        return(-1);
+    }
+    
     if ( (*rlen) > qbit )
     {
+        if (q + ((*rlen - qbit) >> 3) > ss->lbuf + ss->raster + CFD_BUFFER_SLOP) {
+            return(-1);
+        }
+
         if (q >= ss->lbuf) {
           *q++ ^= (1 << qbit) - 1;
         }
@@ -215,6 +225,7 @@ static inline int invert_data(stream_CFD_state *ss, stream_cursor_read *pr, int 
             q++;
         }
         (*rlen) -= qbit;
+
         switch ( (*rlen) >> 3 )
         {
           case 7:         /* original rlen possibly >= 64 */
