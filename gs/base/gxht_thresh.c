@@ -789,10 +789,12 @@ move_landscape_buffer(ht_landscape_info_t *ht_landscape, byte *contone_align,
         position_curr = ht_landscape->curr_pos - 1;
         position_new = 0;
     }
-    for (k = 0; k < data_length; k++) {
-            contone_align[position_new] = contone_align[position_curr];
-            position_curr += LAND_BITS;
-            position_new += LAND_BITS;
+    if (position_curr != position_new) {
+        for (k = 0; k < data_length; k++) {
+                contone_align[position_new] = contone_align[position_curr];
+                position_curr += LAND_BITS;
+                position_new += LAND_BITS;
+        }
     }
 }
 
@@ -854,7 +856,6 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
     bool is_planar_dev = dev->is_planar;
     gx_color_index dev_white = gx_device_white(dev);
     gx_color_index dev_black = gx_device_black(dev);
-    bool done = false;
     int spp_out = dev->color_info.num_components;
     byte *contone_align = NULL; /* Init to silence compiler warnings */
 
@@ -971,7 +972,7 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                    first if we have enough data or are all done */
             while ( (penum->ht_landscape.count >= LAND_BITS ||
                    ((penum->ht_landscape.count >= offset_bits) &&
-                    penum->ht_landscape.offset_set)) && !done ) {
+                    penum->ht_landscape.offset_set))) {
                 /* Go ahead and 2D tile in the threshold buffer at this time */
                 /* Always work the tiling from the upper left corner of our
                    LAND_BITS columns */
@@ -1066,7 +1067,6 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                         move_landscape_buffer(&(penum->ht_landscape),
                                               contone_align, dest_height);
                     }
-                    done = true;
                 }
                 /* Perform the copy mono */
                 if (penum->ht_landscape.index < 0) {
