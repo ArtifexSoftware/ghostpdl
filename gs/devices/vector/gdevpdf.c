@@ -73,9 +73,48 @@ ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
     index -= pdev->outline_depth + 1;
     ENUM_PREFIX(st_device_psdf, 0);
 }
-#define e1(i,elt) ENUM_PTR(i, gx_device_pdf, elt);
-gx_device_pdf_do_ptrs(e1)
-#undef e1
+ ENUM_PTR(0, gx_device_pdf, asides.strm);
+ ENUM_PTR(1, gx_device_pdf, asides.strm_buf);
+ ENUM_PTR(2, gx_device_pdf, asides.save_strm);
+ ENUM_PTR(3, gx_device_pdf, streams.strm);
+ ENUM_PTR(4, gx_device_pdf, streams.strm_buf);
+ ENUM_PTR(5, gx_device_pdf, pictures.strm);
+ ENUM_PTR(6, gx_device_pdf, pictures.strm_buf);
+ ENUM_PTR(7, gx_device_pdf, pictures.save_strm);
+ ENUM_PTR(8, gx_device_pdf, Catalog);
+ ENUM_PTR(9, gx_device_pdf, Info);
+ ENUM_PTR(10, gx_device_pdf, Pages);
+ ENUM_PTR(11, gx_device_pdf, text);
+ ENUM_PTR(12, gx_device_pdf, pages);
+ ENUM_PTR(13, gx_device_pdf, cs_Patterns[0]);
+ ENUM_PTR(14, gx_device_pdf, cs_Patterns[1]);
+ ENUM_PTR(15, gx_device_pdf, cs_Patterns[3]);
+ ENUM_PTR(16, gx_device_pdf, cs_Patterns[4]);
+ ENUM_PTR(17, gx_device_pdf, last_resource);
+ ENUM_PTR(18, gx_device_pdf, articles);
+ ENUM_PTR(19, gx_device_pdf, Dests);
+ ENUM_PTR(20, gx_device_pdf, global_named_objects);
+ ENUM_PTR(21, gx_device_pdf, local_named_objects);
+ ENUM_PTR(22, gx_device_pdf, NI_stack);
+ ENUM_PTR(23, gx_device_pdf, Namespace_stack);
+ ENUM_PTR(24, gx_device_pdf, font_cache);
+ ENUM_PTR(25, gx_device_pdf, clip_path);
+ ENUM_PTR(26, gx_device_pdf, PageLabels);
+ ENUM_PTR(27, gx_device_pdf, PageLabels_current_label);
+ ENUM_PTR(28, gx_device_pdf, sbstack);
+ ENUM_PTR(29, gx_device_pdf, substream_Resources);
+ ENUM_PTR(30, gx_device_pdf, font3);
+ ENUM_PTR(31, gx_device_pdf, accumulating_substream_resource);
+ ENUM_PTR(32, gx_device_pdf, pres_soft_mask_dict);
+ ENUM_PTR(33, gx_device_pdf, PDFXTrimBoxToMediaBoxOffset.data);
+ ENUM_PTR(34, gx_device_pdf, PDFXBleedBoxToTrimBoxOffset.data);
+ ENUM_PTR(35, gx_device_pdf, DSCEncodingToUnicode.data);
+ ENUM_PTR(36, gx_device_pdf, Identity_ToUnicode_CMaps[0]);
+ ENUM_PTR(37, gx_device_pdf, Identity_ToUnicode_CMaps[1]);
+ ENUM_PTR(38, gx_device_pdf, ResourceUsage);
+ ENUM_PTR(39, gx_device_pdf, vgstack);
+ ENUM_PTR(40, gx_device_pdf, outline_levels);
+ ENUM_PTR(41, gx_device_pdf, EmbeddedFiles);
 #define e1(i,elt) ENUM_PARAM_STRING_PTR(i + gx_device_pdf_num_ptrs, gx_device_pdf, elt);
 gx_device_pdf_do_param_strings(e1)
 #undef e1
@@ -87,9 +126,48 @@ ENUM_PTRS_END
 static RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
 {
     RELOC_PREFIX(st_device_psdf);
-#define r1(i,elt) RELOC_PTR(gx_device_pdf,elt);
-    gx_device_pdf_do_ptrs(r1)
-#undef r1
+ RELOC_PTR(gx_device_pdf, asides.strm);
+ RELOC_PTR(gx_device_pdf, asides.strm_buf);
+ RELOC_PTR(gx_device_pdf, asides.save_strm);
+ RELOC_PTR(gx_device_pdf, streams.strm);
+ RELOC_PTR(gx_device_pdf, streams.strm_buf);
+ RELOC_PTR(gx_device_pdf, pictures.strm);
+ RELOC_PTR(gx_device_pdf, pictures.strm_buf);
+ RELOC_PTR(gx_device_pdf, pictures.save_strm);
+ RELOC_PTR(gx_device_pdf, Catalog);
+ RELOC_PTR(gx_device_pdf, Info);
+ RELOC_PTR(gx_device_pdf, Pages);
+ RELOC_PTR(gx_device_pdf, text);
+ RELOC_PTR(gx_device_pdf, pages);
+ RELOC_PTR(gx_device_pdf, cs_Patterns[0]);
+ RELOC_PTR(gx_device_pdf, cs_Patterns[1]);
+ RELOC_PTR(gx_device_pdf, cs_Patterns[3]);
+ RELOC_PTR(gx_device_pdf, cs_Patterns[4]);
+ RELOC_PTR(gx_device_pdf, last_resource);
+ RELOC_PTR(gx_device_pdf, articles);
+ RELOC_PTR(gx_device_pdf, Dests);
+ RELOC_PTR(gx_device_pdf, global_named_objects);
+ RELOC_PTR(gx_device_pdf, local_named_objects);
+ RELOC_PTR(gx_device_pdf, NI_stack);
+ RELOC_PTR(gx_device_pdf, Namespace_stack);
+ RELOC_PTR(gx_device_pdf, font_cache);
+ RELOC_PTR(gx_device_pdf, clip_path);
+ RELOC_PTR(gx_device_pdf, PageLabels);
+ RELOC_PTR(gx_device_pdf, PageLabels_current_label);
+ RELOC_PTR(gx_device_pdf, sbstack);
+ RELOC_PTR(gx_device_pdf, substream_Resources);
+ RELOC_PTR(gx_device_pdf, font3);
+ RELOC_PTR(gx_device_pdf, accumulating_substream_resource);
+ RELOC_PTR(gx_device_pdf, pres_soft_mask_dict);
+ RELOC_PTR(gx_device_pdf, PDFXTrimBoxToMediaBoxOffset.data);
+ RELOC_PTR(gx_device_pdf, PDFXBleedBoxToTrimBoxOffset.data);
+ RELOC_PTR(gx_device_pdf, DSCEncodingToUnicode.data);
+ RELOC_PTR(gx_device_pdf, Identity_ToUnicode_CMaps[0]);
+ RELOC_PTR(gx_device_pdf, Identity_ToUnicode_CMaps[1]);
+ RELOC_PTR(gx_device_pdf, ResourceUsage);
+ RELOC_PTR(gx_device_pdf, vgstack);
+ RELOC_PTR(gx_device_pdf, outline_levels);
+ RELOC_PTR(gx_device_pdf, EmbeddedFiles);
 #define r1(i,elt) RELOC_PARAM_STRING_PTR(gx_device_pdf,elt);
         gx_device_pdf_do_param_strings(r1)
 #undef r1
@@ -2960,6 +3038,7 @@ pdf_close(gx_device * dev)
             gs_free_object(pdev->memory->non_gc_memory, pdev->vgstack[i].dash_pattern, "pdfwrite final free stored dash in gstate");
     }
     gs_free_object(pdev->pdf_memory, pdev->vgstack, "pdf_close(graphics state stack)");
+    pdev->vgstack = 0;
 
     cos_release((cos_object_t *)pdev->Namespace_stack, "release Name space stack");
     gs_free_object(mem, pdev->Namespace_stack, "Free Name space stack");

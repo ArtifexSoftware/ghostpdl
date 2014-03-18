@@ -883,8 +883,13 @@ struct gx_device_pdf_s {
 #define is_in_page(pdev)\
   ((pdev)->contents_id != 0)
 
-/* Enumerate the individual pointers in a gx_device_pdf. */
-#define gx_device_pdf_do_ptrs(m)\
+/* Enumerate the individual pointers in a gx_device_pdf.
+   I disliked this macro and so its been removed, the pointers are
+   enumerated/relocated in gdevpdf.c now. We still need the gx_device_pdf_num_ptrs
+   though, so I'm maintaining this comment just to keep track of the number
+   of pointers.
+ */
+/*#define gx_device_pdf_do_ptrs(m)\
  m(0,asides.strm) m(1,asides.strm_buf) m(2,asides.save_strm)\
  m(3,streams.strm) m(4,streams.strm_buf)\
  m(5,pictures.strm) m(6,pictures.strm_buf) m(7,pictures.save_strm)\
@@ -903,7 +908,7 @@ struct gx_device_pdf_s {
  m(34,PDFXBleedBoxToTrimBoxOffset.data) m(35, DSCEncodingToUnicode.data)\
  m(36,Identity_ToUnicode_CMaps[0]) m(37,Identity_ToUnicode_CMaps[1])\
  m(38,ResourceUsage) m(39,vgstack)\
- m(40, outline_levels) m(41, EmbeddedFiles)
+ m(40, outline_levels) m(41, EmbeddedFiles)*/
 #define gx_device_pdf_num_ptrs 42
 #define gx_device_pdf_do_param_strings(m)\
     m(0, OwnerPassword) m(1, UserPassword) m(2, NoEncrypt)\
