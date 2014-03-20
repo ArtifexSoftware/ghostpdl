@@ -2167,10 +2167,10 @@ pdf_image_plane_data_alt(gx_image_enum_common_t * info,
     /****** DOESN'T HANDLE IMAGES WITH VARYING WIDTH PER PLANE ******/
     uint width_bits = pie->width * pie->plane_depths[0];
     /****** DOESN'T HANDLE NON-ZERO data_x CORRECTLY ******/
-    uint bcount = (width_bits + 7) >> 3;
     uint ignore;
     int nplanes = pie->num_planes;
     int status = 0;
+    uint bcount = (width_bits + 7) >> 3;
 
     if (h > pie->rows_left)
         h = pie->rows_left;
@@ -2199,13 +2199,16 @@ pdf_image_plane_data_alt(gx_image_enum_common_t * info,
                 uint flip_count;
                 uint flipped_count;
 
-                if (count >= block_bytes) {
+                if (count > block_bytes) {
                     flip_count = block_bytes;
                     flipped_count = block_bytes * nplanes;
                 } else {
                     flip_count = count;
                     flipped_count =
                         (width_bits % (block_bytes * 8) * nplanes + 7) >> 3;
+                    /* In case the width of the image is a precise multiple of our block size */
+                    if (flipped_count == 0)
+                        flipped_count = block_bytes * nplanes;
                 }
                 image_flip_planes(row, bit_planes, offset, flip_count,
                                   nplanes, pie->plane_depths[0]);
