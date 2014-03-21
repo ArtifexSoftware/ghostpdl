@@ -328,7 +328,11 @@ pclxl_set_color(gx_device_pclxl * xdev, const gx_drawing_color * pdc,
 static bool
 pclxl_can_handle_color_space(const gs_color_space * pcs)
 {
-    gs_color_space_index index = gs_color_space_get_index(pcs);
+    gs_color_space_index index;
+    /* an image with no colorspace info arrived; cannot handle */
+    if (!pcs)
+        return false;
+    index = gs_color_space_get_index(pcs);
 
     if (index == gs_color_space_index_Indexed) {
         if (pcs->params.indexed.use_proc)
