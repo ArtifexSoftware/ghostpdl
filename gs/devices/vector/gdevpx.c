@@ -356,7 +356,11 @@ static bool
 pclxl_can_icctransform(const gs_image_t * pim)
 {
     const gs_color_space *pcs = pim->ColorSpace;
-    int bits_per_pixel =
+    int bits_per_pixel;
+    /* an image with no colorspace info arrived; cannot transform */
+    if (!pcs)
+        return false;
+    bits_per_pixel =
 	(pim->ImageMask ? 1 :
 	 pim->BitsPerComponent * gs_color_space_num_components(pcs));
 
