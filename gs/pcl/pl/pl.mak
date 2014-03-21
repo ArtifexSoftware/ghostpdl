@@ -20,12 +20,12 @@
 #	PLSRCDIR - the source directory
 #	PLOBJDIR - the object / executable directory
 
-MAIN_OBJ?=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
-REALMAIN_OBJ?=$(PLOBJDIR)/realmain.$(OBJ)
-REALMAIN_SRC?=realmain
-PCL_TOP_OBJ?=$(PCL5OBJDIR)/pctop.$(OBJ)
-PXL_TOP_OBJ?=$(PXLOBJDIR)/pxtop.$(OBJ)
-TOP_OBJ?=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(GLOBJ)gconfig.$(OBJ)
+MAIN_OBJ=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
+REALMAIN_OBJ=$(PLOBJDIR)/realmain.$(OBJ)
+REALMAIN_SRC=realmain
+PCL_TOP_OBJ=$(PCL5OBJDIR)/pctop.$(OBJ)
+PXL_TOP_OBJ=$(PXLOBJDIR)/pxtop.$(OBJ)
+TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(GLOBJ)gconfig.$(OBJ)
 
 PLSRC=$(PLSRCDIR)$(D)
 PLOBJ=$(PLOBJDIR)$(D)

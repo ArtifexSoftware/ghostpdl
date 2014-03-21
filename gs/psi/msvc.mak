@@ -79,15 +79,15 @@ TARGET_ARCH_FILE=$(GLSRCDIR)\..\arch\windows-x86-msvc.h
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
 !if "$(MEMENTO)"=="1"
-DEFAULT_OBJ_DIR=.\memobj
+DEFAULT_OBJ_DIR=.\$(PRODUCT_PREFIX)memobj
 !else
 !if "$(PROFILE)"=="1"
-DEFAULT_OBJ_DIR=.\profobj
+DEFAULT_OBJ_DIR=.\$(PRODUCT_PREFIX)profobj
 !else
 !if "$(DEBUG)"=="1"
-DEFAULT_OBJ_DIR=.\debugobj
+DEFAULT_OBJ_DIR=.\$(PRODUCT_PREFIX)debugobj
 !else
-DEFAULT_OBJ_DIR=.\obj
+DEFAULT_OBJ_DIR=.\$(PRODUCT_PREFIX)obj
 !endif
 !endif
 !endif
@@ -156,7 +156,58 @@ PSOBJDIR=$(DEFAULT_OBJ_DIR)
 !ifndef SBRDIR
 SBRDIR=$(DEFAULT_OBJ_DIR)
 !endif
+
+!ifndef PCL5SRCDIR
+PCL5SRCDIR=.\pcl\pcl
+!endif
+
+!ifndef PCL5GENDIR
+PCL5GENDIR=.\$(DEFAULT_OBJ_DIR)
+!endif
+
+!ifndef PCL5OBJDIR
+PCL5OBJDIR=.\$(DEFAULT_OBJ_DIR)
+!endif
+
+!ifndef PXLSRCDIR
+PXLSRCDIR=.\pcl\pxl
+!endif
+
+!ifndef PXLGENDIR
+PXLGENDIR=.\$(DEFAULT_OBJ_DIR)
+!endif
+
+!ifndef PXLOBJDIR
+PXLOBJDIR=.\$(DEFAULT_OBJ_DIR)
+!endif
+
+!ifndef PLSRCDIR
+PLSRCDIR=.\pcl\pl
+!endif
+
+!ifndef PLGENDIR
+PLGENDIR=.\$(DEFAULT_OBJ_DIR)
+!endif
+
+!ifndef PLOBJDIR
+PLOBJDIR=.\$(DEFAULT_OBJ_DIR)
+!endif
+
+!ifndef XPSSRCDIR
+XPSSRCDIR=.\xps
+!endif
+
+!ifndef XPSGENDIR
+XPSGENDIR=.\$(DEFAULT_OBJ_DIR)
+!endif
+
+!ifndef XPSOBJDIR
+XPSOBJDIR=.\$(DEFAULT_OBJ_DIR)
+!endif
+
+
 CONTRIBDIR=.\contrib
+
 
 # Define the root directory for Ghostscript installation.
 
