@@ -2072,7 +2072,7 @@ pclxl_begin_image(gx_device * dev,
     pie->rows.num_rows = num_rows;
     pie->rows.first_y = 0;
     pie->rows.raster = row_raster;
-    if (!pclxl_can_handle_color_space(pcs)
+    if (!pim->ImageMask && !pclxl_can_handle_color_space(pcs)
 	&& pclxl_can_icctransform(pim) && pcs->cmm_icc_profile_data) {
 	gsicc_rendering_param_t rendering_params;
 
