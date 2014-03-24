@@ -364,12 +364,17 @@ c_param_end_write_collection(gs_param_list * plist, gs_param_name pkey,
 {
     gs_c_param_list *const cplist = (gs_c_param_list *)plist;
     gs_c_param_list *dlist = (gs_c_param_list *) pvalue->list;
+    int code;
 
-    return c_param_write(cplist, pkey, pvalue->list,
+    code = c_param_write(cplist, pkey, pvalue->list,
                     (dlist->coll_type == gs_param_collection_dict_int_keys ?
                      gs_param_type_dict_int_keys :
                      dlist->coll_type == gs_param_collection_array ?
                      gs_param_type_array : gs_param_type_dict));
+
+    gs_free_object(plist->memory, pvalue->list, "c_param_end_write_collection");
+    pvalue->list = 0;
+    return code;
 }
 static int
 c_param_write_typed(gs_param_list * plist, gs_param_name pkey,
