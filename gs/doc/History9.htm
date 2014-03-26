@@ -29,7 +29,7 @@ TOC to see how to edit it for visual conciseness.
 <h2>Table of contents</h2>
 
 <blockquote><ul>
-<li><a href="#Version9.12">Version 9.12 (2014-03-25)</a>
+<li><a href="#Version9.14">Version 9.14 (2014-03-26)</a>
 <li><a href="#Version9.10">Version 9.10 (2013-08-27)</a>
 <li><a href="#Version9.09">Version 9.09 (2013-08-21)</a>
 <li><a href="#Version9.07">Version 9.07 (2013-02-14)</a>
@@ -70,7 +70,7 @@ overview</a>.
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
-<h2><a name="Version9.12"></a>Version 9.12 (2014-03-25)</h2>
+<h2><a name="Version9.14"></a>Version 9.14 (2014-03-26)</h2>
 
 <p>This is the tenth full release in the stable 9.x series, and is
 primarily a maintenance release.
@@ -85,7 +85,7 @@ differences when compared to the old system.
 
 <p>It is no longer necessary to specify UseCIEColor (and we very much encourage
 you not to do this) or the ProcessColorModel if you want to convert a PDF file
-to a specific color space, simply set the ColorConverionStrategy appropriately.
+to a specific color space, simply set the ColorConversionStrategy appropriately.
 
 <p>We do not expect any major problems to arise with this new code, but for the
 duration of this release a new switch -dPDFUseOldCMS is available which will
@@ -114,7 +114,7 @@ transparency and output is to display devices such as Windows display or x11
 vector devices that cannot reproduce the PDF transparency model, such as the
 ps2write device or pdfwrite when 'flattening' to PDF 1.3 or earlier
 (-dCompatibilityLevel=1.3). This uses banding (clist) files to render the
-transparenct areas in bands to reduce memory use, and unlike the existing
+transparent areas in bands to reduce memory use, and unlike the existing
 page level banding, this is hidden from the target device.
 </li>
 <li>
@@ -131,6 +131,12 @@ rendering bands into multiple threads, it is now possible to perform
 post-processing in multiple threads, such as downscale, post-render halftoning,
 or compression. Previously, post processing was only possible in the single
 main thread. This can improve performance significantly. 
+</li>
+<li>
+<p> Ghostscript has a new "pwgraster" output device for PWG Raster output
+</li>
+<li>
+<p> The CUPS device now has improved support for PPD-less printing
 </li>
 <li>
 <p>Plus the usual round of bug fixes, compatibility changes, and incremental improvements.
@@ -101583,7 +101589,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.12, 25 March 2014
+<small>Ghostscript version 9.14, 26 March 2014
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
