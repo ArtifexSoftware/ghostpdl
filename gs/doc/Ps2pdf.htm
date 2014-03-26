@@ -377,7 +377,11 @@ Therefore the user should choose a compromise value.
 <dd>With <code>CompatibilityLevel &lt; 1.3</code> it specifies 
 whether the target viewer can handle TrueType fonts.
 If not, TrueType fonts are converted into raster fonts
-with resolution specified in <code>HWResolution</code>.
+with resolution specified in <code>HWResolution</code>. Note that large text at higher resolutions
+results in very large bitmaps which are likely to defeat caching in many printers. As a result the
+text is emitted as simple images rather than as a (type 3) bitmap font. The PostScript user parameter
+MaxFontItem can be used to increase the maximum size of a cache entry which will increase the size/resolution
+of the text which can be stored in a font.
 With <code>CompatibilityLevel &ge; 1.3</code> this option is ignored. Default value is <code>true</code>.
 
 </dl>
