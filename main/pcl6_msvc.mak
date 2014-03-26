@@ -472,7 +472,7 @@ DEVICE_DEVS=$(DD)\display.dev\
  $(DD)\tiff12nc.dev $(DD)\tiff24nc.dev\
  $(DD)\tiffscaled4.dev $(DD)\tiffscaled8.dev $(DD)\tiffscaled24.dev $(DD)\tiffscaled32.dev\
  $(DD)\png16m.dev $(DD)\pngmono.dev $(DD)\pngmonod.dev $(DD)\jpeg.dev \
- $(DD)\pdfwrite.dev $(DD)\ps2write.dev $(DD)\txtwrite.dev \
+ $(DD)\pdfwrite.dev $(DD)\ps2write.dev $(DD)\eps2write.dev $(DD)\txtwrite.dev \
  $(DD)\xpswrite.dev \
  $(DD)\plan.dev $(DD)\planm.dev $(DD)\plang.dev $(DD)\planc.dev $(DD)\plank.dev \
  $(DD)\bbox.dev
