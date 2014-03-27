@@ -2103,10 +2103,10 @@ txt_add_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
     memcpy(unsorted_entry->Widths, penum->Widths, penum->TextBufferIndex * sizeof(float));
 
     unsorted_entry->FontName = (char *)gs_malloc(tdev->memory->stable_memory,
-        (strlen(penum->text_state->FontName) + 1), sizeof(unsigned short), "txtwrite alloc sorted text buffer");
+        (strlen(penum->text_state->FontName) + 1), sizeof(unsigned char), "txtwrite alloc sorted text buffer");
     if (!unsorted_entry->Unicode_Text)
         return gs_note_error(gs_error_VMerror);
-    memcpy(unsorted_entry->FontName, penum->text_state->FontName, strlen(penum->text_state->FontName) * sizeof(unsigned short));
+    memcpy(unsorted_entry->FontName, penum->text_state->FontName, strlen(penum->text_state->FontName) * sizeof(unsigned char));
     unsorted_entry->FontName[strlen(penum->text_state->FontName)] = 0x00;
 
     /* First add one entry to the unsorted list */
