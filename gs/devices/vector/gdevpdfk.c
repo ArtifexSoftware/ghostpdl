@@ -336,6 +336,14 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
                 goto fail;
         }
 
+    } else {
+        if (ncomps != 1 && ncomps != 3 && ncomps != 4) {
+            /* We can only use a default for Gray, RGB or CMYK. For anything else we need
+             * to convert to the base space, we can't legally preserve the ICC profile.
+             */
+            code = gs_error_rangecheck;
+            goto fail;
+        }
     }
 
     /* Wrap up. */
