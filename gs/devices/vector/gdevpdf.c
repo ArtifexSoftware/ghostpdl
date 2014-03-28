@@ -1174,6 +1174,18 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
             if (sscanf(buf, "[ %g %g %g %g ]",
                     &temp[0], &temp[1], &temp[2], &temp[3]) == 4) {
                 cos_dict_delete_c_key(page->Page, "/CropBox");
+                /* Ensure that CropBox is no larger than MediaBox. The spec says *nothing* about
+                 * this, but Acrobat Preflight complains if it is larger. This can happen because
+                 * we apply 'round_box_coord' to the mediabox at the start of this rouinte.
+                 */
+                if (temp[0] < mediabox[0])
+                    temp[0] = mediabox[0];
+                if (temp[1] < mediabox[1])
+                    temp[1] = mediabox[1];
+                if (temp[2] > mediabox[2])
+                    temp[2] = mediabox[2];
+                if (temp[3] > mediabox[3])
+                    temp[3] = mediabox[3];
                 pprintg4(s, "/CropBox [%g %g %g %g]\n",
                     temp[0], temp[1], temp[2], temp[3]);
                 /* Make sure TrimBox fits inside CropBox. Spec says 'must not extend
