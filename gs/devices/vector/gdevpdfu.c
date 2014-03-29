@@ -536,6 +536,8 @@ pdfwrite_pdf_open_document(gx_device_pdf * pdev)
                         return_error(gs_error_ioerror);
                 } else
                     pdev->strm = s;
+                if (!pdev->Eps2Write)
+                    stream_puts(s, "/EPS2Write false def\n");
                 if(pdev->SetPageSize)
                     stream_puts(s, "/SetPageSize true def\n");
                 if(pdev->RotatePages)
