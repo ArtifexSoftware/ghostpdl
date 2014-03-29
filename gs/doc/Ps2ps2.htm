@@ -194,7 +194,9 @@ Note: It is not possible to set <code>CompressEntireFile</code> when <code>Produ
 
 <p>
 A few options can be used to influence the behavior of a printer or
-PostScript interpreter that reads the result of ps2ps2.
+PostScript interpreter that reads the result of ps2ps2. All of these options
+are incompatible with DSC-compliant PostScript, in order to use any of them
+<code>ProduceDSC</code> must be set to false.
 
 <dl>
 <dt><code>-dRotatePages=</code><em>boolean</em>. 
