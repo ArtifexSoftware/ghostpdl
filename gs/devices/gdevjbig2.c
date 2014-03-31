@@ -28,9 +28,6 @@ typedef struct gx_device_jbig2_s {
     gx_prn_device_common;
 } gx_device_jbig2;
 
-/* The device descriptor */
-static dev_proc_print_page(jbig2_print_page);
-
 /* ------ The device descriptors ------ */
 
 /* Default X and Y resolution. */
@@ -99,16 +96,19 @@ jbig2_print_page(gx_device_printer * pdev, FILE * prn_stream)
     if (state.templat->init)
         (*state.templat->init) (cstrm.state);
 
+    state.jb2_encode = true;
+
     /* Copy the data to the output. */
     for (lnum = 0; lnum < jdev->height; ++lnum) {
         byte *data;
         uint ignore_used;
+        int i;
 
         if (cstrm.end_status) {
             code = gs_note_error(gs_error_ioerror);
             goto done;
         }
-        gdev_prn_get_bits(pdev, lnum, in, &data);
+        gdev_prn_get_bits(pdev, lnum, in, &data);        
         sputs(&cstrm, data, state.stride, &ignore_used);
     }
 

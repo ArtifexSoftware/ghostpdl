@@ -74,6 +74,7 @@ typedef struct stream_jbig2encode_state_s
     unsigned long outsize;	/* bytes available in the buffer */
     unsigned long outfill;	/* bytes written to the buffer */
     unsigned long offset;	/* bytes written from the buffer */
+    bool jb2_encode;            /* are we writing a jb2 file (true), or a stream for a PDF (false) */
 
 } stream_jbig2encode_state;
 

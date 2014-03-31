@@ -488,6 +488,7 @@ s_jbig2encode_init(stream_state * ss)
     state->outsize = 0;
     state->outfill = 0;
     state->offset = 0;
+    state->jb2_encode = false;
 
     return 0;
 }
@@ -504,6 +505,7 @@ s_jbig2encode_process(stream_state * ss, stream_cursor_read * pr,
     long out_size = pw->limit - pw->ptr;
     long available, segment;
     JB2_Error err;
+    JB2_Export_Format format[] = {cJB2_Export_Format_Stream_For_PDF, cJB2_Export_Format_JB2};
 
     /* Be greedy in filling our internal line buffer so we always
        make read progress on a stream. */
@@ -557,7 +559,7 @@ s_jbig2encode_process(stream_state * ss, stream_cursor_read * pr,
            unfortunately we can't serialize this across process calls */
         err = JB2_Document_Export_Document(state->doc,
             s_jbig2encode_write, state,
-            cJB2_Export_Format_Stream_For_PDF);
+            format[state->jb2_encode]);
         if (err != cJB2_Error_OK) return ERRC;
     }
 
