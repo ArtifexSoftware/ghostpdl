@@ -583,7 +583,7 @@ const char *opdfread_ps [] = {
 "//PDFReader/InitialGraphicState get\n",
 "//PDFReader/GraphicState get copy pop\n",
 "//PDFReader/Operators get begin\n",
-"pop currentfile 0(endstream)/SubFileDecode filter\n",
+"currentfile exch ()/SubFileDecode filter\n",
 "1 index//AppendFilters exec\n",
 "cvx mark exch\n",
 "exec\n",
