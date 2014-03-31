@@ -1596,9 +1596,16 @@ $(DD)pngalpha.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev $(GDEV)
 
 fpng_=$(DEVOBJ)gdevfpng.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ)
 
-$(DEVOBJ)gdevfpng.$(OBJ) : $(DEVSRC)gdevfpng.c\
+$(DEVOBJ)gdevfpng_0.$(OBJ) : $(DEVSRC)gdevfpng.c\
  $(gdevprn_h) $(gdevpccm_h) $(gscdefs_h) $(zlib_h)
-	$(CC_) $(I_)$(DEVI_) $(II)$(PI_)$(_I) $(PCF_) $(GLF_) $(DEVO_)gdevfpng.$(OBJ) $(C_) $(DEVSRC)gdevfpng.c
+	$(CC_) $(I_)$(DEVI_) $(II)$(PI_)$(_I) $(PCF_) $(GLF_) $(DEVO_)gdevfpng_0.$(OBJ) $(C_) $(DEVSRC)gdevfpng.c
+
+$(DEVOBJ)gdevfpng_1.$(OBJ) : $(DEVSRC)gdevfpng.c\
+ $(gdevprn_h) $(gdevpccm_h) $(gscdefs_h)
+	$(CC_) $(I_)$(DEVI_) $(II)$(PI_)$(_I) $(PCF_) $(GLF_) $(DEVO_)gdevfpng_1.$(OBJ) $(C_) $(DEVSRC)gdevfpng.c
+
+$(DEVOBJ)gdevfpng.$(OBJ) : $(DEVOBJ)gdevfpng_$(SHARE_ZLIB).$(OBJ)
+	$(CP_) $(DEVOBJ)gdevfpng_$(SHARE_ZLIB).$(OBJ) $(DEVOBJ)gdevfpng.$(OBJ)
 
 $(DD)fpng.dev : $(DEVS_MAK) $(fpng_) $(GLD)page.dev $(GDEV)
 	$(SETPDEV2) $(DD)fpng $(fpng_)
