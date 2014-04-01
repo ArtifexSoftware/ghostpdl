@@ -468,10 +468,15 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
         const gs_param_string *pair = &pairs[i];
         long src_pg;
 
-        if (pdf_key_eq(pair, "/SrcPg") &&
-            sscanf((const char *)pair[1].data, "%ld", &src_pg) == 1
-            )
-            params->src_pg = src_pg - 1;
+        if (pdf_key_eq(pair, "/SrcPg")){
+            unsigned char *buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, (pair[1].size + 1) * sizeof(unsigned char),
+                        "pdf_xmp_write_translated");
+            memcpy(buf0, pair[1].data, pair[1].size);
+            buf0[pair[1].size] = 0x00;
+            if (sscanf((char *)buf0, "%ld", &src_pg) == 1)
+                params->src_pg = src_pg - 1;
+            gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
+        }
         else if (!for_outline && pdf_key_eq(pair, "/Color"))
             pdfmark_put_c_pair(pcd, "/C", pair + 1);
         else if (!for_outline && pdf_key_eq(pair, "/Title"))
@@ -1367,7 +1372,7 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
              const gs_matrix * pctm, const gs_param_string * objname)
 {
     gs_param_string key;
-    int i, code;
+    int i;
 
     if (pdev->CompatibilityLevel < 1.4)
         return_error(gs_error_undefined);
@@ -1382,7 +1387,7 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
         pdev->EmbeddedFiles->id = pdf_obj_ref(pdev);
     }
 
-    for (i = 0; code >= 0 && i < count; i += 2) {
+    for (i = 0; i < count; i += 2) {
         if (pdf_key_eq(&pairs[i], "/FS")) {
             return cos_dict_put_string(pdev->EmbeddedFiles, key.data, key.size,
                                pairs[i+1].data, pairs[i+1].size);
