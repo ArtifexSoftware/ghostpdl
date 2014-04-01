@@ -157,6 +157,23 @@ PSOBJDIR=$(DEFAULT_OBJ_DIR)
 SBRDIR=$(DEFAULT_OBJ_DIR)
 !endif
 
+!ifndef EXPATGENDIR
+EXPATGENDIR=$(GLGENDIR)
+!endif
+
+!ifndef EXPATOBJDIR
+EXPATOBJDIR=$(GLGENDIR)
+!endif
+
+!ifndef JPEGXR_GENDIR
+JPEGXR_GENDIR=$(GLGENDIR)
+!endif
+
+!ifndef JPEGXR_OBJDIR
+JPEGXR_OBJDIR=$(GLGENDIR)
+!endif
+
+
 !ifndef PCL5SRCDIR
 PCL5SRCDIR=.\pcl\pcl
 !endif
@@ -205,9 +222,50 @@ XPSGENDIR=.\$(DEFAULT_OBJ_DIR)
 XPSOBJDIR=.\$(DEFAULT_OBJ_DIR)
 !endif
 
+GPDLSRCDIR=.\gpdl
+GPDLGENDIR=.\$(DEFAULT_OBJ_DIR)
+GPDLOBJDIR=.\$(DEFAULT_OBJ_DIR)
 
 CONTRIBDIR=.\contrib
 
+# Can we build PCL and XPS
+!ifndef BUILD_PCL
+BUILD_PCL=0
+!if exist ("$(PLSRCDIR)\pl.mak")
+BUILD_PCL=1
+!endif
+!endif
+
+!ifndef BUILD_XPS
+BUILD_XPS=0
+!if exist ("$(XPSSRCDIR)\xps.mak")
+BUILD_XPS=1
+!endif
+!endif
+
+!ifndef BUILD_GPDL
+BUILD_GPDL=0
+!if exist ("$(GPDLSRCDIR)\gpdl.mak")
+BUILD_GPDL=1
+!endif
+!endif
+
+PCL_TARGET=
+XPS_TARGET=
+
+!if $(BUILD_PCL)
+PCL_TARGET=pcl
+!endif
+
+!if $(BUILD_XPS)
+XPS_TARGET=xps
+!endif
+
+!if $(BUILD_GPDL)
+GPDL_TARGET=gpdl
+!endif
+
+PCL_XPS_TARGETS=$(PCL_TARGET) $(XPS_TARGET) $(GPDL_TARGET)
 
 # Define the root directory for Ghostscript installation.
 
@@ -360,11 +418,20 @@ XPSPRINT=1
 !ifndef GS
 !ifdef WIN64
 GS=gswin64
+PCL=gpclwin64
+XPS=gxpswin64
+GPDL=gpdlwin64
 !else
 !ifdef ARM
 GS=gswinARM
+PCL=gpclwinARM
+XPS=gxpswinARM
+GPDL=gpdlwinARM
 !else
 GS=gswin32
+PCL=gpclwin32
+XPS=gxpswin32
+GPDL=gpdlwin32
 !endif
 !endif
 !endif
@@ -469,7 +536,7 @@ TIFFPLATFORM=win32
 # See zlib.mak for more information.
 
 !ifndef ZSRCDIR
-ZSRCDIR=zlib
+ZSRCDIR=.\zlib
 !endif
 
 # Define which jbig2 library to use
@@ -522,6 +589,12 @@ JPX_LIB=openjpeg
 # Alternatively, you can build a separate DLL
 # and define SHARE_JPX=1 in src/winlib.mak
 
+# Define the directory where the lcms source is stored.
+# See lcms.mak for more information
+!ifndef LCMSSRCDIR
+LCMSSRCDIR=lcms
+!endif
+
 # Define the directory where the lcms2 source is stored.
 # See lcms2.mak for more information
 !ifndef LCMS2SRCDIR
@@ -556,6 +629,29 @@ LCUPSISRCDIR=cups
 CUPS_CC=$(CC) $(CFLAGS) -DWIN32 -DHAVE_BOOLEAN
 !endif
 
+!ifndef JPEGXR_SRCDIR
+JPEGXR_SRCDIR=.\jpegxr
+!endif
+
+!ifndef SHARE_JPEGXR
+SHARE_JPEGXR=0
+!endif
+
+!ifndef JPEGXR_CFLAGS
+JPEGXR_CFLAGS=/TP /DNDEBUG
+!endif
+
+!ifndef EXPATSRCDIR
+EXPATSRCDIR=.\expat
+!endif
+
+!ifndef SHARE_EXPAT
+SHARE_EXPAT=0
+!endif
+
+!ifndef EXPAT_CFLAGS
+EXPAT_CFLAGS=/DHAVE_MEMMOVE
+!endif
 
 # Define any other compilation flags.
 
@@ -593,21 +689,15 @@ CFLAGS=$(CFLAGS) $(XCFLAGS) $(UNICODECFLAGS)
 
 # 1 --> Use 64 bits for gx_color_index.  This is required only for
 # non standard devices or DeviceN process color model devices.
-!ifndef USE_LARGE_COLOR_INDEX
-USE_LARGE_COLOR_INDEX=1
-!endif
+USE_LARGE_COLOR_INDEX=0
 
 !if $(USE_LARGE_COLOR_INDEX) == 1
 # Definitions to force gx_color_index to 64 bits
 LARGEST_UINTEGER_TYPE=unsigned __int64
 GX_COLOR_INDEX_TYPE=$(LARGEST_UINTEGER_TYPE)
-ARCH_SIZEOF_GX_COLOR_INDEX=8
-!else
-GX_COLOR_INDEX_TYPE=unsigned int
-ARCH_SIZEOF_GX_COLOR_INDEX=4
-!endif
 
-CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)" /DARCH_SIZEOF_GX_COLOR_INDEX=$(ARCH_SIZEOF_GX_COLOR_INDEX)
+CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
+!endif
 
 # -W3 generates too much noise.
 !ifndef WARNOPT
@@ -1161,12 +1251,12 @@ JPXSRCDIR=openjpeg
 !endif
 !ifndef JPX_CFLAGS
 !ifdef WIN64
-JPX_CFLAGS=-DUSE_OPENJPEG_JP2 -DUSE_JPIP $(JPX_SSE_CFLAGS) -DWIN64
+JPX_CFLAGS=-DUSE_OPENJPEG_JP2 $(JPX_SSE_CFLAGS) -DWIN64
 !else
-JPX_CFLAGS=-DUSE_OPENJPEG_JP2 -DUSE_JPIP $(JPX_SSE_CFLAGS) -DWIN32
+JPX_CFLAGS=-DUSE_OPENJPEG_JP2 $(JPX_SSE_CFLAGS) -DWIN32
 !endif
 !else
-JPX_CFLAGS = $JPX_CFLAGS -DUSE_JPIP -DUSE_OPENJPEG_JP2
+JPX_CFLAGS = $JPX_CFLAGS -DUSE_OPENJPEG_JP2
 !endif
 !endif
 
@@ -1175,7 +1265,26 @@ JPX_CFLAGS = $JPX_CFLAGS -DUSE_JPIP -DUSE_OPENJPEG_JP2
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)mspoll.dev $(PSD)fapi_ps.dev $(PSD)jbig2.dev $(PSD)jpx.dev $(PSD)winutf8.dev $(PSD)ramfs.dev
+# FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)mspoll.dev $(PSD)fapi_ps.dev $(PSD)winutf8.dev $(PSD)ramfs.dev
+
+# Choose the language feature(s) to include.  See gs.mak for details.
+PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)epsf.dev $(PSD)ttfont.dev \
+                 $(PSD)jbig2.dev $(PSD)jpx.dev $(PSD)fapi_ps.dev $(GLD)winutf8.dev 
+
+
+PCL_FEATURE_DEVS=$(PLOBJDIR)/pl.dev $(PLOBJDIR)/pjl.dev $(PXLOBJDIR)/pxl.dev $(PCL5OBJDIR)/pcl5c.dev \
+             $(PCL5OBJDIR)/hpgl2c.dev
+
+XPS_FEATURE_DEVS=$(XPSOBJDIR)/pl.dev $(XPSOBJDIR)/xps.dev
+
+FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev $(GLD)psl2lib.dev \
+             $(GLD)dps2lib.dev $(GLD)path1lib.dev $(GLD)patlib.dev $(GLD)psl2cs.dev $(GLD)rld.dev $(GLD)gxfapiu$(UFST_BRIDGE).dev\
+             $(GLD)ttflib.dev  $(GLD)cielib.dev $(GLD)pipe.dev $(GLD)htxlib.dev $(GLD)sdctd.dev $(GLD)libpng.dev\
+	     $(GLD)seprlib.dev $(GLD)translib.dev $(GLD)cidlib.dev $(GLD)psf0lib.dev $(GLD)psf1lib.dev\
+             $(GLD)psf2lib.dev $(GLD)lzwd.dev $(GLD)sicclib.dev $(GLD)mshandle.dev $(GLD)mspoll.dev \
+             $(GLD)ramfs.dev $(GLD)sjpx.dev $(GLD)sjbig2.dev
+
+
 !ifndef METRO
 FEATURE_DEVS=$(FEATURE_DEVS) $(PSD)msprinter.dev $(GLD)pipe.dev
 !endif
@@ -1223,7 +1332,8 @@ STDIO_IMPLEMENTATION=c
 !ifdef METRO
 DEVICE_DEVS=
 !else
-DEVICE_DEVS=$(DD)display.dev $(DD)mswindll.dev $(DD)mswinpr2.dev $(DD)ijs.dev
+# $(DD)mswindll.dev 
+DEVICE_DEVS=$(DD)display.dev $(DD)mswinpr2.dev $(DD)ijs.dev $(DD)mswindll.dev 
 !endif
 DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
@@ -1235,17 +1345,13 @@ DEVICE_DEVS8=$(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcx16.dev $(DD)pcx256.dev $(
 DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm.dev $(DD)pgnmraw.dev $(DD)pkmraw.dev
 DEVICE_DEVS10=$(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev $(DD)tifflzw.dev $(DD)tiffpack.dev
 DEVICE_DEVS11=$(DD)bmpmono.dev $(DD)bmpgray.dev $(DD)bmp16.dev $(DD)bmp256.dev $(DD)bmp16m.dev $(DD)tiff12nc.dev $(DD)tiff24nc.dev $(DD)tiff48nc.dev $(DD)tiffgray.dev $(DD)tiff32nc.dev $(DD)tiff64nc.dev $(DD)tiffsep.dev $(DD)tiffsep1.dev $(DD)tiffscaled.dev $(DD)tiffscaled8.dev $(DD)tiffscaled24.dev $(DD)tiffscaled32.dev $(DD)tiffscaled4.dev
-!if $(DEBUG)==1
-DEVICE_DEVS12=$(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev $(DD)tracedev.dev
-!else
 DEVICE_DEVS12=$(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
-!endif
 DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pngmonod.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev $(DD)fpng.dev $(DD)psdcmykog.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)jpegcmyk.dev
-DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)ps2write.dev $(DD)eps2write.dev $(DD)txtwrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev $(DD)xpswrite.dev $(DD)inkcov.dev $(DD)ink_cov.dev
+DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)ps2write.dev $(DD)eps2write.dev $(DD)epswrite.dev $(DD)txtwrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev $(DD)xpswrite.dev $(DD)inkcov.dev $(DD)ink_cov.dev
 DEVICE_DEVS16=$(DD)bbox.dev $(DD)plib.dev $(DD)plibg.dev $(DD)plibm.dev $(DD)plibc.dev $(DD)plibk.dev $(DD)plan.dev $(DD)plang.dev $(DD)planm.dev $(DD)planc.dev $(DD)plank.dev
 !if "$(WITH_CUPS)" == "1"
-DEVICE_DEVS16=$(DEVICE_DEVS16) $(DD)cups.dev $(DD)pwgraster.dev
+DEVICE_DEVS16=$(DEVICE_DEVS16) $(DD)cups.dev
 !endif
 # Overflow for DEVS3,4,5,6,9
 DEVICE_DEVS17=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
@@ -1286,17 +1392,43 @@ BEGINFILES2=$(BEGINFILES2) $(BSCFILE)
 !endif
 
 !include $(GLSRCDIR)\msvccmd.mak
-# psromfs.mak must precede lib.mak
+# *romfs.mak must precede lib.mak
 !include $(PSSRCDIR)\psromfs.mak
+
+!if $(BUILD_PCL)
+!include $(PLSRCDIR)\plromfs.mak
+!endif
+!if $(BUILD_XPS)
+!include $(XPSSRCDIR)\xpsromfs.mak
+!endif
+
 !include $(GLSRCDIR)\winlib.mak
+
+!if $(BUILD_PCL)
+!include $(PLSRCDIR)\pl.mak
+!include $(PCL5SRCDIR)\pcl.mak
+!include $(PCL5SRCDIR)\pcl_top.mak
+!include $(PXLSRCDIR)\pxl.mak
+!endif
+
+!if $(BUILD_XPS)
+!include $(XPSSRCDIR)\xps.mak
+!endif
+
+!if $(BUILD_GPDL)
+!include $(GPDLSRCDIR)\gpdl.mak
+!endif
+
 !include $(GLSRCDIR)\msvctail.mak
 !include $(PSSRCDIR)\winint.mak
-
 # ----------------------------- Main program ------------------------------ #
 
 GSCONSOLE_XE=$(BINDIR)\$(GSCONSOLE).exe
 GSDLL_DLL=$(BINDIR)\$(GSDLL).dll
 GSDLL_OBJS=$(PSOBJ)gsdll.$(OBJ) $(GLOBJ)gp_msdll.$(OBJ)
+INT_ARCHIVE_SOME=$(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)
+INT_ARCHIVE_ALL=$(PSOBJ)imainarg.$(OBJ) $(PSOBJ)imain.$(OBJ) $(GLOBJ)iconfig.$(OBJ) \
+ $(INT_ARCHIVE_SOME)
 
 !if $(TDEBUG) != 0
 $(PSGEN)lib.rsp: $(TOP_MAKEFILES)
@@ -1318,6 +1450,69 @@ $(PSGEN)lib.rsp: $(TOP_MAKEFILES)
 !endif
 !endif
 
+# a bit naff - find some way to combine above and this....
+!if $(TDEBUG) != 0
+$(PCLGEN)pcllib.rsp: $(TOP_MAKEFILES)
+	echo /NODEFAULTLIB:LIBC.lib > $(PCLGEN)pcllib.rsp
+	echo /NODEFAULTLIB:LIBCMT.lib >> $(PCLGEN)pcllib.rsp
+!ifdef METRO
+	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(PCLGEN)pcllib.rsp
+!else
+	echo LIBCMTD.lib >> $(PCLGEN)pcllib.rsp
+!endif
+!else
+$(PCLGEN)pcllib.rsp: $(TOP_MAKEFILES)
+	echo /NODEFAULTLIB:LIBC.lib > $(PCLGEN)pcllib.rsp
+	echo /NODEFAULTLIB:LIBCMTD.lib >> $(PCLGEN)pcllib.rsp
+!ifdef METRO
+	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(PCLGEN)pcllib.rsp
+!else
+	echo LIBCMT.lib >> $(PCLGEN)pcllib.rsp
+!endif
+!endif
+
+!if $(TDEBUG) != 0
+
+$(XPSGEN)xpslib.rsp: $(TOP_MAKEFILES)
+	echo /NODEFAULTLIB:LIBC.lib > $(XPSGEN)xpslib.rsp
+	echo /NODEFAULTLIB:LIBCMT.lib >> $(XPSGEN)xpslib.rsp
+!ifdef METRO
+	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(XPSGEN)xpslib.rsp
+!else
+	echo LIBCMTD.lib >> $(XPSGEN)xpslib.rsp
+!endif
+!else
+$(XPSGEN)xpslib.rsp: $(TOP_MAKEFILES)
+	echo /NODEFAULTLIB:LIBC.lib > $(XPSGEN)xpslib.rsp
+	echo /NODEFAULTLIB:LIBCMTD.lib >> $(XPSGEN)xpslib.rsp
+!ifdef METRO
+	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(XPSGEN)xpslib.rsp
+!else
+	echo LIBCMT.lib >> $(XPSGEN)xpslib.rsp
+!endif
+!endif
+
+!if $(TDEBUG) != 0
+
+$(GPDLGEN)gpdllib.rsp: $(TOP_MAKEFILES)
+	echo /NODEFAULTLIB:LIBC.lib > $(XPSGEN)gpdllib.rsp
+	echo /NODEFAULTLIB:LIBCMT.lib >> $(XPSGEN)gpdllib.rsp
+!ifdef METRO
+	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(XPSGEN)gpdllib.rsp
+!else
+	echo LIBCMTD.lib >> $(XPSGEN)gpdllib.rsp
+!endif
+!else
+$(GPDLGEN)gpdllib.rsp: $(TOP_MAKEFILES)
+	echo /NODEFAULTLIB:LIBC.lib > $(XPSGEN)gpdllib.rsp
+	echo /NODEFAULTLIB:LIBCMTD.lib >> $(XPSGEN)gpdllib.rsp
+!ifdef METRO
+	echo kernel32.lib runtimeobject.lib rpcrt4.lib >> $(XPSGEN)gpdllib.rsp
+!else
+	echo LIBCMT.lib >> $(XPSGEN)gpdllib.rsp
+!endif
+!endif
+
 
 !if $(MAKEDLL)
 # The graphical small EXE loader
@@ -1329,7 +1524,7 @@ $(GS_XE): $(GSDLL_DLL)
 $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)gp_wutf8.$(OBJ)
 	echo /SUBSYSTEM:WINDOWS > $(PSGEN)gswin.rsp
 !if "$(PROFILE)"=="1"
-	echo /PROFILE >> $(PSGEN)gswin.rsp
+	echo /PROFILE >> $(PSGEN)gswin.rsp 
 !endif
 !ifdef WIN64
 	echo /DEF:$(PSSRCDIR)\dwmain64.def /OUT:$(GS_XE) >> $(PSGEN)gswin.rsp
@@ -1355,20 +1550,20 @@ $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.d
 	del $(PSGEN)gswin.rsp
 
 # The big DLL
-$(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_OBJ).res $(PSGEN)lib.rsp $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
+$(GSDLL_DLL): $(ECHOGS_XE) $(gs_tr) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_OBJ).res $(PSGEN)lib.rsp $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 	echo Linking $(GSDLL)  $(GSDLL_DLL) $(METRO)
 	echo /DLL /DEF:$(PSSRCDIR)\$(GSDLL).def /OUT:$(GSDLL_DLL) > $(PSGEN)gswin.rsp
 !if "$(PROFILE)"=="1"
 	echo /PROFILE >> $(PSGEN)gswin.rsp
 !endif
-	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(GSDLL_OBJS) @$(ld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) @$(PSGEN)lib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
+	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(GSDLL_OBJS) @$(gsld_tr) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) @$(PSGEN)lib.rsp $(LINKLIBPATH) @$(LIBCTR) $(GSDLL_OBJ).res
 	del $(PSGEN)gswin.rsp
 
 !else
 # The big graphical EXE
 $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL_OBJ).res $(PSSRCDIR)\dwmain32.def\
-		$(PSSRCDIR)\dwmain64.def $(PSGEN)lib.rsp $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
-	copy $(ld_tr) $(PSGEN)gswin.tr
+		$(ld_tr) $(gs_tr) $(PSSRCDIR)\dwmain64.def $(PSGEN)lib.rsp $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
+	copy $(gsld_tr) $(PSGEN)gswin.tr
 	echo $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) >> $(PSGEN)gswin.tr
 	echo $(PSOBJ)dwnodll.obj >> $(PSGEN)gswin.tr
 	echo $(GLOBJ)dwimg.obj >> $(PSGEN)gswin.tr
@@ -1388,8 +1583,9 @@ $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL
 	del $(PSGEN)gswin.rsp
 
 # The big console mode EXE
-$(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.def $(PSGEN)lib.rsp $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
-	copy $(ld_tr) $(PSGEN)gswin.tr
+$(GSCONSOLE_XE): $(ECHOGS_XE) $(gs_tr) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.def \
+		$(PSGEN)lib.rsp $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
+	copy $(gsld_tr) $(PSGEN)gswin.tr
 	echo $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) >> $(PSGEN)gswin.tr
 	echo $(PSOBJ)dwnodllc.obj >> $(PSGEN)gswin.tr
 	echo $(GLOBJ)dwimg.obj >> $(PSGEN)gswin.tr
@@ -1406,6 +1602,47 @@ $(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(P
 	del $(PSGEN)gswin.tr
 !endif
 
+
+$(GPCL_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(PCL_DEVS_ALL) $(PCLGEN)pcllib.rsp \
+                $(PCLOBJ)gsromfs$(COMPILE_INITS).$(OBJ) \
+		$(ld_tr) $(pcl_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) $(INT_ARCHIVE_SOME)
+	copy $(ld_tr) $(PCLGEN)gpclwin.tr
+	$(ECHOGS_XE) -a $(PCLGEN)gpclwin.tr -n -R $(pcl_tr)
+	echo $(WINMAINOBJS) $(TOP_OBJ) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(PCLGEN)gpclwin.tr
+	echo $(PCLOBJ)gsromfs$(COMPILE_INITS).$(OBJ) >> $(PCLGEN)gpclwin.tr
+	echo /SUBSYSTEM:CONSOLE > $(PCLGEN)pclwin.rsp
+        echo /OUT:$(GPCL_XE) >> $(PCLGEN)pclwin.rsp
+	$(LINK) $(LCT) @$(PCLGEN)pclwin.rsp @$(PCLGEN)gpclwin.tr $(LINKLIBPATH) @$(LIBCTR) @$(PCLGEN)pcllib.rsp $(DWTRACE)
+	del $(PCLGEN)pclwin.rsp
+	del $(PCLGEN)gpclwin.tr
+
+$(GXPS_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(XPS_DEVS_ALL) $(XPSGEN)xpslib.rsp \
+                $(XPS_TOP_OBJS) $(XPSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) \
+		$(ld_tr) $(xps_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(XOBJS) $(INT_ARCHIVE_SOME)
+	copy $(ld_tr) $(XPSGEN)gxpswin.tr
+	$(ECHOGS_XE) -a $(PCLGEN)gxpswin.tr -n -R $(xps_tr)
+	echo $(WINMAINOBJS) $(XPS_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(XPSGEN)gxpswin.tr
+	echo $(PCLOBJ)gsromfs$(COMPILE_INITS).$(OBJ) >> $(XPSGEN)gxpswin.tr
+	echo /SUBSYSTEM:CONSOLE > $(XPSGEN)xpswin.rsp
+        echo /OUT:$(GXPS_XE) >> $(XPSGEN)xpswin.rsp
+	$(LINK) $(LCT) @$(XPSGEN)xpswin.rsp @$(XPSGEN)gxpswin.tr $(LINKLIBPATH) @$(LIBCTR) @$(XPSGEN)xpslib.rsp $(DWTRACE)
+	del $(XPSGEN)xpswin.rsp
+	del $(XPSGEN)gxpswin.tr
+
+$(GPDL_XE): $(ECHOGS_XE) $(ld_tr) $(gpdl_tr) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(XPS_DEVS_ALL) $(PCL_DEVS_ALL) $(GS_ALL) \
+                $(GPDLGEN)gpdllib.rsp \
+                $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) \
+                $(GPDLOBJ)gsromfs$(COMPILE_INITS).$(OBJ) \
+		$(REALMAIN_OBJ) $(MAIN_OBJ) $(XOBJS) $(INT_ARCHIVE_SOME)
+	copy $(gpdlld_tr) $(GPDLGEN)gpdlwin.tr
+	echo $(WINMAINOBJS) $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(XOBJS) >> $(GPDLGEN)gpdlwin.tr
+	echo $(PCLOBJ)gsromfs$(COMPILE_INITS).$(OBJ) >> $(GPDLGEN)gpdlwin.tr
+	echo /SUBSYSTEM:CONSOLE > $(GPDLGEN)gpdlwin.rsp
+        echo /OUT:$(GPDL_XE) >> $(GPDLGEN)gpdlwin.rsp
+	$(LINK) $(LCT) @$(GPDLGEN)gpdlwin.rsp @$(GPDLGEN)gpdlwin.tr $(LINKLIBPATH) @$(LIBCTR) @$(GPDLGEN)gpdllib.rsp $(DWTRACE)
+	del $(GPDLGEN)gpdlwin.rsp
+	del $(GPDLGEN)gpdlwin.tr
+
 # ---------------------- Debug targets ---------------------- #
 # Simply set some definitions and call ourselves back         #
 
@@ -1420,6 +1657,18 @@ DEBUGDEFS=DEBUG=1 TDEBUG=1
 debug:
 	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS)
 
+gsdebug:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) gs
+
+pcldebug:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) pcl
+
+xpsdebug:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) xps
+
+gpdldebug:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) gpdl
+
 debugclean:
 	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) clean
 
@@ -1433,6 +1682,18 @@ MEMENTODEFS=$(DEBUGDEFS) MEMENTO=1
 
 memento-target:
 	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS)
+
+gs-memento-target:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) gs
+
+pcl-memento-target:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) pcl
+
+xps-memento-target:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) xps
+
+gpdl-memento-target:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) gpdl
 
 mementoclean:
 	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) clean
@@ -1504,6 +1765,20 @@ ufst-clean: ufst-lib
 
 ufst-bsc: ufst-lib
 	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" $(WINDEFS) bsc
+
+#----------------------- Individual Product Targets --------------------#
+gs:$(GS_XE) $(GSCONSOLE_XE)
+	$(NO_OP)
+
+pcl:$(GPCL_XE)
+	$(NO_OP)
+
+xps:$(GXPS_XE)
+	$(NO_OP)
+
+gpdl:$(GPDL_XE)
+	$(NO_OP)
+
 
 # ---------------------- Browse information step ---------------------- #
 
