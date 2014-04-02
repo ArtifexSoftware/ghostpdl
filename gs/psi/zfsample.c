@@ -187,12 +187,16 @@ determine_sampled_data_size(int num_inputs, int num_outputs,
         for (i = 0; i < num_inputs; i++)
             Size[i] = size;
 
-        if (valid_cube_size(num_inputs, num_outputs, sample_size, Size))
-            return 0;		/* We have a valid size */
-
-        if (size == 2)		/* Cannot have less than 2 points per side */
-            return_error(e_rangecheck);
-        size--;
+        /* If we have reached the minimum size (2), don't bother checking if its 'valid'
+         * as there is nothing we cna do now if it isn't.
+         */
+        if (size > 2) {
+            if (valid_cube_size(num_inputs, num_outputs, sample_size, Size))
+                return 0;		/* We have a valid size */
+            size--;
+        } else {
+            return 0;
+        }
     }
 }
 
