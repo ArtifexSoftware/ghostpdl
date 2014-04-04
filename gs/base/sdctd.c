@@ -259,9 +259,20 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
                        tomove);
                 pw->ptr += tomove;
                 jddp->bytes_in_scanline -= tomove;
-                if (jddp->bytes_in_scanline != 0)
+                /* calculate room after the copy,
+                 * PXL typically provides room 1 exactly 1 scan, so avail == 0
+                 * PDF/PS provide enough room, so avail >= 0
+                 * XPS provides room ro complete image, and expects complet image copied
+                 * PCL,PXL,PDF,PS copy 1 scan at a time.
+                 */
+                avail -= tomove;
+                if ((jddp->bytes_in_scanline != 0) || /* no room for complete scan */
+                    ((jddp->bytes_in_scanline == 0) && (tomove > 0) && /* 1 scancopy completed */
+                     (avail < tomove) && /* still room for 1 more scan */
+                     (jddp->dinfo.output_height > jddp->dinfo.output_scanline))) /* more scans to do */
                     return 1;	/* need more room */
             }
+            /* while not done with image, decode 1 scan, otherwise fall into phase 4 */
             while (jddp->dinfo.output_height > jddp->dinfo.output_scanline) {
                 int read;
                 byte *samples;

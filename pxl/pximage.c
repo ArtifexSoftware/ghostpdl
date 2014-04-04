@@ -192,7 +192,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
     int code = -1;
 
     /* consumed all of the data */
-    if ((par->source.position >= end_pos) && (ss->phase != 4)) {
+    if ((par->source.position >= end_pos) && (ss->phase != 4) && (par->source.available == 0)) {
         /* shutdown jpeg filter if necessary */
         if (benum->initialized)
             gs_jpeg_destroy((&benum->dct_stream_state));
