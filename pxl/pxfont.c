@@ -410,7 +410,7 @@ px_text(px_args_t * par, px_state_t * pxs, bool to_path)
     /* The character matrix is not visible to devices.  High level
        devices get character scaling information from the font's
        matrix (FontMatrix).  */
-    gs_matrix_multiply(&pxgs->char_matrix, &pfont->orig_FontMatrix,
+    gs_matrix_multiply(&pfont->orig_FontMatrix, &pxgs->char_matrix,
                        &pfont->FontMatrix);
     /* we don't need to consider the vertical mess for resident fonts */
     if (plfont->storage != pxfsDownLoaded) {
