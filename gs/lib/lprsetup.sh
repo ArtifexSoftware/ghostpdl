@@ -5,6 +5,25 @@
 # See documentation for usage
 #
 
+GSPATH=
+while [ $# -gt 0 ]
+do
+    case "$1" in
+	-p) GSPATH="$2"/lib/ghostscript; shift;;
+        -h) echo >&2 \
+            "usage: $0 [-p <gs install prefix>]\n"\
+            "Where <gs install prefix> is the ""prefix""\n"\
+            "for the Ghostscript install - the default is\n"\
+            """/usr/local"""
+            exit 1;;
+	-*) echo >&2 \
+	    "usage: $0 [-p <gs install prefix>]"
+	    exit 1;;
+	*)  break;;	# terminate while loop
+    esac
+    shift
+done
+
 DEVICES="bjt600.32 bjc600.32 bjc600.24 bjc600.24.3 bjc600.16 bjc600.8 bjc600.8.1 bjc600.1 bjc600.dq"
 #FILTERS="if nf tf gf vf df cf rf"
 FILTERS="if"
@@ -14,11 +33,27 @@ PRINTERDEV=/dev/lp1
 # The kind of printer (accepted values: 'parallel' and 'serial')
 PRINTERTYPE=parallel
 
-GSDIR=/usr/local/lib/ghostscript
+if [ "x$GSPATH"="x" ] ; then
+  GSDIR=`which gs | awk -F / 'sub(FS $NF,x)' | awk -F / 'sub(FS $NF,x)'`/lib/ghostscript
+else
+  GSDIR=$GSPATH
+fi
+
 GSFILTERDIR=$GSDIR/filt
 SPOOLDIR=/var/spool
 GSIF=unix-lpr.sh
 PCAP=printcap.insert
+
+if [ "x$GSPATH"="x" ] ; then
+  echo "Warning: Writing filters to $GSFILTERDIR"
+  echo "if you do not want this, you have 10 seconds to hit ^c to abort this script:"
+  for i in 10 09 08 07 06 05 04 03 02 01 continuing....; do
+   sleep 1
+   echo -n 
+   echo -n $i
+  done
+  echo
+fi
 
 PATH=/bin:/usr/bin:/usr/ucb
 export PATH
