@@ -665,11 +665,11 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
             if (pcs->defining_macro && !in_macro) {
                 /* We just started a macro definition. */
                 if (pst->scan_type != scanning_none) {
-                    /* combinded command started macro */
-                    /* start definition of macro with esc& preloaded */
-                    static const byte macro_prefix[3] = " \033&";
+                    /* macro was defined with an incomple combined command */
+                    /* start definition of macro with esc&f preloaded */
+                    static const byte macro_prefix[4] = " \033&f";
 
-                    append_macro(&macro_prefix[0], &macro_prefix[2], pcs);
+                    append_macro(&macro_prefix[0], &macro_prefix[3], pcs);
                 }
                 macro_p = p;
             }
