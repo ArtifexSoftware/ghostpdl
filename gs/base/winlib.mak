@@ -87,6 +87,8 @@ OBJ=obj
 Q=
 XE=.exe
 XEAUX=.exe
+PERCENTESCAPE=%
+GENCONFLINECONT=
 
 # Define generic commands.
 
@@ -147,6 +149,12 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\ldf_jb2.mak
 !include $(GLSRCDIR)\lwf_jp2.mak
 !include $(GLSRCDIR)\openjpeg.mak
+
+# FIXME: these should be conditional
+!include $(GLSRCDIR)\expat.mak
+!include $(GLSRCDIR)\jpegxr.mak
+#EMXIF
+
 !include $(GLSRCDIR)\$(WHICH_CMS).mak
 !include $(GLSRCDIR)\ijs.mak
 !include $(GLSRCDIR)\lcups.mak

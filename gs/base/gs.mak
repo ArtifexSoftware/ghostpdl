@@ -470,11 +470,11 @@ $(GLGENDIR)$(D)productld.tr: $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.m
 
 $(GLGENDIR)$(D)pclproductld.tr: $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(PCL_DEVS_ALL) \
                                                    $(PCL_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
-	$(EXP)$(GENCONF_XE) -n pcl $(PCL_FEATURE_DEVS) -p "%s&s&&" -o $(GLGENDIR)$(D)pclproductld.tr
+	$(EXP)$(GENCONF_XE) -n pcl $(PCL_FEATURE_DEVS) $(CONFILES) -o $(GLGENDIR)$(D)pclproductld.tr
 
 $(GLGENDIR)$(D)xpsproductld.tr: $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(XPS_DEVS_ALL) \
                                                    $(XPS_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
-	$(EXP)$(GENCONF_XE) -n xps $(XPS_FEATURE_DEVS) -p "%s&s&&" -o $(GLGENDIR)$(D)xpsproductld.tr
+	$(EXP)$(GENCONF_XE) -n xps $(XPS_FEATURE_DEVS) $(CONFILES) -o $(GLGENDIR)$(D)xpsproductld.tr
 
 #  $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(DEVS_ALL) $(GLGENDIR)$(D)libcore.dev
 ld_tr=$(GLGENDIR)$(D)ld.tr

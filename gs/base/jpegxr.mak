@@ -31,7 +31,7 @@ JPEGXR_GEN=$(JPEGXR_GENDIR)$(D)
 JPEGXR_OBJ=$(JPEGXR_OBJDIR)$(D)
 JPEGXR_O_=$(O_)$(JPEGXR_OBJ)
 
-JPEGXR_CC=$(CC_) $(JPEGXR_CFLAGS)
+JPEGXR_CC=$(CC_) $(JPEGXR_CFLAGS) $(D_)JXR_DLL_EXPORTS=1$(_D)
 
 jpegxr.clean : jpegxr.config-clean jpegxr.clean-not-config-clean
 
@@ -100,11 +100,6 @@ $(JPEGXR_OBJ)w_tile_frequency.$(OBJ) : $(JPEGXR_SRC)w_tile_frequency.c $(jpegxr_
 $(JPEGXR_OBJ)x_strip.$(OBJ) : $(JPEGXR_SRC)x_strip.c $(jpegxr_deps)
 	$(JPEGXR_CC) $(JPEGXR_O_)x_strip.$(OBJ) $(C_) $(JPEGXR_SRC)x_strip.c
 
-# Copy the target definition we want
-$(JPEGXR_GEN)jpegxr.dev : $(TOP_MAKEFILES) $(JPEGXR_MAK) \
- $(JPEGXR_GEN)jpegxr_$(SHARE_JPEGXR).dev $(MAKEDIRS)
-	$(CP_) $(JPEGXR_GEN)jpegxr_$(SHARE_JPEGXR).dev $(JPEGXR_GEN)jpegxr.dev
-
 # Define the compiled in target
 $(JPEGXR_GEN)jpegxr_0.dev : $(JPEGXR_MAK) $(ECHOGS_XE) $(jpegxr_objs) $(MAKEDIRS)
 	$(SETMOD) $(JPEGXR_GEN)jpegxr_0 $(jpegxr_objs)
@@ -112,4 +107,10 @@ $(JPEGXR_GEN)jpegxr_0.dev : $(JPEGXR_MAK) $(ECHOGS_XE) $(jpegxr_objs) $(MAKEDIRS
 # Define the external link target
 $(JPEGXR_GEN)jpegxr_1.dev : $(JPEGXR_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 	$(SETMOD) $(JPEGXR_GEN)jpegxr_1 -lib jpegxr
+
+# Copy the target definition we want
+$(JPEGXR_GEN)jpegxr.dev : $(TOP_MAKEFILES) $(JPEGXR_MAK) \
+ $(JPEGXR_GEN)jpegxr_$(SHARE_JPEGXR).dev $(MAKEDIRS)
+	$(CP_) $(JPEGXR_GEN)jpegxr_$(SHARE_JPEGXR).dev $(JPEGXR_GEN)jpegxr.dev
+
 

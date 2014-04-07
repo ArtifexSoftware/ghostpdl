@@ -162,8 +162,8 @@ XPS_OBJS=\
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is
 # required and shouldn't be and PLOBJ==XPSGEN is required.
 
-$(XPSOBJ)xps.dev: $(XPS_MAK) $(ECHOGS_XE) $(XPS_OBJS)  $(XPSOBJDIR)$(D)expat.dev $(XPSOBJDIR)$(D)jpegxr.dev \
+$(XPSOBJ)xps.dev: $(XPS_MAK) $(ECHOGS_XE) $(XPS_OBJS)  $(XPSOBJDIR)$(D)expat.dev $(JPEGXR_GENDIR)$(D)jpegxr.dev \
                   $(XPSGEN)pl.dev $(XPSGEN)$(PL_SCALER).dev $(XPSGEN)pjl.dev
 	$(SETMOD) $(XPSOBJ)xps $(XPS_OBJS)
 	$(ADDMOD) $(XPSOBJ)xps -include $(XPSGEN)pl $(XPSGEN)$(PL_SCALER) $(XPSGEN)pjl.dev \
-                                                                $(XPSOBJDIR)$(D)expat.dev $(XPSOBJDIR)$(D)jpegxr.dev
+                                                                $(XPSOBJDIR)$(D)expat.dev $(JPEGXR_GENDIR)$(D)jpegxr.dev

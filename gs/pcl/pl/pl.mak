@@ -20,11 +20,11 @@
 #	PLSRCDIR - the source directory
 #	PLOBJDIR - the object / executable directory
 
-MAIN_OBJ=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
-REALMAIN_OBJ=$(PLOBJDIR)/realmain.$(OBJ)
+MAIN_OBJ=$(PLOBJDIR)$(D)plmain.$(OBJ) $(PLOBJDIR)$(D)plimpl.$(OBJ)
+REALMAIN_OBJ=$(PLOBJDIR)$(D)realmain.$(OBJ)
 REALMAIN_SRC=realmain
-PCL_TOP_OBJ=$(PCL5OBJDIR)/pctop.$(OBJ)
-PXL_TOP_OBJ=$(PXLOBJDIR)/pxtop.$(OBJ)
+PCL_TOP_OBJ=$(PCL5OBJDIR)$(D)pctop.$(OBJ)
+PXL_TOP_OBJ=$(PXLOBJDIR)$(D)pxtop.$(OBJ)
 TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(GLOBJ)gconfig.$(OBJ)
 
 PLSRC=$(PLSRCDIR)$(D)
@@ -34,6 +34,10 @@ GLGEN=$(GLGENDIR)$(D)
 
 PLCCC=$(CC_) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 PLATCCC=$(PLCCC)
+
+#### Note PLCCC brings /Za, which can't compile Windows headers, so we define and use PLCCC_W instead. :
+CC_W=$(CC_WX) $(COMPILE_FULL_OPTIMIZED) $(ZM)
+PLCCC_W=$(CC_W) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
 # Define the name of this makefile.
 PL_MAK=$(PLSRC)pl.mak
@@ -96,8 +100,8 @@ PJL_VOLUME_1=/tmp/pjl1
 plver_h=$(PLOBJ)plver.h
 
 # FIXME: move elsewhere
-$(GLGEN)pconf.h $(GLGEN)/ldconf.tr: $(TARGET_DEVS) $(AUXDIR)/genconf$(XE)
-	$(AUXDIR)/genconf -n - $(TARGET_DEVS) -h $(GLGEN)/pconf.h -p "%s&s&&" -o $(GLGEN)/ldconf.tr
+$(GLGEN)pconf.h $(GLGEN)/ldconf.tr: $(TARGET_DEVS) $(AUXDIR)$(D)genconf$(XE)
+	$(AUXDIR)$(D)genconf -n - $(TARGET_DEVS) -h $(GLGEN)/pconf.h -p "%s&s&&" -o $(GLGEN)/ldconf.tr
 
 $(PLOBJ)plver.h: $(PLSRC)pl.mak
 	$(AUX)echogs$(XE) -e .h -w $(PLOBJ)plver -n -x 23 "define PJLVERSION"
@@ -329,7 +333,7 @@ $(PLOBJ)bfs.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj1) $(pl_obj2)
 ### END BROKEN ###
 
 $(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj) $(PLOBJ)fapi_pl.dev \
-                $(GLOBJ)plufstlp$(UFST_BRIDGE).$(OBJ) $(GLOBJ)gsargs.$(OBJ)
+                $(PLOBJ)plufstlp$(UFST_BRIDGE).$(OBJ) $(GLOBJ)gsargs.$(OBJ)
 	$(SETMOD) $(PLOBJ)pl $(pl_obj1)
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj2)
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj3)
@@ -356,6 +360,18 @@ $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(string__h)\
 # can view the output.
 $(PLOBJ)$(REALMAIN_SRC).$(OBJ): $(PLSRC)$(REALMAIN_SRC).c
 	$(PLATCCC) $(PLSRC)$(REALMAIN_SRC).c $(PLO_)$(REALMAIN_SRC).$(OBJ)
+
+
+$(PLOBJ)dwmainc.$(OBJ): $(PLSRC)dwmainc.c
+	$(PLCCC_W) $(COMPILE_FOR_CONSOLE_EXE) $(PLSRC)dwmainc.c $(PLO_)dwmainc.$(OBJ)
+
+$(PLOBJ)dwimg.$(OBJ): $(PLSRC)dwimg.c
+	$(PLCCC_W)$(COMPILE_FOR_CONSOLE_EXE)  $(PLSRC)dwimg.c $(PLO_)dwimg.$(OBJ)
+
+$(PLOBJ)dwreg.$(OBJ): $(PLSRC)dwreg.c
+	$(PLCCC_W) $(COMPILE_FOR_CONSOLE_EXE) $(PLSRC)dwreg.c $(PLO_)dwreg.$(OBJ)
+
+WINMAINOBJS=$(MAIN_OBJ) $(PLOBJ)dwmainc.$(OBJ) $(PLOBJ)dwimg.$(OBJ) $(PLOBJ)dwreg.$(OBJ)
 
 $(PLOBJ)plimpl.$(OBJ):  $(PLSRC)plimpl.c            \
                         $(AK)                       \

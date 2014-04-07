@@ -23,14 +23,6 @@
 # Include the generic makefile.
 !include $(PSSRCDIR)\int.mak
 
-# FIXME: use conditional to pull in
-!include $(PLSRCDIR)\pl.mak
-!include $(PCL5SRCDIR)\pcl.mak
-!include $(PCL5SRCDIR)\pcl_top.mak
-!include $(PXLSRCDIR)\pxl.mak
-
-!include $(XPSSRCDIR)\xps.mak
-
 # Define the location of the NSIS makensis installer utility
 !ifndef MAKENSIS_XE
 !if $(BUILD_SYSTEM) == 64
