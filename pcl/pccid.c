@@ -312,19 +312,17 @@ check_cid_hdr(pcl_state_t * pcs, pcl_cid_data_t * pcid)
         pcidh->bits_per_primary[2] = 8;
     }
 
-    /* the short form of CIE Lab and "LumChrom" are replaced with sRGB
-     *  on modern HP color printers
+    /* 
+     * All long form color commands appear to be deprecated on modern
+     * HP devices.  We simply truncate all long form commands to the 6
+     * byte short form.
      */
-    if (pcidh->cspace > pcl_cspace_Colorimetric) {
-        pcidh->cspace = pcl_cspace_Colorimetric;
-        pcid->len = 6;
-    }
+
+    pcid->len = 6;
 
     /* remap the colorimetric color space to rgb */
-    if (pcidh->cspace == pcl_cspace_Colorimetric) {
+    if (pcidh->cspace == pcl_cspace_Colorimetric)
         pcidh->cspace = pcl_cspace_RGB;
-        pcid->len = 6;
-    }
 
     return 0;
 }
