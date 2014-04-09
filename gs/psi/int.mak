@@ -1739,7 +1739,8 @@ $(PSD)pdf.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(PSD)psbase.dev $(GLD)dps2lib.dev $(PSD)dps2read.dev\
  $(PSD)pdffonts.dev $(PSD)psl3.dev $(PSD)pdfread.dev $(PSD)cff.dev\
  $(PSD)fmd5.dev $(PSD)fsha2.dev $(PSD)farc4.dev $(PSD)faes.dev\
- $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)icc.dev $(PSD)pdfops.dev 
+ $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)icc.dev $(PSD)pdfops.dev\
+ $(PSD)pdf_r6.dev
 	$(SETMOD) $(PSD)pdf -include $(PSD)psbase $(GLD)dps2lib
 	$(ADDMOD) $(PSD)pdf -include $(PSD)dps2read $(PSD)pdffonts $(PSD)psl3
 	$(ADDMOD) $(PSD)pdf -include $(GLD)psl2lib $(PSD)pdfread $(PSD)cff
@@ -1747,6 +1748,7 @@ $(PSD)pdf.dev : $(INT_MAK) $(ECHOGS_XE)\
 	$(ADDMOD) $(PSD)pdf -include $(PSD)farc4 $(PSD)faes.dev
 	$(ADDMOD) $(PSD)pdf -include $(PSD)ttfont $(PSD)type2
 	$(ADDMOD) $(PSD)pdf -include $(PSD)icc $(PSD)pdfops
+	$(ADDMOD) $(PSD)pdf -include $(PSD)pdf_r6
 	$(ADDMOD) $(PSD)pdf -functiontype 4
 	$(ADDMOD) $(PSD)pdf -emulator PDF
 
@@ -1812,6 +1814,14 @@ $(PSOBJ)zutf8.$(OBJ) : $(PSSRC)zutf8.c $(OP)\
  $(ghost_h) $(oper_h) $(iutil_h) $(ialloc_h) $(malloc__h) $(string__h)\
  $(store_h)
 	$(PSCC) $(PSO_)zutf8.$(OBJ) $(C_) $(PSSRC)zutf8.c
+
+zpdf_r6_=$(PSOBJ)zpdf_r6.$(OBJ)
+$(PSD)pdf_r6.dev : $(INT_MAK) $(ECHOGS_XE) $(zpdf_r6_)
+	$(SETMOD) $(PSD)pdf_r6 $(zpdf_r6_)
+	$(ADDMOD) $(PSD)pdf_r6 -oper zpdf_r6
+
+$(PSOBJ)zpdf_r6.$(OBJ) : $(PSSRC)zpdf_r6.c $(OP) $(MAKEFILE)
+	$(PSCC) $(PSO_)zpdf_r6.$(OBJ) $(C_) $(PSSRC)zpdf_r6.c
 
 # ================ Dependencies for auxiliary programs ================ #
 
