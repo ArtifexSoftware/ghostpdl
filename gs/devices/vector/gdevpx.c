@@ -371,6 +371,22 @@ pclxl_can_icctransform(const gs_image_t * pim)
     return false;
 }
 
+/*
+ * Avoid PXL high level images if a transfer function has been set.
+ * Allow the graphics library to render to a lower level
+ * representation with the function applied to the colors.
+ */
+
+static bool
+pclxl_nontrivial_transfer(const gs_imager_state * pis)
+{
+    gx_transfer_map *red = pis->set_transfer.red;
+    gx_transfer_map *green = pis->set_transfer.green;
+    gx_transfer_map *blue = pis->set_transfer.blue;
+
+    return (red || green || blue);
+    
+}
 /* Set brush, pen, and mode for painting a path. */
 static void
 pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
@@ -1955,9 +1971,17 @@ pclxl_begin_image(gx_device * dev,
      */
     gs_matrix_invert(&pim->ImageMatrix, &mat);
     gs_matrix_multiply(&mat, &ctm_only(pis), &mat);
-    /* We can handle rotations of 90 degs + scaling + reflections.
-     * These have one of the diagonals being zeros
-     * (and the other diagonals having non-zeros).
+
+    if (pclxl_nontrivial_transfer(pis))
+        goto use_default;
+
+    /* 
+     * NOTE: this predicate should be fixed to be readable and easily
+     * debugged.  Each condition should be separate.  See the large
+     * similar conditional in clist_begin_typed_image which has
+     * already been reworked.  We can handle rotations of 90 degs +
+     * scaling + reflections.  * These have one of the diagonals being
+     * zeros * (and the other diagonals having non-zeros).
      */
     if ((!((mat.xx * mat.yy != 0) && (mat.xy == 0) && (mat.yx == 0)) &&
          !((mat.xx == 0) && (mat.yy == 0) && (mat.xy * mat.yx != 0))) ||
