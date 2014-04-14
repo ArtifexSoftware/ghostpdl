@@ -144,6 +144,37 @@ update_xfm_state(pcl_state_t * pcs, bool reset_initial)
      *    toff = -toff;
      * }
      */
+    {
+        gx_device *pdev = gs_currentdevice(pcs->pgs);
+
+        /* get the LeadingEdge from the device
+         * This has probably no influence on the resulting calculations,
+         * as the offsetregistration is only influenced by pageside & bindingedge
+         * (not feededge) */
+        if ((pdev->LeadingEdge & 1) == 1) {  /* longedgefeed */
+            if (pcs->back_side) {
+                if (pcs->bind_short_edge) {
+                    toff = -toff;
+                } else {  /* bind_long_edge */
+                    loff = -loff;
+                }
+            } else {
+                /* do not change LOFF */
+                /* TOFF ? */
+            }
+        } else {  /* shortedgefeed */
+            if (pcs->back_side) {
+                if (pcs->bind_short_edge) {
+                    toff = -toff;
+                } else {  /* bind_long_edge */
+                    loff = -loff;
+                }
+            } else {
+                /* do nothing */
+            }
+        }
+    }
+
     pcl_make_rotation(pxfmst->lp_orient,
                       (double) (psize->width),
                       (double) (psize->height), &(pxfmst->lp2pg_mtx)
@@ -587,6 +618,15 @@ pcl_end_page(pcl_state_t * pcs, pcl_print_condition_t condition)
      * Advance of a page may move from a page front to a page back. This may
      * change the applicable transformations.
      */
+    /*
+     * Keep track of the side you are on
+     */
+    if (pcs->duplex) {
+        pcs->back_side = ! pcs->back_side;
+    } else {
+        pcs->back_side = false;
+    }
+    put_param1_bool(pcs,"FirstSide", !pcs->back_side);
     update_xfm_state(pcs, 0);
 
     pcl_continue_underline(pcs);
@@ -649,7 +689,12 @@ set_paper_source(pcl_args_t * pargs, pcl_state_t * pcs)
     if (code < 0)
         return code;
     pcl_home_cursor(pcs);
-
+    /* Do not change the page side if the wanted paper source is the same as the actual one */
+    if (pcs->paper_source != i) {
+        pcs->back_side = false;
+        put_param1_bool(pcs, "FirstSide", !pcs->back_side);
+    }
+    pcs->paper_source = i;
     /* Note: not all printers support all possible values. */
     if (i <= 6) {
         code = 0;

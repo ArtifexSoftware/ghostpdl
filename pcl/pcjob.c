@@ -100,19 +100,34 @@ pcl_simplex_duplex_print(pcl_args_t * pargs, pcl_state_t * pcs)
     switch (int_arg(pargs)) {
         case 0:
             pcs->duplex = false;
+            pcs->back_side = false;
             break;
         case 1:
             pcs->duplex = true;
+            pcs->back_side = false;
             pcs->bind_short_edge = false;
             break;
         case 2:
             pcs->duplex = true;
+            pcs->back_side = false;
             pcs->bind_short_edge = true;
             break;
         default:
             return 0;
     }
     code = put_param1_bool(pcs, "Duplex", pcs->duplex);
+    switch (code) {
+        case 1:                /* reopen device */
+            reopen = true;
+        case 0:
+            break;
+        case gs_error_undefined:
+            return 0;
+        default:               /* error */
+            if (code < 0)
+                return code;
+    }
+    code = put_param1_bool(pcs, "FirstSide", !pcs->back_side);
     switch (code) {
         case 1:                /* reopen device */
             reopen = true;
@@ -144,6 +159,9 @@ pcl_duplex_page_side_select(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint i = uint_arg(pargs);
     int code;
+    /* save : because pcl_end_page() messes with it,
+       or not if it was an unmarked page, so do it yourself */
+    bool back_side = pcs->back_side;
 
     /* oddly the command goes to the next page irrespective of
        arguments */
@@ -155,8 +173,26 @@ pcl_duplex_page_side_select(pcl_args_t * pargs, pcl_state_t * pcs)
     if (i > 2)
         return 0;
 
-    if (i > 0 && pcs->duplex)
-        put_param1_bool(pcs, "FirstSide", i == 1);
+    /* restore */
+    pcs->back_side = back_side;
+    if (pcs->duplex)
+    {
+        switch (i) {
+            case 0:
+                pcs->back_side = !pcs->back_side;
+                break;
+            case 1:
+                pcs->back_side = false;
+                break;
+            case 2:
+                pcs->back_side = true;
+                break;
+            default:
+                pcs->back_side = false; /* default front */
+                break;
+        }
+        put_param1_bool(pcs, "FirstSide", !pcs->back_side);
+    }
     return 0;
 }
 
@@ -280,7 +316,9 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
                               "longedge") ? false : true;
         pcs->back_side = false;
         pcs->output_bin = 1;
-
+        put_param1_bool(pcs, "Duplex", pcs->duplex);
+        put_param1_bool(pcs, "FirstSide", !pcs->back_side);
+        put_param1_bool(pcs, "BindShortEdge", pcs->bind_short_edge);
     }
 
     if (type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay)) {

@@ -706,6 +706,10 @@ pxEndPage(px_args_t * par, px_state_t * pxs)
     (*pxs->end_page) (pxs, (par->pv[0] ? par->pv[0]->value.i : pxs->copies),
                       1);
     pxs->have_page = false;
+    if (pxs->duplex)
+        pxs->duplex_back_side = !pxs->duplex_back_side;
+    else
+        pxs->duplex_back_side = false;
     return 0;
 }
 /* The default end-page procedure just calls the device procedure. */
