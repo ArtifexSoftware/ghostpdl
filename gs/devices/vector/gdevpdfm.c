@@ -2204,6 +2204,7 @@ static int
 pdfmark_BMC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
             const gs_matrix *pctm, const gs_param_string *objname)
 {
+#if 0
     int code;
     char *tag;
 
@@ -2220,6 +2221,7 @@ pdfmark_BMC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
     pprints1(pdev->strm, "%s", tag);
 
     gs_free_object(pdev->memory, tag, "pdfmark_BMC");
+#endif
     return 0;
 }
 
@@ -2228,6 +2230,7 @@ static int
 pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
             const gs_matrix *pctm, const gs_param_string *objname)
 {
+#if 0
     int code;
     cos_object_t *pco;
     char *cstring;
@@ -2299,6 +2302,7 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
         return code;
 
     gs_free_object(pdev->memory, cstring, "pdfmark_BDC");
+#endif
     return 0;
 }
 
@@ -2307,12 +2311,14 @@ static int
 pdfmark_EMC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
             const gs_matrix *pctm, const gs_param_string *objname)
 {
+#if 0
     int code;
 
     code = pdf_open_contents(pdev, PDF_IN_STREAM);
     if (code < 0) return code;
     stream_puts(pdev->strm, "EMC\n");
 
+#endif
     return 0;
 }
 
