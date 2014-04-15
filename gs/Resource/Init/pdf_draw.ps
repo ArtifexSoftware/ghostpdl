@@ -2136,8 +2136,31 @@ end
 } bdef
 
 % Set an annotation color.
-/annotsetcolor {	% <annot> annotsetcolor -
-  /C knownoget { aload pop setrgbcolor } { 0 setgray } ifelse
+% If the /C array is empty we don't want to draw the annotation
+%
+/annotsetcolor {	% <annot> annotsetcolor bool
+  /C knownoget {
+    dup length 4 eq {
+      aload pop setcmykcolor true
+    }{
+      dup length 3 eq {
+        aload pop setrgbcolor true
+      }{
+        dup length 1 eq {
+          aload pop setgray true
+        } {
+          dup length 0 eq {
+            pop
+            false
+          }{
+            (invalid color specified for FreeText annotation /C entry)
+            pdfformaterror false
+          } ifelse
+        } ifelse
+      } ifelse
+    } ifelse
+  }
+  { 0 setgray true} ifelse
 } bdef
 
 % Draw the border.  Currently, we ignore requests for beveling, and we
@@ -2146,15 +2169,19 @@ end
   1 index 0 ne {	% do not draw if border width is 0
     gsave
     2 index annotsetcolor
-    0 setdash dup setlinewidth
-    exch annotrect
-    2 { 4 index sub 4 1 roll } repeat
-    2 { 4 index 0.5 mul add 4 1 roll } repeat
-    rectstroke pop
-    grestore
+    {
+      0 setdash dup setlinewidth
+      exch annotrect
+      2 { 4 index sub 4 1 roll } repeat
+      2 { 4 index 0.5 mul add 4 1 roll } repeat
+      rectstroke pop
+      grestore
+    } {
+      pop pop pop
+    } ifelse
   } {
     pop pop pop
-  } ifelse
+  }ifelse
 } bdef
 
 % Draw an annotation border.
@@ -2537,16 +2564,17 @@ currentdict /set_bc_color undef
       1 setlinewidth
       1 setlinecap
       1 setlinejoin
-      dup annotsetcolor
-      dup calc_annot_scale
-      3 index annotrect pop pop translate
-      scale
-      /InkList knownoget {
-        { oforce
-          mark exch { oforce } forall
-          .pdfinkpath
-          stroke
-        } forall
+      dup annotsetcolor {
+        dup calc_annot_scale
+        3 index annotrect pop pop translate
+        scale
+        /InkList knownoget {
+          { oforce
+            mark exch { oforce } forall
+            .pdfinkpath
+            stroke
+          } forall
+        } if
       } if
       //false
     } ifelse
@@ -2557,25 +2585,26 @@ currentdict /set_bc_color undef
       //true
     } {
       0 setlinecap
-      dup annotsetcolor
-      dup calc_annot_scale scale
+      dup annotsetcolor {
+        dup calc_annot_scale scale
 
-      /QuadPoints knownoget {
-        aload length 8 idiv {
-          //quadpoints2basis exec
+        /QuadPoints knownoget {
+          aload length 8 idiv {
+            //quadpoints2basis exec
 
-          % Acrobat draws the line at 1/7 of the box width from the bottom
-          % of the box and 1/16 thick of the box width. /Rect is ignored.
+            % Acrobat draws the line at 1/7 of the box width from the bottom
+            % of the box and 1/16 thick of the box width. /Rect is ignored.
 
-          2 copy dup mul exch dup mul add sqrt 16 div setlinewidth
-          7 div 4 index add exch % x0 y0 x1-x0 y1-y0 (y2-y0)/7+y0 x2-x0
-          7 div 5 index add exch % x0 y0 x1-x0 y1-y0 (x2-x0)/7+x0 (y2-y0)/7+y0
-          2 copy moveto
-          2 index add exch
-          3 index add exch lineto % x0 y0 x1-x0 y1-y0
-          pop pop pop pop
-          stroke
-        } repeat
+            2 copy dup mul exch dup mul add sqrt 16 div setlinewidth
+            7 div 4 index add exch % x0 y0 x1-x0 y1-y0 (y2-y0)/7+y0 x2-x0
+            7 div 5 index add exch % x0 y0 x1-x0 y1-y0 (x2-x0)/7+x0 (y2-y0)/7+y0
+            2 copy moveto
+            2 index add exch
+            3 index add exch lineto % x0 y0 x1-x0 y1-y0
+            pop pop pop pop
+            stroke
+          } repeat
+        } if
       } if
       //false
     } ifelse
@@ -2586,25 +2615,26 @@ currentdict /set_bc_color undef
       //true
     } {
       0 setlinecap
-      dup annotsetcolor
-      dup calc_annot_scale scale
+      dup annotsetcolor {
+        dup calc_annot_scale scale
 
-      /QuadPoints knownoget {
-        aload length 8 idiv {
-          //quadpoints2basis exec
+        /QuadPoints knownoget {
+          aload length 8 idiv {
+            //quadpoints2basis exec
 
-          % Acrobat draws the line at 3/7 of the box width from the bottom
-          % of the box and 1/16 thick of the box width. /Rect is ignored.
+            % Acrobat draws the line at 3/7 of the box width from the bottom
+            % of the box and 1/16 thick of the box width. /Rect is ignored.
 
-          2 copy dup mul exch dup mul add sqrt 16 div setlinewidth
-          0.4285714 mul 4 index add exch % x0 y0 x1-x0 y1-y0 (y2-y0)*3/7+y0 x2-x0
-          0.4285714 mul 5 index add exch % x0 y0 x1-x0 y1-y0 (x2-x0)*3/7+x0 (y2-y0)*3/7+y0
-          2 copy moveto
-          2 index add exch
-          3 index add exch lineto % x0 y0 x1-x0 y1-y0
-          pop pop pop pop
-          stroke
-        } repeat
+            2 copy dup mul exch dup mul add sqrt 16 div setlinewidth
+            0.4285714 mul 4 index add exch % x0 y0 x1-x0 y1-y0 (y2-y0)*3/7+y0 x2-x0
+            0.4285714 mul 5 index add exch % x0 y0 x1-x0 y1-y0 (x2-x0)*3/7+x0 (y2-y0)*3/7+y0
+            2 copy moveto
+            2 index add exch
+            3 index add exch lineto % x0 y0 x1-x0 y1-y0
+            pop pop pop pop
+            stroke
+          } repeat
+        } if
       } if
       //false
     } ifelse
@@ -2635,25 +2665,26 @@ currentdict /set_bc_color undef
   /Highlight {
     % Acrobat ignores /AP and uses transparent highlighting
     0 setlinecap
-    dup annotsetcolor
-    /QuadPoints knownoget {
-      aload length 8 idiv {
-        6 -2 roll
-        2 copy moveto
-        //highlight-arc exec
-        2 copy lineto
-        //highlight-arc exec
-        closepath
-      } repeat
-      PDFusingtransparency {
-        //emptydict
-        pathbbox 2 index add exch 3 index add exch .begintransparencygroup
-        /Multiply .setblendmode
-        fill
-        .endtransparencygroup
-      } { % for -dNOTRANSPARENCY
-        stroke newpath
-      } ifelse
+    dup annotsetcolor {
+      /QuadPoints knownoget {
+        aload length 8 idiv {
+          6 -2 roll
+          2 copy moveto
+          //highlight-arc exec
+          2 copy lineto
+          //highlight-arc exec
+          closepath
+        } repeat
+        PDFusingtransparency {
+          //emptydict
+          pathbbox 2 index add exch 3 index add exch .begintransparencygroup
+          /Multiply .setblendmode
+          fill
+          .endtransparencygroup
+        } { % for -dNOTRANSPARENCY
+          stroke newpath
+        } ifelse
+      } if
     } if
     //false
   } bdef
@@ -2664,43 +2695,44 @@ currentdict /set_bc_color undef
     dup /AP oknown {
       //true
     } {
-      dup annotsetcolor
-      dup calc_annot_scale scale
+      dup annotsetcolor {
+        dup calc_annot_scale scale
 
-      /QuadPoints knownoget {
-        aload length 8 idiv {
-          gsave
-          8 copy moveto lineto
-          4 2 roll lineto lineto closepath clip newpath
-          //quadpoints2basis exec
-          6 -2 roll translate    % adjust for x0 y0      % x1-x0 y1-y0 x2-x0 y2-y0
-          1 index 56 div 1 index 56 div translate        % zigzag box is 1/56 up
-          1 index 72 div 1 index 72 div translate        % the line in the box is 1/72 up
-          2 copy dup mul exch dup mul add sqrt           % x1-x0 y1-y0 x2-x0 y2-y0 |p2|
-          4 index dup mul 4 index dup mul add sqrt       % x1-x0 y1-y0 x2-x0 y2-y0 |p2| |p1|
-          dup 0 gt 2 index 0 gt and {
-            div                                          % x1-x0 y1-y0 x2-x0 y2-y0 |p2|/|p1|=p12
-            dup 1 exch div 4 mul 1 add cvi exch 6 2 roll % cnt p12 x1-x0 y1-y0 x2-x0 y2-y0
-            4 2 roll                                     % cnt p12 x2-x0 y2-y0 x1-x0 y1-y0
-            4 index mul exch 4 index mul exch            % cnt p12 x2-x0 y2-y0 (x1-x0)*p12 (y1-y0)*p12
-            4 2 roll 0 0 6 array astore concat           % cnt p12
-            1 40 div 1 72 div scale
-            pop                                          % cnt
-            0 0 moveto
-            1 setlinecap
-            1 setlinejoin
-            1 setlinewidth
-            {
-              5 10 lineto
-              10 0 lineto
-              10 0 translate
-            } repeat
-            stroke
-          } {
-            6 { pop } repeat
-          } ifelse
-          grestore
-        } repeat
+        /QuadPoints knownoget {
+          aload length 8 idiv {
+            gsave
+            8 copy moveto lineto
+            4 2 roll lineto lineto closepath clip newpath
+            //quadpoints2basis exec
+            6 -2 roll translate    % adjust for x0 y0      % x1-x0 y1-y0 x2-x0 y2-y0
+            1 index 56 div 1 index 56 div translate        % zigzag box is 1/56 up
+            1 index 72 div 1 index 72 div translate        % the line in the box is 1/72 up
+            2 copy dup mul exch dup mul add sqrt           % x1-x0 y1-y0 x2-x0 y2-y0 |p2|
+            4 index dup mul 4 index dup mul add sqrt       % x1-x0 y1-y0 x2-x0 y2-y0 |p2| |p1|
+            dup 0 gt 2 index 0 gt and {
+              div                                          % x1-x0 y1-y0 x2-x0 y2-y0 |p2|/|p1|=p12
+              dup 1 exch div 4 mul 1 add cvi exch 6 2 roll % cnt p12 x1-x0 y1-y0 x2-x0 y2-y0
+              4 2 roll                                     % cnt p12 x2-x0 y2-y0 x1-x0 y1-y0
+              4 index mul exch 4 index mul exch            % cnt p12 x2-x0 y2-y0 (x1-x0)*p12 (y1-y0)*p12
+              4 2 roll 0 0 6 array astore concat           % cnt p12
+              1 40 div 1 72 div scale
+              pop                                          % cnt
+              0 0 moveto
+              1 setlinecap
+              1 setlinejoin
+              1 setlinewidth
+              {
+                5 10 lineto
+                10 0 lineto
+                10 0 translate
+              } repeat
+              stroke
+            } {
+              6 { pop } repeat
+            } ifelse
+            grestore
+          } repeat
+        } if
       } if
       //false
     } ifelse
@@ -2733,6 +2765,153 @@ currentdict /set_bc_color undef
       9 0 moveto 9 5 lineto 14 5 lineto
       stroke
       //false
+    } ifelse
+  } bdef
+
+  /FreeText {
+    dup /AP oknown {
+      //true
+    } {
+      gsave
+
+      dup annotrect rectclip
+
+      dup /C knownoget {
+        dup length 4 eq {
+          aload pop setcmykcolor true
+        }{
+          dup length 3 eq {
+            aload pop setrgbcolor true
+          }{
+            dup length 1 eq {
+              aload pop setgray true
+            } {
+              dup length 0 eq {
+                pop
+                false
+              }{
+                (invalid color specified for FreeText annotation /C entry)
+                pdfformaterror false
+              } ifelse
+            } ifelse
+          } ifelse
+        } ifelse
+      } if
+      {dup annotrect rectfill} if
+
+      %% get and process the default appearance string, if we don't have one, use a default
+      dup /DA knownoget {
+        length string /tempstr exch def
+        dup /DA get tempstr copy pop
+        {
+          %% This is kind of ugly, we use token to process the string
+          %% and process each token separately.
+          tempstr
+          token {
+            exch /tempstr exch def
+            %% change font
+            dup /Tf eq {
+              pop exch dup /Helv eq {
+                pop /Helvetica findfont exch scalefont setfont
+              }{
+                findfont exch scalefont setfont
+              }ifelse
+            } {
+              %% change color, I can't find this documented in the PDF reference
+              %% anywhere, so I'm assuming that 'r' is rgb, no idea if there are others.
+              dup /r eq {
+                pop aload pop setrgbcolor
+              }{
+                %% We want to leave names (eg /Helv) on the stack, but we
+                %% want to process array (possibly dict as well ?) marks.
+                dup type /nametype eq {
+                  dup ([) cvn eq 1 index (]) cvn eq or {cvx exec} if
+                } {
+                  cvx exec
+                } ifelse
+              }ifelse
+            }ifelse
+          }{
+            exit
+          }ifelse
+        } loop
+      } {
+        0 setgray
+        /Helvetica findfont 12 scalefont setfont
+      }ifelse
+
+      %% draw the border, if we don't have a border style dictionary, draw a default one.
+      dup /BS knownoget {
+        pop dup drawborder
+      }{
+        newpath
+        0 setgray 1 setlinewidth
+        dup annotrect 4 -1 roll 1 add 4 -1 roll 1 add 4 -1 roll 2 sub 4 -1 roll 2 sub
+        4 2 roll moveto
+        currentpoint exch 3 index add exch lineto
+        currentpoint 2 index add lineto
+        exch currentpoint 3 1 roll exch sub exch lineto
+        currentpoint 3 -1 roll sub lineto stroke
+      }ifelse
+
+      %% Start the current point at the top left of the annotation Rect
+      %%
+      dup annotrect 4 -1 roll 2 add 4 -1 roll 2 add 4 -1 roll 4 sub 4 -1 roll 4 sub
+      3 -1 roll add 2 index exch moveto 1 index add
+
+      %% Get the Contents string, if we don't have one, we're done
+      %%
+      2 index /Contents knownoget {
+        %% Check for UTF16-BE, we probably don't work properly with this yet.
+        %%
+        dup 0 get 254 eq 1 index 1 get 255 eq and
+        {
+          /DroidSansFallback (Identity-UTF 16-H) cvn composefont 12 scalefont setfont
+          dup length 2 div 1 sub 0 1 3 -1 roll {
+                                    %% llx urx (string) index
+            1 index exch 2 mul 2 getinterval        %% llx urx (string) (substring)
+            dup stringwidth pop currentpoint pop add 3 index gt {
+              currentpoint exch pop 4 index exch 12 sub moveto
+            } if
+            show
+          } for
+          pop
+        }
+        {
+          %% Heuristic to determine the height (ascender to descender) of the text
+          %% for when we move down a line.
+          gsave
+          /..TextHeight (Hy) false charpath pathbbox exch pop exch sub exch pop def
+          grestore
+          %% and use it immediatley to start the text one line down
+          %%
+          currentpoint ..TextHeight sub moveto
+
+          %% Now we process each character code in the string. If we find
+          %% a /r/ or /n then we drop a line. If the character would end up
+          %% outside the Annot Rect, then we drop a line before showing it.
+          %%
+          dup length 1 sub 0 1 3 -1 roll {
+                                    %% llx urx (string) index
+            1 index exch get        %% llx urx (string) int
+            dup 10 eq 1 index 13 eq or {
+              pop
+              currentpoint exch pop 3 index exch ..TextHeight sub moveto
+            } {
+              1 string dup 0 4 -1 roll
+              put dup                 %% llx urx (string) (int) (int)
+              stringwidth pop currentpoint pop add 3 index gt {
+                currentpoint exch pop 4 index exch ..TextHeight sub moveto
+              } if
+              show
+            } ifelse
+          } for
+          pop
+        }ifelse
+      } if
+      pop pop
+      //false
+      grestore
     } ifelse
   } bdef
 
