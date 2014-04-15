@@ -2369,6 +2369,9 @@ pdf_close(gx_device * dev)
     code1 = pdf_free_resource_objects(pdev, resourceXObject);
     if (code >= 0)
         code = code1;
+    code1 = pdf_free_resource_objects(pdev, resourceProperties);
+    if (code >= 0)
+        code = code1;
     code1 = pdf_write_resource_objects(pdev, resourceGroup);
     if (code >= 0)
         code = code1;

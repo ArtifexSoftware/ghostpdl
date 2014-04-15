@@ -2204,7 +2204,23 @@ static int
 pdfmark_BMC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
             const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;			/****** NOT IMPLEMENTED YET ******/
+    int code;
+    char *tag;
+
+    if (count != 1) return_error(gs_error_rangecheck);
+
+    tag = (char *)gs_alloc_bytes(pdev->memory, (pairs[0].size + 1) * sizeof(unsigned char),
+                "pdfmark_BMC");
+    memcpy(tag, pairs[0].data, pairs[0].size);
+    tag[pairs[0].size] = 0x00;
+
+    code = pdf_open_contents(pdev, PDF_IN_STREAM);
+    if (code < 0) return code;
+
+    pprints1(pdev->strm, "%s", tag);
+
+    gs_free_object(pdev->memory, tag, "pdfmark_BMC");
+    return 0;
 }
 
 /* [ tag propdict /BDC pdfmark */
@@ -2212,7 +2228,78 @@ static int
 pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
             const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;			/****** NOT IMPLEMENTED YET ******/
+    int code;
+    cos_object_t *pco;
+    char *cstring;
+    pdf_resource_t *pres;
+
+    if (count != 2) return_error(gs_error_rangecheck);
+
+    /* check tag for /Name object syntax */
+    if ((pairs[0].data)[0] != '/') return_error(gs_error_rangecheck);
+
+    /* check propdict for {object name} syntax */
+    if (pdf_objname_is_valid(pairs[1].data, pairs[1].size))
+    {
+        code = pdf_refer_named(pdev, &pairs[1], &pco);
+        if(code < 0) return code;
+    }
+    else /* << inline prop dict >> */
+    {
+        /* strip << and >> */
+        if ((pairs[1].data)[0]=='<'&&(pairs[1].data)[1]=='<')
+        {
+            pairs[1].data=&(pairs[1].data[2]);
+            pairs[1].size-=2;
+        }
+        else
+            return_error(gs_error_rangecheck);
+
+        if ((pairs[1].data)[pairs[1].size-1]=='>'&&(pairs[1].data)[pairs[1].size-2]=='>')
+            pairs[1].size-=2;
+
+        /* convert inline propdict to C string with object names replaced by refs */
+        code = pdf_replace_names(pdev, &pairs[1], &pairs[1]);
+        if (code<0) return code;
+        cstring = (char *)gs_alloc_bytes(pdev->memory, (pairs[1].size + 1) * sizeof(unsigned char),
+            "pdfmark_BDC");
+        memcpy(cstring, pairs[1].data, pairs[1].size);
+        cstring[pairs[1].size] = 0x00;
+
+        code = pdf_make_named_dict(pdev, NULL, (cos_dict_t**) &pco, true);
+        if (code<0) return code;
+
+        /* copy inline propdict to new object */
+        code = cos_dict_put_c_strings((cos_dict_t*) pco, cstring, "");
+        if(code < 0) return code;
+        COS_WRITE_OBJECT(pco, pdev, resourceProperties);
+        COS_RELEASE(pco, "pdfmark_BDC");
+        gs_free_object(pdev->memory, cstring, "pdfmark_BDC");
+    }
+
+    pres = pdf_find_resource_by_resource_id(pdev, resourceProperties, pco->id);
+    if (pres==0){
+        if ((code = pdf_alloc_resource(pdev, resourceProperties, pco->id, &(pco->pres), pco->id))<0)
+            return code;
+    }
+
+    cstring = (char *)gs_alloc_bytes(pdev->memory, (pairs[0].size + 1) * sizeof(unsigned char),
+                "pdfmark_BDC");
+    memcpy(cstring, pairs[0].data, pairs[0].size);
+    cstring[pairs[0].size] = 0x00;
+
+    /* make sure we write to the correct stream */
+    code = pdf_open_contents(pdev, PDF_IN_STREAM);
+    if (code < 0) return code;
+
+    pprints1(pdev->strm, "%s", cstring); /* write tag */
+    pprintld1(pdev->strm, "/R%ld BDC\n", pco->id);
+    pco->pres->where_used |= pdev->used_mask;
+    if ((code = pdf_add_resource(pdev, pdev->substream_Resources, "/Properties", pco->pres))<0)
+        return code;
+
+    gs_free_object(pdev->memory, cstring, "pdfmark_BDC");
+    return 0;
 }
 
 /* [ /EMC pdfmark */
@@ -2220,7 +2307,13 @@ static int
 pdfmark_EMC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
             const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;			/****** NOT IMPLEMENTED YET ******/
+    int code;
+
+    code = pdf_open_contents(pdev, PDF_IN_STREAM);
+    if (code < 0) return code;
+    stream_puts(pdev->strm, "EMC\n");
+
+    return 0;
 }
 
 /* ---------------- Document structure pdfmarks ---------------- */
@@ -2372,7 +2465,7 @@ static const pdfmark_name mark_names[] =
     {"MP",           pdfmark_MP,          PDFMARK_ODD_OK},
     {"DP",           pdfmark_DP,          0},
     {"BMC",          pdfmark_BMC,         PDFMARK_ODD_OK},
-    {"BDC",          pdfmark_BDC,         0},
+    {"BDC",          pdfmark_BDC,         PDFMARK_NO_REFS},
     {"EMC",          pdfmark_EMC,         0},
         /* Document structure. */
     {"StRoleMap",    pdfmark_StRoleMap,   0},

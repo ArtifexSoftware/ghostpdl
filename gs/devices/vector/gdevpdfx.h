@@ -99,6 +99,7 @@ typedef enum {
     resourcePattern,
     resourceShading,
     resourceXObject,
+    resourceProperties,
     resourceOther, /* Anything else that needs to be stored for a time.
                     * Can be any of the types defined below NUM_RESOURCE_TYPES
                     * but this is the type used to identify the object.
@@ -145,7 +146,7 @@ typedef enum {
 } pdf_resource_type_t;
 
 #define PDF_RESOURCE_TYPE_NAMES\
-  "/ColorSpace", "/ExtGState", "/Pattern", "/Shading", "/XObject", 0, "/Font",\
+  "/ColorSpace", "/ExtGState", "/Pattern", "/Shading", "/XObject", "/Properties", 0, "/Font",\
   0, "/Font", "/CMap", "/FontDescriptor", "/Group", "/Mask", 0, 0, 0, 0, 0,\
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 #define PDF_RESOURCE_TYPE_STRUCTS\
@@ -154,6 +155,7 @@ typedef enum {
   &st_pdf_pattern,\
   &st_pdf_resource,\
   &st_pdf_x_object,                /* see below */\
+  &st_pdf_resource,\
   &st_pdf_resource,\
   &st_pdf_font_resource,        /* gdevpdff.h / gdevpdff.c */\
   &st_pdf_char_proc,                /* gdevpdff.h / gdevpdff.c */\
