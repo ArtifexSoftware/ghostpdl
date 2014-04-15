@@ -555,10 +555,12 @@ gx_remap_color(gs_state * pgs)
 
     /* The current color in the graphics state is always used for */
     /* the texture, never for the source. */
-    code = (*pcs->type->remap_color) (gs_currentcolor_inline(pgs),
-                                      pcs, gs_currentdevicecolor_inline(pgs),
-                                      (gs_imager_state *) pgs, pgs->device,
-                                      gs_color_select_texture);
+    /* skip remap if the dev_color is already set and is type "pure" (a common case) */
+    if (!gx_dc_is_pure(gs_currentdevicecolor_inline(pgs)))
+        code = (*pcs->type->remap_color) (gs_currentcolor_inline(pgs),
+                                          pcs, gs_currentdevicecolor_inline(pgs),
+                                          (gs_imager_state *) pgs, pgs->device,
+                                          gs_color_select_texture);
     /* if overprint mode is in effect, update the overprint information */
     if (code >= 0 && pgs->effective_overprint_mode == 1)
         code = gs_do_set_overprint(pgs);

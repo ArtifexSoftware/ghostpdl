@@ -84,10 +84,22 @@ gs_setcolor(gs_state * pgs, const gs_client_color * pcc)
 {
     gs_color_space *    pcs = pgs->color[0].color_space;
     gs_client_color     cc_old = *pgs->color[0].ccolor;
+    gx_device_color *dev_color = pgs->color[0].dev_color;
+    bool do_unset  = true;
 
-   if (pgs->in_cachedevice)
+    if (pgs->in_cachedevice)
         return_error(gs_error_undefined); /* PLRM3 page 215. */
-    gx_unset_dev_color(pgs);
+    if (dev_color->ccolor_valid && gx_dc_is_pure(dev_color)) {      /* change of colorspace will set type to _none */
+        int i;
+        int ncomps = cs_num_components(pcs);
+
+        for(i=0; i < ncomps; i++)
+            if (dev_color->ccolor.paint.values[i] != pcc->paint.values[i])
+                break;
+        do_unset = i < ncomps;      /* if i == ncomps, color unchanged, optimized */
+    }
+    if (do_unset)
+        gx_unset_dev_color(pgs);
     (*pcs->type->adjust_color_count)(pcc, pcs, 1);
     *pgs->color[0].ccolor = *pcc;
     (*pcs->type->restrict_color)(pgs->color[0].ccolor, pcs);
