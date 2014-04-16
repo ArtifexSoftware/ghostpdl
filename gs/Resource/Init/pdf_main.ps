@@ -2194,11 +2194,21 @@ currentdict /PDF2PS_matrix_key undef
              pop pop //true exit  % as transparency.
            } if
          } if
-         /AP knownoget {	% Get appearance dict for the annoation
+         dup /AP knownoget {	% Get appearance dict for the annoation
            /N knownogetdict { 	% Get the /N (i.e. normal) appearance stream
-             4 dict exch resourceusestransparency { pop //true exit } if
+             4 dict exch resourceusestransparency { pop pop //true exit } if
            } if
          } if  			% If AP dict known
+         dup /CA knownoget {
+           1 le {
+             pop pop //true exit
+           } if
+         } if
+         /ca knownoget {
+           1 le {
+             pop //true exit
+           } if
+         } if
        } {
          pop
        } ifelse

@@ -2153,7 +2153,7 @@ end
             pop
             false
           }{
-            (invalid color specified for FreeText annotation /C entry)
+            (invalid color specified for annotation /C entry)
             pdfformaterror false
           } ifelse
         } ifelse
@@ -2776,6 +2776,14 @@ currentdict /set_bc_color undef
 
       dup annotrect rectclip
 
+      dup /CA knownoget {
+        .setopacityalpha
+      } if
+
+      dup /ca knownoget {
+        .setopacityalpha
+      } if
+
       dup /C knownoget {
         dup length 4 eq {
           aload pop setcmykcolor true
@@ -2797,7 +2805,13 @@ currentdict /set_bc_color undef
           } ifelse
         } ifelse
       } if
-      {dup annotrect rectfill} if
+      {dup annotrect
+        %% Somewhat horrifyingly, rectfill maps directly to the device fill_rectangle
+        %% method, which bypasses transparency (!!) So we construct the rectangle,
+        %% and fill it, manually instead....
+        gsave 4 2 roll moveto 1 index 0 rlineto
+        0 exch rlineto neg 0 rlineto closepath fill grestore
+      } if
 
       %% get and process the default appearance string, if we don't have one, use a default
       dup /DA knownoget {
