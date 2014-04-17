@@ -1854,9 +1854,14 @@ currentdict /CMap_read_dict undef
       } loop
       2 idiv
         % Stack: filepos fontres font mapstream array/string CIDCount
-      3 index exch /CIDCount exch put
-      exch closefile exch
-      dup /CIDMap 4 -1 roll put
+      dup 0 ne {
+        3 index exch /CIDCount exch put
+        exch closefile exch
+        dup /CIDMap 4 -1 roll put
+      }{
+        % If CIDCount is zero, ignore it
+        pop pop closefile
+      }ifelse
     } ifelse
     3 2 roll PDFfile exch setfileposition
   } if
