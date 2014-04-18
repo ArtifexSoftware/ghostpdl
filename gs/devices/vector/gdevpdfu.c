@@ -1660,7 +1660,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage
          * for it. If we don't actually emit it then the xref will be invalid.
          * An alternative would be to modify the xref to mark the object as unused.
          */
-        if (i != resourceFont)
+        if (i != resourceFont && i != resourceProperties)
             pdf_write_resource_objects(pdev, i);
     }
     page->procsets = pdev->procsets;

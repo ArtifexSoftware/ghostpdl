@@ -4638,9 +4638,9 @@ currentdict end readonly def
   /d0 /setcharwidth load def
   /d1 /setcachedevice load def
 
-  /BDC { BeginMarkedContentSequenceWithPropertyList } bind def
-  /BMC { BeginMarkedContentSequence } bind def
-  /EMC { EndMarkedContentSequence } bind def
+  /BDC { pop pop } bind def
+  /BMC { pop } bind def
+  /EMC {  } bind def
   /BX { BeginCompatibilitySection } bind def
   /EX { EndCompatibilitySection } bind def
   /DP { DefineMarkedContentPointWithPropertyList } bind def
