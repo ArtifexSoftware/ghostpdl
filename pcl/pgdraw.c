@@ -111,7 +111,7 @@ hpgl_set_pcl_to_plu_ctm(hpgl_state_t * pgls)
         /* scale to plotter units and a flip for y */
         hpgl_call(gs_scale(pgls->pgs, (7200.0 / 1016.0), -(7200.0 / 1016.0)));
     } else {
-        if (pgls->g.picture_frame_width > pgls->g.picture_frame_height) {
+        if (pgls->g.picture_frame_width >= pgls->g.picture_frame_height) {
             hpgl_call(gs_rotate(pgls->pgs, -90));
             hpgl_call(gs_scale
                       (pgls->pgs, -(7200.0 / 1016.0), (7200.0 / 1016.0)));
