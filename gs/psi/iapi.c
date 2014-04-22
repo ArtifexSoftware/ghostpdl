@@ -436,7 +436,7 @@ gsapi_run_file(void *lib, const char *file_name,
         *d = 0;
     }
     else {
-      temp = file_name;
+      temp = (char *)file_name;
     }
     code =  gs_main_run_file(minst, temp, user_errors, pexit_code,
                              &(minst->error_object));
