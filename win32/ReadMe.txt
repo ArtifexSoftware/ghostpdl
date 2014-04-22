@@ -2,7 +2,7 @@
         =================================================
 
 This directory contains a simple Visual Studio 2005 Solution file
-with projects for language_switch, pcl, svg and xps. A project for
+with projects for language_switch, pcl and xps. A project for
 ghostscript exists in the gs directory, which this relies on. It is
 intended to be useful for Windows based developers who are familiar with
 the Visual Studio IDE and who want to limit their exposure to the
@@ -49,7 +49,9 @@ able to run executables during the build, you may have trouble building
 for a 64bit machine on a 32bit one.
 
 In addition, we support 2 'non-standard' configurations, Profile and
-Memento.
+Memento. (For gs, we actually support 2 more, Debug-cups and
+Debug-contrib, but these are unlikely to be of interest to people
+other than the Ghostscript developers).
 
 Profile builds are (as the name suggests) designed to be used with
 profiling tools; essentially they fall somewhere between Debug and Release
@@ -93,17 +95,17 @@ to make this work are fairly simple though.
   Choose Configuration: Debug in the top left corner of the window.
   In Configuration Properties -> Debugging, edit the options as follows:
   
-      Command              ..\gs\debugbin\gswin32c.exe
+      Command              $(TargetPath)
       Command Arguments    -r72 gs\examples\tiger.eps
-      Working Directory    ..
+      Working Directory    $(ProjectDir)\..
   
   Choose Apply.
   Now Choose Configuration: Release
   In Configuration Properties -> Debugging, edit the options as follows:
   
-      Command              ..\gs\bin\gswin32c.exe
+      Command              $(TargetPath)
       Command Arguments    -r72 gs\examples\tiger.eps
-      Working Directory    ..
+      Working Directory    $(ProjectDir)\..
   
   Select OK.
   
@@ -117,41 +119,19 @@ Similar steps are required for each of the other projects. Example
 settings are as follows:
 
   language_switch
-    Debug
-      Cmd     ..\language_switch\debugobj\pspcl6.exe
+      Cmd     $(TargetPath)
       Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp gs\examples\tiger.eps
-      Dir     ..
-    Release
-      Cmd     ..\language_switch\obj\pspcl6.exe
-      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp gs\examples\tiger.eps
-      Dir     ..
+      Dir     $(ProjectDir)\..
+
   pcl
-    Debug
-      Cmd     ..\main\debugobj\pcl6.exe
+      Cmd     $(TargetPath)
       Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp tools\tiger.px3
-      Dir     ..
-    Release
-      Cmd     ..\main\obj\pcl6.exe
-      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp tools\tiger.px3
-      Dir     ..
-  svg
-    Debug
-      Cmd     ..\svg\debugobj\gsvg.exe
-      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp tools\tiger.svg
-      Dir     ..
-    Release
-      Cmd     ..\svg\obj\gsvg.exe
-      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp tools\tiger.svg
-      Dir     ..
+      Dir     $(ProjectDir)\..
+
   xps
-    Debug
-      Cmd     ..\xps\debugobj\gxps.exe
+      Cmd     $(TargetPath)
       Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp tools\tiger.xps
-      Dir     ..
-    Release
-      Cmd     ..\xps\obj\gxps.exe
-      Args    -r72 -sDEVICE=bmp16m -sOutputFile=out.bmp tools\tiger.xps
-      Dir     ..
+      Dir     $(ProjectDir)\..
 
 To start one of these debugging, either reset the active project, or
 start the program by right hand clicking on the appropriate project and
@@ -198,9 +178,9 @@ Example debugging arguments for this project are as follows:
 
   ghostscript-ufst
     Debug
-      Cmd     ..\gs\ufstdebugbin\gswin32c.exe
+      Cmd     $(TargetPath)
       Args    -dUFST_SSDir=(/ufst/fontdata/mtfonts/pclps/mt3) -dUFST_Plugin=(/ufst/fontdata/mtfonts/pclps2/mt3/pclp2_xj.fco) gs/examples/alphabet.ps
-      Dir     ..
+      Dir     $(ProjectDir)\..
 
 
 Things to know about this solution
