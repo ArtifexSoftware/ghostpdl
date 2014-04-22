@@ -422,20 +422,26 @@ gsapi_run_file(void *lib, const char *file_name,
                             &(minst->error_object));
 #else
     /* Convert the file_name to utf8 */
-    len = 1;
-    while ((rune = minst->get_codepoint(NULL, &c)) >= 0)
-        len += codepoint_to_utf8(dummy, rune);
-    temp = (char *)gs_alloc_bytes_immovable(ctx->memory, len, "gsapi_run_file");
-    if (temp == NULL)
-        return 0;
-    c = file_name;
-    d = temp;
-    while ((rune = minst->get_codepoint(NULL, &c)) >= 0)
-       d += codepoint_to_utf8(d, rune);
-    *d = 0;
+    if (minst->get_codepoint) {
+        len = 1;
+        while ((rune = minst->get_codepoint(NULL, &c)) >= 0)
+            len += codepoint_to_utf8(dummy, rune);
+        temp = (char *)gs_alloc_bytes_immovable(ctx->memory, len, "gsapi_run_file");
+        if (temp == NULL)
+            return 0;
+        c = file_name;
+        d = temp;
+        while ((rune = minst->get_codepoint(NULL, &c)) >= 0)
+           d += codepoint_to_utf8(d, rune);
+        *d = 0;
+    }
+    else {
+      temp = file_name;
+    }
     code =  gs_main_run_file(minst, temp, user_errors, pexit_code,
                              &(minst->error_object));
-    gs_free_object(ctx->memory, temp, "gsapi_run_file");
+    if (temp != file_name)
+        gs_free_object(ctx->memory, temp, "gsapi_run_file");
     return code;
 #endif
 }
