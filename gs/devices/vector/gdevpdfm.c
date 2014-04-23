@@ -759,7 +759,49 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
     if (Dest.data) {
         if (coerce_dest)
             pdfmark_coerce_dest(&Dest, dest);
-        pdfmark_put_c_pair(pcd, "/Dest", &Dest);
+        /*
+         * For PDF 1.2 or better  we write a Names tree, but in this case the names
+         * are required to be (counter-intuitively) strings, NOT name objects....
+         */
+        if (pdev->CompatibilityLevel > 1.1) {
+            gs_param_string DestString;
+            int i = 0, j;
+            char *D;
+
+            /*
+             * If the name has any 'unusual' characters, it is 'escaped' by starting with NULLs
+             * I suspect we no longer need that, but here we remove the escaping NULLs
+             */
+            if (Dest.size > 3 && Dest.data[0] == 0x00 && Dest.data[1] == 0x00 && Dest.data[Dest.size - 1] == 0x00) {
+                i = 2;
+                if (Dest.size > 5 && Dest.data[2] == 0x00 && Dest.data[3] == 0x00)
+                    i += 2;
+            }
+
+            if (Dest.data[i] == '/') {
+                i++;
+
+                DestString.data = gs_alloc_bytes(pdev->memory->stable_memory, (Dest.size * 2) + 1, "DEST pdfmark temp string");
+                if (DestString.data == 0)
+                    return_error(gs_error_VMerror);
+                DestString.size = (Dest.size * 2) + 1;
+                DestString.persistent = 0;
+                D = (char *)DestString.data;
+                D[0] = '(';
+                for (j=1;i<Dest.size;i++, j++) {
+                    if (Dest.data[i] == '(' || Dest.data[i] == ')') {
+                        D[j++] = '\\';
+                    }
+                    D[j] = Dest.data[i];
+                }
+                D[j++] = ')';
+                DestString.size = j;
+                pdfmark_put_c_pair(pcd, "/Dest", &DestString);
+                gs_free_object(pdev->memory->stable_memory, D, "DEST pdfmark temp string");
+            } else
+                pdfmark_put_c_pair(pcd, "/Dest", &Dest);
+        } else
+            pdfmark_put_c_pair(pcd, "/Dest", &Dest);
     } else if (for_outline && !Action) {
         /* Make an implicit destination. */
         char dstr[1 + (sizeof(long) * 8 / 3 + 1) + 25 + 1];
@@ -1405,6 +1447,8 @@ pdfmark_DEST(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     char dest[MAX_DEST_STRING];
     gs_param_string key;
     cos_value_t value;
+    cos_dict_t *ddict;
+    int i, code;
 
     if (!pdfmark_find_key("/Dest", pairs, count, &key) ||
         (present =
@@ -1418,29 +1462,29 @@ pdfmark_DEST(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
             return_error(gs_error_VMerror);
         pdev->Dests->id = pdf_obj_ref(pdev);
     }
-    if (objname || count > (present + 1) * 2) {
-        /*
-         * Create the destination as a dictionary with a D key, since
-         * it has (or, if named, may have) additional key/value pairs.
-         */
-        cos_dict_t *ddict;
-        int i, code;
 
-        code = pdf_make_named_dict(pdev, objname, &ddict, false);
-        if (code < 0)
-            return code;
-        code = cos_dict_put_c_key_string(ddict, "/D", (byte *)dest,
-                                         strlen(dest));
-        for (i = 0; code >= 0 && i < count; i += 2)
-            if (!pdf_key_eq(&pairs[i], "/Dest") &&
-                !pdf_key_eq(&pairs[i], "/Page") &&
-                !pdf_key_eq(&pairs[i], "/View")
-                )
-                code = pdfmark_put_pair(ddict, &pairs[i]);
-        if (code < 0)
-            return code;
-        COS_OBJECT_VALUE(&value, ddict);
-    }
+    /*
+     * Create the destination as a dictionary with a D key.
+     */
+    code = pdf_make_named_dict(pdev, objname, &ddict, false);
+    ddict->id = pdf_obj_ref(pdev);
+
+    if (code < 0)
+        return code;
+    code = cos_dict_put_c_key_string(ddict, "/D", (byte *)dest,
+                                     strlen(dest));
+    for (i = 0; code >= 0 && i < count; i += 2)
+        if (!pdf_key_eq(&pairs[i], "/Dest") &&
+            !pdf_key_eq(&pairs[i], "/Page") &&
+            !pdf_key_eq(&pairs[i], "/View")
+            )
+            code = pdfmark_put_pair(ddict, &pairs[i]);
+    if (code < 0)
+        return code;
+    COS_WRITE_OBJECT(ddict, pdev, resourceOther);
+    COS_OBJECT_VALUE(&value, ddict);
+    COS_RELEASE(ddict, "pdfmark_DEST(Dests dict)");
+
     return cos_dict_put(pdev->Dests, key.data, key.size, &value);
 }
 
@@ -1835,7 +1879,7 @@ pdfmark_DOCVIEW(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     if (code < 0)
         return gs_note_error(gs_error_rangecheck);
 
-    if (code == 0) {
+    if (code > 0) {
         int i;
 
         code = cos_dict_put_c_key_string(pdev->Catalog, "/OpenAction",

@@ -936,16 +936,23 @@ cos_dict_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
 static int find_last_dict_entry(const cos_dict_t *d, const cos_dict_element_t **element)
 {
     const cos_dict_element_t *pcde = d->elements, *Last;
-    int code, length, length1, length2;
+    int code, length, length1, length2, offset1 = 0, offset2 = 0, i;
 
     *element = 0L;
 
     Last = pcde;
-    if (Last->key.data[0] == '/') {
-        length1 = Last->key.size - 1;
+    for (i = 0;Last->key.data[i] == 0x00; i++)
+        ;
+    length1 = Last->key.size - i;
+    offset1 = i;
+
+    if (Last->key.data[offset1] == '/') {
+        length1 -= 1;
+        offset1 += 1;
     } else {
-        if (pcde->key.data[0] == '(') {
-            length1 = Last->key.size - 2;
+        if (pcde->key.data[offset1] == '(') {
+            length1 -= 2;
+            offset1 = 1;
         } else {
             return_error(gs_error_typecheck);
         }
@@ -953,11 +960,17 @@ static int find_last_dict_entry(const cos_dict_t *d, const cos_dict_element_t **
 
     pcde = pcde->next;
     while (pcde){
-        if (pcde->key.data[0] == '/') {
-            length2 = pcde->key.size - 1;
+        for (i = 0;pcde->key.data[i] == 0x00; i++)
+            ;
+        length2 = pcde->key.size - i;
+        offset2 = i;
+        if (pcde->key.data[offset2] == '/') {
+            length2 -= 1;
+            offset2 += 1;
         } else {
-            if (pcde->key.data[0] == '(') {
-                length2 = pcde->key.size - 2;
+            if (pcde->key.data[offset2] == '(') {
+                length2 -= 2;
+                offset2 = 1;
             } else {
                 return_error(gs_error_typecheck);
             }
@@ -967,9 +980,9 @@ static int find_last_dict_entry(const cos_dict_t *d, const cos_dict_element_t **
             length = length2;
         else
             length = length1;
-        code = strncmp((const char *)&pcde->key.data[1], (const char *)&Last->key.data[1], length);
+        code = strncmp((const char *)&pcde->key.data[offset2], (const char *)&Last->key.data[offset1], length);
         if (code == 0) {
-            if (pcde->key.size > Last->key.size) {
+            if (length2 > length1) {
                 Last = pcde;
                 length1 = length2;
             }
@@ -986,16 +999,29 @@ static int find_last_dict_entry(const cos_dict_t *d, const cos_dict_element_t **
 static int find_first_dict_entry(const cos_dict_t *d, const cos_dict_element_t **element)
 {
     const cos_dict_element_t *pcde = d->elements, *First;
-    int code, length, length1, length2;
+    int code, length, length1, length2, offset1 = 0, offset2 = 0, i;
 
     *element = 0L;
 
     First = pcde;
-    if (First->key.data[0] == '/') {
-        length1 = First->key.size - 1;
+
+    /*
+     * If the name has any 'unusual' characters, it is 'escaped' by starting with NULLs
+     * I suspect we no longer need that, but here we remove the escaping NULLs
+     */
+    for (i = 0;First->key.data[i] == 0x00; i++)
+        ;
+
+    length1 = First->key.size - i;
+    offset1 = i;
+
+    if (First->key.data[offset1] == '/') {
+        length1 -= 1;
+        offset1 += 1;
     } else {
-        if (pcde->key.data[0] == '(') {
+        if (First->key.data[offset1] == '(') {
             length1 = First->key.size - 2;
+            offset1 = 1;
         } else {
             return_error(gs_error_typecheck);
         }
@@ -1003,11 +1029,18 @@ static int find_first_dict_entry(const cos_dict_t *d, const cos_dict_element_t *
 
     pcde = pcde->next;
     while (pcde){
-        if (pcde->key.data[0] == '/') {
-            length2 = pcde->key.size - 1;
+        for (i = 0;pcde->key.data[i] == 0x00; i++)
+            ;
+        length2 = pcde->key.size - i;
+        offset2 = i;
+
+        if (pcde->key.data[offset2] == '/') {
+            length2 -= 1;
+            offset2 += 1;
         } else {
-            if (pcde->key.data[0] == '(') {
+            if (pcde->key.data[offset2] == '(') {
                 length2 = pcde->key.size - 2;
+                offset2 = 1;
             } else {
                 return_error(gs_error_typecheck);
             }
@@ -1017,9 +1050,9 @@ static int find_first_dict_entry(const cos_dict_t *d, const cos_dict_element_t *
             length = length2;
         else
             length = length1;
-        code = strncmp((const char *)&pcde->key.data[1], (const char *)&First->key.data[1], length);
+        code = strncmp((const char *)&pcde->key.data[offset2], (const char *)&First->key.data[offset1], length);
         if (code == 0) {
-            if (pcde->key.size < First->key.size) {
+            if (length2 < length1) {
                 First = pcde;
                 length1 = length2;
             }
@@ -1036,24 +1069,40 @@ static int find_first_dict_entry(const cos_dict_t *d, const cos_dict_element_t *
 static int find_next_dict_entry(const cos_dict_t *d, const cos_dict_element_t **element)
 {
     const cos_dict_element_t *pcde = d->elements, *Current = *element, *Next = 0L;
-    int code, length, length1, length2, length3;
+    int code, length, length1, length2, length3, offset1 = 0, offset2 = 0, offset3 = 0, i;
 
-    if (Current->key.data[0] == '/') {
-        length1 = Current->key.size - 1;
+    /*
+     * If the name has any 'unusual' characters, it is 'escaped' by starting with NULLs
+     * I suspect we no longer need that, but here we remove the escaping NULLs
+     */
+    for (i = 0;Current->key.data[i] == 0x00; i++)
+        ;
+    length1 = Current->key.size - i;
+    offset1 = i;
+    if (Current->key.data[offset1] == '/') {
+        length1 -= 1;
+        offset1 += 1;
     } else {
         if (Current->key.data[0] == '(') {
-            length1 = Current->key.size - 2;
+            length1 -= 2;
+            offset1 = 1;
         } else {
             return_error(gs_error_typecheck);
         }
     }
 
     while (pcde) {
-        if (pcde->key.data[0] == '/') {
-            length2 = pcde->key.size - 1;
+        for (i = 0;pcde->key.data[i] == 0x00; i++)
+            ;
+        length2 = pcde->key.size - i;
+        offset2 = i;
+        if (pcde->key.data[offset2] == '/') {
+            length2 -= 1;
+            offset2 += 1;
         } else {
             if (pcde->key.data[0] == '(') {
-                length2 = pcde->key.size - 2;
+                length2 -= 2;
+                offset2 = 1;
             } else {
                 return_error(gs_error_typecheck);
             }
@@ -1063,21 +1112,27 @@ static int find_next_dict_entry(const cos_dict_t *d, const cos_dict_element_t **
             length = length2;
         else
             length = length1;
-        code = strncmp((const char *)&pcde->key.data[1], (const char *)&Current->key.data[1], length);
+        code = strncmp((const char *)&pcde->key.data[offset2], (const char *)&Current->key.data[offset1], length);
         if (code > 0 || (code == 0 && length2 > length1)) {
             if (Next) {
                 if (length3 < length2)
                     length = length3;
                 else
                     length = length2;
-                code = strncmp((const char *)&pcde->key.data[1], (const char *)&Next->key.data[1], length);
+                code = strncmp((const char *)&pcde->key.data[offset2], (const char *)&Next->key.data[offset3], length);
                 if (code < 0 || (code == 0 && length3 > length2)) {
                     Next = pcde;
-                    if (Next->key.data[0] == '/') {
-                        length3 = pcde->key.size - 1;
+                    for (i = 0;Next->key.data[i] == 0x00; i++)
+                        ;
+                    length3 = Next->key.size - i;
+                    offset3 = i;
+                    if (Next->key.data[offset3] == '/') {
+                        length3 -= 1;
+                        offset3 += 1;
                     } else {
                         if (Next->key.data[0] == '(') {
-                            length3 = pcde->key.size - 2;
+                            length3 -= 2;
+                            offset3 = 1;
                         } else {
                             return_error(gs_error_typecheck);
                         }
@@ -1085,11 +1140,17 @@ static int find_next_dict_entry(const cos_dict_t *d, const cos_dict_element_t **
                 }
             } else {
                 Next = pcde;
-                if (Next->key.data[0] == '/') {
-                    length3 = pcde->key.size - 1;
+                for (i = 0;Next->key.data[i] == 0x00; i++)
+                    ;
+                length3 = Next->key.size - i;
+                offset3 = i;
+                if (Next->key.data[offset3] == '/') {
+                    length3 -= 1;
+                    offset3 = 1;
                 } else {
                     if (Next->key.data[0] == '(') {
-                        length3 = pcde->key.size - 2;
+                        length3 -= 2;
+                        offset3 = 1;
                     } else {
                         return_error(gs_error_typecheck);
                     }
@@ -1104,9 +1165,27 @@ static int find_next_dict_entry(const cos_dict_t *d, const cos_dict_element_t **
 
 static int write_key_as_string(stream *s, const cos_dict_element_t *element)
 {
-    if (element->key.data[0] == '/') {
+    int i, length, offset;
+
+    /*
+     * If the name has any 'unusual' characters, it is 'escaped' by starting with NULLs
+     * I suspect we no longer need that, but here we remove the escaping NULLs
+     */
+    if (element->key.data[0] == 0x00) {
+        for (i = 0;element->key.data[i] == 0x00; i++)
+            ;
+        length = element->key.size - (i + 1);
+        offset = i;
+    } else {
+        offset = 0;
+        length = element->key.size;
+    }
+
+    if (element->key.data[offset] == '/') {
+        offset++;
+        length--;
         spputc(s, '(');
-        stream_write(s, &element->key.data[1], element->key.size - 1);
+        stream_write(s, &element->key.data[offset], length);
         spputc(s, ')');
     } else {
         stream_write(s, element->key.data, element->key.size);
