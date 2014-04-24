@@ -146,6 +146,7 @@ gsdll_stderr(void *instance, const char *str, int len)
     return len;
 }
 
+
 /*********************************************************************/
 /* dll display device */
 
@@ -1144,6 +1145,17 @@ display_callback display = {
     display_separation
 };
 
+static int
+write_stderr(const char *str)
+{
+    fwrite(str, 1, strlen(str), stderr);
+    fflush(stderr);
+}
+
+
+/* Note the space! It makes the string merging simpler */
+#define OUR_DEFAULT_DEV_STR "display "
+
 /*********************************************************************/
 
 int main(int argc, char *argv[])
@@ -1156,6 +1168,9 @@ int main(int argc, char *argv[])
     char dformat[64];
     int exit_code;
     gboolean use_gui;
+    const char *default_devs = NULL;
+    char *our_default_devs = NULL;
+    int len;
 
     /* Gtk initialisation */
     setlocale(LC_ALL, "");
@@ -1174,9 +1189,31 @@ int main(int argc, char *argv[])
     /* run Ghostscript */
     if ((code = gsapi_new_instance(&instance, NULL)) == 0) {
         gsapi_set_stdio(instance, gsdll_stdin, gsdll_stdout, gsdll_stderr);
-        if (use_gui)
+        if (use_gui) {
             gsapi_set_display_callback(instance, &display);
-        code = gsapi_init_with_args(instance, nargc, nargv);
+
+            code = gsapi_get_default_device_list(instance, &default_devs, &len);
+            if (code >= 0) {
+                our_default_devs = malloc(len + strlen(OUR_DEFAULT_DEV_STR) + 1);
+                if (our_default_devs) {
+                    memcpy(our_default_devs, OUR_DEFAULT_DEV_STR, strlen(OUR_DEFAULT_DEV_STR));
+                    memcpy(our_default_devs + strlen(OUR_DEFAULT_DEV_STR), default_devs, len);
+                    our_default_devs[len + strlen(OUR_DEFAULT_DEV_STR)] = '\0';
+                    code = gsapi_set_default_device_list(instance, our_default_devs, strlen(default_devs));
+                    free(our_default_devs);
+                }
+                else {
+                    code = -1;
+                }
+            }
+            if (code < 0) {
+                write_stderr("Could not set default devices, continuing with existing defaults\n");
+                code = 0;
+            }
+        }
+        
+        if (code == 0)
+            code = gsapi_init_with_args(instance, nargc, nargv);
 
         if (code == 0)
             code = gsapi_run_string(instance, start_string, 0, &exit_code);
