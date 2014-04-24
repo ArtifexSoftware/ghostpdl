@@ -76,13 +76,15 @@ read_stdin_handler(GIOChannel *channel, GIOCondition condition, gpointer data)
 {
     struct stdin_buf *input = (struct stdin_buf *)data;
     GError *error = NULL;
+    gsize c;
 
     if (condition & (G_IO_PRI)) {
         g_print("input exception");
         input->count = 0;	/* EOF */
     }
     else if (condition & (G_IO_IN)) {
-        g_io_channel_read_chars(channel, input->buf, input->len, (gsize *)&input->count, &error);
+        g_io_channel_read_chars(channel, input->buf, input->len, &c, &error);
+        input->count = (int)c;
         if (error) {
             g_print("%s\n", error->message);
             g_error_free(error);
