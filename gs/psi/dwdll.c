@@ -152,6 +152,22 @@ gsapi_revision_t rv;
         return 1;
     }
 
+    gsdll->get_default_device_list = (PFN_gsapi_get_default_device_list)
+        GetProcAddress(gsdll->hmodule, "gsapi_get_default_device_list");
+    if (gsdll->get_default_device_list == NULL) {
+        strncpy(last_error, "Can't find gsapi_get_default_device_list\n", len-1);
+        unload_dll(gsdll);
+        return 1;
+    }
+
+    gsdll->set_default_device_list = (PFN_gsapi_set_default_device_list)
+        GetProcAddress(gsdll->hmodule, "gsapi_set_default_device_list");
+    if (gsdll->set_default_device_list == NULL) {
+        strncpy(last_error, "Can't find gsapi_set_default_device_list\n", len-1);
+        unload_dll(gsdll);
+        return 1;
+    }
+
     gsdll->init_with_args = (PFN_gsapi_init_with_args)
         GetProcAddress(gsdll->hmodule, "gsapi_init_with_args");
     if (gsdll->init_with_args == NULL) {

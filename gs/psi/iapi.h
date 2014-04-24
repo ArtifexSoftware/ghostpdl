@@ -197,6 +197,23 @@ GSDLLEXPORT int GSDLLAPI gsapi_set_poll(void *instance,
 GSDLLEXPORT int GSDLLAPI gsapi_set_display_callback(
    void *instance, display_callback *callback);
 
+/* Set the string containing the list of default device names
+ * for example "display x11alpha x11 bbox". Allows the calling
+ * application to influence which device(s) gs will try in order
+ * to select the default device
+ *
+ * *Must* be called after gsapi_new_instance() and before
+ * gsapi_init_with_args().
+ */
+GSDLLEXPORT int GSDLLAPI
+gsapi_set_default_device_list(void *lib, char *list, int listlen);
+
+/* Returns a pointer to the current default device string
+ * *Must* be called after gsapi_new_instance().
+ */
+GSDLLEXPORT int GSDLLAPI
+gsapi_get_default_device_list(void *lib, char **list, int *listlen);
+
 /* Set the encoding used for the args. By default we assume
  * 'local' encoding. For windows this equates to whatever the current
  * codepage is. For linux this is utf8.
@@ -307,6 +324,10 @@ typedef int (GSDLLAPIPTR PFN_gsapi_set_poll)(void *instance,
     int(GSDLLCALLPTR poll_fn)(void *caller_handle));
 typedef int (GSDLLAPIPTR PFN_gsapi_set_display_callback)(
     void *instance, display_callback *callback);
+typedef int (GSDLLAPIPTR PFN_gsapi_set_default_device_list)(
+    void *lib, char *list, int listlen);
+typedef int (GSDLLAPIPTR PFN_gsapi_get_default_device_list)(
+    void *lib, char **list, int *listlen);
 typedef int (GSDLLAPIPTR PFN_gsapi_init_with_args)(
     void *instance, int argc, char **argv);
 #ifdef __WIN32__

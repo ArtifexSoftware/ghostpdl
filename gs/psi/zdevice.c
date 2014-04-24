@@ -217,7 +217,7 @@ zgetdefaultdevice(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     const gx_device *dev;
 
-    dev = gs_getdefaultdevice();
+    dev = gs_getdefaultlibdevice(imemory);
     if (dev == 0) /* couldn't find a default device */
         return_error(e_unknownerror);
     push(1);

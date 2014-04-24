@@ -200,6 +200,25 @@ gsapi_set_display_callback(void *lib, display_callback *callback)
     return 0;
 }
 
+/* Set/Get the default device list string */
+GSDLLEXPORT int GSDLLAPI
+gsapi_set_default_device_list(void *lib, char *list, int listlen)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
+        return e_Fatal;
+    return gs_lib_ctx_set_default_device_list(ctx->memory, list, listlen);
+}
+
+GSDLLEXPORT int GSDLLAPI
+gsapi_get_default_device_list(void *lib, char **list, int *listlen)
+{
+    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
+    if (lib == NULL)
+        return e_Fatal;
+    return gs_lib_ctx_get_default_device_list(ctx->memory, list, listlen);
+}
+
 static int utf16le_get_codepoint(FILE *file, const char **astr)
 {
     int c;

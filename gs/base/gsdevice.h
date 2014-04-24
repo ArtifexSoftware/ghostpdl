@@ -42,7 +42,12 @@ typedef struct gs_param_list_s gs_param_list;
 /* Device procedures not involving a graphics state. */
 
 const gx_device *gs_getdevice(int);
+
+/****** DEPRECATED *********/
 const gx_device *gs_getdefaultdevice(void);
+
+const gx_device *
+gs_getdefaultlibdevice(gs_memory_t *mem);
 
 int gs_opendevice(gx_device *);
 int gs_copyscanlines(gx_device *, int, byte *, uint, int *, uint *);

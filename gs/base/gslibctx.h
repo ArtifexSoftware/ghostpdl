@@ -80,6 +80,7 @@ typedef struct gs_lib_ctx_s
     int profiledir_len;             /* length of directory name (allows for Unicode) */
     void *cms_context;  /* Opaque context pointer from underlying CMS in use */
     gs_fapi_server **fapi_servers;
+    char *default_device_list;
 } gs_lib_ctx_t;
 
 /** initializes and stores itself in the given gs_memory_t pointer.
@@ -107,6 +108,19 @@ gs_memory_t * gs_lib_ctx_get_non_gc_memory_t(void);
 
 void gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
                         int dir_namelen);
+
+
+/* Sets/Gets the string containing the list of device names we should search
+ * to find a suitable default
+ */
+int
+gs_lib_ctx_set_default_device_list(const gs_memory_t *mem, const char* dev_list_str,
+                        int list_str_len);
+
+/* Returns a pointer to the string not a new string */
+int
+gs_lib_ctx_get_default_device_list(const gs_memory_t *mem, char** dev_list_str,
+                        int *list_str_len);
 
 #define IS_LIBCTX_STDOUT(mem, f) (f == mem->gs_lib_ctx->fstdout)
 #define IS_LIBCTX_STDERR(mem, f) (f == mem->gs_lib_ctx->fstderr)

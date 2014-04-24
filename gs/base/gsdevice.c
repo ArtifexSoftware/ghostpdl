@@ -244,7 +244,7 @@ gs_getdevice(int index)
 
 /* Get the default device from the known device list */
 const gx_device *
-gs_getdefaultdevice(void)
+gs_getdefaultlibdevice(gs_memory_t *mem)
 {
     const gx_device *const *list;
     int count = gs_lib_device_list(&list, NULL);
@@ -252,8 +252,15 @@ gs_getdefaultdevice(void)
     int i;
 
     /* Search the compiled in device list for a known device name */
-    name = gs_dev_defaults;
-    fin = name + strlen(name);
+    /* In the case the lib ctx hasn't been initialised */
+    if (mem && mem->gs_lib_ctx && mem->gs_lib_ctx->default_device_list) {
+        name = mem->gs_lib_ctx->default_device_list;
+        fin = name + strlen(name);
+    }
+    else {
+        name = gs_dev_defaults;
+        fin = name + strlen(name);
+    }
 
     /* iterate through each name in the string */
     while (name < fin) {
@@ -277,6 +284,12 @@ gs_getdefaultdevice(void)
 
     /* Fall back to the first device in the list. */
     return gs_getdevice(0);
+}
+
+const gx_device *
+gs_getdefaultdevice(void)
+{
+    return gs_getdefaultlibdevice(NULL);
 }
 
 /* Fill in the GC structure descriptor for a device. */

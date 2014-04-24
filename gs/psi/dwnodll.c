@@ -41,6 +41,8 @@ int load_dll(GSDLL *gsdll, char *last_error, int len)
     gsdll->run_string = &gsapi_run_string;
     gsdll->exit = &gsapi_exit;
     gsdll->set_visual_tracer = &gsapi_set_visual_tracer;
+    gsdll->set_default_device_list = &gsapi_set_default_device_list;
+    gsdll->get_default_device_list = &gsapi_get_default_device_list;
     return 0;
 }
 
