@@ -2523,7 +2523,7 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                 }
                 if (has_tags) {
                     /* If alpha is 100% then set to pure path, else or */
-                    if (dst[num_comp] == 255) {
+                    if (src[num_comp] == 255) {
                         dst_ptr[tag_off] = curr_tag;
                     } else {
                         dst_ptr[tag_off] = ( dst_ptr[tag_off] |curr_tag ) & ~GS_UNTOUCHED_TAG;
