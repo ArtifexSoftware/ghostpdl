@@ -1877,6 +1877,8 @@ pl_font_remove_glyph(pl_font_t * plfont, gs_glyph glyph)
         ptcg->chr = gs_no_char;
         ptcg->glyph = 1;        /* mark as deleted */
         plfont->char_glyphs.used--;
+        /* we have to clear out the widths cache now */
+        pl_font_glyph_width_cache_remove_nodes(plfont);
     }
     /* may not have a glyph table in case of cloned resident */
     if (plfont->glyphs.table == 0)
@@ -1897,5 +1899,7 @@ pl_font_remove_glyph(pl_font_t * plfont, gs_glyph glyph)
     pfg->data = 0;
     pfg->glyph = 1;             /* mark as deleted */
     plfont->glyphs.used--;
+    /* we have to clear out the widths cache now */
+    pl_font_glyph_width_cache_remove_nodes(plfont);
     return 1;
 }

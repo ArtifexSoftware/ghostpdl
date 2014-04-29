@@ -51,7 +51,6 @@ private_st_pl_font();
 #define u32(bptr) (uint)pl_get_uint32(bptr)
 
 /* ---------------- Utilities ---------------- */
-
 /* Free a font.  This is the freeing procedure in the font dictionary. */
 void
 pl_free_font(gs_memory_t * mem, void *plf, client_name_t cname)
@@ -73,6 +72,10 @@ pl_free_font(gs_memory_t * mem, void *plf, client_name_t cname)
         gs_free_object(mem, (void *)plfont->header, cname);
         plfont->header = 0;     /* see hack note above */
     }
+
+    /* free any nodes in the widths cache */
+    pl_font_glyph_width_cache_remove_nodes(plfont);
+
     /* Free the font data itself. */
     gs_free_object(mem, (void *)plfont->char_glyphs.table, cname);
     gs_free_object(mem, (void *)plfont->glyphs.table, cname);
@@ -464,14 +467,101 @@ pl_decode_glyph(gs_font * font, gs_glyph glyph, int ch)
     return plfont->last_char;
 }
 
-/* ---------------- Public procedures ---------------- */
+/* ---------------- Width cache ---------------- */
+static int
+pl_font_glyph_width_cache_node_add(pl_font_t *plfont,
+                              uint char_code, gs_point * pwidth)
+{
+    pl_glyph_width_node_t *node;
 
+    /* We can't safely cache widths for bitmap fonts */
+    if (plfont->scaling_technology == plfst_bitmap) {
+        return(0);
+    }
+
+    if (plfont->widths_cache_nitems > PL_MAX_WIDTHS_CACHE_NITEMS) {
+        pl_font_glyph_width_cache_remove_nodes(plfont);
+    }
+    
+    node = (pl_glyph_width_node_t *) gs_alloc_bytes(plfont->pfont->memory,
+                                                 sizeof
+                                                 (pl_glyph_width_node_t),
+                                                 "pl_glyph_width_cache_node_add");
+
+    if (node == NULL) {
+        /* if we couldn't allocate a node, it probably doesn't hurt
+         * to get rid of all the nodes we have.
+         */
+        pl_font_glyph_width_cache_remove_nodes(plfont);
+        return -1;
+    }
+
+    node->next = plfont->widths_cache;
+    plfont->widths_cache = node;
+    plfont->widths_cache_nitems++;
+
+    node->char_code = char_code;
+    node->font_id = plfont->pfont->id;
+    node->width = *pwidth;
+
+    return 0;
+}
+
+
+static int
+pl_font_glyph_width_cache_node_search(const pl_font_t *plfont, uint char_code,
+                                 gs_point * pwidth)
+{
+    pl_glyph_width_node_t *current = plfont->widths_cache;
+
+    while (current) {
+        if (char_code == current->char_code) {
+            *pwidth = current->width;
+            return 0;
+        }
+        current = current->next;
+    }
+    return -1;
+}
+
+
+/* ---------------- Public procedures ---------------- */
 /* character width */
+
+void
+pl_font_glyph_width_cache_remove_nodes(pl_font_t *plfont)
+{
+    pl_glyph_width_node_t *current = plfont->widths_cache;
+
+    while (current) {
+        pl_glyph_width_node_t *next = current->next;
+
+        gs_free_object(plfont->pfont->memory, current, "pl_glyph_width_list_remove");
+        current = next;
+    }
+    plfont->widths_cache = NULL;
+    plfont->widths_cache_nitems = 0;
+    return;
+}
+
 int
 pl_font_char_width(const pl_font_t * plfont, const void *pgs,
                    gs_char char_code, gs_point * pwidth)
 {
-    return (*(plfont)->char_width) (plfont, pgs, char_code, pwidth);
+    int code = 0;
+
+    if (pl_font_glyph_width_cache_node_search(plfont, char_code, pwidth) >= 0) {
+        return(code);
+    }
+    
+    if ((code = (*(plfont)->char_width) (plfont, pgs, char_code, pwidth)) == 0) {
+
+        /* at least here, ignore the return value - if we fail to add a node
+         * to the cache, we can reasonably attempt to carry on without it
+         */
+        (void)pl_font_glyph_width_cache_node_add((pl_font_t *)plfont, char_code, pwidth);
+    }
+    return code;
 }
 
 /* character width */
@@ -503,6 +593,8 @@ pl_alloc_font(gs_memory_t * mem, client_name_t cname)
         memset(plfont->character_complement, 0xff, 8);
         plfont->offsets.GC = plfont->offsets.GT = plfont->offsets.VT = -1;
         plfont->pts_per_inch = 72.0;    /* normal value */
+        plfont->widths_cache = NULL;
+        plfont->widths_cache_nitems = 0;
     }
     return plfont;
 }
@@ -538,6 +630,8 @@ pl_clone_font(const pl_font_t * src, gs_memory_t * mem, client_name_t cname)
     plfont->font_file_loaded = src->font_file_loaded;
     plfont->orient = src->orient;
     plfont->bold_fraction = src->bold_fraction;
+    plfont->widths_cache = NULL;
+    plfont->widths_cache_nitems = 0;
     {
         int i;
 

@@ -155,6 +155,18 @@ typedef struct gs_font_s gs_font;
 typedef struct gs_matrix_s gs_matrix;
 #endif
 
+
+#define PL_MAX_WIDTHS_CACHE_NITEMS 256
+typedef struct pl_glyph_width_node_s pl_glyph_width_node_t;
+
+struct pl_glyph_width_node_s
+{
+    uint char_code;
+    uint font_id;
+    gs_point width;
+    pl_glyph_width_node_t *next;
+};
+
 /*
  * We 'wrap' gs_fonts in our own structure.
  *
@@ -208,6 +220,8 @@ struct pl_font_s
     pl_tt_char_glyph_table_t char_glyphs;
 
     float pts_per_inch;         /* either 72 or 72.307 (for Intellifont) */
+    pl_glyph_width_node_t *widths_cache;
+    int widths_cache_nitems;
 };
 
 #define private_st_pl_font()	/* in plfont.c */\
@@ -310,6 +324,9 @@ int pl_free_tt_fontfile_buffer(gs_memory_t * mem, byte * ptt_font_data);
 
 /* Add a glyph to a font.  Return -1 if the table is full. */
 int pl_font_add_glyph(pl_font_t * plfont, gs_glyph glyph, const byte * cdata);
+
+void
+pl_font_glyph_width_cache_remove_nodes(pl_font_t *plfont);
 
 /* Determine the escapement of a character in a font / symbol set. */
 /* If the font is bound, the symbol set is ignored. */
