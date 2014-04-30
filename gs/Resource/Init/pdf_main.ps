@@ -2280,7 +2280,16 @@ currentdict /PDF2PS_matrix_key undef
       } forall
     } if
     dup /Shading knownoget {
-      { exch pop oforce /ColorSpace oget 3 index colorspacespotcolors } forall
+      { exch pop
+        oforce /ColorSpace
+        { oget } stopped
+        {
+          pop pop
+          (   **** Warning: invalid color space in shading.\n) pdfformaterror
+        }
+        { 3 index colorspacespotcolors}
+        ifelse        
+      } forall
     } if
     /XObject knownoget {
       dup type /dicttype eq {
