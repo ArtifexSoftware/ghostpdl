@@ -497,7 +497,7 @@ SO_LIB_VERSION_SEPARATOR=@SO_LIB_VERSION_SEPARATOR@
 # Choose the language feature(s) to include.  See gs.mak for details.
 # Choose the language feature(s) to include.  See gs.mak for details.
 PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)epsf.dev $(PSD)ttfont.dev \
-                 $(PSD)utf8.dev $(PSD)fapi_ps.dev 
+                 $(PSD)utf8.dev $(PSD)fapi_ps.dev $(PSD)jpx.dev $(PSD)rasterop.dev $(PSD)jbig2.dev
 
 
 PCL_FEATURE_DEVS=$(PLOBJDIR)/pjl.dev $(PXLOBJDIR)/pxl.dev $(PCL5OBJDIR)/pcl5c.dev \
@@ -509,8 +509,8 @@ FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev 
              $(GLD)dps2lib.dev $(GLD)path1lib.dev $(GLD)patlib.dev $(GLD)psl2cs.dev $(GLD)rld.dev $(GLD)gxfapiu$(UFST_BRIDGE).dev\
              $(GLD)ttflib.dev  $(GLD)cielib.dev $(GLD)pipe.dev $(GLD)htxlib.dev $(GLD)sdctd.dev $(GLD)libpng.dev\
 	     $(GLD)seprlib.dev $(GLD)translib.dev $(GLD)cidlib.dev $(GLD)psf0lib.dev $(GLD)psf1lib.dev\
-             $(GLD)psf2lib.dev $(GLD)lzwd.dev $(GLD)sicclib.dev $(GLD)rasterop.dev \
-             $(GLD)jbig2.dev $(GLD)jpx.dev $(GLD)winutf8.dev $(GLD)ramfs.dev
+             $(GLD)psf2lib.dev $(GLD)lzwd.dev $(GLD)sicclib.dev \
+             $(GLD)sjbig2.dev $(GLD)sjpx.dev $(GLD)ramfs.dev
 
 
 
