@@ -22,6 +22,9 @@
 #include "gxdevice.h"
 #include "gxdevsop.h"
 
+/* defined in gsdpram.c */
+int gx_default_get_param(gx_device *dev, char *Param, void *list);
+
 /* ---------------- Default device procedures ---------------- */
 
 /*
@@ -958,6 +961,11 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
                 return 4;
             }
             return 0; /* Otherwise no change */
+        case gxdso_get_dev_param:
+            {
+                dev_param_req_t *request = (dev_param_req_t *)data;
+                return gx_default_get_param(pdev, request->Param, request->list);
+            }
     }
     return gs_error_undefined;
 }

@@ -31,6 +31,7 @@
 #include "gxpaint.h"		/* requires gx_path, ... */
 #include "gzpath.h"
 #include "gzcpath.h"
+#include "gxdevsop.h"
 
 /* Structure descriptors */
 public_st_device_vector();
@@ -947,6 +948,24 @@ gdev_vector_end_image(gx_device_vector * vdev,
 
 #define vdev ((gx_device_vector *)dev)
 
+int gdev_vector_get_param(gx_device *dev, char *Param, void *list)
+{
+    gs_param_list * plist = (gs_param_list *)list;
+    gs_param_string ofns;
+    bool bool_true = 1;
+
+    ofns.data = (const byte *)vdev->fname,
+        ofns.size = strlen(vdev->fname),
+        ofns.persistent = false;
+    if (strcmp(Param, "OutputFile") == 0) {
+        return param_write_string(plist, "OutputFile", &ofns);
+    }
+    if (strcmp(Param, "HighLevelDevice") == 0) {
+        return param_write_bool(plist, "HighLevelDevice", &bool_true);
+    }
+    return gs_error_undefined;
+}
+
 /* Get parameters. */
 int
 gdev_vector_get_params(gx_device * dev, gs_param_list * plist)
@@ -1271,6 +1290,19 @@ gdev_vector_fill_triangle(gx_device * dev,
     points[2].x = px + bx, points[2].y = py + by;
     return gdev_vector_write_polygon(vdev, points, 3, true,
                                      gx_path_type_fill);
+}
+
+int
+gdev_vector_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
+{
+    if (dev_spec_op == gxdso_get_dev_param) {
+        int code;
+        dev_param_req_t *request = (dev_param_req_t *)data;
+        code = gdev_vector_get_param(pdev, request->Param, request->list);
+        if (code != gs_error_undefined)
+            return code;
+    }
+    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
 #undef vdev

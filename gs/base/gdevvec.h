@@ -378,6 +378,7 @@ int gdev_vector_end_image(gx_device_vector * vdev,
 /* Redefine get/put_params to handle OutputFile. */
 dev_proc_put_params(gdev_vector_put_params);
 dev_proc_get_params(gdev_vector_get_params);
+int gdev_vector_get_param(gx_device *dev, char *Param, void *list);
 
 /* ---------------- Defaults ---------------- */
 
@@ -392,5 +393,6 @@ dev_proc_stroke_path(gdev_vector_stroke_path);
 dev_proc_fill_trapezoid(gdev_vector_fill_trapezoid);
 dev_proc_fill_parallelogram(gdev_vector_fill_parallelogram);
 dev_proc_fill_triangle(gdev_vector_fill_triangle);
+dev_proc_dev_spec_op(gdev_vector_dev_spec_op);
 
 #endif /* gdevvec_INCLUDED */

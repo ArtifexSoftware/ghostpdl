@@ -35,6 +35,8 @@
 #include "sa85x.h"
 #include "gdevpsdf.h"
 #include "gdevpsu.h"
+#include "gdevpsdf.h"
+#include "gxdevsop.h"
 
 /* Current ProcSet version */
 #define PSWRITE_PROCSET_VERSION 1
@@ -1662,4 +1664,18 @@ psw_image_end_image(gx_image_enum_common_t * info, bool draw_last)
             return_error(gs_error_ioerror);
     }
     return code;
+}
+
+int
+gdev_psdf_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
+{
+    if (dev_spec_op == gxdso_get_dev_param) {
+        int code;
+        dev_param_req_t *request = (dev_param_req_t *)data;
+        code = gdev_psdf_get_param(pdev, request->Param, request->list);
+        if (code != gs_error_undefined)
+            return code;
+    }
+
+    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }

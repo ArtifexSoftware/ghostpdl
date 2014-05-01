@@ -154,6 +154,14 @@ gdev_prn_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
     if (dev_spec_op == gxdso_supports_saved_pages)
         return 1;
 
+    if (dev_spec_op == gxdso_get_dev_param) {
+        int code;
+        dev_param_req_t *request = (dev_param_req_t *)data;
+        code = gdev_prn_get_param(pdev, request->Param, request->list);
+        if (code != gs_error_undefined)
+            return code;
+    }
+
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
@@ -554,6 +562,67 @@ gx_default_close_render_device(gx_device_printer *pdev)
 }
 
 /* ------ Get/put parameters ------ */
+
+int
+gdev_prn_get_param(gx_device *dev, char *Param, void *list)
+{
+    gx_device_printer * const ppdev = (gx_device_printer *)dev;
+    gs_param_list * plist = (gs_param_list *)list;
+
+    if (strcmp(Param, "Duplex") == 0) {
+        if (ppdev->Duplex_set >= 0) {
+            if (ppdev->Duplex_set)
+                return param_write_bool(plist, "Duplex", &ppdev->Duplex);
+            else
+                return param_write_null(plist, "Duplex");
+        }
+    }
+    if (strcmp(Param, "NumRenderingThreads") == 0) {
+        return param_write_int(plist, "NumRenderingThreads", &ppdev->num_render_threads_requested);
+    }
+    if (strcmp(Param, "OpenOutputFile") == 0) {
+        return param_write_bool(plist, "OpenOutputFile", &ppdev->OpenOutputFile);
+    }
+    if (strcmp(Param, "BGPrint") == 0) {
+        return param_write_bool(plist, "BGPrint", &ppdev->bg_print_requested);
+    }
+    if (strcmp(Param, "ReopenPerPage") == 0) {
+        return param_write_bool(plist, "ReopenPerPage", &ppdev->ReopenPerPage);
+    }
+    if (strcmp(Param, "BandListStorage") == 0) {
+        gs_param_string bls;
+        /* Force the default to 'memory' if clist file I/O is not included in this build */
+        if (clist_io_procs_file_global == NULL)
+            ppdev->BLS_force_memory = true;
+        if (ppdev->BLS_force_memory) {
+            bls.data = (byte *)"memory";
+            bls.size = 6;
+            bls.persistent = false;
+        } else {
+            bls.data = (byte *)"file";
+            bls.size = 4;
+            bls.persistent = false;
+        }
+        return param_write_string(plist, "BandListStorage", &bls);
+    }
+    if (strcmp(Param, "OutputFile") == 0) {
+        gs_param_string ofns;
+
+        ofns.data = (const byte *)ppdev->fname,
+        ofns.size = strlen(ppdev->fname),
+        ofns.persistent = false;
+        return param_write_string(plist, "OutputFile", &ofns);
+    }
+    if (strcmp(Param, "saved-pages") == 0) {
+        gs_param_string saved_pages;
+        /* Always return an empty string for saved-pages */
+        saved_pages.data = (const byte *)"";
+        saved_pages.size = 0;
+        saved_pages.persistent = false;
+        return param_write_string(plist, "saved-pages", &saved_pages);
+    }
+    return gs_error_undefined;
+}
 
 /* Get parameters.  Printer devices add several more parameters */
 /* to the default set. */

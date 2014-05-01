@@ -330,9 +330,11 @@ extern_st(st_device_psdf);
 #define st_device_psdf_max_ptrs (st_device_vector_max_ptrs + 14)
 
 /* Get/put parameters. */
+int gdev_psdf_get_param(gx_device *dev, char *Param, void *list);
 dev_proc_get_params(gdev_psdf_get_params);
 dev_proc_put_params(gdev_psdf_put_params);
 
+dev_proc_dev_spec_op(gdev_psdf_dev_spec_op);
 /* ---------------- Vector implementation procedures ---------------- */
 
         /* Imager state */

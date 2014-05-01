@@ -2143,7 +2143,7 @@ $(GLOBJ)gdevvec.$(OBJ) : $(GLSRC)gdevvec.c $(AK) $(gx_h) $(gserrors_h)\
  $(math__h) $(memory__h) $(string__h)\
  $(gdevvec_h) $(gp_h) $(gscspace_h) $(gxiparam_h) $(gsparam_h) $(gsutil_h)\
  $(gxdcolor_h) $(gxfixed_h) $(gxpaint_h)\
- $(gzcpath_h) $(gzpath_h) $(MAKEDIRS)
+ $(gzcpath_h) $(gzpath_h) $(gxdevsop_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevvec.$(OBJ) $(C_) $(GLSRC)gdevvec.c
 
 # ---------------- Image scaling filters ---------------- #

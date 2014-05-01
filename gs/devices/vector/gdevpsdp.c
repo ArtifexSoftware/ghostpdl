@@ -29,6 +29,7 @@
 #include "slzwx.h"
 #include "srlx.h"
 #include "szlibx.h"
+#include "gdevvec.h"
 #ifdef USE_LDF_JB2
 #include "sjbig2_luratech.h"
 #endif
@@ -370,7 +371,162 @@ psdf_get_embed_param(gs_param_list *plist, gs_param_name allpname,
     return code;
 }
 
+/* Transfer a collection of parameters. */
+static const byte xfer_item_sizes[] = {
+    GS_PARAM_TYPE_SIZES(0)
+};
 /* Get parameters. */
+static
+int gdev_psdf_get_image_param(gx_device_psdf *pdev, const psdf_image_param_names_t *image_names,
+                              psdf_image_params * params, char *Param, gs_param_list * plist)
+{
+    const gs_param_item_t *pi;
+    int code;
+
+    for (pi = image_names->items; pi->key != 0; ++pi) {
+        if (strcmp(pi->key, Param) == 0) {
+            const char *key = pi->key;
+            const void *pvalue = (const void *)((const char *)params + pi->offset);
+            int size = xfer_item_sizes[pi->type];
+            gs_param_typed_value typed;
+
+            memcpy(&typed.value, pvalue, size);
+            typed.type = pi->type;
+            code = (*plist->procs->xmit_typed) (plist, key, &typed);
+            return code;
+        }
+    }
+    /* We only have an ACSDict for color image parameters */
+    if (image_names->ACSDict) {
+        if (strcmp(Param, image_names->ACSDict) == 0)
+            return psdf_get_image_dict_param(plist, image_names->ACSDict, params->ACSDict);
+    }
+    if (strcmp(Param, image_names->Dict) == 0)
+        return psdf_get_image_dict_param(plist, image_names->Dict, params->Dict);
+
+    if (strcmp(Param, image_names->DownsampleType) == 0)
+        return psdf_write_name(plist, image_names->DownsampleType,
+                DownsampleType_names[params->DownsampleType]);
+    if (strcmp(Param, image_names->Filter) == 0)
+        return psdf_write_name(plist, image_names->Filter,
+                                   (params->Filter == 0 ?
+                                    image_names->filter_names[0].pname :
+                                    params->Filter));
+#ifdef USE_LWF_JP2
+    if (strcmp(Param, image_names->AutoFilterStrategy) == 0)
+        if (image_names->AutoFilterStrategy != 0)
+            return psdf_write_name(plist, image_names->AutoFilterStrategy,
+                                   (params->AutoFilterStrategy == 0 ?
+                                   "JPEG2000" : params->AutoFilterStrategy));
+#endif
+    return gs_error_undefined;
+}
+int
+gdev_psdf_get_param(gx_device *dev, char *Param, void *list)
+{
+    gx_device_psdf *pdev = (gx_device_psdf *) dev;
+    const psdf_image_param_names_t *image_names;
+    const gs_param_item_t *pi;
+    gs_param_list * plist = (gs_param_list *)list;
+    int code = 0;
+
+    code = gdev_vector_get_param(dev, Param, list);
+    if (code != gs_error_undefined)
+        return code;
+
+    /* General parameters first */
+    for (pi = psdf_param_items; pi->key != 0; ++pi) {
+        if (strcmp(pi->key, Param) == 0) {
+            const char *key = pi->key;
+            const void *pvalue = (const void *)((const char *)&pdev + pi->offset);
+            int size = xfer_item_sizes[pi->type];
+            gs_param_typed_value typed;
+
+            memcpy(&typed.value, pvalue, size);
+            typed.type = pi->type;
+            code = (*plist->procs->xmit_typed) (plist, key, &typed);
+            return code;
+        }
+    }
+
+    /* Color image parameters */
+    if (pdev->ParamCompatibilityLevel >= 1.5)
+        image_names = &Color_names15;
+    else
+        image_names = &Color_names;
+
+    code = gdev_psdf_get_image_param(pdev, image_names, &pdev->params.ColorImage, Param, plist);
+    if (code != gs_error_undefined)
+        return code;
+
+    /* Grey image parameters */
+    if (pdev->ParamCompatibilityLevel >= 1.5)
+        image_names = &Gray_names15;
+    else
+        image_names = &Gray_names;
+
+    code = gdev_psdf_get_image_param(pdev, image_names, &pdev->params.GrayImage, Param, plist);
+    if (code != gs_error_undefined)
+        return code;
+
+    /* Mono image parameters */
+    code = gdev_psdf_get_image_param(pdev, &Mono_names, &pdev->params.MonoImage, Param, plist);
+    if (code != gs_error_undefined)
+        return code;
+
+    if (strcmp(Param, "AutoRotatePages") == 0) {
+        return(psdf_write_name(plist, "AutoRotatePages",
+                AutoRotatePages_names[(int)pdev->params.AutoRotatePages]));
+    }
+    if (strcmp(Param, "Binding") == 0) {
+        return(psdf_write_name(plist, "Binding",
+                Binding_names[(int)pdev->params.Binding]));
+    }
+    if (strcmp(Param, "DefaultRenderingIntent") == 0) {
+        return(psdf_write_name(plist, "DefaultRenderingIntent",
+                DefaultRenderingIntent_names[(int)pdev->params.DefaultRenderingIntent]));
+    }
+    if (strcmp(Param, "TransferFunctionInfo") == 0) {
+        return(psdf_write_name(plist, "TransferFunctionInfo",
+                TransferFunctionInfo_names[(int)pdev->params.TransferFunctionInfo]));
+    }
+    if (strcmp(Param, "UCRandBGInfo") == 0) {
+        return(psdf_write_name(plist, "UCRandBGInfo",
+                UCRandBGInfo_names[(int)pdev->params.UCRandBGInfo]));
+    }
+    if (strcmp(Param, "ColorConversionStrategy") == 0) {
+        return(psdf_write_name(plist, "ColorConversionStrategy",
+                ColorConversionStrategy_names[(int)pdev->params.ColorConversionStrategy]));
+    }
+    if (strcmp(Param, "CalCMYKProfile") == 0) {
+        return(psdf_write_string_param(plist, "CalCMYKProfile",
+                                        &pdev->params.CalCMYKProfile));
+    }
+    if (strcmp(Param, "CalGrayProfile") == 0) {
+        return(psdf_write_string_param(plist, "CalGrayProfile",
+                                        &pdev->params.CalGrayProfile));
+    }
+    if (strcmp(Param, "CalRGBProfile") == 0) {
+        return(psdf_write_string_param(plist, "CalRGBProfile",
+                                        &pdev->params.CalRGBProfile));
+    }
+    if (strcmp(Param, "sRGBProfile") == 0) {
+        return(psdf_write_string_param(plist, "sRGBProfile",
+                                        &pdev->params.sRGBProfile));
+    }
+    if (strcmp(Param, ".AlwaysEmbed") == 0) {
+        return(psdf_get_embed_param(plist, ".AlwaysEmbed", &pdev->params.AlwaysEmbed));
+    }
+    if (strcmp(Param, ".NeverEmbed") == 0) {
+        return(psdf_get_embed_param(plist, ".NeverEmbed", &pdev->params.NeverEmbed));
+    }
+    if (strcmp(Param, "CannotEmbedFontPolicy") == 0) {
+        return(psdf_write_name(plist, "CannotEmbedFontPolicy",
+                CannotEmbedFontPolicy_names[(int)pdev->params.CannotEmbedFontPolicy]));
+    }
+    return gs_error_undefined;
+}
+
 int
 gdev_psdf_get_params(gx_device * dev, gs_param_list * plist)
 {

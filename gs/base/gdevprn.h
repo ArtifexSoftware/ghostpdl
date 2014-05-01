@@ -262,6 +262,8 @@ dev_proc_put_params(gdev_prn_put_params);
 dev_proc_dev_spec_op(gdev_prn_forwarding_dev_spec_op);
 dev_proc_dev_spec_op(gdev_prn_dev_spec_op);
 
+int gdev_prn_get_param(gx_device *dev, char *Param, void *list);
+
 /* Default printer-specific procedures */
 /* VMS limits procedure names to 31 characters. */
 prn_dev_proc_get_space_params(gx_default_get_space_params);

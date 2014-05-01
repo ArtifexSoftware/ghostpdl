@@ -401,6 +401,7 @@ dev_proc_strip_tile_rect_devn(gx_forward_strip_tile_rect_devn);
 dev_proc_copy_alpha_hl_color(gx_forward_copy_alpha_hl_color);
 
 /* ---------------- Implementation utilities ---------------- */
+int gx_default_get_param(gx_device *dev, char *Param, void *list);
 
 /* Convert the device procedures to the proper form (see above). */
 void gx_device_set_procs(gx_device *);

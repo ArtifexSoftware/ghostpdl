@@ -1479,4 +1479,5 @@ int pdf_from_stream_to_text(gx_device_pdf *pdev);
 int pdf_from_string_to_text(gx_device_pdf *pdev);
 void pdf_close_text_contents(gx_device_pdf *pdev);
 
+int gdev_pdf_get_param(gx_device *dev, char *Param, void *list);
 #endif /* gdevpdfx_INCLUDED */

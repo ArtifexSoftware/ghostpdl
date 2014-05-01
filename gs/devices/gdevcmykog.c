@@ -195,6 +195,13 @@ cmykog_dev_spec_op(gx_device *dev_, int op, void *data, int datasize)
     /* Any band height is fine, as long as it is even */
     return datasize & ~1;
   }
+  if (op == gxdso_get_dev_param) {
+      int code;
+      dev_param_req_t *request = (dev_param_req_t *)data;
+      code = gdev_prn_get_param(dev_, request->Param, request->list);
+      if (code != gs_error_undefined)
+          return code;
+  }
   return gx_default_dev_spec_op(dev_, op, data, datasize);
 }
 

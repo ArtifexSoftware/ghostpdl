@@ -2864,6 +2864,14 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
              * palette entries after the colour space has been set.
              */
             return 1;
+        case gxdso_get_dev_param:
+            {
+                int code;
+                dev_param_req_t *request = (dev_param_req_t *)data;
+                code = gdev_pdf_get_param(pdev1, request->Param, request->list);
+                if (code != gs_error_undefined)
+                    return code;
+            }
     }
     return gx_default_dev_spec_op(pdev1, dev_spec_op, data, size);
 }

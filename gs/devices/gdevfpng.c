@@ -42,6 +42,20 @@ struct gx_device_fpng_s {
 };
 
 static int
+fpng_get_param(gx_device *dev, char *Param, void *list)
+{
+    gx_device_fpng *pdev = (gx_device_fpng *)dev;
+    gs_param_list * plist = (gs_param_list *)list;
+
+    if (strcmp(Param, "DownScaleFactor") == 0) {
+        if (pdev->downscale_factor < 1)
+            pdev->downscale_factor = 1;
+        return param_write_int(plist, "DownScaleFactor", &pdev->downscale_factor);
+    }
+    return gs_error_undefined;
+}
+
+static int
 fpng_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_fpng *pdev = (gx_device_fpng *)dev;
@@ -97,6 +111,14 @@ fpng_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
 
     if (dev_spec_op == gxdso_adjust_bandheight)
         return gx_downscaler_adjust_bandheight(fdev->downscale_factor, size);
+
+    if (dev_spec_op == gxdso_get_dev_param) {
+        int code;
+        dev_param_req_t *request = (dev_param_req_t *)data;
+        code = fpng_get_param(pdev, request->Param, request->list);
+        if (code != gs_error_undefined)
+            return code;
+    }
 
     return gdev_prn_dev_spec_op(pdev, dev_spec_op, data, size);
 }
