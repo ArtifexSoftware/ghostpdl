@@ -116,6 +116,14 @@ typedef struct gxdso_device_child_request_s
     int        n;
 } gxdso_device_child_request;
 
+/* structure used to request a specific device parameter
+ * be returned by a device.
+ */
+typedef struct dev_param_req_s {
+    char *Param;
+    void *list;
+}dev_param_req_t;
+
 enum {
     /* All gxdso_ keys must be defined in this structure.
      * Do NOT rely on your particular gxdso_ having a particular value.
@@ -274,6 +282,8 @@ enum {
      * to round it to a multiple of a given number.
      */
     gxdso_adjust_bandheight,
+    /* Retrieve a *single* device parameter */
+    gxdso_get_dev_param,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };
