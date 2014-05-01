@@ -315,10 +315,11 @@ level2dict begin
       } forall
       % If the device is the distiller device, update distillerparams that
       % may have been changed by setdistillerparams
-      % Check to see if the current device supports Tr
-      currentdevice 1 dict dup /IsDistiller dup put .getdeviceparams
-      dup type /booleantype eq not {cleartomark false}{3 1 roll cleartomark}ifelse
-%      currentdevice .devicename /pdfwrite eq
+      /IsDistiller /GetDeviceParam .special_op {
+        exch pop
+      }{
+        //false
+      }ifelse
       {
           currentdistillerparams {
               % Stack: current key value
@@ -902,8 +903,11 @@ SETPDDEBUG { (Installing.) = pstack flush } if
                 % We must install the new page device dictionary
                 % before calling the Install procedure.
   dup .setpagedevice
-  currentdevice 1 dict dup /HighLevelDevice dup put .getdeviceparams
-  dup type /booleantype eq not {cleartomark //true}{3 1 roll cleartomark not}ifelse
+  /HighLevelDevice /GetDeviceParam .special_op {
+    exch pop not
+  }{
+    //true
+  }ifelse
   {
   .setdefaulthalftone	% Set the default screen before calling Install.
   } if

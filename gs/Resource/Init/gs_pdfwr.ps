@@ -608,8 +608,11 @@ currentdict /.pdfmarkparams .undef
   % If the Creator is PScript5.dll, disable the 32 /FontType resource for
   % handling GlyphNames2Unicode. Since /FontType category can't redefine,
   % we can do only with redefining the operator 'resourcestatus'.
-  currentdevice 1 dict dup /WantsToUnicode dup put .getdeviceparams
-  dup type /booleantype eq not {cleartomark //true}{3 1 roll cleartomark}ifelse
+  /WantsToUnicode /GetDeviceParam .special_op {
+    exch pop
+  }{
+    //true
+  }ifelse
   {
     /Creator .knownget {
       (PScript5.dll) search {
@@ -802,8 +805,11 @@ currentdict /.pdf_hook_DSC_Creator undef
  {
     % Check to see if the current device is a Distiller
     % and return it if so.
-    currentdevice 1 dict dup /IsDistiller dup put .getdeviceparams
-    dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+    /IsDistiller /GetDeviceParam .special_op {
+      exch pop
+    }{
+      //false
+    }ifelse
     { currentdevice }
     { /pdfwrite finddevice }
    ifelse
@@ -836,8 +842,11 @@ currentdict /.pdf_hook_DSC_Creator undef
 } odef
 /setdistillerparams {
   % Check to see if the current device is a Distiller
-  currentdevice 1 dict dup /IsDistiller dup put .getdeviceparams
-  dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse not
+  /IsDistiller /GetDeviceParam .special_op {
+    exch pop not
+  }{
+    //true
+  }ifelse
   {
     /setdistillerparams /undefined signalerror
   } if
@@ -845,8 +854,11 @@ currentdict /.pdf_hook_DSC_Creator undef
 } bind odef
 /currentdistillerparams {
   % Check to see if the current device is a Distiller
-  currentdevice 1 dict dup /IsDistiller dup put .getdeviceparams
-  dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse not
+  /IsDistiller /GetDeviceParam .special_op {
+    exch pop not
+  }{
+    //true
+  }ifelse
   {
     /currentdistillerparams /undefined signalerror
   } if
@@ -857,8 +869,11 @@ currentdict /.pdf_hook_DSC_Creator undef
 % if the pdfwrite device is the current one.
 {
   % Check to see if the current device is a Distiller
-  currentdevice 1 dict dup /IsDistiller dup put .getdeviceparams
-  dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+  /IsDistiller /GetDeviceParam .special_op {
+    exch pop
+  }{
+    //false
+  }ifelse
   {
     .where
   } {
@@ -876,8 +891,11 @@ currentdict /.pdf_hook_DSC_Creator undef
     systemdict 2 index eq {	% only mask the operator in systemdict
       known
       % Check to see if the current device is a Distiller
-      currentdevice 1 dict dup /IsDistiller dup put .getdeviceparams
-      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse not
+      /IsDistiller /GetDeviceParam .special_op {
+        exch pop not
+      }{
+        //true
+      }ifelse
       { pop false } if
     } {
       known
@@ -923,8 +941,11 @@ currentdict /.pdf_hook_DSC_Creator undef
   % Note, this may not work if the initial device is not pdfwrite
   % and may require the use of -dProvideUnicode on the command line.
   % Check to see if the current device wants ToUnicode info
-  currentdevice 1 dict dup /WantsToUnicode dup put .getdeviceparams
-  dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+  /WantsToUnicode /GetDeviceParam .special_op {
+    exch pop
+  }{
+    //false
+  }ifelse
   systemdict /ProvideUnicode .knownget not { //false } if or
   {
     currentglobal true setglobal

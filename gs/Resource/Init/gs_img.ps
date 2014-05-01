@@ -701,8 +701,11 @@ if
             %% Don't apply ImScaleDecode to interpolate imagemasks if
             %% the current device is a high level device.
             %%
-            currentdevice 1 dict dup /HighLevelDevice dup put .getdeviceparams
-            dup type /booleantype eq not {cleartomark //true}{3 1 roll cleartomark not}ifelse
+            /HighLevelDevice /GetDeviceParam .special_op {
+              exch pop not
+            }{
+              //true
+            }ifelse
             and
             {
               % Apply interpolated imagemask scaling filter

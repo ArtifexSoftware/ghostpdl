@@ -31,6 +31,7 @@
 #include "gsparam.h"	    /* these are needed to check device parameters */
 #include "zfunc.h"
 #include "zcolor.h"
+#include "gxdevsop.h"
 
 /*
  * FunctionType 4 functions are not defined in the PostScript language.  We
@@ -433,8 +434,7 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     int code;
     byte *ops;
     int size;
-    gs_c_param_list list;
-    int AllowRepeat = 0;
+    int AllowRepeat = 1; /* Default to permitting Repeat, devices which can't handle it implement the spec_op */
 
     *(gs_function_params_t *)&params = *mnDR;
     params.ops.data = 0;	/* in case of failure */
@@ -451,19 +451,28 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
 
     /* Check if the device allows the use of repeat in functions */
     /* We can't handle 'repeat' with pdfwrite since it emits FunctionType 4 */
-    gs_c_param_list_write(&list, i_ctx_p->pgs->device->memory);
-    code = gs_getdeviceparams(i_ctx_p->pgs->device, (gs_param_list *)&list);
-    if (code < 0) {
+    {
+        char data[] = {"AllowPSRepeatFunctions"};
+        dev_param_req_t request;
+        gs_c_param_list list;
+
+        gs_c_param_list_write(&list, i_ctx_p->pgs->device->memory);
+        /* Stuff the data into a structure for passing to the spec_op */
+        request.Param = data;
+        request.list = &list;
+        code = dev_proc(i_ctx_p->pgs->device, dev_spec_op)(i_ctx_p->pgs->device, gxdso_get_dev_param, &request, sizeof(dev_param_req_t));
+        if (code < 0 && code != gs_error_undefined) {
+            gs_c_param_list_release(&list);
+            return code;
+        }
+        gs_c_param_list_read(&list);
+        code = param_read_bool((gs_param_list *)&list,
+            "AllowPSRepeatFunctions",
+            &AllowRepeat);
         gs_c_param_list_release(&list);
-        return code;
+        if (code < 0)
+            return code;
     }
-    gs_c_param_list_read(&list);
-    code = param_read_bool((gs_param_list *)&list,
-        "AllowPSRepeatFunctions",
-        &AllowRepeat);
-    gs_c_param_list_release(&list);
-    if (code < 0)
-        return code;
 
     code = check_psc_function(i_ctx_p, proc, 0, NULL, &size, AllowRepeat);
     if (code < 0)
@@ -495,8 +504,7 @@ int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t *
     float *ptr;
     ref alternatespace, *palternatespace = &alternatespace;
     PS_colour_space_t *space, *altspace;
-    gs_c_param_list list;
-    int AllowRepeat = 0;
+    int AllowRepeat = 1; /* Default to permitting Repeat, devices which can't handle it implement the spec_op */
 
     code = get_space_object(i_ctx_p, arr, &space);
     if (code < 0)
@@ -549,19 +557,28 @@ int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t *
 
     /* Check if the device allows the use of repeat in functions */
     /* We can't handle 'repeat' with pdfwrite since it emits FunctionType 4 */
-    gs_c_param_list_write(&list, i_ctx_p->pgs->device->memory);
-    code = gs_getdeviceparams(i_ctx_p->pgs->device, (gs_param_list *)&list);
-    if (code < 0) {
+    {
+        char data[] = {"AllowPSRepeatFunctions"};
+        dev_param_req_t request;
+        gs_c_param_list list;
+
+        gs_c_param_list_write(&list, i_ctx_p->pgs->device->memory);
+        /* Stuff the data into a structure for passing to the spec_op */
+        request.Param = data;
+        request.list = &list;
+        code = dev_proc(i_ctx_p->pgs->device, dev_spec_op)(i_ctx_p->pgs->device, gxdso_get_dev_param, &request, sizeof(dev_param_req_t));
+        if (code < 0 && code != gs_error_undefined) {
+            gs_c_param_list_release(&list);
+            return code;
+        }
+        gs_c_param_list_read(&list);
+        code = param_read_bool((gs_param_list *)&list,
+            "AllowPSRepeatFunctions",
+            &AllowRepeat);
         gs_c_param_list_release(&list);
-        return code;
+        if (code < 0)
+            return code;
     }
-    gs_c_param_list_read(&list);
-    code = param_read_bool((gs_param_list *)&list,
-        "AllowPSRepeatFunctions",
-        &AllowRepeat);
-    gs_c_param_list_release(&list);
-    if (code < 0)
-        return code;
 
     code = check_psc_function(i_ctx_p, (const ref *)pproc, 0, NULL, &size, AllowRepeat);
     if (code < 0) {

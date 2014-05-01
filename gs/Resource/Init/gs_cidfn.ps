@@ -168,9 +168,9 @@ pop		% .cidfonttypes
                 % resource file, in which case the resource file will be
                 % closed.  So if the current output device is pdfwrite,
                 % don't use incremental loading.
-    currentdevice 1 dict dup /AllowIncrementalCFF dup put .getdeviceparams
-    dup type /booleantype eq {{stop}if}if
-    cleartomark
+    /AllowIncrementalCFF /GetDeviceParam .special_op {
+      exch pop {stop}if
+    }if
     currentfile fileposition
   } .internalstopped {
                 % File is not positionable, or uses hex data.

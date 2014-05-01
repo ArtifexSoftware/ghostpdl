@@ -951,8 +951,11 @@ end readonly def
 
 /setstrokeforTrpreservation {
       % Check to see if the current device supports Tr
-      currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
-      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+      /PreserveTrMode /GetDeviceParam .special_op {
+          exch pop
+      }{
+          //false
+      }ifelse
       {
         TextRenderingMode 1 eq TextRenderingMode 2 eq or
         TextRenderingMode 5 eq TextRenderingMode 6 eq or or {
@@ -980,8 +983,11 @@ end readonly def
  { WordSpacing 0 eq TextSpacing 0 eq and FontMatrixNonHV not and
     {
       % Check to see if the current device supports Tr
-      currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
-      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+      /PreserveTrMode /GetDeviceParam .special_op {
+          exch pop
+      }{
+          //false
+      }ifelse
       {
               pdfwrite_textrenderingprocs TextRenderingMode get
       }
@@ -1032,8 +1038,11 @@ end readonly def
       
       currentfont /FontType get 3 eq or 
 
-      currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
-      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+      /PreserveTrMode /GetDeviceParam .special_op {
+          exch pop
+      }{
+          //false
+      }ifelse
       % pdfwrite can't handle rendering modes which involve clipping
       TextRenderingMode 4 lt and or
       % Tr was set to graphic state.
@@ -1112,8 +1121,11 @@ end readonly def
              % can't handle clipping text, so we *do* want to do the clip path
              % as a 'true charpath'.
              %
-             currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
-             dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse {
+              /PreserveTrMode /GetDeviceParam .special_op {
+                  exch pop
+              }{
+                  //false
+              }ifelse {
                % NB we must have Tr at least 4 or the test above would have
                % taken a different path, so we *know* the Tr involves clipping
                % or we wouldn't be here. Subtract 4 from the Tr and preserve
@@ -1140,8 +1152,11 @@ end readonly def
            % path, so call the correct routine to stroke/fill it (clip is handled when we
            % get ET).
            %
-           currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
-           dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse not {
+             /PreserveTrMode /GetDeviceParam .special_op {
+                 exch pop not
+             }{
+                 //true
+             }ifelse {
              textrenderingprocs TextRenderingMode get exec
            } if
            setlinewidth
