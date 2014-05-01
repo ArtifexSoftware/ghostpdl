@@ -149,4 +149,5 @@ int ztoken(i_ctx_t *);
 int ztokenexec(i_ctx_t *);
 int zwrite(i_ctx_t *);
 
+int zspec_op(i_ctx_t *i_ctx_p);
 #endif /* opextern_INCLUDED */
