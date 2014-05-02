@@ -78,6 +78,11 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     char null_str[1]={'\0'};
 #define set_param_array(a, d, s)\
   (a.data = d, a.size = s, a.persistent = false);
+    bool devicegraytok = true;  /* Default if device profile stuct not set */
+    bool graydetection = false;
+    bool usefastcolor = false;  /* set for unmanaged color */
+    bool sim_overprint = true;  /* By default simulate overprinting */
+    bool prebandthreshold = true;
 
     if(strcmp(Param, "OutputDevice") == 0){
         gs_param_string dns;
@@ -277,41 +282,38 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
             if (code < 0)
                 return code;
         }
-    }
-    if (strcmp(Param, "DeviceGrayToK") == 0) {
-        return param_write_bool(plist, "DeviceGrayToK", &dev_profile->devicegraytok);
-    }
-    if (strcmp(Param, "GrayDetection") == 0) {
-        return param_write_bool(plist, "GrayDetection", &dev_profile->graydetection);
-    }
-    if (strcmp(Param, "UseFastColor") == 0) {
-        return param_write_bool(plist, "UseFastColor", &dev_profile->usefastcolor);
-    }
-    if (strcmp(Param, "SimulateOverprint") == 0) {
-        return param_write_bool(plist, "SimulateOverprint", &dev_profile->sim_overprint);
-    }
-    if (strcmp(Param, "PreBandThreshold") == 0) {
-        return param_write_bool(plist, "PreBandThreshold", &dev_profile->prebandthreshold);
-    }
-    if (strcmp(Param, "ProofProfile") == 0) {
+        for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
+            if (dev_profile->device_profile[k] == NULL
+                || dev_profile->device_profile[k]->name == NULL) {
+                param_string_from_string(profile_array[k], null_str);
+                profile_intents[k] = gsRINOTSPECIFIED;
+                blackptcomps[k] = gsBPNOTSPECIFIED;
+                blackpreserve[k] = gsBKPRESNOTSPECIFIED;
+            } else {
+                param_string_from_string(profile_array[k],
+                    dev_profile->device_profile[k]->name);
+                profile_intents[k] = dev_profile->rendercond[k].rendering_intent;
+                blackptcomps[k] = dev_profile->rendercond[k].black_point_comp;
+                blackpreserve[k] = dev_profile->rendercond[k].preserve_black;
+            }
+        }
         if (dev_profile->proof_profile == NULL) {
             param_string_from_string(proof_profile, null_str);
         } else {
             param_string_from_string(proof_profile,
                                      dev_profile->proof_profile->name);
         }
-        return param_write_string(plist,"ProofProfile", &(proof_profile));
-    }
-    if (strcmp(Param, "DeviceLinkProfile") == 0) {
         if (dev_profile->link_profile == NULL) {
             param_string_from_string(link_profile, null_str);
         } else {
             param_string_from_string(link_profile,
                                      dev_profile->link_profile->name);
         }
-        return param_write_string(plist,"DeviceLinkProfile", &(link_profile));
-    }
-    if (strcmp(Param, "ICCOutputColors") == 0) {
+        devicegraytok = dev_profile->devicegraytok;
+        graydetection = dev_profile->graydetection;
+        usefastcolor = dev_profile->usefastcolor;
+        sim_overprint = dev_profile->sim_overprint;
+        prebandthreshold = dev_profile->prebandthreshold;
         /* With respect to Output profiles that have non-standard colorants,
            we rely upon the default profile to give us the colorants if they do
            exist. */
@@ -328,22 +330,40 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
                 param_string_from_string(icc_colorants, null_str);
             }
         }
-        return param_write_string(plist,"ICCOutputColors", &(icc_colorants));
-    }
-    for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
-        if (dev_profile->device_profile[k] == NULL
-            || dev_profile->device_profile[k]->name == NULL) {
+    } else {
+        for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             param_string_from_string(profile_array[k], null_str);
             profile_intents[k] = gsRINOTSPECIFIED;
             blackptcomps[k] = gsBPNOTSPECIFIED;
             blackpreserve[k] = gsBKPRESNOTSPECIFIED;
-        } else {
-            param_string_from_string(profile_array[k],
-                dev_profile->device_profile[k]->name);
-            profile_intents[k] = dev_profile->rendercond[k].rendering_intent;
-            blackptcomps[k] = dev_profile->rendercond[k].black_point_comp;
-            blackpreserve[k] = dev_profile->rendercond[k].preserve_black;
         }
+        param_string_from_string(proof_profile, null_str);
+        param_string_from_string(link_profile, null_str);
+        param_string_from_string(icc_colorants, null_str);
+    }
+    if (strcmp(Param, "DeviceGrayToK") == 0) {
+        return param_write_bool(plist, "DeviceGrayToK", &devicegraytok);
+    }
+    if (strcmp(Param, "GrayDetection") == 0) {
+        return param_write_bool(plist, "GrayDetection", &graydetection);
+    }
+    if (strcmp(Param, "UseFastColor") == 0) {
+        return param_write_bool(plist, "UseFastColor", &usefastcolor);
+    }
+    if (strcmp(Param, "SimulateOverprint") == 0) {
+        return param_write_bool(plist, "SimulateOverprint", &sim_overprint);
+    }
+    if (strcmp(Param, "PreBandThreshold") == 0) {
+        return param_write_bool(plist, "PreBandThreshold", &prebandthreshold);
+    }
+    if (strcmp(Param, "ProofProfile") == 0) {
+        return param_write_string(plist,"ProofProfile", &(proof_profile));
+    }
+    if (strcmp(Param, "DeviceLinkProfile") == 0) {
+        return param_write_string(plist,"DeviceLinkProfile", &(link_profile));
+    }
+    if (strcmp(Param, "ICCOutputColors") == 0) {
+        return param_write_string(plist,"ICCOutputColors", &(icc_colorants));
     }
     if (strcmp(Param, "OutputICCProfile") == 0) {
         return param_write_string(plist,"OutputICCProfile", &(profile_array[0]));
