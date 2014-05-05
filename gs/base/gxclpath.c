@@ -1440,7 +1440,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                         continue;
                     }
                     /* If we skipped any segments, put out a moveto/lineto. */
-                    if (side && (px != out.x || py != out.y || first_point())) {
+                    if (side && ((open < 0) || (px != out.x || py != out.y || first_point()))) {
                         C = out.x - px, D = out.y - py;
                         if (open < 0) {
                             first = out;
@@ -1482,7 +1482,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                         continue;
                     }
                     /* If we skipped any segments, put out a moveto/lineto. */
-                    if (side && (px != out.x || py != out.y || first_point())) {
+                    if (side && ((open < 0) || (px != out.x || py != out.y || first_point()))) {
                         C = out.x - px, D = out.y - py;
                         if (open < 0) {
                             first = out;
@@ -1614,7 +1614,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                         } else
                             out_side = which_side(F);
                         /* If we skipped any segments, put out a moveto/lineto. */
-                        if (side && (px != out.x || py != out.y || first_point())) {
+                        if (side && ((open < 0) || (px != out.x || py != out.y || first_point()))) {
                             fixed diff[2];
 
                             diff[0] = out.x - px, diff[1] = out.y - py;
