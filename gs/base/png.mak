@@ -133,7 +133,7 @@ $(PNGOBJ)pngget.$(OBJ) : $(PNGSRC)pngget.c $(PDEP)
 
 
 # Define the version of libpng.dev that we are actually using.
-$(PNGGEN)libpng.dev : $(TOP_MAKEFILES) $(PNGGEN)libpng_$(SHARE_LIBPNG).dev
+$(PNGGEN)libpng.dev : $(TOP_MAKEFILES) $(PNGGEN)libpng_$(SHARE_LIBPNG).dev $(MAKEDIRS)
 	$(CP_) $(PNGGEN)libpng_$(SHARE_LIBPNG).dev $(PNGGEN)libpng.dev
 
 # Define the shared version of libpng.

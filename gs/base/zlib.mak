@@ -126,7 +126,7 @@ $(ZOBJ)crc32.$(OBJ) : $(ZSRC)crc32.c $(ZDEP)
 
 # Decoding (decompression) code.
 
-$(ZGEN)zlibd.dev : $(TOP_MAKEFILES) $(ZGEN)zlibd_$(SHARE_ZLIB).dev
+$(ZGEN)zlibd.dev : $(TOP_MAKEFILES) $(ZGEN)zlibd_$(SHARE_ZLIB).dev $(MAKEDIRS)
 	$(CP_) $(ZGEN)zlibd_$(SHARE_ZLIB).dev $(ZGEN)zlibd.dev
 
 $(ZGEN)zlibd_1.dev : $(TOP_MAKEFILES) $(ZLIB_MAK) $(ECHOGS_XE)
