@@ -25,6 +25,7 @@ TRIO_MAK=$(GLSRCDIR)$(D)trio.mak
 # local aliases
 TRIOSRC=$(TRIOSRCDIR)$(D)
 TRIOOBJ=$(TRIOOBJDIR)$(D)
+TRIOGEN=$(TRIOGENDIR)$(D)
 TRIOO_=$(O_)$(TRIOOBJ)
 
 TRIOCFLAGS=$(CFLAGS) $(TRIO_CFLAGS) $(D_)TRIO_EMBED_STRING$(_D) $(D_)TRIO_FEATURE_CLOSURE=0$(_D) \
@@ -55,3 +56,15 @@ $(TRIOOBJ)trio.$(OBJ) : $(TRIOSRC)trio.c $(TRIOHDRS) $(TRIO_MAK)
 
 $(TRIOOBJ)trionan.$(OBJ) : $(TRIOSRC)trionan.c $(TRIOHDRS) $(TRIO_MAK)
 	$(TRIOCC) $(TRIOO_)trionan.$(OBJ) $(C_) $(TRIOSRC)trionan.c
+
+# dev file for shared (separately built) lcms library
+$(TRIOGEN)trio_1.dev : $(TOP_MAKEFILES) $(TRIO_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(TRIOGEN)trio_1 -lib trio
+
+# dev file for compiling our own from source
+$(TRIOGEN)trio_0.dev : $(TOP_MAKEFILES) $(TRIO_MAK) $(ECHOGS_XE) $(TRIOOBJS)
+	$(SETMOD) $(TRIOGEN)trio_0 $(TRIOOBJS)
+
+# switch in the version of lcms2.dev we're actually using
+$(TRIOGEN)trio.dev : $(TOP_MAKEFILES) $(TRIOGEN)trio_$(SHARE_TRIO).dev
+	$(CP_) $(TRIOGEN)trio_$(SHARE_TRIO).dev $(TRIOGEN)trio.dev

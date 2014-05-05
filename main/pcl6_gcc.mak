@@ -82,6 +82,7 @@ TIFFPLATFORM?=unix
 
 # specify the location of the trio source
 TRIOSRCDIR=../gs/trio
+SHARE_TRIO?=0
 
 # ridiculousness, not worth documenting.
 AK?=

@@ -510,6 +510,36 @@ esac
 AC_SUBST(SYNC)
 AC_SUBST(PTHREAD_LIBS)
 
+AC_MSG_CHECKING([for local trio library source])
+if test -f $srcdir/trio/trio.h; then
+        AC_MSG_RESULT([trio])
+        SHARE_TRIO=0
+        TRIODIR=$srcdir/trio
+else
+# This is how it should be done, but link fails.
+# But link libtrio to gs, and it works - answers on
+# a postcard, please......
+#        AC_MSG_RESULT([no])
+#        AC_CHECK_LIB(trio, trio_vsprintf, [
+#          AC_CHECK_HEADERS([trio.h], [SHARE_TRIO=1])
+#        ],[])
+
+# So, for now, use a "standard" function instead - link
+# will still fail if the libtrio is not found.
+        AC_MSG_RESULT([no])
+        AC_CHECK_LIB(trio, malloc, [
+          AC_CHECK_HEADERS([trio.h], [SHARE_TRIO=1])
+        ],[])
+fi
+if test -z "$SHARE_TRIO"; then
+  AC_MSG_ERROR([I wasn't able to find a copy
+  of the trio library. This is required for compiling
+  ghostscript.
+  ])
+fi
+AC_SUBST(SHARE_TRIO)
+AC_SUBST(TRIODIR)
+
 dnl Tests for iconv (Needed for OpenPrinting Vector, "opvp" output device)
 AC_ARG_WITH(libiconv,
             [AC_HELP_STRING([--with-libiconv=@<:@no/gnu/native@:>@],

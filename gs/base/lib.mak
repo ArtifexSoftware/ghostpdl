@@ -332,9 +332,15 @@ $(AUX)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
  $(gsrect_h) $(gsuid_h) $(gsutil_h) $(gzstate_h) $(gxdcolor_h) $(MAKEDIRS)
 	$(GLCCAUX) $(C_) $(AUXO_)gsutil.$(OBJ) $(GLSRC)gsutil.c
 
-$(GLOBJ)gssprintf.$(OBJ) : $(GLSRC)gssprintf.c $(gssprintf_h) $(triodef_h) $(trio_h) \
-$(triop_h) $(triostr_h) $(trionan_h)
-	$(GLCC) $(I_)$(TRIOSRCDIR)$(_I) $(GLO_)gssprintf.$(OBJ) $(C_) $(GLSRC)gssprintf.c
+$(GLOBJ)gssprintf_1.$(OBJ) : $(GLSRC)gssprintf.c $(gssprintf_h) 
+	$(GLCC) $(GLO_)gssprintf_1.$(OBJ) $(C_) $(GLSRC)gssprintf.c
+
+$(GLOBJ)gssprintf_0.$(OBJ) : $(GLSRC)gssprintf.c $(gssprintf_h) $(triodef_h) $(trio_h) \
+$(triop_h) $(triostr_h) $(trionan_h) 
+	$(GLCC) $(I_)$(TRIOSRCDIR)$(_I) $(GLO_)gssprintf_0.$(OBJ) $(C_) $(GLSRC)gssprintf.c
+
+$(GLOBJ)gssprintf.$(OBJ) :  $(GLOBJ)gssprintf_$(SHARE_TRIO).$(OBJ)
+	$(CP_) $(GLOBJ)gssprintf_$(SHARE_TRIO).$(OBJ) $(GLOBJ)gssprintf.$(OBJ)
 
 # MD5 digest
 md5_h=$(GLSRC)md5.h
@@ -1324,7 +1330,7 @@ LIB10s=$(GLOBJ)gsmalloc.$(OBJ) $(GLOBJ)memento.$(OBJ)  $(GLOBJ)gsmatrix.$(OBJ)
 LIB11s=$(GLOBJ)gsmemory.$(OBJ) $(GLOBJ)gsmemret.$(OBJ) $(GLOBJ)gsmisc.$(OBJ) $(GLOBJ)gsnotify.$(OBJ) $(GLOBJ)gslibctx.$(OBJ)
 LIB12s=$(GLOBJ)gspaint.$(OBJ) $(GLOBJ)gsparam.$(OBJ) $(GLOBJ)gspath.$(OBJ)
 LIB13s=$(GLOBJ)gsserial.$(OBJ) $(GLOBJ)gsstate.$(OBJ) $(GLOBJ)gstext.$(OBJ)\
-  $(GLOBJ)gsutil.$(OBJ) $(TRIOOBJS) $(GLOBJ)gssprintf.$(OBJ) 
+  $(GLOBJ)gsutil.$(OBJ) $(GLOBJ)gssprintf.$(OBJ) 
 LIB1x=$(GLOBJ)gxacpath.$(OBJ) $(GLOBJ)gxbcache.$(OBJ) $(GLOBJ)gxccache.$(OBJ)
 LIB2x=$(GLOBJ)gxccman.$(OBJ) $(GLOBJ)gxchar.$(OBJ) $(GLOBJ)gxcht.$(OBJ)
 LIB3x=$(GLOBJ)gxclip.$(OBJ) $(GLOBJ)gxcmap.$(OBJ) $(GLOBJ)gxcpath.$(OBJ)
@@ -1351,7 +1357,7 @@ LIB_ALL=$(LIBs) $(LIBx) $(LIBd)
 # but not in the link, to catch compilation problems.
 LIB_O=$(GLOBJ)gdevmpla.$(OBJ) $(GLOBJ)gdevmrun.$(OBJ) $(GLOBJ)gshtx.$(OBJ) $(GLOBJ)gsnogc.$(OBJ)
 $(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev $(GLD)translib.dev \
-                 $(GLD)clist.dev $(GLD)gxfapi.dev
+                 $(GLD)clist.dev $(GLD)gxfapi.dev $(TRIOGEN)trio.dev
 	$(SETMOD) $(GLD)libs $(LIB0s)
 	$(ADDMOD) $(GLD)libs $(LIB1s)
 	$(ADDMOD) $(GLD)libs $(LIB2s)
@@ -1372,6 +1378,7 @@ $(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev $(G
 	$(ADDMOD) $(GLD)libs -include $(GLD)gsiodevs
 	$(ADDMOD) $(GLD)libs -include $(GLD)translib
 	$(ADDMOD) $(GLD)libs -include $(GLD)clist
+	$(ADDMOD) $(GLD)libs $(TRIOGEN)trio
 	$(ADDMOD) $(GLD)libs $(GLD)gxfapi
 	$(ADDMOD) $(GLD)libs -init fapi
 $(GLD)libx.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBx)

@@ -192,6 +192,10 @@ TIFFPLATFORM=win32
 TRIOSRCDIR=..\gs\trio
 !endif
 
+!ifndef SHARE_TRIO
+SHARE_TRIO=0
+!endif
+
 # specify if banding should be memory or file based, and choose a
 # compression method
 !ifndef BAND_LIST_STORAGE
