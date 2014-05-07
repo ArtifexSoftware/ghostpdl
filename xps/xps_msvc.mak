@@ -173,6 +173,10 @@ JPEGXR_CFLAGS=/TP /DNDEBUG
 TRIOSRCDIR=..\gs\trio
 !endif
 
+!ifndef SHARE_TRIO
+SHARE_TRIO=0
+!endif
+
 # PLPLATFORM indicates should be set to 'ps' for language switch
 # builds and null otherwise.
 !ifndef PLPLATFORM
