@@ -1,7 +1,13 @@
- /*
+/*
  * Testbed implementation of Even Better Screening. 
  * Updated to function properly by Robin Watts and Michael Vrhel
-*/
+ *
+ * Code in this module is covered by US Patents 5055942 and
+ * 5917614 and corresponding international patents. Contact
+ * Artifex for more information, or see:
+ *
+ *   http://www.artifex.com/page/imaging-science.html
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
