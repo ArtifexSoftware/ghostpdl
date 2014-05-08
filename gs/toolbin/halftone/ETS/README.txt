@@ -1,3 +1,16 @@
+Release notes ETS version 150
+8 May 2014
+Copyright 2000-2014 Artifex Sotware Inc.
+
+This release removed the SSE and VEC code so that we could focus on 
+repairing lingering issues with the C code. 
+
+Robin fixed issues in the actual ETS code.  In particular he fixed issues with 
+the "white count test" and the FS weights.  We did a fair amount of testing 
+with the various parameters. We also added more useful image outputs in the test 
+bed allowing the creation of multiple colorants in PSD format including 16bit.
+We also moved to a Visual Studio solution for the project.
+
 Release notes ETS version 138
 26 Apr 2006
 Copyright 2000-2010 Artifex Sotware Inc.

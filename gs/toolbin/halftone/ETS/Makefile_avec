@@ -1,6 +1,0 @@
-LDLIBS = -lm
-CFLAGS = -faltivec -g -Wall -Wmissing-prototypes
-LDFLAGS = -g
-
-
-test_evenbetter:	test_evenbetter.o evenbetter-rll.o eb_avec.o
