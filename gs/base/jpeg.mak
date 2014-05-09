@@ -167,9 +167,16 @@ $(GLGEN)jpeglib.h : $(JSRC)jpeglib.h $(MAKEDIRS)
 
 JDEP=$(AK) $(jconfig_h) $(jmorecfg_h) $(JHCOPY) $(MAKEDIRS)
 
-# Code common to compression and decompression.
 
-jpegc0_=$(JOBJ)jcomapi.$(OBJ) $(JOBJ)jutils.$(OBJ) $(JOBJ)jmemmgr.$(OBJ) $(JOBJ)jerror.$(OBJ) $(JOBJ)jaricom.$(OBJ)
+# Code common to compression and decompression.
+jpegc0_=$(JOBJ)jcomapi.$(OBJ) $(JOBJ)jutils.$(OBJ) $(JOBJ)jmemmgr.$(OBJ) $(JOBJ)jerror.$(OBJ) $(JOBJ)jaricom.$(OBJ) \
+        $(GLOBJ)jmemcust.$(OBJ)
+
+# custom memory handler
+$(GLOBJ)jmemcust.$(OBJ) : $(GLSRC)jmemcust.c $(JDEP)
+	$(JCC) $(JO_)jmemcust.$(OBJ) $(C_) $(GLSRC)jmemcust.c
+
+
 $(JGEN)jpegc0.dev : $(JPEG_MAK) $(ECHOGS_XE) $(jpegc0_)
 	$(SETMOD) $(JGEN)jpegc0 $(jpegc0_)
 

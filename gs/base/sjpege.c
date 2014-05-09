@@ -38,6 +38,10 @@ gs_jpeg_create_compress(stream_DCT_state * st)
         return_error(gs_jpeg_log_error(st));
 
     jpeg_stream_data_common_init(st->data.compress);
+
+    if (gs_jpeg_mem_init (st->memory, (j_common_ptr)&st->data.compress->cinfo) < 0)
+        return_error(gs_error_VMerror);
+
     jpeg_create_compress(&st->data.compress->cinfo);
     return 0;
 }
