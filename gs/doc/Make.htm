@@ -855,6 +855,15 @@ There is a corresponding "<code>make soclean</code>" for cleaning up.
 quite work in one way or another. Read the section on your specific
 platform.
 
+<p>
+<b><em>Note 2:</em></b> If you are attempting to build a statically linked
+executable, you will probably need to add libraries to the linker options
+(libraries that are normally pulled-in automatically by the dynamic linker).
+These can be added at the make command line using the "EXTRALIBS=" option.
+Unfortunately, the set of libraries that may be required varies greatly
+depending on platform and configuration, so it is not practical to offer
+a list here.
+
 <h3><a name="Cross-compiling"></a>Cross-compiling</h3>
 
 <p>
