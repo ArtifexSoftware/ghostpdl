@@ -1282,7 +1282,7 @@ bbox_text_begin(gx_device * dev, gs_imager_state * pis,
     int code = gx_default_text_begin(dev, pis, text, font, path, pdcolor,
                                      pcpath, memory, ppenum);
 
-    if (bdev->target != NULL) {
+    if (code >=0 && bdev->target != NULL) {
         /* See note on imaging_dev in gxtext.h */
         rc_assign((*ppenum)->imaging_dev, dev, "bbox_text_begin");
     }
