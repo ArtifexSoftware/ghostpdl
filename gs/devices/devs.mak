@@ -1931,8 +1931,9 @@ $(DD)pwgraster.dev : $(DEVS_MAK) $(lcups_dev) $(lcupsi_dev) $(cups_) $(GDEV)
 	$(ADDMOD) $(DD)pwgraster -include $(lcupsi_dev)
 
 $(DEVOBJ)gdevcups.$(OBJ) : $(LCUPSSRCDIR)$(D)gdevcups.c $(std_h)
-	$(CUPS_CC) $(DEVO_)gdevcups.$(OBJ) $(C_) $(CFLAGS) $(I_)$(GLSRC) \
-            $(I_)$(DEVSRC) \
+	$(CUPS_CC) $(DEVO_)gdevcups.$(OBJ) $(C_) $(CFLAGS) $(CUPSCFLAGS) \
+	    $(I_)$(GLSRC) \
+	    $(I_)$(DEVSRC) \
             $(I_)$(DEVOBJ) $(I_)$(LCUPSSRCDIR)$(D)libs \
             $(LCUPSSRCDIR)$(D)gdevcups.c
 

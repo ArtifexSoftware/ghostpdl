@@ -2890,10 +2890,25 @@ cups_print_pages(gx_device_printer *pdev,
 	return_error(gs_error_unknownerror);
       }
     }
+    /* NOTE: PWG Raster output is only available with shared CUPS CUPS and
+       CUPS image libraries as the built-in libraries of Ghostscript do not
+       contain the new code needed for PWG Raster output. This conditional
+       is a temporary workaround for the time being until up-to-date CUPS
+       libraries get included. */
     if ((cups->stream = cupsRasterOpen(fileno(cups->file),
+#if defined(SHARE_LCUPSI) && SHARE_LCUPSI==1
+                                       (strcasecmp(cups->header.MediaClass,
+						   "PwgRaster") == 0 ?
+					CUPS_RASTER_WRITE_PWG :
+					(cups->cupsRasterVersion == 3 ?
+					 CUPS_RASTER_WRITE :
+					 CUPS_RASTER_WRITE_COMPRESSED)))) ==
+	NULL)
+#else
                                        (cups->cupsRasterVersion == 3 ?
 					CUPS_RASTER_WRITE :
 					CUPS_RASTER_WRITE_COMPRESSED))) == NULL)
+#endif
     {
       perror("ERROR: Unable to open raster stream - ");
       return_error(gs_error_ioerror);
