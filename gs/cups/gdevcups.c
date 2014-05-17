@@ -2896,7 +2896,7 @@ cups_print_pages(gx_device_printer *pdev,
        is a temporary workaround for the time being until up-to-date CUPS
        libraries get included. */
     if ((cups->stream = cupsRasterOpen(fileno(cups->file),
-#if defined(SHARE_LCUPSI) && SHARE_LCUPSI==1
+#if 0 && defined(SHARE_LCUPSI) && SHARE_LCUPSI==1
                                        (strcasecmp(cups->header.MediaClass,
 						   "PwgRaster") == 0 ?
 					CUPS_RASTER_WRITE_PWG :
