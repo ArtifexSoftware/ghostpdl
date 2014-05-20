@@ -85,7 +85,7 @@ nodict readonly pop
 } bdef
 
 /gput		% <value> <key> gput -
- { 
+ {
    currentdict /n known {
      pop pop
      (   **** Ignoring changes to the graphic state after operator 'W'.\n)
@@ -93,7 +93,7 @@ nodict readonly pop
    } {
      exch currentdict //nodict eq { /self dup load end 5 dict begin def } if
      def
-   } ifelse  
+   } ifelse
  } bdef
 
 /q {
@@ -104,7 +104,7 @@ nodict readonly pop
 % Some PDF files have excess Q operators!
 /Q {
   //false
-  { currentdict /n known { end pop //true } { exit } ifelse 
+  { currentdict /n known { end pop //true } { exit } ifelse
   } loop {
     (   **** Dropping unfinished 'W' mode at 'Q'.\n)
     pdfformaterror
@@ -661,8 +661,8 @@ end readonly def
 } bdef
 /ET {
   currentdict /TextSaveMatrix known {
-    TextRenderingMode 4 ge { .currentfilladjust 0 .setfilladjust clip newpath .setfilladjust} if
-    TextSaveMatrix setmatrix
+    TextRenderingMode 4 ge { .currentfilladjust 0 .setfilladjust clip .setfilladjust} if
+    newpath TextSaveMatrix setmatrix
     currentdict /TextSaveMatrix undef
 
     % if we were in a W/W* context, grab the dict, undefine temp entry for it,
@@ -979,6 +979,26 @@ end readonly def
     } if
 } bind def
 
+/TextTransSetup {	% true TextTransSetup -		% if current path is valid
+                        % false TextTransSetup -	% no path, use clip box
+   % NB: if 'show' is used, then we use the clippath, but a smaller bbox is preferred
+   SoftMask //null ne {
+     mark /Subtype /Group /Isolated //true .dicttomark exch
+     { pathbbox } { gsave clippath pathbbox grestore } ifelse
+     .begintransparencygroup
+   }
+   {
+     pop
+   }	% discard path_valid boolean
+   ifelse
+} bind def
+
+/TextTransTeardown {
+   SoftMask //null ne {
+     .endtransparencygroup
+   } if
+} bind def
+
 /setshowstate
  { WordSpacing 0 eq TextSpacing 0 eq and FontMatrixNonHV not and
     {
@@ -994,9 +1014,9 @@ end readonly def
       {
               TextRenderingMode 0 eq
               currentfont /FontType get 3 eq TextRenderingMode 3 eq not
-              and or 
+              and or
                {
-                { setfillstate show }
+                { setfillstate //false TextTransSetup show TextTransTeardown }
               } {
                 TextRenderingMode 3 eq {
                         % Some PDF files execute 'tm' with a singular matrix,
@@ -1014,6 +1034,7 @@ end readonly def
                     } if
                     setmatrix
                     currentpoint
+                    % don't worry about transparency for invisible text
                     4 index setfillstate show % Tr was set to graphic state.
                     moveto
                     setmatrix
@@ -1035,8 +1056,7 @@ end readonly def
       % a device supporting text rendering modes, then go through this route.
       %
       TextRenderingMode 0 eq TextRenderingMode 3 eq or
-      
-      currentfont /FontType get 3 eq or 
+      currentfont /FontType get 3 eq or
 
       /PreserveTrMode /GetDeviceParam .special_op {
           exch pop
@@ -1052,7 +1072,7 @@ end readonly def
              % preserve current line width around possible stroke setup
              currentlinewidth exch
              setstrokeforTrpreservation
-             setfillstate
+             setfillstate //false TextTransSetup
              [ TextSpacing WordSpacing 3 index
                {					    % str [... weach wword c undef|ythis xthis|undef
                  exch % will be removed, unless FontMatrix.xx/yy == 0 (FontMatrixNonHV already true)
@@ -1066,38 +1086,39 @@ end readonly def
                } if
                cshow pop pop ]
              { xshow } { yshow } Vexch pop exec
-             setlinewidth
+             setlinewidth TextTransTeardown
            }
          } {
-           WordSpacing 0 eq { 
+           WordSpacing 0 eq {
              {
                { setstrokeforTrpreservation
-                 setfillstate TextSpacing 0 Vexch 3 -1 roll ashow
-               } 
+                 setfillstate //false TextTransSetup TextSpacing 0 Vexch 3 -1 roll ashow TextTransTeardown
+               }
                currentlinewidth
                { setlinewidth }
                3 .execn
-             }  
+             }
            } {
-              TextSpacing 0 eq { 
+              TextSpacing 0 eq {
                 { % preserve current line width around possible stroke setup
                   { setstrokeforTrpreservation
-                    setfillstate WordSpacing 0 Vexch 32 4 -1 roll .pdfwidthshow
+                    setfillstate //false TextTransSetup WordSpacing 0 Vexch 32 4 -1 roll .pdfwidthshow
+                    TextTransTeardown
                   }
                   currentlinewidth
                   { setlinewidth }
                   3 .execn
-                } 
-              } { 
+                }
+              } {
                 { % preserve current line width around possible stroke setup
                   { setstrokeforTrpreservation
-                    setfillstate WordSpacing 0 Vexch 32
-                    TextSpacing 0 Vexch 6 -1 roll .pdfawidthshow
+                    setfillstate //false TextTransSetup WordSpacing 0 Vexch 32
+                    TextSpacing 0 Vexch 6 -1 roll .pdfawidthshow TextTransTeardown
                   }
                   currentlinewidth
                   { setlinewidth }
                   3 .execn
-                } 
+                }
               } ifelse
            } ifelse
          } ifelse
@@ -1133,7 +1154,7 @@ end readonly def
                % correctly.
                gsave TextRenderingMode 4 sub .settextrenderingmode
                setstrokeforTrpreservation
-               setstrokestate setfillstate dup show grestore} if
+               setstrokestate setfillstate //false TextTransSetup dup show grestore TextTransTeardown } if
              //false charpath
              3 copy 32 eq { add } { exch pop } ifelse
                         % Stack: str wthis xorig yorig wword wchar ccode wextra
@@ -1199,20 +1220,21 @@ end readonly def
   } ifelse
 } bdef
 
-/tf { setfillstate currentpoint fill moveto } bdef
+% NB: We don't need clippath when filling or stroking
+/tf { setfillstate //true TextTransSetup currentpoint fill TextTransTeardown moveto} bdef
 /tn { currentpoint newpath moveto } bdef % Obsolete, never used.
 % For stroking characters, temporarily restore the graphics CTM so that
 % the line width will be transformed properly.
 /Tmatrix matrix def
 /tS
- { 
+ {
    currentfont /FontType get 3 eq
    {
-     setfillstate currentpoint fill moveto
+     setfillstate //true TextTransSetup currentpoint fill TextTransTeardown moveto
    }
    {
-     setstrokestate
-     currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix .swapcolors stroke .swapcolors
+     setstrokestate //true TextTransSetup
+     currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix .swapcolors stroke TextTransTeardown .swapcolors
      setmatrix moveto
    } ifelse
  } bdef
