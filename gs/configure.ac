@@ -1429,11 +1429,26 @@ fi
 
 OPENJPEGDIR=$srcdir/openjpeg
 
-if test "x$ac_cv_header_stdint_h" = xyes; then
-  CFLAGS_OPJ_HAVE_STDINT_H="-DOPJ_HAVE_STDINT_H"
+if test "x$ac_cv_header_stdint_h" = "xyes"; then
+  CFLAGS_OPJ_HAVE_STDINT_H="-DOPJ_HAVE_STDINT_H=1"
 else
-  CFLAGS_OPJ_HAVE_STDINT_H=""
+  CFLAGS_OPJ_HAVE_STDINT_H=
 fi
+
+
+if test "x$ac_cv_header_inttypes_h" = "xyes"; then
+  CFLAGS_OPJ_HAVE_INTTYPES_H="-DOPJ_HAVE_INTTYPES_H=1"
+else
+  CFLAGS_OPJ_HAVE_INTTYPES_H=
+fi
+
+if test "x$BIGENDIAN" != "x0"; then
+  CFLAGS_OPJ_BIGENDIAN="-DOPJ_BIG_ENDIAN"
+else
+  CFLAGS_OPJ_BIGENDIAN=
+fi
+
+AC_CHECK_FUNCS([fseeko], [CFLAGS_OPJ_HAVE_FSEEKO="-DOPJ_HAVE_FSEEKO=1"], [CFLAGS_OPJ_HAVE_STDINT_H=])
 
 JPX_SSE_CFLAGS=""
 
@@ -1449,7 +1464,7 @@ AC_ARG_ENABLE([openjpeg], AC_HELP_STRING([--disable-openjpeg],
 if test "x$JPX_DECODER" = "x"; then
   if test "x$enable_openjpeg" != "xno"; then
     AC_MSG_CHECKING([for local OpenJPEG library source])
-    if test -e $OPENJPEGDIR/libopenjpeg/openjpeg.h; then
+    if test -e $OPENJPEGDIR/src/lib/openjp2/openjpeg.h; then
       AC_MSG_RESULT([yes])
       JPXDIR="$OPENJPEGDIR"
       JPX_DECODER=openjpeg
@@ -1457,10 +1472,12 @@ if test "x$JPX_DECODER" = "x"; then
       AC_CHECK_FUNCS([memalign], [have_memalign=1])
 
       if test "x$have_memalign" = "x1"; then
-        JPX_AUTOCONF_CFLAGS="-DUSE_OPENJPEG_JP2 $CFLAGS_OPJ_HAVE_STDINT_H"
+        JPX_AUTOCONF_CFLAGS=""
       else
-        JPX_AUTOCONF_CFLAGS="-DUSE_OPENJPEG_JP2 $CFLAGS_OPJ_HAVE_STDINT_H -D\"memalign(a,b)=malloc(b)\""
+        JPX_AUTOCONF_CFLAGS="-D\"memalign(a,b)=malloc(b)\""
       fi
+      
+      JPX_AUTOCONF_CFLAGS="$JPX_AUTOCONF_CFLAGS -DUSE_JPIP -DUSE_OPENJPEG_JP2 $CFLAGS_OPJ_HAVE_STDINT_H $CFLAGS_OPJ_HAVE_INTTYPES_H $CFLAGS_OPJ_BIGENDIAN $CFLAGS_OPJ_HAVE_FSEEKO"
 
       JPXDEVS='$(PSD)jpx.dev'
     else

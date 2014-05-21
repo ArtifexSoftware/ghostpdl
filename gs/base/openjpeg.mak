@@ -31,7 +31,7 @@
 
 OPEN_JPEG_MAK=$(GLSRC)openjpeg.mak
 
-OPEN_JPEG_SRC=$(JPXSRCDIR)$(D)libopenjpeg$(D)
+OPEN_JPEG_SRC=$(JPXSRCDIR)$(D)src$(D)lib$(D)openjp2$(D)
 OPEN_JPEG_GEN=$(JPXOBJDIR)$(D)
 
 OPEN_JPEG_PREFIX=opj_

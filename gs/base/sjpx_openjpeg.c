@@ -559,7 +559,11 @@ s_opjd_process(stream_state * ss, stream_cursor_read * pr,
         if (state->image == NULL)
         {
             int ret = ERRC;
+#if OPJ_VERSION_MAJOR >= 2 && OPJ_VERSION_MINOR >= 1
+            opj_stream_set_user_data(state->stream, &(state->sb), NULL);
+#else
             opj_stream_set_user_data(state->stream, &(state->sb));
+#endif
             opj_stream_set_user_data_length(state->stream, state->sb.size);
             ret = decode_image(state);
             if (ret != 0)

@@ -339,7 +339,7 @@ JB2CF_=$(JBIG2_CFLAGS)
 LDF_JB2I_=$(JBIG2SRCDIR)$(D)source$(D)libraries
 LWF_JPXI_=$(JPXSRCDIR)$(D)library$(D)source
 JPXCF_=$(JPX_CFLAGS)
-JPX_OPENJPEG_I_=$(JPXSRCDIR)$(D)libopenjpeg
+JPX_OPENJPEG_I_=$(JPXSRCDIR)$(D)src$(D)lib$(D)openjp2
 
 ######################## How to define new 'features' #######################
 #
