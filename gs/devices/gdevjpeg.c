@@ -449,9 +449,14 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
             state.icc_profile = icc_profile;
         }
     } 
-    jcdp->memory = state.jpeg_memory = mem;
+    /* We need state.memory for gs_jpeg_create_compress().... */
+    jcdp->memory = state.jpeg_memory = state.memory = mem;
     if ((code = gs_jpeg_create_compress(&state)) < 0)
         goto fail;
+    /* ....but we need it to be NULL so we don't try to free
+     * the stack based state...
+     */
+    state.memory = NULL;
     jcdp->cinfo.image_width = pdev->width;
     jcdp->cinfo.image_height = pdev->height;
     switch (pdev->color_info.depth) {
