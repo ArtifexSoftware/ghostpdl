@@ -735,6 +735,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type 
         *ppcd = (cos_dict_t *)writer.pres->object;
         if (code < 0) {
             pdf_end_fontfile(pdev, &writer);
+            pdf_obj_mark_unused(pdev, writer.pres->object->id);
             return code;
         }
         code = pdf_end_fontfile(pdev, &writer);

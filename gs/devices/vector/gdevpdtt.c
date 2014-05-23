@@ -1947,7 +1947,7 @@ pdf_obtain_font_resource_encoded(gx_device_pdf *pdev, gs_font *font,
                         &cgp->s[cgp->unused_offset].glyph, cgp->num_unused_chars,
                         sizeof(pdf_char_glyph_pair_t), true);
             if (code < 0)
-                return code;
+                code = 1;
         } else
             code = 1;
         if (code == 0) {

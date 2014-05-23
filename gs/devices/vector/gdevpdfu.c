@@ -632,6 +632,29 @@ pdf_obj_ref(gx_device_pdf * pdev)
     return id;
 }
 
+/* Set the offset in the xref table for an object to zero. This
+ * means that whenwritingthe xref we will mark the object as 'unused'.
+ * This is primarily of use when we encounter an error writing an object,
+ * we want to elide the entry from the xref in order to not write a
+ * broken PDF file. Of course, the missing object may still produce
+ * a broken PDF file (more subtly broken), but because the PDF interpreter
+ * generally doesn't stop if we signal an error, we try to avoid grossly
+ * broken PDF files this way.
+ */
+long
+pdf_obj_mark_unused(gx_device_pdf *pdev, long id)
+{
+    FILE *tfile = pdev->xref.file;
+    int64_t tpos = gp_ftell_64(tfile);
+    gs_offset_t pos = 0;
+
+    gp_fseek_64 (tfile, ((int64_t)(id - pdev->FirstObjectNumber)) * sizeof(pos),
+          SEEK_SET);
+    fwrite(&pos, sizeof(pos), 1, tfile);
+    gp_fseek_64(tfile, tpos, SEEK_SET);
+    return 0;
+}
+
 /* Begin an object, optionally allocating an ID. */
 long
 pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
