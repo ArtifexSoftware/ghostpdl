@@ -987,6 +987,9 @@ long pdf_obj_forward_ref(gx_device_pdf * pdev);
 /* Allocate an ID for a future object. */
 long pdf_obj_ref(gx_device_pdf * pdev);
 
+/* Remove an object from the xref table (mark as unused) */
+long pdf_obj_mark_unused(gx_device_pdf *pdev, long id);
+
 /* Read the current position in the output stream. */
 gs_offset_t pdf_stell(gx_device_pdf * pdev);
 
