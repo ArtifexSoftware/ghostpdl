@@ -1165,14 +1165,16 @@ currentdict /xref-char-dict undef
         {
           dup /S knownoget {
             dup /GoTo eq {
-              pop
+              /Action exch
+              4 2 roll
               dup /D knownoget {
                 exch pop exch dup length dict copy dup /Dest 4 -1 roll put
               } if
             }
             {
               dup /GoToR eq {
-                pop
+                /Action exch
+                4 2 roll
                 dup /NewWindow knownoget {
                   2 index dup length dict copy dup /NewWindow 4 -1 roll put 3 1 roll exch pop
                 } if
@@ -1525,7 +1527,7 @@ end readonly def
     /NewWindow exch 3 -1 roll
   } if
   dup /F knownoget {
-    /F exch 3 -1 roll
+    /File exch 3 -1 roll
   } if
   dup /Dest knownoget
     { resolvedest
