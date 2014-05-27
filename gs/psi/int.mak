@@ -745,7 +745,7 @@ $(PSD)psf1read.dev : $(INT_MAK) $(ECHOGS_XE) $(psf1read_) $(GLD)seexec.dev
 	$(ADDMOD) $(PSD)psf1read -obj $(psf1read_2)
 	$(ADDMOD) $(PSD)psf1read -include $(GLD)seexec
 	$(ADDMOD) $(PSD)psf1read -oper zchar1 zfont1 zmisc1
-	$(ADDMOD) $(PSD)psf1read -ps gs_type1
+	$(ADDMOD) $(PSD)psf1read -ps gs_agl gs_type1
 
 $(PSOBJ)zchar1.$(OBJ) : $(PSSRC)zchar1.c $(OP) $(memory__h)\
  $(gscencs_h) $(gspaint_h) $(gspath_h) $(gsrect_h) $(gsstruct_h)\

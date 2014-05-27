@@ -61,48 +61,73 @@
      ifelse
    } if
 
-   dup /CharStrings get
+   % We want to skip this process if we've already done it, and
+   % not do it for embedded fonts.
+   dup /.AGLprocessed~GS known not 1 index /PathLoad known and
+   {
+     dup /CharStrings get
+     % Provide all known aliases for each glyph if
+     % substitution is allowed (pf2afm.ps has code
+     % to disables it by modifying t1_glyph_equivalence).
 
-   % Provide all known aliases for each glyph if
-   % substitution is allowed (pf2afm.ps has code
-   % to disables it by modifying t1_glyph_equivalence).
+     t1_glyph_equivalence length 0 ne
+     {
+         16 string //ReverseAdobeGlyphList //AdobeGlyphList 4 -1 roll  % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict)
+         dup
+         {                                                   % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) gname cstring
+           exch dup                                          % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname gname
+           4 index exch .knownget
+           { //true}
+           {                                                 % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
+             % if we couldn't derive the code point from the AGL, we might derive it
+             % from a formatted "uniXXXX" name.
+             dup 6 index 0 1 15 {1 index exch 0 put} for cvs dup (uni) anchorsearch
+             {
+               % as luck would have it, we can just replace the "uni" with "16#"
+               % to get something we can convert to a number
+               pop pop dup 0 (16#) putinterval {cvi} stopped
+               {//false}
+               {                                             % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname cpoint
+                 dup 5 index exch known
+                 { //true }
+                 { pop //false }
+                 ifelse
+               } ifelse
+             }
+             { pop pop //false}
+             ifelse
+           } ifelse
 
-   t1_glyph_equivalence length 0 ne {
-     % Create an empty code point to glyph dictionary
-     0 dict exch
-     % Build a mapping from code points to known glyphs
-     AdobeGlyphList {
-       % Stack: CPtoGlyph(dict) CharStrings(dict) /name codepoint
-       2 index 2 index known
-       { exch 3 index 3 1 roll .growput }
-       { pop pop }
-       ifelse
-     } forall
-     % Add aliases for missing names
-     AdobeGlyphList {
-       % Stack: CPtoGlyph(dict) CharStrings(dict) /name codepoint
-       2 index 2 index known
-       { pop pop }
-       { 2 index 3 1 roll 4 index 1 index .knownget
-         % Try mapping unknown name to equivalent known glyph
-         { CCFONTDEBUG { (setting alias: ) print 2 index ==only
-                         ( to be the same as glyph: ) print dup //== exec } if
-           exch pop 2 index exch get //.growput superexec }
-         % Try mapping unknown name to known uniXXXX glyph
-         { dup 16 4 string cvrs dup length neg 7 add (uni0000) 7 string copy dup
-           4 -2 roll exch putinterval cvn 3 index 1 index .knownget
-           { CCFONTDEBUG { (setting alias: ) print 3 index ==only
-                           ( to be the same as glyph: ) print 1 index //== exec } if
-             3 1 roll pop pop //.growput superexec }
-           { pop pop pop pop }
-           ifelse }
-         ifelse }
-       ifelse
-     } forall
+           {
+                                                             % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname cpoint
+             % loop through the array of names for this codepoint
+             % if the CharStrings dict doesn't contain an entry for the name
+             % create one.
+             % We know from above that the cpoint exists in the RAGL dict.
+             5 index exch get
+                                                               % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglnames(array)
+             {                                                 % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglname
+               dup 4 index exch known not
+               {                                               % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglname
+                 CFFDEBUG { (\nsetting alias: ) print dup ==only
+                       ( to be the same as glyph: ) print 1 index //== exec } if
+                 3 index exch 3 index //.growput superexec
+                                                               % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
+               }
+               {pop} ifelse
+             } forall
+             pop pop
+           }
+           {
+                                                               % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
+             pop pop
+           } ifelse
+         } forall
+         4 1 roll pop pop pop
+     } if
      pop
+     dup /.AGLprocessed~GS //true .growput
    } if
-   pop
-
    //.buildfont1
    3 2 roll .setglobal
  } bind def
