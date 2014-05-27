@@ -1413,12 +1413,28 @@ process_plain_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
             return_error(gs_error_unregistered); /* Must not happen. */
         count = 0;
         for (i = 0; i < size; ++i) {
+            pdf_font_resource_t *pdfont;
             gs_glyph glyph = gdata[pte->index + i];
             int char_code_length;
 
             code = pdf_encode_glyph((gs_font_base *)font, glyph,
                          buf + count, size - count, &char_code_length);
             if (code < 0)
+                break;
+            /* Even if we already have a glyph encoded at this position in the font
+             * it may not be the *right* glyph. We effectively use the first byte of
+             * the glyph name as the index when using glyphshow which means that
+             * /o and /omicron would be encoded at the same index. So we need
+             * to check the actual glyph to see if they are the same. To do
+             * that we need the PDF font resource which is attached to the font (if any).
+             * cf bugs #695259 and #695168
+             */
+            code = pdf_attached_font_resource((gx_device_pdf *)penum->dev, font,
+                            &pdfont, NULL, NULL, NULL, NULL);
+            if (pdfont && pdfont->u.simple.Encoding[*(buf + count)].glyph != glyph)
+                /* the glyph doesn't match the glyph already encoded at this position.
+                 * Breaking out here will start a new PDF font resource in the code below.
+                 */
                 break;
             count += char_code_length;
             if (operation & TEXT_INTERVENE)
