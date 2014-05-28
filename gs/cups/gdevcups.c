@@ -113,6 +113,9 @@ int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
 #  define CUPS_CSPACE_RGBW 17
 #endif /* CUPS_RASTER_SYNCv1 */
 
+#if !defined(CUPS_RASTER_WRITE_PWG)
+    #define CUPS_RASTER_WRITE_PWG 3
+#endif
 
 /*
  * CIE XYZ color constants...
@@ -2896,7 +2899,7 @@ cups_print_pages(gx_device_printer *pdev,
        is a temporary workaround for the time being until up-to-date CUPS
        libraries get included. */
     if ((cups->stream = cupsRasterOpen(fileno(cups->file),
-#if 0 && defined(SHARE_LCUPSI) && SHARE_LCUPSI==1
+#if defined(CUPS_RASTER_HAVE_PWGRASTER)
                                        (strcasecmp(cups->header.MediaClass,
 						   "PwgRaster") == 0 ?
 					CUPS_RASTER_WRITE_PWG :
