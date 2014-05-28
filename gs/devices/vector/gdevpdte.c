@@ -1431,7 +1431,7 @@ process_plain_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
              */
             code = pdf_attached_font_resource((gx_device_pdf *)penum->dev, font,
                             &pdfont, NULL, NULL, NULL, NULL);
-            if (pdfont && pdfont->u.simple.Encoding[*(buf + count)].glyph != glyph)
+            if (code >= 0 && pdfont && pdfont->u.simple.Encoding[*(buf + count)].glyph != glyph)
                 /* the glyph doesn't match the glyph already encoded at this position.
                  * Breaking out here will start a new PDF font resource in the code below.
                  */
