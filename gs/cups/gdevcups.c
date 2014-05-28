@@ -2711,7 +2711,7 @@ cups_map_rgb_color(gx_device      *pdev,/* I - Device info */
               break;
 #ifdef GX_COLOR_INDEX_TYPE
 	  case 16 :
-	      i = (((((ic << 16) | im) << 16) | iy) << 16) | ik;
+	      i = (((ic << 16) | im) << 16) | iy;
 	      break;
 #endif /* GX_COLOR_INDEX_TYPE */
         }
