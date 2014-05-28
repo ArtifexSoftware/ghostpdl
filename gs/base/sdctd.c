@@ -137,6 +137,33 @@ compact:
     return o - i;
 }
 
+static void
+update_jpeg_header_height(JOCTET *d, size_t len, int height)
+{
+    int marker_len;
+
+    for (d += 2; len > 9 && d[0] == 0xFF; d += marker_len)
+    {
+        int declared_height;
+
+        marker_len = 2 + (d[2] << 8) + d[3];
+        if (marker_len > len)
+            break;
+        len -= marker_len;
+
+        /* We can only safely rewrite non-differential SOF markers */
+        if (d[1] < 0xC0 || (0xC3 < d[1] && d[1] < 0xC9) || 0xCB < d[1])
+            continue;
+
+        declared_height = (d[5]<<8) | d[6];
+        if (declared_height == 0 || declared_height > height)
+        {
+            d[5] = height>>8;
+            d[6] = height;
+        }
+    }
+}
+
 /* Process a buffer */
 static int
 s_DCTD_process(stream_state * st, stream_cursor_read * pr,
@@ -181,6 +208,8 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
             ss->phase = 1;
             /* falls through */
         case 1:		/* reading header markers */
+            if (ss->data.common->Height != 0)
+                update_jpeg_header_height(pr->ptr + 1, src->bytes_in_buffer, ss->data.common->Height);
             if ((code = gs_jpeg_read_header(ss, TRUE)) < 0)
                 return ERRC;
             pr->ptr =
