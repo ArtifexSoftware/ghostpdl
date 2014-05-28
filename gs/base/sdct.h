@@ -50,6 +50,7 @@
         gs_memory_t *memory;	/* heap */\
         gs_memory_t *cmem;	/* chunk allocator for library allocations */\
         byte *dummy;   /* see comment above */\
+        int Height; /* For JPEG files using a DNL (Define Number of Lines) marker */\
                 /* The following are documented in Adobe TN 5116. */\
         int Picky;		/* 0 or 1 */\
         int Relax		/* 0 or 1 */
@@ -61,6 +62,7 @@ typedef struct jpeg_stream_data_s {
 /* Define initialization for the non-library part of the stream state. */
 #define jpeg_stream_data_common_init(pdata)\
 BEGIN\
+  (pdata)->Height = 0;\
   (pdata)->Picky = 0;\
   (pdata)->Relax = 0;\
   (pdata)->dummy = 0;\

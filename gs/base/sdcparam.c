@@ -38,6 +38,7 @@ static const gs_param_item_t jsd_param_items[] =
 {
     dctp("Picky", gs_param_type_int, jpeg_stream_data, Picky),
     dctp("Relax", gs_param_type_int, jpeg_stream_data, Relax),
+    dctp("Height", gs_param_type_int, jpeg_stream_data, Height),
     gs_param_item_end
 };
 
