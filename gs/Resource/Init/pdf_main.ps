@@ -1165,8 +1165,7 @@ currentdict /xref-char-dict undef
         {
           dup /S knownoget {
             dup /GoTo eq {
-              /Action exch
-              4 2 roll
+              pop
               dup /D knownoget {
                 exch pop exch dup length dict copy dup /Dest 4 -1 roll put
               } if
