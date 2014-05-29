@@ -417,47 +417,68 @@ DEVS_ALL=$(GLGENDIR)$(D)$(GSPLATFORM).dev\
  $(DEVICE_DEVS18) $(DEVICE_DEVS19) $(DEVICE_DEVS20) $(DEVICE_DEVS21) \
  $(DEVICE_DEVS_EXTRA) $(GLD)romfs$(COMPILE_INITS).dev 
 
+
 $(GLGENDIR)$(D)fdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(EXP)$(ECHOGS_XE) -w $(GLGENDIR)$(D)fdevs.tr -+ $(PSI_FEATURE_DEVS)
+	$(EXP)$(ECHOGS_XE) -w $(GLGENDIR)$(D)fdevs.tr - -include $(GLGENDIR)$(D)$(GSPLATFORM)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)fdevs.tr -+ $(FEATURE_DEVS)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)fdevs.tr -+ $(FEATURE_DEVS_EXTRA)
 
-$(GLGENDIR)$(D)pclfdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(EXP)$(ECHOGS_XE) -w $(GLGENDIR)$(D)pclfdevs.tr -+ ""
+$(GLGENDIR)$(D)devdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS1)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS2)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS3)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS4)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS5)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS6)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS7)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS8)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS9)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS10)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS11)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS12)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS13)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS14)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS15)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS16)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS17)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS18)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS19)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS20)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS21)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS_EXTRA)
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(GLD)romfs$(COMPILE_INITS).dev
+	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr - $(GLGENDIR)$(D)libcore
 
-$(GLGENDIR)$(D)xpsfdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(EXP)$(ECHOGS_XE) -w $(GLGENDIR)$(D)xpsfdevs.tr -+ ""
+#$(GLGENDIR)$(D)fdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
+#	$(EXP)$(ECHOGS_XE) -w $(GLGENDIR)$(D)fdevs.tr -+ $(PSI_FEATURE_DEVS)
+
+#$(GLGENDIR)$(D)pclfdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
+#	$(EXP)$(ECHOGS_XE) -w $(GLGENDIR)$(D)pclfdevs.tr -+ ""
+
+#$(GLGENDIR)$(D)xpsfdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
+#	$(EXP)$(ECHOGS_XE) -w $(GLGENDIR)$(D)xpsfdevs.tr -+ ""
 
 devs_tr=$(GLGENDIR)$(D)devs.tr
+pcldevs_tr=$(GLGENDIR)$(D)pcldevs.tr
+xpsdevs_tr=$(GLGENDIR)$(D)xpsdevs.tr
+
 # NOTE that PRODUCT_STRING is empty for Ghostscript
-$(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE) $(GLGENDIR)$(D)$(PRODUCT_STRING)fdevs.tr
-	$(EXP)$(ECHOGS_XE) -w $(devs_tr) - -include $(GLGENDIR)$(D)$(GSPLATFORM)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(FEATURE_DEVS)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(FEATURE_DEVS_EXTRA)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -n -R $(GLGENDIR)$(D)$(PRODUCT_STRING)fdevs.tr
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS1)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS2)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS3)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS4)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS5)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS6)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS7)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS8)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS9)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS10)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS11)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS12)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS13)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS14)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS15)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS16)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS17)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS18)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS19)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS20)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS21)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(DEVICE_DEVS_EXTRA)
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(GLD)romfs$(COMPILE_INITS).dev
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) - $(GLGENDIR)$(D)libcore
+$(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE) $(GLGENDIR)$(D)fdevs.tr $(GLGENDIR)$(D)devdevs.tr
+	$(EXP)$(ECHOGS_XE) -w $(devs_tr) -n -R $(GLGENDIR)$(D)fdevs.tr
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(PSI_FEATURE_DEVS)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -n -R $(GLGENDIR)$(D)devdevs.tr
+
+$(pcldevs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE) $(GLGENDIR)$(D)fdevs.tr $(GLGENDIR)$(D)devdevs.tr
+	$(EXP)$(ECHOGS_XE) -w $(pcldevs_tr) -n -R $(GLGENDIR)$(D)fdevs.tr
+	$(EXP)$(ECHOGS_XE) -a $(pcldevs_tr) -+ ""
+	$(EXP)$(ECHOGS_XE) -a $(pcldevs_tr) -n -R $(GLGENDIR)$(D)devdevs.tr
+
+$(xpsdevs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE) $(GLGENDIR)$(D)fdevs.tr $(GLGENDIR)$(D)devdevs.tr
+	$(EXP)$(ECHOGS_XE) -w $(xpsdevs_tr) -n -R $(GLGENDIR)$(D)fdevs.tr
+	$(EXP)$(ECHOGS_XE) -a $(xpsdevs_tr) -+ ""
+	$(EXP)$(ECHOGS_XE) -a $(xpsdevs_tr) -n -R $(GLGENDIR)$(D)devdevs.tr
+
 
 # GCONFIG_EXTRAS can be set on the command line.
 # Note that it consists of arguments for echogs, i.e.,
@@ -468,11 +489,11 @@ $(GLGENDIR)$(D)productld.tr: $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.m
                                                $(GLGENDIR)$(D)libcore.dev
 	$(EXP)$(ECHOGS_XE) -w -n $(GLGENDIR)$(D)productld.tr -+
 
-$(GLGENDIR)$(D)pclproductld.tr: $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(PCL_DEVS_ALL) \
+$(GLGENDIR)$(D)pclproductld.tr: $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(pcldevs_tr) $(PCL_DEVS_ALL) \
                                                    $(PCL_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
 	$(EXP)$(GENCONF_XE) -n pcl $(PCL_FEATURE_DEVS) $(CONFILES) -o $(GLGENDIR)$(D)pclproductld.tr
 
-$(GLGENDIR)$(D)xpsproductld.tr: $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(XPS_DEVS_ALL) \
+$(GLGENDIR)$(D)xpsproductld.tr: $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(xpsdevs_tr) $(XPS_DEVS_ALL) \
                                                    $(XPS_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
 	$(EXP)$(GENCONF_XE) -n xps $(XPS_FEATURE_DEVS) $(CONFILES) -o $(GLGENDIR)$(D)xpsproductld.tr
 
