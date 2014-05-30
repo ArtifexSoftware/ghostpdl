@@ -2439,12 +2439,12 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
         for (i = 0; i < w; ++i, ++sx) {
             /* Complement the components for subtractive color spaces */
             if (additive) {
-                for (k = 0; k < num_chan; ++k)
+                for (k = 0; k < num_chan; ++k)		/* num_chan includes alpha */
                     dst[k] = dst_ptr[k * planestride];
             } else { /* Complement the components for subtractive color spaces */
                 for (k = 0; k < num_comp; ++k)
                     dst[k] = 255 - dst_ptr[k * planestride];
-                dst[num_comp] = dst_ptr[num_comp * planestride];
+                dst[num_comp] = dst_ptr[num_comp * planestride];	/* alpha */
             }
             /* Get the aa alpha from the buffer */
             if (depth == 2) {	/* map 0 - 3 to 0 - 15 */
@@ -2471,16 +2471,14 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                 }
                 if (knockout) {
                     if (has_shape) {
-                        art_pdf_composite_knockout_simple_8(dst,
-                            has_shape ? dst_ptr + shape_off : NULL,
-                            has_tags ? dst_ptr + tag_off : NULL,
-                            src, curr_tag, num_comp, 255);
+                        art_pdf_composite_knockout_8(dst, src, num_comp,
+                                                            blend_mode, pdev->blend_procs);
                     } else {
                         art_pdf_knockoutisolated_group_8(dst, src, num_comp);
                     }
                 } else {
                     art_pdf_composite_pixel_alpha_8(dst, src, num_comp,
-                                                 blend_mode, pdev->blend_procs);
+                                                    blend_mode, pdev->blend_procs);
                 }
                 /* Complement the results for subtractive color spaces */
                 if (additive) {
@@ -4789,8 +4787,9 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev, int x, int y, int w, int h,
 {
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
+    gs_blend_mode_t blend_mode = pdev->blend_mode;
     int i, j, k;
-    byte *line, *dst_ptr;
+    byte *bline, *bg_ptr, *line, *dst_ptr;
     byte src[PDF14_MAX_PLANES];
     byte dst[PDF14_MAX_PLANES];
     int rowstride = buf->rowstride;
@@ -4875,26 +4874,28 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev, int x, int y, int w, int h,
     if (x + w > buf->dirty.q.x) buf->dirty.q.x = x + w;
     if (y + h > buf->dirty.q.y) buf->dirty.q.y = y + h;
 
+    /* composite with backdrop only */
+    bline = buf->backdrop + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
     line = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
 
     for (j = 0; j < h; ++j) {
+        bg_ptr = bline;
         dst_ptr = line;
         for (i = 0; i < w; ++i) {
             /* Complement the components for subtractive color spaces */
             if (additive) {
                 for (k = 0; k < num_chan; ++k)
-                    dst[k] = dst_ptr[k * planestride];
+                    dst[k] = bg_ptr[k * planestride];
             } else {
                 for (k = 0; k < num_comp; ++k)
-                    dst[k] = 255 - dst_ptr[k * planestride];
-                dst[num_comp] = dst_ptr[num_comp * planestride];
+                    dst[k] = 255 - bg_ptr[k * planestride];
+                dst[num_comp] = bg_ptr[num_comp * planestride];
             }
             if (buf->isolated) {
                 art_pdf_knockoutisolated_group_8(dst, src, num_comp);
             } else {
-                art_pdf_composite_knockout_simple_8(dst,
-                    has_shape ? dst_ptr + shape_off : NULL,
-                    has_tags ? dst_ptr + tag_off : NULL, src, curr_tag, num_comp, 255);
+                art_pdf_composite_knockout_8(dst, src, num_comp,
+                                                    blend_mode, pdev->blend_procs);
             }
             /* Complement the results for subtractive color spaces */
             if (additive) {
@@ -4917,7 +4918,9 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev, int x, int y, int w, int h,
                 dst_ptr[shape_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
             }
             ++dst_ptr;
+            ++bg_ptr;
         }
+        bline += rowstride;
         line += rowstride;
     }
 #if 0
@@ -7128,16 +7131,7 @@ pdf14_clist_get_param_compressed_color_list(pdf14_device * p14dev)
         gx_device * tdev = p14dev->target;
 
         gs_c_param_list_read(&param_list);
-#if 1
         code = dev_proc(tdev, put_params)(tdev, (gs_param_list *)&param_list);
-#else
-        /*
-         * This call will put the compressed color list info into the
-         * clist.  However there are two problems.  The info goes into
-         * the list at the end of the list.
-         */
-        code = cmd_put_params(cldev, (gs_param_list *)&param_list );
-#endif
     }
     gs_c_param_list_release(&param_list);
     free_temp_keyname_list(p14dev->memory, pkeyname_list_head);

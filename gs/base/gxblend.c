@@ -197,7 +197,7 @@ void smask_copy(int num_rows, int num_cols, int row_stride,
     }
 }
 
-void smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan, 
+void smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan,
                int row_stride, int plane_stride, byte *src, const byte *dst,
                gsicc_link_t *icclink)
 {
@@ -222,7 +222,7 @@ void smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan,
                   false, false, true, plane_stride,
                   row_stride, num_rows, num_cols);
     /* Transform the data */
-    (icclink->procs.map_buffer)(dev, icclink, &input_buff_desc, &output_buff_desc, 
+    (icclink->procs.map_buffer)(dev, icclink, &input_buff_desc, &output_buff_desc,
                                 (void*) src, (void*) dst);
 }
 
@@ -889,7 +889,7 @@ art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask)
 }
 
 static void
-art_pdf_knockout_composite_pixel_alpha_8(byte *backdrop, byte tos_shape, byte *dst, 
+art_pdf_knockout_composite_pixel_alpha_8(byte *backdrop, byte tos_shape, byte *dst,
                         const byte *src, int n_chan, gs_blend_mode_t blend_mode,
                         const pdf14_nonseparable_blending_procs_t * pblend_procs)
 {
@@ -903,7 +903,7 @@ art_pdf_knockout_composite_pixel_alpha_8(byte *backdrop, byte tos_shape, byte *d
     a_s = src[n_chan];
     a_b = backdrop[n_chan];
     if (a_s == 0) {
-        /* source alpha is zero, if we have a src shape value there then copy 
+        /* source alpha is zero, if we have a src shape value there then copy
            the backdrop, else leave it alone */
         if (tos_shape)
            memcpy(dst, backdrop, n_chan + 1);
@@ -912,7 +912,7 @@ art_pdf_knockout_composite_pixel_alpha_8(byte *backdrop, byte tos_shape, byte *d
 
     /* In this case a_s is not zero */
     if (a_b == 0) {
-        /* backdrop alpha is zero but not source alpha, just copy source pixels and 
+        /* backdrop alpha is zero but not source alpha, just copy source pixels and
            avoid computation. */
         memcpy(dst, src, n_chan + 1);
         return;
@@ -944,7 +944,7 @@ art_pdf_knockout_composite_pixel_alpha_8(byte *backdrop, byte tos_shape, byte *d
             int c_mix;		/* Blend result mixed with source color */
 
             c_s = src[i];
-            c_b = dst[i];
+            c_b = backdrop[i];
             c_bl = blend[i];
             tmp = a_b * (c_bl - ((int)c_s)) + 0x80;
             c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
@@ -1239,9 +1239,9 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
 }
 
 void
-art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst, 
-        byte *dst_alpha_g, const byte *src, int n_chan, byte alpha, 
-        gs_blend_mode_t blend_mode, 
+art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
+        byte *dst_alpha_g, const byte *src, int n_chan, byte alpha,
+        gs_blend_mode_t blend_mode,
         const pdf14_nonseparable_blending_procs_t * pblend_procs)
 {
     byte src_alpha;		/* $\alpha g_n$ */
@@ -1249,7 +1249,7 @@ art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
     int tmp;
 
     if (alpha == 255) {
-        art_pdf_knockout_composite_pixel_alpha_8(backdrop, tos_shape, dst, src, 
+        art_pdf_knockout_composite_pixel_alpha_8(backdrop, tos_shape, dst, src,
                                                  n_chan, blend_mode, pblend_procs);
         if (dst_alpha_g != NULL) {
             tmp = (255 - *dst_alpha_g) * (255 - src[n_chan]) + 0x80;
@@ -1263,8 +1263,8 @@ art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
         memcpy(src_tmp, src, n_chan + 3);
         tmp = src_alpha * alpha + 0x80;
         src_tmp[n_chan] = (tmp + (tmp >> 8)) >> 8;
-        art_pdf_knockout_composite_pixel_alpha_8(backdrop, tos_shape, dst, 
-                                                 src_tmp, n_chan, 
+        art_pdf_knockout_composite_pixel_alpha_8(backdrop, tos_shape, dst,
+                                                 src_tmp, n_chan,
                                                  blend_mode, pblend_procs);
         if (dst_alpha_g != NULL) {
             tmp = (255 - *dst_alpha_g) * (255 - src_tmp[n_chan]) + 0x80;
@@ -1320,48 +1320,74 @@ art_pdf_knockoutisolated_group_8(byte *dst, const byte *src, int n_chan)
 }
 
 void
-art_pdf_composite_knockout_simple_8(byte *dst,
-                                    byte *dst_shape,
-                                    byte *dst_tag,
+art_pdf_composite_knockout_8(byte *dst,
                                     const byte *src,
-                                    byte tag,
-                                    int n_chan, byte opacity)
+                                    int n_chan,
+                                    gs_blend_mode_t blend_mode,
+                                    const pdf14_nonseparable_blending_procs_t * pblend_procs)
 {
     byte src_shape = src[n_chan];
-    int i;
+    int i, tmp;
 
-    if (src_shape == 0)
-        return;
-    else if (src_shape == 255) {
-        memcpy (dst, src, n_chan + 3);
-        dst[n_chan] = opacity;
-        if (dst_shape != NULL)
-            *dst_shape = 255;
-    } else {
-        /* Use src_shape to interpolate (in premultiplied alpha space)
-           between dst and (src, opacity). */
-        int dst_alpha = dst[n_chan];
-        byte result_alpha;
-        int tmp;
+    if (blend_mode == BLEND_MODE_Normal) {
+        /* Do simple compositing of source over backdrop */
+        if (src_shape == 0)
+            return;
+        else if (src_shape == 255) {
+            memcpy (dst, src, n_chan + 3);
+            return;
+        } else {
+            /* Use src_shape to interpolate (in premultiplied alpha space)
+               between dst and (src, opacity). */
+            int dst_alpha = dst[n_chan];
+            byte result_alpha;
 
-        tmp = (opacity - dst_alpha) * src_shape + 0x80;
-        result_alpha = dst_alpha + ((tmp + (tmp >> 8)) >> 8);
+            tmp = (255 - dst_alpha) * src_shape + 0x80;
+            result_alpha = dst_alpha + ((tmp + (tmp >> 8)) >> 8);
 
-        if (result_alpha != 0)
-            for (i = 0; i < n_chan; i++) {
-                /* todo: optimize this - can strength-reduce so that
-                   inner loop is a single interpolation */
-                tmp = dst[i] * dst_alpha * (255 - src_shape) +
-                    ((int)src[i]) * opacity * src_shape + (result_alpha << 7);
-                dst[i] = tmp / (result_alpha * 255);
-            }
-        dst[n_chan] = result_alpha;
-
-        /* union in dst_shape if non-null */
-        if (dst_shape != NULL) {
-            tmp = (255 - *dst_shape) * (255 - src_shape) + 0x80;
-            *dst_shape = 255 - ((tmp + (tmp >> 8)) >> 8);
+            if (result_alpha != 0)
+                for (i = 0; i < n_chan; i++) {
+                    /* todo: optimize this - can strength-reduce so that
+                       inner loop is a single interpolation */
+                    tmp = dst[i] * dst_alpha * (255 - src_shape) +
+                        ((int)src[i]) * 255 * src_shape + (result_alpha << 7);
+                    dst[i] = tmp / (result_alpha * 255);
+                }
+            dst[n_chan] = result_alpha;
         }
+    } else {
+        /* Do compositing with blending */
+        byte blend[ART_MAX_CHAN];
+        byte a_b, a_s;
+        unsigned int a_r;
+        int src_scale;
+        int c_b, c_s;
+
+        a_s = src[n_chan];
+        a_b = dst[n_chan];
+
+        /* Result alpha is Union of backdrop and source alpha */
+        tmp = (0xff - a_b) * (0xff - a_s) + 0x80;
+        a_r = 0xff - (((tmp >> 8) + tmp) >> 8);
+        /* todo: verify that a_r is nonzero in all cases */
+
+        /* Compute a_s / a_r in 16.16 format */
+        src_scale = ((a_s << 16) + (a_r >> 1)) / a_r;
+
+        art_blend_pixel_8(blend, dst, src, n_chan, blend_mode, pblend_procs);
+        for (i = 0; i < n_chan; i++) {
+            int c_bl;		/* Result of blend function */
+            int c_mix;		/* Blend result mixed with source color */
+
+            c_s = src[i];
+            c_b = dst[i];
+            c_bl = blend[i];
+            tmp = a_b * (c_bl - ((int)c_s)) + 0x80;
+            c_mix = c_s + (((tmp >> 8) + tmp) >> 8);
+            tmp = (c_b << 16) + src_scale * (c_mix - c_b) + 0x8000;
+            dst[i] = tmp >> 16;
+        }
+        dst[n_chan] = a_r;
     }
 }
 
@@ -1382,7 +1408,7 @@ art_pdf_composite_knockout_isolated_8(byte *dst,
     if (shape == 0) {
         /* If a softmask was present pass it along Bug 693548 */
         if (has_mask)
-            dst[n_chan] = alpha_mask; 
+            dst[n_chan] = alpha_mask;
         return;
     } else if ((shape & shape_mask) == 255) {
 

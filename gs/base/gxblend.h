@@ -323,23 +323,20 @@ art_pdf_composite_knockout_group_8(byte *backdrop, byte tos_shape, byte *dst,
         gs_blend_mode_t blend_mode,
         const pdf14_nonseparable_blending_procs_t * pblend_procs);
 /**
- * art_pdf_composite_knockout_simple_8: Simple knockout compositing.
- * @dst: Destination pixel.
- * @dst_shape: Shape associated with @dst.
+ * art_pdf_composite_knockout_8: knockout compositing.
+ * @dst: Destination pixel array -- has been initialized with background
  * @src: Source pixel.
- * @n_chan: Number of channels.
- * @opacity: Opacity.
+ * n_chan: Number of channels.
  *
- * This function handles the simplest knockout case: an isolated
- * knockout group, and an elementary shape. The alpha channel of @src
- * is interpreted as shape.
+ * This function handles the knockout case: an isolated knockout group,
+ * and an elementary shape. The alpha channel of @src is interpreted as shape.
  **/
 void
-art_pdf_composite_knockout_simple_8(byte *dst,
-                                    byte *dst_shape,
-                                    byte *dst_tag,
-                                    const byte *src, byte tag,
-                                    int n_chan, byte opacity);
+art_pdf_composite_knockout_8(byte *dst,
+                                    const byte *src,
+                                    int n_chan,
+                                    gs_blend_mode_t blend_mode,
+                                    const pdf14_nonseparable_blending_procs_t * pblend_procs);
 
 /**
  * art_pdf_knockoutisolated_group_8: Knockout for isolated group.

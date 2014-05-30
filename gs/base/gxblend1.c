@@ -348,6 +348,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     byte nos_pixel[PDF14_MAX_PLANES];
     byte back_drop[PDF14_MAX_PLANES];
     bool tos_isolated = tos->isolated;
+    bool nos_isolated = nos->isolated;
     bool nos_knockout = nos->knockout;
     byte *nos_alpha_g_ptr;
     int tos_shape_offset = n_chan * tos_planestride;
@@ -482,7 +483,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 #		    endif
                 
             if (nos_knockout) {
-                /* We need to be knocking out what every is on the nos. */
+                /* We need to be knocking out what ever is on the nos, but may need to combine with it's backdrop */
                 byte *nos_shape_ptr = nos_shape_offset ?
                     &nos_ptr[nos_shape_offset] : NULL;
                 byte *nos_tag_ptr = nos_tag_offset ?
@@ -498,7 +499,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                 else
                     tos_tag = 255;
 
-                if (tos_isolated) {
+                if (nos_isolated) {
                     /* We do not need to compose with the backdrop */
                     art_pdf_composite_knockout_isolated_8(nos_pixel, nos_shape_ptr,
                                                           nos_tag_ptr, tos_pixel,
@@ -524,7 +525,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                                                        blend_mode, pblend_procs);
                 }
             } else {
-                if (tos_isolated || (nos->saved == NULL && tos->knockout)) {
+                if (tos_isolated) {
                     art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr, tos_pixel, 
                                               n_chan, pix_alpha, blend_mode, 
                                               pblend_procs);
