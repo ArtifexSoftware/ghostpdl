@@ -160,6 +160,7 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
                    uint num_refs, client_name_t cname)
 {
     ref *obj;
+    int i;
 
     /* If we're allocating a run of refs already, */
     /* and we aren't about to overflow the maximum run length, use it. */
@@ -223,6 +224,9 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
             mem->changes = cp;
             cp->where = (ref_packed *)obj;
         }
+    }
+    for (i = 0; i < num_refs; i++) {
+        make_null(&(obj[i]));
     }
     make_array(parr, attrs | mem->space, num_refs, obj);
     return 0;
