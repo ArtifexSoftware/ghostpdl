@@ -340,12 +340,18 @@ currentdict /ttf_otf_tag_dict .undef
 
 % <namerecord> is2byte <bool>
 /is2byte {
-  dup 0 getu16 {
+  dup 0 getu16
+  {
     { pop //true }		% Apple Unicode
     { pop //false }		% Macintosh Script manager
     { 1 getu16 1 eq }		% ISO
     { 1 getu16 1 eq }		% Microsoft
-  } exch get exec
+    { pop //false }		% default - *MUST* be last
+  }
+  % check for a valid Platform ID, if we don't get one, assume single byte encoding
+  dup length 1 sub
+  2 index lt {exch pop dup length 1 sub}{exch} ifelse
+  get exec
 } bind def
 
 % <string> is2byte2 <bool>
