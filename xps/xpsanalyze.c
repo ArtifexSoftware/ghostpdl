@@ -21,6 +21,8 @@
 
 #include "ghostxps.h"
 
+static int xps_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root);
+
 static int
 xps_remote_resource_dictionary_has_transparency(xps_context_t *ctx, char *base_uri, char *source_att)
 {
@@ -40,10 +42,16 @@ xps_resource_dictionary_has_transparency(xps_context_t *ctx, char *base_uri, xps
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
-        // TODO: ... all kinds of stuff can be here, brushes, elements, whatnot
+        if (!strcmp(xps_tag(node), "RadialGradientBrush") ||
+                !strcmp(xps_tag(node), "LinearGradientBrush") ||
+                !strcmp(xps_tag(node), "SolidColorBrush") ||
+                !strcmp(xps_tag(node), "VisualBrush") ||
+                !strcmp(xps_tag(node), "ImageBrush"))
+            if (xps_brush_has_transparency(ctx, base_uri, node))
+                return 1;
     }
 
-    return 1;
+    return 0;
 }
 
 static int
