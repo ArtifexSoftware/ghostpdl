@@ -563,7 +563,7 @@ xps_expand_colormap(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
     if (image->comps != 1 && image->comps != 2)
         return gs_throw(-1, "invalid number of samples for RGBPal");
 
-    if (image->bits != 4 && image->bits != 8)
+    if (image->bits != 1 && image->bits != 4 && image->bits != 8)
         return gs_throw(-1, "invalid number of bits for RGBPal");
 
     stride = image->width * (image->comps + 2);
@@ -770,6 +770,14 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
 
     /* RGBPal */
     if (tiff->photometric == 3 && tiff->colormap)
+    {
+        error = xps_expand_colormap(ctx, tiff, image);
+        if (error)
+            return gs_rethrow(error, "could not expand colormap");
+    }
+
+    /* B&W with palette */
+    if (tiff->photometric == 1 && tiff->colormap)
     {
         error = xps_expand_colormap(ctx, tiff, image);
         if (error)
