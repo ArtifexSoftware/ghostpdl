@@ -519,7 +519,7 @@ xps_unassocalpha_tiff(byte *line, int width, int comps, int bits)
         a = getcomp(line, i * comps + (comps - 1), bits);
         for (k = 0; k < (comps - 1); k++)
         {
-            if (a > 0) 
+            if (a > 0)
             {
                 v = getcomp(line, i * comps + k, bits);
                 v = (v * m) / a;

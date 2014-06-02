@@ -100,7 +100,7 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
                     {
                         sample_in[i] = sample[i+1]*65535;
                     }
-                    gscms_transform_color((gx_device *)(ctx->pgs->device), 
+                    gscms_transform_color((gx_device *)(ctx->pgs->device),
                                           icclink, sample_in, sample_out, 2);
 
                     stops[count].color[0] = sample[0]; /* Alpha */
@@ -282,12 +282,12 @@ xps_create_gradient_stop_function(xps_context_t *ctx, struct stop *stops, int co
     sparams.Bounds = bounds;
     sparams.Encode = encode;
 
-    if (opacity_only) 
+    if (opacity_only)
     {
         sparams.n = 1;
         lparams.n = 1;
-    } 
-    else 
+    }
+    else
     {
         sparams.n = 3;
         lparams.n = 3;
@@ -638,12 +638,12 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
             out[1] = 0.0;
             out[2] = 0.0;
             out[3] = 0.0;
-            if (ctx->opacity_only) 
+            if (ctx->opacity_only)
             {
                 gs_function_evaluate(func, in, out);
                 xps_set_color(ctx, ctx->gray_lin, out);
-            } 
-            else 
+            }
+            else
             {
                 gs_function_evaluate(func, in, out + 1);
                 xps_set_color(ctx, ctx->srgb, out);
@@ -942,7 +942,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
             gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
             gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
             /* I dont like this, but dont want to change interface of draw */
-            /* For the opacity case, we want to make sure the functions 
+            /* For the opacity case, we want to make sure the functions
                are set up for gray only */
             ctx->opacity_only = true;
             code = draw(ctx, root, spread_method, opacity_func);
@@ -970,7 +970,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
                is not a push of the state made since there is already a soft
                mask present from gs_end_transparency_mask.  In this case,
                we are removing the mask with this forced pop. */
-            gs_pop_transparency_state(ctx->pgs, true);  
+            gs_pop_transparency_state(ctx->pgs, true);
         }
         else
         {

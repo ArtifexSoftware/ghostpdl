@@ -328,7 +328,7 @@ xps_paint_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
            is not a push of the state made since there is already a soft
            mask present from gs_end_transparency_mask.  In this case,
            we are removing the mask with this forced pop. */
-        gs_pop_transparency_state(ctx->pgs, true);  
+        gs_pop_transparency_state(ctx->pgs, true);
         code = gs_grestore(ctx->pgs);
         if (code < 0)
             return gs_rethrow(code, "cannot grestore after transparency group");

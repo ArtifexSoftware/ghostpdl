@@ -174,7 +174,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
     jxr_image_t image;
     int offset, alpha_offset;
     int rc;
-    
+
     if (!name) {
         return gs_throw(gs_error_VMerror, "cannot allocate scratch file name buffer");
     }

@@ -13,7 +13,6 @@
    CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-
 /* XPS interpreter - path (vector drawing) support */
 
 #include "ghostxps.h"
@@ -24,16 +23,16 @@ xps_get_real_params(char *s, int num, float *x)
     int k = 0;
 
     if (s != NULL && *s != 0) {
-        while (*s) 
+        while (*s)
         {
-            while (*s == 0x0d || *s == '\t' || *s == ' ' || *s == 0x0a) 
+            while (*s == 0x0d || *s == '\t' || *s == ' ' || *s == 0x0a)
                 s++;
             x[k] = (float)strtod(s, &s);
-            while (*s == 0x0d || *s == '\t' || *s == ' ' || *s == 0x0a) 
+            while (*s == 0x0d || *s == '\t' || *s == ' ' || *s == 0x0a)
                 s++;
-            if (*s == ',') 
+            if (*s == ',')
                 s++;
-            if (++k == num) 
+            if (++k == num)
                 break;
         }
         return s;
@@ -699,7 +698,7 @@ xps_parse_poly_line_segment(xps_context_t *ctx, xps_item_t *root, int stroking, 
     s = points_att;
     while (*s != 0)
     {
-        s = xps_get_real_params(s, 2, &xy[0]); 
+        s = xps_get_real_params(s, 2, &xy[0]);
         if (stroking && !is_stroked)
             gs_moveto(ctx->pgs, xy[0], xy[1]);
         else
@@ -731,7 +730,7 @@ xps_parse_path_figure(xps_context_t *ctx, xps_item_t *root, int stroking)
         is_closed = !strcmp(is_closed_att, "true");
     if (is_filled_att)
         is_filled = !strcmp(is_filled_att, "true");
-    if (start_point_att) 
+    if (start_point_att)
         xps_get_point(start_point_att, &start_x, &start_y);
 
     if (!stroking && !is_filled) /* not filled, when filling */
@@ -1114,7 +1113,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
             xps_parse_abbreviated_geometry(ctx, data_att);
         if (data_tag)
             xps_parse_path_geometry(ctx, dict, data_tag, 1);
-        
+
         if (!opacity_pushed) {
             code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag, true, true);
             if (code)

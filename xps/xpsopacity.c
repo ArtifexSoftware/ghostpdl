@@ -38,7 +38,7 @@ xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *ubox)
 
 /* This will get the proper bounds based upon the current path, clip path
    and stroke width */
-void xps_bounds_in_user_space_path_clip(xps_context_t *ctx, gs_rect *ubox, 
+void xps_bounds_in_user_space_path_clip(xps_context_t *ctx, gs_rect *ubox,
                                         bool use_path, bool is_stroke)
 {
     int code;
@@ -47,9 +47,9 @@ void xps_bounds_in_user_space_path_clip(xps_context_t *ctx, gs_rect *ubox,
     if (!use_path)
         code = gx_curr_bbox(ctx->pgs, &bbox, NO_PATH);
     else {
-        if (is_stroke) 
+        if (is_stroke)
             code = gx_curr_bbox(ctx->pgs, &bbox, PATH_STROKE);
-        else 
+        else
             code = gx_curr_bbox(ctx->pgs, &bbox, PATH_FILL);
     }
     gs_bbox_transform_inverse(&bbox, &ctm_only(ctx->pgs), ubox);
@@ -57,7 +57,7 @@ void xps_bounds_in_user_space_path_clip(xps_context_t *ctx, gs_rect *ubox,
 
 int
 xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
-        char *opacity_att, xps_item_t *opacity_mask_tag, bool use_path, 
+        char *opacity_att, xps_item_t *opacity_mask_tag, bool use_path,
         bool is_stroke)
 {
     gs_transparency_group_params_t tgp;
@@ -89,7 +89,7 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
            For example if we had a canvas opacity then we need to make
            the path for that opacity.  Otherwise we use the opacity path
            that was defined and its intesection with the clipping path. */
-        if (!use_path) 
+        if (!use_path)
         {
             gs_moveto(ctx->pgs, bbox.p.x, bbox.p.y);
             gs_lineto(ctx->pgs, bbox.p.x, bbox.q.y);
@@ -136,5 +136,5 @@ xps_end_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
        mask present from gs_end_transparency_mask.  In this case,
        we are removing the mask with this forced pop. */
     if (opacity_mask_tag != NULL)
-        gs_pop_transparency_state(ctx->pgs, true);  
+        gs_pop_transparency_state(ctx->pgs, true);
 }

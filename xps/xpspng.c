@@ -155,7 +155,7 @@ xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     unsigned int iccproflen = 0;
     png_uint_32 xres, yres;
     int unit;
- 
+
     /*
      * Set up PNG structs and input source
      */
