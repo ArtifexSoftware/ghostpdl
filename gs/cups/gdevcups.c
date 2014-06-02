@@ -4200,8 +4200,14 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
             (int)cups->EncodeLUT[gx_max_color_value]);
 #endif /* CUPS_DEBUG */
 
-  for (i = 0; i < cups->color_info.dither_grays; i ++)
-    cups->DecodeLUT[i] = gx_max_color_value * i / max_lut;
+  for (i = 0; i < cups->color_info.dither_grays; i ++) {
+    j = i;
+#if !ARCH_IS_BIG_ENDIAN
+    if (max_lut > 255)
+      j = ((j & 255) << 8) | ((j >> 8) & 255);
+#endif /* !ARCH_IS_BIG_ENDIAN */
+    cups->DecodeLUT[i] = gx_max_color_value * j / max_lut;
+  }
 
 #ifdef CUPS_DEBUG
   dmprintf2(pdev->memory, "DEBUG: num_components = %d, depth = %d\n",
