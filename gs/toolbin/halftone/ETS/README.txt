@@ -14,10 +14,6 @@ We also moved to a Visual Studio solution for the project.
 Release notes ETS version 138
 26 Apr 2006
 Copyright 2000-2010 Artifex Sotware Inc.
-
-This version of ETS is for commercial licensees and is governed by the
-licensing agreement between Artifex Software and the licensee. Please
-contact mailto://sales@artifex.com for information on licensing.
  
 This is the latest unified release of Even Tone Screening. The core
 ETS algorithm has been highly tuned for modern inkjet printers such as
