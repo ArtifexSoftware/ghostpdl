@@ -174,21 +174,6 @@ struct cached_char_s {
     uint pair_index;		/* index of pair in mdata */
     gs_fixed_point subpix_origin; /* glyph origin offset modulo pixel */
 
-#ifdef GSLITE
-    /* GSLite API needs to be able to lock a cache entry from being
-       evicted. We do this by counting how many times the GSLite user
-       has "retained" the slot. The initial value of this is zero.
-       For normal ghostscript operation it will never be changed,
-       so it has no effect.
-
-       This is an ugly and ill conceived hack that was implemented
-       at the behest of a large customer. It is guarded by this ifdef
-       for a reason. We do not want our own code to depend on
-       this functionality.
-     */
-    int dont_evict;
-#endif
-
     /* The rest of the structure is the 'value'. */
     /* gx_cached_bits_common has width, height, raster, */
     /* shift (not used here), id. */
@@ -241,11 +226,6 @@ struct cached_char_s {
 /* Define the hash index for a (glyph, fm_pair) key. */
 #define chars_head_index(glyph, pair)\
   ((uint)(glyph) * 59 + (pair)->hash * 73)	/* scramble it a bit */
-
-#ifdef GSLITE
-void gx_retain_cached_char(cached_char *cc);
-void gx_release_cached_char(cached_char *cc);
-#endif
 
 /* ------ Character cache ------ */
 

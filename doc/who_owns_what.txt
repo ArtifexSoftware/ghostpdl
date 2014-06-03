@@ -323,7 +323,6 @@ General (high level) Ownership
 
 color:michael
 fonts:ken
-gslite:henry
 images:robin
 memory:ray
 makefiles:chris

@@ -159,9 +159,6 @@ gx_purge_selected_cached_chars(gs_font_dir * dir,
         cached_char *cc = dir->ccache.table[chi];
 
         if (cc != 0 &&
-#ifdef GSLITE
-                !cc->dont_evict &&
-#endif
                 (*proc) (dir->memory, cc, proc_data)) {
             hash_remove_cached_char(dir, chi);
             gx_free_cached_char(dir, cc);
@@ -981,12 +978,6 @@ alloc_char_in_chunk(gs_font_dir * dir, ulong icdsize, cached_char **pcc)
         if (cch == 0) {		/* Not enough room to allocate in this chunk. */
             return 0;
         }
-#ifdef GSLITE
-        /* We shouldn't free because it's used. */
-        if (cc->dont_evict) {
-            return 0;
-        }
-#endif
         else {			/* Free the character */
             cached_fm_pair *pair = cc_pair(cc);
 
@@ -1005,10 +996,6 @@ alloc_char_in_chunk(gs_font_dir * dir, ulong icdsize, cached_char **pcc)
             gx_free_cached_char(dir, cc);
         }
     }
-
-#ifdef GSLITE
-    cc->dont_evict = 0;
-#endif
 
     cc->chunk = cck;
     cc->loc = (byte *) cc - cck->data;
@@ -1055,17 +1042,3 @@ shorten_cached_char(gs_font_dir * dir, cached_char * cc, uint diff)
     if_debug2m('K', dir->memory, "[K]shortening creates free block 0x%lx(%u)\n",
               (ulong) ((byte *) cc + cc->head.size), diff);
 }
-
-#ifdef GSLITE
-
-void gx_retain_cached_char(cached_char *cc)
-{
-    cc->dont_evict ++;
-}
-
-void gx_release_cached_char(cached_char *cc)
-{
-    cc->dont_evict --;
-}
-
-#endif
