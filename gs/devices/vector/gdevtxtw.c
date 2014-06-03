@@ -828,7 +828,7 @@ txtwrite_output_page(gx_device * dev, int num_copies, int flush)
     page_text_list_t *y_list;
     gs_parsed_file_name_t parsed;
     const char *fmt;
-    const char BOM[] = {0xFE, 0xFF};
+    const short BOM = 0xFEFF;
 
     if (!tdev->file) {
         /* Either this is the first page, or we're doing one file per page */
@@ -847,7 +847,7 @@ txtwrite_output_page(gx_device * dev, int num_copies, int flush)
             break;
 
         case 2:
-            fwrite (BOM, sizeof(unsigned char), 2, tdev->file);
+            fwrite (&BOM, sizeof(unsigned short), 1, tdev->file);
         case 3:
             code = simple_text_output(tdev);
             if (code < 0)
