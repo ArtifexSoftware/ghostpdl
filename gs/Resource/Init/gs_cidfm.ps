@@ -134,7 +134,22 @@ currentdict end def
 >> def
 
 /VerifyMap  % <raw_map> VerifyMap -
-{ % Checks for vicious substitution cycles.
+{
+  % Remove any mappings for which we cannot find the font file
+  dup
+  {
+    dup type /dicttype eq
+    {
+      /Path .knownget
+      {
+        status {pop pop pop pop pop}
+        {2 index exch undef} ifelse
+      }
+      {2 index exch undef}
+      ifelse
+    }
+    {pop pop} ifelse
+  } forall
 
   % This is where we insert the default fallback into the map
   % checking first to see if there is a user specified alternative
@@ -148,6 +163,8 @@ currentdict end def
        pop
      }ifelse
   } if
+
+  % Checks for vicious substitution cycles.
   dup length dict copy                  % <<map>>
   dup length dict                       % <<map>> <<temp>>
   { % Choose a random record :
@@ -190,7 +207,8 @@ currentdict end def
 } bind def
 
 /PreprocessRecord  % <map> <Name> <raw_record> PreprocessRecord <map> <Name> <record> <bool>
-{ //IsMyRecord exec {
+{
+  //IsMyRecord exec {
     1 dict begin
     /Substitute exch def
     dup /Name exch def
