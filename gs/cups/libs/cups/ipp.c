@@ -126,7 +126,11 @@
  */
 
 #include "cups-private.h"
+
+#ifndef WIN32
 #include <regex.h>
+#endif /* WIN32 */
+
 #ifdef WIN32
 #  include <io.h>
 #endif /* WIN32 */
@@ -4837,7 +4841,9 @@ ippValidateAttribute(
 		uri_status;		/* URI separation status */
   const char	*ptr;			/* Pointer into string */
   ipp_attribute_t *colattr;		/* Collection attribute */
+#ifndef WIN32
   regex_t	re;			/* Regular expression */
+#endif /* WIN32 */
   ipp_uchar_t	*date;			/* Current date value */
   static const char * const uri_status_strings[] =
   {					/* URI status strings */
@@ -5338,7 +5344,7 @@ ippValidateAttribute(
 	* language tags in RFC 4646.  All I can say is that this is the
 	* easiest way to check the values...
 	*/
-
+#ifndef WIN32
         if ((i = regcomp(&re,
 			 "^("
 			 "(([a-z]{2,3}(-[a-z][a-z][a-z]){0,3})|[a-z]{4,8})"
@@ -5363,9 +5369,11 @@ ippValidateAttribute(
 			  "expression: %s."), temp);
 	  return (0);
         }
+#endif /* WIN32 */
 
         for (i = 0; i < attr->num_values; i ++)
 	{
+#ifndef WIN32
 	  if (regexec(&re, attr->values[i].string.text, 0, NULL, 0))
 	  {
 	    ipp_set_error(IPP_STATUS_ERROR_BAD_REQUEST,
@@ -5375,6 +5383,7 @@ ippValidateAttribute(
 	    regfree(&re);
 	    return (0);
 	  }
+#endif /* WIN32 */
 
 	  if (strlen(attr->values[i].string.text) > (IPP_MAX_LANGUAGE - 1))
 	  {
@@ -5383,12 +5392,16 @@ ippValidateAttribute(
 			    "length %d (RFC 2911 section 4.1.8)."),
 			  attr->name, attr->values[i].string.text,
 			  (int)strlen(attr->values[i].string.text));
+#ifndef WIN32
 	    regfree(&re);
+#endif /* WIN32 */
 	    return (0);
 	  }
 	}
 
+#ifndef WIN32
 	regfree(&re);
+#endif /* WIN32 */
         break;
 
     case IPP_TAG_MIMETYPE :
@@ -5398,6 +5411,7 @@ ippValidateAttribute(
 	* the easiest way to check the values...
 	*/
 
+#ifndef WIN32
         if ((i = regcomp(&re,
 			 "^"
 			 "[-a-zA-Z0-9!#$&.+^_]{1,127}"		/* type-name */
@@ -5417,9 +5431,11 @@ ippValidateAttribute(
 			  "expression: %s."), temp);
 	  return (0);
         }
+#endif /* WIN32 */
 
         for (i = 0; i < attr->num_values; i ++)
 	{
+#ifndef WIN32
 	  if (regexec(&re, attr->values[i].string.text, 0, NULL, 0))
 	  {
 	    ipp_set_error(IPP_STATUS_ERROR_BAD_REQUEST,
@@ -5429,6 +5445,7 @@ ippValidateAttribute(
 	    regfree(&re);
 	    return (0);
 	  }
+#endif /* WIN32 */
 
 	  if (strlen(attr->values[i].string.text) > (IPP_MAX_MIMETYPE - 1))
 	  {
@@ -5437,12 +5454,16 @@ ippValidateAttribute(
 			    "length %d (RFC 2911 section 4.1.9)."),
 			  attr->name, attr->values[i].string.text,
 			  (int)strlen(attr->values[i].string.text));
+#ifndef WIN32
 	    regfree(&re);
+#endif /* WIN32 */
 	    return (0);
 	  }
 	}
 
+#ifndef WIN32
 	regfree(&re);
+#endif /* WIN32 */
         break;
 
     default :

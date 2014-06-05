@@ -141,6 +141,7 @@ _cupsGlobalUnlock(void)
 
 
 #ifdef WIN32
+#if 0
 /*
  * 'DllMain()' - Main entry for library.
  */
@@ -184,6 +185,7 @@ DllMain(HINSTANCE hinst,		/* I - DLL module handle */
 
   return (TRUE);
 }
+#endif /* 0 */
 #endif /* WIN32 */
 
 

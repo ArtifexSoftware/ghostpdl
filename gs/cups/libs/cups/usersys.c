@@ -455,7 +455,11 @@ cupsSetUserAgent(const char *user_agent)/* I - User-Agent string or @code NULL@ 
 #ifdef WIN32
   version.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
   GetVersionEx(&version);
+#if 0
   GetNativeSystemInfo(&sysinfo);
+#else
+  GetSystemInfo(&sysinfo);
+#endif
 
   snprintf(cg->user_agent, sizeof(cg->user_agent),
            CUPS_MINIMAL " (Windows %d.%d; %s) IPP/2.0",

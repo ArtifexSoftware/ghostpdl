@@ -46,7 +46,9 @@ _cups_gettimeofday(struct timeval *tv,	/* I  - Timeval struct */
 #  include <sys/time.h>
 #  include <unistd.h>
 #endif /* WIN32 */
-#include <regex.h>
+#ifndef WIN32
+#  include <regex.h>
+#endif /* WIN32 */
 #include <fcntl.h>
 
 
@@ -65,8 +67,10 @@ int			_cups_debug_level = 1;
  * Local globals...
  */
 
+#  ifndef WIN32
 static regex_t		*debug_filter = NULL;
 					/* Filter expression for messages */
+#  endif /* !WIN32 */
 static int		debug_init = 0;	/* Did we initialize debugging? */
 static _cups_mutex_t	debug_init_mutex = _CUPS_MUTEX_INITIALIZER,
 					/* Mutex to control initialization */
@@ -445,6 +449,7 @@ _cups_debug_printf(const char *format,	/* I - Printf-style format string */
   if (level > _cups_debug_level)
     return;
 
+#ifndef WIN32
   if (debug_filter)
   {
     int	result;				/* Filter result */
@@ -456,6 +461,7 @@ _cups_debug_printf(const char *format,	/* I - Printf-style format string */
     if (result)
       return;
   }
+#endif
 
  /*
   * Format the message...
@@ -528,6 +534,7 @@ _cups_debug_puts(const char *s)		/* I - String to output */
   if (level > _cups_debug_level)
     return;
 
+#ifndef WIN32
   if (debug_filter)
   {
     int	result;				/* Filter result */
@@ -539,7 +546,7 @@ _cups_debug_puts(const char *s)		/* I - String to output */
     if (result)
       return;
   }
-
+#endif /* WIN32 */
  /*
   * Format the message...
   */
@@ -596,11 +603,13 @@ _cups_debug_set(const char *logfile,	/* I - Log file or NULL */
       _cups_debug_fd = -1;
     }
 
+#ifndef WIN32
     if (debug_filter)
     {
       regfree((regex_t *)debug_filter);
       debug_filter = NULL;
     }
+#endif /* WIN32 */
 
     _cups_debug_level = 1;
 
@@ -627,6 +636,7 @@ _cups_debug_set(const char *logfile,	/* I - Log file or NULL */
     if (level)
       _cups_debug_level = atoi(level);
 
+#ifndef WIN32
     if (filter)
     {
       if ((debug_filter = (regex_t *)calloc(1, sizeof(regex_t))) == NULL)
@@ -640,6 +650,7 @@ _cups_debug_set(const char *logfile,	/* I - Log file or NULL */
 	debug_filter = NULL;
       }
     }
+#endif
 
     debug_init = 1;
   }
