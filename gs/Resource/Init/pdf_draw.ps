@@ -2854,9 +2854,18 @@ currentdict /set_bc_color undef
   } bdef
 
   /FreeText {
-    dup /AP oknown {
-      //true
-    } {
+    dup /AP knownoget {
+        %% Check minimal entriy in /AP dictionary
+        /N known not {
+          //true
+        }{
+          //false
+        }ifelse
+      } {
+        //true
+    }ifelse
+    %% We either have no appearance, or its invalid, make one up.
+    {
       gsave
 
       dup annotrect rectclip
@@ -2889,7 +2898,9 @@ currentdict /set_bc_color undef
             } ifelse
           } ifelse
         } ifelse
-      } if
+      }{
+        false
+      } ifelse
       {dup annotrect
         %% Somewhat horrifyingly, rectfill maps directly to the device fill_rectangle
         %% method, which bypasses transparency (!!) So we construct the rectangle,
@@ -2899,6 +2910,17 @@ currentdict /set_bc_color undef
       } if
 
       %% get and process the default appearance string, if we don't have one, use a default
+      /DA_Action_Dict
+      <<
+        /Tf {exch dup /Helv eq {pop /Helvetica findfont exch scalefont setfont}{findfont exch scalefont setfont}ifelse}
+        /r  {aload pop setrgbcolor}
+        /rg {aload pop setrgbcolor}
+        /RG {aload pop setrgbcolor}
+        /G  {aload pop setgray}
+        /g  {aload pop setgray}
+        /k  {aload pop setcmykcolor}
+        /K  {aload pop setcmykcolor}
+      >> def
       dup /DA knownoget {
         length string /tempstr exch def
         dup /DA get tempstr copy pop
@@ -2908,27 +2930,19 @@ currentdict /set_bc_color undef
           tempstr
           token {
             exch /tempstr exch def
-            %% change font
-            dup /Tf eq {
-              pop exch dup /Helv eq {
-                pop /Helvetica findfont exch scalefont setfont
+            %% If the token is a name
+            %%
+            dup type /nametype eq {
+              %% Is it a name we want to take actionon
+              dup DA_Action_Dict exch known {
+                DA_Action_Dict exch get exec
               }{
-                findfont exch scalefont setfont
-              }ifelse
-            } {
-              %% change color, I can't find this documented in the PDF reference
-              %% anywhere, so I'm assuming that 'r' is rgb, no idea if there are others.
-              dup /r eq {
-                pop aload pop setrgbcolor
-              }{
-                %% We want to leave names (eg /Helv) on the stack, but we
-                %% want to process array (possibly dict as well ?) marks.
-                dup type /nametype eq {
-                  dup ([) cvn eq 1 index (]) cvn eq or {cvx exec} if
-                } {
-                  cvx exec
-                } ifelse
-              }ifelse
+                %% Its not a name we know, is it executable
+                dup xcheck {exec} if
+              } ifelse
+            }{
+              %% Not a name, just make it executable and execute it
+              cvx exec
             }ifelse
           }{
             exit
@@ -2938,7 +2952,6 @@ currentdict /set_bc_color undef
         0 setgray
         /Helvetica findfont 12 scalefont setfont
       }ifelse
-
       %% draw the border, if we don't have a border style dictionary, draw a default one.
       dup /BS knownoget {
         pop dup drawborder
@@ -3011,6 +3024,9 @@ currentdict /set_bc_color undef
       pop pop
       //false
       grestore
+    }
+    {
+      //true
     } ifelse
   } bdef
 
