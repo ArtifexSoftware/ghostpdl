@@ -1,9 +1,9 @@
 /*
- * "$Id: language.h 8179 2008-12-10 05:03:11Z mike $"
+ * "$Id: language.h 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   Multi-language support for the Common UNIX Printing System (CUPS).
+ *   Multi-language support for CUPS.
  *
- *   Copyright 2007-2008 by Apple Inc.
+ *   Copyright 2007-2011 by Apple Inc.
  *   Copyright 1997-2006 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -111,5 +111,5 @@ extern cups_lang_t	*cupsLangGet(const char *language);
 #endif /* !_CUPS_LANGUAGE_H_ */
 
 /*
- * End of "$Id: language.h 8179 2008-12-10 05:03:11Z mike $".
+ * End of "$Id: language.h 10996 2013-05-29 11:51:34Z msweet $".
  */

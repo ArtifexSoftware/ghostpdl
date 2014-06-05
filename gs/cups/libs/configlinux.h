@@ -1,10 +1,10 @@
 /* config.h.  Generated from config.h.in by configure.  */
 /*
- * "$Id: config.h.in 9259 2010-08-13 04:11:46Z mike $"
+ * "$Id: config.h.in 11642 2014-02-27 15:57:59Z msweet $"
  *
  *   Configuration file for CUPS.
  *
- *   Copyright 2007-2010 by Apple Inc.
+ *   Copyright 2007-2013 by Apple Inc.
  *   Copyright 1997-2007 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -21,8 +21,8 @@
  * Version of software...
  */
 
-#define CUPS_SVERSION "CUPS v1.4.5"
-#define CUPS_MINIMAL "CUPS/1.4.5"
+#define CUPS_SVERSION "CUPS v1.7.3"
+#define CUPS_MINIMAL "CUPS/1.7.3"
 
 
 /*
@@ -63,12 +63,8 @@
  */
 
 #define CUPS_DEFAULT_BROWSING 1
-#define CUPS_DEFAULT_BROWSE_LOCAL_PROTOCOLS "CUPS"
-#define CUPS_DEFAULT_BROWSE_REMOTE_PROTOCOLS "CUPS"
-#define CUPS_DEFAULT_BROWSE_SHORT_NAMES 1
+#define CUPS_DEFAULT_BROWSE_LOCAL_PROTOCOLS ""
 #define CUPS_DEFAULT_DEFAULT_SHARED 1
-#define CUPS_DEFAULT_IMPLICIT_CLASSES 1
-#define CUPS_DEFAULT_USE_NETWORK_DEFAULT 1
 
 
 /*
@@ -665,6 +661,46 @@
 #define HAVE_SYS_STATFS_H 1
 #define HAVE_SYS_STATVFS_H 1
 #define HAVE_SYS_VFS_H 1
+
+
+/*
+ * Location of OS X localization bundle, if any.
+ */
+
+/* #undef CUPS_BUNDLEDIR */
+
+
+/*
+ * Do we have XPC?
+ */
+
+/* #undef HAVE_XPC */
+/* #undef HAVE_XPC_PRIVATE_H */
+
+
+/*
+ * Do we have Mini-XML?
+ */
+
+/* #undef HAVE_MXML_H */
+
+
+/*
+ * Do we have the C99 abs() function?
+ */
+
+#define HAVE_ABS 0
+#if !defined(HAVE_ABS) && !defined(abs)
+#  if defined(__GNUC__) || __STDC_VERSION__ >= 199901L
+#    define abs(x) _cups_abs(x)
+static inline int _cups_abs(int i) { return (i < 0 ? -i : i); }
+#  elif defined(_MSC_VER)
+#    define abs(x) _cups_abs(x)
+static __inline int _cups_abs(int i) { return (i < 0 ? -i : i); }
+#  else
+#    define abs(x) ((x) < 0 ? -(x) : (x))
+#  endif /* __GNUC__ || __STDC_VERSION__ */
+#endif /* !HAVE_ABS && !abs */
 
 
 #endif /* !_CUPS_CONFIG_H_ */

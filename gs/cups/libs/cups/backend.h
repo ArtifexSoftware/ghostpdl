@@ -1,9 +1,9 @@
 /*
- * "$Id: backend.h 8884 2009-11-17 21:57:54Z mike $"
+ * "$Id: backend.h 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   Backend definitions for the Common UNIX Printing System (CUPS).
+ *   Backend definitions for CUPS.
  *
- *   Copyright 2007-2008 by Apple Inc.
+ *   Copyright 2007-2011 by Apple Inc.
  *   Copyright 1997-2005 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -45,7 +45,9 @@ enum cups_backend_e			/**** Backend exit codes ****/
   CUPS_BACKEND_AUTH_REQUIRED = 2,	/* Job failed, authentication required */
   CUPS_BACKEND_HOLD = 3,		/* Job failed, hold job */
   CUPS_BACKEND_STOP = 4,		/* Job failed, stop queue */
-  CUPS_BACKEND_CANCEL = 5		/* Job failed, cancel job */
+  CUPS_BACKEND_CANCEL = 5,		/* Job failed, cancel job */
+  CUPS_BACKEND_RETRY = 6,		/* Job failed, retry this job later */
+  CUPS_BACKEND_RETRY_CURRENT = 7	/* Job failed, retry this job immediately */
 };
 typedef enum cups_backend_e cups_backend_t;
 					/**** Backend exit codes ****/
@@ -63,7 +65,7 @@ extern void		cupsBackendReport(const char *device_scheme,
 			                  const char *device_id,
 			                  const char *device_location)
 					  _CUPS_API_1_4;
-			                  
+
 
 #  ifdef __cplusplus
 }
@@ -72,5 +74,5 @@ extern void		cupsBackendReport(const char *device_scheme,
 #endif /* !_CUPS_BACKEND_H_ */
 
 /*
- * End of "$Id: backend.h 8884 2009-11-17 21:57:54Z mike $".
+ * End of "$Id: backend.h 10996 2013-05-29 11:51:34Z msweet $".
  */

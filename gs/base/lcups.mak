@@ -68,9 +68,7 @@ LIBCUPS_OBJS =\
 	$(LIBCUPSOBJ)options.$(OBJ) \
 	$(LIBCUPSOBJ)page.$(OBJ) \
 	$(LIBCUPSOBJ)ppd.$(OBJ) \
-	$(LIBCUPSOBJ)pwg-file.$(OBJ) \
 	$(LIBCUPSOBJ)pwg-media.$(OBJ) \
-	$(LIBCUPSOBJ)pwg-ppd.$(OBJ) \
 	$(LIBCUPSOBJ)request.$(OBJ) \
 	$(LIBCUPSOBJ)snmp.$(OBJ) \
 	$(LIBCUPSOBJ)string.$(OBJ) \
@@ -79,9 +77,13 @@ LIBCUPS_OBJS =\
 	$(LIBCUPSOBJ)cups_util.$(OBJ) \
 	$(LIBCUPSOBJ)cups_md5.$(OBJ) \
 	$(LIBCUPSOBJ)cups_snpf.$(OBJ) \
-	$(LIBCUPSOBJ)usersys.$(OBJ) 
+	$(LIBCUPSOBJ)usersys.$(OBJ) \
+	$(LIBCUPSOBJ)ppd-cache.$(OBJ) \
+	$(LIBCUPSOBJ)thread.$(OBJ) 
 #	$(LIBCUPSOBJ)sidechannel.$(OBJ) \
 #	$(LIBCUPSOBJ)getifaddrs.$(OBJ) \
+#	$(LIBCUPSOBJ)pwg-ppd.$(OBJ) \
+#	$(LIBCUPSOBJ)pwg-file.$(OBJ) \
 
 LIBCUPSHEADERS	=	\
 		$(LIBCUPSSRC)adminutil.h \
@@ -269,6 +271,12 @@ $(LIBCUPSOBJ)transcode.$(OBJ) : $(LIBCUPSSRC)transcode.c $(LIBSCUPSHEADERS)
 
 $(LIBCUPSOBJ)usersys.$(OBJ) : $(LIBCUPSSRC)usersys.c $(LIBSCUPSHEADERS)
 	$(LCUPS_CC) $(LCUPSO_)usersys.$(OBJ) $(C_) $(LIBCUPSSRC)usersys.c
+
+$(LIBCUPSOBJ)ppd-cache.$(OBJ) : $(LIBCUPSSRC)ppd-cache.c $(LIBSCUPSHEADERS)
+	$(LCUPS_CC) $(LCUPSO_)ppd-cache.$(OBJ) $(C_) $(LIBCUPSSRC)ppd-cache.c
+
+$(LIBCUPSOBJ)thread.$(OBJ) : $(LIBCUPSSRC)thread.c $(LIBSCUPSHEADERS)
+	$(LCUPS_CC) $(LCUPSO_)thread.$(OBJ) $(C_) $(LIBCUPSSRC)thread.c
 
 $(LIBCUPSOBJ)cups_util.$(OBJ) : $(LIBCUPSSRC)util.c $(LIBSCUPSHEADERS)
 	$(CP_) $(LIBCUPSSRC)util.c $(LIBCUPSGEN)cups_util.c

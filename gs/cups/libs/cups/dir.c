@@ -1,11 +1,11 @@
 /*
- * "$Id: dir.c 8635 2009-05-14 21:18:35Z mike $"
+ * "$Id: dir.c 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   Public directory routines for the Common UNIX Printing System (CUPS).
+ *   Directory routines for CUPS.
  *
  *   This set of APIs abstracts enumeration of directory entries.
  *
- *   Copyright 2007-2009 by Apple Inc.
+ *   Copyright 2007-2012 by Apple Inc.
  *   Copyright 1997-2005 by Easy Software Products, all rights reserved.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -31,11 +31,9 @@
  * Include necessary headers...
  */
 
+#include "string-private.h"
+#include "debug-private.h"
 #include "dir.h"
-#include "string.h"
-#include "debug.h"
-#include <stdlib.h>
-#include <errno.h>
 
 
 /*
@@ -81,7 +79,7 @@ _cups_dir_time(FILETIME ft)		/* I - File time */
 /*
  * 'cupsDirClose()' - Close a directory.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void
@@ -112,7 +110,7 @@ cupsDirClose(cups_dir_t *dp)		/* I - Directory pointer */
 /*
  * 'cupsDirOpen()' - Open a directory.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 cups_dir_t *				/* O - Directory pointer or @code NULL@ if the directory could not be opened. */
@@ -155,7 +153,7 @@ cupsDirOpen(const char *directory)	/* I - Directory name */
 /*
  * 'cupsDirRead()' - Read the next directory entry.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 cups_dentry_t *				/* O - Directory entry or @code NULL@ if there are no more */
@@ -202,7 +200,7 @@ cupsDirRead(cups_dir_t *dp)		/* I - Directory pointer */
   dp->entry.fileinfo.st_atime = _cups_dir_time(entry.ftLastAccessTime);
   dp->entry.fileinfo.st_ctime = _cups_dir_time(entry.ftCreationTime);
   dp->entry.fileinfo.st_mtime = _cups_dir_time(entry.ftLastWriteTime);
-  dp->entry.fileinfo.st_size  = entry.nFileSizeLow + (entry.nFileSizeHigh << 32);
+  dp->entry.fileinfo.st_size  = entry.nFileSizeLow + ((unsigned long long)entry.nFileSizeHigh << 32);
 
  /*
   * Return the entry...
@@ -215,7 +213,7 @@ cupsDirRead(cups_dir_t *dp)		/* I - Directory pointer */
 /*
  * 'cupsDirRewind()' - Rewind to the start of the directory.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void
@@ -265,7 +263,7 @@ struct _cups_dir_s			/**** Directory data structure ****/
 /*
  * 'cupsDirClose()' - Close a directory.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void
@@ -292,7 +290,7 @@ cupsDirClose(cups_dir_t *dp)		/* I - Directory pointer */
 /*
  * 'cupsDirOpen()' - Open a directory.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 cups_dir_t *				/* O - Directory pointer or @code NULL@ if the directory could not be opened. */
@@ -346,7 +344,7 @@ cupsDirOpen(const char *directory)	/* I - Directory name */
 /*
  * 'cupsDirRead()' - Read the next directory entry.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 cups_dentry_t *				/* O - Directory entry or @code NULL@ when there are no more */
@@ -444,7 +442,7 @@ cupsDirRead(cups_dir_t *dp)		/* I - Directory pointer */
 /*
  * 'cupsDirRewind()' - Rewind to the start of the directory.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void
@@ -470,5 +468,5 @@ cupsDirRewind(cups_dir_t *dp)		/* I - Directory pointer */
 #endif /* WIN32 */
 
 /*
- * End of "$Id: dir.c 8635 2009-05-14 21:18:35Z mike $".
+ * End of "$Id: dir.c 10996 2013-05-29 11:51:34Z msweet $".
  */

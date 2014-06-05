@@ -1,49 +1,109 @@
 /*
- * "$Id: encode.c 9258 2010-08-13 01:34:04Z mike $"
+ * "$Id: encode.c 11867 2014-05-09 20:33:08Z msweet $"
  *
- *   Option encoding routines for the Common UNIX Printing System (CUPS).
+ * Option encoding routines for CUPS.
  *
- *   Copyright 2007-2009 by Apple Inc.
- *   Copyright 1997-2007 by Easy Software Products.
+ * Copyright 2007-2014 by Apple Inc.
+ * Copyright 1997-2007 by Easy Software Products.
  *
- *   These coded instructions, statements, and computer programs are the
- *   property of Apple Inc. and are protected by Federal copyright
- *   law.  Distribution and use rights are outlined in the file "LICENSE.txt"
- *   which should have been included with this file.  If this file is
- *   file is missing or damaged, see the license at "http://www.cups.org/".
+ * These coded instructions, statements, and computer programs are the
+ * property of Apple Inc. and are protected by Federal copyright
+ * law.  Distribution and use rights are outlined in the file "LICENSE.txt"
+ * which should have been included with this file.  If this file is
+ * file is missing or damaged, see the license at "http://www.cups.org/".
  *
- *   This file is subject to the Apple OS-Developed Software exception.
- *
- * Contents:
- *
- *   cupsEncodeOptions()   - Encode printer options into IPP attributes.
- *   cupsEncodeOptions2()  - Encode printer options into IPP attributes for
- *                           a group.
- *   _ippFindOption()      - Find the attribute information for an option.
- *   compare_ipp_options() - Compare two IPP options.
+ * This file is subject to the Apple OS-Developed Software exception.
  */
 
 /*
  * Include necessary headers...
  */
 
-#include "cups.h"
-#include "ipp-private.h"
-#include <stdlib.h>
-#include <ctype.h>
-#include "string.h"
-#include "debug.h"
+#include "cups-private.h"
 
 
 /*
- * Local list of option names and the value tags they should use...
+ * Local list of option names, the value tags they should use, and the list of
+ * supported operations...
  *
- * **** THIS LIST MUST BE SORTED ****
+ * **** THIS LIST MUST BE SORTED BY ATTRIBUTE NAME ****
  */
+
+static const ipp_op_t ipp_job_creation[] =
+{
+  IPP_OP_PRINT_JOB,
+  IPP_OP_PRINT_URI,
+  IPP_OP_VALIDATE_JOB,
+  IPP_OP_CREATE_JOB,
+  IPP_OP_HOLD_JOB,
+  IPP_OP_SET_JOB_ATTRIBUTES,
+  IPP_OP_CUPS_NONE
+};
+
+static const ipp_op_t ipp_doc_creation[] =
+{
+  IPP_OP_PRINT_JOB,
+  IPP_OP_PRINT_URI,
+  IPP_OP_SEND_DOCUMENT,
+  IPP_OP_SEND_URI,
+  IPP_OP_SET_JOB_ATTRIBUTES,
+  IPP_OP_SET_DOCUMENT_ATTRIBUTES,
+  IPP_OP_CUPS_NONE
+};
+
+static const ipp_op_t ipp_sub_creation[] =
+{
+  IPP_OP_PRINT_JOB,
+  IPP_OP_PRINT_URI,
+  IPP_OP_CREATE_JOB,
+  IPP_OP_CREATE_PRINTER_SUBSCRIPTIONS,
+  IPP_OP_CREATE_JOB_SUBSCRIPTIONS,
+  IPP_OP_CUPS_NONE
+};
+
+static const ipp_op_t ipp_all_print[] =
+{
+  IPP_OP_PRINT_JOB,
+  IPP_OP_PRINT_URI,
+  IPP_OP_VALIDATE_JOB,
+  IPP_OP_CREATE_JOB,
+  IPP_OP_SEND_DOCUMENT,
+  IPP_OP_SEND_URI,
+  IPP_OP_CUPS_NONE
+};
+
+static const ipp_op_t ipp_set_printer[] =
+{
+  IPP_OP_SET_PRINTER_ATTRIBUTES,
+  IPP_OP_CUPS_ADD_MODIFY_PRINTER,
+  IPP_OP_CUPS_ADD_MODIFY_CLASS,
+  IPP_OP_CUPS_NONE
+};
+
+static const ipp_op_t cups_schemes[] =
+{
+  IPP_OP_CUPS_GET_DEVICES,
+  IPP_OP_CUPS_GET_PPDS,
+  IPP_OP_CUPS_NONE
+};
+
+static const ipp_op_t cups_get_ppds[] =
+{
+  IPP_OP_CUPS_GET_PPDS,
+  IPP_OP_CUPS_NONE
+};
+
+static const ipp_op_t cups_ppd_name[] =
+{
+  IPP_OP_CUPS_ADD_MODIFY_PRINTER,
+  IPP_OP_CUPS_GET_PPD,
+  IPP_OP_CUPS_NONE
+};
 
 static const _ipp_option_t ipp_options[] =
 {
   { 1, "auth-info",		IPP_TAG_TEXT,		IPP_TAG_JOB },
+  { 1, "auth-info-default",	IPP_TAG_TEXT,		IPP_TAG_PRINTER },
   { 1, "auth-info-required",	IPP_TAG_KEYWORD,	IPP_TAG_PRINTER },
   { 0, "blackplot",		IPP_TAG_BOOLEAN,	IPP_TAG_JOB },
   { 0, "blackplot-default",	IPP_TAG_BOOLEAN,	IPP_TAG_PRINTER },
@@ -51,16 +111,31 @@ static const _ipp_option_t ipp_options[] =
   { 0, "brightness-default",	IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
   { 0, "columns",		IPP_TAG_INTEGER,	IPP_TAG_JOB },
   { 0, "columns-default",	IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
-  { 0, "compression",		IPP_TAG_KEYWORD,	IPP_TAG_OPERATION },
-  { 0, "copies",		IPP_TAG_INTEGER,	IPP_TAG_JOB },
+  { 0, "compression",		IPP_TAG_KEYWORD,	IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							ipp_doc_creation },
+  { 0, "copies",		IPP_TAG_INTEGER,	IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
   { 0, "copies-default",	IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
   { 0, "device-uri",		IPP_TAG_URI,		IPP_TAG_PRINTER },
-  { 0, "document-format",	IPP_TAG_MIMETYPE,	IPP_TAG_OPERATION },
+  { 1, "document-copies",	IPP_TAG_RANGE,		IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT,
+							ipp_doc_creation },
+  { 0, "document-format",	IPP_TAG_MIMETYPE,	IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							ipp_doc_creation },
   { 0, "document-format-default", IPP_TAG_MIMETYPE,	IPP_TAG_PRINTER },
-  { 1, "exclude-schemes",	IPP_TAG_NAME,		IPP_TAG_OPERATION },
-  { 1, "finishings",		IPP_TAG_ENUM,		IPP_TAG_JOB },
+  { 1, "document-numbers",	IPP_TAG_RANGE,		IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT,
+							ipp_all_print },
+  { 1, "exclude-schemes",	IPP_TAG_NAME,		IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							cups_schemes },
+  { 1, "finishings",		IPP_TAG_ENUM,		IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
   { 1, "finishings-default",	IPP_TAG_ENUM,		IPP_TAG_PRINTER },
-  { 0, "fit-to-page",		IPP_TAG_BOOLEAN,	IPP_TAG_JOB },
+  { 0, "fit-to-page",		IPP_TAG_BOOLEAN,	IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
   { 0, "fit-to-page-default",	IPP_TAG_BOOLEAN,	IPP_TAG_PRINTER },
   { 0, "fitplot",		IPP_TAG_BOOLEAN,	IPP_TAG_JOB },
   { 0, "fitplot-default",	IPP_TAG_BOOLEAN,	IPP_TAG_PRINTER },
@@ -68,14 +143,37 @@ static const _ipp_option_t ipp_options[] =
   { 0, "gamma-default",		IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
   { 0, "hue",			IPP_TAG_INTEGER,	IPP_TAG_JOB },
   { 0, "hue-default",		IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
-  { 1, "include-schemes",	IPP_TAG_NAME,		IPP_TAG_OPERATION },
-  { 0, "job-impressions",	IPP_TAG_INTEGER,	IPP_TAG_JOB },
+  { 1, "include-schemes",	IPP_TAG_NAME,		IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							cups_schemes },
+  { 0, "job-account-id",        IPP_TAG_NAME,           IPP_TAG_JOB },
+  { 0, "job-account-id-default",IPP_TAG_NAME,           IPP_TAG_PRINTER },
+  { 0, "job-accounting-user-id", IPP_TAG_NAME,          IPP_TAG_JOB },
+  { 0, "job-accounting-user-id-default", IPP_TAG_NAME,  IPP_TAG_PRINTER },
+  { 0, "job-authorization-uri",	IPP_TAG_URI,		IPP_TAG_OPERATION },
+  { 0, "job-hold-until",	IPP_TAG_KEYWORD,	IPP_TAG_JOB },
+  { 0, "job-id",		IPP_TAG_INTEGER,	IPP_TAG_ZERO }, /* never send as option */
+  { 0, "job-impressions",	IPP_TAG_INTEGER,	IPP_TAG_ZERO }, /* never send as option */
+  { 0, "job-impressions-completed", IPP_TAG_INTEGER,	IPP_TAG_ZERO }, /* never send as option */
   { 0, "job-k-limit",		IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
+  { 0, "job-k-octets",		IPP_TAG_INTEGER,	IPP_TAG_ZERO }, /* never send as option */
+  { 0, "job-k-octets-completed",IPP_TAG_INTEGER,	IPP_TAG_ZERO }, /* never send as option */
+  { 0, "job-media-sheets",	IPP_TAG_INTEGER,	IPP_TAG_ZERO }, /* never send as option */
+  { 0, "job-media-sheets-completed", IPP_TAG_INTEGER,	IPP_TAG_ZERO }, /* never send as option */
   { 0, "job-page-limit",	IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
+  { 0, "job-password",          IPP_TAG_STRING,         IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							ipp_job_creation },
+  { 0, "job-password-encryption", IPP_TAG_KEYWORD,      IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							ipp_job_creation },
   { 0, "job-priority",		IPP_TAG_INTEGER,	IPP_TAG_JOB },
   { 0, "job-quota-period",	IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
   { 1, "job-sheets",		IPP_TAG_NAME,		IPP_TAG_JOB },
   { 1, "job-sheets-default",	IPP_TAG_NAME,		IPP_TAG_PRINTER },
+  { 0, "job-state",		IPP_TAG_ENUM,		IPP_TAG_ZERO }, /* never send as option */
+  { 0, "job-state-message",	IPP_TAG_TEXT,		IPP_TAG_ZERO }, /* never send as option */
+  { 0, "job-state-reasons",	IPP_TAG_KEYWORD,	IPP_TAG_ZERO }, /* never send as option */
   { 0, "job-uuid",		IPP_TAG_URI,		IPP_TAG_JOB },
   { 0, "landscape",		IPP_TAG_BOOLEAN,	IPP_TAG_JOB },
   { 1, "marker-change-time",	IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
@@ -86,14 +184,20 @@ static const _ipp_option_t ipp_options[] =
   { 0, "marker-message",	IPP_TAG_TEXT,		IPP_TAG_PRINTER },
   { 1, "marker-names",		IPP_TAG_NAME,		IPP_TAG_PRINTER },
   { 1, "marker-types",		IPP_TAG_KEYWORD,	IPP_TAG_PRINTER },
-  { 1, "media",			IPP_TAG_KEYWORD,	IPP_TAG_JOB },
-  { 0, "media-col",		IPP_TAG_BEGIN_COLLECTION, IPP_TAG_JOB },
+  { 1, "media",			IPP_TAG_KEYWORD,	IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
+  { 0, "media-col",		IPP_TAG_BEGIN_COLLECTION, IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
   { 0, "media-col-default",	IPP_TAG_BEGIN_COLLECTION, IPP_TAG_PRINTER },
-  { 0, "media-color",		IPP_TAG_KEYWORD,	IPP_TAG_JOB },
+  { 0, "media-color",		IPP_TAG_KEYWORD,	IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
   { 1, "media-default",		IPP_TAG_KEYWORD,	IPP_TAG_PRINTER },
-  { 0, "media-key",		IPP_TAG_KEYWORD,	IPP_TAG_JOB },
-  { 0, "media-size",		IPP_TAG_BEGIN_COLLECTION, IPP_TAG_JOB },
-  { 0, "media-type",		IPP_TAG_KEYWORD,	IPP_TAG_JOB },
+  { 0, "media-key",		IPP_TAG_KEYWORD,	IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
+  { 0, "media-size",		IPP_TAG_BEGIN_COLLECTION, IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
+  { 0, "media-type",		IPP_TAG_KEYWORD,	IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
   { 0, "mirror",		IPP_TAG_BOOLEAN,	IPP_TAG_JOB },
   { 0, "mirror-default",	IPP_TAG_BOOLEAN,	IPP_TAG_PRINTER },
   { 0, "natural-scaling",	IPP_TAG_INTEGER,	IPP_TAG_JOB },
@@ -108,29 +212,63 @@ static const _ipp_option_t ipp_options[] =
   { 0, "notify-recipient-uri",	IPP_TAG_URI,		IPP_TAG_SUBSCRIPTION },
   { 0, "notify-time-interval",	IPP_TAG_INTEGER,	IPP_TAG_SUBSCRIPTION },
   { 0, "notify-user-data",	IPP_TAG_STRING,		IPP_TAG_SUBSCRIPTION },
-  { 0, "number-up",		IPP_TAG_INTEGER,	IPP_TAG_JOB },
+  { 0, "number-up",		IPP_TAG_INTEGER,	IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
   { 0, "number-up-default",	IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
-  { 0, "orientation-requested",	IPP_TAG_ENUM,		IPP_TAG_JOB },
+  { 0, "orientation-requested",	IPP_TAG_ENUM,		IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
   { 0, "orientation-requested-default", IPP_TAG_ENUM,	IPP_TAG_PRINTER },
+  { 1, "overrides",		IPP_TAG_BEGIN_COLLECTION, IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
   { 0, "page-bottom",		IPP_TAG_INTEGER,	IPP_TAG_JOB },
   { 0, "page-bottom-default",	IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
   { 0, "page-left",		IPP_TAG_INTEGER,	IPP_TAG_JOB },
   { 0, "page-left-default",	IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
-  { 1, "page-ranges",		IPP_TAG_RANGE,		IPP_TAG_JOB },
+  { 1, "page-ranges",		IPP_TAG_RANGE,		IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
   { 1, "page-ranges-default",	IPP_TAG_RANGE,		IPP_TAG_PRINTER },
   { 0, "page-right",		IPP_TAG_INTEGER,	IPP_TAG_JOB },
   { 0, "page-right-default",	IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
   { 0, "page-top",		IPP_TAG_INTEGER,	IPP_TAG_JOB },
   { 0, "page-top-default",	IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
+  { 1, "pages",			IPP_TAG_RANGE,		IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
   { 0, "penwidth",		IPP_TAG_INTEGER,	IPP_TAG_JOB },
   { 0, "penwidth-default",	IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
   { 0, "port-monitor",		IPP_TAG_NAME,		IPP_TAG_PRINTER },
-  { 0, "ppd-name",		IPP_TAG_NAME,		IPP_TAG_PRINTER },
+  { 0, "ppd-device-id",		IPP_TAG_TEXT,		IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							cups_get_ppds },
+  { 0, "ppd-make",		IPP_TAG_TEXT,		IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							cups_get_ppds },
+  { 0, "ppd-make-and-model",	IPP_TAG_TEXT,		IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							cups_get_ppds },
+  { 0, "ppd-model-number",	IPP_TAG_INTEGER,	IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							cups_get_ppds },
+  { 0, "ppd-name",		IPP_TAG_NAME,		IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							cups_ppd_name },
+  { 0, "ppd-natural-language",	IPP_TAG_LANGUAGE,	IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							cups_get_ppds },
+  { 0, "ppd-product",		IPP_TAG_TEXT,		IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							cups_get_ppds },
+  { 0, "ppd-psversion",		IPP_TAG_TEXT,		IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							cups_get_ppds },
+  { 0, "ppd-type",		IPP_TAG_KEYWORD,	IPP_TAG_OPERATION,
+							IPP_TAG_ZERO,
+							cups_get_ppds },
   { 0, "ppi",			IPP_TAG_INTEGER,	IPP_TAG_JOB },
   { 0, "ppi-default",		IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
   { 0, "prettyprint",		IPP_TAG_BOOLEAN,	IPP_TAG_JOB },
   { 0, "prettyprint-default",	IPP_TAG_BOOLEAN,	IPP_TAG_PRINTER },
-  { 0, "print-quality",		IPP_TAG_ENUM,		IPP_TAG_JOB },
+  { 0, "print-quality",		IPP_TAG_ENUM,		IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
   { 0, "print-quality-default",	IPP_TAG_ENUM,		IPP_TAG_PRINTER },
   { 1, "printer-commands",	IPP_TAG_KEYWORD,	IPP_TAG_PRINTER },
   { 0, "printer-error-policy",	IPP_TAG_NAME,		IPP_TAG_PRINTER },
@@ -141,7 +279,8 @@ static const _ipp_option_t ipp_options[] =
   { 0, "printer-make-and-model", IPP_TAG_TEXT,		IPP_TAG_PRINTER },
   { 0, "printer-more-info",	IPP_TAG_URI,		IPP_TAG_PRINTER },
   { 0, "printer-op-policy",	IPP_TAG_NAME,		IPP_TAG_PRINTER },
-  { 0, "printer-resolution",	IPP_TAG_RESOLUTION,	IPP_TAG_JOB },
+  { 0, "printer-resolution",	IPP_TAG_RESOLUTION,	IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
   { 0, "printer-state",		IPP_TAG_ENUM,		IPP_TAG_PRINTER },
   { 0, "printer-state-change-time", IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
   { 1, "printer-state-reasons",	IPP_TAG_KEYWORD,	IPP_TAG_PRINTER },
@@ -159,12 +298,18 @@ static const _ipp_option_t ipp_options[] =
   { 0, "saturation-default",	IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
   { 0, "scaling",		IPP_TAG_INTEGER,	IPP_TAG_JOB },
   { 0, "scaling-default",	IPP_TAG_INTEGER,	IPP_TAG_PRINTER },
-  { 0, "sides",			IPP_TAG_KEYWORD,	IPP_TAG_JOB },
+  { 0, "sides",			IPP_TAG_KEYWORD,	IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
   { 0, "sides-default",		IPP_TAG_KEYWORD,	IPP_TAG_PRINTER },
+  { 0, "time-at-completed",	IPP_TAG_INTEGER,	IPP_TAG_ZERO }, /* never send as option */
+  { 0, "time-at-creation",	IPP_TAG_INTEGER,	IPP_TAG_ZERO }, /* never send as option */
+  { 0, "time-at-processing",	IPP_TAG_INTEGER,	IPP_TAG_ZERO }, /* never send as option */
   { 0, "wrap",			IPP_TAG_BOOLEAN,	IPP_TAG_JOB },
   { 0, "wrap-default",		IPP_TAG_BOOLEAN,	IPP_TAG_PRINTER },
-  { 0, "x-dimension",		IPP_TAG_INTEGER,	IPP_TAG_JOB },
-  { 0, "y-dimension",		IPP_TAG_INTEGER,	IPP_TAG_JOB }
+  { 0, "x-dimension",		IPP_TAG_INTEGER,	IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT },
+  { 0, "y-dimension",		IPP_TAG_INTEGER,	IPP_TAG_JOB,
+							IPP_TAG_DOCUMENT }
 };
 
 
@@ -207,7 +352,7 @@ cupsEncodeOptions(ipp_t         *ipp,		/* I - Request to add to */
  * function multiple times for each group, or use cupsEncodeOptions()
  * to add the standard groups.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void
@@ -217,23 +362,27 @@ cupsEncodeOptions2(
     cups_option_t *options,		/* I - Options */
     ipp_tag_t     group_tag)		/* I - Group to encode */
 {
-  int		i, j;			/* Looping vars */
-  int		count;			/* Number of values */
-  char		*s,			/* Pointer into option value */
-		*val,			/* Pointer to option value */
-		*copy,			/* Copy of option value */
-		*sep,			/* Option separator */
-		quote;			/* Quote character */
-  ipp_attribute_t *attr;		/* IPP attribute */
-  ipp_tag_t	value_tag;		/* IPP value tag */
-  cups_option_t	*option;		/* Current option */
-  ipp_t		*collection;		/* Collection value */
-  int		num_cols;		/* Number of collection values */
-  cups_option_t	*cols;			/* Collection values */
+  int			i, j;		/* Looping vars */
+  int			count;		/* Number of values */
+  char			*s,		/* Pointer into option value */
+			*val,		/* Pointer to option value */
+			*copy,		/* Copy of option value */
+			*sep,		/* Option separator */
+			quote;		/* Quote character */
+  ipp_attribute_t	*attr;		/* IPP attribute */
+  ipp_tag_t		value_tag;	/* IPP value tag */
+  cups_option_t		*option;	/* Current option */
+  ipp_t			*collection;	/* Collection value */
+  int			num_cols;	/* Number of collection values */
+  cups_option_t		*cols;		/* Collection values */
+  ipp_op_t		op;		/* Operation for this request */
+  const ipp_op_t	*ops;		/* List of allowed operations */
 
 
-  DEBUG_printf(("cupsEncodeOptions2(ipp=%p, num_options=%d, options=%p, "
-                "group_tag=%x)", ipp, num_options, options, group_tag));
+  DEBUG_printf(("cupsEncodeOptions2(ipp=%p(%s), num_options=%d, options=%p, "
+                "group_tag=%x)", ipp,
+                ipp ? ippOpString(ippGetOperation(ipp)) : "", num_options,
+                options, group_tag));
 
  /*
   * Range check input...
@@ -246,13 +395,18 @@ cupsEncodeOptions2(
   * Do special handling for the document-format/raw options...
   */
 
-  if (group_tag == IPP_TAG_OPERATION)
+  op = ippGetOperation(ipp);
+
+  if (group_tag == IPP_TAG_OPERATION &&
+      (op == IPP_OP_PRINT_JOB || op == IPP_OP_PRINT_URI ||
+       op == IPP_OP_SEND_DOCUMENT || op == IPP_OP_SEND_URI))
   {
    /*
     * Handle the document format stuff first...
     */
 
-    if ((val = (char *)cupsGetOption("document-format", num_options, options)) != NULL)
+    if ((val = (char *)cupsGetOption("document-format", num_options,
+                                     options)) != NULL)
       ippAddString(ipp, IPP_TAG_OPERATION, IPP_TAG_MIMETYPE, "document-format",
         	   NULL, val);
     else if (cupsGetOption("raw", num_options, options))
@@ -276,8 +430,8 @@ cupsEncodeOptions2(
     * Skip document format options that are handled above...
     */
 
-    if (!strcasecmp(option->name, "raw") ||
-        !strcasecmp(option->name, "document-format") ||
+    if (!_cups_strcasecmp(option->name, "raw") ||
+        !_cups_strcasecmp(option->name, "document-format") ||
 	!option->name[0])
       continue;
 
@@ -287,10 +441,26 @@ cupsEncodeOptions2(
 
     if ((match = _ippFindOption(option->name)) != NULL)
     {
-      if (match->group_tag != group_tag)
+      if (match->group_tag != group_tag && match->alt_group_tag != group_tag)
         continue;
 
       value_tag = match->value_tag;
+
+      if (match->operations)
+        ops = match->operations;
+      else if (group_tag == IPP_TAG_JOB)
+        ops = ipp_job_creation;
+      else if (group_tag == IPP_TAG_DOCUMENT)
+        ops = ipp_doc_creation;
+      else if (group_tag == IPP_TAG_SUBSCRIPTION)
+        ops = ipp_sub_creation;
+      else if (group_tag == IPP_TAG_PRINTER)
+        ops = ipp_set_printer;
+      else
+      {
+	DEBUG_printf(("2cupsEncodeOptions2: Skipping \"%s\".", option->name));
+        continue;
+      }
     }
     else
     {
@@ -299,19 +469,50 @@ cupsEncodeOptions2(
 
       namelen = (int)strlen(option->name);
 
-      if (namelen < 9 || strcmp(option->name + namelen - 8, "-default"))
+      if (namelen < 10 ||
+          (strcmp(option->name + namelen - 8, "-default") &&
+           strcmp(option->name + namelen - 10, "-supported")))
       {
-	if (group_tag != IPP_TAG_JOB)
+	if (group_tag != IPP_TAG_JOB && group_tag != IPP_TAG_DOCUMENT)
+	{
+	  DEBUG_printf(("2cupsEncodeOptions2: Skipping \"%s\".", option->name));
           continue;
+        }
       }
       else if (group_tag != IPP_TAG_PRINTER)
+      {
+	DEBUG_printf(("2cupsEncodeOptions2: Skipping \"%s\".", option->name));
         continue;
+      }
 
-      if (!strcasecmp(option->value, "true") ||
-          !strcasecmp(option->value, "false"))
+      if (group_tag == IPP_TAG_JOB)
+        ops = ipp_job_creation;
+      else if (group_tag == IPP_TAG_DOCUMENT)
+        ops = ipp_doc_creation;
+      else
+        ops = ipp_set_printer;
+
+      if (!_cups_strcasecmp(option->value, "true") ||
+          !_cups_strcasecmp(option->value, "false"))
 	value_tag = IPP_TAG_BOOLEAN;
       else
 	value_tag = IPP_TAG_NAME;
+    }
+
+   /*
+    * Verify that we send this attribute for this operation...
+    */
+
+    while (*ops != IPP_OP_CUPS_NONE)
+      if (op == *ops)
+        break;
+      else
+        ops ++;
+
+    if (*ops == IPP_OP_CUPS_NONE && op != IPP_OP_CUPS_NONE)
+    {
+      DEBUG_printf(("2cupsEncodeOptions2: Skipping \"%s\".", option->name));
+      continue;
     }
 
    /*
@@ -348,7 +549,8 @@ cupsEncodeOptions2(
     * Allocate memory for the attribute values...
     */
 
-    if ((attr = _ippAddAttr(ipp, count)) == NULL)
+    if ((attr = ippAddStrings(ipp, group_tag, value_tag, option->name, count,
+                              NULL, NULL)) == NULL)
     {
      /*
       * Ran out of memory!
@@ -357,19 +559,6 @@ cupsEncodeOptions2(
       DEBUG_puts("1cupsEncodeOptions2: Ran out of memory for attributes!");
       return;
     }
-
-   /*
-    * Now figure out what type of value we have...
-    */
-
-    attr->group_tag = group_tag;
-    attr->value_tag = value_tag;
-
-   /*
-    * Copy the name over...
-    */
-
-    attr->name = _cupsStrAlloc(option->name);
 
     if (count > 1)
     {
@@ -465,9 +654,9 @@ cupsEncodeOptions2(
             break;
 
 	case IPP_TAG_BOOLEAN :
-	    if (!strcasecmp(val, "true") ||
-	        !strcasecmp(val, "on") ||
-	        !strcasecmp(val, "yes"))
+	    if (!_cups_strcasecmp(val, "true") ||
+	        !_cups_strcasecmp(val, "on") ||
+	        !_cups_strcasecmp(val, "yes"))
 	    {
 	     /*
 	      * Boolean value - true...
@@ -529,7 +718,8 @@ cupsEncodeOptions2(
 	    else
 	      attr->values[j].resolution.yres = attr->values[j].resolution.xres;
 
-	    if (!strcasecmp(s, "dpc"))
+	    if (!_cups_strcasecmp(s, "dpc") ||
+	        !_cups_strcasecmp(s, "dpcm"))
               attr->values[j].resolution.units = IPP_RES_PER_CM;
             else
               attr->values[j].resolution.units = IPP_RES_PER_INCH;
@@ -600,6 +790,26 @@ cupsEncodeOptions2(
 }
 
 
+#ifdef DEBUG
+/*
+ * '_ippCheckOptions()' - Validate that the option array is sorted properly.
+ */
+
+const char *				/* O - First out-of-order option or NULL */
+_ippCheckOptions(void)
+{
+  int	i;				/* Looping var */
+
+
+  for (i = 0; i < (int)(sizeof(ipp_options) / sizeof(ipp_options[0]) - 1); i ++)
+    if (strcmp(ipp_options[i].name, ipp_options[i + 1].name) >= 0)
+      return (ipp_options[i + 1].name);
+
+  return (NULL);
+}
+#endif /* DEBUG */
+
+
 /*
  * '_ippFindOption()' - Find the attribute information for an option.
  */
@@ -637,5 +847,5 @@ compare_ipp_options(_ipp_option_t *a,	/* I - First option */
 
 
 /*
- * End of "$Id: encode.c 9258 2010-08-13 01:34:04Z mike $".
+ * End of "$Id: encode.c 11867 2014-05-09 20:33:08Z msweet $".
  */

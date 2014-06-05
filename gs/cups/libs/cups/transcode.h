@@ -1,9 +1,9 @@
 /*
- * "$Id: transcode.h 8179 2008-12-10 05:03:11Z mike $"
+ * "$Id: transcode.h 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   Transcoding definitions for the Common UNIX Printing System (CUPS).
+ *   Transcoding definitions for CUPS.
  *
- *   Copyright 2007 by Apple Inc.
+ *   Copyright 2007-2011 by Apple Inc.
  *   Copyright 1997-2006 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -77,5 +77,5 @@ extern int	cupsUTF32ToUTF8(cups_utf8_t *dest,
 
 
 /*
- * End of "$Id: transcode.h 8179 2008-12-10 05:03:11Z mike $"
+ * End of "$Id: transcode.h 10996 2013-05-29 11:51:34Z msweet $"
  */

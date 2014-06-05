@@ -1,11 +1,11 @@
 /*
- * "$Id: dir.h 7026 2007-10-19 00:57:45Z mike $"
+ * "$Id: dir.h 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   Public directory definitions for the Common UNIX Printing System (CUPS).
+ *   Public directory definitions for CUPS.
  *
  *   This set of APIs abstracts enumeration of directory entries.
  *
- *   Copyright 2007 by Apple Inc.
+ *   Copyright 2007-2011 by Apple Inc.
  *   Copyright 1997-2006 by Easy Software Products, all rights reserved.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -65,5 +65,5 @@ extern void		cupsDirRewind(cups_dir_t *dp) _CUPS_API_1_2;
 #endif /* !_CUPS_DIR_H_ */
 
 /*
- * End of "$Id: dir.h 7026 2007-10-19 00:57:45Z mike $".
+ * End of "$Id: dir.h 10996 2013-05-29 11:51:34Z msweet $".
  */

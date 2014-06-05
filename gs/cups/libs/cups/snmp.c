@@ -1,9 +1,9 @@
 /*
- * "$Id: snmp.c 8950 2010-01-14 22:40:19Z mike $"
+ * "$Id: snmp.c 4167 2013-02-04 19:27:13Z msweet $"
  *
- *   SNMP functions for the Common UNIX Printing System (CUPS).
+ *   SNMP functions for CUPS.
  *
- *   Copyright 2007-2010 by Apple Inc.
+ *   Copyright 2007-2011 by Apple Inc.
  *   Copyright 2006-2007 by Easy Software Products, all rights reserved.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -58,12 +58,10 @@
  * Include necessary headers.
  */
 
-#include "globals.h"
-#include "debug.h"
+#include "cups-private.h"
 #include "snmp-private.h"
-#include <errno.h>
 #ifdef HAVE_POLL
-#  include <sys/poll.h>
+#  include <poll.h>
 #endif /* HAVE_POLL */
 
 
@@ -180,7 +178,7 @@ _cupsSNMPDefaultCommunity(void)
     {
       linenum = 0;
       while (cupsFileGetConf(fp, line, sizeof(line), &value, &linenum))
-	if (!strcasecmp(line, "Community") && value)
+	if (!_cups_strcasecmp(line, "Community") && value)
 	{
 	  strlcpy(cg->snmp_community, value, sizeof(cg->snmp_community));
 	  break;
@@ -364,11 +362,7 @@ _cupsSNMPOpen(int family)		/* I - Address family - @code AF_INET@ or @code AF_IN
 
   val = 1;
 
-#ifdef WIN32
-  if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST, (char *)&val, sizeof(val)))
-#else
-  if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &val, sizeof(val)))
-#endif /* WIN32 */
+  if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST, CUPS_SOCAST &val, sizeof(val)))
   {
     DEBUG_printf(("5_cupsSNMPOpen: Returning -1 (%s)", strerror(errno)));
 
@@ -730,7 +724,7 @@ _cupsSNMPWrite(
   packet.request_type = request_type;
   packet.request_id   = request_id;
   packet.object_type  = CUPS_ASN1_NULL_VALUE;
-  
+
   strlcpy(packet.community, community, sizeof(packet.community));
 
   for (i = 0; oid[i] >= 0 && i < (CUPS_SNMP_MAX_OID - 1); i ++)
@@ -763,12 +757,7 @@ _cupsSNMPWrite(
 
   temp = *address;
 
-#ifdef AF_INET6
-  if (temp.addr.sa_family == AF_INET6)
-    temp.ipv6.sin6_port = htons(CUPS_SNMP_PORT);
-  else
-#endif /* AF_INET6 */
-  temp.ipv4.sin_port = htons(CUPS_SNMP_PORT);
+  _httpAddrSetPort(&temp, CUPS_SNMP_PORT);
 
   return (sendto(fd, buffer, bytes, 0, (void *)&temp,
                  httpAddrLength(&temp)) == bytes);
@@ -970,7 +959,7 @@ asn1_debug(const char    *prefix,	/* I - Prefix string */
     }
   }
 }
-          
+
 
 /*
  * 'asn1_decode_snmp()' - Decode a SNMP packet.
@@ -1092,7 +1081,7 @@ asn1_decode_snmp(unsigned char *buffer,	/* I - Buffer */
 		    packet->object_value.string.num_bytes = length;
 		    asn1_get_string(&bufptr, bufend, length,
 		                    (char *)packet->object_value.string.bytes,
-				    CUPS_SNMP_MAX_STRING);
+				    sizeof(packet->object_value.string.bytes));
 	            break;
 
 	        case CUPS_ASN1_OID :
@@ -1432,6 +1421,9 @@ asn1_get_string(
     char          *string,		/* I  - String buffer */
     int           strsize)		/* I  - String buffer size */
 {
+  if (length > (bufend - *buffer))
+    length = bufend - *buffer;
+
   if (length < 0)
   {
    /*
@@ -1737,5 +1729,5 @@ snmp_set_error(cups_snmp_t *packet,	/* I - Packet */
 
 
 /*
- * End of "$Id: snmp.c 8950 2010-01-14 22:40:19Z mike $".
+ * End of "$Id: snmp.c 4167 2013-02-04 19:27:13Z msweet $".
  */

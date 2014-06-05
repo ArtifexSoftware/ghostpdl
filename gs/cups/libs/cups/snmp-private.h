@@ -1,12 +1,9 @@
 /*
- * "$Id: snmp-private.h 8254 2009-01-14 22:40:58Z mike $"
+ * "$Id: snmp-private.h 3794 2012-04-23 22:44:16Z msweet $"
  *
- *   SNMP definitions for the Common UNIX Printing System (CUPS).
+ *   Private SNMP definitions for CUPS.
  *
- *   This API is PRIVATE and subject to change.  No third-party applications
- *   should use the SNMP API defined in this file.
- *
- *   Copyright 2007-2009 by Apple Inc.
+ *   Copyright 2007-2012 by Apple Inc.
  *   Copyright 2006-2007 by Easy Software Products, all rights reserved.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -18,15 +15,15 @@
  *   This file is subject to the Apple OS-Developed Software exception.
  */
 
-#ifndef _CUPS_SNMP_H_
-#  define _CUPS_SNMP_H_
+#ifndef _CUPS_SNMP_PRIVATE_H_
+#  define _CUPS_SNMP_PRIVATE_H_
 
 
 /*
  * Include necessary headers.
  */
 
-#include "http.h"
+#include <cups/http.h>
 
 
 /*
@@ -34,9 +31,10 @@
  */
 
 #define CUPS_SNMP_PORT		161	/* SNMP well-known port */
+#define CUPS_SNMP_MAX_COMMUNITY	512	/* Maximum size of community name */
 #define CUPS_SNMP_MAX_OID	128	/* Maximum number of OID numbers */
 #define CUPS_SNMP_MAX_PACKET	1472	/* Maximum size of SNMP packet */
-#define CUPS_SNMP_MAX_STRING	512	/* Maximum size of string */
+#define CUPS_SNMP_MAX_STRING	1024	/* Maximum size of string */
 #define CUPS_SNMP_VERSION_1	0	/* SNMPv1 */
 
 
@@ -87,7 +85,7 @@ typedef struct cups_snmp_s		/**** SNMP data packet ****/
   const char	*error;			/* Encode/decode error */
   http_addr_t	address;		/* Source address */
   int		version;		/* Version number */
-  char		community[CUPS_SNMP_MAX_STRING];
+  char		community[CUPS_SNMP_MAX_COMMUNITY];
 					/* Community name */
   cups_asn1_t	request_type;		/* Request type */
   int		request_id;		/* request-id value */
@@ -140,9 +138,9 @@ extern int		_cupsSNMPWrite(int fd, http_addr_t *address, int version,
 #  ifdef __cplusplus
 }
 #  endif /* __cplusplus */
-#endif /* !_CUPS_SNMP_H_ */
+#endif /* !_CUPS_SNMP_PRIVATE_H_ */
 
 
 /*
- * End of "$Id: snmp-private.h 8254 2009-01-14 22:40:58Z mike $".
+ * End of "$Id: snmp-private.h 3794 2012-04-23 22:44:16Z msweet $".
  */

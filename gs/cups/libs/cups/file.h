@@ -1,14 +1,14 @@
 /*
- * "$Id: file.h 9120 2010-04-23 18:56:34Z mike $"
+ * "$Id: file.h 11642 2014-02-27 15:57:59Z msweet $"
  *
- *   Public file definitions for the Common UNIX Printing System (CUPS).
+ *   Public file definitions for CUPS.
  *
  *   Since stdio files max out at 256 files on many systems, we have to
  *   write similar functions without this limit.  At the same time, using
  *   our own file functions allows us to provide transparent support of
  *   gzip'd print files, PPD files, etc.
  *
- *   Copyright 2007-2008 by Apple Inc.
+ *   Copyright 2007-2011 by Apple Inc.
  *   Copyright 1997-2007 by Easy Software Products, all rights reserved.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -16,6 +16,8 @@
  *   law.  Distribution and use rights are outlined in the file "LICENSE.txt"
  *   which should have been included with this file.  If this file is
  *   file is missing or damaged, see the license at "http://www.cups.org/".
+ *
+ *   This file is subject to the Apple OS-Developed Software exception.
  */
 
 #ifndef _CUPS_FILE_H_
@@ -72,26 +74,29 @@ extern const char	*cupsFileFind(const char *filename, const char *path,
 				      int bufsize) _CUPS_API_1_2;
 extern int		cupsFileFlush(cups_file_t *fp) _CUPS_API_1_2;
 extern int		cupsFileGetChar(cups_file_t *fp) _CUPS_API_1_2;
-extern char		*cupsFileGetConf(cups_file_t *fp, char *buf, size_t buflen,
-			                 char **value, int *linenum) _CUPS_API_1_2;
+extern char		*cupsFileGetConf(cups_file_t *fp, char *buf,
+			                 size_t buflen, char **value,
+			                 int *linenum) _CUPS_API_1_2;
 extern size_t		cupsFileGetLine(cups_file_t *fp, char *buf,
 			                size_t buflen) _CUPS_API_1_2;
-extern char		*cupsFileGets(cups_file_t *fp, char *buf, size_t buflen) _CUPS_API_1_2;
+extern char		*cupsFileGets(cups_file_t *fp, char *buf, size_t buflen)
+			_CUPS_API_1_2;
 extern int		cupsFileLock(cups_file_t *fp, int block) _CUPS_API_1_2;
 extern int		cupsFileNumber(cups_file_t *fp) _CUPS_API_1_2;
-extern cups_file_t	*cupsFileOpen(const char *filename, const char *mode) _CUPS_API_1_2;
+extern cups_file_t	*cupsFileOpen(const char *filename, const char *mode)
+			_CUPS_API_1_2;
 extern cups_file_t	*cupsFileOpenFd(int fd, const char *mode) _CUPS_API_1_2;
 extern int		cupsFilePeekChar(cups_file_t *fp) _CUPS_API_1_2;
 extern int		cupsFilePrintf(cups_file_t *fp, const char *format, ...)
-#ifdef __GNUC__
-__attribute__ ((__format__ (__printf__, 2, 3)))
-#endif /* __GNUC__ */
-_CUPS_API_1_2;
+			__attribute__((__format__ (__printf__, 2, 3)))
+			_CUPS_API_1_2;
 extern int		cupsFilePutChar(cups_file_t *fp, int c) _CUPS_API_1_2;
 extern ssize_t		cupsFilePutConf(cups_file_t *fp, const char *directive,
 			                const char *value) _CUPS_API_1_4;
-extern int		cupsFilePuts(cups_file_t *fp, const char *s) _CUPS_API_1_2;
-extern ssize_t		cupsFileRead(cups_file_t *fp, char *buf, size_t bytes) _CUPS_API_1_2;
+extern int		cupsFilePuts(cups_file_t *fp, const char *s)
+			_CUPS_API_1_2;
+extern ssize_t		cupsFileRead(cups_file_t *fp, char *buf, size_t bytes)
+			_CUPS_API_1_2;
 extern off_t		cupsFileRewind(cups_file_t *fp) _CUPS_API_1_2;
 extern off_t		cupsFileSeek(cups_file_t *fp, off_t pos) _CUPS_API_1_2;
 extern cups_file_t	*cupsFileStderr(void) _CUPS_API_1_2;
@@ -99,7 +104,8 @@ extern cups_file_t	*cupsFileStdin(void) _CUPS_API_1_2;
 extern cups_file_t	*cupsFileStdout(void) _CUPS_API_1_2;
 extern off_t		cupsFileTell(cups_file_t *fp) _CUPS_API_1_2;
 extern int		cupsFileUnlock(cups_file_t *fp) _CUPS_API_1_2;
-extern ssize_t		cupsFileWrite(cups_file_t *fp, const char *buf, size_t bytes) _CUPS_API_1_2;
+extern ssize_t		cupsFileWrite(cups_file_t *fp, const char *buf,
+			              size_t bytes) _CUPS_API_1_2;
 
 
 #  ifdef __cplusplus
@@ -108,5 +114,5 @@ extern ssize_t		cupsFileWrite(cups_file_t *fp, const char *buf, size_t bytes) _C
 #endif /* !_CUPS_FILE_H_ */
 
 /*
- * End of "$Id: file.h 9120 2010-04-23 18:56:34Z mike $".
+ * End of "$Id: file.h 11642 2014-02-27 15:57:59Z msweet $".
  */

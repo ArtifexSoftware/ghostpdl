@@ -1,9 +1,9 @@
 /*
- * "$Id: backchannel.c 8635 2009-05-14 21:18:35Z mike $"
+ * "$Id: backchannel.c 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   Backchannel functions for the Common UNIX Printing System (CUPS).
+ *   Backchannel functions for CUPS.
  *
- *   Copyright 2007-2008 by Apple Inc.
+ *   Copyright 2007-2012 by Apple Inc.
  *   Copyright 1997-2007 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -18,7 +18,7 @@
  *
  *   cupsBackChannelRead()  - Read data from the backchannel.
  *   cupsBackChannelWrite() - Write data to the backchannel.
- *   cups_setup()           - Setup select() 
+ *   cups_setup()           - Setup select()
  */
 
 /*
@@ -50,7 +50,7 @@ static void	cups_setup(fd_set *set, struct timeval *tval,
  * parameter controls how many seconds to wait for the data - use 0.0 to
  * return immediately if there is no data, -1.0 to wait for data indefinitely.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 ssize_t					/* O - Bytes read or -1 on error */
@@ -101,7 +101,7 @@ cupsBackChannelRead(char   *buffer,	/* I - Buffer to read into */
  * 0.0 to return immediately if the data cannot be written, -1.0 to wait
  * indefinitely.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 ssize_t					/* O - Bytes written or -1 on error */
@@ -178,7 +178,7 @@ cupsBackChannelWrite(
 
 
 /*
- * 'cups_setup()' - Setup select() 
+ * 'cups_setup()' - Setup select()
  */
 
 static void
@@ -195,5 +195,5 @@ cups_setup(fd_set         *set,		/* I - Set for select() */
 
 
 /*
- * End of "$Id: backchannel.c 8635 2009-05-14 21:18:35Z mike $".
+ * End of "$Id: backchannel.c 10996 2013-05-29 11:51:34Z msweet $".
  */

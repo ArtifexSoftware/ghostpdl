@@ -1,9 +1,9 @@
 /*
- * "$Id: array.c 8532 2009-04-20 21:37:14Z mike $"
+ * "$Id: array.c 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   Sorted array routines for the Common UNIX Printing System (CUPS).
+ *   Sorted array routines for CUPS.
  *
- *   Copyright 2007-2009 by Apple Inc.
+ *   Copyright 2007-2012 by Apple Inc.
  *   Copyright 1997-2007 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -16,38 +16,44 @@
  *
  * Contents:
  *
- *   cupsArrayAdd()       - Add an element to the array.
- *   cupsArrayClear()     - Clear the array.
- *   cupsArrayCount()     - Get the number of elements in the array.
- *   cupsArrayCurrent()   - Return the current element in the array.
- *   cupsArrayDelete()    - Free all memory used by the array.
- *   cupsArrayDup()       - Duplicate the array.
- *   cupsArrayFind()      - Find an element in the array.
- *   cupsArrayFirst()     - Get the first element in the array.
- *   cupsArrayGetIndex()  - Get the index of the current element.
- *   cupsArrayGetInsert() - Get the index of the last inserted element.
- *   cupsArrayIndex()     - Get the N-th element in the array.
- *   cupsArrayInsert()    - Insert an element in the array.
- *   cupsArrayLast()      - Get the last element in the array.
- *   cupsArrayNew()       - Create a new array.
- *   cupsArrayNext()      - Get the next element in the array.
- *   cupsArrayPrev()      - Get the previous element in the array.
- *   cupsArrayRemove()    - Remove an element from the array.
- *   cupsArrayRestore()   - Reset the current element to the last cupsArraySave.
- *   cupsArraySave()      - Mark the current element for a later
- *                          cupsArrayRestore.
- *   cupsArrayUserData()  - Return the user data for an array.
- *   cups_array_add()     - Insert or append an element to the array...
- *   cups_array_find()    - Find an element in the array...
+ *   cupsArrayAdd()         - Add an element to the array.
+ *   _cupsArrayAddStrings() - Add zero or more comma-delimited strings to an
+ *                            array.
+ *   cupsArrayClear()       - Clear the array.
+ *   cupsArrayCount()       - Get the number of elements in the array.
+ *   cupsArrayCurrent()     - Return the current element in the array.
+ *   cupsArrayDelete()      - Free all memory used by the array.
+ *   cupsArrayDup()         - Duplicate the array.
+ *   cupsArrayFind()        - Find an element in the array.
+ *   cupsArrayFirst()       - Get the first element in the array.
+ *   cupsArrayGetIndex()    - Get the index of the current element.
+ *   cupsArrayGetInsert()   - Get the index of the last inserted element.
+ *   cupsArrayIndex()       - Get the N-th element in the array.
+ *   cupsArrayInsert()      - Insert an element in the array.
+ *   cupsArrayLast()        - Get the last element in the array.
+ *   cupsArrayNew()         - Create a new array.
+ *   cupsArrayNew2()        - Create a new array with hash.
+ *   cupsArrayNew3()        - Create a new array with hash and/or free function.
+ *   _cupsArrayNewStrings() - Create a new array of comma-delimited strings.
+ *   cupsArrayNext()        - Get the next element in the array.
+ *   cupsArrayPrev()        - Get the previous element in the array.
+ *   cupsArrayRemove()      - Remove an element from the array.
+ *   cupsArrayRestore()     - Reset the current element to the last @link
+ *                            cupsArraySave@.
+ *   cupsArraySave()        - Mark the current element for a later @link
+ *                            cupsArrayRestore@.
+ *   cupsArrayUserData()    - Return the user data for an array.
+ *   cups_array_add()       - Insert or append an element to the array.
+ *   cups_array_find()      - Find an element in the array.
  */
 
 /*
  * Include necessary headers...
  */
 
-#include "array.h"
-#include "string.h"
-#include "debug.h"
+#include "string-private.h"
+#include "debug-private.h"
+#include "array-private.h"
 
 
 /*
@@ -84,6 +90,8 @@ struct _cups_array_s			/**** CUPS array structure ****/
   cups_ahash_func_t	hashfunc;	/* Hash function */
   int			hashsize,	/* Size of hash */
 			*hash;		/* Hash array */
+  cups_acopy_func_t	copyfunc;	/* Copy function */
+  cups_afree_func_t	freefunc;	/* Free function */
 };
 
 
@@ -102,7 +110,7 @@ static int	cups_array_find(cups_array_t *a, void *e, int prev, int *rdiff);
  * appended at the end of the run of identical elements.  For unsorted arrays,
  * the element is appended to the end of the array.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 int					/* O - 1 on success, 0 on failure */
@@ -130,13 +138,110 @@ cupsArrayAdd(cups_array_t *a,		/* I - Array */
 
 
 /*
+ * '_cupsArrayAddStrings()' - Add zero or more delimited strings to an array.
+ *
+ * Note: The array MUST be created using the @link _cupsArrayNewStrings@
+ * function. Duplicate strings are NOT added. If the string pointer "s" is NULL
+ * or the empty string, no strings are added to the array.
+ */
+
+int					/* O - 1 on success, 0 on failure */
+_cupsArrayAddStrings(cups_array_t *a,	/* I - Array */
+                     const char   *s,	/* I - Delimited strings or NULL */
+                     char         delim)/* I - Delimiter character */
+{
+  char		*buffer,		/* Copy of string */
+		*start,			/* Start of string */
+		*end;			/* End of string */
+  int		status = 1;		/* Status of add */
+
+
+  DEBUG_printf(("_cupsArrayAddStrings(a=%p, s=\"%s\", delim='%c')", a, s,
+                delim));
+
+  if (!a || !s || !*s)
+  {
+    DEBUG_puts("1_cupsArrayAddStrings: Returning 0");
+    return (0);
+  }
+
+  if (delim == ' ')
+  {
+   /*
+    * Skip leading whitespace...
+    */
+
+    DEBUG_puts("1_cupsArrayAddStrings: Skipping leading whitespace.");
+
+    while (*s && isspace(*s & 255))
+      s ++;
+
+    DEBUG_printf(("1_cupsArrayAddStrings: Remaining string \"%s\".", s));
+  }
+
+  if (!strchr(s, delim) &&
+      (delim != ' ' || (!strchr(s, '\t') && !strchr(s, '\n'))))
+  {
+   /*
+    * String doesn't contain a delimiter, so add it as a single value...
+    */
+
+    DEBUG_puts("1_cupsArrayAddStrings: No delimiter seen, adding a single "
+               "value.");
+
+    if (!cupsArrayFind(a, (void *)s))
+      status = cupsArrayAdd(a, (void *)s);
+  }
+  else if ((buffer = strdup(s)) == NULL)
+  {
+    DEBUG_puts("1_cupsArrayAddStrings: Unable to duplicate string.");
+    status = 0;
+  }
+  else
+  {
+    for (start = end = buffer; *end; start = end)
+    {
+     /*
+      * Find the end of the current delimited string and see if we need to add
+      * it...
+      */
+
+      if (delim == ' ')
+      {
+        while (*end && !isspace(*end & 255))
+          end ++;
+        while (*end && isspace(*end & 255))
+          *end++ = '\0';
+      }
+      else if ((end = strchr(start, delim)) != NULL)
+        *end++ = '\0';
+      else
+        end = start + strlen(start);
+
+      DEBUG_printf(("1_cupsArrayAddStrings: Adding \"%s\", end=\"%s\"", start,
+                    end));
+
+      if (!cupsArrayFind(a, start))
+        status &= cupsArrayAdd(a, start);
+    }
+
+    free(buffer);
+  }
+
+  DEBUG_printf(("1_cupsArrayAddStrings: Returning %d.", status));
+
+  return (status);
+}
+
+
+/*
  * 'cupsArrayClear()' - Clear the array.
  *
  * This function is equivalent to removing all elements in the array.
  * The caller is responsible for freeing the memory used by the
  * elements themselves.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void
@@ -148,6 +253,19 @@ cupsArrayClear(cups_array_t *a)		/* I - Array */
 
   if (!a)
     return;
+
+ /*
+  * Free the existing elements as needed..
+  */
+
+  if (a->freefunc)
+  {
+    int		i;			/* Looping var */
+    void	**e;			/* Current element */
+
+    for (i = a->num_elements, e = a->elements; i > 0; i --, e ++)
+      (a->freefunc)(*e, a->data);
+  }
 
  /*
   * Set the number of elements to 0; we don't actually free the memory
@@ -165,7 +283,7 @@ cupsArrayClear(cups_array_t *a)		/* I - Array */
 /*
  * 'cupsArrayCount()' - Get the number of elements in the array.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 int					/* O - Number of elements */
@@ -192,7 +310,7 @@ cupsArrayCount(cups_array_t *a)		/* I - Array */
  * The current element is undefined until you call @link cupsArrayFind@,
  * @link cupsArrayFirst@, or @link cupsArrayIndex@, or @link cupsArrayLast@.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void *					/* O - Element */
@@ -222,7 +340,7 @@ cupsArrayCurrent(cups_array_t *a)	/* I - Array */
  * The caller is responsible for freeing the memory used by the
  * elements themselves.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void
@@ -236,8 +354,21 @@ cupsArrayDelete(cups_array_t *a)	/* I - Array */
     return;
 
  /*
-  * Free the array of element pointers - the caller is responsible
-  * for freeing the elements themselves...
+  * Free the elements if we have a free function (otherwise the caller is
+  * responsible for doing the dirty work...)
+  */
+
+  if (a->freefunc)
+  {
+    int		i;			/* Looping var */
+    void	**e;			/* Current element */
+
+    for (i = a->num_elements, e = a->elements; i > 0; i --, e ++)
+      (a->freefunc)(*e, a->data);
+  }
+
+ /*
+  * Free the array of element pointers...
   */
 
   if (a->alloc_elements)
@@ -253,7 +384,7 @@ cupsArrayDelete(cups_array_t *a)	/* I - Array */
 /*
  * 'cupsArrayDup()' - Duplicate the array.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 cups_array_t *				/* O - Duplicate array */
@@ -303,7 +434,26 @@ cupsArrayDup(cups_array_t *a)		/* I - Array */
     * Copy the element pointers...
     */
 
-    memcpy(da->elements, a->elements, a->num_elements * sizeof(void *));
+    if (a->copyfunc)
+    {
+     /*
+      * Use the copy function to make a copy of each element...
+      */
+
+      int	i;			/* Looping var */
+
+      for (i = 0; i < a->num_elements; i ++)
+	da->elements[i] = (a->copyfunc)(a->elements[i], a->data);
+    }
+    else
+    {
+     /*
+      * Just copy raw pointers...
+      */
+
+      memcpy(da->elements, a->elements, a->num_elements * sizeof(void *));
+    }
+
     da->num_elements   = a->num_elements;
     da->alloc_elements = a->num_elements;
   }
@@ -319,7 +469,7 @@ cupsArrayDup(cups_array_t *a)		/* I - Array */
 /*
  * 'cupsArrayFind()' - Find an element in the array.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void *					/* O - Element found or @code NULL@ */
@@ -414,7 +564,7 @@ cupsArrayFind(cups_array_t *a,		/* I - Array */
 /*
  * 'cupsArrayFirst()' - Get the first element in the array.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void *					/* O - First element or @code NULL@ if the array is empty */
@@ -443,7 +593,7 @@ cupsArrayFirst(cups_array_t *a)		/* I - Array */
  * The current element is undefined until you call @link cupsArrayFind@,
  * @link cupsArrayFirst@, or @link cupsArrayIndex@, or @link cupsArrayLast@.
  *
- * @since CUPS 1.3/Mac OS X 10.5@
+ * @since CUPS 1.3/OS X 10.5@
  */
 
 int					/* O - Index of the current element, starting at 0 */
@@ -459,7 +609,7 @@ cupsArrayGetIndex(cups_array_t *a)	/* I - Array */
 /*
  * 'cupsArrayGetInsert()' - Get the index of the last inserted element.
  *
- * @since CUPS 1.3/Mac OS X 10.5@
+ * @since CUPS 1.3/OS X 10.5@
  */
 
 int					/* O - Index of the last inserted element, starting at 0 */
@@ -475,7 +625,7 @@ cupsArrayGetInsert(cups_array_t *a)	/* I - Array */
 /*
  * 'cupsArrayIndex()' - Get the N-th element in the array.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void *					/* O - N-th element or @code NULL@ */
@@ -498,7 +648,7 @@ cupsArrayIndex(cups_array_t *a,		/* I - Array */
  * inserted at the beginning of the run of identical elements.  For unsorted
  * arrays, the element is inserted at the beginning of the array.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 int					/* O - 0 on failure, 1 on success */
@@ -528,7 +678,7 @@ cupsArrayInsert(cups_array_t *a,	/* I - Array */
 /*
  * 'cupsArrayLast()' - Get the last element in the array.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void *					/* O - Last element or @code NULL@ if the array is empty */
@@ -559,14 +709,14 @@ cupsArrayLast(cups_array_t *a)		/* I - Array */
  * data pointer argument can safely be omitted when not required so functions
  * like @code strcmp@ can be used for sorted string arrays.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 cups_array_t *				/* O - Array */
 cupsArrayNew(cups_array_func_t f,	/* I - Comparison function or @code NULL@ for an unsorted array */
              void              *d)	/* I - User data pointer or @code NULL@ */
 {
-  return (cupsArrayNew2(f, d, 0, 0));
+  return (cupsArrayNew3(f, d, 0, 0, 0, 0));
 }
 
 
@@ -581,7 +731,7 @@ cupsArrayNew(cups_array_func_t f,	/* I - Comparison function or @code NULL@ for 
  * The hash function ("h") is used to implement cached lookups with the
  * specified hash size ("hsize").
  *
- * @since CUPS 1.3/Mac OS X 10.5@
+ * @since CUPS 1.3/OS X 10.5@
  */
 
 cups_array_t *				/* O - Array */
@@ -589,6 +739,38 @@ cupsArrayNew2(cups_array_func_t  f,	/* I - Comparison function or @code NULL@ fo
               void               *d,	/* I - User data or @code NULL@ */
               cups_ahash_func_t  h,	/* I - Hash function or @code NULL@ for unhashed lookups */
 	      int                hsize)	/* I - Hash size (>= 0) */
+{
+  return (cupsArrayNew3(f, d, h, hsize, 0, 0));
+}
+
+
+/*
+ * 'cupsArrayNew3()' - Create a new array with hash and/or free function.
+ *
+ * The comparison function ("f") is used to create a sorted array. The function
+ * receives pointers to two elements and the user data pointer ("d") - the user
+ * data pointer argument can safely be omitted when not required so functions
+ * like @code strcmp@ can be used for sorted string arrays.
+ *
+ * The hash function ("h") is used to implement cached lookups with the
+ * specified hash size ("hsize").
+ *
+ * The copy function ("cf") is used to automatically copy/retain elements when
+ * added or the array is copied.
+ *
+ * The free function ("cf") is used to automatically free/release elements when
+ * removed or the array is deleted.
+ *
+ * @since CUPS 1.5/OS X 10.7@
+ */
+
+cups_array_t *				/* O - Array */
+cupsArrayNew3(cups_array_func_t  f,	/* I - Comparison function or @code NULL@ for an unsorted array */
+              void               *d,	/* I - User data or @code NULL@ */
+              cups_ahash_func_t  h,	/* I - Hash function or @code NULL@ for unhashed lookups */
+	      int                hsize,	/* I - Hash size (>= 0) */
+	      cups_acopy_func_t  cf,	/* I - Copy function */
+	      cups_afree_func_t  ff)	/* I - Free function */
 {
   cups_array_t	*a;			/* Array  */
 
@@ -623,6 +805,33 @@ cupsArrayNew2(cups_array_func_t  f,	/* I - Comparison function or @code NULL@ fo
     memset(a->hash, -1, hsize * sizeof(int));
   }
 
+  a->copyfunc = cf;
+  a->freefunc = ff;
+
+  return (a);
+}
+
+
+/*
+ * '_cupsArrayNewStrings()' - Create a new array of comma-delimited strings.
+ *
+ * Note: The array automatically manages copies of the strings passed. If the
+ * string pointer "s" is NULL or the empty string, no strings are added to the
+ * newly created array.
+ */
+
+cups_array_t *				/* O - Array */
+_cupsArrayNewStrings(const char *s,	/* I - Delimited strings or NULL */
+                     char       delim)	/* I - Delimiter character */
+{
+  cups_array_t	*a;			/* Array */
+
+
+  if ((a = cupsArrayNew3((cups_array_func_t)strcmp, NULL, NULL, 0,
+                         (cups_acopy_func_t)_cupsStrAlloc,
+			 (cups_afree_func_t)_cupsStrFree)) != NULL)
+    _cupsArrayAddStrings(a, s, delim);
+
   return (a);
 }
 
@@ -636,7 +845,7 @@ cupsArrayNew2(cups_array_func_t  f,	/* I - Comparison function or @code NULL@ fo
  * @link cupsArrayFirst@, or @link cupsArrayIndex@, or @link cupsArrayLast@
  * to set the current element.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void *					/* O - Next element or @code NULL@ */
@@ -669,7 +878,7 @@ cupsArrayNext(cups_array_t *a)		/* I - Array */
  * @link cupsArrayFirst@, or @link cupsArrayIndex@, or @link cupsArrayLast@
  * to set the current element.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void *					/* O - Previous element or @code NULL@ */
@@ -702,7 +911,7 @@ cupsArrayPrev(cups_array_t *a)		/* I - Array */
  * The caller is responsible for freeing the memory used by the
  * removed element.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 int					/* O - 1 on success, 0 on failure */
@@ -738,6 +947,9 @@ cupsArrayRemove(cups_array_t *a,	/* I - Array */
 
   a->num_elements --;
 
+  if (a->freefunc)
+    (a->freefunc)(a->elements[current], a->data);
+
   if (current < a->num_elements)
     memmove(a->elements + current, a->elements + current + 1,
             (a->num_elements - current) * sizeof(void *));
@@ -764,7 +976,7 @@ cupsArrayRemove(cups_array_t *a,	/* I - Array */
 /*
  * 'cupsArrayRestore()' - Reset the current element to the last @link cupsArraySave@.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void *					/* O - New current element */
@@ -795,7 +1007,7 @@ cupsArrayRestore(cups_array_t *a)	/* I - Array */
  *
  * The save/restore stack is guaranteed to be at least 32 elements deep.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 int					/* O - 1 on success, 0 on failure */
@@ -817,7 +1029,7 @@ cupsArraySave(cups_array_t *a)		/* I - Array */
 /*
  * 'cupsArrayUserData()' - Return the user data for an array.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 void *					/* O - User data */
@@ -831,9 +1043,9 @@ cupsArrayUserData(cups_array_t *a)	/* I - Array */
 
 
 /*
- * 'cups_array_add()' - Insert or append an element to the array...
+ * 'cups_array_add()' - Insert or append an element to the array.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 static int				/* O - 1 on success, 0 on failure */
@@ -985,7 +1197,17 @@ cups_array_add(cups_array_t *a,		/* I - Array */
     DEBUG_printf(("9cups_array_add: append element at %d...", current));
 #endif /* DEBUG */
 
-  a->elements[current] = e;
+  if (a->copyfunc)
+  {
+    if ((a->elements[current] = (a->copyfunc)(e, a->data)) == NULL)
+    {
+      DEBUG_puts("8cups_array_add: Copy function returned NULL, returning 0");
+      return (0);
+    }
+  }
+  else
+    a->elements[current] = e;
+
   a->num_elements ++;
   a->insert = current;
 
@@ -1002,7 +1224,7 @@ cups_array_add(cups_array_t *a,		/* I - Array */
 
 
 /*
- * 'cups_array_find()' - Find an element in the array...
+ * 'cups_array_find()' - Find an element in the array.
  */
 
 static int				/* O - Index of match */
@@ -1140,5 +1362,5 @@ cups_array_find(cups_array_t *a,	/* I - Array */
 
 
 /*
- * End of "$Id: array.c 8532 2009-04-20 21:37:14Z mike $".
+ * End of "$Id: array.c 10996 2013-05-29 11:51:34Z msweet $".
  */

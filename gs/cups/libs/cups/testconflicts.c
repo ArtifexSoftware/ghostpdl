@@ -1,9 +1,9 @@
 /*
- * "$Id: testconflicts.c 8255 2009-01-14 23:17:47Z mike $"
+ * "$Id: testconflicts.c 3755 2012-03-30 05:59:14Z msweet $"
  *
- *   PPD constraint test program for the Common UNIX Printing System (CUPS).
+ *   PPD constraint test program for CUPS.
  *
- *   Copyright 2008-2009 by Apple Inc.
+ *   Copyright 2008-2012 by Apple Inc.
  *
  *   These coded instructions, statements, and computer programs are the
  *   property of Apple Inc. and are protected by Federal copyright
@@ -23,7 +23,8 @@
  */
 
 #include "cups.h"
-#include "string.h"
+#include "ppd.h"
+#include "string-private.h"
 
 
 /*
@@ -80,7 +81,7 @@ main(int  argc,				/* I - Number of command-line arguments */
     {
       fputs("Resolved conflicts with the following options:\n   ", stdout);
       for (i = 0; i < num_options; i ++)
-        if (!option || strcasecmp(option, options[i].name))
+        if (!option || _cups_strcasecmp(option, options[i].name))
 	  printf(" %s=%s", options[i].name, options[i].value);
       putchar('\n');
 
@@ -90,7 +91,13 @@ main(int  argc,				/* I - Number of command-line arguments */
     if (option)
     {
       free(option);
+      option = NULL;
+    }
+
+    if (choice)
+    {
       free(choice);
+      choice = NULL;
     }
 
     printf("\nNew Option(s): ");
@@ -117,10 +124,15 @@ main(int  argc,				/* I - Number of command-line arguments */
     cupsFreeOptions(num_options, options);
   }
 
+  if (option)
+    free(option);
+  if (choice)
+    free(choice);
+
   return (0);
 }
 
 
 /*
- * End of "$Id: testconflicts.c 8255 2009-01-14 23:17:47Z mike $".
+ * End of "$Id: testconflicts.c 3755 2012-03-30 05:59:14Z msweet $".
  */

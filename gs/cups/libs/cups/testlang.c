@@ -1,9 +1,9 @@
 /*
- * "$Id: testlang.c 8669 2009-05-21 22:17:54Z mike $"
+ * "$Id: testlang.c 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   Localization test program for the Common UNIX Printing System (CUPS).
+ *   Localization test program for CUPS.
  *
- *   Copyright 2007-2009 by Apple Inc.
+ *   Copyright 2007-2010 by Apple Inc.
  *   Copyright 1997-2006 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -23,9 +23,7 @@
  * Include necessary headers...
  */
 
-#include <stdio.h>
-#include "i18n.h"
-#include "string.h"
+#include "cups-private.h"
 
 
 /*
@@ -112,5 +110,5 @@ main(int  argc,				/* I - Number of command-line arguments */
 
 
 /*
- * End of "$Id: testlang.c 8669 2009-05-21 22:17:54Z mike $".
+ * End of "$Id: testlang.c 10996 2013-05-29 11:51:34Z msweet $".
  */

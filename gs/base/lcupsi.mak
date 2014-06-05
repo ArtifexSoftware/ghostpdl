@@ -38,20 +38,6 @@ LCUPSI_CC=$(CUPS_CC) $(I_)$(LIBCUPSISRC) $(I_)$(LIBCUPSIGEN)$(D)cups $(I_)$(LCUP
 LCUPSI_MAK=$(GLSRC)lcupsi.mak
 
 LIBCUPSI_OBJS =\
-    $(LIBCUPSIOBJ)image-bmp.$(OBJ) \
-    $(LIBCUPSIOBJ)image-colorspace.$(OBJ) \
-    $(LIBCUPSIOBJ)image-gif.$(OBJ) \
-    $(LIBCUPSIOBJ)image-jpeg.$(OBJ) \
-    $(LIBCUPSIOBJ)image-photocd.$(OBJ) \
-    $(LIBCUPSIOBJ)image-pix.$(OBJ) \
-    $(LIBCUPSIOBJ)image-png.$(OBJ) \
-    $(LIBCUPSIOBJ)image-pnm.$(OBJ) \
-    $(LIBCUPSIOBJ)image-sgi.$(OBJ) \
-    $(LIBCUPSIOBJ)image-sgilib.$(OBJ) \
-    $(LIBCUPSIOBJ)image-sun.$(OBJ) \
-    $(LIBCUPSIOBJ)image-tiff.$(OBJ) \
-    $(LIBCUPSIOBJ)image-zoom.$(OBJ) \
-    $(LIBCUPSIOBJ)image.$(OBJ) \
     $(LIBCUPSIOBJ)error.$(OBJ) \
     $(LIBCUPSIOBJ)interpret.$(OBJ) \
     $(LIBCUPSIOBJ)raster.$(OBJ)

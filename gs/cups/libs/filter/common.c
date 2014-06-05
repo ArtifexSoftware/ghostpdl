@@ -1,9 +1,9 @@
 /*
- * "$Id: common.c 6649 2007-07-11 21:46:42Z mike $"
+ * "$Id: common.c 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   Common filter routines for the Common UNIX Printing System (CUPS).
+ *   Common filter routines for CUPS.
  *
- *   Copyright 2007 by Apple Inc.
+ *   Copyright 2007-2011 by Apple Inc.
  *   Copyright 1997-2006 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -95,8 +95,8 @@ SetCommonOptions(
 
   if ((val = cupsGetOption("landscape", num_options, options)) != NULL)
   {
-    if (strcasecmp(val, "no") != 0 && strcasecmp(val, "off") != 0 &&
-        strcasecmp(val, "false") != 0)
+    if (_cups_strcasecmp(val, "no") != 0 && _cups_strcasecmp(val, "off") != 0 &&
+        _cups_strcasecmp(val, "false") != 0)
     {
       if (ppd && ppd->landscape > 0)
         Orientation = 1;
@@ -531,5 +531,5 @@ WriteTextComment(const char *name,	/* I - Comment name ("Title", etc.) */
 
 
 /*
- * End of "$Id: common.c 6649 2007-07-11 21:46:42Z mike $".
+ * End of "$Id: common.c 10996 2013-05-29 11:51:34Z msweet $".
  */

@@ -1,9 +1,9 @@
 /*
- * "$Id: testadmin.c 8179 2008-12-10 05:03:11Z mike $"
+ * "$Id: testadmin.c 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   Admin function test program for the Common UNIX Printing System (CUPS).
+ *   Admin function test program for CUPS.
  *
- *   Copyright 2007-2008 by Apple Inc.
+ *   Copyright 2007-2013 by Apple Inc.
  *   Copyright 2006 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -25,7 +25,7 @@
  */
 
 #include "adminutil.h"
-#include "string.h"
+#include "string-private.h"
 
 
 /*
@@ -53,7 +53,8 @@ main(int  argc,				/* I - Number of command-line args */
   * Connect to the server using the defaults...
   */
 
-  http = httpConnectEncrypt(cupsServer(), ippPort(), cupsEncryption());
+  http = httpConnect2(cupsServer(), ippPort(), NULL, AF_UNSPEC,
+                      cupsEncryption(), 1, 30000, NULL);
 
  /*
   * Set the current configuration if we have anything on the command-line...
@@ -116,5 +117,5 @@ show_settings(
 
 
 /*
- * End of "$Id: testadmin.c 8179 2008-12-10 05:03:11Z mike $".
+ * End of "$Id: testadmin.c 10996 2013-05-29 11:51:34Z msweet $".
  */

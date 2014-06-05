@@ -1,9 +1,9 @@
 /*
- * "$Id: md5passwd.c 8179 2008-12-10 05:03:11Z mike $"
+ * "$Id: md5passwd.c 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   MD5 password support for the Common UNIX Printing System (CUPS).
+ *   MD5 password support for CUPS.
  *
- *   Copyright 2007 by Apple Inc.
+ *   Copyright 2007-2010 by Apple Inc.
  *   Copyright 1997-2005 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -27,7 +27,7 @@
  */
 
 #include "http-private.h"
-#include "string.h"
+#include "string-private.h"
 
 
 /*
@@ -138,5 +138,5 @@ httpMD5String(const unsigned char *sum,	/* I - MD5 sum data */
 
 
 /*
- * End of "$Id: md5passwd.c 8179 2008-12-10 05:03:11Z mike $".
+ * End of "$Id: md5passwd.c 10996 2013-05-29 11:51:34Z msweet $".
  */

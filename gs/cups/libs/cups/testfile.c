@@ -1,9 +1,9 @@
 /*
- * "$Id: testfile.c 8938 2009-12-18 23:52:01Z mike $"
+ * "$Id: testfile.c 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   File test program for the Common UNIX Printing System (CUPS).
+ *   File test program for CUPS.
  *
- *   Copyright 2007-2008 by Apple Inc.
+ *   Copyright 2007-2011 by Apple Inc.
  *   Copyright 1997-2007 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -26,13 +26,11 @@
  * Include necessary headers...
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <time.h>
-#include "string.h"
+#include "string-private.h"
+#include "debug-private.h"
 #include "file.h"
-#include "debug.h"
+#include <stdlib.h>
+#include <time.h>
 #ifdef HAVE_LIBZ
 #  include <zlib.h>
 #endif /* HAVE_LIBZ */
@@ -132,12 +130,12 @@ main(int  argc,				/* I - Number of command-line arguments */
 #endif /* !WIN32 */
 
    /*
-    * Count lines in euc-jp.txt, rewind, then count again.
+    * Count lines in psglyphs, rewind, then count again.
     */
 
-    fputs("\ncupsFileOpen(\"../data/euc-jp.txt\", \"r\"): ", stdout);
+    fputs("\ncupsFileOpen(\"../data/media.defs\", \"r\"): ", stdout);
 
-    if ((fp = cupsFileOpen("../data/euc-jp.txt", "r")) == NULL)
+    if ((fp = cupsFileOpen("../data/media.defs", "r")) == NULL)
     {
       puts("FAIL");
       status ++;
@@ -147,9 +145,9 @@ main(int  argc,				/* I - Number of command-line arguments */
       puts("PASS");
       fputs("cupsFileGets: ", stdout);
 
-      if ((count = count_lines(fp)) != 15184)
+      if ((count = count_lines(fp)) != 208)
       {
-        printf("FAIL (got %d lines, expected 15184)\n", count);
+        printf("FAIL (got %d lines, expected 208)\n", count);
 	status ++;
       }
       else
@@ -167,9 +165,9 @@ main(int  argc,				/* I - Number of command-line arguments */
 	  puts("PASS");
 	  fputs("cupsFileGets: ", stdout);
 
-	  if ((count = count_lines(fp)) != 15184)
+	  if ((count = count_lines(fp)) != 208)
 	  {
-	    printf("FAIL (got %d lines, expected 15184)\n", count);
+	    printf("FAIL (got %d lines, expected 208)\n", count);
 	    status ++;
 	  }
 	  else
@@ -431,7 +429,7 @@ random_tests(void)
   */
 
   unlink("testfile.dat");
-                    
+
  /*
   * Return the test status...
   */
@@ -471,7 +469,7 @@ read_write_tests(int compression)	/* I - Use compression? */
   * Initialize the write buffer with random data...
   */
 
-  CUPS_SRAND(time(NULL));
+  CUPS_SRAND((unsigned)time(NULL));
 
   for (i = 0; i < (int)sizeof(writebuf); i ++)
     writebuf[i] = CUPS_RAND();
@@ -678,7 +676,7 @@ read_write_tests(int compression)	/* I - Use compression? */
     for (i = 0; i < 1000; i ++)
       if (!cupsFileGetConf(fp, line, sizeof(line), &value, &linenum))
         break;
-      else if (strcasecmp(line, "TestLine") || !value || atoi(value) != i ||
+      else if (_cups_strcasecmp(line, "TestLine") || !value || atoi(value) != i ||
                linenum != (i + 2))
         break;
 
@@ -809,7 +807,7 @@ read_write_tests(int compression)	/* I - Use compression? */
   */
 
   unlink(compression ? "testfile.dat.gz" : "testfile.dat");
-                    
+
  /*
   * Return the test status...
   */
@@ -819,5 +817,5 @@ read_write_tests(int compression)	/* I - Use compression? */
 
 
 /*
- * End of "$Id: testfile.c 8938 2009-12-18 23:52:01Z mike $".
+ * End of "$Id: testfile.c 10996 2013-05-29 11:51:34Z msweet $".
  */

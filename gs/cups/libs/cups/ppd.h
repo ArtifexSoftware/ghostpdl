@@ -1,9 +1,13 @@
 /*
- * "$Id: ppd.h 9120 2010-04-23 18:56:34Z mike $"
+ * "$Id: ppd.h 11056 2013-06-25 14:27:30Z msweet $"
  *
  *   PostScript Printer Description definitions for CUPS.
  *
- *   Copyright 2007-2010 by Apple Inc.
+ *   THESE APIS ARE DEPRECATED. TO COMPILE WITHOUT WARNINGS ADD
+ *   -D_PPD_DEPRECATED="" TO YOUR COMPILE OPTIONS.  THIS HEADER AND THESE
+ *   FUNCTIONS WILL BE REMOVED IN A FUTURE RELEASE OF CUPS.
+ *
+ *   Copyright 2007-2013 by Apple Inc.
  *   Copyright 1997-2007 by Easy Software Products, all rights reserved.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -32,6 +36,7 @@
  */
 
 #  include <stdio.h>
+#  include "cups.h"
 #  include "array.h"
 #  include "file.h"
 
@@ -43,6 +48,16 @@
 #  ifdef __cplusplus
 extern "C" {
 #  endif /* __cplusplus */
+
+
+/*
+ * Define _PPD_DEPRECATED to silence the warnings about PPD functions being
+ * deprecated...
+ */
+
+#  ifndef _PPD_DEPRECATED
+#    define _PPD_DEPRECATED _CUPS_DEPRECATED_1_6_MSG("Use cupsCopyDestInfo and friends instead.")
+#  endif /* !_PPD_DEPRECATED */
 
 
 /*
@@ -92,7 +107,7 @@ typedef enum ppd_cs_e			/**** Colorspaces ****/
   PPD_CS_N				/* DeviceN colorspace */
 } ppd_cs_t;
 
-typedef enum ppd_status_e		/**** Status Codes @since CUPS 1.1.19/Mac OS X 10.3@ ****/
+typedef enum ppd_status_e		/**** Status Codes @since CUPS 1.1.19/OS X 10.3@ ****/
 {
   PPD_OK = 0,				/* OK */
   PPD_FILE_OPEN_ERROR,			/* Unable to open PPD file */
@@ -117,19 +132,20 @@ typedef enum ppd_status_e		/**** Status Codes @since CUPS 1.1.19/Mac OS X 10.3@ 
   PPD_BAD_CUSTOM_PARAM,			/* Bad custom parameter */
   PPD_MISSING_OPTION_KEYWORD,		/* Missing option keyword */
   PPD_BAD_VALUE,			/* Bad value string */
+  PPD_MISSING_CLOSE_GROUP,		/* Missing CloseGroup */
   PPD_MAX_STATUS			/* @private@ */
 } ppd_status_t;
 
-enum ppd_conform_e			/**** Conformance Levels @since CUPS 1.1.19/Mac OS X 10.3@ ****/
+enum ppd_conform_e			/**** Conformance Levels @since CUPS 1.1.19/OS X 10.3@ ****/
 {
   PPD_CONFORM_RELAXED,			/* Relax whitespace and control char */
   PPD_CONFORM_STRICT			/* Require strict conformance */
 };
 
 typedef enum ppd_conform_e ppd_conform_t;
-					/**** Conformance Levels @since CUPS 1.1.19/Mac OS X 10.3@ ****/
+					/**** Conformance Levels @since CUPS 1.1.19/OS X 10.3@ ****/
 
-typedef struct ppd_attr_s		/**** PPD Attribute Structure @since CUPS 1.1.19/Mac OS X 10.3@ ****/
+typedef struct ppd_attr_s		/**** PPD Attribute Structure @since CUPS 1.1.19/OS X 10.3@ ****/
 {
   char		name[PPD_MAX_NAME];	/* Name of attribute (cupsXYZ) */
   char		spec[PPD_MAX_NAME];	/* Specifier string, if any */
@@ -170,7 +186,7 @@ typedef struct ppd_group_s		/**** Groups ****/
    ****/
   char		text[PPD_MAX_TEXT - PPD_MAX_NAME];
   					/* Human-readable group name */
-  char		name[PPD_MAX_NAME];	/* Group name @since CUPS 1.1.18/Mac OS X 10.3@ */
+  char		name[PPD_MAX_NAME];	/* Group name @since CUPS 1.1.18/OS X 10.3@ */
   int		num_options;		/* Number of options */
   ppd_option_t	*options;		/* Options */
   int		num_subgroups;		/* Number of sub-groups */
@@ -215,8 +231,8 @@ typedef struct ppd_profile_s		/**** sRGB Color Profiles ****/
   float		matrix[3][3];		/* Transform matrix */
 } ppd_profile_t;
 
-/**** New in CUPS 1.2/Mac OS X 10.5 ****/
-typedef enum ppd_cptype_e		/**** Custom Parameter Type @since CUPS 1.2/Mac OS X 10.5@ ****/
+/**** New in CUPS 1.2/OS X 10.5 ****/
+typedef enum ppd_cptype_e		/**** Custom Parameter Type @since CUPS 1.2/OS X 10.5@ ****/
 {
   PPD_CUSTOM_CURVE,			/* Curve value for f(x) = x^value */
   PPD_CUSTOM_INT,			/* Integer number value */
@@ -228,7 +244,7 @@ typedef enum ppd_cptype_e		/**** Custom Parameter Type @since CUPS 1.2/Mac OS X 
   PPD_CUSTOM_STRING			/* String of characters */
 } ppd_cptype_t;
 
-typedef union ppd_cplimit_u		/**** Custom Parameter Limit @since CUPS 1.2/Mac OS X 10.5@ ****/
+typedef union ppd_cplimit_u		/**** Custom Parameter Limit @since CUPS 1.2/OS X 10.5@ ****/
 {
   float		custom_curve;		/* Gamma value */
   int		custom_int;		/* Integer value */
@@ -240,7 +256,7 @@ typedef union ppd_cplimit_u		/**** Custom Parameter Limit @since CUPS 1.2/Mac OS
   int		custom_string;		/* String length */
 } ppd_cplimit_t;
 
-typedef union ppd_cpvalue_u		/**** Custom Parameter Value @since CUPS 1.2/Mac OS X 10.5@ ****/
+typedef union ppd_cpvalue_u		/**** Custom Parameter Value @since CUPS 1.2/OS X 10.5@ ****/
 {
   float		custom_curve;		/* Gamma value */
   int		custom_int;		/* Integer value */
@@ -252,7 +268,7 @@ typedef union ppd_cpvalue_u		/**** Custom Parameter Value @since CUPS 1.2/Mac OS
   char		*custom_string;		/* String value */
 } ppd_cpvalue_t;
 
-typedef struct ppd_cparam_s		/**** Custom Parameter @since CUPS 1.2/Mac OS X 10.5@ ****/
+typedef struct ppd_cparam_s		/**** Custom Parameter @since CUPS 1.2/OS X 10.5@ ****/
 {
   char		name[PPD_MAX_NAME];	/* Parameter name */
   char		text[PPD_MAX_TEXT];	/* Human-readable text */
@@ -263,13 +279,16 @@ typedef struct ppd_cparam_s		/**** Custom Parameter @since CUPS 1.2/Mac OS X 10.
   ppd_cpvalue_t	current;		/* Current value */
 } ppd_cparam_t;
 
-typedef struct ppd_coption_s		/**** Custom Option @since CUPS 1.2/Mac OS X 10.5@ ****/
+typedef struct ppd_coption_s		/**** Custom Option @since CUPS 1.2/OS X 10.5@ ****/
 {
   char		keyword[PPD_MAX_NAME];	/* Name of option that is being extended... */
   ppd_option_t	*option;		/* Option that is being extended... */
   int		marked;			/* Extended option is marked */
   cups_array_t	*params;		/* Parameters */
 } ppd_coption_t;
+
+typedef struct _ppd_cache_s _ppd_cache_t;
+					/**** PPD cache and mapping data @since CUPS 1.5/OS X 10.7@ @private@ ****/
 
 typedef struct ppd_file_s		/**** PPD File ****/
 {
@@ -317,25 +336,25 @@ typedef struct ppd_file_s		/**** PPD File ****/
   int		flip_duplex;		/* 1 = Flip page for back sides @deprecated@ */
 
   /**** New in CUPS 1.1.19 ****/
-  char		*protocols;		/* Protocols (BCP, TBCP) string @since CUPS 1.1.19/Mac OS X 10.3@ */
-  char		*pcfilename;		/* PCFileName string @since CUPS 1.1.19/Mac OS X 10.3@ */
-  int		num_attrs;		/* Number of attributes @since CUPS 1.1.19/Mac OS X 10.3@ @private@ */
-  int		cur_attr;		/* Current attribute @since CUPS 1.1.19/Mac OS X 10.3@ @private@ */
-  ppd_attr_t	**attrs;		/* Attributes @since CUPS 1.1.19/Mac OS X 10.3@ @private@ */
+  char		*protocols;		/* Protocols (BCP, TBCP) string @since CUPS 1.1.19/OS X 10.3@ */
+  char		*pcfilename;		/* PCFileName string @since CUPS 1.1.19/OS X 10.3@ */
+  int		num_attrs;		/* Number of attributes @since CUPS 1.1.19/OS X 10.3@ @private@ */
+  int		cur_attr;		/* Current attribute @since CUPS 1.1.19/OS X 10.3@ @private@ */
+  ppd_attr_t	**attrs;		/* Attributes @since CUPS 1.1.19/OS X 10.3@ @private@ */
 
-  /**** New in CUPS 1.2/Mac OS X 10.5 ****/
-  cups_array_t	*sorted_attrs;		/* Attribute lookup array @since CUPS 1.2/Mac OS X 10.5@ @private@ */
-  cups_array_t	*options;		/* Option lookup array @since CUPS 1.2/Mac OS X 10.5@ @private@ */
-  cups_array_t	*coptions;		/* Custom options array @since CUPS 1.2/Mac OS X 10.5@ @private@ */
+  /**** New in CUPS 1.2/OS X 10.5 ****/
+  cups_array_t	*sorted_attrs;		/* Attribute lookup array @since CUPS 1.2/OS X 10.5@ @private@ */
+  cups_array_t	*options;		/* Option lookup array @since CUPS 1.2/OS X 10.5@ @private@ */
+  cups_array_t	*coptions;		/* Custom options array @since CUPS 1.2/OS X 10.5@ @private@ */
 
-  /**** New in CUPS 1.3/Mac OS X 10.5 ****/
-  cups_array_t	*marked;		/* Marked choices @since CUPS 1.3/Mac OS X 10.5@ @private@ */
+  /**** New in CUPS 1.3/OS X 10.5 ****/
+  cups_array_t	*marked;		/* Marked choices @since CUPS 1.3/OS X 10.5@ @private@ */
 
-  /**** New in CUPS 1.4/Mac OS X 10.6 ****/
-  cups_array_t	*cups_uiconstraints;	/* cupsUIConstraints @since CUPS 1.4/Mac OS X 10.6@ @private@ */
+  /**** New in CUPS 1.4/OS X 10.6 ****/
+  cups_array_t	*cups_uiconstraints;	/* cupsUIConstraints @since CUPS 1.4/OS X 10.6@ @private@ */
 
   /**** New in CUPS 1.5 ****/
-  void		*pwg;			/* PWG to/from PPD mappings */
+  _ppd_cache_t	*cache;			/* PPD cache and mapping data @since CUPS 1.5/OS X 10.7@ @private@ */
 } ppd_file_t;
 
 
@@ -343,81 +362,106 @@ typedef struct ppd_file_s		/**** PPD File ****/
  * Prototypes...
  */
 
-extern void		ppdClose(ppd_file_t *ppd);
+extern int		cupsMarkOptions(ppd_file_t *ppd, int num_options,
+			                cups_option_t *options) _PPD_DEPRECATED;
+extern void		ppdClose(ppd_file_t *ppd) _PPD_DEPRECATED;
 extern int		ppdCollect(ppd_file_t *ppd, ppd_section_t section,
-			           ppd_choice_t  ***choices);
-extern int		ppdConflicts(ppd_file_t *ppd);
+			           ppd_choice_t  ***choices) _PPD_DEPRECATED;
+extern int		ppdConflicts(ppd_file_t *ppd) _PPD_DEPRECATED;
 extern int		ppdEmit(ppd_file_t *ppd, FILE *fp,
-			        ppd_section_t section);
+			        ppd_section_t section) _PPD_DEPRECATED;
 extern int		ppdEmitFd(ppd_file_t *ppd, int fd,
-			          ppd_section_t section);
+			          ppd_section_t section) _PPD_DEPRECATED;
 extern int		ppdEmitJCL(ppd_file_t *ppd, FILE *fp, int job_id,
-			           const char *user, const char *title);
-extern ppd_choice_t	*ppdFindChoice(ppd_option_t *o, const char *option);
-extern ppd_choice_t	*ppdFindMarkedChoice(ppd_file_t *ppd, const char *keyword);
-extern ppd_option_t	*ppdFindOption(ppd_file_t *ppd, const char *keyword);
+			           const char *user, const char *title)
+			           _PPD_DEPRECATED;
+extern ppd_choice_t	*ppdFindChoice(ppd_option_t *o, const char *option)
+			               _PPD_DEPRECATED;
+extern ppd_choice_t	*ppdFindMarkedChoice(ppd_file_t *ppd,
+			                     const char *keyword)
+			                     _PPD_DEPRECATED;
+extern ppd_option_t	*ppdFindOption(ppd_file_t *ppd, const char *keyword)
+			               _PPD_DEPRECATED;
 extern int		ppdIsMarked(ppd_file_t *ppd, const char *keyword,
-			            const char *option);
-extern void		ppdMarkDefaults(ppd_file_t *ppd);
+			            const char *option) _PPD_DEPRECATED;
+extern void		ppdMarkDefaults(ppd_file_t *ppd) _PPD_DEPRECATED;
 extern int		ppdMarkOption(ppd_file_t *ppd, const char *keyword,
-			              const char *option);
-extern ppd_file_t	*ppdOpen(FILE *fp);
-extern ppd_file_t	*ppdOpenFd(int fd);
-extern ppd_file_t	*ppdOpenFile(const char *filename);
-extern float		ppdPageLength(ppd_file_t *ppd, const char *name);
-extern ppd_size_t	*ppdPageSize(ppd_file_t *ppd, const char *name);
-extern float		ppdPageWidth(ppd_file_t *ppd, const char *name);
+			              const char *option) _PPD_DEPRECATED;
+extern ppd_file_t	*ppdOpen(FILE *fp) _PPD_DEPRECATED;
+extern ppd_file_t	*ppdOpenFd(int fd) _PPD_DEPRECATED;
+extern ppd_file_t	*ppdOpenFile(const char *filename) _PPD_DEPRECATED;
+extern float		ppdPageLength(ppd_file_t *ppd, const char *name)
+			              _PPD_DEPRECATED;
+extern ppd_size_t	*ppdPageSize(ppd_file_t *ppd, const char *name)
+			             _PPD_DEPRECATED;
+extern float		ppdPageWidth(ppd_file_t *ppd, const char *name)
+			             _PPD_DEPRECATED;
 
 /**** New in CUPS 1.1.19 ****/
-extern const char	*ppdErrorString(ppd_status_t status) _CUPS_API_1_1_19;
+extern const char	*ppdErrorString(ppd_status_t status) _PPD_DEPRECATED;
 extern ppd_attr_t	*ppdFindAttr(ppd_file_t *ppd, const char *name,
-			             const char *spec) _CUPS_API_1_1_19;
+			             const char *spec) _PPD_DEPRECATED;
 extern ppd_attr_t	*ppdFindNextAttr(ppd_file_t *ppd, const char *name,
-			                 const char *spec) _CUPS_API_1_1_19;
-extern ppd_status_t	ppdLastError(int *line) _CUPS_API_1_1_19;
+			                 const char *spec) _PPD_DEPRECATED;
+extern ppd_status_t	ppdLastError(int *line) _PPD_DEPRECATED;
 
 /**** New in CUPS 1.1.20 ****/
-extern void		ppdSetConformance(ppd_conform_t c) _CUPS_API_1_1_20;
+extern void		ppdSetConformance(ppd_conform_t c) _PPD_DEPRECATED;
 
 /**** New in CUPS 1.2 ****/
 extern int		ppdCollect2(ppd_file_t *ppd, ppd_section_t section,
-			            float min_order, ppd_choice_t  ***choices) _CUPS_API_1_2;
+			            float min_order, ppd_choice_t  ***choices)
+			            _PPD_DEPRECATED;
 extern int		ppdEmitAfterOrder(ppd_file_t *ppd, FILE *fp,
 			                  ppd_section_t section, int limit,
-					  float min_order) _CUPS_API_1_2;
-extern int		ppdEmitJCLEnd(ppd_file_t *ppd, FILE *fp) _CUPS_API_1_2;
+					  float min_order) _PPD_DEPRECATED;
+extern int		ppdEmitJCLEnd(ppd_file_t *ppd, FILE *fp)
+			              _PPD_DEPRECATED;
 extern char		*ppdEmitString(ppd_file_t *ppd, ppd_section_t section,
-			               float min_order) _CUPS_API_1_2;
+			               float min_order) _PPD_DEPRECATED;
 extern ppd_coption_t	*ppdFindCustomOption(ppd_file_t *ppd,
-			                     const char *keyword) _CUPS_API_1_2;
+			                     const char *keyword)
+			                     _PPD_DEPRECATED;
 extern ppd_cparam_t	*ppdFindCustomParam(ppd_coption_t *opt,
-			                    const char *name) _CUPS_API_1_2;
-extern ppd_cparam_t	*ppdFirstCustomParam(ppd_coption_t *opt) _CUPS_API_1_2;
-extern ppd_option_t	*ppdFirstOption(ppd_file_t *ppd) _CUPS_API_1_2;
-extern ppd_cparam_t	*ppdNextCustomParam(ppd_coption_t *opt) _CUPS_API_1_2;
-extern ppd_option_t	*ppdNextOption(ppd_file_t *ppd) _CUPS_API_1_2;
-extern int		ppdLocalize(ppd_file_t *ppd) _CUPS_API_1_2;
-extern ppd_file_t	*ppdOpen2(cups_file_t *fp) _CUPS_API_1_2;
+			                    const char *name) _PPD_DEPRECATED;
+extern ppd_cparam_t	*ppdFirstCustomParam(ppd_coption_t *opt)
+			                     _PPD_DEPRECATED;
+extern ppd_option_t	*ppdFirstOption(ppd_file_t *ppd) _PPD_DEPRECATED;
+extern ppd_cparam_t	*ppdNextCustomParam(ppd_coption_t *opt) _PPD_DEPRECATED;
+extern ppd_option_t	*ppdNextOption(ppd_file_t *ppd) _PPD_DEPRECATED;
+extern int		ppdLocalize(ppd_file_t *ppd) _PPD_DEPRECATED;
+extern ppd_file_t	*ppdOpen2(cups_file_t *fp) _PPD_DEPRECATED;
 
-/**** New in CUPS 1.3/Mac OS X 10.5 ****/
+/**** New in CUPS 1.3/OS X 10.5 ****/
 extern const char	*ppdLocalizeIPPReason(ppd_file_t *ppd,
 			                      const char *reason,
 					      const char *scheme,
 					      char *buffer,
-					      size_t bufsize) _CUPS_API_1_3;
+					      size_t bufsize) _PPD_DEPRECATED;
 
-/**** New in CUPS 1.4/Mac OS X 10.6 ****/
+/**** New in CUPS 1.4/OS X 10.6 ****/
+extern int		cupsGetConflicts(ppd_file_t *ppd, const char *option,
+					 const char *choice,
+					 cups_option_t **options)
+					 _PPD_DEPRECATED;
+extern int		cupsResolveConflicts(ppd_file_t *ppd,
+			                     const char *option,
+			                     const char *choice,
+					     int *num_options,
+					     cups_option_t **options)
+					     _PPD_DEPRECATED;
 extern int		ppdInstallableConflict(ppd_file_t *ppd,
 			                       const char *option,
 					       const char *choice)
-					           _CUPS_API_1_4;
+					       _PPD_DEPRECATED;
 extern ppd_attr_t	*ppdLocalizeAttr(ppd_file_t *ppd, const char *keyword,
-			                 const char *spec) _CUPS_API_1_4;
+			                 const char *spec) _PPD_DEPRECATED;
 extern const char	*ppdLocalizeMarkerName(ppd_file_t *ppd,
-			                       const char *name) _CUPS_API_1_4;
+			                       const char *name)
+			                       _PPD_DEPRECATED;
 extern int		ppdPageSizeLimits(ppd_file_t *ppd,
 			                  ppd_size_t *minimum,
-					  ppd_size_t *maximum) _CUPS_API_1_4;
+					  ppd_size_t *maximum) _PPD_DEPRECATED;
 
 
 /*
@@ -430,5 +474,5 @@ extern int		ppdPageSizeLimits(ppd_file_t *ppd,
 #endif /* !_CUPS_PPD_H_ */
 
 /*
- * End of "$Id: ppd.h 9120 2010-04-23 18:56:34Z mike $".
+ * End of "$Id: ppd.h 11056 2013-06-25 14:27:30Z msweet $".
  */

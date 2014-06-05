@@ -1,9 +1,9 @@
 /*
- * "$Id: string.c 9261 2010-08-13 21:54:11Z mike $"
+ * "$Id: string.c 11890 2014-05-22 13:59:21Z msweet $"
  *
- *   String functions for the Common UNIX Printing System (CUPS).
+ *   String functions for CUPS.
  *
- *   Copyright 2007-2009 by Apple Inc.
+ *   Copyright 2007-2012 by Apple Inc.
  *   Copyright 1997-2007 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -36,26 +36,18 @@
  * Include necessary headers...
  */
 
-#include <stdlib.h>
+#define _CUPS_STRING_C_
+#include "cups-private.h"
 #include <stddef.h>
 #include <limits.h>
-#include "array.h"
-#include "debug.h"
-#define _CUPS_STRING_C_
-#include "string.h"
-#ifdef HAVE_PTHREAD_H
-#  include <pthread.h>
-#endif /* HAVE_PTHREAD_H */
 
 
 /*
  * Local globals...
  */
 
-#ifdef HAVE_PTHREAD_H
-static pthread_mutex_t	sp_mutex = PTHREAD_MUTEX_INITIALIZER;
+static _cups_mutex_t	sp_mutex = _CUPS_MUTEX_INITIALIZER;
 					/* Mutex to control access to pool */
-#endif /* HAVE_PTHREAD_H */
 static cups_array_t	*stringpool = NULL;
 					/* Global string pool */
 
@@ -74,6 +66,7 @@ static int	compare_sp_items(_cups_sp_item_t *a, _cups_sp_item_t *b);
 char *					/* O - String pointer */
 _cupsStrAlloc(const char *s)		/* I - String */
 {
+  size_t		slen;		/* Length of string */
   _cups_sp_item_t	*item,		/* String pool item */
 			*key;		/* Search key */
 
@@ -89,18 +82,14 @@ _cupsStrAlloc(const char *s)		/* I - String */
   * Get the string pool...
   */
 
-#ifdef HAVE_PTHREAD_H
-  pthread_mutex_lock(&sp_mutex);
-#endif /* HAVE_PTHREAD_H */
+  _cupsMutexLock(&sp_mutex);
 
   if (!stringpool)
     stringpool = cupsArrayNew((cups_array_func_t)compare_sp_items, NULL);
 
   if (!stringpool)
   {
-#ifdef HAVE_PTHREAD_H
-    pthread_mutex_unlock(&sp_mutex);
-#endif /* HAVE_PTHREAD_H */
+    _cupsMutexUnlock(&sp_mutex);
 
     return (NULL);
   }
@@ -128,9 +117,7 @@ _cupsStrAlloc(const char *s)		/* I - String */
       abort();
 #endif /* DEBUG_GUARDS */
 
-#ifdef HAVE_PTHREAD_H
-    pthread_mutex_unlock(&sp_mutex);
-#endif /* HAVE_PTHREAD_H */
+    _cupsMutexUnlock(&sp_mutex);
 
     return (item->str);
   }
@@ -139,18 +126,17 @@ _cupsStrAlloc(const char *s)		/* I - String */
   * Not found, so allocate a new one...
   */
 
-  item = (_cups_sp_item_t *)calloc(1, sizeof(_cups_sp_item_t) + strlen(s));
+  slen = strlen(s);
+  item = (_cups_sp_item_t *)calloc(1, sizeof(_cups_sp_item_t) + slen);
   if (!item)
   {
-#ifdef HAVE_PTHREAD_H
-    pthread_mutex_unlock(&sp_mutex);
-#endif /* HAVE_PTHREAD_H */
+    _cupsMutexUnlock(&sp_mutex);
 
     return (NULL);
   }
 
   item->ref_count = 1;
-  strcpy(item->str, s);
+  memcpy(item->str, s, slen + 1);
 
 #ifdef DEBUG_GUARDS
   item->guard = _CUPS_STR_GUARD;
@@ -166,11 +152,42 @@ _cupsStrAlloc(const char *s)		/* I - String */
 
   cupsArrayAdd(stringpool, item);
 
-#ifdef HAVE_PTHREAD_H
-  pthread_mutex_unlock(&sp_mutex);
-#endif /* HAVE_PTHREAD_H */
+  _cupsMutexUnlock(&sp_mutex);
 
   return (item->str);
+}
+
+
+/*
+ * '_cupsStrDate()' - Return a localized date for a given time value.
+ *
+ * This function works around the locale encoding issues of strftime...
+ */
+
+char *					/* O - Buffer */
+_cupsStrDate(char   *buf,		/* I - Buffer */
+             size_t bufsize,		/* I - Size of buffer */
+	     time_t timeval)		/* I - Time value */
+{
+  struct tm	*dateval;		/* Local date/time */
+  char		temp[1024];		/* Temporary buffer */
+  _cups_globals_t *cg = _cupsGlobals();	/* Per-thread globals */
+
+
+  if (!cg->lang_default)
+    cg->lang_default = cupsLangDefault();
+
+  dateval = localtime(&timeval);
+
+  if (cg->lang_default->encoding != CUPS_UTF8)
+  {
+    strftime(temp, sizeof(temp), "%c", dateval);
+    cupsCharsetToUTF8((cups_utf8_t *)buf, temp, (int)bufsize, cg->lang_default->encoding);
+  }
+  else
+    strftime(buf, bufsize, "%c", dateval);
+
+  return (buf);
 }
 
 
@@ -187,9 +204,7 @@ _cupsStrFlush(void)
   DEBUG_printf(("4_cupsStrFlush: %d strings in array",
                 cupsArrayCount(stringpool)));
 
-#ifdef HAVE_PTHREAD_H
-  pthread_mutex_lock(&sp_mutex);
-#endif /* HAVE_PTHREAD_H */
+  _cupsMutexLock(&sp_mutex);
 
   for (item = (_cups_sp_item_t *)cupsArrayFirst(stringpool);
        item;
@@ -199,9 +214,7 @@ _cupsStrFlush(void)
   cupsArrayDelete(stringpool);
   stringpool = NULL;
 
-#ifdef HAVE_PTHREAD_H
-  pthread_mutex_unlock(&sp_mutex);
-#endif /* HAVE_PTHREAD_H */
+  _cupsMutexUnlock(&sp_mutex);
 }
 
 
@@ -318,9 +331,7 @@ _cupsStrFree(const char *s)		/* I - String to free */
   * See if the string is already in the pool...
   */
 
-#ifdef HAVE_PTHREAD_H
-  pthread_mutex_lock(&sp_mutex);
-#endif /* HAVE_PTHREAD_H */
+  _cupsMutexLock(&sp_mutex);
 
   key = (_cups_sp_item_t *)(s - offsetof(_cups_sp_item_t, str));
 
@@ -354,9 +365,7 @@ _cupsStrFree(const char *s)		/* I - String to free */
     }
   }
 
-#ifdef HAVE_PTHREAD_H
-  pthread_mutex_unlock(&sp_mutex);
-#endif /* HAVE_PTHREAD_H */
+  _cupsMutexUnlock(&sp_mutex);
 }
 
 
@@ -387,15 +396,11 @@ _cupsStrRetain(const char *s)		/* I - String to retain */
     }
 #endif /* DEBUG_GUARDS */
 
-#ifdef HAVE_PTHREAD_H
-    pthread_mutex_lock(&sp_mutex);
-#endif /* HAVE_PTHREAD_H */
+    _cupsMutexLock(&sp_mutex);
 
     item->ref_count ++;
 
-#ifdef HAVE_PTHREAD_H
-    pthread_mutex_unlock(&sp_mutex);
-#endif /* HAVE_PTHREAD_H */
+    _cupsMutexUnlock(&sp_mutex);
   }
 
   return ((char *)s);
@@ -559,9 +564,7 @@ _cupsStrStatistics(size_t *alloc_bytes,	/* O - Allocated bytes */
   * Loop through strings in pool, counting everything up...
   */
 
-#ifdef HAVE_PTHREAD_H
-  pthread_mutex_lock(&sp_mutex);
-#endif /* HAVE_PTHREAD_H */
+  _cupsMutexLock(&sp_mutex);
 
   for (count = 0, abytes = 0, tbytes = 0,
            item = (_cups_sp_item_t *)cupsArrayFirst(stringpool);
@@ -578,9 +581,7 @@ _cupsStrStatistics(size_t *alloc_bytes,	/* O - Allocated bytes */
     tbytes += item->ref_count * len;
   }
 
-#ifdef HAVE_PTHREAD_H
-  pthread_mutex_unlock(&sp_mutex);
-#endif /* HAVE_PTHREAD_H */
+  _cupsMutexUnlock(&sp_mutex);
 
  /*
   * Return values...
@@ -602,7 +603,7 @@ _cupsStrStatistics(size_t *alloc_bytes,	/* O - Allocated bytes */
 
 void
 _cups_strcpy(char       *dst,		/* I - Destination string */
-            const char *src)		/* I - Source string */
+             const char *src)		/* I - Source string */
 {
   while (*src)
     *dst++ = *src++;
@@ -619,16 +620,18 @@ _cups_strcpy(char       *dst,		/* I - Destination string */
 char 	*				/* O - New string pointer */
 _cups_strdup(const char *s)		/* I - String to duplicate */
 {
-  char	*t;				/* New string pointer */
+  char		*t;			/* New string pointer */
+  size_t	slen;			/* Length of string */
 
 
-  if (s == NULL)
+  if (!s)
     return (NULL);
 
-  if ((t = malloc(strlen(s) + 1)) == NULL)
+  slen = strlen(s);
+  if ((t = malloc(slen + 1)) == NULL)
     return (NULL);
 
-  return (strcpy(t, s));
+  return (memcpy(t, s, slen + 1));
 }
 #endif /* !HAVE_STRDUP */
 
@@ -637,16 +640,15 @@ _cups_strdup(const char *s)		/* I - String to duplicate */
  * '_cups_strcasecmp()' - Do a case-insensitive comparison.
  */
 
-#ifndef HAVE_STRCASECMP
 int				/* O - Result of comparison (-1, 0, or 1) */
 _cups_strcasecmp(const char *s,	/* I - First string */
-                const char *t)	/* I - Second string */
+                 const char *t)	/* I - Second string */
 {
   while (*s != '\0' && *t != '\0')
   {
-    if (tolower(*s & 255) < tolower(*t & 255))
+    if (_cups_tolower(*s) < _cups_tolower(*t))
       return (-1);
-    else if (tolower(*s & 255) > tolower(*t & 255))
+    else if (_cups_tolower(*s) > _cups_tolower(*t))
       return (1);
 
     s ++;
@@ -660,13 +662,11 @@ _cups_strcasecmp(const char *s,	/* I - First string */
   else
     return (-1);
 }
-#endif /* !HAVE_STRCASECMP */
 
 /*
  * '_cups_strncasecmp()' - Do a case-insensitive comparison on up to N chars.
  */
 
-#ifndef HAVE_STRNCASECMP
 int					/* O - Result of comparison (-1, 0, or 1) */
 _cups_strncasecmp(const char *s,	/* I - First string */
                   const char *t,	/* I - Second string */
@@ -674,9 +674,9 @@ _cups_strncasecmp(const char *s,	/* I - First string */
 {
   while (*s != '\0' && *t != '\0' && n > 0)
   {
-    if (tolower(*s & 255) < tolower(*t & 255))
+    if (_cups_tolower(*s) < _cups_tolower(*t))
       return (-1);
-    else if (tolower(*s & 255) > tolower(*t & 255))
+    else if (_cups_tolower(*s) > _cups_tolower(*t))
       return (1);
 
     s ++;
@@ -693,7 +693,6 @@ _cups_strncasecmp(const char *s,	/* I - First string */
   else
     return (-1);
 }
-#endif /* !HAVE_STRNCASECMP */
 
 
 #ifndef HAVE_STRLCAT
@@ -790,5 +789,5 @@ compare_sp_items(_cups_sp_item_t *a,	/* I - First item */
 
 
 /*
- * End of "$Id: string.c 9261 2010-08-13 21:54:11Z mike $".
+ * End of "$Id: string.c 11890 2014-05-22 13:59:21Z msweet $".
  */

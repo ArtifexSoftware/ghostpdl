@@ -1,9 +1,9 @@
 /*
- * "$Id: testcups.c 8293 2009-01-28 03:56:27Z mike $"
+ * "$Id: testcups.c 11205 2013-07-31 18:06:15Z msweet $"
  *
- *   CUPS API test program for the Common UNIX Printing System (CUPS).
+ *   CUPS API test program for CUPS.
  *
- *   Copyright 2007-2009 by Apple Inc.
+ *   Copyright 2007-2013 by Apple Inc.
  *   Copyright 2007 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -24,11 +24,11 @@
  * Include necessary headers...
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#undef _CUPS_NO_DEPRECATED
+#include "string-private.h"
 #include "cups.h"
-#include "string.h"
-#include <errno.h>
+#include "ppd.h"
+#include <stdlib.h>
 
 
 /*
@@ -36,6 +36,7 @@
  */
 
 static int	dests_equal(cups_dest_t *a, cups_dest_t *b);
+static int	enum_cb(void *user_data, unsigned flags, cups_dest_t *dest);
 static void	show_diffs(cups_dest_t *a, cups_dest_t *b);
 
 
@@ -61,66 +62,214 @@ main(int  argc,				/* I - Number of command-line arguments */
 
   if (argc > 1)
   {
-   /*
-    * ./testcups printer file interval
-    */
-
-    int		interval,		/* Interval between writes */
-		job_id;			/* Job ID */
-    cups_file_t	*fp;			/* Print file */
-    char	buffer[16384];		/* Read/write buffer */
-    ssize_t	bytes;			/* Bytes read/written */
-
-
-    if (argc != 4)
+    if (!strcmp(argv[1], "enum"))
     {
-      puts("Usage: ./testcups");
-      puts("       ./testcups printer file interval");
-      return (1);
+      cups_ptype_t	mask = CUPS_PRINTER_LOCAL,
+					/* Printer type mask */
+			type = CUPS_PRINTER_LOCAL;
+					/* Printer type */
+      int		msec = 0;	/* Timeout in milliseconds */
+
+
+      for (i = 2; i < argc; i ++)
+        if (isdigit(argv[i][0] & 255) || argv[i][0] == '.')
+          msec = (int)(atof(argv[i]) * 1000);
+        else if (!_cups_strcasecmp(argv[i], "bw"))
+        {
+          mask |= CUPS_PRINTER_BW;
+          type |= CUPS_PRINTER_BW;
+        }
+        else if (!_cups_strcasecmp(argv[i], "color"))
+        {
+          mask |= CUPS_PRINTER_COLOR;
+          type |= CUPS_PRINTER_COLOR;
+        }
+        else if (!_cups_strcasecmp(argv[i], "mono"))
+        {
+          mask |= CUPS_PRINTER_COLOR;
+        }
+        else if (!_cups_strcasecmp(argv[i], "duplex"))
+        {
+          mask |= CUPS_PRINTER_DUPLEX;
+          type |= CUPS_PRINTER_DUPLEX;
+        }
+        else if (!_cups_strcasecmp(argv[i], "simplex"))
+        {
+          mask |= CUPS_PRINTER_DUPLEX;
+        }
+        else if (!_cups_strcasecmp(argv[i], "staple"))
+        {
+          mask |= CUPS_PRINTER_STAPLE;
+          type |= CUPS_PRINTER_STAPLE;
+        }
+        else if (!_cups_strcasecmp(argv[i], "copies"))
+        {
+          mask |= CUPS_PRINTER_COPIES;
+          type |= CUPS_PRINTER_COPIES;
+        }
+        else if (!_cups_strcasecmp(argv[i], "collate"))
+        {
+          mask |= CUPS_PRINTER_COLLATE;
+          type |= CUPS_PRINTER_COLLATE;
+        }
+        else if (!_cups_strcasecmp(argv[i], "punch"))
+        {
+          mask |= CUPS_PRINTER_PUNCH;
+          type |= CUPS_PRINTER_PUNCH;
+        }
+        else if (!_cups_strcasecmp(argv[i], "cover"))
+        {
+          mask |= CUPS_PRINTER_COVER;
+          type |= CUPS_PRINTER_COVER;
+        }
+        else if (!_cups_strcasecmp(argv[i], "bind"))
+        {
+          mask |= CUPS_PRINTER_BIND;
+          type |= CUPS_PRINTER_BIND;
+        }
+        else if (!_cups_strcasecmp(argv[i], "sort"))
+        {
+          mask |= CUPS_PRINTER_SORT;
+          type |= CUPS_PRINTER_SORT;
+        }
+        else if (!_cups_strcasecmp(argv[i], "mfp"))
+        {
+          mask |= CUPS_PRINTER_MFP;
+          type |= CUPS_PRINTER_MFP;
+        }
+        else if (!_cups_strcasecmp(argv[i], "printer"))
+        {
+          mask |= CUPS_PRINTER_MFP;
+        }
+        else if (!_cups_strcasecmp(argv[i], "large"))
+        {
+          mask |= CUPS_PRINTER_LARGE;
+          type |= CUPS_PRINTER_LARGE;
+        }
+        else if (!_cups_strcasecmp(argv[i], "medium"))
+        {
+          mask |= CUPS_PRINTER_MEDIUM;
+          type |= CUPS_PRINTER_MEDIUM;
+        }
+        else if (!_cups_strcasecmp(argv[i], "small"))
+        {
+          mask |= CUPS_PRINTER_SMALL;
+          type |= CUPS_PRINTER_SMALL;
+        }
+        else
+          fprintf(stderr, "Unknown argument \"%s\" ignored...\n", argv[i]);
+
+      cupsEnumDests(CUPS_DEST_FLAGS_NONE, msec, NULL, type, mask, enum_cb, NULL);
     }
-
-    if ((fp = cupsFileOpen(argv[2], "r")) == NULL)
+    else if (!strcmp(argv[1], "password"))
     {
-      printf("Unable to open \"%s\": %s\n", argv[2], strerror(errno));
-      return (1);
+      const char *pass = cupsGetPassword("Password:");
+					  /* Password string */
+
+      if (pass)
+	printf("Password entered: %s\n", pass);
+      else
+	puts("No password entered.");
     }
-
-    if ((job_id = cupsCreateJob(CUPS_HTTP_DEFAULT, argv[1], "testcups", 0,
-                                NULL)) <= 0)
+    else if (!strcmp(argv[1], "ppd") && argc == 3)
     {
-      printf("Unable to create print job on %s: %s\n", argv[1],
-             cupsLastErrorString());
-      return (1);
+     /*
+      * ./testcups ppd printer
+      */
+
+      http_status_t	http_status;	/* Status */
+      char		buffer[1024];	/* PPD filename */
+      time_t		modtime = 0;	/* Last modified */
+
+      if ((http_status = cupsGetPPD3(CUPS_HTTP_DEFAULT, argv[2], &modtime,
+                                     buffer, sizeof(buffer))) != HTTP_STATUS_OK)
+        printf("Unable to get PPD: %d (%s)\n", (int)http_status,
+               cupsLastErrorString());
+      else
+        puts(buffer);
     }
-              
-    interval = atoi(argv[3]);
-
-    if (cupsStartDocument(CUPS_HTTP_DEFAULT, argv[1], job_id, argv[2],
-                          CUPS_FORMAT_AUTO, 1) != HTTP_CONTINUE)
+    else if (!strcmp(argv[1], "print") && argc == 5)
     {
-      puts("Unable to start document!");
-      return (1);
-    }
+     /*
+      * ./testcups print printer file interval
+      */
 
-    while ((bytes = cupsFileRead(fp, buffer, sizeof(buffer))) > 0)
-    {
-      printf("Writing %d bytes...\n", (int)bytes);
+      int		interval,	/* Interval between writes */
+			job_id;		/* Job ID */
+      cups_file_t	*fp;		/* Print file */
+      char		buffer[16384];	/* Read/write buffer */
+      ssize_t		bytes;		/* Bytes read/written */
 
-      if (cupsWriteRequestData(CUPS_HTTP_DEFAULT, buffer,
-			       bytes) != HTTP_CONTINUE)
+      if ((fp = cupsFileOpen(argv[3], "r")) == NULL)
       {
-        puts("Unable to write bytes!");
+	printf("Unable to open \"%s\": %s\n", argv[2], strerror(errno));
 	return (1);
       }
 
-      sleep(interval);
+      if ((job_id = cupsCreateJob(CUPS_HTTP_DEFAULT, argv[2], "testcups", 0,
+				  NULL)) <= 0)
+      {
+	printf("Unable to create print job on %s: %s\n", argv[1],
+	       cupsLastErrorString());
+	return (1);
+      }
+
+      interval = atoi(argv[4]);
+
+      if (cupsStartDocument(CUPS_HTTP_DEFAULT, argv[1], job_id, argv[2],
+			    CUPS_FORMAT_AUTO, 1) != HTTP_STATUS_CONTINUE)
+      {
+	puts("Unable to start document!");
+	return (1);
+      }
+
+      while ((bytes = cupsFileRead(fp, buffer, sizeof(buffer))) > 0)
+      {
+	printf("Writing %d bytes...\n", (int)bytes);
+
+	if (cupsWriteRequestData(CUPS_HTTP_DEFAULT, buffer,
+				 bytes) != HTTP_STATUS_CONTINUE)
+	{
+	  puts("Unable to write bytes!");
+	  return (1);
+	}
+
+        if (interval > 0)
+	  sleep(interval);
+      }
+
+      cupsFileClose(fp);
+
+      if (cupsFinishDocument(CUPS_HTTP_DEFAULT,
+                             argv[1]) > IPP_STATUS_OK_IGNORED_OR_SUBSTITUTED)
+      {
+	puts("Unable to finish document!");
+	return (1);
+      }
     }
-
-    cupsFileClose(fp);
-
-    if (cupsFinishDocument(CUPS_HTTP_DEFAULT, argv[1]) != HTTP_OK)
+    else
     {
-      puts("Unable to finish document!");
+      puts("Usage:");
+      puts("");
+      puts("Run basic unit tests:");
+      puts("");
+      puts("    ./testcups");
+      puts("");
+      puts("Enumerate printers (for N seconds, -1 for indefinitely):");
+      puts("");
+      puts("    ./testcups enum [seconds]");
+      puts("");
+      puts("Ask for a password:");
+      puts("");
+      puts("    ./testcups password");
+      puts("");
+      puts("Get the PPD file:");
+      puts("");
+      puts("    ./testcups ppd printer");
+      puts("");
+      puts("Print a file (interval controls delay between buffers in seconds):");
+      puts("");
+      puts("    ./testcups print printer file interval");
       return (1);
     }
 
@@ -353,10 +502,10 @@ dests_equal(cups_dest_t *a,		/* I - First destination */
   if (!a || !b)
     return (0);
 
-  if (strcasecmp(a->name, b->name) ||
+  if (_cups_strcasecmp(a->name, b->name) ||
       (a->instance && !b->instance) ||
       (!a->instance && b->instance) ||
-      (a->instance && strcasecmp(a->instance, b->instance)) ||
+      (a->instance && _cups_strcasecmp(a->instance, b->instance)) ||
       a->num_options != b->num_options)
     return (0);
 
@@ -365,6 +514,33 @@ dests_equal(cups_dest_t *a,		/* I - First destination */
                               b->options)) == NULL ||
         strcmp(aoption->value, bval))
       return (0);
+
+  return (1);
+}
+
+
+/*
+ * 'enum_cb()' - Report additions and removals.
+ */
+
+static int				/* O - 1 to continue, 0 to stop */
+enum_cb(void        *user_data,		/* I - User data (unused) */
+        unsigned    flags,		/* I - Destination flags */
+        cups_dest_t *dest)		/* I - Destination */
+{
+  int		i;			/* Looping var */
+  cups_option_t	*option;		/* Current option */
+
+
+  if (flags & CUPS_DEST_FLAGS_REMOVED)
+    printf("Removed '%s':\n", dest->name);
+  else
+    printf("Added '%s':\n", dest->name);
+
+  for (i = dest->num_options, option = dest->options; i > 0; i --, option ++)
+    printf("    %s=\"%s\"\n", option->name, option->value);
+
+  putchar('\n');
 
   return (1);
 }
@@ -389,12 +565,12 @@ show_diffs(cups_dest_t *a,		/* I - First destination */
   puts("    Item                  cupsGetDest           cupsGetNamedDest");
   puts("    --------------------  --------------------  --------------------");
 
-  if (strcasecmp(a->name, b->name))
+  if (_cups_strcasecmp(a->name, b->name))
     printf("    name                  %-20.20s  %-20.20s\n", a->name, b->name);
 
   if ((a->instance && !b->instance) ||
       (!a->instance && b->instance) ||
-      (a->instance && strcasecmp(a->instance, b->instance)))
+      (a->instance && _cups_strcasecmp(a->instance, b->instance)))
     printf("    instance              %-20.20s  %-20.20s\n",
            a->instance ? a->instance : "(null)",
 	   b->instance ? b->instance : "(null)");
@@ -413,5 +589,5 @@ show_diffs(cups_dest_t *a,		/* I - First destination */
 
 
 /*
- * End of "$Id: testcups.c 8293 2009-01-28 03:56:27Z mike $".
+ * End of "$Id: testcups.c 11205 2013-07-31 18:06:15Z msweet $".
  */

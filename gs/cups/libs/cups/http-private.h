@@ -1,18 +1,18 @@
 /*
- * "$Id: http-private.h 9104 2010-04-12 04:03:53Z mike $"
+ * "$Id: http-private.h 11392 2013-11-06 01:29:56Z msweet $"
  *
- *   Private HTTP definitions for the Common UNIX Printing System (CUPS).
+ * Private HTTP definitions for CUPS.
  *
- *   Copyright 2007-2008 by Apple Inc.
- *   Copyright 1997-2007 by Easy Software Products, all rights reserved.
+ * Copyright 2007-2013 by Apple Inc.
+ * Copyright 1997-2007 by Easy Software Products, all rights reserved.
  *
- *   These coded instructions, statements, and computer programs are the
- *   property of Apple Inc. and are protected by Federal copyright
- *   law.  Distribution and use rights are outlined in the file "LICENSE.txt"
- *   which should have been included with this file.  If this file is
- *   file is missing or damaged, see the license at "http://www.cups.org/".
+ * These coded instructions, statements, and computer programs are the
+ * property of Apple Inc. and are protected by Federal copyright
+ * law.  Distribution and use rights are outlined in the file "LICENSE.txt"
+ * which should have been included with this file.  If this file is
+ * file is missing or damaged, see the license at "http://www.cups.org/".
  *
- *   This file is subject to the Apple OS-Developed Software exception.
+ * This file is subject to the Apple OS-Developed Software exception.
  */
 
 #ifndef _CUPS_HTTP_PRIVATE_H_
@@ -22,8 +22,9 @@
  * Include necessary headers...
  */
 
+#  include "config.h"
+#  include <stddef.h>
 #  include <stdlib.h>
-#  include <config.h>
 
 #  ifdef __sun
 #    include <sys/select.h>
@@ -33,50 +34,123 @@
 #  ifdef WIN32
 #    include <io.h>
 #    include <winsock2.h>
+#    define CUPS_SOCAST (const char *)
 #  else
 #    include <unistd.h>
 #    include <fcntl.h>
 #    include <sys/socket.h>
 #    define closesocket(f) close(f)
+#    define CUPS_SOCAST
 #  endif /* WIN32 */
 
 #  ifdef HAVE_GSSAPI
-#    ifdef HAVE_GSSAPI_GSSAPI_H
+#    ifdef HAVE_GSS_GSSAPI_H
+#      include <GSS/gssapi.h>
+#    elif defined(HAVE_GSSAPI_GSSAPI_H)
 #      include <gssapi/gssapi.h>
-#    endif /* HAVE_GSSAPI_GSSAPI_H */
-#    ifdef HAVE_GSSAPI_GSSAPI_GENERIC_H
-#      include <gssapi/gssapi_generic.h>
-#    endif /* HAVE_GSSAPI_GSSAPI_GENERIC_H */
-#    ifdef HAVE_GSSAPI_GSSAPI_KRB5_H
-#      include <gssapi/gssapi_krb5.h>
-#    endif /* HAVE_GSSAPI_GSSAPI_KRB5_H */
-#    ifdef HAVE_GSSAPI_H
+#    elif defined(HAVE_GSSAPI_H)
 #      include <gssapi.h>
-#    endif /* HAVE_GSSAPI_H */
+#    endif /* HAVE_GSS_GSSAPI_H */
 #    ifndef HAVE_GSS_C_NT_HOSTBASED_SERVICE
 #      define GSS_C_NT_HOSTBASED_SERVICE gss_nt_service_name
 #    endif /* !HAVE_GSS_C_NT_HOSTBASED_SERVICE */
-#    ifdef HAVE_KRB5_H
-#      include <krb5.h>
-#    endif /* HAVE_KRB5_H */
 #  endif /* HAVE_GSSAPI */
 
 #  ifdef HAVE_AUTHORIZATION_H
 #    include <Security/Authorization.h>
 #  endif /* HAVE_AUTHORIZATION_H */
 
-#  if defined(__sgi) || (defined(__APPLE__) && !defined(_SOCKLEN_T))
+#  if defined(__APPLE__) && !defined(_SOCKLEN_T)
 /*
- * IRIX and MacOS X 10.2.x do not define socklen_t, and in fact use an int instead of
+ * MacOS X 10.2.x does not define socklen_t, and in fact uses an int instead of
  * unsigned type for length values...
  */
 
 typedef int socklen_t;
-#  endif /* __sgi || (__APPLE__ && !_SOCKLEN_T) */
+#  endif /* __APPLE__ && !_SOCKLEN_T */
 
-#  include "http.h"
-#  include "md5.h"
+#  include <cups/http.h>
+#  include "md5-private.h"
 #  include "ipp-private.h"
+
+#  if defined HAVE_LIBSSL
+#    include <openssl/err.h>
+#    include <openssl/rand.h>
+#    include <openssl/ssl.h>
+#  elif defined HAVE_GNUTLS
+#    include <gnutls/gnutls.h>
+#    include <gnutls/x509.h>
+#    include <gcrypt.h>
+#  elif defined(HAVE_CDSASSL)
+#    include <CoreFoundation/CoreFoundation.h>
+#    include <Security/Security.h>
+#    include <Security/SecureTransport.h>
+#    ifdef HAVE_SECURETRANSPORTPRIV_H
+#      include <Security/SecureTransportPriv.h>
+#    endif /* HAVE_SECURETRANSPORTPRIV_H */
+#    ifdef HAVE_SECITEM_H
+#      include <Security/SecItem.h>
+#    endif /* HAVE_SECITEM_H */
+#    ifdef HAVE_SECBASEPRIV_H
+#      include <Security/SecBasePriv.h>
+#    endif /* HAVE_SECBASEPRIV_H */
+#    ifdef HAVE_SECCERTIFICATE_H
+#      include <Security/SecCertificate.h>
+#      include <Security/SecIdentity.h>
+#    endif /* HAVE_SECCERTIFICATE_H */
+#    ifdef HAVE_SECITEMPRIV_H
+#      include <Security/SecItemPriv.h>
+#    endif /* HAVE_SECITEMPRIV_H */
+#    ifdef HAVE_SECIDENTITYSEARCHPRIV_H
+#      include <Security/SecIdentitySearchPriv.h>
+#    endif /* HAVE_SECIDENTITYSEARCHPRIV_H */
+#    ifdef HAVE_SECPOLICYPRIV_H
+#      include <Security/SecPolicyPriv.h>
+#    endif /* HAVE_SECPOLICYPRIV_H */
+#  elif defined(HAVE_SSPISSL)
+#    include "sspi-private.h"
+#  endif /* HAVE_LIBSSL */
+
+#  ifndef WIN32
+#    include <net/if.h>
+#    ifdef HAVE_GETIFADDRS
+#      include <ifaddrs.h>
+#    else
+#      include <sys/ioctl.h>
+#      ifdef HAVE_SYS_SOCKIO_H
+#        include <sys/sockio.h>
+#      endif /* HAVE_SYS_SOCKIO_H */
+#    endif /* HAVE_GETIFADDRS */
+#  endif /* !WIN32 */
+
+#  ifdef HAVE_LIBZ
+#    include <zlib.h>
+#  endif /* HAVE_LIBZ */
+
+
+/*
+ * C++ magic...
+ */
+
+#  ifdef __cplusplus
+extern "C" {
+#  endif /* __cplusplus */
+
+
+/*
+ * Constants...
+ */
+
+
+#define _HTTP_RESOLVE_DEFAULT	0	/* Just resolve with default options */
+#define _HTTP_RESOLVE_STDERR	1	/* Log resolve progress to stderr */
+#define _HTTP_RESOLVE_FQDN	2	/* Resolve to a FQDN */
+#define _HTTP_RESOLVE_FAXOUT	4	/* Resolve FaxOut service? */
+
+
+/*
+ * Types and functions for SSL support...
+ */
 
 #  if defined HAVE_LIBSSL
 /*
@@ -85,11 +159,8 @@ typedef int socklen_t;
  * (basic IO) implementation to do timeouts...
  */
 
-#    include <openssl/err.h>
-#    include <openssl/rand.h>
-#    include <openssl/ssl.h>
-
-typedef SSL http_tls_t;
+typedef SSL  *http_tls_t;
+typedef void *http_tls_credentials_t;
 
 extern BIO_METHOD *_httpBIOMethods(void);
 
@@ -97,18 +168,13 @@ extern BIO_METHOD *_httpBIOMethods(void);
 /*
  * The GNU TLS library is more of a "bare metal" SSL/TLS library...
  */
-#    include <gnutls/gnutls.h>
-#    include <gcrypt.h>
 
-typedef struct
-{
-  gnutls_session	session;	/* GNU TLS session object */
-  void			*credentials;	/* GNU TLS credentials object */
-} http_tls_t;
+typedef gnutls_session_t http_tls_t;
+typedef void *http_tls_credentials_t;
 
-extern ssize_t	_httpReadGNUTLS(gnutls_transport_ptr ptr, void *data,
+extern ssize_t	_httpReadGNUTLS(gnutls_transport_ptr_t ptr, void *data,
 		                size_t length);
-extern ssize_t	_httpWriteGNUTLS(gnutls_transport_ptr ptr, const void *data,
+extern ssize_t	_httpWriteGNUTLS(gnutls_transport_ptr_t ptr, const void *data,
 		                 size_t length);
 
 #  elif defined(HAVE_CDSASSL)
@@ -117,22 +183,66 @@ extern ssize_t	_httpWriteGNUTLS(gnutls_transport_ptr ptr, const void *data,
  * for its IO and protocol management...
  */
 
-#    include <Security/SecureTransport.h>
+#    if !defined(HAVE_SECBASEPRIV_H) && defined(HAVE_CSSMERRORSTRING) /* Declare prototype for function in that header... */
+extern const char *cssmErrorString(int error);
+#    endif /* !HAVE_SECBASEPRIV_H && HAVE_CSSMERRORSTRING */
+#    ifndef HAVE_SECITEMPRIV_H /* Declare constants from that header... */
+extern const CFTypeRef kSecClassCertificate;
+extern const CFTypeRef kSecClassIdentity;
+#    endif /* !HAVE_SECITEMPRIV_H */
+#    if !defined(HAVE_SECIDENTITYSEARCHPRIV_H) && defined(HAVE_SECIDENTITYSEARCHCREATEWITHPOLICY) /* Declare prototype for function in that header... */
+extern OSStatus SecIdentitySearchCreateWithPolicy(SecPolicyRef policy,
+				CFStringRef idString, CSSM_KEYUSE keyUsage,
+				CFTypeRef keychainOrArray,
+				Boolean returnOnlyValidIdentities,
+				SecIdentitySearchRef* searchRef);
+#    endif /* !HAVE_SECIDENTITYSEARCHPRIV_H && HAVE_SECIDENTITYSEARCHCREATEWITHPOLICY */
+#    if !defined(HAVE_SECPOLICYPRIV_H) && defined(HAVE_SECPOLICYSETVALUE) /* Declare prototype for function in that header... */
+extern OSStatus SecPolicySetValue(SecPolicyRef policyRef,
+                                  const CSSM_DATA *value);
+#    endif /* !HAVE_SECPOLICYPRIV_H && HAVE_SECPOLICYSETVALUE */
 
-typedef struct				/**** CDSA connection information ****/
-{
-  SSLContextRef		session;	/* CDSA session object */
-  CFArrayRef		certsArray;	/* Certificates array */
-} http_tls_t;
+typedef SSLContextRef	http_tls_t;
+typedef CFArrayRef	http_tls_credentials_t;
 
 extern OSStatus	_httpReadCDSA(SSLConnectionRef connection, void *data,
 		              size_t *dataLength);
 extern OSStatus	_httpWriteCDSA(SSLConnectionRef connection, const void *data,
 		               size_t *dataLength);
+
+#  elif defined(HAVE_SSPISSL)
+/*
+ * Windows' SSPI library gets a CUPS wrapper...
+ */
+
+typedef _sspi_struct_t * http_tls_t;
+typedef void *http_tls_credentials_t;
+
+#  else
+/*
+ * Otherwise define stub types since we have no SSL support...
+ */
+
+typedef void *http_tls_t;
+typedef void *http_tls_credentials_t;
 #  endif /* HAVE_LIBSSL */
 
+typedef enum _http_coding_e		/**** HTTP content coding enumeration ****/
+{
+  _HTTP_CODING_IDENTITY,		/* No content coding */
+  _HTTP_CODING_GZIP,			/* LZ77+gzip decompression */
+  _HTTP_CODING_DEFLATE,			/* LZ77+zlib compression */
+  _HTTP_CODING_GUNZIP,			/* LZ77+gzip decompression */
+  _HTTP_CODING_INFLATE			/* LZ77+zlib decompression */
+} _http_coding_t;
 
-struct _http_s				/**** HTTP connection structure. ****/
+typedef enum _http_mode_e		/**** HTTP mode enumeration ****/
+{
+  _HTTP_MODE_CLIENT,			/* Client connected to server */
+  _HTTP_MODE_SERVER			/* Server connected (accepted) from client */
+} _http_mode_t;
+
+struct _http_s				/**** HTTP connection structure ****/
 {
   int			fd;		/* File descriptor for this socket */
   int			blocking;	/* To block or not to block */
@@ -142,14 +252,14 @@ struct _http_s				/**** HTTP connection structure. ****/
   http_status_t		status;		/* Status of last request */
   http_version_t	version;	/* Protocol version */
   http_keepalive_t	keep_alive;	/* Keep-alive supported? */
-  struct sockaddr_in	_hostaddr;	/* Address of connected host @deprecated@ */
+  struct sockaddr_in	_hostaddr;	/* Address of connected host (deprecated) */
   char			hostname[HTTP_MAX_HOST],
   					/* Name of connected host */
-			fields[HTTP_FIELD_MAX][HTTP_MAX_VALUE];
-					/* Field values */
+			fields[HTTP_FIELD_ACCEPT_ENCODING][HTTP_MAX_VALUE];
+					/* Field values up to Accept-Encoding */
   char			*data;		/* Pointer to data buffer */
   http_encoding_t	data_encoding;	/* Chunked or not */
-  int			_data_remaining;/* Number of bytes left @deprecated@ */
+  int			_data_remaining;/* Number of bytes left (deprecated) */
   int			used;		/* Number of bytes used in buffer */
   char			buffer[HTTP_MAX_BUFFER];
 					/* Buffer for incoming data */
@@ -158,37 +268,69 @@ struct _http_s				/**** HTTP connection structure. ****/
   char			nonce[HTTP_MAX_VALUE];
 					/* Nonce value */
   int			nonce_count;	/* Nonce count */
-  void			*tls;		/* TLS state information */
+  http_tls_t		tls;		/* TLS state information */
   http_encryption_t	encryption;	/* Encryption requirements */
+
   /**** New in CUPS 1.1.19 ****/
-  fd_set		*input_set;	/* select() set for httpWait() @deprecated@ */
-  http_status_t		expect;		/* Expect: header @since CUPS 1.1.19@ */
-  char			*cookie;	/* Cookie value(s) @since CUPS 1.1.19@ */
+  fd_set		*input_set;	/* select() set for httpWait() (deprecated) */
+  http_status_t		expect;		/* Expect: header */
+  char			*cookie;	/* Cookie value(s) */
+
   /**** New in CUPS 1.1.20 ****/
   char			_authstring[HTTP_MAX_VALUE],
-					/* Current Authentication value. @deprecated@ */
+					/* Current Authorization value (deprecated) */
 			userpass[HTTP_MAX_VALUE];
-					/* Username:password string @since CUPS 1.1.20@ */
-  int			digest_tries;	/* Number of tries for digest auth @since CUPS 1.1.20@ */
+					/* Username:password string */
+  int			digest_tries;	/* Number of tries for digest auth */
+
   /**** New in CUPS 1.2 ****/
-  off_t			data_remaining;	/* Number of bytes left @since CUPS 1.2@ */
-  http_addr_t		*hostaddr;	/* Current host address and port @since CUPS 1.2@ */
-  http_addrlist_t	*addrlist;	/* List of valid addresses @since CUPS 1.2@ */
+  off_t			data_remaining;	/* Number of bytes left */
+  http_addr_t		*hostaddr;	/* Current host address and port */
+  http_addrlist_t	*addrlist;	/* List of valid addresses */
   char			wbuffer[HTTP_MAX_BUFFER];
 					/* Buffer for outgoing data */
-  int			wused;		/* Write buffer bytes used @since CUPS 1.2@ */
+  int			wused;		/* Write buffer bytes used */
+
   /**** New in CUPS 1.3 ****/
   char			*field_authorization;
-					/* Authorization field @since CUPS 1.3@ */
-  char			*authstring;	/* Current authorization field @since CUPS 1.3 */
+					/* Authorization field */
+  char			*authstring;	/* Current Authorization field */
 #  ifdef HAVE_GSSAPI
-  gss_OID 		gssmech;	/* Authentication mechanism @since CUPS 1.3@ */
-  gss_ctx_id_t		gssctx;		/* Authentication context @since CUPS 1.3@ */
-  gss_name_t		gssname;	/* Authentication server name @since CUPS 1.3@ */
+  gss_OID 		gssmech;	/* Authentication mechanism */
+  gss_ctx_id_t		gssctx;		/* Authentication context */
+  gss_name_t		gssname;	/* Authentication server name */
 #  endif /* HAVE_GSSAPI */
 #  ifdef HAVE_AUTHORIZATION_H
   AuthorizationRef	auth_ref;	/* Authorization ref */
 #  endif /* HAVE_AUTHORIZATION_H */
+
+  /**** New in CUPS 1.5 ****/
+  http_tls_credentials_t tls_credentials;
+					/* TLS credentials */
+  http_timeout_cb_t	timeout_cb;	/* Timeout callback */
+  void			*timeout_data;	/* User data pointer */
+  double		timeout_value;	/* Timeout in seconds */
+  int			wait_value;	/* httpWait value for timeout */
+#  ifdef HAVE_GSSAPI
+  char			gsshost[256];	/* Hostname for Kerberos */
+#  endif /* HAVE_GSSAPI */
+
+  /**** New in CUPS 1.7 ****/
+  int			tls_upgrade;	/* Non-zero if we are doing an upgrade */
+  _http_mode_t		mode;		/* _HTTP_MODE_CLIENT or _HTTP_MODE_SERVER */
+  char			*accept_encoding,
+					/* Accept-Encoding field */
+			*allow,		/* Allow field */
+			*server,	/* Server field */
+			*default_accept_encoding,
+			*default_server,
+			*default_user_agent;
+					/* Default field values */
+#  ifdef HAVE_LIBZ
+  _http_coding_t	coding;		/* _HTTP_CODING_xxx */
+  z_stream		stream;		/* (De)compression stream */
+  Bytef			*dbuffer;	/* Decompression buffer */
+#  endif /* HAVE_LIBZ */
 };
 
 
@@ -211,22 +353,13 @@ extern const char *hstrerror(int error);
  * Some OS's don't have getifaddrs() and freeifaddrs()...
  */
 
-#  ifndef WIN32
-#    include <net/if.h>
-#    ifdef HAVE_GETIFADDRS
-#      include <ifaddrs.h>
-#    else
-#      include <sys/ioctl.h>
-#      ifdef HAVE_SYS_SOCKIO_H
-#        include <sys/sockio.h>
-#      endif /* HAVE_SYS_SOCKIO_H */
-
-#      ifdef ifa_dstaddr
-#        undef ifa_dstaddr
-#      endif /* ifa_dstaddr */
-#      ifndef ifr_netmask
-#        define ifr_netmask ifr_addr
-#      endif /* !ifr_netmask */
+#  if !defined(WIN32) && !defined(HAVE_GETIFADDRS)
+#    ifdef ifa_dstaddr
+#      undef ifa_dstaddr
+#    endif /* ifa_dstaddr */
+#    ifndef ifr_netmask
+#      define ifr_netmask ifr_addr
+#    endif /* !ifr_netmask */
 
 struct ifaddrs				/**** Interface Structure ****/
 {
@@ -244,34 +377,65 @@ struct ifaddrs				/**** Interface Structure ****/
   void			*ifa_data;	/* Interface statistics */
 };
 
-#      ifndef ifa_broadaddr
-#        define ifa_broadaddr ifa_ifu.ifu_broadaddr
-#      endif /* !ifa_broadaddr */
-#      ifndef ifa_dstaddr
-#        define ifa_dstaddr ifa_ifu.ifu_dstaddr
-#      endif /* !ifa_dstaddr */
+#    ifndef ifa_broadaddr
+#      define ifa_broadaddr ifa_ifu.ifu_broadaddr
+#    endif /* !ifa_broadaddr */
+#    ifndef ifa_dstaddr
+#      define ifa_dstaddr ifa_ifu.ifu_dstaddr
+#    endif /* !ifa_dstaddr */
 
 extern int	_cups_getifaddrs(struct ifaddrs **addrs);
-#      define getifaddrs _cups_getifaddrs
+#    define getifaddrs _cups_getifaddrs
 extern void	_cups_freeifaddrs(struct ifaddrs *addrs);
-#      define freeifaddrs _cups_freeifaddrs
-#    endif /* HAVE_GETIFADDRS */
-#  endif /* !WIN32 */
+#    define freeifaddrs _cups_freeifaddrs
+#  endif /* !WIN32 && !HAVE_GETIFADDRS */
+
 
 /*
  * Prototypes...
  */
 
-extern int		_httpAddrPort(http_addr_t *addr);
+#define			_httpAddrFamily(addrp) (addrp)->addr.sa_family
+extern int		_httpAddrPort(http_addr_t *addr)
+			              _CUPS_INTERNAL_MSG("Use httpAddrPort instead.");
+extern void		_httpAddrSetPort(http_addr_t *addr, int port);
+extern char		*_httpAssembleUUID(const char *server, int port,
+					   const char *name, int number,
+					   char *buffer, size_t bufsize)
+					   _CUPS_INTERNAL_MSG("Use httpAssembleUUID instead.");
 extern http_t		*_httpCreate(const char *host, int port,
-			             http_encryption_t encryption);
+			             http_addrlist_t *addrlist,
+				     http_encryption_t encryption,
+				     int family)
+				     _CUPS_INTERNAL_MSG("Use httpConnect2 or httpAccept instead.");
+extern http_tls_credentials_t
+			_httpCreateCredentials(cups_array_t *credentials);
+extern char		*_httpDecodeURI(char *dst, const char *src,
+			                size_t dstsize);
+extern void		_httpDisconnect(http_t *http);
 extern char		*_httpEncodeURI(char *dst, const char *src,
 			                size_t dstsize);
+extern void		_httpFreeCredentials(http_tls_credentials_t credentials);
+extern ssize_t		_httpPeek(http_t *http, char *buffer, size_t length)
+			          _CUPS_INTERNAL_MSG("Use httpPeek instead.");
 extern const char	*_httpResolveURI(const char *uri, char *resolved_uri,
-			                 size_t resolved_size, int log);
+			                 size_t resolved_size, int options,
+					 int (*cb)(void *context),
+					 void *context);
+extern int		_httpUpdate(http_t *http, http_status_t *status);
 extern int		_httpWait(http_t *http, int msec, int usessl);
+
+
+/*
+ * C++ magic...
+ */
+
+#  ifdef __cplusplus
+}
+#  endif /* __cplusplus */
+
 #endif /* !_CUPS_HTTP_PRIVATE_H_ */
 
 /*
- * End of "$Id: http-private.h 9104 2010-04-12 04:03:53Z mike $".
+ * End of "$Id: http-private.h 11392 2013-11-06 01:29:56Z msweet $".
  */

@@ -1,9 +1,9 @@
 /*
- * "$Id: ipp-private.h 7990 2008-09-28 04:42:10Z mike $"
+ * "$Id: ipp-private.h 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   Private IPP definitions for the Common UNIX Printing System (CUPS).
+ *   Private IPP definitions for CUPS.
  *
- *   Copyright 2007-2008 by Apple Inc.
+ *   Copyright 2007-2012 by Apple Inc.
  *   Copyright 1997-2006 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -22,7 +22,7 @@
  * Include necessary headers...
  */
 
-#  include "ipp.h"
+#  include <cups/ipp.h>
 
 
 /*
@@ -46,19 +46,15 @@ extern "C" {
  * Structures...
  */
 
-typedef struct _ipp_buffer_s		/**** Read/write buffer ****/
-{
-  unsigned char		d[IPP_BUF_SIZE];/* Data buffer */
-  struct _ipp_buffer_s	*next;		/* Next buffer in list */
-  int			used;		/* Is this buffer used? */
-} _ipp_buffer_t;
-
 typedef struct				/**** Attribute mapping data ****/
 {
   int		multivalue;		/* Option has multiple values? */
   const char	*name;			/* Option/attribute name */
   ipp_tag_t	value_tag;		/* Value tag for this attribute */
   ipp_tag_t	group_tag;		/* Group tag for this attribute */
+  ipp_tag_t	alt_group_tag;		/* Alternate group tag for this
+					 * attribute */
+  const ipp_op_t *operations;		/* Allowed operations for this attr */
 } _ipp_option_t;
 
 
@@ -66,10 +62,10 @@ typedef struct				/**** Attribute mapping data ****/
  * Prototypes for private functions...
  */
 
-extern ipp_attribute_t	*_ippAddAttr(ipp_t *, int);
+#ifdef DEBUG
+extern const char	*_ippCheckOptions(void);
+#endif /* DEBUG */
 extern _ipp_option_t	*_ippFindOption(const char *name);
-extern void		_ippFreeAttr(ipp_attribute_t *);
-
 
 /*
  * C++ magic...
@@ -81,5 +77,5 @@ extern void		_ippFreeAttr(ipp_attribute_t *);
 #endif /* !_CUPS_IPP_H_ */
 
 /*
- * End of "$Id: ipp-private.h 7990 2008-09-28 04:42:10Z mike $".
+ * End of "$Id: ipp-private.h 10996 2013-05-29 11:51:34Z msweet $".
  */

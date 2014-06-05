@@ -1,9 +1,9 @@
 /*
- * "$Id: localize.c 9233 2010-08-10 06:15:55Z mike $"
+ * "$Id: localize.c 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   PPD localization routines for the Common UNIX Printing System (CUPS).
+ *   PPD localization routines for CUPS.
  *
- *   Copyright 2007-2009 by Apple Inc.
+ *   Copyright 2007-2012 by Apple Inc.
  *   Copyright 1997-2007 by Easy Software Products, all rights reserved.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -43,11 +43,9 @@
  * Include necessary headers.
  */
 
-#include "globals.h"
+#include "cups-private.h"
 #include "ppd-private.h"
-#include "debug.h"
 
-int strcmp(const char *, const char *);
 
 /*
  * Local functions...
@@ -63,7 +61,7 @@ static cups_lang_t	*ppd_ll_CC(char *ll_CC, int ll_CC_size);
  * descriptions, printer presets, and custom option parameters.  Each
  * localized string uses the UTF-8 character encoding.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 int					/* O - 0 on success, -1 on error */
@@ -248,7 +246,7 @@ ppdLocalizeAttr(ppd_file_t *ppd,	/* I - PPD file */
  *
  * If no value of the requested scheme can be found, NULL is returned.
  *
- * @since CUPS 1.3/Mac OS X 10.5@
+ * @since CUPS 1.3/OS X 10.5@
  */
 
 const char *				/* O - Value or NULL if not found */
@@ -304,56 +302,55 @@ ppdLocalizeIPPReason(
 
       const char *message = NULL;	/* Localized message */
 
-
       if (!strncmp(reason, "media-needed", 12))
-        message = _("Media tray needs to be filled.");
+	message = _("The paper tray needs to be filled.");
       else if (!strncmp(reason, "media-jam", 9))
-        message = _("Media jam!");
+	message = _("There is a paper jam.");
       else if (!strncmp(reason, "offline", 7) ||
-	       !strncmp(reason, "shutdown", 8))
-        message = _("Printer offline.");
+		       !strncmp(reason, "shutdown", 8))
+	message = _("The printer is not connected.");
       else if (!strncmp(reason, "toner-low", 9))
-        message = _("Toner low.");
+	message = _("The printer is running low on toner.");
       else if (!strncmp(reason, "toner-empty", 11))
-        message = _("Out of toner!");
+	message = _("The printer may be out of toner.");
       else if (!strncmp(reason, "cover-open", 10))
-        message = _("Cover open.");
+	message = _("The printer's cover is open.");
       else if (!strncmp(reason, "interlock-open", 14))
-        message = _("Interlock open.");
+	message = _("The printer's interlock is open.");
       else if (!strncmp(reason, "door-open", 9))
-        message = _("Door open.");
+	message = _("The printer's door is open.");
       else if (!strncmp(reason, "input-tray-missing", 18))
-        message = _("Media tray missing!");
+	message = _("The paper tray is missing.");
       else if (!strncmp(reason, "media-low", 9))
-        message = _("Media tray almost empty.");
+	message = _("The paper tray is almost empty.");
       else if (!strncmp(reason, "media-empty", 11))
-        message = _("Media tray empty!");
+	message = _("The paper tray is empty.");
       else if (!strncmp(reason, "output-tray-missing", 19))
-        message = _("Output tray missing!");
+	message = _("The output bin is missing.");
       else if (!strncmp(reason, "output-area-almost-full", 23))
-        message = _("Output bin almost full.");
+	message = _("The output bin is almost full.");
       else if (!strncmp(reason, "output-area-full", 16))
-        message = _("Output bin full!");
+	message = _("The output bin is full.");
       else if (!strncmp(reason, "marker-supply-low", 17))
-        message = _("Ink/toner almost empty.");
+	message = _("The printer is running low on ink.");
       else if (!strncmp(reason, "marker-supply-empty", 19))
-        message = _("Ink/toner empty!");
+	message = _("The printer may be out of ink.");
       else if (!strncmp(reason, "marker-waste-almost-full", 24))
-        message = _("Ink/toner waste bin almost full.");
+	message = _("The printer's waste bin is almost full.");
       else if (!strncmp(reason, "marker-waste-full", 17))
-        message = _("Ink/toner waste bin full!");
+	message = _("The printer's waste bin is full.");
       else if (!strncmp(reason, "fuser-over-temp", 15))
-        message = _("Fuser temperature high!");
+	message = _("The fuser's temperature is high.");
       else if (!strncmp(reason, "fuser-under-temp", 16))
-        message = _("Fuser temperature low!");
+	message = _("The fuser's temperature is low.");
       else if (!strncmp(reason, "opc-near-eol", 12))
-        message = _("OPC almost at end-of-life.");
+	message = _("The optical photoconductor will need to be replaced soon.");
       else if (!strncmp(reason, "opc-life-over", 13))
-        message = _("OPC at end-of-life!");
+	message = _("The optical photoconductor needs to be replaced.");
       else if (!strncmp(reason, "developer-low", 13))
-        message = _("Developer almost empty.");
+	message = _("The developer unit will need to be replaced soon.");
       else if (!strncmp(reason, "developer-empty", 15))
-        message = _("Developer empty!");
+	message = _("The developer unit needs to be replaced.");
 
       if (message)
       {
@@ -502,7 +499,7 @@ ppdLocalizeIPPReason(
  * text from the attribute value. If no localized text for the requested
  * name can be found, @code NULL@ is returned.
  *
- * @since CUPS 1.4/Mac OS X 10.6@
+ * @since CUPS 1.4/OS X 10.6@
  */
 
 const char *				/* O - Value or @code NULL@ if not found */
@@ -640,7 +637,7 @@ _ppdGetLanguages(ppd_file_t *ppd)	/* I - PPD file */
 /*
  * '_ppdHashName()' - Generate a hash value for a device or profile name.
  *
- * This function is primarily used on Mac OS X, but is generally accessible
+ * This function is primarily used on OS X, but is generally accessible
  * since cupstestppd needs to check for profile name collisions in PPD files...
  */
 
@@ -778,5 +775,5 @@ ppd_ll_CC(char *ll_CC,			/* O - Country-specific locale name */
 
 
 /*
- * End of "$Id: localize.c 9233 2010-08-10 06:15:55Z mike $".
+ * End of "$Id: localize.c 10996 2013-05-29 11:51:34Z msweet $".
  */

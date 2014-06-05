@@ -1,9 +1,9 @@
 /*
- * "$Id: sidechannel.h 8827 2009-09-22 23:20:35Z mike $"
+ * "$Id: sidechannel.h 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   Side-channel API definitions for the Common UNIX Printing System (CUPS).
+ *   Side-channel API definitions for CUPS.
  *
- *   Copyright 2007-2008 by Apple Inc.
+ *   Copyright 2007-2012 by Apple Inc.
  *   Copyright 2006 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -61,11 +61,22 @@ enum cups_sc_command_e			/**** Request command codes ****/
   CUPS_SC_CMD_GET_BIDI = 3,		/* Return bidirectional capabilities */
   CUPS_SC_CMD_GET_DEVICE_ID = 4,	/* Return the IEEE-1284 device ID */
   CUPS_SC_CMD_GET_STATE = 5,		/* Return the device state */
-  CUPS_SC_CMD_SNMP_GET = 6,		/* Query an SNMP OID @since CUPS 1.4/Mac OS X 10.6@ */
-  CUPS_SC_CMD_SNMP_GET_NEXT = 7		/* Query the next SNMP OID @since CUPS 1.4/Mac OS X 10.6@ */
+  CUPS_SC_CMD_SNMP_GET = 6,		/* Query an SNMP OID @since CUPS 1.4/OS X 10.6@ */
+  CUPS_SC_CMD_SNMP_GET_NEXT = 7,	/* Query the next SNMP OID @since CUPS 1.4/OS X 10.6@ */
+  CUPS_SC_CMD_GET_CONNECTED = 8,	/* Return whether the backend is "connected" to the printer @since CUPS 1.5/OS X 10.7@ */
+  CUPS_SC_CMD_MAX			/* End of valid values @private@ */
 };
 typedef enum cups_sc_command_e cups_sc_command_t;
 					/**** Request command codes ****/
+
+enum cups_sc_connected_e		/**** Connectivity values ****/
+{
+  CUPS_SC_NOT_CONNECTED = 0,		/* Backend is not "connected" to printer */
+  CUPS_SC_CONNECTED = 1			/* Backend is "connected" to printer */
+};
+typedef enum cups_sc_connected_e cups_sc_connected_t;
+					/**** Connectivity values ****/
+
 
 enum cups_sc_state_e			/**** Printer state bits ****/
 {
@@ -132,5 +143,5 @@ extern cups_sc_status_t	cupsSideChannelSNMPWalk(const char *oid, double timeout,
 #endif /* !_CUPS_SIDECHANNEL_H_ */
 
 /*
- * End of "$Id: sidechannel.h 8827 2009-09-22 23:20:35Z mike $".
+ * End of "$Id: sidechannel.h 10996 2013-05-29 11:51:34Z msweet $".
  */

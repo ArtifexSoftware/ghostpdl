@@ -1,9 +1,9 @@
 /*
- * "$Id: backend.c 8627 2009-05-13 21:39:17Z mike $"
+ * "$Id: backend.c 10996 2013-05-29 11:51:34Z msweet $"
  *
- *   Backend functions for the Common UNIX Printing System (CUPS).
+ *   Backend functions for CUPS.
  *
- *   Copyright 2007-2009 by Apple Inc.
+ *   Copyright 2007-2012 by Apple Inc.
  *   Copyright 2006 by Easy Software Products.
  *
  *   These coded instructions, statements, and computer programs are the
@@ -25,9 +25,8 @@
  * Include necessary headers...
  */
 
-#include <stdlib.h>
+#include "cups-private.h"
 #include "backend.h"
-#include "globals.h"
 
 
 /*
@@ -45,14 +44,18 @@ static void	quote_string(const char *s);
  * variable or the device URI passed in argv[0], whichever is found
  * first.
  *
- * @since CUPS 1.2/Mac OS X 10.5@
+ * @since CUPS 1.2/OS X 10.5@
  */
 
 const char *				/* O - Device URI or @code NULL@ */
 cupsBackendDeviceURI(char **argv)	/* I - Command-line arguments */
 {
-  const char	*device_uri;		/* Device URI */
+  const char	*device_uri,		/* Device URI */
+		*auth_info_required;	/* AUTH_INFO_REQUIRED env var */
   _cups_globals_t *cg = _cupsGlobals();	/* Global info */
+  int		options;		/* Resolve options */
+  ppd_file_t	*ppd;			/* PPD file */
+  ppd_attr_t	*ppdattr;		/* PPD attribute */
 
 
   if ((device_uri = getenv("DEVICE_URI")) == NULL)
@@ -63,8 +66,22 @@ cupsBackendDeviceURI(char **argv)	/* I - Command-line arguments */
     device_uri = argv[0];
   }
 
+  options = _HTTP_RESOLVE_STDERR;
+  if ((auth_info_required = getenv("AUTH_INFO_REQUIRED")) != NULL &&
+      !strcmp(auth_info_required, "negotiate"))
+    options |= _HTTP_RESOLVE_FQDN;
+
+  if ((ppd = ppdOpenFile(getenv("PPD"))) != NULL)
+  {
+    if ((ppdattr = ppdFindAttr(ppd, "cupsIPPFaxOut", NULL)) != NULL &&
+        !_cups_strcasecmp(ppdattr->value, "true"))
+      options |= _HTTP_RESOLVE_FAXOUT;
+
+    ppdClose(ppd);
+  }
+
   return (_httpResolveURI(device_uri, cg->resolved_uri,
-                          sizeof(cg->resolved_uri), 1));
+                          sizeof(cg->resolved_uri), options, NULL, NULL));
 }
 
 
@@ -75,7 +92,7 @@ cupsBackendDeviceURI(char **argv)	/* I - Command-line arguments */
  * It handles quoting of special characters in the device-make-and-model,
  * device-info, device-id, and device-location strings.
  *
- * @since CUPS 1.4/Mac OS X 10.6@
+ * @since CUPS 1.4/OS X 10.6@
  */
 
 void
@@ -119,7 +136,10 @@ quote_string(const char *s)		/* I - String to write */
       if (*s == '\\' || *s == '\"')
 	putchar('\\');
 
-      putchar(*s);
+      if (((*s & 255) < ' ' && *s != '\t') || *s == 0x7f)
+        putchar(' ');
+      else
+        putchar(*s);
 
       s ++;
     }
@@ -130,5 +150,5 @@ quote_string(const char *s)		/* I - String to write */
 
 
 /*
- * End of "$Id: backend.c 8627 2009-05-13 21:39:17Z mike $".
+ * End of "$Id: backend.c 10996 2013-05-29 11:51:34Z msweet $".
  */
