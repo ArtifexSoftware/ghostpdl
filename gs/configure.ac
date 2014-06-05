@@ -1154,6 +1154,8 @@ if ( test -d $srcdir/cups ); then
                 CUPSCFLAGS="`$CUPSCONFIG --cflags` $CFLAGS"
 #                CUPSLINK="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --static --image --libs | sed -e '1,$s/-lssl//'` $LIBS"
                 CUPSLINK="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --image --libs`"
+                CUPSAPIVERSION="`$CUPSCONFIG --api-version`"
+
                 GS_SPLIT_LIBS([CUPSLIBS], [$CUPSLINK])
                 GS_SPLIT_LIBPATHS([CUPSLIBDIRS],[$CUPSLINK])
 
@@ -1176,8 +1178,16 @@ if ( test -d $srcdir/cups ); then
                 fi
 
                 CUPSINCLUDE="include $srcdir/cups/cups.mak"
-                CUPSDEV="cups pwgraster"
+                CUPSDEV="cups"
+
+                echo "\n\n\n $CUPSAPIVERSION \n\n\n"
+                # pwgraster support arrived in cups 1.5.x
+                if test "$CUPSAPIVERSION" ">" "1.4" ; then
+                  CUPSDEV="$CUPSDEV pwgraster"
+                fi
+
                 CUPSVERSION="`$CUPSCONFIG --version`"
+
                 LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
                 LCUPSIINCLUDE="include \$(GLSRCDIR)/lcupsi.mak"
                 if ( test x$with_pdftoraster != xno ); then
