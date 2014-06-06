@@ -1858,15 +1858,33 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
             else {
                 ref *CIDSystemInfo;
                 ref *Ordering;
+                ref *fdict, *CMapDict, *CMapName, CMapNameStr;
+                char *cmapnm = NULL;
+                int cmapnmlen = 0;
+                /* leave off the -H or -V */
+                char *utfcmap = "Identity-UTF16";
+                int utfcmaplen = strlen(utfcmap);
 
-                /* We only have to lookup the char code if we're *not* using an identity ordering */
-                if (dict_find_string(pdr, "CIDSystemInfo", &CIDSystemInfo) >= 0
+                fdict = pfont_dict(gs_rootfont(igs));
+                dict_find_string(fdict, "CMap", &CMapDict);
+                if (r_has_type(CMapDict, t_dictionary)) {
+                    dict_find_string(CMapDict, "CMapName", &CMapName);
+                    if (r_has_type(CMapName, t_name)) {
+                        name_string_ref(imemory, CMapName, &CMapNameStr);
+                        cmapnm = (char *)CMapNameStr.value.bytes;
+                        cmapnmlen = r_size(&CMapNameStr);
+                    }
+                }
+                /* We only have to lookup the char code if we're *not* using an identity ordering 
+                   with the exception of Identity-UTF16 which is a different beast altogether */
+                if ((cmapnmlen > 0 && !strncmp(cmapnm, utfcmap, cmapnmlen > utfcmaplen ? utfcmaplen : cmapnmlen))
+                    || (dict_find_string(pdr, "CIDSystemInfo", &CIDSystemInfo) >= 0
                     && r_has_type(CIDSystemInfo, t_dictionary)
                     && dict_find_string(CIDSystemInfo, "Ordering",
                                         &Ordering) >= 0
                     && r_has_type(Ordering, t_string)
                     && strncmp((const char *)Ordering->value.bytes,
-                               "Identity", 8) != 0) {
+                               "Identity", 8) != 0)) {
 
                     if ((code =
                          cid_to_TT_charcode(imemory, Decoding, TT_cmap,
