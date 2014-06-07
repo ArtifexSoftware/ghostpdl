@@ -1333,7 +1333,11 @@ end readonly def
       counttomark 1 add 1 roll                          % MaxLen (V) Ff Q dx dy yy desc/asc*yy line_height [ () () ...
       2 0 moveto                                        % start at bottom left of rect
       counttomark 1 1 3 -1 roll {                       % for every string
-        pop gsave Show grestore                         % pop loop counter, show string (saving current point)
+        pop gsave
+        <FEFF> anchorsearch {
+            pop
+        } if
+        Show grestore                         % pop loop counter, show string (saving current point)
         counttomark 1 add index 0 exch rmoveto          % get line height, move that amount vertically.
       } for
       pop pop
@@ -1344,6 +1348,9 @@ end readonly def
         2 0 moveto                                        % start at bottom left of rect
         counttomark 1 1 3 -1 roll {                       % for every string
           pop gsave                                       % pop loop counter
+          <FEFF> anchorsearch {
+              pop
+          } if
           dup stringwidth pop counttomark 5 add index     % get rectangle width
           exch sub 2 div 0 rmoveto                        % subtract width of string, divide by 2 move that amount
           Show grestore                                   % show string
@@ -1356,6 +1363,9 @@ end readonly def
         2 0 moveto                                        % start at bottom left of rect
         counttomark 1 1 3 -1 roll {                       % for every string
           pop gsave                                       % pop loop counter
+          <FEFF> anchorsearch {
+            pop
+          } if
           dup stringwidth pop counttomark 5 add index     % get rectangle width
           exch sub 2 sub 0 rmoveto                        % subtract width of string,move that amount
           Show grestore                                   % show string
@@ -1372,7 +1382,11 @@ end readonly def
       3 1 roll sub add 2 div             % MaxLen (V) Ff Q dx (dy-yy+desc)/2
       0 exch moveto                      % MaxLen (V) Ff Q dx
       1 index 0 ne {
-        3 index stringwidth pop          % MaxLen (V) Ff Q dx w
+        3 index
+        <FEFF> anchorsearch {
+            pop
+        } if
+        stringwidth pop          % MaxLen (V) Ff Q dx w
         sub exch 1 eq { 2 div } { 2 sub } ifelse % MaxLen (V) Ff (dx-w)/2
         0 rmoveto                        % MaxLen (V) Ff
         pop                              % MaxLen (V)
@@ -1380,7 +1394,11 @@ end readonly def
         pop pop pop                      % MaxLen (V)
         2 0 rmoveto
       } ifelse
-      exch pop Show                      % -
+      exch pop
+      <FEFF> anchorsearch {
+        pop
+      } if
+      Show                      % -
     } ifelse
   } ifelse
 } bdef
