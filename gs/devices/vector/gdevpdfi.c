@@ -1574,7 +1574,7 @@ new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 {
     int code, i;
     unsigned int use_fallback  = 0, in_line = 0, is_mask = 0,
-        force_lossless = 0, convert_to_process_colors = 0, reduce_bits = 0;
+        force_lossless = 0, convert_to_process_colors = 0;
     int width, height;
     cos_dict_t *pnamed = 0;
     image_union_t *image;
@@ -1706,8 +1706,6 @@ new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
             break;
         case 12:
         case 16:
-            use_fallback = 1;
-//            reduce_bits = pim->BitsPerComponent;
             break;
         default:
             gs_free(mem->non_gc_memory, image, 4, sizeof(image_union_t),
@@ -1861,7 +1859,7 @@ new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     pie->width = width;
     height = rect.q.y - rect.p.y;
     pie->bits_per_pixel =
-        (reduce_bits ? reduce_bits : pim->BitsPerComponent) * num_components / pie->num_planes;
+        pim->BitsPerComponent * num_components / pie->num_planes;
     pie->rows_left = height;
     if (pnamed != 0) /* Don't in-line the image if it is named. */
         in_line = false;
@@ -1926,6 +1924,8 @@ new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     if (!is_mask) {
         if (image[0].pixel.ColorSpace != NULL && !(context == PDF_IMAGE_TYPE3_MASK))
             convert_to_process_colors = setup_image_colorspace(pdev, &image[0], pcs, &pcs_orig, names, &cs_value);
+        if (pim->BitsPerComponent > 8 && convert_to_process_colors)
+            goto fail_and_fallback;
         if (convert_to_process_colors == 4) {
             code = convert_DeviceN_alternate(pdev, pis, pcs, NULL, NULL, NULL, NULL, &cs_value, in_line);
             if (code < 0)
@@ -2023,12 +2023,6 @@ new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
         image[0].pixel.ColorSpace = pcs_device;
     }
 
-    if (reduce_bits) {
-        code = new_resize_input(&pie->writer.binary[0], pim->Width, gs_color_space_num_components(pim->ColorSpace), reduce_bits, 8);
-        if (code < 0)
-            goto fail_and_fallback;
-    }
-
     if (pie->writer.alt_writer_count > 1) {
         code = pdf_make_alt_stream(pdev, &pie->writer.binary[1]);
         if (code) {
@@ -2061,11 +2055,6 @@ new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
                 goto fail_and_fallback;
             }
             image[1].pixel.ColorSpace = pcs_device;
-        }
-        if (reduce_bits) {
-            code = new_resize_input(&pie->writer.binary[0], pim->Width, gs_color_space_num_components(pim->ColorSpace), reduce_bits, 8);
-            if (code < 0)
-                goto fail_and_fallback;
         }
     }
 
