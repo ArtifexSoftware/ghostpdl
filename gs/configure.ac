@@ -20,7 +20,7 @@ dnl Initialization and Versioning
 dnl ------------------------------------------------
 
 AC_INIT
-AC_PREREQ(2.52)
+AC_PREREQ(2.60)
 AC_LANG(C)
 AC_CONFIG_SRCDIR(psi/gs.c)
 
