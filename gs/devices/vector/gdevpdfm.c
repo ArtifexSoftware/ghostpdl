@@ -116,8 +116,8 @@ pdfmark_page_number(gx_device_pdf * pdev, const gs_param_string * pnstr)
         --page;
     else if (pdfmark_scan_int(pnstr, &page) < 0)
         page = 0;
-    if (pdev->max_referred_page < page)
-        pdev->max_referred_page = page;
+/*    if (pdev->max_referred_page < page)
+        pdev->max_referred_page = page;*/
     return page;
 }
 
@@ -156,8 +156,11 @@ pdfmark_make_dest(char dstr[MAX_DEST_STRING], gx_device_pdf * pdev,
              pdf_key_eq(&action, "/GoToR")
         )
         gs_sprintf(dstr, "[%d ", page - 1);
-    else
+    else {
         gs_sprintf(dstr, "[%ld 0 R ", pdf_page_id(pdev, page));
+        if (pdev->max_referred_page < page)
+            pdev->max_referred_page = page;
+    }
     len = strlen(dstr);
     if (len + view_string.size > MAX_DEST_STRING)
         return_error(gs_error_limitcheck);
@@ -1394,6 +1397,8 @@ pdfmark_ARTICLE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
         pdfmark_find_key("/Page", pairs, count, &page_string);
         page = pdfmark_page_number(pdev, &page_string);
+        if (pdev->max_referred_page < page)
+            pdev->max_referred_page = page;
         part->last.page_id = pdf_page_id(pdev, page);
         for (i = 0; i < count; i += 2) {
             if (pdf_key_eq(&pairs[i], "/Rect") || pdf_key_eq(&pairs[i], "/Page"))
