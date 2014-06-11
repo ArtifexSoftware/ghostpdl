@@ -4,9 +4,15 @@
 %% multiflake
 
 /snowflaksave save def		% prevent left over effects
+
+% we make the seed deterministic for testing - the orginal code seeded
+% the generator with user time.
+/lastseed 0 def
+/seed {lastseed dup 1 add /lastseed exch def} def
+
 /newflake
-{/seed usertime def
-seed srand
+{
+seed srand 
 /strokecolor  [rand 99 mod 100 div 
 	       rand 99 mod 100 div
 	       100 rand 22 mod sub 100 div] def
