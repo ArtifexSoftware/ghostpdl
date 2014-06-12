@@ -132,7 +132,7 @@ static int
 update_max_page_reference(gx_device_pdf * pdev, int *page)
 {
     if (*page < pdev->FirstPage || (pdev->LastPage != 0 && *page > pdev->LastPage)) {
-        emprintf1(pdev->memory, "Destination page %d lies outside the valid page range.\n", page);
+        emprintf1(pdev->memory, "Destination page %d lies outside the valid page range.\n", *page);
         return -1;
     }
     else {
@@ -142,6 +142,7 @@ update_max_page_reference(gx_device_pdf * pdev, int *page)
         if (pdev->max_referred_page < *page)
             pdev->max_referred_page = *page;
     }
+    return 0;
 }
 
 /* Construct a destination string specified by /Page and/or /View. */
