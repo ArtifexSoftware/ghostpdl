@@ -116,9 +116,32 @@ pdfmark_page_number(gx_device_pdf * pdev, const gs_param_string * pnstr)
         --page;
     else if (pdfmark_scan_int(pnstr, &page) < 0)
         page = 0;
-/*    if (pdev->max_referred_page < page)
-        pdev->max_referred_page = page;*/
     return page;
+}
+
+/*
+ * This routine checks the page number is inside the valid range FirstPage->LastPage
+ * and if it is, and FirstPage is not 0, it updates the page number by rebasing it to
+ * the new FirstPage. If all conditions are met we also update the 'max_referred_page'
+ * which we check during closedown, and emit a warning if a reference should somehow
+ * point outside the valid range of pages in the document. This can happen if we reference
+ * a destination page that we haven't created yet, and when we get to the end of the
+ * job we discover we never did create it.
+ */
+static int
+update_max_page_reference(gx_device_pdf * pdev, int *page)
+{
+    if (*page < pdev->FirstPage || (pdev->LastPage != 0 && *page > pdev->LastPage)) {
+        emprintf1(pdev->memory, "Destination page %d lies outside the valid page range.\n", page);
+        return -1;
+    }
+    else {
+        if (pdev->FirstPage != 0)
+            *page = (*page - pdev->FirstPage) + 1;
+
+        if (pdev->max_referred_page < *page)
+            pdev->max_referred_page = *page;
+    }
 }
 
 /* Construct a destination string specified by /Page and/or /View. */
@@ -135,18 +158,10 @@ pdfmark_make_dest(char dstr[MAX_DEST_STRING], gx_device_pdf * pdev,
         pdfmark_find_key(View_key, pairs, count, &view_string);
     int page=0;
     gs_param_string action;
-    int len;
+    int len, code = 0;
 
     if (present || RequirePage)
         page = pdfmark_page_number(pdev, &page_string);
-
-    if (page < pdev->FirstPage || (pdev->LastPage != 0 && page > pdev->LastPage)) {
-        emprintf1(pdev->memory, "Destination page %d lies outside the valid page range.\n", page);
-        return -1;
-    }
-    else
-        if (pdev->FirstPage != 0)
-            page = (page - pdev->FirstPage) + 1;
 
     if (view_string.size == 0)
         param_string_from_string(view_string, "[/XYZ null null null]");
@@ -157,9 +172,10 @@ pdfmark_make_dest(char dstr[MAX_DEST_STRING], gx_device_pdf * pdev,
         )
         gs_sprintf(dstr, "[%d ", page - 1);
     else {
+        code = update_max_page_reference(pdev, &page);
+        if (code < 0)
+            return code;
         gs_sprintf(dstr, "[%ld 0 R ", pdf_page_id(pdev, page));
-        if (pdev->max_referred_page < page)
-            pdev->max_referred_page = page;
     }
     len = strlen(dstr);
     if (len + view_string.size > MAX_DEST_STRING)
@@ -1397,8 +1413,9 @@ pdfmark_ARTICLE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
         pdfmark_find_key("/Page", pairs, count, &page_string);
         page = pdfmark_page_number(pdev, &page_string);
-        if (pdev->max_referred_page < page)
-            pdev->max_referred_page = page;
+        code = update_max_page_reference(pdev, &page);
+        if (code < 0)
+            return code;
         part->last.page_id = pdf_page_id(pdev, page);
         for (i = 0; i < count; i += 2) {
             if (pdf_key_eq(&pairs[i], "/Rect") || pdf_key_eq(&pairs[i], "/Page"))
