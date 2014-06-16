@@ -1036,8 +1036,8 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
             tbits.size.x = crdev->width;
             tbits.size.y = crdev->height;
             if (code >= 0)
-                code = tile_by_steps(&state_clist_trans, xmin, ymin, xmax,
-                                     ymax, ptile, &tbits, tile_pattern_clist);
+                code = tile_by_steps(&state_clist_trans, xmin, ymin, xmax-xmin,
+                                     ymax-ymin, ptile, &tbits, tile_pattern_clist);
 
             if (code >= 0 && (state_clist_trans.cdev != NULL)) {
                 tile_clip_free((gx_device_tile_clip *)state_clist_trans.cdev);
