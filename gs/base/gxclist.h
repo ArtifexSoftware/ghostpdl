@@ -250,10 +250,13 @@ struct clist_icctable_s {
     clist_icctable_entry_t *final;
 };
 
+void
+clist_icc_table_finalize(const gs_memory_t *memory, void * vptr);
+
 #define private_st_clist_icctable()\
-  gs_private_st_ptrs2(st_clist_icctable,\
+  gs_private_st_ptrs2_final(st_clist_icctable,\
                 clist_icctable_t, "clist_icctable",\
-                clist_icctable_enum_ptrs, clist_icctable_reloc_ptrs, head, final)
+                clist_icctable_enum_ptrs, clist_icctable_reloc_ptrs, clist_icc_table_finalize, head, final)
 
 typedef struct gx_device_clist_common_s {
     gx_device_clist_common_members;

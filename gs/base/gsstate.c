@@ -158,7 +158,6 @@ typedef struct gs_state_parts_s {
 /* GC descriptors */
 extern_st(st_imager_state);
 public_st_gs_state();
-
 /* GC procedures for gs_state */
 static ENUM_PTRS_WITH(gs_state_enum_ptrs, gs_state *gsvptr)
 ENUM_PREFIX(st_imager_state, gs_state_num_ptrs + 2);

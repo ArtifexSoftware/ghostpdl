@@ -8437,11 +8437,19 @@ pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev)
                     }
                 }
             }
-            /* Decrement handled in pdf14_free_smask_color */
+
             icc_manager->default_gray = smaskcolor->profiles->smask_gray;
             icc_manager->default_rgb = smaskcolor->profiles->smask_rgb;
             icc_manager->default_cmyk = smaskcolor->profiles->smask_cmyk;
             icc_manager->smask_profiles->swapped = false;
+            /* We didn't increment the reference count when we assigned these
+             * so NULL them to avoid decrementing when smaskcolor is freed
+             */
+            smaskcolor->profiles->smask_gray =
+              smaskcolor->profiles->smask_rgb =
+              smaskcolor->profiles->smask_cmyk = NULL;
+            
+            
             pdf14_free_smask_color(pdev);
         }
     }

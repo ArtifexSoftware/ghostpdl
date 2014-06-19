@@ -127,19 +127,6 @@ rc_gsicc_link_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     /* Ending the entire cache.  The ref counts on all the links should be 0 */
     gsicc_link_cache_t *link_cache = (gsicc_link_cache_t * ) ptr_in;
 
-    while (link_cache->head != NULL) {
-        gsicc_remove_link(link_cache->head, mem);
-        link_cache->num_links--;
-    }
-#ifdef DEBUG
-    if (link_cache->num_links != 0) {
-        emprintf1(mem, "num_links is %d, should be 0.\n", link_cache->num_links);
-    }
-#endif
-    gx_semaphore_free(link_cache->wait);
-    link_cache->wait = NULL;
-    gx_monitor_free(link_cache->lock);
-    link_cache->lock = NULL;
     if_debug2m(gs_debug_flag_icc, mem,
                "[icc] Removing link cache = 0x%x memory = 0x%x\n",
                link_cache, link_cache->memory);
@@ -152,6 +139,15 @@ icc_linkcache_finalize(const gs_memory_t *mem, void *ptr)
 {
     gsicc_link_cache_t *link_cache = (gsicc_link_cache_t * ) ptr;
 
+    while (link_cache->head != NULL) {
+        gsicc_remove_link(link_cache->head, mem);
+        link_cache->num_links--;
+    }
+#ifdef DEBUG
+    if (link_cache->num_links != 0) {
+        emprintf1(mem, "num_links is %d, should be 0.\n", link_cache->num_links);
+    }
+#endif
     gx_semaphore_free(link_cache->wait);
     link_cache->wait = NULL;
     gx_monitor_free(link_cache->lock);
@@ -233,12 +229,19 @@ gsicc_set_link_data(gsicc_link_t *icc_link, void *link_handle,
     gx_monitor_leave(lock);	/* done with updating, let everyone run */
 }
 
-void
-gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory)
+static void
+gsicc_link_free_contents(gsicc_link_t *icc_link)
 {
     icc_link->procs.free_link(icc_link);
     gx_semaphore_free(icc_link->wait);
     icc_link->wait = NULL;
+}
+
+void
+gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory)
+{
+    gsicc_link_free_contents(icc_link);
+
     gs_free_object(memory->stable_memory, icc_link, "gsicc_link_free");
 }
 
@@ -248,8 +251,7 @@ icc_link_finalize(const gs_memory_t *mem, void *ptr)
 {
     gsicc_link_t *icc_link = (gsicc_link_t * ) ptr;
 
-    gx_semaphore_free(icc_link->wait);
-    icc_link->wait = NULL;
+    gsicc_link_free_contents(icc_link);
 }
 
 static void

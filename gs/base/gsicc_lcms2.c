@@ -754,6 +754,8 @@ gscms_release_link(gsicc_link_t *icclink)
 {
     if (icclink->link_handle != NULL )
         cmsDeleteTransform(icclink->link_handle);
+
+    icclink->link_handle = NULL;
 }
 
 /* Have the CMS release the profile handle */

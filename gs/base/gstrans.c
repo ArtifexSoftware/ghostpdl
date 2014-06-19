@@ -589,13 +589,19 @@ gs_begin_transparency_mask(gs_state * pgs,
         params.group_color_numcomps =
                 blend_color_space->cmm_icc_profile_data->num_comps;
         /* Get the ICC profile */
+        /* We don't reference count this - see comment in
+         * pdf14_update_device_color_procs_pop_c()
+         */
         params.iccprofile = blend_color_space->cmm_icc_profile_data;
         params.icc_hash = blend_color_space->cmm_icc_profile_data->hashcode;
-        rc_increment(params.iccprofile);
     } else {
         params.group_color = GRAY_SCALE;
         params.group_color_numcomps = 1;  /* Need to check */
     }
+    /* Explicitly decrement the profile data since blend_color_space may not
+     * be an ICC color space object.
+     */
+    rc_decrement(blend_color_space->cmm_icc_profile_data, "gs_begin_transparency_mask");
     rc_decrement_only_cs(blend_color_space, "gs_begin_transparency_mask");
     return gs_state_update_pdf14trans(pgs, &params);
 }

@@ -298,18 +298,21 @@ gsicc_nocm_freelink(gsicc_link_t *icclink)
 {
     nocm_link_t *nocm_link = (nocm_link_t*) icclink->link_handle;
 
-    if (nocm_link->pis != NULL) {
-        if (nocm_link->pis->black_generation != NULL) {
-            gs_free_object(nocm_link->memory, nocm_link->pis->black_generation,
-                           "gsicc_nocm_freelink");
+    if (nocm_link) {
+        if (nocm_link->pis != NULL) {
+            if (nocm_link->pis->black_generation != NULL) {
+                gs_free_object(nocm_link->memory, nocm_link->pis->black_generation,
+                               "gsicc_nocm_freelink");
+            }
+            if (nocm_link->pis->undercolor_removal != NULL) {
+                gs_free_object(nocm_link->memory, nocm_link->pis->undercolor_removal,
+                               "gsicc_nocm_freelink");
+            }
+            gs_free_object(nocm_link->memory, nocm_link->pis, "gsicc_nocm_freelink");
         }
-        if (nocm_link->pis->undercolor_removal != NULL) {
-            gs_free_object(nocm_link->memory, nocm_link->pis->undercolor_removal,
-                           "gsicc_nocm_freelink");
-        }
-        gs_free_object(nocm_link->memory, nocm_link->pis, "gsicc_nocm_freelink");
+        gs_free_object(nocm_link->memory, nocm_link, "gsicc_nocm_freelink");
+        icclink->link_handle = NULL;
     }
-    gs_free_object(nocm_link->memory, nocm_link, "gsicc_nocm_freelink");
 }
 
 /* Since this is the only occurence of this object we are not going to

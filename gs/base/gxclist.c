@@ -1038,23 +1038,38 @@ clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode)
      return(false);  /* No entry */
 }
 
-/* Free the table */
-int
-clist_free_icc_table(clist_icctable_t *icc_table, gs_memory_t *memory)
+static void
+clist_free_icc_table_contents(clist_icctable_t *icc_table)
 {
     int number_entries;
     clist_icctable_entry_t *curr_entry, *next_entry;
     int k;
 
-    if (icc_table == NULL)
-        return(0);
     number_entries = icc_table->tablesize;
     curr_entry = icc_table->head;
     for (k = 0; k < number_entries; k++) {
         next_entry = curr_entry->next;
+        rc_decrement(curr_entry->icc_profile, "clist_free_icc_table");
         gs_free_object(icc_table->memory, curr_entry, "clist_free_icc_table");
         curr_entry = next_entry;
     }
+}
+
+void
+clist_icc_table_finalize(const gs_memory_t *memory, void * vptr)
+{
+    clist_icctable_t *icc_table = (clist_icctable_t *)vptr;
+
+    clist_free_icc_table_contents(icc_table);
+}
+
+/* Free the table */
+int
+clist_free_icc_table(clist_icctable_t *icc_table, gs_memory_t *memory)
+{
+    if (icc_table == NULL)
+        return(0);
+
     gs_free_object(icc_table->memory, icc_table, "clist_free_icc_table");
     return(0);
 }

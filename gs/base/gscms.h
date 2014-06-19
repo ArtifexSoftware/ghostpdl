@@ -498,7 +498,7 @@ typedef struct gsicc_smask_s {
     cmm_profile_t *smask_rgb;
     cmm_profile_t *smask_cmyk;
     gs_memory_t *memory;
-    bool swapped;  
+    bool swapped;
 } gsicc_smask_t;
 
 /* The manager object */

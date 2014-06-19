@@ -58,6 +58,9 @@ static gsicc_namelist_t* gsicc_new_namelist(gs_memory_t *memory);
 static gsicc_colorname_t* gsicc_new_colorname(gs_memory_t *memory);
 static gsicc_namelist_t* gsicc_get_spotnames(gcmmhprofile_t profile,
                                              gs_memory_t *memory);
+static void gsicc_manager_free_contents(gs_memory_t * mem, gsicc_manager_t *icc_man,
+                                  client_name_t cname);
+
 static void rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in,
                                   client_name_t cname);
 static void rc_free_icc_profile(gs_memory_t * mem, void *ptr_in,
@@ -75,14 +78,22 @@ static int gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s,
 static cmm_srcgtag_profile_t* gsicc_new_srcgtag_profile(gs_memory_t *memory);
 static void gsicc_free_spotnames(gsicc_namelist_t *spotnames, gs_memory_t * mem);
 
+static void
+gsicc_manager_finalize(const gs_memory_t *memory, void * vptr);
+
+static void
+gsicc_smask_finalize(const gs_memory_t *memory, void * vptr);
+
 /* profile data structure */
 /* profile_handle should NOT be garbage collected since it is allocated by the external CMS */
 gs_private_st_ptrs2(st_gsicc_colorname, gsicc_colorname_t, "gsicc_colorname",
                     gsicc_colorname_enum_ptrs, gsicc_colorname_reloc_ptrs, name, next);
 
-gs_private_st_ptrs2(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
+gs_private_st_ptrs2_final(st_gsicc_manager, gsicc_manager_t, "gsicc_manager",
                     gsicc_manager_enum_ptrs, gsicc_manager_profile_reloc_ptrs,
-                    smask_profiles, device_n);
+                    gsicc_manager_finalize, smask_profiles, device_n);
+
+gs_private_st_simple_final(st_gsicc_smask, gsicc_smask_t, "gsicc_smask", gsicc_smask_finalize);
 
 gs_private_st_ptrs2(st_gsicc_devicen, gsicc_devicen_t, "gsicc_devicen",
                 gsicc_devicen_enum_ptrs, gsicc_devicen_reloc_ptrs, head, final);
@@ -170,12 +181,25 @@ gsicc_set_iccsmaskprofile(const char *pname,
     return icc_profile;
 }
 
+static void
+gsicc_smask_finalize(const gs_memory_t *memory, void * vptr)
+{
+    gsicc_smask_t *iccsmask = (gsicc_smask_t *)vptr;
+
+    rc_decrement(iccsmask->smask_gray,
+        "gsicc_smask_finalize");
+    rc_decrement(iccsmask->smask_rgb,
+        "gsicc_smask_finalize");
+    rc_decrement(iccsmask->smask_cmyk,
+        "gsicc_smask_finalize");
+}
+
 gsicc_smask_t*
 gsicc_new_iccsmask(gs_memory_t *memory)
 {
     gsicc_smask_t *result;
 
-    result = (gsicc_smask_t *) gs_alloc_bytes(memory, sizeof(gsicc_smask_t), "gsicc_new_iccsmask");
+    result = (gsicc_smask_t *) gs_alloc_struct(memory, gsicc_smask_t, &st_gsicc_smask, "gsicc_new_iccsmask");
     if (result != NULL) {
         result->smask_gray = NULL;
         result->smask_rgb = NULL;
@@ -1783,7 +1807,8 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
         }
         profile->hash_is_valid = 0;
         if (profile->lock != NULL) {
-            gs_free_object(mem_nongc, profile->lock,"rc_free_icc_profile(lock)");
+            gx_monitor_free(profile->lock);
+            profile->lock = NULL;
         }
         /* If we had a DeviceN profile with names
            deallocate that now */
@@ -1892,6 +1917,14 @@ gsicc_init_iccmanager(gs_state * pgs)
     return 0;
 }
 
+static void
+gsicc_manager_finalize(const gs_memory_t *memory, void * vptr)
+{
+    gsicc_manager_t *icc_man = (gsicc_manager_t *)vptr;
+
+    gsicc_manager_free_contents(memory, icc_man, "gsicc_manager_finalize");
+}
+
 gsicc_manager_t *
 gsicc_manager_new(gs_memory_t *memory)
 {
@@ -1919,45 +1952,47 @@ gsicc_manager_new(gs_memory_t *memory)
     return result;
 }
 
+static void gsicc_manager_free_contents(gs_memory_t * mem, gsicc_manager_t *icc_manager,
+                                  client_name_t cname)
+{
+    int k;
+    gsicc_devicen_entry_t *device_n, *device_n_next;
+
+    rc_decrement(icc_manager->default_cmyk, "gsicc_manager_free_contents");
+    rc_decrement(icc_manager->default_gray, "gsicc_manager_free_contents");
+    rc_decrement(icc_manager->default_rgb, "gsicc_manager_free_contents");
+    rc_decrement(icc_manager->device_named, "gsicc_manager_free_contents");
+    rc_decrement(icc_manager->lab_profile, "gsicc_manager_free_contents");
+    rc_decrement(icc_manager->graytok_profile, "gsicc_manager_free_contents");
+    rc_decrement(icc_manager->srcgtag_profile, "gsicc_manager_free_contents");
+
+    /* Loop through the DeviceN profiles */
+    if ( icc_manager->device_n != NULL) {
+        device_n = icc_manager->device_n->head;
+        for ( k = 0; k < icc_manager->device_n->count; k++) {
+            rc_decrement(device_n->iccprofile, "gsicc_manager_free_contents");
+            device_n_next = device_n->next;
+            gs_free_object(icc_manager->memory, device_n, "gsicc_manager_free_contents");
+            device_n = device_n_next;
+        }
+        gs_free_object(icc_manager->memory, icc_manager->device_n,
+                       "gsicc_manager_free_contents");
+    }
+    
+    /* The soft mask profiles */
+    if (icc_manager->smask_profiles != NULL) {
+        gs_free_object(icc_manager->smask_profiles->memory, icc_manager->smask_profiles, "gsicc_manager_free_contents");
+        icc_manager->smask_profiles = NULL;
+    }
+}
+
 static void
 rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 {
     /* Ending the manager.  Decrement the ref counts of the profiles
        and then free the structure */
     gsicc_manager_t *icc_manager = (gsicc_manager_t * ) ptr_in;
-    int k;
-    gsicc_devicen_entry_t *device_n, *device_n_next;
-
-    rc_decrement(icc_manager->default_cmyk, "rc_gsicc_manager_free");
-    rc_decrement(icc_manager->default_gray, "rc_gsicc_manager_free");
-    rc_decrement(icc_manager->default_rgb, "rc_gsicc_manager_free");
-    rc_decrement(icc_manager->device_named, "rc_gsicc_manager_free");
-    rc_decrement(icc_manager->lab_profile, "rc_gsicc_manager_free");
-    rc_decrement(icc_manager->xyz_profile, "rc_gsicc_manager_free");
-    rc_decrement(icc_manager->graytok_profile, "rc_gsicc_manager_free");
-    rc_decrement(icc_manager->srcgtag_profile, "rc_gsicc_manager_free");
-
-    /* Loop through the DeviceN profiles */
-    if ( icc_manager->device_n != NULL) {
-        device_n = icc_manager->device_n->head;
-        for ( k = 0; k < icc_manager->device_n->count; k++) {
-            rc_decrement(device_n->iccprofile, "rc_gsicc_manager_free");
-            device_n_next = device_n->next;
-            gs_free_object(icc_manager->memory, device_n, "rc_gsicc_manager_free");
-            device_n = device_n_next;
-        }
-        gs_free_object(icc_manager->memory, icc_manager->device_n,
-                       "rc_gsicc_manager_free");
-    }
-    /* The soft mask profiles */
-    if ( icc_manager->smask_profiles != NULL) {
-        rc_decrement(icc_manager->smask_profiles->smask_gray,
-            "rc_gsicc_manager_free");
-        rc_decrement(icc_manager->smask_profiles->smask_rgb,
-            "rc_gsicc_manager_free");
-        rc_decrement(icc_manager->smask_profiles->smask_cmyk,
-            "rc_gsicc_manager_free");
-    }
+    
     gs_free_object(icc_manager->memory, icc_manager, "rc_gsicc_manager_free");
 }
 
