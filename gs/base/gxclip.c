@@ -158,17 +158,14 @@ gx_make_clip_device_on_stack_if_needed(gx_device_clip * dev, const gx_clip_path 
         rect->p.y = pcpath->outer_box.p.y;
     if (rect->q.y > pcpath->outer_box.q.y)
         rect->q.y = pcpath->outer_box.q.y;
+    /* Check for area being trivially clipped away. */
+    if (rect->p.x >= rect->q.x || rect->p.y >= rect->q.y)
+        return NULL;
     if (pcpath->inner_box.p.x <= rect->p.x && pcpath->inner_box.p.y <= rect->p.y &&
         pcpath->inner_box.q.x >= rect->q.x && pcpath->inner_box.q.y >= rect->q.y)
     {
         /* Area is trivially included. No need for clip. */
         return target;
-    }
-    else
-    {
-        /* Check for area being trivially clipped away. */
-        if (rect->p.x >= rect->q.x || rect->p.y >= rect->q.y)
-            return NULL;
     }
     gx_device_init_on_stack((gx_device *)dev, (const gx_device *)&gs_clip_device, target->memory);
     dev->list = *gx_cpath_list(pcpath);
