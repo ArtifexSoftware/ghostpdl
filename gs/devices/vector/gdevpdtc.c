@@ -830,6 +830,7 @@ process_cmap_text(gs_text_enum_t *penum, void *vbuf, uint bsize)
 {
     int code;
     pdf_text_enum_t *pte = (pdf_text_enum_t *)penum;
+    byte *save;
 
     if (pte->text.operation &
         (TEXT_FROM_ANY - (TEXT_FROM_STRING | TEXT_FROM_BYTES))
@@ -839,7 +840,24 @@ process_cmap_text(gs_text_enum_t *penum, void *vbuf, uint bsize)
         /* Not implemented.  (PostScript doesn't allow TEXT_INTERVENE.) */
         return_error(gs_error_rangecheck);
     }
+    /* scan_cmap_text has the unfortunate side effect of meddling with the
+     * text data in the enumerator. In general that's OK but in the case where
+     * the string is (eg) in a bound procedure, and we run that procedure more
+     * than once, the string is corrupted on the first use and then produces
+     * incorrect output for the subsequent use(s).
+     * The routine is, sadly, extremely convoluted so instead of trying to fix
+     * it so that it doesn't corrupt the string (which looks likely to be impossible
+     * without copying the string at some point) I've chosen to take a copy of the
+     * string here, and restore it after the call to scan_cmap_text.
+     * See bug #695322 and test file Bug691680.ps
+     */
+    save = (byte *)pte->text.data.bytes;
+    pte->text.data.bytes = gs_alloc_string(pte->memory, pte->text.size, "pdf_text_process");
+    memcpy((byte *)pte->text.data.bytes, save, pte->text.size);
     code = scan_cmap_text(pte, vbuf);
+    gs_free_string(pte->memory, (byte *)pte->text.data.bytes,  pte->text.size, "pdf_text_process");
+    pte->text.data.bytes = save;
+
     if (code == TEXT_PROCESS_CDEVPROC)
         pte->cdevproc_callout = true;
     else
