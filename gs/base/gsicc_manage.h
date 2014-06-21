@@ -150,8 +150,7 @@ void gs_currentdefaultcmykicc(const gs_state * pgs, gs_param_string * pval);
 int gs_setdefaultcmykicc(const gs_state * pgs, gs_param_string * pval);
 void gs_currentlabicc(const gs_state * pgs, gs_param_string * pval);
 int gs_setlabicc(const gs_state * pgs, gs_param_string * pval);
-
-
+int gsicc_get_device_class(cmm_profile_t *icc_profile);
 
 #if ICC_DUMP
 static void dump_icc_buffer(int buffersize, char filename[],byte *Buffer);

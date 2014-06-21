@@ -41,5 +41,7 @@ int gsicc_create_fromdef(const gs_color_space *pcs, unsigned char **pp_buffer_in
 cmm_profile_t* gsicc_create_from_cal(float *white, float *black, float *gamma,
                                      float *matrix, gs_memory_t *memory,
                                      int num_colors);
-
+byte* gsicc_getv2buffer(cmm_profile_t *srcprofile, int *size);
+byte* gsicc_create_getv2buffer(const gs_imager_state *pis, 
+                                cmm_profile_t *srcprofile, int *size);
 #endif

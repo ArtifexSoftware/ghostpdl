@@ -41,6 +41,7 @@
 #include "gxdevice.h"
 
 #define ICC_HEADER_SIZE 128
+#define CREATE_V2_DATA 0
 
 #if ICC_DUMP
 unsigned int global_icc_index = 0;
@@ -505,6 +506,11 @@ gsicc_check_device_link(cmm_profile_t *icc_profile)
     return value;
 }
 
+int
+gsicc_get_device_class(cmm_profile_t *icc_profile)
+{
+    return gscms_get_device_class(icc_profile->profile_handle);
+}
 
 /* This inititializes the srcgtag structure in the ICC manager */
 int
@@ -757,6 +763,10 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
                  num_comps = 3;
                  default_space = gsCIELAB;
                  break;
+            case XYZ_TYPE:
+                manager_default_profile = &(icc_manager->xyz_profile);
+                num_comps = 3;
+                default_space = gsRGB;
             case DEVICEN_TYPE:
                 manager_default_profile = NULL;
                 default_space = gsNCHANNEL;
@@ -881,7 +891,7 @@ gsicc_initialize_default_profile(cmm_profile_t *icc_profile)
     const gs_memory_t *mem = icc_profile->memory;
 
     /* Get the profile handle if it is not already set */
-    if (icc_profile->profile_handle != NULL) {
+    if (icc_profile->profile_handle == NULL) {
         icc_profile->profile_handle =
                         gsicc_get_profile_handle_buffer(icc_profile->buffer,
                                                         icc_profile->buffer_size,
@@ -1731,6 +1741,9 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
     result->dev = NULL;
     result->memory = mem_nongc;
     result->lock = gx_monitor_alloc(mem_nongc);
+    result->vers = ICCVERS_UNKNOWN;
+    result->v2_data = NULL;
+    result->v2_size = 0;
     if (result->lock == NULL) {
         gs_free_object(mem_nongc, result, "gsicc_profile_new");
         gs_free_object(mem_nongc, nameptr, "gsicc_profile_new");
@@ -1753,7 +1766,7 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     if (profile->rc.ref_count <= 1 ) {
         /* Clear out the buffer if it is full */
         if(profile->buffer != NULL) {
-            gs_free_object(mem_nongc, profile->buffer, "rc_free_icc_profile");
+            gs_free_object(mem_nongc, profile->buffer, "rc_free_icc_profile(buffer)");
             profile->buffer = NULL;
         }
         if_debug0m(gs_debug_flag_icc, mem, "[icc] profile freed\n");
@@ -1764,13 +1777,13 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
         }
         /* Release the name if it has been set */
         if(profile->name != NULL) {
-            gs_free_object(mem_nongc, profile->name,"rc_free_icc_profile");
+            gs_free_object(mem_nongc, profile->name,"rc_free_icc_profile(name)");
             profile->name = NULL;
             profile->name_length = 0;
         }
         profile->hash_is_valid = 0;
         if (profile->lock != NULL) {
-            gs_free_object(mem_nongc, profile->lock,"rc_free_icc_profile");
+            gs_free_object(mem_nongc, profile->lock,"rc_free_icc_profile(lock)");
         }
         /* If we had a DeviceN profile with names
            deallocate that now */
@@ -1778,7 +1791,11 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
             /* Free the linked list in this object */
             gsicc_free_spotnames(profile->spotnames, mem_nongc);
             /* Free the main object */
-            gs_free_object(mem_nongc, profile->spotnames, "rc_free_icc_profile");
+            gs_free_object(mem_nongc, profile->spotnames, "rc_free_icc_profile(spotnames)");
+        }
+        /* If we allocated a buffer to hold the v2 profile then free that */
+        if (profile->v2_data != NULL) {
+            gs_free_object(mem_nongc, profile->v2_data, "rc_free_icc_profile(v2_data)");
         }
         gs_free_object(mem_nongc, profile, "rc_free_icc_profile");
     }
@@ -1847,6 +1864,31 @@ gsicc_init_iccmanager(gs_state * pgs)
         if (code < 0)
             return gs_rethrow(code, "cannot find default icc profile");
     }
+#if CREATE_V2_DATA
+    /* Test bed for V2 creation from V4 */
+    for (int j = 2; j < 3; j++)
+    {
+        gs_imager_state *pis = (gs_imager_state*)pgs;
+        byte *data;
+        int size;
+
+        switch (default_profile_params[j].default_type) {
+        case DEFAULT_GRAY:
+            profile = iccmanager->default_gray;
+            break;
+        case DEFAULT_RGB:
+            profile = iccmanager->default_rgb;
+            break;
+        case DEFAULT_CMYK:
+            profile = iccmanager->default_cmyk;
+            break;
+        default:
+            profile = NULL;
+        }
+        gsicc_initialize_default_profile(profile);
+        data = gsicc_create_getv2buffer(pis, profile, &size);
+    }
+#endif
     return 0;
 }
 
@@ -1866,6 +1908,7 @@ gsicc_manager_new(gs_memory_t *memory)
     result->default_rgb = NULL;
     result->default_cmyk = NULL;
     result->lab_profile = NULL;
+    result->xyz_profile = NULL;
     result->graytok_profile = NULL;
     result->device_named = NULL;
     result->device_n = NULL;
@@ -1890,6 +1933,7 @@ rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     rc_decrement(icc_manager->default_rgb, "rc_gsicc_manager_free");
     rc_decrement(icc_manager->device_named, "rc_gsicc_manager_free");
     rc_decrement(icc_manager->lab_profile, "rc_gsicc_manager_free");
+    rc_decrement(icc_manager->xyz_profile, "rc_gsicc_manager_free");
     rc_decrement(icc_manager->graytok_profile, "rc_gsicc_manager_free");
     rc_decrement(icc_manager->srcgtag_profile, "rc_gsicc_manager_free");
 

@@ -230,7 +230,14 @@ gscms_get_clrtname(gcmmhprofile_t profile, int colorcount, gs_memory_t *memory)
 bool
 gscms_is_device_link(gcmmhprofile_t profile)
 {
-    return (cmsGetDeviceClass(profile) == cmsSigLinkClass);
+    return cmsGetDeviceClass(profile) == cmsSigLinkClass;
+}
+
+/* Needed for v2 profile creation */
+int
+gscms_get_device_class(gcmmhprofile_t profile)
+{
+    return cmsGetDeviceClass(profile);
 }
 
 /* Check if the profile is a input type */

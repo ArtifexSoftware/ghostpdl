@@ -286,6 +286,7 @@ typedef enum {
     DEFAULT_CMYK,   /* The default DeviceCMYK profile */
     NAMED_TYPE,     /* The named color profile */
     LAB_TYPE,       /* The CIELAB profile */
+    XYZ_TYPE,       /* The RGB D50 CIEXYZ profile */
     DEVICEN_TYPE,   /* A special device N profile */
     DEFAULT_GRAY_s, /* Same as default but a source profile from document */
     DEFAULT_RGB_s,  /* Same as default but a source profile from document */
@@ -299,6 +300,12 @@ typedef enum {
     CIE_DEFG,       /* Generated from PS CIEDEFG definition */
     CIE_CRD        /* Generated from PS CRD definition */
 } gsicc_profile_t;
+
+typedef enum {
+    ICCVERS_UNKNOWN,
+    ICCVERS_2,
+    ICCVERS_NOT2
+} gsicc_version_t;
 
 #define gsicc_serial_data\
     unsigned char num_comps;		/* number of device dependent values */\
@@ -341,6 +348,9 @@ struct cmm_profile_s {
                                  * name.  This is primarily here for the system profiles, and
                                  * so that we avoid resetting them everytime the user params
                                  * are reloaded. */
+    gsicc_version_t vers;      /* Is this profile V2 */
+    byte *v2_data;              /* V2 data that is equivalent to this profile. Used for PDF-A1 support */
+    int v2_size;                /* Number of bytes in v2_data */
     gs_memory_t *memory;        /* In case we have some in non-gc and some in gc memory */
     gx_monitor_t *lock;		/* handle for the monitor */
 };
@@ -499,6 +509,7 @@ typedef struct gsicc_manager_s {
     cmm_profile_t *default_rgb;     /* Default RGB profile for device RGB */
     cmm_profile_t *default_cmyk;    /* Default CMYK profile for device CMKY */
     cmm_profile_t *lab_profile;     /* Colorspace type ICC profile from LAB to LAB */
+    cmm_profile_t *xyz_profile;     /* RGB based proflie that hands back CIEXYZ values */
     cmm_profile_t *graytok_profile; /* A specialized profile for mapping gray to K */
     gsicc_devicen_t *device_n;      /* A linked list of profiles used for DeviceN support */
     gsicc_smask_t *smask_profiles;  /* Profiles used when we are in a softmask group */
