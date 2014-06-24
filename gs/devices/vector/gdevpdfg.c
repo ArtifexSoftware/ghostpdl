@@ -697,6 +697,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
         case ccs_Gray:
             code = pdf_make_sampled_base_space_function(pdev, &new_pfn, pcs->params.device_n.num_components, 1, data_buff);
             break;
+        case ccs_sRGB:
         case ccs_RGB:
             code = pdf_make_sampled_base_space_function(pdev, &new_pfn, pcs->params.device_n.num_components, 3, data_buff);
             break;
@@ -829,6 +830,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
             case ccs_Gray:
                 cos_c_string_value(&v, (const char *)pdf_color_space_names.DeviceGray);
                 break;
+            case ccs_sRGB:
             case ccs_RGB:
                 cos_c_string_value(&v, (const char *)pdf_color_space_names.DeviceRGB);
                 break;
