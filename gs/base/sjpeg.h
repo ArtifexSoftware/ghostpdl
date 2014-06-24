@@ -67,4 +67,7 @@ int gs_jpeg_finish_decompress(stream_DCT_state * st);
 
 int gs_jpeg_mem_init (gs_memory_t *mem, j_common_ptr cinfo);
 
+void
+gs_jpeg_mem_term(j_common_ptr cinfo);
+
 #endif /* sjpeg_INCLUDED */

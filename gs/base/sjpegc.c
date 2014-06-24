@@ -141,8 +141,11 @@ gs_jpeg_destroy(stream_DCT_state * st)
 {
     if (st->data.common && setjmp(find_jmp_buf(st->data.common->exit_jmpbuf)))
         return_error(gs_jpeg_log_error(st));
-    if (st->data.compress)
+
+    if (st->data.compress){
         jpeg_destroy((j_common_ptr) & st->data.compress->cinfo);
+        gs_jpeg_mem_term((j_common_ptr) & st->data.compress->cinfo);
+    }
     return 0;
 }
 
@@ -212,4 +215,18 @@ int gs_jpeg_mem_init (gs_memory_t *mem, j_common_ptr cinfo)
     }
 #endif /* SHAREJPEG == 0 */
     return code;
+}
+
+void
+gs_jpeg_mem_term(j_common_ptr cinfo)
+{
+#if SHARE_JPEG == 0
+    if (cinfo->client_data) {
+        jpeg_cust_mem_data *custmptr = (jpeg_cust_mem_data *)cinfo->client_data;
+        gs_memory_t *mem = (gs_memory_t *)(GET_CUST_MEM_DATA(cinfo)->priv);
+        
+        gs_free_object(mem, custmptr, "gs_jpeg_mem_term");
+        cinfo->client_data = NULL;
+    }
+#endif /* SHAREJPEG == 0 */
 }
