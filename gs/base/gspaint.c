@@ -94,6 +94,15 @@ gs_fillpage(gs_state * pgs)
                                       gs_currentdevicecolor_inline(pgs));
     if (code < 0)
         return code;
+
+    /* If GrayDetection is set, make sure monitoring is enabled. */
+    if (dev->icc_struct != NULL &&
+            dev->icc_struct->graydetection && !dev->icc_struct->pageneutralcolor) {
+        dev->icc_struct->pageneutralcolor = true;	/* start detecting again */
+        gsicc_mcm_begin_monitor(pgs->icc_link_cache, dev);
+    }
+    if (code < 0)
+        return code;
     return (*dev_proc(dev, sync_output)) (dev);
 }
 /*

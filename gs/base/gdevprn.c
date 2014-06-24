@@ -157,6 +157,7 @@ gdev_prn_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
     if (dev_spec_op == gxdso_get_dev_param) {
         int code;
         dev_param_req_t *request = (dev_param_req_t *)data;
+
         code = gdev_prn_get_param(pdev, request->Param, request->list);
         if (code != gs_error_undefined)
             return code;
@@ -568,6 +569,7 @@ gdev_prn_get_param(gx_device *dev, char *Param, void *list)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)dev;
     gs_param_list * plist = (gs_param_list *)list;
+    bool pageneutralcolor = false;
 
     if (strcmp(Param, "Duplex") == 0) {
         if (ppdev->Duplex_set >= 0) {
@@ -621,6 +623,11 @@ gdev_prn_get_param(gx_device *dev, char *Param, void *list)
         saved_pages.persistent = false;
         return param_write_string(plist, "saved-pages", &saved_pages);
     }
+    if (dev->icc_struct != NULL)
+        pageneutralcolor = dev->icc_struct->pageneutralcolor;
+    if (strcmp(Param, "pageneutralcolor") == 0) {
+        return param_write_bool(plist, "pageneutralcolor", &pageneutralcolor);
+    }
     return gs_error_undefined;
 }
 
@@ -634,7 +641,10 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
     gs_param_string ofns;
     gs_param_string bls;
     gs_param_string saved_pages;
+    bool pageneutralcolor = false;
 
+    if (pdev->icc_struct != NULL)
+        pageneutralcolor = pdev->icc_struct->pageneutralcolor;
     if (code < 0 ||
         (ppdev->Duplex_set >= 0 &&
         (code = (ppdev->Duplex_set ?
@@ -643,7 +653,8 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
         (code = param_write_int(plist, "NumRenderingThreads", &ppdev->num_render_threads_requested)) < 0 ||
         (code = param_write_bool(plist, "OpenOutputFile", &ppdev->OpenOutputFile)) < 0 ||
         (code = param_write_bool(plist, "BGPrint", &ppdev->bg_print_requested)) < 0 ||
-        (code = param_write_bool(plist, "ReopenPerPage", &ppdev->ReopenPerPage)) < 0
+        (code = param_write_bool(plist, "ReopenPerPage", &ppdev->ReopenPerPage)) < 0 ||
+        (code = param_write_bool(plist, "pageneutralcolor", &pageneutralcolor)) < 0
         )
         return code;
 
@@ -710,6 +721,7 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     gs_param_string bls;
     gs_param_dict mdict;
     gs_param_string saved_pages;
+    bool pageneutralcolor = false;
 
     memset(&saved_pages, 0, sizeof(gs_param_string));
     save_sp = ppdev->space_params;
@@ -830,6 +842,15 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
             break;
     }
 
+    /* NB: put_params to change pageneutralcolor is allowed, but has no effect */
+    /*     It will be set according the GrayDetection. Allowing it prevents errors */
+    if (pdev->icc_struct != NULL)
+        pageneutralcolor = pdev->icc_struct->pageneutralcolor;
+    if ((code = param_read_bool(plist, (param_name = "pageneutralcolor"),
+                                                        &pageneutralcolor)) < 0) {
+        ecode = code;
+        param_signal_error(plist, param_name, ecode);
+    }
 
     if (ecode < 0)
         return ecode;

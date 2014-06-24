@@ -2012,26 +2012,56 @@ delivered by the rendering threads.
 
 <dl>
 <dt><code>GrayDetection &lt;boolean&gt;</code>
-<dd>When <code>true</code>,  and when the display list (clist) banding mode is being used,
+<dd>When <code>true</code>, and when the display list (clist) banding mode is being used,
 during writing of the clist, the color processing logic collects information about the
 colors used <b>before</b> the device color profile is applied. This allows special devices
-that examine <code>pageneutralcolor</code> with the information that all colors on
-the page are near <i>neutral</i>, i.e. monochrome, and converting the rendered raster to
-gray may be used to reduce the use of color toners/inks.
+that examine <code>dev-&gt;icc_struct-&gt;pageneutralcolor</code> with the information that all
+colors on the page are near <i>neutral</i>, i.e. monochrome, and converting the rendered
+raster to gray may be used to reduce the use of color toners/inks.
 <p>
 Since the determination of whether or not the page uses colors is determined before the
 conversion to device colors, this information is independent of the device output profile.
+The determination has a small delta (<tt>DEV_NEUTRAL</tt> and <tt>AB_NEUTRAL</tt> in
+<tt>base/gscms.h</tt>) to allow colors close to neutral to be detected as neutral.
+Changing this value requires rebuilding.
 <p>
 Among the devices distributed with the source, currently only the <code>pnmcmyk</code>
 device supports this parameter and will produce either a <code>P7 PAM</code> CMYK output
 or a  <code>P5 PGM</code> Gray output depending on the use of color on the page.
 <p>
-<b>Note:</b> Since <code>-dGrayDetection=true</code> requires extra checking during
+Also, the 'pageneutralcolor' status can be interrogated as a device parameter of the
+same name. Using PostScript there are several methods:
+<pre>
+    currentpagedevice /pageneutralcolor get
+
+    mark currentdevice //null .getdeviceprops .dicttomark /pageneutralcolor get
+
+    /pageneutralcolor /GetDeviceParam .special_op { exch pop }{ //false } ifelse
+</pre>
+<p>
+Note that the <tt>pageneutralcolor</tt> state is reset to <tt>false</tt> after the
+page is output, so this parameter is only valid immediately <b>before</b> <tt>showpage</tt>
+is executed, although the <tt>setpagedevice EndPage</tt> procedure can be used to check
+the state just prior to the actual output of the page that resets <tt>pagenuetralcolor</tt>.
+For example:
+<pre>
+    &lt;&lt; /EndPage {
+      exch pop 2 ne dup {
+        currentpagedevice /pageneutralcolor get (pageneutralcolor: ) print = flush
+      } if
+    }
+    &gt;&gt; setpagedevice
+</pre>
+<b>Notes:</b>
+<p>
+Since <code>-dGrayDetection=true</code> requires extra checking during
 writing of the clist, this option should <b>only</b> be used for devices that
 support the optimization of pages to monochrome, otherwise performance may be degraded
 for no benefit.
+<p>
+Since GrayDetection=true is only effective when in clist (banding) mode, it is recommended
+to also force banding. For example: <b><tt>-dGrayDetection=true -dMaxBitmap=0</tt></b>
 </dl>
-
 
 <dl>
 <dt><code>NumRenderingThreads &lt;integer&gt;</code>
