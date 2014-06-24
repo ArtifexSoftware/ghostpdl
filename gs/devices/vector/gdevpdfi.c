@@ -1173,7 +1173,7 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                 break;
             case gs_color_space_index_DeviceRGB:
                 if (pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged ||
-                    pdev->params.ColorConversionStrategy == ccs_RGB)
+                    pdev->params.ColorConversionStrategy == ccs_RGB || pdev->params.ColorConversionStrategy == ccs_sRGB)
                     return 0;
                 else {
                     code = setup_image_process_colorspace(pdev, image, pcs_orig, names->DeviceRGB, cs_value);
@@ -1252,7 +1252,7 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                             return 0;
                         break;
                     case gs_color_space_index_DeviceRGB:
-                        if (pdev->params.ColorConversionStrategy == ccs_RGB ||
+                        if (pdev->params.ColorConversionStrategy == ccs_RGB || pdev->params.ColorConversionStrategy == ccs_sRGB ||
                             pdev->params.ColorConversionStrategy == ccs_LeaveColorUnchanged)
                             return 0;
                         break;

@@ -1005,6 +1005,7 @@ int convert_separation_alternate(gx_device_pdf * pdev, const gs_imager_state * p
         case ccs_Gray:
             code = pdf_make_base_space_function(pdev, &new_pfn, 1, out_low, out_high);
             break;
+        case ccs_sRGB:
         case ccs_RGB:
             code = pdf_make_base_space_function(pdev, &new_pfn, 3, out_low, out_high);
             break;
