@@ -969,12 +969,41 @@ gsicc_compute_cam(gsicc_lutatob *icc_luta2bparts, gs_memory_t *memory)
 
     /* Calculate the chromatic adaptation matrix */
     icc_luta2bparts->cam = (float*) gs_alloc_bytes(memory, 
-                                        9 * sizeof(float), "gsicc_create_fromabc");
+                                        9 * sizeof(float), "gsicc_compute_cam");
     if (icc_luta2bparts->cam == NULL) {
         gs_throw(gs_error_VMerror, "Allocation of ICC cam failed");
     }
     gsicc_create_compute_cam(icc_luta2bparts->white_point, &(d50), icc_luta2bparts->cam);
     return 0;
+}
+
+/* Compute the CAT02 transformation to get us from the Cal White 
+   point to the D50 white point.  We could pack this in a chad tag
+   and let the CMM worry about applying but it is safer if we just
+   take care of it ourselves by mapping the primaries.  This is what is
+   also done for the table based data */
+static float*
+gsicc_get_cat02_cam(float *curr_wp, gs_memory_t *memory)
+{
+    gs_vector3 d50;
+    gs_vector3 wp;
+    float *cam;
+
+    wp.u = curr_wp[0];
+    wp.v = curr_wp[1];
+    wp.w = curr_wp[2];
+
+    d50.u = D50_X;
+    d50.v = D50_Y;
+    d50.w = D50_Z;
+
+    cam = (float*)gs_alloc_bytes(memory, 9 * sizeof(float), "gsicc_get_cat02_cam");
+    if (cam == NULL) {
+        gs_throw(gs_error_VMerror, "Allocation of cat02 matrix failed");
+    }
+    gsicc_create_compute_cam(curr_wp, &(d50), cam);
+
+    return cam;
 }
 
 /* Hardcoded chad for D65 to D50. This should be computed on the fly
@@ -1281,6 +1310,8 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
     int trc_tag_size;
     unsigned char *buffer;
     cmm_profile_t *result;
+    float *cat02;
+    float black_adapt[3];
 
     /* Fill in the common stuff */
     setheader_common(header, 4);
@@ -1345,23 +1376,30 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
         curr_ptr += tag_list[k].size;
     }
     tag_location = NUMBER_COMMON_TAGS;
+
+    /* Get the cat02 matrix */
+    cat02 = gsicc_get_cat02_cam(white, memory);
+
     /* The matrix */
     if (num_colors == 3) {
         for ( k = 0; k < 3; k++ ) {
-            get_XYZ_doubletr(temp_XYZ, &(matrix[k*3]));
+            float primary[3];
+            /* Apply the cat02 matrix to the primaries */
+            apply_adaption(cat02, &(matrix[k * 3]), &(primary[0]));
+            get_XYZ_doubletr(temp_XYZ, &(primary[0]));
             add_xyzdata(curr_ptr, temp_XYZ);
             curr_ptr += tag_list[tag_location].size;
             tag_location++;
         }
     }
-    /* White and black points */
-    /* Need to adjust for the D65/D50 issue */
-    get_XYZ_doubletr(temp_XYZ,white);
+    /* White and black points.  WP is D50 */
+    get_D50(temp_XYZ); 
     add_xyzdata(curr_ptr,temp_XYZ);
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
-    /* Black point */
-    get_XYZ_doubletr(temp_XYZ,black);
+    /* Black point.  Apply cat02*/ 
+    apply_adaption(cat02, black, &(black_adapt[0]));
+    get_XYZ_doubletr(temp_XYZ, &(black_adapt[0]));
     add_xyzdata(curr_ptr,temp_XYZ);
     curr_ptr += tag_list[tag_location].size;
     tag_location++;
@@ -1388,6 +1426,7 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
     result->hash_is_valid = true;
     /* Free up the tag list */
     gs_free_object(memory, tag_list, "gsicc_create_from_cal");
+    gs_free_object(memory, cat02, "gsicc_create_from_cal");
 
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
