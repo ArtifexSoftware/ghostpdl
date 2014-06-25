@@ -326,6 +326,15 @@ is 1 bit per pixel otherwise it is set to PCL5C. RTL must be
 explicitly set on the command line. RTL always grayscales and never
 thresholds colors to black and white.
 
+\textbf{pcl6 -H12x12x12x12 mypcl.pcl}
+
+apply hardware margins of 1/6 inch, the parameter's units are points.
+Without this or specification of hardware margins from a Ghostscript
+device the margins will be 0 or full bleed.  Most HP printers have a
+hardware margin greater than 0.  Normally this would be expressed by
+setting a device parameter on the command line but PCL does not parse
+this type (array) parameter yet.
+
 \subsection*{Fonts}
 
 The release is packaged with 80 high quality URW TrueType fonts. For

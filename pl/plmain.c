@@ -86,6 +86,7 @@ static const char *pl_usage = "\
 Usage: %s [option* file]+...\n\
 Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -l<PCL5C|PCL5E|RTL> -Z...\n\
          -sDEVICE=<dev> -g<W>x<H> -r<X>[x<Y>] -d{First|Last}Page=<#>\n\
+         -H<l>x<b>x<r>x<t>\n\
          -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
          -J<PJL commands>\n";
 
@@ -1157,6 +1158,24 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         param_write_int_array((gs_param_list *) params,
                                               "HWSize", &ia);
                     pmi->page_set_on_command_line = true;
+                }
+                break;
+            case 'H':
+                {
+                    float marg[4];
+                    gs_param_float_array fa;
+                    if (sscanf(arg, "%fx%fx%fx%f", &marg[0], &marg[1],
+                               &marg[2], &marg[3]) != 4) {
+                        dmprintf(pmi->memory,
+                                 "-H must be followed by <left>x<bottom>x<right>x<top>\n");
+                        return -1;
+                    }
+                    fa.data = marg;
+                    fa.size = 4;
+                    fa.persistent = false;
+                    code =
+                        param_write_float_array((gs_param_list *) params,
+                                              ".HWMargins", &fa);
                 }
                 break;
             case 'h':
