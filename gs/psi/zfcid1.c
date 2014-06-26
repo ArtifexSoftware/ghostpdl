@@ -433,6 +433,10 @@ zbuildfont11(i_ctx_t *i_ctx_p)
             if (font->FontType == ft_CID_TrueType) {
                 gs_font_cid2 *pfcid1 = (gs_font_cid2 *)font;
                 if (pfcid1->subst_CID_on_WMode != NULL &&
+                    /* We want the subst_CID_on_WMode to exist in same local/global
+                     * VM as the CIDFont object that will hold a reference to it
+                     */
+                    pfcid1->memory == pfcid->memory &&
                     bytes_compare(o->value.const_bytes, r_size(o),
                             pfcid1->cidata.common.CIDSystemInfo.Ordering.data,
                             pfcid1->cidata.common.CIDSystemInfo.Ordering.size)) {
@@ -441,6 +445,7 @@ zbuildfont11(i_ctx_t *i_ctx_p)
                 }
             }
         }
+
         if (subst == NULL) {
             rc_alloc_struct_1(subst, gs_subst_CID_on_WMode_t, &st_subst_CID_on_WMode,
                             pfcid->memory, return_error(e_VMerror), "zbuildfont11");
