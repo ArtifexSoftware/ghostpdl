@@ -140,10 +140,7 @@ typedef struct pcl_xfm_state_s
     coord_point_t lp_size;
     coord_point_t pd_size;
 
-    /* printable region in logical page and device space */
     gs_rect lp_print_rect;
-    gs_fixed_rect dev_print_rect;
-
 } pcl_xfm_state_t;
 
 /*

@@ -575,15 +575,6 @@ hpgl_set_clipping_region(hpgl_state_t * pgls,
         fixed_box.p.y = float2fixed(floor(dev_clip_box.p.y));
         fixed_box.q.x = float2fixed(ceil(dev_clip_box.q.x));
         fixed_box.q.y = float2fixed(ceil(dev_clip_box.q.y));
-        /* intersect with pcl clipping region */
-        fixed_box.p.x =
-            max(fixed_box.p.x, pgls->xfm_state.dev_print_rect.p.x);
-        fixed_box.p.y =
-            max(fixed_box.p.y, pgls->xfm_state.dev_print_rect.p.y);
-        fixed_box.q.x =
-            min(fixed_box.q.x, pgls->xfm_state.dev_print_rect.q.x);
-        fixed_box.q.y =
-            min(fixed_box.q.y, pgls->xfm_state.dev_print_rect.q.y);
         hpgl_call(gx_clip_to_rectangle(pgls->pgs, &fixed_box));
     }
     return 0;

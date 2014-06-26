@@ -257,10 +257,6 @@ update_xfm_state(pcl_state_t * pcs, bool reset_initial)
                                     inch2coord(pdev->HWMargins[3] / 72.0));
         }
         pcl_transform_rect(pcs->memory, &print_rect, &dev_rect, &pg2dev);
-        pxfmst->dev_print_rect.p.x = float2fixed(round(dev_rect.p.x));
-        pxfmst->dev_print_rect.p.y = float2fixed(round(dev_rect.p.y));
-        pxfmst->dev_print_rect.q.x = float2fixed(round(dev_rect.q.x));
-        pxfmst->dev_print_rect.q.y = float2fixed(round(dev_rect.q.y));
     }
     pcl_invert_mtx(&(pxfmst->lp2pg_mtx), &pg2lp);
     pcl_transform_rect(pcs->memory, &print_rect, &(pxfmst->lp_print_rect),
@@ -495,22 +491,6 @@ pcl_new_logical_page_for_passthrough(pcl_state_t * pcs, int orient,
 
 /* page marking routines */
 
-/* set page marked for path drawing commands.  NB doesn't handle 0 width - lenghth */
-void
-pcl_mark_page_for_path(pcl_state_t * pcs)
-{
-    if (pcs->page_marked)
-        return;
-    {
-        gs_rect bbox;
-
-        bbox.p.x = bbox.p.y = bbox.q.x = bbox.q.y = 0;
-        gs_pathbbox(pcs->pgs, &bbox);
-        if ((bbox.p.x < bbox.q.x) && (bbox.p.y < bbox.q.y))
-            pcs->page_marked = true;
-        return;
-    }
-}
 
 void
 pcl_mark_page_for_current_pos(pcl_state_t * pcs)
@@ -522,31 +502,39 @@ pcl_mark_page_for_current_pos(pcl_state_t * pcs)
     /* convert current point to device space and check if it is inside
        device rectangle for the page */
     {
-        gs_fixed_rect page_bbox_fixed = pcs->xfm_state.dev_print_rect;
-        gs_rect page_bbox_float;
-        gs_point current_pt, dev_pt;
+        gs_fixed_rect page_box;
+        gs_fixed_point pt;
+        int code;
 
-        page_bbox_float.p.x = fixed2float(page_bbox_fixed.p.x);
-        page_bbox_float.p.y = fixed2float(page_bbox_fixed.p.y);
-        page_bbox_float.q.x = fixed2float(page_bbox_fixed.q.x);
-        page_bbox_float.q.y = fixed2float(page_bbox_fixed.q.y);
-
-        if (gs_currentpoint(pcs->pgs, &current_pt) < 0) {
-            dmprintf(pcs->memory, "Not expected to fail\n");
+        code = gx_default_clip_box(pcs->pgs, &page_box);
+        if (code < 0)
+            /* shouldn't happen. */
             return;
-        }
-
-        if (gs_transform(pcs->pgs, current_pt.x, current_pt.y, &dev_pt)) {
-            dmprintf(pcs->memory, "Not expected to fail\n");
+        
+        code = gx_path_current_point(gx_current_path(pcs->pgs), &pt);
+        if (code < 0)
+            /* shouldn't happen */
             return;
-        }
+        
 
         /* half-open lower - not sure this is correct */
-        if (dev_pt.x >= page_bbox_float.p.x &&
-            dev_pt.y >= page_bbox_float.p.y &&
-            dev_pt.x < page_bbox_float.q.x && dev_pt.y < page_bbox_float.q.y)
+        if (pt.x >= page_box.p.x && pt.y >= page_box.p.y &&
+            pt.x < page_box.q.x && pt.y < page_box.q.y)
             pcs->page_marked = true;
     }
+}
+
+/* 
+ *  Just use the current position to see if we marked the page.  This
+ *  could be improved by using the bounding box of the path object but
+ *  for page marking that case does not seem to come up in practice.
+ */
+void
+pcl_mark_page_for_path(pcl_state_t * pcs)
+{
+
+    pcl_mark_page_for_current_pos(pcs);
+    return;
 }
 
 /* returns the bounding box coordinates for the current device and a
