@@ -1001,7 +1001,7 @@ gsicc_get_cat02_cam(float *curr_wp, gs_memory_t *memory)
     if (cam == NULL) {
         gs_throw(gs_error_VMerror, "Allocation of cat02 matrix failed");
     }
-    gsicc_create_compute_cam(curr_wp, &(d50), cam);
+    gsicc_create_compute_cam(&wp, &(d50), cam);
 
     return cam;
 }
