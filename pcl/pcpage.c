@@ -48,7 +48,7 @@
  * device. Since this dimension affects some default values related to rasters,
  * it is important that it be assigned this value.
  */
-#define PRINTABLE_MARGIN_CP inch2coord(1.0 / 6.0)
+#define PRINTABLE_MARGIN_CP inch2coord(0.0)
 
 #define round(x)    (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
 
