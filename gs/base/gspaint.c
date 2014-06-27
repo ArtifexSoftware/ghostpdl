@@ -33,6 +33,7 @@
 #include "gxhldevc.h"
 #include "gsutil.h"
 #include "gxdevsop.h"
+#include "gsicc_cms.h"
 
 /* Define the nominal size for alpha buffers. */
 #define abuf_nominal_SMALL 500

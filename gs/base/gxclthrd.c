@@ -279,7 +279,7 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
     /* If we don't have one large enough already, create an icc cache list */
     if (crdev->num_render_threads > crdev->icc_cache_list_len) {
         void *old = crdev->icc_cache_list;
-        crdev->icc_cache_list = gs_alloc_byte_array(mem->thread_safe_memory,
+        crdev->icc_cache_list = (gsicc_link_cache_t **)gs_alloc_byte_array(mem->thread_safe_memory,
                                     crdev->num_render_threads,
                                     sizeof(void*), "clist_render_setup_threads");
         if (crdev->icc_cache_list == NULL) {
