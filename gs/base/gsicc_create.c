@@ -215,18 +215,6 @@ get_padding(int x)
     return (4 -x%4)%4;
 }
 
-/* Scale the matrix to the ICC encoding */
-static void
-gsicc_scale_matrix(gs_matrix3 *matrix)
-{
-    float *temp = &(matrix->cu.u);
-    int k;
-
-    for (k = 0; k < 9; k++) {
-        temp[k] = temp[k] / (1.0 + (32767.0/32768.0));
-    }
-}
-
 /* For some weird reason I cant link to the one in gscie.c */
 static void
 gsicc_matrix_init(register gs_matrix3 * mat)
@@ -293,22 +281,6 @@ gsicc_matrix3_to_mlut(gs_matrix3 *mat, unsigned short *clut)
         value = (unsigned short) (valueflt*65535.0);
         *curr_ptr ++= value;
     }
-}
-
-static u1Fixed15Number
-double2u1Fixed15Number(float number_in)
-{
-    float value;
-
-    value = number_in/(1.0 + (32767.0/32768.0));
-    value = value * 65535.0;
-    if (value < 0) {
-        value = 0;
-    }
-    if (value > 65535) {
-        value = 65535;
-    }
-    return (u1Fixed15Number) value;
 }
 
 static void 
@@ -664,7 +636,6 @@ add_text_tag(unsigned char *buffer, const char text[], gsicc_tag tag_list[],
             int curr_tag)
 {
     unsigned char *curr_ptr;
-    int len = strlen(text) + 1;
     int k;
 
     curr_ptr = buffer;
@@ -1004,28 +975,6 @@ gsicc_get_cat02_cam(float *curr_wp, gs_memory_t *memory)
     gsicc_create_compute_cam(&wp, &(d50), cam);
 
     return cam;
-}
-
-/* Hardcoded chad for D65 to D50. This should be computed on the fly
-   based upon the PS specified white point and ICC D50. We don't use
-   the chad tag with littleCMS since it takes care of the chromatic
-   adaption itself based upon D50 and the media white point.  */
-static void
-add_chad_data(unsigned char *input_ptr, float *data)
-{
-    unsigned char *curr_ptr = input_ptr;
-  /*  float data[] = {1.04790738171017, 0.0229333845542104, -0.0502016347980104,
-                 0.0296059594177168, 0.990456039910785, -0.01707552919587,
-                 -0.00924679432678241, 0.0150626801401488, 0.751791232609078};*/
-
-    /* Signature should be sf32 */
-    curr_ptr = input_ptr;
-    write_bigendian_4bytes(curr_ptr,icSigS15Fixed16ArrayType);
-    curr_ptr += 4;
-    /* Reserved */
-    memset(curr_ptr,0,4);
-    curr_ptr += 4;
-    add_matrixwithbias(curr_ptr,  &(data[0]), false);
 }
 
 static void
@@ -1832,11 +1781,6 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     gs_cie_abc *pcie = pcs->params.abc;
     bool input_range_ok;
     int code;
-    gs_vector3 d50;
-
-    d50.u = D50_X;
-    d50.v = D50_Y;
-    d50.w = D50_Z;
 
     gsicc_create_init_luta2bpart(&icc_luta2bparts);
     gsicc_matrix_init(&(pcie->common.MatrixLMN));  /* Need this set now */
@@ -2011,11 +1955,6 @@ gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     gs_cie_a *pcie = pcs->params.a;
     bool input_range_ok;
     int code;
-    gs_vector3 d50;
-
-    d50.u = D50_X;
-    d50.v = D50_Y;
-    d50.w = D50_Z;
 
     gsicc_create_init_luta2bpart(&icc_luta2bparts);
     /* Fill in the common stuff */
@@ -2423,7 +2362,6 @@ write_v2_common_data(byte *buffer, int profile_size, icHeader *header,
     gsicc_tag *tag_list, int num_tags, byte *mediawhitept)
 {
     byte *curr_ptr = buffer;
-    int tag_location;
     int k;
 
     /* The header */
@@ -2441,7 +2379,6 @@ write_v2_common_data(byte *buffer, int profile_size, icHeader *header,
     for (k = 0; k< NUMBER_COMMON_TAGS; k++) {
         curr_ptr += tag_list[k].size;
     }
-    tag_location = NUMBER_COMMON_TAGS;
 
     /* Media white point. Get from current profile */
     write_bigendian_4bytes(curr_ptr, icSigXYZType);
@@ -2531,13 +2468,7 @@ create_clut_v2(gsicc_clut *clut, gsicc_link_t *link, int num_in,
     byte *ptr_byte;
     int num_points, index;
     unsigned short input[4], output[4];
-    double max;
     int kk, j, i;
-
-    if (bitdepth == 2)
-        max = 65535.0;
-    else
-        max = 255.0;
 
     clut->clut_num_input = num_in;
     clut->clut_num_output = num_out;
@@ -2754,7 +2685,6 @@ gsicc_create_v2input(const gs_imager_state *pis, icHeader *header, cmm_profile_t
     gs_memory_t *memory = src_profile->memory;
     int last_tag = -1;
     byte *buffer, *curr_ptr;
-    int tag_location;
     gsicc_link_t *link;
     int tag_size;
     gsicc_clut clut;
@@ -2792,7 +2722,6 @@ gsicc_create_v2input(const gs_imager_state *pis, icHeader *header, cmm_profile_t
     /* Write out data */
     curr_ptr = write_v2_common_data(buffer, profile_size, header, tag_list, 
         num_tags, mediawhitept);
-    tag_location = V2_COMMON_TAGS;
 
     /* Now the A2B0 Tag */
     link = get_link(pis, src_profile, lab_profile, gsPERCEPTUAL);
@@ -3179,7 +3108,6 @@ get_xyzprofile(cmm_profile_t *xyz_profile)
     int trc_tag_size = 12;
     byte *buffer, *curr_ptr, *tempptr;
     int tag_location;
-    double white[3];
     gs_memory_t *memory = xyz_profile->memory;
     icS15Fixed16Number temp_XYZ[3];
     byte mediawhitept[12];
@@ -3412,7 +3340,6 @@ gsicc_create_isv2(cmm_profile_t *profile)
 {
     if (profile->vers == ICCVERS_UNKNOWN) {
         int majorvers = profile->buffer[8];
-        int minorvers = profile->buffer[9];
 
         if (majorvers == 2) {
             profile->vers = ICCVERS_2;
