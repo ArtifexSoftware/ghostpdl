@@ -76,12 +76,10 @@ typedef struct pcl_paper_type_s
  * makes the implicit assumption that this transformation matrix is also
  * diagonal, which is the case for all reasonable devices.
  *
- * This structure also maintains a copy of the printable region rectangle in
- * logical page space and device space (the latter in gs_fixed_rect format).
- * The raster module uses the former to calculate default raster destination
- * dimensions and usable raster source dimensions; the latter is needed
- * frequently as the clip window must be re-established prior to each object
- * printed.
+ * This structure also maintains a copy of the printable region
+ * rectangle in logical page space.  It is used by the raster module
+ * to calculate default raster destination dimensions and usable
+ * raster source dimensions.
  *
  * fields:
  *
@@ -118,7 +116,6 @@ typedef struct pcl_paper_type_s
  *
  *      lp_print_rect   printable region rectangle, in logical page space
  *
- *      dev_print_rect  printable region rectangle, in device space
  */
 typedef struct pcl_xfm_state_s
 {
