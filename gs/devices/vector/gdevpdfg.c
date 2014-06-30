@@ -641,6 +641,12 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
     pdf_resource_t *pres = NULL;
     gs_color_space *pcs_save = NULL;
 
+    csi = gs_color_space_get_index(pcs);
+    if (csi == gs_color_space_index_Indexed) {
+        pcs_save = (gs_color_space *)pcs;
+        pcs = pcs->base_space;
+    }
+
     pca = cos_array_alloc(pdev, "pdf_color_space");
     if (pca == 0)
         return_error(gs_error_VMerror);
@@ -720,12 +726,6 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
         return code;
     }
 
-    csi = gs_color_space_get_index(pcs);
-    if (csi == gs_color_space_index_Indexed) {
-        pcs_save = (gs_color_space *)pcs;
-        pcs = pcs->base_space;
-    }
-
     if (code >= 0) {
         byte *name_string;
         uint name_string_length;
@@ -753,7 +753,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
                 COS_FREE(pca, "convert DeviceN");
                 return code;
             }
-            code = cos_array_add_no_copy(psna, &v);
+            code = cos_array_add(psna, &v);
             if (code < 0) {
                 COS_FREE(pca, "convert DeviceN");
                 return code;
