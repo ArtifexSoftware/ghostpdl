@@ -36,9 +36,9 @@
 #include "gsfcmap.h"        /* For gs_cmap_ToUnicode_free */
 
 /* Define the default language level and PDF compatibility level. */
-/* Acrobat 4 (PDF 1.3) is the default. */
+/* Acrobat 6 (PDF 1.5) is the default. (1.5 for ICC V4 profile support) */
 #define PSDF_VERSION_INITIAL psdf_version_ll3
-#define PDF_COMPATIBILITY_LEVEL_INITIAL 1.4
+#define PDF_COMPATIBILITY_LEVEL_INITIAL 1.5
 
 /* Define the size of internal stream buffers. */
 /* (This is not a limitation, it only affects performance.) */

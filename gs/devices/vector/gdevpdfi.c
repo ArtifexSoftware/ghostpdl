@@ -683,7 +683,7 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
             }
             code = pdf_convert_ICC(pdev, pcs, &cs_value, names);
             if (code == 0) {
-                code = pdf_color_space_named(pdev, &cs_value, &pranges, pcs, names,
+                code = pdf_color_space_named(pdev, pis, &cs_value, &pranges, pcs, names,
                                          in_line, NULL, 0, false);
             }
             if (pcs->cmm_icc_profile_data != NULL &&
@@ -1941,20 +1941,20 @@ new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
             if (code < 0)
                 goto fail_and_fallback;
             image[0].pixel.ColorSpace = pcs_device;
-            code = pdf_color_space_named(pdev, &cs_value, &pranges, pcs_device, names,
+            code = pdf_color_space_named(pdev, pis, &cs_value, &pranges, pcs_device, names,
                                      in_line, NULL, 0, false);
             if (code < 0)
                 goto fail_and_fallback;
         } else {
             if (convert_to_process_colors == 2) {
                 convert_to_process_colors = 0;
-                code = pdf_color_space_named(pdev, &cs_value, &pranges, pcs, names,
+                code = pdf_color_space_named(pdev, pis, &cs_value, &pranges, pcs, names,
                                      in_line, NULL, 0, true);
                 if (code < 0)
                     goto fail_and_fallback;
             } else {
                 convert_to_process_colors = 0;
-                code = pdf_color_space_named(pdev, &cs_value, &pranges, pcs, names,
+                code = pdf_color_space_named(pdev, pis, &cs_value, &pranges, pcs, names,
                                      in_line, NULL, 0, false);
                 if (code < 0)
                     goto fail_and_fallback;

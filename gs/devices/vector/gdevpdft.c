@@ -111,7 +111,7 @@ pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams
     if (gstate != NULL && pparams->group_color != UNKNOWN) {
         const gs_color_space *cs = gs_currentcolorspace_inline(gstate);
 
-        code = pdf_color_space_named(pdev, &cs_value, NULL, cs,
+        code = pdf_color_space_named(pdev, pis, &cs_value, NULL, cs,
                 &pdf_color_space_names, false, NULL, 0, false);
         if (code < 0)
             return code;

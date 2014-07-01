@@ -28,6 +28,7 @@
 #include "gdevpdfc.h"
 #include "gdevpdfo.h"
 #include "strimpl.h"
+#include "gsicc_create.h"
 
 /* ------ CIE space synthesis ------ */
 
@@ -251,7 +252,8 @@ pdf_convert_cie_to_lab(gx_device_pdf *pdev, cos_array_t *pca,
  * the profile data on *ppcstrm.
  */
 static int
-pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
+pdf_make_iccbased(gx_device_pdf *pdev, const gs_imager_state * pis,
+                  cos_array_t *pca, int ncomps,
                   const gs_range *prange /*[4]*/,
                   const gs_color_space *pcs_alt,
                   cos_stream_t **ppcstrm,
@@ -328,7 +330,7 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
         case gs_color_space_index_DeviceCMYK:
             break;			/* implicit (default) */
         default:
-            if ((code = pdf_color_space_named(pdev, &v, NULL, pcs_alt,
+            if ((code = pdf_color_space_named(pdev, pis, &v, NULL, pcs_alt,
                                         &pdf_color_space_names, false, NULL, 0, true)) < 0 ||
                 (code = cos_dict_put_c_key(cos_stream_dict(pcstrm), "/Alternate",
                                            &v)) < 0
@@ -711,7 +713,7 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
     white_d50.w = 0.8249f;
 
     pdf_cspace_init_Device(pdev->memory, &alt_space, ncomps);	/* can't fail */
-    code = pdf_make_iccbased(pdev, pca, ncomps, prange, alt_space,
+    code = pdf_make_iccbased(pdev, NULL, pca, ncomps, prange, alt_space,
                              &pcstrm, pprange);
     rc_decrement_cs(alt_space, "pdf_convert_cie_to_iccbased");
     if (code < 0)
@@ -815,7 +817,7 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
  * broken out only for readability.
  */
 int
-pdf_iccbased_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
+pdf_iccbased_color_space(gx_device_pdf *pdev, const gs_imager_state * pis, cos_value_t *pvalue,
                          const gs_color_space *pcs, cos_array_t *pca)
 {
     /*
@@ -824,7 +826,7 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
      */
     cos_stream_t * pcstrm;
     int code =
-        pdf_make_iccbased(pdev, pca, pcs->cmm_icc_profile_data->num_comps,
+        pdf_make_iccbased(pdev, pis, pca, pcs->cmm_icc_profile_data->num_comps,
                           pcs->cmm_icc_profile_data->Range.ranges,
                           pcs->base_space,
                           &pcstrm, NULL);
@@ -834,8 +836,23 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 
     /* Transfer the buffer data  */
 
-    code = cos_stream_add_bytes(pcstrm, pcs->cmm_icc_profile_data->buffer,
+    /* PDF/A-1 only supports version 2 ICC profiles, and the PDF spec
+     * only supports Version 4 profiles in PDF 1.5 and above
+     */
+    if (pdev->CompatibilityLevel < 1.5 || pdev->PDFA == 1) {
+        byte *v2_buffer;
+        int size;
+
+        if (pis == NULL)
+            return (gs_error_undefined);
+        if (pcs->cmm_icc_profile_data->profile_handle == NULL)
+            gsicc_initialize_default_profile(pcs->cmm_icc_profile_data);
+        v2_buffer = gsicc_create_getv2buffer(pis, pcs->cmm_icc_profile_data, &size);
+        code = cos_stream_add_bytes(pcstrm, v2_buffer, size);
+    }else{
+        code = cos_stream_add_bytes(pcstrm, pcs->cmm_icc_profile_data->buffer,
         pcs->cmm_icc_profile_data->buffer_size);
+    }
 
     if (code >= 0)
         code = pdf_finish_iccbased(pcstrm);

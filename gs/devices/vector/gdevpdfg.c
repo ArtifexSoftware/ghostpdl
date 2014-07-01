@@ -514,7 +514,7 @@ static int write_color_unchanged(gx_device_pdf * pdev, const gs_imager_state * p
             if (!gx_hld_saved_color_same_cspace(current, psc)) {
                 cos_value_t cs_value;
 
-                code = pdf_color_space_named(pdev, &cs_value, (const gs_range_t **)&ranges, pcs,
+                code = pdf_color_space_named(pdev, pis, &cs_value, (const gs_range_t **)&ranges, pcs,
                                 &pdf_color_space_names, true, NULL, 0, false);
                 /* fixme : creates redundant PDF objects. */
                 if (code == gs_error_rangecheck) {
@@ -598,7 +598,7 @@ static int write_color_as_process_ICC(gx_device_pdf * pdev, const gs_imager_stat
     cos_value_t cs_value;
 
     if (!gx_hld_saved_color_same_cspace(current, psc)) {
-        code = pdf_color_space_named(pdev, &cs_value, NULL, pcs,
+        code = pdf_color_space_named(pdev, pis, &cs_value, NULL, pcs,
                         &pdf_color_space_names, true, NULL, 0, true);
         /* fixme : creates redundant PDF objects. */
         if (code == gs_error_rangecheck) {
@@ -794,7 +794,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
                     COS_FREE(pca, "convert DeviceN");
                     return code;
                 }
-                code = pdf_color_space_named(pdev, &v_separation, NULL, csa->cspace, &pdf_color_space_names, false, NULL, 0, false);
+                code = pdf_color_space_named(pdev, pis, &v_separation, NULL, csa->cspace, &pdf_color_space_names, false, NULL, 0, false);
                 if (code < 0) {
                     COS_FREE(pca, "convert DeviceN");
                     return code;
@@ -894,7 +894,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
         pcs = pcs_save;
         discard(COS_OBJECT_VALUE(&value, pca));
         pca1 = cos_array_alloc(pdev, "pdf_color_space");
-        code = pdf_indexed_color_space(pdev, &value, pcs, pca1, (cos_value_t *)&value);
+        code = pdf_indexed_color_space(pdev, pis, &value, pcs, pca1, (cos_value_t *)&value);
         pca = pca1;
 
         /*
@@ -1123,7 +1123,7 @@ int convert_separation_alternate(gx_device_pdf * pdev, const gs_imager_state * p
 
         discard(COS_OBJECT_VALUE(&value, pca));
         pca1 = cos_array_alloc(pdev, "pdf_color_space");
-        code = pdf_indexed_color_space(pdev, &value, pcs, pca1, (cos_value_t *)&value);
+        code = pdf_indexed_color_space(pdev, pis, &value, pcs, pca1, (cos_value_t *)&value);
         pca = pca1;
 
         /*
@@ -1251,7 +1251,7 @@ static int new_pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis
                         return_error(gs_error_rangecheck);
                     if (!is_pattern2_allowed_in_strategy(pdev, pdc))
                         return_error(gs_error_rangecheck);
-                    code1 = pdf_put_pattern2(pdev, pdc, ppscc, &pres);
+                    code1 = pdf_put_pattern2(pdev, pis, pdc, ppscc, &pres);
                     if (code1 < 0)
                         return code1;
                 } else
@@ -1748,7 +1748,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
                 scn:
                     command = ppscc->setcolorn;
                     if (!gx_hld_saved_color_same_cspace(&temp, psc)) {
-                        code = pdf_color_space_named(pdev, &cs_value, (const gs_range_t **)&ranges, pcs,
+                        code = pdf_color_space_named(pdev, pis, &cs_value, (const gs_range_t **)&ranges, pcs,
                                         &pdf_color_space_names, true, NULL, 0, false);
                         /* fixme : creates redundant PDF objects. */
                         if (code == gs_error_rangecheck) {
@@ -1815,7 +1815,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
                         return_error(gs_error_rangecheck);
                     if (!is_pattern2_allowed_in_strategy(pdev, pdc))
                         return_error(gs_error_rangecheck);
-                    code1 = pdf_put_pattern2(pdev, pdc, ppscc, &pres);
+                    code1 = pdf_put_pattern2(pdev, pis, pdc, ppscc, &pres);
                 } else
                     return_error(gs_error_rangecheck);
                 if (code < 0)

@@ -466,7 +466,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
      * We don't have to worry about color space scaling: the color
      * space is always a Device space.
      */
-    code = pdf_color_space_named(pdev, &cs_value, NULL, pcs_Device,
+    code = pdf_color_space_named(pdev, NULL, &cs_value, NULL, pcs_Device,
                            &pdf_color_space_names, true, NULL, 0, false);
     if (code < 0)
         return code;
@@ -523,7 +523,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 
 /* Write parameters common to all Shadings. */
 static int
-pdf_put_shading_common(cos_dict_t *pscd, const gs_shading_t *psh,
+pdf_put_shading_common(cos_dict_t *pscd, const gs_imager_state * pis, const gs_shading_t *psh,
                        bool shfill, const gs_range_t **ppranges)
 {
     gs_shading_type_t type = ShadingType(psh);
@@ -534,7 +534,7 @@ pdf_put_shading_common(cos_dict_t *pscd, const gs_shading_t *psh,
     if (code < 0 ||
         (psh->params.AntiAlias &&
          (code = cos_dict_put_c_strings(pscd, "/AntiAlias", "true")) < 0) ||
-        (code = pdf_color_space_named(pscd->pdev, &cs_value, ppranges, pcs,
+        (code = pdf_color_space_named(pscd->pdev, pis, &cs_value, ppranges, pcs,
                                 &pdf_color_space_names, false, NULL, 0, false)) < 0 ||
         (code = cos_dict_put_c_key(pscd, "/ColorSpace", &cs_value)) < 0
         )
@@ -921,7 +921,7 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 
 /* Write a PatternType 2 (shading pattern) color. */
 int
-pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
+pdf_put_pattern2(gx_device_pdf *pdev, const gs_imager_state * pis, const gx_drawing_color *pdc,
                  const psdf_set_color_commands_t *ppscc,
                  pdf_resource_t **ppres)
 {
@@ -953,7 +953,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     if (ShadingType(psh) >= 4) {
         /* Shading has an associated data stream. */
         cos_become(psco, cos_type_stream);
-        code = pdf_put_shading_common(cos_stream_dict((cos_stream_t *)psco),
+        code = pdf_put_shading_common(cos_stream_dict((cos_stream_t *)psco), pis,
                                       psh, pinst->shfill, &pranges);
         if (code >= 0)
             code1 = pdf_put_mesh_shading((cos_stream_t *)psco, psh, pranges);
@@ -962,7 +962,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
             psres->where_used = 0;
     } else {
         cos_become(psco, cos_type_dict);
-        code = pdf_put_shading_common((cos_dict_t *)psco, psh, pinst->shfill, &pranges);
+        code = pdf_put_shading_common((cos_dict_t *)psco, pis, psh, pinst->shfill, &pranges);
         if (code >= 0)
             code = pdf_put_scalar_shading((cos_dict_t *)psco, psh, pranges);
         else
@@ -1021,6 +1021,6 @@ gdev_pdf_include_color_space(gx_device *dev, gs_color_space *cspace, const byte 
     gx_device_pdf * pdev = (gx_device_pdf *)dev;
     cos_value_t cs_value;
 
-    return pdf_color_space_named(pdev, &cs_value, NULL, cspace,
+    return pdf_color_space_named(pdev, NULL, &cs_value, NULL, cspace,
                                 &pdf_color_space_names, true, res_name, name_length, false);
 }

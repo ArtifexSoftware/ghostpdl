@@ -278,7 +278,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
          * We don't have to worry about color space scaling: the color
          * space is always a Device space.
          */
-        code = pdf_color_space_named(pdev, &cs_value, NULL, pcs,
+        code = pdf_color_space_named(pdev, NULL, &cs_value, NULL, pcs,
                                &writer.pin->color_spaces, in_line, NULL, 0, false);
         if (code < 0)
             return code;
@@ -432,7 +432,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     pdf_image_writer_init(piw);
     pdev->ParamCompatibilityLevel = pdev->CompatibilityLevel;
     if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
-        (code = pdf_color_space_named(pdev, &cs_value, NULL, pcs,
+        (code = pdf_color_space_named(pdev, NULL, &cs_value, NULL, pcs,
                                 &piw->pin->color_spaces, in_line, NULL, 0, false)) < 0 ||
         (for_pattern < 2 || nbytes < 512000 ?
             (code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,
