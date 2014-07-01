@@ -1052,7 +1052,7 @@ int convert_separation_alternate(gx_device_pdf * pdev, const gs_imager_state * p
             return code;
         }
 
-        code = cos_array_add_no_copy(pca, &v);
+        code = cos_array_add(pca, &v);
         if (code < 0) {
             COS_FREE(pca, "pdf_color_space");
             return code;
