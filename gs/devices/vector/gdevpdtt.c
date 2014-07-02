@@ -2932,6 +2932,8 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
     gs_const_string gnstr;
     int code;
 
+    if (pte_default->returned.current_glyph == GS_NO_GLYPH)
+        return gs_error_undefined;
     code = pdf_choose_output_glyph_hame(pdev, penum, &gnstr, pte_default->returned.current_glyph);
     if (code < 0) {
         return code;
