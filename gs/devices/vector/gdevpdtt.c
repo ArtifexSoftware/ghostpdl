@@ -3182,7 +3182,6 @@ pdf_text_process(gs_text_enum_t *pte)
                  */
                 gs_show_enum psenum = *(gs_show_enum *)pte_default;
                 gs_state *pgs = (gs_state *)penum->pis;
-                gs_text_enum_procs_t const *save_procs = pte_default->procs;
                 gs_text_enum_procs_t special_procs = *pte_default->procs;
                 void (*save_proc)(gx_device *, gs_matrix *) = pdev->procs.get_initial_matrix;
                 extern_st(st_gs_show_enum);
@@ -3273,6 +3272,11 @@ pdf_text_process(gs_text_enum_t *pte)
                 if (code < 0)
                     return code;
 
+                /* complete_charproc will release the text enumerator 'pte_default', we assume
+                 * that we are holding the only reference to it. Note that complete_charproc
+                 * also sets penum->pte_default to 0, so that we don't re-entre this  section of
+                 * code but process the text normally, now that we have captured the glyph description.
+                 */
                 code = complete_charproc(pdev, pte, pte_default, penum, false);
                 if (penum->current_font->FontType == ft_PCL_user_defined)
                 {
@@ -3351,7 +3355,6 @@ pdf_text_process(gs_text_enum_t *pte)
 
                     pdfont->u.simple.s.type3.cached[cdata[pte->index] >> 3] |= 0x80 >> (cdata[pte->index] & 7);
                 }
-                pte_default->procs = save_procs;
                 size = pte->text.size - pte->index;
                 if (code < 0)
                     return code;
