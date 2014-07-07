@@ -2309,16 +2309,23 @@ pdf_close(gx_device * dev)
     FILE *tfile = pdev->xref.file;
     gs_offset_t xref = 0;
     gs_offset_t resource_pos;
-    long Catalog_id = pdev->Catalog->id, Info_id = pdev->Info->id,
-        Pages_id = pdev->Pages->id, Encrypt_id = 0;
+    long Catalog_id = 0, Info_id = 0,
+        Pages_id = 0, Encrypt_id = 0;
     long Threads_id = 0;
     bool partial_page = (pdev->contents_id != 0 && pdev->next_page != 0);
     int code = 0, code1, pagecount=0;
     int64_t start_section, end_section;
     char str[256];
-
-
     pdf_linearisation_t linear_params;
+
+    if (!dev->is_open)
+        return gs_error_undefined;
+    dev->is_open = false;
+
+    Catalog_id = pdev->Catalog->id;
+    Info_id = pdev->Info->id;
+    Pages_id = pdev->Pages->id;
+
     memset(&linear_params, 0x00, sizeof(linear_params));
     linear_params.Info_id = Info_id;
     linear_params.Pages_id = Pages_id;
