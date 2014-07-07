@@ -29,6 +29,7 @@
 #include "gdevpdfo.h"
 #include "strimpl.h"
 #include "gsicc_create.h"
+#include "gsicc_manage.h"
 
 /* ------ CIE space synthesis ------ */
 
