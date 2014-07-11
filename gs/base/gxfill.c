@@ -112,7 +112,7 @@ x_order(const active_line *lp1, const active_line *lp2)
     bool s1;
 
     INCR(order);
-    if (lp1->x_current < lp2->x_current)
+    if (!lp1 || !lp2 || lp1->x_current < lp2->x_current)
         return -1;
     else if (lp1->x_current > lp2->x_current)
         return 1;
@@ -252,6 +252,9 @@ init_line_list(line_list *ll, gs_memory_t * mem)
     ll->local_margin_alloc_count = 0;
     ll->margin_set0.sect = ll->local_section0;
     ll->margin_set1.sect = ll->local_section1;
+
+    ll->x_head.prev = NULL;
+
     /* Do not initialize ll->bbox_left, ll->bbox_width - they were set in advance. */
     INCR(fill);
 }
@@ -1274,7 +1277,8 @@ insert_x_new(active_line * alp, line_list *ll)
     alp->prev = prev;
     if (next != 0)
         next->prev = alp;
-    prev->next = alp;
+    if (prev)
+        prev->next = alp;
 }
 
 /* Insert a newly active line in the h list. */
@@ -1618,7 +1622,9 @@ resort_x_line(active_line * alp)
     /* next might be null, if alp was in the correct spot already. */
     if (next)
         next->prev = alp;
-    prev->next = alp;
+    /* prev can be null if the path reaches (beyond) the extent of our coordinate space */
+    if (prev)
+        prev->next = alp;
 }
 
 /* Move active lines by Y. */
