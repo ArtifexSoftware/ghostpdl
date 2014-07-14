@@ -165,7 +165,7 @@ pcl_duplex_page_side_select(pcl_args_t * pargs, pcl_state_t * pcs)
 
     /* oddly the command goes to the next page irrespective of
        arguments */
-    code = pcl_end_page_always(pcs);
+    code = pcl_end_page_if_marked(pcs);
     if (code < 0)
         return code;
     pcl_home_cursor(pcs);
