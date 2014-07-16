@@ -909,7 +909,7 @@ xps_setfillcolor(gx_device_vector *vdev, const gs_imager_state *pis, const gx_dr
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
 
-    if_debug1m('_', xps->memory, "xps_setfillcolor:%06X\n", (uint)gx_dc_pure_color(pdc));
+    if_debug1m('_', xps->memory, "xps_setfillcolor:%06X\n", (uint32_t)gx_dc_pure_color(pdc));
     
     return set_state_color(vdev, pdc, &xps->fillcolor);
 }
@@ -919,7 +919,7 @@ xps_setstrokecolor(gx_device_vector *vdev, const gs_imager_state *pis, const gx_
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
     
-    if_debug1m('_', xps->memory, "xps_setstrokecolor:%06X\n", (uint)gx_dc_pure_color(pdc));
+    if_debug1m('_', xps->memory, "xps_setstrokecolor:%06X\n", (uint32_t)gx_dc_pure_color(pdc));
     
     return set_state_color(vdev, pdc, &xps->strokecolor);
 }
@@ -1071,7 +1071,7 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
     gx_device_xps *xps = (gx_device_xps *)vdev;
     char line[300];
     const char *fmt;
-    gx_color_index c;
+    uint32_t c;
 
     (void)gdev_vector_stream((gx_device_vector*)xps);
 
@@ -1153,7 +1153,7 @@ xps_beginpath(gx_device_vector *vdev, gx_path_type_t type)
 {
     char line[300];
     gx_device_xps *xps = (gx_device_xps *)vdev;
-    gx_color_index c;
+    uint32_t c;
     const char *fmt;
     
     (void)gdev_vector_stream((gx_device_vector*)xps);
