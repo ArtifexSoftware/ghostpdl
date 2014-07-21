@@ -511,7 +511,12 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
     gx_path *path = path0;
     pdf_text_enum_t *penum;
     int code, user_defined = 0;
-
+    
+    /* should we "flatten" the font to "normal" marking operations */
+    if (font->dir->ccache.upper == 0)
+        return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
+                                         pcpath, mem, ppte);
+    
     /* Track the dominant text rotation. */
     {
         gs_matrix tmat;
