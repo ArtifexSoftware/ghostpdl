@@ -513,9 +513,11 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
     int code, user_defined = 0;
     
     /* should we "flatten" the font to "normal" marking operations */
-    if (font->dir->ccache.upper == 0)
+    if (pdev->FlattenFonts) {
+        font->dir->ccache.upper = 0;
         return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
                                          pcpath, mem, ppte);
+    }
     
     /* Track the dominant text rotation. */
     {

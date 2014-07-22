@@ -126,6 +126,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("NoT3CCITT", gs_param_type_bool, NoT3CCITT),
     pi("PDFUseOldCMS", gs_param_type_bool, UseOldColor),
     pi("FastWebView", gs_param_type_bool, Linearise),
+    pi("NoOutputFonts", gs_param_type_bool, FlattenFonts),
     pi("FirstPage", gs_param_type_int, FirstPage),
     pi("LastPage", gs_param_type_int, LastPage),
 #undef pi
@@ -736,6 +737,8 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         pdev->Linearise = false;
     }
 
+    if (pdev->FlattenFonts)
+        pdev->PreserveTrMode = false;
     return 0;
  fail:
     /* Restore all the parameters to their original state. */

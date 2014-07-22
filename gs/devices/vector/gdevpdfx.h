@@ -880,6 +880,7 @@ struct gx_device_pdf_s {
                                      * closedevice and, if there are no marks, we should delete
                                      * the last file *if* we are emitting one file per page.
                                      */
+    bool FlattenFonts;
 };
 
 #define is_in_page(pdev)\

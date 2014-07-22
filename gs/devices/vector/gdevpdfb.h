@@ -281,5 +281,6 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,                     /* LastPage (from the command line) */
  0,                     /* pointer to resourceusage */
  0,                     /* Size of resourceusage */
- false                  /* called from output_page */
+ false,                 /* called from output_page */
+ false                  /* FlattenFonts, writes text as outlines instead of fonts */
 };

@@ -209,6 +209,17 @@ file will of course be larger this way.
 We do not attempt to preserve Form XObjects from PDF files, unless they
 are associaed with transparency groups.
 
+<dt><code>-dNoOutputFonts</code></dt><dd>Ordinarily the pdfwrite device
+goes to considerable lengths to preserve fonts from the input as fonts
+in the output. However in some highly specific cases it can be useful to
+have the text emitted as linework/bitmpas instead. Setting this switch
+will prevent pdfwrite (and ps2write) from emitting any fonts, all text
+will be stored as vectors (or bitmaps in the case of bitmapped fonts)
+in the page content stream. Note that this will produce larger output
+which will process more slowly, render differently and particularly
+at lower resolution produce less consistent text rendering. Use with
+caution.
+
 </dl>
 
 <p>
@@ -760,9 +771,6 @@ and if the alternate space is not appropriate a new alternate space will be crea
 when the <code>ColorConversionStrategy</code> is set to <code>CMYK</code> would be converted to [/Separation (MyColor) /DeviceCMYK {...}]
 The new tint transform would be created by sampling the original tint transform, converting the RGB values into CMYK, and then creating
 a function to linearly interpolate between those values.</p>
-<p>Finally, because the PDF/A-1 specificatin requires that ICC profiles be Version 2, and we do not yet have a means to
-guarantee that the profiles we create will be version 2 profiles, if you select PDF/A-1 conformance the code will
-automatically use the old CMS.
 </p>
 <hr>
 
