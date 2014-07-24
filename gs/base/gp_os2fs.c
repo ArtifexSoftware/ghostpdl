@@ -262,6 +262,34 @@ gp_fopen(const char *fname, const char *mode)
     return fopen(fname, mode);
 }
 
+int gp_can_share_fdesc(void)
+{
+    return 0;
+}
+
+FILE *gp_open_scratch_file_rm(const gs_memory_t *mem,
+                              const char        *prefix,
+                                    char         fname[gp_file_name_sizeof],
+                              const char        *mode)
+{
+    return NULL;
+}
+
+FILE *gp_fdup(FILE *f, const char *mode)
+{
+    return NULL;
+}
+
+int gp_fpread(char *buf, uint count, int64_t offset, FILE *f)
+{
+    return -1;
+}
+
+int gp_fpwrite(char *buf, uint count, int64_t offset, FILE *f)
+{
+    return -1;
+}
+
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */
 
 uint gp_file_name_root(const char *fname, uint len)

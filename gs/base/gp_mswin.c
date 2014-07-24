@@ -612,11 +612,12 @@ FILE *mswin_popen(const char *cmd, const char *mode)
 
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
-FILE *
-gp_open_scratch_file(const gs_memory_t *mem,
-                     const char        *prefix,
-                           char        *fname,
-                     const char        *mode)
+static FILE *
+gp_open_scratch_file_generic(const gs_memory_t *mem,
+                             const char        *prefix,
+                                   char        *fname,
+                             const char        *mode,
+                                   int          remove)
 {
     UINT n;
     DWORD l;
@@ -721,26 +722,19 @@ gp_open_scratch_file(const gs_memory_t *mem,
                 hfile = CreateFile2(uni,
                                     GENERIC_READ | GENERIC_WRITE | DELETE,
                                     FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                    CREATE_ALWAYS,
+                                    CREATE_ALWAYS | (remove ? FILE_FLAG_DELETE_ON_CLOSE : 0),
                                     NULL);
 #else
                 hfile = CreateFileW(uni,
                                     GENERIC_READ | GENERIC_WRITE | DELETE,
                                     FILE_SHARE_READ | FILE_SHARE_WRITE,
                                     NULL, CREATE_ALWAYS,
-                                    FILE_ATTRIBUTE_NORMAL /* | FILE_FLAG_DELETE_ON_CLOSE */,
+                                    FILE_ATTRIBUTE_NORMAL | (remove ? FILE_FLAG_DELETE_ON_CLOSE : 0),
                                     NULL);
 #endif
                 free(uni);
             }
 #endif
-            /*
-             * Can't apply FILE_FLAG_DELETE_ON_CLOSE due to
-             * the logics of clist_fclose. Also note that
-             * gdev_prn_render_pages requires multiple temporary files
-             * to exist simultaneousely, so that keeping all them opened
-             * may exceed available CRTL file handles.
-             */
         }
     }
     if (hfile != INVALID_HANDLE_VALUE) {
@@ -769,6 +763,24 @@ gp_open_scratch_file(const gs_memory_t *mem,
     return f;
 }
 
+FILE *
+gp_open_scratch_file(const gs_memory_t *mem,
+                     const char        *prefix,
+                           char        *fname,
+                     const char        *mode)
+{
+    return gp_open_scratch_file_generic(mem, prefix, fname, mode, 0);
+}
+
+FILE *
+gp_open_scratch_file_rm(const gs_memory_t *mem,
+                        const char        *prefix,
+                              char        *fname,
+                        const char        *mode)
+{
+    return gp_open_scratch_file_generic(mem, prefix, fname, mode, 1);
+}
+
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
 FILE *
 gp_fopen(const char *fname, const char *mode)
@@ -792,6 +804,66 @@ gp_fopen(const char *fname, const char *mode)
     free(uni);
     return file;
 #endif
+}
+
+/* test whether gp_fdup is supported on this platform  */
+int gp_can_share_fdesc(void)
+{
+    return 1;
+}
+
+/* Create a second open FILE on the basis of a given one */
+FILE *gp_fdup(FILE *f, const char *mode)
+{
+    int fd = fileno(f);
+    if (fd < 0)
+        return NULL;
+
+    fd = dup(fd);
+    if (fd < 0)
+        return NULL;
+
+    return fdopen(fd, mode);
+}
+
+/* Read from a specified offset within a FILE into a buffer */
+int gp_fpread(char *buf, uint count, int64_t offset, FILE *f)
+{
+    OVERLAPPED overlapped;
+    DWORD ret;
+    HANDLE hnd = _get_osfhandle(fileno(f));
+
+    if (hnd == INVALID_HANDLE_VALUE)
+        return -1;
+
+    memset(&overlapped, 0, sizeof(OVERLAPPED));
+    overlapped.Offset = (DWORD)offset;
+    overlapped.OffsetHigh = (DWORD)(offset >> 32);
+
+    if (!ReadFile((HANDLE)hnd, buf, count, &ret, &overlapped))
+        return -1;
+
+    return ret;
+}
+
+/* Write to a specified offset within a FILE from a buffer */
+int gp_fpwrite(char *buf, uint count, int64_t offset, FILE *f)
+{
+    OVERLAPPED overlapped;
+    DWORD ret;
+    HANDLE hnd = _get_osfhandle(fileno(f));
+
+    if (hnd == INVALID_HANDLE_VALUE)
+        return -1;
+
+    memset(&overlapped, 0, sizeof(OVERLAPPED));
+    overlapped.Offset = (DWORD)offset;
+    overlapped.OffsetHigh = (DWORD)(offset >> 32);
+
+    if (!WriteFile((HANDLE)hnd, buf, count, &ret, &overlapped))
+        return -1;
+
+    return ret;
 }
 
 /* ------ Font enumeration ------ */

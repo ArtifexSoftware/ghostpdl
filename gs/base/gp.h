@@ -232,6 +232,24 @@ FILE *gp_open_scratch_file(const gs_memory_t *mem,
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
 FILE *gp_fopen(const char *fname, const char *mode);
 
+/* Test whether this platform supports the sharing of file descriptors */
+int gp_can_share_fdesc(void);
+
+/* Create a self-deleting scratch file */
+FILE *gp_open_scratch_file_rm(const gs_memory_t *mem,
+                              const char        *prefix,
+                                    char         fname[gp_file_name_sizeof],
+                              const char        *mode);
+
+/* Create a second open FILE on the basis of a given one */
+FILE *gp_fdup(FILE *f, const char *mode);
+
+/* Read from a specified offset within a FILE into a buffer */
+int gp_fpread(char *buf, uint count, int64_t offset, FILE *f);
+
+/* Write to a specified offset within a FILE from a buffer */
+int gp_fpwrite(char *buf, uint count, int64_t offset, FILE *f);
+
 /* Force given file into binary mode (no eol translations, etc) */
 /* if 2nd param true, text mode if 2nd param false */
 int gp_setmode_binary(FILE * pfile, bool mode);

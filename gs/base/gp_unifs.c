@@ -151,6 +151,46 @@ gp_fopen(const char *fname, const char *mode)
     return fopen(fname, mode);
 }
 
+int gp_can_share_fdesc(void)
+{
+    return 1;
+}
+
+FILE *gp_open_scratch_file_rm(const gs_memory_t *mem,
+                              const char        *prefix,
+                                    char         fname[gp_file_name_sizeof],
+                              const char        *mode)
+{
+    FILE *f = gp_open_scratch_file_generic(mem, prefix, fname, mode, false);
+    /* Unlink file immediately to avoid it being left around if the program
+     * is killed. On this platform readers access temp files by cloning the
+     * FILE pointer and without accessing the file by name */
+    if (f)
+        unlink(fname);
+    return f;
+}
+
+FILE *gp_fdup(FILE *f, const char *mode)
+{
+    int fd = fileno(f);
+    if (fd < 0)
+        return NULL;
+    fd = dup(fd);
+    if (fd < 0)
+        return NULL;
+    return fdopen(fd, mode);
+}
+
+int gp_fpread(char *buf, uint count, int64_t offset, FILE *f)
+{
+    return pread(fileno(f), buf, count, offset);
+}
+
+int gp_fpwrite(char *buf, uint count, int64_t offset, FILE *f)
+{
+    return pwrite(fileno(f), buf, count, offset);
+}
+
 /* Set a file into binary or text mode. */
 int
 gp_setmode_binary(FILE * pfile, bool mode)
