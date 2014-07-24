@@ -938,6 +938,8 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
                     "KnockoutBackDrop", buf->backdrop);
         global_index++;
 #endif
+    } else {
+        buf->backdrop = NULL;
     }
 #if RAW_DUMP
     /* Dump the current buffer to see what we have. */
