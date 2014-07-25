@@ -3307,6 +3307,7 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_imager_state	* pis,
     gx_device * target = pdev->target;
     pdf14_device * dev_proto;
     pdf14_device temp_dev_proto;
+    bool has_tags = dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
     int code;
 
     if_debug0m('v', dev->memory, "[v]pdf14_recreate_device\n");
@@ -3324,6 +3325,10 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_imager_state	* pis,
     pdev->log2_align_mod = target->log2_align_mod;
     pdev->is_planar = target->is_planar;
     pdev->procs = dev_proto->procs;
+    if (has_tags) {
+        pdev->procs.encode_color = pdf14_encode_color_tag;
+        pdev->color_info.depth += 8;
+    }
     dev->static_procs = dev_proto->static_procs;
     gx_device_set_procs(dev);
     gx_device_fill_in_procs(dev);
