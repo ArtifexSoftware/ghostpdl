@@ -333,83 +333,88 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
         */
         pfont->data.len_glyphs = NULL;
     } else {
-        /* Now build the len_glyphs array since 'loca' may not be properly sorted */
-        pfont->data.len_glyphs = (uint *)gs_alloc_byte_array(pfont->memory, loca_size, sizeof(uint),
-                                                        "gs_type42_font_init");
-        if (pfont->data.len_glyphs == 0)
-            return_error(gs_error_VMerror);
-        code = gs_font_notify_register((gs_font *)pfont, gs_len_glyphs_release, (void *)pfont);
-        if (code < 0)
-            return code;
-
-        /* The 'loca' may not be in order, so we construct a glyph length array */
-        /* Since 'loca' is usually sorted, first try the simple linear scan to  */
-        /* avoid the need to perform the more expensive process. */
-        glyph_start = get_glyph_offset(pfont, 0);
-        for (i = 1; i < loca_size; i++) {
-            glyph_offset = get_glyph_offset(pfont, i);
-            glyph_length = glyph_offset - glyph_start;
-            if (glyph_length > 0x80000000)
-                break;
-            if (glyph_offset > glyph_size)
-                break;
-            /* out of order loca */
-            pfont->data.len_glyphs[i - 1] = glyph_length;
-            glyph_start = glyph_offset;
+        if (loca_size == 0) {
+            pfont->data.len_glyphs = NULL;
         }
-        if (i < loca_size) {
-            /*
-             * loca was out of order, build the len_glyphs the hard way.
-             * For each glyph, we use the next higher or equal
-             * glyph offset to compute the glyph length.
-             * It assumes no overlapping and no duplicate glyphs.
-             */
-            ulong last_glyph_offset = glyph_size;
-            ulong num_valid_loca_elm = loca_size;
-            long last_offset = 0;
-            gs_type42_font_init_sort_t *psort;
-            gs_type42_font_init_sort_t *psortary =
-                (gs_type42_font_init_sort_t *)gs_alloc_byte_array(pfont->memory,
-                    loca_size, sizeof(gs_type42_font_init_sort_t), "gs_type42_font_init(sort loca)");
-
-            if (psortary == 0)
+        else {
+            /* Now build the len_glyphs array since 'loca' may not be properly sorted */
+            pfont->data.len_glyphs = (uint *)gs_alloc_byte_array(pfont->memory, loca_size, sizeof(uint),
+                                                            "gs_type42_font_init");
+            if (pfont->data.len_glyphs == 0)
                 return_error(gs_error_VMerror);
-            /* loca_size > 0 due to condition above, so we always have the 0th element. */
-            psortary->glyph_num = 0;
-            psortary->glyph_offset = get_glyph_offset(pfont, 0);
-            for (i = 1, psort = psortary + 1; i < loca_size; i++, psort++) {
-                psort->glyph_num = i;
-                psort->glyph_offset = get_glyph_offset(pfont, i);
-                psort[-1].glyph_length = psort->glyph_offset - last_offset;
-                last_offset = psort->glyph_offset;
+            code = gs_font_notify_register((gs_font *)pfont, gs_len_glyphs_release, (void *)pfont);
+            if (code < 0)
+                return code;
+            
+            /* The 'loca' may not be in order, so we construct a glyph length array */
+            /* Since 'loca' is usually sorted, first try the simple linear scan to  */
+            /* avoid the need to perform the more expensive process. */
+            glyph_start = get_glyph_offset(pfont, 0);
+            for (i = 1; i < loca_size; i++) {
+                glyph_offset = get_glyph_offset(pfont, i);
+                glyph_length = glyph_offset - glyph_start;
+                if (glyph_length > 0x80000000)
+                    break;
+                if (glyph_offset > glyph_size)
+                    break;
+                /* out of order loca */
+                pfont->data.len_glyphs[i - 1] = glyph_length;
+                glyph_start = glyph_offset;
             }
-            psort[-1].glyph_length = 0; /* Dummy element. */
-            qsort(psortary, loca_size, sizeof(gs_type42_font_init_sort_t), gs_type42_font_init_compare);
-            while (num_valid_loca_elm > 0 && psortary[num_valid_loca_elm - 1].glyph_offset > glyph_size)
-                num_valid_loca_elm --;
-            if (0 == num_valid_loca_elm)
-                return_error(gs_error_invalidfont);
-            for (i = num_valid_loca_elm; i--;) {
-                long old_length;
-
-                psort = psortary + i;
-                old_length = psort->glyph_length;
-                if (old_length < 0 || old_length > 2000 /*  arbitrary */) {
-                    pfont->data.len_glyphs[psort->glyph_num] = last_glyph_offset - psort->glyph_offset;
-                    /* Note the new length may be so big as old_length. */
-                } else
-                    pfont->data.len_glyphs[psort->glyph_num] = old_length;
-                last_glyph_offset = psort->glyph_offset;
+            if (i < loca_size) {
+                /*
+                 * loca was out of order, build the len_glyphs the hard way.
+                 * For each glyph, we use the next higher or equal
+                 * glyph offset to compute the glyph length.
+                 * It assumes no overlapping and no duplicate glyphs.
+                 */
+                ulong last_glyph_offset = glyph_size;
+                ulong num_valid_loca_elm = loca_size;
+                long last_offset = 0;
+                gs_type42_font_init_sort_t *psort;
+                gs_type42_font_init_sort_t *psortary =
+                    (gs_type42_font_init_sort_t *)gs_alloc_byte_array(pfont->memory,
+                        loca_size, sizeof(gs_type42_font_init_sort_t), "gs_type42_font_init(sort loca)");
+            
+                if (psortary == 0)
+                    return_error(gs_error_VMerror);
+                /* loca_size > 0 due to condition above, so we always have the 0th element. */
+                psortary->glyph_num = 0;
+                psortary->glyph_offset = get_glyph_offset(pfont, 0);
+                for (i = 1, psort = psortary + 1; i < loca_size; i++, psort++) {
+                    psort->glyph_num = i;
+                    psort->glyph_offset = get_glyph_offset(pfont, i);
+                    psort[-1].glyph_length = psort->glyph_offset - last_offset;
+                    last_offset = psort->glyph_offset;
+                }
+                psort[-1].glyph_length = 0; /* Dummy element. */
+                qsort(psortary, loca_size, sizeof(gs_type42_font_init_sort_t), gs_type42_font_init_compare);
+                while (num_valid_loca_elm > 0 && psortary[num_valid_loca_elm - 1].glyph_offset > glyph_size)
+                    num_valid_loca_elm --;
+                if (0 == num_valid_loca_elm)
+                    return_error(gs_error_invalidfont);
+                for (i = num_valid_loca_elm; i--;) {
+                    long old_length;
+            
+                    psort = psortary + i;
+                    old_length = psort->glyph_length;
+                    if (old_length < 0 || old_length > 2000 /*  arbitrary */) {
+                        pfont->data.len_glyphs[psort->glyph_num] = last_glyph_offset - psort->glyph_offset;
+                        /* Note the new length may be so big as old_length. */
+                    } else
+                        pfont->data.len_glyphs[psort->glyph_num] = old_length;
+                    last_glyph_offset = psort->glyph_offset;
+                }
+                for (i = num_valid_loca_elm; i < loca_size; i++) {
+                    psort = psortary + i;
+                    pfont->data.len_glyphs[psort->glyph_num] = 0;
+                }
+                /* Well the last element of len_glyphs is never used.
+                   We compute it because we're interesting whether it is not zero sometimes.
+                   To know that, set a conditional breakpoint at the next statement.
+                 */
+                gs_free_object(pfont->memory, psortary, "gs_type42_font_init(sort loca)");
             }
-            for (i = num_valid_loca_elm; i < loca_size; i++) {
-                psort = psortary + i;
-                pfont->data.len_glyphs[psort->glyph_num] = 0;
-            }
-            /* Well the last element of len_glyphs is never used.
-               We compute it because we're interesting whether it is not zero sometimes.
-               To know that, set a conditional breakpoint at the next statement.
-             */
-            gs_free_object(pfont->memory, psortary, "gs_type42_font_init(sort loca)");
         }
     }
     /*
@@ -616,7 +621,10 @@ default_get_outline(gs_font_type42 * pfont, uint glyph_index,
      if (glyph_index >= pfont->data.trueNumGlyphs)
         return_error(gs_error_invalidfont);
     glyph_start = get_glyph_offset(pfont, glyph_index);
-    glyph_length = pfont->data.len_glyphs[glyph_index];
+    if (pfont->data.len_glyphs)
+        glyph_length = pfont->data.len_glyphs[glyph_index];
+    else
+        glyph_length = 0;
     if (glyph_length == 0)
         gs_glyph_data_from_null(pgd);
     else {
