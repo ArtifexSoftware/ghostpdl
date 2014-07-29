@@ -642,6 +642,11 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
     result->mask_id = 0;
     new_parent_color = gs_alloc_struct(memory, pdf14_parent_color_t, &st_pdf14_clr,
                                                 "pdf14_buf_new");
+    if (new_parent_color == NULL) {
+        gs_free_object(memory, result, "pdf_buf_new");
+        return NULL;
+    }
+
     result->parent_color_info_procs = new_parent_color;
     result->parent_color_info_procs->get_cmap_procs = NULL;
     result->parent_color_info_procs->parent_color_mapping_procs = NULL;
@@ -2055,6 +2060,7 @@ pdf14_discard_trans_layer(gx_device *dev, gs_imager_state * pis)
         }
         /* Finally the context itself */
         gs_free_object (ctx->memory, ctx, "pdf14_discard_trans_layer");
+        pdev->ctx = NULL;
     }
     return 0;
 }
