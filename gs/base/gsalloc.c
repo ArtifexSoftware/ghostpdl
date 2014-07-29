@@ -274,6 +274,7 @@ ialloc_solo(gs_memory_t * parent, gs_memory_type_ptr_t pstype,
     alloc_init_chunk(cp, cdata, cdata + csize, false, (chunk_t *) NULL);
     cp->cbot = cp->ctop;
     cp->cprev = cp->cnext = 0;
+    cp->c_alone = true;
     /* Construct the object header "by hand". */
     obj->o_pad = 0;
     obj->o_alone = 1;
@@ -552,7 +553,8 @@ gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled)
                 gs_alloc_fill(ptr, gs_alloc_fill_alloc, size);
 #define ELSEIF_LIFO_ALLOC(ptr, imem, size, pstype)\
         }\
-        else if ( (imem->cc.ctop - (byte *)(ptr = (obj_header_t *)imem->cc.cbot))\
+        else if ( !imem->cc.c_alone && \
+                (imem->cc.ctop - (byte *)(ptr = (obj_header_t *)imem->cc.cbot))\
                 >= size + (obj_align_mod + sizeof(obj_header_t) * 2) &&\
              size < imem->large_size\
            )\
@@ -1066,6 +1068,8 @@ i_alloc_string_immovable(gs_memory_t * mem, uint nbytes, client_name_t cname)
 
     if (cp == 0)
         return 0;
+    cp->c_alone = true;
+
     str = cp->ctop = cp->climit - nbytes;
     if_debug4m('a', mem, "[a%d|+>L]%s(%u) = 0x%lx\n",
                alloc_trace_space(imem), client_name_string(cname), nbytes,
@@ -1315,6 +1319,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
             return 0;
         if (cp == 0)
             return 0;
+        cp->c_alone = true;
         ptr = (obj_header_t *) cp->cbot;
         cp->cbot += asize;
         ptr->o_pad = 0;
@@ -1344,7 +1349,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
         }
 
 #define CAN_ALLOC_AT_END(cp)\
-  ((cp)->ctop - (byte *) (ptr = (obj_header_t *) (cp)->cbot)\
+  (!((cp)->c_alone) && (cp)->ctop - (byte *) (ptr = (obj_header_t *) (cp)->cbot)\
    > asize + sizeof(obj_header_t))
 
         do {
@@ -1876,6 +1881,7 @@ alloc_init_chunk(chunk_t * cp, byte * bot, byte * top, bool has_strings,
     cp->inner_count = 0;
     cp->has_refs = false;
     cp->sbase = cdata;
+    cp->c_alone = false; /* should be set correctly by caller */
     if (has_strings && top - cdata >= string_space_quantum + sizeof(long) - 1) {
         /*
          * We allocate a large enough string marking and reloc table

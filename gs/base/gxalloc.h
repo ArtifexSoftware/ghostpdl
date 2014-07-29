@@ -154,6 +154,7 @@ struct chunk_s {
     uint inner_count;		/* number of chunks of which this is */
                                 /*   the outer chunk, if any */
     bool has_refs;		/* true if any refs in chunk */
+    bool c_alone;               /* this chunk is for a single allocation */
     /*
      * Free lists for single bytes in blocks of 1 to 2*N-1 bytes, one per
      * 256 bytes in [csbase..climit), where N is sizeof(uint). The chain
