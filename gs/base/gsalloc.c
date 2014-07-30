@@ -992,6 +992,9 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
      */
     chunk_t *cp_orig = imem->pcc;
 
+    if (nbytes + (uint)HDR_ID_OFFSET < nbytes)
+        return NULL;
+
     nbytes += HDR_ID_OFFSET;
 
 #ifdef MEMENTO
