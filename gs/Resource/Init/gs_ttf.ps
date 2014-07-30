@@ -1297,22 +1297,28 @@ mark
     { //true}
     {                                                 % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
       % if we couldn't derive the code point from the AGL, we might derive it
-      % from a formatted "uniXXXX" name.
-      dup 6 index 0 1 15 {1 index exch 0 put} for cvs dup (uni) anchorsearch
+      % from a formatted "uniXXXX" name - the only ones we're interested in are smaller than 16 chars.
+      dup length 16 gt
       {
-        % as luck would have it, we can just replace the "uni" with "16#"
-        % to get something we can convert to a number
-        pop pop dup 0 (16#) putinterval {cvi} stopped
-        {pop //false}
-        {                                             % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname cpoint
-          dup 5 index exch known
-          { //true }
-          { pop //false }
-          ifelse
-        } ifelse
+        //false
       }
-      { pop pop //false}
-      ifelse
+      {
+        dup 6 index 0 1 15 {1 index exch 0 put} for cvs dup (uni) anchorsearch
+        {
+          % as luck would have it, we can just replace the "uni" with "16#"
+          % to get something we can convert to a number
+          pop pop dup 0 (16#) putinterval {cvi} stopped
+          {pop //false}
+          {                                             % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname cpoint
+            dup 5 index exch known
+            { //true }
+            { pop //false }
+            ifelse
+          } ifelse
+        }
+        { pop pop //false}
+        ifelse
+      } ifelse
     } ifelse
 
     {
