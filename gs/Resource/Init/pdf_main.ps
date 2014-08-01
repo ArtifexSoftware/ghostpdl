@@ -459,8 +459,21 @@ pdfdict begin
  {
    pop				% We do not need the position.
    0				% Initialize xref table error counter
+   false            % Have we seen at least one section entry in this xref ? Bug #694342
    { PDFfile token pop		% first object # or trailer
-     dup /trailer eq { pop Objects length 0 eq {/setxrefentry cvx /syntaxerror signalerror} {exit} ifelse } if
+     dup /trailer eq {
+         %% check to see if we have seen at least an empty section for this xref
+        pop {exit}
+        {
+            %% we have not seen any section entries in an xref, not even an empty section (xref 0 0)
+            %% Bug 694342, treat this as an error and rebuild the xref.
+            /setxrefentry cvx /syntaxerror signalerror
+        } ifelse
+     }
+     {
+     %% remove the boolean telling us if we have a section or not, leaving the first object number
+     exch pop
+     } ifelse
      PDFfile token pop		% entry count
  
      % remaining must be whitespace only (otherwise this xref Size was invalid.
@@ -520,6 +533,7 @@ pdfdict begin
        1 add			% increment object number
      } repeat
      pop			% pop <obj #>
+     true           % We have seen at least one entry in an xref section Bug #694342
    } loop
    0 ne {
      (   **** Warning:  length of some xref entries is not equal to 20 bytes.\n)
