@@ -156,9 +156,14 @@ end % A dictionary for local binding
 
 /HexDigits (0123456789ABCDEF) readonly def
 
+%% This routine assumes that a PostScript int is only 32 bits
+%% we partially address that by and'ing 15 with the 4 bits of
+%% data in order to ensure that we don't index off the end of
+%% the string above. However, if the integer is genuinely
+%% more than 32 bits we still only print the first 32.
 /PrintHex  % <int> PrintHex -
 { 8 {
-    dup -28 bitshift //HexDigits exch 1 getinterval //=only exec
+    dup -28 bitshift 15 and //HexDigits exch 1 getinterval //=only exec
     4 bitshift
   } repeat
   pop

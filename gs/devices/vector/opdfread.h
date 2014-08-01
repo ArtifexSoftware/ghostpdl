@@ -111,7 +111,7 @@ const char *opdfread_ps [] = {
 "/HexDigits(0123456789ABCDEF)readonly def\n",
 "/PrintHex\n",
 "{8{\n",
-"dup -28 bitshift//HexDigits exch 1 getinterval//=only exec\n",
+"dup -28 bitshift 15 and//HexDigits exch 1 getinterval//=only exec\n",
 "4 bitshift\n",
 "}repeat\n",
 "pop\n",
