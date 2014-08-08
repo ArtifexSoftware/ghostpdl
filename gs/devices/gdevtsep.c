@@ -2138,7 +2138,6 @@ static int
 print_cmyk_equivalent_colors(tiffsep_device *tfdev, int num_comp, cmyk_composite_map *cmyk_map)
 {
     int comp_num;
-    int num_std_colorants = tfdev->devn_params.num_std_colorant_names;
     char *name = (char *)gs_alloc_bytes(tfdev->memory, gp_file_name_sizeof,
                                 "tiffsep_print_cmyk_equivalent_colors(name)");
 
