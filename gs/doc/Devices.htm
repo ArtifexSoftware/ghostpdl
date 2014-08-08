@@ -690,6 +690,16 @@ axes before error diffusion takes place. For example rendering with
 a 200dpi image.
 </dl></blockquote>
 
+<p>
+The <tt>tiffsep</tt> TIFF
+device also provide this parameter:
+
+<blockquote><dl>
+<dt><code>-dPrintSpotCMYK=<em>boolean</em></code> defaults to false. When set to true
+the device will print (to stdout) the name of each ink used on the page, and the CMYK
+values which are equivalent to 100% of that ink. The values are 16-bits ranging from 0
+to 32760.
+
 
 <h3><a name="fax"></a>FAX</h3>
 

@@ -534,6 +534,7 @@ static dev_proc_output_page(tiffseps_output_page);
     TIFF *tiff[GX_DEVICE_COLOR_MAX_COMPONENTS]; \
     bool  BigEndian;            /* true = big endian; false = little endian */\
     bool  UseBigTIFF;           /* true = output bigtiff, false don't */ \
+    bool  PrintSpotCMYK;        /* true = print CMYK equivalents for spot inks; false = do nothing */\
     uint16 Compression;         /* for the separation files, same values as
                                    TIFFTAG_COMPRESSION */\
     bool close_files; \
@@ -712,6 +713,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
         { 0 },                  /* separation files */\
         arch_is_big_endian      /* true = big endian; false = little endian */,\
         false,                  /* UseBigTIFF */\
+        false,                  /* PrintSpotCMYK */\
         compr                   /* COMPRESSION_* */,\
         true,                   /* close_files */ \
         TIFF_DEFAULT_STRIP_SIZE,/* MaxStripSize */\
@@ -955,6 +957,8 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
         ecode = code;
     if ((code = param_write_int(plist, "MaxSpots", &pdevn->max_spots)) < 0)
         ecode = code;
+    if ((code = param_write_bool(plist, "PrintSpotCMYK", &pdevn->PrintSpotCMYK)) < 0)
+        ecode = code;
 
     return ecode;
 }
@@ -975,6 +979,14 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
 
     /* Read BigEndian option as bool */
     switch (code = param_read_bool(plist, (param_name = "BigEndian"), &pdevn->BigEndian)) {
+        default:
+            param_signal_error(plist, param_name, code);
+            return code;
+        case 0:
+        case 1:
+            break;
+    }
+    switch (code = param_read_bool(plist, (param_name = "PrintSpotCMYK"), &pdevn->PrintSpotCMYK)) {
         default:
             param_signal_error(plist, param_name, code);
             return code;
@@ -2113,6 +2125,64 @@ if ( gs_debug_c('h') ) {
    return thresh;
 }
 
+ /*
+ * This function prints out CMYK value with separation name for every
+ * separation. Where the original alternate colour space was DeviceCMYK, and the output
+ * ICC profile is CMYK, no transformation takes place. Where the original alternate space
+ * was not DeviceCMYK, the colour management system will be used to generate CMYK values
+ * from the original tint transform.
+ * NB if the output profile is DeviceN then we will use the DeviceCMYK profile to map the
+ * equivalents, *not* the DeviceN profile. This is a peculiar case.....
+ */
+static int
+print_cmyk_equivalent_colors(tiffsep_device *tfdev, int num_comp, cmyk_composite_map *cmyk_map)
+{
+    int comp_num;
+    int num_std_colorants = tfdev->devn_params.num_std_colorant_names;
+    char *name = (char *)gs_alloc_bytes(tfdev->memory, gp_file_name_sizeof,
+                                "tiffsep_print_cmyk_equivalent_colors(name)");
+
+    if (!name) {
+        return_error(gs_error_VMerror);
+    }
+
+    for (comp_num = 0; comp_num < num_comp; comp_num++) {
+        int sep_num = tfdev->devn_params.separation_order_map[comp_num];
+
+        if (sep_num < tfdev->devn_params.num_std_colorant_names) {
+            if (gp_file_name_sizeof < strlen(tfdev->devn_params.std_colorant_names[sep_num])) {
+                if (name)
+                    gs_free_object(tfdev->memory, name, "tiffsep_print_cmyk_equivalent_colors(name)");
+                return_error(gs_error_rangecheck);
+            }
+            strcpy(name, tfdev->devn_params.std_colorant_names[sep_num]);
+        } else {
+            sep_num -= tfdev->devn_params.num_std_colorant_names;
+            if (gp_file_name_sizeof < tfdev->devn_params.separations.names[sep_num].size) {
+                if (name)
+                    gs_free_object(tfdev->memory, name, "tiffsep_print_cmyk_equivalent_colors(name)");
+                return_error(gs_error_rangecheck);
+            }
+
+            memcpy(name, (char *)tfdev->devn_params.separations.names[sep_num].data, tfdev->devn_params.separations.names[sep_num].size);
+            name[tfdev->devn_params.separations.names[sep_num].size] = '\0';
+        }
+
+        dmlprintf5(tfdev->memory, "%%%%SeparationColor: \"%s\" 100%% ink = %hd %hd %hd %hd CMYK\n",
+                     name,
+                     cmyk_map[comp_num].c,
+                     cmyk_map[comp_num].m,
+                     cmyk_map[comp_num].y,
+                     cmyk_map[comp_num].k);
+    }
+
+    if (name) {
+        gs_free_object(tfdev->memory, name, "tiffsep_print_cmyk_equivalent_colors(name)");
+    }
+
+    return 0;
+}
+
 /*
  * Output the image data for the tiff separation (tiffsep) device.  The data
  * for the tiffsep device is written in separate planes to separate files.
@@ -2252,6 +2322,12 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     }
 
     build_cmyk_map(tfdev, num_comp, cmyk_map);
+    if (tfdev->PrintSpotCMYK) {
+        code = print_cmyk_equivalent_colors(tfdev, num_comp, cmyk_map);
+        if (code < 0) {
+            goto done;
+        }
+    }
 
     {
         int raster_plane = bitmap_raster(width * 8);
