@@ -919,7 +919,10 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     if (minst->init_done >= 2)
       gs_main_run_string(minst,
         "(%stdout) (w) file closefile (%stderr) (w) file closefile "
-        "serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemvar exec",
+        "/systemdict .systemexec /begin .systemexec"
+        ".uninstallpagedevice"
+        "serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemexec"
+        "end",
         0 , &exit_code, &error_object);
     gp_readline_finit(minst->readline_data);
     i_ctx_p = minst->i_ctx_p;		/* get current interp context */
