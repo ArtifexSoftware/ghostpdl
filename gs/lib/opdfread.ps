@@ -1466,11 +1466,14 @@ end
         /StringOffset StringOffset 4 add     % ()
         def
       } {
-        dup                                  % () loca
-        StringOffset getu16                  % ()
-        LocaArray LocaIndex 3 -1 roll put    % ()
+        StringOffset getu16 2 mul            % () loca
+        LocaArray length LocaIndex gt {      % take account of apdding in the string
+          LocaArray LocaIndex 3 -1 roll put  % ()
+        }{                                   %
+          pop                                % ignore indices off the end of the array
+        }ifelse                              %
         /LocaIndex LocaIndex 1 add def       % ()
-        /StringOffset StringOffset 4 add     % ()
+        /StringOffset StringOffset 2 add     % ()
         def
       } ifelse
     }{                                       % ()
