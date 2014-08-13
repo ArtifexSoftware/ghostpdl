@@ -105,6 +105,8 @@ DEVGEN=$(DEVGENDIR)$(D)
 # +	atx23		Practical Automation ATX-23 label printer
 # +	atx24		Practical Automation ATX-24 label printer
 # +	atx38		Practical Automation ATX-38 label printer
+# +	itk24i		Practical Automation ITK-24i label printer
+# +	itk38		Practical Automation ATK-38 label printer
 # +	deskjet		H-P DeskJet and DeskJet Plus
 #	djet500		H-P DeskJet 500; use -r600 for DJ 600 series
 # +	fs600		Kyocera FS-600 (600 dpi)
@@ -554,6 +556,12 @@ $(DD)atx24.dev : $(DEVS_MAK) $(atx_) $(GLD)page.dev $(GDEV)
 
 $(DD)atx38.dev : $(DEVS_MAK) $(atx_) $(GLD)page.dev $(GDEV)
 	$(SETPDEV2) $(DD)atx38 $(atx_)
+
+$(DD)itk24i.dev : $(DEVS_MAK) $(atx_) $(GLD)page.dev $(GDEV)
+	$(SETPDEV2) $(DD)itk24i $(atx_)
+
+$(DD)itk38.dev : $(DEVS_MAK) $(atx_) $(GLD)page.dev $(GDEV)
+	$(SETPDEV2) $(DD)itk38 $(atx_)
 
 $(DEVOBJ)gdevatx.$(OBJ) : $(DEVSRC)gdevatx.c $(PDEVH) $(math__h) $(GDEV)
 	$(DEVCC) $(DEVO_)gdevatx.$(OBJ) $(C_) $(DEVSRC)gdevatx.c

@@ -13,7 +13,7 @@
    CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* Practical Automation ATX-23, -24, and -38 driver */
+/* Practical Automation ATX-23, -24, -38  and ITK-24i, -38 driver */
 #include "math_.h"
 #include "gdevprn.h"
 
@@ -22,7 +22,10 @@
  * and bottom of the page.  They also have unprintable left/right margins:
  *	ATX-23	0.25"
  *	ATX-24	0.193"
- *	ATS-38	0.25"
+ *	ATX-38	0.25"
+ * The ITK-24i does not have an unprintable left or right margin.
+ * The ITK-38 is identical to the ATX-38 for the purpose of this driver.
+ *
  * The code below assumes that coordinates refer only to the *printable*
  * part of each page.  This is wrong and must eventually be changed.
  */
@@ -40,8 +43,7 @@ static dev_proc_print_page(atx24_print_page);
 static dev_proc_print_page(atx38_print_page);
 
 #define ATX_DEVICE(dname, w10, h10, dpi, lrm, btm, print_page)\
-                     /* The print_page proc is compatible with allowing bg printing */\
-  prn_device_margins(prn_bg_procs, dname, w10, h10, dpi, dpi, 0, 0,\
+  prn_device_margins(prn_std_procs, dname, w10, h10, dpi, dpi, 0, 0,\
                      lrm, btm, lrm, btm, 1, print_page)
 
 const gx_device_printer gs_atx23_device = /* real width = 576 pixels */
@@ -54,6 +56,14 @@ ATX_DEVICE("atx24", 41 /* 4.1" */, 35 /* (minimum) */,
 
 const gx_device_printer gs_atx38_device = /* real width = 2400 pixels */
 ATX_DEVICE("atx38", 80 /* 8.0" */, 35 /* (minimum) */,
+           300, 0.25, 0.125, atx38_print_page);
+
+const gx_device_printer gs_itk24i_device = /* real width = 832 pixels */
+ATX_DEVICE("itk24i", 41 /* 4.1" */, 35 /* (minimum) */,
+           203, 0.0, 0.125, atx24_print_page);
+
+const gx_device_printer gs_itk38_device = /* real width = 2400 pixels */
+ATX_DEVICE("itk38", 80 /* 8.0" */, 35 /* (minimum) */,
            300, 0.25, 0.125, atx38_print_page);
 
 /* Output a printer command with a 2-byte, little-endian numeric argument. */
@@ -254,3 +264,4 @@ atx38_print_page(gx_device_printer *pdev, FILE *f)
 {
     return atx_print_page(pdev, f, 2400 / 8);
 }
+
