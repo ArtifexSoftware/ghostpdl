@@ -105,8 +105,8 @@ DEVGEN=$(DEVGENDIR)$(D)
 # +	atx23		Practical Automation ATX-23 label printer
 # +	atx24		Practical Automation ATX-24 label printer
 # +	atx38		Practical Automation ATX-38 label printer
-# +	itk24i		Practical Automation ITK-24i label printer
-# +	itk38		Practical Automation ATK-38 label printer
+# +	itk24i		Practical Automation ITK-24i thermal kiosk printer
+# +	itk38		Practical Automation ITK-38 thermal kiosk printer
 # +	deskjet		H-P DeskJet and DeskJet Plus
 #	djet500		H-P DeskJet 500; use -r600 for DJ 600 series
 # +	fs600		Kyocera FS-600 (600 dpi)
