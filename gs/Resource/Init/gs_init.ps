@@ -285,6 +285,9 @@ QUIET not { printgreeting flush } if
 /.systemvar {		% <name> .systemvar <value>
   //systemdict exch get
 } .bind odef
+/.systemexec {
+  .systemvar exec
+} .bind odef
 /.userdict {		% - .userdict <dict>
   /userdict .systemvar
 } .bind odef
