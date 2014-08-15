@@ -292,10 +292,6 @@ QUIET not { printgreeting flush } if
   .userdict exch get
 } .bind odef
 
-/.systemexec {
-//.systemvar exec
-} .bind odef
-
 % If we're delaying binding, remember everything that needs to be bound later.
 DELAYBIND NOBIND not and
  { .currentglobal //false .setglobal
