@@ -1498,69 +1498,85 @@ currentdict /jp2_csp_dict .undef
       /JPXDecode eq
     } {
       //false
-    } ifelse { % /JPXDecode tricks
-      dup /ColorSpace oknown
-      1 index /BitsPerComponent oknown and not {
-        % JPXDecode filters can omit the /ColorSpace and /BitsPerComponent
-        % keys, in which case the interpreter must retrieve this information
-        % from inside the compressed stream.
-        dup /IDFlag known {
-          (   **** Warning: PDF spec bans inline JPX images.\n) pdfformaterror
-          % Inline stream is not positionable. Cannot get ColorSpace.
-        } {
-          % Drop the last filter (JPXDecode) from the pipeline
-          dup dup length dict copy
-          dup /Filter oget
-          dup type /arraytype eq {
-            dup length 1 gt {
-              dup length 1 sub 0 exch getinterval
-              1 index exch /Filter exch put
+    } ifelse {
+      % /JPXDecode tricks
 
-              dup /DecodeParms knownoget {
-                dup type /arraytype eq {
-                  dup length 1 gt {
-                    dup length 1 sub 0 exch getinterval
-                    1 index exch /DecodeParms exch put
-                  } {
-                    pop
-                    dup /DecodeParms undef
-                  } ifelse
+      % Previously we only ran the code to extract the Color Space and Bits Per Component
+      % from the JOX stream if the image dict had either BPC or ColorSpace undefined.
+      % However, while this is correct for the ColorSpace, its *not* correct for the BPC.
+      % According to the spec we should ignore any BPC in the image dicitonary and
+      % always use the BPC from the JPX stream.
+      % Now the code in get_jp2_csp always overwrites the ColorSpace (in the image resource dict)
+      % which technically is fine, because the image dictionary entry must be either not present or the
+      % same as the JPX stream. However, this doesn't work, so instead we just save the existing
+      % color space (if any). Then after extracting the color space and BPC from the JPX stream
+      % we put back the saved color space, but only if there was one previously.
+      dup /ColorSpace oknown {
+        dup dup /ColorSpace get /ImageDictColorSpace exch put
+      } if
+      dup /IDFlag known {
+        (   **** Warning: PDF spec bans inline JPX images.\n) pdfformaterror
+        % Inline stream is not positionable. Cannot get ColorSpace.
+      } {
+        % Drop the last filter (JPXDecode) from the pipeline
+        dup dup length dict copy
+        dup /Filter oget
+        dup type /arraytype eq {
+          dup length 1 gt {
+            dup length 1 sub 0 exch getinterval
+            1 index exch /Filter exch put
+
+            dup /DecodeParms knownoget {
+              dup type /arraytype eq {
+                dup length 1 gt {
+                  dup length 1 sub 0 exch getinterval
+                  1 index exch /DecodeParms exch put
                 } {
                   pop
                   dup /DecodeParms undef
                 } ifelse
-              } if
-            } {
-              pop
-              dup /Filter undef
-              dup /DecodeParms undef
-            } ifelse
+              } {
+                pop
+                dup /DecodeParms undef
+              } ifelse
+            } if
           } {
             pop
             dup /Filter undef
             dup /DecodeParms undef
           } ifelse
-
-          //false resolvestream get_jp2_csp
-
-          currentdict /ColorSpace oknown not {
-            currentdict /JPXICC .knownget {
-               [ /ICCBased mark
-                   /DataSource 5 -1 roll
-                   /N currentdict /JPXColors .knownget not {
-                     currentdict /JPXComponents get
-                   } if
-                 .dicttomark
-               ] /ColorSpace exch def
-            } if
-          } if
-
-          { /JPXICC /JPXColors /JPXComponents /JPXOpacity /JPXPremult } {
-            currentdict exch undef
-          } forall
-
+        } {
+          pop
+          dup /Filter undef
+          dup /DecodeParms undef
         } ifelse
-      } if % fi missing csp, bpc
+
+        //false resolvestream get_jp2_csp
+
+        currentdict /ColorSpace oknown not {
+          currentdict /JPXICC .knownget {
+             [ /ICCBased mark
+                 /DataSource 5 -1 roll
+                 /N currentdict /JPXColors .knownget not {
+                   currentdict /JPXComponents get
+                 } if
+               .dicttomark
+             ] /ColorSpace exch def
+          } if
+        } if
+
+        { /JPXICC /JPXColors /JPXComponents /JPXOpacity /JPXPremult } {
+          currentdict exch undef
+        } forall
+
+      } ifelse
+
+      % If we had a Color Space in the image dictionary before we read the JPX
+      % stream, put it back now. We mujst do this before last-ditch-bpc-csp
+      % because that resolves any indirect references to the color space.
+      dup /ImageDictColorSpace known {
+        dup /ImageDictColorSpace get currentdict /ColorSpace 3 -1 roll put
+      } if
 
       //last-ditch-bpc-csp exec
 
