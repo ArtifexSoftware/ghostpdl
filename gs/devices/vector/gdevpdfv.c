@@ -797,8 +797,13 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
             for (i = 0; i < num_comp; ++i) {
                 double rmin, rmax;
 
-                if (pmp->Function || pranges || data_params.Domain == 0)
-                    rmin = 0.0, rmax = 1.0;
+                if (pmp->Function || pranges || data_params.Domain == 0) {
+                    if (pmp->Function && pmp->Function->params.Domain != 0) {
+                        rmin = pmp->Function->params.Domain[0], rmax = pmp->Function->params.Domain[1];
+                    } else {
+                        rmin = 0.0, rmax = 1.0;
+                    }
+                }
                 else
                     rmin = data_params.Domain[2 * i],
                         rmax = data_params.Domain[2 * i + 1];
