@@ -1323,7 +1323,12 @@ end readonly def
   dup 0 ne { div } { pop pop 0 } ifelse                     % MaxLen (V) Ff Q dx dy yy desc/asc
   1 index mul                                               % MaxLen (V) Ff Q dx dy yy desc/asc*yy
 
-  5 index 16#1000 and 0 ne { % multiline
+  %% Check if this is declared as a multiine text widget, and if it is
+  %% check that the string has at least 2 characters, so we can split it
+  %% into at least two strings....
+  %% Bug #687498.pdf has a multiline text widget with an empty string (amongst
+  %% many other problems with this file).
+  5 index 16#1000 and 0 ne 7 index length 1 gt and{ % multiline
     %% First lets see how many lines we have, make a copy of the string
     6 index mark exch .splitstring                      % MaxLen (V) Ff Q dx dy yy desc/asc*yy [ () () ...
     counttomark 1 add 4 add index                       % MaxLen (V) Ff Q dx dy yy desc/asc*yy [ () () ... count Q
