@@ -243,17 +243,42 @@ level2dict begin
 
 % Define currentpagedevice so it creates the dictionary on demand if needed,
 % adding all the required entries defined just above.
+
 % We have to deal specially with entries that the driver may change
-% on its own.
-/.dynamicppkeys mark
+% on its own. We also have to deal specially with parameters which the device may
+% change on its own but which we *also* want to transmit to the device. Previously
+% any parameter which was 'dynamic' would not be sent to the device, making it
+% impossible to set a parameter, and later have the device change it. Currently
+% only OutputICCProfile fits this category.
+% This whole area is broken its completely the wrong way round from the way the spec says it should work.
+
+% This dictionary contains the keys we never want to set.
+/.readonlypdkeys mark
   /.MediaSize dup		% because it changes when PageSize is set
-%  /LeadingEdge dup
+  /PageCount dup
+  /Colors dup
+  /BitsPerPixel dup
+  /ColorValues dup
+  /RedValues dup        % Set by the device when ProcessColorModel changes
+  /GreenValues dup      % Set by the device when ProcessColorModel changes
+  /BlueValues dup       % Set by the device when ProcessColorModel changes
+  /GrayValues dup       % Set by the device when ProcessColorModel changes
+.dicttomark readonly def
+
+% This dictionary contains the keys we always want to read back from the device.
+/.volatilepdkeys mark
+  /.MediaSize dup		% because it changes when PageSize is set
+  /RedValues dup        % Set by the device when ProcessColorModel changes
+  /GreenValues dup      % Set by the device when ProcessColorModel changes
+  /BlueValues dup       % Set by the device when ProcessColorModel changes
+  /GrayValues dup       % Set by the device when ProcessColorModel changes
   /PageCount dup
   /Colors dup
   /BitsPerPixel dup
   /ColorValues dup
   /OutputICCProfile dup		% ColorConversionStrategy can change this
 .dicttomark readonly def
+
 /.makecurrentpagedevice {	% - .makecurrentpagedevice <dict>
   currentdevice //null .getdeviceparams
         % Make the dictionary large enough to add defaulted entries.
@@ -294,7 +319,7 @@ level2dict begin
     } {
                 % If any of the dynamic keys have changed,
                 % we must update the page device dictionary.
-      currentdevice //.dynamicppkeys .getdeviceparams .dicttomark {
+      currentdevice //.volatilepdkeys .getdeviceparams .dicttomark {
                 % Stack: current key value
             2 index 2 index .knownget { 1 index ne } { //true } ifelse
              { 2 index wcheck not
@@ -452,8 +477,8 @@ NOMEDIAATTRS {
 % The procedure leaves all its operands on the stack and returns
 % true iff the key/value pair should be presented to .putdeviceparams.
 /.presentspecial mark
-  .dynamicppkeys
-      { pop dup /LeadingEdge ne { //false } { pop } ifelse }
+  .readonlypdkeys
+      { pop //false }
   forall
                         % We must ignore an explicit request for .MediaSize,
                         % because media matching always handles this.
