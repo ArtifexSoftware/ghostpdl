@@ -259,6 +259,31 @@ level2dict begin
   /Colors dup
   /BitsPerPixel dup
   /ColorValues dup
+.dicttomark readonly def
+
+% Bonkers, but needed by our ridiculous setpagedevice implementation. There are
+% some keys (at the moment, RedValues, GreenValues and BlueValues are known) which
+% only exist in the page device dictionary under some conditions (ProcessColorModel == DeviceRGB)
+% If we change the conditions, so that these keys are no longer present in the params
+% returned by the device, sending these keys to the device can trigger a fault.
+% This is a problem because of our stored dictionary:
+%
+% 1) Set up the inital dictioanry by retrieving the params from the device
+% 2) Change the conditions (ProcessColorModel == DeviceGray)
+% 3) merge any volatile keys from the device. Note that RedValues etc no longer defined.
+% 4) Call .installpagdevice, use the stored dicitonary to set the params
+% 5) The stored RedValues etc, cause an error.
+%
+% The stored dictioanry is readonly (we use forceput to wedge new keys into it) so
+% we can't 'undef' keys from it. (the dictionary is made readonly by the action of zsetpagedevice
+% '.setpagedevice' in PostScrfipt)
+%
+% So the only solution is to have 'write only' keys. These can be written to the device
+% but are not stored in the saved page device dictionary. This means PostScript programs
+% can't interrogate and take action on these, but there's no solution to that except to
+% rewrite this stuff completely so that it actually works properly.
+
+/.writeonlykeys mark
   /RedValues dup        % Set by the device when ProcessColorModel changes
   /GreenValues dup      % Set by the device when ProcessColorModel changes
   /BlueValues dup       % Set by the device when ProcessColorModel changes
@@ -310,6 +335,10 @@ level2dict begin
       exec 2 index 3 1 roll put
     } ifelse
   } forall exch .setglobal
+
+  % Remove any keys we don't want to be stored, before .setpagedevice
+  % makes the dictionary read only
+  .writeonlykeys {2 index exch undef pop} forall
   dup .setpagedevice
 } bind def
 /currentpagedevice {
