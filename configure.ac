@@ -122,16 +122,16 @@ LIBTIFFCONFDIR=./tiff-config
 echo
 echo "Running libtiff configure script..."
 olddir=`pwd`
-if ! test -d $LIBTIFFCONFDIR ; then
-  mkdir $LIBTIFFCONFDIR
+if ! test -d "$LIBTIFFCONFDIR" ; then
+  mkdir "$LIBTIFFCONFDIR"
 fi
 
-cd $LIBTIFFCONFDIR && $olddir/$LIBTIFFDIR/configure --disable-jbig --disable-lzma $SUBCONFIG_OPTS
+cd "$LIBTIFFCONFDIR" && "$olddir"/"$LIBTIFFDIR"/configure --disable-jbig --disable-lzma $SUBCONFIG_OPTS
 status=$?
 if test "$status" -ne 0 ; then
   AC_MSG_ERROR([libtiff configure script failed], $status)
 fi
-cd $olddir
+cd "$olddir"
 echo
 echo "Continuing with GhostPDL configuration..."
 
