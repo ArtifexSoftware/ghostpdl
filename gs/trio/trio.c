@@ -3172,6 +3172,11 @@ TRIO_ARGS6((self, number, flags, width, precision, base),
   if (integerNumber > epsilon)
     {
       integerDigits += (int)TrioLogarithm(integerNumber, base);
+      /* Deal with the dangers of casting long double to int */
+      if (integerNumber - TrioPower (base, integerDigits) >= 0)
+        {
+          integerDigits++;
+        }
     }
 
   fractionDigits = precision;
@@ -3255,6 +3260,13 @@ TRIO_ARGS6((self, number, flags, width, precision, base),
 	      integerDigits = (integerNumber > epsilon)
 		? 1 + (int)TrioLogarithm(integerNumber, base)
 		: 1;
+
+	      /* Deal with the dangers of casting long double to int */
+	      if (integerNumber - TrioPower (base, integerDigits) >= 0)
+	        {
+                  integerDigits++;
+                }
+
 	      if (flags & FLAGS_FLOAT_G)
 		{
 		  if (flags & FLAGS_ALTERNATIVE)
