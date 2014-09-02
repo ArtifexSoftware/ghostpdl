@@ -99,6 +99,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
   gdev_pdf_dev_spec_op		/* dev_spec_op */
  },
  psdf_initial_values(PSDF_VERSION_INITIAL, 0 /*false */ ),  /* (!ASCII85EncodePages) */
+ 0,                     /* pdf_font_dir */
  PDF_FOR_OPDFREAD,		/* is_ps2write */
  PDF_COMPATIBILITY_LEVEL_INITIAL,  /* CompatibilityLevel */
  -1,				/* EndPage */

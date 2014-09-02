@@ -551,6 +551,8 @@ typedef enum {
 /* Define the device structure. */
 struct gx_device_pdf_s {
     gx_device_psdf_common;
+    gs_font_dir *pdf_font_dir;  /* Our own font cache, so that PCL can free its own ones, we set our font copeis to use this */
+                                /* see 'pdf_free_pdf_font_cache' in gdevpdf.c for more details. */
     bool is_ps2write;          /* ps2write (true) versus pdfwrite (false); never changed */
     /* PDF-specific distiller parameters */
     double CompatibilityLevel;
@@ -911,8 +913,10 @@ struct gx_device_pdf_s {
  m(34,PDFXBleedBoxToTrimBoxOffset.data) m(35, DSCEncodingToUnicode.data)\
  m(36,Identity_ToUnicode_CMaps[0]) m(37,Identity_ToUnicode_CMaps[1])\
  m(38,ResourceUsage) m(39,vgstack)\
- m(40, outline_levels) m(41, EmbeddedFiles)*/
-#define gx_device_pdf_num_ptrs 42
+ m(40, outline_levels) m(41, EmbeddedFiles)
+ m(41, gx_device_pdf, EmbeddedFiles);
+ m(42, gx_device_pdf, pdf_font_dir);*/
+#define gx_device_pdf_num_ptrs 43
 #define gx_device_pdf_do_param_strings(m)\
     m(0, OwnerPassword) m(1, UserPassword) m(2, NoEncrypt)\
     m(3, DocumentUUID) m(4, InstanceUUID)

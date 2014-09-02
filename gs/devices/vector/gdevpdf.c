@@ -35,6 +35,8 @@
 #include "gdevpdti.h"
 #include "gsfcmap.h"        /* For gs_cmap_ToUnicode_free */
 
+#include "gxfcache.h"
+
 /* Define the default language level and PDF compatibility level. */
 /* Acrobat 6 (PDF 1.5) is the default. (1.5 for ICC V4 profile support) */
 #define PSDF_VERSION_INITIAL psdf_version_ll3
@@ -115,6 +117,7 @@ ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
  ENUM_PTR(39, gx_device_pdf, vgstack);
  ENUM_PTR(40, gx_device_pdf, outline_levels);
  ENUM_PTR(41, gx_device_pdf, EmbeddedFiles);
+ ENUM_PTR(42, gx_device_pdf, pdf_font_dir);
 #define e1(i,elt) ENUM_PARAM_STRING_PTR(i + gx_device_pdf_num_ptrs, gx_device_pdf, elt);
 gx_device_pdf_do_param_strings(e1)
 #undef e1
@@ -168,6 +171,7 @@ static RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
  RELOC_PTR(gx_device_pdf, vgstack);
  RELOC_PTR(gx_device_pdf, outline_levels);
  RELOC_PTR(gx_device_pdf, EmbeddedFiles);
+ RELOC_PTR(gx_device_pdf, pdf_font_dir);
 #define r1(i,elt) RELOC_PARAM_STRING_PTR(gx_device_pdf,elt);
         gx_device_pdf_do_param_strings(r1)
 #undef r1
@@ -811,6 +815,22 @@ pdf_open(gx_device * dev)
 
     if(pdev->UseCIEColor) {
         emprintf(pdev->memory, "\n\nUse of -dUseCIEColor detected!\nSince the release of version 9.11 of Ghostscript we recommend you do not set\n-dUseCIEColor with the pdfwrite/ps2write device family.\n\n");
+    }
+
+    /* Build a font cache for pdfwrite, see 'pdf_free_pdf_font_cache' for why we need this. */
+    pdev->pdf_font_dir = gs_font_dir_alloc2(pdev->memory->stable_memory, pdev->memory->non_gc_memory);
+    if (pdev->pdf_font_dir == 0) {
+        code = gs_error_VMerror;
+        goto fail;
+    }
+    /* If we have a gs_lib_ctx, then we need to copy these function pointers from it (we are in PostScript).
+     * We can't fill them in otherwise, as the functions are declared static in gsfont.c.
+     * If we don't have one then we are in PCL/PXL/XPS, and cannot copy these function pointers. Fortunately
+     * we don't need them for fonts in these languages.
+     */
+    if (pdev->memory->gs_lib_ctx->font_dir) {
+        pdev->pdf_font_dir->ccache.mark_glyph = pdev->memory->gs_lib_ctx->font_dir->ccache.mark_glyph;
+        pdev->pdf_font_dir->global_glyph_code = pdev->memory->gs_lib_ctx->font_dir->global_glyph_code;
     }
     return 0;
   fail:
@@ -2299,6 +2319,56 @@ int pdf_record_usage_by_parent(gx_device_pdf *const pdev, long resource_id, long
     return 0;
 }
 
+/* These two routines are related to the PCL interpreter. Because of the way that
+ * PCL pass through works, the PCL interpreter can shut down and free its font cache
+ * while still running. This leaves us with copies of fonts, which point to a now
+ * freed font cache. Large parts of the code which retrieve font information require
+ * that the font cache be present, and fail badly if it isn't. So we construct a
+ * font cache of our own, and when we copy fonts from the interpreter we point the
+ * copied font at this font cache, instead of the one the original font used.
+ * This allows the PCL interpreter to shut down and free its cache, thus eliminating
+ * a memory leak, while still allowing pdfwrite to retrieve the information it needs
+ * from the copied fonts.
+ * Here we need to shut down and free our font cache.
+ */
+static bool
+purge_all(const gs_memory_t * mem, cached_char * cc, void *dummy)
+{
+    return true;
+}
+
+static void pdf_free_pdf_font_cache(gx_device_pdf *pdev)
+{
+    if (pdev->pdf_font_dir) {
+        gx_purge_selected_cached_chars(pdev->pdf_font_dir,
+                                       purge_all,
+                                       (void *)NULL);
+        /* free character cache machinery */
+        gs_free_object(pdev->pdf_font_dir->memory, pdev->pdf_font_dir->fmcache.mdata, "pdf_free_pdf_font_cache");
+        {
+            /* free the circular list of memory chunks first */
+            gx_bits_cache_chunk *chunk = pdev->pdf_font_dir->ccache.chunks;
+            gx_bits_cache_chunk *start_chunk = chunk;
+            gx_bits_cache_chunk *prev_chunk;
+            while (1) {
+                if (start_chunk == chunk->next) {
+                    gs_free_object(pdev->pdf_font_dir->ccache.bits_memory, chunk->data, "pdf_free_pdf_font_cache");
+                    gs_free_object(pdev->pdf_font_dir->ccache.bits_memory, chunk, "pdf_free_pdf_font_cache");
+                    break;
+                }
+                prev_chunk = chunk;
+                chunk = chunk->next;
+                gs_free_object(pdev->pdf_font_dir->ccache.bits_memory, prev_chunk->data, "pdf_free_pdf_font_cache");
+                gs_free_object(pdev->pdf_font_dir->ccache.bits_memory, prev_chunk, "pdf_free_pdf_font_cache");
+            }
+
+            gs_free_object(pdev->pdf_font_dir->memory, pdev->pdf_font_dir->ccache.table, "pdf_free_pdf_font_cache");
+            gs_free_object(pdev->pdf_font_dir->memory, pdev->pdf_font_dir, "pdf_free_pdf_font_cache");
+            pdev->pdf_font_dir = 0;
+        }
+    }
+}
+
 /* Close the device. */
 static int
 pdf_close(gx_device * dev)
@@ -3103,5 +3173,6 @@ pdf_close(gx_device * dev)
     if (code < 0)
         return code;
 
+    pdf_free_pdf_font_cache(pdev);
     return code;
 }

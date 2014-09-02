@@ -340,6 +340,12 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
         complete = copied;
     pbfont->copied = (gs_font_base *)copied;
     pbfont->complete = (gs_font_base *)complete;
+
+    /* replace the font cache of the copied fonts with our own font cache
+     * this is required for PCL, see 'pdf_free_pdf_font_cache' in gdevpdf.c
+     * for further details.
+     */
+    pbfont->copied->dir = pbfont->complete->dir = pdev->pdf_font_dir;
     pbfont->is_standard = is_standard;
     if (pfname->size > 0) {
         font_name.data = pfname->chars;

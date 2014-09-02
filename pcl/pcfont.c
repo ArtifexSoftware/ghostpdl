@@ -651,6 +651,13 @@ pcl_unload_resident_fonts(pcl_state_t * pcs)
     }
 }
 
+/* Purge all */
+static bool
+purge_all(const gs_memory_t * mem, cached_char * cc, void *dummy)
+{
+    return true;
+}
+
 static void
 pcfont_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
@@ -685,6 +692,35 @@ pcfont_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         pl_dict_release(&pcs->built_in_fonts);
         pl_dict_release(&pcs->cartridge_fonts);
         pl_dict_release(&pcs->simm_fonts);
+
+        if (pcs->font_dir) {
+            gx_purge_selected_cached_chars(pcs->font_dir,
+                                           purge_all,
+                                           (void *)NULL);
+            /* free character cache machinery */
+            gs_free_object(pcs->font_dir->memory, pcs->font_dir->fmcache.mdata, "pcsfont_do_reset");
+            {
+                /* free the circular list of memory chunks first */
+                gx_bits_cache_chunk *chunk = pcs->font_dir->ccache.chunks;
+                gx_bits_cache_chunk *start_chunk = chunk;
+                gx_bits_cache_chunk *prev_chunk;
+                while (1) {
+                    if (start_chunk == chunk->next) {
+                        gs_free_object(pcs->font_dir->ccache.bits_memory, chunk->data, "pcsfont_do_reset");
+                        gs_free_object(pcs->font_dir->ccache.bits_memory, chunk, "pcsfont_do_reset");
+                        break;
+                    }
+                    prev_chunk = chunk;
+                    chunk = chunk->next;
+                    gs_free_object(pcs->font_dir->ccache.bits_memory, prev_chunk->data, "pcsfont_do_reset");
+                    gs_free_object(pcs->font_dir->ccache.bits_memory, prev_chunk, "pcsfont_do_reset");
+                }
+
+                gs_free_object(pcs->font_dir->memory, pcs->font_dir->ccache.table, "pcfont_do_reset");
+                gs_free_object(pcs->font_dir->memory, pcs->font_dir, "pcfont_do_reset");
+                pcs->font_dir = 0;
+            }
+        }
     }
 }
 
