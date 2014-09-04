@@ -40,6 +40,8 @@ static int zbeginform(i_ctx_t *i_ctx_p)
     int code;
     float BBox[4], Matrix[6];
     gs_form_template_t tmplate;
+    gs_point pt;
+    gs_fixed_rect box;
 
     check_type(*op, t_dictionary);
     check_dict_read(*op);
@@ -55,8 +57,8 @@ static int zbeginform(i_ctx_t *i_ctx_p)
        return_error(e_undefined);
     tmplate.BBox.p.x = BBox[0];
     tmplate.BBox.p.y = BBox[1];
-    tmplate.BBox.q.x = BBox[2];
-    tmplate.BBox.q.y = BBox[3];
+    pt.x = tmplate.BBox.q.x = BBox[2];
+    pt.y = tmplate.BBox.q.y = BBox[3];
  
     code = dict_floats_param(imemory, op, "Matrix", 6, Matrix, NULL);
     if (code < 0)
@@ -80,9 +82,8 @@ static int zbeginform(i_ctx_t *i_ctx_p)
      */
     if (code > 0)
     {
-        gs_fixed_rect box;
-
         gs_setmatrix(igs, &tmplate.CTM);
+        gs_distance_transform(tmplate.BBox.q.x, tmplate.BBox.q.y, &tmplate.CTM, &pt);
 
         /* A form can legitimately have negative co-ordinates in paths
          * because it can be translated. But we always clip paths to the
@@ -92,17 +93,18 @@ static int zbeginform(i_ctx_t *i_ctx_p)
          * So here we temporarily set the clip to permit negative values,
          * fortunately this works.....
          */
-        code = gx_default_clip_box(igs, &box);
-        if (code < 0)
-            return code;
         /* We choose to permit negative values of the same magnitude as the
          * positive ones.
          */
-        box.p.x = box.q.x * -1;
-        box.p.y = box.q.y * -1;
+        box.p.x = float2fixed(pt.x * -1);
+        box.p.y = float2fixed(pt.y * -1);
+        box.q.x = float2fixed(pt.x);
+        box.q.y = float2fixed(pt.y);
+
         /* This gets undone when we grestore after the form is executed */
         code = gx_clip_to_rectangle(igs, &box);
     }
+
     pop(2);
     return code;
 }
