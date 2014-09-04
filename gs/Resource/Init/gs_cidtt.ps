@@ -108,8 +108,17 @@ currentdict /super.complete_instance currentdict /complete_instance get put
       } if
       closefile
   } {
-    (Can't find the font file ) print =
-    /findfont cvx /undefinedfilename signalerror
+    (r) { file } .internalstopped
+    {
+      (Can't find the font file ) print =
+      /findfont cvx /undefinedfilename signalerror
+    }
+    {
+      dup .filename {
+        currentdict exch /Path exch put
+      } if
+      closefile
+    } ifelse
   } ifelse
   end
 } bind def
