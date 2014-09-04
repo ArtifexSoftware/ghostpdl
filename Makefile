@@ -197,14 +197,26 @@ ls-udebug-clean: ufst_debug_clean
 ls-umemento-clean: ufst_debug_clean
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-clean
 
-uproduct: ufst
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product
+uproduct: # ufst
+	@echo "================================================================"
+	@echo "The 'uproduct' target is no longer supported."
+	@echo "Please use the '--with-ufst=<path>' option for configure instead"
+	@echo "================================================================"
+#	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product
 
-udebug: ufst
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-debug
+udebug: # ufst
+	@echo "================================================================"
+	@echo "The 'udebug' target is no longer supported."
+	@echo "Please use the '--with-ufst=<path>' option for configure instead"
+	@echo "================================================================"
+#	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-debug
 
-umemento: ufst
-	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-memento
+umemento: # ufst
+	@echo "================================================================"
+	@echo "The 'umemento' target is no longer supported."
+	@echo "Please use the '--with-ufst=<path>' option for configure instead"
+	@echo "================================================================"
+#	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-memento
 
 uclean: ufst_clean
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
