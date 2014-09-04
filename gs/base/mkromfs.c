@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2012 Artifex Software, Inc.
+/* Copyright (C) 2001-2014 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -116,6 +116,23 @@ typedef struct Xlist_element_s {
         void *next;
         char *path;
     } Xlist_element;
+
+#ifndef ARCH_IS_BIG_ENDIAN
+#define ARCH_IS_BIG_ENDIAN 0
+#endif
+/* This gives what we're running on,
+ * whilst ARCH_IS_BIG_ENDIAN gives what we're
+ * building for.
+ */
+static inline int isbigendian(void)
+{
+    union {
+        int i;
+        char c[sizeof(int)];
+    } u = {1};
+
+    return u.c[0] != 1;
+}
 
 /*******************************************************************************
  * The following are non-redirected printing functions to avoid the need for
@@ -372,7 +389,12 @@ void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len)
         w2c.c.c2 = p[j++];
         w2c.c.c3 = p[j++];
         w2c.c.c4 = p[j++];
-        fprintf(out, "0x%08x,", w2c.w);
+        if (isbigendian() != ARCH_IS_BIG_ENDIAN) {
+            fprintf (out, "0x%02x%02x%02x%02x,", (w2c.w) & 0xff, (w2c.w>>8) & 0xff, (w2c.w>>16) & 0xff, (w2c.w >>24) & 0xff);
+        }
+        else {
+            fprintf(out, "0x%08x,", w2c.w);
+        }
         if ((i & 7) == 7)
             fprintf(out, "\n\t");
     }
@@ -384,7 +406,12 @@ void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len)
         w2c.c.c2 = p[j+1];
       case 1:
         w2c.c.c1 = p[j];
-        fprintf(out, "0x%08x,", w2c.w);
+        if (isbigendian() != ARCH_IS_BIG_ENDIAN) {
+            fprintf (out, "0x%02x%02x%02x%02x,", (w2c.w) & 0xff, (w2c.w>>8) & 0xff, (w2c.w>>16) & 0xff, (w2c.w >>24) & 0xff);
+        }
+        else {
+            fprintf(out, "0x%08x,", w2c.w);
+        }
       default: ;
     }
     fprintf(out, "\n\t");
