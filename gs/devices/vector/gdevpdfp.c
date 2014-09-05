@@ -287,7 +287,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     int ecode, code;
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
     float cl = (float)pdev->CompatibilityLevel;
-    bool locked = pdev->params.LockDistillerParams;
+    bool locked = pdev->params.LockDistillerParams, ForOPDFRead;
     gs_param_name param_name;
     enum psdf_color_conversion_strategy save_ccs = pdev->params.ColorConversionStrategy;
 
@@ -371,33 +371,33 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     if (ecode < 0)
         param_signal_error(plist, param_name, ecode);
 
-    if (!(locked && pdev->params.LockDistillerParams)) {
-        /* General parameters. */
+    /* General parameters. */
 
-        {
-            int efo = 1;
+    {
+        int efo = 1;
 
-            ecode = param_put_int(plist, (param_name = ".EmbedFontObjects"), &efo, ecode);
-            if (ecode < 0)
-                param_signal_error(plist, param_name, ecode);
-            if (efo != 1)
-                param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
-        }
-        {
-            int cdv = CoreDistVersion;
+        ecode = param_put_int(plist, (param_name = ".EmbedFontObjects"), &efo, ecode);
+        if (ecode < 0)
+            param_signal_error(plist, param_name, ecode);
+        if (efo != 1)
+            param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
+    }
+    {
+        int cdv = CoreDistVersion;
 
-            ecode = param_put_int(plist, (param_name = "CoreDistVersion"), &cdv, ecode);
-            if (ecode < 0)
-                return gs_note_error(ecode);
-            if (cdv != CoreDistVersion)
-                param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
-        }
+        ecode = param_put_int(plist, (param_name = "CoreDistVersion"), &cdv, ecode);
+        if (ecode < 0)
+            return gs_note_error(ecode);
+        if (cdv != CoreDistVersion)
+            param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
+    }
 
-        switch (code = param_read_float(plist, (param_name = "CompatibilityLevel"), &cl)) {
-            default:
-                ecode = code;
-                param_signal_error(plist, param_name, ecode);
-            case 0:
+    switch (code = param_read_float(plist, (param_name = "CompatibilityLevel"), &cl)) {
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 0:
+            if (!(locked && pdev->params.LockDistillerParams)) {
                 /*
                  * Must be 1.2, 1.3, 1.4, or 1.5.  Per Adobe documentation, substitute
                  * the nearest achievable value.
@@ -416,69 +416,70 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                     cl = (float)1.6;
                 else
                     cl = (float)1.7;
-            case 1:
-                break;
-        }
-        {   /* HACK : gs_param_list_s::memory is documented in gsparam.h as
-               "for allocating coerced arrays". Not sure why zputdeviceparams
-               sets it to the current memory space, while the device
-               assumes to store them in the device's memory space.
-               As a hackish workaround we temporary replace it here.
-               Doing so because we don't want to change the global code now
-               because we're unable to test it with all devices.
-               Bug 688531 "Segmentation fault running pdfwrite from 219-01.ps".
-
-               This solution to be reconsidered after fixing
-               the bug 688533 "zputdeviceparams specifies a wrong memory space.".
-            */
-            gs_memory_t *mem = plist->memory;
-
-            plist->memory = pdev->pdf_memory;
-            code = gs_param_read_items(plist, pdev, pdf_param_items);
-            if (code < 0 ||
-                (!pdev->is_ps2write && (code = param_read_bool(plist, "ForOPDFRead", &pdev->ForOPDFRead)) < 0)
-                ){
             }
-            plist->memory = mem;
-        }
-        if (code < 0)
-            ecode = code;
+        case 1:
+            break;
+    }
+    {   /* HACK : gs_param_list_s::memory is documented in gsparam.h as
+           "for allocating coerced arrays". Not sure why zputdeviceparams
+           sets it to the current memory space, while the device
+           assumes to store them in the device's memory space.
+           As a hackish workaround we temporary replace it here.
+           Doing so because we don't want to change the global code now
+           because we're unable to test it with all devices.
+           Bug 688531 "Segmentation fault running pdfwrite from 219-01.ps".
+
+           This solution to be reconsidered after fixing
+           the bug 688533 "zputdeviceparams specifies a wrong memory space.".
+        */
+        gs_memory_t *mem = plist->memory;
+
+        plist->memory = pdev->pdf_memory;
+        code = gs_param_read_items(plist, pdev, pdf_param_items);
+        if (code < 0 || (code = param_read_bool(plist, "ForOPDFRead", &ForOPDFRead)) < 0)
         {
-            /*
-             * Setting FirstObjectNumber is only legal if the file
-             * has just been opened and nothing has been written,
-             * or if we are setting it to the same value.
-             */
-            long fon = pdev->FirstObjectNumber;
+        }
+        if (code == 0 && !pdev->is_ps2write && !(locked && pdev->params.LockDistillerParams))
+            pdev->ForOPDFRead = ForOPDFRead;
+        plist->memory = mem;
+    }
+    if (code < 0)
+        ecode = code;
+    {
+        /*
+         * Setting FirstObjectNumber is only legal if the file
+         * has just been opened and nothing has been written,
+         * or if we are setting it to the same value.
+         */
+        long fon = pdev->FirstObjectNumber;
 
-            if (fon != save_dev->FirstObjectNumber) {
-                if (fon <= 0 || fon > 0x7fff0000 ||
-                    (pdev->next_id != 0 &&
-                     pdev->next_id !=
-                     save_dev->FirstObjectNumber + pdf_num_initial_ids)
-                    ) {
-                    ecode = gs_error_rangecheck;
-                    param_signal_error(plist, "FirstObjectNumber", ecode);
-                }
+        if (fon != save_dev->FirstObjectNumber) {
+            if (fon <= 0 || fon > 0x7fff0000 ||
+                (pdev->next_id != 0 &&
+                 pdev->next_id !=
+                 save_dev->FirstObjectNumber + pdf_num_initial_ids)
+                ) {
+                ecode = gs_error_rangecheck;
+                param_signal_error(plist, "FirstObjectNumber", ecode);
             }
         }
-        {
-            /*
-             * Set ProcessColorModel now, because gx_default_put_params checks
-             * it.
-             */
-            static const char *const pcm_names[] = {
-                "DeviceGray", "DeviceRGB", "DeviceCMYK", "DeviceN", 0
-            };
-            int pcm = -1;
+    }
+    {
+        /*
+         * Set ProcessColorModel now, because gx_default_put_params checks
+         * it.
+         */
+        static const char *const pcm_names[] = {
+            "DeviceGray", "DeviceRGB", "DeviceCMYK", "DeviceN", 0
+        };
+        int pcm = -1;
 
-            ecode = param_put_enum(plist, "ProcessColorModel", &pcm,
-                                   pcm_names, ecode);
-            if (pcm >= 0) {
-                pdf_set_process_color_model(pdev, pcm);
-                pdf_set_initial_color(pdev, &pdev->saved_fill_color, &pdev->saved_stroke_color,
-                                &pdev->fill_used_process_color, &pdev->stroke_used_process_color);
-            }
+        ecode = param_put_enum(plist, "ProcessColorModel", &pcm,
+                               pcm_names, ecode);
+        if (pcm >= 0) {
+            pdf_set_process_color_model(pdev, pcm);
+            pdf_set_initial_color(pdev, &pdev->saved_fill_color, &pdev->saved_stroke_color,
+                            &pdev->fill_used_process_color, &pdev->stroke_used_process_color);
         }
     }
     if (ecode < 0)
