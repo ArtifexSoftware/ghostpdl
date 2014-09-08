@@ -1063,16 +1063,14 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
          * pointers are not copied from the real params structure, or they get
          * overwritten.
          */
-        params.CalCMYKProfile.size = params.CalCMYKProfile.data = 0;
-        params.CalGrayProfile.size = params.CalGrayProfile.data = 0;
-        params.CalRGBProfile.size = params.CalRGBProfile.data = 0;
-        params.sRGBProfile.size = params.sRGBProfile.data = 0;
+        params.CalCMYKProfile.size = params.CalGrayProfile.size = params.CalRGBProfile.size = params.sRGBProfile.size = 0;
+        params.CalCMYKProfile.data = 0;params.CalGrayProfile.data = params.CalRGBProfile.data = params.sRGBProfile.data = (byte *)0;
 
         params.ColorImage.ACSDict = params.ColorImage.Dict = 0;
         params.GrayImage.ACSDict = params.GrayImage.Dict = 0;
         params.MonoImage.ACSDict = params.MonoImage.Dict = 0;
-        params.AlwaysEmbed.data = params.AlwaysEmbed.size = params.AlwaysEmbed.persistent = 0;
-        params.NeverEmbed.data = params.NeverEmbed.size = params.NeverEmbed.persistent = 0;
+        params.AlwaysEmbed.data = params.NeverEmbed.data = 0;
+        params.AlwaysEmbed.size = params.AlwaysEmbed.persistent = params.NeverEmbed.size = params.NeverEmbed.persistent = 0;
     }
 
     /* General parameters. */
@@ -1169,17 +1167,17 @@ exit:
         gs_memory_t *stable_mem = gs_memory_stable(mem);
 
         if (params.NeverEmbed.data != 0)
-            gs_free_object(stable_mem, params.NeverEmbed.data, "free dummy param NeverEmbed");
+            gs_free_object(stable_mem, (void *)params.NeverEmbed.data, "free dummy param NeverEmbed");
         if (params.AlwaysEmbed.data != 0)
-            gs_free_object(stable_mem, params.AlwaysEmbed.data, "free dummy param AlwaysEmbed");
+            gs_free_object(stable_mem, (void *)params.AlwaysEmbed.data, "free dummy param AlwaysEmbed");
         if (params.CalCMYKProfile.data != 0)
-            gs_free_string(stable_mem, params.CalCMYKProfile.data, params.CalCMYKProfile.size, "free dummy param CalCMYKProfile");
+            gs_free_string(stable_mem, (void *)params.CalCMYKProfile.data, params.CalCMYKProfile.size, "free dummy param CalCMYKProfile");
         if (params.CalGrayProfile.data != 0)
-            gs_free_string(stable_mem, params.CalGrayProfile.data, params.CalGrayProfile.size, "free dummy param CalGrayProfile");
+            gs_free_string(stable_mem, (void *)params.CalGrayProfile.data, params.CalGrayProfile.size, "free dummy param CalGrayProfile");
         if (params.CalRGBProfile.data != 0)
-            gs_free_string(stable_mem, params.CalRGBProfile.data, params.CalRGBProfile.size, "free dummy param CalRGBProfile");
+            gs_free_string(stable_mem, (void *)params.CalRGBProfile.data, params.CalRGBProfile.size, "free dummy param CalRGBProfile");
         if (params.sRGBProfile.data != 0)
-            gs_free_string(stable_mem, params.sRGBProfile.data, params.sRGBProfile.size, "free dummy param sRGBProfile");
+            gs_free_string(stable_mem, (void *)params.sRGBProfile.data, params.sRGBProfile.size, "free dummy param sRGBProfile");
         if (params.ColorImage.ACSDict)
             gs_c_param_list_release(params.ColorImage.ACSDict);
         if (params.ColorImage.Dict)
