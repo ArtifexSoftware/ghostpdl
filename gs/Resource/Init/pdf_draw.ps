@@ -456,7 +456,15 @@ end
 /gssmask {
   {
     dup /None eq 1 index //null eq or PDFusingtransparency not or {
-      pop //null exit
+      pop //null
+      SoftMask //null ne {
+        % get rid of the current SMask (Bug 695471)
+        false			% colorspace not set
+        << /Subtype /None >>	% Special type for this purpose
+        0 0 0 0			% fake BBox
+        .begintransparencymaskgroup
+      } if
+      exit
     } if
         % Preprocess the SMask value into a parameter dictionary for
         % .begintransparencymaskgroup, with added /BBox and /Draw keys.
@@ -485,7 +493,7 @@ end
         resolvefnproc /TransferFunction exch 3 2 roll
       } ifelse
     } if
-    dup /G oget 
+    dup /G oget
     dup /BBox oget oforce_array
     1 index /Matrix knownoget {
       oforce_array .bbox_transform 4 array astore
@@ -794,24 +802,24 @@ currentdict /csncompdict undef
         currentdict end /CIEBasedABC exch 2 array astore
       } if
     } if
-    3 1 roll  % Stack: /Indexed csp comp table 
+    3 1 roll  % Stack: /Indexed csp comp table
     oforce dup type /stringtype ne {
                 % The color lookup table is a stream.
                 % Get its contents.  Don't lose our place in PDFfile.
                 % Stack: /Indexed basespace hival lookup
-        PDFfile fileposition 5 1 roll 
+        PDFfile fileposition 5 1 roll
         dup /Filter oknown not { % For Bug691941.pdf and similar lossage
           dup /Length knownoget not { 0 } if
         } {
-          0 
+          0
         } ifelse
                 % Stack: filepos /Indexed basespace hival lookup Length
         2 index 1 add
                 % Stack: filepos /Indexed basespace hival lookup Length len
-        4 index csncomp mul .max string 
+        4 index csncomp mul .max string
                 % Stack: filepos /Indexed basespace hival lookup (...)
-        exch //true resolvestream 
-        1 index readstring not { 
+        exch //true resolvestream
+        1 index readstring not {
           % The string is padded with 0s
           (   **** Warning: Short look-up table in the Indexed color space was padded with 0's.\n)
           pdfformaterror
@@ -819,7 +827,7 @@ currentdict /csncompdict undef
         pop
                 % Stack: filepos /Indexed basespace hival (...)
         PDFfile 6 -1 roll setfileposition
-    } if 
+    } if
     4 array astore
                 % Stack: [filepos /Indexed basespace hival (...)]
                 % Replace the PDFColorSpace with the Indexed space if needed.
@@ -876,7 +884,7 @@ currentdict end readonly def
     } {
       //csnames 1 index known {
         //true
-      } { 
+      } {
         (   **** Warning: Undefined space resource: /)
         exch .namestring concatstrings (\n) concatstrings pdfformaterror
         //false
@@ -908,8 +916,8 @@ currentdict end readonly def
     } {
       dup type /nametype eq {
         csresolve not { /DeviceRGB } if   % Arbitrary
-      } { 
-        csset exch pop 
+      } {
+        csset exch pop
       } ifelse
     } ifelse
   } if
@@ -948,7 +956,7 @@ currentdict end readonly def
 
   % Save old values on opstack, set pdfemptycount to new value.
   pdfemptycount countdictstack mark
-  
+
   /pdfemptycount count 3 sub def 5 3 roll
   %
   % Stack: ... <old emptycount> <dictcount> mark <patdict> <resdict>
@@ -957,9 +965,9 @@ currentdict end readonly def
 
   exch //false resolvestream pdfopdict .pdfruncontext
   cleartomark
-  
+
   //false
-  { countdictstack 
+  { countdictstack
     2 index le { exit } if
     currentdict /n known not or
     Q
@@ -1160,9 +1168,9 @@ drawopdict begin
           } {
            .buildshading
           } ifelse
-          .shfill 
-        } stopped { 
-          pop 
+          .shfill
+        } stopped {
+          pop
           (   **** Warning: Dropping incorrect smooth shading object.\n)
           pdfformaterror
         } if
@@ -1418,7 +1426,7 @@ currentdict /jp2_csp_dict .undef
         dup dup length 1 sub             % <resdict> obj [...] [...] len-1
         4 -1 roll put                    % <resdict> [... obj]
       } {
-        pop 
+        pop
       } ifelse
     } if
   } ifelse
@@ -1717,7 +1725,7 @@ currentdict /last-ditch-bpc-csp undef
 
 /DoImage {
   checkaltimage dup length 6 add dict  % <<image>> <<>>
-  1 index /SMask knownoget {           % <<image>> <<>> <<sm>>  
+  1 index /SMask knownoget {           % <<image>> <<>> <<sm>>
     dup 3 index ne {                   % <<image>> <<>> <<sm>> <<sm>>
       1 index exch /SMask exch put
     } {
@@ -1754,8 +1762,8 @@ currentdict /last-ditch-bpc-csp undef
     } forall exch pop {
       (   **** Warning: Some elements of Mask array are out of range.\n)
       pdfformaterror
-      
-      ColorSpace dup type /arraytype eq { 0 oget } if /Indexed eq 
+
+      ColorSpace dup type /arraytype eq { 0 oget } if /Indexed eq
       BitsPerComponent 1 eq and {
         % AR9 treats Indexed 1 bpc images specially. Bug 692852.
         dup 0 oget
@@ -1970,11 +1978,11 @@ currentdict /last-ditch-bpc-csp undef
   /q cvx /PDFexecform cvx 5 -2 roll 4 .execn
   % Restore pdfemptycount
   0
-  { countdictstack 
+  { countdictstack
     2 index le { exit } if
     currentdict /n known not { 1 add } if
     Q
-  } loop 
+  } loop
   1 gt {
     (   **** Warning: Form stream has unbalanced q/Q operators \(too many q's\)\n)
     pdfformaterror
@@ -2447,7 +2455,7 @@ end
       } if
     } if
   } if
-  pop 
+  pop
 } bdef
 
 /drawwidget {			% <scalefactor_x> <scalefactor_y> <annot> drawwidget -
@@ -2488,7 +2496,7 @@ end
                 % tell whether this is a Form or a set of sub-appearances
                 % is by testing for the stream Length or File key.
                 % If the stream lacks Length key, try File key.
-      dup /Length knownoget { type /integertype eq } { //false } ifelse 
+      dup /Length knownoget { type /integertype eq } { //false } ifelse
       1 index /File knownoget { type /filetype eq or } if {
                 % If this is a form then simply use it
         //true

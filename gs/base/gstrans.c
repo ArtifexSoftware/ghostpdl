@@ -162,7 +162,7 @@ gs_state_update_pdf14trans(gs_state * pgs, gs_pdf14trans_params_t * pparams)
     gx_device *pdf14dev = NULL;
     int code;
     int curr_num = dev->color_info.num_components;
-    
+
     /*
      * Send the PDF 1.4 create compositor action specified by the parameters.
      */
@@ -177,7 +177,7 @@ gs_state_update_pdf14trans(gs_state * pgs, gs_pdf14trans_params_t * pparams)
         gx_set_device_only(pgs, pdf14dev);
     }
 
-    /* If we had a color space change and we are in overprint, then we need to 
+    /* If we had a color space change and we are in overprint, then we need to
        update the drawn_comps */
     if (pgs->overprint && curr_num != pdf14dev->color_info.num_components) {
         code = gs_do_set_overprint(pgs);
@@ -373,7 +373,7 @@ gx_begin_transparency_group(gs_imager_state * pis, gx_device * pdev,
     }
 #endif
     if (dev_proc(pdev, begin_transparency_group) != 0)
-        return (*dev_proc(pdev, begin_transparency_group)) (pdev, &tgp, &bbox, pis, 
+        return (*dev_proc(pdev, begin_transparency_group)) (pdev, &tgp, &bbox, pis,
                                                             NULL);
     else
         return 0;
@@ -560,49 +560,51 @@ gs_begin_transparency_mask(gs_state * pgs,
     }
     /* A new soft mask group,  make sure the profiles are set */
     if_debug0m('v', pgs->memory, "[v]pushing soft mask color sending\n");
-    params_color.pdf14_op = PDF14_PUSH_SMASK_COLOR;
-    code = gs_state_update_pdf14trans(pgs, &params_color);
-    if (code < 0)
-        return(code);
-    blend_color_space = gs_cspace_new_DeviceGray(pgs->memory);
-    blend_color_space->cmm_icc_profile_data = pgs->icc_manager->default_gray;
-    rc_increment(blend_color_space->cmm_icc_profile_data);
-    if_debug8m('v', pgs->memory, "[v](0x%lx)gs_begin_transparency_mask [%g %g %g %g]\n\
-      subtype = %d  Background_components = %d %s\n",
-              (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,
-              (int)ptmp->subtype, ptmp->Background_components,
-              (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
-               "has TR"));
-    /* Sample the transfer function */
-    for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
-        float in = (float)(i * (1.0 / (MASK_TRANSFER_FUNCTION_SIZE - 1)));
-        float out;
+    if (params.subtype != TRANSPARENCY_MASK_None) {
+        params_color.pdf14_op = PDF14_PUSH_SMASK_COLOR;
+        code = gs_state_update_pdf14trans(pgs, &params_color);
+        if (code < 0)
+            return(code);
+        blend_color_space = gs_cspace_new_DeviceGray(pgs->memory);
+        blend_color_space->cmm_icc_profile_data = pgs->icc_manager->default_gray;
+        rc_increment(blend_color_space->cmm_icc_profile_data);
+        if_debug8m('v', pgs->memory, "[v](0x%lx)gs_begin_transparency_mask [%g %g %g %g]\n\
+          subtype = %d  Background_components = %d %s\n",
+                  (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,
+                  (int)ptmp->subtype, ptmp->Background_components,
+                  (ptmp->TransferFunction == mask_transfer_identity ? "no TR" :
+                   "has TR"));
+        /* Sample the transfer function */
+        for (i = 0; i < MASK_TRANSFER_FUNCTION_SIZE; i++) {
+            float in = (float)(i * (1.0 / (MASK_TRANSFER_FUNCTION_SIZE - 1)));
+            float out;
 
-        ptmp->TransferFunction(in, &out, ptmp->TransferFunction_data);
-        params.transfer_fn[i] = (byte)floor((double)(out * 255 + 0.5));
-    }
-    /* Note:  This function is called during the c-list writer side. */
-    if ( blend_color_space->cmm_icc_profile_data != NULL ) {
-    /* Blending space is ICC based.  If we are doing c-list rendering we will
-       need to write this color space into the clist. */
-        params.group_color = ICC;
-        params.group_color_numcomps =
-                blend_color_space->cmm_icc_profile_data->num_comps;
-        /* Get the ICC profile */
-        /* We don't reference count this - see comment in
-         * pdf14_update_device_color_procs_pop_c()
+            ptmp->TransferFunction(in, &out, ptmp->TransferFunction_data);
+            params.transfer_fn[i] = (byte)floor((double)(out * 255 + 0.5));
+        }
+        /* Note:  This function is called during the c-list writer side. */
+        if ( blend_color_space->cmm_icc_profile_data != NULL ) {
+        /* Blending space is ICC based.  If we are doing c-list rendering we will
+           need to write this color space into the clist. */
+            params.group_color = ICC;
+            params.group_color_numcomps =
+                    blend_color_space->cmm_icc_profile_data->num_comps;
+            /* Get the ICC profile */
+            /* We don't reference count this - see comment in
+             * pdf14_update_device_color_procs_pop_c()
+             */
+            params.iccprofile = blend_color_space->cmm_icc_profile_data;
+            params.icc_hash = blend_color_space->cmm_icc_profile_data->hashcode;
+        } else {
+            params.group_color = GRAY_SCALE;
+            params.group_color_numcomps = 1;  /* Need to check */
+        }
+        /* Explicitly decrement the profile data since blend_color_space may not
+         * be an ICC color space object.
          */
-        params.iccprofile = blend_color_space->cmm_icc_profile_data;
-        params.icc_hash = blend_color_space->cmm_icc_profile_data->hashcode;
-    } else {
-        params.group_color = GRAY_SCALE;
-        params.group_color_numcomps = 1;  /* Need to check */
+        rc_decrement(blend_color_space->cmm_icc_profile_data, "gs_begin_transparency_mask");
+        rc_decrement_only_cs(blend_color_space, "gs_begin_transparency_mask");
     }
-    /* Explicitly decrement the profile data since blend_color_space may not
-     * be an ICC color space object.
-     */
-    rc_decrement(blend_color_space->cmm_icc_profile_data, "gs_begin_transparency_mask");
-    rc_decrement_only_cs(blend_color_space, "gs_begin_transparency_mask");
     return gs_state_update_pdf14trans(pgs, &params);
 }
 
@@ -743,15 +745,15 @@ gs_push_pdf14trans_device(gs_state * pgs, bool is_pattern)
 {
     gs_pdf14trans_params_t params = { 0 };
     cmm_profile_t *icc_profile;
-    gsicc_rendering_param_t render_cond;   
+    gsicc_rendering_param_t render_cond;
     int code;
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(pgs->device, get_profile)(pgs->device,  &dev_profile);
     if (code < 0)
         return code;
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile, 
-                          &render_cond); 
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile,
+                          &render_cond);
     params.pdf14_op = PDF14_PUSH_DEVICE;
     /*
      * We really only care about the number of spot colors when we have

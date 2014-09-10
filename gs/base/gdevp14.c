@@ -1230,14 +1230,13 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     buf->blend_mode = BLEND_MODE_Normal;
     buf->transfer_fn = transfer_fn;
     buf->mask_id = mask_id;
-    {	/* If replacing=false, we start the mask for an image with SMask.
-           In this case the image's SMask temporary replaces the
-           mask of the containing group. Save the containing droup's mask
-           in buf->mask_stack */
-        buf->mask_stack = ctx->mask_stack;
-        if (buf->mask_stack){
-            rc_increment(buf->mask_stack->rc_mask);
-        }
+    /* If replacing=false, we start the mask for an image with SMask.
+       In this case the image's SMask temporary replaces the
+       mask of the containing group. Save the containing droup's mask
+       in buf->mask_stack */
+    buf->mask_stack = ctx->mask_stack;
+    if (buf->mask_stack){
+        rc_increment(buf->mask_stack->rc_mask);
     }
 #if RAW_DUMP
     /* Dump the current buffer to see what we have. */
@@ -4464,13 +4463,26 @@ pdf14_begin_transparency_mask(gx_device	*dev,
 {
     pdf14_device *pdev = (pdf14_device *)dev;
     byte bg_alpha = 0;   /* By default the background alpha (area outside mask) is zero */
-    byte *transfer_fn = (byte *)gs_alloc_bytes(pdev->ctx->memory, 256,
-                                               "pdf14_begin_transparency_mask");
+    byte *transfer_fn;
     gs_int_rect rect;
     int code;
     int group_color_numcomps;
     gs_transparency_color_t group_color;
 
+    if (ptmp->subtype == TRANSPARENCY_MASK_None) {
+        pdf14_ctx *ctx = pdev->ctx;
+
+        /* free up any maskbuf on the current tos */
+        if (ctx->mask_stack) {
+            if (ctx->mask_stack->rc_mask->mask_buf != NULL ) {
+                pdf14_buf_free(ctx->mask_stack->rc_mask->mask_buf, ctx->mask_stack->memory);
+                ctx->mask_stack->rc_mask->mask_buf = NULL;
+            }
+        }
+        return 0;
+    }
+    transfer_fn = (byte *)gs_alloc_bytes(pdev->ctx->memory, 256,
+                                               "pdf14_begin_transparency_mask");
     if (transfer_fn == NULL)
         return_error(gs_error_VMerror);
     code = compute_group_device_int_rect(pdev, &rect, pbbox, pis);
@@ -5799,8 +5811,10 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             }
             break;
         case PDF14_BEGIN_TRANS_MASK:
-            pdf14_needed = true;		/* the compositor will be needed while reading */
-            smask_level++;
+            if (pparams->subtype != TRANSPARENCY_MASK_None) {
+                pdf14_needed = true;		/* the compositor will be needed while reading */
+                smask_level++;
+            }
             code = c_pdf14trans_write_ctm(&pbuf, pparams);
             if (code < 0)
                 return code;
@@ -7308,6 +7322,8 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                    the group color space.  For simplicity, the list item is created
                    even if the color space did not change */
                 /* First store the current ones */
+                if (pdf14pct->params.subtype == TRANSPARENCY_MASK_None)
+                    break;
                 pdf14_push_parent_color(dev, pis);
                 /* Now update the device procs */
                 code = pdf14_update_device_color_procs_push_c(dev,
@@ -8461,8 +8477,7 @@ pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev)
             smaskcolor->profiles->smask_gray =
               smaskcolor->profiles->smask_rgb =
               smaskcolor->profiles->smask_cmyk = NULL;
-            
-            
+
             pdf14_free_smask_color(pdev);
         }
     }

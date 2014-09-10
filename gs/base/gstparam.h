@@ -80,11 +80,12 @@ typedef struct gs_transparency_group_params_s {
 /* Define the parameter structure for a transparency mask. */
 typedef enum {
     TRANSPARENCY_MASK_Alpha,
-    TRANSPARENCY_MASK_Luminosity
+    TRANSPARENCY_MASK_Luminosity,
+    TRANSPARENCY_MASK_None          /* special case for removing a SMask from the tos */
 } gs_transparency_mask_subtype_t;
 
 #define GS_TRANSPARENCY_MASK_SUBTYPE_NAMES\
-  "Alpha", "Luminosity"
+  "Alpha", "Luminosity", "None"
 
 /* See the gx_transparency_mask_params_t type below */
 /* (Update gs_trans_mask_params_init if these change.) */
