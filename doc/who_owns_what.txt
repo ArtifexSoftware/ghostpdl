@@ -72,7 +72,6 @@ eps9mid.dev: ?
 epsf.dev: ken
 epson.dev: henry
 epsonc.dev: henry
-epswrite.dev: ken
 fapi.dev: ken
 fapif.dev: ken
 fapiu.dev: ken
@@ -236,6 +235,7 @@ psl2lib.dev: michael and ken
 psmono.dev: obsolete
 psrgb.dev: obsolete
 pswrite.dev: obsolete
+epswrite.dev: obsolete
 pxl.dev: henry
 pxlcolor.dev: ray and henry
 pxlmono.dev: ray and henry

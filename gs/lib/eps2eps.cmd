@@ -27,7 +27,7 @@ if infile='' then call usage
 outfile=word(params,i+1)
 if outfile='' then call usage
 
-gs '-q -sDEVICE=epswrite -sOutputFile='outfile options infile
+gs '-q -sDEVICE=eps2write -sOutputFile='outfile options infile
 exit
 
 usage:

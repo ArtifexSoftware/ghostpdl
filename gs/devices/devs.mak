@@ -137,7 +137,6 @@ DEVGEN=$(DEVGENDIR)$(D)
 #	tiffg32d	TIFF Group 3 2-D fax
 #	tiffg4		TIFF Group 4 fax
 # High-level file formats:
-#	epswrite	EPS output (like PostScript Distillery)
 #	pdfwrite	PDF output (like Adobe Acrobat Distiller)
 #	txtwrite	ASCII or Unicode text output
 #	pxlmono 	Black-and-white PCL XL
@@ -786,21 +785,6 @@ $(DEVOBJ)gdevpsdu.$(OBJ) : $(DEVVECSRC)gdevpsdu.c $(GXERR)\
  $(sa85x_h) $(scfx_h) $(sdct_h) $(sjpeg_h) $(strimpl_h)\
  $(gdevpsdf_h) $(spprint_h) $(gsovrc_h)
 	$(DEVJCC) $(DEVO_)gdevpsdu.$(OBJ) $(C_) $(DEVVECSRC)gdevpsdu.c
-
-# PostScript and EPS writers
-
-pswrite_=$(DEVOBJ)gdevps.$(OBJ) $(DEVOBJ)gdevpsu.$(OBJ) $(DEVOBJ)scantab.$(OBJ) $(DEVOBJ)sfilter2.$(OBJ)
-$(DD)epswrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pswrite_) $(GLD)psdf.dev $(GDEV)
-	$(SETDEV2) $(DD)epswrite $(pswrite_)
-	$(ADDMOD) $(DD)epswrite -include $(GLD)psdf
-
-$(DEVOBJ)gdevps.$(OBJ) : $(DEVVECSRC)gdevps.c $(GDEV)\
- $(math__h) $(memory__h) $(string__h) $(time__h)\
- $(gscdefs_h) $(gscspace_h) $(gsline_h) $(gsparam_h) $(gsiparam_h) $(gsmatrix_h)\
- $(gxdcolor_h) $(gxpath_h)\
- $(sa85x_h) $(sstring_h) $(strimpl_h)\
- $(gdevpsdf_h) $(gdevpsu_h) $(spprint_h)
-	$(DEVCC) $(DEVO_)gdevps.$(OBJ) $(C_) $(DEVVECSRC)gdevps.c
 
 # Plain text writer
 
