@@ -520,7 +520,7 @@ DISPLAY_DEV=$(DD)bbox.dev
 #DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev
 #DEVICE_DEVS13=@PNGDEVS@
 #DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev
-#DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)ps2write.dev $(DD)eps2write.dev $(DD)epswrite.dev $(DD)txtwrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
+#DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)ps2write.dev $(DD)eps2write.dev $(DD)txtwrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
 #DEVICE_DEVS16=$(DD)bbox.dev
 
 #DEVICE_DEVS17=
