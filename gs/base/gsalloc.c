@@ -362,6 +362,7 @@ ialloc_reset(gs_ref_memory_t * mem)
     mem->cc.rcur = 0;
     mem->cc.rtop = 0;
     mem->cc.has_refs = false;
+    mem->cc.c_alone = false;
     mem->allocated = 0;
     mem->changes = 0;
     mem->scan_limit = 0;
