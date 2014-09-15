@@ -18,23 +18,85 @@
 % Requires the colorimage operator.
 % If SCALE is defined, maps input pixels to output pixels with that scale;
 % if SCALE is undefined, scales the image to fit the page.
-% If BITS is defined, it is the number of bits per sample (1,2,4,8,12);
+% If BITS is defined, it is the number of bits per sample (1,2,4,8);
 % if BITS is undefined, its default value is 1.
 % Colorspace defaults to cmyk, but -dGray or -dRGB can change it
 
-/viewraw {			% <filename> <ncomp> <width> viewraw -
+/viewraw {        		% <filename> <ncomp> <width> viewraw -
   20 dict begin
   % Default ncomp is 4 == CMYK
   /w exch def
   /fname exch def
-  /ncomp 
-  /Gray where
-  { pop 1 }					% DeviceGray is 1 component
-  { /RGB where { pop 3 } { 4 } ifelse	% DeviceRGB is 3 component, DeviceCMYK is 4 component
-  } ifelse
-  def
-  /bpc /BITS where { pop BITS } { 1 } ifelse def
   /f fname (r) file def
+  /bpc /BITS where { pop BITS } { 1 } ifelse def
+  /ncomp
+  /Gray where
+  { pop 1 /CS /DeviceGray def }        	% DeviceGray is 1 component
+  { /RGB where
+    { pop 3 BITS 4 ge          		% DeviceRGB is 3 component, use Indexed for 1, 2, 4 BITS
+      { /CS /DeviceRGB def }
+      {
+        BITS 1 eq {
+          /CS
+          [ /Indexed /DeviceRGB 15 <
+              000000 0000FF 00FF00 00FFFF FF0000 FF00FF FFFF00 FFFFFF
+              000000 0000FF 00FF00 00FFFF FF0000 FF00FF FFFF00 FFFFFF
+            >
+          ] def
+          /BITS 4 def			% change to 4 bit indexed
+        } if
+        BITS 2 eq {
+          /CS
+          [ /Indexed /DeviceRGB 255 <
+              000000 000055 0000AA 0000FF
+              005500 005555 0055AA 0055FF
+              00AA00 00AA55 00AAAA 00AAFF
+              00FF00 00FF55 00FFAA 00FFFF
+              550000 550055 5500AA 5500FF
+              555500 555555 5555AA 5555FF
+              55AA00 55AA55 55AAAA 55AAFF
+              55FF00 55FF55 55FFAA 55FFFF
+              AA0000 AA0055 AA00AA AA00FF
+              AA5500 AA5555 AA55AA AA55FF
+              AAAA00 AAAA55 AAAAAA AAAAFF
+              AAFF00 AAFF55 AAFFAA AAFFFF
+              FF0000 FF0055 FF00AA FF00FF
+              FF5500 FF5555 FF55AA FF55FF
+              FFAA00 FFAA55 FFAAAA FFAAFF
+              FFFF00 FFFF55 FFFFAA FFFFFF
+
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+              000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000 000000
+            >
+          ] def
+          /BITS 8 def			% change to 4 bit indexed
+        } if
+      }
+      ifelse
+    }
+    { 4 /CS /DeviceCMYK def }         	% DeviceCMYK is 4 component
+    ifelse
+  }
+  ifelse
+  def
+  % Calculate Height from file length and width
   mark fname status pop pop pop /flen exch def cleartomark
   /h flen w bpc ncomp mul mul 7 add 8 idiv idiv def
   %% (Dimensions: ) print [w h] == flush
@@ -51,12 +113,19 @@
     3 1 roll exch sub w div .min dup
   } ifelse scale
   %% w h bpc [1 0 0 -1 0 h] f false ncomp colorimage
-  << /ImageType 1 /Width w /Height h /ImageMatrix [1 0 0 -1 0 h] 
+  CS setcolorspace
+  << /ImageType 1 /Width w /Height h /ImageMatrix [1 0 0 -1 0 h]
      /MultipleDataSources false /DataSource f /BitsPerComponent BITS
-     /Decode BITS 1 gt		% inverted sense for 1 bit per component 
-       { [ [ 0 1 ] [0] [ 0 1 0 1 0 1 ] [ 0 1 0 1 0 1 0 1 ] ] ncomp 1 sub get }
-       { [ [ 1 0 ] [0] [ 1 0 1 0 1 0 ] [ 1 0 1 0 1 0 1 0 ] ] ncomp 1 sub get }
-     ifelse
+     /Decode
+       bpc 1 eq {        	% inverted sense for 1 bit per component
+         [ [0] [ 1 0 ] [0] [ 0 15 ] [ 0 1 0 1 0 1 0 1 ] ] ncomp get
+       } if
+       bpc 2 eq {
+         [ [0] [ 0 1 ] [0] [ 0 255 ] [ 0 1 0 1 0 1 0 1 ] ] ncomp get
+       } if
+       bpc 4 ge {
+         [ [0] [ 0 1 ] [0] [ 0 1 0 1 0 1 ] [ 0 1 0 1 0 1 0 1 ] ] ncomp get
+       } if
   >> image
   showpage
   f closefile
