@@ -863,6 +863,11 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
 
     ppdev->OpenOutputFile = oof;
     ppdev->ReopenPerPage = rpp;
+
+    if (ppdev->bg_print_requested && !bg_print_requested) {
+        prn_finish_bg_print(ppdev);
+    }
+    
     ppdev->bg_print_requested = bg_print_requested;
     if (duplex_set >= 0) {
         ppdev->Duplex = duplex;
