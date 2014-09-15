@@ -262,9 +262,13 @@ int pdf_font_descriptor_free(gx_device_pdf *pdev, pdf_resource_t *pres)
 {
     pdf_font_descriptor_t *pfd = (pdf_font_descriptor_t *)pres;
     pdf_base_font_t *pbfont = pfd->base_font;
-    gs_font *copied = (gs_font *)pbfont->copied;
+    gs_font *copied = (gs_font *)pbfont->copied, *complete = (gs_font *)pbfont->complete;
 
     gs_free_copied_font(copied);
+    if (complete && copied != complete) {
+        gs_free_copied_font(complete);
+        pbfont->complete = 0;
+    }
     pbfont->copied = 0;
     if (pbfont && pbfont->font_name.size) {
         gs_free_string(pdev->pdf_memory, pbfont->font_name.data, pbfont->font_name.size, "Free BaseFont FontName string");
