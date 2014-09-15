@@ -892,10 +892,11 @@ pcl_font_scale(pcl_state_t * pcs, gs_point * pscale)
                 * (1000.0 / pl_fp_pitch_cp(&pfp->font->params))
                 * (7200.0 / (100.0 * ppi));
 
-            /* hack for a scalable lineprinter font.  If a real
-               lineprinter bitmap font is available it will be handled
-               by the bitmap scaling case above */
-            if (pfp->font->params.typeface_family == 0) {
+            /* hack for our internal scalable lineprinter font.  If a
+               real lineprinter bitmap font is available it will be
+               handled by the bitmap scaling case above */
+            if ((pfp->font->params.typeface_family == 0) &&
+                (pfp->font->storage == pcds_internal)) {
                 pscale->x = pscale->y = 850.0;
             }
 
