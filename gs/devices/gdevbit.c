@@ -42,6 +42,7 @@ static dev_proc_map_rgb_color(bit_mono_map_color);
 #if 0 /* unused */
 static dev_proc_map_rgb_color(bit_forcemono_map_rgb_color);
 #endif
+static dev_proc_map_rgb_color(bitrgb_rgb_map_rgb_color);
 static dev_proc_map_color_rgb(bit_map_color_rgb);
 static dev_proc_map_cmyk_color(bit_map_cmyk_color);
 static dev_proc_get_params(bit_get_params);
@@ -135,7 +136,7 @@ const gx_device_bit gs_bit_device =
 };
 
 static const gx_device_procs bitrgb_procs =
-bit_procs(gx_default_rgb_map_rgb_color);
+bit_procs(bitrgb_rgb_map_rgb_color);
 const gx_device_bit gs_bitrgb_device =
 {prn_device_body(gx_device_bit, bitrgb_procs, "bitrgb",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -436,6 +437,25 @@ bit_forcemono_map_rgb_color(gx_device * dev, const gx_color_value cv[])
     return color;
 }
 #endif
+
+gx_color_index
+bitrgb_rgb_map_rgb_color(gx_device * dev, const gx_color_value cv[])
+{
+    if (dev->color_info.depth == 24)
+        return gx_color_value_to_byte(cv[2]) +
+            ((uint) gx_color_value_to_byte(cv[1]) << 8) +
+            ((ulong) gx_color_value_to_byte(cv[0]) << 16);
+    else {
+        COLROUND_VARS;
+        /* The following needs special handling to avoid bpc=5 when depth=16 */
+        int bpc = dev->color_info.depth == 16 ? 4 : dev->color_info.depth / 3;
+        COLROUND_SETUP(bpc);
+
+        return (((COLROUND_ROUND(cv[0]) << bpc) +
+                 COLROUND_ROUND(cv[1])) << bpc) +
+               COLROUND_ROUND(cv[2]);
+    }
+}
 
 /* Map color to RGB.  This has 3 separate cases, but since it is rarely */
 /* used, we do a case test rather than providing 3 separate routines. */
