@@ -29,7 +29,7 @@ TOC to see how to edit it for visual conciseness.
 <h2>Table of contents</h2>
 
 <blockquote><ul>
-<li><a href="#Version9.15">Version 9.15 (2014-09-08)</a>
+<li><a href="#Version9.15">Version 9.15 (2014-09-16)</a>
 <li><a href="#Version9.14">Version 9.14 (2014-03-26)</a>
 <li><a href="#Version9.10">Version 9.10 (2013-08-27)</a>
 <li><a href="#Version9.09">Version 9.09 (2013-08-21)</a>
@@ -72,7 +72,7 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h2><a name="Version9.15"></a>Version 9.15 (2014-09-08)</h2>
+<h2><a name="Version9.15"></a>Version 9.15 (2014-09-16)</h2>
 
 <p>This is the eleventh full release in the stable 9.x series, and is
 primarily a maintenance release.
@@ -123,6 +123,154 @@ No recorded incompatible changes.
 <h3><a name="9.15_changelog"></a>Changelog</h3>
 <p><strong>2014-09-08 09:36:19 +0100
 </strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=551d7dd426fe8ab7f2c0c9d90339784e2b643bad">551d7dd426fe8ab7f2c0c9d90339784e2b643bad</a>
+<blockquote>
+<p>
+    Bug 695483: disable BGPrint before we shutdown interpreter<br>
+<br>
+    Before we start the process of shutting down the PS interpreter, disable BGPrint<br>
+    (and set NumRenderingThreads to 0, just for safety). If we don't do this, the<br>
+    &quot;parent&quot; rendering thread will continue preparations for the next page whilst<br>
+    we shutdown the interpreter, and will thus attempt to access some objects<br>
+    subject to garbage collection (such as the I/O device table).<br>
+<br>
+    Additionally, when a device switches from BGPrint enabled to disabled, make sure<br>
+    we tear down the rendering thread(s) and get rid off the BGPrint related data.<br>
+<br>
+    No cluster differences.<br>
+<br>
+gs/base/gdevprn.c<br>
+gs/psi/imain.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2014-09-15 10:21:18 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=51b9c7dc2a471b9c3dfe6400c0a55d90db4fec16">51b9c7dc2a471b9c3dfe6400c0a55d90db4fec16</a>
+<blockquote>
+<p>
+    Bug 695486: initialise c_alone in current chunk (cc)<br>
+<br>
+    When we (re-)initialise an allocator, we have to initialise the contents of the<br>
+    current chunk (cc) entry - initialise to &quot;false&quot; since that's the common case.<br>
+<br>
+    No cluster differences.<br>
+<br>
+gs/base/gsalloc.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2014-09-15 15:19:46 +0100
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=fec643c7e29810c0c5381bd86ba31ff3595bc9ba">fec643c7e29810c0c5381bd86ba31ff3595bc9ba</a>
+<blockquote>
+<p>
+    pdfwrite - free pdfwrite's 'complete' font copy if required<br>
+<br>
+    Bug #695484 &quot;Regression: seg fault with debug build in pdfwrite starting with ceb5e2f006bf554a56701ee2f2c228841b324a4b&quot;<br>
+<br>
+    The problem was caused because pdfwrite can maintain two copies of a font,<br>
+    a subset and a complete copy, depending on settings. We were properly freeing<br>
+    the subset, but not the complete copy.<br>
+<br>
+    This has been a long-standing undetected memory leak, but only on systems<br>
+    without garbage collection, because the copied font is subject to GC, and<br>
+    indeed this was causing the actual fault. When we restored at the end of the<br>
+    file, the copied font was garbage collected, which caused it to try nd free<br>
+    any glyphs from its font cache. But the font cache is now (since the commit<br>
+    in the bug title) pointing at the pdfwrite font cache, and that has already<br>
+    been freed before we get to the end of job restore, resutling in a seg fault.<br>
+<br>
+    Here we free the complete font copy if one has been allocated.<br>
+<br>
+    No differences expected.<br>
+<br>
+gs/devices/vector/gdevpdtd.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2014-09-14 23:00:08 -0600
+</strong>
+<br>Henry Stiles &lt;henry.stiles@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=d10d0b9f9a4c11ef11f08849cf0f0f0405ada6c6">d10d0b9f9a4c11ef11f08849cf0f0f0405ada6c6</a>
+<blockquote>
+<p>
+    Fix Bug 695481 - Barcode font scaled incorrectly.<br>
+<br>
+    The downloaded font in this file (the barcode) used the typeface<br>
+    family designation of 0 which is reserved for the lineprinter font.<br>
+    Our interpreter scales lineprinter specially and identifies<br>
+    lineprinter with its typeface number (0), thus the barcode font was<br>
+    scaled as if it were the lineprinter font.  Now we check the typeface<br>
+    number is 0 and the font is internal which will uniquely identify the<br>
+    lineprinter font and not confuse other fonts with it.<br>
+<br>
+    Technically the font is broken and shouldn't be accepted, the typeface<br>
+    family numbers documented by HP should not be reused by downloaded<br>
+    fonts, but HP printers seem to print the job.<br>
+<br>
+pcl/pctext.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2014-09-12 14:49:08 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=f4034b2aa85e685c66e98be8c31c511cd9a5169e">f4034b2aa85e685c66e98be8c31c511cd9a5169e</a>
+<blockquote>
+<p>
+    Get rid of last vestiges of pswrite....<br>
+<br>
+    Remove epswrite (the final &quot;subdevice&quot; of pswrite) and references to it.<br>
+<br>
+    Also remove the gdevps.c source file.<br>
+<br>
+    Cluster differences only in files that enumerate the devices list, for<br>
+    example:<br>
+    430-01.ps<br>
+<br>
+doc/who_owns_what.txt<br>
+gs/Makefile.in<br>
+gs/base/macos-mcp.mak<br>
+gs/base/macosx.mak<br>
+gs/base/openvms.mak<br>
+gs/base/openvms.mmk<br>
+gs/base/unix-gcc.mak<br>
+gs/base/unixansi.mak<br>
+gs/configure.ac<br>
+gs/devices/devs.mak<br>
+gs/devices/vector/gdevps.c<br>
+gs/lib/eps2eps<br>
+gs/lib/eps2eps.bat<br>
+gs/lib/eps2eps.cmd<br>
+gs/man/ps2ps.1<br>
+gs/psi/msvc.mak<br>
+gs/psi/os2.mak<br>
+gs/toolbin/pre.chk<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2014-08-27 10:08:45 -0700
+</strong>
+<br>Ray Johnston &lt;ray.johnston@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=bbe97e4cfc3d725f42ae34125c716902faf72977">bbe97e4cfc3d725f42ae34125c716902faf72977</a>
+<blockquote>
+<p>
+    Add lib/viewraw.ps utility to view &quot;raw&quot; files<br>
+<br>
+    An extended version of lib/viewcmyk.ps so that &quot;raw&quot; output from<br>
+    bit, bitrgb or bitcmyk can be displayed or converted. For example:<br>
+      gswin32c -sDEVICE=bitrgb -dGrayValues=256 -o x.rgb examples/tiger.eps<br>
+    can be viewed with:<br>
+      gswin32c -dRGB -dBITS=8 -- lib/viewraw.ps x.rgb 612<br>
+<br>
+gs/lib/viewraw.ps<br>
+<p>
+</blockquote>
+<hr>
 <br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
 <a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=8605f67582ae2e2e619ab6fbab9888a23f37fdb9">8605f67582ae2e2e619ab6fbab9888a23f37fdb9</a>
 <blockquote>
@@ -106922,7 +107070,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.15, 8 September 2014
+<small>Ghostscript version 9.15, 16 September 2014
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
