@@ -27,23 +27,49 @@
   % Default ncomp is 4 == CMYK
   /w exch def
   /fname exch def
-  /f fname (r) file def
+  /F fname (r) file def		% the raw file
+  /f /F load def		% the usual DataSource
   /bpc /BITS where { pop BITS } { 1 } ifelse def
   /ncomp
   /Gray where
   { pop 1 /CS /DeviceGray def }        	% DeviceGray is 1 component
   { /RGB where
-    { pop 3 BITS 4 ge          		% DeviceRGB is 3 component, use Indexed for 1, 2, 4 BITS
+    { pop 3 BITS 8 ge          		% DeviceRGB is 3 component, use Indexed for 1, 2, 4 BITS
       { /CS /DeviceRGB def }
       {
-        BITS 1 eq {
+        BITS 4 eq {
+          /P 4096 3 mul string def	% the palette
+          0 1 15 { /r exch def
+            0 1 15 { /g exch def
+              0 1 15 { /b exch def
+                r 256 mul g 16 mul add b add 3 mul	% base of the triplet
+                P 1 index r 17 mul put
+                P 1 index 1 add g 17 mul put
+                P exch 2 add b 17 mul put
+              } for
+            } for
+          } for
           /CS
-          [ /Indexed /DeviceRGB 15 <
-              000000 0000FF 00FF00 00FFFF FF0000 FF00FF FFFF00 FFFFFF
-              000000 0000FF 00FF00 00FFFF FF0000 FF00FF FFFF00 FFFFFF
-            >
-          ] def
-          /BITS 4 def			% change to 4 bit indexed
+          [ /Indexed /DeviceRGB 4095 P ] def
+          /BITS 12 def			% change to 4 bit indexed
+          % redefine the DataSource to pack the 16-bit values into 12-bit
+          % The 'proc' returns 2 12-bit pixels in 3 bytes
+          % This proc is needed for the output from -sDEVICE=bitrgb -dGrayValues=16
+          /S3 3 string def
+          /f {
+            F read
+            {
+              256 mul F read
+              pop add 16 mul S3 0 2 index 256 div cvi put
+              240 and F read
+              { add S3 exch 1 exch put S3 2 F read pop put }
+              { S3 exch 1 exch put S3 2 0 put }
+              ifelse
+              S3
+            }
+            { () }
+            ifelse
+          } bind def
         } if
         BITS 2 eq {
           /CS
@@ -88,6 +114,15 @@
           ] def
           /BITS 8 def			% change to 4 bit indexed
         } if
+        BITS 1 eq {
+          /CS
+          [ /Indexed /DeviceRGB 15 <
+              000000 0000FF 00FF00 00FFFF FF0000 FF00FF FFFF00 FFFFFF
+              000000 0000FF 00FF00 00FFFF FF0000 FF00FF FFFF00 FFFFFF
+            >
+          ] def
+          /BITS 4 def			% change to 4 bit indexed
+        } if
       }
       ifelse
     }
@@ -96,9 +131,12 @@
   }
   ifelse
   def
+
   % Calculate Height from file length and width
   mark fname status pop pop pop /flen exch def cleartomark
-  /h flen w bpc ncomp mul mul 7 add 8 idiv idiv def
+  % NB: bitrgb writes 4 bits when BITS=1, 8 bits when BITS=2, 16 bits when BITS=4
+  % presumably to keep values on nice boundaries this takes some fudging
+  /h flen w bpc ncomp dup 3 eq bpc 8 lt and { 1 add } if mul mul 7 add 8 idiv idiv def
   %% (Dimensions: ) print [w h] == flush
                 % Set up scaling.
   /SCALE where {
@@ -115,7 +153,7 @@
   %% w h bpc [1 0 0 -1 0 h] f false ncomp colorimage
   CS setcolorspace
   << /ImageType 1 /Width w /Height h /ImageMatrix [1 0 0 -1 0 h]
-     /MultipleDataSources false /DataSource f /BitsPerComponent BITS
+     /MultipleDataSources false /DataSource /f load /BitsPerComponent BITS
      /Decode
        bpc 1 eq {        	% inverted sense for 1 bit per component
          [ [0] [ 1 0 ] [0] [ 0 15 ] [ 0 1 0 1 0 1 0 1 ] ] ncomp get
@@ -123,12 +161,15 @@
        bpc 2 eq {
          [ [0] [ 0 1 ] [0] [ 0 255 ] [ 0 1 0 1 0 1 0 1 ] ] ncomp get
        } if
-       bpc 4 ge {
-         [ [0] [ 0 1 ] [0] [ 0 1 0 1 0 1 ] [ 0 1 0 1 0 1 0 1 ] ] ncomp get
+       bpc 4 eq {
+         [ [0] [ 0 1 ] [0] [ 0 4095 ] [ 1 0 1 0 1 0 1 0 ] ] ncomp get
+       } if
+       bpc 8 ge {
+         [ [0] [ 0 1 ] [0] [ 0 1 0 1 0 1 ] [ 1 0 1 0 1 0 1 0 ] ] ncomp get
        } if
   >> image
   showpage
-  f closefile
+  F closefile
   end
 } bind def
 
