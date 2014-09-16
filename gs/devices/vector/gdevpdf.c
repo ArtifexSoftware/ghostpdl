@@ -1340,6 +1340,7 @@ pdf_output_page(gx_device * dev, int num_copies, int flush)
         if ((code = pdf_close(dev)) < 0)
             return code;
         code = pdf_open(dev);
+        dev->is_open = true;
     }
     return code;
 }
