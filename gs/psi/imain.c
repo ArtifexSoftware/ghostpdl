@@ -880,13 +880,15 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
      * We also have to mess with the BeginPage/EndPage procs so that we don't
      * trigger a spurious extra page to be emitted.
      */
-    gs_main_run_string(minst,
-        "/systemdict .systemexec /begin .systemexec \
-        <</BeginPage {pop} /EndPage {pop pop //false } \
-          /BGPrint false /NumRenderingThreads 0>> setpagedevice \
-          serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse end \
-          .systemvar exec",
-        0 , &exit_code, &error_object);
+    if (minst->init_done >= 1) {
+        gs_main_run_string(minst,
+            "/systemdict .systemexec /begin .systemexec \
+            <</BeginPage {pop} /EndPage {pop pop //false } \
+              /BGPrint false /NumRenderingThreads 0>> setpagedevice \
+              serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse end \
+              .systemvar exec",
+            0 , &exit_code, &error_object);
+    }
 #endif
 
     /*
