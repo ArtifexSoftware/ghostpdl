@@ -197,6 +197,9 @@ hpgl_select_stick_font(hpgl_state_t * pgls)
     font->pfont = (gs_font *) pfont;
     font->scaling_technology = plfst_TrueType;    /****** WRONG ******/
     font->font_type = plft_Unicode;
+    font->widths_cache = NULL;
+    font->widths_cache_nitems = 0;
+
     memcpy(font->character_complement, stick_character_complement, 8);
     /*
      * The stick/arc font is protean: set its proportional spacing,
@@ -248,6 +251,8 @@ hpgl_select_531_font(hpgl_state_t * pgls)
     font->pfont = (gs_font *) pfont;
     font->scaling_technology = plfst_TrueType;/****** WRONG ******/
     font->font_type = plft_Unicode;
+    font->widths_cache = NULL;
+    font->widths_cache_nitems = 0;
     /* we pass the dictionary created during the DL command as the font header data. */
     font->header = (void *)&pgls->g.dl_531_fontdict;
     /* the parameters aren't used so we just fill them in with stick
