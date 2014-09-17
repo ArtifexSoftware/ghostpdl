@@ -649,6 +649,8 @@ $(PCLOBJ)pcfsel.$(OBJ): $(PCLSRC)pcfsel.c   \
                         $(plftable_h)
 	$(PCLCCC) $(PCLSRC)pcfsel.c $(PCLO_)pcfsel.$(OBJ)
 
+pconfig_h    = $(PCLGEN)pconfig.h
+
 $(PCL_TOP_OBJ):         $(PCLSRC)pctop.c            \
                         $(AK)                       \
                         $(malloc__h)                \
@@ -674,8 +676,7 @@ $(PCL_TOP_OBJ):         $(PCLSRC)pctop.c            \
                         $(pcpalet_h)                \
                         $(rtgmode_h)                \
                         $(gsicc_manage_h)           \
-                        $(PCLGEN)pconf.h
-	$(CP_) $(PCLGEN)pconf.h $(PCLGEN)pconfig.h
+                        $(pconfig_h)
 	$(PCLCCC) $(PCLSRC)pctop.c $(PCLO_)pctop.$(OBJ)
 
 PCL_COMMON  = $(PCLOBJ)pcfsel.$(OBJ)

@@ -56,8 +56,7 @@ $(PSI_TOP_OBJ): $(PSISRC)psitop.c $(AK) $(stdio__h)\
  $(string__h) $(gdebug_h) $(gp_h) $(gsdevice_h) $(gserrors_h) $(gsmemory_h)\
  $(gsstate_h) $(gsstruct_h) $(gspaint_h) $(gstypes_h) $(gxalloc_h) $(gxstate_h)\
  $(gsnogc_h) $(pltop_h) $(psitop_h) $(plparse_h) $(gsicc_manage_h)\
- $(PSIGEN)pconf.h $(plfont_h) $(uconfig_h)
-	$(CP_) $(PSIGEN)pconf.h $(PSIGEN)pconfig.h
+ $(PSIGEN)pconf.h $(plfont_h) $(uconfig_h) $(pconfig_h)
 	$(PSICCC) $(PSISRC)psitop.c $(O_)$(PSI_TOP_OBJ)
 
 $(PSIOBJ)psi.dev: $(PSI_MAK) $(ECHOGS_XE) $(PLOBJ)pl.dev $(PLOBJ)pjl.dev 

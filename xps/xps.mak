@@ -121,8 +121,7 @@ $(XPSOBJ)xpsfapi.$(OBJ): $(XPSSRC)xpsfapi.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsfapi.c $(XPSO_)xpsfapi.$(OBJ)
 
 
-$(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(XPSGEN)pconf.h $(pltop_h) $(XPSINCLUDES)
-	$(CP_) $(XPSGEN)pconf.h $(XPSGEN)pconfig.h
+$(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(pconfig_h) $(pltop_h) $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpstop.c $(XPSO_)xpstop.$(OBJ)
 
 XPS_OBJS=\

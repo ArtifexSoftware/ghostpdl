@@ -61,6 +61,12 @@ romfnttab_h=$(PLSRC)romfnttab.h
 plfont_h=$(PLSRC)plfont.h $(gsccode_h) $(plsymbol_h) \
          $(pldict_h) $(stream_h) $(strmio_h)
 plchar_h=$(PLSRC)plchar.h
+
+pconfig_h=$(GLGEN)pconfig.h
+
+$(pconfig_h): $(GLGEN)pconf.h
+	$(CP_) $(GLGEN)pconf.h $(GLGEN)pconfig.h
+
 ################ PJL ################
 
 

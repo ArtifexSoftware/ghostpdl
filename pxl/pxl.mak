@@ -213,8 +213,7 @@ $(PXL_TOP_OBJ): $(PXLSRC)pxtop.c $(AK) $(stdio__h)\
  $(gsstate_h) $(gsfont_h) $(gsstruct_h) $(gspaint_h) $(gstypes_h) $(gxalloc_h) $(gxstate_h)\
  $(gsnogc_h) $(pltop_h) $(plparse_h)\
  $(pxattr_h) $(pxerrors_h) $(pxoper_h) $(pxparse_h) $(pxptable_h) $(pxstate_h)\
- $(pxfont_h) $(pxvalue_h) $(PXLGEN)pconf.h $(plfont_h)
-	$(CP_) $(PXLGEN)pconf.h $(PXLGEN)pconfig.h
+ $(pxfont_h) $(pxvalue_h) $(PXLGEN)pconf.h $(plfont_h) $(pconfig_h)
 	$(PXLCCC) $(PXLSRC)pxtop.c $(PXLO_)pxtop.$(OBJ)
 
 # Note that we must initialize pxfont before pxerrors.
