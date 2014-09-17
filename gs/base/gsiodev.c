@@ -63,7 +63,7 @@ int
 gs_iodev_init(gs_memory_t * mem)
 {				/* Make writable copies of all IODevices. */
     gx_io_device **table =
-        gs_alloc_struct_array(mem, gx_io_device_table_count,
+        gs_alloc_struct_array_immovable(mem, gx_io_device_table_count,
                               gx_io_device *, &st_io_device_ptr_element,
                               "gs_iodev_init(table)");
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
@@ -75,7 +75,7 @@ gs_iodev_init(gs_memory_t * mem)
 
     for (i = 0; i < gx_io_device_table_count; ++i) {
         gx_io_device *iodev =
-            gs_alloc_struct(mem, gx_io_device, &st_io_device,
+            gs_alloc_struct_immovable(mem, gx_io_device, &st_io_device,
                             "gs_iodev_init(iodev)");
 
         if (iodev == 0)

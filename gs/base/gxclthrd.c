@@ -101,7 +101,7 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
         rc_increment(ndev->icc_struct);
 #endif
     /* get the current device parameters to put into the cloned device */
-    gs_c_param_list_write(&paramlist, dev->memory);
+    gs_c_param_list_write(&paramlist, thread_mem);
     if ((code = gs_getdeviceparams(dev, (gs_param_list *)&paramlist)) < 0) {
         emprintf1(dev->memory,
                   "Error getting device params, code=%d. Rendering threads not started.\n",
