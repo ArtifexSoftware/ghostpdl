@@ -2159,13 +2159,53 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
     return code;
 }
 
-int gs_free_copied_font(gs_font *font)
+/* We only need this because the ddescndant(s) share the parent
+ * CIDFont glyph space, so we can't free that if we are a descendant.
+ */
+static int gs_free_copied_descendant_font(gs_font *font)
 {
     gs_copied_font_data_t *cfdata = font->client_data;
     gs_memory_t *mem = font->memory;
     int i;
+
+    if (cfdata) {
+        uncopy_string(mem, &cfdata->info.FullName,
+                      "gs_free_copied_font(FullName)");
+        uncopy_string(mem, &cfdata->info.FamilyName,
+                      "gs_free_copied_font(FamilyName)");
+        uncopy_string(mem, &cfdata->info.Notice,
+                      "gs_free_copied_font(Notice)");
+        uncopy_string(mem, &cfdata->info.Copyright,
+                      "gs_free_copied_font(Copyright)");
+        if (cfdata->Encoding)
+            gs_free_object(mem, cfdata->Encoding, "gs_free_copied_font(Encoding)");
+        gs_free_object(mem, cfdata->names, "gs_free_copied_font(names)");
+        gs_free_object(mem, cfdata->data, "gs_free_copied_font(data)");
+        gs_free_object(mem, cfdata, "gs_free_copied_font(wrapper data)");
+    }
+    gs_free_object(mem, font, "gs_free_copied_font(copied font)");
+    return 0;
+}
+
+int gs_free_copied_font(gs_font *font)
+{
+    gs_copied_font_data_t *cfdata = font->client_data;
+    gs_memory_t *mem = font->memory;
+    int i, code;
     gs_copied_glyph_t *pcg = 0;
 
+    /* For CID fonts, we must also free the descendants, which we copied
+     * at the time we copied the actual CIDFont itself
+     */
+    if (font->FontType == ft_CID_encrypted) {
+        gs_font_cid0 *copied0 = (gs_font_cid0 *)font;
+
+        for (i = 0; i < copied0->cidata.FDArray_size; ++i) {
+            code = gs_free_copied_descendant_font((gs_font *)copied0->cidata.FDArray[i]);
+            if (code < 0)
+                return code;
+        }
+    }
     /* free copied glyph data */
     for (i=0;i < cfdata->glyphs_size;i++) {
         pcg = &cfdata->glyphs[i];
