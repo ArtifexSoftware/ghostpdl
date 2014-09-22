@@ -269,6 +269,30 @@ static int
 pdf_begin_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
                                 const gs_pdf14trans_params_t * pparams)
 {
+    if (pparams->subtype == TRANSPARENCY_MASK_None) {
+        int code, id = pis->soft_mask_id;
+        pdf_resource_t *pres = 0L;
+
+        /* reset the soft mask ID. Apparently this is only used by pdfwrite, if we don't
+         * reset it, then the pdf_prepare_drawing code doesn't know that the SMask has
+         * changed, and so doesn't write out the GState
+         */
+        pis->soft_mask_id = 0;
+        code = pdf_prepare_drawing(pdev, pis, &pres);
+        if (code = gs_error_interrupt) {
+            /* Not in an appropriate context, ignore it but restore
+             * the old soft_mask_id. Not sure this is correct, but it works for now.
+             */
+            pis->soft_mask_id = id;
+            return 0;
+        }
+        if (code < 0)
+            return code;
+        code = pdf_end_gstate(pdev, pres);
+        if (code < 0)
+            return code;
+        return 0;
+    }
     if (pparams->mask_is_image) {
         /* HACK :
             The control comes here when
