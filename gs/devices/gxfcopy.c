@@ -2166,7 +2166,6 @@ static int gs_free_copied_descendant_font(gs_font *font)
 {
     gs_copied_font_data_t *cfdata = font->client_data;
     gs_memory_t *mem = font->memory;
-    int i;
 
     if (cfdata) {
         uncopy_string(mem, &cfdata->info.FullName,
