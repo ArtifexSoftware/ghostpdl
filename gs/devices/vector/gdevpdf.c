@@ -1322,10 +1322,29 @@ static int
 pdf_output_page(gx_device * dev, int num_copies, int flush)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *) dev;
-    int code = pdf_close_page(pdev, num_copies);
+    int code;
 
-    if (code < 0)
-        return code;
+    if (pdev->ForOPDFRead) {
+        code = pdf_close_page(pdev, num_copies);
+        if (code < 0)
+            return code;
+
+        while (pdev->sbstack_depth) {
+            code = pdf_exit_substream(pdev);
+            if (code < 0)
+                return code;
+        }
+    } else {
+        while (pdev->sbstack_depth) {
+            code = pdf_exit_substream(pdev);
+            if (code < 0)
+                return code;
+        }
+        code = pdf_close_page(pdev, num_copies);
+        if (code < 0)
+            return code;
+    }
+
     if(pdev->UseCIEColor) {
         emprintf(pdev->memory, "\n\nUse of -dUseCIEColor detected!\nSince the release of version 9.11 of Ghostscript we recommend you do not set\n-dUseCIEColor with the pdfwrite/ps2write device family.\n\n");
     }
