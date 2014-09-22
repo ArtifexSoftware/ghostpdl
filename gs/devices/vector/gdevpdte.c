@@ -881,8 +881,6 @@ pdf_char_widths_to_uts(pdf_font_resource_t *pdfont /* may be NULL for non-Type3 
         pwidths->Width.xy.x *= pmat->xx; /* formula simplified based on wy in glyph space == 0 */
         pwidths->Width.xy.y  = 0.0; /* WMode == 0 for PDF Type 3 fonts */
         gs_distance_transform(pwidths->real_width.xy.x, pwidths->real_width.xy.y, pmat, &pwidths->real_width.xy);
-//        gs_distance_transform(pwidths->BBox.p.x, pwidths->BBox.p.y, pmat, &pwidths->BBox.p);
-//        gs_distance_transform(pwidths->BBox.q.x, pwidths->BBox.q.y, pmat, &pwidths->BBox.q);
     } else {
         /*
          * For other font types:
@@ -893,10 +891,6 @@ pdf_char_widths_to_uts(pdf_font_resource_t *pdfont /* may be NULL for non-Type3 
         pwidths->Width.xy.y /= 1000.0;
         pwidths->real_width.xy.x /= 1000.0;
         pwidths->real_width.xy.y /= 1000.0;
-/*        pwidths->BBox.p.x /= 1000.0;
-        pwidths->BBox.p.y /= 1000.0;
-        pwidths->BBox.q.x /= 1000.0;
-        pwidths->BBox.q.y /= 1000.0;*/
     }
 }
 
