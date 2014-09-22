@@ -284,6 +284,7 @@ pdf_begin_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
              * the old soft_mask_id. Not sure this is correct, but it works for now.
              */
             pis->soft_mask_id = id;
+            code = pdf_end_gstate(pdev, pres);
             return 0;
         }
         if (code < 0)
