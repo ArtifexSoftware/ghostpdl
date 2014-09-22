@@ -817,6 +817,8 @@ pdf_exit_substream(gx_device_pdf *pdev)
         code = code1;
     pdev->context = pdev->sbstack[sbstack_ptr].context;
     pdf_text_state_copy(pdev->text->text_state, pdev->sbstack[sbstack_ptr].text_state);
+    gs_free_object(pdev->pdf_memory, pdev->sbstack[sbstack_ptr].text_state, "free text state for stream");
+    pdev->sbstack[sbstack_ptr].text_state = 0;
     pdev->clip_path = pdev->sbstack[sbstack_ptr].clip_path;
     pdev->sbstack[sbstack_ptr].clip_path = 0;
     pdev->clip_path_id = pdev->sbstack[sbstack_ptr].clip_path_id;
