@@ -2205,6 +2205,8 @@ int gs_free_copied_font(gs_font *font)
             if (code < 0)
                 return code;
         }
+        gs_free_object(mem, copied0->cidata.FDArray, "free copied CIDFont FDArray");
+        copied0->cidata.FDArray = 0;
     }
     /* free copied glyph data */
     for (i=0;i < cfdata->glyphs_size;i++) {
