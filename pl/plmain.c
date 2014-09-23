@@ -1516,7 +1516,7 @@ pl_post_finish_page(pl_interp_instance_t * interp, void *closure)
                 pti->page_count);
         pl_log_string(pti->memory, strbuf, 1);
     } else if (gs_debug_c(':'))
-        pl_print_usage(pti, " done :");
+        pl_print_usage(pti, "render done :");
     return 0;
 }
 

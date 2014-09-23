@@ -686,6 +686,8 @@ pcl_end_page_top(pcl_state_t * pcs, int num_copies, int flush)
     }
 
     /* output the page */
+    if (gs_debug_c(':'))
+        pl_print_usage(pcli->post_page_closure, "parse done :");
     code = gs_output_page(pcs->pgs, num_copies, flush);
     if (code < 0)
         return code;
