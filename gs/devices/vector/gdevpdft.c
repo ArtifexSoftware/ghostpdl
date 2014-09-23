@@ -279,12 +279,15 @@ pdf_begin_transparency_mask(gs_imager_state * pis, gx_device_pdf * pdev,
          */
         pis->soft_mask_id = 0;
         code = pdf_prepare_drawing(pdev, pis, &pres);
-        if (code = gs_error_interrupt) {
+        if (code == gs_error_interrupt) {
             /* Not in an appropriate context, ignore it but restore
              * the old soft_mask_id. Not sure this is correct, but it works for now.
              */
             pis->soft_mask_id = id;
-            code = pdf_end_gstate(pdev, pres);
+            /* ignore return code, we don't care about this graphics state as we aren't
+             * emitting it anyway
+             */
+            pdf_end_gstate(pdev, pres);
             return 0;
         }
         if (code < 0)
