@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2012 Artifex Software, Inc.
+/* Copyright (C) 2001-2014 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -15,17 +15,29 @@
 
 /* XPS output device */
 #include "string_.h"
+#include "stdio_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gdevvec.h"
 #include "gxpath.h"
+#include "gzcpath.h"
 #include "stream.h"
 #include "zlib.h"
+#include <tiffio.h>
+#include <tiffvers.h>
+#include "gsicc_create.h"
+#include "gsicc_cache.h"
 
 #define MAXPRINTERNAME 64
 #if defined(__WIN32__) && XPSPRINT==1
 int XPSPrint(char *FileName, char *PrinterName, int *reason);
 #endif
+
+#define MAXICCNAME 64
+#define PROFILEPATH "Documents/1/Resources/Profiles/"
+
+#define MAXTIFFNAME 64
+#define IMAGEPATH "Documents/1/Resources/Images/"
 
 /* default resolution. */
 #ifndef X_DPI
@@ -54,7 +66,7 @@ typedef enum {XPS_JOIN, XPS_START_CAP, XPS_END_CAP, XPS_THICK, XPS_MITER_LIMIT,
 
 typedef struct gx_device_xps_vals {
     double f;
-    uint64_t   i;
+    uint64_t i;
 } val_t;
 
 /* current and default values of state atrributes */
@@ -108,6 +120,34 @@ typedef struct gx_device_xps_f2i_s {
     struct gx_device_xps_f2i_s *next;
 } gx_device_xps_f2i_t;
 
+/* Used for keeping track of icc profiles that we have written.   This way we 
+   avoid writing the same one multiple times.  It would be nice to do this
+   based upon the gs_id for images, but that id is really created after we
+   have already drawn the path.  Not clear to me how to get a source ID. */
+typedef struct xps_icc_data_s {
+    int64_t hash;
+    int index;
+    struct xps_icc_data_s *next;
+} xps_icc_data_t;
+
+typedef enum {
+    xps_solidbrush,
+    xps_imagebrush,
+    xps_visualbrush
+} xps_brush_t;
+
+typedef struct xps_image_enum_s {
+    gdev_vector_image_enum_common;
+    gs_matrix mat;
+    TIFF *tif; /* in non-GC memory */
+    char file_name[MAXTIFFNAME];
+    char icc_name[MAXICCNAME];
+} xps_image_enum_t;
+
+gs_private_st_suffix_add0(st_xps_image_enum, xps_image_enum_t,
+    "xps_image_enum_t", xps_image_enum_enum_ptrs,
+    xps_image_enum_reloc_ptrs, st_vector_image_enum);
+
 typedef struct gx_device_xps_s {
     /* superclass state */
     gx_device_vector_common;
@@ -116,7 +156,12 @@ typedef struct gx_device_xps_s {
     gx_device_xps_f2i_t *f2i_tail;
     /* local state */
     int page_count;     /* how many output_page calls we've seen */
+    int image_count;    /* number of images so far */
+    int relationship_count;  /* Pages relationships */
+    xps_icc_data_t *icc_data;
     gx_color_index strokecolor, fillcolor;
+    xps_brush_t stroketype, filltype;
+    xps_image_enum_t *xps_pie;
     double linewidth;
     gs_line_cap linecap;
     gs_line_join linejoin;
@@ -124,6 +169,10 @@ typedef struct gx_device_xps_s {
     bool can_stroke;
     unsigned char PrinterName[MAXPRINTERNAME];
 } gx_device_xps;
+
+gs_public_st_suffix_add1_final(st_device_xps, gx_device_xps,
+    "gx_device_xps", device_xps_enum_ptrs, device_xps_reloc_ptrs,
+    gx_device_finalize, st_device_vector, xps_pie);
 
 #define xps_device_body(dname, depth)\
   std_device_dci_type_body(gx_device_xps, 0, dname, &st_device_xps, \
@@ -142,6 +191,7 @@ static dev_proc_put_params(xps_put_params);
 static dev_proc_fill_path(gdev_xps_fill_path);
 static dev_proc_stroke_path(gdev_xps_stroke_path);
 static dev_proc_finish_copydevice(xps_finish_copydevice);
+static dev_proc_begin_image(xps_begin_image);
 
 #define xps_device_procs \
 { \
@@ -176,7 +226,7 @@ static dev_proc_finish_copydevice(xps_finish_copydevice);
         NULL,                   /* gdev_vector_fill_parallelogram */        \
         NULL,                   /* gdev_vector_fill_triangle */           \
         NULL,                   /* draw_thin_line */\
-        NULL,                   /* begin_image */   \
+        xps_begin_image,        /* begin_image */   \
         NULL,                   /* image_data */\
         NULL,                   /* end_image */\
         NULL,                   /* strip_tile_rectangle */\
@@ -191,11 +241,6 @@ static dev_proc_finish_copydevice(xps_finish_copydevice);
         xps_finish_copydevice,\
         NULL,\
 }
-
-gs_public_st_suffix_add0_final(st_device_xps, gx_device_xps,
-                               "gx_device_xps",
-                               device_xps_enum_ptrs, device_xps_reloc_ptrs,
-                               gx_device_finalize, st_device_vector);
 
 const gx_device_xps gs_xpswrite_device = {
     xps_device_body("xpswrite", 24),
@@ -284,6 +329,7 @@ static char *xps_content_types = (char *)"<?xml version=\"1.0\" encoding=\"utf-8
     "<Default Extension=\"fdoc\" ContentType=\"application/vnd.ms-package.xps-fixeddocument+xml\" />"
     "<Default Extension=\"fpage\" ContentType=\"application/vnd.ms-package.xps-fixedpage+xml\" />"
     "<Default Extension=\"ttf\" ContentType=\"application/vnd.ms-opentype\" />"
+    "<Default Extension = \"icc\" ContentType = \"application/vnd.ms-color.iccprofile\" />"
     "<Default Extension=\"tif\" ContentType=\"image/tiff\" />"
     "<Default Extension=\"png\" ContentType=\"image/png\" /></Types>";
 
@@ -295,10 +341,14 @@ static char *fixed_document_sequence = (char *)"<?xml version=\"1.0\" encoding=\
 static char *fixed_document_fdoc_header = (char *)"<?xml version=\"1.0\" encoding=\"utf-8\"?>"
     "<FixedDocument xmlns=\"http://schemas.microsoft.com/xps/2005/06\">";
 
-static char *rels_magic = (char *)"<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-    "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">"
-    "<Relationship Type=\"http://schemas.microsoft.com/xps/2005/06/fixedrepresentation\" Target=\"/FixedDocumentSequence.fdseq\" Id=\"Rdd12fb46c1de43ab\" />"
-    "</Relationships>";
+static char *rels_header = (char *)"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+    "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">\n";
+
+static char *rels_fdseq = (char *)"<Relationship Type=\"http://schemas.microsoft.com/xps/2005/06/fixedrepresentation\" "
+    "Target=\"/FixedDocumentSequence.fdseq\" Id=\"Rdd12fb46c1de43ab\" />\n"
+    "</Relationships>\n";
+
+static char *rels_req_type = (char *) "\"http://schemas.microsoft.com/xps/2005/06/required-resource\"";
 
     /* Procedures to manage the containing zip archive */
 
@@ -425,6 +475,22 @@ zip_append_data(gs_memory_t *mem, gx_device_xps_zinfo_t *info, byte *data, uint 
     return 0;
 }
 
+/* Seek within an archived zip file. Needed to use with tiff */
+static uint64_t
+zip_seek(gs_memory_t *mem, gx_device_xps_zinfo_t *info, uint64_t off, int whence)
+{
+    if (info->data.fp == NULL && off == 0)
+        return 0;
+
+    if (info->data.fp == NULL)
+        return (uint64_t)-1;
+
+    if (gp_fseek_64(info->data.fp, (gs_offset_t)off, whence) < 0) {
+        return (uint64_t)-1;
+    }
+    return (gp_ftell_64(info->data.fp));
+}
+
 /* write to one of the archives (filename) in the zip archive */
 static int
 write_to_zip_file(gx_device_xps *xps_dev, const char *filename,
@@ -453,6 +519,32 @@ write_to_zip_file(gx_device_xps *xps_dev, const char *filename,
         return gs_rethrow_code(code);
 
     return code;
+}
+
+/* Seek in an archive.  Needed for tiff writing support */
+static uint64_t
+seek_to_zip_file(gx_device_xps *xps_dev, const char *filename, uint64_t off,
+        int whence)
+{
+    gx_device *dev = (gx_device *)xps_dev;
+    gs_memory_t *mem = dev->memory;
+
+    gx_device_xps_zinfo_t *info = zip_look_up_file_info(xps_dev, filename);
+    int code = 0;
+
+    /* No information on this archive file, create a new zip entry
+    info node */
+    if (info == NULL) {
+        code = zip_add_file(xps_dev, filename);
+        if (code < 0)
+            return gs_rethrow_code(code);
+        info = zip_look_up_file_info(xps_dev, filename);
+    }
+
+    if (info == NULL)
+        return gs_throw_code(gs_error_Fatal);
+
+    return zip_seek(mem, info, off, whence);
 }
 
 static void
@@ -513,6 +605,8 @@ zip_close_archive_file(gx_device_xps *xps_dev, const char *filename)
     gx_device_xps_zdata_t data = info->data;
     byte buf[4];
     unsigned long crc = 0;
+    int count = 0;
+    int len;
     /* we can't use the vector stream accessor because it calls beginpage */
     stream *f = ((gx_device_vector*)xps_dev)->strm;
 
@@ -527,8 +621,17 @@ zip_close_archive_file(gx_device_xps *xps_dev, const char *filename)
         while (!feof(fp)) {
             nread = fread(buf, 1, sizeof(buf), fp);
             crc = crc32(crc, buf, nread);
+            count = count + nread;
         }
-
+        /* If this is a TIFF file, then update the data count information.
+           During the writing of the TIFF directory there is seeking and
+           relocations that occur, which make data.count incorrect. 
+           We could just do this for all the files and avoid the test. */
+        len = strlen(filename);
+        if (len > 3 && (strncmp("tif", &(filename[len - 3]), 3) == 0)) {
+            info->data.count = count;
+            data = info->data;
+        }
     }
 
     info->current_pos = stell(f);
@@ -646,8 +749,24 @@ zip_close_archive(gx_device_xps *xps_dev)
     return 0;
 }
 
-/* Device procedures */
+/* Brush management */
+static void
+xps_setstrokebrush(gx_device_xps *xps, xps_brush_t type)
+{
+    if_debug1m('_', xps->memory, "xps_setstrokebrush:%d\n", (int)type);
 
+    xps->stroketype = type;
+}
+
+static void
+xps_setfillbrush(gx_device_xps *xps, xps_brush_t type)
+{
+    if_debug1m('_', xps->memory, "xps_setfillbrush:%d\n", (int)type);
+
+    xps->filltype = type;
+}
+
+/* Device procedures */
 static int
 xps_open_device(gx_device *dev)
 {
@@ -665,8 +784,11 @@ xps_open_device(gx_device *dev)
 
     /* xps-specific initialization goes here */
     xps->page_count = 0;
+    xps->relationship_count = 0;
     xps->strokecolor = gx_no_color_index;
     xps->fillcolor = gx_no_color_index;
+    xps_setstrokebrush(xps, xps_solidbrush);
+    xps_setfillbrush(xps, xps_solidbrush);
     /* these should be the graphics library defaults instead? */
     xps->linewidth = XPS_DEFAULT_LINEWIDTH;
     xps->linecap = XPS_DEFAULT_LINECAP;
@@ -676,6 +798,13 @@ xps_open_device(gx_device *dev)
     /* zip info */
     xps->f2i = NULL;
     xps->f2i_tail = NULL;
+
+    /* Image related stuff */
+    xps->image_count = 0;
+    xps->xps_pie = NULL;
+
+    /* ICC related stuff */
+    xps->icc_data = NULL;
 
     code = write_str_to_zip_file(xps, (char *)"FixedDocumentSequence.fdseq",
                                  fixed_document_sequence);
@@ -693,9 +822,12 @@ xps_open_device(gx_device *dev)
     if (code < 0)
         return gs_rethrow_code(code);
 
+    /* Right out the magical stuff related to the fix document sequence relationship */
+    code = write_str_to_zip_file(xps, (char *)"_rels/.rels", rels_header);
+    if (code < 0)
+        return gs_rethrow_code(code);
 
-    code = write_str_to_zip_file(xps, (char *)"_rels/.rels",
-                                 rels_magic);
+    code = write_str_to_zip_file(xps, (char *)"_rels/.rels", rels_fdseq);
     if (code < 0)
         return gs_rethrow_code(code);
 
@@ -716,7 +848,46 @@ write_str_to_current_page(gx_device_xps *xps, const char *str)
     
     return write_str_to_zip_file(xps, buf, str);
 }
-    
+
+/* add relationship to Pages/_rels/%d.fpage.rels */
+static int
+add_new_relationship(gx_device_xps *xps, const char *str)
+{
+    const char *rels_template = "Documents/1/Pages/_rels/%d.fpage.rels";
+    char buf[128]; /* easily enough to accommodate the string and a page number */
+    char line[300];
+    const char *fmt;
+
+    int code = gs_sprintf(buf, rels_template, xps->page_count + 1);
+    if (code < 0)
+        return gs_rethrow_code(code);
+
+    /* Check if this is our first one */
+    if (xps->relationship_count == 0) 
+        write_str_to_zip_file(xps, buf, rels_header);
+
+    /* Now add the reference */
+    fmt = "<Relationship Target = \"/%s\" Id = \"R%d\" Type = %s/>\n";
+    gs_sprintf(line, fmt, str, xps->relationship_count, rels_req_type);
+
+    xps->relationship_count++;
+
+    return write_str_to_zip_file(xps, buf, line);
+}
+
+static int
+close_page_relationship(gx_device_xps *xps)
+{
+    const char *rels_template = "Documents/1/Pages/_rels/%d.fpage.rels";
+    char buf[128]; /* easily enough to accommodate the string and a page number */
+
+    int code = gs_sprintf(buf, rels_template, xps->page_count + 1);
+    if (code < 0)
+        return gs_rethrow_code(code);
+
+    write_str_to_zip_file(xps, buf, "</Relationships>");
+    return 0;
+}
 
         /* Page management */
 
@@ -729,6 +900,14 @@ xps_output_page(gx_device *dev, int num_copies, int flush)
     int code;
 
     write_str_to_current_page(xps, "</Canvas></FixedPage>");
+    if (xps->relationship_count > 0)
+    {
+        /* Close the relationship xml */
+        code = close_page_relationship(xps);
+        if (code < 0)
+            return gs_rethrow_code(code);
+        xps->relationship_count = 0;  /* Reset for next page */
+    }
     xps->page_count++;
 
     if (ferror(xps->file))
@@ -751,11 +930,27 @@ xps_output_page(gx_device *dev, int num_copies, int flush)
     return code;
 }
 
+static void
+xps_release_icc_info(gx_device *dev)
+{
+    gx_device_xps *xps = (gx_device_xps*)dev;
+    xps_icc_data_t *curr;
+    xps_icc_data_t *icc_data = xps->icc_data;
+
+    while (icc_data != NULL) {
+        curr = icc_data;
+        icc_data = icc_data->next;
+        gs_free(dev->memory->non_gc_memory, curr, sizeof(xps_icc_data_t), 1,
+            "xps_release_icc_info");
+    }
+    return;
+}
+
 /* Close the device */
 static int
 xps_close_device(gx_device *dev)
 {
-    gx_device_xps *const xps = (gx_device_xps*)dev;
+    const gx_device_xps *xps = (gx_device_xps*)dev;
     int code;
 
     /* closing for the FixedDocument */
@@ -769,6 +964,9 @@ xps_close_device(gx_device *dev)
     code = zip_close_archive(xps);
     if (code < 0)
         return gs_rethrow_code(code);
+
+    /* Release the icc info */
+    xps_release_icc_info(dev);
 
 #if defined(__WIN32__) && XPSPRINT==1
     code = gdev_vector_close_file((gx_device_vector*)dev);
@@ -905,7 +1103,7 @@ xps_put_params(gx_device *dev, gs_param_list *plist)
 
 static int xps_finish_copydevice(gx_device *dev, const gx_device *from_dev)
 {
-    gx_device_xps *const xps = (gx_device_xps*)dev;
+    const gx_device_xps *xps = (gx_device_xps*)dev;
 
     memset(xps->PrinterName, 0x00, MAXPRINTERNAME);
     return 0;
@@ -1076,7 +1274,7 @@ xps_setlogop(gx_device_vector *vdev, gs_logical_operation_t lop,
 
 static int
 xps_can_handle_hl_color(gx_device_vector *vdev, const gs_imager_state *pis,
-                          const gx_drawing_color * pdc)
+                          const gx_drawing_color *pdc)
 {
     if_debug0m('_', vdev->memory, "xps_can_handle_hl_color\n");
     return 0;
@@ -1084,9 +1282,48 @@ xps_can_handle_hl_color(gx_device_vector *vdev, const gs_imager_state *pis,
 
 /* Paths */
 static bool
-drawing_path(gx_path_type_t type)
+image_brush_fill(gx_path_type_t path_type, xps_brush_t brush_type)
 {
-    return ((type & gx_path_type_stroke) || (type & gx_path_type_fill));
+    return brush_type == xps_imagebrush;
+}
+
+static bool
+drawing_path(gx_path_type_t path_type, xps_brush_t brush_type)
+{
+    return ((path_type & gx_path_type_stroke) || (path_type & gx_path_type_fill) ||
+        image_brush_fill(path_type, brush_type));
+}
+
+static void
+xps_finish_image_path(gx_device_vector *vdev)
+{
+    gx_device_xps *xps = (gx_device_xps *)vdev;
+    char line[300];
+    const char *fmt;
+    gs_matrix matrix;
+
+    /* Path is started.  Do the image brush image brush and close the path */
+    write_str_to_current_page(xps, "\t<Path.Fill>\n");
+    write_str_to_current_page(xps, "\t\t<ImageBrush ");
+    fmt = "ImageSource = \"{ColorConvertedBitmap /%s /%s}\" Viewbox=\"%d, %d, %d, %d\" ViewboxUnits = \"Absolute\" Viewport = \"%d, %d, %d, %d\" ViewportUnits = \"Absolute\" TileMode = \"None\" >\n";
+    gs_sprintf(line, fmt, xps->xps_pie->file_name, xps->xps_pie->icc_name,
+        0, 0, xps->xps_pie->width, xps->xps_pie->height, 0, 0,
+        xps->xps_pie->width, xps->xps_pie->height);
+    write_str_to_current_page(xps, line);
+
+    /* Now the render transform.  This is applied to the image brush. Path
+    is already transformed */
+    write_str_to_current_page(xps, "\t\t\t<ImageBrush.Transform>\n");
+    fmt = "\t\t\t\t<MatrixTransform Matrix = \"%g,%g,%g,%g,%g,%g\" />\n";
+    matrix = xps->xps_pie->mat;
+    gs_sprintf(line, fmt,
+        matrix.xx, matrix.xy, matrix.yx, matrix.xx, matrix.tx, matrix.ty);
+    write_str_to_current_page(xps, line);
+    write_str_to_current_page(xps, "\t\t\t</ImageBrush.Transform>\n");
+    write_str_to_current_page(xps, "\t\t</ImageBrush>\n");
+    write_str_to_current_page(xps, "\t</Path.Fill>\n");
+    /* End this path */
+    write_str_to_current_page(xps, "</Path>\n");
 }
 
 static int
@@ -1109,7 +1346,7 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
                
     
     /* skip non-drawing paths for now */
-    if (!drawing_path(type)) {
+    if (!drawing_path(type, xps->filltype)) {
         if_debug1m('_', xps->memory, "xps_dorect: type not supported %x\n", type);
         return 0;
     }
@@ -1118,9 +1355,20 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
         return_error(gs_error_rangecheck);
     }
 
-    write_str_to_current_page(xps, "<Path ");
-
-    if (type & gx_path_type_fill) {
+    if (image_brush_fill(type, xps->filltype)) {
+        /* Do the path data  */
+        fmt = "<Path Data=\"M %g, %g L %g, %g %g, %g %g, %g Z\" >\n";
+        gs_sprintf(line, fmt,
+            fixed2float(x0), fixed2float(y0),
+            fixed2float(x0), fixed2float(y1),
+            fixed2float(x1), fixed2float(y1),
+            fixed2float(x1), fixed2float(y0));
+        write_str_to_current_page(xps, line);
+        /* And now the rest of the details */
+        xps_finish_image_path(vdev);
+    } else if (type & gx_path_type_fill) {
+        /* Solid fill */
+        write_str_to_current_page(xps, "<Path ");
         /* NB - F0 should be changed for a different winding type */
         fmt = "Fill=\"#%06X\" Data=\"M %g, %g L %g, %g %g, %g %g, %g Z\" ";
         c = xps->fillcolor & 0xffffffL;
@@ -1129,7 +1377,11 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
                 fixed2float(x0), fixed2float(y1),
                 fixed2float(x1), fixed2float(y1),
                 fixed2float(x1), fixed2float(y0));
+        write_str_to_current_page(xps, line);
+        write_str_to_current_page(xps, "/>\n");
     } else {
+        /* Solid stroke */
+        write_str_to_current_page(xps, "<Path ");
         fmt = "Stroke=\"#%06X\" Data=\"M %g, %g L %g, %g %g, %g %g, %g Z\" ";
         c = xps->strokecolor & 0xffffffL;
         gs_sprintf(line, fmt, c,
@@ -1137,18 +1389,18 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
                 fixed2float(x0), fixed2float(y1),
                 fixed2float(x1), fixed2float(y1),
                 fixed2float(x1), fixed2float(y0));
-    }
-    
-    write_str_to_current_page(xps, line);
-
-    if (type & gx_path_type_stroke) {
-        /* NB format width. */
-        fmt = "StrokeThickness=\"%g\" ";
-        gs_sprintf(line, fmt, xps->linewidth);
         write_str_to_current_page(xps, line);
+
+        if (type & gx_path_type_stroke) {
+            /* NB format width. */
+            fmt = "StrokeThickness=\"%g\" ";
+            gs_sprintf(line, fmt, xps->linewidth);
+            write_str_to_current_page(xps, line);
+        }
+        write_str_to_current_page(xps, "/>\n");
     }
     /* end and close NB \n not necessary. */
-    return write_str_to_current_page(xps, "/>\n");
+    return 0;
 }
 
 static int
@@ -1184,7 +1436,7 @@ xps_beginpath(gx_device_vector *vdev, gx_path_type_t type)
     (void)gdev_vector_stream((gx_device_vector*)xps);
 
     /* skip non-drawing paths for now */
-    if (!drawing_path(type)) {
+    if (!drawing_path(type, xps->filltype)) {
         if_debug1m('_', xps->memory, "xps_beginpath: type not supported %x\n", type);
         return 0;
     }
@@ -1196,16 +1448,18 @@ xps_beginpath(gx_device_vector *vdev, gx_path_type_t type)
     c = type & gx_path_type_fill ? xps->fillcolor : xps->strokecolor;
     c &= 0xffffffL;
 
-    write_str_to_current_page(xps, "<Path ");
-    
-    if (type & gx_path_type_fill)
-        fmt = "Fill=\"#%06X\" Data=\"";
-    else
-        fmt = "Stroke=\"#%06X\" Data=\"";
-    
-    gs_sprintf(line, fmt, c);
-    
-    write_str_to_current_page(xps, line);
+    if (!image_brush_fill(type, xps->filltype)) {
+        write_str_to_current_page(xps, "<Path ");
+        if (type & gx_path_type_fill)
+            fmt = "Fill=\"#%06X\" Data=\"";
+        else
+            fmt = "Stroke=\"#%06X\" Data=\"";
+        gs_sprintf(line, fmt, c);
+        write_str_to_current_page(xps, line);
+    }
+    else {
+        write_str_to_current_page(xps, "<Path Data=\"");
+    }
     
     if_debug1m('_', xps->memory, "xps_beginpath %s\n", line);
 
@@ -1222,7 +1476,7 @@ xps_moveto(gx_device_vector *vdev, double x0, double y0,
     if_debug2m('_', xps->memory, "xps_moveto %g %g\n", x, y);
 
     /* skip non-drawing paths for now */
-    if (!drawing_path(type)) {
+    if (!drawing_path(type, xps->filltype)) {
         if_debug1m('_', xps->memory, "xps_moveto: type not supported %x\n", type);
         return 0;
     }
@@ -1243,7 +1497,7 @@ xps_lineto(gx_device_vector *vdev, double x0, double y0,
     if_debug2m('_', xps->memory, "xps_lineto %g %g\n", x, y);
     
     /* skip non-drawing paths for now */
-    if (!drawing_path(type)) {
+    if (!drawing_path(type, xps->filltype)) {
         if_debug1m('_', xps->memory, "xps_lineto: type not supported %x\n", type);
         return 0;
     }
@@ -1262,7 +1516,7 @@ xps_curveto(gx_device_vector *vdev, double x0, double y0,
     char line[200];
     
     /* skip non-drawing paths for now */
-    if (!drawing_path(type)) {
+    if (!drawing_path(type, xps->filltype)) {
         if_debug1m('_', xps->memory, "xps_curveto: type not supported %x\n", type);
         return 0;
     }
@@ -1282,7 +1536,7 @@ xps_closepath(gx_device_vector *vdev, double x, double y,
     gx_device_xps *xps = (gx_device_xps *)vdev;
 
     /* skip non-drawing paths for now */
-    if (!drawing_path(type)) {
+    if (!drawing_path(type, xps->filltype)) {
         if_debug1m('_', xps->memory, "xps_closepath: type not supported %x\n", type);
         return 0;
     }
@@ -1301,12 +1555,16 @@ xps_endpath(gx_device_vector *vdev, gx_path_type_t type)
     const char *fmt;
 
     /* skip non-drawing paths for now */
-    if (!drawing_path(type)) {
+    if (!drawing_path(type, xps->filltype)) {
         if_debug1m('_', xps->memory, "xps_endpath: type not supported %x\n", type);
         return 0;
     }
 
-    if (type & gx_path_type_stroke) {
+    if (image_brush_fill(type, xps->filltype)) {
+        write_str_to_current_page(xps, "\" >\n");
+        /* And now the rest of the details */
+        xps_finish_image_path(vdev);
+    } else if (type & gx_path_type_stroke) {
         /* NB format width. */
         fmt = "\" StrokeThickness=\"%g\" />\n";
         gs_sprintf(line, fmt, xps->linewidth);
@@ -1317,4 +1575,505 @@ xps_endpath(gx_device_vector *vdev, gx_path_type_t type)
     }
 
     return 0;
+}
+
+/* Image handling */
+
+static image_enum_proc_plane_data(xps_image_plane_data);
+static image_enum_proc_end_image(xps_image_end_image);
+static const gx_image_enum_procs_t xps_image_enum_procs = {
+    xps_image_plane_data, xps_image_end_image
+};
+
+/* High level image support */
+
+/* Prototypes */
+static TIFF* tiff_from_name(gx_device_xps *dev, const char *name, int big_endian,
+    bool usebigtiff);
+static void tiff_set_values(xps_image_enum_t *pie, TIFF *tif, 
+                            cmm_profile_t *profile);
+static void xps_tiff_set_handlers(void);
+
+/* Check if we have the ICC profile in the package */
+static xps_icc_data_t*
+xps_find_icc(const gx_device_xps *xdev, cmm_profile_t *icc_profile)
+{
+    xps_icc_data_t *icc_data = xdev->icc_data;
+
+    while (icc_data != NULL) {
+        if (icc_data->hash == gsicc_get_hash(icc_profile)) {
+            return icc_data;
+        }
+        icc_data = icc_data->next;
+    }
+    return NULL;
+}
+
+static int
+xps_create_icc_name(const gx_device_xps *xps_dev, cmm_profile_t *profile, char *name)
+{
+    xps_icc_data_t *icc_data;
+
+    icc_data = xps_find_icc(xps_dev, profile);
+    if (icc_data == NULL)
+        return gs_throw_code(gs_error_rangecheck);  /* Should be there */
+
+    snprintf(name, MAXICCNAME, "%sProfile_%d.icc", PROFILEPATH, icc_data->index);
+    return 0;
+}
+
+static void
+xps_create_image_name(gx_device *dev, char *name)
+{
+    gx_device_xps *const xdev = (gx_device_xps *)dev;
+
+    snprintf(name, MAXTIFFNAME, "%s%d.tif", IMAGEPATH, xdev->image_count);
+    xdev->image_count++;
+}
+
+static int
+xps_write_profile(const gs_imager_state *pis, cmm_profile_t *profile, const gx_device_xps *xps_dev)
+{
+    char file_name[MAXICCNAME];
+    byte *profile_buffer;
+    int size;
+
+    int code;
+
+    code = xps_create_icc_name(xps_dev, profile, &(file_name[0]));
+    if (code < 0)
+        return gs_rethrow_code(code);
+
+    /* Need V2 ICC Profile */
+    profile_buffer = gsicc_create_getv2buffer(pis, profile, &size);
+    code = write_to_zip_file(xps_dev, file_name, profile_buffer, size);
+    if (code < 0)
+        return gs_rethrow_code(code);
+    return 0;
+}
+
+static int
+xps_add_icc_relationship(xps_image_enum_t *pie)
+{
+    gx_device_xps *xps = (gx_device_xps*) (pie->dev);
+    int code;
+
+    code = add_new_relationship(xps, pie->icc_name);
+    if (code < 0)
+        return gs_rethrow_code(code);
+
+    return 0;
+}
+
+static int 
+xps_add_image_relationship(xps_image_enum_t *pie)
+{
+    gx_device_xps *xps = (gx_device_xps*) (pie->dev);
+    int code;
+
+    code = add_new_relationship(xps, pie->file_name);
+    if (code < 0)
+        return gs_rethrow_code(code);
+
+    return 0;
+}
+
+static int
+xps_begin_image(gx_device *dev, const gs_imager_state *pis, 
+                const gs_image_t *pim, gs_image_format_t format, 
+                const gs_int_rect *prect, const gx_drawing_color *pdcolor,
+                const gx_clip_path *pcpath, gs_memory_t *mem,
+                gx_image_enum_common_t **pinfo)
+{
+    const gx_device_vector *vdev = (gx_device_vector *)dev;
+    gx_device_xps *const xdev = (gx_device_xps *)dev;
+    const gs_color_space *pcs = pim->ColorSpace;
+    xps_image_enum_t *pie;
+    xps_icc_data_t *icc_data;
+    int base_index;
+    gs_matrix mat;
+    int code;
+    gx_clip_path cpath;
+    gs_fixed_rect bbox;
+
+    /* No image mask yet */
+    if (((const gs_image1_t *)pim)->ImageMask)
+        goto use_default;
+
+    /* No wacky color spaces yet, including indexed */
+    base_index = gs_color_space_get_index(pcs);
+    if (base_index > gs_color_space_index_DeviceCMYK &&
+        base_index != gs_color_space_index_ICC)
+        goto use_default;
+
+    /* Only 8 bit / component */
+    if (pim->BitsPerComponent != 8)
+        goto use_default;
+
+    gs_matrix_invert(&pim->ImageMatrix, &mat);
+    gs_matrix_multiply(&mat, &ctm_only(pis), &mat);
+
+    pie = gs_alloc_struct(mem, xps_image_enum_t, &st_xps_image_enum,
+                          "xps_begin_image");
+    if (pie == 0) {
+        code = gs_note_error(gs_error_VMerror);
+        goto fail;
+    }
+
+    /* Set the brush types to image */
+    xps_setstrokebrush(xdev, xps_imagebrush);
+    xps_setfillbrush(xdev, xps_imagebrush);
+    pie->mat = mat;
+    xdev->xps_pie = pie;
+    /* We need this set a bit early for the ICC relationship writing */
+    pie->dev = (gx_device*) xdev;
+
+    /* Now we actually write out the image and icc profile data to the zip
+      package. Test if profile is already here.  If not add it. */
+    if (xps_find_icc(xdev, pcs->cmm_icc_profile_data) == NULL)
+    {
+        icc_data = (xps_icc_data_t*)gs_alloc_bytes(dev->memory->non_gc_memory,
+            sizeof(xps_icc_data_t), "xps_begin_image");
+        if (icc_data == NULL)
+            gs_throw(gs_error_VMerror, "Allocation of icc_data failed");
+
+        icc_data->hash = gsicc_get_hash(pcs->cmm_icc_profile_data);
+        if (xdev->icc_data == NULL) {
+            icc_data->index = 0;
+            xdev->icc_data = icc_data;
+            xdev->icc_data->next = NULL;
+        } else {
+            icc_data->next = xdev->icc_data;
+            icc_data->index = icc_data->next->index + 1;
+            xdev->icc_data = icc_data;
+        }
+        /* Add profile to the package */
+        code = xps_write_profile(pis, pcs->cmm_icc_profile_data, xdev);
+        if (code < 0)
+            return gs_rethrow_code(code);
+
+        /* Get name for mark up and for relationship. Have to wait and do 
+           this after it is added to the package */
+        code = xps_create_icc_name(xdev, pcs->cmm_icc_profile_data, &(pie->icc_name[0]));
+        if (code < 0)
+            return gs_rethrow_code(code);
+
+        /* Add ICC relationship */
+        xps_add_icc_relationship(pie);
+    } else {
+        /* Get name for mark up.  We already have it in the relationship and list */
+        code = xps_create_icc_name(xdev, pcs->cmm_icc_profile_data, &(pie->icc_name[0]));
+        if (code < 0)
+            return gs_rethrow_code(code);
+    }
+    /* Get image name for mark up */
+    xps_create_image_name(dev, &(pie->file_name[0]));
+
+    /* Set width and height here */
+    pie->width = pim->Width;
+    pie->height = pim->Height;
+
+    if (pcpath == NULL) {
+        (*dev_proc(dev, get_clipping_box)) (dev, &bbox);
+        gx_cpath_init_local(&cpath, dev->memory);
+        code = gx_cpath_from_rectangle(&cpath, &bbox);
+        pcpath = &cpath;
+    }
+
+    code = gdev_vector_begin_image(vdev, pis, pim, format, prect,
+        pdcolor, pcpath, mem, &xps_image_enum_procs,
+        (gdev_vector_image_enum_t *)pie);
+    if (code < 0)
+        return code;
+
+    /* Null out the device pie.  It was just needed for the above vector command */
+    xdev->xps_pie = NULL;
+
+    pie->tif = tiff_from_name(xdev, pie->file_name, false, false);
+    xps_tiff_set_handlers();
+    tiff_set_values(pie, pie->tif, pcs->cmm_icc_profile_data);
+    code = TIFFCheckpointDirectory(pie->tif);
+
+    *pinfo = (gx_image_enum_common_t *)pie;
+    return 0;
+fail:
+    gs_free_object(mem, pie, "xps_begin_image");
+use_default:
+    return gx_default_begin_image(dev, pis, pim, format, prect,
+        pdcolor, pcpath, mem, pinfo);
+}
+
+/* Process the next piece of an image. */
+static int
+xps_image_plane_data(gx_image_enum_common_t *info, 
+                     const gx_image_plane_t *planes, int height, 
+                     int *rows_used)
+{
+    xps_image_enum_t *pie = (xps_image_enum_t *)info;
+    int data_bit = planes[0].data_x * info->plane_depths[0];
+    int width_bits = pie->width * info->plane_depths[0];
+    int i;
+    int code;
+    byte *data;
+
+    /****** SHOULD HANDLE NON-BYTE-ALIGNED DATA ******/
+    if (width_bits != pie->bits_per_row || (data_bit & 7) != 0)
+        return_error(gs_error_rangecheck);
+    if (height > pie->height - pie->y)
+        height = pie->height - pie->y;
+    for (i = 0; i < height; pie->y++, ++i) {
+        data = planes[0].data + planes[0].raster * i + (data_bit >> 3);
+        code = TIFFWriteScanline(pie->tif, data, pie->y, 0);
+        if (code < 0)
+            return code;
+    }
+    *rows_used = height;
+    return pie->y >= pie->height;
+}
+
+/* Clean up by releasing the buffers. */
+static int
+xps_image_end_image(gx_image_enum_common_t * info, bool draw_last)
+{
+    xps_image_enum_t *pie = (xps_image_enum_t *)info;
+    int code = 0;
+
+    code = TIFFWriteDirectory(pie->tif);
+    TIFFCleanup(pie->tif);
+
+    /* N.B. Write the final strip, if any. */
+
+    /* Reset the brush type to solid */
+    xps_setstrokebrush((gx_device_xps *) (pie->dev), xps_solidbrush);
+    xps_setfillbrush((gx_device_xps *) (pie->dev), xps_solidbrush);
+
+    /* Add the image relationship */
+    code = xps_add_image_relationship(pie);
+    if (code < 0)
+        return gs_rethrow_code(code);
+
+    return code;
+}
+
+/* Tiff related code so that we can output all the image data in Tiff format.
+   Tiff has the advantage of supporting Gray, RGB, CMYK as well as multiple
+   bit depts and having lossless compression.  Much of this was borrowed from
+   gstiffio.c but refactored to enable us to write out to the zip archive. */
+
+#define TIFF_PRINT_BUF_LENGTH 1024
+static const char tifs_msg_truncated[] = "\n*** Previous line has been truncated.\n";
+
+static void 
+tiff_set_values(xps_image_enum_t *pie, TIFF *tif, cmm_profile_t *profile)
+{
+    TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+    TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, pie->height);
+    TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, pie->width);
+    TIFFSetField(tif, TIFFTAG_IMAGELENGTH, pie->height);
+    TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+    TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+    TIFFSetField(tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
+    TIFFSetField(tif, TIFFTAG_XRESOLUTION, 96.0);
+    TIFFSetField(tif, TIFFTAG_YRESOLUTION, 96.0);
+
+    switch (profile->data_cs)
+    {
+        case  gsGRAY:
+            TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, pie->bits_per_pixel);
+            TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+            TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+            break;
+        case  gsRGB:
+            TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, pie->bits_per_pixel / 3);
+            TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+            TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 3);
+            break;
+        case gsCMYK:
+            TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, pie->bits_per_pixel / 4);
+            TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_SEPARATED);
+            TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 4);
+            break;
+        default:
+            TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, pie->bits_per_pixel);
+            TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+            TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+    }
+}
+
+/* place to hold the data for our libtiff i/o hooks */
+typedef struct tifs_io_xps_t
+{
+    const char *filename;
+    gx_device_xps *pdev;
+} tifs_io_xps;
+
+/* libtiff i/o hooks */
+static int
+xps_tifsDummyMapProc(thandle_t fd, void** pbase, toff_t* psize)
+{
+    (void)fd;
+    (void)pbase;
+    (void)psize;
+    return (0);
+}
+
+static void
+xps_tifsDummyUnmapProc(thandle_t fd, void* base, toff_t size)
+{
+    (void)fd;
+    (void)base;
+    (void)size;
+}
+
+static size_t
+xps_tifsReadProc(thandle_t fd, void* buf, size_t size)
+{
+    size_t size_io = (size_t)size;
+
+    if ((size_t)size_io != size) {
+        return (size_t)-1;
+    }
+    return 0;
+}
+
+static size_t
+xps_tifsWriteProc(thandle_t fd, void* buf, size_t size)
+{
+    tifs_io_xps *tiffio = (tifs_io_xps *)fd;
+    size_t size_io = (size_t)size;
+    int code;
+
+    if ((size_t)size_io != size) {
+        return (size_t)-1;
+    }
+
+    code = write_to_zip_file(tiffio->pdev, tiffio->filename, (byte *)buf, size);
+    if (code < 0)
+        return gs_rethrow_code(code);
+
+    return size;
+}
+
+static uint64_t
+xps_tifsSeekProc(thandle_t fd, uint64_t off, int whence)
+{
+    tifs_io_xps *tiffio = (tifs_io_xps *)fd;
+    gs_offset_t off_io = (gs_offset_t)off;
+
+    if ((uint64_t)off_io != off) {
+        return (uint64_t)-1; 
+    }
+
+    return seek_to_zip_file(tiffio->pdev, tiffio->filename, off, whence);
+}
+
+static int
+xps_tifsCloseProc(thandle_t fd)
+{
+    tifs_io_xps *tiffio = (tifs_io_xps *)fd;
+    gx_device_xps *pdev = tiffio->pdev;
+
+    gs_free(pdev->memory->non_gc_memory, tiffio, sizeof(tifs_io_xps), 1, 
+        "xps_tifsCloseProc");
+    return 0;
+}
+
+/* Could not see where this was getting used so basically a dummy proc
+   for now. */
+static uint64_t
+xps_tifsSizeProc(thandle_t fd)
+{
+    uint64_t length = 0;
+
+    return length;
+}
+
+static TIFF *
+tiff_from_name(gx_device_xps *dev, const char *name, int big_endian, bool usebigtiff)
+{
+    char mode[5] = "w";
+    int modelen = 1;
+    TIFF *t;
+    tifs_io_xps *tiffio;
+
+    if (big_endian)
+        mode[modelen++] = 'b';
+    else
+        mode[modelen++] = 'l';
+
+    if (usebigtiff)
+        /* this should never happen for libtiff < 4.0 - see tiff_put_some_params() */
+        mode[modelen++] = '8';
+
+    mode[modelen] = (char)0;
+
+    tiffio = (tifs_io_xps *)gs_malloc(dev->memory->non_gc_memory, 
+            sizeof(tifs_io_xps), 1, "tiff_from_filep");
+    if (!tiffio) {
+        return NULL;
+    }
+    tiffio->filename = name;
+    tiffio->pdev = dev;
+
+    t = TIFFClientOpen(name, mode,
+        (thandle_t)tiffio, (TIFFReadWriteProc)xps_tifsReadProc,
+        (TIFFReadWriteProc)xps_tifsWriteProc, (TIFFSeekProc)xps_tifsSeekProc,
+        xps_tifsCloseProc, (TIFFSizeProc)xps_tifsSizeProc, xps_tifsDummyMapProc,
+        xps_tifsDummyUnmapProc);
+
+    return t;
+}
+
+static void
+xps_tifsWarningHandlerEx(thandle_t client_data, const char *module, 
+                         const char *fmt, va_list ap)
+{
+    tifs_io_xps *tiffio = (tifs_io_xps *)client_data;
+    gx_device_xps *pdev = tiffio->pdev;
+    int count;
+    char buf[TIFF_PRINT_BUF_LENGTH];
+
+    count = vsnprintf(buf, sizeof(buf), fmt, ap);
+    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+        dmlprintf1(pdev->memory, "%s", buf);
+        dmlprintf1(pdev->memory, "%s\n", tifs_msg_truncated);
+    }
+    else {
+        dmlprintf1(pdev->memory, "%s\n", buf);
+    }
+}
+
+static void
+xps_tifsErrorHandlerEx(thandle_t client_data, const char *module, 
+                       const char *fmt, va_list ap)
+{
+    tifs_io_xps *tiffio = (tifs_io_xps *)client_data;
+    gx_device_xps *pdev = tiffio->pdev;
+    const char *max_size_error = "Maximum TIFF file size exceeded";
+    int count;
+    char buf[TIFF_PRINT_BUF_LENGTH];
+
+    count = vsnprintf(buf, sizeof(buf), fmt, ap);
+    if (count >= sizeof(buf) || count < 0)  { /* C99 || MSVC */
+        dmlprintf1(pdev->memory, "%s\n", buf);
+        dmlprintf1(pdev->memory, "%s", tifs_msg_truncated);
+    }
+    else {
+        dmlprintf1(pdev->memory, "%s\n", buf);
+    }
+
+#if (TIFFLIB_VERSION >= 20111221)
+    if (!strncmp(fmt, max_size_error, strlen(max_size_error))) {
+        dmlprintf(pdev->memory, "Use -dUseBigTIFF(=true) for BigTIFF output\n");
+    }
+#endif
+}
+
+static void
+xps_tiff_set_handlers(void)
+{
+    (void)TIFFSetErrorHandler(NULL);
+    (void)TIFFSetWarningHandler(NULL);
+    (void)TIFFSetErrorHandlerExt(xps_tifsErrorHandlerEx);
+    (void)TIFFSetWarningHandlerExt(xps_tifsWarningHandlerEx);
 }

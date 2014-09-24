@@ -3364,6 +3364,11 @@ gsicc_create_getv2buffer(const gs_imager_state *pis, cmm_profile_t *srcprofile,
         return srcprofile->buffer;
     }
 
+    if (srcprofile->profile_handle == NULL)
+        srcprofile->profile_handle =
+        gsicc_get_profile_handle_buffer(srcprofile->buffer,
+        srcprofile->buffer_size, pis->memory);
+
     /* Need to create v2 profile */
     gsicc_create_v2(pis, srcprofile);
 

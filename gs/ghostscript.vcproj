@@ -7900,6 +7900,10 @@
 						>
 					</File>
 					<File
+						RelativePath=".\devices\vector\gdevxps.c"
+						>
+					</File>					
+					<File
 						RelativePath=".\devices\vector\whitelst.c"
 						>
 					</File>

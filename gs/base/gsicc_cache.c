@@ -261,6 +261,19 @@ gsicc_mash_hash(gsicc_hashlink_t *hash)
         (hash->des_hash >> 1) ^ (hash->rend_hash) ^ (hash->src_hash);
 }
 
+int64_t 
+gsicc_get_hash(cmm_profile_t *profile)
+{
+    if (!profile->hash_is_valid) {
+        int64_t hash;
+
+        gsicc_get_icc_buff_hash(profile->buffer, &hash, profile->buffer_size);
+        profile->hashcode = hash;
+        profile->hash_is_valid = true;
+    }
+    return profile->hashcode;
+}
+
 void
 gsicc_get_icc_buff_hash(unsigned char *buffer, int64_t *hash, unsigned int buff_size)
 {
