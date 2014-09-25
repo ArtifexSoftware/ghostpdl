@@ -434,9 +434,9 @@ teardown_device_and_mem_for_thread(gx_device *dev, gp_thread_id thread_id, bool 
      */
     /* If this thread was being used for background printing and NumRenderingThreads > 0 */
     /* the clist_setup_render_threads may have already closed these files                */
-    if (thread_cdev->page_info.cfile != NULL)
-        thread_cdev->page_info.io_procs->fclose(thread_cdev->page_info.bfile, thread_cdev->page_info.bfname, bg_print);
     if (thread_cdev->page_info.bfile != NULL)
+        thread_cdev->page_info.io_procs->fclose(thread_cdev->page_info.bfile, thread_cdev->page_info.bfname, bg_print);
+    if (thread_cdev->page_info.cfile != NULL)
         thread_cdev->page_info.io_procs->fclose(thread_cdev->page_info.cfile, thread_cdev->page_info.cfname, bg_print);
     thread_cdev->do_not_open_or_close_bandfiles = true; /* we already closed the files */
 
