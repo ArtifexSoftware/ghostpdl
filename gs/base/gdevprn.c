@@ -111,6 +111,24 @@ prn_finish_bg_print(gx_device_printer *ppdev)
         teardown_device_and_mem_for_thread(ppdev->bg_print.device,
                                            ppdev->bg_print.thread_id, true);
         ppdev->bg_print.device = NULL;
+        if (ppdev->bg_print.ocfile) {
+            closecode = ppdev->bg_print.oio_procs->fclose(ppdev->bg_print.ocfile, ppdev->bg_print.ocfname, true);
+            if (ppdev->bg_print.return_code == 0)
+               ppdev->bg_print.return_code = closecode;
+        }
+        if (ppdev->bg_print.ocfname) {
+            gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.ocfname, "prn_finish_bg_print(ocfname)");
+        }
+        if (ppdev->bg_print.obfile) {
+            closecode = ppdev->bg_print.oio_procs->fclose(ppdev->bg_print.obfile, ppdev->bg_print.obfname, true);
+            if (ppdev->bg_print.return_code == 0)
+               ppdev->bg_print.return_code = closecode;
+        }
+        if (ppdev->bg_print.obfname) {
+            gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.obfname, "prn_finish_bg_print(obfname)");
+        }
+        ppdev->bg_print.ocfile = ppdev->bg_print.obfile = 
+          ppdev->bg_print.ocfname = ppdev->bg_print.obfname = NULL;
     }
 }
 /* Generic closing for the printer device. */
@@ -276,6 +294,21 @@ gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
         ppdev->buffer_space = 0;
         was_command_list = true;
 
+        if (ppdev->bg_print.ocfname) {
+            gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.ocfname, "gdev_prn_tear_down(ocfname)");
+        }
+        if (ppdev->bg_print.obfname) {
+            gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.obfname, "gdev_prn_tear_down(obfname)");
+        }
+        ppdev->bg_print.ocfname = ppdev->bg_print.obfname = NULL;
+        if (ppdev->bg_print.ocfile) {
+            (void)ppdev->bg_print.oio_procs->fclose(ppdev->bg_print.ocfile, ppdev->bg_print.ocfname, true);
+        }
+        if (ppdev->bg_print.obfile) {
+            (void)ppdev->bg_print.oio_procs->fclose(ppdev->bg_print.obfile, ppdev->bg_print.obfname, true);
+        }
+        ppdev->bg_print.ocfile = ppdev->bg_print.obfile = NULL;
+
         /* If the clist is a reader clist, free any color_usage_array
          * memory used by same.
          */
@@ -417,6 +450,8 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
             /* Buffer the image in a command list. */
             /* Release the buffer if we allocated it. */
             int code;
+            gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+
             if (!reallocate) {
                 gs_free_object(buffer_memory, the_memory,
                                "printer buffer(open)");
@@ -426,6 +461,9 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
                 ecode = gs_note_error(gs_error_VMerror);
                 continue;
             }
+            ppdev->bg_print.ocfname = ppdev->bg_print.obfname = 
+                ppdev->bg_print.obfile = ppdev->bg_print.ocfile = NULL;
+
             code = gdev_prn_setup_as_command_list(pdev, buffer_memory,
                                                   &the_memory, &space_params,
                                                   !bufferSpace_is_default);
@@ -987,6 +1025,26 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                     /* should not happen -- do foreground print */
                     break;
 
+                /* We need to hang onto references to these files, so we can ensure the main file data
+                 * gets freed with the correct allocator.
+                 */
+                ppdev->bg_print.ocfname = 
+                     gs_alloc_bytes(ppdev->memory->non_gc_memory, strnlen(crdev->page_info.cfname, gp_file_name_sizeof) + 1,
+                           "gdev_prn_output_page_aux(ocfname)");
+                ppdev->bg_print.obfname = 
+                     gs_alloc_bytes(ppdev->memory->non_gc_memory, strnlen(crdev->page_info.bfname, gp_file_name_sizeof) + 1,
+                           "gdev_prn_output_page_aux(ocfname)");
+
+                if (!ppdev->bg_print.ocfname || !ppdev->bg_print.obfname)
+                    break;
+
+                strncpy(ppdev->bg_print.ocfname, crdev->page_info.cfname, strnlen(crdev->page_info.cfname, gp_file_name_sizeof));
+                strncpy(ppdev->bg_print.obfname, crdev->page_info.bfname, strnlen(crdev->page_info.bfname, gp_file_name_sizeof));
+                ppdev->bg_print.obfile = crdev->page_info.bfile;
+                ppdev->bg_print.ocfile = crdev->page_info.cfile;                
+                ppdev->bg_print.oio_procs = crdev->page_info.io_procs;
+                crdev->page_info.cfile = crdev->page_info.bfile = NULL;
+
                 if (ppdev->bg_print.sema == NULL)
                     if (((ppdev->bg_print.sema = gx_semaphore_alloc(ppdev->memory->non_gc_memory)) == NULL))
                         break;			/* couldn't create the semaphore */
@@ -1011,18 +1069,17 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                 /* Page was succesfully started in bg_print mode */
                 print_foreground = 0;
                 /* Now we need to set up the next page so it will use new clist files */
-                /* Close (but don't delete) the files since the background printing now owns them */
-                if ((code = crdev->page_info.io_procs->fclose(crdev->page_info.cfile, crdev->page_info.cfname, false)) < 0 ||
-                    (code = crdev->page_info.io_procs->fclose(crdev->page_info.bfile, crdev->page_info.bfname, false)) < 0) {
-                    return_error(gs_error_unknownerror); /* shouldn't happen */
-                }
-                crdev->page_info.cfile = crdev->page_info.bfile = NULL;
                 if ((code = clist_open(pdev)) < 0) 	/* this should do it */
                     /* OOPS! can't proceed with the next page */
                     return code;	/* probably ioerror */
                 break;				/* exit the while loop */
             }
             if (print_foreground) {
+            
+                 gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.ocfname, "gdev_prn_output_page_aux(ocfname)");
+                 gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.obfname, "gdev_prn_output_page_aux(obfname)");
+                 ppdev->bg_print.ocfname = ppdev->bg_print.obfname = NULL;
+                 
                 /* either bg_print was not requested or was not able to start */
                 if (ppdev->bg_print.sema != NULL && ppdev->bg_print.device != NULL) {
                     /* There was a problem. Teardown the device and its allocator, but */

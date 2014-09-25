@@ -193,6 +193,11 @@ typedef struct bg_print_s {
     gp_thread_id thread_id;
     int num_copies;
     int return_code;			/* result from background print thread */
+    char *ocfname;	                /* command file name */
+    clist_file_ptr ocfile;	        /* command file, normally 0 */
+    char *obfname;	                /* block file name */
+    clist_file_ptr obfile;	/* block file, normally 0 */
+    const clist_io_procs_t *oio_procs;
 } bg_print_t;
 
 #define gx_prn_device_common\
