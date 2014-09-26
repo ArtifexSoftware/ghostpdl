@@ -18,6 +18,7 @@
 #include "std.h"
 #include "gx.h"
 #include "gsmemory.h"
+#include "gspaint.h"
 #include "gsmatrix.h"           /* for gsdevice.h */
 #include "gsdevice.h"
 #include "pcommand.h"
@@ -294,13 +295,25 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
            away, there is no pcl command to set the resolution so a
            state variable is not needed.  Don't override -r from the command line. */
         if (!pcs->res_set_on_command_line) {
+            gx_device *pdev = gs_currentdevice(pcs->pgs);
             float res[2];
+            gs_point device_res;
+
+            device_res.x = pdev->HWResolution[0];
+            device_res.y = pdev->HWResolution[1];
 
             /* resolution is always a single number in PJL */
             res[0] = res[1] = pcl_pjl_res(pcs);
 
-            if (res[0] != 0)
+            /* 
+             * again we only have a single number from PJL so just
+             *  check the width
+             */
+
+            if (res[0] != 0 && res[0] != device_res.x) {
                 put_param1_float_array(pcs, "HWResolution", res);
+                gs_erasepage(pcs->pgs);
+            }
         }
 
         pcs->num_copies = pjl_proc_vartoi(pcs->pjls,

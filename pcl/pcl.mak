@@ -690,6 +690,7 @@ $(PCLOBJ)pcjob.$(OBJ): $(PCLSRC)pcjob.c \
 		       $(std_h)         \
                        $(gx_h)          \
                        $(gsmemory_h)    \
+                       $(gspaint_h)     \
                        $(gsmatrix_h)    \
                        $(gsdevice_h)    \
                        $(pcommand_h)    \
