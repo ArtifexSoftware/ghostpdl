@@ -1329,20 +1329,23 @@ mark
       % loop through the array of names for this codepoint
       % if the CharStrings dict doesn't contain an entry for the name
       % create one.
-      % We know from above that the cpoint exists in the RAGL dict.
-      5 index exch get
-                                                        % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglnames(array)
-      {                                                 % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglname
-        dup 4 index exch known not
-        {                                               % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglname
-          TTFDEBUG { (\nsetting alias: ) print dup ==only
-                ( to be the same as glyph: ) print 1 index //== exec } if
-          3 index exch 3 index //.growput superexec
-                                                        % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
-        }
-        {pop} ifelse
-      } forall
-      pop pop
+      5 index exch .knownget
+      {                                                  % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglnames(array)
+        {                                                 % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglname
+          dup 4 index exch known not
+          {                                               % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglname
+            TTFDEBUG { (\nsetting alias: ) print dup ==only
+                  ( to be the same as glyph: ) print 1 index //== exec } if
+            3 index exch 3 index //.growput superexec
+                                                          % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
+          }
+          {pop} ifelse
+        } forall
+        pop pop
+      }
+      {
+        pop pop pop
+      } ifelse
     }
     {
                                                         % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname

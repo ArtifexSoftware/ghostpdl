@@ -79,23 +79,29 @@
            4 index exch .knownget
            { //true}
            {                                                 % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
-             % if we couldn't derive the code point from the AGL, we might derive it
-             % from a formatted "uniXXXX" name.
-             dup 6 index 0 1 15 {1 index exch 0 put} for cvs dup (uni) anchorsearch
+             dup length 16 gt
              {
-               % as luck would have it, we can just replace the "uni" with "16#"
-               % to get something we can convert to a number
-               pop pop dup 0 (16#) putinterval {cvi} stopped
-               {//false}
-               {                                             % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname cpoint
-                 dup 5 index exch known
-                 { //true }
-                 { pop //false }
-                 ifelse
-               } ifelse
+               //false
              }
-             { pop pop //false}
-             ifelse
+             {
+               % if we couldn't derive the code point from the AGL, we might derive it
+               % from a formatted "uniXXXX" name.
+               dup 6 index 0 1 15 {1 index exch 0 put} for cvs dup (uni) anchorsearch
+               {
+                 % as luck would have it, we can just replace the "uni" with "16#"
+                 % to get something we can convert to a number
+                 pop pop dup 0 (16#) putinterval {cvi} stopped
+                 {//false}
+                 {                                             % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname cpoint
+                   dup 5 index exch known
+                   { //true }
+                   { pop //false }
+                   ifelse
+                 } ifelse
+               }
+               { pop pop //false}
+               ifelse
+             } ifelse
            } ifelse
 
            {
@@ -103,20 +109,23 @@
              % loop through the array of names for this codepoint
              % if the CharStrings dict doesn't contain an entry for the name
              % create one.
-             % We know from above that the cpoint exists in the RAGL dict.
-             5 index exch get
-                                                               % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglnames(array)
-             {                                                 % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglname
-               dup 4 index exch known not
-               {                                               % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglname
-                 CFFDEBUG { (\nsetting alias: ) print dup ==only
-                       ( to be the same as glyph: ) print 1 index //== exec } if
-                 3 index exch 3 index //.growput superexec
-                                                               % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
-               }
-               {pop} ifelse
-             } forall
-             pop pop
+             5 index exch .knownget
+             {                                                   % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglnames(array)
+               {                                                 % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglname
+                 dup 4 index exch known not
+                 {                                               % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglname
+                   CFFDEBUG { (\nsetting alias: ) print dup ==only
+                         ( to be the same as glyph: ) print 1 index //== exec } if
+                   3 index exch 3 index //.growput superexec
+                                                                 % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
+                 }
+                 {pop} ifelse
+               } forall
+               pop pop
+             }
+             {
+               pop pop pop
+             } ifelse
            }
            {
                                                                % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
