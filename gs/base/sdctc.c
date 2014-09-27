@@ -56,20 +56,27 @@ stream_dct_finalize(const gs_memory_t *cmem, void *vptr)
 
     if (st->templat->process == s_DCTE_template.process) {
         gs_jpeg_destroy(ss);
-        if (ss->data.common)
+        if (ss->data.compress != NULL) {
             gs_free_object(ss->data.common->memory, ss->data.compress,
                            "s_DCTE_release");
+            ss->data.compress = NULL;
+        }
         /* Switch the template pointer back in case we still need it. */
         st->templat = &s_DCTE_template;
     }
     else {
         gs_jpeg_destroy(ss);
-        if (ss->data.decompress->scanline_buffer != NULL)
-            gs_free_object(gs_memory_stable(ss->data.common->memory),
-                           ss->data.decompress->scanline_buffer,
-                           "s_DCTD_release(scanline_buffer)");
-        gs_free_object(ss->data.common->memory, ss->data.decompress,
+        if (ss->data.decompress != NULL) {
+            if (ss->data.decompress->scanline_buffer != NULL) {
+                gs_free_object(gs_memory_stable(ss->data.common->memory),
+                               ss->data.decompress->scanline_buffer,
+                               "s_DCTD_release(scanline_buffer)");
+                ss->data.decompress->scanline_buffer = NULL;
+            }
+            gs_free_object(ss->data.common->memory, ss->data.decompress,
                        "s_DCTD_release");
+            ss->data.decompress = NULL;
+        }
         /* Switch the template pointer back in case we still need it. */
         st->templat = &s_DCTD_template;
     }
