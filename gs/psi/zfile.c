@@ -858,8 +858,11 @@ zopen_file(i_ctx_t *i_ctx_p, const gs_parsed_file_name_t *pfn,
 {
     gx_io_device *const iodev = pfn->iodev;
 
-    if (pfn->fname == NULL)     /* just a device */
+    if (pfn->fname == NULL) {     /* just a device */
+        iodev->state = i_ctx_p;
         return iodev->procs.open_device(iodev, file_access, ps, mem);
+        iodev->state = NULL;
+    }
     else {                      /* file */
         iodev_proc_open_file((*open_file)) = iodev->procs.open_file;
 
