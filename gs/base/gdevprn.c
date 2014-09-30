@@ -1029,11 +1029,11 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                  * gets freed with the correct allocator.
                  */
                 ppdev->bg_print.ocfname = 
-                     gs_alloc_bytes(ppdev->memory->non_gc_memory, strnlen(crdev->page_info.cfname, gp_file_name_sizeof) + 1,
-                           "gdev_prn_output_page_aux(ocfname)");
+                     (char *)gs_alloc_bytes(ppdev->memory->non_gc_memory,
+                           strnlen(crdev->page_info.cfname, gp_file_name_sizeof) + 1, "gdev_prn_output_page_aux(ocfname)");
                 ppdev->bg_print.obfname = 
-                     gs_alloc_bytes(ppdev->memory->non_gc_memory, strnlen(crdev->page_info.bfname, gp_file_name_sizeof) + 1,
-                           "gdev_prn_output_page_aux(ocfname)");
+                     (char *)gs_alloc_bytes(ppdev->memory->non_gc_memory,
+                           strnlen(crdev->page_info.bfname, gp_file_name_sizeof) + 1,"gdev_prn_output_page_aux(ocfname)");
 
                 if (!ppdev->bg_print.ocfname || !ppdev->bg_print.obfname)
                     break;
