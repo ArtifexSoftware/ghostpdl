@@ -949,48 +949,25 @@ AC_SUBST(LIBPNGDIR)
 
 WHICHLCMS=
 
-AC_ARG_WITH([lcms], AC_HELP_STRING([--with-lcms],
-    [try to use LittleCMS 1.x instead of the default of LittleCMS 2.x]))
-
-if test x$with_lcms != xyes; then
-  AC_MSG_CHECKING([for local lcms2 library source])
-  LCMS2DIR=$srcdir/lcms2
-  if test -f $LCMS2DIR/include/lcms2.h; then
-        AC_MSG_RESULT([yes])
-        SHARELCMS=0
-        WHICHLCMS=lcms2
-  else
-    AC_MSG_RESULT([no])
-    AC_MSG_CHECKING([for system lcms2 library])
-    AC_CHECK_LIB(lcms2, cmsGetTransformOutputFormat, [
-           AC_CHECK_HEADERS([lcms2.h], [LCMS2DIR="";SHARELCMS=1;WHICHLCMS=lcms2])
-         ])
-    if test x$WHICHLCMS = x; then
-      AC_MSG_WARN([lcms2 not found, or too old])
-    fi
-  fi
-fi
-
-if test x$WHICHLCMS = x; then
-  AC_MSG_CHECKING([for local lcms library source])
-  LCMSDIR=$srcdir/lcms
-  SHARELCMS=0
-  if test -f $LCMSDIR/include/lcms.h; then
-        AC_MSG_RESULT([yes])
-        SHARELCMS=0
-        WHICHLCMS=lcms
-  else
-
-    AC_MSG_ERROR([LittleCMS source not found!])
-    #AC_CHECK_LIB(lcms, cmsCreateXYZProfile, [
-    #          AC_CHECK_HEADERS([lcms.h], [SHARELCMS=1;LCMSDIR=""])
-    #        ])
+AC_MSG_CHECKING([for local lcms2 library source])
+LCMS2DIR=$srcdir/lcms2
+if test -f $LCMS2DIR/include/lcms2.h; then
+      AC_MSG_RESULT([yes])
+      SHARELCMS=0
+      WHICHLCMS=lcms2
+else
+  AC_MSG_RESULT([no])
+  AC_MSG_CHECKING([for system lcms2 library])
+  AC_CHECK_LIB(lcms2, cmsGetTransformOutputFormat, [
+         AC_CHECK_HEADERS([lcms2.h], [LCMS2DIR="";SHARELCMS=1;WHICHLCMS=lcms2])
+       ])
+  if test x$WHICHLCMS = x; then
+    AC_MSG_ERROR([lcms2 not found, or too old])
   fi
 fi
 
 AC_SUBST(SHARELCMS)
 AC_SUBST(WHICHLCMS)
-AC_SUBST(LCMSDIR)
 AC_SUBST(LCMS2DIR)
 
 dnl look for libtiff, it also requires lib

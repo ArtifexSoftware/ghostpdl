@@ -479,12 +479,6 @@ JPX_LIB=openjpeg
 # Alternatively, you can build a separate DLL
 # and define SHARE_JPX=1 in src/winlib.mak
 
-# Define the directory where the lcms source is stored.
-# See lcms.mak for more information
-!ifndef LCMSSRCDIR
-LCMSSRCDIR=lcms
-!endif
-
 # Define the directory where the lcms2 source is stored.
 # See lcms2.mak for more information
 !ifndef LCMS2SRCDIR
