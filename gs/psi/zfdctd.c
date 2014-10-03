@@ -35,16 +35,17 @@ stream_state_proc_put_params(s_DCTD_put_params, stream_DCT_state);
 
 /* Find the memory that will be used for allocating the stream. */
 static gs_ref_memory_t *
-find_stream_memory(i_ctx_t *i_ctx_p, int npop, uint space)
+find_stream_memory(i_ctx_t *i_ctx_p, int npop, uint *space)
 {
-    uint use_space = max(space, avm_global);
+    uint use_space = max(*space, avm_global);
     os_ptr sop = osp - npop;
 
     if (r_has_type(sop, t_dictionary)) {
         --sop;
     }
-    use_space = max(use_space, r_space(sop));
-    return idmemory->spaces_indexed[use_space >> r_space_shift];
+    *space = max(use_space, r_space(sop));
+
+    return idmemory->spaces_indexed[*space >> r_space_shift];
 }
 
 /* <source> <dict> DCTDecode/filter <file> */
@@ -65,7 +66,7 @@ zDCTD(i_ctx_t *i_ctx_p)
         dop = op, dspace = r_space(op);
     else
         dop = 0, dspace = 0;
-    mem = (gs_memory_t *)find_stream_memory(i_ctx_p, 0, dspace);
+    mem = (gs_memory_t *)find_stream_memory(i_ctx_p, 0, &dspace);
     state.memory = mem;
     /* First allocate space for IJG parameters. */
     jddp = gs_alloc_struct_immovable(mem,jpeg_decompress_data,
