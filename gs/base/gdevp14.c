@@ -2492,7 +2492,7 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                     for (k = 0; k < num_chan; ++k)
                         dst_ptr[k * planestride] = dst[k];
                 } else {
-                    if (overprint) {
+                    if (overprint && dst_ptr[num_comp * planestride] != 0) {
                         if (blendspot) {
                             /* Overprint simulation of spot colorants */
                             for (k = 0; k < num_comp; ++k) {
