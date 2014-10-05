@@ -50,6 +50,9 @@
 #  define isatty(fd) _isatty(fd)
 #  define setmode(fd, mode) _setmode(fd, mode)
 #else
+   /* _XOPEN_SOURCE 500 define is needed to get
+    * access to pread and pwrite */
+#  define _XOPEN_SOURCE 500
 #  include <unistd.h>
 #endif
 

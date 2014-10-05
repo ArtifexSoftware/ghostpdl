@@ -82,7 +82,7 @@ static IFILE *wrap_file(gs_memory_t *mem, FILE *f)
     return ifile;
 }
 
-int close_file(IFILE *ifile)
+static int close_file(IFILE *ifile)
 {
     int res = 0;
     if (ifile)
@@ -167,8 +167,7 @@ clist_fclose(clist_file_ptr cf, const char *fname, bool delete)
         /* fname is an encoded file pointer, and cf is the FILE used to create it.
          * We shouldn't close it unless we have been asked to delete it, in which
          * case closing it will delete it */
-        if (delete)
-            close_file((IFILE *)ocf);
+        return delete ? (close_file((IFILE *)ocf) ? gs_note_error(gs_error_ioerror) : 0) : 0;
     }
     else
     {
@@ -185,7 +184,7 @@ clist_fwrite_chars(const void *data, uint len, clist_file_ptr cf)
 {
     if (gp_can_share_fdesc())
     {
-        int res = gp_fpwrite(data, len, ((IFILE *)cf)->pos, ((IFILE *)cf)->f);
+        int res = gp_fpwrite((char *)data, len, ((IFILE *)cf)->pos, ((IFILE *)cf)->f);
         if (res >= 0)
             ((IFILE *)cf)->pos += len; return res;
     }
