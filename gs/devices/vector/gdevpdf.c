@@ -169,7 +169,6 @@ static RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
  RELOC_PTR(gx_device_pdf, Identity_ToUnicode_CMaps[1]);
  RELOC_PTR(gx_device_pdf, ResourceUsage);
  RELOC_PTR(gx_device_pdf, vgstack);
- RELOC_PTR(gx_device_pdf, outline_levels);
  RELOC_PTR(gx_device_pdf, EmbeddedFiles);
  RELOC_PTR(gx_device_pdf, pdf_font_dir);
 #define r1(i,elt) RELOC_PARAM_STRING_PTR(gx_device_pdf,elt);
@@ -191,6 +190,7 @@ static RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
             }
         }
     }
+ RELOC_PTR(gx_device_pdf, outline_levels);
 }
 RELOC_PTRS_END
 /* Even though device_pdfwrite_finalize is the same as gx_device_finalize, */
