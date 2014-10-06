@@ -5931,8 +5931,11 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
 
         code = obj->setproc(i_ctx_p, parr, &stage, &cont, CIESubst);
         make_int(pstage, stage);
-        if (code != 0)
+        if (code != 0) {
+            if (code < 0)
+                esp -= 5;
             return code;
+        }
         if (!cont) {
             /* Completed that space, decrement the 'depth' */
             make_int(pdepth, --depth);
