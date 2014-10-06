@@ -138,7 +138,6 @@ typedef struct psdf_image_param_names_s {
       pi(dst, gs_param_type_float, DownsampleThreshold),\
       pi(e, gs_param_type_bool, Encode),\
       pi(r, gs_param_type_int, Resolution),\
-      pi(afs, gs_param_type_int, AutoFilterStrategy),\
       gs_param_item_end\
     }
 
@@ -179,7 +178,7 @@ static const psdf_image_param_names_t Color_names15 = {
         "DownsampleColorImages", "ColorImageDownsampleType",
         "ColorImageDownsampleThreshold", 1.5,
         "EncodeColorImages", "ColorImageFilter", Poly_filters,
-        "ColorImageResolution", "ColorAutoFilterStrategy"
+        "ColorImageResolution", "ColorImageAutoFilterStrategy"
     )
 };
 static const psdf_image_param_names_t Gray_names15 = {
@@ -189,7 +188,7 @@ static const psdf_image_param_names_t Gray_names15 = {
         "DownsampleGrayImages", "GrayImageDownsampleType",
         "GrayImageDownsampleThreshold", 2.0,
         "EncodeGrayImages", "GrayImageFilter", Poly_filters,
-        "GrayImageResolution", "GrayAutoFilterStrategy"
+        "GrayImageResolution", "GrayImageAutoFilterStrategy"
     )
 };
 #undef pi
@@ -201,6 +200,9 @@ static const char *const ColorConversionStrategy_names[] = {
 };
 static const char *const DownsampleType_names[] = {
     psdf_ds_names, 0
+};
+static const char *const AutoFilterStrategy_names[] = {
+    psdf_afs_names, 0
 };
 static const char *const Binding_names[] = {
     psdf_binding_names, 0
@@ -350,12 +352,12 @@ psdf_get_image_params(gs_param_list * plist,
         return code;
 
            /* (Resolution) */
-#ifdef USE_LWF_JP2
     if (pnames->AutoFilterStrategy != 0)
         code = psdf_write_name(plist, pnames->AutoFilterStrategy,
-                                   (params->AutoFilterStrategy == 0 ?
-                                   "JPEG2000" : params->AutoFilterStrategy));
-#endif
+                AutoFilterStrategy_names[params->AutoFilterStrategy]);
+    if (code < 0)
+        return code;
+
     return code;
 }
 
@@ -957,7 +959,6 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
                       &ecode);
     /* (DownsampleThreshold) */
     /* (Encode) */
-#ifdef USE_LWF_JP2
     /* Process AutoFilterStrategy before Filter, because it sets defaults
        for the latter. */
     if (pnames->AutoFilterStrategy != NULL) {
@@ -967,11 +968,11 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
                     const psdf_image_filter_name *pn = pnames->filter_names;
                     const char *param_name = 0;
 
-                    if (gs_param_string_eq(&fs, "/JPEG")) {
-                        params->AutoFilterStrategy = "/JPEG";
+                    if (gs_param_string_eq(&fs, "JPEG")) {
+                        params->AutoFilterStrategy = af_Jpeg;
                         param_name = "DCTEncode";
-                    } if (gs_param_string_eq(&fs, "/JPEG2000")) {
-                        params->AutoFilterStrategy = "/JPEG2000";
+                    } if (gs_param_string_eq(&fs, "JPEG2000")) {
+                        params->AutoFilterStrategy = af_Jpeg2000;
                         param_name = "JPXEncode";
                     } else {
                         ecode = gs_error_rangecheck;
@@ -992,7 +993,7 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
                 break;
         }
     }
-#endif
+
     switch (code = param_read_string(plist, pnames->Filter, &fs)) {
         case 0:
             {

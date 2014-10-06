@@ -60,7 +60,12 @@ typedef struct psdf_image_params_s {
     bool Encode;
     const char *Filter;
     int Resolution;
-    const char *AutoFilterStrategy;
+    enum psdf_autofilter_type {
+        af_Jpeg,
+        af_Jpeg2000
+    } AutoFilterStrategy;
+#define psdf_afs_names\
+        "JPEG", "JPEG2000"
     const stream_template *filter_template;
 } psdf_image_params;
 
@@ -211,11 +216,11 @@ extern const stream_template s_zlibE_template;
     NULL,	    /* Dict (JPEG or CCITTFax) */ \
     0,		    /* Downsample (false) */ \
     1.5,	    /* Donwsample threshold */ \
-    ds_Subsample,   /* Downsample type */ \
+    ds_Bicubic,   /* Downsample type */ \
     1,		    /* Encode (true) */ \
-    0,  /* compression filter */ \
+    0,  /* compression biccufilter */ \
     150,	    /* Downsample resolution */ \
-    "JPEG2000",	    /* AutoFilterStrategy */ \
+    af_Jpeg,	    /* AutoFilterStrategy */ \
     &s_zlibE_template	/* Filter stream template */ \
     },  0,	    /* ConvertCMYKImagesToRGB (false) */ \
     1		    /* ConvertImagesToIndexed (true) */
@@ -232,7 +237,7 @@ extern const stream_template s_zlibE_template;
     1,		    /* Encode (true) */ \
     0,  /* compression filter */ \
     150,	    /* Downsample resolution */ \
-    "JPEG2000",	    /* AutoFilterStrategy */ \
+    af_Jpeg,	    /* AutoFilterStrategy */ \
     &s_zlibE_template	/* Filter stream template */ \
      }
 
@@ -248,7 +253,7 @@ extern const stream_template s_zlibE_template;
     1,		    /* Encode (true) */ \
     "CCITTFaxEncode",  /* compression filter */ \
     300,	    /* Downsample resolution */ \
-    "JPEG2000",	    /* AutoFilterStrategy */ \
+    af_Jpeg,	    /* AutoFilterStrategy */ \
     &s_CFE_template	/* Filter stream template */ \
     }
 
