@@ -1973,15 +1973,18 @@ currentdict /last-ditch-bpc-csp undef
   /.paintform cvx
   ] cvx /PaintProc exch put
     % Adjust pdfemptycount since we have an extra dictionary on the stack
-  pdfemptycount countdictstack  3 -1 roll
+  pdfemptycount countdictstack 3 -1 roll
   /pdfemptycount count 4 sub store
-  /q cvx /PDFexecform cvx 5 -2 roll 4 .execn
+  /q cvx /PDFexecform cvx 5 -2 roll
+  4 .execn
   % Restore pdfemptycount
   0
   { countdictstack
     2 index le { exit } if
     currentdict /n known not { 1 add } if
+    countdictstack
     Q
+    countdictstack eq {end} if
   } loop
   1 gt {
     (   **** Warning: Form stream has unbalanced q/Q operators \(too many q's\)\n)
