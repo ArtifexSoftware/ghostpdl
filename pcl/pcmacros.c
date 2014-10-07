@@ -147,8 +147,6 @@ pcl_macro_control(pcl_args_t * pargs, pcl_state_t * pcs)
             {                   /* Start defining <macro_id>. */
                 pcl_macro_t *pmac;
 
-                pl_dict_undef_purge_synonyms(&pcs->macros, current_macro_id,
-                                             current_macro_id_size);
                 pmac = (pcl_macro_t *)
                     gs_alloc_bytes(pcs->memory, sizeof(pcl_macro_t),
                                    "begin macro definition");
