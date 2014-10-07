@@ -971,12 +971,14 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
                     if (gs_param_string_eq(&fs, "JPEG")) {
                         params->AutoFilterStrategy = af_Jpeg;
                         param_name = "DCTEncode";
-                    } if (gs_param_string_eq(&fs, "JPEG2000")) {
-                        params->AutoFilterStrategy = af_Jpeg2000;
-                        param_name = "JPXEncode";
                     } else {
-                        ecode = gs_error_rangecheck;
-                        goto ipe1;
+                        if (gs_param_string_eq(&fs, "JPEG2000")) {
+                            params->AutoFilterStrategy = af_Jpeg2000;
+                            param_name = "JPXEncode";
+                        } else {
+                            ecode = gs_error_rangecheck;
+                            goto ipe1;
+                        }
                     }
                     while (pn->pname != 0 && !gs_param_string_eq(&fs, param_name))
                         pn++;
