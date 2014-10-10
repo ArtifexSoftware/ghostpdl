@@ -132,8 +132,6 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
             sizeof(xps_context_t), "xps_imp_allocate_interp_instance");
 
     pgs = gs_state_alloc(pmem);
-    gsicc_init_iccmanager(pgs);
-    memset(ctx, 0, sizeof(xps_context_t));
 
     if (!instance || !ctx || !pgs)
     {
@@ -145,6 +143,9 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
             gs_state_free(pgs);
         return gs_error_VMerror;
     }
+
+    gsicc_init_iccmanager(pgs);
+    memset(ctx, 0, sizeof(xps_context_t));
 
     ctx->instance = instance;
     ctx->memory = pmem;
