@@ -1383,6 +1383,7 @@ SHARE_JPX=0
 JPXDEVS=''
 JPX_DECODER=
 JPX_AUTOCONF_CFLAGS=
+JPX_LRINTF_SUBST=
 
 if test x$with_luratech != xno; then
   AC_MSG_CHECKING([for local Luratech JPEG2K library source])
@@ -1445,6 +1446,8 @@ if test "x$HAVE_SSE2" = "x" ; then
   fi
 fi
 
+AC_CHECK_DECL(lrintf, , [OPJ_LRINTF_SUBST="-D\"lrintf(a)\"=\"((long)(a+0.5))\"]",[[#include <math.h>]])
+
 AC_ARG_ENABLE([openjpeg], AC_HELP_STRING([--disable-openjpeg],
         [Do not use OpenJPEG for JPX decoding]))
 
@@ -1464,7 +1467,7 @@ if test "x$JPX_DECODER" = "x"; then
         JPX_AUTOCONF_CFLAGS="-D\"memalign(a,b)=malloc(b)\""
       fi
       
-      JPX_AUTOCONF_CFLAGS="$JPX_AUTOCONF_CFLAGS -DUSE_JPIP -DUSE_OPENJPEG_JP2 $CFLAGS_OPJ_HAVE_STDINT_H $CFLAGS_OPJ_HAVE_INTTYPES_H $CFLAGS_OPJ_BIGENDIAN $CFLAGS_OPJ_HAVE_FSEEKO"
+      JPX_AUTOCONF_CFLAGS="$JPX_AUTOCONF_CFLAGS $OPJ_LRINTF_SUBST -DUSE_JPIP -DUSE_OPENJPEG_JP2 $CFLAGS_OPJ_HAVE_STDINT_H $CFLAGS_OPJ_HAVE_INTTYPES_H $CFLAGS_OPJ_BIGENDIAN $CFLAGS_OPJ_HAVE_FSEEKO"
 
       JPXDEVS='$(PSD)jpx.dev'
     else
