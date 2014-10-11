@@ -86,7 +86,7 @@ static const char *pl_usage = "\
 Usage: %s [option* file]+...\n\
 Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -l<PCL5C|PCL5E|RTL> -Z...\n\
          -sDEVICE=<dev> -g<W>x<H> -r<X>[x<Y>] -d{First|Last}Page=<#>\n\
-         -H<l>x<b>x<r>x<t>\n\
+         -H<l>x<b>x<r>x<t> -dNOCACHE\n\
          -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
          -J<PJL commands>\n";
 
