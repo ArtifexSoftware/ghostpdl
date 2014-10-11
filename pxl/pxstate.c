@@ -46,6 +46,7 @@ px_state_alloc(gs_memory_t * memory)
     pxs->pxgs = pxgs;
     pxgs->pxs = pxs;
     px_state_init(pxs, NULL);
+
     /* allocate the font directory */
     pxs->font_dir = gs_font_dir_alloc(pxs->memory);
     if (pxs->font_dir == 0)

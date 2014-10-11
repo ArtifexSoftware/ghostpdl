@@ -83,6 +83,14 @@ xps_imp_allocate_interp(pl_interp_t **ppinterp,
     return 0;
 }
 
+static void
+xps_set_nocache(pl_interp_instance_t *instance, gs_font_dir *font_dir)
+{
+    if (instance->nocache)
+        gs_setcachelimit(font_dir, 0);
+    return;
+}
+
 static int
 xps_set_icc_user_params(pl_interp_instance_t *instance, gs_state *pgs)
 {    gs_param_string p;
@@ -177,7 +185,9 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     instance->scratch_file = NULL;
     instance->scratch_name[0] = 0;
 
+    /* NB needs error handling */
     ctx->fontdir = gs_font_dir_alloc(ctx->memory);
+
     gs_setaligntopixels(ctx->fontdir, 1); /* no subpixels */
     gs_setgridfittt(ctx->fontdir, 1); /* see gx_ttf_outline in gxttfn.c for values */
 
@@ -244,6 +254,7 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     gs_setaccuratecurves(ctx->pgs, true); /* NB not sure */
     gs_setfilladjust(ctx->pgs, 0, 0);
     (void)xps_set_icc_user_params((pl_interp_instance_t *)instance, ctx->pgs);
+    xps_set_nocache((pl_interp_instance_t *)instance, ctx->fontdir);
 
     /* gsave and grestore (among other places) assume that */
     /* there are at least 2 gstates on the graphics stack. */

@@ -152,6 +152,7 @@ struct px_state_s
 
     /* Miscellaneous */
     bool interpolate;           /* image interpolation */
+    bool nocache;               /* disable the cache */
 
     struct db_
     {

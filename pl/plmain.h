@@ -55,6 +55,7 @@ typedef struct pl_main_instance_s
                                    personality - rtl, pcl5c, pcl5e, and
                                    pcl == default.  NB doesn't belong here. */
     bool interpolate;
+    bool nocache;
     bool page_set_on_command_line;
     bool res_set_on_command_line;
     bool high_level_device;

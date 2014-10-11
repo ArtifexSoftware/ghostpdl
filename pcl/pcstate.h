@@ -354,6 +354,9 @@ struct pcl_state_s
     /* enable image interpolation */
     bool interpolate;
 
+    /* disable the font cache */
+    bool nocache;
+
     /* store a pointer to the command definitions for use by macros */
     void *pcl_commands;
 

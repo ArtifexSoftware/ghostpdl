@@ -317,6 +317,12 @@ pxl_get_interpolation(pl_interp_instance_t * instance)
     return instance->interpolate;
 }
 
+static bool
+pxl_get_nocache(pl_interp_instance_t * instance)
+{
+    return instance->nocache;
+}
+
 /* Set a device into an interperter instance */
 /* ret 0 ok, else -ve error code */
 static int 
@@ -334,6 +340,11 @@ pxl_impl_set_device(pl_interp_instance_t * instance,
         goto pisdEnd;
 
     pxs->interpolate = pxl_get_interpolation(instance);
+    pxs->nocache = pxl_get_nocache(instance);
+
+    if (pxs->nocache)
+        gs_setcachelimit(pxs->font_dir, 0);
+
     /* Set the device into the gstate */
     stage = Ssetdevice;
     if ((code = gs_setdevice_no_erase(pxli->pgs, device)) < 0)  /* can't erase yet */

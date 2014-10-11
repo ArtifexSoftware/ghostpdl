@@ -376,6 +376,12 @@ pcl_set_icc_params(pl_interp_instance_t * instance, gs_state * pgs)
 }
 
 static bool
+pcl_get_nocache(pl_interp_instance_t * instance)
+{
+    return instance->nocache;
+}
+
+static bool
 pcl_get_interpolation(pl_interp_instance_t * instance)
 {
     return instance->interpolate;
@@ -416,9 +422,10 @@ pcl_impl_set_device(pl_interp_instance_t * instance,    /* interp instance to us
             Sdone } stage;
 
     stage = Sbegin;
-    /* get ad hoc paramaters personality and interpolation */
+    /* get ad hoc paramaters personality and interpolation, etc. */
     pcli->pcs.personality = pcl_get_personality(instance, device);
     pcli->pcs.interpolate = pcl_get_interpolation(instance);
+    pcli->pcs.nocache = pcl_get_nocache(instance);
     pcli->pcs.page_set_on_command_line = pcl_get_page_set(instance);
     pcli->pcs.res_set_on_command_line = pcl_get_res_set(instance);
     pcli->pcs.high_level_device = pcl_get_high_level(instance);

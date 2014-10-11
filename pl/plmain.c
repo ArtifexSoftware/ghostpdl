@@ -777,6 +777,7 @@ pl_main_universe_select(pl_main_universe_t * universe,  /* universe to select fr
         /* NB fix me, these parameters should not be passed this way */
         universe->curr_instance->pcl_personality = pti->pcl_personality;
         universe->curr_instance->interpolate = pti->interpolate;
+        universe->curr_instance->nocache = pti->nocache;
         universe->curr_instance->page_set_on_command_line =
             pti->page_set_on_command_line;
         universe->curr_instance->res_set_on_command_line =
@@ -831,6 +832,7 @@ pl_main_init_instance(pl_main_instance_t * pti, gs_memory_t * mem)
     pti->last_page = max_int;
     pti->page_count = 0;
     pti->interpolate = false;
+    pti->nocache = false;
     pti->page_set_on_command_line = false;
     pti->res_set_on_command_line = false;
     pti->high_level_device = false;
@@ -1003,6 +1005,10 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 }
                 if (!strcmp(arg, "DOINTERPOLATE")) {
                     pmi->interpolate = true;
+                    continue;
+                }
+                if (!strcmp(arg, "NOCACHE")) {
+                    pmi->nocache = true;
                     continue;
                 }
 
