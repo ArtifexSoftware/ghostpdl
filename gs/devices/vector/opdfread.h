@@ -3157,6 +3157,7 @@ const char *opdfread_ps [] = {
 "}ifelse\n",
 "}if\n",
 "dup 0 get/Separation eq{\n",
+"dup dup 1 get UnPDFEscape 1 exch put\n",
 "3//ResolveArrayElement exec\n",
 "dup 3 get//FunctionToProc exec\n",
 "2 copy 3 exch put\n",

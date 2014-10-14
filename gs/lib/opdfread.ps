@@ -3802,6 +3802,7 @@ end
     } ifelse
   } if
   dup 0 get /Separation eq {
+    dup dup 1 get UnPDFEscape 1 exch put
     3 //ResolveArrayElement exec
     dup 3 get //FunctionToProc exec
     2 copy 3 exch put
