@@ -222,15 +222,18 @@ ldf_jb2_OBJS=$(ldf_jb2_common_OBJS) $(ldf_jb2_compress_OBJS)
 ldf_jb2_HDRS=$(ldf_jb2_common_HDRS) $(ldf_jb2_compress_HDRS)
 
 # switch in the selected library .dev
-$(LDF_JB2_GEN)ldf_jb2.dev : $(TOP_MAKEFILES) $(LDF_JB2_MAK) $(LDF_JB2_GEN)ldf_jb2_$(SHARE_JBIG2).dev
+$(LDF_JB2_GEN)ldf_jb2.dev : $(TOP_MAKEFILES) $(LDF_JB2_MAK) $(LDF_JB2_GEN)ldf_jb2_$(SHARE_JBIG2).dev \
+ $(MAKEDIRS)
 	$(CP_) $(LDF_JB2_GEN)ldf_jb2_$(SHARE_JBIG2).dev $(LDF_JB2_GEN)ldf_jb2.dev
 
 # external link .dev
-$(LDF_JB2_GEN)ldf_jb2_1.dev : $(TOP_MAKEFILES) $(LDF_JB2_MAK) $(ECHOGS_XE)
+$(LDF_JB2_GEN)ldf_jb2_1.dev : $(TOP_MAKEFILES) $(LDF_JB2_MAK) $(ECHOGS_XE) \
+ $(MAKEDIRS)
 	$(SETMOD) $(LDF_JB2_GEN)ldf_jb2_1 -lib ldf_jb2
 
 # compile our own .dev
-$(LDF_JB2_GEN)ldf_jb2_0.dev : $(TOP_MAKEFILES) $(LDF_JB2_MAK) $(ECHOGS_XE) $(ldf_jb2_OBJS)
+$(LDF_JB2_GEN)ldf_jb2_0.dev : $(TOP_MAKEFILES) $(LDF_JB2_MAK) $(ECHOGS_XE) $(ldf_jb2_OBJS) \
+ $(MAKEDIRS)
 	$(SETMOD) $(LDF_JB2_GEN)ldf_jb2_0 $(ldf_jb2_common_OBJS)
 	$(ADDMOD) $(LDF_JB2_GEN)ldf_jb2_0 $(ldf_jb2_compress_OBJS)
 
@@ -238,256 +241,256 @@ $(LDF_JB2_GEN)ldf_jb2_0.dev : $(TOP_MAKEFILES) $(LDF_JB2_MAK) $(ECHOGS_XE) $(ldf
 LDF_JB2_CC=$(CC_) $(I_)$(LDF_JB2I_) $(II)$(LDF_JB2_COMMON) $(II)$(LDF_JB2_COMPRESS)$(_I) $(JB2CF_)
 LDF_JB2_O=$(O_)$(LDF_JB2_OBJ)
 
-LDF_JB2_DEP=$(AK) $(LDF_JB2_MAK)
+LDF_JB2_DEP=$(AK) $(LDF_JB2_MAK) $(MAKEDIRS)
 
 
 # explicit rules for building each source file
 # for simplicity we have every source file depend on all headers
 
-$(LDF_JB2_OBJ)jb2_adt_cache.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_cache.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_cache.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_cache.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_cache.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_cache.c
 
-$(LDF_JB2_OBJ)jb2_adt_context_buffer.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_context_buffer.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_context_buffer.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_context_buffer.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_context_buffer.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_context_buffer.c
 
-$(LDF_JB2_OBJ)jb2_adt_context_decoder.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_context_decoder.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_context_decoder.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_context_decoder.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_context_decoder.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_context_decoder.c
 
-$(LDF_JB2_OBJ)jb2_adt_context_ref_buffer.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_context_ref_buffer.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_context_ref_buffer.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_context_ref_buffer.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_context_ref_buffer.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_context_ref_buffer.c
 
-$(LDF_JB2_OBJ)jb2_adt_context_ref_decoder.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_context_ref_decoder.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_context_ref_decoder.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_context_ref_decoder.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_context_ref_decoder.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_context_ref_decoder.c
 
-$(LDF_JB2_OBJ)jb2_adt_decoder_collective_bitmap.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_decoder_collective_bitmap.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_decoder_collective_bitmap.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_decoder_collective_bitmap.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_decoder_collective_bitmap.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_decoder_collective_bitmap.c
 
-$(LDF_JB2_OBJ)jb2_adt_decoder_generic_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_decoder_generic_region.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_decoder_generic_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_decoder_generic_region.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_decoder_generic_region.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_decoder_generic_region.c
 
-$(LDF_JB2_OBJ)jb2_adt_decoder_halftone_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_decoder_halftone_region.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_decoder_halftone_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_decoder_halftone_region.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_decoder_halftone_region.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_decoder_halftone_region.c
 
-$(LDF_JB2_OBJ)jb2_adt_decoder_pattern_dict.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_decoder_pattern_dict.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_decoder_pattern_dict.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_decoder_pattern_dict.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_decoder_pattern_dict.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_decoder_pattern_dict.c
 
-$(LDF_JB2_OBJ)jb2_adt_decoder_symbol_dict.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_decoder_symbol_dict.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_decoder_symbol_dict.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_decoder_symbol_dict.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_decoder_symbol_dict.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_decoder_symbol_dict.c
 
-$(LDF_JB2_OBJ)jb2_adt_decoder_text_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_decoder_text_region.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_decoder_text_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_decoder_text_region.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_decoder_text_region.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_decoder_text_region.c
 
-$(LDF_JB2_OBJ)jb2_adt_external_cache.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_external_cache.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_external_cache.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_external_cache.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_external_cache.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_external_cache.c
 
-$(LDF_JB2_OBJ)jb2_adt_file.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_file.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_file.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_file.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_file.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_file.c
 
-$(LDF_JB2_OBJ)jb2_adt_file_extras.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_file_extras.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_file_extras.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_file_extras.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_file_extras.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_file_extras.c
 
-$(LDF_JB2_OBJ)jb2_adt_handle_document.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_handle_document.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_handle_document.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_handle_document.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_handle_document.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_handle_document.c
 
-$(LDF_JB2_OBJ)jb2_adt_huffman_decoder.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_huffman_decoder.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_huffman_decoder.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_huffman_decoder.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_huffman_decoder.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_huffman_decoder.c
 
-$(LDF_JB2_OBJ)jb2_adt_huffman_table.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_huffman_table.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_huffman_table.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_huffman_table.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_huffman_table.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_huffman_table.c
 
-$(LDF_JB2_OBJ)jb2_adt_huffman_table_standard.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_huffman_table_standard.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_huffman_table_standard.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_huffman_table_standard.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_huffman_table_standard.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_huffman_table_standard.c
 
-$(LDF_JB2_OBJ)jb2_adt_huffman_table_symbol.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_huffman_table_symbol.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_huffman_table_symbol.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_huffman_table_symbol.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_huffman_table_symbol.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_huffman_table_symbol.c
 
-$(LDF_JB2_OBJ)jb2_adt_huffman_table_user_defined.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_huffman_table_user_defined.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_huffman_table_user_defined.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_huffman_table_user_defined.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_huffman_table_user_defined.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_huffman_table_user_defined.c
 
-$(LDF_JB2_OBJ)jb2_adt_huffman_tree.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_huffman_tree.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_huffman_tree.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_huffman_tree.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_huffman_tree.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_huffman_tree.c
 
-$(LDF_JB2_OBJ)jb2_adt_location.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_location.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_location.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_location.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_location.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_location.c
 
-$(LDF_JB2_OBJ)jb2_adt_memory.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_memory.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_memory.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_memory.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_memory.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_memory.c
 
-$(LDF_JB2_OBJ)jb2_adt_message.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_message.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_message.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_message.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_message.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_message.c
 
-$(LDF_JB2_OBJ)jb2_adt_mmr_decoder.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_mmr_decoder.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_mmr_decoder.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_mmr_decoder.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_mmr_decoder.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_mmr_decoder.c
 
-$(LDF_JB2_OBJ)jb2_adt_mmr_tables.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_mmr_tables.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_mmr_tables.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_mmr_tables.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_mmr_tables.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_mmr_tables.c
 
-$(LDF_JB2_OBJ)jb2_adt_mq_decoder.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_mq_decoder.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_mq_decoder.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_mq_decoder.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_mq_decoder.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_mq_decoder.c
 
-$(LDF_JB2_OBJ)jb2_adt_mq_state.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_mq_state.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_mq_state.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_mq_state.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_mq_state.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_mq_state.c
 
-$(LDF_JB2_OBJ)jb2_adt_pattern_dict.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_pattern_dict.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_pattern_dict.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_pattern_dict.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_pattern_dict.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_pattern_dict.c
 
-$(LDF_JB2_OBJ)jb2_adt_pdf_file.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_pdf_file.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_pdf_file.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_pdf_file.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_pdf_file.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_pdf_file.c
 
-$(LDF_JB2_OBJ)jb2_adt_pdf_stream.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_pdf_stream.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_pdf_stream.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_pdf_stream.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_pdf_stream.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_pdf_stream.c
 
-$(LDF_JB2_OBJ)jb2_adt_props_decompress.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_props_decompress.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_props_decompress.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_props_decompress.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_props_decompress.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_props_decompress.c
 
-$(LDF_JB2_OBJ)jb2_adt_read_bit_buffer.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_read_bit_buffer.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_read_bit_buffer.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_read_bit_buffer.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_read_bit_buffer.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_read_bit_buffer.c
 
-$(LDF_JB2_OBJ)jb2_adt_read_data.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_read_data.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_read_data.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_read_data.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_read_data.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_read_data.c
 
-$(LDF_JB2_OBJ)jb2_adt_render_common.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_render_common.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_render_common.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_render_common.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_render_common.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_render_common.c
 
-$(LDF_JB2_OBJ)jb2_adt_render_generic_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_render_generic_region.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_render_generic_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_render_generic_region.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_render_generic_region.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_render_generic_region.c
 
-$(LDF_JB2_OBJ)jb2_adt_render_halftone_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_render_halftone_region.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_render_halftone_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_render_halftone_region.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_render_halftone_region.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_render_halftone_region.c
 
-$(LDF_JB2_OBJ)jb2_adt_render_text_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_render_text_region.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_render_text_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_render_text_region.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_render_text_region.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_render_text_region.c
 
-$(LDF_JB2_OBJ)jb2_adt_segment.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_segment.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_segment.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_segment.c
 
-$(LDF_JB2_OBJ)jb2_adt_segment_array.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_array.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_segment_array.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_array.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_segment_array.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_segment_array.c
 
-$(LDF_JB2_OBJ)jb2_adt_segment_end_of_file.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_end_of_file.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_segment_end_of_file.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_end_of_file.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_segment_end_of_file.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_segment_end_of_file.c
 
-$(LDF_JB2_OBJ)jb2_adt_segment_end_of_page.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_end_of_page.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_segment_end_of_page.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_end_of_page.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_segment_end_of_page.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_segment_end_of_page.c
 
-$(LDF_JB2_OBJ)jb2_adt_segment_end_of_stripe.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_end_of_stripe.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_segment_end_of_stripe.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_end_of_stripe.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_segment_end_of_stripe.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_segment_end_of_stripe.c
 
-$(LDF_JB2_OBJ)jb2_adt_segment_generic_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_generic_region.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_segment_generic_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_generic_region.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_segment_generic_region.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_segment_generic_region.c
 
-$(LDF_JB2_OBJ)jb2_adt_segment_halftone_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_halftone_region.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_segment_halftone_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_halftone_region.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_segment_halftone_region.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_segment_halftone_region.c
 
-$(LDF_JB2_OBJ)jb2_adt_segment_page_info.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_page_info.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_segment_page_info.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_page_info.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_segment_page_info.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_segment_page_info.c
 
-$(LDF_JB2_OBJ)jb2_adt_segment_pattern_dict.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_pattern_dict.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_segment_pattern_dict.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_pattern_dict.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_segment_pattern_dict.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_segment_pattern_dict.c
 
-$(LDF_JB2_OBJ)jb2_adt_segment_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_region.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_segment_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_region.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_segment_region.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_segment_region.c
 
-$(LDF_JB2_OBJ)jb2_adt_segment_symbol_dict.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_symbol_dict.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_segment_symbol_dict.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_symbol_dict.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_segment_symbol_dict.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_segment_symbol_dict.c
 
-$(LDF_JB2_OBJ)jb2_adt_segment_table.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_table.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_segment_table.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_table.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_segment_table.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_segment_table.c
 
-$(LDF_JB2_OBJ)jb2_adt_segment_text_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_text_region.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_segment_text_region.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_text_region.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_segment_text_region.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_segment_text_region.c
 
-$(LDF_JB2_OBJ)jb2_adt_segment_types.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_types.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_segment_types.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_segment_types.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_segment_types.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_segment_types.c
 
-$(LDF_JB2_OBJ)jb2_adt_symbol.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_symbol.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_symbol.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_symbol.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_symbol.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_symbol.c
 
-$(LDF_JB2_OBJ)jb2_adt_symbol_dict.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_symbol_dict.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_symbol_dict.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_symbol_dict.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_symbol_dict.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_symbol_dict.c
 
-$(LDF_JB2_OBJ)jb2_adt_symbol_instance.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_symbol_instance.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_symbol_instance.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_symbol_instance.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_symbol_instance.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_symbol_instance.c
 
-$(LDF_JB2_OBJ)jb2_adt_write_bits.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_write_bits.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_write_bits.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_write_bits.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_write_bits.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_write_bits.c
 
-$(LDF_JB2_OBJ)jb2_adt_write_data.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_write_data.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_write_data.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_write_data.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_write_data.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_write_data.c
 
-$(LDF_JB2_OBJ)jb2_adt_write_pdf.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_write_pdf.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_write_pdf.$(OBJ) : $(LDF_JB2_COMMON)jb2_adt_write_pdf.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_write_pdf.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_adt_write_pdf.c
 
-$(LDF_JB2_OBJ)jb2_common.$(OBJ) : $(LDF_JB2_COMMON)jb2_common.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_common.$(OBJ) : $(LDF_JB2_COMMON)jb2_common.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_common.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_common.c
 
-$(LDF_JB2_OBJ)jb2_license_dummy.$(OBJ) : $(LDF_JB2_COMMON)jb2_license_dummy.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_license_dummy.$(OBJ) : $(LDF_JB2_COMMON)jb2_license_dummy.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_license_dummy.$(OBJ) $(C_) $(LDF_JB2_COMMON)jb2_license_dummy.c
 
-$(LDF_JB2_OBJ)jb2_adt_component.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_component.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_component.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_component.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_component.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_component.c
 
-$(LDF_JB2_OBJ)jb2_adt_component_class.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_component_class.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_component_class.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_component_class.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_component_class.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_component_class.c
 
-$(LDF_JB2_OBJ)jb2_adt_component_group.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_component_group.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_component_group.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_component_group.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_component_group.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_component_group.c
 
-$(LDF_JB2_OBJ)jb2_adt_component_match.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_component_match.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_component_match.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_component_match.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_component_match.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_component_match.c
 
-$(LDF_JB2_OBJ)jb2_adt_context_encoder.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_context_encoder.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_context_encoder.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_context_encoder.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_context_encoder.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_context_encoder.c
 
-$(LDF_JB2_OBJ)jb2_adt_context_ref_encoder.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_context_ref_encoder.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_context_ref_encoder.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_context_ref_encoder.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_context_ref_encoder.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_context_ref_encoder.c
 
-$(LDF_JB2_OBJ)jb2_adt_encoder_generic_region.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_encoder_generic_region.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_encoder_generic_region.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_encoder_generic_region.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_encoder_generic_region.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_encoder_generic_region.c
 
-$(LDF_JB2_OBJ)jb2_adt_encoder_symbol_dict.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_encoder_symbol_dict.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_encoder_symbol_dict.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_encoder_symbol_dict.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_encoder_symbol_dict.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_encoder_symbol_dict.c
 
-$(LDF_JB2_OBJ)jb2_adt_encoder_text_region.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_encoder_text_region.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_encoder_text_region.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_encoder_text_region.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_encoder_text_region.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_encoder_text_region.c
 
-$(LDF_JB2_OBJ)jb2_adt_handle_compress.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_handle_compress.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_handle_compress.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_handle_compress.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_handle_compress.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_handle_compress.c
 
-$(LDF_JB2_OBJ)jb2_adt_huffman_encoder.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_huffman_encoder.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_huffman_encoder.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_huffman_encoder.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_huffman_encoder.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_huffman_encoder.c
 
-$(LDF_JB2_OBJ)jb2_adt_mmr_encoder.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_mmr_encoder.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_mmr_encoder.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_mmr_encoder.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_mmr_encoder.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_mmr_encoder.c
 
-$(LDF_JB2_OBJ)jb2_adt_mq_encoder.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_mq_encoder.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_mq_encoder.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_mq_encoder.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_mq_encoder.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_mq_encoder.c
 
-$(LDF_JB2_OBJ)jb2_adt_props_compress.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_props_compress.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_props_compress.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_props_compress.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_props_compress.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_props_compress.c
 
-$(LDF_JB2_OBJ)jb2_adt_run_array.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_run_array.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_run_array.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_run_array.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_run_array.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_run_array.c
 
-$(LDF_JB2_OBJ)jb2_adt_stack.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_stack.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_stack.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_stack.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_stack.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_stack.c
 
-$(LDF_JB2_OBJ)jb2_adt_stripe_clean_up.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_stripe_clean_up.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_stripe_clean_up.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_stripe_clean_up.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_stripe_clean_up.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_stripe_clean_up.c
 
-$(LDF_JB2_OBJ)jb2_adt_stripe_encoder.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_stripe_encoder.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_stripe_encoder.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_stripe_encoder.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_stripe_encoder.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_stripe_encoder.c
 
-$(LDF_JB2_OBJ)jb2_adt_stripe_half_tone.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_stripe_half_tone.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_stripe_half_tone.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_stripe_half_tone.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_stripe_half_tone.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_stripe_half_tone.c
 
-$(LDF_JB2_OBJ)jb2_adt_stripe_preprocessing.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_stripe_preprocessing.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_stripe_preprocessing.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_stripe_preprocessing.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_stripe_preprocessing.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_stripe_preprocessing.c
 
-$(LDF_JB2_OBJ)jb2_adt_stripe_text.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_stripe_text.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_stripe_text.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_stripe_text.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_stripe_text.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_stripe_text.c
 
-$(LDF_JB2_OBJ)jb2_adt_symbol_unify.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_symbol_unify.c $(LDF_JB2_DEP) $(ldf_jb2_HDRS)
+$(LDF_JB2_OBJ)jb2_adt_symbol_unify.$(OBJ) : $(LDF_JB2_COMPRESS)jb2_adt_symbol_unify.c $(ldf_jb2_HDRS) $(LDF_JB2_DEP)
 	$(LDF_JB2_CC) $(LDF_JB2_O)jb2_adt_symbol_unify.$(OBJ) $(C_) $(LDF_JB2_COMPRESS)jb2_adt_symbol_unify.c
 
 

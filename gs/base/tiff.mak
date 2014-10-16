@@ -35,7 +35,7 @@ LIBTIFF_MAK=$(GLSRC)tiff.mak
 
 TIFFCC=$(CC_) $(I_)$(TI_) $(II)$(JI_)$(_I) $(PF_)
 
-TIFFDEP = $(AK) $(TIFFGEN)tif_config.h $(TIFFGEN)tiffconf.h
+TIFFDEP = $(AK) $(TIFFGEN)tif_config.h $(TIFFGEN)tiffconf.h $(MAKEDIRS)
 gstiffio_h=$(GLSRC)gstiffio.h
 
 tiff_1=$(TIFFOBJ)tif_aux.$(OBJ) $(TIFFOBJ)tif_close.$(OBJ) $(TIFFOBJ)tif_codec.$(OBJ) $(TIFFOBJ)tif_color.$(OBJ)
@@ -185,23 +185,23 @@ $(TIFFOBJ)tif_zip.$(OBJ) : $(TIFFSRC)/libtiff/tif_zip.c $(TIFFDEP)
 # instead of the platform specific files above, we include our own which stubs out
 # the platform specific code, and routes via the Ghostscript I/O functions.
 $(TIFFOBJ)gstiffio.$(OBJ) : $(GLSRC)gstiffio.c $(gstiffio_h) $(PDEVH) $(stdint__h) $(stdio__h) $(time__h)\
-    $(gscdefs_h) $(gstypes_h) $(stream_h) $(strmio_h) $(malloc__h)
+    $(gscdefs_h) $(gstypes_h) $(stream_h) $(strmio_h) $(malloc__h) $(MAKEDIRS)
 	$(TIFFCC) $(TIFFO_)gstiffio.$(OBJ) $(D_)SHARE_LIBTIFF=$(SHARE_LIBTIFF) $(C_) $(GLSRC)gstiffio.c
 
-$(TIFFGEN)tif_config.h: $(TIFFCONFIG_H)
+$(TIFFGEN)tif_config.h: $(TIFFCONFIG_H) $(MAKEDIRS)
 	$(CP_) $(TIFFCONFIG_H) $(TIFFGEN)tif_config.h
 	
-$(TIFFGEN)tiffconf.h: $(TIFFCONF_H)
+$(TIFFGEN)tiffconf.h: $(TIFFCONF_H) $(MAKEDIRS)
 	$(CP_) $(TIFFCONF_H) $(TIFFGEN)tiffconf.h
 	
 # Define the version of libtiff.dev that we are actually using.
-$(TIFFGEN)libtiff.dev : $(TOP_MAKEFILES) $(TIFFGEN)libtiff_$(SHARE_LIBTIFF).dev
+$(TIFFGEN)libtiff.dev : $(TOP_MAKEFILES) $(TIFFGEN)libtiff_$(SHARE_LIBTIFF).dev $(MAKEDIRS)
 	$(CP_) $(TIFFGEN)libtiff_$(SHARE_LIBTIFF).dev $(TIFFGEN)libtiff.dev
 
 
 # Define the shared version.
 $(TIFFGEN)libtiff_1.dev : $(TOP_MAKEFILES) $(LIBTIFF_MAK) $(ECHOGS_XE) $(JPEGGEN)jpegd.dev $(JPEGGEN)jpege.dev \
-    $(tiff_11)
+    $(tiff_11) $(MAKEDIRS)
 	$(SETMOD) $(TIFFGEN)libtiff_1 $(tiff_11)
 	$(ADDMOD) $(TIFFGEN)libtiff_1 -lib $(LIBTIFF_NAME)
 	$(ADDMOD) $(TIFFGEN)libtiff_1 -include $(JPEGGEN)jpegd.dev
@@ -211,7 +211,7 @@ $(TIFFGEN)libtiff_1.dev : $(TOP_MAKEFILES) $(LIBTIFF_MAK) $(ECHOGS_XE) $(JPEGGEN
 $(TIFFGEN)libtiff_0.dev : $(LIBTIFF_MAK) $(ECHOGS_XE) \
     $(tiff_1) $(tiff_2) $(tiff_3) $(tiff_4) $(tiff_5) \
     $(tiff_6) $(tiff_7) $(tiff_8) $(tiff_9) $(tiff_10) $(tiff_11) \
-    $(JPEGGEN)jpegd.dev $(JPEGGEN)jpege.dev
+    $(JPEGGEN)jpegd.dev $(JPEGGEN)jpege.dev $(MAKEDIRS)
 	$(SETMOD) $(TIFFGEN)libtiff_0 $(tiff_1)
 	$(ADDMOD) $(TIFFGEN)libtiff_0 $(tiff_2)
 	$(ADDMOD) $(TIFFGEN)libtiff_0 $(tiff_3)

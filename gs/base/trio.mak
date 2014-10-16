@@ -41,6 +41,8 @@ TRIOCC=$(CC) $(TRIOCFLAGS)
 
 TRIOOBJS=$(TRIOOBJ)triostr.$(OBJ) $(TRIOOBJ)trio.$(OBJ) $(TRIOOBJ)trionan.$(OBJ)
 
+TRIODEPS=$(TRIOHDRS) $(TRIO_MAK) $(MAKEDIRS)
+
 triodef_h=$(TRIOSRC)triodef.h
 trio_h=$(TRIOSRC)trio.h
 triop_h=$(TRIOSRC)triop.h
@@ -48,23 +50,26 @@ triostr_h=$(TRIOSRC)triostr.h
 
 TRIOHDRS=$(triodef_h) $(trio_h) $(triop_h) $(triostr_h)
 
-$(TRIOOBJ)triostr.$(OBJ) : $(TRIOSRC)triostr.c $(TRIOHDRS) $(TRIO_MAK)
+$(TRIOOBJ)triostr.$(OBJ) : $(TRIOSRC)triostr.c $(TRIODEPS)
 	$(TRIOCC) $(TRIOO_)triostr.$(OBJ) $(C_) $(TRIOSRC)triostr.c
 
-$(TRIOOBJ)trio.$(OBJ) : $(TRIOSRC)trio.c $(TRIOHDRS) $(TRIO_MAK)
+$(TRIOOBJ)trio.$(OBJ) : $(TRIOSRC)trio.c  $(TRIODEPS)
 	$(TRIOCC) $(TRIOO_)trio.$(OBJ) $(C_) $(TRIOSRC)trio.c
 
-$(TRIOOBJ)trionan.$(OBJ) : $(TRIOSRC)trionan.c $(TRIOHDRS) $(TRIO_MAK)
+$(TRIOOBJ)trionan.$(OBJ) : $(TRIOSRC)trionan.c $(TRIODEPS)
 	$(TRIOCC) $(TRIOO_)trionan.$(OBJ) $(C_) $(TRIOSRC)trionan.c
 
-# dev file for shared (separately built) lcms library
-$(TRIOGEN)trio_1.dev : $(TOP_MAKEFILES) $(TRIO_MAK) $(ECHOGS_XE)
+# dev file for shared (separately built) trio library
+$(TRIOGEN)trio_1.dev : $(TOP_MAKEFILES) $(TRIO_MAK) $(ECHOGS_XE) \
+  $(MAKEDIRS)
 	$(SETMOD) $(TRIOGEN)trio_1 -lib trio
 
 # dev file for compiling our own from source
-$(TRIOGEN)trio_0.dev : $(TOP_MAKEFILES) $(TRIO_MAK) $(ECHOGS_XE) $(TRIOOBJS)
+$(TRIOGEN)trio_0.dev : $(TOP_MAKEFILES) $(TRIO_MAK) $(ECHOGS_XE) $(TRIOOBJS) \
+  $(MAKEDIRS)
 	$(SETMOD) $(TRIOGEN)trio_0 $(TRIOOBJS)
 
 # switch in the version of lcms2.dev we're actually using
-$(TRIOGEN)trio.dev : $(TOP_MAKEFILES) $(TRIOGEN)trio_$(SHARE_TRIO).dev
+$(TRIOGEN)trio.dev : $(TOP_MAKEFILES) $(TRIOGEN)trio_$(SHARE_TRIO).dev \
+  $(MAKEDIRS)
 	$(CP_) $(TRIOGEN)trio_$(SHARE_TRIO).dev $(TRIOGEN)trio.dev

@@ -69,7 +69,7 @@ z.clean-not-config-clean :
 z.config-clean :
 	$(RMN_) $(ZGEN)zlib*.dev $(ZGEN)crc32*.dev
 
-ZDEP=$(AK)
+ZDEP=$(AK) $(MAKEDIRS)
 
 # Code common to compression and decompression.
 
@@ -82,15 +82,18 @@ $(ZOBJ)zutil.$(OBJ) : $(ZSRC)zutil.c $(ZDEP)
 
 # Encoding (compression) code.
 
-$(ZGEN)zlibe.dev : $(TOP_MAKEFILES) $(ZGEN)zlibe_$(SHARE_ZLIB).dev
+$(ZGEN)zlibe.dev : $(TOP_MAKEFILES) $(ZGEN)zlibe_$(SHARE_ZLIB).dev \
+ $(MAKEDIRS)
 	$(CP_) $(ZGEN)zlibe_$(SHARE_ZLIB).dev $(ZGEN)zlibe.dev
 
-$(ZGEN)zlibe_1.dev : $(TOP_MAKEFILES) $(ZLIB_MAK) $(ECHOGS_XE)
+$(ZGEN)zlibe_1.dev : $(TOP_MAKEFILES) $(ZLIB_MAK) $(ECHOGS_XE) \
+ $(MAKEDIRS)
 	$(SETMOD) $(ZGEN)zlibe_1 -lib $(ZLIB_NAME)
 
 zlibe_=$(ZOBJ)adler32.$(OBJ) $(ZOBJ)deflate.$(OBJ) \
 	$(ZOBJ)compress.$(OBJ) $(ZOBJ)trees.$(OBJ) $(ZOBJ)crc32.$(OBJ)
-$(ZGEN)zlibe_0.dev : $(ZLIB_MAK) $(ECHOGS_XE) $(ZGEN)zlibc.dev $(zlibe_)
+$(ZGEN)zlibe_0.dev : $(ZLIB_MAK) $(ECHOGS_XE) $(ZGEN)zlibc.dev $(zlibe_) \
+ $(MAKEDIRS)
 	$(SETMOD) $(ZGEN)zlibe_0 $(zlibe_)
 	$(ADDMOD) $(ZGEN)zlibe_0 -include $(ZGEN)zlibc.dev
 
@@ -110,13 +113,16 @@ $(ZOBJ)trees.$(OBJ) : $(ZSRC)trees.c $(ZDEP)
 # The zlib filters per se don't need crc32, but libpng versions starting
 # with 0.90 do.
 
-$(ZGEN)crc32.dev : $(TOP_MAKEFILES) $(ZGEN)crc32_$(SHARE_ZLIB).dev
+$(ZGEN)crc32.dev : $(TOP_MAKEFILES) $(ZGEN)crc32_$(SHARE_ZLIB).dev \
+ $(MAKEDIRS)
 	$(CP_) $(ZGEN)crc32_$(SHARE_ZLIB).dev $(ZGEN)crc32.dev
 
-$(ZGEN)crc32_1.dev : $(TOP_MAKEFILES) $(ZLIB_MAK) $(ECHOGS_XE)
+$(ZGEN)crc32_1.dev : $(TOP_MAKEFILES) $(ZLIB_MAK) $(ECHOGS_XE) \
+ $(MAKEDIRS)
 	$(SETMOD) $(ZGEN)crc32_1 -lib $(ZLIB_NAME)
 
-$(ZGEN)crc32_0.dev : $(ZLIB_MAK) $(ECHOGS_XE) $(ZOBJ)crc32.$(OBJ)
+$(ZGEN)crc32_0.dev : $(ZLIB_MAK) $(ECHOGS_XE) $(ZOBJ)crc32.$(OBJ) \
+ $(MAKEDIRS)
 	$(SETMOD) $(ZGEN)crc32_0 $(ZOBJ)crc32.$(OBJ)
 
 # We have to compile crc32 without warnings, because it defines 32-bit
@@ -129,7 +135,8 @@ $(ZOBJ)crc32.$(OBJ) : $(ZSRC)crc32.c $(ZDEP)
 $(ZGEN)zlibd.dev : $(TOP_MAKEFILES) $(ZGEN)zlibd_$(SHARE_ZLIB).dev $(MAKEDIRS)
 	$(CP_) $(ZGEN)zlibd_$(SHARE_ZLIB).dev $(ZGEN)zlibd.dev
 
-$(ZGEN)zlibd_1.dev : $(TOP_MAKEFILES) $(ZLIB_MAK) $(ECHOGS_XE)
+$(ZGEN)zlibd_1.dev : $(TOP_MAKEFILES) $(ZLIB_MAK) $(ECHOGS_XE) \
+ $(MAKEDIRS)
 	$(SETMOD) $(ZGEN)zlibd_1 -lib $(ZLIB_NAME)
 
 # zlibd[12]_ list the decompression source files for zlib 1.4.x
@@ -140,7 +147,7 @@ zlibd2_=$(ZOBJ)inflate.$(OBJ) $(ZOBJ)inftrees.$(OBJ) $(ZOBJ)infutil.$(OBJ) $(ZOB
 zlibd_=$(ZOBJ)inffast.$(OBJ) $(ZOBJ)inflate.$(OBJ) $(ZOBJ)inftrees.$(OBJ) $(ZOBJ)uncompr.$(OBJ)
 
 
-$(ZGEN)zlibd_0.dev : $(ZLIB_MAK) $(ECHOGS_XE) $(ZGEN)zlibc.dev $(zlibd_)
+$(ZGEN)zlibd_0.dev : $(ZLIB_MAK) $(ECHOGS_XE) $(ZGEN)zlibc.dev $(zlibd_) $(MAKEDIRS)
 	$(SETMOD) $(ZGEN)zlibd_0 $(zlibd_)
 	$(ADDMOD) $(ZGEN)zlibd_0 -include $(ZGEN)zlibc.dev
 

@@ -85,7 +85,7 @@ LIBCUPS_OBJS =\
 #	$(LIBCUPSOBJ)pwg-ppd.$(OBJ) \
 #	$(LIBCUPSOBJ)pwg-file.$(OBJ) \
 
-LIBCUPSHEADERS	=	\
+LIBCUPS_DEPS	=	\
 		$(LIBCUPSSRC)adminutil.h \
 		$(LIBCUPSSRC)array.h \
 		$(LIBCUPSSRC)backend.h \
@@ -99,7 +99,8 @@ LIBCUPSHEADERS	=	\
 		$(LIBCUPSSRC)raster.h \
 		$(LIBCUPSSRC)sidechannel.h \
 		$(LIBCUPSSRC)transcode.h \
-		$(LIBCUPSSRC)versioning.h 
+		$(LIBCUPSSRC)versioning.h \
+		$(MAKEDIRS)
 
 libcups.clean : libcups.config-clean libcups.clean-not-config-clean
 
@@ -115,169 +116,171 @@ libcups.config-clean :
 	$(RMN_) $(LIBCUPSGEN)$(D)cups_util.c
 
 # instantiate the requested build option (shared or compiled in)
-$(LIBCUPSGEN)lcups.dev : $(TOP_MAKEFILES) $(LIBCUPSGEN)lcups_$(SHARE_LCUPS).dev
+$(LIBCUPSGEN)lcups.dev : $(TOP_MAKEFILES) $(LIBCUPSGEN)lcups_$(SHARE_LCUPS).dev \
+ $(MAKEDIRS)
 	$(CP_) $(LIBCUPSGEN)lcups_$(SHARE_LCUPS).dev $(LIBCUPSGEN)lcups.dev
 
 # Define the shared version.
-$(LIBCUPSGEN)lcups_1.dev : $(TOP_MAKEFILES) $(LCUPS_MAK) $(ECHOGS_XE)
+$(LIBCUPSGEN)lcups_1.dev : $(TOP_MAKEFILES) $(LCUPS_MAK) $(ECHOGS_XE)\
+ $(MAKEDIRS)
 	$(SETMOD) $(LIBCUPSGEN)lcups_1 -link $(LCUPS_LIBS)
 	$(ADDMOD) $(DD)lcups_1 -libpath $(CUPSLIBDIRS)
 	$(ADDMOD) $(DD)lcups_1 -lib $(CUPSLIBS)
 
 # Define the non-shared version.
 $(LIBCUPSGEN)lcups_0.dev : $(TOP_MAKEFILES) $(LCUPS_MAK) $(ECHOGS_XE) \
-	$(LIBCUPS_OBJS)
+	$(LIBCUPS_OBJS) $(MAKEDIRS)
 	$(SETMOD) $(LIBCUPSGEN)lcups_0 $(LIBCUPS_OBJS)
 
 # explicit rules for building the source files
 # for simplicity we have every source file depend on all headers
 
-$(LIBCUPSGEN)$(D)cups$(D)config.h : $(LCUPSSRCDIR)$(D)libs$(D)config$(LCUPSBUILDTYPE).h
+$(LIBCUPSGEN)$(D)cups$(D)config.h : $(LCUPSSRCDIR)$(D)libs$(D)config$(LCUPSBUILDTYPE).h $(MAKEDIRS)
 	$(CP_) $(LCUPSSRCDIR)$(D)libs$(D)config$(LCUPSBUILDTYPE).h $(LIBCUPSGEN)$(D)cups$(D)config.h
 
-$(LIBCUPSOBJ)adminutil.$(OBJ) : $(LIBCUPSSRC)adminutil.c $(LIBSCUPSHEADERS) $(LIBCUPSGEN)$(D)cups$(D)config.h
+$(LIBCUPSOBJ)adminutil.$(OBJ) : $(LIBCUPSSRC)adminutil.c $(LIBCUPSGEN)$(D)cups$(D)config.h $(LIBCUPS_DEPS) 
 	$(LCUPS_CC) $(LCUPSO_)adminutil.$(OBJ) $(C_) $(LIBCUPSSRC)adminutil.c
 	
-$(LIBCUPSOBJ)array.$(OBJ) : $(LIBCUPSSRC)array.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)array.$(OBJ) : $(LIBCUPSSRC)array.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)array.$(OBJ) $(C_) $(LIBCUPSSRC)array.c
 	
-$(LIBCUPSOBJ)attr.$(OBJ) : $(LIBCUPSSRC)attr.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)attr.$(OBJ) : $(LIBCUPSSRC)attr.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)attr.$(OBJ) $(C_) $(LIBCUPSSRC)attr.c
 
-$(LIBCUPSOBJ)auth.$(OBJ) : $(LIBCUPSSRC)auth.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)auth.$(OBJ) : $(LIBCUPSSRC)auth.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)auth.$(OBJ) $(C_) $(LIBCUPSSRC)auth.c
 
-$(LIBCUPSOBJ)backchannel.$(OBJ) : $(LIBCUPSSRC)backchannel.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)backchannel.$(OBJ) : $(LIBCUPSSRC)backchannel.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)backchannel.$(OBJ) $(C_) $(LIBCUPSSRC)backchannel.c
 
-$(LIBCUPSOBJ)backend.$(OBJ) : $(LIBCUPSSRC)backend.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)backend.$(OBJ) : $(LIBCUPSSRC)backend.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)backend.$(OBJ) $(C_) $(LIBCUPSSRC)backend.c
 
-$(LIBCUPSOBJ)conflicts.$(OBJ) : $(LIBCUPSSRC)conflicts.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)conflicts.$(OBJ) : $(LIBCUPSSRC)conflicts.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)conflicts.$(OBJ) $(C_) $(LIBCUPSSRC)conflicts.c
 
-$(LIBCUPSOBJ)custom.$(OBJ) : $(LIBCUPSSRC)custom.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)custom.$(OBJ) : $(LIBCUPSSRC)custom.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)custom.$(OBJ) $(C_) $(LIBCUPSSRC)custom.c
 
-$(LIBCUPSOBJ)debug.$(OBJ) : $(LIBCUPSSRC)debug.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)debug.$(OBJ) : $(LIBCUPSSRC)debug.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)debug.$(OBJ) $(C_) $(LIBCUPSSRC)debug.c
 
-$(LIBCUPSOBJ)dest.$(OBJ) : $(LIBCUPSSRC)dest.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)dest.$(OBJ) : $(LIBCUPSSRC)dest.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)dest.$(OBJ) $(C_) $(LIBCUPSSRC)dest.c
 
-$(LIBCUPSOBJ)dir.$(OBJ) : $(LIBCUPSSRC)dir.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)dir.$(OBJ) : $(LIBCUPSSRC)dir.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)dir.$(OBJ) $(C_) $(LIBCUPSSRC)dir.c
 
-$(LIBCUPSOBJ)emit.$(OBJ) : $(LIBCUPSSRC)emit.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)emit.$(OBJ) : $(LIBCUPSSRC)emit.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)emit.$(OBJ) $(C_) $(LIBCUPSSRC)emit.c
 
-$(LIBCUPSOBJ)encode.$(OBJ) : $(LIBCUPSSRC)encode.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)encode.$(OBJ) : $(LIBCUPSSRC)encode.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)encode.$(OBJ) $(C_) $(LIBCUPSSRC)encode.c
 
-$(LIBCUPSOBJ)file.$(OBJ) : $(LIBCUPSSRC)file.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)file.$(OBJ) : $(LIBCUPSSRC)file.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)file.$(OBJ) $(C_) $(LIBCUPSSRC)file.c
 
-$(LIBCUPSOBJ)getdevices.$(OBJ) : $(LIBCUPSSRC)getdevices.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)getdevices.$(OBJ) : $(LIBCUPSSRC)getdevices.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)getdevices.$(OBJ) $(C_) $(LIBCUPSSRC)getdevices.c
 
-$(LIBCUPSOBJ)getifaddrs.$(OBJ) : $(LIBCUPSSRC)getifaddrs.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)getifaddrs.$(OBJ) : $(LIBCUPSSRC)getifaddrs.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)getifaddrs.$(OBJ) $(C_) $(LIBCUPSSRC)getifaddrs.c
 
-$(LIBCUPSOBJ)getputfile.$(OBJ) : $(LIBCUPSSRC)getputfile.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)getputfile.$(OBJ) : $(LIBCUPSSRC)getputfile.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)getputfile.$(OBJ) $(C_) $(LIBCUPSSRC)getputfile.c
 
-$(LIBCUPSOBJ)globals.$(OBJ) : $(LIBCUPSSRC)globals.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)globals.$(OBJ) : $(LIBCUPSSRC)globals.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)globals.$(OBJ) $(C_) $(LIBCUPSSRC)globals.c
 
-$(LIBCUPSOBJ)http.$(OBJ) : $(LIBCUPSSRC)http.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)http.$(OBJ) : $(LIBCUPSSRC)http.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)http.$(OBJ) $(C_) $(LIBCUPSSRC)http.c
 
-$(LIBCUPSOBJ)http-addr.$(OBJ) : $(LIBCUPSSRC)http-addr.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)http-addr.$(OBJ) : $(LIBCUPSSRC)http-addr.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)http-addr.$(OBJ) $(C_) $(LIBCUPSSRC)http-addr.c
 
-$(LIBCUPSOBJ)http-addrlist.$(OBJ) : $(LIBCUPSSRC)http-addrlist.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)http-addrlist.$(OBJ) : $(LIBCUPSSRC)http-addrlist.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)http-addrlist.$(OBJ) $(C_) $(LIBCUPSSRC)http-addrlist.c
 
-$(LIBCUPSOBJ)http-support.$(OBJ) : $(LIBCUPSSRC)http-support.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)http-support.$(OBJ) : $(LIBCUPSSRC)http-support.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)http-support.$(OBJ) $(C_) $(LIBCUPSSRC)http-support.c
 
-$(LIBCUPSOBJ)ipp.$(OBJ) : $(LIBCUPSSRC)ipp.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)ipp.$(OBJ) : $(LIBCUPSSRC)ipp.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)ipp.$(OBJ) $(C_) $(LIBCUPSSRC)ipp.c
 
-$(LIBCUPSOBJ)ipp-support.$(OBJ) : $(LIBCUPSSRC)ipp-support.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)ipp-support.$(OBJ) : $(LIBCUPSSRC)ipp-support.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)ipp-support.$(OBJ) $(C_) $(LIBCUPSSRC)ipp-support.c
 
-$(LIBCUPSOBJ)langprintf.$(OBJ) : $(LIBCUPSSRC)langprintf.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)langprintf.$(OBJ) : $(LIBCUPSSRC)langprintf.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)langprintf.$(OBJ) $(C_) $(LIBCUPSSRC)langprintf.c
 
-$(LIBCUPSOBJ)language.$(OBJ) : $(LIBCUPSSRC)language.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)language.$(OBJ) : $(LIBCUPSSRC)language.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)language.$(OBJ) $(C_) $(LIBCUPSSRC)language.c
 
-$(LIBCUPSOBJ)localize.$(OBJ) : $(LIBCUPSSRC)localize.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)localize.$(OBJ) : $(LIBCUPSSRC)localize.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)localize.$(OBJ) $(C_) $(LIBCUPSSRC)localize.c
 
-$(LIBCUPSOBJ)mark.$(OBJ) : $(LIBCUPSSRC)mark.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)mark.$(OBJ) : $(LIBCUPSSRC)mark.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)mark.$(OBJ) $(C_) $(LIBCUPSSRC)mark.c
 
-$(LIBCUPSOBJ)cups_md5.$(OBJ) : $(LIBCUPSSRC)md5.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)cups_md5.$(OBJ) : $(LIBCUPSSRC)md5.c $(LIBCUPS_DEPS)
 	$(CP_) $(LIBCUPSSRC)md5.c $(LIBCUPSGEN)cups_md5.c
 	$(LCUPS_CC) $(LCUPSO_)cups_md5.$(OBJ) $(C_) $(LIBCUPSGEN)cups_md5.c
 
-$(LIBCUPSOBJ)md5passwd.$(OBJ) : $(LIBCUPSSRC)md5passwd.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)md5passwd.$(OBJ) : $(LIBCUPSSRC)md5passwd.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)md5passwd.$(OBJ) $(C_) $(LIBCUPSSRC)md5passwd.c
 
-$(LIBCUPSOBJ)notify.$(OBJ) : $(LIBCUPSSRC)notify.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)notify.$(OBJ) : $(LIBCUPSSRC)notify.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)notify.$(OBJ) $(C_) $(LIBCUPSSRC)notify.c
 
-$(LIBCUPSOBJ)options.$(OBJ) : $(LIBCUPSSRC)options.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)options.$(OBJ) : $(LIBCUPSSRC)options.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)options.$(OBJ) $(C_) $(LIBCUPSSRC)options.c
 
-$(LIBCUPSOBJ)page.$(OBJ) : $(LIBCUPSSRC)page.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)page.$(OBJ) : $(LIBCUPSSRC)page.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)page.$(OBJ) $(C_) $(LIBCUPSSRC)page.c
 
-$(LIBCUPSOBJ)ppd.$(OBJ) : $(LIBCUPSSRC)ppd.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)ppd.$(OBJ) : $(LIBCUPSSRC)ppd.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)ppd.$(OBJ) $(C_) $(LIBCUPSSRC)ppd.c
 
-$(LIBCUPSOBJ)pwg-file.$(OBJ) : $(LIBCUPSSRC)pwg-file.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)pwg-file.$(OBJ) : $(LIBCUPSSRC)pwg-file.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)pwg-file.$(OBJ) $(C_) $(LIBCUPSSRC)pwg-file.c
 
-$(LIBCUPSOBJ)pwg-media.$(OBJ) : $(LIBCUPSSRC)pwg-media.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)pwg-media.$(OBJ) : $(LIBCUPSSRC)pwg-media.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)pwg-media.$(OBJ) $(C_) $(LIBCUPSSRC)pwg-media.c
 
-$(LIBCUPSOBJ)pwg-ppd.$(OBJ) : $(LIBCUPSSRC)pwg-ppd.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)pwg-ppd.$(OBJ) : $(LIBCUPSSRC)pwg-ppd.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)pwg-ppd.$(OBJ) $(C_) $(LIBCUPSSRC)pwg-ppd.c
 
-$(LIBCUPSOBJ)request.$(OBJ) : $(LIBCUPSSRC)request.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)request.$(OBJ) : $(LIBCUPSSRC)request.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)request.$(OBJ) $(C_) $(LIBCUPSSRC)request.c
 
-$(LIBCUPSOBJ)sidechannel.$(OBJ) : $(LIBCUPSSRC)sidechannel.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)sidechannel.$(OBJ) : $(LIBCUPSSRC)sidechannel.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)sidechannel.$(OBJ) $(C_) $(LIBCUPSSRC)sidechannel.c
 
-$(LIBCUPSOBJ)snmp.$(OBJ) : $(LIBCUPSSRC)snmp.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)snmp.$(OBJ) : $(LIBCUPSSRC)snmp.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)snmp.$(OBJ) $(C_) $(LIBCUPSSRC)snmp.c
 
-$(LIBCUPSOBJ)cups_snpf.$(OBJ) : $(LIBCUPSSRC)snprintf.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)cups_snpf.$(OBJ) : $(LIBCUPSSRC)snprintf.c $(LIBCUPS_DEPS)
 	$(CP_) $(LIBCUPSSRC)snprintf.c $(LIBCUPSGEN)cups_snpf.c
 	$(LCUPS_CC) $(LCUPSO_)cups_snpf.$(OBJ) $(C_) $(LIBCUPSGEN)cups_snpf.c
 
-$(LIBCUPSOBJ)string.$(OBJ) : $(LIBCUPSSRC)string.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)string.$(OBJ) : $(LIBCUPSSRC)string.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)string.$(OBJ) $(C_) $(LIBCUPSSRC)string.c
 
-$(LIBCUPSOBJ)tempfile.$(OBJ) : $(LIBCUPSSRC)tempfile.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)tempfile.$(OBJ) : $(LIBCUPSSRC)tempfile.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)tempfile.$(OBJ) $(C_) $(LIBCUPSSRC)tempfile.c
 
-$(LIBCUPSOBJ)transcode.$(OBJ) : $(LIBCUPSSRC)transcode.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)transcode.$(OBJ) : $(LIBCUPSSRC)transcode.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)transcode.$(OBJ) $(C_) $(LIBCUPSSRC)transcode.c
 
-$(LIBCUPSOBJ)usersys.$(OBJ) : $(LIBCUPSSRC)usersys.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)usersys.$(OBJ) : $(LIBCUPSSRC)usersys.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)usersys.$(OBJ) $(C_) $(LIBCUPSSRC)usersys.c
 
-$(LIBCUPSOBJ)ppd-cache.$(OBJ) : $(LIBCUPSSRC)ppd-cache.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)ppd-cache.$(OBJ) : $(LIBCUPSSRC)ppd-cache.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)ppd-cache.$(OBJ) $(C_) $(LIBCUPSSRC)ppd-cache.c
 
-$(LIBCUPSOBJ)thread.$(OBJ) : $(LIBCUPSSRC)thread.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)thread.$(OBJ) : $(LIBCUPSSRC)thread.c $(LIBCUPS_DEPS)
 	$(LCUPS_CC) $(LCUPSO_)thread.$(OBJ) $(C_) $(LIBCUPSSRC)thread.c
 
-$(LIBCUPSOBJ)cups_util.$(OBJ) : $(LIBCUPSSRC)util.c $(LIBSCUPSHEADERS)
+$(LIBCUPSOBJ)cups_util.$(OBJ) : $(LIBCUPSSRC)util.c $(LIBCUPS_DEPS)
 	$(CP_) $(LIBCUPSSRC)util.c $(LIBCUPSGEN)cups_util.c
 	$(LCUPS_CC) $(LCUPSO_)cups_util.$(OBJ) $(C_) $(LIBCUPSGEN)cups_util.c

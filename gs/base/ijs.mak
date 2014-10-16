@@ -58,14 +58,14 @@ IJSDEP=$(AK)
 ijslib_=$(IJSOBJ)ijs.$(OBJ) $(IJSOBJ)ijs_server.$(OBJ) \
     $(IJSOBJ)ijs_client.$(OBJ) $(IJSOBJ)ijs_exec_$(IJSEXECTYPE).$(OBJ)
 
-$(IJSGEN)ijslib_0.dev : $(TOP_MAKEFILES) $(IJS_MAK) $(ECHOGS_XE) $(ijslib_)
+$(IJSGEN)ijslib_0.dev : $(TOP_MAKEFILES) $(IJS_MAK) $(ECHOGS_XE) $(ijslib_) $(MAKEDIRS)
 	$(SETMOD) $(IJSGEN)ijslib_0 $(ijslib_)
 
-$(IJSGEN)ijslib_1.dev : $(TOP_MAKEFILES) $(IJS_MAK) $(ECHOGS_XE)
+$(IJSGEN)ijslib_1.dev : $(TOP_MAKEFILES) $(IJS_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 	$(SETMOD) $(IJSGEN)ijslib_1 -lib $(IJS_NAME)
 
 
-$(IJSGEN)ijslib.dev : $(TOP_MAKEFILES) $(IJS_MAK) $(IJSGEN)ijslib_$(SHARE_IJS).dev
+$(IJSGEN)ijslib.dev : $(TOP_MAKEFILES) $(IJS_MAK) $(IJSGEN)ijslib_$(SHARE_IJS).dev $(MAKEDIRS)
 	$(CP_) $(IJSGEN)ijslib_$(SHARE_IJS).dev $(IJSGEN)ijslib.dev
 
 
@@ -74,25 +74,25 @@ ijs_h=$(IJSSRC)ijs.h
 ijs_client_h=$(IJSSRC)$(D)ijs_client.h
 ijs_server_h=$(IJSSRC)$(D)ijs_server.h
 
-$(IJSOBJ)ijs.$(OBJ) : $(IJSSRC)ijs.c $(IJSDEP) $(ijs_h) $(ECHOGS_XE)
+$(IJSOBJ)ijs.$(OBJ) : $(IJSSRC)ijs.c $(IJSDEP) $(ijs_h) $(ECHOGS_XE) $(MAKEDIRS)
 #	echo $(IJS_CCFLAGS)
 	$(EXP)$(ECHOGS_XE) $(IJS_CCFLAGS)
 	$(IJS_CC) $(IJSO_)ijs.$(OBJ) $(C_) $(IJSSRC)ijs.c
 
 $(IJSOBJ)ijs_client.$(OBJ) : $(IJSSRC)ijs_client.c \
-    $(IJSDEP) $(ijs_h) $(ijs_client_h)
+    $(IJSDEP) $(ijs_h) $(ijs_client_h) $(MAKEDIRS)
 	$(IJS_CC) $(IJSO_)ijs_client.$(OBJ) $(C_) $(IJSSRC)ijs_client.c
 
 $(IJSOBJ)ijs_server.$(OBJ) : $(IJSSRC)ijs_server.c \
-    $(IJSDEP) $(ijs_h) $(ijs_server_h)
+    $(IJSDEP) $(ijs_h) $(ijs_server_h) $(MAKEDIRS)
 	$(IJS_CC) $(IJSO_)ijs_server.$(OBJ) $(C_) $(IJSSRC)ijs_server.c
 
 $(IJSOBJ)ijs_exec_unix.$(OBJ) : $(IJSSRC)ijs_exec_unix.c \
-    $(IJSDEP) $(ijs_h) $(ijs_client_h)
+    $(IJSDEP) $(ijs_h) $(ijs_client_h) $(MAKEDIRS)
 	$(IJS_CC) $(IJSO_)ijs_exec_unix.$(OBJ) $(C_) $(IJSSRC)ijs_exec_unix.c
 
 $(IJSOBJ)ijs_exec_win.$(OBJ) : $(IJSSRC)ijs_exec_win.c \
-    $(IJSDEP) $(ijs_h) $(ijs_client_h)
+    $(IJSDEP) $(ijs_h) $(ijs_client_h) $(MAKEDIRS)
 # This can't be compiled with /Za because it needs windows.h.
 	$(CC_WX) $(IJS_CCFLAGS) $(IJSO_)ijs_exec_win.$(OBJ) $(C_) $(IJSSRC)ijs_exec_win.c
 
@@ -108,20 +108,20 @@ ijs_client_example_=$(BINDIR)$(D)ijs_client_example
 
 ijs_examples_=$(ijs_server_example_) $(ijs_client_example_)
 $(IJSGEN)ijs_examples.dev : $(IJS_MAK) $(ECHOGS_XE) \
-    $(ijs_examples_) $(ijslib_)
+    $(ijs_examples_) $(ijslib_) $(MAKEDIRS)
 	$(SETMOD) $(IJSGEN)ijs_examples $(ijs_examples_)
 	$(ADDMOD) $(IJSGEN)ijs_examples $(ijslib_)
 
 $(IJSOBJ)ijs_client_example.$(OBJ) : $(IJSSRC)ijs_client_example.c \
-    $(IJSDEP) $(ijs_h) $(ijs_client_h)
+    $(IJSDEP) $(ijs_h) $(ijs_client_h) $(MAKEDIRS)
 	$(IJS_CC) $(IJSO_)ijs_client_example.$(OBJ) $(C_) $(IJSSRC)ijs_client_example.c
 
-$(BINDIR)$(D)ijs_client_example : $(IJSOBJ)ijs_client_example.$(OBJ) $(ijslib_)
+$(BINDIR)$(D)ijs_client_example : $(IJSOBJ)ijs_client_example.$(OBJ) $(ijslib_) $(MAKEDIRS)
 	$(IJS_CC) -o bin/ijs_client_example $(IJSOBJ)ijs_client_example.$(OBJ) $(ijslib_)
 
 $(IJSOBJ)ijs_server_example.$(OBJ) : $(IJSSRC)ijs_server_example.c \
-    $(IJSDEP) $(ijs_h) $(ijs_server_h)
+    $(IJSDEP) $(ijs_h) $(ijs_server_h) $(MAKEDIRS)
 	$(IJS_CC) $(IJSO_)ijs_server_example.$(OBJ) $(C_) $(IJSSRC)ijs_server_example.c
 
-$(BINDIR)$(D)ijs_server_example : $(IJSOBJ)ijs_server_example.$(OBJ) $(ijslib_)
+$(BINDIR)$(D)ijs_server_example : $(IJSOBJ)ijs_server_example.$(OBJ) $(ijslib_) $(MAKEDIRS)
 	$(IJS_CC) -o bin/ijs_server_example $(IJSOBJ)ijs_server_example.$(OBJ) $(ijslib_)

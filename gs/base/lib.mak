@@ -347,7 +347,7 @@ md5_h=$(GLSRC)md5.h
 # We have to use a slightly different compilation approach in order to
 # get std.h included when compiling md5.c.
 md5_=$(GLOBJ)md5.$(OBJ)
-$(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(md5_h) $(std_h) $(MAKEDIRS) $(EXP)$(ECHOGS_XE)
+$(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(md5_h) $(std_h) $(EXP)$(ECHOGS_XE) $(MAKEDIRS)
 	$(EXP)$(ECHOGS_XE) -w $(GLGEN)md5.h -x 23 include -x 2022 memory_.h -x 22
 	$(EXP)$(ECHOGS_XE) -a $(GLGEN)md5.h -+R $(GLSRC)md5.h
 	$(CP_) $(GLSRC)md5.c $(GLGEN)md5.c
@@ -983,7 +983,7 @@ $(GLOBJ)gsimpath.$(OBJ) : $(GLSRC)gsimpath.c $(AK) $(gx_h)\
 
 $(GLOBJ)gsinit.$(OBJ) : $(GLSRC)gsinit.c $(AK) $(memory__h) $(stdio__h)\
  $(gdebug_h) $(gp_h) $(gscdefs_h) $(gslib_h) $(gsmalloc_h) $(gsmemory_h)\
- $(gxfapi_h) $(MAKEDIRS) $(valgrind_h)
+ $(gxfapi_h) $(valgrind_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsinit.$(OBJ) $(C_) $(GLSRC)gsinit.c
 
 $(GLOBJ)gsiodev.$(OBJ) : $(GLSRC)gsiodev.c $(AK) $(gx_h) $(gserrors_h)\
@@ -1057,7 +1057,7 @@ $(GLOBJ)gstext.$(OBJ) : $(GLSRC)gstext.c $(AK) $(memory__h) $(gdebug_h)\
 # We make gsiodevs a separate module so the PS interpreter can replace it.
 
 $(GLD)gsiodevs.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gsiodevs.$(OBJ)\
- $(GLD)sfile.dev
+ $(GLD)sfile.dev $(MAKEDIRS)
 	$(SETMOD) $(GLD)gsiodevs $(GLOBJ)gsiodevs.$(OBJ)
 	$(ADDMOD) $(GLD)gsiodevs -include $(GLD)sfile
 	$(ADDMOD) $(GLD)gsiodevs -iodev stdin stdout stderr
@@ -1071,10 +1071,10 @@ $(GLOBJ)gsiodevs.$(OBJ) : $(GLSRC)gsiodevs.c $(AK) $(gx_h)\
 ### Device support
 # PC display color mapping
 $(GLOBJ)gdevpccm.$(OBJ) : $(GLSRC)gdevpccm.c $(AK)\
- $(gx_h) $(gsmatrix_h) $(gxdevice_h) $(gdevpccm_h)
+ $(gx_h) $(gsmatrix_h) $(gxdevice_h) $(gdevpccm_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevpccm.$(OBJ) $(C_) $(GLSRC)gdevpccm.c
 
-$(GLOBJ)ConvertUTF.$(OBJ) : $(GLSRC)ConvertUTF.c $(ConvertUTF_h)
+$(GLOBJ)ConvertUTF.$(OBJ) : $(GLSRC)ConvertUTF.c $(ConvertUTF_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)ConvertUTF.$(OBJ) $(C_) $(GLSRC)ConvertUTF.c
 
 ### Memory devices
@@ -1156,10 +1156,10 @@ $(GLOBJ)gdevabuf.$(OBJ) : $(GLSRC)gdevabuf.c $(AK) $(gx_h)\
 # the bboxutil.dev pseudo device to allow inclusion without putting
 # the bbox device on the list of devices.
 
-$(GLD)bboxutil.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevbbox.$(OBJ)
+$(GLD)bboxutil.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevbbox.$(OBJ) $(MAKEDIRS)
 	$(SETMOD) $(GLD)bboxutil $(GLOBJ)gdevbbox.$(OBJ)
 
-$(GLD)bbox.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevbbox.$(OBJ)
+$(GLD)bbox.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevbbox.$(OBJ) $(MAKEDIRS)
 	$(SETDEV2) $(GLD)bbox $(GLOBJ)gdevbbox.$(OBJ)
 
 $(GLOBJ)gdevbbox.$(OBJ) : $(GLSRC)gdevbbox.c $(AK) $(gx_h)\
@@ -1230,7 +1230,7 @@ gxfapi_h=$(GLSRC)gxfapi.h $(gsmemory_h) $(gsmatrix_h) $(gsccode_h) $(stdint__h)
 
 # stub for UFST bridge support  :
 
-$(GLD)gxfapiu.dev : $(LIB_MAK) $(ECHOGS_XE)
+$(GLD)gxfapiu.dev : $(LIB_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 	$(SETMOD) $(GLD)gxfapiu
 
 wrfont_h=$(stdpre_h) $(GLSRC)wrfont.h
@@ -1238,25 +1238,26 @@ write_t1_h=$(gxfapi_h) $(GLSRC)write_t1.h
 write_t2_h=$(gxfapi_h) $(GLSRC)write_t2.h
 
 $(GLOBJ)write_t1.$(OBJ) : $(GLSRC)write_t1.c $(AK)\
- $(wrfont_h) $(write_t1_h)
+ $(wrfont_h) $(write_t1_h) $(MAKEDIRS)
 	$(GLCC) $(FT_CFLAGS) $(GLO_)write_t1.$(OBJ) $(C_) $(GLSRC)write_t1.c
 
 $(GLOBJ)write_t2.$(OBJ) : $(GLSRC)write_t2.c $(AK)\
- $(wrfont_h) $(write_t2_h) $(gxfont_h) $(gxfont1_h) $(gzstate_h) $(stdpre_h)
+ $(wrfont_h) $(write_t2_h) $(gxfont_h) $(gxfont1_h) $(gzstate_h) $(stdpre_h) \
+ $(MAKEDIRS)
 	$(GLCC) $(FT_CFLAGS) $(GLO_)write_t2.$(OBJ) $(C_) $(GLSRC)write_t2.c
 
 $(GLOBJ)wrfont.$(OBJ) : $(GLSRC)wrfont.c $(AK)\
- $(wrfont_h) $(stdio__h)
+ $(wrfont_h) $(stdio__h) $(MAKEDIRS)
 	$(GLCC) $(FT_CFLAGS) $(GLO_)wrfont.$(OBJ) $(C_) $(GLSRC)wrfont.c
 
 # stub for UFST bridge :
 
-$(GLD)fapiu.dev : $(INT_MAK) $(ECHOGS_XE)
+$(GLD)fapiu.dev : $(INT_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 	$(SETMOD) $(GLD)fapiu
 
 # stub for Bitstream bridge (see fapi_bs.mak):
 
-$(GLD)fapib.dev : $(INT_MAK) $(ECHOGS_XE)
+$(GLD)fapib.dev : $(INT_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 	$(SETMOD) $(GLD)fapib
 
 # FreeType bridge :
@@ -1266,7 +1267,7 @@ $(GLD)fapib.dev : $(INT_MAK) $(ECHOGS_XE)
 
 $(GLD)fapif1.dev : $(INT_MAK) $(ECHOGS_XE) $(GLOBJ)fapi_ft.$(OBJ) \
  $(GLOBJ)write_t1.$(OBJ) $(GLOBJ)write_t2.$(OBJ) $(GLOBJ)wrfont.$(OBJ) \
- $(GLD)freetype.dev
+ $(GLD)freetype.dev $(MAKEDIRS)
 	$(SETMOD) $(GLD)fapif1 $(GLOBJ)fapi_ft.$(OBJ) $(GLOBJ)write_t1.$(OBJ)
 	$(ADDMOD) $(GLD)fapif1 $(GLOBJ)write_t2.$(OBJ) $(GLOBJ)wrfont.$(OBJ)
 	$(ADDMOD) $(GLD)fapif1 -include $(GLD)freetype
@@ -1275,23 +1276,23 @@ $(GLD)fapif1.dev : $(INT_MAK) $(ECHOGS_XE) $(GLOBJ)fapi_ft.$(OBJ) \
 $(GLOBJ)fapi_ft.$(OBJ) : $(GLSRC)fapi_ft.c $(AK)\
  $(stdio__h) $(malloc__h) $(write_t1_h) $(write_t2_h) $(math__h) $(gserrors_h)\
  $(gsmemory_h) $(gsmalloc_h) $(gxfixed_h) $(gdebug_h) $(gxbitmap_h) $(gsmchunk_h) \
- $(stream_h) $(gxiodev_h) $(gsfname_h) $(gxfapi_h) 
+ $(stream_h) $(gxiodev_h) $(gsfname_h) $(gxfapi_h)  $(MAKEDIRS)
 	$(GLCC) $(FT_CFLAGS) $(GLO_)fapi_ft.$(OBJ) $(C_) $(GLSRC)fapi_ft.c
 
 # stub for FreeType bridge :
 
-$(GLD)fapif0.dev : $(INT_MAK) $(ECHOGS_XE)
+$(GLD)fapif0.dev : $(INT_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 	$(SETMOD) $(GLD)fapif0
 
 
 $(GLOBJ)gxfapi.$(OBJ) : $(GLSRC)gxfapi.c $(memory__h) $(gsmemory_h) $(gserrors_h) $(gxdevice_h) \
                  $(gxfont_h) $(gxfont1_h) $(gxpath_h) $(gxfcache_h) $(gxchrout_h) $(gximask_h) \
                  $(gscoord_h) $(gspaint_h) $(gspath_h) $(gzstate_h) $(gxfcid_h) $(gxchar_h) \
-                 $(gdebug_h) $(gsimage_h) $(gxfapi_h) $(gsbittab_h)
+                 $(gdebug_h) $(gsimage_h) $(gxfapi_h) $(gsbittab_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxfapi.$(OBJ) $(C_) $(GLSRC)gxfapi.c
 
 $(GLD)gxfapi.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gxfapi.$(OBJ) $(GLD)fapiu$(UFST_BRIDGE).dev \
-                 $(GLD)fapif$(FT_BRIDGE).dev $(GLD)fapib$(BITSTREAM_BRIDGE).dev
+                 $(GLD)fapif$(FT_BRIDGE).dev $(GLD)fapib$(BITSTREAM_BRIDGE).dev $(MAKEDIRS)
 	$(SETMOD) $(GLD)gxfapi $(GLOBJ)gxfapi.$(OBJ)
 	$(ADDMOD) $(GLD)gxfapi -include $(GLD)fapiu$(UFST_BRIDGE)
 	$(ADDMOD) $(GLD)gxfapi -include $(GLD)fapif$(FT_BRIDGE)
@@ -1357,7 +1358,7 @@ LIB_ALL=$(LIBs) $(LIBx) $(LIBd)
 # but not in the link, to catch compilation problems.
 LIB_O=$(GLOBJ)gdevmpla.$(OBJ) $(GLOBJ)gdevmrun.$(OBJ) $(GLOBJ)gshtx.$(OBJ) $(GLOBJ)gsnogc.$(OBJ)
 $(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev $(GLD)translib.dev \
-                 $(GLD)clist.dev $(GLD)gxfapi.dev $(TRIOGEN)trio.dev
+                 $(GLD)clist.dev $(GLD)gxfapi.dev $(TRIOGEN)trio.dev $(MAKEDIRS)
 	$(SETMOD) $(GLD)libs $(LIB0s)
 	$(ADDMOD) $(GLD)libs $(LIB1s)
 	$(ADDMOD) $(GLD)libs $(LIB2s)
@@ -1381,7 +1382,7 @@ $(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev $(G
 	$(ADDMOD) $(GLD)libs $(TRIOGEN)trio
 	$(ADDMOD) $(GLD)libs $(GLD)gxfapi
 	$(ADDMOD) $(GLD)libs -init fapi
-$(GLD)libx.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBx)
+$(GLD)libx.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBx) $(MAKEDIRS)
 	$(SETMOD) $(GLD)libx $(LIB1x)
 	$(ADDMOD) $(GLD)libx $(LIB2x)
 	$(ADDMOD) $(GLD)libx $(LIB3x)
@@ -1396,7 +1397,7 @@ $(GLD)libx.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBx)
 	$(ADDMOD) $(GLD)libx -imageclass 1_simple 3_mono
 	$(ADDMOD) $(GLD)libx -imagetype 1 mask1
 
-$(GLD)libd.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBd)
+$(GLD)libd.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBd) $(MAKEDIRS)
 	$(SETMOD) $(GLD)libd $(LIB1d)
 	$(ADDMOD) $(GLD)libd $(LIB2d)
 	$(ADDMOD) $(GLD)libd $(LIB3d)
@@ -1406,7 +1407,7 @@ $(GLD)libd.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBd)
 
 $(GLD)libcore.dev : $(LIB_MAK) $(ECHOGS_XE)\
  $(GLD)libs.dev $(GLD)libx.dev $(GLD)libd.dev\
- $(GLD)iscale.dev $(GLD)roplib.dev $(GLD)strdline.dev
+ $(GLD)iscale.dev $(GLD)roplib.dev $(GLD)strdline.dev $(MAKEDIRS)
 	$(SETMOD) $(GLD)libcore
 	$(ADDMOD) $(GLD)libcore -dev2 nullpage
 	$(ADDMOD) $(GLD)libcore -include $(GLD)libs $(GLD)libx $(GLD)libd
@@ -1423,7 +1424,7 @@ $(GLOBJ)stream.$(OBJ) : $(GLSRC)stream.c $(AK) $(stdio__h) $(memory__h)\
 
 # Default, stream-based readline.
 strdline_=$(GLOBJ)gp_strdl.$(OBJ)
-$(GLD)strdline.dev : $(LIB_MAK) $(ECHOGS_XE) $(strdline_)
+$(GLD)strdline.dev : $(LIB_MAK) $(ECHOGS_XE) $(strdline_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)strdline $(strdline_)
 
 $(GLOBJ)gp_strdl.$(OBJ) : $(GLSRC)gp_strdl.c $(AK) $(std_h) $(gp_h)\
@@ -1437,7 +1438,7 @@ $(GLOBJ)gp_strdl.$(OBJ) : $(GLSRC)gp_strdl.c $(AK) $(std_h) $(gp_h)\
 sfile_=$(GLOBJ)sfx$(FILE_IMPLEMENTATION).$(OBJ) $(GLOBJ)sfxcommon.$(OBJ)\
  $(GLOBJ)stream.$(OBJ)
 
-$(GLD)sfile.dev : $(LIB_MAK) $(ECHOGS_XE) $(sfile_)
+$(GLD)sfile.dev : $(LIB_MAK) $(ECHOGS_XE) $(sfile_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)sfile $(sfile_)
 
 $(GLOBJ)sfxcommon.$(OBJ) : $(GLSRC)sfxcommon.c $(AK) $(stdio__h)\
@@ -1477,7 +1478,7 @@ $(GLOBJ)sbcp.$(OBJ) : $(GLSRC)sbcp.c $(AK) $(stdio__h)\
 # These are used by clists, some drivers, and Level 2 in general.
 
 cfe_=$(GLOBJ)scfe.$(OBJ) $(GLOBJ)scfetab.$(OBJ) $(GLOBJ)shc.$(OBJ)
-$(GLD)cfe.dev : $(LIB_MAK) $(ECHOGS_XE) $(cfe_)
+$(GLD)cfe.dev : $(LIB_MAK) $(ECHOGS_XE) $(cfe_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)cfe $(cfe_)
 
 $(GLOBJ)scfe.$(OBJ) : $(GLSRC)scfe.c $(AK) $(memory__h) $(stdio__h)\
@@ -1493,7 +1494,7 @@ $(GLOBJ)shc.$(OBJ) : $(GLSRC)shc.c $(AK) $(std_h) $(scommon_h) $(shc_h)\
 	$(GLCC) $(GLO_)shc.$(OBJ) $(C_) $(GLSRC)shc.c
 
 cfd_=$(GLOBJ)scfd.$(OBJ) $(GLOBJ)scfdtab.$(OBJ)
-$(GLD)cfd.dev : $(LIB_MAK) $(ECHOGS_XE) $(cfd_)
+$(GLD)cfd.dev : $(LIB_MAK) $(ECHOGS_XE) $(cfd_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)cfd $(cfd_)
 
 $(GLOBJ)scfd.$(OBJ) : $(GLSRC)scfd.c $(AK) $(memory__h) $(stdio__h)\
@@ -1534,7 +1535,7 @@ $(GLOBJ)sjpegc_0.$(OBJ) : $(GLSRC)sjpegc.c $(AK) $(stdio__h) $(string__h)\
  $(gserrors_h) $(sjpeg_h) $(sdct_h) $(strimpl_h) $(gsmchunk_h) $(MAKEDIRS)
 	$(GLJCC) $(GLO_)sjpegc_0.$(OBJ) $(C_) $(GLSRC)sjpegc.c
 
-$(GLOBJ)sjpegc.$(OBJ) : $(GLOBJ)sjpegc_$(SHARE_JPEG).$(OBJ)
+$(GLOBJ)sjpegc.$(OBJ) : $(GLOBJ)sjpegc_$(SHARE_JPEG).$(OBJ) $(MAKEDIRS)
 	$(CP_) $(GLOBJ)sjpegc_$(SHARE_JPEG).$(OBJ) $(GLOBJ)sjpegc.$(OBJ)
 
 # sdcparam is used by the filter operator and the PS/PDF writer.
@@ -1548,7 +1549,8 @@ $(GLOBJ)sdcparam.$(OBJ) : $(GLSRC)sdcparam.c $(AK) $(memory__h)\
 # Encoding (compression)
 
 sdcte_=$(sdctc_) $(GLOBJ)sdcte.$(OBJ) $(GLOBJ)sjpege.$(OBJ)
-$(GLD)sdcte.dev : $(LIB_MAK) $(ECHOGS_XE) $(sdcte_) $(JGENDIR)$(D)jpege.dev
+$(GLD)sdcte.dev : $(LIB_MAK) $(ECHOGS_XE) $(sdcte_) $(JGENDIR)$(D)jpege.dev \
+ $(MAKEDIRS)
 	$(SETMOD) $(GLD)sdcte $(sdcte_)
 	$(ADDMOD) $(GLD)sdcte -include $(JGENDIR)$(D)jpege.dev
 
@@ -1584,7 +1586,7 @@ $(GLOBJ)sjpege.$(OBJ) : $(GLOBJ)sjpege_$(SHARE_JPEG).$(OBJ) $(MAKEDIRS)
 # sdeparam is used by the filter operator and the PS/PDF writer.
 # It is not included automatically in sdcte.
 sdeparam_=$(GLOBJ)sdeparam.$(OBJ) $(GLOBJ)sdcparam.$(OBJ)
-$(GLD)sdeparam.dev : $(LIB_MAK) $(ECHOGS_XE) $(sdeparam_)
+$(GLD)sdeparam.dev : $(LIB_MAK) $(ECHOGS_XE) $(sdeparam_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)sdeparam $(sdeparam_)
 
 $(GLOBJ)sdeparam.$(OBJ) : $(GLSRC)sdeparam.c $(AK) $(memory__h)\
@@ -1596,7 +1598,8 @@ $(GLOBJ)sdeparam.$(OBJ) : $(GLSRC)sdeparam.c $(AK) $(memory__h)\
 # Decoding (decompression)
 
 sdctd_=$(sdctc_) $(GLOBJ)sdctd.$(OBJ) $(GLOBJ)sjpegd.$(OBJ)
-$(GLD)sdctd.dev : $(LIB_MAK) $(ECHOGS_XE) $(sdctd_) $(JGENDIR)$(D)jpegd.dev
+$(GLD)sdctd.dev : $(LIB_MAK) $(ECHOGS_XE) $(sdctd_) $(JGENDIR)$(D)jpegd.dev \
+ $(MAKEDIRS)
 	$(SETMOD) $(GLD)sdctd $(sdctd_)
 	$(ADDMOD) $(GLD)sdctd -include $(JGENDIR)$(D)jpegd.dev
 
@@ -1633,7 +1636,7 @@ $(GLOBJ)sjpegd.$(OBJ) : $(GLOBJ)sjpegd_$(SHARE_JPEG).$(OBJ) $(MAKEDIRS)
 # sddparam is used by the filter operator.
 # It is not included automatically in sdctd.
 sddparam_=$(GLOBJ)sddparam.$(OBJ) $(GLOBJ)sdcparam.$(OBJ)
-$(GLD)sddparam.dev : $(LIB_MAK) $(ECHOGS_XE) $(sddparam_)
+$(GLD)sddparam.dev : $(LIB_MAK) $(ECHOGS_XE) $(sddparam_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)sddparam $(sddparam_)
 
 $(GLOBJ)sddparam.$(OBJ) : $(GLSRC)sddparam.c $(AK) $(std_h)\
@@ -1646,11 +1649,11 @@ $(GLOBJ)sddparam.$(OBJ) : $(GLSRC)sddparam.c $(AK) $(std_h)\
 # These are used by Level 2 in general.
 
 lzwe_=$(GLOBJ)slzwe.$(OBJ) $(GLOBJ)slzwc.$(OBJ)
-$(GLD)lzwe.dev : $(LIB_MAK) $(ECHOGS_XE) $(lzwe_)
+$(GLD)lzwe.dev : $(LIB_MAK) $(ECHOGS_XE) $(lzwe_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)lzwe $(lzwe_)
 
 # We need slzwe.dev as a synonym for lzwe.dev for BAND_LIST_STORAGE = memory.
-$(GLD)slzwe.dev : $(GLD)lzwe.dev
+$(GLD)slzwe.dev : $(GLD)lzwe.dev $(MAKEDIRS)
 	$(CP_) $(GLD)lzwe.dev $(GLD)slzwe.dev
 
 $(GLOBJ)slzwe.$(OBJ) : $(GLSRC)slzwe.c $(AK) $(stdio__h) $(gdebug_h)\
@@ -1662,11 +1665,11 @@ $(GLOBJ)slzwc.$(OBJ) : $(GLSRC)slzwc.c $(AK) $(std_h)\
 	$(GLCC) $(GLO_)slzwc.$(OBJ) $(C_) $(GLSRC)slzwc.c
 
 lzwd_=$(GLOBJ)slzwd.$(OBJ) $(GLOBJ)slzwc.$(OBJ)
-$(GLD)lzwd.dev : $(LIB_MAK) $(ECHOGS_XE) $(lzwd_)
+$(GLD)lzwd.dev : $(LIB_MAK) $(ECHOGS_XE) $(lzwd_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)lzwd $(lzwd_)
 
 # We need slzwd.dev as a synonym for lzwd.dev for BAND_LIST_STORAGE = memory.
-$(GLD)slzwd.dev : $(GLD)lzwd.dev
+$(GLD)slzwd.dev : $(GLD)lzwd.dev $(MAKEDIRS)
 	$(CP_) $(GLD)lzwd.dev $(GLD)slzwd.dev
 
 $(GLOBJ)slzwd.$(OBJ) : $(GLSRC)slzwd.c $(AK) $(stdio__h) $(gdebug_h)\
@@ -1676,7 +1679,7 @@ $(GLOBJ)slzwd.$(OBJ) : $(GLSRC)slzwd.c $(AK) $(stdio__h) $(gdebug_h)\
 # ---------------- MD5 digest filter ---------------- #
 
 smd5_=$(GLOBJ)smd5.$(OBJ)
-$(GLD)smd5.dev : $(LIB_MAK) $(ECHOGS_XE) $(smd5_) $(md5_)
+$(GLD)smd5.dev : $(LIB_MAK) $(ECHOGS_XE) $(smd5_) $(md5_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)smd5 $(smd5_) $(md5_)
 
 $(GLOBJ)smd5.$(OBJ) : $(GLSRC)smd5.c $(AK) $(memory__h)\
@@ -1687,7 +1690,8 @@ $(GLOBJ)smd5.$(OBJ) : $(GLSRC)smd5.c $(AK) $(memory__h)\
 
 ssha2_h=$(GLSRC)ssha2.h $(sha2_h)
 ssha2_=$(GLOBJ)ssha2.$(OBJ)
-$(GLD)ssha2.dev : $(LIB_MAK) $(ECHOGS_XE) $(ssha2_) $(sha2_)
+$(GLD)ssha2.dev : $(LIB_MAK) $(ECHOGS_XE) $(ssha2_) $(sha2_) \
+ $(MAKEDIRS)
 	$(SETMOD) $(GLD)ssha2 $(ssha2_) $(sha2_)
 
 $(GLOBJ)ssha2.$(OBJ) : $(GLSRC)ssha2.c $(AK) $(memory__h)\
@@ -1697,7 +1701,7 @@ $(GLOBJ)ssha2.$(OBJ) : $(GLSRC)ssha2.c $(AK) $(memory__h)\
 # -------------- Arcfour cipher filter --------------- #
 
 sarc4_=$(GLOBJ)sarc4.$(OBJ)
-$(GLD)sarc4.dev : $(LIB_MAK) $(ECHOGS_XE) $(sarc4_)
+$(GLD)sarc4.dev : $(LIB_MAK) $(ECHOGS_XE) $(sarc4_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)sarc4 $(sarc4_)
 
 $(GLOBJ)sarc4.$(OBJ) : $(GLSRC)sarc4.c $(AK) $(memory__h)\
@@ -1707,7 +1711,7 @@ $(GLOBJ)sarc4.$(OBJ) : $(GLSRC)sarc4.c $(AK) $(memory__h)\
 # -------------- AES cipher filter --------------- #
 
 saes_=$(GLOBJ)saes.$(OBJ)
-$(GLD)saes.dev : $(LIB_MAK) $(ECHOGS_XE) $(saes_) $(aes_)
+$(GLD)saes.dev : $(LIB_MAK) $(ECHOGS_XE) $(saes_) $(aes_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)saes $(saes_) $(aes_)
 
 $(GLOBJ)saes.$(OBJ) : $(GLSRC)saes.c $(AK) $(memory__h)\
@@ -1716,14 +1720,15 @@ $(GLOBJ)saes.$(OBJ) : $(GLSRC)saes.c $(AK) $(memory__h)\
 
 # ---------------- JBIG2 compression filter ---------------- #
 
-$(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)sjbig2_$(JBIG2_LIB).dev
+$(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)sjbig2_$(JBIG2_LIB).dev \
+ $(MAKEDIRS)
 	$(CP_) $(GLD)sjbig2_$(JBIG2_LIB).dev $(GLD)sjbig2.dev
 
 # jbig2dec version
 sjbig2_jbig2dec=$(GLOBJ)sjbig2.$(OBJ)
 
 $(GLD)sjbig2_jbig2dec.dev : $(LIB_MAK) $(ECHOGS_XE) \
- $(GLD)jbig2dec.dev $(sjbig2_jbig2dec)
+ $(GLD)jbig2dec.dev $(sjbig2_jbig2dec) $(MAKEDIRS)
 	$(SETMOD) $(GLD)sjbig2_jbig2dec $(sjbig2_jbig2dec)
 	$(ADDMOD) $(GLD)sjbig2_jbig2dec -include $(GLD)jbig2dec.dev
 
@@ -1752,7 +1757,7 @@ $(GLOBJ)sjbig2_luratech.$(OBJ) : $(GLSRC)sjbig2_luratech.c $(AK) \
 
 # ---------------- JPEG 2000 compression filter ---------------- #
 
-$(GLD)sjpx.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)sjpx_$(JPX_LIB).dev
+$(GLD)sjpx.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)sjpx_$(JPX_LIB).dev $(MAKEDIRS)
 	$(CP_) $(GLD)sjpx_$(JPX_LIB).dev $(GLD)sjpx.dev
 
 $(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
@@ -1763,11 +1768,11 @@ $(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
 # luratech version
 sjpx_luratech=$(GLOBJ)sjpx_luratech.$(OBJ)
 $(GLD)sjpx_luratech.dev : $(LIB_MAK) $(ECHOGS_XE) \
- $(GLD)lwf_jp2.dev $(sjpx_luratech)
+ $(GLD)lwf_jp2.dev $(sjpx_luratech) $(MAKEDIRS)
 	$(SETMOD) $(GLD)sjpx_luratech $(sjpx_luratech)
 	$(ADDMOD) $(GLD)sjpx_luratech -include $(GLD)lwf_jp2.dev
 
-$(GLD)luratech_jp2.dev : $(TOP_MAKEFILES) $(LIB_MAK) $(ECHOGS_XE)
+$(GLD)luratech_jp2.dev : $(TOP_MAKEFILES) $(LIB_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 	$(SETMOD) $(GLD)luratech_jp2 $(GLD)liblwf_jp2.a
 
 $(GLOBJ)sjpx_luratech.$(OBJ) : $(GLSRC)sjpx_luratech.c $(AK) \
@@ -1779,7 +1784,7 @@ $(GLOBJ)sjpx_luratech.$(OBJ) : $(GLSRC)sjpx_luratech.c $(AK) \
 # openjpeg version
 sjpx_openjpeg=$(GLOBJ)sjpx_openjpeg.$(OBJ)
 $(GLD)sjpx_openjpeg.dev : $(LIB_MAK) $(ECHOGS_XE) \
- $(GLD)openjpeg.dev $(sjpx_openjpeg)
+ $(GLD)openjpeg.dev $(sjpx_openjpeg) $(MAKEDIRS)
 	$(SETMOD) $(GLD)sjpx_openjpeg $(sjpx_openjpeg)
 	$(ADDMOD) $(GLD)sjpx_openjpeg -include $(GLD)openjpeg.dev
 
@@ -1793,7 +1798,7 @@ $(GLOBJ)sjpx_openjpeg.$(OBJ) : $(GLSRC)sjpx_openjpeg.c $(AK) \
 # The Predictor facility of the LZW and Flate filters uses these.
 
 pdiff_=$(GLOBJ)spdiff.$(OBJ)
-$(GLD)pdiff.dev : $(LIB_MAK) $(ECHOGS_XE) $(pdiff_)
+$(GLD)pdiff.dev : $(LIB_MAK) $(ECHOGS_XE) $(pdiff_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)pdiff $(pdiff_)
 
 $(GLOBJ)spdiff.$(OBJ) : $(GLSRC)spdiff.c $(AK) $(memory__h) $(stdio__h)\
@@ -1804,7 +1809,7 @@ $(GLOBJ)spdiff.$(OBJ) : $(GLSRC)spdiff.c $(AK) $(memory__h) $(stdio__h)\
 # The Predictor facility of the LZW and Flate filters uses these.
 
 pngp_=$(GLOBJ)spngp.$(OBJ)
-$(GLD)pngp.dev : $(LIB_MAK) $(ECHOGS_XE) $(pngp_)
+$(GLD)pngp.dev : $(LIB_MAK) $(ECHOGS_XE) $(pngp_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)pngp $(pngp_)
 
 $(GLOBJ)spngp.$(OBJ) : $(GLSRC)spngp.c $(AK) $(memory__h)\
@@ -1815,7 +1820,7 @@ $(GLOBJ)spngp.$(OBJ) : $(GLSRC)spngp.c $(AK) $(memory__h)\
 # These are used by clists and also by Level 2 in general.
 
 rle_=$(GLOBJ)srle.$(OBJ)
-$(GLD)rle.dev : $(LIB_MAK) $(ECHOGS_XE) $(rle_)
+$(GLD)rle.dev : $(LIB_MAK) $(ECHOGS_XE) $(rle_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)rle $(rle_)
 
 $(GLOBJ)srle.$(OBJ) : $(GLSRC)srle.c $(AK) $(stdio__h) $(memory__h)\
@@ -1823,7 +1828,7 @@ $(GLOBJ)srle.$(OBJ) : $(GLSRC)srle.c $(AK) $(stdio__h) $(memory__h)\
 	$(GLCC) $(GLO_)srle.$(OBJ) $(C_) $(GLSRC)srle.c
 
 rld_=$(GLOBJ)srld.$(OBJ)
-$(GLD)rld.dev : $(LIB_MAK) $(ECHOGS_XE) $(rld_)
+$(GLD)rld.dev : $(LIB_MAK) $(ECHOGS_XE) $(rld_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)rld $(rld_)
 
 $(GLOBJ)srld.$(OBJ) : $(GLSRC)srld.c $(AK) $(stdio__h) $(memory__h)\
@@ -1885,7 +1890,8 @@ $(GLOBJ)szlibc.$(OBJ) : $(GLOBJ)szlibc_$(SHARE_ZLIB).$(OBJ) $(MAKEDIRS)
 	$(CP_) $(GLOBJ)szlibc_$(SHARE_ZLIB).$(OBJ) $(GLOBJ)szlibc.$(OBJ)
 
 szlibe_=$(szlibc_) $(GLOBJ)szlibe.$(OBJ)
-$(GLD)szlibe.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)zlibe.dev $(szlibe_)
+$(GLD)szlibe.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)zlibe.dev $(szlibe_) \
+ $(MAKEDIRS)
 	$(SETMOD) $(GLD)szlibe $(szlibe_)
 	$(ADDMOD) $(GLD)szlibe -include $(ZGENDIR)$(D)zlibe.dev
 
@@ -1901,7 +1907,8 @@ $(GLOBJ)szlibe.$(OBJ) : $(GLOBJ)szlibe_$(SHARE_ZLIB).$(OBJ)  $(MAKEDIRS)
 	$(CP_) $(GLOBJ)szlibe_$(SHARE_ZLIB).$(OBJ) $(GLOBJ)szlibe.$(OBJ)
 
 szlibd_=$(szlibc_) $(GLOBJ)szlibd.$(OBJ)
-$(GLD)szlibd.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)zlibd.dev $(szlibd_)
+$(GLD)szlibd.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)zlibd.dev $(szlibd_) \
+ $(MAKEDIRS)
 	$(SETMOD) $(GLD)szlibd $(szlibd_)
 	$(ADDMOD) $(GLD)szlibd -include $(ZGENDIR)$(D)zlibd.dev
 
@@ -1925,21 +1932,21 @@ gdevprn_h=$(GLSRC)gdevprn.h $(memory__h) $(string__h) $(gp_h) $(gx_h)\
  $(gxclist_h) $(gxdevice_h) $(gxdevmem_h) $(gxrplane_h) $(gxclthrd_h)
 
 page_=$(GLOBJ)gdevprn.$(OBJ) $(downscale_)
-$(GLD)page.dev : $(LIB_MAK) $(ECHOGS_XE) $(page_)
+$(GLD)page.dev : $(LIB_MAK) $(ECHOGS_XE) $(page_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)page $(page_)
 	$(ADDMOD) $(GLD)page -include $(GLD)clist
 
 $(GLOBJ)gdevprn.$(OBJ) : $(GLSRC)gdevprn.c $(ctype__h)\
  $(gdevprn_h) $(gp_h) $(gsdevice_h) $(gsfname_h) $(gsparam_h)\
  $(gxclio_h) $(gxgetbit_h) $(gdevplnx_h) $(gstrans_h) \
- $(gxdownscale_h) $(gdevdevn_h) $(gxdevsop_h)
+ $(gxdownscale_h) $(gdevdevn_h) $(gxdevsop_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevprn.$(OBJ) $(C_) $(GLSRC)gdevprn.c
 
 # Planar page devices
 gdevppla_h=$(GLSRC)gdevppla.h
 
 $(GLOBJ)gdevppla.$(OBJ) : $(GLSRC)gdevppla.c\
- $(gdevmpla_h) $(gdevppla_h) $(gdevprn_h) $(gxdevsop_h)
+ $(gdevmpla_h) $(gdevppla_h) $(gdevprn_h) $(gxdevsop_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevppla.$(OBJ) $(C_) $(GLSRC)gdevppla.c
 
 # ---------------- Masked images ---------------- #
@@ -1969,7 +1976,7 @@ $(GLOBJ)gximage4.$(OBJ) : $(GLSRC)gximage4.c $(memory__h) $(AK)\
 	$(GLCC) $(GLO_)gximage4.$(OBJ) $(C_) $(GLSRC)gximage4.c
 
 imasklib_=$(GLOBJ)gxclipm.$(OBJ) $(GLOBJ)gximage3.$(OBJ) $(GLOBJ)gximage4.$(OBJ) $(GLOBJ)gxmclip.$(OBJ)
-$(GLD)imasklib.dev : $(LIB_MAK) $(ECHOGS_XE) $(imasklib_)
+$(GLD)imasklib.dev : $(LIB_MAK) $(ECHOGS_XE) $(imasklib_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)imasklib $(imasklib_)
 	$(ADDMOD) $(GLD)imasklib -imagetype 3 4
 
@@ -1996,7 +2003,8 @@ clist_=$(clbase1_) $(clbase2_) $(clbase3_) $(clbase4_) $(clpath_) $(clthread_)
 
 $(GLD)clist.dev : $(LIB_MAK) $(ECHOGS_XE) $(clist_)\
  $(GLD)cl$(BAND_LIST_STORAGE).dev $(GLD)clmemory.dev $(GLD)$(SYNC).dev\
- $(GLD)cfe.dev $(GLD)cfd.dev $(GLD)rle.dev $(GLD)rld.dev $(GLD)psl2cs.dev
+ $(GLD)cfe.dev $(GLD)cfd.dev $(GLD)rle.dev $(GLD)rld.dev $(GLD)psl2cs.dev \
+ $(MAKEDIRS)
 	$(SETMOD) $(GLD)clist $(clbase1_)
 	$(ADDMOD) $(GLD)clist -obj $(clbase2_)
 	$(ADDMOD) $(GLD)clist -obj $(clbase3_)
@@ -2086,18 +2094,20 @@ $(GLOBJ)gxclutil.$(OBJ) : $(GLSRC)gxclutil.c $(AK) $(gx_h)\
 # Implement band lists on files.
 
 clfile_=$(GLOBJ)gxclfile.$(OBJ)
-$(GLD)clfile.dev : $(LIB_MAK) $(ECHOGS_XE) $(clfile_)
+$(GLD)clfile.dev : $(LIB_MAK) $(ECHOGS_XE) $(clfile_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)clfile $(clfile_)
 	$(ADDMOD) $(GLD)clfile -init gxclfile
 
 $(GLOBJ)gxclfile.$(OBJ) : $(GLSRC)gxclfile.c $(stdio__h) $(string__h)\
- $(gp_h) $(gsmemory_h) $(gserrors_h) $(gxclio_h) $(unistd__h) $(valgrind_h)
+ $(gp_h) $(gsmemory_h) $(gserrors_h) $(gxclio_h) $(unistd__h) $(valgrind_h) \
+ $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxclfile.$(OBJ) $(C_) $(GLSRC)gxclfile.c
 
 # Implement band lists in memory (RAM).
 
 clmemory_=$(GLOBJ)gxclmem.$(OBJ) $(GLOBJ)gxcl$(BAND_LIST_COMPRESSOR).$(OBJ)
-$(GLD)clmemory.dev : $(LIB_MAK) $(ECHOGS_XE) $(clmemory_) $(GLD)s$(BAND_LIST_COMPRESSOR)e.dev $(GLD)s$(BAND_LIST_COMPRESSOR)d.dev
+$(GLD)clmemory.dev : $(LIB_MAK) $(ECHOGS_XE) $(clmemory_) $(GLD)s$(BAND_LIST_COMPRESSOR)e.dev \
+  $(GLD)s$(BAND_LIST_COMPRESSOR)d.dev $(MAKEDIRS)
 	$(SETMOD) $(GLD)clmemory $(clmemory_)
 	$(ADDMOD) $(GLD)clmemory -include $(GLD)s$(BAND_LIST_COMPRESSOR)e
 	$(ADDMOD) $(GLD)clmemory -include $(GLD)s$(BAND_LIST_COMPRESSOR)d
@@ -2106,7 +2116,7 @@ $(GLD)clmemory.dev : $(LIB_MAK) $(ECHOGS_XE) $(clmemory_) $(GLD)s$(BAND_LIST_COM
 gxclmem_h=$(GLSRC)gxclmem.h $(gxclio_h) $(strimpl_h)
 
 $(GLOBJ)gxclmem.$(OBJ) : $(GLSRC)gxclmem.c $(AK) $(gx_h) $(gserrors_h)\
- $(LIB_MAK) $(memory__h) $(gxclmem_h) $(gssprintf_h) $(MAKEDIRS) $(valgrind_h)
+ $(LIB_MAK) $(memory__h) $(gxclmem_h) $(gssprintf_h) $(valgrind_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxclmem.$(OBJ) $(C_) $(GLSRC)gxclmem.c
 
 # Implement the compression method for RAM-based band lists.
@@ -2142,7 +2152,7 @@ gdevvec_h=$(GLSRC)gdevvec.h $(gdevbbox_h) $(gp_h)\
 
 vector_=$(GLOBJ)gdevvec.$(OBJ)
 $(GLD)vector.dev : $(LIB_MAK) $(ECHOGS_XE) $(vector_)\
- $(GLD)bboxutil.dev $(GLD)sfile.dev
+ $(GLD)bboxutil.dev $(GLD)sfile.dev $(MAKEDIRS)
 	$(SETMOD) $(GLD)vector $(vector_)
 	$(ADDMOD) $(GLD)vector -include $(GLD)bboxutil $(GLD)sfile
 
@@ -2156,7 +2166,7 @@ $(GLOBJ)gdevvec.$(OBJ) : $(GLSRC)gdevvec.c $(AK) $(gx_h) $(gserrors_h)\
 # ---------------- Image scaling filters ---------------- #
 
 iscale_=$(GLOBJ)siinterp.$(OBJ) $(GLOBJ)siscale.$(OBJ) $(GLOBJ)sidscale.$(OBJ)
-$(GLD)iscale.dev : $(LIB_MAK) $(ECHOGS_XE) $(iscale_)
+$(GLD)iscale.dev : $(LIB_MAK) $(ECHOGS_XE) $(iscale_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)iscale $(iscale_)
 
 $(GLOBJ)siinterp.$(OBJ) : $(GLSRC)siinterp.c $(AK)\
@@ -2177,7 +2187,7 @@ $(GLOBJ)sidscale.$(OBJ) : $(GLSRC)sidscale.c $(AK)\
 # -------------- imagemask scaling filter --------------- #
 
 simscale_=$(GLOBJ)simscale.$(OBJ)
-$(GLD)simscale.dev : $(LIB_MAK) $(ECHOGS_XE) $(simscale_)
+$(GLD)simscale.dev : $(LIB_MAK) $(ECHOGS_XE) $(simscale_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)simscale $(simscale_)
 
 $(GLOBJ)simscale.$(OBJ) : $(GLSRC)simscale.c $(AK) $(memory__h)\
@@ -2191,7 +2201,7 @@ $(GLOBJ)simscale.$(OBJ) : $(GLSRC)simscale.c $(AK) $(memory__h)\
 gshtx_h=$(GLSRC)gshtx.h $(gsht1_h) $(gsmemory_h) $(gxtmap_h) $(gscspace_h)
 
 htxlib_=$(GLOBJ)gshtx.$(OBJ)
-$(GLD)htxlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(htxlib_)
+$(GLD)htxlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(htxlib_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)htxlib $(htxlib_)
 
 $(GLOBJ)gshtx.$(OBJ) : $(GLSRC)gshtx.c $(AK) $(gx_h) $(gserrors_h)\
@@ -2205,7 +2215,7 @@ roplib1_=$(GLOBJ)gdevdrop.$(OBJ) $(GLOBJ)gsroprun.$(OBJ)
 roplib2_=$(GLOBJ)gdevmr1.$(OBJ) $(GLOBJ)gdevmr2n.$(OBJ) $(GLOBJ)gdevmr8n.$(OBJ)
 roplib3_=$(GLOBJ)gdevrops.$(OBJ) $(GLOBJ)gsrop.$(OBJ) $(GLOBJ)gsroptab.$(OBJ)
 roplib_=$(roplib1_) $(roplib2_) $(roplib3_)
-$(GLD)roplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(roplib_)
+$(GLD)roplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(roplib_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)roplib $(roplib1_)
 	$(ADDMOD) $(GLD)roplib $(roplib2_)
 	$(ADDMOD) $(GLD)roplib $(roplib3_)
@@ -2251,7 +2261,7 @@ gsroprun1_h=$(GLSRC)gsroprun1.h
 gsroprun8_h=$(GLSRC)gsroprun8.h
 gsroprun24_h=$(GLSRC)gsroprun24.h
 $(GLOBJ)gsroprun.$(OBJ) : $(GLSRC)gsroprun.c $(std_h) $(stdpre_h) $(gsropt_h)\
- $(gsroprun1_h) $(gsroprun8_h) $(gsroprun24_h) $(gp_h) $(arch_h)
+ $(gsroprun1_h) $(gsroprun8_h) $(gsroprun24_h) $(gp_h) $(arch_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsroprun.$(OBJ) $(C_) $(GLSRC)gsroprun.c
 
 # ---------------- Async rendering ---------------- #
@@ -2261,7 +2271,7 @@ gdevprna_h=$(GLSRC)gdevprna.h $(gdevprn_h) $(gxsync_h)
 
 async_=$(GLOBJ)gdevprna.$(OBJ) $(GLOBJ)gxpageq.$(OBJ) $(GLOBJ)gsmemlok.$(OBJ)
 async_inc=$(GLD)clist.dev $(GLD)gsnogc.dev $(GLD)$(SYNC).dev
-$(GLD)async.dev : $(LIB_MAK) $(ECHOGS_XE) $(async_) $(async_inc)
+$(GLD)async.dev : $(LIB_MAK) $(ECHOGS_XE) $(async_) $(async_inc) $(MAKEDIRS)
 	$(SETMOD) $(GLD)async $(async_)
 	$(ADDMOD) $(GLD)async -include $(async_inc)
 
@@ -2285,7 +2295,7 @@ ttflib_=$(GLOBJ)gstype42.$(OBJ) $(GLOBJ)gxchrout.$(OBJ) \
  $(GLOBJ)ttinterp.$(OBJ) $(GLOBJ)ttload.$(OBJ) $(GLOBJ)ttobjs.$(OBJ) \
  $(GLOBJ)gxttfb.$(OBJ) $(GLOBJ)gzspotan.$(OBJ)
 
-$(GLD)ttflib.dev : $(LIB_MAK) $(ECHOGS_XE) $(ttflib_)
+$(GLD)ttflib.dev : $(LIB_MAK) $(ECHOGS_XE) $(ttflib_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)ttflib $(ttflib_)
 
 # "gxfont42_h=$(GLSRC)gxfont42.h" already defined above
@@ -2370,7 +2380,8 @@ gxfont0c_h=$(GLSRC)gxfont0c.h $(gxfcid_h) $(gxfont0_h)
 
 cidlib_=$(GLOBJ)gsfcid.$(OBJ) $(GLOBJ)gsfcid2.$(OBJ)
 # cidlib requires ttflib for CIDFontType 2 fonts.
-$(GLD)cidlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cidlib_) $(GLD)ttflib.dev
+$(GLD)cidlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cidlib_) $(GLD)ttflib.dev \
+ $(MAKEDIRS)
 	$(SETMOD) $(GLD)cidlib $(cidlib_)
 	$(ADDMOD) $(GLD)cidlib -include $(GLD)ttflib
 
@@ -2384,7 +2395,8 @@ $(GLOBJ)gsfcid2.$(OBJ) : $(GLSRC)gsfcid2.c $(AK) $(gx_h) $(gserrors_h)\
 	$(GLCC) $(GLO_)gsfcid2.$(OBJ) $(C_) $(GLSRC)gsfcid2.c
 
 cmaplib_=$(GLOBJ)gsfcmap.$(OBJ) $(GLOBJ)gsfcmap1.$(OBJ)
-$(GLD)cmaplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cmaplib_) $(GLD)cidlib.dev
+$(GLD)cmaplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cmaplib_) $(GLD)cidlib.dev \
+ $(MAKEDIRS)
 	$(SETMOD) $(GLD)cmaplib $(cmaplib_)
 	$(ADDMOD) $(GLD)cmaplib -include $(GLD)cidlib
 
@@ -2398,7 +2410,8 @@ $(GLOBJ)gsfcmap1.$(OBJ) : $(GLSRC)gsfcmap1.c $(AK) $(gx_h)\
 	$(GLCC) $(GLO_)gsfcmap1.$(OBJ) $(C_) $(GLSRC)gsfcmap1.c
 
 psf0lib_=$(GLOBJ)gschar0.$(OBJ) $(GLOBJ)gsfont0.$(OBJ)
-$(GLD)psf0lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)cmaplib.dev $(psf0lib_)
+$(GLD)psf0lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)cmaplib.dev $(psf0lib_) \
+ $(MAKEDIRS)
 	$(SETMOD) $(GLD)psf0lib $(psf0lib_)
 	$(ADDMOD) $(GLD)psf0lib -include $(GLD)cmaplib
 
@@ -2503,7 +2516,7 @@ $(GLOBJ)gxhintn1.$(OBJ) : $(GLSRC)gxhintn1.c $(AK) $(gx_h)\
 # Note that seexec is not needed for rasterizing Type 1/2/4 fonts,
 # only for reading or writing them.
 seexec_=$(GLOBJ)seexec.$(OBJ) $(GLOBJ)gscrypt1.$(OBJ)
-$(GLD)seexec.dev : $(LIB_MAK) $(ECHOGS_XE) $(seexec_)
+$(GLD)seexec.dev : $(LIB_MAK) $(ECHOGS_XE) $(seexec_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)seexec $(seexec_)
 
 $(GLOBJ)seexec.$(OBJ) : $(GLSRC)seexec.c $(AK) $(stdio__h)\
@@ -2517,7 +2530,8 @@ $(GLOBJ)gscrypt1.$(OBJ) : $(GLSRC)gscrypt1.c $(AK) $(stdpre_h)\
 # Type 1 charstrings
 
 psf1lib_=$(GLOBJ)gstype1.$(OBJ)
-$(GLD)psf1lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf1lib_) $(type1lib_)
+$(GLD)psf1lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf1lib_) $(type1lib_) \
+ $(MAKEDIRS)
 	$(SETMOD) $(GLD)psf1lib $(psf1lib_)
 	$(ADDMOD) $(GLD)psf1lib $(type1lib_)
 
@@ -2531,7 +2545,8 @@ $(GLOBJ)gstype1.$(OBJ) : $(GLSRC)gstype1.c $(AK) $(gx_h) $(gserrors_h)\
 # Type 2 charstrings
 
 psf2lib_=$(GLOBJ)gstype2.$(OBJ)
-$(GLD)psf2lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf2lib_) $(type1lib_)
+$(GLD)psf2lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf2lib_) $(type1lib_) \
+ $(MAKEDIRS)
 	$(SETMOD) $(GLD)psf2lib $(psf2lib_)
 	$(ADDMOD) $(GLD)psf2lib $(type1lib_)
 
@@ -2545,7 +2560,7 @@ $(GLOBJ)gstype2.$(OBJ) : $(GLSRC)gstype2.c $(AK) $(gx_h) $(gserrors_h)\
 # -------- Level 1 color extensions (CMYK color and colorimage) -------- #
 
 cmyklib_=$(GLOBJ)gscolor1.$(OBJ) $(GLOBJ)gsht1.$(OBJ)
-$(GLD)cmyklib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cmyklib_)
+$(GLD)cmyklib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cmyklib_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)cmyklib $(cmyklib_)
 
 $(GLOBJ)gscolor1.$(OBJ) : $(GLSRC)gscolor1.c $(AK) $(gx_h)\
@@ -2560,7 +2575,7 @@ $(GLOBJ)gsht1.$(OBJ) : $(GLSRC)gsht1.c $(AK) $(gx_h) $(gserrors_h)\
 	$(GLCC) $(GLO_)gsht1.$(OBJ) $(C_) $(GLSRC)gsht1.c
 
 colimlib_=$(GLOBJ)gxicolor.$(OBJ)
-$(GLD)colimlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(colimlib_)
+$(GLD)colimlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(colimlib_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)colimlib $(colimlib_)
 	$(ADDMOD) $(GLD)colimlib -imageclass 4_color
 
@@ -2577,7 +2592,7 @@ $(GLOBJ)gxicolor.$(OBJ) : $(GLSRC)gxicolor.c $(AK) $(gx_h)\
 # ---- Level 1 path miscellany (arcs, pathbbox, path enumeration) ---- #
 
 path1lib_=$(GLOBJ)gspath1.$(OBJ)
-$(GLD)path1lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(path1lib_)
+$(GLD)path1lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(path1lib_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)path1lib $(path1lib_)
 
 $(GLOBJ)gspath1.$(OBJ) : $(GLSRC)gspath1.c $(AK) $(gx_h) $(gserrors_h)\
@@ -2589,7 +2604,7 @@ $(GLOBJ)gspath1.$(OBJ) : $(GLSRC)gspath1.c $(AK) $(gx_h) $(gserrors_h)\
 # --------------- Level 2 color space and color image support --------------- #
 
 psl2cs_=$(GLOBJ)gscolor2.$(OBJ)
-$(GLD)psl2cs.dev : $(LIB_MAK) $(ECHOGS_XE) $(psl2cs_)
+$(GLD)psl2cs.dev : $(LIB_MAK) $(ECHOGS_XE) $(psl2cs_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)psl2cs $(psl2cs_)
 
 $(GLOBJ)gscolor2.$(OBJ) : $(GLSRC)gscolor2.c $(AK) $(gx_h)\
@@ -2600,7 +2615,7 @@ $(GLOBJ)gscolor2.$(OBJ) : $(GLSRC)gscolor2.c $(AK) $(gx_h)\
 	$(GLCC) $(GLO_)gscolor2.$(OBJ) $(C_) $(GLSRC)gscolor2.c
 
 $(GLD)psl2lib.dev : $(LIB_MAK) $(ECHOGS_XE) \
- $(GLD)colimlib.dev $(GLD)psl2cs.dev
+ $(GLD)colimlib.dev $(GLD)psl2cs.dev $(MAKEDIRS)
 	$(SETMOD) $(GLD)psl2lib -include $(GLD)colimlib $(GLD)psl2cs
 	$(ADDMOD) $(GLD)psl2lib -imageclass 2_fracs
 
@@ -2617,7 +2632,7 @@ $(GLOBJ)gxiscale.$(OBJ) : $(GLSRC)gxiscale.c $(AK) $(gx_h)\
 # ---------------- Display Postscript / Level 2 support ---------------- #
 
 dps2lib_=$(GLOBJ)gsdps1.$(OBJ)
-$(GLD)dps2lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dps2lib_)
+$(GLD)dps2lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dps2lib_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)dps2lib $(dps2lib_)
 
 $(GLOBJ)gsdps1.$(OBJ) : $(GLSRC)gsdps1.c $(AK) $(gx_h) $(gserrors_h)\
@@ -2637,7 +2652,7 @@ gxfunc_h=$(GLSRC)gxfunc.h $(gsfunc_h) $(gsstruct_h)
 
 # Generic support, and FunctionType 0.
 funclib_=$(GLOBJ)gsdsrc.$(OBJ) $(GLOBJ)gsfunc.$(OBJ) $(GLOBJ)gsfunc0.$(OBJ)
-$(GLD)funclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(funclib_)
+$(GLD)funclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(funclib_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)funclib $(funclib_)
 
 $(GLOBJ)gsdsrc.$(OBJ) : $(GLSRC)gsdsrc.c $(AK) $(gx_h) $(memory__h)\
@@ -2660,7 +2675,8 @@ $(GLOBJ)gsfunc0.$(OBJ) : $(GLSRC)gsfunc0.c $(AK) $(gx_h) $(math__h)\
 gsfunc4_h=$(GLSRC)gsfunc4.h $(gsfunc_h)
 
 func4lib_=$(GLOBJ)gsfunc4.$(OBJ) $(GLOBJ)spprint.$(OBJ)
-$(GLD)func4lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(func4lib_) $(GLD)funclib.dev
+$(GLD)func4lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(func4lib_) $(GLD)funclib.dev \
+ $(MAKEDIRS)
 	$(SETMOD) $(GLD)func4lib $(func4lib_)
 	$(ADDMOD) $(GLD)func4lib -include $(GLD)funclib
 
@@ -2675,7 +2691,8 @@ $(GLOBJ)gsfunc4.$(OBJ) : $(GLSRC)gsfunc4.c $(AK) $(gx_h) $(math__h)\
 gscpixel_h=$(GLSRC)gscpixel.h
 
 cspixlib_=$(GLOBJ)gscpixel.$(OBJ)
-$(GLD)cspixlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cspixlib_)
+$(GLD)cspixlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cspixlib_) \
+ $(MAKEDIRS)
 	$(SETMOD) $(GLD)cspixlib $(cspixlib_)
 
 $(GLOBJ)gscpixel.$(OBJ) : $(GLSRC)gscpixel.c $(AK) $(gx_h)\
@@ -2689,7 +2706,7 @@ $(GLOBJ)gscpixel.$(OBJ) : $(GLSRC)gscpixel.c $(AK) $(gx_h)\
 cielib1_=$(GLOBJ)gscie.$(OBJ) $(GLOBJ)gsciemap.$(OBJ) $(GLOBJ)gscscie.$(OBJ)
 cielib2_=$(GLOBJ)gscrd.$(OBJ) $(GLOBJ)gscrdp.$(OBJ) $(GLOBJ)gxctable.$(OBJ)
 cielib_=$(cielib1_) $(cielib2_)
-$(GLD)cielib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cielib_)
+$(GLD)cielib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cielib_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)cielib $(cielib1_)
 	$(ADDMOD) $(GLD)cielib $(cielib2_)
 
@@ -2738,7 +2755,7 @@ gsicc_=$(GLOBJ)gsicc_manage.$(OBJ) $(GLOBJ)gsicc_cache.$(OBJ)\
 
 sicclib_=$(GLOBJ)gsicc.$(OBJ)
 $(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(gsicc_)\
- $(GLD)cielib.dev $(LCMSGENDIR)$(D)$(WHICH_CMS).dev
+ $(GLD)cielib.dev $(LCMSGENDIR)$(D)$(WHICH_CMS).dev $(MAKEDIRS)
 	$(SETMOD) $(GLD)sicclib $(sicclib_)
 	$(ADDMOD) $(GLD)sicclib $(gsicc_)
 	$(ADDMOD) $(GLD)sicclib -include $(LCMSGENDIR)$(D)$(WHICH_CMS).dev
@@ -2796,27 +2813,29 @@ $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(AK)\
 	$(GLCC) $(GLO_)gsicc_profilecache.$(OBJ) $(C_) $(GLSRC)gsicc_profilecache.c
 
 $(GLOBJ)gsicc_lcms_1.$(OBJ) : $(GLSRC)gsicc_lcms.c\
- $(gsicc_cms_h) $(gslibctx_h) $(gserrors_h)
+ $(gsicc_cms_h) $(gslibctx_h) $(gserrors_h) $(MAKEDIRS)
 	$(GLLCMSCC) $(GLO_)gsicc_lcms_1.$(OBJ) $(C_) $(GLSRC)gsicc_lcms.c
 
 $(GLOBJ)gsicc_lcms_0.$(OBJ) : $(GLSRC)gsicc_lcms.c\
- $(gsicc_cms_h) $(lcms_h) $(gslibctx_h) $(gserrors_h)
+ $(gsicc_cms_h) $(lcms_h) $(gslibctx_h) $(gserrors_h) $(MAKEDIRS)
 	$(GLLCMSCC) $(GLO_)gsicc_lcms_0.$(OBJ) $(C_) $(GLSRC)gsicc_lcms.c
 
-$(GLOBJ)gsicc_lcms.$(OBJ) : $(GLOBJ)gsicc_lcms_$(SHARE_LCMS).$(OBJ) $(gp_h)
+$(GLOBJ)gsicc_lcms.$(OBJ) : $(GLOBJ)gsicc_lcms_$(SHARE_LCMS).$(OBJ) $(gp_h) \
+ $(MAKEDIRS)
 	$(CP_) $(GLOBJ)gsicc_lcms_$(SHARE_LCMS).$(OBJ) $(GLOBJ)gsicc_lcms.$(OBJ)
 
 
 $(GLOBJ)gsicc_lcms2_1.$(OBJ) : $(GLSRC)gsicc_lcms2.c\
- $(memory__h) $(gsicc_cms_h) $(gslibctx_h) $(gserrors_h)
+ $(memory__h) $(gsicc_cms_h) $(gslibctx_h) $(gserrors_h) $(MAKEDIRS)
 	$(GLLCMS2CC) $(GLO_)gsicc_lcms2_1.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2.c
 
 $(GLOBJ)gsicc_lcms2_0.$(OBJ) : $(GLSRC)gsicc_lcms2.c\
- $(memory__h) $(gsicc_cms_h) $(lcms2_h) $(gslibctx_h) $(lcms2_plugin_h) $(gserrors_h)
+ $(memory__h) $(gsicc_cms_h) $(lcms2_h) $(gslibctx_h) $(lcms2_plugin_h) $(gserrors_h) \
+  $(MAKEDIRS)
 	$(GLLCMS2CC) $(GLO_)gsicc_lcms2_0.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2.c
 
 $(GLOBJ)gsicc_lcms2.$(OBJ) : $(GLOBJ)gsicc_lcms2_$(SHARE_LCMS).$(OBJ) $(gp_h) \
- $(gxsync_h)
+ $(gxsync_h) $(MAKEDIRS)
 	$(CP_) $(GLOBJ)gsicc_lcms2_$(SHARE_LCMS).$(OBJ) $(GLOBJ)gsicc_lcms2.$(OBJ)
 
 # Note that gsicc_create requires compile with lcms to obtain icc34.h
@@ -2845,7 +2864,7 @@ $(GLOBJ)gsicc_create.$(OBJ) : $(GLOBJ)gsicc_create_$(SHARE_LCMS).$(OBJ) $(MAKEDI
 # ---------------- Separation colors ---------------- #
 
 seprlib_=$(GLOBJ)gscsepr.$(OBJ) $(GLOBJ)gsnamecl.$(OBJ) $(GLOBJ)gsncdummy.$(OBJ)
-$(GLD)seprlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(seprlib_)
+$(GLD)seprlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(seprlib_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)seprlib $(seprlib_)
 
 $(GLOBJ)gscsepr.$(OBJ) : $(GLSRC)gscsepr.c $(AK) $(gx_h) $(gserrors_h)\
@@ -2883,7 +2902,8 @@ gsdps_h=$(GLSRC)gsdps.h $(gsiparm2_h)
 # Display PostScript needs the DevicePixel color space to implement
 # the PixelCopy option of ImageType 2 images.
 dpslib_=$(GLOBJ)gsdps.$(OBJ) $(GLOBJ)gximage2.$(OBJ)
-$(GLD)dpslib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dpslib_) $(GLD)cspixlib.dev
+$(GLD)dpslib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dpslib_) $(GLD)cspixlib.dev \
+ $(MAKEDIRS)
 	$(SETMOD) $(GLD)dpslib $(dpslib_)
 	$(ADDMOD) $(GLD)dpslib -imagetype 2
 	$(ADDMOD) $(GLD)dpslib -include $(GLD)cspixlib
@@ -2914,7 +2934,7 @@ $(GLOBJ)gximagec.$(OBJ) : $(GLSRC)gximagec.c $(AK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gximagec.$(OBJ) $(C_) $(GLSRC)gximagec.c
 
 dpnxtlib_=$(GLOBJ)gsalphac.$(OBJ)
-$(GLD)dpnxtlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dpnxtlib_)
+$(GLD)dpnxtlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dpnxtlib_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)dpnxtlib $(dpnxtlib_)
 	$(ADDCOMP) $(GLD)dpnxtlib alpha
 
@@ -2941,7 +2961,8 @@ $(GLOBJ)gsclipsr.$(OBJ) : $(GLSRC)gsclipsr.c $(AK) $(gx_h)\
 psl3lib_=$(GLOBJ)gsclipsr.$(OBJ) $(GLOBJ)gscdevn.$(OBJ) $(GLOBJ)gxdevndi.$(OBJ)
 
 $(GLD)psl3lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(psl3lib_)\
- $(GLD)imasklib.dev $(GLD)shadelib.dev $(GLD)gxfapiu$(UFST_BRIDGE).dev
+ $(GLD)imasklib.dev $(GLD)shadelib.dev $(GLD)gxfapiu$(UFST_BRIDGE).dev \
+  $(MAKEDIRS)
 	$(SETMOD) $(GLD)psl3lib $(psl3lib_)
 	$(ADDMOD) $(GLD)psl3lib -include $(GLD)imasklib $(GLD)shadelib
 	$(ADDMOD) $(GLD)psl3lib -include $(GLD)gxfapiu$(UFST_BRIDGE)
@@ -2955,7 +2976,7 @@ $(GLOBJ)gstrap.$(OBJ) : $(GLSRC)gstrap.c $(AK) $(gx_h) $(gserrors_h)\
 	$(GLCC) $(GLO_)gstrap.$(OBJ) $(C_) $(GLSRC)gstrap.c
 
 traplib_=$(GLOBJ)gsparamx.$(OBJ) $(GLOBJ)gstrap.$(OBJ)
-$(GLD)traplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(traplib_)
+$(GLD)traplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(traplib_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)traplib $(traplib_)
 
 ### ------------------------ The DeviceN device ------------------------ ###
@@ -2963,16 +2984,16 @@ $(GLD)traplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(traplib_)
 
 devn_=$(GLOBJ)gdevdevn.$(OBJ)
 
-$(DD)spotcmyk.dev : $(LIB_MAK) $(devn_) $(GLD)page.dev $(GDEV)
+$(DD)spotcmyk.dev : $(LIB_MAK) $(devn_) $(GLD)page.dev $(GDEV) $(MAKEDIRS)
 	$(SETDEV) $(DD)spotcmyk $(devn_)
 
-$(DD)devicen.dev : $(LIB_MAK) $(devn_) $(GLD)page.dev $(GDEV)
+$(DD)devicen.dev : $(LIB_MAK) $(devn_) $(GLD)page.dev $(GDEV) $(MAKEDIRS)
 	$(SETDEV) $(DD)devicen $(devn_)
 
 $(GLOBJ)gdevdevn.$(OBJ) : $(GLSRC)gdevdevn.c $(gx_h) $(math__h) $(string__h)\
  $(gdevprn_h) $(gsparam_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gdevdcrd_h)\
  $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h) $(gdevp14_h)\
- $(gxblend_h) $(gdevdevnprn_h)
+ $(gxblend_h) $(gdevdevnprn_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevdevn.$(OBJ) $(C_) $(GLSRC)gdevdevn.c
 
 
@@ -2981,13 +3002,13 @@ $(GLOBJ)gdevdevn.$(OBJ) : $(GLSRC)gdevdevn.c $(gx_h) $(math__h) $(string__h)\
 $(GLOBJ)gdevdcrd.$(OBJ) : $(GLSRC)gdevdcrd.c $(AK)\
  $(math__h) $(memory__h) $(string__h)\
  $(gscrd_h) $(gscrdp_h) $(gserrors_h) $(gsparam_h) $(gscspace_h)\
- $(gx_h) $(gxdevcli_h) $(gdevdcrd_h)
+ $(gx_h) $(gxdevcli_h) $(gdevdcrd_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevdcrd.$(OBJ) $(C_) $(GLSRC)gdevdcrd.c
 
 $(GLOBJ)gsequivc.$(OBJ) : $(GLSRC)gsequivc.c $(math__h)\
  $(PDEVH) $(gsparam_h) $(gstypes_h) $(gxdconv_h) $(gdevdevn_h)\
  $(gsequivc_h) $(gzstate_h) $(gsstate_h) $(gscspace_h) $(gxcspace_h)\
- $(gsicc_manage_h) $(gxdevsop_h)
+ $(gsicc_manage_h) $(gxdevsop_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsequivc.$(OBJ) $(C_) $(GLSRC)gsequivc.c
 
 
@@ -3039,7 +3060,7 @@ translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\
  $(GLOBJ)gxblend.$(OBJ) $(GLOBJ)gxblend1.$(OBJ) $(GLOBJ)gdevp14.$(OBJ) $(GLOBJ)gdevdevn.$(OBJ)\
  $(GLOBJ)gdevdcrd.$(OBJ) $(GLOBJ)gscolorbuffer.$(OBJ)
 $(GLD)translib.dev : $(LIB_MAK) $(ECHOGS_XE) $(translib_)\
- $(GLD)cspixlib.dev $(GLD)bboxutil.dev $(GLD)cielib.dev
+ $(GLD)cspixlib.dev $(GLD)bboxutil.dev $(GLD)cielib.dev $(MAKEDIRS)
 	$(SETMOD) $(GLD)translib $(translib_)
 	$(ADDMOD) $(GLD)translib -imagetype 3x
 	$(ADDMOD) $(GLD)translib -include $(GLD)cspixlib $(GLD)bboxutil
@@ -3111,7 +3132,7 @@ shadelib_1=$(GLOBJ)gscolor3.$(OBJ) $(GLOBJ)gsfunc3.$(OBJ) $(GLOBJ)gsptype2.$(OBJ
 shadelib_2=$(GLOBJ)gxshade.$(OBJ) $(GLOBJ)gxshade1.$(OBJ) $(GLOBJ)gxshade4.$(OBJ) $(GLOBJ)gxshade6.$(OBJ)
 shadelib_=$(shadelib_1) $(shadelib_2)
 $(GLD)shadelib.dev : $(LIB_MAK) $(ECHOGS_XE) $(shadelib_)\
- $(GLD)funclib.dev $(GLD)patlib.dev
+ $(GLD)funclib.dev $(GLD)patlib.dev $(MAKEDIRS)
 	$(SETMOD) $(GLD)shadelib $(shadelib_1)
 	$(ADDMOD) $(GLD)shadelib -obj $(shadelib_2)
 	$(ADDMOD) $(GLD)shadelib -include $(GLD)funclib $(GLD)patlib
@@ -3120,12 +3141,12 @@ $(GLD)shadelib.dev : $(LIB_MAK) $(ECHOGS_XE) $(shadelib_)\
 # This is used to access compressed, compiled-in support files
 gsiorom_h=$(GLSRC)gsiorom.h
 romfs_=$(GLOBJ)gsiorom.$(OBJ)
-$(GLD)romfs1.dev : $(LIB_MAK) $(ECHOGS_XE) $(romfs_)
+$(GLD)romfs1.dev : $(LIB_MAK) $(ECHOGS_XE) $(romfs_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)romfs1 $(romfs_)
 	$(ADDMOD) $(GLD)romfs1 -iodev rom
 
 # A dummy romfs when we aren't using COMPILE_INITS
-$(GLD)romfs0.dev :  $(LIB_MAK) $(ECHOGS_XE)
+$(GLD)romfs0.dev :  $(LIB_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 	$(SETMOD) $(GLD)romfs0
 
 $(GLGEN)gsromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
@@ -3178,18 +3199,19 @@ MKROMFS_COMMON_DEPS=$(stdpre_h) $(stdint__h) $(gsiorom_h) $(arch_h)\
 # ---------------- Support for %ram% IODevice ----------------- #
 gsioram_h=$(GLSRC)gsioram.h
 ramfs_=$(GLOBJ)gsioram.$(OBJ) $(GLOBJ)ramfs.$(OBJ)
-$(GLD)ramfs.dev : $(LIB_MAK) $(ECHOGS_XE) $(ramfs_)
+$(GLD)ramfs.dev : $(LIB_MAK) $(ECHOGS_XE) $(ramfs_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)ramfs $(ramfs_)
 	$(ADDMOD) $(GLD)ramfs -iodev ram
 	$(ADDMOD) $(GLD)ramfs -obj $(GLOBJ)ramfs.$(OBJ)
 
 $(GLOBJ)ramfs.$(OBJ) : $(GLSRC)ramfs.c $(gp_h) $(gscdefs_h) $(gserrors_h)\
-  $(gsparam_h) $(gsstruct_h) $(gx_h) $(ramfs_h) $(string__h) $(unistd__h)
+  $(gsparam_h) $(gsstruct_h) $(gx_h) $(ramfs_h) $(string__h) $(unistd__h)\
+   $(MAKEDIRS)
 	$(GLCC) $(GLO_)ramfs.$(OBJ) $(C_) $(GLSRC)ramfs.c
 
 $(GLOBJ)gsioram.$(OBJ) : $(GLSRC)gsioram.c $(gp_h) $(gscdefs_h) $(gserrors_h)\
   $(gsparam_h) $(gsstruct_h) $(gsutil_h) $(gx_h) $(gxiodev_h) $(ramfs_h)\
-  $(stream_h) $(string__h) $(unistd__h)
+  $(stream_h) $(string__h) $(unistd__h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsioram.$(OBJ) $(C_) $(GLSRC)gsioram.c
 
 
@@ -3205,7 +3227,7 @@ $(GLOBJ)gsiodisk.$(OBJ) : $(GLSRC)gsiodisk.c $(AK) $(gx_h)\
 # This is used to load native-format fonts on MacOS
 # Define the macres.dev FEATURE
 macres_=$(GLOBJ)gsiomacres.$(OBJ)
-$(GLD)macres.dev : $(LIB_MAK) $(ECHOGS_XE) $(macres_)
+$(GLD)macres.dev : $(LIB_MAK) $(ECHOGS_XE) $(macres_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)macres $(macres_)
 	$(ADDMOD) $(GLD)macres -iodev macresource
 
@@ -3275,7 +3297,7 @@ $(AUX)gp_unifn.$(OBJ) : $(GLSRC)gp_unifn.c $(AK) $(gx_h) $(gp_h)\
 # Pipes.  These are actually the same on all platforms that have them.
 
 pipe_=$(GLOBJ)gdevpipe.$(OBJ)
-$(GLD)pipe.dev : $(LIB_MAK) $(ECHOGS_XE) $(pipe_)
+$(GLD)pipe.dev : $(LIB_MAK) $(ECHOGS_XE) $(pipe_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)pipe $(pipe_)
 	$(ADDMOD) $(GLD)pipe -iodev pipe
 
@@ -3289,7 +3311,7 @@ $(GLOBJ)gdevpipe.$(OBJ) : $(GLSRC)gdevpipe.c $(AK)\
 
 # Dummy implementation.
 nosync_=$(GLOBJ)gp_nsync.$(OBJ)
-$(GLD)nosync.dev : $(LIB_MAK) $(ECHOGS_XE) $(nosync_)
+$(GLD)nosync.dev : $(LIB_MAK) $(ECHOGS_XE) $(nosync_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)nosync $(nosync_)
 
 $(GLOBJ)gp_nsync.$(OBJ) : $(GLSRC)gp_nsync.c $(AK) $(std_h)\
@@ -3298,7 +3320,7 @@ $(GLOBJ)gp_nsync.$(OBJ) : $(GLSRC)gp_nsync.c $(AK) $(std_h)\
 
 # POSIX pthreads-based implementation.
 pthreads_=$(GLOBJ)gp_psync.$(OBJ)
-$(GLD)posync.dev : $(LIB_MAK) $(ECHOGS_XE) $(pthreads_)
+$(GLD)posync.dev : $(LIB_MAK) $(ECHOGS_XE) $(pthreads_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)posync $(pthreads_)
 	$(ADDMOD) $(GLD)posync -replace $(GLD)nosync
 

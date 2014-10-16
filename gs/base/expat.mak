@@ -70,25 +70,25 @@ expat_xmltok_hdrs=$(EXPATSRC)xmltok_impl.c \
 	$(EXPATSRC)expat_external.h \
 	$(EXPATSRC)internal.h
 
-$(EXPATOBJ)xmlparse.$(OBJ) : $(EXPATSRC)xmlparse.c $(expat_xmlparse_hdrs)
+$(EXPATOBJ)xmlparse.$(OBJ) : $(EXPATSRC)xmlparse.c $(expat_xmlparse_hdrs) $(MAKEDIRS)
 	$(EXPATCC) $(EXPATO_)xmlparse.$(OBJ) $(C_) $(EXPATSRC)xmlparse.c
 
-$(EXPATOBJ)xmlrole.$(OBJ) : $(EXPATSRC)xmlrole.c $(expat_xmlrole_hdrs)
+$(EXPATOBJ)xmlrole.$(OBJ) : $(EXPATSRC)xmlrole.c $(expat_xmlrole_hdrs) $(MAKEDIRS)
 	$(EXPATCC) $(EXPATO_)xmlrole.$(OBJ) $(C_) $(EXPATSRC)xmlrole.c
 
-$(EXPATOBJ)xmltok.$(OBJ) : $(EXPATSRC)xmltok.c $(expat_xmltok_hdrs)
+$(EXPATOBJ)xmltok.$(OBJ) : $(EXPATSRC)xmltok.c $(expat_xmltok_hdrs) $(MAKEDIRS)
 	$(EXPATCC) $(EXPATO_)xmltok.$(OBJ) $(C_) $(EXPATSRC)xmltok.c
 
 # Copy the target definition we want
 $(EXPATGEN)expat.dev : $(TOP_MAKEFILES) $(EXPAT_MAK) \
- $(EXPATGEN)expat_$(SHARE_EXPAT).dev
+ $(EXPATGEN)expat_$(SHARE_EXPAT).dev $(MAKEDIRS)
 	$(CP_) $(EXPATGEN)expat_$(SHARE_EXPAT).dev $(EXPATGEN)expat.dev
 
 # Define the compiled in target
-$(EXPATGEN)expat_0.dev : $(EXPAT_MAK) $(ECHOGS_XE) $(expat_)
+$(EXPATGEN)expat_0.dev : $(EXPAT_MAK) $(ECHOGS_XE) $(expat_) $(MAKEDIRS)
 	$(SETMOD) $(EXPATGEN)expat_0 $(expat_)
 
 # Define the external link target
-$(EXPATGEN)expat_1.dev : $(EXPAT_MAK) $(ECHOGS_XE)
+$(EXPATGEN)expat_1.dev : $(EXPAT_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 	$(SETMOD) $(EXPATGEN)expat_1 -lib expat
 

@@ -42,11 +42,12 @@ LIBCUPSI_OBJS =\
     $(LIBCUPSIOBJ)interpret.$(OBJ) \
     $(LIBCUPSIOBJ)raster.$(OBJ)
 
-LIBCUPSIHEADERS	=	\
+LIBCUPSI_DEPS	=	\
 		$(LIBCUPSISRC)common.h \
 		$(LIBCUPSISRC)image.h \
 		$(LIBCUPSISRC)image-private.h \
-		$(LIBCUPSISRC)image-sgi.h
+		$(LIBCUPSISRC)image-sgi.h \
+		$(MAKEDIRS)
 
 libcupsi.clean : libcupsi.config-clean libcupsi.clean-not-config-clean
 
@@ -58,69 +59,71 @@ libcupsi.config-clean :
 	$(RMN_) $(LIBCUPSIGEN)$(D)lcupsi*.dev
 
 # instantiate the requested build option (shared or compiled in)
-$(LIBCUPSIGEN)lcupsi.dev : $(TOP_MAKEFILES) $(LIBCUPSIGEN)lcupsi_$(SHARE_LCUPSI).dev
+$(LIBCUPSIGEN)lcupsi.dev : $(TOP_MAKEFILES) $(LIBCUPSIGEN)lcupsi_$(SHARE_LCUPSI).dev\
+ $(MAKEDIRS)
 	$(CP_) $(LIBCUPSIGEN)lcupsi_$(SHARE_LCUPSI).dev $(LIBCUPSIGEN)lcupsi.dev
 
 # Define the shared version.
-$(LIBCUPSIGEN)lcupsi_1.dev : $(TOP_MAKEFILES) $(LCUPSI_MAK) $(ECHOGS_XE)
+$(LIBCUPSIGEN)lcupsi_1.dev : $(TOP_MAKEFILES) $(LCUPSI_MAK) $(ECHOGS_XE) \
+ $(MAKEDIRS)
 	$(SETMOD) $(LIBCUPSIGEN)lcupsi_1 -link $(LCUPSI_LIBS)
 
 # Define the non-shared version.
 $(LIBCUPSIGEN)lcupsi_0.dev : $(TOP_MAKEFILES) $(LCUPSI_MAK) $(ECHOGS_XE) \
-	$(LIBCUPSI_OBJS)
+	$(LIBCUPSI_OBJS) $(MAKEDIRS)
 	$(SETMOD) $(LIBCUPSIGEN)lcupsi_0 $(LIBCUPSI_OBJS)
 
 # explicit rules for building the source files
 # for simplicity we have every source file depend on all headers
 
-$(LIBCUPSIOBJ)image-bmp.$(OBJ) : $(LIBCUPSISRC)image-bmp.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)image-bmp.$(OBJ) : $(LIBCUPSISRC)image-bmp.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-bmp.$(OBJ) $(C_) $(LIBCUPSISRC)image-bmp.c
 
-$(LIBCUPSIOBJ)image-colorspace.$(OBJ) : $(LIBCUPSISRC)image-colorspace.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)image-colorspace.$(OBJ) : $(LIBCUPSISRC)image-colorspace.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-colorspace.$(OBJ) $(C_) $(LIBCUPSISRC)image-colorspace.c
 	
-$(LIBCUPSIOBJ)image-gif.$(OBJ) : $(LIBCUPSISRC)image-gif.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)image-gif.$(OBJ) : $(LIBCUPSISRC)image-gif.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-gif.$(OBJ) $(C_) $(LIBCUPSISRC)image-gif.c
 	
-$(LIBCUPSIOBJ)image-jpeg.$(OBJ) : $(LIBCUPSISRC)image-jpeg.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)image-jpeg.$(OBJ) : $(LIBCUPSISRC)image-jpeg.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-jpeg.$(OBJ) $(C_) $(LIBCUPSISRC)image-jpeg.c
 	
-$(LIBCUPSIOBJ)image-photocd.$(OBJ) : $(LIBCUPSISRC)image-photocd.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)image-photocd.$(OBJ) : $(LIBCUPSISRC)image-photocd.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-photocd.$(OBJ) $(C_) $(LIBCUPSISRC)image-photocd.c
 	
-$(LIBCUPSIOBJ)image-pix.$(OBJ) : $(LIBCUPSISRC)image-pix.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)image-pix.$(OBJ) : $(LIBCUPSISRC)image-pix.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-pix.$(OBJ) $(C_) $(LIBCUPSISRC)image-pix.c
 	
-$(LIBCUPSIOBJ)image-png.$(OBJ) : $(LIBCUPSISRC)image-png.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)image-png.$(OBJ) : $(LIBCUPSISRC)image-png.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-png.$(OBJ) $(C_) $(LIBCUPSISRC)image-png.c
 	
-$(LIBCUPSIOBJ)image-pnm.$(OBJ) : $(LIBCUPSISRC)image-pnm.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)image-pnm.$(OBJ) : $(LIBCUPSISRC)image-pnm.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-pnm.$(OBJ) $(C_) $(LIBCUPSISRC)image-pnm.c
 	
-$(LIBCUPSIOBJ)image-sgi.$(OBJ) : $(LIBCUPSISRC)image-sgi.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)image-sgi.$(OBJ) : $(LIBCUPSISRC)image-sgi.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-sgi.$(OBJ) $(C_) $(LIBCUPSISRC)image-sgi.c
 	
-$(LIBCUPSIOBJ)image-sgilib.$(OBJ) : $(LIBCUPSISRC)image-sgilib.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)image-sgilib.$(OBJ) : $(LIBCUPSISRC)image-sgilib.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-sgilib.$(OBJ) $(C_) $(LIBCUPSISRC)image-sgilib.c
 	
-$(LIBCUPSIOBJ)image-sun.$(OBJ) : $(LIBCUPSISRC)image-sun.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)image-sun.$(OBJ) : $(LIBCUPSISRC)image-sun.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-sun.$(OBJ) $(C_) $(LIBCUPSISRC)image-sun.c
 	
-$(LIBCUPSIOBJ)image-tiff.$(OBJ) : $(LIBCUPSISRC)image-tiff.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)image-tiff.$(OBJ) : $(LIBCUPSISRC)image-tiff.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-tiff.$(OBJ) $(C_) $(LIBCUPSISRC)image-tiff.c
 	
-$(LIBCUPSIOBJ)image-zoom.$(OBJ) : $(LIBCUPSISRC)image-zoom.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)image-zoom.$(OBJ) : $(LIBCUPSISRC)image-zoom.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image-zoom.$(OBJ) $(C_) $(LIBCUPSISRC)image-zoom.c
 	
-$(LIBCUPSIOBJ)image.$(OBJ) : $(LIBCUPSISRC)image.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)image.$(OBJ) : $(LIBCUPSISRC)image.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)image.$(OBJ) $(C_) $(LIBCUPSISRC)image.c
 	
-$(LIBCUPSIOBJ)error.$(OBJ) : $(LIBCUPSISRC)error.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)error.$(OBJ) : $(LIBCUPSISRC)error.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)error.$(OBJ) $(C_) $(LIBCUPSISRC)error.c
 	
-$(LIBCUPSIOBJ)interpret.$(OBJ) : $(LIBCUPSISRC)interpret.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)interpret.$(OBJ) : $(LIBCUPSISRC)interpret.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)interpret.$(OBJ) $(C_) $(LIBCUPSISRC)interpret.c
 	
-$(LIBCUPSIOBJ)raster.$(OBJ) : $(LIBCUPSISRC)raster.c $(LIBSCUPSIHEADERS)
+$(LIBCUPSIOBJ)raster.$(OBJ) : $(LIBCUPSISRC)raster.c $(LIBCUPSI_DEPS)
 	$(LCUPSI_CC) $(LCUPSIO_)raster.$(OBJ) $(C_) $(LIBCUPSISRC)raster.c
 	
