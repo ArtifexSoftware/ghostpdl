@@ -953,6 +953,7 @@ int gdev_vector_get_param(gx_device *dev, char *Param, void *list)
     gs_param_list * plist = (gs_param_list *)list;
     gs_param_string ofns;
     bool bool_true = 1;
+    const int a=0;
 
     ofns.data = (const byte *)vdev->fname,
         ofns.size = strlen(vdev->fname),
@@ -962,6 +963,12 @@ int gdev_vector_get_param(gx_device *dev, char *Param, void *list)
     }
     if (strcmp(Param, "HighLevelDevice") == 0) {
         return param_write_bool(plist, "HighLevelDevice", &bool_true);
+    }
+    if (strcmp(Param, "FirstPage") == 0) {
+        return param_write_int(plist, "FirstPage", &vdev->FirstPage);
+    }
+    if (strcmp(Param, "LastPage") == 0) {
+        return param_write_int(plist, "LastPage", &vdev->LastPage);
     }
     return gs_error_undefined;
 }
@@ -974,6 +981,7 @@ gdev_vector_get_params(gx_device * dev, gs_param_list * plist)
     int ecode;
     gs_param_string ofns;
     bool bool_true = 1;
+    const int a=0;
 
     if (code < 0)
         return code;
@@ -984,6 +992,10 @@ gdev_vector_get_params(gx_device * dev, gs_param_list * plist)
         return ecode;
     if ((ecode = param_write_bool(plist, "HighLevelDevice", &bool_true)) < 0)
         return ecode;
+    if ((ecode = param_write_int(plist, "FirstPage", &vdev->FirstPage)) < 0)
+        return ecode;
+    if ((ecode = param_write_int(plist, "LastPage", &vdev->LastPage)) < 0)
+        return ecode;
     return code;
 }
 
@@ -992,17 +1004,30 @@ int
 gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
 {
     int ecode = 0;
-    int code;
+    int code, a, first_page, last_page;
     int igni;
     bool ignb;
     gs_param_name param_name;
     gs_param_string ofns;
     bool open = dev->is_open, HighLevelDevice;
 
-
+    first_page = dev->FirstPage;
+    last_page = dev->LastPage;
     code = param_read_bool(plist, (param_name = "HighLevelDevice"), &HighLevelDevice);
     if (code < 0)
         return code;
+
+    code = param_read_int(plist, (param_name = "FirstPage"), &dev->FirstPage);
+    if (code < 0)
+        return code;
+
+    code = param_read_int(plist, (param_name = "LastPage"), &dev->LastPage);
+    if (code < 0)
+        return code;
+
+    if ((first_page == 0 && dev->FirstPage != 0) ||
+        (last_page == 0 && dev->LastPage != 0)) {
+    }
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofns)) {
         case 0:

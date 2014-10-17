@@ -672,6 +672,12 @@ gdev_prn_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "pageneutralcolor") == 0) {
         return param_write_bool(plist, "pageneutralcolor", &pageneutralcolor);
     }
+    if (strcmp(Param, "FirstPage") == 0) {
+        return param_write_int(plist, "FirstPage", &dev->FirstPage);
+    }
+    if (strcmp(Param, "LastPage") == 0) {
+        return param_write_int(plist, "LastPage", &dev->LastPage);
+    }
     return gs_error_undefined;
 }
 
@@ -723,6 +729,10 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
     if ((code = param_write_string(plist, "OutputFile", &ofns)) < 0)
         return code;
 
+    if ((code = param_write_int(plist, "FirstPage", &ppdev->FirstPage)) < 0)
+        return code;
+    if ((code = param_write_int(plist, "LastPage", &ppdev->LastPage)) < 0)
+        return code;
     /* Always return an empty string for saved-pages so that get_params followed */
     /* by put_params will have no effect.                                       */
     saved_pages.data = (const byte *)"";
@@ -748,7 +758,7 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     int ecode = 0;
-    int code;
+    int code, first_page, last_page;
     const char *param_name;
     bool is_open = pdev->is_open;
     bool oof = ppdev->OpenOutputFile;
@@ -766,6 +776,9 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     gs_param_dict mdict;
     gs_param_string saved_pages;
     bool pageneutralcolor = false;
+
+    first_page = pdev->FirstPage;
+    last_page = pdev->LastPage;
 
     memset(&saved_pages, 0, sizeof(gs_param_string));
     save_sp = ppdev->space_params;
@@ -837,6 +850,18 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
         case 1:
             ofs.data = 0;
             break;
+    }
+
+    code = param_read_int(plist,  (param_name = "FirstPage"), &pdev->FirstPage);
+    if (code < 0)
+        ecode = code;
+
+    code = param_read_int(plist,  (param_name = "LastPage"), &pdev->LastPage);
+    if (code < 0)
+        ecode = code;
+
+    if ((first_page == 0 && pdev->FirstPage != 0) ||
+        (last_page == 0 && pdev->LastPage != 0)) {
     }
 
     /* Read InputAttributes and OutputAttributes just for the type */

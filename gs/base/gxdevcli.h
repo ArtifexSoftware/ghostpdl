@@ -755,6 +755,8 @@ typedef struct gdev_space_params_s {
                                         /* in units given by MarginsHWResolution */\
         float HWMargins[4];		/* margins around imageable area, */\
                                         /* in default user units ("points") */\
+        int FirstPage;\
+        int LastPage;\
         long PageCount;			/* number of pages written */\
         long ShowpageCount;		/* number of calls on showpage */\
         int NumCopies;\
@@ -1175,7 +1177,7 @@ typedef struct gs_param_list_s gs_param_list;
 
                 /* Added in release 5.24 */
 
-     /* ... text_begin ... see gxtext.h for definition */
+     /* ... text_begin ... see gstext.h for definition */
 
                 /* Added in release 6.23 */
 

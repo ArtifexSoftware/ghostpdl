@@ -285,7 +285,9 @@ const gx_device_bit gs_bitrgbtags_device =
          (float)((0) * 72.0),
          (float)((0) * 72.0),
          (float)((0) * 72.0)},
-        0 , /*PAgeCount*/
+        0 , /*FirstPage*/
+        0 , /*LastPage*/
+        0 , /*PageCount*/
         0 , /*ShowPageCount*/
         1 , /*NumCopies*/
         0 , /*NumCopiesSet*/
