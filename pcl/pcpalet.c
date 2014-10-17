@@ -29,6 +29,9 @@
 #include "gzstate.h"
 #include "gxdevsop.h"   /* for special ops */
 #include "gsutil.h"     /* for gs_next_ids */
+#include "gdevmplt.h"
+
+extern gx_device_mplt gs_pcl_mono_palette_device;
 
 /* RC routines */
 gs_private_st_simple(st_palette_t, pcl_palette_t, "pcl palette object");
@@ -804,47 +807,6 @@ set_render_algorithm(pcl_args_t * pargs, pcl_state_t * pcs)
     return pcl_palette_set_render_method(pcs, uint_arg(pargs));
 }
 
-static bool swapped_device_color_procs = false;
-
-static gx_cm_color_map_procs device_cm_procs;
-
-/* needs type */
-static dev_proc_get_color_mapping_procs(*saved_get_color_map_proc);
-
-static void
-pcl_gray_cs_to_cm(gx_device * dev, frac gray, frac out[])
-{
-    /* just pass it along */
-    device_cm_procs.map_gray(dev, gray, out);
-}
-
-static void
-pcl_rgb_cs_to_cm(gx_device * dev, const gs_imager_state * pis, frac r, frac g,
-                 frac b, frac out[])
-{
-    frac gray = color_rgb_to_gray(r, g, b, NULL);
-
-    device_cm_procs.map_rgb(dev, pis, gray, gray, gray, out);
-}
-
-static void
-pcl_cmyk_cs_to_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
-{
-    frac gray = color_cmyk_to_gray(c, m, y, k, NULL);
-
-    device_cm_procs.map_cmyk(dev, gray, gray, gray, gray, out);
-}
-
-static const gx_cm_color_map_procs pcl_mono_procs = {
-    pcl_gray_cs_to_cm, pcl_rgb_cs_to_cm, pcl_cmyk_cs_to_cm
-};
-
-static const gx_cm_color_map_procs *
-pcl_mono_color_mapping_procs(const gx_device * dev)
-{
-    return &pcl_mono_procs;
-}
-
 /* set monochrome page device parameter.  NB needs testing.  We don't
    currently have a device that does what we need with
    ProcessColorModel.  We assume non color devices will simply ignore
@@ -852,25 +814,33 @@ pcl_mono_color_mapping_procs(const gx_device * dev)
 static int
 pcl_update_mono(pcl_state_t * pcs)
 {
-    gx_device *dev = gs_currentdevice(pcs->pgs);
+    gx_device *pdev, *dev = gs_currentdevice(pcs->pgs);
+    int code = 0;
 
-    const gx_cm_color_map_procs *cm_procs =
-        dev_proc(dev, get_color_mapping_procs) (dev);
     if (pcs->monochrome_mode) {
-        if (swapped_device_color_procs == false) {
-            device_cm_procs = *cm_procs;
-            saved_get_color_map_proc = dev->procs.get_color_mapping_procs;
-            dev->procs.get_color_mapping_procs = pcl_mono_color_mapping_procs;
-            swapped_device_color_procs = true;
+        while (dev) {
+            pdev = dev;
+            if (strcmp(dev->dname, "PCL_Mono_Palette") == 0){
+                break;
+            }
+            dev = dev->child;
+        }
+        if (!dev){
+            code = gx_device_subclass(pdev, (gx_device *)&gs_pcl_mono_palette_device, sizeof(pcl_mono_palette_subclass_data));
         }
     } else {
-        if (swapped_device_color_procs == true) {
-            dev->procs.get_color_mapping_procs = saved_get_color_map_proc;
-            swapped_device_color_procs = false;
+        while (dev) {
+            if (strcmp(dev->dname, "PCL_Mono_Palette") == 0){
+                break;
+            }
+            dev = dev->child;
+        }
+        if (dev){
+            gx_device_unsubclass(dev);
         }
     }
     gx_unset_dev_color(pcs->pgs);
-    return 0;
+    return code;
 }
 
 /*

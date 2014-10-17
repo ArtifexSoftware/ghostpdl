@@ -585,18 +585,6 @@ Ghostscript is normally built to interpret both PostScript and PDF files, examin
 
 <p>Here are some command line options specific to PDF
 
-<dl>
-<dt><code>-dFirstPage=</code><em>pagenumber</em>
-<dd>Begins interpreting on the designated page of the document.
-Pages of all documents in PDF collections are numbered sequentionally.
-</dl>
-
-<dl>
-<dt><code>-dLastPage=</code><em>pagenumber</em>
-<dd>Stops interpreting after the designated page of the document.
-Pages of all documents in PDF collections are numbered sequentionally.
-</dl>
-
  <dl>
 <dt><code>-dPDFFitPage</code>
 <dd>Rather than selecting a PageSize given by the PDF MediaBox, BleedBox (see -dUseBleedBox),
@@ -710,6 +698,33 @@ using a user parameter <code>RenderTTNotdef</code>. The PDF interpreter sets thi
 user parameter to the value of <code>RENDERTTNOTDEF</code> in systemdict,
 when rendering PDF files. To restore rendering of /.notdef glyphs from TrueType fonts in PDF files, set this parameter to true.
 </dl>
+
+<dl>
+<dt><code>-dFirstPage=</code><em>pagenumber</em>
+<dd>Begins interpreting on the designated page of the document.
+Pages of all documents in PDF collections are numbered sequentionally.
+</dl>
+
+<dl>
+<dt><code>-dLastPage=</code><em>pagenumber</em>
+<dd>Stops interpreting after the designated page of the document.
+Pages of all documents in PDF collections are numbered sequentionally.
+</dl>
+
+<p>These command line options are no longer specific to PDF, but have some specific differences with PDF files
+
+<dl>
+<dt><code>-dFirstPage=</code><em>pagenumber</em>
+<dd>Begins interpreting on the designated page of the document.
+Pages of all documents in PDF collections are numbered sequentionally.
+</dl>
+
+<dl>
+<dt><code>-dLastPage=</code><em>pagenumber</em>
+<dd>Stops interpreting after the designated page of the document.
+Pages of all documents in PDF collections are numbered sequentionally.
+</dl>
+
 
 <h3><a name="PDF_problems"></a>Problems interpreting a PDF file</h3>
 
@@ -2484,6 +2499,16 @@ earlier, processing of DoPS was always enabled.
 <h4><a name="Page_parameters"></a>Page parameters</h4>
 
 <dl>
+<dt><code>-dFirstPage=</code><em>pagenumber</em>
+<dd>Begins processing on the designated page of the document.
+</dl>
+
+<dl>
+<dt><code>-dLastPage=</code><em>pagenumber</em>
+<dd>Stops processing after the designated page of the document.
+</dl>
+
+<dl>
 <dt><a name="FIXEDMEDIA"></a><code>-dFIXEDMEDIA</code>
 <dd>Causes the media size to be fixed after initialization, forcing pages
 of other sizes or orientations to be clipped.  This may be useful when
@@ -3192,6 +3217,23 @@ for more information.
 </dl>
 
 <h4><a name="Other_parameters"></a>Other parameters</h4>
+
+<d1>
+<dt><code>-dFILTERIMAGE</code></dt>
+<dd>If set, ths will ignore all images in the input (in this context image means a bitmap), these will
+therefore not be rendered.</dd>
+</d1>
+
+<d1>
+<dt><code>-dFILTERTEXT</code></dt>
+<dd>If set, ths will ignore all text in the input (just because it looks like text doesn't mean it is, it might be an image), text will
+therefore not be rendered.</dd>
+</d1>
+
+<d1>
+<dt><code>-dFILTERVECTOR</code></dt>
+<dd>If set, ths will ignore anything whch is neither text nor an image..</dd>
+</d1>
 
 <dl>
 <dt><code>-dDELAYBIND</code>

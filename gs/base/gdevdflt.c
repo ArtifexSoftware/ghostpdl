@@ -15,12 +15,16 @@
 
 /* Default device implementation */
 #include "math_.h"
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsropt.h"
 #include "gxcomp.h"
 #include "gxdevice.h"
 #include "gxdevsop.h"
+#include "gdevp14.h"        /* Needed to patch up the procs after compositor creation */
+#include "gstrans.h"        /* For gs_pdf14trans_t */
+#include "gxistate.h"       /* for gs_image_state_s */
 
 /* defined in gsdpram.c */
 int gx_default_get_param(gx_device *dev, char *Param, void *list);
@@ -127,17 +131,13 @@ is_like_DeviceRGB(gx_device * dev)
     if ( dev->color_info.num_components != 3                   ||
          dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE  )
         return false;
-    cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
+
+    cm_procs = get_color_mapping_procs_subclass(dev);
     if (cm_procs == 0 || cm_procs->map_rgb == 0)
         return false;
 
     /* check the values 1/4, 1/3, and 3/4 */
-    cm_procs->map_rgb( dev,
-                       0,
-                       frac_1 / 4,
-                       frac_1 / 3,
-                       3 * frac_1 / 4,
-                       cm_comp_fracs );
+    map_rgb_subclass(cm_procs, dev, 0, frac_1 / 4, frac_1 / 3, 3 * frac_1 / 4,cm_comp_fracs);
 
     /* verify results to .01 */
     cm_comp_fracs[0] -= frac_1 / 4;
@@ -165,12 +165,13 @@ is_like_DeviceCMYK(gx_device * dev)
     if ( dev->color_info.num_components != 4                      ||
          dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE  )
         return false;
-    cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
+    cm_procs = get_color_mapping_procs_subclass(dev);
     if (cm_procs == 0 || cm_procs->map_cmyk == 0)
         return false;
 
     /* check the values 1/4, 1/3, 3/4, and 1/8 */
-    cm_procs->map_cmyk( dev,
+
+    map_cmyk_subclass( cm_procs, dev,
                         frac_1 / 4,
                         frac_1 / 3,
                         3 * frac_1 / 4,
@@ -1064,4 +1065,413 @@ gx_default_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t graphics
 {
     /* set the tag but carefully preserve GS_DEVICE_ENCODES_TAGS */
     dev->graphics_type_tag = (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) | graphics_type_tag;
+}
+
+/* ---------------- Device subclassing procedures ---------------- */
+
+/* Non-obvious code. The 'dest_procs' is the 'procs' memory occupied by the original device that we decided to subclass,
+ * 'src_procs' is the newly allocated piece of memory, to whch we have already copied the content of the
+ * original device (including the procs), prototype is the device structure prototype for the subclassing device.
+ * Here we copy the methods from the prototype to the original device procs memory *but* if the original (src_procs)
+ * device had a NULL method, we make the new device procs have a NULL method too.
+ * The reason for ths is ugly, there are some places in the graphics library which explicitly check for
+ * a device having a NULL method and take different code paths depending on the result.
+ * Now in general we expect subclassing devices to implement *every* method, so if we didn't copy
+ * over NULL methods present in the original source device then the code path could be inappropriate for
+ * that underlying (now subclassed) device.
+ */
+int gx_copy_device_procs(gx_device_procs *dest_procs, gx_device_procs *src_procs, gx_device_procs *prototype_procs)
+{
+    if (src_procs->open_device != NULL)
+        dest_procs->open_device = prototype_procs->open_device;
+    if (src_procs->get_initial_matrix != NULL)
+        dest_procs->get_initial_matrix = prototype_procs->get_initial_matrix;
+    if (src_procs->sync_output != NULL)
+        dest_procs->sync_output = prototype_procs->sync_output;
+    if (src_procs->output_page != NULL)
+        dest_procs->output_page = prototype_procs->output_page;
+    if (src_procs->close_device != NULL)
+        dest_procs->close_device = prototype_procs->close_device;
+    if (src_procs->map_rgb_color != NULL)
+        dest_procs->map_rgb_color = prototype_procs->map_rgb_color;
+    if (src_procs->map_color_rgb != NULL)
+        dest_procs->map_color_rgb = prototype_procs->map_color_rgb;
+    if (src_procs->fill_rectangle != NULL)
+        dest_procs->fill_rectangle = prototype_procs->fill_rectangle;
+    if (src_procs->tile_rectangle != NULL)
+        dest_procs->tile_rectangle = prototype_procs->tile_rectangle;
+    if (src_procs->copy_mono != NULL)
+        dest_procs->copy_mono = prototype_procs->copy_mono;
+    if (src_procs->copy_color != NULL)
+        dest_procs->copy_color = prototype_procs->copy_color;
+    if (src_procs->obsolete_draw_line != NULL)
+        dest_procs->obsolete_draw_line = prototype_procs->obsolete_draw_line;
+    if (src_procs->get_bits != NULL)
+        dest_procs->get_bits = prototype_procs->get_bits;
+    if (src_procs->get_params != NULL)
+        dest_procs->get_params = prototype_procs->get_params;
+    if (src_procs->put_params != NULL)
+        dest_procs->put_params = prototype_procs->put_params;
+    if (src_procs->map_cmyk_color != NULL)
+        dest_procs->map_cmyk_color = prototype_procs->map_cmyk_color;
+    if (src_procs->get_xfont_procs != NULL)
+        dest_procs->get_xfont_procs = prototype_procs->get_xfont_procs;
+    if (src_procs->get_xfont_device != NULL)
+        dest_procs->get_xfont_device = prototype_procs->get_xfont_device;
+    if (src_procs->map_rgb_alpha_color != NULL)
+        dest_procs->map_rgb_alpha_color = prototype_procs->map_rgb_alpha_color;
+    if (src_procs->get_page_device != NULL)
+        dest_procs->get_page_device = prototype_procs->get_page_device;
+    if (src_procs->get_alpha_bits != NULL)
+        dest_procs->get_alpha_bits = prototype_procs->get_alpha_bits;
+    if (src_procs->copy_alpha != NULL)
+        dest_procs->copy_alpha = prototype_procs->copy_alpha;
+    if (src_procs->get_band != NULL)
+        dest_procs->get_band = prototype_procs->get_band;
+    if (src_procs->copy_rop != NULL)
+        dest_procs->copy_rop = prototype_procs->copy_rop;
+    if (src_procs->fill_path != NULL)
+        dest_procs->fill_path = prototype_procs->fill_path;
+    if (src_procs->stroke_path != NULL)
+        dest_procs->stroke_path = prototype_procs->stroke_path;
+    if (src_procs->fill_mask != NULL)
+        dest_procs->fill_mask = prototype_procs->fill_mask;
+    if (src_procs->fill_trapezoid != NULL)
+        dest_procs->fill_trapezoid = prototype_procs->fill_trapezoid;
+    if (src_procs->fill_parallelogram != NULL)
+        dest_procs->fill_parallelogram = prototype_procs->fill_parallelogram;
+    if (src_procs->fill_triangle != NULL)
+        dest_procs->fill_triangle = prototype_procs->fill_triangle;
+    if (src_procs->draw_thin_line != NULL)
+        dest_procs->draw_thin_line = prototype_procs->draw_thin_line;
+    if (src_procs->begin_image != NULL)
+        dest_procs->begin_image = prototype_procs->begin_image;
+    if (src_procs->image_data != NULL)
+        dest_procs->image_data = prototype_procs->image_data;
+    if (src_procs->end_image != NULL)
+        dest_procs->end_image = prototype_procs->end_image;
+    if (src_procs->strip_tile_rectangle != NULL)
+        dest_procs->strip_tile_rectangle = prototype_procs->strip_tile_rectangle;
+    if (src_procs->strip_copy_rop != NULL)
+        dest_procs->strip_copy_rop = prototype_procs->strip_copy_rop;
+    if (src_procs->get_clipping_box != NULL)
+        dest_procs->get_clipping_box = prototype_procs->get_clipping_box;
+    if (src_procs->begin_typed_image != NULL)
+        dest_procs->begin_typed_image = prototype_procs->begin_typed_image;
+    if (src_procs->get_bits_rectangle != NULL)
+        dest_procs->get_bits_rectangle = prototype_procs->get_bits_rectangle;
+    if (src_procs->map_color_rgb_alpha != NULL)
+        dest_procs->map_color_rgb_alpha = prototype_procs->map_color_rgb_alpha;
+    if (src_procs->create_compositor != NULL)
+        dest_procs->create_compositor = prototype_procs->create_compositor;
+    if (src_procs->get_hardware_params != NULL)
+        dest_procs->get_hardware_params = prototype_procs->get_hardware_params;
+    if (src_procs->text_begin != NULL)
+        dest_procs->text_begin = prototype_procs->text_begin;
+    if (src_procs->finish_copydevice != NULL)
+        dest_procs->finish_copydevice = prototype_procs->finish_copydevice;
+    if (src_procs->begin_transparency_group != NULL)
+        dest_procs->begin_transparency_group = prototype_procs->begin_transparency_group;
+    if (src_procs->end_transparency_group != NULL)
+        dest_procs->end_transparency_group = prototype_procs->end_transparency_group;
+    if (src_procs->discard_transparency_layer != NULL)
+        dest_procs->discard_transparency_layer = prototype_procs->discard_transparency_layer;
+    if (src_procs->get_color_mapping_procs != NULL)
+        dest_procs->get_color_mapping_procs = prototype_procs->get_color_mapping_procs;
+    if (src_procs->get_color_comp_index != NULL)
+        dest_procs->get_color_comp_index = prototype_procs->get_color_comp_index;
+    if (src_procs->encode_color != NULL)
+        dest_procs->encode_color = prototype_procs->encode_color;
+    if (src_procs->decode_color != NULL)
+        dest_procs->decode_color = prototype_procs->decode_color;
+    if (src_procs->pattern_manage != NULL)
+        dest_procs->pattern_manage = prototype_procs->pattern_manage;
+    if (src_procs->fill_rectangle_hl_color != NULL)
+        dest_procs->fill_rectangle_hl_color = prototype_procs->fill_rectangle_hl_color;
+    if (src_procs->include_color_space != NULL)
+        dest_procs->include_color_space = prototype_procs->include_color_space;
+    if (src_procs->fill_linear_color_scanline != NULL)
+        dest_procs->fill_linear_color_scanline = prototype_procs->fill_linear_color_scanline;
+    if (src_procs->fill_linear_color_trapezoid != NULL)
+        dest_procs->fill_linear_color_trapezoid = prototype_procs->fill_linear_color_trapezoid;
+    if (src_procs->fill_linear_color_triangle != NULL)
+        dest_procs->fill_linear_color_triangle = prototype_procs->fill_linear_color_triangle;
+    if (src_procs->update_spot_equivalent_colors != NULL)
+        dest_procs->update_spot_equivalent_colors = prototype_procs->update_spot_equivalent_colors;
+    if (src_procs->ret_devn_params != NULL)
+        dest_procs->ret_devn_params = prototype_procs->ret_devn_params;
+    if (src_procs->fillpage != NULL)
+        dest_procs->fillpage = prototype_procs->fillpage;
+    if (src_procs->push_transparency_state != NULL)
+        dest_procs->push_transparency_state = prototype_procs->push_transparency_state;
+    if (src_procs->pop_transparency_state != NULL)
+        dest_procs->pop_transparency_state = prototype_procs->pop_transparency_state;
+    if (src_procs->put_image != NULL)
+        dest_procs->put_image = prototype_procs->put_image;
+    if (src_procs->dev_spec_op != NULL)
+        dest_procs->dev_spec_op = prototype_procs->dev_spec_op;
+    if (src_procs->copy_planes != NULL)
+        dest_procs->copy_planes = prototype_procs->copy_planes;
+    if (src_procs->get_profile != NULL)
+        dest_procs->get_profile = prototype_procs->get_profile;
+    if (src_procs->set_graphics_type_tag != NULL)
+        dest_procs->set_graphics_type_tag = prototype_procs->set_graphics_type_tag;
+    if (src_procs->strip_copy_rop2 != NULL)
+        dest_procs->strip_copy_rop2 = prototype_procs->strip_copy_rop2;
+    if (src_procs->strip_tile_rect_devn != NULL)
+        dest_procs->strip_tile_rect_devn = prototype_procs->strip_tile_rect_devn;
+    if (src_procs->copy_alpha_hl_color != NULL)
+        dest_procs->copy_alpha_hl_color = prototype_procs->copy_alpha_hl_color;
+    if (src_procs->process_page != NULL)
+        dest_procs->process_page = prototype_procs->process_page;
+    return 0;
+}
+
+int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, unsigned int private_data_size)
+{
+    gx_device *child_dev;
+    void *psubclass_data;
+    gs_memory_struct_type_t *a_std;
+    int dynamic = dev_to_subclass->stype_is_dynamic;
+    char *ptr, *ptr1;
+
+    /* If this happens we are stuffed, as there is no way to get hold
+     * of the original device's stype structure, which means we cannot
+     * allocate a replacement structure. Abort if so.
+     */
+    if (!dev_to_subclass->stype)
+        return_error(gs_error_VMerror);
+
+    /* We make a 'stype' structure for our new device, and copy the old stype into it
+     * This means our new device will always have the 'stype_is_dynamic' flag set
+     */
+    a_std = (gs_memory_struct_type_t *)
+        gs_alloc_bytes_immovable(dev_to_subclass->memory->non_gc_memory, sizeof(*a_std),
+                                 "gs_device_subclass(stype)");
+    if (!a_std)
+        return_error(gs_error_VMerror);
+    *a_std = *dev_to_subclass->stype;
+    a_std->ssize = dev_to_subclass->params_size;
+
+    /* Allocate a device structure for the new child device */
+    child_dev = gs_alloc_struct_immovable(dev_to_subclass->memory, gx_device, a_std,
+                                        "gs_device_subclass(device)");
+    if (child_dev == 0) {
+        gs_free_const_object(dev_to_subclass->memory->non_gc_memory, a_std, "gs_device_subclass(stype)");
+        return_error(gs_error_VMerror);
+    }
+
+    /* Make sure all methods are filled in, note this won't work for a forwarding device
+     * so forwarding devices will have to be filled in before being subclassed. This doesn't fill
+     * in the fill_rectangle proc, that gets done in the ultimate device's open proc.
+     */
+    gx_device_fill_in_procs(dev_to_subclass);
+    memcpy(child_dev, dev_to_subclass, dev_to_subclass->stype->ssize);
+    child_dev->stype = a_std;
+    child_dev->stype_is_dynamic = 1;
+
+    psubclass_data = (void *)gs_alloc_bytes(dev_to_subclass->memory->non_gc_memory, private_data_size, "subclass memory for subclassing device");
+    if (psubclass_data == 0){
+        gs_free_const_object(dev_to_subclass->memory->non_gc_memory, a_std, "gs_device_subclass(stype)");
+        gs_free(dev_to_subclass->memory, child_dev, 1, dev_to_subclass->stype->ssize, "free subclass memory for subclassing device");
+        return_error(gs_error_VMerror);
+    }
+    memset(psubclass_data, 0x00, private_data_size);
+
+    if (dev_to_subclass->stype->ssize < new_prototype->params_size)
+        return_error(gs_error_VMerror);
+
+    gx_copy_device_procs(&dev_to_subclass->procs, &child_dev->procs, &new_prototype->procs);
+    dev_to_subclass->procs.fill_rectangle = new_prototype->procs.fill_rectangle;
+    dev_to_subclass->procs.copy_planes = new_prototype->procs.copy_planes;
+    dev_to_subclass->finalize = new_prototype->finalize;
+    dev_to_subclass->dname = new_prototype->dname;
+    dev_to_subclass->icc_struct = NULL;
+
+    /* In case the new device we're creating has already been initialised, copy
+     * its additional data.
+     */
+    ptr = ((char *)dev_to_subclass) + sizeof(gx_device);
+    ptr1 = ((char *)new_prototype) + sizeof(gx_device);
+    memcpy(ptr, ptr1, new_prototype->params_size - sizeof(gx_device));
+
+    /* If the original device's stype structure was dynamically allocated, we need
+     * to 'fixup' the contents, it's procs need to point to the new device's procs
+     * for instance.
+     */
+    if (dynamic) {
+        if (new_prototype->stype) {
+            a_std = (gs_memory_struct_type_t *)dev_to_subclass->stype;
+            *a_std = *new_prototype->stype;
+        } else {
+            gs_free_const_object(child_dev->memory->non_gc_memory, dev_to_subclass->stype,
+                             "unsubclass");
+            dev_to_subclass->stype = NULL;
+            dev_to_subclass->stype_is_dynamic = 0;
+        }
+    }
+
+    dev_to_subclass->subclass_data = psubclass_data;
+    dev_to_subclass->child = child_dev;
+    if (child_dev->parent) {
+        dev_to_subclass->parent = child_dev->parent;
+        child_dev->parent->child = dev_to_subclass;
+    }
+    child_dev->parent = dev_to_subclass;
+
+    return 0;
+}
+
+int gx_device_unsubclass(gx_device *dev)
+{
+    void *psubclass_data = dev->subclass_data;
+    gx_device *parent = dev->parent, *child = dev->child;
+    gs_memory_struct_type_t *a_std;
+    int dynamic = dev->stype_is_dynamic;
+
+    /* If ths device's stype is dynamically allocated, keep a copy of it
+     * in case we might need it.
+     */
+    if (dynamic) {
+        a_std = (gs_memory_struct_type_t *)dev->stype;
+        *a_std = *child->stype;
+    }
+
+    /* If ths device has any private storage, free it now */
+    if (psubclass_data)
+        gs_free_object(dev->memory->non_gc_memory, psubclass_data, "subclass memory for first-last page");
+
+    /* Copy the child device into ths device's memory */
+    memcpy(dev, child, child->stype->ssize);
+
+    /* How can we have a subclass device with no child ? Simples; when we hit the end of job
+     * restore, the devices are not freed in device chain order. To make sure we don't end up
+     * following stale poitners, when a device is freed we remov it from the chain and update
+     * any danlging poitners to NULL. When we later free the remaining devices its possible that
+     * their child pointer can then be NULL.
+     */
+    if (child) {
+        /* we cannot afford to free the child device if its stype is not dynamic because
+         * we can't 'null' the finalise routine, and we cannot permit the device to be finalised
+         * because we have copied it up one level, not discarded it.
+         * (this shouldn't happen! Child devices are always created with a dynamic stype)
+         * If this ever happens garbage collecton will eventually clean up the memory.
+         */
+        if (child->stype_is_dynamic) {
+            gs_memory_struct_type_t *b_std = (gs_memory_struct_type_t *)child->stype;
+            /* We definitley do *not* want to finalise the device, we just copied it up a level */
+            b_std->finalize = 0;
+            gs_free_object(dev->memory, child, "gx_unsubclass_device(device)");
+        }
+    }
+    if(dev->child)
+        dev->child->parent = dev;
+    dev->parent = parent;
+
+    /* If this device has a dynamic stype, we wnt to keep using it, but we copied
+     * the stype pointer from the child when we copied the rest of the device. So
+     * we update the stype pointer with the saved pointer to this device's stype.
+     */
+    if (dynamic) {
+        dev->stype = a_std;
+        dev->stype_is_dynamic = 1;
+    } else {
+        dev->stype_is_dynamic = 0;
+    }
+
+    return 0;
+}
+
+int gx_update_from_subclass(gx_device *dev)
+{
+    if (!dev->child)
+        return 0;
+
+    memcpy(&dev->color_info, &dev->child->color_info, sizeof(gx_device_color_info));
+    memcpy(&dev->cached_colors, &dev->child->cached_colors, sizeof(gx_device_cached_colors_t));
+    dev->max_fill_band = dev->child->max_fill_band;
+    dev->width = dev->child->width;
+    dev->height = dev->child->height;
+    dev->pad = dev->child->pad;
+    dev->log2_align_mod = dev->child->log2_align_mod;
+    dev->max_fill_band = dev->child->max_fill_band;
+    dev->is_planar = dev->child->is_planar;
+    dev->LeadingEdge = dev->child->LeadingEdge;
+    memcpy(&dev->ImagingBBox, &dev->child->ImagingBBox, sizeof(dev->child->ImagingBBox));
+    dev->ImagingBBox_set = dev->child->ImagingBBox_set;
+    memcpy(&dev->MediaSize, &dev->child->MediaSize, sizeof(dev->child->MediaSize));
+    memcpy(&dev->HWResolution, &dev->child->HWResolution, sizeof(dev->child->HWResolution));
+    memcpy(&dev->Margins, &dev->child->Margins, sizeof(dev->child->Margins));
+    memcpy(&dev->HWMargins, &dev->child->HWMargins, sizeof(dev->child->HWMargins));
+    dev->FirstPage = dev->child->FirstPage;
+    dev->LastPage = dev->child->LastPage;
+    dev->PageCount = dev->child->PageCount;
+    dev->ShowpageCount = dev->child->ShowpageCount;
+    dev->NumCopies = dev->child->NumCopies;
+    dev->NumCopies_set = dev->child->NumCopies_set;
+    dev->IgnoreNumCopies = dev->child->IgnoreNumCopies;
+    dev->UseCIEColor = dev->child->UseCIEColor;
+    dev->LockSafetyParams= dev->child->LockSafetyParams;
+    dev->band_offset_x = dev->child->band_offset_y;
+    dev->sgr = dev->child->sgr;
+    dev->MaxPatternBitmap = dev->child->MaxPatternBitmap;
+    dev->page_uses_transparency = dev->child->page_uses_transparency;
+    memcpy(&dev->space_params, &dev->child->space_params, sizeof(gdev_space_params));
+    dev->graphics_type_tag = dev->child->graphics_type_tag;
+
+    return 0;
+}
+
+int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
+    gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev)
+{
+    pdf14_clist_device *p14dev;
+    generic_subclass_data *psubclass_data;
+    int code = 0;
+
+    p14dev = (pdf14_clist_device *)dev;
+    psubclass_data = p14dev->target->subclass_data;
+
+    dev->procs.create_compositor = psubclass_data->saved_compositor_method;
+
+    if (gs_is_pdf14trans_compositor(pcte) != 0 && strncmp(dev->dname, "pdf14clist", 10) == 0) {
+        const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pcte;
+
+        switch (pdf14pct->params.pdf14_op) {
+            case PDF14_POP_DEVICE:
+                {
+                    pdf14_clist_device *p14dev = (pdf14_clist_device *)dev;
+                    gx_device *subclass_device;
+
+                    p14dev->target->color_info = p14dev->saved_target_color_info;
+                    if (p14dev->target->child)
+                        p14dev->target->child->color_info = p14dev->saved_target_color_info;
+
+                    p14dev->target->child->procs.encode_color = p14dev->saved_target_encode_color;
+                    p14dev->target->child->procs.decode_color = p14dev->saved_target_decode_color;
+                    p14dev->target->child->procs.get_color_mapping_procs = p14dev->saved_target_get_color_mapping_procs;
+                    p14dev->target->child->procs.get_color_comp_index = p14dev->saved_target_get_color_comp_index;
+
+                    pis->get_cmap_procs = p14dev->save_get_cmap_procs;
+                    gx_set_cmap_procs(pis, p14dev->target);
+
+                    subclass_device = p14dev->target;
+                    p14dev->target = p14dev->target->child;
+
+                    code = dev->procs.create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+
+                    p14dev->target = subclass_device;
+
+                    return code;
+                }
+                break;
+            default:
+                code = dev->procs.create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+                break;
+        }
+    } else {
+        code = dev->procs.create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+    }
+    dev->procs.create_compositor = gx_subclass_create_compositor;
+    return code;
 }

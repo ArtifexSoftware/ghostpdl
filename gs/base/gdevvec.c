@@ -33,6 +33,8 @@
 #include "gzcpath.h"
 #include "gxdevsop.h"
 
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
+
 /* Structure descriptors */
 public_st_device_vector();
 public_st_vector_image_enum();
@@ -341,6 +343,11 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
         (*dev_proc(vdev->bbox_device, open_device))
             ((gx_device *) vdev->bbox_device);
     }
+
+    code = install_internal_subclass_devices((gx_device **)&vdev, NULL);
+    if (code < 0)
+        return code;
+
     return 0;
 }
 
@@ -963,7 +970,7 @@ int gdev_vector_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "HighLevelDevice") == 0) {
         return param_write_bool(plist, "HighLevelDevice", &bool_true);
     }
-    return gs_error_undefined;
+    return gx_default_get_param(dev, Param, list);
 }
 
 /* Get parameters. */
@@ -998,7 +1005,6 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
     gs_param_name param_name;
     gs_param_string ofns;
     bool open = dev->is_open, HighLevelDevice;
-
 
     code = param_read_bool(plist, (param_name = "HighLevelDevice"), &HighLevelDevice);
     if (code < 0)

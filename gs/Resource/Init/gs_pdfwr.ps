@@ -986,7 +986,15 @@ currentdict /.pdf_hook_DSC_Creator undef
     /PDFSETTINGS where {
       pop /PDFSETTINGS load
     } {
-      currentdevice .devicename /ps2write eq { /PSL2Printer } { /default } ifelse
+      % We use the presence of the OPDFRead key as a proxy for a pdfwrite-family device
+      /ForOPDFRead /GetDeviceParam .special_op {
+        % Get rid of the OPDFRead key
+        exch pop
+        % and then check the value to see if its pdfwrite or ps2write
+        { /PSL2Printer } { /default } ifelse
+      } {
+        /default
+      } ifelse
     } ifelse
     .distillersettings exch get
     % Don't override parameters defined on the command line.
@@ -996,11 +1004,17 @@ currentdict /.pdf_hook_DSC_Creator undef
         systemdict 2 index known { pop pop } { def } ifelse
       } forall
     } repeat
-    currentdevice .devicename /pdfwrite eq {
-      systemdict /PDFX known systemdict /PDFA known or {
-      /DSCEncoding where {
-          /DSCEncoding get .make_DSC_translation_table
-          /DSCEncodingToUnicode exch def
+    % We use the presence of the OPDFRead key as a proxy for a pdfwrite-family device
+    /ForOPDFRead /GetDeviceParam .special_op {
+      % Get rid of the OPDFRead key
+      exch pop
+      % Then check to see if OPDFRead is true or not
+      not {
+        systemdict /PDFX known systemdict /PDFA known or {
+        /DSCEncoding where {
+            /DSCEncoding get .make_DSC_translation_table
+            /DSCEncodingToUnicode exch def
+          } if
         } if
       } if
     } if
@@ -1011,7 +1025,10 @@ currentdict /.pdf_hook_DSC_Creator undef
 
 2000 % priority
 { % Note, this may not work if the initial device is not pdfwrite
-  currentdevice .devicename dup /pdfwrite eq exch /ps2write eq or {
+  % We use the presence of the OPDFRead key as a proxy for a pdfwrite-family device
+  /ForOPDFRead /GetDeviceParam .special_op {
+    % Get rid of the OPDFRead key and value
+    pop pop
     % Inform the device with initial graphic state. See gdev_pdf_fill_path.
     newpath fill
   } if

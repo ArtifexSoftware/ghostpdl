@@ -24,6 +24,7 @@
 #include "gdevfax.h"
 
 #include "gstiffio.h"
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 
 /* ---------------- TIFF/fax output ---------------- */
 
@@ -99,7 +100,7 @@ tfax_open(gx_device * pdev)
     if (ppdev->OpenOutputFile)
         if ((code = gdev_prn_open_printer_seekable(pdev, 1, true)) < 0)
             return code;
-
+    code = install_internal_subclass_devices((gx_device **)&pdev, NULL);
     return code;
 }
 

@@ -29,19 +29,26 @@
 #include "gstrans.h"
 #include "gxdownscale.h"
 
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
+
 /*#define DEBUGGING_HACKS*/
 
 /* GC information */
 static
-ENUM_PTRS_WITH(device_printer_enum_ptrs, gx_device_printer *pdev)
+ENUM_PTRS_WITH(device_printer_enum_ptrs, gx_device_printer *pdev);
     if (PRINTER_IS_CLIST(pdev))
-        ENUM_PREFIX(st_device_clist, 0);
+        ENUM_PREFIX(st_device_clist, 2);
     else
-        ENUM_PREFIX(st_device_forward, 0);
+        ENUM_PREFIX(st_device_forward, 2);
+    break;
+case 0:ENUM_RETURN(gx_device_enum_ptr(pdev->parent));
+case 1:ENUM_RETURN(gx_device_enum_ptr(pdev->child));
 ENUM_PTRS_END
 static
 RELOC_PTRS_WITH(device_printer_reloc_ptrs, gx_device_printer *pdev)
 {
+    pdev->parent = gx_device_reloc_ptr(pdev->parent, gcst);
+    pdev->child = gx_device_reloc_ptr(pdev->child, gcst);
     if (PRINTER_IS_CLIST(pdev))
         RELOC_PREFIX(st_device_clist);
     else
@@ -76,17 +83,31 @@ static void prn_print_page_in_background(void *data);
 static void prn_finish_bg_print(gx_device_printer *ppdev);
 
 /* ------ Open/close ------ */
-
 /* Open a generic printer device. */
 /* Specific devices may wish to extend this. */
 int
 gdev_prn_open(gx_device * pdev)
 {
-    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+    gx_device_printer * ppdev;
     int code;
+    bool update_procs = false;
+
+    code = install_internal_subclass_devices(&pdev, &update_procs);
+    if (code < 0)
+        return code;
+
+    ppdev = (gx_device_printer *)pdev;
 
     ppdev->file = NULL;
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
+    if (update_procs) {
+        if (pdev->ObjectHandlerPushed) {
+            gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_obj_filter_device.procs);
+            pdev = pdev->parent;
+        }
+        if (pdev->PageHandlerPushed)
+            gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_flp_device.procs);
+    }
     if (code < 0)
         return code;
     if (ppdev->OpenOutputFile)
@@ -294,6 +315,8 @@ gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
         ppdev->buffer_space = 0;
         was_command_list = true;
 
+        gs_free_object(pcldev->memory->non_gc_memory, pcldev->cache_chunk, "free tile cache for clist");
+        pcldev->cache_chunk = 0;
         if (ppdev->bg_print.ocfile) {
             (void)ppdev->bg_print.oio_procs->fclose(ppdev->bg_print.ocfile, ppdev->bg_print.ocfname, true);
         }
@@ -672,7 +695,7 @@ gdev_prn_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "pageneutralcolor") == 0) {
         return param_write_bool(plist, "pageneutralcolor", &pageneutralcolor);
     }
-    return gs_error_undefined;
+    return gx_default_get_param(dev, Param, list);
 }
 
 /* Get parameters.  Printer devices add several more parameters */
@@ -1326,6 +1349,7 @@ gdev_prn_open_printer_seekable(gx_device *pdev, bool binary_mode,
         }
     }
     ppdev->file_is_new = true;
+
     return 0;
 }
 int

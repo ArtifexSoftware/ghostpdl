@@ -518,20 +518,22 @@ check_cmyk_color_model_comps(gx_device * dev)
         return 0;
 
     /* check the mapping */
-    if ( (pprocs = dev_proc(dev, get_color_mapping_procs)(dev)) == 0 ||
+    pprocs = get_color_mapping_procs_subclass(dev);
+
+    if ( pprocs == 0 ||
          (map_cmyk = pprocs->map_cmyk) == 0                            )
         return 0;
 
-    map_cmyk(dev, frac_14, frac_0, frac_0, frac_0, out);
+    map_cmyk_subclass(pprocs, dev, frac_14, frac_0, frac_0, frac_0, out);
     if (!check_single_comp(cyan_c, frac_14, ncomps, out))
         return 0;
-    map_cmyk(dev, frac_0, frac_14, frac_0, frac_0, out);
+    map_cmyk_subclass(pprocs, dev, frac_0, frac_14, frac_0, frac_0, out);
     if (!check_single_comp(magenta_c, frac_14, ncomps, out))
         return 0;
-    map_cmyk(dev, frac_0, frac_0, frac_14, frac_0, out);
+    map_cmyk_subclass(pprocs, dev, frac_0, frac_0, frac_14, frac_0, out);
     if (!check_single_comp(yellow_c, frac_14, ncomps, out))
         return false;
-    map_cmyk(dev, frac_0, frac_0, frac_0, frac_14, out);
+    map_cmyk_subclass(pprocs, dev, frac_0, frac_0, frac_0, frac_14, out);
     if (!check_single_comp(black_c, frac_14, ncomps, out))
         return 0;
 
@@ -582,17 +584,18 @@ check_rgb_color_model_comps(gx_device * dev)
         return 0;
 
     /* check the mapping */
-    if ( (pprocs = dev_proc(dev, get_color_mapping_procs)(dev)) == 0 ||
+    pprocs = get_color_mapping_procs_subclass(dev);
+    if ( pprocs == 0 ||
          (map_rgb = pprocs->map_rgb) == 0                            )
         return 0;
 
-    map_rgb(dev, NULL, frac_14, frac_0, frac_0, out);
+    map_rgb_subclass(pprocs, dev, NULL, frac_14, frac_0, frac_0, out);
     if (!check_single_comp(red_c, frac_14, ncomps, out))
         return 0;
-    map_rgb(dev, NULL, frac_0, frac_14, frac_0, out);
+    map_rgb_subclass(pprocs, dev, NULL, frac_0, frac_14, frac_0, out);
     if (!check_single_comp(green_c, frac_14, ncomps, out))
         return 0;
-    map_rgb(dev, NULL, frac_0, frac_0, frac_14, out);
+    map_rgb_subclass(pprocs, dev, NULL, frac_0, frac_0, frac_14, out);
     if (!check_single_comp(blue_c, frac_14, ncomps, out))
         return 0;
 
@@ -654,6 +657,9 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_state * pgs)
     gsicc_rendering_param_t        render_cond;   
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    if (code < 0)
+        return code;
+
     gsicc_extract_profile(dev->graphics_type_tag, dev_profile, &(output_profile),
                           &render_cond);
 

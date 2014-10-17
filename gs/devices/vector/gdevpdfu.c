@@ -1162,7 +1162,7 @@ pdf_cancel_resource(gx_device_pdf * pdev, pdf_resource_t *pres, pdf_resource_typ
         pres->object->written = true;
         if (rtype == resourceXObject || rtype == resourceCharProc || rtype == resourceOther
             || rtype >= NUM_RESOURCE_TYPES) {
-            int code = cos_stream_release_pieces((cos_stream_t *)pres->object);
+            int code = cos_stream_release_pieces(pdev, (cos_stream_t *)pres->object);
 
             if (code < 0)
                 return code;
@@ -2232,7 +2232,7 @@ pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
                 cos_dict_alloc(pdev, "pdf_put_image_filters(decode_parms)");
             if (decode_parms == 0)
                 return_error(gs_error_VMerror);
-            CHECK(cos_param_list_writer_init(&writer, decode_parms, 0));
+            CHECK(cos_param_list_writer_init(pdev, &writer, decode_parms, 0));
             /*
              * If EndOfBlock is true, we mustn't write a Rows value.
              * This is a hack....
@@ -2568,7 +2568,7 @@ pdf_function_aux(gx_device_pdf *pdev, const gs_function_t *pfn,
             return code;
         }
     }
-    code = cos_param_list_writer_init(&rlist, pcd, PRINT_BINARY_OK);
+    code = cos_param_list_writer_init(pdev, &rlist, pcd, PRINT_BINARY_OK);
     if (code < 0)
         return code;
     return gs_function_get_params(pfn, (gs_param_list *)&rlist);
@@ -2586,6 +2586,9 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn, cos_value_t *pvalue)
 
     if (code < 0)
         return code;
+    if (pres->object->md5_valid)
+        pres->object->md5_valid = 0;
+
     code = pdf_substitute_resource(pdev, &pres, resourceFunction, functions_equal, false);
     if (code < 0)
         return code;

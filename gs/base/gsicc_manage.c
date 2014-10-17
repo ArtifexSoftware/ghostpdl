@@ -1605,6 +1605,13 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
     stream *str;
     int code;
 
+    /* This is slightly silly, we have a device method for 'get_profile' we really ought to
+     * have one for 'set_profile' as well. In its absence, make sure we are setting the profile
+     * of the bootm level device.
+     */
+    while(pdev->child)
+        pdev = pdev->child;
+
     /* Check if device has a profile for this slot. Note that we already
        decremented for any profile that we might be replacing
        in gsicc_init_device_profile_struct */

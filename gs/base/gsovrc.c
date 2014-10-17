@@ -786,29 +786,30 @@ update_overprint_params(
         gx_color_index                  drawn_comps = 0;
         static const frac               frac_13 = float2frac(1.0 / 3.0);
 
-        if ((pprocs = dev_proc(opdev, get_color_mapping_procs)(dev)) == 0 ||
+        pprocs = get_color_mapping_procs_subclass(dev);
+        if (pprocs == 0 ||
             pprocs->map_gray == 0                                         ||
             pprocs->map_rgb == 0                                          ||
             pprocs->map_cmyk == 0                                           )
             return_error(gs_error_unknownerror);
 
-        pprocs->map_gray(dev, frac_13, cvals);
+        map_gray_subclass(pprocs, dev, frac_13, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
 
-        pprocs->map_rgb(dev, 0, frac_13, frac_0, frac_0, cvals);
+        map_rgb_subclass(pprocs, dev, 0, frac_13, frac_0, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        pprocs->map_rgb(dev, 0, frac_0, frac_13, frac_0, cvals);
+        map_rgb_subclass(pprocs, dev, 0, frac_0, frac_13, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        pprocs->map_rgb(dev, 0, frac_0, frac_0, frac_13, cvals);
+        map_rgb_subclass(pprocs, dev, 0, frac_0, frac_0, frac_13, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
 
-        pprocs->map_cmyk(dev, frac_13, frac_0, frac_0, frac_0, cvals);
+        map_cmyk_subclass(pprocs, dev, frac_13, frac_0, frac_0, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        pprocs->map_cmyk(dev, frac_0, frac_13, frac_0, frac_0, cvals);
+        map_cmyk_subclass(pprocs, dev, frac_0, frac_13, frac_0, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        pprocs->map_cmyk(dev, frac_0, frac_0, frac_13, frac_0, cvals);
+        map_cmyk_subclass(pprocs, dev, frac_0, frac_0, frac_13, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        pprocs->map_cmyk(dev, frac_0, frac_0, frac_0, frac_13, cvals);
+        map_cmyk_subclass(pprocs, dev, frac_0, frac_0, frac_0, frac_13, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
 
         opdev->drawn_comps = drawn_comps;
@@ -1016,8 +1017,6 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
     int                     k,j;
     gs_memory_t *           mem = dev->memory;
     gx_color_index          comps = opdev->drawn_comps;
-    gx_color_index          mask;
-    int                     shift;
     byte                    *curr_data = (byte *) data + data_x;
     int                     row, offset;
 
@@ -1033,8 +1032,6 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
 
         fit_fill(tdev, x, y, w, h);
         byte_depth = depth / num_comps;
-        mask = ((gx_color_index)1 << byte_depth) - 1;
-        shift = 16 - byte_depth;
 
         /* allocate a buffer for the returned data */
         raster = bitmap_raster(w * byte_depth);

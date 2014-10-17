@@ -82,7 +82,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     bool graydetection = false;
     bool usefastcolor = false;  /* set for unmanaged color */
     bool sim_overprint = false;  /* By default do not simulate overprinting */
-    bool prebandthreshold = true;
+    bool prebandthreshold = true, temp_bool = false;
 
     if(strcmp(Param, "OutputDevice") == 0){
         gs_param_string dns;
@@ -413,6 +413,28 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "TextKPreserve") == 0) {
         return param_write_int(plist,"TextKPreserve", (const int *) &(blackpreserve[3]));
     }
+    if (strcmp(Param, "FirstPage") == 0) {
+        return param_write_int(plist, "FirstPage", &dev->FirstPage);
+    }
+    if (strcmp(Param, "LastPage") == 0) {
+        return param_write_int(plist, "LastPage", &dev->LastPage);
+    }
+    if (strcmp(Param, "DisablePageHandler") == 0) {
+        temp_bool = dev->DisablePageHandler;
+        return param_write_bool(plist, "DisablePageHandler", &temp_bool);
+    }
+    if (strcmp(Param, "FILTERIMAGE") == 0) {
+        temp_bool = dev->ObjectFilter & FILTERIMAGE;
+        return param_write_bool(plist, "FILTERIMAGE", &temp_bool);
+    }
+    if (strcmp(Param, "FILTERTEXT") == 0) {
+        temp_bool = dev->ObjectFilter & FILTERTEXT;
+        return param_write_bool(plist, "FILTERTEXT", &temp_bool);
+    }
+    if (strcmp(Param, "FILTERVECTOR") == 0) {
+        temp_bool = dev->ObjectFilter & FILTERVECTOR;
+        return param_write_bool(plist, "FILTERVECTOR", &temp_bool);
+    }
 
     return gs_error_undefined;
 }
@@ -435,7 +457,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     bool graydetection = false;
     bool usefastcolor = false;  /* set for unmanaged color */
     bool sim_overprint = false;  /* By default do not simulate overprinting */
-    bool prebandthreshold = true;
+    bool prebandthreshold = true, temp_bool;
     int k;
     gs_param_float_array msa, ibba, hwra, ma;
     gs_param_string_array scna;
@@ -634,6 +656,25 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         code = param_write_int(plist, "LeadingEdge", &leadingedge);
     }
     if (code < 0)
+        return code;
+
+    if ((code = param_write_int(plist, "FirstPage", &dev->FirstPage)) < 0)
+        return code;
+    if ((code = param_write_int(plist, "LastPage", &dev->LastPage)) < 0)
+        return code;
+
+    temp_bool = dev->DisablePageHandler;
+    if ((code = param_write_bool(plist, "DisablePageHandler", &temp_bool)) < 0)
+        return code;
+
+    temp_bool = dev->ObjectFilter & FILTERIMAGE;
+    if ((code = param_write_bool(plist, "FILTERIMAGE", &temp_bool)) < 0)
+        return code;
+    temp_bool = dev->ObjectFilter & FILTERTEXT;
+    if ((code = param_write_bool(plist, "FILTERTEXT", &temp_bool)) < 0)
+        return code;
+    temp_bool = dev->ObjectFilter & FILTERVECTOR;
+    if ((code = param_write_bool(plist, "FILTERVECTOR", &temp_bool)) < 0)
         return code;
 
     /* Fill in color information. */
@@ -1246,6 +1287,7 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     bool usefastcolor = false;
     bool sim_overprint = false;
     bool prebandthreshold = false;
+    bool temp_bool;
     int  profile_types[NUM_DEVICE_PROFILES] = {gsDEFAULTPROFILE,
                                                gsGRAPHICPROFILE,
                                                gsIMAGEPROFILE,
@@ -1697,6 +1739,50 @@ label:\
             code = param_check_bytes(plist, "HWColorMap", 0, 0, false);
         if (code < 0)
             ecode = code;
+    }
+
+    code = param_read_int(plist, "FirstPage", &dev->FirstPage);
+    if (code < 0)
+        ecode = code;
+
+    code = param_read_int(plist,  "LastPage", &dev->LastPage);
+    if (code < 0)
+        ecode = code;
+
+    code = param_read_bool(plist, "DisablePageHandler", &temp_bool);
+    if (code < 0)
+        ecode = code;
+    if (code == 0)
+        dev->DisablePageHandler = temp_bool;
+
+    code = param_read_bool(plist, "FILTERIMAGE", &temp_bool);
+    if (code < 0)
+        ecode = code;
+    if (code == 0) {
+        if (temp_bool)
+            dev->ObjectFilter |= FILTERIMAGE;
+        else
+            dev->ObjectFilter &= ~FILTERIMAGE;
+    }
+
+    code = param_read_bool(plist, "FILTERTEXT", &temp_bool);
+    if (code < 0)
+        ecode = code;
+    if (code == 0) {
+        if (temp_bool)
+            dev->ObjectFilter |= FILTERTEXT;
+        else
+            dev->ObjectFilter &= ~FILTERTEXT;
+    }
+
+    code = param_read_bool(plist, "FILTERVECTOR", &temp_bool);
+    if (code < 0)
+        ecode = code;
+    if (code == 0) {
+        if (temp_bool)
+            dev->ObjectFilter |= FILTERVECTOR;
+        else
+            dev->ObjectFilter &= ~FILTERVECTOR;
     }
 
     /* We must 'commit', in order to detect unknown parameters, */

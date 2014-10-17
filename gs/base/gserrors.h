@@ -106,7 +106,14 @@ enum gs_error_type {
  * This allows Window versions of Ghostscript to pause until
  * the message can be read.
  */
-    gs_error_Info = -110
+    gs_error_Info = -110,
+
+/* A special 'error', like reamp color above. This is used by a subclassing
+ * device to indicate that it has fully processed a device method, and parent
+ * subclasses should not perform any further action. Currently this is limited
+ * to compositor creation.
+ */
+    gs_error_handled = -111
 };
 
 /* We do provide a typedef type for external API use */

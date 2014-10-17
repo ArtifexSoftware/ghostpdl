@@ -612,7 +612,7 @@ rtlbasec_   = $(PCLOBJ)pcbiptrn.$(OBJ) $(PCLOBJ)pccid.$(OBJ)    \
               $(PCLOBJ)pcfrgrnd.$(OBJ) $(PCLOBJ)pcht.$(OBJ)     \
               $(PCLOBJ)pcident.$(OBJ) $(PCLOBJ)pcindxed.$(OBJ)  \
               $(PCLOBJ)pclookup.$(OBJ) $(PCLOBJ)pcmtx3.$(OBJ)   \
-              $(PCLOBJ)pcpalet.$(OBJ) $(PCLOBJ)pcpatrn.$(OBJ)   \
+              $(PCLOBJ)pcpalet.$(OBJ)  $(PCLOBJ)pcpatrn.$(OBJ)   \
               $(PCLOBJ)pcpatxfm.$(OBJ) $(PCLOBJ)pcuptrn.$(OBJ)  \
               $(PCLOBJ)pcwhtidx.$(OBJ) $(PCLOBJ)rtgmode.$(OBJ)  \
               $(PCLOBJ)rtrstcmp.$(OBJ)

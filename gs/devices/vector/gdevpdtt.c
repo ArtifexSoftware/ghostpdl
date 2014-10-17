@@ -685,9 +685,8 @@ pdf_locate_font_cache_elem(gx_device_pdf *pdev, gs_font *font)
 }
 
 static void
-pdf_remove_font_cache_elem(pdf_font_cache_elem_t *e0)
+pdf_remove_font_cache_elem(gx_device_pdf *pdev, pdf_font_cache_elem_t *e0)
 {
-    gx_device_pdf *pdev = e0->pdev;
     pdf_font_cache_elem_t **e = &pdev->font_cache;
 
     for (; *e != 0; e = &(*e)->next)
@@ -708,7 +707,6 @@ pdf_remove_font_cache_elem(pdf_font_cache_elem_t *e0)
             e0->next = 0;
             e0->glyph_usage = 0;
             e0->real_widths = 0;
-            e0->pdev = 0;
             gs_free_object(pdev->pdf_memory, e0,
                                 "pdf_remove_font_cache_elem");
             return;
@@ -793,7 +791,7 @@ pdf_free_font_cache(gx_device_pdf *pdev)
 
     while (e != NULL) {
         next = e->next;
-        pdf_remove_font_cache_elem(e);
+        pdf_remove_font_cache_elem(pdev, e);
         e = next;
     }
     pdev->font_cache = NULL;
@@ -872,7 +870,6 @@ pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font,
         e->num_chars = 0;
         e->glyph_usage = NULL;
         e->real_widths = NULL;
-        e->pdev = pdev;
         e->next = pdev->font_cache;
         pdev->font_cache = e;
         return 0;

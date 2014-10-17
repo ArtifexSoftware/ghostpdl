@@ -30,20 +30,38 @@
 #include "strmio.h"
 
 #include "gstiffio.h"
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 
 int
 tiff_open(gx_device *pdev)
 {
-    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+    gx_device_printer *ppdev = (gx_device_printer *)pdev;
     int code;
+    bool update_procs = false;
 
     /* Use our own warning and error message handlers in libtiff */
     tiff_set_handlers();
+
+    code = install_internal_subclass_devices((gx_device **)&pdev, &update_procs);
+    if (code < 0)
+        return code;
+    /* If we've been subclassed, find the terminal device */
+    while(pdev->child)
+        pdev = pdev->child;
+    ppdev = (gx_device_printer *)pdev;
 
     ppdev->file = NULL;
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
     if (code < 0)
         return code;
+    if (update_procs) {
+        if (pdev->ObjectHandlerPushed) {
+            gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_obj_filter_device.procs);
+            pdev = pdev->parent;
+        }
+        if (pdev->PageHandlerPushed)
+            gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_flp_device.procs);
+    }
     if (ppdev->OpenOutputFile)
         code = gdev_prn_open_printer_seekable(pdev, 1, true);
     return code;

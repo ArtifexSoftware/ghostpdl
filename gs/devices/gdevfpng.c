@@ -52,7 +52,7 @@ fpng_get_param(gx_device *dev, char *Param, void *list)
             pdev->downscale_factor = 1;
         return param_write_int(plist, "DownScaleFactor", &pdev->downscale_factor);
     }
-    return gs_error_undefined;
+    return gdev_prn_get_param(dev, Param, list);
 }
 
 static int

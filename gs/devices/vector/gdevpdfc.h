@@ -36,7 +36,7 @@ typedef enum {
 /*
  * Finish creating a CIE-based color space (Calxxx or Lab.)
  */
-int pdf_finish_cie_space(cos_array_t *pca, cos_dict_t *pcd,
+int pdf_finish_cie_space(gx_device_pdf *pdev, cos_array_t *pca, cos_dict_t *pcd,
                          const gs_cie_common *pciec);
 
 /* ------ Exported by gdevpdfk.c for gdevpdfc.c ------ */
@@ -60,7 +60,7 @@ int pdf_convert_cie_space(gx_device_pdf *pdev, cos_array_t *pca,
 /*
  * Create a Lab color space object.
  */
-int pdf_put_lab_color_space(cos_array_t *pca, cos_dict_t *pcd,
+int pdf_put_lab_color_space(gx_device_pdf *pdev, cos_array_t *pca, cos_dict_t *pcd,
                             const gs_range ranges[3] /* only [1] and [2] used */);
 
 #endif /* gdevpdfc_INCLUDED */

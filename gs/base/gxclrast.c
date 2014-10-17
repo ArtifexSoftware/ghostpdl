@@ -1118,7 +1118,7 @@ in:                             /* Initialize for a new page. */
                 state.tile_index =
                     ((op & 0xf) << 8) + *cbp++;
               sti:state_slot =
-                    (tile_slot *) (cdev->chunk.data +
+                    (tile_slot *) (cdev->cache_chunk->data +
                                  cdev->tile_table[state.tile_index].offset);
                 if_debug2m('L', mem, " index=%u offset=%lu\n",
                            state.tile_index,
@@ -2399,7 +2399,7 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
     if_debug2m('L', mem, " index=%d offset=%lu\n", pcls->tile_index, offset);
     pcls->tile_index = index;
     cdev->tile_table[pcls->tile_index].offset = offset;
-    slot = (tile_slot *)(cdev->chunk.data + offset);
+    slot = (tile_slot *)(cdev->cache_chunk->data + offset);
     *pslot = slot;
     *slot = *bits;
     tile->data = data = (byte *)(slot + 1);

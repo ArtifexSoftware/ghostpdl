@@ -5462,6 +5462,10 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
                                  target->space_params.MaxBitmap;
     bool use_pdf14_accum = false;
 
+    /* Guard against later seg faults, this should not be possible */
+    if (target == NULL)
+        return gs_throw_code(gs_error_Fatal);
+
     /* If the device is not a printer class device, it won't support saved-pages */
     /* and so we may need to make a clist device in order to prevent very large  */
     /* or high resolution pages from having allocation problems.                 */
@@ -5600,6 +5604,9 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
         max_bitmap = max(target->space_params.MaxBitmap, target->space_params.BufferSpace);
         new_target->space_params.BufferSpace = max_bitmap;
 
+        new_target->PageHandlerPushed = true;
+        new_target->ObjectHandlerPushed = true;
+
         if ((code = gdev_prn_open(new_target)) < 0 ||
              !PRINTER_IS_CLIST((gx_device_printer *)new_target)) {
             gs_free_object(mem->stable_memory, new_target, "pdf14-accum");
@@ -5624,7 +5631,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
 
 no_clist_accum:
         /* FIXME: We allocated a really small p14dev, but that won't work */
-    return gs_error_Fatal;		/* punt for now */
+    return gs_throw_code(gs_error_Fatal); /* punt for now */
 }
 
 /*
@@ -6361,6 +6368,8 @@ send_pdf14trans(gs_imager_state	* pis, gx_device * dev,
     if (code < 0)
         return code;
     code = dev_proc(dev, create_compositor) (dev, pcdev, pct, pis, mem, NULL);
+    if (code == gs_error_handled)
+        code = 0;
 
     gs_free_object(pis->memory, pct, "send_pdf14trans");
 
@@ -8248,12 +8257,17 @@ pdf14_cmykspot_get_color_comp_index(gx_device * dev, const char * pname,
                                 int name_size, int component_type)
 {
     pdf14_device * pdev = (pdf14_device *) dev;
-    gx_device * tdev = pdev->target;
+    gx_device *tdev = pdev->target;
     gs_devn_params * pdevn_params = &pdev->devn_params;
     gs_separations * pseparations = &pdevn_params->separations;
     int comp_index;
-    dev_proc_get_color_comp_index(*target_get_color_comp_index) =
-                                        dev_proc(tdev, get_color_comp_index);
+    dev_proc_get_color_comp_index(*target_get_color_comp_index);
+
+    while (tdev->child) {
+        tdev = tdev->child;
+    }
+
+    target_get_color_comp_index = dev_proc(tdev, get_color_comp_index);
 
     /* The pdf14_clist_create_compositor may have set the color procs.
        We need the real target procs */

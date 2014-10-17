@@ -511,6 +511,10 @@ psdf_create_compositor(
     if (gs_is_overprint_compositor(pct)) {
         *pcdev = dev;
         return 0;
-    } else
-        return gx_default_create_compositor(dev, pcdev, pct, pis, mem, cdev);
+    } else {
+        if (dev->parent)
+            return gx_default_create_compositor(dev->parent, pcdev, pct, pis, mem, cdev);
+        else
+            return gx_default_create_compositor(dev, pcdev, pct, pis, mem, cdev);
+    }
 }

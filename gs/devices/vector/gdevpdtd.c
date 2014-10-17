@@ -280,7 +280,7 @@ int pdf_font_descriptor_free(gx_device_pdf *pdev, pdf_resource_t *pres)
         pfd->base_font = 0;
     }
     if (pres->object) {
-        gs_free_object(cos_object_memory(pres->object), pres->object, "free FontDescriptor object");
+        gs_free_object(pdev->pdf_memory, pres->object, "free FontDescriptor object");
         pres->object = NULL;
     }
     return 0;

@@ -731,6 +731,9 @@ typedef struct gdev_space_params_s {
         rc_header rc;			/* reference count from gstates */\
                                         /* and targets, +1 if retained */\
         bool retained;			/* true if retained */\
+        gx_device *parent;\
+        gx_device *child;\
+        void *subclass_data;    /* Must be immovable, non-GC memory, used to store subclass data */\
         bool is_open;			/* true if device has been opened */\
         int max_fill_band;		/* limit on band size for fill, */\
                                         /* must be 0 or a power of 2 */\
@@ -755,6 +758,12 @@ typedef struct gdev_space_params_s {
                                         /* in units given by MarginsHWResolution */\
         float HWMargins[4];		/* margins around imageable area, */\
                                         /* in default user units ("points") */\
+        int FirstPage;\
+        int LastPage;\
+        bool PageHandlerPushed;    /* Handles FirstPage and LastPage operations */\
+        bool DisablePageHandler;   /* Can be set by the interpreter if it will process FirstPage and LastPage itself */\
+        int ObjectFilter;          /* Bit field for which object filters to apply */\
+        bool ObjectHandlerPushed;  /* Handles filtering of objects to devices */\
         long PageCount;			/* number of pages written */\
         long ShowpageCount;		/* number of calls on showpage */\
         int NumCopies;\
@@ -826,6 +835,15 @@ typedef struct gdev_space_params_s {
   if ( dev_proc(dev, p) == 0 ) set_dev_proc(dev, p, dproc)
 #define assign_dev_procs(todev, fromdev)\
   ((todev)->procs = (fromdev)->procs)
+
+/* The bit fields used to filter objects out. If any bit field is set
+ * then objects of that type will not be rendered/output.
+ */
+typedef enum FILTER_FLAGS {
+    FILTERIMAGE = 1,
+    FILTERTEXT = 2,
+    FILTERVECTOR = 4
+} OBJECT_FILTER_FLAGS;
 
 /* ---------------- Device procedures ---------------- */
 
@@ -1175,7 +1193,7 @@ typedef struct gs_param_list_s gs_param_list;
 
                 /* Added in release 5.24 */
 
-     /* ... text_begin ... see gxtext.h for definition */
+     /* ... text_begin ... see gstext.h for definition */
 
                 /* Added in release 6.23 */
 
@@ -1691,8 +1709,8 @@ struct_proc_finalize(gx_device_finalize);	/* public for subclasses */
 /* gx_device can have subclasses. */
 #define public_st_device()	/* in gsdevice.c */\
   gs_public_st_complex_only(st_device, gx_device, "gx_device",\
-    0, gs_no_struct_enum_ptrs, gs_no_struct_reloc_ptrs, gx_device_finalize)
-#define st_device_max_ptrs 0
+    0, device_enum_ptrs, device_reloc_ptrs, gx_device_finalize)
+#define st_device_max_ptrs 2
 
 /* Enumerate or relocate a pointer to a device. */
 /* These take the containing space into account properly. */
@@ -1725,6 +1743,63 @@ extern_st(st_device_forward);
     "gx_device_forward", 0, device_forward_enum_ptrs,\
     device_forward_reloc_ptrs, gx_device_finalize)
 #define st_device_forward_max_ptrs (st_device_max_ptrs + 1)
+
+/* The color mapping procs were used in a way which defeats a 'pipeline'
+ * approach to devices. Certain graphics library routines (eg images)
+ * called the color mapping procs *directly* from the device procs of the
+ * current (ie terminal) device. This prevented any pipeline approach from
+ * working as earlier devices in the chain wouldn't see the call. In particular
+ * this prevented the use of such a device to do 'monochrome mode' in PCL
+ * (see pcpalet.c, pcl_update_mono). This macro walks back up the pipeline
+ * and retrieves the uppermost device color_mapping procs.
+ */
+static inline
+gx_cm_color_map_procs *get_color_mapping_procs_subclass(const gx_device *dev)
+{
+    if (dev == NULL)
+        return NULL;
+    while(dev->parent)
+    {
+        dev = dev->parent;
+    }
+    return (gx_cm_color_map_procs *)dev_proc(dev, get_color_mapping_procs)(dev);
+}
+
+static inline
+void map_rgb_subclass(const gx_cm_color_map_procs *procs, gx_device *dev, const gs_imager_state *pis, frac r, frac g, frac b, frac out[])
+{
+    if (dev == NULL)
+        return;
+    while(dev->parent)
+    {
+        dev = dev->parent;
+    }
+    procs->map_rgb(dev, pis, r, g, b, out);
+}
+
+static inline
+void map_gray_subclass(const gx_cm_color_map_procs *procs, gx_device *dev, frac gray, frac out[])
+{
+    if (dev == NULL)
+        return;
+    while(dev->parent)
+    {
+        dev = dev->parent;
+    }
+    procs->map_gray(dev, gray, out);
+}
+
+static inline
+void map_cmyk_subclass(const gx_cm_color_map_procs *procs, gx_device *dev, frac c, frac m, frac y, frac k, frac out[])
+{
+    if (dev == NULL)
+        return;
+    while(dev->parent)
+    {
+        dev = dev->parent;
+    }
+    procs->map_cmyk(dev, c, m, y, k, out);
+}
 
 /* A null device.  This is used to temporarily disable output. */
 #ifndef gx_device_null_DEFINED

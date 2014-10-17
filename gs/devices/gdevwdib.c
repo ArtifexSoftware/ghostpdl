@@ -19,6 +19,7 @@
 #include "gxdevmem.h"
 #include "gsdll.h"
 #include "gsdllwin.h"
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 
 #ifdef __WIN32__
 #  define USE_SEGMENTS 0
@@ -142,6 +143,7 @@ win_dib_open(gx_device * dev)
                         (dev->width & 0xffff) +
                         ((ulong) (dev->height & 0xffff) << 16));
     }
+    code = install_internal_subclass_devices((gx_device **)&dev, NULL);
     return code;
 }
 

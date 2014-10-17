@@ -114,7 +114,7 @@ struct otype_s {\
     long id;\
     etype *elements;\
     cos_stream_piece_t *pieces;\
-    gx_device_pdf *pdev;\
+    gs_memory_t *mem;\
     pdf_resource_t *pres;	/* only for BP/EP XObjects */\
     byte is_open;		/* see above */\
     byte is_graphics;		/* see above */\
@@ -131,9 +131,9 @@ struct otype_s {\
 }
 cos_object_struct(cos_object_s, cos_element_t);
 #define private_st_cos_object()	/* in gdevpdfo.c */\
-  gs_private_st_ptrs5(st_cos_object, cos_object_t, "cos_object_t",\
+  gs_private_st_ptrs4(st_cos_object, cos_object_t, "cos_object_t",\
     cos_object_enum_ptrs, cos_object_reloc_ptrs, elements, pieces,\
-    pdev, pres, input_strm)
+    pres, input_strm)
 extern const cos_object_procs_t cos_generic_procs;
 #define cos_type_generic (&cos_generic_procs)
 
@@ -262,7 +262,7 @@ int cos_dict_put_c_key_string(cos_dict_t *, const char *, const byte *, uint);
 int cos_dict_put_c_key_int(cos_dict_t *, const char *, int);
 int cos_dict_put_c_key_bool(cos_dict_t *pcd, const char *key, bool value);
 int cos_dict_put_c_key_real(cos_dict_t *, const char *, double);
-int cos_dict_put_c_key_floats(cos_dict_t *, const char *, const float *, uint);
+int cos_dict_put_c_key_floats(gx_device_pdf *pdev, cos_dict_t *, const char *, const float *, uint);
 int cos_dict_put_c_key_object(cos_dict_t *, const char *, cos_object_t *);
 int cos_dict_put_string(cos_dict_t *, const byte *, uint, const byte *, uint);
 int cos_dict_put_string_copy(cos_dict_t *pcd, const char *key, const char *value);
@@ -270,10 +270,10 @@ int cos_dict_put_c_strings(cos_dict_t *, const char *, const char *);
 /* move all the elements from one dict to another */
 int cos_dict_move_all(cos_dict_t *, cos_dict_t *);
     /* stream */
-int cos_stream_add(cos_stream_t *, uint);
-int cos_stream_add_bytes(cos_stream_t *, const byte *, uint);
-int cos_stream_add_stream_contents(cos_stream_t *, stream *);
-int cos_stream_release_pieces(cos_stream_t *pcs);
+int cos_stream_add(gx_device_pdf *pdev, cos_stream_t *, uint);
+int cos_stream_add_bytes(gx_device_pdf *pdev, cos_stream_t *, const byte *, uint);
+int cos_stream_add_stream_contents(gx_device_pdf *pdev, cos_stream_t *, stream *);
+int cos_stream_release_pieces(gx_device_pdf *pdev, cos_stream_t *pcs);
 cos_dict_t *cos_stream_dict(cos_stream_t *);
 
 /* Remove an element from a cos_dict */
@@ -310,8 +310,9 @@ typedef struct cos_param_list_writer_s {
     gs_param_list_common;
     cos_dict_t *pcd;
     int print_ok;
+    gx_device_pdf *pdev;
 } cos_param_list_writer_t;
-int cos_param_list_writer_init(cos_param_list_writer_t *, cos_dict_t *,
+int cos_param_list_writer_init(gx_device_pdf *pdev, cos_param_list_writer_t *, cos_dict_t *,
                                int print_ok);
 
 /* Create a stream that writes into a Cos stream. */

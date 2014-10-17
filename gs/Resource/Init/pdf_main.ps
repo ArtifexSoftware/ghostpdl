@@ -184,6 +184,7 @@ currentdict /runpdfstring .undef
 } bind def
 
 /runpdfpagerange {	% - runpdfpagerange <firstpage#> <lastpage#>
+   <</DisablePageHandler true>> setpagedevice
    /PortfolioPage where {
      pop
      PortfolioPage cvi dup pdfpagecount add                  % a b+1
@@ -192,8 +193,8 @@ currentdict /runpdfstring .undef
      dup 3 index exch cvs pop                                % a b+1 /P (b+1)
      store
      1 sub                                                   % a b
-     /FirstPage where { pop FirstPage } { 1 } ifelse
-     /LastPage  where { pop LastPage  } {2000000000} ifelse  % a b fp lp
+     /FirstPage where { pop FirstPage <</DisablePageHandler true>> setpagedevice} { 1 } ifelse
+     /LastPage  where { pop LastPage  <</DisablePageHandler true>> setpagedevice} {2000000000} ifelse  % a b fp lp
      2 index 2 index lt { % b < fp
        1e10
      } {
@@ -223,7 +224,8 @@ currentdict /runpdfstring .undef
        } ifelse
      } if
    } {
-     /FirstPage where { 
+     /FirstPage where {
+       <</DisablePageHandler true>> setpagedevice
        pop FirstPage dup pdfpagecount gt {
          (\nRequested FirstPage is greater than the number of pages in the file: ) print
           pdfpagecount = flush
@@ -231,11 +233,11 @@ currentdict /runpdfstring .undef
      } {
         1
      } ifelse
-     /LastPage where { pop LastPage pdfpagecount .min } { pdfpagecount } ifelse
+     /LastPage where {<</DisablePageHandler true>> setpagedevice pop LastPage pdfpagecount .min } { pdfpagecount } ifelse
      1 index 1 index gt { 
-       (   No pages will be processed \(FirstPage > LastPage\).) = flush 
-     } { 
-       QUIET not { 
+       (   No pages will be processed \(FirstPage > LastPage\).) = flush
+     } {
+       QUIET not {
          (Processing pages ) print 1 index =only ( through ) print dup =only
          (.) = flush
        } if

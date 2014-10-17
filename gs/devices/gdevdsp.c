@@ -53,6 +53,8 @@
 #include "gdevdsp.h"
 #include "gdevdsp2.h"
 
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
+
 /* Initial values for width and height */
 #define INITIAL_RESOLUTION 96
 #define INITIAL_WIDTH ((INITIAL_RESOLUTION * 85 + 5) / 10)
@@ -241,6 +243,10 @@ display_open(gx_device * dev)
     /* The callback will be set later and the device re-opened. */
     if (ddev->callback == NULL)
         return 0;
+    ccode = install_internal_subclass_devices((gx_device **)&ddev, NULL);
+    if (ccode < 0)
+        return ccode;
+    dev = ddev;
 
     /* Make sure we have been passed a valid callback structure. */
     if ((ccode = display_check_structure(ddev)) < 0)

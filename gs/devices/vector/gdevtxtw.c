@@ -33,6 +33,7 @@
 #include "gdevagl.h"
 #include "gxdevsop.h"
 #include "gzpath.h"
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 
 /* #define TRACE_TXTWRITE 1 */
 
@@ -265,6 +266,7 @@ static int
 txtwrite_open_device(gx_device * dev)
 {
     gx_device_txtwrite_t *const tdev = (gx_device_txtwrite_t *) dev;
+    int code = 0;
 
     gx_device_fill_in_procs(dev);
     if (tdev->fname[0] == 0)
@@ -276,7 +278,9 @@ txtwrite_open_device(gx_device * dev)
 #ifdef TRACE_TXTWRITE
     tdev->DebugFile = gp_fopen("/temp/txtw_dbg.txt", "wb+");
 #endif
-    return 0;
+
+    code = install_internal_subclass_devices((gx_device **)&dev, NULL);
+    return code;
 }
 
 static int
@@ -1922,7 +1926,7 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
     gs_font *font = pte->orig_font;
     const gs_glyph *gdata = NULL;
     gs_glyph glyph;
-    gs_char ch;
+    gs_char ch = 0;
     int i, code;
     uint operation = pte->text.operation;
     txt_glyph_widths_t widths;

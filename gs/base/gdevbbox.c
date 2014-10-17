@@ -29,6 +29,8 @@
 #include "gxpath.h"
 #include "gxcpath.h"
 
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and object filter */
+
 /* GC descriptor */
 public_st_device_bbox();
 
@@ -354,12 +356,17 @@ gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox)
 static int
 bbox_open_device(gx_device * dev)
 {
-    gx_device_bbox *const bdev = (gx_device_bbox *) dev;
+    gx_device_bbox *bdev = (gx_device_bbox *) dev;
+    int code;
 
     if (bdev->free_standing) {
         gx_device_forward_fill_in_procs((gx_device_forward *) dev);
         bdev->box_procs = box_procs_default;
         bdev->box_proc_data = bdev;
+
+        code = install_internal_subclass_devices((gx_device **)&bdev, NULL);
+        if (code < 0)
+            return code;
     }
     if (bdev->box_procs.init_box == box_procs_default.init_box)
         BBOX_INIT_BOX(bdev);

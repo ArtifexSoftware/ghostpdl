@@ -1298,6 +1298,14 @@ static int pcl3_open_device(gx_device *device)
   /* Open the "eprn" device part */
   if ((rc = eprn_open_device(device)) != 0) return rc;
 
+  /* if device has been subclassed (FirstPage/LastPage device) then make sure we use
+   * the subclassed device.
+   */
+  while (device->child)
+      device = device->child;
+
+  dev = (pcl3_Device *)device;
+
   /* Fill the still unassigned parts of 'file_data' from the other data */
   {
     pcl_FileData *data = &dev->file_data;
@@ -1347,10 +1355,10 @@ static int pcl3_open_device(gx_device *device)
              just as fast, provided the compiler is sufficiently intelligent. */
 
         dev->eprn.soft_tumble = dev->duplex_capability != Duplex_both &&
-            (same_leading_edge &&
-                dev->duplex_capability != Duplex_sameLeadingEdge ||
-              !same_leading_edge &&
-                dev->duplex_capability != Duplex_oppositeLeadingEdge);
+            ((same_leading_edge &&
+                dev->duplex_capability != Duplex_sameLeadingEdge) ||
+              (!same_leading_edge &&
+                dev->duplex_capability != Duplex_oppositeLeadingEdge));
         if (dev->eprn.soft_tumble) same_leading_edge = !same_leading_edge;
 
         /*  I am assuming here that the values 1 and 2, specified by HP in
@@ -1473,8 +1481,8 @@ static int pcl3_print_page(gx_device_printer *device, FILE *out)
   if (pcl_cm_is_differential(dev->file_data.compression))
     rd.previous = (pcl_OctetString *)malloc(planes*sizeof(pcl_OctetString));
   if (lengths == NULL || rd.next == NULL ||
-      pcl_cm_is_differential(dev->file_data.compression) &&
-        rd.previous == NULL) {
+      (pcl_cm_is_differential(dev->file_data.compression) &&
+        rd.previous == NULL)) {
     free(lengths); free(rd.next); free(rd.previous);
     eprintf1("%s" ERRPREF "Memory allocation failure from malloc().\n",
       epref);

@@ -31,6 +31,7 @@
 #include "gsiparm2.h"
 #include "gxdevmem.h"
 #include "gdevx.h"
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 
 /* Define whether to try to read back exposure events after XGetImage. */
 /****** THIS IS USELESS.  XGetImage DOES NOT GENERATE EXPOSURE EVENTS. ******/
@@ -253,6 +254,13 @@ x_open(gx_device * dev)
     if (code < 0)
         return code;
     update_init(xdev);
+    code = install_internal_subclass_devices((gx_device **)&xdev, NULL);
+    if (code < 0)
+        return code;
+
+    if (xdev->is_buffered)
+        xdev->box_proc_data = xdev;
+
     return 0;
 }
 

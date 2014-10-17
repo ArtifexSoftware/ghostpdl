@@ -169,7 +169,7 @@ cos_object_init(cos_object_t *pco, gx_device_pdf *pdev,
         pco->id = 0;
         pco->elements = 0;
         pco->pieces = 0;
-        pco->pdev = pdev;
+        pco->mem = pdev->pdf_memory;
         pco->pres = 0;
         pco->is_open = true;
         pco->is_graphics = false;
@@ -186,7 +186,7 @@ cos_object_init(cos_object_t *pco, gx_device_pdf *pdev,
 gs_memory_t *
 cos_object_memory(const cos_object_t *pco)
 {
-    return pco->pdev->pdf_memory;
+    return pco->mem;
 }
 
 /* Change a generic cos object into one of a specific type. */
@@ -511,7 +511,6 @@ cos_array_from_floats(gx_device_pdf *pdev, const float *pf, uint size,
 static void
 cos_array_release(cos_object_t *pco, client_name_t cname)
 {
-    gs_memory_t *mem = cos_object_memory(pco);
     cos_array_t *const pca = (cos_array_t *)pco;
     cos_array_element_t *cur;
     cos_array_element_t *next;
@@ -519,7 +518,7 @@ cos_array_release(cos_object_t *pco, client_name_t cname)
     for (cur = pca->elements; cur; cur = next) {
         next = cur->next;
         cos_value_free(&cur->value, pco, cname);
-        gs_free_object(mem, cur, cname);
+        gs_free_object(cos_object_memory(pco), cur, cname);
     }
     pca->elements = 0;
 }
@@ -1413,10 +1412,10 @@ cos_dict_put_c_key_real(cos_dict_t *pcd, const char *key, double value)
     return cos_dict_put_c_key_string(pcd, key, str, stell(&s));
 }
 int
-cos_dict_put_c_key_floats(cos_dict_t *pcd, const char *key, const float *pf,
+cos_dict_put_c_key_floats(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, const float *pf,
                           uint size)
 {
-    cos_array_t *pca = cos_array_from_floats(pcd->pdev, pf, size,
+    cos_array_t *pca = cos_array_from_floats(pdev, pf, size,
                                              "cos_dict_put_c_key_floats");
     int code;
 
@@ -1573,13 +1572,16 @@ cos_param_put_typed(gs_param_list * plist, gs_param_name pkey,
 {
     cos_param_list_writer_t *const pclist =
         (cos_param_list_writer_t *)plist;
-    gx_device_pdf *pdev = pclist->pcd->pdev;
+    gx_device_pdf *pdev = pclist->pdev;
     gs_memory_t *mem = pclist->memory;
     cos_value_t value;
     cos_array_t *pca;
     int key_len = strlen(pkey);
     byte key_chars[100];		/****** ADHOC ******/
     int code;
+
+    while(pdev->child)
+        pdev = (gx_device_pdf *)pdev->child;
 
     if (key_len > sizeof(key_chars) - 1)
         return_error(gs_error_limitcheck);
@@ -1648,12 +1650,13 @@ cos_param_put_typed(gs_param_list * plist, gs_param_name pkey,
 }
 
 int
-cos_param_list_writer_init(cos_param_list_writer_t *pclist, cos_dict_t *pcd,
+cos_param_list_writer_init(gx_device_pdf *pdev, cos_param_list_writer_t *pclist, cos_dict_t *pcd,
                            int print_ok)
 {
     gs_param_list_init((gs_param_list *)pclist, &cos_param_list_writer_procs,
                        COS_OBJECT_MEMORY(pcd));
     pclist->pcd = pcd;
+    pclist->pdev = pdev;
     pclist->print_ok = print_ok;
     return 0;
 }
@@ -1682,14 +1685,13 @@ cos_stream_alloc(gx_device_pdf *pdev, client_name_t cname)
 static void
 cos_stream_release(cos_object_t *pco, client_name_t cname)
 {
-    gs_memory_t *mem = cos_object_memory(pco);
     cos_stream_t *const pcs = (cos_stream_t *)pco;
     cos_stream_piece_t *cur;
     cos_stream_piece_t *next;
 
     for (cur = pcs->pieces; cur; cur = next) {
         next = cur->next;
-        gs_free_object(mem, cur, cname);
+        gs_free_object(cos_object_memory(pco), cur, cname);
     }
     pcs->pieces = 0;
     cos_dict_release(pco, cname);
@@ -1886,12 +1888,20 @@ cos_stream_dict(cos_stream_t *pcs)
 /* Add a contents piece to a stream object: size bytes just written on */
 /* streams.strm. */
 int
-cos_stream_add(cos_stream_t *pcs, uint size)
+cos_stream_add(gx_device_pdf *pdev, cos_stream_t *pcs, uint size)
 {
-    gx_device_pdf *pdev = pcs->pdev;
-    stream *s = pdev->streams.strm;
-    gs_offset_t position = stell(s);
+    stream *s;
+    gs_offset_t position;
     cos_stream_piece_t *prev = pcs->pieces;
+
+    /* Beware of subclassed devices. This is mad IMO, we should store
+     * 's' in the stream state somewhere.
+     */
+    while (pdev->child)
+        pdev = (gx_device_pdf *)pdev->child;
+
+    s = pdev->streams.strm;
+    position = stell(s);
 
     /* Check for consecutive writing -- just an optimization. */
     if (prev != 0 && prev->position + prev->size + size == position) {
@@ -1915,15 +1925,15 @@ cos_stream_add(cos_stream_t *pcs, uint size)
 
 /* Add bytes to a stream object. */
 int
-cos_stream_add_bytes(cos_stream_t *pcs, const byte *data, uint size)
+cos_stream_add_bytes(gx_device_pdf *pdev, cos_stream_t *pcs, const byte *data, uint size)
 {
-    stream_write(pcs->pdev->streams.strm, data, size);
-    return cos_stream_add(pcs, size);
+    stream_write(pdev->streams.strm, data, size);
+    return cos_stream_add(pdev, pcs, size);
 }
 
 /* Add the contents of a stream to a stream object. */
 int
-cos_stream_add_stream_contents(cos_stream_t *pcs, stream *s)
+cos_stream_add_stream_contents(gx_device_pdf *pdev, cos_stream_t *pcs, stream *s)
 {
     int code = 0;
     byte sbuff[200];	/* arbitrary */
@@ -1940,19 +1950,17 @@ cos_stream_add_stream_contents(cos_stream_t *pcs, stream *s)
                 break;
             return_error(gs_error_ioerror);
         }
-    } while ((code = cos_stream_add_bytes(pcs, sbuff, cnt)) >= 0);
+    } while ((code = cos_stream_add_bytes(pdev, pcs, sbuff, cnt)) >= 0);
     return code;
 }
 
 /* Release the last contents piece of a stream object. */
 /* Warning : this function can't release pieces if another stream is written after them. */
 int
-cos_stream_release_pieces(cos_stream_t *pcs)
+cos_stream_release_pieces(gx_device_pdf *pdev, cos_stream_t *pcs)
 {
-    gx_device_pdf *pdev = pcs->pdev;
     stream *s = pdev->streams.strm;
     gs_offset_t position = stell(s), position0 = position;
-    gs_memory_t *mem = cos_object_memory((cos_object_t *)pcs);
 
     while (pcs->pieces != NULL &&
                 position == pcs->pieces->position + pcs->pieces->size) {
@@ -1960,7 +1968,7 @@ cos_stream_release_pieces(cos_stream_t *pcs)
 
         position -= p->size;
         pcs->pieces = p->next;
-        gs_free_object(mem, p, "cos_stream_release_pieces");
+        gs_free_object(cos_object_memory((cos_object_t *)pcs), p, "cos_stream_release_pieces");
     }
     if (position0 != position)
         if (sseek(s, position) < 0)
@@ -1989,8 +1997,8 @@ cos_write_stream_process(stream_state * st, stream_cursor_read * pr,
 {
     uint count = pr->limit - pr->ptr;
     cos_write_stream_state_t *ss = (cos_write_stream_state_t *)st;
-    gx_device_pdf *pdev = ss->pdev;
     stream *target = ss->target;
+    gx_device_pdf *pdev = ss->pdev;
     gs_offset_t start_pos = stell(pdev->streams.strm);
     int code;
 
@@ -1998,7 +2006,7 @@ cos_write_stream_process(stream_state * st, stream_cursor_read * pr,
     gs_md5_append(&ss->pcs->md5, pr->ptr + 1, count);
     pr->ptr = pr->limit;
     sflush(target);
-    code = cos_stream_add(ss->pcs, (uint)(stell(pdev->streams.strm) - start_pos));
+    code = cos_stream_add(pdev, ss->pcs, (uint)(stell(pdev->streams.strm) - start_pos));
     return (code < 0 ? ERRC : 0);
 }
 static int

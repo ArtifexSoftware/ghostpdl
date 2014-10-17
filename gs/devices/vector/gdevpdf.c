@@ -708,7 +708,7 @@ pdf_reset_text(gx_device_pdf * pdev)
 static int
 pdf_open(gx_device * dev)
 {
-    gx_device_pdf *const pdev = (gx_device_pdf *) dev;
+    gx_device_pdf *pdev = (gx_device_pdf *) dev;
     gs_memory_t *mem = pdev->pdf_memory = gs_memory_stable(pdev->memory);
     int code;
 
@@ -723,6 +723,13 @@ pdf_open(gx_device * dev)
     code = gdev_vector_open_file((gx_device_vector *) pdev, sbuf_size);
     if (code < 0)
         goto fail;
+    while (pdev->child) {
+        /* we've been subclassed by gdev_vector_open_file. Ordinarily we would want to call
+         * open_file last, in order to make sure that we don't care if we are subclessed
+         * but we want to set up the stream, so we can't do that....
+         */
+        pdev = (gx_device_pdf *)pdev->child;
+    }
     if (pdev->ComputeDocumentDigest) {
         stream *s = s_MD5C_make_stream(pdev->pdf_memory, pdev->strm);
 
@@ -840,6 +847,14 @@ pdf_open(gx_device * dev)
         pdev->pdf_font_dir->ccache.mark_glyph = pdev->memory->gs_lib_ctx->font_dir->ccache.mark_glyph;
         pdev->pdf_font_dir->global_glyph_code = pdev->memory->gs_lib_ctx->font_dir->global_glyph_code;
     }
+
+    /* gs_opendevice() sets the device 'is_open' flag which is now of course the parent. We
+     * still need to set the child's flag, we'll do it here to avoid setting it if we get any
+     * failures, as those will also leave the parent not open.
+     */
+    if (pdev->parent)
+        pdev->is_open = true;
+
     return 0;
   fail:
     gdev_vector_close_file((gx_device_vector *) pdev);

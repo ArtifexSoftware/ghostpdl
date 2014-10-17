@@ -56,6 +56,17 @@ gx_device_finalize(const gs_memory_t *cmem, void *vptr)
     }
     if (dev->finalize)
         dev->finalize(dev);
+
+    /* Deal with subclassed devices. Ordinarily these should not be a problem, we
+     * will never see them, but if ths is a end of job restore we can end up
+     * with the 'child' device(s) being freed before their parents. We need to make
+     * sure we don't leave any dangling pointers in that case.
+     */
+    if (dev->child)
+        dev->child->parent = dev->parent;
+    if (dev->parent)
+        dev->parent->child = dev->child;
+
     discard(gs_closedevice(dev));
     if (dev->stype_is_dynamic)
         gs_free_const_object(dev->memory->non_gc_memory, dev->stype,
@@ -70,6 +81,17 @@ gx_device_free_local(gx_device *dev)
 }
 
 /* GC procedures */
+static
+ENUM_PTRS_WITH(device_enum_ptrs, gx_device *dev) return 0;
+case 0:ENUM_RETURN(gx_device_enum_ptr(dev->parent));
+case 1:ENUM_RETURN(gx_device_enum_ptr(dev->child));
+ENUM_PTRS_END
+static RELOC_PTRS_WITH(device_reloc_ptrs, gx_device *dev)
+{
+    dev->parent = gx_device_reloc_ptr(dev->parent, gcst);
+    dev->child = gx_device_reloc_ptr(dev->child, gcst);
+}
+RELOC_PTRS_END
 static
 ENUM_PTRS_WITH(device_forward_enum_ptrs, gx_device_forward *fdev) return 0;
 case 0: ENUM_RETURN(gx_device_enum_ptr(fdev->target));

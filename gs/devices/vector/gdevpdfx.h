@@ -469,14 +469,13 @@ struct pdf_font_cache_elem_s {
     struct pdf_font_resource_s *pdfont;
     byte *glyph_usage;
     double *real_widths;        /* [count] (not used for Type 0) */
-    gx_device_pdf *pdev;        /* For pdf_remove_font_cache_elem */
 };
 
 #define private_st_pdf_font_cache_elem()\
-    gs_private_st_ptrs5(st_pdf_font_cache_elem, pdf_font_cache_elem_t,\
+    gs_private_st_ptrs4(st_pdf_font_cache_elem, pdf_font_cache_elem_t,\
         "pdf_font_cache_elem_t", pdf_font_cache_elem_enum,\
         pdf_font_cache_elem_reloc, next, pdfont,\
-        glyph_usage, real_widths, pdev)
+        glyph_usage, real_widths)
 
 /*
  * pdf_viewer_state tracks the graphic state of a viewer,
@@ -866,8 +865,6 @@ struct gx_device_pdf_s {
     bool Linearise;                 /* Whether to Linearizse the file, the next 2 parameter
                                      * are only used if this is true.
                                      */
-    int FirstPage;
-    int LastPage;
     pdf_linearisation_record_t
         *ResourceUsage;             /* An array, one per resource defined to date, which
                                      * contains either -2 (shared on multiple pages), -1
