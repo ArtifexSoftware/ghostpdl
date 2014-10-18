@@ -511,7 +511,7 @@ adjust_auto_filter_strategy(gx_device_psdf *pdev,
     if (!in_line && params->Depth > 1 && pdev->ParamCompatibilityLevel >= 1.5 &&
             pim->ColorSpace->type->index != gs_color_space_index_Indexed &&
             params->AutoFilter &&
-            !strcmp(params->AutoFilterStrategy, "/JPEG2000")) {
+            params->AutoFilterStrategy != af_Jpeg) {
         params->Filter = "/JPXEncode";
         params->filter_template = &s_jpxe_template;
         params->Dict = plist;
