@@ -929,18 +929,18 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     break;
                 } else if (strncmp(arg, "saved-pages=", 12) == 0) {
                     gx_device *pdev = pmi->device;
-                    gx_device_printer *ppdev = pdev;
+                    gx_device_printer *ppdev = (gx_device_printer *)pdev;
 
                     /* open the device if not yet open */
                     if (pdev->is_open == 0 && (code = gs_opendevice(pdev)) < 0) {
                         return code;
                     }
                     if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) == 0) {
-                        errprintf("   --saved-pages not supported by the '%s' device.\n",
+                        errprintf(pmi->memory, "   --saved-pages not supported by the '%s' device.\n",
                                   pdev->dname);
                         return -1;
                     }
-                    code = gx_saved_pages_param_process(ppdev, arg+12, strlen(arg+12));
+                    code = gx_saved_pages_param_process(ppdev, (byte *)arg+12, strlen(arg+12));
                     if (code > 0) {
                         /* erase the page */
                         gx_color_index color;
@@ -965,7 +965,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                         return code;
 
                     if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_saved_pages, NULL, 0) == 0) {
-                        errprintf("   --saved-pages-test not supported by the '%s' device.\n",
+                        errprintf(pmi->memory, "   --saved-pages-test not supported by the '%s' device.\n",
                                   pdev->dname);
                         break;			/* just ignore it */
                     }
