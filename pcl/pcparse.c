@@ -375,15 +375,12 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                      * many strings that aren't valid numbers.  If this
                      * ever becomes a problem, we can tighten it up....
                      */
-                    if (pst->garbage_in_parameter)
-                    {
+                    if (pst->garbage_in_parameter) {
                         if (chr < ' ' || chr > '?') {
                             pst->garbage_in_parameter = false; /* no garbage anymore */
                             break;
                         }
-                    }
-                    else
-                    {
+                    } else {
                         if (chr >= '0' && chr <= '9') {
                             chr -= '0';
                             if (value_is_float(&avalue))
@@ -402,7 +399,8 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                             continue;
                         else if (chr >= ' ' && chr <= '?') {        /* Ignore garbage nearby in the code space. */
                             /* skip the remainder until a chr outside this range is found */
-                            pst->garbage_in_parameter = true;
+                            if (avalue.type != pcv_none)
+                                pst->garbage_in_parameter = true;
                             continue;
                         } else
                             break;
