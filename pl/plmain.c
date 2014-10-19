@@ -1582,3 +1582,18 @@ pl_main_cursor_close(pl_top_cursor_t * cursor   /* cursor to operate on */
     pl_top_cursor_dnit(cursor);
     fclose(cursor->strm);
 }
+
+
+/* plmain accessors */
+bool
+pl_get_nocache(pl_interp_instance_t *instance)
+{
+    return instance->nocache;
+}
+
+
+bool
+pl_get_interpolation(pl_interp_instance_t * instance)
+{
+    return instance->interpolate;
+}

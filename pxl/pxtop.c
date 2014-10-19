@@ -43,6 +43,7 @@
 #include "pxptable.h"
 #include "pxstate.h"
 #include "pltop.h"
+#include "plmain.h"
 #include "gsicc_manage.h"
 
 /* Imported operators */
@@ -311,18 +312,6 @@ pxl_set_icc_params(pl_interp_instance_t * instance, gs_state * pgs)
     return code;
 }
 
-static bool
-pxl_get_interpolation(pl_interp_instance_t * instance)
-{
-    return instance->interpolate;
-}
-
-static bool
-pxl_get_nocache(pl_interp_instance_t * instance)
-{
-    return instance->nocache;
-}
-
 /* Set a device into an interperter instance */
 /* ret 0 ok, else -ve error code */
 static int 
@@ -339,8 +328,8 @@ pxl_impl_set_device(pl_interp_instance_t * instance,
     if ((code = gs_opendevice(device)) < 0)
         goto pisdEnd;
 
-    pxs->interpolate = pxl_get_interpolation(instance);
-    pxs->nocache = pxl_get_nocache(instance);
+    pxs->interpolate = pl_get_interpolation(instance);
+    pxs->nocache = pl_get_nocache(instance);
 
     if (pxs->nocache)
         gs_setcachelimit(pxs->font_dir, 0);
