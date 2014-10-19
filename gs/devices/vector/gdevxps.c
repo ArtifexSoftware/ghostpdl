@@ -103,7 +103,7 @@ typedef struct gx_device_xps_zinfo_s {
 /* a list of archive file names and their corresponding info
    (gx_device_xps_zinfo_t) */
 typedef struct gx_device_xps_f2i_s {
-    const char *filename;
+    char *filename;
     gx_device_xps_zinfo_t *info;
     struct gx_device_xps_f2i_s *next;
 } gx_device_xps_f2i_t;
@@ -1085,7 +1085,7 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
     
     /* skip non-drawing paths for now */
     if (!drawing_path(type)) {
-        gs_warn1("xps_rect: type not supported %x", type);
+        if_debug1m('_', xps->memory, "xps_dorect: type not supported %x\n", type);
         return 0;
     }
 
@@ -1160,7 +1160,7 @@ xps_beginpath(gx_device_vector *vdev, gx_path_type_t type)
 
     /* skip non-drawing paths for now */
     if (!drawing_path(type)) {
-        gs_warn1("type not supported %x", type);
+        if_debug1m('_', xps->memory, "xps_beginpath: type not supported %x\n", type);
         return 0;
     }
 
@@ -1198,7 +1198,7 @@ xps_moveto(gx_device_vector *vdev, double x0, double y0,
 
     /* skip non-drawing paths for now */
     if (!drawing_path(type)) {
-        gs_warn1("xps_moveto: type not supported %x\n", type);
+        if_debug1m('_', xps->memory, "xps_moveto: type not supported %x\n", type);
         return 0;
     }
 
@@ -1219,7 +1219,7 @@ xps_lineto(gx_device_vector *vdev, double x0, double y0,
     
     /* skip non-drawing paths for now */
     if (!drawing_path(type)) {
-        gs_warn1("xps_lineto: type not supported %x\n", type);
+        if_debug1m('_', xps->memory, "xps_lineto: type not supported %x\n", type);
         return 0;
     }
     gs_sprintf(line, " L %g,%g", x, y);
@@ -1238,7 +1238,7 @@ xps_curveto(gx_device_vector *vdev, double x0, double y0,
     
     /* skip non-drawing paths for now */
     if (!drawing_path(type)) {
-        gs_warn1("xps_lineto: type not supported %x", type);
+        if_debug1m('_', xps->memory, "xps_curveto: type not supported %x\n", type);
         return 0;
     }
     
@@ -1258,7 +1258,7 @@ xps_closepath(gx_device_vector *vdev, double x, double y,
 
     /* skip non-drawing paths for now */
     if (!drawing_path(type)) {
-        gs_warn1("xps_closepath: type not supported %x", type);
+        if_debug1m('_', xps->memory, "xps_closepath: type not supported %x\n", type);
         return 0;
     }
 
@@ -1277,7 +1277,7 @@ xps_endpath(gx_device_vector *vdev, gx_path_type_t type)
 
     /* skip non-drawing paths for now */
     if (!drawing_path(type)) {
-        gs_warn1("xps_lineto: type not supported %x", type);
+        if_debug1m('_', xps->memory, "xps_endpath: type not supported %x\n", type);
         return 0;
     }
 
