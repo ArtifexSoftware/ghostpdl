@@ -830,8 +830,6 @@ static int
 xps_get_params(gx_device *dev, gs_param_list *plist)
 {
     int code = 0;
-    gx_device_xps *const xps = (gx_device_xps*)dev;
-    gs_param_string ofns;
 
     if_debug0m('_', dev->memory, "xps_get_params\n");
 
@@ -840,13 +838,19 @@ xps_get_params(gx_device *dev, gs_param_list *plist)
     if (code < 0)
       return gs_rethrow_code(code);
 
-    /* xps specific parameters are added to plist here */
-    ofns.data = (const byte *)&xps->PrinterName;
-    ofns.size = strlen(xps->fname);
-    ofns.persistent = false;
-    if ((code = param_write_string(plist, "PrinterName", &ofns)) < 0)
-        return code;
+#if defined(__WIN32__) && XPSPRINT==1
+    {
+        gs_param_string ofns;
+        gx_device_xps *const xps = (gx_device_xps*)dev;
 
+        /* xps specific parameters are added to plist here */
+        ofns.data = (const byte *)&xps->PrinterName;
+        ofns.size = strlen(xps->fname);
+        ofns.persistent = false;
+        if ((code = param_write_string(plist, "PrinterName", &ofns)) < 0)
+            return code;
+    }
+#endif
     return code;
 }
 
@@ -855,15 +859,16 @@ static int
 xps_put_params(gx_device *dev, gs_param_list *plist)
 {
     int code = 0;
-    gs_param_string pps;
-    gs_param_name param_name;
-    gx_device_xps *const xps = (gx_device_xps*)dev;
 
     if_debug0m('_', dev->memory, "xps_put_params\n");
 
     /* xps specific parameters are parsed here */
-
-    switch (code = param_read_string(plist, (param_name = "PrinterName"), &pps)) {
+#if defined(__WIN32__) && XPSPRINT==1
+    {
+        gs_param_name param_name;
+        gs_param_string pps;
+        gx_device_xps *const xps = (gx_device_xps*)dev;
+        switch (code = param_read_string(plist, (param_name = "PrinterName"), &pps)) {
         case 0:
             if (pps.size > 64) {
                 eprintf1("\nERROR: PrinterName too long (max %d)\n", MAXPRINTERNAME);
@@ -875,9 +880,11 @@ xps_put_params(gx_device *dev, gs_param_list *plist)
         default:
             param_signal_error(plist, param_name, code);
         case 1:
-/*            memset(&xps->PrinterName, 0x00, MAXPRINTERNAME);*/
+            /*            memset(&xps->PrinterName, 0x00, MAXPRINTERNAME);*/
             break;
+        }
     }
+#endif
     /* call our superclass to get its parameters, like OutputFile */
     code = gdev_vector_put_params(dev, plist);
     if (code < 0)
