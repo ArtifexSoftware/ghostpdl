@@ -43,6 +43,7 @@ struct xps_item_s
     char **atts;
     xps_item_t *up;
     xps_item_t *down;
+    xps_item_t *tail;
     xps_item_t *next;
 };
 
@@ -149,14 +150,14 @@ on_open_tag(void *zp, char *ns_name, char **atts)
     if (!parser->head->down)
     {
         parser->head->down = item;
+        parser->head->tail = item;
         parser->head = item;
         return;
     }
 
-    tail = parser->head->down;
-    while (tail->next)
-        tail = tail->next;
+    tail = parser->head->tail;
     tail->next = item;
+    parser->head->tail = item;
     parser->head = item;
 }
 
