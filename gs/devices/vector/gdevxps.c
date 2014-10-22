@@ -141,6 +141,7 @@ static dev_proc_get_params(xps_get_params);
 static dev_proc_put_params(xps_put_params);
 static dev_proc_fill_path(gdev_xps_fill_path);
 static dev_proc_stroke_path(gdev_xps_stroke_path);
+static dev_proc_finish_copydevice(xps_finish_copydevice);
 
 #define xps_device_procs \
 { \
@@ -179,7 +180,16 @@ static dev_proc_stroke_path(gdev_xps_stroke_path);
         NULL,                   /* image_data */\
         NULL,                   /* end_image */\
         NULL,                   /* strip_tile_rectangle */\
-        NULL                    /* strip_copy_rop */\
+        NULL,                    /* strip_copy_rop */\
+        NULL,                   /* get_clipping_box */\
+        NULL,                   /* begin_typed_image */\
+        NULL,                   /* get_bits_rectangle */\
+        NULL,                   /* map_color_rgb_alpha */\
+        NULL,                   /* create_compositor */\
+        NULL,                   /* get_hardware_params */\
+        NULL,                   /* text_begin */\
+        xps_finish_copydevice,\
+        NULL,\
 }
 
 gs_public_st_suffix_add0_final(st_device_xps, gx_device_xps,
@@ -891,6 +901,14 @@ xps_put_params(gx_device *dev, gs_param_list *plist)
       return gs_rethrow_code(code);
 
     return code;
+}
+
+static int xps_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+{
+    gx_device_xps *const xps = (gx_device_xps*)dev;
+
+    memset(xps->PrinterName, 0x00, MAXPRINTERNAME);
+    return 0;
 }
 
 static int
