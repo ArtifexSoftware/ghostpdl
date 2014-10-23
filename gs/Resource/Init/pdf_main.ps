@@ -192,8 +192,8 @@ currentdict /runpdfstring .undef
      dup 3 index exch cvs pop                                % a b+1 /P (b+1)
      store
      1 sub                                                   % a b
-     /FirstPage where { pop FirstPage } { 1 } ifelse
-     /LastPage  where { pop LastPage  } {2000000000} ifelse  % a b fp lp
+     /FirstPDFPage where { pop FirstPDFPage } { 1 } ifelse
+     /LastPDFPage  where { pop LastPDFPage  } {2000000000} ifelse  % a b fp lp
      2 index 2 index lt { % b < fp
        1e10
      } {
@@ -223,19 +223,19 @@ currentdict /runpdfstring .undef
        } ifelse
      } if
    } {
-     /FirstPage where { 
-       pop FirstPage dup pdfpagecount gt {
-         (\nRequested FirstPage is greater than the number of pages in the file: ) print
+     /FirstPDFPage where {
+       pop FirstPDFPage dup pdfpagecount gt {
+         (\nRequested FirstPDFPage is greater than the number of pages in the file: ) print
           pdfpagecount = flush
        } if
      } {
         1
      } ifelse
-     /LastPage where { pop LastPage pdfpagecount .min } { pdfpagecount } ifelse
+     /LastPDFPage where { pop LastPDFPage pdfpagecount .min } { pdfpagecount } ifelse
      1 index 1 index gt { 
-       (   No pages will be processed \(FirstPage > LastPage\).) = flush 
-     } { 
-       QUIET not { 
+       (   No pages will be processed \(FirstPDFPage > LastPDFPage\).) = flush
+     } {
+       QUIET not {
          (Processing pages ) print 1 index =only ( through ) print dup =only
          (.) = flush
        } if
@@ -1609,8 +1609,8 @@ end readonly def
 } bind def
 % <pagedict> mark ... -proc- <page#> <error>
 /namedactions 8 dict dup begin
-  /FirstPage { 1 /CumulativePageCount where {pop CumulativePageCount}{0}ifelse add //false } def
-  /LastPage { pdfpagecount /CumulativePageCount where {pop CumulativePageCount}{0}ifelse add //false } def
+  /FirstPDFPage { 1 /CumulativePageCount where {pop CumulativePageCount}{0}ifelse add //false } def
+  /LastPDFPage { pdfpagecount /CumulativePageCount where {pop CumulativePageCount}{0}ifelse add //false } def
   /NextPage { counttomark 2 add index pdfpagenumber 1 add dup pdfpagecount gt exch /CumulativePageCount where {pop CumulativePageCount}{0}ifelse add exch} bind def
   /PrevPage { counttomark 2 add index pdfpagenumber 1 sub dup 1 lt exch /CumulativePageCount where {pop CumulativePageCount}{0}ifelse add exch} bind def
 end readonly def
