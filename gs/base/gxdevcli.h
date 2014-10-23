@@ -731,6 +731,7 @@ typedef struct gdev_space_params_s {
         rc_header rc;			/* reference count from gstates */\
                                         /* and targets, +1 if retained */\
         bool retained;			/* true if retained */\
+        void *subclass_data;    /* Must be immovable, non-GC memory, used to store subclass data */\
         bool is_open;			/* true if device has been opened */\
         int max_fill_band;		/* limit on band size for fill, */\
                                         /* must be 0 or a power of 2 */\

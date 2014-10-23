@@ -29,7 +29,12 @@
 #include "gstrans.h"
 #include "gxdownscale.h"
 
+#include "gdevflp.h"
+
 /*#define DEBUGGING_HACKS*/
+
+extern gx_device_flp  gs_flp_device;
+int gx_device_subclass(gx_device *dev_to_subclass, gx_device *prototype, int data_size);
 
 /* GC information */
 static
@@ -860,10 +865,6 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     if (code < 0)
         ecode = code;
 
-    if ((first_page == 0 && pdev->FirstPage != 0) ||
-        (last_page == 0 && pdev->LastPage != 0)) {
-    }
-
     /* Read InputAttributes and OutputAttributes just for the type */
     /* check and to indicate that they aren't undefined. */
 #define read_media(pname)\
@@ -977,6 +978,17 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
         code = gdev_prn_open_printer(pdev, 1);
         if (code < 0)
             return code;
+    }
+
+    /* Subclassing the device needs to happen very late in processing parameters
+     * as we want to make sure the parameters end up in the device about to be subclassed.
+     * If we subclass early then parameters after the subclass, but before the end of the
+     * routine will end up copied into the 'origianl' device structure, the one which has
+     * just become the parent rather than the new subclassed device.
+     */
+    if ((first_page == 0 && pdev->FirstPage != 0) ||
+        (last_page == 0 && pdev->LastPage != 0)) {
+            gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
     }
 
     /* Processing the saved_pages string MAY have side effects, such as printing, */

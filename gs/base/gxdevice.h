@@ -101,7 +101,7 @@
 #define std_device_part1_(devtype, ptr_procs, dev_name, stype, open_init)\
         sizeof(devtype), ptr_procs, dev_name,\
         0 /*memory*/, stype, 0 /*stype_is_dynamic*/, 0 /*finalize*/,\
-        { 0 } /*rc*/, 0 /*retained*/, open_init() /*is_open, max_fill_band*/
+        { 0 } /*rc*/, 0 /*retained*/, 0 /* subclass_data */, open_init() /*is_open, max_fill_band*/
         /* color_info goes here */
 /*
  * The MetroWerks compiler has some bizarre bug that produces a spurious
@@ -237,6 +237,7 @@
 
 /* Default implementations of optional procedures. */
 /* Note that the default map_xxx_color routines assume white_on_black. */
+dev_proc_init_device(gx_default_init_device);
 dev_proc_open_device(gx_default_open_device);
 dev_proc_get_initial_matrix(gx_default_get_initial_matrix);
 dev_proc_get_initial_matrix(gx_upright_get_initial_matrix);
