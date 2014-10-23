@@ -142,10 +142,15 @@ currentdict end def
     {
       /Path .knownget
       {
-        status {pop pop pop pop pop}
-        {2 index exch undef} ifelse
+        .libfile
+        {closefile pop}
+        {
+          {(r) file} .internalstopped
+          {pop pop 2 index exch .undef}
+          {closefile pop} ifelse
+        } ifelse
       }
-      {2 index exch undef}
+      {2 index exch .undef}
       ifelse
     }
     {pop pop} ifelse
@@ -203,7 +208,7 @@ currentdict end def
       pop 1 index exch undef            % <<map>> <<temp>>
     } loop
   } loop
-  pop pop                               %
+  pop pop
 } bind def
 
 /PreprocessRecord  % <map> <Name> <raw_record> PreprocessRecord <map> <Name> <record> <bool>
