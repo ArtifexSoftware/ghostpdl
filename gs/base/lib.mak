@@ -1943,7 +1943,7 @@ $(GLOBJ)gdevprn.$(OBJ) : $(GLSRC)gdevprn.c $(ctype__h)\
 	$(GLCC) $(GLO_)gdevprn.$(OBJ) $(C_) $(GLSRC)gdevprn.c
 
 $(GLOBJ)gdevflp.$(OBJ) : $(GLSRC)gdevflp.c $(gdevflp_h)
-    $(GLCC) $(GLO_)gdevflp.$(OBJ) $(C_) $(GLSRC)gdevflp.c
+	$(GLCC) $(GLO_)gdevflp.$(OBJ) $(C_) $(GLSRC)gdevflp.c
 
 # Planar page devices
 gdevppla_h=$(GLSRC)gdevppla.h
