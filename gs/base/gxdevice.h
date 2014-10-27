@@ -237,7 +237,6 @@
 
 /* Default implementations of optional procedures. */
 /* Note that the default map_xxx_color routines assume white_on_black. */
-dev_proc_init_device(gx_default_init_device);
 dev_proc_open_device(gx_default_open_device);
 dev_proc_get_initial_matrix(gx_default_get_initial_matrix);
 dev_proc_get_initial_matrix(gx_upright_get_initial_matrix);
