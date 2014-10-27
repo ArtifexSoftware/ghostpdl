@@ -38,7 +38,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *prototype, int dat
 
 /* GC information */
 static
-ENUM_PTRS_WITH(device_printer_enum_ptrs, gx_device_printer *pdev)
+ENUM_PTRS_WITH(device_printer_enum_ptrs, gx_device_printer *pdev) return 0;
 case 0:ENUM_RETURN(gx_device_enum_ptr(pdev->parent));
 case 1:ENUM_RETURN(gx_device_enum_ptr(pdev->child));
 case 2:
