@@ -731,6 +731,8 @@ typedef struct gdev_space_params_s {
         rc_header rc;			/* reference count from gstates */\
                                         /* and targets, +1 if retained */\
         bool retained;			/* true if retained */\
+        gx_device *parent;\
+        gx_device *child;\
         void *subclass_data;    /* Must be immovable, non-GC memory, used to store subclass data */\
         bool is_open;			/* true if device has been opened */\
         int max_fill_band;		/* limit on band size for fill, */\
@@ -1694,8 +1696,8 @@ struct_proc_finalize(gx_device_finalize);	/* public for subclasses */
 /* gx_device can have subclasses. */
 #define public_st_device()	/* in gsdevice.c */\
   gs_public_st_complex_only(st_device, gx_device, "gx_device",\
-    0, gs_no_struct_enum_ptrs, gs_no_struct_reloc_ptrs, gx_device_finalize)
-#define st_device_max_ptrs 0
+    0, device_enum_ptrs, device_reloc_ptrs, gx_device_finalize)
+#define st_device_max_ptrs 2
 
 /* Enumerate or relocate a pointer to a device. */
 /* These take the containing space into account properly. */

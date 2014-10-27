@@ -39,6 +39,9 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *prototype, int dat
 /* GC information */
 static
 ENUM_PTRS_WITH(device_printer_enum_ptrs, gx_device_printer *pdev)
+case 0:ENUM_RETURN(gx_device_enum_ptr(pdev->parent));
+case 1:ENUM_RETURN(gx_device_enum_ptr(pdev->child));
+case 2:
     if (PRINTER_IS_CLIST(pdev))
         ENUM_PREFIX(st_device_clist, 0);
     else
@@ -47,6 +50,8 @@ ENUM_PTRS_END
 static
 RELOC_PTRS_WITH(device_printer_reloc_ptrs, gx_device_printer *pdev)
 {
+    pdev->parent = gx_device_reloc_ptr(pdev->parent, gcst);
+    pdev->child = gx_device_reloc_ptr(pdev->child, gcst);
     if (PRINTER_IS_CLIST(pdev))
         RELOC_PREFIX(st_device_clist);
     else

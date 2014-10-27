@@ -235,6 +235,8 @@ const gx_device_bit gs_bitrgbtags_device =
         0 ,                             /* finalize */
         { 0 } ,                         /* rc header */
         0 ,                             /* retained */
+        0 ,                             /* parent */
+        0 ,                             /* child */
         0 ,                             /* subclass data */
         0 ,                             /* is open */
         0,                              /* max_fill_band */

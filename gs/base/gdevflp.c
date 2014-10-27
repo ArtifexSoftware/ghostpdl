@@ -57,7 +57,7 @@
 #include "gxcpath.h"
 #include "gxcmap.h"         /* color mapping procs */
 #include "gsstype.h"
-
+#include "gdevprn.h"
 #include "gdevflp.h"
 
 /* GC descriptor */
@@ -147,6 +147,24 @@ flp_finalize(gx_device *dev);
 #define MAX_COORD (max_int_in_fixed - 1000)
 #define MAX_RESOLUTION 4000
 
+#define public_st_flp_device()	/* in gsdevice.c */\
+  gs_public_st_complex_only(st_flp_device, gx_device, "first_lastpage",\
+    0, flp_enum_ptrs, flp_reloc_ptrs, gx_device_finalize)
+
+static
+ENUM_PTRS_WITH(flp_enum_ptrs, gx_device *dev) return 0;
+case 0:ENUM_RETURN(gx_device_enum_ptr(dev->parent));
+case 1:ENUM_RETURN(gx_device_enum_ptr(dev->child));
+ENUM_PTRS_END
+static RELOC_PTRS_WITH(flp_reloc_ptrs, gx_device *dev)
+{
+    dev->parent = gx_device_reloc_ptr(dev->parent, gcst);
+    dev->child = gx_device_reloc_ptr(dev->child, gcst);
+}
+RELOC_PTRS_END
+
+public_st_flp_device();
+
 const
 gx_device_flp gs_flp_device =
 {
@@ -154,11 +172,13 @@ gx_device_flp gs_flp_device =
     0,                      /* obselete static_procs */\
     "first_lastpage",       /* dname */\
     0,                      /* memory */\
-    0,              /* stype */\
+    &st_flp_device,              /* stype */\
     0,              /* is_dynamic (always false for a prototype, will be true for an allocated device instance) */\
     flp_finalize,   /* The reason why we can't use the std_device_dci_body macro, we want a finalize */\
     {0},              /* rc */\
     0,              /* retained */\
+    0,              /* parent */\
+    0,              /* child */\
     0,              /* subclass_data */\
     0,              /* is_open */\
     0,              /* max_fill_band */\
@@ -257,15 +277,12 @@ gx_device_flp gs_flp_device =
 int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, unsigned int private_data_size)
 {
     gx_device *child_dev;
-    subclass_data_common_t *psubclass_data;
+    void *psubclass_data;
 
     if (!dev_to_subclass->stype)
         return_error(gs_error_VMerror);
 
-    if (private_data_size < sizeof(subclass_data_common_t))
-        return_error(gs_error_typecheck);
-
-    child_dev = (gx_device *)gs_alloc_bytes_immovable(dev_to_subclass->memory->non_gc_memory, dev_to_subclass->stype->ssize, "gx_device_subclass(device)");
+    child_dev = (gx_device *)gs_alloc_bytes(dev_to_subclass->memory, dev_to_subclass->stype->ssize, "gx_device_subclass(device)");
     if (child_dev == 0)
         return_error(gs_error_VMerror);
 
@@ -276,39 +293,38 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     gx_device_fill_in_procs(dev_to_subclass);
     memcpy(child_dev, dev_to_subclass, dev_to_subclass->stype->ssize);
 
-    psubclass_data = (void *)gs_alloc_bytes(dev_to_subclass->memory->non_gc_memory, private_data_size, "subclass memory for first-last page");
+    psubclass_data = (void *)gs_alloc_bytes(dev_to_subclass->memory->non_gc_memory, private_data_size, "subclass memory for subclassing device");
     if (psubclass_data == 0){
-        gs_free(dev_to_subclass->memory, child_dev, 1, dev_to_subclass->stype->ssize, "free subclass memory for first-last page");
+        gs_free(dev_to_subclass->memory, child_dev, 1, dev_to_subclass->stype->ssize, "free subclass memory for subclassing device");
         return_error(gs_error_VMerror);
     }
     memset(psubclass_data, 0x00, private_data_size);
-    dev_to_subclass->subclass_data = psubclass_data;
-    psubclass_data->child = child_dev;
-    psubclass_data->private_data_size = private_data_size;
 
     memcpy(&dev_to_subclass->procs, &new_prototype->procs, sizeof(gx_device_procs));
     dev_to_subclass->finalize = new_prototype->finalize;
     dev_to_subclass->dname = new_prototype->dname;
+    dev_to_subclass->stype = new_prototype->stype;
 
-    if (child_dev->subclass_data) {
-        subclass_data_common_t *pchild_subclass_data = child_dev->subclass_data;
-        gx_device *parent_dev = pchild_subclass_data->parent;
-
-        psubclass_data->parent = parent_dev;
-        pchild_subclass_data->parent = dev_to_subclass;
+    dev_to_subclass->subclass_data = psubclass_data;
+    dev_to_subclass->child = child_dev;
+    if (child_dev->parent) {
+        child_dev->parent = dev_to_subclass;
     }
+
     return 0;
 }
 
 static
 void flp_finalize(gx_device *dev) {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
-    gx_device *child_dev = subclass_common->child;
+    gx_device *parent = dev->parent, *child = dev->child;
 
-    memcpy(dev, child_dev, child_dev->stype->ssize);
-    gs_free(dev->memory, psubclass_data, 1, psubclass_data->data_size, "subclass memory for first-last page");
-    gs_free(dev->memory, child_dev, 1, child_dev->stype->ssize, "gx_device_subclass(device)");
+    memcpy(dev, child, child->stype->ssize);
+    if (psubclass_data)
+        gs_free_object(dev->memory->non_gc_memory, psubclass_data, "subclass memory for first-last page");
+    if (child)
+        gs_free_object(dev->memory, child, "gx_device_subclass(device)");
+    dev->parent = parent;
     if (dev->finalize)
         dev->finalize(dev);
     return;
@@ -322,10 +338,9 @@ void flp_finalize(gx_device *dev) {
 int flp_open_device(gx_device *dev)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.open_device)
-        subclass_common->child->procs.open_device(subclass_common->child);
+    if (dev->child->procs.open_device)
+        dev->child->procs.open_device(dev->child);
 
     return 0;
 }
@@ -333,7 +348,6 @@ int flp_open_device(gx_device *dev)
 void flp_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     /* At first sight we should never have a method in a device structure which is NULL
      * because gx_device_fill_in_procs() should replace all the NULLs with default routines.
@@ -344,8 +358,8 @@ void flp_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
      * because that gets set up by gdev_prn_allocate_memory(). Isn't it great the way we do our
      * initialisation in lots of places?
      */
-    if (subclass_common->child->procs.get_initial_matrix)
-        subclass_common->child->procs.get_initial_matrix(subclass_common->child, pmat);
+    if (dev->child->procs.get_initial_matrix)
+        dev->child->procs.get_initial_matrix(dev->child, pmat);
     else
         gx_default_get_initial_matrix(dev, pmat);
     return;
@@ -354,10 +368,9 @@ void flp_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 int flp_sync_output(gx_device *dev)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.sync_output)
-        return subclass_common->child->procs.sync_output(subclass_common->child);
+    if (dev->child->procs.sync_output)
+        return dev->child->procs.sync_output(dev->child);
     else
         gx_default_sync_output(dev);
 
@@ -367,12 +380,11 @@ int flp_sync_output(gx_device *dev)
 int flp_output_page(gx_device *dev, int num_copies, int flush)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.output_page)
-                return subclass_common->child->procs.output_page(subclass_common->child, num_copies, flush);
+            if (dev->child->procs.output_page)
+                return dev->child->procs.output_page(dev->child, num_copies, flush);
         }
     }
     psubclass_data->PageCount++;
@@ -383,20 +395,18 @@ int flp_output_page(gx_device *dev, int num_copies, int flush)
 int flp_close_device(gx_device *dev)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.close_device)
-        return subclass_common->child->procs.close_device(subclass_common->child);
+    if (dev->child->procs.close_device)
+        return dev->child->procs.close_device(dev->child);
     return 0;
 }
 
 gx_color_index flp_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.map_rgb_color)
-        return subclass_common->child->procs.map_rgb_color(subclass_common->child, cv);
+    if (dev->child->procs.map_rgb_color)
+        return dev->child->procs.map_rgb_color(dev->child, cv);
     else
         gx_error_encode_color(dev, cv);
     return 0;
@@ -405,10 +415,9 @@ gx_color_index flp_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 int flp_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.map_color_rgb)
-        return subclass_common->child->procs.map_color_rgb(subclass_common->child, color, rgb);
+    if (dev->child->procs.map_color_rgb)
+        return dev->child->procs.map_color_rgb(dev->child, color, rgb);
     else
         gx_default_map_color_rgb(dev, color, rgb);
 
@@ -418,12 +427,11 @@ int flp_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3
 int flp_fill_rectangle(gx_device *dev, int x, int y, int width, int height, gx_color_index color)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.fill_rectangle)
-                return subclass_common->child->procs.fill_rectangle(subclass_common->child, x, y, width, height, color);
+            if (dev->child->procs.fill_rectangle)
+                return dev->child->procs.fill_rectangle(dev->child, x, y, width, height, color);
         }
     }
 
@@ -435,12 +443,11 @@ int flp_tile_rectangle(gx_device *dev, const gx_tile_bitmap *tile, int x, int y,
     int phase_x, int phase_y)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.tile_rectangle)
-                return subclass_common->child->procs.tile_rectangle(subclass_common->child, tile, x, y, width, height, color0, color1, phase_x, phase_y);
+            if (dev->child->procs.tile_rectangle)
+                return dev->child->procs.tile_rectangle(dev->child, tile, x, y, width, height, color0, color1, phase_x, phase_y);
         }
     }
 
@@ -452,12 +459,11 @@ int flp_copy_mono(gx_device *dev, const byte *data, int data_x, int raster, gx_b
     gx_color_index color0, gx_color_index color1)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.copy_mono)
-                return subclass_common->child->procs.copy_mono(subclass_common->child, data, data_x, raster, id, x, y, width, height, color0, color1);
+            if (dev->child->procs.copy_mono)
+                return dev->child->procs.copy_mono(dev->child, data, data_x, raster, id, x, y, width, height, color0, color1);
         }
     }
 
@@ -468,12 +474,11 @@ int flp_copy_color(gx_device *dev, const byte *data, int data_x, int raster, gx_
     int x, int y, int width, int height)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.copy_color)
-                return subclass_common->child->procs.copy_color(subclass_common->child, data, data_x, raster, id, x, y, width, height);
+            if (dev->child->procs.copy_color)
+                return dev->child->procs.copy_color(dev->child, data, data_x, raster, id, x, y, width, height);
         }
     }
 
@@ -483,12 +488,11 @@ int flp_copy_color(gx_device *dev, const byte *data, int data_x, int raster, gx_
 int flp_draw_line(gx_device *dev, int x0, int y0, int x1, int y1, gx_color_index color)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.obsolete_draw_line)
-                return subclass_common->child->procs.obsolete_draw_line(subclass_common->child, x0, y0, x1, y1, color);
+            if (dev->child->procs.obsolete_draw_line)
+                return dev->child->procs.obsolete_draw_line(dev->child, x0, y0, x1, y1, color);
         }
     }
     return 0;
@@ -497,12 +501,11 @@ int flp_draw_line(gx_device *dev, int x0, int y0, int x1, int y1, gx_color_index
 int flp_get_bits(gx_device *dev, int y, byte *data, byte **actual_data)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.get_bits)
-                return subclass_common->child->procs.get_bits(subclass_common->child, y, data, actual_data);
+            if (dev->child->procs.get_bits)
+                return dev->child->procs.get_bits(dev->child, y, data, actual_data);
             else
                 return gx_default_get_bits(dev, y, data, actual_data);
         }
@@ -518,10 +521,9 @@ int flp_get_bits(gx_device *dev, int y, byte *data, byte **actual_data)
 int flp_get_params(gx_device *dev, gs_param_list *plist)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.get_params)
-        return subclass_common->child->procs.get_params(subclass_common->child, plist);
+    if (dev->child->procs.get_params)
+        return dev->child->procs.get_params(dev->child, plist);
     else
         return gx_default_get_params(dev, plist);
 
@@ -531,10 +533,9 @@ int flp_get_params(gx_device *dev, gs_param_list *plist)
 int flp_put_params(gx_device *dev, gs_param_list *plist)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.put_params)
-        return subclass_common->child->procs.put_params(subclass_common->child, plist);
+    if (dev->child->procs.put_params)
+        return dev->child->procs.put_params(dev->child, plist);
     else
         return gx_default_put_params(dev, plist);
 
@@ -544,10 +545,9 @@ int flp_put_params(gx_device *dev, gs_param_list *plist)
 gx_color_index flp_map_cmyk_color(gx_device *dev, const gx_color_value cv[])
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.map_cmyk_color)
-        return subclass_common->child->procs.map_cmyk_color(subclass_common->child, cv);
+    if (dev->child->procs.map_cmyk_color)
+        return dev->child->procs.map_cmyk_color(dev->child, cv);
     else
         return gx_default_map_cmyk_color(dev, cv);
 
@@ -557,10 +557,9 @@ gx_color_index flp_map_cmyk_color(gx_device *dev, const gx_color_value cv[])
 const gx_xfont_procs *flp_get_xfont_procs(gx_device *dev)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.get_xfont_procs)
-        return subclass_common->child->procs.get_xfont_procs(subclass_common->child);
+    if (dev->child->procs.get_xfont_procs)
+        return dev->child->procs.get_xfont_procs(dev->child);
     else
         return gx_default_get_xfont_procs(dev);
 
@@ -570,10 +569,9 @@ const gx_xfont_procs *flp_get_xfont_procs(gx_device *dev)
 gx_device *flp_get_xfont_device(gx_device *dev)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.get_xfont_device)
-        return subclass_common->child->procs.get_xfont_device(subclass_common->child);
+    if (dev->child->procs.get_xfont_device)
+        return dev->child->procs.get_xfont_device(dev->child);
     else
         return gx_default_get_xfont_device(dev);
 
@@ -584,12 +582,11 @@ gx_color_index flp_map_rgb_alpha_color(gx_device *dev, gx_color_value red, gx_co
     gx_color_value alpha)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.map_rgb_alpha_color)
-        return subclass_common->child->procs.map_rgb_alpha_color(subclass_common->child, red, green, blue, alpha);
+    if (dev->child->procs.map_rgb_alpha_color)
+        return dev->child->procs.map_rgb_alpha_color(dev->child, red, green, blue, alpha);
     else
-        return gx_default_map_rgb_alpha_color(subclass_common->child, red, green, blue, alpha);
+        return gx_default_map_rgb_alpha_color(dev->child, red, green, blue, alpha);
 
     return 0;
 }
@@ -597,10 +594,9 @@ gx_color_index flp_map_rgb_alpha_color(gx_device *dev, gx_color_value red, gx_co
 gx_device *flp_get_page_device(gx_device *dev)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.get_page_device)
-        return subclass_common->child->procs.get_page_device(subclass_common->child);
+    if (dev->child->procs.get_page_device)
+        return dev->child->procs.get_page_device(dev->child);
     else
         return gx_default_get_page_device(dev);
 
@@ -610,12 +606,11 @@ gx_device *flp_get_page_device(gx_device *dev)
 int flp_get_alpha_bits(gx_device *dev, graphics_object_type type)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.get_alpha_bits)
-                return subclass_common->child->procs.get_alpha_bits(subclass_common->child, type);
+            if (dev->child->procs.get_alpha_bits)
+                return dev->child->procs.get_alpha_bits(dev->child, type);
         }
     }
 
@@ -627,12 +622,11 @@ int flp_copy_alpha(gx_device *dev, const byte *data, int data_x,
     gx_color_index color, int depth)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.copy_alpha)
-                return subclass_common->child->procs.copy_alpha(subclass_common->child, data, data_x, raster, id, x, y, width, height, color, depth);
+            if (dev->child->procs.copy_alpha)
+                return dev->child->procs.copy_alpha(dev->child, data, data_x, raster, id, x, y, width, height, color, depth);
         }
     }
 
@@ -642,12 +636,11 @@ int flp_copy_alpha(gx_device *dev, const byte *data, int data_x,
 int flp_get_band(gx_device *dev, int y, int *band_start)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.get_band)
-                return subclass_common->child->procs.get_band(subclass_common->child, y, band_start);
+            if (dev->child->procs.get_band)
+                return dev->child->procs.get_band(dev->child, y, band_start);
             else
                 return gx_default_get_band(dev, y, band_start);
         }
@@ -667,16 +660,15 @@ int flp_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, g
     int phase_x, int phase_y, gs_logical_operation_t lop)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.copy_rop)
-                return subclass_common->child->procs.copy_rop(subclass_common->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
+            if (dev->child->procs.copy_rop)
+                return dev->child->procs.copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
             else
-                return gx_default_copy_rop(subclass_common->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
+                return gx_default_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
         } else
-            return gx_default_copy_rop(subclass_common->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
+            return gx_default_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
     }
     else
         return gx_default_copy_rop(dev, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
@@ -689,14 +681,13 @@ int flp_fill_path(gx_device *dev, const gs_imager_state *pis, gx_path *ppath,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.fill_path)
-                return subclass_common->child->procs.fill_path(subclass_common->child, pis, ppath, params, pdcolor, pcpath);
+            if (dev->child->procs.fill_path)
+                return dev->child->procs.fill_path(dev->child, pis, ppath, params, pdcolor, pcpath);
             else
-                return gx_default_fill_path(subclass_common->child, pis, ppath, params, pdcolor, pcpath);
+                return gx_default_fill_path(dev->child, pis, ppath, params, pdcolor, pcpath);
         }
     }
 
@@ -708,14 +699,13 @@ int flp_stroke_path(gx_device *dev, const gs_imager_state *pis, gx_path *ppath,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.stroke_path)
-                return subclass_common->child->procs.stroke_path(subclass_common->child, pis, ppath, params, pdcolor, pcpath);
+            if (dev->child->procs.stroke_path)
+                return dev->child->procs.stroke_path(dev->child, pis, ppath, params, pdcolor, pcpath);
             else
-                return gx_default_stroke_path(subclass_common->child, pis, ppath, params, pdcolor, pcpath);
+                return gx_default_stroke_path(dev->child, pis, ppath, params, pdcolor, pcpath);
         }
     }
 
@@ -728,14 +718,13 @@ int flp_fill_mask(gx_device *dev, const byte *data, int data_x, int raster, gx_b
     gs_logical_operation_t lop, const gx_clip_path *pcpath)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.fill_mask)
-                return subclass_common->child->procs.fill_mask(subclass_common->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
+            if (dev->child->procs.fill_mask)
+                return dev->child->procs.fill_mask(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
             else
-                return gx_default_fill_mask(subclass_common->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
+                return gx_default_fill_mask(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
         }
     }
 
@@ -747,14 +736,13 @@ int flp_fill_trapezoid(gx_device *dev, const gs_fixed_edge *left, const gs_fixed
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.fill_trapezoid)
-                return subclass_common->child->procs.fill_trapezoid(subclass_common->child, left, right, ybot, ytop, swap_axes, pdcolor, lop);
+            if (dev->child->procs.fill_trapezoid)
+                return dev->child->procs.fill_trapezoid(dev->child, left, right, ybot, ytop, swap_axes, pdcolor, lop);
             else
-                return gx_default_fill_trapezoid(subclass_common->child, left, right, ybot, ytop, swap_axes, pdcolor, lop);
+                return gx_default_fill_trapezoid(dev->child, left, right, ybot, ytop, swap_axes, pdcolor, lop);
         }
     }
 
@@ -765,14 +753,13 @@ int flp_fill_parallelogram(gx_device *dev, fixed px, fixed py, fixed ax, fixed a
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.fill_parallelogram)
-                return subclass_common->child->procs.fill_parallelogram(subclass_common->child, px, py, ax, ay, bx, by, pdcolor, lop);
+            if (dev->child->procs.fill_parallelogram)
+                return dev->child->procs.fill_parallelogram(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
             else
-                return gx_default_fill_parallelogram(subclass_common->child, px, py, ax, ay, bx, by, pdcolor, lop);
+                return gx_default_fill_parallelogram(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
         }
     }
 
@@ -783,14 +770,13 @@ int flp_fill_triangle(gx_device *dev, fixed px, fixed py, fixed ax, fixed ay, fi
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.fill_triangle)
-                return subclass_common->child->procs.fill_triangle(subclass_common->child, px, py, ax, ay, bx, by, pdcolor, lop);
+            if (dev->child->procs.fill_triangle)
+                return dev->child->procs.fill_triangle(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
             else
-                return gx_default_fill_triangle(subclass_common->child, px, py, ax, ay, bx, by, pdcolor, lop);
+                return gx_default_fill_triangle(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
         }
     }
 
@@ -802,14 +788,13 @@ int flp_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed fx1, fixed fy
     fixed adjustx, fixed adjusty)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.draw_thin_line)
-                return subclass_common->child->procs.draw_thin_line(subclass_common->child, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
+            if (dev->child->procs.draw_thin_line)
+                return dev->child->procs.draw_thin_line(dev->child, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
             else
-                return gx_default_draw_thin_line(subclass_common->child, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
+                return gx_default_draw_thin_line(dev->child, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
         }
     }
 
@@ -822,14 +807,13 @@ int flp_begin_image(gx_device *dev, const gs_imager_state *pis, const gs_image_t
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.begin_image)
-                return subclass_common->child->procs.begin_image(subclass_common->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
+            if (dev->child->procs.begin_image)
+                return dev->child->procs.begin_image(dev->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
             else
-                return gx_default_begin_image(subclass_common->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
+                return gx_default_begin_image(dev->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
         }
     }
 
@@ -840,12 +824,11 @@ int flp_image_data(gx_device *dev, gx_image_enum_common_t *info, const byte **pl
     uint raster, int height)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.image_data)
-                return subclass_common->child->procs.image_data(subclass_common->child, info, planes, data_x, raster, height);
+            if (dev->child->procs.image_data)
+                return dev->child->procs.image_data(dev->child, info, planes, data_x, raster, height);
         }
     }
 
@@ -855,12 +838,11 @@ int flp_image_data(gx_device *dev, gx_image_enum_common_t *info, const byte **pl
 int flp_end_image(gx_device *dev, gx_image_enum_common_t *info, bool draw_last)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.end_image)
-                return subclass_common->child->procs.end_image(subclass_common->child, info, draw_last);
+            if (dev->child->procs.end_image)
+                return dev->child->procs.end_image(dev->child, info, draw_last);
         }
     }
 
@@ -872,14 +854,13 @@ int flp_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles, int x
     int phase_x, int phase_y)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.strip_tile_rectangle)
-                return subclass_common->child->procs.strip_tile_rectangle(subclass_common->child, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
+            if (dev->child->procs.strip_tile_rectangle)
+                return dev->child->procs.strip_tile_rectangle(dev->child, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
             else
-                return gx_default_strip_tile_rectangle(subclass_common->child, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
+                return gx_default_strip_tile_rectangle(dev->child, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
         }
     }
 
@@ -893,14 +874,13 @@ int flp_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sras
     int phase_x, int phase_y, gs_logical_operation_t lop)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.strip_copy_rop)
-                return subclass_common->child->procs.strip_copy_rop(subclass_common->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
+            if (dev->child->procs.strip_copy_rop)
+                return dev->child->procs.strip_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
             else
-                return gx_default_strip_copy_rop(subclass_common->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
+                return gx_default_strip_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
         }
     }
 
@@ -910,12 +890,11 @@ int flp_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sras
 void flp_get_clipping_box(gx_device *dev, gs_fixed_rect *pbox)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.get_clipping_box)
-        subclass_common->child->procs.get_clipping_box(subclass_common->child, pbox);
+    if (dev->child->procs.get_clipping_box)
+        dev->child->procs.get_clipping_box(dev->child, pbox);
     else
-        gx_default_get_clipping_box(subclass_common->child, pbox);
+        gx_default_get_clipping_box(dev->child, pbox);
 
     return;
 }
@@ -926,19 +905,18 @@ int flp_begin_typed_image(gx_device *dev, const gs_imager_state *pis, const gs_m
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.begin_typed_image)
-                return subclass_common->child->procs.begin_typed_image(subclass_common->child, pis, pmat, pim, prect, pdcolor, pcpath, memory, pinfo);
+            if (dev->child->procs.begin_typed_image)
+                return dev->child->procs.begin_typed_image(dev->child, pis, pmat, pim, prect, pdcolor, pcpath, memory, pinfo);
             else
-                return gx_default_begin_typed_image(subclass_common->child, pis, pmat, pim, prect, pdcolor, pcpath, memory, pinfo);
+                return gx_default_begin_typed_image(dev->child, pis, pmat, pim, prect, pdcolor, pcpath, memory, pinfo);
         } else
-            return gx_default_begin_typed_image(subclass_common->child, pis, pmat, pim, prect, pdcolor, pcpath, memory, pinfo);
+            return gx_default_begin_typed_image(dev->child, pis, pmat, pim, prect, pdcolor, pcpath, memory, pinfo);
     }
     else
-        return gx_default_begin_typed_image(subclass_common->child, pis, pmat, pim, prect, pdcolor, pcpath, memory, pinfo);
+        return gx_default_begin_typed_image(dev->child, pis, pmat, pim, prect, pdcolor, pcpath, memory, pinfo);
 
     return 0;
 }
@@ -947,19 +925,18 @@ int flp_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
     gs_get_bits_params_t *params, gs_int_rect **unread)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.get_bits_rectangle)
-                return subclass_common->child->procs.get_bits_rectangle(subclass_common->child, prect, params, unread);
+            if (dev->child->procs.get_bits_rectangle)
+                return dev->child->procs.get_bits_rectangle(dev->child, prect, params, unread);
             else
-                return gx_default_get_bits_rectangle(subclass_common->child, prect, params, unread);
+                return gx_default_get_bits_rectangle(dev->child, prect, params, unread);
         } else
-            return gx_default_get_bits_rectangle(subclass_common->child, prect, params, unread);
+            return gx_default_get_bits_rectangle(dev->child, prect, params, unread);
     }
     else
-        return gx_default_get_bits_rectangle(subclass_common->child, prect, params, unread);
+        return gx_default_get_bits_rectangle(dev->child, prect, params, unread);
 
     return 0;
 }
@@ -967,28 +944,27 @@ int flp_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
 int flp_map_color_rgb_alpha(gx_device *dev, gx_color_index color, gx_color_value rgba[4])
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.map_color_rgb_alpha)
-        return subclass_common->child->procs.map_color_rgb_alpha(subclass_common->child, color, rgba);
+    if (dev->child->procs.map_color_rgb_alpha)
+        return dev->child->procs.map_color_rgb_alpha(dev->child, color, rgba);
     else
-        return gx_default_map_color_rgb_alpha(subclass_common->child, color, rgba);
+        return gx_default_map_color_rgb_alpha(dev->child, color, rgba);
 
     return 0;
 }
 
-int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,\
+int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.create_compositor)
-                return subclass_common->child->procs.create_compositor(subclass_common->child, pcdev, pcte, pis, memory, cdev);
+            if (dev->child->procs.create_compositor)
+                return dev->child->procs.create_compositor(dev, pcdev, pcte, pis, memory, cdev);
         }
-    }
+    } else
+        gx_default_create_compositor(dev, pcdev, pcte, pis, memory, cdev);
 
     return 0;
 }
@@ -996,12 +972,11 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
 int flp_get_hardware_params(gx_device *dev, gs_param_list *plist)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.get_hardware_params)
-        return subclass_common->child->procs.get_hardware_params(subclass_common->child, plist);
+    if (dev->child->procs.get_hardware_params)
+        return dev->child->procs.get_hardware_params(dev->child, plist);
     else
-        return gx_default_get_hardware_params(subclass_common->child, plist);
+        return gx_default_get_hardware_params(dev->child, plist);
 
     return 0;
 }
@@ -1078,13 +1053,12 @@ int flp_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_params_t 
     int code;
 
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage && (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage)) {
-        if (subclass_common->child->procs.text_begin)
-            return subclass_common->child->procs.text_begin(subclass_common->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
+        if (dev->child->procs.text_begin)
+            return dev->child->procs.text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
         else
-            return gx_default_text_begin(subclass_common->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
+            return gx_default_text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
     }
     else {
         rc_alloc_struct_1(penum, flp_text_enum_t, &st_flp_text_enum, memory,
@@ -1115,12 +1089,11 @@ int flp_begin_transparency_group(gx_device *dev, const gs_transparency_group_par
     const gs_rect *pbbox, gs_imager_state *pis, gs_memory_t *mem)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.begin_transparency_group)
-                return subclass_common->child->procs.begin_transparency_group(subclass_common->child, ptgp, pbbox, pis, mem);
+            if (dev->child->procs.begin_transparency_group)
+                return dev->child->procs.begin_transparency_group(dev->child, ptgp, pbbox, pis, mem);
         }
     }
 
@@ -1130,12 +1103,11 @@ int flp_begin_transparency_group(gx_device *dev, const gs_transparency_group_par
 int flp_end_transparency_group(gx_device *dev, gs_imager_state *pis)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.end_transparency_group)
-                return subclass_common->child->procs.end_transparency_group(subclass_common->child, pis);
+            if (dev->child->procs.end_transparency_group)
+                return dev->child->procs.end_transparency_group(dev->child, pis);
         }
     }
 
@@ -1146,12 +1118,11 @@ int flp_begin_transparency_mask(gx_device *dev, const gx_transparency_mask_param
     const gs_rect *pbbox, gs_imager_state *pis, gs_memory_t *mem)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.begin_transparency_mask)
-                return subclass_common->child->procs.begin_transparency_mask(subclass_common->child, ptmp, pbbox, pis, mem);
+            if (dev->child->procs.begin_transparency_mask)
+                return dev->child->procs.begin_transparency_mask(dev->child, ptmp, pbbox, pis, mem);
         }
     }
 
@@ -1161,12 +1132,11 @@ int flp_begin_transparency_mask(gx_device *dev, const gx_transparency_mask_param
 int flp_end_transparency_mask(gx_device *dev, gs_imager_state *pis)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.end_transparency_mask)
-                return subclass_common->child->procs.end_transparency_mask(subclass_common->child, pis);
+            if (dev->child->procs.end_transparency_mask)
+                return dev->child->procs.end_transparency_mask(dev->child, pis);
         }
     }
 
@@ -1175,12 +1145,11 @@ int flp_end_transparency_mask(gx_device *dev, gs_imager_state *pis)
 int flp_discard_transparency_layer(gx_device *dev, gs_imager_state *pis)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.discard_transparency_layer)
-                return subclass_common->child->procs.discard_transparency_layer(subclass_common->child, pis);
+            if (dev->child->procs.discard_transparency_layer)
+                return dev->child->procs.discard_transparency_layer(dev->child, pis);
         }
     }
 
@@ -1190,12 +1159,11 @@ int flp_discard_transparency_layer(gx_device *dev, gs_imager_state *pis)
 const gx_cm_color_map_procs *flp_get_color_mapping_procs(const gx_device *dev)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.get_color_mapping_procs)
-        return subclass_common->child->procs.get_color_mapping_procs(subclass_common->child);
+    if (dev->child->procs.get_color_mapping_procs)
+        return dev->child->procs.get_color_mapping_procs(dev->child);
     else
-        return gx_default_DevGray_get_color_mapping_procs(subclass_common->child);
+        return gx_default_DevGray_get_color_mapping_procs(dev->child);
 
     return 0;
 }
@@ -1203,12 +1171,11 @@ const gx_cm_color_map_procs *flp_get_color_mapping_procs(const gx_device *dev)
 int  flp_get_color_comp_index(gx_device *dev, const char * pname, int name_size, int component_type)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.get_color_comp_index)
-        return subclass_common->child->procs.get_color_comp_index(subclass_common->child, pname, name_size, component_type);
+    if (dev->child->procs.get_color_comp_index)
+        return dev->child->procs.get_color_comp_index(dev->child, pname, name_size, component_type);
     else
-        return gx_error_get_color_comp_index(subclass_common->child, pname, name_size, component_type);
+        return gx_error_get_color_comp_index(dev->child, pname, name_size, component_type);
 
     return 0;
 }
@@ -1216,12 +1183,11 @@ int  flp_get_color_comp_index(gx_device *dev, const char * pname, int name_size,
 gx_color_index flp_encode_color(gx_device *dev, const gx_color_value colors[])
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.encode_color)
-        return subclass_common->child->procs.encode_color(subclass_common->child, colors);
+    if (dev->child->procs.encode_color)
+        return dev->child->procs.encode_color(dev->child, colors);
     else
-        return gx_error_encode_color(subclass_common->child, colors);
+        return gx_error_encode_color(dev->child, colors);
 
     return 0;
 }
@@ -1229,10 +1195,9 @@ gx_color_index flp_encode_color(gx_device *dev, const gx_color_value colors[])
 flp_decode_color(gx_device *dev, gx_color_index cindex, gx_color_value colors[])
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.decode_color)
-        return subclass_common->child->procs.decode_color(subclass_common->child, cindex, colors);
+    if (dev->child->procs.decode_color)
+        return dev->child->procs.decode_color(dev->child, cindex, colors);
     else {
         memset(colors, 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
     }
@@ -1244,12 +1209,11 @@ int flp_pattern_manage(gx_device *dev, gx_bitmap_id id,
                 gs_pattern1_instance_t *pinst, pattern_manage_t function)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.pattern_manage)
-                return subclass_common->child->procs.pattern_manage(subclass_common->child, id, pinst, function);
+            if (dev->child->procs.pattern_manage)
+                return dev->child->procs.pattern_manage(dev->child, id, pinst, function);
         }
     }
 
@@ -1260,12 +1224,11 @@ int flp_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         const gs_imager_state *pis, const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.fill_rectangle_hl_color)
-                return subclass_common->child->procs.fill_rectangle_hl_color(subclass_common->child, rect, pis, pdcolor, pcpath);
+            if (dev->child->procs.fill_rectangle_hl_color)
+                return dev->child->procs.fill_rectangle_hl_color(dev->child, rect, pis, pdcolor, pcpath);
             else
                 return_error(gs_error_rangecheck);
         }
@@ -1277,10 +1240,9 @@ int flp_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
 int flp_include_color_space(gx_device *dev, gs_color_space *cspace, const byte *res_name, int name_length)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.include_color_space)
-        return subclass_common->child->procs.include_color_space(subclass_common->child, cspace, res_name, name_length);
+    if (dev->child->procs.include_color_space)
+        return dev->child->procs.include_color_space(dev->child, cspace, res_name, name_length);
 
     return 0;
 }
@@ -1290,14 +1252,13 @@ int flp_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
         int32_t cg_den)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.fill_linear_color_scanline)
-                return subclass_common->child->procs.fill_linear_color_scanline(subclass_common->child, fa, i, j, w, c0, c0_f, cg_num, cg_den);
+            if (dev->child->procs.fill_linear_color_scanline)
+                return dev->child->procs.fill_linear_color_scanline(dev->child, fa, i, j, w, c0, c0_f, cg_num, cg_den);
             else
-                return gx_default_fill_linear_color_scanline(subclass_common->child, fa, i, j, w, c0, c0_f, cg_num, cg_den);
+                return gx_default_fill_linear_color_scanline(dev->child, fa, i, j, w, c0, c0_f, cg_num, cg_den);
         }
     }
 
@@ -1311,14 +1272,13 @@ int flp_fill_linear_color_trapezoid(gx_device *dev, const gs_fill_attributes *fa
         const frac31 *c2, const frac31 *c3)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.fill_linear_color_trapezoid)
-                return subclass_common->child->procs.fill_linear_color_trapezoid(subclass_common->child, fa, p0, p1, p2, p3, c0, c1, c2, c3);
+            if (dev->child->procs.fill_linear_color_trapezoid)
+                return dev->child->procs.fill_linear_color_trapezoid(dev->child, fa, p0, p1, p2, p3, c0, c1, c2, c3);
             else
-                return gx_default_fill_linear_color_trapezoid(subclass_common->child, fa, p0, p1, p2, p3, c0, c1, c2, c3);
+                return gx_default_fill_linear_color_trapezoid(dev->child, fa, p0, p1, p2, p3, c0, c1, c2, c3);
         }
     }
 
@@ -1330,14 +1290,13 @@ int flp_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
         const gs_fixed_point *p2, const frac31 *c0, const frac31 *c1, const frac31 *c2)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.fill_linear_color_triangle)
-                return subclass_common->child->procs.fill_linear_color_triangle(subclass_common->child, fa, p0, p1, p2, c0, c1, c2);
+            if (dev->child->procs.fill_linear_color_triangle)
+                return dev->child->procs.fill_linear_color_triangle(dev->child, fa, p0, p1, p2, c0, c1, c2);
             else
-                return gx_default_fill_linear_color_triangle(subclass_common->child, fa, p0, p1, p2, c0, c1, c2);
+                return gx_default_fill_linear_color_triangle(dev->child, fa, p0, p1, p2, c0, c1, c2);
         }
     }
 
@@ -1347,10 +1306,9 @@ int flp_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
 int flp_update_spot_equivalent_colors(gx_device *dev, const gs_state * pgs)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.update_spot_equivalent_colors)
-        return subclass_common->child->procs.update_spot_equivalent_colors(subclass_common->child, pgs);
+    if (dev->child->procs.update_spot_equivalent_colors)
+        return dev->child->procs.update_spot_equivalent_colors(dev->child, pgs);
 
     return 0;
 }
@@ -1358,10 +1316,9 @@ int flp_update_spot_equivalent_colors(gx_device *dev, const gs_state * pgs)
 gs_devn_params *flp_ret_devn_params(gx_device *dev)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.ret_devn_params)
-        return subclass_common->child->procs.ret_devn_params(subclass_common->child);
+    if (dev->child->procs.ret_devn_params)
+        return dev->child->procs.ret_devn_params(dev->child);
 
     return 0;
 }
@@ -1369,14 +1326,13 @@ gs_devn_params *flp_ret_devn_params(gx_device *dev)
 int flp_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.fillpage)
-                return subclass_common->child->procs.fillpage(subclass_common->child, pis, pdevc);
+            if (dev->child->procs.fillpage)
+                return dev->child->procs.fillpage(dev->child, pis, pdevc);
             else
-                return gx_default_fillpage(subclass_common->child, pis, pdevc);
+                return gx_default_fillpage(dev->child, pis, pdevc);
         }
     }
 
@@ -1386,12 +1342,11 @@ int flp_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
 int flp_push_transparency_state(gx_device *dev, gs_imager_state *pis)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.push_transparency_state)
-                return subclass_common->child->procs.push_transparency_state(subclass_common->child, pis);
+            if (dev->child->procs.push_transparency_state)
+                return dev->child->procs.push_transparency_state(dev->child, pis);
         }
     }
 
@@ -1401,12 +1356,11 @@ int flp_push_transparency_state(gx_device *dev, gs_imager_state *pis)
 int flp_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.push_transparency_state)
-                return subclass_common->child->procs.push_transparency_state(subclass_common->child, pis);
+            if (dev->child->procs.push_transparency_state)
+                return dev->child->procs.push_transparency_state(dev->child, pis);
         }
     }
 
@@ -1418,12 +1372,11 @@ int flp_put_image(gx_device *dev, const byte *buffer, int num_chan, int x, int y
             int alpha_plane_index, int tag_plane_index)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.put_image)
-                return subclass_common->child->procs.put_image(subclass_common->child, buffer, num_chan, x, y, width, height, row_stride, plane_stride, alpha_plane_index, tag_plane_index);
+            if (dev->child->procs.put_image)
+                return dev->child->procs.put_image(dev->child, buffer, num_chan, x, y, width, height, row_stride, plane_stride, alpha_plane_index, tag_plane_index);
         }
     }
 
@@ -1433,10 +1386,9 @@ int flp_put_image(gx_device *dev, const byte *buffer, int num_chan, int x, int y
 int flp_dev_spec_op(gx_device *dev, int op, void *data, int datasize)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.dev_spec_op)
-        return subclass_common->child->procs.dev_spec_op(subclass_common->child, op, data, datasize);
+    if (dev->child->procs.dev_spec_op)
+        return dev->child->procs.dev_spec_op(dev->child, op, data, datasize);
 
     return 0;
 }
@@ -1445,12 +1397,11 @@ int flp_copy_planes(gx_device *dev, const byte *data, int data_x, int raster, gx
     int x, int y, int width, int height, int plane_height)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.copy_planes)
-                return subclass_common->child->procs.copy_planes(subclass_common->child, data, data_x, raster, id, x, y, width, height, plane_height);
+            if (dev->child->procs.copy_planes)
+                return dev->child->procs.copy_planes(dev->child, data, data_x, raster, id, x, y, width, height, plane_height);
         }
     }
 
@@ -1460,12 +1411,11 @@ int flp_copy_planes(gx_device *dev, const byte *data, int data_x, int raster, gx
 int flp_get_profile(gx_device *dev, cmm_dev_profile_t **dev_profile)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
-    if (subclass_common->child->procs.get_profile)
-        return subclass_common->child->procs.get_profile(subclass_common->child, dev_profile);
+    if (dev->child->procs.get_profile)
+        return dev->child->procs.get_profile(dev->child, dev_profile);
     else
-        return gx_default_get_profile(subclass_common->child, dev_profile);
+        return gx_default_get_profile(dev->child, dev_profile);
 
     return 0;
 }
@@ -1473,12 +1423,11 @@ int flp_get_profile(gx_device *dev, cmm_dev_profile_t **dev_profile)
 void flp_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t tag)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.set_graphics_type_tag)
-                subclass_common->child->procs.set_graphics_type_tag(subclass_common->child, tag);
+            if (dev->child->procs.set_graphics_type_tag)
+                dev->child->procs.set_graphics_type_tag(dev->child, tag);
         }
     }
 
@@ -1490,14 +1439,13 @@ int flp_strip_copy_rop2(gx_device *dev, const byte *sdata, int sourcex, uint sra
     int x, int y, int width, int height, int phase_x, int phase_y, gs_logical_operation_t lop, uint planar_height)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.strip_copy_rop2)
-                return subclass_common->child->procs.strip_copy_rop2(subclass_common->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
+            if (dev->child->procs.strip_copy_rop2)
+                return dev->child->procs.strip_copy_rop2(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
             else
-                return gx_default_strip_copy_rop2(subclass_common->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
+                return gx_default_strip_copy_rop2(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
         }
     }
 
@@ -1508,14 +1456,13 @@ int flp_strip_tile_rect_devn(gx_device *dev, const gx_strip_bitmap *tiles, int x
     const gx_drawing_color *pdcolor0, const gx_drawing_color *pdcolor1, int phase_x, int phase_y)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.strip_tile_rect_devn)
-                return subclass_common->child->procs.strip_tile_rect_devn(subclass_common->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
+            if (dev->child->procs.strip_tile_rect_devn)
+                return dev->child->procs.strip_tile_rect_devn(dev->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
             else
-                return gx_default_strip_tile_rect_devn(subclass_common->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
+                return gx_default_strip_tile_rect_devn(dev->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
         }
     }
 
@@ -1527,12 +1474,11 @@ int flp_copy_alpha_hl_color(gx_device *dev, const byte *data, int data_x,
     const gx_drawing_color *pdcolor, int depth)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.copy_alpha_hl_color)
-                return subclass_common->child->procs.copy_alpha_hl_color(subclass_common->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth);
+            if (dev->child->procs.copy_alpha_hl_color)
+                return dev->child->procs.copy_alpha_hl_color(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth);
             else
                 return_error(gs_error_rangecheck);
         }
@@ -1544,12 +1490,11 @@ int flp_copy_alpha_hl_color(gx_device *dev, const byte *data, int data_x,
 int flp_process_page(gx_device *dev, gx_process_page_options_t *options)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
-    subclass_data_common_t *subclass_common = &psubclass_data->subclass_common;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (subclass_common->child->procs.process_page)
-                return subclass_common->child->procs.process_page(subclass_common->child, options);
+            if (dev->child->procs.process_page)
+                return dev->child->procs.process_page(dev->child, options);
         }
     }
 

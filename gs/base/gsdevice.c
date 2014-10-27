@@ -71,6 +71,17 @@ gx_device_free_local(gx_device *dev)
 
 /* GC procedures */
 static
+ENUM_PTRS_WITH(device_enum_ptrs, gx_device *dev) return 0;
+case 0:ENUM_RETURN(gx_device_enum_ptr(dev->parent));
+case 1:ENUM_RETURN(gx_device_enum_ptr(dev->child));
+ENUM_PTRS_END
+static RELOC_PTRS_WITH(device_reloc_ptrs, gx_device *dev)
+{
+    dev->parent = gx_device_reloc_ptr(dev->parent, gcst);
+    dev->child = gx_device_reloc_ptr(dev->child, gcst);
+}
+RELOC_PTRS_END
+static
 ENUM_PTRS_WITH(device_forward_enum_ptrs, gx_device_forward *fdev) return 0;
 case 0: ENUM_RETURN(gx_device_enum_ptr(fdev->target));
 ENUM_PTRS_END
