@@ -379,10 +379,10 @@ jbig2_arith_decode (Jbig2ArithState *as, Jbig2ArithCx *pcx)
     }
 }
 
-int
-jbig2_arith_get_offset(Jbig2ArithState *as)
+bool
+jbig2_arith_has_reached_marker(Jbig2ArithState *as)
 {
-  return as->offset;
+  return as->next_word_bytes == 2 && (as->next_word >> 16) > 0xFF8F;
 }
 
 #ifdef TEST
