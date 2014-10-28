@@ -2070,7 +2070,13 @@ currentdict /PDF2PS_matrix_key undef
   gsave		% preserve gstate for Annotations later
   /Contents knownoget not { 0 array } if
   dup type /arraytype ne { 1 array astore } if {
-    oforce //false resolvestream pdfopdict .pdfrun
+    oforce dup type /dicttype eq {
+      //false resolvestream pdfopdict .pdfrun
+    } {
+      (**** Error: The Page /Contents array contains an element which is not a stream\n            This page will not display correctly\n\n)
+      pdfformaterror
+      pop exit
+    }ifelse
   } forall
   % check for extra garbage on the ostack and clean it up
   count pdfemptycount sub dup 0 ne {
