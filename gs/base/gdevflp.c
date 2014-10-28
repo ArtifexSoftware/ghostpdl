@@ -41,6 +41,15 @@
  * be usable as a real forwarding device (last time I tried to do this for eps2write I was unable
  * to solve the problems with text enumerators).
  */
+
+/* TODO make gx_device_fill_in_procs fill in *all* hte procs, currently it doesn't.
+ * this will mean declaring gx_default_ methods for the transparency methods, possibly
+ * some others. Like a number of other default methods, these cna simply return an error
+ * which hopefuly will avoid us having to check for NULL device methods.
+ * We also agreed to set the fill_rectangle method to a default as well (currently it explicitly
+ * does not do this) and have gdev_prn_alloc_buffer check to see if the method is the default
+ * before overwriting it, rather than the current check for NULL.
+ */
 #include "math_.h"
 #include "memory_.h"
 #include "gx.h"
@@ -901,8 +910,41 @@ void flp_get_clipping_box(gx_device *dev, gs_fixed_rect *pbox)
     return;
 }
 
+typedef struct flp_image_enum_s {
+    gx_image_enum_common;
+} flp_image_enum;
+gs_private_st_composite(st_flp_image_enum, flp_image_enum, "flp_image_enum",
+  flp_image_enum_enum_ptrs, flp_image_enum_reloc_ptrs);
+
+static ENUM_PTRS_WITH(flp_image_enum_enum_ptrs, flp_image_enum *pie)
+    return ENUM_USING_PREFIX(st_gx_image_enum_common, 0);
+ENUM_PTRS_END
+static RELOC_PTRS_WITH(flp_image_enum_reloc_ptrs, flp_image_enum *pie)
+{
+}
+RELOC_PTRS_END
+
+static int
+flp_image_plane_data(gx_image_enum_common_t * info,
+                     const gx_image_plane_t * planes, int height,
+                     int *rows_used)
+{
+    return 0;
+}
+
+static int
+flp_image_end_image(gx_image_enum_common_t * info, bool draw_last)
+{
+    return 0;
+}
+
+static const gx_image_enum_procs_t flp_image_enum_procs = {
+    flp_image_plane_data,
+    flp_image_end_image
+};
+
 int flp_begin_typed_image(gx_device *dev, const gs_imager_state *pis, const gs_matrix *pmat,
-    const gs_image_common_t *pim, const gs_int_rect *prect,
+    const gs_image_common_t *pic, const gs_int_rect *prect,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 {
@@ -911,14 +953,34 @@ int flp_begin_typed_image(gx_device *dev, const gs_imager_state *pis, const gs_m
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
             if (dev->child->procs.begin_typed_image)
-                return dev->child->procs.begin_typed_image(dev->child, pis, pmat, pim, prect, pdcolor, pcpath, memory, pinfo);
+                return dev->child->procs.begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
             else
-                return gx_default_begin_typed_image(dev->child, pis, pmat, pim, prect, pdcolor, pcpath, memory, pinfo);
+                return gx_default_begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
         } else
-            return gx_default_begin_typed_image(dev->child, pis, pmat, pim, prect, pdcolor, pcpath, memory, pinfo);
+            return gx_default_begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
     }
-    else
-        return gx_default_begin_typed_image(dev->child, pis, pmat, pim, prect, pdcolor, pcpath, memory, pinfo);
+    else {
+        flp_image_enum *pie;
+        const gs_pixel_image_t *pim = (const gs_pixel_image_t *)pic;
+        int num_components = gs_color_space_num_components(pim->ColorSpace);
+
+        if (pic->type->index == 1) {
+            const gs_image_t *pim1 = (const gs_image_t *)pic;
+
+            if (pim1->ImageMask)
+                num_components = 1;
+        }
+
+        pie = gs_alloc_struct(memory, flp_image_enum, &st_flp_image_enum,
+                            "flp_begin_image");
+        if (pie == 0)
+            return_error(gs_error_VMerror);
+        memset(pie, 0, sizeof(*pie)); /* cleanup entirely for GC to work in all cases. */
+        *pinfo = (gx_image_enum_common_t *) pie;
+        gx_image_enum_common_init(*pinfo, (const gs_data_image_t *) pim, &flp_image_enum_procs,
+                            (gx_device *)dev, num_components, pim->format);
+        pie->memory = memory;
+    }
 
     return 0;
 }
@@ -963,7 +1025,7 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
             if (dev->child->procs.create_compositor)
-                return dev->child->procs.create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+                return dev->child->procs.create_compositor(dev->child, pcdev, pcte, pis, memory, cdev);
         }
     } else
         gx_default_create_compositor(dev, pcdev, pcte, pis, memory, cdev);
