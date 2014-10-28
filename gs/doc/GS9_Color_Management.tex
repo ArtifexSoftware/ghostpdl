@@ -35,19 +35,19 @@
 
 \begin{titlepage}
 
-\begin{center}{\huge \bf Ghostscript 9.07 Color Management\\} \vspace{0.5in} {\Large Michael J.
+\begin{center}{\huge \bf Ghostscript 9.15 Color Management\\} \vspace{0.5in} {\Large Michael J.
 Vrhel, Ph.D.\\} {\Large Artifex Software\\} {\Large 7 Mt. Lassen Drive, A-134\\} {\Large San Rafael, CA 94903, USA\\}
 {\Large www.artifex.com\\}
 \end{center}
 \vspace*{0.5in}
 \begin{abstract}
-This document provides information about the color architecture in Ghostscript 9.06. The document is suitable for users who wish to
+This document provides information about the color architecture in Ghostscript 9.15. The document is suitable for users who wish to
 obtain accurate color with their output device as well as for developers who wish to customize Ghostscript to achieve a higher
 level of control and/or interface with a different color management module.
 \end{abstract}
 \begin{center}
 \vspace*{0.25in}
-Revision 1.4
+Revision 1.5
 \vspace*{0.25in}
 \capstartfalse
 \begin{figure}[h]
@@ -72,7 +72,7 @@ Revision 1.4
 
 With release 9.0, the color architecture of Ghostscript was updated to primarily use the ICC\cite{ICC} format for its color management needs.  Prior to this release, Ghostscript's color architecture was based heavily upon PostScript\cite{PS} Color Management (PCM).  This is due to the fact that Ghostscript was designed prior to the ICC format and likely even before there was much thought about digital color management.  At that point in time, color management was very much an art with someone adjusting controls to achieve the proper output color.
 
-Today, almost all print color management is performed using ICC profiles as opposed to PCM.  This fact along with the desire to create a faster, more flexible design was the motivation for the color architectural changes in release 9.0.  Since 9.0, several new features and capabilities  have been added. As of the 9.07 release, features of the color architecture include:
+Today, almost all print color management is performed using ICC profiles as opposed to PCM.  This fact along with the desire to create a faster, more flexible design was the motivation for the color architectural changes in release 9.0.  Since 9.0, several new features and capabilities  have been added. As of the 9.15 release, features of the color architecture include:
 \begin{itemize}
 \item Easy to interface different CMMs (Color Management Modules) with Ghostscript.
 \item ALL color spaces are defined in terms of ICC profiles.
@@ -94,6 +94,7 @@ Today, almost all print color management is performed using ICC profiles as oppo
 \item Control to force gray source colors to black ink only when rendering to output devices that support black ink.
 \item Ability to make use of device link ICC profiles for direct mapping of source colors to the device color space.
 \item Ability to make use of device link ICC profiles for retargeting from SWOP/Fogra standard color space to a specific device color space.
+\item Ability to monitor for the presence of color on individual pages, which is useful for certain print systems.
 \end{itemize}
 The document is organized to first provide a high level overview of the architecture. This is followed by details of the various functions and structures, which include the information necessary to interface other color management modules to Ghostscript as well as how to interface specialized color handling operations.
 
@@ -1126,7 +1127,7 @@ Full ICC support for XPS\cite{XPS} is contained in ghostxps. This includes the h
 \bibitem{ICC} Specification ICC.1:2004-10 (Profile version 4.2.0.0) Image technology colour management - Architecture, profile format, and data structure.
 (http://www.color.org/ICC1v42\_2006-05.pdf), Oct. 2004.
 
-\bibitem{PS} PostScript® Language Reference Third Edition, Adobe Systems Incorporated, Addison-Wesley Publishing, (http://partners.adobe.com/public/developer/ps/index\_specs.html)
+\bibitem{PS} PostScript Language Reference Third Edition, Adobe Systems Incorporated, Addison-Wesley Publishing, (http://partners.adobe.com/public/developer/ps/index\_specs.html)
 Reading Massachusetts, 1999.
 
 \bibitem{PDF} PDF Reference Sixth Edition Ver. 1.7, Adobe Systems Incorporated, (http://www.adobe.com/devnet/pdf/pdf\_reference.html), November 2006.
@@ -1138,7 +1139,7 @@ Reading Massachusetts, 1999.
 \end{thebibliography}
 
 \vspace*{1.25in}
-Copyright (c) 2011, Artifex Software Inc. All rights reserved.
+Copyright (c) 2014, Artifex Software Inc. All rights reserved.
 
 
 \end{document}
