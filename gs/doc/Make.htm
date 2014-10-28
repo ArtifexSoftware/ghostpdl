@@ -697,19 +697,30 @@ COMPILE_INITS=1
 </code></blockquote>
 
 <p>
+Or, if you use the <code>configure</code> based Unix-style build, you can disable
+COMPILE_INITS by adding the option <code>--disable-compile-inits</code> to the invocation
+of <code>configure</code>
+<p>
 Files are now compiled into the executable as a %rom% file system that can
 be searched, opened, etc. as with the normal (%os%) file system. The data
-is (mostly) compressed. The set of files built into the %rom% file system
-is specified in the <code>psi/psromfs.mak</code> file. Refer to the file
+is (mostly) compressed. Several of the initialisation files (those in <code>Resource/Init</code>)
+are also converted to binary Postscript encoding, and &quot;merged&quot; into a single monolithic
+file - this is done for both size and speed optimization. Files that are often customized for
+individual installations (such as <code>Fontmap</code> and <code>cidfmap</code>) are not
+merged into the single file and thus installation specific versions can be used.
+<p>
+The set of files built into the %rom% file system
+is specified in the <code>psi/psromfs.mak</code> file. By default the set
+of files built into the rom file system comprises all the resource files
+Ghostscript requires to run successfully (all the files under <code>Resource</code>
+directory, and those under the <code>iccprofiles</code> directory). Refer to the file
 <code>base/mkromfs.c</code> for a description of the parameters that
 control source and destination pathnames, file enumeration exclusion,
 compression, etc.
 
 <p>
-While fonts normally are compiled into the executable using <code>mkromfs</code>
-(above) from the Resource/Font/ directory, it is possible to compile Type 1 fonts
-into the executable using an older method that converts Type 1 fonts into C code.
-See <a href="Fonts.htm#Precompiling">Precompiling fonts</a>. 
+Fonts normally are compiled into the executable using <code>mkromfs</code>
+(above) from the Resource/Font/ directory.</a>. 
 
 <p>
 Similarly, Halftone resources can be compiled into the executable using
