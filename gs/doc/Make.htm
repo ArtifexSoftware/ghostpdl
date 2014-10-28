@@ -36,7 +36,6 @@
 <li><a href="#Features_and_devices">Selecting features and devices</a>
 <ul>
 <li><a href="#Precompiled_data">Precompiled run-time data</a>
-<li><a href="#GNU_readline">GNU readline</a>
 </ul>
 <li><a href="#Makefile_setup">Setting up "makefile"</a>
 <li><a href="#MSys/Mingw">MSys/Mingw</a>
@@ -731,62 +730,6 @@ halftone data files, and <code>lib/ht_ccsto.ps</code> for a sample data file.
  Note that even though the data files use PostScript syntax, compiled halftones
 do not require the PostScript interpreter and may be used with the graphics
 library alone.
-
-<h4><a name="GNU_readline"></a>GNU readline</h4>
-
-<p>
-AFPL Ghostscript does not include an interface to GNU readline.  A user
-contributed code for this purpose, which we spent significant time debugging
-and then updating to track internal architectural changes in Ghostscript.
-The contributor was willing to assign the copyright to Aladdin Enterprises
-(the copyright holder of Ghostscript at the time), and to allow the code to
-be distributed with the Aladdin Free Public License (AFPL) as well as the
-GNU License (GPL).  However, even though the GPL allows linking GPLed code
-(such as the GNU readline library package) with non-GPLed code (such as all
-the rest of AFPL Ghostscript) if one doesn't distribute the result, the Free
-Software Foundation, creators of the GPL, have told us that in their
-opinion, the GPL forbids distributing non-GPLed code that is merely
-<em>intended</em> to be linked with GPLed code.  We understand that FSF
-takes this position in order to prevent the construction of software that is
-partly GPLed and partly not GPLed, even though the text of the GPL does not
-actually forbid this (it only forbids <em>distribution</em> of such
-software).  We think that FSF's position is legally questionable and not in
-the best interest of users, but we do not have the resources to challenge
-it, especially since FSF's attorney apparently supports it.  Therefore, even
-though we added the user-contributed interface to GNU readline in internal
-Aladdin Ghostscript version 5.71 and had it working in version 5.93 (one of
-the last beta versions before the 6.0 release), we removed it from the
-Aladdin Ghostscript 6.0 distribution.
-
-<p>
-GPL Ghostscript distributions will include support for GNU readline.  As
-with other GPL Ghostscript components that are not included in AFPL
-Ghostscript, the maintainers of Ghostscript will not attempt to run, link,
-or even compile this code, or keep it current across changes in the rest of
-Ghostscript.  We will, however, welcome bug fixes or updates, and distribute
-them with subsequent releases of GPL Ghostscript.
-
-<p>
-The first Ghostscript distribution to include GPL readline
-support was GNU Ghostscript 6.0. Support has unfortunately
-been spotty since then.
-
-<p>
-We put considerable work into making it possible for Ghostscript to use GNU
-readline, including the creation and adjustment of internal software
-interfaces specifically to serve this purpose.  In principle, we should have
-undone this work in AFPL Ghostscript, lest FSF object to it too as
-intended to facilitate linking AFPL Ghostscript with GNU readline (as the
-U.S. government has been said to do for code that merely provides APIs where
-encryption may be added).  However, we are willing to take this risk rather
-than spend the time to undo the interface changes.
-
-<p>
-If you have comments or questions about this situation, please feel free to
-contact the Free Software Foundation, authors of the GPL and copyright
-holders of GNU readline, at <a href="mailto:gnu@gnu.org">gnu@gnu.org</a>,
-and/or Artifex Software, Inc., copyright holder of Ghostscript, at <a
-href="mailto:info@artifex.com">info@artifex.com</a>.
 
 <h3><a name="Makefile_setup"></a>Setting up "makefile"</h3>
 
