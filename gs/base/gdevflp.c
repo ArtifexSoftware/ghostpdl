@@ -308,8 +308,10 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     dev_to_subclass->subclass_data = psubclass_data;
     dev_to_subclass->child = child_dev;
     if (child_dev->parent) {
-        child_dev->parent = dev_to_subclass;
+        dev_to_subclass->parent = child_dev->parent;
+        child_dev->parent->child = dev_to_subclass;
     }
+    child_dev->parent = dev_to_subclass;
 
     return 0;
 }
