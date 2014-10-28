@@ -50,7 +50,7 @@ extern_st(st_imager_state);
 static
 ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
     if (index < st_device_forward_max_ptrs) {
-        gs_ptr_type_t ret = ENUM_USING_PREFIX(st_device_forward, 0);
+        gs_ptr_type_t ret = ENUM_USING_PREFIX(st_device_forward, st_device_max_ptrs);
 
         return (ret ? ret : ENUM_OBJ(0));
     }
