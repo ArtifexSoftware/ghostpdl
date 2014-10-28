@@ -1966,6 +1966,11 @@ currentdict /last-ditch-bpc-csp undef
       ifelse
     } for
   } ifelse
+  currentdict /BBox known not {
+        (\n   **** Warning: Required entry /BBox not present in Form.\n)
+        pdfformaterror
+        /BBox [0 1 0 1]
+  } if
   currentdict end { oforce } forall
   >>
   dup [ 2 index /Resources knownoget { oforce } { 0 dict } ifelse
