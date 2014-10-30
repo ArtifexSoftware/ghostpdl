@@ -290,7 +290,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
                 blackptcomps[k] = gsBPNOTSPECIFIED;
                 blackpreserve[k] = gsBKPRESNOTSPECIFIED;
             } else {
-                param_string_from_string(profile_array[k],
+                param_string_from_transient_string(profile_array[k],
                     dev_profile->device_profile[k]->name);
                 profile_intents[k] = dev_profile->rendercond[k].rendering_intent;
                 blackptcomps[k] = dev_profile->rendercond[k].black_point_comp;
@@ -300,13 +300,13 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         if (dev_profile->proof_profile == NULL) {
             param_string_from_string(proof_profile, null_str);
         } else {
-            param_string_from_string(proof_profile,
+            param_string_from_transient_string(proof_profile,
                                      dev_profile->proof_profile->name);
         }
         if (dev_profile->link_profile == NULL) {
             param_string_from_string(link_profile, null_str);
         } else {
-            param_string_from_string(link_profile,
+            param_string_from_transient_string(link_profile,
                                      dev_profile->link_profile->name);
         }
         devicegraytok = dev_profile->devicegraytok;
@@ -325,7 +325,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
             colorant_names =
                 gsicc_get_dev_icccolorants(dev_profile);
             if (colorant_names != NULL) {
-                param_string_from_string(icc_colorants, colorant_names);
+                param_string_from_transient_string(icc_colorants, colorant_names);
             } else {
                 param_string_from_string(icc_colorants, null_str);
             }
@@ -501,7 +501,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
                 blackptcomps[k] = gsBPNOTSPECIFIED;
                 blackpreserve[k] = gsBKPRESNOTSPECIFIED;
             } else {
-                param_string_from_string(profile_array[k],
+                param_string_from_transient_string(profile_array[k],
                     dev_profile->device_profile[k]->name);
                 profile_intents[k] = dev_profile->rendercond[k].rendering_intent;
                 blackptcomps[k] = dev_profile->rendercond[k].black_point_comp;
@@ -512,13 +512,13 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         if (dev_profile->proof_profile == NULL) {
             param_string_from_string(proof_profile, null_str);
         } else {
-            param_string_from_string(proof_profile,
+            param_string_from_transient_string(proof_profile,
                                      dev_profile->proof_profile->name);
         }
         if (dev_profile->link_profile == NULL) {
             param_string_from_string(link_profile, null_str);
         } else {
-            param_string_from_string(link_profile,
+            param_string_from_transient_string(link_profile,
                                      dev_profile->link_profile->name);
         }
         devicegraytok = dev_profile->devicegraytok;
@@ -537,7 +537,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
             colorant_names =
                 gsicc_get_dev_icccolorants(dev_profile);
             if (colorant_names != NULL) {
-                param_string_from_string(icc_colorants, colorant_names);
+                param_string_from_transient_string(icc_colorants, colorant_names);
             } else {
                 param_string_from_string(icc_colorants, null_str);
             }
