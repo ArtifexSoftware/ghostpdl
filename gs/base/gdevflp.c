@@ -350,8 +350,10 @@ int flp_open_device(gx_device *dev)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (dev->child->procs.open_device)
+    if (dev->child->procs.open_device) {
         dev->child->procs.open_device(dev->child);
+        dev->child->is_open = true;
+    }
 
     return 0;
 }
@@ -406,9 +408,14 @@ int flp_output_page(gx_device *dev, int num_copies, int flush)
 int flp_close_device(gx_device *dev)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
+    int code;
 
-    if (dev->child->procs.close_device)
-        return dev->child->procs.close_device(dev->child);
+    if (dev->child->procs.close_device) {
+        code = dev->child->procs.close_device(dev->child);
+        dev->is_open = dev->child->is_open;
+        return code;
+    }
+    dev->is_open = false;
     return 0;
 }
 
@@ -544,9 +551,13 @@ int flp_get_params(gx_device *dev, gs_param_list *plist)
 int flp_put_params(gx_device *dev, gs_param_list *plist)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
+    int code;
 
-    if (dev->child->procs.put_params)
-        return dev->child->procs.put_params(dev->child, plist);
+    if (dev->child->procs.put_params) {
+        code = dev->child->procs.put_params(dev->child, plist);
+        /* The child device might have closed itself (yes seriously, this can happen!) */
+        dev->is_open = dev->child->is_open;
+    }
     else
         return gx_default_put_params(dev, plist);
 
