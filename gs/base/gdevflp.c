@@ -50,6 +50,11 @@
  * does not do this) and have gdev_prn_alloc_buffer check to see if the method is the default
  * before overwriting it, rather than the current check for NULL.
  */
+
+/*
+ * gsdparam.c line 272 checks for method being NULL, this is bad, we should check for a return error
+ * or default method and do initialisation based on that.
+ */
 #include "math_.h"
 #include "memory_.h"
 #include "gx.h"
@@ -353,6 +358,37 @@ int flp_open_device(gx_device *dev)
     if (dev->child->procs.open_device) {
         dev->child->procs.open_device(dev->child);
         dev->child->is_open = true;
+        memcpy(&dev->color_info, &dev->child->color_info, sizeof(gx_device_color_info));
+        memcpy(&dev->cached_colors, &dev->child->cached_colors, sizeof(gx_device_cached_colors_t));
+        dev->max_fill_band = dev->child->max_fill_band;
+        dev->width = dev->child->width;
+        dev->height = dev->child->height;
+        dev->pad = dev->child->pad;
+        dev->log2_align_mod = dev->child->log2_align_mod;
+        dev->max_fill_band = dev->child->max_fill_band;
+        dev->is_planar = dev->child->is_planar;
+        dev->LeadingEdge = dev->child->LeadingEdge;
+        memcpy(&dev->ImagingBBox, &dev->child->ImagingBBox, 2 * sizeof(float));
+        dev->ImagingBBox_set = dev->child->ImagingBBox_set;
+        memcpy(&dev->HWResolution, &dev->child->HWResolution, 2 * sizeof(float));
+        memcpy(&dev->Margins, &dev->child->Margins, 2 * sizeof(float));
+        memcpy(&dev->HWMargins, &dev->child->HWMargins, 4 * sizeof(float));
+        dev->FirstPage = dev->child->FirstPage;
+        dev->LastPage = dev->child->LastPage;
+        dev->PageCount = dev->child->PageCount;
+        dev->ShowpageCount = dev->child->ShowpageCount;
+        dev->NumCopies = dev->child->NumCopies;
+        dev->NumCopies_set = dev->child->NumCopies_set;
+        dev->IgnoreNumCopies = dev->child->IgnoreNumCopies;
+        dev->UseCIEColor = dev->child->UseCIEColor;
+        dev->LockSafetyParams= dev->child->LockSafetyParams;
+        dev->band_offset_x = dev->child->band_offset_y;
+        dev->sgr = dev->child->sgr;
+        dev->MaxPatternBitmap = dev->child->MaxPatternBitmap;
+        dev->page_uses_transparency = dev->child->page_uses_transparency;
+        memcpy(&dev->space_params, &dev->child->space_params, sizeof(gdev_space_params));
+        dev->icc_struct = dev->child->icc_struct;
+        dev->graphics_type_tag = dev->child->graphics_type_tag;
     }
 
     return 0;
