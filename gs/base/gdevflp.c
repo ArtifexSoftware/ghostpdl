@@ -448,7 +448,7 @@ int flp_close_device(gx_device *dev)
 
     if (dev->child->procs.close_device) {
         code = dev->child->procs.close_device(dev->child);
-        dev->is_open = dev->child->is_open;
+        dev->is_open = dev->child->is_open = false;
         return code;
     }
     dev->is_open = false;
