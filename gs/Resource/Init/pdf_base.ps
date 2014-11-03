@@ -103,8 +103,10 @@ pdfdict begin
       //true 1 index .namestring {
         //num-chars-dict exch known and
       } forall { % perhaps, it's a malformed number.
+        PDFSTOPONERROR {//true}{
         pop pop pop 0 //false
         ( looks like a malformed number, replacing with 0.) pdfformaterror
+        } ifelse
       } {
         //true % punt
       } ifelse
@@ -192,7 +194,11 @@ currentdict /num-chars-dict .undef
         pop
         {
           %% If it looks like a number, try to deal with it as such
-          dup {.pdftokenerror} stopped
+          PDFSTOPONERROR {
+            dup .pdftokenerror
+          }{
+            dup {.pdftokenerror} stopped
+          } ifelse
           { pop
             %% But if it fails, fall back to converting into a anem.
             %% This will propagate through and cause different
