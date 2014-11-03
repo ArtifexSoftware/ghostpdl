@@ -61,10 +61,18 @@ RELOC_PTRS_WITH(device_printer_reloc_ptrs, gx_device_printer *pdev)
 {
     pdev->parent = gx_device_reloc_ptr(pdev->parent, gcst);
     pdev->child = gx_device_reloc_ptr(pdev->child, gcst);
+    if (pdev->child) {
+        vptr = (gx_device_printer *)(pdev->child);
+    if (PRINTER_IS_CLIST((gx_device_printer *)pdev->child))
+        RELOC_PREFIX(st_device_clist);
+    else
+        RELOC_PREFIX(st_device_forward);
+    } else {
     if (PRINTER_IS_CLIST(pdev))
         RELOC_PREFIX(st_device_clist);
     else
         RELOC_PREFIX(st_device_forward);
+    }
 } RELOC_PTRS_END
 public_st_device_printer();
 
