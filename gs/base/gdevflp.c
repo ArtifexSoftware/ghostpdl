@@ -166,7 +166,10 @@ flp_finalize(gx_device *dev);
     0, flp_enum_ptrs, flp_reloc_ptrs, gx_device_finalize)
 
 static
-ENUM_PTRS_WITH(flp_enum_ptrs, gx_device *dev) return 0;
+ENUM_PTRS_WITH(flp_enum_ptrs, gx_device *dev)
+{gx_device *dev = (gx_device *)vptr;
+vptr = dev->child;
+ENUM_PREFIX(*dev->child->stype, 2);}return 0;
 case 0:ENUM_RETURN(gx_device_enum_ptr(dev->parent));
 case 1:ENUM_RETURN(gx_device_enum_ptr(dev->child));
 ENUM_PTRS_END
@@ -174,6 +177,8 @@ static RELOC_PTRS_WITH(flp_reloc_ptrs, gx_device *dev)
 {
     dev->parent = gx_device_reloc_ptr(dev->parent, gcst);
     dev->child = gx_device_reloc_ptr(dev->child, gcst);
+    vptr = dev->child;
+    RELOC_PREFIX(*dev->child->stype);
 }
 RELOC_PTRS_END
 
@@ -292,6 +297,9 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
 {
     gx_device *child_dev;
     void *psubclass_data;
+    gs_memory_struct_type_t *a_std = 0;
+    gs_memory_struct_type_t **b_std;
+    unsigned char *ptr;
 
     if (!dev_to_subclass->stype)
         return_error(gs_error_VMerror);
@@ -319,6 +327,20 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     dev_to_subclass->dname = new_prototype->dname;
     dev_to_subclass->stype = new_prototype->stype;
 
+    /* Nasty, nasty hackery. The 'object' (in this case, struct) which wraps
+     * the actual body also maintains a pointer to the 'stype' and the garbage
+     * collector uses *that* to enumerate pointers and so on, not the one in the
+     * actual structure (which begs the qustion of what use the one in the structure
+     * is, actually ?). So here we patch the pointer held in the wrapper. We can't
+     * simply alter the contents of 'stype' as you might expect, because if its not
+     * dynamically allocated we'll be trying to alter the executable, and that's
+     * the sort of thing likely to trigger faults these days.
+     */
+    ptr = (unsigned char *)dev_to_subclass;
+    ptr -= 8;
+    b_std = (gs_memory_struct_type_t **)ptr;
+    *b_std = (gs_memory_struct_type_t *)new_prototype->stype;
+
     dev_to_subclass->subclass_data = psubclass_data;
     dev_to_subclass->child = child_dev;
     if (child_dev->parent) {
@@ -334,6 +356,9 @@ static
 void flp_finalize(gx_device *dev) {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
     gx_device *parent = dev->parent, *child = dev->child;
+    unsigned char *ptr;
+    gs_memory_struct_type_t **b_std;
+
 
     memcpy(dev, child, child->stype->ssize);
     if (psubclass_data)
@@ -341,6 +366,12 @@ void flp_finalize(gx_device *dev) {
     if (child)
         gs_free_object(dev->memory, child, "gx_device_subclass(device)");
     dev->parent = parent;
+
+    ptr = (unsigned char *)dev;
+    ptr -= 8;
+    b_std = (gs_memory_struct_type_t **)ptr;
+    *b_std = (gs_memory_struct_type_t *)dev->stype;
+
     if (dev->finalize)
         dev->finalize(dev);
     return;
@@ -1250,7 +1281,7 @@ int flp_end_transparency_mask(gx_device *dev, gs_imager_state *pis)
                 return dev->child->procs.end_transparency_mask(dev->child, pis);
         }
     }
-
+    return 0;
 }
 
 int flp_discard_transparency_layer(gx_device *dev, gs_imager_state *pis)
