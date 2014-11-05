@@ -537,39 +537,54 @@ currentdict /token_nofail_dict .undef
 } bind def
 
 /endobj {		% <object#> <generation#> <object> endobj <object>
-  {
-    2 index type /integertype ne 2 index type /integertype ne or {
-      count 3 gt {
-        (   **** Warning: obj definition followed by multiple tokens, attempting to recover.\n) pdfformaterror
+
+  %% If we have a stream wioth a broken endstream we can get here without
+  %% an object definition on nthe stack. If we simply pop the 'extraneous'
+  %% data we will break the stream definition and throw an error. So we look
+  %% to see if this appears to be this specific case.
+  2 index type /marktype eq 2 index type /marktype eq or {
+    {
+      dup type /marktype eq {
+        exit
+      }{
         pop
+      }if
+    }loop
+  }{
+    {
+      2 index type /integertype ne 2 index type /integertype ne or {
+        count 3 gt {
+          (   **** Warning: obj definition followed by multiple tokens, attempting to recover.\n) pdfformaterror
+          pop
+        } {
+          //null
+          (   **** Warning: ignoring obj followed by multiple tokens.\n) pdfformaterror
+          exit
+        } ifelse
       } {
-        //null
-        (   **** Warning: ignoring obj followed by multiple tokens.\n) pdfformaterror
         exit
       } ifelse
-    } {
-      exit
-    } ifelse
-  } loop
+    } loop
 
-  3 1 roll
-                % Read the xref entry if we haven't yet done so.
-                % This is only needed for generation # checking.
-  1 index resolved? {
-    pop
-  } if
-  checkgeneration {
-                % The only global objects we bother to save are
-                % (resource) dictionaries.
-    1 index dup gcheck exch type /dicttype eq and {
-      PDFDEBUG { (%Local=>global: ) print dup //== exec } if
-      GlobalObjects 1 index 3 index put
-      IsGlobal 1 index 1 put
+    3 1 roll
+                  % Read the xref entry if we haven't yet done so.
+                  % This is only needed for generation # checking.
+    1 index resolved? {
+      pop
     } if
-    Objects exch 2 index put
-  } {
-    pop pop //null
-  } ifelse
+    checkgeneration {
+                  % The only global objects we bother to save are
+                  % (resource) dictionaries.
+      1 index dup gcheck exch type /dicttype eq and {
+        PDFDEBUG { (%Local=>global: ) print dup //== exec } if
+        GlobalObjects 1 index 3 index put
+        IsGlobal 1 index 1 put
+      } if
+      Objects exch 2 index put
+    } {
+      pop pop //null
+    } ifelse
+  }ifelse
 } bind def
 
 % When resolving an object reference in an object stream, we stop at
