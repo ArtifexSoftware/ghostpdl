@@ -2092,7 +2092,7 @@ currentdict /PDF2PS_matrix_key undef
     /Annots knownoget {
       { oforce
         dup //null ne {
-          drawannot
+          mark exch {drawannot} stopped {(Error: Ignoring invalid annotation\n) pdfformaterror} if cleartomark
         } {
           pop
         } ifelse
