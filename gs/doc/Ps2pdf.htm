@@ -370,19 +370,20 @@ The value of the option counts straight path segments
 Default value is <code>12000</code>.
 
 <dt><code>-dMaxShadingBitmapSize=<em>integer</em></code>
-<dd>With <code>CompatibilityLevel &lt; 1.3</code> it specifies 
-the maximum number of bytes allowed for representing a shading as a bitmap.
+<dd>Specifies the maximum number of bytes allowed for representing a shading as a bitmap.
 If a shading exceeds this value, the resolution of the output bitmap
-is reduced to fit into the specified frame.
+is reduced to fit into the specified number of bytes.
 Note that the number of bytes depends on the number of color components
-in <code>ProcessColorModel</code>, assumes 8 bits per sample,
-and doesn't account an image compression or filtering.
-Also note that reducing the resolution results unsmooth shading boundaries.
+in <code>ProcessColorModel</code> or <code>ColorConverionStrategy</code>, assumes 8 bits per sample,
+and doesn't consider image compression or downsampling. The image is rendered at the current resolution
+as specified by <code>-r</code> or the default of 720 dpi.
 
-With <code>CompatibilityLevel &ge; 1.3</code> this option is ignored. Default value is <code>256000</code>.
-For the best quality one can set the maximal integer value,
-but the output file size may dramatically increase.
-Therefore the user should choose a compromise value.
+Default value is <code>256000</code>.
+In general larger values will result in higher quality,
+but the output file size may increase dramatically, particularly with shadings which cover large areas.
+
+Shadings hsould generally only be rendered to images if <code>CompatibilityLevel</code> is 1.2 or less
+or if <code>ColorCoversionStrategy</code> specifies a color space differnt to that of the shading.
 
 <dt><code>-dHaveTrueTypes=<em>boolean</em></code>
 <dd>With <code>CompatibilityLevel &lt; 1.3</code> it specifies 
