@@ -33,6 +33,10 @@
 #include "gzcpath.h"
 #include "gxdevsop.h"
 
+#include "gdevflp.h"
+extern gx_device_flp  gs_flp_device;
+int gx_device_subclass(gx_device *dev_to_subclass, gx_device *prototype, int data_size);
+
 /* Structure descriptors */
 public_st_device_vector();
 public_st_vector_image_enum();
@@ -1025,10 +1029,6 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
     if (code < 0)
         return code;
 
-    if ((first_page == 0 && dev->FirstPage != 0) ||
-        (last_page == 0 && dev->LastPage != 0)) {
-    }
-
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofns)) {
         case 0:
             /*
@@ -1087,6 +1087,19 @@ ofe:        param_signal_error(plist, param_name, ecode);
     }
     if (code < 0)
         return code;
+
+    /* Subclassing the device needs to happen very late in processing parameters
+     * as we want to make sure the parameters end up in the device about to be subclassed.
+     * If we subclass early then parameters after the subclass, but before the end of the
+     * routine will end up copied into the 'origianl' device structure, the one which has
+     * just become the parent rather than the new subclassed device.
+     */
+#if 1
+    if (dev->parent == NULL /*&& ((first_page == 0 && pdev->FirstPage != 0) ||
+        (last_page == 0 && pdev->LastPage != 0))*/) {
+            gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+    }
+#endif
 
     if (ofns.data != 0) {
         /* If ofns.data is not NULL, then we have a different file name */
