@@ -293,6 +293,150 @@ gx_device_flp gs_flp_device =
 #undef MAX_COORD
 #undef MAX_RESOLUTION
 
+static int copy_procs(gx_device_procs *dest_procs, gx_device_procs *src_procs, gx_device_procs *prototype_procs)
+{
+    if (src_procs->open_device != NULL)
+        dest_procs->open_device = prototype_procs->open_device;
+    if (src_procs->get_initial_matrix != NULL)
+        dest_procs->get_initial_matrix = prototype_procs->get_initial_matrix;
+    if (src_procs->sync_output != NULL)
+        dest_procs->sync_output = prototype_procs->sync_output;
+    if (src_procs->output_page != NULL)
+        dest_procs->output_page = prototype_procs->output_page;
+    if (src_procs->close_device != NULL)
+        dest_procs->close_device = prototype_procs->close_device;
+    if (src_procs->map_rgb_color != NULL)
+        dest_procs->map_rgb_color = prototype_procs->map_rgb_color;
+    if (src_procs->map_color_rgb != NULL)
+        dest_procs->map_color_rgb = prototype_procs->map_color_rgb;
+    if (src_procs->fill_rectangle != NULL)
+        dest_procs->fill_rectangle = prototype_procs->fill_rectangle;
+    if (src_procs->tile_rectangle != NULL)
+        dest_procs->tile_rectangle = prototype_procs->tile_rectangle;
+    if (src_procs->copy_mono != NULL)
+        dest_procs->copy_mono = prototype_procs->copy_mono;
+    if (src_procs->copy_color != NULL)
+        dest_procs->copy_color = prototype_procs->copy_color;
+    if (src_procs->obsolete_draw_line != NULL)
+        dest_procs->obsolete_draw_line = prototype_procs->obsolete_draw_line;
+    if (src_procs->get_bits != NULL)
+        dest_procs->get_bits = prototype_procs->get_bits;
+    if (src_procs->get_params != NULL)
+        dest_procs->get_params = prototype_procs->get_params;
+    if (src_procs->put_params != NULL)
+        dest_procs->put_params = prototype_procs->put_params;
+    if (src_procs->map_cmyk_color != NULL)
+        dest_procs->map_cmyk_color = prototype_procs->map_cmyk_color;
+    if (src_procs->get_xfont_procs != NULL)
+        dest_procs->get_xfont_procs = prototype_procs->get_xfont_procs;
+    if (src_procs->get_xfont_device != NULL)
+        dest_procs->get_xfont_device = prototype_procs->get_xfont_device;
+    if (src_procs->map_rgb_alpha_color != NULL)
+        dest_procs->map_rgb_alpha_color = prototype_procs->map_rgb_alpha_color;
+    if (src_procs->get_alpha_bits != NULL)
+        dest_procs->get_alpha_bits = prototype_procs->get_alpha_bits;
+    if (src_procs->copy_alpha != NULL)
+        dest_procs->copy_alpha = prototype_procs->copy_alpha;
+    if (src_procs->get_band != NULL)
+        dest_procs->get_band = prototype_procs->get_band;
+    if (src_procs->copy_rop != NULL)
+        dest_procs->copy_rop = prototype_procs->copy_rop;
+    if (src_procs->fill_path != NULL)
+        dest_procs->fill_path = prototype_procs->fill_path;
+    if (src_procs->stroke_path != NULL)
+        dest_procs->stroke_path = prototype_procs->stroke_path;
+    if (src_procs->fill_mask != NULL)
+        dest_procs->fill_mask = prototype_procs->fill_mask;
+    if (src_procs->fill_trapezoid != NULL)
+        dest_procs->fill_trapezoid = prototype_procs->fill_trapezoid;
+    if (src_procs->fill_parallelogram != NULL)
+        dest_procs->fill_parallelogram = prototype_procs->fill_parallelogram;
+    if (src_procs->fill_triangle != NULL)
+        dest_procs->fill_triangle = prototype_procs->fill_triangle;
+    if (src_procs->draw_thin_line != NULL)
+        dest_procs->draw_thin_line = prototype_procs->draw_thin_line;
+    if (src_procs->begin_image != NULL)
+        dest_procs->begin_image = prototype_procs->begin_image;
+    if (src_procs->image_data != NULL)
+        dest_procs->image_data = prototype_procs->image_data;
+    if (src_procs->end_image != NULL)
+        dest_procs->end_image = prototype_procs->end_image;
+    if (src_procs->strip_tile_rectangle != NULL)
+        dest_procs->strip_tile_rectangle = prototype_procs->strip_tile_rectangle;
+    if (src_procs->strip_copy_rop != NULL)
+        dest_procs->strip_copy_rop = prototype_procs->strip_copy_rop;
+    if (src_procs->get_clipping_box != NULL)
+        dest_procs->get_clipping_box = prototype_procs->get_clipping_box;
+    if (src_procs->begin_typed_image != NULL)
+        dest_procs->begin_typed_image = prototype_procs->begin_typed_image;
+    if (src_procs->get_bits_rectangle != NULL)
+        dest_procs->get_bits_rectangle = prototype_procs->get_bits_rectangle;
+    if (src_procs->map_color_rgb_alpha != NULL)
+        dest_procs->map_color_rgb_alpha = prototype_procs->map_color_rgb_alpha;
+    if (src_procs->create_compositor != NULL)
+        dest_procs->create_compositor = prototype_procs->create_compositor;
+    if (src_procs->get_hardware_params != NULL)
+        dest_procs->get_hardware_params = prototype_procs->get_hardware_params;
+    if (src_procs->text_begin != NULL)
+        dest_procs->text_begin = prototype_procs->text_begin;
+    if (src_procs->finish_copydevice != NULL)
+        dest_procs->finish_copydevice = prototype_procs->finish_copydevice;
+    if (src_procs->begin_transparency_group != NULL)
+        dest_procs->begin_transparency_group = prototype_procs->begin_transparency_group;
+    if (src_procs->end_transparency_group != NULL)
+        dest_procs->end_transparency_group = prototype_procs->end_transparency_group;
+    if (src_procs->discard_transparency_layer != NULL)
+        dest_procs->discard_transparency_layer = prototype_procs->discard_transparency_layer;
+    if (src_procs->get_color_mapping_procs != NULL)
+        dest_procs->get_color_mapping_procs = prototype_procs->get_color_mapping_procs;
+    if (src_procs->get_color_comp_index != NULL)
+        dest_procs->get_color_comp_index = prototype_procs->get_color_comp_index;
+    if (src_procs->encode_color != NULL)
+        dest_procs->encode_color = prototype_procs->encode_color;
+    if (src_procs->decode_color != NULL)
+        dest_procs->decode_color = prototype_procs->decode_color;
+    if (src_procs->pattern_manage != NULL)
+        dest_procs->pattern_manage = prototype_procs->pattern_manage;
+    if (src_procs->fill_rectangle_hl_color != NULL)
+        dest_procs->fill_rectangle_hl_color = prototype_procs->fill_rectangle_hl_color;
+    if (src_procs->include_color_space != NULL)
+        dest_procs->include_color_space = prototype_procs->include_color_space;
+    if (src_procs->fill_linear_color_scanline != NULL)
+        dest_procs->fill_linear_color_scanline = prototype_procs->fill_linear_color_scanline;
+    if (src_procs->fill_linear_color_trapezoid != NULL)
+        dest_procs->fill_linear_color_trapezoid = prototype_procs->fill_linear_color_trapezoid;
+    if (src_procs->fill_linear_color_triangle != NULL)
+        dest_procs->fill_linear_color_triangle = prototype_procs->fill_linear_color_triangle;
+    if (src_procs->update_spot_equivalent_colors != NULL)
+        dest_procs->update_spot_equivalent_colors = prototype_procs->update_spot_equivalent_colors;
+    if (src_procs->ret_devn_params != NULL)
+        dest_procs->ret_devn_params = prototype_procs->ret_devn_params;
+    if (src_procs->fillpage != NULL)
+        dest_procs->fillpage = prototype_procs->fillpage;
+    if (src_procs->push_transparency_state != NULL)
+        dest_procs->push_transparency_state = prototype_procs->push_transparency_state;
+    if (src_procs->pop_transparency_state != NULL)
+        dest_procs->pop_transparency_state = prototype_procs->pop_transparency_state;
+    if (src_procs->put_image != NULL)
+        dest_procs->put_image = prototype_procs->put_image;
+    if (src_procs->dev_spec_op != NULL)
+        dest_procs->dev_spec_op = prototype_procs->dev_spec_op;
+    if (src_procs->copy_planes != NULL)
+        dest_procs->copy_planes = prototype_procs->copy_planes;
+    if (src_procs->get_profile != NULL)
+        dest_procs->get_profile = prototype_procs->get_profile;
+    if (src_procs->set_graphics_type_tag != NULL)
+        dest_procs->set_graphics_type_tag = prototype_procs->set_graphics_type_tag;
+    if (src_procs->strip_copy_rop2 != NULL)
+        dest_procs->strip_copy_rop2 = prototype_procs->strip_copy_rop2;
+    if (src_procs->strip_tile_rect_devn != NULL)
+        dest_procs->strip_tile_rect_devn = prototype_procs->strip_tile_rect_devn;
+    if (src_procs->copy_alpha_hl_color != NULL)
+        dest_procs->copy_alpha_hl_color = prototype_procs->copy_alpha_hl_color;
+    if (src_procs->process_page != NULL)
+        dest_procs->process_page = prototype_procs->process_page;
+}
+
 int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, unsigned int private_data_size)
 {
     gx_device *child_dev;
@@ -322,7 +466,8 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     }
     memset(psubclass_data, 0x00, private_data_size);
 
-    memcpy(&dev_to_subclass->procs, &new_prototype->procs, sizeof(gx_device_procs));
+//    memcpy(&dev_to_subclass->procs, &new_prototype->procs, sizeof(gx_device_procs));
+    copy_procs(&dev_to_subclass->procs, &child_dev->procs, &new_prototype->procs);
     dev_to_subclass->finalize = new_prototype->finalize;
     dev_to_subclass->dname = new_prototype->dname;
     dev_to_subclass->stype = new_prototype->stype;
@@ -337,7 +482,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
      * the sort of thing likely to trigger faults these days.
      */
     ptr = (unsigned char *)dev_to_subclass;
-    ptr -= 8;
+    ptr -= 2 * sizeof(void *);
     b_std = (gs_memory_struct_type_t **)ptr;
     *b_std = (gs_memory_struct_type_t *)new_prototype->stype;
 
@@ -367,7 +512,7 @@ int gx_unsubclass_device(gx_device *dev)
     dev->parent = parent;
 
     ptr = (unsigned char *)dev;
-    ptr -= 8;
+    ptr -= 2 * sizeof(void *);
     b_std = (gs_memory_struct_type_t **)ptr;
     *b_std = (gs_memory_struct_type_t *)dev->stype;
 
