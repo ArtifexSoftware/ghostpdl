@@ -3575,7 +3575,7 @@ const int pl_built_in_symbol_map_count = countof(pl_built_in_symbol_maps) - 1;
 ulong
 pl_map_symbol(const pl_symbol_map_t * psm,
               uint chr, bool is_resident_font, bool is_MSL,
-              bool is_590, const gs_memory_t * mem)
+              const gs_memory_t * mem)
 {
     uint first_code, last_code, code;
 
@@ -3589,16 +3589,9 @@ pl_map_symbol(const pl_symbol_map_t * psm,
      *
      */
 
-    if (psm == 0) {
-        if (is_resident_font && !is_590)
-            return chr + 0xf000;
-        else
-            return chr;
-    }
-
-    if (pl_get_uint16(psm->id) == 590) {
+    if ((psm == 0) || (pl_get_uint16(psm->id) == 590))
         return chr;
-    }
+
 
     first_code = pl_get_uint16(psm->first_code);
     last_code = pl_get_uint16(psm->last_code);

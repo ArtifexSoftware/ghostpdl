@@ -303,7 +303,6 @@ px_str_to_gschars(px_args_t * par, px_state_t * pxs, gs_char * pchr)
     int i;
     gs_char chr;
     const pl_symbol_map_t *psm = pxs->pxgs->symbol_map;
-    uint symbol_set = pxs->pxgs->symbol_set;
     bool db = px_downloaded_and_bound(pxs->pxgs->base_font);
 
     for (i = 0; i < len; i++) {
@@ -315,7 +314,7 @@ px_str_to_gschars(px_args_t * par, px_state_t * pxs, gs_char * pchr)
         pchr[i] = pl_map_symbol((db ? NULL : psm), chr,
                                 pxs->pxgs->base_font->storage == pxfsInternal,
                                 false /* pxl does not support MSL */ ,
-                                symbol_set == 590, pxs->memory);
+                                pxs->memory);
     }
 }
 

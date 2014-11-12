@@ -89,7 +89,7 @@ extern const int pl_built_in_symbol_map_count;
    of gs_char to avoid pulling in all the gs_char graphics library
    dependencies. */
 ulong pl_map_symbol(const pl_symbol_map_t * psm, uint chr,
-                    bool is_resident_font, bool is_MSL, bool is_590,
+                    bool is_resident_font, bool is_MSL,
                     const gs_memory_t * mem);
 
 /* supported pcl and xl wide encodings - 4 Asian encodings and an an
