@@ -5462,6 +5462,10 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
                                  target->space_params.MaxBitmap;
     bool use_pdf14_accum = false;
 
+    /* Guard against later seg faults, this should not be possible */
+    if (!target)
+        return gs_error_Fatal;		/* punt for now */
+
     /* If the device is not a printer class device, it won't support saved-pages */
     /* and so we may need to make a clist device in order to prevent very large  */
     /* or high resolution pages from having allocation problems.                 */
