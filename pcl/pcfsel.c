@@ -93,6 +93,7 @@ dmprint_ufst_font_name(const gs_memory_t * mem, const pl_font_t * pfont)
 #include "plftable.h"
     int i;
     bool found = false;
+    (void)pl_built_in_resident_font_table_count;
 
     for (i = 0; strlen(resident_table[i].full_font_name); i++) {
         if (!memcmp(&resident_table[i].params,
@@ -121,6 +122,7 @@ dmprint_font_name(const gs_memory_t * mem, const pl_font_t * pfont)
 #include "plftable.h"
     int i;
     bool found = false;
+    (void)pl_built_in_resident_font_table_count;
 
     for (i = 0; strlen(resident_table[i].full_font_name); i++) {
         if (!memcmp(&resident_table[i].params,

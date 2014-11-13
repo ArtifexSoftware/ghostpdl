@@ -127,7 +127,7 @@ hpgl_map_symbol(uint chr, const hpgl_state_t * pgls)
 
     return pl_map_symbol(psm, chr,
                          pfs->font->storage == pcds_internal,
-                         pfs->font->font_type == plgv_MSL,
+                         pfs->font->font_type == plft_MSL,
                          pgls->memory);
 }
 
@@ -806,7 +806,6 @@ hpgl_print_char(hpgl_state_t * pgls, uint ch)
         gs_matrix pre_rmat, advance_mat;
         int angle = 0;
         gs_text_enum_t *penum;
-        byte str[2];
         int code;
         gs_point start_pt, end_pt;
         hpgl_real_t space_width;
@@ -894,9 +893,6 @@ hpgl_print_char(hpgl_state_t * pgls, uint ch)
             gs_setmatrix(pgs, &pre_rmat);
             gs_rotate(pgs, (double) angle);
         }
-
-        str[0] = ch;
-        str[1] = 0;
 
         /* If SP is a control code, get the width of the space character. */
         if (ch == ' ') {

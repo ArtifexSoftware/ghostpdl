@@ -356,7 +356,6 @@ px_image_color_space(gs_image_t * pim,
             rc_increment(pbase_pcs->cmm_icc_profile_data);
             break;
         case eSRGB:
-        case eCRGB:
             cie_space = true;
             pbase_pcs = gs_cspace_new_DeviceRGB(pgs->memory);
             pbase_pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;

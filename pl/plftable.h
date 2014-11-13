@@ -845,7 +845,7 @@ static const font_resident_t resident_table[] = {
 };
 
 /* a null entry terminates the list, so - 1 */
-static const int pl_built_in_resident_font_table_count =
+const int pl_built_in_resident_font_table_count =
     countof(resident_table) - 1;
 #endif /* fontnames */
                             

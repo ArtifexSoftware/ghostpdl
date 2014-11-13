@@ -52,11 +52,6 @@ typedef enum {
 } pxeColorDepth_t;
 
 typedef enum {
-    eCRGB = 5,			/* Note: for this enumeration, 0 is not a valid value */
-    pxeColorimetricColorSpace_next
-} pxeColorimetricColorSpace_t;	/* 2.0 */
-
-typedef enum {
     eDirectPixel = 0,
     eIndexedPixel,
     pxeColorMapping_next

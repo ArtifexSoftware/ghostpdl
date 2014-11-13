@@ -354,7 +354,6 @@ int px_high_level_pattern(gs_state * pgs)
             break;
         case eRGB:
         case eSRGB:
-        case eCRGB:
             pcs = gs_cspace_new_DeviceRGB(pgs->memory);
             if (pcs == NULL) {
                 gs_grestore(pgs);
@@ -512,7 +511,6 @@ render_pattern(gs_client_color * pcc, const px_pattern_t * pattern,
                     break;
                 case eRGB:
                 case eSRGB:
-                case eCRGB:
                     pcs = gs_cspace_new_DeviceRGB(pxgs->memory);
                     if (pcs == NULL)
                         return_error(errorInsufficientMemory);
@@ -785,16 +783,10 @@ pxSetColorSpace(px_args_t * par, px_state_t * pxs)
         cspace = par->pv[1]->value.i;
     else
         return_error(errorIllegalAttributeValue);
-#ifndef SUPPORT_COLORIMETRIC
-    if (cspace == eCRGB)
-        /* oddly the 4600 reports this a missing attribute, not
-           the expected illegal attribute */
-        return_error(errorMissingAttribute);
-#endif
 
     if (par->pv[6] && par->pv[7]) {
         int ncomp =
-            ((cspace == eRGB || cspace == eSRGB || cspace == eCRGB) ? 3 : 1);
+            ((cspace == eRGB || cspace == eSRGB) ? 3 : 1);
         uint size = par->pv[7]->value.array.size;
 
         if (!(size == ncomp << 1 || size == ncomp << 4 || size == ncomp << 8)

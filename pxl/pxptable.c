@@ -161,7 +161,7 @@ const px_attr_value_type_t px_attr_value_types[] = {
     /* 14 */ arr(ub), /* PrimaryArray */
     /* 15 */ en(pxeColorDepth_next), /* PrimaryDepth */
     /* 16 */ none,
-    /* 17 */ en(pxeColorimetricColorSpace_next), /* ColorimetricColorSpace */
+    /* 17 */ none,  /* ColorimetricColorSpace */
     /* 18 */ arr(rl), /* XYChromaticities */
     /* 19 */ arr(rl), /* WhiteReferencePoint */
     /* 20 */ arr(rl), /* CRGBMinMax  */
