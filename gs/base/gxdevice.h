@@ -118,7 +118,7 @@
 
 /* offsets and margins go here */
 #define std_device_part3_()\
-        0/*FirstPage*/, 0/*LastPage*/,\
+        0/*FirstPage*/, 0/*LastPage*/, 0/*PageHandlerPushed*/,\
         0/*PageCount*/, 0/*ShowpageCount*/, 1/*NumCopies*/, 0/*NumCopies_set*/,\
         0/*IgnoreNumCopies*/, 0/*UseCIEColor*/, 0/*LockSafetyParams*/,\
         0/*band_offset_x*/, 0/*band_offset_y*/, {false}/* sgr */,\

@@ -109,8 +109,16 @@ static void prn_finish_bg_print(gx_device_printer *ppdev);
 int
 gdev_prn_open(gx_device * pdev)
 {
-    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+    gx_device_printer * ppdev;
     int code;
+
+    if (!pdev->PageHandlerPushed /*&& (pdev->FirstPage != 0 || pdev->LastPage != 0)*/) {
+        pdev->PageHandlerPushed = true;
+        gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        pdev = pdev->child;
+        pdev->is_open = true;
+    }
+    ppdev = (gx_device_printer *)pdev;
 
     ppdev->file = NULL;
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
@@ -1001,19 +1009,6 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
         if (code < 0)
             return code;
     }
-
-    /* Subclassing the device needs to happen very late in processing parameters
-     * as we want to make sure the parameters end up in the device about to be subclassed.
-     * If we subclass early then parameters after the subclass, but before the end of the
-     * routine will end up copied into the 'origianl' device structure, the one which has
-     * just become the parent rather than the new subclassed device.
-     */
-#if 1
-    if (pdev->parent == NULL /*&& ((first_page == 0 && pdev->FirstPage != 0) ||
-        (last_page == 0 && pdev->LastPage != 0))*/) {
-            gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
-    }
-#endif
 
     /* Processing the saved_pages string MAY have side effects, such as printing, */
     /* allocating or freeing a list. This is (sort of) a write-only parameter, so */

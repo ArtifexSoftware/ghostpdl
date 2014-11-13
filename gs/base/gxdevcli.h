@@ -760,6 +760,7 @@ typedef struct gdev_space_params_s {
                                         /* in default user units ("points") */\
         int FirstPage;\
         int LastPage;\
+        bool PageHandlerPushed;\
         long PageCount;			/* number of pages written */\
         long ShowpageCount;		/* number of calls on showpage */\
         int NumCopies;\

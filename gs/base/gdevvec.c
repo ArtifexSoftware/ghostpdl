@@ -345,6 +345,12 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
         (*dev_proc(vdev->bbox_device, open_device))
             ((gx_device *) vdev->bbox_device);
     }
+
+    if (!vdev->PageHandlerPushed /*&& (vdev->FirstPage != 0 || vdev->LastPage != 0)*/) {
+        vdev->PageHandlerPushed = true;
+        gx_device_subclass(vdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+    }
+
     return 0;
 }
 
@@ -1087,19 +1093,6 @@ ofe:        param_signal_error(plist, param_name, ecode);
     }
     if (code < 0)
         return code;
-
-    /* Subclassing the device needs to happen very late in processing parameters
-     * as we want to make sure the parameters end up in the device about to be subclassed.
-     * If we subclass early then parameters after the subclass, but before the end of the
-     * routine will end up copied into the 'origianl' device structure, the one which has
-     * just become the parent rather than the new subclassed device.
-     */
-#if 1
-    if (dev->parent == NULL /*&& ((first_page == 0 && pdev->FirstPage != 0) ||
-        (last_page == 0 && pdev->LastPage != 0))*/) {
-            gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
-    }
-#endif
 
     if (ofns.data != 0) {
         /* If ofns.data is not NULL, then we have a different file name */
