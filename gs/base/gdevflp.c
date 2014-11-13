@@ -448,7 +448,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     if (!dev_to_subclass->stype)
         return_error(gs_error_VMerror);
 
-    child_dev = (gx_device *)gs_alloc_bytes(dev_to_subclass->memory, dev_to_subclass->stype->ssize, "gx_device_subclass(device)");
+    child_dev = (gx_device *)gs_alloc_bytes(dev_to_subclass->memory->stable_memory, dev_to_subclass->stype->ssize, "gx_device_subclass(device)");
     if (child_dev == 0)
         return_error(gs_error_VMerror);
 
@@ -468,6 +468,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
 
 //    memcpy(&dev_to_subclass->procs, &new_prototype->procs, sizeof(gx_device_procs));
     copy_procs(&dev_to_subclass->procs, &child_dev->procs, &new_prototype->procs);
+    dev_to_subclass->procs.fill_rectangle = new_prototype->procs.fill_rectangle;
     dev_to_subclass->finalize = new_prototype->finalize;
     dev_to_subclass->dname = new_prototype->dname;
     dev_to_subclass->stype = new_prototype->stype;
@@ -480,6 +481,12 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
      * simply alter the contents of 'stype' as you might expect, because if its not
      * dynamically allocated we'll be trying to alter the executable, and that's
      * the sort of thing likely to trigger faults these days.
+     * And the answer to the question above is that the wrapper only exists in the GC.
+     * When we aren't using the GC, then we don't get the wrapper. Obviously in that
+     * case we don't care, because we don't need the entries in the stype, so
+     * still left wondering what the copy in the structure is for. Anyway, we can't
+     * do this patching unless hte object has been allocated in GC memory, which
+     * is a problem, how can we possibly tell ?
      */
     ptr = (unsigned char *)dev_to_subclass;
     ptr -= 2 * sizeof(void *);
@@ -508,7 +515,7 @@ int gx_unsubclass_device(gx_device *dev)
     if (psubclass_data)
         gs_free_object(dev->memory->non_gc_memory, psubclass_data, "subclass memory for first-last page");
     if (child)
-        gs_free_object(dev->memory, child, "gx_device_subclass(device)");
+        gs_free_object(dev->memory->stable_memory, child, "gx_device_subclass(device)");
     dev->parent = parent;
 
     ptr = (unsigned char *)dev;
