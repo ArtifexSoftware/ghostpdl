@@ -7,7 +7,7 @@ use Data::Dumper;
 
 my $verbose=0;
 
-# bmpcmp usage: [gs] [pcl] [xps] [gs] [mupdf] [mujstest] [bmpcmp] [lowres] [32] [pdfwrite] [$user] | abort
+# bmpcmp usage: [gs] [pcl] [xps] [gs] [mupdf] [mujstest] [bmpcmp] [lowres] [32] [pdfwrite] [ps2write] [xpswrite] [$user] | abort
 
 
 
@@ -31,6 +31,8 @@ my $res="";
 my $w32="";
 my $nr="";
 my $pdfwrite="";
+my $ps2write="";
+my $xpswrite="";
 my $singlePagePDF="";
 my $relaxTimeout="";
 my $t1;
@@ -46,7 +48,7 @@ while ($t1=shift) {
     $w32="32";
   } elsif ($t1 eq "nr" || $t1 eq "nonredundnat") {
     $nr="nonredundant";
-  } elsif ($t1 eq "pdfwrite" || $t1 eq "ps2write") {
+  } elsif ($t1 eq "pdfwrite" || $t1 eq "ps2write" || $t1 eq "xpswrite") {
     $pdfwrite="pdfwrite";
   } elsif ($t1 eq "timeout" || $t1 eq "relaxtimeout") {
     $relaxTimeout="relaxTimeout";
