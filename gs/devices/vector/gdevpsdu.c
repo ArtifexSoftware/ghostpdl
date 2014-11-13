@@ -514,5 +514,7 @@ psdf_create_compositor(
     } else {
         if (dev->parent)
             return gx_default_create_compositor(dev->parent, pcdev, pct, pis, mem, cdev);
+        else
+            return gx_default_create_compositor(dev, pcdev, pct, pis, mem, cdev);
     }
 }
