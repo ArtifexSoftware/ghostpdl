@@ -597,6 +597,7 @@ end readonly def
    /TextFont //null def
    /FontMatrixNonHV //false def
    /Show { showfirst } def
+   /TextFillStateNeeded //true def
  } bdef
 
 % Contrary to the statement in the PDF manual, BT and ET *can* be nested,
@@ -979,6 +980,11 @@ end readonly def
     } if
 } bind def
 
+% conditionally set fillstate to avoid multiple operations during text operators
+/settextfillstate {
+  TextFillStateNeeded { setfillstate //false /TextFillStateNeeded gput } if
+} bind def
+
 /TextTransSetup {	% true TextTransSetup -		% if current path is valid
                         % false TextTransSetup -	% no path, use clip box
    % NB: if 'show' is used, then we use the clippath, but a smaller bbox is preferred
@@ -1016,7 +1022,7 @@ end readonly def
               currentfont /FontType get 3 eq TextRenderingMode 3 eq not
               and or
                {
-                { setfillstate //false TextTransSetup show TextTransTeardown }
+                { settextfillstate //false TextTransSetup show TextTransTeardown }
               } {
                 TextRenderingMode 3 eq {
                         % Some PDF files execute 'tm' with a singular matrix,
@@ -1035,7 +1041,7 @@ end readonly def
                     setmatrix
                     currentpoint
                     % don't worry about transparency for invisible text
-                    4 index setfillstate show % Tr was set to graphic state.
+                    4 index settextfillstate show % Tr was set to graphic state.
                     moveto
                     setmatrix
                     % now set the currentpoint using the original matrix
@@ -1072,7 +1078,7 @@ end readonly def
              % preserve current line width around possible stroke setup
              currentlinewidth exch
              setstrokeforTrpreservation
-             setfillstate //false TextTransSetup
+             settextfillstate //false TextTransSetup
              [ TextSpacing WordSpacing 3 index
                {					    % str [... weach wword c undef|ythis xthis|undef
                  exch % will be removed, unless FontMatrix.xx/yy == 0 (FontMatrixNonHV already true)
@@ -1092,7 +1098,7 @@ end readonly def
            WordSpacing 0 eq {
              {
                { setstrokeforTrpreservation
-                 setfillstate //false TextTransSetup TextSpacing 0 Vexch 3 -1 roll ashow TextTransTeardown
+                 settextfillstate //false TextTransSetup TextSpacing 0 Vexch 3 -1 roll ashow TextTransTeardown
                }
                currentlinewidth
                { setlinewidth }
@@ -1102,7 +1108,7 @@ end readonly def
               TextSpacing 0 eq {
                 { % preserve current line width around possible stroke setup
                   { setstrokeforTrpreservation
-                    setfillstate //false TextTransSetup WordSpacing 0 Vexch 32 4 -1 roll .pdfwidthshow
+                    settextfillstate //false TextTransSetup WordSpacing 0 Vexch 32 4 -1 roll .pdfwidthshow
                     TextTransTeardown
                   }
                   currentlinewidth
@@ -1112,7 +1118,7 @@ end readonly def
               } {
                 { % preserve current line width around possible stroke setup
                   { setstrokeforTrpreservation
-                    setfillstate //false TextTransSetup WordSpacing 0 Vexch 32
+                    settextfillstate //false TextTransSetup WordSpacing 0 Vexch 32
                     TextSpacing 0 Vexch 6 -1 roll .pdfawidthshow TextTransTeardown
                   }
                   currentlinewidth
@@ -1154,7 +1160,7 @@ end readonly def
                % correctly.
                gsave TextRenderingMode 4 sub .settextrenderingmode
                setstrokeforTrpreservation
-               setstrokestate setfillstate //false TextTransSetup dup show grestore TextTransTeardown } if
+               setstrokestate settextfillstate //false TextTransSetup dup show grestore TextTransTeardown } if
              //false charpath
              3 copy 32 eq { add } { exch pop } ifelse
                         % Stack: str wthis xorig yorig wword wchar ccode wextra
@@ -1190,7 +1196,10 @@ end readonly def
 /showfirst { setshowstate Show } def
 
 /Tj {
-  { 0 0 moveto Show settextposition }
+  {
+    //true /TextFillStateNeeded gput
+    0 0 moveto Show settextposition
+  }
   OFFlevels length 0 eq {
     exec
   } {
@@ -1198,6 +1207,7 @@ end readonly def
     exec
     get-gs-attrs grestore set-gs-attrs
   } ifelse
+    //true /TextFillStateNeeded gput
 } bdef
 /' { T* Tj } bdef
 /" { exch Tc exch Tw T* Tj } bdef
@@ -1210,6 +1220,7 @@ end readonly def
         0 Vexch rmoveto
       } ifelse
     } forall settextposition
+  //true /TextFillStateNeeded gput
   }
   OFFlevels length 0 eq {
     exec
@@ -1218,10 +1229,14 @@ end readonly def
     exec
     get-gs-attrs grestore set-gs-attrs
   } ifelse
+  //true /TextFillStateNeeded gput
 } bdef
 
 % NB: We don't need clippath when filling or stroking
-/tf { setfillstate //true TextTransSetup currentpoint fill TextTransTeardown moveto} bdef
+/tf {
+      //true /TextFillStateNeeded gput
+      settextfillstate //true TextTransSetup currentpoint fill TextTransTeardown moveto
+} bdef
 /tn { currentpoint newpath moveto } bdef % Obsolete, never used.
 % For stroking characters, temporarily restore the graphics CTM so that
 % the line width will be transformed properly.
@@ -1230,13 +1245,14 @@ end readonly def
  {
    currentfont /FontType get 3 eq
    {
-     setfillstate //true TextTransSetup currentpoint fill TextTransTeardown moveto
+     settextfillstate //true TextTransSetup currentpoint fill TextTransTeardown moveto
    }
    {
      setstrokestate //true TextTransSetup
      currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix .swapcolors stroke TextTransTeardown .swapcolors
      setmatrix moveto
    } ifelse
+   //true /TextFillStateNeeded gput
  } bdef
 
 % Handle transparency the same as /B operator
@@ -1256,6 +1272,7 @@ end readonly def
         } {
           gsave tf grestore tS
         } ifelse
+   //true /TextFillStateNeeded gput
 } bdef
 
 % This does the wrong thing if there have been multiple text operations
