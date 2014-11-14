@@ -788,6 +788,7 @@ int flp_put_params(gx_device *dev, gs_param_list *plist)
         code = dev->child->procs.put_params(dev->child, plist);
         /* The child device might have closed itself (yes seriously, this can happen!) */
         dev->is_open = dev->child->is_open;
+        return code;
     }
     else
         return gx_default_put_params(dev, plist);
