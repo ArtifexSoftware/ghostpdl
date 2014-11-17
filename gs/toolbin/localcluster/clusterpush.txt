@@ -4,11 +4,12 @@ code that has not been committed to git.
 
 Usage:
 
-  clusterpush.pl [prduct] ['bmpcmp'] ['lowres'|'hires'] ['32'] ['relaxtimeout'] [user]
+  clusterpush.pl [product] ['bmpcmp'] ['lowres'|'hires'] ['32'] ['relaxtimeout'] [user]
 
 
-Where product gs, pcl, xps, and/or ls ('ls' standing for language switch).
-If you do not specify a produt all products will be tested.
+Where product is one or more of gs, pcl, xps or mupdf or mujstest.
+If you do not specify a product the product(s) tested will be cased on
+what directory you are 'cd'ed to when the clusterpush.pl script is run.
 
 bmpcmp indicates that a bitmap comparison of your output to that of the
 last svn commit should be performed.

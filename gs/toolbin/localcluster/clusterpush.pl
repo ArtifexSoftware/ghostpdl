@@ -7,7 +7,7 @@ use Data::Dumper;
 
 my $verbose=0;
 
-# bmpcmp usage: [gs] [pcl] [xps] [gs] [mupdf] [mujstest] [bmpcmp] [lowres] [32] [pdfwrite] [ps2write] [xpswrite] [$user] | abort
+# bmpcmp usage: [gs] [pcl] [xps] [mupdf] [mujstest] [bmpcmp] [lowres] [highres] [32] [pdfwrite] [ps2write] [xpswrite] [relaxtimeout] [$user] | abort
 
 
 
