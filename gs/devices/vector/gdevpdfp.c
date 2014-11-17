@@ -525,9 +525,6 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
          pdev->PreserveSMask = false;
     }
 
-    if (pdev->PDFA == 1) {
-        pdev->UseOldColor = true;
-    }
     /*
      * We have to set version to the new value, because the set of
      * legal parameter values for psdf_put_params varies according to
