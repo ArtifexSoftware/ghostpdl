@@ -927,7 +927,7 @@ It accepts a four-value array in the same format as the
 
 Here is a sample command line to invoke Ghostscript for generating a PDF/X-3 document :
 <blockquote><code>
-gs -dPDFX -dBATCH -dNOPAUSE -dNOOUTERSAVE -sColorConverionStrategy=/CMYK -sOutputICCProfile="ISO Coated sb.icc" -sDEVICE=pdfwrite -sOutputFile=out-x3.pdf PDFX_def.ps input.ps
+gs -dPDFX -dBATCH -dNOPAUSE -sColorConverionStrategy=/CMYK -sDEVICE=pdfwrite -sOutputFile=out-x3.pdf PDFX_def.ps input.ps
 </code></blockquote>
 
 <p>
@@ -978,7 +978,7 @@ depending on the nature of the PDF/A incompatibility.
 
 Here is a sample command line to invoke Ghostscript for generating a PDF/A document :
 <blockquote><code>
-gs -dPDFA=1 -dBATCH -dNOPAUSE -dNOOUTERSAVE -sColorConversionStrategy=/RGB -sOutputICCProfile=srgb.icc -sDEVICE=pdfwrite -sOutputFile=out-a.pdf PDFA_def.ps input.ps
+gs -dPDFA=1 -dBATCH -dNOPAUSE -sColorConversionStrategy=/RGB -sDEVICE=pdfwrite -sOutputFile=out-a.pdf PDFA_def.ps input.ps
 </code></blockquote>
 
 <p>
