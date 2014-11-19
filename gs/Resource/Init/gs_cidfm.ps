@@ -138,22 +138,44 @@ currentdict end def
   % Remove any mappings for which we cannot find the font file
   dup
   {
-    dup type /dicttype eq
+    % if we have a name1->name2 mapping, follow the "trail",
+    % so if the name2 mapping is known in the .map dict, retrieve
+    % that map value and loop round until we either reach a map
+    % which references a TTF (i.e. a dictionary record) or we have
+    % a name not known in the .map, in which case we have to resort
+    % to the normal Postscript "resourcestatus".
     {
-      /Path .knownget
+      dup type /nametype eq
       {
-        .libfile
-        {closefile pop}
+        dup 3 index exch .knownget
+        { exch pop }
         {
-          {(r) file} .internalstopped
-          {pop pop 2 index exch .undef}
-          {closefile pop} ifelse
+          /CIDFont resourcestatus
+          { pop pop pop }
+          { 2 index exch .undef }
+          ifelse
+          exit
         } ifelse
       }
-      {2 index exch .undef}
-      ifelse
-    }
-    {pop pop} ifelse
+      {
+        dup type /dicttype eq
+        {
+          /Path .knownget
+          {
+            .libfile
+            {closefile pop}
+            {
+              {(r) file} .internalstopped
+              {pop pop 2 index exch .undef}
+              {closefile pop} ifelse
+            } ifelse
+          }
+          {2 index exch .undef}
+          ifelse
+          exit
+        } if
+      } ifelse
+    } loop
   } forall
 
   % This is where we insert the default fallback into the map
