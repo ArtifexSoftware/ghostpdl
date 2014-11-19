@@ -528,6 +528,9 @@ int gx_unsubclass_device(gx_device *dev)
 
 int gx_update_from_subclass(gx_device *dev)
 {
+    if (!dev->child)
+        return 0;
+
     memcpy(&dev->color_info, &dev->child->color_info, sizeof(gx_device_color_info));
     memcpy(&dev->cached_colors, &dev->child->cached_colors, sizeof(gx_device_cached_colors_t));
     dev->max_fill_band = dev->child->max_fill_band;
@@ -540,6 +543,7 @@ int gx_update_from_subclass(gx_device *dev)
     dev->LeadingEdge = dev->child->LeadingEdge;
     memcpy(&dev->ImagingBBox, &dev->child->ImagingBBox, 2 * sizeof(float));
     dev->ImagingBBox_set = dev->child->ImagingBBox_set;
+    memcpy(&dev->MediaSize, &dev->child->MediaSize, 2 * sizeof(float));
     memcpy(&dev->HWResolution, &dev->child->HWResolution, 2 * sizeof(float));
     memcpy(&dev->Margins, &dev->child->Margins, 2 * sizeof(float));
     memcpy(&dev->HWMargins, &dev->child->HWMargins, 4 * sizeof(float));
@@ -788,6 +792,7 @@ int flp_put_params(gx_device *dev, gs_param_list *plist)
         code = dev->child->procs.put_params(dev->child, plist);
         /* The child device might have closed itself (yes seriously, this can happen!) */
         dev->is_open = dev->child->is_open;
+        gx_update_from_subclass(dev);
         return code;
     }
     else
@@ -1264,11 +1269,19 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
     gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
+    int code;
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (dev->child->procs.create_compositor)
-                return dev->child->procs.create_compositor(dev->child, pcdev, pcte, pis, memory, cdev);
+            if (dev->child->procs.create_compositor) {
+                code = dev->child->procs.create_compositor(dev->child, pcdev, pcte, pis, memory, cdev);
+                if (*pcdev != dev->child)
+                    return code;
+                else {
+                    *pcdev = dev;
+                    return code;
+                }
+            }
         }
     } else
         gx_default_create_compositor(dev, pcdev, pcte, pis, memory, cdev);
