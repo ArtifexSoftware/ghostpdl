@@ -793,7 +793,7 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     int ecode = 0;
-    int code, first_page, last_page;
+    int code;
     const char *param_name;
     bool is_open = pdev->is_open;
     bool oof = ppdev->OpenOutputFile;
@@ -811,9 +811,6 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     gs_param_dict mdict;
     gs_param_string saved_pages;
     bool pageneutralcolor = false;
-
-    first_page = pdev->FirstPage;
-    last_page = pdev->LastPage;
 
     memset(&saved_pages, 0, sizeof(gs_param_string));
     save_sp = ppdev->space_params;

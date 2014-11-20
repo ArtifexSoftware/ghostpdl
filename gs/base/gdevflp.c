@@ -42,6 +42,16 @@
  * to solve the problems with text enumerators).
  */
 
+/* At first sight we should never have a method in a device structure which is NULL
+ * because gx_device_fill_in_procs() should replace all the NULLs with default routines.
+ * However, obselete routines, and a number of newer routines (especially those involving
+ * transparency) don't get filled in. Its not obvious to me if this is deliberate or not,
+ * but we'll be careful and check the subclassed device's method before trying to execute
+ * it. Same for all the methods. NB the fill_rectangle method is deliberately not filled in
+ * because that gets set up by gdev_prn_allocate_memory(). Isn't it great the way we do our
+ * initialisation in lots of places?
+ */
+
 /* TODO make gx_device_fill_in_procs fill in *all* hte procs, currently it doesn't.
  * this will mean declaring gx_default_ methods for the transparency methods, possibly
  * some others. Like a number of other default methods, these cna simply return an error
@@ -435,13 +445,13 @@ static int copy_procs(gx_device_procs *dest_procs, gx_device_procs *src_procs, g
         dest_procs->copy_alpha_hl_color = prototype_procs->copy_alpha_hl_color;
     if (src_procs->process_page != NULL)
         dest_procs->process_page = prototype_procs->process_page;
+    return 0;
 }
 
 int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, unsigned int private_data_size)
 {
     gx_device *child_dev;
     void *psubclass_data;
-    gs_memory_struct_type_t *a_std = 0;
     gs_memory_struct_type_t **b_std;
     unsigned char *ptr;
 
@@ -466,7 +476,6 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     }
     memset(psubclass_data, 0x00, private_data_size);
 
-//    memcpy(&dev_to_subclass->procs, &new_prototype->procs, sizeof(gx_device_procs));
     copy_procs(&dev_to_subclass->procs, &child_dev->procs, &new_prototype->procs);
     dev_to_subclass->procs.fill_rectangle = new_prototype->procs.fill_rectangle;
     dev_to_subclass->finalize = new_prototype->finalize;
@@ -485,7 +494,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
      * When we aren't using the GC, then we don't get the wrapper. Obviously in that
      * case we don't care, because we don't need the entries in the stype, so
      * still left wondering what the copy in the structure is for. Anyway, we can't
-     * do this patching unless hte object has been allocated in GC memory, which
+     * do this patching unless the object has been allocated in GC memory, which
      * is a problem, how can we possibly tell ?
      */
     ptr = (unsigned char *)dev_to_subclass;
@@ -582,8 +591,6 @@ void flp_finalize(gx_device *dev) {
  */
 int flp_open_device(gx_device *dev)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.open_device) {
         dev->child->procs.open_device(dev->child);
         dev->child->is_open = true;
@@ -595,17 +602,6 @@ int flp_open_device(gx_device *dev)
 
 void flp_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
-    /* At first sight we should never have a method in a device structure which is NULL
-     * because gx_device_fill_in_procs() should replace all the NULLs with default routines.
-     * However, obselete routines, and a number of newer routines (especially those involving
-     * transparency) don't get filled in. Its not obvious to me if this is deliberate or not,
-     * but we'll be careful and check the subclassed device's method before trying to execute
-     * it. Same for all the methods. NB the fill_rectangle method is deliberately not filled in
-     * because that gets set up by gdev_prn_allocate_memory(). Isn't it great the way we do our
-     * initialisation in lots of places?
-     */
     if (dev->child->procs.get_initial_matrix)
         dev->child->procs.get_initial_matrix(dev->child, pmat);
     else
@@ -615,8 +611,6 @@ void flp_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 
 int flp_sync_output(gx_device *dev)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.sync_output)
         return dev->child->procs.sync_output(dev->child);
     else
@@ -642,7 +636,6 @@ int flp_output_page(gx_device *dev, int num_copies, int flush)
 
 int flp_close_device(gx_device *dev)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
     int code;
 
     if (dev->child->procs.close_device) {
@@ -656,8 +649,6 @@ int flp_close_device(gx_device *dev)
 
 gx_color_index flp_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.map_rgb_color)
         return dev->child->procs.map_rgb_color(dev->child, cv);
     else
@@ -667,8 +658,6 @@ gx_color_index flp_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 
 int flp_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.map_color_rgb)
         return dev->child->procs.map_color_rgb(dev->child, color, rgb);
     else
@@ -773,8 +762,6 @@ int flp_get_bits(gx_device *dev, int y, byte *data, byte **actual_data)
 
 int flp_get_params(gx_device *dev, gs_param_list *plist)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.get_params)
         return dev->child->procs.get_params(dev->child, plist);
     else
@@ -785,7 +772,6 @@ int flp_get_params(gx_device *dev, gs_param_list *plist)
 
 int flp_put_params(gx_device *dev, gs_param_list *plist)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
     int code;
 
     if (dev->child->procs.put_params) {
@@ -803,8 +789,6 @@ int flp_put_params(gx_device *dev, gs_param_list *plist)
 
 gx_color_index flp_map_cmyk_color(gx_device *dev, const gx_color_value cv[])
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.map_cmyk_color)
         return dev->child->procs.map_cmyk_color(dev->child, cv);
     else
@@ -815,8 +799,6 @@ gx_color_index flp_map_cmyk_color(gx_device *dev, const gx_color_value cv[])
 
 const gx_xfont_procs *flp_get_xfont_procs(gx_device *dev)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.get_xfont_procs)
         return dev->child->procs.get_xfont_procs(dev->child);
     else
@@ -827,8 +809,6 @@ const gx_xfont_procs *flp_get_xfont_procs(gx_device *dev)
 
 gx_device *flp_get_xfont_device(gx_device *dev)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.get_xfont_device)
         return dev->child->procs.get_xfont_device(dev->child);
     else
@@ -840,8 +820,6 @@ gx_device *flp_get_xfont_device(gx_device *dev)
 gx_color_index flp_map_rgb_alpha_color(gx_device *dev, gx_color_value red, gx_color_value green, gx_color_value blue,
     gx_color_value alpha)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.map_rgb_alpha_color)
         return dev->child->procs.map_rgb_alpha_color(dev->child, red, green, blue, alpha);
     else
@@ -852,8 +830,6 @@ gx_color_index flp_map_rgb_alpha_color(gx_device *dev, gx_color_value red, gx_co
 
 gx_device *flp_get_page_device(gx_device *dev)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.get_page_device)
         return dev->child->procs.get_page_device(dev->child);
     else
@@ -1148,8 +1124,6 @@ int flp_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sras
 
 void flp_get_clipping_box(gx_device *dev, gs_fixed_rect *pbox)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.get_clipping_box)
         dev->child->procs.get_clipping_box(dev->child, pbox);
     else
@@ -1255,8 +1229,6 @@ int flp_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
 
 int flp_map_color_rgb_alpha(gx_device *dev, gx_color_index color, gx_color_value rgba[4])
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.map_color_rgb_alpha)
         return dev->child->procs.map_color_rgb_alpha(dev->child, color, rgba);
     else
@@ -1291,8 +1263,6 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
 
 int flp_get_hardware_params(gx_device *dev, gs_param_list *plist)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.get_hardware_params)
         return dev->child->procs.get_hardware_params(dev->child, plist);
     else
@@ -1302,7 +1272,7 @@ int flp_get_hardware_params(gx_device *dev, gs_param_list *plist)
 }
 
 /* Text processing (like images) works differently to other device
- * methods. Instead of the interpreter callign a device method, only
+ * methods. Instead of the interpreter calling a device method, only
  * the 'begin' method is called, this creates a text enumerator which
  * it fills in (in part with the routines for processing text) and returns
  * to the interpreter. The interpreter then calls the methods defined in
@@ -1478,8 +1448,6 @@ int flp_discard_transparency_layer(gx_device *dev, gs_imager_state *pis)
 
 const gx_cm_color_map_procs *flp_get_color_mapping_procs(const gx_device *dev)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.get_color_mapping_procs)
         return dev->child->procs.get_color_mapping_procs(dev->child);
     else
@@ -1490,8 +1458,6 @@ const gx_cm_color_map_procs *flp_get_color_mapping_procs(const gx_device *dev)
 
 int  flp_get_color_comp_index(gx_device *dev, const char * pname, int name_size, int component_type)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.get_color_comp_index)
         return dev->child->procs.get_color_comp_index(dev->child, pname, name_size, component_type);
     else
@@ -1502,8 +1468,6 @@ int  flp_get_color_comp_index(gx_device *dev, const char * pname, int name_size,
 
 gx_color_index flp_encode_color(gx_device *dev, const gx_color_value colors[])
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.encode_color)
         return dev->child->procs.encode_color(dev->child, colors);
     else
@@ -1514,8 +1478,6 @@ gx_color_index flp_encode_color(gx_device *dev, const gx_color_value colors[])
 
 flp_decode_color(gx_device *dev, gx_color_index cindex, gx_color_value colors[])
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.decode_color)
         return dev->child->procs.decode_color(dev->child, cindex, colors);
     else {
@@ -1559,8 +1521,6 @@ int flp_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
 
 int flp_include_color_space(gx_device *dev, gs_color_space *cspace, const byte *res_name, int name_length)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.include_color_space)
         return dev->child->procs.include_color_space(dev->child, cspace, res_name, name_length);
 
@@ -1625,8 +1585,6 @@ int flp_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
 
 int flp_update_spot_equivalent_colors(gx_device *dev, const gs_state * pgs)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.update_spot_equivalent_colors)
         return dev->child->procs.update_spot_equivalent_colors(dev->child, pgs);
 
@@ -1635,8 +1593,6 @@ int flp_update_spot_equivalent_colors(gx_device *dev, const gs_state * pgs)
 
 gs_devn_params *flp_ret_devn_params(gx_device *dev)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.ret_devn_params)
         return dev->child->procs.ret_devn_params(dev->child);
 
@@ -1705,8 +1661,6 @@ int flp_put_image(gx_device *dev, const byte *buffer, int num_chan, int x, int y
 
 int flp_dev_spec_op(gx_device *dev, int op, void *data, int datasize)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.dev_spec_op)
         return dev->child->procs.dev_spec_op(dev->child, op, data, datasize);
 
@@ -1730,8 +1684,6 @@ int flp_copy_planes(gx_device *dev, const byte *data, int data_x, int raster, gx
 
 int flp_get_profile(gx_device *dev, cmm_dev_profile_t **dev_profile)
 {
-    first_last_subclass_data *psubclass_data = dev->subclass_data;
-
     if (dev->child->procs.get_profile)
         return dev->child->procs.get_profile(dev->child, dev_profile);
     else

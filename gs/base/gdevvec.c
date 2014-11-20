@@ -348,7 +348,7 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
 
     if (!vdev->PageHandlerPushed /*&& (vdev->FirstPage != 0 || vdev->LastPage != 0)*/) {
         vdev->PageHandlerPushed = true;
-        gx_device_subclass(vdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        gx_device_subclass((gx_device *)vdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
     }
 
     return 0;
@@ -963,7 +963,6 @@ int gdev_vector_get_param(gx_device *dev, char *Param, void *list)
     gs_param_list * plist = (gs_param_list *)list;
     gs_param_string ofns;
     bool bool_true = 1;
-    const int a=0;
 
     ofns.data = (const byte *)vdev->fname,
         ofns.size = strlen(vdev->fname),
@@ -991,7 +990,6 @@ gdev_vector_get_params(gx_device * dev, gs_param_list * plist)
     int ecode;
     gs_param_string ofns;
     bool bool_true = 1;
-    const int a=0;
 
     if (code < 0)
         return code;
@@ -1014,15 +1012,13 @@ int
 gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
 {
     int ecode = 0;
-    int code, a, first_page, last_page;
+    int code;
     int igni;
     bool ignb;
     gs_param_name param_name;
     gs_param_string ofns;
     bool open = dev->is_open, HighLevelDevice;
 
-    first_page = dev->FirstPage;
-    last_page = dev->LastPage;
     code = param_read_bool(plist, (param_name = "HighLevelDevice"), &HighLevelDevice);
     if (code < 0)
         return code;
