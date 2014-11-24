@@ -688,10 +688,12 @@ clist_close_page_info(gx_band_page_info_t *ppi)
     if (ppi->cfile != NULL) {
         ppi->io_procs->fclose(ppi->cfile, ppi->cfname, true);
         ppi->cfile = NULL;
+        ppi->cfname[0] = 0;     /* prevent re-use in case this is a fake path */
     }
     if (ppi->bfile != NULL) {
         ppi->io_procs->fclose(ppi->bfile, ppi->bfname, true);
         ppi->bfile = NULL;
+        ppi->bfname[0] = 0;     /* prevent re-use in case this is a fake path */
     }
     return 0;
 }

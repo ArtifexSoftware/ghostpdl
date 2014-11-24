@@ -127,7 +127,7 @@ prn_finish_bg_print(gx_device_printer *ppdev)
         if (ppdev->bg_print.obfname) {
             gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.obfname, "prn_finish_bg_print(obfname)");
         }
-        ppdev->bg_print.ocfile = ppdev->bg_print.obfile = 
+        ppdev->bg_print.ocfile = ppdev->bg_print.obfile =
           ppdev->bg_print.ocfname = ppdev->bg_print.obfname = NULL;
     }
 }
@@ -294,13 +294,6 @@ gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
         ppdev->buffer_space = 0;
         was_command_list = true;
 
-        if (ppdev->bg_print.ocfname) {
-            gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.ocfname, "gdev_prn_tear_down(ocfname)");
-        }
-        if (ppdev->bg_print.obfname) {
-            gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.obfname, "gdev_prn_tear_down(obfname)");
-        }
-        ppdev->bg_print.ocfname = ppdev->bg_print.obfname = NULL;
         if (ppdev->bg_print.ocfile) {
             (void)ppdev->bg_print.oio_procs->fclose(ppdev->bg_print.ocfile, ppdev->bg_print.ocfname, true);
         }
@@ -308,6 +301,14 @@ gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
             (void)ppdev->bg_print.oio_procs->fclose(ppdev->bg_print.obfile, ppdev->bg_print.obfname, true);
         }
         ppdev->bg_print.ocfile = ppdev->bg_print.obfile = NULL;
+        if (ppdev->bg_print.ocfname) {
+            gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.ocfname, "gdev_prn_tear_down(ocfname)");
+        }
+        if (ppdev->bg_print.obfname) {
+            gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.obfname, "gdev_prn_tear_down(obfname)");
+        }
+        ppdev->bg_print.ocfname = ppdev->bg_print.obfname = NULL;
+
         rc_decrement(pcldev->icc_cache_cl, "gdev_prn_tear_down");
         pcldev->icc_cache_cl = NULL;
 
@@ -466,7 +467,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
                 ecode = gs_note_error(gs_error_VMerror);
                 continue;
             }
-            ppdev->bg_print.ocfname = ppdev->bg_print.obfname = 
+            ppdev->bg_print.ocfname = ppdev->bg_print.obfname =
                 ppdev->bg_print.obfile = ppdev->bg_print.ocfile = NULL;
 
             code = gdev_prn_setup_as_command_list(pdev, buffer_memory,
@@ -910,7 +911,7 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     if (ppdev->bg_print_requested && !bg_print_requested) {
         prn_finish_bg_print(ppdev);
     }
-    
+
     ppdev->bg_print_requested = bg_print_requested;
     if (duplex_set >= 0) {
         ppdev->Duplex = duplex;
@@ -1033,20 +1034,20 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                 /* We need to hang onto references to these files, so we can ensure the main file data
                  * gets freed with the correct allocator.
                  */
-                ppdev->bg_print.ocfname = 
+                ppdev->bg_print.ocfname =
                      (char *)gs_alloc_bytes(ppdev->memory->non_gc_memory,
-                           strnlen(crdev->page_info.cfname, gp_file_name_sizeof) + 1, "gdev_prn_output_page_aux(ocfname)");
-                ppdev->bg_print.obfname = 
+                           strnlen(crdev->page_info.cfname, gp_file_name_sizeof - 1) + 1, "gdev_prn_output_page_aux(ocfname)");
+                ppdev->bg_print.obfname =
                      (char *)gs_alloc_bytes(ppdev->memory->non_gc_memory,
-                           strnlen(crdev->page_info.bfname, gp_file_name_sizeof) + 1,"gdev_prn_output_page_aux(ocfname)");
+                           strnlen(crdev->page_info.bfname, gp_file_name_sizeof - 1) + 1,"gdev_prn_output_page_aux(ocfname)");
 
                 if (!ppdev->bg_print.ocfname || !ppdev->bg_print.obfname)
                     break;
 
-                strncpy(ppdev->bg_print.ocfname, crdev->page_info.cfname, strnlen(crdev->page_info.cfname, gp_file_name_sizeof));
-                strncpy(ppdev->bg_print.obfname, crdev->page_info.bfname, strnlen(crdev->page_info.bfname, gp_file_name_sizeof));
+                strncpy(ppdev->bg_print.ocfname, crdev->page_info.cfname, strnlen(crdev->page_info.cfname, gp_file_name_sizeof - 1) + 1);
+                strncpy(ppdev->bg_print.obfname, crdev->page_info.bfname, strnlen(crdev->page_info.bfname, gp_file_name_sizeof - 1) + 1);
                 ppdev->bg_print.obfile = crdev->page_info.bfile;
-                ppdev->bg_print.ocfile = crdev->page_info.cfile;                
+                ppdev->bg_print.ocfile = crdev->page_info.cfile;
                 ppdev->bg_print.oio_procs = crdev->page_info.io_procs;
                 crdev->page_info.cfile = crdev->page_info.bfile = NULL;
 
@@ -1080,11 +1081,11 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                 break;				/* exit the while loop */
             }
             if (print_foreground) {
-            
+
                  gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.ocfname, "gdev_prn_output_page_aux(ocfname)");
                  gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.obfname, "gdev_prn_output_page_aux(obfname)");
                  ppdev->bg_print.ocfname = ppdev->bg_print.obfname = NULL;
-                 
+
                 /* either bg_print was not requested or was not able to start */
                 if (ppdev->bg_print.sema != NULL && ppdev->bg_print.device != NULL) {
                     /* There was a problem. Teardown the device and its allocator, but */
