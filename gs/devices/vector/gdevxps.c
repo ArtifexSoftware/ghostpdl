@@ -1370,25 +1370,23 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
         /* Solid fill */
         write_str_to_current_page(xps, "<Path ");
         /* NB - F0 should be changed for a different winding type */
-        fmt = "Fill=\"#%06X\" Data=\"M %g, %g L %g, %g %g, %g %g, %g Z\" ";
+        fmt = "Fill=\"#%06X\" Data=\"M %g,%g V %g H %g V %g Z\" ";
         c = xps->fillcolor & 0xffffffL;
         gs_sprintf(line, fmt, c,
-                fixed2float(x0), fixed2float(y0),
-                fixed2float(x0), fixed2float(y1),
-                fixed2float(x1), fixed2float(y1),
-                fixed2float(x1), fixed2float(y0));
+                   fixed2float(x0), fixed2float(y0),
+                   fixed2float(y1), fixed2float(x1),
+                   fixed2float(y0));
         write_str_to_current_page(xps, line);
         write_str_to_current_page(xps, "/>\n");
     } else {
         /* Solid stroke */
         write_str_to_current_page(xps, "<Path ");
-        fmt = "Stroke=\"#%06X\" Data=\"M %g, %g L %g, %g %g, %g %g, %g Z\" ";
+        fmt = "Stroke=\"#%06X\" Data=\"M %g,%g V %g H %g V %g Z\" ";
         c = xps->strokecolor & 0xffffffL;
         gs_sprintf(line, fmt, c,
-                fixed2float(x0), fixed2float(y0),
-                fixed2float(x0), fixed2float(y1),
-                fixed2float(x1), fixed2float(y1),
-                fixed2float(x1), fixed2float(y0));
+                   fixed2float(x0), fixed2float(y0),
+                   fixed2float(y1), fixed2float(x1),
+                   fixed2float(y0));
         write_str_to_current_page(xps, line);
 
         if (type & gx_path_type_stroke) {
