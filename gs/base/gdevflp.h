@@ -24,7 +24,11 @@ typedef struct gx_device_s gx_device_flp;
 /* Initialize a first/last page device. */
 void gx_device_flp_init(gx_device_flp * dev);
 
+#define subclass_common\
+    void *saved_compositor_method
+
 typedef struct {
+    subclass_common;
     unsigned int private_data_size;
     int PageCount;
 } first_last_subclass_data;

@@ -82,7 +82,10 @@
 #include "gxcmap.h"         /* color mapping procs */
 #include "gsstype.h"
 #include "gdevprn.h"
+#include "gdevp14.h"        /* Needed to patch up the procs after compositor creation */
 #include "gdevflp.h"
+
+int gs_is_pdf14trans_compositor(const gs_composite_t * pct);
 
 /* GC descriptor */
 public_st_device_flp();
@@ -478,6 +481,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
 
     copy_procs(&dev_to_subclass->procs, &child_dev->procs, &new_prototype->procs);
     dev_to_subclass->procs.fill_rectangle = new_prototype->procs.fill_rectangle;
+    dev_to_subclass->procs.copy_planes = new_prototype->procs.copy_planes;
     dev_to_subclass->finalize = new_prototype->finalize;
     dev_to_subclass->dname = new_prototype->dname;
     dev_to_subclass->stype = new_prototype->stype;
@@ -572,6 +576,8 @@ int gx_update_from_subclass(gx_device *dev)
     memcpy(&dev->space_params, &dev->child->space_params, sizeof(gdev_space_params));
     dev->icc_struct = dev->child->icc_struct;
     dev->graphics_type_tag = dev->child->graphics_type_tag;
+
+    return 0;
 }
 
 static
@@ -1237,6 +1243,64 @@ int flp_map_color_rgb_alpha(gx_device *dev, gx_color_index color, gx_color_value
     return 0;
 }
 
+int subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
+    gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev)
+{
+    pdf14_clist_device *p14dev;
+    first_last_subclass_data *psubclass_data;
+    int code = 0;
+
+    p14dev = (pdf14_clist_device *)dev;
+    psubclass_data = p14dev->target->subclass_data;
+
+    dev->procs.create_compositor = psubclass_data->saved_compositor_method;
+
+    if (gs_is_pdf14trans_compositor(pcte) != 0 && strncmp(dev->dname, "pdf14clist", 10) == 0) {
+        const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pcte;
+
+        switch (pdf14pct->params.pdf14_op) {
+            case PDF14_POP_DEVICE:
+                {
+                    pdf14_clist_device *p14dev = (pdf14_clist_device *)dev;
+                    gx_device *subclass_device;
+
+                    p14dev->target->color_info = p14dev->saved_target_color_info;
+                    if (p14dev->target->child)
+                        p14dev->target->child->color_info = p14dev->saved_target_color_info;
+
+                    p14dev->target->procs.encode_color = p14dev->saved_target_encode_color;
+                    p14dev->saved_target_encode_color = p14dev->target->child->procs.encode_color;
+                    p14dev->target->procs.decode_color = p14dev->saved_target_decode_color;
+                    p14dev->saved_target_decode_color = p14dev->target->child->procs.decode_color;
+                    p14dev->target->procs.get_color_mapping_procs = p14dev->saved_target_get_color_mapping_procs;
+                    p14dev->saved_target_get_color_mapping_procs = p14dev->target->child->procs.get_color_mapping_procs;
+                    p14dev->target->procs.get_color_comp_index = p14dev->saved_target_get_color_comp_index;
+                    p14dev->saved_target_get_color_comp_index = p14dev->target->child->procs.get_color_comp_index;
+
+                    pis->get_cmap_procs = p14dev->save_get_cmap_procs;
+                    gx_set_cmap_procs(pis, p14dev->target);
+
+                    subclass_device = p14dev->target;
+                    p14dev->target = p14dev->target->child;
+
+                    code = dev->procs.create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+
+                    p14dev->target = subclass_device;
+
+                    return code;
+                }
+                break;
+            default:
+                code = dev->procs.create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+                break;
+        }
+    } else {
+        code = dev->procs.create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+    }
+    dev->procs.create_compositor = subclass_create_compositor;
+    return code;
+}
+
 int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev)
 {
@@ -1246,10 +1310,67 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
             if (dev->child->procs.create_compositor) {
+                gx_device_color_info saved_target_color_info = dev->child->color_info;
+                dev_proc_encode_color(*saved_target_encode_color) = dev->child->procs.encode_color;
+                dev_proc_decode_color(*saved_target_decode_color) = dev->child->procs.decode_color;
+                dev_proc_get_color_mapping_procs(*saved_target_get_color_mapping_procs) = dev->child->procs.get_color_mapping_procs;
+                dev_proc_get_color_comp_index(*saved_target_get_color_comp_index) = dev->child->procs.get_color_comp_index;
+
+                /* Some more unpleasantness here. If the child device is a clist, then it will use the first argument
+                 * that we pass to access its own data (not unreasonably), so we need to make sure we pass in the
+                 * child device. This has some follow on implications detailed below.
+                 */
                 code = dev->child->procs.create_compositor(dev->child, pcdev, pcte, pis, memory, cdev);
-                if (*pcdev != dev->child)
+                if (*pcdev != dev->child){
+                    /* If the child created a new compositor, which it wants to be the new 'device' in the
+                     * graphics state, it sets it in the returned pcdev variable. When we return from this
+                     * method, if pcdev is not the same as the device in the graphics state then the interpreter
+                     * sets pcdev as the new device in the graphics state. But because we passed in the child device
+                     * to the child method, if it did create a compositor it will be a forwarding device, and it will
+                     * be forwarding to our child, we need it to point to us instead. So if pcdev is not the same as the
+                     * child device, we fixup the target in the child device to point to us.
+                     */
+                    gx_device_forward *fdev = (gx_device_forward *)*pcdev;
+
+                    if (gs_is_pdf14trans_compositor(pcte) != 0 && strncmp(fdev->dname, "pdf14clist", 10) == 0) {
+                        pdf14_clist_device *p14dev;
+
+                        p14dev = (pdf14_clist_device *)*pcdev;
+
+                        dev->color_info = dev->child->color_info;
+
+                        p14dev->saved_target_encode_color = dev->procs.encode_color;
+                        p14dev->saved_target_decode_color = dev->procs.decode_color;
+                        p14dev->saved_target_get_color_mapping_procs = dev->procs.get_color_mapping_procs;
+                        p14dev->saved_target_get_color_comp_index = dev->procs.get_color_comp_index;
+
+                        dev->procs.encode_color = p14dev->procs.encode_color = dev->child->procs.encode_color;
+                        dev->procs.decode_color = p14dev->procs.decode_color = dev->child->procs.decode_color;
+                        dev->procs.get_color_mapping_procs = dev->child->procs.get_color_mapping_procs;
+                        dev->procs.get_color_comp_index = dev->child->procs.get_color_comp_index;
+
+                        dev->child->procs.encode_color = saved_target_encode_color;
+                        dev->child->procs.decode_color = saved_target_decode_color;
+                        dev->child->procs.get_color_mapping_procs = saved_target_get_color_mapping_procs;
+                        dev->child->procs.get_color_comp_index = saved_target_get_color_comp_index;
+
+                        psubclass_data->saved_compositor_method = p14dev->procs.create_compositor;
+                        p14dev->procs.create_compositor = subclass_create_compositor;
+                    }
+
+                    fdev->target = dev;
+                    rc_decrement_only(dev->child, "first-last page compositor code");
+                    rc_increment(dev);
                     return code;
+                }
                 else {
+                    /* See the 2 comments above. Now, if the child did not create a new compositor (eg its a clist)
+                     * then it returns pcdev pointing to the passed in device (the child in our case). Now this is a
+                     * problem, if we return with pcdev == child->dev, and teh current device is 'dev' then the
+                     * compositor code will think we wanted to push a new device and will select the child device.
+                     * so here if pcdev == dev->child we change it to be our own device, so that the calling code
+                     * won't redirect the device in the graphics state.
+                     */
                     *pcdev = dev;
                     return code;
                 }
@@ -1312,6 +1433,7 @@ flp_text_set_cache(gs_text_enum_t *pte, const double *pw,
 {
     return 0;
 }
+static int
 flp_text_retry(gs_text_enum_t *pte)
 {
     return 0;
@@ -1319,8 +1441,6 @@ flp_text_retry(gs_text_enum_t *pte)
 static void
 flp_text_release(gs_text_enum_t *pte, client_name_t cname)
 {
-    flp_text_enum_t *const penum = (flp_text_enum_t *)pte;
-
     gx_default_text_release(pte, cname);
 }
 
@@ -1476,7 +1596,7 @@ gx_color_index flp_encode_color(gx_device *dev, const gx_color_value colors[])
     return 0;
 }
 
-flp_decode_color(gx_device *dev, gx_color_index cindex, gx_color_value colors[])
+int flp_decode_color(gx_device *dev, gx_color_index cindex, gx_color_value colors[])
 {
     if (dev->child->procs.decode_color)
         return dev->child->procs.decode_color(dev->child, cindex, colors);
