@@ -847,6 +847,14 @@ pdf_open(gx_device * dev)
         pdev->pdf_font_dir->ccache.mark_glyph = pdev->memory->gs_lib_ctx->font_dir->ccache.mark_glyph;
         pdev->pdf_font_dir->global_glyph_code = pdev->memory->gs_lib_ctx->font_dir->global_glyph_code;
     }
+
+    /* gs_opendevice() sets the device 'is_open' flag which is now of course the parent. We
+     * still need to set the child's flag, we'll do it here to avoid setting it if we get any
+     * failures, as those will also leave the parent not open.
+     */
+    if (pdev->parent)
+        pdev->is_open = true;
+
     return 0;
   fail:
     gdev_vector_close_file((gx_device_vector *) pdev);
