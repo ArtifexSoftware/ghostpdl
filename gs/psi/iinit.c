@@ -34,6 +34,7 @@
 #include "ivmspace.h"
 #include "opdef.h"
 #include "store.h"
+#include "iconf.h"
 
 /* Implementation parameters. */
 /*
@@ -524,3 +525,19 @@ op_get_name_string(op_proc_t opproc)
     return unknown_op_name;
 }
 #endif
+
+int
+i_iodev_init(i_ctx_t *i_ctx_p)
+{
+    int i;
+    int code;
+    extern init_proc(gs_iodev_init);
+
+    code = gs_iodev_init(imemory);
+
+    for (i = 0; i < i_io_device_table_count && code >= 0; i++) {
+        code = gs_iodev_register_dev(imemory, i_io_device_table[i]);
+    }
+
+    return code;
+}

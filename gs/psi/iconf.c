@@ -26,6 +26,12 @@
 #include "iapi.h"
 #include "iminst.h"
 #include "iplugin.h"
+#include "gxiodev.h"
+
+/* Declare IODevices as extern. */
+#define io_device_(iodev) extern const gx_io_device iodev;
+#include "iconfig.h"
+#undef io_device_
 
 /* Define the default values for an interpreter instance. */
 const gs_main_instance gs_main_instance_init_values =
@@ -34,6 +40,7 @@ const gs_main_instance gs_main_instance_init_values =
 /* Set up the .ps file name string. */
 #define psfile_(fns,len) fns "\000"
 const byte gs_init_files[] =
+#include "iconfig.h"
 #include "gconf.h"
 ;
 #undef psfile_
@@ -42,6 +49,7 @@ const uint gs_init_files_sizeof = sizeof(gs_init_files);
 /* Set up the emulator name string. */
 #define emulator_(ems,len) ems "\000"
 const byte gs_emulators[] =
+#include "iconfig.h"
 #include "gconf.h"
 ;
 #undef emulator_
@@ -49,11 +57,14 @@ const uint gs_emulators_sizeof = sizeof(gs_emulators);
 
 /* Set up the function type table similarly. */
 #define function_type_(i,proc) extern build_function_proc(proc);
+#include "iconfig.h"
 #include "gconf.h"
 #undef function_type_
 #define function_type_(i,proc) {i,proc},
 const build_function_type_t build_function_type_table[] = {
+#include "iconfig.h"
 #include "gconf.h"
+
     {0}
 };
 #undef function_type_
@@ -65,13 +76,13 @@ const uint build_function_type_table_count =
 #define oper_(xx_op_defs) extern const op_def xx_op_defs[];
 oper_(interp1_op_defs)		/* Interpreter operators */
 oper_(interp2_op_defs)		/* ibid. */
-#include "gconf.h"
+#include "iconfig.h"
 #undef oper_
-
 const op_def *const op_defs_all[] = {
 #define oper_(defs) defs,
     oper_(interp1_op_defs)	/* Interpreter operators */
     oper_(interp2_op_defs)	/* ibid. */
+#include "iconfig.h"
 #include "gconf.h"
 #undef oper_
     0
@@ -81,13 +92,24 @@ const uint op_def_count = (countof(op_defs_all) - 1) * OP_DEFS_MAX_SIZE;
 /* Set up the plugin table. */
 
 #define plugin_(proc) extern plugin_instantiation_proc(proc);
+#include "iconfig.h"
 #include "gconf.h"
 #undef plugin_
 
 extern_i_plugin_table();
 #define plugin_(proc) proc,
 const i_plugin_instantiation_proc i_plugin_table[] = {
+#include "iconfig.h"
 #include "gconf.h"
     0
 };
 #undef plugin_
+
+#define io_device_(iodev) &iodev,
+const gx_io_device *const i_io_device_table[] = {
+#include "iconfig.h"
+    0
+};
+#undef io_device_
+/* We must use unsigned here, not uint.  See gscdefs.h. */
+const unsigned i_io_device_table_count = countof(i_io_device_table) - 1;

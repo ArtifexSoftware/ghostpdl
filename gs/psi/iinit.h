@@ -34,6 +34,9 @@ int op_init(i_ctx_t *);
 const char *op_get_name_string(op_proc_t opproc);
 #endif
 
+int
+i_iodev_init(i_ctx_t *i_ctx_p);
+
 /*
  * Test whether there are any Level 2 operators in the executable.
  * (This is different from the language level in which the interpreter is

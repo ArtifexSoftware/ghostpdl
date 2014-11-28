@@ -34,6 +34,14 @@ typedef struct gx_io_device_s gx_io_device;
 #endif
 typedef struct gx_io_device_procs_s gx_io_device_procs;  /* defined here */
 
+/* the number of slots reserved in the io device table for io devices to
+ * be added at run time.
+ */
+#define NUM_RUNTIME_IODEVS 16
+
+int
+gs_iodev_register_dev(gs_memory_t * mem, const gx_io_device *newiodev);
+
 /* The IODevice table is defined in gconf.c; its extern is in gscdefs.h. */
 
 #ifndef file_enum_DEFINED	/* also defined in gp.h */

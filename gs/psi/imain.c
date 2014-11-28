@@ -188,7 +188,6 @@ int
 gs_main_init1(gs_main_instance * minst)
 {
     i_ctx_t *i_ctx_p;
-    extern init_proc(gs_iodev_init);
 
     if (minst->init_done < 1) {
         gs_dual_memory_t idmem;
@@ -223,7 +222,7 @@ gs_main_init1(gs_main_instance * minst)
         if (code < 0)
             return code;
         i_ctx_p = minst->i_ctx_p;
-        code = gs_iodev_init(imemory);
+        code = i_iodev_init(minst->i_ctx_p);
         if (code < 0)
             return code;
         minst->init_done = 1;

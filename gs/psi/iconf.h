@@ -30,4 +30,7 @@ extern const uint gs_init_files_sizeof;
 extern const byte gs_emulators[];
 extern const uint gs_emulators_sizeof;
 
+extern gx_io_device *i_io_device_table[];
+extern const unsigned i_io_device_table_count;
+
 #endif /* iconf_INCLUDED */

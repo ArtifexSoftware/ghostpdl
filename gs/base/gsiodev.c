@@ -63,7 +63,7 @@ int
 gs_iodev_init(gs_memory_t * mem)
 {				/* Make writable copies of all IODevices. */
     gx_io_device **table =
-        gs_alloc_struct_array_immovable(mem, gx_io_device_table_count,
+        gs_alloc_struct_array_immovable(mem, gx_io_device_table_count + NUM_RUNTIME_IODEVS,
                               gx_io_device *, &st_io_device_ptr_element,
                               "gs_iodev_init(table)");
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
@@ -72,6 +72,8 @@ gs_iodev_init(gs_memory_t * mem)
 
     if ((table == NULL) || (libctx == NULL))
         return_error(gs_error_VMerror);
+
+    libctx->io_device_table_size = gx_io_device_table_count + NUM_RUNTIME_IODEVS;
 
     for (i = 0; i < gx_io_device_table_count; ++i) {
         gx_io_device *iodev =
@@ -82,6 +84,7 @@ gs_iodev_init(gs_memory_t * mem)
             goto fail;
         table[i] = iodev;
         memcpy(table[i], gx_io_device_table[i], sizeof(gx_io_device));
+        libctx->io_device_table_count++;
     }
     libctx->io_device_table = table;
     code = gs_register_struct_root(mem, NULL,
@@ -103,6 +106,48 @@ gs_iodev_init(gs_memory_t * mem)
     gs_free_object(mem, table, "gs_iodev_init(table)");
     libctx->io_device_table = NULL;
     return (code < 0 ? code : gs_note_error(gs_error_VMerror));
+}
+
+/*
+ * Register io devices *after* lib initialisation
+*/
+int
+gs_iodev_register_dev(gs_memory_t * mem, const gx_io_device *newiodev)
+{
+    gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
+    gx_io_device **table = libctx->io_device_table;
+    int code = 0;
+    gx_io_device *iodev;
+    int i;
+
+    if (libctx->io_device_table_count >= libctx->io_device_table_size) {
+        /* FIXME: table size should be dynamic - deregistering the root node is a problem */
+        return_error(gs_error_limitcheck);
+    }
+
+    iodev = gs_alloc_struct(mem, gx_io_device, &st_io_device,
+                            "gs_iodev_register_dev(iodev)");
+
+    if (iodev == 0) {
+        code = gs_note_error(gs_error_VMerror);
+        goto fail;
+    }
+    table[libctx->io_device_table_count] = iodev;
+    memcpy(table[libctx->io_device_table_count], newiodev, sizeof(gx_io_device));
+
+    if ((code = (table[libctx->io_device_table_count]->procs.init)(table[libctx->io_device_table_count], mem)) < 0)
+        goto fail2;
+    libctx->io_device_table_count++;
+
+    return(code);
+  fail2:
+    for (; i > 0; --i)
+        gs_free_object(mem, table[i - 1], "gs_iodev_init(iodev)");
+    gs_free_object(mem, table, "gs_iodev_init(table)");
+    libctx->io_device_table = NULL;
+
+  fail:
+    return(code);
 }
 
 static void
@@ -278,7 +323,7 @@ gs_getiodevice(const gs_memory_t *mem, int index)
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
 
     if (libctx == NULL || libctx->io_device_table == NULL ||
-        index < 0      || index >= gx_io_device_table_count)
+        index < 0      || index >= libctx->io_device_table_count)
         return 0;		/* index out of range */
     return libctx->io_device_table[index];
 }
@@ -295,7 +340,7 @@ gs_findiodevice(const gs_memory_t *mem, const byte * str, uint len)
     	return 0;
     if (len > 1 && str[len - 1] == '%')
         len--;
-    for (i = 0; i < gx_io_device_table_count; ++i) {
+    for (i = 0; i < libctx->io_device_table_count; ++i) {
         gx_io_device *iodev = libctx->io_device_table[i];
         const char *dname = iodev->dname;
 
