@@ -28,7 +28,7 @@ UNIXLINK_MAK=$(GLSRC)unixlink.mak
 
 ### Interpreter main program
 
-INT_ARCHIVE_SOME=$(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)
+INT_ARCHIVE_SOME=$(GLOBJ)gconfig.$(OBJ) $(GLOBJ)iconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)
 
 INT_ARCHIVE_ALL=$(PSOBJ)imainarg.$(OBJ) $(PSOBJ)imain.$(OBJ) \
  $(INT_ARCHIVE_SOME)
@@ -54,10 +54,10 @@ $(GS_A): $(obj_tr) $(ECHOGS_XE) $(INT_ARCHIVE_ALL) $(INT_ALL) $(DEVS_ALL)
 # which has limited environment space.
 ldt_tr=$(PSOBJ)ldt.tr
 
-$(GS_XE): $(ld_tr) $(ECHOGS_XE) $(XE_ALL) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
+$(GS_XE): $(ld_tr) $(gs_tr) $(ECHOGS_XE) $(XE_ALL) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
 	$(ECHOGS_XE) -w $(ldt_tr) -n - $(CCLD) $(LDFLAGS) -o $(GS_XE)
 	$(ECHOGS_XE) -a $(ldt_tr) -n -s $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) $(PSOBJ)gs.$(OBJ) -s
-	cat $(ld_tr) >>$(ldt_tr)
+	cat $(gsld_tr) >> $(ldt_tr)
 	$(ECHOGS_XE) -a $(ldt_tr) -s - $(EXTRALIBS) $(STDLIBS)
 	if [ x$(XLIBDIR) != x ]; then LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; fi; \
 	XCFLAGS= XINCLUDE= XLDFLAGS= XLIBDIRS= XLIBS= \

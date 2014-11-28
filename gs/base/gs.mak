@@ -270,6 +270,9 @@ gconfxx_h=$(GLGENDIR)$(D)gconfxx.h
 gconfigf_h=$(GLGENDIR)$(D)gconfxc.h
 gconfigd_h=$(GLGENDIR)$(D)gconfigd.h
 
+iconfxx_h=$(GLGENDIR)$(D)iconfxx.h
+iconfig_h=$(GLGENDIR)$(D)iconfig.h
+
 all default : $(GS_XE) $(PCL_XPS_TARGETS) $(GS_SHARED_OBJS) $(MAKEDIRSTOP) $(MAKEDIRS)
 	$(NO_OP)
 
@@ -418,12 +421,12 @@ DEVS_ALL=$(GLGENDIR)$(D)$(GSPLATFORM).dev\
  $(DEVICE_DEVS_EXTRA) $(GLD)romfs$(COMPILE_INITS).dev 
 
 
-$(GLGENDIR)$(D)fdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
+$(GLGENDIR)$(D)fdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE) $(GSPLAT_DEVS_ALL) $(FEATURE_DEVS)
 	$(EXP)$(ECHOGS_XE) -w $(GLGENDIR)$(D)fdevs.tr - -include $(GLGENDIR)$(D)$(GSPLATFORM)
 	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)fdevs.tr -+ $(FEATURE_DEVS)
 	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)fdevs.tr -+ $(FEATURE_DEVS_EXTRA)
 
-$(GLGENDIR)$(D)devdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
+$(GLGENDIR)$(D)devdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE) $(DEVICE_DEVS_ALL)
 	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS)
 	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS1)
 	$(EXP)$(ECHOGS_XE) -a $(GLGENDIR)$(D)devdevs.tr -+ $(DEVICE_DEVS2)
@@ -460,13 +463,14 @@ $(GLGENDIR)$(D)devdevs.tr: $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
 #	$(EXP)$(ECHOGS_XE) -w $(GLGENDIR)$(D)xpsfdevs.tr -+ ""
 
 devs_tr=$(GLGENDIR)$(D)devs.tr
+psdevs_tr=$(GLGENDIR)$(D)psdevs.tr
 pcldevs_tr=$(GLGENDIR)$(D)pcldevs.tr
 xpsdevs_tr=$(GLGENDIR)$(D)xpsdevs.tr
 
 # NOTE that PRODUCT_STRING is empty for Ghostscript
 $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE) $(GLGENDIR)$(D)fdevs.tr $(GLGENDIR)$(D)devdevs.tr
 	$(EXP)$(ECHOGS_XE) -w $(devs_tr) -n -R $(GLGENDIR)$(D)fdevs.tr
-	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ $(PSI_FEATURE_DEVS)
+	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -+ ""
 	$(EXP)$(ECHOGS_XE) -a $(devs_tr) -n -R $(GLGENDIR)$(D)devdevs.tr
 
 $(pcldevs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE) $(GLGENDIR)$(D)fdevs.tr $(GLGENDIR)$(D)devdevs.tr
@@ -485,26 +489,34 @@ $(xpsdevs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE) $(GLGENDIR)$(D)fdevs.tr 
 # it isn't just literal text.
 GCONFIG_EXTRAS=
 
-$(GLGENDIR)$(D)productld.tr: $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(PSI_DEVS_ALL) \
-                                               $(GLGENDIR)$(D)libcore.dev
-	$(EXP)$(ECHOGS_XE) -w -n $(GLGENDIR)$(D)productld.tr -+
-
-$(GLGENDIR)$(D)pclproductld.tr: $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(pcldevs_tr) $(PCL_DEVS_ALL) \
-                                                   $(PCL_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
-	$(EXP)$(GENCONF_XE) -n pcl $(PCL_FEATURE_DEVS) $(CONFILES) -o $(GLGENDIR)$(D)pclproductld.tr
-
-$(GLGENDIR)$(D)xpsproductld.tr: $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(xpsdevs_tr) $(XPS_DEVS_ALL) \
-                                                   $(XPS_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
-	$(EXP)$(GENCONF_XE) -n xps $(XPS_FEATURE_DEVS) $(CONFILES) -o $(GLGENDIR)$(D)xpsproductld.tr
-
 #  $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(DEVS_ALL) $(GLGENDIR)$(D)libcore.dev
 ld_tr=$(GLGENDIR)$(D)ld.tr
 $(ld_tr) : \
-  $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(GLGENDIR)$(D)libcore.dev \
-  $(GLGENDIR)$(D)$(PRODUCT_STRING)productld.tr
+  $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(GLGENDIR)$(D)libcore.dev
 	$(EXP)$(GENCONF_XE) $(devs_tr) -h $(gconfxx_h) $(CONFILES) $(CONFLDTR) $(ld_tr)
-	$(EXP)$(ECHOGS_XE) -a $(ld_tr) -n -R $(GLGENDIR)$(D)$(PRODUCT_STRING)productld.tr
 	$(EXP)$(ECHOGS_XE) -a $(gconfxx_h) $(GCONFIG_EXTRAS)
+
+gs_tr=$(GLGENDIR)$(D)gs.tr
+igs_tr=$(GLGENDIR)$(D)igs.tr
+gsld_tr=$(GLGENDIR)$(D)gsld.tr
+$(gs_tr): $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_tr) $(devs_tr) $(PSI_DEVS_ALL) \
+                                               $(GLGENDIR)$(D)libcore.dev
+	$(EXP)$(ECHOGS_XE) -w $(igs_tr) - -include $(PSI_FEATURE_DEVS)
+	$(EXP)$(GENCONF_XE) $(igs_tr) -h $(iconfxx_h) $(CONFILES) $(CONFLDTR) $(gsld_tr)
+	$(EXP)$(ECHOGS_XE) -w $(iconfig_h) -R $(iconfxx_h)
+	$(EXP)$(ECHOGS_XE) -w $(gs_tr) -R $(devs_tr)
+	$(EXP)$(ECHOGS_XE) -a $(gs_tr) -R $(igs_tr)
+	$(EXP)$(GENCONF_XE) $(gs_tr) -h $(GLGENDIR)$(D)unused.h $(CONFILES) $(CONFLDTR) $(gsld_tr)
+
+pcl_tr=$(GLGENDIR)$(D)pcl.tr
+$(pcl_tr): $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_tr) $(pcldevs_tr) $(PCL_DEVS_ALL) \
+                                                   $(PCL_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
+	$(EXP)$(GENCONF_XE) -n pcl $(PCL_FEATURE_DEVS) $(CONFILES) -o $(pcl_tr)
+
+xps_tr=$(GLGENDIR)$(D)xps.tr
+$(xps_tr): $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_tr) $(xpsdevs_tr) $(XPS_DEVS_ALL) \
+                                                   $(XPS_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
+	$(EXP)$(GENCONF_XE) -n xps $(XPS_FEATURE_DEVS) $(CONFILES) -o $(xps_tr)
 
 $(gconfxx_h) : $(ld_tr)
 	$(NO_OP)
