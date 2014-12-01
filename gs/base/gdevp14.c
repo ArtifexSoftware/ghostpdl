@@ -5604,6 +5604,8 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
         max_bitmap = max(target->space_params.MaxBitmap, target->space_params.BufferSpace);
         new_target->space_params.BufferSpace = max_bitmap;
 
+        new_target->PageHandlerPushed = true;
+
         if ((code = gdev_prn_open(new_target)) < 0 ||
              !PRINTER_IS_CLIST((gx_device_printer *)new_target)) {
             gs_free_object(mem->stable_memory, new_target, "pdf14-accum");
