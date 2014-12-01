@@ -1332,35 +1332,37 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
                      */
                     gx_device_forward *fdev = (gx_device_forward *)*pcdev;
 
-                    if (gs_is_pdf14trans_compositor(pcte) != 0 && strncmp(fdev->dname, "pdf14clist", 10) == 0) {
-                        pdf14_clist_device *p14dev;
+                    if (fdev->target == dev->child) {
+                        if (gs_is_pdf14trans_compositor(pcte) != 0 && strncmp(fdev->dname, "pdf14clist", 10) == 0) {
+                            pdf14_clist_device *p14dev;
 
-                        p14dev = (pdf14_clist_device *)*pcdev;
+                            p14dev = (pdf14_clist_device *)*pcdev;
 
-                        dev->color_info = dev->child->color_info;
+                            dev->color_info = dev->child->color_info;
 
-                        p14dev->saved_target_encode_color = dev->procs.encode_color;
-                        p14dev->saved_target_decode_color = dev->procs.decode_color;
-                        p14dev->saved_target_get_color_mapping_procs = dev->procs.get_color_mapping_procs;
-                        p14dev->saved_target_get_color_comp_index = dev->procs.get_color_comp_index;
+                            p14dev->saved_target_encode_color = dev->procs.encode_color;
+                            p14dev->saved_target_decode_color = dev->procs.decode_color;
+                            p14dev->saved_target_get_color_mapping_procs = dev->procs.get_color_mapping_procs;
+                            p14dev->saved_target_get_color_comp_index = dev->procs.get_color_comp_index;
 
-                        dev->procs.encode_color = p14dev->procs.encode_color = dev->child->procs.encode_color;
-                        dev->procs.decode_color = p14dev->procs.decode_color = dev->child->procs.decode_color;
-                        dev->procs.get_color_mapping_procs = dev->child->procs.get_color_mapping_procs;
-                        dev->procs.get_color_comp_index = dev->child->procs.get_color_comp_index;
+                            dev->procs.encode_color = p14dev->procs.encode_color = dev->child->procs.encode_color;
+                            dev->procs.decode_color = p14dev->procs.decode_color = dev->child->procs.decode_color;
+                            dev->procs.get_color_mapping_procs = dev->child->procs.get_color_mapping_procs;
+                            dev->procs.get_color_comp_index = dev->child->procs.get_color_comp_index;
 
-                        dev->child->procs.encode_color = saved_target_encode_color;
-                        dev->child->procs.decode_color = saved_target_decode_color;
-                        dev->child->procs.get_color_mapping_procs = saved_target_get_color_mapping_procs;
-                        dev->child->procs.get_color_comp_index = saved_target_get_color_comp_index;
+                            dev->child->procs.encode_color = saved_target_encode_color;
+                            dev->child->procs.decode_color = saved_target_decode_color;
+                            dev->child->procs.get_color_mapping_procs = saved_target_get_color_mapping_procs;
+                            dev->child->procs.get_color_comp_index = saved_target_get_color_comp_index;
 
-                        psubclass_data->saved_compositor_method = p14dev->procs.create_compositor;
-                        p14dev->procs.create_compositor = subclass_create_compositor;
+                            psubclass_data->saved_compositor_method = p14dev->procs.create_compositor;
+                            p14dev->procs.create_compositor = subclass_create_compositor;
+                        }
+
+                        fdev->target = dev;
+                        rc_decrement_only(dev->child, "first-last page compositor code");
+                        rc_increment(dev);
                     }
-
-                    fdev->target = dev;
-                    rc_decrement_only(dev->child, "first-last page compositor code");
-                    rc_increment(dev);
                     return code;
                 }
                 else {
