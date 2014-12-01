@@ -867,7 +867,7 @@ $(PSD)macglyph.dev : $(INT_MAK) $(ECHOGS_XE) $(PSINIT)gs_mgl_e.ps\
 $(PSD)ttfont.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)macglyph.dev $(PSD)type42.dev\
  $(MAKEDIRS)
 	$(SETMOD) $(PSD)ttfont -include $(PSD)macglyph $(PSD)type42
-	$(ADDMOD) $(PSD)ttfont -ps gs_wan_e gs_agl gs_ttf
+	$(ADDMOD) $(PSD)ttfont -ps gs_wan_e gs_ttf
 
 # Type 42 (embedded TrueType) support
 type42read_=$(PSOBJ)zchar42.$(OBJ) $(PSOBJ)zcharout.$(OBJ) $(PSOBJ)zfont42.$(OBJ)
@@ -1014,7 +1014,7 @@ $(PSD)psl2int.dev : $(INT_MAK) $(ECHOGS_XE) $(psl2int_)\
 	$(SETMOD) $(PSD)psl2int $(psl2int_)
 	$(ADDMOD) $(PSD)psl2int -include $(PSD)dps2int $(PSD)usparam
 	$(ADDMOD) $(PSD)psl2int -oper zmisc2
-	$(ADDMOD) $(PSD)psl2int -ps gs_lev2 gs_res
+	$(ADDMOD) $(PSD)psl2int -ps gs_lev2 gs_res gs_pdfwr
 
 ivmem2_h=$(PSSRC)ivmem2.h
 
@@ -1096,6 +1096,11 @@ $(PSOBJ)zimage2.$(OBJ) : $(PSSRC)zimage2.c $(OP) $(math__h) $(memory__h)\
 	$(PSCC) $(PSO_)zimage2.$(OBJ) $(C_) $(PSSRC)zimage2.c
 
 # ---------------- setpagedevice ---------------- #
+
+# NOTE: gs_pdfwr.ps is strictly speaking an interpreter feature
+# but is logically part of the PS resources, and requires the content
+# of gs_setpd.ps to work, so we include it here (rather than in the
+# graphics library).
 
 pagedev_=$(PSOBJ)zdevice2.$(OBJ) $(PSOBJ)zmedia2.$(OBJ)
 $(PSD)pagedev.dev : $(INT_MAK) $(ECHOGS_XE) $(pagedev_)\

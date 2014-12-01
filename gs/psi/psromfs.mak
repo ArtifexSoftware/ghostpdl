@@ -33,7 +33,7 @@ RESOURCE_LIST=SubstCID$(D)* CIDFSubst$(D)* CIDFont$(D)* -C $(PDF_RESOURCE_LIST) 
 
 #	Notes: gs_cet.ps is only needed to match Adobe CPSI defaults
 PS_ROMFS_ARGS=-c \
-  -d Resource/Init/ -P $(PSRESDIR)$(D)Init$(D) -g gs_init.ps $(gconfig_h) \
+  -d Resource/Init/ -P $(PSRESDIR)$(D)Init$(D) -g gs_init.ps $(iconfig_h) \
   -d Resource/ -P $(PSRESDIR)$(D) $(RESOURCE_LIST) \
   -d lib/ -P $(PSLIBDIR)$(D) $(EXTRA_INIT_FILES)
 

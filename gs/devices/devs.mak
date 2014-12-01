@@ -826,10 +826,6 @@ $(DEVOBJ)gdevagl.$(OBJ) : $(DEVVECSRC)gdevagl.c $(GDEV)\
 
 ################ BEGIN PDF WRITER ################
 
-# PDF writer
-# Note that gs_pdfwr.ps will only actually be loaded if the configuration
-# includes a PostScript interpreter.
-
 # We reserve slots here for gdevpdfa...z, just in case we need them.
 pdfwrite1_=$(DEVOBJ)gdevpdf.$(OBJ) $(DEVOBJ)gdevpdfb.$(OBJ)
 pdfwrite2_=$(DEVOBJ)gdevpdfc.$(OBJ) $(DEVOBJ)gdevpdfd.$(OBJ) $(DEVOBJ)gdevpdfe.$(OBJ)
@@ -880,7 +876,6 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite9_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite10_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite11_)
-	$(ADDMOD) $(DD)pdfwrite -ps gs_pdfwr
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)cmyklib $(GLD)cfe $(GLD)lzwe
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)rle $(GLD)sdcte $(GLD)sdeparam
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)smd5 $(GLD)szlibe $(GLD)sarc4.dev
