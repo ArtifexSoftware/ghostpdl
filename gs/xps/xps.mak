@@ -21,7 +21,7 @@ XPSO_       = $(O_)$(XPSOBJ)
 EXPATINCDIR = $(EXPATSRCDIR)$(D)lib
 PLOBJ       = $(PLOBJDIR)$(D)
 
-XPSCCC  = $(CC_) $(I_)$(XPSSRCDIR)$(_I) $(I_)$(XPSGENDIR)$(_I) \
+XPSCCC  = $(CC_) $(D_)XPS_INCLUDED$(_D) $(I_)$(XPSSRCDIR)$(_I) $(I_)$(XPSGENDIR)$(_I) \
 	$(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) \
 	$(I_)$(EXPATINCDIR)$(_I) $(I_)$(JPEGXR_SRCDIR)$(_I) $(I_)$(ZSRCDIR)$(_I) $(C_)
 
@@ -38,7 +38,7 @@ xps.config-clean: clean_gs
 	$(RM_) $(XPSOBJ)devs.tr5
 
 XPS_TOP_OBJ=$(XPSOBJDIR)/xpstop.$(OBJ)
-XPS_TOP_OBJS= $(XPS_TOP_OBJ) $(GLOBJ)gconfig.$(OBJ)
+XPS_TOP_OBJS= $(XPS_TOP_OBJ) $(XPSOBJDIR)$(D)xpsimpl.$(OBJ)
 
 XPSINCLUDES=$(XPSSRC)*.h $(XPSOBJ)arch.h $(XPSOBJ)jpeglib_.h
 
@@ -123,6 +123,15 @@ $(XPSOBJ)xpscff.$(OBJ): $(XPSSRC)xpscff.c $(XPSINCLUDES)
 $(XPSOBJ)xpsfapi.$(OBJ): $(XPSSRC)xpsfapi.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsfapi.c $(XPSO_)xpsfapi.$(OBJ)
 
+$(PLOBJ)xpsimpl.$(OBJ):  $(PLSRC)plimpl.c            \
+                        $(AK)                       \
+                        $(memory__h)                \
+                        $(scommon_h)                \
+                        $(gxdevice_h)               \
+                        $(pltop_h)
+	$(RM_) $(XPSGEN)xpsimpl.c
+	$(CP_) $(PLSRC)plimpl.c $(XPSGEN)xpsimpl.c
+	$(XPSCCC) $(XPSGEN)xpsimpl.c $(XPSO_)xpsimpl.$(OBJ)
 
 $(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(pltop_h) $(XPSINCLUDES) $(GLOBJ)gconfig.$(OBJ) <
                 $(pconfig_h)

@@ -273,7 +273,7 @@ gconfigd_h=$(GLGENDIR)$(D)gconfigd.h
 iconfxx_h=$(GLGENDIR)$(D)iconfxx.h
 iconfig_h=$(GLGENDIR)$(D)iconfig.h
 
-all default : $(GS_XE) $(PCL_XPS_TARGETS) $(GS_SHARED_OBJS) $(MAKEDIRSTOP) $(MAKEDIRS)
+all default : $(PCL_XE) $(PCL_XPS_TARGETS) $(GS_SHARED_OBJS) $(MAKEDIRSTOP) $(MAKEDIRS)
 	$(NO_OP)
 
 # the distclean and maintainer-clean targets (if any)
@@ -510,12 +510,12 @@ $(gs_tr): $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(
 
 pcl_tr=$(GLGENDIR)$(D)pcl.tr
 $(pcl_tr): $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_tr) $(pcldevs_tr) $(PCL_DEVS_ALL) \
-                                                   $(PCL_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
+                                             $(devs_tr) $(PCL_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
 	$(EXP)$(GENCONF_XE) -n pcl $(PCL_FEATURE_DEVS) $(CONFILES) -o $(pcl_tr)
 
 xps_tr=$(GLGENDIR)$(D)xps.tr
 $(xps_tr): $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_tr) $(xpsdevs_tr) $(XPS_DEVS_ALL) \
-                                                   $(XPS_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
+                                             $(devs_tr) $(XPS_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
 	$(EXP)$(GENCONF_XE) -n xps $(XPS_FEATURE_DEVS) $(CONFILES) -o $(xps_tr)
 
 $(gconfxx_h) : $(ld_tr)

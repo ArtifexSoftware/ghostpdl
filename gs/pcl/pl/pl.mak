@@ -20,24 +20,24 @@
 #	PLSRCDIR - the source directory
 #	PLOBJDIR - the object / executable directory
 
-MAIN_OBJ=$(PLOBJDIR)$(D)plmain.$(OBJ) $(PLOBJDIR)$(D)plimpl.$(OBJ)
+MAIN_OBJ=$(PLOBJDIR)$(D)plmain.$(OBJ)
 REALMAIN_OBJ=$(PLOBJDIR)$(D)realmain.$(OBJ)
 REALMAIN_SRC=realmain
 PCL_TOP_OBJ=$(PCL5OBJDIR)$(D)pctop.$(OBJ)
 PXL_TOP_OBJ=$(PXLOBJDIR)$(D)pxtop.$(OBJ)
-TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ) $(GLOBJ)gconfig.$(OBJ)
+TOP_OBJ=$(PLOBJDIR)$(D)plimpl.$(OBJ) $(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 
 PLSRC=$(PLSRCDIR)$(D)
 PLOBJ=$(PLOBJDIR)$(D)
 PLO_=$(O_)$(PLOBJ)
 GLGEN=$(GLGENDIR)$(D)
 
-PLCCC=$(CC_) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
-PLATCCC=$(PLCCC)
+PLCCC=$(CC_) $(D_)PCL_INCLUDED$(_D) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
+PLATCCC=$(PLCCC) $(D_)PCL_INCLUDED$(_D)
 
 #### Note PLCCC brings /Za, which can't compile Windows headers, so we define and use PLCCC_W instead. :
-CC_W=$(CC_WX) $(COMPILE_FULL_OPTIMIZED) $(ZM)
-PLCCC_W=$(CC_W) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
+CC_W=$(CC_WX) $(D_)PCL_INCLUDED$(_D) $(COMPILE_FULL_OPTIMIZED) $(ZM)
+PLCCC_W=$(CC_W) $(D_)PCL_INCLUDED$(_D) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
 # Define the name of this makefile.
 PL_MAK=$(PLSRC)pl.mak
@@ -340,7 +340,6 @@ $(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj) $(PLOBJ)fapi_pl.dev \
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj2)
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj3)
 	$(ADDMOD) $(PLOBJ)pl $(PLOBJ)plufstlp$(UFST_BRIDGE).$(OBJ)
-	$(ADDMOD) $(PLOBJ)pl $(GLOBJ)gscdefs.$(OBJ)
 	$(ADDMOD) $(PLOBJ)pl $(GLOBJ)gsargs.$(OBJ)
 	$(ADDMOD) $(PLOBJ)pl -include $(PLOBJ)fapi_pl
 	$(ADDMOD) $(PLOBJ)pl -include $(PLOBJ)$(PL_SCALER)
