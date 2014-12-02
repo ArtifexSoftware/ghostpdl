@@ -346,6 +346,8 @@ static int copy_procs(gx_device_procs *dest_procs, gx_device_procs *src_procs, g
         dest_procs->get_xfont_device = prototype_procs->get_xfont_device;
     if (src_procs->map_rgb_alpha_color != NULL)
         dest_procs->map_rgb_alpha_color = prototype_procs->map_rgb_alpha_color;
+    if (src_procs->get_page_device != NULL)
+        dest_procs->get_page_device = prototype_procs->get_page_device;
     if (src_procs->get_alpha_bits != NULL)
         dest_procs->get_alpha_bits = prototype_procs->get_alpha_bits;
     if (src_procs->copy_alpha != NULL)
