@@ -988,6 +988,8 @@ currentdict /.pdf_hook_DSC_Creator undef
     } {
       % We use the presence of the OPDFRead key as a proxy for a pdfwrite-family device
       /ForOPDFRead /GetDeviceParam .special_op {
+        % Get rid of the OPDFRead key
+        exch pop
         % and then check the value to see if its pdfwrite or ps2write
         { /PSL2Printer } { /default } ifelse
       } {
@@ -1004,6 +1006,8 @@ currentdict /.pdf_hook_DSC_Creator undef
     } repeat
     % We use the presence of the OPDFRead key as a proxy for a pdfwrite-family device
     /ForOPDFRead /GetDeviceParam .special_op {
+      % Get rid of the OPDFRead key
+      exch pop
       % Then check to see if OPDFRead is true or not
       not {
         systemdict /PDFX known systemdict /PDFA known or {
@@ -1023,7 +1027,8 @@ currentdict /.pdf_hook_DSC_Creator undef
 { % Note, this may not work if the initial device is not pdfwrite
   % We use the presence of the4 OPDFRead key as a proxy for a pdfwrite-family device
   /ForOPDFRead /GetDeviceParam .special_op {
-    pop
+    % Get rid of the OPDFRead key and value
+    pop pop
     % Inform the device with initial graphic state. See gdev_pdf_fill_path.
     newpath fill
   } if
