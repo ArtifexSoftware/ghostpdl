@@ -32,7 +32,7 @@
 
 #include "gdevprn.h"
 #include "gp.h"
-#include "errors.h"
+#include "gserrors.h"
 #include "gsparam.h"
 #include "gsstate.h"
 #include "math_.h"

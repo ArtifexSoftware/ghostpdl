@@ -81,10 +81,9 @@
 #else
 #include "spprint.h"
 #endif
-#include "ghost.h"
+
 #include "gzstate.h"
-#include "imemory.h"
-#include "igstate.h"
+
 #include "gdevlips.h"
 
 /* ---------------- Device definition ---------------- */

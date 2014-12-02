@@ -51,8 +51,7 @@
 #include "gdevpstr.h"
 #include "ghost.h"
 #include "gzstate.h"
-#include "imemory.h"
-#include "igstate.h"
+
 #include "gdevescv.h"
 #include "gspath.h"
 #include "gzpath.h"
