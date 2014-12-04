@@ -1290,69 +1290,62 @@ mark
   } if
 
   % Provide all known aliases for each glyph
-  dup
-  16 string //ReverseAdobeGlyphList //AdobeGlyphList 4 -1 roll  % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict)
-  dup
-  {                                                   % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) gname cstring
-    exch dup                                          % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname gname
+  cmapsub 0 4 getinterval <00030001> eq % is the cmap table a unicode one?
+  cmapa //ReverseAdobeGlyphList //AdobeGlyphList
+  {                                  %  CharStrings(dict) isunicode(boolean) cmap(dict) RAGL(dict) gname(name) codep(integer)
+    exch
+    dup 6 index exch .knownget
+    {                                %  CharStrings(dict) isunicode(boolean) cmap(dict) RAGL(dict) codep(integer) gname(name) gindex(integer)
+      3 index 3 index .knownget
+      {                              %  CharStrings(dict) isunicode(boolean) cmap(dict) RAGL(dict) codep(integer) gname(name) gindex(integer) gnames(array)
+        {                            %  CharStrings(dict) isunicode(boolean) cmap(dict) RAGL(dict) codep(integer) gname(name) gindex(integer) gname(name)
+          TTFDEBUG { (\n1 setting alias: ) print dup ==only
+                ( to be the same as  ) print 2 index //== exec } if
 
-    4 index exch .knownget
-    { //true}
-    {                                                 % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
-      % if we couldn't derive the code point from the AGL, we might derive it
-      % from a formatted "uniXXXX" name - the only ones we're interested in are smaller than 16 chars.
-      dup length 16 gt
-      {
-        //false
-      }
-      {
-        dup 6 index 0 1 15 {1 index exch 0 put} for cvs dup (uni) anchorsearch
-        {
-          % as luck would have it, we can just replace the "uni" with "16#"
-          % to get something we can convert to a number
-          pop pop dup 0 (16#) putinterval {cvi} stopped
-          {pop //false}
-          {                                             % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname cpoint
-            dup 5 index exch known
-            { //true }
-            { pop //false }
-            ifelse
-          } ifelse
-        }
-        { pop pop //false}
-        ifelse
-      } ifelse
-    } ifelse
-
-    {
-                                                      % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname cpoint
-      % loop through the array of names for this codepoint
-      % if the CharStrings dict doesn't contain an entry for the name
-      % create one.
-      5 index exch .knownget
-      {                                                  % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglnames(array)
-        {                                                 % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglname
-          dup 4 index exch known not
-          {                                               % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname aglname
-            TTFDEBUG { (\nsetting alias: ) print dup ==only
-                  ( to be the same as glyph: ) print 1 index //== exec } if
-            3 index exch 3 index //.growput superexec
-                                                          % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
-          }
-          {pop} ifelse
+          7 index 2 index 3 -1 roll exch //.growput superexec
         } forall
-        pop pop
+        pop pop pop
       }
       {
-        pop pop pop
+        pop pop
       } ifelse
     }
-    {
-                                                        % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
-      pop pop
+    {                                %  CharStrings(dict) isunicode(boolean) cmap(dict) RAGL(dict) gname(name) codep(integer)
+      exch
+      % Only do this for Unicode cmap table
+      4 index
+      {
+        dup 4 index exch .knownget
+        {                            %  CharStrings(dict) isunicode(boolean) cmap(dict) RAGL(dict) gname(name) codep(integer) gindex(integer)
+          exch pop
+          TTFDEBUG { (\n2 setting alias: ) print 1 index ==only
+                     ( to use glyph index: ) print dup //== exec } if
+          5 index 3 1 roll //.growput superexec
+          //false
+        }
+        {
+          //true
+        }ifelse
+      }
+      {
+        //true
+      } ifelse
+
+      {                        %  CharStrings(dict) isunicode(boolean) cmap(dict) RAGL(dict) gname(name) codep(integer)
+        16 4 string cvrs dup length neg 7 add (uni0000) dup
+        4 -2 roll exch putinterval cvn 3 index 1 index .knownget
+        {                            %  CharStrings(dict) isunicode(boolean) cmap(dict) RAGL(dict) gname(name) codep(integer) gindex(integer)
+          TTFDEBUG { (\3 nsetting alias: ) print 1 index ==only
+                ( to be index: ) print dup //== exec } if
+          exch pop 5 index 3 1 roll //.growput superexec
+        }
+        {
+          pop pop
+        } ifelse
+      } if
     } ifelse
   } forall
-  pop pop pop pop
+  pop pop pop
 
   readonly
 
