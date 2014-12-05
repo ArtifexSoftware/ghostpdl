@@ -467,7 +467,7 @@ run_stdin:
                         (arg[0] == '-' && !isdigit((unsigned char)arg[1]))
                         )
                         break;
-                    code = runarg(minst, "", arg, ".runstring", runBuffer);
+                    code = runarg(minst, "", arg, ".runstring", 0);
                     if (code < 0)
                         return code;
                 }
@@ -965,16 +965,7 @@ runarg(gs_main_instance * minst, const char *pre, const char *arg,
     strcpy(line, pre);
     esc_strcat(line, arg);
     strcat(line, post);
-    /* If we're running PS from a buffer (i.e. from the "-c" option
-       we don't want lib_file_open() to search the current directory
-       during this call to run_string()
-     */
-    if ((options & runBuffer)) {
-        minst->i_ctx_p->starting_arg_file = false;
-    }
-    else {
-        minst->i_ctx_p->starting_arg_file = true;
-    }
+    minst->i_ctx_p->starting_arg_file = true;
     code = run_string(minst, line, options);
     minst->i_ctx_p->starting_arg_file = false;
     gs_free_object(minst->heap, line, "runarg");
