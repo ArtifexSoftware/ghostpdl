@@ -8254,12 +8254,17 @@ pdf14_cmykspot_get_color_comp_index(gx_device * dev, const char * pname,
                                 int name_size, int component_type)
 {
     pdf14_device * pdev = (pdf14_device *) dev;
-    gx_device * tdev = pdev->target;
+    gx_device *fdev, *tdev = pdev->target;
     gs_devn_params * pdevn_params = &pdev->devn_params;
     gs_separations * pseparations = &pdevn_params->separations;
     int comp_index;
-    dev_proc_get_color_comp_index(*target_get_color_comp_index) =
-                                        dev_proc(tdev, get_color_comp_index);
+    dev_proc_get_color_comp_index(*target_get_color_comp_index);
+
+    while (tdev->child) {
+        tdev = tdev->child;
+    }
+
+    target_get_color_comp_index = dev_proc(tdev, get_color_comp_index);
 
     /* The pdf14_clist_create_compositor may have set the color procs.
        We need the real target procs */
