@@ -1270,14 +1270,19 @@ int subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_compo
                     if (p14dev->target->child)
                         p14dev->target->child->color_info = p14dev->saved_target_color_info;
 
-                    p14dev->target->procs.encode_color = p14dev->saved_target_encode_color;
+/*                    p14dev->target->procs.encode_color = p14dev->saved_target_encode_color;
                     p14dev->saved_target_encode_color = p14dev->target->child->procs.encode_color;
                     p14dev->target->procs.decode_color = p14dev->saved_target_decode_color;
                     p14dev->saved_target_decode_color = p14dev->target->child->procs.decode_color;
                     p14dev->target->procs.get_color_mapping_procs = p14dev->saved_target_get_color_mapping_procs;
                     p14dev->saved_target_get_color_mapping_procs = p14dev->target->child->procs.get_color_mapping_procs;
                     p14dev->target->procs.get_color_comp_index = p14dev->saved_target_get_color_comp_index;
-                    p14dev->saved_target_get_color_comp_index = p14dev->target->child->procs.get_color_comp_index;
+                    p14dev->saved_target_get_color_comp_index = p14dev->target->child->procs.get_color_comp_index; */
+
+                    p14dev->target->child->procs.encode_color = p14dev->saved_target_encode_color;
+                    p14dev->target->child->procs.decode_color = p14dev->saved_target_decode_color;
+                    p14dev->target->child->procs.get_color_mapping_procs = p14dev->saved_target_get_color_mapping_procs;
+                    p14dev->target->child->procs.get_color_comp_index = p14dev->saved_target_get_color_comp_index;
 
                     pis->get_cmap_procs = p14dev->save_get_cmap_procs;
                     gx_set_cmap_procs(pis, p14dev->target);
@@ -1342,7 +1347,7 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
 
                             dev->color_info = dev->child->color_info;
 
-                            p14dev->saved_target_encode_color = dev->procs.encode_color;
+/*                            p14dev->saved_target_encode_color = dev->procs.encode_color;
                             p14dev->saved_target_decode_color = dev->procs.decode_color;
                             p14dev->saved_target_get_color_mapping_procs = dev->procs.get_color_mapping_procs;
                             p14dev->saved_target_get_color_comp_index = dev->procs.get_color_comp_index;
@@ -1355,7 +1360,7 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
                             dev->child->procs.encode_color = saved_target_encode_color;
                             dev->child->procs.decode_color = saved_target_decode_color;
                             dev->child->procs.get_color_mapping_procs = saved_target_get_color_mapping_procs;
-                            dev->child->procs.get_color_comp_index = saved_target_get_color_comp_index;
+                            dev->child->procs.get_color_comp_index = saved_target_get_color_comp_index;*/
 
                             psubclass_data->saved_compositor_method = p14dev->procs.create_compositor;
                             p14dev->procs.create_compositor = subclass_create_compositor;
