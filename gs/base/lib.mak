@@ -1942,7 +1942,7 @@ $(GLOBJ)gdevprn.$(OBJ) : $(GLSRC)gdevprn.c $(ctype__h)\
  $(gxdownscale_h) $(gdevdevn_h) $(gxdevsop_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevprn.$(OBJ) $(C_) $(GLSRC)gdevprn.c
 
-$(GLOBJ)gdevflp.$(OBJ) : $(GLSRC)gdevflp.c $(gdevflp_h)
+$(GLOBJ)gdevflp.$(OBJ) : $(GLSRC)gdevflp.c $(gdevflp_h)$(std_h)
 	$(GLCC) $(GLO_)gdevflp.$(OBJ) $(C_) $(GLSRC)gdevflp.c
 
 # Planar page devices
