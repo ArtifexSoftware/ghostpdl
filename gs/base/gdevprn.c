@@ -111,17 +111,23 @@ gdev_prn_open(gx_device * pdev)
 {
     gx_device_printer * ppdev;
     int code;
+    bool update_procs = false;
 
+#if 1
     if (!pdev->PageHandlerPushed /*&& (pdev->FirstPage != 0 || pdev->LastPage != 0)*/) {
         pdev->PageHandlerPushed = true;
         gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
         pdev = pdev->child;
         pdev->is_open = true;
+        update_procs = true;
     }
+#endif
     ppdev = (gx_device_printer *)pdev;
 
     ppdev->file = NULL;
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
+    if (update_procs)
+        copy_procs(&pdev->parent->procs, &pdev->procs, (gx_device *)&gs_flp_device.procs);
     if (code < 0)
         return code;
     if (ppdev->OpenOutputFile)

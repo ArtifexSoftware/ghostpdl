@@ -306,7 +306,7 @@ gx_device_flp gs_flp_device =
 #undef MAX_COORD
 #undef MAX_RESOLUTION
 
-static int copy_procs(gx_device_procs *dest_procs, gx_device_procs *src_procs, gx_device_procs *prototype_procs)
+int copy_procs(gx_device_procs *dest_procs, gx_device_procs *src_procs, gx_device_procs *prototype_procs)
 {
     if (src_procs->open_device != NULL)
         dest_procs->open_device = prototype_procs->open_device;
@@ -1270,15 +1270,6 @@ int subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_compo
                     if (p14dev->target->child)
                         p14dev->target->child->color_info = p14dev->saved_target_color_info;
 
-/*                    p14dev->target->procs.encode_color = p14dev->saved_target_encode_color;
-                    p14dev->saved_target_encode_color = p14dev->target->child->procs.encode_color;
-                    p14dev->target->procs.decode_color = p14dev->saved_target_decode_color;
-                    p14dev->saved_target_decode_color = p14dev->target->child->procs.decode_color;
-                    p14dev->target->procs.get_color_mapping_procs = p14dev->saved_target_get_color_mapping_procs;
-                    p14dev->saved_target_get_color_mapping_procs = p14dev->target->child->procs.get_color_mapping_procs;
-                    p14dev->target->procs.get_color_comp_index = p14dev->saved_target_get_color_comp_index;
-                    p14dev->saved_target_get_color_comp_index = p14dev->target->child->procs.get_color_comp_index; */
-
                     p14dev->target->child->procs.encode_color = p14dev->saved_target_encode_color;
                     p14dev->target->child->procs.decode_color = p14dev->saved_target_decode_color;
                     p14dev->target->child->procs.get_color_mapping_procs = p14dev->saved_target_get_color_mapping_procs;
@@ -1346,21 +1337,6 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
                             p14dev = (pdf14_clist_device *)*pcdev;
 
                             dev->color_info = dev->child->color_info;
-
-/*                            p14dev->saved_target_encode_color = dev->procs.encode_color;
-                            p14dev->saved_target_decode_color = dev->procs.decode_color;
-                            p14dev->saved_target_get_color_mapping_procs = dev->procs.get_color_mapping_procs;
-                            p14dev->saved_target_get_color_comp_index = dev->procs.get_color_comp_index;
-
-                            dev->procs.encode_color = p14dev->procs.encode_color = dev->child->procs.encode_color;
-                            dev->procs.decode_color = p14dev->procs.decode_color = dev->child->procs.decode_color;
-                            dev->procs.get_color_mapping_procs = dev->child->procs.get_color_mapping_procs;
-                            dev->procs.get_color_comp_index = dev->child->procs.get_color_comp_index;
-
-                            dev->child->procs.encode_color = saved_target_encode_color;
-                            dev->child->procs.decode_color = saved_target_decode_color;
-                            dev->child->procs.get_color_mapping_procs = saved_target_get_color_mapping_procs;
-                            dev->child->procs.get_color_comp_index = saved_target_get_color_comp_index;*/
 
                             psubclass_data->saved_compositor_method = p14dev->procs.create_compositor;
                             p14dev->procs.create_compositor = subclass_create_compositor;
