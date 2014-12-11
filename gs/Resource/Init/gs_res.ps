@@ -567,7 +567,6 @@ status {
   dup status {
     pop pop pop pop exch pop                  % (scr) (p/c/n)
   } {
-    exch                                      % (scr) (p/c/n) (c/n)
     .libfile {
       dup .filename pop                       % (scr) (p/c/n) file (p/c/n')
       exch closefile                          % (scr) (p/c/n) (p/c/n')
