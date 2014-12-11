@@ -97,7 +97,20 @@ nodict readonly pop
  } bdef
 
 /q {
-  gsave //nodict begin
+  %% Special case, if we get a 'q' while accumulating clip/eoclip then
+  %% we need to make sure we close the current dictionary, and reopen it after
+  %% performing the gsave, so that the redefinition of 'n' in particular is correct
+  currentdict /n known {
+    currentdict            %% copy the dicitonary for the accumulation
+    end                    %% and close it (NB *before* the gsave!)
+    gsave //nodict begin   %% execute gsave and start 'nodict' just like normal
+    begin                  %% reopen the accumulation dictionary.
+                           %% when we execute 'n' this will close and we'll go back
+                           %% to the regular 'nodict' opened above. This could cause some
+                           %% odd interactions with 'Q' for unbalanced files.....
+  } {
+    gsave //nodict begin
+  } ifelse
   PDFusingtransparency { .pushextendedgstate } if
 } bdef
 
