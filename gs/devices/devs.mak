@@ -1218,15 +1218,21 @@ $(DEVOBJ)gdevpx.$(OBJ) : $(DEVVECSRC)gdevpx.c\
  $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevpx.$(OBJ) $(C_) $(DEVVECSRC)gdevpx.c
 
-# XPS writer
+# XPS writer. Uses libtiff for all images
+
+libtiff_dev=$(TIFFGENDIR)$(D)libtiff.dev
+tiff_i_=-include $(TIFFGENDIR)$(D)libtiff
 
 xpswrite_=$(DEVOBJ)gdevxps.$(OBJ)
 $(DD)xpswrite.dev : $(DEVS_MAK) $(xpswrite_) $(GDEV) $(GLD)vector.dev \
- $(MAKEDIRS)
+$(libtiff_dev) $(MAKEDIRS)
 	$(SETDEV2) $(DD)xpswrite $(xpswrite_)
-	$(ADDMOD) $(DD)xpswrite -include $(GLD)vector
+	$(ADDMOD) $(DD)xpswrite -include $(GLD)vector $(tiff_i_)
 
-$(DEVOBJ)gdevxps.$(OBJ) : $(DEVVECSRC)gdevxps.c $(gx_h) $(gdevvec_h) \
+$(DEVOBJ)gdevxps.$(OBJ) : $(DEVVECSRC)gdevxps.c $(gdevvec_h) \
+$(string__h) $(stdio__h) $(libtiff_dev) $(gx_h) $(gserrors_h) \
+$(gxpath_h) $(gzcpath_h) $(stream_h) $(zlib_h) \
+$(stdint__h) $(gdevtifs_h) $(gsicc_create_h) $(gsicc_cache_h) \
 $(MAKEDIRS)
 	$(XPSDEVCC) $(I_)$(TI_)$(_I) $(GLO_)gdevxps.$(OBJ) $(C_) $(DEVVECSRC)gdevxps.c
 
@@ -1725,8 +1731,6 @@ $(DEVOBJ)minftrsz.$(OBJ) : $(DEVSRC)minftrsz.c $(minftrsz_h) $(MAKEDIRS)
 # AdjustWidth to 0 (e.g., -dAdjustWidth=0 on the command line).
 
 gdevfax_h=$(DEVSRC)gdevfax.h
-libtiff_dev=$(TIFFGENDIR)$(D)libtiff.dev
-tiff_i_=-include $(TIFFGENDIR)$(D)libtiff
 
 fax_=$(DEVOBJ)gdevfax.$(OBJ) $(DEVOBJ)minftrsz.$(OBJ)
 $(DD)fax.dev : $(DEVS_MAK) $(libtiff_dev) $(fax_) $(GLD)cfe.dev $(minftrsz_h)\

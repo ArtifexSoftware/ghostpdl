@@ -23,8 +23,8 @@
 #include "gzcpath.h"
 #include "stream.h"
 #include "zlib.h"
-#include <tiffio.h>
-#include <tiffvers.h>
+#include "stdint_.h"
+#include "gdevtifs.h"
 #include "gsicc_create.h"
 #include "gsicc_cache.h"
 
