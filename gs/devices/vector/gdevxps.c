@@ -1778,6 +1778,12 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
         gx_cpath_init_local(&cpath, dev->memory);
         code = gx_cpath_from_rectangle(&cpath, &bbox);
         pcpath = &cpath;
+    } else {
+        /* Force vector device to do new path as the clip path is the image
+           path.  I had a case where the clip path ids were the same but the 
+           CTM was changing which resulted in subsequent images coming up 
+           missing on the page. i.e. only the first one was shown. */
+        ((gx_device_vector*) vdev)->clip_path_id = vdev->no_clip_path_id;
     }
 
     code = gdev_vector_begin_image(vdev, pis, pim, format, prect,
