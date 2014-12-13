@@ -116,7 +116,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
 int pdf_cs_Pattern_colored(gx_device_pdf *pdev, cos_value_t *pvalue);
 int pdf_cs_Pattern_uncolored(gx_device_pdf *pdev, cos_value_t *pvalue);
 int pdf_cs_Pattern_uncolored_hl(gx_device_pdf *pdev,
-        const gs_color_space *pcs, cos_value_t *pvalue);
+        const gs_color_space *pcs, cos_value_t *pvalue, const gs_imager_state * pis);
 
 /* Set the ProcSets bits corresponding to an image color space. */
 void pdf_color_space_procsets(gx_device_pdf *pdev,
@@ -340,7 +340,7 @@ int pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 int pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
                           const gs_color_space *pcs,
                           const psdf_set_color_commands_t *ppscc,
-                          bool have_pattern_streams, pdf_resource_t **ppres);
+                          const gs_imager_state *pis, pdf_resource_t **ppres);
 
 /* Write a PatternType 2 (shading pattern) color. */
 int pdf_put_pattern2(gx_device_pdf *pdev, const gs_imager_state * pis, const gx_drawing_color *pdc,

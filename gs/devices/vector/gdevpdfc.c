@@ -1512,10 +1512,10 @@ pdf_cs_Pattern_uncolored(gx_device_pdf *pdev, cos_value_t *pvalue)
 }
 int
 pdf_cs_Pattern_uncolored_hl(gx_device_pdf *pdev,
-                const gs_color_space *pcs, cos_value_t *pvalue)
+                const gs_color_space *pcs, cos_value_t *pvalue, const gs_imager_state * pis)
 {
     /* Only for high level colors. */
-    return pdf_color_space_named(pdev, NULL, pvalue, NULL, pcs, &pdf_color_space_names, true, NULL, 0, false);
+    return pdf_color_space_named(pdev, pis, pvalue, NULL, pcs, &pdf_color_space_names, true, NULL, 0, false);
 }
 
 /* Set the ProcSets bits corresponding to an image color space. */

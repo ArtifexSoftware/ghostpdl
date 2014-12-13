@@ -325,12 +325,12 @@ int
 pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
                           const gs_color_space *pcs,
                           const psdf_set_color_commands_t *ppscc,
-                          bool have_pattern_streams, pdf_resource_t **ppres)
+                          const gs_imager_state * pis, pdf_resource_t **ppres)
 {
     const gx_color_tile *m_tile = pdc->mask.m_tile;
     gx_drawing_color dc_pure;
 
-    if (!have_pattern_streams && m_tile == 0) {
+    if (!pis->have_pattern_streams && m_tile == 0) {
         /*
          * If m_tile == 0, this uncolored Pattern is all 1's,
          * equivalent to a pure color.
@@ -347,14 +347,14 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 
         if (!tile_size_ok(pdev, NULL, m_tile))
             return_error(gs_error_limitcheck);
-        if (!have_pattern_streams) {
+        if (!pis->have_pattern_streams) {
             if ((code = pdf_cs_Pattern_uncolored(pdev, &v)) < 0 ||
                 (code = pdf_put_pattern_mask(pdev, m_tile, &pcs_image)) < 0 ||
                 (code = pdf_pattern(pdev, pdc, NULL, m_tile, pcs_image, ppres)) < 0
                 )
                 return code;
         } else {
-            code = pdf_cs_Pattern_uncolored_hl(pdev, pcs, &v);
+            code = pdf_cs_Pattern_uncolored_hl(pdev, pcs, &v, pis);
             if (code < 0)
                 return code;
             *ppres = pdf_find_resource_by_gs_id(pdev, resourcePattern, pdc->mask.id);
@@ -373,7 +373,7 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
         }
         cos_value_write(&v, pdev);
         pprints1(s, " %s ", ppscc->setcolorspace);
-        if (have_pattern_streams)
+        if (pis->have_pattern_streams)
             return 0;
         set_nonclient_dev_color(&dc_pure, gx_dc_pure_color(pdc));
         return psdf_set_color((gx_device_vector *)pdev, &dc_pure, &no_scc, pdev->UseOldColor);
