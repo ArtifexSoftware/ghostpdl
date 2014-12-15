@@ -1231,7 +1231,7 @@ static int new_pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis
                         return gs_error_undefined;
                     }
                     code = pdf_put_colored_pattern(pdev, pdc, pcs,
-                                ppscc, pis->have_pattern_streams, &pres);
+                                ppscc, pis, &pres);
                 }
                 else if (pdc->type == &gx_dc_pure_masked) {
                     code = pdf_put_uncolored_pattern(pdev, pdc, pcs,
@@ -1796,10 +1796,10 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 
                 if (pdc->type == gx_dc_type_pattern)
                     code = pdf_put_colored_pattern(pdev, pdc, pcs,
-                                ppscc, pis->have_pattern_streams, &pres);
+                                ppscc, pis, &pres);
                 else if (pdc->type == &gx_dc_pure_masked) {
                     code = pdf_put_uncolored_pattern(pdev, pdc, pcs,
-                                ppscc, pis->have_pattern_streams, &pres);
+                                ppscc, pis, &pres);
                     if (code < 0 || pres == 0) {
                         /* replaced a pattern with a flat fill, but we still
                          * need to change the 'saved' colour or we will

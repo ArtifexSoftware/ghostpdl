@@ -384,7 +384,7 @@ int
 pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
                         const gs_color_space *pcs,
                         const psdf_set_color_commands_t *ppscc,
-                        bool have_pattern_streams, pdf_resource_t **ppres)
+                        const gs_imager_state * pis, pdf_resource_t **ppres)
 {
     const gx_color_tile *p_tile = pdc->colors.pattern.p_tile;
     gs_color_space *pcs_Device;
@@ -396,7 +396,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     pdf_image_writer writer;
     int w = p_tile->tbits.rep_width, h = p_tile->tbits.rep_height;
 
-    if (!have_pattern_streams) {
+    if (!pis->have_pattern_streams) {
         /*
          * NOTE: We assume here that the color space of the cached Pattern
          * is the same as the native color space of the device.  This will
@@ -444,7 +444,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
                     dcolor = *pdc;
                     dcolor.colors.pure = color;
                     return pdf_put_uncolored_pattern(pdev, &dcolor, pcs, ppscc,
-                                have_pattern_streams, ppres);
+                                pis, ppres);
                 }
             not_pure:
                 DO_NOTHING;		/* required by MSVC */
@@ -470,7 +470,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
                            &pdf_color_space_names, true, NULL, 0, false);
     if (code < 0)
         return code;
-    if (!have_pattern_streams) {
+    if (!pis->have_pattern_streams) {
         cos_stream_t *pcs_mask = 0;
         cos_stream_t *pcs_image;
 

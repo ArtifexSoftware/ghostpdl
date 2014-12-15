@@ -334,7 +334,7 @@ int pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
 int pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
                         const gs_color_space *pcs,
                         const psdf_set_color_commands_t *ppscc,
-                        bool have_pattern_streams, pdf_resource_t **ppres);
+                        const gs_imager_state * pis, pdf_resource_t **ppres);
 
 /* Write an uncolored Pattern color. */
 int pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
