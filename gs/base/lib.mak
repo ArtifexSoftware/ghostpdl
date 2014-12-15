@@ -538,6 +538,7 @@ gsstate_h=$(GLSRC)gsstate.h\
  $(gscolor_h) $(gscpm_h) $(gscsel_h) $(gsdevice_h) $(gsht_h) $(gsline_h)
 gscolorbuffer_h=$(GLSRC)gscolorbuffer.h
 gsicc_create_h=$(GLSRC)gsicc_create.h $(gscie_h)
+gximdecode_h=$(GLSRC)gximdecode.h $(gx_h) $(gxfixed_h) $(gximage_h) $(gxsample_h) $(gxfrac_h)
 
 gzacpath_h=$(GLSRC)gzacpath.h $(gxcpath_h)
 gzcpath_h=$(GLSRC)gzcpath.h $(gxcpath_h) $(gzpath_h)
@@ -1338,7 +1339,7 @@ LIB3x=$(GLOBJ)gxclip.$(OBJ) $(GLOBJ)gxcmap.$(OBJ) $(GLOBJ)gxcpath.$(OBJ)
 LIB4x=$(GLOBJ)gxdcconv.$(OBJ) $(GLOBJ)gxdcolor.$(OBJ) $(GLOBJ)gxhldevc.$(OBJ)
 LIB5x=$(GLOBJ)gxfill.$(OBJ) $(GLOBJ)gxfdrop.$(OBJ) $(GLOBJ)gxht.$(OBJ) $(GLOBJ)gxhtbit.$(OBJ)\
   $(GLOBJ)gxht_thresh.$(OBJ)
-LIB6x=$(GLOBJ)gxidata.$(OBJ) $(GLOBJ)gxifast.$(OBJ) $(GLOBJ)gximage.$(OBJ)
+LIB6x=$(GLOBJ)gxidata.$(OBJ) $(GLOBJ)gxifast.$(OBJ) $(GLOBJ)gximage.$(OBJ) $(GLOBJ)gximdecode.$(OBJ)
 LIB7x=$(GLOBJ)gximage1.$(OBJ) $(GLOBJ)gximono.$(OBJ) $(GLOBJ)gxipixel.$(OBJ) $(GLOBJ)gximask.$(OBJ)
 LIB8x=$(GLOBJ)gxi12bit.$(OBJ) $(GLOBJ)gxi16bit.$(OBJ) $(GLOBJ)gxiscale.$(OBJ) $(GLOBJ)gxpaint.$(OBJ) $(GLOBJ)gxpath.$(OBJ) $(GLOBJ)gxpath2.$(OBJ)
 LIB9x=$(GLOBJ)gxpcopy.$(OBJ) $(GLOBJ)gxpdash.$(OBJ) $(GLOBJ)gxpflat.$(OBJ)
@@ -2068,8 +2069,8 @@ $(GLOBJ)gxclimag.$(OBJ) : $(GLSRC)gxclimag.c $(AK) $(gx_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gxfmap_h) $(gxiparam_h) $(gxpath_h)\
  $(sisparam_h) $(stream_h) $(strimpl_h) $(gxcomp_h) $(gsserial_h)\
  $(gxdhtserial_h) $(gsptype1_h) $(gsicc_manage_h) $(gsicc_cache_h)\
- $(gxdevsop_h) $(gscindex_h) $(gsicc_cms_h) $(gxsample_h)\
- $(gximage_h) $(gxfrac_h) $(MAKEDIRS)
+ $(gxdevsop_h) $(gscindex_h) $(gsicc_cms_h) $(gximdecode_h)\
+ $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxclimag.$(OBJ) $(C_) $(GLSRC)gxclimag.c
 
 $(GLOBJ)gxclpath.$(OBJ) : $(GLSRC)gxclpath.c $(AK) $(gx_h)\
@@ -2893,6 +2894,12 @@ $(GLOBJ)gscolorbuffer.$(OBJ) : $(GLSRC)gscolorbuffer.c $(AK)\
  $(stdpre_h) $(gstypes_h) $(gsmemory_h) $(gxblend_h) $(gscolorbuffer_h)\
  $(MAKEDIRS)
 	$(GLCC) $(GLO_)gscolorbuffer.$(OBJ) $(C_) $(GLSRC)gscolorbuffer.c
+
+# ------------- Image Color Decode.  Used in color mon and xpswrite --------- #
+
+$(GLOBJ)gximdecode.$(OBJ) : $(GLSRC)gximdecode.c $(gximdecode_h) $(string__h)\
+ $(MAKEDIRS)
+	$(GLCC) $(GLO_)gximdecode.$(OBJ) $(C_) $(GLSRC)gximdecode.c
 
 # ================ Display Postscript extensions ================ #
 

@@ -1718,6 +1718,10 @@
 						>
 					</File>
 					<File
+						RelativePath="base\gximdecode.c"
+						>
+					</File>
+					<File
 						RelativePath="base\gximono.c"
 						>
 					</File>
@@ -4588,6 +4592,10 @@
 				</File>
 				<File
 					RelativePath=".\base\gximask.h"
+					>
+				</File>
+				<File
+					RelativePath=".\base\gximdecode.h"
 					>
 				</File>
 				<File

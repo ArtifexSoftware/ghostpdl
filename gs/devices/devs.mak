@@ -1233,7 +1233,7 @@ $(DEVOBJ)gdevxps.$(OBJ) : $(DEVVECSRC)gdevxps.c $(gdevvec_h) \
 $(string__h) $(stdio__h) $(libtiff_dev) $(gx_h) $(gserrors_h) \
 $(gxpath_h) $(gzcpath_h) $(stream_h) $(zlib_h) \
 $(stdint__h) $(gdevtifs_h) $(gsicc_create_h) $(gsicc_cache_h) \
-$(MAKEDIRS)
+$(gximdecode_h) $(MAKEDIRS)
 	$(XPSDEVCC) $(I_)$(TI_)$(_I) $(GLO_)gdevxps.$(OBJ) $(C_) $(DEVVECSRC)gdevxps.c
 
 ###### --------------------- Raster file formats --------------------- ######

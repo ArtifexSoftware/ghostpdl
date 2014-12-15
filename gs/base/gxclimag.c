@@ -44,9 +44,7 @@
 #include "gxdevsop.h"
 #include "gscindex.h"
 #include "gsicc_cms.h"
-#include "gxsample.h"
-#include "gximage.h"
-#include "gxfrac.h"
+#include "gximdecode.h"
 
 extern_gx_image_type_table();
 
@@ -350,12 +348,8 @@ typedef struct clist_image_enum_s {
     int y;
     bool color_map_is_known;
     bool monitor_color;
-    int bps;
-    int spp;
-    SAMPLE_UNPACK_PROC((*unpack));
+    image_decode_t decode;
     byte *buffer;  /* needed for unpacking during monitoring */
-    int spread;
-    sample_map map[GS_IMAGE_MAX_COMPONENTS];
 } clist_image_enum;
 gs_private_st_suffix_add4(st_clist_image_enum, clist_image_enum,
                           "clist_image_enum", clist_image_enum_enum_ptrs,
@@ -375,7 +369,7 @@ row_has_color(byte *data_ptr, clist_image_enum *pie_c, int data_size, int width)
 {
     clist_color_space_t pclcs = pie_c->color_space;
     bool ((*is_neutral)(void*, int));
-    int step_size = data_size * pie_c->spp;
+    int step_size = data_size * pie_c->decode.spp;
     byte *ptr;
     bool is_mono;
     int k;
@@ -404,152 +398,6 @@ row_has_color(byte *data_ptr, clist_image_enum *pie_c, int data_size, int width)
         ptr += step_size;
     }
     return false;
-}
-
-/* We need to have the unpacking proc so that we can monitor the data. */
-static void
-get_unpack_proc(clist_image_enum *pie, const float *decode) {
-
-static sample_unpack_proc_t procs[2][6] = {
-    {   sample_unpack_1, sample_unpack_2,
-        sample_unpack_4, sample_unpack_8,
-        0, 0
-    },
-    {   sample_unpack_1_interleaved, sample_unpack_2_interleaved,
-        sample_unpack_4_interleaved, sample_unpack_8_interleaved,
-        0, 0
-    }};
-    int num_planes = pie->num_planes;
-    bool interleaved = (num_planes == 1 && pie->plane_depths[0] != pie->bps);
-    int i;
-    int index_bps = (pie->bps < 8 ? pie->bps >> 1 : (pie->bps >> 2) + 1);
-    gs_image_format_t format = pie->format;
-    int log2_xbytes = (pie->bps <= 8 ? 0 : arch_log2_sizeof_frac);
-
-    switch (format) {
-        case gs_image_format_chunky:
-            pie->spread = 1 << log2_xbytes;
-            break;
-        case gs_image_format_component_planar:
-            pie->spread = (pie->spp) << log2_xbytes;
-            break;
-        case gs_image_format_bit_planar:
-            pie->spread = (pie->spp) << log2_xbytes;
-            break;
-        default:
-           pie->spread = 0;
-    }
-
-    procs[0][4] = procs[1][4] = sample_unpack_12_proc;
-    procs[0][5] = procs[1][5] = sample_unpackicc_16_proc;
-    if (interleaved) {
-        int num_components = pie->plane_depths[0] / pie->bps;
-
-        for (i = 1; i < num_components; i++) {
-            if (decode[0] != decode[i * 2 + 0] ||
-                decode[1] != decode[i * 2 + 1])
-                break;
-        }
-        if (i == num_components)
-            interleaved = false; /* Use single table. */
-    }
-    pie->unpack = procs[interleaved][index_bps];
-}
-
-/* We also need the mapping method for the unpacking proc */
-static void
-get_map(clist_image_enum *pie, gs_image_format_t format, const float *decode)
-{
-    int ci, decode_type;
-    int bps = pie->bps;
-    int spp = pie->spp;
-    static const float default_decode[] = {
-        0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
-    };
-
-    decode_type = 3; /* 0=custom, 1=identity, 2=inverted, 3=impossible */
-    for (ci = 0; ci < spp; ci +=2 ) {
-        decode_type &= (decode[ci] == 0. && decode[ci + 1] == 1.) |
-                       (decode[ci] == 1. && decode[ci + 1] == 0.) << 1;
-    }
-
-    /* Initialize the maps from samples to intensities. */
-    for (ci = 0; ci < spp; ci++) {
-        sample_map *pmap = &pie->map[ci];
-
-        /* If the decoding is [0 1] or [1 0], we can fold it */
-        /* into the expansion of the sample values; */
-        /* otherwise, we have to use the floating point method. */
-
-        const float *this_decode = &decode[ci * 2];
-        const float *map_decode;        /* decoding used to */
-                                        /* construct the expansion map */
-        const float *real_decode;       /* decoding for expanded samples */
-
-        map_decode = real_decode = this_decode;
-        if (!(decode_type & 1)) {
-            if ((decode_type & 2) && bps <= 8) {
-                real_decode = default_decode;
-            } else {
-                map_decode = default_decode;
-            }
-        }
-        if (bps > 2 || format != gs_image_format_chunky) {
-            if (bps <= 8)
-                image_init_map(&pmap->table.lookup8[0], 1 << bps,
-                               map_decode);
-        } else {                /* The map index encompasses more than one pixel. */
-            byte map[4];
-            register int i;
-
-            image_init_map(&map[0], 1 << bps, map_decode);
-            switch (bps) {
-                case 1:
-                    {
-                        register bits32 *p = &pmap->table.lookup4x1to32[0];
-
-                        if (map[0] == 0 && map[1] == 0xff)
-                            memcpy((byte *) p, lookup4x1to32_identity, 16 * 4);
-                        else if (map[0] == 0xff && map[1] == 0)
-                            memcpy((byte *) p, lookup4x1to32_inverted, 16 * 4);
-                        else
-                            for (i = 0; i < 16; i++, p++)
-                                ((byte *) p)[0] = map[i >> 3],
-                                    ((byte *) p)[1] = map[(i >> 2) & 1],
-                                    ((byte *) p)[2] = map[(i >> 1) & 1],
-                                    ((byte *) p)[3] = map[i & 1];
-                    }
-                    break;
-                case 2:
-                    {
-                        register bits16 *p = &pmap->table.lookup2x2to16[0];
-
-                        for (i = 0; i < 16; i++, p++)
-                            ((byte *) p)[0] = map[i >> 2],
-                                ((byte *) p)[1] = map[i & 3];
-                    }
-                    break;
-            }
-        }
-        pmap->decode_base /* = decode_lookup[0] */  = real_decode[0];
-        pmap->decode_factor =
-            (real_decode[1] - real_decode[0]) /
-            (bps <= 8 ? 255.0 : (float)frac_1);
-        pmap->decode_max /* = decode_lookup[15] */  = real_decode[1];
-        if (decode_type) {
-            pmap->decoding = sd_none;
-            pmap->inverted = map_decode[0] != 0;
-        } else if (bps <= 4) {
-            int step = 15 / ((1 << bps) - 1);
-            int i;
-
-            pmap->decoding = sd_lookup;
-            for (i = 15 - step; i > 0; i -= step)
-                pmap->decode_lookup[i] = pmap->decode_base +
-                    i * (255.0 / 15) * pmap->decode_factor;
-        } else
-            pmap->decoding = sd_compute;
-    }
 }
 
 /* Forward declarations */
@@ -749,8 +597,8 @@ clist_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
         int bytes_per_plane, bytes_per_row;
 
         bits_per_pixel = pim->BitsPerComponent * num_components;
-        pie->bps = bits_per_pixel/num_components;
-        pie->spp = num_components;
+        pie->decode.bps = bits_per_pixel/num_components;
+        pie->decode.spp = num_components;
         pie->image = *pim;
         pie->dcolor = *pdcolor;
         if (prect)
@@ -951,22 +799,23 @@ clist_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
     }
     /* Decide if we need to do any monitoring of the colors.  Note that multiple source
        (planes) is treated as color */
-    pie->unpack = NULL;
+    pie->decode.unpack = NULL;
     if (dev_profile->pageneutralcolor && pie->color_space.icc_info.data_cs != gsGRAY) {
         /* If it is an index image, then check the pallete only */
         if (!indexed) {
             pie->monitor_color = true;
             /* Set up the unpacking proc for monitoring */
-            get_unpack_proc(pie, pim->Decode);
-            get_map(pie, pim->format, pim->Decode);
-            if (pie->unpack == NULL) {
+            get_unpack_proc((gx_image_enum_common_t*) pie, &(pie->decode), 
+                             pim->format, pim->Decode);
+            get_map(&(pie->decode), pim->format, pim->Decode);
+            if (pie->decode.unpack == NULL) {
                 /* If we cant unpack, then end monitoring now. Treat as has color */
                 dev_profile->pageneutralcolor = false;
                 gsicc_mcm_end_monitor(pis->icc_link_cache, dev);
             } else {
                 /* We need to allocate the buffer for unpacking during monitoring.
                     This is mainly for the 12bit case */
-                int bsize = ((pie->bps > 8 ? (pim->Width) * 2 : pim->Width) + 15) * num_components;
+                int bsize = ((pie->decode.bps > 8 ? (pim->Width) * 2 : pim->Width) + 15) * num_components;
                 pie->buffer = gs_alloc_bytes(mem, bsize, "image buffer");
                 if (pie->buffer == 0) {
                     gs_free_object(mem, pie, "clist_begin_typed_image");
@@ -2162,9 +2011,9 @@ cmd_image_plane_data_mon(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     int plane, i;
     int code;
     int width = pie_c->rect.q.x - pie_c->rect.p.x;
-    int dsize = (((width + (planes[0]).data_x) * pie_c->spp *
-                   pie_c->bps / pie->num_planes + 7) >> 3);
-    int data_size = pie_c->spread / pie->num_planes;
+    int dsize = (((width + (planes[0]).data_x) * pie_c->decode.spp *
+        pie_c->decode.bps / pie->num_planes + 7) >> 3);
+    int data_size = pie_c->decode.spread / pie->num_planes;
 
     *found_color = false;
 
@@ -2187,15 +2036,16 @@ cmd_image_plane_data_mon(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                to see if we have any non-neutral colors */
             int pdata_x;
             byte *data_ptr =  (byte *)(planes[0].data + i * planes[0].raster + offsets[0] + offset);
-            byte *buffer = (byte *)(*pie_c->unpack)(pie_c->buffer, &pdata_x, data_ptr, 0, dsize, pie_c->map,
-                                                    pie_c->spread, pie_c->spp);
+            byte *buffer = (byte *)(*pie_c->decode.unpack)(pie_c->buffer, &pdata_x, 
+                                     data_ptr, 0, dsize, pie_c->decode.map,
+                pie_c->decode.spread, pie_c->decode.spp);
 
             for (plane = 1; plane < pie->num_planes; ++plane) {
                 /* unpack planes after the first (if any), relying on spread to place the */
                 /* data at the correct spacing, with the buffer start adjusted for each plane */
                 data_ptr = (byte *)(planes[plane].data + i * planes[plane].raster + offsets[plane] + offset);
-                (*pie_c->unpack)(pie_c->buffer + (data_size * plane), &pdata_x, data_ptr, 0,
-                                 dsize, pie_c->map, pie_c->spread, pie_c->spp);
+                (*pie_c->decode.unpack)(pie_c->buffer + (data_size * plane), &pdata_x, data_ptr, 0,
+                    dsize, pie_c->decode.map, pie_c->decode.spread, pie_c->decode.spp);
             }
             if (row_has_color(buffer, pie_c, data_size, width)) {
                 /* Has color.  We are done monitoring */

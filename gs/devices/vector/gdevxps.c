@@ -27,16 +27,15 @@
 #include "gdevtifs.h"
 #include "gsicc_create.h"
 #include "gsicc_cache.h"
+#include "gximdecode.h" /* Need so that we can unpack and decode */
 
 #define MAXPRINTERNAME 64
 #if defined(__WIN32__) && XPSPRINT==1
 int XPSPrint(char *FileName, char *PrinterName, int *reason);
 #endif
 
-#define MAXICCNAME 64
+#define MAXNAME 64
 #define PROFILEPATH "Documents/1/Resources/Profiles/"
-
-#define MAXTIFFNAME 64
 #define IMAGEPATH "Documents/1/Resources/Images/"
 
 /* default resolution. */
@@ -95,7 +94,10 @@ attr_t xps_fixed_state[] = {
    with the final filename to be used in the archive.  filenames with
    associated contents in temporary files are maintained until the end
    of the job, at which time we enumerate the list and write the zip
-   archive. */
+   archive.  The exception to this is the image data and icc profiles.  Image
+   data are stored in temp files and upon end image transferred to the zip
+   archive and the temp file closed (and removed).  ICC profiles are written
+   directly to the archive without a temp file. */
 
 typedef struct gx_device_xps_zdata_s {
     FILE *fp;
@@ -110,6 +112,7 @@ typedef struct gx_device_xps_zinfo_s {
     long current_pos;
     ushort date;
     ushort time;
+    bool saved;  /* flag to indicate file was already saved (e.g. image or profile) */
 } gx_device_xps_zinfo_t;
 
 /* a list of archive file names and their corresponding info
@@ -140,13 +143,22 @@ typedef struct xps_image_enum_s {
     gdev_vector_image_enum_common;
     gs_matrix mat;
     TIFF *tif; /* in non-GC memory */
-    char file_name[MAXTIFFNAME];
-    char icc_name[MAXICCNAME];
+    char file_name[MAXNAME];
+    char icc_name[MAXNAME];
+    image_decode_t decode_st;
+    int bytes_comp;
+    byte *buffer; /* Needed for unpacking/decoding of image data */
+    byte *devc_buffer; /* Needed for case where we are mapping to device colors */
+    gs_color_space *pcs;     /* Needed for Sep, DeviceN, Indexed */
+    gsicc_link_t *icc_link;  /* Needed for CIELAB */
+    gs_imager_state *pis;    /* Needed for color conversions of DeviceN etc */
+    FILE *fid;
 } xps_image_enum_t;
 
-gs_private_st_suffix_add0(st_xps_image_enum, xps_image_enum_t,
+gs_private_st_suffix_add3(st_xps_image_enum, xps_image_enum_t,
     "xps_image_enum_t", xps_image_enum_enum_ptrs,
-    xps_image_enum_reloc_ptrs, st_vector_image_enum);
+    xps_image_enum_reloc_ptrs, st_vector_image_enum,
+    buffer, devc_buffer, pis);
 
 typedef struct gx_device_xps_s {
     /* superclass state */
@@ -370,7 +382,6 @@ zip_new_info_node(gx_device_xps *xps_dev, const char *filename)
     
     if (info == NULL || f2i == NULL)
         return gs_throw_code(gs_error_Fatal);
-    
 
     f2i->info = info;
     f2i->next = NULL;
@@ -389,6 +400,8 @@ zip_new_info_node(gx_device_xps *xps_dev, const char *filename)
         
     info->data.fp = 0;
     info->data.count = 0;
+    info->saved = false;
+
     if (gs_debug_c('_')) {
         gx_device_xps_f2i_t *f2i = xps_dev->f2i;
         int node = 1;
@@ -437,7 +450,8 @@ zip_append_data(gs_memory_t *mem, gx_device_xps_zinfo_t *info, byte *data, uint 
        archive file, open a temporary file to store the data. */
     if (info->data.count == 0) {
         char *filename =
-          (char *)gs_alloc_bytes(mem, gp_file_name_sizeof, "zip_append_data(filename)");
+          (char *)gs_alloc_bytes(mem->non_gc_memory, gp_file_name_sizeof, 
+                "zip_append_data(filename)");
         FILE *fp;
         
         if (!filename) {
@@ -446,12 +460,7 @@ zip_append_data(gs_memory_t *mem, gx_device_xps_zinfo_t *info, byte *data, uint 
         
         fp = gp_open_scratch_file_rm(mem, "xpsdata-",
                                         filename, "wb+");
-
-        if (fp == NULL) {
-            gs_free_object(mem, filename, "zip_append_data(filename)");
-            return gs_throw_code(gs_error_Fatal);
-        }
-        gs_free_object(mem, filename, "zip_append_data(filename)");
+        gs_free_object(mem->non_gc_memory, filename, "zip_append_data(filename)");
         info->data.fp = fp;
     }
 
@@ -465,29 +474,11 @@ zip_append_data(gs_memory_t *mem, gx_device_xps_zinfo_t *info, byte *data, uint 
         fclose(info->data.fp);
         return -1;
     }
-
     /* probably unnecessary but makes debugging easier */
     fflush(info->data.fp);
-
     info->data.count += len;
 
     return 0;
-}
-
-/* Seek within an archived zip file. Needed to use with tiff */
-static uint64_t
-zip_seek(gs_memory_t *mem, gx_device_xps_zinfo_t *info, uint64_t off, int whence)
-{
-    if (info->data.fp == NULL && off == 0)
-        return 0;
-
-    if (info->data.fp == NULL)
-        return (uint64_t)-1;
-
-    if (gp_fseek_64(info->data.fp, (gs_offset_t)off, whence) < 0) {
-        return (uint64_t)-1;
-    }
-    return (gp_ftell_64(info->data.fp));
 }
 
 /* write to one of the archives (filename) in the zip archive */
@@ -520,32 +511,6 @@ write_to_zip_file(gx_device_xps *xps_dev, const char *filename,
     return code;
 }
 
-/* Seek in an archive.  Needed for tiff writing support */
-static uint64_t
-seek_to_zip_file(gx_device_xps *xps_dev, const char *filename, uint64_t off,
-        int whence)
-{
-    gx_device *dev = (gx_device *)xps_dev;
-    gs_memory_t *mem = dev->memory;
-
-    gx_device_xps_zinfo_t *info = zip_look_up_file_info(xps_dev, filename);
-    int code = 0;
-
-    /* No information on this archive file, create a new zip entry
-    info node */
-    if (info == NULL) {
-        code = zip_add_file(xps_dev, filename);
-        if (code < 0)
-            return gs_rethrow_code(code);
-        info = zip_look_up_file_info(xps_dev, filename);
-    }
-
-    if (info == NULL)
-        return gs_throw_code(gs_error_Fatal);
-
-    return zip_seek(mem, info, off, whence);
-}
-
 static void
 put_bytes(stream *zs, byte *buf, uint len)
 {
@@ -570,7 +535,6 @@ put_u16(stream *zs, ushort s)
     sputc(zs, (byte)(s >> 8));
 }
 
-
 /* TODO - the following 2 definitions need to done correctly */
 static ushort
 make_dos_date(uint year, uint month, uint day)
@@ -594,12 +558,143 @@ write_str_to_zip_file(gx_device_xps *xps_dev, const char *filename,
     return write_to_zip_file(xps_dev, filename, (byte *)str, strlen(str));
 }
 
+/* Used to add ICC profiles to the zip file. */
+add_data_to_zip_file(gx_device_xps *xps_dev, const char *filename, byte *buf, long size)
+{
+    gx_device_xps_zinfo_t *info = zip_look_up_file_info(xps_dev, filename);
+    int code;
+    long curr_pos;
+    unsigned long crc = 0;
+
+    /* This file should not yet exist */
+    if (info == NULL) {
+        code = zip_add_file(xps_dev, filename);
+        if (code < 0)
+            return gs_rethrow_code(code);
+        info = zip_look_up_file_info(xps_dev, filename);
+    }
+    else {
+        return gs_throw_code(gs_error_Fatal);
+    }
+    stream *f = ((gx_device_vector*)xps_dev)->strm;
+    curr_pos = stell(f);
+
+    /* Figure out the crc */
+    crc = crc32(0L, Z_NULL, 0);
+    crc = crc32(crc, buf, size);
+
+    ushort date = make_dos_date(2012, 2, 16);
+    ushort time = make_dos_time(9, 15, 0);
+
+    put_u32(f, 0x04034b50); /* magic */
+    put_u16(f, 20);         /* version */
+    put_u16(f, 0);          /* flags */
+    put_u16(f, 0);          /* method */
+    put_u16(f, time);
+    put_u16(f, date);
+    put_u32(f, crc);
+    put_u32(f, size); /* compressed */
+    put_u32(f, size); /* uncompressed */
+    put_u16(f, strlen(filename));
+    put_u16(f, 0);         /* extra field length */
+    put_bytes(f, (byte *)filename, strlen(filename));
+    put_bytes(f, buf, size);
+    put_bytes(f, 0, 0); /* extra field */
+
+    /* Now we need to add the info about this file */
+    xps_dev->f2i_tail->info->CRC = crc;
+    xps_dev->f2i_tail->info->time = time;
+    xps_dev->f2i_tail->info->date = date;
+    xps_dev->f2i_tail->info->data.count = size;
+    xps_dev->f2i_tail->info->current_pos = curr_pos;
+    xps_dev->f2i_tail->info->file_size = size;
+    /* Mark the file as already stored */
+    xps_dev->f2i_tail->info->saved = true;
+    return 0;
+}
+
+/* Used to add images to the zip file. This file is added now
+and not later like the other files */
+static int
+add_file_to_zip_file(gx_device_xps *xps_dev, const char *filename, FILE *src)
+{
+    gx_device_xps_zinfo_t *info = zip_look_up_file_info(xps_dev, filename);
+    int code = 0;
+    long curr_pos;
+    unsigned long crc = 0;
+    byte buf[4];
+    uint nread;
+    unsigned long count = 0;
+
+    /* This file should not yet exist */
+    if (info == NULL) {
+        code = zip_add_file(xps_dev, filename);
+        if (code < 0)
+            return gs_rethrow_code(code);
+        info = zip_look_up_file_info(xps_dev, filename);
+    }
+    else {
+        return gs_throw_code(gs_error_Fatal);
+    }
+
+    stream *f = ((gx_device_vector*)xps_dev)->strm;
+    curr_pos = stell(f);
+
+    /* Get to the start */
+    if (gp_fseek_64(src, 0, 0) < 0)
+        return gs_throw_code(gs_error_Fatal);
+
+    /* Figure out the crc */
+    crc = crc32(0L, Z_NULL, 0);
+    /* Chunks of 4 until we get to remainder */
+    while (!feof(src)) {
+        nread = fread(buf, 1, sizeof(buf), src);
+        count = count + nread;
+        crc = crc32(crc, buf, nread);
+    }
+
+    ushort date = make_dos_date(2012, 2, 16);
+    ushort time = make_dos_time(9, 15, 0);
+
+    put_u32(f, 0x04034b50); /* magic */
+    put_u16(f, 20);         /* version */
+    put_u16(f, 0);          /* flags */
+    put_u16(f, 0);          /* method */
+    put_u16(f, time);
+    put_u16(f, date);
+    put_u32(f, crc);
+    put_u32(f, count); /* compressed */
+    put_u32(f, count); /* uncompressed */
+    put_u16(f, strlen(filename));
+    put_u16(f, 0);         /* extra field length */
+    put_bytes(f, (byte *)filename, strlen(filename));
+    {
+        if (gp_fseek_64(src, (gs_offset_t)0, 0) < 0)
+            return gs_throw_code(gs_error_Fatal);
+        while (!feof(src)) {
+            ulong nread = fread(buf, 1, sizeof(buf), src);
+            put_bytes(f, buf, nread);
+        }
+    }
+    put_bytes(f, 0, 0); /* extra field */
+
+    /* Now we need to add the info about this file */
+    xps_dev->f2i_tail->info->CRC = crc;
+    xps_dev->f2i_tail->info->time = time;
+    xps_dev->f2i_tail->info->date = date;
+    xps_dev->f2i_tail->info->data.count = count;
+    xps_dev->f2i_tail->info->current_pos = curr_pos;
+    xps_dev->f2i_tail->info->file_size = count;
+    /* Mark the file as already stored */
+    xps_dev->f2i_tail->info->saved = true;
+    return 0;
+}
+
 /* zip up a single file moving its data from the temporary file to the
    zip container. */
 static int
 zip_close_archive_file(gx_device_xps *xps_dev, const char *filename)
 {
-
     gx_device_xps_zinfo_t *info = zip_look_up_file_info(xps_dev, filename);
     gx_device_xps_zdata_t data = info->data;
     byte buf[4];
@@ -612,9 +707,17 @@ zip_close_archive_file(gx_device_xps *xps_dev, const char *filename)
     if (info == NULL)
         return -1;
 
+    /* Already stored */
+    if (info->saved)
+        return 0;
+
     if (data.count >= 0) {
         FILE *fp = data.fp;
         uint nread;
+
+        if (fp == NULL)
+            return gs_throw_code(gs_error_Fatal);
+
         crc = crc32(0L, Z_NULL, 0);
         rewind(fp);
         while (!feof(fp)) {
@@ -630,6 +733,7 @@ zip_close_archive_file(gx_device_xps *xps_dev, const char *filename)
         if (len > 3 && (strncmp("tif", &(filename[len - 3]), 3) == 0)) {
             info->data.count = count;
             data = info->data;
+            data.fp = fp;
         }
     }
 
@@ -663,6 +767,9 @@ zip_close_archive_file(gx_device_xps *xps_dev, const char *filename)
         fclose(fp);
     }
     put_bytes(f, 0, 0); /* extra field */
+
+    /* Mark as saved */
+    info->saved = true;
     return 0;
 }
 
@@ -679,7 +786,6 @@ zip_close_all_archive_files(gx_device_xps *xps_dev)
         }
         f2i = f2i->next;
     }
-    return 0;
 }
 
 /* write all files to the zip container and write the zip central
@@ -1315,7 +1421,7 @@ xps_finish_image_path(gx_device_vector *vdev)
     fmt = "\t\t\t\t<MatrixTransform Matrix = \"%g,%g,%g,%g,%g,%g\" />\n";
     matrix = xps->xps_pie->mat;
     gs_sprintf(line, fmt,
-        matrix.xx, matrix.xy, matrix.yx, matrix.xx, matrix.tx, matrix.ty);
+        matrix.xx, matrix.xy, matrix.yx, matrix.yy, matrix.tx, matrix.ty);
     write_str_to_current_page(xps, line);
     write_str_to_current_page(xps, "\t\t\t</ImageBrush.Transform>\n");
     write_str_to_current_page(xps, "\t\t</ImageBrush>\n");
@@ -1574,20 +1680,18 @@ xps_endpath(gx_device_vector *vdev, gx_path_type_t type)
 }
 
 /* Image handling */
-
-static image_enum_proc_plane_data(xps_image_plane_data);
+static image_enum_proc_plane_data(xps_image_data);
 static image_enum_proc_end_image(xps_image_end_image);
 static const gx_image_enum_procs_t xps_image_enum_procs = {
-    xps_image_plane_data, xps_image_end_image
+    xps_image_data, xps_image_end_image
 };
 
 /* High level image support */
-
 /* Prototypes */
 static TIFF* tiff_from_name(gx_device_xps *dev, const char *name, int big_endian,
     bool usebigtiff);
-static void tiff_set_values(xps_image_enum_t *pie, TIFF *tif, 
-                            cmm_profile_t *profile);
+static int tiff_set_values(xps_image_enum_t *pie, TIFF *tif, 
+                            cmm_profile_t *profile, bool force8bit);
 static void xps_tiff_set_handlers(void);
 
 /* Check if we have the ICC profile in the package */
@@ -1614,7 +1718,7 @@ xps_create_icc_name(const gx_device_xps *xps_dev, cmm_profile_t *profile, char *
     if (icc_data == NULL)
         return gs_throw_code(gs_error_rangecheck);  /* Should be there */
 
-    snprintf(name, MAXICCNAME, "%sProfile_%d.icc", PROFILEPATH, icc_data->index);
+    snprintf(name, MAXNAME, "%sProfile_%d.icc", PROFILEPATH, icc_data->index);
     return 0;
 }
 
@@ -1623,29 +1727,8 @@ xps_create_image_name(gx_device *dev, char *name)
 {
     gx_device_xps *const xdev = (gx_device_xps *)dev;
 
-    snprintf(name, MAXTIFFNAME, "%s%d.tif", IMAGEPATH, xdev->image_count);
+    snprintf(name, MAXNAME, "%s%d.tif", IMAGEPATH, xdev->image_count);
     xdev->image_count++;
-}
-
-static int
-xps_write_profile(const gs_imager_state *pis, cmm_profile_t *profile, const gx_device_xps *xps_dev)
-{
-    char file_name[MAXICCNAME];
-    byte *profile_buffer;
-    int size;
-
-    int code;
-
-    code = xps_create_icc_name(xps_dev, profile, &(file_name[0]));
-    if (code < 0)
-        return gs_rethrow_code(code);
-
-    /* Need V2 ICC Profile */
-    profile_buffer = gsicc_create_getv2buffer(pis, profile, &size);
-    code = write_to_zip_file(xps_dev, file_name, profile_buffer, size);
-    if (code < 0)
-        return gs_rethrow_code(code);
-    return 0;
 }
 
 static int
@@ -1675,6 +1758,21 @@ xps_add_image_relationship(xps_image_enum_t *pie)
 }
 
 static int
+xps_write_profile(const gs_imager_state *pis, char *name, cmm_profile_t *profile, const gx_device_xps *xps_dev)
+{
+    byte *profile_buffer;
+    int size;
+    int code;
+    int count;
+
+    /* Need V2 ICC Profile */
+    profile_buffer = gsicc_create_getv2buffer(pis, profile, &size);
+
+    /* Now go ahead and add to the zip archive */
+    return add_data_to_zip_file(xps_dev, name, profile_buffer, size);
+}
+
+static int
 xps_begin_image(gx_device *dev, const gs_imager_state *pis, 
                 const gs_image_t *pim, gs_image_format_t format, 
                 const gs_int_rect *prect, const gx_drawing_color *pdcolor,
@@ -1682,28 +1780,36 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
                 gx_image_enum_common_t **pinfo)
 {
     const gx_device_vector *vdev = (gx_device_vector *)dev;
-    gx_device_xps *const xdev = (gx_device_xps *)dev;
-    const gs_color_space *pcs = pim->ColorSpace;
-    xps_image_enum_t *pie;
+    gx_device_xps *xdev = (gx_device_xps *)dev;
+    gs_color_space *pcs = pim->ColorSpace;
+    xps_image_enum_t *pie = NULL;
     xps_icc_data_t *icc_data;
-    int base_index;
     gs_matrix mat;
     int code;
     gx_clip_path cpath;
     gs_fixed_rect bbox;
+    int bits_per_pixel;
+    int num_components;
+    int bsize;
+    cmm_profile_t *icc_profile = NULL; 
+    gs_color_space_index csindex;
+    float index_decode[2];
+    gsicc_rendering_param_t rendering_params;
+    bool force8bit = false;
 
-    /* No image mask yet */
-    if (((const gs_image1_t *)pim)->ImageMask)
+    /* No image mask yet.  Also, need a color space */
+    if (pcs == NULL || ((const gs_image1_t *)pim)->ImageMask)
         goto use_default;
 
-    /* No wacky color spaces yet, including indexed */
-    base_index = gs_color_space_get_index(pcs);
-    if (base_index > gs_color_space_index_DeviceCMYK &&
-        base_index != gs_color_space_index_ICC)
+    /* No indexed images that are not 8 bit. */
+    csindex = gs_color_space_get_index(pcs);
+    if (csindex == gs_color_space_index_Indexed && pim->BitsPerComponent != 8)
         goto use_default;
 
-    /* Only 8 bit / component */
-    if (pim->BitsPerComponent != 8)
+    /* Also need imager state for these color spaces */
+    if (pis == NULL && (csindex == gs_color_space_index_Indexed ||
+        csindex == gs_color_space_index_Separation ||
+        csindex == gs_color_space_index_DeviceN))
         goto use_default;
 
     gs_matrix_invert(&pim->ImageMatrix, &mat);
@@ -1711,10 +1817,11 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
 
     pie = gs_alloc_struct(mem, xps_image_enum_t, &st_xps_image_enum,
                           "xps_begin_image");
-    if (pie == 0) {
-        code = gs_note_error(gs_error_VMerror);
-        goto fail;
-    }
+    if (pie == 0)
+        return_error(gs_error_VMerror);
+    pie->buffer = NULL;
+    pie->devc_buffer = NULL;
+    pie->pis = NULL;
 
     /* Set the brush types to image */
     xps_setstrokebrush(xdev, xps_imagebrush);
@@ -1724,16 +1831,60 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
     /* We need this set a bit early for the ICC relationship writing */
     pie->dev = (gx_device*) xdev;
 
+    /* If the color space is DeviceN, Sep or indexed these end up getting 
+       mapped to the color space defined by the device profile.  XPS only 
+       support RGB indexed images so we just expand if for now. ICC link
+       creation etc is handled during the remap/concretization of the colors */
+    if (csindex == gs_color_space_index_Indexed ||
+        csindex == gs_color_space_index_Separation ||
+        csindex == gs_color_space_index_DeviceN) {
+        cmm_dev_profile_t *dev_profile;
+        pie->pcs = pcs;
+        rc_increment(pcs);
+        code = dev_proc(dev, get_profile)(dev, &(dev_profile));
+        /* Just use the "default" profile for now */
+        icc_profile = dev_profile->device_profile[0];
+        force8bit = true; /* Output image is 8 bit regardless of source */
+    } else {
+        /* An ICC, RGB, CMYK, Gray color space */
+        pie->pcs = NULL;
+        /* Get the ICC profile */
+        if (gs_color_space_is_PSCIE(pcs)) {
+            if (pcs->icc_equivalent == NULL) {
+                bool is_lab;
+                gs_colorspace_set_icc_equivalent(pcs, &is_lab, pis->memory);
+            }
+            icc_profile = pcs->icc_equivalent->cmm_icc_profile_data;
+        } else {
+            icc_profile = pcs->cmm_icc_profile_data;
+        }
+    }
+
+    /* Set up for handling case where we are in CIELAB. In this case, we are
+       going out to the default RGB color space */
+    if (icc_profile->islab) {
+        /* Create the link */
+        rendering_params.black_point_comp = gsBLACKPTCOMP_ON;
+        rendering_params.graphics_type_tag = GS_IMAGE_TAG;
+        rendering_params.override_icc = false;
+        rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
+        rendering_params.rendering_intent = gsPERCEPTUAL;
+        rendering_params.cmm = gsCMM_DEFAULT;
+        pie->icc_link = gsicc_get_link_profile(pis, dev, icc_profile,
+            pis->icc_manager->default_rgb, &rendering_params, pis->memory, false);
+    } else {
+        pie->icc_link = NULL;
+    }
+
     /* Now we actually write out the image and icc profile data to the zip
-      package. Test if profile is already here.  If not add it. */
-    if (xps_find_icc(xdev, pcs->cmm_icc_profile_data) == NULL)
-    {
+      package. Test if profile is already here. If not, add it. */
+    if (xps_find_icc(xdev, icc_profile) == NULL) {
         icc_data = (xps_icc_data_t*)gs_alloc_bytes(dev->memory->non_gc_memory,
             sizeof(xps_icc_data_t), "xps_begin_image");
         if (icc_data == NULL)
             gs_throw(gs_error_VMerror, "Allocation of icc_data failed");
 
-        icc_data->hash = gsicc_get_hash(pcs->cmm_icc_profile_data);
+        icc_data->hash = gsicc_get_hash(icc_profile);
         if (xdev->icc_data == NULL) {
             icc_data->index = 0;
             xdev->icc_data = icc_data;
@@ -1743,14 +1894,16 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
             icc_data->index = icc_data->next->index + 1;
             xdev->icc_data = icc_data;
         }
-        /* Add profile to the package */
-        code = xps_write_profile(pis, pcs->cmm_icc_profile_data, xdev);
-        if (code < 0)
-            return gs_rethrow_code(code);
 
         /* Get name for mark up and for relationship. Have to wait and do 
            this after it is added to the package */
-        code = xps_create_icc_name(xdev, pcs->cmm_icc_profile_data, &(pie->icc_name[0]));
+        code = xps_create_icc_name(xdev, icc_profile, &(pie->icc_name[0]));
+        if (code < 0)
+            return gs_rethrow_code(code);
+
+        /* Add profile to the package. Here like images we are going to write
+           the data now.  Rather than later. */
+        code = xps_write_profile(pis, &(pie->icc_name[0]), icc_profile, xdev);
         if (code < 0)
             return gs_rethrow_code(code);
 
@@ -1758,13 +1911,13 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
         xps_add_icc_relationship(pie);
     } else {
         /* Get name for mark up.  We already have it in the relationship and list */
-        code = xps_create_icc_name(xdev, pcs->cmm_icc_profile_data, &(pie->icc_name[0]));
+        code = xps_create_icc_name(xdev, icc_profile, &(pie->icc_name[0]));
         if (code < 0)
             return gs_rethrow_code(code);
     }
+
     /* Get image name for mark up */
     xps_create_image_name(dev, &(pie->file_name[0]));
-
     /* Set width and height here */
     pie->width = pim->Width;
     pie->height = pim->Height;
@@ -1788,49 +1941,225 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
     if (code < 0)
         return code;
 
-    /* Null out the device pie.  It was just needed for the above vector command */
-    xdev->xps_pie = NULL;
+    if ((pie->tif = tiff_from_name(xdev, pie->file_name, false, false)) == NULL)
+        return_error(gs_error_VMerror);
 
-    pie->tif = tiff_from_name(xdev, pie->file_name, false, false);
+    /* Null out pie.  Only needed for the above vector command and tiff set up */
+    xdev->xps_pie = NULL;
     xps_tiff_set_handlers();
-    tiff_set_values(pie, pie->tif, pcs->cmm_icc_profile_data);
+    code = tiff_set_values(pie, pie->tif, icc_profile, force8bit);
+    if (code < 0)
+        return gs_rethrow_code(code);
     code = TIFFCheckpointDirectory(pie->tif);
+
+    num_components = gs_color_space_num_components(pcs);
+    bits_per_pixel = pim->BitsPerComponent * num_components;
+    pie->decode_st.bps = bits_per_pixel / num_components;
+    pie->bytes_comp = (pie->decode_st.bps > 8 ? 2 : 1);
+    pie->decode_st.spp = num_components;
+    pie->decode_st.unpack = NULL;
+    get_unpack_proc((gx_image_enum_common_t*)pie, &(pie->decode_st), pim->format, 
+        pim->Decode);
+
+    /* The decode mapping for index colors needs an adjustment */
+    if (csindex == gs_color_space_index_Indexed) {
+        if (pim->Decode[0] == 0 &&
+            pim->Decode[1] == 255) {
+            index_decode[0] = 0;
+            index_decode[1] = 1.0;
+        } else {
+            index_decode[0] = pim->Decode[0];
+            index_decode[1] = pim->Decode[1];
+        }
+        get_map(&(pie->decode_st), pim->format, index_decode);
+    } else {
+        get_map(&(pie->decode_st), pim->format, pim->Decode); 
+    }
+
+    /* Allocate our decode buffer. */
+    bsize = ((pie->decode_st.bps > 8 ? (pim->Width) * 2 : pim->Width) + 15) * num_components;
+    pie->buffer = gs_alloc_bytes(mem, bsize, "xps_begin_typed_image(buffer)");
+    if (pie->buffer == 0) {
+        gs_free_object(mem, pie, "xps_begin_typed_image");
+        *pinfo = NULL;
+        return_error(gs_error_VMerror);
+    }
+
+    /* If needed, allocate our device color buffer.  We will always do 8 bit here */
+    if (csindex == gs_color_space_index_Indexed ||
+        csindex == gs_color_space_index_Separation ||
+        csindex == gs_color_space_index_DeviceN) {
+        bsize = (pim->Width + 15) * icc_profile->num_comps;
+        pie->devc_buffer = gs_alloc_bytes(mem, bsize, "xps_begin_typed_image(devc_buffer)");
+        if (pie->devc_buffer == 0) {
+            gs_free_object(mem, pie, "xps_begin_typed_image");
+            *pinfo = NULL;
+            return_error(gs_error_VMerror);
+        }
+        /* Also, the color remaps need the imager state */
+        pie->pis = pis;
+    }
 
     *pinfo = (gx_image_enum_common_t *)pie;
     return 0;
-fail:
-    gs_free_object(mem, pie, "xps_begin_image");
 use_default:
+    if (pie != NULL && pie->buffer != NULL)
+        gs_free_object(mem, pie->buffer, "xps_begin_image");
+    if (pie != NULL && pie->devc_buffer != NULL)
+        gs_free_object(mem, pie->devc_buffer, "xps_begin_image");
+    if (pie != NULL)
+        gs_free_object(mem, pie, "xps_begin_image");
+
     return gx_default_begin_image(dev, pis, pim, format, prect,
         pdcolor, pcpath, mem, pinfo);
 }
 
-/* Process the next piece of an image. */
+/* Handles conversion from decoded DeviceN, Sep or Indexed space to Device color
+   space. The encoding specified by the image object is already handled at this
+   point. Slow due to the multitude of conversions that take place.  I.e. conv to
+   float, frac and back to byte, but it will get the job done. Since we can have
+   indexed spaces that reference DeviceN spaces etc, we really have to do it
+   this way or code up a bunch of optimized special cases.  Note here we always
+   output 8 bit regardless of input */
+static void
+set_device_colors(xps_image_enum_t *pie)
+{
+    gx_device *pdev = pie->dev;
+    const gs_imager_state *pis = pie->pis;
+    gs_color_space *pcs = pie->pcs;
+    byte *src = pie->buffer;
+    byte *des = pie->devc_buffer;
+    int num_src = gs_color_space_num_components(pcs);
+    int num_des = pdev->color_info.num_components;
+    int width = pie->width;
+    cs_proc_remap_color((*remap_color)) = pcs->type->remap_color;
+    int i, j, code;
+    gs_client_color cc;
+    gx_device_color devc;
+    gx_color_value cm_values[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    float scale = 1.0;
+
+    if (pie->decode_st.bps > 8) {
+        unsigned short *src_ptr = (unsigned short*)src;
+        int pos_src = 0;
+        int pos_des = 0;
+        for (i = 0; i < width; i++) {
+            for (j = 0; j < num_src; j++, pos_src++) {
+                cc.paint.values[j] = (float)(src_ptr[pos_src]) / 65535.0;
+            }
+            code = remap_color(&cc, pcs, &devc, pis, pdev, gs_color_select_source);
+            dev_proc(pdev, decode_color)(pdev, devc.colors.pure, cm_values);
+            for (j = 0; j < num_des; j++, pos_des++) {
+                des[pos_des] = (cm_values[j] >> 8);
+            }
+        }
+    } else {
+        int pos_src = 0;
+        int pos_des = 0;
+        if (gs_color_space_get_index(pcs) != gs_color_space_index_Indexed)
+            scale = 255.0;
+        for (i = 0; i < width; i++) {
+            for (j = 0; j < num_src; j++, pos_src++) {
+                cc.paint.values[j] = (float)(src[pos_src]) / scale;
+            }
+            code = remap_color(&cc, pcs, &devc, pis, pdev, gs_color_select_source);
+            dev_proc(pdev, decode_color)(pdev, devc.colors.pure, cm_values);
+            for (j = 0; j < num_des; j++, pos_des++) {
+                des[pos_des] = (cm_values[j] >> 8);
+            }
+        }
+    }
+}
+
+/* Chunky or planar in and chunky out */
 static int
-xps_image_plane_data(gx_image_enum_common_t *info, 
-                     const gx_image_plane_t *planes, int height, 
-                     int *rows_used)
+xps_image_data(gx_image_enum_common_t *info,
+const gx_image_plane_t *planes, int height, int *rows_used)
 {
     xps_image_enum_t *pie = (xps_image_enum_t *)info;
     int data_bit = planes[0].data_x * info->plane_depths[0];
     int width_bits = pie->width * info->plane_depths[0];
-    int i;
+    int bytes_comp = pie->bytes_comp;
+    int i, plane;
     int code;
-    byte *data;
+    int width = pie->width;
+    int num_planes = pie->num_planes;
+    int dsize = (((width + (planes[0]).data_x) * pie->decode_st.spp *
+        pie->decode_st.bps / num_planes + 7) >> 3);
+    void *bufend = (void*)(pie->buffer + width * bytes_comp * pie->decode_st.spp);
+    byte *outbuffer;
 
-    /****** SHOULD HANDLE NON-BYTE-ALIGNED DATA ******/
     if (width_bits != pie->bits_per_row || (data_bit & 7) != 0)
         return_error(gs_error_rangecheck);
     if (height > pie->height - pie->y)
         height = pie->height - pie->y;
-    for (i = 0; i < height; pie->y++, ++i) {
-        data = planes[0].data + planes[0].raster * i + (data_bit >> 3);
-        code = TIFFWriteScanline(pie->tif, data, pie->y, 0);
+
+    for (i = 0; i < height; pie->y++, i++) {
+        int pdata_x;
+        /* Plane zero done here to get the pointer to the data */
+        byte *data_ptr = planes[0].data + planes[0].raster * i + (data_bit >> 3);
+        byte *des_ptr = pie->buffer;
+        byte *buffer = (byte *)(*pie->decode_st.unpack)(des_ptr, &pdata_x,
+            data_ptr, 0, dsize, &(pie->decode_st.map[0]),
+            pie->decode_st.spread, pie->decode_st.spp);
+
+        /* Step through the planes having decode do the repack to chunky as
+           well as any decoding needed */
+        for (plane = 1; plane < num_planes; plane++) {
+            data_ptr = planes[plane].data + planes[plane].raster * i + (data_bit >> 3);
+            des_ptr = pie->buffer + plane * pie->bytes_comp;
+            /* This does the planar to chunky conversion */
+            (*pie->decode_st.unpack)(des_ptr, &pdata_x,
+                data_ptr, 0, dsize, &(pie->decode_st.map[plane]),
+                pie->decode_st.spread, pie->decode_st.spp);
+        }
+
+        /* CIELAB does not get mapped.  Handled in color management */
+        if (pie->icc_link == NULL) {
+            pie->decode_st.applymap(pie->decode_st.map, (void*)buffer,
+                pie->decode_st.spp, (void*)pie->buffer, bufend);
+            /* Index, Sep and DeviceN are mapped to color space defined by
+            device profile */
+            if (pie->pcs != NULL) {
+                /* In device color space */
+                set_device_colors(pie);
+                outbuffer = pie->devc_buffer;
+            } else {
+                /* In source color space */
+                outbuffer = pie->buffer;
+            }
+        } else {
+            /* CIELAB to default RGB */
+            gsicc_bufferdesc_t input_buff_desc;
+            gsicc_bufferdesc_t output_buff_desc;
+            gsicc_init_buffer(&input_buff_desc, 3, bytes_comp,
+                false, false, false, 0, width * bytes_comp * 3,
+                1, width);
+            gsicc_init_buffer(&output_buff_desc, 3, bytes_comp,
+                false, false, false, 0, width * bytes_comp * 3,
+                1, width);
+            (pie->icc_link->procs.map_buffer)(pie->dev, pie->icc_link,
+                &input_buff_desc, &output_buff_desc, (void*)buffer,
+                (void*)pie->buffer);
+            outbuffer = pie->buffer;
+        }
+        code = TIFFWriteScanline(pie->tif, outbuffer, pie->y, 0);
         if (code < 0)
             return code;
     }
     *rows_used = height;
     return pie->y >= pie->height;
+}
+
+static int
+xps_add_tiff_image(xps_image_enum_t *pie)
+{
+    gx_device_xps *xdev = (gx_device_xps *)(pie->dev);
+    int code;
+
+    code = add_file_to_zip_file(xdev, pie->file_name, pie->fid);
+    fclose(pie->fid);
+    return code;
 }
 
 /* Clean up by releasing the buffers. */
@@ -1839,11 +2168,17 @@ xps_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     xps_image_enum_t *pie = (xps_image_enum_t *)info;
     int code = 0;
+    gx_device_xps *xdev = (gx_device_xps *)(pie->dev);
+
+    /* N.B. Write the final strip, if any. */
 
     code = TIFFWriteDirectory(pie->tif);
     TIFFCleanup(pie->tif);
 
-    /* N.B. Write the final strip, if any. */
+    /* Stuff the image into the zip archive and close the file */
+    code = xps_add_tiff_image(pie);
+    if (code < 0)
+        goto exit;
 
     /* Reset the brush type to solid */
     xps_setstrokebrush((gx_device_xps *) (pie->dev), xps_solidbrush);
@@ -1851,8 +2186,18 @@ xps_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 
     /* Add the image relationship */
     code = xps_add_image_relationship(pie);
-    if (code < 0)
-        return gs_rethrow_code(code);
+
+exit:
+    if (pie->pcs != NULL)
+        rc_decrement(pie->pcs, "xps_image_end_image (pcs)");
+    if (pie->buffer != NULL)
+        gs_free_object(pie->memory, pie->buffer, "xps_image_end_image");
+    if (pie->devc_buffer != NULL)
+        gs_free_object(pie->memory, pie->devc_buffer, "xps_image_end_image");
+
+    /* ICC clean up */
+    if (pie->icc_link != NULL)
+        gsicc_release_link(pie->icc_link);
 
     return code;
 }
@@ -1860,56 +2205,123 @@ xps_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 /* Tiff related code so that we can output all the image data in Tiff format.
    Tiff has the advantage of supporting Gray, RGB, CMYK as well as multiple
    bit depts and having lossless compression.  Much of this was borrowed from
-   gstiffio.c but refactored to enable us to write out to the zip archive. */
-
+   gstiffio.c */
 #define TIFF_PRINT_BUF_LENGTH 1024
 static const char tifs_msg_truncated[] = "\n*** Previous line has been truncated.\n";
 
-static void 
-tiff_set_values(xps_image_enum_t *pie, TIFF *tif, cmm_profile_t *profile)
+static int 
+tiff_set_values(xps_image_enum_t *pie, TIFF *tif, cmm_profile_t *profile,
+                bool force8bit)
 {
-    TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+    int bits = 8;
+
     TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, pie->height);
     TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, pie->width);
     TIFFSetField(tif, TIFFTAG_IMAGELENGTH, pie->height);
     TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
     TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+    TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
     TIFFSetField(tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
     TIFFSetField(tif, TIFFTAG_XRESOLUTION, 96.0);
     TIFFSetField(tif, TIFFTAG_YRESOLUTION, 96.0);
 
-    switch (profile->data_cs)
-    {
+    switch (profile->data_cs) {
         case  gsGRAY:
-            TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, pie->bits_per_pixel);
+            if (pie->bits_per_pixel > 8 && !force8bit)
+                bits = 16;
+            TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, bits);
             TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
             TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
             break;
         case  gsRGB:
-            TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, pie->bits_per_pixel / 3);
+        case gsCIELAB:
+            if ((pie->num_planes > 1 && pie->bits_per_pixel > 8 && !force8bit) ||
+                (pie->num_planes == 1 && pie->bits_per_pixel / 3 > 8 && !force8bit))
+                bits = 16;
+            TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, bits);
             TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
             TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 3);
             break;
         case gsCMYK:
-            TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, pie->bits_per_pixel / 4);
+            if ((pie->num_planes > 1 && pie->bits_per_pixel > 8 && !force8bit) ||
+                (pie->num_planes == 1 && pie->bits_per_pixel / 4 > 8 && !force8bit))
+                bits = 16;
+            TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, bits);
             TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_SEPARATED);
             TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 4);
             break;
         default:
-            TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, pie->bits_per_pixel);
-            TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-            TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, 1);
+            return gs_throw_code(gs_error_rangecheck);
     }
+    return 0;
 }
 
 /* place to hold the data for our libtiff i/o hooks */
 typedef struct tifs_io_xps_t
 {
-    const char *filename;
     gx_device_xps *pdev;
+    FILE *fid; 
 } tifs_io_xps;
 
 /* libtiff i/o hooks */
+static size_t
+xps_tifsWriteProc(thandle_t fd, void* buf, size_t size)
+{
+    tifs_io_xps *tiffio = (tifs_io_xps *)fd;
+    size_t size_io = (size_t)size;
+    FILE *fid = tiffio->fid;
+    size_t count;
+
+    if ((size_t)size_io != size) {
+        return (size_t)-1;
+    }
+
+    if (fid == NULL)
+        return gs_throw_code(gs_error_Fatal);
+
+    count = fwrite(buf, 1, size, fid);
+    if (count != size) {
+        fclose(fid);
+        return gs_rethrow_code(-1);
+    }
+    fflush(fid);
+    return size;
+}
+
+static uint64_t
+xps_tifsSeekProc(thandle_t fd, uint64_t off, int origin)
+{
+    tifs_io_xps *tiffio = (tifs_io_xps *)fd;
+    gs_offset_t off_io = (gs_offset_t)off;
+    FILE *fid = tiffio->fid;
+
+    if ((uint64_t)off_io != off) {
+        return (uint64_t)-1;
+    }
+
+    if (fid == NULL && off == 0)
+        return 0;
+
+    if (fid == NULL)
+        return (uint64_t)-1;
+
+    if (gp_fseek_64(fid, (gs_offset_t)off, origin) < 0) {
+        return (uint64_t)-1;
+    }
+    return (gp_ftell_64(fid));
+}
+
+static int
+xps_tifsCloseProc(thandle_t fd)
+{
+    tifs_io_xps *tiffio = (tifs_io_xps *)fd;
+    gx_device_xps *pdev = tiffio->pdev;
+
+    gs_free(pdev->memory->non_gc_memory, tiffio, sizeof(tifs_io_xps), 1,
+        "xps_tifsCloseProc");
+    return 0;
+}
+
 static int
 xps_tifsDummyMapProc(thandle_t fd, void** pbase, toff_t* psize)
 {
@@ -1938,48 +2350,6 @@ xps_tifsReadProc(thandle_t fd, void* buf, size_t size)
     return 0;
 }
 
-static size_t
-xps_tifsWriteProc(thandle_t fd, void* buf, size_t size)
-{
-    tifs_io_xps *tiffio = (tifs_io_xps *)fd;
-    size_t size_io = (size_t)size;
-    int code;
-
-    if ((size_t)size_io != size) {
-        return (size_t)-1;
-    }
-
-    code = write_to_zip_file(tiffio->pdev, tiffio->filename, (byte *)buf, size);
-    if (code < 0)
-        return gs_rethrow_code(code);
-
-    return size;
-}
-
-static uint64_t
-xps_tifsSeekProc(thandle_t fd, uint64_t off, int whence)
-{
-    tifs_io_xps *tiffio = (tifs_io_xps *)fd;
-    gs_offset_t off_io = (gs_offset_t)off;
-
-    if ((uint64_t)off_io != off) {
-        return (uint64_t)-1; 
-    }
-
-    return seek_to_zip_file(tiffio->pdev, tiffio->filename, off, whence);
-}
-
-static int
-xps_tifsCloseProc(thandle_t fd)
-{
-    tifs_io_xps *tiffio = (tifs_io_xps *)fd;
-    gx_device_xps *pdev = tiffio->pdev;
-
-    gs_free(pdev->memory->non_gc_memory, tiffio, sizeof(tifs_io_xps), 1, 
-        "xps_tifsCloseProc");
-    return 0;
-}
-
 /* Could not see where this was getting used so basically a dummy proc
    for now. */
 static uint64_t
@@ -1988,42 +2358,6 @@ xps_tifsSizeProc(thandle_t fd)
     uint64_t length = 0;
 
     return length;
-}
-
-static TIFF *
-tiff_from_name(gx_device_xps *dev, const char *name, int big_endian, bool usebigtiff)
-{
-    char mode[5] = "w";
-    int modelen = 1;
-    TIFF *t;
-    tifs_io_xps *tiffio;
-
-    if (big_endian)
-        mode[modelen++] = 'b';
-    else
-        mode[modelen++] = 'l';
-
-    if (usebigtiff)
-        /* this should never happen for libtiff < 4.0 - see tiff_put_some_params() */
-        mode[modelen++] = '8';
-
-    mode[modelen] = (char)0;
-
-    tiffio = (tifs_io_xps *)gs_malloc(dev->memory->non_gc_memory, 
-            sizeof(tifs_io_xps), 1, "tiff_from_filep");
-    if (!tiffio) {
-        return NULL;
-    }
-    tiffio->filename = name;
-    tiffio->pdev = dev;
-
-    t = TIFFClientOpen(name, mode,
-        (thandle_t)tiffio, (TIFFReadWriteProc)xps_tifsReadProc,
-        (TIFFReadWriteProc)xps_tifsWriteProc, (TIFFSeekProc)xps_tifsSeekProc,
-        xps_tifsCloseProc, (TIFFSizeProc)xps_tifsSizeProc, xps_tifsDummyMapProc,
-        xps_tifsDummyUnmapProc);
-
-    return t;
 }
 
 static void
@@ -2078,4 +2412,49 @@ xps_tiff_set_handlers(void)
     (void)TIFFSetWarningHandler(NULL);
     (void)TIFFSetErrorHandlerExt(xps_tifsErrorHandlerEx);
     (void)TIFFSetWarningHandlerExt(xps_tifsWarningHandlerEx);
+}
+
+static TIFF *
+tiff_from_name(gx_device_xps *dev, const char *name, int big_endian, bool usebigtiff)
+{
+    char mode[5] = "w";
+    int modelen = 1;
+    TIFF *t;
+    tifs_io_xps *tiffio;
+    gs_memory_t *mem = dev->memory->non_gc_memory;
+
+    if (big_endian)
+        mode[modelen++] = 'b';
+    else
+        mode[modelen++] = 'l';
+
+    if (usebigtiff)
+        /* this should never happen for libtiff < 4.0 - see tiff_put_some_params() */
+        mode[modelen++] = '8';
+
+    mode[modelen] = (char)0;
+
+    tiffio = (tifs_io_xps *)gs_malloc(dev->memory->non_gc_memory,
+        sizeof(tifs_io_xps), 1, "tiff_from_name");
+    if (!tiffio) {
+        return NULL;
+    }
+    tiffio->pdev = dev;
+
+    char *filename = (char *)gs_alloc_bytes(mem, gp_file_name_sizeof,
+        "tiff_from_name(filename)");
+    if (!filename)
+        return NULL;
+
+    tiffio->fid = gp_open_scratch_file_rm(mem, "tif-", filename, "wb+");
+    dev->xps_pie->fid = tiffio->fid;  /* We will be closing it from here */
+
+    gs_free_object(mem, filename, "tiff_from_name(filename)");
+
+    t = TIFFClientOpen(name, mode,
+        (thandle_t)tiffio, (TIFFReadWriteProc)xps_tifsReadProc,
+        (TIFFReadWriteProc)xps_tifsWriteProc, (TIFFSeekProc)xps_tifsSeekProc,
+        xps_tifsCloseProc, (TIFFSizeProc)xps_tifsSizeProc, xps_tifsDummyMapProc,
+        xps_tifsDummyUnmapProc);
+    return t;
 }
