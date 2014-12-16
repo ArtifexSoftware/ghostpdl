@@ -859,12 +859,20 @@ pcl_update_mono(pcl_state_t * pcs)
     if (pcs->monochrome_mode) {
         if (swapped_device_color_procs == false) {
             device_cm_procs = *cm_procs;
+
+            /* KAS Device subclassing, this is a hack and should be fixed properly */
+            while(dev->child)
+                dev = dev->child;
             saved_get_color_map_proc = dev->procs.get_color_mapping_procs;
             dev->procs.get_color_mapping_procs = pcl_mono_color_mapping_procs;
             swapped_device_color_procs = true;
         }
     } else {
         if (swapped_device_color_procs == true) {
+
+            /* KAS Device subclassing, this is a hack and should be fixed properly */
+            while(dev->child)
+                dev = dev->child;
             dev->procs.get_color_mapping_procs = saved_get_color_map_proc;
             swapped_device_color_procs = false;
         }
