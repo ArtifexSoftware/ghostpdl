@@ -525,6 +525,8 @@ pl_main_aux(int argc, char *argv[], void *disp)
         }
      }
 #endif /* OMIT_SAVED_PAGES_TEST */
+    /* release param list */
+    gs_c_param_list_release(&params);
     /* Dnit PDLs */
     if (pl_main_universe_dnit(&universe, err_buf)) {
         errprintf(mem, "%s", err_buf);
@@ -540,8 +542,6 @@ pl_main_aux(int argc, char *argv[], void *disp)
     /* We lost the ability to print peak memory usage with the loss
      * of the memory wrappers.
      */
-    /* release param list */
-    gs_c_param_list_release(&params);
     arg_finit(&args);
 
 #if defined(DEBUG) && defined(ALLOW_VD_TRACE)
