@@ -531,7 +531,7 @@ pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
     values.pdfont = pdfont;
     values.size = 1;
     values.matrix = *pimat;
-    values.render_mode = 0;
+    values.render_mode = pdev->pte->pis->text_rendering_mode;
     values.word_spacing = 0;
     pdf_set_text_state_values(pdev, &values);
     pdf_bitmap_char_update_bbox(pdev, pcp->x_offset, pcp->y_offset, pcp->real_width.x, pcp->real_width.y);

@@ -36,6 +36,7 @@
 #include "gsfcmap.h"        /* For gs_cmap_ToUnicode_free */
 
 #include "gxfcache.h"
+#include "gdevpdts.h"       /* for sync_text_state */
 
 /* Define the default language level and PDF compatibility level. */
 /* Acrobat 6 (PDF 1.5) is the default. (1.5 for ICC V4 profile support) */
@@ -693,6 +694,13 @@ pdf_set_process_color_model(gx_device_pdf * pdev, int index)
 void
 pdf_reset_text(gx_device_pdf * pdev)
 {
+    /* we need to flush the text buffer, in case we have (eg) Tr set,
+     * but have reset it to 0 for the current (buffered) text. If we restore to a
+     * graphics state which also has Tr 0 then we won't ever write out the change.
+     * I suspect this can theoretically happen with other graphics state values too
+     * See PCL file enter.test.
+     */
+    sync_text_state(pdev);
     pdf_reset_text_state(pdev->text);
 }
 
