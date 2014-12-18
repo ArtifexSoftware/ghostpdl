@@ -308,6 +308,11 @@ gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
             (void)ppdev->bg_print.oio_procs->fclose(ppdev->bg_print.obfile, ppdev->bg_print.obfname, true);
         }
         ppdev->bg_print.ocfile = ppdev->bg_print.obfile = NULL;
+        rc_decrement(pcldev->icc_cache_cl, "gdev_prn_tear_down");
+        pcldev->icc_cache_cl = NULL;
+
+        clist_free_icc_table(pcldev->icc_table, pcldev->memory);
+        pcldev->icc_table = NULL;
 
         /* If the clist is a reader clist, free any color_usage_array
          * memory used by same.
