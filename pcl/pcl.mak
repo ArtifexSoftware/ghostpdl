@@ -781,6 +781,8 @@ $(PCLOBJ)pctext.$(OBJ): $(PCLSRC)pctext.c   \
                         $(pcfrgrnd_h)       \
                         $(gdebug_h)         \
                         $(gscoord_h)        \
+                        $(gsdevice_h)       \
+                        $(gxdevsop_h)       \
                         $(gsline_h)         \
                         $(gspaint_h)        \
                         $(gspath_h)         \

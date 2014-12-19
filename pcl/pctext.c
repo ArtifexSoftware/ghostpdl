@@ -40,6 +40,9 @@
 #include "gxfont.h"             /* for setting next_char proc */
 #include "gxstate.h"
 
+#include "gxdevsop.h"       /* For special ops */
+#include "gsdevice.h"       /* for gs_currentdevice */
+
 /* pseudo-"dots" (actually 1/300" units) used in underline only */
 #define dots(n)     ((float)(7200 / 300 * n))
 
@@ -496,6 +499,66 @@ show_char_foreground(const pcl_state_t * pcs, const gs_char * pbuff)
     return code;
 }
 
+static int
+show_char_invisible_foreground(const pcl_state_t * pcs, const gs_char * pbuff)
+{
+
+    gs_c_param_list list;
+    dev_param_req_t request;
+    gs_param_name ParamName = "PreserveTrMode";
+    gs_param_typed_value Param;
+    char *data;
+    gs_state *pgs = pcs->pgs;
+    uint saved_mode = gs_currenttextrenderingmode(pgs);
+    int code = 0;
+
+    /* Interrogate the device to see if it supports Text Rendering Mode
+     * If it does we can mimic the 'invisible text' by using mode 3. If it
+     * doesn't then we drop the text.
+     */
+    data = (char *)gs_alloc_bytes(pcs->memory, 15, "temporary special_op string");
+    memset(data, 0x00, 15);
+    memcpy(data, "PreserveTrMode", 15);
+    gs_c_param_list_write(&list, pcs->memory);
+    /* Make a null object so that the param list won't check for requests */
+    Param.type = gs_param_type_null;
+    list.procs->xmit_typed((gs_param_list *)&list, ParamName, &Param);
+    /* Stuff the data into a structure for passing to the spec_op */
+    request.Param = data;
+    request.list = &list;
+
+    code = dev_proc(gs_currentdevice(pgs), dev_spec_op)(gs_currentdevice(pgs), gxdso_get_dev_param,
+                                                        &request, sizeof(dev_param_req_t));
+
+    if (code != gs_error_undefined) {
+        /* The parameter is present in the device, now we need to see its value */
+        gs_c_param_list_read(&list);
+        list.procs->xmit_typed((gs_param_list *)&list, ParamName, &Param);
+
+        if (Param.type != gs_param_type_bool) {
+            /* This really shoudn't happen, but its best to be sure */
+            gs_free_object(pcs->memory, data,"temporary special_op string");
+            gs_c_param_list_release(&list);
+            return gs_error_typecheck;
+        }
+
+        if (Param.value.b) {
+            /* Its true, so we can set the Tr mode to 3, draw the text
+               and then reset the Tr mode */
+            gs_settextrenderingmode(pgs, 3);
+            code = show_char_foreground(pcs, pbuff);
+            gs_settextrenderingmode(pgs, saved_mode);
+        }
+    } else {
+        code = 0;
+    }
+    gs_free_object(pcs->memory, data,"temporary special_op string");
+    gs_c_param_list_release(&list);
+    return code;
+}
+
+
+
 /*
  * draw the opaque background of a character.
  *
@@ -817,12 +880,17 @@ pcl_show_chars_slow(pcl_state_t * pcs,
             /* if source is opaque, show and opaque background */
             if (source_opaque)
                 code = show_char_background(pcs, buff);
-            if (code >= 0)
-                if (!invisible_pattern)
-                    code = show_char_foreground(pcs, buff);
             if (code < 0)
                 break;
-            /* NB WRONG - */
+
+            if (invisible_pattern)
+                code = show_char_invisible_foreground(pcs, buff);
+            else
+                code = show_char_foreground(pcs, buff);
+
+            if (code < 0)
+                break;
+
             pcl_mark_page_for_current_pos(pcs);
         }
 
