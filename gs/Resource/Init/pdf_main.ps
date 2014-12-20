@@ -1183,33 +1183,19 @@ currentdict /xref-char-dict undef
           3 2 roll
         }
         {
-          dup /S knownoget {
-            dup /GoTo eq {
-              pop
-              dup /D knownoget {
-                exch pop exch dup length dict copy dup /Dest 4 -1 roll put
+          dup /S knownoget  {
+            dup /GoTo eq 1 index /GoToR eq or {
+                pop /A mark       % <<..action dict..>> /A [
+                3 2 roll          % /A [ <<..action dict..>>
+                { oforce } forall
+                .dicttomark
+                3 2 roll
+            }{
+              /Named eq {
+                /N knownoget {                % Assume /S /Named
+                    namedactions exch .knownget { exec } if
+                } if
               } if
-            }
-            {
-              dup /GoToR eq {
-                /Action exch
-                4 2 roll
-                dup /NewWindow knownoget {
-                  2 index dup length dict copy dup /NewWindow 4 -1 roll put 3 1 roll exch pop
-                } if
-                dup /F knownoget {
-                  2 index dup length dict copy dup /F 4 -1 roll put 3 1 roll exch pop
-                } if
-                dup /D knownoget {
-                  exch pop exch dup length dict copy dup /Dest 4 -1 roll put
-                } if
-              }{
-                /Named eq {
-                  /N knownoget {                % Assume /S /Named
-                      namedactions exch .knownget { exec } if
-                  } if
-                } if
-              } ifelse
             } ifelse
           } if
         } ifelse
@@ -1549,7 +1535,8 @@ end readonly def
     /File exch 3 -1 roll
   } if
   dup /Dest knownoget
-    { resolvedest
+    {
+      resolvedest
       dup type /dicttype eq { /D knownoget not { //null } if } if
       dup //null eq
        { pop }
@@ -1629,39 +1616,26 @@ end readonly def
         3 2 roll
       } {
         dup /S knownoget  {
-          dup /GoTo eq {
-            pop
-            dup /D knownoget {
-              exch pop exch dup length dict copy dup /Dest 4 -1 roll put
-            } if
+          dup /GoTo eq 1 index /GoToR eq or {
+              pop /A mark       % <<..action dict..>> /A [
+              3 2 roll          % /A [ <<..action dict..>>
+              { oforce } forall
+              .dicttomark
+              3 2 roll
           }{
-            dup /GoToR eq {
-              /Action exch
-              4 2 roll
-              dup /NewWindow knownoget {
-                2 index dup length dict copy dup /NewWindow 4 -1 roll put 3 1 roll exch pop
-              } if
-              dup /F knownoget {
-                2 index dup length dict copy dup /F 4 -1 roll put 3 1 roll exch pop
-              } if
-              dup /D knownoget {
-                exch pop exch dup length dict copy dup /Dest 4 -1 roll put
-              } if
-            }{
-              /Named eq {
-                /N knownoget {
-                  namedactions exch .knownget {
-                    exec {
-                      pop
-                      (   **** Warning: Ignoring a named action pointing out of the document page range.\n)
-                      pdfformaterror
-                    } {
-                      /Page exch 3 -1 roll
-                    } ifelse
-                  } if
+            /Named eq {
+              /N knownoget {
+                namedactions exch .knownget {
+                  exec {
+                    pop
+                    (   **** Warning: Ignoring a named action pointing out of the document page range.\n)
+                    pdfformaterror
+                  } {
+                    /Page exch 3 -1 roll
+                  } ifelse
                 } if
               } if
-            } ifelse
+            } if
           } ifelse
         } if
       } ifelse
