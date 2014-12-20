@@ -545,21 +545,25 @@ currentdict end readonly def
   //PDFR_DEBUG {
     (endobj ) =
   } if
-  dup type /dicttype eq {
-    dup /.endobj_daemon //knownget exec {
-      //PDFR_DEBUG { (.endobj_daemon for ) print 2 index = } if
-      exec
+  count 1 eq {
+    pop
+  }{
+    dup type /dicttype eq {
+      dup /.endobj_daemon //knownget exec {
+        //PDFR_DEBUG { (.endobj_daemon for ) print 2 index = } if
+        exec
+      } if
     } if
-  } if
-  dup type /dicttype eq { dup /ImmediateExec known } { false } ifelse {
-    pop pop
-  } {
-    //PDFR_DEBUG {
-      (Storing ) print 1 index =
-    } if
-    //RunTypeDaemon exec
-    //DoNothing 3 1 roll //Register exec
-  } ifelse
+    dup type /dicttype eq { dup /ImmediateExec known } { false } ifelse {
+      pop pop
+    } {
+      //PDFR_DEBUG {
+        (Storing ) print 1 index =
+      } if
+      //RunTypeDaemon exec
+      //DoNothing 3 1 roll //Register exec
+    } ifelse
+  }ifelse
 } bind def
 
 /StoreBlock % <buf> StoreBlock -
