@@ -933,69 +933,6 @@ cos_dict_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
     return 0;
 }
 
-static int find_last_dict_entry(const cos_dict_t *d, const cos_dict_element_t **element)
-{
-    const cos_dict_element_t *pcde = d->elements, *Last;
-    int code, length, length1, length2, offset1 = 0, offset2 = 0, i;
-
-    *element = 0L;
-
-    Last = pcde;
-    for (i = 0;Last->key.data[i] == 0x00; i++)
-        ;
-    length1 = Last->key.size - i;
-    offset1 = i;
-
-    if (Last->key.data[offset1] == '/') {
-        length1 -= 1;
-        offset1 += 1;
-    } else {
-        if (pcde->key.data[offset1] == '(') {
-            length1 -= 2;
-            offset1 = 1;
-        } else {
-            return_error(gs_error_typecheck);
-        }
-    }
-
-    pcde = pcde->next;
-    while (pcde){
-        for (i = 0;pcde->key.data[i] == 0x00; i++)
-            ;
-        length2 = pcde->key.size - i;
-        offset2 = i;
-        if (pcde->key.data[offset2] == '/') {
-            length2 -= 1;
-            offset2 += 1;
-        } else {
-            if (pcde->key.data[offset2] == '(') {
-                length2 -= 2;
-                offset2 = 1;
-            } else {
-                return_error(gs_error_typecheck);
-            }
-        }
-
-        if (length2 < length1)
-            length = length2;
-        else
-            length = length1;
-        code = strncmp((const char *)&pcde->key.data[offset2], (const char *)&Last->key.data[offset1], length);
-        if (code == 0) {
-            if (length2 > length1) {
-                Last = pcde;
-                length1 = length2;
-            }
-        } else if (code > 0) {
-            Last = pcde;
-            length1 = length2;
-        }
-        pcde = pcde->next;
-    }
-    *element = Last;
-    return 0;
-}
-
 static int find_first_dict_entry(const cos_dict_t *d, const cos_dict_element_t **element)
 {
     const cos_dict_element_t *pcde = d->elements, *First;
@@ -1160,6 +1097,24 @@ static int find_next_dict_entry(const cos_dict_t *d, const cos_dict_element_t **
         pcde = pcde->next;
     }
     *element = Next;
+    return 0;
+}
+
+static int find_last_dict_entry(const cos_dict_t *d, const cos_dict_element_t **element)
+{
+    const cos_dict_element_t *pcde = d->elements, *Last, *Next;
+
+    *element = 0L;
+
+    Next = Last = pcde;
+
+    do {
+        Last = Next;
+        find_next_dict_entry(d, &Next);
+    } while (Next);
+
+    *element = Last;
+
     return 0;
 }
 
