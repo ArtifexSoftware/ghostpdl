@@ -1202,11 +1202,19 @@ currentdict /xref-char-dict undef
                 .dicttomark
                 3 2 roll
               }{
-                /Named eq {
-                  /N knownoget {                % Assume /S /Named
-                      namedactions exch .knownget { exec } if
+                dup /Launch eq {
+                  pop /A mark       % <<..action dict..>> /A [
+                  3 2 roll          % /A [ <<..action dict..>>
+                  { oforce } forall
+                  .dicttomark
+                  3 2 roll
+                }{
+                    /Named eq {
+                    /N knownoget {                % Assume /S /Named
+                        namedactions exch .knownget { exec } if
+                    } if
                   } if
-                } if
+                } ifelse
               } ifelse
             } ifelse
           } if
@@ -1646,19 +1654,27 @@ end readonly def
               .dicttomark
               3 2 roll
             }{
-              /Named eq {
-                /N knownoget {
-                  namedactions exch .knownget {
-                    exec {
-                      pop
-                      (   **** Warning: Ignoring a named action pointing out of the document page range.\n)
-                      pdfformaterror
-                    } {
-                      /Page exch 3 -1 roll
-                    } ifelse
+              dup /Launch eq {
+                pop /A mark       % <<..action dict..>> /A [
+                3 2 roll          % /A [ <<..action dict..>>
+                { oforce } forall
+                .dicttomark
+                3 2 roll
+              }{
+                /Named eq {
+                  /N knownoget {
+                    namedactions exch .knownget {
+                      exec {
+                        pop
+                        (   **** Warning: Ignoring a named action pointing out of the document page range.\n)
+                        pdfformaterror
+                      } {
+                        /Page exch 3 -1 roll
+                      } ifelse
+                    } if
                   } if
                 } if
-              } if
+              }ifelse
             } ifelse
           } ifelse
         } if
