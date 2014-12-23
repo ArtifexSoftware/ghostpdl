@@ -1628,26 +1628,38 @@ end readonly def
         3 2 roll
       } {
         dup /S knownoget  {
-          dup /GoTo eq 1 index /GoToR eq or {
+          %% Because we process GoTo Destinations into absolute references in the PDF file
+          %% we need to resolve the /D or /Dest. However, we must *not* do this for
+          %% GoToR Destinations because (obviously) those are in a different file and
+          %% we cannot resolve them into absolute references. We don't need to anyway
+          %% because that file must already have a named destination.
+          dup /GoTo eq {
+            pop
+            dup /D knownoget {
+              exch pop exch dup length dict copy dup /Dest 4 -1 roll put
+            } if
+          }{
+            dup /GoToR eq {
               pop /A mark       % <<..action dict..>> /A [
               3 2 roll          % /A [ <<..action dict..>>
               { oforce } forall
               .dicttomark
               3 2 roll
-          }{
-            /Named eq {
-              /N knownoget {
-                namedactions exch .knownget {
-                  exec {
-                    pop
-                    (   **** Warning: Ignoring a named action pointing out of the document page range.\n)
-                    pdfformaterror
-                  } {
-                    /Page exch 3 -1 roll
-                  } ifelse
+            }{
+              /Named eq {
+                /N knownoget {
+                  namedactions exch .knownget {
+                    exec {
+                      pop
+                      (   **** Warning: Ignoring a named action pointing out of the document page range.\n)
+                      pdfformaterror
+                    } {
+                      /Page exch 3 -1 roll
+                    } ifelse
+                  } if
                 } if
               } if
-            } if
+            } ifelse
           } ifelse
         } if
       } ifelse
