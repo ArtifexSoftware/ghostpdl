@@ -254,7 +254,7 @@ currentdict /runpdfstring .undef
     } for
   % Indicate that the number of spot colors is unknown in case the next page
   % imaged is a PS file.
-  << /PageSpotColors -1 >> setpagedevice
+  currentpagedevice /PageSpotColors known { << /PageSpotColors -1 >> setpagedevice } if
   << /PDFScanRules //null >> setuserparams	% restore scanning rules for PS
 } bind def
 
@@ -1903,7 +1903,7 @@ currentdict /PDF2PS_matrix_key undef
   % Determine the number of spot colors used on the page.  Note: This searches
   % the pages resources.  It may be high if a spot color is in a resource but
   % is not actually used on the page.
-  /PageSpotColors 2 index countspotcolors def
+  currentpagedevice /PageSpotColors known { /PageSpotColors 2 index countspotcolors def } if
 
   % Let the device know if we will be using PDF 1.4 transparency.
   % The clist logic may need to adjust the size of bands.

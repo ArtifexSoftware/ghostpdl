@@ -993,6 +993,8 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
 {
     int ecode = 0;
     int code;
+    int igni;
+    bool ignb;
     gs_param_name param_name;
     gs_param_string ofns;
     bool open = dev->is_open, HighLevelDevice;
@@ -1031,6 +1033,23 @@ ofe:        param_signal_error(plist, param_name, ecode);
         case 1:
             ofns.data = 0;
             break;
+    }
+    /* Ignore the following printer device params */
+    switch (code = param_read_bool(plist, (param_name = "BGPrint"), &ignb)) {
+        default:
+          ecode = code;
+          param_signal_error(plist, param_name, ecode);
+        case 0:
+        case 1:
+          break;
+    }
+    switch (code = param_read_int(plist, (param_name = "NumRenderingThreads"), &igni)) {
+        default:
+          ecode = code;
+          param_signal_error(plist, param_name, ecode);
+        case 0:
+        case 1:
+          break;
     }
 
     if (ecode < 0)

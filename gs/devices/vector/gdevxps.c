@@ -444,14 +444,13 @@ zip_append_data(gs_memory_t *mem, gx_device_xps_zinfo_t *info, byte *data, uint 
             return(gs_throw_code(gs_error_VMerror));
         }
         
-        fp = gp_open_scratch_file(mem, "xpsdata-",
+        fp = gp_open_scratch_file_rm(mem, "xpsdata-",
                                         filename, "wb+");
 
         if (fp == NULL) {
             gs_free_object(mem, filename, "zip_append_data(filename)");
             return gs_throw_code(gs_error_Fatal);
         }
-        unlink(filename);
         gs_free_object(mem, filename, "zip_append_data(filename)");
         info->data.fp = fp;
     }
@@ -1072,7 +1071,8 @@ xps_put_params(gx_device *dev, gs_param_list *plist)
 
     /* xps specific parameters are parsed here */
 #if defined(__WIN32__) && XPSPRINT==1
-    {
+    {	/* NB: The following is not strictly correct since changes are */
+        /*     made even if 'gdev_vector_put_params' returns an error. */
         gs_param_name param_name;
         gs_param_string pps;
         gx_device_xps *const xps = (gx_device_xps*)dev;
@@ -1094,9 +1094,7 @@ xps_put_params(gx_device *dev, gs_param_list *plist)
     }
 #endif
     /* call our superclass to get its parameters, like OutputFile */
-    code = gdev_vector_put_params(dev, plist);
-    if (code < 0)
-      return gs_rethrow_code(code);
+    code = gdev_vector_put_params(dev, plist);	/* errors are handled by caller  or setpagedevice */
 
     return code;
 }
