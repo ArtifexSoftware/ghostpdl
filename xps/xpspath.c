@@ -262,6 +262,10 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
     int reset_smooth;
 
     args = xps_alloc(ctx, sizeof(char*) * (strlen(geom) + 1));
+    if (!args) {
+        gs_throw(gs_error_VMerror, "out of memory: args.\n");
+        return;
+    }
     pargs = args;
 
     //dmprintf1(ctx->memory, "new path (%.70s)\n", geom);

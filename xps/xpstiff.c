@@ -570,7 +570,7 @@ xps_expand_colormap(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
 
     samples = xps_alloc(ctx, stride * image->height);
     if (!samples)
-        return gs_throw(-1, "out of memory: samples");
+        return gs_throw(gs_error_VMerror, "out of memory: samples");
 
     for (y = 0; y < image->height; y++)
     {
@@ -687,7 +687,7 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
 
     image->samples = xps_alloc(ctx, image->stride * image->height);
     if (!image->samples)
-        return gs_throw(-1, "could not allocate image samples");
+        return gs_throw(gs_error_VMerror, "could not allocate image samples");
 
     memset(image->samples, 0x55, image->stride * image->height);
 
@@ -935,7 +935,7 @@ xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
     case ICCProfile:
         tiff->profile = xps_alloc(ctx, count);
         if (!tiff->profile)
-            return gs_throw(-1, "could not allocate embedded icc profile");
+            return gs_throw(gs_error_VMerror, "could not allocate embedded icc profile");
         /* ICC profile data type is set to UNDEFINED.
          * TBYTE reading not correct in xps_read_tiff_tag_value */
         xps_read_tiff_bytes(tiff->profile, tiff, value, count);
@@ -950,21 +950,21 @@ xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
     case StripOffsets:
         tiff->stripoffsets = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
         if (!tiff->stripoffsets)
-            return gs_throw(-1, "could not allocate strip offsets");
+            return gs_throw(gs_error_VMerror, "could not allocate strip offsets");
         xps_read_tiff_tag_value(tiff->stripoffsets, tiff, type, value, count);
         break;
 
     case StripByteCounts:
         tiff->stripbytecounts = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
         if (!tiff->stripbytecounts)
-            return gs_throw(-1, "could not allocate strip byte counts");
+            return gs_throw(gs_error_VMerror, "could not allocate strip byte counts");
         xps_read_tiff_tag_value(tiff->stripbytecounts, tiff, type, value, count);
         break;
 
     case ColorMap:
         tiff->colormap = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
         if (!tiff->colormap)
-            return gs_throw(-1, "could not allocate color map");
+            return gs_throw(gs_error_VMerror, "could not allocate color map");
         xps_read_tiff_tag_value(tiff->colormap, tiff, type, value, count);
         break;
 

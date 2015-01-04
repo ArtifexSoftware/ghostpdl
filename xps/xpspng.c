@@ -287,6 +287,9 @@ xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     image->stride = (image->width * image->comps * image->bits + 7) / 8;
 
     image->samples = xps_alloc(ctx, image->stride * image->height);
+    if (!image->samples) {
+        return gs_throw(gs_error_VMerror, "out of memory.\n");
+    }
 
     for (pass = 0; pass < npasses; pass++)
     {

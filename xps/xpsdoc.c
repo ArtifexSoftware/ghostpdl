@@ -26,9 +26,18 @@ xps_new_part(xps_context_t *ctx, char *name, int size)
     xps_part_t *part;
 
     part = xps_alloc(ctx, sizeof(xps_part_t));
+    if (!part) {
+        gs_throw(gs_error_VMerror, "out of memory: xps_new_part\n");
+        return NULL;
+    }
     part->name = xps_strdup(ctx, name);
     part->size = size;
     part->data = xps_alloc(ctx, size);
+    if (!part->data) {
+        xps_free(ctx, part);
+        gs_throw(gs_error_VMerror, "out of memory: xps_new_part\n");
+        return NULL;
+    }
 
     return part;
 }
@@ -81,6 +90,10 @@ xps_add_fixed_document(xps_context_t *ctx, char *name)
     if_debug1m('|', ctx->memory, "doc: adding fixdoc %s\n", name);
 
     fixdoc = xps_alloc(ctx, sizeof(xps_document_t));
+    if (!fixdoc) {
+        gs_throw(gs_error_VMerror, "out of memory: xps_add_fixed_document\n");
+        return;
+    }
     fixdoc->name = xps_strdup(ctx, name);
     fixdoc->next = NULL;
 
@@ -124,6 +137,10 @@ xps_add_fixed_page(xps_context_t *ctx, char *name, int width, int height)
     if_debug1m('|', ctx->memory, "doc: adding page %s\n", name);
 
     page = xps_alloc(ctx, sizeof(xps_page_t));
+    if (!page) {
+        gs_throw(gs_error_VMerror, "out of memory: xps_add_fixed_page\n");
+        return;
+    }
     page->name = xps_strdup(ctx, name);
     page->width = width;
     page->height = height;

@@ -53,7 +53,7 @@ xps_new_font(xps_context_t *ctx, byte *buf, int buflen, int index)
     font = xps_alloc(ctx, sizeof(xps_font_t));
     if (!font)
     {
-        gs_throw(-1, "out of memory");
+        gs_throw(gs_error_VMerror, "out of memory");
         return NULL;
     }
 

@@ -110,9 +110,10 @@ on_open_tag(void *zp, char *ns_name, char **atts)
     }
 
     item = xps_alloc(ctx, sizeof(xps_item_t) + attslen + namelen + textlen);
-    if (!item)
-    {
+    if (!item) {
         parser->error = "out of memory";
+        gs_throw(gs_error_VMerror, "out of memory.\n");
+        return;
     }
 
     /* copy strings to new memory */
@@ -198,6 +199,7 @@ on_text(void *zp, char *buf, int len)
             if (!tmp)
             {
                 parser->error = "out of memory";
+                gs_throw(gs_error_VMerror, "out of memory.\n");
                 return;
             }
 
@@ -249,12 +251,14 @@ xps_parse_xml(xps_context_t *ctx, byte *buf, int len)
     XML_SetCharacterDataHandler(xp, (XML_CharacterDataHandler)on_text);
 
     code = XML_Parse(xp, (char*)buf, len, 1);
-    if (code == 0)
+    if (code == 0 || parser.error != NULL)
     {
         if (parser.root)
             xps_free_item(ctx, parser.root);
+        if (XML_ErrorString(XML_GetErrorCode(xp)) != 0)
+            emprintf1(parser.ctx->memory, "XML_Error: %s\n", XML_ErrorString(XML_GetErrorCode(xp)));
         XML_ParserFree(xp);
-        gs_throw1(-1, "xml error: %s", XML_ErrorString(XML_GetErrorCode(xp)));
+        gs_throw1(-1, "parser error: %s", parser.error);
         return NULL;
     }
 

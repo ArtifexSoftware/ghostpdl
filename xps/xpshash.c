@@ -70,7 +70,7 @@ xps_hash_new(xps_context_t *ctx)
     table = xps_alloc(ctx, sizeof(xps_hash_table_t));
     if (!table)
     {
-        gs_throw(-1, "out of memory: hash table struct");
+        gs_throw(gs_error_VMerror, "out of memory: hash table struct");
         return NULL;
     }
 
@@ -81,7 +81,7 @@ xps_hash_new(xps_context_t *ctx)
     if (!table->entries)
     {
         xps_free(ctx, table);
-        gs_throw(-1, "out of memory: hash table entries array");
+        gs_throw(gs_error_VMerror, "out of memory: hash table entries array");
         return NULL;
     }
 
@@ -111,7 +111,7 @@ xps_hash_double(xps_context_t *ctx, xps_hash_table_t *table)
     old_entries = table->entries;
     new_entries = xps_alloc(ctx, sizeof(xps_hash_entry_t) * new_size);
     if (!new_entries)
-        return gs_throw(-1, "out of memory: hash table entries array");
+        return gs_throw(gs_error_VMerror, "out of memory: hash table entries array");
 
     table->size = new_size;
     table->entries = new_entries;

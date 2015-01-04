@@ -129,7 +129,7 @@ xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     wlen = image->stride * image->height;
     wbuf = xps_alloc(ctx, wlen);
     if (!wbuf)
-        return gs_throw1(-1, "out of memory allocating samples: %d", wlen);
+        return gs_throw1(gs_error_VMerror, "out of memory allocating samples: %d", wlen);
 
     image->samples = wbuf;
 

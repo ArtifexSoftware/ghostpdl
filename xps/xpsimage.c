@@ -35,6 +35,10 @@ xps_isolate_alpha_channel_8(xps_context_t *ctx, xps_image_t *image)
     byte *sp, *dp, *ap;
 
     image->alpha = xps_alloc(ctx, image->width * image->height);
+    if (!image->alpha) {
+        gs_throw(gs_error_VMerror, "out of memory: image->alpha.\n");
+        return;
+    }
 
     for (y = 0; y < image->height; y++)
     {
@@ -62,6 +66,10 @@ xps_isolate_alpha_channel_16(xps_context_t *ctx, xps_image_t *image)
     unsigned short *sp, *dp, *ap;
 
     image->alpha = xps_alloc(ctx, image->width * image->height * 2);
+    if (!image->alpha) {
+        gs_throw(gs_error_VMerror, "out of memory: image->alpha.\n");
+        return;
+    }
 
     for (y = 0; y < image->height; y++)
     {
@@ -250,7 +258,7 @@ xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
 
     penum = gs_image_enum_alloc(ctx->memory, "xps_parse_image_brush (gs_image_enum_alloc)");
     if (!penum)
-        return gs_throw(-1, "gs_enum_allocate failed");
+        return gs_throw(gs_error_VMerror, "gs_enum_allocate failed");
 
     if ((code = gs_image_init(penum, &gsimage, false, ctx->pgs)) < 0)
         return gs_throw(code, "gs_image_init failed");

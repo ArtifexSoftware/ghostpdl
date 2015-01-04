@@ -259,12 +259,20 @@ xps_create_gradient_stop_function(xps_context_t *ctx, struct stop *stops, int co
     k = count - 1; /* number of intervals / functions */
 
     domain = xps_alloc(ctx, 2 * sizeof(float));
+    if (!domain) {
+        gs_throw(gs_error_VMerror, "out of memory: domain\n");
+        return NULL;
+    }
     domain[0] = 0.0;
     domain[1] = 1.0;
     sparams.m = 1;
     sparams.Domain = domain;
 
     range = xps_alloc(ctx, 6 * sizeof(float));
+    if (!range) {
+        gs_throw(gs_error_VMerror, "out of memory: range\n");
+        return NULL;
+    }
     range[0] = 0.0;
     range[1] = 1.0;
     range[2] = 0.0;
@@ -274,8 +282,20 @@ xps_create_gradient_stop_function(xps_context_t *ctx, struct stop *stops, int co
     sparams.Range = range;
 
     functions = xps_alloc(ctx, k * sizeof(void*));
+    if (!functions) {
+        gs_throw(gs_error_VMerror, "out of memory: functions.\n");
+        return NULL;
+    }
     bounds = xps_alloc(ctx, (k - 1) * sizeof(float));
+    if (!bounds) {
+        gs_throw(gs_error_VMerror, "out of memory: bounds.\n");
+        return NULL;
+    }
     encode = xps_alloc(ctx, (k * 2) * sizeof(float));
+    if (!encode) {
+        gs_throw(gs_error_VMerror, "out of memory: encode.\n");
+        return NULL;
+    }
 
     sparams.k = k;
     sparams.Functions = functions;
@@ -296,12 +316,20 @@ xps_create_gradient_stop_function(xps_context_t *ctx, struct stop *stops, int co
     for (i = 0; i < k; i++)
     {
         domain = xps_alloc(ctx, 2 * sizeof(float));
+        if (!domain) {
+            gs_throw(gs_error_VMerror, "out of memory: domain.\n");
+            return NULL;
+    }
         domain[0] = 0.0;
         domain[1] = 1.0;
         lparams.m = 1;
         lparams.Domain = domain;
 
         range = xps_alloc(ctx, 6 * sizeof(float));
+        if (!range) {
+            gs_throw(gs_error_VMerror, "out of memory: range.\n");
+            return NULL;
+        }
         range[0] = 0.0;
         range[1] = 1.0;
         range[2] = 0.0;
@@ -311,9 +339,17 @@ xps_create_gradient_stop_function(xps_context_t *ctx, struct stop *stops, int co
         lparams.Range = range;
 
         c0 = xps_alloc(ctx, 3 * sizeof(float));
+        if (!c0) {
+            gs_throw(gs_error_VMerror, "out of memory: c0.\n");
+            return NULL;
+        }
         lparams.C0 = c0;
 
         c1 = xps_alloc(ctx, 3 * sizeof(float));
+        if (!c0) {
+            gs_throw(gs_error_VMerror, "out of memory: c1.\n");
+            return NULL;
+        }
         lparams.C1 = c1;
 
         if (opacity_only)

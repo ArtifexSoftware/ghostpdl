@@ -98,6 +98,10 @@ xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
         output->bits = 8;
         output->stride = output->width * output->comps;
         output->samples = xps_alloc(ctx, output->stride * output->height);
+        if (!output->samples) {
+            gs_throw(gs_error_VMerror, "out of memory: output->samples.\n");
+            return;
+        }
 
         switch (output->comps)
         {
@@ -142,6 +146,10 @@ xps_decode_jpegxr_alpha_block(jxr_image_t image, int mx, int my, int *data)
     if (!output->alpha)
     {
         output->alpha = xps_alloc(ctx, output->width * output->height);
+        if (!output->alpha) {
+            gs_throw(gs_error_VMerror, "out of memory: output->alpha.\n");
+            return;
+        }
     }
 
     depth = jxr_get_OUTPUT_BITDEPTH(image);

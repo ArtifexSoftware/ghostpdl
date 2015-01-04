@@ -48,7 +48,11 @@ static inline int getlong(FILE *file)
 static void *
 xps_zip_alloc_items(xps_context_t *ctx, int items, int size)
 {
-    return xps_alloc(ctx, items * size);
+    void *item = xps_alloc(ctx, items * size);
+    if (!item) {
+        gs_throw(gs_error_VMerror, "out of memory: item.\n");
+        return NULL;
+    }
 }
 
 static void
@@ -126,6 +130,9 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
     else if (method == 8)
     {
         inbuf = xps_alloc(ctx, ent->csize);
+        if (!inbuf) {
+            return gs_throw(gs_error_VMerror, "out of memory.\n");
+        }
 
         fread(inbuf, 1, ent->csize, ctx->file);
 
@@ -196,7 +203,7 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
     ctx->zip_count = count;
     ctx->zip_table = xps_alloc(ctx, sizeof(xps_entry_t) * count);
     if (!ctx->zip_table)
-        return gs_throw(-1, "cannot allocate zip entry table");
+        return gs_throw(gs_error_VMerror, "cannot allocate zip entry table");
 
     memset(ctx->zip_table, 0, sizeof(xps_entry_t) * count);
 
@@ -227,7 +234,7 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
 
         ctx->zip_table[i].name = xps_alloc(ctx, namesize + 1);
         if (!ctx->zip_table[i].name)
-            return gs_throw(-1, "cannot allocate zip entry name");
+            return gs_throw(gs_error_VMerror, "cannot allocate zip entry name");
 
         fread(ctx->zip_table[i].name, 1, namesize, ctx->file);
         ctx->zip_table[i].name[namesize] = 0;

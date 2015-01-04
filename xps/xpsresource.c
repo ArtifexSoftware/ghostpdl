@@ -158,7 +158,7 @@ xps_parse_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp, char *
         {
             entry = xps_alloc(ctx, sizeof(xps_resource_t));
             if (!entry)
-                return gs_throw(-1, "cannot allocate resource entry");
+                return gs_throw(gs_error_VMerror, "cannot allocate resource entry");
             entry->name = key;
             entry->base_uri = NULL;
             entry->base_xml = NULL;
