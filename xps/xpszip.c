@@ -53,6 +53,7 @@ xps_zip_alloc_items(xps_context_t *ctx, int items, int size)
         gs_throw(gs_error_VMerror, "out of memory: item.\n");
         return NULL;
     }
+    return item;
 }
 
 static void
