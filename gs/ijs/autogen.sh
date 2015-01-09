@@ -126,7 +126,7 @@ echo "  $LIBTOOLIZE --automake"
 $LIBTOOLIZE --automake
 
 echo "  $AUTOMAKE --add-missing $AUTOMAKE_OPTIONS"
-$AUTOMAKE --add-missing $AUTOMAKE_OPTIONS
+$AUTOMAKE --add-missing --copy $AUTOMAKE_OPTIONS
 
 echo "  autoconf"
 autoconf
