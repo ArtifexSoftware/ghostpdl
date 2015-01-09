@@ -117,7 +117,7 @@ CLEANSCRIPTS = \
 	config.sub \
 	ltmain.sh
 
-CLEANFILES = gmon.out core ijs_spec.log ijs_spec.tex ijs_spec.aux ijs_spec.ps ijs_spec.pdf
+CLEANFILES = gmon.out core ijs_spec.log ijs_spec.tex ijs_spec.aux
 DISTCLEANFILES = ijs-config config.cache config.log config.status
 # ijs-config.in ijs.pc ijs.pc.in ijs.m4 ijs.h
 MAINTAINERCLEANFILES = INSTALL aclocal.m4 config.h.in configure Makefile.in stamp-h.in $(CLEANSCRIPTS)
