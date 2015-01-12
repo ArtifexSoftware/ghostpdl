@@ -40,7 +40,9 @@ LDFLAGS="${LDFLAGS:=}"
 GCFLAGS="$CFLAGS"
 
 # Checks for programs.
+save_cflags=$CFLAGS
 AC_PROG_CC
+CFLAGS=$save_cflags
 
 # Checks for header files.
 AC_FUNC_ALLOCA

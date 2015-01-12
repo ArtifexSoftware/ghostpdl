@@ -16,6 +16,6 @@
 # gccdefs.mak
 # Definitions for compilation with gcc.
 
-CC=gcc
-AR=ar
-CCAUX=$(CC)
+CC?=gcc
+AR?=ar
+CCAUX?=$(CC)
