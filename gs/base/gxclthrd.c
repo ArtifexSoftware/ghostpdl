@@ -423,6 +423,13 @@ teardown_device_and_mem_for_thread(gx_device *dev, gp_thread_id thread_id, bool 
     } else {
         /* make sure this doesn't get freed by gdev_prn_free_memory below */
         ((gx_device_clist_reader *)thread_cdev)->color_usage_array = NULL;
+
+        /* For non-bg_print cases the icc_table is shared between devices, but
+         * is not reference counted or anything. We rely on it being shared with
+         * and owned by the "parent" device in the interpreter thread, hence
+         * null it here to avoid it being freed as we cleanup the thread device.
+         */
+        thread_crdev->icc_table = NULL;
     }
     rc_decrement(thread_crdev->icc_cache_cl, "teardown_render_thread");
     thread_crdev->icc_cache_cl = NULL;
