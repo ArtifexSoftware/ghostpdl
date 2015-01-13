@@ -895,19 +895,19 @@ cups_get_params(gx_device     *pdev,	/* I - Device info */
   * Then write the CUPS parameters...
   */
 
-  param_string_from_string(s, cups->header.MediaClass);
+  param_string_from_transient_string(s, cups->header.MediaClass);
   if ((code = param_write_string(plist, "MediaClass", &s)) < 0)
     return (code);
 
-  param_string_from_string(s, cups->header.MediaColor);
+  param_string_from_transient_string(s, cups->header.MediaColor);
   if ((code = param_write_string(plist, "MediaColor", &s)) < 0)
     return (code);
 
-  param_string_from_string(s, cups->header.MediaType);
+  param_string_from_transient_string(s, cups->header.MediaType);
   if ((code = param_write_string(plist, "MediaType", &s)) < 0)
     return (code);
 
-  param_string_from_string(s, cups->header.OutputType);
+  param_string_from_transient_string(s, cups->header.OutputType);
   if ((code = param_write_string(plist, "OutputType", &s)) < 0)
     return (code);
 
@@ -1059,20 +1059,20 @@ cups_get_params(gx_device     *pdev,	/* I - Device info */
   for (i = 0; i < 16; i ++)
   {
     sprintf(name, "cupsString%d", i);
-    param_string_from_string(s, cups->header.cupsString[i]);
+    param_string_from_transient_string(s, cups->header.cupsString[i]);
     if ((code = param_write_string(plist, strdup(name), &s)) < 0)
       return (code);
   }
 
-  param_string_from_string(s, cups->header.cupsMarkerType);
+  param_string_from_transient_string(s, cups->header.cupsMarkerType);
   if ((code = param_write_string(plist, "cupsMarkerType", &s)) < 0)
     return (code);
 
-  param_string_from_string(s, cups->header.cupsRenderingIntent);
+  param_string_from_transient_string(s, cups->header.cupsRenderingIntent);
   if ((code = param_write_string(plist, "cupsRenderingIntent", &s)) < 0)
     return (code);
 
-  param_string_from_string(s, cups->header.cupsPageSizeName);
+  param_string_from_transient_string(s, cups->header.cupsPageSizeName);
   if ((code = param_write_string(plist, "cupsPageSizeName", &s)) < 0)
     return (code);
 #endif /* CUPS_RASTER_SYNCv1 */
