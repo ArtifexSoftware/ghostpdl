@@ -1875,7 +1875,8 @@ currentdict /PDF2PS_matrix_key undef
       /UseCIEColor //true def
     } if
 
-  /Orientation 0 def
+  % Only lock in Orientation if we need to for pdfmarks
+  .writepdfmarks { /Orientation 0 def } if
   currentpagedevice
         % Stack: pdfpagedict currentpagedevicedict
   1 index get_any_box
