@@ -1199,7 +1199,8 @@ pdf_forget_resource(gx_device_pdf * pdev, pdf_resource_t *pres1, pdf_resource_ty
             *pprev = pres->prev;
             break;
         }
-    for (i = 0; i < NUM_RESOURCE_CHAINS; i++) {
+
+    for (i = (gs_id_hash(pres->rid) % NUM_RESOURCE_CHAINS); i < NUM_RESOURCE_CHAINS; i++) {
         pprev = pchain + i;
         for (; (pres = *pprev) != 0; pprev = &pres->next)
             if (pres == pres1) {
@@ -1210,7 +1211,7 @@ pdf_forget_resource(gx_device_pdf * pdev, pdf_resource_t *pres1, pdf_resource_ty
                     pres->object = 0;
                 }
                 gs_free_object(pdev->pdf_memory, pres, "pdf_forget_resource");
-                break;
+                return;
             }
     }
 }
