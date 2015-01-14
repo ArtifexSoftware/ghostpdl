@@ -559,6 +559,7 @@ write_str_to_zip_file(gx_device_xps *xps_dev, const char *filename,
 }
 
 /* Used to add ICC profiles to the zip file. */
+static int
 add_data_to_zip_file(gx_device_xps *xps_dev, const char *filename, byte *buf, long size)
 {
     gx_device_xps_zinfo_t *info = zip_look_up_file_info(xps_dev, filename);
