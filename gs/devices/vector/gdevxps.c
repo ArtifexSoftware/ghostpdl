@@ -565,6 +565,8 @@ add_data_to_zip_file(gx_device_xps *xps_dev, const char *filename, byte *buf, lo
     int code;
     long curr_pos;
     unsigned long crc = 0;
+    stream *f;
+    ushort date, time;
 
     /* This file should not yet exist */
     if (info == NULL) {
@@ -576,15 +578,15 @@ add_data_to_zip_file(gx_device_xps *xps_dev, const char *filename, byte *buf, lo
     else {
         return gs_throw_code(gs_error_Fatal);
     }
-    stream *f = ((gx_device_vector*)xps_dev)->strm;
+    f = ((gx_device_vector*)xps_dev)->strm;
     curr_pos = stell(f);
 
     /* Figure out the crc */
     crc = crc32(0L, Z_NULL, 0);
     crc = crc32(crc, buf, size);
 
-    ushort date = make_dos_date(2012, 2, 16);
-    ushort time = make_dos_time(9, 15, 0);
+    date = make_dos_date(2012, 2, 16);
+    time = make_dos_time(9, 15, 0);
 
     put_u32(f, 0x04034b50); /* magic */
     put_u16(f, 20);         /* version */
@@ -625,6 +627,8 @@ add_file_to_zip_file(gx_device_xps *xps_dev, const char *filename, FILE *src)
     byte buf[4];
     uint nread;
     unsigned long count = 0;
+    stream *f;
+    ushort date, time;
 
     /* This file should not yet exist */
     if (info == NULL) {
@@ -637,7 +641,7 @@ add_file_to_zip_file(gx_device_xps *xps_dev, const char *filename, FILE *src)
         return gs_throw_code(gs_error_Fatal);
     }
 
-    stream *f = ((gx_device_vector*)xps_dev)->strm;
+    f = ((gx_device_vector*)xps_dev)->strm;
     curr_pos = stell(f);
 
     /* Get to the start */
@@ -653,8 +657,8 @@ add_file_to_zip_file(gx_device_xps *xps_dev, const char *filename, FILE *src)
         crc = crc32(crc, buf, nread);
     }
 
-    ushort date = make_dos_date(2012, 2, 16);
-    ushort time = make_dos_time(9, 15, 0);
+    date = make_dos_date(2012, 2, 16);
+    time = make_dos_time(9, 15, 0);
 
     put_u32(f, 0x04034b50); /* magic */
     put_u16(f, 20);         /* version */
@@ -786,6 +790,7 @@ zip_close_all_archive_files(gx_device_xps *xps_dev)
         }
         f2i = f2i->next;
     }
+    return 0;
 }
 
 /* write all files to the zip container and write the zip central
@@ -2422,6 +2427,7 @@ tiff_from_name(gx_device_xps *dev, const char *name, int big_endian, bool usebig
     TIFF *t;
     tifs_io_xps *tiffio;
     gs_memory_t *mem = dev->memory->non_gc_memory;
+    char *filename;
 
     if (big_endian)
         mode[modelen++] = 'b';
@@ -2441,7 +2447,7 @@ tiff_from_name(gx_device_xps *dev, const char *name, int big_endian, bool usebig
     }
     tiffio->pdev = dev;
 
-    char *filename = (char *)gs_alloc_bytes(mem, gp_file_name_sizeof,
+    filename = (char *)gs_alloc_bytes(mem, gp_file_name_sizeof,
         "tiff_from_name(filename)");
     if (!filename)
         return NULL;

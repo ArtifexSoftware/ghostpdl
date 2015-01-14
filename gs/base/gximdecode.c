@@ -80,6 +80,10 @@ get_map(image_decode_t *imd, gs_image_format_t format, const float *decode)
     static const float default_decode[] = {
         0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
     };
+    float *this_decode = &decode[ci * 2];
+    float *map_decode;        /* decoding used to */
+                              /* construct the expansion map */
+    float *real_decode;       /* decoding for expanded samples */
 
     decode_type = 3; /* 0=custom, 1=identity, 2=inverted, 3=impossible */
     for (ci = 0; ci < spp; ci += 2) {
@@ -100,10 +104,7 @@ get_map(image_decode_t *imd, gs_image_format_t format, const float *decode)
         /* into the expansion of the sample values; */
         /* otherwise, we have to use the floating point method. */
 
-        const float *this_decode = &decode[ci * 2];
-        const float *map_decode;        /* decoding used to */
-        /* construct the expansion map */
-        const float *real_decode;       /* decoding for expanded samples */
+        this_decode = &decode[ci * 2];
 
         map_decode = real_decode = this_decode;
         if (!(decode_type & 1)) {
