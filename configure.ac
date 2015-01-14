@@ -37,7 +37,12 @@ CPPFLAGS="${CPPFLAGS:=}"
 CXXFLAGS="${CXXFLAGS:=}"
 LDFLAGS="${LDFLAGS:=}"
 
-GCFLAGS="$CFLAGS"
+if test $ac_cv_prog_gcc = yes; then
+  GCFLAGS="$CFLAGS" -Werror=declaration-after-statement \
+-Werror=return-type
+else
+  GCFLAGS="$CFLAGS"
+fi
 
 # Checks for programs.
 save_cflags=$CFLAGS

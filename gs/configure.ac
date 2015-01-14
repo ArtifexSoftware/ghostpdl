@@ -195,8 +195,8 @@ AC_SUBST(SET_DT_SONAME)
 if test $ac_cv_prog_gcc = yes; then
     cflags_to_try="-Wall -Wstrict-prototypes -Wundef \
 -Wmissing-declarations -Wmissing-prototypes -Wwrite-strings \
--Wno-strict-aliasing -Wdeclaration-after-statement \
--fno-builtin -fno-common"
+-Wno-strict-aliasing -Werror=declaration-after-statement \
+-fno-builtin -fno-common -Werror=return-type"
     optflags_to_try="$CC_OPT_FLAGS_TO_TRY"
     dbgflags_to_try="$CC_DBG_FLAGS_TO_TRY"
 else
