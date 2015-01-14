@@ -74,16 +74,17 @@ get_unpack_proc(gx_image_enum_common_t *pie, image_decode_t *imd,
 void
 get_map(image_decode_t *imd, gs_image_format_t format, const float *decode)
 {
-    int ci, decode_type;
+    int ci = 0;
+    int decode_type;
     int bps = imd->bps;
     int spp = imd->spp;
     static const float default_decode[] = {
         0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
     };
-    float *this_decode = &decode[ci * 2];
-    float *map_decode;        /* decoding used to */
+    const float *this_decode = &decode[ci * 2];
+    const float *map_decode;        /* decoding used to */
                               /* construct the expansion map */
-    float *real_decode;       /* decoding for expanded samples */
+    const float *real_decode;       /* decoding for expanded samples */
 
     decode_type = 3; /* 0=custom, 1=identity, 2=inverted, 3=impossible */
     for (ci = 0; ci < spp; ci += 2) {
@@ -185,7 +186,7 @@ void applymap8(sample_map map[], const void *psrc_in, int spp, void *pdes,
     int k;
     float temp;
 
-    while (curr_pos < bufend) {
+    while (curr_pos < (byte*) bufend) {
         for (k = 0; k < spp; k++) {
             switch (map[k].decoding) {
             case sd_none:
@@ -221,7 +222,7 @@ void applymap16(sample_map map[], const void *psrc_in, int spp, void *pdes,
     int k;
     float temp;
 
-    while (curr_pos < bufend) {
+    while (curr_pos < (unsigned short*) bufend) {
         for (k = 0; k < spp; k++) {
             switch (map[k].decoding) {
             case sd_none:

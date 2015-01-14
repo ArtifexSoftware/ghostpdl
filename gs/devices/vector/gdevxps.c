@@ -151,7 +151,7 @@ typedef struct xps_image_enum_s {
     byte *devc_buffer; /* Needed for case where we are mapping to device colors */
     gs_color_space *pcs;     /* Needed for Sep, DeviceN, Indexed */
     gsicc_link_t *icc_link;  /* Needed for CIELAB */
-    gs_imager_state *pis;    /* Needed for color conversions of DeviceN etc */
+    const gs_imager_state *pis;    /* Needed for color conversions of DeviceN etc */
     FILE *fid;
 } xps_image_enum_t;
 
@@ -1759,17 +1759,14 @@ xps_add_image_relationship(xps_image_enum_t *pie)
     code = add_new_relationship(xps, pie->file_name);
     if (code < 0)
         return gs_rethrow_code(code);
-
     return 0;
 }
 
 static int
-xps_write_profile(const gs_imager_state *pis, char *name, cmm_profile_t *profile, const gx_device_xps *xps_dev)
+xps_write_profile(const gs_imager_state *pis, char *name, cmm_profile_t *profile, gx_device_xps *xps_dev)
 {
     byte *profile_buffer;
     int size;
-    int code;
-    int count;
 
     /* Need V2 ICC Profile */
     profile_buffer = gsicc_create_getv2buffer(pis, profile, &size);
@@ -1785,7 +1782,7 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
                 const gx_clip_path *pcpath, gs_memory_t *mem,
                 gx_image_enum_common_t **pinfo)
 {
-    const gx_device_vector *vdev = (gx_device_vector *)dev;
+    gx_device_vector *vdev = (gx_device_vector *)dev;
     gx_device_xps *xdev = (gx_device_xps *)dev;
     gs_color_space *pcs = pim->ColorSpace;
     xps_image_enum_t *pie = NULL;
@@ -2027,7 +2024,7 @@ use_default:
    indexed spaces that reference DeviceN spaces etc, we really have to do it
    this way or code up a bunch of optimized special cases.  Note here we always
    output 8 bit regardless of input */
-static void
+static int
 set_device_colors(xps_image_enum_t *pie)
 {
     gx_device *pdev = pie->dev;
@@ -2039,7 +2036,7 @@ set_device_colors(xps_image_enum_t *pie)
     int num_des = pdev->color_info.num_components;
     int width = pie->width;
     cs_proc_remap_color((*remap_color)) = pcs->type->remap_color;
-    int i, j, code;
+    int i, j, code = 0;
     gs_client_color cc;
     gx_device_color devc;
     gx_color_value cm_values[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -2075,6 +2072,7 @@ set_device_colors(xps_image_enum_t *pie)
             }
         }
     }
+    return code;
 }
 
 /* Chunky or planar in and chunky out */
@@ -2087,7 +2085,7 @@ const gx_image_plane_t *planes, int height, int *rows_used)
     int width_bits = pie->width * info->plane_depths[0];
     int bytes_comp = pie->bytes_comp;
     int i, plane;
-    int code;
+    int code = 0;
     int width = pie->width;
     int num_planes = pie->num_planes;
     int dsize = (((width + (planes[0]).data_x) * pie->decode_st.spp *
@@ -2103,7 +2101,7 @@ const gx_image_plane_t *planes, int height, int *rows_used)
     for (i = 0; i < height; pie->y++, i++) {
         int pdata_x;
         /* Plane zero done here to get the pointer to the data */
-        byte *data_ptr = planes[0].data + planes[0].raster * i + (data_bit >> 3);
+        const byte *data_ptr = planes[0].data + planes[0].raster * i + (data_bit >> 3);
         byte *des_ptr = pie->buffer;
         byte *buffer = (byte *)(*pie->decode_st.unpack)(des_ptr, &pdata_x,
             data_ptr, 0, dsize, &(pie->decode_st.map[0]),
@@ -2128,7 +2126,9 @@ const gx_image_plane_t *planes, int height, int *rows_used)
             device profile */
             if (pie->pcs != NULL) {
                 /* In device color space */
-                set_device_colors(pie);
+                code = set_device_colors(pie);
+                if (code < 0)
+                    return gs_rethrow_code(code);
                 outbuffer = pie->devc_buffer;
             } else {
                 /* In source color space */
@@ -2174,7 +2174,6 @@ xps_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
     xps_image_enum_t *pie = (xps_image_enum_t *)info;
     int code = 0;
-    gx_device_xps *xdev = (gx_device_xps *)(pie->dev);
 
     /* N.B. Write the final strip, if any. */
 
