@@ -1200,7 +1200,7 @@ pdf_forget_resource(gx_device_pdf * pdev, pdf_resource_t *pres1, pdf_resource_ty
             break;
         }
 
-    for (i = (gs_id_hash(pres->rid) % NUM_RESOURCE_CHAINS); i < NUM_RESOURCE_CHAINS; i++) {
+    for (i = (gs_id_hash(pres1->rid) % NUM_RESOURCE_CHAINS); i < NUM_RESOURCE_CHAINS; i++) {
         pprev = pchain + i;
         for (; (pres = *pprev) != 0; pprev = &pres->next)
             if (pres == pres1) {
