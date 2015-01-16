@@ -238,7 +238,7 @@ CFLAGS?= $(GCFLAGS) $(XCFLAGS)
 
 CCLD?=gcc
 
-DEVICE_DEVS?=$(X11DEVS) \
+DEVICE_DEVS?=$(X11DEVS) $(DD)bbox.dev \
    $(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev \
    $(DD)bit.dev $(DD)bitcmyk.dev $(DD)bitrgb.dev $(DD)bitrgbtags.dev \
    $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev \
@@ -253,7 +253,7 @@ DEVICE_DEVS?=$(X11DEVS) \
    $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev \
    $(DD)png16m.dev $(DD)pngmono.dev $(DD)pngmonod.dev $(DD)jpeg.dev\
    $(DD)plan.dev $(DD)planm.dev $(DD)plang.dev $(DD)planc.dev $(DD)plank.dev\
-   $(DD)romfs$(COMPILE_INITS).dev $(DD)bbox.dev
+   $(DD)romfs$(COMPILE_INITS).dev
 
 FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev\
