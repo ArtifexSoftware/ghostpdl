@@ -180,8 +180,11 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     /* but it's simpler for GC and freeing to allocate it as bytes. */
     pattern = (char *)gs_alloc_bytes(mem, pat_size,
                                      "gp_enumerate_files(pattern)");
-    if (pattern == 0)
+    if (pattern == 0) {
+        gs_free_object(mem, pden, "free directory enumerator on error");
+        gs_free_object(mem, pfen, "free file enumerator on error");
         return 0;
+    }
 
     /* translate the template into a pattern. Note that */
     /* a final '\' or '/' in the string is discarded.                */
@@ -383,9 +386,9 @@ gp_enumerate_files_close(file_enum * pfen)
         gs_free_object(mem, pden, "gp_enumerate_files_close");
         pden = ptenum;
     };
+    gs_free_object(mem, pfen->pattern,
+         "gp_enumerate_files_close(pattern)");
     gs_free_object(mem, pfen, "gp_enumerate_files_close");
-/*    gs_free_object(mem, pfen->pattern,
-         "gp_enumerate_files_close(pattern)");*/
 }
 
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */
