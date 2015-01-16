@@ -1133,6 +1133,11 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
 	goto done;
      }
 
+    if (strlen(fname) == 0) {
+        code = gs_note_error(gs_error_undefinedfilename);
+        emprintf1(dev->memory, "Device '%s' requires an output file but no file was specified.\n", dev->dname);
+        goto done;
+    }
     code = gx_parse_output_file_name(&parsed, &fmt, fname, strlen(fname), dev->memory);
     if (code < 0) {
         goto done;
@@ -1187,7 +1192,7 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
     else {
         *pfile = gp_open_printer(dev->memory, (pfname[0] ? pfname : fname), binary);
         if (!(*pfile)) {
-            emprintf1(dev->memory, "**** Could not open the file %s .\n", (pfname[0] ? pfname : fname));
+            emprintf1(dev->memory, "**** Could not open the file '%s'.\n", (pfname[0] ? pfname : fname));
 
             code = gs_note_error(gs_error_invalidfileaccess);
         }
