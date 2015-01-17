@@ -1149,7 +1149,8 @@ static int
 write_stderr(const char *str)
 {
     fwrite(str, 1, strlen(str), stderr);
-    fflush(stderr);
+
+    return fflush(stderr);
 }
 
 
