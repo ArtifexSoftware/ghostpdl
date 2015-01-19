@@ -631,13 +631,14 @@ int flp_output_page(gx_device *dev, int num_copies, int flush)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
+    psubclass_data->PageCount++;
+
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
             if (dev->child->procs.output_page)
                 return dev->child->procs.output_page(dev->child, num_copies, flush);
         }
     }
-    psubclass_data->PageCount++;
 
     return 0;
 }
@@ -678,8 +679,8 @@ int flp_fill_rectangle(gx_device *dev, int x, int y, int width, int height, gx_c
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.fill_rectangle)
                 return dev->child->procs.fill_rectangle(dev->child, x, y, width, height, color);
         }
@@ -694,8 +695,8 @@ int flp_tile_rectangle(gx_device *dev, const gx_tile_bitmap *tile, int x, int y,
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.tile_rectangle)
                 return dev->child->procs.tile_rectangle(dev->child, tile, x, y, width, height, color0, color1, phase_x, phase_y);
         }
@@ -710,8 +711,8 @@ int flp_copy_mono(gx_device *dev, const byte *data, int data_x, int raster, gx_b
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.copy_mono)
                 return dev->child->procs.copy_mono(dev->child, data, data_x, raster, id, x, y, width, height, color0, color1);
         }
@@ -725,8 +726,8 @@ int flp_copy_color(gx_device *dev, const byte *data, int data_x, int raster, gx_
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.copy_color)
                 return dev->child->procs.copy_color(dev->child, data, data_x, raster, id, x, y, width, height);
         }
@@ -739,8 +740,8 @@ int flp_draw_line(gx_device *dev, int x0, int y0, int x1, int y1, gx_color_index
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.obsolete_draw_line)
                 return dev->child->procs.obsolete_draw_line(dev->child, x0, y0, x1, y1, color);
         }
@@ -752,8 +753,8 @@ int flp_get_bits(gx_device *dev, int y, byte *data, byte **actual_data)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.get_bits)
                 return dev->child->procs.get_bits(dev->child, y, data, actual_data);
             else
@@ -850,8 +851,8 @@ int flp_get_alpha_bits(gx_device *dev, graphics_object_type type)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.get_alpha_bits)
                 return dev->child->procs.get_alpha_bits(dev->child, type);
         }
@@ -866,8 +867,8 @@ int flp_copy_alpha(gx_device *dev, const byte *data, int data_x,
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.copy_alpha)
                 return dev->child->procs.copy_alpha(dev->child, data, data_x, raster, id, x, y, width, height, color, depth);
         }
@@ -880,8 +881,8 @@ int flp_get_band(gx_device *dev, int y, int *band_start)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.get_band)
                 return dev->child->procs.get_band(dev->child, y, band_start);
             else
@@ -904,8 +905,8 @@ int flp_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, g
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.copy_rop)
                 return dev->child->procs.copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
             else
@@ -925,8 +926,8 @@ int flp_fill_path(gx_device *dev, const gs_imager_state *pis, gx_path *ppath,
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.fill_path)
                 return dev->child->procs.fill_path(dev->child, pis, ppath, params, pdcolor, pcpath);
             else
@@ -943,8 +944,8 @@ int flp_stroke_path(gx_device *dev, const gs_imager_state *pis, gx_path *ppath,
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.stroke_path)
                 return dev->child->procs.stroke_path(dev->child, pis, ppath, params, pdcolor, pcpath);
             else
@@ -962,8 +963,8 @@ int flp_fill_mask(gx_device *dev, const byte *data, int data_x, int raster, gx_b
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.fill_mask)
                 return dev->child->procs.fill_mask(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
             else
@@ -980,8 +981,8 @@ int flp_fill_trapezoid(gx_device *dev, const gs_fixed_edge *left, const gs_fixed
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.fill_trapezoid)
                 return dev->child->procs.fill_trapezoid(dev->child, left, right, ybot, ytop, swap_axes, pdcolor, lop);
             else
@@ -997,8 +998,8 @@ int flp_fill_parallelogram(gx_device *dev, fixed px, fixed py, fixed ax, fixed a
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.fill_parallelogram)
                 return dev->child->procs.fill_parallelogram(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
             else
@@ -1014,8 +1015,8 @@ int flp_fill_triangle(gx_device *dev, fixed px, fixed py, fixed ax, fixed ay, fi
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.fill_triangle)
                 return dev->child->procs.fill_triangle(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
             else
@@ -1032,8 +1033,8 @@ int flp_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed fx1, fixed fy
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.draw_thin_line)
                 return dev->child->procs.draw_thin_line(dev->child, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
             else
@@ -1068,8 +1069,8 @@ int flp_image_data(gx_device *dev, gx_image_enum_common_t *info, const byte **pl
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.image_data)
                 return dev->child->procs.image_data(dev->child, info, planes, data_x, raster, height);
         }
@@ -1082,8 +1083,8 @@ int flp_end_image(gx_device *dev, gx_image_enum_common_t *info, bool draw_last)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.end_image)
                 return dev->child->procs.end_image(dev->child, info, draw_last);
         }
@@ -1098,8 +1099,8 @@ int flp_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles, int x
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.strip_tile_rectangle)
                 return dev->child->procs.strip_tile_rectangle(dev->child, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
             else
@@ -1118,8 +1119,8 @@ int flp_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sras
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.strip_copy_rop)
                 return dev->child->procs.strip_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
             else
@@ -1180,8 +1181,8 @@ int flp_begin_typed_image(gx_device *dev, const gs_imager_state *pis, const gs_m
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.begin_typed_image)
                 return dev->child->procs.begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
             else
@@ -1220,8 +1221,8 @@ int flp_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.get_bits_rectangle)
                 return dev->child->procs.get_bits_rectangle(dev->child, prect, params, unread);
             else
@@ -1305,8 +1306,8 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
     first_last_subclass_data *psubclass_data = dev->subclass_data;
     int code;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.create_compositor) {
                 /* Some more unpleasantness here. If the child device is a clist, then it will use the first argument
                  * that we pass to access its own data (not unreasonably), so we need to make sure we pass in the
@@ -1443,7 +1444,7 @@ int flp_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_params_t 
 
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage && (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage)) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1 && (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1)) {
         if (dev->child->procs.text_begin)
             return dev->child->procs.text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
         else
@@ -1479,8 +1480,8 @@ int flp_begin_transparency_group(gx_device *dev, const gs_transparency_group_par
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.begin_transparency_group)
                 return dev->child->procs.begin_transparency_group(dev->child, ptgp, pbbox, pis, mem);
         }
@@ -1493,8 +1494,8 @@ int flp_end_transparency_group(gx_device *dev, gs_imager_state *pis)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.end_transparency_group)
                 return dev->child->procs.end_transparency_group(dev->child, pis);
         }
@@ -1508,8 +1509,8 @@ int flp_begin_transparency_mask(gx_device *dev, const gx_transparency_mask_param
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.begin_transparency_mask)
                 return dev->child->procs.begin_transparency_mask(dev->child, ptmp, pbbox, pis, mem);
         }
@@ -1522,8 +1523,8 @@ int flp_end_transparency_mask(gx_device *dev, gs_imager_state *pis)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.end_transparency_mask)
                 return dev->child->procs.end_transparency_mask(dev->child, pis);
         }
@@ -1535,8 +1536,8 @@ int flp_discard_transparency_layer(gx_device *dev, gs_imager_state *pis)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.discard_transparency_layer)
                 return dev->child->procs.discard_transparency_layer(dev->child, pis);
         }
@@ -1591,8 +1592,8 @@ int flp_pattern_manage(gx_device *dev, gx_bitmap_id id,
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.pattern_manage)
                 return dev->child->procs.pattern_manage(dev->child, id, pinst, function);
         }
@@ -1606,8 +1607,8 @@ int flp_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.fill_rectangle_hl_color)
                 return dev->child->procs.fill_rectangle_hl_color(dev->child, rect, pis, pdcolor, pcpath);
             else
@@ -1632,8 +1633,8 @@ int flp_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.fill_linear_color_scanline)
                 return dev->child->procs.fill_linear_color_scanline(dev->child, fa, i, j, w, c0, c0_f, cg_num, cg_den);
             else
@@ -1652,8 +1653,8 @@ int flp_fill_linear_color_trapezoid(gx_device *dev, const gs_fill_attributes *fa
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.fill_linear_color_trapezoid)
                 return dev->child->procs.fill_linear_color_trapezoid(dev->child, fa, p0, p1, p2, p3, c0, c1, c2, c3);
             else
@@ -1670,8 +1671,8 @@ int flp_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.fill_linear_color_triangle)
                 return dev->child->procs.fill_linear_color_triangle(dev->child, fa, p0, p1, p2, c0, c1, c2);
             else
@@ -1702,8 +1703,8 @@ int flp_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.fillpage)
                 return dev->child->procs.fillpage(dev->child, pis, pdevc);
             else
@@ -1718,8 +1719,8 @@ int flp_push_transparency_state(gx_device *dev, gs_imager_state *pis)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.push_transparency_state)
                 return dev->child->procs.push_transparency_state(dev->child, pis);
         }
@@ -1732,8 +1733,8 @@ int flp_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.push_transparency_state)
                 return dev->child->procs.push_transparency_state(dev->child, pis);
         }
@@ -1748,8 +1749,8 @@ int flp_put_image(gx_device *dev, const byte *buffer, int num_chan, int x, int y
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.put_image)
                 return dev->child->procs.put_image(dev->child, buffer, num_chan, x, y, width, height, row_stride, plane_stride, alpha_plane_index, tag_plane_index);
         }
@@ -1771,8 +1772,8 @@ int flp_copy_planes(gx_device *dev, const byte *data, int data_x, int raster, gx
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.copy_planes)
                 return dev->child->procs.copy_planes(dev->child, data, data_x, raster, id, x, y, width, height, plane_height);
         }
@@ -1795,8 +1796,8 @@ void flp_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t tag)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.set_graphics_type_tag)
                 dev->child->procs.set_graphics_type_tag(dev->child, tag);
         }
@@ -1811,8 +1812,8 @@ int flp_strip_copy_rop2(gx_device *dev, const byte *sdata, int sourcex, uint sra
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.strip_copy_rop2)
                 return dev->child->procs.strip_copy_rop2(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
             else
@@ -1828,8 +1829,8 @@ int flp_strip_tile_rect_devn(gx_device *dev, const gx_strip_bitmap *tiles, int x
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.strip_tile_rect_devn)
                 return dev->child->procs.strip_tile_rect_devn(dev->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
             else
@@ -1846,8 +1847,8 @@ int flp_copy_alpha_hl_color(gx_device *dev, const byte *data, int data_x,
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.copy_alpha_hl_color)
                 return dev->child->procs.copy_alpha_hl_color(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth);
             else
@@ -1862,8 +1863,8 @@ int flp_process_page(gx_device *dev, gx_process_page_options_t *options)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
-        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
+        if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
             if (dev->child->procs.process_page)
                 return dev->child->procs.process_page(dev->child, options);
         }
