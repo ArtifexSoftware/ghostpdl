@@ -30,20 +30,33 @@
 #include "strmio.h"
 
 #include "gstiffio.h"
+#include "gdevflp.h"
+
+extern gx_device_flp  gs_flp_device;
 
 int
 tiff_open(gx_device *pdev)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     int code;
+    bool update_procs = false;
 
     /* Use our own warning and error message handlers in libtiff */
     tiff_set_handlers();
 
+    if (!pdev->PageHandlerPushed && (pdev->FirstPage != 0 || pdev->LastPage != 0)) {
+        pdev->PageHandlerPushed = true;
+        gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        pdev = pdev->child;
+        pdev->is_open = true;
+        update_procs = true;
+    }
     ppdev->file = NULL;
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
     if (code < 0)
         return code;
+    if (update_procs)
+        gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_flp_device.procs);
     if (ppdev->OpenOutputFile)
         code = gdev_prn_open_printer_seekable(pdev, 1, true);
     return code;
