@@ -49,9 +49,9 @@ pushdef([IJS_INTERFACE_AGE],     [1])
 pushdef([IJS_BINARY_AGE],        [0])
 pushdef([IJS_VERSION], IJS_MAJOR_VERSION.IJS_MINOR_VERSION[]IJS_EXTRA_VERSION)
 
-AC_INIT(IJS_NAME, IJS_VERSION, [inkjet-list@linuxprinting.org])
+AC_INIT([IJS_NAME], [IJS_VERSION])
 AC_PREREQ(2.53)
-AC_CONFIG_SRCDIR(ijs.c)
+AC_CONFIG_SRCDIR([ijs.c])
 AC_REVISION($Revision: 5783 $)
 
 dnl In the following script, there are a the following variants
@@ -84,7 +84,7 @@ popdef([IJS_INTERFACE_AGE])
 popdef([IJS_BINARY_AGE])
 
 dnl Initialize automake stuff.
-AM_INIT_AUTOMAKE(IJS_NAME, IJS_VERSION)
+AM_INIT_AUTOMAKE
 popdef([IJS_NAME])
 popdef([IJS_VERSION])
 
@@ -151,7 +151,7 @@ AC_SUBST(IJS_VERSION)
 AC_SUBST(ijs_cflags)
 ijs_libs="${IJS_LIBS} ${IJS_DEPLIBS}"
 AC_SUBST(ijs_libs)
-AC_SUBST(INCLUDES)
+AC_SUBST(AM_CPPFLAGS)
 LIBIJS_LIBS="${LIBIJS_LIBS} ${IJS_DEPLIBS}"
 AC_SUBST(LIBIJS_LIBS)
 

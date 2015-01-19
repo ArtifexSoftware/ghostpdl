@@ -1,7 +1,6 @@
 #!/bin/sh
 # Run this to generate all the initial makefiles, etc.
 # bits borrowed from all over
-
 package="ijs"
 
 olddir=`pwd`
@@ -29,64 +28,88 @@ echo "checking for autoconf..."
   DIE=1
 }
 
-VERSIONGREP="sed -e s/.*[^0-9\.]\([0-9]\.[0-9]\).*/\1/"
+ VERSIONGREP="sed -e s/.*[^0-9\.]\([0-9]\.[0-9]\).*/\1/"
 
 # do we need automake?
-(grep "^AM_INIT_AUTOMAKE" "$CONFIG_AC" >/dev/null) && {
-  AM_NEEDED=`fgrep AUTOMAKE_OPTIONS Makefile.am | $VERSIONGREP`
-  AM_NMAJOR=`echo $AM_NEEDED |cut -d. -f1`
-  AM_NMINOR=`echo $AM_NEEDED |cut -d. -f2`
-  AM_NPATCHLEVEL=`echo $AM_NEEDED |cut -d. -f3`
-  AM_NVERSION=`expr $AM_NMAJOR '*' 10000 + $AM_NMINOR '*' 100 + 0$AM_NPATCHLEVEL`
-  if test -z $AM_NEEDED; then
-    echo -n "checking for automake... "
-    AUTOMAKE=automake
-    ACLOCAL=aclocal
-    if ($AUTOMAKE --version < /dev/null > /dev/null 2>&1); then
-      echo "no"
-      AUTOMAKE=
+if test "x$USE_OLD" = "xyes" ; then
+  (grep "^AM_INIT_AUTOMAKE" "$CONFIG_AC" >/dev/null) && {
+    AM_NEEDED=`fgrep AUTOMAKE_OPTIONS Makefile.am | $VERSIONGREP`
+    AM_NMAJOR=`echo $AM_NEEDED |cut -d. -f1`
+    AM_NMINOR=`echo $AM_NEEDED |cut -d. -f2`
+    AM_NPATCHLEVEL=`echo $AM_NEEDED |cut -d. -f3`
+    AM_NVERSION=`expr $AM_NMAJOR '*' 10000 + $AM_NMINOR '*' 100 + 0$AM_NPATCHLEVEL`
+    if test -z $AM_NEEDED; then
+      echo -n "checking for automake... "
+      AUTOMAKE=automake
+      ACLOCAL=aclocal
+      if ($AUTOMAKE --version < /dev/null > /dev/null 2>&1); then
+        echo "no"
+        AUTOMAKE=
+      else
+        echo "yes"
+      fi
+    echo
     else
-      echo "yes"
+      echo -n "checking for automake $AM_NEEDED or later... "
+      for am in automake-$AM_NEEDED automake$AM_NEEDED automake; do
+        ($am --version < /dev/null > /dev/null 2>&1) || continue
+        AM_MAJOR=`echo $AM_NEEDED |cut -d. -f1`
+        AM_MINOR=`echo $AM_NEEDED |cut -d. -f2`
+        AM_PATCHLEVEL=`echo $AM_NEEDED |cut -d. -f3`
+        AM_VERSION=`expr $AM_NMAJOR '*' 10000 + $AM_NMINOR '*' 100 + 0$AM_NPATCHLEVEL`
+        if test $AM_VERSION -ge $AM_NVERSION; then
+          AUTOMAKE=$am
+          echo $AUTOMAKE
+          break
+        fi
+      done
+      test -z $AUTOMAKE &&  echo "no"
+      echo -n "checking for aclocal $AM_NEEDED or later... "
+      for ac in aclocal-$AM_NEEDED aclocal$AM_NEEDED aclocal; do
+        ($ac --version < /dev/null > /dev/null 2>&1) || continue
+        AM_MAJOR=`echo $AM_NEEDED |cut -d. -f1`
+        AM_MINOR=`echo $AM_NEEDED |cut -d. -f2`
+        AM_PATCHLEVEL=`echo $AM_NEEDED |cut -d. -f3`
+        AM_VERSION=`expr $AM_NMAJOR '*' 10000 + $AM_NMINOR '*' 100 + 0$AM_NPATCHLEVEL`
+        if test $AM_VERSION -ge $AM_NVERSION; then
+          ACLOCAL=$ac
+          echo $ACLOCAL
+          break
+        fi
+      done
+    test -z $ACLOCAL && echo "no"
     fi
-  echo
-  else
-    echo -n "checking for automake $AM_NEEDED or later... "
-    for am in automake-$AM_NEEDED automake$AM_NEEDED automake; do
-      ($am --version < /dev/null > /dev/null 2>&1) || continue
-      AM_MAJOR=`echo $AM_NEEDED |cut -d. -f1`
-      AM_MINOR=`echo $AM_NEEDED |cut -d. -f2`
-      AM_PATCHLEVEL=`echo $AM_NEEDED |cut -d. -f3`
-      AM_VERSION=`expr $AM_NMAJOR '*' 10000 + $AM_NMINOR '*' 100 + 0$AM_NPATCHLEVEL`
-      if test $AM_VERSION -ge $AM_NVERSION; then
-        AUTOMAKE=$am
-        echo $AUTOMAKE
-        break
-      fi
-    done
-    test -z $AUTOMAKE &&  echo "no"
-    echo -n "checking for aclocal $AM_NEEDED or later... "
-    for ac in aclocal-$AM_NEEDED aclocal$AM_NEEDED aclocal; do
-      ($ac --version < /dev/null > /dev/null 2>&1) || continue
-      AM_MAJOR=`echo $AM_NEEDED |cut -d. -f1`
-      AM_MINOR=`echo $AM_NEEDED |cut -d. -f2`
-      AM_PATCHLEVEL=`echo $AM_NEEDED |cut -d. -f3`
-      AM_VERSION=`expr $AM_NMAJOR '*' 10000 + $AM_NMINOR '*' 100 + 0$AM_NPATCHLEVEL`
-      if test $AM_VERSION -ge $AM_NVERSION; then
-        ACLOCAL=$ac
-        echo $ACLOCAL
-        break
-      fi
-    done
-  test -z $ACLOCAL && echo "no"
-  fi
-  test -z $AUTOMAKE || test -z $ACLOCAL && {
-        echo
-        echo "You must have automake installed to compile $package."
-        echo "Download the appropriate package for your distribution,"
-        echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/"
-        exit 1
+    test -z $AUTOMAKE || test -z $ACLOCAL && {
+          echo
+          echo "You must have automake installed to compile $package."
+          echo "Download the appropriate package for your distribution,"
+          echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/"
+          exit 1
+    }
   }
-}
+else
+
+  AUTOMAKE=automake
+  ACLOCAL=aclocal
+  AM_VER=`$AUTOMAKE --version | grep "automake (GNU automake)" | sed 's/[^0-9\.]*//g'`
+  AM_MAJ=`echo $AM_VER |cut -d. -f1`
+  AM_MIN=`echo $AM_VER |cut -d. -f2`
+  AM_PAT=`echo $AM_VER |cut -d. -f3`
+
+  AM_NEEDED=`fgrep AUTOMAKE_OPTIONS Makefile.am | $VERSIONGREP`
+  AM_MAJOR_REQ=`echo $AM_NEEDED |cut -d. -f1`
+  AM_MINOR_REQ=`echo $AM_NEEDED |cut -d. -f2`
+  
+  echo "checking for automake $AM_NEEDED or later..."
+
+  if [ $AM_MAJ -lt $AM_MAJOR_REQ -o $AM_MIN -lt $AM_MINOR_REQ ] ; then
+    echo
+    echo "You must have automake $AM_NEEDED or better installed to compile $package."
+    echo "Download the appropriate package for your distribution,"
+    echo "or get the source tarball at ftp://ftp.gnu.org/pub/gnu/"
+    exit 1
+  fi
+fi
 
 (grep "^AM_PROG_LIBTOOL" "$CONFIG_AC" >/dev/null) && {
   echo -n "checking for libtoolize... "
@@ -133,7 +156,7 @@ autoconf
 
 cd "$olddir"
 
-conf_flags="--enable-maintainer-mode --enable-compile-warnings" #--enable-iso-c
+conf_flags= #"--enable-maintainer-mode --enable-compile-warnings" #--enable-iso-c
 
 echo Running $srcdir/configure $conf_flags "$@" ...
 $srcdir/configure $conf_flags "$@" \
