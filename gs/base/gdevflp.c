@@ -306,7 +306,7 @@ gx_device_flp gs_flp_device =
 #undef MAX_COORD
 #undef MAX_RESOLUTION
 
-int copy_procs(gx_device_procs *dest_procs, gx_device_procs *src_procs, gx_device_procs *prototype_procs)
+int gx_copy_device_procs(gx_device_procs *dest_procs, gx_device_procs *src_procs, gx_device_procs *prototype_procs)
 {
     if (src_procs->open_device != NULL)
         dest_procs->open_device = prototype_procs->open_device;
@@ -481,7 +481,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     }
     memset(psubclass_data, 0x00, private_data_size);
 
-    copy_procs(&dev_to_subclass->procs, &child_dev->procs, &new_prototype->procs);
+    gx_copy_device_procs(&dev_to_subclass->procs, &child_dev->procs, &new_prototype->procs);
     dev_to_subclass->procs.fill_rectangle = new_prototype->procs.fill_rectangle;
     dev_to_subclass->procs.copy_planes = new_prototype->procs.copy_planes;
     dev_to_subclass->finalize = new_prototype->finalize;
@@ -1245,7 +1245,7 @@ int flp_map_color_rgb_alpha(gx_device *dev, gx_color_index color, gx_color_value
     return 0;
 }
 
-int subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
+int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev)
 {
     pdf14_clist_device *p14dev;
@@ -1295,7 +1295,7 @@ int subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_compo
     } else {
         code = dev->procs.create_compositor(dev, pcdev, pcte, pis, memory, cdev);
     }
-    dev->procs.create_compositor = subclass_create_compositor;
+    dev->procs.create_compositor = gx_subclass_create_compositor;
     return code;
 }
 
@@ -1308,12 +1308,6 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
             if (dev->child->procs.create_compositor) {
-                gx_device_color_info saved_target_color_info = dev->child->color_info;
-                dev_proc_encode_color(*saved_target_encode_color) = dev->child->procs.encode_color;
-                dev_proc_decode_color(*saved_target_decode_color) = dev->child->procs.decode_color;
-                dev_proc_get_color_mapping_procs(*saved_target_get_color_mapping_procs) = dev->child->procs.get_color_mapping_procs;
-                dev_proc_get_color_comp_index(*saved_target_get_color_comp_index) = dev->child->procs.get_color_comp_index;
-
                 /* Some more unpleasantness here. If the child device is a clist, then it will use the first argument
                  * that we pass to access its own data (not unreasonably), so we need to make sure we pass in the
                  * child device. This has some follow on implications detailed below.
@@ -1339,7 +1333,7 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
                             dev->color_info = dev->child->color_info;
 
                             psubclass_data->saved_compositor_method = p14dev->procs.create_compositor;
-                            p14dev->procs.create_compositor = subclass_create_compositor;
+                            p14dev->procs.create_compositor = gx_subclass_create_compositor;
                         }
 
                         fdev->target = dev;

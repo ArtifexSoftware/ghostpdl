@@ -35,7 +35,6 @@
 
 #include "gdevflp.h"
 extern gx_device_flp  gs_flp_device;
-int gx_device_subclass(gx_device *dev_to_subclass, gx_device *prototype, int data_size);
 
 /* Structure descriptors */
 public_st_device_vector();
@@ -346,10 +345,12 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
             ((gx_device *) vdev->bbox_device);
     }
 
+#if 0
     if (!vdev->PageHandlerPushed /*&& (vdev->FirstPage != 0 || vdev->LastPage != 0)*/) {
         vdev->PageHandlerPushed = true;
         gx_device_subclass((gx_device *)vdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
     }
+#endif
 
     return 0;
 }

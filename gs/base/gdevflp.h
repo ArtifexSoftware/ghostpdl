@@ -24,8 +24,10 @@ typedef struct gx_device_s gx_device_flp;
 /* Initialize a first/last page device. */
 void gx_device_flp_init(gx_device_flp * dev);
 
+typedef int (t_dev_proc_create_compositor) (gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte, gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev);
+
 #define subclass_common\
-    void *saved_compositor_method
+    t_dev_proc_create_compositor *saved_compositor_method
 
 typedef struct {
     subclass_common;
@@ -44,5 +46,12 @@ typedef struct flp_text_enum_s {
 
 extern_st(st_device_flp);
 #define public_st_device_flp()	/* in gdevbflp.c */\
+
+int gx_copy_device_procs(gx_device_procs *dest_procs, gx_device_procs *src_procs, gx_device_procs *prototype_procs);
+int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, unsigned int private_data_size);
+int gx_unsubclass_device(gx_device *dev);
+int gx_update_from_subclass(gx_device *dev);
+int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
+    gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev);
 
 #endif /* gdevflp_INCLUDED */

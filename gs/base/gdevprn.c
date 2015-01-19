@@ -34,7 +34,6 @@
 /*#define DEBUGGING_HACKS*/
 
 extern gx_device_flp  gs_flp_device;
-int gx_device_subclass(gx_device *dev_to_subclass, gx_device *prototype, int data_size);
 
 /* GC information */
 static
@@ -127,7 +126,7 @@ gdev_prn_open(gx_device * pdev)
     ppdev->file = NULL;
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
     if (update_procs)
-        copy_procs(&pdev->parent->procs, &pdev->procs, (gx_device *)&gs_flp_device.procs);
+        gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_flp_device.procs);
     if (code < 0)
         return code;
     if (ppdev->OpenOutputFile)
