@@ -29,6 +29,10 @@
 #include "gxpath.h"
 #include "gxcpath.h"
 
+#include "gdevflp.h"
+
+extern gx_device_flp  gs_flp_device;
+
 /* GC descriptor */
 public_st_device_bbox();
 
@@ -354,12 +358,18 @@ gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox)
 static int
 bbox_open_device(gx_device * dev)
 {
-    gx_device_bbox *const bdev = (gx_device_bbox *) dev;
+    gx_device_bbox *bdev = (gx_device_bbox *) dev;
 
     if (bdev->free_standing) {
         gx_device_forward_fill_in_procs((gx_device_forward *) dev);
         bdev->box_procs = box_procs_default;
         bdev->box_proc_data = bdev;
+        if (!bdev->PageHandlerPushed && (bdev->FirstPage != 0 || bdev->LastPage != 0)) {
+            bdev->PageHandlerPushed = true;
+            gx_device_subclass((gx_device *)bdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+            bdev = (gx_device_bbox *)dev->child;
+            bdev->is_open = true;
+        }
     }
     if (bdev->box_procs.init_box == box_procs_default.init_box)
         BBOX_INIT_BOX(bdev);
@@ -576,6 +586,10 @@ bbox_get_params(gx_device * dev, gs_param_list * plist)
     if (code < 0)
         return code;
     code = param_write_bool(plist, "WhiteIsOpaque", &bdev->white_is_opaque);
+    if ((code = param_write_int(plist, "FirstPage", &bdev->FirstPage)) < 0)
+        return code;
+    if ((code = param_write_int(plist, "LastPage", &bdev->LastPage)) < 0)
+        return code;
     return code;
 }
 
@@ -628,6 +642,14 @@ bbox_put_params(gx_device * dev, gs_param_list * plist)
         }
         bdev->white_is_opaque = white_is_opaque;
     }
+    code = param_read_int(plist,  (param_name = "FirstPage"), &dev->FirstPage);
+    if (code < 0)
+        ecode = code;
+
+    code = param_read_int(plist,  (param_name = "LastPage"), &dev->LastPage);
+    if (code < 0)
+        ecode = code;
+
     bbox_copy_params(bdev, bdev->is_open);
     return code;
 }
