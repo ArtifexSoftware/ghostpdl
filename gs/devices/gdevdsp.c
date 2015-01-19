@@ -53,6 +53,10 @@
 #include "gdevdsp.h"
 #include "gdevdsp2.h"
 
+#include "gdevflp.h"
+
+extern gx_device_flp  gs_flp_device;
+
 /* Initial values for width and height */
 #define INITIAL_RESOLUTION 96
 #define INITIAL_WIDTH ((INITIAL_RESOLUTION * 85 + 5) / 10)
@@ -241,6 +245,14 @@ display_open(gx_device * dev)
     /* The callback will be set later and the device re-opened. */
     if (ddev->callback == NULL)
         return 0;
+
+    if (!dev->PageHandlerPushed && (dev->FirstPage != 0 || dev->LastPage != 0)) {
+        dev->PageHandlerPushed = true;
+        gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        dev = dev->child;
+        ddev = (gx_device_display *) dev;
+        dev->is_open = true;
+    }
 
     /* Make sure we have been passed a valid callback structure. */
     if ((ccode = display_check_structure(ddev)) < 0)
@@ -795,6 +807,13 @@ display_get_params(gx_device * dev, gs_param_list * plist)
         (ddev->nFormat & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_SEPARATION)
         code = devn_get_params(dev, plist, &ddev->devn_params,
                 &ddev->equiv_cmyk_colors);
+    if (code < 0)
+        return code;
+
+    if ((code = param_write_int(plist, "FirstPage", &dev->FirstPage)) < 0)
+        return code;
+    if ((code = param_write_int(plist, "LastPage", &dev->LastPage)) < 0)
+        return code;
     return code;
 }
 
@@ -829,6 +848,14 @@ display_put_params(gx_device * dev, gs_param_list * plist)
     gs_param_string dh = { 0 };
 
     /* Handle extra parameters */
+
+    code = param_read_int(plist, "FirstPage", &dev->FirstPage);
+    if (code < 0)
+        return code;
+
+    code = param_read_int(plist, "LastPage", &dev->LastPage);
+    if (code < 0)
+        return code;
 
     switch (code = param_read_int(plist, "DisplayFormat", &format)) {
         case 0:
