@@ -112,15 +112,14 @@ gdev_prn_open(gx_device * pdev)
     int code;
     bool update_procs = false;
 
-#if 1
-    if (!pdev->PageHandlerPushed /*&& (pdev->FirstPage != 0 || pdev->LastPage != 0)*/) {
+    if (!pdev->PageHandlerPushed && (pdev->FirstPage != 0 || pdev->LastPage != 0)) {
         pdev->PageHandlerPushed = true;
         gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
         pdev = pdev->child;
         pdev->is_open = true;
         update_procs = true;
     }
-#endif
+
     ppdev = (gx_device_printer *)pdev;
 
     ppdev->file = NULL;
@@ -1384,6 +1383,7 @@ gdev_prn_open_printer_seekable(gx_device *pdev, bool binary_mode,
         }
     }
     ppdev->file_is_new = true;
+
     return 0;
 }
 int
