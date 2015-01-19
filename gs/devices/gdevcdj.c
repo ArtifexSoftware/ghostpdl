@@ -569,7 +569,7 @@ cdj_device(cdj500_procs, "cdjmono", 300, 300, 1,
            dj500c_print_page, 4, 0, 1);
 
 gx_device_cdj far_data gs_cdeskjet_device =
-cdj_device(cdj500_procs, "cdeskjet", 300, 300, 3,
+cdj_device(cdj500_procs, "cdeskjet", 300, 300, 24,
            dj500c_print_page, 4, 2, 1);
 
 gx_device_cdj far_data gs_cdjcolor_device =
