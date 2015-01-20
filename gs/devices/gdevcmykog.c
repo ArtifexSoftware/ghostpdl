@@ -593,34 +593,47 @@ cmykog_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
   gx_device_cmykog * pdevn = (gx_device_cmykog *) pdev;
   int ncomp = pdevn->color_info.num_components;
-  cmykog_process_arg_t arg = { { 0 } };
+  cmykog_process_arg_t *arg;
   gx_process_page_options_t options;
   int code, i;
-  psd_write_ctx psd_ctx;
+  psd_write_ctx *psd_ctx;
+
+  if ((arg = (cmykog_process_arg_t *)gs_alloc_bytes(pdev->memory,
+                                        sizeof(cmykog_process_arg_t),
+                                        "cmykog_print_page arg")) == NULL)
+      return_error(gs_error_VMerror);
+
+  memset(arg, 0, sizeof(cmykog_process_arg_t));
+  if ((psd_ctx = (psd_write_ctx *)gs_alloc_bytes(pdev->memory,
+                                        sizeof(psd_write_ctx),
+                                        "cmykog_print_page psd_ctx")) == NULL) {
+      gs_free_object(pdev->memory, arg, "cmykog_print_page arg");
+      return_error(gs_error_VMerror);
+  }
 
   /* Calculate the raster that will be used for each bands data;
    * gx_device_raster_plane takes care of any alignment or padding
    * required. */
-  arg.dev_raster = gx_device_raster_plane((gx_device *)pdev, NULL);
+  arg->dev_raster = gx_device_raster_plane((gx_device *)pdev, NULL);
 
 #ifndef NO_OUTPUT
   /* Output the psd headers */
-  code = psd_setup(&psd_ctx, (gx_devn_prn_device *)pdevn,
+  code = psd_setup(psd_ctx, (gx_devn_prn_device *)pdevn,
                    prn_stream, pdev->width>>1, pdev->height>>1);
   if (code < 0)
       return code;
 
-  code = psd_write_header(&psd_ctx, (gx_devn_prn_device *)pdevn);
+  code = psd_write_header(psd_ctx, (gx_devn_prn_device *)pdevn);
   if (code < 0)
       return code;
 
   /* We will output the 0th plane direct to the target file. We open
    * temporary files here, where the data for planes 1-5 will be put.
    * We will then copy this data into the target file at the end. */
-  arg.spot_file[0] = prn_stream;
+  arg->spot_file[0] = prn_stream;
   for(i = 1; i < ncomp; i++) {
-    arg.spot_file[i] = gp_open_scratch_file(pdev->memory, gp_scratch_file_name_prefix, &arg.spot_name[i][0], "w+b");
-    if (arg.spot_file[i] == NULL) {
+    arg->spot_file[i] = gp_open_scratch_file(pdev->memory, gp_scratch_file_name_prefix, &(arg->spot_name[i][0]), "w+b");
+    if (arg->spot_file[i] == NULL) {
       code = gs_error_invalidfileaccess;
       goto prn_done;
     }
@@ -632,7 +645,7 @@ cmykog_print_page(gx_device_printer * pdev, FILE * prn_stream)
   options.free_buffer_fn = cmykog_free_buffer;
   options.process_fn = cmykog_process;
   options.output_fn = cmykog_output;
-  options.arg = &arg;
+  options.arg = arg;
   options.options = 0;
   code = dev_proc(pdev, process_page)((gx_device *)pdev, &options);
 
@@ -641,9 +654,9 @@ cmykog_print_page(gx_device_printer * pdev, FILE * prn_stream)
   for (i = 1; i < ncomp; i++) {
     char tmp[4096];
     int n;
-    fseek(arg.spot_file[i], 0, SEEK_SET);
-    while (!feof(arg.spot_file[i])) {
-      n = fread(tmp, 1, 4096, arg.spot_file[i]);
+    fseek(arg->spot_file[i], 0, SEEK_SET);
+    while (!feof(arg->spot_file[i])) {
+      n = fread(tmp, 1, 4096, arg->spot_file[i]);
       fwrite(tmp, 1, n, prn_stream);
     }
   }
@@ -659,12 +672,14 @@ prn_done:
 #ifndef NO_OUTPUT
   /* Close the temporary files. */
   for(i = 1; i < ncomp; i++) {
-    if (arg.spot_file[i] != NULL)
-      fclose(arg.spot_file[i]);
-    if(arg.spot_name[i][0])
-      unlink(arg.spot_name[i]);
+    if (arg->spot_file[i] != NULL)
+      fclose(arg->spot_file[i]);
+    if(arg->spot_name[i][0])
+      unlink(arg->spot_name[i]);
   }
 #endif
+  gs_free_object(pdev->memory, psd_ctx, "cmykog_print_page psd_ctx");
+  gs_free_object(pdev->memory, arg, "cmykog_print_page arg");
 
   return code;
 }
