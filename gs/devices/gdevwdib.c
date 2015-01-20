@@ -19,6 +19,9 @@
 #include "gxdevmem.h"
 #include "gsdll.h"
 #include "gsdllwin.h"
+#include "gdevflp.h"
+
+extern gx_device_flp  gs_flp_device;
 
 #ifdef __WIN32__
 #  define USE_SEGMENTS 0
@@ -141,6 +144,12 @@ win_dib_open(gx_device * dev)
         (*pgsdll_callback) (GSDLL_SIZE, (unsigned char *)dev,
                         (dev->width & 0xffff) +
                         ((ulong) (dev->height & 0xffff) << 16));
+    }
+    if (!dev->PageHandlerPushed && (dev->FirstPage != 0 || dev->LastPage != 0)) {
+        dev->PageHandlerPushed = true;
+        gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        dev = dev->child;
+        dev->is_open = true;
     }
     return code;
 }
