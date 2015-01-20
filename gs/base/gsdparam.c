@@ -636,6 +636,11 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     if (code < 0)
         return code;
 
+    if ((code = param_write_int(plist, "FirstPage", &dev->FirstPage)) < 0)
+        return code;
+    if ((code = param_write_int(plist, "LastPage", &dev->LastPage)) < 0)
+        return code;
+
     /* Fill in color information. */
 
     if (colors > 1) {
@@ -1698,6 +1703,14 @@ label:\
         if (code < 0)
             ecode = code;
     }
+
+    code = param_read_int(plist, "FirstPage", &dev->FirstPage);
+    if (code < 0)
+        ecode = code;
+
+    code = param_read_int(plist,  "LastPage", &dev->LastPage);
+    if (code < 0)
+        ecode = code;
 
     /* We must 'commit', in order to detect unknown parameters, */
     /* even if there were errors. */

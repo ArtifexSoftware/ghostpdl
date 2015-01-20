@@ -277,11 +277,6 @@ win_get_params(gx_device * dev, gs_param_list * plist)
 {
     int code = gx_default_get_params(dev, plist);
 
-    if ((code = param_write_int(plist, "FirstPage", &dev->FirstPage)) < 0)
-        return code;
-    if ((code = param_write_int(plist, "LastPage", &dev->LastPage)) < 0)
-        return code;
-
     return code;
 }
 
@@ -322,14 +317,6 @@ win_put_params(gx_device * dev, gs_param_list * plist)
         case 1:
             break;
     }
-
-    code = param_read_int(plist,  "FirstPage", &dev->FirstPage);
-    if (code < 0)
-        ecode = code;
-
-    code = param_read_int(plist,  "LastPage", &dev->LastPage);
-    if (code < 0)
-        ecode = code;
 
     if (ecode >= 0) {		/* Prevent gx_default_put_params from closing the device. */
         dev->is_open = false;

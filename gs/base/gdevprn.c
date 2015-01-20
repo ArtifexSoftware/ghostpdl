@@ -768,10 +768,6 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
     if ((code = param_write_string(plist, "OutputFile", &ofns)) < 0)
         return code;
 
-    if ((code = param_write_int(plist, "FirstPage", &ppdev->FirstPage)) < 0)
-        return code;
-    if ((code = param_write_int(plist, "LastPage", &ppdev->LastPage)) < 0)
-        return code;
     /* Always return an empty string for saved-pages so that get_params followed */
     /* by put_params will have no effect.                                       */
     saved_pages.data = (const byte *)"";
@@ -887,14 +883,6 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
             ofs.data = 0;
             break;
     }
-
-    code = param_read_int(plist,  (param_name = "FirstPage"), &pdev->FirstPage);
-    if (code < 0)
-        ecode = code;
-
-    code = param_read_int(plist,  (param_name = "LastPage"), &pdev->LastPage);
-    if (code < 0)
-        ecode = code;
 
     /* Read InputAttributes and OutputAttributes just for the type */
     /* check and to indicate that they aren't undefined. */

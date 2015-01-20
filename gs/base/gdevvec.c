@@ -999,10 +999,6 @@ gdev_vector_get_params(gx_device * dev, gs_param_list * plist)
         return ecode;
     if ((ecode = param_write_bool(plist, "HighLevelDevice", &bool_true)) < 0)
         return ecode;
-    if ((ecode = param_write_int(plist, "FirstPage", &vdev->FirstPage)) < 0)
-        return ecode;
-    if ((ecode = param_write_int(plist, "LastPage", &vdev->LastPage)) < 0)
-        return ecode;
     return code;
 }
 
@@ -1019,14 +1015,6 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
     bool open = dev->is_open, HighLevelDevice;
 
     code = param_read_bool(plist, (param_name = "HighLevelDevice"), &HighLevelDevice);
-    if (code < 0)
-        return code;
-
-    code = param_read_int(plist, (param_name = "FirstPage"), &dev->FirstPage);
-    if (code < 0)
-        return code;
-
-    code = param_read_int(plist, (param_name = "LastPage"), &dev->LastPage);
     if (code < 0)
         return code;
 

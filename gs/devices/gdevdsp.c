@@ -810,10 +810,6 @@ display_get_params(gx_device * dev, gs_param_list * plist)
     if (code < 0)
         return code;
 
-    if ((code = param_write_int(plist, "FirstPage", &dev->FirstPage)) < 0)
-        return code;
-    if ((code = param_write_int(plist, "LastPage", &dev->LastPage)) < 0)
-        return code;
     return code;
 }
 
@@ -848,14 +844,6 @@ display_put_params(gx_device * dev, gs_param_list * plist)
     gs_param_string dh = { 0 };
 
     /* Handle extra parameters */
-
-    code = param_read_int(plist, "FirstPage", &dev->FirstPage);
-    if (code < 0)
-        return code;
-
-    code = param_read_int(plist, "LastPage", &dev->LastPage);
-    if (code < 0)
-        return code;
 
     switch (code = param_read_int(plist, "DisplayFormat", &format)) {
         case 0:
