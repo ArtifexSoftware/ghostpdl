@@ -218,13 +218,12 @@ gx_pattern_size_estimate(gs_pattern1_instance_t *pinst, int has_tags)
 
     if (pinst->templat.uses_transparency) {
         raster = (pinst->size.x * ((depth/8) + 1 + has_tags));
-        size = raster > max_int / pinst->size.y ? (max_int & ~0xFFFF) : raster * pinst->size.y;
     } else {
         raster = (pinst->size.x * depth + 7) / 8;
-        size = raster * pinst->size.y;
     }
+    size = raster > max_int / pinst->size.y ? (max_int & ~0xFFFF) : raster * pinst->size.y;
     if (size > (int64_t)max_int)
-        size = (int64_t)max_int;
+        size = (max_int & ~0xFFFF);
     return (int)size;
 }
 
