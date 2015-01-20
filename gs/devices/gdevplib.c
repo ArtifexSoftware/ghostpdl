@@ -156,7 +156,7 @@ void __aebi_memmove(void *dest, const void *src, size_t n)
 
 #ifdef  TESTING_WITH_NO_BAND_DONOR
 
-#include <malloc.h>
+#include <malloc_.h>
 
 static void *my_buffer;
 

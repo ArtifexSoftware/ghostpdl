@@ -1695,7 +1695,7 @@ JPEG_DEVS='jpeg jpeggray jpegcmyk'
 PCX_DEVS='pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk pcx2up'
 PBM_DEVS='pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm pksmraw pam pamcmyk4 pamcmyk32 plan plang planm planc plank'
 PS_DEVS='psdf psdcmyk psdrgb pdfwrite ps2write eps2write bbox txtwrite inkcov ink_cov psdcmykog fpng'
-MISC_FDEVS='ccr cif inferno mag16 mag256 mgr4 mgr8 mgrgray2 mgrgray4 mgrgray8 mgrmono miff24 plan9bm sgirgb sunhmono bit bitrgb bitrgbtags bitcmyk devicen spotcmyk xcf'
+MISC_FDEVS='ccr cif inferno mag16 mag256 mgr4 mgr8 mgrgray2 mgrgray4 mgrgray8 mgrmono miff24 plan9bm sgirgb sunhmono bit bitrgb bitrgbtags bitcmyk devicen spotcmyk xcf plib plibg plibm plibc plibk'
 XPSDEV='xpswrite'
 
 while test -n "$drivers"; do
