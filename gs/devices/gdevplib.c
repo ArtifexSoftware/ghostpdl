@@ -553,13 +553,13 @@ plib_put_params(gx_device * pdev, gs_param_list * plist)
     int bandHeight = ppdev->space_params.band.BandHeight;
 
     code = gdev_prn_put_params(pdev, plist);
-    if (ppdev->space_params.band.BandHeight < MINBANDHEIGHT)
-    {
-        emprintf1(pdev->memory, "Must have a BandHeight of at least %d\n", MINBANDHEIGHT);
-
+    /* Note that 0 means "default". This will encounter a future check in "open" */
+    if (ppdev->space_params.band.BandHeight != 0 &&
+        ppdev->space_params.band.BandHeight < MINBANDHEIGHT) {
+        emprintf1(pdev->memory, "BandHeight of %d not valid, BandHeight minimum is %d\n",
+                  ppdev->space_params.band.BandHeight, MINBANDHEIGHT);
         ecode = gs_error_rangecheck;
-
-        /* Restore to our valid value */
+        /* Restore to the previous (possibly default == 0) value */
         ppdev->space_params.band.BandHeight = bandHeight;
     }
     if (ecode >= 0)
@@ -591,7 +591,8 @@ set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
         plane1.depth = mdev->color_info.depth;
         num_planes = 1;
     }
-
+    if (line_ptrs)
+        mdev->line_ptrs = line_ptrs;
     for (pi = 0; pi < num_planes; ++pi) {
         byte **pend = line_ptrs + setup_height;
         byte *scan_line = base;
@@ -710,6 +711,7 @@ static int
 plib_open(gx_device * pdev)
 {
     gx_device_plib * const bdev = (gx_device_plib *)pdev;
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     int code;
 
 #ifdef DEBUG_PRINT
@@ -718,6 +720,7 @@ plib_open(gx_device * pdev)
     bdev->printer_procs.buf_procs.create_buf_device = plib_create_buf_device;
     bdev->printer_procs.buf_procs.setup_buf_device = plib_setup_buf_device;
     bdev->printer_procs.buf_procs.size_buf_device = plib_size_buf_device;
+    pdev->is_planar = 1;
 
     /* You might expect us to call gdev_prn_open_planar rather than
      * gdev_prn_open, but if we do that, it overwrites the 2 function
@@ -725,7 +728,13 @@ plib_open(gx_device * pdev)
     code = gdev_prn_open(pdev);
     if (code < 0)
         return code;
-    pdev->is_planar = 1;
+    if (ppdev->space_params.band.BandHeight < MINBANDHEIGHT) {
+        emprintf1(pdev->memory, "BandHeight of %d not valid, BandHeight minimum is %d\n",
+                  ((gx_device_printer *)pdev)->space_params.band.BandHeight,
+                  MINBANDHEIGHT);
+
+        return_error(gs_error_rangecheck);
+    }
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     set_linear_color_bits_mask_shift(pdev);
 
