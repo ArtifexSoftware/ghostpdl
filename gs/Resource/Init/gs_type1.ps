@@ -69,6 +69,7 @@
      % Provide all known aliases for each glyph if
      % substitution is allowed (pf2afm.ps has code
      % to disables it by modifying t1_glyph_equivalence).
+(\n\nhere 1\n\n) print flush  
 
      t1_glyph_equivalence length 0 ne
      {
@@ -135,7 +136,7 @@
          4 1 roll pop pop pop
      } if
      pop
-     dup /.AGLprocessed~GS //true .growput
+     dup /.AGLprocessed~GS //true //.growput superexec
    } if
    //.buildfont1
    3 2 roll .setglobal
