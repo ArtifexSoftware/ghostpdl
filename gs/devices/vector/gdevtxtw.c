@@ -33,6 +33,9 @@
 #include "gdevagl.h"
 #include "gxdevsop.h"
 #include "gzpath.h"
+#include "gdevflp.h"
+
+extern gx_device_flp  gs_flp_device;
 
 /* #define TRACE_TXTWRITE 1 */
 
@@ -276,6 +279,13 @@ txtwrite_open_device(gx_device * dev)
 #ifdef TRACE_TXTWRITE
     tdev->DebugFile = gp_fopen("/temp/txtw_dbg.txt", "wb+");
 #endif
+
+    if (!dev->PageHandlerPushed && (dev->FirstPage != 0 || dev->LastPage != 0)) {
+        dev->PageHandlerPushed = true;
+        gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        dev = dev->child;
+        dev->is_open = true;
+    }
     return 0;
 }
 

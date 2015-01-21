@@ -24,6 +24,9 @@
 #include "gdevfax.h"
 
 #include "gstiffio.h"
+#include "gdevflp.h"
+
+extern gx_device_flp  gs_flp_device;
 
 /* ---------------- TIFF/fax output ---------------- */
 
@@ -100,6 +103,12 @@ tfax_open(gx_device * pdev)
         if ((code = gdev_prn_open_printer_seekable(pdev, 1, true)) < 0)
             return code;
 
+    if (!pdev->PageHandlerPushed && (pdev->FirstPage != 0 || pdev->LastPage != 0)) {
+        pdev->PageHandlerPushed = true;
+        gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        pdev = pdev->child;
+        pdev->is_open = true;
+    }
     return code;
 }
 
