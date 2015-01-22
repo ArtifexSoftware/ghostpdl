@@ -556,7 +556,7 @@ plib_put_params(gx_device * pdev, gs_param_list * plist)
     /* Note that 0 means "default". This will encounter a future check in "open" */
     if (ppdev->space_params.band.BandHeight != 0 &&
         ppdev->space_params.band.BandHeight < MINBANDHEIGHT) {
-        emprintf1(pdev->memory, "BandHeight of %d not valid, BandHeight minimum is %d\n",
+        emprintf2(pdev->memory, "BandHeight of %d not valid, BandHeight minimum is %d\n",
                   ppdev->space_params.band.BandHeight, MINBANDHEIGHT);
         ecode = gs_error_rangecheck;
         /* Restore to the previous (possibly default == 0) value */
@@ -729,7 +729,7 @@ plib_open(gx_device * pdev)
     if (code < 0)
         return code;
     if (ppdev->space_params.band.BandHeight < MINBANDHEIGHT) {
-        emprintf1(pdev->memory, "BandHeight of %d not valid, BandHeight minimum is %d\n",
+        emprintf2(pdev->memory, "BandHeight of %d not valid, BandHeight minimum is %d\n",
                   ((gx_device_printer *)pdev)->space_params.band.BandHeight,
                   MINBANDHEIGHT);
 
