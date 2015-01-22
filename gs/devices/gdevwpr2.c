@@ -402,6 +402,23 @@ win_pr2_open(gx_device * dev)
                                  wdev->fname, "wb");
     fclose(pfile);
     code = gdev_prn_open(dev);
+
+    /* If we subclassed the device, with a FirstPage LastPage device,
+     * update the stored pointer copy here, if we don't then this whole
+     * device stops working, not sure why.
+     */
+    if (dev->child) {
+        gx_device_win_pr2 *windev = (gx_device_win_pr2 *)dev;
+
+        if (windev->original_device == windev) {
+            windev = (gx_device_win_pr2 *)dev->child;
+            windev->original_device = (gx_device_win_pr2 *)dev->child;
+        }
+
+        /* We use 'dev' below, so make sure its the actual mswinpr2 device we use */
+        dev = dev->child;
+    }
+
     if ((code < 0) && wdev->fname[0])
         unlink(wdev->fname);
 
