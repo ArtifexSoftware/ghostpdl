@@ -1035,6 +1035,12 @@ int eprn_open_device(gx_device *device)
   /* Open the "prn" device part */
   if ((rc = gdev_prn_open(device)) != 0) return rc;
 
+  /* if device has been subclassed (FirstPage/LastPage device) then make sure we use
+   * the subclassed device.
+   */
+  if (device->child)
+      device = device->child;
+
   /* Just in case a previous open call failed in a derived device (note that
      'octets_per_line' is still the same as then): */
   if (eprn->scan_line.str != NULL)

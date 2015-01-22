@@ -1298,6 +1298,12 @@ static int pcl3_open_device(gx_device *device)
   /* Open the "eprn" device part */
   if ((rc = eprn_open_device(device)) != 0) return rc;
 
+  /* if device has been subclassed (FirstPage/LastPage device) then make sure we use
+   * the subclassed device.
+   */
+  if (device->child)
+      device = device->child;
+
   /* Fill the still unassigned parts of 'file_data' from the other data */
   {
     pcl_FileData *data = &dev->file_data;
