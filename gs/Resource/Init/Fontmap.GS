@@ -81,49 +81,49 @@
 
 % Aliases
 
-/Bookman-Demi			/URWBookmanL-DemiBold	;
-/Bookman-DemiItalic		/URWBookmanL-DemiBoldItal	;
-/Bookman-Light			/URWBookmanL-Ligh	;
-/Bookman-LightItalic		/URWBookmanL-LighItal	;
+/Bookman-Demi			/BookmanURW-DemBol	;
+/Bookman-DemiItalic		/BookmanURW-DemBolIta	;
+/Bookman-Light			/BookmanURW-Lig	;
+/Bookman-LightItalic		/BookmanURW-LigIta	;
 
-/Courier			/NimbusMonL-Regu	;
-/Courier-Oblique		/NimbusMonL-ReguObli	;
-/Courier-Bold			/NimbusMonL-Bold	;
-/Courier-BoldOblique		/NimbusMonL-BoldObli	;
+/Courier			/NimbusMon-Reg	;
+/Courier-Oblique		/NimbusMon-Obl	;
+/Courier-Bold			/NimbusMon-Bol	;
+/Courier-BoldOblique		/NimbusMon-BolObl	;
 
-/AvantGarde-Book		/URWGothicL-Book	;
-/AvantGarde-BookOblique		/URWGothicL-BookObli	;
-/AvantGarde-Demi		/URWGothicL-Demi	;
-/AvantGarde-DemiOblique		/URWGothicL-DemiObli	;
+/AvantGarde-Book		/URWGothic-Boo	;
+/AvantGarde-BookOblique		/URWGothic-BooObl	;
+/AvantGarde-Demi		/URWGothic-Dem	;
+/AvantGarde-DemiOblique		/URWGothic-DemObl	;
 
-/Helvetica			/NimbusSanL-Regu	;
-/Helvetica-Oblique		/NimbusSanL-ReguItal	;
-/Helvetica-Bold			/NimbusSanL-Bold	;
-/Helvetica-BoldOblique		/NimbusSanL-BoldItal	;
+/Helvetica			/NimbusSan-Reg	;
+/Helvetica-Oblique		/NimbusSan-Ita	;
+/Helvetica-Bold			/NimbusSan-Bol	;
+/Helvetica-BoldOblique		/NimbusSan-BolIta	;
 
-/Helvetica-Narrow		/NimbusSanL-ReguCond	;
-/Helvetica-Narrow-Oblique	/NimbusSanL-ReguCondItal	;
-/Helvetica-Narrow-Bold		/NimbusSanL-BoldCond	;
-/Helvetica-Narrow-BoldOblique	/NimbusSanL-BoldCondItal	;
+/Helvetica-Narrow		/NimbusSanNar-Reg	;
+/Helvetica-Narrow-Oblique	/NimbusSanNar-Ita	;
+/Helvetica-Narrow-Bold		/NimbusSanNar-Bol	;
+/Helvetica-Narrow-BoldOblique	/NimbusSanNar-BolIta	;
 
-/Palatino-Roman			/URWPalladioL-Roma	;
-/Palatino-Italic		/URWPalladioL-Ital	;
-/Palatino-Bold			/URWPalladioL-Bold	;
-/Palatino-BoldItalic		/URWPalladioL-BoldItal	;
+/Palatino-Roman			/PalladioURW-Rom	;
+/Palatino-Italic		/PalladioURW-Ita	;
+/Palatino-Bold			/PalladioURW-Bol	;
+/Palatino-BoldItalic		/PalladioURW-BolIta	;
 
-/NewCenturySchlbk-Roman		/CenturySchL-Roma	;
-/NewCenturySchlbk-Italic	/CenturySchL-Ital	;
-/NewCenturySchlbk-Bold		/CenturySchL-Bold	;
-/NewCenturySchlbk-BoldItalic	/CenturySchL-BoldItal	;
+/NewCenturySchlbk-Roman		/CenturySchURW-Rom	;
+/NewCenturySchlbk-Italic	/CenturySchURW-Ita	;
+/NewCenturySchlbk-Bold		/CenturySchURW-Bol	;
+/NewCenturySchlbk-BoldItalic	/CenturySchURW-BolIta	;
 
-/Times-Roman			/NimbusRomNo9L-Regu	;
-/Times-Italic			/NimbusRomNo9L-ReguItal	;
-/Times-Bold			/NimbusRomNo9L-Medi	;
-/Times-BoldItalic		/NimbusRomNo9L-MediItal	;
+/Times-Roman			/NimbusRom-Reg	;
+/Times-Italic			/NimbusRom-Ita	;
+/Times-Bold			/NimbusRom-Med	;
+/Times-BoldItalic		/NimbusRom-MedIta	;
 
 /Symbol				/StandardSymL	;
 
-/ZapfChancery-MediumItalic	/URWChanceryL-MediItal	;
+/ZapfChancery-MediumItalic	/ChanceryURW-MedIta	;
 
 /ZapfDingbats			/Dingbats	;
 
