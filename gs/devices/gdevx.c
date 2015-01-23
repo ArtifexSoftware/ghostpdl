@@ -253,6 +253,14 @@ x_open(gx_device * dev)
     if (code < 0)
         return code;
     update_init(xdev);
+
+    if (!dev->PageHandlerPushed && (dev->FirstPage != 0 || dev->LastPage != 0)) {
+        dev->PageHandlerPushed = true;
+        gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        dev = dev->child;
+        dev->is_open = true;
+    }
+
     return 0;
 }
 
