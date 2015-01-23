@@ -31,6 +31,9 @@
 #include "gsiparm2.h"
 #include "gxdevmem.h"
 #include "gdevx.h"
+#include "gdevflp.h"
+
+extern gx_device_flp  gs_flp_device;
 
 /* Define whether to try to read back exposure events after XGetImage. */
 /****** THIS IS USELESS.  XGetImage DOES NOT GENERATE EXPOSURE EVENTS. ******/
