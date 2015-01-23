@@ -262,6 +262,9 @@ x_open(gx_device * dev)
         gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
         dev = dev->child;
         dev->is_open = true;
+        xdev = (gx_device_X *) dev;
+        if (xdev->is_buffered)
+            xdev->box_proc_data = xdev;
     }
 
     return 0;
