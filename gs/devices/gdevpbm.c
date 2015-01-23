@@ -271,7 +271,7 @@ ppm_set_dev_procs(gx_device * pdev)
 static int
 ppm_open(gx_device * pdev)
 {
-    gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
+    gx_device_pbm * bdev = (gx_device_pbm *)pdev;
     int code;
 
 #ifdef TEST_PAD_AND_ALIGN
@@ -280,6 +280,10 @@ ppm_open(gx_device * pdev)
 #endif
 
     code = gdev_prn_open_planar(pdev, bdev->UsePlanarBuffer);
+    if (pdev->child) {
+        pdev = pdev->child;
+        bdev = (gx_device_pbm *)pdev;;
+    }
 
     if (code < 0)
         return code;
