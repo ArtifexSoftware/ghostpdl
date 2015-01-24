@@ -1052,7 +1052,7 @@ int flp_begin_image(gx_device *dev, const gs_imager_state *pis, const gs_image_t
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
-    if (psubclass_data->PageCount >= dev->FirstPage) {
+    if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
             if (dev->child->procs.begin_image)
                 return dev->child->procs.begin_image(dev->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
