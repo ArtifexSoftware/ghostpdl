@@ -1535,6 +1535,11 @@ pl_log_string(const gs_memory_t * mem, const char *str, int wait_for_key)
 int                             /* ret 0 if page should be printed, 1 if no print, else -ve error */
 pl_pre_finish_page(pl_interp_instance_t * interp, void *closure)
 {
+    pl_main_instance_t *pti = (pl_main_instance_t *) closure;
+
+    /* up the page count */
+    ++(pti->page_count);
+
     /* print the page */
     return 0;
 }
