@@ -829,8 +829,6 @@ pl_main_init_instance(pl_main_instance_t * pti, gs_memory_t * mem)
     pti->device = 0;
     pti->implementation = 0;
     gp_get_usertime(pti->base_time);
-    pti->first_page = 1;
-    pti->last_page = max_int;
     pti->page_count = 0;
     pti->interpolate = false;
     pti->nocache = false;
@@ -1130,18 +1128,12 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                             default:
                                 break;  /* not a valid suffix or last char was digit */
                         }
-                        if (!strncmp(arg, "FirstPage", 9))
-                            pmi->first_page = max(vi, 1);
-                        else if (!strncmp(arg, "LastPage", 8))
-                            pmi->last_page = vi;
-                        else {
-                            /* create a null terminated string for the key */
-                            strncpy(buffer, arg, eqp - arg);
-                            buffer[eqp - arg] = '\0';
-                            code =
-                                param_write_int((gs_param_list *) params,
-                                                arg_heap_copy(buffer), &vi);
-                        }
+                        /* create a null terminated string for the key */
+                        strncpy(buffer, arg, eqp - arg);
+                        buffer[eqp - arg] = '\0';
+                        code =
+                            param_write_int((gs_param_list *) params,
+                                            arg_heap_copy(buffer), &vi);
                     } else if (sscanf(value, "%f", &vf) == 1) {
                         /* create a null terminated string.  NB duplicated code. */
                         strncpy(buffer, arg, eqp - arg);
@@ -1543,21 +1535,8 @@ pl_log_string(const gs_memory_t * mem, const char *str, int wait_for_key)
 int                             /* ret 0 if page should be printed, 1 if no print, else -ve error */
 pl_pre_finish_page(pl_interp_instance_t * interp, void *closure)
 {
-    pl_main_instance_t *pti = (pl_main_instance_t *) closure;
-
-    /* up the page count */
-    ++(pti->page_count);
-
-    /* nothing to do now if we are in range */
-    if (pti->page_count >= pti->first_page
-        && pti->page_count <= pti->last_page)
-        return 0;
-
-    if (pti->page_count > pti->last_page)
-        return e_ExitLanguage;
-
-    /* out of range don't allow printing the page */
-    return 1;
+    /* print the page */
+    return 0;
 }
 
 /* Post-page portion of page finishing routine */
