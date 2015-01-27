@@ -15,6 +15,7 @@
 
 /* Default device implementation */
 #include "math_.h"
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsropt.h"
