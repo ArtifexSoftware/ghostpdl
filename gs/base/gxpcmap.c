@@ -209,7 +209,7 @@ static dev_proc_destroy_buf_device(dummy_destroy_buf_device)
 /* be needed in the pattern cache). If we end up using the clist, this is only  */
 /* a guess -- we use the tile size which will _probably_ be too large.          */
 static int
-gx_pattern_size_estimate(gs_pattern1_instance_t *pinst, int has_tags)
+gx_pattern_size_estimate(gs_pattern1_instance_t *pinst, bool has_tags)
 {
     gx_device *tdev = pinst->saved->device;
     int depth = (pinst->templat.PaintType == 2 ? 1 : tdev->color_info.depth);
@@ -217,7 +217,8 @@ gx_pattern_size_estimate(gs_pattern1_instance_t *pinst, int has_tags)
     int64_t size;
 
     if (pinst->templat.uses_transparency) {
-        raster = (pinst->size.x * ((depth/8) + 1 + has_tags));
+        /* if the device has tags, add in an extra tag byte for the pdf14 compositor */
+        raster = (pinst->size.x * ((depth/8) + 1 + (has_tags ? 1 : 0)));
     } else {
         raster = (pinst->size.x * depth + 7) / 8;
     }
@@ -249,7 +250,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
                        gs_pattern1_instance_t *pinst, client_name_t cname)
 {
     gx_device *tdev = pinst->saved->device;
-    int has_tags = tdev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
+    bool has_tags = (tdev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) != 0;
     int size = gx_pattern_size_estimate(pinst, has_tags);
     gx_device_forward *fdev;
     int force_no_clist = 0;
@@ -1236,7 +1237,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     gs_state *saved;
     gx_color_tile *ctile;
     gs_memory_t *mem = pis->memory;
-    int has_tags = dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
+    bool has_tags = (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) != 0;
     int code;
 
     if (pis->pattern_cache == NULL)
