@@ -2590,7 +2590,11 @@ currentdict /PDF2PS_matrix_key undef
             4 index /Info knownoget not { () } if
             5 index /DestOutputProfile knownoget not { () } if
           ]
-          [ /OutputIntent 3 2 roll .pdfputparams pop pop
+          [ /OutputIntent 3 2 roll /.pdfputparams where
+            { pop .pdfputparams }
+            { currentdevice //null //false counttomark 1 add 3 roll .putdeviceparamsonly }
+          ifelse
+          pop pop
           pop	  % done with this OutputIntent dictionary
         } forall
       } {
@@ -2600,7 +2604,11 @@ currentdict /PDF2PS_matrix_key undef
       } ifelse
     } if	% OutputIntents known
     % tell device there are no more OutputIntents
-    [ /OutputIntent [ ] .pdfputparams pop pop
+    [ /OutputIntent [ ] /.pdfputparams where
+      { pop .pdfputparams }
+      { currentdevice //null //false counttomark 1 add 3 roll .putdeviceparamsonly }
+      ifelse
+      pop pop
   } if
 } bind def
 

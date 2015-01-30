@@ -1932,7 +1932,7 @@ gdevprn_h=$(GLSRC)gdevprn.h $(memory__h) $(string__h) $(gp_h) $(gx_h)\
  $(gserrors_h) $(gsmatrix_h) $(gsparam_h) $(gsutil_h) $(gxclpage_h)\
  $(gxclist_h) $(gxdevice_h) $(gxdevmem_h) $(gxrplane_h) $(gxclthrd_h)
 
-page_=$(GLOBJ)gdevprn.$(OBJ) $(downscale_)
+page_=$(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) $(downscale_)
 $(GLD)page.dev : $(LIB_MAK) $(ECHOGS_XE) $(page_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)page $(page_)
 	$(ADDMOD) $(GLD)page -include $(GLD)clist
@@ -3065,7 +3065,8 @@ $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(AK) $(gx_h) $(gserrors_h)\
 
 translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\
  $(GLOBJ)gxblend.$(OBJ) $(GLOBJ)gxblend1.$(OBJ) $(GLOBJ)gdevp14.$(OBJ) $(GLOBJ)gdevdevn.$(OBJ)\
- $(GLOBJ)gdevdcrd.$(OBJ) $(GLOBJ)gscolorbuffer.$(OBJ)
+ $(GLOBJ)gsequivc.$(OBJ)  $(GLOBJ)gdevdcrd.$(OBJ) $(GLOBJ)gscolorbuffer.$(OBJ)
+
 $(GLD)translib.dev : $(LIB_MAK) $(ECHOGS_XE) $(translib_)\
  $(GLD)cspixlib.dev $(GLD)bboxutil.dev $(GLD)cielib.dev $(MAKEDIRS)
 	$(SETMOD) $(GLD)translib $(translib_)
