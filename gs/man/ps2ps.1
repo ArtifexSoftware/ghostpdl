@@ -1,32 +1,28 @@
-.TH PS2PS 1 "22 September 2014" 9.15 "Ghostscript Tools" \" -*- nroff -*-
+.TH PS2PS 1 "30 January 2015" 9.16 "Ghostscript Tools" \" -*- nroff -*-
 .SH NAME
 ps2ps, eps2eps \- Ghostscript PostScript "distiller"
 .SH SYNOPSIS
-\fBps2ps\fR [ \fIoptions\fR ] \fIinput.ps output.ps\fR
+\fBps2ps\fR [ \fIoptions\fR ] \fIinput output.ps\fR
 .br
-\fBeps2eps\fR [ \fIoptions\fR ] \fIinput.eps output.eps\fR
+\fBeps2eps\fR [ \fIoptions\fR ] \fIinput output.eps\fR
 .SH DESCRIPTION
-\fBps2ps\fR uses \fIgs\fR(1) to convert \fBPostScript\fR(tm) file
-"input.ps" to simpler, normalized and (usually) faster PostScript in
-"output.ps".  Normally the output is allowed to use PostScript Level 2
-or Level 3 constructs, but the \fB\-dLanguageLevel=1\fR option restricts
-the output to Level 1.
+\fBps2ps\fR uses \fIgs\fR(1) to convert \fBPostScript\fR(tm) or \fBPDF\fR(tm) file
+"input" to simpler, normalized and (usually) faster PostScript in
+"output.ps".  The output is level 2 DSC 3.0 conforming PostScript.
 .PP
-\fBeps2eps\fR performs the equivalent optimization for Encapsulated
-PostScript (EPS) files.
+\fBeps2eps\fR performs the equivalent optimization, creating Encapsulated
+PostScript (EPS) files. NB, despite the name, the input need not be an
+EPS file, PostScript or indeed PDF files are equally acceptable.
 .PP
 Both accept any general Ghostscript command line options, and
-respectively options specific to the ps2write and eps2write devices.
+options specific to the ps2write and eps2write devices.
 .SH FILES
 Run "\fBgs -h\fR" to find the location of Ghostscript documentation on your
 system, from which you can get more details.
-.SH BUGS
-The pswrite device used by both \fBps2ps\fR and \fBeps2eps\fR produces much
-lower level output than is desirable. Use with caution.
 .SH SEE ALSO
 ps2pdf(1), ps2ascii(1), ps2epsi(1)
 .SH VERSION
-This document was last revised for Ghostscript version 9.15.
+This document was last revised for Ghostscript version 9.16.
 .SH AUTHOR
 Artifex Software, Inc. are the 
 primary maintainers of Ghostscript.
