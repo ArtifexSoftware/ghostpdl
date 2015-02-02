@@ -141,7 +141,7 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
             out.index = 0; /* Note : we don't reset out.xy_index here. */
             code = pdf_process_string_aux(&out, &str, NULL, &fmat, &text_state);
             if (code < 0) {
-                if (code == gs_error_undefined && pte->current_font->FontType == ft_encrypted2)
+                if (code == gs_error_undefined && new_font && new_font->FontType == ft_encrypted2)
                 /* Caused by trying to make a CFF font resource for ps2write, which doesn't support CFF, abort now! */
                     return gs_error_invalidfont;
                 return code;
