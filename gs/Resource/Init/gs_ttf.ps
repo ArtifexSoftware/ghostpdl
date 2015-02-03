@@ -41,16 +41,21 @@
 % Closes the file in either case.
 /.findnonttfontvalue /.findfontvalue load def
 /.findfontvalue {
-  1 index .is_ttf_or_otf {
-                % If this is a font at all, it's a TrueType font.
-      dup /FontType eq {
-        pop closefile 42 //true
-      } {
-        dup /FontName eq { pop .findttfontname } { pop closefile //false } ifelse
-      } ifelse
-  } {
-                % Not a TrueType font.
-      .findnonttfontvalue
+  1 index .is_woff {
+    /.findfontvalue cvx /invalidfont signalerror
+  }
+  {
+    1 index .is_ttf_or_otf {
+                  % If this is a font at all, it's a TrueType font.
+        dup /FontType eq {
+          pop closefile 42 //true
+        } {
+          dup /FontName eq { pop .findttfontname } { pop closefile //false } ifelse
+        } ifelse
+    } {
+                  % Not a TrueType font.
+        .findnonttfontvalue
+    } ifelse
   } ifelse
 } bind def
 
@@ -81,6 +86,7 @@
 
 /tt_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 >> readonly def
 /ttf_otf_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 (OTTO) 0>> readonly def
+/woff_tag_dict << (wOFF) 0>> readonly def
 
 % <file> .loadfontfile -
 /.loadnonttfontfile /.loadfontfile load def
@@ -99,8 +105,13 @@
     dup 0 setfileposition (1234) .peekstring { //ttf_otf_tag_dict exch known } { //false } ifelse
 } bind def
 
+/.is_woff {
+    dup 0 setfileposition (1234) .peekstring { //woff_tag_dict exch known } { //false } ifelse
+} bind def
+
 currentdict /tt_tag_dict .undef
 currentdict /ttf_otf_tag_dict .undef
+currentdict /woff_tag_dict .undef
 
 % ---------------- Automatic Type 42 generation ---------------- %
 
