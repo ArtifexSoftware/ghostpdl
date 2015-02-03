@@ -361,6 +361,13 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
         }
      }
 
+    /* If the cm_procs are forwarding due to the overprint device or other
+       odd thing, drill down now and get the proper ones */
+    if (fwd_uses_fwd_cmap_procs(dev)) {
+        cm_procs = fwd_get_target_cmap_procs(dev);
+    } else {
+        GET_COLOR_MAPPING_PROCS(dev, cm_procs);
+    }
     /* We will add this to the link cache so that we can avoid the issue
        of black_generation and undercolor removal being GC values.
        Since the link is not GC we would need to copy the contents over

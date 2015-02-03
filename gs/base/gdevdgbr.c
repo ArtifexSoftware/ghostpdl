@@ -437,7 +437,7 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
             bool do_alpha = false;
             const gx_cm_color_map_procs * map_procs;
 
-            map_procs = dev_proc(dev, get_color_mapping_procs)(dev);
+            GET_COLOR_MAPPING_PROCS(dev, map_procs);
 
             /* Fetch the source data. */
             if (stored->options & GB_ALPHA_FIRST) {

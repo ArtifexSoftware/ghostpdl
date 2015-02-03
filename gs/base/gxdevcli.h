@@ -833,6 +833,23 @@ typedef struct gdev_space_params_s {
 #define assign_dev_procs(todev, fromdev)\
   ((todev)->procs = (fromdev)->procs)
 
+/* The color mapping procs were used in a way which defeats a 'pipeline'
+ * approach to devices. Certain graphics library routines (eg images)
+ * called the color mapping procs *directly* from the device procs of the
+ * current (ie terminal) device. This prevented any pipeline approach from
+ * working as earlier devices in the chain wouldn't see the call. In particular
+ * this prevented the use of such a device to do 'monochrome mode' in PCL
+ * (see pcpalet.c, pcl_update_mono). This macro walks back up the pipeline
+ * and retrieves the uppermost device color_mapping procs.
+ */
+#define GET_COLOR_MAPPING_PROCS(dev, procs)\
+    {\
+        gx_device *saved = dev;\
+        while(dev->parent) {dev = dev->parent;}\
+        procs = (gx_cm_color_map_procs *)dev_proc(dev, get_color_mapping_procs)(dev);\
+        dev = saved;\
+    }
+
 /* ---------------- Device procedures ---------------- */
 
 /* Define an opaque type for parameter lists. */

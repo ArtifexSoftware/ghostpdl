@@ -2061,7 +2061,8 @@ opvp_open(gx_device *dev)
         }
         if (dev->child) {
             dev = pdev->child;
-            rdev = pdev = (gx_device_opvp *)pdev->child;
+            rdev = (gx_device_oprp *)(pdev->child);
+            pdev = (gx_device_opvp *)(pdev->child);
         }
 #if GS_VERSION_MAJOR >= 8
         if (pdev->bbox_device != NULL) {
@@ -2080,7 +2081,8 @@ opvp_open(gx_device *dev)
         }
         if (dev->child) {
             dev = pdev->child;
-            rdev = pdev = (gx_device_opvp *)pdev->child;
+            rdev = (gx_device_oprp *)(pdev->child);
+            pdev = (gx_device_opvp *)(pdev->child);
         }
         /* open output stream */
         code = gdev_prn_open_printer_seekable(dev, true, false);
@@ -4851,7 +4853,6 @@ opvp_vector_dopath(
     _fPoint *points = NULL;
     opvp_point_t *opvp_p = NULL;
     _fPoint current;
-    _fPoint check_p;
 #else
     _fPoint points[4];
 #endif
@@ -5015,8 +5016,6 @@ opvp_vector_dopath(
         case gs_pe_curveto:
 #ifdef  OPVP_OPT_MULTI_PATH
             /* curve to */
-            check_p.x = fixed2float(vs[0]) / scale.x;
-            check_p.y = fixed2float(vs[1]) / scale.y;
 
             i = npoints;
             npoints += 3;
@@ -5267,15 +5266,12 @@ opvp_curveto(
     gx_device_opvp *pdev = (gx_device_opvp *)vdev;
     opvp_result_t r = -1;
     int ecode = 0;
-    int npoints[2];
     opvp_point_t points[4];
 
     /* check page-in */
     if (opvp_check_in_page(pdev)) return -1;
 
     /* points */
-    npoints[0] = 4;
-    npoints[1] = 0;
     OPVP_F2FIX(x0, points[0].x);
     OPVP_F2FIX(y0, points[0].y);
     OPVP_F2FIX(x1, points[1].x);

@@ -345,7 +345,11 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
             ((gx_device *) vdev->bbox_device);
     }
 
+#if 0
     if (!vdev->PageHandlerPushed && (vdev->FirstPage != 0 || vdev->LastPage != 0)) {
+#else
+    if (!vdev->PageHandlerPushed) {
+#endif
         vdev->PageHandlerPushed = true;
         gx_device_subclass((gx_device *)vdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
     }

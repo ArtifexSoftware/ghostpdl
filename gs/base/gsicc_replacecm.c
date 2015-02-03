@@ -323,7 +323,7 @@ gsicc_rcm_get_link(const gs_imager_state *pis, gx_device *dev,
     if (fwd_uses_fwd_cmap_procs(dev)) {
         cm_procs = fwd_get_target_cmap_procs(dev);
     } else {
-        cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
+        GET_COLOR_MAPPING_PROCS(dev, cm_procs);
     }
 
     hash.rend_hash = gsCMM_REPLACE;

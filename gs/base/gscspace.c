@@ -518,7 +518,9 @@ check_cmyk_color_model_comps(gx_device * dev)
         return 0;
 
     /* check the mapping */
-    if ( (pprocs = dev_proc(dev, get_color_mapping_procs)(dev)) == 0 ||
+    GET_COLOR_MAPPING_PROCS(dev, pprocs);
+
+    if ( pprocs == 0 ||
          (map_cmyk = pprocs->map_cmyk) == 0                            )
         return 0;
 
@@ -582,7 +584,8 @@ check_rgb_color_model_comps(gx_device * dev)
         return 0;
 
     /* check the mapping */
-    if ( (pprocs = dev_proc(dev, get_color_mapping_procs)(dev)) == 0 ||
+    GET_COLOR_MAPPING_PROCS(dev, pprocs);
+    if ( pprocs == 0 ||
          (map_rgb = pprocs->map_rgb) == 0                            )
         return 0;
 
@@ -654,6 +657,9 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_state * pgs)
     gsicc_rendering_param_t        render_cond;   
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    if (code < 0)
+        return code;
+
     gsicc_extract_profile(dev->graphics_type_tag, dev_profile, &(output_profile),
                           &render_cond);
 

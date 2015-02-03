@@ -112,7 +112,11 @@ gdev_prn_open(gx_device * pdev)
     int code;
     bool update_procs = false;
 
+#if 0
     if (!pdev->PageHandlerPushed && (pdev->FirstPage != 0 || pdev->LastPage != 0)) {
+#else
+    if (!pdev->PageHandlerPushed) {
+#endif
         pdev->PageHandlerPushed = true;
         gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
         pdev = pdev->child;

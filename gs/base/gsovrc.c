@@ -786,7 +786,8 @@ update_overprint_params(
         gx_color_index                  drawn_comps = 0;
         static const frac               frac_13 = float2frac(1.0 / 3.0);
 
-        if ((pprocs = dev_proc(opdev, get_color_mapping_procs)(dev)) == 0 ||
+        GET_COLOR_MAPPING_PROCS(dev, pprocs);
+        if (pprocs == 0 ||
             pprocs->map_gray == 0                                         ||
             pprocs->map_rgb == 0                                          ||
             pprocs->map_cmyk == 0                                           )
@@ -1016,8 +1017,6 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
     int                     k,j;
     gs_memory_t *           mem = dev->memory;
     gx_color_index          comps = opdev->drawn_comps;
-    gx_color_index          mask;
-    int                     shift;
     byte                    *curr_data = (byte *) data + data_x;
     int                     row, offset;
 
@@ -1033,8 +1032,6 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
 
         fit_fill(tdev, x, y, w, h);
         byte_depth = depth / num_comps;
-        mask = ((gx_color_index)1 << byte_depth) - 1;
-        shift = 16 - byte_depth;
 
         /* allocate a buffer for the returned data */
         raster = bitmap_raster(w * byte_depth);

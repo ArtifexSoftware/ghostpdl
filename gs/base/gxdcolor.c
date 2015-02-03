@@ -106,11 +106,12 @@ gx_color_index
 gx_device_black(gx_device *dev)
 {
     if (dev->cached_colors.black == gx_no_color_index) {
-        const gx_cm_color_map_procs * cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
+        const gx_cm_color_map_procs * cm_procs;
         int i, ncomps = dev->color_info.num_components;
         frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
+        GET_COLOR_MAPPING_PROCS(dev, cm_procs);
         /* Get color components for black (gray = 0) */
         cm_procs->map_gray(dev, frac_0, cm_comps);
 
@@ -125,11 +126,12 @@ gx_color_index
 gx_device_white(gx_device *dev)
 {
     if (dev->cached_colors.white == gx_no_color_index) {
-        const gx_cm_color_map_procs * cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
+        const gx_cm_color_map_procs * cm_procs;
         int i, ncomps = dev->color_info.num_components;
         frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
+        GET_COLOR_MAPPING_PROCS(dev, cm_procs);
         /* Get color components for white (gray = 1) */
         cm_procs->map_gray(dev, frac_1, cm_comps);
 

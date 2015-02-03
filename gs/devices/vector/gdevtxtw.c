@@ -1932,7 +1932,7 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
     gs_font *font = pte->orig_font;
     const gs_glyph *gdata = NULL;
     gs_glyph glyph;
-    gs_char ch;
+    gs_char ch = 0;
     int i, code;
     uint operation = pte->text.operation;
     txt_glyph_widths_t widths;

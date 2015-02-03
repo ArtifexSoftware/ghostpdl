@@ -131,7 +131,8 @@ is_like_DeviceRGB(gx_device * dev)
     if ( dev->color_info.num_components != 3                   ||
          dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE  )
         return false;
-    cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
+
+    GET_COLOR_MAPPING_PROCS(dev, cm_procs);
     if (cm_procs == 0 || cm_procs->map_rgb == 0)
         return false;
 
@@ -169,7 +170,7 @@ is_like_DeviceCMYK(gx_device * dev)
     if ( dev->color_info.num_components != 4                      ||
          dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE  )
         return false;
-    cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
+    GET_COLOR_MAPPING_PROCS(dev, cm_procs);
     if (cm_procs == 0 || cm_procs->map_cmyk == 0)
         return false;
 

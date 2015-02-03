@@ -898,11 +898,13 @@ cmap_gray_halftoned(frac gray, gx_device_color * pdc,
 {
     int i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_cm_color_map_procs *   pprocs;
 
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    dev_proc(dev, get_color_mapping_procs)(dev)->map_gray(dev, gray, cm_comps);
+    GET_COLOR_MAPPING_PROCS(dev, pprocs);
+    pprocs->map_gray(dev, gray, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -941,11 +943,13 @@ cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_imager_state * pis,
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    gx_cm_color_map_procs *   pprocs;
 
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    dev_proc(dev, get_color_mapping_procs)(dev)->map_gray(dev, gray, cm_comps);
+    GET_COLOR_MAPPING_PROCS(dev, pprocs);
+    pprocs->map_gray(dev, gray, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -989,11 +993,13 @@ cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
 {
     int i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_cm_color_map_procs *   pprocs;
 
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
+    GET_COLOR_MAPPING_PROCS(dev, pprocs);
+    pprocs->map_rgb(dev, pis, r, g, b, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -1018,11 +1024,13 @@ cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    gx_cm_color_map_procs *   pprocs;
 
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
+    GET_COLOR_MAPPING_PROCS(dev, pprocs);
+    pprocs->map_rgb(dev, pis, r, g, b, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -1059,11 +1067,13 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     cmm_dev_profile_t *dev_profile;
     gsicc_colorbuffer_t src_space = gsUNDEFINED;
     bool gray_to_k;
+    gx_cm_color_map_procs *   pprocs;
 
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    dev_proc(dev, get_color_mapping_procs)(dev)->map_cmyk(dev, c, m, y, k, cm_comps);
+    GET_COLOR_MAPPING_PROCS(dev, pprocs);
+    pprocs->map_cmyk(dev, c, m, y, k, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -1132,11 +1142,13 @@ cmap_rgb_alpha_halftoned(frac r, frac g, frac b, frac alpha,
 {
      int i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_cm_color_map_procs *   pprocs;
 
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
+    GET_COLOR_MAPPING_PROCS(dev, pprocs);
+    pprocs->map_rgb(dev, pis, r, g, b, cm_comps);
 
     /* pre-multiply to account for the alpha weighting */
     if (alpha != frac_1) {
@@ -1173,11 +1185,13 @@ cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv_alpha, cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    gx_cm_color_map_procs *   pprocs;
 
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, pis, r, g, b, cm_comps);
+    GET_COLOR_MAPPING_PROCS(dev, pprocs);
+    pprocs->map_rgb(dev, pis, r, g, b, cm_comps);
 
     /* pre-multiply to account for the alpha weighting */
     if (alpha != frac_1) {
@@ -1428,7 +1442,10 @@ devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis, gx_device *dev)
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
-    dev_proc(dev, get_profile)(dev,  &dev_profile);
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    if (code < 0)
+        return code;
+
     gsicc_extract_profile(dev->graphics_type_tag,
                           dev_profile, &des_profile, &render_cond);
     /* Define the rendering intents. */
@@ -1475,7 +1492,7 @@ cmap_devicen_halftoned(const frac * pcc,
 {
     int i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    gsicc_rendering_param_t render_cond;
+    gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
@@ -1520,7 +1537,7 @@ cmap_devicen_direct(const frac * pcc,
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
-    gsicc_rendering_param_t render_cond;
+    gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
@@ -2109,7 +2126,7 @@ gx_device_uses_std_cmap_procs(gx_device * dev, const gs_imager_state * pis)
                           dev_profile, &des_profile, &render_cond);
 
     if (des_profile != NULL) {
-        pprocs = dev_proc(dev, get_color_mapping_procs)(dev);
+        GET_COLOR_MAPPING_PROCS(dev, pprocs);
         /* Check if they are forwarding procs */
         if (fwd_uses_fwd_cmap_procs(dev)) {
             pprocs = fwd_get_target_cmap_procs(dev);

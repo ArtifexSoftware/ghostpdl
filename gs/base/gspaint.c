@@ -75,10 +75,13 @@ gs_fillpage(gs_state * pgs)
 {
     gx_device *dev = gs_currentdevice(pgs);
     int code;
+    gx_cm_color_map_procs *   pprocs;
 
+    GET_COLOR_MAPPING_PROCS(dev, pprocs);
     /* If we get here without a valid get_color_mapping_procs, fail */
-    if (dev_proc(dev, get_color_mapping_procs) == NULL ||
-        dev_proc(dev, get_color_mapping_procs) == gx_error_get_color_mapping_procs) {
+    if (pprocs == NULL ||
+        /* Deliberately use the terminal device here */
+        dev_proc(dev, get_color_mapping_procs) ==  gx_error_get_color_mapping_procs) {
         emprintf1(dev->memory,
                   "\n   *** Error: No get_color_mapping_procs for device: %s\n",
                   dev->dname);

@@ -8254,7 +8254,7 @@ pdf14_cmykspot_get_color_comp_index(gx_device * dev, const char * pname,
                                 int name_size, int component_type)
 {
     pdf14_device * pdev = (pdf14_device *) dev;
-    gx_device *fdev, *tdev = pdev->target;
+    gx_device *tdev = pdev->target;
     gs_devn_params * pdevn_params = &pdev->devn_params;
     gs_separations * pseparations = &pdevn_params->separations;
     int comp_index;
