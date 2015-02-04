@@ -265,29 +265,63 @@ gx_device_mplt gs_pcl_mono_palette_device =
 static void
 pcl_gray_cs_to_cm(gx_device * dev, frac gray, frac out[])
 {
-    pcl_mono_palette_subclass_data *psubclass_data = dev->subclass_data;
+    pcl_mono_palette_subclass_data *psubclass_data;
 
-    /* just pass it along */
-    psubclass_data->device_cm_procs->map_gray(dev, gray, out);
+    do {
+        if (strncmp(dev->dname, "PCL_Mono_Palette", 16) == 0)
+            break;
+        dev = dev->child;
+    } while(dev->child);
+
+    if (dev->child) {
+        psubclass_data = dev->subclass_data;
+        /* just pass it along */
+        psubclass_data->device_cm_procs->map_gray(dev, gray, out);
+    } else
+        return;
 }
 
 static void
 pcl_rgb_cs_to_cm(gx_device * dev, const gs_imager_state * pis, frac r, frac g,
                  frac b, frac out[])
 {
-    pcl_mono_palette_subclass_data *psubclass_data = dev->subclass_data;
-    frac gray = color_rgb_to_gray(r, g, b, NULL);
+    pcl_mono_palette_subclass_data *psubclass_data;
+    frac gray;
 
-    psubclass_data->device_cm_procs->map_rgb(dev, pis, gray, gray, gray, out);
+    do {
+        if (strncmp(dev->dname, "PCL_Mono_Palette", 16) == 0)
+            break;
+        dev = dev->child;
+    } while(dev->child);
+
+    if (dev->child) {
+        psubclass_data = dev->subclass_data;
+        gray = color_rgb_to_gray(r, g, b, NULL);
+
+        psubclass_data->device_cm_procs->map_rgb(dev, pis, gray, gray, gray, out);
+    } else
+        return;
 }
 
 static void
 pcl_cmyk_cs_to_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
-    pcl_mono_palette_subclass_data *psubclass_data = dev->subclass_data;
-    frac gray = color_cmyk_to_gray(c, m, y, k, NULL);
+    pcl_mono_palette_subclass_data *psubclass_data;
+    frac gray;
 
-    psubclass_data->device_cm_procs->map_cmyk(dev, gray, gray, gray, gray, out);
+    do {
+        if (strncmp(dev->dname, "PCL_Mono_Palette", 16) == 0)
+            break;
+        dev = dev->child;
+    } while(dev->child);
+
+    if (dev->child) {
+        psubclass_data = dev->subclass_data;
+        gray = color_cmyk_to_gray(c, m, y, k, NULL);
+
+        psubclass_data->device_cm_procs->map_cmyk(dev, gray, gray, gray, gray, out);
+    } else
+        return;
 }
 
 
@@ -705,12 +739,24 @@ int pcl_mono_palette_begin_typed_image(gx_device *dev, const gs_imager_state *pi
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 {
-    if (dev->child->procs.begin_typed_image)
-        return dev->child->procs.begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
-    else
-        return gx_default_begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
+    int code = 0;
 
-    return 0;
+    if (dev->child->procs.begin_typed_image)
+        code = dev->child->procs.begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
+    else
+        code = gx_default_begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
+
+#if 0
+    /* This is pretty ugly. We want the image code to use our modified color mapping procs. But if we leave
+     * it as-is, the stored (ie child) device in the enumerator will be used, which means that our remapping won't
+     * take place. Now, we know that 'this' device is a fair copy of the child, including bitmap pointers and so
+     * on, so we can just substitute 'this' device for the child in the enumerator. This is an example
+     * of why the text and image enumerators are a really bad idea.
+     */
+    ((gx_image_enum_common_t *)*pinfo)->dev = dev;
+#endif
+
+    return code;
 }
 
 int pcl_mono_palette_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
@@ -806,12 +852,29 @@ int pcl_mono_palette_text_begin(gx_device *dev, gs_imager_state *pis, const gs_t
     gs_font *font, gx_path *path, const gx_device_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gs_text_enum_t **ppte)
 {
-    if (dev->child->procs.text_begin)
-        return dev->child->procs.text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
-    else
-        return gx_default_text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
+    int code = 0;
 
-    return 0;
+    if (dev->child->procs.text_begin)
+        code = dev->child->procs.text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
+    else
+        code = gx_default_text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
+
+#if 0
+    /* This is pretty ugly. We want the image code to use our modified color mapping procs. But if we leave
+     * it as-is, the stored (ie child) device in the enumerator will be used, which means that our remapping won't
+     * take place. Now, we know that 'this' device is a fair copy of the child, including bitmap pointers and so
+     * on, so we can just substitute 'this' device for the child in the enumerator. This is an example
+     * of why the text and image enumerators are a really bad idea.
+     */
+    /* The default text enum init routine increments teh reference count of the device, but the image enumerator
+     * doesn't. Consistency ? We've heard of it.....
+     */
+    rc_decrement_only(((gs_text_enum_t *)*ppte)->dev, "pcl_mono_palette");
+    ((gs_text_enum_t *)*ppte)->dev = dev;
+    rc_increment(dev);
+#endif
+
+    return code;
 }
 
 /* This method seems (despite the name) to be intended to allow for
@@ -873,7 +936,7 @@ const gx_cm_color_map_procs *pcl_mono_palette_get_color_mapping_procs(const gx_d
         psubclass_data->pcl_mono_procs.map_gray = pcl_gray_cs_to_cm;
         psubclass_data->pcl_mono_procs.map_rgb = pcl_rgb_cs_to_cm;
         psubclass_data->pcl_mono_procs.map_cmyk = pcl_cmyk_cs_to_cm;
-        psubclass_data->device_cm_procs = dev_proc(dev->child, get_color_mapping_procs) (dev->child);
+        psubclass_data->device_cm_procs = (gx_cm_color_map_procs *)dev_proc(dev->child, get_color_mapping_procs) (dev->child);
     }
     return &psubclass_data->pcl_mono_procs;
 }
