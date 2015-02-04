@@ -793,23 +793,23 @@ update_overprint_params(
             pprocs->map_cmyk == 0                                           )
             return_error(gs_error_unknownerror);
 
-        pprocs->map_gray(dev, frac_13, cvals);
+        MAP_GRAY(pprocs, dev, frac_13, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
 
-        pprocs->map_rgb(dev, 0, frac_13, frac_0, frac_0, cvals);
+        MAP_RGB(pprocs, dev, 0, frac_13, frac_0, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        pprocs->map_rgb(dev, 0, frac_0, frac_13, frac_0, cvals);
+        MAP_RGB(pprocs, dev, 0, frac_0, frac_13, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        pprocs->map_rgb(dev, 0, frac_0, frac_0, frac_13, cvals);
+        MAP_RGB(pprocs, dev, 0, frac_0, frac_0, frac_13, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
 
-        pprocs->map_cmyk(dev, frac_13, frac_0, frac_0, frac_0, cvals);
+        MAP_CMYK(pprocs, dev, frac_13, frac_0, frac_0, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        pprocs->map_cmyk(dev, frac_0, frac_13, frac_0, frac_0, cvals);
+        MAP_CMYK(pprocs, dev, frac_0, frac_13, frac_0, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        pprocs->map_cmyk(dev, frac_0, frac_0, frac_13, frac_0, cvals);
+        MAP_CMYK(pprocs, dev, frac_0, frac_0, frac_13, frac_0, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
-        pprocs->map_cmyk(dev, frac_0, frac_0, frac_0, frac_13, cvals);
+        MAP_CMYK(pprocs, dev, frac_0, frac_0, frac_0, frac_13, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
 
         opdev->drawn_comps = drawn_comps;

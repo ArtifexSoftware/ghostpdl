@@ -469,13 +469,13 @@ gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
 
                 switch (ncolors) {
                 case 1:
-                    map_procs->map_gray(dev, sc[0], dc);
+                    MAP_GRAY(map_procs, dev, sc[0], dc);
                     break;
                 case 3:
-                    map_procs->map_rgb(dev, 0, sc[0], sc[1], sc[2], dc);
+                    MAP_RGB(map_procs, dev, 0, sc[0], sc[1], sc[2], dc);
                     break;
                 case 4:
-                    map_procs->map_cmyk(dev, sc[0], sc[1], sc[2], sc[3], dc);
+                    MAP_CMYK(map_procs, dev, sc[0], sc[1], sc[2], sc[3], dc);
                     break;
                 default:
                     return_error(gs_error_rangecheck);

@@ -524,16 +524,16 @@ check_cmyk_color_model_comps(gx_device * dev)
          (map_cmyk = pprocs->map_cmyk) == 0                            )
         return 0;
 
-    map_cmyk(dev, frac_14, frac_0, frac_0, frac_0, out);
+    MAP_CMYK(pprocs, dev, frac_14, frac_0, frac_0, frac_0, out);
     if (!check_single_comp(cyan_c, frac_14, ncomps, out))
         return 0;
-    map_cmyk(dev, frac_0, frac_14, frac_0, frac_0, out);
+    MAP_CMYK(pprocs, dev, frac_0, frac_14, frac_0, frac_0, out);
     if (!check_single_comp(magenta_c, frac_14, ncomps, out))
         return 0;
-    map_cmyk(dev, frac_0, frac_0, frac_14, frac_0, out);
+    MAP_CMYK(pprocs, dev, frac_0, frac_0, frac_14, frac_0, out);
     if (!check_single_comp(yellow_c, frac_14, ncomps, out))
         return false;
-    map_cmyk(dev, frac_0, frac_0, frac_0, frac_14, out);
+    MAP_CMYK(pprocs, dev, frac_0, frac_0, frac_0, frac_14, out);
     if (!check_single_comp(black_c, frac_14, ncomps, out))
         return 0;
 
@@ -589,13 +589,13 @@ check_rgb_color_model_comps(gx_device * dev)
          (map_rgb = pprocs->map_rgb) == 0                            )
         return 0;
 
-    map_rgb(dev, NULL, frac_14, frac_0, frac_0, out);
+    MAP_RGB(pprocs, dev, NULL, frac_14, frac_0, frac_0, out);
     if (!check_single_comp(red_c, frac_14, ncomps, out))
         return 0;
-    map_rgb(dev, NULL, frac_0, frac_14, frac_0, out);
+    MAP_RGB(pprocs, dev, NULL, frac_0, frac_14, frac_0, out);
     if (!check_single_comp(green_c, frac_14, ncomps, out))
         return 0;
-    map_rgb(dev, NULL, frac_0, frac_0, frac_14, out);
+    MAP_RGB(pprocs, dev, NULL, frac_0, frac_0, frac_14, out);
     if (!check_single_comp(blue_c, frac_14, ncomps, out))
         return 0;
 

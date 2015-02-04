@@ -850,6 +850,30 @@ typedef struct gdev_space_params_s {
         dev = saved;\
     }
 
+#define MAP_RGB(procs, dev, pis, r, g, b, cm_comps)\
+    {\
+        gx_device *saved = dev;\
+        while(dev->parent) {dev = dev->parent;}\
+        procs->map_rgb(dev, pis, r, g, b, cm_comps);\
+        dev = saved;\
+    }
+
+#define MAP_GRAY(procs, dev, gray, cm_comps)\
+    {\
+        gx_device *saved = dev;\
+        while(dev->parent) {dev = dev->parent;}\
+        procs->map_gray(dev, gray, cm_comps);\
+        dev = saved;\
+    }
+
+#define MAP_CMYK(procs, dev, c, m, y, k, cm_comps)\
+    {\
+        gx_device *saved = dev;\
+        while(dev->parent) {dev = dev->parent;}\
+        procs->map_cmyk(dev, c, m, y, k, cm_comps);\
+        dev = saved;\
+    }
+
 /* ---------------- Device procedures ---------------- */
 
 /* Define an opaque type for parameter lists. */

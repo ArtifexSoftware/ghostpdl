@@ -904,7 +904,7 @@ cmap_gray_halftoned(frac gray, gx_device_color * pdc,
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
     GET_COLOR_MAPPING_PROCS(dev, pprocs);
-    pprocs->map_gray(dev, gray, cm_comps);
+    MAP_GRAY(pprocs, dev, gray, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -949,7 +949,7 @@ cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_imager_state * pis,
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
     GET_COLOR_MAPPING_PROCS(dev, pprocs);
-    pprocs->map_gray(dev, gray, cm_comps);
+    MAP_GRAY(pprocs, dev, gray, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -999,7 +999,7 @@ cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
     GET_COLOR_MAPPING_PROCS(dev, pprocs);
-    pprocs->map_rgb(dev, pis, r, g, b, cm_comps);
+    MAP_RGB(pprocs, dev, pis, r, g, b, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -1030,7 +1030,7 @@ cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
     GET_COLOR_MAPPING_PROCS(dev, pprocs);
-    pprocs->map_rgb(dev, pis, r, g, b, cm_comps);
+    MAP_RGB(pprocs, dev, pis, r, g, b, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -1073,7 +1073,7 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
     GET_COLOR_MAPPING_PROCS(dev, pprocs);
-    pprocs->map_cmyk(dev, c, m, y, k, cm_comps);
+    MAP_CMYK(pprocs, dev, c, m, y, k, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -1148,7 +1148,7 @@ cmap_rgb_alpha_halftoned(frac r, frac g, frac b, frac alpha,
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
     GET_COLOR_MAPPING_PROCS(dev, pprocs);
-    pprocs->map_rgb(dev, pis, r, g, b, cm_comps);
+    MAP_RGB(pprocs, dev, pis, r, g, b, cm_comps);
 
     /* pre-multiply to account for the alpha weighting */
     if (alpha != frac_1) {
@@ -1191,7 +1191,7 @@ cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
     GET_COLOR_MAPPING_PROCS(dev, pprocs);
-    pprocs->map_rgb(dev, pis, r, g, b, cm_comps);
+    MAP_RGB(pprocs, dev, pis, r, g, b, cm_comps);
 
     /* pre-multiply to account for the alpha weighting */
     if (alpha != frac_1) {
