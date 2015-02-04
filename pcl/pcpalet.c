@@ -29,6 +29,9 @@
 #include "gzstate.h"
 #include "gxdevsop.h"   /* for special ops */
 #include "gsutil.h"     /* for gs_next_ids */
+#include "gdevmplt.h"
+
+extern gx_device_mplt gs_pcl_mono_palette_device;
 
 /* RC routines */
 gs_private_st_simple(st_palette_t, pcl_palette_t, "pcl palette object");
@@ -852,10 +855,11 @@ pcl_mono_color_mapping_procs(const gx_device * dev)
 static int
 pcl_update_mono(pcl_state_t * pcs)
 {
-    gx_device *dev = gs_currentdevice(pcs->pgs);
+    gx_device *pdev, *dev = gs_currentdevice(pcs->pgs);
 
     const gx_cm_color_map_procs *cm_procs =
         dev_proc(dev, get_color_mapping_procs) (dev);
+#if 0
     if (pcs->monochrome_mode) {
         if (swapped_device_color_procs == false) {
             device_cm_procs = *cm_procs;
@@ -877,6 +881,30 @@ pcl_update_mono(pcl_state_t * pcs)
             swapped_device_color_procs = false;
         }
     }
+#else
+    if (pcs->monochrome_mode) {
+        while (dev) {
+            pdev = dev;
+            if (strcmp(dev->dname, "PCL_Mono_Palette") == 0){
+                break;
+            }
+            dev = dev->child;
+        }
+        if (!dev){
+            gx_device_subclass(pdev, (gx_device *)&gs_pcl_mono_palette_device, sizeof(pcl_mono_palette_subclass_data));
+        }
+    } else {
+        while (dev) {
+            if (strcmp(dev->dname, "PCL_Mono_Palette") == 0){
+                break;
+            }
+            dev = dev->child;
+        }
+        if (dev){
+            gx_unsubclass_device(dev);
+        }
+    }
+#endif
     gx_unset_dev_color(pcs->pgs);
     return 0;
 }
