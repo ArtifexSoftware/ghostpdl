@@ -883,6 +883,7 @@ struct gx_device_pdf_s {
                                      * the last file *if* we are emitting one file per page.
                                      */
     bool FlattenFonts;
+    int LastFormID;
 };
 
 #define is_in_page(pdev)\

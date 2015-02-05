@@ -273,10 +273,19 @@ enum {
      */
     gxdso_supports_saved_pages,
     /* Form handling, we need one to start and one to stop a form
-     * its up to the device to recognise duplicate execution of forms.
      */
     gxdso_form_begin,
     gxdso_form_end,
+    /* These next two relate to high level form handling. After executing a form the
+     * PostScript will request an ID for the form. If it gets one, it stores it in the
+     * /Implementation in the Form dictioanry. Next time it encoutners 'execform' for that
+     * form it will not call gxdso_form_begin and gxdso_form_end, instead it will simply call
+     * gxdso_repeat_form with the ID presented earlier. You should not return anything in response
+     * to the gxdso_form_ID unless the device is capable of storing the form and repeating it
+     * without running the PaintProc again.
+     */
+    gxdso_get_form_ID,
+    gxdso_repeat_form,
     /* gxdso_adjust_bandheight:
      * Adjust the bandheight given in 'size' (normally downwards). Typically
      * to round it to a multiple of a given number.

@@ -2771,6 +2771,39 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     pdf_reserve_object_id(pdev, pres, 0);
                 pprintld1(pdev->strm, "/R%ld Do Q\n", pdf_resource_id(pres));
                 pdev->HighLevelForm--;
+                pdev->LastFormID = pdf_resource_id(pres);
+            }
+            return 0;
+        case gxdso_get_form_ID:
+            {
+                int *ID = data;
+                *ID = pdev->LastFormID;
+            }
+            return 0;
+        case gxdso_repeat_form:
+            {
+                gs_form_template_t *tmplate = (gs_form_template_t *)data;
+
+                /* Make sure the document and page stream are open */
+                code = pdfwrite_pdf_open_document(pdev);
+                if (code < 0)
+                    return code;
+                code = pdf_open_contents(pdev, PDF_IN_STREAM);
+                if (code < 0)
+                    return code;
+                /* Put any extant clip out before we start the form */
+                code = pdf_put_clip_path(pdev, tmplate->pcpath);
+                if (code < 0)
+                    return code;
+                /* Set the CTM to be the one passed in from the interpreter,
+                 * this allows us to spot forms even when translation/rotation takes place
+                 * as we remove the CTN from the form stream before capture
+                 */
+                pprintg6(pdev->strm, "q %g %g %g %g %g %g cm\n", tmplate->CTM.xx, tmplate->CTM.xy,
+                         tmplate->CTM.yx, tmplate->CTM.yy, tmplate->CTM.tx, tmplate->CTM.ty);
+                pprintld1(pdev->strm, "/R%ld Do Q\n", tmplate->FormID);
+                pres = pdf_find_resource_by_resource_id(pdev, resourceXObject, tmplate->FormID);
+                pres->where_used |= pdev->used_mask;
             }
             return 0;
         case gxdso_pattern_start_accum:

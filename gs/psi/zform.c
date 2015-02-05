@@ -28,6 +28,7 @@
 #include "gspath.h"
 #include "gxpath.h"
 #include "gzstate.h"
+#include "store.h"
 
 /* support for high level formss */
 
@@ -55,6 +56,7 @@ static int zbeginform(i_ctx_t *i_ctx_p)
         return code;
     if (code == 0)
        return_error(e_undefined);
+    tmplate.FormID = -1;
     tmplate.BBox.p.x = BBox[0];
     tmplate.BBox.p.y = BBox[1];
     pt.x = tmplate.BBox.q.x = BBox[2];
@@ -121,9 +123,83 @@ static int zendform(i_ctx_t *i_ctx_p)
     return code;
 }
 
+/*
+ * - .get_form_id <int>
+ */
+static int zget_form_id(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gx_device *cdev = gs_currentdevice_inline(igs);
+    int code, ID;
+
+    code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_get_form_ID,
+                            &ID, sizeof(int));
+
+    if (code < 0){
+        ID = -1;
+        code = 0;
+    }
+
+    push(1);
+    make_int(op, ID);
+    return code;
+}
+
+/*
+ * <int> .repeatform -
+ */
+static int zrepeatform(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gx_device *cdev = gs_currentdevice_inline(igs);
+    int code;
+    gs_form_template_t tmplate;
+    float BBox[4], Matrix[6];
+
+    check_type(*op, t_integer);
+
+    code = read_matrix(imemory, op - 2, &tmplate.CTM);
+    if (code < 0)
+        return code;
+
+    code = dict_floats_param(imemory, op - 1, "BBox", 4, BBox, NULL);
+    if (code < 0)
+        return code;
+    if (code == 0)
+       return_error(e_undefined);
+
+    tmplate.BBox.p.x = BBox[0];
+    tmplate.BBox.p.y = BBox[1];
+
+    code = dict_floats_param(imemory, op - 1, "Matrix", 6, Matrix, NULL);
+    if (code < 0)
+        return code;
+    if (code == 0)
+       return_error(e_undefined);
+
+    tmplate.form_matrix.xx = Matrix[0];
+    tmplate.form_matrix.xy = Matrix[1];
+    tmplate.form_matrix.yx = Matrix[2];
+    tmplate.form_matrix.yy = Matrix[3];
+    tmplate.form_matrix.tx = Matrix[4];
+    tmplate.form_matrix.ty = Matrix[5];
+
+    tmplate.pcpath = igs->clip_path;
+
+    tmplate.FormID = op->value.intval;
+
+    code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_repeat_form,
+                            &tmplate, sizeof(gs_form_template_t));
+
+    pop(3);
+    return code;
+}
+
 const op_def zform_op_defs[] =
 {
     {"0.beginform", zbeginform},
     {"0.endform", zendform},
+    {"0.get_form_id", zget_form_id},
+    {"1.repeatform", zrepeatform},
 op_def_end(0)
 };

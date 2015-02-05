@@ -938,8 +938,35 @@ mark
     1 index dup /Implementation //null .forceput readonly pop
   } if
   /UNROLLFORMS where {/UNROLLFORMS get}{false}ifelse not
-  %% [CTM] <<Form>> .beginform -
-  {3 -1 roll 2 index .beginform exec .endform}{exec} ifelse
+  %% [CTM] <<Form>> PaintProc .beginform -
+  {
+    %% First,, check to see if we have no /Implementation already defined (see above)
+    1 index /Implementation get //null eq
+    {
+      %% We don't, so copy the form dictionary
+      1 index 4 1 roll
+      %% tell devices we're starting a form, run the PaintProc, and then tell the devices we've finished
+      3 -1 roll 2 index .beginform exec .endform
+      %% Ask devices if they have cached the form, and what ID to use if so
+      %% returning -1 means 'no ID'
+      .get_form_id dup -1 eq
+      {pop pop}
+      {
+        %% The form is cached with a specific ID. Make a dictionary (which we'll store in the
+        %% Form dictioanry using the /Implementation key).
+        1 dict dup /FormID 4 -1 roll put
+        1 index exch /Implementation exch .forceput readonly pop
+      }
+      ifelse
+    }
+    {
+      %% We have a (non-null) Implementation, get the dictionary and pull the
+      %% FormID key from it, then tell the device to use the stored form with the
+      %% specified key.
+      pop dup /Implementation get /FormID get .repeatform
+    }ifelse
+  }
+  {exec} ifelse
 } .bind odef	% must bind .forceput
 
 /.formtypes 5 dict
