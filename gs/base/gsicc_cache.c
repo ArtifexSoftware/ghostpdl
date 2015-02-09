@@ -1042,7 +1042,9 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
    buffer are parsed and placed into a custom stucture that is pointed to by
    the profile pointer.  Note that this pointer is not visible to the garbage
    collector and should be allocated in non-gc memory as is demonstrated in
-   this sample.
+   this sample.  The structure elements are released when the profile is 
+   destroyed through the call to gsicc_named_profile_release, which is set
+   as the value of the profile member variable release.
 
    Note that there are calls defined in gsicc_littlecms.c that will create link
    transforms between Named Color ICC profiles and the output device.  Such
@@ -1059,8 +1061,8 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
 
    !!!!IT WILL BE NECESSARY TO PERFORM THE PROPER DEALLOCATION
        CLEAN-UP OF THE STRUCTURES WHEN rc_free_icc_profile OCCURS FOR THE NAMED
-       COLOR PROFILE!!!!!!
-
+       COLOR PROFILE!!!!!!   See gsicc_named_profile_release below for an example.
+       This is set in the profile release member variable.
 */
 
 /* Define the demo structure and function for named color look-up */
@@ -1068,6 +1070,7 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
 typedef struct gsicc_namedcolortable_s {
     gsicc_namedcolor_t *named_color;    /* The named color */
     unsigned int number_entries;        /* The number of entries */
+    gs_memory_t *memory;
 } gsicc_namedcolortable_t;
 
 /* Support functions for parsing buffer */
@@ -1090,6 +1093,36 @@ get_to_next_line(char **buffptr, int *buffer_count)
     }
 }
 
+/* Release the structures we allocated in gsicc_transform_named_color */
+static void
+gsicc_named_profile_release(void *ptr)
+{
+    gsicc_namedcolortable_t *namedcolor_table = (gsicc_namedcolortable_t*) ptr;
+    unsigned int num_entries;
+    gs_memory_t *mem;
+    int k;
+    gsicc_namedcolor_t *namedcolor_data;
+
+    if (namedcolor_table != NULL) {
+        mem = namedcolor_table->memory;
+        num_entries = namedcolor_table->number_entries;
+        namedcolor_data = namedcolor_table->named_color;
+
+        for (k = 0; k < num_entries; k++) {
+            gs_free(mem, namedcolor_data[k].colorant_name, 1,
+                namedcolor_data[k].name_size + 1,
+                "gsicc_named_profile_release (colorant_name)");
+        }
+
+        gs_free(mem, namedcolor_data, num_entries, sizeof(gsicc_namedcolor_t),
+            "gsicc_named_profile_release (namedcolor_data)");
+
+        gs_free(namedcolor_table->memory, namedcolor_table, 1,
+            sizeof(gsicc_namedcolortable_t),
+            "gsicc_named_profile_release (namedcolor_table)");
+    }
+}
+
 /* Function returns -1 if name not found.  Otherwise transform the color. */
 int
 gsicc_transform_named_color(const float tint_values[],
@@ -1100,7 +1133,6 @@ gsicc_transform_named_color(const float tint_values[],
                             cmm_profile_t *gs_output_profile,
                             gsicc_rendering_param_t *rendering_params)
 {
-
     gsicc_namedcolor_t *namedcolor_data;
     unsigned int num_entries;
     cmm_profile_t *named_profile;
@@ -1126,6 +1158,7 @@ gsicc_transform_named_color(const float tint_values[],
     gsicc_rendering_param_t render_cond;   
     cmm_dev_profile_t *dev_profile;
     int indices[GS_CLIENT_COLOR_MAX_COMPONENTS]; 
+    gs_memory_t *nongc_mem = pis->memory->non_gc_memory;
 
     /* Check if the data that we have has already been generated. */
     if (pis->icc_manager != NULL) {
@@ -1137,37 +1170,38 @@ gsicc_transform_named_color(const float tint_values[],
                 /*  Note that we do this in non-GC memory since the
                     profile pointer is not GC'd */
                 namedcolor_table =
-                    (gsicc_namedcolortable_t*) gs_malloc(pis->memory->stable_memory, 1,
+                    (gsicc_namedcolortable_t*) gs_malloc(nongc_mem, 1,
                                                     sizeof(gsicc_namedcolortable_t),
                                                     "gsicc_transform_named_color");
-                if (namedcolor_table == NULL) return(gs_error_VMerror);
+                if (namedcolor_table == NULL) 
+                    return(gs_error_VMerror);
+                namedcolor_table->memory = nongc_mem;
                 /* Parse buffer and load the structure we will be searching */
                 buffptr = (char*) named_profile->buffer;
                 buffer_count = named_profile->buffer_size;
                 count = sscanf(buffptr,"%d",&num_entries);
                 if (num_entries < 1 || count == 0) {
-                    gs_free(pis->memory, namedcolor_table, 1,
+                    gs_free(nongc_mem, namedcolor_table, 1,
                             sizeof(gsicc_namedcolortable_t),
                             "gsicc_transform_named_color");
-                    return (-1);
+                    return -1;
                 }
                 code = get_to_next_line(&buffptr,&buffer_count);
                 if (code < 0) {
-                    gs_free(pis->memory,
-                            namedcolor_table, 1,
+                    gs_free(nongc_mem, namedcolor_table, 1,
                             sizeof(gsicc_namedcolortable_t),
                             "gsicc_transform_named_color");
-                    return (-1);
+                    return -1;
                 }
                 namedcolor_data =
-                    (gsicc_namedcolor_t*) gs_malloc(pis->memory->stable_memory, num_entries,
+                    (gsicc_namedcolor_t*) gs_malloc(nongc_mem, num_entries,
                                                     sizeof(gsicc_namedcolor_t),
                                                     "gsicc_transform_named_color");
                 if (namedcolor_data == NULL) {
-                    gs_free(pis->memory, namedcolor_table, 1,
+                    gs_free(nongc_mem, namedcolor_table, num_entries,
                             sizeof(gsicc_namedcolortable_t),
                             "gsicc_transform_named_color");
-                    return (gs_error_VMerror);
+                    return gs_error_VMerror;
                 }
                 namedcolor_table->number_entries = num_entries;
                 namedcolor_table->named_color = namedcolor_data;
@@ -1191,8 +1225,7 @@ gsicc_transform_named_color(const float tint_values[],
                     namedcolor_data[k].name_size = curr_name_size;
                     /* +1 for the null */
                     namedcolor_data[k].colorant_name =
-                        (char*) gs_malloc(pis->memory->stable_memory,1,
-                                          curr_name_size+1,
+                        (char*)gs_malloc(nongc_mem, 1, curr_name_size + 1,
                                           "gsicc_transform_named_color");
                     if (namedcolor_data[k].colorant_name == NULL)
                         return gs_error_VMerror;
@@ -1210,25 +1243,17 @@ gsicc_transform_named_color(const float tint_values[],
                         if (lab[j] < 0) lab[j] = 0;
                         namedcolor_data[k].lab[j] = (unsigned short) lab[j];
                     }
-                    if (code < 0) {
-                        gs_free(pis->memory, namedcolor_table, 1,
-                                sizeof(gsicc_namedcolortable_t),
-                                "gsicc_transform_named_color");
-                        gs_free(pis->memory, namedcolor_data, num_entries,
-                                sizeof(gsicc_namedcolordata_t),
-                                "gsicc_transform_named_color");
-                        return (-1);
-                    }
                 }
                 /* Assign to the profile pointer */
                 named_profile->profile_handle = namedcolor_table;
+                named_profile->release = gsicc_named_profile_release;
             } else {
                 if (named_profile->profile_handle != NULL ) {
                     namedcolor_table =
                         (gsicc_namedcolortable_t*) named_profile->profile_handle;
                    num_entries = namedcolor_table->number_entries;
                 } else {
-                    return(-1);
+                    return -1;
                 }
             }
             /* Go through each of our spot names, getting the color value for
@@ -1255,7 +1280,10 @@ gsicc_transform_named_color(const float tint_values[],
             }
             /* We have all the colorants.  Lets go through and see if we can
                make something that looks like a merge of the various ones */
-            /* Apply tint, blend LAB values  */
+            /* Apply tint, blend LAB values.  Note that we may have wanted to 
+               check if we even want to do this.  It is possible that the
+               device directly supports this particular colorant.  One may
+               want to check the alt tint transform boolean */
             for (n = 0; n < num_names; n++) {
                 for (j = 0; j < 3; j++) {
                     temp = (float) namedcolor_table->named_color[indices[n]].lab[j] * tint_values[n]

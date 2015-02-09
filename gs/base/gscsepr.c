@@ -301,10 +301,21 @@ gx_remap_Separation(const gs_client_color * pcc, const gs_color_space * pcs,
                        gs_color_select_t select)
 {
     int code = 0;
+    bool mapped = false;
 
-    if (pcs->params.separation.sep_type != SEP_NONE)
-        code = gx_default_remap_color(pcc, pcs, pdc, pis, dev, select);
-    else {
+    if (pcs->params.separation.sep_type != SEP_NONE) {
+        /* First see if we want to do a direct remap with a named color table.
+           Note that this call occurs regardless of the alt color space boolean
+           value.  A decision can be made in gsicc_transform_named_color to
+           return false if you don't want those named colors to be mapped */
+        if (pcs->params.separation.sep_type == SEP_OTHER &&
+            pis->icc_manager->device_named != NULL) {
+            /* Try to apply the direct replacement */
+            mapped = gx_remap_named_color(pcc, pcs, pdc, pis, dev, select);
+        }
+        if (!mapped)
+            code = gx_default_remap_color(pcc, pcs, pdc, pis, dev, select);
+    } else {
         color_set_null(pdc);
     }
     /* Save original color space and color info into dev color */
@@ -321,46 +332,10 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
     gs_client_color cc;
     gs_color_space *pacs = pcs->base_space;
     bool is_lab;
-    int k;
-    int num_des_comps = dev->color_info.num_components;
-    gsicc_namedcolor_t named_color;
 
     if (pcs->params.separation.sep_type == SEP_OTHER &&
         pcs->params.separation.use_alt_cspace) {
         gs_device_n_map *map = pcs->params.separation.map;
-        /* First see if we have a named color object that we can use to try
-           to map from the spot color into device values.  */
-        if (pis->icc_manager->device_named != NULL) {
-            /* There is a table present.  If we have the colorant name
-               then get the device values */
-            gx_color_value device_values[GX_DEVICE_COLOR_MAX_COMPONENTS];
-            const gs_separation_name name = pcs->params.separation.sep_name;
-            byte *pname;
-            uint name_size;
-            gsicc_rendering_param_t rendering_params;
-
-            /* Define the rendering intents. */
-            rendering_params.black_point_comp = pis->blackptcomp;
-            rendering_params.graphics_type_tag = dev->graphics_type_tag;
-            rendering_params.override_icc = false;
-            rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
-            rendering_params.rendering_intent = pis->renderingintent;
-            rendering_params.cmm = gsCMM_DEFAULT;
-            pcs->params.separation.get_colorname_string(pis->memory, name,
-                                                &pname, &name_size);
-            /* Make the name structure and initialized it */
-            named_color.colorant_name = (char*) pname;
-            named_color.name_size = name_size;
-            code = gsicc_transform_named_color(pc->paint.values, &named_color,
-                                               1, device_values, pis, dev, NULL,
-                                               &rendering_params);
-            if (code == 0) {
-                for (k = 0; k < num_des_comps; k++){
-                    pconc[k] = float2frac(((float) device_values[k])/65535.0);
-                }
-                return(0);
-            }
-        }
         /* Check the 1-element cache first. */
         if (map->cache_valid && map->tint[0] == pc->paint.values[0]) {
             int i, num_out = gs_color_space_num_components(pacs);
@@ -394,8 +369,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
             cc.paint.values[2] = (cc.paint.values[2]+128)/255.0;
         }
         return cs_concretize_color(&cc, pacs, pconc, pis, dev);
-    }
-    else {
+    } else {
         pconc[0] = gx_unit_frac(pc->paint.values[0]);
     }
     return 0;
@@ -419,8 +393,8 @@ gx_remap_concrete_Separation(const frac * pconc,  const gs_color_space * pcs,
 
         return (*pacs->type->remap_concrete_color)
                                 (pconc, pacs, pdc, pis, dev, select);
-    }
-    else {
+    } else {
+        /* We need to determine if we did a direct color replacement */
         gx_remap_concrete_separation(pconc[0], pdc, pis, dev, select);
         return 0;
     }

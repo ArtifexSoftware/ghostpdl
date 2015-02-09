@@ -58,8 +58,8 @@ static gsicc_namelist_t* gsicc_new_namelist(gs_memory_t *memory);
 static gsicc_colorname_t* gsicc_new_colorname(gs_memory_t *memory);
 static gsicc_namelist_t* gsicc_get_spotnames(gcmmhprofile_t profile,
                                              gs_memory_t *memory);
-static void gsicc_manager_free_contents(gs_memory_t * mem, gsicc_manager_t *icc_man,
-                                  client_name_t cname);
+static void gsicc_manager_free_contents(gsicc_manager_t *icc_man, 
+                                        client_name_t cname);
 
 static void rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in,
                                   client_name_t cname);
@@ -1768,6 +1768,8 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
     result->vers = ICCVERS_UNKNOWN;
     result->v2_data = NULL;
     result->v2_size = 0;
+    result->release = gscms_release_profile; /* Default case */
+
     if (result->lock == NULL) {
         gs_free_object(mem_nongc, result, "gsicc_profile_new");
         gs_free_object(mem_nongc, nameptr, "gsicc_profile_new");
@@ -1789,18 +1791,18 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
                ptr_in, profile->rc.ref_count);
     if (profile->rc.ref_count <= 1 ) {
         /* Clear out the buffer if it is full */
-        if(profile->buffer != NULL) {
+        if (profile->buffer != NULL) {
             gs_free_object(mem_nongc, profile->buffer, "rc_free_icc_profile(buffer)");
             profile->buffer = NULL;
         }
         if_debug0m(gs_debug_flag_icc, mem, "[icc] profile freed\n");
         /* Release this handle if it has been set */
-        if(profile->profile_handle != NULL) {
-            gscms_release_profile(profile->profile_handle);
+        if (profile->profile_handle != NULL) {
+            profile->release(profile->profile_handle);
             profile->profile_handle = NULL;
         }
         /* Release the name if it has been set */
-        if(profile->name != NULL) {
+        if (profile->name != NULL) {
             gs_free_object(mem_nongc, profile->name,"rc_free_icc_profile(name)");
             profile->name = NULL;
             profile->name_length = 0;
@@ -1810,8 +1812,7 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
             gx_monitor_free(profile->lock);
             profile->lock = NULL;
         }
-        /* If we had a DeviceN profile with names
-           deallocate that now */
+        /* If we had a DeviceN profile with names deallocate that now */
         if (profile->spotnames != NULL) {
             /* Free the linked list in this object */
             gsicc_free_spotnames(profile->spotnames, mem_nongc);
@@ -1922,7 +1923,7 @@ gsicc_manager_finalize(const gs_memory_t *memory, void * vptr)
 {
     gsicc_manager_t *icc_man = (gsicc_manager_t *)vptr;
 
-    gsicc_manager_free_contents(memory, icc_man, "gsicc_manager_finalize");
+    gsicc_manager_free_contents(icc_man, "gsicc_manager_finalize");
 }
 
 gsicc_manager_t *
@@ -1952,7 +1953,7 @@ gsicc_manager_new(gs_memory_t *memory)
     return result;
 }
 
-static void gsicc_manager_free_contents(gs_memory_t * mem, gsicc_manager_t *icc_manager,
+static void gsicc_manager_free_contents(gsicc_manager_t *icc_manager,
                                   client_name_t cname)
 {
     int k;
@@ -2057,13 +2058,13 @@ gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s,
     if (code < 0)
         return code;
     /* Allocate the buffer, stuff with the profile */
-    buffer_ptr = gs_alloc_bytes(memory, profile_size,
+    buffer_ptr = gs_alloc_bytes(memory->non_gc_memory, profile_size,
                                         "gsicc_load_profile");
     if (buffer_ptr == NULL)
         return gs_throw(gs_error_VMerror, "Insufficient memory for profile buffer");
     num_bytes = sfread(buffer_ptr,sizeof(unsigned char),profile_size,s);
     if( num_bytes != profile_size) {
-        gs_free_object(memory, buffer_ptr, "gsicc_load_profile");
+        gs_free_object(memory->non_gc_memory, buffer_ptr, "gsicc_load_profile");
         return -1;
     }
     profile->buffer = buffer_ptr;

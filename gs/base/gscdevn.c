@@ -373,13 +373,14 @@ gx_remap_DeviceN(const gs_client_color * pcc, const gs_color_space * pcs,
     frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     const gs_color_space *pconcs;
     int i = pcs->type->num_components(pcs),k;
-    int code;
+    int code = 0;
     const gs_color_space *pacs = pcs->base_space;
     gs_client_color temp;
+    bool mapped = false;
 
     if ( pcs->cmm_icc_profile_data != NULL && pis->color_component_map.use_alt_cspace) {
-        /* If needed, reorganize the data.  The ICC colorants tag drives the
-           the laydown order */
+        /* This is the case where we have placed a N-CLR source profile for
+           this color space */
         if (pcs->cmm_icc_profile_data->devicen_permute_needed) {
             for ( k = 0; k < i; k++) {
                 temp.paint.values[k] = pcc->paint.values[pcs->cmm_icc_profile_data->devicen_permute[k]];
@@ -390,11 +391,21 @@ gx_remap_DeviceN(const gs_client_color * pcc, const gs_color_space * pcs,
         }
         return(code);
     } else {
-        code = (*pcs->type->concretize_color)(pcc, pcs, conc, pis, dev);
-        if (code < 0)
-            return code;
-        pconcs = cs_concrete_space(pcs, pis);
-        code = (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pis, dev, select);
+        /* Check if we are doing any named color management.  This check happens
+           regardless if we are doing the alternate tint transform or not.  If
+           desired, that check could be made in gsicc_transform_named_color and
+           a decision made to return true or false */
+        if (pis->icc_manager->device_named != NULL) {
+            /* Try to apply the direct replacement */
+            mapped = gx_remap_named_color(pcc, pcs, pdc, pis, dev, select);
+        }
+        if (!mapped) {
+            code = (*pcs->type->concretize_color)(pcc, pcs, conc, pis, dev);
+            if (code < 0)
+                return code;
+            pconcs = cs_concrete_space(pcs, pis);
+            code = (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pis, dev, select);
+        }
         /* Save original color space and color info into dev color */
         i = any_abs(i);
         for (i--; i >= 0; i--)
@@ -413,10 +424,6 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
     gs_color_space *pacs = (gs_color_space*) (pcs->base_space);
     gs_device_n_map *map = pcs->params.device_n.map;
     bool is_lab;
-    int k;
-    int num_des_comps = dev->color_info.num_components;
-    gsicc_namedcolor_t *named_color;
-    const gs_separation_name *names = pcs->params.device_n.names;
     int num_src_comps = pcs->params.device_n.num_components;
 
 #ifdef DEBUG
@@ -433,49 +440,6 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
      */
 
     if (pis->color_component_map.use_alt_cspace) {
-        /* First see if we have a named color object that we can use to try
-           to map from the spot color into device values.  */
-        if (pis->icc_manager->device_named != NULL) {
-            /* There is a table present.  If we have the colorant name
-               then get the device values */
-            gx_color_value device_values[GX_DEVICE_COLOR_MAX_COMPONENTS];
-            byte *pname;
-            uint name_size;
-            gsicc_rendering_param_t rendering_params;
-
-            /* Define the rendering intents. */
-            rendering_params.black_point_comp = pis->blackptcomp;
-            rendering_params.graphics_type_tag = dev->graphics_type_tag;
-            rendering_params.override_icc = false;
-            rendering_params.preserve_black = gsBKPRESNOTSPECIFIED;
-            rendering_params.rendering_intent = pis->renderingintent;
-            rendering_params.cmm = gsCMM_DEFAULT;
-
-            /* Allocate and initialize name structure */
-            named_color = 
-                (gsicc_namedcolor_t*) gs_alloc_bytes(dev->memory,
-                    num_src_comps * sizeof(gsicc_namedcolor_t),
-                    "gx_remap_concrete_DeviceN");
-
-            for (k = 0; k < num_src_comps; k++) {
-                pcs->params.device_n.get_colorname_string(dev->memory, names[k], 
-                                                          &pname, &name_size);
-                named_color[k].colorant_name = (char*) pname;
-                named_color[k].name_size = name_size;
-            }
-            code = gsicc_transform_named_color(pc->paint.values, named_color,
-                                               num_src_comps, device_values, 
-                                               pis, dev, NULL, 
-                                               &rendering_params);
-            gs_free_object(dev->memory, named_color, 
-                           "gx_remap_concrete_DeviceN");
-            if (code == 0) {
-                for (k = 0; k < num_des_comps; k++){
-                    pconc[k] = float2frac(((float) device_values[k])/65535.0);
-                }
-                return(0);
-            }
-        }
         /* Check the 1-element cache first. */
         if (map->cache_valid) {
             int i;
@@ -533,7 +497,7 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
         gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
                           gs_color_select_t select)
 {
-    int code;
+    int code = 0;
 
 #ifdef DEBUG
     /*
@@ -547,8 +511,7 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
 
         return (*pacs->type->remap_concrete_color)
                                 (pconc, pacs, pdc, pis, dev, select);
-    }
-    else {
+    } else {
     /* If we are going DeviceN out to real sep device that understands these,
        and if the destination profile is DeviceN, we print the colors directly. 
        Make sure to disable the DeviceN profile color map so that is does not
@@ -558,7 +521,7 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
         bool temp_val;
 
         code = dev_proc(dev, get_profile)(dev, &dev_profile);
-        if (dev_profile->spotnames != NULL) {
+        if (dev_profile->spotnames != NULL && code >= 0) {
             temp_val = dev_profile->spotnames->equiv_cmyk_set;
             dev_profile->spotnames->equiv_cmyk_set = false;
             gx_remap_concrete_devicen(pconc, pdc, pis, dev, select);

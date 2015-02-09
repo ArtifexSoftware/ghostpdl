@@ -118,6 +118,9 @@ typedef struct gscms_procs_s {
     gscms_monitor_proc_t is_color;
 } gscms_procs_t;
 
+/* Allow different methods for releasing the opaque profile contents */
+typedef void(*gscms_free_profile_proc_t) (void *profile_handle);
+
 /* Enumerate the ICC rendering intents and other parameters.  A note on 
    these.  0-3 are for different values.   4-7 are for Override cases
    where we are trying to override some value specified in the document.
@@ -337,22 +340,23 @@ typedef struct gsicc_serialized_profile_s {
  */
 struct cmm_profile_s {
     gsicc_serial_data;
-    byte *buffer;               /* A buffer with ICC profile content */
-    gx_device *dev;             /* A pointer to the clist device in which the ICC data may be contained */
-    gsicc_namelist_t *spotnames;  /* Used for profiles that have non-standard colorants */
-    void *profile_handle;       /* The profile handle */
-    rc_header rc;               /* Reference count.  So we know when to free */
-    int name_length;            /* Length of file name */
-    char *name;                 /* Name of file name (if there is one) where profile is found.
-                                 * If it was embedded in the stream, there will not be a file
-                                 * name.  This is primarily here for the system profiles, and
-                                 * so that we avoid resetting them everytime the user params
-                                 * are reloaded. */
-    gsicc_version_t vers;      /* Is this profile V2 */
-    byte *v2_data;              /* V2 data that is equivalent to this profile. Used for PDF-A1 support */
-    int v2_size;                /* Number of bytes in v2_data */
-    gs_memory_t *memory;        /* In case we have some in non-gc and some in gc memory */
-    gx_monitor_t *lock;		/* handle for the monitor */
+    byte *buffer;                       /* A buffer with ICC profile content */
+    gx_device *dev;                     /* A pointer to the clist device in which the ICC data may be contained */
+    gsicc_namelist_t *spotnames;        /* Used for profiles that have non-standard colorants */
+    void *profile_handle;               /* The profile handle */
+    rc_header rc;                       /* Reference count.  So we know when to free */
+    int name_length;                    /* Length of file name */
+    char *name;                         /* Name of file name (if there is one) where profile is found.
+                                         * If it was embedded in the stream, there will not be a file
+                                         * name.  This is primarily here for the system profiles, and
+                                         * so that we avoid resetting them everytime the user params
+                                         * are reloaded. */
+    gsicc_version_t vers;               /* Is this profile V2 */
+    byte *v2_data;                      /* V2 data that is equivalent to this profile. Used for PDF-A1 support */
+    int v2_size;                        /* Number of bytes in v2_data */
+    gs_memory_t *memory;                /* In case we have some in non-gc and some in gc memory */
+    gx_monitor_t *lock;                 /* handle for the monitor */
+    gscms_free_profile_proc_t release;  /* Release the profile handle at CMM */
 };
 
 #ifndef cmm_profile_DEFINED
