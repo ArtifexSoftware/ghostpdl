@@ -32,8 +32,6 @@
 
 /* A link structure for our non-cm color transform */
 typedef struct nocm_link_s {
-    /* device (or default) procs to do the transformation */
-    gx_cm_color_map_procs cm_procs;
     /* Since RGB to CMYK requires BG and UCR, we need to have the
        imager state available */
     gs_imager_state *pis;
@@ -252,18 +250,18 @@ gsicc_nocm_transform_general(gx_device *dev, gsicc_link_t *icclink,
             frac_in[k] = byte2frac(data[k]);
         }
     }
-    /* Use the device procedure */
+    /* Use the device procedures to do the mapping */
     switch (num_in) {
         case 1:
-            (link->cm_procs.map_gray)(dev, frac_in[0], frac_out);
+            dev_proc(dev, get_color_mapping_procs)(dev)->map_gray(dev, frac_in[0], frac_out);
             break;
         case 3:
-            (link->cm_procs.map_rgb)(dev, link->pis, frac_in[0], frac_in[1],
-                                 frac_in[2], frac_out);
+            dev_proc(dev, get_color_mapping_procs)(dev)->map_rgb(dev, link->pis, frac_in[0], frac_in[1],
+                frac_in[2], frac_out);
             break;
         case 4:
-            (link->cm_procs.map_cmyk)(dev, frac_in[0], frac_in[1], frac_in[2],
-                                 frac_in[3], frac_out);
+            dev_proc(dev, get_color_mapping_procs)(dev)->map_cmyk(dev, frac_in[0], frac_in[1],
+                frac_in[2], frac_in[3], frac_out);
             break;
         default:
             break;
@@ -348,7 +346,6 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
     gsicc_hashlink_t hash;
     nocm_link_t *nocm_link;
     gs_memory_t *mem = pis->memory->non_gc_memory;
-    const gx_cm_color_map_procs * cm_procs;
     bool pageneutralcolor = false;
     cmm_dev_profile_t *dev_profile;
     int code;
@@ -364,13 +361,6 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
         }
      }
 
-    /* If the cm_procs are forwarding due to the overprint device or other
-       odd thing, drill down now and get the proper ones */
-    if (fwd_uses_fwd_cmap_procs(dev)) {
-        cm_procs = fwd_get_target_cmap_procs(dev);
-    } else {
-        cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
-    }
     /* We will add this to the link cache so that we can avoid the issue
        of black_generation and undercolor removal being GC values.
        Since the link is not GC we would need to copy the contents over
@@ -426,9 +416,6 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
     }
     nocm_link->num_out = min(dev->color_info.num_components,
                              GS_CLIENT_COLOR_MAX_COMPONENTS);
-    nocm_link->cm_procs.map_cmyk = cm_procs->map_cmyk;
-    nocm_link->cm_procs.map_rgb = cm_procs->map_rgb;
-    nocm_link->cm_procs.map_gray = cm_procs->map_gray;
     nocm_link->num_in = src_index;
 
     result->num_input = nocm_link->num_in;
