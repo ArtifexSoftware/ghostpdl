@@ -28,7 +28,7 @@
 #include <process.h>
 #include "vdtrace.h"
 #include "gdevdsp.h"
-#include "dwimg.h"
+#include "plwimg.h"
 #include "plapi.h"
 
 /* ------ Pseudo-errors used internally ------ */

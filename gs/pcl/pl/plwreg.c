@@ -23,6 +23,7 @@
 #include <stdlib.h>             /* for getenv */
 #include <string.h>
 #include "gscdefs.h"            /* for gs_productfamily and gs_revision */
+#include "plwreg.h"
 
 /* We store registry named values under the key
  * "Software\\GPL Ghostscript"

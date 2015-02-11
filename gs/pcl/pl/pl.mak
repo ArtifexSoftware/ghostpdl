@@ -363,16 +363,16 @@ $(PLOBJ)$(REALMAIN_SRC).$(OBJ): $(PLSRC)$(REALMAIN_SRC).c
 	$(PLATCCC) $(PLSRC)$(REALMAIN_SRC).c $(PLO_)$(REALMAIN_SRC).$(OBJ)
 
 
-$(PLOBJ)dwmainc.$(OBJ): $(PLSRC)dwmainc.c
-	$(PLCCC_W) $(COMPILE_FOR_CONSOLE_EXE) $(PLSRC)dwmainc.c $(PLO_)dwmainc.$(OBJ)
+$(PLOBJ)plwmainc.$(OBJ): $(PLSRC)plwmainc.c
+	$(PLCCC_W) $(COMPILE_FOR_CONSOLE_EXE) $(PLSRC)plwmainc.c $(PLO_)plwmainc.$(OBJ)
 
-$(PLOBJ)dwimg.$(OBJ): $(PLSRC)dwimg.c
-	$(PLCCC_W)$(COMPILE_FOR_CONSOLE_EXE)  $(PLSRC)dwimg.c $(PLO_)dwimg.$(OBJ)
+$(PLOBJ)plwimg.$(OBJ): $(PLSRC)plwimg.c
+	$(PLCCC_W)$(COMPILE_FOR_CONSOLE_EXE)  $(PLSRC)plwimg.c $(PLO_)plwimg.$(OBJ)
 
-$(PLOBJ)dwreg.$(OBJ): $(PLSRC)dwreg.c
-	$(PLCCC_W) $(COMPILE_FOR_CONSOLE_EXE) $(PLSRC)dwreg.c $(PLO_)dwreg.$(OBJ)
+$(PLOBJ)plwreg.$(OBJ): $(PLSRC)plwreg.c
+	$(PLCCC_W) $(COMPILE_FOR_CONSOLE_EXE) $(PLSRC)plwreg.c $(PLO_)plwreg.$(OBJ)
 
-WINMAINOBJS=$(MAIN_OBJ) $(PLOBJ)dwmainc.$(OBJ) $(PLOBJ)dwimg.$(OBJ) $(PLOBJ)dwreg.$(OBJ)
+WINMAINOBJS=$(MAIN_OBJ) $(PLOBJ)plwmainc.$(OBJ) $(PLOBJ)plwimg.$(OBJ) $(PLOBJ)plwreg.$(OBJ)
 
 $(PLOBJ)plimpl.$(OBJ):  $(PLSRC)plimpl.c            \
                         $(AK)                       \

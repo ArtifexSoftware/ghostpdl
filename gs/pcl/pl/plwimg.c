@@ -40,9 +40,9 @@
 #include <windows.h>
 #include "stdio_.h"
 
-#include "dwres.h"
-#include "dwimg.h"
-#include "dwreg.h"
+#include "plwres.h"
+#include "plwimg.h"
+#include "plwreg.h"
 #include "gdevdsp.h"
 
 static const char szImgName2[] = "Ghostscript Image";
