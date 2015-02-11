@@ -31,6 +31,22 @@
 #include "plwimg.h"
 #include "plapi.h"
 
+/* FIXME: this is purely because the gsdll.h requires psi/iapi.h and
+ * we don't want that required here. But as a couple of Windows specific
+ * devices depend upon pgsdll_callback being defined, having a compatible
+ * set of declarations here saves having to have different device lists
+ * for Ghostscript and the other languages, and as both devices are
+ * deprecated, a simple solution seems best = for now.
+ */
+#ifdef __IBMC__
+#define GSPLDLLCALLLINK _System
+#else
+#define GSPLDLLCALLLINK
+#endif
+
+typedef int (* GSPLDLLCALLLINK GS_PL_DLL_CALLBACK) (int, char *, unsigned long);
+GS_PL_DLL_CALLBACK pgsdll_callback = NULL;
+
 /* ------ Pseudo-errors used internally ------ */
 /* Copied from gs/psi/ierrors.h */
 /*

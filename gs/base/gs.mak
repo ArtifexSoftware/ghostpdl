@@ -252,8 +252,8 @@ GS_MAK=$(GLSRCDIR)$(D)gs.mak
 
 # Define the names of the executables.
 GS_XE=$(BINDIR)$(D)$(GS)$(XE)
-PCL_XE=$(BINDIR)$(D)$(PCL)$(XE)
-XPS_XE=$(BINDIR)$(D)$(XPS)$(XE)
+GPCL_XE=$(BINDIR)$(D)$(PCL)$(XE)
+GXPS_XE=$(BINDIR)$(D)$(XPS)$(XE)
 
 AUX=$(AUXDIR)$(D)
 ECHOGS_XE=$(AUX)echogs$(XEAUX)
@@ -273,7 +273,7 @@ gconfigd_h=$(GLGENDIR)$(D)gconfigd.h
 iconfxx_h=$(GLGENDIR)$(D)iconfxx.h
 iconfig_h=$(GLGENDIR)$(D)iconfig.h
 
-all default : $(PCL_XE) $(PCL_XPS_TARGETS) $(GS_SHARED_OBJS) $(MAKEDIRSTOP) $(MAKEDIRS)
+all default : $(GS_XE) $(PCL_XPS_TARGETS) $(GS_SHARED_OBJS) $(MAKEDIRSTOP) $(MAKEDIRS)
 	$(NO_OP)
 
 # the distclean and maintainer-clean targets (if any)
