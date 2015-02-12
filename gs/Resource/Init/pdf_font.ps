@@ -1905,8 +1905,16 @@ currentdict /CMap_read_dict undef
   3 index /FontDescriptor oget /FontName oget
   1 index
   /FontSetInit /ProcSet findresource begin //true //false ReadData
-  { exch pop exit } forall
-  7 1 roll
+  %% We need to be careful not to corrupt the stack if something went wrong.
+  %% Previously, if the dict was length 0 (an error occured) we would end up
+  %% unable to recover the stack in the calling procedure.
+  %% Bug #695819.
+  dup length 0 ne {
+    { exch pop exit } forall
+    7 1 roll
+  }{
+    /invalidfont signalerror
+  } ifelse
   closefile closefile pop
   PDFfile 3 -1 roll setfileposition
   pop pop
