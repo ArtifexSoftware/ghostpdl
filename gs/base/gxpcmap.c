@@ -874,6 +874,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     gx_device_memory *mbits = NULL;
     gx_pattern_trans_t *trans = NULL;
     int size_b, size_c;
+    gs_state *pgs = (gs_state *)pis;
 
     if (code < 0)
         return code;
@@ -950,6 +951,10 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     ctile->is_simple = pinst->is_simple;
     ctile->has_overlap = pinst->has_overlap;
     ctile->is_dummy = false;
+    if (pinst->templat.uses_transparency)
+        ctile->blending_mode = ((pdf14_device *)(pgs->device))->blend_mode;
+    else
+        ctile->blending_mode = 0;
     if (fdev->procs.open_device != pattern_clist_open_device) {
         if (mbits != 0) {
             make_bitmap(&ctile->tbits, mbits, gs_next_ids(pis->memory, 1));
@@ -980,15 +985,6 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
         ctile->tmask.size.x = 0;
         ctile->tmask.size.y = 0;
         ctile->cdev = cdev;
-#if 0 /* Don't free - tile cache is used by clist reader. */
-        gs_free_object(cwdev->bandlist_memory, cwdev->data, "gx_pattern_cache_add_entry");
-        cwdev->data = NULL;
-        cwdev->states = NULL;
-        cwdev->cbuf = NULL;
-        cwdev->cnext = NULL;
-        cwdev->cend = NULL;
-        cwdev->ccl = NULL;
-#endif
         /* Prevent freeing files on pattern_paint_cleanup : */
         cwdev->do_not_open_or_close_bandfiles = true;
     }

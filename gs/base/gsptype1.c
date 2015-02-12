@@ -1563,7 +1563,6 @@ typedef struct tile_trans_clist_info_s {
     int n_chan; /* number of pixel planes including alpha */
     int width;
     int height;
-    gs_blend_mode_t blend_mode;
 } tile_trans_clist_info_t;
 
 typedef struct gx_dc_serialized_tile_s {
@@ -1573,6 +1572,7 @@ typedef struct gx_dc_serialized_tile_s {
     gs_matrix step_matrix;
     gs_rect bbox;
     int flags;
+    gs_blend_mode_t blending_mode;	/* in case tile has transparency */
 } gx_dc_serialized_tile_t;
 
 enum {
@@ -1713,6 +1713,7 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, int64_t offset, byte *dat
                   | (ptile->has_overlap ? TILE_HAS_OVERLAP : 0);
         buf.step_matrix = ptile->step_matrix;
         buf.bbox = ptile->bbox;
+        buf.blending_mode = ptile->blending_mode;
         if (sizeof(buf) > left) {
             /* For a while we require the client to provide enough buffer size. */
             return_error(gs_error_unregistered); /* Must not happen. */
@@ -1723,7 +1724,6 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, int64_t offset, byte *dat
         offset1 += sizeof(buf);
 
         /* Do the transparency information now */
-        trans_info.blend_mode = ptile->ttrans->blending_mode;
         trans_info.height = ptile->ttrans->height;
         trans_info.n_chan = ptile->ttrans->n_chan;
         trans_info.planestride = ptile->ttrans->planestride;
@@ -1838,6 +1838,7 @@ gx_dc_pattern_write(
                   | (ptile->is_simple ? TILE_IS_SIMPLE : 0)
                   | (ptile->has_overlap ? TILE_HAS_OVERLAP : 0)
                   | (ptile->cdev->common.page_uses_transparency ? TILE_USES_TRANSP : 0);
+        buf.blending_mode = ptile->blending_mode;    /* in case tile has transparency */
         if (sizeof(buf) > left) {
             /* For a while we require the client to provide enough buffer size. */
             return_error(gs_error_unregistered); /* Must not happen. */
@@ -1993,7 +1994,7 @@ gx_dc_pattern_read(
     int64_t offset1 = offset;
     gx_color_tile *ptile;
     int code, l;
-    tile_trans_clist_info_t trans_info;
+    tile_trans_clist_info_t trans_info = { 0 };
     int cache_space_needed;
 
     if (offset == 0) {
@@ -2061,6 +2062,7 @@ gx_dc_pattern_read(
         ptile->tiling_type = (buf.flags & TILE_TYPE_MASK)>>TILE_TYPE_SHIFT;
         ptile->is_simple = !!(buf.flags & TILE_IS_SIMPLE);
         ptile->has_overlap = !!(buf.flags & TILE_HAS_OVERLAP);
+        ptile->blending_mode = buf.blending_mode;
         ptile->is_dummy = 0;
 
         if (!(buf.flags & TILE_IS_CLIST)) {
@@ -2072,7 +2074,6 @@ gx_dc_pattern_read(
                 ptile->ttrans = new_pattern_trans_buff(mem);
                 /* trans_info was loaded above */
 
-                ptile->ttrans->blending_mode = trans_info.blend_mode;
                 ptile->ttrans->height = trans_info.height;
                 ptile->ttrans->n_chan = trans_info.n_chan;
                 ptile->ttrans->pdev14 = NULL;

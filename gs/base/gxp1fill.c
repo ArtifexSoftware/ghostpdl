@@ -329,6 +329,7 @@ tile_pattern_clist(const tile_fill_state_t * ptfs,
     crdev->offset_map = NULL;
     crdev->page_info.io_procs->rewind(crdev->page_info.bfile, false, NULL);
     crdev->page_info.io_procs->rewind(crdev->page_info.cfile, false, NULL);
+    clist_render_init(cdev);
      /* Check for and get ICC profile table */
     if (crdev->icc_table == NULL)
         code = clist_read_icctable(crdev);
@@ -902,7 +903,7 @@ tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax,
             /* Blend */
             art_pdf_composite_pixel_alpha_8(dst, src,
                                             ptile->ttrans->n_chan-1,
-                                            ptile->ttrans->blending_mode,
+                                            ptile->blending_mode,
                                             ptile->ttrans->blending_procs);
 
             /* Store the color values */

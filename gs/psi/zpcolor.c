@@ -305,10 +305,9 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
     if (pdev != NULL) {
         gx_color_tile *ctile;
         int code;
-        if (pinst->templat.uses_transparency) {
-            gs_state *pgs = igs;
-            int code;
+        gs_state *pgs = igs;
 
+        if (pinst->templat.uses_transparency) {
             if (pinst->is_clist) {
                 /* Send the compositor command to close the PDF14 device */
                 code = (gs_pop_pdf14trans_device(pgs, true) < 0);

@@ -28,6 +28,7 @@
 #include "gxgetbit.h"
 #include "gxhttile.h"
 #include "gdevplnx.h"
+#include "gdevp14.h"
 #include "gsmemory.h"
 #include "gsmemlok.h"
 #include "vdtrace.h"

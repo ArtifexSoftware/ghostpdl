@@ -104,11 +104,21 @@ gx_image_fill_masked(gx_device *dev,
     gx_device *cdev = dev;
     int code;
 
-    code = gx_image_fill_masked_start(dev, pdc, pcpath, dev->memory, &cdev);
-    if (code >= 0)
+    if ((code = gx_image_fill_masked_start(dev, pdc, pcpath, dev->memory, &cdev)) < 0)
+        return code;
+
+    if (cdev == dev)
         code = (*dev_proc(cdev, fill_mask))(cdev, data, data_x, raster, id,
                             x, y, width, height, pdc, depth, lop, pcpath);
-    if (code >= 0 && cdev != dev)
-        code = gx_image_fill_masked_end(cdev, dev, pdc);
+    else {
+        /* cdev != dev means that a cpath_accum device was inserted */
+        gx_device_color dc_temp;   /* if fill_masked_start did cpath_accum, use pure color */
+
+        set_nonclient_dev_color(&dc_temp, 1);    /* arbitrary color since cpath_accum doesn't use it */
+        if ((code = (*dev_proc(cdev, fill_mask))(cdev, data, data_x, raster, id,
+                            x, y, width, height, &dc_temp, depth, lop, pcpath)) < 0)
+            return code;
+        code = gx_image_fill_masked_end(cdev, dev, pdc);    /* fill with the actual device color */
+    }
     return code;
 }

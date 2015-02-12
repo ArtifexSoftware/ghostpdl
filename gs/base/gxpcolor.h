@@ -172,7 +172,6 @@ struct gx_pattern_trans_s {
     int height;
     const pdf14_nonseparable_blending_procs_t *blending_procs;
     bool is_additive;
-    gs_blend_mode_t blending_mode;
     gs_int_rect *dirty;
     void (* pat_trans_fill)(int xmin, int ymin, int xmax, int ymax, int px,
                             int py, const gx_color_tile *ptile,
@@ -215,6 +214,7 @@ struct gx_color_tile_s {
     /* (i.e., the mask is all 1's) */
 
     gx_pattern_trans_t *ttrans;  /* !=0 if has trans. in this case tbits == 0 */
+    gs_blend_mode_t blending_mode;  /* used if the pattern has transparency */
 
     gx_device_clist *cdev;	/* not NULL if the graphics is a command list. */
     byte is_simple;		/* true if xstep/ystep = tile size */
