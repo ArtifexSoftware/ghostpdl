@@ -775,6 +775,15 @@ static const font_resident_t resident_table[] = {
 
     {
         fontnames("noname", "noname", "ArtLinePrinter"),
+        {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ',
+         '1', '0', 'U'},
+        {330, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 90},
+        cc_alphabetic, plft_8bit_printable
+    },
+
+
+    {
+        fontnames("noname", "noname", "ArtLinePrinter"),
         {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', '1',
          '0', 'U'},
         {341, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 80},
