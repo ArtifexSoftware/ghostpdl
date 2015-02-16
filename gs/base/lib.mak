@@ -1931,7 +1931,6 @@ gdevprn_h=$(GLSRC)gdevprn.h $(GLSRC)gdevflp.h $(memory__h) $(string__h) $(gp_h) 
  $(gxclist_h) $(gxdevice_h) $(gxdevmem_h) $(gxrplane_h) $(gxclthrd_h) $(gxflp_h)
 
 page_=$(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) $(GLOBJ)gdevflp.$(OBJ) $(downscale_)
->>>>>>> This is supposed to be an experiment in implementing FirstPage and LastPage
 $(GLD)page.dev : $(LIB_MAK) $(ECHOGS_XE) $(page_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)page $(page_)
 	$(ADDMOD) $(GLD)page -include $(GLD)clist
