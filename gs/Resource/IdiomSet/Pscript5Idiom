@@ -18,7 +18,7 @@ currentuserparams /IdiomRecognition get
       }{
           //false
       }ifelse
-      { gsave sBdx 2 div dup 0.05 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode xshow currentpoint grestore moveto}
+      { gsave sBdx 2 div dup 0.2 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode xshow currentpoint grestore moveto}
       {2 copy 2 copy 2 copy gsave sBdx 0 rmoveto xshow grestore gsave 0 sBdx rmoveto xshow grestore gsave sBdx dup rmoveto xshow grestore xshow} bind
       ifelse
     } bind
@@ -31,7 +31,7 @@ currentuserparams /IdiomRecognition get
       }{
           //false
       }ifelse
-      { gsave sBdx 2 div dup 0.05 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode yshow currentpoint grestore moveto}
+      { gsave sBdx 2 div dup 0.2 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode yshow currentpoint grestore moveto}
       {2 copy 2 copy 2 copy gsave sBdx 0 rmoveto yshow grestore gsave 0 sBdx rmoveto yshow grestore gsave sBdx dup rmoveto yshow grestore yshow} bind
       ifelse
     } bind
@@ -44,7 +44,7 @@ currentuserparams /IdiomRecognition get
       }{
           //false
       }ifelse
-      { gsave sBdx 2 div dup 0.05 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode xyshow currentpoint grestore moveto}
+      { gsave sBdx 2 div dup 0.2 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode xyshow currentpoint grestore moveto}
       {2 copy 2 copy 2 copy gsave sBdx 0 rmoveto xyshow grestore gsave 0 sBdx rmoveto xyshow grestore gsave sBdx dup rmoveto xyshow grestore xyshow} bind
       ifelse
     } bind
@@ -57,7 +57,7 @@ currentuserparams /IdiomRecognition get
       }{
           //false
       }ifelse
-      { gsave sBdx 2 div dup 0.05 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode show currentpoint grestore moveto}
+      { gsave sBdx 2 div dup 0.2 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode show currentpoint grestore moveto}
       {1 copy 2 copy gsave sBdx 0 rmoveto show grestore gsave 0 sBdx rmoveto show grestore gsave sBdx dup rmoveto show grestore show} bind
       ifelse
     } bind
@@ -70,7 +70,7 @@ currentuserparams /IdiomRecognition get
       }{
           //false
       }ifelse
-      { gsave sBdx 2 div dup 0.05 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode ashow currentpoint grestore moveto}
+      { gsave sBdx 2 div dup 0.2 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode ashow currentpoint grestore moveto}
       {3 copy 3 copy 3 copy gsave sBdx 0 rmoveto ashow grestore gsave 0 sBdx rmoveto ashow grestore gsave sBdx dup rmoveto ashow grestore ashow} bind
       ifelse
     } bind
@@ -83,7 +83,7 @@ currentuserparams /IdiomRecognition get
       }{
           //false
       }ifelse
-      { gsave sBdx 2 div dup 0.05 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode widthshow currentpoint grestore moveto}
+      { gsave sBdx 2 div dup 0.2 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode widthshow currentpoint grestore moveto}
       {3 copy 3 copy 3 copy gsave sBdx 0 rmoveto widthshow grestore gsave 0 sBdx rmoveto widthshow grestore gsave sBdx dup rmoveto widthshow grestore widthshow} bind
       ifelse
     } bind
@@ -97,7 +97,7 @@ currentuserparams /IdiomRecognition get
       }{
           //false
       }ifelse
-      { gsave sBdx 2 div dup 0.05 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode awidthshow currentpoint grestore moveto}
+      { gsave sBdx 2 div dup 0.2 setlinewidth currentcolor currentcolorspace .swapcolors setcolorspace setcolor .swapcolors rmoveto 2 .settextrenderingmode awidthshow currentpoint grestore moveto}
       {3 copy 3 copy 3 copy gsave sBdx 0 rmoveto awidthshow grestore gsave 0 sBdx rmoveto awidthshow grestore gsave sBdx dup rmoveto awidthshow grestore awidthshow} bind
       ifelse
     } bind
