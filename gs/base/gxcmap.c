@@ -1436,7 +1436,7 @@ devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis, gx_device *dev)
     gsicc_rendering_param_t rendering_params;
     unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS];
     unsigned short psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    int k;
+    int k, code;
     unsigned short *psrc_temp;
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile = NULL;
