@@ -25,7 +25,12 @@ const char gp_file_name_list_separator = ':';
 
 /* Define the string to be concatenated with the file mode */
 /* for opening files without end-of-line conversion. */
+#if (defined(__MINGW32__) && __MINGW32__ == 1) || (defined(__CYGWIN__) && __CYGWIN__ == 1)
+const char gp_fmode_binary_suffix[] = "b";
+#else
 const char gp_fmode_binary_suffix[] = "";
+#endif
+
 
 /* Define the file modes for binary reading or writing. */
 #if (defined(__MINGW32__) && __MINGW32__ == 1) || (defined(__CYGWIN__) && __CYGWIN__ == 1)
