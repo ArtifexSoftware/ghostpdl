@@ -108,6 +108,33 @@ static const char
 /* Prefix for error messages */
 #define ERRPREF "? eprn: "
 
+
+static
+ENUM_PTRS_WITH(eprn_Device_enum_ptrs, eprn_Device *pdev)
+{
+  if (index < st_device_max_ptrs) {
+    gs_ptr_type_t ret = ENUM_USING_PREFIX(st_device_printer, 0);
+    return (ret ? ret : ENUM_OBJ(0));
+  }
+  index -= st_device_max_ptrs;
+
+  if (index == 0) {
+    return ENUM_OBJ(pdev->eprn.pis);
+  }
+
+  return 0;
+}
+ENUM_PTRS_END
+
+static RELOC_PTRS_WITH(eprn_Device_reloc_ptrs, eprn_Device *pdev)
+{
+  RELOC_PREFIX(st_device_printer);
+  RELOC_VAR(pdev->eprn.pis);
+}
+RELOC_PTRS_END
+
+private_st_device_EPRN(eprn_Device_enum_ptrs, eprn_Device_reloc_ptrs);
+
 /******************************************************************************
 
   Function: eprn_get_initial_matrix
@@ -1114,14 +1141,11 @@ int eprn_close_device(gx_device *device)
 
 ******************************************************************************/
 
-static void eprn_forget_defaultmatrix(gs_memory_t *memory)
+static void eprn_forget_defaultmatrix(gx_device *device)
 {
-#if EPRN_USE_GSTATE
-  /* Old ghostscript versions */
-  gs_setdefaultmatrix(igs, NULL);
-#else
-  gs_setdefaultmatrix(get_minst_from_memory(memory)->i_ctx_p->pgs, NULL);
-#endif
+  eprn_Eprn *eprn = &((eprn_Device *)device)->eprn;
+
+  gs_setdefaultmatrix((gs_state *)eprn->pis, NULL);
 
   return;
 }
@@ -1184,7 +1208,7 @@ int eprn_output_page(gx_device *dev, int num_copies, int flush)
 
   /* If soft tumble has been demanded, ensure the get_initial_matrix procedure
      is consulted for the next page */
-  if (eprn->soft_tumble) eprn_forget_defaultmatrix(dev->memory->non_gc_memory);
+  if (eprn->soft_tumble) eprn_forget_defaultmatrix(dev);
 
 #ifdef EPRN_TRACE
   if_debug1(EPRN_TRACE_CHAR, "! eprn_output_page() terminates after %f s.\n",

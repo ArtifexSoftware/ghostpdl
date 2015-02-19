@@ -489,6 +489,8 @@ typedef struct s_eprn_Device {
      /* If this field is set, every second page will have its default user
         coordinate system rotated by 180 degrees. */
 
+  dev_proc_fillpage((*orig_fillpage));
+
   /* Colour */
   eprn_ColourModel
     colour_model;	/* Colour model selected */
@@ -528,6 +530,7 @@ typedef struct s_eprn_Device {
     eprn_IR_FloydSteinberg, the next scan line to return is actually already
     present in 'next_scan_line' with its device coordinate being "next_y - 1",
     unless 'next_y' is zero in which case we have finished. */
+  gs_imager_state * pis;
 } eprn_Eprn;
 
 /* Macro for device structure type definitions. Note that in contrast to
@@ -541,6 +544,10 @@ typedef struct s_eprn_Device {
 typedef struct {
   gx_eprn_device_common;
 } eprn_Device;
+
+#define private_st_device_EPRN(eprn_enum, eprn_reloc) \
+   gs_private_st_composite(st_eprn_Device, eprn_Device, \
+    "eprn_Device", eprn_enum, eprn_reloc);
 
 /*  Macro for initializing device structure instances (device prototypes)
 
@@ -605,6 +612,7 @@ typedef struct {
     0.0,	/* down_shift */	\
     false,	/* keep_margins */	\
     false,	/* soft_tumble */	\
+    NULL,       /* orig_fillpage */     \
     eprn_DeviceGray, /* colour_model */	\
     2,		/* black_levels */	\
     0,		/* non_black_levels */	\
@@ -619,7 +627,8 @@ typedef struct {
     {NULL, 0},	/* next_scan_line */	\
     0,		/* octets_per_line */	\
     0,		/* output_planes */	\
-    0		/* next_y */		\
+    0,		/* next_y */		\
+    NULL        /* pis    */            \
   }
 
 /*  For the calling conventions of the following functions consult the comments
@@ -658,6 +667,7 @@ extern dev_proc_map_cmyk_color(eprn_map_cmyk_color);
 extern dev_proc_map_cmyk_color(eprn_map_cmyk_color_flex);
 extern dev_proc_map_cmyk_color(eprn_map_cmyk_color_max);
 extern dev_proc_map_cmyk_color(eprn_map_cmyk_color_glob);
+extern dev_proc_fillpage(eprn_fillpage);
 
 /*  Macro for initializing device procedure tables
 
@@ -693,7 +703,49 @@ extern dev_proc_map_cmyk_color(eprn_map_cmyk_color_glob);
   NULL,				/* get_xfont_procs */		\
   NULL,				/* get_xfont_device */		\
   NULL,				/* map_rgb_alpha_color */	\
-  gx_page_device_get_page_device  /* get_page_device */
+  gx_page_device_get_page_device, /* get_page_device */         \
+  NULL,                         /* get_alpha_bits */            \
+  NULL,                         /* copy_alpha */                \
+  NULL,                         /* get_band */                  \
+  NULL,                         /* copy_rop */                  \
+  NULL,                         /* fill_path */                 \
+  NULL,                         /* stroke_path */               \
+  NULL,                         /* fill_mask */                 \
+  NULL,                         /* fill_trapezoid */            \
+  NULL,                         /* fill_parallelogram */        \
+  NULL,                         /* fill_triangle */             \
+  NULL,                         /* draw_thin_line */            \
+  NULL,                         /* begin_image */               \
+  NULL,                         /* image_data */                \
+  NULL,                         /* end_image */                 \
+  NULL,                         /* strip_tile_rectangle */      \
+  NULL,                         /* strip_copy_rop */            \
+  NULL,                         /* get_clipping_box */          \
+  NULL,                         /* begin_typed_image */         \
+  NULL,                         /* get_bits_rectangle */        \
+  NULL,                         /* map_color_rgb_alpha */       \
+  NULL,                         /* create_compositor */         \
+  NULL,                         /* get_hardware_params */       \
+  NULL,                         /* text_begin */                \
+  NULL,                         /* finish_copydevice */         \
+  NULL,                         /* begin_transparency_group */  \
+  NULL,                         /* end_transparency_group */    \
+  NULL,                         /* begin_transparency_mask */   \
+  NULL,                         /* end_transparency_mask */     \
+  NULL,                         /* discard_transparency_layer */\
+  NULL,                         /* get_color_mapping_procs */   \
+  NULL,                         /* get_color_comp_index */      \
+  NULL,                         /* encode_color */              \
+  NULL,                         /* decode_color */              \
+  NULL,                         /* pattern_manage */            \
+  NULL,                         /* fill_rectangle_hl_color */   \
+  NULL,                         /* include_color_space */       \
+  NULL,                         /* fill_linear_color_scanline */\
+  NULL,                         /* fill_linear_color_trapezoid */ \
+  NULL,                         /* fill_linear_color_triangle */\
+  NULL,                         /* update_spot_equivalent_colors */\
+  NULL,                         /* ret_devn_params */              \
+  eprn_fillpage                 /* fillpage */
   /* The remaining fields should be NULL. */
 
 /*****************************************************************************/

@@ -65,6 +65,8 @@ static const char
 #include "gdeveprn.h"
 #include "gp.h"
 
+#include "gscoord.h"    /* for gs_setdefaultmatrix() */
+
 /*****************************************************************************/
 
 #define ERRPREF         "? eprn: "
@@ -201,6 +203,35 @@ void eprn_dump_parameter_list(gs_param_list *plist)
 }
 
 #endif  /* EPRN_TRACE */
+
+/******************************************************************************
+
+  Function: eprn_fillpage
+  This is just a "call-through" to the default, so we can grab the imager state
+
+******************************************************************************/
+int
+eprn_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
+{
+  eprn_Eprn *eprn = &((eprn_Device *)dev)->eprn;
+
+  eprn->pis = pis;
+
+  return (*eprn->orig_fillpage)(dev, pis, pdevc);
+}
+
+
+void eprn_replace_fillpage(gx_device *dev)
+{
+    eprn_Eprn *eprn = &((eprn_Device *)dev)->eprn;
+
+    if (dev->procs.fillpage != eprn_fillpage) {
+        eprn->orig_fillpage = dev->procs.fillpage;
+        dev->procs.fillpage = eprn_fillpage;
+    }
+}
+
+
 /******************************************************************************
 
   Function: eprn_get_params
@@ -221,6 +252,8 @@ int eprn_get_params(gx_device *device, gs_param_list *plist)
 #ifdef EPRN_TRACE
   if_debug0(EPRN_TRACE_CHAR, "! eprn_get_params()...\n");
 #endif
+
+  eprn_replace_fillpage(device);
 
   /* Base class parameters */
   rc = gdev_prn_get_params(device, plist);
@@ -901,6 +934,8 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
     eprn_dump_parameter_list(plist);
   }
 #endif  /* EPRN_TRACE */
+
+  eprn_replace_fillpage(dev);
 
   /* Remember initial page size */
   for (temp = 0; temp < 2; temp++) mediasize[temp] = dev->MediaSize[temp];
