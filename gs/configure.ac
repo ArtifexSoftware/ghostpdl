@@ -1640,6 +1640,22 @@ AC_ARG_WITH([gs], AC_HELP_STRING([--with-gs=NAME],
         [GS="$with_gs"],[GS='gs'])
 AC_SUBST(GS)
 
+if test -f $srcdir/pcl/pl/pl.mak; then
+  AC_ARG_WITH([pcl], AC_HELP_STRING([--with-pcl=NAME],
+        [name of the GhostPCL executible (if the source is available, ignored otherwise) [[gpcl6]]]),
+        [PCL="$with_pcl"],[PCL='gpcl6'])
+
+  AC_SUBST(PCL)
+fi
+
+if test -f $srcdir/xps/xps.mak; then
+  AC_ARG_WITH([xps], AC_HELP_STRING([--with-xps=NAME],
+        [name of the GhostXPS executible (if the source is available, ignored otherwise) [[gxps]]]),
+        [PCL="$with_xps"],[XPS='gxps'])
+
+  AC_SUBST(XPS)
+fi
+
 dnl do we compile the postscript initialization files into Ghostscript?
 COMPILE_INITS="1"
 AC_ARG_ENABLE([compile-inits], AC_HELP_STRING([--disable-compile-inits],

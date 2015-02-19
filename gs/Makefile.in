@@ -169,16 +169,14 @@ CAPOPT= @HAVE_MKSTEMP@ @HAVE_FILE64@ @HAVE_FSEEKO@ @HAVE_MKSTEMP64@ @HAVE_FONTCO
 
 GS=@GS@@EXEEXT@
 GS_SO_BASE=@GS@
+
+PCL=@PCL@@EXEEXT@
+XPS=@XPS@@EXEEXT@
+
 XE=@EXEEXT@
 XEAUX=@EXEEXT@
 
-# FIXME: use configure to set (as above)
-PCL=gpcl6
-XPS=gxps
-
-# FIXME: use configure to set
-PCL_XPS_TARGETS=gpcl6 gxps
-PCL_XPS_CLEAN=pcl_xps_clean
+PCL_XPS_TARGETS=$(PCL) $(XPS)
 
 # Define the directories for debugging and profiling binaries, relative to
 # the standard binaries.

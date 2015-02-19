@@ -69,26 +69,15 @@ $(GS_XE): $(ld_tr) $(gs_tr) $(ECHOGS_XE) $(XE_ALL) $(PSOBJ)gsromfs$(COMPILE_INIT
 	DEVICE_DEVS_EXTRA= \
 	$(SH) <$(ldt_tr)
 
-#$(GS_XE): $(ld_tr) $(ECHOGS_XE) $(XE_ALL) $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
-#	$(ECHOGS_XE) -w $(ldt_tr) -n - $(CCLD) $(LDFLAGS) -o $(GS_XE)
-#	$(ECHOGS_XE) -a $(ldt_tr) -n -s $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) $(PSOBJ)gs.$(OBJ) -s
-#	cat $(ld_tr) >>$(ldt_tr)
-#	$(ECHOGS_XE) -a $(ldt_tr) -s - $(EXTRALIBS) $(STDLIBS)
-#	if [ x$(XLIBDIR) != x ]; then LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; fi; \
-#	XCFLAGS= XINCLUDE= XLDFLAGS= XLIBDIRS= XLIBS= \
-#	PSI_FEATURE_DEVS= FEATURE_DEVS= DEVICE_DEVS= DEVICE_DEVS1= DEVICE_DEVS2= DEVICE_DEVS3= \
-#	DEVICE_DEVS4= DEVICE_DEVS5= DEVICE_DEVS6= DEVICE_DEVS7= DEVICE_DEVS8= \
-#	DEVICE_DEVS9= DEVICE_DEVS10= DEVICE_DEVS11= DEVICE_DEVS12= \
-#	DEVICE_DEVS13= DEVICE_DEVS14= DEVICE_DEVS15= DEVICE_DEVS16= \
-#	DEVICE_DEVS17= DEVICE_DEVS18= DEVICE_DEVS19= DEVICE_DEVS20= \
-#	DEVICE_DEVS_EXTRA= \
-#	$(SH) <$(ldt_tr)
+.gssubtarget: $(GS_XE)
+	$(NO_OP)
+
 
 pclldt_tr=$(PSOBJ)pclldt.tr
-$(PCL_XE): $(ld_tr) $(pcl_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) \
+$(GPCL_XE): $(ld_tr) $(pcl_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) \
             $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) \
             $(INT_ARCHIVE_SOME)
-	$(ECHOGS_XE) -w $(pclldt_tr) -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(PCL_XE)
+	$(ECHOGS_XE) -w $(pclldt_tr) -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(GPCL_XE)
 	$(ECHOGS_XE) -a $(pclldt_tr) -n -x 20
 	cat $(ld_tr) >> $(pclldt_tr)
 	$(ECHOGS_XE) -a $(pclldt_tr) -n -s $(TOP_OBJ) $(INT_ARCHIVE_SOME) $(XOBJS) -s
@@ -105,14 +94,14 @@ $(PCL_XE): $(ld_tr) $(pcl_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) \
 	DEVICE_DEVS_XETRA= \
 	sh <$(pclldt_tr)
 
-.pcl6subtarget: $(PCL_XE)
+.pcl6subtarget: $(GPCL_XE)
 	$(NO_OP)
 
 xpsldt_tr=$(PSOBJ)xpsldt.tr
-$(XPS_XE): $(ld_tr) $(xps_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(XPS_TOP_OBJS) \
+$(GXPS_XE): $(ld_tr) $(xps_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(XPS_TOP_OBJS) \
              $(XOBJS) $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) \
              $(INT_ARCHIVE_SOME)
-	$(ECHOGS_XE) -w $(xpsldt_tr) -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(XPS_XE)
+	$(ECHOGS_XE) -w $(xpsldt_tr) -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(GXPS_XE)
 	$(ECHOGS_XE) -a $(xpsldt_tr) -n -s $(XPS_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) -s
 	cat $(ld_tr) >> $(xpsldt_tr)
 	cat $(xps_tr) >> $(xpsldt_tr)
@@ -127,7 +116,7 @@ $(XPS_XE): $(ld_tr) $(xps_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(XPS_TOP_OBJS) \
 	DEVICE_DEVS_EXTRA= \
 	sh <$(xpsldt_tr)
 
-.xpssubtarget: $(XPS_XE)
+.xpssubtarget: $(GXPS_XE)
 	$(NO_OP)
 
 APITEST_XE=$(BINDIR)$(D)apitest$(XE)
