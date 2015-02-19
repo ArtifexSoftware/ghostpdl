@@ -137,7 +137,7 @@ is_like_DeviceRGB(gx_device * dev)
         return false;
 
     /* check the values 1/4, 1/3, and 3/4 */
-    MAP_RGB(cm_procs, dev, 0, frac_1 / 4, frac_1 / 3, frac_1 / 4,cm_comp_fracs);
+    MAP_RGB(cm_procs, dev, 0, frac_1 / 4, frac_1 / 3, 3 * frac_1 / 4,cm_comp_fracs);
 
     /* verify results to .01 */
     cm_comp_fracs[0] -= frac_1 / 4;
@@ -1292,8 +1292,10 @@ int gx_unsubclass_device(gx_device *dev)
     memcpy(dev, child, child->stype->ssize);
     if (psubclass_data)
         gs_free_object(dev->memory->non_gc_memory, psubclass_data, "subclass memory for first-last page");
-    if (child)
+    if (child) {
+        memset(child, 0x00, child->stype->ssize);
         gs_free_object(dev->memory->stable_memory, child, "gx_device_subclass(device)");
+    }
     dev->parent = parent;
 
     ptr = (unsigned char *)dev;
