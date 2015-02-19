@@ -267,11 +267,11 @@ pcl_gray_cs_to_cm(gx_device * dev, frac gray, frac out[])
 {
     pcl_mono_palette_subclass_data *psubclass_data;
 
-    do {
+    while(dev->child) {
         if (strncmp(dev->dname, "PCL_Mono_Palette", 16) == 0)
             break;
         dev = dev->child;
-    } while(dev->child);
+    };
 
     if (dev->child) {
         psubclass_data = dev->subclass_data;
@@ -288,11 +288,11 @@ pcl_rgb_cs_to_cm(gx_device * dev, const gs_imager_state * pis, frac r, frac g,
     pcl_mono_palette_subclass_data *psubclass_data;
     frac gray;
 
-    do {
+    while(dev->child) {
         if (strncmp(dev->dname, "PCL_Mono_Palette", 16) == 0)
             break;
         dev = dev->child;
-    } while(dev->child);
+    };
 
     if (dev->child) {
         psubclass_data = dev->subclass_data;
@@ -309,11 +309,11 @@ pcl_cmyk_cs_to_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
     pcl_mono_palette_subclass_data *psubclass_data;
     frac gray;
 
-    do {
+    while(dev->child) {
         if (strncmp(dev->dname, "PCL_Mono_Palette", 16) == 0)
             break;
         dev = dev->child;
-    } while(dev->child);
+    };
 
     if (dev->child) {
         psubclass_data = dev->subclass_data;
