@@ -86,6 +86,10 @@ gs_iodev_init(gs_memory_t * mem)
         memcpy(table[i], gx_io_device_table[i], sizeof(gx_io_device));
         libctx->io_device_table_count++;
     }
+    for (;i < gx_io_device_table_count + NUM_RUNTIME_IODEVS; i++) {
+        table[i] = NULL;
+    }
+
     libctx->io_device_table = table;
     code = gs_register_struct_root(mem, NULL,
                                    (void **)&libctx->io_device_table,
