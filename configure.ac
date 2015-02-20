@@ -453,12 +453,30 @@ dnl --------------------------------------------------
 dnl Check for libraries and x11 includes/libraries
 dnl --------------------------------------------------
 
+AC_CHECK_FUNCS([pread pwrite], [HAVE_PREAD_PWRITE="-DHAVE_PREAD_PWRITE=1"], [HAVE_PREAD_PWRITE=])
+
+AC_SUBST(HAVE_PREAD_PWRITE)
+
 SYNC="nosync"
 PTHREAD_LIBS=""
-AC_CHECK_LIB(pthread, pthread_create, [
-  SYNC=posync;
-  PTHREAD_LIBS="-lpthread"
-])
+
+# if you haven't got pread/pwrite, we can't use multithreading
+if test "x$HAVE_PREAD_PWRITE" != "x"; then
+
+  case `uname` in
+    MINGW*)
+      AC_MSG_WARN([disabling support for pthreads......])
+    ;;
+    *)
+      AC_CHECK_LIB(pthread, pthread_create, [
+        SYNC=posync;
+        PTHREAD_LIBS="-lpthread"
+      ])
+    ;;
+  esac
+
+fi
+
 AC_SUBST(SYNC)
 AC_SUBST(PTHREAD_LIBS)
 

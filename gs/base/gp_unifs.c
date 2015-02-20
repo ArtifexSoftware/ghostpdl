@@ -183,12 +183,46 @@ FILE *gp_fdup(FILE *f, const char *mode)
 
 int gp_fpread(char *buf, uint count, int64_t offset, FILE *f)
 {
+#if defined(HAVE_PREAD_PWRITE) && HAVE_PREAD_PWRITE == 1
     return pread(fileno(f), buf, count, offset);
+#else
+    uint c;
+    int64_t os, curroff = gp_ftell_64(f);
+    if (curroff < 0) return curroff;
+    
+    os = gp_fseek_64(f, offset, 0);
+    if (os < 0) return os;
+    
+    c = fread(buf, 1, count, f);
+    if (c < 0) return c;
+    
+    os = gp_fseek_64(f, curroff, 0);
+    if (os < 0) return os;
+    
+    return c;
+#endif
 }
 
 int gp_fpwrite(char *buf, uint count, int64_t offset, FILE *f)
 {
+#if defined(HAVE_PREAD_PWRITE) && HAVE_PREAD_PWRITE == 1
     return pwrite(fileno(f), buf, count, offset);
+#else
+    uint c;
+    int64_t os, curroff = gp_ftell_64(f);
+    if (curroff < 0) return curroff;
+    
+    os = gp_fseek_64(f, offset, 0);
+    if (os < 0) return os;
+    
+    c = fwrite(buf, 1, count, f);
+    if (c < 0) return c;
+    
+    os = gp_fseek_64(f, curroff, 0);
+    if (os < 0) return os;
+    
+    return c;
+#endif
 }
 
 /* Set a file into binary or text mode. */

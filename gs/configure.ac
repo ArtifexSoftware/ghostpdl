@@ -492,10 +492,17 @@ dnl --------------------------------------------------
 
 AC_CHECK_LIB(m, cos)
 
+AC_CHECK_FUNCS([pread pwrite], [HAVE_PREAD_PWRITE="-DHAVE_PREAD_PWRITE=1"], [HAVE_PREAD_PWRITE=])
+
+AC_SUBST(HAVE_PREAD_PWRITE)
+
 SYNC="nosync"
 PTHREAD_LIBS=""
 
-case `uname` in
+# if you haven't got pread/pwrite, we can't use multithreading
+if test "x$HAVE_PREAD_PWRITE" != "x"; then
+
+  case `uname` in
     MINGW*)
       AC_MSG_WARN([disabling support for pthreads......])
     ;;
@@ -505,7 +512,9 @@ case `uname` in
         PTHREAD_LIBS="-lpthread"
       ])
     ;;
-esac
+  esac
+
+fi
 
 AC_SUBST(SYNC)
 AC_SUBST(PTHREAD_LIBS)
