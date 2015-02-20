@@ -90,6 +90,7 @@ typedef struct psd_device_s {
 
     long downscale_factor;
     int max_spots;
+    bool lock_colorants;
 
     /* ICC color profile objects, for color conversion.
        These are all device link profiles.  At least that
@@ -265,7 +266,8 @@ const psd_device gs_psdrgb_device =
     /* PSD device specific parameters */
     psd_DEVICE_RGB,		/* Color model */
     1,                          /* downscale_factor */
-    GS_SOFT_MAX_SPOTS           /* max_spots */
+    GS_SOFT_MAX_SPOTS,           /* max_spots */
+    false,                      /* colorants not locked */
 };
 
 /*
@@ -295,7 +297,8 @@ const psd_device gs_psdcmyk_device =
     /* PSD device specific parameters */
     psd_DEVICE_CMYK,		/* Color model */
     1,                          /* downscale_factor */
-    GS_SOFT_MAX_SPOTS           /* max_spots */
+    GS_SOFT_MAX_SPOTS,           /* max_spots */
+    false,                      /* colorants not locked */
 };
 
 /* Open the psd devices */
@@ -379,11 +382,13 @@ psd_prn_open(gx_device * pdev)
             /* Use the information that is in the page spot color.  We should
                be here if we are processing a PDF and we do not have a DeviceN
                ICC profile specified for output */
-            pdev->color_info.num_components = 
-                (pdev_psd->devn_params.page_spot_colors 
-                 + pdev_psd->devn_params.num_std_colorant_names);
-            if (pdev->color_info.num_components > pdev->color_info.max_components)
-                pdev->color_info.num_components = pdev->color_info.max_components;
+            if (!(pdev_psd->lock_colorants)) {
+                pdev->color_info.num_components =
+                    (pdev_psd->devn_params.page_spot_colors
+                    + pdev_psd->devn_params.num_std_colorant_names);
+                if (pdev->color_info.num_components > pdev->color_info.max_components)
+                    pdev->color_info.num_components = pdev->color_info.max_components;
+            }
         }
     } else {
         /* We do not know how many spots may occur on the page. 
@@ -391,11 +396,13 @@ psd_prn_open(gx_device * pdev)
            have available.  Note, lack of knowledge only occurs in the case
            of PS files.  With PDF we know a priori the number of spot
            colorants.  */
-        int num_comp = pdev_psd->max_spots + 4; /* Spots + CMYK */
-        if (num_comp > GS_CLIENT_COLOR_MAX_COMPONENTS)
-            num_comp = GS_CLIENT_COLOR_MAX_COMPONENTS;
-        pdev->color_info.num_components = num_comp;
-        pdev->color_info.max_components = num_comp;
+        if (!(pdev_psd->lock_colorants)) {
+            int num_comp = pdev_psd->max_spots + 4; /* Spots + CMYK */
+            if (num_comp > GS_CLIENT_COLOR_MAX_COMPONENTS)
+                num_comp = GS_CLIENT_COLOR_MAX_COMPONENTS;
+            pdev->color_info.num_components = num_comp;
+            pdev->color_info.max_components = num_comp;
+        }
     }
     /* Push this to the max amount as a default if someone has not set it */
     if (pdev_psd->devn_params.num_separation_order_names == 0)
@@ -768,7 +775,7 @@ psd_get_params(gx_device * pdev, gs_param_list * plist)
     code = param_write_int(plist, "MaxSpots", &xdev->max_spots);
     if (code < 0)
         return code;
-
+    code = param_write_bool(plist, "LockColorants", &xdev->lock_colorants);
     return code;
 }
 
@@ -854,6 +861,16 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
             break;
         default:
             param_signal_error(plist, "DownScaleFactor", code);
+            return code;
+    }
+
+    switch (code = param_read_bool(plist, "LockColorants", &(pdevn->lock_colorants))) {
+        case 0:
+            break;
+        case 1:
+            break;
+        default:
+            param_signal_error(plist, "LockColorants", code);
             return code;
     }
 

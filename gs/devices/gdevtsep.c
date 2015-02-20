@@ -537,12 +537,13 @@ static dev_proc_output_page(tiffseps_output_page);
     bool  PrintSpotCMYK;        /* true = print CMYK equivalents for spot inks; false = do nothing */\
     uint16 Compression;         /* for the separation files, same values as
                                    TIFFTAG_COMPRESSION */\
-    bool close_files; \
+    bool close_files;\
     long MaxStripSize;\
     long DownScaleFactor;\
     long MinFeatureSize;\
     long BitsPerComponent;\
     int max_spots;\
+    bool lock_colorants;\
     gs_devn_params devn_params;         /* DeviceN generated parameters */\
     equivalent_cmyk_color_params equiv_cmyk_colors
 
@@ -720,7 +721,8 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
         1,                      /* DownScaleFactor */\
         0,                      /* MinFeatureSize */\
         8,                      /* BitsPerComponent */\
-        GS_SOFT_MAX_SPOTS       /* max_spots */
+        GS_SOFT_MAX_SPOTS,      /* max_spots */\
+        false                   /* Colorants not locked */
 
 #define GCIB (ARCH_SIZEOF_GX_COLOR_INDEX * 8)
 
@@ -957,6 +959,8 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
         ecode = code;
     if ((code = param_write_int(plist, "MaxSpots", &pdevn->max_spots)) < 0)
         ecode = code;
+    if ((code = param_write_bool(plist, "LockColorants", &pdevn->lock_colorants)) < 0)
+        ecode = code;
     if ((code = param_write_bool(plist, "PrintSpotCMYK", &pdevn->PrintSpotCMYK)) < 0)
         ecode = code;
 
@@ -1070,6 +1074,16 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
                 break;
             }
             code = gs_error_rangecheck;
+        case 1:
+            break;
+        default:
+            param_signal_error(plist, param_name, code);
+            return code;
+    }
+    switch (code = param_read_bool(plist, (param_name = "LockColorants"), 
+            &(pdevn->lock_colorants))) {
+        case 0:
+            break;
         case 1:
             break;
         default:
@@ -1615,11 +1629,15 @@ tiffsep_prn_open(gx_device * pdev)
             /* Limit us only to the ICC colorants */
             pdev->color_info.max_components = pdev->color_info.num_components;
         } else {
-            pdev->color_info.num_components =
-                (pdev_sep->devn_params.page_spot_colors
-                                     + pdev_sep->devn_params.num_std_colorant_names);
-            if (pdev->color_info.num_components > pdev->color_info.max_components)
-                pdev->color_info.num_components = pdev->color_info.max_components;
+            /* Do not allow the spot count to update if we have specified the
+               colorants already */
+            if (!(pdev_sep->lock_colorants)) {
+                pdev->color_info.num_components =
+                    (pdev_sep->devn_params.page_spot_colors
+                    + pdev_sep->devn_params.num_std_colorant_names);
+                if (pdev->color_info.num_components > pdev->color_info.max_components)
+                    pdev->color_info.num_components = pdev->color_info.max_components;
+            }
         }
     } else {
         /* We do not know how many spots may occur on the page.
@@ -1627,11 +1645,13 @@ tiffsep_prn_open(gx_device * pdev)
            have available.  Note, lack of knowledge only occurs in the case
            of PS files.  With PDF we know a priori the number of spot
            colorants.  */
-        int num_comp = pdev_sep->max_spots + 4; /* Spots + CMYK */
-        if (num_comp > GS_CLIENT_COLOR_MAX_COMPONENTS)
-            num_comp = GS_CLIENT_COLOR_MAX_COMPONENTS;
-        pdev->color_info.num_components = num_comp;
-        pdev->color_info.max_components = num_comp;
+        if (!(pdev_sep->lock_colorants)) {
+            int num_comp = pdev_sep->max_spots + 4; /* Spots + CMYK */
+            if (num_comp > GS_CLIENT_COLOR_MAX_COMPONENTS)
+                num_comp = GS_CLIENT_COLOR_MAX_COMPONENTS;
+            pdev->color_info.num_components = num_comp;
+            pdev->color_info.max_components = num_comp;
+        }
     }
     /* Push this to the max amount as a default if someone has not set it */
     if (pdev_sep->devn_params.num_separation_order_names == 0)
