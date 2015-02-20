@@ -185,6 +185,7 @@ gs_private_st_composite(st_color_space_Indexed, gs_color_space,
 static cs_proc_restrict_color(gx_restrict_Indexed);
 static cs_proc_concrete_space(gx_concrete_space_Indexed);
 static cs_proc_concretize_color(gx_concretize_Indexed);
+static cs_proc_remap_color(gx_remap_IndexedNamed);
 static cs_proc_install_cspace(gx_install_Indexed);
 static cs_proc_set_overprint(gx_set_overprint_Indexed);
 static cs_proc_final(gx_final_Indexed);
@@ -197,6 +198,24 @@ const gs_color_space_type gs_color_space_type_Indexed = {
     gx_concrete_space_Indexed,
     gx_concretize_Indexed, NULL,
     gx_default_remap_color,
+    gx_install_Indexed,
+    gx_set_overprint_Indexed,
+    gx_final_Indexed, gx_no_adjust_color_count,
+    gx_serialize_Indexed,
+    gx_cspace_is_linear_default, gx_polarity_Indexed
+};
+
+/* To keep things vectorized and avoid an if test during the remap proc we
+   have another set of procedures to use for indexed color spaces when 
+   someone has specified a named color profile and the base space of the
+   index color space is DeviceN or Separation */
+const gs_color_space_type gs_color_space_type_Indexed_Named = {
+    gs_color_space_index_Indexed, false, false,
+    &st_color_space_Indexed, gx_num_components_1,
+    gx_init_paint_1, gx_restrict_Indexed,
+    gx_concrete_space_Indexed,
+    gx_concretize_Indexed, NULL,
+    gx_remap_IndexedNamed,
     gx_install_Indexed,
     gx_set_overprint_Indexed,
     gx_final_Indexed, gx_no_adjust_color_count,
@@ -477,7 +496,6 @@ static int
 gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
                       frac * pconc, const gs_imager_state * pis, gx_device *dev)
 {
-
     gs_client_color cc;
     const gs_color_space *pbcs =
         (const gs_color_space *)pcs->base_space;
@@ -486,6 +504,47 @@ gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
     if (code < 0)
         return code;
     return (*pbcs->type->concretize_color) (&cc, pbcs, pconc, pis, dev);
+}
+
+/* We should only be here for cases where the base space is DeviceN or Sep and
+   we are doing named color replacement. */
+static int
+gx_remap_IndexedNamed(const gs_client_color * pcc, const gs_color_space * pcs,
+gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+gs_color_select_t select)
+{
+    frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    const gs_color_space *pconcs;
+    int i = pcs->type->num_components(pcs);
+    gs_client_color cc;
+    bool mapped;
+    int code = gs_indexed_limit_and_lookup(pcc, pcs, &cc);
+
+    if (code < 0)
+        return code;
+
+    pconcs = cs_concrete_space(pcs, pis);
+    /* Now see if we can do the named color replacement */
+    mapped = gx_remap_named_color(&cc, pconcs, pdc, pis, dev, select);
+
+    if (!mapped) {
+        /* Named color remap failed perhaps due to colorant not found. Do the 
+           old approach of concretize of the base space and remap concrete color */
+        const gs_color_space *pbcs =
+            (const gs_color_space *)pcs->base_space;
+
+        code = (*pbcs->type->concretize_color) (&cc, pbcs, conc, pis, dev);
+        if (code < 0)
+            return code;
+        code = (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pis, dev, select);
+    }
+
+    /* Save original color space and color info into dev color */
+    i = any_abs(i);
+    for (i--; i >= 0; i--)
+        pdc->ccolor.paint.values[i] = pcc->paint.values[i];
+    pdc->ccolor_valid = true;
+    return code;
 }
 
 /* Look up an index in an Indexed color space. */

@@ -46,6 +46,7 @@ gs_indexed_limit_and_lookup(const gs_client_color * pc,const gs_color_space *pcs
 
 /* Declare the Indexed color space type. */
 extern const gs_color_space_type gs_color_space_type_Indexed;
+extern const gs_color_space_type gs_color_space_type_Indexed_Named;
 
 /* CIE-specific routines */
 #ifndef gs_cie_render_DEFINED

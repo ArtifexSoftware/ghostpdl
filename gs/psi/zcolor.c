@@ -4260,6 +4260,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     ref hival, lookup;
     gs_color_space *pcs;
     gs_color_space *pcs_base;
+    gs_color_space_index base_type;
 
     if (i_ctx_p->language_level < 2)
         return_error(e_undefined);
@@ -4273,6 +4274,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     cspace_old = istate->colorspace[0];
 
     pcs_base = gs_currentcolorspace(igs);
+    base_type = gs_color_space_get_index(pcs_base);
 
     code = array_get(imemory, r, 3, &lookup);
     if (code < 0)
@@ -4293,7 +4295,15 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
          */
         if (r_size(&lookup) < num_values)
             return_error(e_rangecheck);
-        pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed);
+        /* If we have a named color profile and the base space is DeviceN or
+           Separation use a different set of procedures to ensure the named
+           color remapping code is used */
+        if (igs->icc_manager->device_named != NULL && 
+            (base_type == gs_color_space_index_Separation ||
+             base_type == gs_color_space_index_DeviceN))
+            pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed_Named);
+        else
+            pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed);
         if (!pcs) {
             return_error(e_VMerror);
         }
@@ -4324,7 +4334,12 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
                              pcs_base, indexed_cont);
         if (code < 0)
             return code;
-        pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed);
+        if (igs->icc_manager->device_named != NULL &&
+            (base_type == gs_color_space_index_Separation ||
+             base_type == gs_color_space_index_DeviceN))
+            pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed_Named);
+        else
+            pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed);
         pcs->base_space = pcs_base;
         rc_increment_cs(pcs_base);
         pcs->params.indexed.use_proc = 1;
