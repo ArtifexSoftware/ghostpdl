@@ -334,6 +334,12 @@ AC_CHECK_FUNC([sqrtf], [SQRTF_SUBST=], [SQRTF_SUBST="-Dsqrtf=\"(float)sqrt\""])
 
 AC_SUBST(SQRTF_SUBST)
 
+dnl --------------------------------------------------
+dnl check for and possibly replace strnlen
+dnl --------------------------------------------------
+AC_CHECK_FUNCS([strnlen], [HAVE_STRNLEN=],[HAVE_STRNLEN="-D\"strnlen(a,b)=strlen(a)\""])
+
+GCFLAGS="$GCFLAGS $HAVE_STRNLEN"
 
 dnl --------------------------------------------------
 dnl currently just for trio
