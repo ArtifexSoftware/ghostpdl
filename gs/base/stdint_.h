@@ -138,37 +138,36 @@ typedef unsigned long long uint64_t;
 #  define PRIu32 "I32u"
 #  define PRIu64 "I64u"
 #  define PRIx64 "I64x"
-# else
-
-#  ifndef PRId32
-#   define PRId32 "d"
-#  endif
-
-#  ifndef PRId64
-#   define PRId64 "lld"
-#  endif
-
-#  ifndef PRIi32
-#   define PRIi32 "i"
-#  endif
-
-#  ifndef PRIi64
-#   define PRIi64 "lli"
-#  endif
-
-#  ifndef PRIu32
-#   define PRIu32 "u"
-#  endif
-
-#  ifndef PRIu64
-#   define PRIu64 "llu"
-#  endif
-
-#  ifndef PRIx64
-#   define PRIx64 "llx"
-#  endif
-
 # endif
 #endif
+
+/* Even if we have inttypes.h, these may not be defined */
+# ifndef PRId32
+#  define PRId32 "d"
+# endif
+
+# ifndef PRId64
+#  define PRId64 "lld"
+# endif
+
+# ifndef PRIi32
+#  define PRIi32 "i"
+# endif
+
+# ifndef PRIi64
+#  define PRIi64 "lli"
+# endif
+
+# ifndef PRIu32
+#  define PRIu32 "u"
+# endif
+
+# ifndef PRIu64
+#  define PRIu64 "llu"
+# endif
+
+# ifndef PRIx64
+#  define PRIx64 "llx"
+# endif
 
 #endif /* stdint__INCLUDED */
