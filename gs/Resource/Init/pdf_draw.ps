@@ -2953,13 +2953,13 @@ currentdict /set_bc_color undef
       /DA_Action_Dict
       <<
         /Tf {exch dup /Helv eq {pop /Helvetica findfont exch scalefont setfont}{findfont exch scalefont setfont}ifelse}
-        /r  {aload pop setrgbcolor}
-        /rg {aload pop setrgbcolor}
-        /RG {aload pop setrgbcolor}
-        /G  {aload pop setgray}
-        /g  {aload pop setgray}
-        /k  {aload pop setcmykcolor}
-        /K  {aload pop setcmykcolor}
+        /r  {aload pop setrgbcolor} % Can't find this actually defined anywhere, but Acrobat seems to honour it :-(
+        /rg {setrgbcolor}
+        /RG {setrgbcolor}
+        /G  {setgray}
+        /g  {setgray}
+        /k  {setcmykcolor}
+        /K  {setcmykcolor}
       >> def
       dup /DA knownoget {
         length string /tempstr exch def
