@@ -626,6 +626,7 @@ $(PSD)psbase.dev : $(INT_MAK) $(ECHOGS_XE) $(INT_OBJS)\
 	$(ADDMOD) $(PSD)psbase -iodev stdin stdout stderr lineedit statementedit
 	$(ADDMOD) $(PSD)psbase -include $(PSD)isupport $(PSD)nobtoken $(PSD)nousparm
 	$(ADDMOD) $(PSD)psbase -include $(GLD)rld $(GLD)rle $(GLD)sfile $(PSD)dscparse
+	$(ADDMOD) $(PSD)psbase -include $(GLD)fapi_ps
 	$(ADDMOD) $(PSD)psbase -replace $(GLD)gsiodevs
 
 # -------------------------- Feature definitions -------------------------- #
@@ -641,7 +642,6 @@ $(PSD)psl1.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(MAKEDIRS)
 	$(SETMOD) $(PSD)psl1 -include $(PSD)psbase $(PSD)bcp $(PSD)path1 $(PSD)type1
 	$(ADDMOD) $(PSD)psl1 -emulator PostScript PostScriptLevel1
-	$(ADDMOD) $(PSD)psbase -include $(GLD)fapi_ps
 
 # -------- Level 1 color extensions (CMYK color and colorimage) -------- #
 
@@ -1851,7 +1851,7 @@ $(PSOBJ)zform.$(OBJ) : $(PSSRC)zform.c $(OP) $(ghost_h) $(oper_h)\
 # On the other hand, the PDF .ps files must get loaded after
 # level2dict is defined.
 $(PSD)pdf.dev : $(INT_MAK) $(ECHOGS_XE)\
- $(PSD)psbase.dev $(GLD)dps2lib.dev $(PSD)dps2read.dev\
+ $(GLD)dps2lib.dev $(PSD)dps2read.dev\
  $(PSD)pdffonts.dev $(PSD)psl3.dev $(PSD)pdfread.dev $(PSD)cff.dev\
  $(PSD)fmd5.dev $(PSD)fsha2.dev $(PSD)farc4.dev $(PSD)faes.dev\
  $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)icc.dev $(PSD)pdfops.dev\
