@@ -836,8 +836,12 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
             bdev->band_offset_x = ppage->offset.x;
             bdev->band_offset_y = ppage->offset.y + (band_first * band_height);
         }
-        /* if any of the requested bands need transparency, use it for all of them */
-        for (band=band_first; band <= band_last; band++)
+        /* if any of the requested bands need transparency, use it for all of them   */
+        /* The pdf14_ok_to_optimize checks if the target device (bdev) is compatible */
+        /* with the pdf14 compositor info that was written to the clist: colorspace, */
+        /* colorspace, etc.                                                          */
+        pdf14_needed = !pdf14_ok_to_optimize(bdev);
+        for (band=band_first; !pdf14_needed && band <= band_last; band++)
             pdf14_needed |= (crdev->color_usage_array[band].trans_bbox.p.y <=
             crdev->color_usage_array[band].trans_bbox.q.y) ? true : false;
 

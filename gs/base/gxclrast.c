@@ -622,10 +622,6 @@ in:                             /* Initialize for a new page. */
     imager_state.line_params.dash.pattern = dash_pattern;
     if (tdev != 0) {
         gx_set_cmap_procs(&imager_state, tdev);
-        /* We can only optimize contone color devices */
-        if ( !(tdev->color_info.max_gray > 15 || tdev->color_info.max_color > 15) &&
-             playback_action == playback_action_render_no_pdf14)
-             playback_action = playback_action_render;      /* can't optimize these cases */
     }
     gx_imager_setscreenphase(&imager_state, -x0, -y0, gs_color_select_all);
     halftone_type = ht_type_none;
