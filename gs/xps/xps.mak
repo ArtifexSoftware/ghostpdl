@@ -123,14 +123,15 @@ $(XPSOBJ)xpscff.$(OBJ): $(XPSSRC)xpscff.c $(XPSINCLUDES)
 $(XPSOBJ)xpsfapi.$(OBJ): $(XPSSRC)xpsfapi.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpsfapi.c $(XPSO_)xpsfapi.$(OBJ)
 
-$(PLOBJ)xpsimpl.$(OBJ):  $(PLSRC)plimpl.c            \
+$(XPSGEN)xpsimpl.c: $(PLSRC)plimpl.c
+	$(CP_) $(PLSRC)plimpl.c $(XPSGEN)xpsimpl.c
+
+$(PLOBJ)xpsimpl.$(OBJ): $(XPSGEN)xpsimpl.c          \
                         $(AK)                       \
                         $(memory__h)                \
                         $(scommon_h)                \
                         $(gxdevice_h)               \
                         $(pltop_h)
-	$(RM_) $(XPSGEN)xpsimpl.c
-	$(CP_) $(PLSRC)plimpl.c $(XPSGEN)xpsimpl.c
 	$(XPSCCC) $(XPSGEN)xpsimpl.c $(XPSO_)xpsimpl.$(OBJ)
 
 $(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(pltop_h) $(XPSINCLUDES) $(GLOBJ)gconfig.$(OBJ) <
