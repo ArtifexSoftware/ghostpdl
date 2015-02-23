@@ -655,25 +655,52 @@ gs_color_select_t select)
             "gx_remap_named_color");
 
     if (code == 0) {
-        /* Named color was found and set.  Finish the job */
-        for (k = 0; k < num_des_comps; k++){
+        /* Named color was found and set.  Note that  gsicc_transform_named_color 
+           MUST set ALL the colorant values AND they must be in the proper
+           order already.  If we have specified the colorants with 
+           -sICCOutputColors (i.e. if you are using an NCLR output profile) then 
+           we should be good. If not or if instead one used SeparationColorNames and
+           SeparationOrder to set up the device, then we need to make a copy 
+           of the imager state and make sure that we set color_component_map is
+           properly set up for the gx_remap_concrete_devicen proc. */
+        for (k = 0; k < num_des_comps; k++)
             conc[k] = float2frac(((float)device_values[k]) / 65535.0);
+
+        /* If we are looking to create the equivalent CMYK value then no need
+           to worry about NCLR profiles or about altering the colorant map */
+        if (!named_color_equivalent_cmyk_colors(pis)) {
+            /* We need to apply transfer functions, possibily halftone and
+               encode the color for the device. To get proper mapping of the
+               colors to the device positions, you MUST specify -sICCOutputColors
+               which will enumerate the positions of the colorants and enable
+               proper color management for the CMYK portions IF you are using
+               an NCLR output profile. */
+            code = dev_proc(dev, get_profile)(dev, &dev_profile);
+            /* Check if the profile is DeviceN (NCLR) */
+            if (dev_profile->device_profile[0]->data_cs == gsNCHANNEL) {
+                if (dev_profile->spotnames == NULL)
+                    return false;
+                if (!dev_profile->spotnames->equiv_cmyk_set) {
+                    /* Note that if the improper NCLR profile is used, then the
+                       composite preview will be wrong. */
+                    code = gsicc_set_devicen_equiv_colors(dev, pis, dev_profile->device_profile[0]);
+                    dev_profile->spotnames->equiv_cmyk_set = true;
+                }
+                gx_remap_concrete_devicen(conc, pdc, pis, dev, select);
+            } else {
+                gs_imager_state temp_state = *((const gs_imager_state *)pis);
+
+                /* No NCLR profile with spot names.  So set up the 
+                   color_component_map in the imager state.  Again, note that
+                   gsicc_transform_named_color must have set ALL the device
+                   colors */
+                for (i = 0; i < temp_state.color_component_map.num_colorants; i++)
+                    temp_state.color_component_map.color_map[i] = i;
+                gx_remap_concrete_devicen(conc, pdc, &temp_state, dev, select);
+            }
+        } else {
+            gx_remap_concrete_devicen(conc, pdc, pis, dev, select);
         }
-        /* We need to apply transfer functions, possibily halftone and
-           encode the color for the device.  To get proper mapping of the
-           colors to the device positions, you MUST specify -sICCOutputColors 
-           which will enumerate the positions of the colorants and enable
-           proper color management for the CMYK portions */
-        code = dev_proc(dev, get_profile)(dev, &dev_profile);
-        if (dev_profile->spotnames == NULL)
-            return false;
-        if (!dev_profile->spotnames->equiv_cmyk_set) {
-            /* Note that if the improper N-CLR profile is used, then the
-               composite preview will be wrong. */
-            code = gsicc_set_devicen_equiv_colors(dev, pis, dev_profile->device_profile[0]);
-            dev_profile->spotnames->equiv_cmyk_set = true;
-        }
-        gx_remap_concrete_devicen(conc, pdc, pis, dev, select);
         /* Save original color space and color info into dev color */
         i = any_abs(i);
         for (i--; i >= 0; i--)

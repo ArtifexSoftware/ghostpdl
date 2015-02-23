@@ -1123,7 +1123,8 @@ gsicc_named_profile_release(void *ptr)
     }
 }
 
-/* Function returns -1 if name not found.  Otherwise transform the color. */
+/* Function returns -1 if a name is not found.  Otherwise it will transform
+   the named colors and return 0 */
 int
 gsicc_transform_named_color(const float tint_values[],
                             gsicc_namedcolor_t color_names[], 
@@ -1137,6 +1138,7 @@ gsicc_transform_named_color(const float tint_values[],
     unsigned int num_entries;
     cmm_profile_t *named_profile;
     gsicc_namedcolortable_t *namedcolor_table;
+    int num_nonnone_names;
     int k,j,n;
     float lab[3];
     char *buffptr;
@@ -1258,33 +1260,47 @@ gsicc_transform_named_color(const float tint_values[],
             }
             /* Go through each of our spot names, getting the color value for
                each one. */
+            num_nonnone_names = num_names;
             for (n = 0; n < num_names; n++) {
-                /* Search our structure for the color name */
+                /* Search our structure for the color name.  Ignore the None
+                   colorant names.  All is a special case that someone may 
+                   want to detect and do some special handling for.  In this
+                   particular example we would punt with All and let the default
+                   methods handle it */
                 found_match = false;
-                for (k = 0; k < num_entries; k++) {
-                    if (color_names[n].name_size == 
-                        namedcolor_table->named_color[k].name_size) {
-                        if( strncmp((const char *) namedcolor_table->named_color[k].colorant_name,
-                            (const char *) color_names[n].colorant_name, color_names[n].name_size) == 0) {
-                            found_match = true;
-                            break;
+
+                if (strncmp("None", (const char *)color_names[n].colorant_name, 
+                            color_names[n].name_size) == 0) {
+                    num_nonnone_names--;
+                } else {
+                    /* Colorant was not None */
+                    for (k = 0; k < num_entries; k++) {
+                        if (color_names[n].name_size ==
+                            namedcolor_table->named_color[k].name_size) {
+                            if (strncmp((const char *)namedcolor_table->named_color[k].colorant_name,
+                                (const char *)color_names[n].colorant_name, color_names[n].name_size) == 0) {
+                                found_match = true;
+                                break;
+                            }
                         }
                     }
-                }
-                if (found_match) {
-                    indices[n] = k;
-                } else {
-                    /* We do not know this colorant, return -1 */
-                    return -1;
+                    if (found_match) {
+                        indices[n] = k;
+                    } else {
+                        /* We do not know this colorant, return -1 */
+                        return -1;
+                    }
                 }
             }
+            if (num_nonnone_names < 1)
+                return -1; /* No non-None colorants. */
             /* We have all the colorants.  Lets go through and see if we can
                make something that looks like a merge of the various ones */
             /* Apply tint, blend LAB values.  Note that we may have wanted to 
                check if we even want to do this.  It is possible that the
                device directly supports this particular colorant.  One may
                want to check the alt tint transform boolean */
-            for (n = 0; n < num_names; n++) {
+            for (n = 0; n < num_nonnone_names; n++) {
                 for (j = 0; j < 3; j++) {
                     temp = (float) namedcolor_table->named_color[indices[n]].lab[j] * tint_values[n]
                             + (float) white_lab[j] * (1.0 - tint_values[n]);
@@ -1302,11 +1318,20 @@ gsicc_transform_named_color(const float tint_values[],
                     psrc[2] = (psrc[2] + temp_lab[2]) / 2; /* b* */
                 }
             }
-            /* Push LAB value through CMM to get device values */
+            /* Push LAB value through CMM to get CMYK device values */
+            /* Note that there are several options here. You could us an NCLR 
+               icc profile to compute the device colors that you want.  For,
+               example if the output device had an NCLR profile.
+               However, what you MUST do here is set ALL the device values.  
+               Hence, below we initialize all of them to zero and in this 
+               particular example, set only the ones that were output from 
+               the device profile */
             if ( gs_output_profile != NULL ) {
                 curr_output_profile = gs_output_profile;
             } else {
-                /* Use the device profile */
+                /* Use the device profile.  Note if one was not set for the
+                   device, the default CMYK profile is used.  Note that 
+                   if we specified and NCLR profile it will be used here */
                 code = dev_proc(dev, get_profile)(dev,  &dev_profile);
                 gsicc_extract_profile(dev->graphics_type_tag,
                                       dev_profile, &(curr_output_profile),
@@ -1324,17 +1349,28 @@ gsicc_transform_named_color(const float tint_values[],
                 (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2);
             }
             gsicc_release_link(icc_link);
-            for ( k = 0; k < curr_output_profile->num_comps; k++){
+
+            /* Clear out ALL the color values */
+            for (k = 0; k < dev->color_info.num_components; k++){
+                device_values[k] = 0;
+            }
+            /* Set only the values that came from the profile.  By default
+               this would generally be just CMYK values.  For the equivalent
+               color computation case it certainly will be.  If someone 
+               specified an NCLR profile it could be more.  Note that if an
+               NCLR profile is being used we will want to make sure the colorant
+               order is correct */
+            for (k = 0; k < curr_output_profile->num_comps; k++){
                 device_values[k] = psrc_temp[k];
             }
             return 0;
         }
     }
-    return -1;
+    return -1; /* Color not found */
 }
 
 /* Used by gs to notify the ICC manager that we are done with this link for now */
-/* This may release elements waiting on a icc_link_cache slot */
+/* This may release elements waiting on an icc_link_cache slot */
 void
 gsicc_release_link(gsicc_link_t *icclink)
 {
@@ -1387,7 +1423,6 @@ gsicc_release_link(gsicc_link_t *icclink)
 }
 
 /* Used to initialize the buffer description prior to color conversion */
-
 void
 gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, unsigned char bytes_per_chan,
                   bool has_alpha, bool alpha_first, bool is_planar, int plane_stride, int row_stride,

@@ -61,4 +61,8 @@ void capture_spot_equivalent_cmyk_colors(gx_device * pdev,
                 const gs_color_space * pcs, int sep_num,
                 equivalent_cmyk_color_params * pparams);
 
+/* Used in named color replacement to detect that we are doing the equivalent
+   computation */
+bool named_color_equivalent_cmyk_colors(const gs_imager_state * pis);
+
 #endif		/* define gsequivc_INCLUDED */

@@ -199,7 +199,6 @@ update_ICC_spot_equivalent_cmyk_colors(gx_device * pdev,
     }
 }
 
-
 static void
 update_DeviceN_spot_equivalent_cmyk_colors(gx_device * pdev,
                     const gs_state * pgs, const gs_color_space * pcs,
@@ -291,6 +290,9 @@ update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     int code;
 
     code = dev_proc(pdev, get_profile)(pdev, &dev_profile);
+    if (code < 0)
+        return;
+
     /* If all of the color_info is valid then there is nothing to do. */
     if (pparams->all_color_info_valid)
         return;
@@ -332,7 +334,7 @@ update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
 
 static void
 save_spot_equivalent_cmyk_color(int sep_num,
-                equivalent_cmyk_color_params * pparams, frac cmyk[4])
+                equivalent_cmyk_color_params * pparams, const frac cmyk[4])
 {
     pparams->color[sep_num].c = cmyk[0];
     pparams->color[sep_num].m = cmyk[1];
@@ -433,11 +435,19 @@ cmap_separation_capture_cmyk_color(frac all, gx_device_color * pdc,
     dmprintf(pis->memory, "cmap_separation_capture_cmyk_color - this routine should not be executed\n");
 }
 
+/* The call to this is actually going to occur if we happen to be using a 
+   named color profile and doing a replacement.  Since the destination profile
+   will have been CMYK based during the swap out to find the equivalent color, we can
+   go ahead and just grab the cmyk portion */
 static void
 cmap_devicen_capture_cmyk_color(const frac * pcc, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
-    dmprintf(pis->memory, "cmap_devicen_capture_cmyk_color - this routine should not be executed\n");
+    equivalent_cmyk_color_params * pparams =
+        ((color_capture_device *)dev)->pequiv_cmyk_colors;
+    int sep_num = ((color_capture_device *)dev)->sep_num;
+
+    save_spot_equivalent_cmyk_color(sep_num, pparams, pcc);
 }
 
 /*
@@ -453,7 +463,6 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     color_capture_device temp_device = { 0 };
     gx_device_color dev_color;
     gsicc_rendering_param_t render_cond;
-    int code;
     cmm_dev_profile_t *dev_profile;
     cmm_profile_t *curr_output_profile;
     cmm_dev_profile_t temp_profile = {	/* Initialize to 0's/NULL's */
@@ -467,7 +476,7 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
                           { 0 } /* rc_header */
                           };
 
-    code = dev_proc(pdev, get_profile)(pdev, &dev_profile);
+    dev_proc(pdev, get_profile)(pdev, &dev_profile);
     gsicc_extract_profile(pdev->graphics_type_tag,
                           dev_profile, &(curr_output_profile), &render_cond);
     /*
@@ -520,4 +529,12 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     /* Now capture the color */
     pcs->type->remap_color (pcc, pcs, &dev_color, &temp_state,
                             (gx_device *)&temp_device, gs_color_select_texture);
+}
+
+/* Used for detecting if we are trying to find the equivalant color during
+   named color replacement */
+bool
+named_color_equivalent_cmyk_colors(const gs_imager_state * pis)
+{
+    return pis->cmap_procs == &cmap_capture_cmyk_color;
 }
