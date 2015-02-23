@@ -30,8 +30,9 @@ UNIXLINK_MAK=$(GLSRC)unixlink.mak
 
 INT_ARCHIVE_SOME=$(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)
 
-INT_ARCHIVE_ALL=$(PSOBJ)imainarg.$(OBJ) $(PSOBJ)imain.$(OBJ) $(GLOBJ)iconfig.$(OBJ) \
- $(INT_ARCHIVE_SOME)
+PSINT_ARCHIVE_ALL=$(PSOBJ)imainarg.$(OBJ) $(PSOBJ)imain.$(OBJ) $(GLOBJ)iconfig.$(OBJ)
+
+INT_ARCHIVE_ALL=$(PSINT_ARCHIVE_ALL) $(INT_ARCHIVE_SOME)
 
 XE_ALL=$(PSOBJ)gs.$(OBJ) $(INT_ARCHIVE_ALL) $(INT_ALL) $(DEVS_ALL)
 
@@ -118,6 +119,29 @@ $(GXPS_XE): $(ld_tr) $(xps_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(XPS_TOP_OBJS) \
 
 .xpssubtarget: $(GXPS_XE)
 	$(NO_OP)
+
+gpdlldt_tr=$(PSOBJ)gpdlldt.tr
+$(GPDL_XE): $(ld_tr) $(gpdl_tr) $(INT_ARCHIVE_ALL) $(REALMAIN_OBJ) $(MAIN_OBJ) \
+             $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) \
+             $(XOBJS) $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) \
+             $(PSINT_ARCHIVE_ALL)
+	$(ECHOGS_XE) -w $(gpdlldt_tr) -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(GPDL_XE)
+	$(ECHOGS_XE) -a $(gpdlldt_tr) -n -s $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(XOBJS) -s
+	cat $(gpdlld_tr) >> $(gpdlldt_tr)
+	$(ECHOGS_XE) -a $(gpdlldt_tr) -s - $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) $(REALMAIN_OBJ) $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
+	if [ x$(XLIBDIR) != x ]; then LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; fi; \
+	XCFLAGS= XINCLUDE= XLDFLAGS= XLIBDIRS= XLIBS= \
+	PCL_FEATURE_DEVS= DEVICE_DEVS= DEVICE_DEVS1= DEVICE_DEVS2= DEVICE_DEVS3= \
+	DEVICE_DEVS4= DEVICE_DEVS5= DEVICE_DEVS6= DEVICE_DEVS7= DEVICE_DEVS8= \
+	DEVICE_DEVS9= DEVICE_DEVS10= DEVICE_DEVS11= DEVICE_DEVS12= \
+	DEVICE_DEVS13= DEVICE_DEVS14= DEVICE_DEVS15= DEVICE_DEVS16= \
+	DEVICE_DEVS17= DEVICE_DEVS18= DEVICE_DEVS19= DEVICE_DEVS20= \
+	DEVICE_DEVS_EXTRA= \
+	sh <$(gpdlldt_tr)
+
+.gpdlsubtarget: $(GPDL_XE)
+	$(NO_OP)
+
 
 APITEST_XE=$(BINDIR)$(D)apitest$(XE)
 

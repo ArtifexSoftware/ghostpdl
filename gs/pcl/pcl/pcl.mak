@@ -325,7 +325,7 @@ PCL5_PARSE  = $(PCLOBJ)pcommand.$(OBJ) $(PCLOBJ)pcparse.$(OBJ)
 PCL5_OTHER  = $(PCL5_PARSE) $(PCLOBJ)pcdraw.$(OBJ)
 
 $(PCLOBJ)pcl5base.dev: $(PCL_MAK) $(ECHOGS_XE) $(PCL5_OTHER)    \
-                       $(PLOBJ)pl.dev $(PLOBJ)pjl.dev $(PLOBJ)$(PCL_FONT_SCALER).dev
+                       $(PLOBJ)pjl.dev $(PLOBJ)$(PCL_FONT_SCALER).dev
 	$(SETMOD) $(PCLOBJ)pcl5base $(PCL5_OTHER)
 	$(ADDMOD) $(PCLOBJ)pcl5base -include $(PLOBJ)pl $(PLOBJ)pjl $(PLOBJ)$(PCL_FONT_SCALER)
 	$(ADDMOD) $(PCLOBJ)pcl5base -init pcparse

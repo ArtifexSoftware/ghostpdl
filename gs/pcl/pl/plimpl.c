@@ -21,6 +21,8 @@
 #include "gxdevice.h"
 #include "pltop.h"
 
+#include "gsmemory.h" /* for gs_ptr_procs_t */
+
 extern pl_interp_implementation_t pcl_implementation;
 
 extern pl_interp_implementation_t pxl_implementation;
@@ -50,3 +52,15 @@ pl_interp_implementation_t const *const pdl_implementation[] = {
 #endif
     0
 };
+
+/* ---------------- Stubs ---------------- */
+
+/* These are here for easier access to PSI_INCLUDED */
+#ifndef PSI_INCLUDED
+/* Stubs for GC */
+const gs_ptr_procs_t ptr_struct_procs = { NULL, NULL, NULL };
+const gs_ptr_procs_t ptr_string_procs = { NULL, NULL, NULL };
+const gs_ptr_procs_t ptr_const_string_procs = { NULL, NULL, NULL };
+const gs_ptr_procs_t ptr_name_index_procs = { NULL, NULL, NULL };
+#endif
+

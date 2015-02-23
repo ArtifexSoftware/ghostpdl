@@ -26,10 +26,11 @@ GLGEN=$(GLGENDIR)$(D)
 GPDL_PSI_TOP_OBJ_FILE=psitop.$(OBJ)
 GPDL_PSI_TOP_OBJ=$(GPDLOBJ)/$(GPDL_PSI_TOP_OBJ_FILE)
 
+GPDL_PSI_TOP_OBJS=$(GPDL_PSI_TOP_OBJ) $(GPDLOBJ)gpdlimpl.$(OBJ)
 
 LANG_CFLAGS=$(D_)PCL_INCLUDED$(_D) $(D_)PSI_INCLUDED$(_D) $(D_)XPS_INCLUDED$(_D)
 
-GPDLCC=$(CC_) $(LANG_CFLAGS) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
+GPDLCC=$(CC_) $(LANG_CFLAGS) $(I_)$(PSSRCDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
 $(GPDLGEN)gpdlimpl.c: $(PLSRC)plimpl.c
 	$(CP_) $(PLSRC)plimpl.c $(GPDLGEN)gpdlimpl.c
@@ -43,7 +44,7 @@ $(GPDLOBJ)gpdlimpl.$(OBJ): $(GPDLGEN)gpdlimpl.c          \
 	$(GPDLCC) $(GPDLGEN)gpdlimpl.c $(GPDLO_)gpdlimpl.$(OBJ)
 
 
-$(PSI_TOP_OBJ): $(GPDLPSISRC)psitop.c $(AK) $(stdio__h)\
+$(GPDL_PSI_TOP_OBJ): $(GPDLPSISRC)psitop.c $(AK) $(stdio__h)\
  $(string__h) $(gdebug_h) $(gp_h) $(gsdevice_h) $(gserrors_h) $(gsmemory_h)\
  $(gsstate_h) $(gsstruct_h) $(gspaint_h) $(gstypes_h) $(gxalloc_h) $(gxstate_h)\
  $(gsnogc_h) $(pltop_h) $(psitop_h) $(plparse_h) $(gsicc_manage_h)\

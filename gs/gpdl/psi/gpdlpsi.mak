@@ -59,7 +59,7 @@ $(PSI_TOP_OBJ): $(PSISRC)psitop.c $(AK) $(stdio__h)\
  $(PSIGEN)pconf.h $(plfont_h) $(uconfig_h) $(pconfig_h)
 	$(PSICCC) $(PSISRC)psitop.c $(O_)$(PSI_TOP_OBJ)
 
-$(PSIOBJ)psi.dev: $(PSI_MAK) $(ECHOGS_XE) $(PLOBJ)pl.dev $(PLOBJ)pjl.dev 
+$(PSIOBJ)psi.dev: $(PSI_MAK) $(ECHOGS_XE) $(PLOBJ)pjl.dev 
 	$(SETMOD) $(PSIOBJ)psi $(PSI_TOP_OBJ)
 	$(ADDMOD) $(PSIOBJ)psi -include $(PLOBJ)pl $(PLOBJ)pjl
 

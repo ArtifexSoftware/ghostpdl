@@ -254,6 +254,7 @@ GS_MAK=$(GLSRCDIR)$(D)gs.mak
 GS_XE=$(BINDIR)$(D)$(GS)$(XE)
 GPCL_XE=$(BINDIR)$(D)$(PCL)$(XE)
 GXPS_XE=$(BINDIR)$(D)$(XPS)$(XE)
+GPDL_XE=$(BINDIR)$(D)$(GPDL)$(XE)
 
 AUX=$(AUXDIR)$(D)
 ECHOGS_XE=$(AUX)echogs$(XEAUX)
@@ -492,8 +493,21 @@ $(pcl_tr): $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $
 
 xps_tr=$(GLGENDIR)$(D)xps.tr
 $(xps_tr): $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_tr) $(devs_tr) $(XPS_DEVS_ALL) \
-                                             $(devs_tr) $(XPS_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
+                                             $(devs_tr) $(PSI_DEVS_ALL) $(XPS_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
 	$(EXP)$(GENCONF_XE) -n xps $(XPS_FEATURE_DEVS) $(CONFILES) -o $(xps_tr)
+
+gpdl_tr=$(GLGENDIR)$(D)gpdl.tr
+igpdl_tr=$(GLGENDIR)$(D)igpdl.tr
+gpdlld_tr=$(GLGENDIR)$(D)gpdlld.tr
+$(gpdl_tr): $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_tr) $(devs_tr) $(XPS_DEVS_ALL) \
+                                       $(devs_tr) $(PSI_DEVS_ALL) $(PCL_FEATURE_DEVS) $(XPS_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
+	$(EXP)$(ECHOGS_XE) -w $(igpdl_tr) - -include $(PSI_FEATURE_DEVS)
+	$(EXP)$(GENCONF_XE) $(igpdl_tr) -h $(iconfxx_h) $(CONFILES) $(CONFLDTR) $(gpdlld_tr)
+	$(EXP)$(ECHOGS_XE) -w $(iconfig_h) -R $(iconfxx_h)
+	$(EXP)$(ECHOGS_XE) -w $(gpdl_tr) -R $(devs_tr)
+	$(EXP)$(ECHOGS_XE) -a $(gpdl_tr) -R $(igpdl_tr)
+	$(EXP)$(ECHOGS_XE) -a $(gpdl_tr) - -include $(PCL_FEATURE_DEVS) $(XPS_FEATURE_DEVS)
+	$(EXP)$(GENCONF_XE) $(gpdl_tr) -h $(GLGENDIR)$(D)unused2.h $(CONFILES) $(CONFLDTR) $(gpdlld_tr)
 
 $(gconfxx_h) : $(ld_tr)
 	$(NO_OP)

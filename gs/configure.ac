@@ -1640,21 +1640,41 @@ AC_ARG_WITH([gs], AC_HELP_STRING([--with-gs=NAME],
         [GS="$with_gs"],[GS='gs'])
 AC_SUBST(GS)
 
+PCL=
+PCL_TARGET=
 if test -f $srcdir/pcl/pl/pl.mak; then
   AC_ARG_WITH([pcl], AC_HELP_STRING([--with-pcl=NAME],
         [name of the GhostPCL executible (if the source is available, ignored otherwise) [[gpcl6]]]),
         [PCL="$with_pcl"],[PCL='gpcl6'])
 
-  AC_SUBST(PCL)
+  PCL_TARGET=pcl
 fi
+AC_SUBST(PCL)
+AC_SUBST(PCL_TARGET)
 
+XPS=
+XPS_TARGET=
 if test -f $srcdir/xps/xps.mak; then
   AC_ARG_WITH([xps], AC_HELP_STRING([--with-xps=NAME],
         [name of the GhostXPS executible (if the source is available, ignored otherwise) [[gxps]]]),
-        [PCL="$with_xps"],[XPS='gxps'])
+        [XPS="$with_xps"],[XPS='gxps'])
 
-  AC_SUBST(XPS)
+  XPS_TARGET=xps
 fi
+AC_SUBST(XPS)
+AC_SUBST(XPS_TARGET)
+
+GPDL=
+GPDL_TARGET=
+if test -f $srcdir/gpdl/gpdl.mak; then
+  AC_ARG_WITH([gpdl], AC_HELP_STRING([--with-gpdl=NAME],
+        [name of the GhostPDL executible (if the source is available, ignored otherwise) [[gpdl]]]),
+        [GPDL="$with_gpdl"],[GPDL='gpdl'])
+
+  GPDL_TARGET=gpdl
+fi
+AC_SUBST(GPDL)
+AC_SUBST(GPDL_TARGET)
 
 dnl do we compile the postscript initialization files into Ghostscript?
 COMPILE_INITS="1"

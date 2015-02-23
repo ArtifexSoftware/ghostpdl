@@ -218,7 +218,7 @@ $(PXL_TOP_OBJ): $(PXLSRC)pxtop.c $(AK) $(stdio__h)\
 
 # Note that we must initialize pxfont before pxerrors.
 $(PXLOBJ)pxl.dev: $(PXL_MAK) $(ECHOGS_XE) $(pxl_other_obj) $(pxl_ops_obj)\
- $(PLOBJ)pl.dev $(PLOBJ)pjl.dev $(PLOBJ)$(PXL_FONT_SCALER).dev
+ $(PLOBJ)pjl.dev $(PLOBJ)$(PXL_FONT_SCALER).dev
 	$(SETMOD) $(PXLOBJ)pxl $(pxl_other_obj1)
 	$(ADDMOD) $(PXLOBJ)pxl $(pxl_other_obj2)
 	$(ADDMOD) $(PXLOBJ)pxl $(pxl_ops_obj1)

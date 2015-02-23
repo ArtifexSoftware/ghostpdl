@@ -43,6 +43,12 @@ xps: .xpssubtarget
 xpsclean: cleansub
 	$(NO_OP)
 
+gpdl: .gpdlsubtarget
+	$(NO_OP)
+
+gpdlclean: .cleansub
+	$(NO_OP)
+
 # Define a rule for building profiling configurations.
 PGDEFS=GENOPT='-DPROFILE' CFLAGS='$(CFLAGS_PROFILE) $(GCFLAGS) $(XCFLAGS)'\
  LDFLAGS='$(XLDFLAGS) -pg' XLIBS='Xt SM ICE Xext X11'
@@ -66,6 +72,12 @@ xpspg:
 	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=(PGDIRPREFIX) .xpssubtarget
 
 xpspgclean:
+	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) cleansub
+
+gpdlpg:
+	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=(PGDIRPREFIX) .gpdlsubtarget
+
+gpdlpgclean:
 	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) cleansub
 
 # Define a rule for building debugging configurations.
@@ -102,6 +114,17 @@ xpsdebug:
 
 xpsdebugclean:
 	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) cleansub
+
+gpdldebug:
+	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) .gpdlsubtarget
+
+#pcl6-debug-apitest:
+#	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) apitest
+
+gpdldebugclean:
+	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) cleansub
+
+
 
 # Define a rule for building memento configurations.
 MEMENTODEFS=GENOPT='-DMEMENTO -DDEBUG' \

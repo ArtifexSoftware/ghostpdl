@@ -175,5 +175,5 @@ XPS_OBJS=\
 $(XPSOBJ)xps.dev: $(XPS_MAK) $(ECHOGS_XE) $(XPS_OBJS)  $(XPSOBJDIR)$(D)expat.dev $(JPEGXR_GENDIR)$(D)jpegxr.dev \
                   $(XPSGEN)pl.dev $(XPSGEN)$(PL_SCALER).dev $(XPSGEN)pjl.dev
 	$(SETMOD) $(XPSOBJ)xps $(XPS_OBJS)
-	$(ADDMOD) $(XPSOBJ)xps -include $(XPSGEN)pl $(XPSGEN)$(PL_SCALER) $(XPSGEN)pjl.dev \
+	$(ADDMOD) $(XPSOBJ)xps -include $(XPSGEN)$(PL_SCALER) $(XPSGEN)pjl.dev \
                                                                 $(XPSOBJDIR)$(D)expat.dev $(JPEGXR_GENDIR)$(D)jpegxr.dev

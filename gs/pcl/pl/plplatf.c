@@ -51,11 +51,3 @@ pl_platform_dnit(int exit_status)
     /* Do platform-specific cleanup. */
     gp_exit(exit_status, 0);
 }
-
-/* ---------------- Stubs ---------------- */
-
-/* Stubs for GC */
-const gs_ptr_procs_t ptr_struct_procs = { NULL, NULL, NULL };
-const gs_ptr_procs_t ptr_string_procs = { NULL, NULL, NULL };
-const gs_ptr_procs_t ptr_const_string_procs = { NULL, NULL, NULL };
-const gs_ptr_procs_t ptr_name_index_procs = { NULL, NULL, NULL };
