@@ -341,13 +341,6 @@ psd_prn_open(gx_device * pdev)
     limit_icc = false;
 #endif
     code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
-    /* Check for case where someone did NOT specify sICCOutputColors but we 
-       have an NCLR ICC profile for the output. In that case, we use a set of 
-       "default" names */
-    if (profile_struct->device_profile[0]->num_comps > 4 &&
-        profile_struct->spotnames == NULL) {
-        
-    }
     if (profile_struct->spotnames == NULL) {
         force_pdf = false;
         force_ps = false;

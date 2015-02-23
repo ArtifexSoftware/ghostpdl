@@ -1366,6 +1366,10 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
             int num_comps = profile_struct->device_profile[0]->num_comps;
             char temp_str[DEFAULT_ICC_COLORANT_LENGTH+2];
 
+            /* If names are already set then we do not want to set default ones */
+            if (profile_struct->spotnames != NULL)
+                return 0;
+
             free_str = true;
             /* Assume first 4 are CMYK */
             total_len = ((DEFAULT_ICC_COLORANT_LENGTH + 1) * (num_comps-4)) +
@@ -1387,6 +1391,7 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
         if (profile_struct->spotnames != NULL &&
             profile_struct->spotnames->name_str != NULL &&
             strlen(profile_struct->spotnames->name_str) == str_len) {
+            /* Here we check if the names are the same */
             if (strncmp(name_str, profile_struct->spotnames->name_str, str_len) == 0) {
                 if (free_str)
                     gs_free_object(dev->memory, name_str,

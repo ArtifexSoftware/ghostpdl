@@ -1423,27 +1423,30 @@ e:	param_signal_error(plist, param_name, ecode);\
         (*dev_proc(dev, get_page_device))(dev) != 0
         ) {
         switch (code = param_read_int(plist, (param_name = "NumCopies"), &nci)) {
-        case 0:
-            if (nci < 0)
-                ecode = gs_error_rangecheck;
-            else {
-                ncset = 1;
-                break;
-            }
-            goto nce;
-        default:
-            if ((code = param_read_null(plist, param_name)) == 0) {
-                ncset = 0;
-                break;
-            }
-            ecode = code;	/* can't be 1 */
+            case 0:
+                if (nci < 0)
+                    ecode = gs_error_rangecheck;
+                else {
+                    ncset = 1;
+                    break;
+                }
+                goto nce;
+            default:
+                if ((code = param_read_null(plist, param_name)) == 0) {
+                    ncset = 0;
+                    break;
+                }
+                ecode = code;	/* can't be 1 */
 nce:
-            param_signal_error(plist, param_name, ecode);
-        case 1:
-            break;
+                param_signal_error(plist, param_name, ecode);
+            case 1:
+                break;
+        }
     }
+    /* Set the ICC output colors first */
+    if ((code = param_read_string(plist, "ICCOutputColors", &icc_pro)) != 1) {
+        gx_default_put_icc_colorants(&icc_pro, dev);
     }
-    /* Set the directory first */
     if ((code = param_read_string(plist, "OutputICCProfile", &icc_pro)) != 1) {
         gx_default_put_icc(&icc_pro, dev, gsDEFAULTPROFILE);
     }
@@ -1463,9 +1466,6 @@ nce:
     }
     if ((code = param_read_string(plist, "DeviceLinkProfile", &icc_pro)) != 1) {
         gx_default_put_icc(&icc_pro, dev, gsLINKPROFILE);
-    }
-    if ((code = param_read_string(plist, "ICCOutputColors", &icc_pro)) != 1) {
-        gx_default_put_icc_colorants(&icc_pro, dev);
     }
     if ((code = param_read_int(plist, (param_name = "RenderIntent"),
                                                     &(rend_intent[0]))) < 0) {
