@@ -41,7 +41,6 @@
 #include "plparse.h"
 #include "pltop.h"
 #include "gzstate.h"
-#include "uconfig.h"	/* for UFSTFONTDIR */
 #include "gsicc_manage.h"
 
 /* Forward decls */
@@ -110,14 +109,6 @@ ps_impl_allocate_interp(
     return 0;   /* success */
 }
 
-/* defaults for locations of font collection objects (fco's) and
-   plugins the root data directory.  These are internally separated with
-   ':' but environment variable use the gp separator */
-#ifndef UFSTFONTDIR
-        /* not using UFST */
-#  define UFSTFONTDIR ""
-#endif
-
 /* Do per-instance interpreter allocation/init. No device is set yet */
 static int   /* ret 0 ok, else -ve error code */
 ps_impl_allocate_interp_instance(
@@ -141,14 +132,6 @@ ps_impl_allocate_interp_instance(
             "-dOSTACKPRINT", // NB: debuggging postscript Needs to be removed.
             "-dESTACKPRINT", // NB: debuggging postscript Needs to be removed.
 #endif
-#if UFST_BRIDGE==1
-            "-dJOBSERVER",
-            "-sUFST_PlugIn=" UFSTFONTDIR "mtfonts/pcl45/mt3/plug__xi.fco",
-            "-sFCOfontfile=" UFSTFONTDIR "mtfonts/pclps2/mt3/pclp2_xj.fco",
-            "-sFCOfontfile2=" UFSTFONTDIR "mtfonts/pcl45/mt3/wd____xh.fco",
-            "-sFAPIfontmap=FCOfontmap-PCLPS2",
-            "-sFAPIconfig=FAPIconfig-FCO",
-#endif
             0
         };
 #ifndef DEBUG
@@ -166,10 +149,6 @@ ps_impl_allocate_interp_instance(
                             sizeof(ps_interp_instance_t),
                             "ps_allocate_interp_instance(ps_interp_instance_t)"
                             );
-
-#if UFST_BRIDGE!=1
-    argc -= 6;
-#endif
 
         /* If allocation error, deallocate & return */
         if (!psi) {
