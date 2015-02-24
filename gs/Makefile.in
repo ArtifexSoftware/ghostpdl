@@ -651,21 +651,21 @@ INSTALL_CONTRIB=@INSTALL_CONTRIB@
 include $(GLSRCDIR)/unixhead.mak
 include $(GLSRCDIR)/gs.mak
 # *romfs.mak must precede lib.mak
-include $(PLSRCDIR)/plromfs.mak   # plromfs.mak
-include $(XPSSRCDIR)/xpsromfs.mak # xpsromfs.mak
+include @PLROMFS_MAK@   # plromfs.mak
+include @XPSROMFS_MAK@ # xpsromfs.mak
+
 include $(PSSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
 
-# FIXME: use configure to pull in
-include $(PLSRCDIR)/pl.mak
-include $(PCL5SRCDIR)/pcl.mak
-include $(PCL5SRCDIR)/pcl_top.mak
-include $(PXLSRCDIR)/pxl.mak
+include @PL_MAK@ # pl.mak
+include @PCL_MAK@ # pcl.mak
+include @PCL_TOP_MAK@ # pcl_top.mak
+include @PXL_MAK@ # pxl.mak
 
-include $(XPSSRCDIR)/xps.mak
+include @XPS_MAK@ # xps.mak
 
-include $(GPDLSRCDIR)/gpdl.mak
+include @GPDL_MAK@ # gpdl.mak
 
 include $(GLSRCDIR)/freetype.mak
 include @FAPIUFST_MAK@

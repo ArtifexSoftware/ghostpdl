@@ -741,7 +741,7 @@ INSERT_UFST_BRIDGE_EQUAL_ONE=
 UFST_ROOT=
 UFST_CFLAGS=
 UFST_LIB_EXT=
-FAPIUFST_MAK="\$(GLSRCDIR)/stub.mak"
+FAPIUFST_MAK="\$(GLSRCDIR)\$(D)stub.mak"
 
 AC_ARG_ENABLE([fapi], AC_HELP_STRING([--disable-fapi],
        [Force use of the (deprecated) Artifex font scaler/renderer]))
@@ -770,8 +770,8 @@ if test x"$enable_fapi" != xno; then
       done
       GCFLAGS="$tmp_cflags"
 
-      FAPIUFST_MAK="\$(UFST_ROOT)/fapiufst.mak"
-
+      FAPIUFST_MAK="\$(UFST_ROOT)\$(D)fapiufst.mak"
+    
       if ! test -f $UFST_ROOT/fapiufst.mak ; then
         echo $UFST_ROOT/fapiufst.mak
         AC_MSG_ERROR([UFST: fapiufst.mak not found])
@@ -1642,39 +1642,77 @@ AC_SUBST(GS)
 
 PCL=
 PCL_TARGET=
+
+PLROMFS_MAK="\$(GLSRCDIR)\$(D)stub.mak"
+PL_MAK="\$(GLSRCDIR)\$(D)stub.mak"
+PCL_MAK="\$(GLSRCDIR)\$(D)stub.mak"
+PCL_TOP_MAK="\$(GLSRCDIR)\$(D)stub.mak"
+PXL_MAK="\$(GLSRCDIR)\$(D)stub.mak"
+
 if test -f $srcdir/pcl/pl/pl.mak; then
   AC_ARG_WITH([pcl], AC_HELP_STRING([--with-pcl=NAME],
         [name of the GhostPCL executible (if the source is available, ignored otherwise) [[gpcl6]]]),
         [PCL="$with_pcl"],[PCL='gpcl6'])
 
   PCL_TARGET=pcl
+
+  PLROMFS_MAK="\$(PLSRCDIR)\$(D)plromfs.mak"
+  PL_MAK="\$(PLSRCDIR)\$(D)pl.mak"
+  PCL_MAK="\$(PCL5SRCDIR)\$(D)pcl.mak"
+  PCL_TOP_MAK="\$(PCL5SRCDIR)\$(D)pcl_top.mak"
+  PXL_MAK="\$(PXLSRCDIR)\$(D)pxl.mak"
 fi
 AC_SUBST(PCL)
 AC_SUBST(PCL_TARGET)
 
+AC_SUBST(PLROMFS_MAK)
+AC_SUBST(PL_MAK)
+AC_SUBST(PCL_MAK)
+AC_SUBST(PCL_TOP_MAK)
+AC_SUBST(PXL_MAK)
+
+
 XPS=
 XPS_TARGET=
-if test -f $srcdir/xps/xps.mak; then
-  AC_ARG_WITH([xps], AC_HELP_STRING([--with-xps=NAME],
-        [name of the GhostXPS executible (if the source is available, ignored otherwise) [[gxps]]]),
-        [XPS="$with_xps"],[XPS='gxps'])
 
-  XPS_TARGET=xps
+XPS_MAK="\$(GLSRCDIR)\$(D)stub.mak"
+XPSROMFS_MAK="\$(GLSRCDIR)\$(D)stub.mak"
+# gxps currently depends on code in pl
+if test "x$PCL_TARGET" != "x" ; then
+  if test -f $srcdir/xps/xps.mak; then
+    AC_ARG_WITH([xps], AC_HELP_STRING([--with-xps=NAME],
+          [name of the GhostXPS executible (if the source is available, ignored otherwise) [[gxps]]]),
+          [XPS="$with_xps"],[XPS='gxps'])
+
+    XPS_TARGET=xps
+    XPS_MAK="\$(XPSSRCDIR)\$(D)xps.mak"
+    XPSROMFS_MAK="\$(XPSSRCDIR)\$(D)xpsromfs.mak"
+  fi
 fi
+
 AC_SUBST(XPS)
 AC_SUBST(XPS_TARGET)
+AC_SUBST(XPS_MAK)
+AC_SUBST(XPSROMFS_MAK)
 
 GPDL=
 GPDL_TARGET=
-if test -f $srcdir/gpdl/gpdl.mak; then
-  AC_ARG_WITH([gpdl], AC_HELP_STRING([--with-gpdl=NAME],
-        [name of the GhostPDL executible (if the source is available, ignored otherwise) [[gpdl]]]),
-        [GPDL="$with_gpdl"],[GPDL='gpdl'])
 
-  GPDL_TARGET=gpdl
+GPDL_MAK="\$(GLSRCDIR)\$(D)stub.mak"
+# in order to build gpdl we need the pdls available
+if test "x$XPS_TARGET" != "x" && test "x$PCL_TARGET" != "x" ; then
+  if test -f $srcdir/gpdl/gpdl.mak; then
+    AC_ARG_WITH([gpdl], AC_HELP_STRING([--with-gpdl=NAME],
+          [name of the GhostPDL executible (if the source is available, ignored otherwise) [[gpdl]]]),
+          [GPDL="$with_gpdl"],[GPDL='gpdl'])
+
+    GPDL_TARGET=gpdl
+    GPDL_MAK="\$(GPDLSRCDIR)\$(D)gpdl.mak"
+  fi
 fi
 AC_SUBST(GPDL)
 AC_SUBST(GPDL_TARGET)
+AC_SUBST(GPDL_MAK)
 
 dnl do we compile the postscript initialization files into Ghostscript?
 COMPILE_INITS="1"
