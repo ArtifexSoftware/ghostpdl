@@ -60,6 +60,8 @@ static void dequantize_up_dclp(jxr_image_t image, int use_my, int ch)
 {
     int tx, ty = 0;
     int dc_quant = 0;
+    unsigned int strip;
+    unsigned int i;
 
     int lp_coeff_count = 16;
     if (ch > 0) {
@@ -69,8 +71,7 @@ static void dequantize_up_dclp(jxr_image_t image, int use_my, int ch)
             lp_coeff_count = 4;
     }
 
-    unsigned int strip = use_my -1;
-    unsigned int i;
+    strip = use_my -1;
     for(i=0; i < image->tile_rows; i++)
     {
         /* Figure out what ty is */
@@ -94,6 +95,8 @@ static void dequantize_up_dclp(jxr_image_t image, int use_my, int ch)
 
         for (mx = 0 ; mx < (int) image->tile_column_width[tx] ; mx += 1) {
             int lp_quant_idx = MACROBLK_UP1_LP_QUANT(image,ch,tx,mx);
+            int k;
+            int lp_quant_use;
 
             int lp_quant_raw = 0;
             if(image->lp_frame_uniform)
@@ -101,13 +104,12 @@ static void dequantize_up_dclp(jxr_image_t image, int use_my, int ch)
             else
                 lp_quant_raw = image->tile_quant[ty *(image->tile_columns) + tx].lp_quant_ch[ch][lp_quant_idx];
 
-            int lp_quant_use = _jxr_quant_map(image, lp_quant_raw, ch==0? 1 : 0/* iShift for YONLY */);
+            lp_quant_use = _jxr_quant_map(image, lp_quant_raw, ch==0? 1 : 0/* iShift for YONLY */);
             MACROBLK_UP_DC(image,ch,tx,mx) *= dc_quant;
             CHECK1(image->lwf_test, MACROBLK_CUR_DC(image,ch,tx,mx));
 
             DEBUG(" Dequantize strip=%d tx=%d MBx=%d ch=%d with lp_quant=%d lp_quant_use=%d\n",
                 use_my-1, tx, mx, ch, lp_quant_raw, lp_quant_use);
-            int k;
             for (k = 1 ; k < lp_coeff_count ; k += 1)
             {
                 MACROBLK_UP_LP(image,ch,tx,mx,k-1) *= lp_quant_use;
@@ -261,6 +263,9 @@ static void IPCT_level2_up2(jxr_image_t image, int use_my, int ch)
         /* Reshuffle the DCLP with the HP data to get
         DC-LP stretches in the data stream. */
         int dclp_count = 16;
+        int hp_quant_raw;
+        int hp_quant;
+
         if (ch>0 && image->use_clr_fmt == 2/*YUV422*/)
             dclp_count = 8;
         else if (ch>0 && image->use_clr_fmt == 1/*YUV420*/)
@@ -271,11 +276,12 @@ static void IPCT_level2_up2(jxr_image_t image, int use_my, int ch)
         DEBUG(" DC-LP-HP IPCT transforms for (second level) strip %d MBx=%d ch=%d\n",
             use_my-2, idx, ch);
 
-        int hp_quant_raw = MACROBLK_UP2_HP_QUANT(image,ch,0,idx);
-        int hp_quant = _jxr_quant_map(image, hp_quant_raw, 1);
+        hp_quant_raw = MACROBLK_UP2_HP_QUANT(image,ch,0,idx);
+        hp_quant = _jxr_quant_map(image, hp_quant_raw, 1);
 
         /* IPCT transform to absorb HP band data. */
         for (jdx = 0 ; jdx < 16*dclp_count ; jdx += 16) {
+            int k;
 #if defined(DETAILED_DEBUG)
             {
                 int pix;
@@ -291,7 +297,6 @@ static void IPCT_level2_up2(jxr_image_t image, int use_my, int ch)
 #endif
             DEBUG(" Dequantize strip=%d MBx=%d ch=%d block=%d with hp_quant=%d (raw=%d)\n",
                 use_my-2, idx, ch, jdx/16, hp_quant, hp_quant_raw);
-            int k;
             for (k = 1 ; k < 16 ; k += 1)
             {
                 image->strip[ch].up2[idx].data[jdx+k] *= hp_quant;
@@ -325,14 +330,14 @@ static void IPCT_level2_up2(jxr_image_t image, int use_my, int ch)
 
 static void overlap_level1_up2_444(jxr_image_t image, int use_my, int ch)
 {
-    /* 16 Coeffs per MB */
-    assert(ch == 0 || (image->use_clr_fmt != 2/*YUV422*/ && image->use_clr_fmt !=1/* YUV420*/));
     int tx = 0; /* XXXX */
-    assert(use_my >= 2);
     int top_my = use_my - 2;
     int idx;
 
     int ty = 0;
+    /* 16 Coeffs per MB */
+    assert(ch == 0 || (image->use_clr_fmt != 2/*YUV422*/ && image->use_clr_fmt !=1/* YUV420*/));
+    assert(use_my >= 2);
     /* Figure out which tile row the current strip of macroblocks belongs to. */
     while(top_my > image->tile_row_position[ty]+image->tile_row_height[ty] - 1)
         ty++;
@@ -450,13 +455,13 @@ static void overlap_level1_up2_444(jxr_image_t image, int use_my, int ch)
 
 static void overlap_level1_up2_422(jxr_image_t image, int use_my, int ch)
 {
-    assert(ch > 0 && image->use_clr_fmt == 2/*YUV422*/);
     int tx = 0; /* XXXX */
-    assert(use_my >= 2);
     int top_my = use_my - 2;
     int idx;
 
     int ty = 0;
+    assert(ch > 0 && image->use_clr_fmt == 2/*YUV422*/);
+    assert(use_my >= 2);
     /* Figure out which tile row the current strip of macroblocks belongs to. */
     while(top_my > image->tile_row_position[ty]+image->tile_row_height[ty] - 1)
         ty++;
@@ -661,14 +666,14 @@ static void overlap_level1_up2_422(jxr_image_t image, int use_my, int ch)
 
 static void overlap_level1_up2_420(jxr_image_t image, int use_my, int ch)
 {
-    /* 4 coeffs*/
-    assert(ch > 0 && image->use_clr_fmt == 1/*YUV420*/);
     int tx = 0; /* XXXX */
-    assert(use_my >= 2);
     int top_my = use_my - 2;
 
     int idx;
     int ty = 0;
+    /* 4 coeffs*/
+    assert(ch > 0 && image->use_clr_fmt == 1/*YUV420*/);
+    assert(use_my >= 2);
     /* Figure out which tile row the current strip of macroblocks belongs to. */
     while(top_my > image->tile_row_position[ty]+image->tile_row_height[ty] - 1)
         ty++;
@@ -876,15 +881,15 @@ static int*R2B42(int*data, int x, int y)
 
 static void overlap_level2_up3_444(jxr_image_t image, int use_my, int ch)
 {
-    assert(ch == 0 || (image->use_clr_fmt != 2/*YUV422*/ && image->use_clr_fmt !=1/* YUV420*/));
     int tx = 0; /* XXXX */
-    assert(use_my >= 3);
     int top_my = use_my - 3;
     int idx;
+    int ty = 0;
 
+    assert(ch == 0 || (image->use_clr_fmt != 2/*YUV422*/ && image->use_clr_fmt !=1/* YUV420*/));
+    assert(use_my >= 3);
     DEBUG("Overlap Level2 for row %d\n", top_my);
 
-    int ty = 0;
     /* Figure out which tile row the current strip of macroblocks belongs to. */
     while(top_my > image->tile_row_position[ty]+image->tile_row_height[ty] - 1)
         ty++;
@@ -1078,16 +1083,16 @@ static void overlap_level2_up3_444(jxr_image_t image, int use_my, int ch)
 
 static void overlap_level2_up3_422(jxr_image_t image, int use_my, int ch)
 {
-    assert(ch > 0 && image->use_clr_fmt == 2/*YUV422*/);
     int tx = 0; /* XXXX */
-    assert(use_my >= 3);
     int top_my = use_my - 3;
     int idx;
+    int ty = 0;
 
 
+    assert(ch > 0 && image->use_clr_fmt == 2/*YUV422*/);
+    assert(use_my >= 3);
     DEBUG("Overlap Level2 for row %d\n", top_my);
 
-    int ty = 0;
     /* Figure out which tile row the current strip of macroblocks belongs to. */
     while(top_my > image->tile_row_position[ty]+image->tile_row_height[ty] - 1)
         ty++;
@@ -1277,16 +1282,16 @@ static void overlap_level2_up3_422(jxr_image_t image, int use_my, int ch)
 
 static void overlap_level2_up3_420(jxr_image_t image, int use_my, int ch)
 {
-    assert(ch > 0 && image->use_clr_fmt == 1/*YUV420*/);
     int tx = 0; /* XXXX */
-    assert(use_my >= 3);
     int top_my = use_my - 3;
     int idx;
+    int ty = 0;
 
+    assert(ch > 0 && image->use_clr_fmt == 1/*YUV420*/);
+    assert(use_my >= 3);
 
     DEBUG("Overlap Level2 (YUV420) for row %d\n", top_my);
 
-    int ty = 0;
 
     /* Figure out which tile row the current strip of macroblocks belongs to. */
     while(top_my > image->tile_row_position[ty]+image->tile_row_height[ty] - 1)
@@ -1553,10 +1558,11 @@ static void yuv422_to_yuv444(jxr_image_t image, int mx)
 
         for (py = 0 ; py < 16 ; py += 1)
         {
+            int inbuf [10];
+
             if(mx == 0) /* Repeat to the left */
                 image->strip[ch].upsample_memory_x[py] = image->strip[ch].up3[mx].data[8*py];
 
-            int inbuf [10];
             /* Prep input array */
             for(px =0; px <=7; px++)
             {
@@ -1812,8 +1818,8 @@ static void scale_and_emit_top(jxr_image_t image, int tx, int use_my)
     int clip_hig = 255;
     int idx;
     int buffer[(MAX_CHANNELS + 1)*256];
-    memset(buffer, 0,(MAX_CHANNELS + 1)*256);
     unsigned int bSkipColorTransform = 0;
+    memset(buffer, 0,(MAX_CHANNELS + 1)*256);
 
     
     switch (SOURCE_BITDEPTH(image)) {
@@ -2029,10 +2035,10 @@ static void scale_and_emit_top(jxr_image_t image, int tx, int use_my)
                 }
                 else if(SOURCE_BITDEPTH(image) == JXR_BD565)
                 {
-                    assert(image->num_channels == 3);
                     /* Special case where R and B have different clip thresholds from G */
                     int*dp = image->strip[ch].up3[idx].data;
                     int jdx;
+                    assert(image->num_channels == 3);
                     if(ch != 1)
                     {
                         clip_hig = 31;
@@ -2146,17 +2152,19 @@ static void scale_and_emit_top(jxr_image_t image, int tx, int use_my)
 */
 static void rflush_to_tile_buffer(jxr_image_t image, int tx, int my)
 {
+    int format_scale = 256;
+    int mx;
     DEBUG("rflush_mb_strip: rflush_to_tile_buffer tx=%d, my=%d\n", tx, my);
 
-    int format_scale = 256;
     if (image->use_clr_fmt == 2 /* YUV422 */) {
         format_scale = 16 + 8*15;
     } else if (image->use_clr_fmt == 1 /* YUV420 */) {
         format_scale = 16 + 4*15;
     }
 
-    int mx;
     for (mx = 0 ; mx < (int) image->tile_column_width[tx] ; mx += 1) {
+        int off;
+        int ch;
         DEBUG("rflush_mb_strip: rflush_to_tile_buffer tx=%d, mx=%d, CUR=0x%08x UP1=0x%08x, UP2=0x%08x, UP3=0x%08x, LP_QUANT=%d\n",
             tx, mx, MACROBLK_CUR(image,0,tx,mx).data[0],
             MACROBLK_UP1(image,0,tx,mx).data[0],
@@ -2164,14 +2172,14 @@ static void rflush_to_tile_buffer(jxr_image_t image, int tx, int my)
             MACROBLK_UP3(image,0,tx,mx).data[0],
             MACROBLK_CUR_LP_QUANT(image,0,tx,mx));
 
-        int off = my * EXTENDED_WIDTH_BLOCKS(image) + image->tile_column_position[tx] + mx;
-        int ch;
+        off = my * EXTENDED_WIDTH_BLOCKS(image) + image->tile_column_position[tx] + mx;
         for (ch = 0; ch < image->num_channels; ch += 1) {
+            int count;
+            int idx;
             struct macroblock_s*mb = image->mb_row_buffer[ch] + off;
             mb->lp_quant = MACROBLK_CUR_LP_QUANT(image,ch,tx,mx);
             mb->hp_quant = MACROBLK_CUR(image,ch,tx,mx).hp_quant;
-            int count = (ch==0)? 256 : format_scale;
-            int idx;
+            count = (ch==0)? 256 : format_scale;
             for (idx = 0 ; idx < count ; idx += 1)
                 mb->data[idx] = MACROBLK_CUR(image,ch,tx,mx).data[idx];
         }
@@ -2185,16 +2193,17 @@ static void rflush_to_tile_buffer(jxr_image_t image, int tx, int my)
 */
 static void rflush_collect_mb_strip_data(jxr_image_t image, int my)
 {
+    int format_scale = 256;
+    int tx;
+
     DEBUG("rflush_mb_strip: rflush_collect_mb_strip_data my=%d\n", my);
 
-    int format_scale = 256;
     if (image->use_clr_fmt == 2 /* YUV422 */) {
         format_scale = 16 + 8*15;
     } else if (image->use_clr_fmt == 1 /* YUV420 */) {
         format_scale = 16 + 4*15;
     }
 
-    int tx;
     for (tx = 0; tx < (int) image->tile_columns-1 ; tx += 1) {
         int mx;
         for (mx = 0; mx < (int) image->tile_column_width[tx]; mx += 1) {
@@ -2202,10 +2211,11 @@ static void rflush_collect_mb_strip_data(jxr_image_t image, int my)
             int ch;
             for (ch = 0; ch < image->num_channels; ch += 1) {
                 struct macroblock_s*mb = image->mb_row_buffer[ch] + off;
+                int count;
+                int idx;
                 MACROBLK_CUR_LP_QUANT(image,ch,tx,mx) = mb->lp_quant;
                 MACROBLK_CUR(image,ch,tx,mx).hp_quant = mb->hp_quant;
-                int count = (ch==0)? 256 : format_scale;
-                int idx;
+                count = (ch==0)? 256 : format_scale;
                 for (idx = 0 ; idx < count; idx += 1)
                     MACROBLK_CUR(image,ch,tx,mx).data[idx] = mb->data[idx];
             }
@@ -2228,16 +2238,16 @@ static void rflush_collect_mb_strip_data(jxr_image_t image, int my)
 */
 static void rflush_save_context(jxr_image_t image)
 {
+    int format_scale = 256;
+    int tx;
     DEBUG("rflush_mb_strip: rflush_save_context\n");
 
-    int format_scale = 256;
     if (image->use_clr_fmt == 2 /* YUV422 */) {
         format_scale = 16 + 8*15;
     } else if (image->use_clr_fmt == 1 /* YUV420 */) {
         format_scale = 16 + 4*15;
     }
 
-    int tx;
     for (tx = 0; tx < (int) image->tile_columns ; tx += 1) {
         int mx;
         for (mx = 0; mx < (int) image->tile_column_width[tx]; mx += 1) {
@@ -2252,6 +2262,9 @@ static void rflush_save_context(jxr_image_t image)
                 MACROBLK_UP2(image,0,tx,mx).data[0],
                 MACROBLK_UP3(image,0,tx,mx).data[0]);
             for (ch = 0; ch < image->num_channels; ch += 1) {
+                int count;
+                int idx;
+
                 image->mb_row_context[ch][off0].lp_quant = MACROBLK_CUR_LP_QUANT(image,ch,tx,mx);
                 image->mb_row_context[ch][off1].lp_quant = MACROBLK_UP1_LP_QUANT(image,ch,tx,mx);
                 image->mb_row_context[ch][off2].lp_quant = MACROBLK_UP2(image,ch,tx,mx).lp_quant;
@@ -2260,8 +2273,7 @@ static void rflush_save_context(jxr_image_t image)
                 image->mb_row_context[ch][off1].hp_quant = MACROBLK_UP1(image,ch,tx,mx).hp_quant;
                 image->mb_row_context[ch][off2].hp_quant = MACROBLK_UP2(image,ch,tx,mx).hp_quant;
                 image->mb_row_context[ch][off3].hp_quant = MACROBLK_UP3(image,ch,tx,mx).hp_quant;
-                int count = (ch==0)? 256 : format_scale;
-                int idx;
+                count = (ch==0)? 256 : format_scale;
                 for (idx = 0 ; idx < count; idx += 1)
                     image->mb_row_context[ch][off0].data[idx] = MACROBLK_CUR(image,ch,tx,mx).data[idx];
                 for (idx = 0 ; idx < count; idx += 1)
@@ -2277,16 +2289,16 @@ static void rflush_save_context(jxr_image_t image)
 
 static void rflush_recover_context(jxr_image_t image)
 {
-    DEBUG("rflush_mb_strip: recover contex\n");
 
     int format_scale = 256;
+    int tx;
+    DEBUG("rflush_mb_strip: recover contex\n");
     if (image->use_clr_fmt == 2 /* YUV422 */) {
         format_scale = 16 + 8*15;
     } else if (image->use_clr_fmt == 1 /* YUV420 */) {
         format_scale = 16 + 4*15;
     }
 
-    int tx;
     for (tx = 0; tx < (int) image->tile_columns ; tx += 1) {
         int mx;
         for (mx = 0; mx < (int) image->tile_column_width[tx]; mx += 1) {
@@ -2296,6 +2308,8 @@ static void rflush_recover_context(jxr_image_t image)
             int off3 = off2 + EXTENDED_WIDTH_BLOCKS(image);
             int ch;
             for (ch = 0; ch < image->num_channels; ch += 1) {
+                int count;
+                int idx;
                 MACROBLK_CUR_LP_QUANT(image,ch,tx,mx) = image->mb_row_context[ch][off0].lp_quant;
                 MACROBLK_UP1_LP_QUANT(image,ch,tx,mx) = image->mb_row_context[ch][off1].lp_quant;
                 MACROBLK_UP2(image,ch,tx,mx).lp_quant = image->mb_row_context[ch][off2].lp_quant;
@@ -2304,8 +2318,7 @@ static void rflush_recover_context(jxr_image_t image)
                 MACROBLK_UP1(image,ch,tx,mx).hp_quant = image->mb_row_context[ch][off1].hp_quant;
                 MACROBLK_UP2(image,ch,tx,mx).hp_quant = image->mb_row_context[ch][off2].hp_quant;
                 MACROBLK_UP3(image,ch,tx,mx).hp_quant = image->mb_row_context[ch][off3].hp_quant;
-                int count = (ch==0)? 256 : format_scale;
-                int idx;
+
                 for (idx = 0 ; idx < count; idx += 1)
                     MACROBLK_CUR(image,ch,tx,mx).data[idx] = image->mb_row_context[ch][off0].data[idx];
                 for (idx = 0 ; idx < count; idx += 1)

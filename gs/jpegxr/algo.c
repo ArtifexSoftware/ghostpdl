@@ -97,10 +97,10 @@ int _jxr_ceil_div2(int x)
 
 int _jxr_quant_map(jxr_image_t image, int x, int shift)
 {
+    int man, exp;
+
     if (x == 0)
         return 1;
-
-    int man, exp;
 
     if (image->scaled_flag) {
         if (x < 16) {
@@ -350,6 +350,7 @@ void _jxr_UpdateModelMB(jxr_image_t image, int lap_mean[2], struct model_s*model
         {0,16,8,5, 4,3,3,2, 2,2,2,1, 1,1,1,1 }
     };
     static const int weight2[6] = { 120,37,2, 120,18,1 };
+    int j;
 
     assert(band < 3);
 
@@ -368,7 +369,6 @@ void _jxr_UpdateModelMB(jxr_image_t image, int lap_mean[2], struct model_s*model
             break;
     }
 
-    int j;
     for (j = 0; j < 2; j += 1) {
         int ms = model->state[j];
         int delta = (lap_mean[j] - modelweight) >> 2;
@@ -516,9 +516,10 @@ void _jxr_InitCBPVLC(jxr_image_t image)
 
 static int num_ones(int val)
 {
+    int cnt = 0;
+
     assert(val >= 0);
 
-    int cnt = 0;
     while (val > 0) {
         if (val&1) cnt += 1;
         val >>= 1;
@@ -559,11 +560,14 @@ int _jxr_PredCBP444(jxr_image_t image, int*diff_cbp,
                     unsigned mx, unsigned my)
 {
     int chroma_flag = 0;
+    int cbp;
+    int norig;
+
     if (channel > 0)
         chroma_flag = 1;
 
     DEBUG(" PredCBP444: Prediction mode = %d\n", image->hp_cbp_model.state[chroma_flag]);
-    int cbp = diff_cbp[channel];
+    cbp = diff_cbp[channel];
     if (image->hp_cbp_model.state[chroma_flag] == 0) {
         if (mx == 0) {
             if (my == 0)
@@ -585,7 +589,7 @@ int _jxr_PredCBP444(jxr_image_t image, int*diff_cbp,
         cbp ^= 0xffff;
     }
 
-    int norig = num_ones(cbp);
+    norig = num_ones(cbp);
     DEBUG(" PredCBP444: NOrig=%d, CBPModel.Count0/1[%d]= %d/%d\n", norig, chroma_flag,
         image->hp_cbp_model.count0[chroma_flag],
         image->hp_cbp_model.count1[chroma_flag]);
@@ -599,12 +603,14 @@ int _jxr_PredCBP444(jxr_image_t image, int*diff_cbp,
 void _jxr_w_PredCBP444(jxr_image_t image, int ch, unsigned tx, unsigned mx, int my)
 {
     int chroma_flag = 0;
+    int cbp;
+    int norig;
     if (ch > 0)
         chroma_flag = 1;
 
     DEBUG(" PredCBP444: Prediction mode = %d\n", image->hp_cbp_model.state[chroma_flag]);
-    int cbp = MACROBLK_UP1_HPCBP(image,ch,tx,mx);
-    int norig = num_ones(cbp);
+    cbp = MACROBLK_UP1_HPCBP(image,ch,tx,mx);
+    norig = num_ones(cbp);
 
     DEBUG(" PredCBP444: ... cbp starts as 0x%x\n", cbp);
 
@@ -641,10 +647,13 @@ int _jxr_PredCBP422(jxr_image_t image, int*diff_cbp,
                     int channel, unsigned tx,
                     unsigned mx, unsigned my)
 {
+    int cbp;
+    int norig;
+
     assert(channel > 0);
     DEBUG(" PredCBP422: Prediction mode = %d, channel=%d, cbp_mode.State[1]=%d\n",
         image->hp_cbp_model.state[1], channel, image->hp_cbp_model.state[1]);
-    int cbp = diff_cbp[channel];
+    cbp = diff_cbp[channel];
 
     if (image->hp_cbp_model.state[1] == 0) {
         if (mx == 0) {
@@ -664,7 +673,7 @@ int _jxr_PredCBP422(jxr_image_t image, int*diff_cbp,
         cbp ^= 0xff;
     }
 
-    int norig = num_ones(cbp) * 2;
+    norig = num_ones(cbp) * 2;
     update_cbp_model(image, 1, norig);
 
     return cbp;
@@ -672,10 +681,13 @@ int _jxr_PredCBP422(jxr_image_t image, int*diff_cbp,
 
 void _jxr_w_PredCBP422(jxr_image_t image, int ch, unsigned tx, unsigned mx, int my)
 {
+    int cbp;
+    int norig;
+
     assert(ch > 0);
     DEBUG(" PredCBP422: Prediction mode = %d\n", image->hp_cbp_model.state[1]);
-    int cbp = MACROBLK_UP1_HPCBP(image,ch,tx,mx);
-    int norig = num_ones(cbp) * 2;
+    cbp = MACROBLK_UP1_HPCBP(image,ch,tx,mx);
+    norig = num_ones(cbp) * 2;
 
     DEBUG(" PredCBP422: ... cbp[%d] starts as 0x%x\n", ch, cbp);
 
@@ -710,10 +722,12 @@ int _jxr_PredCBP420(jxr_image_t image, int*diff_cbp,
                     int channel, unsigned tx,
                     unsigned mx, unsigned my)
 {
+    int cbp;
+    int norig;
     assert(channel > 0);
     DEBUG(" PredCBP420: Prediction mode = %d, channel=%d, cbp_mode.State[1]=%d\n",
         image->hp_cbp_model.state[1], channel, image->hp_cbp_model.state[1]);
-    int cbp = diff_cbp[channel];
+    cbp = diff_cbp[channel];
 
     if (image->hp_cbp_model.state[1] == 0) {
         if (mx == 0) {
@@ -731,7 +745,7 @@ int _jxr_PredCBP420(jxr_image_t image, int*diff_cbp,
         cbp ^= 0xf;
     }
 
-    int norig = num_ones(cbp) * 4;
+    norig = num_ones(cbp) * 4;
     update_cbp_model(image, 1, norig);
 
     return cbp;
@@ -739,10 +753,12 @@ int _jxr_PredCBP420(jxr_image_t image, int*diff_cbp,
 
 void _jxr_w_PredCBP420(jxr_image_t image, int ch, unsigned tx, unsigned mx, int my)
 {
+    int cbp;
+    int norig;
     assert(ch > 0);
     DEBUG(" PredCBP420: Prediction mode = %d\n", image->hp_cbp_model.state[1]);
-    int cbp = MACROBLK_UP1_HPCBP(image,ch,tx,mx);
-    int norig = num_ones(cbp) * 4;
+    cbp = MACROBLK_UP1_HPCBP(image,ch,tx,mx);
+    norig = num_ones(cbp) * 4;
 
     DEBUG(" PredCBP420: ... cbp[%d] starts as 0x%x\n", ch, cbp);
 
@@ -790,6 +806,12 @@ void _jxr_ResetTotalsAdaptiveScanHP(jxr_image_t image)
 static int
 calculate_mbdc_mode(jxr_image_t image, int tx, int mx, int my)
 {
+    long left;
+    long top;
+    long topleft;
+    long strhor;
+    long strvert;
+
     if (mx == 0 && my == 0)
         return 3; /* No prediction. */
 
@@ -799,12 +821,12 @@ calculate_mbdc_mode(jxr_image_t image, int tx, int mx, int my)
     if (my == 0)
         return 0; /* prediction from left only */
 
-    long left = MACROBLK_CUR_DC(image, 0, tx, mx-1);
-    long top = MACROBLK_UP_DC(image, 0, tx, mx);
-    long topleft = MACROBLK_UP_DC(image, 0, tx, mx-1);
+    left = MACROBLK_CUR_DC(image, 0, tx, mx-1);
+    top = MACROBLK_UP_DC(image, 0, tx, mx);
+    topleft = MACROBLK_UP_DC(image, 0, tx, mx-1);
 
-    long strhor = 0;
-    long strvert = 0;
+    strhor = 0;
+    strvert = 0;
     if (image->use_clr_fmt==0 || image->use_clr_fmt==6) {/* YONLY or NCOMPONENT */
 
         strhor = labs(topleft - left);
@@ -845,6 +867,7 @@ void _jxr_complete_cur_dclp(jxr_image_t image, int tx, int mx, int my)
     /* Calculate the mbcd prediction mode. This mode is used for
     all the planes of DC data. */
     int mbdc_mode = calculate_mbdc_mode(image, tx, mx, image->cur_my);
+    int mblp_mode;
     /* Now process all the planes of DC data. */
     int ch;
     for (ch = 0 ; ch < image->num_channels ; ch += 1) {
@@ -881,7 +904,7 @@ void _jxr_complete_cur_dclp(jxr_image_t image, int tx, int mx, int my)
         }
     }
 
-    int mblp_mode = 0;
+    mblp_mode = 0;
     if (mbdc_mode==0 && MACROBLK_CUR_LP_QUANT(image,0,tx,mx) == MACROBLK_CUR_LP_QUANT(image,0,tx,mx-1)) {
         mblp_mode = 0;
     } else if (mbdc_mode==1 && MACROBLK_CUR_LP_QUANT(image,0,tx,mx) == MACROBLK_UP1_LP_QUANT(image,0,tx,mx)) {
@@ -1089,11 +1112,13 @@ static void _FwdPermute(int*coeff)
 
 static void _2x2T_h(int*a, int*b, int*c, int*d, int R_flag)
 {
+    int t1;
+    int t2;
     *a += *d;
     *b -= *c;
 
-    int t1 = ((*a - *b + R_flag) >> 1);
-    int t2 = *c;
+    t1 = ((*a - *b + R_flag) >> 1);
+    t2 = *c;
 
     *c = t1 - *d;
     *d = t1 - t2;
@@ -1120,11 +1145,13 @@ static void _2x2T_h_POST(int*a, int*b, int*c, int*d)
 
 static void _2x2T_h_Enc(int*a, int*b, int*c, int*d)
 {
+    int t1;
+    int t2;
     *a += *d;
     *b -= *c;
     CHECK2(long_word_flag, *a, *b);
-    int t1 = *d;
-    int t2 = *c;
+    t1 = *d;
+    t2 = *c;
     *c = ((*a - *b) >> 1) - t1;
     *d = t2 + (*b >> 1);
     *b += *c;
@@ -1228,14 +1255,16 @@ static void _T_odd(int*a, int*b, int*c, int*d)
 
 static void _T_odd_odd(int*a, int*b, int*c, int*d)
 {
+    int t1;
+    int t2;
     *b = -*b;
     *c = -*c;
     CHECK2(long_word_flag, *b, *c);
 
     *d += *a;
     *c -= *b;
-    int t1 = *d >> 1;
-    int t2 = *c >> 1;
+    t1 = *d >> 1;
+    t2 = *c >> 1;
     *a -= t1;
     *b += t2;
     CHECK4(long_word_flag, *d, *c, *a, *b);
@@ -1451,10 +1480,12 @@ void _jxr_2OverlapFilter(int*a, int*b)
 
 static void fwdT_Odd_Odd_PRE(int*a, int*b, int*c, int*d)
 {
+    int t1;
+    int t2;
     *d += *a;
     *c -= *b;
-    int t1 = *d >> 1;
-    int t2 = *c >> 1;
+    t1 = *d >> 1;
+    t2 = *c >> 1;
     *a -= t1;
     *b += t2;
     CHECK4(long_word_flag, *d, *c, *a, *b);

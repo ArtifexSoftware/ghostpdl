@@ -52,6 +52,9 @@
 
 int jxrc_start_file(jxr_container_t cp, FILE*fd)
 {
+      const unsigned char head_bytes[8] = {0x49, 0x49, 0xbc, 0x01,
+                                                              0x08, 0x00, 0x00, 0x00 };
+
       assert(cp->fd == 0);
 
       /* initializations */
@@ -63,9 +66,6 @@ int jxrc_start_file(jxr_container_t cp, FILE*fd)
 
       cp->fd = fd;
       cp->file_mark = ftell(cp->fd);
-
-      const unsigned char head_bytes[8] = {0x49, 0x49, 0xbc, 0x01,
-					   0x08, 0x00, 0x00, 0x00 };
 
       fwrite(head_bytes, 1, 8, cp->fd);
       return 0;
@@ -135,20 +135,13 @@ static void emit_ifd(jxr_container_t cp)
 {
     unsigned long ifd_mark;
     int idx;
-
-    assert(cp->image_count > 0);
-    if (cp->image_count > 1){
-        assert(0);
-        ifd_mark = 0;
-    } else {
-        ifd_mark = 8;
-    }
-
     struct ifd_table ifd[64];
     unsigned char buf[1024];
 
     int num_ifd = 0;
     int num_buf = 0;
+    unsigned long ifd_len;
+    unsigned char scr[12];
 
 #ifdef WRITE_OPTIONAL_IFD_TAGS
     int ifd_cnt;
@@ -171,6 +164,14 @@ static void emit_ifd(jxr_container_t cp)
     unsigned char level_idc = 255;
     float width_res = 96.0;
     float height_res = 96.0;
+
+    assert(cp->image_count > 0);
+    if (cp->image_count > 1){
+        assert(0);
+        ifd_mark = 0;
+    } else {
+        ifd_mark = 8;
+    }
 
     input_string = document_name;
     ifd_cnt = strlen(input_string) + 1;
@@ -480,7 +481,7 @@ static void emit_ifd(jxr_container_t cp)
     num_ifd += 1;
 #endif
 
-    unsigned long ifd_len = 2 + 12*num_ifd + 4; /* NUM_ENTRIES + 12 bytes per entry + ZERO_OR_NEXT_IFD_OFFSET */
+    ifd_len = 2 + 12*num_ifd + 4; /* NUM_ENTRIES + 12 bytes per entry + ZERO_OR_NEXT_IFD_OFFSET */
 
     cp->image_offset_mark = ifd_mark + ifd_len + num_buf;
 
@@ -526,7 +527,6 @@ static void emit_ifd(jxr_container_t cp)
         }
     }
 
-    unsigned char scr[12];
     scr[0] = (num_ifd>>0) & 0xff;
     scr[1] = (num_ifd>>8) & 0xff;
     fwrite(scr, 1, 2, cp->fd);
@@ -608,15 +608,18 @@ int jxrc_begin_image_data(jxr_container_t cp)
 int jxrc_write_container_post(jxr_container_t cp)
 {
       uint32_t mark = ftell(cp->fd);
+      uint32_t count;
+      unsigned char scr[4];
+
       mark = (mark+1)&~1;
 
       assert(mark > cp->image_offset_mark);
-      uint32_t count = mark - cp->image_offset_mark;
+      count = mark - cp->image_offset_mark;
 
       DEBUG("CONTAINER: measured bitstream count=%u\n", count);
 
       fseek(cp->fd, cp->image_count_mark, SEEK_SET);
-      unsigned char scr[4];
+
       scr[0] = (count >>  0) & 0xff;
       scr[1] = (count >>  8) & 0xff;
       scr[2] = (count >> 16) & 0xff;
@@ -641,9 +644,11 @@ int jxrc_write_container_post(jxr_container_t cp)
 int jxrc_write_container_post_alpha(jxr_container_t cp)
 {
       uint32_t mark = ftell(cp->fd);
+      uint32_t count;
+
       mark = (mark+1)&~1;
       
-      uint32_t count = mark - cp->alpha_begin_mark;
+      count = mark - cp->alpha_begin_mark;
       DEBUG("CONTAINER: measured alpha count=%u\n", count);
       
       if(cp->separate_alpha_image_plane)

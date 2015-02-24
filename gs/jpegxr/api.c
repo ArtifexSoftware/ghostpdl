@@ -301,6 +301,7 @@ int jxr_test_LEVEL_IDC(jxr_image_t image, int flag)
 
     unsigned i;
     uint64_t max_tile_width = 0, max_tile_height = 0;
+    unsigned char level;
     for (i = 0; i < image->tile_columns; i++)
         max_tile_width = (uint64_t) (image->tile_column_width[i] > max_tile_width ? image->tile_column_width[i] : max_tile_width);
     for (i = 0; i < image->tile_rows; i++)
@@ -341,7 +342,7 @@ int jxr_test_LEVEL_IDC(jxr_image_t image, int flag)
             break;
     }
 
-    unsigned char level = image->level_idc;
+    level = image->level_idc;
     /* 
     * For forward compatability 
     * Though only specified levels are currently applicable, decoder shouldn't reject other levels.
@@ -998,6 +999,7 @@ void jxr_set_QP_INDEPENDENT(jxr_image_t image, unsigned char*quant_per_channel)
     * until we find a QP flag that indicates otherwlse. If that
     * happens, turn SCALED_FLAG on.
     */
+    int idx;
 
     image->scaled_flag = 0;
 
@@ -1023,7 +1025,6 @@ void jxr_set_QP_INDEPENDENT(jxr_image_t image, unsigned char*quant_per_channel)
     image->num_lp_qps = 1;
     image->num_hp_qps = 1;
 
-    int idx;
     for (idx = 0 ; idx < image->num_channels ; idx += 1) {
         if (quant_per_channel[idx] >= 1)
             image->scaled_flag = 1;
@@ -1036,6 +1037,8 @@ void jxr_set_QP_INDEPENDENT(jxr_image_t image, unsigned char*quant_per_channel)
 
 void jxr_set_QP_UNIFORM(jxr_image_t image, unsigned char quant)
 {
+    int idx;
+
     image->scaled_flag = 0;
 
     image->dc_component_mode = JXR_CM_UNIFORM;
@@ -1056,7 +1059,6 @@ void jxr_set_QP_UNIFORM(jxr_image_t image, unsigned char quant)
     if (image->bands_present != JXR_BP_ALL)
         image->scaled_flag = 1;
 
-    int idx;
     for (idx = 0 ; idx < image->num_channels ; idx += 1) {
         image->dc_quant_ch[idx] = quant;
         image->lp_quant_ch[idx][0] = quant;
@@ -1074,6 +1076,8 @@ void jxr_set_QP_SEPARATE(jxr_image_t image, unsigned char*quant_per_channel)
     * until we find a QP flag that indicates otherwlse. If that
     * happens, turn SCALED_FLAG on.
     */
+    int ch;
+
     image->scaled_flag = 0;
 
     if (image->bands_present != JXR_BP_ALL)
@@ -1102,7 +1106,6 @@ void jxr_set_QP_SEPARATE(jxr_image_t image, unsigned char*quant_per_channel)
     if (quant_per_channel[1] >= 1)
         image->scaled_flag = 1;
 
-    int ch;
     for (ch = 1 ; ch < image->num_channels ; ch += 1) {
         image->dc_quant_ch[ch] = quant_per_channel[1];
         image->lp_quant_ch[ch][0] = quant_per_channel[1];

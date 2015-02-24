@@ -75,10 +75,12 @@ static void _jxr_w_load_hpcbp_state(jxr_image_t image, int tx);
 static unsigned char w_guess_dc_quant(jxr_image_t image, int ch,
                                       unsigned tx, unsigned ty)
 {
+    struct jxr_tile_qp*cur;
+
     if (image->dc_frame_uniform)
         return image->dc_quant_ch[ch];
 
-    struct jxr_tile_qp*cur = GET_TILE_QUANT(image,tx,ty);
+    cur = GET_TILE_QUANT(image,tx,ty);
 
     if (ch == 0)
         return cur->channel[0].dc_qp;
@@ -99,20 +101,23 @@ static unsigned char w_guess_dc_quant(jxr_image_t image, int ch,
 unsigned char _jxr_select_lp_index(jxr_image_t image, unsigned tx, unsigned ty,
                                    unsigned mx, unsigned my)
 {
-    /* If this is frame uniform LP QP, then implicitly the QP
+    struct jxr_tile_qp*cur;
+    unsigned mxy;
+    unsigned lp_index;
+   /* If this is frame uniform LP QP, then implicitly the QP
     index is always zero. */
     if (image->lp_frame_uniform)
         return 0;
 
     /* Otherwise we have the more complicated case that the LP QP
     index may vary per MB. */
-    struct jxr_tile_qp*cur = GET_TILE_QUANT(image,tx,ty);
+    cur = GET_TILE_QUANT(image,tx,ty);
     if (cur->lp_map == 0)
         return 0;
 
-    unsigned mxy = my*jxr_get_TILE_WIDTH(image, tx) + mx;
+    mxy = my*jxr_get_TILE_WIDTH(image, tx) + mx;
 
-    unsigned lp_index = cur->lp_map[mxy];
+    lp_index = cur->lp_map[mxy];
     assert(lp_index < cur->channel[0].num_lp || lp_index==0);
 
     return lp_index;
@@ -121,11 +126,14 @@ unsigned char _jxr_select_lp_index(jxr_image_t image, unsigned tx, unsigned ty,
 static unsigned char w_guess_lp_quant(jxr_image_t image, int ch,
                                       unsigned tx, unsigned ty, unsigned mx, unsigned my)
 {
+    unsigned idx;
+    struct jxr_tile_qp*cur;
+
     if (image->lp_frame_uniform)
         return image->lp_quant_ch[ch][0];
 
-    unsigned idx = _jxr_select_lp_index(image, tx, ty, mx, my);
-    struct jxr_tile_qp*cur = GET_TILE_QUANT(image,tx,ty);
+    idx = _jxr_select_lp_index(image, tx, ty, mx, my);
+    cur = GET_TILE_QUANT(image,tx,ty);
 
     if (ch == 0)
         return cur->channel[0].lp_qp[idx];
@@ -146,18 +154,22 @@ static unsigned char w_guess_lp_quant(jxr_image_t image, int ch,
 unsigned char _jxr_select_hp_index(jxr_image_t image, unsigned tx, unsigned ty,
                                    unsigned mx, unsigned my)
 {
+    unsigned mxy;
+    unsigned hp_index;
+    struct jxr_tile_qp*cur;
+
     if (image->hp_frame_uniform)
         return 0;
 
-    struct jxr_tile_qp*cur = GET_TILE_QUANT(image,tx,ty);
+    cur = GET_TILE_QUANT(image,tx,ty);
     /* If there is no actual map, then assume all indices in the
     tile are zero. */
     if (cur->hp_map == 0)
         return 0;
 
-    unsigned mxy = my*jxr_get_TILE_WIDTH(image, tx) + mx;
+    mxy = my*jxr_get_TILE_WIDTH(image, tx) + mx;
 
-    unsigned hp_index = cur->hp_map[mxy];
+    hp_index = cur->hp_map[mxy];
     assert(hp_index < cur->channel[0].num_hp || hp_index == 0);
 
     return hp_index;
@@ -167,11 +179,14 @@ static unsigned char w_guess_hp_quant(jxr_image_t image, int ch,
                                       unsigned tx, unsigned ty,
                                       int mx, int my)
 {
+    unsigned idx;
+    struct jxr_tile_qp*cur;
+
     if (image->hp_frame_uniform)
         return image->hp_quant_ch[ch][0];
 
-    unsigned idx = _jxr_select_hp_index(image, tx, ty, mx, my);
-    struct jxr_tile_qp*cur = GET_TILE_QUANT(image,tx,ty);
+    idx = _jxr_select_hp_index(image, tx, ty, mx, my);
+    cur = GET_TILE_QUANT(image,tx,ty);
 
     if (ch == 0)
         return cur->channel[0].hp_qp[idx];
@@ -192,12 +207,13 @@ static unsigned char w_guess_hp_quant(jxr_image_t image, int ch,
 static int quantize_dc(int value, int quant)
 {
     int sign = 1;
+    int offset;
     if (value < 0) {
         sign = -1;
         value = -value;
     }
 
-    int offset = quant >> 1;
+    offset = quant >> 1;
 
     return sign * (value + offset)/quant;
 }
@@ -205,12 +221,13 @@ static int quantize_dc(int value, int quant)
 static int quantize_lphp(int value, int quant)
 {
     int sign = 1;
+    int offset;
     if (value < 0) {
         sign = -1;
         value = -value;
     }
 
-    int offset = (quant*3 + 1) >> 3;
+    offset = (quant*3 + 1) >> 3;
 
     return sign * (value + offset)/quant;
 }
@@ -359,19 +376,20 @@ static void wflush_process_strip(jxr_image_t image, int ty)
     }
 
     if (cur_row >= -1 && cur_row < (height-1)) {
+        int use_num_channels;
+        int tx;
         DEBUG("wflush_process_string: Calculate HP CBP for my=%d\n", cur_row+1);
 
         /* Perform HP prediction. */
-        int use_num_channels = image->num_channels;
+        use_num_channels = image->num_channels;
         if (image->use_clr_fmt == 1/*YUV420*/ || image->use_clr_fmt == 2/*YUV422*/)
             use_num_channels = 1;
 
-        int tx;
         image->model_hp;
         for (tx = 0; tx < (int) image->tile_columns ; tx += 1) {
+            int mx;
             if (image->tile_columns > 1)
                 _jxr_w_load_hpcbp_state(image, tx);
-            int mx;
             for (mx = 0 ; mx < (int) image->tile_column_width[tx] ; mx += 1) {
                 int mbhp_pred_mode = MACROBLK_UP1(image,0,tx,mx).mbhp_pred_mode;
                 int idx;
@@ -419,9 +437,9 @@ void _jxr_w_store_hpcbp_state(jxr_image_t image, int tx)
 
 void _jxr_wflush_mb_strip(jxr_image_t image, int tx, int ty, int my, int read_new)
 {
+    unsigned ty_offset = 0;
     DEBUG("wflush_mb_strip: cur_my=%d, tile-x/y=%d/%d, my=%d\n", image->cur_my, tx, ty, my);
 
-    unsigned ty_offset = 0;
     if (FREQUENCY_MODE_CODESTREAM_FLAG(image))
         ty_offset = image->tile_row_position[ty];
 
@@ -485,9 +503,10 @@ void _jxr_wflush_mb_strip(jxr_image_t image, int tx, int ty, int my, int read_ne
 */
 static void wflush_to_tile_buffer(jxr_image_t image, int my)
 {
+    int format_scale = 256;
+    int tx;
     DEBUG("wflush_mb_strip: wflush_to_tile_buffer my=%d\n", my);
 
-    int format_scale = 256;
     if (image->use_clr_fmt == 2 /* YUV422 */) {
         format_scale = 16 + 8*15;
     } else if (image->use_clr_fmt == 1 /* YUV420 */) {
@@ -495,10 +514,11 @@ static void wflush_to_tile_buffer(jxr_image_t image, int my)
     }
 
 
-    int tx;
     for (tx = 0; tx < (int) image->tile_columns ; tx += 1) {
         int mx;
         for (mx = 0 ; mx < (int) image->tile_column_width[tx] ; mx += 1) {
+            int off;
+            int ch;
             DEBUG("wflush_mb_strip: wflush_to_tile_buffer tx=%d, mx=%d, CUR=0x%08x UP1=0x%08x, UP2=0x%08x, UP3=0x%08x, LP_QUANT=%d\n",
                 tx, mx, MACROBLK_CUR(image,0,tx,mx).data[0],
                 MACROBLK_UP1(image,0,tx,mx).data[0],
@@ -506,9 +526,10 @@ static void wflush_to_tile_buffer(jxr_image_t image, int my)
                 MACROBLK_UP3(image,0,tx,mx).data[0],
                 MACROBLK_CUR_LP_QUANT(image,0,tx,mx));
 
-            int off = my * EXTENDED_WIDTH_BLOCKS(image) + image->tile_column_position[tx] + mx;
-            int ch;
+            off = my * EXTENDED_WIDTH_BLOCKS(image) + image->tile_column_position[tx] + mx;
             for (ch = 0; ch < image->num_channels; ch += 1) {
+                int count;
+                int idx;
                 struct macroblock_s*mb = image->mb_row_buffer[ch] + off;
                 mb->lp_quant = MACROBLK_CUR_LP_QUANT(image,ch,tx,mx);
                 mb->hp_quant = MACROBLK_CUR(image,ch,tx,mx).hp_quant;
@@ -517,8 +538,7 @@ static void wflush_to_tile_buffer(jxr_image_t image, int my)
                 mb->mbhp_pred_mode = MACROBLK_CUR(image,ch,tx,mx).mbhp_pred_mode;
                 mb->hp_model_bits[0] = MACROBLK_CUR(image,ch,tx,mx).hp_model_bits[0];
                 mb->hp_model_bits[1] = MACROBLK_CUR(image,ch,tx,mx).hp_model_bits[1];
-                int count = (ch==0)? 256 : format_scale;
-                int idx;
+                count = (ch==0)? 256 : format_scale;
                 for (idx = 0 ; idx < count ; idx += 1)
                     mb->data[idx] = MACROBLK_CUR(image,ch,tx,mx).data[idx];
                 for (idx = 0 ; idx < 7 ; idx += 1)
@@ -536,16 +556,16 @@ static void wflush_to_tile_buffer(jxr_image_t image, int my)
 */
 static void wflush_collect_mb_strip_data(jxr_image_t image, int my)
 {
+    int format_scale = 256;
+    int tx;
     DEBUG("wflush_mb_strip: wflush_collect_mb_strip_data my=%d\n", my);
 
-    int format_scale = 256;
     if (image->use_clr_fmt == 2 /* YUV422 */) {
         format_scale = 16 + 8*15;
     } else if (image->use_clr_fmt == 1 /* YUV420 */) {
         format_scale = 16 + 4*15;
     }
 
-    int tx;
     for (tx = 0; tx < (int) image->tile_columns ; tx += 1) {
         int mx;
         for (mx = 0; mx < (int) image->tile_column_width[tx]; mx += 1) {
@@ -553,6 +573,8 @@ static void wflush_collect_mb_strip_data(jxr_image_t image, int my)
             int ch;
             for (ch = 0; ch < image->num_channels; ch += 1) {
                 struct macroblock_s*mb = image->mb_row_buffer[ch] + off;
+                int count;
+                int idx;
                 MACROBLK_CUR_LP_QUANT(image,ch,tx,mx) = mb->lp_quant;
                 MACROBLK_CUR(image,ch,tx,mx).hp_quant = mb->hp_quant;
                 MACROBLK_CUR(image,ch,tx,mx).hp_cbp = mb->hp_cbp;
@@ -560,8 +582,7 @@ static void wflush_collect_mb_strip_data(jxr_image_t image, int my)
                 MACROBLK_CUR(image,ch,tx,mx).mbhp_pred_mode = mb->mbhp_pred_mode;
                 MACROBLK_CUR(image,ch,tx,mx).hp_model_bits[0] = mb->hp_model_bits[0];
                 MACROBLK_CUR(image,ch,tx,mx).hp_model_bits[1] = mb->hp_model_bits[1];
-                int count = (ch==0)? 256 : format_scale;
-                int idx;
+                count = (ch==0)? 256 : format_scale;
                 for (idx = 0 ; idx < count; idx += 1)
                     MACROBLK_CUR(image,ch,tx,mx).data[idx] = mb->data[idx];
                 for (idx = 0 ; idx < 7 ; idx += 1)
@@ -708,9 +729,9 @@ static void yuv444_to_yuv422_up4(jxr_image_t image)
 static void yuv422_to_yuv420_up3(jxr_image_t image)
 {
     int my = image->cur_my + 3;
-    assert(my >= 0);
 
     int ch;
+    assert(my >= 0);
     for (ch = 1 ; ch < 3 ; ch += 1) {
         unsigned mx;
         for (mx = 0 ; mx < EXTENDED_WIDTH_BLOCKS(image); mx += 1) {
@@ -718,10 +739,10 @@ static void yuv422_to_yuv420_up3(jxr_image_t image)
             /* Save the unreduced data to allow for overlapping */
             int*dataX = data + 128;
             int idx;
+            int px, py;
             for (idx = 0 ; idx < 128 ; idx += 1)
                 dataX[idx] = data[idx];
 
-            int px, py;
 
             /* First, handle py==0 */
             if (my == 0) {
@@ -905,6 +926,10 @@ static void collect_and_scale_up4(jxr_image_t image, int ty)
     int bias;
     int round;
     int shift_bits = image->shift_bits;
+    int my;
+    int mx;
+    int ch;
+    int num_channels;
 
     if (image->output_clr_fmt == JXR_OCF_RGBE) {
         bias = 0;
@@ -967,12 +992,10 @@ static void collect_and_scale_up4(jxr_image_t image, int ty)
     assert(image->num_channels > 0);
 
     /* This function operates on a whole image (not tile) basis */
-    int my = image->cur_my + image->tile_row_position[ty] + 4;
+    my = image->cur_my + image->tile_row_position[ty] + 4;
     DEBUG("collect_and_scale_up4: Collect strip %d\n", my);
 
-    int mx;
-    int ch;
-    int num_channels = image->num_channels;
+    num_channels = image->num_channels;
     
     if (ALPHACHANNEL_FLAG(image)) {
         num_channels ++;
@@ -982,8 +1005,9 @@ static void collect_and_scale_up4(jxr_image_t image, int ty)
     for (mx = 0 ; mx < (int) EXTENDED_WIDTH_BLOCKS(image) ; mx += 1) {
 
         /* Collect the data from the application. */
-        assert(image->num_channels <= 16);
         int buffer[17*256];
+        int jdx;
+        assert(image->num_channels <= 16);
         image->inp_fun(image, mx, my, buffer); 
 
         /* Pad to the bottom by repeating the last pixel */
@@ -1023,7 +1047,6 @@ static void collect_and_scale_up4(jxr_image_t image, int ty)
 
         /* And finally collect the strip data. */
         /* image->alpha->strip[0].up4 == image->strip[image->num_channels].up4 !!! */
-        int jdx;
         for (jdx = 0 ; jdx < 256 ; jdx += 1) {
             int ch;
             for (ch = 0 ; ch < num_channels ; ch += 1)
@@ -1047,8 +1070,8 @@ static void collect_and_scale_up4(jxr_image_t image, int ty)
             int*dp;
             assert(image->num_channels == 4);
             for (ch = 0 ; ch < 3 ; ch += 1) {
-                dp = image->strip[ch].up4[mx].data;
                 int jdx;
+                dp = image->strip[ch].up4[mx].data;
                 for (jdx = 0 ; jdx < 256 ; jdx += 1)
                     dp[jdx] = (dp[jdx] - (bias>>1)) << scale;
             }
@@ -1186,10 +1209,10 @@ static int*R2B42(int*data, int x, int y)
 
 static void first_prefilter444_up2(jxr_image_t image, int ch, int ty)
 {
-    assert(ch == 0 || (image->use_clr_fmt != 2/*YUV422*/ && image->use_clr_fmt !=1/* YUV420*/));
     int tx = 0; /* XXXX */
     int top_my = image->cur_my + 2;
     int idx;
+    assert(ch == 0 || (image->use_clr_fmt != 2/*YUV422*/ && image->use_clr_fmt !=1/* YUV420*/));
 
     if (top_my >= image->tile_row_height[ty])
         top_my -= image->tile_row_height[ty++];
@@ -1388,12 +1411,12 @@ static void first_prefilter444_up2(jxr_image_t image, int ch, int ty)
 
 static void first_prefilter422_up2(jxr_image_t image, int ch, int ty)
 {
-    assert(ch > 0 && image->use_clr_fmt == 2/*YUV422*/);
     int tx = 0; /* XXXX */
 
     int top_my = image->cur_my + 2;
-    assert(top_my >= 0 );
     int idx;
+    assert(ch > 0 && image->use_clr_fmt == 2/*YUV422*/);
+    assert(top_my >= 0 );
 
     if (top_my >= image->tile_row_height[ty])
         top_my -= image->tile_row_height[ty++];
@@ -1585,10 +1608,10 @@ static void first_prefilter422_up2(jxr_image_t image, int ch, int ty)
 
 static void first_prefilter420_up2(jxr_image_t image, int ch, int ty)
 {
-    assert(ch > 0 && image->use_clr_fmt == 1/*YUV420*/);
     int tx = 0; /* XXXX */
     int top_my = image->cur_my + 2;
     int idx;
+    assert(ch > 0 && image->use_clr_fmt == 1/*YUV420*/);
 
     if (top_my >= image->tile_row_height[ty])
         top_my -= image->tile_row_height[ty++];
@@ -1781,6 +1804,9 @@ static void PCT_stage2_up1(jxr_image_t image, int ch, int ty)
 {
     int tx = 0;
     int use_my = image->cur_my + 1;
+    int mx;
+    int dc_quant;
+    int dclp_count;
 
     /* make adjustments based on tiling */
     if (use_my == image->tile_row_height[ty]) {
@@ -1788,24 +1814,24 @@ static void PCT_stage2_up1(jxr_image_t image, int ch, int ty)
         use_my = 0;
     }
 
-    int dclp_count = 16;
+    dclp_count = 16;
     if (ch>0 && image->use_clr_fmt == 2/*YUV422*/)
         dclp_count = 8;
     else if (ch>0 && image->use_clr_fmt == 1/*YUV420*/)
         dclp_count = 4;
 
-    int dc_quant = w_guess_dc_quant(image, ch, tx, ty);
+    dc_quant = w_guess_dc_quant(image, ch, tx, ty);
     dc_quant = _jxr_quant_map(image, dc_quant, ch==0? 1 : 0/* iShift for YONLY */);
     assert(dc_quant > 0);
 
-    int mx;
     for (mx = 0 ; mx < (int) EXTENDED_WIDTH_BLOCKS(image) ; mx += 1) {
+        int jdx;
+        int lp_quant;
 
         if (ch > 0 && image->use_clr_fmt == 1/*YUV420*/) {
 
             /* Scale up the chroma channel */
             if (image->scaled_flag) {
-                int jdx;
                 for (jdx = 0 ; jdx < 4 ; jdx += 1) {
                     int val = image->strip[ch].up1[mx].data[jdx];
                     val = _jxr_floor_div2(val);
@@ -1821,7 +1847,7 @@ static void PCT_stage2_up1(jxr_image_t image, int ch, int ty)
 
 #if defined(DETAILED_DEBUG) && 1
             DEBUG(" DC/LP scaled_flag=%d\n", image->scaled_flag);
-            { int jdx;
+            {
             DEBUG(" DC/LP (strip=%3d, mbx=%4d, ch=%d) Pre-PCT:", use_my, mx, ch);
             DEBUG(" 0x%08x", MACROBLK_UP_DC(image,ch,tx,mx));
             for (jdx = 0; jdx < 7 ; jdx += 1) {
@@ -1834,7 +1860,6 @@ static void PCT_stage2_up1(jxr_image_t image, int ch, int ty)
 #endif
             /* Scale up the chroma channel */
             if (image->scaled_flag) {
-                int jdx;
                 for (jdx = 0 ; jdx < 8 ; jdx += 1) {
                     int val = image->strip[ch].up1[mx].data[jdx];
                     val = _jxr_floor_div2(val);
@@ -1842,7 +1867,7 @@ static void PCT_stage2_up1(jxr_image_t image, int ch, int ty)
                 }
             }
 #if defined(DETAILED_DEBUG) && 1
-            { int jdx;
+            {
             DEBUG(" DC/LP (strip=%3d, mbx=%4d, ch=%d) scaled :", use_my, mx, ch);
             DEBUG(" 0x%08x", MACROBLK_UP_DC(image,ch,tx,mx));
             for (jdx = 0; jdx < 7 ; jdx += 1) {
@@ -1868,7 +1893,7 @@ static void PCT_stage2_up1(jxr_image_t image, int ch, int ty)
 
 #if defined(DETAILED_DEBUG) && 1
             DEBUG(" DC/LP scaled_flag=%d\n", image->scaled_flag);
-            { int jdx;
+            {
             DEBUG(" DC/LP (strip=%3d, mbx=%4d, ch=%d) Post-PCT:", use_my, mx, ch);
             DEBUG(" 0x%08x", MACROBLK_UP_DC(image,ch,tx,mx));
             for (jdx = 0; jdx < 7 ; jdx += 1) {
@@ -1882,7 +1907,7 @@ static void PCT_stage2_up1(jxr_image_t image, int ch, int ty)
 
         } else {
 #if defined(DETAILED_DEBUG) && 1
-            { int jdx;
+            {
             DEBUG(" DC/LP (strip=%3d, mbx=%4d, ch=%d) Pre-PCT:", use_my, mx, ch);
             DEBUG(" 0x%08x", MACROBLK_UP_DC(image,ch,tx,mx));
             for (jdx = 0; jdx < 15 ; jdx += 1) {
@@ -1895,7 +1920,6 @@ static void PCT_stage2_up1(jxr_image_t image, int ch, int ty)
 #endif
             /* Scale up the chroma channel */
             if (ch > 0 && image->scaled_flag) {
-                int jdx;
                 for (jdx = 0 ; jdx < 16 ; jdx += 1) {
                     int val = image->strip[ch].up1[mx].data[jdx];
                     val = _jxr_floor_div2(val);
@@ -1906,7 +1930,7 @@ static void PCT_stage2_up1(jxr_image_t image, int ch, int ty)
             _jxr_4x4PCT(image->strip[ch].up1[mx].data);
 
 #if defined(DETAILED_DEBUG)
-            { int jdx;
+            {
             DEBUG(" DC/LP (strip=%3d, mbx=%4d, ch=%d) post-PCT:", use_my, mx, ch);
             DEBUG(" 0x%08x", MACROBLK_UP_DC(image,ch,0,mx));
             for (jdx = 0; jdx < 15 ; jdx += 1) {
@@ -1920,7 +1944,7 @@ static void PCT_stage2_up1(jxr_image_t image, int ch, int ty)
         }
 
         /* Quantize */
-        int lp_quant = w_guess_lp_quant(image, ch, tx, ty, mx, use_my);
+        lp_quant = w_guess_lp_quant(image, ch, tx, ty, mx, use_my);
         MACROBLK_UP1_LP_QUANT(image,ch,tx,mx) = lp_quant;
         lp_quant = _jxr_quant_map(image, lp_quant, ch==0? 1 : 0/* iShift for YONLY */);
         assert(lp_quant > 0);
@@ -1930,10 +1954,10 @@ static void PCT_stage2_up1(jxr_image_t image, int ch, int ty)
 
         CHECK1(image->lwf_test, MACROBLK_CUR_DC(image,ch,tx,mx));
         MACROBLK_UP_DC(image,ch,tx,mx) = quantize_dc(MACROBLK_UP_DC(image,ch,tx,mx), dc_quant);
-        int jdx;
         for (jdx = 1 ; jdx < dclp_count ; jdx += 1) {
+            int value;
             CHECK1(image->lwf_test, MACROBLK_UP_LP(image,ch,tx,mx,jdx-1));
-            int value = MACROBLK_UP_LP(image,ch,tx,mx,jdx-1);
+            value = MACROBLK_UP_LP(image,ch,tx,mx,jdx-1);
             MACROBLK_UP_LP(image,ch,tx,mx,jdx-1) = quantize_lphp(value, lp_quant);
         }
 #if defined(DETAILED_DEBUG)
@@ -1953,11 +1977,11 @@ static void PCT_stage2_up1(jxr_image_t image, int ch, int ty)
 
 static void second_prefilter444_up1(jxr_image_t image, int ch, int ty)
 {
-    assert(ch == 0 || (image->use_clr_fmt != 2/*YUV422*/ && image->use_clr_fmt !=1/* YUV420*/));
     int tx = 0; /* XXXX */
     int top_my = image->cur_my + 1;
     int idx;
 
+    assert(ch == 0 || (image->use_clr_fmt != 2/*YUV422*/ && image->use_clr_fmt !=1/* YUV420*/));
     if (top_my >= image->tile_row_height[ty])
         top_my -= image->tile_row_height[ty++];
     top_my += image->tile_row_position[ty];
@@ -2075,11 +2099,11 @@ static void second_prefilter444_up1(jxr_image_t image, int ch, int ty)
 
 static void second_prefilter422_up1(jxr_image_t image, int ch, int ty)
 {
-    assert(ch > 0);
     int tx = 0; /* XXXX */
     int top_my = image->cur_my + 1;
     int idx;
 
+    assert(ch > 0);
     if (top_my >= image->tile_row_height[ty])
         top_my -= image->tile_row_height[ty++];
     top_my += image->tile_row_position[ty];
@@ -2285,10 +2309,10 @@ static void second_prefilter422_up1(jxr_image_t image, int ch, int ty)
 
 static void second_prefilter420_up1(jxr_image_t image, int ch, int ty)
 {
-    assert(ch > 0);
     int tx = 0; /* XXXX */
     int top_my = image->cur_my + 1;
     int idx;
+    assert(ch > 0);
 
     if (top_my >= image->tile_row_height[ty])
         top_my -= image->tile_row_height[ty++];
@@ -2503,6 +2527,8 @@ static void PCT_stage1_up2(jxr_image_t image, int ch, int ty)
 {
     int tx = 0;
     int use_my = image->cur_my + 2;
+    int mx;
+    int dclp_count;
 
     /* make adjustments based on tiling */
     if (use_my >= image->tile_row_height[ty]) {
@@ -2514,15 +2540,16 @@ static void PCT_stage1_up2(jxr_image_t image, int ch, int ty)
         }
     }
 
-    int dclp_count = 16;
+    dclp_count = 16;
     if (ch>0 && image->use_clr_fmt == 2/*YUV422*/)
         dclp_count = 8;
     else if (ch>0 && image->use_clr_fmt == 1/*YUV420*/)
         dclp_count = 4;
 
-    int mx;
     for (mx = 0 ; mx < (int) EXTENDED_WIDTH_BLOCKS(image) ; mx += 1) {
         int jdx;
+        int hp_quant_raw;
+        int hp_quant;
         for (jdx = 0 ; jdx < 16*dclp_count ; jdx += 16) {
 #if defined(DETAILED_DEBUG)
             {
@@ -2556,8 +2583,8 @@ static void PCT_stage1_up2(jxr_image_t image, int ch, int ty)
 
         dclphp_unshuffle(image->strip[ch].up2[mx].data, dclp_count);
 
-        int hp_quant_raw = w_guess_hp_quant(image, ch, tx, ty, mx, use_my);
-        int hp_quant = _jxr_quant_map(image, hp_quant_raw, 1);
+        hp_quant_raw = w_guess_hp_quant(image, ch, tx, ty, mx, use_my);
+        hp_quant = _jxr_quant_map(image, hp_quant_raw, 1);
         assert(hp_quant > 0);
 
         DEBUG(" DC-LP-HP (mx=%d ch=%d) use_hp_quant=%d (hp quant index=%u raw=%d)\n", mx, ch,
@@ -2566,8 +2593,9 @@ static void PCT_stage1_up2(jxr_image_t image, int ch, int ty)
         for (jdx = 0 ; jdx < dclp_count ; jdx += 1) {
             int k;
             for (k = 0 ; k < 15 ; k += 1) {
+                int value;
                 CHECK1(image->lwf_test, MACROBLK_UP2_HP(image,ch,tx,mx,jdx,k));
-                int value = MACROBLK_UP2_HP(image,ch,tx,mx,jdx,k);
+                value = MACROBLK_UP2_HP(image,ch,tx,mx,jdx,k);
                 MACROBLK_UP2_HP(image,ch,tx,mx,jdx,k) = quantize_lphp(value, hp_quant);
             }
 #if defined(DETAILED_DEBUG)
@@ -2598,6 +2626,13 @@ static void PCT_stage1_up2(jxr_image_t image, int ch, int ty)
 */
 static int w_calculate_mbdc_mode(jxr_image_t image, int tx, int mx, int my)
 {
+    /* The context. */
+    long left = MACROBLK_UP1(image, 0, tx, mx-1).pred_dclp[0];
+    long top = MACROBLK_CUR(image, 0, tx, mx).pred_dclp[0];
+    long topleft = MACROBLK_CUR(image, 0, tx, mx-1).pred_dclp[0];
+    long strhor = 0;
+    long strvert = 0;
+
     if (mx == 0 && my == 0)
         return 3; /* No prediction. */
 
@@ -2607,16 +2642,9 @@ static int w_calculate_mbdc_mode(jxr_image_t image, int tx, int mx, int my)
     if (my == 0)
         return 0; /* prediction from left only */
 
-    /* The context. */
-    long left = MACROBLK_UP1(image, 0, tx, mx-1).pred_dclp[0];
-    long top = MACROBLK_CUR(image, 0, tx, mx).pred_dclp[0];
-    long topleft = MACROBLK_CUR(image, 0, tx, mx-1).pred_dclp[0];
-
     /* Calculate horizontal and vertical "strengths". We will use
     those strengths to decide which direction prediction should
     be. */
-    long strhor = 0;
-    long strvert = 0;
     if (image->use_clr_fmt==0 || image->use_clr_fmt==6) {/* YONLY or NCOMPONENT */
 
         /* YONLY and NCOMPONENT use only the context of channel-0
@@ -2663,6 +2691,10 @@ static int w_calculate_mbdc_mode(jxr_image_t image, int tx, int mx, int my)
 static void w_predict_up1_dclp(jxr_image_t image, int tx, int ty, int mx)
 {
     int my = image->cur_my + 1;
+    int mblp_mode;
+    unsigned char mblp_index;
+    int mbdc_mode;
+    int ch;
 
     /* make adjustments based on tiling */
     if (my == image->tile_row_height[ty]) {
@@ -2672,9 +2704,8 @@ static void w_predict_up1_dclp(jxr_image_t image, int tx, int ty, int mx)
 
     /* Calculate the mbcd prediction mode. This mode is used for
     all the planes of DC data. */
-    int mbdc_mode = w_calculate_mbdc_mode(image, tx, mx, my);
+    mbdc_mode = w_calculate_mbdc_mode(image, tx, mx, my);
     /* Now process all the planes of DC data. */
-    int ch;
     for (ch = 0 ; ch < image->num_channels ; ch += 1) {
         long left = mx>0? MACROBLK_UP1(image,ch,tx,mx-1).pred_dclp[0] : 0;
         long top = MACROBLK_CUR(image,ch,tx,mx).pred_dclp[0];
@@ -2720,8 +2751,8 @@ static void w_predict_up1_dclp(jxr_image_t image, int tx, int ty, int mx)
     predicting from the left, bug the MBLP QP Index from the
     left is different from that of the current MB, then cancel
     prediction. Same for prediction from above. */
-    int mblp_mode = 2;
-    unsigned char mblp_index = _jxr_select_lp_index(image, tx, ty, mx, my);
+    mblp_mode = 2;
+    mblp_index = _jxr_select_lp_index(image, tx, ty, mx, my);
     if (mbdc_mode == 0) {
         unsigned char mblp_index_left = _jxr_select_lp_index(image, tx, ty, mx-1, my);
         if (mblp_index == mblp_index_left)
@@ -3060,6 +3091,8 @@ static void w_predict_lp420(jxr_image_t image, int tx, int mx, int my, int ch, i
 static void calculate_hpcbp_up1(jxr_image_t image, int tx, int ty, int mx)
 {
     int use_my = image->cur_my + 1;
+    int lap_mean[2];
+    int ch;
 
     /* make adjustments based on tiling */
     if (use_my == image->tile_row_height[ty]) {
@@ -3071,11 +3104,9 @@ static void calculate_hpcbp_up1(jxr_image_t image, int tx, int ty, int mx)
         _jxr_InitializeModelMB(&image->model_hp, 2/*band=HP*/);
     }
 
-    int lap_mean[2];
     lap_mean[0] = 0;
     lap_mean[1] = 0;
 
-    int ch;
     for (ch = 0 ; ch < image->num_channels ; ch += 1) {
         int chroma_flag = (ch>0)? 1 : 0;
         unsigned model_bits = image->model_hp.bits[chroma_flag];
@@ -3083,17 +3114,17 @@ static void calculate_hpcbp_up1(jxr_image_t image, int tx, int ty, int mx)
         int cbp_mask = 0;
 
         int blk_count = 16;
+        int blk;
         if (chroma_flag && image->use_clr_fmt==2/*YUV422*/)
             blk_count = 8;
         if (chroma_flag && image->use_clr_fmt==1/*YUV420*/)
             blk_count = 4;
 
-        int blk;
         for (blk = 0 ; blk < blk_count ; blk += 1) {
             int bpos = blk;
+            int idx;
             if (blk_count==16)
                 bpos = _jxr_hp_scan_map[bpos];
-            int idx;
             for (idx = 0 ; idx < 15 ; idx += 1) {
                 int value = MACROBLK_UP1_HP(image,ch,tx,mx,bpos,idx);
                 value = abs(value) >> model_bits;
@@ -3127,6 +3158,7 @@ static void calculate_hpcbp_up1(jxr_image_t image, int tx, int ty, int mx)
 static void w_PredCBP(jxr_image_t image, unsigned tx, unsigned ty, unsigned mx)
 {
     int use_my = image->cur_my+1;
+    int ch;
     if (use_my == image->tile_row_height[ty]) {
         use_my = 0;
         ty += 1;
@@ -3136,7 +3168,6 @@ static void w_PredCBP(jxr_image_t image, unsigned tx, unsigned ty, unsigned mx)
         _jxr_InitializeCBPModel(image);
     }
 
-    int ch;
     switch (image->use_clr_fmt) {
         case 1: /* YUV420 */
             _jxr_w_PredCBP444(image, 0, tx, mx, use_my);

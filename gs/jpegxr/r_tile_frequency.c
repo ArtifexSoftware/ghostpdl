@@ -57,10 +57,13 @@ static void recover_dclphp_strip(jxr_image_t image, int tx, int ty, int my);
 int _jxr_r_TILE_DC(jxr_image_t image, struct rbitstream*str,
                    unsigned tx, unsigned ty)
 {
+    unsigned mx, my;
+    unsigned mb_height;
+    unsigned mb_width;
+    unsigned char s0, s1, s2, s3;
     DEBUG("START TILE_DC at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_rbitstream_bitpos(str));
 
     /* TILE_STARTCODE == 1 */
-    unsigned char s0, s1, s2, s3;
     s0 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s1 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s2 = _jxr_rbitstream_uint8(str); /* 0x01 */
@@ -76,15 +79,14 @@ int _jxr_r_TILE_DC(jxr_image_t image, struct rbitstream*str,
     tile. This involves scanning the macroblocks, and the
     blocks within the macroblocks, generating bits as we go. */
 
-    unsigned mb_height = EXTENDED_HEIGHT_BLOCKS(image);
-    unsigned mb_width = EXTENDED_WIDTH_BLOCKS(image);
+    mb_height = EXTENDED_HEIGHT_BLOCKS(image);
+    mb_width = EXTENDED_WIDTH_BLOCKS(image);
 
     if (TILING_FLAG(image)) {
         mb_height = image->tile_row_height[ty];
         mb_width = image->tile_column_width[tx];
     }
 
-    unsigned mx, my;
     for (my = 0 ; my < mb_height ; my += 1) {
         _jxr_r_rotate_mb_strip(image);
         image->cur_my = my;
@@ -114,10 +116,14 @@ int _jxr_r_TILE_DC(jxr_image_t image, struct rbitstream*str,
 int _jxr_r_TILE_LP(jxr_image_t image, struct rbitstream*str,
                    unsigned tx, unsigned ty)
 {
+    unsigned mx, my;
+    unsigned plane_idx, num_planes;
+    unsigned mb_height;
+    unsigned mb_width;
+    unsigned char s0, s1, s2, s3;
     DEBUG("START TILE_LOWPASS at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_rbitstream_bitpos(str));
 
     /* TILE_STARTCODE == 1 */
-    unsigned char s0, s1, s2, s3;
     s0 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s1 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s2 = _jxr_rbitstream_uint8(str); /* 0x01 */
@@ -136,16 +142,15 @@ int _jxr_r_TILE_LP(jxr_image_t image, struct rbitstream*str,
     tile. This involves scanning the macroblocks, and the
     blocks within the macroblocks, generating bits as we go. */
 
-    unsigned mb_height = EXTENDED_HEIGHT_BLOCKS(image);
-    unsigned mb_width = EXTENDED_WIDTH_BLOCKS(image);
+    mb_height = EXTENDED_HEIGHT_BLOCKS(image);
+    mb_width = EXTENDED_WIDTH_BLOCKS(image);
 
     if (TILING_FLAG(image)) {
         mb_height = image->tile_row_height[ty];
         mb_width = image->tile_column_width[tx];
     }
 
-    unsigned mx, my;
-    unsigned plane_idx, num_planes = ((ALPHACHANNEL_FLAG(image)) ? 2 : 1);
+    num_planes = ((ALPHACHANNEL_FLAG(image)) ? 2 : 1);
     for (my = 0 ; my < mb_height ; my += 1) {
         _jxr_r_rotate_mb_strip(image);
         if (ALPHACHANNEL_FLAG(image)) {
@@ -159,13 +164,13 @@ int _jxr_r_TILE_LP(jxr_image_t image, struct rbitstream*str,
         for (plane_idx = 0; plane_idx < num_planes; plane_idx ++) {
             /* The qp_index_lp table goes only into channel 0 */
             int qp_index_lp = 0;
+            int ch;
             jxr_image_t plane = (plane_idx == 0 ? image : image->alpha);
 
             if (!plane->lp_use_dc_qp && plane->num_lp_qps>1) {
                 qp_index_lp = _jxr_DECODE_QP_INDEX(str, plane->num_lp_qps);
                 DEBUG(" DECODE_QP_INDEX(%d) --> %u\n", plane->num_lp_qps, qp_index_lp);
             }
-            int ch;
             for (ch = 0 ; ch < plane->num_channels ; ch += 1) {
                 MACROBLK_CUR_LP_QUANT(plane,ch,tx,mx) = qp_index_lp;
                 DEBUG(" LP_QUANT for MBx=%d ch=%d is %d\n", mx, ch, MACROBLK_CUR_LP_QUANT(plane,ch,tx,mx));
@@ -188,10 +193,14 @@ int _jxr_r_TILE_LP(jxr_image_t image, struct rbitstream*str,
 int _jxr_r_TILE_HP(jxr_image_t image, struct rbitstream*str,
                    unsigned tx, unsigned ty)
 {
+    unsigned mx, my;
+    unsigned plane_idx, num_planes;
+    unsigned mb_height;
+    unsigned mb_width;
+    unsigned char s0, s1, s2, s3;
     DEBUG("START TILE_HIGHPASS at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_rbitstream_bitpos(str));
 
     /* TILE_STARTCODE == 1 */
-    unsigned char s0, s1, s2, s3;
     s0 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s1 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s2 = _jxr_rbitstream_uint8(str); /* 0x01 */
@@ -210,16 +219,15 @@ int _jxr_r_TILE_HP(jxr_image_t image, struct rbitstream*str,
     tile. This involves scanning the macroblocks, and the
     blocks within the macroblocks, generating bits as we go. */
 
-    unsigned mb_height = EXTENDED_HEIGHT_BLOCKS(image);
-    unsigned mb_width = EXTENDED_WIDTH_BLOCKS(image);
+    mb_height = EXTENDED_HEIGHT_BLOCKS(image);
+    mb_width = EXTENDED_WIDTH_BLOCKS(image);
 
     if (TILING_FLAG(image)) {
         mb_height = image->tile_row_height[ty];
         mb_width = image->tile_column_width[tx];
     }
 
-    unsigned mx, my;
-    unsigned plane_idx, num_planes = ((ALPHACHANNEL_FLAG(image)) ? 2 : 1);
+    num_planes = ((ALPHACHANNEL_FLAG(image)) ? 2 : 1);
     for (my = 0 ; my < mb_height ; my += 1) {
         _jxr_r_rotate_mb_strip(image);
 
@@ -234,6 +242,8 @@ int _jxr_r_TILE_HP(jxr_image_t image, struct rbitstream*str,
         for (plane_idx = 0; plane_idx < num_planes; plane_idx ++) {
             /* The qp_index_hp table goes only into channel 0 */
             int qp_index_hp = 0;
+            int ch;
+            int rc;
             jxr_image_t plane = (plane_idx == 0 ? image : image->alpha);
             if (plane->num_hp_qps>1) {
                 if (!plane->hp_use_lp_qp)
@@ -242,13 +252,12 @@ int _jxr_r_TILE_HP(jxr_image_t image, struct rbitstream*str,
                     qp_index_hp = MACROBLK_CUR_LP_QUANT(plane,0,tx,mx);
             }
             DEBUG(" HP_QP_INDEX for MBx=%d is %d\n", mx, qp_index_hp);
-            int ch;
             for (ch = 0 ; ch < plane->num_channels ; ch += 1) {
                 MACROBLK_CUR_HP_QUANT(plane,ch,tx,mx) = plane->hp_quant_ch[ch][qp_index_hp];
                 DEBUG(" HP_QUANT for MBx=%d ch=%d is %d\n", mx, ch, MACROBLK_CUR_HP_QUANT(plane,ch,tx,mx));
             }
 
-            int rc = _jxr_r_MB_CBP(plane, str, 0, tx, ty, mx, my);
+            rc = _jxr_r_MB_CBP(plane, str, 0, tx, ty, mx, my);
             if (rc < 0) {
                 DEBUG("r_MB_CBP returned ERROR rc=%d\n", rc);
                 return rc;
@@ -272,10 +281,16 @@ int _jxr_r_TILE_HP(jxr_image_t image, struct rbitstream*str,
 int _jxr_r_TILE_FLEXBITS(jxr_image_t image, struct rbitstream*str,
                          unsigned tx, unsigned ty)
 {
+    int mx, my;
+    int plane_idx, num_planes;
+    unsigned mb_height;
+    unsigned mb_width;
+    int use_num_channels;
+    unsigned char s0, s1, s2, s3;
+
     DEBUG("START TILE_FLEXBITS at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_rbitstream_bitpos(str));
 
     /* TILE_STARTCODE == 1 */
-    unsigned char s0, s1, s2, s3;
     s0 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s1 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s2 = _jxr_rbitstream_uint8(str); /* 0x01 */
@@ -292,7 +307,7 @@ int _jxr_r_TILE_FLEXBITS(jxr_image_t image, struct rbitstream*str,
         DEBUG(" TRIM_FLEXBITS = %u\n", image->trim_flexbits);
     }
 
-    int use_num_channels = image->num_channels;
+    use_num_channels = image->num_channels;
     if (image->use_clr_fmt == 1/*YUV420*/ || image->use_clr_fmt == 2/*YUV422*/)
         use_num_channels = 1;
 
@@ -300,16 +315,15 @@ int _jxr_r_TILE_FLEXBITS(jxr_image_t image, struct rbitstream*str,
     tile. This involves scanning the macroblocks, and the
     blocks within the macroblocks, generating bits as we go. */
 
-    unsigned mb_height = EXTENDED_HEIGHT_BLOCKS(image);
-    unsigned mb_width = EXTENDED_WIDTH_BLOCKS(image);
+    mb_height = EXTENDED_HEIGHT_BLOCKS(image);
+    mb_width = EXTENDED_WIDTH_BLOCKS(image);
 
     if (TILING_FLAG(image)) {
         mb_height = image->tile_row_height[ty];
         mb_width = image->tile_column_width[tx];
     }
 
-    int mx, my;
-    int plane_idx, num_planes = ((ALPHACHANNEL_FLAG(image)) ? 2 : 1);
+    num_planes = ((ALPHACHANNEL_FLAG(image)) ? 2 : 1);
     for (my = 0 ; my < (int) mb_height ; my += 1) {
         _jxr_r_rotate_mb_strip(image);
         if (ALPHACHANNEL_FLAG(image)) {
@@ -324,6 +338,8 @@ int _jxr_r_TILE_FLEXBITS(jxr_image_t image, struct rbitstream*str,
             jxr_image_t plane = (plane_idx == 0 ? image : image->alpha);
             int channels = (plane_idx == 0 ? use_num_channels : 1);
             int rc = _jxr_r_MB_FLEXBITS(plane, str, 0, tx, ty, mx, my);
+            int mbhp_pred_mode;
+            int idx;
             if (rc < 0) {
                 DEBUG("r_MB_FLEXBITS returned ERROR rc=%d\n", rc);
                 return rc;
@@ -332,8 +348,7 @@ int _jxr_r_TILE_FLEXBITS(jxr_image_t image, struct rbitstream*str,
             /* Now the HP values are complete, so run the propagation
             process. This involves recovering some bits of data saved
             by the HP tile. */
-            int mbhp_pred_mode = MACROBLK_CUR(plane,0,tx,mx).mbhp_pred_mode;
-            int idx;
+            mbhp_pred_mode = MACROBLK_CUR(plane,0,tx,mx).mbhp_pred_mode;
             for (idx = 0 ; idx < channels ; idx += 1) {
                 DEBUG(" MB_FLEXBITS: propagate HP predictions in MB_FLEXBITS\n");
                 _jxr_propagate_hp_predictions(plane, idx, tx, mx, mbhp_pred_mode);
@@ -355,21 +370,21 @@ int _jxr_r_TILE_FLEXBITS(jxr_image_t image, struct rbitstream*str,
 */
 int _jxr_r_TILE_FLEXBITS_ESCAPE(jxr_image_t image, unsigned tx, unsigned ty)
 {
-    DEBUG("START TILE_FLEXBITS_ESCAPE at tile=[%u %u]\n", tx, ty);
-
     int use_num_channels = image->num_channels;
-    if (image->use_clr_fmt == 1/*YUV420*/ || image->use_clr_fmt == 2/*YUV422*/)
-        use_num_channels = 1;
-
     unsigned mb_height = EXTENDED_HEIGHT_BLOCKS(image);
     unsigned mb_width = EXTENDED_WIDTH_BLOCKS(image);
+    int mx, my;
+
+    DEBUG("START TILE_FLEXBITS_ESCAPE at tile=[%u %u]\n", tx, ty);
+
+    if (image->use_clr_fmt == 1/*YUV420*/ || image->use_clr_fmt == 2/*YUV422*/)
+        use_num_channels = 1;
 
     if (TILING_FLAG(image)) {
         mb_height = image->tile_row_height[ty];
         mb_width = image->tile_column_width[tx];
     }
 
-    int mx, my;
     for (my = 0 ; my < (int) mb_height ; my += 1) {
         _jxr_r_rotate_mb_strip(image);
         image->cur_my = my;
@@ -419,22 +434,22 @@ static void backup_dclp_strip(jxr_image_t image, int tx, int ty, int my)
 
 
     int format_scale = 15;
+    int ch;
     if (image->use_clr_fmt == 2 /* YUV422 */) {
         format_scale = 7;
     } else if (image->use_clr_fmt == 1 /* YUV420 */) {
         format_scale = 3;
     }
 
-    int ch;
     for (ch = 0 ; ch < image->num_channels ; ch += 1) {
         struct macroblock_s*mb = image->mb_row_buffer[ch] + ptr;
         int count = ch==0? 15 : format_scale;
 
         for (mx = 0 ; mx < (int) image->tile_column_width[tx] ; mx += 1) {
+            int idx;
             mb[mx].data[0] = MACROBLK_CUR_DC(image,ch,tx,mx);
             DEBUG(" backup_dclp_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d, DC=0x%x, LP=",
                 tx, ty, mx, my, ch, mb[mx].data[0]);
-            int idx;
             for (idx = 0 ; idx < count ; idx += 1) {
                 mb[mx].data[idx+1] = MACROBLK_CUR_LP(image,ch,tx,mx,idx);
                 DEBUG(" 0x%x", mb[mx].data[idx+1]);
@@ -454,13 +469,13 @@ static void backup_hp_strip(jxr_image_t image, int tx, int ty, int my)
 
 
     int format_scale = 16;
+    int ch;
     if (image->use_clr_fmt == 2 /* YUV422 */) {
         format_scale = 8;
     } else if (image->use_clr_fmt == 1 /* YUV420 */) {
         format_scale = 4;
     }
 
-    int ch;
     for (ch = 0 ; ch < image->num_channels ; ch += 1) {
         struct macroblock_s*mb = image->mb_row_buffer[ch] + ptr;
         int count = ch==0? 16 : format_scale;
@@ -475,10 +490,10 @@ static void backup_hp_strip(jxr_image_t image, int tx, int ty, int my)
             }
         }
         for (mx = 0 ; mx < (int) image->tile_column_width[tx] ; mx += 1) {
+            int blk;
             mb[mx].data[0] = MACROBLK_CUR_DC(image,ch,tx,mx);
             DEBUG(" backup_hp_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d\n",
                 tx, ty, mx, my, ch);
-            int blk;
             for (blk = 0 ; blk < count ; blk += 1) {
                 int idx;
                 for (idx = 0 ; idx < 15 ; idx += 1)
@@ -514,6 +529,7 @@ static void recover_dclp_strip(jxr_image_t image, int tx, int ty, int my)
     int use_my = my + image->tile_row_position[ty];
     int use_mx = image->tile_column_position[tx];
     int ptr = use_my*EXTENDED_WIDTH_BLOCKS(image) + use_mx;
+    int ch;
 
     int format_scale = 15;
     if (image->use_clr_fmt == 2 /* YUV422 */) {
@@ -522,16 +538,15 @@ static void recover_dclp_strip(jxr_image_t image, int tx, int ty, int my)
         format_scale = 3;
     }
 
-    int ch;
     for (ch = 0 ; ch < image->num_channels ; ch += 1) {
         struct macroblock_s*mb = image->mb_row_buffer[ch] + ptr;
         int count = ch==0? 15 : format_scale;
 
         for (mx = 0 ; mx < (int) image->tile_column_width[tx] ; mx += 1) {
+            int idx;
             MACROBLK_CUR_DC(image,ch,tx,mx) = mb[mx].data[0];
             DEBUG(" recover_dclp_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d, DC=0x%0x8, LP=\n",
                 tx, ty, mx, my, ch, mb[mx].data[0]);
-            int idx;
             for (idx = 0 ; idx < count ; idx += 1) {
                 MACROBLK_CUR_LP(image,ch,tx,mx,idx) = mb[mx].data[idx+1];
                 DEBUG(" 0x%x", mb[mx].data[idx+1]);
@@ -550,13 +565,13 @@ static void recover_dclphp_strip(jxr_image_t image, int tx, int ty, int my)
     int ptr = use_my*EXTENDED_WIDTH_BLOCKS(image) + use_mx;
 
     int format_scale = 16;
+    int ch;
     if (image->use_clr_fmt == 2 /* YUV422 */) {
         format_scale = 8;
     } else if (image->use_clr_fmt == 1 /* YUV420 */) {
         format_scale = 4;
     }
 
-    int ch;
     for (ch = 0 ; ch < image->num_channels ; ch += 1) {
         struct macroblock_s*mb = image->mb_row_buffer[ch] + ptr;
         int count = ch==0? 16 : format_scale;
@@ -571,10 +586,10 @@ static void recover_dclphp_strip(jxr_image_t image, int tx, int ty, int my)
             }
         }
         for (mx = 0 ; mx < (int) image->tile_column_width[tx] ; mx += 1) {
+            int blk;
             MACROBLK_CUR_DC(image,ch,tx,mx) = mb[mx].data[0];
             DEBUG(" recover_dclphp_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d, DC=0x%0x8, LP=\n",
                 tx, ty, mx, my, ch, mb[mx].data[0]);
-            int blk;
             for (blk = 1 ; blk < count ; blk += 1) {
                 MACROBLK_CUR_LP(image,ch,tx,mx,blk-1) = mb[mx].data[blk];
                 DEBUG(" 0x%x", mb[mx].data[blk]);
@@ -601,10 +616,10 @@ void _jxr_frequency_mode_render(jxr_image_t image)
     for (ty = 0 ; ty < (int) image->tile_rows ; ty += 1) {
         int my;
         for (my = 0 ; my < (int) image->tile_row_height[ty] ; my += 1) {
+            int tx;
             if (ALPHACHANNEL_FLAG(image))
                 _jxr_rflush_mb_strip(image->alpha, -1, -1, my + image->alpha->tile_row_position[ty]);
             _jxr_rflush_mb_strip(image, -1, -1, my + image->tile_row_position[ty]);
-            int tx;
             for (tx = 0 ; tx < (int) image->tile_columns ; tx += 1) {
                 if (ALPHACHANNEL_FLAG(image))
                     recover_dclphp_strip(image->alpha, tx, ty, my);

@@ -50,9 +50,14 @@
 void _jxr_w_TILE_DC(jxr_image_t image, struct wbitstream*str,
                           unsigned tx, unsigned ty)
 {
+    unsigned tile_idx;
+    unsigned mx, my;
+    unsigned mb_height;
+    unsigned mb_width;
+    uint8_t bands_present;
     DEBUG("START TILE_DC at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_wbitstream_bitpos(str));
 
-    uint8_t bands_present = image->bands_present_of_primary;
+    bands_present = image->bands_present_of_primary;
 
     /* TILE_STARTCODE == 1 */
     DEBUG(" DC_TILE_STARTCODE at bitpos=%zu\n", _jxr_wbitstream_bitpos(str));
@@ -73,8 +78,8 @@ void _jxr_w_TILE_DC(jxr_image_t image, struct wbitstream*str,
     tile. This involves scanning the macroblocks, and the
     blocks within the macroblocks, generating bits as we go. */
 
-    unsigned mb_height = EXTENDED_HEIGHT_BLOCKS(image);
-    unsigned mb_width = EXTENDED_WIDTH_BLOCKS(image);
+    mb_height = EXTENDED_HEIGHT_BLOCKS(image);
+    mb_width = EXTENDED_WIDTH_BLOCKS(image);
 
     if (TILING_FLAG(image)) {
         mb_height = image->tile_row_height[ty];
@@ -82,7 +87,6 @@ void _jxr_w_TILE_DC(jxr_image_t image, struct wbitstream*str,
     }
 
     DEBUG(" TILE_DC at [%d %d] is %u x %u MBs\n", tx, ty, mb_width, mb_height);
-    unsigned mx, my;
     for (my = 0 ; my < mb_height ; my += 1) {
 
         _jxr_wflush_mb_strip(image, tx, ty, my, 1);
@@ -96,7 +100,7 @@ void _jxr_w_TILE_DC(jxr_image_t image, struct wbitstream*str,
         }
     }
 
-    unsigned tile_idx = ty * image->tile_columns + tx;
+    tile_idx = ty * image->tile_columns + tx;
 
     _jxr_wbitstream_syncbyte(str);
     _jxr_wbitstream_flush(str);
@@ -106,9 +110,14 @@ void _jxr_w_TILE_DC(jxr_image_t image, struct wbitstream*str,
 void _jxr_w_TILE_LP(jxr_image_t image, struct wbitstream*str,
                          unsigned tx, unsigned ty)
 {
+    unsigned tile_idx;
+    unsigned mx, my;
+    unsigned mb_height;
+    unsigned mb_width;
+    uint8_t bands_present;
     DEBUG("START TILE_LP at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_wbitstream_bitpos(str));
 
-    uint8_t bands_present = image->bands_present_of_primary;
+    bands_present = image->bands_present_of_primary;
 
     if (bands_present < 3 /* LOWPASS */) {
         /* TILE_STARTCODE == 1 */
@@ -128,8 +137,8 @@ void _jxr_w_TILE_LP(jxr_image_t image, struct wbitstream*str,
     tile. This involves scanning the macroblocks, and the
     blocks within the macroblocks, generating bits as we go. */
 
-    unsigned mb_height = EXTENDED_HEIGHT_BLOCKS(image);
-    unsigned mb_width = EXTENDED_WIDTH_BLOCKS(image);
+    mb_height = EXTENDED_HEIGHT_BLOCKS(image);
+    mb_width = EXTENDED_WIDTH_BLOCKS(image);
 
     if (TILING_FLAG(image)) {
         mb_height = image->tile_row_height[ty];
@@ -137,7 +146,6 @@ void _jxr_w_TILE_LP(jxr_image_t image, struct wbitstream*str,
     }
 
     DEBUG(" TILE_LP at [%d %d] is %u x %u MBs\n", tx, ty, mb_width, mb_height);
-    unsigned mx, my;
     for (my = 0 ; my < mb_height ; my += 1) {
 
         _jxr_wflush_mb_strip(image, tx, ty, my, 0);
@@ -159,7 +167,7 @@ void _jxr_w_TILE_LP(jxr_image_t image, struct wbitstream*str,
         }
     }
 
-    unsigned tile_idx = ty * image->tile_columns + tx;
+    tile_idx = ty * image->tile_columns + tx;
 
     _jxr_wbitstream_syncbyte(str);
     _jxr_wbitstream_flush(str);
@@ -169,12 +177,18 @@ void _jxr_w_TILE_LP(jxr_image_t image, struct wbitstream*str,
 void _jxr_w_TILE_HP_FLEX(jxr_image_t image, struct wbitstream*str,
                          unsigned tx, unsigned ty)
 {
+    unsigned tile_idx;
+    uint8_t bands_present ;
+    struct wbitstream strFP;
+    FILE*fdFP;
+    unsigned mx, my;
+    unsigned mb_height;
+    unsigned mb_width;
     DEBUG("START TILE_HP_FLEX at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_wbitstream_bitpos(str));
 
-    uint8_t bands_present = image->bands_present_of_primary;
+    bands_present = image->bands_present_of_primary;
 
-    struct wbitstream strFP;
-    FILE*fdFP = fopen("fp.tmp", "wb");
+    fdFP = fopen("fp.tmp", "wb");
     _jxr_wbitstream_initialize(&strFP, fdFP);
 
     if (bands_present < 2 /* HIGHPASS */) {
@@ -208,8 +222,8 @@ void _jxr_w_TILE_HP_FLEX(jxr_image_t image, struct wbitstream*str,
     tile. This involves scanning the macroblocks, and the
     blocks within the macroblocks, generating bits as we go. */
 
-    unsigned mb_height = EXTENDED_HEIGHT_BLOCKS(image);
-    unsigned mb_width = EXTENDED_WIDTH_BLOCKS(image);
+    mb_height = EXTENDED_HEIGHT_BLOCKS(image);
+    mb_width = EXTENDED_WIDTH_BLOCKS(image);
 
     if (TILING_FLAG(image)) {
         mb_height = image->tile_row_height[ty];
@@ -217,7 +231,6 @@ void _jxr_w_TILE_HP_FLEX(jxr_image_t image, struct wbitstream*str,
     }
 
     DEBUG(" TILE_HP_FLEX at [%d %d] is %u x %u MBs\n", tx, ty, mb_width, mb_height);
-    unsigned mx, my;
     for (my = 0 ; my < mb_height ; my += 1) {
 
         _jxr_wflush_mb_strip(image, tx, ty, my, 0);
@@ -252,7 +265,7 @@ void _jxr_w_TILE_HP_FLEX(jxr_image_t image, struct wbitstream*str,
         }
     }
 
-    unsigned tile_idx = ty * image->tile_columns + tx;
+    tile_idx = ty * image->tile_columns + tx;
 
     _jxr_wbitstream_syncbyte(str);
     _jxr_wbitstream_flush(str);
@@ -264,9 +277,9 @@ void _jxr_w_TILE_HP_FLEX(jxr_image_t image, struct wbitstream*str,
     if (bands_present == 0 /* ALL */) {
         struct rbitstream strFPRead;
         FILE*fdFPRead = fopen("fp.tmp", "rb");
+        size_t idx;
         _jxr_rbitstream_initialize(&strFPRead, fdFPRead);
 
-        size_t idx;
         for (idx = 0; idx < strFP.write_count; idx++) {
             _jxr_wbitstream_uint8(str, _jxr_rbitstream_uint8(&strFPRead));
         }

@@ -50,8 +50,8 @@
 
 void _jxr_clear_strip_cur(jxr_image_t image)
 {
-    assert(image->num_channels > 0);
     int ch;
+    assert(image->num_channels > 0);
     for (ch = 0 ; ch < image->num_channels ; ch += 1) {
         unsigned idx;
         for (idx = 0 ; idx < EXTENDED_WIDTH_BLOCKS(image) ; idx += 1) {

@@ -98,6 +98,10 @@ int jxr_read_image_bitstream(jxr_image_t image, FILE*fd)
 {
     int rc;
     struct rbitstream bits;
+    uint8_t input_profile;
+    uint8_t input_level;
+    int64_t subsequent_bytes;
+
     _jxr_rbitstream_initialize(&bits, fd);
 
     /* Image header for the image overall */
@@ -132,14 +136,14 @@ int jxr_read_image_bitstream(jxr_image_t image, FILE*fd)
     rc = r_INDEX_TABLE(image, &bits);
 
     /* Store command line input values for later comparison */
-    uint8_t input_profile = image->profile_idc;
-    uint8_t input_level = image->level_idc;
+    input_profile = image->profile_idc;
+    input_level = image->level_idc;
 
     /* inferred value as per Appendix B */
     image->profile_idc = 111; 
     image->level_idc = 255;
 
-    int64_t subsequent_bytes = _jxr_rbitstream_intVLW(&bits);
+    subsequent_bytes = _jxr_rbitstream_intVLW(&bits);
     DEBUG(" Subsequent bytes with %ld bytes\n", subsequent_bytes);
     if (subsequent_bytes > 0) {
         int64_t read_bytes = r_PROFILE_LEVEL_INFO(image,&bits);
@@ -207,6 +211,8 @@ static int r_image_header(jxr_image_t image, struct rbitstream*str)
     unsigned idx;
 
     unsigned version_info, version_sub_info;
+    unsigned hei_sum;
+    unsigned wid_sum = 0;
 
     /* Read and test the GDI_SIGNATURE magic number */
     for (idx = 0 ; idx < 8 ; idx += 1) {
@@ -300,7 +306,7 @@ static int r_image_header(jxr_image_t image, struct rbitstream*str)
     image->tile_row_height = (unsigned*)calloc(2*image->tile_rows, sizeof(unsigned));
     image->tile_row_position = image->tile_row_height + image->tile_rows;
 
-    unsigned wid_sum = 0;
+    wid_sum = 0;
     if (SHORT_HEADER_FLAG(image)) {
         for (idx = 0 ; idx < image->tile_columns-1 ; idx += 1) {
             image->tile_column_width[idx] = _jxr_rbitstream_uint8(str);
@@ -317,7 +323,7 @@ static int r_image_header(jxr_image_t image, struct rbitstream*str)
     }
     /* calculate final tile width after windowing parameters are found */
 
-    unsigned hei_sum = 0;
+    hei_sum = 0;
     if (SHORT_HEADER_FLAG(image)) {
         for (idx = 0 ; idx < image->tile_rows-1 ; idx += 1) {
             image->tile_row_height[idx] = _jxr_rbitstream_uint8(str);
@@ -394,6 +400,8 @@ static int r_image_header(jxr_image_t image, struct rbitstream*str)
 static int r_image_plane_header(jxr_image_t image, struct rbitstream*str, int alpha)
 {
     size_t save_count = str->read_count;
+    uint16_t num_components;
+
     DEBUG("START IMAGE_PLANE_HEADER (bitpos=%zu)\n", _jxr_rbitstream_bitpos(str));
 
     /* NOTE: The "use_clr_fmt" is the encoded color format, and is
@@ -414,7 +422,6 @@ static int r_image_plane_header(jxr_image_t image, struct rbitstream*str, int al
     DEBUG(" SCALED_FLAG = %s\n", image->scaled_flag? "true" : "false");
     DEBUG(" BANDS_PRESENT = %d\n", image->bands_present);
 
-    uint16_t num_components;
     switch (image->use_clr_fmt) {
         case 0: /* YONLY */
             image->num_channels = 1;
@@ -692,14 +699,14 @@ static int r_INDEX_TABLE(jxr_image_t image, struct rbitstream*str)
 {
     DEBUG("INDEX_TABLE START bitpos=%zu\n", _jxr_rbitstream_bitpos(str));
     if (INDEXTABLE_PRESENT_FLAG(image)) {
+        int num_index_table_entries;
+        int idx;
+
         uint8_t s0 = _jxr_rbitstream_uint8(str);
         uint8_t s1 = _jxr_rbitstream_uint8(str);
         DEBUG(" STARTCODE = 0x%02x 0x%02x\n", s0, s1);
         if (s0 != 0x00 || s1 != 0x01)
             return JXR_EC_ERROR;
-
-        int num_index_table_entries;
-        int idx;
 
         if (FREQUENCY_MODE_CODESTREAM_FLAG(image) == 0 /* SPATIALMODE */) {
             num_index_table_entries = image->tile_rows * image->tile_columns;
@@ -754,7 +761,7 @@ static int64_t r_PROFILE_LEVEL_INFO(jxr_image_t image, struct rbitstream*str)
 
 static int r_TILE(jxr_image_t image, struct rbitstream*str)
 {
-int rc = 0;
+    int rc = 0;
     image->tile_quant = (struct jxr_tile_qp *) calloc(image->tile_columns*image->tile_rows, sizeof(*(image->tile_quant)));
     assert(image->tile_quant);
 
@@ -774,6 +781,7 @@ int rc = 0;
         }
     } else { /* FREQUENCYMODE */
 
+        unsigned tx, ty, tt;
         int num_bands = 0;
         switch (image->bands_present) {
             case 0: /* ALL */
@@ -792,7 +800,6 @@ int rc = 0;
                 break;
         }
 
-        unsigned tx, ty, tt;
         for (ty = 0, tt=0 ; ty < image->tile_rows ; ty += 1) {
             for (tx = 0 ; tx < image->tile_columns ; tx += 1) {
                 _jxr_rbitstream_seek(str, image->tile_index_table[tt*num_bands+0]);
@@ -916,14 +923,15 @@ void _jxr_r_TILE_HEADER_HIGHPASS(jxr_image_t image, struct rbitstream*str,
 unsigned _jxr_DECODE_QP_INDEX(struct rbitstream*str, unsigned index_count)
 {
     static const int bits_per_qp_index[] = {0,0,1,1,2,2,3,3, 3,3,4,4,4,4,4,4,4};
-    assert(index_count <= 16);
 
     int nonzero_flag = _jxr_rbitstream_uint1(str);
+    int bits_count;
 
+    assert(index_count <= 16);
     if (nonzero_flag == 0)
         return 0;
 
-    int bits_count = bits_per_qp_index[index_count];
+    bits_count = bits_per_qp_index[index_count];
     /* DECODE_QP_INDEX is onny called if the index count is
     greater then 1. Therefore, the bits_count here must be more
     then zero. */
@@ -961,12 +969,13 @@ void _jxr_r_MB_DC(jxr_image_t image, struct rbitstream*str,
             int m = (idx == 0)? 0 : 1;
             int model_bits = image->model_dc.bits[m];
             unsigned is_dc_ch = _jxr_rbitstream_uint1(str);
+            uint32_t dc_val;
             DEBUG(" MB_DC: IS_DC_CH=%u, model_bits=%d\n",
                 is_dc_ch, model_bits);
             if (is_dc_ch) {
                 lap_mean[m] += 1;
             }
-            uint32_t dc_val = r_DEC_DC(image, str, tx, ty, mx, my,
+            dc_val = r_DEC_DC(image, str, tx, ty, mx, my,
                 model_bits, 0/*chroma_flag==FALSE*/,
                 is_dc_ch);
 
@@ -975,28 +984,32 @@ void _jxr_r_MB_DC(jxr_image_t image, struct rbitstream*str,
                 tx, ty, mx, my, (int32_t)dc_val, dc_val);
         }
     } else {
-        assert(image->num_channels == 3);
         int is_dc_yuv = get_is_dc_yuv(str);
         int model_bits_y = image->model_dc.bits[0];
         int model_bits_uv = image->model_dc.bits[1];
+        uint32_t dc_val_v;
+        uint32_t dc_val_u;
+        uint32_t dc_val_y;
+
+        assert(image->num_channels == 3);
         DEBUG(" MB_DC: IS_DC_YUV=0x%x, model_bits[0]=%d, model_bits[1]=%d\n",
             is_dc_yuv, model_bits_y, model_bits_uv);
 
         if (is_dc_yuv&4)
             lap_mean[0] += 1;
-        uint32_t dc_val_y = r_DEC_DC(image, str, tx, ty, mx, my,
+        dc_val_y = r_DEC_DC(image, str, tx, ty, mx, my,
             model_bits_y, 0/*chroma_flag==FALSE*/,
             is_dc_yuv&4);
 
         if (is_dc_yuv&2)
             lap_mean[1] += 1;
-        uint32_t dc_val_u = r_DEC_DC(image, str, tx, ty, mx, my,
+        dc_val_u = r_DEC_DC(image, str, tx, ty, mx, my,
             model_bits_uv, 1/*chroma_flag==TRUE*/,
             is_dc_yuv&2);
 
         if (is_dc_yuv&1)
             lap_mean[1] += 1;
-        uint32_t dc_val_v = r_DEC_DC(image, str, tx, ty, mx, my,
+        dc_val_v = r_DEC_DC(image, str, tx, ty, mx, my,
             model_bits_uv, 1/*chroma_flag==TRUE*/,
             is_dc_yuv&1);
 
@@ -1041,8 +1054,9 @@ void _jxr_r_MB_DC(jxr_image_t image, struct rbitstream*str,
 */
 static void AdaptiveLPScan(jxr_image_t image, int lpinput_n[], int i, int value)
 {
+    int k;
     assert(i > 0);
-    int k = image->lopass_scanorder[i-1];
+    k = image->lopass_scanorder[i-1];
     lpinput_n[k] = value;
     image->lopass_scantotals[i-1] += 1;
     if (i>1 && image->lopass_scantotals[i-1] > image->lopass_scantotals[i-2]) {
@@ -1061,6 +1075,11 @@ void _jxr_r_MB_LP(jxr_image_t image, struct rbitstream*str,
     static const int transpose422[8] = {0, 2, 1, 3, 4, 6, 5, 7};
     int LPInput[8][16];
     int idx;
+    int model_bits;
+    int lap_mean[2];
+    int ndx;
+    int full_planes;
+    int cbplp;
 
     for (idx = 0 ; idx < 8 ; idx += 1) {
         int k;
@@ -1068,7 +1087,6 @@ void _jxr_r_MB_LP(jxr_image_t image, struct rbitstream*str,
             LPInput[idx][k] = 0;
     }
 
-    int lap_mean[2];
     lap_mean[0] = 0;
     lap_mean[1] = 0;
 
@@ -1087,7 +1105,7 @@ void _jxr_r_MB_LP(jxr_image_t image, struct rbitstream*str,
         _jxr_ResetTotalsAdaptiveScanLP(image);
     }
 
-    int full_planes = image->num_channels;
+    full_planes = image->num_channels;
     if (image->use_clr_fmt==2 || image->use_clr_fmt==1)
         full_planes = 2;
 
@@ -1096,12 +1114,14 @@ void _jxr_r_MB_LP(jxr_image_t image, struct rbitstream*str,
     with a bit for each channel. So for example, YONLY, which
     has 1 channel, has a 1-bit cbplp. */
 
-    int cbplp = 0;
+    cbplp = 0;
     /* if CLR_FMT is YUV420, YUV422 or YUV444... */
     if (image->use_clr_fmt==1 || image->use_clr_fmt==2 || image->use_clr_fmt==3) {
+        int max = full_planes * 4 - 5;
+
         DEBUG(" MB_LP: Calculate YUV CBP using CountZeroCBPLP=%d, CountMaxCBPLP=%d bitpos=%zu\n",
             image->count_zero_CBPLP, image->count_max_CBPLP, _jxr_rbitstream_bitpos(str));
-        int max = full_planes * 4 - 5;
+
         if (image->count_zero_CBPLP <= 0 || image->count_max_CBPLP < 0) {
             int cbp_yuv_lp1 = dec_cbp_yuv_lp1(image, str);
             if (image->count_max_CBPLP < image->count_zero_CBPLP)
@@ -1125,7 +1145,6 @@ void _jxr_r_MB_LP(jxr_image_t image, struct rbitstream*str,
 
     DEBUG(" MB_LP: cbplp = 0x%x (full_planes=%u)\n", cbplp, full_planes);
 
-    int ndx;
     for (ndx = 0 ; ndx < full_planes ; ndx += 1) {
         int idx;
         const int chroma_flag = ndx>0? 1 : 0;
@@ -1138,10 +1157,10 @@ void _jxr_r_MB_LP(jxr_image_t image, struct rbitstream*str,
             have parsing to do. Decode the (15) coeffs and
             arrange them for use in the MB. */
             int RLCoeffs[32] = {0};
+            int location = 1;
             for (idx = 0 ; idx < 32 ; idx += 1)
                 RLCoeffs[idx] = 0;
 
-            int location = 1;
             /* if CLR_FMT is YUV420 or YUV422 */
             if (image->use_clr_fmt==1/*YUV420*/ && chroma_flag)
                 location = 10;
@@ -1157,18 +1176,21 @@ void _jxr_r_MB_LP(jxr_image_t image, struct rbitstream*str,
                 static const int remap_arr[] = {4, 1, 2, 3, 5, 6, 7};
                 int temp[14];
                 int idx;
+                int k, i;
+                int count_chr;
+                int remap_off;
                 for (idx = 0 ; idx < 14 ; idx += 1)
                     temp[idx] = 0;
 
-                int remap_off = 0;
+                remap_off = 0;
                 if (image->use_clr_fmt==1/*YUV420*/)
                     remap_off = 1;
 
-                int count_chr = 14;
+                count_chr = 14;
                 if (image->use_clr_fmt==1/*YUV420*/)
                     count_chr = 6;
 
-                int k, i = 0;
+                i = 0;
                 for (k = 0; k < num_nonzero; k+=1) {
                     i += RLCoeffs[k*2+0];
                     temp[i] = RLCoeffs[k*2+1];
@@ -1250,7 +1272,7 @@ void _jxr_r_MB_LP(jxr_image_t image, struct rbitstream*str,
         }
 #endif
 
-        int model_bits = image->model_lp.bits[chroma_flag];
+        model_bits = image->model_lp.bits[chroma_flag];
         lap_mean[chroma_flag] += num_nonzero;
         DEBUG(" MB_LP: start refine, model_bits=%d, bitpos=%zu\n",
             model_bits, _jxr_rbitstream_bitpos(str));
@@ -1364,6 +1386,9 @@ int _jxr_r_MB_CBP(jxr_image_t image, struct rbitstream*str, int alpha_flag,
 
         int diff_cbp[MAX_CHANNELS];
         int idx;
+        int chan;
+        int channels;
+
         for (idx = 0 ; idx < MAX_CHANNELS ; idx += 1)
             diff_cbp[idx] = 0;
 
@@ -1378,7 +1403,7 @@ int _jxr_r_MB_CBP(jxr_image_t image, struct rbitstream*str, int alpha_flag,
 
         /* "Channels" is not quite the same as "planes". For the
         purposes of CBP parsing, a color image has 1 channel. */
-        int channels = 1;
+        channels = 1;
         if (image->use_clr_fmt==4/*YUVK*/ || image->use_clr_fmt==6/*NCOMPONENT*/)
             channels = image->num_channels;
 
@@ -1386,20 +1411,22 @@ int _jxr_r_MB_CBP(jxr_image_t image, struct rbitstream*str, int alpha_flag,
         but the encoded difference values. These are then added to
         the predicted values that are calculated later to make the
         actual MBCBP values. */
-        int chan;
         for (chan = 0 ; chan < channels ; chan += 1) {
-            DEBUG(" MB_CBP: Decode CBP for channel %d bitpos=%zu\n", chan, _jxr_rbitstream_bitpos(str));
             struct adaptive_vlc_s*vlc = image->vlc_table + DecNumCBP;
             int num_cbp = get_num_cbp(str, vlc);
+            int blk;
+            static const int Num_CBP_Delta[5] = {0, -1, 0, 1, 1};
+            int cbp;
+
+            DEBUG(" MB_CBP: Decode CBP for channel %d bitpos=%zu\n", chan, _jxr_rbitstream_bitpos(str));
 
             assert(vlc->deltatable == 0 && num_cbp < 5);
-            static const int Num_CBP_Delta[5] = {0, -1, 0, 1, 1};
             vlc->discriminant += Num_CBP_Delta[num_cbp];
 
             DEBUG(" MB_CBP: Got num_cbp=%d, start REFINE_CBP at bitpos=%zu\n",
                 num_cbp, _jxr_rbitstream_bitpos(str));
 
-            int cbp = r_REFINE_CBP(str, num_cbp);
+            cbp = r_REFINE_CBP(str, num_cbp);
 
             DEBUG(" MB_CBP: Refined CBP=0x%x (num=%d)\n", cbp, num_cbp);
 
@@ -1411,8 +1438,12 @@ int _jxr_r_MB_CBP(jxr_image_t image, struct rbitstream*str, int alpha_flag,
             the ? nibbles are yet to be resolved by the loop
             below. */
 
-            int blk;
             for (blk = 0 ; blk < 4 ; blk += 1) {
+                int code;
+                int val;
+                int blkcbp;
+                int num_blkcbp;
+
                 if ( (cbp & (1<<blk)) == 0 )
                     continue;
 
@@ -1420,26 +1451,26 @@ int _jxr_r_MB_CBP(jxr_image_t image, struct rbitstream*str, int alpha_flag,
                 DEBUG(" MB_CBP: block=%d Use DecNumBlkCBP table=%d, discriminant=%d, bitpos=%zu\n",
                     blk, vlc->table, vlc->discriminant, _jxr_rbitstream_bitpos(str));
 
-                int num_blkcbp = get_num_blkcbp(image, str, vlc);
+                num_blkcbp = get_num_blkcbp(image, str, vlc);
 
                 assert(vlc->deltatable == 0);
 
                 if (image->use_clr_fmt==0 || image->use_clr_fmt==4 || image->use_clr_fmt==6) {
-                    assert(num_blkcbp < 5);
                     static const int Num_BLKCBP_Delta5[5] = {0, -1, 0, 1, 1};
+                    assert(num_blkcbp < 5);
                     vlc->discriminant += Num_BLKCBP_Delta5[num_blkcbp];
                 } else {
-                    assert(num_blkcbp < 9);
                     static const int Num_BLKCBP_Delta9[9] = {2, 2, 1, 1, -1, -2, -2, -2, -3};
+                    assert(num_blkcbp < 9);
                     vlc->discriminant += Num_BLKCBP_Delta9[num_blkcbp];
                 }
 
                 DEBUG(" MB_CBP: NUM_BLKCBP=%d, discriminant becomes=%d, \n",
                     num_blkcbp, vlc->discriminant);
 
-                int val = num_blkcbp + 1;
+                val = num_blkcbp + 1;
 
-                int blkcbp = 0;
+                blkcbp = 0;
 
                 /* Should only be true if this is chroma data. */
                 if (val >= 6) {
@@ -1454,7 +1485,7 @@ int _jxr_r_MB_CBP(jxr_image_t image, struct rbitstream*str, int alpha_flag,
                 }
                 assert(val < 6);
 
-                int code = off_table[val];
+                code = off_table[val];
                 if (flc_table[val]) {
                     code += _jxr_rbitstream_uintN(str, flc_table[val]);
                 }
@@ -1584,6 +1615,12 @@ int _jxr_r_MB_HP(jxr_image_t image, struct rbitstream*str,
                  unsigned tx, unsigned ty,
                  unsigned mx, unsigned my)
 {
+    int use_num_channels;
+    int idx;
+    int lap_mean[2];
+    int flex_flag;
+    int mbhp_pred_mode;
+
     DEBUG(" MB_HP tile=[%u %u] mb=[%u %u] bitpos=%zu\n",
         tx, ty, mx, my, _jxr_rbitstream_bitpos(str));
 
@@ -1602,41 +1639,44 @@ int _jxr_r_MB_HP(jxr_image_t image, struct rbitstream*str,
     /* FLEXBITS are embedded in the HP data if there are FLEXBITS
     present in the bitstream AND we are in SPATIAL (not
     FREQUENCY) mode. */
-    int flex_flag = 1;
+    flex_flag = 1;
     if (image->bands_present == 1) /* NOFLEXBITS */
         flex_flag = 0;
     if (FREQUENCY_MODE_CODESTREAM_FLAG(image) != 0) /* FREQUENCY_MODE */
         flex_flag = 0;
 
-    int lap_mean[2];
     lap_mean[0] = 0;
     lap_mean[1] = 0;
 
     /* Calculate the MB HP prediction mode. This uses only local
     information, namely the LP values. */
-    int mbhp_pred_mode = r_calculate_mbhp_mode(image, tx, mx);
+    mbhp_pred_mode = r_calculate_mbhp_mode(image, tx, mx);
     assert(mbhp_pred_mode < 4);
 
-    int idx;
     for (idx = 0 ; idx < image->num_channels; idx += 1) {
         int chroma_flag = idx>0? 1 : 0;
         int nblocks = 4;
+        unsigned model_bits;
+        int cbp;
+        int block;
+
         if (chroma_flag && image->use_clr_fmt==1/*YUV420*/)
             nblocks = 1;
         else if (chroma_flag && image->use_clr_fmt==2/*YUV422*/)
             nblocks = 2;
 
-        unsigned model_bits = image->model_hp.bits[chroma_flag];
-        int cbp = MACROBLK_CUR_HPCBP(image, idx, tx, mx);
-        int block;
+        model_bits = image->model_hp.bits[chroma_flag];
+        cbp = MACROBLK_CUR_HPCBP(image, idx, tx, mx);
+
         DEBUG(" MB_HP channel=%d, cbp=0x%x, model_bits=%u MBHPMode=%d\n",
             idx, cbp, model_bits, mbhp_pred_mode);
         for (block=0 ; block<(nblocks*4) ; block += 1, cbp >>= 1) {
             int bpos = block;
+            int num_nonzero;
             /* Only remap the Y plane of YUV42X data. */
             if (nblocks == 4)
                 bpos = _jxr_hp_scan_map[block];
-            int num_nonzero = r_DECODE_BLOCK_ADAPTIVE(image, str, tx, mx,
+            num_nonzero = r_DECODE_BLOCK_ADAPTIVE(image, str, tx, mx,
                 cbp&1, chroma_flag,
                 idx, bpos, mbhp_pred_mode,
                 model_bits);
@@ -1652,7 +1692,7 @@ int _jxr_r_MB_HP(jxr_image_t image, struct rbitstream*str,
 
     }
 
-    int use_num_channels = image->num_channels;
+    use_num_channels = image->num_channels;
     if (image->use_clr_fmt == 1/*YUV420*/ || image->use_clr_fmt == 2/*YUV422*/)
         use_num_channels = 1;
 
@@ -1698,13 +1738,15 @@ int _jxr_r_MB_FLEXBITS(jxr_image_t image, struct rbitstream*str,
     for (idx = 0 ; idx < image->num_channels ; idx += 1) {
         int chroma_flag = idx>0? 1 : 0;
         int nblocks = 4;
+        unsigned model_bits;
+        int block;
         if (chroma_flag && image->use_clr_fmt==1/*YUV420*/)
             nblocks = 1;
         else if (chroma_flag && image->use_clr_fmt==2/*YUV422*/)
             nblocks = 2;
 
-        unsigned model_bits = MACROBLK_CUR(image,0,tx,mx).hp_model_bits[chroma_flag];
-        int block;
+        model_bits = MACROBLK_CUR(image,0,tx,mx).hp_model_bits[chroma_flag];
+
         for (block=0 ; block<(nblocks*4) ; block += 1) {
             int bpos = block;
             /* Only remap the Y plane of YUV42X data. */
@@ -1737,8 +1779,8 @@ static int32_t r_DEC_DC(jxr_image_t image, struct rbitstream*str,
     /* If there are model_bits, then read them literally from the
     bitstream and use them as the LSB bits for the DC value. */
     if (model_bits > 0) {
-        DEBUG(" DEC_DC: Collect %u model_bits\n", model_bits);
         int idx;
+        DEBUG(" DEC_DC: Collect %u model_bits\n", model_bits);
         for (idx = 0 ; idx < model_bits ; idx += 1) {
             dc_val <<= 1;
             dc_val |= _jxr_rbitstream_uint1(str);
@@ -1771,26 +1813,27 @@ static uint32_t r_DECODE_ABS_LEVEL(jxr_image_t image, struct rbitstream*str,
                                    int band, int chroma_flag)
 {
     int vlc_select = _jxr_vlc_select(band, chroma_flag);
-    DEBUG(" Use vlc_select = %s (table=%d) to decode level index, bitpos=%zu\n",
-        _jxr_vlc_index_name(vlc_select), image->vlc_table[vlc_select].table,
-        _jxr_rbitstream_bitpos(str));
 
     const int remap[] = {2, 3, 4, 6, 10, 14};
     const int fixed_len[] = {0, 0, 1, 2, 2, 2};
+    uint32_t level;
 
     int abslevel_index = dec_abslevel_index(image, str, vlc_select);
+    DEBUG(" Use vlc_select = %s (table=%d) to decode level index, bitpos=%zu\n",
+        _jxr_vlc_index_name(vlc_select), image->vlc_table[vlc_select].table,
+        _jxr_rbitstream_bitpos(str));
     DEBUG(" ABSLEVEL_INDEX = %d\n", abslevel_index);
 
     image->vlc_table[vlc_select].discriminant += _jxr_abslevel_index_delta[abslevel_index];
 
-    uint32_t level;
     if (abslevel_index < 6) {
         int fixed = fixed_len[abslevel_index];
-        level = remap[abslevel_index];
         uint32_t level_ref = 0;
+
+        level = remap[abslevel_index];
         if (fixed > 0) {
-            assert(fixed <= 32);
             int idx;
+            assert(fixed <= 32);
             for (idx = 0 ; idx < fixed ; idx += 1) {
                 level_ref <<= 1;
                 level_ref |= _jxr_rbitstream_uint1(str);
@@ -1801,6 +1844,9 @@ static uint32_t r_DECODE_ABS_LEVEL(jxr_image_t image, struct rbitstream*str,
             level, fixed, level_ref);
     } else {
         int fixed = 4 + _jxr_rbitstream_uint4(str);
+        uint32_t level_ref;
+        int idx;
+
         if (fixed == 19) {
             fixed += _jxr_rbitstream_uint2(str);
             if (fixed == 22) {
@@ -1810,8 +1856,7 @@ static uint32_t r_DECODE_ABS_LEVEL(jxr_image_t image, struct rbitstream*str,
 
         assert(fixed <= 32);
 
-        uint32_t level_ref = 0;
-        int idx;
+        level_ref = 0;
         for (idx = 0 ; idx < fixed ; idx += 1) {
             level_ref <<= 1;
             level_ref |= _jxr_rbitstream_uint1(str);
@@ -1833,8 +1878,6 @@ static uint32_t r_DECODE_ABS_LEVEL(jxr_image_t image, struct rbitstream*str,
 int r_DECODE_BLOCK(jxr_image_t image, struct rbitstream*str,
                    int chroma_flag, int coeff[32], int band, int location)
 {
-    DEBUG(" DECODE_BLOCK chroma_flag=%d, band=%d, location=%d bitpos=%zu\n",
-        chroma_flag, band, location, _jxr_rbitstream_bitpos(str));
     int num_nz = 1;
 
     /* The index is a bit field that encodes three values:
@@ -1845,19 +1888,22 @@ int r_DECODE_BLOCK(jxr_image_t image, struct rbitstream*str,
     * 2 there are zero coefficients before the next.
     */
     int index = r_DECODE_FIRST_INDEX(image, str, chroma_flag, band);
-
-    DEBUG(" first index=0x%x\n", index);
-
     int sr = index & 1;
     int srn = index >> 2;
     int context = sr & srn;
+    int sign_flag;
+
+    DEBUG(" DECODE_BLOCK chroma_flag=%d, band=%d, location=%d bitpos=%zu\n",
+        chroma_flag, band, location, _jxr_rbitstream_bitpos(str));
+    DEBUG(" first index=0x%x\n", index);
+
 
     /* Decode the first coefficient. Note that the chroma_flag
     argument to DECODE_ABS_LEVEL really is supposed to be the
     context. It is "chroma" for DC values (band==0) and context
     for LP and HP values. This DECODE_BLOCK is only called for
     LP and HP blocks. */
-    int sign_flag = _jxr_rbitstream_uint1(str);
+    sign_flag = _jxr_rbitstream_uint1(str);
     if (index&2)
         coeff[1] = r_DECODE_ABS_LEVEL(image, str, band, context);
     else
@@ -2096,6 +2142,19 @@ static int r_DECODE_FIRST_INDEX(jxr_image_t image, struct rbitstream*str,
         5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5
     };
 
+    typedef int deltatable_t[12];
+    const deltatable_t FirstIndexDelta[4] = {
+        { 1, 1, 1, 1, 1, 0, 0,-1, 2, 1, 0, 0 },
+        { 2, 2,-1,-1,-1, 0,-2,-1, 0, 0,-2,-1 },
+        {-1, 1, 0, 2, 0, 0, 0, 0,-2, 0, 1, 1 },
+        { 0, 1, 0, 1,-2, 0,-1,-1,-2,-1,-2,-2 }
+    };
+
+    int delta_table;
+    int delta2table;
+    int vlc_table;
+    int first_index;
+
     abs_level_vlc_index_t vlc_select = (abs_level_vlc_index_t)0;
 
     switch (band) {
@@ -2116,8 +2175,8 @@ static int r_DECODE_FIRST_INDEX(jxr_image_t image, struct rbitstream*str,
             break;
     }
 
-    int vlc_table = image->vlc_table[vlc_select].table;
-    int first_index = 0;
+    vlc_table = image->vlc_table[vlc_select].table;
+    first_index = 0;
 
     switch (vlc_table) {
         case 0:
@@ -2153,16 +2212,9 @@ static int r_DECODE_FIRST_INDEX(jxr_image_t image, struct rbitstream*str,
             break;
     }
 
-    int delta_table = image->vlc_table[vlc_select].deltatable;
-    int delta2table = image->vlc_table[vlc_select].delta2table;
+    delta_table = image->vlc_table[vlc_select].deltatable;
+    delta2table = image->vlc_table[vlc_select].delta2table;
 
-    typedef int deltatable_t[12];
-    const deltatable_t FirstIndexDelta[4] = {
-        { 1, 1, 1, 1, 1, 0, 0,-1, 2, 1, 0, 0 },
-        { 2, 2,-1,-1,-1, 0,-2,-1, 0, 0,-2,-1 },
-        {-1, 1, 0, 2, 0, 0, 0, 0,-2, 0, 1, 1 },
-        { 0, 1, 0, 1,-2, 0,-1,-1,-2,-1,-2,-2 }
-    };
     assert(delta_table < 4);
     assert(delta2table < 4);
     assert(first_index < 12);
@@ -2181,6 +2233,18 @@ static int r_DECODE_INDEX(jxr_image_t image, struct rbitstream*str,
                           int location, int chroma_flag, int band, int context)
 {
     int vlc_select = 0;
+    int vlc_delta;
+    int vlc_delta2;
+    int vlc_table;
+    int index;
+
+    typedef int deltatable_t[6];
+    const deltatable_t Index1Delta[3] = {
+        {-1, 1, 1, 1, 0, 1 },
+        {-2, 0, 0, 2, 0, 0 },
+        {-1,-1, 0, 1,-2, 0 }
+    };
+
 
     switch (band) {
         case 1: /* LP */
@@ -2200,7 +2264,7 @@ static int r_DECODE_INDEX(jxr_image_t image, struct rbitstream*str,
             break;
     }
 
-    int index = 0;
+    index = 0;
 
     /* If location > 15, then there can't possibly be coefficients
     after the next, so the encoding will only encode the low
@@ -2237,7 +2301,7 @@ static int r_DECODE_INDEX(jxr_image_t image, struct rbitstream*str,
 
     /* For more general cases, use adaptive table selections to
     decode the full set of index possibilities. */
-    int vlc_table = image->vlc_table[vlc_select].table;
+    vlc_table = image->vlc_table[vlc_select].table;
     DEBUG(" DECODE_INDEX: vlc_select = %s, vlc_table = %d chroma_flag=%d\n",
         _jxr_vlc_index_name(vlc_select), vlc_table, chroma_flag);
 
@@ -2353,15 +2417,8 @@ static int r_DECODE_INDEX(jxr_image_t image, struct rbitstream*str,
             assert(0);
     }
 
-    int vlc_delta = image->vlc_table[vlc_select].deltatable;
-    int vlc_delta2 = image->vlc_table[vlc_select].delta2table;
-
-    typedef int deltatable_t[6];
-    const deltatable_t Index1Delta[3] = {
-        {-1, 1, 1, 1, 0, 1 },
-        {-2, 0, 0, 2, 0, 0 },
-        {-1,-1, 0, 1,-2, 0 }
-    };
+    vlc_delta = image->vlc_table[vlc_select].deltatable;
+    vlc_delta2 = image->vlc_table[vlc_select].delta2table;
 
     image->vlc_table[vlc_select].discriminant += Index1Delta[vlc_delta][index];
     image->vlc_table[vlc_select].discriminant2+= Index1Delta[vlc_delta2][index];
@@ -2416,6 +2473,9 @@ static int r_DECODE_RUN(jxr_image_t image, struct rbitstream*str, int max_run)
         static const int RunFixedLen[15] = {0,0,1,1,3, 0,0,1,1,2, 0,0,0,0,1 };
         static const int Remap[15] = {1,2,3,5,7, 1,2,3,5,7, 1,2,3,4,5 };
         int run_index = 0;
+        int fixed;
+        int index;
+
         if (_jxr_rbitstream_uint1(str))
             run_index = 0; /* 1 */
         else if (_jxr_rbitstream_uint1(str))
@@ -2430,11 +2490,11 @@ static int r_DECODE_RUN(jxr_image_t image, struct rbitstream*str, int max_run)
         DEBUG(" DECODE_RUN max_run=%d, RUN_INDEX=%d\n", max_run, run_index);
 
         assert(max_run < 15);
-        int index = run_index + 5*RunBin[max_run];
+        index = run_index + 5*RunBin[max_run];
         DEBUG(" DECODE_RUN index=%d\n", index);
 
         assert(run_index < 15);
-        int fixed = RunFixedLen[index];
+        fixed = RunFixedLen[index];
         DEBUG(" DECODE_RUN fixed=%d (bitpos=%zu)\n",
             fixed, _jxr_rbitstream_bitpos(str));
 

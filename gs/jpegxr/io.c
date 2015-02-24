@@ -71,9 +71,10 @@ void _jxr_rbitstream_mark(struct rbitstream*str)
 
 void _jxr_rbitstream_seek(struct rbitstream*str, uint64_t off)
 {
+    int rc;
     assert(str->bits_avail == 0);
     /* NOTE: Should be using fseek64? */
-    int rc = fseek(str->fd, str->mark_stream_position + (long)off, SEEK_SET);
+    rc = fseek(str->fd, str->mark_stream_position + (long)off, SEEK_SET);
     str->read_count = (size_t) off;
     assert(rc >= 0);
 }
@@ -288,8 +289,9 @@ int64_t _jxr_rbitstream_intVLW(struct rbitstream*str)
         val = _jxr_rbitstream_uint32(str);
 
     } else if (val == 0xfc) {
+        uint64_t tmp;
         val = _jxr_rbitstream_uint32(str);
-        uint64_t tmp = _jxr_rbitstream_uint32(str);
+        tmp = _jxr_rbitstream_uint32(str);
         val = (val << (uint64_t)32) + tmp;
 
     } else {
@@ -378,6 +380,8 @@ void _jxr_wbitstream_uint6(struct wbitstream*str, uint8_t val)
 
 void _jxr_wbitstream_uint8(struct wbitstream*str, uint8_t val)
 {
+    int idx;
+
     if (str->bits_ready == 8)
         put_byte(str);
 
@@ -386,8 +390,6 @@ void _jxr_wbitstream_uint8(struct wbitstream*str, uint8_t val)
         str->byte = val;
         return;
     }
-
-    int idx;
     for (idx = 0 ; idx < 8 ; idx += 1) {
         _jxr_wbitstream_uint1(str, val & (0x80 >> idx));
     }

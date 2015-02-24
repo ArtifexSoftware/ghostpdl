@@ -53,6 +53,10 @@
 void _jxr_w_TILE_SPATIAL(jxr_image_t image, struct wbitstream*str,
                          unsigned tx, unsigned ty)
 {
+    unsigned mx, my;
+    unsigned plane_idx, num_planes;
+    unsigned mb_height;
+    unsigned mb_width;
     DEBUG("START TILE_SPATIAL at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_wbitstream_bitpos(str));
 
     /* TILE_STARTCODE == 1 */
@@ -94,8 +98,8 @@ void _jxr_w_TILE_SPATIAL(jxr_image_t image, struct wbitstream*str,
     tile. This involves scanning the macroblocks, and the
     blocks within the macroblocks, generating bits as we go. */
 
-    unsigned mb_height = EXTENDED_HEIGHT_BLOCKS(image);
-    unsigned mb_width = EXTENDED_WIDTH_BLOCKS(image);
+    mb_height = EXTENDED_HEIGHT_BLOCKS(image);
+    mb_width = EXTENDED_WIDTH_BLOCKS(image);
 
     if (TILING_FLAG(image)) {
         mb_height = image->tile_row_height[ty];
@@ -103,8 +107,7 @@ void _jxr_w_TILE_SPATIAL(jxr_image_t image, struct wbitstream*str,
     }
 
     DEBUG(" TILE_SPATIAL at [%d %d] is %u x %u MBs\n", tx, ty, mb_width, mb_height);
-    unsigned mx, my;
-    unsigned plane_idx, num_planes = ((ALPHACHANNEL_FLAG(image)) ? 2 : 1);
+    num_planes = ((ALPHACHANNEL_FLAG(image)) ? 2 : 1);
 
     for (my = 0 ; my < mb_height ; my += 1) {
 

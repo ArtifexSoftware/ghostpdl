@@ -59,10 +59,14 @@ int _jxr_r_TILE_SPATIAL(jxr_image_t image, struct rbitstream*str,
                         unsigned tx, unsigned ty)
 {
     int rc = 0;
+    unsigned mx, my, plane_idx;
+    unsigned char s0, s1, s2, s3;
+    unsigned mb_height;
+    unsigned mb_width;
+
     DEBUG("START TILE_SPATIAL at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_rbitstream_bitpos(str));
 
     /* TILE_STARTCODE == 1 */
-    unsigned char s0, s1, s2, s3;
     s0 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s1 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s2 = _jxr_rbitstream_uint8(str); /* 0x01 */
@@ -105,15 +109,14 @@ int _jxr_r_TILE_SPATIAL(jxr_image_t image, struct rbitstream*str,
     tile. This involves scanning the macroblocks, and the
     blocks within the macroblocks, generating bits as we go. */
 
-    unsigned mb_height = EXTENDED_HEIGHT_BLOCKS(image);
-    unsigned mb_width = EXTENDED_WIDTH_BLOCKS(image);
+    mb_height = EXTENDED_HEIGHT_BLOCKS(image);
+    mb_width = EXTENDED_WIDTH_BLOCKS(image);
 
     if (TILING_FLAG(image)) {
         mb_height = image->tile_row_height[ty];
         mb_width = image->tile_column_width[tx];
     }
 
-    unsigned mx, my, plane_idx;
     for (my = 0 ; my < mb_height ; my += 1) {
         if (ALPHACHANNEL_FLAG(image))
             _jxr_rflush_mb_strip(image->alpha, tx, ty, my);

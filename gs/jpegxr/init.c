@@ -67,6 +67,7 @@ static void clear_vlc_tables(jxr_image_t image)
 static struct jxr_image* __make_jxr(void)
 {
     struct jxr_image*image = (struct jxr_image*) calloc(1, sizeof(struct jxr_image));
+    int idx;
     image->user_flags = 0;
     image->width1 = 0;
     image->height1 = 0;
@@ -83,7 +84,6 @@ static struct jxr_image* __make_jxr(void)
 
     clear_vlc_tables(image);
 
-    int idx;
     for (idx = 0 ; idx < MAX_CHANNELS ; idx += 1) {
         image->strip[idx].up4 = 0;
         image->strip[idx].up3 = 0;
@@ -104,6 +104,8 @@ static void make_mb_row_buffer(jxr_image_t image, unsigned use_height)
     size_t block_count = EXTENDED_WIDTH_BLOCKS(image) * use_height;
     int*data, *pred_dclp;
     size_t idx;
+    int format_scale;
+    int ch;
 
     image->mb_row_buffer[0] = (struct macroblock_s*) calloc(block_count, sizeof(struct macroblock_s));
     data = (int*) calloc(block_count*256, sizeof(int));
@@ -118,14 +120,13 @@ static void make_mb_row_buffer(jxr_image_t image, unsigned use_height)
         image->mb_row_buffer[0][idx].pred_dclp = pred_dclp + 7*idx;
     }
 
-    int format_scale = 256;
+    format_scale = 256;
     if (image->use_clr_fmt == 2 /* YUV422 */) {
         format_scale = 16 + 8*15;
     } else if (image->use_clr_fmt == 1 /* YUV420 */) {
         format_scale = 16 + 4*15;
     }
 
-    int ch;
     for (ch = 1 ; ch < image->num_channels ; ch += 1) {
         image->mb_row_buffer[ch] = (struct macroblock_s*) calloc(block_count, sizeof(struct macroblock_s));
         data = (int*) calloc(block_count*format_scale, sizeof(int));
@@ -242,6 +243,8 @@ void _jxr_make_mbstore(jxr_image_t image, int up4_flag)
             /* This means that the tiling flag is used */
             unsigned max_tile_height = 0;
             unsigned idx;
+            int format_scale;
+            int ch;
             for (idx = 0 ; idx < image->tile_rows ; idx += 1) {
                 if (image->tile_row_height[idx] > max_tile_height)
                     max_tile_height = image->tile_row_height[idx];
@@ -252,14 +255,13 @@ void _jxr_make_mbstore(jxr_image_t image, int up4_flag)
             /* Save enough context MBs for 4 rows of
             macroblocks. */
 
-            int format_scale = 256;
+            format_scale = 256;
             if (image->use_clr_fmt == 2 /* YUV422 */) {
                 format_scale = 16 + 8*15;
             } else if (image->use_clr_fmt == 1 /* YUV420 */) {
                 format_scale = 16 + 4*15;
             }
 
-            int ch;
             for (ch = 0 ; ch < image->num_channels ; ch += 1) {
                 int count = (ch==0)? 256 : format_scale;
                 image->mb_row_context[ch] = (struct macroblock_s*)
@@ -295,10 +297,12 @@ jxr_image_t jxr_create_input(void)
 
 jxr_image_t jxr_create_image(int width, int height, unsigned char * windowing)
 {
+    struct jxr_image*image = __make_jxr();
+
     if (width == 0 || height == 0)
         return 0;
 
-    struct jxr_image*image = __make_jxr();
+    image = __make_jxr();
 
     if (windowing[0] == 1) {
         assert(((width+windowing[2]+windowing[4]) & 0x0f) == 0);

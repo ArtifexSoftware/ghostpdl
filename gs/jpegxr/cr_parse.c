@@ -71,6 +71,7 @@ int jxr_read_image_container(jxr_container_t container, FILE*fd)
 {
     unsigned char buf[4];
     size_t rc;
+    uint32_t ifd_off;
 
     rc = fread(buf, 1, 4, fd);
     if (rc < 4)
@@ -84,17 +85,18 @@ int jxr_read_image_container(jxr_container_t container, FILE*fd)
     rc = fread(buf, 1, 4, fd);
     if (rc != 4) return JXR_EC_IO;
 
-    uint32_t ifd_off = (buf[3] << 24) + (buf[2]<<16) + (buf[1]<<8) + (buf[0]<<0);
+    ifd_off = (buf[3] << 24) + (buf[2]<<16) + (buf[1]<<8) + (buf[0]<<0);
     container->image_count = 0;
 
     while (ifd_off != 0) {
+        uint32_t ifd_next;
+
         container->image_count += 1;
         container->table_cnt = (unsigned*)realloc(container->table_cnt,
             container->image_count * sizeof(unsigned));
         container->table = (struct ifd_table**) realloc(container->table,
             container->image_count * sizeof(struct ifd_table*));
 
-        uint32_t ifd_next;
         if (ifd_off & 0x1) return JXR_EC_IO;
         rc = fseek(fd, ifd_off, SEEK_SET);
         rc = read_ifd(container, fd, container->image_count-1, &ifd_next);
@@ -113,12 +115,16 @@ int jxrc_image_count(jxr_container_t container)
 
 int jxrc_document_name(jxr_container_t container, int image, char ** string)
 {
+
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0x010d)
             break;
@@ -148,12 +154,15 @@ int jxrc_document_name(jxr_container_t container, int image, char ** string)
 
 int jxrc_image_description(jxr_container_t container, int image, char ** string)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0x010e)
             break;
@@ -183,12 +192,15 @@ int jxrc_image_description(jxr_container_t container, int image, char ** string)
 
 int jxrc_equipment_make(jxr_container_t container, int image, char ** string)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0x010f)
             break;
@@ -218,12 +230,15 @@ int jxrc_equipment_make(jxr_container_t container, int image, char ** string)
 
 int jxrc_equipment_model(jxr_container_t container, int image, char ** string)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0x0110)
             break;
@@ -253,12 +268,15 @@ int jxrc_equipment_model(jxr_container_t container, int image, char ** string)
 
 int jxrc_page_name(jxr_container_t container, int image, char ** string)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0x011d)
             break;
@@ -288,12 +306,15 @@ int jxrc_page_name(jxr_container_t container, int image, char ** string)
 
 int jxrc_page_number(jxr_container_t container, int image, unsigned short * value)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0x0129)
             break;
@@ -312,12 +333,15 @@ int jxrc_page_number(jxr_container_t container, int image, unsigned short * valu
 
 int jxrc_software_name_version(jxr_container_t container, int image, char ** string)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0x0131)
             break;
@@ -347,12 +371,15 @@ int jxrc_software_name_version(jxr_container_t container, int image, char ** str
 
 int jxrc_date_time(jxr_container_t container, int image, char ** string)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    unsigned i;
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0x0132)
             break;
@@ -367,7 +394,6 @@ int jxrc_date_time(jxr_container_t container, int image, char ** string)
     assert(string[0] != 0);
     assert(ifd[idx].cnt == 20);
 
-    unsigned i;
     for (i = 0 ; i < ifd[idx].cnt ; i++)
         string[0][i] = ifd[idx].value_.p_sbyte[i];
 
@@ -386,12 +412,15 @@ int jxrc_date_time(jxr_container_t container, int image, char ** string)
 
 int jxrc_artist_name(jxr_container_t container, int image, char ** string)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0x013b)
             break;
@@ -421,12 +450,15 @@ int jxrc_artist_name(jxr_container_t container, int image, char ** string)
 
 int jxrc_host_computer(jxr_container_t container, int image, char ** string)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0x013c)
             break;
@@ -456,12 +488,15 @@ int jxrc_host_computer(jxr_container_t container, int image, char ** string)
 
 int jxrc_copyright_notice(jxr_container_t container, int image, char ** string)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0x8298)
             break;
@@ -491,12 +526,16 @@ int jxrc_copyright_notice(jxr_container_t container, int image, char ** string)
 
 unsigned short jxrc_color_space(jxr_container_t container, int image)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    unsigned short value;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xa001)
             break;
@@ -507,7 +546,7 @@ unsigned short jxrc_color_space(jxr_container_t container, int image)
     assert(ifd[idx].cnt == 1);
     assert(ifd[idx].type == 3);
 
-    unsigned short value = ifd[idx].value_.v_short[0];
+    value = ifd[idx].value_.v_short[0];
     if (value != 0x0001)
         value = 0xffff;
     if (value == 0x0001) {
@@ -584,14 +623,17 @@ unsigned short jxrc_color_space(jxr_container_t container, int image)
 
 jxrc_t_pixelFormat jxrc_image_pixelformat(jxr_container_t container, int imagenum)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+
     unsigned char guid[16];
     int i;
     assert(imagenum < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[imagenum];
-    struct ifd_table*ifd = container->table[imagenum];
+    ifd_cnt = container->table_cnt[imagenum];
+    ifd = container->table[imagenum];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xbc01)
             break;
@@ -616,12 +658,16 @@ jxrc_t_pixelFormat jxrc_image_pixelformat(jxr_container_t container, int imagenu
 
 unsigned long jxrc_spatial_xfrm_primary(jxr_container_t container, int image)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    unsigned long spatial_xfrm;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xbc02)
             break;
@@ -631,7 +677,6 @@ unsigned long jxrc_spatial_xfrm_primary(jxr_container_t container, int image)
     if (ifd[idx].tag != 0xbc02) return 0;
     assert(ifd[idx].cnt == 1);
 
-    unsigned long spatial_xfrm;
     switch (ifd[idx].type) {
         case 4: /* ULONG */
             spatial_xfrm = (unsigned long) ifd[idx].value_.v_long;
@@ -654,12 +699,16 @@ unsigned long jxrc_spatial_xfrm_primary(jxr_container_t container, int image)
 
 unsigned long jxrc_image_type(jxr_container_t container, int image)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    unsigned long image_type;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xbc04)
             break;
@@ -670,20 +719,24 @@ unsigned long jxrc_image_type(jxr_container_t container, int image)
     assert(ifd[idx].cnt == 1);
     assert(ifd[idx].type == 4);
 
-    unsigned long image_type = ifd[idx].value_.v_long;
+    image_type = ifd[idx].value_.v_long;
     image_type &= 0x00000003;
     return image_type;
 }
 
 int jxrc_ptm_color_info(jxr_container_t container, int image, unsigned char * buf)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    uint32_t i;
+
     assert(image < container->image_count);
     assert(buf);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xbc05)
             break;
@@ -694,24 +747,30 @@ int jxrc_ptm_color_info(jxr_container_t container, int image, unsigned char * bu
     assert(ifd[idx].cnt == 4);
     assert(ifd[idx].type == 1);
 
-    uint32_t i;
     for (i = 0 ; i < 4 ; i += 1)
         buf[i] = ifd[idx].value_.v_byte[i];
 
     return 0;
 }
 
-int jxrc_profile_level_container(jxr_container_t container, int image, unsigned char * profile, unsigned char * level) {
+int jxrc_profile_level_container(jxr_container_t container, int image, unsigned char * profile, unsigned char * level)
+{
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    unsigned char * data;
+    uint32_t count_remaining;
+    uint8_t last, last_flag;
+
     assert(image < container->image_count);
     assert(profile);
     assert(level);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned char * data = 0;
+    data = 0;
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xbc06)
             break;
@@ -729,8 +788,7 @@ int jxrc_profile_level_container(jxr_container_t container, int image, unsigned 
         data = (unsigned char *) (ifd[idx].value_.p_sbyte);
     }
 
-    uint32_t count_remaining = ifd[idx].cnt;
-    uint8_t last, last_flag;
+    count_remaining = ifd[idx].cnt;
     for (last = 0 ; last == 0 ; last = last_flag) {
         profile[0] = data[0];
         level[0] = data[1];
@@ -745,12 +803,16 @@ int jxrc_profile_level_container(jxr_container_t container, int image, unsigned 
 
 unsigned long jxrc_image_width(jxr_container_t container, int image)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    unsigned long width;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xbc80)
             break;
@@ -760,7 +822,6 @@ unsigned long jxrc_image_width(jxr_container_t container, int image)
     assert(ifd[idx].tag == 0xbc80);
     assert(ifd[idx].cnt == 1);
 
-    unsigned long width;
     switch (ifd[idx].type) {
         case 4: /* ULONG */
             width = (unsigned long) ifd[idx].value_.v_long;
@@ -781,12 +842,16 @@ unsigned long jxrc_image_width(jxr_container_t container, int image)
 
 unsigned long jxrc_image_height(jxr_container_t container, int image)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    unsigned long height;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xbc81)
             break;
@@ -796,7 +861,6 @@ unsigned long jxrc_image_height(jxr_container_t container, int image)
     assert(ifd[idx].tag == 0xbc81);
     assert(ifd[idx].cnt == 1);
 
-    unsigned long height;
     switch (ifd[idx].type) {
         case 4: /* ULONG */
             height = (unsigned long) ifd[idx].value_.v_long;
@@ -817,12 +881,16 @@ unsigned long jxrc_image_height(jxr_container_t container, int image)
 
 float jxrc_width_resolution(jxr_container_t container, int image)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    float width_resolution;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xbc82)
             break;
@@ -833,7 +901,7 @@ float jxrc_width_resolution(jxr_container_t container, int image)
     assert(ifd[idx].cnt == 1);
     assert(ifd[idx].type == 11);
 
-    float width_resolution = ifd[idx].value_.v_float;
+    width_resolution = ifd[idx].value_.v_float;
     if (width_resolution == 0.0)
         width_resolution = 96.0;
     return width_resolution;
@@ -841,12 +909,16 @@ float jxrc_width_resolution(jxr_container_t container, int image)
 
 float jxrc_height_resolution(jxr_container_t container, int image)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    float height_resolution;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xbc83)
             break;
@@ -857,7 +929,7 @@ float jxrc_height_resolution(jxr_container_t container, int image)
     assert(ifd[idx].cnt == 1);
     assert(ifd[idx].type == 11);
 
-    float height_resolution = ifd[idx].value_.v_float;
+    height_resolution = ifd[idx].value_.v_float;
     if (height_resolution == 0.0)
         height_resolution = 96.0;
     return height_resolution;
@@ -865,12 +937,16 @@ float jxrc_height_resolution(jxr_container_t container, int image)
 
 unsigned long jxrc_image_offset(jxr_container_t container, int image)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    unsigned long pos;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xbcc0)
             break;
@@ -880,7 +956,6 @@ unsigned long jxrc_image_offset(jxr_container_t container, int image)
     assert(ifd[idx].tag == 0xbcc0);
     assert(ifd[idx].cnt == 1);
 
-    unsigned long pos;
     switch (ifd[idx].type) {
         case 4: /* ULONG */
             pos = (unsigned long) ifd[idx].value_.v_long;
@@ -901,12 +976,16 @@ unsigned long jxrc_image_offset(jxr_container_t container, int image)
 
 unsigned long jxrc_image_bytecount(jxr_container_t container, int image)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    unsigned long pos;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xbcc1)
             break;
@@ -916,7 +995,6 @@ unsigned long jxrc_image_bytecount(jxr_container_t container, int image)
     assert(ifd[idx].tag == 0xbcc1);
     assert(ifd[idx].cnt == 1);
 
-    unsigned long pos;
     switch (ifd[idx].type) {
         case 4: /* ULONG */
             pos = (unsigned long) ifd[idx].value_.v_long;
@@ -937,12 +1015,16 @@ unsigned long jxrc_image_bytecount(jxr_container_t container, int image)
 
 unsigned long jxrc_alpha_offset(jxr_container_t container, int image)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    unsigned long pos;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xBCC2)
             break;
@@ -952,7 +1034,6 @@ unsigned long jxrc_alpha_offset(jxr_container_t container, int image)
     if (ifd[idx].tag != 0xbcc2) return 0;
     assert(ifd[idx].cnt == 1);
 
-    unsigned long pos;
     switch (ifd[idx].type) {
         case 4: /* ULONG */
             pos = (unsigned long) ifd[idx].value_.v_long;
@@ -973,12 +1054,16 @@ unsigned long jxrc_alpha_offset(jxr_container_t container, int image)
 
 unsigned long jxrc_alpha_bytecount(jxr_container_t container, int image)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    unsigned long pos;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xbcc3)
             break;
@@ -989,7 +1074,6 @@ unsigned long jxrc_alpha_bytecount(jxr_container_t container, int image)
     if (ifd[idx].tag != 0xbcc3) return 0;
     assert(ifd[idx].cnt == 1);
 
-    unsigned long pos;
     switch (ifd[idx].type) {
         case 4: /* ULONG */
             pos = (unsigned long) ifd[idx].value_.v_long;
@@ -1010,12 +1094,15 @@ unsigned long jxrc_alpha_bytecount(jxr_container_t container, int image)
 
 unsigned char jxrc_image_band_presence(jxr_container_t container, int image)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xbcc4)
             break;
@@ -1032,12 +1119,15 @@ unsigned char jxrc_image_band_presence(jxr_container_t container, int image)
 
 unsigned char jxrc_alpha_band_presence(jxr_container_t container, int image)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xbcc5)
             break;
@@ -1054,12 +1144,17 @@ unsigned char jxrc_alpha_band_presence(jxr_container_t container, int image)
 
 int jxrc_padding_data(jxr_container_t container, int image)
 {
+    unsigned ifd_cnt;
+    struct ifd_table*ifd;
+    unsigned idx;
+    unsigned char * data;
+    unsigned i;
+
     assert(image < container->image_count);
 
-    unsigned ifd_cnt = container->table_cnt[image];
-    struct ifd_table*ifd = container->table[image];
+    ifd_cnt = container->table_cnt[image];
+    ifd = container->table[image];
 
-    unsigned idx;
     for (idx = 0 ; idx < ifd_cnt ; idx += 1) {
         if (ifd[idx].tag == 0xea1c)
             break;
@@ -1070,7 +1165,6 @@ int jxrc_padding_data(jxr_container_t container, int image)
     assert(ifd[idx].type == 7);
     assert(ifd[idx].cnt > 1);
 
-    unsigned char * data;
     if (ifd[idx].cnt <= 4)
         data = (unsigned char *) ifd[idx].value_.v_sbyte;
     else
@@ -1078,7 +1172,6 @@ int jxrc_padding_data(jxr_container_t container, int image)
 
     assert(data[0] == 0x1c);
     assert(data[1] == 0xea);
-    unsigned i;
 
     return 0;
 }
@@ -1095,22 +1188,24 @@ uint32_t bytes4_to_off(uint8_t*bp)
 
 static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32_t*ifd_next)
 {
-    *ifd_next = 0;
-
     unsigned char buf[16];
     size_t rc;
     int idx;
     int ifd_tag_prev = 0;
     int alpha_tag_check = 0;
     uint32_t ifd_off;
+    struct ifd_table*cur;
+    uint16_t entry_count;
+
+    *ifd_next = 0;
 
     rc = fread(buf, 1, 2, fd);
     if (rc != 2) return -1;
 
-    uint16_t entry_count = (buf[1]<<8) + (buf[0]<<0);
+    entry_count = (buf[1]<<8) + (buf[0]<<0);
     container->table_cnt[image_number] = entry_count;
 
-    struct ifd_table*cur = (struct ifd_table*)calloc(entry_count, sizeof(struct ifd_table));
+    cur = (struct ifd_table*)calloc(entry_count, sizeof(struct ifd_table));
     assert(cur != 0);
 
     container->table[image_number] = cur;
@@ -1120,20 +1215,24 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
     through the types later and interpret the values more
     precisely. */
     for (idx = 0 ; idx < entry_count ; idx += 1) {
+        uint16_t ifd_tag;
+        uint16_t ifd_type;
+        uint32_t ifd_cnt;
+
         rc = fread(buf, 1, 12, fd);
         assert(rc == 12);
 
-        uint16_t ifd_tag = (buf[1]<<8) + (buf[0]<<0);
+        ifd_tag = (buf[1]<<8) + (buf[0]<<0);
         if (ifd_tag == 0xbcc2)
             alpha_tag_check += 1;
         if (ifd_tag == 0xbcc3)
             alpha_tag_check += 2;
         if (ifd_tag == 0xbcc5)
             alpha_tag_check += 4;
-        uint16_t ifd_type = (buf[3]<<8) + (buf[2]<<0);
+        ifd_type = (buf[3]<<8) + (buf[2]<<0);
         if (ifd_type == 7)
             assert (ifd_tag == 0x8773 || ifd_tag == 0xea1c);
-        uint32_t ifd_cnt = (buf[7]<<24) + (buf[6]<<16) + (buf[5]<<8) + buf[4];
+        ifd_cnt = (buf[7]<<24) + (buf[6]<<16) + (buf[5]<<8) + buf[4];
 
         assert(ifd_tag > ifd_tag_prev);
         ifd_tag_prev = ifd_tag;
@@ -1169,9 +1268,11 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
                 cur[idx].value_.p_byte = (uint8_t*)malloc(cur[idx].cnt);
                 fread(cur[idx].value_.p_byte, 1, cur[idx].cnt, fd);
 #if defined(DETAILED_DEBUG)
-                int bb;
-                for (bb = 0 ; bb < cur[idx].cnt ; bb += 1)
-                    DEBUG("%02x", cur[idx].value_.p_byte[bb]);
+                {
+                  int bb;
+                  for (bb = 0 ; bb < cur[idx].cnt ; bb += 1)
+                      DEBUG("%02x", cur[idx].value_.p_byte[bb]);
+                }
 #endif
                 if (cur[idx].type == 2) {
                     int cc;
@@ -1198,6 +1299,8 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
                 DEBUG("Container %d: tag 0x%04x SHORT %u SHORT %u\n", image_number,
                     cur[idx].tag, cur[idx].value_.v_short[0], cur[idx].value_.v_short[1]);
             } else {
+                uint16_t cdx;
+
                 ifd_off = bytes4_to_off(cur[idx].value_.v_byte);
                 assert((ifd_off & 1) == 0);
                 fseek(fd, ifd_off, SEEK_SET);
@@ -1205,7 +1308,6 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
 
                 DEBUG("Container %d: tag 0x%04x SHORT\n", image_number,
                     cur[idx].tag);
-                uint16_t cdx;
                 for (cdx = 0 ; cdx < cur[idx].cnt ; cdx += 1) {
                     uint8_t buf[2];
                     fread(buf, 1, 2, fd);
@@ -1224,6 +1326,8 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
                 DEBUG("Container %d: tag 0x%04x LONG %u\n", image_number,
                     cur[idx].tag, cur[idx].value_.v_long);
             } else {
+                uint32_t cdx;
+
                 ifd_off = bytes4_to_off(cur[idx].value_.v_byte);
                 assert((ifd_off & 1) == 0);
                 fseek(fd, ifd_off, SEEK_SET);
@@ -1231,7 +1335,6 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
 
                 DEBUG("Container %d: tag 0x%04x LONG\n", image_number,
                     cur[idx].tag);
-                uint32_t cdx;
                 for (cdx = 0 ; cdx < cur[idx].cnt ; cdx += 1) {
                     uint8_t buf[4];
                     fread(buf, 1, 4, fd);
@@ -1245,6 +1348,9 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
         case 5: /* URATIONAL */
         case 10: /* SRATIONAL */
         case 12: /* DOUBLE */
+          {
+            uint64_t cdx;
+
             /* Always offset */
             ifd_off = bytes4_to_off(cur[idx].value_.v_byte);
             assert((ifd_off & 1) == 0);
@@ -1253,7 +1359,6 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
 
             DEBUG("Container %d: tag 0x%04x LONG\n", image_number,
                 cur[idx].tag);
-            uint64_t cdx;
             for (cdx = 0 ; cdx < cur[idx].cnt ; cdx += 1) {
                 uint8_t buf[4];
                 fread(buf, 1, 4, fd);
@@ -1263,6 +1368,7 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
                 DEBUG(" %u", cur[idx].value_.p_rational[cdx]);
             }
             DEBUG("\n");
+          }
             break;
 
         default:
