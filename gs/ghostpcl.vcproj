@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="ghostscript"
-	ProjectGUID="{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}"
-	RootNamespace="ghostscript"
+	Name="ghostpcl"
+	ProjectGUID="{ED35CF95-DAA1-45B3-9206-599F4170F198}"
+	RootNamespace="ghostpcl"
 	Keyword="MakeFileProj"
 	>
 	<Platforms>
@@ -26,10 +26,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= pcldebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= pcldebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= debugclean"
-				Output="$(ProjectDir)\debugbin\gswin32c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -46,10 +46,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= pcldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= pcldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean"
-				Output="$(ProjectDir)\debugbin\gswin64c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN64;_DEBUG;DEBUG=1;TDEBUG=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -66,10 +66,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= pcl &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= pcl &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean"
-				Output="$(ProjectDir)\bin\gswin32c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -86,10 +86,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= pcl &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= pcl &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean"
-				Output="$(ProjectDir)\bin\gswin64c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -109,7 +109,7 @@
 				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc"
 				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= profileclean"
-				Output="$(ProjectDir)\profbin\gswin32c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;DEBUG=0;TDEBUG=0;DEBUGSYM=1;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -126,10 +126,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= pcldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= pcldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean"
-				Output="$(ProjectDir)\profbin\gswin64c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN64;_DEBUG;DEBUG=1;TDEBUG=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -149,7 +149,7 @@
 				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc"
 				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean"
-				Output="$(ProjectDir)\membin\gswin32c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;MEMENTO=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -169,7 +169,7 @@
 				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= memento-target &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementobsc"
 				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= memento-target &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementobsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementoclean"
-				Output="$(ProjectDir)\membin\gswin64c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN64;_DEBUG;DEBUG=1;TDEBUG=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -186,10 +186,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 pcldebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 pcldebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugclean"
-				Output="$(ProjectDir)\debugbin\gswin32c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -206,10 +206,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 pcldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 pcldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean"
-				Output="$(ProjectDir)\debugbin\gswin64c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN64;_DEBUG;DEBUG=1;TDEBUG=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -226,10 +226,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugbsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CONTRIB=1 pcldebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 pcldebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugclean"
-				Output="$(ProjectDir)\debugbin\gswin32c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -246,10 +246,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 pcldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 pcldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean"
-				Output="$(ProjectDir)\debugbin\gswin64c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN64;_DEBUG;DEBUG=1;TDEBUG=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -266,10 +266,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= pcl &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= pcl &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean"
-				Output="$(ProjectDir)\bin\gswin32c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -286,10 +286,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gs &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= bsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 WITH_CONTRIB=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= bsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 SBR=1 DEVSTUDIO= WITH_CONTRIB=1 pcl &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= bsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 WITH_CONTRIB=1 DEVSTUDIO= pcl &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= bsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= clean"
-				Output="$(ProjectDir)\bin\gswin64c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -303,7 +303,7 @@
 	</References>
 	<Files>
 		<Filter
-			Name="gs"
+			Name="ghostpcl"
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
@@ -1011,7 +1011,7 @@
 					>
 				</File>
 				<File
-					RelativePath="base\gsmd5.c"
+					RelativePath="base\md5.c"
 					>
 				</File>
 				<File
@@ -1715,10 +1715,6 @@
 					</File>
 					<File
 						RelativePath="base\gximask.c"
-						>
-					</File>
-					<File
-						RelativePath="base\gximdecode.c"
 						>
 					</File>
 					<File
@@ -4595,10 +4591,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\base\gximdecode.h"
-					>
-				</File>
-				<File
 					RelativePath=".\base\gxiodev.h"
 					>
 				</File>
@@ -4779,7 +4771,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\base\gsmd5.h"
+					RelativePath=".\base\md5.h"
 					>
 				</File>
 				<File
@@ -5212,470 +5204,126 @@
 				</Filter>
 			</Filter>
 			<Filter
-				Name="psi (.h)"
+				Name="pl"
 				>
 				<File
-					RelativePath="psi\bfont.h"
+					RelativePath=".\pcl\pl\pjparse.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\btoken.h"
+					RelativePath=".\pcl\pl\pjparsei.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\dscparse.h"
+					RelativePath=".\pcl\pl\pjtop.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\dstack.h"
+					RelativePath=".\pcl\pl\plalloc.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwdll.h"
+					RelativePath=".\pcl\pl\plchar.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwimg.h"
+					RelativePath=".\pcl\pl\pldict.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwinst.h"
+					RelativePath=".\pcl\pl\pldraw.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwreg.h"
+					RelativePath=".\pcl\pl\plfapi.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwres.h"
+					RelativePath=".\pcl\pl\plfont.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwsetup.h"
+					RelativePath=".\pcl\pl\plftable.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwtext.h"
+					RelativePath=".\pcl\pl\plht.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwtrace.h"
+					RelativePath=".\pcl\pl\plimpl.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwuninst.h"
+					RelativePath=".\pcl\pl\pllfont.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\estack.h"
+					RelativePath=".\pcl\pl\plmain.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\files.h"
+					RelativePath=".\pcl\pl\plplatf.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\ghost.h"
+					RelativePath=".\pcl\pl\plplatfps.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\ialloc.h"
+					RelativePath=".\pcl\pl\plsymbol.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\iapi.h"
+					RelativePath=".\pcl\pl\pltop.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\iastate.h"
+					RelativePath=".\pcl\pl\pltoputl.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\iastruct.h"
+					RelativePath=".\pcl\pl\pluchar.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\ibnum.h"
+					RelativePath=".\pcl\pl\plufont.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\ichar.h"
+					RelativePath=".\pcl\pl\plufstlp.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\ichar1.h"
+					RelativePath=".\pcl\pl\plufstlp1.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\icharout.h"
+					RelativePath=".\pcl\pl\plulfont.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\icid.h"
+					RelativePath=".\pcl\pl\plvalue.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\icie.h"
+					RelativePath=".\pcl\pl\plvocab.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\icolor.h"
+					RelativePath=".\pcl\pl\plwimg.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\iconf.h"
+					RelativePath=".\pcl\pl\plwmainc.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\icontext.h"
+					RelativePath=".\pcl\pl\plwreg.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\icremap.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\icsmap.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\icstate.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iddict.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iddstack.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\idebug.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\idict.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\idictdef.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\idicttpl.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\idisp.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\idosave.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\idparam.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\idsdata.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\idstack.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ierrors.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iesdata.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iestack.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ifapi.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ifcid.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ifilter.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ifilter2.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ifont.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ifont1.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ifont2.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ifont42.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ifrpred.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ifunc.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ifwpred.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\igc.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\igcstr.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\igstate.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iht.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iimage.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iimage2.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iinit.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ilevel.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\imain.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\imainarg.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\imemory.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iminst.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iname.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\inamedef.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\inameidx.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\inames.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\inamestr.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\interp.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iosdata.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iostack.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ipacked.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iparam.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iparray.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ipcolor.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iplugin.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iref.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\isave.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iscan.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iscanbin.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iscannum.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\isdata.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\isstate.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\istack.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\istkparm.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\istream.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\istruct.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\itoken.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iutil.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\iutil2.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ivmem2.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ivmspace.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\main.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\oparc.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\opcheck.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\opdef.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\oper.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\opextern.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\ostack.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\store.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\wrfont.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\write_t1.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\write_t2.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\zchar42.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcie.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcolor.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfile.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfunc.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\zht2.h"
-					>
-				</File>
-				<File
-					RelativePath="psi\zicc.h"
+					RelativePath=".\pcl\pl\realmain.c"
 					>
 				</File>
 			</Filter>
@@ -5696,722 +5344,406 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="psi (.rc)"
+				Name="pcl"
 				>
 				<File
-					RelativePath="psi\dwmain.rc"
+					RelativePath=".\pcl\pcl\pcbiptrn.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwsetup.rc"
+					RelativePath=".\pcl\pcl\pccid.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwuninst.rc"
+					RelativePath=".\pcl\pcl\pccolor.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\gsdll2.rc"
+					RelativePath=".\pcl\pcl\pccprint.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\gsdll32.rc"
+					RelativePath=".\pcl\pcl\pccsbase.c"
 					>
 				</File>
 				<File
-					RelativePath="psi\gsos2.rc"
+					RelativePath=".\pcl\pcl\pcdither.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcdraw.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcfont.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcfontpg.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcfrgrnd.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcfsel.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcht.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcident.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcimpl.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcindxed.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcjob.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pclookup.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcmacros.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcmisc.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcmtx3.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcommand.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcpage.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcpalet.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcparse.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcpatrn.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcpatxfm.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcrect.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcsfont.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcstatus.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcsymbol.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pctext.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pctop.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcuptrn.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcursor.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcwhtidx.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgchar.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgcolor.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgconfig.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgdraw.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgfdata.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgfont.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgframe.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pggeom.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pginit.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pglabel.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pglfill.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgmisc.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgparse.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgpoly.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgvector.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\rtgmode.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\rtmisc.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\rtraster.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\rtrstcmp.c"
 					>
 				</File>
 			</Filter>
 			<Filter
-				Name="psi"
+				Name="pcl (.h)"
 				>
 				<File
-					RelativePath="psi\dmmain.c"
+					RelativePath=".\pcl\pcl\pcbiptrn.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dpmain.c"
+					RelativePath=".\pcl\pcl\pccid.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dscparse.c"
+					RelativePath=".\pcl\pcl\pccoord.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwdll.c"
+					RelativePath=".\pcl\pcl\pccsbase.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwimg.c"
+					RelativePath=".\pcl\pcl\pcdict.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwinst.cpp"
+					RelativePath=".\pcl\pcl\pcdither.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwmain.c"
+					RelativePath=".\pcl\pcl\pcdraw.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwmainc.c"
+					RelativePath=".\pcl\pcl\pcfont.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwnodll.c"
+					RelativePath=".\pcl\pcl\pcfontst.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwreg.c"
+					RelativePath=".\pcl\pcl\pcfrgrnd.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwsetup.cpp"
+					RelativePath=".\pcl\pcl\pcfsel.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwtext.c"
+					RelativePath=".\pcl\pcl\pcht.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwtrace.c"
+					RelativePath=".\pcl\pcl\pcident.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dwuninst.cpp"
+					RelativePath=".\pcl\pcl\pcindxed.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dxmain.c"
+					RelativePath=".\pcl\pcl\pclookup.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\dxmainc.c"
+					RelativePath=".\pcl\pcl\pcmtx3.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\fapi_ft.c"
+					RelativePath=".\pcl\pcl\pcommand.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\fapiufst.c"
+					RelativePath=".\pcl\pcl\pcpage.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\gs.c"
+					RelativePath=".\pcl\pcl\pcpalet.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\gsdll.c"
+					RelativePath=".\pcl\pcl\pcparam.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\gserver.c"
+					RelativePath=".\pcl\pcl\pcparse.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\ialloc.c"
+					RelativePath=".\pcl\pcl\pcpatrn.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\iapi.c"
+					RelativePath=".\pcl\pcl\pcpattyp.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\ibnum.c"
+					RelativePath=".\pcl\pcl\pcpatxfm.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\iconf.c"
+					RelativePath=".\pcl\pcl\pcstate.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\icontext.c"
+					RelativePath=".\pcl\pcl\pcsymbol.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\idebug.c"
+					RelativePath=".\pcl\pcl\pctop.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\idict.c"
+					RelativePath=".\pcl\pcl\pctpm.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\idisp.c"
+					RelativePath=".\pcl\pcl\pcuptrn.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\idparam.c"
+					RelativePath=".\pcl\pcl\pcursor.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\idstack.c"
+					RelativePath=".\pcl\pcl\pcwhtidx.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\igc.c"
+					RelativePath=".\pcl\pcl\pcxfmst.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\igcref.c"
+					RelativePath=".\pcl\pcl\pgdraw.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\igcstr.c"
+					RelativePath=".\pcl\pcl\pgfdata.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\iinit.c"
+					RelativePath=".\pcl\pcl\pgfont.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\ilocate.c"
+					RelativePath=".\pcl\pcl\pggeom.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\imain.c"
+					RelativePath=".\pcl\pcl\pginit.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\imainarg.c"
+					RelativePath=".\pcl\pcl\pgmand.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\iname.c"
+					RelativePath=".\pcl\pcl\pgmisc.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\inobtokn.c"
+					RelativePath=".\pcl\pcl\pgstate.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\inouparm.c"
+					RelativePath=".\pcl\pcl\rtgmode.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\interp.c"
+					RelativePath=".\pcl\pcl\rtmisc.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\iparam.c"
+					RelativePath=".\pcl\pcl\rtraster.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\iplugin.c"
+					RelativePath=".\pcl\pcl\rtrstcmp.h"
 					>
 				</File>
 				<File
-					RelativePath="psi\ireclaim.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\isave.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\iscan.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\iscanbin.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\iscannum.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\istack.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\iutil.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\iutil2.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\sfilter1.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\wrfont.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\write_t1.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\write_t2.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zalg.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zarith.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zarray.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zbfont.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zbseq.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcfont.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zchar.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zchar1.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zchar2.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zchar32.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zchar42.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcharout.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcharx.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcid.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcidtest.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcie.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcolor.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcolor1.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcolor2.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcolor3.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcontext.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcontrol.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcrd.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcsdevn.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcsindex.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcspixel.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zcssepr.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zdevcal.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zdevice.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zdevice2.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zdfilter.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zdict.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zdosio.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zdouble.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zdpnext.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zdps.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zdps1.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zdscpars.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfaes.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfapi.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfarc4.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfbcp.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfcid.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfcid0.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfcid1.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfcmap.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfdctd.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfdcte.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfdecode.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfile.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfile1.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfileio.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfilter.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfilter2.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfilterx.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfimscale.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfjbig2.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfjpx.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfmd5.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfont.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfont0.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfont1.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfont2.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfont32.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfont42.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfontenum.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfproc.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfrsd.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfsample.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfunc.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfunc0.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfunc3.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfunc4.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zfzlib.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zgeneric.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zgstate.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zhsb.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zht.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zht1.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zht2.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zicc.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zimage.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zimage2.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zimage3.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\ziodev.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\ziodev2.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\ziodevs.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\ziodevsc.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zmath.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zmatrix.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zmedia2.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zmisc.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zmisc1.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zmisc2.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zmisc3.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zncdummy.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zpacked.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zpaint.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zpath.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zpath1.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zpcolor.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zpdfops.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zrelbit.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zrop.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zshade.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zstack.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zstring.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zsysvm.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\ztoken.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\ztrans.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\ztrap.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\ztype.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zupath.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zusparam.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zvmem.c"
-					>
-				</File>
-				<File
-					RelativePath="psi\zvmem2.c"
+					RelativePath=".\pcl\pcl\rtrstst.h"
 					>
 				</File>
 			</Filter>
@@ -7908,10 +7240,6 @@
 						>
 					</File>
 					<File
-						RelativePath=".\devices\vector\gdevxps.c"
-						>
-					</File>					
-					<File
 						RelativePath=".\devices\vector\whitelst.c"
 						>
 					</File>
@@ -8545,1467 +7873,247 @@
 					>
 				</File>
 			</Filter>
-		</Filter>
-		<Filter
-			Name="Resource"
-			>
 			<Filter
-				Name="CMap"
+				Name="pl (.h)"
 				>
 				<File
-					RelativePath=".\Resource\CMap\78-EUC-H"
+					RelativePath=".\pcl\pl\pjparse.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\78-EUC-V"
+					RelativePath=".\pcl\pl\pjtop.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\78-H"
+					RelativePath=".\pcl\pl\plalloc.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\78-RKSJ-H"
+					RelativePath=".\pcl\pl\plapi.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\78-RKSJ-V"
+					RelativePath=".\pcl\pl\plchar.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\78-V"
+					RelativePath=".\pcl\pl\pldebug.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\78ms-RKSJ-H"
+					RelativePath=".\pcl\pl\pldict.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\78ms-RKSJ-V"
+					RelativePath=".\pcl\pl\pldraw.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\83pv-RKSJ-H"
+					RelativePath=".\pcl\pl\plfapi.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\90ms-RKSJ-H"
+					RelativePath=".\pcl\pl\plfont.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\90ms-RKSJ-UCS2"
+					RelativePath=".\pcl\pl\plftable.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\90ms-RKSJ-V"
+					RelativePath=".\pcl\pl\plht.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\90msp-RKSJ-H"
+					RelativePath=".\pcl\pl\pllfont.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\90msp-RKSJ-V"
+					RelativePath=".\pcl\pl\plmain.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\90pv-RKSJ-H"
+					RelativePath=".\pcl\pl\plparse.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\90pv-RKSJ-UCS2"
+					RelativePath=".\pcl\pl\plplatf.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\90pv-RKSJ-UCS2C"
+					RelativePath=".\pcl\pl\plsymbol.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\90pv-RKSJ-V"
+					RelativePath=".\pcl\pl\pltop.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\Add-H"
+					RelativePath=".\pcl\pl\pltoputl.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\Add-RKSJ-H"
+					RelativePath=".\pcl\pl\plufstlp.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\Add-RKSJ-V"
+					RelativePath=".\pcl\pl\plvalue.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\Add-V"
+					RelativePath=".\pcl\pl\plvocab.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\Adobe-CNS1-0"
+					RelativePath=".\pcl\pl\plwimg.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\Adobe-CNS1-1"
+					RelativePath=".\pcl\pl\plwreg.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\CMap\Adobe-CNS1-2"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-CNS1-3"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-CNS1-4"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-CNS1-5"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-CNS1-6"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-CNS1-B5pc"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-CNS1-ETenms-B5"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-CNS1-H-CID"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-CNS1-H-Host"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-CNS1-H-Mac"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-CNS1-UCS2"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-GB1-0"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-GB1-1"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-GB1-2"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-GB1-3"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-GB1-4"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-GB1-5"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-GB1-GBK-EUC"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-GB1-GBpc-EUC"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-GB1-H-CID"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-GB1-H-Host"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-GB1-H-Mac"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-GB1-UCS2"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-0"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-1"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-2"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-3"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-4"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-5"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-6"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-90ms-RKSJ"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-90pv-RKSJ"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-H-CID"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-H-Host"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-H-Mac"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-PS-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-PS-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan1-UCS2"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Japan2-0"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Korea1-0"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Korea1-1"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Korea1-2"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Korea1-H-CID"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Korea1-H-Host"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Korea1-H-Mac"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Korea1-KSCms-UHC"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Korea1-KSCpc-EUC"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Adobe-Korea1-UCS2"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\B5-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\B5-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\B5pc-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\B5pc-UCS2"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\B5pc-UCS2C"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\B5pc-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\CNS-EUC-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\CNS-EUC-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\CNS01-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\CNS02-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\CNS03-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\CNS04-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\CNS05-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\CNS06-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\CNS07-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\CNS1-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\CNS1-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\CNS15-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\CNS2-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\CNS2-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\ETen-B5-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\ETen-B5-UCS2"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\ETen-B5-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\ETenms-B5-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\ETenms-B5-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\ETHK-B5-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\ETHK-B5-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\EUC-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\EUC-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Ext-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Ext-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Ext-RKSJ-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Ext-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GB-EUC-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GB-EUC-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GB-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GB-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GB-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBK-EUC-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBK-EUC-UCS2"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBK-EUC-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBK2K-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBK2K-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBKp-EUC-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBKp-EUC-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBpc-EUC-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBpc-EUC-UCS2"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBpc-EUC-UCS2C"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBpc-EUC-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBT-EUC-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBT-EUC-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBT-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBT-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBT-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBTpc-EUC-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\GBTpc-EUC-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Hankaku"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Hiragana"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\HK-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\HKdla-B5-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\HKdla-B5-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\HKdlb-B5-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\HKdlb-B5-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\HKgccs-B5-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\HKgccs-B5-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\HKm314-B5-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\HKm314-B5-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\HKm471-B5-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\HKm471-B5-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\HKscs-B5-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\HKscs-B5-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Hojo-EUC-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Hojo-EUC-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Hojo-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Hojo-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Hojo-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Identity-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Identity-UTF16-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Identity-UTF16-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Identity-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Katakana"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSC-EUC-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSC-EUC-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSC-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSC-Johab-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSC-Johab-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSC-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSC-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSC2-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSCms-UHC-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSCms-UHC-HW-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSCms-UHC-HW-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSCms-UHC-UCS2"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSCms-UHC-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSCpc-EUC-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSCpc-EUC-UCS2"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSCpc-EUC-UCS2C"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\KSCpc-EUC-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\NWP-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\NWP-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\RKSJ-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\Roman"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\TCVN-RKSJ-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UCS2-90ms-RKSJ"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UCS2-90pv-RKSJ"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UCS2-B5pc"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UCS2-ETen-B5"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UCS2-GBK-EUC"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UCS2-GBpc-EUC"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UCS2-KSCms-UHC"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UCS2-KSCpc-EUC"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniCNS-UCS2-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniCNS-UCS2-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniCNS-UTF16-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniCNS-UTF16-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniCNS-UTF32-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniCNS-UTF32-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniCNS-UTF8-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniCNS-UTF8-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniGB-UCS2-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniGB-UCS2-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniGB-UTF16-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniGB-UTF16-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniGB-UTF32-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniGB-UTF32-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniGB-UTF8-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniGB-UTF8-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniHojo-UCS2-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniHojo-UCS2-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniHojo-UTF16-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniHojo-UTF16-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniHojo-UTF32-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniHojo-UTF32-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniHojo-UTF8-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniHojo-UTF8-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS-UCS2-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS-UCS2-HW-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS-UCS2-HW-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS-UCS2-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS-UTF16-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS-UTF16-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS-UTF32-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS-UTF32-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS-UTF8-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS-UTF8-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS2004-UTF16-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS2004-UTF16-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS2004-UTF32-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS2004-UTF32-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS2004-UTF8-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJIS2004-UTF8-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJISPro-UCS2-HW-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJISPro-UCS2-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJISPro-UTF8-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJISX0213-UTF32-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJISX0213-UTF32-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJISX02132004-UTF32-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniJISX02132004-UTF32-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniKS-UCS2-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniKS-UCS2-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniKS-UTF16-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniKS-UTF16-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniKS-UTF32-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniKS-UTF32-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniKS-UTF8-H"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\UniKS-UTF8-V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\V"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\CMap\WP-Symbol"
+					RelativePath=".\pcl\pl\plwres.h"
 					>
 				</File>
 			</Filter>
 			<Filter
-				Name="Init"
+				Name="pxl"
 				>
 				<File
-					RelativePath=".\Resource\Init\cidfmap"
+					RelativePath=".\pcl\pxl\pxbfont.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\FCOfontmap-PCLPS2"
+					RelativePath=".\pcl\pxl\pxerrors.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\Fontmap"
+					RelativePath=".\pcl\pxl\pxffont.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\Fontmap.GS"
+					RelativePath=".\pcl\pxl\pxfont.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\gs_agl.ps"
+					RelativePath=".\pcl\pxl\pxgstate.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\gs_btokn.ps"
+					RelativePath=".\pcl\pxl\pximage.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\gs_cet.ps"
+					RelativePath=".\pcl\pxl\pximpl.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\gs_cff.ps"
+					RelativePath=".\pcl\pxl\pxink.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\gs_cidcm.ps"
+					RelativePath=".\pcl\pxl\pxpaint.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\gs_ciddc.ps"
+					RelativePath=".\pcl\pxl\pxparse.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\gs_cidfm.ps"
+					RelativePath=".\pcl\pxl\pxptable.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\gs_cidfn.ps"
+					RelativePath=".\pcl\pxl\pxpthr.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\gs_cidtt.ps"
+					RelativePath=".\pcl\pxl\pxsessio.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\gs_cmap.ps"
+					RelativePath=".\pcl\pxl\pxstate.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\gs_cspace.ps"
+					RelativePath=".\pcl\pxl\pxstream.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\gs_css_e.ps"
+					RelativePath=".\pcl\pxl\pxtop.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\gs_dbt_e.ps"
+					RelativePath=".\pcl\pxl\pxvalue.c"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Init\gs_diskf.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_diskn.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_dpnxt.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_dps.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_dps1.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_dps2.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_dscp.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_epsf.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_fapi.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_fntem.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_fonts.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_frsd.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_icc.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_il1_e.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_img.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_init.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_l2img.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_lev2.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_ll3.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_mex_e.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_mgl_e.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_mro_e.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_pdf_e.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_pdfwr.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_res.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_resmp.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_setpd.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_statd.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_std_e.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_sym_e.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_trap.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_ttf.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_typ32.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_typ42.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_type1.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\gs_wan_e.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\opdfread.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\pdf_base.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\pdf_cslayer.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\pdf_draw.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\pdf_font.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\pdf_main.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\pdf_ops.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\pdf_rbld.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\pdf_sec.ps"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Init\xlatmap"
+					RelativePath=".\pcl\pxl\pxvendor.c"
 					>
 				</File>
 			</Filter>
 			<Filter
-				Name="ColorSpace"
+				Name="pxl (.h)"
 				>
 				<File
-					RelativePath=".\Resource\ColorSpace\DefaultCMYK"
+					RelativePath=".\pcl\pxl\pxattr.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\ColorSpace\DefaultGray"
+					RelativePath=".\pcl\pxl\pxbfont.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\ColorSpace\DefaultRGB"
+					RelativePath=".\pcl\pxl\pxdict.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\ColorSpace\sGray"
+					RelativePath=".\pcl\pxl\pxenum.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\ColorSpace\sRGB"
+					RelativePath=".\pcl\pxl\pxerrors.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\ColorSpace\TrivialCMYK"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Decoding"
-				>
-				<File
-					RelativePath=".\Resource\Decoding\FCO_Dingbats"
+					RelativePath=".\pcl\pxl\pxfont.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Decoding\FCO_Symbol"
+					RelativePath=".\pcl\pxl\pxgstate.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Decoding\FCO_Unicode"
+					RelativePath=".\pcl\pxl\pxoper.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Decoding\FCO_Wingdings"
+					RelativePath=".\pcl\pxl\pxparse.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Decoding\Latin1"
+					RelativePath=".\pcl\pxl\pxptable.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Decoding\StandardEncoding"
+					RelativePath=".\pcl\pxl\pxpthr.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Decoding\Unicode"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Encoding"
-				>
-				<File
-					RelativePath=".\Resource\Encoding\Wingdings"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Font"
-				>
-				<File
-					RelativePath=".\Resource\Font\CenturySchL-Bold"
+					RelativePath=".\pcl\pxl\pxstate.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Font\CenturySchL-BoldItal"
+					RelativePath=".\pcl\pxl\pxtag.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Font\CenturySchL-Ital"
+					RelativePath=".\pcl\pxl\pxvalue.h"
 					>
 				</File>
 				<File
-					RelativePath=".\Resource\Font\CenturySchL-Roma"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\Dingbats"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusMonL-Bold"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusMonL-BoldObli"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusMonL-Regu"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusMonL-ReguObli"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusRomNo9L-Medi"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusRomNo9L-MediItal"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusRomNo9L-Regu"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusRomNo9L-ReguItal"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusSanL-Bold"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusSanL-BoldCond"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusSanL-BoldCondItal"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusSanL-BoldItal"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusSanL-Regu"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusSanL-ReguCond"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusSanL-ReguCondItal"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\NimbusSanL-ReguItal"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\StandardSymL"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\URWBookmanL-DemiBold"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\URWBookmanL-DemiBoldItal"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\URWBookmanL-Ligh"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\URWBookmanL-LighItal"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\URWChanceryL-MediItal"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\URWGothicL-Book"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\URWGothicL-BookObli"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\URWGothicL-Demi"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\URWGothicL-DemiObli"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\URWPalladioL-Bold"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\URWPalladioL-BoldItal"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\URWPalladioL-Ital"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\Font\URWPalladioL-Roma"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="SubstCID"
-				>
-				<File
-					RelativePath=".\Resource\SubstCID\CNS1-WMode"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\SubstCID\GB1-WMode"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\SubstCID\Japan1-WMode"
-					>
-				</File>
-				<File
-					RelativePath=".\Resource\SubstCID\Korea1-WMode"
+					RelativePath=".\pcl\pxl\pxvendor.h"
 					>
 				</File>
 			</Filter>

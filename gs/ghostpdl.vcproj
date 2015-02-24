@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="ghostscript"
-	ProjectGUID="{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}"
+	Name="ghostpdl"
+	ProjectGUID="{C4038125-61B9-4147-9EA8-39690BA3A599}"
 	RootNamespace="ghostscript"
 	Keyword="MakeFileProj"
 	>
@@ -26,10 +26,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdldebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdldebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= debugclean"
-				Output="$(ProjectDir)\debugbin\gswin32c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -46,10 +46,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpdldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpdldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean"
-				Output="$(ProjectDir)\debugbin\gswin64c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN64;_DEBUG;DEBUG=1;TDEBUG=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -66,10 +66,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdl &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdl &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean"
-				Output="$(ProjectDir)\bin\gswin32c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -86,10 +86,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpdl &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpdl &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean"
-				Output="$(ProjectDir)\bin\gswin64c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -109,7 +109,7 @@
 				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc"
 				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= profileclean"
-				Output="$(ProjectDir)\profbin\gswin32c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;DEBUG=0;TDEBUG=0;DEBUGSYM=1;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -126,10 +126,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpdldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= gpdldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean"
-				Output="$(ProjectDir)\profbin\gswin64c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN64;_DEBUG;DEBUG=1;TDEBUG=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -149,7 +149,7 @@
 				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc"
 				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean"
-				Output="$(ProjectDir)\membin\gswin32c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;MEMENTO=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -169,7 +169,7 @@
 				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= memento-target &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementobsc"
 				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= memento-target &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementobsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= mementoclean"
-				Output="$(ProjectDir)\membin\gswin64c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN64;_DEBUG;DEBUG=1;TDEBUG=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -186,10 +186,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gpdldebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gpdldebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugclean"
-				Output="$(ProjectDir)\debugbin\gswin32c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -206,10 +206,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gpdldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gpdldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean"
-				Output="$(ProjectDir)\debugbin\gswin64c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN64;_DEBUG;DEBUG=1;TDEBUG=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -226,10 +226,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugbsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gpdldebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 gpdldebug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 debugclean"
-				Output="$(ProjectDir)\debugbin\gswin32c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -246,10 +246,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gpdldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gpdldebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean"
-				Output="$(ProjectDir)\debugbin\gswin64c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN64;_DEBUG;DEBUG=1;TDEBUG=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -266,10 +266,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdl &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gpdl &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean"
-				Output="$(ProjectDir)\bin\gswin32c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -286,10 +286,10 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gs &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= bsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 WITH_CONTRIB=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= bsc"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gpdl &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= bsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 WITH_CONTRIB=1 DEVSTUDIO= gpdl &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= bsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= clean"
-				Output="$(ProjectDir)\bin\gswin64c.exe"
+				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
 				IncludeSearchPath=""
 				ForcedIncludes=""
@@ -303,7 +303,7 @@
 	</References>
 	<Files>
 		<Filter
-			Name="gs"
+			Name="ghostpdl"
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
@@ -1011,7 +1011,7 @@
 					>
 				</File>
 				<File
-					RelativePath="base\gsmd5.c"
+					RelativePath="base\md5.c"
 					>
 				</File>
 				<File
@@ -1715,10 +1715,6 @@
 					</File>
 					<File
 						RelativePath="base\gximask.c"
-						>
-					</File>
-					<File
-						RelativePath="base\gximdecode.c"
 						>
 					</File>
 					<File
@@ -4595,10 +4591,6 @@
 					>
 				</File>
 				<File
-					RelativePath=".\base\gximdecode.h"
-					>
-				</File>
-				<File
 					RelativePath=".\base\gxiodev.h"
 					>
 				</File>
@@ -4779,7 +4771,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\base\gsmd5.h"
+					RelativePath=".\base\md5.h"
 					>
 				</File>
 				<File
@@ -7908,10 +7900,6 @@
 						>
 					</File>
 					<File
-						RelativePath=".\devices\vector\gdevxps.c"
-						>
-					</File>					
-					<File
 						RelativePath=".\devices\vector\whitelst.c"
 						>
 					</File>
@@ -8542,6 +8530,914 @@
 				</File>
 				<File
 					RelativePath=".\zlib\zutil.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="pxl (.h)"
+				>
+				<File
+					RelativePath=".\pcl\pxl\pxattr.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxbfont.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxdict.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxenum.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxerrors.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxfont.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxgstate.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxoper.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxparse.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxptable.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxpthr.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxstate.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxtag.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxvalue.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxvendor.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="pxl"
+				>
+				<File
+					RelativePath=".\pcl\pxl\pxbfont.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxerrors.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxffont.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxfont.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxgstate.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pximage.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pximpl.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxink.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxpaint.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxparse.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxptable.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxpthr.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxsessio.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxstate.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxstream.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxtop.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxvalue.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pxl\pxvendor.c"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="pcl (.h)"
+				>
+				<File
+					RelativePath=".\pcl\pcl\pcbiptrn.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pccid.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pccoord.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pccsbase.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcdict.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcdither.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcdraw.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcfont.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcfontst.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcfrgrnd.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcfsel.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcht.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcident.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcindxed.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pclookup.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcmtx3.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcommand.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcpage.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcpalet.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcparam.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcparse.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcpatrn.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcpattyp.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcpatxfm.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcstate.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcsymbol.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pctop.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pctpm.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcuptrn.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcursor.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcwhtidx.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcxfmst.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgdraw.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgfdata.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgfont.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pggeom.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pginit.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgmand.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgmisc.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgstate.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\rtgmode.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\rtmisc.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\rtraster.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\rtrstcmp.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\rtrstst.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="pcl"
+				>
+				<File
+					RelativePath=".\pcl\pcl\pcbiptrn.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pccid.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pccolor.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pccprint.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pccsbase.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcdither.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcdraw.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcfont.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcfontpg.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcfrgrnd.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcfsel.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcht.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcident.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcimpl.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcindxed.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcjob.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pclookup.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcmacros.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcmisc.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcmtx3.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcommand.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcpage.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcpalet.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcparse.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcpatrn.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcpatxfm.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcrect.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcsfont.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcstatus.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcsymbol.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pctext.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pctop.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcuptrn.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcursor.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pcwhtidx.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgchar.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgcolor.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgconfig.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgdraw.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgfdata.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgfont.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgframe.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pggeom.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pginit.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pglabel.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pglfill.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgmisc.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgparse.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgpoly.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\pgvector.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\rtgmode.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\rtmisc.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\rtraster.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pcl\rtrstcmp.c"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="pl"
+				>
+				<File
+					RelativePath=".\pcl\pl\pjparse.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pjparsei.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pjtop.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plalloc.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plchar.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pldict.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pldraw.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plfapi.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plfont.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plftable.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plht.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plimpl.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pllfont.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plmain.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plplatf.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plplatfps.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plsymbol.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pltop.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pltoputl.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pluchar.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plufont.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plufstlp.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plufstlp1.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plulfont.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plvalue.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plvocab.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plwimg.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plwmainc.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plwreg.c"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\realmain.c"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="pl (.h)"
+				>
+				<File
+					RelativePath=".\pcl\pl\pjparse.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pjtop.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plalloc.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plapi.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plchar.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pldebug.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pldict.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pldraw.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plfapi.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plfont.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plftable.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plht.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pllfont.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plmain.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plparse.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plplatf.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plsymbol.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pltop.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\pltoputl.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plufstlp.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plvalue.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plvocab.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plwimg.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plwreg.h"
+					>
+				</File>
+				<File
+					RelativePath=".\pcl\pl\plwres.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="xps"
+				>
+				<File
+					RelativePath=".\xps\xpsanalyze.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpscff.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpscolor.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpscommon.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpscrc.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsdoc.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsfapi.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsfont.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsglyphs.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsgradient.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpshash.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsimage.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsjpeg.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsjxr.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsmem.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsopacity.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpspage.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpspath.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpspng.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsresource.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpstiff.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpstile.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpstop.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsttf.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsutf.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsvisual.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsxml.c"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpszip.c"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="xps (.h)"
+				>
+				<File
+					RelativePath=".\xps\ghostxps.h"
+					>
+				</File>
+				<File
+					RelativePath=".\xps\xpsfapi.h"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="pdlpsi"
+				>
+				<File
+					RelativePath=".\gpdl\psi\psitop.c"
 					>
 				</File>
 			</Filter>

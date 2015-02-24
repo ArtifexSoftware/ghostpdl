@@ -86,8 +86,6 @@ $(pconfig_h): $(GLGEN)pconf.h
 
 ################ PJL ################
 
-PCLXL_ROMFS_ARGS=-c -P pcl/urwfonts -d ttfonts /*.ttf
-
 
 PJLVERSION="$(GS_DOT_VERSION)"
 
