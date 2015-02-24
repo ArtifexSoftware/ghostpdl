@@ -134,7 +134,7 @@ $(PLOBJ)xpsimpl.$(OBJ): $(XPSGEN)xpsimpl.c          \
                         $(pltop_h)
 	$(XPSCCC) $(XPSGEN)xpsimpl.c $(XPSO_)xpsimpl.$(OBJ)
 
-$(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(pltop_h) $(XPSINCLUDES) $(GLOBJ)gconfig.$(OBJ) <
+$(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(pltop_h) $(XPSINCLUDES) $(GLOBJ)gconfig.$(OBJ) \
                 $(pconfig_h)
 	$(XPSCCC) $(XPSSRC)xpstop.c $(XPSO_)xpstop.$(OBJ)
 
