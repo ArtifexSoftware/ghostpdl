@@ -766,7 +766,7 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
                           out_buf[x * 3 + 2] = abs(rowmid1[x * 3 + 2]- rowmid2[x * 3 + 2]);
                         }
                         if (fparams->report_coordinates &&
-                            (abs(x - x0) > 1 && y == y0 || y - y0 > 1))
+                            ((abs(x - x0) > 1 && y == y0) || y - y0 > 1))
                           {
                             /* fixme : a contiguity test wanted. */
                             x0 = x; y0 = y;
