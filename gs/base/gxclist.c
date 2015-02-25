@@ -722,7 +722,7 @@ clist_open(gx_device *dev)
     cdev->permanent_error = 0;
     cdev->is_open = false;
 
-    cdev->cache_chunk = (gx_bits_cache_chunk *)gs_alloc_bytes_immovable(cdev->memory->non_gc_memory, sizeof(gx_bits_cache_chunk), "alloc tile cache for clist");
+    cdev->cache_chunk = (gx_bits_cache_chunk *)gs_alloc_bytes(cdev->memory->non_gc_memory, sizeof(gx_bits_cache_chunk), "alloc tile cache for clist");
     if (!cdev->cache_chunk)
         return_error(gs_error_VMerror);
     memset(cdev->cache_chunk, 0x00, sizeof(gx_bits_cache_chunk));
