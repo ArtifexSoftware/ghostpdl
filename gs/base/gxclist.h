@@ -185,7 +185,7 @@ typedef struct gx_clist_state_s gx_clist_state;
         bool do_not_open_or_close_bandfiles;	/* if true, do not open/close bandfiles */\
         int is_printer;                 /* if true, then clist is based on a prn device */\
                 /* Following are used for both writing and reading. */\
-        gx_bits_cache_chunk chunk;	/* the only chunk of bits */\
+        gx_bits_cache_chunk *cache_chunk;	/* the only chunk of bits */\
         gx_bits_cache bits;\
         uint tile_hash_mask;		/* size of tile hash table -1 */\
         uint tile_band_mask_size;	/* size of band mask preceding */\

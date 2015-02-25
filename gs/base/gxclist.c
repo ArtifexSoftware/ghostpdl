@@ -310,8 +310,8 @@ clist_init_tile_cache(gx_device * dev, byte * init_data, ulong data_size)
     cdev->tile_table = (tile_hash *) data;
     data += hsize;
     bits_size -= hsize;
-    gx_bits_cache_chunk_init(&cdev->chunk, data, bits_size);
-    gx_bits_cache_init(&cdev->bits, &cdev->chunk);
+    gx_bits_cache_chunk_init(cdev->cache_chunk, data, bits_size);
+    gx_bits_cache_init(&cdev->bits, cdev->cache_chunk);
     return 0;
 }
 
@@ -721,6 +721,12 @@ clist_open(gx_device *dev)
 
     cdev->permanent_error = 0;
     cdev->is_open = false;
+
+    cdev->cache_chunk = (gx_bits_cache_chunk *)gs_alloc_bytes_immovable(cdev->memory->non_gc_memory, sizeof(gx_bits_cache_chunk), "alloc tile cache for clist");
+    if (!cdev->cache_chunk)
+        return_error(gs_error_VMerror);
+    memset(cdev->cache_chunk, 0x00, sizeof(gx_bits_cache_chunk));
+
     code = clist_init(dev);
     if (code < 0)
         return code;
@@ -731,7 +737,8 @@ clist_open(gx_device *dev)
         code = clist_emit_page_header(dev);
     if (code >= 0)
        dev->is_open = save_is_open;
-     return code;
+
+    return code;
 }
 
 static int
@@ -740,6 +747,9 @@ clist_close(gx_device *dev)
     int i;
     gx_device_clist_writer * const cdev =
         &((gx_device_clist *)dev)->writer;
+
+    gs_free_object(cdev->memory->non_gc_memory, cdev->cache_chunk, "free tile cache for clist");
+    cdev->cache_chunk = 0;
 
     for(i = 0; i < cdev->icc_cache_list_len; i++) {
         rc_decrement(cdev->icc_cache_list[i], "clist_close");
