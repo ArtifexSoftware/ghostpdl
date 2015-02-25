@@ -112,7 +112,7 @@ gdev_prn_open(gx_device * pdev)
     int code;
     bool update_procs = false;
 
-#if 0
+#if 1
     if (!pdev->PageHandlerPushed && (pdev->FirstPage != 0 || pdev->LastPage != 0)) {
 #else
     if (!pdev->PageHandlerPushed) {
