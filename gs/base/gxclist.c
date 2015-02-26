@@ -748,9 +748,11 @@ clist_close(gx_device *dev)
     gx_device_clist_writer * const cdev =
         &((gx_device_clist *)dev)->writer;
 
-    gs_free_object(cdev->memory->non_gc_memory, cdev->cache_chunk, "free tile cache for clist");
-    cdev->cache_chunk = 0;
-
+    /* I'd like to free the cache chunk in here, but we can't, because the pattern clist
+     * device gets closed, but not discarded, later it gets run. So we have to free the memory
+     * in *2* places, once in gdev_prn_tear_down() for regular clists, and once in
+     * gx_pattern_cache_free_entry() for pattern clists....
+     */
     for(i = 0; i < cdev->icc_cache_list_len; i++) {
         rc_decrement(cdev->icc_cache_list[i], "clist_close");
     }

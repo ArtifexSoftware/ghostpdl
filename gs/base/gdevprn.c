@@ -337,6 +337,8 @@ gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
         ppdev->buffer_space = 0;
         was_command_list = true;
 
+        gs_free_object(pcldev->memory->non_gc_memory, pcldev->cache_chunk, "free tile cache for clist");
+        pcldev->cache_chunk = 0;
         if (ppdev->bg_print.ocfile) {
             (void)ppdev->bg_print.oio_procs->fclose(ppdev->bg_print.ocfile, ppdev->bg_print.ocfname, true);
         }
