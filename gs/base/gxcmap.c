@@ -694,8 +694,9 @@ gs_color_select_t select)
                    color_component_map in the imager state.  Again, note that
                    gsicc_transform_named_color must have set ALL the device
                    colors */
-                for (i = 0; i < temp_state.color_component_map.num_colorants; i++)
+                for (i = 0; i < dev->color_info.num_components; i++)
                     temp_state.color_component_map.color_map[i] = i;
+                temp_state.color_component_map.num_components = dev->color_info.num_components;
                 gx_remap_concrete_devicen(conc, pdc, &temp_state, dev, select);
             }
         } else {
