@@ -668,19 +668,6 @@ int pcl_mono_palette_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed 
     return 0;
 }
 
-int pcl_mono_palette_begin_image(gx_device *dev, const gs_imager_state *pis, const gs_image_t *pim,
-    gs_image_format_t format, const gs_int_rect *prect,
-    const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
-    gs_memory_t *memory, gx_image_enum_common_t **pinfo)
-{
-    if (dev->child->procs.begin_image)
-        return dev->child->procs.begin_image(dev->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
-    else
-        return gx_default_begin_image(dev->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
-
-    return 0;
-}
-
 int pcl_mono_palette_image_data(gx_device *dev, gx_image_enum_common_t *info, const byte **planes, int data_x,
     uint raster, int height)
 {
@@ -734,19 +721,102 @@ void pcl_mono_palette_get_clipping_box(gx_device *dev, gs_fixed_rect *pbox)
     return;
 }
 
+typedef struct pcl_mono_palette_image_enum_s {
+    gx_image_enum_common;
+    gx_image_enum_common_t *child_enumerator;
+} pcl_mono_palette_image_enum;
+gs_private_st_suffix_add1(st_pcl_mono_palette_image_enum, pcl_mono_palette_image_enum, "pcl_mono_palette_image_enum",
+  pcl_mono_palette_image_enum_enum_ptrs, pcl_mono_palette_image_enum_reloc_ptrs,
+  st_gx_image_enum_common, child_enumerator);
+
+int pcl_mono_palette_begin_image(gx_device *dev, const gs_imager_state *pis, const gs_image_t *pim,
+    gs_image_format_t format, const gs_int_rect *prect,
+    const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
+    gs_memory_t *memory, gx_image_enum_common_t **pinfo)
+{
+    int code = 0;
+    pcl_mono_palette_image_enum *mie;
+
+    if (dev->child->procs.begin_image)
+        code = dev->child->procs.begin_image(dev->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
+    else
+        code = gx_default_begin_image(dev->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
+
+    if (code >= 0) {
+        mie = gs_alloc_struct(memory, pcl_mono_palette_image_enum, &st_pcl_mono_palette_image_enum,
+                          "pcl_mono_palette_image_begin");
+        if (mie == 0) {
+            gs_free_object(memory, *pinfo, "free subclassed image enumerator (vm error)");
+            return_error(gs_error_VMerror);
+        }
+        mie->child_enumerator = *pinfo;
+        *pinfo = (gx_image_enum_common_t *)mie;
+    }
+    return 0;
+}
+
+static int
+pcl_mono_palette_image_plane_data(gx_image_enum_common_t * info,
+                     const gx_image_plane_t * planes, int height,
+                     int *rows_used)
+{
+    pcl_mono_palette_image_enum *mie = (pcl_mono_palette_image_enum *)info;
+    return mie->child_enumerator->procs->plane_data(mie->child_enumerator,
+        planes, height, rows_used);
+}
+
+static int
+pcl_mono_palette_image_end_image(gx_image_enum_common_t * info, bool draw_last)
+{
+    int code;
+
+    pcl_mono_palette_image_enum *mie = (pcl_mono_palette_image_enum *)info;
+    code = mie->child_enumerator->procs->end_image(mie->child_enumerator,
+        draw_last);
+    gs_free_object(mie->memory, mie->child_enumerator, "Close PCL raster");
+
+    return code;
+}
+
+static int
+pcl_mono_palette_image_flush(gx_image_enum_common_t * info)
+{
+    pcl_mono_palette_image_enum *mie = (pcl_mono_palette_image_enum *)info;
+    return mie->child_enumerator->procs->flush(mie->child_enumerator);
+}
+
+static bool
+pcl_mono_palette_image_planes_wanted(const gx_image_enum_common_t * info, byte *wanted)
+{
+    pcl_mono_palette_image_enum *mie = (pcl_mono_palette_image_enum *)info;
+    if (mie->child_enumerator->procs->planes_wanted)
+        return mie->child_enumerator->procs->planes_wanted(mie->child_enumerator,
+            wanted);
+    memset(wanted, 0xff, mie->child_enumerator->num_planes);
+    return 0;
+}
+
+static const gx_image_enum_procs_t pcl_mono_palette_image_enum_procs = {
+    pcl_mono_palette_image_plane_data,
+    pcl_mono_palette_image_end_image,
+    pcl_mono_palette_image_flush,
+    pcl_mono_palette_image_planes_wanted
+};
+
 int pcl_mono_palette_begin_typed_image(gx_device *dev, const gs_imager_state *pis, const gs_matrix *pmat,
     const gs_image_common_t *pic, const gs_int_rect *prect,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 {
     int code = 0;
+    pcl_mono_palette_image_enum *mie;
 
     if (dev->child->procs.begin_typed_image)
         code = dev->child->procs.begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
     else
         code = gx_default_begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
 
-#if 0
+#if 1
     /* This is pretty ugly. We want the image code to use our modified color mapping procs. But if we leave
      * it as-is, the stored (ie child) device in the enumerator will be used, which means that our remapping won't
      * take place. Now, we know that 'this' device is a fair copy of the child, including bitmap pointers and so
@@ -756,6 +826,29 @@ int pcl_mono_palette_begin_typed_image(gx_device *dev, const gs_imager_state *pi
     ((gx_image_enum_common_t *)*pinfo)->dev = dev;
 #endif
 
+    if (code >= 0) {
+        const gs_color_space *pcs;
+        int num_components;
+        int is_mask = false;
+        const gs_pixel_image_t *pim = (const gs_pixel_image_t *)pic;
+
+        mie = gs_alloc_struct(memory, pcl_mono_palette_image_enum, &st_pcl_mono_palette_image_enum,
+                          "pcl_mono_palette_image_begin");
+        if (mie == 0) {
+            gs_free_object(memory, *pinfo, "free subclassed image enumerator (vm error)");
+            return_error(gs_error_VMerror);
+        }
+        if(pic->type->index == 1) {
+            const gs_image_t *pim1 = (const gs_image_t *)pic;
+            is_mask = pim1->ImageMask;
+        }
+        pcs = pim->ColorSpace;
+        num_components = (is_mask ? 1 : gs_color_space_num_components(pcs));
+        gx_image_enum_common_init((gx_image_enum_common_t *)mie, (const gs_data_image_t *)pic, &pcl_mono_palette_image_enum_procs, dev, num_components, pim->format);
+        mie->memory = memory;
+        mie->child_enumerator = *pinfo;
+        *pinfo = (gx_image_enum_common_t *)mie;
+    }
     return code;
 }
 
@@ -847,6 +940,54 @@ int pcl_mono_palette_get_hardware_params(gx_device *dev, gs_param_list *plist)
 
     return 0;
 }
+
+/* Text processing (like images) works differently to other device
+ * methods.
+ */
+static text_enum_proc_process(pcl_mono_palette_text_process);
+static int
+pcl_mono_palette_text_resync(gs_text_enum_t *pte, const gs_text_enum_t *pfrom)
+{
+    return 0;
+}
+int
+pcl_mono_palette_text_process(gs_text_enum_t *pte)
+{
+    return 0;
+}
+static bool
+pcl_mono_palette_text_is_width_only(const gs_text_enum_t *pte)
+{
+    return false;
+}
+static int
+pcl_mono_palette_text_current_width(const gs_text_enum_t *pte, gs_point *pwidth)
+{
+    return 0;
+}
+static int
+pcl_mono_palette_text_set_cache(gs_text_enum_t *pte, const double *pw,
+                   gs_text_cache_control_t control)
+{
+    return 0;
+}
+static int
+pcl_mono_palette_text_retry(gs_text_enum_t *pte)
+{
+    return 0;
+}
+static void
+pcl_mono_palette_text_release(gs_text_enum_t *pte, client_name_t cname)
+{
+    gx_default_text_release(pte, cname);
+}
+
+static const gs_text_enum_procs_t pcl_mono_palette_text_procs = {
+    pcl_mono_palette_text_resync, pcl_mono_palette_text_process,
+    pcl_mono_palette_text_is_width_only, pcl_mono_palette_text_current_width,
+    pcl_mono_palette_text_set_cache, pcl_mono_palette_text_retry,
+    pcl_mono_palette_text_release
+};
 
 int pcl_mono_palette_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_params_t *text,
     gs_font *font, gx_path *path, const gx_device_color *pdcolor, const gx_clip_path *pcpath,

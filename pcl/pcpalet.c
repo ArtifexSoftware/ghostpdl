@@ -859,7 +859,7 @@ pcl_update_mono(pcl_state_t * pcs)
 
     const gx_cm_color_map_procs *cm_procs =
         dev_proc(dev, get_color_mapping_procs) (dev);
-#if 1
+#if 0
     if (pcs->monochrome_mode) {
         if (swapped_device_color_procs == false) {
             device_cm_procs = *cm_procs;
