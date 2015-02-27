@@ -560,7 +560,7 @@ static const font_resident_t resident_table[] = {
                   "CenturySchL-Bold"),
         {'N', 'w', 'C', 'e', 'n', 't', 'S', 'c', 'h', 'l', 'b', 'k', ' ', ' ',
          'B', 'd'},
-        {0, 1, {287.0, 720000.0 / 287.0}, 0, REGULAR, BOLD, 24703, 58},
+        {0, 1, {287.0, 720000.0 / 287.0}, 0, REGULAR, BOLD, 24703, 57},
         cc_alphabetic, plft_Unicode
     },
     
@@ -569,7 +569,7 @@ static const font_resident_t resident_table[] = {
                   "CenturySchL-BoldItal"),
         {'N', 'w', 'C', 'e', 'n', 't', 'S', 'c', 'h', 'l', 'b', 'k', 'B', 'd',
          'I', 't'},
-        {0, 1, {287.0, 720000.0 / 287.0}, 0, ITALIC, BOLD, 24703, 60},
+        {0, 1, {287.0, 720000.0 / 287.0}, 0, ITALIC, BOLD, 24703, 58},
         cc_alphabetic, plft_Unicode
     },
     
@@ -587,7 +587,7 @@ static const font_resident_t resident_table[] = {
                   "CenturySchL-Roma"),
         {'N', 'w', 'C', 'e', 'n', 't', 'S', 'c', 'h', 'l', 'b', 'k', ' ', 'R',
          'm', 'n'},
-        {0, 1, {278.0, 720000.0 / 278.0}, 0, REGULAR, NOBOLD, 24703, 57},
+        {0, 1, {278.0, 720000.0 / 278.0}, 0, REGULAR, NOBOLD, 24703, 60},
         cc_alphabetic, plft_Unicode
     },
     
@@ -737,7 +737,7 @@ static const font_resident_t resident_table[] = {
                   "NimbusMonL-BoldObli"),
         {'C', 'o', 'u', 'r', 'i', 'e', 'r', 'P', 'S', ' ', ' ', ' ', 'B', 'd',
          'O', 'b'},
-        {0, 0, {600.0, 720000.0 / 600.0}, 0, ITALIC, BOLD, 24579, 79},
+        {0, 0, {600.0, 720000.0 / 600.0}, 0, ITALIC, BOLD, 24579, 78},
         cc_alphabetic, plft_Unicode
     },
     
@@ -745,7 +745,7 @@ static const font_resident_t resident_table[] = {
         fontnames("Courier-Oblique", "Courier-Oblique", "NimbusMonL-ReguObli"),
         {'C', 'o', 'u', 'r', 'i', 'e', 'r', 'P', 'S', ' ', ' ', ' ', ' ', ' ',
          'O', 'b'},
-        {0, 0, {600.0, 720000.0 / 600.0}, 0, ITALIC, NOBOLD, 24579, 78},
+        {0, 0, {600.0, 720000.0 / 600.0}, 0, ITALIC, NOBOLD, 24579, 79},
         cc_alphabetic, plft_Unicode
     },
     
@@ -753,7 +753,7 @@ static const font_resident_t resident_table[] = {
         fontnames("noname", "noname", "ArtLinePrinter"),
         {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
          '0', 'N'},
-        {14, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 82},
+        {14, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 80},
         cc_alphabetic, plft_8bit_printable
     },
 
@@ -761,7 +761,7 @@ static const font_resident_t resident_table[] = {
         fontnames("noname", "noname", "ArtLinePrinter"),
         {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
          '6', 'N'},
-        {206, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 88},
+        {206, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 81},
         cc_alphabetic, plft_8bit_printable
     },
 
@@ -769,7 +769,7 @@ static const font_resident_t resident_table[] = {
         fontnames("noname", "noname", "ArtLinePrinter"),
         {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
          '9', 'N'},
-        {302, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 89},
+        {302, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 82},
         cc_alphabetic, plft_8bit_printable
     },
 
@@ -777,24 +777,16 @@ static const font_resident_t resident_table[] = {
         fontnames("noname", "noname", "ArtLinePrinter"),
         {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ',
          '1', '0', 'U'},
-        {330, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 90},
+        {341, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 83},
         cc_alphabetic, plft_8bit_printable
     },
 
-
-    {
-        fontnames("noname", "noname", "ArtLinePrinter"),
-        {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', '1',
-         '0', 'U'},
-        {341, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 80},
-        cc_alphabetic, plft_8bit_printable
-    },
 
     {
         fontnames("noname", "noname", "ArtLinePrinter"),
         {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', '1',
          '1', 'U'},
-        {373, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 83},
+        {373, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 84},
         cc_alphabetic, plft_8bit_printable
     },
 
@@ -802,7 +794,7 @@ static const font_resident_t resident_table[] = {
         fontnames("noname", "noname", "ArtLinePrinter"),
         {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', '1',
          '2', 'U'},
-        {405, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 84},
+        {405, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 85},
         cc_alphabetic, plft_8bit_printable
     },
 
@@ -810,7 +802,7 @@ static const font_resident_t resident_table[] = {
         fontnames("noname", "noname", "ArtLinePrinter"),
         {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
          '1', 'U'},
-        {53, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 85},
+        {53, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 86},
         cc_alphabetic, plft_8bit_printable
     },
 
@@ -818,7 +810,7 @@ static const font_resident_t resident_table[] = {
         fontnames("noname", "noname", "ArtLinePrinter"),
         {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
          '2', 'N'},
-        {78, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 86},
+        {78, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 87},
         cc_alphabetic, plft_8bit_printable
     },
 
@@ -826,7 +818,7 @@ static const font_resident_t resident_table[] = {
         fontnames("noname", "noname", "ArtLinePrinter"),
         {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
          '5', 'N'},
-        {174, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 87},
+        {174, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 88},
         cc_alphabetic, plft_8bit_printable
     },
     
@@ -834,7 +826,103 @@ static const font_resident_t resident_table[] = {
         fontnames("noname", "noname", "ArtLinePrinter"),
         {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
          '8', 'U'},
-        {277, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 81},
+        {277, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 89},
+        cc_alphabetic, plft_8bit_printable
+    },
+
+    {
+        fontnames("noname", "noname", "ArtLinePrinter"),
+        {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
+         '0', 'U'},
+        {21, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 90},
+        cc_alphabetic, plft_8bit_printable
+    },
+
+    {
+        fontnames("noname", "noname", "ArtLinePrinter"),
+        {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
+         '1', 'E'},
+        {37, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 91},
+        cc_alphabetic, plft_8bit_printable
+    },
+
+    {
+        fontnames("noname", "noname", "ArtLinePrinter"),
+        {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
+         '1', 'F'},
+        {38, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 92},
+        cc_alphabetic, plft_8bit_printable
+    },
+
+    {
+        fontnames("noname", "noname", "ArtLinePrinter"),
+        {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
+         '1', 'G'},
+        {39, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 93},
+        cc_alphabetic, plft_8bit_printable
+    },
+
+    {
+        fontnames("noname", "noname", "ArtLinePrinter"),
+        {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
+         '0', 'I'},
+        {9, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 94},
+        cc_alphabetic, plft_8bit_printable
+    },
+
+    {
+        fontnames("noname", "noname", "ArtLinePrinter"),
+        {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
+         '0', 'S'},
+        {19, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 95},
+        cc_alphabetic, plft_8bit_printable
+    },
+
+    {
+        fontnames("noname", "noname", "ArtLinePrinter"),
+        {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
+         '2', 'S'},
+        {83, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 96},
+        cc_alphabetic, plft_8bit_printable
+    },
+
+    {
+        fontnames("noname", "noname", "ArtLinePrinter"),
+        {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
+         '0', 'D'},
+        {4, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 97},
+        cc_alphabetic, plft_8bit_printable
+    },
+
+    {
+        fontnames("noname", "noname", "ArtLinePrinter"),
+        {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
+         '1', 'O'},
+        {47, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 98},
+        cc_alphabetic, plft_8bit_printable
+    },
+
+    {
+        fontnames("noname", "noname", "ArtLinePrinter"),
+        {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', '1',
+         '3', 'J'},
+        {426, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 99},
+        cc_alphabetic, plft_8bit_printable
+    },
+
+    {
+        fontnames("noname", "noname", "ArtLinePrinter"),
+        {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', '1',
+         '3', 'U'},
+        {437, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 100},
+        cc_alphabetic, plft_8bit_printable
+    },
+
+    {
+        fontnames("noname", "noname", "ArtLinePrinter"),
+        {'L', 'i', 'n', 'e', ' ', 'P', 'r', 'i', 'n', 't', 'e', 'r', ' ', ' ',
+         '4', 'U'},
+        {149, 0, {431.0, 720000.0 / 431.0}, 34, REGULAR, NOBOLD, 0, 101},
         cc_alphabetic, plft_8bit_printable
     },
 
