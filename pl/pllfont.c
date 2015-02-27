@@ -52,36 +52,7 @@ extern const char gp_file_name_list_separator;
  * salvaged for later.
  */
 
-/* utilities for poking around in tt files. It returns true if it a tt
-   file, false if not.  Also returns false if there are any I/O
-   failures */
-static bool
-is_ttfile(stream * ttfile)
-{
-    /* check if an open file a ttfile saving and restoring the file position */
-    long pos;                   /* saved file position */
-    byte buffer[4];             /* version number buffer */
-    bool is_tt;                 /* true if a tt file */
-
-    if ((pos = sftell(ttfile)) < 0)
-        return false;
-    /* seek to beginning */
-    if (sfseek(ttfile, 0L, SEEK_SET))
-        return false;
-    /* read 4 byte version number */
-    is_tt = false;
-    if ((sfread(&buffer, 1, 4, ttfile) == 4) &&
-        (pl_get_uint32(buffer) == 0x10000))
-        is_tt = true;
-    /* restore the file position */
-    if (sfseek(ttfile, pos, SEEK_SET) < 0)
-        return false;
-    return is_tt;
-}
-
-/* get the windows truetype font file name - position 4 in the name
-   table.  Assumes file is a reasonable tt_file - use is_ttfile() to
-   check before calling this procedure. */
+/* get the windows truetype font file name */
 #define WINDOWSNAME 4
 #define PSNAME 6
 
@@ -717,14 +688,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                 dmprintf1(mem, "cannot open file %s\n", tmp_path_copy);
                 continue;
             }
-            if (!is_ttfile(in)) {
-#ifdef DEBUG
-                if (gs_debug_c('=')) {
-                    dmprintf1(mem, "%s not a TrueType file\n", tmp_path_copy);
-                }
-#endif
-                continue;
-            }
 
             code = get_name_from_tt_file(in, mem, buffer, PSNAME);
             if (code < 0) {
@@ -780,7 +743,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                     key[2] = (byte) (residentp - resident_table);
                     key[0] = key[1] = 0;
                     pl_dict_put(pfontdict, key, sizeof(key), plfont);
-
                     /* leave data stored in the file.  NB this should be a fatal error also. */
                     if (pl_store_resident_font_data_in_file
                         (tmp_path_copy, mem, plfont) < 0) {
