@@ -61,6 +61,13 @@
  * before overwriting it, rather than the current check for NULL.
  */
 
+/* More observations; method naems, we have text_begin, but begin_image.
+ * The enumerator initialiser for images gx_image_enum_common_init doesn't initialise
+ * the 'memory' member variable. The text enumerator initialiser gs_text_enum_init does.
+ * The default text enum init routine increments the reference count of the device, but the image enumerator
+ * doesn't.
+ */
+
 /*
  * gsdparam.c line 272 checks for method being NULL, this is bad, we should check for a return error
  * or default method and do initialisation based on that.

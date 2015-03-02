@@ -773,8 +773,8 @@ pcl_mono_palette_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     pcl_mono_palette_image_enum *mie = (pcl_mono_palette_image_enum *)info;
     code = mie->child_enumerator->procs->end_image(mie->child_enumerator,
         draw_last);
-    gs_free_object(mie->memory, mie->child_enumerator, "Close PCL raster");
 
+    gx_image_free_enum(&info);
     return code;
 }
 
@@ -816,7 +816,7 @@ int pcl_mono_palette_begin_typed_image(gx_device *dev, const gs_imager_state *pi
     else
         code = gx_default_begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
 
-#if 1
+#if 0
     /* This is pretty ugly. We want the image code to use our modified color mapping procs. But if we leave
      * it as-is, the stored (ie child) device in the enumerator will be used, which means that our remapping won't
      * take place. Now, we know that 'this' device is a fair copy of the child, including bitmap pointers and so
@@ -1007,7 +1007,7 @@ int pcl_mono_palette_text_begin(gx_device *dev, gs_imager_state *pis, const gs_t
      * on, so we can just substitute 'this' device for the child in the enumerator. This is an example
      * of why the text and image enumerators are a really bad idea.
      */
-    /* The default text enum init routine increments teh reference count of the device, but the image enumerator
+    /* The default text enum init routine increments the reference count of the device, but the image enumerator
      * doesn't. Consistency ? We've heard of it.....
      */
     rc_decrement_only(((gs_text_enum_t *)*ppte)->dev, "pcl_mono_palette");
