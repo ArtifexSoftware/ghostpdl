@@ -1567,7 +1567,7 @@ end readonly def
              /Page eq {
                pop % the "false" flag
                dup pdf_cached_PDF2PS_matrix exch
-               dup /Rotate pget not { 0 } if 90 idiv exch
+               dup /Rotate pget not { 0 } if cvi 90 idiv exch
                pdfpagenumber /CumulativePageCount where {pop CumulativePageCount}{0}ifelse add
                //true % now we have a page# and a transformation matrix
              } if
@@ -1778,7 +1778,7 @@ end readonly def
     % Adjust PageSize and .HWMargins for the page portrait/landscape orientation
     2 copy gt	% PageSize_is_landscape
     7 index aload pop 3 -1 roll sub 3 1 roll exch sub exch
-    10 index /Rotate pget not { 0 } if 90 idiv 1 and 0 ne { exch } if
+    10 index /Rotate pget not { 0 } if cvi 90 idiv 1 and 0 ne { exch } if
     gt	% Box_is_landscape
     ne {
       1 index 0 translate 90 rotate	% add in a rotation
@@ -1800,7 +1800,7 @@ end readonly def
     2 index sub exch 3 index sub exch 4 2 roll pop pop
             % stack: savedCTM <pdfpagedict> [Box] XImageable YImageable
     2 index aload pop 2 index sub exch 3 index sub exch 4 2 roll pop pop
-    5 index /Rotate pget not { 0 } if 90 idiv 1 and 0 ne { exch } if
+    5 index /Rotate pget not { 0 } if 90 cvi idiv 1 and 0 ne { exch } if
             % stack: savedCTM <pdfpagedict> [Box] XImageable YImageable XBox YBox
     4 copy
     3 -1 roll exch div 3 1 roll div .min
@@ -1832,7 +1832,7 @@ end readonly def
     { 180 rotate neg exch neg exch translate }
     {  90 rotate neg 0 exch translate pop }
   }
-  5 index /Rotate pget not { 0 } if
+  5 index /Rotate pget not { 0 } if cvi
   PDFDEBUG { dup 0 ne { (Rotating by ) print dup =print ( degrees.) = flush } if } if
   90 idiv 3 and get exec
   % Now translate to the origin given in the Crop|Media Box
@@ -1882,7 +1882,7 @@ currentdict /PDF2PS_matrix_key undef
   1 index get_any_box
         % Stack: pdfpagedict currentpagedevicedict /BoxName [box]
   oforce_elems normrect_elems fix_empty_rect_elems boxrect 4 2 roll pop pop
-  3 index /Rotate pget not { 0 } if 90 idiv 1 and 0 ne { exch } if
+  3 index /Rotate pget not { 0 } if cvi 90 idiv 1 and 0 ne { exch } if
   % stack: pdfpagedict currentpagedevicedict boxwidth boxheight
   //systemdict /PDFFitPage known {
     % Preserve page size,
