@@ -68,6 +68,7 @@ end def
 
 % Load a font name -> font file name map.
 userdict /Fontmap .FontDirectory maxlength dict put
+userdict /.nativeFontmap .FontDirectory maxlength dict put
 /.loadFontmap {         % <file> .loadFontmap -
                 % We would like to simply execute .definefontmap as we read,
                 % but we have to maintain backward compatibility with an older
@@ -115,7 +116,7 @@ userdict /Fontmap .FontDirectory maxlength dict put
 } bind def
 % Add an entry in Fontmap.  We redefine this if the Level 2
 % resource machinery is loaded.
-/.definefontmap                 % <fontname> <file|alias> .definefontmap -
+/.definefontmapaux                 % <bool> <fontname> <file|alias> .definefontmapaux -
  {              % Since Fontmap is global, make sure the values are storable.
    % If the fontname contains Unicode (first byte == \000) and
    % this is not an alias definition, define an alias using ASCII
@@ -135,7 +136,7 @@ userdict /Fontmap .FontDirectory maxlength dict put
        } for
        exch {
          DEBUG { (\nAdding alias for: ) print 1 index ==only ( as: ) print dup //== exec flush } if
-           cvn exch cvn .definefontmap	% recurse with an alias
+           cvn exch cvn .definefontmapaux	% recurse with an alias
        } {
          pop pop	% discard the name
        } ifelse
@@ -148,7 +149,9 @@ userdict /Fontmap .FontDirectory maxlength dict put
     { dup .gcheck not { dup length string copy } if
     }
    if
-   Fontmap 3 -1 roll 2 copy .knownget
+
+   4 -1 roll {.nativeFontmap}{Fontmap} ifelse
+   3 -1 roll 2 copy .knownget
     {           % Add an element to the end of the existing value,
                 % unless it's the same as the current last element.
       mark exch aload pop counttomark 4 add -1 roll
@@ -159,6 +162,16 @@ userdict /Fontmap .FontDirectory maxlength dict put
     }
    ifelse .setglobal
  } bind def
+
+/.definefontmap                 % <fontname> <file|alias> .definefontmap -
+{
+  //false 3 1 roll //.definefontmapaux exec
+} bind def
+
+/.definenativefontmap                 % <fontname> <file|alias> .definenativefontmap -
+{
+  //true 3 1 roll //.definefontmapaux exec
+} bind def
 
 % Parse a font file just enough to find the FontName or FontType.
 /.findfontvalue {       % <file> <key> .findfontvalue <value> true
@@ -322,12 +335,12 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
           {     % stack: <fontcount> <scancount+1> <filecount+1> <filename>
                 %       <file>
             dup 0 setfileposition .findfontname
-             { dup Fontmap exch known
+             { dup .nativeFontmap exch known
                 { pop pop
                 }
                 { exch copystring exch
                   DEBUG { ( ) print dup =only flush } if
-                  1 index .definefontmap
+                  1 index .definenativefontmap
                   .splitfilename pop //true .scanfontdict 3 1 roll .growput
                         % Increment fontcount.
                   3 -1 roll 1 add 3 1 roll
@@ -369,41 +382,47 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 } .bind executeonly def
 systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
 /.buildnativefontmap {   % - .buildnativefontmap <bool>
-  QUIET not {
-    (Querying operating system for font files...\n)
-    print flush
-  } if
-  .getnativefonts dup
+  systemdict /.nativefontmapbuilt .knownget not
+  { //false} if
+
+  {//false}
   {
-    exch
+    QUIET not {
+      (Querying operating system for font files...\n)
+      print flush
+    } if
+    .getnativefonts dup
     {
-      % stack: [ (name) (path) ]
-      % verify the font name ourselves
-      dup 1 get (r) { file } .internalstopped
+      exch
       {
-        % skip the entry if we can't open the returned path
-        pop pop pop
-      }{
-        % we could open the font file
-        mark 2 1 roll
-        {.findfontname} .internalstopped
+        % stack: [ (name) (path) ]
+        % verify the font name ourselves
+        dup 1 get (r) { file } .internalstopped
         {
-          cleartomark
-          pop
-        }
-        {
-          3 -1 roll pop
-          not { dup 0 get } if  % stack: (newname) [ (name) (path) ]
-          % DEBUG { (  found ) print dup print (\n) print flush } if
-          % add entry to the fontmap
-          1 index exch 0 exch dup type /nametype ne {cvn} if put
-          aload pop .definefontmap
+          % skip the entry if we can't open the returned path
+          pop pop pop
+        }{
+          % we could open the font file
+          mark 2 1 roll
+          {.findfontname} .internalstopped
+          {
+            cleartomark
+            pop
+          }
+          {
+            3 -1 roll pop
+            not { dup 0 get } if  % stack: (newname) [ (name) (path) ]
+            % DEBUG { (  found ) print dup print (\n) print flush } if
+            % add entry to the fontmap
+            1 index exch 0 exch dup type /nametype ne {cvn} if put
+            aload pop .definenativefontmap
+          } ifelse
         } ifelse
-      } ifelse
-    } forall
-  } if
-  % record that we've been run
-  //true .setnativefontmapbuilt
+      } forall
+    } if
+    % record that we've been run
+    //true .setnativefontmapbuilt
+  } ifelse
 } bind def
 
 % Create the dictionary that registers the .buildfont procedure
@@ -738,7 +757,11 @@ buildfontdict 3 /.buildfont3 cvx put
 /.substitutefont {              % <fontname> .substitutefont <altname>
   dup 0 exch .fontnameproperties .substitutefontname
         % Only accept fonts known in the Fontmap.
-   Fontmap 1 index known not { pop defaultfontname } if
+   Fontmap 1 index known not
+   {
+     .nativeFontmap 1 index known not
+     {pop defaultfontname } if
+   } if
 } bind def
 
 % If requested, make (and recognize) fake entries in FontDirectory for fonts
@@ -931,12 +954,23 @@ $error /SubstituteFont { } put
     {                   % Already loaded
       exch pop //true
     }
-    { dup Fontmap exch .knownget not
+    {
+       dup Fontmap exch .knownget
+       { //true //true }
        {                % Unknown font name.  Look for a file with the
                         % same name as the requested font.
-         .tryloadfont
-       }
+         dup .tryloadfont
+         { exch pop //true //false }
+         {
+           % if we can't load by name check the native font map
+           dup .nativeFontmap exch .knownget
+           { //true //true }
+           { //false //false } ifelse
+         } ifelse
+       } ifelse
+
        {                % Try each element of the Fontmap in turn.
+         pop
          //false exch   % (in case we exhaust the list)
                         % Stack: fontname false fontmaplist
          { exch pop
@@ -970,7 +1004,7 @@ $error /SubstituteFont { } put
          }
         ifelse
        }
-      ifelse
+      if
     }
    ifelse
  } bind def
@@ -1130,8 +1164,9 @@ currentdict /.putgstringcopy .undef
 % Define a procedure to load all known fonts.
 % This isn't likely to be very useful.
 /loadallfonts
- { Fontmap { pop findfont pop } forall
- } bind def
+{
+  [Fontmap .nativeFontmap] { { pop findfont pop } forall } forall
+} bind def
 
 % If requested, load all the fonts defined in the Fontmap into FontDirectory
 % as "fake" fonts i.e., font dicts with only FontName and FontType defined.
@@ -1146,15 +1181,18 @@ currentdict /.putgstringcopy .undef
     }
     {
       (gs_fonts FAKEFONTS) VMDEBUG
-      Fontmap {
-        pop dup type /stringtype eq { cvn } if
-        .FontDirectory 1 index known not {
-          2 dict dup /FontName 3 index put
-          dup /FontType 1 put
-          .FontDirectory 3 1 roll { put } //superexec	% readonly
-        } {
-          pop
-        } ifelse
+      [Fontmap .nativeFontmap ]
+      {
+        {
+          pop dup type /stringtype eq { cvn } if
+          .FontDirectory 1 index known not {
+            2 dict dup /FontName 3 index put
+            dup /FontType 1 put
+            .FontDirectory 3 1 roll { put } //superexec   % readonly
+          } {
+            pop
+          } ifelse
+        } forall
       } forall
     }
 FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined

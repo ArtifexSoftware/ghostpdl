@@ -765,7 +765,11 @@ setglobal
                 % fonts with no properties are handled correctly.
       //.pdfdfndict begin .substitutefontname end
                 % Stack: font-res fontname fontdesc substname|null
-      Fontmap 1 index known not {
+      Fontmap 1 index known
+      {//false}
+      { .buildnativefontmap pop NativeFontmap 1 index known not} ifelse
+
+      {
                 % No available good substitution, use the standard one.
         pop 1 index .substitutefont
       } if
