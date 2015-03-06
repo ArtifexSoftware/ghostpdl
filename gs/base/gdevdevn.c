@@ -334,8 +334,11 @@ devn_get_params(gx_device * pdev, gs_param_list * plist,
     if ( (code = sample_device_crd_get_params(pdev, plist, "CRDDefault")) < 0 ||
          (code = param_write_name_array(plist, "SeparationColorNames", &scna)) < 0 ||
          (code = param_write_name_array(plist, "SeparationOrder", &sona)) < 0 ||
-         (code = param_write_bool(plist, "Separations", &seprs)) < 0 ||
-         (code = param_write_int(plist, "PageSpotColors", &(pdevn_params->page_spot_colors))) < 0)
+         (code = param_write_bool(plist, "Separations", &seprs)) < 0)
+        return code;
+
+    if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE &&
+        (code = param_write_int(plist, "PageSpotColors", &(pdevn_params->page_spot_colors))) < 0)
         return code;
 
     if (pdevn_params->separations.num_separations > 0)
