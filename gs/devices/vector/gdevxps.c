@@ -1875,6 +1875,7 @@ xps_begin_image(gx_device *dev, const gs_imager_state *pis,
         rendering_params.cmm = gsCMM_DEFAULT;
         pie->icc_link = gsicc_get_link_profile(pis, dev, icc_profile,
             pis->icc_manager->default_rgb, &rendering_params, pis->memory, false);
+        icc_profile = pis->icc_manager->default_rgb;
     } else {
         pie->icc_link = NULL;
     }
