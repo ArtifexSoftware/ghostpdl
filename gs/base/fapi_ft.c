@@ -56,6 +56,9 @@
 
 /* Note: structure definitions here start with FF_, which stands for 'FAPI FreeType". */
 
+#define ft_emprintf(m,s) { outflush(m); emprintf(m, s); outflush(m); }
+#define ft_emprintf1(m,s,d) { outflush(m); emprintf1(m, s, d); outflush(m); }
+
 typedef struct ff_server_s
 {
     gs_fapi_server fapi_server;
@@ -790,12 +793,12 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
     if (ft_error == FT_Err_Too_Many_Hints) {
 #ifdef DEBUG
         if (gs_debug_c('1')) {
-            emprintf1(a_fapi_font->memory,
+            ft_emprintf1(a_fapi_font->memory,
                       "TrueType glyph %"PRId64" uses more instructions than the declared maximum in the font.",
                       a_char_ref->char_codes[0]);
 
             if (!ft_error_fb) {
-                emprintf(a_fapi_font->memory,
+                ft_emprintf(a_fapi_font->memory,
                          " Continuing, falling back to notdef\n\n");
             }
         }
@@ -806,12 +809,12 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
     if (ft_error == FT_Err_Invalid_Argument) {
 #ifdef DEBUG
         if (gs_debug_c('1')) {
-            emprintf1(a_fapi_font->memory,
+            ft_emprintf1(a_fapi_font->memory,
                       "TrueType parsing error in glyph %"PRId64" in the font.",
                       a_char_ref->char_codes[0]);
 
             if (!ft_error_fb) {
-                emprintf(a_fapi_font->memory,
+                ft_emprintf(a_fapi_font->memory,
                          " Continuing, falling back to notdef\n\n");
             }
         }
@@ -822,12 +825,12 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
     if (ft_error == FT_Err_Too_Many_Function_Defs) {
 #ifdef DEBUG
         if (gs_debug_c('1')) {
-            emprintf1(a_fapi_font->memory,
+            ft_emprintf1(a_fapi_font->memory,
                       "TrueType instruction error in glyph %"PRId64" in the font.",
                       a_char_ref->char_codes[0]);
 
             if (!ft_error_fb) {
-                emprintf(a_fapi_font->memory,
+                ft_emprintf(a_fapi_font->memory,
                          " Continuing, falling back to notdef\n\n");
             }
         }
@@ -838,12 +841,12 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
     if (ft_error == FT_Err_Invalid_Glyph_Index) {
 #ifdef DEBUG
         if (gs_debug_c('1')) {
-            emprintf1(a_fapi_font->memory,
+            ft_emprintf1(a_fapi_font->memory,
                       "FreeType is unable to find the glyph %"PRId64" in the font.",
                       a_char_ref->char_codes[0]);
 
             if (!ft_error_fb) {
-                emprintf(a_fapi_font->memory,
+                ft_emprintf(a_fapi_font->memory,
                          " Continuing, falling back to notdef\n\n");
             }
         }

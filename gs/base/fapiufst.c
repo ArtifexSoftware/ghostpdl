@@ -82,6 +82,9 @@
 #include "t1itype1.h"
 #endif
 
+#define ufst_emprintf(m,s) { outflush(m); emprintf(m, s); outflush(m); }
+#define ufst_emprintf1(m,s,d) { outflush(m); emprintf1(m, s, d); outflush(m); }
+
 #if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
 #undef true
 #undef false
@@ -296,13 +299,13 @@ open_UFST(fapi_ufst_server * r, const byte * server_param,
             bPlugIn = TRUE;
         }
         else if (gs_debug_c('1'))
-            emprintf(r->mem, "Warning: Unknown UFST parameter ignored.\n");
+            ufst_emprintf(r->mem, "Warning: Unknown UFST parameter ignored.\n");
     }
 #if !NO_SYMSET_MAPPING
     if (!bSSdir) {
         strcpy(ufst_root_dir, ".");
         if (gs_debug_c('1'))
-            emprintf(r->mem,
+            ufst_emprintf(r->mem,
                      "Warning: UFST_SSdir is not specified, will search *.ss files in the curent directory.\n");
     }
 #endif
@@ -319,7 +322,7 @@ open_UFST(fapi_ufst_server * r, const byte * server_param,
     }
     else {
 #ifdef FCO_RDR
-        emprintf(r->mem,
+        ufst_emprintf(r->mem,
                  "Warning: UFST_PlugIn is not specified, some characters may be missing.\n");
 #endif
     }
@@ -340,7 +343,7 @@ gs_fapi_ufst_ensure_open(gs_fapi_server *server, const char *server_param, int s
     {
         code = open_UFST(r, (byte *)server_param, server_param_size);
         if (code < 0) {
-            emprintf(r->mem, "Error opening the UFST font server.\n");
+            ufst_emprintf(r->mem, "Error opening the UFST font server.\n");
             return code;
         }
     }
@@ -970,7 +973,7 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
             stream *f = sfopen(font_file_path, "rb", r->mem);
 
             if (f == NULL) {
-                emprintf1(r->mem,
+                ufst_emprintf1(r->mem,
                           "fapiufst: Can't open %s\n", font_file_path);
                 return gs_error_undefinedfilename;
             }
