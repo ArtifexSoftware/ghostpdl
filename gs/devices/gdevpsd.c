@@ -359,42 +359,45 @@ psd_prn_open(gx_device * pdev)
        that the number of spot colors can change from page to page.  
        Update things so that we only output separations for the
        inks on that page. */
-    if ((pdev_psd->devn_params.page_spot_colors >= 0 || force_pdf) && !force_ps) {
-        if (force_pdf) {
-            /* Use the information that is in the ICC profle.  We will be here
-               anytime that we have limited ourselves to a fixed number
-               of colorants specified by the DeviceN ICC profile */
-            pdev->color_info.num_components = 
-                (pdev_psd->devn_params.separations.num_separations 
-                 + pdev_psd->devn_params.num_std_colorant_names);
-            if (pdev->color_info.num_components > pdev->color_info.max_components)
-                pdev->color_info.num_components = pdev->color_info.max_components;
-            /* Limit us only to the ICC colorants */
-            pdev->color_info.max_components = pdev->color_info.num_components;
-        } else {
-            /* Use the information that is in the page spot color.  We should
-               be here if we are processing a PDF and we do not have a DeviceN
-               ICC profile specified for output */
-            if (!(pdev_psd->lock_colorants)) {
+
+    if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
+        if ((pdev_psd->devn_params.page_spot_colors >= 0 || force_pdf) && !force_ps) {
+            if (force_pdf) {
+                /* Use the information that is in the ICC profle.  We will be here
+                   anytime that we have limited ourselves to a fixed number
+                   of colorants specified by the DeviceN ICC profile */
                 pdev->color_info.num_components =
-                    (pdev_psd->devn_params.page_spot_colors
+                    (pdev_psd->devn_params.separations.num_separations
                     + pdev_psd->devn_params.num_std_colorant_names);
                 if (pdev->color_info.num_components > pdev->color_info.max_components)
                     pdev->color_info.num_components = pdev->color_info.max_components;
+                /* Limit us only to the ICC colorants */
+                pdev->color_info.max_components = pdev->color_info.num_components;
+            } else {
+                /* Use the information that is in the page spot color.  We should
+                   be here if we are processing a PDF and we do not have a DeviceN
+                   ICC profile specified for output */
+                if (!(pdev_psd->lock_colorants)) {
+                    pdev->color_info.num_components =
+                        (pdev_psd->devn_params.page_spot_colors
+                        + pdev_psd->devn_params.num_std_colorant_names);
+                    if (pdev->color_info.num_components > pdev->color_info.max_components)
+                        pdev->color_info.num_components = pdev->color_info.max_components;
+                }
             }
-        }
-    } else {
-        /* We do not know how many spots may occur on the page. 
-           For this reason we go ahead and allocate the maximum that we
-           have available.  Note, lack of knowledge only occurs in the case
-           of PS files.  With PDF we know a priori the number of spot
-           colorants.  */
-        if (!(pdev_psd->lock_colorants)) {
-            int num_comp = pdev_psd->max_spots + 4; /* Spots + CMYK */
-            if (num_comp > GS_CLIENT_COLOR_MAX_COMPONENTS)
-                num_comp = GS_CLIENT_COLOR_MAX_COMPONENTS;
-            pdev->color_info.num_components = num_comp;
-            pdev->color_info.max_components = num_comp;
+        } else {
+            /* We do not know how many spots may occur on the page.
+               For this reason we go ahead and allocate the maximum that we
+               have available.  Note, lack of knowledge only occurs in the case
+               of PS files.  With PDF we know a priori the number of spot
+               colorants.  */
+            if (!(pdev_psd->lock_colorants)) {
+                int num_comp = pdev_psd->max_spots + 4; /* Spots + CMYK */
+                if (num_comp > GS_CLIENT_COLOR_MAX_COMPONENTS)
+                    num_comp = GS_CLIENT_COLOR_MAX_COMPONENTS;
+                pdev->color_info.num_components = num_comp;
+                pdev->color_info.max_components = num_comp;
+            }
         }
     }
     /* Push this to the max amount as a default if someone has not set it */
@@ -1010,18 +1013,22 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, FILE *file, int w, int h)
     }
     xc->base_bytes_pp = dev->devn_params.num_std_colorant_names;
     xc->num_channels = i;
-    if (dev->devn_params.num_separation_order_names == 0) {
-        xc->n_extra_channels = dev->devn_params.separations.num_separations;
-    } else {
-        /* Have to figure out how many in the order list were not std
-           colorants */
-        spot_count = 0;
-        for (i = 0; i < dev->devn_params.num_separation_order_names; i++) {
-            if (dev->devn_params.separation_order_map[i] >= NUM_CMYK_COMPONENTS) {
-                spot_count++;
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
+        if (dev->devn_params.num_separation_order_names == 0) {
+            xc->n_extra_channels = dev->devn_params.separations.num_separations;
+        } else {
+            /* Have to figure out how many in the order list were not std
+               colorants */
+            spot_count = 0;
+            for (i = 0; i < dev->devn_params.num_separation_order_names; i++) {
+                if (dev->devn_params.separation_order_map[i] >= NUM_CMYK_COMPONENTS) {
+                    spot_count++;
+                }
             }
+            xc->n_extra_channels = spot_count;
         }
-        xc->n_extra_channels = spot_count;
+    } else {
+        xc->n_extra_channels = 0;
     }
     xc->width = w;
     xc->height = h;
@@ -1038,16 +1045,18 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, FILE *file, int w, int h)
         xc->chnl_to_orig_sep[i] = i;
     }
     /* If we had a specify order name, then we may need to adjust things */
-    if (dev->devn_params.num_separation_order_names > 0) {
-        for (i = 0; i < dev->devn_params.num_separation_order_names; i++) {
-            int sep_order_num = dev->devn_params.separation_order_map[i];
-            if (sep_order_num >= NUM_CMYK_COMPONENTS) {
-                xc->chnl_to_position[xc->num_channels] = sep_order_num;
-                xc->chnl_to_orig_sep[xc->num_channels++] = sep_order_num;
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
+        if (dev->devn_params.num_separation_order_names > 0) {
+            for (i = 0; i < dev->devn_params.num_separation_order_names; i++) {
+                int sep_order_num = dev->devn_params.separation_order_map[i];
+                if (sep_order_num >= NUM_CMYK_COMPONENTS) {
+                    xc->chnl_to_position[xc->num_channels] = sep_order_num;
+                    xc->chnl_to_orig_sep[xc->num_channels++] = sep_order_num;
+                }
             }
+        } else {
+            xc->num_channels += dev->devn_params.separations.num_separations;
         }
-    } else {
-        xc->num_channels += dev->devn_params.separations.num_separations;
     }
     return 0;
 }
