@@ -369,17 +369,17 @@ bind def
 
 /FAPIhook_aux  %      <string|name> <font_dict> .FAPIhook <string|name> <font>
 {                                                     % name <<font>>
-  { (FAPIhook ) print 1 index = } //FAPI_hook_debug exec
+  { (\nFAPIhook ) print 1 index = flush } //FAPI_hook_debug exec
   dup /FAPI known {
-    { //PrintFontRef exec ( is mapped to FAPI=) print dup /FAPI get = } //FAPI_hook_debug exec
+    { //PrintFontRef exec ( is mapped to FAPI=) print dup /FAPI get = flush } //FAPI_hook_debug exec
     //true //.FAPIrebuildfont //ChooseDecoding exec
   } {
     dup /PathLoad known dup {
-      { (PathLoad known for the font ) print //PrintFontRef exec (.) = } //FAPI_hook_debug exec
+      { (PathLoad known for the font ) print //PrintFontRef exec (.\n) print flush} //FAPI_hook_debug exec
     } {
       pop //FAPI_is_hook_disabled exec dup
       { pop
-        { (FAPIhook is in .loadfont context for the font ) print //PrintFontRef exec (.) = } //FAPI_hook_debug exec
+        { (FAPIhook is in .loadfont context for the font ) print //PrintFontRef exec (.\n) print flush } //FAPI_hook_debug exec
         //true
       } if
     } ifelse
@@ -402,15 +402,15 @@ bind def
         1 index //GetFontType exec //FindInArray exec      % name <<font>> bHook
     } ifelse
 
-    { { (Trying to render the font ) print //PrintFontRef exec ( with FAPI...) = } //FAPI_hook_debug exec
+    { { (Trying to render the font ) print //PrintFontRef exec ( with FAPI...\n) print flush } //FAPI_hook_debug exec
       //.FAPIpassfont {
-        { //PrintFontRef exec ( is being rendered with FAPI=) print dup /FAPI get = } //FAPI_hook_debug exec
+        { //PrintFontRef exec ( is being rendered with FAPI=) print dup /FAPI get = flush } //FAPI_hook_debug exec
         //false //.FAPIrebuildfont //ChooseDecoding exec
       } {
-        { (Can't render ) print //PrintFontRef exec ( with FAPI, will do with native GS renderer.) = } //FAPI_hook_warn exec
+        { (Can't render ) print //PrintFontRef exec ( with FAPI, will do with native GS renderer.\n) print flush } //FAPI_hook_warn exec
       } ifelse
     } {
-      { (The font ) print //PrintFontRef exec ( doesn't need to render with FAPI.) = } //FAPI_hook_debug exec
+      { (The font ) print //PrintFontRef exec ( doesn't need to render with FAPI.\n) print flush } //FAPI_hook_debug exec
     } ifelse
 
     % Remove the plugin request from the font dictionary
@@ -422,7 +422,7 @@ bind def
 { //is_device_compatible_to_FAPI exec
   { //FAPIhook_aux exec
   } {
-    { (FAPIhook is disabled for the current device.) = } //FAPI_hook_debug exec
+    { (FAPIhook is disabled for the current device.\n) print flush } //FAPI_hook_debug exec
   } ifelse
 } bind def
 
