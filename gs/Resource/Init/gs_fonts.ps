@@ -915,7 +915,7 @@ $error /SubstituteFont { } put
     } {
                         % No more directories to scan. Try building the native
                         % font map entries if we haven't already done so.
-      systemdict /.nativefontmapbuilt get not { .buildnativefontmap } { //false } ifelse {
+        .buildnativefontmap {
                         % Same stack as at the beginning of .dofindfont.
         .dofindfont     % start over
       } {
