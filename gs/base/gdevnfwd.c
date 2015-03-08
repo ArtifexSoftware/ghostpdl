@@ -714,17 +714,18 @@ static void
 fwd_map_gray_cs(gx_device * dev, frac gray, frac out[])
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device * const tdev = fdev->target;
+    gx_device * tdev = fdev->target;
     const gx_cm_color_map_procs * pprocs;
 
+    GET_COLOR_MAPPING_PROCS(tdev, pprocs);
     /* Verify that all of the pointers and procs are set */
     /* If not then use a default routine.  This case should be an error */
     if (tdev == 0 || dev_proc(tdev, get_color_mapping_procs) == 0 ||
-          (pprocs = dev_proc(tdev, get_color_mapping_procs(tdev))) == 0 ||
+          pprocs == 0 ||
           pprocs->map_gray == 0)
         gray_cs_to_gray_cm(tdev, gray, out);   /* if all else fails */
     else
-        pprocs->map_gray(tdev, gray, out);
+        MAP_GRAY(pprocs, tdev, gray, out)
 }
 
 /*
@@ -735,17 +736,18 @@ fwd_map_rgb_cs(gx_device * dev, const gs_imager_state *pis,
                                    frac r, frac g, frac b, frac out[])
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device * const tdev = fdev->target;
+    gx_device * tdev = fdev->target;
     const gx_cm_color_map_procs * pprocs;
 
+    GET_COLOR_MAPPING_PROCS(tdev, pprocs);
     /* Verify that all of the pointers and procs are set */
     /* If not then use a default routine.  This case should be an error */
     if (tdev == 0 || dev_proc(tdev, get_color_mapping_procs) == 0 ||
-          (pprocs = dev_proc(tdev, get_color_mapping_procs(tdev))) == 0 ||
+          pprocs == 0 ||
           pprocs->map_rgb == 0)
         rgb_cs_to_rgb_cm(tdev, pis, r, g, b, out);   /* if all else fails */
     else
-        pprocs->map_rgb(tdev, pis, r, g, b, out);
+        MAP_RGB(pprocs, tdev, pis, r, g, b, out)
 }
 
 /*
@@ -755,17 +757,18 @@ static void
 fwd_map_cmyk_cs(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device * const tdev = fdev->target;
+    gx_device * tdev = fdev->target;
     const gx_cm_color_map_procs * pprocs;
 
+    GET_COLOR_MAPPING_PROCS(tdev, pprocs);
     /* Verify that all of the pointers and procs are set */
     /* If not then use a default routine.  This case should be an error */
     if (tdev == 0 || dev_proc(tdev, get_color_mapping_procs) == 0 ||
-          (pprocs = dev_proc(tdev, get_color_mapping_procs(tdev))) == 0 ||
+          pprocs == 0 ||
           pprocs->map_cmyk == 0)
         cmyk_cs_to_cmyk_cm(tdev, c, m, y, k, out);   /* if all else fails */
     else
-        pprocs->map_cmyk(tdev, c, m, y, k, out);
+        MAP_CMYK(pprocs, tdev, c, m, y, k, out)
 }
 
 static const gx_cm_color_map_procs FwdDevice_cm_map_procs = {
