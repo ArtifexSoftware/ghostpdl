@@ -87,7 +87,8 @@ gsdll_stdin_utf8(void *instance, char *buf, int len)
     int nret = 0;               /* number of bytes returned to caller */
     int i;
 
-    while (len) {
+    /* protect against caller passing invalid len */
+    while (len > 0) {
         while (len && nmore) {
             nmore--;
             *buf++ = 0x80 | ((thiswchar >> (6 * nmore)) & 0x3F), nret++;
@@ -144,7 +145,8 @@ gsdll_utf8write(FILE *stdwr, const char *str, int len, WCHAR *thiswchar, int *nm
 {
     UINT consolecp = 0;
 
-    while (len) {
+    /* protect against caller passing invalid len */
+    while (len > 0) {
         const char *str0;
 
         /* write ASCII chars without translation */
