@@ -460,25 +460,36 @@ AC_SUBST(HAVE_PREAD_PWRITE)
 SYNC="nosync"
 PTHREAD_LIBS=""
 
+AC_ARG_ENABLE([threading], AC_HELP_STRING([--disable-threading],
+    [disable support for multithreaded rendering]))
+
+
 # if you haven't got pread/pwrite, we can't use multithreading
 if test "x$HAVE_PREAD_PWRITE" != "x"; then
-
-  case `uname` in
-    MINGW*)
-      AC_MSG_WARN([disabling support for pthreads......])
-    ;;
-    *)
-      AC_CHECK_LIB(pthread, pthread_create, [
-        SYNC=posync;
-        PTHREAD_LIBS="-lpthread"
-      ])
-    ;;
-  esac
-
+  if test "$enable_fontconfig" != "no"; then
+    case `uname` in
+      MINGW*)
+        AC_MSG_WARN([disabling support for pthreads......])
+      ;;
+      *)
+        AC_CHECK_LIB(pthread, pthread_create, [
+          SYNC=posync;
+          PTHREAD_LIBS="-lpthread"
+        ])
+        AC_TRY_COMPILE([#include <pthread.h>],
+             [static int k = PTHREAD_MUTEX_RECURSIVE;],
+             [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE"],
+             [AC_TRY_COMPILE([#include <pthread.h>],
+                [static int k = PTHREAD_MUTEX_RECURSIVE_NP;],
+                [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE_NP"])])
+      ;;
+    esac
+  fi
 fi
 
 AC_SUBST(SYNC)
 AC_SUBST(PTHREAD_LIBS)
+AC_SUBST(RECURSIVE_MUTEXATTR)
 
 AC_PATH_X
 

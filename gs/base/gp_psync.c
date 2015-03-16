@@ -128,13 +128,20 @@ gp_semaphore_signal(gp_semaphore * sema)
 /* Monitor supports enter/leave semantics */
 
 /*
- * We need PTHREAD_MUTEX_RECURSIVE behavior, but this isn't totally portable
- * so we implement it in a more portable fashion, keeping track of the
- * owner thread using 'pthread_self()'
+ * We need PTHREAD_MUTEX_RECURSIVE behavior, but this isn't
+ * supported on all pthread platforms, so if it's available
+ * we'll use it, otherwise we'll emulate it.
+ * GS_RECURSIVE_MUTEXATTR is set by the configure script
+ * on Unix-like machines to the attribute setting for
+ * PTHREAD_MUTEX_RECURSIVE - on linux this is usually
+ * PTHREAD_MUTEX_RECURSIVE_NP
  */
 typedef struct gp_pthread_recursive_s {
     pthread_mutex_t mutex;	/* actual mutex */
+#ifndef GS_RECURSIVE_MUTEXATTR
     pthread_t	self_id;	/* owner */
+    int lcount;
+#endif
 } gp_pthread_recursive_t;
 
 uint
@@ -148,12 +155,32 @@ gp_monitor_open(gp_monitor * mona)
 {
     pthread_mutex_t *mon;
     int scode;
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_t *attrp = NULL;
 
     if (!mona)
         return -1;		/* monitors are not movable */
-    mon = &((gp_pthread_recursive_t *)mona)->mutex;
+
+
+#ifdef GS_RECURSIVE_MUTEXATTR
+    attrp = &attr;
+    scode = pthread_mutexattr_init(attrp);
+    if (scode < 0) goto done;
+
+    scode = pthread_mutexattr_settype(attrp, GS_RECURSIVE_MUTEXATTR);
+    if (scode < 0) {
+        goto done;
+    }
+#else     
     ((gp_pthread_recursive_t *)mona)->self_id = 0;	/* Not valid unless mutex is locked */
-    scode = pthread_mutex_init(mon, NULL);
+    ((gp_pthread_recursive_t *)mona)->lcount = 0;
+#endif
+
+    mon = &((gp_pthread_recursive_t *)mona)->mutex;
+    scode = pthread_mutex_init(mon, attrp);
+    if (attrp)
+        (void)pthread_mutexattr_destroy(attrp);
+done:
     return SEM_ERROR_CODE(scode);
 }
 
@@ -173,29 +200,48 @@ gp_monitor_enter(gp_monitor * mona)
     pthread_mutex_t * const mon = (pthread_mutex_t *)mona;
     int scode;
 
+#ifdef GS_RECURSIVE_MUTEXATTR
+    scode = pthread_mutex_lock(mon);
+#else
     if ((scode = pthread_mutex_trylock(mon)) == 0) {
         ((gp_pthread_recursive_t *)mona)->self_id = pthread_self();
-        return SEM_ERROR_CODE(scode);
+        ((gp_pthread_recursive_t *)mona)->lcount++;
     } else {
-        if (pthread_equal(pthread_self(),((gp_pthread_recursive_t *)mona)->self_id))
-            return 0;
+        if (pthread_equal(pthread_self(),((gp_pthread_recursive_t *)mona)->self_id)) {
+            ((gp_pthread_recursive_t *)mona)->lcount++;
+            scode = 0;
+        }
         else {
             /* we were not the owner, wait */
             scode = pthread_mutex_lock(mon);
             ((gp_pthread_recursive_t *)mona)->self_id = pthread_self();
-            return SEM_ERROR_CODE(scode);
+            ((gp_pthread_recursive_t *)mona)->lcount++;
         }
     }
+#endif
+    return SEM_ERROR_CODE(scode);
 }
 
 int
 gp_monitor_leave(gp_monitor * mona)
 {
     pthread_mutex_t * const mon = (pthread_mutex_t *)mona;
-    int scode;
+    int scode = 0;
 
-    scode = pthread_mutex_unlock(mon);
-    ((gp_pthread_recursive_t *)mona)->self_id = 0;	/* Not valid unless mutex is locked */
+#ifdef GS_RECURSIVE_MUTEXATTR
+    scode = pthread_mutex_lock(mon);
+#else
+    if (pthread_equal(pthread_self(),((gp_pthread_recursive_t *)mona)->self_id)) {
+      if ((--((gp_pthread_recursive_t *)mona)->lcount) == 0) {
+          scode = pthread_mutex_unlock(mon);
+          ((gp_pthread_recursive_t *)mona)->self_id = 0;	/* Not valid unless mutex is locked */
+
+      }
+    }
+    else {
+        scode = -1 /* should be EPERM */;
+    }
+#endif
     return SEM_ERROR_CODE(scode);
 }
 
