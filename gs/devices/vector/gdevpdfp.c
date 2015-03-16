@@ -776,6 +776,42 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 
 /* ---------------- Process DSC comments ---------------- */
 
+/* Bug #695850 DSC comments are not actually encoded, nor are they PostScript strings
+ * they are simply a sequence of bytes. SO it would seem we should just preserve that
+ * byte sequence. Bizarrely, Distiller treats the comment as 'almost' a PostScript
+ * string. In particular it converts octal codes into an equivalent binary byte. It
+ * also converts (eg) '\n' and '\r' into 'n' and 'r' and invalid octal escapes
+ * (eg \11) simply have the '\' turned into a '?'.
+ * We think this is nuts and have no intention of trying to mimic it precisely. This
+ * routine will find octal escapes and convert them into binary. The way this works is
+ * a little obscure. The DSC parser does convert the comment into a PostScript string
+ * and so has to escape any unusual characters. This means our octal escaped values in
+ * the original DSC comment have had the escape character ('\') escaped to become '\\'.
+ * All we need to do is remove the escape of the escape and we will end up with a
+ * properly escaped PostScript string.
+ */
+static int unescape_octals(gx_device_pdf * pdev, char *src, int size)
+{
+    char *start, *dest;
+
+    start = src;
+    dest = src;
+
+    while(size) {
+        if (size > 4 && src[0] == '\\' && src[1] == '\\' &&
+                src[2] > 0x29 && src[2] < 0x35 &&
+                src[3] > 0x29 &&src[3] < 0x38 &&
+                src[4] > 0x29 && src[4] < 0x38) {
+            src++;
+            size--;
+        } else {
+            *dest++ = *src++;
+            size--;
+        }
+    }
+    return (dest - start);
+}
+
 static int
 pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 {
@@ -796,8 +832,9 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 
     for (i = 0; i + 1 < pma->size && code >= 0; i += 2) {
         const gs_param_string *pkey = &pma->data[i];
-        const gs_param_string *pvalue = &pma->data[i + 1];
+        gs_param_string *pvalue = (gs_param_string *)&pma->data[i + 1];
         const char *key;
+        int newsize;
 
         /*
          * %%For, %%Creator, and %%Title are recognized only if either
@@ -809,13 +846,25 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
          * but we do the same -- we ignore %%CreationDate here.
          */
 
-        if (pdf_key_eq(pkey, "Creator"))
+        if (pdf_key_eq(pkey, "Creator")) {
             key = "/Creator";
-        else if (pdf_key_eq(pkey, "Title"))
+            newsize = unescape_octals(pdev, (char *)pvalue->data, pvalue->size);
+            code = cos_dict_put_c_key_string(pdev->Info, key,
+                                             pvalue->data, newsize);
+            continue;
+        } else if (pdf_key_eq(pkey, "Title")) {
             key = "/Title";
-        else if (pdf_key_eq(pkey, "For"))
+            newsize = unescape_octals(pdev, (char *)pvalue->data, pvalue->size);
+            code = cos_dict_put_c_key_string(pdev->Info, key,
+                                             pvalue->data, newsize);
+            continue;
+        } else if (pdf_key_eq(pkey, "For")) {
             key = "/Author";
-        else {
+            newsize = unescape_octals(pdev, (char *)pvalue->data, pvalue->size);
+            code = cos_dict_put_c_key_string(pdev->Info, key,
+                                             pvalue->data, newsize);
+            continue;
+        } else {
             pdf_page_dsc_info_t *ppdi;
             char scan_buf[200]; /* arbitrary */
 
