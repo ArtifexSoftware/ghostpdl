@@ -1022,7 +1022,10 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                 threads_enabled = 0;	/* and allow current page to try foreground */
             }
             /* Use 'while' instead of 'if' to avoid nesting */
-            while (ppdev->bg_print_requested && threads_enabled) {
+            while (ppdev->bg_print_requested && threads_enabled &&
+                   /* FIXME: Don't allow bg_print if multiple rendering threads are used.  */
+                   /* TEMPORARY WORK AROUND FOR BUG 695711 */
+                   ppdev->num_render_threads_requested == 0) {
                 gx_device *ndev;
                 gx_device_printer *npdev;
                 gx_device_clist_reader *crdev = (gx_device_clist_reader *)ppdev;
