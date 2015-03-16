@@ -107,7 +107,7 @@ my $directory=`pwd`;
 chomp $directory;
 
 $directory =~ s|.+/||;
-if ($directory ne 'gs' && $directory ne 'ghostpdl' && $directory ne 'mupdf') {
+if ($directory ne 'gs' && $directory ne 'ghostpdl' && $directory ne 'mupdf' && $directory ne 'ghostpdl.git' && $directory ne 'mupdf.git') {
   $directory="";
   if (-d "base" && -d "Resource") {
     $directory='gs';
@@ -115,7 +115,7 @@ if ($directory ne 'gs' && $directory ne 'ghostpdl' && $directory ne 'mupdf') {
   if (-d "pxl" && -d "pcl") {
     $directory='ghostpdl';
   }
-  if (-d "fitz" && -d "draw" && -d "pdf") {
+  if (-d "source/fitz" && -d "source/draw" && -d "source/pdf") {
     $directory='mupdf';
   }
 }
