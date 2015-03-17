@@ -178,68 +178,48 @@ no responsibility for RPMs created by others.
 <h2><a name="Install_Windows"></a>Installing Ghostscript on MS Windows</h2>
 
 <p>
-We usually distribute Ghostscript releases for Windows as self-extracting
-archive files, since this is the most convenient form for users.  These
-files can also be unpacked as if they were plain zip files.
+We usually distribute Ghostscript releases for Windows as a binary installer,
+for the convenience of most users.
 
 <h4><a name="Windows16"></a>Windows 3.1 (16-bit)</h4>
 <p>
 The last version to run on 16-bit Windows 3.1 was Ghostscript 4.03.
 
-<h4><a name="Windows32"></a>Windows 95, 98, Me, NT4, 2000, XP, 2003 or Vista (32-bit)</h4>
+<h4><a name="Windows32"></a>Windows 95, 98, Me</h4>
 <p>
-The self-extracting archive is normally named
+The last version to be available as a binary for Windoes 85/98/Me was 8.71. Although
+building from source with Visual Studio 2003 should produce a working binary for those
+versions.
+
+<h4><a name="Windows32"></a>Windows NT4, 2000, XP, 2003 or Vista (32-bit)</h4>
+<p>
+The installer is normally named
 <code>gs###w32.exe</code>,
-where ### is the release number (e.g., 650 for Ghostscript 6.50, 
-700 for Ghostscript 7.00).  
+where ### is the release number (e.g., 871 for Ghostscript 8.71, 
+910 for Ghostscript 9.10).  
 
 <h4><a name="Windows64"></a>Windows XP x64 edition, 2003 or Vista (64-bit)</h4>
 <p>
-The x64 self-extracting archive is normally named
+The x64 installer is normally named
 <code>gs###w64.exe</code>
 This is for 64-bit Windows operating systems based on the x64 instruction set.
 Do not use this on 64-bit processors running 32-bit Windows.
 
 <h3><a name="Windows4"></a>Installing</h3>
 <p>
-To install a self-extracting Ghostscript archive on Windows, 
-you need just this self-extracting archive file.  
-Run this file to install Ghostscript.
+To Ghostscript on Windows, you should run the installer executable.
 
-<p>
-Alternatively, if you have the zip file, unzip it to a temporary
-directory then run the included <code>setupgs.exe</code>.
-After the setup program has finished, remove the temporary files.
-
-<p>The <code>setupgs.exe</code> executable in the zip file (and also
-in the self-extracting archive) supports a primitive form of
-unattended installation: if it is invoked with exactly one argument,
-that one argument is treated as the target installation directory for
-unattended silent batch installation.
-
-<p>The NSIS-based installer (see also <a href="Release.htm">Release.htm</a>
+<p>The installer is NSIS-based (see also <a href="Release.htm">Release.htm</a>) and
 supports a few standard NSIS options: <code>/NCRC</code> disables the CRC check,
 <code>/S</code> runs the installer or uninstaller silently, <code>/D</code>
 sets the default installation directory (It must be the last parameter
 used in the command line and must not contain any quotes, even if the path
-contains spaces. Only absolute paths are supported.)
-
-<p>
-After installing Ghostscript, it is strongly recommended that you 
-install the <b>GSview previewer</b>, 
-which provides an easier to use graphical interface for Ghostscript.
-Information on GSview is available from:
-
-<blockquote>
-<a
-href="http://www.cs.wisc.edu/~ghost/gsview/" 
-class="offsite">http://www.cs.wisc.edu/~ghost/gsview/</a>
-</blockquote>
+contains spaces. Only absolute paths are supported).
 
 <h3><a name="General_Windows"></a>General Windows configuration</h3>
 
 <p>
-The archive includes files in these subdirectories:
+The installer includes files in these subdirectories:
 
 <blockquote><code>
 gs<em>#.##</em>\bin
@@ -287,34 +267,8 @@ functionality
 </table></blockquote>
 
 <p>
-See "<a href="#Use_platform_fonts_ATM">Using fonts from Adobe Type Manager</a>" below for
-information about using Adobe Type Manager, Adobe Type Basics, or Adobe
-Acrobat fonts.  If your system uses TrueType fonts, you can get them
-converted to a Ghostscript-compatible format at the time you select your
-"printer" by doing the following:
-
-<blockquote><ol>
-<li>Open control panel and double-click on the "Printers" icon.
-<li>Select your PostScript printer.
-<li>Choose Setup.
-<li>Choose Options.
-<li>Choose Advanced.
-<li>At the top of the dialog box you will see TrueType Fonts Send to
-Printer As: Choose <em>(drop-down menu)</em> Adobe Type 1.
-<li>Uncheck Use Printer Fonts for All TrueType Fonts and Use
-Substitution
-Table.
-<li>OK.
-<li>OK etc.
-</ol></blockquote>
-
-<p>
-That's it!  Your TrueType fonts will automatically be downloaded in your
-PostScript file for Ghostscript to use.
-
-<p>
 For printer devices, the default output is the default printer.
-This can be modified as follows.
+This can be modified as follows:
 
 <blockquote>
 <dl>
@@ -358,36 +312,9 @@ the PATH environment variable.
 </ul>
 
 <p>
-The Ghostscript setup program will create registry values
+The Ghostscript installer will create registry values
 for the environment variables <code>GS_LIB</code> 
 and <code>GS_DLL</code>.
-
-
-<h3><a name="Use_platform_fonts_ATM"></a>
-Using fonts from Adobe Type Manager</h3> 
-<p>
-If you have Adobe Type Manager
-(ATM) fonts installed on your system, and you wish to use them with
-Ghostscript, you may wish to replace the <code>FONTMAP</code> file with
-<code>FONTMAP.ATM</code>, and to add to the environment variable
-<code>GS_LIB</code> the name of the directory where the fonts are located
-(see <a href="Use.htm#Finding_files">Use.htm</a> for more information 
-about <code>GS_LIB</code>).  Before you
-do this, please read carefully the license that accompanies the ATM fonts;
-we take no responsibility for any possible violations of such licenses.
-Similarly, if you have Adobe Type Basics, you may wish to replace
-<code>FONTMAP</code> with <code>FONTMAP.ATB</code>.  Finally, if you
-have neither ATM nor ATB but you have Adobe Acrobat installed, you can use
-the Acrobat fonts in place of the ones provided with Ghostscript by adding
-the Acrobat fonts directory to <code>GS_FONTPATH</code> and removing
-these fonts from <code>FONTMAP</code>:
-
-<blockquote>
-Courier, Courier-Bold, Courier-BoldOblique, Courier-Oblique, Helvetica,
-Helvetica-Bold, Helvetica-BoldOblique, Helvetica-Oblique, Symbol, Times-Bold,
-Times-BoldItalic, Times-Italic, Times-Roman, ZapfDingbats
-</blockquote>
-
 
 <h3><a name="Uninstall_Windows"></a>Uninstalling Ghostscript on Windows</h3>
 
@@ -395,12 +322,20 @@ Times-BoldItalic, Times-Italic, Times-Roman, ZapfDingbats
 To uninstall Ghostscript, use the Control Panel, Add/Remove Programs and
 remove "Ghostscript #.##" and "Ghostscript Fonts".  (The entries may be
 called "GPL Ghostscript" or "AFPL Ghostscript", rather than just
-"Ghostscript", depending on what version of Ghostscript was installed.)
-
-
+"Ghostscript", depending on what version of Ghostscript was installed).
+Alternatively, an uninstall shortcut is also available in the Start Menu
+group.
 <hr>
 
 <h2><a name="Install_VMS"></a>Installing Ghostscript on OpenVMS</h2>
+
+<p>
+Support for OpenVMS has stagnated (and almost certainly bit-rotted), and
+as the core development team has no access to an OpenVMS environment, we
+are unable to bring it up to date. We will consider patches from contributors
+if any wish to take on the task of getting it working again. Given the
+very limited appeal of OpenVMS these days, however, we are unlikely to consider
+patches with invasive code changes.
 
 <p>
 You need the file <code>GS.EXE</code> to run Ghostscript on OpenVMS, and
@@ -462,6 +397,14 @@ command line executable <code>GSWIN32C.EXE</code>.
 <hr>
 
 <h2><a name="Install_OS2"></a>Installing Ghostscript on OS/2 2.x</h2>
+
+<p>
+Support for OS/2 has stagnated (and almost certainly bit-rotted), and
+as the core development team has no access to an OS/2 environment, we
+are unable to bring it up to date. We will consider patches from contributors
+if any wish to take on the task of getting it working again. Given the
+very limited appeal of OS/2 these days, however, we are unlikely to consider
+patches with invasive code changes.
 
 <p>
 The Ghostscript OS/2 implementation is designed for OS/2 2.1 or later.
