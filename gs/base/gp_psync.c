@@ -20,7 +20,7 @@
 #include <pthread.h>
 #include "gserrors.h"
 #include "gpsync.h"
-
+#include "assert_.h"
 /*
  * Thanks to Larry Jones <larry.jones@sdrc.com> for this revision of
  * Aladdin's original code into a form that depends only on POSIX APIs.
@@ -203,6 +203,8 @@ gp_monitor_enter(gp_monitor * mona)
 #ifdef GS_RECURSIVE_MUTEXATTR
     scode = pthread_mutex_lock(mon);
 #else
+    assert(((gp_pthread_recursive_t *)mona)->lcount >= 0);
+
     if ((scode = pthread_mutex_trylock(mon)) == 0) {
         ((gp_pthread_recursive_t *)mona)->self_id = pthread_self();
         ((gp_pthread_recursive_t *)mona)->lcount++;
@@ -231,10 +233,12 @@ gp_monitor_leave(gp_monitor * mona)
 #ifdef GS_RECURSIVE_MUTEXATTR
     scode = pthread_mutex_unlock(mon);
 #else
+    assert(((gp_pthread_recursive_t *)mona)->lcount > 0 && ((gp_pthread_recursive_t *)mona)->self_id != 0);
+
     if (pthread_equal(pthread_self(),((gp_pthread_recursive_t *)mona)->self_id)) {
       if ((--((gp_pthread_recursive_t *)mona)->lcount) == 0) {
-          scode = pthread_mutex_unlock(mon);
           ((gp_pthread_recursive_t *)mona)->self_id = 0;	/* Not valid unless mutex is locked */
+          scode = pthread_mutex_unlock(mon);
 
       }
     }

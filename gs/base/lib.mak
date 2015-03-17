@@ -125,6 +125,7 @@ string__h=$(GLSRC)string_.h $(std_h)
 time__h=$(GLSRC)time_.h $(std_h) $(gconfig__h)
 unistd__h=$(GLSRC)unistd_.h $(std_h)
 windows__h=$(GLSRC)windows_.h
+assert__h=$(GLSRC)assert_.h
 # Out of order
 pipe__h=$(GLSRC)pipe_.h $(stdio__h)
 
@@ -3333,7 +3334,7 @@ $(GLD)posync.dev : $(LIB_MAK) $(ECHOGS_XE) $(pthreads_) $(MAKEDIRS)
 	$(ADDMOD) $(GLD)posync -replace $(GLD)nosync
 
 $(GLOBJ)gp_psync.$(OBJ) : $(GLSRC)gp_psync.c $(AK) $(malloc__h)\
- $(std_h) $(gpsync_h) $(gserrors_h) $(MAKEDIRS)
+ $(std_h) $(gpsync_h) $(gserrors_h) $(assert__h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gp_psync.$(OBJ) $(C_) $(GLSRC)gp_psync.c
 
 # Other stuff.

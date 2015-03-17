@@ -459,6 +459,7 @@ AC_SUBST(HAVE_PREAD_PWRITE)
 
 SYNC="nosync"
 PTHREAD_LIBS=""
+RECURSIVE_MUTEXATTR=""
 
 AC_ARG_ENABLE([threading], AC_HELP_STRING([--disable-threading],
     [disable support for multithreaded rendering]))
