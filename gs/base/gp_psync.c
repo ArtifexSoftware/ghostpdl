@@ -229,7 +229,7 @@ gp_monitor_leave(gp_monitor * mona)
     int scode = 0;
 
 #ifdef GS_RECURSIVE_MUTEXATTR
-    scode = pthread_mutex_lock(mon);
+    scode = pthread_mutex_unlock(mon);
 #else
     if (pthread_equal(pthread_self(),((gp_pthread_recursive_t *)mona)->self_id)) {
       if ((--((gp_pthread_recursive_t *)mona)->lcount) == 0) {
