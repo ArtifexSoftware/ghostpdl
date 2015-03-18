@@ -883,8 +883,9 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     if (minst->init_done >= 1) {
         gs_main_run_string(minst,
             "/systemdict .systemexec /begin .systemexec \
-            <</BeginPage {pop} /EndPage {pop pop //false } \
-              /BGPrint false /NumRenderingThreads 0>> setpagedevice \
+            /BGPrint /GetDeviceParam .special_op \
+            {{ <</BeginPage {pop} /EndPage {pop pop //false } \
+              /BGPrint false /NumRenderingThreads 0>> setpagedevice} if} if \
               serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse end \
               .systemvar exec",
             0 , &exit_code, &error_object);
