@@ -56,42 +56,15 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h2><a name="Version9.15"></a>Version 9.15 (2014-09-22)</h2>
+<h2><a name="Version9.16"></a>Version 9.16 (2015-03-19)</h2>
 
-<p>This is the eleventh full release in the stable 9.x series, and is
+<p>This is the twelfth full release in the stable 9.x series, and is
 primarily a maintenance release.
 
 <p> Highlights in this release include:
 <ul>
 <li>
-<p>Ghostscript now supports the PDF security handler revision 6.
-</li>
-<li>
-<p>The pdfwrite and ps2write (and related) devices can now be forced to &quot;flatten&quot;
-glyphs into &quot;basic&quot; marking operations (rather than writing fonts to the output),
-by giving the <code>-dNoOutputFonts</code> command line option (defaults to &quot;false&quot;)
-</li>
-<li>
-<p> PostScript programs can now use get_params or get_param to
-determine if a page contains color markings by reading the pageneutralcolor
-state from the device (so whether the page is &quot;color&quot; or &quot;mono&quot;).
-<p> Note that this is only accurate when in clist mode, so <code>-dMaxBitmap=0</code>
-and <code>-dGrayDetection=true</code> should both be used.
-</li>
-<li>
-<p> The pdfwrite device now supports Link annotations with GoTo and GoToR actions
-</li>
-<li>
-<p> The pdfwrite device now supports BMC/BDC/EMC pdfmarks
-</li>
-<li>
-<p> Regarding the new color management for the pdfwrite device introduced in the
-previous release, the proscription on using the new color management when producing
-PDF/A-1 compliant files is now lifted.
-<p> To reiterate, also, with the new color management implementation, using the
-UseCIEColor option is <strong><em>strongly</em></strong> discouraged.
-<p> For further information on the new pdfwrite color management,
-see: <a href="Ps2pdf.htm#Color_Conversion_and_Management">Color Conversion and Management</a>
+<p>Stuff
 </li>
 <li>
 <p>Plus the usual round of bug fixes, compatibility changes, and incremental improvements.
@@ -100,11 +73,11 @@ see: <a href="Ps2pdf.htm#Color_Conversion_and_Management">Color Conversion and M
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 
-<h3><a name="9.15_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="9.16_Incompatible_changes"></a>Incompatible changes</h3>
 <p>
 No recorded incompatible changes.
 
-<h3><a name="9.15_changelog"></a>Changelog</h3>
+<h3><a name="9.16_changelog"></a>Changelog</h3>
 
 <p>See the <a href="History9.htm">history file</a> for complete log 
 of changes.
@@ -115,7 +88,7 @@ of changes.
 <hr>
 
 <p>
-<small>Copyright &copy; 2005-2014 Artifex Software, Inc.
+<small>Copyright &copy; 2005-2015 Artifex Software, Inc.
 All rights reserved.</small>
 
 <p>
@@ -129,7 +102,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.15, 22 September 2014
+<small>Ghostscript version 9.16, 19 March 2015
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
