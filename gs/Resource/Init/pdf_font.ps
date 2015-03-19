@@ -1728,7 +1728,8 @@ currentdict /CMap_read_dict undef
     } if
     exch pop
     dup /CIDFont resourcestatus {
-      pop pop /CIDFont findresource exit
+      pop pop /CIDFont { findresource } stopped
+      {pop}{exit} ifelse
     } if
     QUIET not {
       (The substitute CID font ") print dup =string cvs print
