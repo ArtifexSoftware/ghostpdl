@@ -505,7 +505,7 @@ AC_ARG_ENABLE([threading], AC_HELP_STRING([--disable-threading],
 
 # if you haven't got pread/pwrite, we can't use multithreading
 if test "x$HAVE_PREAD_PWRITE" != "x"; then
-  if test "$enable_fontconfig" != "no"; then
+  if test "$enable_threading" != "no"; then
     case `uname` in
       MINGW*)
         AC_MSG_WARN([disabling support for pthreads......])
