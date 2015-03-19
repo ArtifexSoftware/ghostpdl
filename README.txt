@@ -1,9 +1,8 @@
 == GhostPDL ==
 
-This is an implemenation of several page description languages on top
+This is an implementation of several page description languages on top
 of the Ghostscript graphics library.  Currently the languages PCL,
-PCLXL, and XPS are production quality implementations and SVG is under
-development and experimental.
+PCLXL, and XPS are production quality implementations.
 
 Ghostscript PCL5e, PCL5c and PXL documentation is in doc/ghostpcl.*
 License is in LICENSE and COPYING. For information on support and
@@ -25,10 +24,10 @@ and are not using an official release:
 make
 
 in the top level source directory. This will create four different
-executables: main/obj/pcl6, a build of GhostPCL with support for
-PCL5e, PCL5c, and PXL, language_switch/obj/pspcl6 a build of GhostPCL
-with additional support for PostScript and PDF, xps/obj/gxps a build
-with support for XPS and finally svg/obj/gsvg the SVG implementation.
+executables: main/obj/pcl6, and xps/obj/gxps a build with support for
+XPS.
+
+Currently the 'install' target only installs the pcl6 executable.
 
 ===
 
@@ -54,12 +53,6 @@ To build just the xps interpreter with GNU make and gcc, type:
 make xps
 
 The executable will be xps/obj/gxps.
-
-To build a shared language build with PCL/PXL and PostScript/PDF
-
-make ls-product
-
-The executable with be in language_switch/obj/pspcl6
 
 Other targets are provided see the top level Makefile.
 
