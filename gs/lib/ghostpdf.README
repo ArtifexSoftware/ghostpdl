@@ -1,0 +1,26 @@
+GHOSTPDF.INF
+
+GHOSTPDF.INF only supports Windows versions 2k, XP and XP x64 edition, Vista
+(x86 and x64) and 7 (x86 and x64). It does not support Windows 8 and beyond.
+
+It can be installed (unsupported and AT YOUR OWN RISK) on Windows 8, by
+doing the following:
+
+Open your charms (the right side popup menu) and select "Settings" and click
+on the last option on the list called  "Change PC Settings". In the "General"
+category click the "Restart now" button under "Advanced startup".
+
+When the system restarts it will show you several options, you want to select
+"Troubleshoot" then "Advanced options" and finally "Startup Settings". The
+system will reboot one more time and you will have a new listing of options,
+you will want to select option #7 "Disable Driver Signature Enforcement".
+
+After the system has finished restarting for the final time you will be able
+to add the Ghostscript printer to Windows 8.
+
+The final item of note is that you must select "File: (print to file)"
+as the port for the printer as "LPT1" will not work.
+
+
+To reiterate: following this procedure is AT YOUR OWN RISK!
+
