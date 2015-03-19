@@ -3859,6 +3859,11 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
                pdev->HWResolution[1] / 72.0f + 0.499f;
     }
 
+    if (width <= 0 || height <= 0) {
+      dmprintf(pdev->memory, "ERROR: page margins overlap\n");
+      return_error(gs_error_rangecheck);
+    }
+
 #ifdef CUPS_RASTER_SYNCv1
     if (cups->header.cupsBorderlessScalingFactor > 1.0)
     {
