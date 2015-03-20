@@ -342,6 +342,16 @@ AC_CHECK_FUNCS([strnlen], [HAVE_STRNLEN=],[HAVE_STRNLEN="-D\"strnlen(a,b)=strlen
 GCFLAGS="$GCFLAGS $HAVE_STRNLEN"
 
 dnl --------------------------------------------------
+dnl disable the memory header ID code on SPARC
+dnl --------------------------------------------------
+
+case `uname -a` in
+        *sparc*)
+	  GCFLAGS="$GCFLAGS -DGS_USE_MEMORY_HEADER_ID=0"
+        ;;
+esac
+
+dnl --------------------------------------------------
 dnl currently just for trio
 dnl --------------------------------------------------
 

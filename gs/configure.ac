@@ -2149,6 +2149,16 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([bzero dup2 floor gettimeofday memchr memmove memset mkdir mkfifo modf pow putenv rint setenv sqrt strchr strrchr strspn strstr])
 
 dnl --------------------------------------------------
+dnl disable the memory header ID code on SPARC
+dnl --------------------------------------------------
+
+case `uname -a` in
+        *sparc*)
+	  GCFLAGS="$GCFLAGS -DGS_USE_MEMORY_HEADER_ID=0"
+        ;;
+esac
+
+dnl --------------------------------------------------
 dnl set big/little endian for LCMS
 dnl --------------------------------------------------
 
