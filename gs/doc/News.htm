@@ -64,7 +64,25 @@ primarily a maintenance release.
 <p> Highlights in this release include:
 <ul>
 <li>
-<p>Stuff
+<p>"LockColorants" command line option for tiffsep and psdcmyk devices. Specifying
+-dLockColorants will restrict those devices to only the colorants list on the command
+line (thus: -c "<< /SeparationColorNames [ /Cyan /Magenta /Yellow /Black /Violet /Orange]
+/SeparationOrder [ /Cyan /Magenta /Yellow /Black /Violet /Orange]>> setpagedevice"), rather
+than allowing the devices to add new colorants as encountered in the input. This is, obviously,
+preferable for real printers, where only a certain of inks will be available.
+</li>
+<li>
+<p>Improved high level devices handling of Forms. Whilst High level devices (eg pdfwrite)
+already checked Forms to see if they are duplicates, and if so use the initial definition.
+However, this does not improve performance, since the Form PaintProc still needs to be executed
+for each instance of the Form, and the matching algorithm could, in very odd circumstances, be
+defeated. The new implementation benefits both causes, meaning the second and subsequent invocation
+of the form need not re-run the PaintProc, and removes the heurisic aspect of the reuse detection.
+</li>
+<li>
+<p>New URW+ fonts in which the families NimbusMono, NimbusRoman and NimbusSans have been
+augmented with production quality Greek and Cyrillic glyphs. These correspond to our
+substitutes for the PDF base 14 fonts.
 </li>
 <li>
 <p>Plus the usual round of bug fixes, compatibility changes, and incremental improvements.
