@@ -327,6 +327,20 @@ AC_SUBST(LCMS_ENDIAN)
 AC_SUBST(LCMS2_ENDIAN)
 
 dnl --------------------------------------------------
+dnl set LCMS2 memory manager's ptr alignment for sparc
+dnl --------------------------------------------------
+
+LCMS2_PTR_ALIGNMENT=
+
+case `uname -a` in
+        *sparc*)
+	  LCMS2_PTR_ALIGNMENT="-DCMS_PTR_ALIGNMENT=8"
+        ;;
+esac
+
+AC_SUBST(LCMS2_PTR_ALIGNMENT)
+
+dnl --------------------------------------------------
 dnl decide if we have to "hack" sqrtf() for lcms2
 dnl --------------------------------------------------
 
