@@ -465,6 +465,16 @@ dnl --------------------------------------------------
 
 AC_CHECK_FUNCS([pread pwrite], [HAVE_PREAD_PWRITE="-DHAVE_PREAD_PWRITE=1"], [HAVE_PREAD_PWRITE=])
 
+if test "x$HAVE_PREAD_PWRITE" != "x"; then
+  save_cflags=$CFLAGS
+  CFLAGS="$CFLAGS -D__USE_UNIX98=1 -D_XOPEN_SOURCE=500"
+  AC_CHECK_DECLS([pwrite,pread], [], [HAVE_PREAD_PWRITE=])
+  CFLAGS=$save_cflags
+  if test "x$HAVE_PREAD_PWRITE" != "x"; then
+    GCFLAGS="$GCFLAGS -D__USE_UNIX98=1"
+  fi
+fi
+
 AC_SUBST(HAVE_PREAD_PWRITE)
 
 SYNC="nosync"
@@ -477,7 +487,7 @@ AC_ARG_ENABLE([threading], AC_HELP_STRING([--disable-threading],
 
 # if you haven't got pread/pwrite, we can't use multithreading
 if test "x$HAVE_PREAD_PWRITE" != "x"; then
-  if test "$enable_fontconfig" != "no"; then
+  if test "$enable_threading" != "no"; then
     case `uname` in
       MINGW*)
         AC_MSG_WARN([disabling support for pthreads......])
@@ -487,11 +497,34 @@ if test "x$HAVE_PREAD_PWRITE" != "x"; then
           SYNC=posync;
           PTHREAD_LIBS="-lpthread"
         ])
+        AC_MSG_CHECKING([recursive mutexes.......])
         AC_TRY_COMPILE([#include <pthread.h>],
-             [static int k = PTHREAD_MUTEX_RECURSIVE;],
+             [
+                static int k = PTHREAD_MUTEX_RECURSIVE;
+                #ifndef pthread_mutexattr_settype
+                #ifdef __cplusplus
+                  (void) pthread_mutexattr_settype;
+                #else
+                  (void) pthread_mutexattr_settype;
+                #endif
+                #endif
+                ;
+                return 0;
+              ],
              [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE"],
              [AC_TRY_COMPILE([#include <pthread.h>],
-                [static int k = PTHREAD_MUTEX_RECURSIVE_NP;],
+                [
+                  static int k = PTHREAD_MUTEX_RECURSIVE_NP;
+                  #ifndef pthread_mutexattr_settype
+                  #ifdef __cplusplus
+                    (void) pthread_mutexattr_settype;
+                  #else
+                    (void) pthread_mutexattr_settype;
+                  #endif
+                  #endif
+                  ;
+                  return 0;
+                ],
                 [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE_NP"])])
       ;;
     esac
