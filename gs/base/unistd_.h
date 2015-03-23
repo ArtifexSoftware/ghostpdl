@@ -53,6 +53,7 @@
    /* _XOPEN_SOURCE 500 define is needed to get
     * access to pread and pwrite */
 #  define _XOPEN_SOURCE 500
+#  define __USE_UNIX98
 #  include <unistd.h>
 #endif
 

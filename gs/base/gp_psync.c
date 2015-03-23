@@ -17,6 +17,7 @@
 /* POSIX pthreads threads / semaphore / monitor implementation */
 #include "std.h"
 #include "malloc_.h"
+#include "unistd_.h" /* for __USE_UNIX98 */
 #include <pthread.h>
 #include "gserrors.h"
 #include "gpsync.h"
