@@ -93,7 +93,7 @@ already checked Forms to see if they are duplicates, and if so use the initial d
 However, this does not improve performance, since the Form PaintProc still needs to be executed
 for each instance of the Form, and the matching algorithm could, in very odd circumstances, be
 defeated. The new implementation benefits both causes, meaning the second and subsequent invocation
-of the form need not re-run the PaintProc, and removes the heurisic aspect of the reuse detection.
+of the form need not re-run the PaintProc, and removes the heuristic aspect of the reuse detection.
 </li>
 <li>
 <p>New URW+ fonts in which the families NimbusMono, NimbusRoman and NimbusSans have been
@@ -114,6 +114,101 @@ No recorded incompatible changes.
 <h3><a name="9.16_changelog"></a>Changelog</h3>
 <p><strong>2015-03-20 00:11:26 +0000
 </strong>
+<p><strong>2015-03-19 11:55:19 +0000
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=49ac7a284e46cf8df8eb553c91ee48a6b004652e">49ac7a284e46cf8df8eb553c91ee48a6b004652e</a>
+<blockquote>
+<p>
+    LCMS2 pointer alignment on SPARC/gcc<br>
+<br>
+    Building on commit 5a2da7dd71:<br>
+<br>
+    With gcc on (Ultra)SPARC hardware, pointers must be 8 byte aligned, even in<br>
+    32 bit userspace (where sizeof(void *) == 4).<br>
+<br>
+    So it means taking special action to enforce 8 byte alignment in the LCMS2<br>
+    memory management code.<br>
+<br>
+    We'll set the alignment for SPARC builds in the configure script.<br>
+<br>
+    No cluster differences.<br>
+<br>
+config.mak.in<br>
+configure.ac<br>
+gs/Makefile.in<br>
+gs/configure.ac<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2015-03-24 13:50:34 +0000
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=f2f22a246dcbe8468880535ea75f47e0fc4619ce">f2f22a246dcbe8468880535ea75f47e0fc4619ce</a>
+<blockquote>
+<p>
+    LCMS2 on SPARC ptr alignment.<br>
+<br>
+    Allow the ptr alignment for LCMS2 memory management to set at build time on the<br>
+    compiler command line.<br>
+<br>
+    Submitted upstream:<br>
+    https://github.com/mm2/Little-CMS/commit/dd0074b2<br>
+<br>
+    No cluster differences<br>
+<br>
+gs/lcms2/src/lcms2_internal.h<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2015-03-23 17:03:41 +0000
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=b96200d7fc5f3b7464744589f6657e9b4c4cb3ec">b96200d7fc5f3b7464744589f6657e9b4c4cb3ec</a>
+<blockquote>
+<p>
+    Bug 695882: ensure function protypes are available<br>
+<br>
+    There are some special defines on Linux to include prototypes for pread, pwrite<br>
+    and pthread_mutexattr_settype: add these to our &quot;unistd_.h&quot; header.<br>
+<br>
+    Also, tweak the the configure script to check for prototypes as well as just<br>
+    successful linking before including the code that uses those functions<br>
+<br>
+    No cluster differences<br>
+<br>
+configure.ac<br>
+gs/base/gp_psync.c<br>
+gs/base/unistd_.h<br>
+gs/configure.ac<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2015-03-24 11:07:43 +0000
+</strong>
+<br>Ken Sharp &lt;ken.sharp@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=9358edca362b60f8ace388768548e6e94f5ebec8">9358edca362b60f8ace388768548e6e94f5ebec8</a>
+<blockquote>
+<p>
+    PDF Interpreter - ignore XRefStm entries which poitn beyond end of file<br>
+<br>
+    Bug #695883 &quot;Error: /invalidaccess in --run--&quot;<br>
+<br>
+    The file is pretty well broken, it claims to be a hybrid (PDF 1.5 or better<br>
+    readable by PDF 1.4 consumer, it uses xref streams) and as such its trailer<br>
+    dictionary contains an XRefStm key whose value is supposed to point to the<br>
+    PDF 1.5 xref stream. It doesn't, in fact it points past the end of the file<br>
+    and so is clearly bogus.<br>
+<br>
+    This commit tests to ensure the XRefStm value is inside the file before<br>
+    attempting to read it.<br>
+<br>
+    No differences expected.<br>
+<br>
+gs/Resource/Init/pdf_main.ps<br>
+<p>
+</blockquote>
+<hr>
 <br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
 <a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=6c56ffb81354dca442b69389b0f7a0b75e4e864e">6c56ffb81354dca442b69389b0f7a0b75e4e864e</a>
 <blockquote>
@@ -130,8 +225,6 @@ gs/configure.ac<br>
 <p>
 </blockquote>
 <hr>
-<p><strong>2015-03-19 11:55:19 +0000
-</strong>
 <br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
 <a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=03d399b295f9a39f743eb194ebce0995d52d0bfb">03d399b295f9a39f743eb194ebce0995d52d0bfb</a>
 <blockquote>
