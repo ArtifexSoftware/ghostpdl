@@ -702,7 +702,14 @@ currentdict /xref-char-dict undef
      % if hybrid-reference PDF, also fetch the entries
      % found in the XRef stream pointed by /XRefStm
      dup /XRefStm knownoget {
-       readpdf15xref pop
+        %% Bug #695883 the test file has an XRefStm which points beyond the end of the file.
+        %% We check that here and simply fall back to thje classic xref if this error occurs.
+        dup PDFfilelen lt{
+          readpdf15xref pop
+        } {
+          (   **** Warning:  This hybrid file's XRefStm points beyond the end of file.\n   Ignoring error, this may cause some objects not to display.\n) pdfformaterror
+          pop
+        }ifelse
      } if
    }
    { readpdf15xref }	% otherwise assume PDF 1.5 xref stream
