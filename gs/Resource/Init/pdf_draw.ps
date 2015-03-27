@@ -297,6 +297,12 @@ pdfdict begin
 } bdef
 
 /.resolveht6 {
+  %% resolvestream will reposition PDFfile. If we are in the middle
+  %% of reading a content stream from PDFfile when we execute this,
+  %% then reading the next buffer will read from the wrong place. We
+  %% must save and restore the position of PDFfile. See the definition
+  %% of resolvestream. Bug #695886
+  PDFfile fileposition exch
   mark exch { oforce } forall .dicttomark
   dup dup //false resolvestream /ReusableStreamDecode filter
   /Thresholds exch put
@@ -304,6 +310,7 @@ pdfdict begin
     resolveidfnproc
     1 index exch /TransferFunction exch put
   } if
+  exch PDFfile exch setfileposition
 } bdef
 
 /htrdict mark
