@@ -341,6 +341,44 @@ hpgl_picture_frame_coords(hpgl_state_t * pgls, gs_int_rect * gl2_win)
     return 0;
 }
 
+static int
+hpgl_scaling_points_default(hpgl_state_t *pgls, int32 *ptxy)
+{
+    gs_int_rect win;
+    hpgl_call(hpgl_picture_frame_coords(pgls, &win));
+    /* default arguments */
+    ptxy[0] = win.p.x;
+    ptxy[1] = win.p.y;
+    ptxy[2] = win.q.x;
+    ptxy[3] = win.q.y;
+
+    return 0;
+}
+
+static int
+hpgl_scaling_points_set(hpgl_state_t *pgls, int32 *ptxy, bool track)
+{
+    if (track == true) {
+        pgls->g.P2.x = (ptxy[0] - pgls->g.P1.x) + pgls->g.P2.x;
+        pgls->g.P2.y = (ptxy[1] - pgls->g.P1.y) + pgls->g.P2.y;
+    } else {
+        pgls->g.P2.x = ptxy[2];
+        pgls->g.P2.y = ptxy[3];
+    }
+
+    pgls->g.P1.x = ptxy[0];
+    pgls->g.P1.y = ptxy[1];
+ 
+  /* if either coordinate is equal it is incremented by 1 */
+    if (pgls->g.P1.x == pgls->g.P2.x)
+        pgls->g.P2.x++;
+    if (pgls->g.P1.y == pgls->g.P2.y)
+        pgls->g.P2.y++;
+    
+    return 0;
+}
+
+    
 /* IP p1x,p1y[,p2x,p2y]; */
 /* IP; */
 int
@@ -348,39 +386,17 @@ hpgl_IP(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     int32 ptxy[4];
     int i;
-    gs_int_rect win;
 
-    /* draw the current path */
-    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-    /* get the default picture frame coordinates */
-    hpgl_call(hpgl_picture_frame_coords(pgls, &win));
+    hpgl_call(hpgl_scaling_points_default(pgls, ptxy));
 
-    /* round the picture frame coordinates */
-    ptxy[0] = win.p.x;
-    ptxy[1] = win.p.y;
-    ptxy[2] = win.q.x;
-    ptxy[3] = win.q.y;
     for (i = 0; i < 4 && hpgl_arg_int(pgls->memory, pargs, &ptxy[i]); ++i);
     if (i & 1)
         return e_Range;
 
-    if (i == 2) {
-        pgls->g.P2.x = (ptxy[0] - pgls->g.P1.x) + pgls->g.P2.x;
-        pgls->g.P2.y = (ptxy[1] - pgls->g.P1.y) + pgls->g.P2.y;
-        pgls->g.P1.x = ptxy[0];
-        pgls->g.P1.y = ptxy[1];
-    } else {
-        pgls->g.P1.x = ptxy[0];
-        pgls->g.P1.y = ptxy[1];
-        pgls->g.P2.x = ptxy[2];
-        pgls->g.P2.y = ptxy[3];
-    }
+    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
-    /* if either coordinate is equal it is incremented by 1 */
-    if (pgls->g.P1.x == pgls->g.P2.x)
-        pgls->g.P2.x++;
-    if (pgls->g.P1.y == pgls->g.P2.y)
-        pgls->g.P2.y++;
+    /* track P2 if 2 arguments are parsed (i == 2) */
+    hpgl_call(hpgl_scaling_points_set(pgls, ptxy, i == 2 ));
 
     return 0;
 }
@@ -391,32 +407,30 @@ int
 hpgl_IR(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
     hpgl_real_t rptxy[4];
+    int32 ptxy[4];
     int i;
-    hpgl_args_t args;
     gs_int_rect win;
+
+    /* defaults percentages */
+    rptxy[0] = rptxy[1] = 0.;
+    rptxy[2] = rptxy[3] = 100.;
 
     for (i = 0; i < 4 && hpgl_arg_c_real(pgls->memory, pargs, &rptxy[i]);
          ++i);
     if (i & 1)
         return e_Range;
 
-    /* get the PCL picture frame coordinates */
-    hpgl_call(hpgl_picture_frame_coords(pgls, &win));
-    hpgl_args_setup(&args);
-    if (i != 0) {
-        hpgl_args_add_int(&args, (int32) (win.p.x + (win.q.x - win.p.x) *
-                                          rptxy[0] / 100.0));
-        hpgl_args_add_int(&args, (int32) (win.p.y + (win.q.y - win.p.y) *
-                                          rptxy[1] / 100.0));
-    }
-    if (i == 4) {
-        hpgl_args_add_int(&args, (int32) (win.p.x + (win.q.x - win.p.x) *
-                                          rptxy[2] / 100.0));
+    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
-        hpgl_args_add_int(&args, (int32) (win.p.y + (win.q.y - win.p.y) *
-                                          rptxy[3] / 100.0));
-    }
-    hpgl_IP(&args, pgls);
+    hpgl_call(hpgl_picture_frame_coords(pgls, &win));
+
+    ptxy[0] = (int32)(win.p.x + (win.q.x - win.p.x) * rptxy[0] / 100.0);
+    ptxy[1] = (int32)(win.p.y + (win.q.y - win.p.y) * rptxy[1] / 100.0);
+    ptxy[2] = (int32)(win.p.x + (win.q.x - win.p.x) * rptxy[2] / 100.0);
+    ptxy[3] = (int32)(win.p.y + (win.q.y - win.p.y) * rptxy[3] / 100.0);
+
+    /* track P2 if 2 arguments are parsed (i == 2) */
+    hpgl_call(hpgl_scaling_points_set(pgls, ptxy, i == 2));
     return 0;
 }
 
