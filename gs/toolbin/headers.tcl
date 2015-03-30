@@ -88,7 +88,7 @@ proc get_header { FInName FOUT } {
         regsub {^[ 	]*(\*|)} $Lx {} Lx
 	set blank [expr [regexp {^[ 	]$} $Lx] || [string length $Lx] == 0]
 	if { $f == 0 && $blank == 1 } then {
-	    #DEBUG puts "Ignoring leading blank header line #$lineocunt"
+	    #DEBUG puts "Ignoring leading blank header line #$linecount"
 	} else {
 	    if { $blank == 1 } then {
 		break
