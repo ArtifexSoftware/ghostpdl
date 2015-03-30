@@ -1175,6 +1175,7 @@ typedef enum _FastImageSupportMode {
     FastImageReverseAngle,
     FastImageAll
 } FastImageSupportMode;
+
 static char *fastImage = NULL;
 static FastImageSupportMode FastImageMode = FastImageDisable;
 static bool begin_image = false;
