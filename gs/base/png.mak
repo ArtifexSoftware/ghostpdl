@@ -78,7 +78,7 @@ png.config-clean :
 	$(RM_) $(pnglibconf_h)
 	$(RM_) $(PNGGEN)lpg*.dev
 
-$(pnglibconf_h) : $(PNGSRC)scripts$(D)pnglibconf.h.prebuilt
+$(pnglibconf_h) : $(PNGSRC)scripts$(D)pnglibconf.h.prebuilt $(MAKEDIRS)
 	$(CP_)  $(PNGSRC)scripts$(D)pnglibconf.h.prebuilt $(pnglibconf_h)
 
 PDEP=$(AK) $(pnglibconf_h) $(MAKEDIRS)
