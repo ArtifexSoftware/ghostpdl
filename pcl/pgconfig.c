@@ -410,6 +410,7 @@ hpgl_IR(hpgl_args_t * pargs, hpgl_state_t * pgls)
     int32 ptxy[4];
     int i;
     gs_int_rect win;
+    gs_point dev_point, point;
 
     /* defaults percentages */
     rptxy[0] = rptxy[1] = 0.;
@@ -422,6 +423,10 @@ hpgl_IR(hpgl_args_t * pargs, hpgl_state_t * pgls)
 
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
+    hpgl_call(hpgl_get_current_position(pgls, &point));
+    hpgl_call(gs_transform(pgls->pgs, point.x, point.y, &dev_point));
+
+
     hpgl_call(hpgl_picture_frame_coords(pgls, &win));
 
     ptxy[0] = (int32)(win.p.x + (win.q.x - win.p.x) * rptxy[0] / 100.0);
@@ -431,6 +436,12 @@ hpgl_IR(hpgl_args_t * pargs, hpgl_state_t * pgls)
 
     /* track P2 if 2 arguments are parsed (i == 2) */
     hpgl_call(hpgl_scaling_points_set(pgls, ptxy, i == 2));
+
+    hpgl_call(hpgl_set_ctm(pgls));
+    hpgl_call(gs_itransform(pgls->pgs, dev_point.x, dev_point.y, &point));
+    hpgl_call(hpgl_add_point_to_path
+              (pgls, point.x, point.y, hpgl_plot_move_absolute, true));
+
     return 0;
 }
 
