@@ -249,7 +249,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
     /* record the color we have just serialized color */
     pdcolor->type->save_dc(pdcolor, &pcls->sdc);
-    if (pattern_id) {
+    if (pattern_id != gs_no_id) {
         /* Don't record empty tiles because they're not cached. */
         pcls->pattern_id = pattern_id;
     }
