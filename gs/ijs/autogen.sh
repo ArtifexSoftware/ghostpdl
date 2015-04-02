@@ -146,7 +146,7 @@ $ACLOCAL $ACLOCAL_FLAGS
 #autoheader
 
 echo "  $LIBTOOLIZE --automake"
-$LIBTOOLIZE --automake
+$LIBTOOLIZE -c --automake
 
 echo "  $AUTOMAKE --add-missing $AUTOMAKE_OPTIONS"
 $AUTOMAKE --add-missing --copy $AUTOMAKE_OPTIONS
