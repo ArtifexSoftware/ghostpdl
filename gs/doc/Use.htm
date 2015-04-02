@@ -1310,8 +1310,8 @@ specified using the command line parameter <code>-sCIDFSubstFont="TTF file name"
 the environment variable <code>CIDFSUBSTFONT</code>.
 
 <h4><a name="ExplicitCIDFontSubstitution"></a>Explicit CIDFont Substitution</h4>
-Substitution of CID font resources is controlled by the Ghostscript
-configuration file <code>lib/cidfmap</code>, which defines a CID font resource map.
+Substitution of CID font resources is controlled, by default, by the Ghostscript
+configuration file <code>Resource/Init/cidfmap</code>, which defines a CID font resource map.
 <p>
 The file forms a table of records, each of which should use one of three formats,
 explained below. Users may modify <code>Resource/Init/cidfmap</code> to configure

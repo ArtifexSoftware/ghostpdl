@@ -4,21 +4,22 @@
 %
 % The map is a set of records, which must use one of the two formats :
 %
-% 1. A substutution of a CIF font with another CID font :
+% 1. A substutution of a CIDFont font with another CIDFont :
 %
 %    /substituted /original ;
 %
 %    Where 'substituted' is a name being used in a document,
 %    'original' is a name of an available resource.
 %
-% 2. A substutution of a CIF font with a True Type font :
+% 2. A substutution of a CIDFont font with a True Type font :
 %
-%    /substituted << /FileType /TrueType /Path (path) /SunfontID 1 /CSI [(ordering) supplement] >> ;
+%    /substituted << /FileType /TrueType /Path (path) /SubfontID 1 /CSI [(ordering) supplement] >> ;
 %
 %    Where 'substituted' is a name being used in a document,
 %    'path' is a path to a True Type font file,
 %    'ordering' is a value of Ordering required for CIDSystemInfo dictionary,
 %    'supplement' is a value of Supplement required for CIDSystemInfo dictionary.
+%    'SubfontID' is the index of the desired font in a TTC - ignored if the target is not a TTC.
 %
 %    The Ordering, and Registry (if present) entries should be PostScript string types
 %    ie enclosed in parentheses, not PostScript name type (initial character '/'). See
