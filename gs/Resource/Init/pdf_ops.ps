@@ -109,7 +109,25 @@ nodict readonly pop
                            %% to the regular 'nodict' opened above. This could cause some
                            %% odd interactions with 'Q' for unbalanced files.....
   } {
-    gsave //nodict begin
+    %% ugly hackery to work around badly broken PDF file in Bug #695897. The file has nested BT/ET
+    %% sections, and delimits them with q/Q. The problem is that our code to deal with nested
+    %% text sections looks in the current dictionary for TextSaveMatrix, and a 'q' makes a brand
+    %% new empty dictionary, so it defeats it.
+    %% I tried copying the TextSaveMatrix from the parent state into this one, but that then causes
+    %% other problems because we end up apllying the TextSaveMatrix when we shouold not. Attempting
+    %% to clear the TextSaveMatrix from all saved states on ET then caused it not to be defined at
+    %% times when we needed it.....
+    %% This is all terribly flaky, but defining a new matrix inside gsaves that tells us that we had
+    %% were already in a text block allows us to detect and cope with the nested BT's and leaving the
+    %% original TextSaveMatrix behind allows the matching ET not to throw an error, as well as coping
+    %% with the various other problems listed above. Its not pretty though.
+    currentdict /TextSaveMatrix known {
+      currentdict /TextSaveMatrix get
+      gsave //nodict begin
+      /qTextSaveMatrix gput
+    }{
+      gsave //nodict begin
+    }ifelse
   } ifelse
   PDFusingtransparency { .pushextendedgstate } if
 } bdef
@@ -650,11 +668,18 @@ end readonly def
 
 /BT {
   currentdict /TextSaveMatrix known {
-    (   **** Ignoring nested BT operator.\n)
+    (   **** illegal; nested BT operator detected.\n)
     pdfformaterror
     ET
   } if
 
+  %% Bug #695897 see the explanation in /q defined above.
+  currentdict /qTextSaveMatrix known {
+    currentdict /qTextSaveMatrix get /TextSaveMatrix gput
+    (   **** Illegal; nested BT operator (inside a gsave) detected.\n)
+    pdfformaterror
+    ET
+  }if
   % If we are in a W/W* "context", pack away the dictionary
   % into a temporary place, and pop it off the dict stack
   currentdict /n known {
