@@ -353,6 +353,11 @@ drawopdict begin
         currentdict /TextSaveMatrix .knownget {
           //cmmatrix exch dup concatmatrix pop
         } if
+        % And if we ha\ve done a gsave inside a text block, we need to update
+        % that matrix instead.
+        currentdict /qTextSaveMatrix .knownget {
+         //cmmatrix exch dup concatmatrix pop
+        } if
       } bdef
 
   /i { 1 .min setflat } bdef
@@ -2077,7 +2082,23 @@ currentdict end readonly def
 } bdef
 
 drawopdict begin
-  /Do {                                              % /Name
+  /Do {                                                  % /Name
+    %% Bug 695897 This file has nested text blocks and also a Do image inside
+    %% a text block. Here we attempt to detect and recover from this by setting the
+    %% CTM to the matrix we saved before the text block. NB we update the 'TextSaveMatrix'
+    %% or 'qTextSaveMatrix' whenever a 'cm' is issued, even if we are in a text block, so
+    %% these matrices 'ought' to be correct.
+    %% Of course, the file is badly broken, but 'Acrobat can open it....'
+    currentdict /TextSaveMatrix known {
+      gsave
+      (   **** Illegal; Executing Do inside a text block, attempting to recover\n) pdfformaterror
+      currentdict /TextSaveMatrix get setmatrix
+    } if
+    currentdict /qTextSaveMatrix known {
+      gsave
+      (   **** Illegal; Executing Do inside a text block, attempting to recover\n) pdfformaterror
+      currentdict /qTextSaveMatrix get setmatrix
+    } if
     setfillblend
     PDFfile fileposition exch                      % pos /Name
     dup Page /XObject rget {
@@ -2103,6 +2124,9 @@ drawopdict begin
       pdfformaterror
     } ifelse
     PDFfile exch setfileposition
+%    currentdict /TextSaveMatrix known currentdict /TextSaveMatrix known or {
+%      grestore
+%    } if
   } bdef
 end
 

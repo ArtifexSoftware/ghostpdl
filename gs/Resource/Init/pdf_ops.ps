@@ -122,7 +122,7 @@ nodict readonly pop
     %% original TextSaveMatrix behind allows the matching ET not to throw an error, as well as coping
     %% with the various other problems listed above. Its not pretty though.
     currentdict /TextSaveMatrix known {
-      currentdict /TextSaveMatrix get
+      currentdict /TextSaveMatrix get matrix copy
       gsave //nodict begin
       /qTextSaveMatrix gput
     }{
