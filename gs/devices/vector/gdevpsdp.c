@@ -415,8 +415,8 @@ int gdev_psdf_get_image_param(gx_device_psdf *pdev, const psdf_image_param_names
                                     image_names->filter_names[0].pname :
                                     params->Filter));
 #ifdef USE_LWF_JP2
-    if (strcmp(Param, image_names->AutoFilterStrategy) == 0)
-        if (image_names->AutoFilterStrategy != 0)
+    if (image_names->AutoFilterStrategy != 0)
+        if (strcmp(Param, image_names->AutoFilterStrategy) == 0)
             return psdf_write_name(plist, image_names->AutoFilterStrategy,
                                    (params->AutoFilterStrategy == 0 ?
                                    "JPEG2000" : params->AutoFilterStrategy));
