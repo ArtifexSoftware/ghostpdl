@@ -64,8 +64,8 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
         }
         else {
             Box = &pdev->charproc_BBox;
-            x0 = x / 100;
-            y0 = y / 100;
+            x0 = (float)x / 100;
+            y0 = (float)y / 100;
             x1 = x0 + (w / 100);
             y1 = y0 + (h / 100);
         }
@@ -1084,11 +1084,19 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
     gs_fixed_rect box = {{0, 0}, {0, 0}}, box1;
 
     if (pdev->Eps2Write) {
-        pdev->AccumulatingBBox++;
-        code = gx_default_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
-        pdev->AccumulatingBBox--;
-        if (code < 0)
-            return code;
+        gx_path_bbox(ppath, &box1);
+        if (box1.p.x != 0 || box1.p.y != 0 || box1.q.x != 0 || box1.q.y != 0){
+            if (pcpath != 0)
+                rect_intersect(box1, pcpath->outer_box);
+            if (fixed2int(box1.p.x) < pdev->BBox.p.x)
+                pdev->BBox.p.x = fixed2int(box1.p.x);
+            if (fixed2int(box1.p.y) < pdev->BBox.p.y)
+                pdev->BBox.p.y = fixed2int(box1.p.y);
+            if (fixed2int(box1.q.x) > pdev->BBox.q.x)
+                pdev->BBox.q.x = fixed2int(box1.q.x);
+            if (fixed2int(box1.q.y) > pdev->BBox.q.y)
+                pdev->BBox.q.x = fixed2int(box1.q.y);
+        }
         if (pdev->AccumulatingBBox)
             return 0;
     }
@@ -1489,9 +1497,9 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
             if (fixed2float(box1.p.y) / (pdev->HWResolution[1] / 72.0) < Box->p.y)
                 Box->p.y = fixed2float(box1.p.y) / (pdev->HWResolution[1] / 72.0);
             if (fixed2float(box1.q.x) / (pdev->HWResolution[0] / 72.0) > Box->q.x)
-                Box->q.x = fixed2float(box1.q.x) / (pdev->HWResolution[0] / 72.0) - Box->p.x;
+                Box->q.x = fixed2float(box1.q.x) / (pdev->HWResolution[0] / 72.0);
             if (fixed2float(box1.q.y) / (pdev->HWResolution[1] / 72.0) > Box->q.y)
-                Box->q.y = fixed2float(box1.q.y) / (pdev->HWResolution[1] / 72.0) - Box->p.y;
+                Box->q.y = fixed2float(box1.q.y) / (pdev->HWResolution[1] / 72.0);
         }
         return 0;
     } else {
