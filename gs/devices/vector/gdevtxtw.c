@@ -32,6 +32,7 @@
 #include "gxpath.h"
 #include "gdevagl.h"
 #include "gxdevsop.h"
+#include "gzpath.h"
 
 /* #define TRACE_TXTWRITE 1 */
 
@@ -2321,6 +2322,17 @@ txtwrite_text_begin(gx_device * dev, gs_imager_state * pis,
     textw_text_enum_t *penum;
     int code;
 
+    /* If this is a stringwidth, we must let the default graphics library code handle it
+     * in case there is no current point (this can happen if this is the first operation
+     * we get, the current font is a CIDFont, and its descendant is a substitute type 1
+     * font). If there is no current point we throw an error in text_process and that
+     * messes up all the font handling. The test below is copied from pdfwrite
+     * (gdev_pdf_text_begin) and seems to do the job.
+     */
+    if ((!(text->operation & TEXT_DO_DRAW) && pis->text_rendering_mode != 3)
+                    || path == 0 || !path_position_valid(path))
+            return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
+                                         pcpath, mem, ppenum);
     /* Allocate and initialize one of our text enumerators. */
     rc_alloc_struct_1(penum, textw_text_enum_t, &st_textw_text_enum, mem,
                       return_error(gs_error_VMerror), "gdev_textw_text_begin");
