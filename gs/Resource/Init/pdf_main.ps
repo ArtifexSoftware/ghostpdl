@@ -2033,7 +2033,9 @@ currentdict /PDF2PS_matrix_key undef
       .abortpdf14devicefilter
       /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
       stop
-    } if .poppdf14devicefilter
+    } if
+    { } settransfer		% identity transfer during popdevice (put_image)
+    .poppdf14devicefilter	% NB: reset to DefaultQstate will also restore transfer function
     /DefaultQstate qstate store	% device has changed -- reset DefaultQstate
   } {
     showpagecontents

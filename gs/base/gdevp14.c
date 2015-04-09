@@ -5080,7 +5080,7 @@ pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_imager_state *
     /* map to the color model */
     dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_gray(trans_device, gray, cm_comps);
     for (i = 0; i < ncomps; i++)
-        cv[i] = frac2cv(cm_comps[i]);
+        cv[i] = frac2cv(gx_map_color_frac(pis, cm_comps[i], effective_transfer[i]));
     /* encode as a color index */
     color = dev_proc(trans_device, encode_color)(trans_device, cv);
     /* check if the encoding was successful; we presume failure is rare */
@@ -5108,7 +5108,7 @@ pdf14_cmap_rgb_direct(frac r, frac g, frac b, gx_device_color *	pdc,
     /* map to the color model */
     dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_rgb(trans_device, pis, r, g, b, cm_comps);
     for (i = 0; i < ncomps; i++)
-        cv[i] = frac2cv(cm_comps[i]);
+        cv[i] = frac2cv(gx_map_color_frac(pis, cm_comps[i], effective_transfer[i]));
     /* encode as a color index */
     color = dev_proc(trans_device, encode_color)(trans_device, cv);
     /* check if the encoding was successful; we presume failure is rare */
@@ -5137,7 +5137,7 @@ pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     /* map to the color model */
     dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_cmyk(trans_device, c, m, y, k, cm_comps);
     for (i = 0; i < ncomps; i++)
-        cv[i] = frac2cv(cm_comps[i]);
+        cv[i] = frac2cv(gx_map_color_frac(pis, cm_comps[i], effective_transfer[i]));
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
     if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
@@ -5181,7 +5181,7 @@ pdf14_cmap_gray_direct_group(frac gray, gx_device_color * pdc, const gs_imager_s
    /* If we are doing concretization of colors in an SMask or isolated group
        then just return the color as is */
    if (ncomps == 1 ) {
-        cv[0] = frac2cv(gray);
+        cv[0] = frac2cv(gx_map_color_frac(pis, gray, effective_transfer[0]));
         /* encode as a color index */
         color = dev_proc(trans_device, encode_color)(trans_device, cv);
         /* check if the encoding was successful; we presume failure is rare */
@@ -5191,7 +5191,7 @@ pdf14_cmap_gray_direct_group(frac gray, gx_device_color * pdc, const gs_imager_s
         /* map to the color model */
         dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_gray(trans_device, gray, cm_comps);
         for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(cm_comps[i]);
+            cv[i] = frac2cv(gx_map_color_frac(pis, cm_comps[i], effective_transfer[i]));
         /* encode as a color index */
         color = dev_proc(trans_device, encode_color)(trans_device, cv);
         /* check if the encoding was successful; we presume failure is rare */
@@ -5222,34 +5222,15 @@ pdf14_cmap_rgb_direct_group(frac r, frac g, frac b, gx_device_color *	pdc,
         trans_device = dev;
     }
     ncomps = trans_device->color_info.num_components;
-    if ( ncomps == 3 ){
-        cv[0] = frac2cv(r);
-        cv[1] = frac2cv(g);
-        cv[2] = frac2cv(b);
-        /* encode as a color index */
-        color = dev_proc(trans_device, encode_color)(trans_device, cv);
-       /* check if the encoding was successful; we presume failure is rare */
-         if (color != gx_no_color_index)
+    /* map to the device color model */
+    dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_rgb(trans_device, pis, r, g, b, cm_comps);
+    for (i = 0; i < ncomps; i++)
+        cv[i] = frac2cv(gx_map_color_frac(pis, cm_comps[i], effective_transfer[i]));
+    /* encode as a color index */
+    color = dev_proc(trans_device, encode_color)(trans_device, cv);
+    /* check if the encoding was successful; we presume failure is rare */
+    if (color != gx_no_color_index)
         color_set_pure(pdc, color);
-    } else {
-        /* map to the device color model */
-        /* We can end up here, if for example we had a DeviceN color space with a
-           CIE based alternate space and a output device that was  RGB but a
-           blending space that was CMYK.  The proper way to solve this is to
-           introduce another color space for the graphic state that has its own
-           Joint CIE Cache between the source and a CMYK CRD (the transparency
-           color space). The problem is that we can only have one CRD, which is
-           defined by the output device.  We will fix these issues with the ICC
-           based color architecture. */
-        dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_rgb(trans_device, pis, r, g, b, cm_comps);
-        for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(cm_comps[i]);
-        /* encode as a color index */
-        color = dev_proc(trans_device, encode_color)(trans_device, cv);
-        /* check if the encoding was successful; we presume failure is rare */
-        if (color != gx_no_color_index)
-            color_set_pure(pdc, color);
-    }
 }
 
 /* color mapping for when we have an smask or a isolated transparency group with another color space */
@@ -5275,25 +5256,13 @@ pdf14_cmap_cmyk_direct_group(frac c, frac m, frac y, frac k, gx_device_color * p
         trans_device = dev;
     }
     ncomps = trans_device->color_info.num_components;
-    if (ncomps == 4 ){
-        cv[0] = frac2cv(c);
-        cv[1] = frac2cv(m);
-        cv[2] = frac2cv(y);
-        cv[3] = frac2cv(k);
-         /* encode as a color index */
-        color = dev_proc(trans_device, encode_color)(trans_device, cv);
-        /* check if the encoding was successful; we presume failure is rare */
-        if (color != gx_no_color_index)
-            color_set_pure(pdc, color);
-    } else {
-        /* map to the color model */
-        dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_cmyk(trans_device, c, m, y, k, cm_comps);
-        for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(cm_comps[i]);
-        color = dev_proc(trans_device, encode_color)(trans_device, cv);
-        if (color != gx_no_color_index)
-            color_set_pure(pdc, color);
-    }
+    /* map to the color model */
+    dev_proc(trans_device, get_color_mapping_procs)(trans_device)->map_cmyk(trans_device, c, m, y, k, cm_comps);
+    for (i = 0; i < ncomps; i++)
+        cv[i] = frac2cv(gx_map_color_frac(pis, cm_comps[i], effective_transfer[i]));
+    color = dev_proc(trans_device, encode_color)(trans_device, cv);
+    if (color != gx_no_color_index)
+        color_set_pure(pdc, color);
 }
 
 static	void
@@ -5330,7 +5299,7 @@ pdf14_cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha,	gx_device_color	
     }
 
     for (i = 0; i < ncomps; i++)
-        cv[i] = frac2cv(cm_comps[i]);
+        cv[i] = frac2cv(gx_map_color_frac(pis, cm_comps[i], effective_transfer[i]));
     color = dev_proc(trans_device, encode_color)(trans_device, cv);
     /* check if the encoding was successful; we presume failure is rare */
     if (color != gx_no_color_index)
@@ -5367,12 +5336,10 @@ pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_st
     /* apply the transfer function(s); convert to color values */
     if (additive)
         for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(gx_map_color_frac(pis,
-                                cm_comps[i], effective_transfer[i]));
+            cv[i] = frac2cv(gx_map_color_frac(pis, cm_comps[i], effective_transfer[i]));
     else
         for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(frac_1 - gx_map_color_frac(pis,
-                        (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
+            cv[i] = frac2cv(frac_1 - gx_map_color_frac(pis, (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
 
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
@@ -5416,12 +5383,10 @@ pdf14_cmap_devicen_direct(const	frac * pcc,
     /* apply the transfer function(s); convert to color values */
     if (trans_device->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
         for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(gx_map_color_frac(pis,
-                                cm_comps[i], effective_transfer[i]));
+            cv[i] = frac2cv(gx_map_color_frac(pis, cm_comps[i], effective_transfer[i]));
     else
         for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(frac_1 - gx_map_color_frac(pis,
-                        (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
+            cv[i] = frac2cv(frac_1 - gx_map_color_frac(pis, (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
     if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
