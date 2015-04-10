@@ -2384,7 +2384,6 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
     bool overprint = pdev->overprint;
-    bool blendspot = pdev->blendspot;
     gx_color_index drawn_comps = pdev->drawn_comps;
     gx_color_index comps;
     byte shape = 0; /* Quiet compiler. */
@@ -2492,20 +2491,10 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                         dst_ptr[k * planestride] = dst[k];
                 } else {
                     if (overprint && dst_ptr[num_comp * planestride] != 0) {
-                        if (blendspot) {
-                            /* Overprint simulation of spot colorants */
-                            for (k = 0; k < num_comp; ++k) {
-                                int temp =
-                                    (255 - dst_ptr[k * planestride]) * dst[k];
-                                temp = temp >> 8;
-                                dst_ptr[k * planestride] = (255 - temp);
-                            }
-                        } else {
-                            for (k = 0, comps = drawn_comps; comps != 0;
-                                 ++k, comps >>= 1) {
-                                if ((comps & 0x1) != 0) {
-                                    dst_ptr[k * planestride] = 255 - dst[k];
-                                }
+                        for (k = 0, comps = drawn_comps; comps != 0;
+                                ++k, comps >>= 1) {
+                            if ((comps & 0x1) != 0) {
+                                dst_ptr[k * planestride] = 255 - dst[k];
                             }
                         }
                         /* The alpha channel */
@@ -4659,7 +4648,6 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     int alpha_g_off = shape_off + (has_shape ? planestride : 0);
     int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
     bool overprint = pdev->overprint;
-    bool blendspot = pdev->blendspot;
     gx_color_index drawn_comps = pdev->drawn_comps;
     gx_color_index comps;
     byte shape = 0; /* Quiet compiler. */
@@ -4786,19 +4774,9 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                                                     blend_mode, pdev->blend_procs);
                     /* Complement the results for subtractive color spaces */
                     if (overprint && dst_ptr[num_comp * planestride] != 0) {
-                        if (blendspot) {
-                            /* Overprint simulation of spot colorants */
-                            for (k = 0; k < num_comp; ++k) {
-                                int temp =
-                                    (255 - dst_ptr[k * planestride]) * dst[k];
-                                temp = temp >> 8;
-                                dst_ptr[k * planestride] = (255 - temp);
-                            }
-                        } else {
-                            for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
-                                if ((comps & 0x1) != 0) {
-                                    dst_ptr[k * planestride] = 255 - dst[k];
-                                }
+                        for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
+                            if ((comps & 0x1) != 0) {
+                                dst_ptr[k * planestride] = 255 - dst[k];
                             }
                         }
                         /* The alpha channel */

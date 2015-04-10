@@ -1123,7 +1123,6 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     gx_color_index          comps = opdev->drawn_comps;
     gx_color_index          mask;
     int                     shift;
-    bool                    blendspot = opdev->blendspot;
 
     if (tdev == 0)
         return 0;
@@ -1181,33 +1180,16 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
                                "overprint_fill_rectangle_hl_color" );
                 return code;
             }
-            if (blendspot) {
-                /* We need to blend the CMYK colorants as we are simulating
-                   the overprint of a spot colorant with its equivalent CMYK
-                   colorants */
-                if ((comps &  0x01) == 1) {
-                    int kk;
-                    byte *cp = gb_params.data[k];
-                    byte new_val = ((pdcolor->colors.devn.values[k]) >> shift & mask);
-                    for (kk = 0; kk < w; kk++, cp++) {
-                        int temp = (255 - *cp) * (255 - new_val);
-                        temp = temp >> 8;
-                        *cp = (255-temp);
-                    }
-                }
-                comps >>= 1;
-            } else {
-                /* Skip the plane if this component is not to be drawn.  We have
-                   to do a get bits for each plane due to the fact that we have
-                   to do a copy_planes at the end.  If we had a copy_plane 
-                   operation we would just get the ones needed and set those. */
-                if ((comps & 0x01) == 1) {
-                    /* Not sure if a loop or a memset is better here */
-                    memset(gb_params.data[k], 
-                           ((pdcolor->colors.devn.values[k]) >> shift & mask), w);
-                }
-                comps >>= 1;
+            /* Skip the plane if this component is not to be drawn.  We have
+                to do a get bits for each plane due to the fact that we have
+                to do a copy_planes at the end.  If we had a copy_plane 
+                operation we would just get the ones needed and set those. */
+            if ((comps & 0x01) == 1) {
+                /* Not sure if a loop or a memset is better here */
+                memset(gb_params.data[k], 
+                        ((pdcolor->colors.devn.values[k]) >> shift & mask), w);
             }
+            comps >>= 1;
         }
         code = dev_proc(tdev, copy_planes)(tdev, gb_buff, 0, raster, 
                                            gs_no_bitmap_id, x, y - 1, w, 1, 1);

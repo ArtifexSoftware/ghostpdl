@@ -560,20 +560,9 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
                 }
             } else {
                 if (overprint) {
-                    if (blendspot) {
-                        /* Overprint simulation of spot colorants */
-                        for (i = 0; i < n_chan; ++i) {
-                            int temp = 
-                                (255 - nos_ptr[i * nos_planestride]) *
-                                (nos_pixel[i]);
-                            temp = temp >> 8;
-                            nos_ptr[i * nos_planestride] = (255 - temp);
-                        }
-                    } else {
-                        for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
-                            if ((comps & 0x1) != 0) {
-                                nos_ptr[i * nos_planestride] = 255 - nos_pixel[i];
-                            }
+                    for (i = 0, comps = drawn_comps; comps != 0; ++i, comps >>= 1) {
+                        if ((comps & 0x1) != 0) {
+                            nos_ptr[i * nos_planestride] = 255 - nos_pixel[i];
                         }
                     }
                 } else {
