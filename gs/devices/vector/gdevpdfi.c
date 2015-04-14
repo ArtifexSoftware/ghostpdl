@@ -2623,7 +2623,7 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
         int num_components =
             gs_color_space_num_components(pim->ColorSpace);
 
-        code = cos_dict_put_c_key_floats(
+        code = cos_dict_put_c_key_floats((gx_device_pdf *)dev,
                                 (cos_dict_t *)pmie->writer.pres->object,
                                 "/Matte", pixm->Matte,
                                 num_components);
@@ -2722,7 +2722,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 arry[2] = tmplate->BBox.q.x;
                 arry[3] = tmplate->BBox.q.y;
                 if (code >= 0)
-                    code = cos_dict_put_c_key_floats(pcd, "/BBox", arry, 4);
+                    code = cos_dict_put_c_key_floats(pdev, pcd, "/BBox", arry, 4);
                 if (code < 0)
                     return code;
 
@@ -2732,7 +2732,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 arry[3] = tmplate->form_matrix.yy;
                 arry[4] = tmplate->form_matrix.tx;
                 arry[5] = tmplate->form_matrix.ty;
-                code = cos_dict_put_c_key_floats(pcd, "/Matrix", arry, 6);
+                code = cos_dict_put_c_key_floats(pdev, pcd, "/Matrix", arry, 6);
                 pprintg2(pdev->strm, "%g 0 0 %g 0 0 cm\n",
                          72.0 / pdev->HWResolution[0], 72.0 / pdev->HWResolution[1]);
 

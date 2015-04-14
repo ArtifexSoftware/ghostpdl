@@ -269,10 +269,10 @@ cos_array_add_vector3(cos_array_t *pca, const gs_vector3 *pvec)
     return code;
 }
 static int
-cos_dict_put_c_key_vector3(cos_dict_t *pcd, const char *key,
+cos_dict_put_c_key_vector3(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key,
                            const gs_vector3 *pvec)
 {
-    cos_array_t *pca = cos_array_alloc(pcd->pdev, "cos_array_from_vector3");
+    cos_array_t *pca = cos_array_alloc(pdev, "cos_array_from_vector3");
     int code;
 
     if (pca == 0)
@@ -290,10 +290,10 @@ cos_dict_put_c_key_vector3(cos_dict_t *pcd, const char *key,
  * This procedure is exported for gdevpdfk.c.
  */
 int
-pdf_finish_cie_space(cos_array_t *pca, cos_dict_t *pcd,
+pdf_finish_cie_space(gx_device_pdf *pdev, cos_array_t *pca, cos_dict_t *pcd,
                      const gs_cie_common *pciec)
 {
-    int code = cos_dict_put_c_key_vector3(pcd, "/WhitePoint",
+    int code = cos_dict_put_c_key_vector3(pdev, pcd, "/WhitePoint",
                                           &pciec->points.WhitePoint);
 
     if (code < 0)
@@ -302,7 +302,7 @@ pdf_finish_cie_space(cos_array_t *pca, cos_dict_t *pcd,
         pciec->points.BlackPoint.v != 0 ||
         pciec->points.BlackPoint.w != 0
         ) {
-        code = cos_dict_put_c_key_vector3(pcd, "/BlackPoint",
+        code = cos_dict_put_c_key_vector3(pdev, pcd, "/BlackPoint",
                                           &pciec->points.BlackPoint);
         if (code < 0)
             return code;
@@ -1134,7 +1134,7 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_imager_state * pis,
     /* Finish handling a CIE-based color space (Calxxx or Lab). */
     if (code < 0)
         return code;
-    code = pdf_finish_cie_space(pca, pcd, pciec);
+    code = pdf_finish_cie_space(pdev, pca, pcd, pciec);
     break;
 
     case gs_color_space_index_CIEABC: {
@@ -1165,7 +1165,7 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_imager_state * pis,
             pcd = cos_dict_alloc(pdev, "pdf_color_space(dict)");
             if (pcd == 0)
                 return_error(gs_error_VMerror);
-            code = pdf_put_lab_color_space(pca, pcd, pcie->RangeABC.ranges);
+            code = pdf_put_lab_color_space(pdev, pca, pcd, pcie->RangeABC.ranges);
             goto cal;
         } else {
             if (!pdev->UseOldColor && !pdev->ForOPDFRead) {
@@ -1198,7 +1198,7 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_imager_state * pis,
         if (pcd == 0)
             return_error(gs_error_VMerror);
         if (expts.u != 1 || expts.v != 1 || expts.w != 1) {
-            code = cos_dict_put_c_key_vector3(pcd, "/Gamma", &expts);
+            code = cos_dict_put_c_key_vector3(pdev, pcd, "/Gamma", &expts);
             if (code < 0)
                 return code;
         }
