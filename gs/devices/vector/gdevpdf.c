@@ -1041,13 +1041,35 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     pdf_page_t *page = &pdev->pages[page_num - 1];
     double mediabox[4] = {0, 0};
     stream *s;
+    const cos_value_t *v_mediabox = cos_dict_find_c_key(page->Page, "/MediaBox");
 
-    mediabox[2] = round_box_coord(page->MediaBox.x);
-    mediabox[3] = round_box_coord(page->MediaBox.y);
-    pdf_open_obj(pdev, page_id, resourcePage);
+    /* If we have not been given a MediaBox overriding pdfmark, use the current media size. */
     s = pdev->strm;
-    pprintg2(s, "<</Type/Page/MediaBox [0 0 %g %g]\n",
+    pdf_open_obj(pdev, page_id, resourcePage);
+
+    if (v_mediabox == NULL ) {
+        mediabox[2] = round_box_coord(page->MediaBox.x);
+        mediabox[3] = round_box_coord(page->MediaBox.y);
+        pprintg2(s, "<</Type/Page/MediaBox [0 0 %g %g]\n",
                 mediabox[2], mediabox[3]);
+    } else {
+        const byte *p = v_mediabox->contents.chars.data;
+        char buf[100];
+        int l = min (v_mediabox->contents.chars.size, sizeof(buf) - 1);
+        float temp[4]; /* the type is float for sscanf. */
+
+        temp[0] = temp[1] = 0;
+        temp[2] = round_box_coord(page->MediaBox.x);
+        temp[3] = round_box_coord(page->MediaBox.y);
+        memcpy(buf, p, l);
+        buf[l] = 0;
+        if (sscanf(buf, "[ %g %g %g %g ]",
+                &temp[0], &temp[1], &temp[2], &temp[3]) == 4) {
+            cos_dict_delete_c_key(page->Page, "/MediaBox");
+        }
+        pprintg4(s, "<</Type/Page/MediaBox [%g %g %g %g]\n",
+                temp[0], temp[1], temp[2], temp[3]);
+    }
     if (pdev->PDFX) {
         const cos_value_t *v_trimbox = cos_dict_find_c_key(page->Page, "/TrimBox");
         const cos_value_t *v_artbox = cos_dict_find_c_key(page->Page, "/ArtBox");
