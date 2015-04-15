@@ -70,7 +70,21 @@ gp_get_realtime(long *pdt)
 void
 gp_get_usertime(long *pdt)
 {
-    gp_get_realtime(pdt);	/* Use an approximation for now.  */
+
+    uint64_t freq;
+    uint64_t count;
+
+    if ( QueryPerformanceFrequency(&freq) == NULL) {
+        gp_get_realtime(pdt);
+    }
+    /* Get the high resolution time as nanoseconds */
+    QueryPerformanceCounter(&count);
+
+    pdt[0] = (count / freq);
+    count -= freq * pdt[0];
+    count *= 1000000000;
+    count /= freq;
+    pdt[1] = count;
 }
 
 /* ------ Console management ------ */
