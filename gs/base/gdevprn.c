@@ -112,10 +112,10 @@ gdev_prn_open(gx_device * pdev)
     int code;
     bool update_procs = false;
 
-#if 1
-    if (!pdev->PageHandlerPushed && (pdev->FirstPage != 0 || pdev->LastPage != 0)) {
-#else
+#if FORCE_TESTING_SUBCLASSING
     if (!pdev->PageHandlerPushed) {
+#else
+    if (!pdev->PageHandlerPushed && (pdev->FirstPage != 0 || pdev->LastPage != 0)) {
 #endif
         pdev->PageHandlerPushed = true;
         gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
