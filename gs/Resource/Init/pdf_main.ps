@@ -1107,9 +1107,14 @@ currentdict /xref-char-dict undef
 } bind def
 
 /stderrfile (%stderr) (w) file def
+/stdoutfile (%stdout) (w) file def
 
 /stderrprint {                % <string> stderrprint -
   //stderrfile dup 3 -1 roll writestring flushfile
+} bind def
+
+/stdoutprint {                % <string> stderrprint -
+  //stdoutfile dup 3 -1 roll writestring flushfile
 } bind def
 
 /pdfformaterror {	% <string> pdfformaterror -
