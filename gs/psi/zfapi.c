@@ -2424,7 +2424,7 @@ zFAPIpassfont(i_ctx_t *i_ctx_p)
     if (fapi_request != NULL)
         gs_free_string(imemory, (byte *) fapi_request,
                        strlen(fapi_request) + 1, "do_FAPIpassfont");
-    if (code != 0)
+    if (code < 0 && code != gs_error_invalidaccess)
         return code;
 
     if (code >= 0 && fapi_id != NULL) {
