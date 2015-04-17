@@ -38,6 +38,7 @@
 #include "jbig2_generic.h"
 #include "jbig2_image.h"
 
+#if 0 /* currently not used */
 static int
 jbig2_decode_refinement_template0(Jbig2Ctx *ctx,
                               Jbig2Segment *segment,
@@ -49,6 +50,7 @@ jbig2_decode_refinement_template0(Jbig2Ctx *ctx,
   return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
     "refinement region template 0 NYI");
 }
+#endif
 
 static int
 jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
@@ -159,6 +161,7 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
   return 0;
 }
 
+#if 0 /* currently not used */
 static int
 jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
                               Jbig2Segment *segment,
@@ -241,6 +244,7 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
   return 0;
 
 }
+#endif
 
 
 typedef uint32_t (*ContextBuilder)(const Jbig2RefinementRegionParams *,
