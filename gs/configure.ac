@@ -790,8 +790,17 @@ if test x"$enable_fapi" != xno; then
          *) UFST_ROOT=`pwd`/$with_ufst ;;
       esac
 
+      # Various versions of UFST fail to build with -Werror=return-type so
+      # strip that off our GCFLAGS if it's there.
+      tmp_cflags=""
+      for tmp_cflag in $GCFLAGS ; do
+        echo $tmp_cflag
+        tmp_cflags="$tmp_cflags $(echo $tmp_cflag | grep -v "Werror=return-type")"
+      done
+      GCFLAGS="$tmp_cflags"
+
       FAPIUFST_MAK="\$(UFST_ROOT)/fapiufst.mak"
-    
+
       if ! test -f $UFST_ROOT/fapiufst.mak ; then
         echo $UFST_ROOT/fapiufst.mak
         AC_MSG_ERROR([UFST: fapiufst.mak not found])

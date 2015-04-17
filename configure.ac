@@ -42,9 +42,8 @@ save_cflags=$CFLAGS
 AC_PROG_CC
 CFLAGS=$save_cflags
 
-if test $ac_cv_prog_gcc = yes; then
-  GCFLAGS="$CFLAGS" -Werror=declaration-after-statement \
--Werror=return-type
+if test "x$ac_cv_prog_gcc" = "xyes" ; then
+  GCFLAGS="$CFLAGS -Werror=return-type"
 else
   GCFLAGS="$CFLAGS"
 fi
@@ -186,6 +185,15 @@ if test x"$enable_fapi" != xno; then
         /*) UFST_ROOT=$with_ufst ;;
          *) UFST_ROOT=`pwd`/$with_ufst ;;
       esac
+
+      # Various versions of UFST fail to build with -Werror=return-type so
+      # strip that off our GCFLAGS if it's there.
+      tmp_cflags=""
+      for tmp_cflag in $GCFLAGS ; do
+        echo $tmp_cflag
+        tmp_cflags="$tmp_cflags $(echo $tmp_cflag | grep -v "Werror=return-type")"
+      done
+      GCFLAGS="$tmp_cflags"
 
       FAPIUFST_MAK="\$(UFST_ROOT)/fapiufst.mak"
       if ! test -f $UFST_ROOT/fapiufst.mak ; then
