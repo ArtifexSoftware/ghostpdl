@@ -455,7 +455,7 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
                 c = pdata->gsubrNumberBias;
             }
             else {
-                c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
+                c = fixed2int_var(*csp) + pdata->gsubrNumberBias;
             }
             code = pdata->procs.subr_data
                 (pfont, c, true, &ipsp[1].cs_data);
