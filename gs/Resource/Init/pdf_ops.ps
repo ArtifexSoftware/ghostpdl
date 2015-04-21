@@ -886,6 +886,21 @@ end readonly def
 % ---------------- Text positioning ---------------- %
 
 /Td {
+  %% Bug #695950 - invalid parameter to 'Td' operator
+  %% Technically the parameters to Td are reals and can vary +/- 3.403x10^38
+  %% However that would be kind of hard to validate, and in any event these
+  %% are somewhat unlikely numbers. We validate against +/- 2^32 instead. If this
+  %% should ever be a problem we'll have to modify this check.
+  %% Testing reveals that Acrobat clamps these out of range values to 0, it doesn't
+  %% simply ignore the error.
+  exch dup dup 4294967295 ge exch 4294967295 neg le or {
+    (   **** invalid argument to Td, Treating argument as 0.\n) pdfformaterror
+    pop 0
+  } if
+  exch dup dup 4294967295 ge exch 4294967295 neg le or {
+    (   **** invalid argument to Td, Treating argument as 0.\n) pdfformaterror
+    pop 0
+  } if
   TextLineMatrix transform TextLineMatrix 4 2 getinterval astore pop
   TextLineMatrix TextMatrix copy pop settextstate
 } bdef
