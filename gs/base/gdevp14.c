@@ -2037,7 +2037,6 @@ pdf14_discard_trans_layer(gx_device *dev, gs_imager_state * pis)
 
         if (ctx->mask_stack != NULL) {
             pdf14_free_mask_stack(ctx, ctx->memory);
-            ctx->mask_stack = NULL;
         }
 
         /* Now the stack of buffers */
