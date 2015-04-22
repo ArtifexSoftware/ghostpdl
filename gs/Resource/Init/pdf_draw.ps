@@ -1260,7 +1260,7 @@ end
 
 /jp2_csp_dict mark
   12 { /DeviceCMYK }       % CMYK
-  14 { /Lab }              % LAB
+  14 { [ /Lab << /WhitePoint [ 0.9505 1 1.0890 ] readonly >> ] }              % LAB, WhitePoint == D65
   16 { /sRGBICC /ColorSpace findresource } bind
   17 { /sGrayICC /ColorSpace findresource } bind
   18 3 index               % YCC is converted to RGB
