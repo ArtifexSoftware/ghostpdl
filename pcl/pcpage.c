@@ -181,7 +181,14 @@ update_xfm_state(pcl_state_t * pcs, bool reset_initial)
         );
     pxfmst->lp2pg_mtx.tx += loff;
     pxfmst->lp2pg_mtx.ty += toff;
-    if (pcs->personality == rtl)
+
+    /* if RTL mode or there is PJL requesting full bleed the offsets
+     * of the logical page are 0.
+     */
+    if ((pcs->personality == rtl) ||
+        (!pjl_proc_compare(pcs->pjls,
+                           pjl_proc_get_envvar(pcs->pjls, "edgetoedge"), "YES")))
+
         offset = 0;
     else
         offset = ((pxfmst->lp_orient & 0x1) != 0 ? psize->offset_landscape

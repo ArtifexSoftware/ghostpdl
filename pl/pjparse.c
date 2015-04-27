@@ -78,6 +78,7 @@ static const pjl_envir_var_t pjl_factory_defaults[] = {
     {"formlines", "60"},
     {"formlines_set", "off"},
     {"widea4", "no"},
+    {"edgetoedge", "no"},
     {"fontsource", "I"},
     {"fontnumber", "0"},
     {"pitch", "10.00"},
