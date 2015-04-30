@@ -118,7 +118,7 @@
 
 /* offsets and margins go here */
 #define std_device_part3_()\
-        0/*FirstPage*/, 0/*LastPage*/, 0/*PageHandlerPushed*/,\
+        0/*FirstPage*/, 0/*LastPage*/, 0/*PageHandlerPushed*/, 0/* Object Filter*/, 0/*ObjectHandlerPushed*/,\
         0/*PageCount*/, 0/*ShowpageCount*/, 1/*NumCopies*/, 0/*NumCopies_set*/,\
         0/*IgnoreNumCopies*/, 0/*UseCIEColor*/, 0/*LockSafetyParams*/,\
         0/*band_offset_x*/, 0/*band_offset_y*/, {false}/* sgr */,\
@@ -639,6 +639,17 @@ int gdev_end_output_media(gs_param_list * mlist, gs_param_dict * pdict);
 void gx_device_request_leadingedge(gx_device *dev, int le_req);
 
 /* ---------------- Device subclassing procedures ---------------- */
+int gs_is_pdf14trans_compositor(const gs_composite_t * pct);
+
+#define subclass_common\
+    t_dev_proc_create_compositor *saved_compositor_method
+
+typedef int (t_dev_proc_create_compositor) (gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte, gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev);
+
+typedef struct {
+    t_dev_proc_create_compositor *saved_compositor_method;
+} generic_subclass_data;
+
 
 int gx_copy_device_procs(gx_device_procs *dest_procs, gx_device_procs *src_procs, gx_device_procs *prototype_procs);
 int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, unsigned int private_data_size);

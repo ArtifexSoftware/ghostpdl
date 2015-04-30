@@ -112,6 +112,13 @@ enum gs_error_type {
 /* We do provide a typedef type for external API use */
 typedef enum gs_error_type gs_error_t;
 
+/* A special 'error', like reamp color above. This is used by a subcalssing
+ * device to indicate that it has fully processed a device method, and parent
+ * subclasses should not perform any further action. Currently this is limited
+ * to compositor creation.
+ */
+#define gs_error_handled (-111)
+
 int gs_log_error(int, const char *, int);
 #if !defined(DEBUG) || defined(GS_THREADSAFE)
 #  define gs_log_error(err, file, line) (err)

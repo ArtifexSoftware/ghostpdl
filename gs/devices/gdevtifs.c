@@ -31,9 +31,12 @@
 
 #include "gstiffio.h"
 #include "gdevflp.h"
+#include "gdevoflt.h"
 
 extern gx_device_flp  gs_flp_device;
+extern gx_device_flp  gs_obj_filter_device;
 
+#define FORCE_TESTING_SUBCLASSING 1
 int
 tiff_open(gx_device *pdev)
 {
@@ -44,19 +47,64 @@ tiff_open(gx_device *pdev)
     /* Use our own warning and error message handlers in libtiff */
     tiff_set_handlers();
 
+#ifdef FORCE_TESTING_SUBCLASSING
+    if (!pdev->PageHandlerPushed) {
+#else
     if (!pdev->PageHandlerPushed && (pdev->FirstPage != 0 || pdev->LastPage != 0)) {
-        pdev->PageHandlerPushed = true;
+#endif
+        gx_device *dev;
+
         gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
-        pdev = pdev->child;
+        dev = (gx_device *)pdev;
+        while (dev->parent)
+            dev = dev->parent;
+
+        while(dev) {
+            dev->PageHandlerPushed = true;
+            dev = dev->child;
+        }
+
+        while(pdev->child)
+            pdev = pdev->child;
         pdev->is_open = true;
         update_procs = true;
     }
+
+#ifdef FORCE_TESTING_SUBCLASSING
+    if (!pdev->ObjectHandlerPushed) {
+#else
+    if (!pdev->ObjectHandlerPushed && (pdev->ObjectFilter != 0)) {
+#endif
+        gx_device *dev;
+
+        gx_device_subclass(pdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+        dev = (gx_device *)pdev;
+        while (dev->parent)
+            dev = dev->parent;
+
+        while(dev) {
+            dev->PageHandlerPushed = true;
+            dev = dev->child;
+        }
+
+        while(pdev->child)
+            pdev = pdev->child;
+        pdev->is_open = true;
+        update_procs = true;
+    }
+
     ppdev->file = NULL;
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
     if (code < 0)
         return code;
-    if (update_procs)
-        gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_flp_device.procs);
+    if (update_procs) {
+        if (pdev->ObjectHandlerPushed) {
+            gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_obj_filter_device.procs);
+            pdev = pdev->parent;
+        }
+        if (pdev->PageHandlerPushed)
+            gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_flp_device.procs);
+    }
     if (ppdev->OpenOutputFile)
         code = gdev_prn_open_printer_seekable(pdev, 1, true);
     return code;

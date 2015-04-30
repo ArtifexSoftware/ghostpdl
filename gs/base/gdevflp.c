@@ -52,9 +52,9 @@
  * initialisation in lots of places?
  */
 
-/* TODO make gx_device_fill_in_procs fill in *all* hte procs, currently it doesn't.
+/* TODO make gx_device_fill_in_procs fill in *all* the procs, currently it doesn't.
  * this will mean declaring gx_default_ methods for the transparency methods, possibly
- * some others. Like a number of other default methods, these cna simply return an error
+ * some others. Like a number of other default methods, these can simply return an error
  * which hopefuly will avoid us having to check for NULL device methods.
  * We also agreed to set the fill_rectangle method to a default as well (currently it explicitly
  * does not do this) and have gdev_prn_alloc_buffer check to see if the method is the default
@@ -90,36 +90,22 @@
 #include "gsstype.h"
 #include "gdevprn.h"
 #include "gdevp14.h"        /* Needed to patch up the procs after compositor creation */
+#include "gdevsclass.h"
 #include "gdevflp.h"
-
-int gs_is_pdf14trans_compositor(const gs_composite_t * pct);
 
 /* GC descriptor */
 public_st_device_flp();
 /* we need text and image enumerators, because of the crazy way that text and images work */
 private_st_flp_text_enum();
 
-/* Device procedures, we need to implement all of them */
-static dev_proc_open_device(flp_open_device);
-static dev_proc_get_initial_matrix(flp_get_initial_matrix);
-static dev_proc_sync_output(flp_sync_output);
+/* Device procedures, we need quite a lot of them */
 static dev_proc_output_page(flp_output_page);
-static dev_proc_close_device(flp_close_device);
-static dev_proc_map_rgb_color(flp_map_rgb_color);
-static dev_proc_map_color_rgb(flp_map_color_rgb);
 static dev_proc_fill_rectangle(flp_fill_rectangle);
 static dev_proc_tile_rectangle(flp_tile_rectangle);
 static dev_proc_copy_mono(flp_copy_mono);
 static dev_proc_copy_color(flp_copy_color);
 static dev_proc_draw_line(flp_draw_line);
 static dev_proc_get_bits(flp_get_bits);
-static dev_proc_get_params(flp_get_params);
-static dev_proc_put_params(flp_put_params);
-static dev_proc_map_cmyk_color(flp_map_cmyk_color);
-static dev_proc_get_xfont_procs(flp_get_xfont_procs);
-static dev_proc_get_xfont_device(flp_get_xfont_device);
-static dev_proc_map_rgb_alpha_color(flp_map_rgb_alpha_color);
-static dev_proc_get_page_device(flp_get_page_device);
 static dev_proc_get_alpha_bits(flp_get_alpha_bits);
 static dev_proc_copy_alpha(flp_copy_alpha);
 static dev_proc_get_band(flp_get_band);
@@ -136,46 +122,30 @@ static dev_proc_image_data(flp_image_data);
 static dev_proc_end_image(flp_end_image);
 static dev_proc_strip_tile_rectangle(flp_strip_tile_rectangle);
 static dev_proc_strip_copy_rop(flp_strip_copy_rop);
-static dev_proc_get_clipping_box(flp_get_clipping_box);
 static dev_proc_begin_typed_image(flp_begin_typed_image);
 static dev_proc_get_bits_rectangle(flp_get_bits_rectangle);
-static dev_proc_map_color_rgb_alpha(flp_map_color_rgb_alpha);
 static dev_proc_create_compositor(flp_create_compositor);
-static dev_proc_get_hardware_params(flp_get_hardware_params);
 static dev_proc_text_begin(flp_text_begin);
-static dev_proc_finish_copydevice(flp_finish_copydevice);
 static dev_proc_begin_transparency_group(flp_begin_transparency_group);
 static dev_proc_end_transparency_group(flp_end_transparency_group);
 static dev_proc_begin_transparency_mask(flp_begin_transparency_mask);
 static dev_proc_end_transparency_mask(flp_end_transparency_mask);
 static dev_proc_discard_transparency_layer(flp_discard_transparency_layer);
-static dev_proc_get_color_mapping_procs(flp_get_color_mapping_procs);
-static dev_proc_get_color_comp_index(flp_get_color_comp_index);
-static dev_proc_encode_color(flp_encode_color);
-static dev_proc_decode_color(flp_decode_color);
 static dev_proc_pattern_manage(flp_pattern_manage);
 static dev_proc_fill_rectangle_hl_color(flp_fill_rectangle_hl_color);
-static dev_proc_include_color_space(flp_include_color_space);
 static dev_proc_fill_linear_color_scanline(flp_fill_linear_color_scanline);
 static dev_proc_fill_linear_color_trapezoid(flp_fill_linear_color_trapezoid);
 static dev_proc_fill_linear_color_triangle(flp_fill_linear_color_triangle);
-static dev_proc_update_spot_equivalent_colors(flp_update_spot_equivalent_colors);
-static dev_proc_ret_devn_params(flp_ret_devn_params);
 static dev_proc_fillpage(flp_fillpage);
 static dev_proc_push_transparency_state(flp_push_transparency_state);
 static dev_proc_pop_transparency_state(flp_pop_transparency_state);
 static dev_proc_put_image(flp_put_image);
-static dev_proc_dev_spec_op(flp_dev_spec_op);
 static dev_proc_copy_planes(flp_copy_planes);
-static dev_proc_get_profile(flp_get_profile);
 static dev_proc_set_graphics_type_tag(flp_set_graphics_type_tag);
 static dev_proc_strip_copy_rop2(flp_strip_copy_rop2);
 static dev_proc_strip_tile_rect_devn(flp_strip_tile_rect_devn);
 static dev_proc_copy_alpha_hl_color(flp_copy_alpha_hl_color);
 static dev_proc_process_page(flp_process_page);
-
-static void
-flp_finalize(gx_device *dev);
 
 /* The device prototype */
 #define MAX_COORD (max_int_in_fixed - 1000)
@@ -207,53 +177,30 @@ public_st_flp_device();
 const
 gx_device_flp gs_flp_device =
 {
-    sizeof(gx_device_flp),  /* params _size */\
-    0,                      /* obselete static_procs */\
-    "first_lastpage",       /* dname */\
-    0,                      /* memory */\
-    &st_flp_device,              /* stype */\
-    0,              /* is_dynamic (always false for a prototype, will be true for an allocated device instance) */\
-    flp_finalize,   /* The reason why we can't use the std_device_dci_body macro, we want a finalize */\
-    {0},              /* rc */\
-    0,              /* retained */\
-    0,              /* parent */\
-    0,              /* child */\
-    0,              /* subclass_data */\
-    0,              /* is_open */\
-    0,              /* max_fill_band */\
-    dci_alpha_values(1, 8, 255, 0, 256, 1, 1, 1),\
-    std_device_part2_(MAX_COORD, MAX_COORD, MAX_RESOLUTION, MAX_RESOLUTION),\
-    offset_margin_values(0, 0, 0, 0, 0, 0),\
-    std_device_part3_(),
-#if 0
-    /*
-     * Define the device as 8-bit gray scale to avoid computing halftones.
-     */
-    std_device_dci_body(gx_device_flp, 0, "first_lastpage",
+    subclass_std_device_dci_body(gx_device_flp, 0, "first_lastpage", default_subclass_finalize, &st_flp_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
                         1, 8, 255, 0, 256, 1),
-#endif
-    {flp_open_device,
-     flp_get_initial_matrix,
-     flp_sync_output,			/* sync_output */
+    {default_subclass_open_device,
+     default_subclass_get_initial_matrix,
+     default_subclass_sync_output,			/* sync_output */
      flp_output_page,
-     flp_close_device,
-     flp_map_rgb_color,
-     flp_map_color_rgb,
+     default_subclass_close_device,
+     default_subclass_map_rgb_color,
+     default_subclass_map_color_rgb,
      flp_fill_rectangle,
      flp_tile_rectangle,			/* tile_rectangle */
      flp_copy_mono,
      flp_copy_color,
      flp_draw_line,			/* draw_line */
      flp_get_bits,			/* get_bits */
-     flp_get_params,
-     flp_put_params,
-     flp_map_cmyk_color,
-     flp_get_xfont_procs,			/* get_xfont_procs */
-     flp_get_xfont_device,			/* get_xfont_device */
-     flp_map_rgb_alpha_color,
-     flp_get_page_device,
+     default_subclass_get_params,
+     default_subclass_put_params,
+     default_subclass_map_cmyk_color,
+     default_subclass_get_xfont_procs,			/* get_xfont_procs */
+     default_subclass_get_xfont_device,			/* get_xfont_device */
+     default_subclass_map_rgb_alpha_color,
+     default_subclass_get_page_device,
      flp_get_alpha_bits,			/* get_alpha_bits */
      flp_copy_alpha,
      flp_get_band,			/* get_band */
@@ -270,38 +217,38 @@ gx_device_flp gs_flp_device =
      flp_end_image,			/* end_image */
      flp_strip_tile_rectangle,
      flp_strip_copy_rop,
-     flp_get_clipping_box,			/* get_clipping_box */
+     default_subclass_get_clipping_box,			/* get_clipping_box */
      flp_begin_typed_image,
      flp_get_bits_rectangle,			/* get_bits_rectangle */
-     flp_map_color_rgb_alpha,
+     default_subclass_map_color_rgb_alpha,
      flp_create_compositor,
-     flp_get_hardware_params,			/* get_hardware_params */
+     default_subclass_get_hardware_params,			/* get_hardware_params */
      flp_text_begin,
-     flp_finish_copydevice,			/* finish_copydevice */
+     default_subclass_finish_copydevice,			/* finish_copydevice */
      flp_begin_transparency_group,			/* begin_transparency_group */
      flp_end_transparency_group,			/* end_transparency_group */
      flp_begin_transparency_mask,			/* begin_transparency_mask */
      flp_end_transparency_mask,			/* end_transparency_mask */
      flp_discard_transparency_layer,			/* discard_transparency_layer */
-     flp_get_color_mapping_procs,			/* get_color_mapping_procs */
-     flp_get_color_comp_index,			/* get_color_comp_index */
-     flp_encode_color,			/* encode_color */
-     flp_decode_color,			/* decode_color */
+     default_subclass_get_color_mapping_procs,			/* get_color_mapping_procs */
+     default_subclass_get_color_comp_index,			/* get_color_comp_index */
+     default_subclass_encode_color,			/* encode_color */
+     default_subclass_decode_color,			/* decode_color */
      flp_pattern_manage,			/* pattern_manage */
      flp_fill_rectangle_hl_color,			/* fill_rectangle_hl_color */
-     flp_include_color_space,			/* include_color_space */
+     default_subclass_include_color_space,			/* include_color_space */
      flp_fill_linear_color_scanline,			/* fill_linear_color_scanline */
      flp_fill_linear_color_trapezoid,			/* fill_linear_color_trapezoid */
      flp_fill_linear_color_triangle,			/* fill_linear_color_triangle */
-     flp_update_spot_equivalent_colors,			/* update_spot_equivalent_colors */
-     flp_ret_devn_params,			/* ret_devn_params */
+     default_subclass_update_spot_equivalent_colors,			/* update_spot_equivalent_colors */
+     default_subclass_ret_devn_params,			/* ret_devn_params */
      flp_fillpage,		/* fillpage */
      flp_push_transparency_state,                      /* push_transparency_state */
      flp_pop_transparency_state,                      /* pop_transparency_state */
      flp_put_image,                      /* put_image */
-     flp_dev_spec_op,                      /* dev_spec_op */
+     default_subclass_dev_spec_op,                      /* dev_spec_op */
      flp_copy_planes,                      /* copy_planes */
-     flp_get_profile,                      /* get_profile */
+     default_subclass_get_profile,                      /* get_profile */
      flp_set_graphics_type_tag,                      /* set_graphics_type_tag */
      flp_strip_copy_rop2,
      flp_strip_tile_rect_devn,
@@ -312,51 +259,6 @@ gx_device_flp gs_flp_device =
 
 #undef MAX_COORD
 #undef MAX_RESOLUTION
-
-static
-void flp_finalize(gx_device *dev) {
-
-    gx_unsubclass_device(dev);
-
-    if (dev->finalize)
-        dev->finalize(dev);
-    return;
-}
-
-/* For printing devices the 'open' routine in gdevprn calls gdevprn_allocate_memory
- * which is responsible for creating the page buffer. This *also* fills in some of
- * the device procs, in particular fill_rectangle() so its vitally important that
- * we pass this on.
- */
-int flp_open_device(gx_device *dev)
-{
-    if (dev->child->procs.open_device) {
-        dev->child->procs.open_device(dev->child);
-        dev->child->is_open = true;
-        gx_update_from_subclass(dev);
-    }
-
-    return 0;
-}
-
-void flp_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
-{
-    if (dev->child->procs.get_initial_matrix)
-        dev->child->procs.get_initial_matrix(dev->child, pmat);
-    else
-        gx_default_get_initial_matrix(dev, pmat);
-    return;
-}
-
-int flp_sync_output(gx_device *dev)
-{
-    if (dev->child->procs.sync_output)
-        return dev->child->procs.sync_output(dev->child);
-    else
-        gx_default_sync_output(dev);
-
-    return 0;
-}
 
 int flp_output_page(gx_device *dev, int num_copies, int flush)
 {
@@ -370,38 +272,6 @@ int flp_output_page(gx_device *dev, int num_copies, int flush)
                 return dev->child->procs.output_page(dev->child, num_copies, flush);
         }
     }
-
-    return 0;
-}
-
-int flp_close_device(gx_device *dev)
-{
-    int code;
-
-    if (dev->child->procs.close_device) {
-        code = dev->child->procs.close_device(dev->child);
-        dev->is_open = dev->child->is_open = false;
-        return code;
-    }
-    dev->is_open = false;
-    return 0;
-}
-
-gx_color_index flp_map_rgb_color(gx_device *dev, const gx_color_value cv[])
-{
-    if (dev->child->procs.map_rgb_color)
-        return dev->child->procs.map_rgb_color(dev->child, cv);
-    else
-        gx_error_encode_color(dev, cv);
-    return 0;
-}
-
-int flp_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
-{
-    if (dev->child->procs.map_color_rgb)
-        return dev->child->procs.map_color_rgb(dev->child, color, rgb);
-    else
-        gx_default_map_color_rgb(dev, color, rgb);
 
     return 0;
 }
@@ -500,84 +370,6 @@ int flp_get_bits(gx_device *dev, int y, byte *data, byte **actual_data)
     return 0;
 }
 
-int flp_get_params(gx_device *dev, gs_param_list *plist)
-{
-    if (dev->child->procs.get_params)
-        return dev->child->procs.get_params(dev->child, plist);
-    else
-        return gx_default_get_params(dev, plist);
-
-    return 0;
-}
-
-int flp_put_params(gx_device *dev, gs_param_list *plist)
-{
-    int code;
-
-    if (dev->child->procs.put_params) {
-        code = dev->child->procs.put_params(dev->child, plist);
-        /* The child device might have closed itself (yes seriously, this can happen!) */
-        dev->is_open = dev->child->is_open;
-        gx_update_from_subclass(dev);
-        return code;
-    }
-    else
-        return gx_default_put_params(dev, plist);
-
-    return 0;
-}
-
-gx_color_index flp_map_cmyk_color(gx_device *dev, const gx_color_value cv[])
-{
-    if (dev->child->procs.map_cmyk_color)
-        return dev->child->procs.map_cmyk_color(dev->child, cv);
-    else
-        return gx_default_map_cmyk_color(dev, cv);
-
-    return 0;
-}
-
-const gx_xfont_procs *flp_get_xfont_procs(gx_device *dev)
-{
-    if (dev->child->procs.get_xfont_procs)
-        return dev->child->procs.get_xfont_procs(dev->child);
-    else
-        return gx_default_get_xfont_procs(dev);
-
-    return 0;
-}
-
-gx_device *flp_get_xfont_device(gx_device *dev)
-{
-    if (dev->child->procs.get_xfont_device)
-        return dev->child->procs.get_xfont_device(dev->child);
-    else
-        return gx_default_get_xfont_device(dev);
-
-    return 0;
-}
-
-gx_color_index flp_map_rgb_alpha_color(gx_device *dev, gx_color_value red, gx_color_value green, gx_color_value blue,
-    gx_color_value alpha)
-{
-    if (dev->child->procs.map_rgb_alpha_color)
-        return dev->child->procs.map_rgb_alpha_color(dev->child, red, green, blue, alpha);
-    else
-        return gx_default_map_rgb_alpha_color(dev->child, red, green, blue, alpha);
-
-    return 0;
-}
-
-gx_device *flp_get_page_device(gx_device *dev)
-{
-    if (dev->child->procs.get_page_device)
-        return dev->child->procs.get_page_device(dev->child);
-    else
-        return gx_default_get_page_device(dev);
-
-    return 0;
-}
-
 int flp_get_alpha_bits(gx_device *dev, graphics_object_type type)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
@@ -642,12 +434,8 @@ int flp_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, g
                 return dev->child->procs.copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
             else
                 return gx_default_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
-        } else
-            return gx_default_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
+        }
     }
-    else
-        return gx_default_copy_rop(dev, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
-
     return 0;
 }
 
@@ -862,16 +650,6 @@ int flp_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sras
     return 0;
 }
 
-void flp_get_clipping_box(gx_device *dev, gs_fixed_rect *pbox)
-{
-    if (dev->child->procs.get_clipping_box)
-        dev->child->procs.get_clipping_box(dev->child, pbox);
-    else
-        gx_default_get_clipping_box(dev->child, pbox);
-
-    return;
-}
-
 typedef struct flp_image_enum_s {
     gx_image_enum_common;
 } flp_image_enum;
@@ -911,6 +689,10 @@ int flp_begin_typed_image(gx_device *dev, const gs_imager_state *pis, const gs_m
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 {
     first_last_subclass_data *psubclass_data = dev->subclass_data;
+    flp_image_enum *pie;
+    const gs_pixel_image_t *pim = (const gs_pixel_image_t *)pic;
+    int num_components;
+
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
@@ -918,31 +700,29 @@ int flp_begin_typed_image(gx_device *dev, const gs_imager_state *pis, const gs_m
                 return dev->child->procs.begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
             else
                 return gx_default_begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
-        } else
-            return gx_default_begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
-    }
-    else {
-        flp_image_enum *pie;
-        const gs_pixel_image_t *pim = (const gs_pixel_image_t *)pic;
-        int num_components = gs_color_space_num_components(pim->ColorSpace);
-
-        if (pic->type->index == 1) {
-            const gs_image_t *pim1 = (const gs_image_t *)pic;
-
-            if (pim1->ImageMask)
-                num_components = 1;
         }
-
-        pie = gs_alloc_struct(memory, flp_image_enum, &st_flp_image_enum,
-                            "flp_begin_image");
-        if (pie == 0)
-            return_error(gs_error_VMerror);
-        memset(pie, 0, sizeof(*pie)); /* cleanup entirely for GC to work in all cases. */
-        *pinfo = (gx_image_enum_common_t *) pie;
-        gx_image_enum_common_init(*pinfo, (const gs_data_image_t *) pim, &flp_image_enum_procs,
-                            (gx_device *)dev, num_components, pim->format);
-        pie->memory = memory;
     }
+
+    if (pic->type->index == 1) {
+        const gs_image_t *pim1 = (const gs_image_t *)pic;
+
+        if (pim1->ImageMask)
+            num_components = 1;
+        else
+            num_components = gs_color_space_num_components(pim->ColorSpace);
+    } else {
+        num_components = gs_color_space_num_components(pim->ColorSpace);
+    }
+
+    pie = gs_alloc_struct(memory, flp_image_enum, &st_flp_image_enum,
+                        "flp_begin_image");
+    if (pie == 0)
+        return_error(gs_error_VMerror);
+    memset(pie, 0, sizeof(*pie)); /* cleanup entirely for GC to work in all cases. */
+    *pinfo = (gx_image_enum_common_t *) pie;
+    gx_image_enum_common_init(*pinfo, (const gs_data_image_t *) pim, &flp_image_enum_procs,
+                        (gx_device *)dev, num_components, pim->format);
+    pie->memory = memory;
 
     return 0;
 }
@@ -967,16 +747,6 @@ int flp_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
     return 0;
 }
 
-int flp_map_color_rgb_alpha(gx_device *dev, gx_color_index color, gx_color_value rgba[4])
-{
-    if (dev->child->procs.map_color_rgb_alpha)
-        return dev->child->procs.map_color_rgb_alpha(dev->child, color, rgba);
-    else
-        return gx_default_map_color_rgb_alpha(dev->child, color, rgba);
-
-    return 0;
-}
-
 int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev)
 {
@@ -991,6 +761,9 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
                  * child device. This has some follow on implications detailed below.
                  */
                 code = dev->child->procs.create_compositor(dev->child, pcdev, pcte, pis, memory, cdev);
+                if (code < 0)
+                    return code;
+
                 if (*pcdev != dev->child){
                     /* If the child created a new compositor, which it wants to be the new 'device' in the
                      * graphics state, it sets it in the returned pcdev variable. When we return from this
@@ -1018,7 +791,7 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
                         rc_decrement_only(dev->child, "first-last page compositor code");
                         rc_increment(dev);
                     }
-                    return code;
+                    return gs_error_handled;
                 }
                 else {
                     /* See the 2 comments above. Now, if the child did not create a new compositor (eg its a clist)
@@ -1035,16 +808,6 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
         }
     } else
         gx_default_create_compositor(dev, pcdev, pcte, pis, memory, cdev);
-
-    return 0;
-}
-
-int flp_get_hardware_params(gx_device *dev, gs_param_list *plist)
-{
-    if (dev->child->procs.get_hardware_params)
-        return dev->child->procs.get_hardware_params(dev->child, plist);
-    else
-        return gx_default_get_hardware_params(dev->child, plist);
 
     return 0;
 }
@@ -1143,15 +906,6 @@ int flp_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_params_t 
     return 0;
 }
 
-/* This method seems (despite the name) to be intended to allow for
- * devices to initialise data before being invoked. For our subclassed
- * device this should already have been done.
- */
-int flp_finish_copydevice(gx_device *dev, const gx_device *from_dev)
-{
-    return 0;
-}
-
 int flp_begin_transparency_group(gx_device *dev, const gs_transparency_group_params_t *ptgp,
     const gs_rect *pbbox, gs_imager_state *pis, gs_memory_t *mem)
 {
@@ -1223,47 +977,6 @@ int flp_discard_transparency_layer(gx_device *dev, gs_imager_state *pis)
     return 0;
 }
 
-const gx_cm_color_map_procs *flp_get_color_mapping_procs(const gx_device *dev)
-{
-    if (dev->child->procs.get_color_mapping_procs)
-        return dev->child->procs.get_color_mapping_procs(dev->child);
-    else
-        return gx_default_DevGray_get_color_mapping_procs(dev->child);
-
-    return 0;
-}
-
-int  flp_get_color_comp_index(gx_device *dev, const char * pname, int name_size, int component_type)
-{
-    if (dev->child->procs.get_color_comp_index)
-        return dev->child->procs.get_color_comp_index(dev->child, pname, name_size, component_type);
-    else
-        return gx_error_get_color_comp_index(dev->child, pname, name_size, component_type);
-
-    return 0;
-}
-
-gx_color_index flp_encode_color(gx_device *dev, const gx_color_value colors[])
-{
-    if (dev->child->procs.encode_color)
-        return dev->child->procs.encode_color(dev->child, colors);
-    else
-        return gx_error_encode_color(dev->child, colors);
-
-    return 0;
-}
-
-int flp_decode_color(gx_device *dev, gx_color_index cindex, gx_color_value colors[])
-{
-    if (dev->child->procs.decode_color)
-        return dev->child->procs.decode_color(dev->child, cindex, colors);
-    else {
-        memset(colors, 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
-    }
-
-    return 0;
-}
-
 int flp_pattern_manage(gx_device *dev, gx_bitmap_id id,
                 gs_pattern1_instance_t *pinst, pattern_manage_t function)
 {
@@ -1292,14 +1005,6 @@ int flp_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
                 return_error(gs_error_rangecheck);
         }
     }
-
-    return 0;
-}
-
-int flp_include_color_space(gx_device *dev, gs_color_space *cspace, const byte *res_name, int name_length)
-{
-    if (dev->child->procs.include_color_space)
-        return dev->child->procs.include_color_space(dev->child, cspace, res_name, name_length);
 
     return 0;
 }
@@ -1356,22 +1061,6 @@ int flp_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
                 return gx_default_fill_linear_color_triangle(dev->child, fa, p0, p1, p2, c0, c1, c2);
         }
     }
-
-    return 0;
-}
-
-int flp_update_spot_equivalent_colors(gx_device *dev, const gs_state * pgs)
-{
-    if (dev->child->procs.update_spot_equivalent_colors)
-        return dev->child->procs.update_spot_equivalent_colors(dev->child, pgs);
-
-    return 0;
-}
-
-gs_devn_params *flp_ret_devn_params(gx_device *dev)
-{
-    if (dev->child->procs.ret_devn_params)
-        return dev->child->procs.ret_devn_params(dev->child);
 
     return 0;
 }
@@ -1436,14 +1125,6 @@ int flp_put_image(gx_device *dev, const byte *buffer, int num_chan, int x, int y
     return 0;
 }
 
-int flp_dev_spec_op(gx_device *dev, int op, void *data, int datasize)
-{
-    if (dev->child->procs.dev_spec_op)
-        return dev->child->procs.dev_spec_op(dev->child, op, data, datasize);
-
-    return 0;
-}
-
 int flp_copy_planes(gx_device *dev, const byte *data, int data_x, int raster, gx_bitmap_id id,
     int x, int y, int width, int height, int plane_height)
 {
@@ -1455,16 +1136,6 @@ int flp_copy_planes(gx_device *dev, const byte *data, int data_x, int raster, gx
                 return dev->child->procs.copy_planes(dev->child, data, data_x, raster, id, x, y, width, height, plane_height);
         }
     }
-
-    return 0;
-}
-
-int flp_get_profile(gx_device *dev, cmm_dev_profile_t **dev_profile)
-{
-    if (dev->child->procs.get_profile)
-        return dev->child->procs.get_profile(dev->child, dev_profile);
-    else
-        return gx_default_get_profile(dev->child, dev_profile);
 
     return 0;
 }

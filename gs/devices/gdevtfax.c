@@ -25,8 +25,10 @@
 
 #include "gstiffio.h"
 #include "gdevflp.h"
+#include "gdevoflt.h"
 
 extern gx_device_flp  gs_flp_device;
+extern gx_device_flp  gs_obj_filter_device;
 
 /* ---------------- TIFF/fax output ---------------- */
 
@@ -85,6 +87,7 @@ const gx_device_tfax gs_tiffg32d_device =
 const gx_device_tfax gs_tiffg4_device =
     TFAX_DEVICE("tiffg4", tiffg4_print_page, COMPRESSION_CCITTFAX4);
 
+#define FORCE_TESTING_SUBCLASSING 1
 static int
 tfax_open(gx_device * pdev)
 {
@@ -103,10 +106,47 @@ tfax_open(gx_device * pdev)
         if ((code = gdev_prn_open_printer_seekable(pdev, 1, true)) < 0)
             return code;
 
+#ifdef FORCE_TESTING_SUBCLASSING
+    if (!pdev->PageHandlerPushed) {
+#else
     if (!pdev->PageHandlerPushed && (pdev->FirstPage != 0 || pdev->LastPage != 0)) {
-        pdev->PageHandlerPushed = true;
+#endif
+        gx_device *dev;
+
         gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
-        pdev = pdev->child;
+        dev = (gx_device *)pdev;
+        while (dev->parent)
+            dev = dev->parent;
+
+        while(dev) {
+            dev->PageHandlerPushed = true;
+            dev = dev->child;
+        }
+
+        while(pdev->child)
+            pdev = pdev->child;
+        pdev->is_open = true;
+    }
+
+#ifdef FORCE_TESTING_SUBCLASSING
+    if (!pdev->ObjectHandlerPushed) {
+#else
+    if (!pdev->ObjectHandlerPushed && (pdev->ObjectFilter != 0)) {
+#endif
+        gx_device *dev;
+
+        gx_device_subclass(pdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+        dev = (gx_device *)pdev;
+        while (dev->parent)
+            dev = dev->parent;
+
+        while(dev) {
+            dev->PageHandlerPushed = true;
+            dev = dev->child;
+        }
+
+        while(pdev->child)
+            pdev = pdev->child;
         pdev->is_open = true;
     }
     return code;

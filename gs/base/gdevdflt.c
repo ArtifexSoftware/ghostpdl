@@ -132,12 +132,12 @@ is_like_DeviceRGB(gx_device * dev)
          dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE  )
         return false;
 
-    GET_COLOR_MAPPING_PROCS(dev, cm_procs);
+    GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, cm_procs);
     if (cm_procs == 0 || cm_procs->map_rgb == 0)
         return false;
 
     /* check the values 1/4, 1/3, and 3/4 */
-    MAP_RGB(cm_procs, dev, 0, frac_1 / 4, frac_1 / 3, 3 * frac_1 / 4,cm_comp_fracs);
+    MAP_RGB_SUBCLASS(cm_procs, dev, 0, frac_1 / 4, frac_1 / 3, 3 * frac_1 / 4,cm_comp_fracs);
 
     /* verify results to .01 */
     cm_comp_fracs[0] -= frac_1 / 4;
@@ -165,13 +165,13 @@ is_like_DeviceCMYK(gx_device * dev)
     if ( dev->color_info.num_components != 4                      ||
          dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE  )
         return false;
-    GET_COLOR_MAPPING_PROCS(dev, cm_procs);
+    GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, cm_procs);
     if (cm_procs == 0 || cm_procs->map_cmyk == 0)
         return false;
 
     /* check the values 1/4, 1/3, 3/4, and 1/8 */
 
-    MAP_CMYK( cm_procs, dev,
+    MAP_CMYK_SUBCLASS( cm_procs, dev,
                         frac_1 / 4,
                         frac_1 / 3,
                         3 * frac_1 / 4,
@@ -1289,9 +1289,9 @@ int gx_unsubclass_device(gx_device *dev)
     unsigned char *ptr;
     gs_memory_struct_type_t **b_std;
 
-    memcpy(dev, child, child->stype->ssize);
     if (psubclass_data)
         gs_free_object(dev->memory->non_gc_memory, psubclass_data, "subclass memory for first-last page");
+    memcpy(dev, child, child->stype->ssize);
     if (child) {
         memset(child, 0x00, child->stype->ssize);
         gs_free_object(dev->memory->stable_memory, child, "gx_device_subclass(device)");
@@ -1346,12 +1346,6 @@ int gx_update_from_subclass(gx_device *dev)
 
     return 0;
 }
-
-typedef int (t_dev_proc_create_compositor) (gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte, gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev);
-
-typedef struct {
-    t_dev_proc_create_compositor *saved_compositor_method;
-} generic_subclass_data;
 
 int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev)

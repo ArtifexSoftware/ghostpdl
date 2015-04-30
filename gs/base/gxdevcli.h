@@ -760,7 +760,9 @@ typedef struct gdev_space_params_s {
                                         /* in default user units ("points") */\
         int FirstPage;\
         int LastPage;\
-        bool PageHandlerPushed;\
+        bool PageHandlerPushed;    /* Handles FirstPage and LastPage operations */\
+        int ObjectFilter;          /* Bit field for which object filters to apply */\
+        bool ObjectHandlerPushed;  /* Handles filtering of objects to devices */\
         long PageCount;			/* number of pages written */\
         long ShowpageCount;		/* number of calls on showpage */\
         int NumCopies;\
@@ -833,6 +835,13 @@ typedef struct gdev_space_params_s {
 #define assign_dev_procs(todev, fromdev)\
   ((todev)->procs = (fromdev)->procs)
 
+/* The bit fields used to filter objects out. If any bit field is set
+ * then objects of that type will not be rendered/output.
+ */
+#define FILTERIMAGE 1
+#define FILTERTEXT 2
+#define FILTERVECTOR 4
+
 /* The color mapping procs were used in a way which defeats a 'pipeline'
  * approach to devices. Certain graphics library routines (eg images)
  * called the color mapping procs *directly* from the device procs of the
@@ -842,7 +851,7 @@ typedef struct gdev_space_params_s {
  * (see pcpalet.c, pcl_update_mono). This macro walks back up the pipeline
  * and retrieves the uppermost device color_mapping procs.
  */
-#define GET_COLOR_MAPPING_PROCS(dev, procs)\
+#define GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, procs)\
     {\
         gx_device *saved = dev;\
         while(dev->parent) {dev = dev->parent;}\
@@ -850,7 +859,7 @@ typedef struct gdev_space_params_s {
         dev = saved;\
     }
 
-#define MAP_RGB(procs, dev, pis, r, g, b, cm_comps)\
+#define MAP_RGB_SUBCLASS(procs, dev, pis, r, g, b, cm_comps)\
     {\
         gx_device *saved = dev;\
         while(dev->parent) {dev = dev->parent;}\
@@ -858,7 +867,7 @@ typedef struct gdev_space_params_s {
         dev = saved;\
     }
 
-#define MAP_GRAY(procs, dev, gray, cm_comps)\
+#define MAP_GRAY_SUBCLASS(procs, dev, gray, cm_comps)\
     {\
         gx_device *saved = dev;\
         while(dev->parent) {dev = dev->parent;}\
@@ -866,7 +875,7 @@ typedef struct gdev_space_params_s {
         dev = saved;\
     }
 
-#define MAP_CMYK(procs, dev, c, m, y, k, cm_comps)\
+#define MAP_CMYK_SUBCLASS(procs, dev, c, m, y, k, cm_comps)\
     {\
         gx_device *saved = dev;\
         while(dev->parent) {dev = dev->parent;}\

@@ -723,7 +723,7 @@ pdf_open(gx_device * dev)
     code = gdev_vector_open_file((gx_device_vector *) pdev, sbuf_size);
     if (code < 0)
         goto fail;
-    if (pdev->child) {
+    while (pdev->child) {
         /* we've been subclassed by gdev_vector_open_file. Ordinarily we would want to call
          * open_file last, in order to make sure that we don't care if we are subclessed
          * but we want to set up the stream, so we can't do that....

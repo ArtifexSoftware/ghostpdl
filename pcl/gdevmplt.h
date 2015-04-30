@@ -24,11 +24,6 @@ typedef struct gx_device_s gx_device_mplt;
 /* Initialize device. */
 void gx_device_pcl_mono_palette_init(gx_device_mplt * dev);
 
-typedef int (t_dev_proc_create_compositor) (gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte, gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev);
-
-#define subclass_common\
-    t_dev_proc_create_compositor *saved_compositor_method
-
 typedef struct {
     subclass_common;
     gx_cm_color_map_procs pcl_mono_procs;
@@ -46,12 +41,5 @@ typedef struct pcl_mono_palette_text_enum_s {
 
 extern_st(st_device_mplt);
 #define public_st_device_mplt()	/* in gdevbflp.c */\
-
-int gx_copy_device_procs(gx_device_procs *dest_procs, gx_device_procs *src_procs, gx_device_procs *prototype_procs);
-int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, unsigned int private_data_size);
-int gx_unsubclass_device(gx_device *dev);
-int gx_update_from_subclass(gx_device *dev);
-int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
-    gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev);
 
 #endif /* gdevmplt_INCLUDED */

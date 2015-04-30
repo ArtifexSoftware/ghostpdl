@@ -30,8 +30,10 @@
 #include "gxcpath.h"
 
 #include "gdevflp.h"
+#include "gdevoflt.h"
 
 extern gx_device_flp  gs_flp_device;
+extern gx_device_flp  gs_obj_filter_device;
 
 /* GC descriptor */
 public_st_device_bbox();
@@ -355,6 +357,7 @@ gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox)
     }
 }
 
+#define FORCE_TESTING_SUBCLASSING 1
 static int
 bbox_open_device(gx_device * dev)
 {
@@ -364,10 +367,46 @@ bbox_open_device(gx_device * dev)
         gx_device_forward_fill_in_procs((gx_device_forward *) dev);
         bdev->box_procs = box_procs_default;
         bdev->box_proc_data = bdev;
+#ifdef FORCE_TESTING_SUBCLASSING
+        if (!bdev->PageHandlerPushed) {
+#else
         if (!bdev->PageHandlerPushed && (bdev->FirstPage != 0 || bdev->LastPage != 0)) {
-            bdev->PageHandlerPushed = true;
+#endif
+            gx_device *pdev;
+
             gx_device_subclass((gx_device *)bdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+            pdev = (gx_device *)bdev;
+            while (pdev->parent)
+                pdev = pdev->parent;
+
+            while(pdev) {
+                pdev->PageHandlerPushed = true;
+                pdev = pdev->child;
+            }
             bdev = (gx_device_bbox *)dev->child;
+            while (dev->child)
+                bdev = dev->child;
+            bdev->is_open = true;
+        }
+#ifdef FORCE_TESTING_SUBCLASSING
+        if (!bdev->ObjectHandlerPushed) {
+#else
+        if (!bdev->ObjectHandlerPushed && (bdev->ObjectFilter != 0)) {
+#endif
+            gx_device *pdev;
+
+            gx_device_subclass((gx_device *)bdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+            pdev = (gx_device *)bdev;
+            while (pdev->parent)
+                pdev = pdev->parent;
+
+            while(pdev) {
+                pdev->ObjectHandlerPushed = true;
+                pdev = pdev->child;
+            }
+            bdev = (gx_device_bbox *)dev->child;
+            while (dev->child)
+                bdev = dev->child;
             bdev->is_open = true;
         }
     }

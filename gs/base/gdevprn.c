@@ -30,10 +30,12 @@
 #include "gxdownscale.h"
 
 #include "gdevflp.h"
+#include "gdevoflt.h"
 
 /*#define DEBUGGING_HACKS*/
 
 extern gx_device_flp  gs_flp_device;
+extern gx_device_obj_filter  gs_obj_filter_device;
 
 /* GC information */
 static
@@ -102,7 +104,7 @@ static void prn_print_page_in_background(void *data);
 static void prn_finish_bg_print(gx_device_printer *ppdev);
 
 /* ------ Open/close ------ */
-
+#define FORCE_TESTING_SUBCLASSING 1
 /* Open a generic printer device. */
 /* Specific devices may wish to extend this. */
 int
@@ -112,7 +114,7 @@ gdev_prn_open(gx_device * pdev)
     int code;
     bool update_procs = false;
 
-#if FORCE_TESTING_SUBCLASSING
+#ifdef FORCE_TESTING_SUBCLASSING
     if (!pdev->PageHandlerPushed) {
 #else
     if (!pdev->PageHandlerPushed && (pdev->FirstPage != 0 || pdev->LastPage != 0)) {
@@ -124,12 +126,30 @@ gdev_prn_open(gx_device * pdev)
         update_procs = true;
     }
 
+#ifdef FORCE_TESTING_SUBCLASSING
+    if (!pdev->ObjectHandlerPushed) {
+#else
+    if (!pdev->ObjectHandlerPushed && (pdev->ObjectFilter != 0)) {
+#endif
+        pdev->ObjectHandlerPushed = true;
+        gx_device_subclass(pdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+        pdev = pdev->child;
+        pdev->is_open = true;
+        update_procs = true;
+    }
+
     ppdev = (gx_device_printer *)pdev;
 
     ppdev->file = NULL;
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
-    if (update_procs)
-        gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_flp_device.procs);
+    if (update_procs) {
+        if (pdev->ObjectHandlerPushed) {
+            gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_obj_filter_device.procs);
+            pdev = pdev->parent;
+        }
+        if (pdev->PageHandlerPushed)
+            gx_copy_device_procs(&pdev->parent->procs, &pdev->procs, (gx_device_procs *)&gs_flp_device.procs);
+    }
     if (code < 0)
         return code;
     if (ppdev->OpenOutputFile)
@@ -658,7 +678,7 @@ gdev_prn_get_param(gx_device *dev, char *Param, void *list)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)dev;
     gs_param_list * plist = (gs_param_list *)list;
-    bool pageneutralcolor = false;
+    bool pageneutralcolor = false, temp_bool;
 
     if (strcmp(Param, "Duplex") == 0) {
         if (ppdev->Duplex_set >= 0) {
@@ -722,6 +742,18 @@ gdev_prn_get_param(gx_device *dev, char *Param, void *list)
     }
     if (strcmp(Param, "LastPage") == 0) {
         return param_write_int(plist, "LastPage", &dev->LastPage);
+    }
+    if (strcmp(Param, "FILTERIMAGE") == 0) {
+        temp_bool = dev->ObjectFilter & FILTERIMAGE;
+        return param_write_bool(plist, "FILTERIMAGE", &temp_bool);
+    }
+    if (strcmp(Param, "FILTERTEXT") == 0) {
+        temp_bool = dev->ObjectFilter & FILTERTEXT;
+        return param_write_bool(plist, "FILTERTEXT", &temp_bool);
+    }
+    if (strcmp(Param, "FILTERVECTOR") == 0) {
+        temp_bool = dev->ObjectFilter & FILTERVECTOR;
+        return param_write_bool(plist, "FILTERVECTOR", &temp_bool);
     }
     return gs_error_undefined;
 }

@@ -14,35 +14,34 @@
 */
 
 
-/* Common definitions for "first/last page" device */
+/* Common definitions for "object filter" device */
 
-#ifndef gdevflp_INCLUDED
-#  define gdevflp_INCLUDED
+#ifndef gdev_obj_filter_INCLUDED
+#  define gdev_obj_filter_INCLUDED
 
 #ifndef gxdevice_INCLUDED
 #include "gxdevice.h"
 #endif
 
-typedef struct gx_device_s gx_device_flp;
+typedef struct gx_device_s gx_device_obj_filter;
 
-/* Initialize a first/last page device. */
-void gx_device_flp_init(gx_device_flp * dev);
+/* Initialize a object filter device. */
+void gx_device_obj_filter_init(gx_device_obj_filter * dev);
 
 typedef struct {
     subclass_common;
-    int PageCount;
-} first_last_subclass_data;
+} obj_filter_subclass_data;
 
-typedef struct flp_text_enum_s {
+typedef struct obj_filter_text_enum_s {
     gs_text_enum_common;
-} flp_text_enum_t;
-#define private_st_flp_text_enum()\
+} obj_filter_text_enum_t;
+#define private_st_obj_filter_text_enum()\
   extern_st(st_gs_text_enum);\
-  gs_private_st_suffix_add0(st_flp_text_enum, flp_text_enum_t,\
-    "flp_text_enum_t", flp_text_enum_enum_ptrs, flp_text_enum_reloc_ptrs,\
+  gs_private_st_suffix_add0(st_obj_filter_text_enum, obj_filter_text_enum_t,\
+    "obj_filter_text_enum_t", obj_filter_text_enum_enum_ptrs, obj_filter_text_enum_reloc_ptrs,\
     st_gs_text_enum)
 
-extern_st(st_device_flp);
-#define public_st_device_flp()	/* in gdevbflp.c */\
+extern_st(st_device_obj_filter);
+#define public_st_device_obj_filter()	/* in gdevoflt.c */\
 
-#endif /* gdevflp_INCLUDED */
+#endif /* gdev_obj_filter_INCLUDED */

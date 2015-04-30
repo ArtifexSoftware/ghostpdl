@@ -5605,6 +5605,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
         new_target->space_params.BufferSpace = max_bitmap;
 
         new_target->PageHandlerPushed = true;
+        new_target->ObjectHandlerPushed = true;
 
         if ((code = gdev_prn_open(new_target)) < 0 ||
              !PRINTER_IS_CLIST((gx_device_printer *)new_target)) {
@@ -6367,6 +6368,8 @@ send_pdf14trans(gs_imager_state	* pis, gx_device * dev,
     if (code < 0)
         return code;
     code = dev_proc(dev, create_compositor) (dev, pcdev, pct, pis, mem, NULL);
+    if (code == gs_error_handled)
+        code = 0;
 
     gs_free_object(pis->memory, pct, "send_pdf14trans");
 

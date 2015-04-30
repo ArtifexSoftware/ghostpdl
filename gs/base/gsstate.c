@@ -643,15 +643,19 @@ gs_state_update_overprint(gs_state * pgs, const gs_overprint_params_t * pparams)
     gx_device *         dev = pgs->device;
     gx_device *         ovptdev;
 
-    if ( (code = gs_create_overprint(&pct, pparams, pgs->memory)) >= 0 &&
-         (code = dev_proc(dev, create_compositor)( dev,
+    code = gs_create_overprint(&pct, pparams, pgs->memory);
+    if (code >= 0) {
+        code = dev_proc(dev, create_compositor)( dev,
                                                    &ovptdev,
                                                    pct,
                                                    pis,
                                                    pgs->memory,
-                                                   NULL)) >= 0   ) {
-        if (ovptdev != dev)
-            gx_set_device_only(pgs, ovptdev);
+                                                   NULL);
+        if (code >= 0 || code == gs_error_handled){
+            if (ovptdev != dev)
+                gx_set_device_only(pgs, ovptdev);
+            code = 0;
+        }
     }
     if (pct != 0)
         gs_free_object(pgs->memory, pct, "gs_state_update_overprint");

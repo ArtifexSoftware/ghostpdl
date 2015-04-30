@@ -111,9 +111,9 @@ gx_device_black(gx_device *dev)
         frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
-        GET_COLOR_MAPPING_PROCS(dev, cm_procs);
+        GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, cm_procs);
         /* Get color components for black (gray = 0) */
-        MAP_GRAY(cm_procs, dev, frac_0, cm_comps);
+        MAP_GRAY_SUBCLASS(cm_procs, dev, frac_0, cm_comps);
 
         for (i = 0; i < ncomps; i++)
             cv[i] = frac2cv(cm_comps[i]);
@@ -131,9 +131,9 @@ gx_device_white(gx_device *dev)
         frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
-        GET_COLOR_MAPPING_PROCS(dev, cm_procs);
+        GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, cm_procs);
         /* Get color components for white (gray = 1) */
-        MAP_GRAY(cm_procs, dev, frac_1, cm_comps);
+        MAP_GRAY_SUBCLASS(cm_procs, dev, frac_1, cm_comps);
 
         for (i = 0; i < ncomps; i++)
             cv[i] = frac2cv(cm_comps[i]);

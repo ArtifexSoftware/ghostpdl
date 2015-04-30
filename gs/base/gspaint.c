@@ -77,7 +77,7 @@ gs_fillpage(gs_state * pgs)
     int code;
     gx_cm_color_map_procs *   pprocs;
 
-    GET_COLOR_MAPPING_PROCS(dev, pprocs);
+    GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, pprocs);
     /* If we get here without a valid get_color_mapping_procs, fail */
     if (pprocs == NULL ||
         /* Deliberately use the terminal device here */
