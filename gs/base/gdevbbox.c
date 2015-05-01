@@ -33,7 +33,7 @@
 #include "gdevoflt.h"
 
 extern gx_device_flp  gs_flp_device;
-extern gx_device_flp  gs_obj_filter_device;
+extern gx_device_obj_filter  gs_obj_filter_device;
 
 /* GC descriptor */
 public_st_device_bbox();
@@ -385,7 +385,7 @@ bbox_open_device(gx_device * dev)
             }
             bdev = (gx_device_bbox *)dev->child;
             while (dev->child)
-                bdev = dev->child;
+                bdev = (gx_device_bbox *)dev->child;
             bdev->is_open = true;
         }
 #ifdef FORCE_TESTING_SUBCLASSING
@@ -406,7 +406,7 @@ bbox_open_device(gx_device * dev)
             }
             bdev = (gx_device_bbox *)dev->child;
             while (dev->child)
-                bdev = dev->child;
+                bdev = (gx_device_bbox *)dev->child;
             bdev->is_open = true;
         }
     }

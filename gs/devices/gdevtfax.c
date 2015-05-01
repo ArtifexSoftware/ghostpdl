@@ -28,7 +28,7 @@
 #include "gdevoflt.h"
 
 extern gx_device_flp  gs_flp_device;
-extern gx_device_flp  gs_obj_filter_device;
+extern gx_device_obj_filter  gs_obj_filter_device;
 
 /* ---------------- TIFF/fax output ---------------- */
 
