@@ -415,8 +415,7 @@ GSDLLEXPORT int GSDLLAPI
 gsapi_run_string(void *lib,
         const char *str, int user_errors, int *pexit_code)
 {
-    gs_lib_ctx_t *ctx = (gs_lib_ctx_t *)lib;
-    return gsapi_run_string_with_length(get_minst_from_memory(ctx->memory),
+    return gsapi_run_string_with_length(lib,
         str, (uint)strlen(str), user_errors, pexit_code);
 }
 
