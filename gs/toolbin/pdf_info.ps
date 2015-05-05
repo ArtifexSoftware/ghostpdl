@@ -20,6 +20,8 @@
 
 % usage: gs -dNODISPLAY -q -sFile=____.pdf [-dDumpMediaSizes] [-dDumpFontsUsed [-dShowEmbeddedFonts] ] toolbin/pdf_info.ps
 
+128 dict begin
+
 /QUIET true def		% in case they forgot
 
 /showoptions {
@@ -83,31 +85,32 @@ cleartomark		% discard the dict from --where--
   } if
 } bind def
 
+% <page index> <page dict> dump-media-sizes -
 /dump-media-sizes {
   DumpMediaSizes {
-  () =
-  % Print out the Page Size info for each page.
-    1 1 PDFPageCount {
-      dup (Page ) print =print
-      pdfgetpage dup
-      /UserUnit pget {
-        ( UserUnit: ) print =print
-      } if
-      dup /MediaBox pget {
-        ( MediaBox: ) print oforce_array ==only
-      } if
-      dup /CropBox pget {
-        ( CropBox: ) print oforce_array ==only
-      } if
-      dup /Rotate pget {
-         (    Rotate = ) print =print
-      } if
-      pageusestransparency {
-          (     Page uses transparency features) print
-      } if
-      () = flush
-    } for
-  } if
+    () =
+    % Print out the Page Size info for each page.
+    (Page ) print =print
+    dup /UserUnit pget {
+      ( UserUnit: ) print =print
+    } if
+    dup /MediaBox pget {
+      ( MediaBox: ) print oforce_array ==only
+    } if
+    dup /CropBox pget {
+      ( CropBox: ) print oforce_array ==only
+    } if
+    dup /Rotate pget {
+       (    Rotate = ) print =print
+    } if
+    pageusestransparency {
+        (     Page uses transparency features) print
+    } if
+    () = flush
+  }
+  {
+    pop pop
+  } ifelse
 } bind def
 
 % List of standard font names for use when we are showing the FontsNeeded
@@ -132,12 +135,12 @@ cleartomark		% discard the dict from --where--
             pop			% skip embedded fonts
           } {
             /BaseFont knownoget { %  not embedded
-              FontsUsed exch //null put
+              2 index exch //null put
             } if
           } ifelse
         } {
           /BaseFont knownoget { % no FontDescriptor, not embedded
-            FontsUsed exch //null put
+            2 index exch //null put
           } if
         } ifelse
       } {
@@ -181,7 +184,7 @@ cleartomark		% discard the dict from --where--
   } bind def
 currentdict end readonly def
 
-% <<res-dict>> get-fonts-from-res -
+% <dict for fonts> <<res-dict>> get-fonts-from-res -
 /get-fonts-from-res {
   oforce 
   dup //null ne {
@@ -205,61 +208,58 @@ currentdict end readonly def
 
 currentdict /res-type-dict undef
 
-/getPDFfonts {	%	(filename) getPDFfonts array_of_font_names
-  /FontsUsed 1000 dict def	% this will increase if needed
-  1 1 PDFPageCount {
-    pdfgetpage			% get pagedict
-    dup /Resources pget { get-fonts-from-res } if
-    /Annots knownoget {
-      { oforce
-        dup //null ne {
-          /AP knownoget {
-            { exch pop oforce 
-              dup //null ne {
-                dup /Resources knownoget {
-                  get-fonts-from-res
-                } if
-                { exch pop oforce
-                  dup type /dicttype eq {
-                    /Resources knownoget {
-                      get-fonts-from-res
-                    } if
-                  } {
-                    pop
-                  } ifelse
-                } forall
-              } {
-                pop
-              } ifelse
-            } forall
-          } if
-        } {
-          pop
-        } ifelse
-      } forall
-    } if
-  } for
+/getPDFfonts {	%	<dict for fonts> <page dict> getPDFfonts -
+  dup /Resources pget { get-fonts-from-res } if
+  /Annots knownoget {
+    { oforce
+      dup //null ne {
+        /AP knownoget {
+          { exch pop oforce
+            dup //null ne {
+              dup /Resources knownoget {
+                get-fonts-from-res
+              } if
+              { exch pop oforce
+                dup type /dicttype eq {
+                  /Resources knownoget {
+                    get-fonts-from-res
+                  } if
+                } {
+                  pop
+                } ifelse
+              } forall
+            } {
+              pop
+            } ifelse
+          } forall
+        } if
+      } {
+        pop
+      } ifelse
+    } forall
+  } if
+  pop
+} bind def
+
+/dump-fonts-used { % <dict for fonts> dump-fonts-used -
   % If DumpFontsUsed is not true, then remove the 'standard' fonts from the list
   systemdict /DumpFontsUsed known not {
     StdFontNames {
-      FontsUsed 1 index known { FontsUsed 1 index undef } if
+      1 index 1 index known { 1 index 1 index undef } if
       pop
     } forall
   } if
 
   % Now dump the FontsUsed dict into an array so we can sort it.
-  [ FontsUsed { pop } forall ]
+  [ 1 index { pop } forall ]
   { 100 string cvs exch 100 string cvs exch lt } .sort
-} bind def
 
-/dump-fonts-used {
   systemdict /DumpFontsUsed known
   {
     (\nFont or CIDFont resources used:) =
-    getPDFfonts { = } forall
+    { = } forall
   } {
     DumpFontsNeeded {
-      getPDFfonts
       dup length 0 gt {
         (\nFonts Needed that are not embedded \(system fonts required\):) =
         { (    ) print = } forall
@@ -269,6 +269,7 @@ currentdict /res-type-dict undef
       } ifelse
     } if
   } ifelse
+  pop
 } bind def
 
 % Copy selected subfiles to temporary files and return the file names
@@ -294,8 +295,19 @@ currentdict /res-type-dict undef
 /dump {  % (title) -> -
   /PDFPageCount pdfpagecount def
   dump-pdf-info
-  dump-media-sizes
+  % dict will be populated with fonts through a call to 'getPDFfonts'
+  % per page, then the contents dumped out in 'dump-fonts-used'
+  1000 dict
+
+  1 1 PDFPageCount
+  {
+    dup pdfgetpage dup 3 -1 roll
+    dump-media-sizes
+    1 index exch getPDFfonts
+  } for
+
   dump-fonts-used
+
 } bind def
 
 % Choose between collection vs plain file.
@@ -333,5 +345,6 @@ currentdict /res-type-dict undef
 } bind def
 
 enum-pdfs
+end
 quit
 
