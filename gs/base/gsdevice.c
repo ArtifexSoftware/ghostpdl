@@ -56,6 +56,17 @@ gx_device_finalize(const gs_memory_t *cmem, void *vptr)
     }
     if (dev->finalize)
         dev->finalize(dev);
+
+    /* Deal with subclassed devices. Ordinarily these should not be a problem, we
+     * will never see them, but if ths is a end of job restore we can end up
+     * with th 'child' device(s) being freed before their parents. We need to make
+     * sure we don't leave any dangling pointers in that case.
+     */
+    if (dev->child)
+        dev->child->parent = dev->parent;
+    if (dev->parent)
+        dev->parent->child = dev->child;
+
     discard(gs_closedevice(dev));
     if (dev->stype_is_dynamic)
         gs_free_const_object(dev->memory->non_gc_memory, dev->stype,

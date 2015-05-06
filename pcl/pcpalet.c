@@ -859,29 +859,6 @@ pcl_update_mono(pcl_state_t * pcs)
 
     const gx_cm_color_map_procs *cm_procs =
         dev_proc(dev, get_color_mapping_procs) (dev);
-#if 0
-    if (pcs->monochrome_mode) {
-        if (swapped_device_color_procs == false) {
-            device_cm_procs = *cm_procs;
-
-            /* KAS Device subclassing, this is a hack and should be fixed properly */
-            while(dev->child)
-                dev = dev->child;
-            saved_get_color_map_proc = dev->procs.get_color_mapping_procs;
-            dev->procs.get_color_mapping_procs = pcl_mono_color_mapping_procs;
-            swapped_device_color_procs = true;
-        }
-    } else {
-        if (swapped_device_color_procs == true) {
-
-            /* KAS Device subclassing, this is a hack and should be fixed properly */
-            while(dev->child)
-                dev = dev->child;
-            dev->procs.get_color_mapping_procs = saved_get_color_map_proc;
-            swapped_device_color_procs = false;
-        }
-    }
-#else
     if (pcs->monochrome_mode) {
         while (dev) {
             pdev = dev;
@@ -904,7 +881,6 @@ pcl_update_mono(pcl_state_t * pcs)
             gx_unsubclass_device(dev);
         }
     }
-#endif
     gx_unset_dev_color(pcs->pgs);
     return 0;
 }

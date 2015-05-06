@@ -56,10 +56,8 @@ static dev_proc_get_color_mapping_procs(pcl_mono_palette_get_color_mapping_procs
     0, pcl_mono_palette_enum_ptrs, pcl_mono_palette_reloc_ptrs, gx_device_finalize)
 
 static
-ENUM_PTRS_WITH(pcl_mono_palette_enum_ptrs, gx_device *dev)
-{gx_device *dev = (gx_device *)vptr;
-vptr = dev->child;
-ENUM_PREFIX(*dev->child->stype, 2);}return 0;
+ENUM_PTRS_WITH(pcl_mono_palette_enum_ptrs, gx_device *dev);
+return 0; /* default case */
 case 0:ENUM_RETURN(gx_device_enum_ptr(dev->parent));
 case 1:ENUM_RETURN(gx_device_enum_ptr(dev->child));
 ENUM_PTRS_END
@@ -67,8 +65,6 @@ static RELOC_PTRS_WITH(pcl_mono_palette_reloc_ptrs, gx_device *dev)
 {
     dev->parent = gx_device_reloc_ptr(dev->parent, gcst);
     dev->child = gx_device_reloc_ptr(dev->child, gcst);
-    vptr = dev->child;
-    RELOC_PREFIX(*dev->child->stype);
 }
 RELOC_PTRS_END
 
@@ -80,7 +76,7 @@ gx_device_mplt gs_pcl_mono_palette_device =
     /*
      * Define the device as 8-bit gray scale to avoid computing halftones.
      */
-    subclass_std_device_dci_body(gx_device_mplt, 0, "PCL_Mono_Palette", default_subclass_finalize, &st_pcl_mono_palette_device,
+    std_device_dci_type_body(gx_device_mplt, 0, "PCL_Mono_Palette", &st_pcl_mono_palette_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
                         1, 8, 255, 0, 256, 1),
@@ -177,7 +173,7 @@ pcl_gray_cs_to_cm(gx_device * dev, frac gray, frac out[])
         dev = dev->child;
     };
 
-    if (dev->child) {
+    if (dev->child && dev->child) {
         psubclass_data = dev->subclass_data;
         /* just pass it along */
         psubclass_data->device_cm_procs->map_gray(dev, gray, out);
@@ -198,7 +194,7 @@ pcl_rgb_cs_to_cm(gx_device * dev, const gs_imager_state * pis, frac r, frac g,
         dev = dev->child;
     };
 
-    if (dev->child) {
+    if (dev->child && dev->child) {
         psubclass_data = dev->subclass_data;
         gray = color_rgb_to_gray(r, g, b, NULL);
 
@@ -219,7 +215,7 @@ pcl_cmyk_cs_to_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
         dev = dev->child;
     };
 
-    if (dev->child) {
+    if (dev->child && dev->child) {
         psubclass_data = dev->subclass_data;
         gray = color_cmyk_to_gray(c, m, y, k, NULL);
 

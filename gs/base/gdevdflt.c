@@ -1220,15 +1220,31 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
 {
     gx_device *child_dev;
     void *psubclass_data;
-    gs_memory_struct_type_t **b_std;
-    unsigned char *ptr;
+    gs_memory_struct_type_t *a_std;
+    int dynamic = dev_to_subclass->stype_is_dynamic;
 
+    /* I believe this is not possible, but.... */
     if (!dev_to_subclass->stype)
         return_error(gs_error_VMerror);
 
-    child_dev = (gx_device *)gs_alloc_bytes(dev_to_subclass->memory->stable_memory, dev_to_subclass->stype->ssize, "gx_device_subclass(device)");
-    if (child_dev == 0)
+    /* We make a 'stype' structure for our new device, and copy the old stype into it
+     * This means our new device will always have the 'stype_is_dynamic' flag set
+     */
+    a_std = (gs_memory_struct_type_t *)
+        gs_alloc_bytes_immovable(dev_to_subclass->memory->non_gc_memory, sizeof(*a_std),
+                                 "gs_device_subclass(stype)");
+    if (!a_std)
         return_error(gs_error_VMerror);
+    *a_std = *dev_to_subclass->stype;
+    a_std->ssize = dev_to_subclass->params_size;
+
+    /* Allocate a device structure for the new child device */
+    child_dev = gs_alloc_struct_immovable(dev_to_subclass->memory, gx_device, a_std,
+                                        "gs_copydevice(device)");
+    if (child_dev == 0) {
+        gs_free_const_object(dev_to_subclass->memory->non_gc_memory, a_std, "gs_device_subclass(stype)");
+        return_error(gs_error_VMerror);
+    }
 
     /* Make sure all methods are filled in, note this won't work for a forwarding device
      * so forwarding devices will have to be filled in before being subclassed. This doesn't fill
@@ -1236,9 +1252,12 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
      */
     gx_device_fill_in_procs(dev_to_subclass);
     memcpy(child_dev, dev_to_subclass, dev_to_subclass->stype->ssize);
+    child_dev->stype = a_std;
+    child_dev->stype_is_dynamic = 1;
 
     psubclass_data = (void *)gs_alloc_bytes(dev_to_subclass->memory->non_gc_memory, private_data_size, "subclass memory for subclassing device");
     if (psubclass_data == 0){
+        gs_free_const_object(dev_to_subclass->memory->non_gc_memory, a_std, "gs_device_subclass(stype)");
         gs_free(dev_to_subclass->memory, child_dev, 1, dev_to_subclass->stype->ssize, "free subclass memory for subclassing device");
         return_error(gs_error_VMerror);
     }
@@ -1249,27 +1268,15 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     dev_to_subclass->procs.copy_planes = new_prototype->procs.copy_planes;
     dev_to_subclass->finalize = new_prototype->finalize;
     dev_to_subclass->dname = new_prototype->dname;
-    dev_to_subclass->stype = new_prototype->stype;
 
-    /* Nasty, nasty hackery. The 'object' (in this case, struct) which wraps
-     * the actual body also maintains a pointer to the 'stype' and the garbage
-     * collector uses *that* to enumerate pointers and so on, not the one in the
-     * actual structure (which begs the qustion of what use the one in the structure
-     * is, actually ?). So here we patch the pointer held in the wrapper. We can't
-     * simply alter the contents of 'stype' as you might expect, because if its not
-     * dynamically allocated we'll be trying to alter the executable, and that's
-     * the sort of thing likely to trigger faults these days.
-     * And the answer to the question above is that the wrapper only exists in the GC.
-     * When we aren't using the GC, then we don't get the wrapper. Obviously in that
-     * case we don't care, because we don't need the entries in the stype, so
-     * still left wondering what the copy in the structure is for. Anyway, we can't
-     * do this patching unless the object has been allocated in GC memory, which
-     * is a problem, how can we possibly tell ?
+    /* If the original device's stype structure was dynamically allocated, we need
+     * to 'fixup' the contents, it's procs need to point to the new device's procs
+     * for instance.
      */
-    ptr = (unsigned char *)dev_to_subclass;
-    ptr -= 2 * sizeof(void *);
-    b_std = (gs_memory_struct_type_t **)ptr;
-    *b_std = (gs_memory_struct_type_t *)new_prototype->stype;
+    if (dynamic) {
+        a_std = (gs_memory_struct_type_t *)dev_to_subclass->stype;
+        *a_std = *new_prototype->stype;
+    }
 
     dev_to_subclass->subclass_data = psubclass_data;
     dev_to_subclass->child = child_dev;
@@ -1287,21 +1294,51 @@ int gx_unsubclass_device(gx_device *dev)
     void *psubclass_data = dev->subclass_data;
     gx_device *parent = dev->parent, *child = dev->child;
     unsigned char *ptr;
-    gs_memory_struct_type_t **b_std;
+    gs_memory_struct_type_t *a_std;
+    int dynamic = dev->stype_is_dynamic;
 
+    /* If ths device's stype is dynamically allocated, keep a copy of it
+     * in case we might need it.
+     */
+    if (dynamic) {
+        a_std = dev->stype;
+        *a_std = *child->stype;
+    }
+
+    /* If ths device has any private storage, free it now */
     if (psubclass_data)
         gs_free_object(dev->memory->non_gc_memory, psubclass_data, "subclass memory for first-last page");
+
+    /* Copy the child device into ths device's memory */
     memcpy(dev, child, child->stype->ssize);
+
+    /* How can we have a subclass device with no child ? Simples; when we hit the end of job
+     * restore, the devices are not freed in device chain order. To make sure we don't end up
+     * following stale poitners, when a device is freed we remov it from the chain and update
+     * any danlging poitners to NULL. When we later free the remaining devices its possible that
+     * their child pointer can then be NULL.
+     */
     if (child) {
+        /* If this device doesn't have a dynamic stype, but the child does, we'll keep the child stype
+         * and keep the device as dynamic. Otherwise if this device isn't dynamic, we'll use ths
+         * device's stype, so if the child's stype is dynamic, free it.
+         */
+        if (dynamic && child->stype_is_dynamic)
+            gs_free_const_object(child->memory->non_gc_memory, child->stype,
+                             "unsubclass");
         memset(child, 0x00, child->stype->ssize);
-        gs_free_object(dev->memory->stable_memory, child, "gx_device_subclass(device)");
+        gs_free_object(dev->memory, child, "gx_unsubclass_device(device)");
     }
     dev->parent = parent;
 
-    ptr = (unsigned char *)dev;
-    ptr -= 2 * sizeof(void *);
-    b_std = (gs_memory_struct_type_t **)ptr;
-    *b_std = (gs_memory_struct_type_t *)dev->stype;
+    /* If this device has a dynamic stype, we wnt to keep using it, but we copied
+     * the stype pointer from the child when we copied the rest of the device. So
+     * we update the stype pointer with the saved pointer to this device's stype.
+     */
+    if (dynamic) {
+        dev->stype = a_std;
+        dev->stype_is_dynamic = 1;
+    }
 
     return 0;
 }

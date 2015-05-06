@@ -127,10 +127,8 @@ obj_filter_finalize(gx_device *dev);
     0, obj_filter_enum_ptrs, obj_filter_reloc_ptrs, gx_device_finalize)
 
 static
-ENUM_PTRS_WITH(obj_filter_enum_ptrs, gx_device *dev)
-{gx_device *dev = (gx_device *)vptr;
-vptr = dev->child;
-ENUM_PREFIX(*dev->child->stype, 2);}return 0;
+ENUM_PTRS_WITH(obj_filter_enum_ptrs, gx_device *dev);
+return 0; /* default case */
 case 0:ENUM_RETURN(gx_device_enum_ptr(dev->parent));
 case 1:ENUM_RETURN(gx_device_enum_ptr(dev->child));
 ENUM_PTRS_END
@@ -138,8 +136,6 @@ static RELOC_PTRS_WITH(obj_filter_reloc_ptrs, gx_device *dev)
 {
     dev->parent = gx_device_reloc_ptr(dev->parent, gcst);
     dev->child = gx_device_reloc_ptr(dev->child, gcst);
-    vptr = dev->child;
-    RELOC_PREFIX(*dev->child->stype);
 }
 RELOC_PTRS_END
 
@@ -148,33 +144,13 @@ public_st_obj_filter_device();
 const
 gx_device_obj_filter gs_obj_filter_device =
 {
-    sizeof(gx_device_obj_filter),  /* params _size */\
-    0,                      /* obselete static_procs */\
-    "object_filter",        /* dname */\
-    0,                      /* memory */\
-    &st_obj_filter_device,              /* stype */\
-    0,              /* is_dynamic (always false for a prototype, will be true for an allocated device instance) */\
-    obj_filter_finalize,   /* The reason why we can't use the std_device_dci_body macro, we want a finalize */\
-    {0},              /* rc */\
-    0,              /* retained */\
-    0,              /* parent */\
-    0,              /* child */\
-    0,              /* subclass_data */\
-    0,              /* is_open */\
-    0,              /* max_fill_band */\
-    dci_alpha_values(1, 8, 255, 0, 256, 1, 1, 1),\
-    std_device_part2_(MAX_COORD, MAX_COORD, MAX_RESOLUTION, MAX_RESOLUTION),\
-    offset_margin_values(0, 0, 0, 0, 0, 0),\
-    std_device_part3_(),
-#if 0
     /*
      * Define the device as 8-bit gray scale to avoid computing halftones.
      */
-    std_device_dci_body(gx_device_flp, 0, "object_filter",
+    std_device_dci_type_body(gx_device_obj_filter, 0, "object_filter", &st_obj_filter_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
                         1, 8, 255, 0, 256, 1),
-#endif
     {obj_filter_open_device,
      obj_filter_get_initial_matrix,
      obj_filter_sync_output,			/* sync_output */
@@ -254,16 +230,6 @@ gx_device_obj_filter gs_obj_filter_device =
 #undef MAX_COORD
 #undef MAX_RESOLUTION
 
-static
-void obj_filter_finalize(gx_device *dev) {
-
-    gx_unsubclass_device(dev);
-
-    if (dev->finalize)
-        dev->finalize(dev);
-    return;
-}
-
 /* For printing devices the 'open' routine in gdevprn calls gdevprn_allocate_memory
  * which is responsible for creating the page buffer. This *also* fills in some of
  * the device procs, in particular fill_rectangle() so its vitally important that
@@ -271,7 +237,7 @@ void obj_filter_finalize(gx_device *dev) {
  */
 int obj_filter_open_device(gx_device *dev)
 {
-    if (dev->child->procs.open_device) {
+    if (dev->child && dev->child->procs.open_device) {
         dev->child->procs.open_device(dev->child);
         dev->child->is_open = true;
         gx_update_from_subclass(dev);
@@ -282,7 +248,7 @@ int obj_filter_open_device(gx_device *dev)
 
 void obj_filter_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 {
-    if (dev->child->procs.get_initial_matrix)
+    if (dev->child && dev->child->procs.get_initial_matrix)
         dev->child->procs.get_initial_matrix(dev->child, pmat);
     else
         gx_default_get_initial_matrix(dev, pmat);
@@ -291,7 +257,7 @@ void obj_filter_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 
 int obj_filter_sync_output(gx_device *dev)
 {
-    if (dev->child->procs.sync_output)
+    if (dev->child && dev->child->procs.sync_output)
         return dev->child->procs.sync_output(dev->child);
     else
         gx_default_sync_output(dev);
@@ -301,7 +267,7 @@ int obj_filter_sync_output(gx_device *dev)
 
 int obj_filter_output_page(gx_device *dev, int num_copies, int flush)
 {
-    if (dev->child->procs.output_page)
+    if (dev->child && dev->child->procs.output_page)
         return dev->child->procs.output_page(dev->child, num_copies, flush);
     return 0;
 }
@@ -310,7 +276,7 @@ int obj_filter_close_device(gx_device *dev)
 {
     int code;
 
-    if (dev->child->procs.close_device) {
+    if (dev->child && dev->child && dev->child->procs.close_device) {
         code = dev->child->procs.close_device(dev->child);
         dev->is_open = dev->child->is_open = false;
         return code;
@@ -321,7 +287,7 @@ int obj_filter_close_device(gx_device *dev)
 
 gx_color_index obj_filter_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 {
-    if (dev->child->procs.map_rgb_color)
+    if (dev->child && dev->child->procs.map_rgb_color)
         return dev->child->procs.map_rgb_color(dev->child, cv);
     else
         gx_error_encode_color(dev, cv);
@@ -330,7 +296,7 @@ gx_color_index obj_filter_map_rgb_color(gx_device *dev, const gx_color_value cv[
 
 int obj_filter_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
 {
-    if (dev->child->procs.map_color_rgb)
+    if (dev->child && dev->child->procs.map_color_rgb)
         return dev->child->procs.map_color_rgb(dev->child, color, rgb);
     else
         gx_default_map_color_rgb(dev, color, rgb);
@@ -340,7 +306,7 @@ int obj_filter_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_valu
 
 int obj_filter_fill_rectangle(gx_device *dev, int x, int y, int width, int height, gx_color_index color)
 {
-    if (dev->child->procs.fill_rectangle)
+    if (dev->child && dev->child->procs.fill_rectangle)
         return dev->child->procs.fill_rectangle(dev->child, x, y, width, height, color);
     return 0;
 }
@@ -349,7 +315,7 @@ int obj_filter_tile_rectangle(gx_device *dev, const gx_tile_bitmap *tile, int x,
     gx_color_index color0, gx_color_index color1,
     int phase_x, int phase_y)
 {
-    if (dev->child->procs.tile_rectangle)
+    if (dev->child && dev->child->procs.tile_rectangle)
         return dev->child->procs.tile_rectangle(dev->child, tile, x, y, width, height, color0, color1, phase_x, phase_y);
     return 0;
 }
@@ -358,7 +324,7 @@ int obj_filter_copy_mono(gx_device *dev, const byte *data, int data_x, int raste
     int x, int y, int width, int height,
     gx_color_index color0, gx_color_index color1)
 {
-    if (dev->child->procs.copy_mono)
+    if (dev->child && dev->child->procs.copy_mono)
         return dev->child->procs.copy_mono(dev->child, data, data_x, raster, id, x, y, width, height, color0, color1);
     return 0;
 }
@@ -366,21 +332,21 @@ int obj_filter_copy_mono(gx_device *dev, const byte *data, int data_x, int raste
 int obj_filter_copy_color(gx_device *dev, const byte *data, int data_x, int raster, gx_bitmap_id id,\
     int x, int y, int width, int height)
 {
-    if (dev->child->procs.copy_color)
+    if (dev->child && dev->child->procs.copy_color)
         return dev->child->procs.copy_color(dev->child, data, data_x, raster, id, x, y, width, height);
     return 0;
 }
 
 int obj_filter_draw_line(gx_device *dev, int x0, int y0, int x1, int y1, gx_color_index color)
 {
-    if (dev->child->procs.obsolete_draw_line)
+    if (dev->child && dev->child->procs.obsolete_draw_line)
         return dev->child->procs.obsolete_draw_line(dev->child, x0, y0, x1, y1, color);
     return 0;
 }
 
 int obj_filter_get_bits(gx_device *dev, int y, byte *data, byte **actual_data)
 {
-    if (dev->child->procs.get_bits)
+    if (dev->child && dev->child->procs.get_bits)
         return dev->child->procs.get_bits(dev->child, y, data, actual_data);
     else
         return gx_default_get_bits(dev, y, data, actual_data);
@@ -389,7 +355,7 @@ int obj_filter_get_bits(gx_device *dev, int y, byte *data, byte **actual_data)
 
 int obj_filter_get_params(gx_device *dev, gs_param_list *plist)
 {
-    if (dev->child->procs.get_params)
+    if (dev->child && dev->child->procs.get_params)
         return dev->child->procs.get_params(dev->child, plist);
     else
         return gx_default_get_params(dev, plist);
@@ -401,7 +367,7 @@ int obj_filter_put_params(gx_device *dev, gs_param_list *plist)
 {
     int code;
 
-    if (dev->child->procs.put_params) {
+    if (dev->child && dev->child->procs.put_params) {
         code = dev->child->procs.put_params(dev->child, plist);
         /* The child device might have closed itself (yes seriously, this can happen!) */
         dev->is_open = dev->child->is_open;
@@ -416,7 +382,7 @@ int obj_filter_put_params(gx_device *dev, gs_param_list *plist)
 
 gx_color_index obj_filter_map_cmyk_color(gx_device *dev, const gx_color_value cv[])
 {
-    if (dev->child->procs.map_cmyk_color)
+    if (dev->child && dev->child->procs.map_cmyk_color)
         return dev->child->procs.map_cmyk_color(dev->child, cv);
     else
         return gx_default_map_cmyk_color(dev, cv);
@@ -426,7 +392,7 @@ gx_color_index obj_filter_map_cmyk_color(gx_device *dev, const gx_color_value cv
 
 const gx_xfont_procs *obj_filter_get_xfont_procs(gx_device *dev)
 {
-    if (dev->child->procs.get_xfont_procs)
+    if (dev->child && dev->child->procs.get_xfont_procs)
         return dev->child->procs.get_xfont_procs(dev->child);
     else
         return gx_default_get_xfont_procs(dev);
@@ -436,7 +402,7 @@ const gx_xfont_procs *obj_filter_get_xfont_procs(gx_device *dev)
 
 gx_device *obj_filter_get_xfont_device(gx_device *dev)
 {
-    if (dev->child->procs.get_xfont_device)
+    if (dev->child && dev->child->procs.get_xfont_device)
         return dev->child->procs.get_xfont_device(dev->child);
     else
         return gx_default_get_xfont_device(dev);
@@ -447,7 +413,7 @@ gx_device *obj_filter_get_xfont_device(gx_device *dev)
 gx_color_index obj_filter_map_rgb_alpha_color(gx_device *dev, gx_color_value red, gx_color_value green, gx_color_value blue,
     gx_color_value alpha)
 {
-    if (dev->child->procs.map_rgb_alpha_color)
+    if (dev->child && dev->child->procs.map_rgb_alpha_color)
         return dev->child->procs.map_rgb_alpha_color(dev->child, red, green, blue, alpha);
     else
         return gx_default_map_rgb_alpha_color(dev->child, red, green, blue, alpha);
@@ -457,7 +423,7 @@ gx_color_index obj_filter_map_rgb_alpha_color(gx_device *dev, gx_color_value red
 
 gx_device *obj_filter_get_page_device(gx_device *dev)
 {
-    if (dev->child->procs.get_page_device)
+    if (dev->child && dev->child->procs.get_page_device)
         return dev->child->procs.get_page_device(dev->child);
     else
         return gx_default_get_page_device(dev);
@@ -467,7 +433,7 @@ gx_device *obj_filter_get_page_device(gx_device *dev)
 
 int obj_filter_get_alpha_bits(gx_device *dev, graphics_object_type type)
 {
-    if (dev->child->procs.get_alpha_bits)
+    if (dev->child && dev->child->procs.get_alpha_bits)
         return dev->child->procs.get_alpha_bits(dev->child, type);
     return 0;
 }
@@ -476,14 +442,14 @@ int obj_filter_copy_alpha(gx_device *dev, const byte *data, int data_x,
     int raster, gx_bitmap_id id, int x, int y, int width, int height,
     gx_color_index color, int depth)
 {
-    if (dev->child->procs.copy_alpha)
+    if (dev->child && dev->child->procs.copy_alpha)
         return dev->child->procs.copy_alpha(dev->child, data, data_x, raster, id, x, y, width, height, color, depth);
     return 0;
 }
 
 int obj_filter_get_band(gx_device *dev, int y, int *band_start)
 {
-    if (dev->child->procs.get_band)
+    if (dev->child && dev->child->procs.get_band)
         return dev->child->procs.get_band(dev->child, y, band_start);
     else
         return gx_default_get_band(dev, y, band_start);
@@ -496,7 +462,7 @@ int obj_filter_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sra
     int x, int y, int width, int height,
     int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    if (dev->child->procs.copy_rop)
+    if (dev->child && dev->child->procs.copy_rop)
         return dev->child->procs.copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
     else
         return gx_default_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
@@ -507,7 +473,7 @@ int obj_filter_fill_path(gx_device *dev, const gs_imager_state *pis, gx_path *pp
     const gx_fill_params *params,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
-    if (dev->child->procs.fill_path)
+    if (dev->child && dev->child->procs.fill_path)
         return dev->child->procs.fill_path(dev->child, pis, ppath, params, pdcolor, pcpath);
     else
         return gx_default_fill_path(dev->child, pis, ppath, params, pdcolor, pcpath);
@@ -518,7 +484,7 @@ int obj_filter_stroke_path(gx_device *dev, const gs_imager_state *pis, gx_path *
     const gx_stroke_params *params,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
-    if (dev->child->procs.stroke_path)
+    if (dev->child && dev->child->procs.stroke_path)
         return dev->child->procs.stroke_path(dev->child, pis, ppath, params, pdcolor, pcpath);
     else
         return gx_default_stroke_path(dev->child, pis, ppath, params, pdcolor, pcpath);
@@ -530,7 +496,7 @@ int obj_filter_fill_mask(gx_device *dev, const byte *data, int data_x, int raste
     const gx_drawing_color *pdcolor, int depth,
     gs_logical_operation_t lop, const gx_clip_path *pcpath)
 {
-    if (dev->child->procs.fill_mask)
+    if (dev->child && dev->child->procs.fill_mask)
         return dev->child->procs.fill_mask(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
     else
         return gx_default_fill_mask(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
@@ -541,7 +507,7 @@ int obj_filter_fill_trapezoid(gx_device *dev, const gs_fixed_edge *left, const g
     fixed ybot, fixed ytop, bool swap_axes,
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 {
-    if (dev->child->procs.fill_trapezoid)
+    if (dev->child && dev->child->procs.fill_trapezoid)
         return dev->child->procs.fill_trapezoid(dev->child, left, right, ybot, ytop, swap_axes, pdcolor, lop);
     else
         return gx_default_fill_trapezoid(dev->child, left, right, ybot, ytop, swap_axes, pdcolor, lop);
@@ -551,7 +517,7 @@ int obj_filter_fill_trapezoid(gx_device *dev, const gs_fixed_edge *left, const g
 int obj_filter_fill_parallelogram(gx_device *dev, fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 {
-    if (dev->child->procs.fill_parallelogram)
+    if (dev->child && dev->child->procs.fill_parallelogram)
         return dev->child->procs.fill_parallelogram(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
     else
         return gx_default_fill_parallelogram(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
@@ -561,7 +527,7 @@ int obj_filter_fill_parallelogram(gx_device *dev, fixed px, fixed py, fixed ax, 
 int obj_filter_fill_triangle(gx_device *dev, fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 {
-    if (dev->child->procs.fill_triangle)
+    if (dev->child && dev->child->procs.fill_triangle)
         return dev->child->procs.fill_triangle(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
     else
         return gx_default_fill_triangle(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
@@ -572,7 +538,7 @@ int obj_filter_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed fx1, f
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop,
     fixed adjustx, fixed adjusty)
 {
-    if (dev->child->procs.draw_thin_line)
+    if (dev->child && dev->child->procs.draw_thin_line)
         return dev->child->procs.draw_thin_line(dev->child, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
     else
         return gx_default_draw_thin_line(dev->child, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
@@ -584,7 +550,7 @@ int obj_filter_begin_image(gx_device *dev, const gs_imager_state *pis, const gs_
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 {
-    if (dev->child->procs.begin_image)
+    if (dev->child && dev->child->procs.begin_image)
         return dev->child->procs.begin_image(dev->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
     else
         return gx_default_begin_image(dev->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
@@ -594,14 +560,14 @@ int obj_filter_begin_image(gx_device *dev, const gs_imager_state *pis, const gs_
 int obj_filter_image_data(gx_device *dev, gx_image_enum_common_t *info, const byte **planes, int data_x,
     uint raster, int height)
 {
-    if (dev->child->procs.image_data)
+    if (dev->child && dev->child->procs.image_data)
         return dev->child->procs.image_data(dev->child, info, planes, data_x, raster, height);
     return 0;
 }
 
 int obj_filter_end_image(gx_device *dev, gx_image_enum_common_t *info, bool draw_last)
 {
-    if (dev->child->procs.end_image)
+    if (dev->child && dev->child->procs.end_image)
         return dev->child->procs.end_image(dev->child, info, draw_last);
     return 0;
 }
@@ -610,7 +576,7 @@ int obj_filter_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles
     gx_color_index color0, gx_color_index color1,
     int phase_x, int phase_y)
 {
-    if (dev->child->procs.strip_tile_rectangle)
+    if (dev->child && dev->child->procs.strip_tile_rectangle)
         return dev->child->procs.strip_tile_rectangle(dev->child, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
     else
         return gx_default_strip_tile_rectangle(dev->child, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
@@ -623,7 +589,7 @@ int obj_filter_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, ui
     int x, int y, int width, int height,
     int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    if (dev->child->procs.strip_copy_rop)
+    if (dev->child && dev->child->procs.strip_copy_rop)
         return dev->child->procs.strip_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
     else
         return gx_default_strip_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
@@ -632,7 +598,7 @@ int obj_filter_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, ui
 
 void obj_filter_get_clipping_box(gx_device *dev, gs_fixed_rect *pbox)
 {
-    if (dev->child->procs.get_clipping_box)
+    if (dev->child && dev->child->procs.get_clipping_box)
         dev->child->procs.get_clipping_box(dev->child, pbox);
     else
         gx_default_get_clipping_box(dev->child, pbox);
@@ -678,7 +644,7 @@ int obj_filter_begin_typed_image(gx_device *dev, const gs_imager_state *pis, con
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 {
-    if (dev->child->procs.begin_typed_image)
+    if (dev->child && dev->child->procs.begin_typed_image)
         return dev->child->procs.begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
     else
         return gx_default_begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
@@ -688,7 +654,7 @@ int obj_filter_begin_typed_image(gx_device *dev, const gs_imager_state *pis, con
 int obj_filter_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
     gs_get_bits_params_t *params, gs_int_rect **unread)
 {
-    if (dev->child->procs.get_bits_rectangle)
+    if (dev->child && dev->child->procs.get_bits_rectangle)
         return dev->child->procs.get_bits_rectangle(dev->child, prect, params, unread);
     else
         return gx_default_get_bits_rectangle(dev->child, prect, params, unread);
@@ -697,7 +663,7 @@ int obj_filter_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
 
 int obj_filter_map_color_rgb_alpha(gx_device *dev, gx_color_index color, gx_color_value rgba[4])
 {
-    if (dev->child->procs.map_color_rgb_alpha)
+    if (dev->child && dev->child->procs.map_color_rgb_alpha)
         return dev->child->procs.map_color_rgb_alpha(dev->child, color, rgba);
     else
         return gx_default_map_color_rgb_alpha(dev->child, color, rgba);
@@ -711,62 +677,12 @@ int obj_filter_create_compositor(gx_device *dev, gx_device **pcdev, const gs_com
     obj_filter_subclass_data *psubclass_data = dev->subclass_data;
     int code;
 
-    if (dev->child->procs.create_compositor) {
-        /* Some more unpleasantness here. If the child device is a clist, then it will use the first argument
-         * that we pass to access its own data (not unreasonably), so we need to make sure we pass in the
-         * child device. This has some follow on implications detailed below.
-         */
-        code = dev->child->procs.create_compositor(dev->child, pcdev, pcte, pis, memory, cdev);
-        if (code < 0)
-            return code;
-
-        if (*pcdev != dev->child){
-            /* If the child created a new compositor, which it wants to be the new 'device' in the
-             * graphics state, it sets it in the returned pcdev variable. When we return from this
-             * method, if pcdev is not the same as the device in the graphics state then the interpreter
-             * sets pcdev as the new device in the graphics state. But because we passed in the child device
-             * to the child method, if it did create a compositor it will be a forwarding device, and it will
-             * be forwarding to our child, we need it to point to us instead. So if pcdev is not the same as the
-             * child device, we fixup the target in the child device to point to us.
-             */
-            gx_device_forward *fdev = (gx_device_forward *)*pcdev;
-
-            if (fdev->target == dev->child) {
-                if (gs_is_pdf14trans_compositor(pcte) != 0 && strncmp(fdev->dname, "pdf14clist", 10) == 0) {
-                    pdf14_clist_device *p14dev;
-
-                    p14dev = (pdf14_clist_device *)*pcdev;
-
-                    dev->color_info = dev->child->color_info;
-
-                    psubclass_data->saved_compositor_method = p14dev->procs.create_compositor;
-                    p14dev->procs.create_compositor = gx_subclass_create_compositor;
-                }
-
-                fdev->target = dev;
-                rc_decrement_only(dev->child, "first-last page compositor code");
-                rc_increment(dev);
-            }
-            return gs_error_handled;
-        }
-        else {
-            /* See the 2 comments above. Now, if the child did not create a new compositor (eg its a clist)
-             * then it returns pcdev pointing to the passed in device (the child in our case). Now this is a
-             * problem, if we return with pcdev == child->dev, and teh current device is 'dev' then the
-             * compositor code will think we wanted to push a new device and will select the child device.
-             * so here if pcdev == dev->child we change it to be our own device, so that the calling code
-             * won't redirect the device in the graphics state.
-             */
-            *pcdev = dev;
-            return code;
-        }
-    }
-    return 0;
+    return default_subclass_create_compositor(dev, pcdev, pcte, pis, memory, cdev);
 }
 
 int obj_filter_get_hardware_params(gx_device *dev, gs_param_list *plist)
 {
-    if (dev->child->procs.get_hardware_params)
+    if (dev->child && dev->child->procs.get_hardware_params)
         return dev->child->procs.get_hardware_params(dev->child, plist);
     else
         return gx_default_get_hardware_params(dev->child, plist);
@@ -841,7 +757,7 @@ int obj_filter_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_pa
     gs_font *font, gx_path *path, const gx_device_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gs_text_enum_t **ppte)
 {
-    if (dev->child->procs.text_begin)
+    if (dev->child && dev->child->procs.text_begin)
         return dev->child->procs.text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
     else
         return gx_default_text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
@@ -861,7 +777,7 @@ int obj_filter_finish_copydevice(gx_device *dev, const gx_device *from_dev)
 int obj_filter_begin_transparency_group(gx_device *dev, const gs_transparency_group_params_t *ptgp,
     const gs_rect *pbbox, gs_imager_state *pis, gs_memory_t *mem)
 {
-    if (dev->child->procs.begin_transparency_group)
+    if (dev->child && dev->child->procs.begin_transparency_group)
         return dev->child->procs.begin_transparency_group(dev->child, ptgp, pbbox, pis, mem);
 
     return 0;
@@ -869,7 +785,7 @@ int obj_filter_begin_transparency_group(gx_device *dev, const gs_transparency_gr
 
 int obj_filter_end_transparency_group(gx_device *dev, gs_imager_state *pis)
 {
-    if (dev->child->procs.end_transparency_group)
+    if (dev->child && dev->child->procs.end_transparency_group)
         return dev->child->procs.end_transparency_group(dev->child, pis);
 
     return 0;
@@ -878,7 +794,7 @@ int obj_filter_end_transparency_group(gx_device *dev, gs_imager_state *pis)
 int obj_filter_begin_transparency_mask(gx_device *dev, const gx_transparency_mask_params_t *ptmp,
     const gs_rect *pbbox, gs_imager_state *pis, gs_memory_t *mem)
 {
-    if (dev->child->procs.begin_transparency_mask)
+    if (dev->child && dev->child->procs.begin_transparency_mask)
         return dev->child->procs.begin_transparency_mask(dev->child, ptmp, pbbox, pis, mem);
 
     return 0;
@@ -886,14 +802,14 @@ int obj_filter_begin_transparency_mask(gx_device *dev, const gx_transparency_mas
 
 int obj_filter_end_transparency_mask(gx_device *dev, gs_imager_state *pis)
 {
-    if (dev->child->procs.end_transparency_mask)
+    if (dev->child && dev->child->procs.end_transparency_mask)
         return dev->child->procs.end_transparency_mask(dev->child, pis);
     return 0;
 }
 
 int obj_filter_discard_transparency_layer(gx_device *dev, gs_imager_state *pis)
 {
-    if (dev->child->procs.discard_transparency_layer)
+    if (dev->child && dev->child->procs.discard_transparency_layer)
         return dev->child->procs.discard_transparency_layer(dev->child, pis);
 
     return 0;
@@ -901,7 +817,7 @@ int obj_filter_discard_transparency_layer(gx_device *dev, gs_imager_state *pis)
 
 const gx_cm_color_map_procs *obj_filter_get_color_mapping_procs(const gx_device *dev)
 {
-    if (dev->child->procs.get_color_mapping_procs)
+    if (dev->child && dev->child->procs.get_color_mapping_procs)
         return dev->child->procs.get_color_mapping_procs(dev->child);
     else
         return gx_default_DevGray_get_color_mapping_procs(dev->child);
@@ -911,7 +827,7 @@ const gx_cm_color_map_procs *obj_filter_get_color_mapping_procs(const gx_device 
 
 int  obj_filter_get_color_comp_index(gx_device *dev, const char * pname, int name_size, int component_type)
 {
-    if (dev->child->procs.get_color_comp_index)
+    if (dev->child && dev->child->procs.get_color_comp_index)
         return dev->child->procs.get_color_comp_index(dev->child, pname, name_size, component_type);
     else
         return gx_error_get_color_comp_index(dev->child, pname, name_size, component_type);
@@ -921,7 +837,7 @@ int  obj_filter_get_color_comp_index(gx_device *dev, const char * pname, int nam
 
 gx_color_index obj_filter_encode_color(gx_device *dev, const gx_color_value colors[])
 {
-    if (dev->child->procs.encode_color)
+    if (dev->child && dev->child->procs.encode_color)
         return dev->child->procs.encode_color(dev->child, colors);
     else
         return gx_error_encode_color(dev->child, colors);
@@ -931,7 +847,7 @@ gx_color_index obj_filter_encode_color(gx_device *dev, const gx_color_value colo
 
 int obj_filter_decode_color(gx_device *dev, gx_color_index cindex, gx_color_value colors[])
 {
-    if (dev->child->procs.decode_color)
+    if (dev->child && dev->child->procs.decode_color)
         return dev->child->procs.decode_color(dev->child, cindex, colors);
     else {
         memset(colors, 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
@@ -943,7 +859,7 @@ int obj_filter_decode_color(gx_device *dev, gx_color_index cindex, gx_color_valu
 int obj_filter_pattern_manage(gx_device *dev, gx_bitmap_id id,
                 gs_pattern1_instance_t *pinst, pattern_manage_t function)
 {
-    if (dev->child->procs.pattern_manage)
+    if (dev->child && dev->child->procs.pattern_manage)
         return dev->child->procs.pattern_manage(dev->child, id, pinst, function);
 
     return 0;
@@ -952,7 +868,7 @@ int obj_filter_pattern_manage(gx_device *dev, gx_bitmap_id id,
 int obj_filter_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         const gs_imager_state *pis, const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
-    if (dev->child->procs.fill_rectangle_hl_color)
+    if (dev->child && dev->child->procs.fill_rectangle_hl_color)
         return dev->child->procs.fill_rectangle_hl_color(dev->child, rect, pis, pdcolor, pcpath);
     else
         return_error(gs_error_rangecheck);
@@ -962,7 +878,7 @@ int obj_filter_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect
 
 int obj_filter_include_color_space(gx_device *dev, gs_color_space *cspace, const byte *res_name, int name_length)
 {
-    if (dev->child->procs.include_color_space)
+    if (dev->child && dev->child->procs.include_color_space)
         return dev->child->procs.include_color_space(dev->child, cspace, res_name, name_length);
 
     return 0;
@@ -972,7 +888,7 @@ int obj_filter_fill_linear_color_scanline(gx_device *dev, const gs_fill_attribut
         int i, int j, int w, const frac31 *c0, const int32_t *c0_f, const int32_t *cg_num,
         int32_t cg_den)
 {
-    if (dev->child->procs.fill_linear_color_scanline)
+    if (dev->child && dev->child->procs.fill_linear_color_scanline)
         return dev->child->procs.fill_linear_color_scanline(dev->child, fa, i, j, w, c0, c0_f, cg_num, cg_den);
     else
         return gx_default_fill_linear_color_scanline(dev->child, fa, i, j, w, c0, c0_f, cg_num, cg_den);
@@ -986,7 +902,7 @@ int obj_filter_fill_linear_color_trapezoid(gx_device *dev, const gs_fill_attribu
         const frac31 *c0, const frac31 *c1,
         const frac31 *c2, const frac31 *c3)
 {
-    if (dev->child->procs.fill_linear_color_trapezoid)
+    if (dev->child && dev->child->procs.fill_linear_color_trapezoid)
         return dev->child->procs.fill_linear_color_trapezoid(dev->child, fa, p0, p1, p2, p3, c0, c1, c2, c3);
     else
         return gx_default_fill_linear_color_trapezoid(dev->child, fa, p0, p1, p2, p3, c0, c1, c2, c3);
@@ -998,7 +914,7 @@ int obj_filter_fill_linear_color_triangle(gx_device *dev, const gs_fill_attribut
         const gs_fixed_point *p0, const gs_fixed_point *p1,
         const gs_fixed_point *p2, const frac31 *c0, const frac31 *c1, const frac31 *c2)
 {
-    if (dev->child->procs.fill_linear_color_triangle)
+    if (dev->child && dev->child->procs.fill_linear_color_triangle)
         return dev->child->procs.fill_linear_color_triangle(dev->child, fa, p0, p1, p2, c0, c1, c2);
     else
         return gx_default_fill_linear_color_triangle(dev->child, fa, p0, p1, p2, c0, c1, c2);
@@ -1008,7 +924,7 @@ int obj_filter_fill_linear_color_triangle(gx_device *dev, const gs_fill_attribut
 
 int obj_filter_update_spot_equivalent_colors(gx_device *dev, const gs_state * pgs)
 {
-    if (dev->child->procs.update_spot_equivalent_colors)
+    if (dev->child && dev->child->procs.update_spot_equivalent_colors)
         return dev->child->procs.update_spot_equivalent_colors(dev->child, pgs);
 
     return 0;
@@ -1016,7 +932,7 @@ int obj_filter_update_spot_equivalent_colors(gx_device *dev, const gs_state * pg
 
 gs_devn_params *obj_filter_ret_devn_params(gx_device *dev)
 {
-    if (dev->child->procs.ret_devn_params)
+    if (dev->child && dev->child->procs.ret_devn_params)
         return dev->child->procs.ret_devn_params(dev->child);
 
     return 0;
@@ -1024,7 +940,7 @@ gs_devn_params *obj_filter_ret_devn_params(gx_device *dev)
 
 int obj_filter_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
 {
-    if (dev->child->procs.fillpage)
+    if (dev->child && dev->child->procs.fillpage)
         return dev->child->procs.fillpage(dev->child, pis, pdevc);
     else
         return gx_default_fillpage(dev->child, pis, pdevc);
@@ -1034,7 +950,7 @@ int obj_filter_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *
 
 int obj_filter_push_transparency_state(gx_device *dev, gs_imager_state *pis)
 {
-    if (dev->child->procs.push_transparency_state)
+    if (dev->child && dev->child->procs.push_transparency_state)
         return dev->child->procs.push_transparency_state(dev->child, pis);
 
     return 0;
@@ -1042,7 +958,7 @@ int obj_filter_push_transparency_state(gx_device *dev, gs_imager_state *pis)
 
 int obj_filter_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
 {
-    if (dev->child->procs.push_transparency_state)
+    if (dev->child && dev->child->procs.push_transparency_state)
         return dev->child->procs.push_transparency_state(dev->child, pis);
 
     return 0;
@@ -1052,7 +968,7 @@ int obj_filter_put_image(gx_device *dev, const byte *buffer, int num_chan, int x
             int width, int height, int row_stride, int plane_stride,
             int alpha_plane_index, int tag_plane_index)
 {
-    if (dev->child->procs.put_image)
+    if (dev->child && dev->child->procs.put_image)
         return dev->child->procs.put_image(dev->child, buffer, num_chan, x, y, width, height, row_stride, plane_stride, alpha_plane_index, tag_plane_index);
 
     return 0;
@@ -1060,7 +976,7 @@ int obj_filter_put_image(gx_device *dev, const byte *buffer, int num_chan, int x
 
 int obj_filter_dev_spec_op(gx_device *dev, int op, void *data, int datasize)
 {
-    if (dev->child->procs.dev_spec_op)
+    if (dev->child && dev->child->procs.dev_spec_op)
         return dev->child->procs.dev_spec_op(dev->child, op, data, datasize);
 
     return 0;
@@ -1069,7 +985,7 @@ int obj_filter_dev_spec_op(gx_device *dev, int op, void *data, int datasize)
 int obj_filter_copy_planes(gx_device *dev, const byte *data, int data_x, int raster, gx_bitmap_id id,
     int x, int y, int width, int height, int plane_height)
 {
-    if (dev->child->procs.copy_planes)
+    if (dev->child && dev->child->procs.copy_planes)
         return dev->child->procs.copy_planes(dev->child, data, data_x, raster, id, x, y, width, height, plane_height);
 
     return 0;
@@ -1077,7 +993,7 @@ int obj_filter_copy_planes(gx_device *dev, const byte *data, int data_x, int ras
 
 int obj_filter_get_profile(gx_device *dev, cmm_dev_profile_t **dev_profile)
 {
-    if (dev->child->procs.get_profile)
+    if (dev->child && dev->child->procs.get_profile)
         return dev->child->procs.get_profile(dev->child, dev_profile);
     else
         return gx_default_get_profile(dev->child, dev_profile);
@@ -1087,7 +1003,7 @@ int obj_filter_get_profile(gx_device *dev, cmm_dev_profile_t **dev_profile)
 
 void obj_filter_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t tag)
 {
-    if (dev->child->procs.set_graphics_type_tag)
+    if (dev->child && dev->child->procs.set_graphics_type_tag)
         dev->child->procs.set_graphics_type_tag(dev->child, tag);
 
     return;
@@ -1097,7 +1013,7 @@ int obj_filter_strip_copy_rop2(gx_device *dev, const byte *sdata, int sourcex, u
     const gx_color_index *scolors, const gx_strip_bitmap *textures, const gx_color_index *tcolors,
     int x, int y, int width, int height, int phase_x, int phase_y, gs_logical_operation_t lop, uint planar_height)
 {
-    if (dev->child->procs.strip_copy_rop2)
+    if (dev->child && dev->child->procs.strip_copy_rop2)
         return dev->child->procs.strip_copy_rop2(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
     else
         return gx_default_strip_copy_rop2(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
@@ -1108,7 +1024,7 @@ int obj_filter_strip_copy_rop2(gx_device *dev, const byte *sdata, int sourcex, u
 int obj_filter_strip_tile_rect_devn(gx_device *dev, const gx_strip_bitmap *tiles, int x, int y, int width, int height,
     const gx_drawing_color *pdcolor0, const gx_drawing_color *pdcolor1, int phase_x, int phase_y)
 {
-    if (dev->child->procs.strip_tile_rect_devn)
+    if (dev->child && dev->child->procs.strip_tile_rect_devn)
         return dev->child->procs.strip_tile_rect_devn(dev->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
     else
         return gx_default_strip_tile_rect_devn(dev->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
@@ -1120,7 +1036,7 @@ int obj_filter_copy_alpha_hl_color(gx_device *dev, const byte *data, int data_x,
     int raster, gx_bitmap_id id, int x, int y, int width, int height,
     const gx_drawing_color *pdcolor, int depth)
 {
-    if (dev->child->procs.copy_alpha_hl_color)
+    if (dev->child && dev->child->procs.copy_alpha_hl_color)
         return dev->child->procs.copy_alpha_hl_color(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth);
     else
         return_error(gs_error_rangecheck);
@@ -1130,7 +1046,7 @@ int obj_filter_copy_alpha_hl_color(gx_device *dev, const byte *data, int data_x,
 
 int obj_filter_process_page(gx_device *dev, gx_process_page_options_t *options)
 {
-    if (dev->child->procs.process_page)
+    if (dev->child && dev->child->procs.process_page)
         return dev->child->procs.process_page(dev->child, options);
 
     return 0;

@@ -156,10 +156,8 @@ static dev_proc_process_page(flp_process_page);
     0, flp_enum_ptrs, flp_reloc_ptrs, gx_device_finalize)
 
 static
-ENUM_PTRS_WITH(flp_enum_ptrs, gx_device *dev)
-{gx_device *dev = (gx_device *)vptr;
-vptr = dev->child;
-ENUM_PREFIX(*dev->child->stype, 2);}return 0;
+ENUM_PTRS_WITH(flp_enum_ptrs, gx_device *dev);
+return 0; /* default case */
 case 0:ENUM_RETURN(gx_device_enum_ptr(dev->parent));
 case 1:ENUM_RETURN(gx_device_enum_ptr(dev->child));
 ENUM_PTRS_END
@@ -167,8 +165,6 @@ static RELOC_PTRS_WITH(flp_reloc_ptrs, gx_device *dev)
 {
     dev->parent = gx_device_reloc_ptr(dev->parent, gcst);
     dev->child = gx_device_reloc_ptr(dev->child, gcst);
-    vptr = dev->child;
-    RELOC_PREFIX(*dev->child->stype);
 }
 RELOC_PTRS_END
 
@@ -177,7 +173,7 @@ public_st_flp_device();
 const
 gx_device_flp gs_flp_device =
 {
-    subclass_std_device_dci_body(gx_device_flp, 0, "first_lastpage", default_subclass_finalize, &st_flp_device,
+    std_device_dci_type_body(gx_device_flp, 0, "first_lastpage", &st_flp_device,
                         MAX_COORD, MAX_COORD,
                         MAX_RESOLUTION, MAX_RESOLUTION,
                         1, 8, 255, 0, 256, 1),
@@ -268,7 +264,7 @@ int flp_output_page(gx_device *dev, int num_copies, int flush)
 
     if (psubclass_data->PageCount >= dev->FirstPage) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (dev->child->procs.output_page)
+            if (dev->child && dev->child->procs.output_page)
                 return dev->child->procs.output_page(dev->child, num_copies, flush);
         }
     }
@@ -282,7 +278,7 @@ int flp_fill_rectangle(gx_device *dev, int x, int y, int width, int height, gx_c
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.fill_rectangle)
+            if (dev->child && dev->child->procs.fill_rectangle)
                 return dev->child->procs.fill_rectangle(dev->child, x, y, width, height, color);
         }
     }
@@ -298,7 +294,7 @@ int flp_tile_rectangle(gx_device *dev, const gx_tile_bitmap *tile, int x, int y,
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.tile_rectangle)
+            if (dev->child && dev->child->procs.tile_rectangle)
                 return dev->child->procs.tile_rectangle(dev->child, tile, x, y, width, height, color0, color1, phase_x, phase_y);
         }
     }
@@ -314,7 +310,7 @@ int flp_copy_mono(gx_device *dev, const byte *data, int data_x, int raster, gx_b
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.copy_mono)
+            if (dev->child && dev->child->procs.copy_mono)
                 return dev->child->procs.copy_mono(dev->child, data, data_x, raster, id, x, y, width, height, color0, color1);
         }
     }
@@ -329,7 +325,7 @@ int flp_copy_color(gx_device *dev, const byte *data, int data_x, int raster, gx_
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.copy_color)
+            if (dev->child && dev->child->procs.copy_color)
                 return dev->child->procs.copy_color(dev->child, data, data_x, raster, id, x, y, width, height);
         }
     }
@@ -343,7 +339,7 @@ int flp_draw_line(gx_device *dev, int x0, int y0, int x1, int y1, gx_color_index
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.obsolete_draw_line)
+            if (dev->child && dev->child->procs.obsolete_draw_line)
                 return dev->child->procs.obsolete_draw_line(dev->child, x0, y0, x1, y1, color);
         }
     }
@@ -356,7 +352,7 @@ int flp_get_bits(gx_device *dev, int y, byte *data, byte **actual_data)
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.get_bits)
+            if (dev->child && dev->child->procs.get_bits)
                 return dev->child->procs.get_bits(dev->child, y, data, actual_data);
             else
                 return gx_default_get_bits(dev, y, data, actual_data);
@@ -376,7 +372,7 @@ int flp_get_alpha_bits(gx_device *dev, graphics_object_type type)
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.get_alpha_bits)
+            if (dev->child && dev->child->procs.get_alpha_bits)
                 return dev->child->procs.get_alpha_bits(dev->child, type);
         }
     }
@@ -392,7 +388,7 @@ int flp_copy_alpha(gx_device *dev, const byte *data, int data_x,
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.copy_alpha)
+            if (dev->child && dev->child->procs.copy_alpha)
                 return dev->child->procs.copy_alpha(dev->child, data, data_x, raster, id, x, y, width, height, color, depth);
         }
     }
@@ -406,7 +402,7 @@ int flp_get_band(gx_device *dev, int y, int *band_start)
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.get_band)
+            if (dev->child && dev->child->procs.get_band)
                 return dev->child->procs.get_band(dev->child, y, band_start);
             else
                 return gx_default_get_band(dev, y, band_start);
@@ -430,7 +426,7 @@ int flp_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, g
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.copy_rop)
+            if (dev->child && dev->child->procs.copy_rop)
                 return dev->child->procs.copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
             else
                 return gx_default_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
@@ -447,7 +443,7 @@ int flp_fill_path(gx_device *dev, const gs_imager_state *pis, gx_path *ppath,
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.fill_path)
+            if (dev->child && dev->child->procs.fill_path)
                 return dev->child->procs.fill_path(dev->child, pis, ppath, params, pdcolor, pcpath);
             else
                 return gx_default_fill_path(dev->child, pis, ppath, params, pdcolor, pcpath);
@@ -465,7 +461,7 @@ int flp_stroke_path(gx_device *dev, const gs_imager_state *pis, gx_path *ppath,
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.stroke_path)
+            if (dev->child && dev->child->procs.stroke_path)
                 return dev->child->procs.stroke_path(dev->child, pis, ppath, params, pdcolor, pcpath);
             else
                 return gx_default_stroke_path(dev->child, pis, ppath, params, pdcolor, pcpath);
@@ -484,7 +480,7 @@ int flp_fill_mask(gx_device *dev, const byte *data, int data_x, int raster, gx_b
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.fill_mask)
+            if (dev->child && dev->child->procs.fill_mask)
                 return dev->child->procs.fill_mask(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
             else
                 return gx_default_fill_mask(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
@@ -502,7 +498,7 @@ int flp_fill_trapezoid(gx_device *dev, const gs_fixed_edge *left, const gs_fixed
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.fill_trapezoid)
+            if (dev->child && dev->child->procs.fill_trapezoid)
                 return dev->child->procs.fill_trapezoid(dev->child, left, right, ybot, ytop, swap_axes, pdcolor, lop);
             else
                 return gx_default_fill_trapezoid(dev->child, left, right, ybot, ytop, swap_axes, pdcolor, lop);
@@ -519,7 +515,7 @@ int flp_fill_parallelogram(gx_device *dev, fixed px, fixed py, fixed ax, fixed a
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.fill_parallelogram)
+            if (dev->child && dev->child->procs.fill_parallelogram)
                 return dev->child->procs.fill_parallelogram(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
             else
                 return gx_default_fill_parallelogram(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
@@ -536,7 +532,7 @@ int flp_fill_triangle(gx_device *dev, fixed px, fixed py, fixed ax, fixed ay, fi
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.fill_triangle)
+            if (dev->child && dev->child->procs.fill_triangle)
                 return dev->child->procs.fill_triangle(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
             else
                 return gx_default_fill_triangle(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
@@ -554,7 +550,7 @@ int flp_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed fx1, fixed fy
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.draw_thin_line)
+            if (dev->child && dev->child->procs.draw_thin_line)
                 return dev->child->procs.draw_thin_line(dev->child, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
             else
                 return gx_default_draw_thin_line(dev->child, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
@@ -573,7 +569,7 @@ int flp_begin_image(gx_device *dev, const gs_imager_state *pis, const gs_image_t
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage) {
-            if (dev->child->procs.begin_image)
+            if (dev->child && dev->child->procs.begin_image)
                 return dev->child->procs.begin_image(dev->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
             else
                 return gx_default_begin_image(dev->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
@@ -590,7 +586,7 @@ int flp_image_data(gx_device *dev, gx_image_enum_common_t *info, const byte **pl
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.image_data)
+            if (dev->child && dev->child->procs.image_data)
                 return dev->child->procs.image_data(dev->child, info, planes, data_x, raster, height);
         }
     }
@@ -604,7 +600,7 @@ int flp_end_image(gx_device *dev, gx_image_enum_common_t *info, bool draw_last)
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.end_image)
+            if (dev->child && dev->child->procs.end_image)
                 return dev->child->procs.end_image(dev->child, info, draw_last);
         }
     }
@@ -620,7 +616,7 @@ int flp_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles, int x
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.strip_tile_rectangle)
+            if (dev->child && dev->child->procs.strip_tile_rectangle)
                 return dev->child->procs.strip_tile_rectangle(dev->child, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
             else
                 return gx_default_strip_tile_rectangle(dev->child, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
@@ -640,7 +636,7 @@ int flp_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sras
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.strip_copy_rop)
+            if (dev->child && dev->child->procs.strip_copy_rop)
                 return dev->child->procs.strip_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
             else
                 return gx_default_strip_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
@@ -696,7 +692,7 @@ int flp_begin_typed_image(gx_device *dev, const gs_imager_state *pis, const gs_m
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.begin_typed_image)
+            if (dev->child && dev->child->procs.begin_typed_image)
                 return dev->child->procs.begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
             else
                 return gx_default_begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
@@ -734,7 +730,7 @@ int flp_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.get_bits_rectangle)
+            if (dev->child && dev->child->procs.get_bits_rectangle)
                 return dev->child->procs.get_bits_rectangle(dev->child, prect, params, unread);
             else
                 return gx_default_get_bits_rectangle(dev->child, prect, params, unread);
@@ -755,7 +751,8 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.create_compositor) {
+#if 0
+            if (dev->child && dev->child->procs.create_compositor) {
                 /* Some more unpleasantness here. If the child device is a clist, then it will use the first argument
                  * that we pass to access its own data (not unreasonably), so we need to make sure we pass in the
                  * child device. This has some follow on implications detailed below.
@@ -805,9 +802,15 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
                     return code;
                 }
             }
+#else
+            return default_subclass_create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+#endif
         }
-    } else
+    }
+#if 0
+    else
         gx_default_create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+#endif
 
     return 0;
 }
@@ -885,7 +888,7 @@ int flp_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_params_t 
     first_last_subclass_data *psubclass_data = dev->subclass_data;
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1 && (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1)) {
-        if (dev->child->procs.text_begin)
+        if (dev->child && dev->child->procs.text_begin)
             return dev->child->procs.text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
         else
             return gx_default_text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
@@ -913,7 +916,7 @@ int flp_begin_transparency_group(gx_device *dev, const gs_transparency_group_par
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.begin_transparency_group)
+            if (dev->child && dev->child->procs.begin_transparency_group)
                 return dev->child->procs.begin_transparency_group(dev->child, ptgp, pbbox, pis, mem);
         }
     }
@@ -927,7 +930,7 @@ int flp_end_transparency_group(gx_device *dev, gs_imager_state *pis)
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.end_transparency_group)
+            if (dev->child && dev->child->procs.end_transparency_group)
                 return dev->child->procs.end_transparency_group(dev->child, pis);
         }
     }
@@ -942,7 +945,7 @@ int flp_begin_transparency_mask(gx_device *dev, const gx_transparency_mask_param
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.begin_transparency_mask)
+            if (dev->child && dev->child->procs.begin_transparency_mask)
                 return dev->child->procs.begin_transparency_mask(dev->child, ptmp, pbbox, pis, mem);
         }
     }
@@ -956,7 +959,7 @@ int flp_end_transparency_mask(gx_device *dev, gs_imager_state *pis)
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.end_transparency_mask)
+            if (dev->child && dev->child->procs.end_transparency_mask)
                 return dev->child->procs.end_transparency_mask(dev->child, pis);
         }
     }
@@ -969,7 +972,7 @@ int flp_discard_transparency_layer(gx_device *dev, gs_imager_state *pis)
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.discard_transparency_layer)
+            if (dev->child && dev->child->procs.discard_transparency_layer)
                 return dev->child->procs.discard_transparency_layer(dev->child, pis);
         }
     }
@@ -984,7 +987,7 @@ int flp_pattern_manage(gx_device *dev, gx_bitmap_id id,
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.pattern_manage)
+            if (dev->child && dev->child->procs.pattern_manage)
                 return dev->child->procs.pattern_manage(dev->child, id, pinst, function);
         }
     }
@@ -999,7 +1002,7 @@ int flp_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.fill_rectangle_hl_color)
+            if (dev->child && dev->child->procs.fill_rectangle_hl_color)
                 return dev->child->procs.fill_rectangle_hl_color(dev->child, rect, pis, pdcolor, pcpath);
             else
                 return_error(gs_error_rangecheck);
@@ -1017,7 +1020,7 @@ int flp_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.fill_linear_color_scanline)
+            if (dev->child && dev->child->procs.fill_linear_color_scanline)
                 return dev->child->procs.fill_linear_color_scanline(dev->child, fa, i, j, w, c0, c0_f, cg_num, cg_den);
             else
                 return gx_default_fill_linear_color_scanline(dev->child, fa, i, j, w, c0, c0_f, cg_num, cg_den);
@@ -1037,7 +1040,7 @@ int flp_fill_linear_color_trapezoid(gx_device *dev, const gs_fill_attributes *fa
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.fill_linear_color_trapezoid)
+            if (dev->child && dev->child->procs.fill_linear_color_trapezoid)
                 return dev->child->procs.fill_linear_color_trapezoid(dev->child, fa, p0, p1, p2, p3, c0, c1, c2, c3);
             else
                 return gx_default_fill_linear_color_trapezoid(dev->child, fa, p0, p1, p2, p3, c0, c1, c2, c3);
@@ -1055,7 +1058,7 @@ int flp_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.fill_linear_color_triangle)
+            if (dev->child && dev->child->procs.fill_linear_color_triangle)
                 return dev->child->procs.fill_linear_color_triangle(dev->child, fa, p0, p1, p2, c0, c1, c2);
             else
                 return gx_default_fill_linear_color_triangle(dev->child, fa, p0, p1, p2, c0, c1, c2);
@@ -1071,7 +1074,7 @@ int flp_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.fillpage)
+            if (dev->child && dev->child->procs.fillpage)
                 return dev->child->procs.fillpage(dev->child, pis, pdevc);
             else
                 return gx_default_fillpage(dev->child, pis, pdevc);
@@ -1087,7 +1090,7 @@ int flp_push_transparency_state(gx_device *dev, gs_imager_state *pis)
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.push_transparency_state)
+            if (dev->child && dev->child->procs.push_transparency_state)
                 return dev->child->procs.push_transparency_state(dev->child, pis);
         }
     }
@@ -1101,7 +1104,7 @@ int flp_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.push_transparency_state)
+            if (dev->child && dev->child->procs.push_transparency_state)
                 return dev->child->procs.push_transparency_state(dev->child, pis);
         }
     }
@@ -1117,7 +1120,7 @@ int flp_put_image(gx_device *dev, const byte *buffer, int num_chan, int x, int y
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.put_image)
+            if (dev->child && dev->child->procs.put_image)
                 return dev->child->procs.put_image(dev->child, buffer, num_chan, x, y, width, height, row_stride, plane_stride, alpha_plane_index, tag_plane_index);
         }
     }
@@ -1132,7 +1135,7 @@ int flp_copy_planes(gx_device *dev, const byte *data, int data_x, int raster, gx
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.copy_planes)
+            if (dev->child && dev->child->procs.copy_planes)
                 return dev->child->procs.copy_planes(dev->child, data, data_x, raster, id, x, y, width, height, plane_height);
         }
     }
@@ -1146,7 +1149,7 @@ void flp_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t tag)
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.set_graphics_type_tag)
+            if (dev->child && dev->child->procs.set_graphics_type_tag)
                 dev->child->procs.set_graphics_type_tag(dev->child, tag);
         }
     }
@@ -1162,7 +1165,7 @@ int flp_strip_copy_rop2(gx_device *dev, const byte *sdata, int sourcex, uint sra
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.strip_copy_rop2)
+            if (dev->child && dev->child->procs.strip_copy_rop2)
                 return dev->child->procs.strip_copy_rop2(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
             else
                 return gx_default_strip_copy_rop2(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
@@ -1179,7 +1182,7 @@ int flp_strip_tile_rect_devn(gx_device *dev, const gx_strip_bitmap *tiles, int x
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.strip_tile_rect_devn)
+            if (dev->child && dev->child->procs.strip_tile_rect_devn)
                 return dev->child->procs.strip_tile_rect_devn(dev->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
             else
                 return gx_default_strip_tile_rect_devn(dev->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
@@ -1197,7 +1200,7 @@ int flp_copy_alpha_hl_color(gx_device *dev, const byte *data, int data_x,
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.copy_alpha_hl_color)
+            if (dev->child && dev->child->procs.copy_alpha_hl_color)
                 return dev->child->procs.copy_alpha_hl_color(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth);
             else
                 return_error(gs_error_rangecheck);
@@ -1213,7 +1216,7 @@ int flp_process_page(gx_device *dev, gx_process_page_options_t *options)
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-            if (dev->child->procs.process_page)
+            if (dev->child && dev->child->procs.process_page)
                 return dev->child->procs.process_page(dev->child, options);
         }
     }

@@ -23,29 +23,8 @@
 #include "gxdevice.h"
 #endif
 
-/* we don't seem to have any existing macros which allow us to set a finalize method in a device
- * so ths is a copy of the existing std_device_dci_body macro, altered to use a modified
- * std_device_part1_ macro which additionally sets the finalize method. All of these
- * other macros are defined in gxdevice.h.
- * Possibly what this really means is that there *are* no devices with finalize methods,
- * but it is possible, so we can't take the chance.
- */
-#define subclass_device_part1_(devtype, ptr_procs, dev_name, finalize, stype, open_init)\
-        sizeof(devtype), ptr_procs, dev_name,\
-        0 /*memory*/, stype, 0 /*stype_is_dynamic*/, finalize /*finalize*/,\
-        { 0 } /*rc*/, 0 /*retained*/, 0 /* parent */, 0 /* child */, 0 /* subclass_data */, open_init() /*is_open, max_fill_band*/
-        /* color_info goes here */
-
-#define subclass_std_device_dci_body(dtype, pprocs, dname, finalize, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc)\
-        subclass_device_part1_(dtype, pprocs, dname, finalize, stype, open_init_closed),\
-        dci_alpha_values(ncomp, depth, mg, mc, dg, dc, 1, 1),\
-        std_device_part2_(w, h, xdpi, ydpi),\
-        offset_margin_values(0, 0, 0, 0, 0, 0),\
-        std_device_part3_()
-
 typedef struct {
     subclass_common;
-    unsigned int private_data_size;
 } default_subclass_subclass_data;
 
 typedef struct default_subclass_text_enum_s {
@@ -57,8 +36,7 @@ typedef struct default_subclass_text_enum_s {
     "default_subclass_text_enum_t", default_subclass_text_enum_enum_ptrs, default_subclass_text_enum_reloc_ptrs,\
     st_gs_text_enum)
 
-/* Device procedures, we need to implement all of them */
-void default_subclass_finalize(gx_device *dev);
+/* Device procedures, we need to prototype all of them */
 dev_proc_open_device(default_subclass_open_device);
 dev_proc_get_initial_matrix(default_subclass_get_initial_matrix);
 dev_proc_sync_output(default_subclass_sync_output);

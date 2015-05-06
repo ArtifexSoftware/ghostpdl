@@ -40,20 +40,11 @@ extern gx_device_obj_filter  gs_obj_filter_device;
 /* GC information */
 static
 ENUM_PTRS_WITH(device_printer_enum_ptrs, gx_device_printer *pdev);
-    if (pdev->child) {
-        vptr = (gx_device_printer *)(pdev->child);
-    if (PRINTER_IS_CLIST((gx_device_printer *)(pdev->child)))
-        ENUM_PREFIX(st_device_clist, 2);
-    else
-        ENUM_PREFIX(st_device_forward, 2);
-    break;
-    } else {
     if (PRINTER_IS_CLIST(pdev))
         ENUM_PREFIX(st_device_clist, 2);
     else
         ENUM_PREFIX(st_device_forward, 2);
     break;
-    }
 case 0:ENUM_RETURN(gx_device_enum_ptr(pdev->parent));
 case 1:ENUM_RETURN(gx_device_enum_ptr(pdev->child));
 ENUM_PTRS_END
@@ -62,18 +53,10 @@ RELOC_PTRS_WITH(device_printer_reloc_ptrs, gx_device_printer *pdev)
 {
     pdev->parent = gx_device_reloc_ptr(pdev->parent, gcst);
     pdev->child = gx_device_reloc_ptr(pdev->child, gcst);
-    if (pdev->child) {
-        vptr = (gx_device_printer *)(pdev->child);
-    if (PRINTER_IS_CLIST((gx_device_printer *)pdev->child))
-        RELOC_PREFIX(st_device_clist);
-    else
-        RELOC_PREFIX(st_device_forward);
-    } else {
     if (PRINTER_IS_CLIST(pdev))
         RELOC_PREFIX(st_device_clist);
     else
         RELOC_PREFIX(st_device_forward);
-    }
 } RELOC_PTRS_END
 public_st_device_printer();
 
