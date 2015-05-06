@@ -369,7 +369,7 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
 #ifdef FORCE_TESTING_SUBCLASSING
     if (!vdev->ObjectHandlerPushed) {
 #else
-    if (!pdev->ObjectHandlerPushed && (pdev->ObjectFilter != 0)) {
+    if (!vdev->ObjectHandlerPushed && (vdev->ObjectFilter != 0)) {
 #endif
         gx_device *pdev;
 
