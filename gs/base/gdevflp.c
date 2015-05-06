@@ -751,7 +751,7 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-#if 0
+#if 1
             if (dev->child && dev->child->procs.create_compositor) {
                 /* Some more unpleasantness here. If the child device is a clist, then it will use the first argument
                  * that we pass to access its own data (not unreasonably), so we need to make sure we pass in the

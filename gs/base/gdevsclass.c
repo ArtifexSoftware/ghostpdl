@@ -513,7 +513,7 @@ int default_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const 
                 rc_decrement_only(dev->child, "first-last page compositor code");
                 rc_increment(dev);
             }
-            return code;
+            return gs_error_handled;
         }
         else {
             /* See the 2 comments above. Now, if the child did not create a new compositor (eg its a clist)
