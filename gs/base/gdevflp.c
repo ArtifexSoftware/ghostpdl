@@ -807,7 +807,7 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
 #endif
         }
     }
-#if 0
+#if 1
     else
         gx_default_create_compositor(dev, pcdev, pcte, pis, memory, cdev);
 #endif
