@@ -486,6 +486,9 @@ int default_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const 
          * child device. This has some follow on implications detailed below.
          */
         code = dev->child->procs.create_compositor(dev->child, pcdev, pcte, pis, memory, cdev);
+        if (code < 0)
+            return code;
+
         if (*pcdev != dev->child){
             /* If the child created a new compositor, which it wants to be the new 'device' in the
              * graphics state, it sets it in the returned pcdev variable. When we return from this

@@ -751,66 +751,9 @@ int flp_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_
 
     if (psubclass_data->PageCount >= dev->FirstPage - 1) {
         if (!dev->LastPage || psubclass_data->PageCount <= dev->LastPage - 1) {
-#if 1
-            if (dev->child && dev->child->procs.create_compositor) {
-                /* Some more unpleasantness here. If the child device is a clist, then it will use the first argument
-                 * that we pass to access its own data (not unreasonably), so we need to make sure we pass in the
-                 * child device. This has some follow on implications detailed below.
-                 */
-                code = dev->child->procs.create_compositor(dev->child, pcdev, pcte, pis, memory, cdev);
-                if (code < 0)
-                    return code;
-
-                if (*pcdev != dev->child){
-                    /* If the child created a new compositor, which it wants to be the new 'device' in the
-                     * graphics state, it sets it in the returned pcdev variable. When we return from this
-                     * method, if pcdev is not the same as the device in the graphics state then the interpreter
-                     * sets pcdev as the new device in the graphics state. But because we passed in the child device
-                     * to the child method, if it did create a compositor it will be a forwarding device, and it will
-                     * be forwarding to our child, we need it to point to us instead. So if pcdev is not the same as the
-                     * child device, we fixup the target in the child device to point to us.
-                     */
-                    gx_device_forward *fdev = (gx_device_forward *)*pcdev;
-
-                    if (fdev->target == dev->child) {
-                        if (gs_is_pdf14trans_compositor(pcte) != 0 && strncmp(fdev->dname, "pdf14clist", 10) == 0) {
-                            pdf14_clist_device *p14dev;
-
-                            p14dev = (pdf14_clist_device *)*pcdev;
-
-                            dev->color_info = dev->child->color_info;
-
-                            psubclass_data->saved_compositor_method = p14dev->procs.create_compositor;
-                            p14dev->procs.create_compositor = gx_subclass_create_compositor;
-                        }
-
-                        fdev->target = dev;
-                        rc_decrement_only(dev->child, "first-last page compositor code");
-                        rc_increment(dev);
-                    }
-                    return gs_error_handled;
-                }
-                else {
-                    /* See the 2 comments above. Now, if the child did not create a new compositor (eg its a clist)
-                     * then it returns pcdev pointing to the passed in device (the child in our case). Now this is a
-                     * problem, if we return with pcdev == child->dev, and teh current device is 'dev' then the
-                     * compositor code will think we wanted to push a new device and will select the child device.
-                     * so here if pcdev == dev->child we change it to be our own device, so that the calling code
-                     * won't redirect the device in the graphics state.
-                     */
-                    *pcdev = dev;
-                    return code;
-                }
-            }
-#else
             return default_subclass_create_compositor(dev, pcdev, pcte, pis, memory, cdev);
-#endif
         }
     }
-#if 1
-    else
-        gx_default_create_compositor(dev, pcdev, pcte, pis, memory, cdev);
-#endif
 
     return 0;
 }
