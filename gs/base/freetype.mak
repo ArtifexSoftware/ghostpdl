@@ -49,7 +49,10 @@ ft_autofit=\
 	$(FTOBJ)aflatin.$(OBJ) \
 	$(FTOBJ)afloader.$(OBJ) \
 	$(FTOBJ)afmodule.$(OBJ) \
-	$(FTOBJ)afwarp.$(OBJ)
+	$(FTOBJ)afwarp.$(OBJ) \
+	$(FTOBJ)afblue.$(OBJ) \
+	$(FTOBJ)afranges.$(OBJ) \
+	$(FTOBJ)hbshim.$(OBJ)
 
 ft_base=\
 	$(FTOBJ)ftadvanc.$(OBJ) \
@@ -81,7 +84,9 @@ ft_base=\
 	$(FTOBJ)fttype1.$(OBJ) \
 	$(FTOBJ)ftwinfnt.$(OBJ) \
 	$(FTOBJ)ftxf86.$(OBJ) \
-	$(FTOBJ)ftpatent.$(OBJ)
+	$(FTOBJ)ftpatent.$(OBJ) \
+	$(FTOBJ)ftmd5.$(OBJ)
+
 
 ft_bdf=\
 	$(FTOBJ)bdflib.$(OBJ) \
@@ -103,7 +108,16 @@ ft_cff=\
 	$(FTOBJ)cffgload.$(OBJ) \
 	$(FTOBJ)cffparse.$(OBJ) \
 	$(FTOBJ)cffcmap.$(OBJ) \
-	$(FTOBJ)cffdrivr.$(OBJ)
+	$(FTOBJ)cffdrivr.$(OBJ) \
+	$(FTOBJ)cf2arrst.$(OBJ) \
+	$(FTOBJ)cf2blues.$(OBJ) \
+	$(FTOBJ)cf2error.$(OBJ) \
+	$(FTOBJ)cf2font.$(OBJ) \
+	$(FTOBJ)cf2ft.$(OBJ) \
+	$(FTOBJ)cf2hints.$(OBJ) \
+	$(FTOBJ)cf2intrp.$(OBJ) \
+	$(FTOBJ)cf2read.$(OBJ) \
+	$(FTOBJ)cf2stack.$(OBJ)
 
 ft_cid=\
 	$(FTOBJ)cidparse.$(OBJ) \
@@ -167,7 +181,9 @@ ft_sfnt=\
 	$(FTOBJ)ttsbit.$(OBJ) \
 	$(FTOBJ)ttkern.$(OBJ) \
 	$(FTOBJ)ttbdf.$(OBJ) \
-	$(FTOBJ)sfntpic.$(OBJ)
+	$(FTOBJ)sfntpic.$(OBJ) \
+	$(FTOBJ)pngshim.$(OBJ)
+
 
 ft_truetype=\
 	$(FTOBJ)ttdriver.$(OBJ) \
@@ -176,7 +192,8 @@ ft_truetype=\
 	$(FTOBJ)ttgload.$(OBJ) \
 	$(FTOBJ)ft2ttinterp.$(OBJ) \
 	$(FTOBJ)ttgxvar.$(OBJ) \
-	$(FTOBJ)ttpic.$(OBJ)
+	$(FTOBJ)ttpic.$(OBJ) \
+	$(FTOBJ)ttsubpix.$(OBJ)
 
 ft_type1=\
 	$(FTOBJ)t1afm.$(OBJ) \
@@ -261,6 +278,14 @@ $(FTOBJ)afmodule.$(OBJ) : $(FTSRC)autofit$(D)afmodule.c $(MAKEDIRS)
 $(FTOBJ)afwarp.$(OBJ) : $(FTSRC)autofit$(D)afwarp.c $(MAKEDIRS)
 	$(FTCC) $(FTO_)afwarp.$(OBJ) $(C_) $(FTSRC)autofit$(D)afwarp.c
 
+$(FTOBJ)afblue.$(OBJ) : $(FTSRC)autofit$(D)afblue.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)afblue.$(OBJ) $(C_) $(FTSRC)autofit$(D)afblue.c
+
+$(FTOBJ)afranges.$(OBJ) : $(FTSRC)autofit$(D)afranges.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)afranges.$(OBJ) $(C_) $(FTSRC)autofit$(D)afranges.c
+
+$(FTOBJ)hbshim.$(OBJ) : $(FTSRC)autofit$(D)hbshim.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)hbshim.$(OBJ) $(C_) $(FTSRC)autofit$(D)hbshim.c
 
 $(FTOBJ)ftadvanc.$(OBJ) : $(FTSRC)base$(D)ftadvanc.c $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftadvanc.$(OBJ) $(C_) $(FTSRC)base$(D)ftadvanc.c
@@ -352,6 +377,9 @@ $(FTOBJ)ftxf86.$(OBJ) : $(FTSRC)base$(D)ftxf86.c $(MAKEDIRS)
 $(FTOBJ)ftpatent.$(OBJ) : $(FTSRC)base$(D)ftpatent.c $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftpatent.$(OBJ) $(C_) $(FTSRC)base$(D)ftpatent.c
 
+$(FTOBJ)ftmd5.$(OBJ) : $(FTSRC)base$(D)md5.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)ftmd5.$(OBJ) $(C_) $(FTSRC)base$(D)md5.c
+
 $(FTOBJ)bdflib.$(OBJ) : $(FTSRC)bdf$(D)bdflib.c $(MAKEDIRS)
 	$(FTCC) $(FTO_)bdflib.$(OBJ) $(C_) $(FTSRC)bdf$(D)bdflib.c
 
@@ -399,6 +427,33 @@ $(FTOBJ)cffcmap.$(OBJ) : $(FTSRC)cff$(D)cffcmap.c $(MAKEDIRS)
 
 $(FTOBJ)cffdrivr.$(OBJ) : $(FTSRC)cff$(D)cffdrivr.c $(MAKEDIRS)
 	$(FTCC) $(FTO_)cffdrivr.$(OBJ) $(C_) $(FTSRC)cff$(D)cffdrivr.c
+
+$(FTOBJ)cf2arrst.$(OBJ) : $(FTSRC)cff$(D)cf2arrst.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)cf2arrst.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2arrst.c
+
+$(FTOBJ)cf2blues.$(OBJ) : $(FTSRC)cff$(D)cf2blues.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)cf2blues.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2blues.c
+
+$(FTOBJ)cf2error.$(OBJ) : $(FTSRC)cff$(D)cf2error.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)cf2error.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2error.c
+
+$(FTOBJ)cf2font.$(OBJ) : $(FTSRC)cff$(D)cf2font.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)cf2font.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2font.c
+
+$(FTOBJ)cf2ft.$(OBJ) : $(FTSRC)cff$(D)cf2ft.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)cf2ft.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2ft.c
+
+$(FTOBJ)cf2hints.$(OBJ) : $(FTSRC)cff$(D)cf2hints.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)cf2hints.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2hints.c
+
+$(FTOBJ)cf2intrp.$(OBJ) : $(FTSRC)cff$(D)cf2intrp.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)cf2intrp.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2intrp.c
+
+$(FTOBJ)cf2read.$(OBJ) : $(FTSRC)cff$(D)cf2read.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)cf2read.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2read.c
+
+$(FTOBJ)cf2stack.$(OBJ) : $(FTSRC)cff$(D)cf2stack.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)cf2stack.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2stack.c
 
 $(FTOBJ)cidparse.$(OBJ) : $(FTSRC)cid$(D)cidparse.c $(MAKEDIRS)
 	$(FTCC) $(FTO_)cidparse.$(OBJ) $(C_) $(FTSRC)cid$(D)cidparse.c
@@ -532,6 +587,9 @@ $(FTOBJ)ttbdf.$(OBJ) : $(FTSRC)sfnt$(D)ttbdf.c $(MAKEDIRS)
 $(FTOBJ)sfntpic.$(OBJ) : $(FTSRC)sfnt$(D)sfntpic.c $(MAKEDIRS)
 	$(FTCC) $(FTO_)sfntpic.$(OBJ) $(C_) $(FTSRC)sfnt$(D)sfntpic.c
 
+$(FTOBJ)pngshim.$(OBJ) : $(FTSRC)sfnt$(D)pngshim.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)pngshim.$(OBJ) $(C_) $(FTSRC)sfnt$(D)pngshim.c
+
 $(FTOBJ)ttdriver.$(OBJ) : $(FTSRC)truetype$(D)ttdriver.c $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttdriver.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttdriver.c
 
@@ -552,6 +610,9 @@ $(FTOBJ)ttgxvar.$(OBJ) : $(FTSRC)truetype$(D)ttgxvar.c $(MAKEDIRS)
 
 $(FTOBJ)ttpic.$(OBJ) : $(FTSRC)truetype$(D)ttpic.c $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttpic.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttpic.c
+
+$(FTOBJ)ttsubpix.$(OBJ) : $(FTSRC)truetype$(D)ttsubpix.c $(MAKEDIRS)
+	$(FTCC) $(FTO_)ttsubpix.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttsubpix.c
 
 $(FTOBJ)t1afm.$(OBJ) : $(FTSRC)type1$(D)t1afm.c $(MAKEDIRS)
 	$(FTCC) $(FTO_)t1afm.$(OBJ) $(C_) $(FTSRC)type1$(D)t1afm.c
