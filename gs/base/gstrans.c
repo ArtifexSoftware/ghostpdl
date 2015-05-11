@@ -255,8 +255,10 @@ gs_begin_transparency_group(gs_state *pgs,
        target device (process color model).  Here we just want
        to set it as a unknown type for clist writing, as we will take care
        of using the parent group color space later during clist reading.
+       Also, if the group was not isolated we MUST use the parent group 
+       color space regardless of what the group color space is specified to be
        */
-    if (ptgp->ColorSpace == NULL) {
+    if (ptgp->ColorSpace == NULL || params.Isolated != true) {
         params.group_color = UNKNOWN;
         params.group_color_numcomps = 0;
     } else {
