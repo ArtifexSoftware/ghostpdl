@@ -33,7 +33,7 @@ FTO_=$(O_)$(FTOBJ)
 # we must define FT2_BUILD_LIBRARY to get internal declarations
 # If GS is using the system zlib, freetype should also do so,
 # FT_CONFIG_SYSTEM_ZLIB is set by the top makefile.
-FTCC=$(CC_) $(I_)$(FTSRCDIR)$(D)include$(_I) $(D_)FT2_BUILD_LIBRARY$(_D) $(D_)DARWIN_NO_CARBON$(_D) $(D_)CFF_CONFIG_OPTION_OLD_ENGINE$(_D) $(FT_CONFIG_SYSTEM_ZLIB)
+FTCC=$(CC_) $(I_)$(FTSRCDIR)$(D)include$(_I) $(D_)FT2_BUILD_LIBRARY$(_D) $(D_)DARWIN_NO_CARBON$(_D) $(FT_CONFIG_SYSTEM_ZLIB)
 
 # Define the name of this makefile.
 FT_MAK=$(GLSRC)freetype.mak
