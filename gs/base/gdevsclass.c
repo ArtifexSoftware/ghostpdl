@@ -564,10 +564,6 @@ int default_subclass_get_hardware_params(gx_device *dev, gs_param_list *plist)
     return 0;
 }
 
-/* The device method which we do actually need to define. Either we are skipping the page,
- * in which case we create a text enumerator with our dummy procedures, or we are leaving it
- * up to the device, in which case we simply pass on the 'begin' method to the device.
- */
 int default_subclass_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_params_t *text,
     gs_font *font, gx_path *path, const gx_device_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gs_text_enum_t **ppte)
