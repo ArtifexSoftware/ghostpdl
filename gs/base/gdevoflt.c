@@ -80,9 +80,6 @@ static dev_proc_strip_tile_rect_devn(obj_filter_strip_tile_rect_devn);
 static dev_proc_copy_alpha_hl_color(obj_filter_copy_alpha_hl_color);
 static dev_proc_process_page(obj_filter_process_page);
 
-static void
-obj_filter_finalize(gx_device *dev);
-
 /* The device prototype */
 #define MAX_COORD (max_int_in_fixed - 1000)
 #define MAX_RESOLUTION 4000
@@ -474,6 +471,7 @@ static ENUM_PTRS_WITH(obj_filter_image_enum_enum_ptrs, obj_filter_image_enum *pi
 ENUM_PTRS_END
 static RELOC_PTRS_WITH(obj_filter_image_enum_reloc_ptrs, obj_filter_image_enum *pie)
 {
+    RELOC_USING(st_gx_image_enum_common, vptr, size);
 }
 RELOC_PTRS_END
 
@@ -621,7 +619,6 @@ int obj_filter_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_pa
 {
     obj_filter_text_enum_t *penum;
     int code = 0;
-    gs_state * pgs = (gs_state *)pis;
 
     /* We don't want to simply ignore stringwidth for 2 reasons;
      * firstly because following elelments may be positioned based on the value returned
