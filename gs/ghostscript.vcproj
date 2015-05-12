@@ -1011,7 +1011,7 @@
 					>
 				</File>
 				<File
-					RelativePath="base\md5.c"
+					RelativePath="base\gsmd5.c"
 					>
 				</File>
 				<File
@@ -4779,7 +4779,7 @@
 					>
 				</File>
 				<File
-					RelativePath=".\base\md5.h"
+					RelativePath=".\base\gsmd5.h"
 					>
 				</File>
 				<File

@@ -344,16 +344,16 @@ $(GLOBJ)gssprintf.$(OBJ) :  $(GLOBJ)gssprintf_$(SHARE_TRIO).$(OBJ)
 	$(CP_) $(GLOBJ)gssprintf_$(SHARE_TRIO).$(OBJ) $(GLOBJ)gssprintf.$(OBJ)
 
 # MD5 digest
-md5_h=$(GLSRC)md5.h
+gsmd5_h=$(GLSRC)gsmd5.h
 # We have to use a slightly different compilation approach in order to
 # get std.h included when compiling md5.c.
-md5_=$(GLOBJ)md5.$(OBJ)
-$(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(md5_h) $(std_h) $(EXP)$(ECHOGS_XE) $(MAKEDIRS)
-	$(EXP)$(ECHOGS_XE) -w $(GLGEN)md5.h -x 23 include -x 2022 memory_.h -x 22
-	$(EXP)$(ECHOGS_XE) -a $(GLGEN)md5.h -+R $(GLSRC)md5.h
-	$(CP_) $(GLSRC)md5.c $(GLGEN)md5.c
-	$(GLCC) $(GLO_)md5.$(OBJ) $(C_) $(GLGEN)md5.c
-	$(RM_) $(GLGEN)md5.c $(GLGEN)md5.h
+md5_=$(GLOBJ)gsmd5.$(OBJ)
+$(GLOBJ)gsmd5.$(OBJ) : $(GLSRC)gsmd5.c $(AK) $(gsmd5_h) $(std_h) $(EXP)$(ECHOGS_XE) $(MAKEDIRS)
+	$(EXP)$(ECHOGS_XE) -w $(GLGEN)gsmd5.h -x 23 include -x 2022 memory_.h -x 22
+	$(EXP)$(ECHOGS_XE) -a $(GLGEN)gsmd5.h -+R $(GLSRC)gsmd5.h
+	$(CP_) $(GLSRC)gsmd5.c $(GLGEN)gsmd5.c
+	$(GLCC) $(GLO_)gsmd5.$(OBJ) $(C_) $(GLGEN)gsmd5.c
+	$(RM_) $(GLGEN)gsmd5.c $(GLGEN)gsmd5.h
 
 # SHA-256 digest
 sha2_h=$(GLSRC)sha2.h $(std_h) $(stdint__h)
@@ -568,7 +568,7 @@ shc_h=$(GLSRC)shc.h $(gsbittab_h) $(scommon_h)
 sisparam_h=$(GLSRC)sisparam.h
 sjpeg_h=$(GLSRC)sjpeg.h
 slzwx_h=$(GLSRC)slzwx.h
-smd5_h=$(GLSRC)smd5.h $(md5_h)
+smd5_h=$(GLSRC)smd5.h $(gsmd5_h)
 sarc4_h=$(GLSRC)sarc4.h $(scommon_h)
 saes_h=$(GLSRC)saes.h $(scommon_h) $(aes_h)
 sjbig2_h=$(GLSRC)sjbig2.h $(stdint__h) $(scommon_h)

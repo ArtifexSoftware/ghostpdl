@@ -22,7 +22,7 @@
 #include <stdlib.h> /* should use gs_malloc() instead */
 #include "gconfigd.h"
 #include "gp.h"
-#include "md5.h"
+#include "gsmd5.h"
 
 /* ------ Persistent data cache types ------*/
 

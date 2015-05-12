@@ -600,7 +600,7 @@
     <ClCompile Include="base\gxttfb.c" />
     <ClCompile Include="base\gxtype1.c" />
     <ClCompile Include="base\gzspotan.c" />
-    <ClCompile Include="base\md5.c" />
+    <ClCompile Include="base\gsmd5.c" />
     <ClCompile Include="base\md5main.c" />
     <ClCompile Include="base\memento.c" />
     <ClCompile Include="base\minftrsz.c" />
@@ -1960,7 +1960,7 @@
     <ClInclude Include="base\macsystypes.h" />
     <ClInclude Include="base\malloc_.h" />
     <ClInclude Include="base\math_.h" />
-    <ClInclude Include="base\md5.h" />
+    <ClInclude Include="base\gsmd5.h" />
     <ClInclude Include="base\memento.h" />
     <ClInclude Include="base\memory_.h" />
     <ClInclude Include="base\pipe_.h" />

@@ -46,7 +46,7 @@ $(AUX)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
 	$(GLCCAUX) $(FONTCONFIG_CFLAGS) $(AUXO_)gp_unix.$(OBJ) $(C_) $(GLSRC)gp_unix.c
 
 $(GLOBJ)gp_unix_cache.$(OBJ): $(GLSRC)gp_unix_cache.c $(AK)\
- $(stdio__h) $(string__h) $(time__h) $(gconfigd_h) $(gp_h) $(md5_h)\
+ $(stdio__h) $(string__h) $(time__h) $(gconfigd_h) $(gp_h) $(gsmd5_h)\
  $(MAKEDIRS)
 	$(GLCC) $(GLO_)gp_unix_cache.$(OBJ) $(C_) $(GLSRC)gp_unix_cache.c
 

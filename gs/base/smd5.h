@@ -20,7 +20,7 @@
 #ifndef smd5_INCLUDED
 #  define smd5_INCLUDED
 
-#include "md5.h"
+#include "gsmd5.h"
 
 /*
  * The MD5Encode filter accepts an arbitrary amount of input data, and then,
