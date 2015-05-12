@@ -44,13 +44,7 @@ private_st_obj_filter_text_enum();
 /* Device procedures, we need to implement all of them */
 static dev_proc_fill_rectangle(obj_filter_fill_rectangle);
 static dev_proc_tile_rectangle(obj_filter_tile_rectangle);
-static dev_proc_copy_mono(obj_filter_copy_mono);
-static dev_proc_copy_color(obj_filter_copy_color);
 static dev_proc_draw_line(obj_filter_draw_line);
-static dev_proc_get_bits(obj_filter_get_bits);
-static dev_proc_get_alpha_bits(obj_filter_get_alpha_bits);
-static dev_proc_copy_alpha(obj_filter_copy_alpha);
-static dev_proc_copy_rop(obj_filter_copy_rop);
 static dev_proc_fill_path(obj_filter_fill_path);
 static dev_proc_stroke_path(obj_filter_stroke_path);
 static dev_proc_fill_mask(obj_filter_fill_mask);
@@ -64,21 +58,14 @@ static dev_proc_end_image(obj_filter_end_image);
 static dev_proc_strip_tile_rectangle(obj_filter_strip_tile_rectangle);
 static dev_proc_strip_copy_rop(obj_filter_strip_copy_rop);
 static dev_proc_begin_typed_image(obj_filter_begin_typed_image);
-static dev_proc_get_bits_rectangle(obj_filter_get_bits_rectangle);
 static dev_proc_text_begin(obj_filter_text_begin);
-static dev_proc_pattern_manage(obj_filter_pattern_manage);
 static dev_proc_fill_rectangle_hl_color(obj_filter_fill_rectangle_hl_color);
 static dev_proc_fill_linear_color_scanline(obj_filter_fill_linear_color_scanline);
 static dev_proc_fill_linear_color_trapezoid(obj_filter_fill_linear_color_trapezoid);
 static dev_proc_fill_linear_color_triangle(obj_filter_fill_linear_color_triangle);
-static dev_proc_fillpage(obj_filter_fillpage);
 static dev_proc_put_image(obj_filter_put_image);
-static dev_proc_copy_planes(obj_filter_copy_planes);
-static dev_proc_set_graphics_type_tag(obj_filter_set_graphics_type_tag);
 static dev_proc_strip_copy_rop2(obj_filter_strip_copy_rop2);
 static dev_proc_strip_tile_rect_devn(obj_filter_strip_tile_rect_devn);
-static dev_proc_copy_alpha_hl_color(obj_filter_copy_alpha_hl_color);
-static dev_proc_process_page(obj_filter_process_page);
 
 /* The device prototype */
 #define MAX_COORD (max_int_in_fixed - 1000)
@@ -122,10 +109,10 @@ gx_device_obj_filter gs_obj_filter_device =
      default_subclass_map_color_rgb,
      obj_filter_fill_rectangle,
      obj_filter_tile_rectangle,			/* tile_rectangle */
-     obj_filter_copy_mono,
-     obj_filter_copy_color,
+     default_subclass_copy_mono,
+     default_subclass_copy_color,
      obj_filter_draw_line,			/* draw_line */
-     obj_filter_get_bits,			/* get_bits */
+     default_subclass_get_bits,			/* get_bits */
      default_subclass_get_params,
      default_subclass_put_params,
      default_subclass_map_cmyk_color,
@@ -133,10 +120,10 @@ gx_device_obj_filter gs_obj_filter_device =
      default_subclass_get_xfont_device,			/* get_xfont_device */
      default_subclass_map_rgb_alpha_color,
      default_subclass_get_page_device,
-     obj_filter_get_alpha_bits,			/* get_alpha_bits */
-     obj_filter_copy_alpha,
+     default_subclass_get_alpha_bits,			/* get_alpha_bits */
+     default_subclass_copy_alpha,
      default_subclass_get_band,			/* get_band */
-     obj_filter_copy_rop,			/* copy_rop */
+     default_subclass_copy_rop,			/* copy_rop */
      obj_filter_fill_path,
      obj_filter_stroke_path,
      obj_filter_fill_mask,
@@ -151,7 +138,7 @@ gx_device_obj_filter gs_obj_filter_device =
      obj_filter_strip_copy_rop,
      default_subclass_get_clipping_box,			/* get_clipping_box */
      obj_filter_begin_typed_image,
-     obj_filter_get_bits_rectangle,			/* get_bits_rectangle */
+     default_subclass_get_bits_rectangle,			/* get_bits_rectangle */
      default_subclass_map_color_rgb_alpha,
      default_subclass_create_compositor,
      default_subclass_get_hardware_params,			/* get_hardware_params */
@@ -166,7 +153,7 @@ gx_device_obj_filter gs_obj_filter_device =
      default_subclass_get_color_comp_index,			/* get_color_comp_index */
      default_subclass_encode_color,			/* encode_color */
      default_subclass_decode_color,			/* decode_color */
-     obj_filter_pattern_manage,			/* pattern_manage */
+     default_subclass_pattern_manage,			/* pattern_manage */
      obj_filter_fill_rectangle_hl_color,			/* fill_rectangle_hl_color */
      default_subclass_include_color_space,			/* include_color_space */
      obj_filter_fill_linear_color_scanline,			/* fill_linear_color_scanline */
@@ -174,18 +161,18 @@ gx_device_obj_filter gs_obj_filter_device =
      obj_filter_fill_linear_color_triangle,			/* fill_linear_color_triangle */
      default_subclass_update_spot_equivalent_colors,			/* update_spot_equivalent_colors */
      default_subclass_ret_devn_params,			/* ret_devn_params */
-     obj_filter_fillpage,		/* fillpage */
+     default_subclass_fillpage,		/* fillpage */
      default_subclass_push_transparency_state,                      /* push_transparency_state */
      default_subclass_pop_transparency_state,                      /* pop_transparency_state */
      obj_filter_put_image,                      /* put_image */
      default_subclass_dev_spec_op,                      /* dev_spec_op */
-     obj_filter_copy_planes,                      /* copy_planes */
+     default_subclass_copy_planes,                      /* copy_planes */
      default_subclass_get_profile,                      /* get_profile */
-     obj_filter_set_graphics_type_tag,                      /* set_graphics_type_tag */
+     default_subclass_set_graphics_type_tag,                      /* set_graphics_type_tag */
      obj_filter_strip_copy_rop2,
      obj_filter_strip_tile_rect_devn,
-     obj_filter_copy_alpha_hl_color,
-     obj_filter_process_page
+     default_subclass_copy_alpha_hl_color,
+     default_subclass_process_page
     }
 };
 
@@ -194,10 +181,8 @@ gx_device_obj_filter gs_obj_filter_device =
 
 int obj_filter_fill_rectangle(gx_device *dev, int x, int y, int width, int height, gx_color_index color)
 {
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0) {
-        if (dev->child && dev->child->procs.fill_rectangle)
-            return dev->child->procs.fill_rectangle(dev->child, x, y, width, height, color);
-    }
+    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
+        return default_subclass_fill_rectangle(dev, x, y, width, height, color);
     return 0;
 }
 
@@ -205,77 +190,15 @@ int obj_filter_tile_rectangle(gx_device *dev, const gx_tile_bitmap *tile, int x,
     gx_color_index color0, gx_color_index color1,
     int phase_x, int phase_y)
 {
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0) {
-        if (dev->child && dev->child->procs.tile_rectangle)
-            return dev->child->procs.tile_rectangle(dev->child, tile, x, y, width, height, color0, color1, phase_x, phase_y);
-    }
-    return 0;
-}
-
-int obj_filter_copy_mono(gx_device *dev, const byte *data, int data_x, int raster, gx_bitmap_id id,
-    int x, int y, int width, int height,
-    gx_color_index color0, gx_color_index color1)
-{
-    if (dev->child && dev->child->procs.copy_mono)
-        return dev->child->procs.copy_mono(dev->child, data, data_x, raster, id, x, y, width, height, color0, color1);
-    return 0;
-}
-
-int obj_filter_copy_color(gx_device *dev, const byte *data, int data_x, int raster, gx_bitmap_id id,\
-    int x, int y, int width, int height)
-{
-    if (dev->child && dev->child->procs.copy_color)
-        return dev->child->procs.copy_color(dev->child, data, data_x, raster, id, x, y, width, height);
+    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
+        return default_subclass_tile_rectangle(dev, tile, x, y, width, height, color0, color1, phase_x, phase_y);
     return 0;
 }
 
 int obj_filter_draw_line(gx_device *dev, int x0, int y0, int x1, int y1, gx_color_index color)
 {
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0) {
-        if (dev->child && dev->child->procs.obsolete_draw_line)
-            return dev->child->procs.obsolete_draw_line(dev->child, x0, y0, x1, y1, color);
-    }
-    return 0;
-}
-
-int obj_filter_get_bits(gx_device *dev, int y, byte *data, byte **actual_data)
-{
-    if (dev->child && dev->child->procs.get_bits)
-        return dev->child->procs.get_bits(dev->child, y, data, actual_data);
-    else
-        return gx_default_get_bits(dev, y, data, actual_data);
-    return 0;
-}
-
-int obj_filter_get_alpha_bits(gx_device *dev, graphics_object_type type)
-{
-    if (dev->child && dev->child->procs.get_alpha_bits)
-        return dev->child->procs.get_alpha_bits(dev->child, type);
-    return 0;
-}
-
-int obj_filter_copy_alpha(gx_device *dev, const byte *data, int data_x,
-    int raster, gx_bitmap_id id, int x, int y, int width, int height,
-    gx_color_index color, int depth)
-{
-    if (dev->child && dev->child->procs.copy_alpha)
-        return dev->child->procs.copy_alpha(dev->child, data, data_x, raster, id, x, y, width, height, color, depth);
-    return 0;
-}
-
-int obj_filter_copy_rop(gx_device *dev, const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,
-    const gx_color_index *scolors,
-    const gx_tile_bitmap *texture, const gx_color_index *tcolors,
-    int x, int y, int width, int height,
-    int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    if (dev->child) {
-        if (dev->child->procs.copy_rop)
-            return dev->child->procs.copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
-        else
-            return gx_default_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
-    } else
-        return gx_default_copy_rop(dev, sdata, sourcex, sraster, id, scolors, texture, tcolors, x, y, width, height, phase_x, phase_y, lop);
+    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
+        return default_subclass_draw_line(dev, x0, y0, x1, y1, color);
     return 0;
 }
 
@@ -283,15 +206,8 @@ int obj_filter_fill_path(gx_device *dev, const gs_imager_state *pis, gx_path *pp
     const gx_fill_params *params,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.fill_path)
-                return dev->child->procs.fill_path(dev->child, pis, ppath, params, pdcolor, pcpath);
-            else
-                return gx_default_fill_path(dev->child, pis, ppath, params, pdcolor, pcpath);
-        } else
-            return gx_default_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
-    }
+    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
+        return default_subclass_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
     return 0;
 }
 
@@ -299,15 +215,8 @@ int obj_filter_stroke_path(gx_device *dev, const gs_imager_state *pis, gx_path *
     const gx_stroke_params *params,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.stroke_path)
-                return dev->child->procs.stroke_path(dev->child, pis, ppath, params, pdcolor, pcpath);
-            else
-                return gx_default_stroke_path(dev->child, pis, ppath, params, pdcolor, pcpath);
-        } else
-            return gx_default_stroke_path(dev, pis, ppath, params, pdcolor, pcpath);
-    }
+    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
+        return default_subclass_stroke_path(dev, pis, ppath, params, pdcolor, pcpath);
     return 0;
 }
 
@@ -316,15 +225,8 @@ int obj_filter_fill_mask(gx_device *dev, const byte *data, int data_x, int raste
     const gx_drawing_color *pdcolor, int depth,
     gs_logical_operation_t lop, const gx_clip_path *pcpath)
 {
-    if ((dev->ObjectFilter & FILTERIMAGE) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.fill_mask)
-                return dev->child->procs.fill_mask(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
-            else
-                return gx_default_fill_mask(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
-        } else
-            return gx_default_fill_mask(dev, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
-    }
+    if ((dev->ObjectFilter & FILTERIMAGE) == 0)
+        return default_subclass_fill_mask(dev, data, data_x, raster, id, x, y, width, height, pdcolor, depth, lop, pcpath);
     return 0;
 }
 
@@ -332,45 +234,24 @@ int obj_filter_fill_trapezoid(gx_device *dev, const gs_fixed_edge *left, const g
     fixed ybot, fixed ytop, bool swap_axes,
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 {
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.fill_trapezoid)
-                return dev->child->procs.fill_trapezoid(dev->child, left, right, ybot, ytop, swap_axes, pdcolor, lop);
-            else
-                return gx_default_fill_trapezoid(dev->child, left, right, ybot, ytop, swap_axes, pdcolor, lop);
-        } else
-            return gx_default_fill_trapezoid(dev, left, right, ybot, ytop, swap_axes, pdcolor, lop);
-    }
+    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
+        return default_subclass_fill_trapezoid(dev, left, right, ybot, ytop, swap_axes, pdcolor, lop);
     return 0;
 }
 
 int obj_filter_fill_parallelogram(gx_device *dev, fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 {
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.fill_parallelogram)
-                return dev->child->procs.fill_parallelogram(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
-            else
-                return gx_default_fill_parallelogram(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
-        } else
-            return gx_default_fill_parallelogram(dev, px, py, ax, ay, bx, by, pdcolor, lop);
-    }
+    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
+        return default_subclass_fill_parallelogram(dev, px, py, ax, ay, bx, by, pdcolor, lop);
     return 0;
 }
 
 int obj_filter_fill_triangle(gx_device *dev, fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
 {
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.fill_triangle)
-                return dev->child->procs.fill_triangle(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
-            else
-                return gx_default_fill_triangle(dev->child, px, py, ax, ay, bx, by, pdcolor, lop);
-        } else
-            return gx_default_fill_triangle(dev, px, py, ax, ay, bx, by, pdcolor, lop);
-    }
+    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
+        return default_subclass_fill_triangle(dev, px, py, ax, ay, bx, by, pdcolor, lop);
     return 0;
 }
 
@@ -378,15 +259,8 @@ int obj_filter_draw_thin_line(gx_device *dev, fixed fx0, fixed fy0, fixed fx1, f
     const gx_drawing_color *pdcolor, gs_logical_operation_t lop,
     fixed adjustx, fixed adjusty)
 {
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.draw_thin_line)
-                return dev->child->procs.draw_thin_line(dev->child, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
-            else
-                return gx_default_draw_thin_line(dev->child, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
-        } else
-            return gx_default_draw_thin_line(dev, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
-    }
+    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
+        return default_subclass_draw_thin_line(dev, fx0, fy0, fx1, fy1, pdcolor, lop, adjustx, adjusty);
     return 0;
 }
 
@@ -395,34 +269,23 @@ int obj_filter_begin_image(gx_device *dev, const gs_imager_state *pis, const gs_
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
     gs_memory_t *memory, gx_image_enum_common_t **pinfo)
 {
-    if ((dev->ObjectFilter & FILTERIMAGE) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.begin_image)
-                return dev->child->procs.begin_image(dev->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
-            else
-                return gx_default_begin_image(dev->child, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
-        } else
-            return gx_default_begin_image(dev, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
-    }
+    if ((dev->ObjectFilter & FILTERIMAGE) == 0)
+        return default_subclass_begin_image(dev, pis, pim, format, prect, pdcolor, pcpath, memory, pinfo);
     return 0;
 }
 
 int obj_filter_image_data(gx_device *dev, gx_image_enum_common_t *info, const byte **planes, int data_x,
     uint raster, int height)
 {
-    if ((dev->ObjectFilter & FILTERIMAGE) == 0) {
-        if (dev->child && dev->child->procs.image_data)
-            return dev->child->procs.image_data(dev->child, info, planes, data_x, raster, height);
-    }
+    if ((dev->ObjectFilter & FILTERIMAGE) == 0)
+        return default_subclass_image_data(dev, info, planes, data_x, raster, height);
     return 0;
 }
 
 int obj_filter_end_image(gx_device *dev, gx_image_enum_common_t *info, bool draw_last)
 {
-    if ((dev->ObjectFilter & FILTERIMAGE) == 0) {
-        if (dev->child && dev->child->procs.end_image)
-            return dev->child->procs.end_image(dev->child, info, draw_last);
-    }
+    if ((dev->ObjectFilter & FILTERIMAGE) == 0)
+        return default_subclass_end_image(dev, info, draw_last);
     return 0;
 }
 
@@ -430,15 +293,8 @@ int obj_filter_strip_tile_rectangle(gx_device *dev, const gx_strip_bitmap *tiles
     gx_color_index color0, gx_color_index color1,
     int phase_x, int phase_y)
 {
-    if ((dev->ObjectFilter & FILTERIMAGE) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.strip_tile_rectangle)
-                return dev->child->procs.strip_tile_rectangle(dev->child, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
-            else
-                return gx_default_strip_tile_rectangle(dev->child, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
-        } else
-            return gx_default_strip_tile_rectangle(dev, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
-    }
+    if ((dev->ObjectFilter & FILTERIMAGE) == 0)
+        return default_subclass_strip_tile_rectangle(dev, tiles, x, y, width, height, color0, color1, phase_x, phase_y);
     return 0;
 }
 
@@ -448,15 +304,8 @@ int obj_filter_strip_copy_rop(gx_device *dev, const byte *sdata, int sourcex, ui
     int x, int y, int width, int height,
     int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    if ((dev->ObjectFilter & FILTERIMAGE) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.strip_copy_rop)
-                return dev->child->procs.strip_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
-            else
-                return gx_default_strip_copy_rop(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
-        } else
-            return gx_default_strip_copy_rop(dev, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
-    }
+    if ((dev->ObjectFilter & FILTERIMAGE) == 0)
+        return default_subclass_strip_copy_rop(dev, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop);
     return 0;
 }
 
@@ -503,15 +352,8 @@ int obj_filter_begin_typed_image(gx_device *dev, const gs_imager_state *pis, con
     const gs_pixel_image_t *pim = (const gs_pixel_image_t *)pic;
     int num_components;
 
-    if ((dev->ObjectFilter & FILTERIMAGE) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.begin_typed_image)
-                return dev->child->procs.begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
-            else
-                return gx_default_begin_typed_image(dev->child, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
-        } else
-            return gx_default_begin_typed_image(dev, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
-    }
+    if ((dev->ObjectFilter & FILTERIMAGE) == 0)
+        return default_subclass_begin_typed_image(dev, pis, pmat, pic, prect, pdcolor, pcpath, memory, pinfo);
 
     if (pic->type->index == 1) {
         const gs_image_t *pim1 = (const gs_image_t *)pic;
@@ -534,19 +376,6 @@ int obj_filter_begin_typed_image(gx_device *dev, const gs_imager_state *pis, con
                         (gx_device *)dev, num_components, pim->format);
     pie->memory = memory;
 
-    return 0;
-}
-
-int obj_filter_get_bits_rectangle(gx_device *dev, const gs_int_rect *prect,
-    gs_get_bits_params_t *params, gs_int_rect **unread)
-{
-    if (dev->child) {
-        if (dev->child->procs.get_bits_rectangle)
-            return dev->child->procs.get_bits_rectangle(dev->child, prect, params, unread);
-        else
-            return gx_default_get_bits_rectangle(dev->child, prect, params, unread);
-    } else
-        return gx_default_get_bits_rectangle(dev, prect, params, unread);
     return 0;
 }
 
@@ -625,51 +454,26 @@ int obj_filter_text_begin(gx_device *dev, gs_imager_state *pis, const gs_text_pa
      * secondly  because op_show_restore executes an unconditional grestore, assuming
      * that a gsave has been done simply *because* its a tringwidth operation !
      */
-    if ((text->operation & TEXT_DO_NONE) && (text->operation & TEXT_RETURN_WIDTH) && pis->text_rendering_mode != 3) {
+    if ((text->operation & TEXT_DO_NONE) && (text->operation & TEXT_RETURN_WIDTH) && pis->text_rendering_mode != 3)
         /* Note that the high level devices *must* be given the opportunity to 'see' the
          * stringwidth operation, or they won;t be able to cache the glyphs properly.
          * So always pass stringwidth operations to the child.
          */
-        if (dev->child) {
-            if (dev->child->procs.text_begin)
-                return dev->child->procs.text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
-            else
-                return gx_default_text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
-        } else
-            return gx_default_text_begin(dev, pis, text, font, path, pdcolor, pcpath, memory, ppte);
+        return default_subclass_text_begin(dev, pis, text, font, path, pdcolor, pcpath, memory, ppte);
+
+    if ((dev->ObjectFilter & FILTERTEXT) == 0)
+        return default_subclass_text_begin(dev, pis, text, font, path, pdcolor, pcpath, memory, ppte);
+
+    rc_alloc_struct_1(penum, obj_filter_text_enum_t, &st_obj_filter_text_enum, memory,
+                  return_error(gs_error_VMerror), "gdev_obj_filter_text_begin");
+    penum->rc.free = rc_free_text_enum;
+    code = gs_text_enum_init((gs_text_enum_t *)penum, &obj_filter_text_procs,
+                         dev, pis, text, font, path, pdcolor, pcpath, memory);
+    if (code < 0) {
+        gs_free_object(memory, penum, "gdev_obj_filter_text_begin");
+        return code;
     }
-
-    if ((dev->ObjectFilter & FILTERTEXT) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.text_begin)
-                return dev->child->procs.text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
-            else
-                return gx_default_text_begin(dev->child, pis, text, font, path, pdcolor, pcpath, memory, ppte);
-        } else
-            return gx_default_text_begin(dev, pis, text, font, path, pdcolor, pcpath, memory, ppte);
-    }
-    else {
-        rc_alloc_struct_1(penum, obj_filter_text_enum_t, &st_obj_filter_text_enum, memory,
-                      return_error(gs_error_VMerror), "gdev_obj_filter_text_begin");
-        penum->rc.free = rc_free_text_enum;
-        code = gs_text_enum_init((gs_text_enum_t *)penum, &obj_filter_text_procs,
-                             dev, pis, text, font, path, pdcolor, pcpath, memory);
-        if (code < 0) {
-            gs_free_object(memory, penum, "gdev_obj_filter_text_begin");
-            return code;
-        }
-        *ppte = (gs_text_enum_t *)penum;
-    }
-
-
-    return 0;
-}
-
-int obj_filter_pattern_manage(gx_device *dev, gx_bitmap_id id,
-                gs_pattern1_instance_t *pinst, pattern_manage_t function)
-{
-    if (dev->child && dev->child->procs.pattern_manage)
-        return dev->child->procs.pattern_manage(dev->child, id, pinst, function);
+    *ppte = (gs_text_enum_t *)penum;
 
     return 0;
 }
@@ -677,13 +481,8 @@ int obj_filter_pattern_manage(gx_device *dev, gx_bitmap_id id,
 int obj_filter_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         const gs_imager_state *pis, const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
 {
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0) {
-        if (dev->child && dev->child->procs.fill_rectangle_hl_color)
-            return dev->child->procs.fill_rectangle_hl_color(dev->child, rect, pis, pdcolor, pcpath);
-        else
-            return_error(gs_error_rangecheck);
-    }
-
+    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
+        return default_subclass_fill_rectangle_hl_color(dev, rect, pis, pdcolor, pcpath);
     return 0;
 }
 
@@ -691,16 +490,8 @@ int obj_filter_fill_linear_color_scanline(gx_device *dev, const gs_fill_attribut
         int i, int j, int w, const frac31 *c0, const int32_t *c0_f, const int32_t *cg_num,
         int32_t cg_den)
 {
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.fill_linear_color_scanline)
-                return dev->child->procs.fill_linear_color_scanline(dev->child, fa, i, j, w, c0, c0_f, cg_num, cg_den);
-            else
-                return gx_default_fill_linear_color_scanline(dev->child, fa, i, j, w, c0, c0_f, cg_num, cg_den);
-        } else
-            return gx_default_fill_linear_color_scanline(dev, fa, i, j, w, c0, c0_f, cg_num, cg_den);
-    }
-
+    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
+        return default_subclass_fill_linear_color_scanline(dev, fa, i, j, w, c0, c0_f, cg_num, cg_den);
     return 0;
 }
 
@@ -710,16 +501,8 @@ int obj_filter_fill_linear_color_trapezoid(gx_device *dev, const gs_fill_attribu
         const frac31 *c0, const frac31 *c1,
         const frac31 *c2, const frac31 *c3)
 {
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.fill_linear_color_trapezoid)
-                return dev->child->procs.fill_linear_color_trapezoid(dev->child, fa, p0, p1, p2, p3, c0, c1, c2, c3);
-            else
-                return gx_default_fill_linear_color_trapezoid(dev->child, fa, p0, p1, p2, p3, c0, c1, c2, c3);
-        } else
-            return gx_default_fill_linear_color_trapezoid(dev, fa, p0, p1, p2, p3, c0, c1, c2, c3);
-    }
-
+    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
+        return default_subclass_fill_linear_color_trapezoid(dev, fa, p0, p1, p2, p3, c0, c1, c2, c3);
     return 0;
 }
 
@@ -727,29 +510,8 @@ int obj_filter_fill_linear_color_triangle(gx_device *dev, const gs_fill_attribut
         const gs_fixed_point *p0, const gs_fixed_point *p1,
         const gs_fixed_point *p2, const frac31 *c0, const frac31 *c1, const frac31 *c2)
 {
-    if ((dev->ObjectFilter & FILTERVECTOR) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.fill_linear_color_triangle)
-                return dev->child->procs.fill_linear_color_triangle(dev->child, fa, p0, p1, p2, c0, c1, c2);
-            else
-                return gx_default_fill_linear_color_triangle(dev->child, fa, p0, p1, p2, c0, c1, c2);
-        } else
-            return gx_default_fill_linear_color_triangle(dev, fa, p0, p1, p2, c0, c1, c2);
-    }
-
-    return 0;
-}
-
-int obj_filter_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
-{
-    if (dev->child) {
-        if (dev->child->procs.fillpage)
-            return dev->child->procs.fillpage(dev->child, pis, pdevc);
-        else
-            return gx_default_fillpage(dev->child, pis, pdevc);
-    } else
-        return gx_default_fillpage(dev, pis, pdevc);
-
+    if ((dev->ObjectFilter & FILTERVECTOR) == 0)
+        return default_subclass_fill_linear_color_triangle(dev, fa, p0, p1, p2, c0, c1, c2);
     return 0;
 }
 
@@ -757,80 +519,24 @@ int obj_filter_put_image(gx_device *dev, const byte *buffer, int num_chan, int x
             int width, int height, int row_stride, int plane_stride,
             int alpha_plane_index, int tag_plane_index)
 {
-    if ((dev->ObjectFilter & FILTERIMAGE) == 0) {
-        if (dev->child && dev->child->procs.put_image)
-            return dev->child->procs.put_image(dev->child, buffer, num_chan, x, y, width, height, row_stride, plane_stride, alpha_plane_index, tag_plane_index);
-    }
-
+    if ((dev->ObjectFilter & FILTERIMAGE) == 0)
+        return default_subclass_put_image(dev, buffer, num_chan, x, y, width, height, row_stride, plane_stride, alpha_plane_index, tag_plane_index);
     return 0;
-}
-
-int obj_filter_copy_planes(gx_device *dev, const byte *data, int data_x, int raster, gx_bitmap_id id,
-    int x, int y, int width, int height, int plane_height)
-{
-    if (dev->child && dev->child->procs.copy_planes)
-        return dev->child->procs.copy_planes(dev->child, data, data_x, raster, id, x, y, width, height, plane_height);
-
-    return 0;
-}
-
-void obj_filter_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t tag)
-{
-    if (dev->child && dev->child->procs.set_graphics_type_tag)
-        dev->child->procs.set_graphics_type_tag(dev->child, tag);
-
-    return;
 }
 
 int obj_filter_strip_copy_rop2(gx_device *dev, const byte *sdata, int sourcex, uint sraster, gx_bitmap_id id,
     const gx_color_index *scolors, const gx_strip_bitmap *textures, const gx_color_index *tcolors,
     int x, int y, int width, int height, int phase_x, int phase_y, gs_logical_operation_t lop, uint planar_height)
 {
-    if ((dev->ObjectFilter & FILTERIMAGE) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.strip_copy_rop2)
-                return dev->child->procs.strip_copy_rop2(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
-            else
-                return gx_default_strip_copy_rop2(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
-        } else
-            return gx_default_strip_copy_rop2(dev, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
-    }
-
+    if ((dev->ObjectFilter & FILTERIMAGE) == 0)
+        return default_subclass_strip_copy_rop2(dev, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
     return 0;
 }
 
 int obj_filter_strip_tile_rect_devn(gx_device *dev, const gx_strip_bitmap *tiles, int x, int y, int width, int height,
     const gx_drawing_color *pdcolor0, const gx_drawing_color *pdcolor1, int phase_x, int phase_y)
 {
-    if ((dev->ObjectFilter & FILTERIMAGE) == 0) {
-        if (dev->child) {
-            if (dev->child->procs.strip_tile_rect_devn)
-                return dev->child->procs.strip_tile_rect_devn(dev->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
-            else
-                return gx_default_strip_tile_rect_devn(dev->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
-        } else
-            return gx_default_strip_tile_rect_devn(dev, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
-    }
-
-    return 0;
-}
-
-int obj_filter_copy_alpha_hl_color(gx_device *dev, const byte *data, int data_x,
-    int raster, gx_bitmap_id id, int x, int y, int width, int height,
-    const gx_drawing_color *pdcolor, int depth)
-{
-    if (dev->child && dev->child->procs.copy_alpha_hl_color)
-        return dev->child->procs.copy_alpha_hl_color(dev->child, data, data_x, raster, id, x, y, width, height, pdcolor, depth);
-    else
-        return_error(gs_error_rangecheck);
-
-    return 0;
-}
-
-int obj_filter_process_page(gx_device *dev, gx_process_page_options_t *options)
-{
-    if (dev->child && dev->child->procs.process_page)
-        return dev->child->procs.process_page(dev->child, options);
-
+    if ((dev->ObjectFilter & FILTERIMAGE) == 0)
+        return default_subclass_strip_tile_rect_devn(dev, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
     return 0;
 }
