@@ -1293,7 +1293,6 @@ int gx_unsubclass_device(gx_device *dev)
 {
     void *psubclass_data = dev->subclass_data;
     gx_device *parent = dev->parent, *child = dev->child;
-    unsigned char *ptr;
     gs_memory_struct_type_t *a_std;
     int dynamic = dev->stype_is_dynamic;
 
@@ -1301,7 +1300,7 @@ int gx_unsubclass_device(gx_device *dev)
      * in case we might need it.
      */
     if (dynamic) {
-        a_std = dev->stype;
+        a_std = (gs_memory_struct_type_t *)dev->stype;
         *a_std = *child->stype;
     }
 
