@@ -450,39 +450,6 @@ void default_subclass_get_clipping_box(gx_device *dev, gs_fixed_rect *pbox)
     return;
 }
 
-typedef struct default_subclass_image_enum_s {
-    gx_image_enum_common;
-} default_subclass_image_enum;
-gs_private_st_composite(st_default_subclass_image_enum, default_subclass_image_enum, "default_subclass_image_enum",
-  default_subclass_image_enum_enum_ptrs, default_subclass_image_enum_reloc_ptrs);
-
-static ENUM_PTRS_WITH(default_subclass_image_enum_enum_ptrs, default_subclass_image_enum *pie)
-    return ENUM_USING_PREFIX(st_gx_image_enum_common, 0);
-ENUM_PTRS_END
-static RELOC_PTRS_WITH(default_subclass_image_enum_reloc_ptrs, default_subclass_image_enum *pie)
-{
-}
-RELOC_PTRS_END
-
-static int
-default_subclass_image_plane_data(gx_image_enum_common_t * info,
-                     const gx_image_plane_t * planes, int height,
-                     int *rows_used)
-{
-    return 0;
-}
-
-static int
-default_subclass_image_end_image(gx_image_enum_common_t * info, bool draw_last)
-{
-    return 0;
-}
-
-static const gx_image_enum_procs_t default_subclass_image_enum_procs = {
-    default_subclass_image_plane_data,
-    default_subclass_image_end_image
-};
-
 int default_subclass_begin_typed_image(gx_device *dev, const gs_imager_state *pis, const gs_matrix *pmat,
     const gs_image_common_t *pic, const gs_int_rect *prect,
     const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,
@@ -596,65 +563,6 @@ int default_subclass_get_hardware_params(gx_device *dev, gs_param_list *plist)
 
     return 0;
 }
-
-/* Text processing (like images) works differently to other device
- * methods. Instead of the interpreter calling a device method, only
- * the 'begin' method is called, this creates a text enumerator which
- * it fills in (in part with the routines for processing text) and returns
- * to the interpreter. The interpreter then calls the methods defined in
- * the text enumerator to process the text.
- * Mad as a fish.....
- */
-
-/* For our purposes if we are handling the text its because we are not
- * printing the page, so we cna afford to ignore all the text processing.
- * A more complex device might need to define real handlers for these, and
- * pass them on to the subclassed device.
- */
-static text_enum_proc_process(default_subclass_text_process);
-static int
-default_subclass_text_resync(gs_text_enum_t *pte, const gs_text_enum_t *pfrom)
-{
-    return 0;
-}
-int
-default_subclass_text_process(gs_text_enum_t *pte)
-{
-    return 0;
-}
-static bool
-default_subclass_text_is_width_only(const gs_text_enum_t *pte)
-{
-    return false;
-}
-static int
-default_subclass_text_current_width(const gs_text_enum_t *pte, gs_point *pwidth)
-{
-    return 0;
-}
-static int
-default_subclass_text_set_cache(gs_text_enum_t *pte, const double *pw,
-                   gs_text_cache_control_t control)
-{
-    return 0;
-}
-static int
-default_subclass_text_retry(gs_text_enum_t *pte)
-{
-    return 0;
-}
-static void
-default_subclass_text_release(gs_text_enum_t *pte, client_name_t cname)
-{
-    gx_default_text_release(pte, cname);
-}
-
-static const gs_text_enum_procs_t default_subclass_text_procs = {
-    default_subclass_text_resync, default_subclass_text_process,
-    default_subclass_text_is_width_only, default_subclass_text_current_width,
-    default_subclass_text_set_cache, default_subclass_text_retry,
-    default_subclass_text_release
-};
 
 /* The device method which we do actually need to define. Either we are skipping the page,
  * in which case we create a text enumerator with our dummy procedures, or we are leaving it
@@ -890,7 +798,7 @@ int default_subclass_push_transparency_state(gx_device *dev, gs_imager_state *pi
 int default_subclass_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
 {
     if (dev->child && dev->child->procs.push_transparency_state)
-        return dev->child->procs.push_transparency_state(dev->child, pis);
+        return dev->child->procs.pop_transparency_state(dev->child, pis);
 
     return 0;
 }

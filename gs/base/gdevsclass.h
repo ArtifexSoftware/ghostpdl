@@ -27,15 +27,6 @@ typedef struct {
     subclass_common;
 } default_subclass_subclass_data;
 
-typedef struct default_subclass_text_enum_s {
-    gs_text_enum_common;
-} default_subclass_text_enum_t;
-#define private_st_default_subclass_text_enum()\
-  extern_st(st_gs_text_enum);\
-  gs_private_st_suffix_add0(st_default_subclass_text_enum, default_subclass_text_enum_t,\
-    "default_subclass_text_enum_t", default_subclass_text_enum_enum_ptrs, default_subclass_text_enum_reloc_ptrs,\
-    st_gs_text_enum)
-
 /* Device procedures, we need to prototype all of them */
 dev_proc_open_device(default_subclass_open_device);
 dev_proc_get_initial_matrix(default_subclass_get_initial_matrix);
