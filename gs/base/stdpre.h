@@ -20,7 +20,7 @@
 #  define stdpre_INCLUDED
 
 /* if we define _LARGEFILE64_SOURCE zlib tries to include unistd.h */
-#ifdef _MSC_VER
+#ifndef _MSC_VER
 /* Ghostscript uses transitional LFS functions. */
 #define _LARGEFILE64_SOURCE 1
 #endif
