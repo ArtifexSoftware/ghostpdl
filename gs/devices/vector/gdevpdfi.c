@@ -1918,6 +1918,10 @@ new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
         pdev->transfer_not_identity)
         force_lossless = true;
 
+    if ((image[0].pixel.ColorSpace != NULL && image[0].pixel.ColorSpace->type->index == gs_color_space_index_Indexed)
+        || force_lossless)
+        pie->writer.alt_writer_count = 1;
+
     names = (in_line ? &pdf_color_space_names_short : &pdf_color_space_names);
 
     /* We don't want to change the colour space of a mask, or an SMask (both of which are Gray) */
