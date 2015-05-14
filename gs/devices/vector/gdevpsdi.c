@@ -39,9 +39,11 @@
 #ifdef USE_LWF_JP2
 #include "sjpx_luratech.h"
 #endif
+#include "sisparam.h"
 
 /* Define parameter-setting procedures. */
 extern stream_state_proc_put_params(s_CF_put_params, stream_CF_state);
+extern stream_template s_IScale_template;
 
 /* ---------------- Image compression ---------------- */
 
@@ -431,7 +433,11 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
             templat = &s_Average_template;
             break;
         case ds_Bicubic:
+            templat = &s_IScale_template;
+            /* We now use the Mitchell filter instead of the 'bicubic' filter
+             * because it gives better results.
             templat = &s_Bicubic_template;
+             */
             break;
         default:
             dmprintf1(pdev->v_memory, "Unsupported downsample type %d\n", pdip->DownsampleType);
@@ -455,6 +461,8 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
         return_error(gs_error_VMerror);
     if (templat->set_defaults)
         templat->set_defaults(st);
+
+    if (templat != &s_IScale_template)
     {
         stream_Downsample_state *const ss = (stream_Downsample_state *) st;
 
@@ -466,11 +474,12 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
         ss->XFactor = ss->YFactor = factor;
         ss->AntiAlias = pdip->AntiAlias;
         ss->padX = ss->padY = false; /* should be true */
+
         if (templat->init)
             templat->init(st);
-        pim->Width = s_Downsample_size_out(pim->Width, factor, ss->padX);
-        pim->Height = s_Downsample_size_out(pim->Height, factor, ss->padY);
         pim->BitsPerComponent = pdip->Depth;
+        pim->Width = s_Downsample_size_out(pim->Width, factor, false);
+        pim->Height = s_Downsample_size_out(pim->Height, factor, false);
         gs_matrix_scale(&pim->ImageMatrix, (double)pim->Width / orig_width,
                         (double)pim->Height / orig_height,
                         &pim->ImageMatrix);
@@ -480,6 +489,45 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
                                  8, pdip->Depth)) < 0 ||
             (code = psdf_encode_binary(pbw, templat, st)) < 0 ||
             (code = pixel_resize(pbw, orig_width, ss->Colors,
+                                 orig_bpc, 8)) < 0
+            ) {
+            gs_free_object(pdev->v_memory, st, "setup_image_compression");
+            return code;
+        }
+    } else {
+        /* The setup for the Mitchell filter is quite different to the other filters
+         * because it isn't one of ours.
+         */
+        int Colors = (pim->ColorSpace == 0 ? 1 /*mask*/ :
+             gs_color_space_num_components(pim->ColorSpace));
+
+        stream_image_scale_state *ss = (stream_image_scale_state *)st;
+
+        ss->params.EntireWidthIn = ss->params.WidthIn = ss->params.PatchWidthIn = pim->Width;
+        ss->params.EntireHeightIn = ss->params.HeightIn = ss->params.PatchHeightIn = pim->Height;
+        ss->params.EntireWidthOut = ss->params.WidthOut = ss->params.PatchWidthOut = s_Downsample_size_out(pim->Width, factor, false);
+        ss->params.EntireHeightOut = ss->params.HeightOut = ss->params.PatchHeightOut = s_Downsample_size_out(pim->Height, factor, false);
+        ss->params.BitsPerComponentIn = ss->params.BitsPerComponentOut = pdip->Depth;
+        ss->params.spp_interp = ss->params.spp_decode = Colors;
+        ss->params.TopMargin = ss->params.LeftMarginIn = ss->params.LeftMarginOut = 0;
+        ss->params.src_y_offset = 0;
+        ss->params.early_cm = true;
+        ss->params.MaxValueIn = ss->params.MaxValueOut = (int)pow(2, pdip->Depth);;
+
+        if (templat->init)
+            templat->init(st);
+        pim->Width = s_Downsample_size_out(pim->Width, factor, false);
+        pim->Height = s_Downsample_size_out(pim->Height, factor, false);
+        pim->BitsPerComponent = pdip->Depth;
+        gs_matrix_scale(&pim->ImageMatrix, (double)pim->Width / orig_width,
+                        (double)pim->Height / orig_height,
+                        &pim->ImageMatrix);
+        /****** NO ANTI-ALIASING YET ******/
+        if ((code = setup_image_compression(pbw, pdip, pim, pis, lossless)) < 0 ||
+            (code = pixel_resize(pbw, pim->Width, Colors,
+                                 8, pdip->Depth)) < 0 ||
+            (code = psdf_encode_binary(pbw, templat, st)) < 0 ||
+            (code = pixel_resize(pbw, orig_width, Colors,
                                  orig_bpc, 8)) < 0
             ) {
             gs_free_object(pdev->v_memory, st, "setup_image_compression");

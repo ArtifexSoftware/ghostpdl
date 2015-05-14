@@ -554,7 +554,7 @@ containing '=' mean that the value of the parameter is the same as in the
 <tr valign=top><td><code>ColorImageDict</code><td><td><a href="#note_13">(13)</a><td><td><a href="#note_7">(note 7)</a><td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><code>ColorImageFilter</code><td><td><td><td>/DCTEncode<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><code>ColorImageDownsampleThreshold</code><td><td><td><td>1.5<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><code>ColorImageDownsampleType</code><td><td><a href="#note_3">(3)</a><td><td>/Subsample<td><td>/Average<td><td>/Bicubic<td><td>/Bicubic<td><td>/Bicubic
+<tr valign=top><td><code>ColorImageDownsampleType</code><td><td><a href="#note_3">(3)</a><td><td>/Subsample<td><td>/Average<td><td>/Average<td><td>/Average<td><td>/Bicubic
 <tr valign=top><td><code>ColorImageResolution</code><td><td><td><td>72<td><td>72<td><td>150<td><td>300<td><td>300
 <tr valign=top><td><code>CompatibilityLevel</code><td><td><td><td>1.4<td><td>1.3<td><td>1.4<td><td>1.4<td><td>1.4
 <tr valign=top><td><code>CompressPages</code><td><td><td><td>true<td><td>=<td><td>=<td><td>=<td><td>=
@@ -588,7 +588,7 @@ containing '=' mean that the value of the parameter is the same as in the
 <tr valign=top><td><code>MonoImageDepth</code><td><td><td><td>-1<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><code>MonoImageDict</code><td><td><a href="#note_13">(13)</a><td><td>&lt;&lt;K -1&gt;&gt;<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><code>MonoImageDownsampleThreshold</code><td><td><td><td>1.5<td><td>=<td><td>=<td><td>=<td><td>=
-<tr valign=top><td><code>MonoImageDownsampleType</code><td><td><td><td>/Subsample<td><td>/Average<td><td>/Bicubic<td><td>/Bicubic<td><td>/Bicubic
+<tr valign=top><td><code>MonoImageDownsampleType</code><td><td><td><td>/Subsample<td><td>/Subsample<td><td>/Subsample<td><td>/Subsample<td><td>/Bicubic
 <tr valign=top><td><code>MonoImageFilter</code><td><td><td><td>/CCITTFaxEncode<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><code>MonoImageResolution</code><td><td><td><td>300<td><td>300<td><td>300<td><td>1200<td><td>1200
 <tr valign=top><td><code>NeverEmbed</code><td><td><a href="#note_13">(13)</a><td><td><a href="#note_11">(note 11)</a><a href="#note_12">(note 12)</a><td><td><a href="#note_11">(note 11)</a><a href="#note_12">(note 12)</a><td><td><a href="#note_11">(note 11)</a><a href="#note_12">(note 12)</a><td><td>[ ]<a href="#note_12">(note 12)</a><td><td>[ ]<a href="#note_12">(note 12)</a>
@@ -634,8 +634,11 @@ has expired, we could change this should it become worthwhile.
 <p>
 <a name="note_3">(note 3)</a>
 The <code>xxxDownsampleType</code> parameters can also have the value
-/Bicubic (a Distiller 4 feature), which is currently treated as equivalent
-to /Average.
+/Bicubic (a Distiller 4 feature), ths will use a Mitchell filter. (older
+versions of pdfwrite simpy used Average instead). Note; if a non-integer
+downsample factor is used the code will clamp to the nearest integer (if
+the difference is less than 0.1) or will silently switch to the old bicubic
+filter, NOT the Mitchell filter.
 
 <p>
 <a name="note_4">(note 4)</a>
