@@ -1063,6 +1063,7 @@ int convert_separation_alternate(gx_device_pdf * pdev, const gs_imager_state * p
                     cos_c_string_value(&v, (const char *)pdf_color_space_names.DeviceGray);
                     break;
                 case ccs_RGB:
+                case ccs_sRGB:
                     cos_c_string_value(&v, (const char *)pdf_color_space_names.DeviceRGB);
                     break;
                 case ccs_CMYK:
