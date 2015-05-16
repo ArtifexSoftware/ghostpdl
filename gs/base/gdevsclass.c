@@ -33,6 +33,58 @@
 #include "gdevp14.h"        /* Needed to patch up the procs after compositor creation */
 #include "gdevsclass.h"
 
+/* This seems to be broadly similar to the 'device filter stack' which is defined in gsdfilt.c
+ * and the stack for which is defined in the graphics state (dfilter_stack) but which seems to be
+ * completely unused. We should probably remove dfilter_stack from the graphics state and remove
+ * gsdfilt.c from the build.
+ */
+
+/*
+ * It would be nice if we could rewrite the clist handling to use this kind of device class chain
+ * instead of the nasty hackery it currently utilises (stores the device procs for the existing
+ * device in 'orig_procs' which is in the device structure) and overwrites the procs with its
+ * own ones. The bbox forwarding device could also be rewritten this way and would probably then
+ * be usable as a real forwarding device (last time I tried to do this for eps2write I was unable
+ * to solve the problems with text enumerators).
+ */
+
+/* At first sight we should never have a method in a device structure which is NULL
+ * because gx_device_fill_in_procs() should replace all the NULLs with default routines.
+ * However, obselete routines, and a number of newer routines (especially those involving
+ * transparency) don't get filled in. Its not obvious to me if this is deliberate or not,
+ * but we'll be careful and check the subclassed device's method before trying to execute
+ * it. Same for all the methods. NB the fill_rectangle method is deliberately not filled in
+ * because that gets set up by gdev_prn_allocate_memory(). Isn't it great the way we do our
+ * initialisation in lots of places?
+ */
+
+/* TODO make gx_device_fill_in_procs fill in *all* the procs, currently it doesn't.
+ * this will mean declaring gx_default_ methods for the transparency methods, possibly
+ * some others. Like a number of other default methods, these can simply return an error
+ * which hopefuly will avoid us having to check for NULL device methods.
+ * We also agreed to set the fill_rectangle method to a default as well (currently it explicitly
+ * does not do this) and have gdev_prn_alloc_buffer check to see if the method is the default
+ * before overwriting it, rather than the current check for NULL.
+ */
+
+/* More observations; method naems, we have text_begin, but begin_image.
+ * The enumerator initialiser for images gx_image_enum_common_init doesn't initialise
+ * the 'memory' member variable. The text enumerator initialiser gs_text_enum_init does.
+ * The default text enum init routine increments the reference count of the device, but the image enumerator
+ * doesn't.
+ */
+
+/* We have a device method for 'get_profile' but we don't have one for 'set_profile' which causes some
+ * problems, the 'set' simply sets the profile in the top device. THs is modified in gsicc_set_device_profile
+ * for now but really should have a method to itself.
+ */
+
+/*
+ * gsdparam.c line 272 checks for method being NULL, this is bad, we should check for a return error
+ * or default method and do initialisation based on that.
+ */
+
+
 /* For printing devices the 'open' routine in gdevprn calls gdevprn_allocate_memory
  * which is responsible for creating the page buffer. This *also* fills in some of
  * the device procs, in particular fill_rectangle() so its vitally important that
@@ -834,8 +886,9 @@ int default_subclass_get_profile(gx_device *dev, cmm_dev_profile_t **dev_profile
         else
             return gx_default_get_profile(dev->child, dev_profile);
     }
-    else
+    else {
         return gx_default_get_profile(dev, dev_profile);
+    }
 
     return 0;
 }

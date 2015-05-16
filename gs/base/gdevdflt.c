@@ -1268,6 +1268,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     dev_to_subclass->procs.copy_planes = new_prototype->procs.copy_planes;
     dev_to_subclass->finalize = new_prototype->finalize;
     dev_to_subclass->dname = new_prototype->dname;
+    dev_to_subclass->icc_struct = NULL;
 
     /* If the original device's stype structure was dynamically allocated, we need
      * to 'fixup' the contents, it's procs need to point to the new device's procs
@@ -1377,7 +1378,6 @@ int gx_update_from_subclass(gx_device *dev)
     dev->MaxPatternBitmap = dev->child->MaxPatternBitmap;
     dev->page_uses_transparency = dev->child->page_uses_transparency;
     memcpy(&dev->space_params, &dev->child->space_params, sizeof(gdev_space_params));
-    dev->icc_struct = dev->child->icc_struct;
     dev->graphics_type_tag = dev->child->graphics_type_tag;
 
     return 0;
