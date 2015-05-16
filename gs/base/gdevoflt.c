@@ -375,6 +375,7 @@ int obj_filter_begin_typed_image(gx_device *dev, const gs_imager_state *pis, con
     gx_image_enum_common_init(*pinfo, (const gs_data_image_t *) pim, &obj_filter_image_enum_procs,
                         (gx_device *)dev, num_components, pim->format);
     pie->memory = memory;
+    pie->skipping = true;
 
     return 0;
 }

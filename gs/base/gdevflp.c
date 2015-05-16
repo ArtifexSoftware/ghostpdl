@@ -29,49 +29,6 @@
  * discard operations again until we reach the end, and close the device.
  */
 
-/* This seems to be broadly similar to the 'device filter stack' which is defined in gsdfilt.c
- * and the stack for which is defined in the graphics state (dfilter_stack) but which seems to be
- * completely unused. We should probably remove dfilter_stack from the graphics state and remove
- * gsdfilt.c from the build.
- *
- * It would be nice if we could rewrite the clist handling to use this kind of device class chain
- * instead of the nasty hackery it currently utilises (stores the device procs for the existing
- * device in 'orig_procs' which is in the device structure) and overwrites the procs with its
- * own ones. The bbox forwarding device could also be rewritten this way and would probably then
- * be usable as a real forwarding device (last time I tried to do this for eps2write I was unable
- * to solve the problems with text enumerators).
- */
-
-/* At first sight we should never have a method in a device structure which is NULL
- * because gx_device_fill_in_procs() should replace all the NULLs with default routines.
- * However, obselete routines, and a number of newer routines (especially those involving
- * transparency) don't get filled in. Its not obvious to me if this is deliberate or not,
- * but we'll be careful and check the subclassed device's method before trying to execute
- * it. Same for all the methods. NB the fill_rectangle method is deliberately not filled in
- * because that gets set up by gdev_prn_allocate_memory(). Isn't it great the way we do our
- * initialisation in lots of places?
- */
-
-/* TODO make gx_device_fill_in_procs fill in *all* the procs, currently it doesn't.
- * this will mean declaring gx_default_ methods for the transparency methods, possibly
- * some others. Like a number of other default methods, these can simply return an error
- * which hopefuly will avoid us having to check for NULL device methods.
- * We also agreed to set the fill_rectangle method to a default as well (currently it explicitly
- * does not do this) and have gdev_prn_alloc_buffer check to see if the method is the default
- * before overwriting it, rather than the current check for NULL.
- */
-
-/* More observations; method naems, we have text_begin, but begin_image.
- * The enumerator initialiser for images gx_image_enum_common_init doesn't initialise
- * the 'memory' member variable. The text enumerator initialiser gs_text_enum_init does.
- * The default text enum init routine increments the reference count of the device, but the image enumerator
- * doesn't.
- */
-
-/*
- * gsdparam.c line 272 checks for method being NULL, this is bad, we should check for a return error
- * or default method and do initialisation based on that.
- */
 #include "math_.h"
 #include "memory_.h"
 #include "gx.h"
@@ -621,6 +578,7 @@ int flp_begin_typed_image(gx_device *dev, const gs_imager_state *pis, const gs_m
     gx_image_enum_common_init(*pinfo, (const gs_data_image_t *) pim, &flp_image_enum_procs,
                         (gx_device *)dev, num_components, pim->format);
     pie->memory = memory;
+    pie->skipping = true;
 
     return 0;
 }
