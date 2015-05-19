@@ -339,12 +339,13 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
 
     /* Set the ICC profile.  Test to avoid issues with separations and also
        if the color space is set to LAB, we do that as an enumerated type. Do
-       NOT set the profile if the bit depth is less than 8. */
+       NOT set the profile if the bit depth is less than 8 or if fast color
+       was used. */
     if (pdev->color_info.depth >= 8) {
         if (pdev->icc_struct != NULL && pdev->icc_struct->device_profile[0] != NULL) {
             cmm_profile_t *icc_profile = pdev->icc_struct->device_profile[0];
             if (icc_profile->num_comps == pdev->color_info.num_components &&
-                icc_profile->data_cs != gsCIELAB) {
+                icc_profile->data_cs != gsCIELAB && !(pdev->icc_struct->usefastcolor)) {
                 TIFFSetField(tif, TIFFTAG_ICCPROFILE, icc_profile->buffer_size, 
                              icc_profile->buffer);
             }

@@ -640,7 +640,8 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
         cmm_profile_t *icc_profile = pdev->icc_struct->device_profile[0];
         /* PNG can only be RGB or gray.  No CIELAB :(  */
         if (icc_profile->data_cs == gsRGB || icc_profile->data_cs == gsGRAY) { 
-            if (icc_profile->num_comps == pdev->color_info.num_components) {
+            if (icc_profile->num_comps == pdev->color_info.num_components &&
+                !(pdev->icc_struct->usefastcolor)) {
                 info_ptr->iccp_name = icc_profile->name;
                 info_ptr->iccp_profile = icc_profile->buffer;
                 info_ptr->iccp_proflen = icc_profile->buffer_size;
