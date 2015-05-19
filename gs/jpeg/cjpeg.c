@@ -2,7 +2,7 @@
  * cjpeg.c
  *
  * Copyright (C) 1991-1998, Thomas G. Lane.
- * Modified 2003-2011 by Guido Vollbeding.
+ * Modified 2003-2013 by Guido Vollbeding.
  * This file is part of the Independent JPEG Group's software.
  * For conditions of distribution and use, see the accompanying README file.
  *
@@ -172,6 +172,10 @@ usage (void)
 #ifdef DCT_SCALING_SUPPORTED
   fprintf(stderr, "  -block N       DCT block size (1..16; default is 8)\n");
 #endif
+#if JPEG_LIB_VERSION_MAJOR >= 9
+  fprintf(stderr, "  -rgb1          Create RGB JPEG file with reversible color transform\n");
+  fprintf(stderr, "  -bgycc         Create big gamut YCC JPEG file\n");
+#endif
 #ifdef DCT_ISLOW_SUPPORTED
   fprintf(stderr, "  -dct int       Use integer DCT method%s\n",
 	  (JDCT_DEFAULT == JDCT_ISLOW ? " (default)" : ""));
@@ -310,9 +314,26 @@ parse_switches (j_compress_ptr cinfo, int argc, char **argv,
       /* Force a monochrome JPEG file to be generated. */
       jpeg_set_colorspace(cinfo, JCS_GRAYSCALE);
 
-    } else if (keymatch(arg, "rgb", 3)) {
+    } else if (keymatch(arg, "rgb", 3) || keymatch(arg, "rgb1", 4)) {
       /* Force an RGB JPEG file to be generated. */
+#if JPEG_LIB_VERSION_MAJOR >= 9
+      /* Note: Entropy table assignment in jpeg_set_colorspace depends
+       * on color_transform.
+       */
+      cinfo->color_transform = arg[3] ? JCT_SUBTRACT_GREEN : JCT_NONE;
+#endif
       jpeg_set_colorspace(cinfo, JCS_RGB);
+
+    } else if (keymatch(arg, "bgycc", 5)) {
+      /* Force a big gamut YCC JPEG file to be generated. */
+#if JPEG_LIB_VERSION_MAJOR >= 9 && \
+      (JPEG_LIB_VERSION_MAJOR > 9 || JPEG_LIB_VERSION_MINOR >= 1)
+      jpeg_set_colorspace(cinfo, JCS_BG_YCC);
+#else
+      fprintf(stderr, "%s: sorry, BG_YCC colorspace not supported\n",
+	      progname);
+      exit(EXIT_FAILURE);
+#endif
 
     } else if (keymatch(arg, "maxmemory", 3)) {
       /* Maximum memory in Kb (or Mb with 'm'). */
@@ -328,7 +349,7 @@ parse_switches (j_compress_ptr cinfo, int argc, char **argv,
       cinfo->mem->max_memory_to_use = lval * 1000L;
 
     } else if (keymatch(arg, "nosmooth", 3)) {
-      /* Suppress fancy downsampling */
+      /* Suppress fancy downsampling. */
       cinfo->do_fancy_downsampling = FALSE;
 
     } else if (keymatch(arg, "optimize", 1) || keymatch(arg, "optimise", 1)) {
@@ -414,7 +435,7 @@ parse_switches (j_compress_ptr cinfo, int argc, char **argv,
       /* Scale the image by a fraction M/N. */
       if (++argn >= argc)	/* advance to next argument */
 	usage();
-      if (sscanf(argv[argn], "%d/%d",
+      if (sscanf(argv[argn], "%u/%u",
 		 &cinfo->scale_num, &cinfo->scale_denom) != 2)
 	usage();
 
