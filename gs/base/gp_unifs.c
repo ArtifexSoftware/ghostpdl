@@ -186,7 +186,7 @@ int gp_fpread(char *buf, uint count, int64_t offset, FILE *f)
 #if defined(HAVE_PREAD_PWRITE) && HAVE_PREAD_PWRITE == 1
     return pread(fileno(f), buf, count, offset);
 #else
-    uint c;
+    int c;
     int64_t os, curroff = gp_ftell_64(f);
     if (curroff < 0) return curroff;
     
@@ -208,7 +208,7 @@ int gp_fpwrite(char *buf, uint count, int64_t offset, FILE *f)
 #if defined(HAVE_PREAD_PWRITE) && HAVE_PREAD_PWRITE == 1
     return pwrite(fileno(f), buf, count, offset);
 #else
-    uint c;
+    int c;
     int64_t os, curroff = gp_ftell_64(f);
     if (curroff < 0) return curroff;
     
