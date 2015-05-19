@@ -71,20 +71,23 @@ void
 gp_get_usertime(long *pdt)
 {
 
-    uint64_t freq;
-    uint64_t count;
+    LARGE_INTEGER freq;
+    LARGE_INTEGER count;
+    LARGE_INTEGER seconds;
 
-    if ( QueryPerformanceFrequency(&freq) == NULL) {
-        gp_get_realtime(pdt);
+    if (!QueryPerformanceFrequency(&freq)) {
+        gp_get_realtime(pdt);	/* use previous method if high-res perf counter not available */
+        return;
     }
-    /* Get the high resolution time as nanoseconds */
+    /* Get the high resolution time as seconds and nanoseconds */
     QueryPerformanceCounter(&count);
 
-    pdt[0] = (count / freq);
-    count -= freq * pdt[0];
-    count *= 1000000000;
-    count /= freq;
-    pdt[1] = count;
+    seconds.QuadPart = (count.QuadPart / freq.QuadPart);
+    pdt[0] = seconds.LowPart;
+    count.QuadPart -= freq.QuadPart * seconds.QuadPart;
+    count.QuadPart *= 1000000000;			/* we want nanoseconds */
+    count.QuadPart /= freq.QuadPart;
+    pdt[1] = count.LowPart;
 }
 
 /* ------ Console management ------ */

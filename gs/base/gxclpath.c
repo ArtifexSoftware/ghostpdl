@@ -305,9 +305,9 @@ cmd_drawing_color_usage(gx_device_clist_writer *cldev,
     else if (gx_dc_is_colored_halftone(pdcolor))
         return gx_color_index2usage((gx_device *)cldev, colored_halftone_color_usage(cldev, pdcolor));
     else if (gx_dc_is_devn(pdcolor)) {
-        gx_color_usage_bits bits = 0;
+        gx_color_usage_bits bits = 0;		/* NB, gx_color_usage_bits is actually gx_color_index */
 
-        gx_dc_devn_get_nonzero_comps(pdcolor, (gx_device *)cldev, (int *)&bits);
+        gx_dc_devn_get_nonzero_comps(pdcolor, (gx_device *)cldev, &bits);
         return bits;
     }
     else

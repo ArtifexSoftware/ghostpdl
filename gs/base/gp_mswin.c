@@ -831,7 +831,7 @@ int gp_fpread(char *buf, uint count, int64_t offset, FILE *f)
 {
     OVERLAPPED overlapped;
     DWORD ret;
-    HANDLE hnd = _get_osfhandle(fileno(f));
+    HANDLE hnd = (HANDLE)_get_osfhandle(fileno(f));
 
     if (hnd == INVALID_HANDLE_VALUE)
         return -1;
@@ -851,7 +851,7 @@ int gp_fpwrite(char *buf, uint count, int64_t offset, FILE *f)
 {
     OVERLAPPED overlapped;
     DWORD ret;
-    HANDLE hnd = _get_osfhandle(fileno(f));
+    HANDLE hnd = (HANDLE)_get_osfhandle(fileno(f));
 
     if (hnd == INVALID_HANDLE_VALUE)
         return -1;
@@ -954,14 +954,14 @@ int gp_fseek_64(FILE *strm, gs_offset_t offset, int origin)
 
 bool gp_fseekable (FILE *f)
 {
-    struct stat s;
+    struct __stat64 s;
     int fno;
     
     fno = fileno(f);
     if (fno < 0)
         return(false);
     
-    if (fstat(fno, &s) < 0)
+    if (_fstat64(fno, &s) < 0)
         return(false);
 
     return((bool)S_ISREG(s.st_mode));
