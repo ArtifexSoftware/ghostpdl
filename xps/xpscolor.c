@@ -189,6 +189,8 @@ xps_read_icc_colorspace(xps_context_t *ctx, char *base_uri, char *profilename)
 
         /* Create the profile */
         profile = gsicc_profile_new(NULL, ctx->memory, NULL, 0);
+        if (profile == NULL)
+            return NULL;
 
         /* Set buffer */
         profile->buffer = part->data;

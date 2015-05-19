@@ -643,6 +643,8 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                             icc_profile =
                                 gsicc_profile_new(str, mem, curr_ptr, strlen(curr_ptr));
                             code = sfclose(str);
+                        }
+                        if (str != NULL && icc_profile != NULL) {
                             gsicc_init_profile_info(icc_profile);
                             cmm = gsCMM_DEFAULT;
                             /* Check if this object is a devicelink profile.

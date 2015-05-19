@@ -170,6 +170,8 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
 
         /* Create the profile */
         profile = gsicc_profile_new(NULL, ctx->memory, NULL, 0);
+        if (profile == NULL)
+            return gs_throw(gs_error_VMerror, "Profile allocation failed");
 
         /* Set buffer */
         profile->buffer = image->profile;
