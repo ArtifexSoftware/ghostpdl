@@ -169,9 +169,11 @@ FT_CFLAGS=@FT_CFLAGS@
 FT_LIBS=@FT_LIBS@
 FT_CONFIG_SYSTEM_ZLIB=@FT_SYS_ZLIB@
 
-# Define whether to compile in UFST. Note that freetype will/must be disabled.
+# Define whether to compile in UFST.
 # FAPI/UFST depends on UFST_BRIDGE being undefined - hence the construct below.
 # (i.e. use "UFST_BRIDGE=1" or *not to define UFST_BRIDGE to anything*)
+# As UFST is not used for fonts embedded in input files, we should still have
+# Freetype enabled, above.
 @INSERT_UFST_BRIDGE_EQUAL_ONE@
 UFST_ROOT=@UFST_ROOT@
 UFST_LIB_EXT=@UFST_LIB_EXT@
