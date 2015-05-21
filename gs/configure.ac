@@ -2204,13 +2204,8 @@ dnl --------------------------------------------------
 dnl set big/little endian for LCMS
 dnl --------------------------------------------------
 
-if test "x$BIGENDIAN" != "x0"; then
-  LCMS_ENDIAN="-DUSE_BIG_ENDIAN=$BIGENDIAN"
-  LCMS2_ENDIAN="-DCMS_USE_BIG_ENDIAN=$BIGENDIAN"
-else
-  LCMS_ENDIAN=
-  LCMS2_ENDIAN=
-fi
+LCMS_ENDIAN="-DUSE_BIG_ENDIAN=$BIGENDIAN"
+LCMS2_ENDIAN="-DCMS_USE_BIG_ENDIAN=$BIGENDIAN"
 
 AC_SUBST(LCMS_ENDIAN)
 AC_SUBST(LCMS2_ENDIAN)
