@@ -1676,7 +1676,7 @@ currentdict /jp2_csp_dict .undef
           dup null eq {
             pop exch                     % <<stream dict>> [] [] loopcount
             <</Height
-            5 index /Height get          % <<stream dict>> [] [] loopcount << /Height Height
+            5 index /Height oget         % <<stream dict>> [] [] loopcount << /Height Height
             round cvi
             >>
             put                          % <<stream dict>> []
@@ -1685,14 +1685,15 @@ currentdict /jp2_csp_dict .undef
             dup type /dicttype eq {
                                          % <<stream dict>> [] loopcount [] <<>>
               /Height                    % <<stream dict>> [] loopcount [] <<>> /Height
-              5 index /Height get        % <<stream dict>> [] loopcount [] <<>> /Height Height
-              round cvi
+              5 index /Height oget       % <<stream dict>> [] loopcount [] <<>> /Height Height
+              round
+              cvi
               put pop pop                % <<stream dict>> []
             }{
               %% bogus entry, throw it away and create a new one
               pop exch                   % <<stream dict>> [] loopcount []
               <</Height
-              5 index /Height get        % <<stream dict>> [] [] loopcount << /Height Height
+              5 index /Height oget       % <<stream dict>> [] [] loopcount << /Height Height
               round cvi
               >>
               put                        % <<stream dict>> []
@@ -1707,14 +1708,14 @@ currentdict /jp2_csp_dict .undef
           dup type /dicttype eq {
                                          % <<stream dict>> <<decode parms dict>>
             /Height 2 index              % <<stream dict>> <<decode parms dict>> /Height <<stream dict>>
-            /Height get                  % <<stream dict>> <<decode parms dict>> /Height ImageHeight
+            /Height oget                  % <<stream dict>> <<decode parms dict>> /Height ImageHeight
             round cvi
             put                          % <<stream dict>>
           }{
             %% bogus entry, throw it away and create a new one
             pop exch                     % <<stream dict>>
             <</Height                    % <<stream dict>> << /Height
-            3 index /Height get          % <<stream dict>> << /Height Height
+            3 index /Height oget          % <<stream dict>> << /Height Height
             round cvi
             >>
             put                          % <<stream dict>> []
@@ -1723,7 +1724,7 @@ currentdict /jp2_csp_dict .undef
           dup                            % <<stream dict>> <<stream dict>>
           /DecodeParms <</Height         % <<stream dict>> <<stream dict>> /DecodeParms << /Height
           3 index                        % <<stream dict>> <<stream dict>> /DecodeParms << /Height <<stream dict>>
-          /Height get
+          /Height oget
           round cvi
           >>                             % <<stream dict>> <<stream dict>> /DecodeParms << /Height ImageHeight>>
           put                            % <<stream dict>>
