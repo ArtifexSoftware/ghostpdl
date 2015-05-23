@@ -109,8 +109,12 @@ int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
 #  define cups_page_header_t cups_page_header2_t
 #  define cupsRasterWriteHeader cupsRasterWriteHeader2
 #else
-/* The RGBW colorspace is not defined until CUPS 1.2... */
+/* The RGBW, SW, SRGB, and ADOBERGB colorspaces is not defined until
+   CUPS 1.2... */
 #  define CUPS_CSPACE_RGBW 17
+#  define CUPS_CSPACE_SW 18
+#  define CUPS_CSPACE_SRGB 19
+#  define CUPS_CSPACE_ADOBERGB 20
 #endif /* CUPS_RASTER_SYNCv1 */
 
 #if !defined(CUPS_RASTER_WRITE_PWG)
@@ -634,6 +638,7 @@ cups_get_color_comp_index(gx_device * pdev, const char * pname,
 	    return -1; /* Indicate that the component name is "unknown" */
         break;
     case CUPS_CSPACE_W :
+    case CUPS_CSPACE_SW :
     case CUPS_CSPACE_WHITE :
         if (compare_color_names(pname, name_size, "White") ||
 	    compare_color_names(pname, name_size, "Luminance") ||
@@ -661,6 +666,8 @@ cups_get_color_comp_index(gx_device * pdev, const char * pname,
 	    return -1;
         break;
     case CUPS_CSPACE_RGB :
+    case CUPS_CSPACE_SRGB :
+    case CUPS_CSPACE_ADOBERGB :
         if (compare_color_names(pname, name_size, "Red"))
 	    return 0;
 	if (compare_color_names(pname, name_size, "Green"))
@@ -1193,6 +1200,7 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
   switch (cups->header.cupsColorSpace)
   {
     case CUPS_CSPACE_W :
+    case CUPS_CSPACE_SW :
         c0 = (c * 31 + m * 61 + y * 8) / 100 + k;
 
 	if (c0 < 0)
@@ -1206,6 +1214,8 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
         out[3] = frac_1;
 
     case CUPS_CSPACE_RGB :
+    case CUPS_CSPACE_SRGB :
+    case CUPS_CSPACE_ADOBERGB :
     case CUPS_CSPACE_RGBW :
         c0 = c + k;
         c1 = m + k;
@@ -2012,12 +2022,15 @@ cups_map_color_rgb(gx_device      *pdev,/* I - Device info */
         break;
 
     case CUPS_CSPACE_W :
+    case CUPS_CSPACE_SW :
         prgb[0] =
         prgb[1] =
         prgb[2] = cups->DecodeLUT[c3];
         break;
 
     case CUPS_CSPACE_RGB :
+    case CUPS_CSPACE_SRGB :
+    case CUPS_CSPACE_ADOBERGB :
         prgb[0] = cups->DecodeLUT[c1];
         prgb[1] = cups->DecodeLUT[c2];
         prgb[2] = cups->DecodeLUT[c3];
@@ -2284,10 +2297,13 @@ cups_map_rgb_color(gx_device      *pdev,/* I - Device info */
   switch (cups->header.cupsColorSpace)
   {
     case CUPS_CSPACE_W :
+    case CUPS_CSPACE_SW :
         i = cups->EncodeLUT[(r * 31 + g * 61 + b * 8) / 100];
         break;
 
     case CUPS_CSPACE_RGB :
+    case CUPS_CSPACE_SRGB :
+    case CUPS_CSPACE_ADOBERGB :
         ic = cups->EncodeLUT[r];
         im = cups->EncodeLUT[g];
         iy = cups->EncodeLUT[b];
@@ -3944,6 +3960,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
   {
     default :
     case CUPS_CSPACE_W :
+    case CUPS_CSPACE_SW :
     case CUPS_CSPACE_K :
     case CUPS_CSPACE_WHITE :
     case CUPS_CSPACE_GOLD :
@@ -3963,6 +3980,8 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
     case CUPS_CSPACE_CMY :
     case CUPS_CSPACE_YMC :
     case CUPS_CSPACE_RGB :
+    case CUPS_CSPACE_SRGB :
+    case CUPS_CSPACE_ADOBERGB :
 #ifdef CUPS_RASTER_SYNCv1
 	cups->header.cupsNumColors      = 3;
 #endif /* CUPS_RASTER_SYNCv1 */
@@ -4065,6 +4084,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 	break;
 
     case CUPS_CSPACE_W :
+    case CUPS_CSPACE_SW :
     case CUPS_CSPACE_WHITE :
     case CUPS_CSPACE_K :
     case CUPS_CSPACE_GOLD :
@@ -4087,8 +4107,11 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
     default :
     case CUPS_CSPACE_RGBW :
     case CUPS_CSPACE_W :
+    case CUPS_CSPACE_SW :
     case CUPS_CSPACE_WHITE :
     case CUPS_CSPACE_RGB :
+    case CUPS_CSPACE_SRGB :
+    case CUPS_CSPACE_ADOBERGB :
     case CUPS_CSPACE_RGBA :
 #  ifdef CUPS_RASTER_HAVE_COLORIMETRIC
     case CUPS_CSPACE_CIEXYZ :
@@ -4346,6 +4369,8 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
       default :
       case CUPS_CSPACE_RGBW :
       case CUPS_CSPACE_RGB :
+      case CUPS_CSPACE_SRGB :
+      case CUPS_CSPACE_ADOBERGB :
       case CUPS_CSPACE_RGBA :
       case CUPS_CSPACE_CMY :
       case CUPS_CSPACE_YMC :
@@ -4381,6 +4406,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
         break;
 
       case CUPS_CSPACE_W :
+      case CUPS_CSPACE_SW :
       case CUPS_CSPACE_WHITE :
       case CUPS_CSPACE_K :
       case CUPS_CSPACE_GOLD :
