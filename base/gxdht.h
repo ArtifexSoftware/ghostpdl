@@ -222,7 +222,7 @@ struct gx_ht_order_s {
     gx_transfer_map *transfer;	/* TransferFunction or 0 */
     gx_ht_order_screen_params_t screen_params;
     byte *threshold;
-    bool threshold_inverts;
+    bool threshold_inverted;
 };
 
 #define ht_order_is_complete(porder)\

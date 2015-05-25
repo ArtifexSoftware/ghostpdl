@@ -177,7 +177,7 @@ threshold_16_SSE_unaligned(byte *contone_ptr, byte *thresh_ptr, byte *ht_data)
 }
 #endif
 
-/* SSE2 and non-SSE2 implememntation of thresholding a row. Subtractive case  
+/* SSE2 and non-SSE2 implememntation of thresholding a row. Subtractive case
    There is some code replication between the two of these (additive and subtractive)
    that I need to go back and determine how we can combine them without
    any performance loss. */
@@ -390,7 +390,7 @@ gx_ht_threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stri
 #endif
 }
 
-/* This thresholds a buffer that is LAND_BITS wide by data_length tall. 
+/* This thresholds a buffer that is LAND_BITS wide by data_length tall.
    Subtractive case */
 void
 gx_ht_threshold_landscape_sub(byte *contone_align, byte *thresh_align,
@@ -615,14 +615,15 @@ gxht_thresh_image_init(gx_image_enum *penum)
        with h=0 we will flush the buffer as we are at the end of the
        data.  */
     if (penum->posture == image_landscape) {
-        int col_length =
-            fixed2int_var_rounded(any_abs(penum->x_extent.y));
+        int col_length = fixed2int_var_rounded(any_abs(penum->x_extent.y));
+
         ox = dda_current(penum->dda.pixel0.x);
         oy = dda_current(penum->dda.pixel0.y);
-        /* Line_size is col_length rounded up - why? */
-        /* RJW: This was 16 here, but as I don't understand why, I'm using
-         * LAND_BITS instead. Check with Michael. */
-        temp = (col_length + LAND_BITS-1)/LAND_BITS;
+        temp = (int) fabs((long) fixed2int_var_rounded(oy + penum->x_extent.y) -
+                         fixed2int_var_rounded(oy));
+        if (col_length < temp)
+            col_length = temp;          /* choose max to make sure line_size is large enough */
+        temp = (col_length + LAND_BITS)/LAND_BITS;      /* round up to allow for offset bits */
         /* bitmap_raster() expects the width in bits, hence "* 8" */
         penum->line_size = bitmap_raster((temp * LAND_BITS) * 8);  /* The stride */
         /* Now we need at most LAND_BITS of these */
@@ -686,15 +687,15 @@ gxht_thresh_image_init(gx_image_enum *penum)
         ox = dda_current(penum->dda.pixel0.x);
         oy = dda_current(penum->dda.pixel0.y);
         dev_width =
-           (int) fabs((long) fixed2long_pixround(ox + penum->x_extent.x) -
-                    fixed2long_pixround(ox));
+           (int) fabs((long) fixed2int_var_rounded(ox + penum->x_extent.x) -
+                    fixed2int_var_rounded(ox));
         /* Get the bit position so that we can do a copy_mono for
            the left remainder and then 16 bit aligned copies for the
            rest.  The right remainder will be OK as it will land in
            the MSBit positions. Note the #define chunk bits16 in
            gdevm1.c.  Allow also for a 15 sample over run.
         */
-        penum->ht_offset_bits = (-fixed2int_var_pixround(ox)) & (bitmap_raster(1) - 1);
+        penum->ht_offset_bits = (-fixed2int_var_rounded(ox)) & (bitmap_raster(1) - 1);
         if (penum->ht_offset_bits > 0) {
             penum->ht_stride = bitmap_raster((7 + (dev_width + 4)) + (ARCH_SIZEOF_LONG * 8));
         } else {
@@ -869,11 +870,13 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
             /*  Iterate over the vdi and fill up our threshold buffer.  We
                  also need to loop across the planes of data */
             for (j = 0; j < spp_out; j++) {
+                bool threshold_inverted = penum->pis->dev_ht->components[j].corder.threshold_inverted;
+
                 thresh_width = penum->pis->dev_ht->components[j].corder.width;
                 thresh_height = penum->pis->dev_ht->components[j].corder.full_height;
                 halftone = penum->ht_buffer + j * vdi * dithered_stride;
                 /* Compute the tiling positions with dest_width */
-                dx = fixed2int_var(xrun) % thresh_width;
+                dx = (fixed2int_var_rounded(xrun) + penum->pis->screen_phase[0].x) % thresh_width;
                 /* Left remainder part */
                 left_rem_end = min(dx + dest_width, thresh_width);
                 /* The left width of our tile part */
@@ -907,8 +910,8 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                 if (offset_bits > dest_width)
                     offset_bits = dest_width;
 
-                if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE
-                    && is_planar_dev) {
+                if (threshold_inverted ||
+                    (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE && is_planar_dev)) {
                     gx_ht_threshold_row_bit_sub(contone_align, thresh_align, contone_stride,
                                       halftone, dithered_stride, dest_width, vdi,
                                       offset_bits);
@@ -930,7 +933,7 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
             /* Now do the copy mono or copy plane operation */
             /* First the left remainder bits */
             if (offset_bits > 0) {
-                int x_pos = fixed2int_var(xrun);
+                int x_pos = fixed2int_var_rounded(xrun);
                 if (!is_planar_dev) {
                     (*dev_proc(dev, copy_mono)) (dev, penum->ht_buffer, 0, dithered_stride,
                                                  gx_no_bitmap_id, x_pos, y_pos,
@@ -945,14 +948,14 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
             if ((dest_width - offset_bits) > 0 ) {
                 /* Now the primary aligned bytes */
                 int curr_width = dest_width - offset_bits;
-                int x_pos = fixed2int_var(xrun) + offset_bits;
+                int x_pos = fixed2int_var_rounded(xrun) + offset_bits;
                 /* FIXME: This assumes the allowed offset_bits will always be <= 16 */
                 int xoffs = offset_bits > 0 ? 16 : 0;
 
                 if (!is_planar_dev) {
                     (*dev_proc(dev, copy_mono)) (dev, penum->ht_buffer, xoffs, dithered_stride,
                                                  gx_no_bitmap_id, x_pos, y_pos,
-                                                 curr_width, vdi, dev_white, 
+                                                 curr_width, vdi, dev_white,
                                                  dev_black);
                 } else {
                     (*dev_proc(dev, copy_planes)) (dev, penum->ht_buffer, xoffs, dithered_stride,
@@ -992,13 +995,13 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                         width = LAND_BITS;
                     }
                     if (penum->y_extent.x < 0) {
-                        dx = (penum->ht_landscape.xstart - width + 1) %
-                                                                thresh_width;
+                        dx = penum->ht_landscape.xstart - width + 1;
                     } else {
-                        dx = penum->ht_landscape.xstart % thresh_width;
+                        dx = penum->ht_landscape.xstart;
                     }
-                    dy = (penum->dev->band_offset_y +
-                                    penum->ht_landscape.y_pos) % thresh_height;
+                    dx = (dx + penum->pis->screen_phase[0].x) % thresh_width;
+                    dy = (penum->ht_landscape.y_pos +
+                              penum->dev->band_offset_y) % thresh_height;
                     if (dy < 0)
                         dy += thresh_height;
                     /* Left remainder part */
@@ -1075,7 +1078,7 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                                         gx_no_bitmap_id,
                                         penum->ht_landscape.xstart - width + 1,
                                         penum->ht_landscape.y_pos,
-                                        width, dest_height, 
+                                        width, dest_height,
                                         dev_white, dev_black);
                     } else {
                         (*dev_proc(dev, copy_planes))
