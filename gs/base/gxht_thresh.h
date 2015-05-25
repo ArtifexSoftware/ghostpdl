@@ -21,7 +21,7 @@
 #  define gsht_thresh_INCLUDED
 
 #define RAW_HT_DUMP 0
-#define USE_FAST_HT_CODE 1
+#define USE_FAST_HT_CODE 0
 /* #define PACIFY_VALGRIND */
 
 #if RAW_HT_DUMP
