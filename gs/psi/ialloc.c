@@ -164,7 +164,7 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
 
     /* If we're allocating a run of refs already, */
     /* and we aren't about to overflow the maximum run length, use it. */
-    if (mem->cc.rtop == mem->cc.cbot &&
+    if (mem->cc.has_refs == true && mem->cc.rtop == mem->cc.cbot &&
         num_refs < (mem->cc.ctop - mem->cc.cbot) / sizeof(ref) &&
         mem->cc.rtop - (byte *) mem->cc.rcur + num_refs * sizeof(ref) <
         max_size_st_refs
