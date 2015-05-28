@@ -1,36 +1,21 @@
-; GHOSTPDF.INF (for Windows 2k, XP and XP x64 edition)
 ;
-; Windows 8:
-; ghostpdl.inf is not supported on Windows 8. It can be installed,
-; however, by doing the following:
+; This .inf file is intended to be used with the ghostpdf.cat
+; file which should have been supplied with it. The ghostpdf.cat
+; file provides the driver signature necessary for installation
+; on recent versions of Windows without the alarming warnings about
+; unsigned drivers, however it also means that this .inf file cannot
+; be installed using right-click->Install (or double-click on the .inf
+; file). You must install this from the Control Panel using Add Printer.
 ;
-; AT YOUR OWN RISK!!
-;
-; Open your charms (the right side popup menu) and select
-; "Settings" and click on the last option on the list called 
-; "Change PC Settings". In the "General" category click the
-; "Restart now" button under "Advanced startup".
-; When the system restarts it will show you several options, you
-; want to select "Troubleshoot" then "Advanced options" and finally
-; "Startup Settings". The system will reboot one more time and you
-; will have a new listing of options, you will want to select option
-; #7 "Disable Driver Signature Enforcement".  After the system has
-; finished restarting for the final time you will be able to add the
-; Ghostscript printer to Windows 8.
-; The final item of note is that you must select "File: (print to file)"
-; as the port for the printer as "LPT1" will not work.
-;
-; AT YOUR OWN RISK!!
-
 
 [Version]
 Signature="$Windows NT$"
-Provider=Ghostgum Software Pty Ltd
+Provider=Artifex Software Inc.
 ClassGUID={4D36E979-E325-11CE-BFC1-08002BE10318}
 Class=Printer
-CatalogFile=oemprint.cat
+CatalogFile=ghostpdf.cat
 
-DriverVer=01/02/2007,1.0.0.1
+DriverVer=01/01/2013,1.0.0.1
 
 ; Manufacturer section
 [Manufacturer]
