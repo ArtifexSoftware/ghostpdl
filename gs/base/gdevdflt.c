@@ -1222,8 +1222,12 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     void *psubclass_data;
     gs_memory_struct_type_t *a_std;
     int dynamic = dev_to_subclass->stype_is_dynamic;
+    char *ptr, *ptr1;
 
-    /* I believe this is not possible, but.... */
+    /* If this happens we are stuffed, as there is no way to get hold
+     * of the original device's stype structure, which means we cannot
+     * allocate a replacement structure. Abort if so.
+     */
     if (!dev_to_subclass->stype)
         return_error(gs_error_VMerror);
 
@@ -1263,6 +1267,9 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     }
     memset(psubclass_data, 0x00, private_data_size);
 
+    if (dev_to_subclass->stype->ssize < new_prototype->params_size)
+        return gs_error_VMerror;
+
     gx_copy_device_procs(&dev_to_subclass->procs, &child_dev->procs, &new_prototype->procs);
     dev_to_subclass->procs.fill_rectangle = new_prototype->procs.fill_rectangle;
     dev_to_subclass->procs.copy_planes = new_prototype->procs.copy_planes;
@@ -1270,13 +1277,27 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     dev_to_subclass->dname = new_prototype->dname;
     dev_to_subclass->icc_struct = NULL;
 
+    /* In case the new device we're creating has already been initialised, copy
+     * its additional data.
+     */
+    ptr = ((char *)dev_to_subclass) + sizeof(gx_device);
+    ptr1 = ((char *)new_prototype) + sizeof(gx_device);
+    memcpy(ptr, ptr1, new_prototype->params_size - sizeof(gx_device));
+
     /* If the original device's stype structure was dynamically allocated, we need
      * to 'fixup' the contents, it's procs need to point to the new device's procs
      * for instance.
      */
     if (dynamic) {
-        a_std = (gs_memory_struct_type_t *)dev_to_subclass->stype;
-        *a_std = *new_prototype->stype;
+        if (new_prototype->stype) {
+            a_std = (gs_memory_struct_type_t *)dev_to_subclass->stype;
+            *a_std = *new_prototype->stype;
+        } else {
+            gs_free_const_object(child_dev->memory->non_gc_memory, dev_to_subclass->stype,
+                             "unsubclass");
+            dev_to_subclass->stype = NULL;
+            dev_to_subclass->stype_is_dynamic = 0;
+        }
     }
 
     dev_to_subclass->subclass_data = psubclass_data;

@@ -36,7 +36,6 @@
 #include "gsparam.h"
 #include "gxdevice.h"
 #include "gsdevice.h"		/* requires gsmatrix.h */
-#include "gdevflp.h"
 #include "gxdcolor.h"		/* for gx_device_black/white */
 #include "gxiparam.h"		/* for image source size */
 #include "gxistate.h"
@@ -122,8 +121,7 @@ static RELOC_PTRS_WITH(flp_reloc_ptrs, gx_device *dev)
 {
     dev->parent = gx_device_reloc_ptr(dev->parent, gcst);
     dev->child = gx_device_reloc_ptr(dev->child, gcst);
-}
-RELOC_PTRS_END
+}RELOC_PTRS_END
 
 public_st_flp_device();
 
