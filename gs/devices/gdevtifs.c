@@ -83,7 +83,7 @@ tiff_open(gx_device *pdev)
             dev = dev->parent;
 
         while(dev) {
-            dev->PageHandlerPushed = true;
+            dev->ObjectHandlerPushed = true;
             dev = dev->child;
         }
 
