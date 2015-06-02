@@ -493,7 +493,7 @@ $(pcl_tr): $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $
 
 xps_tr=$(GLGENDIR)$(D)xps.tr
 $(xps_tr): $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(ld_tr) $(devs_tr) $(XPS_DEVS_ALL) \
-                                             $(devs_tr) $(PSI_DEVS_ALL) $(XPS_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
+                                             $(devs_tr) $(XPS_FEATURE_DEVS) $(GLGENDIR)$(D)libcore.dev
 	$(EXP)$(GENCONF_XE) -n xps $(XPS_FEATURE_DEVS) $(CONFILES) -o $(xps_tr)
 
 gpdl_tr=$(GLGENDIR)$(D)gpdl.tr
