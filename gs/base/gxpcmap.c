@@ -98,8 +98,8 @@ static dev_proc_fill_rectangle_hl_color(pattern_accum_fill_rectangle_hl_color);
 
 /* The device descriptor */
 static const gx_device_pattern_accum gs_pattern_accum_device =
-{std_device_std_body_open(gx_device_pattern_accum, 0,
-                          "pattern accumulator",
+{std_device_std_body_type_open(gx_device_pattern_accum, 0,
+                          "pattern accumulator", &st_device_pattern_accum,
                           0, 0, 72, 72),
  {
      /* NOTE: all drawing procedures must be defaulted, not forwarded. */

@@ -920,8 +920,17 @@ int pixmap_high_level_pattern(gs_state * pgs)
         gs_grestore(pgs);
         return code;
     }
-    code = dev_proc(pgs->device, dev_spec_op)(pgs->device,
-                                gxdso_pattern_start_accum, pinst, pinst->id);
+
+    {
+        pattern_accum_param_s param;
+        param.pinst = (void *)pinst;
+        param.graphics_state = (void *)pgs;
+        param.pinst_id = pinst->id;
+
+        code = dev_proc(pgs->device, dev_spec_op)(pgs->device,
+                                gxdso_pattern_start_accum, &param, sizeof(pattern_accum_param_s));
+    }
+
     if (code < 0) {
         gs_grestore(pgs);
         return code;
@@ -941,8 +950,15 @@ int pixmap_high_level_pattern(gs_state * pgs)
     if (code < 0)
         return code;
 
-    code = dev_proc(pgs->device, dev_spec_op)(pgs->device,
-                          gxdso_pattern_finish_accum, NULL, gx_no_bitmap_id);
+    {
+        pattern_accum_param_s param;
+        param.pinst = (void *)pinst;
+        param.graphics_state = (void *)pgs;
+        param.pinst_id = pinst->id;
+
+        code = dev_proc(pgs->device, dev_spec_op)(pgs->device,
+                          gxdso_pattern_finish_accum, &param, sizeof(pattern_accum_param_s));
+    }
 
     return code;
 }

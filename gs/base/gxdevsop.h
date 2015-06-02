@@ -124,6 +124,13 @@ typedef struct dev_param_req_s {
     void *list;
 }dev_param_req_t;
 
+/* structure used to pass the parameters for pattern handling */
+typedef struct pattern_accum_param_t {
+    void *pinst;
+    void *graphics_state;
+    int pinst_id;
+}pattern_accum_param_s;
+
 enum {
     /* All gxdso_ keys must be defined in this structure.
      * Do NOT rely on your particular gxdso_ having a particular value.

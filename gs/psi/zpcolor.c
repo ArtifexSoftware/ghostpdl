@@ -273,8 +273,17 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
             gs_grestore(pgs);
             return code;
         }
-        code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_pattern_start_accum,
-                                pinst, pinst->id);
+
+        {
+            pattern_accum_param_s param;
+            param.pinst = (void *)pinst;
+            param.graphics_state = (void *)pgs;
+            param.pinst_id = pinst->id;
+
+            code = (*dev_proc(pgs->device, dev_spec_op))((gx_device *)pgs->device,
+                gxdso_pattern_start_accum, &param, sizeof(pattern_accum_param_s));
+        }
+
         if (code < 0) {
             gs_grestore(pgs);
             return code;
@@ -345,21 +354,25 @@ pattern_paint_cleanup(i_ctx_t *i_ctx_p)
 {
     gx_device_pattern_accum *const pdev =
         r_ptr(esp + 2, gx_device_pattern_accum);
+        gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)gs_currentcolor(igs->saved)->pattern;
     int code;
 
     if (pdev != NULL) {
         /* grestore will free the device, so close it first. */
         (*dev_proc(pdev, close_device)) ((gx_device *) pdev);
     }
-    code = gs_grestore(igs);
-    gx_unset_dev_color(igs);	/* dev_color may need updating if GC ran */
     if (pdev == NULL) {
         gx_device *cdev = gs_currentdevice_inline(igs);
-        int code1 = dev_proc(cdev, dev_spec_op)(cdev,
-                        gxdso_pattern_finish_accum, NULL, gx_no_bitmap_id);
+        pattern_accum_param_s param;
 
-        if (code == 0 && code1 < 0)
-            code = code1;
+        param.pinst = (void *)pinst;
+        param.graphics_state = (void *)igs;
+        param.pinst_id = pinst->id;
+
+        code = dev_proc(cdev, dev_spec_op)(cdev,
+                        gxdso_pattern_finish_accum, &param, sizeof(pattern_accum_param_s));
     }
+    code = gs_grestore(igs);
+    gx_unset_dev_color(igs);	/* dev_color may need updating if GC ran */
     return code;
 }

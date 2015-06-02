@@ -884,16 +884,31 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
         inst.templat.BBox.q.y = cvd->mdev.height;
         inst.templat.XStep = (float)cvd->mdev.width;
         inst.templat.YStep = (float)cvd->mdev.height;
-        code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev,
-            gxdso_pattern_start_accum, &inst, id);
+
+        {
+            pattern_accum_param_s param;
+            param.pinst = (void *)&inst;
+            param.graphics_state = (void *)&s;
+            param.pinst_id = inst.id;
+
+            code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev,
+                gxdso_pattern_start_accum, &param, sizeof(pattern_accum_param_s));
+        }
+
         if (code >= 0) {
             stream_puts(pdev->strm, "W n\n");
             code = write_image(pdev, &cvd->mdev, NULL);
         }
         pres = pdev->accumulating_substream_resource;
-        if (code >= 0)
+        if (code >= 0) {
+            pattern_accum_param_s param;
+            param.pinst = (void *)&inst;
+            param.graphics_state = (void *)&s;
+            param.pinst_id = inst.id;
+
             code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev,
-                gxdso_pattern_finish_accum, &inst, id);
+                gxdso_pattern_finish_accum, &param, id);
+        }
         if (code >= 0)
             code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev,
                 gxdso_pattern_load, &inst, id);

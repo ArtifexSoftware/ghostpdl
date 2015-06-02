@@ -2273,16 +2273,31 @@ use_image_as_pattern(gx_device_pdf *pdev, pdf_resource_t *pres1,
     inst.templat.BBox.q.y = 1;
     inst.templat.XStep = 2; /* Set 2 times bigger step against artifacts. */
     inst.templat.YStep = 2;
-    code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev,
-        gxdso_pattern_start_accum, &inst, id);
+
+    {
+        pattern_accum_param_s param;
+        param.pinst = (void *)&inst;
+        param.graphics_state = (void *)&s;
+        param.pinst_id = inst.id;
+
+        code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev,
+            gxdso_pattern_start_accum, &param, sizeof(pattern_accum_param_s));
+    }
+
     if (code >= 0)
         pprintld1(pdev->strm, "/R%ld Do\n", pdf_resource_id(pres1));
     pres = pdev->accumulating_substream_resource;
     if (code >= 0)
         code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pres1);
-    if (code >= 0)
+    if (code >= 0) {
+        pattern_accum_param_s param;
+        param.pinst = (void *)&inst;
+        param.graphics_state = (void *)&s;
+        param.pinst_id = inst.id;
+
         code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev,
-            gxdso_pattern_finish_accum, &inst, id);
+            gxdso_pattern_finish_accum, &param, id);
+    }
     if (code >= 0)
         code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev,
             gxdso_pattern_load, &inst, id);
@@ -2672,7 +2687,6 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
     int code=0;
     pdf_resource_t *pres, *pres1;
     gx_bitmap_id id = (gx_bitmap_id)size;
-    gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)data;
 
     switch (dev_spec_op) {
         case gxdso_pattern_can_accum:
@@ -2813,18 +2827,24 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             }
             return 0;
         case gxdso_pattern_start_accum:
-            code = pdf_enter_substream(pdev, resourcePattern, id, &pres, false,
-                    pdev->CompressFonts/* Have no better switch.*/);
-            if (code < 0)
-                return code;
-            pres->rid = id;
-            code = pdf_store_pattern1_params(pdev, pres, pinst);
-            if (code < 0)
-                return code;
-            /* Scale the coordinate system, because object handlers assume so. See none_to_stream. */
-            pprintg2(pdev->strm, "%g 0 0 %g 0 0 cm\n",
-                     72.0 / pdev->HWResolution[0], 72.0 / pdev->HWResolution[1]);
-            pdev->PatternDepth++;
+            {
+                pattern_accum_param_s *param = (pattern_accum_param_s *)data;
+                gs_pattern1_instance_t *pinst = param->pinst;
+                id = param->pinst_id;
+
+                code = pdf_enter_substream(pdev, resourcePattern, id, &pres, false,
+                        pdev->CompressFonts/* Have no better switch.*/);
+                if (code < 0)
+                    return code;
+                pres->rid = id;
+                code = pdf_store_pattern1_params(pdev, pres, pinst);
+                if (code < 0)
+                    return code;
+                /* Scale the coordinate system, because object handlers assume so. See none_to_stream. */
+                pprintg2(pdev->strm, "%g 0 0 %g 0 0 cm\n",
+                         72.0 / pdev->HWResolution[0], 72.0 / pdev->HWResolution[1]);
+                pdev->PatternDepth++;
+            }
             return 1;
         case gxdso_pattern_finish_accum:
             code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
