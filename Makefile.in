@@ -497,7 +497,7 @@ SO_LIB_VERSION_SEPARATOR=@SO_LIB_VERSION_SEPARATOR@
 # Choose the language feature(s) to include.  See gs.mak for details.
 # Choose the language feature(s) to include.  See gs.mak for details.
 PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)epsf.dev $(PSD)ttfont.dev \
-                 $(PSD)utf8.dev $(PSD)fapi_ps.dev $(PSD)jpx.dev $(PSD)rasterop.dev $(PSD)jbig2.dev
+                 @UTF8DEVS@ $(PSD)fapi_ps.dev $(PSD)jpx.dev $(PSD)rasterop.dev $(PSD)jbig2.dev
 
 
 PCL_FEATURE_DEVS=$(PLOBJDIR)/pl.dev $(PLOBJDIR)/pjl.dev $(PXLOBJDIR)/pxl.dev $(PCL5OBJDIR)/pcl5c.dev \
