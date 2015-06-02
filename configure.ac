@@ -346,7 +346,6 @@ dnl --------------------------------------------------
 dnl Check for headers
 dnl --------------------------------------------------
 
->>>>>>> Rearrange directories.
 AC_HEADER_DIRENT
 AC_HEADER_STDC
 AC_CHECK_HEADERS([errno.h fcntl.h limits.h malloc.h memory.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/time.h sys/times.h syslog.h unistd.h dirent.h ndir.h sys/dir.h sys/ndir.h inttypes.h])
@@ -2546,7 +2545,6 @@ AC_SUBST(AUXDIRPOSTFIX)
 dnl --------------------------------------------------
 dnl Do substitutions
 dnl --------------------------------------------------
->>>>>>> Rearrange directories.
 
 AC_SUBST(OPT_CFLAGS)
 AC_SUBST(DBG_CFLAGS)
