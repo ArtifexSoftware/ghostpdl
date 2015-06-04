@@ -35,9 +35,9 @@ zarray(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if (op->value.intval < 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if (op->value.intval > max_array_size)
-        return_error(e_limitcheck);
+        return_error(gs_error_limitcheck);
     size = op->value.intval;
     code = ialloc_ref_array((ref *)op, a_all, size, "array");
     if (code < 0)
@@ -101,13 +101,13 @@ zastore(i_ctx_t *i_ctx_p)
     if (size == 0)
         return 0;
     if (!r_has_type_attrs(op, t_array, a_write))
-        return_error(e_invalidaccess);
+        return_error(gs_error_invalidaccess);
     if (size > op - osbot) {
         /* The store operation might involve other stack segments. */
         ref arr;
 
         if (size >= ref_stack_count(&o_stack))
-            return_error(e_stackunderflow);
+            return_error(gs_error_stackunderflow);
         arr = *op;
         code = ref_stack_store(&o_stack, &arr, size, 1, 0, true, idmemory,
                                "astore");

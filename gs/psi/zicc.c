@@ -63,7 +63,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 
     /* verify the DataSource entry */
     if (dict_find_string(ICCdict, "DataSource", &pstrmval) <= 0)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     check_read_file(i_ctx_p, s, pstrmval);
 
     /* build the color space object */
@@ -144,7 +144,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     if (!expected || ncomps != expected) {
         rc_decrement(picc_profile,"seticc");
         rc_decrement(pcs,"seticc");
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     }
 
     /* Lets go ahead and get the hash code and check if we match one of the default spaces */
@@ -263,7 +263,7 @@ zset_outputintent(i_ctx_t * i_ctx_p)
 
     /* verify the DataSource entry. Creat profile from stream */
     if (dict_find_string(op, "DataSource", &pstrmval) <= 0)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     check_read_file(i_ctx_p, s, pstrmval);
 
     picc_profile = gsicc_profile_new(s, gs_state_memory(igs), NULL, 0);
@@ -301,7 +301,7 @@ zset_outputintent(i_ctx_t * i_ctx_p)
     }
     if (expected && ncomps != expected) {
         rc_decrement(picc_profile,"zset_outputintent");
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     }
     gsicc_init_hash_cs(picc_profile, pis);
 
@@ -428,10 +428,10 @@ zseticcspace(i_ctx_t * i_ctx_p)
         return code;
     ncomps = pnval->value.intval;
     if (2*ncomps > sizeof(range_buff)/sizeof(range_buff[0]))
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     /* verify the DataSource entry */
     if (dict_find_string(op, "DataSource", &pstrmval) <= 0)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     check_read_file(i_ctx_p, s, pstrmval);
     /*
      * Verify that the current color space can be a alternative color space.
@@ -441,7 +441,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
     palt_cs = gs_currentcolorspace(igs);
     if ( !palt_cs->type->can_be_alt_space                                ||
          gs_color_space_get_index(palt_cs) == gs_color_space_index_ICC  )
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     /*
      * Fetch and verify the Range array.
      *
@@ -467,7 +467,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
     for (i = 0; i < 2 * ncomps && range_buff[i + 1] >= range_buff[i]; i += 2)
         ;
     if (i != 2 * ncomps)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     return seticc(i_ctx_p, ncomps, op, range_buff);
 }
 

@@ -49,7 +49,7 @@ INT_MAK=$(PSSRC)int.mak
 # It knows about the PostScript data types, but isn't supposed to
 # depend on anything outside itself.
 
-ierrors_h=$(PSSRC)ierrors.h
+ierrors_h=$(PSSRC)ierrors.h $(gserrors_h)
 iconf_h=$(PSSRC)iconf.h
 idebug_h=$(PSSRC)idebug.h
 # Having iddstack.h at this level is unfortunate, but unavoidable.

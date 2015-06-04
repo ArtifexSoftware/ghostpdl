@@ -110,7 +110,7 @@ uint ref_stack_counttomark(const ref_stack_t *pstack);
 
 /*
  * Do the store check for storing 'count' elements of a stack, starting
- * 'skip' elements below the top, into an array.  Return 0 or e_invalidaccess.
+ * 'skip' elements below the top, into an array.  Return 0 or gs_error_invalidaccess.
  */
 int ref_stack_store_check(const ref_stack_t *pstack, ref *parray,
                           uint count, uint skip);
@@ -118,8 +118,8 @@ int ref_stack_store_check(const ref_stack_t *pstack, ref *parray,
 /*
  * Store the top 'count' elements of a stack, starting 'skip' elements below
  * the top, into an array, with or without store/undo checking.  age=-1 for
- * no check, 0 for old, 1 for new.  May return e_rangecheck or
- * e_invalidaccess.
+ * no check, 0 for old, 1 for new.  May return gs_error_rangecheck or
+ * gs_error_invalidaccess.
  */
 #ifndef gs_dual_memory_DEFINED
 #  define gs_dual_memory_DEFINED
@@ -145,7 +145,7 @@ int ref_stack_pop_block(ref_stack_t *pstack);
 /*
  * Extend a stack to recover from an overflow condition.
  * Uses the requested value to decide what to do.
- * May return overflow_error or e_VMerror.
+ * May return overflow_error or gs_error_VMerror.
  */
 int ref_stack_extend(ref_stack_t *pstack, uint request);
 
@@ -153,7 +153,7 @@ int ref_stack_extend(ref_stack_t *pstack, uint request);
  * Push N empty slots onto a stack.  These slots are not initialized:
  * the caller must immediately fill them.  May return overflow_error
  * (if max_stack would be exceeded, or the stack has no allocator)
- * or e_VMerror.
+ * or gs_error_VMerror.
  */
 int ref_stack_push(ref_stack_t *pstack, uint count);
 

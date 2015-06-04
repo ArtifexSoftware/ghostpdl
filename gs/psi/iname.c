@@ -194,9 +194,9 @@ names_ref(name_table *nt, const byte *ptr, uint size, ref *pref, int enterflag)
     }
     /* Name was not in the table.  Make a new entry. */
     if (enterflag < 0)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     if (size > max_name_string)
-        return_error(e_limitcheck);
+        return_error(gs_error_limitcheck);
     nidx = nt->free;
     if (nidx == 0) {
         int code = name_alloc_sub(nt);
@@ -211,7 +211,7 @@ names_ref(name_table *nt, const byte *ptr, uint size, ref *pref, int enterflag)
                                              "names_ref(string)");
 
         if (cptr == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         memcpy(cptr, ptr, size);
         pnstr->string_bytes = cptr;
         pnstr->foreign_string = 0;
@@ -477,7 +477,7 @@ name_alloc_sub(name_table * nt)
 
     for (;; ++sub_index) {
         if (sub_index > nt->max_sub_count)
-            return_error(e_limitcheck);
+            return_error(gs_error_limitcheck);
         if (nt->sub[sub_index].names == 0)
             break;
     }
@@ -492,7 +492,7 @@ name_alloc_sub(name_table * nt)
     if (sub == 0 || ssub == 0) {
         gs_free_object(mem, ssub, "name_alloc_sub(string sub-table)");
         gs_free_object(mem, sub, "name_alloc_sub(sub-table)");
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     }
     memset(sub, 0, sizeof(name_sub_table));
     memset(ssub, 0, sizeof(name_string_sub_table_t));

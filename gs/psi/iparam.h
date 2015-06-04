@@ -88,7 +88,7 @@ typedef struct stack_param_list_s {
  * The 3rd (const ref *) parameter is the policies dictionary when reading,
  * or the key selection dictionary when writing; it may be NULL in either case.
  * If the bool parameter is true, if there are any unqueried parameters,
- * the commit procedure will return an e_undefined error.
+ * the commit procedure will return an gs_error_undefined error.
  */
 int dict_param_list_read(dict_param_list *, const ref * /*t_dictionary */ ,
                          const ref *, bool, gs_ref_memory_t *);

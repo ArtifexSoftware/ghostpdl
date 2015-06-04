@@ -28,7 +28,7 @@
 #include "icontext.h"
 #include "icremap.h"
 #include "idebug.h"
-#include "igstate.h"            /* for handling e_RemapColor */
+#include "igstate.h"            /* for handling gs_error_Remap_Color */
 #include "inamedef.h"
 #include "iname.h"              /* for the_name_table */
 #include "interp.h"
@@ -333,7 +333,7 @@ gs_interp_alloc_stacks(gs_ref_memory_t *mem, gs_context_state_t * pcst)
                               smem, NULL);
 	if (code < 0)
             return code;
-        ref_stack_set_error_codes(pos, e_stackunderflow, e_stackoverflow);
+        ref_stack_set_error_codes(pos, gs_error_stackunderflow, gs_error_stackoverflow);
         ref_stack_set_max_count(pos, MAX_OSTACK);
         stk.value.refs += REFS_SIZE_OSTACK;
     }
@@ -348,8 +348,8 @@ gs_interp_alloc_stacks(gs_ref_memory_t *mem, gs_context_state_t * pcst)
                        smem, NULL);
 	if (code < 0)
             return code;
-        ref_stack_set_error_codes(pes, e_ExecStackUnderflow,
-                                  e_execstackoverflow);
+        ref_stack_set_error_codes(pes, gs_error_ExecStackUnderflow,
+                                  gs_error_execstackoverflow);
         /**************** E-STACK EXPANSION IS NYI. ****************/
         ref_stack_allow_expansion(pes, false);
         ref_stack_set_max_count(pes, MAX_ESTACK);
@@ -363,8 +363,8 @@ gs_interp_alloc_stacks(gs_ref_memory_t *mem, gs_context_state_t * pcst)
         code = ref_stack_init(pds, &stk, 0, 0, NULL, smem, NULL);
         if (code < 0)
             return code;
-        ref_stack_set_error_codes(pds, e_dictstackunderflow,
-                                  e_dictstackoverflow);
+        ref_stack_set_error_codes(pds, gs_error_dictstackunderflow,
+                                  gs_error_dictstackoverflow);
         ref_stack_set_max_count(pds, MAX_DSTACK);
     }
 
@@ -400,7 +400,7 @@ gs_interp_reset(i_ctx_t *i_ctx_p)
 static int
 estack_underflow(i_ctx_t *i_ctx_p)
 {
-    return e_ExecStackUnderflow;
+    return gs_error_ExecStackUnderflow;
 }
 
 /*
@@ -520,25 +520,25 @@ again:
     if (esp < esbot)            /* popped guard entry */
         esp = esbot;
     switch (code) {
-        case e_Fatal:
+        case gs_error_Fatal:
             *pexit_code = 255;
             return code;
-        case e_Quit:
+        case gs_error_Quit:
             *perror_object = osp[-1];
             *pexit_code = code = osp->value.intval;
             osp -= 2;
             return
-                (code == 0 ? e_Quit :
-                 code < 0 && code > -100 ? code : e_Fatal);
-        case e_InterpreterExit:
+                (code == 0 ? gs_error_Quit :
+                 code < 0 && code > -100 ? code : gs_error_Fatal);
+        case gs_error_InterpreterExit:
             return 0;
-        case e_ExecStackUnderflow:
+        case gs_error_ExecStackUnderflow:
 /****** WRONG -- must keep mark blocks intact ******/
             ref_stack_pop_block(&e_stack);
             doref = *perror_object;
             epref = &doref;
             goto again;
-        case e_VMreclaim:
+        case gs_error_VMreclaim:
             /* Do the GC and continue. */
             code = interp_reclaim(pi_ctx_p,
                                   (osp->value.intval == 2 ?
@@ -548,8 +548,8 @@ again:
             make_oper(&doref, 0, zpop);
             epref = &doref;
             goto again;
-        case e_NeedInput:
-        case e_interrupt:
+        case gs_error_NeedInput:
+        case gs_error_interrupt:
             return code;
     }
     /* Adjust osp in case of operand stack underflow */
@@ -558,7 +558,7 @@ again:
     /* We have to handle stack over/underflow specially, because */
     /* we might be able to recover by adding or removing a block. */
     switch (code) {
-        case e_dictstackoverflow:
+        case gs_error_dictstackoverflow:
             /* We don't have to handle this specially: */
             /* The only places that could generate it */
             /* use check_dstack, which does a ref_stack_extend, */
@@ -575,7 +575,7 @@ again:
             dict_set_top();
             *++osp = saref;
             break;
-        case e_dictstackunderflow:
+        case gs_error_dictstackunderflow:
             if (ref_stack_pop_block(&d_stack) >= 0) {
                 dict_set_top();
                 doref = *perror_object;
@@ -583,7 +583,7 @@ again:
                 goto again;
             }
             break;
-        case e_execstackoverflow:
+        case gs_error_execstackoverflow:
             /* We don't have to handle this specially: */
             /* The only places that could generate it */
             /* use check_estack, which does a ref_stack_extend, */
@@ -620,7 +620,7 @@ again:
             }
             *++osp = saref;
             break;
-        case e_stackoverflow:
+        case gs_error_stackoverflow:
             if (ref_stack_extend(&o_stack, o_stack.requested) >= 0) {   /* We can't just re-execute the object, because */
                 /* it might be a procedure being pushed as a */
                 /* literal.  We check for this case specially. */
@@ -638,7 +638,7 @@ again:
             ref_stack_clear(&o_stack);
             *++osp = saref;
             break;
-        case e_stackunderflow:
+        case gs_error_stackunderflow:
             if (ref_stack_pop_block(&o_stack) >= 0) {
                 doref = *perror_object;
                 epref = &doref;
@@ -663,7 +663,7 @@ again:
     doref = *epref;
     epref = &doref;
     /* Push the error object on the operand stack if appropriate. */
-    if (!ERROR_IS_INTERRUPT(code)) {
+    if (!GS_ERROR_IS_INTERRUPT(code)) {
         /* Replace the error object if within an oparray or .errorexec. */
         *++osp = *perror_object;
         errorexec_find(i_ctx_p, osp);
@@ -673,7 +673,7 @@ again:
 static int
 interp_exit(i_ctx_t *i_ctx_p)
 {
-    return e_InterpreterExit;
+    return gs_error_InterpreterExit;
 }
 
 /* Set the GC signal for all VMs. */
@@ -732,7 +732,7 @@ gs_errorname(i_ctx_t *i_ctx_p, int code, ref * perror_name)
     if (dict_find_string(systemdict, "errordict", &perrordict) <= 0 ||
         dict_find_string(systemdict, "ErrorNames", &pErrorNames) <= 0
         )
-        return_error(e_undefined);      /* errordict or ErrorNames not found?! */
+        return_error(gs_error_undefined);      /* errordict or ErrorNames not found?! */
     return array_get(imemory, pErrorNames, (long)(-code - 1), perror_name);
 }
 
@@ -751,12 +751,12 @@ gs_errorinfo_put_string(i_ctx_t *i_ctx_p, const char *str)
         !r_has_type(pderror, t_dictionary) ||
         idict_put_string(pderror, "errorinfo", &rstr) < 0
         )
-        return_error(e_Fatal);
+        return_error(gs_error_Fatal);
     return 0;
 }
 
 /* Main interpreter. */
-/* If execution terminates normally, return e_InterpreterExit. */
+/* If execution terminates normally, return gs_error_InterpreterExit. */
 /* If an error occurs, leave the current object in *perror_object */
 /* and return a (negative) error code. */
 static int
@@ -830,9 +830,9 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 #define return_with_code_iref()\
   { ierror.line = __LINE__; goto rweci; }
 #define return_with_stackoverflow(objp)\
-  { o_stack.requested = 1; return_with_error(e_stackoverflow, objp); }
+  { o_stack.requested = 1; return_with_error(gs_error_stackoverflow, objp); }
 #define return_with_stackoverflow_iref()\
-  { o_stack.requested = 1; return_with_error_iref(e_stackoverflow); }
+  { o_stack.requested = 1; return_with_error_iref(gs_error_stackoverflow); }
 /*
  * If control reaches the special operators (x_add, etc.) as a result of
  * interpreting an executable name, iref points to the name, not the
@@ -899,7 +899,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
     /* so we push the argument on the estack and enter */
     /* the loop at the bottom. */
     if (iesp >= estop)
-        return_with_error(e_execstackoverflow, pref);
+        return_with_error(gs_error_execstackoverflow, pref);
     ++iesp;
     ref_assign_inline(iesp, pref);
     goto bot;
@@ -919,7 +919,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
         (r_type(iosp) == t__invalid || r_type(iosp) >= tx_next_op)
         ) {
         mlprintf(imemory, "Invalid value on o-stack!\n");
-        return_with_error_iref(e_Fatal);
+        return_with_error_iref(gs_error_Fatal);
     }
     if (gs_debug['I'] ||
         (gs_debug['i'] &&
@@ -964,13 +964,13 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 #define cases_invalid()\
   case plain(t__invalid): case plain_exec(t__invalid)
           cases_invalid():
-            return_with_error_iref(e_Fatal);
+            return_with_error_iref(gs_error_Fatal);
 #define cases_nox()\
   case nox_exec(t_array): case nox_exec(t_dictionary):\
   case nox_exec(t_file): case nox_exec(t_string):\
   case nox_exec(t_mixedarray): case nox_exec(t_shortarray)
           cases_nox():
-            return_with_error_iref(e_invalidaccess);
+            return_with_error_iref(gs_error_invalidaccess);
             /*
              * Literal objects.  We have to enumerate all the types.
              * In fact, we have to include some extra plain_exec entries
@@ -1032,10 +1032,10 @@ x_def:      INCR(x_def);
         case plain_exec(tx_op_dup):
 x_dup:      INCR(x_dup);
             if (iosp < osbot)
-                return_with_error_tx_op(e_stackunderflow);
+                return_with_error_tx_op(gs_error_stackunderflow);
             if (iosp >= ostop) {
                 o_stack.requested = 1;
-                return_with_error_tx_op(e_stackoverflow);
+                return_with_error_tx_op(gs_error_stackoverflow);
             }
             iosp++;
             ref_assign_inline(iosp, iosp - 1);
@@ -1043,7 +1043,7 @@ x_dup:      INCR(x_dup);
         case plain_exec(tx_op_exch):
 x_exch:     INCR(x_exch);
             if (iosp <= osbot)
-                return_with_error_tx_op(e_stackunderflow);
+                return_with_error_tx_op(gs_error_stackunderflow);
             ref_assign_inline(&token, iosp);
             ref_assign_inline(iosp, iosp - 1);
             ref_assign_inline(iosp - 1, &token);
@@ -1054,13 +1054,13 @@ x_if:       INCR(x_if);
                 return_with_error_tx_op(check_proc_failed(iosp));
             if (!r_has_type(iosp - 1, t_boolean))
                 return_with_error_tx_op((iosp <= osbot ?
-                                        e_stackunderflow : e_typecheck));
+                                        gs_error_stackunderflow : gs_error_typecheck));
             if (!iosp[-1].value.boolval) {
                 iosp -= 2;
                 next_either();
             }
             if (iesp >= estop)
-                return_with_error_tx_op(e_execstackoverflow);
+                return_with_error_tx_op(gs_error_execstackoverflow);
             store_state_either(iesp);
             whichp = iosp;
             iosp -= 2;
@@ -1073,9 +1073,9 @@ x_ifelse:   INCR(x_ifelse);
                 return_with_error_tx_op(check_proc_failed(iosp - 1));
             if (!r_has_type(iosp - 2, t_boolean))
                 return_with_error_tx_op((iosp < osbot + 2 ?
-                                        e_stackunderflow : e_typecheck));
+                                        gs_error_stackunderflow : gs_error_typecheck));
             if (iesp >= estop)
-                return_with_error_tx_op(e_execstackoverflow);
+                return_with_error_tx_op(gs_error_execstackoverflow);
             store_state_either(iesp);
             whichp = (iosp[-2].value.boolval ? iosp - 1 : iosp);
             iosp -= 3;
@@ -1103,7 +1103,7 @@ x_index:    INCR(x_index);
         case plain_exec(tx_op_pop):
 x_pop:      INCR(x_pop);
             if (iosp < osbot)
-                return_with_error_tx_op(e_stackunderflow);
+                return_with_error_tx_op(gs_error_stackunderflow);
             iosp--;
             next_either();
         case plain_exec(tx_op_roll):
@@ -1132,7 +1132,7 @@ x_sub:      INCR(x_sub);
             store_state(iesp);
           oppr:         /* Record the stack depths in case of failure. */
             if (iesp >= estop - 4)
-                return_with_error_iref(e_execstackoverflow);
+                return_with_error_iref(gs_error_execstackoverflow);
             iesp += 5;
             osp = iosp;         /* ref_stack_count_inline needs this */
             make_mark_estack(iesp - 4, es_other, oparray_cleanup);
@@ -1152,7 +1152,7 @@ x_sub:      INCR(x_sub);
                     goto top;
             }
             if (iesp >= estop)
-                return_with_error_iref(e_execstackoverflow);
+                return_with_error_iref(gs_error_execstackoverflow);
             ++iesp;
             /* Do a ref_assign, but also set iref. */
             iesp->tas = pvalue->tas;
@@ -1203,7 +1203,7 @@ x_sub:      INCR(x_sub);
                 case o_reschedule:
                     store_state(iesp);
                     goto res;
-                case e_RemapColor:
+                case gs_error_Remap_Color:
 oe_remap:           store_state(iesp);
 remap:              if (iesp + 2 >= estop) {
                         esp = iesp;
@@ -1231,15 +1231,15 @@ remap:              if (iesp + 2 >= estop) {
 
                 INCR(find_name);
                 if ((pvalue = dict_find_name_by_index_inline(nidx, htemp)) == 0)
-                    return_with_error_iref(e_undefined);
+                    return_with_error_iref(gs_error_undefined);
             }
             /* Dispatch on the type of the value. */
             /* Again, we have to over-populate the switch. */
             switch (r_type_xe(pvalue)) {
                   cases_invalid():
-                    return_with_error_iref(e_Fatal);
+                    return_with_error_iref(gs_error_Fatal);
                   cases_nox():  /* access errors */
-                    return_with_error_iref(e_invalidaccess);
+                    return_with_error_iref(gs_error_invalidaccess);
                   cases_lit_1():
                   cases_lit_2():
                   cases_lit_3():
@@ -1310,7 +1310,7 @@ remap:              if (iesp + 2 >= estop) {
                             case o_reschedule:
                                 store_state(iesp);
                                 goto res;
-                            case e_RemapColor:
+                            case gs_error_Remap_Color:
                                 goto oe_remap;
                         }
                         iosp = osp;
@@ -1361,13 +1361,13 @@ remap:              if (iesp + 2 >= estop) {
                         store_state(iesp);
                         /* Push the file on the e-stack */
                         if (iesp >= estop)
-                            return_with_error_iref(e_execstackoverflow);
+                            return_with_error_iref(gs_error_execstackoverflow);
                         esfile_set_cache(++iesp);
                         ref_assign_inline(iesp, IREF);
                         SET_IREF(&token);
                         icount = 0;
                         goto top;
-                    case e_undefined:   /* //name undefined */
+                    case gs_error_undefined:   /* //name undefined */
                         gs_scanner_error_object(i_ctx_p, &sstate, &token);
                         return_with_error(code, &token);
                     case scan_EOF:      /* end of file */
@@ -1379,7 +1379,7 @@ remap:              if (iesp + 2 >= estop) {
                         store_state(iesp);
                         /* Push the file on the e-stack */
                         if (iesp >= estop)
-                            return_with_error_iref(e_execstackoverflow);
+                            return_with_error_iref(gs_error_execstackoverflow);
                         esfile_set_cache(++iesp);
                         ref_assign_inline(iesp, IREF);
                         pvalue = &token;
@@ -1391,7 +1391,7 @@ remap:              if (iesp + 2 >= estop) {
                         ref_assign_inline(&token, IREF);
                         /* Push the file on the e-stack */
                         if (iesp >= estop)
-                            return_with_error_iref(e_execstackoverflow);
+                            return_with_error_iref(gs_error_execstackoverflow);
                         ++iesp;
                         ref_assign_inline(iesp, &token);
                         esp = iesp;
@@ -1422,7 +1422,7 @@ remap:              if (iesp + 2 >= estop) {
                         store_state(iesp);
                         ref_assign_inline(&file_token, IREF);
                         if (iesp >= estop)
-                            return_with_error_iref(e_execstackoverflow);
+                            return_with_error_iref(gs_error_execstackoverflow);
                         ++iesp;
                         ref_assign_inline(iesp, &file_token);
                         esp = iesp;
@@ -1461,7 +1461,7 @@ remap:              if (iesp + 2 >= estop) {
 
                             if (size) {
                                 if (iesp >= estop)
-                                    return_with_error_iref(e_execstackoverflow);
+                                    return_with_error_iref(gs_error_execstackoverflow);
                                 ++iesp;
                                 iesp->tas.type_attrs = IREF->tas.type_attrs;
                                 iesp->value.const_bytes = sbufptr(&ss);
@@ -1479,7 +1479,7 @@ remap:              if (iesp + 2 >= estop) {
                     case scan_EOF:      /* end of string */
                         goto bot;
                     case scan_Refill:   /* error */
-                        code = gs_note_error(e_syntaxerror);
+                        code = gs_note_error(gs_error_syntaxerror);
                     default:    /* error */
                         ref_assign_inline(&token, IREF);
                         gs_scanner_error_object(i_ctx_p, &sstate, &token);
@@ -1576,7 +1576,7 @@ remap:              if (iesp + 2 >= estop) {
                             case o_reschedule:
                                 store_state_short(iesp);
                                 goto res;
-                            case e_RemapColor:
+                            case gs_error_Remap_Color:
                                 store_state_short(iesp);
                                 goto remap;
                         }
@@ -1615,7 +1615,7 @@ remap:              if (iesp + 2 >= estop) {
                                 INCR(p_find_name);
                                 if ((pvalue = dict_find_name_by_index_inline(nidx, htemp)) == 0) {
                                     names_index_ref(int_nt, nidx, &token);
-                                    return_with_error(e_undefined, &token);
+                                    return_with_error(gs_error_undefined, &token);
                                 }
                             }
                             if (r_has_masked_attrs(pvalue, a_execute, a_execute + a_executable)) {      /* Literal, push it. */
@@ -1699,7 +1699,7 @@ res:
   sst:                          /* Time-slice, but push the current object first. */
     store_state(iesp);
     if (iesp >= estop)
-        return_with_error_iref(e_execstackoverflow);
+        return_with_error_iref(gs_error_execstackoverflow);
     iesp++;
     ref_assign_inline(iesp, iref);
 #endif /****** ****** ***** */
@@ -1743,13 +1743,13 @@ res:
         ierror.obj = &ierror.full;
     }
   error_exit:
-    if (ERROR_IS_INTERRUPT(ierror.code)) {      /* We must push the current object being interpreted */
+    if (GS_ERROR_IS_INTERRUPT(ierror.code)) {      /* We must push the current object being interpreted */
         /* back on the e-stack so it will be re-executed. */
         /* Currently, this is always an executable operator, */
         /* but it might be something else someday if we check */
         /* for interrupts in the interpreter loop itself. */
         if (iesp >= estop)
-            code = e_execstackoverflow;
+            code = gs_error_execstackoverflow;
         else {
             iesp++;
             ref_assign_inline(iesp, IREF);
@@ -1759,9 +1759,9 @@ res:
     osp = iosp;
     ref_assign_inline(perror_object, ierror.obj);
 #ifdef DEBUG
-    if (ierror.code == e_InterpreterExit) {
+    if (ierror.code == gs_error_InterpreterExit) {
         /* Do not call gs_log_error to reduce the noise. */
-        return e_InterpreterExit;
+        return gs_error_InterpreterExit;
     }
 #endif
     return gs_log_error(ierror.code, __FILE__, ierror.line);
@@ -1921,7 +1921,7 @@ zsetstackprotect(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_boolean);
     if (ep == 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     ep->value.opproc =
         (op->value.boolval ? oparray_cleanup : oparray_no_cleanup);
     pop(1);
@@ -1937,7 +1937,7 @@ zcurrentstackprotect(i_ctx_t *i_ctx_p)
     ref *ep = oparray_find(i_ctx_p);
 
     if (ep == 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     push(1);
     make_bool(op, ep->value.opproc == oparray_cleanup);
     return 0;

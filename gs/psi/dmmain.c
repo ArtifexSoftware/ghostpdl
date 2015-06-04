@@ -142,7 +142,7 @@ static int GSDLLCALL gsdll_poll(void *handle)
     while (WaitNextEvent(everyEvent, &eventStructure, 0, NULL))
         doEvents(&eventStructure);
 
-    return (gDone ? e_Fatal : 0);
+    return (gDone ? gs_error_Fatal : 0);
 }
 /*********************************************************************/
 
@@ -222,7 +222,7 @@ static int display_presize(void *handle, void *device, int width, int height,
     {
         printf("DisplayFormat has been set to an incompatible value.\n");
         fflush(stdout);
-        return e_rangecheck;
+        return gs_error_rangecheck;
     }
 
     return 0;
@@ -248,7 +248,7 @@ static int display_size(void *handle, void *device, int width, int height,
            DisposePixMap(img->pixmapHdl);
            img->pixmapHdl = NULL;
        }
-       return e_rangecheck;
+       return gs_error_rangecheck;
     }
 
     /* Create the PixMap */

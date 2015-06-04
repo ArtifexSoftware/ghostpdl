@@ -91,7 +91,7 @@ main(int argc, char *argv[])
     (void)setlocale(LC_CTYPE, "");
     mem = gs_malloc_init();
     minst = gs_main_alloc_instance(mem);
-    code = (minst == NULL ? e_Fatal : 0);
+    code = (minst == NULL ? gs_error_Fatal : 0);
     if (code >= 0)
         code = gs_main_init_with_args(minst, argc, argv);
 
@@ -125,10 +125,10 @@ main(int argc, char *argv[])
     exit_status = 0;
     switch (code) {
         case 0:
-        case e_Info:
-        case e_Quit:
+        case gs_error_Info:
+        case gs_error_Quit:
             break;
-        case e_Fatal:
+        case gs_error_Fatal:
             exit_status = 1;
             break;
         default:

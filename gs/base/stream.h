@@ -363,7 +363,7 @@ stream * file_alloc_stream(gs_memory_t *, client_name_t);
 #define check_file(svar,op)\
   BEGIN\
     check_type(*(op), t_file);\
-    if ( file_is_invalid(svar, op) ) return_error(e_invalidaccess);\
+    if ( file_is_invalid(svar, op) ) return_error(gs_error_invalidaccess);\
   END
 
 /* Close a file stream. */

@@ -525,7 +525,7 @@ alloc_save_change_alloc(gs_ref_memory_t *mem, client_name_t cname, alloc_change_
     cp = gs_alloc_struct((gs_memory_t *)mem, alloc_change_t,
                          &st_alloc_change, "alloc_save_change");
     if (cp == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     cp->next = mem->changes;
     cp->where = 0;
     cp->offset = AC_OFFSET_ALLOCATED;
@@ -1195,7 +1195,7 @@ mark_allocated(void *obj, bool to_new, uint *psize)
     if (pre->o_type != &st_refs) {
         /* Must not happen. */
         if_debug0('u', "Wrong object type when expected a ref.\n");
-        return_error(e_Fatal);
+        return_error(gs_error_Fatal);
     }
     /* We know that every block of refs ends with */
     /* a full-size ref, so we only need the end check */

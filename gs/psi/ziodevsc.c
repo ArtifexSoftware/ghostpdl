@@ -119,7 +119,7 @@ stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
     stream *s;
 
     if (!streq1(access, 'r'))
-        return_error(e_invalidfileaccess);
+        return_error(gs_error_invalidfileaccess);
     if (file_is_invalid(s, &ref_stdin)) {
         /****** stdin SHOULD NOT LINE-BUFFER ******/
         gs_memory_t *sysmem = imemory_system;
@@ -137,7 +137,7 @@ stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
         /* to make progress. */
         buf = gs_alloc_bytes(sysmem, STDIN_BUF_SIZE, "stdin_open(buffer)");
         if (s == 0 || buf == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
 
         s_std_init(s, buf, STDIN_BUF_SIZE, &p, s_mode_read);
         s->file = 0;
@@ -203,7 +203,7 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
     stream *s;
 
     if (!streq1(access, 'w'))
-        return_error(e_invalidfileaccess);
+        return_error(gs_error_invalidfileaccess);
     if (file_is_invalid(s, &ref_stdout)) {
         gs_memory_t *sysmem = imemory_system;
         byte *buf;
@@ -215,7 +215,7 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
         s = file_alloc_stream(sysmem, "stdout_open(stream)");
         buf = gs_alloc_bytes(sysmem, STDOUT_BUF_SIZE, "stdout_open(buffer)");
         if (s == 0 || buf == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         s_std_init(s, buf, STDOUT_BUF_SIZE, &p, s_mode_write);
         s->file = 0;
         s->file_modes = s->modes;
@@ -274,7 +274,7 @@ stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
     stream *s;
 
     if (!streq1(access, 'w'))
-        return_error(e_invalidfileaccess);
+        return_error(gs_error_invalidfileaccess);
     if (file_is_invalid(s, &ref_stderr)) {
         gs_memory_t *sysmem = imemory_system;
         byte *buf;
@@ -286,7 +286,7 @@ stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
         s = file_alloc_stream(sysmem, "stderr_open(stream)");
         buf = gs_alloc_bytes(sysmem, STDERR_BUF_SIZE, "stderr_open(buffer)");
         if (s == 0 || buf == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         s_std_init(s, buf, STDERR_BUF_SIZE, &p, s_mode_write);
         s->file = 0;
         s->file_modes = s->modes;

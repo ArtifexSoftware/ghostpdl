@@ -70,7 +70,7 @@ zsetcolorscreen(i_ctx_t *i_ctx_p)
     rc_alloc_struct_0(pdht, gx_device_halftone, &st_device_halftone,
                       mem, pdht = 0, "setcolorscreen(device halftone)");
     if (pht == 0 || pdht == 0)
-        code = gs_note_error(e_VMerror);
+        code = gs_note_error(gs_error_VMerror);
     else {
         pht->type = ht_type_colorscreen;
         pht->params.colorscreen = cscreen;

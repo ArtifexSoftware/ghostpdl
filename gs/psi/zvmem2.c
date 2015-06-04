@@ -78,7 +78,7 @@ int
 set_vm_threshold(i_ctx_t *i_ctx_p, long val)
 {
     if (val < -1)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     else if (val == -1)
         val = (gs_debug_c('.') ? DEFAULT_VM_THRESHOLD_SMALL :
                DEFAULT_VM_THRESHOLD_LARGE);
@@ -100,7 +100,7 @@ set_vm_reclaim(i_ctx_t *i_ctx_p, long val)
         gs_memory_set_vm_reclaim(idmemory->space_local, (val == 0));
         return 0;
     } else
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 }
 
 /*
@@ -118,9 +118,9 @@ zvmreclaim(i_ctx_t *i_ctx_p)
     if (op->value.intval == 1 || op->value.intval == 2) {
         /* Force the interpreter to store its state and exit. */
         /* The interpreter's caller will do the actual GC. */
-        return_error(e_VMreclaim);
+        return_error(gs_error_VMreclaim);
     }
-    return_error(e_rangecheck);
+    return_error(gs_error_rangecheck);
 }
 
 /* ------ Initialization procedure ------ */

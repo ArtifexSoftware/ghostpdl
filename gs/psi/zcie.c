@@ -91,7 +91,7 @@ dict_proc_array_param(const gs_memory_t *mem,
 
         check_array_only(*pvalue);
         if (r_size(pvalue) != count)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         for (i = 0; i < count; i++) {
             ref proc;
 
@@ -169,7 +169,7 @@ cie_points_param(const gs_memory_t *mem,
         pwb->BlackPoint.v < 0 ||
         pwb->BlackPoint.w < 0
         )
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     return 0;
 }
 
@@ -192,7 +192,7 @@ cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
     for (i = 0; i < n; ++i) {
         check_type_only(pta[i], t_integer);
         if (pta[i].value.intval <= 1 || pta[i].value.intval > max_ushort)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         pclt->dims[i] = (int)pta[i].value.intval;
     }
     nbytes = m * pclt->dims[n - 2] * pclt->dims[n - 1];
@@ -201,7 +201,7 @@ cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
             gs_alloc_struct_array(mem->stable_memory, pclt->dims[0], gs_const_string,
                                   &st_const_string_element, "cie_table_param");
         if (table == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         code = cie_3d_table_param(pta + 3, pclt->dims[0], nbytes, table);
     } else {			/* n == 4 */
         int d0 = pclt->dims[0], d1 = pclt->dims[1];
@@ -210,12 +210,12 @@ cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
 
         check_read_type(pta[4], t_array);
         if (r_size(pta + 4) != d0)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         table =
             gs_alloc_struct_array(mem->stable_memory, ntables, gs_const_string,
                                   &st_const_string_element, "cie_table_param");
         if (table == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         psuba = pta[4].value.const_refs;
         /*
          * We know that d0 > 0, so code will always be set in the loop:
@@ -243,14 +243,14 @@ cie_3d_table_param(const ref * ptable, uint count, uint nbytes,
 
     check_read_type(*ptable, t_array);
     if (r_size(ptable) != count)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     rstrings = ptable->value.const_refs;
     for (i = 0; i < count; ++i) {
         const ref *const prt2 = rstrings + i;
 
         check_read_type(*prt2, t_string);
         if (r_size(prt2) != nbytes)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         strings[i].data = prt2->value.const_bytes;
         strings[i].size = nbytes;
     }
@@ -444,10 +444,10 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
     procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
     if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0)
-        return (code < 0 ? code : gs_note_error(e_rangecheck));
+        return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
     check_read_type(*ptref, t_array);
     if (r_size(ptref) != 5)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
         /* Stable memory due to current caching of color space */
         code = gs_cspace_build_CIEDEFG(&pcs, NULL, mem->stable_memory);
     if (code < 0)
@@ -544,10 +544,10 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
     procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
     if ((code = dict_find_string(CIEDict, "Table", &ptref)) <= 0)
-        return (code < 0 ? code : gs_note_error(e_rangecheck));
+        return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
     check_read_type(*ptref, t_array);
     if (r_size(ptref) != 4)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
         /* Stable memory due to current caching of color space */
         code = gs_cspace_build_CIEDEF(&pcs, NULL, mem->stable_memory);
     if (code < 0)

@@ -51,12 +51,12 @@ type1crypt(i_ctx_t *i_ctx_p,
     check_type(op[-2], t_integer);
     state = op[-2].value.intval;
     if (op[-2].value.intval != state)
-        return_error(e_rangecheck);	/* state value was truncated */
+        return_error(gs_error_rangecheck);	/* state value was truncated */
     check_read_type(op[-1], t_string);
     check_write_type(*op, t_string);
     ssize = r_size(op - 1);
     if (r_size(op) < ssize)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     discard((*proc)(op->value.bytes, op[-1].value.const_bytes, ssize,
                     &state));	/* can't fail */
     op[-2].value.intval = state;
@@ -78,7 +78,7 @@ eexec_param(os_ptr op, ushort * pcstate)
     check_type(*op, t_integer);
     *pcstate = op->value.intval;
     if (op->value.intval != *pcstate)
-        return_error(e_rangecheck);	/* state value was truncated */
+        return_error(gs_error_rangecheck);	/* state value was truncated */
     return npop;
 }
 

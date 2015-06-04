@@ -44,9 +44,9 @@ z_arcfour_d(i_ctx_t * i_ctx_p)
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     if (dict_find_string(op, "Key", &sop) <= 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if (!r_has_type(sop, t_string))
-    	return_error(e_typecheck);
+    	return_error(gs_error_typecheck);
     s_arcfour_set_key(&state, sop->value.const_bytes, r_size(sop));
 
     /* we pass npop=0, since we've no arguments left to consume */
@@ -69,9 +69,9 @@ z_arcfour_e(i_ctx_t * i_ctx_p)
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     if (dict_find_string(op, "Key", &sop) <= 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if (!r_has_type(sop, t_string))
-    	return_error(e_typecheck);
+    	return_error(gs_error_typecheck);
 
     s_arcfour_set_key(&state, sop->value.const_bytes, r_size(sop));
 

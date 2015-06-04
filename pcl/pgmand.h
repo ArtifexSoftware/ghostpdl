@@ -159,8 +159,6 @@ void hpgl_define_commands(const gs_memory_t * mem,
   hpgl_define_commands(mem_, defs_, pcl_parser_state->hpgl_parser_state);\
 }
 
-/* Define a return code asking for more data. */
-#define e_NeedData (-200)
 
 /* Initialize the HP-GL/2 parser. */
 void hpgl_process_init(hpgl_parser_state_t *);

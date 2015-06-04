@@ -177,7 +177,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
         (pfont->FontType != ft_TrueType &&
          pfont->FontType != ft_CID_TrueType)
         )
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     /*
      * Any reasonable implementation would execute something like
      *  1 setmiterlimit 0 setlinejoin 0 setlinecap
@@ -255,7 +255,7 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
     if (penum == 0 || (pfont->FontType != ft_TrueType &&
                        pfont->FontType != ft_CID_TrueType)
         )
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     pfont42 = (gs_font_type42 *)pfont;
 
     if (!i_ctx_p->RenderTTNotdef) {

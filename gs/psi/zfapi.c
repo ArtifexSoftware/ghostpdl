@@ -99,7 +99,7 @@ sfnts_next_elem(sfnts_reader *r)
     do {
     	r->index++;
     	code = array_get(r->memory, r->sfnts, r->index, &s);
-    	if (code == e_rangecheck) {
+    	if (code == gs_error_rangecheck) {
     		r->error |= 2;
     	}
     	else if (code < 0) {
@@ -1311,7 +1311,7 @@ FAPI_get_xlatmap(i_ctx_t *i_ctx_p, char **xlatmap)
     if ((code = dict_find_string(systemdict, ".xlatmap", &pref)) < 0)
         return code;
     if (r_type(pref) != t_string)
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     *xlatmap = (char *)pref->value.bytes;
     /*  Note : this supposes that xlatmap doesn't move in virtual memory.
        Garbager must not be called while plugin executes get_scaled_font, get_decodingID.
@@ -1328,7 +1328,7 @@ renderer_retcode(gs_memory_t *mem, gs_fapi_server *I, gs_fapi_retcode rc)
     emprintf2(mem,
               "Error: Font Renderer Plugin ( %s ) return code = %d\n",
               I->ig.d->subtype, rc);
-    return rc < 0 ? rc : e_invalidfont;
+    return rc < 0 ? rc : gs_error_invalidfont;
 }
 
 /* <server name>/<null> object .FAPIavailable bool */
@@ -1345,7 +1345,7 @@ zFAPIavailable(i_ctx_t *i_ctx_p)
         serv_name =
             (char *) ref_to_string(&name_ref, imemory, "zFAPIavailable");
         if (!serv_name) {
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         }
     }
 
@@ -1410,7 +1410,7 @@ FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font *pfont,
         if (dict_find_string(op, "FontBBox", &v) > 0) {
             if (!r_has_type(v, t_array) && !r_has_type(v, t_shortarray)
                 && !r_has_type(v, t_mixedarray))
-                return_error(e_invalidfont);
+                return_error(gs_error_invalidfont);
             make_real(&mat[0], pbfont->FontBBox.p.x);
             make_real(&mat[1], pbfont->FontBBox.p.y);
             make_real(&mat[2], pbfont->FontBBox.q.x);
@@ -1459,11 +1459,11 @@ FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font *pfont,
 
             if (dict_find_string(pdr, "CIDSystemInfo", &CIDSystemInfo) <= 0
                 || !r_has_type(CIDSystemInfo, t_dictionary))
-                return_error(e_invalidfont);
+                return_error(gs_error_invalidfont);
 
             if (dict_find_string(CIDSystemInfo, "Ordering", &Ordering) <= 0
                 || !r_has_type(Ordering, t_string)) {
-                return_error(e_invalidfont);
+                return_error(gs_error_invalidfont);
             }
 
             ordering_length =
@@ -1533,7 +1533,7 @@ zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     if (pbfont->FAPI == NULL) {
         if (dict_find_string(op - 1, "FAPI", &v) <= 0
             || !r_has_type(v, t_name))
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
         obj_string_data(imemory, v, &pchars, &len);
         len = min(len, sizeof(FAPI_ID) - 1);
         strncpy((char *)FAPI_ID, (const char *)pchars, len);
@@ -1547,7 +1547,7 @@ zFAPIrebuildfont(i_ctx_t *i_ctx_p)
                                 (gs_fapi_get_server_param_callback)
                                 ps_get_server_param);
         if (!pbfont->FAPI || code < 0) {
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
         }
     }
 
@@ -1779,7 +1779,7 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                         return code;
             }
             else {
-                return_error(e_invalidfont);
+                return_error(gs_error_invalidfont);
             }
         }
         else {
@@ -1795,7 +1795,7 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
          * been constructed using the extended name....
          */
         if (!r_has_type(&char_name, t_name))
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
         name_string_ref(imemory, &char_name, &cname_str);
         enc_char_name->data = cname_str.value.bytes;
         enc_char_name->size = r_size(&cname_str);
@@ -1813,10 +1813,10 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
 
             if (dict_find_string(pdr, "Decoding", &Decoding) <= 0
                 || !r_has_type(Decoding, t_dictionary))
-                return_error(e_invalidfont);
+                return_error(gs_error_invalidfont);
             if (dict_find_string(pdr, "SubstNWP", &SubstNWP) <= 0
                 || !r_has_type(SubstNWP, t_array))
-                return_error(e_invalidfont);
+                return_error(gs_error_invalidfont);
             if (dict_find_string(pdr, "TT_cmap", &TT_cmap) <= 0
                 || !r_has_type(TT_cmap, t_dictionary)) {
                 ref *DecodingArray, char_code, char_code1, ih;
@@ -1827,7 +1827,7 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                 if (dict_find(Decoding, &ih, &DecodingArray) <= 0
                     || !r_has_type(DecodingArray, t_array)
                     || array_get(imemory, DecodingArray, i, &char_code) < 0) {
-                    return_error(e_invalidfont);
+                    return_error(gs_error_invalidfont);
                 }
 
                 /* Check the Decoding entry */
@@ -1840,13 +1840,13 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                     n = r_size(DecodingArray);
                 }
                 else {
-                    return_error(e_invalidfont);
+                    return_error(gs_error_invalidfont);
                 }
 
                 for (; n--; i++) {
                     if (array_get(imemory, DecodingArray, i, &char_code1) < 0
                         || !r_has_type(&char_code1, t_integer)) {
-                        return_error(e_invalidfont);
+                        return_error(gs_error_invalidfont);
                     }
 
                     c = char_code1.value.intval;
@@ -1973,7 +1973,7 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
 
         if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0
             || !r_has_type(CharStrings, t_dictionary))
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
         if ((dict_find(CharStrings, &char_name, &glyph_index) < 0)
             || r_has_type(glyph_index, t_null)) {
 #ifdef DEBUG
@@ -2025,7 +2025,7 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
             ref_assign(esp, glyph_index);
             return o_push_estack;
 #else
-            return (e_invalidfont);
+            return (gs_error_invalidfont);
 #endif
         }
         cr->is_glyph_index = true;
@@ -2058,7 +2058,7 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                     (uint) array_find(imemory, Encoding, &glyph);
             }
             else
-                return_error(e_invalidfont);
+                return_error(gs_error_invalidfont);
         }
     }
     else {                      /* a non-embedded font, i.e. a disk font */
@@ -2101,14 +2101,14 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
 
                         cr->char_codes_count = r_size(char_code);
                         if (cr->char_codes_count > count_of(cr->char_codes))
-                            code = gs_note_error(e_rangecheck);
+                            code = gs_note_error(gs_error_rangecheck);
                         if (code >= 0) {
                             for (i = 0; i < cr->char_codes_count; i++) {
                                 code = array_get(imemory, char_code, i, &v);
                                 if (code < 0)
                                     break;
                                 if (!r_has_type(char_code, t_integer)) {
-                                    code = gs_note_error(e_rangecheck);
+                                    code = gs_note_error(gs_error_rangecheck);
                                     break;
                                 }
                                 cr->char_codes[i] = v.value.intval;
@@ -2116,7 +2116,7 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                         }
                     }
                     else {
-                        code = gs_note_error(e_rangecheck);
+                        code = gs_note_error(gs_error_rangecheck);
                     }
                     if (code < 0) {
                         char buf[16];
@@ -2130,7 +2130,7 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                         emprintf1(imemory,
                                   "Wrong decoding entry for the character '%s'.\n",
                                   buf);
-                        return_error(e_rangecheck);
+                        return_error(gs_error_rangecheck);
                     }
                 }
             }
@@ -2209,11 +2209,11 @@ FAPI_char(i_ctx_t *i_ctx_p, bool bBuildGlyph, ref *charstring)
                  * here, the out of range CID is handled later
                  */
                 if ((dict_find_string(op - 1, "CharStrings", &chstrs)) <= 0) {
-                    return_error(e_undefined);
+                    return_error(gs_error_undefined);
                 }
 
                 if ((dict_find_string(chstrs, ".notdef", &chs)) <= 0) {
-                    return_error(e_undefined);
+                    return_error(gs_error_undefined);
                 }
                 ref_assign_inline(op, chs);
             }
@@ -2266,7 +2266,7 @@ FAPI_char(i_ctx_t *i_ctx_p, bool bBuildGlyph, ref *charstring)
                 return (zchar_exec_char_proc(i_ctx_p));
             }
             else {
-                return_error(e_invalidfont);
+                return_error(gs_error_invalidfont);
             }
         }
     }
@@ -2303,10 +2303,10 @@ zFAPIBuildGlyph9(i_ctx_t *i_ctx_p)
     font_index = op[0].value.intval;
     if (dict_find_string(&font9, "FDArray", &rFDArray) <= 0
         || r_type(rFDArray) != t_array)
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
     if (array_get(imemory, rFDArray, font_index, &f) < 0
         || r_type(&f) != t_dictionary)
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
 
     op[0] = op[-2];
     op[-2] = op[-1];            /* Keep the charstring on ostack for the garbager. */

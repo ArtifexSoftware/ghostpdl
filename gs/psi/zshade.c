@@ -105,7 +105,7 @@ zbuildshadingpattern(i_ctx_t *i_ctx_p)
         (code = shading_param(op, &templat.Shading)) < 0 ||
         (code = int_pattern_alloc(&pdata, op2, imemory)) < 0
         )
-        return_error((code < 0 ? code : e_rangecheck));
+        return_error((code < 0 ? code : gs_error_rangecheck));
     templat.client_data = pdata;
     code = gs_make_pattern(&cc_instance,
                            (const gs_pattern_template_t *)&templat,
@@ -131,7 +131,7 @@ shading_param(const_os_ptr op, const gs_shading_t ** ppsh)
     if (!r_is_struct(op) ||
         r_has_masked_attrs(op, a_executable | a_execute, a_all)
         )
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     *ppsh = (gs_shading_t *) op->value.pstruct;
     return 0;
 }
@@ -170,7 +170,7 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
 
         if (num_comp < 0) {	/* Pattern color space */
             gs_errorinfo_put_pair_from_dict(i_ctx_p, op, "ColorSpace");
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         }
         params.ColorSpace = pcs;
         rc_increment_cs(pcs);
@@ -180,7 +180,7 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
                               "build_shading");
 
             if (pcc == 0) {
-                code = gs_note_error(e_VMerror);
+                code = gs_note_error(gs_error_VMerror);
                 goto fail;
             }
             pcc->pattern = 0;
@@ -239,7 +239,7 @@ fail:
     if (params.ColorSpace) {
         rc_decrement_only_cs(params.ColorSpace, "build_shading");
     }
-    return (code < 0 ? code : gs_note_error(e_rangecheck));
+    return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
 }
 
 /* Collect a Function value. */
@@ -261,7 +261,7 @@ build_shading_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
 
         check_read(*pFunction);
         if (size == 0)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         code = alloc_function_array(size, &Functions, mem);
         if (code < 0)
             return code;
@@ -290,7 +290,7 @@ build_shading_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
             return code;
         if ((*ppfn)->params.m != num_inputs) {
             gs_function_free(*ppfn, true, mem);
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         }
     }
     return code;
@@ -309,7 +309,7 @@ check_indexed_vs_function(i_ctx_t *i_ctx_p, const ref *op,
     ref *f;
     if (dict_find_string(op, fn, &f) > 0)
         gs_errorinfo_put_pair(i_ctx_p, fn, sizeof(fn) - 1, f);
-    return_error(e_typecheck);  /* CET 12-14a */
+    return_error(gs_error_typecheck);  /* CET 12-14a */
   }
   return 0;
 }
@@ -335,7 +335,7 @@ build_shading_1(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
         goto out;
     if (params.Domain[0] > params.Domain[1] || params.Domain[2] > params.Domain[3]) {
         gs_errorinfo_put_pair_from_dict(i_ctx_p, op, "Domain");
-        code = gs_note_error(e_rangecheck);
+        code = gs_note_error(gs_error_rangecheck);
         goto out; /* CPSI 3017 and CET 12-14b reject un-normalised domain */
     }
     if (dict_find_string(op, "Matrix", &pmatrix) > 0 ) {
@@ -349,7 +349,7 @@ build_shading_1(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
     if (code < 0)
         goto out;
     if (params.Function == 0) {  /* Function is required */
-        code = gs_note_error(e_undefined);
+        code = gs_note_error(gs_error_undefined);
         gs_errorinfo_put_pair_from_dict(i_ctx_p, op, "Function");
         goto out;
     }
@@ -388,22 +388,22 @@ build_directional_shading(i_ctx_t *i_ctx_p, const ref * op, float *Coords, int n
         )
         return code;
     if (!*pFunction)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     if (dict_find_string(op, "Extend", &pExtend) <= 0)
         Extend[0] = Extend[1] = false;
     else {
         ref E0, E1;
 
         if (!r_is_array(pExtend))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         else if (r_size(pExtend) != 2)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         else if ((array_get(imemory, pExtend, 0L, &E0),
                   !r_has_type(&E0, t_boolean)) ||
                  (array_get(imemory, pExtend, 1L, &E1),
                   !r_has_type(&E1, t_boolean))
             )
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         Extend[0] = E0.value.boolval, Extend[1] = E1.value.boolval;
     }
     return 0;
@@ -453,7 +453,7 @@ build_shading_3(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
         gs_free_object(mem, params.Function, "Function");
     }
     if (params.Function == 0)		/* Function is required */
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     return code;
 }
 /* <dict> .buildshading3 <shading_struct> */
@@ -477,14 +477,14 @@ build_mesh_shading(i_ctx_t *i_ctx_p, const ref * op,
     *pDecode = 0;
     *pFunction = 0;
     if (dict_find_string(op, "DataSource", &pDataSource) <= 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if (r_is_array(pDataSource)) {
         uint size = r_size(pDataSource);
 
         data = (float *)gs_alloc_byte_array(mem, size, sizeof(float),
                                             "build_mesh_shading");
         if (data == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         code = process_float_array(mem, pDataSource, size, data);
         if (code < 0) {
             gs_free_object(mem, data, "build_mesh_shading");
@@ -507,7 +507,7 @@ build_mesh_shading(i_ctx_t *i_ctx_p, const ref * op,
                                          r_size(pDataSource));
                 break;
             default:
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
         }
     code = build_shading_function(i_ctx_p, op, pFunction, 1, mem, NULL);
     if (code < 0) {
@@ -531,7 +531,7 @@ build_mesh_shading(i_ctx_t *i_ctx_p, const ref * op,
                 gs_alloc_byte_array(mem, num_decode, sizeof(float),
                                     "build_mesh_shading");
             if (*pDecode == 0)
-                code = gs_note_error(e_VMerror);
+                code = gs_note_error(gs_error_VMerror);
             else {
                 code = dict_floats_param(mem, op, "Decode", num_decode, *pDecode, NULL);
                 if (code < 0) {

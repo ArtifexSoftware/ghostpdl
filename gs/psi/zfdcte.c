@@ -54,7 +54,7 @@ zDCTE(i_ctx_t *i_ctx_p)
     jcdp = gs_alloc_struct_immovable(mem, jpeg_compress_data,
       &st_jpeg_compress_data, "zDCTE");
     if (jcdp == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     state.memory = mem;
     if (s_DCTE_template.set_defaults)
         (*s_DCTE_template.set_defaults) ((stream_state *) & state);
@@ -116,7 +116,7 @@ zdcteparams(i_ctx_t *i_ctx_p)
     check_type(op[-2], t_dictionary);
     /* The DCT filters copy the template.... */
     if (s->state->templat->process != s_DCTE_template.process)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     code = dict_param_list_write(&list, op - 2, NULL, iimemory);
     if (code < 0)
         return code;

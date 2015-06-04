@@ -99,7 +99,7 @@ gstate_check_space(i_ctx_t *i_ctx_p, int_gstate *isp, uint space)
      */
 #if 1				/* ****** WORKAROUND ****** */
     if (space != avm_local && imemory_save_level(iimemory) > 0)
-        return_error(e_invalidaccess);
+        return_error(gs_error_invalidaccess);
 #endif				/* ****** END ****** */
 #define gsref_check(p) store_check_space(space, p)
     int_gstate_map_refs(isp, gsref_check);
@@ -122,11 +122,11 @@ zgstate(i_ctx_t *i_ctx_p)
         return code;
     pigo = ialloc_struct(igstate_obj, &st_igstate_obj, "gstate");
     if (pigo == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     pnew = gs_state_copy(igs, imemory);
     if (pnew == 0) {
         ifree_object(pigo, "gstate");
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     }
     isp = gs_int_gstate(pnew);
     int_gstate_map_refs(isp, ref_mark_new);
@@ -364,7 +364,7 @@ rect_get(local_rects_t * plr, os_ptr op, gs_memory_t *mem)
             format = code;
             count = num_array_size(op, format);
             if (count % 4)
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
             count /= 4;
             break;
         default:		/* better be 4 numbers */
@@ -384,7 +384,7 @@ rect_get(local_rects_t * plr, os_ptr op, gs_memory_t *mem)
         pr = (gs_rect *)gs_alloc_byte_array(mem, count, sizeof(gs_rect),
                                             "rect_get");
         if (pr == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
     }
     plr->pr = pr;
     for (n = 0; n < count; n++, pr++) {
@@ -479,7 +479,7 @@ gstate_unshare(i_ctx_t *i_ctx_p)
     /* Copy the gstate. */
     pnew = gs_gstate(pgs);
     if (pnew == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     isp = gs_int_gstate(pnew);
     int_gstate_map_refs(isp, ref_mark_new);
     ref_do_save(op, pgsref, "gstate_unshare");

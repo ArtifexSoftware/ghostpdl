@@ -168,21 +168,21 @@ zcurrentcolorspace(i_ctx_t * i_ctx_p)
         if (r_size(&namestr) == 10 && !memcmp(namestr.value.bytes, "DeviceGray", 10)) {
             body = ialloc_string(32, "string");
             if (body == 0)
-                return_error(e_VMerror);
+                return_error(gs_error_VMerror);
             memcpy(body, "systemdict /DeviceGray_array get", 32);
             make_string(&stref, a_all | icurrent_space, 32, body);
         } else {
             if (r_size(&namestr) == 9 && !memcmp(namestr.value.bytes, "DeviceRGB", 9)) {
                 body = ialloc_string(31, "string");
                 if (body == 0)
-                    return_error(e_VMerror);
+                    return_error(gs_error_VMerror);
                 memcpy(body, "systemdict /DeviceRGB_array get", 31);
                 make_string(&stref, a_all | icurrent_space, 31, body);
             } else {
                 if (r_size(&namestr) == 10 && !memcmp(namestr.value.bytes, "DeviceCMYK", 10)) {
                     body = ialloc_string(32, "string");
                     if (body == 0)
-                        return_error(e_VMerror);
+                        return_error(gs_error_VMerror);
                     memcpy(body, "systemdict /DeviceCMYK_array get", 32);
                     make_string(&stref, a_all | icurrent_space, 32, body);
                 } else {
@@ -480,7 +480,7 @@ zsetcolorspace(i_ctx_t * i_ctx_p)
     /* Check its either a name (base space) or an array */
     if (!r_has_type(op, t_name))
         if (!r_is_array(op))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
 
     code = validate_spaces(i_ctx_p, op, &depth);
     if (code < 0)
@@ -545,7 +545,7 @@ setcolorspace_nosubst(i_ctx_t * i_ctx_p)
     /* Check its either a name (base space) or an array */
     if (!r_has_type(op, t_name))
         if (!r_is_array(op))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
 
     code = validate_spaces(i_ctx_p, op, &depth);
     if (code < 0)
@@ -699,7 +699,7 @@ zcolor_remap_one_store(i_ctx_t *i_ctx_p, double min_value)
     gx_transfer_map *pmap = r_ptr(esp, gx_transfer_map);
 
     if (ref_stack_count(&o_stack) < transfer_map_size)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
     for (i = 0; i < transfer_map_size; i++) {
         double v;
         int code =
@@ -762,7 +762,7 @@ zcolor_test(i_ctx_t *i_ctx_p)
     os_ptr op = osp - (ncomp-1);
     int i;
     if (ref_stack_count(&o_stack) < ncomp)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
     for (i = 0; i < ncomp; i++) {
         if (r_has_type(op+i, t_real))
             cv[i] = (gx_color_value)
@@ -771,7 +771,7 @@ zcolor_test(i_ctx_t *i_ctx_p)
             cv[i] = (gx_color_value)
                 (op[i].value.intval * gx_max_color_value);
         else
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     }
     color = (*dev_proc(dev, encode_color)) (dev, cv);
     (*dev_proc(dev, decode_color)) (dev, color, cv);
@@ -813,9 +813,9 @@ zcolor_test_all(i_ctx_t *i_ctx_p)
         acceptable_error = gx_max_color_value / dev->color_info.max_color + 1;
 
     if (ref_stack_count(&o_stack) < 1)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
     if (!r_has_type(&osp[0], t_integer))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     steps = osp[0].value.intval;
     for (i = 0; i < ncomp; i++) {
         counter[i] = 0;
@@ -1130,14 +1130,14 @@ static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                     code = dict_find_string(systemdict, "NOSUBSTDEVICECOLORS", &nosubst);
                     if (code != 0) {
                         if (!r_has_type(nosubst, t_boolean))
-                            return_error(e_typecheck);
+                            return_error(gs_error_typecheck);
                     }
                     if (code != 0 && nosubst->value.boolval) {
                         *stage = 4;
                         *cont = 1;
                         body = ialloc_string(32, "string");
                         if (body == 0)
-                            return_error(e_VMerror);
+                            return_error(gs_error_VMerror);
                         memcpy(body, "/DefaultGray ..nosubstdevicetest",32);
                         make_string(&stref, a_all | icurrent_space, 32, body);
                         r_set_attrs(&stref, a_executable);
@@ -1149,7 +1149,7 @@ static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                         *cont = 1;
                         body = ialloc_string(47, "string");
                         if (body == 0)
-                            return_error(e_VMerror);
+                            return_error(gs_error_VMerror);
                         memcpy(body, "{/DefaultGray /ColorSpace findresource} stopped",47);
                         make_string(&stref, a_all | icurrent_space, 47, body);
                         r_set_attrs(&stref, a_executable);
@@ -1163,7 +1163,7 @@ static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
             case 1:
                 pcs = gs_cspace_new_DeviceGray(imemory);
                 if (pcs == NULL)
-                    return_error(e_VMerror);
+                    return_error(gs_error_VMerror);
                 code = gs_setcolorspace(igs, pcs);
                 if (code >= 0) {
                     gs_client_color *pcc = gs_currentcolor_inline(igs);
@@ -1179,7 +1179,7 @@ static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                 break;
             case 2:
                 if (!r_has_type(op, t_boolean))
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
                 if (op->value.boolval) {
                     /* Failed to find the /DefaultGray CSA, so give up and
                      * just use DeviceGray
@@ -1211,7 +1211,7 @@ static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                  * to set DeviceGray. See gs_cspace.ps.
                  */
                 if (!r_has_type(op, t_boolean))
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
                 pop(1);
                 *stage = 1;
                 *cont = 1;
@@ -1267,12 +1267,12 @@ static int graybasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, in
         if (r_has_type(op, t_real)) {
             Gray = op->value.realval;
         } else
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     } else
         Gray = (float)op->value.intval;
 
     if (Gray < 0 || Gray > 1)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 
     switch (base) {
         case 0:
@@ -1305,7 +1305,7 @@ static int graybasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, in
             make_real(op, (float)1.0 - Gray);
             break;
         default:
-            return_error(e_undefined);
+            return_error(gs_error_undefined);
     }
     return 0;
 }
@@ -1314,10 +1314,10 @@ static int grayvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_com
     os_ptr op = osp;
 
     if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     if (num_comps < 1)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
 
     if (*values > 1.0)
         *values = 1.0;
@@ -1354,14 +1354,14 @@ static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                     code = dict_find_string(systemdict, "NOSUBSTDEVICECOLORS", &nosubst);
                     if (code != 0) {
                         if (!r_has_type(nosubst, t_boolean))
-                            return_error(e_typecheck);
+                            return_error(gs_error_typecheck);
                     }
                     if (code != 0 && nosubst->value.boolval) {
                         *stage = 4;
                         *cont = 1;
                         body = ialloc_string(31, "string");
                         if (body == 0)
-                            return_error(e_VMerror);
+                            return_error(gs_error_VMerror);
                         memcpy(body, "/DefaultRGB ..nosubstdevicetest",31);
                         make_string(&stref, a_all | icurrent_space, 31, body);
                         r_set_attrs(&stref, a_executable);
@@ -1373,7 +1373,7 @@ static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                         *cont = 1;
                         body = ialloc_string(46, "string");
                         if (body == 0)
-                            return_error(e_VMerror);
+                            return_error(gs_error_VMerror);
                         memcpy(body, "{/DefaultRGB /ColorSpace findresource} stopped", 46);
                         make_string(&stref, a_all | icurrent_space, 46, body);
                         r_set_attrs(&stref, a_executable);
@@ -1386,7 +1386,7 @@ static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
             case 1:
                 pcs = gs_cspace_new_DeviceRGB(imemory);
                 if (pcs == NULL)
-                    return_error(e_VMerror);
+                    return_error(gs_error_VMerror);
                 code = gs_setcolorspace(igs, pcs);
                 if (code >= 0) {
                     gs_client_color *pcc = gs_currentcolor_inline(igs);
@@ -1404,7 +1404,7 @@ static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                 break;
             case 2:
                 if (!r_has_type(op, t_boolean))
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
                 if (op->value.boolval) {
                     /* Failed to find the /DefaultRGB CSA, so give up and
                      * just use DeviceRGB
@@ -1435,7 +1435,7 @@ static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                  * to set DeviceGray. See gs-cspace.ps.
                  */
                 if (!r_has_type(op, t_boolean))
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
                 pop(1);
                 *stage = 1;
                 *cont = 1;
@@ -1517,11 +1517,11 @@ static int rgbbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
                     if (r_has_type(op, t_real)) {
                         RGB[i] = op->value.realval;
                     } else
-                        return_error(e_typecheck);
+                        return_error(gs_error_typecheck);
                 } else
                     RGB[i] = (float)op->value.intval;
                 if (RGB[i] < 0 || RGB[i] > 1)
-                    return_error(e_rangecheck);
+                    return_error(gs_error_rangecheck);
                 op++;
             }
             op = osp;
@@ -1582,7 +1582,7 @@ static int rgbbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
                     return o_push_estack;
                     break;
                 default:
-                    return_error(e_undefined);
+                    return_error(gs_error_undefined);
                     break;
             }
             break;
@@ -1597,7 +1597,7 @@ static int rgbbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
                     if (r_has_type(op, t_real)) {
                         CMYK[i] = op->value.realval;
                     } else
-                        return_error(e_typecheck);
+                        return_error(gs_error_typecheck);
                 } else
                     CMYK[i] = (float)op->value.intval;
                 op++;
@@ -1606,7 +1606,7 @@ static int rgbbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
                 if (r_has_type(op, t_real)) {
                     UCR = op->value.realval;
                 } else
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
             } else
                 UCR = (float)op->value.intval;
             for (i=0;i<3;i++) {
@@ -1634,7 +1634,7 @@ static int rgbbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
                 if (r_has_type(op, t_real)) {
                     BG = op->value.realval;
                 } else
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
             } else
                 BG = (float)op->value.intval;
             pop(1);
@@ -1654,12 +1654,12 @@ static int rgbvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_comp
     int i;
 
     if (num_comps < 3)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
 
     op -= 2;
     for (i=0;i<3;i++) {
         if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         op++;
     }
 
@@ -1702,14 +1702,14 @@ static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                     code = dict_find_string(systemdict, "NOSUBSTDEVICECOLORS", &nosubst);
                     if (code != 0) {
                         if (!r_has_type(nosubst, t_boolean))
-                            return_error(e_typecheck);
+                            return_error(gs_error_typecheck);
                     }
                     if (code != 0 && nosubst->value.boolval) {
                         *stage = 4;
                         *cont = 1;
                         body = ialloc_string(32, "string");
                         if (body == 0)
-                            return_error(e_VMerror);
+                            return_error(gs_error_VMerror);
                         memcpy(body, "/DefaultCMYK ..nosubstdevicetest",32);
                         make_string(&stref, a_all | icurrent_space, 32, body);
                         r_set_attrs(&stref, a_executable);
@@ -1721,7 +1721,7 @@ static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                         *cont = 1;
                         body = ialloc_string(47, "string");
                         if (body == 0)
-                            return_error(e_VMerror);
+                            return_error(gs_error_VMerror);
                         memcpy(body, "{/DefaultCMYK /ColorSpace findresource} stopped", 47);
                         make_string(&stref, a_all | icurrent_space, 47, body);
                         r_set_attrs(&stref, a_executable);
@@ -1734,7 +1734,7 @@ static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
             case 1:
                 pcs = gs_cspace_new_DeviceCMYK(imemory);
                 if (pcs == NULL)
-                    return_error(e_VMerror);
+                    return_error(gs_error_VMerror);
                 code = gs_setcolorspace(igs, pcs);
                 if (code >= 0) {
                     gs_client_color *pcc = gs_currentcolor_inline(igs);
@@ -1753,7 +1753,7 @@ static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                 break;
             case 2:
                 if (!r_has_type(op, t_boolean))
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
                 if (op->value.boolval) {
                     /* Failed to find the /DefaultCMYK CSA, so give up and
                      * just use DeviceCMYK
@@ -1784,7 +1784,7 @@ static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                  * to set DeviceGray. See gs-cspace.ps.
                  */
                 if (!r_has_type(op, t_boolean))
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
                 pop(1);
                 *stage = 1;
                 *cont = 1;
@@ -1865,11 +1865,11 @@ static int cmykbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, in
             if (r_has_type(op, t_real)) {
                 CMYK[i] = op->value.realval;
             } else
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
         } else
             CMYK[i] = (float)op->value.intval;
         if (CMYK[i] < 0 || CMYK[i] > 1)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         op++;
     }
 
@@ -1911,7 +1911,7 @@ static int cmykbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, in
             make_real(op, CMYK[3]);
             break;
         default:
-            return_error(e_undefined);
+            return_error(gs_error_undefined);
     }
     return 0;
 }
@@ -1921,12 +1921,12 @@ static int cmykvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_com
     int i;
 
     if (num_comps < 4)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
 
     op -= 3;
     for (i=0;i < 4;i++) {
         if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         op++;
     }
 
@@ -2075,9 +2075,9 @@ static int get_cie_param_array(const gs_memory_t *mem, const ref *src,  int n, f
 		else if (r_has_type(&valref, t_real))
 			dst[i] = (float)valref.value.realval;
 		else
-			return_error(e_typecheck);
+			return_error(gs_error_typecheck);
 		if (dst[i] < -MAX_CIE_RANGE || dst[i] > MAX_CIE_RANGE)
-			return_error(e_limitcheck);
+			return_error(gs_error_limitcheck);
 	}
     return code;
 }
@@ -2094,12 +2094,12 @@ static int checkWhitePoint(i_ctx_t * i_ctx_p, ref *CIEdict)
         return code;
 
     if (code == 0 || r_has_type(tempref, t_null))
-        return gs_note_error(e_undefined);
+        return gs_note_error(gs_error_undefined);
 
     if (!r_is_array(tempref))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     if (r_size(tempref) != 3)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 
     code = get_cie_param_array(imemory, tempref, 3, value);
     if (code < 0)
@@ -2107,7 +2107,7 @@ static int checkWhitePoint(i_ctx_t * i_ctx_p, ref *CIEdict)
 
     /* Xw and Zw must be positive and Yw must be 1 (3rd edition PLRM p230) */
     if (value[0] < 0 || value[1] != 1 || value[2] < 0 )
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
     return 0;
 }
@@ -2121,9 +2121,9 @@ static int checkBlackPoint(i_ctx_t * i_ctx_p, ref *CIEdict)
     code = dict_find_string(CIEdict, "BlackPoint", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {
         if (!r_is_array(tempref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(tempref) != 3)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
         code = get_cie_param_array(imemory, tempref, 3, value);
         if (code < 0)
@@ -2141,14 +2141,14 @@ static int checkRangeLMN(i_ctx_t * i_ctx_p, ref *CIEdict)
     code = dict_find_string(CIEdict, "RangeLMN", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {
         if (!r_is_array(tempref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(tempref) != 6)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         code = get_cie_param_array(imemory, tempref, 6, value);
         if (code < 0)
             return code;
         if (value[1] < value[0] || value[3] < value[2] || value[5] < value[4])
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
     }
     return 0;
 }
@@ -2161,9 +2161,9 @@ static int checkDecodeLMN(i_ctx_t * i_ctx_p, ref *CIEdict)
     code = dict_find_string(CIEdict, "DecodeLMN", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {
         if (!r_is_array(tempref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(tempref) != 3)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
         for (i=0;i<3;i++) {
             code = array_get(imemory, tempref, i, &valref);
@@ -2184,9 +2184,9 @@ static int checkMatrixLMN(i_ctx_t * i_ctx_p, ref *CIEdict)
     code = dict_find_string(CIEdict, "MatrixLMN", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {
         if (!r_is_array(tempref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(tempref) != 9)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         code = get_cie_param_array(imemory, tempref, 9, value);
         if (code < 0)
             return code;
@@ -2202,12 +2202,12 @@ static int setcieaspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
     ulong dictkey;
 
     if (i_ctx_p->language_level < 2)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
 
     code = dict_find_string(systemdict, "NOCIE", &nocie);
     if (code > 0) {
         if (!r_has_type(nocie, t_boolean))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (nocie->value.boolval)
             return setgrayspace(i_ctx_p, r, stage, cont, 1);
     }
@@ -2238,10 +2238,10 @@ static int validatecieaspace(i_ctx_t * i_ctx_p, ref **r)
     ref     CIEdict, *CIEspace = *r, *tempref;
 
     if (!r_is_array(CIEspace))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Validate parameters, check we have enough operands */
     if (r_size(CIEspace) != 2)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 
     code = array_get(imemory, CIEspace, 1, &CIEdict);
     if (code < 0)
@@ -2261,15 +2261,15 @@ static int validatecieaspace(i_ctx_t * i_ctx_p, ref **r)
     if (code > 0 && !r_has_type(tempref, t_null)) {
         /* Array of two numbers A0 < A1 */
         if (!r_is_array(tempref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(tempref) != 2)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
         code = get_cie_param_array(imemory, tempref, 2, value);
         if (code < 0)
             return code;
         if (value[1] < value[0])
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
     }
 
     code = dict_find_string(&CIEdict, "DecodeA", &tempref);
@@ -2280,9 +2280,9 @@ static int validatecieaspace(i_ctx_t * i_ctx_p, ref **r)
     code = dict_find_string(&CIEdict, "MatrixA", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {
         if (!r_is_array(tempref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(tempref) != 3)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         code = get_cie_param_array(imemory, tempref, 3, value);
         if (code < 0)
             return code;
@@ -2360,10 +2360,10 @@ static int cieavalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_com
     os_ptr op = osp;
 
     if (num_comps < 1)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
 
     if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     return 0;
 }
@@ -2405,12 +2405,12 @@ static int setcieabcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
     ulong dictkey;
 
     if (i_ctx_p->language_level < 2)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
 
     code = dict_find_string(systemdict, "NOCIE", &nocie);
     if (code > 0) {
         if (!r_has_type(nocie, t_boolean))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (nocie->value.boolval)
             return setrgbspace(i_ctx_p, r, stage, cont, 1);
     }
@@ -2444,10 +2444,10 @@ static int validatecieabcspace(i_ctx_t * i_ctx_p, ref **r)
     ref     CIEdict, *CIEspace = *r, *tempref, valref;
 
     if (!r_is_array(CIEspace))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Validate parameters, check we have enough operands */
     if (r_size(CIEspace) != 2)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 
     code = array_get(imemory, CIEspace, 1, &CIEdict);
     if (code < 0)
@@ -2465,22 +2465,22 @@ static int validatecieabcspace(i_ctx_t * i_ctx_p, ref **r)
     code = dict_find_string(&CIEdict, "RangeABC", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {
         if (!r_is_array(tempref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(tempref) != 6)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         code = get_cie_param_array(imemory, tempref, 6, value);
         if (code < 0)
             return code;
         if (value[1] < value[0] || value[3] < value[2] || value[5] < value[4])
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
     }
 
     code = dict_find_string(&CIEdict, "DecodeABC", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {
         if (!r_is_array(tempref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(tempref) != 3)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
         for (i=0;i<3;i++) {
             code = array_get(imemory, tempref, i, &valref);
@@ -2493,9 +2493,9 @@ static int validatecieabcspace(i_ctx_t * i_ctx_p, ref **r)
     code = dict_find_string(&CIEdict, "MatrixABC", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {
         if (!r_is_array(tempref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(tempref) != 9)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         code = get_cie_param_array(imemory, tempref, 9, value);
         if (code < 0)
             return code;
@@ -2568,12 +2568,12 @@ static int cieabcvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_c
     int i;
 
     if (num_comps < 3)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
 
     op -= 2;
     for (i=0;i<3;i++) {
         if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         op++;
     }
 
@@ -2617,12 +2617,12 @@ static int setciedefspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
     ulong dictkey;
 
     if (i_ctx_p->language_level < 3)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
 
     code = dict_find_string(systemdict, "NOCIE", &nocie);
     if (code > 0) {
         if (!r_has_type(nocie, t_boolean))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (nocie->value.boolval)
             return setrgbspace(i_ctx_p, r, stage, cont, 1);
     }
@@ -2655,10 +2655,10 @@ static int validateciedefspace(i_ctx_t * i_ctx_p, ref **r)
     ref     CIEdict, *pref, *CIEspace = *r, tempref, valref;
 
     if (!r_is_array(CIEspace))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Validate parameters, check we have enough operands */
     if (r_size(CIEspace) != 2)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 
     code = array_get(imemory, CIEspace, 1, &CIEdict);
     if (code < 0)
@@ -2673,35 +2673,35 @@ static int validateciedefspace(i_ctx_t * i_ctx_p, ref **r)
     code = dict_find_string(&CIEdict, "Table", &pref);
     if (code > 0) {
         if (!r_is_array(pref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(pref) != 4)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         code = get_cie_param_array(imemory, pref, 3, value);
         if (code < 0)
             return code;
         if (value[0] <= 1 || value[1] <= 1 || value[2] <= 1)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
         code = array_get(imemory, pref, 3, &valref);
         if (code < 0)
             return code;
         if (!r_is_array(&valref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(&valref) != value[0])
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
         for (i=0;i<value[0];i++) {
             code = array_get(imemory, &valref, i, &tempref);
             if (code < 0)
                 return code;
             if (!r_has_type(&tempref, t_string))
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
 
             if (r_size(&tempref) != (3 * value[1] * value[2]))
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
         }
     } else {
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     }
 
     /* Remaining parameters are optional, but we must validate
@@ -2710,22 +2710,22 @@ static int validateciedefspace(i_ctx_t * i_ctx_p, ref **r)
     code = dict_find_string(&CIEdict, "RangeDEF", &pref);
     if (code > 0 && !r_has_type(&tempref, t_null)) {
         if (!r_is_array(pref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(pref) != 6)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         code = get_cie_param_array(imemory, pref, 6, value);
         if (code < 0)
             return code;
         if (value[1] < value[0] || value[3] < value[2] || value[5] < value[4])
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
     }
 
     code = dict_find_string(&CIEdict, "DecodeDEF", &pref);
     if (code > 0 && !r_has_type(pref, t_null)) {
         if (!r_is_array(pref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(pref) != 3)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
         for (i=0;i<3;i++) {
             code = array_get(imemory, pref, i, &valref);
@@ -2738,14 +2738,14 @@ static int validateciedefspace(i_ctx_t * i_ctx_p, ref **r)
     code = dict_find_string(&CIEdict, "RangeHIJ", &pref);
     if (code > 0 && !r_has_type(pref, t_null)) {
         if (!r_is_array(pref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(pref) != 6)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         code = get_cie_param_array(imemory, pref, 6, value);
         if (code < 0)
             return code;
         if (value[1] < value[0] || value[3] < value[2] || value[5] < value[4])
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
     }
 
     *r = 0;
@@ -2799,12 +2799,12 @@ static int ciedefvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_c
     int i;
 
     if (num_comps < 3)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
 
     op -= 2;
     for (i=0;i<3;i++) {
         if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         op++;
     }
 
@@ -2856,12 +2856,12 @@ static int setciedefgspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     ulong dictkey;
 
     if (i_ctx_p->language_level < 3)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
 
     code = dict_find_string(systemdict, "NOCIE", &nocie);
     if (code > 0) {
         if (!r_has_type(nocie, t_boolean))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (nocie->value.boolval)
             return setcmykspace(i_ctx_p, r, stage, cont, 1);
     }
@@ -2894,10 +2894,10 @@ static int validateciedefgspace(i_ctx_t * i_ctx_p, ref **r)
     ref     CIEdict, *CIEspace = *r, tempref, arrayref, valref, *pref = &tempref;
 
     if (!r_is_array(CIEspace))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Validate parameters, check we have enough operands */
     if (r_size(CIEspace) != 2)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 
     code = array_get(imemory, CIEspace, 1, &CIEdict);
     if (code < 0)
@@ -2911,9 +2911,9 @@ static int validateciedefgspace(i_ctx_t * i_ctx_p, ref **r)
     code = dict_find_string(&CIEdict, "Table", &pref);
     if (code > 0) {
         if (!r_is_array(pref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(pref) != 5)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
         for (i=0;i<4;i++) {
             code = array_get(imemory, pref, i, &valref);
@@ -2922,18 +2922,18 @@ static int validateciedefgspace(i_ctx_t * i_ctx_p, ref **r)
             if (r_has_type(&valref, t_integer))
                 value[i] = (float)valref.value.intval;
             else
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
         }
         if (value[0] <= 1 || value[1] <= 1 || value[2] <= 1 || value[3] <= 1)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
         code = array_get(imemory, pref, 4, &arrayref);
         if (code < 0)
             return code;
         if (!r_is_array(&arrayref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(&arrayref) != value[0])
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
         for (i=0;i<value[0];i++) {
             code = array_get(imemory, &arrayref, i, &tempref);
@@ -2944,14 +2944,14 @@ static int validateciedefgspace(i_ctx_t * i_ctx_p, ref **r)
                 if (code < 0)
                     return code;
                 if (!r_has_type(&valref, t_string))
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
 
                 if (r_size(&valref) != (3 * value[2] * value[3]))
-                    return_error(e_rangecheck);
+                    return_error(gs_error_rangecheck);
             }
         }
     } else {
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     }
 
     /* Remaining parameters are optional, but we must validate
@@ -2960,22 +2960,22 @@ static int validateciedefgspace(i_ctx_t * i_ctx_p, ref **r)
     code = dict_find_string(&CIEdict, "RangeDEFG", &pref);
     if (code > 0 && !r_has_type(pref, t_null)) {
         if (!r_is_array(pref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(pref) != 8)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         code = get_cie_param_array(imemory, pref, 8, value);
         if (code < 0)
             return code;
         if (value[1] < value[0] || value[3] < value[2] || value[5] < value[4] || value[7] < value[6])
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
     }
 
     code = dict_find_string(&CIEdict, "DecodeDEFG", &pref);
     if (code > 0 && !r_has_type(pref, t_null)) {
         if (!r_is_array(pref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(pref) != 4)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
         for (i=0;i<4;i++) {
             code = array_get(imemory, pref, i, &valref);
@@ -2988,14 +2988,14 @@ static int validateciedefgspace(i_ctx_t * i_ctx_p, ref **r)
     code = dict_find_string(&CIEdict, "RangeHIJK", &pref);
     if (code > 0 && !r_has_type(pref, t_null)) {
         if (!r_is_array(pref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(pref) != 8)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         code = get_cie_param_array(imemory, pref, 8, value);
         if (code < 0)
             return code;
         if (value[1] < value[0] || value[3] < value[2] || value[5] < value[4] || value[7] < value[6])
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
     }
 
     *r = 0;
@@ -3049,12 +3049,12 @@ static int ciedefgvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_
     int i;
 
     if (num_comps < 4)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
 
     op -= 3;
     for (i=0;i < 4;i++) {
         if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         op++;
     }
     return 0;
@@ -3123,7 +3123,7 @@ static int ciebasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
         spacename = space;
     /* Check that it really is a name */
     if (!r_has_type(spacename, t_name))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     /* Find the relevant color space object */
     for (i=0;i<4;i++) {
@@ -3229,7 +3229,7 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
     gs_client_color cc;
 
     if (i_ctx_p->language_level < 2)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
 
     *cont = 0;
     if ((*stage) == 0) {
@@ -3322,10 +3322,10 @@ static int validateseparationspace(i_ctx_t * i_ctx_p, ref **space)
     ref nameref, sref, sname, altspace, tref;
 
     if (!r_is_array(sepspace))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Validate parameters, check we have enough operands */
     if (r_size(sepspace) != 4)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 
     /* Check separation name is a string or name object */
     code = array_get(imemory, sepspace, 1, &sname);
@@ -3333,7 +3333,7 @@ static int validateseparationspace(i_ctx_t * i_ctx_p, ref **space)
         return code;
     if (!r_has_type(&sname, t_name)) {
         if (!r_has_type(&sname, t_string))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         else {
             code = name_from_string(imemory, &sname, &sname);
             if (code < 0)
@@ -3356,13 +3356,13 @@ static int validateseparationspace(i_ctx_t * i_ctx_p, ref **space)
     else {
         /* Make sure the alternate space is an array */
         if (!r_is_array(&altspace))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         /* And has a name for its type */
         code = array_get(imemory, &altspace, 0, &tref);
         if (code < 0)
             return code;
         if (!r_has_type(&tref, t_name))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         ref_assign(&nameref, &tref);
     }
 
@@ -3371,15 +3371,15 @@ static int validateseparationspace(i_ctx_t * i_ctx_p, ref **space)
     /* Check its not /Indexed or /Pattern or /DeviceN */
     if (r_size(&sref) == 7) {
         if (strncmp((const char *)sref.value.const_bytes, "Indexed", 7) == 0)
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (strncmp((const char *)sref.value.const_bytes, "Pattern", 7) == 0)
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (strncmp((const char *)sref.value.const_bytes, "DeviceN", 7) == 0)
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     }
     /* and also not /Separation */
     if (r_size(&sref) == 9 && strncmp((const char *)sref.value.const_bytes, "Separation", 9) == 0)
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     ref_assign(*space, &altspace);
     return 0;
@@ -3500,10 +3500,10 @@ static int sepvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_comp
     os_ptr op = osp;
 
     if (num_comps < 1)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
 
     if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     if (*values > 1.0)
         *values = 1.0;
@@ -3650,7 +3650,7 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
                         sep_name = name_index(imemory, &space[0]);
                         break;
                     default:
-                        code = e_typecheck;
+                        code = gs_error_typecheck;
                 }
             }
             make_int(pindex, ++index);
@@ -3678,7 +3678,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
     gs_client_color cc;
 
     if (i_ctx_p->language_level < 3)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
 
     *cont = 0;
     if ((*stage) == 2) {
@@ -3781,7 +3781,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                 name_string_ref(imemory, &sname, &tname);
                 break;
             default:
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
                 break;
         }
         if (strncmp((const char *)tname.value.const_bytes, "All", 3) == 0 && r_size(&tname) == 3) {
@@ -3853,7 +3853,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                     break;
                 default:
                     rc_decrement_cs(pcs, "setdevicenspace");
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
             }
         }
     }
@@ -3893,19 +3893,19 @@ static int validatedevicenspace(i_ctx_t * i_ctx_p, ref **space)
 
     /* Check enough arguments in the space */
     if (r_size(devicenspace) < 4)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     /* Check the names parameter is an array */
     code = array_get(imemory, devicenspace, 1, &namesarray);
     if (code < 0)
         return code;
     if (!r_is_array(&namesarray))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Ensure we have at least one ink */
     if (r_size(&namesarray) < 1)
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Make sure no more inks than we can cope with */
     if (r_size(&namesarray) > MAX_COMPONENTS_IN_DEVN)    /* MUST match psi/icremap.h int_remap_color_info_s */
-        return_error(e_limitcheck);
+        return_error(gs_error_limitcheck);
     /* Check the tint transform is a procedure */
     code = array_get(imemory, devicenspace, 3, &proc);
     if (code < 0)
@@ -3920,7 +3920,7 @@ static int validatedevicenspace(i_ctx_t * i_ctx_p, ref **space)
                 case t_name:
                     break;
                 default:
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
         }
     }
 
@@ -3933,28 +3933,28 @@ static int validatedevicenspace(i_ctx_t * i_ctx_p, ref **space)
     else {
         /* Make sure the alternate space is an array */
         if (!r_is_array(&altspace))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         /* And has a name for its type */
         code = array_get(imemory, &altspace, 0, &nameref);
         if (code < 0)
             return code;
         if (!r_has_type(&nameref, t_name))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     }
     /* Convert alternate space name to string */
     name_string_ref(imemory, &nameref, &sref);
     /* Check its not /Indexed, /Pattern, /DeviceN */
     if (r_size(&sref) == 7) {
         if (strncmp((const char *)sref.value.const_bytes, "Indexed", 7) == 0)
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (strncmp((const char *)sref.value.const_bytes, "Pattern", 7) == 0)
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (strncmp((const char *)sref.value.const_bytes, "DeviceN", 7) == 0)
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     }
     /* and also not /Separation */
     if (r_size(&sref) == 9 && strncmp((const char *)sref.value.const_bytes, "Separation", 9) == 0)
-           return_error(e_typecheck);
+           return_error(gs_error_typecheck);
 
     ref_assign(*space, &altspace);
     return 0;
@@ -4033,7 +4033,7 @@ static int devicentransform(i_ctx_t *i_ctx_p, ref *devicenspace, int *usealterna
     if (code < 0)
         return code;
     if (!r_is_array(&narray))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     for (i=0;i<r_size(&narray);i++) {
         code = array_get(imemory, &narray, i, &sname);
@@ -4133,16 +4133,16 @@ static int devicenvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_
     if (code < 0)
         return code;
     if (!r_is_array(&narray))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     if (num_comps < r_size(&narray))
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
 
     op -= r_size(&narray) - 1;
 
     for (i=0;i < r_size(&narray); i++) {
         if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
 
         if (values[i] > 1.0)
             values[i] = 1.0;
@@ -4263,7 +4263,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     gs_color_space_index base_type;
 
     if (i_ctx_p->language_level < 2)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
 
     *cont = 0;
     if (*stage == 1) {
@@ -4294,7 +4294,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
          * these files without complaint, so we ignore the extra data.
          */
         if (r_size(&lookup) < num_values)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         /* If we have a named color profile and the base space is DeviceN or
            Separation use a different set of procedures to ensure the named
            color remapping code is used */
@@ -4305,7 +4305,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
         else
             pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed);
         if (!pcs) {
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         }
         pcs->base_space = pcs_base;
         rc_increment_cs(pcs_base);
@@ -4313,7 +4313,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
         data_tmp = (byte *) (pcs->params.indexed.lookup.table.data = ialloc_string (lookup.tas.rsize, "setindexedspace"));
         if (!data_tmp) {
             rc_decrement(pcs, "setindexedspace");
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         }
 
         memcpy(data_tmp, lookup.value.const_bytes, lookup.tas.rsize);
@@ -4373,20 +4373,20 @@ static int validateindexedspace(i_ctx_t * i_ctx_p, ref **space)
     ref nameref, sref, hival, lookup, altspace;
 
     if (!r_is_array(r))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Validate parameters, check we have enough operands */
     if (r_size(r) != 4)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     /* Check operand type(s) */
     /* Make sure 'hival' is an integer */
     code = array_get(imemory, r, 2, &hival);
     if (code < 0)
         return code;
     if (!r_has_type(&hival, t_integer))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Make sure 'hival' lies between 0 and 4096 */
     if (hival.value.intval < 0 || hival.value.intval > 4096)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     /* Ensure the 'lookup' is either a string or a procedure */
     code = array_get(imemory, r, 3, &lookup);
     if (code < 0)
@@ -4402,7 +4402,7 @@ static int validateindexedspace(i_ctx_t * i_ctx_p, ref **space)
         ref_assign(&nameref, &altspace);
     else {
         if (!r_is_array(&altspace))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         code = array_get(imemory, &altspace, 0, &nameref);
         if (code < 0)
             return code;
@@ -4412,9 +4412,9 @@ static int validateindexedspace(i_ctx_t * i_ctx_p, ref **space)
     /* Check its not /Indexed or /Pattern */
     if (r_size(&sref) == 7) {
         if (strncmp((const char *)sref.value.const_bytes, "Indexed", 7) == 0)
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (strncmp((const char *)sref.value.const_bytes, "Pattern", 7) == 0)
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     }
     ref_assign(*space, &altspace);
     return 0;
@@ -4494,7 +4494,7 @@ static int indexedbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage,
             /* We have a string, start by retrieving the index from the op stack */
             /* Make sure its an integer! */
             if (!r_has_type(op, t_integer))
-                return_error (e_typecheck);
+                return_error (gs_error_typecheck);
             index = op->value.intval;
             /* And remove it from the stack. */
             pop(1);
@@ -4535,10 +4535,10 @@ static int indexedvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_
     os_ptr op = osp;
 
     if (num_comps < 1)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
 
     if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     code = array_get(imemory, space, 2, &hival);
     if (code < 0)
@@ -4567,7 +4567,7 @@ static int setpatternspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     int code = 0;
 
     if (i_ctx_p->language_level < 2)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
 
     *cont = 0;
     pcs_base = NULL;
@@ -4579,11 +4579,11 @@ static int setpatternspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
                 pcs_base = NULL;
                 break;
             default:
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             case 2:
                 pcs_base = gs_currentcolorspace(igs);
                 if (cs_num_components(pcs_base) < 0)       /* i.e., Pattern space */
-                    return_error(e_rangecheck);
+                    return_error(gs_error_rangecheck);
         }
     }
     pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Pattern);
@@ -4617,7 +4617,7 @@ static int validatepatternspace(i_ctx_t * i_ctx_p, ref **r)
             } else
                 *r = 0;
         } else
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     } else
         *r = 0;
     return 0;
@@ -4637,7 +4637,7 @@ static int patternalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r, int *CI
             } else
                 *r = 0;
         } else
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     } else
         *r = 0;
     return 0;
@@ -4670,7 +4670,7 @@ static int patterncomponent(i_ctx_t * i_ctx_p, ref *space, int *n)
         } else
             *n = 1;
     } else
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     return 0;
 }
@@ -4735,7 +4735,7 @@ static int patternvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_
     check_op(1);
 
     if (!r_has_type(op, t_dictionary) && !r_has_type(op, t_null))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     return 0;
 }
@@ -4754,14 +4754,14 @@ static int setdevicepspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
      * Preserve the old behaviour anyway.
      */
     if (i_ctx_p->language_level < 2)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
 
     *cont = 0;
     code = array_get(imemory, r, 1, &bpp);
     if (code < 0)
         return code;
     if (!r_has_type(&bpp, t_integer))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     code = gs_cspace_new_DevicePixel(imemory, &pcs, (int)bpp.value.intval);
     if (code < 0)
         return code;
@@ -4777,20 +4777,20 @@ static int validatedevicepspace(i_ctx_t * i_ctx_p, ref **space)
     ref *r = *space, bpp;
 
     if (!r_is_array(r))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Validate parameters, check we have enough operands */
     if (r_size(r) != 2)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     /* Make sure 'bits per pixel' is an integer */
     code = array_get(imemory, r, 1, &bpp);
     if (code < 0)
         return code;
     if (!r_has_type(&bpp, t_integer))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     /* Make sure 'bits per pixel' lies between 0 and 31 */
     if (bpp.value.intval < 0 || bpp.value.intval > 31)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 
     *space = 0;
     return code;
@@ -4847,7 +4847,7 @@ static int set_dev_space(i_ctx_t * i_ctx_p, int components)
             code = setcmykspace(i_ctx_p, (ref *)0, &stage, &cont, 1);
             break;
         default:
-            code = gs_note_error(e_rangecheck);
+            code = gs_note_error(gs_error_rangecheck);
             break;
     }
     return code;
@@ -4865,9 +4865,9 @@ static int checkrangeab(i_ctx_t * i_ctx_p, ref *labdict)
     code = dict_find_string(labdict, "Range", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {
         if (!r_is_array(tempref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(tempref) != 4)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
         for (i=0;i<4;i++) {
             code = array_get(imemory, tempref, i, &valref);
@@ -4878,10 +4878,10 @@ static int checkrangeab(i_ctx_t * i_ctx_p, ref *labdict)
             else if (r_has_type(&valref, t_real))
                 value[i] = (float)valref.value.realval;
             else
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
         }
         if (value[1] < value[0] || value[3] < value[2] )
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
     }
     return 0;
 }
@@ -4908,13 +4908,13 @@ static int setlabspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont,
                               dflt_range );
     for (i = 0; i < 4 && range_buff[i + 1] >= range_buff[i]; i += 2);
     if (i != 4)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     code = dict_floats_param( imemory, &labdict, "BlackPoint", 3, black,
                               dflt_black );
      code = dict_floats_param( imemory, &labdict, "WhitePoint", 3, white,
                               dflt_white );
      if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     code = seticc_lab(i_ctx_p, white, black, range_buff);
     if ( code < 0)
         return gs_rethrow(code, "setting PDF lab color space");
@@ -4932,10 +4932,10 @@ static int validatelabspace(i_ctx_t * i_ctx_p, ref **r)
 
     space = *r;
     if (!r_is_array(space))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Validate parameters, check we have enough operands */
     if (r_size(space) < 2)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     code = array_get(imemory, space, 1, &labdict);
     if (code < 0)
         return code;
@@ -4977,7 +4977,7 @@ static int labrange(i_ctx_t * i_ctx_p, ref *space, float *ptr)
             else if (r_has_type(&valref, t_real))
                 ptr[i] = (float)valref.value.realval;
             else
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
         }
     } else {
         /* Default values for Lab */
@@ -5010,7 +5010,7 @@ static int labdomain(i_ctx_t * i_ctx_p, ref *space, float *ptr)
             else if (r_has_type(&valref, t_real))
                 ptr[i] = (float)valref.value.realval;
             else
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
         }
     } else {
         /* Default values for Lab */
@@ -5048,11 +5048,11 @@ static int labvalidate(i_ctx_t *i_ctx_p, ref *space, float *values, int num_comp
     int i;
 
     if (num_comps < 3)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
     op -= 2;
     for (i=0;i<3;i++) {
         if (!r_has_type(op, t_integer) && !r_has_type(op, t_real))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         op++;
     }
     return 0;
@@ -5068,9 +5068,9 @@ static int checkCalMatrix(i_ctx_t * i_ctx_p, ref *CIEdict)
     code = dict_find_string(CIEdict, "Matrix", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {
         if (!r_is_array(tempref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(tempref) != 9)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         code = get_cie_param_array(imemory, tempref, 9, value);
         if (code < 0)
             return code;
@@ -5090,9 +5090,9 @@ static int checkGamma(i_ctx_t * i_ctx_p, ref *CIEdict, int numvalues)
         if (numvalues > 1) {
             /* Array of gammas (RGB) */
             if (!r_is_array(tempref))
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
             if (r_size(tempref) != numvalues)
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             for (i=0;i<numvalues;i++) {
                 code = array_get(imemory, tempref, i, &valref);
                 if (code < 0)
@@ -5102,8 +5102,8 @@ static int checkGamma(i_ctx_t * i_ctx_p, ref *CIEdict, int numvalues)
                 else if (r_has_type(&valref, t_real))
                     value[i] = (float)valref.value.realval;
                 else
-                    return_error(e_typecheck);
-                if (value[i] <= 0) return_error(e_rangecheck);
+                    return_error(gs_error_typecheck);
+                if (value[i] <= 0) return_error(gs_error_rangecheck);
             }
         } else {
             /* Single gamma (gray) */
@@ -5112,8 +5112,8 @@ static int checkGamma(i_ctx_t * i_ctx_p, ref *CIEdict, int numvalues)
             else if (r_has_type(tempref, t_integer))
                     value[0] = (float)(tempref->value.intval);
             else
-                return_error(e_typecheck);
-            if (value[0] <= 0) return_error(e_rangecheck);
+                return_error(gs_error_typecheck);
+            if (value[0] <= 0) return_error(gs_error_rangecheck);
         }
     }
     return 0;
@@ -5136,7 +5136,7 @@ static int setcalgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
 /* Get all the parts */
     code = dict_float_param(&graydict, "Gamma",
                  dflt_gamma, &gamma);
-    if (gamma <= 0 ) return_error(e_rangecheck);
+    if (gamma <= 0 ) return_error(gs_error_rangecheck);
      code = dict_floats_param( imemory,
                               &graydict,
                               "BlackPoint",
@@ -5150,7 +5150,7 @@ static int setcalgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
                               white,
                               dflt_white );
      if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     code = seticc_cal(i_ctx_p, white, black, &gamma, NULL, 1,
                         graydict.value.saveid);
     if ( code < 0)
@@ -5168,10 +5168,10 @@ static int validatecalgrayspace(i_ctx_t * i_ctx_p, ref **r)
 
     space = *r;
     if (!r_is_array(space))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Validate parameters, check we have enough operands */
     if (r_size(space) < 2)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     code = array_get(imemory, space, 1, &calgraydict);
     if (code < 0)
         return code;
@@ -5218,7 +5218,7 @@ static int setcalrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
                               gamma,
                               dflt_gamma );
      if (gamma[0] <= 0 || gamma[1] <= 0 || gamma[2] <= 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
      code = dict_floats_param( imemory,
                               &rgbdict,
                               "BlackPoint",
@@ -5232,7 +5232,7 @@ static int setcalrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
                               white,
                               dflt_white );
      if (white[0] <= 0 || white[1] != 1.0 || white[2] <= 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
      code = dict_floats_param( imemory,
                               &rgbdict,
                               "Matrix",
@@ -5256,15 +5256,15 @@ static int validatecalrgbspace(i_ctx_t * i_ctx_p, ref **r)
 
     space = *r;
     if (!r_is_array(space))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Validate parameters, check we have enough operands */
     if (r_size(space) < 2)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     code = array_get(imemory, space, 1, &calrgbdict);
     if (code < 0)
         return code;
     if (!r_has_type(&calrgbdict, t_dictionary))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Check the white point, which is required */
     code = checkWhitePoint(i_ctx_p, &calrgbdict);
     if (code != 0)
@@ -5297,7 +5297,7 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
     code = dict_find_string(systemdict, "NOCIE", &nocie);
     if (code > 0) {
         if (!r_has_type(nocie, t_boolean))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     }
     *cont = 0;
     do {
@@ -5311,10 +5311,10 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                 if (code < 0)
                     return code;
                 if (code == 0)
-                    return gs_note_error(e_undefined);
+                    return gs_note_error(gs_error_undefined);
                 components = tempref->value.intval;
                 if (components > count_of(range)/2)
-                    return_error(e_rangecheck);
+                    return_error(gs_error_rangecheck);
 
                 /* Don't allow ICCBased spaces if NOCIE is true */
                 if (nocie && nocie->value.boolval) {
@@ -5345,7 +5345,7 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                         return code;
                     code = dict_find_string(&ICCdict, "DataSource", &tempref);
                     if (code == 0)
-                        return gs_note_error(e_undefined);
+                        return gs_note_error(gs_error_undefined);
                     /* Check for string based ICC and convert to a file */
                     if (r_has_type(tempref, t_string)){
                         uint n = r_size(tempref);
@@ -5396,7 +5396,7 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                 code = 0;
                 break;
             default:
-                return_error (e_rangecheck);
+                return_error (gs_error_rangecheck);
                 break;
         }
     }while(*stage);
@@ -5454,10 +5454,10 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
 
     space = *r;
     if (!r_is_array(space))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Validate parameters, check we have enough operands */
     if (r_size(space) != 2)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 
     code = array_get(imemory, space, 1, &ICCdict);
     if (code < 0)
@@ -5469,35 +5469,35 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
     if (code < 0)
         return code;
     if (code == 0)
-        return gs_note_error(e_undefined);
+        return gs_note_error(gs_error_undefined);
     if (!r_has_type(tempref, t_null)) {
         if (!r_has_type(tempref, t_integer))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         components = tempref->value.intval;
     } else
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     code = dict_find_string(&ICCdict, "DataSource", &tempref);
     if (code <= 0)
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     if (!r_has_type(tempref, t_null)) {
         if (!r_has_type(tempref, t_string) && !r_has_type(tempref, t_file))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     } else
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     /* Following are optional entries */
     code = dict_find_string(&ICCdict, "Range", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {
         if (!r_is_array(tempref))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(tempref) < (components * 2))
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         for (i=0;i<components * 2;i++) {
             code = array_get(imemory, tempref, i, &valref);
             if (code < 0)
                 return code;
             if (!r_has_type(&valref, t_integer) && !r_has_type(&valref, t_real))
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
         }
     }
     code = dict_find_string(&ICCdict, "Alternate", &tempref);
@@ -5506,22 +5506,22 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
         if (r_has_type(tempref, t_name)) {
             name_string_ref(imemory, tempref, &sref);
             if (sref.value.bytes && strncmp((const char *)sref.value.bytes, "Pattern", 7) == 0)
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
         } else {
             if (r_is_array(tempref)) {
                 code = array_get(imemory, tempref, 0, &valref);
                 if (code < 0)
                     return code;
                 if (!r_has_type(&valref, t_name) && !r_has_type(&valref, t_string))
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
                 if (r_has_type(&valref, t_name))
                     name_string_ref(imemory, &valref, &sref);
                 else
                     sref.value.bytes = valref.value.bytes;
                 if (sref.value.bytes && strncmp((const char *)sref.value.bytes, "Pattern", 7) == 0)
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
             } else
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
         }
     } else {
         ref nameref;
@@ -5537,7 +5537,7 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
                 code = name_enter_string(imemory, "DeviceCMYK", &nameref);
                 break;
             default:
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
         }
         /* In case this space is the /ALternate for a previous ICCBased space
          * insert the named space into the ICC dictionary. If we simply returned
@@ -5560,10 +5560,10 @@ static int iccalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r, int *CIESub
     ref *tempref, ICCdict;
 
     if (!r_is_array(space))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     /* Validate parameters, check we have enough operands */
     if (r_size(space) != 2)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 
     code = array_get(imemory, space, 1, &ICCdict);
     if (code < 0)
@@ -5573,7 +5573,7 @@ static int iccalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r, int *CIESub
     if (code < 0)
         return code;
     if (code == 0)
-        return gs_note_error(e_undefined);
+        return gs_note_error(gs_error_undefined);
 
     components = tempref->value.intval;
 
@@ -5592,7 +5592,7 @@ static int iccalternatespace(i_ctx_t * i_ctx_p, ref *space, ref **r, int *CIESub
                 code = name_enter_string(imemory, "DeviceCMYK", *r);
                 break;
             default:
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
         }
     }
     *CIESubst = 1;
@@ -5611,7 +5611,7 @@ static int icccomponents(i_ctx_t * i_ctx_p, ref *space, int *n)
     if (code < 0)
         return code;
     if (code == 0)
-        return gs_note_error(e_undefined);
+        return gs_note_error(gs_error_undefined);
     *n = tempref->value.intval;
     return 0;
 }
@@ -5627,7 +5627,7 @@ static int iccdomain(i_ctx_t * i_ctx_p, ref *space, float *ptr)
     if (code < 0)
         return code;
     if (code == 0)
-        return gs_note_error(e_undefined);
+        return gs_note_error(gs_error_undefined);
     components = tempref->value.intval;
     code = dict_find_string(&ICCdict, "Range", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {
@@ -5660,7 +5660,7 @@ static int iccrange(i_ctx_t * i_ctx_p, ref *space, float *ptr)
     if (code < 0)
         return code;
     if (code == 0)
-        return gs_note_error(e_undefined);
+        return gs_note_error(gs_error_undefined);
     components = tempref->value.intval;
     code = dict_find_string(&ICCdict, "Range", &tempref);
     if (code > 0 && !r_has_type(tempref, t_null)) {
@@ -5775,7 +5775,7 @@ int get_space_object(i_ctx_t *i_ctx_p, ref *arr, PS_colour_space_t **obj)
 
     /* Check that it really is a name */
     if (!r_has_type(&spacename, t_name))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     /* Find the relevant color space object */
     for (i=0;i<nprocs;i++) {
@@ -5787,7 +5787,7 @@ int get_space_object(i_ctx_t *i_ctx_p, ref *arr, PS_colour_space_t **obj)
             return 0;
         }
     }
-    return_error(e_undefined);
+    return_error(gs_error_undefined);
 }
 /*
  * This routine checks all the color spaces in an operand by
@@ -5861,7 +5861,7 @@ setcolor_cont(i_ctx_t *i_ctx_p)
 
             if (i < (depth)) {
                 if (!obj->alternateproc) {
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
                 }
                 code = obj->alternateproc(i_ctx_p, parr, &parr, &CIESubst);
                 if (code < 0)
@@ -5936,7 +5936,7 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
 
             if (i < (depth - 1)) {
                 if (!obj->alternateproc) {
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
                 }
                 code = obj->alternateproc(i_ctx_p, parr, &parr, &CIESubst);
                 if (code < 0)
@@ -6242,7 +6242,7 @@ currentbasecolor_cont(i_ctx_t *i_ctx_p)
 
             if (i < (depth - 1)) {
                 if (!obj->alternateproc) {
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
                 }
                 code = obj->alternateproc(i_ctx_p, parr, &parr, &CIESubst);
                 if (code < 0)

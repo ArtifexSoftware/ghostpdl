@@ -53,7 +53,7 @@ zcshow(i_ctx_t *i_ctx_p)
         str_op = op - 1;
     } else {
         check_op(2);
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     }
     if ((code = op_show_setup(i_ctx_p, str_op)) != 0 ||
         (code = gs_cshow_begin(igs, str_op->value.bytes, r_size(str_op),

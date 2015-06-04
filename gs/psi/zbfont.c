@@ -281,7 +281,7 @@ build_gs_font_procs(os_ptr op, build_proc_refs * pbuild)
     gcode = dict_find_string(op, "BuildGlyph", &pBuildGlyph);
     if (ccode <= 0) {
         if (gcode <= 0)
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
         make_null(&pbuild->BuildChar);
     } else {
         check_proc(*pBuildChar);
@@ -343,16 +343,16 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 
     if (dict_find_string(op, "CharStrings", &pcharstrings) <= 0) {
         if (!(options & bf_CharStrings_optional))
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
     } else {
         ref *ignore;
 
         if (!r_has_type(pcharstrings, t_dictionary))
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
         if ((options & bf_notdef_required) != 0 &&
             dict_find_string(pcharstrings, ".notdef", &ignore) <= 0
             )
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
         /*
          * Since build_gs_simple_font may resize the dictionary and cause
          * pointers to become invalid, save CharStrings.
@@ -615,7 +615,7 @@ sub_font_params(gs_memory_t *mem, const ref *op, gs_matrix *pmat, gs_matrix *pom
     if (dict_find_string(op, "FontMatrix", &pmatrix) <= 0 ||
         read_matrix(mem, pmatrix, pmat) < 0
         )
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
     if (dict_find_string(op, "OrigFont", &porigfont) <= 0)
         porigfont = NULL;
     if (pomat!= NULL) {
@@ -637,7 +637,7 @@ sub_font_params(gs_memory_t *mem, const ref *op, gs_matrix *pmat, gs_matrix *pom
             byte *sfname = gs_alloc_string(mem, fssize, "sub_font_params");
 
             if (sfname == NULL)
-                return_error(e_VMerror);
+                return_error(gs_error_VMerror);
             memcpy(sfname, tmpStr1, fssize1);
             sfname[fssize1]=',' ;
             memcpy(sfname + fssize1 + 1, tmpStr2, fssize2);
@@ -682,14 +682,14 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
         !r_has_type(pftype, t_integer) ||
         pftype->value.intval != (int)ftype
         )
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
     if (dict_find_string(op, "Encoding", &pencoding) <= 0) {
         if (!(options & bf_Encoding_optional))
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
         pencoding = 0;
     } else {
         if (!r_is_array(pencoding))
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
     }
     if (pencoding) {   /* observed Adobe behavior */
         int count = r_size(pencoding);
@@ -702,13 +702,13 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
              !(r_has_type(&r, type) || r_has_type(&r, t_null))) {
                if (!cpsi_mode && ftype == ft_user_defined) {
                    if (code < 0 || r_has_type(&r, t_null)) {
-                       return_error(e_typecheck);
+                       return_error(gs_error_typecheck);
                    }
                    fixit = true;
                    break;
                }
                else {
-                   return_error(e_typecheck);
+                   return_error(gs_error_typecheck);
                }
            }
         }
@@ -735,7 +735,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
             while (count--) {
                ref r;
                if (array_get(imemory, pencoding, count, &r) < 0){
-                   return_error(e_typecheck);
+                   return_error(gs_error_typecheck);
                }
                /* For type 3, we know the Encoding entries must be names */
                if (r_has_type(&r, t_name)){
@@ -782,7 +782,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
         if (obj_eq(pfont->memory, pfont_dict(pfont), op)) {
             if (pfont->base == pfont) {	/* original font */
                 if (!level2_enabled)
-                    return_error(e_invalidfont);
+                    return_error(gs_error_invalidfont);
                 *ppfont = pfont;
                 return 1;
             } else {		/* This was made by makefont or scalefont. */
@@ -801,7 +801,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
     }
     /* This is a new font. */
     if (!r_has_attr(aop, a_write))
-        return_error(e_invalidaccess);
+        return_error(gs_error_invalidaccess);
     {
         ref encoding;
 
@@ -860,7 +860,7 @@ build_gs_sub_font(i_ctx_t *i_ctx_p, const ref *op, gs_font **ppfont,
     pdata = ialloc_struct(font_data, &st_font_data,
                           "buildfont(data)");
     if (pfont == 0 || pdata == 0)
-        code = gs_note_error(e_VMerror);
+        code = gs_note_error(gs_error_VMerror);
     else if (fid_op)
         code = add_FID(i_ctx_p, fid_op, pfont, iimemory);
     if (code < 0) {

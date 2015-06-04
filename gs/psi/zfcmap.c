@@ -72,25 +72,25 @@ acquire_code_ranges(gs_cmap_adobe1_t *cmap, const ref *pref, gs_memory_t *mem)
     ref elem;
 
     if (!r_is_array(pref))
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     for (i=0; i < r_size(pref); i++) {
         int code = array_get(mem, pref, i, &elem);
         if (code < 0)
             return code;
         elem_sz = r_size(&elem);
         if (elem_sz & 1)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         num_ranges += elem_sz;
     }
     if (num_ranges == 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     num_ranges >>= 1;
 
     ranges = (gx_code_space_range_t *)
         gs_alloc_byte_array(mem, num_ranges, sizeof(gx_code_space_range_t),
                             "acquire_code_ranges");
     if (ranges == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     cmap->code_space.ranges = ranges;
     cmap->code_space.num_ranges = num_ranges;
 
@@ -108,7 +108,7 @@ acquire_code_ranges(gs_cmap_adobe1_t *cmap, const ref *pref, gs_memory_t *mem)
             (size = r_size(&rfirst)) == 0 || size > MAX_CMAP_CODE_SIZE ||
             r_size(&rlast) != size ||
             memcmp(rfirst.value.bytes, rlast.value.bytes, size) > 0)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         memcpy(ranges->first, rfirst.value.bytes, size);
         memcpy(ranges->last, rlast.value.bytes, size);
         ranges->size = size;
@@ -130,14 +130,14 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
     uint elem_sz;
 
     if (!r_is_array(pref))
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     for (i=0; i < r_size(pref); i++) {
         int code = array_get(mem, pref, i, &elem);
         if (code < 0)
             return code;
         elem_sz = r_size(&elem);
         if (elem_sz % 5 != 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
         num_lookup += elem_sz;
     }
     num_lookup /= 5;
@@ -145,7 +145,7 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
                                  &st_cmap_lookup_range_element,
                                  "acquire_code_map(lookup ranges)");
     if (pclr == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     memset(pclr, 0, sizeof(*pclr) * num_lookup);
     pcmap->lookup = pclr;
     pcmap->num_lookup = num_lookup;
@@ -169,13 +169,13 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
             !(r_has_type(&rvalues, t_string) || r_is_array(&rvalues)) ||
             !r_has_type(&rfxs, t_integer)
             )
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(&rmisc) != 4 ||
             rmisc.value.bytes[0] > MAX_CMAP_CODE_SIZE - r_size(&rprefix) ||
             rmisc.value.bytes[1] > 1 ||
             rmisc.value.bytes[2] > CODE_VALUE_MAX ||
             rmisc.value.bytes[3] == 0)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         pclr->cmap = root;
         pclr->key_size = rmisc.value.bytes[0];
         pclr->key_prefix_size = r_size(&rprefix);
@@ -184,13 +184,13 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
         if (pclr->key_size == 0) {
             /* This is a single entry consisting only of the prefix. */
             if (r_size(&rkeys) != 0)
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             pclr->num_entries = 1;
         } else {
             int step = pclr->key_size * (pclr->key_is_range ? 2 : 1);
 
             if (r_size(&rkeys) % step != 0)
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             pclr->num_entries = r_size(&rkeys) / step;
         }
         pclr->keys.data = rkeys.value.bytes,
@@ -199,10 +199,10 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
         pclr->value_size = rmisc.value.bytes[3];
         if (r_has_type(&rvalues, t_string)) {
             if (pclr->value_type == CODE_VALUE_GLYPH)
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             if (r_size(&rvalues) % pclr->num_entries != 0 ||
                 r_size(&rvalues) / pclr->num_entries != pclr->value_size)
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             pclr->values.data = rvalues.value.bytes,
                 pclr->values.size = r_size(&rvalues);
         } else {
@@ -213,11 +213,11 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
             if (pclr->value_type != CODE_VALUE_GLYPH ||
                 r_size(&rvalues) != pclr->num_entries ||
                 pclr->value_size > sizeof(gs_glyph))
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             pclr->values.data = gs_alloc_string(mem, values_size,
                                                 "acquire_code_map(values)");
             if (pclr->values.data == 0)
-                return_error(e_VMerror);
+                return_error(gs_error_VMerror);
             pclr->values.size = values_size;
             pvalue = pclr->values.data;
             for (k = 0; k < pclr->num_entries; ++k) {
@@ -227,7 +227,7 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
 
                 array_get(mem, &rvalues, k, &rvalue);
                 if (!r_has_type(&rvalue, t_name))
-                    return_error(e_rangecheck);
+                    return_error(gs_error_rangecheck);
                 value = name_index(mem, &rvalue);
                 /*
                  * We need a special check here because some CPUs cannot
@@ -236,7 +236,7 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
                 if (pclr->value_size < sizeof(value) &&
                     (value >> (pclr->value_size * 8)) != 0
                     )
-                    return_error(e_rangecheck);
+                    return_error(gs_error_rangecheck);
                 for (i = pclr->value_size; --i >= 0; )
                     *pvalue++ = (byte)(value >> (i * 8));
             }
@@ -267,7 +267,7 @@ acquire_cid_system_info(ref *psia, const ref *op)
         return 0;
     }
     if (!r_is_array(prcidsi))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     *psia = *prcidsi;
     return 0;
 }
@@ -334,7 +334,7 @@ ztype0_get_cmap(const gs_cmap_t **ppcmap, const ref *pfdepvector,
         !r_is_struct(pcodemap) ||
         gs_object_size(imem, r_ptr(pcodemap, gs_cmap_t)) < sizeof(gs_cmap_t)
         )
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
     pcmap = r_ptr(pcodemap, gs_cmap_t);
     num_fonts = r_size(pfdepvector);
     for (i = 0; i < num_fonts; ++i) {
@@ -346,7 +346,7 @@ ztype0_get_cmap(const gs_cmap_t **ppcmap, const ref *pfdepvector,
             return code;
         if (code == 0) {
             if (r_size(&rfsi) != 1)
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
 #ifdef CHECK_CID_SYSTEM_INFO_COMPATIBILITY
             {
                 gs_cid_system_info_t cidsi;
@@ -355,7 +355,7 @@ ztype0_get_cmap(const gs_cmap_t **ppcmap, const ref *pfdepvector,
                 if (!cid_system_info_is_null(&cidsi) &&
                     !cid_system_info_compatible(&cidsi,
                                                 pcmap->CIDSystemInfo + i))
-                    return_error(e_rangecheck);
+                    return_error(gs_error_rangecheck);
             }
 #endif
         }
@@ -405,11 +405,11 @@ zbuildcmap(i_ctx_t *i_ctx_p)
     check_type(*op, t_dictionary);
     check_dict_write(*op);
     if ((code = dict_find_string(op, "CMapName", &pcmapname)) <= 0) {
-        code = gs_note_error(e_rangecheck);
+        code = gs_note_error(gs_error_rangecheck);
         goto fail;
     }
     if (!r_has_type(pcmapname, t_name)) {
-        code = gs_note_error(e_typecheck);
+        code = gs_note_error(gs_error_typecheck);
         goto fail;
     }
     name_string_ref(imemory, pcmapname, &rname);
@@ -419,7 +419,7 @@ zbuildcmap(i_ctx_t *i_ctx_p)
         dict_find_string(op, "CodeMap", &pcodemap) <= 0 ||
         !r_has_type(pcodemap, t_null)
         ) {
-        code = gs_note_error(e_rangecheck);
+        code = gs_note_error(gs_error_rangecheck);
         goto fail;
     }
     if ((code = acquire_cid_system_info(&rcidsi, op)) < 0)
@@ -436,7 +436,7 @@ zbuildcmap(i_ctx_t *i_ctx_p)
         goto fail;
     if (dict_find_string(op, "UIDOffset", &puidoffset) > 0) {
         if (!r_has_type(puidoffset, t_integer)) {
-            code = gs_note_error(e_typecheck);
+            code = gs_note_error(gs_error_typecheck);
             goto fail;
         }
         pcmap->UIDOffset = puidoffset->value.intval; /* long, not int */

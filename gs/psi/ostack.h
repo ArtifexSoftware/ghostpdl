@@ -33,7 +33,7 @@
 /* Macro to ensure enough room on the operand stack */
 #define check_ostack(n)\
   if ( ostop - osp < (n) )\
-    { o_stack.requested = (n); return_error(e_stackoverflow); }
+    { o_stack.requested = (n); return_error(gs_error_stackoverflow); }
 
 /* Operand stack manipulation. */
 
@@ -41,7 +41,7 @@
 #define push(n)\
   BEGIN\
     if ( (op += (n)) > ostop )\
-      { o_stack.requested = (n); return_error(e_stackoverflow); }\
+      { o_stack.requested = (n); return_error(gs_error_stackoverflow); }\
     else osp = op;\
   END
 
@@ -68,7 +68,7 @@
  * operator's declared minimum number of entries.)
  */
 #define check_op(nargs)\
-  if ( op < osbot + ((nargs) - 1) ) return_error(e_stackunderflow)
+  if ( op < osbot + ((nargs) - 1) ) return_error(gs_error_stackunderflow)
 /*
  * Similarly, in order to simplify some overflow checks, we allocate
  * a few guard entries just above the top of the o-stack.

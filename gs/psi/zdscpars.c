@@ -156,13 +156,13 @@ zinitialize_dsc_parser(i_ctx_t *i_ctx_p)
         gs_alloc_struct(mem, dsc_data_t, &st_dsc_data_t, "DSC parser init");
 
     if (!data)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     data->document_level = 0;
 
     data->dsc_data_ptr = dsc_init_with_alloc((void *) "Ghostscript DSC parsing",
                            zDSC_memalloc, zDSC_memfree, (void *)mem->non_gc_memory);
     if (!data->dsc_data_ptr)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     dsc_set_error_function(data->dsc_data_ptr, dsc_error_handler);
     make_astruct(&local_ref, a_readonly | r_space(op), (byte *) data);
     code = idict_put_string(op, dsc_dict_name, &local_ref);

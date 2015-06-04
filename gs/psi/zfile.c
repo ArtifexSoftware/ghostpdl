@@ -180,7 +180,7 @@ check_file_permissions_reduced(i_ctx_t *i_ctx_p, const char *fname, int len,
             return 0;           /* success */
     }
     /* not found */
-    return e_invalidfileaccess;
+    return gs_error_invalidfileaccess;
 }
 
 /* Check a file name for permission by stringmatch on one of the */
@@ -193,7 +193,7 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
     uint rlen = sizeof(fname_reduced);
 
     if (gp_file_name_reduce(fname, len, fname_reduced, &rlen) != gp_combine_success)
-        return e_invalidaccess;         /* fail if we couldn't reduce */
+        return gs_error_invalidaccess;         /* fail if we couldn't reduce */
     return check_file_permissions_reduced(i_ctx_p, fname_reduced, rlen, permitgroup);
 }
 
@@ -221,14 +221,14 @@ zfile(i_ctx_t *i_ctx_p)
         bool statement = (strcmp(pname.iodev->dname, "%statementedit%") == 0);
         bool lineedit = (strcmp(pname.iodev->dname, "%lineedit%") == 0);
         if (pname.fname)
-            return_error(e_invalidfileaccess);
+            return_error(gs_error_invalidfileaccess);
         if (statement || lineedit) {
             /* These need special code to support callouts */
             gx_io_device *indev = gs_findiodevice(imemory,
                                                   (const byte *)"%stdin", 6);
             stream *ins;
             if (strcmp(file_access, "r"))
-                return_error(e_invalidfileaccess);
+                return_error(gs_error_invalidfileaccess);
             indev->state = i_ctx_p;
             code = (indev->procs.open_device)(indev, file_access, &ins, imemory);
             indev->state = 0;
@@ -256,7 +256,7 @@ zfile(i_ctx_t *i_ctx_p)
     code = ssetfilename(s, op[-1].value.const_bytes, r_size(op - 1));
     if (code < 0) {
         sclose(s);
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     }
     make_stream_file(op - 1, s, file_access);
     pop(1);
@@ -343,7 +343,7 @@ zfilenameforall(i_ctx_t *i_ctx_p)
     pfen = iodev->procs.enumerate_files(iodev, (const char *)pname.fname,
                 pname.len, imemory);
     if (pfen == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     push_mark_estack(es_for, file_cleanup);
     ++esp;
     make_istruct(esp, 0, iodev);
@@ -370,7 +370,7 @@ file_continue(i_ctx_t *i_ctx_p)
     uint code;
 
     if (len < devlen)
-        return_error(e_rangecheck);     /* not even room for device len */
+        return_error(gs_error_rangecheck);     /* not even room for device len */
     memcpy((char *)pscratch->value.bytes, iodev->dname, devlen);
     code = iodev->procs.enumerate_next(pfen, (char *)pscratch->value.bytes + devlen,
                 len - devlen);
@@ -378,7 +378,7 @@ file_continue(i_ctx_t *i_ctx_p)
         esp -= 5;               /* pop proc, pfen, devlen, iodev , mark */
         return o_pop_estack;
     } else if (code > len)      /* overran string */
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     else {
         push(1);
         ref_assign(op, pscratch);
@@ -434,7 +434,7 @@ zrenamefile(i_ctx_t *i_ctx_p)
                                         "PermitFileControl") < 0 ||
               check_file_permissions(i_ctx_p, pname2.fname, pname2.len,
                                         "PermitFileWriting") < 0 )))) {
-            code = gs_note_error(e_invalidfileaccess);
+            code = gs_note_error(gs_error_invalidfileaccess);
         } else {
             code = (*pname1.iodev->procs.rename_file)(pname1.iodev,
                             pname1.fname, pname2.fname);
@@ -471,7 +471,7 @@ zstatus(i_ctx_t *i_ctx_p)
                 int code = parse_file_name(op, &pname,
                                            i_ctx_p->LockFilePermissions, imemory);
                 if (code < 0) {
-                    if (code == e_undefinedfilename) {
+                    if (code == gs_error_undefinedfilename) {
                         make_bool(op, 0);
                         code = 0;
                     }
@@ -506,12 +506,12 @@ zstatus(i_ctx_t *i_ctx_p)
                             (double)op[-3].value.intval !=
                               (double)fstat.st_size
                             )
-                            return_error(e_limitcheck);
+                            return_error(gs_error_limitcheck);
                         make_int(op - 2, fstat.st_mtime);
                         make_int(op - 1, fstat.st_ctime);
                         make_bool(op, 1);
                         break;
-                    case e_undefinedfilename:
+                    case gs_error_undefinedfilename:
                         make_bool(op, 0);
                         code = 0;
                 }
@@ -576,7 +576,7 @@ zfilenamesplit(i_ctx_t *i_ctx_p)
 
     check_read_type(*op, t_string);
 /****** NOT IMPLEMENTED YET ******/
-    return_error(e_undefined);
+    return_error(gs_error_undefined);
 }
 
 /* <string> .libfile <file> true */
@@ -605,7 +605,7 @@ zlibfile(i_ctx_t *i_ctx_p)
             code = ssetfilename(s, op->value.const_bytes, r_size(op));
             if (code < 0) {
                 sclose(s);
-                return_error(e_VMerror);
+                return_error(gs_error_VMerror);
             }
         }
         if (code < 0) {
@@ -624,11 +624,11 @@ zlibfile(i_ctx_t *i_ctx_p)
             code = ssetfilename(s, cname, clen);
             if (code < 0) {
                 sclose(s);
-                return_error(e_VMerror);
+                return_error(gs_error_VMerror);
             }
         }
         if (code < 0) {
-            if (code == e_VMerror || code == e_invalidfileaccess)
+            if (code == gs_error_VMerror || code == gs_error_invalidfileaccess)
                 return code;
             push(1);
             make_false(op);
@@ -690,7 +690,7 @@ ztempfile(i_ctx_t *i_ctx_p)
         check_read_type(op[-1], t_string);
         psize = r_size(op - 1);
         if (psize >= gp_file_name_sizeof) {
-            code = gs_note_error(e_rangecheck);
+            code = gs_note_error(gs_error_rangecheck);
             goto done;
         }
         memcpy(prefix, op[-1].value.const_bytes, psize);
@@ -701,36 +701,36 @@ ztempfile(i_ctx_t *i_ctx_p)
     if (gp_file_name_is_absolute(pstr, strlen(pstr))) {
         if (check_file_permissions(i_ctx_p, pstr, strlen(pstr),
                                    "PermitFileWriting") < 0) {
-            code = gs_note_error(e_invalidfileaccess);
+            code = gs_note_error(gs_error_invalidfileaccess);
             goto done;
         }
     } else if (!prefix_is_simple(pstr)) {
-        code = gs_note_error(e_invalidfileaccess);
+        code = gs_note_error(gs_error_invalidfileaccess);
         goto done;
     }
 
     s = file_alloc_stream(imemory, "ztempfile(stream)");
     if (s == 0) {
-        code = gs_note_error(e_VMerror);
+        code = gs_note_error(gs_error_VMerror);
         goto done;
     }
     buf = gs_alloc_bytes(imemory, file_default_buffer_size,
                          "ztempfile(buffer)");
     if (buf == 0) {
-        code = gs_note_error(e_VMerror);
+        code = gs_note_error(gs_error_VMerror);
         goto done;
     }
     sfile = gp_open_scratch_file(imemory, pstr, fname, fmode);
     if (sfile == 0) {
         gs_free_object(imemory, buf, "ztempfile(buffer)");
-        code = gs_note_error(e_invalidfileaccess);
+        code = gs_note_error(gs_error_invalidfileaccess);
         goto done;
     }
     fnlen = strlen(fname);
     sbody = ialloc_string(fnlen, ".tempfile(fname)");
     if (sbody == 0) {
         gs_free_object(imemory, buf, "ztempfile(buffer)");
-        code = gs_note_error(e_VMerror);
+        code = gs_note_error(gs_error_VMerror);
         goto done;
     }
     memcpy(sbody, fname, fnlen);
@@ -741,7 +741,7 @@ ztempfile(i_ctx_t *i_ctx_p)
         sclose(s);
         iodev_dflt->procs.delete_file(iodev_dflt, fname);
         ifree_string(sbody, fnlen, ".tempfile(fname)");
-        code = gs_note_error(e_VMerror);
+        code = gs_note_error(gs_error_VMerror);
         goto done;
     }
     make_string(op - 1, a_readonly | icurrent_space, fnlen, sbody);
@@ -797,7 +797,7 @@ parse_file_name(const ref * op, gs_parsed_file_name_t * pfn, bool safemode,
      * for now it is simply disallowed.
      */
     if (pfn->iodev && safemode && strcmp(pfn->iodev->dname, "%pipe%") == 0)
-        return e_invalidfileaccess;
+        return gs_error_invalidfileaccess;
     return code;
 }
 
@@ -824,7 +824,7 @@ parse_file_access_string(const ref *op, char file_access[4])
     switch (r_size(op)) {
         case 2:
             if (astr[1] != '+')
-                return_error(e_invalidfileaccess);
+                return_error(gs_error_invalidfileaccess);
             file_access[1] = '+';
             file_access[2] = 0;
             break;
@@ -832,7 +832,7 @@ parse_file_access_string(const ref *op, char file_access[4])
             file_access[1] = 0;
             break;
         default:
-            return_error(e_invalidfileaccess);
+            return_error(gs_error_invalidfileaccess);
     }
     switch (astr[0]) {
         case 'r':
@@ -840,7 +840,7 @@ parse_file_access_string(const ref *op, char file_access[4])
         case 'a':
             break;
         default:
-            return_error(e_invalidfileaccess);
+            return_error(gs_error_invalidfileaccess);
     }
     file_access[0] = astr[0];
     return 0;
@@ -918,7 +918,7 @@ check_file_permissions_aux(i_ctx_t *i_ctx_p, char *fname, uint flen)
     if (i_ctx_p == NULL)
         return 0;
     if (check_file_permissions_reduced(i_ctx_p, fname, flen, "PermitFileReading") < 0)
-        return_error(e_invalidfileaccess);
+        return_error(gs_error_invalidfileaccess);
     return 0;
 }
 
@@ -944,7 +944,7 @@ lib_file_open_search_with_no_combine(gs_file_path_ptr  lib_path, const gs_memory
                 return 0;
             }
         }
-        return_error(e_invalidfileaccess);
+        return_error(gs_error_invalidfileaccess);
     }
  skip:;
     return 1;
@@ -978,7 +978,7 @@ lib_file_open_search_with_combine(gs_file_path_ptr  lib_path, const gs_memory_t 
             if (code < 0)
                 continue;
             if (blen < max(pname.len, plen) + flen)
-            	return_error(e_limitcheck);
+            	return_error(gs_error_limitcheck);
             memcpy(buffer, pname.fname, pname.len);
             memcpy(buffer+pname.len, fname, flen);
             code = pname.iodev->procs.open_file(pname.iodev, buffer, pname.len + flen, fmode,
@@ -1005,7 +1005,7 @@ lib_file_open_search_with_combine(gs_file_path_ptr  lib_path, const gs_memory_t 
                     return 0;
                 }
                 sclose(s);
-                return_error(e_invalidfileaccess);
+                return_error(gs_error_invalidfileaccess);
             }
         }
     }
@@ -1073,7 +1073,7 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
           return code;
       }
     }
-    return_error(e_undefinedfilename);
+    return_error(gs_error_undefinedfilename);
 }
 
 /* The startup code calls this to open @-files. */
@@ -1106,7 +1106,7 @@ file_read_string(const byte *str, uint len, ref *pfile, gs_ref_memory_t *imem)
     stream *s = file_alloc_stream((gs_memory_t *)imem, "file_read_string");
 
     if (s == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     sread_string(s, str, len);
     s->foreign = 1;
     s->write_id = 0;
@@ -1141,7 +1141,7 @@ filter_open(const char *file_access, uint buffer_size, ref * pfile,
     if (templat->stype != &st_stream_state) {
         sst = s_alloc_state(mem, templat->stype, "filter_open(stream_state)");
         if (sst == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
     }
     code = file_open_stream((char *)0, 0, file_access, buffer_size, &s,
                                 (gx_io_device *)0, (iodev_proc_fopen_t)0, mem);
@@ -1185,7 +1185,7 @@ file_close(ref * pfile)
 
     if (file_is_valid(s, pfile)) {      /* closing a closed file is a no-op */
         if (sclose(s))
-            return_error(e_ioerror);
+            return_error(gs_error_ioerror);
     }
     return 0;
 }

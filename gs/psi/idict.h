@@ -48,8 +48,8 @@ extern const uint dict_max_size;
 /*
  * Define whether dictionaries expand automatically when full.  Note that
  * if dict_auto_expand is true, dict_put, dict_copy, dict_resize, and
- * dict_grow cannot return e_dictfull; however, they can return e_VMerror.
- * (dict_find can return e_dictfull even if dict_auto_expand is true.)
+ * dict_grow cannot return gs_error_dictfull; however, they can return gs_error_VMerror.
+ * (dict_find can return gs_error_dictfull even if dict_auto_expand is true.)
  */
 extern bool dict_auto_expand;
 
@@ -83,11 +83,11 @@ int dict_alloc(gs_ref_memory_t *, uint maxlength, ref * pdref);
  * The caller is responsible for checking that the dictionary is readable.
  * Return 1 if found, 0 if not and there is room for a new entry,
  * Failure returns:
- *      e_typecheck if the key is null;
- *      e_invalidaccess if the key is a string lacking read access;
- *      e_VMerror or e_limitcheck if the key is a string and the corresponding
+ *      gs_error_typecheck if the key is null;
+ *      gs_error_invalidaccess if the key is a string lacking read access;
+ *      gs_error_VMerror or gs_error_limitcheck if the key is a string and the corresponding
  *        error occurs from attempting to convert it to a name;
- *      e_dictfull if the dictionary is full and the key is missing.
+ *      gs_error_dictfull if the dictionary is full and the key is missing.
  */
 int dict_find(const ref * pdref, const ref * key, ref ** ppvalue);
 
@@ -101,18 +101,18 @@ int dict_find_string(const ref * pdref, const char *kstr, ref ** ppvalue);
  * Enter a key-value pair in a dictionary.
  * The caller is responsible for checking that the dictionary is writable.
  * Return 1 if this was a new entry, 0 if this replaced an existing entry.
- * Failure returns are as for dict_find, except that e_dictfull doesn't
+ * Failure returns are as for dict_find, except that gs_error_dictfull doesn't
  * occur if the dictionary is full but expandable, plus:
- *      e_invalidaccess for an attempt to store a younger key or value into
+ *      gs_error_invalidaccess for an attempt to store a younger key or value into
  *        an older dictionary, or as described just below;
- *      e_VMerror if a VMerror occurred while trying to expand the
+ *      gs_error_VMerror if a VMerror occurred while trying to expand the
  *        dictionary.
  * Note that this procedure, and all procedures that may change the
  * contents of a dictionary, take a pointer to a dictionary stack,
  * so they can update the cached 'top' values and also update the cached
  * value pointer in names.  A NULL pointer for the dictionary stack is
  * allowed, but in this case, if the dictionary is present on any dictionary
- * stack, an e_invalidaccess error will occur if cached values need updating.
+ * stack, an gs_error_invalidaccess error will occur if cached values need updating.
  * THIS ERROR CHECK IS NOT IMPLEMENTED YET.
  */
 int dict_put(ref * pdref, const ref * key, const ref * pvalue,
@@ -126,8 +126,8 @@ int dict_put_string(ref * pdref, const char *kstr, const ref * pvalue,
 
 /*
  * Remove a key-value pair from a dictionary.
- * Return any of the same values as dict_put, except for 0 and e_dictfull
- * which are converted to e_undefined.
+ * Return any of the same values as dict_put, except for 0 and gs_error_dictfull
+ * which are converted to gs_error_undefined.
  */
 int dict_undef(ref * pdref, const ref * key, dict_stack_t *pds);
 
@@ -149,7 +149,7 @@ uint dict_max_index(const ref * pdref);
 
 /*
  * Copy one dictionary into another.
- * Return 0 or e_dictfull.
+ * Return 0 or gs_error_dictfull.
  * If new_only is true, only copy entries whose keys
  * aren't already present in the destination.
  */
@@ -161,7 +161,7 @@ int dict_copy_entries(const ref * dfrom, ref * dto, bool new_only,
 
 /*
  * Grow or shrink a dictionary.
- * Return 0, e_dictfull, or e_VMerror.
+ * Return 0, gs_error_dictfull, or gs_error_VMerror.
  */
 int dict_resize(ref * pdref, uint newmaxlength, dict_stack_t *pds);
 
@@ -203,7 +203,7 @@ int dict_value_index(const ref * pdref, const ref * pvalue);
 /*
  * Given an index in [0..max_index-1], as returned by dict_value_index,
  * return the key and value, as returned by dict_next.
- * If the index designates an unoccupied entry, return e_undefined.
+ * If the index designates an unoccupied entry, return gs_error_undefined.
  */
 int dict_index_entry(const ref * pdref, int index, ref * eltp);
 

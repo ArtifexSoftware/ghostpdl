@@ -106,13 +106,13 @@ z_jbig2makeglobalctx(i_ctx_t * i_ctx_p)
                         &global);
         if (size > 0 && global == NULL) {
             dmlprintf(imemory, "failed to create parsed JBIG2GLOBALS object.");
-            return_error(e_unknownerror);
+            return_error(gs_error_unknownerror);
         }
 
         st = ialloc_struct(s_jbig2_global_data_t,
                 &st_jbig2_global_data_t,
                 "jbig2decode parsed global context");
-        if (st == NULL) return_error(e_VMerror);
+        if (st == NULL) return_error(gs_error_VMerror);
 
         st->data = global;
         make_astruct(op, a_readonly | icurrent_space, (byte*)st);

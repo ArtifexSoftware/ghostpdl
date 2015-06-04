@@ -62,8 +62,8 @@ int gs_server_initialize(int fno_stdin, int fno_stdout, int fno_stderr,
  * do modify the baseline state for future calls of ...run_string and
  * ...run_files.  There are four cases of return values:
  *      value = 0: normal return.
- *      value = e_Quit: the PostScript code executed a `quit'.
- *      value = e_Fatal: the PostScript code encountered a fatal error.
+ *      value = gs_error_Quit: the PostScript code executed a `quit'.
+ *      value = gs_error_Fatal: the PostScript code encountered a fatal error.
  *              *exit_code_ptr holds the C exit code.
  *      other value: the PostScript code encountered a PostScript error
  *              while processing another error, or some other fatal

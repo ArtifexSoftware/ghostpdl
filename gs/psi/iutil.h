@@ -45,15 +45,15 @@ bool obj_ident_eq(const gs_memory_t *mem, const ref *, const ref *);
 
 /*
  * Set *pchars and *plen to point to the data of a name or string, and
- * return 0.  If the object isn't a name or string, return e_typecheck.
- * If the object is a string without read access, return e_invalidaccess.
+ * return 0.  If the object isn't a name or string, return gs_error_typecheck.
+ * If the object is a string without read access, return gs_error_invalidaccess.
  */
 int obj_string_data(const gs_memory_t *mem, const ref *op, const byte **pchars, uint *plen);
 
 /*
  * Create a printable representation of an object, a la cvs and =
  * (full_print = 0), == (full_print = 1), or === (full_print = 2).  Return 0
- * if OK, 1 if the destination wasn't large enough, e_invalidaccess if the
+ * if OK, 1 if the destination wasn't large enough, gs_error_invalidaccess if the
  * object's contents weren't readable.  If the return value is 0 or 1,
  * *prlen contains the amount of data returned.  start_pos is the starting
  * output position -- the first start_pos bytes of output are discarded.
@@ -68,14 +68,14 @@ int obj_cvp(const ref * op, byte *str, uint len, uint * prlen,
 
 /*
  * Create a printable representation of an object, a la cvs and =.  Return 0
- * if OK, e_rangecheck if the destination wasn't large enough,
- * e_invalidaccess if the object's contents weren't readable.  If pchars !=
+ * if OK, gs_error_rangecheck if the destination wasn't large enough,
+ * gs_error_invalidaccess if the object's contents weren't readable.  If pchars !=
  * NULL, then if the object was a string or name, store a pointer to its
  * characters in *pchars even if it was too large; otherwise, set *pchars =
  * str.  In any case, store the length in *prlen.
  *
  * obj_cvs is different from obj_cvp in two respects: if the printed
- * representation is too large, it returns e_rangecheck rather than 1;
+ * representation is too large, it returns gs_error_rangecheck rather than 1;
  * and it can return a pointer to the data for names and strings, like
  * obj_string_data.
  */
@@ -93,7 +93,7 @@ void packed_get(const gs_memory_t *mem, const ref_packed *, ref *);
 
 /* Check to make sure an interval contains no object references */
 /* to a space younger than a given one. */
-/* Return 0 or e_invalidaccess. */
+/* Return 0 or gs_error_invalidaccess. */
 int refs_check_space(const ref * refs, uint size, uint space);
 
 /* ------ String utilities ------ */
@@ -117,7 +117,7 @@ int float_params(const ref *, int, float *);
 int process_float_array(const gs_memory_t *mem, const ref *, int, float *);
 
 /* Get a single real parameter. */
-/* The only possible error is e_typecheck. */
+/* The only possible error is gs_error_typecheck. */
 int real_param(const ref *, double *);
 
 /* float_param can lose accuracy for large integers. */
@@ -127,7 +127,7 @@ int float_param(const ref *, float *);
 int int_param(const ref *, int, int *);
 
 /* Make real values on the stack. */
-/* Return e_limitcheck for infinities or double->float overflow. */
+/* Return gs_error_limitcheck for infinities or double->float overflow. */
 int make_reals(ref *, const double *, int);
 int make_floats(ref *, const float *, int);
 

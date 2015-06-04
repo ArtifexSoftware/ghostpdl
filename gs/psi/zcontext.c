@@ -438,7 +438,7 @@ ctx_reschedule(i_ctx_t **pi_ctx_p)
                 if (current != 0)
                     context_store(psched, current);
                 lprintf("No context to run!");
-                return_error(e_Fatal);
+                return_error(gs_error_Fatal);
             }
             /* See above for an explanation of the following test. */
             if (ready->state.memory.space_local->saved != 0 &&
@@ -518,7 +518,7 @@ zdetach(i_ctx_t *i_ctx_p)
     if_debug2('\'', "[']detach %ld, status = %d\n",
               pctx->index, pctx->status);
     if (pctx->joiner_index != 0 || pctx->detach)
-        return_error(e_invalidcontext);
+        return_error(gs_error_invalidcontext);
     switch (pctx->status) {
         case cs_active:
             pctx->detach = true;
@@ -552,7 +552,7 @@ zfork(i_ctx_t *i_ctx_p)
     ref rnull;
 
     if (mcount == 0)
-        return_error(e_unmatchedmark);
+        return_error(gs_error_unmatchedmark);
     make_null(&rnull);
     return do_fork(i_ctx_p, op, &rnull, &rnull, mcount, false);
 }
@@ -564,7 +564,7 @@ zlocalfork(i_ctx_t *i_ctx_p)
     int code;
 
     if (mcount == 0)
-        return_error(e_unmatchedmark);
+        return_error(gs_error_unmatchedmark);
     code = values_older_than(&o_stack, 1, mcount - 1, avm_local);
     if (code < 0)
         return code;
@@ -592,7 +592,7 @@ do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
 
     check_proc(*op);
     if (iimemory_local->save_level)
-        return_error(e_invalidcontext);
+        return_error(gs_error_invalidcontext);
     if (r_has_type(pstdout, t_null)) {
         code = zget_stdout(i_ctx_p, &s);
         if (code < 0)
@@ -619,7 +619,7 @@ do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
         if (dict_find_string(systemdict, "userdict", &puserdict) <= 0 ||
             !r_has_type(puserdict, t_dictionary)
             )
-            return_error(e_Fatal);
+            return_error(gs_error_Fatal);
         old_userdict = *puserdict;
         userdict_size = dict_maxlength(&old_userdict);
         lmem = ialloc_alloc_state(parent, iimemory_local->chunk_size);
@@ -627,7 +627,7 @@ do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
         if (lmem == 0 || lmem_stable == 0) {
             gs_free_object(parent, lmem_stable, "do_fork");
             gs_free_object(parent, lmem, "do_fork");
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         }
         lmem->space = avm_local;
         lmem_stable->space = avm_local;
@@ -759,7 +759,7 @@ values_older_than(const ref_stack_t * pstack, uint first, uint last,
 
     for (i = first; i <= last; ++i)
         if (r_space(ref_stack_index(pstack, (long)i)) >= next_space)
-            return_error(e_invalidaccess);
+            return_error(gs_error_invalidaccess);
     return 0;
 }
 
@@ -794,7 +794,7 @@ fork_done(i_ctx_t *i_ctx_p)
 
         if (dict_find_string(systemdict, "restore", &prestore) <= 0) {
             lprintf("restore not found in systemdict!");
-            return_error(e_Fatal);
+            return_error(gs_error_Fatal);
         }
         if (pcur->detach) {
             ref_stack_clear(&o_stack);	/* help avoid invalidrestore */
@@ -866,7 +866,7 @@ zjoin(i_ctx_t *i_ctx_p)
           current->state.memory.space_local ||
         iimemory_local->save_level != 0
         )
-        return_error(e_invalidcontext);
+        return_error(gs_error_invalidcontext);
     switch (pctx->status) {
         case cs_active:
             /*
@@ -914,7 +914,7 @@ finish_join(i_ctx_t *i_ctx_p)
     if_debug2('\'', "[']finish_join %ld, status = %d\n",
               pctx->index, pctx->status);
     if (pctx->joiner_index != current->index)
-        return_error(e_invalidcontext);
+        return_error(gs_error_invalidcontext);
     pctx->joiner_index = 0;
     return zjoin(i_ctx_p);
 }
@@ -958,7 +958,7 @@ zcondition(i_ctx_t *i_ctx_p)
         ialloc_struct(gs_condition_t, &st_condition, "zcondition");
 
     if (pcond == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     pcond->waiting.head_index = pcond->waiting.tail_index = 0;
     push(1);
     make_istruct(op, a_all, pcond);
@@ -973,7 +973,7 @@ zlock(i_ctx_t *i_ctx_p)
     gs_lock_t *plock = ialloc_struct(gs_lock_t, &st_lock, "zlock");
 
     if (plock == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     plock->holder_index = 0;
     plock->waiting.head_index = plock->waiting.tail_index = 0;
     push(1);
@@ -1002,7 +1002,7 @@ zmonitor(i_ctx_t *i_ctx_p)
              pctx->state.memory.space_local ==
              current->state.memory.space_local)
             )
-            return_error(e_invalidcontext);
+            return_error(gs_error_invalidcontext);
     }
     /*
      * We push on the e-stack:
@@ -1089,7 +1089,7 @@ zwait(i_ctx_t *i_ctx_p)
         (iimemory_local->save_level != 0 &&
          (r_space(op - 1) == avm_local || r_space(op) == avm_local))
         )
-        return_error(e_invalidcontext);
+        return_error(gs_error_invalidcontext);
     check_estack(1);
     lock_release(op - 1);
     add_last(psched, &pcond->waiting, pctx);
@@ -1177,7 +1177,7 @@ context_create(gs_scheduler_t * psched, gs_context_t ** ppctx,
 
     pctx = gs_alloc_struct(mem, gs_context_t, &st_context, "context_create");
     if (pctx == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     if (copy_state) {
         pctx->state = *i_ctx_p;
     } else {
@@ -1221,7 +1221,7 @@ context_param(const gs_scheduler_t * psched, os_ptr op, gs_context_t ** ppctx)
     check_type(*op, t_integer);
     pctx = index_context(psched, op->value.intval);
     if (pctx == 0)
-        return_error(e_invalidcontext);
+        return_error(gs_error_invalidcontext);
     *ppctx = pctx;
     return 0;
 }
@@ -1283,7 +1283,7 @@ lock_acquire(os_ptr op, gs_context_t * pctx)
     return o_reschedule;
 }
 
-/* Release a lock.  Return 0 if OK, e_invalidcontext if not. */
+/* Release a lock.  Return 0 if OK, gs_error_invalidcontext if not. */
 static int
 lock_release(ref * op)
 {
@@ -1296,7 +1296,7 @@ lock_release(ref * op)
         activate_waiting(psched, &plock->waiting);
         return 0;
     }
-    return_error(e_invalidcontext);
+    return_error(gs_error_invalidcontext);
 }
 
 /* ------ Initialization procedure ------ */

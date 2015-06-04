@@ -90,7 +90,7 @@ ireclaim(gs_dual_memory_t * dmem, int space)
         }
         if (allocated >= mem->gc_status.max_vm) {
             /* We can't satisfy this request within max_vm. */
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         }
     }
     return 0;

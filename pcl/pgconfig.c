@@ -84,7 +84,7 @@ hpgl_CO(hpgl_args_t * pargs, hpgl_state_t * pgls)
         }
     }
     pargs->source.ptr = p;
-    return e_NeedData;
+    return gs_error_NeedInput;
 }
 
 #ifdef DEBUG
@@ -114,7 +114,7 @@ hpgl_ZZ(hpgl_args_t * pargs, hpgl_state_t * pgls)
         }
     }
     pargs->source.ptr = p;
-    return e_NeedData;
+    return gs_error_NeedInput;
 }
 #endif
 /* The part of the DF command applicable for overlay macros */

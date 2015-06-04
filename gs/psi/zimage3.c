@@ -52,7 +52,7 @@ zimage3(i_ctx_t *i_ctx_p)
     if (dict_find_string(op, "DataDict", &pDataDict) <= 0 ||
         dict_find_string(op, "MaskDict", &pMaskDict) <= 0
         )
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if ((code = pixel_image_params(i_ctx_p, pDataDict,
                         (gs_pixel_image_t *)&image, &ip_data,
                         12, false, gs_currentcolorspace(igs))) < 0 ||
@@ -69,7 +69,7 @@ zimage3(i_ctx_t *i_ctx_p)
         ip_mask.MultipleDataSources ||
         mcode != (image.InterleaveType != 3)
         )
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if (image.InterleaveType == 3) {
         /* Insert the mask DataSource before the data DataSources. */
         memmove(&ip_data.DataSource[1], &ip_data.DataSource[0],
@@ -103,7 +103,7 @@ zimage4(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     code = dict_int_array_check_param(imemory, op, "MaskColor",
-       num_components * 2, colors, 0, e_rangecheck);
+       num_components * 2, colors, 0, gs_error_rangecheck);
     /* Clamp the color values to the unsigned range. */
     if (code == num_components) {
         image.MaskColor_is_range = false;
@@ -121,7 +121,7 @@ zimage4(i_ctx_t *i_ctx_p)
             }
         }
     } else
-        return_error(code < 0 ? code : gs_note_error(e_rangecheck));
+        return_error(code < 0 ? code : gs_note_error(gs_error_rangecheck));
     return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image, &ip.DataSource[0],
                         image.CombineWithColor, 1);
 }

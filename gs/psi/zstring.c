@@ -39,7 +39,7 @@ zbytestring(i_ctx_t *i_ctx_p)
     size = (uint)op->value.intval;
     sbody = ialloc_bytes(size, ".bytestring");
     if (sbody == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     make_astruct(op, a_all | icurrent_space, sbody);
     memset(sbody, 0, size);
     return 0;
@@ -55,13 +55,13 @@ zstring(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if (op->value.intval < 0 )
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if (op->value.intval > max_string_size )
-        return_error(e_limitcheck); /* to match Distiller */
+        return_error(gs_error_limitcheck); /* to match Distiller */
     size = op->value.intval;
     sbody = ialloc_string(size, "string");
     if (sbody == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     make_string(op, a_all | icurrent_space, size, sbody);
     memset(sbody, 0, size);
     return 0;

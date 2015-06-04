@@ -75,7 +75,7 @@ int_pattern_alloc(int_pattern **ppdata, const ref *op, gs_memory_t *mem)
         gs_alloc_struct(mem, int_pattern, &st_int_pattern, "int_pattern");
 
     if (pdata == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     pdata->dict = *op;
     *ppdata = pdata;
     return 0;
@@ -106,7 +106,7 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     if (code != 1)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 
     code = dict_int_param(op1, "PaintType", 1, 2, 0, &templat.PaintType);
     if (code < 0)
@@ -124,32 +124,32 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     if (code == 0)
-       return_error(e_undefined);
+       return_error(gs_error_undefined);
 
     code = dict_float_param(op1, "XStep", 0.0, &templat.XStep);
     if (code < 0)
         return code;
     if (code == 1)
-       return_error(e_undefined);
+       return_error(gs_error_undefined);
 
     code = dict_float_param(op1, "YStep", 0.0, &templat.YStep);
     if (code < 0)
         return code;
     if (code == 1)
-       return_error(e_undefined);
+       return_error(gs_error_undefined);
 
     code = dict_find_string(op1, "PaintProc", &pPaintProc);
     if (code < 0)
         return code;
     if (code == 0)
-       return_error(e_undefined);
+       return_error(gs_error_undefined);
 
     check_proc(*pPaintProc);
 
     if (mat.xx * mat.yy == mat.xy * mat.yx)
-        return_error(e_undefinedresult);
+        return_error(gs_error_undefinedresult);
     if (BBox[0] >= BBox[2] ||  BBox[1] >= BBox[3])
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 
     templat.BBox.p.x = BBox[0];
     templat.BBox.p.y = BBox[1];
@@ -191,7 +191,7 @@ zPaintProc(const gs_client_color * pcc, gs_state * pgs)
     r_ptr(&gs_int_gstate(pgs)->remap_color_info,
           int_remap_color_info_t)->proc =
         pattern_paint_prepare;
-    return_error(e_RemapColor);
+    return_error(gs_error_Remap_Color);
 }
 /* Prepare to run the PaintProc. */
 static int
@@ -220,7 +220,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
 
         pdev = gx_pattern_accum_alloc(imemory, storage_memory, pinst, "pattern_paint_prepare");
         if (pdev == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         code = (*dev_proc(pdev, open_device)) ((gx_device *) pdev);
         if (code < 0) {
             ifree_object(pdev, "pattern_paint_prepare");

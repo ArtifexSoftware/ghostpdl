@@ -66,7 +66,7 @@ z_fontenum(i_ctx_t *i_ctx_p)
     while((code = gp_enumerate_fonts_next(enum_state, &fontname, &path )) > 0) {
         if (fontname == NULL || path == NULL) {
             gp_enumerate_fonts_free(enum_state);
-            return_error(e_ioerror);
+            return_error(gs_error_ioerror);
         }
 
         length = strlen(fontname) + 1;
@@ -95,14 +95,14 @@ z_fontenum(i_ctx_t *i_ctx_p)
             length = strlen(r->fontname);
             string = ialloc_string(length, "native font name");
             if (string == NULL)
-                return_error(e_VMerror);
+                return_error(gs_error_VMerror);
             memcpy(string, r->fontname, length);
             make_string(&(mapping.value.refs[0]), a_all | icurrent_space, length, string);
 
             length = strlen(r->path);
             string = ialloc_string(length, "native font path");
             if (string == NULL)
-                return_error(e_VMerror);
+                return_error(gs_error_VMerror);
             memcpy(string, r->path, length);
             make_string(&(mapping.value.refs[1]), a_all | icurrent_space, length, string);
 

@@ -74,16 +74,16 @@ charstring_font_get_refs(const_os_ptr op, charstring_font_refs_t *pfr)
     if (dict_find_string(op, "Private", &pfr->Private) <= 0 ||
         !r_has_type(pfr->Private, t_dictionary)
         )
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
     make_empty_array(&pfr->no_subrs, 0);
     if (dict_find_string(pfr->Private, "OtherSubrs", &pfr->OtherSubrs) > 0) {
         if (!r_is_array(pfr->OtherSubrs))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     } else
         pfr->OtherSubrs = &pfr->no_subrs;
     if (dict_find_string(pfr->Private, "Subrs", &pfr->Subrs) > 0) {
         if (!r_is_array(pfr->Subrs))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     } else
         pfr->Subrs = &pfr->no_subrs;
     pfr->GlobalSubrs = &pfr->no_subrs;
@@ -136,10 +136,10 @@ charstring_font_params(const gs_memory_t *mem,
     if ((code = dict_bool_param(pprivate, "RndStemUp", true, &pdata1->RndStemUp)) < 0)
         return code;
     if ((code = pdata1->StdHW.count = dict_float_array_check_param(mem, pprivate, "StdHW",
-                1, &pdata1->StdHW.values[0], NULL, 0, e_rangecheck)) < 0)
+                1, &pdata1->StdHW.values[0], NULL, 0, gs_error_rangecheck)) < 0)
         return code;
     if ((code = pdata1->StdVW.count = dict_float_array_check_param(mem, pprivate, "StdVW",
-                1, &pdata1->StdVW.values[0], NULL, 0, e_rangecheck)) < 0)
+                1, &pdata1->StdVW.values[0], NULL, 0, gs_error_rangecheck)) < 0)
         return code;
     if ((code = pdata1->StemSnapH.count = dict_float_array_param(mem, pprivate, "StemSnapH",
                 max_StemSnap, &pdata1->StemSnapH.values[0], NULL)) < 0)

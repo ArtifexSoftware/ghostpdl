@@ -180,7 +180,7 @@ zcrd1_proc_params(const gs_memory_t *mem,
     if (code < 0)
         return code;
     if (code == 1)
-        return gs_note_error(e_undefined);
+        return gs_note_error(gs_error_undefined);
     if (dict_find_string(op, "RenderTable", &pRT) > 0) {
         const ref *prte;
         int size;
@@ -189,7 +189,7 @@ zcrd1_proc_params(const gs_memory_t *mem,
         check_read_type(*pRT, t_array);
         size = r_size(pRT);
         if (size < 5)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         prte = pRT->value.const_refs;
         for (i = 5; i < size; i++)
             check_proc_only(prte[i]);
@@ -235,11 +235,11 @@ zcrd1_params(os_ptr op, gs_cie_render * pcrd,
         /* Finish unpacking and checking the RenderTable parameter. */
         check_type_only(prte[4], t_integer);
         if (!(prte[4].value.intval == 3 || prte[4].value.intval == 4))
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         prtl->n = 3;
         prtl->m = prte[4].value.intval;
         if (r_size(pRT) != prtl->m + 5)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         code = cie_table_param(pRT, prtl, mem);
         if (code < 0)
             return code;
@@ -275,7 +275,7 @@ cie_cache_joint(i_ctx_t *i_ctx_p, const ref_cie_render_procs * pcrprocs,
     if (pcrd == 0)		/* cache is not set up yet */
         return 0;
     if (pjc == 0)		/* must already be allocated */
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     if (r_has_type(&pcrprocs->TransformPQR, t_null)) {
         /*
          * This CRD came from a driver, not from a PostScript dictionary.
@@ -344,7 +344,7 @@ cie_post_exec_tpqr(i_ctx_t *i_ctx_p)
     ref vref;
 
     if (count < 2)
-        return_error(e_unmatchedmark);
+        return_error(gs_error_unmatchedmark);
     vref = *op;
     ref_stack_pop(&o_stack, count - 1);
     *osp = vref;
@@ -398,7 +398,7 @@ ztpqr_scale_wb_common(i_ctx_t *i_ctx_p, int idx)
     }
 
     if (a[0] == a[1])
-        return_error(e_undefinedresult);
+        return_error(gs_error_undefinedresult);
     result = a[3] + (a[2] - a[3]) * (Ps - a[1]) / (a[0] - a[1]);
     make_real(op - 4, result);
     pop(4);

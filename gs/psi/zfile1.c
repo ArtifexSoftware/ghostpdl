@@ -47,7 +47,7 @@ zfile_name_combine(i_ctx_t *i_ctx_p)
     blen = blen0 = plen + flen + 2; /* Inserts separator and ending zero byte. */
     buffer = ialloc_string(blen, "zfile_name_combine");
     if (buffer == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     prefix = op[-2].value.const_bytes;
     fname =  op[-1].value.const_bytes;
     no_sibling = op[0].value.boolval;
@@ -58,7 +58,7 @@ zfile_name_combine(i_ctx_t *i_ctx_p)
     } else {
         buffer = iresize_string(buffer, blen0, blen, "zfile_name_combine");
         if (buffer == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         make_string(op - 2, a_all | icurrent_space, blen, buffer);
         make_bool(op - 1, true);
         pop(1);

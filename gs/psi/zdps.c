@@ -53,7 +53,7 @@ zsetscreenphase(i_ctx_t *i_ctx_p)
     if (op[-2].value.intval < -1 ||
         op[-2].value.intval >= gs_color_select_count
         )
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     code = gs_setscreenphase(igs, x, y,
                              (gs_color_select_t) op[-2].value.intval);
     if (code >= 0)
@@ -73,7 +73,7 @@ zcurrentscreenphase(i_ctx_t *i_ctx_p)
     if (op->value.intval < -1 ||
         op->value.intval >= gs_color_select_count
         )
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     code = gs_currentscreenphase(igs, &phase,
                                  (gs_color_select_t)op->value.intval);
     if (code < 0)
@@ -116,7 +116,7 @@ zimage2(i_ctx_t *i_ctx_p)
             (code = dict_bool_param(op, "PixelCopy", false,
                                     &image.PixelCopy)) < 0
             )
-            return (code < 0 ? code : gs_note_error(e_rangecheck));
+            return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
         check_stype(*pDataSource, st_igstate_obj);
         image.DataSource = igstate_ptr(pDataSource);
         {
@@ -127,7 +127,7 @@ zimage2(i_ctx_t *i_ctx_p)
                 image.UnpaintedPath = gx_path_alloc(imemory,
                                                     ".image2 UnpaintedPath");
                 if (image.UnpaintedPath == 0)
-                    return_error(e_VMerror);
+                    return_error(gs_error_VMerror);
             } else
                 image.UnpaintedPath = 0;
         }
@@ -213,7 +213,7 @@ zdefineusername(i_ctx_t *i_ctx_p)
                     goto ret;
                 /* falls through */
             default:
-                return_error(e_invalidaccess);
+                return_error(gs_error_invalidaccess);
         }
     } else {			/* Expand the array. */
         ref new_array;

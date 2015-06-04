@@ -76,14 +76,14 @@ zsave(i_ctx_t *i_ctx_p)
     vmsave = ialloc_struct(vm_save_t, &st_vm_save, "zsave");
     ialloc_set_space(idmemory, space);
     if (vmsave == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     vmsave->gsave = NULL; /* Ensure constructed enough to destroy safely */
     code = alloc_save_state(idmemory, vmsave, &sid);
     if (code < 0)
         return code;
     if (sid == 0) {
         ifree_object(vmsave, "zsave");
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     }
     if_debug2m('u', imemory, "[u]vmsave 0x%lx, id = %lu\n",
                (ulong) vmsave, (ulong) sid);
@@ -191,11 +191,11 @@ restore_check_operand(os_ptr op, alloc_save_t ** pasave,
     check_type(*op, t_save);
     vmsave = r_ptr(op, vm_save_t);
     if (vmsave == 0)		/* invalidated save */
-        return_error(e_invalidrestore);
+        return_error(gs_error_invalidrestore);
     sid = op->value.saveid;
     asave = alloc_find_save(idmem, sid);
     if (asave == 0)
-        return_error(e_invalidrestore);
+        return_error(gs_error_invalidrestore);
     *pasave = asave;
     return 0;
 }
@@ -247,7 +247,7 @@ restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t * pstack,
                     /* Names are special because of how they are allocated. */
                     if (alloc_name_is_since_save((const gs_memory_t *)pstack->memory,
                                                  stkp, asave))
-                        return_error(e_invalidrestore);
+                        return_error(gs_error_invalidrestore);
                     continue;
                 case t_string:
                     /* Don't check empty executable strings */
@@ -285,7 +285,7 @@ restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t * pstack,
                      * in LL3, but just in case....
                      */
                     if (ptr == 0)
-                        return_error(e_invalidrestore);
+                        return_error(gs_error_invalidrestore);
                     if (ptr == asave)
                         continue;
                     break;
@@ -293,7 +293,7 @@ restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t * pstack,
                     continue;
             }
             if (alloc_is_since_save(ptr, asave))
-                return_error(e_invalidrestore);
+                return_error(gs_error_invalidrestore);
         }
     } while (ref_stack_enum_next(&rsenum));
     return 0;		/* OK */

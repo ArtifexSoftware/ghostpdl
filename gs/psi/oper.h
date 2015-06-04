@@ -40,8 +40,8 @@
  * we must make an additional check to determine which error
  * should be reported.  In order not to have to make this check in-line
  * in every type check in every operator, we define a procedure that takes
- * an o-stack pointer and returns e_stackunderflow if it points to
- * a guard entry, e_typecheck otherwise.
+ * an o-stack pointer and returns gs_error_stackunderflow if it points to
+ * a guard entry, gs_error_typecheck otherwise.
  *
  * Note that we only need to do this for typecheck, not for any other
  * kind of error such as invalidaccess, since any operator that can
@@ -72,7 +72,7 @@ int check_type_failed(const ref *);
 #define check_type_access(orf,typ,acc1)\
   if ( !r_has_type_attrs(&orf,typ,acc1) )\
     return_error((!r_has_type(&orf,typ) ? check_type_failed(&orf) :\
-                  e_invalidaccess))
+                  gs_error_invalidaccess))
 #define check_read_type(orf,typ)\
   check_type_access(orf,typ,a_read)
 #define check_write_type(orf,typ)\
@@ -81,7 +81,7 @@ int check_type_failed(const ref *);
 /* Macro for as yet unimplemented operators. */
 /* The if ( 1 ) is to prevent the compiler from complaining about */
 /* unreachable code. */
-#define NYI(msg) if ( 1 ) return_error(e_undefined)
+#define NYI(msg) if ( 1 ) return_error(gs_error_undefined)
 
 /*
  * If an operator has popped or pushed something on the control stack,

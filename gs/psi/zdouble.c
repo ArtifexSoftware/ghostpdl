@@ -72,7 +72,7 @@ zddiv(i_ctx_t *i_ctx_p)
 {
     dbegin_binary();
     if (num[1] == 0.0)
-        return_error(e_undefinedresult);
+        return_error(gs_error_undefinedresult);
     return double_result(i_ctx_p, 2, num[0] / num[1]);
 }
 
@@ -137,7 +137,7 @@ zdsqrt(i_ctx_t *i_ctx_p)
 {
     dbegin_unary();
     if (num < 0.0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     return double_result(i_ctx_p, 1, sqrt(num));
 }
 
@@ -179,7 +179,7 @@ zdatan(i_ctx_t *i_ctx_p)
     dbegin_binary();
     if (num[0] == 0) {		/* on X-axis, special case */
         if (num[1] == 0)
-            return_error(e_undefinedresult);
+            return_error(gs_error_undefinedresult);
         result = (num[1] < 0 ? 180 : 0);
     } else {
         result = atan2(num[0], num[1]) * radians_to_degrees;
@@ -204,9 +204,9 @@ zdexp(i_ctx_t *i_ctx_p)
 
     dbegin_binary();
     if (num[0] == 0.0 && num[1] == 0.0)
-        return_error(e_undefinedresult);
+        return_error(gs_error_undefinedresult);
     if (num[0] < 0.0 && modf(num[1], &ipart) != 0.0)
-        return_error(e_undefinedresult);
+        return_error(gs_error_undefinedresult);
     return double_result(i_ctx_p, 2, pow(num[0], num[1]));
 }
 
@@ -215,7 +215,7 @@ dlog(i_ctx_t *i_ctx_p, double (*lfunc)(double))
 {
     dbegin_unary();
     if (num <= 0.0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     return double_result(i_ctx_p, 1, (*lfunc)(num));
 }
 /* <dposnum> <dresult> .dln <dresult> */
@@ -322,7 +322,7 @@ zcvsd(i_ctx_t *i_ctx_p)
     check_read_type(op[-1], t_string);
     len = r_size(op - 1);
     if (len > MAX_CHARS)
-        return_error(e_limitcheck);
+        return_error(gs_error_limitcheck);
     gs_sprintf(buf, "%f", 1.5);
     dot = buf[1]; /* locale-dependent */
     memcpy(str, op[-1].value.bytes, len);
@@ -338,7 +338,7 @@ zcvsd(i_ctx_t *i_ctx_p)
         --len;
     str[len] = 0;
     if (strspn(str, "0123456789+-.dDeE") != len)
-        return_error(e_syntaxerror);
+        return_error(gs_error_syntaxerror);
     strcat(str, "$");
     if (dot != '.') {
         char *pdot = strchr(str, '.');
@@ -346,7 +346,7 @@ zcvsd(i_ctx_t *i_ctx_p)
             *pdot = dot;
     }
     if (sscanf(str, "%lf%c", &num, &end) != 2 || end != '$')
-        return_error(e_syntaxerror);
+        return_error(gs_error_syntaxerror);
     return double_result(i_ctx_p, 1, num);
 }
 
@@ -366,7 +366,7 @@ zdcvi(i_ctx_t *i_ctx_p)
         return code;
 
     if (num < min_int_real || num > max_int_real)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     make_int(op, (long)num);	/* truncates toward 0 */
     return 0;
 }
@@ -388,7 +388,7 @@ zdcvr(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     if (num < min_real || num > max_real)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     make_real(op, (float)num);
     return 0;
 }
@@ -427,7 +427,7 @@ zdcvs(i_ctx_t *i_ctx_p)
     }
     len = strlen(str);
     if (len > r_size(op))
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     /* Juggling locales isn't thread-safe. Posix me harder. */
     if (dot != '.') {
         char *pdot = strchr(str, dot);
@@ -505,14 +505,14 @@ double_params(os_ptr op, int count, double *pval)
                 if (!r_has_attr(op, a_read) ||
                     r_size(op) != sizeof(double)
                 )
-                           return_error(e_typecheck);
+                           return_error(gs_error_typecheck);
                 --pval;
                 memcpy(pval, op->value.bytes, sizeof(double));
                 break;
             case t__invalid:
-                return_error(e_stackunderflow);
+                return_error(gs_error_stackunderflow);
             default:
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
         }
         op--;
     }
@@ -525,7 +525,7 @@ double_params_result(os_ptr op, int count, double *pval)
 {
     check_write_type(*op, t_string);
     if (r_size(op) != sizeof(double))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     return double_params(op - 1, count, pval);
 }
 

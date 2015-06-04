@@ -83,7 +83,7 @@ filter_write_predictor(i_ctx_t *i_ctx_p, int npop,
                 code = zpp_setup(op, &pps);
                 break;
             default:
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
         }
         if (code < 0)
             return code;

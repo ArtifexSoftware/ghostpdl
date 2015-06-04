@@ -207,7 +207,7 @@ zdissolve(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     if (delta < 0 || delta > 1)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     params.op = composite_Dissolve;
     params.delta = delta;
     return composite_image(i_ctx_p, &params);

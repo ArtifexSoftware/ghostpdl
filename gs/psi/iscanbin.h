@@ -21,7 +21,7 @@
 
 /*
  * Scan a binary token.  The main scanner calls this iff recognize_btokens()
- * is true.  Return e_unregistered if Level 2 features are not included.
+ * is true.  Return gs_error_unregistered if Level 2 features are not included.
  * Return 0 or scan_BOS on success, <0 on failure.
  *
  * This header file exists only because there are two implementations of

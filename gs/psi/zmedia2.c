@@ -301,7 +301,7 @@ zmatch_page_size(const gs_memory_t *mem, const ref * pvreq, const ref * pvmed,
         return_error(code);
     nm = r_size(pvmed);
     if (!((nm == 2 || nm == 4) && (nr == 2 || nr == nm)))
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     {
         uint i;
         double v[6];
@@ -349,7 +349,7 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
     double rx = request->x, ry = request->y;
 
     if ((rx <= 0) || (ry <= 0))
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if (policy == 7) {
                 /* (Adobe) hack: just impose requested values */
         *best_mismatch = 0;

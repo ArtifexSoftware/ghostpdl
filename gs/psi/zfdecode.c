@@ -142,7 +142,7 @@ filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
                 code = zpp_setup(op, &pps);
                 break;
             default:
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
         }
         if (code < 0)
             return code;
@@ -264,7 +264,7 @@ zpd_setup(os_ptr op, stream_PDiff_state * ppds)
         (code = dict_int_param(op, "Columns", 1, max_int, 1,
                                &ppds->Columns)) < 0
         )
-        return (code < 0 ? code : gs_note_error(e_rangecheck));
+        return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
     ppds->BitsPerComponent = bpc;
     return 0;
 }
@@ -315,7 +315,7 @@ zpp_setup(os_ptr op, stream_PNGP_state * ppps)
         (code = dict_int_param(op, "Predictor", 10, 15, 15,
                                &ppps->Predictor)) < 0
         )
-        return (code < 0 ? code : gs_note_error(e_rangecheck));
+        return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
     ppps->BitsPerComponent = bpc;
     return 0;
 }

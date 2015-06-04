@@ -332,7 +332,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
             break;
         case t_name:
             if (!r_has_attr(&elt, a_executable))
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             name_string_ref(imemory, &elt, &elt);
             if (!bytes_compare(elt.value.bytes, r_size(&elt),
                                (const byte *)"true", 4)) {
@@ -348,11 +348,11 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
             }
             /* Check if the name is a valid operator in systemdict */
             if (dict_find(systemdict, &elt, &delp) <= 0)
-                return_error(e_undefined);
+                return_error(gs_error_undefined);
             if (r_btype(delp) != t_operator)
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
             if (!r_has_attr(delp, a_executable))
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             elt = *delp;
             /* Fall into the operator case */
         case t_operator: {
@@ -364,13 +364,13 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
                     ++*psize;
                     goto next;
                 }
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         }
         default: {
             if (!r_is_proc(&elt))
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
             if (depth == MAX_PSC_FUNCTION_NESTING)
-                return_error(e_limitcheck);
+                return_error(gs_error_limitcheck);
             if ((code = array_get(imemory, pref, ++i, &elt2)) < 0)
                 return code;
             *psize += 3;
@@ -380,7 +380,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
             /* Check for { proc } repeat | {proc} if | {proc1} {proc2} ifelse */
             if (resolves_to_oper(i_ctx_p, &elt2, zrepeat)) {
                 if (!AllowRepeat)
-                    return_error(e_rangecheck);
+                    return_error(gs_error_rangecheck);
                 if (ops) {
                     *p = PtCr_repeat;
                     psc_fixup(p, ops + *psize);
@@ -394,7 +394,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
                     psc_fixup(p, ops + *psize);
                 }
             } else if (!r_is_proc(&elt2))
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             else if ((code = array_get(imemory, pref, ++i, &elt3)) < 0)
                 return code;
             else if (resolves_to_oper(i_ctx_p, &elt3, zifelse)) {
@@ -411,7 +411,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
                 if (ops)
                     psc_fixup(p, ops + *psize);
             } else
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             }	 /* end 'default' */
         }
     next:
@@ -440,11 +440,11 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     params.ops.data = 0;	/* in case of failure */
     params.ops.size = 0;	/* ditto */
     if (dict_find_string(op, "Function", &proc) <= 0) {
-        code = gs_note_error(e_rangecheck);
+        code = gs_note_error(gs_error_rangecheck);
         goto fail;
     }
     if (!r_is_proc(proc)) {
-        code = gs_note_error(e_typecheck);
+        code = gs_note_error(gs_error_typecheck);
         goto fail;
     }
     size = 0;
@@ -479,7 +479,7 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
         goto fail;
     ops = gs_alloc_string(mem, size + 1, "gs_build_function_4(ops)");
     if (ops == 0) {
-        code = gs_note_error(e_VMerror);
+        code = gs_note_error(gs_error_VMerror);
         goto fail;
     }
     size = 0;
@@ -493,7 +493,7 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     /* free_params will free the ops string */
 fail:
     gs_function_PtCr_free_params(&params, mem);
-    return (code < 0 ? code : gs_note_error(e_rangecheck));
+    return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
 }
 
 int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t **func)
@@ -510,7 +510,7 @@ int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t *
     if (code < 0)
         return code;
     if (!space->alternateproc)
-        return e_typecheck;
+        return gs_error_typecheck;
     code = space->alternateproc(i_ctx_p, arr, &palternatespace, &CIESubst);
     if (code < 0)
         return code;
@@ -523,7 +523,7 @@ int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t *
         return code;
     ptr = (float *)gs_alloc_byte_array(imemory, num_components * 2, sizeof(float), "make_type4_function(Domain)");
     if (!ptr)
-        return e_VMerror;
+        return gs_error_VMerror;
     code = space->domain(i_ctx_p, arr, ptr);
     if (code < 0) {
         gs_free_const_object(imemory, ptr, "make_type4_function(Domain)");
@@ -540,7 +540,7 @@ int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t *
     ptr = (float *)gs_alloc_byte_array(imemory, num_components * 2, sizeof(float), "make_type4_function(Range)");
     if (!ptr) {
         gs_free_const_object(imemory, params.Domain, "make_type4_function(Domain)");
-        return e_VMerror;
+        return gs_error_VMerror;
     }
     code = altspace->range(i_ctx_p, &alternatespace, ptr);
     if (code < 0) {

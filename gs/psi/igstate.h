@@ -161,7 +161,7 @@ typedef struct int_gstate_s {
     /*
      * Remap_color_info is used temporarily to communicate the need for
      * Pattern or DeviceNcolor remapping to the interpreter.  See
-     * e_RemapColor in ierrors.h.  The extra level of indirection through a
+     * gs_error_Remap_Color in gserrors.h.  The extra level of indirection through a
      * structure is needed because the gstate passed to the PaintProc is
      * different from the current gstate in the graphics state, and because
      * the DeviceN color being remapped is not necessarily the current color

@@ -188,7 +188,7 @@ zreadhexstring_continue(i_ctx_t *i_ctx_p)
     odd = (char)(op->value.intval >> 24);
 
     if (length > r_size(op - 1) || odd < -1 || odd > 0xF)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     check_write_type(op[-1], t_string);
     code = zreadhexstring_at(i_ctx_p, op - 1, (uint)length, odd);
     if (code >= 0)
@@ -232,7 +232,7 @@ zwritehexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint odd)
         status = write_string(&rbuf, s);
         switch (status) {
             default:
-                return_error(e_ioerror);
+                return_error(gs_error_ioerror);
             case 0:
                 len -= len1;
                 odd = 0;
@@ -268,7 +268,7 @@ zwritehexstring_continue(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if ((op->value.intval & ~1) != 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     code = zwritehexstring_at(i_ctx_p, op - 1, (uint) op->value.intval);
     if (code >= 0)
         pop(1);
@@ -305,7 +305,7 @@ zreadstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start)
      * len is zero, sgets will return 0 immediately with rlen = 0.
      */
     if (len == 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     r_set_size(op, rlen);
     op[-1] = *op;
     make_bool(op, (rlen == len ? 1 : 0));
@@ -328,7 +328,7 @@ zreadstring_continue(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if (op->value.intval < 0 || op->value.intval > r_size(op - 1))
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     code = zreadstring_at(i_ctx_p, op - 1, (uint) op->value.intval);
     if (code >= 0)
         pop(1);
@@ -384,7 +384,7 @@ zreadline_at(i_ctx_t *i_ctx_p, os_ptr op, uint count, bool in_eol)
         case EOFC:
             break;
         case 1:
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         default:
             if (count == 0 && !in_eol)
                 return handle_read_status(i_ctx_p, status, op - 1, NULL,
@@ -422,7 +422,7 @@ zreadline_continue(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if (op->value.intval < 0 || op->value.intval > size)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     start = (uint) op->value.intval;
     code = (start == 0 ? zreadline_at(i_ctx_p, op - 1, size, true) :
             zreadline_at(i_ctx_p, op - 1, start, false));
@@ -459,7 +459,7 @@ zbytesavailable(i_ctx_t *i_ctx_p)
     check_read_file(i_ctx_p, s, op);
     switch (savailable(s, &avail)) {
         default:
-            return_error(e_ioerror);
+            return_error(gs_error_ioerror);
         case EOFC:
             avail = -1;
         case 0:
@@ -510,7 +510,7 @@ zflushfile(i_ctx_t *i_ctx_p)
      */
     if (file_is_invalid(s, op)) {
         if (r_has_attr(op, a_write))
-            return_error(e_invalidaccess);
+            return_error(gs_error_invalidaccess);
         pop(1);
         return 0;
     }
@@ -598,7 +598,7 @@ zfileposition(i_ctx_t *i_ctx_p)
      * streams.
      */
     if (!s_can_seek(s))
-        return_error(e_ioerror);
+        return_error(gs_error_ioerror);
     make_int(op, stell(s));
     return 0;
 }
@@ -628,7 +628,7 @@ zsetfileposition(i_ctx_t *i_ctx_p)
     check_type(*op, t_integer);
     check_file(s, op - 1);
     if (sseek(s, (gs_offset_t)op->value.intval) < 0)
-        return_error(e_ioerror);
+        return_error(gs_error_ioerror);
     pop(2);
     return 0;
 }
@@ -653,7 +653,7 @@ zfilename(i_ctx_t *i_ctx_p)
     check_ostack(1);
     str = ialloc_string(fname.size, "filename");
     if (str == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     memcpy(str, fname.data, fname.size);
     push(1);			/* can't fail */
     make_const_string( op - 1 ,
@@ -702,7 +702,7 @@ zpeekstring(i_ctx_t *i_ctx_p)
              * which allocator to use and how it should interact with restore.
              */
             if (len >= s->bsize)
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             s_process_read_buf(s);
             continue;
         default:
@@ -733,9 +733,9 @@ zunread(i_ctx_t *i_ctx_p)
     check_type(*op, t_integer);
     ch = op->value.intval;
     if (ch > 0xff)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if (sungetc(s, (byte) ch) < 0)
-        return_error(e_ioerror);
+        return_error(gs_error_ioerror);
     pop(2);
     return 0;
 }
@@ -756,10 +756,10 @@ zwritecvp_at(i_ctx_t *i_ctx_p, os_ptr op, uint start, bool first)
     check_type(*op, t_integer);
     code = obj_cvp(op - 1, str, sizeof(str), &len, (int)op->value.intval,
                    start, imemory, true);
-    if (code == e_rangecheck) {
+    if (code == gs_error_rangecheck) {
         code = obj_string_data(imemory, op - 1, &data, &len);
         if (len < start)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         data += start;
         len -= start;
     }
@@ -770,7 +770,7 @@ zwritecvp_at(i_ctx_t *i_ctx_p, os_ptr op, uint start, bool first)
     status = write_string(&rstr, s);
     switch (status) {
         default:
-            return_error(e_ioerror);
+            return_error(gs_error_ioerror);
         case 0:
             break;
         case INTC:
@@ -810,7 +810,7 @@ zwritecvp_continue(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if (op->value.intval != (uint) op->value.intval)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     return zwritecvp_at(i_ctx_p, op - 1, (uint) op->value.intval, false);
 }
 
@@ -863,9 +863,9 @@ file_switch_to_read(const ref * op)
     stream *s = fptr(op);
 
     if (s->write_id != r_size(op) || s->file == 0)	/* not valid */
-        return_error(e_invalidaccess);
+        return_error(gs_error_invalidaccess);
     if (sswitch(s, false) < 0)
-        return_error(e_ioerror);
+        return_error(gs_error_ioerror);
     s->read_id = s->write_id;	/* enable reading */
     s->write_id = 0;		/* disable writing */
     return 0;
@@ -879,9 +879,9 @@ file_switch_to_write(const ref * op)
     stream *s = fptr(op);
 
     if (s->read_id != r_size(op) || s->file == 0)	/* not valid */
-        return_error(e_invalidaccess);
+        return_error(gs_error_invalidaccess);
     if (sswitch(s, true) < 0)
-        return_error(e_ioerror);
+        return_error(gs_error_ioerror);
     s->write_id = s->read_id;	/* enable writing */
     s->read_id = 0;		/* disable reading */
     return 0;
@@ -928,7 +928,7 @@ copy_error_string(i_ctx_t *i_ctx_p, const ref *fop)
             return code;
         s->state->error_string[0] = 0; /* just do it once */
     }
-    return_error(e_ioerror);
+    return_error(gs_error_ioerror);
 }
 
 /* Handle an exceptional status return from a read stream. */

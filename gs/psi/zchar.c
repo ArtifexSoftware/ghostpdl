@@ -105,10 +105,10 @@ widthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
     check_type(op[-1], t_integer);
     if (gs_currentfont(igs)->FontType == ft_composite) {
         if ((gs_char) (op[-1].value.intval) != op[-1].value.intval)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
     } else {
         if (op[-1].value.intval < 0 || op[-1].value.intval > 255)
-            return_error(e_rangecheck); /* per PLRM and CET 13-26 */
+            return_error(gs_error_rangecheck); /* per PLRM and CET 13-26 */
     }
     if ((code = num_params(op - 2, 2, cxy)) < 0 )
         return code;
@@ -170,10 +170,10 @@ awidthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
     check_type(op[-3], t_integer);
     if (gs_currentfont(igs)->FontType == ft_composite) {
         if ((gs_char) (op[-3].value.intval) != op[-3].value.intval)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
     } else {
         if (op[-3].value.intval < 0 || op[-3].value.intval > 255)
-            return_error(e_rangecheck); /* per PLRM and CET 13-02 */
+            return_error(gs_error_rangecheck); /* per PLRM and CET 13-02 */
     }
     if ((code = num_params(op - 4, 2, cxy)) < 0 )
         return code;
@@ -225,7 +225,7 @@ zkshow(i_ctx_t *i_ctx_p)
      * so we check for it here.
      */
     if (gs_currentfont(igs)->FontType == ft_composite)
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
     if ((code = op_show_setup(i_ctx_p, op)) != 0 ||
         (code = gs_kshow_begin(igs, op->value.bytes, r_size(op),
                                imemory_local, &penum)) < 0)
@@ -328,7 +328,7 @@ zsetcachedevice(i_ctx_t *i_ctx_p)
     int code = num_params(op, 6, wbox);
 
     if (penum == 0)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     if (code < 0)
         return code;
     if (zchar_show_width_only(penum))
@@ -352,7 +352,7 @@ zsetcachedevice2(i_ctx_t *i_ctx_p)
     int code = num_params(op, 10, wbox);
 
     if (penum == 0)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     if (code < 0)
         return code;
     if (zchar_show_width_only(penum))
@@ -378,7 +378,7 @@ zsetcharwidth(i_ctx_t *i_ctx_p)
     int code = num_params(op, 2, width);
 
     if (penum == 0)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     if (code < 0)
         return code;
     if (zchar_show_width_only(penum))
@@ -530,7 +530,7 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
               penum->text.data.bytes[0] ==
                 (gs_text_current_char(osenum) & 0xff))
             )
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         text = penum->text;
         text.operation =
             (text.operation &
@@ -551,7 +551,7 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
         int ft = igs->root_font->FontType;
 
         if ((ft >= ft_CID_encrypted && ft <= ft_CID_TrueType) || ft == ft_CID_bitmap)
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     }
     make_mark_estack(ep - (snumpush - 1), es_show, op_show_cleanup);
     if (endproc == NULL)
@@ -722,15 +722,15 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
                     code = z1_set_cache(i_ctx_p, (gs_font_base *)pfont,
                                     &cnref, glyph, cont, &exec_cont);
                 else
-                    return_error(e_unregistered); /* Unimplemented. */
+                    return_error(gs_error_unregistered); /* Unimplemented. */
                 if (exec_cont != 0)
-                    return_error(e_unregistered); /* Must not happen. */
+                    return_error(gs_error_unregistered); /* Must not happen. */
                 return code;
             }
         default:		/* error */
 err:
             if (code >= 0)
-                code = gs_note_error(e_invalidfont);
+                code = gs_note_error(gs_error_invalidfont);
             return op_show_free(i_ctx_p, code);
     }
 }
@@ -826,11 +826,11 @@ op_show_return_width(i_ctx_t *i_ctx_p, uint npop, double *pwidth)
     /* Restore the operand and dictionary stacks. */
     ocount = ref_stack_count(&o_stack) - (uint) esodepth(ep).value.intval;
     if (ocount < npop)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
     dsaved = (uint) esddepth(ep).value.intval;
     dcount = ref_stack_count(&d_stack);
     if (dcount < dsaved)
-        return_error(e_dictstackunderflow);
+        return_error(gs_error_dictstackunderflow);
     while (dcount > dsaved) {
         code = zend(i_ctx_p);
         if (code < 0)
@@ -896,7 +896,7 @@ op_show_restore(i_ctx_t *i_ctx_p, bool for_error)
              * Bad news: we got an error inside a save inside a BuildChar or
              * BuildGlyph.  Don't attempt to recover.
              */
-            code = gs_note_error(e_Fatal);
+            code = gs_note_error(gs_error_Fatal);
         } else
             code = gs_grestore(igs);
     }
@@ -937,7 +937,7 @@ font_bbox_param(const gs_memory_t *mem, const ref * pfdict, double bbox[4])
     bbox[0] = bbox[1] = bbox[2] = bbox[3] = 0.0;
     if (dict_find_string(pfdict, "FontBBox", &pbbox) > 0) {
         if (!r_is_array(pbbox))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(pbbox) == 4) {
             const ref_packed *pbe = pbbox->value.packed;
             ref rbe[4];
@@ -961,7 +961,7 @@ font_bbox_param(const gs_memory_t *mem, const ref * pfdict, double bbox[4])
                 bbox[0] = bbox[1] = bbox[2] = bbox[3] = 0.0;
         }
     } else if (gs_currentcpsimode(mem)) {
-        return_error(e_invalidfont); /* CPSI requires FontBBox */
+        return_error(gs_error_invalidfont); /* CPSI requires FontBBox */
     }
     return 0;
 }

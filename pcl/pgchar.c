@@ -312,7 +312,7 @@ hpgl_DT(hpgl_args_t * pargs, hpgl_state_t * pgls)
     /* We use phase to remember the terminator character */
     /* in case we had to restart execution. */
     if (p >= rlimit)
-        return e_NeedData;
+        return gs_error_NeedInput;
     if (!ch)
         switch ((ch = *++p)) {
             case ';':
@@ -326,7 +326,7 @@ hpgl_DT(hpgl_args_t * pargs, hpgl_state_t * pgls)
                 return e_Range;
             default:
                 if (p >= rlimit)
-                    return e_NeedData;
+                    return gs_error_NeedInput;
                 if (*++p == ',') {
                     pargs->source.ptr = p;
                     pargs->phase = ch;

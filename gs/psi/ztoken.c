@@ -63,7 +63,7 @@ ztoken(i_ctx_t *i_ctx_p)
 
             /* Don't pop the operand in case of invalidaccess. */
             if (!r_has_attr(op, a_read))
-                return_error(e_invalidaccess);
+                return_error(gs_error_invalidaccess);
             code = gs_scan_string_token(i_ctx_p, op, &token);
             switch (code) {
             case scan_EOF:      /* no tokens */
@@ -115,7 +115,7 @@ again:
     switch (code) {
         default:                /* error */
             if (code > 0)       /* comment, not possible */
-                code = gs_note_error(e_syntaxerror);
+                code = gs_note_error(gs_error_syntaxerror);
             gs_scanner_error_object(i_ctx_p, pstate, &i_ctx_p->error_object);
             break;
         case scan_BOS:
@@ -255,7 +255,7 @@ ztoken_handle_comment(i_ctx_t *i_ctx_p, scanner_state *sstate,
         proc_name = "%ProcessDSCComment";
         break;
     default:
-        return_error(e_Fatal);  /* can't happen */
+        return_error(gs_error_Fatal);  /* can't happen */
     }
     /*
      * We can't use check_ostack here, because it returns on overflow.
@@ -274,7 +274,7 @@ ztoken_handle_comment(i_ctx_t *i_ctx_p, scanner_state *sstate,
         pstate = (scanner_state *)ialloc_struct(scanner_state_dynamic, &st_scanner_state_dynamic,
                                "ztoken_handle_comment");
         if (pstate == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         ((scanner_state_dynamic *)pstate)->mem = imemory;
         *pstate = *sstate;
     } else

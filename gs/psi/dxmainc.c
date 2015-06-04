@@ -88,9 +88,9 @@ int main(int argc, char *argv[])
         if (code == 0)
             code = gsapi_run_string(instance, start_string, 0, &exit_code);
         code1 = gsapi_exit(instance);
-        if (code == 0 || code == e_Quit)
+        if (code == 0 || code == gs_error_Quit)
             code = code1;
-        if (code == e_Quit)
+        if (code == gs_error_Quit)
             code = 0;	/* user executed 'quit' */
 
         gsapi_delete_instance(instance);
@@ -99,10 +99,10 @@ int main(int argc, char *argv[])
     exit_status = 0;
     switch (code) {
         case 0:
-        case e_Info:
-        case e_Quit:
+        case gs_error_Info:
+        case gs_error_Quit:
             break;
-        case e_Fatal:
+        case gs_error_Fatal:
             exit_status = 1;
             break;
         default:

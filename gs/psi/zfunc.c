@@ -107,14 +107,14 @@ zscalefunction(i_ctx_t *i_ctx_p)
     check_proc(op[-1]);
     pfn = ref_function(op - 1);
     if (pfn == 0 || !r_is_array(op))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     if (r_size(op) != 2 * pfn->params.n)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     ranges = (gs_range_t *)
         gs_alloc_byte_array(imemory, pfn->params.n, sizeof(gs_range_t),
                             "zscalefunction");
     if (ranges == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     for (i = 0; i < pfn->params.n; ++i) {
         ref rval[2];
         float val[2];
@@ -158,7 +158,7 @@ zexecfunction(i_ctx_t *i_ctx_p)
     if (!r_is_struct(op) ||
         !r_has_masked_attrs(op, a_executable | a_execute, a_executable | a_all)
         )
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     {
         gs_function_t *pfn = (gs_function_t *) op->value.pstruct;
         int m = pfn->params.m, n = pfn->params.n;
@@ -178,7 +178,7 @@ zexecfunction(i_ctx_t *i_ctx_p)
                 in = (float *)ialloc_byte_array(m + n, sizeof(float),
                                                 "%execfunction(in/out)");
                 if (in == 0)
-                    code = gs_note_error(e_VMerror);
+                    code = gs_note_error(gs_error_VMerror);
             }
             out = in + m;
             if (code < 0 ||
@@ -240,7 +240,7 @@ fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
     gs_function_params_t params;
 
     if (depth > MAX_SUB_FUNCTION_DEPTH)
-        return_error(e_limitcheck);
+        return_error(gs_error_limitcheck);
     check_type(*op, t_dictionary);
     code = dict_int_param(op, "FunctionType", 0, max_int, -1, &type);
     if (code < 0)
@@ -249,7 +249,7 @@ fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
         if (build_function_type_table[i].type == type)
             break;
     if (i == build_function_type_table_count)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     /* Collect parameters common to all function types. */
     params.Domain = 0;
     params.Range = 0;
@@ -261,7 +261,7 @@ fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
     params.m = code >> 1;
     for (j = 0; j < params.m << 1; j += 2) {
         if (params.Domain[j] >= params.Domain[j + 1]) {
-          code = gs_note_error(e_rangecheck);
+          code = gs_note_error(gs_error_rangecheck);
           gs_errorinfo_put_pair_from_dict(i_ctx_p, op, "Domain");
           goto fail;
         }
@@ -272,12 +272,12 @@ fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
          * here because Adobe checks Domain before checking other parameters.
          */
         if (num_inputs != params.m)
-            code = gs_note_error(e_rangecheck);
+            code = gs_note_error(gs_error_rangecheck);
         for (j = 0; j < 2*num_inputs && code >= 0; j += 2) {
             if (params.Domain[j] > shading_domain[j] ||
                 params.Domain[j+1] < shading_domain[j+1]
                ) {
-                code = gs_note_error(e_rangecheck);
+                code = gs_note_error(gs_error_rangecheck);
             }
         }
         if (code < 0) {
@@ -314,22 +314,22 @@ fn_build_float_array(const ref * op, const char *kstr, bool required,
 
     *pparray = 0;
     if (dict_find_string(op, kstr, &par) <= 0)
-        return (required ? gs_note_error(e_rangecheck) : 0);
+        return (required ? gs_note_error(gs_error_rangecheck) : 0);
     if (!r_is_array(par))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     {
         uint size = r_size(par);
         float *ptr = (float *)
             gs_alloc_byte_array(mem, size, sizeof(float), kstr);
 
         if (ptr == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         code = dict_float_array_check_param(mem, op, kstr, size,
                                             ptr, NULL,
-                                            0, e_rangecheck);
+                                            0, gs_error_rangecheck);
         if (code < 0 || (even && (code & 1) != 0)) {
             gs_free_object(mem, ptr, kstr);
-            return(code < 0 ? code : gs_note_error(e_rangecheck));
+            return(code < 0 ? code : gs_note_error(gs_error_rangecheck));
         }
         *pparray = ptr;
     }
@@ -352,22 +352,22 @@ fn_build_float_array_forced(const ref * op, const char *kstr, bool required,
 
     *pparray = 0;
     if (dict_find_string(op, kstr, &par) <= 0)
-        return (required ? gs_note_error(e_rangecheck) : 0);
+        return (required ? gs_note_error(gs_error_rangecheck) : 0);
 
     if( r_is_array(par) )
         size = r_size(par);
     else if(r_type(par) == t_integer || r_type(par) == t_real)
         size = 1;
     else
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     ptr = (float *)gs_alloc_byte_array(mem, size, sizeof(float), kstr);
 
     if (ptr == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     if(r_is_array(par) )
         code = dict_float_array_check_param(mem, op, kstr,
                                             size, ptr, NULL,
-                                            0, e_rangecheck);
+                                            0, gs_error_rangecheck);
     else {
         code = dict_float_param(op, kstr, 0., ptr); /* defailt cannot happen */
         if( code == 0 )

@@ -88,7 +88,7 @@ dynamic_free(da_ptr pda)
 }
 
 /* Resize a dynamic string. */
-/* If the allocation fails, return e_VMerror; otherwise, return 0. */
+/* If the allocation fails, return gs_error_VMerror; otherwise, return 0. */
 static int
 dynamic_resize(da_ptr pda, uint new_size)
 {
@@ -101,11 +101,11 @@ dynamic_resize(da_ptr pda, uint new_size)
         base = gs_resize_string(mem, pda->base, old_size,
                                 new_size, "scanner");
         if (base == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
     } else {                    /* switching from static to dynamic */
         base = gs_alloc_string(mem, new_size, "scanner");
         if (base == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         memcpy(base, pda->base, min(old_size, new_size));
         pda->is_dynamic = true;
     }
@@ -130,7 +130,7 @@ dynamic_grow(da_ptr pda, byte * next, uint max_size)
 
     pda->next = next;
     if (old_size >= max_size)
-        return_error(e_limitcheck);
+        return_error(gs_error_limitcheck);
     while ((code = dynamic_resize(pda, new_size)) < 0 &&
            new_size > old_size
         ) {                     /* Try trimming down the requested new size. */
@@ -297,7 +297,7 @@ gs_scan_handle_refill(i_ctx_t *i_ctx_p, scanner_state * sstate,
 
     if (s->end_status == EOFC) {
         /* More data needed, but none available, so this is a syntax error. */
-        return_error(e_syntaxerror);
+        return_error(gs_error_syntaxerror);
     }
     status = s_process_read_buf(s);
     if (sbufavailable(s) > avail)
@@ -310,7 +310,7 @@ gs_scan_handle_refill(i_ctx_t *i_ctx_p, scanner_state * sstate,
             /* Let the caller find this out. */
             return 0;
         case ERRC:
-            return_error(e_ioerror);
+            return_error(gs_error_ioerror);
         case INTC:
         case CALLC:
             {
@@ -322,7 +322,7 @@ gs_scan_handle_refill(i_ctx_t *i_ctx_p, scanner_state * sstate,
                         ialloc_struct(scanner_state_dynamic, &st_scanner_state_dynamic,
                                       "gs_scan_handle_refill");
                     if (pstate == 0)
-                        return_error(e_VMerror);
+                        return_error(gs_error_VMerror);
                     ((scanner_state_dynamic *)pstate)->mem = imemory;
                     *pstate = *sstate;
                 } else
@@ -393,7 +393,7 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
         byte *cstr = ialloc_string(len, "scan_comment");
 
         if (cstr == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         memcpy(cstr, base, len);
         make_string(pref, a_all | icurrent_space, len, cstr);
     }
@@ -413,7 +413,7 @@ gs_scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
     int code;
 
     if (!r_has_attr(pstr, a_read))
-        return_error(e_invalidaccess);
+        return_error(gs_error_invalidaccess);
     s_init(s, NULL);
     sread_string(s, pstr->value.bytes, r_size(pstr));
     gs_scanner_init_stream_options(&state, s, options | SCAN_FROM_STRING);
@@ -432,7 +432,7 @@ gs_scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
             }
             break;
         case scan_Refill:       /* error */
-            code = gs_note_error(e_syntaxerror);
+            code = gs_note_error(gs_error_syntaxerror);
         case scan_EOF:
             break;
     }
@@ -446,7 +446,7 @@ gs_scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
  * >0 for special situations (see iscan.h).
  * If the token required a terminating character (i.e., was a name or
  * number) and the next character was whitespace, read and discard
- * that character.  Note that the state is relevant for e_VMerror
+ * that character.  Note that the state is relevant for gs_error_VMerror
  * as well as for scan_Refill.
  */
 int
@@ -548,7 +548,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             case scanning_string:
                 goto cont_string;
             default:
-                return_error(e_Fatal);
+                return_error(gs_error_Fatal);
         }
     }
     /* Fetch any state variables that are relevant even if */
@@ -624,7 +624,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                                     scan_type = scanning_string;
                                     goto suspend;
                                 } else
-                                    sreturn(e_syntaxerror);
+                                    sreturn(gs_error_syntaxerror);
                             }
                             break;
                         }
@@ -633,7 +633,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     case 1:
                         if (!check_only) {
                             retcode = dynamic_grow(&da, da.next, max_string_size);
-                            if (retcode == e_VMerror) {
+                            if (retcode == gs_error_VMerror) {
                                 scan_type = scanning_string;
                                 goto suspend;
                             } else if (retcode < 0)
@@ -647,7 +647,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             switch (status) {
                 default:
                     /*case ERRC: */
-                    sreturn(e_syntaxerror);
+                    sreturn(gs_error_syntaxerror);
                 case INTC:
                 case CALLC:
                     scan_type = scanning_string;
@@ -692,10 +692,10 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             }
             /* falls through */
         case ')':
-            sreturn(e_syntaxerror);
+            sreturn(gs_error_syntaxerror);
         case '}':
             if (pstack == 0)
-                sreturn(e_syntaxerror);
+                sreturn(gs_error_syntaxerror);
             osp--;
             {
                 uint size = ref_stack_count_inline(&o_stack) - pstack;
@@ -707,7 +707,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                            ref_stack_index(&o_stack, size)->value.intval),
                            size + pstack);
                 if (size > max_array_size)
-                    sreturn(e_limitcheck);
+                    sreturn(gs_error_limitcheck);
                 myref = (pstack == pdepth ? pref : &arr);
                 if (check_only) {
                     make_empty_array(myref, 0);
@@ -853,7 +853,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                                      */
                                     goto end_comment;
                                 default:
-                                    sreturn(e_syntaxerror);
+                                    sreturn(gs_error_syntaxerror);
                             }
                         if (daptr < comment_line + max_comment_line)
                             *daptr++ = c;
@@ -875,12 +875,12 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             if (pstack != 0) {
                 if (check_only)
                     goto pause;
-                sreturn(e_syntaxerror);
+                sreturn(gs_error_syntaxerror);
             }
             retcode = scan_EOF;
             break;
         case ERRC:
-            sreturn(e_ioerror);
+            sreturn(gs_error_ioerror);
 
             /* Check for a Level 2 funny name (<< or >>). */
             /* c is '<' or '>'.  We already did an ensure2. */
@@ -895,7 +895,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                 }
                 scan_putback();
             }
-            sreturn(e_syntaxerror);
+            sreturn(gs_error_syntaxerror);
 
             /* Handle separately the names that might be a number. */
         case '0':
@@ -1069,7 +1069,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             retcode = dynamic_grow(&da, da.limit, name_max_string);
             if (retcode < 0) {
                 dynamic_save(&da);
-                if (retcode != e_VMerror)
+                if (retcode != gs_error_VMerror)
                     sreturn(retcode);
                 scan_type = scanning_name;
                 goto pause_ret;
@@ -1084,7 +1084,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                                            name_max_string);
                     if (retcode < 0) {
                         dynamic_save(&da);
-                        if (retcode != e_VMerror)
+                        if (retcode != gs_error_VMerror)
                             sreturn(retcode);
                         scan_putback();
                         scan_type = scanning_name;
@@ -1121,7 +1121,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                         case CALLC:
                             goto pause_name;
                         case ERRC:
-                            sreturn(e_ioerror);
+                            sreturn(gs_error_ioerror);
                         case EOFC:
                             break;
                     }
@@ -1135,11 +1135,11 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                 if (retcode == 1) {
                     ref_mark_new(myref);
                     retcode = 0;
-                } else if (retcode != e_syntaxerror) {
+                } else if (retcode != gs_error_syntaxerror) {
                     dynamic_free(&da);
                     if (name_type == 2)
-                        sreturn(e_syntaxerror);
-                    break;      /* might be e_limitcheck */
+                        sreturn(gs_error_syntaxerror);
+                    break;      /* might be gs_error_limitcheck */
                 }
             }
             if (da.is_dynamic) {        /* We've already allocated the string on the heap. */
@@ -1164,7 +1164,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             }
             /* Done scanning.  Check for preceding /'s. */
             if (retcode < 0) {
-                if (retcode != e_VMerror)
+                if (retcode != gs_error_VMerror)
                     sreturn(retcode);
                 if (!da.is_dynamic) {
                     da.next = daptr;
@@ -1190,12 +1190,12 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                             ref_assign(&sstate.s_error.object, myref);
                             r_set_attrs(&sstate.s_error.object,
                                 a_executable); /* Adobe compatibility */
-                            sreturn(e_undefined);
+                            sreturn(gs_error_undefined);
                         }
                         if (pstack != 0 &&
                             r_space(pvalue) > ialloc_space(idmemory)
                             )
-                            sreturn(e_invalidaccess);
+                            sreturn(gs_error_invalidaccess);
                         ref_assign_new(myref, pvalue);
                     }
             }
@@ -1204,7 +1204,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
         scan_end_inline();
         pstate->s_error = sstate.s_error;
         if (pstack != 0) {
-            if (retcode == e_undefined)
+            if (retcode == gs_error_undefined)
                 *pref = *osp;   /* return undefined name as error token */
             ref_stack_pop(&o_stack,
                           ref_stack_count(&o_stack) - (pdepth - 1));

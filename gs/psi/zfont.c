@@ -260,13 +260,13 @@ font_param(const ref * pfdict, gs_font ** ppfont)
     if (dict_find_string(pfdict, "FID", &pid) <= 0 ||
         !r_has_type(pid, t_fontID)
         )
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
     pfont = r_ptr(pid, gs_font);
     if (pfont == 0)
-        return_error(e_invalidfont);	/* unregistered font */
+        return_error(gs_error_invalidfont);	/* unregistered font */
     pdata = pfont->client_data;
     if (!obj_eq(pfont->memory, &pdata->dict, pfdict))
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
     *ppfont = pfont;
     return 0;
 }
@@ -306,7 +306,7 @@ make_font(i_ctx_t *i_ctx_p, const gs_matrix * pmat)
         if (dict_find_string(fp, "Encoding", &pencoding) > 0 &&
             !r_is_array(pencoding)
             )
-            code = gs_note_error(e_invalidfont);
+            code = gs_note_error(gs_error_invalidfont);
         else {
                 /*
                  * Temporarily substitute the new dictionary
@@ -332,7 +332,7 @@ make_font(i_ctx_t *i_ctx_p, const gs_matrix * pmat)
         !obj_eq(imemory, pencoding, &pfont_data(newfont)->Encoding)
         ) {
         if (newfont->FontType == ft_composite)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         /* We should really do validity checking here.... */
         ref_assign(&pfont_data(newfont)->Encoding, pencoding);
         lookup_gs_simple_font_encoding((gs_font_base *) newfont);
@@ -378,7 +378,7 @@ zdefault_make_font(gs_font_dir * pdir, const gs_font * oldfont,
     if ((pdata = gs_alloc_struct(mem, font_data, &st_font_data,
                                  "make_font(font_data)")) == 0
         )
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     /*
      * This dictionary is newly created: it's safe to pass NULL as the
      * dstack pointer to dict_copy and dict_put_string.
@@ -646,7 +646,7 @@ setup_unicode_decoder(i_ctx_t *i_ctx_p, ref *Decoding)
     gs_unicode_decoder *pud = gs_alloc_struct(imemory, gs_unicode_decoder,
                              &st_unicode_decoder, "setup_unicode_decoder");
     if (pud == NULL)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     ref_assign_new(&pud->data, Decoding);
     ifont_dir->glyph_to_unicode_table = pud;
     return 0;

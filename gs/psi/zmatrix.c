@@ -356,7 +356,7 @@ zbbox_transform(i_ctx_t *i_ctx_p)
         return_op_typecheck(op - 1);
     check_read(op[-1]);
     if (r_size(op - 1) != 4)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if ((code = process_float_array(imemory, op - 1, 4, bbox) < 0))
         return code;
 

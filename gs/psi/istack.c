@@ -171,7 +171,7 @@ ref_stack_set_margin(ref_stack_t *pstack, uint margin)
         refset_null_new(pstack->top + 1, pstack->margin - margin, 0);
     } else {
         if (margin > data_size >> 1)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         if (pstack->top - pstack->p < margin) {
             uint used = pstack->p + 1 - pstack->bot;
             uint keep = data_size - margin;
@@ -244,7 +244,7 @@ ref_stack_counttomark(const ref_stack_t *pstack)
 
 /*
  * Do the store check for storing 'count' elements of a stack, starting
- * 'skip' elements below the top, into an array.  Return 0 or e_invalidaccess.
+ * 'skip' elements below the top, into an array.  Return 0 or gs_error_invalidaccess.
  */
 int
 ref_stack_store_check(const ref_stack_t *pstack, ref *parray, uint count,
@@ -286,8 +286,8 @@ ref_stack_store_check(const ref_stack_t *pstack, ref *parray, uint count,
 /*
  * Store the top 'count' elements of a stack, starting 'skip' elements below
  * the top, into an array, with or without store/undo checking.  age=-1 for
- * no check, 0 for old, 1 for new.  May return e_rangecheck or
- * e_invalidaccess.
+ * no check, 0 for old, 1 for new.  May return gs_error_rangecheck or
+ * gs_error_invalidaccess.
  */
 #undef idmemory			/****** NOTA BENE ******/
 int
@@ -300,7 +300,7 @@ ref_stack_store(const ref_stack_t *pstack, ref *parray, uint count,
     ref_stack_enum_t rsenum;
 
     if (count > ref_stack_count(pstack) || count > r_size(parray))
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if (check) {
         int code = ref_stack_store_check(pstack, parray, count, skip);
 
@@ -408,7 +408,7 @@ ref_stack_pop_block(ref_stack_t *pstack)
         uint left;
 
         if (moved == 0)
-            return_error(e_Fatal);
+            return_error(gs_error_Fatal);
         memmove(bot + moved, bot, count * sizeof(ref));
         left = used - moved;
         memcpy(bot, body + left, moved * sizeof(ref));
@@ -437,7 +437,7 @@ ref_stack_pop_block(ref_stack_t *pstack)
 
 /*
  * Extend a stack to recover from an overflow condition.
- * May return overflow_error or e_VMerror.
+ * May return overflow_error or gs_error_VMerror.
  */
 int
 ref_stack_extend(ref_stack_t *pstack, uint request)
@@ -459,7 +459,7 @@ ref_stack_extend(ref_stack_t *pstack, uint request)
  * Push N empty slots onto a stack.  These slots are not initialized:
  * the caller must immediately fill them.  May return overflow_error
  * (if max_stack would be exceeded, or the stack has no allocator)
- * or e_VMerror.
+ * or gs_error_VMerror.
  */
 int
 ref_stack_push(ref_stack_t *pstack, uint count)
@@ -492,7 +492,7 @@ ref_stack_push(ref_stack_t *pstack, uint count)
  * Push a block onto the stack, specifying how many elements of the current
  * top block should remain in the top block and also how many elements we
  * are trying to add.  Requires keep <= count.  May return overflow_error or
- * e_VMerror.
+ * gs_error_VMerror.
  */
 static int
 ref_stack_push_block(ref_stack_t *pstack, uint keep, uint add)
@@ -507,7 +507,7 @@ ref_stack_push_block(ref_stack_t *pstack, uint keep, uint add)
     int code;
 
     if (keep > count)
-        return_error(e_Fatal);
+        return_error(gs_error_Fatal);
     /* Check for overflowing the maximum size, */
     /* or expansion not allowed.  */
     if (pstack->extension_used + (pstack->top - pstack->bot) + add >=

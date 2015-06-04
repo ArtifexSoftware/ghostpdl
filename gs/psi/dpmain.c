@@ -379,19 +379,19 @@ static int run_gspmdrv(IMAGE *img)
     gs_sprintf(term_queue_name, "\\QUEUES\\TERMQ_%s", id);
     if (DosCreateQueue(&(img->term_queue), QUE_FIFO, term_queue_name)) {
         fprintf(stdout, "run_gspmdrv: failed to create termination queue\n");
-        return e_limitcheck;
+        return gs_error_limitcheck;
     }
     /* get full path to gsos2.exe and hence path to gspmdrv.exe */
     if ((rc = DosGetInfoBlocks(&pptib, &pppib)) != 0) {
         fprintf(stdout, "run_gspmdrv: Couldn't get module handle, rc = %d\n",
             rc);
-        return e_limitcheck;
+        return gs_error_limitcheck;
     }
     if ((rc = DosQueryModuleName(pppib->pib_hmte, sizeof(progname) - 1,
         progname)) != 0) {
         fprintf(stdout, "run_gspmdrv: Couldn't get module name, rc = %d\n",
             rc);
-        return e_limitcheck;
+        return gs_error_limitcheck;
     }
     if ((tail = strrchr(progname, '\\')) != (PCHAR) NULL) {
         tail++;
@@ -439,7 +439,7 @@ static int run_gspmdrv(IMAGE *img)
         fprintf(stdout, "run_gspmdrv: failed to run %s, rc = %d\n",
             sdata.PgmName, rc);
         fprintf(stdout, "run_gspmdrv: error_message: %s\n", error_message);
-        return e_limitcheck;
+        return gs_error_limitcheck;
     }
 #ifdef DEBUG
     if (debug)
@@ -570,12 +570,12 @@ int display_open(void *handle, void *device)
          * a new PM application which can display multiple windows
          * within a single session.
          */
-        return e_limitcheck;
+        return gs_error_limitcheck;
     }
 
     img = (IMAGE *)malloc(sizeof(IMAGE));
     if (img == NULL)
-        return e_limitcheck;
+        return gs_error_limitcheck;
     memset(img, 0, sizeof(IMAGE));
 
     /* add to list */
@@ -589,7 +589,7 @@ int display_open(void *handle, void *device)
     /* Derive ID from process ID */
     if (DosGetInfoBlocks(&pptib, &pppib)) {
         fprintf(stdout, "\ndisplay_open: Couldn't get pid\n");
-        return e_limitcheck;
+        return gs_error_limitcheck;
     }
     img->pid = pppib->pib_ulppid;	/* use parent (CMD.EXE) pid */
     gs_sprintf(id, ID_NAME, img->pid, (ULONG) img->device);
@@ -598,7 +598,7 @@ int display_open(void *handle, void *device)
     gs_sprintf(name, SYNC_NAME, id);
     if (DosCreateEventSem(name, &(img->sync_event), 0, FALSE)) {
         fprintf(stdout, "display_open: failed to create event semaphore %s\n", name);
-        return e_limitcheck;
+        return gs_error_limitcheck;
     }
     /* Create mutex - used for preventing gspmdrv from accessing */
     /* bitmap while we are changing the bitmap size. Initially unowned. */
@@ -606,7 +606,7 @@ int display_open(void *handle, void *device)
     if (DosCreateMutexSem(name, &(img->bmp_mutex), 0, FALSE)) {
         DosCloseEventSem(img->sync_event);
         fprintf(stdout, "display_open: failed to create mutex semaphore %s\n", name);
-        return e_limitcheck;
+        return gs_error_limitcheck;
     }
 
     /* Shared memory is common to all processes so we don't want to
@@ -616,7 +616,7 @@ int display_open(void *handle, void *device)
     if (DosAllocSharedMem((PPVOID) & img->bitmap, name,
                       13 * 1024 * 1024, PAG_READ | PAG_WRITE)) {
         fprintf(stdout, "display_open: failed allocating shared BMP memory %s\n", name);
-        return e_limitcheck;
+        return gs_error_limitcheck;
     }
 
     /* commit one page so there is enough storage for a */
@@ -624,7 +624,7 @@ int display_open(void *handle, void *device)
     if (DosSetMem(img->bitmap, MIN_COMMIT, PAG_COMMIT | PAG_DEFAULT)) {
         DosFreeMem(img->bitmap);
         fprintf(stdout, "display: failed committing BMP memory\n");
-        return e_limitcheck;
+        return gs_error_limitcheck;
     }
     img->committed = MIN_COMMIT;
 
@@ -742,7 +742,7 @@ int display_presize(void *handle, void *device, int width, int height,
             img->format_known = TRUE;
         if (!img->format_known) {
             fprintf(stdout, "display_presize: format %d = 0x%x is unsupported\n", format, format);
-            return e_limitcheck;
+            return gs_error_limitcheck;
         }
         /* grab mutex to stop other thread using bitmap */
         DosRequestMutexSem(img->bmp_mutex, 120000);
@@ -775,7 +775,7 @@ int display_size(void *handle, void *device, int width, int height,
     img = image_find(handle, device);
     if (img) {
         if (!img->format_known)
-            return e_limitcheck;
+            return gs_error_limitcheck;
 
         img->width = width;
         img->height = height;
@@ -860,7 +860,7 @@ int display_sync(void *handle, void *device)
     img = image_find(handle, device);
     if (img) {
         if (!img->format_known)
-            return e_limitcheck;
+            return gs_error_limitcheck;
         /* delay starting gspmdrv until display_size has been called */
         if (!img->session_id && (img->width != 0) && (img->height != 0))
            run_gspmdrv(img);
@@ -1042,7 +1042,7 @@ main(int argc, char *argv[])
         if (code == 0)
             code = gsdll.run_string(instance, start_string, 0, &exit_code);
         code1 = gsdll.exit(instance);
-        if (code == 0 || (code == e_Quit && code1 != 0))
+        if (code == 0 || (code == gs_error_Quit && code1 != 0))
             code = code1;
 
         gsdll.delete_instance(instance);
@@ -1055,10 +1055,10 @@ main(int argc, char *argv[])
     exit_status = 0;
     switch (code) {
         case 0:
-        case e_Info:
-        case e_Quit:
+        case gs_error_Info:
+        case gs_error_Quit:
             break;
-        case e_Fatal:
+        case gs_error_Fatal:
             exit_status = 1;
             break;
         default:

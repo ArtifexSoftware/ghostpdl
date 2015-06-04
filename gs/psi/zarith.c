@@ -111,7 +111,7 @@ zdiv(i_ctx_t *i_ctx_p)
             return_op_typecheck(op);
         case t_real:
             if (op->value.realval == 0)
-                return_error(e_undefinedresult);
+                return_error(gs_error_undefinedresult);
             switch (r_type(op1)) {
                 default:
                     return_op_typecheck(op1);
@@ -124,7 +124,7 @@ zdiv(i_ctx_t *i_ctx_p)
             break;
         case t_integer:
             if (op->value.intval == 0)
-                return_error(e_undefinedresult);
+                return_error(gs_error_undefinedresult);
             switch (r_type(op1)) {
                 default:
                     return_op_typecheck(op1);
@@ -273,7 +273,7 @@ zidiv(i_ctx_t *i_ctx_p)
         int tmpval;
         if ((op->value.intval == 0) || (op[-1].value.intval == (ps_int)MIN_PS_INT32 && op->value.intval == -1)) {
             /* Anomalous boundary case: -MININT / -1, fail. */
-            return_error(e_undefinedresult);
+            return_error(gs_error_undefinedresult);
         }
         tmpval = (int)op[-1].value.intval / op->value.intval;
         op[-1].value.intval = (int64_t)tmpval;
@@ -281,7 +281,7 @@ zidiv(i_ctx_t *i_ctx_p)
     else {
         if ((op->value.intval == 0) || (op[-1].value.intval == MIN_PS_INT && op->value.intval == -1)) {
             /* Anomalous boundary case: -MININT / -1, fail. */
-            return_error(e_undefinedresult);
+            return_error(gs_error_undefinedresult);
         }
         op[-1].value.intval /= op->value.intval;
     }
@@ -298,7 +298,7 @@ zmod(i_ctx_t *i_ctx_p)
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
     if (op->value.intval == 0)
-        return_error(e_undefinedresult);
+        return_error(gs_error_undefinedresult);
     op[-1].value.intval %= op->value.intval;
     pop(1);
     return 0;

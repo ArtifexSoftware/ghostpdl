@@ -140,7 +140,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
         else if (colorant_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
             /* If here then we have the "Default" component */
             if (have_default)
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             have_default = true;
         }
 
@@ -150,12 +150,12 @@ zsethalftone5(i_ctx_t *i_ctx_p)
          * components.
          */
         if (count > GS_CLIENT_COLOR_MAX_COMPONENTS + 1) {
-            code = gs_note_error(e_rangecheck);
+            code = gs_note_error(gs_error_rangecheck);
             break;
         }
     }
     if (count == 0 || (halftonetype == ht_type_multiple && ! have_default))
-        code = gs_note_error(e_rangecheck);
+        code = gs_note_error(gs_error_rangecheck);
 
     if (code >= 0) {
         check_estack(5);		/* for sampling Type 1 screens */
@@ -172,7 +172,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
             j = 0; /* Quiet the compiler:
                       gs_note_error isn't necessarily identity,
                       so j could be left ununitialized. */
-            code = gs_note_error(e_VMerror);
+            code = gs_note_error(gs_error_VMerror);
         }
     }
     if (code >= 0) {
@@ -207,12 +207,12 @@ zsethalftone5(i_ctx_t *i_ctx_p)
             /* Now process the component dictionary */
             check_dict_read(rvalue[1]);
             if (dict_int_param(&rvalue[1], "HalftoneType", 1, 7, 0, &type) < 0) {
-                code = gs_note_error(e_typecheck);
+                code = gs_note_error(gs_error_typecheck);
                 break;
             }
             switch (type) {
                 default:
-                    code = gs_note_error(e_rangecheck);
+                    code = gs_note_error(gs_error_rangecheck);
                     break;
                 case 1:
                     code = dict_spot_params(&rvalue[1], &pc->params.spot,
@@ -422,7 +422,7 @@ dict_spot_params(const ref * pdict, gs_spot_halftone * psp,
                                 &psp->accurate_screens)) < 0 ||
       (code = dict_proc_param(pdict, "TransferFunction", ptproc, false)) < 0
         )
-        return (code < 0 ? code : e_undefined);
+        return (code < 0 ? code : gs_error_undefined);
     psp->transfer = (code > 0 ? (gs_mapping_proc) 0 : gs_mapped_transfer);
     psp->transfer_closure.proc = 0;
     psp->transfer_closure.data = 0;
@@ -474,7 +474,7 @@ dict_threshold_common_params(const ref * pdict,
         (code = dict_find_string(pdict, "Thresholds", pptstring)) <= 0 ||
       (code = dict_proc_param(pdict, "TransferFunction", ptproc, false)) < 0
         )
-        return (code < 0 ? code : e_undefined);
+        return (code < 0 ? code : gs_error_undefined);
     ptp->transfer_closure.proc = 0;
     ptp->transfer_closure.data = 0;
     return code;
@@ -495,7 +495,7 @@ dict_threshold_params(const ref * pdict, gs_threshold_halftone * ptp,
         return code;
     check_read_type_only(*tstring, t_string);
     if (r_size(tstring) != (long)ptp->width * ptp->height)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     ptp->thresholds.data = tstring->value.const_bytes;
     ptp->thresholds.size = r_size(tstring);
     ptp->transfer = (code > 0 ? (gs_mapping_proc) 0 : gs_mapped_transfer);
@@ -528,7 +528,7 @@ dict_threshold2_params(const ref * pdict, gs_threshold2_halftone * ptp,
     if ((bps != 8 && bps != 16) || cw2 != ch2 ||
         (!cw2 && (ptp->width2 == 0 || ptp->height2 == 0))
         )
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     ptp->bytes_per_sample = bps / 8;
     switch (r_type(tstring)) {
     case t_string:
@@ -538,17 +538,17 @@ dict_threshold2_params(const ref * pdict, gs_threshold2_halftone * ptp,
         break;
     case t_astruct:
         if (gs_object_type(mem, tstring->value.pstruct) != &st_bytes)
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         size = gs_object_size(mem, tstring->value.pstruct);
         gs_bytestring_from_bytes(&ptp->thresholds, r_ptr(tstring, byte),
                                  0, size);
         break;
     default:
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     }
     check_read(*tstring);
     if (size != (ptp->width * ptp->height + ptp->width2 * ptp->height2) *
         ptp->bytes_per_sample)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     return 0;
 }

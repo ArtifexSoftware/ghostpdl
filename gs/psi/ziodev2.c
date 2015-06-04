@@ -47,7 +47,7 @@ null_open(gx_io_device * iodev, const char *access, stream ** ps,
           gs_memory_t * mem)
 {
     if (!streq1(access, 'w'))
-        return_error(e_invalidfileaccess);
+        return_error(gs_error_invalidfileaccess);
     return file_open_stream(gp_null_file_name,
                             strlen(gp_null_file_name),
                             access, 256 /* arbitrary */ , ps,
@@ -70,7 +70,7 @@ zgetdevparams(i_ctx_t *i_ctx_p)
     check_read_type(*op, t_string);
     iodev = gs_findiodevice(imemory, op->value.bytes, r_size(op));
     if (iodev == 0)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     stack_param_list_write(&list, &o_stack, NULL, iimemory);
     if ((code = gs_getdevparams(iodev, plist)) < 0) {
         ref_stack_pop(&o_stack, list.count * 2);
@@ -95,7 +95,7 @@ zputdevparams(i_ctx_t *i_ctx_p)
     check_read_type(*op, t_string);
     iodev = gs_findiodevice(imemory, op->value.bytes, r_size(op));
     if (iodev == 0)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     code = stack_param_list_read(&list, &o_stack, 1, NULL, false, iimemory);
     if (code < 0)
         return code;
@@ -106,7 +106,7 @@ zputdevparams(i_ctx_t *i_ctx_p)
     code = param_check_password(plist, &system_params_password);
     if (code != 0) {
         iparam_list_release(&list);
-        return_error(code < 0 ? code : e_invalidaccess);
+        return_error(code < 0 ? code : gs_error_invalidaccess);
     }
     code = gs_putdevparams(iodev, plist);
     iparam_list_release(&list);

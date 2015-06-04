@@ -51,10 +51,10 @@ zcomputecodes(i_ctx_t *i_ctx_p)
     check_write_type(*op1, t_array);
     asize = r_size(op1);
     if (op->value.intval < 1 || op->value.intval > max_hc_length)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     def.num_counts = op->value.intval;
     if (asize < def.num_counts + 2)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     def.num_values = asize - (def.num_counts + 1);
     data = (ushort *) gs_alloc_byte_array(imemory, asize, sizeof(ushort),
                                           "zcomputecodes");
@@ -63,7 +63,7 @@ zcomputecodes(i_ctx_t *i_ctx_p)
                                         "zcomputecodes(freqs)");
 
     if (data == 0 || freqs == 0)
-        code = gs_note_error(e_VMerror);
+        code = gs_note_error(gs_error_VMerror);
     else {
         uint i;
 
@@ -73,7 +73,7 @@ zcomputecodes(i_ctx_t *i_ctx_p)
             const ref *pf = op1->value.const_refs + i + def.num_counts + 1;
 
             if (!r_has_type(pf, t_integer)) {
-                code = gs_note_error(e_typecheck);
+                code = gs_note_error(gs_error_typecheck);
                 break;
             }
             freqs[i] = pf->value.intval;
@@ -104,7 +104,7 @@ bt_setup(os_ptr op, stream_BT_state * pbts)
 {
     check_read_type(*op, t_string);
     if (r_size(op) != 256)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     memcpy(pbts->table, op->value.const_bytes, 256);
     return 0;
 }

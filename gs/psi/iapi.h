@@ -233,10 +233,10 @@ enum {
 /* Initialise the interpreter.
  * This calls gs_main_init_with_args() in imainarg.c
  * 1. If quit or EOF occur during gsapi_init_with_args(),
- *    the return value will be e_Quit.  This is not an error.
+ *    the return value will be gs_error_Quit.  This is not an error.
  *    You must call gsapi_exit() and must not call any other
  *    gsapi_XXX functions.
- * 2. If usage info should be displayed, the return value will be e_Info
+ * 2. If usage info should be displayed, the return value will be gs_error_Info
  *    which is not an error.  Do not call gsapi_exit().
  * 3. Under normal conditions this returns 0.  You would then
  *    call one or more gsapi_run_*() functions and then finish
@@ -259,7 +259,7 @@ GSDLLEXPORT int GSDLLAPI gsapi_init_with_argsW(void *instance,
  * If these functions return <= -100, either quit or a fatal
  * error has occured.  You then call gsapi_exit() next.
  * The only exception is gsapi_run_string_continue()
- * which will return e_NeedInput if all is well.
+ * which will return gs_error_NeedInput if all is well.
  */
 
 GSDLLEXPORT int GSDLLAPI

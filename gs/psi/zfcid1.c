@@ -84,7 +84,7 @@ z11_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
     switch (r_type(pcidmap)) {
     case t_string:
         if (cid >= r_size(pcidmap) / gdbytes)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         data = pcidmap->value.const_bytes + cid * gdbytes;
         break;
     case t_integer:
@@ -93,9 +93,9 @@ z11_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
         make_int(&rcid, cid);
         code = dict_find(pcidmap, &rcid, &prgnum);
         if (code <= 0)
-            return (code < 0 ? code : gs_note_error(e_undefined));
+            return (code < 0 ? code : gs_note_error(gs_error_undefined));
         if (!r_has_type(prgnum, t_integer))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         return prgnum->value.intval;
     default:			/* array type */
         code = string_array_access_proc(pfont->memory, pcidmap, 1, cid * gdbytes,
@@ -104,12 +104,12 @@ z11_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
         if (code < 0)
             return code;
         if ( code > 0 )
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
     }
     for (i = 0; i < gdbytes; ++i)
         gnum = (gnum << 8) + data[i];
     if (gnum >= pfont->data.trueNumGlyphs)
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
     return gnum;
 }
 
@@ -218,7 +218,7 @@ z11_enumerate_glyph(gs_font *font, int *pindex,
     int code;
 
     if(*pindex > pfont->cidata.common.CIDCount)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 
     for (;;) {
         code = z11_CIDMap_proc(pfont, GS_MIN_CID_GLYPH + *pindex);
@@ -268,11 +268,11 @@ get_subst_CID_on_WMode(gs_subst_CID_on_WMode_t *subst, ref *t, int WMode)
 
         s = (uint *)gs_alloc_byte_array(subst->rc.memory, n, sizeof(int), "zbuildfont11");
         if (s == NULL)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         for (i = 0; i < n; i++) {
             array_get(subst->rc.memory, a, (long)i, &e);
             if (r_type(&e) != t_integer)
-                return_error(e_invalidfont);
+                return_error(gs_error_invalidfont);
             s[i] = e.value.intval;
         }
         subst->data[WMode] = s;
@@ -359,9 +359,9 @@ zbuildfont11(i_ctx_t *i_ctx_p)
      */
     CIDFontName = *pCIDFontName;
     if (MetricsCount & 1)	/* only allowable values are 0, 2, 4 */
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     code = dict_find_string(op, "File", &pfile);
-    if (code < 0 && code != e_undefined)
+    if (code < 0 && code != gs_error_undefined)
         return code;
     if (code > 0) {
         ref *file_table_pos, *a, v;
@@ -376,15 +376,15 @@ zbuildfont11(i_ctx_t *i_ctx_p)
         check_read_type(file, t_file);
         code = dict_find_string(op, "file_table_pos", &file_table_pos);
         if (code <= 0 || r_type(file_table_pos) != t_dictionary)
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
         for (i = 0; i < 2; i++) {
             code = dict_find_string(file_table_pos, name[i], &a);
             if (code <= 0 || r_type(a) != t_array)
-                return_error(e_invalidfont);
+                return_error(gs_error_invalidfont);
             for (j = 0; j < 2; j++) {
                 code = array_get(imemory, a, j, &v);
                 if (code < 0 || r_type(&v) != t_integer)
-                    return_error(e_invalidfont);
+                    return_error(gs_error_invalidfont);
                 loca_glyph_pos[i][j] = v.value.intval;
             }
         }
@@ -396,11 +396,11 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     gdb:
         /* GDBytes is required for indexing a string or string array. */
         if (common.GDBytes == 0)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         break;
     default:
         return code;
-    case e_typecheck:
+    case gs_error_typecheck:
         switch (r_type(&rcidmap)) {
         case t_string:		/* in PLRM3 */
             goto gdb;
@@ -428,7 +428,7 @@ zbuildfont11(i_ctx_t *i_ctx_p)
         gs_font *font;
 
         if (dict_find_string(t, "Ordering", &o) <= 0 || r_type(o) != t_string)
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
         for (font = ifont_dir->orig_fonts; font != NULL; font = font->next) {
             if (font->FontType == ft_CID_TrueType) {
                 gs_font_cid2 *pfcid1 = (gs_font_cid2 *)font;
@@ -448,7 +448,7 @@ zbuildfont11(i_ctx_t *i_ctx_p)
 
         if (subst == NULL) {
             rc_alloc_struct_1(subst, gs_subst_CID_on_WMode_t, &st_subst_CID_on_WMode,
-                            pfcid->memory, return_error(e_VMerror), "zbuildfont11");
+                            pfcid->memory, return_error(gs_error_VMerror), "zbuildfont11");
             subst->data[0] = subst->data[1] = 0;
             pfcid->subst_CID_on_WMode = subst;
             code = get_subst_CID_on_WMode(subst, t, 0);
@@ -519,13 +519,13 @@ ztype11mapcid(i_ctx_t *i_ctx_p)
         if (op->value.intval < 0 ||
             op->value.intval >= ((gs_font_type42 *)pfont)->data.numGlyphs
             )
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         code = (int)op->value.intval;
     } else
 #endif
     {
         if (pfont->FontType != ft_CID_TrueType)
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
         code = z11_CIDMap_proc((gs_font_cid2 *)pfont,
                         (gs_glyph)(gs_min_cid_glyph + op->value.intval));
     }

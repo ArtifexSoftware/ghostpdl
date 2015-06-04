@@ -48,11 +48,11 @@ zpackedarray(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if (op->value.intval < 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if (op->value.intval > op - osbot &&
         op->value.intval >= ref_stack_count(&o_stack)
         )
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
     osp--;
     code = make_packed_array(&parr, &o_stack, (uint) op->value.intval,
                              idmemory, "packedarray");

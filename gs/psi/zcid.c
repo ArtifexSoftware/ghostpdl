@@ -34,11 +34,11 @@ cid_system_info_param(gs_cid_system_info_t *pcidsi, const ref *prcidsi)
     int code;
 
     if (!r_has_type(prcidsi, t_dictionary))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     if (dict_find_string(prcidsi, "Registry", &pregistry) <= 0 ||
         dict_find_string(prcidsi, "Ordering", &pordering) <= 0
         )
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     check_read_type_only(*pregistry, t_string);
     check_read_type_only(*pordering, t_string);
     pcidsi->Registry.data = pregistry->value.const_bytes;
@@ -145,7 +145,7 @@ set_CIDMap_element(const gs_memory_t *mem, ref *CIDMap, uint cid, uint glyph_ind
     uchar *c;
 
     if (glyph_index >= 65536)
-        return_error(e_rangecheck); /* Can't store with GDBytes == 2. */
+        return_error(gs_error_rangecheck); /* Can't store with GDBytes == 2. */
     for (i = 0; i < count; i++) {
         array_get(mem, CIDMap, i, &s);
         size = r_size(&s) & ~1;
@@ -172,9 +172,9 @@ cid_fill_CIDMap(const gs_memory_t *mem,
     int count, i;
 
     if (GDBytes != 2)
-        return_error(e_unregistered); /* Unimplemented. */
+        return_error(gs_error_unregistered); /* Unimplemented. */
     if (r_type(CIDMap) != t_array)
-        return_error(e_unregistered); /* Unimplemented. It could be a single string. */
+        return_error(gs_error_unregistered); /* Unimplemented. It could be a single string. */
     count = r_size(CIDMap);
     /* Checking the CIDMap structure correctness : */
     for (i = 0; i < count; i++) {
@@ -195,7 +195,7 @@ cid_fill_CIDMap(const gs_memory_t *mem,
         if (!r_has_type(&el[0], t_integer))
             continue;
         if (!r_has_type(&el[1], t_array))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         index = el[0].value.intval;
         count = r_size(&el[1]);
         for (i = 0; i < count; i++) {

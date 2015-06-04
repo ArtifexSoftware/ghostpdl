@@ -95,7 +95,7 @@ gsdll_init_with_encoding(GSDLL_CALLBACK callback, HWND hwnd, int argc, char * ar
     code = gsapi_set_arg_encoding(pgs_minst, encoding);
     if (code >= 0)
         code = gsapi_init_with_args(pgs_minst, argc, argv);
-    if (code == e_Quit) {
+    if (code == gs_error_Quit) {
         gsapi_exit(pgs_minst);
         return GSDLL_INIT_QUIT;
     }
@@ -138,7 +138,7 @@ gsdll_execute_cont(const char * str, int len)
     int exit_code;
     int code = gsapi_run_string_continue(pgs_minst, str, len,
         0, &exit_code);
-    if (code == e_NeedInput)
+    if (code == gs_error_NeedInput)
         code = 0;		/* this is not an error */
     return code;
 }

@@ -51,9 +51,9 @@ zpdfinkpath(i_ctx_t *i_ctx_p)
     const double smooth_value = 1; /* from 0..1 range */
 
     if (count == 0)
-        return_error(e_unmatchedmark);
+        return_error(gs_error_unmatchedmark);
     if ((count & 1) == 0 || count < 3)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 
     ocount = count - 1;
     optr = op - ocount + 1;
@@ -156,7 +156,7 @@ zsaslprep(i_ctx_t *i_ctx_p)
     buffer_size = input_size * 11 + 1;
     buffer = ialloc_string(buffer_size, "saslprep result");
     if (buffer == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
 
     memcpy(buffer, op->value.bytes, input_size);
     buffer[input_size] = '\0';
@@ -181,7 +181,7 @@ zsaslprep(i_ctx_t *i_ctx_p)
         if ((int)err < 100)
             return 0;
 
-        return_error(e_ioerror);
+        return_error(gs_error_ioerror);
     }
 
     output_size = strlen((char *)buffer);

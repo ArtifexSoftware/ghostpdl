@@ -148,7 +148,7 @@ zgetbitsrect(i_ctx_t *i_ctx_p)
     else if (op[-2].value.intval == 1)
         options |= GB_ALPHA_LAST;
     else
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if (r_has_type(op - 1, t_null)) {
         options |= GB_COLORS_NATIVE;
         depth = dev->color_info.depth;
@@ -164,19 +164,19 @@ zgetbitsrect(i_ctx_t *i_ctx_p)
         std_depth = (int)op[-1].value.intval;
         depth_option = depths[std_depth];
         if (depth_option == 0)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         options |= depth_option | GB_COLORS_NATIVE;
         depth = (dev->color_info.num_components +
                  (options & GB_ALPHA_NONE ? 0 : 1)) * std_depth;
     }
     if (w == 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     raster = (w * depth + 7) >> 3;
     check_write_type(*op, t_string);
     num_rows = r_size(op) / raster;
     h = min(h, num_rows);
     if (h == 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     rect.q.x = rect.p.x + w;
     rect.q.y = rect.p.y + h;
     params.options = options;
@@ -200,10 +200,10 @@ zgetdevice(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if (op->value.intval != (int)(op->value.intval))
-        return_error(e_rangecheck);	/* won't fit in an int */
+        return_error(gs_error_rangecheck);	/* won't fit in an int */
     dev = gs_getdevice((int)(op->value.intval));
     if (dev == 0)		/* index out of range */
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     /* Device prototypes are read-only; */
     /* the cast is logically unnecessary. */
     make_tav(op, t_device, avm_foreign | a_readonly, pdevice,
@@ -220,7 +220,7 @@ zgetdefaultdevice(i_ctx_t *i_ctx_p)
 
     dev = gs_getdefaultlibdevice(imemory);
     if (dev == 0) /* couldn't find a default device */
-        return_error(e_unknownerror);
+        return_error(gs_error_unknownerror);
     push(1);
     make_tav(op, t_device, avm_foreign | a_readonly, pdevice,
                 (gx_device *) dev);
@@ -297,13 +297,13 @@ zmakewordimagedevice(i_ctx_t *i_ctx_p)
         if (op1->value.intval != 16 && op1->value.intval != 24 &&
             op1->value.intval != 32
             )
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         colors = 0;
         colors_size = -op1->value.intval;
     } else {
         check_type(*op1, t_string);	/* palette */
         if (r_size(op1) > 3 * 256)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         colors = op1->value.bytes;
         colors_size = r_size(op1);
     }
@@ -403,12 +403,12 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
     int i, dest;
 
     if (count == 0)
-        return_error(e_unmatchedmark);
+        return_error(gs_error_unmatchedmark);
     prequire_all = ref_stack_index(&o_stack, count);
     ppolicy = ref_stack_index(&o_stack, count + 1);
     pdev = ref_stack_index(&o_stack, count + 2);
     if (pdev == 0)
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
     check_type_only(*prequire_all, t_boolean);
     check_write_type_only(*pdev, t_device);
     dev = pdev->value.pdevice;
@@ -469,7 +469,7 @@ zsetdevice(i_ctx_t *i_ctx_p)
     check_write_type(*op, t_device);
     if (dev->LockSafetyParams) {	  /* do additional checking if locked  */
         if(op->value.pdevice != dev) 	  /* don't allow a different device    */
-            return_error(e_invalidaccess);
+            return_error(gs_error_invalidaccess);
     }
     dev->ShowpageCount = 0;
 #ifndef PSI_INCLUDED
@@ -533,7 +533,7 @@ zspec_op(i_ctx_t *i_ctx_p)
     /* At the very minimum we need a name object telling us which sepc_op to perform */
     check_op(1);
     if (!r_has_type(op, t_name))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     ref_assign(&opname, op);
 
@@ -549,7 +549,7 @@ zspec_op(i_ctx_t *i_ctx_p)
     }
 
     if (proc < 0)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
 
     pop(1);     /* We don't need the name of the spec_op any more */
     op = osp;
@@ -565,14 +565,14 @@ zspec_op(i_ctx_t *i_ctx_p)
                  */
                 check_op(1);
                 if (!r_has_type(op, t_name))
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
 
                 ref_assign(&opname, op);
                 name_string_ref(imemory, &opname, &namestr);
 
                 data = (char *)gs_alloc_bytes(imemory, r_size(&namestr) + 1, "temporary special_op string");
                 if (data == 0)
-                    return_error(e_VMerror);
+                    return_error(gs_error_VMerror);
                 memset(data, 0x00, r_size(&namestr) + 1);
                 memcpy(data, namestr.value.bytes, r_size(&namestr));
 
@@ -608,7 +608,7 @@ zspec_op(i_ctx_t *i_ctx_p)
              * containing the names should mirror the entries in this switch. If we
              * found a name there should be a matching case here.
              */
-            return_error(e_undefined);
+            return_error(gs_error_undefined);
             break;
     }
     return 0;

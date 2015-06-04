@@ -153,13 +153,13 @@ zSFD(i_ctx_t *i_ctx_p)
         if ((code = dict_int_param(op, "EODCount", 0, max_int, 0, &count)) < 0)
             return code;
         if (dict_find_string(op, "EODString", &sop) <= 0)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         state.count = count;
         npop = 0;
     } else {
         check_type(sop[-1], t_integer);
         if (sop[-1].value.intval < 0)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         state.count = sop[-1].value.intval;
         npop = 2;
     }
@@ -209,7 +209,7 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * templat,
             ialloc_set_space(idmemory, use_space);
             sstrm = file_alloc_stream(imemory, "filter_read(string stream)");
             if (sstrm == 0) {
-                code = gs_note_error(e_VMerror);
+                code = gs_note_error(gs_error_VMerror);
                 goto out;
             }
             sread_string(sstrm, sop->value.bytes, r_size(sop));
@@ -289,7 +289,7 @@ filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * templat,
             ialloc_set_space(idmemory, use_space);
             sstrm = file_alloc_stream(imemory, "filter_write(string)");
             if (sstrm == 0) {
-                code = gs_note_error(e_VMerror);
+                code = gs_note_error(gs_error_VMerror);
                 goto out;
             }
             swrite_string(sstrm, sop->value.bytes, r_size(sop));
@@ -396,7 +396,7 @@ filter_ensure_buf(stream ** ps, uint min_buf_size, gs_ref_memory_t *imem,
                                    "filter_ensure_buf");
 
         if (buf == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         s->cbuf = buf;
         s->srptr = s->srlimit = s->swptr = buf - 1;
         s->swlimit = buf - 1 + len;

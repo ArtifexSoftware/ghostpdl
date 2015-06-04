@@ -1547,7 +1547,7 @@ hpgl_LB(hpgl_args_t * pargs, hpgl_state_t * pgls)
         }
     }
     pargs->source.ptr = p;
-    return e_NeedData;
+    return gs_error_NeedInput;
 }
 
 void

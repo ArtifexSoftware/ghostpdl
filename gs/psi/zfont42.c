@@ -133,7 +133,7 @@ font_string_array_param(const gs_memory_t *mem, os_ptr op, const char *kstr, ref
     int code;
 
     if (dict_find_string(op, kstr, &pvsa) <= 0)
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
     *psa = *pvsa;
     /*
      * We only check the first element of the array now, as a sanity test;
@@ -142,7 +142,7 @@ font_string_array_param(const gs_memory_t *mem, os_ptr op, const char *kstr, ref
     if ((code = array_get(mem, pvsa, 0L, &rstr0)) < 0)
         return code;
     if (!r_has_type(&rstr0, t_string))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     return 0;
 }
 
@@ -158,7 +158,7 @@ font_GlyphDirectory_param(os_ptr op, ref *pGlyphDirectory)
     if (dict_find_string(op, "GlyphDirectory", &pgdir) <= 0)
         make_null(pGlyphDirectory);
     else if (!r_has_type(pgdir, t_dictionary) && !r_is_array(pgdir))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     else
         *pGlyphDirectory = *pgdir;
     return 0;
@@ -209,7 +209,7 @@ string_array_access_proc(const gs_memory_t *mem,
         if (code < 0)
             return code;
         if (!r_has_type(&rstr, t_string))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         /*
          * NOTE: According to the Adobe documentation, each sfnts
          * string should have even length.  If the length is odd,
@@ -303,7 +303,7 @@ font_gdir_get_outline(const gs_memory_t *mem,
     if (code < 0) {
         gs_glyph_data_from_null(pgd);
     } else if (!r_has_type(pgdef, t_string)) {
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     } else {
         gs_glyph_data_from_string(pgd, pgdef->value.const_bytes, r_size(pgdef),
                                   NULL);

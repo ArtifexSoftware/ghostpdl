@@ -108,7 +108,7 @@ stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
     stream *s;
 
     if (!streq1(access, 'r'))
-        return_error(e_invalidfileaccess);
+        return_error(gs_error_invalidfileaccess);
     if (file_is_invalid(s, &ref_stdin)) {
         /****** stdin SHOULD NOT LINE-BUFFER ******/
         gs_memory_t *mem = imemory_system;
@@ -121,7 +121,7 @@ stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
         /* to make progress. */
         buf = gs_alloc_bytes(mem, STDIN_BUF_SIZE, "stdin_open(buffer)");
         if (s == 0 || buf == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         sread_file(s, gs_stdin, buf, STDIN_BUF_SIZE);
         s->procs.process = s_stdin_read_process;
         s->save_close = s_std_null;
@@ -187,7 +187,7 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
     stream *s;
 
     if (!streq1(access, 'w'))
-        return_error(e_invalidfileaccess);
+        return_error(gs_error_invalidfileaccess);
     if (file_is_invalid(s, &ref_stdout)) {
         gs_memory_t *mem = imemory_system;
         byte *buf;
@@ -195,7 +195,7 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
         s = file_alloc_stream(mem, "stdout_open(stream)");
         buf = gs_alloc_bytes(mem, STDOUT_BUF_SIZE, "stdout_open(buffer)");
         if (s == 0 || buf == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         swrite_file(s, gs_stdout, buf, STDOUT_BUF_SIZE);
         s->save_close = s->procs.flush;
         s->procs.close = file_close_file;
@@ -234,7 +234,7 @@ stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
     stream *s;
 
     if (!streq1(access, 'w'))
-        return_error(e_invalidfileaccess);
+        return_error(gs_error_invalidfileaccess);
     if (file_is_invalid(s, &ref_stderr)) {
         gs_memory_t *mem = imemory_system;
         byte *buf;
@@ -242,7 +242,7 @@ stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
         s = file_alloc_stream(mem, "stderr_open(stream)");
         buf = gs_alloc_bytes(mem, STDERR_BUF_SIZE, "stderr_open(buffer)");
         if (s == 0 || buf == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         swrite_file(s, gs_stderr, buf, STDERR_BUF_SIZE);
         s->save_close = s->procs.flush;
         s->procs.close = file_close_file;

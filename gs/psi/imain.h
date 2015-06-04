@@ -151,9 +151,9 @@ int gs_main_lib_open(gs_main_instance * minst, const char *fname,
  *              (gs_main_run_string_begin/continue/end).
  *
  * The value returned by the first three of these calls is
- * 0 if the interpreter ran to completion, e_Quit for a normal quit,
- * or e_Fatal for a non-zero quit or a fatal error.
- * e_Fatal stores the exit code in the third argument.
+ * 0 if the interpreter ran to completion, gs_error_Quit for a normal quit,
+ * or gs_error_Fatal for a non-zero quit or a fatal error.
+ * gs_error_Fatal stores the exit code in the third argument.
  * The str argument of gs_main_run_string[_with_length] must be allocated
  * in non-garbage-collectable space (e.g., by malloc or gs_malloc,
  * or statically).
@@ -182,9 +182,9 @@ int gs_main_run_file_open(gs_main_instance * minst,
  * be a properly formed PostScript program fragment.  To use them:
  *      Call run_string_begin.
  *      Call run_string_continue as many times as desired,
- *        stopping if it returns anything other than e_NeedInput.
+ *        stopping if it returns anything other than gs_error_NeedInput.
  *      If run_string_continue didn't indicate an error or a quit
- *        (i.e., a return value other than e_NeedInput), call run_string_end
+ *        (i.e., a return value other than gs_error_NeedInput), call run_string_end
  *        to provide an EOF indication.
  * Note that run_string_continue takes a pointer and a length, like
  * run_string_with_length.
@@ -204,8 +204,8 @@ int gs_main_run_string_end(gs_main_instance * minst, int user_errors,
  * The following procedures are not used in normal operation;
  * they exist only to allow clients driving the interpreter through the
  * gs_main_run_xxx procedures to push parameters quickly and to get results
- * back.  The push procedures return 0, e_stackoverflow, or e_VMerror;
- * the pop procedures return 0, e_stackunderflow, or e_typecheck.
+ * back.  The push procedures return 0, gs_error_stackoverflow, or gs_error_VMerror;
+ * the pop procedures return 0, gs_error_stackunderflow, or gs_error_typecheck.
  *
  * Procedures to push values on the operand stack:
  */

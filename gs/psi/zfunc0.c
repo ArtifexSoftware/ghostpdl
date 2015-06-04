@@ -45,7 +45,7 @@ gs_build_function_0(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     params.pole = NULL;
     params.Size = params.array_step = params.stream_step = NULL;
     if ((code = dict_find_string(op, "DataSource", &pDataSource)) <= 0)
-        return (code < 0 ? code : gs_note_error(e_rangecheck));
+        return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
     switch (r_type(pDataSource)) {
         case t_string:
             data_source_init_string2(&params.DataSource,
@@ -56,14 +56,14 @@ gs_build_function_0(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
             stream *s;
 
             check_read_known_file_else(s, pDataSource, return_error,
-                                       return_error(e_invalidfileaccess));
+                                       return_error(gs_error_invalidfileaccess));
             if (!(s->modes & s_mode_seek))
-                return_error(e_ioerror);
+                return_error(gs_error_ioerror);
             data_source_init_stream(&params.DataSource, s);
             break;
         }
         default:
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
     }
     if ((code = dict_int_param(op, "Order", 1, 3, 1, &params.Order)) < 0 ||
         (code = dict_int_param(op, "BitsPerSample", 1, 32, 0,
@@ -77,7 +77,7 @@ gs_build_function_0(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
             gs_alloc_byte_array(mem, params.m, sizeof(int), "Size");
 
         if (ptr == 0) {
-            code = gs_note_error(e_VMerror);
+            code = gs_note_error(gs_error_VMerror);
             goto fail;
         }
         params.Size = ptr;
@@ -90,5 +90,5 @@ gs_build_function_0(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
         return 0;
 fail:
     gs_function_Sd_free_params(&params, mem);
-    return (code < 0 ? code : gs_note_error(e_rangecheck));
+    return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
 }

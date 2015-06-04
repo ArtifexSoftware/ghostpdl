@@ -107,7 +107,7 @@ hpgl_process(hpgl_parser_state_t * pst, hpgl_state_t * pgls,
         /* the caller for more data.  pst->command != 0. */
         pr->ptr = pst->source.ptr;
         pst->exit_to_parser = NULL;
-        if (code < 0 && code != e_NeedData) {
+        if (code < 0 && code != gs_error_NeedInput) {
             pst->command = 0;   /* cancel command */
             if_debug0m('i', pgls->memory, "\n");
             return code;
@@ -122,7 +122,7 @@ hpgl_process(hpgl_parser_state_t * pst, hpgl_state_t * pgls,
         p = pst->source.ptr;
         /* cancel the command for any error other than needing
            more data */
-        if (code < 0 && code != e_NeedData)
+        if (code < 0 && code != gs_error_NeedInput)
             pst->command = 0;
         if (code < 0)
             goto x;
@@ -213,7 +213,7 @@ hpgl_process(hpgl_parser_state_t * pst, hpgl_state_t * pgls,
     }
   x:pr->ptr = p;
     pst->exit_to_parser = NULL;
-    return (code == e_NeedData ? 0 : code);
+    return (code == gs_error_NeedInput ? 0 : code);
 }
 
 /*
@@ -333,7 +333,7 @@ hpgl_arg(const gs_memory_t * mem, hpgl_parser_state_t * pst)
     }
     /* We ran out of data before reaching a terminator. */
     pst->source.ptr = p;
-    longjmp(*(pst->exit_to_parser), e_NeedData);
+    longjmp(*(pst->exit_to_parser), gs_error_NeedInput);
     /* NOTREACHED */
   out:pst->source.ptr = p;
     switch (parg->have_value) {

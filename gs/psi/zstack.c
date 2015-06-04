@@ -72,10 +72,10 @@ zindex(i_ctx_t *i_ctx_p)
         ref *elt;
 
         if (op->value.intval < 0)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         elt = ref_stack_index(&o_stack, op->value.intval + 1);
         if (elt == 0)
-            return_error(e_stackunderflow);
+            return_error(gs_error_stackunderflow);
         ref_assign(op, elt);
         return 0;
     }
@@ -96,8 +96,8 @@ zargindex(i_ctx_t *i_ctx_p)
      * result will be a stackunderflow rather than a rangecheck.  (This is,
      * in fact, the only reason this operator exists.)
      */
-    if (code == e_rangecheck && osp->value.intval >= 0)
-        code = gs_note_error(e_stackunderflow);
+    if (code == gs_error_rangecheck && osp->value.intval >= 0)
+        code = gs_note_error(gs_error_stackunderflow);
     return code;
 }
 
@@ -124,9 +124,9 @@ zroll(i_ctx_t *i_ctx_p)
         int left, i;
 
         if (op1->value.intval < 0)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         if (op1->value.intval + 2 > (int)ref_stack_count(&o_stack))
-            return_error(e_stackunderflow);
+            return_error(gs_error_stackunderflow);
         count = op1->value.intval;
         if (count <= 1) {
             pop(2);
@@ -214,7 +214,7 @@ zroll(i_ctx_t *i_ctx_p)
         /* Move everything up, then top elements down. */
         if (mod >= ostop - op) {
             o_stack.requested = mod;
-            return_error(e_stackoverflow);
+            return_error(gs_error_stackoverflow);
         }
         pop(2);
         op -= 2;
@@ -226,7 +226,7 @@ zroll(i_ctx_t *i_ctx_p)
         mod = count - mod;
         if (mod >= ostop - op) {
             o_stack.requested = mod;
-            return_error(e_stackoverflow);
+            return_error(gs_error_stackoverflow);
         }
         pop(2);
         op -= 2;
@@ -277,7 +277,7 @@ zcleartomark(i_ctx_t *i_ctx_p)
     uint count = ref_stack_counttomark(&o_stack);
 
     if (count == 0)
-        return_error(e_unmatchedmark);
+        return_error(gs_error_unmatchedmark);
     ref_stack_pop(&o_stack, count);
     return 0;
 }
@@ -291,7 +291,7 @@ zcounttomark(i_ctx_t *i_ctx_p)
     uint count = ref_stack_counttomark(&o_stack);
 
     if (count == 0)
-        return_error(e_unmatchedmark);
+        return_error(gs_error_unmatchedmark);
     push(1);
     make_int(op, count - 1);
     return 0;

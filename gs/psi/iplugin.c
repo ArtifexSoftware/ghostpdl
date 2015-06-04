@@ -63,7 +63,7 @@ int i_plugin_init(i_ctx_t *i_ctx_p)
             return code;
         h = (i_plugin_holder *)gs_alloc_bytes_immovable(mem_raw, sizeof(i_plugin_holder), "plugin_holder");
         if (h == 0)
-            return_error(e_Fatal);
+            return_error(gs_error_Fatal);
         h->I = instance;
         h->next = i_ctx_p->plugin_list;
         i_ctx_p->plugin_list = h;

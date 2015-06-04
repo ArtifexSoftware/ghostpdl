@@ -24,28 +24,88 @@
 /* or negative for failure. */
 /* We use ints rather than an enum to avoid a lot of casting. */
 
+#define gs_error_ok (0)	/* unknown error */
 #define gs_error_unknownerror (-1)	/* unknown error */
+#define gs_error_dictfull (-2)
+#define gs_error_dictstackoverflow (-3)
+#define gs_error_dictstackunderflow (-4)
+#define gs_error_execstackoverflow (-5)
 #define gs_error_interrupt (-6)
 #define gs_error_invalidaccess (-7)
+#define gs_error_invalidexit (-8)
 #define gs_error_invalidfileaccess (-9)
 #define gs_error_invalidfont (-10)
+#define gs_error_invalidrestore (-11)
 #define gs_error_ioerror (-12)
 #define gs_error_limitcheck (-13)
 #define gs_error_nocurrentpoint (-14)
 #define gs_error_rangecheck (-15)
+#define gs_error_stackoverflow (-16)
+#define gs_error_stackunderflow (-17)
+#define gs_error_syntaxerror (-18)
+#define gs_error_timeout (-19)
 #define gs_error_typecheck (-20)
 #define gs_error_undefined (-21)
 #define gs_error_undefinedfilename (-22)
 #define gs_error_undefinedresult (-23)
-#define gs_error_VMerror (-25)
+#define gs_error_unmatchedmark (-24)
+#define gs_error_VMerror (-25)		/* must be the last Level 1 error */
+
+        /* ------ Additional Level 2 errors (also in DPS) ------ */
+
+#define gs_error_configurationerror (-26)
+#define gs_error_undefinedresource (-27)
+
 #define gs_error_unregistered (-28)
+#define gs_error_invalidcontext (-29)
+/* invalidid is for the NeXT DPS extension. */
+#define gs_error_invalidid (-30)
+
+        /* ------ Pseudo-errors used internally ------ */
 
 #define gs_error_hit_detected (-99)
 
 #define gs_error_Fatal (-100)
+/*
+ * Internal code for the .quit operator.
+ * The real quit code is an integer on the operand stack.
+ * gs_interpret returns this only for a .quit with a zero exit code.
+ */
+#define gs_error_Quit (-101)
+
+/*
+ * Internal code for a normal exit from the interpreter.
+ * Do not use outside of interp.c.
+ */
+#define gs_error_InterpreterExit (-102)
 
 /* Need the remap color error for high level pattern support */
 #define gs_error_Remap_Color (-103)
+
+/*
+ * Internal code to indicate we have underflowed the top block
+ * of the e-stack.
+ */
+#define gs_error_ExecStackUnderflow (-104)
+
+/*
+ * Internal code for the vmreclaim operator with a positive operand.
+ * We need to handle this as an error because otherwise the interpreter
+ * won't reload enough of its state when the operator returns.
+ */
+#define gs_error_VMreclaim (-105)
+
+/*
+ * Internal code for requesting more input from run_string.
+ */
+#define gs_error_NeedInput (-106)
+
+/*
+ * Internal code for a normal exit when usage info is displayed.
+ * This allows Window versions of Ghostscript to pause until
+ * the message can be read.
+ */
+#define gs_error_Info (-110)
 
 int gs_log_error(int, const char *, int);
 #if !defined(DEBUG) || defined(GS_THREADSAFE)

@@ -193,7 +193,7 @@ dict_create_contents(uint size, const ref * pdref, bool pack)
     register uint i;
 
     if (asize == 0 || asize > max_array_size - 1)	/* too large */
-        return_error(e_limitcheck);
+        return_error(gs_error_limitcheck);
     asize++;			/* allow room for wraparound entry */
     code = gs_alloc_ref_array(mem, &pdict->values, a_all, asize,
                               "dict_create_contents(values)");
@@ -302,7 +302,7 @@ dict_find(const ref * pdref, const ref * pkey,
             int code;
 
             if (!r_has_attr(pkey, a_read))
-                return_error(e_invalidaccess);
+                return_error(gs_error_invalidaccess);
             code = name_ref(mem, pkey->value.bytes, r_size(pkey), &nref, 1);
             if (code < 0)
                 return code;
@@ -336,7 +336,7 @@ dict_find(const ref * pdref, const ref * pkey,
         nidx = 0;		/* only to pacify gcc */
         break;
     case t_null:		/* not allowed as a key */
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     default:
         hash = r_btype(pkey) * 99;	/* yech */
         kpack = packed_key_impossible;
@@ -360,12 +360,12 @@ dict_find(const ref * pdref, const ref * pkey,
          * we must return dictfull if length = maxlength.
          */
         if (pslot == 0 || d_length(pdict) == d_maxlength(pdict))
-            return_error(e_dictfull);
+            return_error(gs_error_dictfull);
         *ppvalue = pdict->values.value.refs + (pslot - kbot);
         return 0;
       miss:			/* Key is missing, not double wrap.  See above re dictfull. */
         if (d_length(pdict) == d_maxlength(pdict))
-            return_error(e_dictfull);
+            return_error(gs_error_dictfull);
         if (pslot == 0)
             pslot = kp;
         *ppvalue = pdict->values.value.refs + (pslot - kbot);
@@ -388,7 +388,7 @@ dict_find(const ref * pdref, const ref * pkey,
                 if (kp == kbot) {	/* wrap */
                     if (wrap++) {	/* wrapped twice */
                         if (pslot == 0)
-                            return_error(e_dictfull);
+                            return_error(gs_error_dictfull);
                         break;
                     }
                     kp += size + 1;
@@ -405,7 +405,7 @@ dict_find(const ref * pdref, const ref * pkey,
             }
         }
         if (d_length(pdict) == d_maxlength(pdict))
-            return_error(e_dictfull);
+            return_error(gs_error_dictfull);
         *ppvalue = pdict->values.value.refs +
             ((pslot != 0 ? pslot : kp) - kbot);
         return 0;
@@ -428,8 +428,8 @@ dict_find_string(const ref * pdref, const char *kstr, ref ** ppvalue)
                              (const byte *)kstr, strlen(kstr), &kname, -1)) < 0)
             return code;
         code = dict_find(pdref, &kname, ppvalue);
-        if (code == e_dictfull)
-            return_error(e_undefined);
+        if (code == gs_error_dictfull)
+            return_error(gs_error_undefined);
         return code;
     }
     return 0;
@@ -458,14 +458,14 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
         switch (code) {
             case 0:
                 break;
-            case e_dictfull:
+            case gs_error_dictfull:
                 if (!pmem->gs_lib_ctx->dict_auto_expand)
-                    return_error(e_dictfull);
+                    return_error(gs_error_dictfull);
                 code = dict_grow(pdref, pds);
                 if (code < 0)
                     return code;
                 goto top;	/* keep things simple */
-            default:		/* e_typecheck */
+            default:		/* gs_error_typecheck */
                 return code;
         }
         index = pvslot - pdict->values.value.refs;
@@ -474,7 +474,7 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
             int code;
 
             if (!r_has_attr(pkey, a_read))
-                return_error(e_invalidaccess);
+                return_error(gs_error_invalidaccess);
             code = name_from_string(pmem, pkey, &kname);
             if (code < 0)
                 return code;
@@ -567,8 +567,8 @@ dict_undef(ref * pdref, const ref * pkey, dict_stack_t *pds)
 
     switch (code) {
     case 0:
-    case e_dictfull:
-        return_error(e_undefined);
+    case gs_error_dictfull:
+        return_error(gs_error_undefined);
     case 1:
         break;
     default:			/* other error */
@@ -753,7 +753,7 @@ dict_resize(ref * pdref, uint new_size, dict_stack_t *pds)
 
     if (new_size < d_length(pdict)) {
         if (!mem->gs_lib_ctx->dict_auto_expand)
-            return_error(e_dictfull);
+            return_error(gs_error_dictfull);
         new_size = d_length(pdict);
     }
     make_tav(&drto, t_dictionary, r_space(pdref) | a_all | new_mask,
@@ -887,7 +887,7 @@ dict_value_index(const ref * pdref, const ref * pvalue)
 }
 
 /* Return the entry at a given index within a dictionary. */
-/* If the index designates an unoccupied entry, return e_undefined. */
+/* If the index designates an unoccupied entry, return gs_error_undefined. */
 int
 dict_index_entry(const ref * pdref, int index, ref * eltp /* ref eltp[2] */ )
 {
@@ -900,5 +900,5 @@ dict_index_entry(const ref * pdref, int index, ref * eltp /* ref eltp[2] */ )
         eltp[1] = pdict->values.value.refs[index + 1];
         return 0;
     }
-    return e_undefined;
+    return gs_error_undefined;
 }

@@ -45,18 +45,18 @@ zlocale_to_utf8(i_ctx_t *i_ctx_p)
     check_read_type(*op, t_string);
     input = ref_to_string(op, imemory, "locale_to_utf8 input");
     if (input == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
 
     success = MultiByteToWideChar(CP_ACP, 0, input, -1,
         wide_buffer, LOCALE_TO_UTF8_BUFFER_SIZE);
     ifree_string((byte *)input, r_size(op) + 1, "locale_to_utf8 input");
     if (success == 0)
-        return_error(e_ioerror);
+        return_error(gs_error_ioerror);
 
     success = WideCharToMultiByte(CP_UTF8, 0, wide_buffer, -1,
         utf8_buffer, LOCALE_TO_UTF8_BUFFER_SIZE, NULL, NULL);
     if (success == 0)
-        return_error(e_ioerror);
+        return_error(gs_error_ioerror);
 
     code = string_to_ref(utf8_buffer, op, iimemory, "locale_to_utf8 output");
     if (code < 0)

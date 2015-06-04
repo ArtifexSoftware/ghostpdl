@@ -271,7 +271,7 @@ zsetsystemparams(i_ctx_t *i_ctx_p)
     code = param_check_password(plist, &pass);
     if (code != 0) {
         if (code > 0)
-            code = gs_note_error(e_invalidaccess);
+            code = gs_note_error(gs_error_invalidaccess);
         goto out;
     }
     code = param_read_password(plist, "StartJobPassword", &pass);
@@ -655,7 +655,7 @@ set_LockFilePermissions(i_ctx_t *i_ctx_p, bool val)
 {
     /* allow locking even if already locked */
     if (i_ctx_p->LockFilePermissions && !val)
-        return_error(e_invalidaccess);
+        return_error(gs_error_invalidaccess);
     i_ctx_p->LockFilePermissions = val;
     return 0;
 }
@@ -773,7 +773,7 @@ setparams(i_ctx_t *i_ctx_p, gs_param_list * plist, const param_set * pset)
                 break;
             case 0:
                 if (val < pdef->min_value || val > pdef->max_value)
-                    return_error(e_rangecheck);
+                    return_error(gs_error_rangecheck);
                 code = (*pdef->set)(i_ctx_p, val);
                 if (code < 0)
                     return code;
@@ -916,7 +916,7 @@ currentparam1(i_ctx_t *i_ctx_p, const param_set * pset)
     if (code < 0)
         return code;
     if (osp == op)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     /* We know osp == op + 2. */
     ref_assign(op, op + 2);
     pop(2);

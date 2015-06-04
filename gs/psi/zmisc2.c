@@ -97,9 +97,9 @@ set_language_level(i_ctx_t *i_ctx_p, int new_level)
         new_level >
         (dict_find_string(systemdict, "ll3dict", &level2dict) > 0 ? 3 : 2)
         )
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if (dict_find_string(systemdict, "level2dict", &level2dict) <= 0)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     /*
      * As noted in dstack.h, we allocate the extra d-stack entry for
      * globaldict even in Level 1 mode; in Level 1 mode, this entry
@@ -120,7 +120,7 @@ set_language_level(i_ctx_t *i_ctx_p, int new_level)
                 code = dict_find_string(level2dict, "globaldict", &pdict);
                 if (code > 0) {
                     if (!r_has_type(pdict, t_dictionary))
-                        return_error(e_typecheck);
+                        return_error(gs_error_typecheck);
                     *pgdict = *pdict;
                 }
                 /* Set other flags for Level 2 operation. */
@@ -164,7 +164,7 @@ set_language_level(i_ctx_t *i_ctx_p, int new_level)
                 code = swap_level_dict(i_ctx_p, "ll3dict");
                 break;
             default:		/* not possible */
-                return_error(e_Fatal);
+                return_error(gs_error_Fatal);
         }
         break;
     }
@@ -193,7 +193,7 @@ swap_level_dict(i_ctx_t *i_ctx_p, const char *dict_name)
      * move if their containing dictionary is resized.
      */
     if (dict_find_string(systemdict, dict_name, &pleveldict) <= 0)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     rleveldict = *pleveldict;
     index = dict_first(&rleveldict);
     while ((index = dict_next(&rleveldict, index, &elt[0])) >= 0)
@@ -270,7 +270,7 @@ swap_entry(i_ctx_t *i_ctx_p, ref elt[2], ref * pdict, ref * pdict2)
         idict_put(pdict2, &elt[0], &old_value);
         if (r_has_type(&elt[1], t_null)) {
             code = idict_undef(pdict, &elt[0]);
-            if (code == e_undefined &&
+            if (code == gs_error_undefined &&
                 r_has_type(&old_value, t_null)
                 )
                 code = 0;

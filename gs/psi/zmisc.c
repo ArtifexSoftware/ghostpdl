@@ -218,7 +218,7 @@ zgetenv(i_ctx_t *i_ctx_p)
     check_read_type(*op, t_string);
     str = ref_to_string(op, imemory, "getenv key");
     if (str == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     if (gp_getenv(str, (char *)0, &len) > 0) {	/* key missing */
         ifree_string((byte *) str, r_size(op) + 1, "getenv key");
         make_false(op);
@@ -227,7 +227,7 @@ zgetenv(i_ctx_t *i_ctx_p)
     value = ialloc_string(len, "getenv value");
     if (value == 0) {
         ifree_string((byte *) str, r_size(op) + 1, "getenv key");
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     }
     DISCARD(gp_getenv(str, (char *)value, &len));	/* can't fail */
     ifree_string((byte *) str, r_size(op) + 1, "getenv key");
@@ -258,7 +258,7 @@ zdefaultpapersize(i_ctx_t *i_ctx_p)
 
     value = ialloc_string(len, "defaultpapersize value");
     if (value == 0) {
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     }
     DISCARD(gp_defaultpapersize((char *)value, &len));	/* can't fail */
     /* Delete the stupid C string terminator. */
@@ -289,7 +289,7 @@ zmakeoperator(i_ctx_t *i_ctx_p)
             opt = &i_ctx_p->op_array_table_local;
             break;
         default:
-            return_error(e_invalidaccess);
+            return_error(gs_error_invalidaccess);
     }
     count = opt->count;
     tab = opt->table.value.refs;
@@ -304,7 +304,7 @@ zmakeoperator(i_ctx_t *i_ctx_p)
     while (count > 0 && r_has_type(&tab[count - 1], t_null))
         --count;
     if (count == r_size(&opt->table))
-        return_error(e_limitcheck);
+        return_error(gs_error_limitcheck);
     ref_assign_old(&opt->table, &tab[count], op, "makeoperator");
     opt->nx_table[count] = name_index(imemory, op - 1);
     op_index_ref(imemory, opt->base_index + count, op - 1);
@@ -490,7 +490,7 @@ zpcachequery(i_ctx_t *i_ctx_p)
                 return 0;
         }
         if (string == NULL)
-                return_error(e_VMerror);
+                return_error(gs_error_VMerror);
         make_string(op, a_all | icurrent_space, len, string);
 
         push(1);

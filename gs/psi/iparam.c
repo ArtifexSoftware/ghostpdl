@@ -42,7 +42,7 @@ ref_param_key(const iparam_list * plist, gs_param_name pkey, ref * pkref)
         long key;
 
         if (sscanf(pkey, "%ld", &key) != 1)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         make_int(pkref, key);
         return 0;
     } else
@@ -70,12 +70,12 @@ ref_to_key(const ref * pref, gs_param_key_t * key, iparam_list *plist)
         /* GC will take care of freeing this: */
         buf = gs_alloc_string(plist->memory, len, "ref_to_key");
         if (!buf)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         key->data = buf;
         key->size = len;
         key->persistent = true;
     } else
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     return 0;
 }
 
@@ -168,7 +168,7 @@ ref_param_begin_write_collection(gs_param_list * plist, gs_param_name pkey,
     int code;
 
     if (dlist == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     if (coll_type != gs_param_collection_array) {
         ref dref;
 
@@ -261,7 +261,7 @@ ref_param_write_typed(gs_param_list * plist, gs_param_name pkey,
                                                     &pvalue->value.d,
               (gs_param_collection_type_t)(pvalue->type - gs_param_type_dict));
         default:
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     }
     if (code < 0)
         return code;
@@ -314,7 +314,7 @@ ref_param_write_string_value(ref * pref, const gs_param_string * pvalue,
                                      "ref_param_write_string");
 
         if (pstr == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         memcpy(pstr, pdata, n);
         make_string(pref, a_readonly | imemory_space(imem), n, pstr);
     }
@@ -473,7 +473,7 @@ array_new_indexed_param_write(iparam_list * iplist, const ref * pkey,
     ref *eltp;
 
     if (!r_has_type(pkey, t_integer))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     check_int_ltu(*pkey, r_size(arr));
     store_check_dest(arr, pvalue);
     eltp = arr->value.refs + pkey->value.intval;
@@ -531,10 +531,10 @@ static int ref_param_read_array(iparam_list *, gs_param_name,
   gs_note_error(*(loc).presult = code)
 #define iparam_check_type(loc, typ)\
   if ( !r_has_type((loc).pvalue, typ) )\
-    return iparam_note_error(loc, e_typecheck)
+    return iparam_note_error(loc, gs_error_typecheck)
 #define iparam_check_read(loc)\
   if ( !r_has_attr((loc).pvalue, a_read) )\
-    return iparam_note_error(loc, e_invalidaccess)
+    return iparam_note_error(loc, gs_error_invalidaccess)
 
 static int
 ref_param_read_int_array(gs_param_list * plist, gs_param_name pkey,
@@ -554,13 +554,13 @@ ref_param_read_int_array(gs_param_list * plist, gs_param_name pkey,
                                      "ref_param_read_int_array");
 
     if (piv == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     for (i = 0; i < size; i++) {
         ref elt;
 
         array_get(plist->memory, loc.pvalue, i, &elt);
         if (!r_has_type(&elt, t_integer)) {
-            code = gs_note_error(e_typecheck);
+            code = gs_note_error(gs_error_typecheck);
             break;
         }
         piv[i] = (int)elt.value.intval;
@@ -593,7 +593,7 @@ ref_param_read_float_array(gs_param_list * plist, gs_param_name pkey,
                                        "ref_param_read_float_array");
 
     if (pfv == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     aref = *loc.pvalue;
     loc.pvalue = &elt;
     for (i = 0; code >= 0 && i < size; i++) {
@@ -628,7 +628,7 @@ ref_param_read_string_array(gs_param_list * plist, gs_param_name pkey,
         gs_alloc_byte_array(plist->memory, size, sizeof(gs_param_string),
                             "ref_param_read_string_array");
     if (psv == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     aref = *loc.pvalue;
     if (r_has_type(&aref, t_array)) {
         for (i = 0; code >= 0 && i < size; i++) {
@@ -670,7 +670,7 @@ ref_param_begin_read_collection(gs_param_list * plist, gs_param_name pkey,
         gs_alloc_bytes(plist->memory, size_of(dict_param_list),
                        "ref_param_begin_read_collection");
     if (dlist == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     if (r_has_type(loc.pvalue, t_dictionary)) {
         code = dict_param_list_read(dlist, loc.pvalue, NULL, false,
                                     iplist->ref_memory);
@@ -683,7 +683,7 @@ ref_param_begin_read_collection(gs_param_list * plist, gs_param_name pkey,
         if (code >= 0)
             pvalue->size = r_size(loc.pvalue);
     } else
-        code = gs_note_error(e_typecheck);
+        code = gs_note_error(gs_error_typecheck);
     if (code < 0) {
         gs_free_object(plist->memory, dlist, "ref_param_begin_write_collection");
         return iparam_note_error(loc, code);
@@ -734,7 +734,7 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
                     pvalue->type = gs_param_type_int_array;
                     code = ref_param_read_int_array(plist, pkey,
                                                     &pvalue->value.ia);
-                    if (code != e_typecheck)
+                    if (code != gs_error_typecheck)
                         return code;
                     /* This might be a float array.  Fall through. */
                     *loc.presult = 0;  /* reset error */
@@ -753,7 +753,7 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
                 default:
                     break;
             }
-            return gs_note_error(e_typecheck);
+            return gs_note_error(gs_error_typecheck);
         case t_boolean:
             pvalue->type = gs_param_type_bool;
             pvalue->value.b = loc.pvalue->value.boolval;
@@ -801,7 +801,7 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
         default:
             break;
     }
-    return gs_note_error(e_typecheck);
+    return gs_note_error(gs_error_typecheck);
 }
 
 static int
@@ -829,7 +829,7 @@ ref_param_read_signal_error(gs_param_list * plist, gs_param_name pkey, int code)
         case gs_param_policy_ignore:
             return 0;
         case gs_param_policy_consult_user:
-            return_error(e_configurationerror);
+            return_error(gs_error_configurationerror);
         default:
             return code;
     }
@@ -846,7 +846,7 @@ ref_param_read_commit(gs_param_list * plist)
     /* Check to make sure that all parameters were actually read. */
     for (i = 0; i < iplist->count; ++i)
         if (iplist->results[i] == 0)
-            iplist->results[i] = ecode = gs_note_error(e_undefined);
+            iplist->results[i] = ecode = gs_note_error(gs_error_undefined);
     return ecode;
 }
 static int
@@ -889,13 +889,13 @@ ref_param_read_string_value(gs_memory_t *mem, const iparam_loc * ploc, gs_param_
                simple call to .putdeviceparams, they are identical. */
             iparam_check_read(*ploc);
             if (gs_object_type(mem, pref->value.pstruct) != &st_bytes)
-                return iparam_note_error(*ploc, e_typecheck);
+                return iparam_note_error(*ploc, gs_error_typecheck);
             pvalue->data = r_ptr(pref, byte);
             pvalue->size = gs_object_size(mem, pref->value.pstruct);
             pvalue->persistent = false;
             break;
         default:
-            return iparam_note_error(*ploc, e_typecheck);
+            return iparam_note_error(*ploc, gs_error_typecheck);
     }
     return 0;
 }
@@ -909,7 +909,7 @@ ref_param_read_array(iparam_list * plist, gs_param_name pkey, iparam_loc * ploc)
     if (code != 0)
         return code;
     if (!r_is_array(ploc->pvalue))
-        return iparam_note_error(*ploc, e_typecheck);
+        return iparam_note_error(*ploc, gs_error_typecheck);
     iparam_check_read(*ploc);
     return 0;
 }
@@ -961,7 +961,7 @@ ref_param_read_init(iparam_list * plist, uint count, const ref * ppolicies,
                             "ref_param_read_init");
 
     if (plist->results == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     memset(plist->results, 0, count * sizeof(int));
 
     plist->int_keys = false;
@@ -1050,7 +1050,7 @@ array_param_list_read(array_param_list * plist, ref * bot, uint count,
     iparam_list *const iplist = (iparam_list *) plist;
 
     if (count & 1)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     plist->u.r.read = array_param_read;
     plist->enumerate = array_param_enumerate;
     plist->bot = bot;
@@ -1090,10 +1090,10 @@ stack_param_list_read(stack_param_list * plist, ref_stack_t * pstack,
     uint count = ref_stack_counttomark(pstack);
 
     if (count == 0)
-        return_error(e_unmatchedmark);
+        return_error(gs_error_unmatchedmark);
     count -= skip + 1;
     if (count & 1)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     plist->u.r.read = stack_param_read;
     plist->enumerate = stack_param_enumerate;
     plist->pstack = pstack;

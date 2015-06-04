@@ -72,7 +72,7 @@ s_proc_init(ref * sop, stream ** psstrm, uint mode,
     if (sstrm == 0 || state == 0) {
         gs_free_object(mem, state, "s_proc_init(state)");
         /*gs_free_object(mem, sstrm, "s_proc_init(stream)"); *//* just leave it on the file list */
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     }
     s_std_init(sstrm, NULL, 0, procs, mode);
     sstrm->procs.process = temp->process;
@@ -101,7 +101,7 @@ s_handle_intc(i_ctx_t *i_ctx_p, const ref *pstate, int nstate,
         memcpy(esp + 2, pstate, nstate * sizeof(ref));
 #if 0				/* **************** */
     {
-        int code = gs_interpret_error(e_interrupt, (ref *) (esp + npush));
+        int code = gs_interpret_error(gs_error_interrupt, (ref *) (esp + npush));
 
         if (code < 0)
             return code;
@@ -193,7 +193,7 @@ s_handle_read_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
         case CALLC:
             break;
         default:
-            return_error(e_ioerror);
+            return_error(gs_error_ioerror);
     }
     /* Find the stream whose buffer needs refilling. */
     for (ps = fptr(fop); ps->strm != 0;)
@@ -315,7 +315,7 @@ s_handle_write_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
         case CALLC:
             break;
         default:
-            return_error(e_ioerror);
+            return_error(gs_error_ioerror);
     }
     /* Find the stream whose buffer needs emptying. */
     for (ps = fptr(fop); ps->strm != 0;)

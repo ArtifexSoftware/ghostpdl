@@ -149,7 +149,7 @@ zcvx(i_ctx_t *i_ctx_p)
         ((opidx = op_index(op)) == 0 ||
          op_def_is_internal(op_index_def(opidx)))
         )
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     aop = ACCESS_REF(op);
     r_set_attrs(aop, a_executable);
     return 0;
@@ -174,7 +174,7 @@ zexecuteonly(i_ctx_t *i_ctx_p)
 
     check_op(1);
     if (r_has_type(op, t_dictionary))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     return access_check(i_ctx_p, a_execute, true);
 }
 
@@ -194,12 +194,12 @@ znoaccess(i_ctx_t *i_ctx_p)
                 /* Already noaccess - do nothing (CET 24-09-1). */
                 return 0;
             }
-            return_error(e_invalidaccess);
+            return_error(gs_error_invalidaccess);
         }
 
         /* Don't allow removing read access to permanent dictionaries. */
         if (dict_is_permanent_on_dstack(op))
-            return_error(e_invalidaccess);
+            return_error(gs_error_invalidaccess);
     }
     return access_check(i_ctx_p, 0, true);
 }
@@ -259,7 +259,7 @@ zcvi(i_ctx_t *i_ctx_p)
                 ref_assign(&str, op);
                 code = gs_scan_string_token(i_ctx_p, &str, &token);
                 if (code > 0)   /* anything other than a plain token */
-                    code = gs_note_error(e_syntaxerror);
+                    code = gs_note_error(gs_error_syntaxerror);
                 if (code < 0)
                     return code;
                 switch (r_type(&token)) {
@@ -270,12 +270,12 @@ zcvi(i_ctx_t *i_ctx_p)
                         fval = token.value.realval;
                         break;
                     default:
-                        return_error(e_typecheck);
+                        return_error(gs_error_typecheck);
                 }
             }
     }
     if (!REAL_CAN_BE_INT(fval))
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     make_int(op, (long)fval);   /* truncates towards 0 */
     return 0;
 }
@@ -312,7 +312,7 @@ zcvr(i_ctx_t *i_ctx_p)
                 ref_assign(&str, op);
                 code = gs_scan_string_token(i_ctx_p, &str, &token);
                 if (code > 0)   /* anything other than a plain token */
-                    code = gs_note_error(e_syntaxerror);
+                    code = gs_note_error(gs_error_syntaxerror);
                 if (code < 0)
                     return code;
                 switch (r_type(&token)) {
@@ -323,7 +323,7 @@ zcvr(i_ctx_t *i_ctx_p)
                         *op = token;
                         return 0;
                     default:
-                        return_error(e_typecheck);
+                        return_error(gs_error_typecheck);
                 }
             }
     }
@@ -338,7 +338,7 @@ zcvrs(i_ctx_t *i_ctx_p)
 
     check_type(op[-1], t_integer);
     if (op[-1].value.intval < 2 || op[-1].value.intval > 36)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     radix = op[-1].value.intval;
     check_write_type(*op, t_string);
     if (radix == 10) {
@@ -354,9 +354,9 @@ zcvrs(i_ctx_t *i_ctx_p)
                     return 0;
                 }
             case t__invalid:
-                return_error(e_stackunderflow);
+                return_error(gs_error_stackunderflow);
             default:
-                return_error(e_rangecheck); /* CET 24-05 wants rangecheck */
+                return_error(gs_error_rangecheck); /* CET 24-05 wants rangecheck */
         }
     } else {
         uint ival;
@@ -373,13 +373,13 @@ zcvrs(i_ctx_t *i_ctx_p)
                     float fval = op[-2].value.realval;
 
                     if (!REAL_CAN_BE_INT(fval))
-                        return_error(e_rangecheck);
+                        return_error(gs_error_rangecheck);
                     ival = (ulong) (long)fval;
                 } break;
             case t__invalid:
-                return_error(e_stackunderflow);
+                return_error(gs_error_stackunderflow);
             default:
-                return_error(e_rangecheck); /* CET 24-05 wants rangecheck */
+                return_error(gs_error_rangecheck); /* CET 24-05 wants rangecheck */
         }
         do {
             int dit = ival % radix;
@@ -389,7 +389,7 @@ zcvrs(i_ctx_t *i_ctx_p)
         }
         while (ival);
         if (endp - dp > r_size(op))
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         memcpy(op->value.bytes, dp, (uint) (endp - dp));
         r_set_size(op, endp - dp);
     }
@@ -456,7 +456,7 @@ access_check(i_ctx_t *i_ctx_p,
             aop = dict_access_ref(op);
             if (modify) {
                 if (!r_has_attrs(aop, access))
-                    return_error(e_invalidaccess);
+                    return_error(gs_error_invalidaccess);
                 ref_save(op, aop, "access_check(modify)");
                 r_clear_attrs(aop, a_all);
                 r_set_attrs(aop, access);
@@ -473,7 +473,7 @@ access_check(i_ctx_t *i_ctx_p,
         case t_device:;
             if (modify) {
                 if (!r_has_attrs(op, access))
-                    return_error(e_invalidaccess);
+                    return_error(gs_error_invalidaccess);
                 r_clear_attrs(op, a_all);
                 r_set_attrs(op, access);
                 return 0;
@@ -505,7 +505,7 @@ convert_to_string(const gs_memory_t *mem, os_ptr op1, os_ptr op)
          * the object is an operator whose name begins with
          * %, ., or @, we just truncate the name.
          */
-        if (code == e_rangecheck)
+        if (code == gs_error_rangecheck)
             switch (r_btype(op1)) {
                 case t_oparray:
                 case t_operator:

@@ -77,9 +77,9 @@ zcopy_integer(i_ctx_t *i_ctx_p)
         /* There might be enough elements in other blocks. */
         check_type(*op, t_integer);
         if (op->value.intval >= (int)ref_stack_count(&o_stack))
-            return_error(e_stackunderflow);
+            return_error(gs_error_stackunderflow);
         if (op->value.intval < 0)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         check_int_ltu(*op, ref_stack_count(&o_stack));
         count = op->value.intval;
     } else if (op1 + (count = op->value.intval) <= ostop) {
@@ -141,7 +141,7 @@ zlength(i_ctx_t *i_ctx_p)
         }
         case t_astruct:
             if (gs_object_type(imemory, op->value.pstruct) != &st_bytes)
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
             check_read(*op);
             make_int(op, gs_object_size(imemory, op->value.pstruct));
             return 0;
@@ -164,7 +164,7 @@ zget(i_ctx_t *i_ctx_p)
         case t_dictionary:
             check_dict_read(*op1);
             if (dict_find(op1, op, &pvalue) <= 0)
-                return_error(e_undefined);
+                return_error(gs_error_undefined);
             op[-1] = *pvalue;
             break;
         case t_string:
@@ -182,9 +182,9 @@ zget(i_ctx_t *i_ctx_p)
                 return code;
             break;
         case t__invalid:
-            return_error(e_stackunderflow);
+            return_error(gs_error_stackunderflow);
         default:
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     }
     pop(1);
     return 0;
@@ -225,7 +225,7 @@ zput(i_ctx_t *i_ctx_p)
             break;
         case t_mixedarray:	/* packed arrays are read-only */
         case t_shortarray:
-            return_error(e_invalidaccess);
+            return_error(gs_error_invalidaccess);
         case t_string:
             sdata = op2->value.bytes;
             ssize = r_size(op2);
@@ -236,7 +236,7 @@ str:	    check_write(*op2);
             break;
         case t_astruct:
             if (gs_object_type(imemory, op2->value.pstruct) != &st_bytes)
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
             sdata = r_ptr(op2, byte);
             ssize = gs_object_size(imemory, op2->value.pstruct);
             goto str;
@@ -270,7 +270,7 @@ zforceput(i_ctx_t *i_ctx_p)
         check_int_ltu(*op1, r_size(op2));
         if (r_space(op2) > r_space(op)) {
             if (imemory_save_level(iimemory))
-                return_error(e_invalidaccess);
+                return_error(gs_error_invalidaccess);
         }
         {
             ref *eltp = op2->value.refs + (uint) op1->value.intval;
@@ -293,7 +293,7 @@ zforceput(i_ctx_t *i_ctx_p)
             return code;
         break;
     default:
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     }
     pop(3);
     return 0;
@@ -359,15 +359,15 @@ zputinterval(i_ctx_t *i_ctx_p)
 
     switch (r_type(opto)) {
         default:
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         case t__invalid:
             if (r_type(op) != t_array && r_type(op) != t_string && r_type(op) != t__invalid)
-                return_error(e_typecheck); /* to match Distiller */
+                return_error(gs_error_typecheck); /* to match Distiller */
             else
-                return_error(e_stackunderflow);
+                return_error(gs_error_stackunderflow);
         case t_mixedarray:
         case t_shortarray:
-            return_error(e_invalidaccess);
+            return_error(gs_error_invalidaccess);
         case t_array:
         case t_string:
             check_write(*opto);
@@ -380,14 +380,14 @@ zputinterval(i_ctx_t *i_ctx_p)
 
             check_write(*opto);
             if (gs_object_type(imemory, opto->value.pstruct) != &st_bytes)
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
             dsize = gs_object_size(imemory, opto->value.pstruct);
             check_int_leu(*opindex, dsize);
             index = (uint)opindex->value.intval;
             check_read_type(*op, t_string);
             ssize = r_size(op);
             if (ssize > dsize - index)
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             memcpy(r_ptr(opto, byte) + index, op->value.const_bytes, ssize);
             code = 0;
             break;
@@ -585,7 +585,7 @@ copy_interval(i_ctx_t *i_ctx_p /* for ref_assign_old */, os_ptr prto,
     check_read(*prfrom);
     check_write(*prto);
     if (fromsize > r_size(prto) - index)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     switch (fromtype) {
         case t_array:
             {			/* We have to worry about aliasing, */

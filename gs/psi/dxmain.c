@@ -507,7 +507,7 @@ static int display_presize(void *handle, void *device, int width, int height,
         int raster, unsigned int format)
 {
     /* Assume everything is OK.
-     * It would be better to return e_rangecheck if we can't
+     * It would be better to return gs_error_rangecheck if we can't
      * support the format.
      */
     return 0;
@@ -563,7 +563,7 @@ static int display_size(void *handle, void *device, int width, int height,
                     return -1;
             }
             else
-                return e_rangecheck;	/* not supported */
+                return gs_error_rangecheck;	/* not supported */
         case DISPLAY_COLORS_GRAY:
             if (depth == DISPLAY_DEPTH_8) {
                 img->rgbbuf = (guchar *)malloc(width * height * 3);
@@ -1219,9 +1219,9 @@ int main(int argc, char *argv[])
         if (code == 0)
             code = gsapi_run_string(instance, start_string, 0, &exit_code);
         code1 = gsapi_exit(instance);
-        if (code == 0 || code == e_Quit)
+        if (code == 0 || code == gs_error_Quit)
             code = code1;
-        if (code == e_Quit)
+        if (code == gs_error_Quit)
             code = 0;	/* user executed 'quit' */
 
         gsapi_delete_instance(instance);
@@ -1230,10 +1230,10 @@ int main(int argc, char *argv[])
     exit_status = 0;
     switch (code) {
         case 0:
-        case e_Info:
-        case e_Quit:
+        case gs_error_Info:
+        case gs_error_Quit:
             break;
-        case e_Fatal:
+        case gs_error_Fatal:
             exit_status = 1;
             break;
         default:

@@ -172,7 +172,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
             code = scan_bin_scalar(i_ctx_p, pref, pstate);
     }
     if (code == scan_Refill && s->end_status == EOFC)
-        code = gs_note_error(e_syntaxerror);
+        code = gs_note_error(gs_error_syntaxerror);
     if (code < 0 && pstate->s_error.string[0] == 0)
         snprintf(pstate->s_error.string, sizeof(pstate->s_error.string),
                  "binary token, type=%d", btype);
@@ -208,7 +208,7 @@ scan_bos(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
             pbs->lsize = lsize = sdecodeint32(p + 4, num_format);
             if ((size = lsize) != lsize) {
                 scan_bos_error(pstate, "bin obj seq length too large");
-                return_error(e_limitcheck);
+                return_error(gs_error_limitcheck);
             }
             hsize = 8;
         } else {
@@ -220,7 +220,7 @@ scan_bos(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
         }
         if (size < hsize || (size - hsize) >> 3 < top_size) {
             scan_bos_error(pstate, "sequence too short");
-            return_error(e_syntaxerror); /* size too small */
+            return_error(gs_error_syntaxerror); /* size too small */
         }
         { /* Preliminary syntax check to avoid potentialy large
            * memory allocation on junk data. Bug 688833
@@ -233,11 +233,11 @@ scan_bos(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
              int c = q[-1] & 0x7f;
              if (c > 10 && c != BS_TYPE_DICTIONARY) {
                 scan_bos_error(pstate, "invalid object type");
-                return_error(e_syntaxerror);
+                return_error(gs_error_syntaxerror);
              }
              if (*q != 0) {
                 scan_bos_error(pstate, "non-zero unused field");
-                return_error(e_syntaxerror);
+                return_error(gs_error_syntaxerror);
              }
           }
         }
@@ -305,7 +305,7 @@ scan_bin_scalar(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
         case BT_FIXED:
             num_format = p[1];
             if (!num_is_valid(num_format))
-                return_error(e_syntaxerror);
+                return_error(gs_error_syntaxerror);
             wanted = 1 + encoded_number_bytes(num_format);
             if (rlimit - p < wanted) {
                 s_end_inline(s, p - 1, rlimit);
@@ -329,7 +329,7 @@ scan_bin_scalar(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
                     r_set_type(pref, code);
                     break;
                 case t_null:
-                    return_error(e_syntaxerror);
+                    return_error(gs_error_syntaxerror);
                 default:
                     return code;
             }
@@ -338,7 +338,7 @@ scan_bin_scalar(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
         case BT_BOOLEAN:
             arg = p[1];
             if (arg & ~1)
-                return_error(e_syntaxerror);
+                return_error(gs_error_syntaxerror);
             make_bool(pref, arg);
             s_end_inline(s, p + 1, rlimit);
             return 0;
@@ -365,7 +365,7 @@ scan_bin_scalar(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
                 byte *str = ialloc_string(arg, "string token");
 
                 if (str == 0)
-                    return_error(e_VMerror);
+                    return_error(gs_error_VMerror);
                 s_end_inline(s, p, rlimit);
                 pstate->s_da.base = pstate->s_da.next = str;
                 pstate->s_da.limit = str + arg;
@@ -405,7 +405,7 @@ scan_bin_scalar(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
         case BT_NUM_ARRAY:
             num_format = p[1];
             if (!num_is_valid(num_format))
-                return_error(e_syntaxerror);
+                return_error(gs_error_syntaxerror);
             arg = sdecodeushort(p + 2, num_format);
             code = ialloc_ref_array(&pbs->bin_array, a_all, arg,
                                     "number array token");
@@ -424,7 +424,7 @@ scan_bin_scalar(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
             }
             return code;
     }
-    return_error(e_syntaxerror);
+    return_error(gs_error_syntaxerror);
 }
 
 /* Get a system or user name. */
@@ -433,14 +433,14 @@ scan_bin_get_name(scanner_state *pstate, const gs_memory_t *mem,
                   const ref *pnames /*t_array*/, int index, ref *pref,
                   const char *usstring)
 {
-    /* Convert all errors to e_undefined to match Adobe. */
+    /* Convert all errors to gs_error_undefined to match Adobe. */
     if (pnames == 0 || array_get(mem, pnames, (long)index, pref) < 0 ||
         !r_has_type(pref, t_name)) {
         snprintf(pstate->s_error.string,
                  sizeof(pstate->s_error.string),
                  "%s%d", usstring, index);
         pstate->s_error.is_name = true;
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     }
     return 0;
 }
@@ -499,7 +499,7 @@ scan_bin_num_array_continue(i_ctx_t *i_ctx_p, ref * pref,
                 break;
             case t_null:
                 scan_bos_error(pstate, "bad number format");
-                return_error(e_syntaxerror);
+                return_error(gs_error_syntaxerror);
             default:
                 return code;
         }
@@ -548,7 +548,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
         }
         if (p[2] != 0) { /* reserved, must be 0 */
             scan_bos_error(pstate, "non-zero unused field");
-            return_error(e_syntaxerror);
+            return_error(gs_error_syntaxerror);
         }
         attrs = (p[1] & 128 ? a_executable : 0);
         /*
@@ -561,14 +561,14 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             case BS_TYPE_NULL:
                 if (osize | value) { /* unused */
                     scan_bos_error(pstate, "non-zero unused field");
-                    return_error(e_syntaxerror);
+                    return_error(gs_error_syntaxerror);
                 }
                 make_null(op);
                 break;
             case BS_TYPE_INTEGER:
                 if (osize) {	/* unused */
                     scan_bos_error(pstate, "non-zero unused field");
-                    return_error(e_syntaxerror);
+                    return_error(gs_error_syntaxerror);
                 }
                 make_int(op, value);
                 break;
@@ -578,7 +578,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     if (osize != 0) {	/* fixed-point number */
                         if (osize > 31) {
                             scan_bos_error(pstate, "invalid number format");
-                            return_error(e_syntaxerror);
+                            return_error(gs_error_syntaxerror);
                         }
                         /* ldexp requires a signed 2nd argument.... */
                         vreal = (float)ldexp((double)value, -(int)osize);
@@ -595,7 +595,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             case BS_TYPE_BOOLEAN:
                 if (osize) {	/* unused */
                     scan_bos_error(pstate, "non-zero unused field");
-                    return_error(e_syntaxerror);
+                    return_error(gs_error_syntaxerror);
                 }
                 make_bool(op, value != 0);
                 break;
@@ -612,7 +612,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     value + osize > size
                     ) {
                     scan_bos_error(pstate, "invalid string offset");
-                    return_error(e_syntaxerror);
+                    return_error(gs_error_syntaxerror);
                 }
                 if (value < min_string_index) {
                     /* We have to (re)allocate the strings. */
@@ -626,7 +626,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                         sbase = ialloc_string(str_size,
                                               "bos strings");
                     if (sbase == 0)
-                        return_error(e_VMerror);
+                        return_error(gs_error_VMerror);
                     pstate->s_da.is_dynamic = true;
                     pstate->s_da.base = pstate->s_da.next = sbase;
                     pstate->s_da.limit = sbase + str_size;
@@ -666,7 +666,7 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     value & (SIZEOF_BIN_SEQ_OBJ - 1)
                     ) {
                     scan_bos_error(pstate, "bad array offset");
-                    return_error(e_syntaxerror);
+                    return_error(gs_error_syntaxerror);
                 }
                 {
                     uint aindex = value / SIZEOF_BIN_SEQ_OBJ;
@@ -680,19 +680,19 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                 break;
             case BS_TYPE_DICTIONARY:	/* EXTENSION */
                 if ((osize & 1) != 0 && osize != 1)
-                    return_error(e_syntaxerror);
+                    return_error(gs_error_syntaxerror);
                 atype = t_mixedarray;	/* mark as dictionary */
                 goto arr;
             case BS_TYPE_MARK:
                 if (osize | value) { /* unused */
                     scan_bos_error(pstate, "non-zero unused field");
-                    return_error(e_syntaxerror);
+                    return_error(gs_error_syntaxerror);
                 }
                 make_mark(op);
                 break;
             default:
                 scan_bos_error(pstate, "invalid object type");
-                return_error(e_syntaxerror);
+                return_error(gs_error_syntaxerror);
         }
     }
     s_end_inline(s, p, rlimit);
@@ -774,7 +774,7 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, ref * pref,
                     ref *defp = dict_find_name(op);
 
                     if (defp == 0)
-                        return_error(e_undefined);
+                        return_error(gs_error_undefined);
                     store_check_space(space, defp);
                     ref_assign(op, defp);
                 }
@@ -836,7 +836,7 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, ref * pref,
                 ref rdict;
 
                 if (r_has_type(piref, t_mixedarray))	/* ref to indirect */
-                    return_error(e_syntaxerror);
+                    return_error(gs_error_syntaxerror);
                 ref_assign(&rdict, piref);
                 r_copy_attrs(&rdict, a_executable, op);
                 ref_assign(op, &rdict);
@@ -879,7 +879,7 @@ encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, ps_int *ref_offset,
             type = BS_TYPE_REAL;
             if (sizeof(obj->value.realval) != sizeof(int)) {
                 /* The PLRM allocates exactly 4 bytes for reals. */
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             }
             value = *(const ps_int *)&obj->value.realval;
 #if !(ARCH_FLOATS_ARE_IEEE && BYTE_SWAP_IEEE_NATIVE_REALS)
@@ -917,7 +917,7 @@ nos:
             obj = &nstr;
             goto nos;
         default:
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
     }
     {
         byte s0 = (byte) size, s1 = (byte) (size >> 8);

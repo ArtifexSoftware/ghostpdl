@@ -61,7 +61,7 @@ type2_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
     /* Get information specific to Type 2 fonts. */
     if (dict_find_string(pfr->Private, "GlobalSubrs", &temp) > 0) {
         if (!r_is_array(temp))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         pfr->GlobalSubrs = temp;
     }
     pdata1->gsubrNumberBias = subr_bias(pfr->GlobalSubrs);
@@ -82,7 +82,7 @@ type2_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
         if (dict_find_string(pfr->Private, "initialRandomSeed", &pirs) <= 0)
             pdata1->initialRandomSeed = 0;
         else if (!r_has_type(pirs, t_integer))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         else
             pdata1->initialRandomSeed = pirs->value.intval;
     }
@@ -1303,7 +1303,7 @@ static int
 card8(unsigned int *u, const cff_data_t *o, unsigned p, unsigned pe)
 {
     if (pe > o->length || p > pe - 1)
-        return_error(e_rangecheck); /* out of range access */
+        return_error(gs_error_rangecheck); /* out of range access */
     *u = o->blk_ref[p >> o->shift].value.bytes[p & o->mask];
     return 0;
 }
@@ -1312,7 +1312,7 @@ static int
 card16(unsigned int *u, const cff_data_t *o, unsigned p, unsigned pe)
 {
     if (pe > o->length || p > pe - 2)
-        return_error(e_rangecheck); /* out of range access */
+        return_error(gs_error_rangecheck); /* out of range access */
     *u = (o->blk_ref[ p      >> o->shift].value.bytes[ p      & o->mask]) << 8 |
           o->blk_ref[(p + 1) >> o->shift].value.bytes[(p + 1) & o->mask];
     return 0;
@@ -1322,7 +1322,7 @@ static int
 card24(unsigned int *u, const cff_data_t *o, unsigned p, unsigned pe)
 {
     if (pe > o->length || p > pe - 3)
-        return_error(e_rangecheck); /* out of range access */
+        return_error(gs_error_rangecheck); /* out of range access */
     *u = (o->blk_ref[ p      >> o->shift].value.bytes[ p      & o->mask]) << 16 |
          (o->blk_ref[(p + 1) >> o->shift].value.bytes[(p + 1) & o->mask]) << 8  |
           o->blk_ref[(p + 2) >> o->shift].value.bytes[(p + 2) & o->mask];
@@ -1332,7 +1332,7 @@ static int
 card32(unsigned int *u, const cff_data_t *o, unsigned p, unsigned pe)
 {
     if (pe > o->length || p > pe - 4)
-        return_error(e_rangecheck); /* out of range access */
+        return_error(gs_error_rangecheck); /* out of range access */
     *u = (o->blk_ref[ p      >> o->shift].value.bytes[ p      & o->mask]) << 24 |
          (o->blk_ref[(p + 1) >> o->shift].value.bytes[(p + 1) & o->mask]) << 16 |
          (o->blk_ref[(p + 2) >> o->shift].value.bytes[(p + 2) & o->mask]) << 8  |
@@ -1348,7 +1348,7 @@ static int
 get_cff_string(unsigned char *dst, const cff_data_t *o, unsigned p, unsigned len)
 {
     if (p + len > o->length)
-        return_error(e_rangecheck); /* out of range access */
+        return_error(gs_error_rangecheck); /* out of range access */
     while (len) {
         unsigned chunk_len = o->mask + 1 - (p & o->mask);
         unsigned char *pos = o->blk_ref[p >> o->shift].value.bytes + (p & o->mask);
@@ -1384,7 +1384,7 @@ parse_index(cff_index_t *x, const cff_data_t *data, unsigned p, unsigned pe)
            x->data = 0;
            x->end = p + 3;
        } else if( x->offsize > 4) {
-           return_error(e_rangecheck); /* Invalid offest size */
+           return_error(gs_error_rangecheck); /* Invalid offest size */
        } else {
            x->data = p + 2 + x->offsize*(x->count+1);
            code = (*offset_procs[x->offsize])(&eod, data, p + 3 + x->offsize*x->count, pe);
@@ -1407,15 +1407,15 @@ peek_index(unsigned *pp, unsigned int *len, const cff_index_t *x, const cff_data
     unsigned int off1, off2;
 
     if (i >= x->count)
-        return_error(e_rangecheck); /* wrong index */
+        return_error(gs_error_rangecheck); /* wrong index */
     if((code = (*offset_procs[x->offsize])(&off1, data, x->start + 3 + x->offsize*i, x->end)) < 0)
         return code;
     if((code = (*offset_procs[x->offsize])(&off2, data, x->start + 3 + x->offsize*(i + 1), x->end)) < 0)
         return code;
     if (off2 < off1)
-        return_error(e_rangecheck); /* Decreasing offsets */
+        return_error(gs_error_rangecheck); /* Decreasing offsets */
     if (x->data + off2 > x->end)
-        return_error(e_rangecheck); /* Element exceeds index size */
+        return_error(gs_error_rangecheck); /* Element exceeds index size */
     *len = off2 - off1;
     *pp  = x->data + off1;
     return 0;
@@ -1445,7 +1445,7 @@ get_int(int *v,  const cff_data_t *data, unsigned p, unsigned pe)
         return 5;
     }
     if (c < 32)
-        return_error(e_rangecheck); /* out of range */
+        return_error(gs_error_rangecheck); /* out of range */
     if (c < 247) {
         *v = ((int)c - 139);
         return 1;
@@ -1462,7 +1462,7 @@ get_int(int *v,  const cff_data_t *data, unsigned p, unsigned pe)
         *v = -((int)c - 251)*256 - (int)u - 108;
         return 2;
     }
-    return_error(e_rangecheck); /* out of range */
+    return_error(gs_error_rangecheck); /* out of range */
 }
 
 static int
@@ -1545,7 +1545,7 @@ idict_undef_c_name(i_ctx_t *i_ctx_p, ref *dst, const char *c_name, unsigned int 
     if ((code = name_ref(imemory, (const unsigned char *)c_name, len, &ps_name, 0)) < 0)
       return code;
     code = idict_undef(dst, &ps_name);
-    if (code < 0 && code != e_undefined) /* ignore undefined error */
+    if (code < 0 && code != gs_error_undefined) /* ignore undefined error */
         return code;
     return 0;
 }
@@ -1578,9 +1578,9 @@ make_string_from_index(i_ctx_t *i_ctx_p, ref *dst, const cff_index_t *index, con
     if ((code = peek_index(&doff, &len, index, data, id)) < 0)
         return code;
     if (len + fdoff> 65535)
-        return_error(e_limitcheck);
+        return_error(gs_error_limitcheck);
     if ((sbody = ialloc_string(len + fdoff, "make_string_from_index")) == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     make_string(dst, icurrent_space | a_readonly, len + fdoff, sbody);
     if ((code = get_cff_string(sbody + fdoff, data, doff, len)) < 0)
         return code;
@@ -1614,7 +1614,7 @@ make_name_from_sid(i_ctx_t *i_ctx_p, ref *dst, const cff_index_t *strings, const
         if ((code = peek_index(&off, &len, strings, data, sid - count_of(standard_strings))) < 0)
             return code;
         if (len > sizeof(buf))
-            return_error(e_limitcheck);
+            return_error(gs_error_limitcheck);
         if ((code = get_cff_string(buf, data, off, len)) < 0)
             return code;
         return name_ref(imemory, buf, len, dst, 1);
@@ -1660,7 +1660,7 @@ iso_adobe_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned
     if (i < 228)
         return i + 1;
     else
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 }
 
 static int
@@ -1669,7 +1669,7 @@ expert_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned i)
     if (i < sizeof(expert_charset)/sizeof(*expert_charset))
         return expert_charset[i];
     else
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 }
 
 static int
@@ -1678,7 +1678,7 @@ expert_subset_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsi
     if (i < sizeof(expert_subset_charset)/sizeof(*expert_subset_charset))
         return expert_subset_charset[i];
     else
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
 }
 
 static int
@@ -1711,7 +1711,7 @@ format1_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned i
         p += 3;
         cid += count;
     }
-    return_error(e_rangecheck);
+    return_error(gs_error_rangecheck);
 }
 
 static int
@@ -1734,7 +1734,7 @@ format2_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned i
         p += 4;
         cid += count;
     }
-    return_error(e_rangecheck);
+    return_error(gs_error_rangecheck);
 }
 
 static int
@@ -1772,7 +1772,7 @@ format3_fdselect_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned 
         }
         p += 3;
     }
-    return_error(e_rangecheck);
+    return_error(gs_error_rangecheck);
 }
 
 static int
@@ -1790,7 +1790,7 @@ find_font_dict(i_ctx_t *i_ctx_p, ref *topdict, ref **fontdict, const char *key)
     if ((code = idict_put_c_name(i_ctx_p, topdict, key, strlen(key), &val)) < 0)
         return code;
     if ((code = dict_find_string(topdict, key, fontdict)) == 0)
-        return_error(e_undefined); /* can't happen */
+        return_error(gs_error_undefined); /* can't happen */
     return code;
 }
 
@@ -2076,7 +2076,7 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
                 break;
             case 12:
                 if (p >= pe)
-                    return_error(e_rangecheck);
+                    return_error(gs_error_rangecheck);
                 if ((code = card8(&c, data, p++, pe)) < 0)
                     return code;
                 switch(c) {
@@ -2152,7 +2152,7 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
                         ref ros;
 
                         if ((op_i -= 3) < 0)
-                            return_error(e_stackunderflow);
+                            return_error(gs_error_stackunderflow);
                         if ((code = dict_create(3, &ros)) < 0)
                             return code;
                         check_type(ops[op_i], t_integer);
@@ -2189,14 +2189,14 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
                     case 36: /* FDArray 12 36 number -, Font DICT (FD) INDEX offset (0) */
                         control = 0;
                         if (--op_i < 0)
-                            return_error(e_stackunderflow);
+                            return_error(gs_error_stackunderflow);
                         check_type(ops[op_i], t_integer);
                         offsets->fdarray_off = ops[op_i].value.intval;
                         continue;
                     case 37: /* FDSelect 12 37 number -, FDSelect offset (0) */
                         control = 0;
                         if (--op_i < 0)
-                            return_error(e_stackunderflow);
+                            return_error(gs_error_stackunderflow);
                         check_type(ops[op_i], t_integer);
                         offsets->fdselect_off = ops[op_i].value.intval;
                         continue;
@@ -2215,25 +2215,25 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
                 break;
             case 15: /* charset  15 number 0, charset offset (0) */
                 if (--op_i < 0)
-                    return_error(e_stackunderflow);
+                    return_error(gs_error_stackunderflow);
                 check_type(ops[op_i], t_integer);
                 offsets->charset_off = ops[op_i].value.intval;
                 continue;
             case 16: /* Encoding 16 number 0, encoding offset (0) */
                 if (--op_i < 0)
-                    return_error(e_stackunderflow);
+                    return_error(gs_error_stackunderflow);
                 check_type(ops[op_i], t_integer);
                 offsets->encoding_off = ops[op_i].value.intval;
                 continue;
             case 17: /* CharStrings 17 number -, CharStrings offset (0) */
                 if (--op_i < 0)
-                    return_error(e_stackunderflow);
+                    return_error(gs_error_stackunderflow);
                 check_type(ops[op_i], t_integer);
                 offsets->charstrings_off = ops[op_i].value.intval;
                 continue;
             case 18: /* Private 18 number, number -, Private DICT size and offset (0)*/
                 if ((op_i -= 2) < 0)
-                    return_error(e_stackunderflow);
+                    return_error(gs_error_stackunderflow);
                 check_type(ops[op_i], t_integer);
                 check_type(ops[op_i + 1], t_integer);
                 offsets->private_size = ops[op_i].value.intval;
@@ -2241,7 +2241,7 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
                 continue;
             case 19: /* Local Subrs 19 number -, Offset (self) to local subrs */
                 if (--op_i < 0)
-                    return_error(e_stackunderflow);
+                    return_error(gs_error_stackunderflow);
                 check_type(ops[op_i], t_integer);
                 offsets->local_subrs_off = ops[op_i].value.intval;
                 continue;
@@ -2255,7 +2255,7 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
                 continue;
             case 30: { /* float operand */
                 if (op_i >= MAXOP)
-                    return_error(e_limitcheck);
+                    return_error(gs_error_limitcheck);
 
                 if ((code = get_float(&ops[op_i], data, p, pe)) < 0)
                     return code;
@@ -2270,7 +2270,7 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
                 {  int n;  /* int operand */
 
                    if (op_i >= MAXOP)
-                       return_error(e_limitcheck);
+                       return_error(gs_error_limitcheck);
                    if ((code = get_int(&n, data, p - 1, pe)) < 0)
                        return code;
                    make_int(&ops[op_i], n);
@@ -2287,13 +2287,13 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
             if (n_op == 0)
                 n_op = op_i;
             else if (op_i < n_op)
-                return_error(e_stackunderflow);
+                return_error(gs_error_stackunderflow);
             if (control & k_delta)
                 undelta(ops + op_i - n_op, n_op);
             op_i -= n_op;
             if (control & (k_sid | k_int | k_bool)) {
                 if (!r_has_type(&ops[op_i], t_integer))
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
             }
             if (control & k_bool)
                 make_bool(&arg, !!ops[op_i].value.intval);
@@ -2369,7 +2369,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
             return code;
     }
     if (offsets.charstrings_off <= 0)
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
     if ((code = parse_index(&charstrings_index, data, p_all + offsets.charstrings_off, pe_all)) < 0)
         return code;
 
@@ -2399,7 +2399,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
                     peek_charset_proc = format2_charset_proc;
                     break;
                 default:
-                    return_error(e_rangecheck);
+                    return_error(gs_error_rangecheck);
             }
         }
     }
@@ -2415,7 +2415,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
         bool top_has_FontMatrix;
 
         if (offsets.fdarray_off == 0 || fdselect_off == 0)
-            return_error(e_invalidfont);
+            return_error(gs_error_invalidfont);
         if ((code = parse_index(&fdarray, data, p_all + offsets.fdarray_off,  pe_all)) < 0)
             return code;
         if ((code = ialloc_ref_array(&fdarray_ref, a_readonly, fdarray.count, "parsecff.fdarray")) < 0)
@@ -2504,7 +2504,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
         else if (fdselect_code == 3)
             fdselect_proc = format3_fdselect_proc;
         else
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
         make_int(&int_ref, 0);
         for (i = 0; i < charstrings_index.count; i++) {
@@ -2654,7 +2654,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
                 memset(gid2char + k, 0, sizeof(gid2char) - k);
                 supp_enc_offset = p_all + offsets.encoding_off + 2*n_ranges + 2;
             } else
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
         }
         if ((code = idict_put_c_name(i_ctx_p, topdict, STR2MEM("Encoding"), &encoding)) < 0)
             return code;
@@ -2731,11 +2731,11 @@ zparsecff(i_ctx_t *i_ctx_p)
             check_read_type(data.blk_ref[i], t_string);
             len = r_size(&data.blk_ref[i]);
             if (len > blk_sz || (len < blk_sz && i < blk_cnt - 1))
-               return_error(e_rangecheck); /* last block can be smaller */
+               return_error(gs_error_rangecheck); /* last block can be smaller */
             data.length += len;
         }
         if (data.length == 0)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
 
         if (blk_cnt == 1) {
            data.mask   = 0xffff; /* stub */
@@ -2747,7 +2747,7 @@ zparsecff(i_ctx_t *i_ctx_p)
             };
             data.mask = blk_sz - 1;
             if (data.mask & blk_sz)
-                return_error(e_rangecheck);  /* not a power of 2 */
+                return_error(gs_error_rangecheck);  /* not a power of 2 */
             data.shift = mod2shift[blk_sz % 37];
         }
     } else if (r_has_type(op, t_string)) {
@@ -2757,7 +2757,7 @@ zparsecff(i_ctx_t *i_ctx_p)
        data.mask   = 0xffff; /* stub */
        data.shift  = 16;     /* stub */
     } else
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
 
     check_type(op[-1], t_boolean);
     force_cidfont = op[-1].value.boolval;
@@ -2765,11 +2765,11 @@ zparsecff(i_ctx_t *i_ctx_p)
     pe = p + data.length;
 
     if (pe < 8) /* arbitrary, to avoid underflow in pe - 4 */
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if ((code = card8(&hdr_ver, &data, p, pe)) < 0)
         return code;
     if (hdr_ver != 1)
-        return_error(e_rangecheck); /* Unsupported version. */
+        return_error(gs_error_rangecheck); /* Unsupported version. */
     if ((code = card8(&hdr_size, &data, p + 2, pe)) < 0)
         return code;
     if ((code = card8(&off_size, &data, p + 3, pe)) < 0)
@@ -2788,7 +2788,7 @@ zparsecff(i_ctx_t *i_ctx_p)
             return code;
     }
     if (names.count >= 65535)
-        return_error(e_limitcheck);
+        return_error(gs_error_limitcheck);
     if ((code = dict_create(names.count, &fontset)) < 0)
         return code;
 
@@ -2806,7 +2806,7 @@ zparsecff(i_ctx_t *i_ctx_p)
         if (name_len == 0) /* deleted entry */
             continue;
         if (name_len > sizeof(buf))
-            return_error(e_limitcheck);
+            return_error(gs_error_limitcheck);
         if ((code = get_cff_string(buf, &data, name_data, name_len)) < 0)
             return code;
         if (buf[0] == 0)   /* deleted entry */

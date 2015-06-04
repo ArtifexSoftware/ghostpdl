@@ -71,7 +71,7 @@ zwrapfont(i_ctx_t *i_ctx_p)
                                           font->memory);
         break;
     default:
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     }
     if (code < 0)
         return code;
@@ -100,7 +100,7 @@ zwritecmap(i_ctx_t *i_ctx_p)
     if (dict_find_string(op, "CodeMap", &pcodemap) <= 0 ||
         !r_is_struct(pcodemap)
         )
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     check_write_file(s, op - 1);
     pcmap = r_ptr(pcodemap, gs_cmap_t);
     code = psf_write_cmap(s, pcmap, zfcmap_put_name_default, NULL, -1);
@@ -122,7 +122,7 @@ zwritefont9(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     if (pfont->FontType != ft_CID_encrypted)
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
     check_write_file(s, op - 1);
     pfcid = (gs_font_cid0 *)pfont;
     code = psf_write_cid0_font(s, pfcid,

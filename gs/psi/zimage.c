@@ -96,7 +96,7 @@ data_image_params(const gs_memory_t *mem,
         if (code < 0) {
             /* Try for all three pairs. Ignore more than 6 elements */
                 code = dict_float_array_check_param(mem, op, "Decode", 6,
-                                                    &pim->Decode[0], NULL, e_rangecheck, 0);	/* over_error = 0 */
+                                                    &pim->Decode[0], NULL, gs_error_rangecheck, 0);	/* over_error = 0 */
         } else {
             /* Set the range on the L */
             pim->Decode[0] = 0;
@@ -107,7 +107,7 @@ data_image_params(const gs_memory_t *mem,
     } else {
             /* more elements than we need is OK */
         code = dict_float_array_check_param(mem, op, "Decode", 2 * num_components,
-                                            &pim->Decode[0], NULL, e_rangecheck, 0);	/* over_error = 0 */
+                                            &pim->Decode[0], NULL, gs_error_rangecheck, 0);	/* over_error = 0 */
         if (code < 0)
             return code;
     }
@@ -115,16 +115,16 @@ data_image_params(const gs_memory_t *mem,
     /* Extract and check the data sources. */
     if ((code = dict_find_string(op, "DataSource", &pds)) <= 0) {
         if (require_DataSource)
-            return (code < 0 ? code : gs_note_error(e_rangecheck));
+            return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
         return 1;		/* no data source */
     }
     if (pip->MultipleDataSources) {
         ref *ds = pip->DataSource;
         long i, n = num_components + (has_alpha ? 1 : 0);
         if (!r_is_array(pds))
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
         if (r_size(pds) != n)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         for (i = 0; i < n; ++i)
             array_get(mem, pds, i, &ds[i]);
         if (r_type(&ds[0]) == t_string) {
@@ -135,7 +135,7 @@ data_image_params(const gs_memory_t *mem,
                 n--;
             for (i = 1; i < n; ++i) {
                 if (r_type(&ds[i]) == t_string && r_size(&ds[i]) != r_size(&ds[0])) {
-                    return_error(e_rangecheck);
+                    return_error(gs_error_rangecheck);
                 }
             }
         }
@@ -156,7 +156,7 @@ pixel_image_params(i_ctx_t *i_ctx_p, const ref *op, gs_pixel_image_t *pim,
     int code;
 
     if (num_components < 1)
-        return_error(e_rangecheck);	/* Pattern space not allowed */
+        return_error(gs_error_rangecheck);	/* Pattern space not allowed */
     pim->ColorSpace = csp;
 
     if (pim->ColorSpace->cmm_icc_profile_data != NULL)
@@ -341,7 +341,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
         switch (r_type(pp)) {
             case t_file:
                 if (!level2_enabled)
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
                 /* Check for aliasing. */
                 {
                     int pi;
@@ -359,7 +359,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
             case t_string:
                 if (r_type(pp) != r_type(sources)) {
                     gx_image_end(pie, false);    /* Clean up pie */
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
                 }
                 check_read(*pp);
                 break;
@@ -368,7 +368,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
                     static const char ds[] = "DataSource";
                     gx_image_end(pie, false);    /* Clean up pie */
                     gs_errorinfo_put_pair(i_ctx_p, ds, sizeof(ds) - 1, pp);
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
                 }
                 check_proc(*pp);
                 string_sources = false;
@@ -380,7 +380,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
        which may be local when the current allocation mode is global.
        Bug 688140. */
     if ((penum = gs_image_enum_alloc(imemory_local, "image_setup")) == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     code = gs_image_enum_init(penum, pie, (const gs_data_image_t *)pim, igs);
     if (code != 0 || (pie->skipping && string_sources)) {		/* error, or empty image */
         int code1 = gs_image_cleanup_and_free_enum(penum, igs);
@@ -439,7 +439,7 @@ image_proc_continue(i_ctx_t *i_ctx_p)
         /* Procedure didn't return a (readable) string.  Quit. */
         esp = zimage_pop_estack(esp);
         image_cleanup(i_ctx_p);
-        return_error(!r_has_type(op, t_string) ? e_typecheck : e_invalidaccess);
+        return_error(!r_has_type(op, t_string) ? gs_error_typecheck : gs_error_invalidaccess);
     }
     size = r_size(op);
     if (size == 0 && ETOP_SOURCE(esp, 0)[1].value.intval == 0)
@@ -450,7 +450,7 @@ image_proc_continue(i_ctx_t *i_ctx_p)
         plane_data[px].data = op->value.bytes;
         plane_data[px].size = size;
         code = gs_image_next_planes(penum, plane_data, used);
-        if (code == e_RemapColor) {
+        if (code == gs_error_Remap_Color) {
             op->value.bytes += used[px]; /* skip used data */
             r_dec_size(op, used[px]);
             ETOP_SOURCE(esp, 0)[1].value.intval = 0; /* RemapColor callout */
@@ -542,7 +542,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
                                                 NULL, 0, image_file_continue);
                 default:
                     /* case ERRC: */
-                    return_error(e_ioerror);
+                    return_error(gs_error_ioerror);
                 }
                 break;		/* for EOFC */
             }
@@ -577,7 +577,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
                 sbufskip(pp->value.pfile, used[pi]);
                 total_used += used[pi];
             }
-            if (code == e_RemapColor)
+            if (code == gs_error_Remap_Color)
                 return code;
         }
         if (at_eof_count >= num_sources || (at_eof_count && total_used == 0))
@@ -608,7 +608,7 @@ image_string_continue(i_ctx_t *i_ctx_p)
         int px;
         int code = gs_image_next_planes(penum, sources, used);
 
-        if (code == e_RemapColor)
+        if (code == gs_error_Remap_Color)
             return code;
     stop_now:
         if (code) {		/* Stop now. */

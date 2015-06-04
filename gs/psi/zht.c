@@ -161,7 +161,7 @@ zscreen_enum_init(i_ctx_t *i_ctx_p, const gx_ht_order * porder,
     check_estack(snumpush + 1);
     penum = gs_screen_enum_alloc(mem, "setscreen");
     if (penum == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     make_struct(esp + snumpush, space_index << r_space_shift, penum);	/* do early for screen_cleanup in case of error */
     code = gs_screen_enum_init_memory(penum, porder, igs, psp, mem);
     if (code < 0) {

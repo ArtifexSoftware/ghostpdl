@@ -90,12 +90,12 @@ static void *gs_main(void *arg)
 
     code = gsapi_init_with_args(minst, gsargc, gsargv);
     code1 = gsapi_exit(minst);
-    if ((code == 0) || (code == e_Quit))
+    if ((code == 0) || (code == gs_error_Quit))
         code = code1;
 
     gsapi_delete_instance(minst);
 
-    if ((code == 0) || (code == e_Quit))
+    if ((code == 0) || (code == gs_error_Quit))
         return (void *)0;
 
     return (void *)1;

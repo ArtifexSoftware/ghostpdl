@@ -78,7 +78,7 @@ zgetiodevice(i_ctx_t *i_ctx_p)
     check_type(*op, t_integer);
     iodev = gs_getiodevice(imemory, (int)(op->value.intval));
     if (iodev == 0)             /* index out of range */
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     dname = (const byte *)iodev->dname;
     if (dname == 0)
         make_null(op);
@@ -136,13 +136,13 @@ zfilelineedit(i_ctx_t *i_ctx_p)
     /* extend string */
     initial_buf_size = statement ? STATEMENTEDIT_BUF_SIZE : LINEEDIT_BUF_SIZE;
     if (initial_buf_size > max_string_size)
-        return_error(e_limitcheck);
+        return_error(gs_error_limitcheck);
     if (!buf->data || (buf->size < initial_buf_size)) {
         count = 0;
         buf->data = gs_alloc_string(imemory_system, initial_buf_size,
             "zfilelineedit(buffer)");
         if (buf->data == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         op->value.bytes = buf->data;
         op->tas.rsize = buf->size = initial_buf_size;
     }
@@ -158,10 +158,10 @@ rd:
         byte *nbuf = gs_resize_string(imemory_system, buf->data, buf->size,
                 max_string_size, "zfilelineedit(shrink buffer)");
         if (nbuf == 0)
-            return_error(e_VMerror);
+            return_error(gs_error_VMerror);
         op->value.bytes = buf->data = nbuf;
         op->tas.rsize = buf->size = max_string_size;
-        return_error(e_limitcheck);
+        return_error(gs_error_limitcheck);
     }
 
     op->value.bytes = buf->data; /* zreadline_from sometimes resizes the buffer. */
@@ -169,12 +169,12 @@ rd:
 
     switch (code) {
         case EOFC:
-            code = gs_note_error(e_undefinedfilename);
+            code = gs_note_error(gs_error_undefinedfilename);
             /* falls through */
         case 0:
             break;
         default:
-            code = gs_note_error(e_ioerror);
+            code = gs_note_error(gs_error_ioerror);
             break;
         case CALLC:
             {
@@ -192,7 +192,7 @@ rd:
                 byte *nbuf;
 
                 if (nsize >= max_string_size) {
-                    code = gs_note_error(e_limitcheck);
+                    code = gs_note_error(gs_error_limitcheck);
                     break;
                 }
                 else if (nsize >= max_string_size / 2)
@@ -202,7 +202,7 @@ rd:
                 nbuf = gs_resize_string(imemory_system, buf->data, buf->size, nsize,
                                         "zfilelineedit(grow buffer)");
                 if (nbuf == 0) {
-                    code = gs_note_error(e_VMerror);
+                    code = gs_note_error(gs_error_VMerror);
                     break;
                 }
                 op->value.bytes = buf->data = nbuf;
@@ -228,13 +228,13 @@ rd:
 
             nsize = buf->size + 1;
             if (nsize > max_string_size) {
-                return_error(gs_note_error(e_limitcheck));
+                return_error(gs_note_error(gs_error_limitcheck));
             }
             else {
                 nbuf = gs_resize_string(imemory_system, buf->data, buf->size, nsize,
                                         "zfilelineedit(grow buffer)");
                 if (nbuf == 0) {
-                    code = gs_note_error(e_VMerror);
+                    code = gs_note_error(gs_error_VMerror);
                     return_error(code);
                 }
                 op->value.bytes = buf->data = nbuf;
@@ -266,13 +266,13 @@ sc:
     buf->data = gs_resize_string(imemory_system, buf->data, buf->size, count,
                            "zfilelineedit(resize buffer)");
     if (buf->data == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     op->value.bytes = buf->data;
     op->tas.rsize = buf->size;
 
     s = file_alloc_stream(imemory_system, "zfilelineedit(stream)");
     if (s == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
 
     sread_string(s, buf->data, count);
     s->save_close = s->procs.close;
@@ -283,7 +283,7 @@ sc:
     code = ssetfilename(s, (const byte *)filename, strlen(filename)+1);
     if (code < 0) {
         sclose(s);
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     }
 
     pop(3);

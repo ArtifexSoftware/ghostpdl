@@ -52,13 +52,13 @@ zmakeglyph32(i_ctx_t *i_ctx_p)
             long_form = false;
             break;
         default:
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
     }
     code = num_params(op[-4].value.refs + msize - 1, msize, metrics);
     if (code < 0)
         return code;
     if (~code & 0x3c)		/* check llx .. ury for integers */
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     check_read_type(op[-3], t_string);
     llx = (int)metrics[2];
     lly = (int)metrics[3];
@@ -68,16 +68,16 @@ zmakeglyph32(i_ctx_t *i_ctx_p)
     height = ury - lly;
     raster = (width + 7) >> 3;
     if (width < 0 || height < 0 || r_size(op - 3) != raster * height)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     check_int_leu(op[-2], 65535);
     code = font_param(op - 1, &pfont);
     if (code < 0)
         return code;
     if (pfont->FontType != ft_CID_bitmap)
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
     check_write_type(*op, t_string);
     if (r_size(op) < 22)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     str = op->value.bytes;
     if (long_form || metrics[0] != (wx = (int)metrics[0]) ||
         metrics[1] != 0 || height == 0 ||
@@ -134,7 +134,7 @@ zremoveglyphs(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     if (range.font->FontType != ft_CID_bitmap)
-        return_error(e_invalidfont);
+        return_error(gs_error_invalidfont);
     range.cid_min = gs_min_cid_glyph + op[-2].value.intval;
     range.cid_max = gs_min_cid_glyph + op[-1].value.intval;
     gx_purge_selected_cached_chars(range.font->dir, select_cid_range,
@@ -158,7 +158,7 @@ zgetmetrics32(i_ctx_t *i_ctx_p)
     data = op->value.const_bytes;
     size = r_size(op);
     if (size < 5)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if (data[0]) {
         /* Short form. */
         int llx = (int)data[3] - 128, lly = (int)data[4] - 128;
@@ -176,13 +176,13 @@ zgetmetrics32(i_ctx_t *i_ctx_p)
         if (data[1]) {
             /* Long form, both WModes. */
             if (size < 22)
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             n = 10;
             size = 22;
         } else {
             /* Long form, WMode = 0 only. */
             if (size < 14)
-                return_error(e_rangecheck);
+                return_error(gs_error_rangecheck);
             n = 6;
             size = 14;
         }

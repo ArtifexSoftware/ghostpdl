@@ -162,14 +162,14 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
     paths = (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
                                         "lib_path array");
     if (paths == 0) {
-        gs_lib_finit(1, e_VMerror, minst->heap);
-        return_error(e_VMerror);
+        gs_lib_finit(1, gs_error_VMerror, minst->heap);
+        return_error(gs_error_VMerror);
     }
     array = (ref *) gs_alloc_byte_array(minst->heap, max_lib_paths, sizeof(ref),
                                         "lib_path array");
     if (array == 0) {
-        gs_lib_finit(1, e_VMerror, minst->heap);
-        return_error(e_VMerror);
+        gs_lib_finit(1, gs_error_VMerror, minst->heap);
+        return_error(gs_error_VMerror);
     }
     make_array(&minst->lib_path.container, avm_foreign, max_lib_paths,
                array);
@@ -208,7 +208,7 @@ gs_main_init1(gs_main_instance * minst)
                                         idmem.space_system);
 
             if (nt == 0)
-                return_error(e_VMerror);
+                return_error(gs_error_VMerror);
             mem->gs_lib_ctx->gs_name_table = nt;
             code = gs_register_struct_root(mem, NULL,
                                            (void **)&mem->gs_lib_ctx->gs_name_table,
@@ -352,7 +352,7 @@ gs_main_init2(gs_main_instance * minst)
                 outprintf(minst->heap,
                           "   --saved-pages not supported by the '%s' device.\n",
                           pdev->dname);
-                return e_Fatal;
+                return gs_error_Fatal;
             }
             code = gx_saved_pages_param_process(ppdev, minst->saved_pages_initial_arg,
                                                 strlen(minst->saved_pages_initial_arg));
@@ -384,7 +384,7 @@ extend_path_list_container (gs_main_instance * minst, gs_file_path * pfp)
                                         "extend_path_list_container array");
 
     if (paths == 0) {
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     }
     make_array(&minst->lib_path.container, avm_foreign, len + LIB_PATH_EXTEND, paths);
     make_array(&minst->lib_path.list, avm_foreign | a_readonly, 0,
@@ -553,7 +553,7 @@ gs_main_run_file_open(gs_main_instance * minst, const char *file_name, ref * pfr
         emprintf1(minst->heap,
                   "Can't find initialization file %s.\n",
                   file_name);
-        return_error(e_Fatal);
+        return_error(gs_error_Fatal);
     }
     r_set_attrs(pfref, a_execute + a_executable);
     return 0;
@@ -584,7 +584,7 @@ gs_run_init_file(gs_main_instance * minst, int *pexit_code, ref * perror_object)
                   "Initialization file %s does not begin with an integer.\n",
                   gs_init_file);
         *pexit_code = 255;
-        return_error(e_Fatal);
+        return_error(gs_error_Fatal);
     }
     *++osp = first_token;
     r_set_attrs(&ifile, a_executable);
@@ -613,7 +613,7 @@ gs_main_run_string_with_length(gs_main_instance * minst, const char *str,
         return code;
     code = gs_main_run_string_continue(minst, str, length, user_errors,
                                        pexit_code, perror_object);
-    if (code != e_NeedInput)
+    if (code != gs_error_NeedInput)
         return code;
     return gs_main_run_string_end(minst, user_errors,
                                   pexit_code, perror_object);
@@ -633,7 +633,7 @@ gs_main_run_string_begin(gs_main_instance * minst, int user_errors,
                       strlen(setup), (const byte *)setup);
     code = gs_main_interpret(minst, &rstr, user_errors, pexit_code,
                         perror_object);
-    return (code == e_NeedInput ? 0 : code == 0 ? e_Fatal : code);
+    return (code == gs_error_NeedInput ? 0 : code == 0 ? gs_error_Fatal : code);
 }
 /* Continue running a string with the option of suspending. */
 int
@@ -719,7 +719,7 @@ static int
 pop_value(i_ctx_t *i_ctx_p, ref * pvalue)
 {
     if (!ref_stack_count(&o_stack))
-        return_error(e_stackunderflow);
+        return_error(gs_error_stackunderflow);
     *pvalue = *ref_stack_index(&o_stack, 0L);
     return 0;
 }
@@ -771,7 +771,7 @@ gs_pop_real(gs_main_instance * minst, float *result)
             *result = (float)(vref.value.intval);
             break;
         default:
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     }
     ref_stack_pop(&o_stack, 1);
     return 0;
@@ -797,7 +797,7 @@ gs_pop_string(gs_main_instance * minst, gs_string * result)
             result->size = r_size(&vref);
             break;
         default:
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     }
     ref_stack_pop(&o_stack, 1);
     return code;
@@ -906,7 +906,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
                 emprintf1(minst->heap,
                           "ERROR %d reclaiming the memory while the interpreter finalization.\n",
                           code);
-                return e_Fatal;
+                return gs_error_Fatal;
             }
             i_ctx_p = minst->i_ctx_p; /* interp_reclaim could change it. */
         }
@@ -930,7 +930,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
                           code,
                           dname);
             rc_decrement(pdev, "gs_main_finit");                /* device might be freed */
-            if (exit_status == 0 || exit_status == e_Quit)
+            if (exit_status == 0 || exit_status == gs_error_Quit)
                 exit_status = code;
         }
 #endif

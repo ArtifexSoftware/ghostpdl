@@ -50,7 +50,7 @@ static int
 zsettrapzone(i_ctx_t *i_ctx_p)
 {
 /****** NYI ******/
-    return_error(e_undefined);
+    return_error(gs_error_undefined);
 }
 
 /* ------ Initialization procedure ------ */

@@ -109,7 +109,7 @@ moveshow(i_ctx_t *i_ctx_p, bool have_x, bool have_y)
     size = num_array_size(op, format);
     values = (float *)ialloc_byte_array(size, sizeof(float), "moveshow");
     if (values == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     if (CPSI_mode)
         memset(values, 0, size * sizeof(values[0])); /* Safety. */
     if ((code = gs_xyshow_begin(igs, op[-1].value.bytes, r_size(op - 1),
@@ -143,7 +143,7 @@ moveshow(i_ctx_t *i_ctx_p, bool have_x, bool have_y)
         case t_real:
             values[i] = value.value.realval; break;
         case t_null:
-            code = gs_note_error(e_rangecheck);
+            code = gs_note_error(gs_error_rangecheck);
             /* falls through */
         default:
             ifree_object(values, "moveshow");

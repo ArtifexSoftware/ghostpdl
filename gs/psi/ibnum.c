@@ -46,13 +46,13 @@ num_array_format(const ref * op)
                 const byte *bp = op->value.bytes;
 
                 if (r_size(op) < 4 || bp[0] != bt_num_array_value)
-                    return_error(e_typecheck);
+                    return_error(gs_error_typecheck);
                 format = bp[1];
                 if (!num_is_valid(format) ||
                     sdecodeshort(bp + 2, format) !=
                     (r_size(op) - 4) / encoded_number_bytes(format)
                     )
-                    return_error(e_rangecheck);
+                    return_error(gs_error_rangecheck);
             }
             break;
         case t_array:
@@ -61,7 +61,7 @@ num_array_format(const ref * op)
             format = num_array;
             break;
         default:
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     }
     check_read(*op);
     return format;
@@ -93,7 +93,7 @@ num_array_get(const gs_memory_t *mem, const ref * op, int format, uint index, re
             case t_real:
                 return t_real;
             default:
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
         }
     } else {
         uint nbytes = encoded_number_bytes(format);
@@ -155,7 +155,7 @@ sdecode_number(const byte * str, int format, ref * np)
                 return t_real;
             }
         default:
-            return_error(e_syntaxerror);	/* invalid format?? */
+            return_error(gs_error_syntaxerror);	/* invalid format?? */
     }
 }
 
@@ -203,7 +203,7 @@ sdecodebits32(const byte * p, int format, bits32 *v)
 }
 
 /* Decode a float.  We assume that native floats occupy 32 bits. */
-/* If the float is an IEEE NaN or Inf, return e_undefinedresult. */
+/* If the float is an IEEE NaN or Inf, return gs_error_undefinedresult. */
 int
 sdecode_float(const byte * p, int format, float *pfnum)
 {
@@ -234,7 +234,7 @@ sdecode_float(const byte * p, int format, float *pfnum)
             if (expt == 0 && mant == 0)
                 fnum = 0;
             else if (expt == 0xff)
-                return_error(e_undefinedresult); /* Inf or NaN */
+                return_error(gs_error_undefinedresult); /* Inf or NaN */
             else {
                 mant += 0x800000;
                 fnum = (float)ldexp((float)mant, expt - 127 - 23);
@@ -254,6 +254,6 @@ sdecode_float(const byte * p, int format, float *pfnum)
      * IEEE (which is the case if control arrives here).
      */
     if (!(~lnum & 0x7f800000))	/* i.e. exponent all 1's */
-        return_error(e_undefinedresult); /* Inf or NaN */
+        return_error(gs_error_undefinedresult); /* Inf or NaN */
     return 0;
 }

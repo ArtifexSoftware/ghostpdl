@@ -61,7 +61,7 @@ zimagepath(i_ctx_t *i_ctx_p)
     check_type(op[-1], t_integer);
     check_read_type(*op, t_string);
     if (r_size(op) < ((op[-2].value.intval + 7) >> 3) * op[-1].value.intval)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     code = gs_imagepath(igs,
                         (int)op[-2].value.intval, (int)op[-1].value.intval,
                         op->value.const_bytes);

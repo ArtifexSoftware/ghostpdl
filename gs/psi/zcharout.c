@@ -105,7 +105,7 @@ zchar_get_metrics(const gs_font_base * pbfont, const ref * pcnref,
                                           4, psbw);
                         break;
                     default:
-                        return_error(e_rangecheck);
+                        return_error(gs_error_rangecheck);
                 }
                 if (code < 0)
                     return code;
@@ -311,7 +311,7 @@ zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
     ref *pcstr;
 
     if (dict_find(&pfont_data(font)->CharStrings, pgref, &pcstr) <= 0)
-        return_error(e_undefined);
+        return_error(gs_error_undefined);
     if (!r_has_type(pcstr, t_string)) {
         /*
          * The ADOBEPS4 Windows driver replaces the .notdef entry of
@@ -327,7 +327,7 @@ zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
             )
             return charstring_make_notdef(pgd, font);
         else
-            return_error(e_typecheck);
+            return_error(gs_error_typecheck);
     }
     gs_glyph_data_from_string(pgd, pcstr->value.const_bytes, r_size(pcstr),
                               NULL);
@@ -373,7 +373,7 @@ charstring_make_notdef(gs_glyph_data_t *pgd, gs_font *font)
     byte *chars = gs_alloc_string(font->memory, len, "charstring_make_notdef");
 
     if (chars == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     gs_glyph_data_from_string(pgd, chars, len, font);
     if (pfont->data.lenIV < 0)
         memcpy(chars, char_data, sizeof(char_data));

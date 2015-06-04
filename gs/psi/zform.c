@@ -55,7 +55,7 @@ static int zbeginform(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     if (code == 0)
-       return_error(e_undefined);
+       return_error(gs_error_undefined);
     tmplate.FormID = -1;
     tmplate.BBox.p.x = BBox[0];
     tmplate.BBox.p.y = BBox[1];
@@ -66,7 +66,7 @@ static int zbeginform(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     if (code == 0)
-       return_error(e_undefined);
+       return_error(gs_error_undefined);
 
     tmplate.form_matrix.xx = Matrix[0];
     tmplate.form_matrix.xy = Matrix[1];
@@ -166,7 +166,7 @@ static int zrepeatform(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     if (code == 0)
-       return_error(e_undefined);
+       return_error(gs_error_undefined);
 
     tmplate.BBox.p.x = BBox[0];
     tmplate.BBox.p.y = BBox[1];
@@ -175,7 +175,7 @@ static int zrepeatform(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     if (code == 0)
-       return_error(e_undefined);
+       return_error(gs_error_undefined);
 
     tmplate.form_matrix.xx = Matrix[0];
     tmplate.form_matrix.xy = Matrix[1];

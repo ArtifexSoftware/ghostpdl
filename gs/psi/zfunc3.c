@@ -62,7 +62,7 @@ gs_build_function_2(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
         return 0;
 fail:
     gs_function_ElIn_free_params(&params, mem);
-    return (code < 0 ? code : gs_note_error(e_rangecheck));
+    return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
 }
 
 /* Finish building a FunctionType 3 (1-Input Stitching) function. */
@@ -83,7 +83,7 @@ gs_build_function_3(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
         int i;
 
         if ((code = dict_find_string(op, "Functions", &pFunctions)) <= 0)
-            return (code < 0 ? code : gs_note_error(e_rangecheck));
+            return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
         check_array_only(*pFunctions);
         params.k = r_size(pFunctions);
         code = alloc_function_array(params.k, &ptr, mem);
@@ -111,15 +111,15 @@ gs_build_function_3(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
 
         params.Encode = p;
         if (p == 0) {
-            code = gs_note_error(e_VMerror);
+            code = gs_note_error(gs_error_VMerror);
             goto fail;
         }
         if (dict_find_string(op, "Encode", &encode) <= 0) {
-            code = gs_note_error(e_undefined);
+            code = gs_note_error(gs_error_undefined);
             goto fail;
         }
         if (!r_is_array(encode)) {
-            code = gs_note_error(e_typecheck);
+            code = gs_note_error(gs_error_typecheck);
             goto fail;
         }
         sz =  min(k2, r_size(encode));
@@ -137,5 +137,5 @@ gs_build_function_3(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
         return 0;
 fail:
     gs_function_1ItSg_free_params(&params, mem);
-    return (code < 0 ? code : gs_note_error(e_rangecheck));
+    return (code < 0 ? code : gs_note_error(gs_error_rangecheck));
 }

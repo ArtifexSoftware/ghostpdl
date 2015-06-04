@@ -41,7 +41,7 @@ zlocale_to_utf8(i_ctx_t *i_ctx_p)
     check_read_type(*op, t_string);
     input = ref_to_string(op, imemory, "locale_to_utf8 input");
     if (input == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
 
     output = stringprep_locale_to_utf8(input);
     ifree_string((byte *)input, r_size(op) + 1, "locale_to_utf8 input");
@@ -62,7 +62,7 @@ zlocale_to_utf8(i_ctx_t *i_ctx_p)
 
         /* Other errors (like ENFILE) are real errors, which we
          * want to return to the user. */
-        return_error(e_ioerror);
+        return_error(gs_error_ioerror);
     }
 
     code = string_to_ref(output, op, iimemory, "locale_to_utf8 output");

@@ -59,7 +59,7 @@ zsort(i_ctx_t *i_ctx_p)
     /* Check operands for type and access */
     /* we can sort only writable [and unpacked] arrays */
     if (r_type(&op[-1]) == t_mixedarray || r_type(&op[-1]) == t_shortarray)
-        return_error(e_invalidaccess);
+        return_error(gs_error_invalidaccess);
     check_write_type(op[-1], t_array);
     /* the predicate must be an executable array/ string/ name/ [pseudo-]operator */
     if (!r_has_attr(&op[0], a_executable))
@@ -70,7 +70,7 @@ zsort(i_ctx_t *i_ctx_p)
         case t_shortarray:
         case t_string:
             if (!r_has_attr(&op[0], a_execute))
-                return_error(e_invalidaccess);
+                return_error(gs_error_invalidaccess);
             break;
         case t_name:
         case t_operator:
@@ -156,7 +156,7 @@ H4:	    i = j;
             }
         case 5:
 /*H5_cont:*/if (!r_has_type(&op[0], t_boolean))
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
             if (op[0].value.boolval)
                 j++;
 H6:	    H = 6;
@@ -166,7 +166,7 @@ H6:	    H = 6;
             break;
         case 6:
 /*H6_cont:*/if (!r_has_type(&op[0], t_boolean))
-                return_error(e_typecheck);
+                return_error(gs_error_typecheck);
             if (op[0].value.boolval) {
 /* H7: */  	ref_assign_old(&arry, &Rn[i], &Rn[j], ".sort(H7)");
                 goto H4;

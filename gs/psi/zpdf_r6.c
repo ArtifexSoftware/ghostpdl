@@ -140,25 +140,25 @@ zcheck_r6_password(i_ctx_t * i_ctx_p)
     CryptDict = op--;
     Pref = op;
     if (!r_has_type(CryptDict, t_dictionary))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     if (!r_has_type(Pref, t_string))
-        return_error(e_typecheck);
+        return_error(gs_error_typecheck);
     
     code = dict_find_string(CryptDict, "O", &Oref);
     if (code < 0 || !r_has_type(Oref, t_string)) {
-      return_error(e_typecheck);
+      return_error(gs_error_typecheck);
     }
     code = dict_find_string(CryptDict, "OE", &OEref);
     if (code < 0 || !r_has_type(OEref, t_string)) {
-      return_error(e_typecheck);
+      return_error(gs_error_typecheck);
     }
     code = dict_find_string(CryptDict, "U", &Uref);
     if (code < 0 || !r_has_type(Uref, t_string)) {
-      return_error(e_typecheck);
+      return_error(gs_error_typecheck);
     }
     code = dict_find_string(CryptDict, "UE", &UEref);
     if (code < 0 || !r_has_type(UEref, t_string)) {
-      return_error(e_typecheck);
+      return_error(gs_error_typecheck);
     }
 
     pop(2);
@@ -185,7 +185,7 @@ zcheck_r6_password(i_ctx_t * i_ctx_p)
 
     body = ialloc_string(32, "r6 encryption key");
     if (body == 0)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     push(1);
     memcpy(body, output, 32);
     make_string(&stref, a_all | icurrent_space, 32, body);

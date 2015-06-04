@@ -134,7 +134,7 @@
 /* Macro to ensure enough entries on the execution stack */
 #define check_esp(n)\
   if ( esp < esbot + ((n) - 1) )\
-    { e_stack.requested = (n); return_error(e_ExecStackUnderflow); }
+    { e_stack.requested = (n); return_error(gs_error_ExecStackUnderflow); }
 
 /* Define the various kinds of execution stack marks. */
 #define es_other 0		/* internal use */

@@ -79,7 +79,7 @@ enum_param(const gs_memory_t *mem, const ref *pnref,
             !memcmp(*p, nsref.value.const_bytes, r_size(&nsref))
             )
             return p - names;
-    return_error(e_rangecheck);
+    return_error(gs_error_rangecheck);
 }
 
 /* ------ Graphics state operators ------ */
@@ -276,7 +276,7 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
     check_type(*dop, t_dictionary);
     check_dict_read(*dop);
     if (dict_find_string(dop, "Subtype", &pparam) <= 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if ((code = enum_param(imemory, pparam, subtype_names)) < 0)
         return code;
     gs_trans_mask_params_init(&params, code);
@@ -294,7 +294,7 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
         gs_function_t *pfn = ref_function(pparam);
 
         if (pfn == 0 || pfn->params.m != 1 || pfn->params.n != 1)
-            return_error(e_rangecheck);
+            return_error(gs_error_rangecheck);
         params.TransferFunction = tf_using_function;
         params.TransferFunction_data = pfn;
     }
@@ -335,7 +335,7 @@ zbegintransparencymaskimage(i_ctx_t *i_ctx_p)
     gs_color_space *gray_cs = gs_cspace_new_DeviceGray(imemory);
 
     if (!gray_cs)
-        return_error(e_VMerror);
+        return_error(gs_error_VMerror);
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
     code = gs_begin_transparency_mask(igs, &params, &bbox, true);
     if (code < 0)
@@ -384,7 +384,7 @@ zimage3x(i_ctx_t *i_ctx_p)
     memset(&image, 0, sizeof(gs_image3x_t));
     gs_image3x_t_init(&image, NULL);
     if (dict_find_string(op, "DataDict", &pDataDict) <= 0)
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if ((code = pixel_image_params(i_ctx_p, pDataDict,
                    (gs_pixel_image_t *)&image, &ip_data,
                    16, false, gs_currentcolorspace(igs))) < 0 ||
@@ -438,7 +438,7 @@ image_params *pip_data, const char *dict_name,
         ip_mask.MultipleDataSources ||
         mcode != (pixm->InterleaveType != 3)
         )
-        return_error(e_rangecheck);
+        return_error(gs_error_rangecheck);
     if (pixm->InterleaveType == 3) {
         /* Insert the mask DataSource before the data DataSources. */
         memmove(&pip_data->DataSource[1], &pip_data->DataSource[0],
