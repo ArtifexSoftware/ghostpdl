@@ -76,14 +76,14 @@ $(GS_XE): $(ld_tr) $(gs_tr) $(ECHOGS_XE) $(XE_ALL) $(PSOBJ)gsromfs$(COMPILE_INIT
 
 pclldt_tr=$(PSOBJ)pclldt.tr
 $(GPCL_XE): $(ld_tr) $(pcl_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) \
-            $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) \
+            $(GLOBJDIR)/pclromfs$(COMPILE_INITS).$(OBJ) \
             $(INT_ARCHIVE_SOME)
 	$(ECHOGS_XE) -w $(pclldt_tr) -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(GPCL_XE)
 	$(ECHOGS_XE) -a $(pclldt_tr) -n -x 20
 	cat $(ld_tr) >> $(pclldt_tr)
 	$(ECHOGS_XE) -a $(pclldt_tr) -n -s $(TOP_OBJ) $(INT_ARCHIVE_SOME) $(XOBJS) -s
 	cat $(pcl_tr) >> $(pclldt_tr)
-	$(ECHOGS_XE) -a $(pclldt_tr) -n -s - $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) $(REALMAIN_OBJ) $(MAIN_OBJ)
+	$(ECHOGS_XE) -a $(pclldt_tr) -n -s - $(GLOBJDIR)/pclromfs$(COMPILE_INITS).$(OBJ) $(REALMAIN_OBJ) $(MAIN_OBJ)
 	$(ECHOGS_XE) -a $(pclldt_tr) -s - $(EXTRALIBS) $(STDLIBS)
 	if [ x$(XLIBDIR) != x ]; then LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; fi; \
 	XCFLAGS= XINCLUDE= XLDFLAGS= XLIBDIRS= XLIBS= \
@@ -100,13 +100,13 @@ $(GPCL_XE): $(ld_tr) $(pcl_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) \
 
 xpsldt_tr=$(PSOBJ)xpsldt.tr
 $(GXPS_XE): $(ld_tr) $(xps_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(XPS_TOP_OBJS) \
-             $(XOBJS) $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) \
+             $(XOBJS) $(GLOBJDIR)/xpsromfs$(COMPILE_INITS).$(OBJ) \
              $(INT_ARCHIVE_SOME)
 	$(ECHOGS_XE) -w $(xpsldt_tr) -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(GXPS_XE)
 	$(ECHOGS_XE) -a $(xpsldt_tr) -n -s $(XPS_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) -s
 	cat $(ld_tr) >> $(xpsldt_tr)
 	cat $(xps_tr) >> $(xpsldt_tr)
-	$(ECHOGS_XE) -a $(xpsldt_tr) -s - $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) $(REALMAIN_OBJ) $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
+	$(ECHOGS_XE) -a $(xpsldt_tr) -s - $(GLOBJDIR)/xpsromfs$(COMPILE_INITS).$(OBJ) $(REALMAIN_OBJ) $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
 	if [ x$(XLIBDIR) != x ]; then LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; fi; \
 	XCFLAGS= XINCLUDE= XLDFLAGS= XLIBDIRS= XLIBS= \
 	PCL_FEATURE_DEVS= DEVICE_DEVS= DEVICE_DEVS1= DEVICE_DEVS2= DEVICE_DEVS3= \
@@ -123,12 +123,12 @@ $(GXPS_XE): $(ld_tr) $(xps_tr) $(REALMAIN_OBJ) $(MAIN_OBJ) $(XPS_TOP_OBJS) \
 gpdlldt_tr=$(PSOBJ)gpdlldt.tr
 $(GPDL_XE): $(ld_tr) $(gpdl_tr) $(INT_ARCHIVE_ALL) $(REALMAIN_OBJ) $(MAIN_OBJ) \
              $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) \
-             $(XOBJS) $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) \
+             $(XOBJS) $(GLOBJDIR)/pdlromfs$(COMPILE_INITS).$(OBJ) \
              $(PSINT_ARCHIVE_ALL)
 	$(ECHOGS_XE) -w $(gpdlldt_tr) -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(GPDL_XE)
 	$(ECHOGS_XE) -a $(gpdlldt_tr) -n -s $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(XOBJS) -s
 	cat $(gpdlld_tr) >> $(gpdlldt_tr)
-	$(ECHOGS_XE) -a $(gpdlldt_tr) -s - $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) $(REALMAIN_OBJ) $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
+	$(ECHOGS_XE) -a $(gpdlldt_tr) -s - $(GLOBJDIR)/pdlromfs$(COMPILE_INITS).$(OBJ) $(REALMAIN_OBJ) $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
 	if [ x$(XLIBDIR) != x ]; then LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; fi; \
 	XCFLAGS= XINCLUDE= XLDFLAGS= XLIBDIRS= XLIBS= \
 	PCL_FEATURE_DEVS= DEVICE_DEVS= DEVICE_DEVS1= DEVICE_DEVS2= DEVICE_DEVS3= \

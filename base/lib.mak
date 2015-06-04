@@ -3172,7 +3172,7 @@ $(GLD)romfs1.dev : $(LIB_MAK) $(ECHOGS_XE) $(romfs_) $(MAKEDIRS)
 # A dummy romfs when we aren't using COMPILE_INITS
 $(GLD)romfs0.dev :  $(LIB_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 	$(SETMOD) $(GLD)romfs0
-
+# psi
 $(GLGEN)gsromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1_.c \
 	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
@@ -3182,11 +3182,57 @@ $(GLGEN)gsromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
 $(GLGEN)gsromfs1_1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1_1.c \
 	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
-	$(UFST_ROMFS_ARGS) $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
-	$(PS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
+	$(UFST_ROMFS_ARGS) $(PS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
 $(GLGEN)gsromfs1.c : $(GLGEN)gsromfs1_$(UFST_BRIDGE).c $(MAKEDIRS)
 	$(CP_) $(GLGEN)gsromfs1_$(UFST_BRIDGE).c $(GLGEN)gsromfs1.c
+
+# pcl
+$(GLGEN)pclromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pclromfs1_.c \
+	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(GL_ROMFS_ARGS)
+
+$(GLGEN)pclromfs1_1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pclromfs1_1.c \
+	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(UFST_ROMFS_ARGS) $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) \
+	$(GL_ROMFS_ARGS)
+
+$(GLGEN)pclromfs1.c : $(GLGEN)pclromfs1_$(UFST_BRIDGE).c $(MAKEDIRS)
+	$(CP_) $(GLGEN)pclromfs1_$(UFST_BRIDGE).c $(GLGEN)pclromfs1.c
+
+# xps
+$(GLGEN)xpsromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)xpsromfs1_.c \
+	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(XPS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
+
+$(GLGEN)xpsromfs1_1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)xpsromfs1_1.c \
+	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(XPS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
+
+$(GLGEN)xpsromfs1.c : $(GLGEN)xpsromfs1_$(UFST_BRIDGE).c $(MAKEDIRS)
+	$(CP_) $(GLGEN)xpsromfs1_$(UFST_BRIDGE).c $(GLGEN)xpsromfs1.c
+
+
+# pdl
+$(GLGEN)pdlromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs1_.c \
+	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
+	$(PS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
+
+$(GLGEN)pdlromfs1_1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
+	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs1_1.c \
+	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
+	$(UFST_ROMFS_ARGS) $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
+	$(PS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
+
+$(GLGEN)pdlromfs1.c : $(GLGEN)pdlromfs1_$(UFST_BRIDGE).c $(MAKEDIRS)
+	$(CP_) $(GLGEN)pdlromfs1_$(UFST_BRIDGE).c $(GLGEN)pdlromfs1.c
+
 
 # the following module is only included if the romfs.dev FEATURE is enabled
 $(GLOBJ)gsiorom_1.$(OBJ) : $(GLSRC)gsiorom.c $(gsiorom_h) \
@@ -3204,12 +3250,36 @@ $(GLOBJ)gsiorom_0.$(OBJ) : $(GLSRC)gsiorom.c $(gsiorom_h) \
 $(GLOBJ)gsiorom.$(OBJ) : $(GLOBJ)gsiorom_$(SHARE_ZLIB).$(OBJ) $(MAKEDIRS)
 	$(CP_) $(GLOBJ)gsiorom_$(SHARE_ZLIB).$(OBJ) $(GLOBJ)gsiorom.$(OBJ)
 
-$(GLOBJ)gsromfs1.$(OBJ) : $(GLOBJ)gsromfs1.c $(time__h) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gsromfs1.$(OBJ) $(C_) $(GLOBJ)gsromfs1.c
-
 # A dummy gsromfs module for COMPILE_INITS=0
 $(GLOBJ)gsromfs0.$(OBJ) : $(GLSRC)gsromfs0.c $(stdint__h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsromfs0.$(OBJ) $(C_) $(GLSRC)gsromfs0.c
+
+$(GLOBJ)gsromfs1.$(OBJ) : $(GLOBJ)gsromfs1.c $(time__h) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gsromfs1.$(OBJ) $(C_) $(GLOBJ)gsromfs1.c
+
+# A dummy pclromfs module for COMPILE_INITS=0
+# NOTE: object file name does not match source file name
+$(GLOBJ)pclromfs0.$(OBJ) : $(GLSRC)gsromfs0.c $(stdint__h) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gsromfs0.$(OBJ) $(C_) $(GLSRC)pclromfs0.c
+
+$(GLOBJ)pclromfs1.$(OBJ) : $(GLOBJ)pclromfs1.c $(time__h) $(MAKEDIRS)
+	$(GLCC) $(GLO_)pclromfs1.$(OBJ) $(C_) $(GLOBJ)pclromfs1.c
+
+# A dummy xpsromfs module for COMPILE_INITS=0
+# NOTE: object file name does not match source file name
+$(GLOBJ)xpsromfs0.$(OBJ) : $(GLSRC)gsromfs0.c $(stdint__h) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gsromfs0.$(OBJ) $(C_) $(GLSRC)xpsromfs0.c
+
+$(GLOBJ)xpsromfs1.$(OBJ) : $(GLOBJ)xpsromfs1.c $(time__h) $(MAKEDIRS)
+	$(GLCC) $(GLO_)xpsromfs1.$(OBJ) $(C_) $(GLOBJ)xpsromfs1.c
+
+# A dummy pdlromfs module for COMPILE_INITS=0
+# NOTE: object file name does not match source file name
+$(GLOBJ)pdlromfs0.$(OBJ) : $(GLSRC)gsromfs0.c $(stdint__h) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gsromfs0.$(OBJ) $(C_) $(GLSRC)pdlromfs0.c
+
+$(GLOBJ)pdlromfs1.$(OBJ) : $(GLOBJ)pdlromfs1.c $(time__h) $(MAKEDIRS)
+	$(GLCC) $(GLO_)pdlromfs1.$(OBJ) $(C_) $(GLOBJ)pdlromfs1.c
 
 # Define the ZLIB modules needed by mnkromfs here to factor it out of top makefiles
 # Also put the .h dependencies here for the same reason
