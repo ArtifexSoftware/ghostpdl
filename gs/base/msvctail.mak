@@ -70,6 +70,11 @@ $(MKROMFS_XE): $(GLSRC)mkromfs.c $(GLGENDIR)\ccf32.tr $(MKROMFS_COMMON_DEPS) $(M
 
 # ----------------------------- Main program ------------------------------ #
 
+# ole32 is only used for xpsprint, but the pcl/language switch
+# build systems don't have XPSPRINT set at this point, so we can't
+# rely on it. Always offer the lib for linking, and the linker
+# will drop it if unrequired.
+
 LIBCTR=$(GLGEN)libc32.tr
 
 $(LIBCTR): $(TOP_MAKEFILES)
@@ -83,9 +88,7 @@ $(LIBCTR): $(TOP_MAKEFILES)
 	echo winspool.lib >>$(LIBCTR)
 	echo advapi32.lib >>$(LIBCTR)
 	echo ws2_32.lib >>$(LIBCTR)
-!if "$(XPSPRINT)"!=""
 	echo ole32.lib >>$(LIBCTR)
-!endif
 !endif
 
 # end of msvctail.mak

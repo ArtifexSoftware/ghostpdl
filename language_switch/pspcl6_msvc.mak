@@ -255,7 +255,8 @@ FEATURE_CORE    = \
 	  $(DD)\dpsnext.dev	\
           $(DD)\htxlib.dev	\
 	  $(DD)\ttfont.dev	\
-          $(DD)\gsnogc.dev
+          $(DD)\gsnogc.dev	\
+          $(DD)\msprinter.dev
 
 !ifndef METRO
 FEATURE_CORE = $(FEATURE_CORE) $(DD)\pipe.dev
