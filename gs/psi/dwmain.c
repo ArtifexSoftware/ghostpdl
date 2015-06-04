@@ -390,6 +390,22 @@ set_font(void)
     WritePrivateProfileString(szIniSection, "FontSize", buf, szIniName);
 }
 
+typedef BOOL (SetProcessDPIAwareFn)(void);
+
+static void
+avoid_windows_scale(void)
+{
+    /* Fetch the function address and only call it if it is there; this keeps
+     * compatability with Windows < 8.1 */
+    HMODULE hUser32 = LoadLibrary(TEXT("user32.dll"));
+    SetProcessDPIAwareFn *ptr;
+
+    ptr = (SetProcessDPIAwareFn *)GetProcAddress(hUser32, "SetProcessDPIAware");
+    if (ptr != NULL)
+        ptr();
+    FreeLibrary(hUser32);
+}
+
 int PASCAL
 WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmdShow)
 {
@@ -410,6 +426,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
     char winposbuf[256];
     int len = sizeof(winposbuf);
     int x, y, cx, cy;
+
+    /* Mark us as being 'system dpi aware' to avoid horrid scaling */
+    avoid_windows_scale();
 
     /* copy the hInstance into a variable so it can be used */
     ghInstance = hInstance;

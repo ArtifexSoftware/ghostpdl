@@ -342,6 +342,22 @@ display_callback display = {
  */
 #endif
 
+typedef BOOL (SetProcessDPIAwareFn)(void);
+
+static int
+avoid_windows_scale(void)
+{
+    /* Fetch the function address and only call it if it is there; this keeps
+     * compatability with Windows < 8.1 */
+    HMODULE hUser32 = LoadLibrary(TEXT("user32.dll"));
+    SetProcessDPIAwareFn *ptr;
+
+    ptr = (SetProcessDPIAwareFn *)GetProcAddress(hUser32, "SetProcessDPIAware");
+    if (ptr != NULL)
+        ptr();
+    FreeLibrary(hUser32);
+}
+
 /* Our 'main' routine sets up the separate thread to look after the
  * display window, and inserts the relevant defaults for the display device.
  * If the user specifies a different device, or different parameters to
@@ -363,6 +379,9 @@ main_utf8(int argc, char *argv[])
     char **nargv;
     char dformat[64];
     char ddpi[64];
+
+    /* Mark us as being 'system dpi aware' to avoid horrid scaling */
+    avoid_windows_scale();
 
     if (!_isatty(fileno(stdin)))
         _setmode(fileno(stdin), _O_BINARY);
