@@ -43,10 +43,12 @@
 #include <stdlib.h>             /* for atol() */
 
 /*
- * The PCL printable region. HP always sets the boundary of this region to be
- * 1/6" in from the edge of the paper, irrespecitve of the paper size or the
- * device. Since this dimension affects some default values related to rasters,
- * it is important that it be assigned this value.
+ * The PCL printable region. In older HP printers this region was set to
+ * 1/6" from the edge of the paper, irrespecitve of the paper size or the
+ * device. However, recent HP printers allow the margin to be configurable 
+ * and even set to 0 for full bleed.  If a non-zero margin is needed it can be 
+ * set on the command line via -H (e.g. -H12x12x12x12 restores the previous 
+ * 1/6" margin).  See doc/ghostpdl.pdf for details.
  */
 #define PRINTABLE_MARGIN_CP inch2coord(0.0)
 
