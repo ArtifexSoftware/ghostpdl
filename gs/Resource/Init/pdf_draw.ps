@@ -1713,12 +1713,12 @@ currentdict /jp2_csp_dict .undef
             put                          % <<stream dict>>
           }{
             %% bogus entry, throw it away and create a new one
-            pop exch                     % <<stream dict>>
-            <</Height                    % <<stream dict>> << /Height
-            3 index /Height oget          % <<stream dict>> << /Height Height
+            pop                     % <<image dict>> <<stream dict>> []
+            <</Height                    % <<stream dict>> <<image dict>> << /Height
+            2 index /Height oget         % <<stream dict>> <<image dict>> << /Height Height
             round cvi
             >>
-            put                          % <<stream dict>> []
+            1 index exch /DecodeParms exch put       % <<stream dict> <<image dict>>
           } ifelse
         }{
           dup                            % <<stream dict>> <<stream dict>>
