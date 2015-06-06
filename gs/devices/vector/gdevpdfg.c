@@ -511,7 +511,8 @@ static int write_color_unchanged(gx_device_pdf * pdev, const gs_imager_state * p
             pprints1(pdev->strm, " %s\n", command);
             break;
         default:
-            if (!gx_hld_saved_color_same_cspace(current, psc)) {
+            csi = gs_color_space_get_index(pcs);
+            if (!gx_hld_saved_color_same_cspace(current, psc) || (csi2 >= gs_color_space_index_CIEDEFG && csi2 <= gs_color_space_index_CIEA)) {
                 cos_value_t cs_value;
 
                 code = pdf_color_space_named(pdev, pis, &cs_value, (const gs_range_t **)&ranges, pcs,
@@ -538,27 +539,29 @@ static int write_color_unchanged(gx_device_pdf * pdev, const gs_imager_state * p
                     return code;
                 pprints1(pdev->strm, " %s\n", ppscc->setcolorspace);
                 if (ranges && (csi2 >= gs_color_space_index_CIEDEFG && csi2 <= gs_color_space_index_CIEA)) {
-                    gs_client_color *dcc = (gs_client_color *)pcc;
+                    gs_client_color dcc = *pcc;
                     switch (csi2) {
                         case gs_color_space_index_CIEDEFG:
-                            rescale_cie_color(ranges, 4, pcc, dcc);
+                            rescale_cie_color(ranges, 4, pcc, &dcc);
                             break;
                         case gs_color_space_index_CIEDEF:
-                            rescale_cie_color(ranges, 3, pcc, dcc);
+                            rescale_cie_color(ranges, 3, pcc, &dcc);
                             break;
                         case gs_color_space_index_CIEABC:
-                            rescale_cie_color(ranges, 3, pcc, dcc);
+                            rescale_cie_color(ranges, 3, pcc, &dcc);
                             break;
                         case gs_color_space_index_CIEA:
-                            rescale_cie_color(ranges, 1, pcc, dcc);
+                            rescale_cie_color(ranges, 1, pcc, &dcc);
                             break;
                         default:
                             /* can't happen but silences compiler warnings */
                             break;
                     }
+                    code = pdf_write_ccolor(pdev, pis, &dcc);
+                } else {
+                    code = pdf_write_ccolor(pdev, pis, pcc);
                 }
                 *used_process_color = false;
-                code = pdf_write_ccolor(pdev, pis, pcc);
                 if (code < 0)
                     return code;
                 pprints1(pdev->strm, " %s\n", ppscc->setcolorn);
