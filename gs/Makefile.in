@@ -364,7 +364,7 @@ FONTCONFIG_LIBS=@FONTCONFIG_LIBS@
 DBUS_CFLAGS=@DBUS_CFLAGS@
 DBUS_LIBS=@DBUS_LIBS@
 
-# defines from autoconf; note that we don't use these at present.
+# defines from autoconf; note that we don't use all of these at present.
 ACDEFS=@DEFS@
 
 CFLAGS=$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)

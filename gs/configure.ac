@@ -281,7 +281,8 @@ if test x$BIGENDIAN = x ; then
      return (*(char*)&one == 0 ? 0 : 1);
     ])],
     [BIGENDIAN=1;AC_MSG_RESULT(big)],
-    [BIGENDIAN=0;AC_MSG_RESULT(little)])
+    [BIGENDIAN=0;AC_MSG_RESULT(little)],
+    [BIGENDIAN=1;AC_MSG_RESULT(cross compiling: assuming big engian, otherwise use "--enable-little-endian")])
 else
   if test x$BIGENDIAN = x1 ; then
     AC_MSG_RESULT(big)
@@ -2211,16 +2212,82 @@ AC_SUBST(LCMS_ENDIAN)
 AC_SUBST(LCMS2_ENDIAN)
 
 dnl --------------------------------------------------
-dnl set LCMS2 memory manager's ptr alignment for sparc
+dnl set memory manager's ptr alignment
 dnl --------------------------------------------------
 
-LCMS2_PTR_ALIGNMENT=
+ALIGN_TEXT_PROG_INCS="\
+#include <stdio.h> \
+#include <stdlib.h>"
 
-case `uname -a` in
-        *sparc*)
-	  LCMS2_PTR_ALIGNMENT="-DCMS_PTR_ALIGNMENT=8"
-        ;;
-esac
+
+ALIGN_TEXT_PROG="\
+    struct altest \
+    { \
+      char a; \
+      int b; \
+      long c; \
+      long long d; \
+      float e; \
+      double f; \
+      void *g; \
+    }; \
+    struct altest *a; \
+    struct altest d; \
+    char *b, *c, *lim; \
+    int ret = 0; \
+    c = b = malloc(64 * sizeof(struct altest)); \
+    lim = b + (64 * sizeof(struct altest)); \
+    do \
+    { \
+        b++; \
+        if ((b >= lim) || \
+            ((((unsigned int)b) & 4) == 0 && (((unsigned int)b) & 8) != 0)) \
+        { \
+          break; \
+        } \
+    } while(1); \
+    if (b >= lim) \
+    { \
+        ret = -1; \
+    } \
+    else \
+    { \
+        a = (struct altest *)b; \
+        b = a->g; \
+        ret = 0; \
+    } \
+    free(c); \
+    exit(ret);"
+
+
+GS_MEMPTR_ALIGNMENT=
+
+AC_ARG_WITH(memory-alignment,
+            [AC_HELP_STRING([--with-memory-alignment],
+                               [Allows setting minimum alignment for the memory manager (4 or 8 bytes]))],
+            [GS_MEMPTR_ALIGNMENT=$with_memory_alignment],[GS_MEMPTR_ALIGNMENT=check])
+
+if test x"$GS_MEMPTR_ALIGNMENT" = xcheck ; then
+   AC_MSG_CHECKING([minimum memory pointer alignment])
+   AC_RUN_IFELSE(
+    [AC_LANG_PROGRAM([$ALIGN_TEXT_PROG_INCS], [
+      $ALIGN_TEXT_PROG
+    ])],
+    [GS_MEMPTR_ALIGNMENT=4;AC_MSG_RESULT(done)],
+    [GS_MEMPTR_ALIGNMENT=8;AC_MSG_RESULT(done)],
+    [GS_MEMPTR_ALIGNMENT=4;AC_MSG_RESULT(cross compiling: assuming 4 byte - otherwise use "--with-memory-alignment=")])
+
+fi
+
+if test x"$GS_MEMPTR_ALIGNMENT" != x4 && test x"$GS_MEMPTR_ALIGNMENT" != x8 ; then
+    AC_MSG_ERROR([4 and 8 are the only valid values for "--with-memory-alignment"], -1)
+fi
+
+if test x"$GS_MEMPTR_ALIGNMENT" != x4  || test x"$with_memory_alignment" != x ; then
+  LCMS2_PTR_ALIGNMENT="-DCMS_PTR_ALIGNMENT=$GS_MEMPTR_ALIGNMENT"
+
+  GCFLAGS="$GCFLAGS -DGS_MEMPTR_ALIGNMENT=$GS_MEMPTR_ALIGNMENT"
+fi
 
 AC_SUBST(LCMS2_PTR_ALIGNMENT)
 
