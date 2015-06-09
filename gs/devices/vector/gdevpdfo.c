@@ -1120,10 +1120,10 @@ static int find_last_dict_entry(const cos_dict_t *d, const cos_dict_element_t **
 }
 static int write_key_as_string_encrypted(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
 {
-    stream sinp, sstr, sout;
+    stream sinp, sout;
     stream_PSSD_state st;
     stream_state so;
-    byte buf[100], bufo[100], *buffer;
+    byte bufo[100], *buffer;
     stream_arcfour_state sarc4;
 
     buffer = gs_alloc_bytes(pdev->pdf_memory, size, "encryption buffer");
