@@ -25,6 +25,7 @@
 #include "strimpl.h"
 #include "sa85x.h"
 #include "sarc4.h"
+#include "sstring.h"
 
 #define CHECK(expr)\
   BEGIN if ((code = (expr)) < 0) return code; END
@@ -1117,8 +1118,38 @@ static int find_last_dict_entry(const cos_dict_t *d, const cos_dict_element_t **
 
     return 0;
 }
+static int write_key_as_string_encrypted(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
+{
+    stream sinp, sstr, sout;
+    stream_PSSD_state st;
+    stream_state so;
+    byte buf[100], bufo[100], *buffer;
+    stream_arcfour_state sarc4;
 
-static int write_key_as_string(stream *s, const cos_dict_element_t *element)
+    buffer = gs_alloc_bytes(pdev->pdf_memory, size, "encryption buffer");
+    if (buffer == 0L)
+        return 0;
+
+    if (pdf_encrypt_init(pdev, object_id, &sarc4) < 0) {
+        gs_free_object(pdev->pdf_memory, buffer, "Free encryption buffer");
+        /* The interface can't pass an error. */
+        stream_write(pdev->strm, str, size);
+        return size;
+    }
+    s_init_state((stream_state *)&st, &s_PSSD_template, NULL);
+    s_init(&sout, NULL);
+    s_init_state(&so, &s_PSSE_template, NULL);
+    s_init_filter(&sout, &so, bufo, sizeof(bufo), pdev->strm);
+    stream_putc(pdev->strm, '(');
+    memcpy(buffer, str, size);
+    s_arcfour_process_buffer(&sarc4, buffer, size);
+    stream_write(&sout, buffer, size);
+    sclose(&sout); /* Writes ')'. */
+    gs_free_object(pdev->pdf_memory, buffer, "Free encryption buffer");
+    return (int)stell(&sinp) + 1;
+}
+
+static int write_key_as_string(const gx_device_pdf *pdev, stream *s, const cos_dict_element_t *element, gs_id object_id)
 {
     int i, length, offset;
 
@@ -1139,11 +1170,18 @@ static int write_key_as_string(stream *s, const cos_dict_element_t *element)
     if (element->key.data[offset] == '/') {
         offset++;
         length--;
-        spputc(s, '(');
-        stream_write(s, &element->key.data[offset], length);
-        spputc(s, ')');
+        if (!pdev->KeyLength || object_id == (gs_id)-1) {
+            spputc(s, '(');
+            stream_write(s, &element->key.data[offset], length);
+            spputc(s, ')');
+        }
+        else
+            write_key_as_string_encrypted(pdev, &element->key.data[offset], length, object_id);
     } else {
-        stream_write(s, element->key.data, element->key.size);
+        if (!pdev->KeyLength || object_id == (gs_id)-1)
+            stream_write(s, element->key.data, element->key.size);
+        else
+            write_key_as_string_encrypted(pdev, &element->key.data[1], element->key.size - 2, object_id);
     }
     return 0;
 }
@@ -1186,14 +1224,14 @@ cos_write_dict_as_ordered_array(cos_object_t *pco, gx_device_pdf *pdev, pdf_reso
     }
 
     stream_puts(s, "<<\n/Limits [\n");
-    write_key_as_string(s, First);
+    write_key_as_string(pdev, s, First, pco->id);
     stream_puts(s, "\n");
-    write_key_as_string(s, Last);
+    write_key_as_string(pdev, s, Last, pco->id);
     stream_puts(s, "\n]\n");
     stream_puts(s, "/Names [");
     do {
         stream_puts(s, "\n");
-        write_key_as_string(s, First);
+        write_key_as_string(pdev, s, First, pco->id);
         cos_value_write_spaced(&First->value, pdev, true, -1);
         find_next_dict_entry(d, &First);
     } while (First);
