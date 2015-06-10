@@ -448,7 +448,13 @@ end
         % All of these require the "transparency" feature in the interpreter.
   /ca { ca }
   /CA { CA }
-  /SMask { gssmask }
+  /SMask {
+    {gssmask} PDFSTOPONERROR { exec //false } { stopped } ifelse
+    {
+      pop (\n   **** Warning: Error in SMask during ExtGState.\n)
+      pdfformaterror
+    } if
+  }
   /AIS { AIS }
   /BM { BM }
   /TK { TK }
