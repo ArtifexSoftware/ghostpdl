@@ -558,20 +558,32 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
                     if (code < 0)
                         return code;
                     if (pdf_is_CID_font(subfont)) {
-                        if (subfont->procs.decode_glyph((gs_font *)subfont, glyph, -1) != GS_NO_CHAR) {
+                        /* Some Pscript5 output has non-identity mappings between character code and CID
+                         * and the GlyphNames2Unicode dictionary uses character codes, not glyph names. So
+                         * if we detect ths condition we cheat and claim not to be a CIDFont, so that the
+                         * decode_glyph procedure can use the character code to look up the GlyphNames2Unicode
+                         * dictionary. See bugs #696021, #688768 and #687954 for examples of the various ways
+                         * this code can be exercised.
+                         */
+                        if (chr == glyph - GS_MIN_CID_GLYPH)
+                            code = subfont->procs.decode_glyph((gs_font *)subfont, glyph, -1);
+                        else
+                            code = subfont->procs.decode_glyph((gs_font *)subfont, glyph, chr);
+                        if (code != GS_NO_CHAR)
                             /* Since PScript5.dll creates GlyphNames2Unicode with character codes
                                instead CIDs, and with the WinCharSetFFFF-H2 CMap
                                character codes appears different than CIDs (Bug 687954),
                                pass the character code intead the CID. */
                             code = pdf_add_ToUnicode(pdev, subfont, pdfont,
                                 chr + GS_MIN_CID_GLYPH, chr, NULL);
-                        } else {
+                        else {
                             /* If we interpret a PDF document, ToUnicode
                                CMap may be attached to the Type 0 font. */
                             code = pdf_add_ToUnicode(pdev, pte->orig_font, pdfont,
                                 chr + GS_MIN_CID_GLYPH, chr, NULL);
                         }
-                    } else
+                    }
+                    else
                         code = pdf_add_ToUnicode(pdev, subfont, pdfont, glyph, cid, NULL);
                     if (code < 0)
                         return code;
