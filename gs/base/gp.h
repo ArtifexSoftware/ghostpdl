@@ -232,6 +232,8 @@ FILE *gp_open_scratch_file(const gs_memory_t *mem,
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
 FILE *gp_fopen(const char *fname, const char *mode);
 
+/* gp_stat is defined in stat_.h rather than here due to macro problems */
+
 /* Test whether this platform supports the sharing of file descriptors */
 int gp_can_share_fdesc(void);
 

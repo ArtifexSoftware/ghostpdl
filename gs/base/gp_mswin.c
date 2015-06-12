@@ -806,6 +806,27 @@ gp_fopen(const char *fname, const char *mode)
 #endif
 }
 
+int gp_stat(const char *path, struct _stat *buf)
+{
+#ifdef GS_NO_UTF8
+    return stat(path, buf);
+#else
+    int len = utf8_to_wchar(NULL, path);
+    wchar_t *uni;
+    int ret;
+
+    if (len <= 0)
+        return -1;
+    uni = malloc(len*sizeof(wchar_t));
+    if (uni == NULL)
+        return -1;
+    utf8_to_wchar(uni, path);
+    ret = _wstat(uni, buf);
+    free(uni);
+    return ret;
+#endif
+}
+
 /* test whether gp_fdup is supported on this platform  */
 int gp_can_share_fdesc(void)
 {

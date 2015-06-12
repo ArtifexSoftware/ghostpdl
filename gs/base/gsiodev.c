@@ -226,7 +226,7 @@ static int
 os_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
 {				/* The RS/6000 prototype for stat doesn't include const, */
     /* so we have to explicitly remove the const modifier. */
-    return (stat((char *)fname, pstat) < 0 ? gs_error_undefinedfilename : 0);
+    return (gp_stat((char *)fname, pstat) < 0 ? gs_error_undefinedfilename : 0);
 }
 
 static file_enum *

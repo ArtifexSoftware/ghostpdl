@@ -45,7 +45,15 @@
  */
 #ifdef _MSC_VER
 #  define stat _stat
+#define struct_stat struct _stat
+#else
+#define struct_stat struct stat
 #endif
+
+/* Find permissions for file */
+/* Ideally this would defined in gp.h, but the macroisms mean it has to be
+ * defined here. */
+extern int gp_stat(const char *path, struct stat *buf);
 
 /*
  * Some (System V?) systems test for directories in a slightly different way.

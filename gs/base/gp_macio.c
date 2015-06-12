@@ -549,6 +549,11 @@ gp_fopen (const char * fname, const char * mode) {
 
 }
 
+int gp_stat(const char *path, struct stat *buf)
+{
+    return stat(path, buf);
+}
+
 int gp_can_share_fdesc(void)
 {
     return 0;
