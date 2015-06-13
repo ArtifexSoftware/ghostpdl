@@ -1379,12 +1379,12 @@ int gx_update_from_subclass(gx_device *dev)
     dev->max_fill_band = dev->child->max_fill_band;
     dev->is_planar = dev->child->is_planar;
     dev->LeadingEdge = dev->child->LeadingEdge;
-    memcpy(&dev->ImagingBBox, &dev->child->ImagingBBox, 2 * sizeof(float));
+    memcpy(&dev->ImagingBBox, &dev->child->ImagingBBox, sizeof(dev->child->ImagingBBox));
     dev->ImagingBBox_set = dev->child->ImagingBBox_set;
-    memcpy(&dev->MediaSize, &dev->child->MediaSize, 2 * sizeof(float));
-    memcpy(&dev->HWResolution, &dev->child->HWResolution, 2 * sizeof(float));
-    memcpy(&dev->Margins, &dev->child->Margins, 2 * sizeof(float));
-    memcpy(&dev->HWMargins, &dev->child->HWMargins, 4 * sizeof(float));
+    memcpy(&dev->MediaSize, &dev->child->MediaSize, sizeof(dev->child->MediaSize));
+    memcpy(&dev->HWResolution, &dev->child->HWResolution, sizeof(dev->child->HWResolution));
+    memcpy(&dev->Margins, &dev->child->Margins, sizeof(dev->child->Margins));
+    memcpy(&dev->HWMargins, &dev->child->HWMargins, sizeof(dev->child->HWMargins));
     dev->FirstPage = dev->child->FirstPage;
     dev->LastPage = dev->child->LastPage;
     dev->PageCount = dev->child->PageCount;
