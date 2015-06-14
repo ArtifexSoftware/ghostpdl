@@ -324,22 +324,22 @@ PS_FONT_DEPS=\
 	$(PSRESDIR)$(D)Font$(D)CenturySchURW-Rom \
 	$(PSRESDIR)$(D)Font$(D)ChanceryURW-MedIta \
 	$(PSRESDIR)$(D)Font$(D)Dingbats \
-	$(PSRESDIR)$(D)Font$(D)NimbusMon-Bol \
-	$(PSRESDIR)$(D)Font$(D)NimbusMon-BolObl \
-	$(PSRESDIR)$(D)Font$(D)NimbusMon-Obl \
-	$(PSRESDIR)$(D)Font$(D)NimbusMon-Reg \
-	$(PSRESDIR)$(D)Font$(D)NimbusRom-Ita \
-	$(PSRESDIR)$(D)Font$(D)NimbusRom-Med \
-	$(PSRESDIR)$(D)Font$(D)NimbusRom-MedIta \
-	$(PSRESDIR)$(D)Font$(D)NimbusRom-Reg \
-	$(PSRESDIR)$(D)Font$(D)NimbusSan-Bol \
-	$(PSRESDIR)$(D)Font$(D)NimbusSan-BolIta \
-	$(PSRESDIR)$(D)Font$(D)NimbusSan-Ita \
+	$(PSRESDIR)$(D)Font$(D)NimbusMono-Bold \
+	$(PSRESDIR)$(D)Font$(D)NimbusMono-BoldOblique \
+	$(PSRESDIR)$(D)Font$(D)NimbusMono-Oblique \
+	$(PSRESDIR)$(D)Font$(D)NimbusMono-Regular \
+	$(PSRESDIR)$(D)Font$(D)NimbusRomNo9L-RegIta \
+	$(PSRESDIR)$(D)Font$(D)NimbusRomNo9L-Med \
+	$(PSRESDIR)$(D)Font$(D)NimbusRomNo9L-MedIta \
+	$(PSRESDIR)$(D)Font$(D)NimbusRomNo9L-Reg \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-Bol  \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-BolIta \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-RegIta \
 	$(PSRESDIR)$(D)Font$(D)NimbusSanNar-Bol \
 	$(PSRESDIR)$(D)Font$(D)NimbusSanNar-BolIta \
 	$(PSRESDIR)$(D)Font$(D)NimbusSanNar-Ita \
 	$(PSRESDIR)$(D)Font$(D)NimbusSanNar-Reg \
-	$(PSRESDIR)$(D)Font$(D)NimbusSan-Reg \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-Reg \
 	$(PSRESDIR)$(D)Font$(D)PalladioURW-Bol \
 	$(PSRESDIR)$(D)Font$(D)PalladioURW-BolIta \
 	$(PSRESDIR)$(D)Font$(D)PalladioURW-Ita \
