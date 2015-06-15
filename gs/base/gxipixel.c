@@ -477,7 +477,6 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
         mty = float2fixed(mat.ty + f) - int2fixed(f);
     }
 
-    /* The next calculation can overflow (see Bug 695348). */
     row_extent.x = float2fixed_rounded_boxed(width * mat.xx);
     row_extent.y =
         (is_fzero(mat.xy) ? fixed_0 :
