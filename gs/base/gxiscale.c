@@ -48,6 +48,8 @@
 #include "gsicc.h"
 #include "gxdevsop.h"
 
+#include <limits.h>  /** for INT_MIN */
+
 static void
 decode_sample_frac_to_float(gx_image_enum *penum, frac sample_value, gs_client_color *cc, int i);
 
@@ -99,6 +101,19 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     if (penum->Width == 0 || penum->Height == 0) {
         penum->interpolate = false; /* No need to interpolate and      */
         return 0;                  /* causes division by 0 if we try. */
+    }
+    if (any_abs(penum->dst_width) < 0 || any_abs(penum->dst_height))
+    {
+        /* A calculation has overflowed. Bale */
+        return 0;
+    }
+    if (penum->x_extent.x == INT_MIN || penum->x_extent.x == INT_MAX ||
+        penum->x_extent.y == INT_MIN || penum->x_extent.y == INT_MAX ||
+        penum->y_extent.x == INT_MIN || penum->y_extent.x == INT_MAX ||
+        penum->y_extent.y == INT_MIN || penum->y_extent.y == INT_MAX)
+    {
+        /* A calculation has overflowed. Bale */
+        return 0;
     }
     if ( pcs->cmm_icc_profile_data != NULL ) {
         use_icc = true;
