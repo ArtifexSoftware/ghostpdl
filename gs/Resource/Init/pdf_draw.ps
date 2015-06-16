@@ -959,7 +959,16 @@ currentdict end readonly def
   } ifelse
 } bdef
 
-/.pdfpaintproc {         % <patdict> <resdict> .pdfpaintproc -
+%% Bug #696017 When we begin a text block, we switch to a special set of marking operations
+%% for paths, these ops don't use the current CTM, but the 'SavedTextMatrix', in order to
+%% correctly position marks which are illegally present inside a text block. But, if we are
+%% executing a PaintProc (eg for a pattern) we *don't* want to do that or the pattern will be wrong.
+%% So we moved the .pdfpaintproc to .actual_pdfpaintproc, and redefined .pdfpaintproc to test
+%% the current value of /m. We always switch to the regular marking operations, but if the definition
+%% of /m at the start of the PaintProc was a special text version, then we switch back to that after we
+%% finished running the PaintProc.
+
+/.actual_pdfpaintproc {         % <patdict> <resdict> .pdfpaintproc -
   PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { //true } ifelse { (%Begin PaintProc) print dup === flush } if } if
   PDFfile fileposition 3 1 roll
   q
@@ -1002,6 +1011,32 @@ currentdict end readonly def
   PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { //true } ifelse { (%End PaintProc) print dup === flush } if } if
   PDFfile exch setfileposition
 } bdef
+
+/.pdfpaintproc {
+    %% Get the /m from pdfopdict (must be present)
+    %% and check its a packedarray
+    pdfopdict /m get dup type /packedarraytype eq {
+      %% get the initial element of the packedarray
+      %% and check its a name
+      0 get dup type /nametype eq {
+        %% If the name is inside_text_m then we are in a text block
+        /inside_text_m eq
+        }{
+           pop false
+        } ifelse
+    }{
+      pop false
+    } ifelse
+    %% rearrange the operands, move the boolean to the back
+    3 1 roll
+    %% Uncopnditionally use the normal marking ops
+     switch_to_normal_marking_ops
+    .actual_pdfpaintproc
+    %% If we were in a text block, restore the text marking ops.
+    {
+      switch_to_text_marking_ops
+    } if
+}bdef
 
 /resolvepattern {	% <patternstreamdict> resolvepattern <patterndict>
                 % Don't do the resolvestream now: just capture the data

@@ -24,7 +24,7 @@
 systemdict /pdfmark known not
  { userdict /pdfmark { cleartomark } bind put } if
 
-userdict /GS_PDF_ProcSet 127 dict dup begin
+userdict /GS_PDF_ProcSet 256 dict dup begin
 
 % ---------------- Abbreviations ---------------- %
 
@@ -521,6 +521,99 @@ end def
 
 % ---------------- Path painting and clipping ---------------- %
 
+%% Bug #696017 In order to get the correct position of paths and other objects which
+%% are illegally present inside a text block, we need to use the saved TextSaveMatrix
+%% to construct/place them. But we don't want to do lots of lookups on every segment of
+%% a path (we feel its OK to do lookups for images). So what we do is redefine the
+%% path contruction operators at the beginning of a text block, and put them back afterwards.
+%% Here we define the 'normal' and 'inside text' versions of those operators, and routines
+%% to switch the definitions back and forth.
+
+/check_and_set_saved_matrix {
+  currentdict /TextSaveMatrix known {
+    currentdict /TextSaveMatrix get setmatrix
+  }
+  {
+    currentdict /qTextSaveMatrix known {
+      currentdict /qTextSaveMatrix get setmatrix
+    } if
+  } ifelse
+} bind def
+
+/normal_m { { moveto }  stopped { count pdfemptycount sub 2 .min { pop } repeat 0 0 moveto } if } bdef
+/inside_text_m {
+  {
+    matrix currentmatrix 3 1 roll
+    check_and_set_saved_matrix
+    moveto
+    setmatrix
+  }
+  stopped { count pdfemptycount sub 2 .min { pop } repeat 0 0 moveto } if
+} bdef
+
+/normal_l { { lineto }  stopped { count pdfemptycount sub 2 .min { pop } repeat } if } bdef
+/inside_text_l {
+  {
+    matrix currentmatrix 3 1 roll
+    check_and_set_saved_matrix
+    lineto
+    setmatrix
+  }
+  stopped { count pdfemptycount sub 2 .min { pop } repeat } if
+} bdef
+
+/normal_c { { curveto } stopped { count pdfemptycount sub 6 .min { pop } repeat } if } bdef
+/inside_text_c {
+  {
+    matrix currentmatrix 7 1 roll
+    check_and_set_saved_matrix
+    curveto
+    setmatrix
+  }
+  stopped { count pdfemptycount sub 6 .min { pop } repeat } if
+} bdef
+
+/normal_v { count pdfemptycount sub 4 ge {
+         { currentpoint 6 2 roll curveto } stopped { count pdfemptycount sub 6 .min { pop } repeat  } if
+       } {
+         count pdfemptycount sub { pop } repeat
+       } ifelse
+     } bdef
+/inside_text_v { count pdfemptycount sub 4 ge {
+         {
+           matrix currentmatrix 5 1 roll
+           check_and_set_saved_matrix
+           currentpoint 6 2 roll curveto
+           setmatrix
+         } stopped { count pdfemptycount sub 6 .min { pop } repeat  } if
+       } {
+         count pdfemptycount sub { pop } repeat
+       } ifelse
+     } bdef
+
+/normal_y { { 2 copy curveto } stopped { count pdfemptycount sub 6 .min { pop } repeat } if } bdef
+/inside_text_y {
+  {
+    matrix currentmatrix 5 1 roll
+    check_and_set_saved_matrix
+    2 copy curveto
+    setmatrix
+  }
+  stopped { count pdfemptycount sub 6 .min { pop } repeat } if
+} bdef
+
+/normal_re {
+   4 2 roll moveto  exch dup 0 rlineto  0 3 -1 roll rlineto  neg 0 rlineto
+   closepath
+  } bdef
+/inside_text__re {
+   matrix currentmatrix 5 1 roll
+   check_and_set_saved_matrix
+   4 2 roll moveto  exch dup 0 rlineto  0 3 -1 roll rlineto  neg 0 rlineto
+   closepath
+   setmatrix
+  } bdef
+
 /S {
   OFFlevels length 0 eq {
     setstrokestate .swapcolors /stroke fsexec .swapcolors
@@ -666,6 +759,24 @@ end readonly def
   } ifelse
 } bdef
 
+/switch_to_text_marking_ops {
+    pdfopdict /m {inside_text_m} bind .forceput
+    pdfopdict /l {inside_text_l} bind .forceput
+    pdfopdict /c {inside_text_c} bind .forceput
+    pdfopdict /v {inside_text_v} bind .forceput
+    pdfopdict /y {inside_text_y} bind .forceput
+    pdfopdict /rey {inside_text_re} bind .forceput
+} bdef
+
+/switch_to_normal_marking_ops {
+    pdfopdict /m {normal_m} bind .forceput
+    pdfopdict /l {normal_l} bind .forceput
+    pdfopdict /c {normal_c} bind .forceput
+    pdfopdict /v {normal_v} bind .forceput
+    pdfopdict /y {normal_y} bind .forceput
+    pdfopdict /re {normal_re} bind .forceput
+} bdef
+
 /BT {
   currentdict /TextSaveMatrix known {
     (   **** illegal; nested BT operator detected.\n)
@@ -696,6 +807,10 @@ end readonly def
     matrix dup /TextSaveMatrix gput
   } if currentmatrix pop settextmatrix
   matrix /TextTempMatrix gput		% see settextposition
+
+  %% Set the special version of the path constructoin operators, so that
+  %% they will work as expected if they are illgeally present in a text block.
+  switch_to_text_marking_ops
 } bdef
 /ET {
   currentdict /TextSaveMatrix known {
@@ -714,6 +829,11 @@ end readonly def
      (   **** Ignoring spurious ET operator.\n)
      pdfformaterror
   } ifelse
+  %% Only switch back to the regular marking operations if we were not
+  %% in a nested text block (inside a gsave).
+  currentdict /qTextSaveMatrix known not {
+    switch_to_normal_marking_ops
+  } if
 } bdef
 /Tc { /TextSpacing gput { showfirst } /Show gput } bdef
 /TL { /TextLeading gput } bdef
