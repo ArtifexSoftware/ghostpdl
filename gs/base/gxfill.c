@@ -254,6 +254,11 @@ init_line_list(line_list *ll, gs_memory_t * mem)
     ll->margin_set1.sect = ll->local_section1;
 
     ll->x_head.prev = NULL;
+    /* Bug 695234: Initialise the following to pacify valgrind */
+    ll->x_head.start.x = 0;
+    ll->x_head.start.y = 0;
+    ll->x_head.end.x = 0;
+    ll->x_head.end.y = 0;
 
     /* Do not initialize ll->bbox_left, ll->bbox_width - they were set in advance. */
     INCR(fill);
