@@ -1423,7 +1423,7 @@ static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int64_t start, i
 {
     int64_t start_offset = (start - pdev->FirstObjectNumber) * sizeof(gs_offset_t);
 
-    gp_fseek_64(tfile, start_offset, SEEK_SET);
+    if (gp_fseek_64(tfile, start_offset, SEEK_SET) == 0)
     {
         long i, r;
 
