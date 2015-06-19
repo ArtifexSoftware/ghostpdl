@@ -479,7 +479,8 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
     char dest[MAX_DEST_STRING];
     bool coerce_dest = false;
 
-    Dest.data = 0;
+    Subtype.data = Subtype.size = 0;
+    Dest.data = Dest.size = 0;
     if (params->subtype)
         param_string_from_string(Subtype, params->subtype);
     else
