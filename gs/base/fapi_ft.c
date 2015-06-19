@@ -478,12 +478,13 @@ new_inc_int(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font)
                                                  sizeof
                                                  (FT_Incremental_InterfaceRec));
     if (i) {
-        i->object = (FT_Incremental) new_inc_int_info(a_server, a_fapi_font);
         i->funcs = &TheFAPIIncrementalInterfaceFuncs;
-    }
-    if (!i->object) {
-        FF_free(s->ftmemory, i);
-        i = NULL;
+        i->object = (FT_Incremental) new_inc_int_info(a_server, a_fapi_font);
+
+        if (!i->object) {
+            FF_free(s->ftmemory, i);
+            i = NULL;
+        }
     }
     return i;
 }
