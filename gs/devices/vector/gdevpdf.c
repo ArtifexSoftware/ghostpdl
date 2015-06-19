@@ -1398,7 +1398,7 @@ static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int64_t star
 {
     int64_t start_offset = (start - pdev->FirstObjectNumber) * sizeof(gs_offset_t);
 
-    gp_fseek_64(tfile, start_offset, SEEK_SET);
+    if (gp_fseek_64(tfile, start_offset, SEEK_SET) == 0)
     {
         long i, r;
 
@@ -1535,10 +1535,14 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
     do {
         if (Size > ScratchSize) {
             code = fread(Scratch, ScratchSize, 1, linear_params->sfile);
+            if (code != 1)
+                return gs_error_ioerror;
             fwrite(Scratch, ScratchSize, 1, linear_params->Lin_File.file);
             Size -= 16384;
         } else {
             code = fread(Scratch, Size, 1, linear_params->sfile);
+            if (code != 1)
+                return gs_error_ioerror;
             fwrite(Scratch, Size, 1, linear_params->Lin_File.file);
             Size = 0;
         }
@@ -1804,6 +1808,8 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
              */
             if (pdev->ResourceUsage[j].PageUsage - 1 == i && j != pdev->pages[i].Page->id) {
                 code = rewrite_object(pdev, linear_params, j);
+                if (code < 0)
+                    goto error;
             }
         }
     }
@@ -1835,8 +1841,14 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     /* Now copy the linearised data back to the main file, as far as the offset of the
      * primary hint stream
      */
-    gp_fseek_64(linear_params->Lin_File.file, 0, SEEK_SET);
-    code = gp_fseek_64(linear_params->sfile, 0, SEEK_SET);
+    if (gp_fseek_64(linear_params->Lin_File.file, 0, SEEK_SET) != 0) {
+        code = gs_error_ioerror;
+        goto error;
+    }
+    if (gp_fseek_64(linear_params->sfile, 0, SEEK_SET) != 0){
+        code = gs_error_ioerror;
+        goto error;
+    }
     Length = pdev->ResourceUsage[HintStreamObj].LinearisedOffset;
     while (Length && code >= 0) {
         if (Length > 1024) {
@@ -2245,7 +2257,10 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     /* Return to the secondary xref and write it again filling
      * in the missing offsets.
      */
-    gp_fseek_64(linear_params->sfile, linear_params->FirstxrefOffset, SEEK_SET);
+    if (gp_fseek_64(linear_params->sfile, linear_params->FirstxrefOffset, SEEK_SET) != 0) {
+        code = gs_error_ioerror;
+        goto error;
+    }
     gs_sprintf(Header, "xref\n%d %d\n", LDictObj, Part1To6 - LDictObj + 1); /* +1 for the primary hint stream */
     fwrite(Header, strlen(Header), 1, linear_params->sfile);
 
