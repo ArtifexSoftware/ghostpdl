@@ -40,16 +40,26 @@
 #include "gdevp14.h"        /* Needed to patch up the procs after compositor creation */
 #include "gdevsclass.h"
 #include "gdevmplt.h"
+#include "gxdcconv.h"       /* for color_rgb_to_gray and color_cmyk_to_gray */
 
-/* GC descriptor */
-public_st_device_pcl_mono_palette();
-
-/* Device procedures, we need to implement all of them */
+/* Device procedures, we only need one */
 static dev_proc_get_color_mapping_procs(pcl_mono_palette_get_color_mapping_procs);
 
 /* The device prototype */
 #define MAX_COORD (max_int_in_fixed - 1000)
 #define MAX_RESOLUTION 4000
+
+/* This device currently doesn't implement garbage collection, because at
+ * the moment its only used in the PCL interpreter. Should the device ever
+ * be added to the PostScript interpreter, or (better if ts required in
+ * multiple interpreters) moved into the graphcs library then it is an
+ * absolute requirement that the device should be capable of being garbage
+ * collected and must cater for its pointers being relocated.
+ * In which case the #if FOR_GC section must be used.
+ */
+#if FOR_GC
+/* GC descriptor */
+public_st_device_pcl_mono_palette();
 
 #define public_st_pcl_mono_palette_device()	/* in gsdevice.c */\
   gs_public_st_complex_only(st_pcl_mono_palette_device, gx_device, "PCL_Mono_Palette",\
@@ -67,6 +77,12 @@ static RELOC_PTRS_WITH(pcl_mono_palette_reloc_ptrs, gx_device *dev)
     dev->child = gx_device_reloc_ptr(dev->child, gcst);
 }
 RELOC_PTRS_END
+#else
+#define public_st_pcl_mono_palette_device()	/* in gsdevice.c */\
+  gs_public_st_complex_only(st_pcl_mono_palette_device, gx_device, "PCL_Mono_Palette",\
+    0, 0, 0, gx_device_finalize)
+
+#endif
 
 public_st_pcl_mono_palette_device();
 
