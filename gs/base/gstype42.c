@@ -1166,7 +1166,7 @@ simple_glyph_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
  */
 int
 gs_type42_default_get_metrics(gs_font_type42 * pfont, uint glyph_index,
-                              gs_type42_metrics_options_t options, float sbw[4])
+                              gs_type42_metrics_options_t options, float *sbw)
 {
     gs_glyph_data_t glyph_data;
     int code;
