@@ -1807,7 +1807,7 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
         if (font_file_path != NULL) {
             ref *Decoding, *TT_cmap, *SubstNWP;
             ref src_type, dst_type;
-            uint c;
+            uint c = 0;
 
             is_glyph_index = true;
 
@@ -1866,10 +1866,10 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                 int utfcmaplen = strlen(utfcmap);
 
                 fdict = pfont_dict(gs_rootfont(igs));
-                dict_find_string(fdict, "CMap", &CMapDict);
-                if (r_has_type(CMapDict, t_dictionary)) {
-                    dict_find_string(CMapDict, "CMapName", &CMapName);
-                    if (r_has_type(CMapName, t_name)) {
+                code = dict_find_string(fdict, "CMap", &CMapDict);
+                if (code >= 0 && r_has_type(CMapDict, t_dictionary)) {
+                    code = dict_find_string(CMapDict, "CMapName", &CMapName);
+                    if (code >= 0 && r_has_type(CMapName, t_name)) {
                         name_string_ref(imemory, CMapName, &CMapNameStr);
                         cmapnm = (char *)CMapNameStr.value.bytes;
                         cmapnmlen = r_size(&CMapNameStr);
