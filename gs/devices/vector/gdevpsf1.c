@@ -237,6 +237,7 @@ static int CheckSubrForMM (gs_glyph_data_t *gdata, gs_font_type1 *pfont)
     byte *source = data->data, *end = source + data->size;
     int CurrentNumberIndex = 0, Stack[32];
 
+    memset(Stack, 0x00, sizeof(Stack));
     gs_type1_decrypt(source, source, data->size, &state);
 
     if(pfont->data.lenIV)
@@ -248,6 +249,8 @@ static int CheckSubrForMM (gs_glyph_data_t *gdata, gs_font_type1 *pfont)
             switch (*source) {
                 case 12:
                     if (*(source + 1) == 16) {
+                        if (CurrentNumberIndex < 1)
+                            return gs_error_rangecheck;
                         switch(Stack[CurrentNumberIndex-1]) {
                             case 18:
                                 code = 6;
