@@ -394,7 +394,12 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     gs_image1_t image;
     const gx_color_tile *m_tile = NULL;
     pdf_image_writer writer;
-    int w = p_tile->tbits.rep_width, h = p_tile->tbits.rep_height;
+    int w = 0, h = 0;
+
+    if (p_tile) {
+        w = p_tile->tbits.rep_width;
+        h = p_tile->tbits.rep_height;
+    }
 
     if (!pis->have_pattern_streams) {
         /*
