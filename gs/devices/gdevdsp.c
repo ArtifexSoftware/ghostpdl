@@ -848,9 +848,6 @@ display_get_params(gx_device * dev, gs_param_list * plist)
         (ddev->nFormat & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_SEPARATION)
         code = devn_get_params(dev, plist, &ddev->devn_params,
                 &ddev->equiv_cmyk_colors);
-    if (code < 0)
-        return code;
-
     return code;
 }
 
