@@ -1067,10 +1067,12 @@ gs_fapi_finish_render(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, gs_f
 
                 penum_pgs->fill_adjust.x = penum_pgs->fill_adjust.y = 0;
 
-                if ((code = gs_fill(penum_pgs)) < 0)
-                    return code;
+                code = gs_fill(penum_pgs);
 
                 penum_pgs->in_cachedevice = in_cachedevice;
+
+                if (code < 0)
+                    return code;
             }
             if ((code = gs_moveto(penum_pgs, pt.x, pt.y)) < 0)
                 return code;
@@ -1195,7 +1197,6 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
     int code;
     bool imagenow = false;
     bool align_to_pixels = gs_currentaligntopixels(pbfont->dir);
-    gs_fapi_descendant_code fdc;
     gs_memory_t *mem = pfont->memory;
     enum
     {
@@ -1343,25 +1344,17 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
                 font_scale.matrix[3] = 1;
         }
 
-        if (!bCID
-            || (pbfont->FontType != ft_encrypted
-                && pbfont->FontType != ft_encrypted2)) {
-            fdc = gs_fapi_toplevel_prepared;
-        }
-        else {
-            fdc = gs_fapi_toplevel_prepared;
-        }
         if ((code =
              gs_fapi_renderer_retcode(mem, I,
                                       I->get_scaled_font(I, &I->ff,
                                                          &font_scale, NULL,
-                                                         fdc))) < 0) {
+                                                         gs_fapi_toplevel_prepared))) < 0) {
             return code;
         }
     }
 
     cr.char_codes_count = 1;
-    cr.char_codes[0] = (index == GS_NO_GLYPH) ? 0 : index;
+    cr.char_codes[0] = index;
     cr.client_char_code = chr;
     cr.is_glyph_index = true;
     enc_char_name_string.data = NULL;
@@ -1414,7 +1407,7 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
                 cr.sb_x = fapi_round(sbw[2] / 2 * scale);
                 cr.sb_y = fapi_round(pbfont->FontBBox.q.y * scale);
                 cr.aw_y = fapi_round(-pbfont->FontBBox.q.x * scale);    /* Sic ! */
-                cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
+                cr.metrics_scale = 1;
                 cr.metrics_type = gs_fapi_metrics_replace;
                 sbw[0] = sbw[2] / 2;
                 sbw[1] = pbfont->FontBBox.q.y;
