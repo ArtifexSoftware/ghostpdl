@@ -1144,6 +1144,7 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
             FT_Open_Args open_args;
 
             open_args.flags = FT_OPEN_MEMORY;
+            open_args.stream = NULL;
 
             if (a_font->is_type1) {
                 long length;
