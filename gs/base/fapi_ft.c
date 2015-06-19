@@ -226,6 +226,9 @@ FF_open_read_stream(gs_memory_t * mem, char *fname, FT_Stream * fts)
             }
         }
     }
+    else {
+        goto error_out;
+    }
 
     if ((code = savailable(ps, &length)) < 0) {
         goto error_out;
@@ -486,7 +489,7 @@ new_inc_int(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font)
 }
 
 static void
-delete_inc_int(gs_fapi_server * a_server,
+delete_inc_int(gs_fapi_server * a_server,
                FT_Incremental_InterfaceRec * a_inc_int)
 {
     ff_server *s = (ff_server *) a_server;
