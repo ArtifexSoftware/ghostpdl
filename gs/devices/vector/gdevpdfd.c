@@ -1095,7 +1095,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
             if (fixed2int(box1.q.x) > pdev->BBox.q.x)
                 pdev->BBox.q.x = fixed2int(box1.q.x);
             if (fixed2int(box1.q.y) > pdev->BBox.q.y)
-                pdev->BBox.q.x = fixed2int(box1.q.y);
+                pdev->BBox.q.y = fixed2int(box1.q.y);
         }
         if (pdev->AccumulatingBBox)
             return 0;
