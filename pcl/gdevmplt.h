@@ -30,16 +30,6 @@ typedef struct {
     gx_cm_color_map_procs *device_cm_procs;
 } pcl_mono_palette_subclass_data;
 
-typedef struct pcl_mono_palette_text_enum_s {
-    gs_text_enum_common;
-} pcl_mono_palette_text_enum_t;
-#define private_st_pcl_mono_palette_text_enum()\
-  extern_st(st_gs_text_enum);\
-  gs_private_st_suffix_add0(st_pcl_mono_palette_text_enum, pcl_mono_palette_text_enum_t,\
-    "pcl_mono_palette_text_enum_t", pcl_mono_palette_text_enum_enum_ptrs, pcl_mono_palette_text_enum_reloc_ptrs,\
-    st_gs_text_enum)
-
 extern_st(st_device_mplt);
-#define public_st_device_mplt()	/* in gdevbflp.c */\
 
 #endif /* gdevmplt_INCLUDED */
