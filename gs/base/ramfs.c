@@ -379,7 +379,7 @@ int ramfile_write(ramhandle * handle,const void * buf,int len)
     int left;
     char *t = (char *)buf;
 
-    if((!handle->mode) & RAMFS_WRITE) {
+    if(!(handle->mode & RAMFS_WRITE)) {
         handle->last_error = RAMFS_NOACCESS;
         return -1;
     }
