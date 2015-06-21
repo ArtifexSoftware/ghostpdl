@@ -1142,7 +1142,6 @@ int convert_separation_alternate(gx_device_pdf * pdev, const gs_imager_state * p
                 return code;
             }
             pdf_reserve_object_id(pdev, pres, 0);
-            if (pres != NULL) {
             ppcs = (pdf_color_space_t *)pres;
             ppcs->serialized = NULL;
             ppcs->serialized_size = 0;
