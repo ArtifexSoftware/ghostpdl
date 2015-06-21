@@ -2377,10 +2377,12 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
     else if (data_height > 0)
         pdf_put_image_matrix(pdev, &pie->mat, (double)data_height / height);
     if (data_height > 0) {
-        code = pdf_complete_image_data(pdev, &pie->writer, data_height,
+        if (pie->writer.pres) {
+            code = pdf_complete_image_data(pdev, &pie->writer, data_height,
                         pie->width, pie->bits_per_pixel);
-        if (code < 0)
-            return code;
+            if (code < 0)
+                return code;
+        }
         code = pdf_end_image_binary(pdev, &pie->writer, data_height);
         /* The call above possibly decreases pie->writer.alt_writer_count in 2. */
         if (code < 0)
