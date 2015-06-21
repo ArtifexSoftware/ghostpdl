@@ -114,6 +114,8 @@ cie_to_xyz(const double *in, double out[3], const gs_color_space *pcs,
            gx_psconcretize_CIEDEFG(&cc, pcs, xyz, xyz_float, pis);
            break;
         default:
+            /* Only to silence a Coverity uninitialised variable warning */
+            memset(&xyz_float, 0x00, sizeof(xyz_float));
             break;
     }
     if (cs_index == gs_color_space_index_CIEA) {
