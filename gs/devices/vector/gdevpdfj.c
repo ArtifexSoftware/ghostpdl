@@ -449,7 +449,7 @@ pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
         code = psdf_end_binary(&piw->binary[0]);
     /* If the image ended prematurely, update the Height. */
     if (data_h != piw->height) {
-        char data[255];
+        char data[256];
         int OutHeight;
         cos_value_t *value;
         value = (cos_value_t *)cos_dict_find(cos_stream_dict(piw->data),
