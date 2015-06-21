@@ -388,6 +388,9 @@ static int write_color_as_process(gx_device_pdf * pdev, const gs_imager_state * 
                     case 4:
                         command = ppscc->setcmykcolor;
                         break;
+                    default:
+                        /* Can't happen since we already check the colour space */
+                        return gs_error_rangecheck;
                 }
                 pprintg1(pdev->strm, "%g", psdf_round(frac2float(conc[0]), 255, 8));
                 for (i = 1; i < pdev->color_info.num_components; i++) {
@@ -1263,14 +1266,14 @@ static int new_pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis
                 if (code < 0)
                     return code;
                 code = pdf_add_resource(pdev, pdev->substream_Resources, "/Pattern", pres);
-                if (code1 != gs_error_rangecheck) {
+                if (code >= 0) {
                     cos_value_write(cos_resource_value(&cs_value, pres->object), pdev);
                     pprints1(pdev->strm, " %s\n", ppscc->setcolorn);
                 }
-                else
+                else {
                     pres->where_used = 0;
-                if (code < 0)
                     return code;
+                }
                 *used_process_color = false;
             }
             break;
