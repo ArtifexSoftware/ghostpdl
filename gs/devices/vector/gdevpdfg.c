@@ -887,12 +887,10 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
         if (pcs_save == NULL && ppscc != NULL)
             pprints1(pdev->strm, "/%s", ppcs->rname);
     }
-    if (pres != NULL) {
-        pres->where_used |= pdev->used_mask;
-        code = pdf_add_resource(pdev, pdev->substream_Resources, "/ColorSpace", pres);
-        if (code < 0)
-            return code;
-    }
+    pres->where_used |= pdev->used_mask;
+    code = pdf_add_resource(pdev, pdev->substream_Resources, "/ColorSpace", pres);
+    if (code < 0)
+        return code;
 
     if (pcs_save != NULL) {
         cos_value_t value;
@@ -930,12 +928,10 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_imager_state * pis,
             if (ppscc != NULL)
                 pprints1(pdev->strm, "/%s", ppcs->rname);
         }
-        if (pres != NULL) {
-            pres->where_used |= pdev->used_mask;
-            code = pdf_add_resource(pdev, pdev->substream_Resources, "/ColorSpace", pres);
-            if (code < 0)
-                return code;
-        }
+        pres->where_used |= pdev->used_mask;
+        code = pdf_add_resource(pdev, pdev->substream_Resources, "/ColorSpace", pres);
+        if (code < 0)
+            return code;
     }
 
     if (ppscc != NULL) {
