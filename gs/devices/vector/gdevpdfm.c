@@ -60,7 +60,7 @@ typedef struct pdfmark_name_s {
 bool
 pdf_key_eq(const gs_param_string * pcs, const char *str)
 {
-    return (strlen(str) == pcs->size &&
+    return (strlen(str) == pcs->size && pcs->data &&
             !strncmp(str, (const char *)pcs->data, pcs->size));
 }
 
