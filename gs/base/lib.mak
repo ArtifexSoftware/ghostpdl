@@ -1317,7 +1317,7 @@ $(GLOBJ)gxdownscale.$(OBJ) : $(GLSRC)gxdownscale.c $(AK) \
 
 LIB0s=$(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)stream.$(OBJ) $(GLOBJ)strmio.$(OBJ)
 LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gsalpha.$(OBJ) $(GLOBJ)gxdownscale.$(OBJ) $(downscale_) $(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevflp.$(OBJ)
-LIB2s=$(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ)
+LIB2s=$(GLOBJ)gdevmplt.$(OBJ) $(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ)
 # Note: gschar.c is no longer required for a standard build;
 # we include it only for backward compatibility for library clients.
 LIB3s=$(GLOBJ)gscedata.$(OBJ) $(GLOBJ)gscencs.$(OBJ) $(GLOBJ)gschar.$(OBJ) $(GLOBJ)gscolor.$(OBJ)
@@ -1926,12 +1926,14 @@ $(GLOBJ)szlibd.$(OBJ) : $(GLOBJ)szlibd_$(SHARE_ZLIB).$(OBJ) $(MAKEDIRS)
 # We include this here, rather than in devs.mak, because it is more like
 # a feature than a simple device.
 
-gdevprn_h=$(GLSRC)gdevprn.h $(gdevflp_h) $(memory__h) $(string__h) $(gp_h) $(gx_h)\
+gdevprn_h=$(GLSRC)gdevprn.h $(gdevflp_h) $(gdevmplt_h) $(memory__h) $(string__h) $(gp_h) $(gx_h)\
  $(gserrors_h) $(gsmatrix_h) $(gsparam_h) $(gsutil_h) $(gxclpage_h)\
  $(gxclist_h) $(gxdevice_h) $(gxdevmem_h) $(gxrplane_h) $(gxclthrd_h) $(gxflp_h) $(gdevsclass_h)\
  $(GLSRC)gdevoflt.h
 
-page_=$(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) $(GLOBJ)gdevflp.$(OBJ) $(downscale_) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ)
+page_=$(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) $(GLOBJ)gdevmplt.$(OBJ) $(GLOBJ)gdevflp.$(OBJ)\
+ $(downscale_) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ)
+
 $(GLD)page.dev : $(LIB_MAK) $(ECHOGS_XE) $(page_) $(MAKEDIRS)
 	$(SETMOD) $(GLD)page $(page_)
 	$(ADDMOD) $(GLD)page -include $(GLD)clist
@@ -1941,6 +1943,9 @@ $(GLOBJ)gdevprn.$(OBJ) : $(GLSRC)gdevprn.c $(ctype__h)\
  $(gxclio_h) $(gxgetbit_h) $(gdevplnx_h) $(gstrans_h) \
  $(gxdownscale_h) $(gdevdevn_h) $(gxdevsop_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevprn.$(OBJ) $(C_) $(GLSRC)gdevprn.c
+
+$(GLOBJ)gdevmplt.$(OBJ) : $(GLSRC)gdevmplt.c $(gdevmplt_h)$(std_h)
+	$(GLCC) $(GLO_)gdevmplt.$(OBJ) $(C_) $(GLSRC)gdevmplt.c
 
 $(GLOBJ)gdevflp.$(OBJ) : $(GLSRC)gdevflp.c $(gdevflp_h)$(std_h)
 	$(GLCC) $(GLO_)gdevflp.$(OBJ) $(C_) $(GLSRC)gdevflp.c

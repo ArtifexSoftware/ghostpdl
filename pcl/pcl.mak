@@ -200,8 +200,6 @@ pcpalet_h   = $(PCLSRC)pcpalet.h  \
               $(pcindxed_h)       \
               $(pcht_h)
 
-gdevmplt_h  = $(PCLSRC)gdevmplt.h
-
 pcfrgrnd_h  = $(PCLSRC)pcfrgrnd.h \
               $(gx_h)             \
               $(gsstruct_h)       \
@@ -528,10 +526,6 @@ $(PCLOBJ)pcpalet.$(OBJ): $(PCLSRC)pcpalet.c \
                          $(gzstate_h)
 	$(PCLCCC) $(PCLSRC)pcpalet.c $(PCLO_)pcpalet.$(OBJ)
 
-$(PCLOBJ)gdevmplt.$(OBJ): $(PCLSRC)gdevmplt.c \
-                         $(gdevmplt_h)
-	$(PCLCCC) $(PCLSRC)gdevmplt.c $(PCLO_)gdevmplt.$(OBJ)
-
 $(PCLOBJ)pcpatrn.$(OBJ): $(PCLSRC)pcpatrn.c \
                          $(gx_h)            \
                          $(gsuid_h)         \
@@ -618,8 +612,7 @@ rtlbasec_   = $(PCLOBJ)pcbiptrn.$(OBJ) $(PCLOBJ)pccid.$(OBJ)    \
               $(PCLOBJ)pcfrgrnd.$(OBJ) $(PCLOBJ)pcht.$(OBJ)     \
               $(PCLOBJ)pcident.$(OBJ) $(PCLOBJ)pcindxed.$(OBJ)  \
               $(PCLOBJ)pclookup.$(OBJ) $(PCLOBJ)pcmtx3.$(OBJ)   \
-              $(PCLOBJ)pcpalet.$(OBJ) $(PCLOBJ)gdevmplt.$(OBJ)  \
-              $(PCLOBJ)pcpatrn.$(OBJ)   \
+              $(PCLOBJ)pcpalet.$(OBJ)  $(PCLOBJ)pcpatrn.$(OBJ)   \
               $(PCLOBJ)pcpatxfm.$(OBJ) $(PCLOBJ)pcuptrn.$(OBJ)  \
               $(PCLOBJ)pcwhtidx.$(OBJ) $(PCLOBJ)rtgmode.$(OBJ)  \
               $(PCLOBJ)rtrstcmp.$(OBJ)
