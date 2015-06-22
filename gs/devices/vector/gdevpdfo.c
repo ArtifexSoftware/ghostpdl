@@ -1728,8 +1728,10 @@ static int hash_cos_stream(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
         gs_free(pdev->memory, ptr, sizeof (byte), pcsp->size, "hash_cos_stream");
         pcsp = pcsp->next;
     }
-    gp_fseek_64(sfile, position_save, SEEK_SET);
     gs_md5_finish(md5, (gs_md5_byte_t *)hash);
+    if (gp_fseek_64(sfile, position_save, SEEK_SET) != 0)
+        return gs_error_ioerror;
+
     return 0;
 }
 
