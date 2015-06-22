@@ -15,7 +15,7 @@
 
 /* Device to set monochrome mode in PCL */
 /* This device is one of the 'subclassing' devices, part of a chain or pipeline
- * of devices, each of which can process some aspect of the graphics methods 
+ * of devices, each of which can process some aspect of the graphics methods
  * before passing them on to the next device in the chain.
  * In this case, the device simply returns monochrome color_mapping procs
  * instead of color ones. When we want to go back to color, we just
@@ -49,15 +49,6 @@ static dev_proc_get_color_mapping_procs(pcl_mono_palette_get_color_mapping_procs
 #define MAX_COORD (max_int_in_fixed - 1000)
 #define MAX_RESOLUTION 4000
 
-/* This device currently doesn't implement garbage collection, because at
- * the moment its only used in the PCL interpreter. Should the device ever
- * be added to the PostScript interpreter, or (better if ts required in
- * multiple interpreters) moved into the graphcs library then it is an
- * absolute requirement that the device should be capable of being garbage
- * collected and must cater for its pointers being relocated.
- * In which case the #if FOR_GC section must be used.
- */
-#if FOR_GC
 /* GC descriptor */
 public_st_device_pcl_mono_palette();
 
@@ -77,12 +68,6 @@ static RELOC_PTRS_WITH(pcl_mono_palette_reloc_ptrs, gx_device *dev)
     dev->child = gx_device_reloc_ptr(dev->child, gcst);
 }
 RELOC_PTRS_END
-#else
-#define public_st_pcl_mono_palette_device()	/* in gsdevice.c */\
-  gs_public_st_complex_only(st_pcl_mono_palette_device, gx_device, "PCL_Mono_Palette",\
-    0, 0, 0, gx_device_finalize)
-
-#endif
 
 public_st_pcl_mono_palette_device();
 
