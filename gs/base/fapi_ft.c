@@ -1578,11 +1578,6 @@ cubic_to(const FT_Vector * aControl1, const FT_Vector * aControl2,
     Control2y = ((int64_t) aControl2->y) << 26;
     return p->path->curveto(p->path, Control1x, Control1y, Control2x,
                             Control2y, p->x, p->y) ? -1 : 0;
-
-    p->x = aTo->x;
-    p->y = aTo->y;
-    return p->path->curveto(p->path, aControl1->x, aControl1->y, aControl2->x,
-                            aControl2->y, aTo->x, aTo->y) ? -1 : 0;
 }
 
 static const FT_Outline_Funcs TheFtOutlineFuncs = {
