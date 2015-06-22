@@ -877,7 +877,7 @@ JAPSRC=$(JAPDIR)$(D)
 
 ### ----------------- The NEC PC-PR201 printer device ----------------- ###
 
-pr201_=$(DEVOBJ)gdevp201.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ) $(DEVOBJ)gdevflp.$(OBJ)
+pr201_=$(DEVOBJ)gdevp201.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 
 $(DD)pr201.dev : $(pr201_)
 	$(SETPDEV) $(DD)pr201 $(pr201_)
@@ -896,7 +896,7 @@ $(DEVOBJ)gdevp201.$(OBJ) : $(JAPSRC)gdevp201.c $(PDEVH)
 
 ### ----------------- The Star JJ-100 printer device ----------------- ###
 
-jj100_=$(DEVOBJ)gdevj100.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ) $(DEVOBJ)gdevflp.$(OBJ)
+jj100_=$(DEVOBJ)gdevj100.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 
 $(DD)jj100.dev : $(jj100_)
 	$(SETPDEV) $(DD)jj100 $(jj100_)
@@ -906,7 +906,7 @@ $(DEVOBJ)gdevj100.$(OBJ) : $(JAPSRC)gdevj100.c $(PDEVH)
 
 ### ----------------- The Canon BubbleJet BJ10v device ----------------- ###
 
-bj10v_=$(DEVOBJ)gdev10v.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ) $(DEVOBJ)gdevflp.$(OBJ)
+bj10v_=$(DEVOBJ)gdev10v.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 
 $(DD)bj10v.dev : $(bj10v_)
 	$(SETPDEV) $(DD)bj10v $(bj10v_)
@@ -923,7 +923,7 @@ $(DEVOBJ)gdev10v.$(OBJ) : $(JAPSRC)gdev10v.c $(PDEVH)
 
 ### ------------------------- MAG file formats ------------------------- ###
 
-maguro_=$(DEVOBJ)gdevmag.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ) $(DEVOBJ)gdevflp.$(OBJ)
+maguro_=$(DEVOBJ)gdevmag.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 $(DEVOBJ)gdevmag.$(OBJ) : $(JAPSRC)gdevmag.c $(PDEVH)
 	$(DEVCC) $(O_)$@ $(C_) $(JAPSRC)gdevmag.c
 
@@ -934,7 +934,7 @@ $(DD)mag256.dev : $(maguro_)
 	$(SETDEV) $(DD)mag256 $(maguro_)
 
 ### ---------------- Dot matrix printer device ---------------- ###
-dmprt_=$(DEVOBJ)gdevdmpr.$(OBJ) $(DEVOBJ)dviprlib.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ) $(DEVOBJ)gdevflp.$(OBJ)
+dmprt_=$(DEVOBJ)gdevdmpr.$(OBJ) $(DEVOBJ)dviprlib.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 
 $(DD)dmprt.dev : $(dmprt_) $(DD)page.dev
 	$(SETDEV) $(DD)dmprt $(dmprt_)
@@ -976,7 +976,7 @@ $(DD)mj8000c.dev : $(mj700v2c_) $(DD)page.dev
 
 ### ----------------- The Fujitsu FMPR printer device ----------------- ###
 
-fmpr_=$(DEVOBJ)gdevfmpr.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ) $(DEVOBJ)gdevflp.$(OBJ)
+fmpr_=$(DEVOBJ)gdevfmpr.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 
 $(DD)fmpr.dev : $(fmpr_) $(DD)page.dev
 	$(SETPDEV) $(DD)fmpr $(fmpr_)
@@ -986,7 +986,7 @@ $(DEVOBJ)gdevfmpr.$(OBJ) : $(JAPSRC)gdevfmpr.c $(PDEVH)
 
 ### --------------- The Fujitsu FMLBP-2xx printer device --------------- ###
 
-fmlbp_=$(DEVOBJ)gdevfmlbp.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ) $(DEVOBJ)gdevflp.$(OBJ)
+fmlbp_=$(DEVOBJ)gdevfmlbp.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 
 $(DD)fmlbp.dev : $(fmlbp_) $(DD)page.dev
 	$(SETPDEV) $(DD)fmlbp $(fmlbp_)
@@ -1001,7 +1001,7 @@ $(DEVOBJ)gdevfmlbp.$(OBJ) : $(JAPSRC)gdevfmlbp.c $(PDEVH)
 #  $Id: gdevml6.mak,v 1.2 1998/03/16 13:32:33 tagawa Exp $
 #
 
-ml6_=$(DEVOBJ)gdevml6.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ) $(DEVOBJ)gdevflp.$(OBJ)
+ml6_=$(DEVOBJ)gdevml6.$(OBJ) $(DEVOBJ)gdevprn.$(OBJ)
 
 $(DD)ml600.dev : $(ml6_) $(DD)page.dev
 	$(SETPDEV) $(DD)ml600 $(ml6_)
