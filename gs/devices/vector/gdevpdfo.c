@@ -1833,9 +1833,11 @@ cos_stream_contents_write(const cos_stream_t *pcs, gx_device_pdf *pdev)
             pdf_copy_data_safe(s, sfile, pcsp->position, pcsp->size);
         else {
             end_pos = gp_ftell_64(sfile);
-            gp_fseek_64(sfile, pcsp->position, SEEK_SET);
+            if (gp_fseek_64(sfile, pcsp->position, SEEK_SET) != 0)
+                return gs_error_ioerror;
             pdf_copy_data(s, sfile, pcsp->size, ss);
-            gp_fseek_64(sfile, end_pos, SEEK_SET);
+            if (gp_fseek_64(sfile, end_pos, SEEK_SET) != 0)
+                return gs_error_ioerror;
         }
     }
     /* Reverse the elements back. */
