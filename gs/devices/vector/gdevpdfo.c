@@ -1718,7 +1718,9 @@ static int hash_cos_stream(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
             result = gs_note_error(gs_error_VMerror);
             return result;
         }
-        gp_fseek_64(sfile, pcsp->position, SEEK_SET);
+        if (gp_fseek_64(sfile, pcsp->position, SEEK_SET) != 0)
+            return gs_error_ioerror;
+
         if (fread(ptr, 1, pcsp->size, sfile) != pcsp->size) {
             gs_free(pdev->memory, ptr, sizeof (byte), pcsp->size, "hash_cos_stream");
             result = gs_note_error(gs_error_ioerror);
