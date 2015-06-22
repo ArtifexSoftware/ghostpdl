@@ -50,8 +50,6 @@ static dev_proc_get_color_mapping_procs(pcl_mono_palette_get_color_mapping_procs
 #define MAX_RESOLUTION 4000
 
 /* GC descriptor */
-public_st_device_pcl_mono_palette();
-
 #define public_st_pcl_mono_palette_device()	/* in gsdevice.c */\
   gs_public_st_complex_only(st_pcl_mono_palette_device, gx_device, "PCL_Mono_Palette",\
     0, pcl_mono_palette_enum_ptrs, pcl_mono_palette_reloc_ptrs, gx_device_finalize)
