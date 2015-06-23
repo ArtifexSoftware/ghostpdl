@@ -240,7 +240,7 @@ static const char *const standard_cmap_names[] = {
     /* The following were added in PDF 1.2. */
 
     "GB-EUC-H", "GB-EUC-V",
-    "GBpc-EUC-H"
+    "GBpc-EUC-H",
 
     "B5pc-H", "B5pc-V",
     "ETen-B5-H", "ETen-B5-V",
