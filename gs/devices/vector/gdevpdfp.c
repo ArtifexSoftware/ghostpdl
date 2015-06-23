@@ -396,6 +396,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         default:
             ecode = code;
             param_signal_error(plist, param_name, ecode);
+            break;
         case 0:
             if (!(locked && pdev->params.LockDistillerParams)) {
                 /*
