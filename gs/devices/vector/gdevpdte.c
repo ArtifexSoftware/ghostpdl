@@ -1008,7 +1008,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
                 bbox->p.y = cw.BBox.p.y;
             if (cw.BBox.q.x > bbox->q.x)
                 bbox->q.x = cw.BBox.q.x;
-            if (cw.BBox.q.x > bbox->q.y)
+            if (cw.BBox.q.y > bbox->q.y)
                 bbox->q.y = cw.BBox.q.y;
         }
     }
