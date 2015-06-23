@@ -1729,13 +1729,19 @@ pdf_copy_data_safe(stream *s, FILE *file, gs_offset_t position, long count)
         long copy = min(left, (long)sbuf_size);
         int64_t end_pos = gp_ftell_64(file);
 
-        gp_fseek_64(file, position + count - left, SEEK_SET);
+        if (gp_fseek_64(file, position + count - left, SEEK_SET) != 0) {
+            gs_note_error(gs_error_ioerror);
+            return;
+        }
         r = fread(buf, 1, copy, file);
         if (r < 1) {
             gs_note_error(gs_error_ioerror);
             return;
         }
-        gp_fseek_64(file, end_pos, SEEK_SET);
+        if (gp_fseek_64(file, end_pos, SEEK_SET) != 0) {
+            gs_note_error(gs_error_ioerror);
+            return;
+        }
         stream_write(s, buf, copy);
         sflush(s);
         left -= copy;
