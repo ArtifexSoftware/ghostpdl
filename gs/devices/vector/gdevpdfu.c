@@ -668,10 +668,12 @@ pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
         FILE *tfile = pdev->xref.file;
         int64_t tpos = gp_ftell_64(tfile);
 
-        gp_fseek_64 (tfile, ((int64_t)(id - pdev->FirstObjectNumber)) * sizeof(pos),
-              SEEK_SET);
+        if (gp_fseek_64 (tfile, ((int64_t)(id - pdev->FirstObjectNumber)) * sizeof(pos),
+              SEEK_SET) != 0)
+              return gs_error_ioerror;
         fwrite(&pos, sizeof(pos), 1, tfile);
-        gp_fseek_64(tfile, tpos, SEEK_SET);
+        if (gp_fseek_64(tfile, tpos, SEEK_SET) != 0)
+              return gs_error_ioerror;
     }
     if (pdev->ForOPDFRead && pdev->ProduceDSC) {
         switch(type) {
