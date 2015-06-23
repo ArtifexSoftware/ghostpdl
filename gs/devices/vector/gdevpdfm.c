@@ -725,7 +725,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
             gs_param_string key, value;
             cos_dict_t *adict = cos_dict_alloc(pdev, "action dict");
             cos_value_t avalue;
-            int code;
+            int code = 0;
 
             if (adict == 0)
                 return_error(gs_error_VMerror);
