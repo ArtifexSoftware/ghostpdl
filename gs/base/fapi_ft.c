@@ -274,7 +274,7 @@ new_face(gs_fapi_server * a_server, FT_Face a_ft_face,
         face->font_data_len = a_font_data_len;
         face->data_owned = data_owned;
         face->ftstrm = ftstrm;
-        face->server = a_server;
+        face->server = (ff_server *) a_server;
     }
     return face;
 }
@@ -936,11 +936,9 @@ transform_decompose(FT_Matrix * a_transform, FT_UInt * xresp, FT_UInt * yresp,
                     FT_Fixed * a_x_scale, FT_Fixed * a_y_scale)
 {
     double scalex, scaley, fact = 1.0;
-    double factx = 1.0, facty = 1.0;
     FT_Matrix ftscale_mat;
     FT_UInt xres;
     FT_UInt yres;
-    bool indep_scale;
 
     scalex = hypot((double)a_transform->xx, (double)a_transform->xy);
     scaley = hypot((double)a_transform->yx, (double)a_transform->yy);
