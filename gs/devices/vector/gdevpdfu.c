@@ -1161,7 +1161,7 @@ pdf_cancel_resource(gx_device_pdf * pdev, pdf_resource_t *pres, pdf_resource_typ
     if (pres->object) {
         pres->object->written = true;
         if (rtype == resourceXObject || rtype == resourceCharProc || rtype == resourceOther
-            || rtype > NUM_RESOURCE_TYPES) {
+            || rtype >= NUM_RESOURCE_TYPES) {
             int code = cos_stream_release_pieces((cos_stream_t *)pres->object);
 
             if (code < 0)
@@ -1473,7 +1473,7 @@ pdf_begin_resource_body(gx_device_pdf * pdev, pdf_resource_type_t rtype,
 {
     int code;
 
-    if (rtype > NUM_RESOURCE_TYPES)
+    if (rtype >= NUM_RESOURCE_TYPES)
         rtype = resourceOther;
 
     code = pdf_begin_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, rid),
@@ -1489,7 +1489,7 @@ pdf_begin_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id rid,
 {
     int code;
 
-    if (rtype > NUM_RESOURCE_TYPES)
+    if (rtype >= NUM_RESOURCE_TYPES)
         rtype = resourceOther;
 
     code = pdf_begin_resource_body(pdev, rtype, rid, ppres);
@@ -1521,7 +1521,7 @@ pdf_alloc_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id rid,
 {
     int code;
 
-    if (rtype > NUM_RESOURCE_TYPES)
+    if (rtype >= NUM_RESOURCE_TYPES)
         rtype = resourceOther;
 
     code = pdf_alloc_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, rid),
@@ -1653,7 +1653,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage
         stream *s = 0;
         int j;
 
-        if (i == resourceOther || i > NUM_RESOURCE_TYPES)
+        if (i == resourceOther || i >= NUM_RESOURCE_TYPES)
             continue;
         page->resource_ids[i] = 0;
         for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
