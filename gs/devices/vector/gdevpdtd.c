@@ -264,21 +264,20 @@ int pdf_font_descriptor_free(gx_device_pdf *pdev, pdf_resource_t *pres)
     pdf_base_font_t *pbfont = pfd->base_font;
     gs_font *copied = (gs_font *)pbfont->copied, *complete = (gs_font *)pbfont->complete;
 
-    gs_free_copied_font(copied);
-    if (complete && copied != complete) {
+    if (complete && copied != complete)
         gs_free_copied_font(complete);
-    }
-    if (pbfont && pbfont->font_name.size) {
-        gs_free_string(pdev->pdf_memory, pbfont->font_name.data, pbfont->font_name.size, "Free BaseFont FontName string");
-        pbfont->font_name.data = (byte *)0L;
-        pbfont->font_name.size = 0;
-    }
+
+    if (copied)
+        gs_free_copied_font(copied);
+
     if (pbfont) {
+        if (pbfont->font_name.size) {
+            gs_free_string(pdev->pdf_memory, pbfont->font_name.data, pbfont->font_name.size, "Free BaseFont FontName string");
+            pbfont->font_name.data = (byte *)0L;
+            pbfont->font_name.size = 0;
+        }
         gs_free_object(cos_object_memory(pres->object), pbfont, "Free base font from FontDescriptor)");
         pfd->base_font = 0;
-        pbfont->copied = 0;
-        if (complete && copied != complete)
-            pbfont->complete = 0;
     }
     if (pres->object) {
         gs_free_object(cos_object_memory(pres->object), pres->object, "free FontDescriptor object");
