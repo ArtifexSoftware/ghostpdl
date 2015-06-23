@@ -619,7 +619,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     } else {
         if ((pdev->params.ColorConversionStrategy == ccs_CMYK &&
              strcmp(pdev->color_info.cm_name, "DeviceCMYK")) ||
-            ((pdev->params.ColorConversionStrategy == ccs_sRGB ||
+            ((pdev->params.ColorConversionStrategy == ccs_RGB ||
              pdev->params.ColorConversionStrategy == ccs_sRGB) &&
               strcmp(pdev->color_info.cm_name, "DeviceRGB")) ||
             (pdev->params.ColorConversionStrategy == ccs_Gray &&
