@@ -45,4 +45,5 @@ typedef struct flp_text_enum_s {
 extern_st(st_device_flp);
 #define public_st_device_flp()	/* in gdevbflp.c */\
 
+
 #endif /* gdevflp_INCLUDED */

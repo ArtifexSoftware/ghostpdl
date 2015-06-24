@@ -31,11 +31,7 @@
 #include "gsiparm2.h"
 #include "gxdevmem.h"
 #include "gdevx.h"
-#include "gdevflp.h"
-#include "gdevoflt.h"
-
-extern gx_device_flp  gs_flp_device;
-extern gx_device_obj_filter  gs_obj_filter_device;
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 
 /* Define whether to try to read back exposure events after XGetImage. */
 /****** THIS IS USELESS.  XGetImage DOES NOT GENERATE EXPOSURE EVENTS. ******/

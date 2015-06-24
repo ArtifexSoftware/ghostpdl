@@ -33,10 +33,7 @@
 #include "gzcpath.h"
 #include "gxdevsop.h"
 
-#include "gdevflp.h"
-extern gx_device_flp gs_flp_device;
-#include "gdevoflt.h"
-extern gx_device_obj_filter gs_obj_filter_device;
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 
 /* Structure descriptors */
 public_st_device_vector();

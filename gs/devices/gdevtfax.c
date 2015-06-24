@@ -24,11 +24,7 @@
 #include "gdevfax.h"
 
 #include "gstiffio.h"
-#include "gdevflp.h"
-#include "gdevoflt.h"
-
-extern gx_device_flp  gs_flp_device;
-extern gx_device_obj_filter  gs_obj_filter_device;
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 
 /* ---------------- TIFF/fax output ---------------- */
 

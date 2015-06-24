@@ -29,11 +29,7 @@
 #include "gxpath.h"
 #include "gxcpath.h"
 
-#include "gdevflp.h"
-#include "gdevoflt.h"
-
-extern gx_device_flp  gs_flp_device;
-extern gx_device_obj_filter  gs_obj_filter_device;
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 
 /* GC descriptor */
 public_st_device_bbox();
