@@ -127,8 +127,6 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("PDFUseOldCMS", gs_param_type_bool, UseOldColor),
     pi("FastWebView", gs_param_type_bool, Linearise),
     pi("NoOutputFonts", gs_param_type_bool, FlattenFonts),
-/*    pi("FirstPage", gs_param_type_int, FirstPage),
-    pi("LastPage", gs_param_type_int, LastPage),*/
 #undef pi
     gs_param_item_end
 };
