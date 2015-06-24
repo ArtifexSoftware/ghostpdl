@@ -1005,13 +1005,7 @@ int gdev_vector_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "HighLevelDevice") == 0) {
         return param_write_bool(plist, "HighLevelDevice", &bool_true);
     }
-    if (strcmp(Param, "FirstPage") == 0) {
-        return param_write_int(plist, "FirstPage", &vdev->FirstPage);
-    }
-    if (strcmp(Param, "LastPage") == 0) {
-        return param_write_int(plist, "LastPage", &vdev->LastPage);
-    }
-    return gs_error_undefined;
+    return gx_default_get_param(dev, Param, list);
 }
 
 /* Get parameters. */

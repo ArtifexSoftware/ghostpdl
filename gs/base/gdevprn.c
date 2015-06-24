@@ -661,7 +661,7 @@ gdev_prn_get_param(gx_device *dev, char *Param, void *list)
 {
     gx_device_printer * const ppdev = (gx_device_printer *)dev;
     gs_param_list * plist = (gs_param_list *)list;
-    bool pageneutralcolor = false, temp_bool;
+    bool pageneutralcolor = false;
 
     if (strcmp(Param, "Duplex") == 0) {
         if (ppdev->Duplex_set >= 0) {
@@ -720,25 +720,7 @@ gdev_prn_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "pageneutralcolor") == 0) {
         return param_write_bool(plist, "pageneutralcolor", &pageneutralcolor);
     }
-    if (strcmp(Param, "FirstPage") == 0) {
-        return param_write_int(plist, "FirstPage", &dev->FirstPage);
-    }
-    if (strcmp(Param, "LastPage") == 0) {
-        return param_write_int(plist, "LastPage", &dev->LastPage);
-    }
-    if (strcmp(Param, "FILTERIMAGE") == 0) {
-        temp_bool = dev->ObjectFilter & FILTERIMAGE;
-        return param_write_bool(plist, "FILTERIMAGE", &temp_bool);
-    }
-    if (strcmp(Param, "FILTERTEXT") == 0) {
-        temp_bool = dev->ObjectFilter & FILTERTEXT;
-        return param_write_bool(plist, "FILTERTEXT", &temp_bool);
-    }
-    if (strcmp(Param, "FILTERVECTOR") == 0) {
-        temp_bool = dev->ObjectFilter & FILTERVECTOR;
-        return param_write_bool(plist, "FILTERVECTOR", &temp_bool);
-    }
-    return gs_error_undefined;
+    return gx_default_get_param(dev, Param, list);
 }
 
 /* Get parameters.  Printer devices add several more parameters */

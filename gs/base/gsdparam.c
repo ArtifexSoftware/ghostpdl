@@ -82,7 +82,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     bool graydetection = false;
     bool usefastcolor = false;  /* set for unmanaged color */
     bool sim_overprint = false;  /* By default do not simulate overprinting */
-    bool prebandthreshold = true;
+    bool prebandthreshold = true, temp_bool = false;
 
     if(strcmp(Param, "OutputDevice") == 0){
         gs_param_string dns;
@@ -412,6 +412,24 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     }
     if (strcmp(Param, "TextKPreserve") == 0) {
         return param_write_int(plist,"TextKPreserve", (const int *) &(blackpreserve[3]));
+    }
+    if (strcmp(Param, "FirstPage") == 0) {
+        return param_write_int(plist, "FirstPage", &dev->FirstPage);
+    }
+    if (strcmp(Param, "LastPage") == 0) {
+        return param_write_int(plist, "LastPage", &dev->LastPage);
+    }
+    if (strcmp(Param, "FILTERIMAGE") == 0) {
+        temp_bool = dev->ObjectFilter & FILTERIMAGE;
+        return param_write_bool(plist, "FILTERIMAGE", &temp_bool);
+    }
+    if (strcmp(Param, "FILTERTEXT") == 0) {
+        temp_bool = dev->ObjectFilter & FILTERTEXT;
+        return param_write_bool(plist, "FILTERTEXT", &temp_bool);
+    }
+    if (strcmp(Param, "FILTERVECTOR") == 0) {
+        temp_bool = dev->ObjectFilter & FILTERVECTOR;
+        return param_write_bool(plist, "FILTERVECTOR", &temp_bool);
     }
 
     return gs_error_undefined;
