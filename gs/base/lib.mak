@@ -1944,16 +1944,16 @@ $(GLOBJ)gdevprn.$(OBJ) : $(GLSRC)gdevprn.c $(ctype__h)\
  $(gxdownscale_h) $(gdevdevn_h) $(gxdevsop_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevprn.$(OBJ) $(C_) $(GLSRC)gdevprn.c
 
-$(GLOBJ)gdevmplt.$(OBJ) : $(GLSRC)gdevmplt.c $(gdevmplt_h)$(std_h)
+$(GLOBJ)gdevmplt.$(OBJ) : $(GLSRC)gdevmplt.c $(gdevmplt_h) $(std_h)
 	$(GLCC) $(GLO_)gdevmplt.$(OBJ) $(C_) $(GLSRC)gdevmplt.c
 
-$(GLOBJ)gdevflp.$(OBJ) : $(GLSRC)gdevflp.c $(gdevflp_h)$(std_h)
+$(GLOBJ)gdevflp.$(OBJ) : $(GLSRC)gdevflp.c $(gdevflp_h) $(std_h)
 	$(GLCC) $(GLO_)gdevflp.$(OBJ) $(C_) $(GLSRC)gdevflp.c
 
-$(GLOBJ)gdevoflt.$(OBJ) : $(GLSRC)gdevoflt.c $(gdevoflp_h)$(std_h)
+$(GLOBJ)gdevoflt.$(OBJ) : $(GLSRC)gdevoflt.c $(gdevoflp_h) $(std_h)
 	$(GLCC) $(GLO_)gdevoflt.$(OBJ) $(C_) $(GLSRC)gdevoflt.c
 
-$(GLOBJ)gdevsclass.$(OBJ) : $(GLSRC)gdevsclass.c $(gdevsclass_h)$(std_h)
+$(GLOBJ)gdevsclass.$(OBJ) : $(GLSRC)gdevsclass.c $(gdevsclass_h) $(std_h)
 	$(GLCC) $(GLO_)gdevsclass.$(OBJ) $(C_) $(GLSRC)gdevsclass.c
 
 # Planar page devices
