@@ -1929,7 +1929,7 @@ $(GLOBJ)szlibd.$(OBJ) : $(GLOBJ)szlibd_$(SHARE_ZLIB).$(OBJ) $(MAKEDIRS)
 gdevprn_h=$(GLSRC)gdevprn.h $(gdevflp_h) $(gdevmplt_h) $(memory__h) $(string__h) $(gp_h) $(gx_h)\
  $(gserrors_h) $(gsmatrix_h) $(gsparam_h) $(gsutil_h) $(gxclpage_h)\
  $(gxclist_h) $(gxdevice_h) $(gxdevmem_h) $(gxrplane_h) $(gxclthrd_h) $(gxflp_h) $(gdevsclass_h)\
- $(GLSRC)gdevoflt.h
+ $(gdevoflt_h) $(gdevkrnlsclass_h)
 
 page_=$(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) $(GLOBJ)gdevmplt.$(OBJ) $(GLOBJ)gdevflp.$(OBJ)\
  $(downscale_) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ)
@@ -2161,7 +2161,7 @@ $(GLOBJ)gsmchunk.$(OBJ) :  $(GLSRC)gsmchunk.c $(AK) $(gx_h)\
 # ---------------- Vector devices ---------------- #
 # We include this here for the same reasons as page.dev.
 
-gdevvec_h=$(GLSRC)gdevvec.h $(gdevbbox_h) $(gp_h)\
+gdevvec_h=$(GLSRC)gdevvec.h $(gdevbbox_h) $(gp_h) $(gdevflp_h) $(gdevoflt_h) $(gdevkrnlsclass_h)\
  $(gsropt_h) $(gxdevice_h) $(gxiparam_h) $(gxistate_h) $(gxhldevc_h) $(stream_h)
 
 vector_=$(GLOBJ)gdevvec.$(OBJ)
