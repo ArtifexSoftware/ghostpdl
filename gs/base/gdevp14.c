@@ -5463,8 +5463,8 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     bool use_pdf14_accum = false;
 
     /* Guard against later seg faults, this should not be possible */
-    if (!target)
-        return gs_error_Fatal;		/* punt for now */
+    if (target == NULL)
+        return gs_throw_code(gs_error_Fatal);
 
     /* If the device is not a printer class device, it won't support saved-pages */
     /* and so we may need to make a clist device in order to prevent very large  */
@@ -5631,7 +5631,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
 
 no_clist_accum:
         /* FIXME: We allocated a really small p14dev, but that won't work */
-    return gs_error_Fatal;		/* punt for now */
+    return gs_throw_code(gs_error_Fatal); /* punt for now */
 }
 
 /*
