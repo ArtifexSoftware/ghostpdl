@@ -853,34 +853,30 @@ typedef struct gdev_space_params_s {
  */
 #define GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, procs)\
     {\
-        gx_device *saved = dev;\
-        while(dev->parent) {dev = dev->parent;}\
-        procs = (gx_cm_color_map_procs *)dev_proc(dev, get_color_mapping_procs)(dev);\
-        dev = saved;\
+        gx_device *temp = dev;\
+        while(temp->parent) {temp = temp->parent;}\
+        procs = (gx_cm_color_map_procs *)dev_proc(temp, get_color_mapping_procs)(temp);\
     }
 
 #define MAP_RGB_SUBCLASS(procs, dev, pis, r, g, b, cm_comps)\
     {\
-        gx_device *saved = dev;\
-        while(dev->parent) {dev = dev->parent;}\
-        procs->map_rgb(dev, pis, r, g, b, cm_comps);\
-        dev = saved;\
+        gx_device *temp = dev;\
+        while(temp->parent) {temp = temp->parent;}\
+        procs->map_rgb(temp, pis, r, g, b, cm_comps);\
     }
 
 #define MAP_GRAY_SUBCLASS(procs, dev, gray, cm_comps)\
     {\
-        gx_device *saved = dev;\
-        while(dev->parent) {dev = dev->parent;}\
-        procs->map_gray(dev, gray, cm_comps);\
-        dev = saved;\
+        gx_device *temp = dev;\
+        while(temp->parent) {temp = temp->parent;}\
+        procs->map_gray(temp, gray, cm_comps);\
     }
 
 #define MAP_CMYK_SUBCLASS(procs, dev, c, m, y, k, cm_comps)\
     {\
-        gx_device *saved = dev;\
-        while(dev->parent) {dev = dev->parent;}\
-        procs->map_cmyk(dev, c, m, y, k, cm_comps);\
-        dev = saved;\
+        gx_device *temp = dev;\
+        while(temp->parent) {temp = temp->parent;}\
+        procs->map_cmyk(temp, c, m, y, k, cm_comps);\
     }
 
 /* ---------------- Device procedures ---------------- */
