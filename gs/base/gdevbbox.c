@@ -625,10 +625,6 @@ bbox_get_params(gx_device * dev, gs_param_list * plist)
     if (code < 0)
         return code;
     code = param_write_bool(plist, "WhiteIsOpaque", &bdev->white_is_opaque);
-    if ((code = param_write_int(plist, "FirstPage", &bdev->FirstPage)) < 0)
-        return code;
-    if ((code = param_write_int(plist, "LastPage", &bdev->LastPage)) < 0)
-        return code;
     return code;
 }
 
@@ -681,14 +677,6 @@ bbox_put_params(gx_device * dev, gs_param_list * plist)
         }
         bdev->white_is_opaque = white_is_opaque;
     }
-    code = param_read_int(plist,  (param_name = "FirstPage"), &dev->FirstPage);
-    if (code < 0)
-        ecode = code;
-
-    code = param_read_int(plist,  (param_name = "LastPage"), &dev->LastPage);
-    if (code < 0)
-        ecode = code;
-
     bbox_copy_params(bdev, bdev->is_open);
     return code;
 }
