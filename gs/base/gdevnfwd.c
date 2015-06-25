@@ -725,7 +725,7 @@ fwd_map_gray_cs(gx_device * dev, frac gray, frac out[])
           pprocs->map_gray == 0)
         gray_cs_to_gray_cm(tdev, gray, out);   /* if all else fails */
     else
-        MAP_GRAY_SUBCLASS(pprocs, tdev, gray, out)
+        MAP_GRAY_SUBCLASS(pprocs, tdev, gray, out);
 }
 
 /*
@@ -747,7 +747,7 @@ fwd_map_rgb_cs(gx_device * dev, const gs_imager_state *pis,
           pprocs->map_rgb == 0)
         rgb_cs_to_rgb_cm(tdev, pis, r, g, b, out);   /* if all else fails */
     else
-        MAP_RGB_SUBCLASS(pprocs, tdev, pis, r, g, b, out)
+        MAP_RGB_SUBCLASS(pprocs, tdev, pis, r, g, b, out);
 }
 
 /*
@@ -768,7 +768,7 @@ fwd_map_cmyk_cs(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
           pprocs->map_cmyk == 0)
         cmyk_cs_to_cmyk_cm(tdev, c, m, y, k, out);   /* if all else fails */
     else
-        MAP_CMYK_SUBCLASS(pprocs, tdev, c, m, y, k, out)
+        MAP_CMYK_SUBCLASS(pprocs, tdev, c, m, y, k, out);
 }
 
 static const gx_cm_color_map_procs FwdDevice_cm_map_procs = {
