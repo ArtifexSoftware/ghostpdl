@@ -838,9 +838,11 @@ typedef struct gdev_space_params_s {
 /* The bit fields used to filter objects out. If any bit field is set
  * then objects of that type will not be rendered/output.
  */
-#define FILTERIMAGE 1
-#define FILTERTEXT 2
-#define FILTERVECTOR 4
+typedef enum FILTER_FLAGS {
+    FILTERIMAGE = 1,
+    FILTERTEXT = 2,
+    FILTERVECTOR = 4
+} OBJECT_FILTER_FLAGS;
 
 /* The color mapping procs were used in a way which defeats a 'pipeline'
  * approach to devices. Certain graphics library routines (eg images)
