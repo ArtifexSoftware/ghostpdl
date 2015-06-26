@@ -193,7 +193,7 @@ pcl_rgb_cs_to_cm(gx_device * dev, const gs_imager_state * pis, frac r, frac g,
         dev = dev->child;
     };
 
-    if (dev->child && dev->child) {
+    if (dev && dev->child) {
         psubclass_data = dev->subclass_data;
         gray = color_rgb_to_gray(r, g, b, NULL);
 
@@ -214,7 +214,7 @@ pcl_cmyk_cs_to_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
         dev = dev->child;
     };
 
-    if (dev->child && dev->child) {
+    if (dev && dev->child) {
         psubclass_data = dev->subclass_data;
         gray = color_cmyk_to_gray(c, m, y, k, NULL);
 

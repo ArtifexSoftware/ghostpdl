@@ -252,7 +252,9 @@ display_open(gx_device * dev)
 #endif
         gx_device *pdev;
 
-        gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        ccode = gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        if (ccode < 0)
+            return ccode;
         pdev = (gx_device *)dev;
         while (pdev->parent)
             pdev = pdev->parent;
@@ -275,7 +277,9 @@ display_open(gx_device * dev)
 #endif
         gx_device *pdev;
 
-        gx_device_subclass(dev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+        ccode = gx_device_subclass(dev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+        if (ccode < 0)
+            return ccode;
         pdev = (gx_device *)dev;
         while (pdev->parent)
             pdev = pdev->parent;

@@ -109,7 +109,9 @@ tfax_open(gx_device * pdev)
 #endif
         gx_device *dev;
 
-        gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        code = gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        if (code < 0)
+            return code;
         dev = (gx_device *)pdev;
         while (dev->parent)
             dev = dev->parent;
@@ -131,7 +133,9 @@ tfax_open(gx_device * pdev)
 #endif
         gx_device *dev;
 
-        gx_device_subclass(pdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+        code = gx_device_subclass(pdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+        if (code < 0)
+            return code;
         dev = (gx_device *)pdev;
         while (dev->parent)
             dev = dev->parent;

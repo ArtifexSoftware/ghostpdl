@@ -352,7 +352,9 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
 #endif
         gx_device *pdev;
 
-        gx_device_subclass((gx_device *)vdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        code = gx_device_subclass((gx_device *)vdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        if (code < 0)
+            return code;
         pdev = (gx_device *)vdev;
         while (pdev->parent)
             pdev = pdev->parent;
@@ -370,7 +372,9 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
 #endif
         gx_device *pdev;
 
-        gx_device_subclass((gx_device *)vdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+        code = gx_device_subclass((gx_device *)vdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+        if (code < 0)
+            return code;
         pdev = (gx_device *)vdev;
         while (pdev->parent)
             pdev = pdev->parent;

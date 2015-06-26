@@ -29,7 +29,7 @@
 #include "gxpath.h"
 #include "gxcpath.h"
 
-#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
+#include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and object filter */
 
 /* GC descriptor */
 public_st_device_bbox();
@@ -369,8 +369,11 @@ bbox_open_device(gx_device * dev)
         if (!bdev->PageHandlerPushed && (bdev->FirstPage != 0 || bdev->LastPage != 0)) {
 #endif
             gx_device *pdev;
+            int code;
 
-            gx_device_subclass((gx_device *)bdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+            code = gx_device_subclass((gx_device *)bdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+            if (code < 0)
+                return code;
             pdev = (gx_device *)bdev;
             while (pdev->parent)
                 pdev = pdev->parent;
@@ -390,8 +393,11 @@ bbox_open_device(gx_device * dev)
         if (!bdev->ObjectHandlerPushed && (bdev->ObjectFilter != 0)) {
 #endif
             gx_device *pdev;
+            int code;
 
-            gx_device_subclass((gx_device *)bdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+            code = gx_device_subclass((gx_device *)bdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+            if (code < 0)
+                return code;
             pdev = (gx_device *)bdev;
             while (pdev->parent)
                 pdev = pdev->parent;

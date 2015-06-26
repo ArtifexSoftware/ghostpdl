@@ -815,6 +815,7 @@ static int
 pcl_update_mono(pcl_state_t * pcs)
 {
     gx_device *pdev, *dev = gs_currentdevice(pcs->pgs);
+    int code = 0;
 
     if (pcs->monochrome_mode) {
         while (dev) {
@@ -825,7 +826,7 @@ pcl_update_mono(pcl_state_t * pcs)
             dev = dev->child;
         }
         if (!dev){
-            gx_device_subclass(pdev, (gx_device *)&gs_pcl_mono_palette_device, sizeof(pcl_mono_palette_subclass_data));
+            code = gx_device_subclass(pdev, (gx_device *)&gs_pcl_mono_palette_device, sizeof(pcl_mono_palette_subclass_data));
         }
     } else {
         while (dev) {
@@ -839,7 +840,7 @@ pcl_update_mono(pcl_state_t * pcs)
         }
     }
     gx_unset_dev_color(pcs->pgs);
-    return 0;
+    return code;
 }
 
 /*

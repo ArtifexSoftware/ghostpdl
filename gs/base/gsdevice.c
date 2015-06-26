@@ -59,7 +59,7 @@ gx_device_finalize(const gs_memory_t *cmem, void *vptr)
 
     /* Deal with subclassed devices. Ordinarily these should not be a problem, we
      * will never see them, but if ths is a end of job restore we can end up
-     * with th 'child' device(s) being freed before their parents. We need to make
+     * with the 'child' device(s) being freed before their parents. We need to make
      * sure we don't leave any dangling pointers in that case.
      */
     if (dev->child)

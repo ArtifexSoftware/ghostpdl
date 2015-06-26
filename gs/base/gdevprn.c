@@ -99,7 +99,9 @@ gdev_prn_open(gx_device * pdev)
     if (!pdev->PageHandlerPushed && (pdev->FirstPage != 0 || pdev->LastPage != 0)) {
 #endif
         pdev->PageHandlerPushed = true;
-        gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        code = gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        if (code < 0)
+            return code;
         pdev = pdev->child;
         pdev->is_open = true;
         update_procs = true;
@@ -111,7 +113,9 @@ gdev_prn_open(gx_device * pdev)
     if (!pdev->ObjectHandlerPushed && (pdev->ObjectFilter != 0)) {
 #endif
         pdev->ObjectHandlerPushed = true;
-        gx_device_subclass(pdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+        code = gx_device_subclass(pdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+        if (code < 0)
+            return code;
         pdev = pdev->child;
         pdev->is_open = true;
         update_procs = true;

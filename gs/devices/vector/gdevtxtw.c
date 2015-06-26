@@ -285,8 +285,11 @@ txtwrite_open_device(gx_device * dev)
     if (!dev->PageHandlerPushed && (dev->FirstPage != 0 || dev->LastPage != 0)) {
 #endif
         gx_device *pdev;
+        int code;
 
-        gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        code = gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
+        if (code < 0)
+            return code;
         pdev = (gx_device *)dev;
         while (pdev->parent)
             pdev = pdev->parent;
@@ -307,8 +310,11 @@ txtwrite_open_device(gx_device * dev)
     if (!dev->ObjectHandlerPushed && (dev->ObjectFilter != 0)) {
 #endif
         gx_device *pdev;
+        int code;
 
-        gx_device_subclass(dev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+        code = gx_device_subclass(dev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
+        if (code < 0)
+            return code;
         pdev = (gx_device *)dev;
         while (pdev->parent)
             pdev = pdev->parent;
