@@ -865,8 +865,6 @@ struct gx_device_pdf_s {
     bool Linearise;                 /* Whether to Linearizse the file, the next 2 parameter
                                      * are only used if this is true.
                                      */
-/*    int FirstPage;
-    int LastPage;*/
     pdf_linearisation_record_t
         *ResourceUsage;             /* An array, one per resource defined to date, which
                                      * contains either -2 (shared on multiple pages), -1
