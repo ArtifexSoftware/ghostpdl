@@ -419,6 +419,10 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "LastPage") == 0) {
         return param_write_int(plist, "LastPage", &dev->LastPage);
     }
+    if (strcmp(Param, "DisablePageHandler") == 0) {
+        temp_bool = dev->DisablePageHandler;
+        return param_write_bool(plist, "DisablePageHandler", &temp_bool);
+    }
     if (strcmp(Param, "FILTERIMAGE") == 0) {
         temp_bool = dev->ObjectFilter & FILTERIMAGE;
         return param_write_bool(plist, "FILTERIMAGE", &temp_bool);
@@ -657,6 +661,10 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     if ((code = param_write_int(plist, "FirstPage", &dev->FirstPage)) < 0)
         return code;
     if ((code = param_write_int(plist, "LastPage", &dev->LastPage)) < 0)
+        return code;
+
+    temp_bool = dev->DisablePageHandler;
+    if ((code = param_write_bool(plist, "DisablePageHandler", &temp_bool)) < 0)
         return code;
 
     temp_bool = dev->ObjectFilter & FILTERIMAGE;
@@ -1740,6 +1748,12 @@ label:\
     code = param_read_int(plist,  "LastPage", &dev->LastPage);
     if (code < 0)
         ecode = code;
+
+    code = param_read_bool(plist, "DisablePageHandler", &temp_bool);
+    if (code < 0)
+        ecode = code;
+    if (code == 0)
+        dev->DisablePageHandler = temp_bool;
 
     code = param_read_bool(plist, "FILTERIMAGE", &temp_bool);
     if (code < 0)

@@ -761,6 +761,7 @@ typedef struct gdev_space_params_s {
         int FirstPage;\
         int LastPage;\
         bool PageHandlerPushed;    /* Handles FirstPage and LastPage operations */\
+        bool DisablePageHandler;   /* Can be set by the interpreter if it will process FirstPage and LastPage itself */\
         int ObjectFilter;          /* Bit field for which object filters to apply */\
         bool ObjectHandlerPushed;  /* Handles filtering of objects to devices */\
         long PageCount;			/* number of pages written */\
