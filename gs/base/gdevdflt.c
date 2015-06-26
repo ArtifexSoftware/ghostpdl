@@ -1069,6 +1069,17 @@ gx_default_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t graphics
 
 /* ---------------- Device subclassing procedures ---------------- */
 
+/* Non-obvious code. The 'dest_procs' is the 'procs' memory occupied by the original device that we decided to subclass,
+ * 'src_procs' is the newly allocated piece of memory, to whch we have already copied the content of the
+ * original device (including the procs), prototype is the device structure prototype for the subclassing device.
+ * Here we copy the methods from the prototype to the original device procs memory *but* if the original (src_procs)
+ * device had a NULL method, we make the new device procs have a NULL method too.
+ * The reason for ths is ugly, there are some places in the graphics library which explicitly check for
+ * a device having a NULL method and take different code paths depending on the result.
+ * Now in general we expect subclassing devices to implement *every* method, so if we didn't copy
+ * over NULL methods present in the original source device then the code path could be inappropriate for
+ * that underlying (now subclassed) device.
+ */
 int gx_copy_device_procs(gx_device_procs *dest_procs, gx_device_procs *src_procs, gx_device_procs *prototype_procs)
 {
     if (src_procs->open_device != NULL)
@@ -1244,7 +1255,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
 
     /* Allocate a device structure for the new child device */
     child_dev = gs_alloc_struct_immovable(dev_to_subclass->memory, gx_device, a_std,
-                                        "gs_copydevice(device)");
+                                        "gs_device_subclass(device)");
     if (child_dev == 0) {
         gs_free_const_object(dev_to_subclass->memory->non_gc_memory, a_std, "gs_device_subclass(stype)");
         return_error(gs_error_VMerror);
@@ -1268,7 +1279,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     memset(psubclass_data, 0x00, private_data_size);
 
     if (dev_to_subclass->stype->ssize < new_prototype->params_size)
-        return gs_error_VMerror;
+        return_error(gs_error_VMerror);
 
     gx_copy_device_procs(&dev_to_subclass->procs, &child_dev->procs, &new_prototype->procs);
     dev_to_subclass->procs.fill_rectangle = new_prototype->procs.fill_rectangle;
@@ -1340,16 +1351,21 @@ int gx_unsubclass_device(gx_device *dev)
      * their child pointer can then be NULL.
      */
     if (child) {
-        /* If this device doesn't have a dynamic stype, but the child does, we'll keep the child stype
-         * and keep the device as dynamic. Otherwise if this device isn't dynamic, we'll use ths
-         * device's stype, so if the child's stype is dynamic, free it.
+        /* we cannot afford to free the child device if its stype is not dynamic because
+         * we can't 'null' the finalise routine, and we cannot permit the device to be finalised
+         * because we have copied it up one level, not discarded it.
+         * (this shouldn't happen! Child devices are always created with a dynamic stype)
+         * If this ever happens garbage collecton will eventually clean up the memory.
          */
-        if (dynamic && child->stype_is_dynamic)
-            gs_free_const_object(child->memory->non_gc_memory, child->stype,
-                             "unsubclass");
-        memset(child, 0x00, child->stype->ssize);
-        gs_free_object(dev->memory, child, "gx_unsubclass_device(device)");
+        if (child->stype_is_dynamic) {
+            gs_memory_struct_type_t *b_std = (gs_memory_struct_type_t *)child->stype;
+            /* We definitley do *not* want to finalise the device, we just copied it up a level */
+            b_std->finalize = 0;
+            gs_free_object(dev->memory, child, "gx_unsubclass_device(device)");
+        }
     }
+    if(dev->child)
+        dev->child->parent = dev;
     dev->parent = parent;
 
     /* If this device has a dynamic stype, we wnt to keep using it, but we copied
@@ -1359,6 +1375,8 @@ int gx_unsubclass_device(gx_device *dev)
     if (dynamic) {
         dev->stype = a_std;
         dev->stype_is_dynamic = 1;
+    } else {
+        dev->stype_is_dynamic = 0;
     }
 
     return 0;
