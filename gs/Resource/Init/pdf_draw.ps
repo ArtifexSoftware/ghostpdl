@@ -2758,7 +2758,8 @@ currentdict /set_bc_color undef
   } bdef
 
   /Link { % <annot> -> <false>
-    dup drawborder dup calc_annot_scale 3 -1 roll drawwidget //false
+    dup drawborder dup calc_annot_scale
+    2 copy mul 0 ne {3 -1 roll drawwidget //false}{pop pop (   **** Warning: ignoring annotation with scale factor of 0\n) pdfformaterror}ifelse
   } bdef
 
   /Ink { % <annot> -> <annot> <true>
@@ -2771,15 +2772,20 @@ currentdict /set_bc_color undef
       1 setlinejoin
       dup annotsetcolor {
         dup calc_annot_scale
-        3 index annotrect pop pop translate
-        scale
-        /InkList knownoget {
-          { oforce
-            mark exch { oforce } forall
-            .pdfinkpath
-            stroke
-          } forall
-        } if
+        2 copy mul 0 ne
+        {
+            3 index annotrect pop pop translate
+            scale
+            /InkList knownoget {
+              { oforce
+                mark exch { oforce } forall
+                .pdfinkpath
+                stroke
+              } forall
+            } if
+        }
+        {pop pop (   **** Warning: ignoring annotation with scale factor of 0\n) pdfformaterror}
+        ifelse
       } if
       //false
     } ifelse
@@ -2791,25 +2797,30 @@ currentdict /set_bc_color undef
     } {
       0 setlinecap
       dup annotsetcolor {
-        dup calc_annot_scale scale
+        dup calc_annot_scale
+        2 copy mul 0 ne
+        {
+            scale
+            /QuadPoints knownoget {
+              aload length 8 idiv {
+                //quadpoints2basis exec
 
-        /QuadPoints knownoget {
-          aload length 8 idiv {
-            //quadpoints2basis exec
+                % Acrobat draws the line at 1/7 of the box width from the bottom
+                % of the box and 1/16 thick of the box width. /Rect is ignored.
 
-            % Acrobat draws the line at 1/7 of the box width from the bottom
-            % of the box and 1/16 thick of the box width. /Rect is ignored.
-
-            2 copy dup mul exch dup mul add sqrt 16 div setlinewidth
-            7 div 4 index add exch % x0 y0 x1-x0 y1-y0 (y2-y0)/7+y0 x2-x0
-            7 div 5 index add exch % x0 y0 x1-x0 y1-y0 (x2-x0)/7+x0 (y2-y0)/7+y0
-            2 copy moveto
-            2 index add exch
-            3 index add exch lineto % x0 y0 x1-x0 y1-y0
-            pop pop pop pop
-            stroke
-          } repeat
-        } if
+                2 copy dup mul exch dup mul add sqrt 16 div setlinewidth
+                7 div 4 index add exch % x0 y0 x1-x0 y1-y0 (y2-y0)/7+y0 x2-x0
+                7 div 5 index add exch % x0 y0 x1-x0 y1-y0 (x2-x0)/7+x0 (y2-y0)/7+y0
+                2 copy moveto
+                2 index add exch
+                3 index add exch lineto % x0 y0 x1-x0 y1-y0
+                pop pop pop pop
+                stroke
+              } repeat
+            } if
+        }
+        {pop pop (   **** Warning: ignoring annotation with scale factor of 0\n) pdfformaterror}
+        ifelse
       } if
       //false
     } ifelse
@@ -2821,25 +2832,30 @@ currentdict /set_bc_color undef
     } {
       0 setlinecap
       dup annotsetcolor {
-        dup calc_annot_scale scale
+        dup calc_annot_scale
+        2 copy mul 0 ne
+        {
+            scale
+            /QuadPoints knownoget {
+              aload length 8 idiv {
+                //quadpoints2basis exec
 
-        /QuadPoints knownoget {
-          aload length 8 idiv {
-            //quadpoints2basis exec
+                % Acrobat draws the line at 3/7 of the box width from the bottom
+                % of the box and 1/16 thick of the box width. /Rect is ignored.
 
-            % Acrobat draws the line at 3/7 of the box width from the bottom
-            % of the box and 1/16 thick of the box width. /Rect is ignored.
-
-            2 copy dup mul exch dup mul add sqrt 16 div setlinewidth
-            0.4285714 mul 4 index add exch % x0 y0 x1-x0 y1-y0 (y2-y0)*3/7+y0 x2-x0
-            0.4285714 mul 5 index add exch % x0 y0 x1-x0 y1-y0 (x2-x0)*3/7+x0 (y2-y0)*3/7+y0
-            2 copy moveto
-            2 index add exch
-            3 index add exch lineto % x0 y0 x1-x0 y1-y0
-            pop pop pop pop
-            stroke
-          } repeat
-        } if
+                2 copy dup mul exch dup mul add sqrt 16 div setlinewidth
+                0.4285714 mul 4 index add exch % x0 y0 x1-x0 y1-y0 (y2-y0)*3/7+y0 x2-x0
+                0.4285714 mul 5 index add exch % x0 y0 x1-x0 y1-y0 (x2-x0)*3/7+x0 (y2-y0)*3/7+y0
+                2 copy moveto
+                2 index add exch
+                3 index add exch lineto % x0 y0 x1-x0 y1-y0
+                pop pop pop pop
+                stroke
+              } repeat
+            } if
+        }
+        {pop pop (   **** Warning: ignoring annotation with scale factor of 0\n) pdfformaterror}
+        ifelse
       } if
       //false
     } ifelse
@@ -2901,43 +2917,48 @@ currentdict /set_bc_color undef
       //true
     } {
       dup annotsetcolor {
-        dup calc_annot_scale scale
-
-        /QuadPoints knownoget {
-          aload length 8 idiv {
-            gsave
-            8 copy moveto lineto
-            4 2 roll lineto lineto closepath clip newpath
-            //quadpoints2basis exec
-            6 -2 roll translate    % adjust for x0 y0      % x1-x0 y1-y0 x2-x0 y2-y0
-            1 index 56 div 1 index 56 div translate        % zigzag box is 1/56 up
-            1 index 72 div 1 index 72 div translate        % the line in the box is 1/72 up
-            2 copy dup mul exch dup mul add sqrt           % x1-x0 y1-y0 x2-x0 y2-y0 |p2|
-            4 index dup mul 4 index dup mul add sqrt       % x1-x0 y1-y0 x2-x0 y2-y0 |p2| |p1|
-            dup 0 gt 2 index 0 gt and {
-              div                                          % x1-x0 y1-y0 x2-x0 y2-y0 |p2|/|p1|=p12
-              dup 1 exch div 4 mul 1 add cvi exch 6 2 roll % cnt p12 x1-x0 y1-y0 x2-x0 y2-y0
-              4 2 roll                                     % cnt p12 x2-x0 y2-y0 x1-x0 y1-y0
-              4 index mul exch 4 index mul exch            % cnt p12 x2-x0 y2-y0 (x1-x0)*p12 (y1-y0)*p12
-              4 2 roll 0 0 6 array astore concat           % cnt p12
-              1 40 div 1 72 div scale
-              pop                                          % cnt
-              0 0 moveto
-              1 setlinecap
-              1 setlinejoin
-              1 setlinewidth
-              {
-                5 10 lineto
-                10 0 lineto
-                10 0 translate
+        dup calc_annot_scale
+        2 copy mul 0 ne
+        {
+            scale
+            /QuadPoints knownoget {
+              aload length 8 idiv {
+                gsave
+                8 copy moveto lineto
+                4 2 roll lineto lineto closepath clip newpath
+                //quadpoints2basis exec
+                6 -2 roll translate    % adjust for x0 y0      % x1-x0 y1-y0 x2-x0 y2-y0
+                1 index 56 div 1 index 56 div translate        % zigzag box is 1/56 up
+                1 index 72 div 1 index 72 div translate        % the line in the box is 1/72 up
+                2 copy dup mul exch dup mul add sqrt           % x1-x0 y1-y0 x2-x0 y2-y0 |p2|
+                4 index dup mul 4 index dup mul add sqrt       % x1-x0 y1-y0 x2-x0 y2-y0 |p2| |p1|
+                dup 0 gt 2 index 0 gt and {
+                  div                                          % x1-x0 y1-y0 x2-x0 y2-y0 |p2|/|p1|=p12
+                  dup 1 exch div 4 mul 1 add cvi exch 6 2 roll % cnt p12 x1-x0 y1-y0 x2-x0 y2-y0
+                  4 2 roll                                     % cnt p12 x2-x0 y2-y0 x1-x0 y1-y0
+                  4 index mul exch 4 index mul exch            % cnt p12 x2-x0 y2-y0 (x1-x0)*p12 (y1-y0)*p12
+                  4 2 roll 0 0 6 array astore concat           % cnt p12
+                  1 40 div 1 72 div scale
+                  pop                                          % cnt
+                  0 0 moveto
+                  1 setlinecap
+                  1 setlinejoin
+                  1 setlinewidth
+                  {
+                    5 10 lineto
+                    10 0 lineto
+                    10 0 translate
+                  } repeat
+                  stroke
+                } {
+                  6 { pop } repeat
+                } ifelse
+                grestore
               } repeat
-              stroke
-            } {
-              6 { pop } repeat
-            } ifelse
-            grestore
-          } repeat
-        } if
+            } if
+        }
+        {pop pop (   **** Warning: ignoring annotation with scale factor of 0\n) pdfformaterror}
+        ifelse
       } if
       //false
     } ifelse
@@ -2947,28 +2968,34 @@ currentdict /set_bc_color undef
     dup /AP oknown {
       //true
     } {
-      dup calc_annot_scale scale
-      annotrect 4 2 roll translate
-      exch pop
+      dup calc_annot_scale
+      2 copy mul 0 ne
+      {
+          scale
+          annotrect 4 2 roll translate
+          exch pop
 
-      % Draw a page icon
-      0.5 exch 18.5 sub translate
-      1 setlinewidth
-      0.75 setgray
-      0.5 -1 moveto 10 -1 lineto 15 4 lineto 15 17.5 lineto stroke
+          % Draw a page icon
+          0.5 exch 18.5 sub translate
+          1 setlinewidth
+          0.75 setgray
+          0.5 -1 moveto 10 -1 lineto 15 4 lineto 15 17.5 lineto stroke
 
-      0 0 moveto
-      9 0 lineto
-      14 5 lineto
-      14 18 lineto
-      0 18 lineto closepath
-      gsave .5 setgray fill grestore 0 setgray stroke
+          0 0 moveto
+          9 0 lineto
+          14 5 lineto
+          14 18 lineto
+          0 18 lineto closepath
+          gsave .5 setgray fill grestore 0 setgray stroke
 
-      3 8 moveto 7.5 8 lineto
-      3 11 moveto 10 11 lineto
-      3 14 moveto 10 14 lineto
-      9 0 moveto 9 5 lineto 14 5 lineto
-      stroke
+          3 8 moveto 7.5 8 lineto
+          3 11 moveto 10 11 lineto
+          3 14 moveto 10 14 lineto
+          9 0 moveto 9 5 lineto 14 5 lineto
+          stroke
+      }
+      {pop pop (   **** Warning: ignoring annotation with scale factor of 0\n) pdfformaterror}
+      ifelse
       //false
     } ifelse
   } bdef
@@ -3258,20 +3285,24 @@ currentdict /set_bc_color undef
     dup /AP oknown {
       //true
     } {
-      dup calc_annot_scale scale
+      dup calc_annot_scale
+      2 copy mul 0 ne
+      {
+          scale
+          % translate to the center of Rect
+          dup annotrect
+          4 2 roll  % dx dy x0 y0
+          2 index 2 div add exch
+          3 index 2 div add exch translate  % dx dy
 
-      % translate to the center of Rect
-      dup annotrect
-      4 2 roll  % dx dy x0 y0
-      2 index 2 div add exch
-      3 index 2 div add exch translate  % dx dy
+          50 div exch 190 div .min dup scale
 
-      50 div exch 190 div .min dup scale
-
-      /Name knownoget not { /Draft } if
-      //stamp_dict 1 index known not { exch pop /Draft exch } if
-      //stamp_dict exch get exec
-
+          /Name knownoget not { /Draft } if
+          //stamp_dict 1 index known not { exch pop /Draft exch } if
+          //stamp_dict exch get exec
+      }
+      {pop pop (   **** Warning: ignoring annotation with scale factor of 0\n) pdfformaterror}
+      ifelse
       //false
     } ifelse
   } bdef
@@ -3285,7 +3316,7 @@ currentdict end readonly def
     dup dup /Subtype knownoget {
       //drawannottypes exch .knownget { exec } { //true } ifelse
       {
-        dup calc_annot_scale 3 -1 roll drawwidget % Draw rejected annots as widgets
+        dup calc_annot_scale 2 copy mul 0 ne {3 -1 roll drawwidget}{(   **** Warning: ignoring annotation with scale factor of 0\n) pdfformaterror}ifelse % Draw rejected annots as widgets
       } if			% type known
     } {
       pop
