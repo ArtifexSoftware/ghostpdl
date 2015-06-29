@@ -333,15 +333,9 @@ $(AUX)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
  $(gsrect_h) $(gsuid_h) $(gsutil_h) $(gzstate_h) $(gxdcolor_h) $(MAKEDIRS)
 	$(GLCCAUX) $(C_) $(AUXO_)gsutil.$(OBJ) $(GLSRC)gsutil.c
 
-$(GLOBJ)gssprintf_1.$(OBJ) : $(GLSRC)gssprintf.c $(gssprintf_h) 
-	$(GLCC) $(GLO_)gssprintf_1.$(OBJ) $(C_) $(GLSRC)gssprintf.c
-
-$(GLOBJ)gssprintf_0.$(OBJ) : $(GLSRC)gssprintf.c $(gssprintf_h) $(triodef_h) $(trio_h) \
-$(triop_h) $(triostr_h) $(trionan_h) 
-	$(GLCC) $(I_)$(TRIOSRCDIR)$(_I) $(GLO_)gssprintf_0.$(OBJ) $(C_) $(GLSRC)gssprintf.c
-
-$(GLOBJ)gssprintf.$(OBJ) :  $(GLOBJ)gssprintf_$(SHARE_TRIO).$(OBJ)
-	$(CP_) $(GLOBJ)gssprintf_$(SHARE_TRIO).$(OBJ) $(GLOBJ)gssprintf.$(OBJ)
+$(GLOBJ)gssprintf.$(OBJ) : $(GLSRC)gssprintf.c $(gssprintf_h) $(stdio__h) \
+ $(stdint__h) $(string__h) $(math__h)
+	$(GLCC) $(GLO_)gssprintf.$(OBJ) $(C_) $(GLSRC)gssprintf.c
 
 # MD5 digest
 gsmd5_h=$(GLSRC)gsmd5.h
@@ -1360,7 +1354,7 @@ LIB_ALL=$(LIBs) $(LIBx) $(LIBd)
 # but not in the link, to catch compilation problems.
 LIB_O=$(GLOBJ)gdevmpla.$(OBJ) $(GLOBJ)gdevmrun.$(OBJ) $(GLOBJ)gshtx.$(OBJ) $(GLOBJ)gsnogc.$(OBJ)
 $(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev $(GLD)translib.dev \
-                 $(GLD)clist.dev $(GLD)gxfapi.dev $(TRIOGEN)trio.dev $(MAKEDIRS)
+                 $(GLD)clist.dev $(GLD)gxfapi.dev $(MAKEDIRS)
 	$(SETMOD) $(GLD)libs $(LIB0s)
 	$(ADDMOD) $(GLD)libs $(LIB1s)
 	$(ADDMOD) $(GLD)libs $(LIB2s)
@@ -1381,7 +1375,6 @@ $(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev $(G
 	$(ADDMOD) $(GLD)libs -include $(GLD)gsiodevs
 	$(ADDMOD) $(GLD)libs -include $(GLD)translib
 	$(ADDMOD) $(GLD)libs -include $(GLD)clist
-	$(ADDMOD) $(GLD)libs $(TRIOGEN)trio
 	$(ADDMOD) $(GLD)libs $(GLD)gxfapi
 	$(ADDMOD) $(GLD)libs -init fapi
 $(GLD)libx.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBx) $(MAKEDIRS)

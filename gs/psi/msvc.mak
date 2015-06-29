@@ -414,14 +414,6 @@ TIFFCONFIG_SUFFIX=.vc
 TIFFPLATFORM=win32
 !endif
 
-!ifndef TRIOSRCDIR
-TRIOSRCDIR=trio
-!endif
-
-!ifndef SHARE_TRIO
-SHARE_TRIO=0
-!endif
-
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
