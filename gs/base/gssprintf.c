@@ -13,34 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* From: https://svn.apache.org/repos/asf/apr/apr/trunk/strings/apr_snprintf.c */
+/* Additional modifications to work outside Apache for use with Ghostscript */
 
-#include "apr.h"
-#include "apr_private.h"
-
-#include "apr_lib.h"
-#include "apr_strings.h"
-#include "apr_network_io.h"
-#include "apr_portable.h"
-#include "apr_errno.h"
-#include <math.h>
-#if APR_HAVE_CTYPE_H
+#include "stdio_.h"
+#include "stdint_.h"
+#include "string_.h"
+#include <stdarg.h>
+#include "math_.h"
 #include <ctype.h>
-#endif
-#if APR_HAVE_NETINET_IN_H
-#include <netinet/in.h>
-#endif
-#if APR_HAVE_SYS_SOCKET_H
-#include <sys/socket.h>
-#endif
-#if APR_HAVE_ARPA_INET_H
-#include <arpa/inet.h>
-#endif
-#if APR_HAVE_LIMITS_H
-#include <limits.h>
-#endif
-#if APR_HAVE_STRING_H
-#include <string.h>
-#endif
+
+#define APR_HAVE_IPV6 0
+#define APR_HAS_THREADS 0
+
+#define FOR_GS 1
+
+#define apr_isalpha(c) isalpha(c)
+#define apr_islower(c) islower(c)
+#define apr_isdigit(c) isdigit(c)
+
+
+typedef uint32_t apr_uint32_t;
+typedef int32_t apr_int32_t;
+typedef uint64_t apr_uint64_t;
+typedef int64_t apr_int64_t;
+typedef size_t apr_size_t;
+typedef int64_t apr_off_t;
+
+
+typedef struct apr_vformatter_buff_t apr_vformatter_buff_t;
+
+/**
+ * Structure used by the variable-formatter routines.
+ */
+struct apr_vformatter_buff_t {
+    /** The current position */
+    char *curpos;
+    /** The end position of the format string */
+    char *endpos;
+};
 
 typedef enum {
     NO = 0, YES = 1
@@ -54,7 +65,29 @@ typedef enum {
 #endif
 #define NUL '\0'
 
-#define S_NULL "(null)"
+#define APR_INT64_C(x) ((int64_t)x)
+#define APR_UINT64_C(x) ((uint64_t)x)
+
+#define APR_INT16_MIN   (-0x7fff - 1)
+#define APR_INT16_MAX   (0x7fff)
+#define APR_UINT16_MAX  (0xffff)
+#define APR_INT32_MIN   (-0x7fffffff - 1)
+#define APR_INT32_MAX  0x7fffffff
+#define APR_UINT32_MAX  (0xffffffffU)
+#define APR_INT64_MIN   (APR_INT64_C(-0x7fffffffffffffff) - 1)
+#define APR_INT64_MAX   APR_INT64_C(0x7fffffffffffffff)
+#define APR_UINT64_MAX  APR_UINT64_C(0xffffffffffffffff)
+#define APR_SIZE_MAX    (~((apr_size_t)0))
+
+#define APR_SIZEOF_VOIDP ARCH_SIZEOF_PTR
+
+#define APR_INT64_T_FMT      PRId64
+#define APR_UINT64_T_FMT     PRIu64
+#define APR_UINT64_T_HEX_FMT PRIx64
+#define APR_OFF_T_FMT        PRId64
+
+static const char null_string[] = "(null)";
+#define S_NULL ((char *)null_string)
 #define S_NULL_LEN 6
 
 #define FLOAT_DIGITS 6
@@ -68,8 +101,8 @@ typedef enum {
 #define NUM_BUF_SIZE 512
 
 /*
- * cvt.c - IEEE floating point formatting routines for FreeBSD
- * from GNU libc-4.6.27.  Modified to be thread safe.
+ * cvt - IEEE floating point formatting routines.
+ *       Derived from UNIX V7, Copyright(C) Caldera International Inc.
  */
 
 /*
@@ -178,6 +211,8 @@ static char *apr_gcvt(double number, int ndigit, char *buf, boolean_e altform)
     register char *p1, *p2;
     register int i;
     char buf1[NDIG];
+    int nd = ndigit;
+    double magn = number < 0 ? -number : number;
 
     p1 = apr_ecvt(number, ndigit, &decpt, &sign, buf1);
     p2 = buf;
@@ -185,11 +220,18 @@ static char *apr_gcvt(double number, int ndigit, char *buf, boolean_e altform)
         *p2++ = '-';
     for (i = ndigit - 1; i > 0 && p1[i] == '0'; i--)
         ndigit--;
+#if !FOR_GS
     if ((decpt >= 0 && decpt - ndigit > 4)
         || (decpt < 0 && decpt < -3)) {                /* use E-style */
+#else
+    if (magn != 0 && ((magn < (double)9.9999989999999991e-05)
+     || (magn >= pow(10, nd)))) {                /* use E-style */
+#endif
         decpt--;
         *p2++ = *p1++;
-        *p2++ = '.';
+
+        if (ndigit >= 2)
+            *p2++ = '.';
         for (i = 1; i < ndigit; i++)
             *p2++ = *p1++;
         *p2++ = 'e';
@@ -201,14 +243,19 @@ static char *apr_gcvt(double number, int ndigit, char *buf, boolean_e altform)
             *p2++ = '+';
         if (decpt / 100 > 0)
             *p2++ = decpt / 100 + '0';
+
+#if !FOR_GS /* We want the extra zero here so we get, for example, 2e+08 instead of 2e+8 */
         if (decpt / 10 > 0)
+#endif
             *p2++ = (decpt % 100) / 10 + '0';
         *p2++ = decpt % 10 + '0';
     }
     else {
         if (decpt <= 0) {
-            if (*p1 != '0')
+            if (*p1 != '0') {
+                *p2++ = '0';
                 *p2++ = '.';
+            }
             while (decpt < 0) {
                 decpt++;
                 *p2++ = '0';
@@ -421,6 +468,7 @@ static char *conv_10_quad(apr_int64_t num, register int is_unsigned,
     return (p);
 }
 
+#if !FOR_GS
 static char *conv_in_addr(struct in_addr *ia, char *buf_end, apr_size_t *len)
 {
     unsigned addr = ntohl(ia->s_addr);
@@ -439,7 +487,6 @@ static char *conv_in_addr(struct in_addr *ia, char *buf_end, apr_size_t *len)
     *len = buf_end - p;
     return (p);
 }
-
 
 /* Must be passed a buffer of size NUM_BUF_SIZE where buf_end points
  * to 1 byte past the end of the buffer. */
@@ -479,6 +526,7 @@ static char *conv_apr_sockaddr(apr_sockaddr_t *sa, char *buf_end, apr_size_t *le
     *len = buf_end - p;
     return (p);
 }
+#endif
 
 
 
@@ -679,7 +727,7 @@ static char *conv_os_thread_t_hex(apr_os_thread_t *tid, char *buf_end, apr_size_
 /*
  * Do format conversion placing the output in buffer
  */
-APR_DECLARE(int) apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
+static int apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
     apr_vformatter_buff_t *vbuff, const char *fmt, va_list ap)
 {
     register char *sp;
@@ -689,7 +737,7 @@ APR_DECLARE(int) apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
 
     register char *s = NULL;
     char *q;
-    apr_size_t s_len;
+    apr_size_t s_len = 0;
 
     register apr_size_t min_width = 0;
     apr_size_t precision = 0;
@@ -703,7 +751,7 @@ APR_DECLARE(int) apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
     apr_int64_t i_quad = 0;
     apr_uint64_t ui_quad;
     apr_int32_t i_num = 0;
-    apr_uint32_t ui_num;
+    apr_uint32_t ui_num = 0;
 
     char num_buf[NUM_BUF_SIZE];
     char char_buf[2];                /* for printing %% and %<unknown> */
@@ -809,10 +857,27 @@ APR_DECLARE(int) apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
                 adjust_precision = adjust_width = NO;
 
             /*
-             * Modifier check.  Note that if APR_INT64_T_FMT is "d",
-             * the first if condition is never true.
+             * Modifier check.  In same cases, APR_OFF_T_FMT can be
+             * "lld" and APR_INT64_T_FMT can be "ld" (that is, off_t is
+             * "larger" than int64). Check that case 1st.
+             * Note that if APR_OFF_T_FMT is "d",
+             * the first if condition is never true. If APR_INT64_T_FMT
+             * is "d' then the second if condition is never true.
              */
-            if ((sizeof(APR_INT64_T_FMT) == 4 &&
+            if ((sizeof(APR_OFF_T_FMT) > sizeof(APR_INT64_T_FMT)) &&
+                ((sizeof(APR_OFF_T_FMT) == 4 &&
+                 fmt[0] == APR_OFF_T_FMT[0] &&
+                 fmt[1] == APR_OFF_T_FMT[1]) ||
+                (sizeof(APR_OFF_T_FMT) == 3 &&
+                 fmt[0] == APR_OFF_T_FMT[0]) ||
+                (sizeof(APR_OFF_T_FMT) > 4 &&
+                 strncmp(fmt, APR_OFF_T_FMT,
+                         sizeof(APR_OFF_T_FMT) - 2) == 0))) {
+                /* Need to account for trailing 'd' and null in sizeof() */
+                var_type = IS_QUAD;
+                fmt += (sizeof(APR_OFF_T_FMT) - 2);
+            }
+            else if ((sizeof(APR_INT64_T_FMT) == 4 &&
                  fmt[0] == APR_INT64_T_FMT[0] &&
                  fmt[1] == APR_INT64_T_FMT[1]) ||
                 (sizeof(APR_INT64_T_FMT) == 3 &&
@@ -941,7 +1006,7 @@ APR_DECLARE(int) apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
                             &num_buf[NUM_BUF_SIZE], &s_len);
                 }
                 FIX_PRECISION(adjust_precision, precision, s, s_len);
-                if (alternate_form && i_num != 0) {
+                if (alternate_form && ui_num != 0) {
                     *--s = *fmt;        /* 'x' or 'X' */
                     *--s = '0';
                     s_len += 2;
@@ -1111,13 +1176,14 @@ APR_DECLARE(int) apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
                     }
 #endif
                     else {
-                        s = "%p";
+                        s = (char *)"%p";
                         s_len = 2;
                         prefix_char = NUL;
                     }
                     pad_char = ' ';
                     break;
 
+#if !FOR_GS
                 /* print an apr_sockaddr_t as a.b.c.d:port */
                 case 'I':
                 {
@@ -1173,6 +1239,7 @@ APR_DECLARE(int) apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
                     pad_char = ' ';
                 }
                 break;
+#endif
 
                 case 'T':
 #if APR_HAS_THREADS
@@ -1224,6 +1291,7 @@ APR_DECLARE(int) apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
 #endif
                     break;
 
+#if !FOR_GS
                 case 'B':
                 case 'F':
                 case 'S':
@@ -1249,13 +1317,34 @@ APR_DECLARE(int) apr_vformatter(int (*flush_func)(apr_vformatter_buff_t *),
                     pad_char = ' ';
                 }
                 break;
+#endif
 
                 case NUL:
-                    /* if %p ends the string, oh well ignore it */
-                    continue;
+                    /* if %p ends the string, treat it as pointer */
+#if APR_SIZEOF_VOIDP == 8
+                    if (sizeof(void *) <= sizeof(apr_uint64_t)) {
+                        ui_quad = (apr_uint64_t) va_arg(ap, void *);
+                        s = conv_p2_quad(ui_quad, 4, 'x',
+                                &num_buf[NUM_BUF_SIZE], &s_len);
+                    }
+#else
+                    if (sizeof(void *) <= sizeof(apr_uint32_t)) {
+                        ui_num = (apr_uint32_t) va_arg(ap, void *);
+                        s = conv_p2(ui_num, 4, 'x',
+                                &num_buf[NUM_BUF_SIZE], &s_len);
+                    }
+#endif
+                    else {
+                        s = (char *)"%p";
+                        s_len = 2;
+                        prefix_char = NUL;
+                    }
+                    pad_char = ' ';
+                    fmt--;
+                    break;
 
                 default:
-                    s = "bogus %p";
+                    s = (char *)"bogus %p";
                     s_len = 8;
                     prefix_char = NUL;
                     (void)va_arg(ap, void *); /* skip the bogus argument on the stack */
@@ -1334,8 +1423,7 @@ static int snprintf_flush(apr_vformatter_buff_t *vbuff)
     return -1;
 }
 
-
-APR_DECLARE_NONSTD(int) apr_snprintf(char *buf, apr_size_t len, 
+int gs_snprintf(char *buf, int32_t len,
                                      const char *format, ...)
 {
     int cc;
@@ -1366,8 +1454,26 @@ APR_DECLARE_NONSTD(int) apr_snprintf(char *buf, apr_size_t len,
     return (cc == -1) ? (int)len - 1 : cc;
 }
 
+int gs_sprintf(char *buf, const char *format, ...)
+{
+    int cc;
+    va_list ap;
+    apr_vformatter_buff_t vbuff;
 
-APR_DECLARE(int) apr_vsnprintf(char *buf, apr_size_t len, const char *format,
+    /* save one byte for nul terminator */
+    vbuff.curpos = buf;
+    vbuff.endpos = buf + NUM_BUF_SIZE - 1;
+
+    va_start(ap, format);
+    cc = apr_vformatter(snprintf_flush, &vbuff, format, ap);
+    va_end(ap);
+    *vbuff.curpos = '\0';
+
+    return cc;
+}
+
+
+int gs_vsnprintf(char *buf, int32_t len, const char *format,
                                va_list ap)
 {
     int cc;
@@ -1386,5 +1492,21 @@ APR_DECLARE(int) apr_vsnprintf(char *buf, apr_size_t len, const char *format,
     if (len != 0) {
         *vbuff.curpos = '\0';
     }
+
     return (cc == -1) ? (int)len - 1 : cc;
+}
+
+int gs_vsprintf(char *buf, const char *format, va_list ap)
+{
+    int cc;
+    apr_vformatter_buff_t vbuff;
+
+    /* save one byte for nul terminator */
+    vbuff.curpos = buf;
+    vbuff.endpos = buf + NUM_BUF_SIZE - 1;
+
+    cc = apr_vformatter(snprintf_flush, &vbuff, format, ap);
+    *vbuff.curpos = '\0';
+
+    return cc;
 }
