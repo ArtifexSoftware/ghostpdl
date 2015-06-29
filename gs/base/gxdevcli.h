@@ -856,30 +856,39 @@ typedef enum FILTER_FLAGS {
  */
 #define GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, procs)\
     do {\
-        gx_device *temp = dev;\
-        while(temp->parent) {temp = temp->parent;}\
-        procs = (gx_cm_color_map_procs *)dev_proc(temp, get_color_mapping_procs)(temp);\
+    if (dev) {\
+            gx_device *temp = dev;\
+            while(temp->parent) {temp = temp->parent;}\
+            procs = (gx_cm_color_map_procs *)dev_proc(temp, get_color_mapping_procs)(temp);\
+    } else\
+        procs = 0;\
     } while (0 == 1)
 
 #define MAP_RGB_SUBCLASS(procs, dev, pis, r, g, b, cm_comps)\
     do {\
-        gx_device *temp = dev;\
-        while(temp->parent) {temp = temp->parent;}\
-        procs->map_rgb(temp, pis, r, g, b, cm_comps);\
+        if (dev) {\
+            gx_device *temp = dev;\
+            while(temp->parent) {temp = temp->parent;}\
+            procs->map_rgb(temp, pis, r, g, b, cm_comps);\
+        }\
     } while (0 == 1)
 
 #define MAP_GRAY_SUBCLASS(procs, dev, gray, cm_comps)\
     do {\
-        gx_device *temp = dev;\
-        while(temp->parent) {temp = temp->parent;}\
-        procs->map_gray(temp, gray, cm_comps);\
+        if (dev) {\
+            gx_device *temp = dev;\
+            while(temp->parent) {temp = temp->parent;}\
+            procs->map_gray(temp, gray, cm_comps);\
+        }\
     } while (0 == 1)
 
 #define MAP_CMYK_SUBCLASS(procs, dev, c, m, y, k, cm_comps)\
     do {\
-        gx_device *temp = dev;\
-        while(temp->parent) {temp = temp->parent;}\
-        procs->map_cmyk(temp, c, m, y, k, cm_comps);\
+        if (dev) {\
+            gx_device *temp = dev;\
+            while(temp->parent) {temp = temp->parent;}\
+            procs->map_cmyk(temp, c, m, y, k, cm_comps);\
+        }\
     } while (0 == 1)
 
 /* ---------------- Device procedures ---------------- */
