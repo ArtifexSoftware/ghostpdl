@@ -330,6 +330,7 @@ hpgl_DT(hpgl_args_t * pargs, hpgl_state_t * pgls)
                 if (*++p == ',') {
                     pargs->source.ptr = p;
                     pargs->phase = ch;
+                    if_debug1m('i', pgls->memory, "%c", ch);
                 }
         }
     if (hpgl_arg_c_int(pgls->memory, pargs, &mode) && (mode & ~1))
