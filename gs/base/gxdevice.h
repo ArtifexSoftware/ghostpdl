@@ -653,7 +653,7 @@ typedef struct {
 
 int gx_copy_device_procs(gx_device_procs *dest_procs, gx_device_procs *src_procs, gx_device_procs *prototype_procs);
 int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, unsigned int private_data_size);
-int gx_unsubclass_device(gx_device *dev);
+int gx_device_unsubclass(gx_device *dev);
 int gx_update_from_subclass(gx_device *dev);
 int gx_subclass_create_compositor(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_imager_state *pis, gs_memory_t *memory, gx_device *cdev);

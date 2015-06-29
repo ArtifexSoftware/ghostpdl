@@ -26,4 +26,6 @@ extern gx_device_obj_filter  gs_obj_filter_device;
 
 extern gx_device_flp  gs_flp_device;
 
+int install_internal_subclass_devices(gx_device **ppdev, int *devices_loaded);
+
 #endif /* gdev_subclass_dev_INCLUDED */

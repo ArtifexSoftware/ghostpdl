@@ -83,7 +83,6 @@ static void prn_print_page_in_background(void *data);
 static void prn_finish_bg_print(gx_device_printer *ppdev);
 
 /* ------ Open/close ------ */
-#define FORCE_TESTING_SUBCLASSING 1
 /* Open a generic printer device. */
 /* Specific devices may wish to extend this. */
 int
@@ -93,33 +92,9 @@ gdev_prn_open(gx_device * pdev)
     int code;
     bool update_procs = false;
 
-#ifdef FORCE_TESTING_SUBCLASSING
-    if (!pdev->PageHandlerPushed) {
-#else
-    if (!pdev->PageHandlerPushed && (pdev->FirstPage != 0 || pdev->LastPage != 0)) {
-#endif
-        pdev->PageHandlerPushed = true;
-        code = gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
-        if (code < 0)
-            return code;
-        pdev = pdev->child;
-        pdev->is_open = true;
-        update_procs = true;
-    }
-
-#ifdef FORCE_TESTING_SUBCLASSING
-    if (!pdev->ObjectHandlerPushed) {
-#else
-    if (!pdev->ObjectHandlerPushed && (pdev->ObjectFilter != 0)) {
-#endif
-        pdev->ObjectHandlerPushed = true;
-        code = gx_device_subclass(pdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
-        if (code < 0)
-            return code;
-        pdev = pdev->child;
-        pdev->is_open = true;
-        update_procs = true;
-    }
+    code = install_internal_subclass_devices(&pdev, &update_procs);
+    if (code < 0)
+        return code;
 
     ppdev = (gx_device_printer *)pdev;
 

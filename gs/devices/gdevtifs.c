@@ -32,66 +32,23 @@
 #include "gstiffio.h"
 #include "gdevkrnlsclass.h" /* 'standard' built in subclasses, currently First/Last Page and obejct filter */
 
-#define FORCE_TESTING_SUBCLASSING 1
 int
 tiff_open(gx_device *pdev)
 {
-    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+    gx_device_printer *ppdev = (gx_device_printer *)pdev;
     int code;
     bool update_procs = false;
 
     /* Use our own warning and error message handlers in libtiff */
     tiff_set_handlers();
 
-#ifdef FORCE_TESTING_SUBCLASSING
-    if (!pdev->PageHandlerPushed) {
-#else
-    if (!pdev->PageHandlerPushed && (pdev->FirstPage != 0 || pdev->LastPage != 0)) {
-#endif
-        gx_device *dev;
-
-        code = gx_device_subclass(pdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
-        if (code < 0)
-            return code;
-        dev = (gx_device *)pdev;
-        while (dev->parent)
-            dev = dev->parent;
-
-        while(dev) {
-            dev->PageHandlerPushed = true;
-            dev = dev->child;
-        }
-
-        while(pdev->child)
-            pdev = pdev->child;
-        pdev->is_open = true;
-        update_procs = true;
-    }
-
-#ifdef FORCE_TESTING_SUBCLASSING
-    if (!pdev->ObjectHandlerPushed) {
-#else
-    if (!pdev->ObjectHandlerPushed && (pdev->ObjectFilter != 0)) {
-#endif
-        gx_device *dev;
-
-        code = gx_device_subclass(pdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
-        if (code < 0)
-            return code;
-        dev = (gx_device *)pdev;
-        while (dev->parent)
-            dev = dev->parent;
-
-        while(dev) {
-            dev->ObjectHandlerPushed = true;
-            dev = dev->child;
-        }
-
-        while(pdev->child)
-            pdev = pdev->child;
-        pdev->is_open = true;
-        update_procs = true;
-    }
+    code = install_internal_subclass_devices((gx_device **)&pdev, &update_procs);
+    if (code < 0)
+        return code;
+    /* If we've been subclassed, find the terminal device */
+    while(pdev->child)
+        pdev = pdev->child;
+    ppdev = (gx_device_printer *)pdev;
 
     ppdev->file = NULL;
     code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);

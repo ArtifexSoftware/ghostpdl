@@ -239,7 +239,6 @@ GC gc, XImage * pi, int sx, int sy, int dx, int dy, unsigned w, unsigned h);
     }\
   END
 
-#define FORCE_TESTING_SUBCLASSING 1
 /* Open the device.  Most of the code is in gdevxini.c. */
 static int
 x_open(gx_device * dev)
@@ -255,60 +254,12 @@ x_open(gx_device * dev)
     if (code < 0)
         return code;
     update_init(xdev);
+    code = install_internal_subclass_devices((gx_device **)&xdev, NULL);
+    if (code < 0)
+        return code;
 
-#ifdef FORCE_TESTING_SUBCLASSING
-    if (!dev->PageHandlerPushed) {
-#else
-    if (!dev->PageHandlerPushed && (dev->FirstPage != 0 || dev->LastPage != 0)) {
-#endif
-        gx_device *pdev;
-
-        code = gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
-        if (code < 0)
-            return code;
-        pdev = (gx_device *)dev;
-        while (pdev->parent)
-            pdev = pdev->parent;
-
-        while(pdev) {
-            pdev->PageHandlerPushed = true;
-            pdev = pdev->child;
-        }
-
-        while(dev->child)
-            dev = dev->child;
-        dev->is_open = true;
-        xdev = (gx_device_X *) dev;
-        if (xdev->is_buffered)
-            xdev->box_proc_data = xdev;
-    }
-
-#ifdef FORCE_TESTING_SUBCLASSING
-    if (!dev->ObjectHandlerPushed) {
-#else
-    if (!dev->ObjectHandlerPushed && (dev->ObjectFilter != 0)) {
-#endif
-        gx_device *pdev;
-
-        code = gx_device_subclass(dev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
-        if (code < 0)
-            return code;
-        pdev = (gx_device *)dev;
-        while (pdev->parent)
-            pdev = pdev->parent;
-
-        while(pdev) {
-            pdev->PageHandlerPushed = true;
-            pdev = pdev->child;
-        }
-
-        while(dev->child)
-            dev = dev->child;
-        dev->is_open = true;
-        xdev = (gx_device_X *) dev;
-        if (xdev->is_buffered)
-            xdev->box_proc_data = xdev;
-    }
+    if (xdev->is_buffered)
+        xdev->box_proc_data = xdev;
 
     return 0;
 }

@@ -227,7 +227,6 @@ static int display_set_color_format(gx_device_display *dev, int nFormat);
 static int display_set_separations(gx_device_display *dev);
 static int display_raster(gx_device_display *dev);
 
-#define FORCE_TESTING_SUBCLASSING 1
 /* Open the display driver. */
 static int
 display_open(gx_device * dev)
@@ -244,56 +243,10 @@ display_open(gx_device * dev)
     /* The callback will be set later and the device re-opened. */
     if (ddev->callback == NULL)
         return 0;
-
-#ifdef FORCE_TESTING_SUBCLASSING
-    if (!dev->PageHandlerPushed) {
-#else
-    if (!dev->PageHandlerPushed && (dev->FirstPage != 0 || dev->LastPage != 0)) {
-#endif
-        gx_device *pdev;
-
-        ccode = gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
-        if (ccode < 0)
-            return ccode;
-        pdev = (gx_device *)dev;
-        while (pdev->parent)
-            pdev = pdev->parent;
-
-        while(pdev) {
-            pdev->PageHandlerPushed = true;
-            pdev = pdev->child;
-        }
-
-        while(dev->child)
-            dev = dev->child;
-        ddev = (gx_device_display *) dev;
-        dev->is_open = true;
-    }
-
-#ifdef FORCE_TESTING_SUBCLASSING
-    if (!dev->ObjectHandlerPushed) {
-#else
-    if (!dev->ObjectHandlerPushed && (dev->ObjectFilter != 0)) {
-#endif
-        gx_device *pdev;
-
-        ccode = gx_device_subclass(dev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
-        if (ccode < 0)
-            return ccode;
-        pdev = (gx_device *)dev;
-        while (pdev->parent)
-            pdev = pdev->parent;
-
-        while(pdev) {
-            pdev->PageHandlerPushed = true;
-            pdev = pdev->child;
-        }
-
-        while(dev->child)
-            dev = dev->child;
-        ddev = (gx_device_display *) dev;
-        dev->is_open = true;
-    }
+    ccode = install_internal_subclass_devices((gx_device **)&ddev, NULL);
+    if (ccode < 0)
+        return ccode;
+    dev = ddev;
 
     /* Make sure we have been passed a valid callback structure. */
     if ((ccode = display_check_structure(ddev)) < 0)

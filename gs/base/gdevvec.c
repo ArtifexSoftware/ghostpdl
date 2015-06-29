@@ -263,7 +263,6 @@ gdev_vector_reset(gx_device_vector * vdev)
         vdev->no_clip_path_id = gs_next_ids(vdev->memory, 1);
 }
 
-#define FORCE_TESTING_SUBCLASSING 1
 /* Open the output file and stream. */
 int
 gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
@@ -345,45 +344,10 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
             ((gx_device *) vdev->bbox_device);
     }
 
-#ifdef FORCE_TESTING_SUBCLASSING
-    if (!vdev->PageHandlerPushed) {
-#else
-    if (!vdev->PageHandlerPushed && (vdev->FirstPage != 0 || vdev->LastPage != 0)) {
-#endif
-        gx_device *pdev;
+    code = install_internal_subclass_devices((gx_device **)&vdev, NULL);
+    if (code < 0)
+        return code;
 
-        code = gx_device_subclass((gx_device *)vdev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
-        if (code < 0)
-            return code;
-        pdev = (gx_device *)vdev;
-        while (pdev->parent)
-            pdev = pdev->parent;
-
-        while(pdev) {
-            pdev->PageHandlerPushed = true;
-            pdev = pdev->child;
-        }
-    }
-
-#ifdef FORCE_TESTING_SUBCLASSING
-    if (!vdev->ObjectHandlerPushed) {
-#else
-    if (!vdev->ObjectHandlerPushed && (vdev->ObjectFilter != 0)) {
-#endif
-        gx_device *pdev;
-
-        code = gx_device_subclass((gx_device *)vdev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
-        if (code < 0)
-            return code;
-        pdev = (gx_device *)vdev;
-        while (pdev->parent)
-            pdev = pdev->parent;
-
-        while(pdev) {
-            pdev->ObjectHandlerPushed = true;
-            pdev = pdev->child;
-        }
-    }
     return 0;
 }
 

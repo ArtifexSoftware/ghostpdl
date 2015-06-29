@@ -114,7 +114,6 @@ gx_device_win_dib far_data gs_mswindll_device =
 static HGLOBAL win_dib_make_dib(gx_device_win * dev, int orgx, int orgy, int wx, int wy);
 static int win_dib_lock_device(unsigned char *device, int flag);
 
-#define FORCE_TESTING_SUBCLASSING 1
 /* Open the win_dib driver */
 static int
 win_dib_open(gx_device * dev)
@@ -144,53 +143,7 @@ win_dib_open(gx_device * dev)
                         (dev->width & 0xffff) +
                         ((ulong) (dev->height & 0xffff) << 16));
     }
-#ifdef FORCE_TESTING_SUBCLASSING
-    if (!dev->PageHandlerPushed) {
-#else
-    if (!dev->PageHandlerPushed && (dev->FirstPage != 0 || dev->LastPage != 0)) {
-#endif
-        gx_device *pdev;
-
-        code = gx_device_subclass(dev, (gx_device *)&gs_flp_device, sizeof(first_last_subclass_data));
-        if (code < 0)
-            return code;
-        pdev = (gx_device *)dev;
-        while (pdev->parent)
-            pdev = pdev->parent;
-
-        while(pdev) {
-            pdev->PageHandlerPushed = true;
-            pdev = pdev->child;
-        }
-
-        while(dev->child)
-            dev = dev->child;
-        dev->is_open = true;
-    }
-
-#ifdef FORCE_TESTING_SUBCLASSING
-    if (!dev->ObjectHandlerPushed) {
-#else
-    if (!dev->ObjectHandlerPushed && (dev->ObjectFilter != 0)) {
-#endif
-        gx_device *pdev;
-
-        code = gx_device_subclass(dev, (gx_device *)&gs_obj_filter_device, sizeof(obj_filter_subclass_data));
-        if (code < 0)
-            return code;
-        pdev = (gx_device *)dev;
-        while (pdev->parent)
-            pdev = pdev->parent;
-
-        while(pdev) {
-            pdev->PageHandlerPushed = true;
-            pdev = pdev->child;
-        }
-
-        while(dev->child)
-            dev = dev->child;
-        dev->is_open = true;
-    }
+    code = install_internal_subclass_devices((gx_device **)&dev, NULL);
     return code;
 }
 

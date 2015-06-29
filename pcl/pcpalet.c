@@ -836,7 +836,7 @@ pcl_update_mono(pcl_state_t * pcs)
             dev = dev->child;
         }
         if (dev){
-            gx_unsubclass_device(dev);
+            gx_device_unsubclass(dev);
         }
     }
     gx_unset_dev_color(pcs->pgs);

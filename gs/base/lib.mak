@@ -1316,7 +1316,7 @@ $(GLOBJ)gxdownscale.$(OBJ) : $(GLSRC)gxdownscale.c $(AK) \
 ###### Create a pseudo-"feature" for the entire graphics library.
 
 LIB0s=$(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)stream.$(OBJ) $(GLOBJ)strmio.$(OBJ)
-LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gsalpha.$(OBJ) $(GLOBJ)gxdownscale.$(OBJ) $(downscale_) $(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevflp.$(OBJ)
+LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gsalpha.$(OBJ) $(GLOBJ)gxdownscale.$(OBJ) $(downscale_) $(GLOBJ)gdevprn.$(OBJ) $(GLOBJ)gdevflp.$(OBJ) $(GLOBJ)gdevkrnlsclass.$(OBJ)
 LIB2s=$(GLOBJ)gdevmplt.$(OBJ) $(GLOBJ)gsbitcom.$(OBJ) $(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ) $(GLOBJ)gdevoflt.$(OBJ) $(GLOBJ)gdevsclass.$(OBJ)
 # Note: gschar.c is no longer required for a standard build;
 # we include it only for backward compatibility for library clients.
@@ -1955,6 +1955,9 @@ $(GLOBJ)gdevoflt.$(OBJ) : $(GLSRC)gdevoflt.c $(gdevoflp_h) $(std_h)
 
 $(GLOBJ)gdevsclass.$(OBJ) : $(GLSRC)gdevsclass.c $(gdevsclass_h) $(std_h)
 	$(GLCC) $(GLO_)gdevsclass.$(OBJ) $(C_) $(GLSRC)gdevsclass.c
+
+$(GLOBJ)gdevkrnlsclass.$(OBJ) : $(GLSRC)gdevkrnlsclass.c $(gdevkrnlsclass) $(std_h)
+	$(GLCC) $(GLO_)gdevkrnlsclass.$(OBJ) $(C_) $(GLSRC)gdevkrnlsclass.c
 
 # Planar page devices
 gdevppla_h=$(GLSRC)gdevppla.h

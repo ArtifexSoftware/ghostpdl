@@ -1322,7 +1322,7 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     return 0;
 }
 
-int gx_unsubclass_device(gx_device *dev)
+int gx_device_unsubclass(gx_device *dev)
 {
     void *psubclass_data = dev->subclass_data;
     gx_device *parent = dev->parent, *child = dev->child;

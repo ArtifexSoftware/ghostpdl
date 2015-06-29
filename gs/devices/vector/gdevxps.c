@@ -881,8 +881,8 @@ xps_setfillbrush(gx_device_xps *xps, xps_brush_t type)
 static int
 xps_open_device(gx_device *dev)
 {
-    gx_device_vector *const vdev = (gx_device_vector*)dev;
-    gx_device_xps *const xps = (gx_device_xps*)dev;
+    gx_device_vector * vdev = (gx_device_vector*)dev;
+    gx_device_xps * xps = (gx_device_xps*)dev;
     int code = 0;
 
     vdev->v_memory = dev->memory;
@@ -892,6 +892,14 @@ xps_open_device(gx_device *dev)
         VECTOR_OPEN_FILE_SEQUENTIAL);
     if (code < 0)
       return gs_rethrow_code(code);
+
+    /* In case ths device has been subclassed, descend to the terminal
+     * of the chain. (Setting the variables in a subclassing device
+     * doesn't do anythign useful.....)
+     */
+    while(vdev->child)
+        vdev = (gx_device_vector *)vdev->child;
+    xps = (gx_device_xps*)vdev;
 
     /* xps-specific initialization goes here */
     xps->page_count = 0;
@@ -1061,7 +1069,7 @@ xps_release_icc_info(gx_device *dev)
 static int
 xps_close_device(gx_device *dev)
 {
-    const gx_device_xps *xps = (gx_device_xps*)dev;
+    gx_device_xps *xps = (gx_device_xps*)dev;
     int code;
 
     /* closing for the FixedDocument */
@@ -1213,7 +1221,7 @@ xps_put_params(gx_device *dev, gs_param_list *plist)
 
 static int xps_finish_copydevice(gx_device *dev, const gx_device *from_dev)
 {
-    const gx_device_xps *xps = (gx_device_xps*)dev;
+    gx_device_xps *xps = (gx_device_xps*)dev;
 
     memset(xps->PrinterName, 0x00, MAXPRINTERNAME);
     return 0;
@@ -1329,8 +1337,11 @@ static int
 xps_setlinecap(gx_device_vector *vdev, gs_line_cap cap)
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
+#ifdef DEBUG
+    /* Only used for debug print, so guiard to prevent warnings on non-debug builds */
     const char *linecap_names[] = {"butt", "round", "square",
         "triangle", "unknown"};
+#endif
 
     if (cap < 0 || cap > gs_cap_unknown)
         return gs_throw_code(gs_error_rangecheck);
@@ -1344,8 +1355,11 @@ static int
 xps_setlinejoin(gx_device_vector *vdev, gs_line_join join)
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
+#ifdef DEBUG
+    /* Only used for debug print, so guiard to prevent warnings on non-debug builds */
     const char *linejoin_names[] = {"miter", "round", "bevel",
         "none", "triangle", "unknown"};
+#endif
 
     if (join < 0 || join > gs_join_unknown)
         return gs_throw_code(gs_error_rangecheck);
