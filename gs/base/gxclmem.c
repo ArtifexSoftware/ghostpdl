@@ -253,7 +253,7 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
         MEMFILE *base_f = NULL;
 
         /* reopening an existing file. */
-        code = gs_sscanf(fname+1, "%p", &base_f);
+        code = sscanf(fname+1, "%p", &base_f);
         if (code != 1) {
             code = gs_note_error(gs_error_ioerror);
             goto finish;
@@ -534,7 +534,7 @@ memfile_unlink(const char *fname)
     MEMFILE *f;
 
     /* memfile file names begin with a flag byte == 0xff */
-    if (fname[0] == '\377' && (code = gs_sscanf(fname+1, "%p", &f) == 1)) {
+    if (fname[0] == '\377' && (code = sscanf(fname+1, "%p", &f) == 1)) {
         return memfile_fclose((clist_file_ptr)f, fname, true);
     } else
         return_error(gs_error_invalidfileaccess);

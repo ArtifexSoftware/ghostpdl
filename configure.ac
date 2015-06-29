@@ -436,25 +436,6 @@ case `uname -a` in
 esac
 
 dnl --------------------------------------------------
-dnl currently just for trio
-dnl --------------------------------------------------
-
-AC_CHECK_FUNC([floorl], [TRIO_NO_FLOORL=""], [TRIO_NO_FLOORL="-DTRIO_NO_FLOORL"])
-
-AC_CHECK_FUNC([ceill], [TRIO_NO_CEILL=""], [TRIO_NO_CEILL="-DTRIO_NO_CEILL"])
-
-AC_CHECK_FUNC([powl], [TRIO_NO_POWL=""], [TRIO_NO_POWL="-DTRIO_NO_POWL"])
-
-AC_CHECK_FUNC([fmodl], [TRIO_NO_FMODL=""], [TRIO_NO_FMODL="-DTRIO_NO_FMODL"])
-
-AC_CHECK_FUNC([log10l], [TRIO_NO_LOG10L=""], [TRIO_NO_LOG10L="-DTRIO_NO_LOG10L"])
-
-AC_TRIO_CFLAGS="$TRIO_NO_FLOORL $TRIO_NO_CEILL $TRIO_NO_POWL $TRIO_NO_FMODL $TRIO_NO_LOG10L"
-
-
-AC_SUBST(AC_TRIO_CFLAGS)
-
-dnl --------------------------------------------------
 dnl check for sse2 intrinsics
 dnl --------------------------------------------------
 

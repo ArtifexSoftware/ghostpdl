@@ -306,11 +306,6 @@ CUPS_CC=$(CC)
 
 CUPSCFLAGS=@CUPSCFLAGS@ -DSHARE_LCUPS=$(SHARE_LCUPS) -DSHARE_LCUPSI=$(SHARE_LCUPSI)
 
-TRIOSRCDIR=@TRIODIR@
-AC_TRIO_CFLAGS=@AC_TRIO_CFLAGS@
-TRIO_CFLAGS=$(TRIO_XCFLAGS) $(AC_TRIO_CFLAGS)
-SHARE_TRIO=@SHARE_TRIO@
-
 # Define how to build the library archives.  (These are not used in any
 # standard configuration.)
 
@@ -595,7 +590,6 @@ MAKEDIRSTOP=
 INSTALL_CONTRIB=@INSTALL_CONTRIB@
 include $(GLSRCDIR)/unixhead.mak
 include $(GLSRCDIR)/gs.mak
-include $(GLSRCDIR)/trio.mak
 # psromfs.mak must precede lib.mak
 include $(PSSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak

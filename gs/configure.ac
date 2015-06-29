@@ -564,36 +564,6 @@ AC_SUBST(SYNC)
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(RECURSIVE_MUTEXATTR)
 
-AC_MSG_CHECKING([for local trio library source])
-if test -f $srcdir/trio/trio.h; then
-        AC_MSG_RESULT([trio])
-        SHARE_TRIO=0
-        TRIODIR=$srcdir/trio
-else
-# This is how it should be done, but link fails.
-# But link libtrio to gs, and it works - answers on
-# a postcard, please......
-#        AC_MSG_RESULT([no])
-#        AC_CHECK_LIB(trio, trio_vsprintf, [
-#          AC_CHECK_HEADERS([trio.h], [SHARE_TRIO=1])
-#        ],[])
-
-# So, for now, use a "standard" function instead - link
-# will still fail if the libtrio is not found.
-        AC_MSG_RESULT([no])
-        AC_CHECK_LIB(trio, malloc, [
-          AC_CHECK_HEADERS([trio.h], [SHARE_TRIO=1])
-        ],[])
-fi
-if test -z "$SHARE_TRIO"; then
-  AC_MSG_ERROR([I wasn't able to find a copy
-  of the trio library. This is required for compiling
-  ghostscript.
-  ])
-fi
-AC_SUBST(SHARE_TRIO)
-AC_SUBST(TRIODIR)
-
 dnl Tests for iconv (Needed for OpenPrinting Vector, "opvp" output device)
 AC_ARG_WITH(libiconv,
             [AC_HELP_STRING([--with-libiconv=@<:@no/gnu/native@:>@],
@@ -2306,25 +2276,6 @@ AC_CHECK_FUNCS([strnlen], [HAVE_STRNLEN=],[HAVE_STRNLEN="-D\"strnlen(a,b)=strlen
 
 GCFLAGS="$GCFLAGS $HAVE_STRNLEN"
 
-
-dnl --------------------------------------------------
-dnl currently just for trio
-dnl --------------------------------------------------
-
-AC_CHECK_FUNC([floorl], [TRIO_NO_FLOORL=""], [TRIO_NO_FLOORL="-DTRIO_NO_FLOORL"])
-
-AC_CHECK_FUNC([ceill], [TRIO_NO_CEILL=""], [TRIO_NO_CEILL="-DTRIO_NO_CEILL"])
-
-AC_CHECK_FUNC([powl], [TRIO_NO_POWL=""], [TRIO_NO_POWL="-DTRIO_NO_POWL"])
-
-AC_CHECK_FUNC([fmodl], [TRIO_NO_FMODL=""], [TRIO_NO_FMODL="-DTRIO_NO_FMODL"])
-
-AC_CHECK_FUNC([log10l], [TRIO_NO_LOG10L=""], [TRIO_NO_LOG10L="-DTRIO_NO_LOG10L"])
-
-AC_TRIO_CFLAGS="$TRIO_NO_FLOORL $TRIO_NO_CEILL $TRIO_NO_POWL $TRIO_NO_FMODL $TRIO_NO_LOG10L"
-
-
-AC_SUBST(AC_TRIO_CFLAGS)
 
 dnl --------------------------------------------------
 dnl check for byte swap intrinsics
