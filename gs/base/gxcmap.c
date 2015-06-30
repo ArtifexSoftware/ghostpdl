@@ -551,7 +551,7 @@ int
 gx_remap_color(gs_state * pgs)
 {
     const gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
-    int                   code;
+    int                   code = 0;
 
     /* The current color in the graphics state is always used for */
     /* the texture, never for the source. */
