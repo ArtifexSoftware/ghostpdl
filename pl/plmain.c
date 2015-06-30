@@ -17,6 +17,7 @@
 /* plmain.c */
 /* Main program command-line interpreter for PCL interpreters */
 #include "string_.h"
+#include <stdlib.h> /* atof */
 #include "gdebug.h"
 #include "gscdefs.h"
 #include "gsio.h"
@@ -900,6 +901,34 @@ set_debug_flags(const char *arg, char *flags)
         flags[*arg++ & 127] = value;
 }
 
+/*
+ * scan floats delimited by spaces, tabs and/or 'x'.  Return the
+ * number of arguments parsed which will be less than or equal to the
+ * number of arguments requested in the parameter arg_count.
+ */
+static int
+parse_floats(gs_memory_t * mem, uint arg_count, char *arg, float *f)
+{
+    int float_index = 0;
+
+    /* copy the input because strtok() steps on the string */
+    char *s = arg_copy(arg, mem);
+    if (s == NULL)
+        return -1;
+    
+    /* allow 'x', tab or spaces to delimit arguments */
+    char *tok = strtok(s, " \tx");
+    while (tok != NULL && float_index < arg_count) {
+        f[float_index++] = atof(tok);
+        tok = strtok(NULL, " \tx");
+    }
+
+    gs_free_object(mem, s, "parse_floats()");
+
+    /* return the number of args processed */
+    return float_index;
+}
+
 #define arg_heap_copy(str) arg_copy(str, pmi->memory)
 int
 pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
@@ -1168,16 +1197,17 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 break;
             case 'H':
                 {
-                    float marg[4];
+                    float hwmarg[4];
                     gs_param_float_array fa;
-                    if (sscanf(arg, "%fx%fx%fx%f", &marg[0], &marg[1],
-                               &marg[2], &marg[3]) != 4) {
+                    uint sz = countof(hwmarg);
+                    uint parsed = parse_floats(pmi->memory, sz, arg, hwmarg);
+                    if (parsed != sz) {
                         dmprintf(pmi->memory,
                                  "-H must be followed by <left>x<bottom>x<right>x<top>\n");
                         return -1;
                     }
-                    fa.data = marg;
-                    fa.size = 4;
+                    fa.data = hwmarg;
+                    fa.size = parsed;
                     fa.persistent = false;
                     code =
                         param_write_float_array((gs_param_list *) params,
@@ -1308,8 +1338,9 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 {
                     float res[2];
                     gs_param_float_array fa;
-
-                    switch (sscanf(arg, "%fx%f", &res[0], &res[1])) {
+                    uint sz = countof(res);
+                    uint parsed = parse_floats(pmi->memory, sz, arg, res);
+                    switch (parsed) {
                         default:
                             dmprintf(pmi->memory,
                                      "-r must be followed by <res> or <xres>x<yres>\n");
@@ -1320,7 +1351,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                             ;
                     }
                     fa.data = res;
-                    fa.size = 2;
+                    fa.size = sz;
                     fa.persistent = false;
                     code =
                         param_write_float_array((gs_param_list *) params,
