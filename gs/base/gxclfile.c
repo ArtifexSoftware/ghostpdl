@@ -494,8 +494,8 @@ clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname)
              */
 
             /* Opening with "w" mode deletes the contents when closing. */
-            (void)freopen(fname, gp_fmode_wb, f);
-            (void)freopen(fname, fmode, f);
+            f = freopen(fname, gp_fmode_wb, f);
+            ((IFILE *)cf)->f = freopen(fname, fmode, f);
         } else {
             rewind(f);
         }
