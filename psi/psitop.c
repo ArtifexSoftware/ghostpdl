@@ -316,7 +316,7 @@ ps_impl_set_device(
                                          screen_str, strlen(screen_str),
                                          0, &exit_code);
         /* needs more input this is not an error */
-        if ( code == e_NeedInput )
+        if ( code == gs_error_NeedInput )
             code = 0;
 
         if (code < 0)
@@ -431,7 +431,7 @@ ps_impl_process(
         code = gsapi_run_string_continue(psi->plmemory->gs_lib_ctx, (const char *)(cursor->ptr + 1),
                                          avail, 0, &exit_code);
         /* needs more input this is not an error */
-        if ( code == e_NeedInput )
+        if ( code == gs_error_NeedInput )
             code = 0;
         /* error - I guess it gets "exit code" - nonsense */
         if ( code < 0 )
@@ -546,7 +546,7 @@ ps_impl_dnit_job(
         /* handle errors... normally job deinit failures are
            considered fatal but pdf runs the spooled job when the job
            is deinitialized so handle error processing here and return code is always 0. */
-        if (( code < 0) && (code != e_NeedInput)) {
+        if (( code < 0) && (code != gs_error_NeedInput)) {
             errprintf(psi->plmemory, "PDF interpreter exited with exit code %d\n", exit_code);
             errprintf(psi->plmemory, "Flushing to EOJ\n");
         }
