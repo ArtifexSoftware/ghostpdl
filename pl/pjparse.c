@@ -19,6 +19,7 @@
 #include "stat_.h"
 #include "memory_.h"
 #include "stdio_.h"
+#include "string_.h"
 #include "scommon.h"
 #include "gdebug.h"
 #include "gp.h"
@@ -392,7 +393,7 @@ pjl_check_font_path(char *path_list, gs_memory_t * mem)
     /* lookup a font path and check if any files (presumably fonts are
        present) */
     char tmp_path[PJL_PATH_NAME_LENGTH + 1];
-    char *tmp_pathp = tmp_path;
+    char *tmp_pathp = tmp_path, *tplast = NULL;
     const char pattern[] = "*";
     char tmp_path_and_pattern[PJL_PATH_NAME_LENGTH + 1 + 1];    /* pattern + null */
     char *dirname;
@@ -403,7 +404,7 @@ pjl_check_font_path(char *path_list, gs_memory_t * mem)
     /* for each path search for fonts.  If we find them return we only
        check if the directory resource has files without checking if
        the files are indeed fonts. */
-    while ((dirname = strtok(tmp_pathp, ";")) != NULL) {
+    while ((dirname = gs_strtok(tmp_pathp, ";", &tplast)) != NULL) {
         file_enum *fe;
 
         strcpy(tmp_path_and_pattern, dirname);

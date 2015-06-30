@@ -43,4 +43,8 @@
 #  endif
 #endif
 
+#include "gsstrtok.h"
+
+#define strtok DO_NOT_USE_STRTOK
+
 #endif /* string__INCLUDED */

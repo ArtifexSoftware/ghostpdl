@@ -121,7 +121,7 @@
 
 #include "gdevprn.h"
 #include "gdevpccm.h"
-
+#include "string_.h"
 #include "windows_.h"
 #include <shellapi.h>
 #include "gp_mswin.h"
@@ -954,7 +954,7 @@ static int
 win_pr2_getdc(gx_device_win_pr2 * wdev)
 {
     char *device;
-    char driverbuf[512];
+    char driverbuf[512], *dbuflast = NULL;
     char *driver;
     char *output;
     char *devcap;
@@ -1044,8 +1044,8 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
         wchar_to_utf8(driverbuf, unidrvbuf);
     }
 #endif
-    driver = strtok(driverbuf, ",");
-    output = strtok(NULL, ",");
+    driver = gs_strtok(driverbuf, ",", &dbuflast);
+    output = gs_strtok(NULL, ",", dbuflast);
 
     if (!gp_OpenPrinter(device, &hprinter))
         return FALSE;

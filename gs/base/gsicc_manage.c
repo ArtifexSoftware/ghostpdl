@@ -490,7 +490,7 @@ gsicc_profile_from_ps(cmm_profile_t *profile_data)
 
 /* Fill in the actual source structure rending information */
 static void
-gsicc_fill_srcgtag_item(gsicc_rendering_param_t *r_params, bool cmyk)
+gsicc_fill_srcgtag_item(gsicc_rendering_param_t *r_params, char **pstrlast, bool cmyk)
 {
     char *curr_ptr;
     int blackptcomp;
@@ -498,20 +498,20 @@ gsicc_fill_srcgtag_item(gsicc_rendering_param_t *r_params, bool cmyk)
     int ri, count = 0;
 
     /* Get the intent */
-    curr_ptr = strtok(NULL, "\t,\32\n\r");
+    curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
     count = sscanf(curr_ptr, "%d", &ri);
     r_params->rendering_intent = ri | gsRI_OVERRIDE;
     /* Get the black point compensation setting */
-    curr_ptr = strtok(NULL, "\t,\32\n\r");
+    curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
     count = sscanf(curr_ptr, "%d", &blackptcomp);
     r_params->black_point_comp = blackptcomp | gsBP_OVERRIDE;
     /* Get the over-ride embedded ICC boolean */
-    curr_ptr = strtok(NULL, "\t,\32\n\r");
+    curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
     count = sscanf(curr_ptr, "%d", &or_icc);
     r_params->override_icc = or_icc;
     if (cmyk) {
         /* Get the preserve K control */
-        curr_ptr = strtok(NULL, "\t,\32\n\r");
+        curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
         count = sscanf(curr_ptr, "%d", &preserve_k);
         r_params->preserve_black = preserve_k | gsKP_OVERRIDE;
     } else {
@@ -545,7 +545,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
     stream *str;
     int code;
     int info_size;
-    char *buffer_ptr, *curr_ptr;
+    char *buffer_ptr, *curr_ptr, *last;
     int num_bytes;
     char str_format_key[6], str_format_file[6];
     int k;
@@ -608,10 +608,10 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
         }
         while (start || strlen(curr_ptr) > 0) {
             if (start) {
-                curr_ptr = strtok(buffer_ptr, "\t,\32\n\r");
+                curr_ptr = gs_strtok(buffer_ptr, "\t,\32\n\r", &last);
                 start = false;
             } else {
-                curr_ptr = strtok(NULL, "\t,\32\n\r");
+                curr_ptr = gs_strtok(NULL, "\t,\32\n\r", &last);
             }
             if (curr_ptr == NULL) break;
             /* Now go ahead and see if we have a match */
@@ -621,7 +621,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                        object is not to be color managed.  Also, if the
                        curr_ptr is Replace which indicates we will be doing
                        direct replacement of the colors.  */
-                    curr_ptr = strtok(NULL, "\t,\32\n\r");
+                    curr_ptr = gs_strtok(NULL, "\t,\32\n\r", &last);
                     if (strncmp(curr_ptr, GSICC_SRCTAG_NOCM, strlen(GSICC_SRCTAG_NOCM)) == 0 &&
                         strlen(curr_ptr) == strlen(GSICC_SRCTAG_NOCM)) {
                         cmm = gsCMM_NONE;
@@ -673,42 +673,42 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                     srcgtag->cmyk_profiles[gsSRC_GRAPPRO] = icc_profile;
                     srcgtag->cmyk_rend_cond[gsSRC_GRAPPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
-                        gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_GRAPPRO]), true);
+                        gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_GRAPPRO]), &last, true);
                     }
                     break;
                 case IMAGE_CMYK:
                     srcgtag->cmyk_profiles[gsSRC_IMAGPRO] = icc_profile;
                     srcgtag->cmyk_rend_cond[gsSRC_IMAGPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
-                        gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_IMAGPRO]), true);
+                        gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_IMAGPRO]), &last, true);
                     }
                     break;
                 case TEXT_CMYK:
                     srcgtag->cmyk_profiles[gsSRC_TEXTPRO] = icc_profile;
                     srcgtag->cmyk_rend_cond[gsSRC_TEXTPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
-                        gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_TEXTPRO]), true);
+                        gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_TEXTPRO]), &last, true);
                     }
                     break;
                 case GRAPHIC_RGB:
                     srcgtag->rgb_profiles[gsSRC_GRAPPRO] = icc_profile;
                     srcgtag->rgb_rend_cond[gsSRC_GRAPPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
-                        gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_GRAPPRO]), false);
+                        gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_GRAPPRO]), &last, false);
                     }
                    break;
                 case IMAGE_RGB:
                     srcgtag->rgb_profiles[gsSRC_IMAGPRO] = icc_profile;
                     srcgtag->rgb_rend_cond[gsSRC_IMAGPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
-                        gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_IMAGPRO]), false);
+                        gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_IMAGPRO]), &last, false);
                     }
                     break;
                 case TEXT_RGB:
                     srcgtag->rgb_profiles[gsSRC_TEXTPRO] = icc_profile;
                     srcgtag->rgb_rend_cond[gsSRC_TEXTPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
-                        gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_TEXTPRO]), false);
+                        gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_TEXTPRO]), &last, false);
                     }
                     break;
                 case GSICC_NUM_SRCGTAG_KEYS:
@@ -1349,7 +1349,7 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
     gsicc_colorname_t *name_entry;
     gsicc_colorname_t **curr_entry;
     gs_memory_t *mem;
-    char *temp_ptr;
+    char *temp_ptr, *last = NULL;
     int done;
     gsicc_namelist_t *spot_names;
     char *pch;
@@ -1421,7 +1421,7 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
         spot_names->name_str[str_len] = 0;
         curr_entry = &(spot_names->head);
          /* Go ahead and tokenize now */
-        pch = strtok(name_str, ",");
+        pch = gs_strtok(name_str, ",", &last);
         count = 0;
         while (pch != NULL) {
             temp_ptr = pch;
@@ -1447,7 +1447,7 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
             /* Get the next entry location */
             curr_entry = &((*curr_entry)->next);
             count += 1;
-            pch = strtok(NULL, ",");
+            pch = gs_strtok(NULL, ",", &last);
         }
         spot_names->count = count;
         /* Create the color map.  Query the device to find out where these
@@ -2546,7 +2546,7 @@ int
 gs_setdevicenprofileicc(const gs_state * pgs, gs_param_string * pval)
 {
     int code = 0;
-    char *pname, *pstr, *pstrend;
+    char *pname, *pstr, *pstrend, *last = NULL;
     int namelen = (pval->size)+1;
     gs_memory_t *mem = pgs->memory;
 
@@ -2564,7 +2564,7 @@ gs_setdevicenprofileicc(const gs_state * pgs, gs_param_string * pval)
             return_error(gs_error_VMerror);
         memcpy(pname,pval->data,namelen-1);
         pname[namelen-1] = 0;
-        pstr = strtok(pname, ",;");
+        pstr = gs_strtok(pname, ",;", &last);
         while (pstr != NULL) {
             namelen = strlen(pstr);
             /* Remove leading and trailing spaces from the name */
@@ -2581,7 +2581,7 @@ gs_setdevicenprofileicc(const gs_state * pgs, gs_param_string * pval)
             code = gsicc_set_profile(pgs->icc_manager, (const char*) pstr, namelen, DEVICEN_TYPE);
             if (code < 0)
                 return gs_throw(code, "cannot find devicen icc profile");
-            pstr = strtok(NULL, ",;");
+            pstr = gs_strtok(NULL, ",;", &last);
         }
         gs_free_object(mem, pname,
         "set_devicen_profile_icc");

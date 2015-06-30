@@ -606,7 +606,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
     byte key[3];
     /* max pathname of 1024 including pattern */
     char tmp_path_copy[1024];
-    char *tmp_pathp;
+    char *tmp_pathp, *tplast = NULL;
     bool found;
     bool found_any = false;
     const char pattern[] = "*";
@@ -630,9 +630,9 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
     }
 
     /* Enumerate through the files in the path */
-    /* make a copy of the path for strtok */
+    /* make a copy of the path for gs_strtok */
     strcpy(tmp_path_copy, pathname);
-    for (tmp_pathp = tmp_path_copy; (tmp_pathp = strtok(tmp_pathp, ";")) != NULL;       /* NB shouldn't use strtok */
+    for (tmp_pathp = tmp_path_copy; (tmp_pathp = gs_strtok(tmp_pathp, ";", &tplast)) != NULL;
          tmp_pathp = NULL) {
         int code;
         file_enum *fe;

@@ -107,6 +107,7 @@ vmsmath_h=$(GLSRC)vmsmath.h
 
 # declare here for use by string__h
 gssprintf_h=$(GLSRC)gssprintf.h
+gsstrtok_h=$(GLSRC)gsstrtok.h
 
 dos__h=$(GLSRC)dos_.h
 ctype__h=$(GLSRC)ctype_.h $(std_h)
@@ -121,7 +122,7 @@ memory__h=$(GLSRC)memory_.h $(std_h)
 setjmp__h=$(GLSRC)setjmp_.h
 stat__h=$(GLSRC)stat_.h $(std_h)
 stdio__h=$(GLSRC)stdio_.h $(std_h) $(gssprintf_h)
-string__h=$(GLSRC)string_.h $(std_h)
+string__h=$(GLSRC)string_.h $(std_h) $(gsstrtok_h)
 time__h=$(GLSRC)time_.h $(std_h) $(gconfig__h)
 unistd__h=$(GLSRC)unistd_.h $(std_h)
 windows__h=$(GLSRC)windows_.h
@@ -336,6 +337,9 @@ $(AUX)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
 $(GLOBJ)gssprintf.$(OBJ) : $(GLSRC)gssprintf.c $(gssprintf_h) $(stdio__h) \
  $(stdint__h) $(string__h) $(math__h)
 	$(GLCC) $(GLO_)gssprintf.$(OBJ) $(C_) $(GLSRC)gssprintf.c
+
+$(GLOBJ)gsstrtok.$(OBJ) : $(GLSRC)gsstrtok.c $(gsstrtok_h) $(string__h)
+	$(GLCC) $(GLO_)gsstrtok.$(OBJ) $(C_) $(GLSRC)gsstrtok.c
 
 # MD5 digest
 gsmd5_h=$(GLSRC)gsmd5.h
@@ -1327,7 +1331,7 @@ LIB10s=$(GLOBJ)gsmalloc.$(OBJ) $(GLOBJ)memento.$(OBJ)  $(GLOBJ)gsmatrix.$(OBJ)
 LIB11s=$(GLOBJ)gsmemory.$(OBJ) $(GLOBJ)gsmemret.$(OBJ) $(GLOBJ)gsmisc.$(OBJ) $(GLOBJ)gsnotify.$(OBJ) $(GLOBJ)gslibctx.$(OBJ)
 LIB12s=$(GLOBJ)gspaint.$(OBJ) $(GLOBJ)gsparam.$(OBJ) $(GLOBJ)gspath.$(OBJ)
 LIB13s=$(GLOBJ)gsserial.$(OBJ) $(GLOBJ)gsstate.$(OBJ) $(GLOBJ)gstext.$(OBJ)\
-  $(GLOBJ)gsutil.$(OBJ) $(GLOBJ)gssprintf.$(OBJ) 
+  $(GLOBJ)gsutil.$(OBJ) $(GLOBJ)gssprintf.$(OBJ) $(GLOBJ)gsstrtok.$(OBJ)
 LIB1x=$(GLOBJ)gxacpath.$(OBJ) $(GLOBJ)gxbcache.$(OBJ) $(GLOBJ)gxccache.$(OBJ)
 LIB2x=$(GLOBJ)gxccman.$(OBJ) $(GLOBJ)gxchar.$(OBJ) $(GLOBJ)gxcht.$(OBJ)
 LIB3x=$(GLOBJ)gxclip.$(OBJ) $(GLOBJ)gxcmap.$(OBJ) $(GLOBJ)gxcpath.$(OBJ)
