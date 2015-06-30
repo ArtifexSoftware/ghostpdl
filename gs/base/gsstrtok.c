@@ -13,16 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* From: https://svn.apache.org/repos/asf/apr/apr/trunk/strings/apr_strtok.c */
+/* with changes to work in Ghostscript */
 
-#ifdef HAVE_STDDEF_H
-#include <stddef.h>        /* for NULL */
-#endif
+#include "string_.h"
+#include "gsstrtok.h"
 
-#include "apr.h"
-#include "apr_strings.h"
-
-#define APR_WANT_STRFUNC   /* for strchr() */
-#include "apr_want.h"
+#define APR_DECLARE(X) static X
 
 APR_DECLARE(char *) apr_strtok(char *str, const char *sep, char **last)
 {
@@ -53,4 +50,9 @@ APR_DECLARE(char *) apr_strtok(char *str, const char *sep, char **last)
     }
 
     return token;
+}
+
+char * gs_strtok(char *str, const char *sep, char **last)
+{
+    return apr_strtok(str, sep, last);
 }
