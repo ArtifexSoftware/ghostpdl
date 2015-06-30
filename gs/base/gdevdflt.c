@@ -132,12 +132,12 @@ is_like_DeviceRGB(gx_device * dev)
          dev->color_info.polarity != GX_CINFO_POLARITY_ADDITIVE  )
         return false;
 
-    GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, cm_procs);
+    cm_procs = get_color_mapping_procs_subclass(dev);
     if (cm_procs == 0 || cm_procs->map_rgb == 0)
         return false;
 
     /* check the values 1/4, 1/3, and 3/4 */
-    MAP_RGB_SUBCLASS(cm_procs, dev, 0, frac_1 / 4, frac_1 / 3, 3 * frac_1 / 4,cm_comp_fracs);
+    map_rgb_subclass(cm_procs, dev, 0, frac_1 / 4, frac_1 / 3, 3 * frac_1 / 4,cm_comp_fracs);
 
     /* verify results to .01 */
     cm_comp_fracs[0] -= frac_1 / 4;
@@ -165,13 +165,13 @@ is_like_DeviceCMYK(gx_device * dev)
     if ( dev->color_info.num_components != 4                      ||
          dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE  )
         return false;
-    GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, cm_procs);
+    cm_procs = get_color_mapping_procs_subclass(dev);
     if (cm_procs == 0 || cm_procs->map_cmyk == 0)
         return false;
 
     /* check the values 1/4, 1/3, 3/4, and 1/8 */
 
-    MAP_CMYK_SUBCLASS( cm_procs, dev,
+    map_cmyk_subclass( cm_procs, dev,
                         frac_1 / 4,
                         frac_1 / 3,
                         3 * frac_1 / 4,

@@ -845,52 +845,6 @@ typedef enum FILTER_FLAGS {
     FILTERVECTOR = 4
 } OBJECT_FILTER_FLAGS;
 
-/* The color mapping procs were used in a way which defeats a 'pipeline'
- * approach to devices. Certain graphics library routines (eg images)
- * called the color mapping procs *directly* from the device procs of the
- * current (ie terminal) device. This prevented any pipeline approach from
- * working as earlier devices in the chain wouldn't see the call. In particular
- * this prevented the use of such a device to do 'monochrome mode' in PCL
- * (see pcpalet.c, pcl_update_mono). This macro walks back up the pipeline
- * and retrieves the uppermost device color_mapping procs.
- */
-#define GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, procs)\
-    do {\
-    if (dev) {\
-            gx_device *temp = dev;\
-            while(temp->parent) {temp = temp->parent;}\
-            procs = (gx_cm_color_map_procs *)dev_proc(temp, get_color_mapping_procs)(temp);\
-    } else\
-        procs = 0;\
-    } while (0 == 1)
-
-#define MAP_RGB_SUBCLASS(procs, dev, pis, r, g, b, cm_comps)\
-    do {\
-        if (dev) {\
-            gx_device *temp = dev;\
-            while(temp->parent) {temp = temp->parent;}\
-            procs->map_rgb(temp, pis, r, g, b, cm_comps);\
-        }\
-    } while (0 == 1)
-
-#define MAP_GRAY_SUBCLASS(procs, dev, gray, cm_comps)\
-    do {\
-        if (dev) {\
-            gx_device *temp = dev;\
-            while(temp->parent) {temp = temp->parent;}\
-            procs->map_gray(temp, gray, cm_comps);\
-        }\
-    } while (0 == 1)
-
-#define MAP_CMYK_SUBCLASS(procs, dev, c, m, y, k, cm_comps)\
-    do {\
-        if (dev) {\
-            gx_device *temp = dev;\
-            while(temp->parent) {temp = temp->parent;}\
-            procs->map_cmyk(temp, c, m, y, k, cm_comps);\
-        }\
-    } while (0 == 1)
-
 /* ---------------- Device procedures ---------------- */
 
 /* Define an opaque type for parameter lists. */
@@ -1789,6 +1743,63 @@ extern_st(st_device_forward);
     "gx_device_forward", 0, device_forward_enum_ptrs,\
     device_forward_reloc_ptrs, gx_device_finalize)
 #define st_device_forward_max_ptrs (st_device_max_ptrs + 1)
+
+/* The color mapping procs were used in a way which defeats a 'pipeline'
+ * approach to devices. Certain graphics library routines (eg images)
+ * called the color mapping procs *directly* from the device procs of the
+ * current (ie terminal) device. This prevented any pipeline approach from
+ * working as earlier devices in the chain wouldn't see the call. In particular
+ * this prevented the use of such a device to do 'monochrome mode' in PCL
+ * (see pcpalet.c, pcl_update_mono). This macro walks back up the pipeline
+ * and retrieves the uppermost device color_mapping procs.
+ */
+static inline
+gx_cm_color_map_procs *get_color_mapping_procs_subclass(const gx_device *dev)
+{
+    if (dev == NULL)
+        return NULL;
+    while(dev->parent)
+    {
+        dev = dev->parent;
+    }
+    return (gx_cm_color_map_procs *)dev_proc(dev, get_color_mapping_procs)(dev);
+}
+
+static inline
+void map_rgb_subclass(const gx_cm_color_map_procs *procs, gx_device *dev, const gs_imager_state *pis, frac r, frac g, frac b, frac out[])
+{
+    if (dev == NULL)
+        return;
+    while(dev->parent)
+    {
+        dev = dev->parent;
+    }
+    procs->map_rgb(dev, pis, r, g, b, out);
+}
+
+static inline
+void map_gray_subclass(const gx_cm_color_map_procs *procs, gx_device *dev, frac gray, frac out[])
+{
+    if (dev == NULL)
+        return;
+    while(dev->parent)
+    {
+        dev = dev->parent;
+    }
+    procs->map_gray(dev, gray, out);
+}
+
+static inline
+void map_cmyk_subclass(const gx_cm_color_map_procs *procs, gx_device *dev, frac c, frac m, frac y, frac k, frac out[])
+{
+    if (dev == NULL)
+        return;
+    while(dev->parent)
+    {
+        dev = dev->parent;
+    }
+    procs->map_cmyk(dev, c, m, y, k, out);
+}
 
 /* A null device.  This is used to temporarily disable output. */
 #ifndef gx_device_null_DEFINED

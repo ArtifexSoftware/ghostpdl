@@ -903,8 +903,8 @@ cmap_gray_halftoned(frac gray, gx_device_color * pdc,
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, pprocs);
-    MAP_GRAY_SUBCLASS(pprocs, dev, gray, cm_comps);
+    pprocs = get_color_mapping_procs_subclass(dev);
+    map_gray_subclass(pprocs, dev, gray, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -948,8 +948,8 @@ cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_imager_state * pis,
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, pprocs);
-    MAP_GRAY_SUBCLASS(pprocs, dev, gray, cm_comps);
+    pprocs = get_color_mapping_procs_subclass(dev);
+    map_gray_subclass(pprocs, dev, gray, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -993,13 +993,13 @@ cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
 {
     int i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    gx_cm_color_map_procs *   pprocs;
+    gx_cm_color_map_procs *pprocs;
 
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, pprocs);
-    MAP_RGB_SUBCLASS(pprocs, dev, pis, r, g, b, cm_comps);
+    pprocs = get_color_mapping_procs_subclass(dev);
+    map_rgb_subclass(pprocs, dev, pis, r, g, b, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -1029,8 +1029,8 @@ cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, pprocs);
-    MAP_RGB_SUBCLASS(pprocs, dev, pis, r, g, b, cm_comps);
+    pprocs = get_color_mapping_procs_subclass(dev);
+    map_rgb_subclass(pprocs, dev, pis, r, g, b, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -1072,8 +1072,8 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, pprocs);
-    MAP_CMYK_SUBCLASS(pprocs, dev, c, m, y, k, cm_comps);
+    pprocs = get_color_mapping_procs_subclass(dev);
+    map_cmyk_subclass(pprocs, dev, c, m, y, k, cm_comps);
 
     /* apply the transfer function(s); convert to color values */
     if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
@@ -1147,8 +1147,8 @@ cmap_rgb_alpha_halftoned(frac r, frac g, frac b, frac alpha,
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, pprocs);
-    MAP_RGB_SUBCLASS(pprocs, dev, pis, r, g, b, cm_comps);
+    pprocs = get_color_mapping_procs_subclass(dev);
+    map_rgb_subclass(pprocs, dev, pis, r, g, b, cm_comps);
 
     /* pre-multiply to account for the alpha weighting */
     if (alpha != frac_1) {
@@ -1190,8 +1190,8 @@ cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
-    GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, pprocs);
-    MAP_RGB_SUBCLASS(pprocs, dev, pis, r, g, b, cm_comps);
+    pprocs = get_color_mapping_procs_subclass(dev);
+    map_rgb_subclass(pprocs, dev, pis, r, g, b, cm_comps);
 
     /* pre-multiply to account for the alpha weighting */
     if (alpha != frac_1) {
@@ -2126,7 +2126,7 @@ gx_device_uses_std_cmap_procs(gx_device * dev, const gs_imager_state * pis)
                           dev_profile, &des_profile, &render_cond);
 
     if (des_profile != NULL) {
-        GET_COLOR_MAPPING_PROCS_SUBCLASS(dev, pprocs);
+        pprocs = get_color_mapping_procs_subclass(dev);
         /* Check if they are forwarding procs */
         if (fwd_uses_fwd_cmap_procs(dev)) {
             pprocs = fwd_get_target_cmap_procs(dev);
