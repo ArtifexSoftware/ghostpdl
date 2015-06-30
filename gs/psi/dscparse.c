@@ -40,7 +40,7 @@
 
 #include <stdio_.h>	/* for sprintf(), not file I/O */
 #include <stdlib.h>
-#include <string.h>
+#include <string_.h>
 #include <ctype.h>
 
 #define MAXSTR 256
@@ -1088,7 +1088,7 @@ dsc_read_line(CDSC *dsc)
              * <type> ::= Hex | Binary | ASCII (Type of data)
              * <bytesorlines> ::= Bytes | Lines (Read in bytes or lines)
              */
-            char begindata[MAXSTR+1];
+            char begindata[MAXSTR+1], *bdatalast = NULL;
             int cnt;
             const char *numberof, *bytesorlines;
             cnt = dsc->line_length;
@@ -1096,9 +1096,9 @@ dsc_read_line(CDSC *dsc)
                 cnt = sizeof(begindata)-1;
             memcpy(begindata, dsc->line, cnt);
             begindata[cnt] = '\0';
-            numberof = strtok(begindata+12, " \r\n");
-            strtok(NULL, " \r\n");	/* dump type */
-            bytesorlines = strtok(NULL, " \r\n");
+            numberof = gs_strtok(begindata+12, " \r\n", &bdatalast);
+            gs_strtok(NULL, " \r\n", &bdatalast);	/* dump type */
+            bytesorlines = gs_strtok(NULL, " \r\n", &bdatalast);
             if (bytesorlines == NULL)
                 bytesorlines = "Bytes";
 

@@ -1145,7 +1145,7 @@ gsicc_transform_named_color(const float tint_values[],
     int buffer_count;
     int count;
     int code;
-    char *pch, *temp_ptr;
+    char *pch, *temp_ptr, *last = NULL;
     bool done;
     int curr_name_size;
     bool found_match;
@@ -1209,9 +1209,9 @@ gsicc_transform_named_color(const float tint_values[],
                 namedcolor_table->named_color = namedcolor_data;
                 for (k = 0; k < num_entries; k++) {
                     if (k == 0) {
-                        pch = strtok(buffptr,",;");
+                        pch = gs_strtok(buffptr,",;", &last);
                     } else {
-                        pch = strtok(NULL,",;");
+                        pch = gs_strtok(NULL,",;", &last);
                     }
                     /* Remove any /0d /0a stuff from start */
                     temp_ptr = pch;
@@ -1234,7 +1234,7 @@ gsicc_transform_named_color(const float tint_values[],
                     strncpy(namedcolor_data[k].colorant_name,temp_ptr,
                             namedcolor_data[k].name_size+1);
                     for (j = 0; j < 3; j++) {
-                        pch = strtok(NULL,",;");
+                        pch = gs_strtok(NULL,",;", &last);
                         count = sscanf(pch,"%f",&(lab[j]));
                     }
                     lab[0] = lab[0]*65535/100.0;
