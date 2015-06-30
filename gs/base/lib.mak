@@ -107,6 +107,7 @@ vmsmath_h=$(GLSRC)vmsmath.h
 
 # declare here for use by string__h
 gssprintf_h=$(GLSRC)gssprintf.h
+gsstrtok_h=$(GLSRC)gsstrtok.h
 
 dos__h=$(GLSRC)dos_.h
 ctype__h=$(GLSRC)ctype_.h $(std_h)
@@ -336,6 +337,9 @@ $(AUX)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
 $(GLOBJ)gssprintf.$(OBJ) : $(GLSRC)gssprintf.c $(gssprintf_h) $(stdio__h) \
  $(stdint__h) $(string__h) $(math__h)
 	$(GLCC) $(GLO_)gssprintf.$(OBJ) $(C_) $(GLSRC)gssprintf.c
+
+$(GLOBJ)gsstrtok.$(OBJ) : $(GLSRC)gsstrtok.c $(gsstrtok_h) $(string__h)
+	$(GLCC) $(GLO_)gsstrtok.$(OBJ) $(C_) $(GLSRC)gsstrtok.c
 
 # MD5 digest
 gsmd5_h=$(GLSRC)gsmd5.h
