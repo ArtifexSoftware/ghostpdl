@@ -280,10 +280,10 @@ ppm_open(gx_device * pdev)
 #endif
 
     code = gdev_prn_open_planar(pdev, bdev->UsePlanarBuffer);
-    if (pdev->child) {
+    while (pdev->child)
         pdev = pdev->child;
-        bdev = (gx_device_pbm *)pdev;;
-    }
+
+    bdev = (gx_device_pbm *)pdev;;
 
     if (code < 0)
         return code;

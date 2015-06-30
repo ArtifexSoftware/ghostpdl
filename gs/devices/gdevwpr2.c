@@ -408,15 +408,14 @@ win_pr2_open(gx_device * dev)
      * device stops working, not sure why.
      */
     if (dev->child) {
-        gx_device_win_pr2 *windev = (gx_device_win_pr2 *)dev;
+        gx_device_win_pr2 *windev;
 
-        if (windev->original_device == windev) {
-            windev = (gx_device_win_pr2 *)dev->child;
-            windev->original_device = (gx_device_win_pr2 *)dev->child;
-        }
+        while (dev->child)
+            dev = dev->child;
 
-        /* We use 'dev' below, so make sure its the actual mswinpr2 device we use */
-        dev = dev->child;
+        windev = (gx_device_win_pr2 *)dev;
+
+        windev->original_device = (gx_device_win_pr2 *)dev;
     }
 
     if ((code < 0) && wdev->fname[0])

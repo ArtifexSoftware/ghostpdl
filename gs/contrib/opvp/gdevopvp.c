@@ -2059,11 +2059,11 @@ opvp_open(gx_device *dev)
             ecode = code;
             return ecode;
         }
-        if (dev->child) {
-            dev = pdev->child;
-            rdev = (gx_device_oprp *)(pdev->child);
-            pdev = (gx_device_opvp *)(pdev->child);
+        while (dev->child) {
+            dev = dev->child;
         }
+        rdev = (gx_device_oprp *)(dev);
+        pdev = (gx_device_opvp *)(dev);
 #if GS_VERSION_MAJOR >= 8
         if (pdev->bbox_device != NULL) {
             if (pdev->bbox_device->memory == NULL) {
@@ -2079,11 +2079,11 @@ opvp_open(gx_device *dev)
             ecode = ecode;
             return ecode;
         }
-        if (dev->child) {
-            dev = pdev->child;
-            rdev = (gx_device_oprp *)(pdev->child);
-            pdev = (gx_device_opvp *)(pdev->child);
+        while (dev->child) {
+            dev = dev->child;
         }
+        rdev = (gx_device_oprp *)(dev);
+        pdev = (gx_device_opvp *)(dev);
         /* open output stream */
         code = gdev_prn_open_printer_seekable(dev, true, false);
         if (code < 0) {

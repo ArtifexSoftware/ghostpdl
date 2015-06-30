@@ -1038,10 +1038,9 @@ int eprn_open_device(gx_device *device)
   /* if device has been subclassed (FirstPage/LastPage device) then make sure we use
    * the subclassed device.
    */
-  if (device->child) {
+  while (device->child)
       device = device->child;
-      eprn = &((eprn_Device *)device)->eprn;
-  }
+  eprn = &((eprn_Device *)device)->eprn;
 
   /* Just in case a previous open call failed in a derived device (note that
      'octets_per_line' is still the same as then): */

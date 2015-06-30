@@ -1301,8 +1301,10 @@ static int pcl3_open_device(gx_device *device)
   /* if device has been subclassed (FirstPage/LastPage device) then make sure we use
    * the subclassed device.
    */
-  if (device->child)
+  while (device->child)
       device = device->child;
+
+  dev = (pcl3_Device *)device;
 
   /* Fill the still unassigned parts of 'file_data' from the other data */
   {

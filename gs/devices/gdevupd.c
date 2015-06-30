@@ -1278,11 +1278,11 @@ upd_open(gx_device *pdev)
 
 /** call the super-class open **/
    error = gdev_prn_open(pdev);
-   if (pdev->child) {
-       pdev = pdev->child;
-       udev = (upd_device *) pdev;
-       upd = udev->upd;
-   }
+   while (pdev->child)
+        pdev = pdev->child;
+
+   udev = (upd_device *) pdev;
+   upd = udev->upd;
 
 /** invoke the subroutines, if an upd is present. */
 
