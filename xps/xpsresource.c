@@ -115,7 +115,10 @@ xps_parse_remote_resource_dictionary(xps_context_t *ctx, xps_resource_t **dictp,
         return gs_rethrow1(code, "cannot parse remote resource dictionary: %s", part_uri);
     }
 
-    dict->base_xml = xml; /* pass on ownership */
+    if (dict != NULL)
+        dict->base_xml = xml; /* pass on ownership */
+    else
+        xps_free_item(ctx, xml);
 
     xps_free_part(ctx, part);
 
