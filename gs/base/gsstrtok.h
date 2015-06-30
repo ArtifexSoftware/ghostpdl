@@ -16,6 +16,6 @@
 #ifndef gsstrtok_INCLUDED
 #  define gsstrtok_INCLUDED
 
-char * gs_strtok(char *str, const char *sep, char **last)
+char * gs_strtok(char *str, const char *sep, char **last);
 
 #endif
