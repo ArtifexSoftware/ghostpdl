@@ -25,7 +25,6 @@
 #include "gdebug.h"
 #include "gp.h"
 #include "gserrors.h"
-#include "ierrors.h"
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "gsmalloc.h"
