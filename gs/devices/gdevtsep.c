@@ -1193,7 +1193,7 @@ dev_proc_fill_path(clist_fill_path);
 int
 tiffsep1_prn_open(gx_device * pdev)
 {
-    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+    gx_device_printer *ppdev = (gx_device_printer *)pdev;
     tiffsep1_device *pdev_sep = (tiffsep1_device *) pdev;
     int code, k;
 
@@ -1230,6 +1230,11 @@ tiffsep1_prn_open(gx_device * pdev)
                              pdev_sep->devn_params.bitspercomponent;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     code = gdev_prn_open_planar(pdev, true);
+    while (pdev->child)
+        pdev = pdev->child;
+    ppdev = (gx_device_printer *)pdev;
+    pdev_sep = (tiffsep1_device *)pdev;
+
     ppdev->file = NULL;
     pdev->icc_struct->supports_devn = true;
 
@@ -1567,7 +1572,7 @@ build_comp_to_sep_map(tiffsep_device * pdev, short * map_comp_to_sep)
 int
 tiffsep_prn_open(gx_device * pdev)
 {
-    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+    gx_device_printer *ppdev = (gx_device_printer *)pdev;
     tiffsep_device *pdev_sep = (tiffsep_device *) pdev;
     int code, k;
     bool force_pdf, limit_icc, force_ps;
@@ -1662,6 +1667,10 @@ tiffsep_prn_open(gx_device * pdev)
                              pdev_sep->devn_params.bitspercomponent;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     code = gdev_prn_open_planar(pdev, true);
+    while (pdev->child)
+        pdev = pdev->child;
+    ppdev = (gx_device_printer *)pdev;
+
     ppdev->file = NULL;
     pdev->icc_struct->supports_devn = true;
     return code;
