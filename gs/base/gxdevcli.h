@@ -747,7 +747,9 @@ typedef struct gdev_space_params_s {
         float ImagingBBox[4];		/* imageable region in points */\
         bool ImagingBBox_set;\
         float HWResolution[2];		/* resolution, dots per inch */\
-        float MarginsHWResolution[2];	/* resolution for Margins */\
+        float MarginsHWResolution[2];	/* resolution for Margins. The pagedevice */\
+                                        /* documentation implies these units might be */\
+                                        /* different than the physical device units. */\
         float Margins[2];		/* offset of physical page corner */\
                                         /* from device coordinate (0,0), */\
                                         /* in units given by MarginsHWResolution */\
