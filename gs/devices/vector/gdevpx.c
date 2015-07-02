@@ -1549,8 +1549,8 @@ static const gx_device_vector_procs pclxl_vector_procs = {
 static int
 pclxl_open_device(gx_device * dev)
 {
-    gx_device_vector *const vdev = (gx_device_vector *)dev;
-    gx_device_pclxl *const xdev = (gx_device_pclxl *)dev;
+    gx_device_vector *vdev = (gx_device_vector *)dev;
+    gx_device_pclxl *xdev = (gx_device_pclxl *)dev;
     int code;
 
     vdev->v_memory = dev->memory;	/****** WRONG ******/
@@ -1559,6 +1559,11 @@ pclxl_open_device(gx_device * dev)
                                          VECTOR_OPEN_FILE_SEQUENTIAL);
     if (code < 0)
         return code;
+
+    while (dev->child)
+        dev = dev->child;
+    vdev = (gx_device_vector *)dev;
+    xdev = (gx_device_pclxl *)dev;
 
     pclxl_page_init(xdev);
     px_write_file_header(vdev->strm, dev);
