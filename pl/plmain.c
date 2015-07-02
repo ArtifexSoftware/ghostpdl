@@ -1214,6 +1214,26 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                                               ".HWMargins", &fa);
                 }
                 break;
+            case 'm':
+                {
+                    float marg[2];
+                    gs_param_float_array fa;
+                    uint sz = countof(marg);
+                    uint parsed = parse_floats(pmi->memory, sz, arg, marg);
+                    if (parsed != sz) {
+                        dmprintf(pmi->memory,
+                                 "-m must be followed by <left>x<bottom>\n");
+                        return -1;
+                    }
+                    fa.data = marg;
+                    fa.size = parsed;
+                    fa.persistent = false;
+                    code =
+                        param_write_float_array((gs_param_list *) params,
+                                                "Margins", &fa);
+
+                }
+                break;
             case 'h':
                 help = true;
                 goto out;
