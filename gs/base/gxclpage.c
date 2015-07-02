@@ -755,7 +755,7 @@ gx_saved_pages_param_process(gx_device_printer *pdev, byte *param, int param_siz
     int erasepage_needed = 0;
 
     while (pdev->child)
-        pdev = pdev->child;
+        pdev = (gx_device_printer *)pdev->child;
 
     while ((token = param_parse_token(param_scan, param_left, &token_size)) != NULL) {
 
