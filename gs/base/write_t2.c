@@ -40,30 +40,30 @@ write_4_byte_int(unsigned char *a_output, long a_int)
 }
 
 static void
-write_type2_int(WRF_output * a_output, long a_int)
+write_type2_int(gs_fapi_font * a_fapi_font, WRF_output * a_output, long a_int)
 {
     if (a_int >= -107 && a_int <= 107)
-        WRF_wbyte(a_output, (unsigned char)(a_int + 139));
+        WRF_wbyte(a_fapi_font->memory, a_output, (unsigned char)(a_int + 139));
     else if (a_int >= -32768 && a_int <= 32767) {
         if (a_int >= 108 && a_int <= 1131)
             a_int += 63124;
         else if (a_int >= -1131 && a_int <= -108)
             a_int = -a_int + 64148;
         else
-            WRF_wbyte(a_output, 28);
-        WRF_wbyte(a_output, (unsigned char)(a_int >> 8));
-        WRF_wbyte(a_output, (unsigned char)(a_int & 0xFF));
+            WRF_wbyte(a_fapi_font->memory, a_output, 28);
+        WRF_wbyte(a_fapi_font->memory, a_output, (unsigned char)(a_int >> 8));
+        WRF_wbyte(a_fapi_font->memory, a_output, (unsigned char)(a_int & 0xFF));
     } else {
         unsigned char buffer[4];
 
-        WRF_wbyte(a_output, 29);
+        WRF_wbyte(a_fapi_font->memory, a_output, 29);
         write_4_byte_int(buffer, a_int);
-        WRF_wtext(a_output, buffer, 4);
+        WRF_wtext(a_fapi_font->memory, a_output, buffer, 4);
     }
 }
 
 static void
-write_type2_float(WRF_output * a_output, double a_float)
+write_type2_float(gs_fapi_font * a_fapi_font, WRF_output * a_output, double a_float)
 {
     char buffer[32];
     const char *p = buffer;
@@ -71,7 +71,7 @@ write_type2_float(WRF_output * a_output, double a_float)
     char c = 0;
 
     gs_sprintf(buffer, "%f", a_float);
-    WRF_wbyte(a_output, 30);
+    WRF_wbyte(a_fapi_font->memory, a_output, 30);
     for (;;) {
         char n = 0;
 
@@ -91,12 +91,12 @@ write_type2_float(WRF_output * a_output, double a_float)
             n = 0xF;
         if (high) {
             if (*p == 0)
-                WRF_wbyte(a_output, 0xFF);
+                WRF_wbyte(a_fapi_font->memory, a_output, 0xFF);
             else
                 c = (char)(n << 4);
         } else {
             c |= n;
-            WRF_wbyte(a_output, c);
+            WRF_wbyte(a_fapi_font->memory, a_output, c);
         }
 
         if (*p == 0)
@@ -108,16 +108,16 @@ write_type2_float(WRF_output * a_output, double a_float)
 }
 
 static void
-write_header(WRF_output * a_output)
+write_header(gs_fapi_font * a_fapi_font, WRF_output * a_output)
 {
-    WRF_wtext(a_output, (const unsigned char *)"\x1\x0\x4\x1", 4);
+    WRF_wtext(a_fapi_font->memory, a_output, (const unsigned char *)"\x1\x0\x4\x1", 4);
 }
 
 static void
-write_name_index(WRF_output * a_output)
+write_name_index(gs_fapi_font * a_fapi_font, WRF_output * a_output)
 {
     /* Write a dummy name of 'x'. */
-    WRF_wtext(a_output, (const unsigned char *)"\x0\x1\x1\x1\x2" "x", 6);
+    WRF_wtext(a_fapi_font->memory, a_output, (const unsigned char *)"\x0\x1\x1\x1\x2" "x", 6);
 }
 
 static void
@@ -134,11 +134,11 @@ write_word_entry(gs_fapi_font * a_fapi_font, WRF_output * a_output,
 
             /* Divide by the divisor to bring it back to font units. */
             x = (short)(x / a_divisor);
-            write_type2_int(a_output, x);
+            write_type2_int(a_fapi_font, a_output, x);
         }
         if (a_two_byte_op)
-            WRF_wbyte(a_output, 12);
-        WRF_wbyte(a_output, (unsigned char)a_op);
+            WRF_wbyte(a_fapi_font->memory, a_output, 12);
+        WRF_wbyte(a_fapi_font->memory, a_output, (unsigned char)a_op);
     }
 }
 
@@ -161,12 +161,12 @@ write_delta_array_entry(gs_fapi_font * a_fapi_font, WRF_output * a_output,
 
             /* Divide by the divisor to bring it back to font units. */
             value = (short)(value / a_divisor);
-            write_type2_int(a_output, value - prev_value);
+            write_type2_int(a_fapi_font, a_output, value - prev_value);
             prev_value = value;
         }
         if (a_two_byte_op)
-            WRF_wbyte(a_output, 12);
-        WRF_wbyte(a_output, (unsigned char)a_op);
+            WRF_wbyte(a_fapi_font->memory, a_output, 12);
+        WRF_wbyte(a_fapi_font->memory, a_output, (unsigned char)a_op);
     }
 }
 
@@ -181,11 +181,11 @@ write_float_entry(gs_fapi_font * a_fapi_font, WRF_output * a_output,
         for (i = 0; i < a_feature_count; i++) {
             double x = a_fapi_font->get_float(a_fapi_font, a_feature_id, i);
 
-            write_type2_float(a_output, x);
+            write_type2_float(a_fapi_font, a_output, x);
         }
         if (a_two_byte_op)
-            WRF_wbyte(a_output, 12);
-        WRF_wbyte(a_output, (unsigned char)a_op);
+            WRF_wbyte(a_fapi_font->memory, a_output, 12);
+        WRF_wbyte(a_fapi_font->memory, a_output, (unsigned char)a_op);
     }
 }
 
@@ -197,24 +197,24 @@ write_font_dict_index(gs_fapi_font * a_fapi_font, WRF_output * a_output,
 {
     unsigned char *data_start = 0;
 
-    WRF_wtext(a_output, (const unsigned char *)"\x0\x1\x2\x0\x1\x0\x0", 7);     /* count = 1, offset size = 2, first offset = 1, last offset = 0 (to be filled in later). */
+    WRF_wtext(a_fapi_font->memory, a_output, (const unsigned char *)"\x0\x1\x2\x0\x1\x0\x0", 7);     /* count = 1, offset size = 2, first offset = 1, last offset = 0 (to be filled in later). */
     if (a_output->m_pos)
         data_start = a_output->m_pos;
     write_word_entry(a_fapi_font, a_output, gs_fapi_font_feature_FontBBox, 4,
                      false, 5, 1);
     write_float_entry(a_fapi_font, a_output, gs_fapi_font_feature_FontMatrix,
                       6, true, 7);
-    write_type2_int(a_output, 0);       /* 0 = Standard Encoding. */
-    WRF_wbyte(a_output, 16);    /* 16 = opcode for 'encoding'. */
+    write_type2_int(a_fapi_font, a_output, 0);       /* 0 = Standard Encoding. */
+    WRF_wbyte(a_fapi_font->memory, a_output, 16);    /* 16 = opcode for 'encoding'. */
     *a_charset_offset_ptr = a_output->m_pos;
-    WRF_wtext(a_output, (const unsigned char *)"\x1d" "xxxx", 5);       /* placeholder for the offset to the charset, which will be a 5-byte integer. */
-    WRF_wbyte(a_output, 15);    /* opcode for 'charset' */
+    WRF_wtext(a_fapi_font->memory, a_output, (const unsigned char *)"\x1d" "xxxx", 5);       /* placeholder for the offset to the charset, which will be a 5-byte integer. */
+    WRF_wbyte(a_fapi_font->memory, a_output, 15);    /* opcode for 'charset' */
     *a_charstrings_offset_ptr = a_output->m_pos;
-    WRF_wtext(a_output, (const unsigned char *)"\x1d" "xxxx", 5);       /* placeholder for the offset to the Charstrings index, which will be a 5-byte integer. */
-    WRF_wbyte(a_output, 17);    /* opcode for 'Charstrings' */
+    WRF_wtext(a_fapi_font->memory, a_output, (const unsigned char *)"\x1d" "xxxx", 5);       /* placeholder for the offset to the Charstrings index, which will be a 5-byte integer. */
+    WRF_wbyte(a_fapi_font->memory, a_output, 17);    /* opcode for 'Charstrings' */
     *a_private_dict_length_ptr = a_output->m_pos;
-    WRF_wtext(a_output, (const unsigned char *)"\x1d" "xxxx\x1d" "yyyy", 10);   /* placeholder for size and offset of Private dictionary, which will be 5-byte integers. */
-    WRF_wbyte(a_output, 18);    /* opcode for 'Private' */
+    WRF_wtext(a_fapi_font->memory, a_output, (const unsigned char *)"\x1d" "xxxx\x1d" "yyyy", 10);   /* placeholder for size and offset of Private dictionary, which will be 5-byte integers. */
+    WRF_wbyte(a_fapi_font->memory, a_output, 18);    /* opcode for 'Private' */
     if (a_output->m_pos) {
         int last_offset = a_output->m_pos - data_start + 1;
 
@@ -230,7 +230,7 @@ via the FAPI interface, and FreeType doesn't need to know anything more
 than the fact that there is at least one character.
 */
 static int
-write_charset(WRF_output * a_output, unsigned char *a_charset_offset_ptr)
+write_charset(gs_fapi_font * a_fapi_font, WRF_output * a_output, unsigned char *a_charset_offset_ptr)
 {
     const int characters = 1;
     int i = 0;
@@ -245,10 +245,10 @@ write_charset(WRF_output * a_output, unsigned char *a_charset_offset_ptr)
        write all the others as .notdef (SID = 0) because we don't actually
        need the charset at the moment.
      */
-    WRF_wbyte(a_output, 0);     /* format = 0 */
+    WRF_wbyte(a_fapi_font->memory, a_output, 0);     /* format = 0 */
     for (i = 1; i < characters; i++) {
-        WRF_wbyte(a_output, 0);
-        WRF_wbyte(a_output, 0);
+        WRF_wbyte(a_fapi_font->memory, a_output, 0);
+        WRF_wbyte(a_fapi_font->memory, a_output, 0);
     }
 
     return characters;
@@ -259,7 +259,7 @@ Write a set of empty charstrings. The only reason for the existence of the chars
 FreeType how many glyphs there are.
 */
 static void
-write_charstrings_index(WRF_output * a_output, int a_characters,
+write_charstrings_index(gs_fapi_font * a_fapi_font, WRF_output * a_output, int a_characters,
                         unsigned char *a_charstrings_offset_ptr)
 {
     /* Write the offset to the charstrings index to the top dictionary. */
@@ -267,11 +267,11 @@ write_charstrings_index(WRF_output * a_output, int a_characters,
         write_4_byte_int(a_charstrings_offset_ptr + 1, a_output->m_count);
 
     /* Write the index. */
-    WRF_wbyte(a_output, (unsigned char)(a_characters >> 8));
-    WRF_wbyte(a_output, (unsigned char)(a_characters & 0xFF));
-    WRF_wbyte(a_output, 1);     /* offset size = 1. */
+    WRF_wbyte(a_fapi_font->memory, a_output, (unsigned char)(a_characters >> 8));
+    WRF_wbyte(a_fapi_font->memory, a_output, (unsigned char)(a_characters & 0xFF));
+    WRF_wbyte(a_fapi_font->memory, a_output, 1);     /* offset size = 1. */
     while (a_characters-- >= 0)
-        WRF_wbyte(a_output, 1); /* offset = 1 */
+        WRF_wbyte(a_fapi_font->memory, a_output, 1); /* offset = 1 */
 }
 
 static void
@@ -284,21 +284,21 @@ write_gsubrs_index(gs_fapi_font * a_fapi_font, WRF_output * a_output)
                                       gs_fapi_font_feature_GlobalSubrs_count,
                                       0);
 
-    WRF_wbyte(a_output, (unsigned char)(count >> 8));
-    WRF_wbyte(a_output, (unsigned char)(count & 0xFF));
+    WRF_wbyte(a_fapi_font->memory, a_output, (unsigned char)(count >> 8));
+    WRF_wbyte(a_fapi_font->memory, a_output, (unsigned char)(count & 0xFF));
 
     if (count <= 0)
         return;
 
-    WRF_wbyte(a_output, 4);     /* offset size = 4 bytes */
-    WRF_wtext(a_output, (const unsigned char *)"\x0\x0\x0\x1", 4);      /* first offset = 1 */
+    WRF_wbyte(a_fapi_font->memory, a_output, 4);     /* offset size = 4 bytes */
+    WRF_wtext(a_fapi_font->memory, a_output, (const unsigned char *)"\x0\x0\x0\x1", 4);      /* first offset = 1 */
 
     if (a_output->m_pos)
         cur_offset = a_output->m_pos;
 
     /* Write dummy bytes for the offsets at the end of each data item. */
     for (i = 0; i < count; i++)
-        WRF_wtext(a_output, (const unsigned char *)"xxxx", 4);
+        WRF_wtext(a_fapi_font->memory, a_output, (const unsigned char *)"xxxx", 4);
 
     if (a_output->m_pos)
         data_start = a_output->m_pos;
@@ -309,7 +309,7 @@ write_gsubrs_index(gs_fapi_font * a_fapi_font, WRF_output * a_output)
                                              (ushort) buffer_size);
 
         if (a_output->m_pos)
-            WRF_wtext(a_output, a_output->m_pos, length);
+            WRF_wtext(a_fapi_font->memory, a_output, a_output->m_pos, length);
         else
             a_output->m_count += length;
         if (cur_offset) {
@@ -331,21 +331,21 @@ write_subrs_index(gs_fapi_font * a_fapi_font, WRF_output * a_output)
         a_fapi_font->get_word(a_fapi_font, gs_fapi_font_feature_Subrs_count,
                               0);
 
-    WRF_wbyte(a_output, (unsigned char)(count >> 8));
-    WRF_wbyte(a_output, (unsigned char)(count & 0xFF));
+    WRF_wbyte(a_fapi_font->memory, a_output, (unsigned char)(count >> 8));
+    WRF_wbyte(a_fapi_font->memory, a_output, (unsigned char)(count & 0xFF));
 
     if (count <= 0)
         return;
 
-    WRF_wbyte(a_output, 4);     /* offset size = 4 bytes */
-    WRF_wtext(a_output, (const unsigned char *)"\x0\x0\x0\x1", 4);      /* first offset = 1 */
+    WRF_wbyte(a_fapi_font->memory, a_output, 4);     /* offset size = 4 bytes */
+    WRF_wtext(a_fapi_font->memory, a_output, (const unsigned char *)"\x0\x0\x0\x1", 4);      /* first offset = 1 */
 
     if (a_output->m_pos)
         cur_offset = a_output->m_pos;
 
     /* Write dummy bytes for the offsets at the end of each data item. */
     for (i = 0; i < count; i++)
-        WRF_wtext(a_output, (const unsigned char *)"xxxx", 4);
+        WRF_wtext(a_fapi_font->memory, a_output, (const unsigned char *)"xxxx", 4);
 
     if (a_output->m_pos)
         data_start = a_output->m_pos;
@@ -356,7 +356,7 @@ write_subrs_index(gs_fapi_font * a_fapi_font, WRF_output * a_output)
                                             (ushort) buffer_size);
 
         if (a_output->m_pos)
-            WRF_wtext(a_output, a_output->m_pos, length);
+            WRF_wtext(a_fapi_font->memory, a_output, a_output->m_pos, length);
         else
             a_output->m_count += length;
         if (cur_offset) {
@@ -383,12 +383,12 @@ write_private_dict(gs_fapi_font * a_fapi_font, WRF_output * a_output,
     write_word_entry(a_fapi_font, a_output, gs_fapi_font_feature_BlueFuzz, 1,
                      true, 11, 16);
 
-    write_type2_float(a_output,
+    write_type2_float(a_fapi_font, a_output,
                       a_fapi_font->get_long(a_fapi_font,
                                             gs_fapi_font_feature_BlueScale,
                                             0) / 65536.0);
-    WRF_wbyte(a_output, 12);
-    WRF_wbyte(a_output, 9);
+    WRF_wbyte(a_fapi_font->memory, a_output, 12);
+    WRF_wbyte(a_fapi_font->memory, a_output, 9);
 
     write_word_entry(a_fapi_font, a_output, gs_fapi_font_feature_BlueShift, 1,
                      true, 10, 16);
@@ -420,10 +420,10 @@ write_private_dict(gs_fapi_font * a_fapi_font, WRF_output * a_output,
     {
         gs_font_type1 *t1 = (gs_font_type1 *) a_fapi_font->client_font_data;
 
-        write_type2_float(a_output, fixed2float(t1->data.defaultWidthX));
-        WRF_wbyte(a_output, 20);
-        write_type2_float(a_output, fixed2float(t1->data.nominalWidthX));
-        WRF_wbyte(a_output, 21);
+        write_type2_float(a_fapi_font, a_output, fixed2float(t1->data.defaultWidthX));
+        WRF_wbyte(a_fapi_font->memory, a_output, 20);
+        write_type2_float(a_fapi_font, a_output, fixed2float(t1->data.nominalWidthX));
+        WRF_wbyte(a_fapi_font->memory, a_output, 21);
     }
 
     count =
@@ -443,34 +443,34 @@ write_private_dict(gs_fapi_font * a_fapi_font, WRF_output * a_output,
             switch (n) {
                 case 1:
                     if (n1 >= -107 && n1 <= 107) {
-                        write_type2_int(a_output, n1);
+                        write_type2_int(a_fapi_font, a_output, n1);
                         n = 5;
                     }
                     break;
                 case 2:
                     if ((n1 >= 108 && n1 <= 1131)
                         || (n1 >= -1131 && n1 <= -108)) {
-                        write_type2_int(a_output, n1);
+                        write_type2_int(a_fapi_font, a_output, n1);
                         n = 5;
                     }
                     break;
                 case 3:
                     if (n1 >= -32768 && n1 <= 32767) {
-                        write_type2_int(a_output, n1);
+                        write_type2_int(a_fapi_font, a_output, n1);
                         n = 5;
                     }
                     break;
                 case 4:
                     break;
                 case 5:
-                    write_type2_int(a_output, n1);
+                    write_type2_int(a_fapi_font, a_output, n1);
                     break;
             }
             n++;
         }
         while (n < 5);
 
-        WRF_wbyte(a_output, 19);
+        WRF_wbyte(a_fapi_font->memory, a_output, 19);
     }
 
     /* Write the length in bytes of the private dictionary to the top dictionary. */
@@ -497,17 +497,17 @@ gs_fapi_serialize_type2_font(gs_fapi_font * a_fapi_font,
 
     WRF_init(&output, a_buffer, a_buffer_size);
 
-    write_header(&output);
-    write_name_index(&output);
+    write_header(a_fapi_font, &output);
+    write_name_index(a_fapi_font, &output);
     write_font_dict_index(a_fapi_font, &output, &charset_offset_ptr,
                           &charstrings_offset_ptr, &private_dict_length_ptr);
 
     /* Write an empty string index. */
-    WRF_wtext(&output, (const unsigned char *)"\x0\x0", 2);
+    WRF_wtext(a_fapi_font->memory, &output, (const unsigned char *)"\x0\x0", 2);
 
     write_gsubrs_index(a_fapi_font, &output);
-    characters = write_charset(&output, charset_offset_ptr);
-    write_charstrings_index(&output, characters, charstrings_offset_ptr);
+    characters = write_charset(a_fapi_font, &output, charset_offset_ptr);
+    write_charstrings_index(a_fapi_font, &output, characters, charstrings_offset_ptr);
     write_private_dict(a_fapi_font, &output, private_dict_length_ptr);
     write_subrs_index(a_fapi_font, &output);
 

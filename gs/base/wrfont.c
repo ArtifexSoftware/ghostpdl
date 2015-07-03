@@ -21,6 +21,7 @@ Started by Graham Asher, 9th August 2002.
 
 #include "wrfont.h"
 #include "stdio_.h"
+#include "assert_.h"
 
 #define EEXEC_KEY 55665
 #define EEXEC_FACTOR 52845
@@ -37,7 +38,7 @@ WRF_init(WRF_output * a_output, unsigned char *a_buffer, long a_buffer_size)
 }
 
 void
-WRF_wbyte(WRF_output * a_output, unsigned char a_byte)
+WRF_wbyte(const gs_memory_t *memory, WRF_output * a_output, unsigned char a_byte)
 {
     if (a_output->m_count < a_output->m_limit) {
         if (a_output->m_encrypt) {
@@ -52,35 +53,43 @@ WRF_wbyte(WRF_output * a_output, unsigned char a_byte)
 }
 
 void
-WRF_wtext(WRF_output * a_output, const unsigned char *a_string, long a_length)
+WRF_wtext(const gs_memory_t *memory, WRF_output * a_output, const unsigned char *a_string, long a_length)
 {
     while (a_length > 0) {
-        WRF_wbyte(a_output, *a_string++);
+        WRF_wbyte(memory, a_output, *a_string++);
         a_length--;
     }
 }
 
 void
-WRF_wstring(WRF_output * a_output, const char *a_string)
+WRF_wstring(const gs_memory_t *memory, WRF_output * a_output, const char *a_string)
 {
     while (*a_string)
-        WRF_wbyte(a_output, *a_string++);
+        WRF_wbyte(memory, a_output, *a_string++);
 }
 
 void
-WRF_wfloat(WRF_output * a_output, double a_float)
+WRF_wfloat(const gs_memory_t *memory, WRF_output * a_output, double a_float)
 {
     char buffer[32];
+    int l;
 
-    gs_sprintf(buffer, "%f", a_float);
-    WRF_wstring(a_output, buffer);
+    l = gs_snprintf(buffer, sizeof (buffer), "%f", a_float);
+    if (l > sizeof (buffer)) {
+        emprintf(memory, "Warning: Font real number value truncated\n");
+    }
+    WRF_wstring(memory, a_output, buffer);
 }
 
 void
-WRF_wint(WRF_output * a_output, long a_int)
+WRF_wint(const gs_memory_t *memory, WRF_output * a_output, long a_int)
 {
     char buffer[32];
+    int l;
 
-    gs_sprintf(buffer, "%ld", a_int);
-    WRF_wstring(a_output, buffer);
+    l = gs_snprintf(buffer, sizeof(buffer), "%ld", a_int);
+    if (l > sizeof (buffer)) {
+        emprintf(memory, "Warning: Font integer number value truncated\n");
+    }
+    WRF_wstring(memory, a_output, buffer);
 }

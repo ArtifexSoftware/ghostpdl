@@ -1233,7 +1233,7 @@ gxfapi_h=$(GLSRC)gxfapi.h $(gsmemory_h) $(gsmatrix_h) $(gsccode_h) $(stdint__h)
 $(GLD)gxfapiu.dev : $(LIB_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 	$(SETMOD) $(GLD)gxfapiu
 
-wrfont_h=$(stdpre_h) $(GLSRC)wrfont.h
+wrfont_h=$(stdpre_h) $(std_h) $(GLSRC)wrfont.h
 write_t1_h=$(gxfapi_h) $(GLSRC)write_t1.h
 write_t2_h=$(gxfapi_h) $(GLSRC)write_t2.h
 
