@@ -2437,6 +2437,26 @@ case `uname` in
 esac
 AC_SUBST(AUXDIRPOSTFIX)
 
+# --------------------------------------------------
+# Set executable name extention
+# usually empty on Unix-like systems
+# --------------------------------------------------
+EXEEXT=""
+
+AC_ARG_WITH([exe-ext],  AC_HELP_STRING([--with-exe-ext=EXT],
+    [set the file name executable extension (must include any separator e.g. the period in ".exe")]),[], [exe_ext=])
+
+if test "x"$with_exe_ext != "x"; then
+  EXEEXT="$with_exe_ext"
+else
+  case `uname` in
+    MINGW*)
+      EXEEXT=".exe"
+    ;;
+  esac
+fi
+
+AC_SUBST(EXEEXT)
 
 dnl --------------------------------------------------
 dnl Do substitutions
