@@ -281,7 +281,8 @@ if test x$BIGENDIAN = x ; then
      return (*(char*)&one == 0 ? 0 : 1);
     ])],
     [BIGENDIAN=1;AC_MSG_RESULT(big)],
-    [BIGENDIAN=0;AC_MSG_RESULT(little)])
+    [BIGENDIAN=0;AC_MSG_RESULT(little)],
+    [BIGENDIAN=1;AC_MSG_RESULT(cross compiling: assuming big engian, otherwise use "--enable-little-endian")])
 else
   if test x$BIGENDIAN = x1 ; then
     AC_MSG_RESULT(big)
@@ -295,7 +296,6 @@ dnl check for sse2 intrinsics
 dnl --------------------------------------------------
 
 AC_MSG_CHECKING([sse2 support])
-
 save_cflags=$CFLAGS
 CFLAGS="$CFLAGS $OPT_CFLAGS"
 
@@ -324,14 +324,6 @@ fi
 AC_SUBST(HAVE_SSE2)
 CFLAGS=$save_cflags
 
-if test "x$ac_cv_prog_gcc" = "xyes" ; then
-  GCFLAGS="$CFLAGS -Werror=return-type"
-else
-  GCFLAGS="$CFLAGS"
-fi
-
-# Checks for header files.
-AC_FUNC_ALLOCA
 
 dnl --------------------------------------------------
 dnl Enable thread safe build
@@ -503,60 +495,74 @@ AC_CHECK_LIB(m, cos)
 
 AC_CHECK_FUNCS([pread pwrite], [HAVE_PREAD_PWRITE="-DHAVE_PREAD_PWRITE=1"], [HAVE_PREAD_PWRITE=])
 
+if test "x$HAVE_PREAD_PWRITE" != "x"; then
+  save_cflags=$CFLAGS
+  CFLAGS="$CFLAGS -D__USE_UNIX98=1 -D_XOPEN_SOURCE=500"
+  AC_CHECK_DECLS([pwrite,pread], [], [HAVE_PREAD_PWRITE=])
+  CFLAGS=$save_cflags
+  if test "x$HAVE_PREAD_PWRITE" != "x"; then
+    GCFLAGS="$GCFLAGS -D__USE_UNIX98=1"
+  fi
+fi
+
 AC_SUBST(HAVE_PREAD_PWRITE)
 
 SYNC="nosync"
 PTHREAD_LIBS=""
+RECURSIVE_MUTEXATTR=""
+
+AC_ARG_ENABLE([threading], AC_HELP_STRING([--disable-threading],
+    [disable support for multithreaded rendering]))
 
 # if you haven't got pread/pwrite, we can't use multithreading
 if test "x$HAVE_PREAD_PWRITE" != "x"; then
-
-  case `uname` in
-    MINGW*)
-      AC_MSG_WARN([disabling support for pthreads......])
-    ;;
-    *)
-      AC_CHECK_LIB(pthread, pthread_create, [
-        SYNC=posync;
-        PTHREAD_LIBS="-lpthread"
-      ])
-    ;;
-  esac
-
+  if test "$enable_threading" != "no"; then
+    case `uname` in
+      MINGW*)
+        AC_MSG_WARN([disabling support for pthreads......])
+      ;;
+      *)
+        AC_CHECK_LIB(pthread, pthread_create, [
+          SYNC=posync;
+          PTHREAD_LIBS="-lpthread"
+        ])
+        AC_MSG_CHECKING([recursive mutexes.......])
+        AC_TRY_COMPILE([#include <pthread.h>],
+             [
+                static int k = PTHREAD_MUTEX_RECURSIVE;
+                #ifndef pthread_mutexattr_settype
+                #ifdef __cplusplus
+                  (void) pthread_mutexattr_settype;
+                #else
+                  (void) pthread_mutexattr_settype;
+                #endif
+                #endif
+                ;
+                return 0;
+              ],
+             [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE"],
+             [AC_TRY_COMPILE([#include <pthread.h>],
+                [
+                  static int k = PTHREAD_MUTEX_RECURSIVE_NP;
+                  #ifndef pthread_mutexattr_settype
+                  #ifdef __cplusplus
+                    (void) pthread_mutexattr_settype;
+                  #else
+                    (void) pthread_mutexattr_settype;
+                  #endif
+                  #endif
+                  ;
+                  return 0;
+                ],
+                [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE_NP"])])
+      ;;
+    esac
+  fi
 fi
 
 AC_SUBST(SYNC)
 AC_SUBST(PTHREAD_LIBS)
-
-AC_MSG_CHECKING([for local trio library source])
-if test -f $srcdir/trio/trio.h; then
-        AC_MSG_RESULT([trio])
-        SHARE_TRIO=0
-        TRIODIR=$srcdir/trio
-else
-# This is how it should be done, but link fails.
-# But link libtrio to gs, and it works - answers on
-# a postcard, please......
-#        AC_MSG_RESULT([no])
-#        AC_CHECK_LIB(trio, trio_vsprintf, [
-#          AC_CHECK_HEADERS([trio.h], [SHARE_TRIO=1])
-#        ],[])
-
-# So, for now, use a "standard" function instead - link
-# will still fail if the libtrio is not found.
-        AC_MSG_RESULT([no])
-        AC_CHECK_LIB(trio, malloc, [
-          AC_CHECK_HEADERS([trio.h], [SHARE_TRIO=1])
-        ],[])
-fi
-if test -z "$SHARE_TRIO"; then
-  AC_MSG_ERROR([I wasn't able to find a copy
-  of the trio library. This is required for compiling
-  ghostscript.
-  ])
-fi
-AC_SUBST(SHARE_TRIO)
-AC_SUBST(TRIODIR)
+AC_SUBST(RECURSIVE_MUTEXATTR)
 
 dnl Tests for iconv (Needed for OpenPrinting Vector, "opvp" output device)
 AC_ARG_WITH(libiconv,
@@ -2230,6 +2236,16 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([bzero dup2 floor gettimeofday memchr memmove memset mkdir mkfifo modf pow putenv rint setenv sqrt strchr strrchr strspn strstr])
 
 dnl --------------------------------------------------
+dnl disable the memory header ID code on SPARC
+dnl --------------------------------------------------
+
+case `uname -a` in
+        *sparc*)
+	  GCFLAGS="$GCFLAGS -DGS_USE_MEMORY_HEADER_ID=0"
+        ;;
+esac
+
+dnl --------------------------------------------------
 dnl set big/little endian for LCMS
 dnl --------------------------------------------------
 
@@ -2336,50 +2352,6 @@ GCFLAGS="$GCFLAGS $HAVE_STRNLEN"
 
 
 dnl --------------------------------------------------
-dnl disable the memory header ID code on SPARC
-dnl --------------------------------------------------
-
-case `uname -a` in
-        *sparc*)
-	  GCFLAGS="$GCFLAGS -DGS_USE_MEMORY_HEADER_ID=0"
-        ;;
-esac
-
-dnl --------------------------------------------------
-<<<<<<< HEAD
-dnl check for sse2 intrinsics
-dnl --------------------------------------------------
-
-AC_MSG_CHECKING([sse2 support])
-save_cflags=$CFLAGS
-CFLAGS="$CFLAGS $OPT_CFLAGS"
-
-HAVE_SSE2=""
-AC_LINK_IFELSE(
-  [AC_LANG_PROGRAM([#include <emmintrin.h>], [
-  __m128i input1;
-  unsigned char buf1[[128]];
-  input1 = _mm_loadu_si128((const __m128i *)buf1);
-  return(0);
-  ])],
-  [HAVE_SSE2="-DHAVE_SSE2"], [HAVE_SSE2=""])
-
-AC_ARG_ENABLE([sse2], AC_HELP_STRING([--disable-sse2],
-       [Do not use sse2 instrinsics]), [
-             if test "x$enable_sse2" = xno; then
-                HAVE_SSE2=""
-             fi])
-
-if test "x$HAVE_SSE2" != x; then
-  AC_MSG_RESULT(yes)
-else
-  AC_MSG_RESULT(no)
-fi
-
-AC_SUBST(HAVE_SSE2)
-CFLAGS=$save_cflags
-
-dnl --------------------------------------------------
 dnl check for byte swap intrinsics
 dnl --------------------------------------------------
 AC_MSG_CHECKING([byteswap support])
@@ -2434,82 +2406,6 @@ else
 fi
 
 AC_SUBST(HAVE_BYTESWAP_H)
-
-dnl --------------------------------------------------
-dnl Check for libraries and x11 includes/libraries
-dnl --------------------------------------------------
-
-AC_CHECK_FUNCS([pread pwrite], [HAVE_PREAD_PWRITE="-DHAVE_PREAD_PWRITE=1"], [HAVE_PREAD_PWRITE=])
-
-if test "x$HAVE_PREAD_PWRITE" != "x"; then
-  save_cflags=$CFLAGS
-  CFLAGS="$CFLAGS -D__USE_UNIX98=1 -D_XOPEN_SOURCE=500"
-  AC_CHECK_DECLS([pwrite,pread], [], [HAVE_PREAD_PWRITE=])
-  CFLAGS=$save_cflags
-  if test "x$HAVE_PREAD_PWRITE" != "x"; then
-    GCFLAGS="$GCFLAGS -D__USE_UNIX98=1"
-  fi
-fi
-
-AC_SUBST(HAVE_PREAD_PWRITE)
-
-SYNC="nosync"
-PTHREAD_LIBS=""
-RECURSIVE_MUTEXATTR=""
-
-AC_ARG_ENABLE([threading], AC_HELP_STRING([--disable-threading],
-    [disable support for multithreaded rendering]))
-
-
-# if you haven't got pread/pwrite, we can't use multithreading
-if test "x$HAVE_PREAD_PWRITE" != "x"; then
-  if test "$enable_threading" != "no"; then
-    case `uname` in
-      MINGW*)
-        AC_MSG_WARN([disabling support for pthreads......])
-      ;;
-      *)
-        AC_CHECK_LIB(pthread, pthread_create, [
-          SYNC=posync;
-          PTHREAD_LIBS="-lpthread"
-        ])
-        AC_MSG_CHECKING([recursive mutexes.......])
-        AC_TRY_COMPILE([#include <pthread.h>],
-             [
-                static int k = PTHREAD_MUTEX_RECURSIVE;
-                #ifndef pthread_mutexattr_settype
-                #ifdef __cplusplus
-                  (void) pthread_mutexattr_settype;
-                #else
-                  (void) pthread_mutexattr_settype;
-                #endif
-                #endif
-                ;
-                return 0;
-              ],
-             [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE"],
-             [AC_TRY_COMPILE([#include <pthread.h>],
-                [
-                  static int k = PTHREAD_MUTEX_RECURSIVE_NP;
-                  #ifndef pthread_mutexattr_settype
-                  #ifdef __cplusplus
-                    (void) pthread_mutexattr_settype;
-                  #else
-                    (void) pthread_mutexattr_settype;
-                  #endif
-                  #endif
-                  ;
-                  return 0;
-                ],
-                [RECURSIVE_MUTEXATTR="-DGS_RECURSIVE_MUTEXATTR=PTHREAD_MUTEX_RECURSIVE_NP"])])
-      ;;
-    esac
-  fi
-fi
-
-AC_SUBST(SYNC)
-AC_SUBST(PTHREAD_LIBS)
-AC_SUBST(RECURSIVE_MUTEXATTR)
 
 # --------------------------------------------------
 # Sun, BSD possibly other makes don't have quite the
