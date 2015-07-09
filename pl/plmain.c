@@ -908,14 +908,14 @@ static int
 parse_floats(gs_memory_t * mem, uint arg_count, char *arg, float *f)
 {
     int float_index = 0;
-    char *l = NULL;
+    char *tok, *l = NULL;
     /* copy the input because strtok() steps on the string */
     char *s = arg_copy(arg, mem);
     if (s == NULL)
         return -1;
     
     /* allow 'x', tab or spaces to delimit arguments */
-    char *tok = gs_strtok(s, " \tx", &l);
+    tok = gs_strtok(s, " \tx", &l);
     while (tok != NULL && float_index < arg_count) {
         f[float_index++] = atof(tok);
         tok = gs_strtok(NULL, " \tx", &l);
