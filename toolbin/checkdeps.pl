@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 # A somewhat specialised dependency checker; checks the contents of
-# gs/base and lib.mak to ensure that lib.mak properly lists all the
+# base and lib.mak to ensure that lib.mak properly lists all the
 # dependencies for each .h and .c file.
 
 use List::MoreUtils qw(uniq);
@@ -178,8 +178,8 @@ sub check_depend
 my %include, %depend, %vars;
 my $depend_ref, $vars_ref;
 
-%include                 = gather_includes("gs/base");
-($depend_ref, $vars_ref) = read_makefile("gs/base", "lib.mak");
+%include                 = gather_includes("base");
+($depend_ref, $vars_ref) = read_makefile("base", "lib.mak");
 %depend = %$depend_ref;
 %vars   = %$vars_ref;
 check_vars(\%include, \%vars);
