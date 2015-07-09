@@ -818,6 +818,7 @@ pcl_update_mono(pcl_state_t * pcs)
     int code = 0;
 
     if (pcs->monochrome_mode) {
+        pdev = dev;
         while (dev) {
             pdev = dev;
             if (strcmp(dev->dname, "PCL_Mono_Palette") == 0){
