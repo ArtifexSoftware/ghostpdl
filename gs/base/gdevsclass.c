@@ -131,7 +131,7 @@ int default_subclass_close_device(gx_device *dev)
 {
     int code;
 
-    if (dev->child && dev->child && dev->child->procs.close_device) {
+    if (dev && dev->child && dev->child->procs.close_device) {
         code = dev->child->procs.close_device(dev->child);
         dev->is_open = dev->child->is_open = false;
         return code;
@@ -905,7 +905,10 @@ int default_subclass_strip_copy_rop2(gx_device *dev, const byte *sdata, int sour
     const gx_color_index *scolors, const gx_strip_bitmap *textures, const gx_color_index *tcolors,
     int x, int y, int width, int height, int phase_x, int phase_y, gs_logical_operation_t lop, uint planar_height)
 {
-    if (dev->child && dev->child->procs.strip_copy_rop2)
+    if (!dev->child)
+        return 0;
+
+    if (dev->child->procs.strip_copy_rop2)
         return dev->child->procs.strip_copy_rop2(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
     else
         return gx_default_strip_copy_rop2(dev->child, sdata, sourcex, sraster, id, scolors, textures, tcolors, x, y, width, height, phase_x, phase_y, lop, planar_height);
