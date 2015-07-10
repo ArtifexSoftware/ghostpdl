@@ -5714,6 +5714,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\devices\gdevgprf.c"
+				>
+			</File>
+			<File
 				RelativePath=".\devices\gdevherc.c"
 				>
 			</File>
