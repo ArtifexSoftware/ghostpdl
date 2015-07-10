@@ -1324,17 +1324,27 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
 
 int gx_device_unsubclass(gx_device *dev)
 {
-    void *psubclass_data = dev->subclass_data;
-    gx_device *parent = dev->parent, *child = dev->child;
+    void *psubclass_data;
+    gx_device *parent, *child;
     gs_memory_struct_type_t *a_std;
-    int dynamic = dev->stype_is_dynamic;
+    int dynamic;
+
+    /* This should not happen... */
+    if (!dev)
+        return 0;
+
+    child = dev->child;
+    psubclass_data = dev->subclass_data;
+    parent = dev->parent;
+    dynamic = dev->stype_is_dynamic;
 
     /* If ths device's stype is dynamically allocated, keep a copy of it
      * in case we might need it.
      */
     if (dynamic) {
         a_std = (gs_memory_struct_type_t *)dev->stype;
-        *a_std = *child->stype;
+        if (child)
+            *a_std = *child->stype;
     }
 
     /* If ths device has any private storage, free it now */
@@ -1342,11 +1352,12 @@ int gx_device_unsubclass(gx_device *dev)
         gs_free_object(dev->memory->non_gc_memory, psubclass_data, "subclass memory for first-last page");
 
     /* Copy the child device into ths device's memory */
-    memcpy(dev, child, child->stype->ssize);
+    if (child)
+        memcpy(dev, child, child->stype->ssize);
 
     /* How can we have a subclass device with no child ? Simples; when we hit the end of job
      * restore, the devices are not freed in device chain order. To make sure we don't end up
-     * following stale poitners, when a device is freed we remov it from the chain and update
+     * following stale pointers, when a device is freed we remove it from the chain and update
      * any danlging poitners to NULL. When we later free the remaining devices its possible that
      * their child pointer can then be NULL.
      */
@@ -1364,8 +1375,8 @@ int gx_device_unsubclass(gx_device *dev)
             gs_free_object(dev->memory, child, "gx_unsubclass_device(device)");
         }
     }
-    if(dev->child)
-        dev->child->parent = dev;
+    if(child)
+        child->parent = dev;
     dev->parent = parent;
 
     /* If this device has a dynamic stype, we wnt to keep using it, but we copied
