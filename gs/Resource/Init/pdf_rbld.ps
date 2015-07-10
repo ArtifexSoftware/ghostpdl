@@ -70,9 +70,18 @@
         % entry that it finds.  However the 'rebuild PDF' logic can find
         % both such entries.  The correct one is usually the last one.
     Generations 4 index get 1 index le {
-      ObjectStream 4 index 4 index cvx put % Save ObjectStream object number
-      Objects 4 index 3 index cvx put	% Save object location
-      Generations 4 index 2 index put	% Save geenration number
+      %% Check if the object we already found was at the locaton specified
+      %% in the original xref (now stored in Orig_Objects). If so, prefer
+      %% that offset, otherwise prefer the later object.
+      %% NB check first to see that the object number is in the range of the original
+      %% xref. If it isn't, set the 'original' Offset to 0.
+      3 index Orig_Objects length pstack le {Orig_Objects 4 index get}{0}ifelse
+      Objects 5 index get eq not
+      {
+        ObjectStream 4 index 4 index cvx put % Save ObjectStream object number
+        Objects 4 index 3 index cvx put	% Save object location
+        Generations 4 index 2 index put	% Save geenration number
+      } if
     } if
         % Set error flag if we have equal object and generation numbers
     Generations 4 index get 1 index eq { /dup_obj_gen_num //true def } if
@@ -334,6 +343,7 @@
 % Its purpose is to provide a basis for an xref fixing facility.
 /search_objects				% - search_objects -
 { % Initialize the Objects, Generations, etc. arrays
+  Objects dup length array copy /Orig_Objects exch def
   initPDFobjects
   % reset duplicate object and generation numbers error flag
   /dup_obj_gen_num //false def
@@ -404,6 +414,7 @@
     (   **** numbers.  The accuracy of the resulting image is unknown.\n)
     pdfformaterror
   } if
+  currentdict /Orig_Objects undef
 } bind def
 
 % Print warning message because we found a problem while reading the xref
