@@ -1684,11 +1684,11 @@ fpng_=$(DEVOBJ)gdevfpng.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ)
 
 $(DEVOBJ)gdevfpng_0.$(OBJ) : $(DEVSRC)gdevfpng.c\
  $(gdevprn_h) $(gdevpccm_h) $(gscdefs_h) $(zlib_h) $(MAKEDIRS)
-	$(CC_) $(I_)$(DEVI_) $(II)$(PI_)$(_I) $(PCF_) $(GLF_) $(DEVO_)gdevfpng_0.$(OBJ) $(C_) $(DEVSRC)gdevfpng.c
+	$(CC_) $(I_)$(DEVI_) $(II)$(ZI_)$(_I) $(PCF_) $(GLF_) $(DEVO_)gdevfpng_0.$(OBJ) $(C_) $(DEVSRC)gdevfpng.c
 
 $(DEVOBJ)gdevfpng_1.$(OBJ) : $(DEVSRC)gdevfpng.c\
  $(gdevprn_h) $(gdevpccm_h) $(gscdefs_h) $(MAKEDIRS)
-	$(CC_) $(I_)$(DEVI_) $(II)$(PI_)$(_I) $(PCF_) $(GLF_) $(DEVO_)gdevfpng_1.$(OBJ) $(C_) $(DEVSRC)gdevfpng.c
+	$(CC_) $(I_)$(DEVI_) $(II)$(ZI_)$(_I) $(PCF_) $(GLF_) $(DEVO_)gdevfpng_1.$(OBJ) $(C_) $(DEVSRC)gdevfpng.c
 
 $(DEVOBJ)gdevfpng.$(OBJ) : $(DEVOBJ)gdevfpng_$(SHARE_ZLIB).$(OBJ) $(MAKEDIRS)
 	$(CP_) $(DEVOBJ)gdevfpng_$(SHARE_ZLIB).$(OBJ) $(DEVOBJ)gdevfpng.$(OBJ)

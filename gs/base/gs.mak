@@ -323,10 +323,11 @@ IJSCF_=
 JI_=$(JSRCDIR)
 JF_=
 JCF_=$(D_)SHARE_JPEG=$(SHARE_JPEG)$(_D)
-PI_=$(PNGSRCDIR) $(II)$(ZSRCDIR)
+ZI_=$(ZSRCDIR)
+PI_=$(PNGSRCDIR) $(II)$(ZI_)
 # PF_ should include PNG_USE_CONST, but this doesn't work.
 #PF_=-DPNG_USE_CONST
-TI_=$(TIFFSRCDIR)$(D)libtiff $(II)$(TIFFCONFDIR)$(D)libtiff $(II)$(JGENDIR)  $(II)$(ZSRCDIR)
+TI_=$(TIFFSRCDIR)$(D)libtiff $(II)$(TIFFCONFDIR)$(D)libtiff $(II)$(JGENDIR) $(II)$(ZI_)
 PF_=
 PCF_=$(D_)SHARE_LIBPNG=$(SHARE_LIBPNG)$(_D)
 ZI_=$(ZSRCDIR)
