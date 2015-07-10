@@ -911,7 +911,6 @@ parse_floats(gs_memory_t * mem, uint arg_count, char *arg, float *f)
     char *tok, *l = NULL;
     /* copy the input because strtok() steps on the string */
     char *s = arg_copy(arg, mem);
-    char *tok = NULL;
     if (s == NULL)
         return -1;
     
