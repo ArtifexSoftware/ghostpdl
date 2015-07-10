@@ -1326,7 +1326,7 @@ int gx_device_unsubclass(gx_device *dev)
 {
     void *psubclass_data;
     gx_device *parent, *child;
-    gs_memory_struct_type_t *a_std;
+    gs_memory_struct_type_t *a_std = 0;
     int dynamic;
 
     /* This should not happen... */
