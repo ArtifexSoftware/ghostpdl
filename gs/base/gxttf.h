@@ -142,7 +142,10 @@ typedef struct ttf_OS_2_s {
         sCapHeight[2],
         usDefaultChar[2],
         usBreakChar[2],
-        usMaxContext[2];
+        usMaxContext[2],
+                                /* version 5 */
+        usLowerOpticalPointSize[2],
+        usUpperOpticalPointSize[2];
 } ttf_OS_2_t;
 
 /* ------ vhea ------ */

@@ -540,7 +540,9 @@ write_name(stream *s, const gs_const_string *font_name)
 
 /* Write a generated OS/2 table. */
 #define OS_2_LENGTH1 offset_of(ttf_OS_2_t, sxHeight[0]) /* OS/2 version 1. */
-#define OS_2_LENGTH2 sizeof(ttf_OS_2_t) /* OS/2 version 2. */
+#define OS_2_LENGTH2 offset_of(ttf_OS_2_t, usLowerOpticalPointSize[0]) /* OS/2 version 2. */
+#define OS_2_LENGTH5 sizeof(ttf_OS_2_t) /* OS/2 version 5 (OpenType 1.7) */
+
 static void
 update_OS_2(ttf_OS_2_t *pos2, uint first_glyph, int num_glyphs)
 {
@@ -789,7 +791,6 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     ulong OS_2_start = 0;
     uint OS_2_length = OS_2_LENGTH1;
     ulong maxp_start = 0;
-    uint maxp_length = 0;
     struct { int glyf, loca, cmap, name, os_2, mtx[2], post, head;
            } subtable_positions;
     gs_offset_t start_position = stell(s);
@@ -858,7 +859,6 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
             READ_SFNTS(pfont, start, length, data);
             numGlyphs = U16(data + 4);
             maxp_start = start;
-            maxp_length = length;
             break;
         case W('n','a','m','e'):
             if (writing_cid)
@@ -869,7 +869,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
             if (writing_cid)
                 continue;
             have_OS_2 = true;
-            if (length > OS_2_LENGTH2)
+            if (length > OS_2_LENGTH5)
                 return_error(gs_error_invalidfont);
             OS_2_start = start;
             OS_2_length = length;
@@ -1138,7 +1138,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
                      * Adjust the first and last character indices in the OS/2
                      * table to reflect the values in the generated cmap.
                      */
-                    byte pos2[OS_2_LENGTH2];
+                    byte pos2[OS_2_LENGTH5];
                     ttf_OS_2_t os2;
 
                     READ_SFNTS(pfont, OS_2_start, OS_2_length, pos2);
