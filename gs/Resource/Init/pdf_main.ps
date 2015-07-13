@@ -2232,17 +2232,23 @@ currentdict /PDF2PS_matrix_key undef
         {
           exch pop oforce 
           dup //null ne {
-            dup /Subtype get
-            dup /Image eq {
-              1 index /SMask oknown { pop pop not exit } if
-              1 index /SMaskInData knownoget {
-                0 ne { pop pop not exit } if
-              } if
-            } if
-            /Form eq {
-              3 index exch resourceusestransparency { not exit } if
+            dup type /dicttype eq {
+                dup /Subtype get
+                dup /Image eq {
+                  1 index /SMask oknown { pop pop not exit } if
+                  1 index /SMaskInData knownoget {
+                    0 ne { pop pop not exit } if
+                  } if
+                } if
+                /Form eq {
+                  3 index exch resourceusestransparency { not exit } if
+                } {
+                  pop
+                } ifelse
             } {
               pop
+              (   **** Ignoring non-dictionary /XObject attribute.\n)
+              pdfformaterror
             } ifelse
           } {
             pop
