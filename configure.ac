@@ -2461,7 +2461,8 @@ AC_SUBST(EXEEXT)
 dnl --------------------------------------------------
 dnl Do substitutions
 dnl --------------------------------------------------
-
+SRCDIR="$srcdir"
+AC_SUBST(SRCDIR)
 AC_SUBST(OPT_CFLAGS)
 AC_SUBST(DBG_CFLAGS)
 AC_SUBST(GCFLAGS)
