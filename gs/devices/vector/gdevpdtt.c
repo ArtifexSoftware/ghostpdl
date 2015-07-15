@@ -1491,7 +1491,16 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
         }
     }
     if (font->FontType == ft_encrypted || font->FontType == ft_encrypted2
-        || (font->FontType == ft_TrueType && pdev->ForOPDFRead)) {
+        || (font->FontType == ft_TrueType && pdev->ForOPDFRead)
+        || (font->FontType == ft_TrueType && ((const gs_font_base *)base_font)->nearest_encoding_index != ENCODING_INDEX_UNKNOWN)) {
+        /* Yet more crazy heuristics. If we embed a TrueType font and don't subset it, then
+         * we preserve the CMAP subtable(s) rather than generatng new ones. The problem is
+         * that if we ake the font symbolic, Acrobat uses the 1,0 CMAP, whereas if we don't
+         * It uses the 3,1 CMAP (and the Encoding). If these two are not compatible, then
+         * the result will be different. So, if we are not subsetting the font, and the original
+         * font wasn't symbolic (it has an Encoding) then we will create a new Encoding, and
+         * in pdf_write_font_descriptor we wil take back off the symbolic flag.
+         */
         /* Removed the addition of Encodings to TrueType fonts as we always write
          * these with the Symbolic flag set. The comment below explains why we
          * previously wrote these, but as the comment notes this was incorrect.
