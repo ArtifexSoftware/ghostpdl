@@ -1265,11 +1265,11 @@ JPX_CFLAGS = $JPX_CFLAGS -DUSE_JPIP -DUSE_OPENJPEG_JP2
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-# FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)mspoll.dev $(PSD)fapi_ps.dev $(PSD)winutf8.dev $(PSD)ramfs.dev
-
 # Choose the language feature(s) to include.  See gs.mak for details.
+
+# if it's included, $(PSD)gs_pdfwr.dev should always be one of the last in the list
 PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)epsf.dev $(PSD)ttfont.dev \
-                 $(PSD)jbig2.dev $(PSD)jpx.dev $(PSD)fapi_ps.dev $(GLD)winutf8.dev 
+                 $(PSD)jbig2.dev $(PSD)jpx.dev $(PSD)fapi_ps.dev $(GLD)winutf8.dev $(PSD)gs_pdfwr.dev
 
 
 PCL_FEATURE_DEVS=$(PLOBJDIR)/pl.dev $(PLOBJDIR)/pjl.dev $(PXLOBJDIR)/pxl.dev $(PCL5OBJDIR)/pcl5c.dev \

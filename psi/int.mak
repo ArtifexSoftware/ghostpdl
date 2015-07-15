@@ -753,6 +753,12 @@ $(PSOBJ)zdouble.$(OBJ) : $(PSSRC)zdouble.c $(OP)\
 $(PSD)epsf.dev : $(INT_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 	$(SETMOD) $(PSD)epsf -ps gs_epsf
 
+# -------- Postscript end of the pdfwriter functionality --------- #
+
+$(PSD)gs_pdfwr.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)psl3.dev $(MAKEDIRS)
+	$(SETMOD) $(PSD)gs_pdfwr -include $(PSD)psl3
+	$(ADDMOD) $(PSD)gs_pdfwr -ps gs_pdfwr
+
 # ---------------- RasterOp ---------------- #
 # This should be a separable feature in the core also....
 
@@ -1014,7 +1020,7 @@ $(PSD)psl2int.dev : $(INT_MAK) $(ECHOGS_XE) $(psl2int_)\
 	$(SETMOD) $(PSD)psl2int $(psl2int_)
 	$(ADDMOD) $(PSD)psl2int -include $(PSD)dps2int $(PSD)usparam
 	$(ADDMOD) $(PSD)psl2int -oper zmisc2
-	$(ADDMOD) $(PSD)psl2int -ps gs_lev2 gs_res gs_pdfwr
+	$(ADDMOD) $(PSD)psl2int -ps gs_lev2 gs_res
 
 ivmem2_h=$(PSSRC)ivmem2.h
 
@@ -1097,7 +1103,7 @@ $(PSOBJ)zimage2.$(OBJ) : $(PSSRC)zimage2.c $(OP) $(math__h) $(memory__h)\
 
 # ---------------- setpagedevice ---------------- #
 
-# NOTE: gs_pdfwr.ps is strictly speaking an interpreter feature
+# NOTE: gs_pdfwr.ps is not strictly speaking an interpreter feature
 # but is logically part of the PS resources, and requires the content
 # of gs_setpd.ps to work, so we include it here (rather than in the
 # graphics library).

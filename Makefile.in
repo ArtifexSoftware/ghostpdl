@@ -495,9 +495,10 @@ SO_LIB_VERSION_SEPARATOR=@SO_LIB_VERSION_SEPARATOR@
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
-# Choose the language feature(s) to include.  See gs.mak for details.
+
+# if it's included, $(PSD)gs_pdfwr.dev should always be one of the last in the list
 PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)epsf.dev $(PSD)ttfont.dev \
-                 @UTF8DEVS@ $(PSD)fapi_ps.dev $(PSD)jpx.dev $(PSD)rasterop.dev $(PSD)jbig2.dev
+                 @UTF8DEVS@ $(PSD)fapi_ps.dev $(PSD)jpx.dev $(PSD)rasterop.dev $(PSD)jbig2.dev $(PSD)gs_pdfwr.dev
 
 
 PCL_FEATURE_DEVS=$(PLOBJDIR)/pl.dev $(PLOBJDIR)/pjl.dev $(PXLOBJDIR)/pxl.dev $(PCL5OBJDIR)/pcl5c.dev \
