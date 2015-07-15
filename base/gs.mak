@@ -467,7 +467,6 @@ $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE) $(GLGENDIR)$(D)fdevs.tr $(G
 # it isn't just literal text.
 GCONFIG_EXTRAS=
 
-#  $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(DEVS_ALL) $(GLGENDIR)$(D)libcore.dev
 ld_tr=$(GLGENDIR)$(D)ld.tr
 $(ld_tr) : \
   $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(GLGENDIR)$(D)libcore.dev

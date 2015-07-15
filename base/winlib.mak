@@ -150,10 +150,8 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\lwf_jp2.mak
 !include $(GLSRCDIR)\openjpeg.mak
 
-# FIXME: these should be conditional
 !include $(GLSRCDIR)\expat.mak
 !include $(GLSRCDIR)\jpegxr.mak
-#EMXIF
 
 !include $(GLSRCDIR)\$(WHICH_CMS).mak
 !include $(GLSRCDIR)\ijs.mak
