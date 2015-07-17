@@ -23,6 +23,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ghostpdl", "ghostpdl.vcproj
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "all", "ghostall.vcproj", "{BE2A6C1B-8EC7-4BC6-A8A8-AAF677DCA373}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{38552CBB-9E6A-4FA4-8A66-C006D1E3C3FB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -156,5 +158,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BE2A6C1B-8EC7-4BC6-A8A8-AAF677DCA373} = {38552CBB-9E6A-4FA4-8A66-C006D1E3C3FB}
+		{C4038125-61B9-4147-9EA8-39690BA3A599} = {38552CBB-9E6A-4FA4-8A66-C006D1E3C3FB}
 	EndGlobalSection
 EndGlobal
