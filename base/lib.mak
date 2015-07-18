@@ -3176,7 +3176,6 @@ $(GLD)romfs0.dev :  $(LIB_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 $(GLGEN)gsromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1_.c \
 	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
-	$(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
 	$(PS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
 $(GLGEN)gsromfs1_1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
