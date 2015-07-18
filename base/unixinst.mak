@@ -16,8 +16,7 @@
 # containing the `install' targets.
 # This is the very last part of the makefile for these configurations.
 
-install: install-exec install-scripts install-data $(INSTALL_SHARED) $(INSTALL_CONTRIB) \
-         install-exec-$(PCL) install-exec-$(XPS)
+install: install-gs install-$(PCL) install-$(XPS)
 
 # The sh -c in the rules below is required because Ultrix's implementation
 # of sh -e terminates execution of a command if any error occurs, even if
@@ -35,14 +34,17 @@ install-exec: $(GS_XE) install-exec-bindir $(MAKEDIRS)
 	-mkdir -p $(DESTDIR)$(gsdatadir)
 	$(INSTALL_PROGRAM) $(GS_XE) $(DESTDIR)$(bindir)/$(GS)$(XE)
 
-install-exec-gpcl6: $(GPCL_XE) install-exec-bindir
+install-gs: install-exec install-scripts install-data $(INSTALL_SHARED) $(INSTALL_CONTRIB)
+	$(NO_OP)
+
+install-gpcl6: $(GPCL_XE) install-exec-bindir
 	$(INSTALL_PROGRAM) $(GPCL_XE) $(DESTDIR)$(bindir)/$(PCL)$(XE)
 
-install-exec-gxps: $(GXPS_XE) install-exec-bindir
+install-gxps: $(GXPS_XE) install-exec-bindir
 	$(INSTALL_PROGRAM) $(GXPS_XE) $(DESTDIR)$(bindir)/$(XPS)$(XE)
 
 # dummy install taget if we don't have pcl and xps available
-install-exec-:
+install-:
 	$(NO_OP)
 
 install-scripts: $(PSLIBDIR)/gsnd
