@@ -1770,10 +1770,10 @@ ufst-bsc: ufst-lib
 gs:$(GS_XE) $(GSCONSOLE_XE)
 	$(NO_OP)
 
-pcl:$(GPCL_XE)
+gpcl6:$(GPCL_XE)
 	$(NO_OP)
 
-xps:$(GXPS_XE)
+gxps:$(GXPS_XE)
 	$(NO_OP)
 
 gpdl:$(GPDL_XE)

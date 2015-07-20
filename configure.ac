@@ -1654,7 +1654,7 @@ if test -f $srcdir/pcl/pl/pl.mak; then
         [name of the GhostPCL executible (if the source is available, ignored otherwise) [[gpcl6]]]),
         [PCL="$with_pcl"],[PCL='gpcl6'])
 
-  PCL_TARGET=pcl
+  PCL_TARGET=gpcl6
 
   PLROMFS_MAK="\$(PLSRCDIR)\$(D)plromfs.mak"
   PL_MAK="\$(PLSRCDIR)\$(D)pl.mak"
@@ -1684,7 +1684,7 @@ if test "x$PCL_TARGET" != "x" ; then
           [name of the GhostXPS executible (if the source is available, ignored otherwise) [[gxps]]]),
           [XPS="$with_xps"],[XPS='gxps'])
 
-    XPS_TARGET=xps
+    XPS_TARGET=gxps
     XPS_MAK="\$(XPSSRCDIR)\$(D)xps.mak"
     XPSROMFS_MAK="\$(XPSSRCDIR)\$(D)xpsromfs.mak"
   fi

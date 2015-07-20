@@ -31,16 +31,16 @@ directories:
 gs: .gssubtarget
 	$(NO_OP)
 
-pcl: .pcl6subtarget
+gpcl6: .pcl6subtarget
 	$(NO_OP)
 
-pclclean: cleansub
+gpcl6clean: cleansub
 	$(NO_OP)
 
-xps: .xpssubtarget
+gxps: .xpssubtarget
 	$(NO_OP)
 
-xpsclean: cleansub
+gxpsclean: cleansub
 	$(NO_OP)
 
 gpdl: .gpdlsubtarget
@@ -62,16 +62,16 @@ pgclean:
 gspg:
 	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) .gssubtarget
 
-pclpg:
+gpcl6pg:
 	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) .pcl6subtarget
 
-pclpgclean:
+gpcl6pgclean:
 	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) cleansub
 
-xpspg:
+gxpspg:
 	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=(PGDIRPREFIX) .xpssubtarget
 
-xpspgclean:
+gxpspgclean:
 	$(MAKE) $(PGDEFS) BUILDDIRPREFIX=$(PGDIRPREFIX) cleansub
 
 gpdlpg:
@@ -97,28 +97,28 @@ debugclean:
 gsdebug:
 	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) .gssubtarget
 
-pcldebug:
+gpcl6debug:
 	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) .pcl6subtarget
 
-#pcl6-debug-apitest:
+#gpcl6-debug-apitest:
 #	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) apitest
 
-pcl6debugclean:
+gpcl6debugclean:
 	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) cleansub
 
-xpsdebug:
+gxpsdebug:
 	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) .xpssubtarget
 
-#pcl6-debug-apitest:
+#gpcl6-debug-apitest:
 #	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) apitest
 
-xpsdebugclean:
+gxpsdebugclean:
 	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) cleansub
 
 gpdldebug:
 	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) .gpdlsubtarget
 
-#pcl6-debug-apitest:
+#gpcl6-debug-apitest:
 #	$(MAKE) $(DEBUGDEFS) BUILDDIRPREFIX=$(DEBUGDIRPREFIX) apitest
 
 gpdldebugclean:
@@ -137,7 +137,7 @@ memento:
 mementoclean:
 	$(MAKE) $(MEMENTODEFS) cleansub
 
-pcl_xps_clean: pclclean xpsclean
+gpcl6_gxps_clean: gpcl6clean gxpsclean
 	$(NO_OP)
 
 # Emacs tags maintenance.
