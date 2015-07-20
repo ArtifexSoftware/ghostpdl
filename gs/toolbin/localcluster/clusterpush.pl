@@ -137,7 +137,12 @@ print "$user $directory $product\n" if ($verbose);
 
 
 if ($directory eq 'gs') {
-  $directory='ghostpdl/gs';
+  if (-e 'gpdl') {
+    print "new directory structure\n";
+    $directory='ghostpdl';
+  } else {
+    $directory='ghostpdl/gs';
+  }
 }
 
 
@@ -183,6 +188,8 @@ my $cmd="rsync -avxcz ".
 " -e \"$ssh\" ".
 " .".
 " $hostpath";
+
+#print "$cmd\n";  exit;
 
 if ($product ne "abort" ) { #&& $product ne "bmpcmp") {
   print STDERR "syncing\n";
