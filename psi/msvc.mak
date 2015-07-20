@@ -254,11 +254,11 @@ PCL_TARGET=
 XPS_TARGET=
 
 !if $(BUILD_PCL)
-PCL_TARGET=pcl
+PCL_TARGET=gpcl6
 !endif
 
 !if $(BUILD_XPS)
-XPS_TARGET=xps
+XPS_TARGET=gxps
 !endif
 
 !if $(BUILD_GPDL)
