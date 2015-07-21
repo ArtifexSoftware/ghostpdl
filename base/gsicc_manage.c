@@ -1244,6 +1244,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     }
     result->proof_profile = NULL;
     result->link_profile = NULL;
+    result->postren_profile = NULL;
     result->oi_profile = NULL;
     result->spotnames = NULL;
     result->devicegraytok = true;  /* Default is to map gray to pure K */
@@ -1507,11 +1508,13 @@ gsicc_init_device_profile_struct(gx_device * dev,
         if (profile_type < gsPROOFPROFILE) {
             curr_profile = profile_struct->device_profile[profile_type];
         } else {
-            /* The proof or link profile */
+            /* The proof, link profile or post render */
             if (profile_type == gsPROOFPROFILE) {
                 curr_profile = profile_struct->proof_profile;
-            } else {
+            } else if (profile_type == gsLINKPROFILE) {
                 curr_profile = profile_struct->link_profile;
+            } else {
+                curr_profile = profile_struct->postren_profile;
             }
         }
         /* See if we have the same profile in this location */
@@ -1632,13 +1635,17 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                            "[icc] Setting device profile %d\n", pro_enum);
                 pdev->icc_struct->device_profile[pro_enum] = icc_profile;
             } else {
-                /* The proof, link or output intent profile */
+                /* The proof, link or post render profile. Output intent 
+                   profile is set in zicc.c */
                 if (pro_enum == gsPROOFPROFILE) {
                     if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting proof profile\n");
                     pdev->icc_struct->proof_profile = icc_profile;
-                } else {
+                } else if (pro_enum ==  gsLINKPROFILE) {
                     if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting link profile\n");
                     pdev->icc_struct->link_profile = icc_profile;
+                } else {
+                    if_debug0m(gs_debug_flag_icc, mem, "[icc] Setting postrender profile\n");
+                    pdev->icc_struct->postren_profile = icc_profile;
                 }
             }
             /* Get the profile handle */

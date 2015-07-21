@@ -468,6 +468,7 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     cmm_dev_profile_t temp_profile = {	/* Initialize to 0's/NULL's */
                           { 0 } /* device_profile[] */, 0 /* proof_profile */,
                           0 /* link_profile */, 0 /* oi_profile */, 
+                          0 /* postren_profile */,
                           { {0} } /* rendercond[] */, 0 /* devicegraytok */, 
                           0 /* graydection */, 0 /* pageneutralcolor */, 
                           0 /* usefastcolor */, 0 /* supports_devn */,
