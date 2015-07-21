@@ -250,175 +250,175 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>debugobjrt\</OutDir>
     <IntDir>debugobjrt\</IntDir>
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 debugbsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 debugbsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 debugclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 debugclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 debugbsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 debugbsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 debugclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 debugclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>debugobjrt64\</OutDir>
     <IntDir>debugobjrt64\</IntDir>
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugbsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugbsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>objrt\</OutDir>
     <IntDir>objrt\</IntDir>
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 bsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 bsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 bsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 bsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>objrt64\</OutDir>
     <IntDir>objrt64\</IntDir>
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 bsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 bsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Win32'">
     <OutDir>profobjrt\</OutDir>
     <IntDir>profobjrt\</IntDir>
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 profilebsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 profilebsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 profileclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 profilebsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 profilebsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 profileclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;DEBUG=0;TDEBUG=0;DEBUGSYM=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|ARM'">
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 profilebsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 profilebsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 profileclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 profilebsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 profile-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 profilebsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 profileclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;DEBUG=0;TDEBUG=0;DEBUGSYM=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
     <OutDir>profobjrt64\</OutDir>
     <IntDir>profobjrt64\</IntDir>
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugbsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugbsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|Win32'">
     <OutDir>memobjrt\</OutDir>
     <IntDir>memobjrt\</IntDir>
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 mementobsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 mementobsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 mementoclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 mementobsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 mementobsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 mementoclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;MEMENTO=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|ARM'">
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 mementobsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 mementobsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 mementoclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 mementobsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 mementobsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 mementoclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;MEMENTO=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Memento|x64'">
     <OutDir>memobjrt64\</OutDir>
     <IntDir>memobjrt64\</IntDir>
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 memento-target &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 mementobsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 mementoclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 memento-target &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 mementobsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 mementoclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 memento-target &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 mementobsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 mementoclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 memento-target &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 mementobsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 mementoclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|Win32'">
     <OutDir>$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CUPS=1 debugclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CUPS=1 debugclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|ARM'">
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debugclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debugclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-cups|x64'">
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|Win32'">
     <OutDir>$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 WITH_CONTRIB=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CONTRIB=1 debugbsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CONTRIB=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CONTRIB=1 debugbsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CONTRIB=1 debugclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 WITH_CONTRIB=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CONTRIB=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CONTRIB=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CONTRIB=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 WITH_CONTRIB=1 debugclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|ARM'">
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debugbsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debugbsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debugclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 ARM=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 ARM=1 WITH_CONTRIB=1 debugclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|x64'">
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugclean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= METRO=1 WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= METRO=1 debugclean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|Win32'">
     <OutDir>$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 bsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 bsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|ARM'">
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 bsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 bsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|x64'">
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 SBR=1 DEVSTUDIO= METRO=1 WITH_CONTRIB=1 &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= METRO=1 bsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= METRO=1 clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 WITH_CONTRIB=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= METRO=1 bsc</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 SBR=1 DEVSTUDIO= METRO=1 WITH_CONTRIB=1 &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= METRO=1 bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= METRO=1 clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 WITH_CONTRIB=1 DEVSTUDIO= METRO=1 &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= METRO=1 bsc</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= WITH_CONTRIB=1 DEVSTUDIO= METRO=1 clean</NMakeCleanCommandLine>
     <NMakeOutput />
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
