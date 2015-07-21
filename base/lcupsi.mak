@@ -44,9 +44,6 @@ LIBCUPSI_OBJS =\
 
 LIBCUPSI_DEPS	=	\
 		$(LIBCUPSISRC)common.h \
-		$(LIBCUPSISRC)image.h \
-		$(LIBCUPSISRC)image-private.h \
-		$(LIBCUPSISRC)image-sgi.h \
 		$(MAKEDIRS)
 
 libcupsi.clean : libcupsi.config-clean libcupsi.clean-not-config-clean
