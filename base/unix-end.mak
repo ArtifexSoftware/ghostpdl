@@ -134,6 +134,15 @@ MEMENTODEFS=GENOPT='-DMEMENTO -DDEBUG' \
 memento:
 	$(MAKE) $(MEMENTODEFS) default
 
+gsmemento:
+	$(MAKE) $(MEMENTODEFS) .gssubtarget
+
+gpcl6memento:
+	$(MAKE) $(MEMENTODEFS) .pcl6subtarget
+
+gxpsmemento:
+	$(MAKE) $(MEMENTODEFS) .xpssubtarget
+
 mementoclean:
 	$(MAKE) $(MEMENTODEFS) cleansub
 
