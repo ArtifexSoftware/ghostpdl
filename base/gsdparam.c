@@ -374,7 +374,7 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "ImageICCProfile") == 0) {
         return param_write_string(plist,"ImageICCProfile", &(profile_array[2]));
     }
-    if (strcmp(Param, "GraphicICCProfile") == 0) {
+    if (strcmp(Param, "TextICCProfile") == 0) {
         return param_write_string(plist,"TextICCProfile", &(profile_array[3]));
     }
     if (strcmp(Param, "RenderIntent") == 0) {
