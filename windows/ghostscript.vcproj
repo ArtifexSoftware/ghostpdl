@@ -1770,191 +1770,191 @@
 			Name="base"
 			>
 			<File
-				RelativePath="base\aes.c"
+				RelativePath="..\base\aes.c"
 				>
 			</File>
 			<File
-				RelativePath="base\bench.c"
+				RelativePath="..\base\bench.c"
 				>
 			</File>
 			<File
-				RelativePath="base\ConvertUTF.c"
+				RelativePath="..\base\ConvertUTF.c"
 				>
 			</File>
 			<File
-				RelativePath="base\echogs.c"
+				RelativePath="..\base\echogs.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gconf.c"
+				RelativePath="..\base\gconf.c"
 				>
 			</File>
 			<File
-				RelativePath="base\genarch.c"
+				RelativePath="..\base\genarch.c"
 				>
 			</File>
 			<File
-				RelativePath="base\genconf.c"
+				RelativePath="..\base\genconf.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gendev.c"
+				RelativePath="..\base\gendev.c"
 				>
 			</File>
 			<File
-				RelativePath="base\genht.c"
+				RelativePath="..\base\genht.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_dosfe.c"
+				RelativePath="..\base\gp_dosfe.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_dosfs.c"
+				RelativePath="..\base\gp_dosfs.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_dvx.c"
+				RelativePath="..\base\gp_dvx.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_getnv.c"
+				RelativePath="..\base\gp_getnv.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_iwatc.c"
+				RelativePath="..\base\gp_iwatc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_mac.c"
+				RelativePath="..\base\gp_mac.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_macio.c"
+				RelativePath="..\base\gp_macio.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_macpoll.c"
+				RelativePath="..\base\gp_macpoll.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_mktmp.c"
+				RelativePath="..\base\gp_mktmp.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_msdll.c"
+				RelativePath="..\base\gp_msdll.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_msdos.c"
+				RelativePath="..\base\gp_msdos.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_mshdl.c"
+				RelativePath="..\base\gp_mshdl.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_mslib.c"
+				RelativePath="..\base\gp_mslib.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_mspol.c"
+				RelativePath="..\base\gp_mspol.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_msprn.c"
+				RelativePath="..\base\gp_msprn.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_mswin.c"
+				RelativePath="..\base\gp_mswin.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_nsync.c"
+				RelativePath="..\base\gp_nsync.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_ntfs.c"
+				RelativePath="..\base\gp_ntfs.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_os2.c"
+				RelativePath="..\base\gp_os2.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_os2fs.c"
+				RelativePath="..\base\gp_os2fs.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_os2pr.c"
+				RelativePath="..\base\gp_os2pr.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_os9.c"
+				RelativePath="..\base\gp_os9.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_paper.c"
+				RelativePath="..\base\gp_paper.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_psync.c"
+				RelativePath="..\base\gp_psync.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_stdia.c"
+				RelativePath="..\base\gp_stdia.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_stdin.c"
+				RelativePath="..\base\gp_stdin.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_strdl.c"
+				RelativePath="..\base\gp_strdl.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_sysv.c"
+				RelativePath="..\base\gp_sysv.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_unifn.c"
+				RelativePath="..\base\gp_unifn.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_unifs.c"
+				RelativePath="..\base\gp_unifs.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_unix.c"
+				RelativePath="..\base\gp_unix.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_unix_cache.c"
+				RelativePath="..\base\gp_unix_cache.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_upapr.c"
+				RelativePath="..\base\gp_upapr.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_vms.c"
+				RelativePath="..\base\gp_vms.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_wgetv.c"
+				RelativePath="..\base\gp_wgetv.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_win32.c"
+				RelativePath="..\base\gp_win32.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_wpapr.c"
+				RelativePath="..\base\gp_wpapr.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gp_wsync.c"
+				RelativePath="..\base\gp_wsync.c"
 				>
 			</File>
 			<File
@@ -1962,411 +1962,411 @@
 				>
 			</File>
 			<File
-				RelativePath="base\gpmisc.c"
+				RelativePath="..\base\gpmisc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsalloc.c"
+				RelativePath="..\base\gsalloc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsalpha.c"
+				RelativePath="..\base\gsalpha.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsalphac.c"
+				RelativePath="..\base\gsalphac.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsargs.c"
+				RelativePath="..\base\gsargs.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsbitcom.c"
+				RelativePath="..\base\gsbitcom.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsbitops.c"
+				RelativePath="..\base\gsbitops.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsbittab.c"
+				RelativePath="..\base\gsbittab.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gscdef.c"
+				RelativePath="..\base\gscdef.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gscedata.c"
+				RelativePath="..\base\gscedata.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gscencs.c"
+				RelativePath="..\base\gscencs.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gschar.c"
+				RelativePath="..\base\gschar.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gschar0.c"
+				RelativePath="..\base\gschar0.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gscicach.c"
+				RelativePath="..\base\gscicach.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsclipsr.c"
+				RelativePath="..\base\gsclipsr.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gscoord.c"
+				RelativePath="..\base\gscoord.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gscparam.c"
+				RelativePath="..\base\gscparam.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gscrdp.c"
+				RelativePath="..\base\gscrdp.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gscrypt1.c"
+				RelativePath="..\base\gscrypt1.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gscssub.c"
+				RelativePath="..\base\gscssub.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsdevice.c"
+				RelativePath="..\base\gsdevice.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsdevmem.c"
+				RelativePath="..\base\gsdevmem.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsdfilt.c"
+				RelativePath="..\base\gsdfilt.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsdparam.c"
+				RelativePath="..\base\gsdparam.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsdps.c"
+				RelativePath="..\base\gsdps.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsdps1.c"
+				RelativePath="..\base\gsdps1.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsdsrc.c"
+				RelativePath="..\base\gsdsrc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsfcid.c"
+				RelativePath="..\base\gsfcid.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsfcid2.c"
+				RelativePath="..\base\gsfcid2.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsfcmap.c"
+				RelativePath="..\base\gsfcmap.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsfcmap1.c"
+				RelativePath="..\base\gsfcmap1.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsflip.c"
+				RelativePath="..\base\gsflip.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsfname.c"
+				RelativePath="..\base\gsfname.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsfont.c"
+				RelativePath="..\base\gsfont.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsfont0.c"
+				RelativePath="..\base\gsfont0.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsfont0c.c"
+				RelativePath="..\base\gsfont0c.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsfunc.c"
+				RelativePath="..\base\gsfunc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsfunc0.c"
+				RelativePath="..\base\gsfunc0.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsfunc3.c"
+				RelativePath="..\base\gsfunc3.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsfunc4.c"
+				RelativePath="..\base\gsfunc4.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsgcache.c"
+				RelativePath="..\base\gsgcache.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsgdata.c"
+				RelativePath="..\base\gsgdata.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gshsb.c"
+				RelativePath="..\base\gshsb.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsht.c"
+				RelativePath="..\base\gsht.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsht1.c"
+				RelativePath="..\base\gsht1.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gshtscr.c"
+				RelativePath="..\base\gshtscr.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gshtx.c"
+				RelativePath="..\base\gshtx.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsimpath.c"
+				RelativePath="..\base\gsimpath.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsinit.c"
+				RelativePath="..\base\gsinit.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsiodev.c"
+				RelativePath="..\base\gsiodev.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsiodevs.c"
+				RelativePath="..\base\gsiodevs.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsiodisk.c"
+				RelativePath="..\base\gsiodisk.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsiomacres.c"
+				RelativePath="..\base\gsiomacres.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsiorom.c"
+				RelativePath="..\base\gsiorom.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsistate.c"
+				RelativePath="..\base\gsistate.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gslib.c"
+				RelativePath="..\base\gslib.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gslibctx.c"
+				RelativePath="..\base\gslibctx.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsline.c"
+				RelativePath="..\base\gsline.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsmalloc.c"
+				RelativePath="..\base\gsmalloc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsmatrix.c"
+				RelativePath="..\base\gsmatrix.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsmchunk.c"
+				RelativePath="..\base\gsmchunk.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsmd5.c"
+				RelativePath="..\base\gsmd5.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsmemlok.c"
+				RelativePath="..\base\gsmemlok.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsmemory.c"
+				RelativePath="..\base\gsmemory.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsmemret.c"
+				RelativePath="..\base\gsmemret.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsmisc.c"
+				RelativePath="..\base\gsmisc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsnogc.c"
+				RelativePath="..\base\gsnogc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsnorop.c"
+				RelativePath="..\base\gsnorop.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsnotify.c"
+				RelativePath="..\base\gsnotify.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gspaint.c"
+				RelativePath="..\base\gspaint.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsparam.c"
+				RelativePath="..\base\gsparam.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsparam2.c"
+				RelativePath="..\base\gsparam2.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsparams.c"
+				RelativePath="..\base\gsparams.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsparamx.c"
+				RelativePath="..\base\gsparamx.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gspath.c"
+				RelativePath="..\base\gspath.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gspath1.c"
+				RelativePath="..\base\gspath1.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gspmdrv.c"
+				RelativePath="..\base\gspmdrv.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsromfs0.c"
+				RelativePath="..\base\gsromfs0.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsrop.c"
+				RelativePath="..\base\gsrop.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsroprun.c"
+				RelativePath="..\base\gsroprun.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsroptab.c"
+				RelativePath="..\base\gsroptab.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsserial.c"
+				RelativePath="..\base\gsserial.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsstate.c"
+				RelativePath="..\base\gsstate.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gstext.c"
+				RelativePath="..\base\gstext.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gstrap.c"
+				RelativePath="..\base\gstrap.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gstype1.c"
+				RelativePath="..\base\gstype1.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gstype2.c"
+				RelativePath="..\base\gstype2.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gstype42.c"
+				RelativePath="..\base\gstype42.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gsutil.c"
+				RelativePath="..\base\gsutil.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxacpath.c"
+				RelativePath="..\base\gxacpath.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxbcache.c"
+				RelativePath="..\base\gxbcache.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxccache.c"
+				RelativePath="..\base\gxccache.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxccman.c"
+				RelativePath="..\base\gxccman.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxchar.c"
+				RelativePath="..\base\gxchar.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxchrout.c"
+				RelativePath="..\base\gxchrout.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxcht.c"
+				RelativePath="..\base\gxcht.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxclip.c"
+				RelativePath="..\base\gxclip.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxclip2.c"
+				RelativePath="..\base\gxclip2.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxclipm.c"
+				RelativePath="..\base\gxclipm.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxcpath.c"
+				RelativePath="..\base\gxcpath.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxdevndi.c"
+				RelativePath="..\base\gxdevndi.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxdhtserial.c"
+				RelativePath="..\base\gxdhtserial.c"
 				>
 			</File>
 			<File
@@ -2374,107 +2374,107 @@
 				>
 			</File>
 			<File
-				RelativePath="base\gxfapiu.c"
+				RelativePath="..\base\gxfapiu.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxfcopy.c"
+				RelativePath="..\base\gxfcopy.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxfdrop.c"
+				RelativePath="..\base\gxfdrop.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxfill.c"
+				RelativePath="..\base\gxfill.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxhintn.c"
+				RelativePath="..\base\gxhintn.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxhintn1.c"
+				RelativePath="..\base\gxhintn1.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxhldevc.c"
+				RelativePath="..\base\gxhldevc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxht.c"
+				RelativePath="..\base\gxht.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxhtbit.c"
+				RelativePath="..\base\gxhtbit.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxmclip.c"
+				RelativePath="..\base\gxmclip.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxoprect.c"
+				RelativePath="..\base\gxoprect.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxpageq.c"
+				RelativePath="..\base\gxpageq.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxpaint.c"
+				RelativePath="..\base\gxpaint.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxpath.c"
+				RelativePath="..\base\gxpath.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxpath2.c"
+				RelativePath="..\base\gxpath2.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxpcopy.c"
+				RelativePath="..\base\gxpcopy.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxpdash.c"
+				RelativePath="..\base\gxpdash.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxpdash2.c"
+				RelativePath="..\base\gxpdash2.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxpflat.c"
+				RelativePath="..\base\gxpflat.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxsample.c"
+				RelativePath="..\base\gxsample.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxstroke.c"
+				RelativePath="..\base\gxstroke.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxsync.c"
+				RelativePath="..\base\gxsync.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxttfb.c"
+				RelativePath="..\base\gxttfb.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gxtype1.c"
+				RelativePath="..\base\gxtype1.c"
 				>
 			</File>
 			<File
-				RelativePath="base\gzspotan.c"
+				RelativePath="..\base\gzspotan.c"
 				>
 			</File>
 			<File
-				RelativePath="base\md5main.c"
+				RelativePath="..\base\md5main.c"
 				>
 			</File>
 			<File
@@ -2482,294 +2482,294 @@
 				>
 			</File>
 			<File
-				RelativePath="base\minftrsz.c"
+				RelativePath="..\base\minftrsz.c"
 				>
 			</File>
 			<File
-				RelativePath="base\mkromfs.c"
+				RelativePath="..\base\mkromfs.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sa85d.c"
+				RelativePath="..\base\sa85d.c"
 				>
 			</File>
 			<File
-				RelativePath="base\saes.c"
+				RelativePath="..\base\saes.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sarc4.c"
+				RelativePath="..\base\sarc4.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sbcp.c"
+				RelativePath="..\base\sbcp.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sbhc.c"
+				RelativePath="..\base\sbhc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sbwbs.c"
+				RelativePath="..\base\sbwbs.c"
 				>
 			</File>
 			<File
-				RelativePath="base\scantab.c"
+				RelativePath="..\base\scantab.c"
 				>
 			</File>
 			<File
-				RelativePath="base\scfd.c"
+				RelativePath="..\base\scfd.c"
 				>
 			</File>
 			<File
-				RelativePath="base\scfdgen.c"
+				RelativePath="..\base\scfdgen.c"
 				>
 			</File>
 			<File
-				RelativePath="base\scfdtab.c"
+				RelativePath="..\base\scfdtab.c"
 				>
 			</File>
 			<File
-				RelativePath="base\scfe.c"
+				RelativePath="..\base\scfe.c"
 				>
 			</File>
 			<File
-				RelativePath="base\scfetab.c"
+				RelativePath="..\base\scfetab.c"
 				>
 			</File>
 			<File
-				RelativePath="base\scfparam.c"
+				RelativePath="..\base\scfparam.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sdcparam.c"
+				RelativePath="..\base\sdcparam.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sdctc.c"
+				RelativePath="..\base\sdctc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sdctd.c"
+				RelativePath="..\base\sdctd.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sdcte.c"
+				RelativePath="..\base\sdcte.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sddparam.c"
+				RelativePath="..\base\sddparam.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sdeparam.c"
+				RelativePath="..\base\sdeparam.c"
 				>
 			</File>
 			<File
-				RelativePath="base\seexec.c"
+				RelativePath="..\base\seexec.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sfilter2.c"
+				RelativePath="..\base\sfilter2.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sfxboth.c"
+				RelativePath="..\base\sfxboth.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sfxcommon.c"
+				RelativePath="..\base\sfxcommon.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sfxfd.c"
+				RelativePath="..\base\sfxfd.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sfxstdio.c"
+				RelativePath="..\base\sfxstdio.c"
 				>
 			</File>
 			<File
-				RelativePath="base\shc.c"
+				RelativePath="..\base\shc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\shcgen.c"
+				RelativePath="..\base\shcgen.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sidscale.c"
+				RelativePath="..\base\sidscale.c"
 				>
 			</File>
 			<File
-				RelativePath="base\siinterp.c"
+				RelativePath="..\base\siinterp.c"
 				>
 			</File>
 			<File
-				RelativePath="base\simscale.c"
+				RelativePath="..\base\simscale.c"
 				>
 			</File>
 			<File
-				RelativePath="base\siscale.c"
+				RelativePath="..\base\siscale.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sjbig2.c"
+				RelativePath="..\base\sjbig2.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sjbig2_luratech.c"
+				RelativePath="..\base\sjbig2_luratech.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sjpegc.c"
+				RelativePath="..\base\sjpegc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sjpegd.c"
+				RelativePath="..\base\sjpegd.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sjpege.c"
+				RelativePath="..\base\sjpege.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sjpx.c"
+				RelativePath="..\base\sjpx.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sjpx_luratech.c"
+				RelativePath="..\base\sjpx_luratech.c"
 				>
 			</File>
 			<File
-				RelativePath="base\slzwc.c"
+				RelativePath="..\base\slzwc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\slzwd.c"
+				RelativePath="..\base\slzwd.c"
 				>
 			</File>
 			<File
-				RelativePath="base\slzwe.c"
+				RelativePath="..\base\slzwe.c"
 				>
 			</File>
 			<File
-				RelativePath="base\smd5.c"
+				RelativePath="..\base\smd5.c"
 				>
 			</File>
 			<File
-				RelativePath="base\smtf.c"
+				RelativePath="..\base\smtf.c"
 				>
 			</File>
 			<File
-				RelativePath="base\spdiff.c"
+				RelativePath="..\base\spdiff.c"
 				>
 			</File>
 			<File
-				RelativePath="base\spngp.c"
+				RelativePath="..\base\spngp.c"
 				>
 			</File>
 			<File
-				RelativePath="base\spprint.c"
+				RelativePath="..\base\spprint.c"
 				>
 			</File>
 			<File
-				RelativePath="base\spsdf.c"
+				RelativePath="..\base\spsdf.c"
 				>
 			</File>
 			<File
-				RelativePath="base\srld.c"
+				RelativePath="..\base\srld.c"
 				>
 			</File>
 			<File
-				RelativePath="base\srle.c"
+				RelativePath="..\base\srle.c"
 				>
 			</File>
 			<File
-				RelativePath="base\sstring.c"
+				RelativePath="..\base\sstring.c"
 				>
 			</File>
 			<File
-				RelativePath="base\stream.c"
+				RelativePath="..\base\stream.c"
 				>
 			</File>
 			<File
-				RelativePath="base\strmio.c"
+				RelativePath="..\base\strmio.c"
 				>
 			</File>
 			<File
-				RelativePath="base\szlibc.c"
+				RelativePath="..\base\szlibc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\szlibd.c"
+				RelativePath="..\base\szlibd.c"
 				>
 			</File>
 			<File
-				RelativePath="base\szlibe.c"
+				RelativePath="..\base\szlibe.c"
 				>
 			</File>
 			<File
-				RelativePath="base\ttcalc.c"
+				RelativePath="..\base\ttcalc.c"
 				>
 			</File>
 			<File
-				RelativePath="base\ttfinp.c"
+				RelativePath="..\base\ttfinp.c"
 				>
 			</File>
 			<File
-				RelativePath="base\ttfmain.c"
+				RelativePath="..\base\ttfmain.c"
 				>
 			</File>
 			<File
-				RelativePath="base\ttfmemd.c"
+				RelativePath="..\base\ttfmemd.c"
 				>
 			</File>
 			<File
-				RelativePath="base\ttinterp.c"
+				RelativePath="..\base\ttinterp.c"
 				>
 			</File>
 			<File
-				RelativePath="base\ttload.c"
+				RelativePath="..\base\ttload.c"
 				>
 			</File>
 			<File
-				RelativePath="base\ttobjs.c"
+				RelativePath="..\base\ttobjs.c"
 				>
 			</File>
 			<File
-				RelativePath="base\vdtrace.c"
+				RelativePath="..\base\vdtrace.c"
 				>
 			</File>
 			<Filter
 				Name="rinkj"
 				>
 				<File
-					RelativePath="base\rinkj\evenbetter-rll.c"
+					RelativePath="..\base\rinkj\evenbetter-rll.c"
 					>
 				</File>
 				<File
-					RelativePath="base\rinkj\rinkj-byte-stream.c"
+					RelativePath="..\base\rinkj\rinkj-byte-stream.c"
 					>
 				</File>
 				<File
-					RelativePath="base\rinkj\rinkj-config.c"
+					RelativePath="..\base\rinkj\rinkj-config.c"
 					>
 				</File>
 				<File
-					RelativePath="base\rinkj\rinkj-device.c"
+					RelativePath="..\base\rinkj\rinkj-device.c"
 					>
 				</File>
 				<File
-					RelativePath="base\rinkj\rinkj-dither.c"
+					RelativePath="..\base\rinkj\rinkj-dither.c"
 					>
 				</File>
 				<File
-					RelativePath="base\rinkj\rinkj-epson870.c"
+					RelativePath="..\base\rinkj\rinkj-epson870.c"
 					>
 				</File>
 				<File
-					RelativePath="base\rinkj\rinkj-screen-eb.c"
+					RelativePath="..\base\rinkj\rinkj-screen-eb.c"
 					>
 				</File>
 			</Filter>
@@ -2929,23 +2929,23 @@
 				Name="shading"
 				>
 				<File
-					RelativePath="base\gsshade.c"
+					RelativePath="..\base\gsshade.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxshade.c"
+					RelativePath="..\base\gxshade.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxshade1.c"
+					RelativePath="..\base\gxshade1.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxshade4.c"
+					RelativePath="..\base\gxshade4.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxshade6.c"
+					RelativePath="..\base\gxshade6.c"
 					>
 				</File>
 			</Filter>
@@ -2953,23 +2953,23 @@
 				Name="transparency"
 				>
 				<File
-					RelativePath="base\gdevp14.c"
+					RelativePath="..\base\gdevp14.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gscolorbuffer.c"
+					RelativePath="..\base\gscolorbuffer.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gstrans.c"
+					RelativePath="..\base\gstrans.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxblend.c"
+					RelativePath="..\base\gxblend.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxblend1.c"
+					RelativePath="..\base\gxblend1.c"
 					>
 				</File>
 			</Filter>
@@ -2977,106 +2977,106 @@
 				Name="color"
 				>
 				<File
-					RelativePath="base\gdevdevn.c"
+					RelativePath="..\base\gdevdevn.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gscdevn.c"
+					RelativePath="..\base\gscdevn.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gscie.c"
+					RelativePath="..\base\gscie.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gsciemap.c"
+					RelativePath="..\base\gsciemap.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gscolor.c"
+					RelativePath="..\base\gscolor.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gscolor1.c"
+					RelativePath="..\base\gscolor1.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gscolor2.c"
+					RelativePath="..\base\gscolor2.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gscolor3.c"
+					RelativePath="..\base\gscolor3.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gscpixel.c"
+					RelativePath="..\base\gscpixel.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gscrd.c"
+					RelativePath="..\base\gscrd.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gscscie.c"
+					RelativePath="..\base\gscscie.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gscsepr.c"
+					RelativePath="..\base\gscsepr.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gscspace.c"
+					RelativePath="..\base\gscspace.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gsequivc.c"
+					RelativePath="..\base\gsequivc.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gsovrc.c"
+					RelativePath="..\base\gsovrc.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gspcolor.c"
+					RelativePath="..\base\gspcolor.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gsptype1.c"
+					RelativePath="..\base\gsptype1.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gsptype2.c"
+					RelativePath="..\base\gsptype2.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxcmap.c"
+					RelativePath="..\base\gxcmap.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxctable.c"
+					RelativePath="..\base\gxctable.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxdcconv.c"
+					RelativePath="..\base\gxdcconv.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxdcolor.c"
+					RelativePath="..\base\gxdcolor.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxp1fill.c"
+					RelativePath="..\base\gxp1fill.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxpcmap.c"
+					RelativePath="..\base\gxpcmap.c"
 					>
 				</File>
 				<Filter
 					Name="icc"
 					>
 					<File
-						RelativePath="base\gsicc.c"
+						RelativePath="..\base\gsicc.c"
 						>
 					</File>
 					<File
@@ -3121,83 +3121,83 @@
 				Name="image"
 				>
 				<File
-					RelativePath="base\gsimage.c"
+					RelativePath="..\base\gsimage.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxht_thresh.c"
+					RelativePath="..\base\gxht_thresh.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxi12bit.c"
+					RelativePath="..\base\gxi12bit.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxi16bit.c"
+					RelativePath="..\base\gxi16bit.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxicolor.c"
+					RelativePath="..\base\gxicolor.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxidata.c"
+					RelativePath="..\base\gxidata.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxifast.c"
+					RelativePath="..\base\gxifast.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gximag3x.c"
+					RelativePath="..\base\gximag3x.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gximage.c"
+					RelativePath="..\base\gximage.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gximage1.c"
+					RelativePath="..\base\gximage1.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gximage2.c"
+					RelativePath="..\base\gximage2.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gximage3.c"
+					RelativePath="..\base\gximage3.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gximage4.c"
+					RelativePath="..\base\gximage4.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gximask.c"
+					RelativePath="..\base\gximask.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gximdecode.c"
+					RelativePath="..\base\gximdecode.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gximono.c"
+					RelativePath="..\base\gximono.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxino12b.c"
+					RelativePath="..\base\gxino12b.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxino16b.c"
+					RelativePath="..\base\gxino16b.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxipixel.c"
+					RelativePath="..\base\gxipixel.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxiscale.c"
+					RelativePath="..\base\gxiscale.c"
 					>
 				</File>
 			</Filter>
@@ -3205,59 +3205,59 @@
 				Name="clist"
 				>
 				<File
-					RelativePath="base\gxclbits.c"
+					RelativePath="..\base\gxclbits.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxclfile.c"
+					RelativePath="..\base\gxclfile.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxclimag.c"
+					RelativePath="..\base\gxclimag.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxclist.c"
+					RelativePath="..\base\gxclist.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxcllzw.c"
+					RelativePath="..\base\gxcllzw.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxclmem.c"
+					RelativePath="..\base\gxclmem.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxclpage.c"
+					RelativePath="..\base\gxclpage.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxclpath.c"
+					RelativePath="..\base\gxclpath.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxclrast.c"
+					RelativePath="..\base\gxclrast.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxclread.c"
+					RelativePath="..\base\gxclread.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxclrect.c"
+					RelativePath="..\base\gxclrect.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxclthrd.c"
+					RelativePath="..\base\gxclthrd.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxclutil.c"
+					RelativePath="..\base\gxclutil.c"
 					>
 				</File>
 				<File
-					RelativePath="base\gxclzlib.c"
+					RelativePath="..\base\gxclzlib.c"
 					>
 				</File>
 			</Filter>
@@ -4798,15 +4798,15 @@
 			Name="base (.rc)"
 			>
 			<File
-				RelativePath="base\gspmdrv.rc"
+				RelativePath="..\base\gspmdrv.rc"
 				>
 			</File>
 			<File
-				RelativePath="base\gswin.rc"
+				RelativePath="..\base\gswin.rc"
 				>
 			</File>
 			<File
-				RelativePath="base\gswin32.rc"
+				RelativePath="..\base\gswin32.rc"
 				>
 			</File>
 		</Filter>
@@ -4814,82 +4814,82 @@
 			Name="contrib"
 			>
 			<File
-				RelativePath="contrib\defs.h"
+				RelativePath="..\contrib\defs.h"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevbjc_.c"
+				RelativePath="..\contrib\gdevbjc_.c"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevbjc_.h"
+				RelativePath="..\contrib\gdevbjc_.h"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevbjca.c"
+				RelativePath="..\contrib\gdevbjca.c"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevcd8.c"
+				RelativePath="..\contrib\gdevcd8.c"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevcd8.h"
+				RelativePath="..\contrib\gdevcd8.h"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevdj9.c"
+				RelativePath="..\contrib\gdevdj9.c"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevgdi.c"
+				RelativePath="..\contrib\gdevgdi.c"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevhl12.c"
+				RelativePath="..\contrib\gdevhl12.c"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevln03.c"
+				RelativePath="..\contrib\gdevln03.c"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevlx32.c"
+				RelativePath="..\contrib\gdevlx32.c"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevlx50.c"
+				RelativePath="..\contrib\gdevlx50.c"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevlx7.c"
+				RelativePath="..\contrib\gdevlx7.c"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevmd2k.c"
+				RelativePath="..\contrib\gdevmd2k.c"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevop4w.c"
+				RelativePath="..\contrib\gdevop4w.c"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gdevxes.c"
+				RelativePath="..\contrib\gdevxes.c"
 				>
 			</File>
 			<File
-				RelativePath="contrib\gomni.c"
+				RelativePath="..\contrib\gomni.c"
 				>
 			</File>
 			<Filter
 				Name="eplaser"
 				>
 				<File
-					RelativePath="contrib\eplaser\gdevescv.c"
+					RelativePath="..\contrib\eplaser\gdevescv.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\eplaser\gdevescv.h"
+					RelativePath="..\contrib\eplaser\gdevescv.h"
 					>
 				</File>
 			</Filter>
@@ -4897,71 +4897,71 @@
 				Name="japanese"
 				>
 				<File
-					RelativePath="contrib\japanese\dviprlib.c"
+					RelativePath="..\contrib\japanese\dviprlib.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\dviprlib.h"
+					RelativePath="..\contrib\japanese\dviprlib.h"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdev10v.c"
+					RelativePath="..\contrib\japanese\gdev10v.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdevalps.c"
+					RelativePath="..\contrib\japanese\gdevalps.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdevdmpr.c"
+					RelativePath="..\contrib\japanese\gdevdmpr.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdevespg.c"
+					RelativePath="..\contrib\japanese\gdevespg.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdevfmlbp.c"
+					RelativePath="..\contrib\japanese\gdevfmlbp.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdevfmpr.c"
+					RelativePath="..\contrib\japanese\gdevfmpr.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdevj100.c"
+					RelativePath="..\contrib\japanese\gdevj100.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdevlbp3.c"
+					RelativePath="..\contrib\japanese\gdevlbp3.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdevmag.c"
+					RelativePath="..\contrib\japanese\gdevmag.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdevmjc.c"
+					RelativePath="..\contrib\japanese\gdevmjc.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdevmjc.h"
+					RelativePath="..\contrib\japanese\gdevmjc.h"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdevml6.c"
+					RelativePath="..\contrib\japanese\gdevml6.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdevnpdl.c"
+					RelativePath="..\contrib\japanese\gdevnpdl.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdevp201.c"
+					RelativePath="..\contrib\japanese\gdevp201.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\japanese\gdevrpdl.c"
+					RelativePath="..\contrib\japanese\gdevrpdl.c"
 					>
 				</File>
 			</Filter>
@@ -4969,27 +4969,27 @@
 				Name="lips4"
 				>
 				<File
-					RelativePath="contrib\lips4\gdevl4r.c"
+					RelativePath="..\contrib\lips4\gdevl4r.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\lips4\gdevl4v.c"
+					RelativePath="..\contrib\lips4\gdevl4v.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\lips4\gdevlips.c"
+					RelativePath="..\contrib\lips4\gdevlips.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\lips4\gdevlips.h"
+					RelativePath="..\contrib\lips4\gdevlips.h"
 					>
 				</File>
 				<File
-					RelativePath="contrib\lips4\gdevlprn.c"
+					RelativePath="..\contrib\lips4\gdevlprn.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\lips4\gdevlprn.h"
+					RelativePath="..\contrib\lips4\gdevlprn.h"
 					>
 				</File>
 			</Filter>
@@ -4997,19 +4997,19 @@
 				Name="opvp"
 				>
 				<File
-					RelativePath="contrib\opvp\gdevopvp.c"
+					RelativePath="..\contrib\opvp\gdevopvp.c"
 					>
 				</File>
 				<File
-					RelativePath="contrib\opvp\opvp.h"
+					RelativePath="..\contrib\opvp\opvp.h"
 					>
 				</File>
 				<File
-					RelativePath="contrib\opvp\opvp_0_2_0.h"
+					RelativePath="..\contrib\opvp\opvp_0_2_0.h"
 					>
 				</File>
 				<File
-					RelativePath="contrib\opvp\opvp_common.h"
+					RelativePath="..\contrib\opvp\opvp_common.h"
 					>
 				</File>
 			</Filter>
@@ -5017,7 +5017,7 @@
 				Name="pscolor"
 				>
 				<File
-					RelativePath="contrib\pscolor\test.c"
+					RelativePath="..\contrib\pscolor\test.c"
 					>
 				</File>
 			</Filter>
@@ -5028,39 +5028,39 @@
 					Name="eprn"
 					>
 					<File
-						RelativePath="contrib\pcl3\eprn\eprnfs.c"
+						RelativePath="..\contrib\pcl3\eprn\eprnfs.c"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\eprn\eprnparm.c"
+						RelativePath="..\contrib\pcl3\eprn\eprnparm.c"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\eprn\eprnrend.c"
+						RelativePath="..\contrib\pcl3\eprn\eprnrend.c"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\eprn\gdeveprn.c"
+						RelativePath="..\contrib\pcl3\eprn\gdeveprn.c"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\eprn\gdeveprn.h"
+						RelativePath="..\contrib\pcl3\eprn\gdeveprn.h"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\eprn\mediasize.c"
+						RelativePath="..\contrib\pcl3\eprn\mediasize.c"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\eprn\mediasize.h"
+						RelativePath="..\contrib\pcl3\eprn\mediasize.h"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\eprn\pagecount.c"
+						RelativePath="..\contrib\pcl3\eprn\pagecount.c"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\eprn\pagecount.h"
+						RelativePath="..\contrib\pcl3\eprn\pagecount.h"
 						>
 					</File>
 				</Filter>
@@ -5068,47 +5068,47 @@
 					Name="src"
 					>
 					<File
-						RelativePath="contrib\pcl3\src\gdevpcl3.c"
+						RelativePath="..\contrib\pcl3\src\gdevpcl3.c"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\src\pcl3opts.c"
+						RelativePath="..\contrib\pcl3\src\pcl3opts.c"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\src\pclcap.c"
+						RelativePath="..\contrib\pcl3\src\pclcap.c"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\src\pclcap.h"
+						RelativePath="..\contrib\pcl3\src\pclcap.h"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\src\pclcomp.c"
+						RelativePath="..\contrib\pcl3\src\pclcomp.c"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\src\pclgen.c"
+						RelativePath="..\contrib\pcl3\src\pclgen.c"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\src\pclgen.h"
+						RelativePath="..\contrib\pcl3\src\pclgen.h"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\src\pclscan.c"
+						RelativePath="..\contrib\pcl3\src\pclscan.c"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\src\pclscan.h"
+						RelativePath="..\contrib\pcl3\src\pclscan.h"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\src\pclsize.c"
+						RelativePath="..\contrib\pcl3\src\pclsize.c"
 						>
 					</File>
 					<File
-						RelativePath="contrib\pcl3\src\pclsize.h"
+						RelativePath="..\contrib\pcl3\src\pclsize.h"
 						>
 					</File>
 				</Filter>
@@ -5118,11 +5118,11 @@
 			Name="cups"
 			>
 			<File
-				RelativePath="cups\gdevcups.c"
+				RelativePath="..\cups\gdevcups.c"
 				>
 			</File>
 			<File
-				RelativePath="cups\pdftoraster.c"
+				RelativePath="..\cups\pdftoraster.c"
 				>
 			</File>
 			<Filter
@@ -6724,117 +6724,117 @@
 			Name="expat"
 			>
 			<File
-				RelativePath="expat\lib\amigaconfig.h"
+				RelativePath="..\expat\lib\amigaconfig.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\ascii.h"
+				RelativePath="..\expat\lib\ascii.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\asciitab.h"
+				RelativePath="..\expat\lib\asciitab.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\expat.h"
+				RelativePath="..\expat\lib\expat.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\expat_external.h"
+				RelativePath="..\expat\lib\expat_external.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\iasciitab.h"
+				RelativePath="..\expat\lib\iasciitab.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\internal.h"
+				RelativePath="..\expat\lib\internal.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\latin1tab.h"
+				RelativePath="..\expat\lib\latin1tab.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\macconfig.h"
+				RelativePath="..\expat\lib\macconfig.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\nametab.h"
+				RelativePath="..\expat\lib\nametab.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\utf8tab.h"
+				RelativePath="..\expat\lib\utf8tab.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\winconfig.h"
+				RelativePath="..\expat\lib\winconfig.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\xmlparse.c"
+				RelativePath="..\expat\lib\xmlparse.c"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\xmlrole.c"
+				RelativePath="..\expat\lib\xmlrole.c"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\xmlrole.h"
+				RelativePath="..\expat\lib\xmlrole.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\xmltok.c"
+				RelativePath="..\expat\lib\xmltok.c"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\xmltok.h"
+				RelativePath="..\expat\lib\xmltok.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\xmltok_impl.c"
+				RelativePath="..\expat\lib\xmltok_impl.c"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\xmltok_impl.h"
+				RelativePath="..\expat\lib\xmltok_impl.h"
 				>
 			</File>
 			<File
-				RelativePath="expat\lib\xmltok_ns.c"
+				RelativePath="..\expat\lib\xmltok_ns.c"
 				>
 			</File>
 			<Filter
 				Name="tests"
 				>
 				<File
-					RelativePath="expat\tests\chardata.c"
+					RelativePath="..\expat\tests\chardata.c"
 					>
 				</File>
 				<File
-					RelativePath="expat\tests\chardata.h"
+					RelativePath="..\expat\tests\chardata.h"
 					>
 				</File>
 				<File
-					RelativePath="expat\tests\minicheck.c"
+					RelativePath="..\expat\tests\minicheck.c"
 					>
 				</File>
 				<File
-					RelativePath="expat\tests\minicheck.h"
+					RelativePath="..\expat\tests\minicheck.h"
 					>
 				</File>
 				<File
-					RelativePath="expat\tests\runtests.c"
+					RelativePath="..\expat\tests\runtests.c"
 					>
 				</File>
 				<File
-					RelativePath="expat\tests\runtestspp.cpp"
+					RelativePath="..\expat\tests\runtestspp.cpp"
 					>
 				</File>
 				<Filter
 					Name="benchmark"
 					>
 					<File
-						RelativePath="expat\tests\benchmark\benchmark.c"
+						RelativePath="..\expat\tests\benchmark\benchmark.c"
 						>
 					</File>
 				</Filter>
@@ -6844,47 +6844,47 @@
 			Name="ijs"
 			>
 			<File
-				RelativePath="ijs\ijs.c"
+				RelativePath="..\ijs\ijs.c"
 				>
 			</File>
 			<File
-				RelativePath="ijs\ijs.h"
+				RelativePath="..\ijs\ijs.h"
 				>
 			</File>
 			<File
-				RelativePath="ijs\ijs_client.c"
+				RelativePath="..\ijs\ijs_client.c"
 				>
 			</File>
 			<File
-				RelativePath="ijs\ijs_client.h"
+				RelativePath="..\ijs\ijs_client.h"
 				>
 			</File>
 			<File
-				RelativePath="ijs\ijs_client_example.c"
+				RelativePath="..\ijs\ijs_client_example.c"
 				>
 			</File>
 			<File
-				RelativePath="ijs\ijs_exec_unix.c"
+				RelativePath="..\ijs\ijs_exec_unix.c"
 				>
 			</File>
 			<File
-				RelativePath="ijs\ijs_exec_win.c"
+				RelativePath="..\ijs\ijs_exec_win.c"
 				>
 			</File>
 			<File
-				RelativePath="ijs\ijs_server.c"
+				RelativePath="..\ijs\ijs_server.c"
 				>
 			</File>
 			<File
-				RelativePath="ijs\ijs_server.h"
+				RelativePath="..\ijs\ijs_server.h"
 				>
 			</File>
 			<File
-				RelativePath="ijs\ijs_server_example.c"
+				RelativePath="..\ijs\ijs_server_example.c"
 				>
 			</File>
 			<File
-				RelativePath="ijs\unistd_.h"
+				RelativePath="..\ijs\unistd_.h"
 				>
 			</File>
 		</Filter>
@@ -7228,167 +7228,167 @@
 			Name="jbig2dec"
 			>
 			<File
-				RelativePath="jbig2dec\config.h"
+				RelativePath="..\jbig2dec\config.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\config_types.h"
+				RelativePath="..\jbig2dec\config_types.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\config_win32.h"
+				RelativePath="..\jbig2dec\config_win32.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\getopt.c"
+				RelativePath="..\jbig2dec\getopt.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\getopt.h"
+				RelativePath="..\jbig2dec\getopt.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\getopt1.c"
+				RelativePath="..\jbig2dec\getopt1.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2.c"
+				RelativePath="..\jbig2dec\jbig2.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2.h"
+				RelativePath="..\jbig2dec\jbig2.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_arith.c"
+				RelativePath="..\jbig2dec\jbig2_arith.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_arith.h"
+				RelativePath="..\jbig2dec\jbig2_arith.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_arith_iaid.c"
+				RelativePath="..\jbig2dec\jbig2_arith_iaid.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_arith_iaid.h"
+				RelativePath="..\jbig2dec\jbig2_arith_iaid.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_arith_int.c"
+				RelativePath="..\jbig2dec\jbig2_arith_int.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_arith_int.h"
+				RelativePath="..\jbig2dec\jbig2_arith_int.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_generic.c"
+				RelativePath="..\jbig2dec\jbig2_generic.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_generic.h"
+				RelativePath="..\jbig2dec\jbig2_generic.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_huffman.c"
+				RelativePath="..\jbig2dec\jbig2_huffman.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_huffman.h"
+				RelativePath="..\jbig2dec\jbig2_huffman.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_hufftab.h"
+				RelativePath="..\jbig2dec\jbig2_hufftab.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_image.c"
+				RelativePath="..\jbig2dec\jbig2_image.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_image.h"
+				RelativePath="..\jbig2dec\jbig2_image.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_image_pbm.c"
+				RelativePath="..\jbig2dec\jbig2_image_pbm.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_image_png.c"
+				RelativePath="..\jbig2dec\jbig2_image_png.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_metadata.c"
+				RelativePath="..\jbig2dec\jbig2_metadata.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_metadata.h"
+				RelativePath="..\jbig2dec\jbig2_metadata.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_mmr.c"
+				RelativePath="..\jbig2dec\jbig2_mmr.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_mmr.h"
+				RelativePath="..\jbig2dec\jbig2_mmr.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_page.c"
+				RelativePath="..\jbig2dec\jbig2_page.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_priv.h"
+				RelativePath="..\jbig2dec\jbig2_priv.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_refinement.c"
+				RelativePath="..\jbig2dec\jbig2_refinement.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_segment.c"
+				RelativePath="..\jbig2dec\jbig2_segment.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_symbol_dict.c"
+				RelativePath="..\jbig2dec\jbig2_symbol_dict.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_symbol_dict.h"
+				RelativePath="..\jbig2dec\jbig2_symbol_dict.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_text.c"
+				RelativePath="..\jbig2dec\jbig2_text.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2_text.h"
+				RelativePath="..\jbig2dec\jbig2_text.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\jbig2dec.c"
+				RelativePath="..\jbig2dec\jbig2dec.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\memcmp.c"
+				RelativePath="..\jbig2dec\memcmp.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\os_types.h"
+				RelativePath="..\jbig2dec\os_types.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\sha1.c"
+				RelativePath="..\jbig2dec\sha1.c"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\sha1.h"
+				RelativePath="..\jbig2dec\sha1.h"
 				>
 			</File>
 			<File
-				RelativePath="jbig2dec\snprintf.c"
+				RelativePath="..\jbig2dec\snprintf.c"
 				>
 			</File>
 		</Filter>
@@ -7396,347 +7396,347 @@
 			Name="jpeg"
 			>
 			<File
-				RelativePath="jpeg\ansi2knr.c"
+				RelativePath="..\jpeg\ansi2knr.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\cderror.h"
+				RelativePath="..\jpeg\cderror.h"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\cdjpeg.c"
+				RelativePath="..\jpeg\cdjpeg.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\cdjpeg.h"
+				RelativePath="..\jpeg\cdjpeg.h"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\cjpeg.c"
+				RelativePath="..\jpeg\cjpeg.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\ckconfig.c"
+				RelativePath="..\jpeg\ckconfig.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\djpeg.c"
+				RelativePath="..\jpeg\djpeg.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\example.c"
+				RelativePath="..\jpeg\example.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jcapimin.c"
+				RelativePath="..\jpeg\jcapimin.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jcapistd.c"
+				RelativePath="..\jpeg\jcapistd.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jccoefct.c"
+				RelativePath="..\jpeg\jccoefct.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jccolor.c"
+				RelativePath="..\jpeg\jccolor.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jcdctmgr.c"
+				RelativePath="..\jpeg\jcdctmgr.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jchuff.c"
+				RelativePath="..\jpeg\jchuff.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jchuff.h"
+				RelativePath="..\jpeg\jchuff.h"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jcinit.c"
+				RelativePath="..\jpeg\jcinit.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jcmainct.c"
+				RelativePath="..\jpeg\jcmainct.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jcmarker.c"
+				RelativePath="..\jpeg\jcmarker.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jcmaster.c"
+				RelativePath="..\jpeg\jcmaster.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jcomapi.c"
+				RelativePath="..\jpeg\jcomapi.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jcparam.c"
+				RelativePath="..\jpeg\jcparam.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jcphuff.c"
+				RelativePath="..\jpeg\jcphuff.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jcprepct.c"
+				RelativePath="..\jpeg\jcprepct.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jcsample.c"
+				RelativePath="..\jpeg\jcsample.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jctrans.c"
+				RelativePath="..\jpeg\jctrans.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdapimin.c"
+				RelativePath="..\jpeg\jdapimin.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdapistd.c"
+				RelativePath="..\jpeg\jdapistd.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdatadst.c"
+				RelativePath="..\jpeg\jdatadst.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdatasrc.c"
+				RelativePath="..\jpeg\jdatasrc.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdcoefct.c"
+				RelativePath="..\jpeg\jdcoefct.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdcolor.c"
+				RelativePath="..\jpeg\jdcolor.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdct.h"
+				RelativePath="..\jpeg\jdct.h"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jddctmgr.c"
+				RelativePath="..\jpeg\jddctmgr.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdhuff.c"
+				RelativePath="..\jpeg\jdhuff.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdhuff.h"
+				RelativePath="..\jpeg\jdhuff.h"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdinput.c"
+				RelativePath="..\jpeg\jdinput.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdmainct.c"
+				RelativePath="..\jpeg\jdmainct.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdmarker.c"
+				RelativePath="..\jpeg\jdmarker.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdmaster.c"
+				RelativePath="..\jpeg\jdmaster.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdmerge.c"
+				RelativePath="..\jpeg\jdmerge.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdphuff.c"
+				RelativePath="..\jpeg\jdphuff.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdpostct.c"
+				RelativePath="..\jpeg\jdpostct.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdsample.c"
+				RelativePath="..\jpeg\jdsample.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jdtrans.c"
+				RelativePath="..\jpeg\jdtrans.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jerror.c"
+				RelativePath="..\jpeg\jerror.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jerror.h"
+				RelativePath="..\jpeg\jerror.h"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jfdctflt.c"
+				RelativePath="..\jpeg\jfdctflt.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jfdctfst.c"
+				RelativePath="..\jpeg\jfdctfst.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jfdctint.c"
+				RelativePath="..\jpeg\jfdctint.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jidctflt.c"
+				RelativePath="..\jpeg\jidctflt.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jidctfst.c"
+				RelativePath="..\jpeg\jidctfst.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jidctint.c"
+				RelativePath="..\jpeg\jidctint.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jidctred.c"
+				RelativePath="..\jpeg\jidctred.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jinclude.h"
+				RelativePath="..\jpeg\jinclude.h"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jmemansi.c"
+				RelativePath="..\jpeg\jmemansi.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jmemdos.c"
+				RelativePath="..\jpeg\jmemdos.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jmemdosa.asm"
+				RelativePath="..\jpeg\jmemdosa.asm"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jmemmac.c"
+				RelativePath="..\jpeg\jmemmac.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jmemmgr.c"
+				RelativePath="..\jpeg\jmemmgr.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jmemname.c"
+				RelativePath="..\jpeg\jmemname.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jmemnobs.c"
+				RelativePath="..\jpeg\jmemnobs.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jmemsys.h"
+				RelativePath="..\jpeg\jmemsys.h"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jmorecfg.h"
+				RelativePath="..\jpeg\jmorecfg.h"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jpegint.h"
+				RelativePath="..\jpeg\jpegint.h"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jpeglib.h"
+				RelativePath="..\jpeg\jpeglib.h"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jpegtran.c"
+				RelativePath="..\jpeg\jpegtran.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jquant1.c"
+				RelativePath="..\jpeg\jquant1.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jquant2.c"
+				RelativePath="..\jpeg\jquant2.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jutils.c"
+				RelativePath="..\jpeg\jutils.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\jversion.h"
+				RelativePath="..\jpeg\jversion.h"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\rdbmp.c"
+				RelativePath="..\jpeg\rdbmp.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\rdcolmap.c"
+				RelativePath="..\jpeg\rdcolmap.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\rdgif.c"
+				RelativePath="..\jpeg\rdgif.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\rdjpgcom.c"
+				RelativePath="..\jpeg\rdjpgcom.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\rdppm.c"
+				RelativePath="..\jpeg\rdppm.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\rdrle.c"
+				RelativePath="..\jpeg\rdrle.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\rdswitch.c"
+				RelativePath="..\jpeg\rdswitch.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\rdtarga.c"
+				RelativePath="..\jpeg\rdtarga.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\transupp.c"
+				RelativePath="..\jpeg\transupp.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\transupp.h"
+				RelativePath="..\jpeg\transupp.h"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\wrbmp.c"
+				RelativePath="..\jpeg\wrbmp.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\wrgif.c"
+				RelativePath="..\jpeg\wrgif.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\wrjpgcom.c"
+				RelativePath="..\jpeg\wrjpgcom.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\wrppm.c"
+				RelativePath="..\jpeg\wrppm.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\wrrle.c"
+				RelativePath="..\jpeg\wrrle.c"
 				>
 			</File>
 			<File
-				RelativePath="jpeg\wrtarga.c"
+				RelativePath="..\jpeg\wrtarga.c"
 				>
 			</File>
 		</Filter>
@@ -7960,87 +7960,87 @@
 			Name="libpng"
 			>
 			<File
-				RelativePath="libpng\example.c"
+				RelativePath="..\libpng\example.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\png.c"
+				RelativePath="..\libpng\png.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\png.h"
+				RelativePath="..\libpng\png.h"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngconf.h"
+				RelativePath="..\libpng\pngconf.h"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngerror.c"
+				RelativePath="..\libpng\pngerror.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pnggccrd.c"
+				RelativePath="..\libpng\pnggccrd.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngget.c"
+				RelativePath="..\libpng\pngget.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngmem.c"
+				RelativePath="..\libpng\pngmem.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngpread.c"
+				RelativePath="..\libpng\pngpread.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngread.c"
+				RelativePath="..\libpng\pngread.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngrio.c"
+				RelativePath="..\libpng\pngrio.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngrtran.c"
+				RelativePath="..\libpng\pngrtran.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngrutil.c"
+				RelativePath="..\libpng\pngrutil.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngset.c"
+				RelativePath="..\libpng\pngset.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngtest.c"
+				RelativePath="..\libpng\pngtest.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngtrans.c"
+				RelativePath="..\libpng\pngtrans.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngvcrd.c"
+				RelativePath="..\libpng\pngvcrd.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngwio.c"
+				RelativePath="..\libpng\pngwio.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngwrite.c"
+				RelativePath="..\libpng\pngwrite.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngwtran.c"
+				RelativePath="..\libpng\pngwtran.c"
 				>
 			</File>
 			<File
-				RelativePath="libpng\pngwutil.c"
+				RelativePath="..\libpng\pngwutil.c"
 				>
 			</File>
 		</Filter>
@@ -8292,691 +8292,691 @@
 			Name="psi"
 			>
 			<File
-				RelativePath="psi\dmmain.c"
+				RelativePath="..\psi\dmmain.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\dpmain.c"
+				RelativePath="..\psi\dpmain.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\dscparse.c"
+				RelativePath="..\psi\dscparse.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwdll.c"
+				RelativePath="..\psi\dwdll.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwimg.c"
+				RelativePath="..\psi\dwimg.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwinst.cpp"
+				RelativePath="..\psi\dwinst.cpp"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwmain.c"
+				RelativePath="..\psi\dwmain.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwmainc.c"
+				RelativePath="..\psi\dwmainc.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwnodll.c"
+				RelativePath="..\psi\dwnodll.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwreg.c"
+				RelativePath="..\psi\dwreg.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwsetup.cpp"
+				RelativePath="..\psi\dwsetup.cpp"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwtext.c"
+				RelativePath="..\psi\dwtext.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwtrace.c"
+				RelativePath="..\psi\dwtrace.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwuninst.cpp"
+				RelativePath="..\psi\dwuninst.cpp"
 				>
 			</File>
 			<File
-				RelativePath="psi\dxmain.c"
+				RelativePath="..\psi\dxmain.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\dxmainc.c"
+				RelativePath="..\psi\dxmainc.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\fapi_ft.c"
+				RelativePath="..\psi\fapi_ft.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\fapiufst.c"
+				RelativePath="..\psi\fapiufst.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\gs.c"
+				RelativePath="..\psi\gs.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\gsdll.c"
+				RelativePath="..\psi\gsdll.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\gserver.c"
+				RelativePath="..\psi\gserver.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\ialloc.c"
+				RelativePath="..\psi\ialloc.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\iapi.c"
+				RelativePath="..\psi\iapi.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\ibnum.c"
+				RelativePath="..\psi\ibnum.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\iconf.c"
+				RelativePath="..\psi\iconf.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\icontext.c"
+				RelativePath="..\psi\icontext.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\idebug.c"
+				RelativePath="..\psi\idebug.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\idict.c"
+				RelativePath="..\psi\idict.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\idisp.c"
+				RelativePath="..\psi\idisp.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\idparam.c"
+				RelativePath="..\psi\idparam.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\idstack.c"
+				RelativePath="..\psi\idstack.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\igc.c"
+				RelativePath="..\psi\igc.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\igcref.c"
+				RelativePath="..\psi\igcref.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\igcstr.c"
+				RelativePath="..\psi\igcstr.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\iinit.c"
+				RelativePath="..\psi\iinit.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\ilocate.c"
+				RelativePath="..\psi\ilocate.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\imain.c"
+				RelativePath="..\psi\imain.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\imainarg.c"
+				RelativePath="..\psi\imainarg.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\iname.c"
+				RelativePath="..\psi\iname.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\inobtokn.c"
+				RelativePath="..\psi\inobtokn.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\inouparm.c"
+				RelativePath="..\psi\inouparm.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\interp.c"
+				RelativePath="..\psi\interp.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\iparam.c"
+				RelativePath="..\psi\iparam.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\iplugin.c"
+				RelativePath="..\psi\iplugin.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\ireclaim.c"
+				RelativePath="..\psi\ireclaim.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\isave.c"
+				RelativePath="..\psi\isave.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\iscan.c"
+				RelativePath="..\psi\iscan.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\iscanbin.c"
+				RelativePath="..\psi\iscanbin.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\iscannum.c"
+				RelativePath="..\psi\iscannum.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\istack.c"
+				RelativePath="..\psi\istack.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\iutil.c"
+				RelativePath="..\psi\iutil.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\iutil2.c"
+				RelativePath="..\psi\iutil2.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\sfilter1.c"
+				RelativePath="..\psi\sfilter1.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\wrfont.c"
+				RelativePath="..\psi\wrfont.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\write_t1.c"
+				RelativePath="..\psi\write_t1.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\write_t2.c"
+				RelativePath="..\psi\write_t2.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zalg.c"
+				RelativePath="..\psi\zalg.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zarith.c"
+				RelativePath="..\psi\zarith.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zarray.c"
+				RelativePath="..\psi\zarray.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zbfont.c"
+				RelativePath="..\psi\zbfont.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zbseq.c"
+				RelativePath="..\psi\zbseq.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcfont.c"
+				RelativePath="..\psi\zcfont.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zchar.c"
+				RelativePath="..\psi\zchar.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zchar1.c"
+				RelativePath="..\psi\zchar1.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zchar2.c"
+				RelativePath="..\psi\zchar2.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zchar32.c"
+				RelativePath="..\psi\zchar32.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zchar42.c"
+				RelativePath="..\psi\zchar42.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcharout.c"
+				RelativePath="..\psi\zcharout.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcharx.c"
+				RelativePath="..\psi\zcharx.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcid.c"
+				RelativePath="..\psi\zcid.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcidtest.c"
+				RelativePath="..\psi\zcidtest.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcie.c"
+				RelativePath="..\psi\zcie.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcolor.c"
+				RelativePath="..\psi\zcolor.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcolor1.c"
+				RelativePath="..\psi\zcolor1.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcolor2.c"
+				RelativePath="..\psi\zcolor2.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcolor3.c"
+				RelativePath="..\psi\zcolor3.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcontext.c"
+				RelativePath="..\psi\zcontext.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcontrol.c"
+				RelativePath="..\psi\zcontrol.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcrd.c"
+				RelativePath="..\psi\zcrd.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcsdevn.c"
+				RelativePath="..\psi\zcsdevn.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcsindex.c"
+				RelativePath="..\psi\zcsindex.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcspixel.c"
+				RelativePath="..\psi\zcspixel.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcssepr.c"
+				RelativePath="..\psi\zcssepr.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zdevcal.c"
+				RelativePath="..\psi\zdevcal.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zdevice.c"
+				RelativePath="..\psi\zdevice.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zdevice2.c"
+				RelativePath="..\psi\zdevice2.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zdfilter.c"
+				RelativePath="..\psi\zdfilter.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zdict.c"
+				RelativePath="..\psi\zdict.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zdosio.c"
+				RelativePath="..\psi\zdosio.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zdouble.c"
+				RelativePath="..\psi\zdouble.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zdpnext.c"
+				RelativePath="..\psi\zdpnext.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zdps.c"
+				RelativePath="..\psi\zdps.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zdps1.c"
+				RelativePath="..\psi\zdps1.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zdscpars.c"
+				RelativePath="..\psi\zdscpars.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfaes.c"
+				RelativePath="..\psi\zfaes.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfapi.c"
+				RelativePath="..\psi\zfapi.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfarc4.c"
+				RelativePath="..\psi\zfarc4.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfbcp.c"
+				RelativePath="..\psi\zfbcp.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfcid.c"
+				RelativePath="..\psi\zfcid.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfcid0.c"
+				RelativePath="..\psi\zfcid0.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfcid1.c"
+				RelativePath="..\psi\zfcid1.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfcmap.c"
+				RelativePath="..\psi\zfcmap.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfdctd.c"
+				RelativePath="..\psi\zfdctd.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfdcte.c"
+				RelativePath="..\psi\zfdcte.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfdecode.c"
+				RelativePath="..\psi\zfdecode.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfile.c"
+				RelativePath="..\psi\zfile.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfile1.c"
+				RelativePath="..\psi\zfile1.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfileio.c"
+				RelativePath="..\psi\zfileio.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfilter.c"
+				RelativePath="..\psi\zfilter.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfilter2.c"
+				RelativePath="..\psi\zfilter2.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfilterx.c"
+				RelativePath="..\psi\zfilterx.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfimscale.c"
+				RelativePath="..\psi\zfimscale.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfjbig2.c"
+				RelativePath="..\psi\zfjbig2.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfjpx.c"
+				RelativePath="..\psi\zfjpx.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfmd5.c"
+				RelativePath="..\psi\zfmd5.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfont.c"
+				RelativePath="..\psi\zfont.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfont0.c"
+				RelativePath="..\psi\zfont0.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfont1.c"
+				RelativePath="..\psi\zfont1.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfont2.c"
+				RelativePath="..\psi\zfont2.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfont32.c"
+				RelativePath="..\psi\zfont32.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfont42.c"
+				RelativePath="..\psi\zfont42.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfontenum.c"
+				RelativePath="..\psi\zfontenum.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfproc.c"
+				RelativePath="..\psi\zfproc.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfrsd.c"
+				RelativePath="..\psi\zfrsd.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfsample.c"
+				RelativePath="..\psi\zfsample.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfunc.c"
+				RelativePath="..\psi\zfunc.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfunc0.c"
+				RelativePath="..\psi\zfunc0.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfunc3.c"
+				RelativePath="..\psi\zfunc3.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfunc4.c"
+				RelativePath="..\psi\zfunc4.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfzlib.c"
+				RelativePath="..\psi\zfzlib.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zgeneric.c"
+				RelativePath="..\psi\zgeneric.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zgstate.c"
+				RelativePath="..\psi\zgstate.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zhsb.c"
+				RelativePath="..\psi\zhsb.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zht.c"
+				RelativePath="..\psi\zht.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zht1.c"
+				RelativePath="..\psi\zht1.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zht2.c"
+				RelativePath="..\psi\zht2.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zicc.c"
+				RelativePath="..\psi\zicc.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zimage.c"
+				RelativePath="..\psi\zimage.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zimage2.c"
+				RelativePath="..\psi\zimage2.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zimage3.c"
+				RelativePath="..\psi\zimage3.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\ziodev.c"
+				RelativePath="..\psi\ziodev.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\ziodev2.c"
+				RelativePath="..\psi\ziodev2.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\ziodevs.c"
+				RelativePath="..\psi\ziodevs.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\ziodevsc.c"
+				RelativePath="..\psi\ziodevsc.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zmath.c"
+				RelativePath="..\psi\zmath.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zmatrix.c"
+				RelativePath="..\psi\zmatrix.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zmedia2.c"
+				RelativePath="..\psi\zmedia2.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zmisc.c"
+				RelativePath="..\psi\zmisc.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zmisc1.c"
+				RelativePath="..\psi\zmisc1.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zmisc2.c"
+				RelativePath="..\psi\zmisc2.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zmisc3.c"
+				RelativePath="..\psi\zmisc3.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zncdummy.c"
+				RelativePath="..\psi\zncdummy.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zpacked.c"
+				RelativePath="..\psi\zpacked.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zpaint.c"
+				RelativePath="..\psi\zpaint.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zpath.c"
+				RelativePath="..\psi\zpath.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zpath1.c"
+				RelativePath="..\psi\zpath1.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zpcolor.c"
+				RelativePath="..\psi\zpcolor.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zpdfops.c"
+				RelativePath="..\psi\zpdfops.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zrelbit.c"
+				RelativePath="..\psi\zrelbit.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zrop.c"
+				RelativePath="..\psi\zrop.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zshade.c"
+				RelativePath="..\psi\zshade.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zstack.c"
+				RelativePath="..\psi\zstack.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zstring.c"
+				RelativePath="..\psi\zstring.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zsysvm.c"
+				RelativePath="..\psi\zsysvm.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\ztoken.c"
+				RelativePath="..\psi\ztoken.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\ztrans.c"
+				RelativePath="..\psi\ztrans.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\ztrap.c"
+				RelativePath="..\psi\ztrap.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\ztype.c"
+				RelativePath="..\psi\ztype.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zupath.c"
+				RelativePath="..\psi\zupath.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zusparam.c"
+				RelativePath="..\psi\zusparam.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zvmem.c"
+				RelativePath="..\psi\zvmem.c"
 				>
 			</File>
 			<File
-				RelativePath="psi\zvmem2.c"
+				RelativePath="..\psi\zvmem2.c"
 				>
 			</File>
 		</Filter>
@@ -8984,467 +8984,467 @@
 			Name="psi (.h)"
 			>
 			<File
-				RelativePath="psi\bfont.h"
+				RelativePath="..\psi\bfont.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\btoken.h"
+				RelativePath="..\psi\btoken.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\dscparse.h"
+				RelativePath="..\psi\dscparse.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\dstack.h"
+				RelativePath="..\psi\dstack.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwdll.h"
+				RelativePath="..\psi\dwdll.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwimg.h"
+				RelativePath="..\psi\dwimg.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwinst.h"
+				RelativePath="..\psi\dwinst.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwreg.h"
+				RelativePath="..\psi\dwreg.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwres.h"
+				RelativePath="..\psi\dwres.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwsetup.h"
+				RelativePath="..\psi\dwsetup.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwtext.h"
+				RelativePath="..\psi\dwtext.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwtrace.h"
+				RelativePath="..\psi\dwtrace.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwuninst.h"
+				RelativePath="..\psi\dwuninst.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\estack.h"
+				RelativePath="..\psi\estack.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\files.h"
+				RelativePath="..\psi\files.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ghost.h"
+				RelativePath="..\psi\ghost.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ialloc.h"
+				RelativePath="..\psi\ialloc.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iapi.h"
+				RelativePath="..\psi\iapi.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iastate.h"
+				RelativePath="..\psi\iastate.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iastruct.h"
+				RelativePath="..\psi\iastruct.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ibnum.h"
+				RelativePath="..\psi\ibnum.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ichar.h"
+				RelativePath="..\psi\ichar.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ichar1.h"
+				RelativePath="..\psi\ichar1.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\icharout.h"
+				RelativePath="..\psi\icharout.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\icid.h"
+				RelativePath="..\psi\icid.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\icie.h"
+				RelativePath="..\psi\icie.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\icolor.h"
+				RelativePath="..\psi\icolor.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iconf.h"
+				RelativePath="..\psi\iconf.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\icontext.h"
+				RelativePath="..\psi\icontext.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\icremap.h"
+				RelativePath="..\psi\icremap.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\icsmap.h"
+				RelativePath="..\psi\icsmap.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\icstate.h"
+				RelativePath="..\psi\icstate.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iddict.h"
+				RelativePath="..\psi\iddict.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iddstack.h"
+				RelativePath="..\psi\iddstack.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\idebug.h"
+				RelativePath="..\psi\idebug.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\idict.h"
+				RelativePath="..\psi\idict.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\idictdef.h"
+				RelativePath="..\psi\idictdef.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\idicttpl.h"
+				RelativePath="..\psi\idicttpl.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\idisp.h"
+				RelativePath="..\psi\idisp.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\idosave.h"
+				RelativePath="..\psi\idosave.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\idparam.h"
+				RelativePath="..\psi\idparam.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\idsdata.h"
+				RelativePath="..\psi\idsdata.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\idstack.h"
+				RelativePath="..\psi\idstack.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ierrors.h"
+				RelativePath="..\psi\ierrors.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iesdata.h"
+				RelativePath="..\psi\iesdata.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iestack.h"
+				RelativePath="..\psi\iestack.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ifapi.h"
+				RelativePath="..\psi\ifapi.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ifcid.h"
+				RelativePath="..\psi\ifcid.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ifilter.h"
+				RelativePath="..\psi\ifilter.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ifilter2.h"
+				RelativePath="..\psi\ifilter2.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ifont.h"
+				RelativePath="..\psi\ifont.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ifont1.h"
+				RelativePath="..\psi\ifont1.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ifont2.h"
+				RelativePath="..\psi\ifont2.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ifont42.h"
+				RelativePath="..\psi\ifont42.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ifrpred.h"
+				RelativePath="..\psi\ifrpred.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ifunc.h"
+				RelativePath="..\psi\ifunc.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ifwpred.h"
+				RelativePath="..\psi\ifwpred.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\igc.h"
+				RelativePath="..\psi\igc.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\igcstr.h"
+				RelativePath="..\psi\igcstr.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\igstate.h"
+				RelativePath="..\psi\igstate.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iht.h"
+				RelativePath="..\psi\iht.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iimage.h"
+				RelativePath="..\psi\iimage.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iimage2.h"
+				RelativePath="..\psi\iimage2.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iinit.h"
+				RelativePath="..\psi\iinit.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ilevel.h"
+				RelativePath="..\psi\ilevel.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\imain.h"
+				RelativePath="..\psi\imain.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\imainarg.h"
+				RelativePath="..\psi\imainarg.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\imemory.h"
+				RelativePath="..\psi\imemory.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iminst.h"
+				RelativePath="..\psi\iminst.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iname.h"
+				RelativePath="..\psi\iname.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\inamedef.h"
+				RelativePath="..\psi\inamedef.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\inameidx.h"
+				RelativePath="..\psi\inameidx.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\inames.h"
+				RelativePath="..\psi\inames.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\inamestr.h"
+				RelativePath="..\psi\inamestr.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\interp.h"
+				RelativePath="..\psi\interp.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iosdata.h"
+				RelativePath="..\psi\iosdata.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iostack.h"
+				RelativePath="..\psi\iostack.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ipacked.h"
+				RelativePath="..\psi\ipacked.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iparam.h"
+				RelativePath="..\psi\iparam.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iparray.h"
+				RelativePath="..\psi\iparray.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ipcolor.h"
+				RelativePath="..\psi\ipcolor.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iplugin.h"
+				RelativePath="..\psi\iplugin.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iref.h"
+				RelativePath="..\psi\iref.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\isave.h"
+				RelativePath="..\psi\isave.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iscan.h"
+				RelativePath="..\psi\iscan.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iscanbin.h"
+				RelativePath="..\psi\iscanbin.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iscannum.h"
+				RelativePath="..\psi\iscannum.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\isdata.h"
+				RelativePath="..\psi\isdata.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\isstate.h"
+				RelativePath="..\psi\isstate.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\istack.h"
+				RelativePath="..\psi\istack.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\istkparm.h"
+				RelativePath="..\psi\istkparm.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\istream.h"
+				RelativePath="..\psi\istream.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\istruct.h"
+				RelativePath="..\psi\istruct.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\itoken.h"
+				RelativePath="..\psi\itoken.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iutil.h"
+				RelativePath="..\psi\iutil.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\iutil2.h"
+				RelativePath="..\psi\iutil2.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ivmem2.h"
+				RelativePath="..\psi\ivmem2.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ivmspace.h"
+				RelativePath="..\psi\ivmspace.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\main.h"
+				RelativePath="..\psi\main.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\oparc.h"
+				RelativePath="..\psi\oparc.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\opcheck.h"
+				RelativePath="..\psi\opcheck.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\opdef.h"
+				RelativePath="..\psi\opdef.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\oper.h"
+				RelativePath="..\psi\oper.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\opextern.h"
+				RelativePath="..\psi\opextern.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\ostack.h"
+				RelativePath="..\psi\ostack.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\store.h"
+				RelativePath="..\psi\store.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\wrfont.h"
+				RelativePath="..\psi\wrfont.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\write_t1.h"
+				RelativePath="..\psi\write_t1.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\write_t2.h"
+				RelativePath="..\psi\write_t2.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\zchar42.h"
+				RelativePath="..\psi\zchar42.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcie.h"
+				RelativePath="..\psi\zcie.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\zcolor.h"
+				RelativePath="..\psi\zcolor.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfile.h"
+				RelativePath="..\psi\zfile.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\zfunc.h"
+				RelativePath="..\psi\zfunc.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\zht2.h"
+				RelativePath="..\psi\zht2.h"
 				>
 			</File>
 			<File
-				RelativePath="psi\zicc.h"
+				RelativePath="..\psi\zicc.h"
 				>
 			</File>
 		</Filter>
@@ -9452,27 +9452,27 @@
 			Name="psi (.rc)"
 			>
 			<File
-				RelativePath="psi\dwmain.rc"
+				RelativePath="..\psi\dwmain.rc"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwsetup.rc"
+				RelativePath="..\psi\dwsetup.rc"
 				>
 			</File>
 			<File
-				RelativePath="psi\dwuninst.rc"
+				RelativePath="..\psi\dwuninst.rc"
 				>
 			</File>
 			<File
-				RelativePath="psi\gsdll2.rc"
+				RelativePath="..\psi\gsdll2.rc"
 				>
 			</File>
 			<File
-				RelativePath="psi\gsdll32.rc"
+				RelativePath="..\psi\gsdll32.rc"
 				>
 			</File>
 			<File
-				RelativePath="psi\gsos2.rc"
+				RelativePath="..\psi\gsos2.rc"
 				>
 			</File>
 		</Filter>
@@ -9483,239 +9483,239 @@
 				Name="libtiff"
 				>
 				<File
-					RelativePath="tiff\libtiff\mkg3states.c"
+					RelativePath="..\tiff\libtiff\mkg3states.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\t4.h"
+					RelativePath="..\tiff\libtiff\t4.h"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_acorn.c"
+					RelativePath="..\tiff\libtiff\tif_acorn.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_apple.c"
+					RelativePath="..\tiff\libtiff\tif_apple.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_atari.c"
+					RelativePath="..\tiff\libtiff\tif_atari.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_aux.c"
+					RelativePath="..\tiff\libtiff\tif_aux.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_close.c"
+					RelativePath="..\tiff\libtiff\tif_close.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_codec.c"
+					RelativePath="..\tiff\libtiff\tif_codec.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_color.c"
+					RelativePath="..\tiff\libtiff\tif_color.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_compress.c"
+					RelativePath="..\tiff\libtiff\tif_compress.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_config.vc.h"
+					RelativePath="..\tiff\libtiff\tif_config.vc.h"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_config.wince.h"
+					RelativePath="..\tiff\libtiff\tif_config.wince.h"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_dir.c"
+					RelativePath="..\tiff\libtiff\tif_dir.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_dir.h"
+					RelativePath="..\tiff\libtiff\tif_dir.h"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_dirinfo.c"
+					RelativePath="..\tiff\libtiff\tif_dirinfo.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_dirread.c"
+					RelativePath="..\tiff\libtiff\tif_dirread.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_dirwrite.c"
+					RelativePath="..\tiff\libtiff\tif_dirwrite.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_dumpmode.c"
+					RelativePath="..\tiff\libtiff\tif_dumpmode.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_error.c"
+					RelativePath="..\tiff\libtiff\tif_error.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_extension.c"
+					RelativePath="..\tiff\libtiff\tif_extension.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_fax3.c"
+					RelativePath="..\tiff\libtiff\tif_fax3.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_fax3.h"
+					RelativePath="..\tiff\libtiff\tif_fax3.h"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_fax3sm.c"
+					RelativePath="..\tiff\libtiff\tif_fax3sm.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_flush.c"
+					RelativePath="..\tiff\libtiff\tif_flush.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_getimage.c"
+					RelativePath="..\tiff\libtiff\tif_getimage.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_jbig.c"
+					RelativePath="..\tiff\libtiff\tif_jbig.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_jpeg.c"
+					RelativePath="..\tiff\libtiff\tif_jpeg.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_luv.c"
+					RelativePath="..\tiff\libtiff\tif_luv.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_lzw.c"
+					RelativePath="..\tiff\libtiff\tif_lzw.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_msdos.c"
+					RelativePath="..\tiff\libtiff\tif_msdos.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_next.c"
+					RelativePath="..\tiff\libtiff\tif_next.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_ojpeg.c"
+					RelativePath="..\tiff\libtiff\tif_ojpeg.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_open.c"
+					RelativePath="..\tiff\libtiff\tif_open.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_packbits.c"
+					RelativePath="..\tiff\libtiff\tif_packbits.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_pixarlog.c"
+					RelativePath="..\tiff\libtiff\tif_pixarlog.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_predict.c"
+					RelativePath="..\tiff\libtiff\tif_predict.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_predict.h"
+					RelativePath="..\tiff\libtiff\tif_predict.h"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_print.c"
+					RelativePath="..\tiff\libtiff\tif_print.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_read.c"
+					RelativePath="..\tiff\libtiff\tif_read.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_stream.cxx"
+					RelativePath="..\tiff\libtiff\tif_stream.cxx"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_strip.c"
+					RelativePath="..\tiff\libtiff\tif_strip.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_swab.c"
+					RelativePath="..\tiff\libtiff\tif_swab.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_thunder.c"
+					RelativePath="..\tiff\libtiff\tif_thunder.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_tile.c"
+					RelativePath="..\tiff\libtiff\tif_tile.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_unix.c"
+					RelativePath="..\tiff\libtiff\tif_unix.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_version.c"
+					RelativePath="..\tiff\libtiff\tif_version.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_warning.c"
+					RelativePath="..\tiff\libtiff\tif_warning.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_win3.c"
+					RelativePath="..\tiff\libtiff\tif_win3.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_win32.c"
+					RelativePath="..\tiff\libtiff\tif_win32.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_write.c"
+					RelativePath="..\tiff\libtiff\tif_write.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tif_zip.c"
+					RelativePath="..\tiff\libtiff\tif_zip.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tiff.h"
+					RelativePath="..\tiff\libtiff\tiff.h"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tiffconf.vc.h"
+					RelativePath="..\tiff\libtiff\tiffconf.vc.h"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tiffconf.wince.h"
+					RelativePath="..\tiff\libtiff\tiffconf.wince.h"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tiffio.h"
+					RelativePath="..\tiff\libtiff\tiffio.h"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tiffio.hxx"
+					RelativePath="..\tiff\libtiff\tiffio.hxx"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tiffiop.h"
+					RelativePath="..\tiff\libtiff\tiffiop.h"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\tiffvers.h"
+					RelativePath="..\tiff\libtiff\tiffvers.h"
 					>
 				</File>
 				<File
-					RelativePath="tiff\libtiff\uvcode.h"
+					RelativePath="..\tiff\libtiff\uvcode.h"
 					>
 				</File>
 			</Filter>
@@ -9723,115 +9723,115 @@
 				Name="tools"
 				>
 				<File
-					RelativePath="tiff\tools\bmp2tiff.c"
+					RelativePath="..\tiff\tools\bmp2tiff.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\fax2ps.c"
+					RelativePath="..\tiff\tools\fax2ps.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\fax2tiff.c"
+					RelativePath="..\tiff\tools\fax2tiff.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\gif2tiff.c"
+					RelativePath="..\tiff\tools\gif2tiff.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\pal2rgb.c"
+					RelativePath="..\tiff\tools\pal2rgb.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\ppm2tiff.c"
+					RelativePath="..\tiff\tools\ppm2tiff.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\ras2tiff.c"
+					RelativePath="..\tiff\tools\ras2tiff.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\rasterfile.h"
+					RelativePath="..\tiff\tools\rasterfile.h"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\raw2tiff.c"
+					RelativePath="..\tiff\tools\raw2tiff.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\rgb2ycbcr.c"
+					RelativePath="..\tiff\tools\rgb2ycbcr.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\sgi2tiff.c"
+					RelativePath="..\tiff\tools\sgi2tiff.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\sgisv.c"
+					RelativePath="..\tiff\tools\sgisv.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\thumbnail.c"
+					RelativePath="..\tiff\tools\thumbnail.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\tiff2bw.c"
+					RelativePath="..\tiff\tools\tiff2bw.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\tiff2pdf.c"
+					RelativePath="..\tiff\tools\tiff2pdf.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\tiff2ps.c"
+					RelativePath="..\tiff\tools\tiff2ps.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\tiff2rgba.c"
+					RelativePath="..\tiff\tools\tiff2rgba.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\tiffcmp.c"
+					RelativePath="..\tiff\tools\tiffcmp.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\tiffcp.c"
+					RelativePath="..\tiff\tools\tiffcp.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\tiffcrop.c"
+					RelativePath="..\tiff\tools\tiffcrop.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\tiffdither.c"
+					RelativePath="..\tiff\tools\tiffdither.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\tiffdump.c"
+					RelativePath="..\tiff\tools\tiffdump.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\tiffgt.c"
+					RelativePath="..\tiff\tools\tiffgt.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\tiffinfo.c"
+					RelativePath="..\tiff\tools\tiffinfo.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\tiffmedian.c"
+					RelativePath="..\tiff\tools\tiffmedian.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\tiffset.c"
+					RelativePath="..\tiff\tools\tiffset.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\tiffsplit.c"
+					RelativePath="..\tiff\tools\tiffsplit.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\tools\ycbcr.c"
+					RelativePath="..\tiff\tools\ycbcr.c"
 					>
 				</File>
 			</Filter>
@@ -9839,35 +9839,35 @@
 				Name="test"
 				>
 				<File
-					RelativePath="tiff\test\ascii_tag.c"
+					RelativePath="..\tiff\test\ascii_tag.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\test\check_tag.c"
+					RelativePath="..\tiff\test\check_tag.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\test\long_tag.c"
+					RelativePath="..\tiff\test\long_tag.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\test\short_tag.c"
+					RelativePath="..\tiff\test\short_tag.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\test\strip.c"
+					RelativePath="..\tiff\test\strip.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\test\strip_rw.c"
+					RelativePath="..\tiff\test\strip_rw.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\test\test_arrays.c"
+					RelativePath="..\tiff\test\test_arrays.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\test\test_arrays.h"
+					RelativePath="..\tiff\test\test_arrays.h"
 					>
 				</File>
 			</Filter>
@@ -9875,27 +9875,27 @@
 				Name="port"
 				>
 				<File
-					RelativePath="tiff\port\dummy.c"
+					RelativePath="..\tiff\port\dummy.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\port\getopt.c"
+					RelativePath="..\tiff\port\getopt.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\port\lfind.c"
+					RelativePath="..\tiff\port\lfind.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\port\libport.h"
+					RelativePath="..\tiff\port\libport.h"
 					>
 				</File>
 				<File
-					RelativePath="tiff\port\strcasecmp.c"
+					RelativePath="..\tiff\port\strcasecmp.c"
 					>
 				</File>
 				<File
-					RelativePath="tiff\port\strtoul.c"
+					RelativePath="..\tiff\port\strtoul.c"
 					>
 				</File>
 			</Filter>
