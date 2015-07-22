@@ -372,7 +372,6 @@ PS_INIT_DEPS=\
 	$(PSRESDIR)$(D)Init$(D)gs_cidtt.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_cmap.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_cspace.ps \
-	$(PSRESDIR)$(D)Init$(D)gs_css_e.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_dbt_e.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_diskf.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_diskn.ps \
