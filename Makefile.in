@@ -680,7 +680,6 @@ include $(GLSRCDIR)/ldf_jb2.mak
 include $(GLSRCDIR)/lwf_jp2.mak
 include $(GLSRCDIR)/openjpeg.mak
 
-# FIXME: use configure to pull in
 include $(GLSRCDIR)/jpegxr.mak
 include $(GLSRCDIR)/expat.mak
 
