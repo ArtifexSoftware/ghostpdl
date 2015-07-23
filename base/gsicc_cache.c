@@ -154,6 +154,75 @@ icc_linkcache_finalize(const gs_memory_t *mem, void *ptr)
     link_cache->lock = NULL;
 }
 
+/* This is a special allocation for a link that is used by devices for
+   doing color management on post rendered data.  It is not tied into the
+   profile cache like gsicc_alloc_link. Also it goes ahead and creates
+   the link */
+gsicc_link_t *
+gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
+    cmm_profile_t *des_profile, gsicc_rendering_param_t *rendering_params)
+{
+    gsicc_link_t *result;
+    int cms_flags = 0;
+
+    result = gs_alloc_struct(memory, gsicc_link_t, &st_icc_link,
+        "gsicc_alloc_link_dev");
+    if (result == NULL)
+        return NULL;
+
+    /* set up placeholder values */
+    result->is_monitored = false;
+    result->orig_procs.map_buffer = NULL;
+    result->orig_procs.map_color = NULL;
+    result->orig_procs.free_link = NULL;
+    result->next = NULL;
+    result->link_handle = NULL;
+    result->procs.map_buffer = gscms_transform_color_buffer;
+    result->procs.map_color = gscms_transform_color;
+    result->procs.free_link = gscms_release_link;
+    result->hashcode.link_hashcode = 0;
+    result->hashcode.des_hash = 0;
+    result->hashcode.src_hash = 0;
+    result->hashcode.rend_hash = 0;
+    result->ref_count = 1;
+    result->includes_softproof = 0;
+    result->includes_devlink = 0;
+    result->num_waiting = 0;
+    result->is_identity = false;
+    result->valid = true;
+
+    if (src_profile->profile_handle == NULL) {
+        src_profile->profile_handle = gsicc_get_profile_handle_buffer(src_profile->buffer,
+            src_profile->buffer_size, memory);
+    }
+
+    if (des_profile->profile_handle == NULL) {
+        des_profile->profile_handle = gsicc_get_profile_handle_buffer(des_profile->buffer,
+            des_profile->buffer_size, memory);
+    }
+
+    /* Check for problems.. */
+    if (src_profile->profile_handle == 0 || des_profile->profile_handle == 0) {
+        gs_free_object(memory, result, "gsicc_alloc_link_dev");
+        return NULL;
+    }
+
+    result->link_handle = gscms_get_link(src_profile->profile_handle,
+        des_profile->profile_handle, rendering_params, cms_flags, memory);
+
+    /* Check for problems.. */
+    if (result->link_handle == 0) {
+        gs_free_object(memory, result, "gsicc_alloc_link_dev");
+        return NULL;
+    }
+
+    /* Check for identity transform */
+    if (gsicc_get_hash(src_profile) == gsicc_get_hash(des_profile))
+        result->is_identity = true;
+
+    return result;
+}
+
 static gsicc_link_t *
 gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
 {
@@ -618,19 +687,19 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
         if (!(rendering_params->rendering_intent & gsRI_OVERRIDE)) {
             /* No it was not.  Check if our device profile RI was specified */
             if (render_cond.rendering_intent != gsRINOTSPECIFIED) {
-                rendering_params->rendering_intent = render_cond.rendering_intent;      
+                rendering_params->rendering_intent = render_cond.rendering_intent;
             }
         }
         /* Similar for the black point compensation */
         if (!(rendering_params->black_point_comp & gsBP_OVERRIDE)) {
             if (render_cond.black_point_comp != gsBPNOTSPECIFIED) {
-                rendering_params->black_point_comp = render_cond.black_point_comp;      
+                rendering_params->black_point_comp = render_cond.black_point_comp;
             }
         }
         /* And the Black preservation */
         if (!(rendering_params->preserve_black & gsKP_OVERRIDE)) {
-            if (render_cond.preserve_black != gsBPNOTSPECIFIED) {
-                rendering_params->preserve_black = render_cond.preserve_black;      
+            if (render_cond.preserve_black != gsBKPRESNOTSPECIFIED) {
+                rendering_params->preserve_black = render_cond.preserve_black;
             }
         }
         devicegraytok = dev_profile->devicegraytok;
