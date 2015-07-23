@@ -164,9 +164,11 @@ gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
 {
     gsicc_link_t *result;
     int cms_flags = 0;
+    gs_memory_t *nongc_mem = memory->non_gc_memory;
 
-    result = gs_alloc_struct(memory, gsicc_link_t, &st_icc_link,
+    result = (gsicc_link_t*) gs_malloc(nongc_mem, 1, sizeof(gsicc_link_t), 
         "gsicc_alloc_link_dev");
+
     if (result == NULL)
         return NULL;
 
@@ -177,6 +179,8 @@ gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
     result->orig_procs.free_link = NULL;
     result->next = NULL;
     result->link_handle = NULL;
+    result->icc_link_cache = NULL;
+    result->wait = NULL;
     result->procs.map_buffer = gscms_transform_color_buffer;
     result->procs.map_color = gscms_transform_color;
     result->procs.free_link = gscms_release_link;
@@ -193,26 +197,26 @@ gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
 
     if (src_profile->profile_handle == NULL) {
         src_profile->profile_handle = gsicc_get_profile_handle_buffer(src_profile->buffer,
-            src_profile->buffer_size, memory);
+            src_profile->buffer_size, nongc_mem);
     }
 
     if (des_profile->profile_handle == NULL) {
         des_profile->profile_handle = gsicc_get_profile_handle_buffer(des_profile->buffer,
-            des_profile->buffer_size, memory);
+            des_profile->buffer_size, nongc_mem);
     }
 
     /* Check for problems.. */
     if (src_profile->profile_handle == 0 || des_profile->profile_handle == 0) {
-        gs_free_object(memory, result, "gsicc_alloc_link_dev");
+        gs_free_object(nongc_mem, result, "gsicc_alloc_link_dev");
         return NULL;
     }
 
     result->link_handle = gscms_get_link(src_profile->profile_handle,
-        des_profile->profile_handle, rendering_params, cms_flags, memory);
+        des_profile->profile_handle, rendering_params, cms_flags, nongc_mem);
 
     /* Check for problems.. */
     if (result->link_handle == 0) {
-        gs_free_object(memory, result, "gsicc_alloc_link_dev");
+        gs_free_object(nongc_mem, result, "gsicc_alloc_link_dev");
         return NULL;
     }
 
@@ -220,7 +224,20 @@ gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
     if (gsicc_get_hash(src_profile) == gsicc_get_hash(des_profile))
         result->is_identity = true;
 
+    /* Set the rest */
+    result->data_cs = src_profile->data_cs;
+    result->num_input = src_profile->num_comps;
+    result->num_output = des_profile->num_comps;
+
     return result;
+}
+
+/* And the related release of the link */
+void
+gsicc_free_link_dev(gs_memory_t *memory, gsicc_link_t *link)
+{
+    gs_memory_t *nongc_mem = memory->non_gc_memory;
+    gs_free_object(nongc_mem, link, "gsicc_free_link_dev");
 }
 
 static gsicc_link_t *

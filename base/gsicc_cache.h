@@ -70,5 +70,5 @@ int gsicc_transform_named_color(const float tint_values[],
 int  gsicc_get_device_profile_comps(cmm_dev_profile_t *dev_profile);
 gsicc_link_t * gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, gsicc_rendering_param_t *rendering_params);
-
+void gsicc_free_link_dev(gs_memory_t *memory, gsicc_link_t *link);
 #endif
