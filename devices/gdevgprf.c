@@ -34,25 +34,11 @@
 #include "gdevppla.h"
 #include "gxdownscale.h"
 #include "gdevdevnprn.h"
-
 #include "zlib.h"
-
-#ifndef cmm_gcmmhlink_DEFINED
-    #define cmm_gcmmhlink_DEFINED
-    typedef void* gcmmhlink_t;
-#endif
-
-#ifndef cmm_gcmmhprofile_DEFINED
-    #define cmm_gcmmhprofile_DEFINED
-    typedef void* gcmmhprofile_t;
-#endif
 
 #ifndef MAX_CHAN
 #   define MAX_CHAN 15
 #endif
-
-/* Enable logic for a local ICC output profile. */
-#define ENABLE_ICC_PROFILE 0
 
 /* Define the device parameters. */
 #ifndef X_DPI
@@ -68,7 +54,6 @@ static dev_proc_close_device(gprf_prn_close);
 static dev_proc_get_params(gprf_get_params);
 static dev_proc_put_params(gprf_put_params);
 static dev_proc_print_page(gprf_print_page);
-static dev_proc_map_color_rgb(gprf_map_color_rgb);
 static dev_proc_get_color_mapping_procs(get_gprfrgb_color_mapping_procs);
 static dev_proc_get_color_mapping_procs(get_gprf_color_mapping_procs);
 static dev_proc_get_color_comp_index(gprf_get_color_comp_index);
@@ -78,33 +63,11 @@ static dev_proc_get_color_comp_index(gprf_get_color_comp_index);
  */
 typedef struct gprf_device_s {
     gx_devn_prn_device_common;
-
     long downscale_factor;
     int max_spots;
     bool lock_colorants;
-
-    /* ICC color profile objects, for color conversion.
-       These are all device link profiles.  At least that
-       is how it appears looking at how this code
-       was written to work with the old icclib.  Just
-       doing minimal updates here so that it works
-       with the new CMM API.  I would be interested
-       to hear how people are using this. */
-
-    char profile_rgb_fn[256];
-    cmm_profile_t *rgb_profile;
-    gcmmhlink_t rgb_icc_link;
-
-    char profile_cmyk_fn[256];
-    cmm_profile_t *cmyk_profile;
-    gcmmhlink_t cmyk_icc_link;
-
-    char profile_out_fn[256];
-    cmm_profile_t *output_profile;
-    gcmmhlink_t output_icc_link;
-
+    gsicc_link_t *icclink;
     bool warning_given;  /* Used to notify the user that max colorants reached */
-
 } gprf_device;
 
 /* GC procedures */
@@ -146,7 +109,7 @@ gs_private_st_composite_final(st_gprf_device, gprf_device,
         gdev_prn_bg_output_page,	/* output_page */\
         gprf_prn_close,			/* close */\
         NULL,				/* map_rgb_color - not used */\
-        gprf_map_color_rgb,		/* map_color_rgb */\
+        NULL,		        /* map_color_rgb */\
         NULL,				/* fill_rectangle */\
         NULL,				/* tile_rectangle */\
         NULL,				/* copy_mono */\
@@ -223,7 +186,7 @@ gs_private_st_composite_final(st_gprf_device, gprf_device,
         prn_device_body_rest_(gprf_print_page)
 
 /*
- * PSD device with CMYK process color model and spot color support.
+ * CMYK process color model and spot color support.
  */
 static const gx_device_procs spot_cmyk_procs
         = device_procs(get_gprf_color_mapping_procs);
@@ -250,6 +213,7 @@ const gprf_device gs_gprf_device =
     1,                          /* downscale_factor */
     GS_SOFT_MAX_SPOTS,          /* max_spots */
     false,                      /* colorants not locked */
+    0,                          /* ICC link */
 };
 
 /* Open the gprf device */
@@ -261,6 +225,7 @@ gprf_prn_open(gx_device * pdev)
     int k;
     bool force_pdf, limit_icc, force_ps;
     cmm_dev_profile_t *profile_struct;
+    gsicc_rendering_param_t rendering_params;
 
 #ifdef TEST_PAD_AND_ALIGN
     pdev->pad = 5;
@@ -357,91 +322,91 @@ gprf_prn_open(gx_device * pdev)
     pdev->color_info.depth = pdev->color_info.num_components * 
                              pdev_gprf->devn_params.bitspercomponent;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
-    pdev->icc_struct->supports_devn = true;
+    profile_struct->supports_devn = true;
     code = gdev_prn_open_planar(pdev, true);
+
+    /* Take care of the ICC transfrom now.  There are several possible ways
+     * that this could go.  One is that the CMYK colors are color managed 
+     * but the non-standard colorants are not.  That is, we have specified
+     * a CMYK profile for our device but we have other spot colorants in
+     * the source file.  In this case, we will do managed proofing for the
+     * CMYK colorants and use the equivalent CMYK values for the spot colorants.
+     * DeviceN colorants will be problematic in this case and we will do the
+     * the best we can with the tools given to us.   The other possibility is
+     * that someone has given an NColor ICC profile for the device and we can
+     * actually deal with the mapping directly. This is a much cleaner case 
+     * but as we know NColor profiles are not too common.  Also we need to 
+     * deal with transparent colorants (e.g. varnish) in an intelligent manner. */
+
+    if (pdev_gprf->icclink == NULL && profile_struct->device_profile[0] != NULL
+        && profile_struct->postren_profile != NULL) {
+        rendering_params.black_point_comp = gsBLACKPTCOMP_ON;
+        rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;
+        rendering_params.override_icc = false;
+        rendering_params.preserve_black = gsBLACKPRESERVE_OFF;
+        rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
+        rendering_params.cmm = gsCMM_DEFAULT;
+        pdev_gprf->icclink = gsicc_alloc_link_dev(pdev_gprf->memory,
+            profile_struct->device_profile[0], profile_struct->postren_profile,
+            &rendering_params);
+    }
     return code;
 }
 
 /* Color mapping routines */
 
-static void
-cmyk_cs_to_gprf_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
-{
-    gprf_device *xdev = (gprf_device *)dev;
-    int n = xdev->devn_params.separations.num_separations;
-
-    gcmmhlink_t link = xdev->cmyk_icc_link;
-    int i;
-
-    if (link != NULL) {
-
-        unsigned short in[4];
-        unsigned short tmp[MAX_CHAN];
-        int outn = xdev->cmyk_profile->num_comps_out;
-
-        in[0] = frac2ushort(c);
-        in[1] = frac2ushort(m);
-        in[2] = frac2ushort(y);
-        in[3] = frac2ushort(k);
-
-        gscms_transform_color(dev, link, &(in[0]),
-                        &(tmp[0]), 2);
-
-        for (i = 0; i < outn; i++)
-            out[i] = ushort2frac(tmp[i]);
-        for (; i < n + 4; i++)
-            out[i] = 0;
-
-    } else {
-        /* If no profile given, assume CMYK */
-        out[0] = c;
-        out[1] = m;
-        out[2] = y;
-        out[3] = k;
-        for(i = 0; i < n; i++)			/* Clear spot colors */
-            out[4 + i] = 0;
-    }
-}
-
+/*
+* The following procedures are used to map the standard color spaces into
+* the color components. This is not where the color management occurs.  These
+* may do a reordering of the colors following some ICC base color management
+* or they may be used in the case of -dUseFastColor as that relies upon the 
+* device color mapping procedures
+*/
 static void
 gray_cs_to_gprf_cm(gx_device * dev, frac gray, frac out[])
 {
-    cmyk_cs_to_gprf_cm(dev, 0, 0, 0, (frac)(frac_1 - gray), out);
+    int * map = ((gprf_device *)dev)->devn_params.separation_order_map;
+    gray_cs_to_devn_cm(dev, map, gray, out);
 }
 
 static void
-rgb_cs_to_gprf_cm(gx_device * dev, const gs_imager_state *pis,
-                  frac r, frac g, frac b, frac out[])
+rgb_cs_to_gprf_cm(gx_device * dev, const gs_imager_state *pis, frac r, frac g,
+                    frac b, frac out[])
 {
-    gprf_device *xdev = (gprf_device *)dev;
-    int n = xdev->devn_params.separations.num_separations;
-    gcmmhlink_t link = xdev->rgb_icc_link;
-    int i;
+    int * map = ((gprf_device *)dev)->devn_params.separation_order_map;
+    rgb_cs_to_devn_cm(dev, map, pis, r, g, b, out);
+}
 
-    if (link != NULL) {
+static void
+cmyk_cs_to_gprf_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
+{
+    const gs_devn_params *devn = &(((gprf_device *) dev)->devn_params);
+    const int *map = devn->separation_order_map;
+    int j;
 
-        unsigned short in[3];
-        unsigned short tmp[MAX_CHAN];
-        int outn = xdev->rgb_profile->num_comps_out;
-
-        in[0] = frac2ushort(r);
-        in[1] = frac2ushort(g);
-        in[2] = frac2ushort(b);
-
-        gscms_transform_color(dev, link, &(in[0]),
-                        &(tmp[0]), 2);
-
-        for (i = 0; i < outn; i++)
-            out[i] = ushort2frac(tmp[i]);
-        for (; i < n + 4; i++)
-            out[i] = 0;
-
-    } else {
-        frac cmyk[4];
-
-        color_rgb_to_cmyk(r, g, b, pis, cmyk, dev->memory);
-        cmyk_cs_to_gprf_cm(dev, cmyk[0], cmyk[1], cmyk[2], cmyk[3],
-                            out);
+    if (devn->num_separation_order_names > 0) {
+        /* This is to set only those that we are using */
+        for (j = 0; j < devn->num_separation_order_names; j++) {
+            switch (map[j]) {
+            case 0:
+                out[0] = c;
+                break;
+            case 1:
+                out[1] = m;
+                break;
+            case 2:
+                out[2] = y;
+                break;
+            case 3:
+                out[3] = k;
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    else {
+        cmyk_cs_to_devn_cm(dev, map, c, m, y, k, out);
     }
 }
 
@@ -459,118 +424,17 @@ get_gprf_color_mapping_procs(const gx_device * dev)
     return &gprf_cm_procs;
 }
 
-/*
- * Convert a gx_color_index to RGB.
- */
-static int
-gprf_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
-{
-    /* TODO: return reasonable values. */
-    rgb[0] = 0;
-    rgb[1] = 0;
-    rgb[2] = 0;
-    return 0;
-}
-
-#if ENABLE_ICC_PROFILE
-static int
-gprf_open_profile(const char *profile_out_fn, cmm_profile_t *icc_profile, gcmmhlink_t icc_link, gs_memory_t *memory)
-{
-
-    gsicc_rendering_param_t rendering_params;
-
-    icc_profile = gsicc_get_profile_handle_file(profile_out_fn,
-                    strlen(profile_out_fn), memory);
-
-    if (icc_profile == NULL)
-        return gs_throw(-1, "Could not create profile for psd device");
-
-    /* Set up the rendering parameters */
-
-    rendering_params.black_point_comp = gsBPNOTSPECIFIED;
-    rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;  /* Already rendered */
-    rendering_params.rendering_intent = gsPERCEPTUAL;
-
-    /* Call with a NULL destination profile since we are using a device link profile here */
-    icc_link = gscms_get_link(icc_profile,
-                    NULL, &rendering_params);
-
-    if (icc_link == NULL)
-        return gs_throw(-1, "Could not create link handle for psd device");
-
-    return(0);
-
-}
-
-static int
-gprf_open_profiles(gprf_device *xdev)
-{
-    int code = 0;
-
-    if (xdev->output_icc_link == NULL && xdev->profile_out_fn[0]) {
-
-        code = gprf_open_profile(xdev->profile_out_fn, xdev->output_profile,
-            xdev->output_icc_link, xdev->memory);
-
-    }
-
-    if (code >= 0 && xdev->rgb_icc_link == NULL && xdev->profile_rgb_fn[0]) {
-
-        code = gprf_open_profile(xdev->profile_rgb_fn, xdev->rgb_profile,
-            xdev->rgb_icc_link, xdev->memory);
-
-    }
-
-    if (code >= 0 && xdev->cmyk_icc_link == NULL && xdev->profile_cmyk_fn[0]) {
-
-        code = gprf_open_profile(xdev->profile_cmyk_fn, xdev->cmyk_profile,
-            xdev->cmyk_icc_link, xdev->memory);
-
-    }
-
-    return code;
-
-}
-#endif
-
 /* Get parameters.  We provide a default CRD. */
 static int
 gprf_get_params(gx_device * pdev, gs_param_list * plist)
 {
     gprf_device *xdev = (gprf_device *)pdev;
     int code;
-#if ENABLE_ICC_PROFILE
-    gs_param_string pos;
-    gs_param_string prgbs;
-    gs_param_string pcmyks;
-#endif
 
     code = gx_devn_prn_get_params(pdev, plist);
     if (code < 0)
         return code;
 
-#if ENABLE_ICC_PROFILE
-    pos.data = (const byte *)xdev->profile_out_fn,
-        pos.size = strlen(xdev->profile_out_fn),
-        pos.persistent = false;
-    code = param_write_string(plist, "ProfileOut", &pos);
-    if (code < 0)
-        return code;
-
-    prgbs.data = (const byte *)xdev->profile_rgb_fn,
-        prgbs.size = strlen(xdev->profile_rgb_fn),
-        prgbs.persistent = false;
-    code = param_write_string(plist, "ProfileRgb", &prgbs);
-    if (code < 0)
-        return code;
-
-    pcmyks.data = (const byte *)xdev->profile_cmyk_fn,
-        pcmyks.size = strlen(xdev->profile_cmyk_fn),
-        pcmyks.persistent = false;
-    code = param_write_string(plist, "ProfileCmyk", &prgbs);
-    if (code < 0)
-        return code;
-#endif
     code = param_write_long(plist, "DownScaleFactor", &xdev->downscale_factor);
     if (code < 0)
         return code;
@@ -580,23 +444,6 @@ gprf_get_params(gx_device * pdev, gs_param_list * plist)
     code = param_write_bool(plist, "LockColorants", &xdev->lock_colorants);
     return code;
 }
-
-#if ENABLE_ICC_PROFILE
-static int
-gprf_param_read_fn(gs_param_list *plist, const char *name,
-                  gs_param_string *pstr, uint max_len)
-{
-    int code = param_read_string(plist, name, pstr);
-
-    if (code == 0) {
-        if (pstr->size >= max_len)
-            param_signal_error(plist, name, code = gs_error_rangecheck);
-    } else {
-        pstr->data = 0;
-    }
-    return code;
-}
-#endif
 
 /* Compare a C string and a gs_param_string. */
 static bool
@@ -612,11 +459,7 @@ gprf_put_params(gx_device * pdev, gs_param_list * plist)
 {
     gprf_device * const pdevn = (gprf_device *) pdev;
     int code = 0;
-#if ENABLE_ICC_PROFILE
-    gs_param_string po;
-    gs_param_string prgb;
-    gs_param_string pcmyk;
-#endif
+
     gs_param_string pcm;
     gx_device_color_info save_info = pdevn->color_info;
 
@@ -662,17 +505,6 @@ gprf_put_params(gx_device * pdev, gs_param_list * plist)
     }
     code = 0;
 
-#if ENABLE_ICC_PROFILE
-    code = gprf_param_read_fn(plist, "ProfileOut", &po,
-                                 sizeof(pdevn->profile_out_fn));
-    if (code >= 0)
-        code = gprf_param_read_fn(plist, "ProfileRgb", &prgb,
-                                 sizeof(pdevn->profile_rgb_fn));
-    if (code >= 0)
-        code = gprf_param_read_fn(plist, "ProfileCmyk", &pcmyk,
-                                 sizeof(pdevn->profile_cmyk_fn));
-#endif
-
     /* handle the standard DeviceN related parameters */
     if (code == 0)
         code = gx_devn_prn_put_params(pdev, plist);
@@ -681,25 +513,6 @@ gprf_put_params(gx_device * pdev, gs_param_list * plist)
         pdev->color_info = save_info;
         return code;
     }
-
-#if ENABLE_ICC_PROFILE
-    /* Open any ICC profiles that have been specified. */
-    if (po.data != 0) {
-        memcpy(pdevn->profile_out_fn, po.data, po.size);
-        pdevn->profile_out_fn[po.size] = 0;
-    }
-    if (prgb.data != 0) {
-        memcpy(pdevn->profile_rgb_fn, prgb.data, prgb.size);
-        pdevn->profile_rgb_fn[prgb.size] = 0;
-    }
-    if (pcmyk.data != 0) {
-        memcpy(pdevn->profile_cmyk_fn, pcmyk.data, pcmyk.size);
-        pdevn->profile_cmyk_fn[pcmyk.size] = 0;
-    }
-    if (memcmp(&pdevn->color_info, &save_info,
-                            size_of(gx_device_color_info)) != 0)
-        code = gprf_open_profiles(pdevn);
-#endif
     return code;
 }
 
@@ -964,21 +777,11 @@ gprf_prn_close(gx_device *dev)
 {
     gprf_device * const xdev = (gprf_device *) dev;
 
-    if (xdev->cmyk_icc_link != NULL) {
-        gscms_release_link(xdev->cmyk_icc_link);
-        rc_decrement(xdev->cmyk_profile, "gprf_prn_close");
+    if (xdev->icclink != NULL) {
+        xdev->icclink->procs.free_link(xdev->icclink);
+        gsicc_free_link_dev(xdev->memory, xdev->icclink);
+        xdev->icclink = NULL;
     }
-
-    if (xdev->rgb_icc_link != NULL) {
-        gscms_release_link(xdev->rgb_icc_link);
-        rc_decrement(xdev->rgb_profile, "gprf_prn_close");
-    }
-
-    if (xdev->output_icc_link != NULL) {
-        gscms_release_link(xdev->output_icc_link);
-        rc_decrement(xdev->output_profile, "gprf_prn_close");
-    }
-
     return gdev_prn_close(dev);
 }
 
@@ -1068,7 +871,6 @@ compressAndWrite(gprf_write_ctx *xc, byte *data, int tile_w, int tile_h, int ras
 /*
  * Output the image data for the GPRF device.
  */
-
 static int
 gprf_write_image_data(gprf_write_ctx *xc)
 {
@@ -1080,8 +882,6 @@ gprf_write_image_data(gprf_write_ctx *xc)
     int i, y;
     int chan_idx;
     int tiled_w, tiled_h, tile_x, tile_y;
-/*  gprf_device *xdev = (gprf_device *)pdev;
-    gcmmhlink_t link = xdev->output_icc_link; */
     int num_comp = xc->num_channels;
     gs_get_bits_params_t params;
     gx_downscaler_t ds = { NULL };
