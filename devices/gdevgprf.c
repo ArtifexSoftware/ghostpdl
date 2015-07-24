@@ -325,7 +325,7 @@ gprf_prn_open(gx_device * pdev)
     profile_struct->supports_devn = true;
     code = gdev_prn_open_planar(pdev, true);
 
-    /* Take care of the ICC transfrom now.  There are several possible ways
+    /* Take care of the ICC transform now.  There are several possible ways
      * that this could go.  One is that the CMYK colors are color managed 
      * but the non-standard colorants are not.  That is, we have specified
      * a CMYK profile for our device but we have other spot colorants in
@@ -336,10 +336,13 @@ gprf_prn_open(gx_device * pdev)
      * that someone has given an NColor ICC profile for the device and we can
      * actually deal with the mapping directly. This is a much cleaner case 
      * but as we know NColor profiles are not too common.  Also we need to 
-     * deal with transparent colorants (e.g. varnish) in an intelligent manner. */
+     * deal with transparent colorants (e.g. varnish) in an intelligent manner. 
+     * Note that we require the post rendering profile to be RGB based for 
+     * this particular device. */
 
     if (pdev_gprf->icclink == NULL && profile_struct->device_profile[0] != NULL
-        && profile_struct->postren_profile != NULL) {
+        && profile_struct->postren_profile != NULL &&
+        profile_struct->postren_profile->data_cs == gsRGB) {
         rendering_params.black_point_comp = gsBLACKPTCOMP_ON;
         rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;
         rendering_params.override_icc = false;
@@ -569,6 +572,8 @@ typedef struct {
     /* Map output channel number to gx_color_index position. */
     int chnl_to_position[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
+    gsicc_link_t *icclink;
+
     int table_offset;
     gx_device_printer *dev;
     int deflate_bound;
@@ -576,7 +581,8 @@ typedef struct {
 } gprf_write_ctx;
 
 int
-gprf_setup(gprf_write_ctx *xc, gx_device_printer *pdev, FILE *file, int w, int h)
+gprf_setup(gprf_write_ctx *xc, gx_device_printer *pdev, FILE *file, int w, int h,
+           gsicc_link_t *icclink)
 {
     int i;
     int spot_count;
@@ -585,6 +591,7 @@ gprf_setup(gprf_write_ctx *xc, gx_device_printer *pdev, FILE *file, int w, int h
 
     xc->f = file;
     xc->dev = pdev;
+    xc->icclink = icclink;
 
 #define NUM_CMYK_COMPONENTS 4
     for (i = 0; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++) {
@@ -733,6 +740,8 @@ gprf_write_header(gprf_write_ctx *xc)
         const char *name = dev->devn_params.std_colorant_names[j];
         int namelen;
         int c, m, y, k;
+        byte cmyk[4], rgba[4];
+
         if (name != NULL)
             namelen = strlen(name);
         else
@@ -742,26 +751,79 @@ gprf_write_header(gprf_write_ctx *xc)
         }
         if (name == NULL)
             namelen = 0;
-        gprf_write_32(xc, 0); /* RGBA */
-        c = (2 * 255 * dev->equiv_cmyk_colors.color[j].c + frac_1) / (2*frac_1);
-        c = (c < 0 ? 0 : (c > 255 ? 255 : c));
-        m = (2 * 255 * dev->equiv_cmyk_colors.color[j].m + frac_1) / (2*frac_1);
-        m = (m < 0 ? 0 : (m > 255 ? 255 : m));
-        y = (2 * 255 * dev->equiv_cmyk_colors.color[j].y + frac_1) / (2*frac_1);
-        y = (y < 0 ? 0 : (y > 255 ? 255 : y));
-        k = (2 * 255 * dev->equiv_cmyk_colors.color[j].k + frac_1) / (2*frac_1);
-        k = (k < 0 ? 0 : (k > 255 ? 255 : k));
-        gprf_write_8(xc, c);
-        gprf_write_8(xc, m);
-        gprf_write_8(xc, y);
-        gprf_write_8(xc, k);
+
+        if (j >= NUM_CMYK_COMPONENTS) {
+            /* Non-std. colorant */
+            c = (2 * 255 * dev->equiv_cmyk_colors.color[j].c + frac_1) / (2 * frac_1);
+            cmyk[0] = (c < 0 ? 0 : (c > 255 ? 255 : c));
+            m = (2 * 255 * dev->equiv_cmyk_colors.color[j].m + frac_1) / (2 * frac_1);
+            cmyk[1] = (m < 0 ? 0 : (m > 255 ? 255 : m));
+            y = (2 * 255 * dev->equiv_cmyk_colors.color[j].y + frac_1) / (2 * frac_1);
+            cmyk[2] = (y < 0 ? 0 : (y > 255 ? 255 : y));
+            k = (2 * 255 * dev->equiv_cmyk_colors.color[j].k + frac_1) / (2 * frac_1);
+            cmyk[3] = (k < 0 ? 0 : (k > 255 ? 255 : k));
+        } else {
+            /* Std. colorant */
+            cmyk[0] = 0;
+            cmyk[1] = 0;
+            cmyk[2] = 0;
+            cmyk[3] = 0;
+            cmyk[j] = 255;
+        }
+
+        /* Convert color to RGBA. To get the A value, we are going to need to 
+           deal with the mixing hints information in the PDF content.  A ToDo
+           project. At this point, everything has an alpha of 1.0 */
+        rgba[3] = 255;
+        if (xc->icclink != NULL) {
+            xc->icclink->procs.map_color(dev, xc->icclink, &(cmyk[0]), &(rgba[0]), 1);
+        } else {
+            /* Something was wrong with the icclink. Use the canned routines. */
+            frac rgb_frac[3], cmyk_frac[4];
+            int r, g, b;
+            int index;
+            int temp;
+
+            if (j >= NUM_CMYK_COMPONENTS) {
+                /* Non std. colorant */
+                color_cmyk_to_rgb(dev->equiv_cmyk_colors.color[j].c,
+                    dev->equiv_cmyk_colors.color[j].m,
+                    dev->equiv_cmyk_colors.color[j].y,
+                    dev->equiv_cmyk_colors.color[j].k, NULL, rgb_frac, dev->memory);
+            } else {
+                /* Std. colorant */
+                cmyk_frac[0] = frac_0;
+                cmyk_frac[1] = frac_0;
+                cmyk_frac[2] = frac_0;
+                cmyk_frac[3] = frac_0;
+                cmyk_frac[j] = frac_1;
+                color_cmyk_to_rgb(cmyk_frac[0], cmyk_frac[1], cmyk_frac[2],
+                    cmyk_frac[3], NULL, rgb_frac, dev->memory);
+            }
+            /* Out of frac and to byte */
+            for (index = 0; index < 3; index++) {
+                temp = (2 * 255 * rgb_frac[index] + frac_1) / (2 * frac_1);
+                rgba[index] = (temp < 0 ? 0 : (temp > 255 ? 255 : temp));
+            }
+        }
+
+        gprf_write_8(xc, rgba[0]);
+        gprf_write_8(xc, rgba[1]);
+        gprf_write_8(xc, rgba[2]);
+        gprf_write_8(xc, rgba[3]);
+        gprf_write_8(xc, cmyk[0]);
+        gprf_write_8(xc, cmyk[1]);
+        gprf_write_8(xc, cmyk[2]);
+        gprf_write_8(xc, cmyk[3]);
+
         if (namelen > 0)
             gprf_write(xc, (const byte *)name, namelen);
         gprf_write_8(xc, 0);
     }
 
     /* FIXME: ICC Profile would go here */
-
+    /* Since MuPDF can't really use the profile and it's optional, at this point
+     * we will not spend time writing out the profile. */
     /* Update header pointer to table */
     xc->table_offset = ftell(xc->f);
     fseek(xc->f, offset+28, SEEK_SET);
@@ -1033,7 +1095,8 @@ gprf_print_page(gx_device_printer *pdev, FILE *file)
 
     gprf_setup(&xc, pdev, file,
               gx_downscaler_scale(pdev->width, gprf_dev->downscale_factor),
-              gx_downscaler_scale(pdev->height, gprf_dev->downscale_factor));
+              gx_downscaler_scale(pdev->height, gprf_dev->downscale_factor),
+              gprf_dev->icclink);
     gprf_write_header(&xc);
     gprf_write_image_data(&xc);
     return 0;
