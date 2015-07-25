@@ -3259,7 +3259,7 @@ $(GLOBJ)gsromfs1.$(OBJ) : $(GLOBJ)gsromfs1.c $(time__h) $(MAKEDIRS)
 # A dummy pclromfs module for COMPILE_INITS=0
 # NOTE: object file name does not match source file name
 $(GLOBJ)pclromfs0.$(OBJ) : $(GLSRC)gsromfs0.c $(stdint__h) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gsromfs0.$(OBJ) $(C_) $(GLSRC)pclromfs0.c
+	$(GLCC) $(GLO_)pclromfs0.$(OBJ) $(C_) $(GLSRC)gsromfs0.c
 
 $(GLOBJ)pclromfs1.$(OBJ) : $(GLOBJ)pclromfs1.c $(time__h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pclromfs1.$(OBJ) $(C_) $(GLOBJ)pclromfs1.c
@@ -3267,7 +3267,7 @@ $(GLOBJ)pclromfs1.$(OBJ) : $(GLOBJ)pclromfs1.c $(time__h) $(MAKEDIRS)
 # A dummy xpsromfs module for COMPILE_INITS=0
 # NOTE: object file name does not match source file name
 $(GLOBJ)xpsromfs0.$(OBJ) : $(GLSRC)gsromfs0.c $(stdint__h) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gsromfs0.$(OBJ) $(C_) $(GLSRC)xpsromfs0.c
+	$(GLCC) $(GLO_)xpsromfs0.$(OBJ) $(C_) $(GLSRC)gsromfs0.c
 
 $(GLOBJ)xpsromfs1.$(OBJ) : $(GLOBJ)xpsromfs1.c $(time__h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)xpsromfs1.$(OBJ) $(C_) $(GLOBJ)xpsromfs1.c
@@ -3275,7 +3275,7 @@ $(GLOBJ)xpsromfs1.$(OBJ) : $(GLOBJ)xpsromfs1.c $(time__h) $(MAKEDIRS)
 # A dummy pdlromfs module for COMPILE_INITS=0
 # NOTE: object file name does not match source file name
 $(GLOBJ)pdlromfs0.$(OBJ) : $(GLSRC)gsromfs0.c $(stdint__h) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gsromfs0.$(OBJ) $(C_) $(GLSRC)pdlromfs0.c
+	$(GLCC) $(GLO_)pdlromfs0.$(OBJ) $(C_) $(GLSRC)gsromfs0.c
 
 $(GLOBJ)pdlromfs1.$(OBJ) : $(GLOBJ)pdlromfs1.c $(time__h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pdlromfs1.$(OBJ) $(C_) $(GLOBJ)pdlromfs1.c
