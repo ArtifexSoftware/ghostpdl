@@ -431,6 +431,13 @@ typedef comp_bit_map_elem_t comp_bit_map_t[COMP_BIT_MAP_SIZE];
 #endif
 
 /*
+* Element for a map to convert colorants to a CMYK color.
+*/
+typedef struct cmyk_composite_map_s {
+    frac c, m, y, k;
+} cmyk_composite_map;
+
+/*
  * The colorant bit map list struct.
  */
 typedef struct comp_bit_map_list_s {
@@ -568,5 +575,10 @@ void free_compressed_color_list(compressed_color_list_t * pcomp_list);
  * Free a set of separation names
  */
 void free_separation_names(gs_memory_t *mem, gs_separations * pseparation);
+
+/* Build a map for use by devices that are building composite views */
+void build_cmyk_map(gx_device *pdev, int num_comp,
+        equivalent_cmyk_color_params equiv_cmyk_colors,
+        cmyk_composite_map * cmyk_map);
 
 #endif		/* ifndef gdevdevn_INCLUDED */

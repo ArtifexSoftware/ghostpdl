@@ -1768,49 +1768,6 @@ done:
 }
 
 /*
- * Element for a map to convert colorants to a CMYK color.
- */
-typedef struct cmyk_composite_map_s {
-    frac c, m, y, k;
-} cmyk_composite_map;
-
-/*
- * Build the map to be used to create a CMYK equivalent to the current
- * device components.
- */
-static void
-build_cmyk_map(tiffsep_device * pdev, int num_comp,
-               cmyk_composite_map * cmyk_map)
-{
-    int comp_num;
-
-    for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
-        int sep_num = pdev->devn_params.separation_order_map[comp_num];
-
-        cmyk_map[comp_num].c = cmyk_map[comp_num].m =
-            cmyk_map[comp_num].y = cmyk_map[comp_num].k = frac_0;
-        /* The tiffsep device has 4 standard colors:  CMYK */
-        if (sep_num < pdev->devn_params.num_std_colorant_names) {
-            switch (sep_num) {
-                case 0: cmyk_map[comp_num].c = frac_1; break;
-                case 1: cmyk_map[comp_num].m = frac_1; break;
-                case 2: cmyk_map[comp_num].y = frac_1; break;
-                case 3: cmyk_map[comp_num].k = frac_1; break;
-            }
-        }
-        else {
-            sep_num -= pdev->devn_params.num_std_colorant_names;
-            if (pdev->equiv_cmyk_colors.color[sep_num].color_info_valid) {
-                cmyk_map[comp_num].c = pdev->equiv_cmyk_colors.color[sep_num].c;
-                cmyk_map[comp_num].m = pdev->equiv_cmyk_colors.color[sep_num].m;
-                cmyk_map[comp_num].y = pdev->equiv_cmyk_colors.color[sep_num].y;
-                cmyk_map[comp_num].k = pdev->equiv_cmyk_colors.color[sep_num].k;
-            }
-        }
-    }
-}
-
-/*
  * Build a CMYK equivalent to a raster line from planar buffer
  */
 static void
@@ -2349,7 +2306,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
         }
     }
 
-    build_cmyk_map(tfdev, num_comp, cmyk_map);
+    build_cmyk_map((gx_device*) tfdev, num_comp, tfdev->equiv_cmyk_colors, cmyk_map);
     if (tfdev->PrintSpotCMYK) {
         code = print_cmyk_equivalent_colors(tfdev, num_comp, cmyk_map);
         if (code < 0) {
