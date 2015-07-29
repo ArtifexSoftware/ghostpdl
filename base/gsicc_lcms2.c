@@ -23,6 +23,7 @@
 #include "gserrors.h"
 #include "gp.h"
 #include "gsicc_cms.h"
+#include "gxdevice.h"
 
 #define USE_LCMS2_LOCKING
 
@@ -283,7 +284,7 @@ gscms_get_profile_handle_mem(gs_memory_t *mem, unsigned char *buffer,
 
 /* Get ICC Profile handle from file ptr */
 gcmmhprofile_t
-gscms_get_profile_handle_file(gs_memory_t *mem,const char *filename)
+gscms_get_profile_handle_file(gs_memory_t *mem, const char *filename)
 {
     cmsContext ctx = gs_lib_ctx_get_cms_context(mem);
 
@@ -386,12 +387,12 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                            output_buff_desc->pixels_per_row;
             int y, i;
 
-            temp_src = (byte*) gs_alloc_bytes(icclink->icc_link_cache->memory, 
+            temp_src = (byte*)gs_alloc_bytes(dev->memory->non_gc_memory,
                                               source_size * input_buff_desc->num_chan, 
                                               "gscms_transform_color_buffer");
             if (temp_src == NULL)
                 return;
-            temp_des = (byte*) gs_alloc_bytes(icclink->icc_link_cache->memory, 
+            temp_des = (byte*) gs_alloc_bytes(dev->memory->non_gc_memory,
                                               des_size * output_buff_desc->num_chan, 
                                               "gscms_transform_color_buffer");
             if (temp_des == NULL)
@@ -420,9 +421,9 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                 inputpos += input_buff_desc->row_stride;
                 outputpos += output_buff_desc->row_stride;
             }
-            gs_free_object(icclink->icc_link_cache->memory, temp_src, 
+            gs_free_object(dev->memory->non_gc_memory, temp_src,
                            "gscms_transform_color_buffer");
-            gs_free_object(icclink->icc_link_cache->memory, temp_des, 
+            gs_free_object(dev->memory->non_gc_memory, temp_des,
                            "gscms_transform_color_buffer");
         }
     } else {
