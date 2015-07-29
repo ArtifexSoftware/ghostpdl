@@ -840,7 +840,14 @@ end readonly def
 /Tr { dup .settextrenderingmode /TextRenderingMode gput { showfirst } /Show gput } bdef
 /Ts { /TextRise gput settextstate } bdef
 /Tw { /WordSpacing gput { showfirst } /Show gput } bdef
-/Tz { 100 div /TextHScaling gput settextstate} bdef
+/Tz {
+  dup 0 eq {
+    (\n   **** Warning: Invalid 0.0 horizontal text scaling given for Tz ****\n)
+    pdfformaterror
+    pop 0.00000001	% handle invalid scale by using a really small value
+  }{
+    100 div
+  }ifelse /TextHScaling gput settextstate} bdef
 
 % ---------------- Font control ---------------- %
 
