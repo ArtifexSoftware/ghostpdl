@@ -28,6 +28,12 @@
 #include <windows.h>
 #include <process.h>
 
+/* After including windows.h, we have to undef bool for VS 2014 and later */
+#if defined(_MSC_VER) && _MSC_VER>=1900
+#  undef bool
+   typedef int bool;
+#endif
+
 /* Unicode/UTF-8 wrappers that we provide */
 BOOL gp_OpenPrinter(char *device, LPHANDLE printer);
 #ifndef GS_NO_UTF8

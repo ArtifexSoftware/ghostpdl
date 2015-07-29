@@ -41,6 +41,11 @@
 #    define vsnprintf _vsnprintf
 #   endif
 #  endif
-#  define snprintf _snprintf
+
+#  if defined(_MSC_VER) && _MSC_VER>=1900 /* VS 2014 and later have (finally) snprintf */
+#    define STDC99
+#  else
+#    define snprintf _snprintf
+#  endif
 
 #endif /* _MSC_VER */

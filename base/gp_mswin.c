@@ -990,6 +990,9 @@ bool gp_fseekable (FILE *f)
 
 /* -------------------------  _snprintf -----------------------------*/
 
+#if defined(_MSC_VER) && _MSC_VER>=1900 /* VS 2014 and later have (finally) snprintf */
+#  define STDC99
+#else
 /* Microsoft Visual C++ 2005  doesn't properly define snprintf,
    which is defined in the C standard ISO/IEC 9899:1999 (E) */
 
@@ -1007,3 +1010,4 @@ int snprintf(char *buffer, size_t count, const char *format, ...)
     } else
         return 0;
 }
+#endif
