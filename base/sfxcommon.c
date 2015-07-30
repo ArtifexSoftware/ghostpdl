@@ -23,6 +23,7 @@
 #include "gp.h"
 #include "gserrors.h"
 #include "stream.h"
+#include "assert_.h"
 
 #define DEFAULT_BUFFER_SIZE 2048
 const uint file_default_buffer_size = DEFAULT_BUFFER_SIZE;
@@ -65,6 +66,14 @@ file_open_stream(const char *fname, uint len, const char *file_access,
     int code;
     FILE *file;
     char fmode[4];  /* r/w/a, [+], [b], null */
+
+#ifdef DEBUG
+    if (strlen(gp_fmode_binary_suffix) > 0) {
+        if (strchr(file_access, gp_fmode_binary_suffix[0]) != NULL)
+	    dmprintf(mem, "\nWarning: spurious 'b' character in file access mode\n");
+	assert(strchr(file_access, gp_fmode_binary_suffix[0]) == NULL);
+    }
+#endif
 
     if (!iodev)
         iodev = iodev_default(mem);

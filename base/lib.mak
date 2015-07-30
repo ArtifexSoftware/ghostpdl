@@ -1442,7 +1442,7 @@ $(GLD)sfile.dev : $(LIB_MAK) $(ECHOGS_XE) $(sfile_) $(MAKEDIRS)
 
 $(GLOBJ)sfxcommon.$(OBJ) : $(GLSRC)sfxcommon.c $(AK) $(stdio__h)\
  $(memory__h) $(unistd__h) $(gsmemory_h) $(gp_h) $(stream_h)\
- $(gserrors_h) $(MAKEDIRS)
+ $(gserrors_h) $(assert__h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)sfxcommon.$(OBJ) $(C_) $(GLSRC)sfxcommon.c
 
 $(GLOBJ)sfxstdio.$(OBJ) : $(GLSRC)sfxstdio.c $(AK) $(stdio__h)\

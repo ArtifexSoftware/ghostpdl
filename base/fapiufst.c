@@ -970,7 +970,7 @@ ufst_make_font_data(fapi_ufst_server * r, const char *font_file_path,
             d->font_type = FC_FCO_TYPE;
         }
         else {
-            stream *f = sfopen(font_file_path, "rb", r->mem);
+            stream *f = sfopen(font_file_path, "r", r->mem);
 
             if (f == NULL) {
                 ufst_emprintf1(r->mem,

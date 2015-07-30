@@ -1055,7 +1055,7 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
         strcat(buffer, pname);
         /* Just to make sure we were null terminated */
         buffer[namelen + dirlen] = '\0';
-        str = sfopen(buffer, "rb", mem_gc);
+        str = sfopen(buffer, "r", mem_gc);
         gs_free_object(mem_gc, buffer, "gsicc_open_search");
         if (str != NULL) {
             *strp = str;
@@ -1064,7 +1064,7 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
     }
 
     /* First just try it like it is */
-    str = sfopen(pname, "rb", mem_gc);
+    str = sfopen(pname, "r", mem_gc);
     if (str != NULL) {
         *strp = str;
         return 0;
@@ -1080,7 +1080,7 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
     strcat(buffer, pname);
     /* Just to make sure we were null terminated */
     buffer[namelen + strlen(DEFAULT_DIR_ICC)] = '\0';
-    str = sfopen(buffer, "rb", mem_gc);
+    str = sfopen(buffer, "r", mem_gc);
     gs_free_object(mem_gc, buffer, "gsicc_open_search");
     if (str == NULL) {
         gs_warn1("Could not find %s ",pname);

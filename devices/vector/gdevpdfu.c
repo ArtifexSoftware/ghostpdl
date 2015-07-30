@@ -168,7 +168,7 @@ copy_ps_file_stripping_all(stream *s, const char *fname, bool HaveTrueTypes)
     int n, l = 0, m = sizeof(buf) - 1, outl = 0;
     bool skipping = false;
 
-    f = sfopen(fname, "rb", s->memory);
+    f = sfopen(fname, "r", s->memory);
     if (f == NULL)
         return_error(gs_error_undefinedfilename);
     n = sfread(buf, 1, m, f);
@@ -244,7 +244,7 @@ copy_ps_file_strip_comments(stream *s, const char *fname, bool HaveTrueTypes)
     int n, l = 0, m = sizeof(buf) - 1, outl = 0;
     bool skipping = false;
 
-    f = sfopen(fname, "rb", s->memory);
+    f = sfopen(fname, "r", s->memory);
     if (f == NULL)
         return_error(gs_error_undefinedfilename);
     n = sfread(buf, 1, m, f);

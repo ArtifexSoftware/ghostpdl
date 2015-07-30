@@ -683,7 +683,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
             /* null terminate the string */
             tmp_path_copy[code] = '\0';
 
-            in = sfopen(tmp_path_copy, "rb", mem);
+            in = sfopen(tmp_path_copy, "r", mem);
             if (in == NULL) {   /* shouldn't happen */
                 dmprintf1(mem, "cannot open file %s\n", tmp_path_copy);
                 continue;
@@ -719,7 +719,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                                      tmp_path_copy);
                 }
                 /* reopen the file */
-                in = sfopen(tmp_path_copy, "rb", mem);
+                in = sfopen(tmp_path_copy, "r", mem);
                 if (in == NULL)
                     return gs_throw1(0,
                                      "An unrecoverable failure occurred while reading the resident font %s\n",
@@ -763,7 +763,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t * mem,
                     dmprintf2(mem,
                               "TrueType font %s in file %s not found in table\n",
                               buffer, tmp_path_copy);
-                    in = sfopen(tmp_path_copy, "rb", mem);
+                    in = sfopen(tmp_path_copy, "r", mem);
                     code =
                         get_name_from_tt_file(in, mem, buffer, WINDOWSNAME);
                     sfclose(in);
