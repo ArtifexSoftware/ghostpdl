@@ -48,6 +48,9 @@
 #  define Y_DPI 72
 #endif
 
+#define MAX_COLOR_VALUE 255             /* We are using 8 bits per colorant */
+
+
 /* The device descriptor */
 static dev_proc_open_device(gprf_prn_open);
 static dev_proc_close_device(gprf_prn_close);
@@ -737,23 +740,20 @@ gprf_write_header(gprf_write_ctx *xc)
     for (i = 0; i < xc->num_channels; i++)
     {
         int j = xc->chnl_to_orig_sep[i];
-        const char *name = dev->devn_params.std_colorant_names[j];
+        const char *name;
         int namelen;
         int c, m, y, k;
         byte cmyk[4], rgba[4];
 
-        if (name != NULL)
-            namelen = strlen(name);
-        else
-        {
-            name = (const char *)dev->devn_params.separations.names[j-4].data;
-            namelen = dev->devn_params.separations.names[j-4].size;
-        }
-        if (name == NULL)
-            namelen = 0;
-
-        if (j >= NUM_CMYK_COMPONENTS) {
-            /* Non-std. colorant */
+        if (j < NUM_CMYK_COMPONENTS) {
+            name = dev->devn_params.std_colorant_names[j];
+            cmyk[0] = 0;
+            cmyk[1] = 0;
+            cmyk[2] = 0;
+            cmyk[3] = 0;
+            cmyk[j] = 255;
+        } else {
+            name = (const char *)dev->devn_params.separations.names[j - NUM_CMYK_COMPONENTS].data;
             c = (2 * 255 * dev->equiv_cmyk_colors.color[j].c + frac_1) / (2 * frac_1);
             cmyk[0] = (c < 0 ? 0 : (c > 255 ? 255 : c));
             m = (2 * 255 * dev->equiv_cmyk_colors.color[j].m + frac_1) / (2 * frac_1);
@@ -762,14 +762,12 @@ gprf_write_header(gprf_write_ctx *xc)
             cmyk[2] = (y < 0 ? 0 : (y > 255 ? 255 : y));
             k = (2 * 255 * dev->equiv_cmyk_colors.color[j].k + frac_1) / (2 * frac_1);
             cmyk[3] = (k < 0 ? 0 : (k > 255 ? 255 : k));
-        } else {
-            /* Std. colorant */
-            cmyk[0] = 0;
-            cmyk[1] = 0;
-            cmyk[2] = 0;
-            cmyk[3] = 0;
-            cmyk[j] = 255;
         }
+
+        if (name == NULL)
+            namelen = 0;
+        else
+            namelen = strlen(name);
 
         /* Convert color to RGBA. To get the A value, we are going to need to 
            deal with the mixing hints information in the PDF content.  A ToDo
@@ -930,6 +928,104 @@ compressAndWrite(gprf_write_ctx *xc, byte *data, int tile_w, int tile_h, int ras
     return 0;
 }
 
+/* If the profile is NULL or if the profile does not support the spot 
+   colors then we have to calculate the equivalent CMYK values and then color
+   manage. */
+static void
+build_cmyk_planar_raster(gprf_write_ctx *xc, byte *planes[], byte *cmyk_in,
+        int raster, int ypos, cmyk_composite_map * cmyk_map)
+{
+    int pixel, comp_num;
+    uint temp, cyan, magenta, yellow, black;
+    cmyk_composite_map * cmyk_map_entry;
+    int num_comp = xc->num_channels;
+    byte *cmyk = cmyk_in;
+
+    for (pixel = 0; pixel < raster; pixel++) {
+        cmyk_map_entry = cmyk_map;
+        /* Get the first one */
+        temp = *(planes[xc->chnl_to_position[0]] + ypos * raster + pixel);
+        cyan = cmyk_map_entry->c * temp;
+        magenta = cmyk_map_entry->m * temp;
+        yellow = cmyk_map_entry->y * temp;
+        black = cmyk_map_entry->k * temp;
+        cmyk_map_entry++;
+        /* Add in the contributions from the rest */
+        for (comp_num = 1; comp_num < num_comp; comp_num++) {
+            temp = *(planes[xc->chnl_to_position[comp_num]] + ypos * raster + pixel);
+            cyan += cmyk_map_entry->c * temp;
+            magenta += cmyk_map_entry->m * temp;
+            yellow += cmyk_map_entry->y * temp;
+            black += cmyk_map_entry->k * temp;
+            cmyk_map_entry++;
+        }
+        cyan /= frac_1;
+        magenta /= frac_1;
+        yellow /= frac_1;
+        black /= frac_1;
+        if (cyan > MAX_COLOR_VALUE)
+            cyan = MAX_COLOR_VALUE;
+        if (magenta > MAX_COLOR_VALUE)
+            magenta = MAX_COLOR_VALUE;
+        if (yellow > MAX_COLOR_VALUE)
+            yellow = MAX_COLOR_VALUE;
+        if (black > MAX_COLOR_VALUE)
+            black = MAX_COLOR_VALUE;
+        /* Now store the CMYK value in the planar buffer */
+        cmyk[0] = cyan;
+        cmyk[raster] = magenta;
+        cmyk[2 * raster] = yellow;
+        cmyk[3 * raster] = black;
+        cmyk++;
+    }
+}
+
+/* Create RGB from CMYK the horribly slow way */
+static void
+get_rgb_planar_line(gprf_write_ctx *xc, byte *c, byte *m, byte *y, byte *k, 
+    byte *red_in, byte *green_in, byte *blue_in, int width)
+{
+    int x_pos;
+    int c_val, m_val, y_val, k_val;
+    gprf_device *gprf_dev = (gprf_device *)xc->dev;
+    frac rgb_frac[3];
+    int temp;
+    int i;
+    byte *rp = red_in;
+    byte *gp = green_in;
+    byte *bp = blue_in;
+
+    for (x_pos = 0; x_pos < width; x_pos++) {
+
+        c_val = ((long)(c)* frac_1 / 255.0);
+        c_val = (c_val < 0 ? 0 : (c_val > frac_1 ? frac_1 : c_val));
+
+        m_val = ((long)(m)* frac_1 / 255.0);
+        m_val = (m_val < 0 ? 0 : (m_val > frac_1 ? frac_1 : m_val));
+
+        y_val = ((long)(y)* frac_1 / 255.0);
+        y_val = (y_val < 0 ? 0 : (y_val > frac_1 ? frac_1 : y_val));
+
+        k_val = ((long)(k)* frac_1 / 255.0);
+        k_val = (k_val < 0 ? 0 : (k_val > frac_1 ? frac_1 : k_val));
+
+        color_cmyk_to_rgb(c_val, m_val, y_val, k_val, NULL, rgb_frac,
+            gprf_dev->memory);
+
+        temp = (2 * 255 * rgb_frac[0] + frac_1) / (2 * frac_1);
+        temp = (temp < 0 ? 0 : (temp > 255 ? 255 : temp));
+        *rp++ = temp;
+
+        temp = (2 * 255 * rgb_frac[1] + frac_1) / (2 * frac_1);
+        temp = (temp < 0 ? 0 : (temp > 255 ? 255 : temp));
+        *gp++ = temp;
+
+        temp = (2 * 255 * rgb_frac[2] + frac_1) / (2 * frac_1);
+        temp = (temp < 0 ? 0 : (temp > 255 ? 255 : temp));
+        *bp++ = temp;
+    }
+}
+
 /*
  * Output the image data for the GPRF device.
  */
@@ -940,6 +1036,7 @@ gprf_write_image_data(gprf_write_ctx *xc)
     int raster_plane = bitmap_raster(pdev->width * 8);
     byte *planes[GS_CLIENT_COLOR_MAX_COMPONENTS];
     byte *rgb[3];
+    byte *cmyk;
     int code = 0;
     int i, y;
     int chan_idx;
@@ -948,6 +1045,37 @@ gprf_write_image_data(gprf_write_ctx *xc)
     gs_get_bits_params_t params;
     gx_downscaler_t ds = { NULL };
     gprf_device *gprf_dev = (gprf_device *)pdev;
+    bool slowcolor = false;
+    bool equiv_needed = false;
+    cmyk_composite_map cmyk_map[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gsicc_bufferdesc_t input_buffer_desc;
+    gsicc_bufferdesc_t output_buffer_desc;
+
+    /* Get set up for color management */
+    /* We are going to deal with four cases for creating the RGB content.
+    * Case 1: We have a CMYK ICC profile and only CMYK colors.
+    * Case 2: We have a DeviceN ICC profile, which defines all our colorants
+    * Case 3: We have a CMYK ICC profile and non-standard spot colorants
+    * Case 4: There was an issue creating the ICC link
+    * For Case 1 and Case 2, we will do a direct ICC mapping from the
+    * planar components to the RGB proofing color.  This is the best work
+    * flow for accurate color proofing.
+    * For Case 3, we will need to compute the equivalent CMYK color similar
+    * to what the tiffsep device does and then apply the ICC mapping
+    * For Case 4, we need to compute the equivalent CMYK color mapping AND
+    * do the slow conversion to RGB */
+
+    if (gprf_dev->icclink == NULL) {
+        /* Case 4 */
+        slowcolor = true;
+        equiv_needed = true;
+    } else {
+        if (num_comp > 4 &&
+            gprf_dev->icc_struct->device_profile[0]->data_cs == gsCMYK) {
+            /* Case 3 */
+            equiv_needed = true;
+        }
+    }
 
     /* Return planar data */
     params.options = (GB_RETURN_POINTER | GB_RETURN_COPY |
@@ -957,25 +1085,38 @@ gprf_write_image_data(gprf_write_ctx *xc)
     params.raster = raster_plane;
 
     /* For every plane, we need a buffer large enough to let us pull out
-     * 256 raster lines from that plane */
-    for (chan_idx = 0; chan_idx < num_comp; chan_idx++)
+     * 256 raster lines from that plane.  Make contiguous so that we can apply
+     * color management */
+    planes[0] = gs_alloc_bytes(pdev->memory, raster_plane * 256 * num_comp,
+        "gprf_write_image_data");
+    if (planes[0] == NULL)
+        return_error(gs_error_VMerror);
+
+    for (chan_idx = 1; chan_idx < num_comp; chan_idx++)
     {
-        planes[chan_idx] = gs_alloc_bytes(pdev->memory,
-                                          raster_plane * 256, 
-                                          "gprf_write_image_data");
+        planes[chan_idx] = planes[0] + raster_plane * 256 * chan_idx;
         params.data[chan_idx] = planes[chan_idx];
-        if (params.data[chan_idx] == NULL)
-            return_error(gs_error_VMerror); /* LEAK! */
     }
 
     /* We also need space for our RGB planes. */
-    for (chan_idx = 0; chan_idx < 3; chan_idx++)
-    {
-        rgb[chan_idx] = gs_alloc_bytes(pdev->memory,
-                                       raster_plane * 256, 
-                                       "gprf_write_image_data");
-        if (rgb[chan_idx] == NULL)
-            return_error(gs_error_VMerror); /* LEAK! */
+    rgb[0] = gs_alloc_bytes(pdev->memory, raster_plane * 256 * 3,
+        "gprf_write_image_data");
+    if (rgb[0] == NULL)
+        return_error(gs_error_VMerror);
+    rgb[1] = rgb[0] + raster_plane * 256;
+    rgb[2] = rgb[0] + raster_plane * 256 * 2;
+
+    /* Finally, we may need a temporary CMYK composite if we have no profile
+     * to handle the spot colorants. Case 3 and Case 4. Also build the mapping
+     * at this point. Note that this does not need to be the whole tile, just
+     * a row across as it can be reused */
+    if (equiv_needed) {
+        build_cmyk_map((gx_device*)gprf_dev, num_comp, gprf_dev->equiv_cmyk_colors,
+            cmyk_map);
+        cmyk = gs_alloc_bytes(pdev->memory, raster_plane * 4,
+            "gprf_write_image_data");
+        if (cmyk == NULL)
+            return_error(gs_error_VMerror);
     }
 
     code = gx_downscaler_init_planar(&ds, (gx_device *)pdev, &params, num_comp,
@@ -987,68 +1128,75 @@ gprf_write_image_data(gprf_write_ctx *xc)
     tiled_h = (xc->height + 255)/256;
 
     /* Reserve space in the table for all the offsets */
-    for (i = 8 * tiled_w * tiled_h * (3 + xc->num_channels); i >= 0; i -= 8)
-    {
+    for (i = 8 * tiled_w * tiled_h * (3 + xc->num_channels); i >= 0; i -= 8) {
         gprf_write_32(xc, 0);
         gprf_write_32(xc, 0);
     }
 
     /* Print the output planes */
     /* For each row of tiles... */
-    for (tile_y = 0; tile_y < tiled_h; tile_y++)
-    {
+    for (tile_y = 0; tile_y < tiled_h; tile_y++) {
         /* Pull out the data for the tiles in that row. */
         int tile_h = (xc->height - tile_y*256);
 
         if (tile_h > 256)
             tile_h = 256;
-        for (y = 0; y < tile_h; y++)
-        {
-            for (chan_idx = 0; chan_idx < num_comp; chan_idx++)
-            {
+        for (y = 0; y < tile_h; y++) {
+            for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
                 params.data[chan_idx] = planes[chan_idx] + y * raster_plane;
             }
             code = gx_downscaler_get_bits_rectangle(&ds, &params, y + tile_y * 256);
             if (code < 0)
                 goto cleanup;
-            for (chan_idx = 0; chan_idx < num_comp; chan_idx++)
-            {
+            for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
                 if (params.data[chan_idx] != planes[chan_idx] + y * raster_plane)
                     memcpy(planes[chan_idx] + y * raster_plane, params.data[chan_idx], raster_plane);
             }
-        }
-
-        /* Make the RGB version from the separations */
-        /* FIXME: Crap version for now. */
-        for (y = 0; y < tile_h; y++)
-        {
-            byte *cp = planes[xc->chnl_to_position[0]] + y * raster_plane;
-            byte *mp = planes[xc->chnl_to_position[1]] + y * raster_plane;
-            byte *yp = planes[xc->chnl_to_position[2]] + y * raster_plane;
-            byte *kp = planes[xc->chnl_to_position[3]] + y * raster_plane;
-            byte *rp = rgb[0] + y * raster_plane;
-            byte *gp = rgb[1] + y * raster_plane;
-            byte *bp = rgb[2] + y * raster_plane;
-            int x;
-            for (x = 0; x < xc->width; x++)
-            {
-                int C = *cp++;
-                int M = *mp++;
-                int Y = *yp++;
-                int K = *kp++;
-                K = 255 - K;
-                C = K - C; if (C < 0) C = 0;
-                M = K - M; if (M < 0) M = 0;
-                Y = K - Y; if (Y < 0) Y = 0;
-                *rp++ = C;
-                *gp++ = M;
-                *bp++ = Y;
+            /* Take care of any color management */
+            if (equiv_needed) {
+                build_cmyk_planar_raster(xc, planes, cmyk, raster_plane, y, cmyk_map);
+                /* At this point we have equiv. CMYK data */
+                if (slowcolor) {
+                    /* Slowest case, no profile and spots present */
+                    get_rgb_planar_line(xc, cmyk, cmyk + raster_plane,
+                        cmyk + 2 * raster_plane, cmyk + 3 * raster_plane,
+                        rgb[0] + y * raster_plane, rgb[1] + y * raster_plane,
+                        rgb[2] + y * raster_plane, pdev->width);
+                } else {
+                    /* ICC approach.  Likely a case with spots but CMYK profile */
+                    /* set up for planar buffer transform */
+                    gsicc_init_buffer(&input_buffer_desc, 4, 1, false, false, true, 
+                        raster_plane, raster_plane, 1, pdev->width);
+                    gsicc_init_buffer(&output_buffer_desc, 3, 1, false, false, true,
+                        raster_plane, raster_plane, 1, pdev->width);
+                    xc->icclink->procs.map_buffer(gprf_dev, xc->icclink,
+                        &input_buffer_desc, &output_buffer_desc,
+                        planes[0] + y * raster_plane, rgb[0] + y * raster_plane);
+                }
+            } else {
+                if (slowcolor) {
+                    /* CMYK input but profile likely missing here */
+                    get_rgb_planar_line(xc, planes[xc->chnl_to_position[0]] + y * raster_plane,
+                        planes[xc->chnl_to_position[xc->chnl_to_position[1]]] + y * raster_plane,
+                        planes[xc->chnl_to_position[xc->chnl_to_position[2]]] + y * raster_plane,
+                        planes[xc->chnl_to_position[xc->chnl_to_position[3]]] + y * raster_plane,
+                        rgb[0] + y * raster_plane, rgb[1] + y * raster_plane,
+                        rgb[2] + y * raster_plane, pdev->width);
+                } else {
+                    /* Fastest case all ICC */
+                    gsicc_init_buffer(&input_buffer_desc, num_comp, 1, false,
+                        false, true, raster_plane, raster_plane, 1, pdev->width);
+                    gsicc_init_buffer(&output_buffer_desc, 3, 1, false, false, true,
+                        raster_plane, raster_plane, 1, pdev->width);
+                    xc->icclink->procs.map_buffer(gprf_dev, xc->icclink,
+                        &input_buffer_desc, &output_buffer_desc,
+                        cmyk, rgb[0] + y * raster_plane);
+                }
             }
         }
 
         /* Now, for each tile... */
-        for (tile_x = 0; tile_x < tiled_w; tile_x++)
-        {
+        for (tile_x = 0; tile_x < tiled_w; tile_x++) {
             int tile_w = (xc->width - tile_x*256);
 
             if (tile_w > 256)
@@ -1060,8 +1208,7 @@ gprf_write_image_data(gprf_write_ctx *xc)
                 code = compressAndWrite(xc, rgb[1] + tile_x*256, tile_w, tile_h, raster_plane);
             if (code >= 0)
                 code = compressAndWrite(xc, rgb[2] + tile_x*256, tile_w, tile_h, raster_plane);
-            for (chan_idx = 0; chan_idx < num_comp; chan_idx++)
-            {
+            for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
                 int j = xc->chnl_to_position[chan_idx];
                 if (code >= 0)
                     code = compressAndWrite(xc, planes[j] + tile_x*256, tile_w, tile_h, raster_plane);
@@ -1074,16 +1221,14 @@ gprf_write_image_data(gprf_write_ctx *xc)
 
 cleanup:
     gx_downscaler_fin(&ds);
-    for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
-        gs_free_object(pdev->memory, planes[chan_idx], 
-                       "gprf_write_image_data");
-    }
+    gs_free_object(pdev->memory, planes[0], 
+                    "gprf_write_image_data");
     gs_free_object(pdev->memory, rgb[0],
                    "gprf_write_image_data");
-    gs_free_object(pdev->memory, rgb[1],
-                   "gprf_write_image_data");
-    gs_free_object(pdev->memory, rgb[2],
-                   "gprf_write_image_data");
+    if (equiv_needed) {
+        gs_free_object(pdev->memory, cmyk,
+            "gprf_write_image_data");
+    }
     return code;
 }
 
