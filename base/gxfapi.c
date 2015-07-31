@@ -1014,6 +1014,11 @@ gs_fapi_finish_render(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, gs_f
      * non-cacheing, non-marking cases, we must not draw the glyph.
      */
     if (pgs->in_charpath && !SHOW_IS(penum, TEXT_DO_NONE)) {
+        gs_point pt;
+
+        if ((code = gs_currentpoint(penum_pgs, &pt)) < 0)
+            return code;
+
         if ((code =
              outline_char(mem, I, import_shift_v, penum_s, penum_pgs->path,
                           !pbfont->PaintType)) < 0) {
@@ -1040,8 +1045,15 @@ gs_fapi_finish_render(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, gs_f
             gs_imager_state *pis = (gs_imager_state *) penum_pgs->show_gstate;
             gs_point pt;
 
+            /* This mimics code which is used below in the case where I->Use_outline is set.
+             * This is usually caused by setting -dTextAlphaBits, and will result in 'undefinedresult'
+             * errors. We want the code to work the same regardless off the setting of -dTextAlphaBits
+             * and it seems the simplest way to provoke the same error is to do the same steps....
+             * Note that we do not actually ever use the returned value.
+             */
             if ((code = gs_currentpoint(penum_pgs, &pt)) < 0)
                 return code;
+
             if ((code =
                  outline_char(mem, I, import_shift_v, penum_s,
                               penum_pgs->path, !pbfont->PaintType)) < 0)
@@ -1080,6 +1092,16 @@ gs_fapi_finish_render(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, gs_f
         else {
             int rast_orig_x = rast.orig_x;
             int rast_orig_y = -rast.orig_y;
+            gs_point pt;
+
+            /* This mimics code which is used above in the case where I->Use_outline is set.
+             * This is usually caused by setting -dTextAlphaBits, and will result in 'undefinedresult'
+             * errors. We want the code to work the same regardless off the setting of -dTextAlphaBits
+             * and it seems the simplest way to provoke the same error is to do the same steps....
+             * Note that we do not actually ever use the returned value.
+             */
+            if ((code = gs_currentpoint(penum_pgs, &pt)) < 0)
+                return code;
 
             if (penum_pgs->in_cachedevice == CACHE_DEVICE_CACHING) {    /* Using GS cache */
                 /*  GS and renderer may transform coordinates few differently.
