@@ -538,6 +538,11 @@ gx_clip_to_rectangle(gs_state * pgs, gs_fixed_rect * pbox)
     if (code < 0)
         return code;
     pgs->clip_path->rule = gx_rule_winding_number;
+    /* We are explicitly setting the clip to a specific rectangle, the path list
+     * must therefore be reset (it bears no relation to the actual clip now).
+     */
+    rc_decrement(pgs->clip_path->path_list, "gx_clip_to_rectangle");
+    pgs->clip_path->path_list = 0;
     note_set_clip_path(pgs);
     return 0;
 }

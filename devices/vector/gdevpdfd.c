@@ -404,7 +404,16 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
         code = pdf_save_viewer_state(pdev, s);
         if (code < 0)
             return code;
-        if (cpath_is_rectangle(pcpath, &rect)) {
+        /* path_valid states that the clip path is a simple path. If the clip is an intersection of
+         * two paths, then path_valid is false. The problem is that the rectangle list is the
+         * scan-converted result of the clip, and ths is at the device resolution. Its possible
+         * that the intersection of the clips, at device resolution, is rectangular but the
+         * two paths are not, and that at a different resolution, nor is the intersection.
+         * So we *only* want to write a rectangle, if the clip is rectangular, and its the
+         * result of a simple rectangle. Otherwise we want to write the paths that create
+         * the clip. However, see below about the path_list.
+         */
+        if (pcpath->path_valid && cpath_is_rectangle(pcpath, &rect)) {
             /* Use unrounded coordinates. */
             pprintg4(s, "%g %g %g %g re",
                 fixed2float(rect.p.x), fixed2float(rect.p.y),
@@ -418,6 +427,15 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 
             gdev_vector_dopath_init(&state, (gx_device_vector *)pdev,
                                     gx_path_type_fill, NULL);
+            /* the comment below is (now) incorrect. Previously in gx_clip_to_rectangle()
+             * we would create a rectangular clip, without using a path to do so. This results
+             * in a rectangular clip, where path_valid is false. However, we did *not* clear
+             * the path_list! So if there had previously been a clip path set, by setting paths,
+             * we did not clear it. This is not sensible, and caused massive confusion for this code
+             * so it has been altered to clear path_list, indicating that there is a clip,
+             * the path is not valid, and that it was not created using arbitrary paths.
+             * In this case we just emit the rectangle as well (there should be only one).
+             */
             if (pcpath->path_list == NULL) {
                 /*
                  * We think this should be never executed.
