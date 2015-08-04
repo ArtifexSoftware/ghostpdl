@@ -992,10 +992,12 @@ static int find_first_dict_entry(const cos_dict_t *d, const cos_dict_element_t *
             if (length2 < length1) {
                 First = pcde;
                 length1 = length2;
+                offset1 = offset2;
             }
         } else if (code < 0) {
             First = pcde;
             length1 = length2;
+            offset1 = offset2;
         }
         pcde = pcde->next;
     }
@@ -1059,21 +1061,8 @@ static int find_next_dict_entry(const cos_dict_t *d, const cos_dict_element_t **
                 code = strncmp((const char *)&pcde->key.data[offset2], (const char *)&Next->key.data[offset3], length);
                 if (code < 0 || (code == 0 && length3 > length2)) {
                     Next = pcde;
-                    for (i = 0;Next->key.data[i] == 0x00; i++)
-                        ;
-                    length3 = Next->key.size - i;
-                    offset3 = i;
-                    if (Next->key.data[offset3] == '/') {
-                        length3 -= 1;
-                        offset3 += 1;
-                    } else {
-                        if (Next->key.data[0] == '(') {
-                            length3 -= 2;
-                            offset3 = 1;
-                        } else {
-                            return_error(gs_error_typecheck);
-                        }
-                    }
+                    length3 = length2;
+                    offset3 = offset2;
                 }
             } else {
                 Next = pcde;
@@ -1083,11 +1072,11 @@ static int find_next_dict_entry(const cos_dict_t *d, const cos_dict_element_t **
                 offset3 = i;
                 if (Next->key.data[offset3] == '/') {
                     length3 -= 1;
-                    offset3 = 1;
+                    offset3 += 1;
                 } else {
                     if (Next->key.data[0] == '(') {
                         length3 -= 2;
-                        offset3 = 1;
+                        offset3 += 1;
                     } else {
                         return_error(gs_error_typecheck);
                     }
