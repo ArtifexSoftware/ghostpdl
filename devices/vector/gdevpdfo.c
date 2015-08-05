@@ -1108,7 +1108,7 @@ static int find_last_dict_entry(const cos_dict_t *d, const cos_dict_element_t **
 }
 static int write_key_as_string_encrypted(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
 {
-    stream sinp, sout;
+    stream sout;
     stream_PSSD_state st;
     stream_state so;
     byte bufo[100], *buffer;
@@ -1134,7 +1134,7 @@ static int write_key_as_string_encrypted(const gx_device_pdf *pdev, const byte *
     stream_write(&sout, buffer, size);
     sclose(&sout); /* Writes ')'. */
     gs_free_object(pdev->pdf_memory, buffer, "Free encryption buffer");
-    return (int)stell(&sinp) + 1;
+    return 0;
 }
 
 static int write_key_as_string(const gx_device_pdf *pdev, stream *s, const cos_dict_element_t *element, gs_id object_id)
