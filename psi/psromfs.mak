@@ -318,41 +318,41 @@ PS_ENCODING_DEPS=\
 
 # A list of all of the files in Resource/Font
 PS_FONT_DEPS=\
-	$(PSRESDIR)$(D)Font$(D)BookmanURW-DemBol \
-	$(PSRESDIR)$(D)Font$(D)BookmanURW-DemBolIta \
-	$(PSRESDIR)$(D)Font$(D)BookmanURW-Lig \
-	$(PSRESDIR)$(D)Font$(D)BookmanURW-LigIta \
-	$(PSRESDIR)$(D)Font$(D)CenturySchURW-Bol \
-	$(PSRESDIR)$(D)Font$(D)CenturySchURW-BolIta \
-	$(PSRESDIR)$(D)Font$(D)CenturySchURW-Ita \
-	$(PSRESDIR)$(D)Font$(D)CenturySchURW-Rom \
-	$(PSRESDIR)$(D)Font$(D)ChanceryURW-MedIta \
+	$(PSRESDIR)$(D)Font$(D)CenturySchL-Bold \
+	$(PSRESDIR)$(D)Font$(D)CenturySchL-BoldItal \
+	$(PSRESDIR)$(D)Font$(D)CenturySchL-Ital \
+	$(PSRESDIR)$(D)Font$(D)CenturySchL-Roma \
 	$(PSRESDIR)$(D)Font$(D)Dingbats \
 	$(PSRESDIR)$(D)Font$(D)NimbusMono-Bold \
 	$(PSRESDIR)$(D)Font$(D)NimbusMono-BoldOblique \
-	$(PSRESDIR)$(D)Font$(D)NimbusMono-Oblique \
 	$(PSRESDIR)$(D)Font$(D)NimbusMono-Regular \
-	$(PSRESDIR)$(D)Font$(D)NimbusRomNo9L-RegIta \
+	$(PSRESDIR)$(D)Font$(D)NimbusMono-Oblique \
 	$(PSRESDIR)$(D)Font$(D)NimbusRomNo9L-Med \
 	$(PSRESDIR)$(D)Font$(D)NimbusRomNo9L-MedIta \
 	$(PSRESDIR)$(D)Font$(D)NimbusRomNo9L-Reg \
-	$(PSRESDIR)$(D)Font$(D)NimbusSanL-Bol  \
+	$(PSRESDIR)$(D)Font$(D)NimbusRomNo9L-RegIta \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-Bol \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-BoldCond \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-BoldCondItal \
 	$(PSRESDIR)$(D)Font$(D)NimbusSanL-BolIta \
-	$(PSRESDIR)$(D)Font$(D)NimbusSanL-RegIta \
-	$(PSRESDIR)$(D)Font$(D)NimbusSanNar-Bol \
-	$(PSRESDIR)$(D)Font$(D)NimbusSanNar-BolIta \
-	$(PSRESDIR)$(D)Font$(D)NimbusSanNar-Ita \
-	$(PSRESDIR)$(D)Font$(D)NimbusSanNar-Reg \
 	$(PSRESDIR)$(D)Font$(D)NimbusSanL-Reg \
-	$(PSRESDIR)$(D)Font$(D)PalladioURW-Bol \
-	$(PSRESDIR)$(D)Font$(D)PalladioURW-BolIta \
-	$(PSRESDIR)$(D)Font$(D)PalladioURW-Ita \
-	$(PSRESDIR)$(D)Font$(D)PalladioURW-Rom \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-ReguCond \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-ReguCondItal \
+	$(PSRESDIR)$(D)Font$(D)NimbusSanL-RegIta \
 	$(PSRESDIR)$(D)Font$(D)StandardSymL \
-	$(PSRESDIR)$(D)Font$(D)URWGothic-Boo \
-	$(PSRESDIR)$(D)Font$(D)URWGothic-BooObl \
-	$(PSRESDIR)$(D)Font$(D)URWGothic-Dem \
-	$(PSRESDIR)$(D)Font$(D)URWGothic-DemObl
+	$(PSRESDIR)$(D)Font$(D)URWBookmanL-DemiBold \
+	$(PSRESDIR)$(D)Font$(D)URWBookmanL-DemiBoldItal \
+	$(PSRESDIR)$(D)Font$(D)URWBookmanL-Ligh \
+	$(PSRESDIR)$(D)Font$(D)URWBookmanL-LighItal \
+	$(PSRESDIR)$(D)Font$(D)URWChanceryL-MediItal \
+	$(PSRESDIR)$(D)Font$(D)URWGothicL-Book \
+	$(PSRESDIR)$(D)Font$(D)URWGothicL-BookObli \
+	$(PSRESDIR)$(D)Font$(D)URWGothicL-Demi \
+	$(PSRESDIR)$(D)Font$(D)URWGothicL-DemiObli \
+	$(PSRESDIR)$(D)Font$(D)URWPalladioL-Bold \
+	$(PSRESDIR)$(D)Font$(D)URWPalladioL-BoldItal \
+	$(PSRESDIR)$(D)Font$(D)URWPalladioL-Ital \
+	$(PSRESDIR)$(D)Font$(D)URWPalladioL-Roma
 
 # A list of all of the files in Resource/IdimSet
 PS_IDIOMSET_DEPS=

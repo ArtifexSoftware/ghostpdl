@@ -81,40 +81,40 @@
 
 % Aliases
 
-/Bookman-Demi			/BookmanURW-DemBol	;
-/Bookman-DemiItalic		/BookmanURW-DemBolIta	;
-/Bookman-Light			/BookmanURW-Lig	;
-/Bookman-LightItalic		/BookmanURW-LigIta	;
+/Bookman-Demi			/URWBookmanL-DemiBold	;
+/Bookman-DemiItalic		/URWBookmanL-DemiBoldItal	;
+/Bookman-Light			/URWBookmanL-Ligh	;
+/Bookman-LightItalic		/URWBookmanL-LighItal	;
 
 /Courier			/NimbusMono-Regular	;
 /Courier-Oblique		/NimbusMono-Oblique	;
 /Courier-Bold			/NimbusMono-Bold	;
 /Courier-BoldOblique		/NimbusMono-BoldOblique	;
 
-/AvantGarde-Book		/URWGothic-Boo	;
-/AvantGarde-BookOblique		/URWGothic-BooObl	;
-/AvantGarde-Demi		/URWGothic-Dem	;
-/AvantGarde-DemiOblique		/URWGothic-DemObl	;
+/AvantGarde-Book		/URWGothicL-Book	;
+/AvantGarde-BookOblique		/URWGothicL-BookObli	;
+/AvantGarde-Demi		/URWGothicL-Demi	;
+/AvantGarde-DemiOblique		/URWGothicL-DemiObli	;
 
 /Helvetica			/NimbusSanL-Reg	;
 /Helvetica-Oblique		/NimbusSanL-RegIta	;
 /Helvetica-Bold			/NimbusSanL-Bol	;
 /Helvetica-BoldOblique		/NimbusSanL-BolIta	;
 
-/Helvetica-Narrow		/NimbusSanNar-Reg	;
-/Helvetica-Narrow-Oblique	/NimbusSanNar-Ita	;
-/Helvetica-Narrow-Bold		/NimbusSanNar-Bol	;
-/Helvetica-Narrow-BoldOblique	/NimbusSanNar-BolIta	;
+/Helvetica-Narrow		/NimbusSanL-ReguCond	;
+/Helvetica-Narrow-Oblique	/NimbusSanL-ReguCondItal	;
+/Helvetica-Narrow-Bold		/NimbusSanL-BoldCond	;
+/Helvetica-Narrow-BoldOblique	/NimbusSanL-BoldCondItal	;
 
-/Palatino-Roman			/PalladioURW-Rom	;
-/Palatino-Italic		/PalladioURW-Ita	;
-/Palatino-Bold			/PalladioURW-Bol	;
-/Palatino-BoldItalic		/PalladioURW-BolIta	;
+/Palatino-Roman			/URWPalladioL-Roma	;
+/Palatino-Italic		/URWPalladioL-Ital	;
+/Palatino-Bold			/URWPalladioL-Bold	;
+/Palatino-BoldItalic		/URWPalladioL-BoldItal	;
 
-/NewCenturySchlbk-Roman		/CenturySchURW-Rom	;
-/NewCenturySchlbk-Italic	/CenturySchURW-Ita	;
-/NewCenturySchlbk-Bold		/CenturySchURW-Bol	;
-/NewCenturySchlbk-BoldItalic	/CenturySchURW-BolIta	;
+/NewCenturySchlbk-Roman		/CenturySchL-Roma	;
+/NewCenturySchlbk-Italic	/CenturySchL-Ital	;
+/NewCenturySchlbk-Bold		/CenturySchL-Bold	;
+/NewCenturySchlbk-BoldItalic	/CenturySchL-BoldItal	;
 
 /Times-Roman			/NimbusRomNo9L-Reg	;
 /Times-Italic			/NimbusRomNo9L-RegIta	;
@@ -123,7 +123,7 @@
 
 /Symbol				/StandardSymL	;
 
-/ZapfChancery-MediumItalic	/ChanceryURW-MedIta	;
+/ZapfChancery-MediumItalic	/URWChanceryL-MediItal	;
 
 /ZapfDingbats			/Dingbats	;
 
