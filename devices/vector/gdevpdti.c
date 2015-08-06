@@ -678,7 +678,7 @@ pdf_open_aside(gx_device_pdf *pdev, pdf_resource_type_t rtype,
 
     pdev->streams.save_strm = pdev->strm;
 
-    if (rtype > NUM_RESOURCE_TYPES)
+    if (rtype >= NUM_RESOURCE_TYPES)
         rtype = resourceOther;
     code = pdf_alloc_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, id),
                 pdf_resource_type_structs[rtype], &pres, reserve_object_id ? 0 : -1);
