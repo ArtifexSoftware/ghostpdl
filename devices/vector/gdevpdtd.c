@@ -262,7 +262,12 @@ int pdf_font_descriptor_free(gx_device_pdf *pdev, pdf_resource_t *pres)
 {
     pdf_font_descriptor_t *pfd = (pdf_font_descriptor_t *)pres;
     pdf_base_font_t *pbfont = pfd->base_font;
-    gs_font *copied = (gs_font *)pbfont->copied, *complete = (gs_font *)pbfont->complete;
+    gs_font *copied = NULL, *complete = NULL;
+
+    if (pbfont) {
+        copied = (gs_font *)pbfont->copied;
+        complete = (gs_font *)pbfont->complete;
+    }
 
     if (complete && copied != complete)
         gs_free_copied_font(complete);
