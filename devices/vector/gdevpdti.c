@@ -93,7 +93,7 @@ assign_char_code(gx_device_pdf * pdev, gs_text_enum_t *pte)
         if (code < 0)
             return code;
         pdfont->u.simple.s.type3.bitmap_font = true;
-        if (pbfs->open_font == 0)
+        if (pbfs->open_font->rname[0] == 0)
             pdfont->rname[0] = 0;
         else
             strcpy(pdfont->rname, pbfs->open_font->rname);
