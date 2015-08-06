@@ -3251,7 +3251,7 @@ pdf_text_process(gs_text_enum_t *pte)
 
                 code = install_charproc_accumulator(pdev, pte, pte_default, penum);
                 if (code < 0) {
-                    pgs->FontMatrix = savem;
+                    pgs->font->FontMatrix = savem;
                     return code;
                 }
 
