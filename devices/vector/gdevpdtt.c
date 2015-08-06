@@ -3250,8 +3250,10 @@ pdf_text_process(gs_text_enum_t *pte)
                     pte->text.data.chars[pte->index];
 
                 code = install_charproc_accumulator(pdev, pte, pte_default, penum);
-                if (code < 0)
+                if (code < 0) {
+                    pgs->FontMatrix = savem;
                     return code;
+                }
 
                 /* We can't capture more than one glyph at a time, so amek this one
                  * otherwise the gs_text_process would try to render all the glyphs
