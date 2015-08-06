@@ -931,10 +931,6 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
             }
             continue;
         }
-
-        if (pdev->ParseDSCCommentsForDocInfo || pdev->PreserveEPSInfo)
-            code = cos_dict_put_c_key_string(pdev->Info, key,
-                                             pvalue->data, pvalue->size);
     }
     return code;
 }
