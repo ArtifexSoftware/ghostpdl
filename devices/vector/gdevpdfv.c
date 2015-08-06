@@ -481,6 +481,9 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 
         gs_image_t_init_adjust(&image, pcs_Device, false);
         image.BitsPerComponent = 8;
+        if (!p_tile)
+            return_error(gs_error_unknownerror);
+
         pdf_set_pattern_image((gs_data_image_t *)&image, &p_tile->tbits);
         if (m_tile) {
             if ((code = pdf_put_pattern_mask(pdev, m_tile, &pcs_mask)) < 0)
