@@ -2473,8 +2473,6 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
             return code;
 
         pis->line_params.half_width = save_width;
-        if (code < 0)
-            return code;
     }
 
     /* Now set all the other parameters. */
