@@ -2255,6 +2255,8 @@ pdf14_fill_path(gx_device *dev,	const gs_imager_state *pis,
     int code;
     gs_pattern2_instance_t *pinst = NULL;
 
+    new_is.is_gstate = false;
+
     if (pdcolor != NULL && gx_dc_is_pattern1_color(pdcolor)){
         if( gx_pattern1_get_transptr(pdcolor) != NULL ||
             gx_pattern1_clist_has_trans(pdcolor) ){
@@ -2331,6 +2333,8 @@ pdf14_stroke_path(gx_device *dev, const	gs_imager_state	*pis,
                              const gx_clip_path *pcpath)
 {
     gs_imager_state new_is = *pis;
+
+    new_is.is_gstate = false;
 
     update_lop_for_pdf14(&new_is, pdcolor);
     pdf14_set_marking_params(dev, pis);
@@ -3408,6 +3412,7 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_imager_state * pis,
                 {
                     /* Make a copy so we can change the ROP */
                     gs_imager_state new_is = *pis;
+                    new_is.is_gstate = false;
 
                     /* We don't use the imager state log_op since this is for the */
                     /* clist playback. Putting the image (band in the case of the */
@@ -7610,6 +7615,8 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
     gsicc_rendering_param_t render_cond;
     cmm_profile_t *icc_profile_fwd, *icc_profile_dev;
 
+    new_is.is_gstate = false;
+
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     if (code < 0)
         return code;
@@ -7673,6 +7680,8 @@ pdf14_clist_stroke_path(gx_device *dev,	const gs_imager_state *pis,
     gs_imager_state new_is = *pis;
     int code;
     gs_pattern2_instance_t *pinst = NULL;
+
+    new_is.is_gstate = false;
 
     /*
      * Ensure that that the PDF 1.4 reading compositor will have the current
