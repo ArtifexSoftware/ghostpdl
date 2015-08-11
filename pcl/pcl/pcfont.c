@@ -179,12 +179,29 @@ pcl_secondary_pitch(pcl_args_t * pargs, pcl_state_t * pcs)
     return pcl_pitch(float_arg(pargs), pcs, 1);
 }
 
+/* 
+ * Experiments on HP printers indicate height command parameters are truncated to
+ * the documented range .25 - 999.75.
+ */
+
+static inline double
+height_clamp(double ht)
+{
+    if (ht < .25)
+        return .25;
+    else if (ht > 999.75)
+        return 999.75;
+    else
+        return ht;
+}
+
 static int
 pcl_height(pcl_args_t * pargs, pcl_state_t * pcs, int set)
 {
-    uint height_4ths = (uint) (float_arg(pargs) * 4 + 0.5);
-    pcl_font_selection_t *pfs = &pcs->font_selection[set];
 
+    uint height_4ths = 
+        (uint) (height_clamp(float_arg(pargs)) * 4 + 0.5);
+    pcl_font_selection_t *pfs = &pcs->font_selection[set];
     pfs->params.height_4ths = height_4ths;
     pcl_decache_font(pcs, set, true);
     return 0;
