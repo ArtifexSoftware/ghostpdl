@@ -803,8 +803,14 @@ pxRemoveFont(px_args_t * par, px_state_t * pxs)
     int code = px_find_existing_font(pfnv, &pxfont, pxs);
     const char *error = 0;
 
+    /*
+     * An error code here indicates the data returned from
+     * px_find_existing_font() is invalid, not much we can do except
+     * return.
+     */
+
     if (code < 0)
-        error = "UndefinedFontNotRemoved - ";
+        return code;
     else if (pxfont == 0)       /* built-in font, assume internal */
         error = "InternalFontNotRemoved - ";
     else
@@ -818,6 +824,7 @@ pxRemoveFont(px_args_t * par, px_state_t * pxs)
             default:           /* downloaded */
                 ;
         }
+
     if (error) {                /* Construct a warning message including the font name. */
         char message[px_max_error_line + 1];
 
@@ -825,7 +832,15 @@ pxRemoveFont(px_args_t * par, px_state_t * pxs)
         px_concat_font_name(message, px_max_error_line, pfnv);
         code = px_record_warning(message, false, pxs);
     }
-        /****** WHAT IF THIS IS THE CURRENT FONT? ******/
+
+    /*
+     * If we're deleting the current font we have to update the
+     * graphics state.
+     */
+    if (pxfont->pfont == gs_currentfont(pxs->pgs))
+        gs_setfont(pxs->pgs, NULL);
+        
     px_dict_undef(&pxs->font_dict, par->pv[0]);
+
     return code;
 }
