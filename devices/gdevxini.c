@@ -946,6 +946,9 @@ gdev_x_close(gx_device_X *xdev)
     gdev_x_free_colors(xdev);
     if (xdev->cmap != DefaultColormapOfScreen(xdev->scr))
         XFreeColormap(xdev->dpy, xdev->cmap);
+    if (xdev->gc)
+        XFreeGC(xdev->dpy, xdev->gc);
+
     XCloseDisplay(xdev->dpy);
     return 0;
 }
