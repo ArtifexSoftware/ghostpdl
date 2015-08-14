@@ -473,6 +473,18 @@ end
 
 /gssmask {
   {
+   dup type /dicttype eq
+   {
+     dup /G knownogetdict
+     {pop}
+     {
+        (   **** Warning: Dropping invalid transparency SMask group\n)
+        pdfformaterror
+        % replace the invalid SMask object
+        pop /None
+     } ifelse
+    } if
+
     dup /None eq 1 index //null eq or PDFusingtransparency not or {
       pop //null
       SoftMask //null ne {
