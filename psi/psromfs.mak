@@ -29,13 +29,17 @@ MISC_INIT_FILES=FCOfontmap-PCLPS2 -C cidfmap \
  pdf_cslayer.ps -B
 
 # In the below list, the Font contents are _not_ compressed since it doesn't help.
-RESOURCE_LIST=SubstCID$(D)* CIDFSubst$(D)* CIDFont$(D)* -C $(PDF_RESOURCE_LIST) ColorSpace$(D)* Decoding$(D)* Encoding$(D)* -B -b Font$(D)* -c -C IdiomSet$(D)* ProcSet$(D)* -P $(PSRESDIR)$(D)Init$(D) -d Resource/Init/ -B $(MISC_INIT_FILES)
+PS_RESOURCE_LIST=SubstCID$(D)* CIDFSubst$(D)* CIDFont$(D)* -C $(PDF_RESOURCE_LIST) ColorSpace$(D)* Decoding$(D)* Encoding$(D)* -c -C IdiomSet$(D)* ProcSet$(D)* -P $(PSRESDIR)$(D)Init$(D) -d Resource/Init/ -B $(MISC_INIT_FILES)
+
+PS_FONT_RESOURCE_LIST=-B -b Font$(D)*
 
 #	Notes: gs_cet.ps is only needed to match Adobe CPSI defaults
 PS_ROMFS_ARGS=-c \
   -d Resource/Init/ -P $(PSRESDIR)$(D)Init$(D) -g gs_init.ps $(iconfig_h) \
-  -d Resource/ -P $(PSRESDIR)$(D) $(RESOURCE_LIST) \
+  -d Resource/ -P $(PSRESDIR)$(D) $(PS_RESOURCE_LIST) \
   -d lib/ -P $(PSLIBDIR)$(D) $(EXTRA_INIT_FILES)
+
+PS_FONT_ROMFS_ARGS=-d Resource/ -P $(PSRESDIR)$(D) $(PS_FONT_RESOURCE_LIST)
 
 # If you add a file remember to add it here. If you forget then builds from
 # clean will work (as all files in the directory are included), but rebuilds

@@ -15,4 +15,5 @@
 # This needs a file on its own due to the required include ordering
 # in the top level makefiles. Being empty, it's here purely for symmetry
 
+XPS_FONT_ROMFS_ARGS=
 XPS_ROMFS_ARGS=

@@ -3176,7 +3176,7 @@ $(GLD)romfs0.dev :  $(LIB_MAK) $(ECHOGS_XE) $(MAKEDIRS)
 $(GLGEN)gsromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1_.c \
 	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
-	$(PS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
+	$(PS_ROMFS_ARGS) $(PS_FONT_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
 $(GLGEN)gsromfs1_1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)gsromfs1_1.c \
@@ -3190,7 +3190,8 @@ $(GLGEN)gsromfs1.c : $(GLGEN)gsromfs1_$(UFST_BRIDGE).c $(MAKEDIRS)
 $(GLGEN)pclromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pclromfs1_.c \
 	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
-	$(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(GL_ROMFS_ARGS)
+	$(PCLXL_FONT_ROMFS_ARGS) $(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) \
+        $(PJL_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
 $(GLGEN)pclromfs1_1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pclromfs1_1.c \
@@ -3205,7 +3206,7 @@ $(GLGEN)pclromfs1.c : $(GLGEN)pclromfs1_$(UFST_BRIDGE).c $(MAKEDIRS)
 $(GLGEN)xpsromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)xpsromfs1_.c \
 	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
-	$(XPS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
+	$(XPS_ROMFS_ARGS) $(XPS_FONT_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
 $(GLGEN)xpsromfs1_1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)xpsromfs1_1.c \
@@ -3220,8 +3221,9 @@ $(GLGEN)xpsromfs1.c : $(GLGEN)xpsromfs1_$(UFST_BRIDGE).c $(MAKEDIRS)
 $(GLGEN)pdlromfs1_.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs1_.c \
 	-X .svn -X CVS -P $(GLSRCDIR)$(D)..$(D) iccprofiles$(D)* \
-	$(PCLXL_ROMFS_ARGS) $(PJL_ROMFS_ARGS) $(XPS_ROMFS_ARGS) \
-	$(PS_ROMFS_ARGS) $(GL_ROMFS_ARGS)
+	$(PCLXL_ROMFS_ARGS) $(PCLXL_FONT_ROMFS_ARGS) $(PJL_ROMFS_ARGS) \
+        $(XPS_ROMFS_ARGS) $(XPS_FONT_ROMFS_ARGS) \
+	$(PS_ROMFS_ARGS) $(PS_FONT_ROMFS_ARGS) $(GL_ROMFS_ARGS)
 
 $(GLGEN)pdlromfs1_1.c : $(MKROMFS_XE) $(PS_ROMFS_DEPS) $(MAKEDIRS)
 	$(EXP)$(MKROMFS_XE) -o $(GLGEN)pdlromfs1_1.c \

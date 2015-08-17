@@ -17,4 +17,6 @@
 # This needs a file on its own due to the required include ordering
 # in the top level makefiles.
 
-PCLXL_ROMFS_ARGS=-c -P $(PLSRCDIR)$(D)..$(D)urwfonts -d ttfonts /*.ttf
+PCLXL_FONT_ROMFS_ARGS=-c -P $(PLSRCDIR)$(D)..$(D)urwfonts -d ttfonts /*.ttf
+
+PCLXL_ROMFS_ARGS=
