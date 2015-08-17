@@ -745,6 +745,30 @@ currentdict /csncompdict undef
   mark exch { oforce } forall .dicttomark
   dup dup //true resolvestream
   /ReusableStreamDecode filter /DataSource exch put
+
+  % Check that the number of components (/N) defined in the ICCBased
+  % dictionry matches the actual profile. Bug #696120
+  dup /N get
+  1 index
+  %% If we get an error reading the profile, just assume that /N is correct
+  %% If its genuinely faulty we will use an alternate based on /N.
+  {.numicc_components} stopped {pop dup} if
+  dup 3 -1 roll ne {
+    %% /N and the actual number of components don't match. Ensure
+    %% that we have a valid number of components from the ICC
+    %% profile. Certain kinds of profile can't determine the numebr of components
+    %% and in ths case we must not override the /N value.
+    dup 0 gt {
+         (   **** Warning: ICCbased space /N value does not match the ICC profile.\n) pdfformaterror
+         (                 Using the number of channles from the profile.\n) pdfformaterror
+        1 index exch /N exch put
+    }{
+      pop
+    } ifelse
+  } {
+    pop
+  } ifelse
+
   1 exch put
   exch PDFfile exch setfileposition
   % Resolve alternate color space

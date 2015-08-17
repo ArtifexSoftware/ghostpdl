@@ -32,6 +32,7 @@
 #include "igstate.h"
 #include "icie.h"
 #include "ialloc.h"
+#include "store.h"
 #include "zicc.h"
 #include "gsicc_manage.h"
 #include "gx.h"
@@ -45,7 +46,6 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 {
     int                     code, k;
     gs_color_space *        pcs;
-    gs_color_space *  palt_cs;
     ref *                   pstrmval;
     stream *                s = 0L;
     cmm_profile_t           *picc_profile;
@@ -58,8 +58,6 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     static const char *const icc_std_profile_keys[] = {
             GSICC_STANDARD_PROFILES_KEYS
         };
-
-    palt_cs = gs_currentcolorspace(igs);
 
     /* verify the DataSource entry */
     if (dict_find_string(ICCdict, "DataSource", &pstrmval) <= 0)
@@ -477,25 +475,20 @@ seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
 {
     int                     code;
     gs_color_space *        pcs;
-    gs_color_space *        palt_cs;
     gs_imager_state *       pis = (gs_imager_state *)igs;
     int                     i;
     static const char *const rfs = LAB_ICC;
-    gs_param_string val, *pval;
+    gs_param_string val;
 
     val.data = (const byte *)rfs;
     val.size = strlen(rfs);
     val.persistent = true;
-    pval = &val;
 
-    palt_cs = gs_currentcolorspace(igs);
     /* build the color space object */
     code = gs_cspace_build_ICC(&pcs, NULL, gs_state_memory(igs));
     if (code < 0)
         return gs_rethrow(code, "building color space object");
     /* record the current space as the alternative color space */
-    /* pcs->base_space = palt_cs;
-    rc_increment_cs(palt_cs); */
     /* Get the lab profile.  It may already be set in the icc manager.
        If not then lets populate it.  */
     if (pis->icc_manager->lab_profile == NULL ) {
@@ -567,9 +560,72 @@ seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma,
     return code;
 }
 
+static int
+znumicc_components(i_ctx_t * i_ctx_p)
+{
+    ref *                   pnval;
+    ref *                   pstrmval;
+    stream *                s;
+    int                     ncomps, expected = 0, code;
+    cmm_profile_t           *picc_profile;
+    os_ptr                  op = osp;
+
+    check_type(*op, t_dictionary);
+    check_dict_read(*op);
+
+    code = dict_find_string(op, "N", &pnval);
+    if (code < 0)
+        return code;
+    ncomps = pnval->value.intval;
+    /* verify the DataSource entry. Create profile from stream */
+    if (dict_find_string(op, "DataSource", &pstrmval) <= 0)
+        return_error(gs_error_undefined);
+    check_read_file(i_ctx_p, s, pstrmval);
+
+    picc_profile = gsicc_profile_new(s, gs_state_memory(igs), NULL, 0);
+    picc_profile->num_comps = ncomps;
+    picc_profile->profile_handle =
+        gsicc_get_profile_handle_buffer(picc_profile->buffer,
+                                        picc_profile->buffer_size,
+                                        gs_state_memory(igs));
+    if (picc_profile->profile_handle == NULL) {
+        rc_decrement(picc_profile,"znumicc_components");
+        make_int(op, expected);
+        return 0;
+    }
+    picc_profile->data_cs = gscms_get_profile_data_space(picc_profile->profile_handle);
+
+    switch (picc_profile->data_cs) {
+        case gsCIEXYZ:
+        case gsCIELAB:
+        case gsRGB:
+            expected = 3;
+            break;
+        case gsGRAY:
+            expected = 1;
+            break;
+        case gsCMYK:
+            expected = 4;
+            break;
+        case gsNCHANNEL:
+            expected = 0;
+            break;
+        case gsNAMED:
+        case gsUNDEFINED:
+            expected = -1;
+            break;
+    }
+
+    make_int(op, expected);
+
+    rc_decrement(picc_profile,"zset_outputintent");
+    return 0;
+}
+
 const op_def    zicc_ll3_op_defs[] = {
     op_def_begin_ll3(),
     { "1.seticcspace", zseticcspace },    
     { "1.set_outputintent", zset_outputintent },
+    { "1.numicc_components", znumicc_components },
     op_def_end(0)
 };
