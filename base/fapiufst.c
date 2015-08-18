@@ -1165,9 +1165,9 @@ gs_fapi_ufst_get_scaled_font_aux(gs_fapi_server * server, gs_fapi_font * ff,
         hy *= 256;
 
         while (hx < 1.5 || hy < 1.5) {
-            world_scale += 8;
-            hx *= 256;
-            hy *= 256;
+            world_scale += 1;
+            hx *= 10;
+            hy *= 10;
         }
     }
     fc->s.m2.world_scale = world_scale;
