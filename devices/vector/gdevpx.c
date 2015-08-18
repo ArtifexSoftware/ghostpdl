@@ -803,9 +803,12 @@ pclxl_write_image_data_JPEG(gx_device_pclxl * xdev, const byte * base,
     state.ColorTransform = (xdev->color_info.num_components == 3 ? 1 : 0);
     state.data.compress = jcdp;
     state.icc_profile = NULL;
-    jcdp->memory = state.jpeg_memory = xdev->v_memory;
+    /* state.memory needs set for creation..... */
+    state.memory = jcdp->memory = state.jpeg_memory = xdev->v_memory;
     if ((code = gs_jpeg_create_compress(&state)) < 0)
-	goto cleanup_and_use_rle;
+        goto cleanup_and_use_rle;
+    /* .... and NULL after, so we don't try to free the stack based "state" */
+    state.memory = NULL;
     /* image-specific info */
     jcdp->cinfo.image_width = width_bytes / xdev->color_info.num_components;
     jcdp->cinfo.image_height = height;
