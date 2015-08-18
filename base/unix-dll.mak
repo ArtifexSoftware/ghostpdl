@@ -88,12 +88,15 @@ $(GS_SO_MAJOR): $(GS_SO_MAJOR_MINOR)
 	$(RM_) $(GS_SO_MAJOR)
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(GS_SO_MAJOR)
 
+so-links-subtarget:	$(GS_SO)
+	$(NO_OP)
+
 # Build the small Ghostscript loaders, with Gtk+ and without
-$(GSSOC_XE): $(GS_SO) $(PSSRC)$(SOC_LOADER)
+$(GSSOC_XE): so-links-subtarget $(PSSRC)$(SOC_LOADER)
 	$(GLCC) -g -o $(GSSOC_XE) $(PSSRC)dxmainc.c \
 	-L$(BINDIR) -l$(GS_SO_BASE)
 
-$(GSSOX_XE): $(GS_SO) $(PSSRC)$(SOC_LOADER)
+$(GSSOX_XE): so-links-subtarget $(PSSRC)$(SOC_LOADER)
 	$(GLCC) -g $(SOC_CFLAGS) -o $(GSSOX_XE) $(PSSRC)$(SOC_LOADER) \
 	-L$(BINDIR) -l$(GS_SO_BASE) $(SOC_LIBS)
 
@@ -121,14 +124,28 @@ so:
 	fi
 	$(MAKE) $(SUB_MAKE_OPTION) so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 
+so-only:
+	@if test -z "$(MAKE) $(SUB_MAKE_OPTION)" -o -z "`$(MAKE) $(SUB_MAKE_OPTION) --version 2>&1 | grep GNU`";\
+	  then echo "Warning: this target requires gmake";\
+	fi
+	$(MAKE) $(SUB_MAKE_OPTION) so-only-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
+	$(MAKE) $(SUB_MAKE_OPTION) so-links-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
+	
+
 # Debug shared object
+so-onlydebug:
+	@if test -z "$(MAKE) $(SUB_MAKE_OPTION)" -o -z "`$(MAKE) $(SUB_MAKE_OPTION) --version 2>&1 | grep GNU`";\
+	  then echo "Warning: this target requires gmake";\
+	fi
+	$(MAKE) $(SUB_MAKE_OPTION) so-only-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
+
 sodebug:
 	@if test -z "$(MAKE) $(SUB_MAKE_OPTION)" -o -z "`$(MAKE) $(SUB_MAKE_OPTION) --version 2>&1 | grep GNU`";\
 	  then echo "Warning: this target requires gmake";\
 	fi
 	$(MAKE) $(SUB_MAKE_OPTION) so-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
 
-so-subtarget:
+so-only-subtarget:
 	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
 	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 directories
@@ -138,6 +155,8 @@ so-subtarget:
 	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)'\
 	 CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)'\
 	 prefix=$(prefix)
+
+so-subtarget: so-only-subtarget
 	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS_FINAL) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
 	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 $(GSSOC_XE) $(GSSOX_XE)
