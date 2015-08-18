@@ -2416,12 +2416,15 @@ AC_ARG_WITH([gnu-make],  AC_HELP_STRING([--without-gnu-make],
     [disable GNU make features]), gnu_make=no)
 
 if test "x$gnu_make" != "xno"; then
+  SUB_MAKE_OPTION="-f \$(MAKEFILE)"
   ORDER_ONLY="|"
 else
+  SUB_MAKE_OPTION=
   ORDER_ONLY=""
 fi
 
 AC_SUBST(ORDER_ONLY)
+AC_SUBST(SUB_MAKE_OPTION)
 
 # --------------------------------------------------
 # annoying: Windows doesn't allow "aux" as a

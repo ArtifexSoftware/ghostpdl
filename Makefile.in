@@ -619,6 +619,10 @@ GS_SHARED_OBJS=@DYNAMIC_DEVS@
 MAKEFILE=Makefile
 TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)/unixhead.mak
 
+# for use in unix-dll.mak and unix-end.mak
+# if you rename the Makefile, you *must* also set this to the new name
+SUB_MAKE_OPTION=@SUB_MAKE_OPTION@
+
 # Define the auxiliary program dependency. We don't use this.
 
 AK=

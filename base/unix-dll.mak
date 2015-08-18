@@ -116,37 +116,37 @@ SODEFS_FINAL=\
 
 # Normal shared object
 so:
-	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
+	@if test -z "$(MAKE) $(SUB_MAKE_OPTION)" -o -z "`$(MAKE) $(SUB_MAKE_OPTION) --version 2>&1 | grep GNU`";\
 	  then echo "Warning: this target requires gmake";\
 	fi
-	$(MAKE) so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
+	$(MAKE) $(SUB_MAKE_OPTION) so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 
 # Debug shared object
 sodebug:
-	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
+	@if test -z "$(MAKE) $(SUB_MAKE_OPTION)" -o -z "`$(MAKE) $(SUB_MAKE_OPTION) --version 2>&1 | grep GNU`";\
 	  then echo "Warning: this target requires gmake";\
 	fi
-	$(MAKE) so-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
+	$(MAKE) $(SUB_MAKE_OPTION) so-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
 
 so-subtarget:
-	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
+	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
 	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 directories
-	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
+	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
 	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 $(AUXDIR)/echogs$(XEAUX) $(AUXDIR)/genarch$(XEAUX)
-	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)'\
+	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)'\
 	 CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)'\
 	 prefix=$(prefix)
-	$(MAKE) $(SODEFS_FINAL) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
+	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS_FINAL) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
 	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 $(GSSOC_XE) $(GSSOX_XE)
 
 install-so:
-	$(MAKE) install-so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
+	$(MAKE) $(SUB_MAKE_OPTION) install-so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 
 install-sodebug:
-	$(MAKE) install-so-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
+	$(MAKE) $(SUB_MAKE_OPTION) install-so-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
 
 install-so-subtarget: so-subtarget
 	-mkdir -p $(DESTDIR)$(prefix)
@@ -168,19 +168,19 @@ install-so-subtarget: so-subtarget
 	$(INSTALL_DATA) $(DEVSRC)gdevdsp.h $(DESTDIR)$(gsincludedir)gdevdsp.h
 
 soinstall:
-	$(MAKE) soinstall-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
+	$(MAKE) $(SUB_MAKE_OPTION) soinstall-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 
 sodebuginstall:
-	$(MAKE) soinstall-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
+	$(MAKE) $(SUB_MAKE_OPTION) soinstall-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
 
 soinstall-subtarget: install-so install-scripts install-data $(INSTALL_SHARED) $(INSTALL_CONTRIB)
 
 # Clean targets
 soclean:
-	$(MAKE) BUILDDIRPREFIX=$(SODIRPREFIX) clean-so-subtarget
+	$(MAKE) $(SUB_MAKE_OPTION) BUILDDIRPREFIX=$(SODIRPREFIX) clean-so-subtarget
 
 clean-so-subtarget:
-	$(MAKE) $(SODEFS) clean-so-subsubtarget
+	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) clean-so-subsubtarget
 
 clean-so-subsubtarget: clean
 	$(RM_) $(BINDIR)/$(GS_SONAME)
@@ -190,9 +190,9 @@ clean-so-subsubtarget: clean
 	$(RMN_) -r $(BINDIR) $(GLGENDIR) $(GLOBJDIR) $(PSGENDIR) $(PSOBJDIR)
 
 sodebugclean:
-	$(MAKE)  BUILDDIRPREFIX=$(SODEBUGDIRPREFIX) clean-sodebug-subtarget
+	$(MAKE) $(SUB_MAKE_OPTION)  BUILDDIRPREFIX=$(SODEBUGDIRPREFIX) clean-sodebug-subtarget
 
 clean-sodebug-subtarget:
-	$(MAKE) $(SODEFS) clean-so-subsubtarget
+	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) clean-so-subsubtarget
 
 # End of unix-dll.mak
