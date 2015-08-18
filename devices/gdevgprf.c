@@ -645,7 +645,7 @@ gprf_setup(gprf_write_ctx *xc, gx_device_printer *pdev, FILE *file, int w, int h
     zstm.zalloc = NULL;
     zstm.zfree = NULL;
     zstm.opaque = NULL;
-    deflateInit(&zstm, Z_BEST_COMPRESSION);
+    deflateInit(&zstm, Z_BEST_SPEED);
     xc->deflate_bound = deflateBound(&zstm, 256*256);
     deflateEnd(&zstm);
     xc->deflate_block = gs_alloc_bytes(dev->memory, xc->deflate_bound, "gprf_setup");
@@ -909,7 +909,7 @@ compressAndWrite(gprf_write_ctx *xc, byte *data, int tile_w, int tile_h, int ras
     zstm.zalloc = my_zalloc;
     zstm.zfree = my_zfree;
     zstm.opaque = xc->dev->memory;
-    deflateInit(&zstm, Z_BEST_COMPRESSION);
+    deflateInit(&zstm, Z_BEST_SPEED);
     zstm.avail_out = xc->deflate_bound;
     zstm.next_out = xc->deflate_block;
 
