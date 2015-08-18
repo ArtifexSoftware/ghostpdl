@@ -857,8 +857,7 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
     if (index < 0)
         return -1;
     if (!is_default || !pti->device) {
-        const gx_device **list;
-
+        const gx_device *dev;
         /* We assume that nobody else changes pti->device,
            and this function is called from this module only.
            Due to that device_root is always consistent with pti->device,
@@ -869,8 +868,17 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
             gs_unregister_root(pti->device_memory, &device_root,
                                "pl_main_universe_select");
         }
-        gs_lib_device_list((const gx_device * const **)&list, NULL);
-        code = gs_copydevice(&pti->device, list[index], pti->device_memory);
+
+        if (index == -1) {
+            dev = gs_getdefaultlibdevice(pti->device_memory);
+        }
+        else {
+            const gx_device **list;
+            gs_lib_device_list((const gx_device * const **)&list, NULL);
+            dev = list[index];
+        }
+        code = gs_copydevice(&pti->device, dev, pti->device_memory);
+
         if (pti->device != NULL)
             gs_register_struct_root(pti->device_memory, &device_root,
                                     (void **)&pti->device,
@@ -1443,7 +1451,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
         return -1;
     }
     gs_c_param_list_read(params);
-    pl_top_create_device(pmi, 0, true); /* create default device if needed */
+    pl_top_create_device(pmi, -1, true); /* create default device if needed */
 
     /* The last argument wasn't a switch filename else NULL */
     *filename = arg;
