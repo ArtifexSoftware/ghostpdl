@@ -850,7 +850,7 @@ new_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
     int bpc = pim->BitsPerComponent;
     int bpc_out = pim->BitsPerComponent = min(bpc, 8);
     int ncomp;
-    double resolution;
+    double resolution, resolutiony;
 
     /*
      * The Adobe documentation doesn't say this, but mask images are
@@ -901,6 +901,19 @@ new_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
         gs_distance_transform(pt.x, pt.y, pctm, &pt);
         resolution = 1.0 / hypot(pt.x / pdev->HWResolution[0],
                                  pt.y / pdev->HWResolution[1]);
+
+        /* Actually we must do both X and Y, in case the image is ananmorphically scaled
+         * and one axis is not high enough resolution to be downsampled.
+         * Bug #696152
+         */
+        code = gs_distance_transform_inverse(0.0, 1.0, &pim->ImageMatrix, &pt);
+        if (code < 0)
+            return code;
+        gs_distance_transform(pt.x, pt.y, pctm, &pt);
+        resolutiony = 1.0 / hypot(pt.x / pdev->HWResolution[0],
+                                 pt.y / pdev->HWResolution[1]);
+        if (resolutiony < resolution)
+            resolution = resolutiony;
     }
     if (ncomp == 1 && pim->ColorSpace && pim->ColorSpace->type->index != gs_color_space_index_Indexed) {
         /* Monochrome, gray, or mask */
