@@ -618,8 +618,8 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
                     switch(pair[1].data[i + 1]) {
                         case 'b':
                             buf0[j++] = '0';
+                            buf0[j++] = '1';
                             buf0[j++] = '0';
-                            buf0[j++] = '7';
                             i++;
                             break;
                         case 'f':
