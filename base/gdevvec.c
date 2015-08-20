@@ -1060,6 +1060,7 @@ ofe:        param_signal_error(plist, param_name, ecode);
 
     if (ecode < 0)
         return ecode;
+
     {
         /* Don't let gx_default_put_params close the device. */
         dev->is_open = false;
@@ -1068,6 +1069,12 @@ ofe:        param_signal_error(plist, param_name, ecode);
     }
     if (code < 0)
         return code;
+
+    if (dev->color_info.anti_alias.text_bits != 1 || dev->color_info.anti_alias.graphics_bits != 1) {
+        emprintf(dev->memory,
+            "\n\n  ERROR:\n    Can't set GraphicsAlphaBits or TextAlphaBits with a vector device.\n");
+        return gs_error_unregistered;
+    }
 
     if (ofns.data != 0) {
         /* If ofns.data is not NULL, then we have a different file name */

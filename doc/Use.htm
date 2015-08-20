@@ -2387,6 +2387,8 @@ they are drawn some files that rely on joining separate filled polygons together
 an area may not render as expected with <tt>GraphicsAlphaBits</tt> at 2 or 4. If you encounter
 strange lines within solid areas, try rendering that file again with
 <tt>-dGraphicsAlphaBits=1</tt>.
+<p>Further note; because this feature relies upon rendering the input it is incompatible, and will generate
+an error on attempted use, with any of the vector output devices.
 </dl>
 
 <dl>
