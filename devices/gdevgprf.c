@@ -752,8 +752,13 @@ gprf_write_header(gprf_write_ctx *xc)
             cmyk[2] = 0;
             cmyk[3] = 0;
             cmyk[j] = 255;
+            if (name == NULL)
+                namelen = 0;
+            else
+                namelen = strlen(name);
         } else {
             name = (const char *)dev->devn_params.separations.names[j - NUM_CMYK_COMPONENTS].data;
+            namelen = dev->devn_params.separations.names[j - NUM_CMYK_COMPONENTS].size;
             c = (2 * 255 * dev->equiv_cmyk_colors.color[j].c + frac_1) / (2 * frac_1);
             cmyk[0] = (c < 0 ? 0 : (c > 255 ? 255 : c));
             m = (2 * 255 * dev->equiv_cmyk_colors.color[j].m + frac_1) / (2 * frac_1);
@@ -763,11 +768,6 @@ gprf_write_header(gprf_write_ctx *xc)
             k = (2 * 255 * dev->equiv_cmyk_colors.color[j].k + frac_1) / (2 * frac_1);
             cmyk[3] = (k < 0 ? 0 : (k > 255 ? 255 : k));
         }
-
-        if (name == NULL)
-            namelen = 0;
-        else
-            namelen = strlen(name);
 
         /* Convert color to RGBA. To get the A value, we are going to need to 
            deal with the mixing hints information in the PDF content.  A ToDo
