@@ -1490,9 +1490,18 @@ show_set_scale(const gs_show_enum * penum, gs_log2_scale_point *log2_scale)
      * Decide whether to oversample.
      * We have to decide this each time setcachedevice is called.
      */
-    const gs_state *pgs = penum->pgs;
+    const gs_state *pgs = NULL;
 
-    if ((penum->charpath_flag == cpm_show ||
+    if (gs_object_type(penum->pis->memory, penum) == &st_gs_show_enum) {
+        pgs = penum->pgs;
+    } else {
+        if (penum->pis->is_gstate)
+            pgs = (gs_state *)penum->pis;
+        else
+            outprintf(penum->memory, "Warning: cannot calculate text oversample (TextAlphaBits)\n");
+    }
+
+    if (pgs != NULL && (penum->charpath_flag == cpm_show ||
          penum->charpath_flag == cpm_charwidth) &&
         SHOW_USES_OUTLINE(penum)
         /* && gx_path_is_void_inline(pgs->path) */
