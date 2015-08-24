@@ -18,5 +18,9 @@
 
 #include "stdint_.h"
 
+#include "time_.h"
+
+    time_t gs_romfs_buildtime = 0;
+
     uint32_t *gs_romfs[] = {
         0 };

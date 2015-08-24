@@ -308,6 +308,14 @@ romfs_file_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
     char *filename;
     uint namelen = strlen(fname);
 
+    /* a build time of zero indicates we have the "dummy" romfs
+     * used when COMPILE_INITS==0 - returning a specific error here
+     * gives us a quick way to check for that.
+     */
+    if (gs_romfs_buildtime == (time_t)0) {
+        return_error(gs_error_unregistered);
+    }
+
     memset(pstat, 0, sizeof(struct stat));
     /* scan the inodes to find the requested file */
     for (i=0; node_scan != 0; i++, node_scan = gs_romfs[i]) {

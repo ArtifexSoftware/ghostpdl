@@ -1098,7 +1098,12 @@ print_help(gs_main_instance * minst)
         const char *dname = iodev->dname;
 
         if (dname && strlen(dname) == 5 && !memcmp("%rom%", dname, 5)) {
-            have_rom_device = 1;
+            struct stat pstat;
+            /* gs_error_unregistered means no usable romfs is available */
+            int code = iodev->procs.file_status((gx_io_device *)iodev, dname, &pstat);
+            if (code != gs_error_unregistered){
+                have_rom_device = 1;
+            }
             break;
         }
     }
