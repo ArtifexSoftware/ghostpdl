@@ -242,8 +242,6 @@ pcl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,     /* RETUR
 
     gs_state *pgs = gs_state_alloc(mem);
 
-    gsicc_init_iccmanager(pgs);
-
     /* If allocation error, deallocate & return */
     if (!pcli || !pgs) {
         if (pcli)
@@ -253,6 +251,9 @@ pcl_impl_allocate_interp_instance(pl_interp_instance_t ** instance,     /* RETUR
             gs_state_free(pgs);
         return gs_error_VMerror;
     }
+
+    gsicc_init_iccmanager(pgs);
+
 
     pcli->memory = mem;
     /* zero-init pre/post page actions for now */
