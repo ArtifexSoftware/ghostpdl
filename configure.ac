@@ -1010,12 +1010,15 @@ AC_ARG_WITH([system-libtiff], AC_HELP_STRING([--with-system-libtiff],
             [], [with_system_libtiff=check])
 TIFFDEVS=''
 FAX_DEVS=''
+XPSWRITEDEVICE=''
+
 
 LIBTIFFDIR=''
 LIBTIFFCONFDIR=''
 
 TIFFDEVS_ALL='tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflzw tiffpack tiffgray tiffsep tiffsep1 tiffscaled tiffscaled4 tiffscaled8 tiffscaled24 tiffscaled32'
 FAX_DEVS_ALL='cfax dfaxlow dfaxhigh fax faxg3 faxg32d faxg4 tiffg3 tiffg32d tiffg4 tfax'
+
 case "x$with_system_libtiff" in
     xcheck)
         if test -d $srcdir/tiff; then
@@ -1043,11 +1046,11 @@ case "x$with_system_libtiff" in
             fi
         fi
         if test "x$HAVE_LOCAL_LIBTIFF" = x && test "x$HAVE_SYSTEM_LIBTIFF" = x; then
-            AC_MSG_NOTICE([Could not find a copy of libtiff on your system.
-Disabling tiff output devices.])
+            AC_MSG_NOTICE([Could not find a copy of libtiff on your system. Disabling tiff and xps output devices.])
         else
             TIFFDEVS="$TIFFDEVS_ALL"
             FAX_DEVS="$FAX_DEVS_ALL"
+            XPSWRITEDEVICE='xpswrite'
         fi
         ;;
     xyes)
@@ -1072,9 +1075,9 @@ Disabling tiff output devices.])
             SHARE_LIBTIFF=1
             TIFFDEVS="$TIFFDEVS_ALL"
             FAX_DEVS="$FAX_DEVS_ALL"
+            XPSWRITEDEVICE='xpswrite'
        else
-            AC_MSG_NOTICE([Could not find a copy of libtiff on your system.
-Disabling tiff output devices.])
+            AC_MSG_NOTICE([Could not find a copy of libtiff on your system. Disabling tiff and xps output devices.])
         fi
         ;;
     xno)
@@ -1086,10 +1089,10 @@ Disabling tiff output devices.])
             SHARE_LIBTIFF=0
             TIFFDEVS="$TIFFDEVS_ALL"
             FAX_DEVS="$FAX_DEVS_ALL"
+            XPSWRITEDEVICE='xpswrite'
         else
             AC_MSG_RESULT([no])
-            AC_MSG_NOTICE([Could not find local copy of libtiff.
-Disabling tiff output devices.])
+            AC_MSG_NOTICE([Could not find local copy of libtiff. Disabling tiff and xps output devices.])
         fi
         ;;
 esac
@@ -1803,7 +1806,7 @@ PCX_DEVS='pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk pcx2up'
 PBM_DEVS='pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm pksmraw pam pamcmyk4 pamcmyk32 plan plang planm planc plank'
 PS_DEVS='psdf psdcmyk psdrgb pdfwrite ps2write eps2write bbox txtwrite inkcov ink_cov psdcmykog fpng'
 MISC_FDEVS='ccr cif inferno mag16 mag256 mgr4 mgr8 mgrgray2 mgrgray4 mgrgray8 mgrmono miff24 plan9bm sgirgb sunhmono bit bitrgb bitrgbtags bitcmyk devicen spotcmyk xcf plib plibg plibm plibc plibk'
-XPSDEV='xpswrite'
+XPSDEV=$XPSWRITEDEVICE
 
 while test -n "$drivers"; do
         if echo $drivers |grep "," >/dev/null; then
