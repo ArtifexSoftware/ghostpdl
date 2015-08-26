@@ -40,10 +40,12 @@ XE_ALL=$(PSOBJ)gs.$(OBJ) $(INT_ARCHIVE_ALL) $(INT_ALL) $(DEVS_ALL)
 # This is not used in a standard build.
 liar_tr=$(GLOBJ)liar.tr
 GS_A=$(GS).a
-$(GS_A): $(obj_tr) $(ECHOGS_XE) $(INT_ARCHIVE_ALL) $(INT_ALL) $(DEVS_ALL)
+$(GS_A): $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) \
+         $(obj_tr) $(ECHOGS_XE) $(INT_ARCHIVE_ALL) $(INT_ALL) $(DEVS_ALL)
 	rm -f $(GS_A)
 	$(ECHOGS_XE) -w $(liar_tr) -n - $(AR) $(ARFLAGS) $(GS_A)
 	$(ECHOGS_XE) -a $(liar_tr) -n -s $(INT_ARCHIVE_ALL) -s
+	$(ECHOGS_XE) -a $(liar_tr) -n -s $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ) -s
 	cat $(obj_tr) >>$(liar_tr)
 	$(ECHOGS_XE) -a $(liar_tr) -s -
 	$(SH) <$(liar_tr)
