@@ -1033,7 +1033,8 @@ static int
 gprf_write_image_data(gprf_write_ctx *xc)
 {
     gx_device_printer *pdev = xc->dev;
-    int raster_plane = bitmap_raster(pdev->width * 8);
+    int raster_row = bitmap_raster(pdev->width * 8);
+    int raster_plane;
     byte *planes[GS_CLIENT_COLOR_MAX_COMPONENTS];
     byte *rgb[3];
     byte *cmyk;
@@ -1082,29 +1083,29 @@ gprf_write_image_data(gprf_write_ctx *xc)
          GB_ALIGN_STANDARD | GB_OFFSET_0 | GB_RASTER_STANDARD |
          GB_PACKING_PLANAR | GB_COLORS_NATIVE | GB_ALPHA_NONE);
     params.x_offset = 0;
-    params.raster = raster_plane;
+    params.raster = raster_row;
 
     /* For every plane, we need a buffer large enough to let us pull out
      * 256 raster lines from that plane.  Make contiguous so that we can apply
      * color management */
-    planes[0] = gs_alloc_bytes(pdev->memory, raster_plane * 256 * num_comp,
-        "gprf_write_image_data");
+    raster_plane = raster_row * 256;
+    planes[0] = gs_alloc_bytes(pdev->memory, raster_plane * num_comp, "gprf_write_image_data");
     if (planes[0] == NULL)
         return_error(gs_error_VMerror);
 
     for (chan_idx = 1; chan_idx < num_comp; chan_idx++)
     {
-        planes[chan_idx] = planes[0] + raster_plane * 256 * chan_idx;
+        planes[chan_idx] = planes[0] + raster_plane * chan_idx;
         params.data[chan_idx] = planes[chan_idx];
     }
 
     /* We also need space for our RGB planes. */
-    rgb[0] = gs_alloc_bytes(pdev->memory, raster_plane * 256 * 3,
+    rgb[0] = gs_alloc_bytes(pdev->memory, raster_plane * 3,
         "gprf_write_image_data");
     if (rgb[0] == NULL)
         return_error(gs_error_VMerror);
-    rgb[1] = rgb[0] + raster_plane * 256;
-    rgb[2] = rgb[0] + raster_plane * 256 * 2;
+    rgb[1] = rgb[0] + raster_plane;
+    rgb[2] = rgb[0] + raster_plane * 2;
 
     /* Finally, we may need a temporary CMYK composite if we have no profile
      * to handle the spot colorants. Case 3 and Case 4. Also build the mapping
@@ -1113,7 +1114,7 @@ gprf_write_image_data(gprf_write_ctx *xc)
     if (equiv_needed) {
         build_cmyk_map((gx_device*)gprf_dev, num_comp, gprf_dev->equiv_cmyk_colors,
             cmyk_map);
-        cmyk = gs_alloc_bytes(pdev->memory, raster_plane * 4,
+        cmyk = gs_alloc_bytes(pdev->memory, raster_row * 4,
             "gprf_write_image_data");
         if (cmyk == NULL)
             return_error(gs_error_VMerror);
@@ -1124,8 +1125,8 @@ gprf_write_image_data(gprf_write_ctx *xc)
     if (code < 0)
         goto cleanup;
 
-    tiled_w = (xc->width + 255)/256;
-    tiled_h = (xc->height + 255)/256;
+    tiled_w = (xc->width + 255) / 256;
+    tiled_h = (xc->height + 255) / 256;
 
     /* Reserve space in the table for all the offsets */
     for (i = 8 * tiled_w * tiled_h * (3 + xc->num_channels); i >= 0; i -= 8) {
@@ -1137,81 +1138,82 @@ gprf_write_image_data(gprf_write_ctx *xc)
     /* For each row of tiles... */
     for (tile_y = 0; tile_y < tiled_h; tile_y++) {
         /* Pull out the data for the tiles in that row. */
-        int tile_h = (xc->height - tile_y*256);
+        int tile_h = (xc->height - tile_y * 256);
 
         if (tile_h > 256)
             tile_h = 256;
         for (y = 0; y < tile_h; y++) {
             for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
-                params.data[chan_idx] = planes[chan_idx] + y * raster_plane;
+                params.data[chan_idx] = planes[chan_idx] + y * raster_row;
             }
             code = gx_downscaler_get_bits_rectangle(&ds, &params, y + tile_y * 256);
             if (code < 0)
                 goto cleanup;
             for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
-                if (params.data[chan_idx] != planes[chan_idx] + y * raster_plane)
-                    memcpy(planes[chan_idx] + y * raster_plane, params.data[chan_idx], raster_plane);
+                if (params.data[chan_idx] != planes[chan_idx] + y * raster_row)
+                    memcpy(planes[chan_idx] + y * raster_row, params.data[chan_idx], raster_row);
             }
             /* Take care of any color management */
             if (equiv_needed) {
-                build_cmyk_planar_raster(xc, planes, cmyk, raster_plane, y, cmyk_map);
+                build_cmyk_planar_raster(xc, planes, cmyk, raster_row, y, cmyk_map);
                 /* At this point we have equiv. CMYK data */
                 if (slowcolor) {
                     /* Slowest case, no profile and spots present */
-                    get_rgb_planar_line(xc, cmyk, cmyk + raster_plane,
-                        cmyk + 2 * raster_plane, cmyk + 3 * raster_plane,
-                        rgb[0] + y * raster_plane, rgb[1] + y * raster_plane,
-                        rgb[2] + y * raster_plane, pdev->width);
+                    get_rgb_planar_line(xc, cmyk, cmyk + raster_row,
+                        cmyk + 2 * raster_row, cmyk + 3 * raster_row,
+                        rgb[0] + y * raster_row, rgb[1] + y * raster_row,
+                        rgb[2] + y * raster_row, pdev->width);
                 } else {
                     /* ICC approach.  Likely a case with spots but CMYK profile */
                     /* set up for planar buffer transform */
-                    gsicc_init_buffer(&input_buffer_desc, 4, 1, false, false, true, 
-                        raster_plane, raster_plane, 1, pdev->width);
+                    gsicc_init_buffer(&input_buffer_desc, 4, 1, false, false, true,
+                        raster_row, raster_row, 1, pdev->width);
                     gsicc_init_buffer(&output_buffer_desc, 3, 1, false, false, true,
-                        raster_plane, raster_plane, 1, pdev->width);
+                        raster_plane, raster_row, 1, pdev->width);
                     xc->icclink->procs.map_buffer(gprf_dev, xc->icclink,
                         &input_buffer_desc, &output_buffer_desc,
-                        planes[0] + y * raster_plane, rgb[0] + y * raster_plane);
+                        cmyk, rgb[0] + y * raster_row);
                 }
             } else {
                 if (slowcolor) {
                     /* CMYK input but profile likely missing here */
-                    get_rgb_planar_line(xc, planes[xc->chnl_to_position[0]] + y * raster_plane,
-                        planes[xc->chnl_to_position[xc->chnl_to_position[1]]] + y * raster_plane,
-                        planes[xc->chnl_to_position[xc->chnl_to_position[2]]] + y * raster_plane,
-                        planes[xc->chnl_to_position[xc->chnl_to_position[3]]] + y * raster_plane,
-                        rgb[0] + y * raster_plane, rgb[1] + y * raster_plane,
-                        rgb[2] + y * raster_plane, pdev->width);
+                    get_rgb_planar_line(xc, planes[xc->chnl_to_position[0]] + y * raster_row,
+                        planes[xc->chnl_to_position[xc->chnl_to_position[1]]] + y * raster_row,
+                        planes[xc->chnl_to_position[xc->chnl_to_position[2]]] + y * raster_row,
+                        planes[xc->chnl_to_position[xc->chnl_to_position[3]]] + y * raster_row,
+                        rgb[0] + y * raster_row, rgb[1] + y * raster_row,
+                        rgb[2] + y * raster_row, pdev->width);
                 } else {
-                    /* Fastest case all ICC */
+                    /* Fastest case all ICC.  Note this could have an issue
+                       if someone reorders the cmyk values. */
                     gsicc_init_buffer(&input_buffer_desc, num_comp, 1, false,
-                        false, true, raster_plane, raster_plane, 1, pdev->width);
+                        false, true, raster_plane, raster_row, 1, pdev->width);
                     gsicc_init_buffer(&output_buffer_desc, 3, 1, false, false, true,
-                        raster_plane, raster_plane, 1, pdev->width);
+                        raster_plane, raster_row, 1, pdev->width);
                     xc->icclink->procs.map_buffer(gprf_dev, xc->icclink,
                         &input_buffer_desc, &output_buffer_desc,
-                        cmyk, rgb[0] + y * raster_plane);
+                        planes[0] + y * raster_row, rgb[0] + y * raster_row);
                 }
             }
         }
 
         /* Now, for each tile... */
         for (tile_x = 0; tile_x < tiled_w; tile_x++) {
-            int tile_w = (xc->width - tile_x*256);
+            int tile_w = (xc->width - tile_x * 256);
 
             if (tile_w > 256)
                 tile_w = 256;
 
             /* Now we have to compress and write each separation in turn */
-            code = compressAndWrite(xc, rgb[0] + tile_x*256, tile_w, tile_h, raster_plane);
+            code = compressAndWrite(xc, rgb[0] + tile_x * 256, tile_w, tile_h, raster_row);
             if (code >= 0)
-                code = compressAndWrite(xc, rgb[1] + tile_x*256, tile_w, tile_h, raster_plane);
+                code = compressAndWrite(xc, rgb[1] + tile_x * 256, tile_w, tile_h, raster_row);
             if (code >= 0)
-                code = compressAndWrite(xc, rgb[2] + tile_x*256, tile_w, tile_h, raster_plane);
+                code = compressAndWrite(xc, rgb[2] + tile_x * 256, tile_w, tile_h, raster_row);
             for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
                 int j = xc->chnl_to_position[chan_idx];
                 if (code >= 0)
-                    code = compressAndWrite(xc, planes[j] + tile_x*256, tile_w, tile_h, raster_plane);
+                    code = compressAndWrite(xc, planes[j] + tile_x * 256, tile_w, tile_h, raster_row);
             }
         }
     }
