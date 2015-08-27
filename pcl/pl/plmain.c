@@ -854,8 +854,6 @@ pl_top_create_device(pl_main_instance_t * pti, int index, bool is_default)
 {
     int code = 0;
 
-    if (index < 0)
-        return -1;
     if (!is_default || !pti->device) {
         const gx_device *dev;
         /* We assume that nobody else changes pti->device,
