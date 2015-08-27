@@ -400,6 +400,9 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
                        prect->q.y == pim3->Height))
             goto nyi;
         if (pdev->CompatibilityLevel < 1.3 && !pdev->PatternImagemask) {
+            code = pdf_check_soft_mask(pdev, (gs_imager_state *)pis);
+            if (code < 0)
+                return code;
             if (pdf_must_put_clip_path(pdev, pcpath))
                 code = pdf_unclip(pdev);
             else
@@ -498,6 +501,9 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
             gs_matrix m, m1, mi;
             gs_image4_t pi4 = *(const gs_image4_t *)pic;
 
+            code = pdf_check_soft_mask(pdev, (gs_imager_state *)pis);
+            if (code < 0)
+                return code;
             if (pdf_must_put_clip_path(pdev, pcpath))
                 code = pdf_unclip(pdev);
             else
@@ -565,6 +571,9 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
     pcs = pim->ColorSpace;
     num_components = (is_mask ? 1 : gs_color_space_num_components(pcs));
 
+    code = pdf_check_soft_mask(pdev, (gs_imager_state *)pis);
+    if (code < 0)
+        return code;
     if (pdf_must_put_clip_path(pdev, pcpath))
         code = pdf_unclip(pdev);
     else
@@ -981,6 +990,9 @@ static int setup_type3_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     int code;
 
     if (pdev->CompatibilityLevel < 1.3 && !pdev->PatternImagemask) {
+        code = pdf_check_soft_mask(pdev, (gs_imager_state *)pis);
+        if (code < 0)
+            return code;
         if (pdf_must_put_clip_path(pdev, pcpath))
             code = pdf_unclip(pdev);
         else
@@ -1081,6 +1093,9 @@ static int convert_type4_to_masked_image(gx_device_pdf *pdev, const gs_imager_st
         int code;
         pdf_lcvd_t *cvd = NULL;
 
+        code = pdf_check_soft_mask(pdev, (gs_imager_state *)pis);
+        if (code < 0)
+            return code;
         if (pdf_must_put_clip_path(pdev, pcpath))
             code = pdf_unclip(pdev);
         else
@@ -1802,6 +1817,9 @@ new_pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     pcs = pim->ColorSpace;
     num_components = (is_mask ? 1 : gs_color_space_num_components(pcs));
 
+    code = pdf_check_soft_mask(pdev, (gs_imager_state *)pis);
+    if (code < 0)
+        return code;
     if (pdf_must_put_clip_path(pdev, pcpath))
         code = pdf_unclip(pdev);
     else

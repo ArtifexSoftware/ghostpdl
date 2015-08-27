@@ -2775,9 +2775,11 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
     if (pdev->state.soft_mask_id != pis->soft_mask_id) {
         char buf[20];
 
-        if (pis->soft_mask_id == 0)
-            strcpy(buf, "/None");
-        else
+        if (pis->soft_mask_id == 0) {
+            pdf_open_contents(pdev, PDF_IN_STREAM);
+            code = pdf_restore_viewer_state(pdev, pdev->strm);
+        }
+        else{
             gs_sprintf(buf, "%ld 0 R", pis->soft_mask_id);
         code = pdf_open_gstate(pdev, ppres);
         if (code < 0)
@@ -2786,6 +2788,8 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
                     "/SMask", (byte *)buf, strlen(buf));
         if (code < 0)
             return code;
+        pdf_save_viewer_state(pdev, pdev->strm);
+        }
         pdev->state.soft_mask_id = pis->soft_mask_id;
     }
     if (pdev->state.opacity.alpha != pis->opacity.alpha) {

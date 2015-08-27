@@ -409,6 +409,9 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
     gs_font *font = pte->current_font;
 
     if (!(text->operation & TEXT_DO_NONE) || pis->text_rendering_mode == 3) {
+        code = pdf_check_soft_mask(pdev, pte->pis);
+        if (code < 0)
+            return code;
         new_clip = pdf_must_put_clip_path(pdev, pcpath);
         if (new_clip)
             code = pdf_unclip(pdev);

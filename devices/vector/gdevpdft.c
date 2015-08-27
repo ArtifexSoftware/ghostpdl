@@ -183,6 +183,7 @@ pdf_begin_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev,
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
         return code;
+    code = pdf_check_soft_mask(pdev, pis);
     if (pdf_must_put_clip_path(pdev, gstate->clip_path)) {
         code = pdf_put_clip_path(pdev, gstate->clip_path);
         if (code < 0)

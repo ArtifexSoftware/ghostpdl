@@ -305,6 +305,28 @@ pdf_is_same_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
     return (code == 0);
 }
 
+int
+pdf_check_soft_mask(gx_device_pdf * pdev, gs_imager_state * pis)
+{
+    int code = 0;
+
+    if (pis && pdev->state.soft_mask_id != pis->soft_mask_id) {
+    /*
+     * The contents must be open already, so the following will only exit
+     * text or string context.
+     */
+    code = pdf_open_contents(pdev, PDF_IN_STREAM);
+    if (code < 0)
+        return code;
+    if (pdev->vgstack_depth > pdev->vgstack_bottom) {
+        code = pdf_restore_viewer_state(pdev, pdev->strm);
+        if (code < 0)
+            return code;
+    }
+    }
+    return code;
+}
+
 /* Test whether we will need to put the clipping path. */
 bool
 pdf_must_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
@@ -525,6 +547,10 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
             return 1;		/* empty clipping path */
         *box = cbox;
     }
+    code = pdf_check_soft_mask(pdev, (gs_imager_state *)pis);
+    if (code < 0)
+        return code;
+
     new_clip = pdf_must_put_clip_path(pdev, pcpath);
     if (have_path || pdev->context == PDF_IN_NONE || new_clip) {
         if (new_clip)
@@ -1315,7 +1341,10 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 
     if (gx_path_is_void(ppath))
         return 0;		/* won't mark the page */
-    if (pdf_must_put_clip_path(pdev, pcpath))
+    code = pdf_check_soft_mask(pdev, (gs_imager_state *)pis);
+    if (code < 0)
+        return code;
+   if (pdf_must_put_clip_path(pdev, pcpath))
         code = pdf_unclip(pdev);
     else if ((pdev->last_charpath_op & TEXT_DO_FALSE_CHARPATH) && ppath->current_subpath &&
         (ppath->last_charpath_segment == ppath->current_subpath->last) && !pdev->ForOPDFRead) {
