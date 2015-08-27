@@ -59,6 +59,7 @@ gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
 {
     char *result;
     gs_lib_ctx_t *p_ctx = mem_gc->gs_lib_ctx;
+    gs_memory_t *p_ctx_mem = p_ctx->memory;
 
     /* If it is already set and the incoming is the default then don't set
        as we are coming from a VMreclaim which is trying to reset the user
@@ -70,11 +71,11 @@ gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
         if (strncmp(pname, p_ctx->profiledir, p_ctx->profiledir_len) == 0) {
             return;
         }
-        gs_free_object(mem_gc->non_gc_memory, p_ctx->profiledir,
+        gs_free_object(p_ctx_mem->non_gc_memory, p_ctx->profiledir,
                        "gsicc_set_icc_directory");
     }
     /* User param string.  Must allocate in non-gc memory */
-    result = (char*) gs_alloc_bytes(mem_gc->non_gc_memory, dir_namelen+1,
+    result = (char*) gs_alloc_bytes(p_ctx_mem->non_gc_memory, dir_namelen+1,
                                      "gsicc_set_icc_directory");
     if (result != NULL) {
         strcpy(result, pname);
