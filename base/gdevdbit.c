@@ -171,7 +171,6 @@ gx_no_copy_alpha(gx_device * dev, const byte * data, int data_x,
    AND it supports devn colors AND is 8 or 16 bit.  For example tiffsep
    and psdcmyk may make use of this if AA is enabled.  It is basically 
    designed for devices that need more than 64 bits for color support 
-   without compressed color encoding.
 
    So that I can follow things and  make it readable for future generations, 
    I am not using the macro nightmare that default_copy_alpha uses. */
@@ -200,7 +199,6 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
     gx_color_value *composite;
     byte *gb_buff;
     int x_curr, w_curr, gb_buff_start;
-    byte *end_ptr;
 
     byte_depth = bpp / ncomps;
     mask = ((gx_color_index)1 << byte_depth) - 1;
@@ -211,7 +209,6 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
     row_alpha = data;
     out_raster = bitmap_raster(width * byte_depth);
     gb_buff = gs_alloc_bytes(mem, out_raster * ncomps, "copy_alpha_hl_color(gb_buff)");
-    end_ptr = gb_buff + out_raster * ncomps;
     if (gb_buff == 0) {
         code = gs_note_error(gs_error_VMerror);
         return code;

@@ -34,24 +34,6 @@
  * device.  (This value does not include spot colors.  See previous value.)
  */
 #define MAX_DEVICE_PROCESS_COLORS 6
-/*
- * This value enable the use of a compression scheme for representing
- * the colorant values in a device pixel.  Ghostscript represents device
- * pixel using an integer type value.  This limits the maximum number of
- * bits that can be used for a pixel to the largest integer size provided
- * by the compiler.  For most compilers this is 64 bits (a 'long long' or
- * _int64 type).  For devices with 4 or fewer colorantss like DeviceGray,
- * DeviceRGB, and DeviceCMYK, this will easily represent 16 bits per colorant.
- * However if the output device supports spot colorants, this limits us in
- * what we can do.  To allow support for more than 8 colorants at 8 bits
- * per colorant, we use a scheme to compress the colorant values into our
- * 64 bit pixels.  For more information see the header before
- * devn_encode_compressed_color in src/gdevdevn.c.
- *
- * To disable compression of encoded colorant values, change this definition.
- */
-#define USE_COMPRESSED_ENCODING 0
-/* #define USE_COMPRESSED_ENCODING (ARCH_SIZEOF_GX_COLOR_INDEX >= 8) */
 
 /*
  * Type definitions associated with the fixed color model names.
@@ -128,17 +110,6 @@ typedef struct gs_devn_params_s {
     /*
      * Pointer to our list of which colorant combinations are being used.
      */
-    struct compressed_color_list_s * compressed_color_list;
-    /*
-     * If the file is using PDF 1.4 transparency compositing and we are using
-     * the clist then we need to pass the compressed color list from the PDF
-     * 1.4 clist writer device to the PDF 1.4 reader device.  However that
-     * device is not created until the clist is read and being processed.
-     * We need to temporary hold that data in the output device until after
-     * clist reader PDF 1.4 compositing device is created.  The PDF 1.4
-     * compositor may also have a different list of separations.
-     */
-    struct compressed_color_list_s * pdf14_compressed_color_list;
     gs_separations pdf14_separations;
 } gs_devn_params_t;
 
@@ -320,20 +291,6 @@ int repack_data(byte * source, byte * dest, int depth, int first_bit,
 int bpc_to_depth(int ncomp, int bpc);
 
 /*
- * We are encoding color values into a gx_color_index value.  This is being
- * done to allow more than eight 8 bit colorant values to be stored inside
- * of a 64 bit gx_color_index value.
- *
- * This is done by only keeping track of non zero colorant values.  We
- * keep a record of which combinations of colorants are used inside of the
- * device and encode an index for the colorant combinations into the
- * gx_color_index value.
- *
- * See comments preceding devn_encode_compressed_color in gdevdevn.c for
- * more information about how we encode the color information into a
- * gx_color_index value.
- */
-/*
  * We are using bytes to pack both which colorants are non zero and the values
  * of the colorants.  Thus do not change this value without recoding the
  * methods used for encoding our colorants.  (This definition is really here
@@ -449,72 +406,6 @@ typedef struct comp_bit_map_list_s {
 } comp_bit_map_list_t;
 
 /*
- * Encoded colorant list level element definition.
- *
- * Each list level contains a list of objects.  An object can be either a
- * colorant bit map or a pointer to a sub list.  We start our sub level
- * pointer at zero and work up.  Component bit maps are started at the top and
- * go down.  When they meet in the middle, then this list level element is full.
- * Note:  We start with the bit maps in the upper positions to ensure that
- * gx_no_color_index and NON_ENCODEABLE_COLOR values correspond to 7 colorant
- * cases.  This is less likely to occur and less likely to cause a problem
- * when we tweak the outputs to keep actual gx_color_index values from
- * being one of these two special cases.
- *
- * See comments preceding devn_encode_compressed_color in gdevdevn.c for
- * more information about how we encode the color information into a
- * gx_color_index value.
- */
-typedef struct compressed_color_list_s {
-    gs_memory_t * mem;   /* the allocator used for this structure */
-    /*
-     * The number of colorants for this level of the encoded color list.
-     * Note:  Each sub level encodes one fewer colorants.
-     */
-    int level_num_comp;
-    /* The number of sub level list pointers */
-    int num_sub_level_ptrs;
-    /* The current lower limit for the colorant bit maps */
-    int first_bit_map;
-    /*
-     * Use a union since an object is either a sub level pointer or a colorant
-     * bit map but not both.
-     */
-    union {
-        struct compressed_color_list_s * sub_level_ptrs[NUM_ENCODE_LIST_ITEMS];
-        comp_bit_map_list_t comp_data[NUM_ENCODE_LIST_ITEMS];
-    } u;
-} compressed_color_list_t;
-
-/*
- * Encode a list of colorant values into a gx_color_index_value.
- *
- * This routine is designed to pack more than eight 8 bit colorant values into
- * a 64 bit gx_color_index value.  It does this piece of magic by keeping a list
- * of which colorant combinations are actualy used (i.e. which colorants are non
- * zero).  The non zero colorant values and and an 'index' value are packed into
- * the output gx_color_index value.
- *
- * See comments preceding devn_encode_compressed_color in gdevdevn.c for more
- * information about how we encode the color information into a gx_color_index
- * value.
- */
-gx_color_index devn_encode_compressed_color(gx_device *pdev,
-        const gx_color_value colors[], gs_devn_params * pdevn_params);
-
-/*
- * Decode a gx_color_index value back to a list of colorant values.  This
- * routine assumes that the gx_color_index value is 'encoded' as described
- * for devn_encode_compressed_color.
- *
- * See comments preceding devn_encode_compressed_color in gdevdevn.c for more
- * information about how we encode the color information into a gx_color_index
- * value.
- */
-int devn_decode_compressed_color(gx_device * dev, gx_color_index color,
-                        gx_color_value * out, gs_devn_params * pdevn_params);
-
-/*
  * Unpack a row of 'encoded color' values.  These values are encoded as
  * described for the devn_encode_color routine.
  *
@@ -528,18 +419,6 @@ int devn_unpack_row(gx_device * dev, int num_comp, gs_devn_params * pdevn_params
                                          int width, byte * in, byte * out);
 
 /*
- * Find the bit map for given bit map index.
- */
-comp_bit_map_list_t * find_bit_map(gx_color_index index,
-                                compressed_color_list_t * pcomp_list);
-
-/*
- * Allocate an list level element for our encode color list.
- */
-compressed_color_list_t * alloc_compressed_color_list_elem(gs_memory_t * mem,
-                                                                int num_comps);
-
-/*
  * The elements of this array contain the number of bits used to encode a color
  * value in a 'compressed' gx_color_index value.  The index into the array is
  * the number of compressed components.
@@ -547,29 +426,11 @@ compressed_color_list_t * alloc_compressed_color_list_elem(gs_memory_t * mem,
 extern int num_comp_bits[];
 
 /*
- * Values used to decompressed the colorants in our encoded values back into
- * a gx_color value.  The color value will be (comp_bits * entry) >> 8
- * The number of bits in comp_bits are defined in the num_comp_bits table.
- * These values are chosen to expand these bit combinations back to 16 bit values
- * (after shifting right 8 bits).
- */
-/*
  * The elements of this array contain factors used to convert compressed color
  * values to gx_color_values.  The index into the array is the number of
  * compressed components.
  */
 extern int comp_bit_factor[];
-
-/*
- * A routine for debugging the encoded color colorant list.  This routine
- * dumps the contents of the list.
- */
-void print_compressed_color_list(const gs_memory_t *mem, compressed_color_list_t * pcomp_list, int num_comp);
-
-/*
- * Free the elements of a compressed color list.
- */
-void free_compressed_color_list(compressed_color_list_t * pcomp_list);
 
 /*
  * Free a set of separation names

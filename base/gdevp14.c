@@ -171,9 +171,7 @@ static	dev_proc_get_color_comp_index(pdf14_cmykspot_get_color_comp_index);
 static	dev_proc_get_color_mapping_procs(pdf14_cmykspot_get_color_mapping_procs);
 dev_proc_encode_color(pdf14_encode_color);
 dev_proc_encode_color(pdf14_encode_color_tag);
-dev_proc_encode_color(pdf14_compressed_encode_color);
 dev_proc_decode_color(pdf14_decode_color);
-dev_proc_decode_color(pdf14_compressed_decode_color);
 static	dev_proc_fill_rectangle(pdf14_fill_rectangle);
 static  dev_proc_fill_rectangle_hl_color(pdf14_fill_rectangle_hl_color);
 static	dev_proc_fill_path(pdf14_fill_path);
@@ -189,7 +187,6 @@ static	dev_proc_end_transparency_group(pdf14_end_transparency_group);
 static	dev_proc_begin_transparency_mask(pdf14_begin_transparency_mask);
 static	dev_proc_end_transparency_mask(pdf14_end_transparency_mask);
 static  dev_proc_dev_spec_op(pdf14_dev_spec_op);
-static int pdf14_clist_get_param_compressed_color_list(pdf14_device * p14dev);
 static	dev_proc_push_transparency_state(pdf14_push_transparency_state);
 static	dev_proc_pop_transparency_state(pdf14_pop_transparency_state);
 static  dev_proc_ret_devn_params(pdf14_ret_devn_params);
@@ -299,17 +296,10 @@ static	const gx_device_procs pdf14_CMYK_procs =
                         gx_default_DevCMYK_get_color_comp_index,
                         pdf14_encode_color, pdf14_decode_color);
 
-#if USE_COMPRESSED_ENCODING
-static	const gx_device_procs pdf14_CMYKspot_procs =
-        pdf14_dev_procs(pdf14_cmykspot_get_color_mapping_procs,
-                        pdf14_cmykspot_get_color_comp_index,
-                        pdf14_compressed_encode_color, pdf14_compressed_decode_color);
-#else
 static	const gx_device_procs pdf14_CMYKspot_procs =
         pdf14_dev_procs(pdf14_cmykspot_get_color_mapping_procs,
                         pdf14_cmykspot_get_color_comp_index,
                         pdf14_encode_color, pdf14_decode_color);
-#endif
 
 static	const gx_device_procs pdf14_custom_procs =
         pdf14_dev_procs(gx_forward_get_color_mapping_procs,
@@ -362,7 +352,7 @@ static const pdf14_procs_t cmyk_pdf14_procs = {
 };
 
 static const pdf14_procs_t cmykspot_pdf14_procs = {
-    pdf14_unpack_compressed,
+    pdf14_unpack_custom,	/* should never be used since we will use devn values */
     pdf14_cmykspot_put_image
 };
 
@@ -554,7 +544,7 @@ const gx_device_pdf14_accum pdf14_accum_CMYK = {
 static
 ENUM_PTRS_WITH(pdf14_device_enum_ptrs, pdf14_device *pdev)
 {
-    index -= 7;
+    index -= 5;
     if (index < pdev->devn_params.separations.num_separations)
         ENUM_RETURN(pdev->devn_params.separations.names[index].data);
     index -= pdev->devn_params.separations.num_separations;
@@ -566,9 +556,7 @@ case 0:	return ENUM_OBJ(pdev->ctx);
 case 1: return ENUM_OBJ(pdev->trans_group_parent_cmap_procs);
 case 2: return ENUM_OBJ(pdev->smaskcolor);
 case 3:	ENUM_RETURN(gx_device_enum_ptr(pdev->target));
-case 4: ENUM_RETURN(pdev->devn_params.compressed_color_list);
-case 5: ENUM_RETURN(pdev->devn_params.pdf14_compressed_color_list);
-case 6:	ENUM_RETURN(gx_device_enum_ptr(pdev->pclist_device));
+case 4:	ENUM_RETURN(gx_device_enum_ptr(pdev->pclist_device));
 ENUM_PTRS_END
 
 static	RELOC_PTRS_WITH(pdf14_device_reloc_ptrs, pdf14_device *pdev)
@@ -580,8 +568,6 @@ static	RELOC_PTRS_WITH(pdf14_device_reloc_ptrs, pdf14_device *pdev)
             RELOC_PTR(pdf14_device, devn_params.separations.names[i].data);
         }
     }
-    RELOC_PTR(pdf14_device, devn_params.compressed_color_list);
-    RELOC_PTR(pdf14_device, devn_params.pdf14_compressed_color_list);
     RELOC_VAR(pdev->ctx);
     RELOC_VAR(pdev->smaskcolor);
     RELOC_VAR(pdev->trans_group_parent_cmap_procs);
@@ -2153,12 +2139,8 @@ pdf14_forward_put_params(gx_device * dev, gs_param_list	* plist)
 }
 
 /* Function prototypes */
-int put_param_compressed_color_list_elem(gx_device * pdev,
-    gs_param_list * plist, compressed_color_list_t ** pret_comp_list,
-    char * keyname, int num_comps);
 int put_param_pdf14_spot_names(gx_device * pdev,
                 gs_separations * pseparations, gs_param_list * plist);
-#define PDF14CompressedColorListParamName "PDF14CompressedColorList"
 #define PDF14NumSpotColorsParamName "PDF14NumSpotColors"
 
 /*
@@ -4113,15 +4095,6 @@ pdf14_update_device_color_procs(gx_device *dev,
         /* Set new information */
         /* If we are in a soft mask and we are using compressed color
            encoding, then go ahead and update the encoder and decoder. */
-        if (pdev->procs.encode_color == pdf14_compressed_encode_color &&
-            new_num_comps == 1) {
-            pdev->procs.decode_color = pdevproto->static_procs->decode_color;
-            if (has_tags) {
-                pdev->procs.encode_color = pdf14_encode_color_tag;
-            } else {
-                pdev->procs.encode_color = pdevproto->static_procs->encode_color;
-            }
-        }
         pis->get_cmap_procs = pdf14_get_cmap_procs_group;
         gx_set_cmap_procs(pis, dev);
         pdev->procs.get_color_mapping_procs =
@@ -4327,17 +4300,6 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                and compressed.  Note that we probably don't have_tags if we
                are dealing with compressed color.  But is is possible so
                we add it in to catch for future use. */
-            if (pdev->procs.encode_color == pdf14_compressed_encode_color &&
-                new_num_comps == 1) {
-                pdev->procs.decode_color =
-                    pdevproto->static_procs->decode_color;
-                if (has_tags) {
-                    pdev->procs.encode_color = pdf14_encode_color_tag;
-                } else {
-                    pdev->procs.encode_color =
-                        pdevproto->static_procs->encode_color;
-                }
-            }
             cldev->clist_color_info.depth = pdev->color_info.depth;
             cldev->clist_color_info.polarity = pdev->color_info.polarity;
             cldev->clist_color_info.num_components = pdev->color_info.num_components;
@@ -6503,19 +6465,11 @@ static	const gx_device_procs pdf14_clist_CMYK_procs =
                         gx_default_DevCMYK_get_color_comp_index,
                         pdf14_encode_color, pdf14_decode_color);
 
-#if USE_COMPRESSED_ENCODING
-static	const gx_device_procs pdf14_clist_CMYKspot_procs =
-        pdf14_clist_procs(pdf14_cmykspot_get_color_mapping_procs,
-                        pdf14_cmykspot_get_color_comp_index,
-                        pdf14_compressed_encode_color,
-                        pdf14_compressed_decode_color);
-#else
 static	const gx_device_procs pdf14_clist_CMYKspot_procs =
         pdf14_clist_procs(pdf14_cmykspot_get_color_mapping_procs,
                         pdf14_cmykspot_get_color_comp_index,
                         pdf14_encode_color,
                         pdf14_decode_color);
-#endif
 
 static	const gx_device_procs pdf14_clist_custom_procs =
         pdf14_clist_procs(gx_forward_get_color_mapping_procs,
@@ -6829,198 +6783,6 @@ pdf14_recreate_clist_device(gs_memory_t	*mem, gs_imager_state *	pis,
 }
 
 /*
- * Key names are normally C const strings.  However we need to create temp
- * parameter key names.  They only need to have a short life.  We need to
- * create a parameter list with the key names.  Then we will put the parameters
- * into the clist.  That process will create a permanent copy of the key
- * name.  At that point we can release our temp key names.
- */
-typedef struct keyname_link_list_s {
-        struct keyname_link_list_s * next;
-        char * key_name;
-    } keyname_link_list_t;
-
-/*
- * The GC description for the keyname link list is being included for
- * completeness.  Since this structure is only temporary, this structure
- * should never be exposed to the GC.
- */
-gs_private_st_ptrs2(st_keyname_link_list, keyname_link_list_t,
-                        "keyname_link_list", keyname_link_list_enum_ptrs,
-                        keyname_link_list_reloc_ptrs, next, key_name);
-
-/* See comments before the definition of keyname_link_list_t */
-static int
-free_temp_keyname_list(gs_memory_t * mem, keyname_link_list_t * plist)
-{
-    keyname_link_list_t * pthis_elem;
-
-    while (plist != NULL) {
-        pthis_elem = plist;
-        plist = plist->next;
-        gs_free_object(mem, (byte *)pthis_elem, "free_temp_keyname_list");
-    }
-    return 0;
-}
-
-/* Put a data value into our 'string' */
-#define put_data(pdata, value, count)\
-    for(j = 0; j < count; j++)\
-        *pdata++ = (byte)((value) >> (j * 8))
-
-/*
- * Convert a compressed color list element into a set of device parameters.
- * Note:  This routine recursively calls itself.  As a result it can create
- * mulitple device parameters.  The parameters are 'strings'.  Actually the
- * data is stored in the strings as binary data.
- *
- * See comments before the definition of keyname_link_list_t
- */
-static int
-get_param_compressed_color_list_elem(pdf14_clist_device * pdev,
-        gs_param_list * plist, compressed_color_list_t * pcomp_list,
-        char * keyname, keyname_link_list_t ** pkeyname_list)
-{
-    int max_list_elem_size =
-            6 + NUM_ENCODE_LIST_ITEMS * sizeof(comp_bit_map_list_t);
-    int i, j;
-    byte * pdata;
-    gs_param_string str;
-
-    if (pcomp_list == NULL)	/* Exit if we don not have a list. */
-        return 0;
-
-    /* Allocate a string for temp data */
-    pdata = gs_alloc_bytes(pdev->memory, max_list_elem_size,
-                                 "convert_compressed_color_list_elem");
-    str.data = (const byte *)pdata;
-    str.persistent = false;
-
-    put_data(pdata, pcomp_list->num_sub_level_ptrs, 2);
-    put_data(pdata, pcomp_list->first_bit_map, 2);
-
-    /* . */
-    for (i = pcomp_list->first_bit_map; i < NUM_ENCODE_LIST_ITEMS; i++) {
-        put_data(pdata, pcomp_list->u.comp_data[i].num_comp, 2);
-        put_data(pdata, pcomp_list->u.comp_data[i].num_non_solid_comp, 2);
-        put_data(pdata, pcomp_list->u.comp_data[i].solid_not_100, 1);
-        put_data(pdata, pcomp_list->u.comp_data[i].colorants,
-                                sizeof(pcomp_list->u.comp_data[i].colorants));
-        if (pcomp_list->u.comp_data[i].num_comp !=
-                        pcomp_list->u.comp_data[i].num_non_solid_comp) {
-            put_data(pdata, pcomp_list->u.comp_data[i].solid_colorants,
-                sizeof(pcomp_list->u.comp_data[i].solid_colorants));
-        }
-    }
-    str.size = pdata - str.data;
-    param_write_string(plist, keyname, &str);
-    gs_free_object(pdev->memory, (byte *)str.data,
-                   "convert_compressed_color_list_elem");
-
-    /* Convert the sub levels. */
-    for (i = 0; i < pcomp_list->num_sub_level_ptrs; i++) {
-        /*
-         * We generate a keyname for the sub level elements based upon
-         * the keyname for the current level.  See comments before the
-         * definition of keyname_link_list_t for comments about the lifetime
-         * of the keynames.
-         */
-        /* Allocate a string for the keyname */
-        char * keyname_buf = (char *)gs_alloc_bytes(pdev->memory,
-                strlen(keyname) + 10, "convert_compressed_color_list_elem");
-        /*
-         * Allocate a link list element so we can keep track of the memory
-         * allocated to hold the keynames.
-         */
-        keyname_link_list_t * pkeyname_list_elem =
-            gs_alloc_struct(pdev->memory, keyname_link_list_t,
-                &st_keyname_link_list, "convert_compressed_color_list_elem");
-        pkeyname_list_elem->next = *pkeyname_list;
-        pkeyname_list_elem->key_name = keyname_buf;
-        *pkeyname_list = pkeyname_list_elem;
-        gs_sprintf(keyname_buf, "%s_%d", keyname, i);
-        get_param_compressed_color_list_elem(pdev, plist,
-                                pcomp_list->u.sub_level_ptrs[i], keyname_buf,
-                                pkeyname_list);
-    }
-
-    return 0;
-}
-#undef put_data
-
-/* Get data value from our 'string' */
-#define get_data(pdata, value, count)\
-    j = count - 1;\
-    value = pdata[j--];\
-    for(; j >= 0; j--)\
-        value = (value << 8) | pdata[j];\
-    pdata += count
-
-/*
- * Retrieve a compressed color list from a set of device parameters.
- * Note:  This routine recursively calls itself.  As a result it can process
- * mulitple device parameters and create the entire compressed color list.
- * The parameters are 'strings'.  Actually the data is stored in the strings
- * as binary data.
- */
-int
-put_param_compressed_color_list_elem(gx_device * pdev,
-    gs_param_list * plist, compressed_color_list_t ** pret_comp_list,
-    char * keyname, int num_comps)
-{
-    int code, i, j;
-    byte * pdata;
-    gs_param_string str;
-    compressed_color_list_t * pcomp_list;
-
-    /* Check if the given keyname is present. */
-    code = param_read_string(plist, keyname, &str);
-    switch (code) {
-      case 0:
-          break;	/* We have the given keyname, continue. */
-      default:
-          param_signal_error(plist, keyname, code);
-      case 1:
-          *pret_comp_list = NULL;
-          return 0;
-    }
-    /* Allocate a compressed color list element. */
-    pdata = (byte *)str.data;
-    pcomp_list = alloc_compressed_color_list_elem(pdev->memory, num_comps);
-    get_data(pdata, pcomp_list->num_sub_level_ptrs, 2);
-    get_data(pdata, pcomp_list->first_bit_map, 2);
-
-    /* Read the bit maps */
-    for (i = pcomp_list->first_bit_map; i < NUM_ENCODE_LIST_ITEMS; i++) {
-        get_data(pdata, pcomp_list->u.comp_data[i].num_comp, 2);
-        get_data(pdata, pcomp_list->u.comp_data[i].num_non_solid_comp, 2);
-        get_data(pdata, pcomp_list->u.comp_data[i].solid_not_100, 1);
-        get_data(pdata, pcomp_list->u.comp_data[i].colorants,
-                                sizeof(pcomp_list->u.comp_data[i].colorants));
-        if (pcomp_list->u.comp_data[i].num_comp !=
-                        pcomp_list->u.comp_data[i].num_non_solid_comp) {
-            get_data(pdata, pcomp_list->u.comp_data[i].solid_colorants,
-                        sizeof(pcomp_list->u.comp_data[i].solid_colorants));
-        }
-    }
-
-    /* Get the sub levels. */
-    for (i = 0; i < pcomp_list->num_sub_level_ptrs; i++) {
-        char buff[50];
-        compressed_color_list_t * sub_list_ptr;
-
-        gs_sprintf(buff, "%s_%d", keyname, i);
-        put_param_compressed_color_list_elem(pdev, plist,
-                                        &sub_list_ptr, buff, num_comps - 1);
-        pcomp_list->u.sub_level_ptrs[i] = sub_list_ptr;
-    }
-
-    *pret_comp_list = pcomp_list;
-    return 0;
-}
-#undef get_data
-
-/*
  * devicen params
  */
 gs_devn_params *
@@ -7029,58 +6791,6 @@ pdf14_ret_devn_params(gx_device *pdev)
     pdf14_device *p14dev = (pdf14_device *)pdev;
 
     return(&(p14dev->devn_params));
-}
-
-/*
- * Convert a list of spot color names into a set of device parameters.
- * This is done to transfer information from the PDf14 clist writer
- * compositing device to the PDF14 clist reader compositing device.
- *
- * See comments before the definition of keyname_link_list_t
- */
-static int
-get_param_spot_color_names(pdf14_clist_device * pdev,
-        gs_param_list * plist, keyname_link_list_t ** pkeyname_list)
-{
-    int code = 0, i;
-    gs_param_string str;
-    gs_separations * separations = &pdev->devn_params.separations;
-    int num_spot_colors = separations->num_separations;
-
-    if (num_spot_colors == 0)
-        return 0;
-
-    code = param_write_int(plist, PDF14NumSpotColorsParamName,
-                                                 &num_spot_colors);
-    if (code < 0)
-        return code;
-
-    for (i = 0; i < num_spot_colors; i++) {
-        /*
-         * We generate a keyname for the spot color based upon the
-         * spot color number.  See comments before the definition of
-         * keyname_link_list_t for comments about the lifetime of the keynames.
-         */
-        /* Allocate a string for the keyname */
-        char * keyname_buf = (char *)gs_alloc_bytes(pdev->memory,
-                strlen("PDF14SpotName_") + 10, "get_param_spot_color_names");
-        /*
-         * Allocate a link list element so we can keep track of the memory
-         * allocated to hold the keynames.
-         */
-        keyname_link_list_t * pkeyname_list_elem =
-            gs_alloc_struct(pdev->memory, keyname_link_list_t,
-                &st_keyname_link_list, "get_param_spot_color_names");
-        pkeyname_list_elem->next = *pkeyname_list;
-        pkeyname_list_elem->key_name = keyname_buf;
-        *pkeyname_list = pkeyname_list_elem;
-        gs_sprintf(keyname_buf, "PDF14SpotName_%d", i);
-        str.size = separations->names[i].size;
-        str.data = separations->names[i].data;
-        str.persistent = false;
-        code = param_write_string(plist, keyname_buf, &str);
-    }
-    return code;
 }
 
 /*
@@ -7130,40 +6840,6 @@ put_param_pdf14_spot_names(gx_device * pdev,
     return 0;;
 }
 
-static int
-pdf14_clist_get_param_compressed_color_list(pdf14_device * p14dev)
-{
-    gx_device_clist_writer * cldev = (gx_device_clist_writer *)p14dev->pclist_device;
-    gs_c_param_list param_list;
-    keyname_link_list_t * pkeyname_list_head = NULL;
-    int code;
-
-    /*
-     * If a put_params call fails, the device will be left in a closed
-     * state, but higher-level code won't notice this fact.  We flag this by
-     * setting permanent_error, which prevents writing to the command list.
-     */
-    if (cldev->permanent_error)
-        return cldev->permanent_error;
-    gs_c_param_list_write(&param_list, p14dev->memory);
-    code = get_param_compressed_color_list_elem(p14dev,
-                (gs_param_list *)&param_list,
-                p14dev->devn_params.compressed_color_list,
-                (char *)PDF14CompressedColorListParamName, &pkeyname_list_head);
-    get_param_spot_color_names(p14dev, (gs_param_list *)&param_list,
-                         &pkeyname_list_head);
-    if (code >= 0) {
-        gx_device * tdev = p14dev->target;
-
-        gs_c_param_list_read(&param_list);
-        code = dev_proc(tdev, put_params)(tdev, (gs_param_list *)&param_list);
-    }
-    gs_c_param_list_release(&param_list);
-    free_temp_keyname_list(p14dev->memory, pkeyname_list_head);
-
-    return code;
-}
-
 /*
  * This procedure will have information from the PDF 1.4 clist writing
  * clist compositior device.  This is information output the compressed
@@ -7178,11 +6854,8 @@ int
 pdf14_put_devn_params(gx_device * pdev, gs_devn_params * pdevn_params,
                                         gs_param_list * plist)
 {
-    int code = put_param_compressed_color_list_elem(pdev, plist,
-            &pdevn_params->pdf14_compressed_color_list,
-            (char *)PDF14CompressedColorListParamName, TOP_ENCODED_LEVEL);
-    if (code >= 0)
-       code = put_param_pdf14_spot_names(pdev,
+    int code;
+    code = put_param_pdf14_spot_names(pdev,
                        &pdevn_params->pdf14_separations, plist);
     return code;
 }
@@ -7262,12 +6935,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                                     pdev->saved_target_get_color_comp_index;
                 pis->get_cmap_procs = pdev->save_get_cmap_procs;
                 gx_set_cmap_procs(pis, pdev->target);
-                /*
-                 * For spot colors we use a 'compressed encoding' for
-                 * gx_color_index values.  Send the related data struct
-                 * to the clist.
-                 */
-                pdf14_clist_get_param_compressed_color_list(pdev);
+                gx_device_decache_colors(pdev->target);
                 /* Disable the PDF 1.4 compositor */
                 pdf14_disable_clist_device(mem, pis, dev);
                 /*
@@ -8099,7 +7767,7 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
 #endif
             /*
              * If we are blending using spot colors (i.e. the output device
-             * supports spot colors) then we need to transfer compressed
+             * supports spot colors) then we need to transfer
              * color info from the clist PDF 1.4 compositing reader device
              * to the clist writer PDF 1.4 compositing device.
              * This info was transfered from that device to the output
@@ -8129,11 +7797,9 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                         p14dev->devn_params.num_std_colorant_names +
                         p14dev->devn_params.page_spot_colors;
                 }
-                /* Transfer the data for the compressed color encoding.
+                /* Transfer the data for the spot color names
                    But we have to free what may be there before we do this */
                 devn_free_params((gx_device*) p14dev);
-                p14dev->devn_params.compressed_color_list =
-                    pclist_devn_params->pdf14_compressed_color_list;
                 p14dev->devn_params.separations =
                     pclist_devn_params->pdf14_separations;
                 p14dev->free_devicen = false;  /* to avoid freeing the clist ones */

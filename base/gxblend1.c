@@ -72,59 +72,6 @@ pdf14_unpack_subtractive(int num_comp, gx_color_index color,
 }
 
 /*
- * Unpack a 'compressed' CMYK color index.  The color index value is unpacked
- * into a set of 8 bit values.  For more information about 'compressed' color
- * index values see the comments before the devn_encode_compressed_color routine.
- *
- * Note: For simplicity of coding the calling routines, this routine will also
- * handle 'uncompressed' color index values.
- */
-void
-pdf14_unpack_compressed(int num_comp, gx_color_index color,
-                                pdf14_device * p14dev, byte * out)
-{
-    int comp_num;
-
-    if (p14dev->devn_params.compressed_color_list == NULL) {
-        /*
-         * For 'uncompressed' data we simply have to unpack the gx_color_index
-         * value directly.
-         */
-        for (comp_num = num_comp - 1; comp_num >= 0; comp_num--) {
-            out[comp_num] = 0xff - (byte)(color & 0xff);
-            color >>= 8;
-        }
-    }
-    else {
-        int factor, bit_count, bit_mask;
-        comp_bit_map_list_t * pbitmap;
-        gx_color_value solid_color = 0xff;
-
-        pbitmap = find_bit_map(color,
-                        p14dev->devn_params.compressed_color_list);
-        bit_count = num_comp_bits[pbitmap->num_non_solid_comp];
-        bit_mask = (1 << bit_count) - 1;
-        factor = comp_bit_factor[pbitmap->num_non_solid_comp];
-        if (pbitmap->solid_not_100) {
-            solid_color = 0xff - ((factor * ((int)color & bit_mask)) >> 16);
-            color >>= bit_count;
-        }
-        for (comp_num = 0; comp_num < num_comp; comp_num++) {
-            if (colorant_present(pbitmap, colorants, comp_num)) {
-                if (colorant_present(pbitmap, solid_colorants, comp_num))
-                    *out++ = (byte)solid_color;
-                else {
-                    *out++ = 0xff - ((factor * ((int)color & bit_mask)) >> 16);
-                    color >>= bit_count;
-                }
-            }
-            else
-                *out++ = 0xff;
-        }
-    }
-}
-
-/*
  * Unpack a device color.  This routine is used for devices in which we do
  * not know the details of the process color model.  In this case we use
  * the device's decode_color procedure.
@@ -339,7 +286,6 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     byte *mask_curr_ptr = NULL;
     int tos_planestride = tos->planestride;
     int nos_planestride = nos->planestride;
-    int mask_planestride = 0x0badf00d; /* Quiet compiler. */
     byte mask_bg_alpha = 0; /* Quiet compiler. */
     int width = x1 - x0;
     int x, y;
@@ -398,7 +344,6 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
         if (maskbuf->data != NULL) {
             mask_row_ptr = maskbuf->data + x0 - maskbuf->rect.p.x +
                     (y0 - maskbuf->rect.p.y) * maskbuf->rowstride;
-            mask_planestride = maskbuf->planestride;
             has_mask = true;
         } 
         /* We may have a case, where we are outside the maskbuf rect. */
@@ -659,57 +604,6 @@ pdf14_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
         color >>= 8;
     }
     return 0;
-}
-
-/*
- * Encode a list of colorant values into a gx_color_index_value.  For more
- * information about 'compressed' color index values see the comments before
- * the devn_encode_compressed_color routine.
- */
-gx_color_index
-pdf14_compressed_encode_color(gx_device *dev, const gx_color_value colors[])
-{
-    gs_devn_params *pdevn_params = NULL;
-
-    if (dev->procs.ret_devn_params != NULL)
-        pdevn_params = dev_proc(dev, ret_devn_params)(dev);
-    /* If there was no dev_proc or it returned NULL, assume pdf14 device devn_params */
-    if (pdevn_params == NULL) {
-#ifdef DEBUG
-        if (strncmp(dev->dname, "pdf14", 5))
-            emprintf1(dev->memory,
-                      "pdf14_compressed_encode_color devn_params not from pdf14 device, device = '%s'\n",
-                      dev->dname);
-#endif
-        pdevn_params = &(((pdf14_device *)dev)->devn_params);
-    }
-    return devn_encode_compressed_color(dev, colors, pdevn_params);
-}
-
-/*
- * Decode a gx_color_index value back to a list of colorant values.  For more
- * information about 'compressed' color index values see the comments before
- * the devn_encode_compressed_color routine.
- */
-int
-pdf14_compressed_decode_color(gx_device * dev, gx_color_index color,
-                                                        gx_color_value * out)
-{
-    gs_devn_params *pdevn_params = NULL;
-
-    if (dev->procs.ret_devn_params != NULL)
-        pdevn_params = dev_proc(dev, ret_devn_params)(dev);
-    /* If there was no dev_proc or it returned NULL, assume pdf14 device devn_params */
-    if (pdevn_params == NULL) {
-#ifdef DEBUG
-        if (strncmp(dev->dname, "pdf14", 5))
-            emprintf1(dev->memory,
-                      "pdf14_compressed_decode_color devn_params not from pdf14 device, device = '%s'\n",
-                      dev->dname);
-#endif
-        pdevn_params = &(((pdf14_device *)dev)->devn_params);
-    }
-    return devn_decode_compressed_color(dev, color, out, pdevn_params);
 }
 
 void

@@ -399,8 +399,6 @@ void pdf14_unpack_additive(int num_comp, gx_color_index color,
 void pdf14_unpack_subtractive(int num_comp, gx_color_index color,
                                 pdf14_device * p14dev, byte * out);
 
-void pdf14_unpack_compressed(int num_comp, gx_color_index color,
-                                pdf14_device * p14dev, byte * out);
 
 void pdf14_unpack_custom(int num_comp, gx_color_index color,
                                 pdf14_device * p14dev, byte * out);
@@ -422,9 +420,6 @@ gx_color_index pdf14_encode_color(gx_device *dev, const gx_color_value colors[])
 gx_color_index pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[]);
 
 int pdf14_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out);
-gx_color_index pdf14_compressed_encode_color(gx_device *dev, const gx_color_value colors[]);
-int pdf14_compressed_decode_color(gx_device * dev, gx_color_index color,
-                                                        gx_color_value * out);
 void pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[]);
 void pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_imager_state *pis,
                            frac r, frac g, frac b, frac out[]);
