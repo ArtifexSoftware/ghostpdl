@@ -94,6 +94,7 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
     pdev->vgstack[i].saved_stroke_color = pdev->saved_stroke_color;
     pdev->vgstack[i].line_params = pdev->state.line_params;
     pdev->vgstack[i].line_params.dash.pattern = 0; /* Use pdev->dash_pattern instead. */
+    pdev->vgstack[i].soft_mask_id = pdev->state.soft_mask_id; /* Use pdev->dash_pattern instead. */
     if (pdev->dash_pattern) {
         if (pdev->vgstack[i].dash_pattern)
             gs_free_object(pdev->memory->non_gc_memory, pdev->vgstack[i].dash_pattern, "free gstate copy dash");
@@ -140,6 +141,7 @@ pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
     pdev->saved_fill_color = s->saved_fill_color;
     pdev->saved_stroke_color = s->saved_stroke_color;
     pdev->state.line_params = s->line_params;
+    pdev->state.soft_mask_id = s->soft_mask_id;
     if (s->dash_pattern) {
         if (pdev->dash_pattern)
             gs_free_object(pdev->memory->stable_memory, pdev->dash_pattern, "vector free dash pattern");
@@ -224,6 +226,7 @@ pdf_viewer_state_from_imager_state_aux(pdf_viewer_state *pvs, const gs_imager_st
     memset(&pvs->line_params.dash, 0 , sizeof(pvs->line_params.dash));
     pvs->dash_pattern = 0;
     pvs->dash_pattern_size = 0;
+    pvs->soft_mask_id = pis->soft_mask_id;
 }
 
 /* Copy viewer state from images state. */
@@ -290,11 +293,16 @@ pdf_reset_graphics_old(gx_device_pdf * pdev)
 void
 pdf_reset_graphics(gx_device_pdf * pdev)
 {
+    int soft_mask_id = pdev->state.soft_mask_id;
+
     if (pdev->vg_initial_set)
         pdf_load_viewer_state(pdev, &pdev->vg_initial);
     else
         pdf_reset_graphics_old(pdev);
     pdf_reset_text(pdev);
+
+    /* Not obvious, we want to preserve any extant soft mask, not reset it */
+    pdev->state.soft_mask_id = soft_mask_id;
 }
 
 /* Write client color. */
