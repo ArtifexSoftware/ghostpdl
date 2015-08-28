@@ -991,7 +991,7 @@ if test -f $LCMS2DIR/include/lcms2.h; then
 else
   AC_MSG_RESULT([no])
   AC_MSG_CHECKING([for system lcms2 library])
-  AC_CHECK_LIB(lcms2, cmsGetTransformOutputFormat, [
+  AC_CHECK_LIB(lcms2, _cmsCreateMutex, [
          AC_CHECK_HEADERS([lcms2.h], [LCMS2DIR="";SHARELCMS=1;WHICHLCMS=lcms2])
        ])
   if test x$WHICHLCMS = x; then
