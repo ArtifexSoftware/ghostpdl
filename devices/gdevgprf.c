@@ -14,7 +14,7 @@
 */
 
 
-/* GProof device, based upon the gdevpsd.c code. */
+/* gprf device, based upon the gdevpsd.c code. */
 
 #include "math_.h"
 #include "gdevprn.h"
@@ -196,7 +196,7 @@ static const gx_device_procs spot_cmyk_procs
 
 const gprf_device gs_gprf_device =
 {
-    gprf_device_body(spot_cmyk_procs, "gproof",
+    gprf_device_body(spot_cmyk_procs, "gprf",
                     ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
                     GX_CINFO_POLARITY_SUBTRACTIVE,
                     ARCH_SIZEOF_GX_COLOR_INDEX * 8, /* 8 bits per component (albeit in planes) */
