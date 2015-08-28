@@ -733,7 +733,7 @@ AC_ARG_ENABLE([freetype], AC_HELP_STRING([--disable-freetype],
 
 FT_BRIDGE=0
 SHARE_FT=0
-FTSRCDIR=
+FTSRCDIR=src
 FT_CFLAGS=
 FT_LIBS=
 
@@ -983,16 +983,19 @@ AC_SUBST(LIBPNGDIR)
 WHICHLCMS=
 
 AC_MSG_CHECKING([for local lcms2 library source])
-LCMS2DIR=$srcdir/lcms2
-if test -f $LCMS2DIR/include/lcms2.h; then
+LCMS2DIR=src
+
+LCMS2SRC=$srcdir/lcms2
+if test -f $LCMS2SRC/include/lcms2.h; then
       AC_MSG_RESULT([yes])
       SHARELCMS=0
       WHICHLCMS=lcms2
+      LCMS2DIR=$LCMS2SRC
 else
   AC_MSG_RESULT([no])
   AC_MSG_CHECKING([for system lcms2 library])
   AC_CHECK_LIB(lcms2, _cmsCreateMutex, [
-         AC_CHECK_HEADERS([lcms2.h], [LCMS2DIR="";SHARELCMS=1;WHICHLCMS=lcms2])
+         AC_CHECK_HEADERS([lcms2.h], [SHARELCMS=1;WHICHLCMS=lcms2])
        ])
   if test x$WHICHLCMS = x; then
     AC_MSG_ERROR([lcms2 not found, or too old])
@@ -1013,7 +1016,7 @@ FAX_DEVS=''
 XPSWRITEDEVICE=''
 
 
-LIBTIFFDIR=''
+LIBTIFFDIR='src'
 LIBTIFFCONFDIR=''
 
 TIFFDEVS_ALL='tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflzw tiffpack tiffgray tiffsep tiffsep1 tiffscaled tiffscaled4 tiffscaled8 tiffscaled24 tiffscaled32'
