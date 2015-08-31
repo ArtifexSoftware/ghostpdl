@@ -2776,7 +2776,9 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
         char buf[20];
 
         if (pis->soft_mask_id == 0) {
-            pdf_open_contents(pdev, PDF_IN_STREAM);
+            code = pdf_open_contents(pdev, PDF_IN_STREAM);
+            if (code < 0)
+                return code;
             code = pdf_restore_viewer_state(pdev, pdev->strm);
             if (code < 0)
                 return code;
