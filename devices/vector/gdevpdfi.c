@@ -2848,8 +2848,10 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             {
                 pattern_accum_param_s *param = (pattern_accum_param_s *)data;
                 gs_pattern1_instance_t *pinst = param->pinst;
-                id = param->pinst_id;
+                gs_state *pgs = param->graphics_state;
 
+                id = param->pinst_id;
+                pdf_check_soft_mask(pdev, (gs_imager_state *)pgs);
                 code = pdf_enter_substream(pdev, resourcePattern, id, &pres, false,
                         pdev->CompressFonts/* Have no better switch.*/);
                 if (code < 0)
