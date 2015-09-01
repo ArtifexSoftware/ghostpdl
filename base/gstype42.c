@@ -1659,9 +1659,13 @@ gs_truetype_font_info(gs_font *font, const gs_point *pscale, int members,
     if (pfont->data.name_offset == 0)
         return 0;
     if (!(info->members & FONT_INFO_COPYRIGHT) && (members & FONT_INFO_COPYRIGHT)) {
-        code = get_from_names_table(pfont, info, &info->Copyright, FONT_INFO_COPYRIGHT, 0);
-        if (code < 0)
-            return code;
+        /* One way we can arrive here is from gs_copy_font() -> z42_font_info(), in
+         * that case we definitely want to copy the copyright informatoin if there is any,
+         * but we don't want to throw an error if we find a Type 42 font which has no
+         * copyright information. So get the informaton, but ignore the return code.
+         * Bug #696174.
+         */
+        get_from_names_table(pfont, info, &info->Copyright, FONT_INFO_COPYRIGHT, 0);
     }
     if (!(info->members & FONT_INFO_FAMILY_NAME) && (members & FONT_INFO_FAMILY_NAME)) {
         code = get_from_names_table(pfont, info, &info->FamilyName, FONT_INFO_FAMILY_NAME, 1);
