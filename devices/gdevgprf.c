@@ -714,6 +714,7 @@ void
 gprf_write_header(gprf_write_ctx *xc)
 {
     int i;
+    int index;
     int offset = ftell(xc->f);
     gx_devn_prn_device *dev = (gx_devn_prn_device *)xc->dev;
 
@@ -757,15 +758,16 @@ gprf_write_header(gprf_write_ctx *xc)
             else
                 namelen = strlen(name);
         } else {
-            name = (const char *)dev->devn_params.separations.names[j - NUM_CMYK_COMPONENTS].data;
-            namelen = dev->devn_params.separations.names[j - NUM_CMYK_COMPONENTS].size;
-            c = (2 * 255 * dev->equiv_cmyk_colors.color[j].c + frac_1) / (2 * frac_1);
+            index = j - NUM_CMYK_COMPONENTS;
+            name = (const char *)dev->devn_params.separations.names[index].data;
+            namelen = dev->devn_params.separations.names[index].size;
+            c = (2 * 255 * dev->equiv_cmyk_colors.color[index].c + frac_1) / (2 * frac_1);
             cmyk[0] = (c < 0 ? 0 : (c > 255 ? 255 : c));
-            m = (2 * 255 * dev->equiv_cmyk_colors.color[j].m + frac_1) / (2 * frac_1);
+            m = (2 * 255 * dev->equiv_cmyk_colors.color[index].m + frac_1) / (2 * frac_1);
             cmyk[1] = (m < 0 ? 0 : (m > 255 ? 255 : m));
-            y = (2 * 255 * dev->equiv_cmyk_colors.color[j].y + frac_1) / (2 * frac_1);
+            y = (2 * 255 * dev->equiv_cmyk_colors.color[index].y + frac_1) / (2 * frac_1);
             cmyk[2] = (y < 0 ? 0 : (y > 255 ? 255 : y));
-            k = (2 * 255 * dev->equiv_cmyk_colors.color[j].k + frac_1) / (2 * frac_1);
+            k = (2 * 255 * dev->equiv_cmyk_colors.color[index].k + frac_1) / (2 * frac_1);
             cmyk[3] = (k < 0 ? 0 : (k > 255 ? 255 : k));
         }
 
