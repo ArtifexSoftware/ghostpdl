@@ -1892,12 +1892,6 @@ $(PSD)pdfread.dev : $(INT_MAK) $(ECHOGS_XE) \
 	$(ADDMOD) $(PSD)pdfread -ps pdf_rbld
 	$(ADDMOD) $(PSD)pdfread -ps pdf_base pdf_draw pdf_font pdf_main pdf_sec
 
-# Optional Illustrator CS2/CS3 layer info extractor
-
-$(PSD)cslayer.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)pdfread.dev\
- $(MAKEDIRS)
-	$(SETMOD) $(PSD)cslayer -ps pdf_cslayer
-
 # ---------------- PS Support for Font API ---------------- #
 $(PSD)fapi_ps.dev : $(LIB_MAK) $(ECHOGS_XE) $(PSOBJ)zfapi.$(OBJ)\
  $(MAKEDIRS)

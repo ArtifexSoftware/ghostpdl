@@ -26,7 +26,7 @@ PDF_RESOURCE_LIST=CMap$(D)*
 MISC_INIT_FILES=FCOfontmap-PCLPS2 -C cidfmap \
  FAPIcidfmap FAPIconfig FAPIfontmap Fontmap Fontmap.GS xlatmap \
  gs_cet.ps gs_diskf.ps gs_diskn.ps gs_dscp.ps gs_trap.ps \
- pdf_cslayer.ps -B
+ -B
 
 # In the below list, the Font contents are _not_ compressed since it doesn't help.
 PS_RESOURCE_LIST=SubstCID$(D)* CIDFSubst$(D)* CIDFont$(D)* -C $(PDF_RESOURCE_LIST) ColorSpace$(D)* Decoding$(D)* Encoding$(D)* -c -C IdiomSet$(D)* ProcSet$(D)* -P $(PSRESDIR)$(D)Init$(D) -d Resource/Init/ -B $(MISC_INIT_FILES)
@@ -413,7 +413,6 @@ PS_INIT_DEPS=\
 	$(PSRESDIR)$(D)Init$(D)gs_type1.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_wan_e.ps \
 	$(PSRESDIR)$(D)Init$(D)pdf_base.ps \
-	$(PSRESDIR)$(D)Init$(D)pdf_cslayer.ps \
 	$(PSRESDIR)$(D)Init$(D)pdf_draw.ps \
 	$(PSRESDIR)$(D)Init$(D)pdf_font.ps \
 	$(PSRESDIR)$(D)Init$(D)pdf_main.ps \
@@ -431,8 +430,7 @@ PS_SUBSTCID_DEPS=\
 PS_MISC_DEPS=\
 	$(PSRESDIR)$(D)Init$(D)FCOfontmap-PCLPS2 \
 	$(PSRESDIR)$(D)Init$(D)cidfmap \
-	$(PSRESDIR)$(D)Init$(D)gs_cet.ps \
-	$(PSRESDIR)$(D)Init$(D)pdf_cslayer.ps
+	$(PSRESDIR)$(D)Init$(D)gs_cet.ps
 
 PS_ROMFS_DEPS=$(PSSRCDIR)$(D)psromfs.mak $(gconfig_h) \
 	$(PDF_RESOURCE_DEPS) $(PS_COLORSPACE_DEPS) $(PS_DECODING_DEPS) $(PS_ENCODING_DEPS) \
