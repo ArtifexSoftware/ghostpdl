@@ -1238,8 +1238,10 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     /* If this happens we are stuffed, as there is no way to get hold
      * of the original device's stype structure, which means we cannot
      * allocate a replacement structure. Abort if so.
+     * Also abort if the new_prototype device struct is too large.
      */
-    if (!dev_to_subclass->stype)
+    if (!dev_to_subclass->stype ||
+        dev_to_subclass->stype->ssize < new_prototype->params_size)
         return_error(gs_error_VMerror);
 
     /* We make a 'stype' structure for our new device, and copy the old stype into it
@@ -1277,9 +1279,6 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
         return_error(gs_error_VMerror);
     }
     memset(psubclass_data, 0x00, private_data_size);
-
-    if (dev_to_subclass->stype->ssize < new_prototype->params_size)
-        return_error(gs_error_VMerror);
 
     gx_copy_device_procs(&dev_to_subclass->procs, &child_dev->procs, &new_prototype->procs);
     dev_to_subclass->procs.fill_rectangle = new_prototype->procs.fill_rectangle;

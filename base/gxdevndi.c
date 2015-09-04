@@ -107,7 +107,7 @@ gx_render_device_DeviceN(frac * pcolor,
     }
 
     for (i = 0; i < num_colors; i++) {
-        unsigned long hsize = pdht ?
+        unsigned long hsize = pdht && i <= pdht->num_comp ?
                 (unsigned) pdht->components[i].corder.num_levels
                 : 1;
         unsigned long nshades = hsize * max_value[i] + 1;
