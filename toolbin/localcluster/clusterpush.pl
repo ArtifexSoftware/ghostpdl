@@ -82,7 +82,7 @@ $user=""    if (!$user);
 
 unlink "cluster_command.run";
 
-my $host="casper.ghostscript.com";
+my $host="cluster.ghostscript.com";
 my $dir="/home/regression/cluster/users";
 
 # To cater for those whose cluster user name doesn't match the user name
