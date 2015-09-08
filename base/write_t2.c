@@ -304,9 +304,9 @@ write_gsubrs_index(gs_fapi_font * a_fapi_font, WRF_output * a_output)
         data_start = a_output->m_pos;
 
     for (i = 0; i < count; i++) {
-        long buffer_size = a_output->m_limit - a_output->m_count;
+        long buffer_size = a_output->m_limit - a_output->m_count < 0 ? 0 : a_output->m_limit - a_output->m_count;
         long length = a_fapi_font->get_gsubr(a_fapi_font, i, a_output->m_pos,
-                                             (ushort) buffer_size);
+                                             (ushort) (buffer_size > 65535 ? 65535 : buffer_size));
 
         if (a_output->m_pos)
             WRF_wtext(a_fapi_font->memory, a_output, a_output->m_pos, length);
