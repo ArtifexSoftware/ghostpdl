@@ -307,9 +307,11 @@ static	const gx_device_procs pdf14_custom_procs =
                         gx_forward_encode_color,
                         gx_forward_decode_color);
 
+struct_proc_finalize(pdf14_device_finalize);
+
 gs_private_st_composite_use_final(st_pdf14_device, pdf14_device, "pdf14_device",
                                   pdf14_device_enum_ptrs, pdf14_device_reloc_ptrs,
-                          gx_device_finalize);
+                          pdf14_device_finalize);
 
 static int pdf14_put_image(gx_device * dev, gs_imager_state * pis,
                                                         gx_device * target);
@@ -8189,6 +8191,17 @@ pdf14_free_smask_color(pdf14_device * pdev)
         gs_free_object(pdev->memory, pdev->smaskcolor, "pdf14_free_smask_color");
         pdev->smaskcolor = NULL;
     }
+}
+
+void
+pdf14_device_finalize(const gs_memory_t *cmem, void *vptr)
+{
+    gx_device * const dev = (gx_device *)vptr;
+    pdf14_device * pdev = (pdf14_device *)dev;
+    while (pdev->trans_group_parent_cmap_procs) {
+        pdf14_pop_parent_color(dev, NULL);
+    }
+    gx_device_finalize(cmem, vptr);
 }
 
 #if DUMP_MASK_STACK
