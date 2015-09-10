@@ -116,6 +116,7 @@ $(PLOBJ)plver.h: $(ECHOGS_XE) $(PL_MAK) $(MAKEDIRS)
 
 pjparse_h=$(PLSRC)pjparse.h
 pjtop_h=$(PLSRC)pjtop.h $(pltop_h)
+plparams_h=$(PLSRC)plparams.h
 
 $(PLOBJ)pjparse.$(OBJ): $(PLSRC)pjparse.c\
 	$(ctype__h)   \
@@ -142,7 +143,12 @@ $(PLOBJ)pjtop.$(OBJ): $(PLSRC)pjtop.c $(AK) $(pjtop_h) $(string__h) \
  $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)pjtop.c $(PLO_)pjtop.$(OBJ)
 
-pjl_obj=$(PLOBJ)pjparse.$(OBJ) $(PLOBJ)pjparsei.$(OBJ) $(PLOBJ)pjtop.$(OBJ) $(PLOBJ)pltop.$(OBJ)
+$(PLOBJ)plparams.$(OBJ): $(PLSRC)plparams.c \
+ $(memory__h) $(gsmatrix_h) $(gsdevice_h) $(gp_h) $(gsparam_h) \
+ $(PL_MAK) $(MAKEDIRS)
+	$(PLCCC) $(PLSRC)plparams.c $(PLO_)plparams.$(OBJ)
+
+pjl_obj=$(PLOBJ)pjparse.$(OBJ) $(PLOBJ)pjparsei.$(OBJ) $(PLOBJ)pjtop.$(OBJ) $(PLOBJ)plparams.$(OBJ) $(PLOBJ)pltop.$(OBJ)
 $(PLOBJ)pjl.dev: $(PL_MAK) $(ECHOGS_XE) $(pjl_obj) $(PL_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PLOBJ)pjl $(pjl_obj)
 

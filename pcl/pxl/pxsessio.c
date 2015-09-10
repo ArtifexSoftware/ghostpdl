@@ -42,6 +42,7 @@
 #include "pllfont.h"
 #include "pxptable.h"
 #include "pxvendor.h"
+#include "gzstate.h"
 
 /* Imported operators */
 px_operator_proc(pxCloseDataSource);

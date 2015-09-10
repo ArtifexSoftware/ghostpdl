@@ -29,6 +29,8 @@
 #include "pcpage.h"
 #include "pjtop.h"
 #include <stdlib.h>             /* for atof() */
+#include "gzstate.h"
+#include "plparams.h"
 
 /* Commands */
 
@@ -332,6 +334,20 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         put_param1_bool(pcs, "Duplex", pcs->duplex);
         put_param1_bool(pcs, "FirstSide", !pcs->back_side);
         put_param1_bool(pcs, "BindShortEdge", pcs->bind_short_edge);
+
+    }
+
+    if (type & (pcl_reset_initial ^ pcl_reset_cold))
+    {
+        pjl_envvar_t *pres;
+
+        pres = pjl_proc_get_envvar(pcs->pjls, "pdfmark");
+        if (strlen(pres) > 0)
+            pcl_pjl_pdfmark(pcs->memory, pcs->pgs->device, pres);
+
+        pres = pjl_proc_get_envvar(pcs->pjls, "setdistillerparams");
+        if (strlen(pres) > 0)
+            pcl_pjl_setdistillerparams(pcs->memory, pcs->pgs->device, pres);
     }
 
     if (type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay)) {

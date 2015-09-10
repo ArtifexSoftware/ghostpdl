@@ -40,15 +40,14 @@
 typedef struct pjl_fontsource
 {
     char designator[2];
-    char pathname[PJL_PATH_NAME_LENGTH + 1];
-    char fontnumber[PJL_STRING_LENGTH + 1];
+    char *pathname;
+    char *fontnumber;
 } pjl_fontsource_t;
 
 /* definitions for variable names and values */
-typedef struct pjl_envir_var_s
-{
-    char var[PJL_STRING_LENGTH + 1];
-    char value[PJL_STRING_LENGTH + 1];
+typedef struct pjl_envir_var_s {
+  char *var;
+  char *value;
 } pjl_envir_var_t;
 
 /* the pjl current environment and the default user environment.  Note
@@ -56,7 +55,8 @@ typedef struct pjl_envir_var_s
    systems. */
 typedef struct pjl_parser_state_s
 {
-    char line[81];              /* buffered command line */
+    char *line;                 /* buffered command line */
+    int line_size;
     int bytes_to_write;         /* data processing by fsdownload */
     int bytes_to_read;          /* data processed by fsupload */
     FILE *fp;                   /* fsdownload or fsupload file */
@@ -75,7 +75,7 @@ typedef struct pjl_parser_state_s
 /* provide factory defaults for pjl commands.  Note these are not pjl
    defaults but initial values set in the printer when shipped.  In an
    embedded system these would be defined in ROM */
-static const pjl_envir_var_t pjl_factory_defaults[] = {
+static pjl_envir_var_t pjl_factory_defaults[] = {
     {"formlines", "60"},
     {"formlines_set", "off"},
     {"widea4", "no"},
@@ -105,6 +105,8 @@ static const pjl_envir_var_t pjl_factory_defaults[] = {
     {"paperlength", ""},
     {"resolution", "0"},
     /*    {"personality", "rtl"}, */
+    {"pdfmark", ""},
+    {"setdistillerparams", ""},
     {"", ""}
 };
 
@@ -120,9 +122,9 @@ static const pjl_envir_var_t pjl_factory_defaults[] = {
    host based systems.  Entries are seperated with a semi-colon.  Note
    there is some unnecessary overlap in the factory default and font
    source table. */
-static const pjl_fontsource_t pjl_fontsource_table[] = {
+static pjl_fontsource_t pjl_fontsource_table[] = {
     {"I",
-     "%rom%ttfonts/;fonts/;urwfonts/;/windows/fonts/;/win95/fonts/;/winnt/fonts/"},
+     "%rom%ttfonts/;fonts/;urwfonts/;/windows/fonts/;/win95/fonts/;/winnt/fonts/", ""},
     {"C", "CART0/", ""},
     {"C1", "CART1/", ""},
     {"C2", "CART2/", ""},
@@ -229,6 +231,18 @@ unsigned char pjl_permanent_soft_fonts[MAX_PERMANENT_FONTS / 8];
 /* forward declaration */
 static int pjl_set(pjl_parser_state_t * pst, char *variable, char *value,
                    bool defaults);
+static int set_pjl_defaults_to_factory(gs_memory_t * mem, pjl_envir_var_t **def);
+static int set_pjl_defaults(gs_memory_t * mem, pjl_envir_var_t **def, pjl_envir_var_t *from);
+static int set_pjl_environment_to_factory(gs_memory_t * mem, pjl_envir_var_t **env);
+static int set_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env, pjl_envir_var_t *from);
+static int set_pjl_fontsource_to_factory(gs_memory_t * mem, pjl_fontsource_t **fontenv);
+static int set_pjl_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontenv, pjl_fontsource_t *from);
+static int set_pjl_default_fontsource_to_factory(gs_memory_t * mem, pjl_fontsource_t **fontdef);
+static int set_pjl_default_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontdef, pjl_fontsource_t *from);
+static int free_pjl_defaults(gs_memory_t * mem, pjl_envir_var_t **def);
+static int free_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env);
+static int free_pjl_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontenv);
+static int free_pjl_default_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontdef);
 
 /* lookup a paper size and return the index in the media return letter
    if no match. */
@@ -282,10 +296,10 @@ pjl_side_effects(pjl_parser_state_t * pst, char *variable, char *value,
                            (int)(pjl_media[indx].width) :
                            (int)(pjl_media[indx].height));
         int formlines = pjl_calc_formlines_new_page_size(page_length);
-        pjl_envir_var_t var;
+        char value[32];
 
-        gs_sprintf(var.value, "%d", formlines);
-        pjl_set(pst, (char *)"FORMLINES", var.value, defaults);
+        gs_sprintf(value, "%d", formlines);
+        pjl_set(pst, (char *)"FORMLINES", value, defaults);
     }
     /* fill in other side effects here */
     return;
@@ -296,19 +310,26 @@ static int
 pjl_set(pjl_parser_state_t * pst, char *variable, char *value, bool defaults)
 {
     pjl_envir_var_t *table = (defaults ? pst->defaults : pst->envir);
-    int i;
+    int i=0;
 
     if (defaults)               /* default also sets current environment. */
         pjl_set(pst, variable, value, false);
 
-    for (i = 0; table[i].var[0]; i++)
+    while (table[i].var) {
         if (!pjl_compare(table[i].var, variable)) {
             /* set the value */
-            strcpy(table[i].value, value);
+            char *newvalue = (char *)gs_alloc_bytes(pst->mem, strlen(value) + 1, "pjl_set, create new value");
+            if (!newvalue)
+                return 0;
+            strcpy(newvalue, value);
+            gs_free_object(pst->mem, table[i].value, "pjl_set free old value");
+            table[i].value = newvalue;
             /* set any side effects of setting the value */
             pjl_side_effects(pst, variable, value, defaults);
             return 1;
         }
+        i++;
+    }
     /* didn't find variable */
     return 0;
 }
@@ -362,7 +383,7 @@ pjl_get_token(pjl_parser_state_t * pst, char token[])
 
         /* we allow = to special case for allowing
            token doesn't fit or is empty */
-        if ((slength > PJL_STRING_LENGTH) || slength == 0)
+        if (slength == 0)
             return DONE;
         /* now the string can be safely copied */
         strncpy(token, &pst->line[start_pos], slength);
@@ -375,9 +396,12 @@ pjl_get_token(pjl_parser_state_t * pst, char token[])
 
         /* NB add other cases here */
         /* check for variables that we support */
-        for (i = 0; pst->envir[i].var[0]; i++)
+        i = 0;
+        while (pst->envir[i].var) {
             if (!pjl_compare(pst->envir[i].var, token))
                 return VARIABLE;
+            i++;
+        }
 
         /* NB assume this is a setting yuck */
         return SETTING;
@@ -447,15 +471,28 @@ pjl_check_font_path(char *path_list, gs_memory_t * mem)
 static void
 pjl_reset_fontsource_fontnumbers(pjl_parser_state_t * pst)
 {
-    char default_font_number[] = "0";   /* default number if resources are present */
+    char default_font_number[] = {0x30, 0x00};   /* default number if resources are present */
     gs_memory_t *mem = pst->mem;
     int i;
+    char *newvalue;
 
     for (i = 0; pst->font_defaults[i].designator[0]; i++) {
-        if (pjl_check_font_path(pst->font_defaults[i].pathname, mem))
-            strcpy(pst->font_defaults[i].fontnumber, default_font_number);
-        if (pjl_check_font_path(pst->font_envir[i].pathname, mem))
-            strcpy(pst->font_envir[i].fontnumber, default_font_number);
+        if (pjl_check_font_path(pst->font_defaults[i].pathname, mem)) {
+            newvalue = (char *)gs_alloc_bytes(mem, strlen(default_font_number) + 1, "pjl_reset_fontsource_fontnumbers, create new value");
+            if (newvalue) {
+                gs_free_object(mem, pst->font_defaults[i].fontnumber, "pjl_reset_fontsource_fontnumbers");
+                strcpy(newvalue, default_font_number);
+                pst->font_defaults[i].fontnumber = newvalue;
+            }
+        }
+        if (pjl_check_font_path(pst->font_envir[i].pathname, mem)) {
+            newvalue = (char *)gs_alloc_bytes(mem, strlen(default_font_number) + 1, "pjl_reset_fontsource_fontnumbers, create new value");
+            if (newvalue) {
+                gs_free_object(mem, pst->font_envir[i].fontnumber, "pjl_reset_fontsource_fontnumbers");
+                strcpy(newvalue, default_font_number);
+                pst->font_envir[i].fontnumber = newvalue;
+            }
+        }
     }
 }
 
@@ -762,14 +799,22 @@ static int
 pjl_parse_and_process_line(pjl_parser_state_t * pst)
 {
     pjl_token_type_t tok;
-    char token[PJL_STRING_LENGTH + 1] = { 0 };
+    char *token;
     char pathname[MAXPATHLEN];
+    int bufsize = pst->pos + 1, code;
+
+    token = (char *)gs_alloc_bytes(pst->mem, bufsize, "working buffer for PJL parsing");
+    if (token == 0)
+        return -1;
+    memset(token, 0x00, bufsize);
 
     /* reset the line position to the beginning of the line */
     pst->pos = 0;
     /* all pjl commands start with the pjl prefix @PJL */
-    if ((tok = pjl_get_token(pst, token)) != PREFIX)
+    if ((tok = pjl_get_token(pst, token)) != PREFIX) {
+        gs_free_object(pst->mem, token, "working buffer for PJL parsing");
         return -1;
+    }
     /* NB we should check for required and optional used of whitespace
        but we don't see PJLTRM 2-6 PJL Command Syntax and Format. */
     while ((tok = pjl_get_token(pst, token)) != DONE) {
@@ -779,11 +824,18 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                 {
                     bool defaults;
 
-                  var:defaults = (tok == DEFAULT);
+                    var:defaults = (tok == DEFAULT);
                     /* NB we skip over lparm and search for the variable */
                     while ((tok = pjl_get_token(pst, token)) != DONE)
                         if (tok == VARIABLE) {
-                            char variable[PJL_STRING_LENGTH + 1];
+                            char *variable;
+
+                            variable = (char *)gs_alloc_bytes(pst->mem, bufsize, "2nd working buffer for PJL parsing");
+                            if (variable == 0) {
+                                gs_free_object(pst->mem, token, "2nd working buffer for PJL parsing");
+                                return -1;
+                            }
+                            memset(variable, 0x00, bufsize);
 
                             strcpy(variable, token);
                             if (((tok = pjl_get_token(pst, token)) == EQUAL)
@@ -798,28 +850,36 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                                 if (!pjl_compare(variable, "FORMLINES"))
                                     pjl_set(pst, (char *)"FORMLINES_SET",
                                             (char *)"on", defaults);
-                                return pjl_set(pst, variable, token,
+                                code = pjl_set(pst, variable, token,
                                                defaults);
-                            } else
+                                gs_free_object(pst->mem, variable, "2nd working buffer for PJL parsing");
+                                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
+                                return code;
+                            } else {
+                                gs_free_object(pst->mem, variable, "2nd working buffer for PJL parsing");
+                                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                                 return -1;      /* syntax error */
+                            }
                         } else
                             continue;
                     return 0;
                 }
             case INITIALIZE:
                 /* set the user default environment to the factory default environment */
-                memcpy(pst->defaults, &pjl_factory_defaults,
-                       sizeof(pjl_factory_defaults));
-                memcpy(pst->font_defaults, &pjl_fontsource_table,
-                       sizeof(pjl_fontsource_table));
+                free_pjl_defaults(pst->mem, &pst->defaults);
+                set_pjl_defaults_to_factory(pst->mem, &pst->defaults);
+                free_pjl_default_fontsource(pst->mem, &pst->font_defaults);
+                set_pjl_default_fontsource_to_factory(pst->mem, &pst->font_defaults);
                 pjl_reset_fontsource_fontnumbers(pst);
+                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return 0;
                 /* set the current environment to the user default environment */
             case RESET:
-                memcpy(pst->envir, pst->defaults,
-                       sizeof(pjl_factory_defaults));
-                memcpy(pst->font_envir, pst->font_defaults,
-                       sizeof(pjl_fontsource_table));
+                free_pjl_defaults(pst->mem, &pst->defaults);
+                set_pjl_environment_to_factory(pst->mem, &pst->defaults);
+                free_pjl_fontsource(pst->mem, &pst->font_envir);
+                set_pjl_fontsource_to_factory(pst->mem, &pst->font_envir);
+                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return 0;
             case ENTER:
                 /* there is no setting for the default language */
@@ -840,6 +900,7 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                     if (pjl_get_setting(pst, SIZE, token) < 0)
                         return -1;
                     size = pjl_vartoi(token);
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return pjl_set_fs_download_state(pst, pathname, size);
                 }
             case FSAPPEND:{
@@ -854,43 +915,61 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                     if (pjl_get_setting(pst, SIZE, token) < 0)
                         return -1;
                     size = pjl_vartoi(token);
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return pjl_set_append_state(pst, pathname, size);
                 }
             case FSDELETE:
                 if (pjl_get_setting(pst, NAME, token) < 0)
                     return -1;
                 strcpy(pathname, token);
+                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return pjl_delete_file(pst, pathname);
             case FSDIRLIST:{
                     int entry;
 
                     int count;
 
-                    if (pjl_get_setting(pst, NAME, token) < 0)
+                    if (pjl_get_setting(pst, NAME, token) < 0) {
+                        gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                         return -1;
+                    }
                     strcpy(pathname, token);
-                    if (pjl_get_setting(pst, ENTRY, token) < 0)
+                    if (pjl_get_setting(pst, ENTRY, token) < 0) {
+                        gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                         return -1;
+                    }
                     entry = pjl_vartoi(token);
-                    if (pjl_get_setting(pst, COUNT, token) < 0)
+                    if (pjl_get_setting(pst, COUNT, token) < 0) {
+                        gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                         return -1;
+                    }
                     count = pjl_vartoi(token);
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return pjl_fsdirlist(pst, pathname, entry, count);
                 }
             case FSINIT:
-                if (pjl_get_setting(pst, VOLUME, token) < 0)
+                if (pjl_get_setting(pst, VOLUME, token) < 0) {
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return -1;
+                }
                 strcpy(pathname, token);
+                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return pjl_fsinit(pst, pathname);
             case FSMKDIR:
-                if (pjl_get_setting(pst, NAME, token) < 0)
+                if (pjl_get_setting(pst, NAME, token) < 0) {
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return -1;
+                }
                 strcpy(pathname, token);
+                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return pjl_fsmkdir(pst, pathname);
             case FSQUERY:
-                if (pjl_get_setting(pst, NAME, token) < 0)
+                if (pjl_get_setting(pst, NAME, token) < 0) {
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return -1;
+                }
                 strcpy(pathname, token);
+                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return pjl_fsquery(pst, pathname);
             case FSUPLOAD:{
                     int size;
@@ -900,21 +979,30 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                     if ((tok = pjl_get_token(pst, token)) == FORMATBINARY) {
                         ;
                     }
-                    if (pjl_get_setting(pst, NAME, token) < 0)
+                    if (pjl_get_setting(pst, NAME, token) < 0) {
+                        gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                         return -1;
+                    }
                     strcpy(pathname, token);
-                    if (pjl_get_setting(pst, OFFSET, token) < 0)
+                    if (pjl_get_setting(pst, OFFSET, token) < 0) {
+                        gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                         return -1;
+                    }
                     offset = pjl_vartoi(token);
-                    if (pjl_get_setting(pst, SIZE, token) < 0)
+                    if (pjl_get_setting(pst, SIZE, token) < 0) {
+                        gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                         return -1;
+                    }
                     size = pjl_vartoi(token);
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return pjl_fsupload(pst, pathname, size, offset);
                 }
             default:
+                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return -1;
         }
     }
+    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
     return (tok == DONE ? 0 : -1);
 }
 
@@ -978,8 +1066,11 @@ pjl_get_named_resource(pjl_parser_state * pst, char *name, byte * data)
 void
 pjl_set_init_from_defaults(pjl_parser_state_t * pst)
 {
-    memcpy(pst->envir, pst->defaults, sizeof(pjl_factory_defaults));
-    memcpy(pst->font_envir, pst->font_defaults, sizeof(pjl_fontsource_table));
+    free_pjl_environment(pst->mem, &pst->envir);
+    set_pjl_environment(pst->mem, &pst->envir, pst->defaults);
+
+    free_pjl_fontsource(pst->mem, &pst->font_envir);
+    set_pjl_fontsource(pst->mem, &pst->font_envir, pst->font_defaults);
 }
 
 void
@@ -1019,17 +1110,64 @@ pjl_set_next_fontsource(pjl_parser_state_t * pst)
 pjl_envvar_t *
 pjl_get_envvar(pjl_parser_state * pst, const char *pjl_var)
 {
-    int i;
+    int i=0;
     pjl_envir_var_t *env = pst->envir;
 
     /* lookup up the value */
-    for (i = 0; env[i].var[0]; i++)
+    while(env[i].var) {
         if (!pjl_compare(env[i].var, pjl_var)) {
             return env[i].value;
         }
+        i++;
+    }
     return NULL;
 }
 
+/* get a pjl environment variable from the current environment - not
+   the user default environment */
+pjl_envvar_t *
+pjl_set_envvar(pjl_parser_state * pst, const char *pjl_var, const char *data)
+{
+    int i=0;
+    pjl_envir_var_t *env = pst->envir;
+    char *newvalue;
+
+    /* Find the current value */
+    while(env[i].var) {
+        if (!pjl_compare(env[i].var, pjl_var)) {
+            if (env[i].value)
+                gs_free_object(pst->mem, env[i].value, "pjl_set_envvar value");
+            newvalue = (char *)gs_alloc_bytes(pst->mem, strlen(data) + 1, "pjl_set_envvar, value");
+            strcpy(newvalue, data);
+            env[i].value = newvalue;
+        }
+        i++;
+    }
+    return NULL;
+}
+
+/* get a pjl environment variable from the current environment - not
+   the user default environment */
+pjl_envvar_t *
+pjl_set_defvar(pjl_parser_state * pst, const char *pjl_var, const char *data)
+{
+    int i=0;
+    pjl_envir_var_t *env = pst->defaults;
+    char *newvalue;
+
+    /* Find the current value */
+    while(env[i].var) {
+        if (!pjl_compare(env[i].var, pjl_var)) {
+            if (env[i].value)
+                gs_free_object(pst->mem, env[i].value, "pjl_set_defvar value");
+            newvalue = (char *)gs_alloc_bytes(pst->mem, strlen(data) + 1, "pjl_set_defvar, value");
+            strcpy(newvalue, data);
+            env[i].value = newvalue;
+        }
+        i++;
+    }
+    return NULL;
+}
 /*
  * Detect illegal characters when preprocessing each line of PJL.
  */
@@ -1098,7 +1236,17 @@ pjl_process(pjl_parser_state * pst, void *pstate, stream_cursor_read * pr)
 
         /* Copy the PJL line into the parser's line buffer. */
         /* Always leave room for a terminator. */
-        if (pst->pos < countof(pst->line) - 1)
+        if (pst->pos == pst->line_size) {
+            char *temp = (char *)gs_alloc_bytes (pst->mem, pst->line_size + 256, "pjl_state increase line buffer");
+
+            if (p) {
+                memcpy(temp, pst->line, pst->line_size);
+                gs_free_object(pst->mem, pst->line, "pjl_state line buffer");
+                pst->line = temp;
+                pst->line_size += 256;
+                pst->line[pst->pos] = p[1], pst->pos++;
+            }
+        } else
             pst->line[pst->pos] = p[1], pst->pos++;
         ++p;
     }
@@ -1226,33 +1374,280 @@ pjl_fontsource_to_path(const pjl_parser_state * pjls,
     return NULL;
 }
 
+static int set_pjl_defaults_to_factory(gs_memory_t * mem, pjl_envir_var_t **def)
+{
+    return set_pjl_defaults(mem, def, (pjl_envir_var_t *)&pjl_factory_defaults);
+}
+
+static int set_pjl_defaults(gs_memory_t * mem, pjl_envir_var_t **def, pjl_envir_var_t *from)
+{
+    pjl_envir_var_t *pjl_def;
+    char *key, *value, *newkey, *newvalue;
+    int i = 0;
+
+    while (from[i].var && from[i].var[0] != 0x00)
+        i++;
+
+    pjl_def = (pjl_envir_var_t *) gs_alloc_bytes(mem,
+                                                  sizeof
+                                                  (pjl_envir_var_t) * (i + 1),
+                                                  "pjl_envir");
+    if (!pjl_def)
+        return -1;
+
+    memset(pjl_def, 0x00, sizeof(pjl_envir_var_t) * (i + 1));
+    i--;
+    while (i >= 0) {
+        key = from[i].var;
+        value = from[i].value;
+
+        newkey = (char *)gs_alloc_bytes(mem, strlen(key) + 1, "new_pjl_defaults, key");
+        newvalue = (char *)gs_alloc_bytes(mem, strlen(value) + 1, "new_pjl_defaults, value");
+        if (!newkey || !newvalue) {
+            free_pjl_defaults(mem, &pjl_def);
+            return -1;
+        }
+        strcpy(newkey, key);
+        strcpy(newvalue, value);
+        pjl_def[i].var = newkey;
+        pjl_def[i].value = newvalue;
+
+        i--;
+    }
+    *def = pjl_def;
+    return 0;
+}
+
+static int set_pjl_environment_to_factory(gs_memory_t * mem, pjl_envir_var_t **env)
+{
+    return set_pjl_environment(mem, env, (pjl_envir_var_t *)&pjl_factory_defaults);
+}
+
+static int set_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env, pjl_envir_var_t *from)
+{
+    pjl_envir_var_t *pjl_env;
+    char *key, *value, *newkey, *newvalue;
+    int i = 0;
+
+    while (from[i].var && from[i].var[0] != 0x00)
+        i++;
+
+    pjl_env = (pjl_envir_var_t *) gs_alloc_bytes(mem,
+                                                  sizeof
+                                                  (pjl_envir_var_t) * (i + 1),
+                                                  "pjl_envir");
+    if (!pjl_env)
+        return -1;
+
+    memset(pjl_env, 0x00, sizeof(pjl_envir_var_t) * (i + 1));
+    i--;
+    while (i >= 0) {
+        key = from[i].var;
+        value = from[i].value;
+        newkey = (char *)gs_alloc_bytes(mem, strlen(key) + 1, "pjl_envir, key");
+        newvalue = (char *)gs_alloc_bytes(mem, strlen(value) + 1, "pjl_envir, value");
+        if (!newkey || !newvalue) {
+            free_pjl_environment(mem, &pjl_env);
+            return -1;
+        }
+        strcpy(newkey, key);
+        strcpy(newvalue, value);
+        pjl_env[i].var = newkey;
+        pjl_env[i].value = newvalue;
+
+        i--;
+    }
+    *env = pjl_env;
+    return 0;
+}
+
+static int set_pjl_fontsource_to_factory(gs_memory_t * mem, pjl_fontsource_t **fontenv)
+{
+    return set_pjl_fontsource(mem, fontenv, (pjl_fontsource_t *)pjl_fontsource_table);
+}
+
+static int set_pjl_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontenv, pjl_fontsource_t *from)
+{
+    pjl_fontsource_t *pjl_fontenv;
+    char *key, *value, *newkey, *newvalue;
+    int i = 0;
+
+    while (from[i].pathname && from[i].pathname[0] != 0x00)
+        i++;
+
+    pjl_fontenv = (pjl_fontsource_t *) gs_alloc_bytes(mem,
+                                                      sizeof
+                                                      (pjl_fontsource_t) * (i + 1),
+                                                      "font_envir");
+    if (!pjl_fontenv)
+        return -1;
+
+    memset(pjl_fontenv, 0x00, sizeof(pjl_fontsource_t) * (i + 1));
+    i--;
+    while (i >= 0) {
+        key = from[i].pathname;
+        value = from[i].fontnumber;
+
+        newkey = (char *)gs_alloc_bytes(mem, strlen(key) + 1, "new_font_envir, pathname");
+        if (!newkey) {
+            free_pjl_fontsource(mem, &pjl_fontenv);
+            return -1;
+        }
+        strcpy(newkey, key);
+        pjl_fontenv[i].pathname = newkey;
+        if (value) {
+            newvalue = (char *)gs_alloc_bytes(mem, strlen(value) + 1, "new_font_envir, fontnumber");
+            if (!newvalue) {
+                free_pjl_fontsource(mem, &pjl_fontenv);
+                return -1;
+            }
+            strcpy(newvalue, value);
+            pjl_fontenv[i].fontnumber = newvalue;
+        } else {
+            pjl_fontenv[i].fontnumber = 0x00;
+        }
+        memcpy(pjl_fontenv[i].designator, pjl_fontsource_table[i].designator, 2);
+
+        i--;
+    }
+    *fontenv = pjl_fontenv;
+    return 0;
+}
+
+static int set_pjl_default_fontsource_to_factory(gs_memory_t * mem, pjl_fontsource_t **fontdef)
+{
+    return set_pjl_default_fontsource(mem, fontdef, (pjl_fontsource_t *)&pjl_fontsource_table);
+}
+
+static int set_pjl_default_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontdef, pjl_fontsource_t *from)
+{
+    pjl_fontsource_t *pjl_fontdef;
+    char *key, *value, *newkey, *newvalue;
+    int i = 0;
+
+    while (from[i].pathname && from[i].pathname[0] != 0x00)
+        i++;
+
+    pjl_fontdef = (pjl_fontsource_t *) gs_alloc_bytes(mem,
+                                                      sizeof
+                                                      (pjl_fontsource_t) * (i + 1),
+                                                      "new_font_defaults");
+    if (!pjl_fontdef)
+        return -1;
+
+    memset(pjl_fontdef, 0x00, sizeof(pjl_fontsource_t) * (i + 1));
+    i--;
+    while (i >= 0) {
+        key = from[i].pathname;
+        value = from[i].fontnumber;
+
+        newkey = (char *)gs_alloc_bytes(mem, strlen(key) + 1, "new_font_defaults, pathname");
+        if (!newkey) {
+            free_pjl_default_fontsource(mem, &pjl_fontdef);
+            return -1;
+        }
+        strcpy(newkey, key);
+        pjl_fontdef[i].pathname = newkey;
+        if (value) {
+            newvalue = (char *)gs_alloc_bytes(mem, strlen(value) + 1, "new_font_defaults, fontnumber");
+            if (!newvalue) {
+                free_pjl_default_fontsource(mem, &pjl_fontdef);
+                return -1;
+            }
+            strcpy(newvalue, value);
+            pjl_fontdef[i].fontnumber = newvalue;
+        } else {
+            pjl_fontdef[i].fontnumber = 0x00;
+        }
+        memcpy(pjl_fontdef[i].designator, pjl_fontsource_table[i].designator, 2);
+
+        i--;
+    }
+    *fontdef = pjl_fontdef;
+    return 0;
+}
+
+static int free_pjl_defaults(gs_memory_t * mem, pjl_envir_var_t **def)
+{
+    int i=0;
+    pjl_envir_var_t *pjl_def = *def;
+
+    while (pjl_def[i].var) {
+        gs_free_object(mem, pjl_def[i].var, "free pjl_defaults key");
+        gs_free_object(mem, pjl_def[i].value, "free pjl_defaults value");
+        i++;
+    }
+    gs_free_object(mem, pjl_def, "pjl_defaults");
+    *def = 0x00;
+    return 0;
+}
+
+int free_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env)
+{
+    int i=0;
+    pjl_envir_var_t *pjl_env = *env;
+
+    while (pjl_env[i].var) {
+        gs_free_object(mem, pjl_env[i].var, "free pjl_environment key");
+        gs_free_object(mem, pjl_env[i].value, "free pjl_environment value");
+        i++;
+    }
+    gs_free_object(mem, pjl_env, "pjl_environment");
+    *env = 0x00;
+    return 0;
+}
+
+int free_pjl_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontenv)
+{
+    int i=0;
+    pjl_fontsource_t *pjl_fontenv = *fontenv;
+
+    while (pjl_fontenv[i].pathname) {
+        gs_free_object(mem, pjl_fontenv[i].pathname, "pjl_font_envir pathname");
+        gs_free_object(mem, pjl_fontenv[i].fontnumber, "pjl_font_envir fontnumber");
+        i++;
+    }
+    gs_free_object(mem, pjl_fontenv, "pjl_font_envir");
+    *fontenv = 0x00;
+    return 0;
+}
+
+int free_pjl_default_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontdef)
+{
+    int i=0;
+    pjl_fontsource_t *pjl_fontdef = *fontdef;
+
+    while (pjl_fontdef[i].pathname) {
+        gs_free_object(mem, pjl_fontdef[i].pathname, "pjl_font_defaults pathname");
+        gs_free_object(mem, pjl_fontdef[i].fontnumber, "pjl_font_defaults fontnumber");
+        i++;
+    }
+    gs_free_object(mem, pjl_fontdef, "pjl_font_defaults");
+    *fontdef = 0x00;
+    return 0;
+}
+
 /* Create and initialize a new state. */
 pjl_parser_state *
 pjl_process_init(gs_memory_t * mem)
 {
+    pjl_envir_var_t *pjl_env, *pjl_def;
+    pjl_fontsource_t *pjl_fontenv, *pjl_fontdef;
+
     pjl_parser_state_t *pjlstate = (pjl_parser_state *) gs_alloc_bytes(mem,
                                                                        sizeof
                                                                        (pjl_parser_state_t),
                                                                        "pjl_state");
-    pjl_envir_var_t *pjl_env = (pjl_envir_var_t *) gs_alloc_bytes(mem,
-                                                                  sizeof
-                                                                  (pjl_factory_defaults),
-                                                                  "pjl_envir");
-    pjl_envir_var_t *pjl_def = (pjl_envir_var_t *) gs_alloc_bytes(mem,
-                                                                  sizeof
-                                                                  (pjl_factory_defaults),
-                                                                  "pjl_defaults");
-    pjl_fontsource_t *pjl_fontenv = (pjl_fontsource_t *) gs_alloc_bytes(mem,
-                                                                        sizeof
-                                                                        (pjl_fontsource_table),
-                                                                        "pjl_font_envir");
-    pjl_fontsource_t *pjl_fontdef = (pjl_fontsource_t *) gs_alloc_bytes(mem,
-                                                                        sizeof
-                                                                        (pjl_fontsource_table),
-                                                                        "pjl_font_defaults");
 
-    if (pjlstate == NULL || pjl_env == NULL || pjl_def == NULL)
+    if (pjlstate == NULL)
         return NULL;            /* should be fatal so we don't bother piecemeal frees */
+
+    pjlstate->line = (char *)gs_alloc_bytes(mem, 256, "pjl_state line buffer");
+    if (pjlstate->line == NULL) {
+        gs_free_object(mem, pjlstate, "pjl_state");
+        return NULL;
+    }
+    pjlstate->line_size = 255;
 
     /* check for an environment variable */
     {
@@ -1276,20 +1671,38 @@ pjl_process_init(gs_memory_t * mem)
         } else                  /* environmet variable does not exist use pjl fontsource */
             pjlstate->environment_font_path = NULL;
     }
+
+    /* initialize the default and initial pjl environment.  We assume
+       that these are the same layout as the factory defaults. */
+    if (set_pjl_defaults_to_factory(mem, &pjl_def) < 0) {
+        gs_free_object(mem, pjlstate, "pjl_state");
+        return NULL;
+    }
+    if (set_pjl_environment_to_factory(mem, &pjl_env) < 0) {
+        free_pjl_defaults(mem, &pjl_def);
+        gs_free_object(mem, pjlstate, "pjl_state");
+        return NULL;
+    }
+    if (set_pjl_fontsource_to_factory(mem, &pjl_fontenv) < 0) {
+        free_pjl_defaults(mem, &pjl_def);
+        free_pjl_environment(mem, &pjl_env);
+        gs_free_object(mem, pjlstate, "pjl_state");
+        return NULL;
+    }
+    if (set_pjl_default_fontsource_to_factory(mem, &pjl_fontdef) < 0) {
+        free_pjl_defaults(mem, &pjl_def);
+        free_pjl_environment(mem, &pjl_env);
+        free_pjl_fontsource(mem, &pjl_fontenv);
+        gs_free_object(mem, pjlstate, "pjl_state");
+        return NULL;
+    }
+
+    /* initialize the font repository data as well */
     pjlstate->defaults = pjl_def;
     pjlstate->envir = pjl_env;
     pjlstate->font_envir = pjl_fontenv;
     pjlstate->font_defaults = pjl_fontdef;
-    /* initialize the default and initial pjl environment.  We assume
-       that these are the same layout as the factory defaults. */
-    memcpy(pjlstate->defaults, pjl_factory_defaults,
-           sizeof(pjl_factory_defaults));
-    memcpy(pjlstate->envir, pjlstate->defaults, sizeof(pjl_factory_defaults));
-    /* initialize the font repository data as well */
-    memcpy(pjlstate->font_defaults, pjl_fontsource_table,
-           sizeof(pjl_fontsource_table));
-    memcpy(pjlstate->font_envir, pjl_fontsource_table,
-           sizeof(pjl_fontsource_table));
+
     /* initialize the current position in the line array and bytes pending */
     pjlstate->bytes_to_read = 0;
     pjlstate->bytes_to_write = 0;
@@ -1322,10 +1735,11 @@ pjl_compare(const pjl_envvar_t * s1, const char *s2)
 void
 pjl_process_destroy(pjl_parser_state * pst, gs_memory_t * mem)
 {
-    gs_free_object(mem, pst->font_envir, "pjl_font_envir");
-    gs_free_object(mem, pst->font_defaults, "pjl_font_defaults");
-    gs_free_object(mem, pst->defaults, "pjl_defaults");
-    gs_free_object(mem, pst->envir, "pjl_envir");
+    free_pjl_defaults(mem, &pst->defaults);
+    free_pjl_environment(mem, &pst->envir);
+    free_pjl_fontsource(mem, &pst->font_envir);
+    free_pjl_default_fontsource(mem, &pst->font_defaults);
+
     if (pst->environment_font_path)
         gs_free_object(mem, pst->environment_font_path, "pjl_state");
     gs_free_object(mem, pst, "pjl_state");

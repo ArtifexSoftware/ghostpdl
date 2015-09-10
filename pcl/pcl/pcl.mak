@@ -752,6 +752,7 @@ $(PCLOBJ)pcjob.$(OBJ): $(PCLSRC)pcjob.c \
                        $(pcdraw_h)      \
                        $(pcpage_h)      \
                        $(pjtop_h)       \
+                       $(plparams_h)    \
                        $(PCL_MAK)       \
                        $(MAKEDIRS)
 	$(PCLCCC) $(PCLSRC)pcjob.c $(PCLO_)pcjob.$(OBJ)
