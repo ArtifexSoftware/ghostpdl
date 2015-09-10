@@ -74,7 +74,7 @@ typedef struct pjl_parser_state_s
 /* provide factory defaults for pjl commands.  Note these are not pjl
    defaults but initial values set in the printer when shipped.  In an
    embedded system these would be defined in ROM */
-static const pjl_envir_var_t pjl_factory_defaults[] = {
+static pjl_envir_var_t pjl_factory_defaults[] = {
     {"formlines", "60"},
     {"formlines_set", "off"},
     {"widea4", "no"},
@@ -119,9 +119,9 @@ static const pjl_envir_var_t pjl_factory_defaults[] = {
    host based systems.  Entries are seperated with a semi-colon.  Note
    there is some unnecessary overlap in the factory default and font
    source table. */
-static const pjl_fontsource_t pjl_fontsource_table[] = {
+static pjl_fontsource_t pjl_fontsource_table[] = {
     {"I",
-     "%rom%ttfonts/;fonts/;urwfonts/;/windows/fonts/;/win95/fonts/;/winnt/fonts/"},
+     "%rom%ttfonts/;fonts/;urwfonts/;/windows/fonts/;/win95/fonts/;/winnt/fonts/", ""},
     {"C", "CART0/", ""},
     {"C1", "CART1/", ""},
     {"C2", "CART2/", ""},
@@ -852,7 +852,7 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
             case RESET:
                 free_pjl_defaults(pst->mem, &pst->defaults);
                 set_pjl_environment_to_factory(pst->mem, &pst->defaults);
-                free_pjl_fontsource(pst->mem, pst->font_envir);
+                free_pjl_fontsource(pst->mem, &pst->font_envir);
                 set_pjl_fontsource_to_factory(pst->mem, &pst->font_envir);
                 return 0;
             case ENTER:
@@ -1267,7 +1267,7 @@ pjl_fontsource_to_path(const pjl_parser_state * pjls,
 
 static int set_pjl_defaults_to_factory(gs_memory_t * mem, pjl_envir_var_t **def)
 {
-    return set_pjl_defaults(mem, def, &pjl_factory_defaults);
+    return set_pjl_defaults(mem, def, (pjl_envir_var_t *)&pjl_factory_defaults);
 }
 
 static int set_pjl_defaults(gs_memory_t * mem, pjl_envir_var_t **def, pjl_envir_var_t *from)
@@ -1311,7 +1311,7 @@ static int set_pjl_defaults(gs_memory_t * mem, pjl_envir_var_t **def, pjl_envir_
 
 static int set_pjl_environment_to_factory(gs_memory_t * mem, pjl_envir_var_t **env)
 {
-    return set_pjl_environment(mem, env, &pjl_factory_defaults);
+    return set_pjl_environment(mem, env, (pjl_envir_var_t *)&pjl_factory_defaults);
 }
 
 static int set_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env, pjl_envir_var_t *from)
@@ -1354,7 +1354,7 @@ static int set_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env, pjl_env
 
 static int set_pjl_fontsource_to_factory(gs_memory_t * mem, pjl_fontsource_t **fontenv)
 {
-    return set_pjl_fontsource(mem, fontenv, &pjl_fontsource_table);
+    return set_pjl_fontsource(mem, fontenv, (pjl_fontsource_t *)pjl_fontsource_table);
 }
 
 static int set_pjl_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontenv, pjl_fontsource_t *from)
@@ -1407,7 +1407,7 @@ static int set_pjl_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontenv, pjl
 
 static int set_pjl_default_fontsource_to_factory(gs_memory_t * mem, pjl_fontsource_t **fontdef)
 {
-    return set_pjl_default_fontsource(mem, fontdef, &pjl_fontsource_table);
+    return set_pjl_default_fontsource(mem, fontdef, (pjl_fontsource_t *)&pjl_fontsource_table);
 }
 
 static int set_pjl_default_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontdef, pjl_fontsource_t *from)
