@@ -2851,7 +2851,9 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 gs_state *pgs = param->graphics_state;
 
                 id = param->pinst_id;
-                pdf_check_soft_mask(pdev, (gs_imager_state *)pgs);
+                code = pdf_check_soft_mask(pdev, (gs_imager_state *)pgs);
+                if (code < 0)
+                    return code;
                 code = pdf_enter_substream(pdev, resourcePattern, id, &pres, false,
                         pdev->CompressFonts/* Have no better switch.*/);
                 if (code < 0)
