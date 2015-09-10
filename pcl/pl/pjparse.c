@@ -228,6 +228,18 @@ unsigned char pjl_permanent_soft_fonts[MAX_PERMANENT_FONTS / 8];
 /* forward declaration */
 static int pjl_set(pjl_parser_state_t * pst, char *variable, char *value,
                    bool defaults);
+static int set_pjl_defaults_to_factory(gs_memory_t * mem, pjl_envir_var_t **def);
+static int set_pjl_defaults(gs_memory_t * mem, pjl_envir_var_t **def, pjl_envir_var_t *from);
+static int set_pjl_environment_to_factory(gs_memory_t * mem, pjl_envir_var_t **env);
+static int set_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env, pjl_envir_var_t *from);
+static int set_pjl_fontsource_to_factory(gs_memory_t * mem, pjl_fontsource_t **fontenv);
+static int set_pjl_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontenv, pjl_fontsource_t *from);
+static int set_pjl_default_fontsource_to_factory(gs_memory_t * mem, pjl_fontsource_t **fontdef);
+static int set_pjl_default_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontdef, pjl_fontsource_t *from);
+static int free_pjl_defaults(gs_memory_t * mem, pjl_envir_var_t **def);
+static int free_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env);
+static int free_pjl_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontenv);
+static int free_pjl_default_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontdef);
 
 /* lookup a paper size and return the index in the media return letter
    if no match. */
@@ -1253,12 +1265,12 @@ pjl_fontsource_to_path(const pjl_parser_state * pjls,
     return NULL;
 }
 
-int set_pjl_defaults_to_factory(gs_memory_t * mem, pjl_envir_var_t **def)
+static int set_pjl_defaults_to_factory(gs_memory_t * mem, pjl_envir_var_t **def)
 {
     return set_pjl_defaults(mem, def, &pjl_factory_defaults);
 }
 
-int set_pjl_defaults(gs_memory_t * mem, pjl_envir_var_t **def, pjl_envir_var_t *from)
+static int set_pjl_defaults(gs_memory_t * mem, pjl_envir_var_t **def, pjl_envir_var_t *from)
 {
     pjl_envir_var_t *pjl_def;
     char *key, *value, *newkey, *newvalue;
@@ -1297,12 +1309,12 @@ int set_pjl_defaults(gs_memory_t * mem, pjl_envir_var_t **def, pjl_envir_var_t *
     return 0;
 }
 
-int set_pjl_environment_to_factory(gs_memory_t * mem, pjl_envir_var_t **env)
+static int set_pjl_environment_to_factory(gs_memory_t * mem, pjl_envir_var_t **env)
 {
     return set_pjl_environment(mem, env, &pjl_factory_defaults);
 }
 
-int set_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env, pjl_envir_var_t *from)
+static int set_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env, pjl_envir_var_t *from)
 {
     pjl_envir_var_t *pjl_env;
     char *key, *value, *newkey, *newvalue;
@@ -1340,12 +1352,12 @@ int set_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env, pjl_envir_var_
     return 0;
 }
 
-int set_pjl_fontsource_to_factory(gs_memory_t * mem, pjl_fontsource_t **fontenv)
+static int set_pjl_fontsource_to_factory(gs_memory_t * mem, pjl_fontsource_t **fontenv)
 {
     return set_pjl_fontsource(mem, fontenv, &pjl_fontsource_table);
 }
 
-int set_pjl_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontenv, pjl_fontsource_t *from)
+static int set_pjl_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontenv, pjl_fontsource_t *from)
 {
     pjl_fontsource_t *pjl_fontenv;
     char *key, *value, *newkey, *newvalue;
@@ -1393,12 +1405,12 @@ int set_pjl_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontenv, pjl_fontso
     return 0;
 }
 
-int set_pjl_default_fontsource_to_factory(gs_memory_t * mem, pjl_fontsource_t **fontdef)
+static int set_pjl_default_fontsource_to_factory(gs_memory_t * mem, pjl_fontsource_t **fontdef)
 {
     return set_pjl_default_fontsource(mem, fontdef, &pjl_fontsource_table);
 }
 
-int set_pjl_default_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontdef, pjl_fontsource_t *from)
+static int set_pjl_default_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontdef, pjl_fontsource_t *from)
 {
     pjl_fontsource_t *pjl_fontdef;
     char *key, *value, *newkey, *newvalue;
@@ -1446,7 +1458,7 @@ int set_pjl_default_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontdef, pj
     return 0;
 }
 
-int free_pjl_defaults(gs_memory_t * mem, pjl_envir_var_t **def)
+static int free_pjl_defaults(gs_memory_t * mem, pjl_envir_var_t **def)
 {
     int i=0;
     pjl_envir_var_t *pjl_def = *def;
