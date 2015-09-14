@@ -834,7 +834,7 @@ pdf_document_metadata(gx_device_pdf *pdev)
 {
     if (pdev->CompatibilityLevel < 1.4)
         return 0;
-    if (pdev->ParseDSCCommentsForDocInfo || pdev->PreserveEPSInfo) {
+    if (pdev->ParseDSCCommentsForDocInfo || pdev->PreserveEPSInfo || pdev->PDFA) {
         pdf_resource_t *pres;
         char buf[20];
         byte digest[6] = {0,0,0,0,0,0};
