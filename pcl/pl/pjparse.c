@@ -104,6 +104,7 @@ static pjl_envir_var_t pjl_factory_defaults[] = {
     {"paperlength", ""},
     {"resolution", "0"},
     /*    {"personality", "rtl"}, */
+    {"pdfa_profile", ""},
     {"", ""}
 };
 

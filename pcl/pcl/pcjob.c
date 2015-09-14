@@ -287,6 +287,120 @@ pcl_pjl_res(pcl_state_t * pcs)
     return atof(pres);
 }
 
+static int pdfa_write_list(pcl_state_t * pcs, gs_param_string_array *array_list)
+{
+    gs_c_param_list list;
+    int code;
+
+    gs_c_param_list_write(&list, pcs->memory);
+    gs_param_list_set_persistent_keys((gs_param_list *) &list, false);
+    gs_c_param_list_write_more(&list);
+    code = param_write_string_array((gs_param_list *)&list, "pdfmark", array_list);
+    if (code < 0)
+        return code;
+
+    gs_c_param_list_read(&list);
+    code = gs_state_putdeviceparams(pcs->pgs, (gs_param_list *)&list);
+
+    return code;
+}
+
+static int pcl_pjl_pdfa(pcl_state_t * pcs, char *profile_path)
+{
+    FILE *f;
+    int code, bytes;
+    char *profile;
+    gs_param_string a[12];
+    gs_param_string_array array_list;
+
+    array_list.data = a;
+    array_list.persistent = 0;
+
+    array_list.size = 6;
+    param_string_from_transient_string(a[0], "/_objdef");
+    param_string_from_transient_string(a[1], "{icc_PDFA}");
+    param_string_from_transient_string(a[2], "/type");
+    param_string_from_transient_string(a[3], "/stream");
+    param_string_from_transient_string(a[4], "[0 0 0 0 0 0]");
+    param_string_from_transient_string(a[5], "OBJ");
+    code = pdfa_write_list(pcs, &array_list);
+    if (code < 0)
+        return code;
+
+    array_list.size = 5;
+    param_string_from_transient_string(a[0], "{icc_PDFA}");
+    param_string_from_transient_string(a[1], "/N");
+    param_string_from_transient_string(a[2], "3");
+    param_string_from_transient_string(a[3], "[0 0 0 0 0 0]");
+    param_string_from_transient_string(a[4], ".PUTDICT");
+    code = pdfa_write_list(pcs, &array_list);
+    if (code < 0)
+        return code;
+
+    f = gp_fopen(profile_path, "rb");
+    if (!f)
+        return -1;
+
+    gp_fseek_64(f, 0, SEEK_END);
+    bytes = gp_ftell_64(f);
+    profile = (char *)gs_alloc_bytes(pcs->memory, bytes, "PJL, ICC profile");
+    if (!profile)
+        return -1;
+
+    gp_fseek_64(f, 0, SEEK_SET);
+    fread(profile, 1, bytes, f);
+    fclose(f);
+
+    array_list.size = 4;
+    param_string_from_transient_string(a[0], "{icc_PDFA}");
+    a[1].data = (const byte *)profile;
+    a[1].size = bytes;
+    a[1].persistent = 0;
+    param_string_from_transient_string(a[2], "[0 0 0 0 0 0]");
+    param_string_from_transient_string(a[3], ".PUTSTREAM");
+    code = pdfa_write_list(pcs, &array_list);
+    gs_free_object(pcs->memory, profile, "PJL, ICC profile");
+    if (code < 0)
+        return code;
+
+    array_list.size = 6;
+    param_string_from_transient_string(a[0], "/_objdef");
+    param_string_from_transient_string(a[1], "{OutputIntent_PDFA}");
+    param_string_from_transient_string(a[2], "/type");
+    param_string_from_transient_string(a[3], "/dict");
+    param_string_from_transient_string(a[4], "[0 0 0 0 0 0]");
+    param_string_from_transient_string(a[5], "OBJ");
+    code = pdfa_write_list(pcs, &array_list);
+    if (code < 0)
+        return code;
+
+    array_list.size = 11;
+    param_string_from_transient_string(a[0], "{OutputIntent_PDFA}");
+    param_string_from_transient_string(a[1], "/S");
+    param_string_from_transient_string(a[2], "/GTS_PDFA1");
+    param_string_from_transient_string(a[3], "/Type");
+    param_string_from_transient_string(a[4], "/OutputIntent");
+    param_string_from_transient_string(a[5], "/DestOutputProfile");
+    param_string_from_transient_string(a[6], "{icc_PDFA}");
+    param_string_from_transient_string(a[7], "/OutputConditionIdentifier");
+    param_string_from_transient_string(a[8], "(sRGB)");
+    param_string_from_transient_string(a[9], "[0 0 0 0 0 0]");
+    param_string_from_transient_string(a[10], ".PUTDICT");
+    code = pdfa_write_list(pcs, &array_list);
+    if (code < 0)
+        return code;
+
+    array_list.size = 5;
+    param_string_from_transient_string(a[0], "{Catalog}");
+    param_string_from_transient_string(a[1], "/OutputIntents");
+    param_string_from_transient_string(a[2], "[ {OutputIntent_PDFA} ]");
+    param_string_from_transient_string(a[3], "[0 0 0 0 0 0]");
+    param_string_from_transient_string(a[4], ".PUTDICT");
+    code = pdfa_write_list(pcs, &array_list);
+
+    return code;
+}
+
 static void
 pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
 {
@@ -332,6 +446,16 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         put_param1_bool(pcs, "Duplex", pcs->duplex);
         put_param1_bool(pcs, "FirstSide", !pcs->back_side);
         put_param1_bool(pcs, "BindShortEdge", pcs->bind_short_edge);
+
+        {
+            pjl_envvar_t *pres;
+
+            pres = pjl_proc_get_envvar(pcs->pjls, "pdfa_profile");
+
+            if (strlen(pres) > 0) {
+                pcl_pjl_pdfa(pcs, pres);
+            }
+        }
     }
 
     if (type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay)) {
