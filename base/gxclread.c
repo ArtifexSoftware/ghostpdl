@@ -625,15 +625,15 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
     if (code < 0)
         return code;
     code = clist_rasterize_lines(dev, y, line_count, bdev, &render_plane, &my);
-    if (code < 0)
-        return code;
-    lines_rasterized = min(code, line_count);
-    /* Return as much of the rectangle as falls within the rasterized lines. */
-    band_rect = *prect;
-    band_rect.p.y = my;
-    band_rect.q.y = my + lines_rasterized;
-    code = dev_proc(bdev, get_bits_rectangle)
-        (bdev, &band_rect, params, unread);
+    if (code >= 0) {
+        lines_rasterized = min(code, line_count);
+        /* Return as much of the rectangle as falls within the rasterized lines. */
+        band_rect = *prect;
+        band_rect.p.y = my;
+        band_rect.q.y = my + lines_rasterized;
+        code = dev_proc(bdev, get_bits_rectangle)
+            (bdev, &band_rect, params, unread);
+    }
     cdev->buf_procs.destroy_buf_device(bdev);
     if (code < 0 || lines_rasterized == line_count)
         return code;
