@@ -679,10 +679,24 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
 static	void
 pdf14_buf_free(pdf14_buf *buf, gs_memory_t *memory)
 {
+    pdf14_parent_color_t *old_parent_color_info = buf->parent_color_info_procs;
+
+    if (buf->mask_stack && buf->mask_stack->rc_mask)
+        rc_decrement(buf->mask_stack->rc_mask, "pdf14_buf_free");
+
     gs_free_object(memory, buf->mask_stack, "pdf14_buf_free");
     gs_free_object(memory, buf->transfer_fn, "pdf14_buf_free");
     gs_free_object(memory, buf->data, "pdf14_buf_free");
-    gs_free_object(memory, buf->parent_color_info_procs, "pdf14_buf_free");
+
+    while (old_parent_color_info) {
+       if (old_parent_color_info->icc_profile != NULL) {
+           rc_decrement(old_parent_color_info->icc_profile, "pdf14_buf_free");
+       }
+       buf->parent_color_info_procs = old_parent_color_info->previous;
+       gs_free_object(memory, old_parent_color_info, "pdf14_buf_free");
+       old_parent_color_info = buf->parent_color_info_procs;
+    }
+
     gs_free_object(memory, buf->backdrop, "pdf14_buf_free");
     gs_free_object(memory, buf, "pdf14_buf_free");
 }
@@ -1979,10 +1993,48 @@ pdf14_custom_put_image(gx_device * dev, gs_imager_state * pis, gx_device * targe
                       x0, y0, width, height, num_comp, bg);
 }
 
+/* This is rather nasty: in the event we are interrupted (by an error) between a push and pop
+ * of one or more groups, we have to cycle through any ICC profile changes since the push
+ * putting everything back how it was, and cleaning up the reference counts.
+ */
+static void pdf14_cleanup_parent_color_profiles (pdf14_device *pdev)
+{
+    if (pdev->ctx) {
+        pdf14_buf *buf, *next;
+
+        for (buf = pdev->ctx->stack; buf != NULL; buf = next) {
+            pdf14_parent_color_t *old_parent_color_info = buf->parent_color_info_procs;
+            next = buf->saved;
+            while (old_parent_color_info) {
+               if (old_parent_color_info->icc_profile != NULL) {
+                   cmm_profile_t *group_profile;
+                   gsicc_rendering_param_t render_cond;
+                   cmm_dev_profile_t *dev_profile;
+                   int code = dev_proc((gx_device *)pdev, get_profile)((gx_device *)pdev,  &dev_profile);
+
+                   if (code >= 0) {
+                       gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &group_profile,
+                                             &render_cond);
+
+                       rc_decrement(group_profile,"pdf14_end_transparency_group");
+                       pdev->icc_struct->device_profile[0] = old_parent_color_info->icc_profile;
+                       rc_decrement(old_parent_color_info->icc_profile,"pdf14_end_transparency_group");
+                       old_parent_color_info->icc_profile = NULL;
+                   }
+               }
+
+               old_parent_color_info = old_parent_color_info->previous;
+            }
+        }
+    }
+}
+
 static	int
 pdf14_close(gx_device *dev)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
+
+    pdf14_cleanup_parent_color_profiles (pdev);
 
     if (pdev->ctx) {
         pdf14_ctx_free(pdev->ctx);
@@ -4369,11 +4421,10 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
         if (pdev->ctx){
             pdev->ctx->additive = parent_color->isadditive;
         }
-       /* The device profile must be restored.  No reference - count is done here
-          A match with pdf14_update_device_color_procs_push_c.  There functions
-          are closely integrated with pdf14_pop_parent_color and pdf14_push_parent color.
-          All four are used only on the clist writer side of the transparency code */
+       /* The device profile must be restored. */
          dev->icc_struct->device_profile[0] = parent_color->icc_profile;
+         rc_decrement(parent_color->icc_profile, "pdf14_update_device_color_procs_pop_c");
+         parent_color->icc_profile = NULL;
          if_debug0m('v', dev->memory, "[v]procs updated\n");
     } else {
         if_debug0m('v', dev->memory, "[v]pdf14_update_device_color_procs_pop_c ERROR \n");
@@ -7034,21 +7085,23 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                     (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0));
                 if (!sep_target) {
                     code = pdf14_update_device_color_procs_pop_c(dev,pis);
-                    if (code < 0)
-                        return code;
                 }
+                else
+                    code = 0;
                 /* We always do this push and pop */
                 pdf14_pop_parent_color(dev, pis);
+                if (code < 0)
+                    return code;
                 break;
             case PDF14_END_TRANS_MASK:
                 /* We need to update the clist writer device procs based upon the
                    the group color space. */
                 /* First restore our procs */
                 code = pdf14_update_device_color_procs_pop_c(dev,pis);
-                if (code < 0)
-                    return code;
                 /* Now pop the old one */
                 pdf14_pop_parent_color(dev, pis);
+                if (code < 0)
+                    return code;
                 break;
             case PDF14_PUSH_TRANS_STATE:
                 break;
@@ -8198,6 +8251,14 @@ pdf14_device_finalize(const gs_memory_t *cmem, void *vptr)
 {
     gx_device * const dev = (gx_device *)vptr;
     pdf14_device * pdev = (pdf14_device *)dev;
+
+    pdf14_cleanup_parent_color_profiles (pdev);
+
+    if (pdev->ctx) {
+        pdf14_ctx_free(pdev->ctx);
+        pdev->ctx = NULL;
+    }
+
     while (pdev->trans_group_parent_cmap_procs) {
         pdf14_pop_parent_color(dev, NULL);
     }
