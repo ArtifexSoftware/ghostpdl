@@ -340,6 +340,12 @@ tile_pattern_clist(const tile_fill_state_t * ptfs,
     code = clist_playback_file_bands(playback_action_render,
                 crdev, &crdev->page_info, dev, 0, 0, ptfs->xoff - x, ptfs->yoff - y);
     if_debug0m('L', dev->memory, "Pattern clist playback end\n");
+    /* FIXME: it would be preferable to have this persist, but as
+     * clist_render_init() sets it to NULL, we currently have to
+     * cleanup before returning. Set to NULL for safety
+     */
+    rc_decrement(crdev->icc_cache_cl, "tile_pattern_clist");
+    crdev->icc_cache_cl = NULL;
     return code;
 }
 
