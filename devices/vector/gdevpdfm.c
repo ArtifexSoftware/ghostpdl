@@ -714,7 +714,9 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
                 /* Adobe Distiller puts a /URI key from pdfmark into the */
                 /* Action dict with /S /URI as Subtype */
                 pdfmark_put_pair(adict, URI);
-                cos_dict_put_c_strings(adict, "/S", "/URI");
+                code = cos_dict_put_c_strings(adict, "/S", "/URI");
+                if (code < 0)
+                    return code;
             }
             cos_dict_put(pcd, (const byte *)"/A", 2,
                          COS_OBJECT_VALUE(&avalue, adict));
