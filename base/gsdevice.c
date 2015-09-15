@@ -71,6 +71,28 @@ gx_device_finalize(const gs_memory_t *cmem, void *vptr)
     if (dev->stype_is_dynamic)
         gs_free_const_object(dev->memory->non_gc_memory, dev->stype,
                              "gx_device_finalize");
+
+#ifdef DEBUG
+    /* Slightly ugly hack: because the garbage collector makes no promises
+     * about the order objects can be garbage collected, it is possible for
+     * a forwarding device to remain in existence (awaiting garbage collection
+     * itself) after it's target marked as free memory by the garbage collector.
+     * In such a case, the normal reference counting is fine (since the garbage
+     * collector leaves the object contents alone until is has completed its
+     * sweep), but the reference counting debugging attempts to access the
+     * memory header to output type information - and the header has been
+     * overwritten by the garbage collector, causing a crash.
+     * Setting the rc memory to NULL here should be safe, since the memory
+     * is now in the hands of the garbage collector, and means we can check in
+     * debugging code to ensure we don't try to use values that not longer exist
+     * in the memmory header.
+     * In the non-gc case, finalize is the very last thing to happen before the
+     * memory is actually freed, so the rc.memory pointer is moot.
+     * See rc_object_type_name()
+     */
+    if (gs_debug_c('^'))
+        dev->rc.memory = NULL;
+#endif
 }
 
 /* "Free" a device locally allocated on the stack, by finalizing it. */
