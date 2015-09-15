@@ -318,6 +318,7 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
     int OnlyCalcLength = 0;
     char Buffer[16];
 
+    memset(Stack, 0x00, 64 * sizeof(int));
     if (stripped == NULL) {
         OnlyCalcLength = 1;
         dest = (byte *)&Buffer;
