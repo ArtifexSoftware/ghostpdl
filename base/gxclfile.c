@@ -211,7 +211,7 @@ void
 cl_cache_load_slot(CL_CACHE *cache, CL_CACHE_SLOT *slot, int64_t pos, byte *data, int len)
 {
     slot->blocknum = pos / cache->block_size;
-    memcpy(slot->base, data, len);
+    memmove(slot->base, data, len);
 }
 
 /* Use our own FILE structure so that, on some platforms, we write and read
