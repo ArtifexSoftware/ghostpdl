@@ -1141,20 +1141,27 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
      */
     bool have_path;
     gs_fixed_rect box = {{0, 0}, {0, 0}}, box1;
+    gs_rect box2;
 
     if (pdev->Eps2Write) {
         gx_path_bbox(ppath, &box1);
         if (box1.p.x != 0 || box1.p.y != 0 || box1.q.x != 0 || box1.q.y != 0){
             if (pcpath != 0)
                 rect_intersect(box1, pcpath->outer_box);
-            if (fixed2int(box1.p.x) < pdev->BBox.p.x)
-                pdev->BBox.p.x = fixed2int(box1.p.x);
-            if (fixed2int(box1.p.y) < pdev->BBox.p.y)
-                pdev->BBox.p.y = fixed2int(box1.p.y);
-            if (fixed2int(box1.q.x) > pdev->BBox.q.x)
-                pdev->BBox.q.x = fixed2int(box1.q.x);
-            if (fixed2int(box1.q.y) > pdev->BBox.q.y)
-                pdev->BBox.q.y = fixed2int(box1.q.y);
+            /* convert fixed point co-ordinates to floating point and account for resolution */
+            box2.p.x = fixed2int(box1.p.x) / (pdev->HWResolution[0] / 72.0);
+            box2.p.y = fixed2int(box1.p.y) / (pdev->HWResolution[1] / 72.0);
+            box2.q.x = fixed2int(box1.q.x) / (pdev->HWResolution[0] / 72.0);
+            box2.q.y = fixed2int(box1.q.y) / (pdev->HWResolution[1] / 72.0);
+            /* Finally compare the new BBox of the path with the existing EPS BBox */
+            if (box2.p.x < pdev->BBox.p.x)
+                pdev->BBox.p.x = box2.p.x;
+            if (box2.p.y < pdev->BBox.p.y)
+                pdev->BBox.p.y = box2.p.y;
+            if (box2.q.x > pdev->BBox.q.x)
+                pdev->BBox.q.x = box2.q.x;
+            if (box2.q.y > pdev->BBox.q.y)
+                pdev->BBox.q.y = box2.q.y;
         }
         if (pdev->AccumulatingBBox)
             return 0;
