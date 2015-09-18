@@ -53,24 +53,6 @@
  * Note that non-embedded fonts in the base set of 14 do not have
  * descriptors, nor do Type 0 or (synthetic bitmap) Type 3 fonts.
  */
-/*
- * Start by defining the elements common to font descriptors and sub-font
- * (character class) descriptors.
- */
-typedef struct pdf_font_descriptor_values_s {
-    /* Required elements */
-    int Ascent, CapHeight, Descent, ItalicAngle, StemV;
-    gs_int_rect FontBBox;
-    gs_string FontName;
-    uint Flags;
-    /* Optional elements (default to 0) */
-    int AvgWidth, Leading, MaxWidth, MissingWidth, StemH, XHeight;
-} pdf_font_descriptor_values_t;
-typedef struct pdf_font_descriptor_common_s pdf_font_descriptor_common_t;
-struct pdf_font_descriptor_common_s {
-    pdf_resource_common(pdf_font_descriptor_common_t);
-    pdf_font_descriptor_values_t values;
-};
 /* Flag bits */
 /*#define FONT_IS_FIXED_WIDTH (1<<0)*/  /* defined in gxfont.h */
 #define FONT_IS_SERIF (1<<1)
@@ -93,25 +75,6 @@ struct pdf_font_descriptor_common_s {
 #define FONT_IS_SMALL_CAPS (1<<17)
 #define FONT_IS_FORCE_BOLD (1<<18)
 
-/*
- * Define a (top-level) FontDescriptor.  CID-keyed vs. non-CID-keyed fonts
- * are distinguished by their FontType.
- */
-#ifndef pdf_base_font_DEFINED
-#  define pdf_base_font_DEFINED
-typedef struct pdf_base_font_s pdf_base_font_t;
-#endif
-struct pdf_font_descriptor_s {
-    pdf_font_descriptor_common_t common;
-    pdf_base_font_t *base_font;
-    font_type FontType;		/* (copied from base_font) */
-    bool embed;
-    struct cid_ {		/* (CIDFonts only) */
-        cos_dict_t *Style;
-        char Lang[3];		/* 2 chars + \0 */
-        cos_dict_t *FD;		/* value = COS_VALUE_RESOURCE */
-    } cid;
-};
 /*
  * Define a sub-descriptor for a character class (FD dictionary element).
  */
@@ -728,7 +691,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
             fd.values.Flags =
                 (fd.values.Flags & ~(FONT_IS_ADOBE_ROMAN)) | FONT_IS_SYMBOLIC;
 
-            if (pfd->base_font->do_subset == DO_SUBSET_NO && ((const gs_font_base *)pfd->base_font)->nearest_encoding_index != ENCODING_INDEX_UNKNOWN) {
+            if (pfd->base_font->do_subset == DO_SUBSET_NO && ((const gs_font_base *)(pfd->base_font->copied))->nearest_encoding_index != ENCODING_INDEX_UNKNOWN) {
                 fd.values.Flags =
                     (fd.values.Flags & ~(FONT_IS_SYMBOLIC)) | FONT_IS_ADOBE_ROMAN;
             }

@@ -55,6 +55,40 @@
  * BaseFont of the font resource.  For more information, see gdevpdtf.h.
  */
 
+/*
+ * Start by defining the elements common to font descriptors and sub-font
+ * (character class) descriptors.
+ */
+typedef struct pdf_font_descriptor_values_s {
+    /* Required elements */
+    int Ascent, CapHeight, Descent, ItalicAngle, StemV;
+    gs_int_rect FontBBox;
+    gs_string FontName;
+    uint Flags;
+    /* Optional elements (default to 0) */
+    int AvgWidth, Leading, MaxWidth, MissingWidth, StemH, XHeight;
+} pdf_font_descriptor_values_t;
+typedef struct pdf_font_descriptor_common_s pdf_font_descriptor_common_t;
+struct pdf_font_descriptor_common_s {
+    pdf_resource_common(pdf_font_descriptor_common_t);
+    pdf_font_descriptor_values_t values;
+};
+/*
+ * Define a (top-level) FontDescriptor.  CID-keyed vs. non-CID-keyed fonts
+ * are distinguished by their FontType.
+ */
+struct pdf_font_descriptor_s {
+    pdf_font_descriptor_common_t common;
+    pdf_base_font_t *base_font;
+    font_type FontType;		/* (copied from base_font) */
+    bool embed;
+    struct cid_ {		/* (CIDFonts only) */
+        cos_dict_t *Style;
+        char Lang[3];		/* 2 chars + \0 */
+        cos_dict_t *FD;		/* value = COS_VALUE_RESOURCE */
+    } cid;
+};
+
 #ifndef pdf_font_descriptor_DEFINED
 #  define pdf_font_descriptor_DEFINED
 typedef struct pdf_font_descriptor_s pdf_font_descriptor_t;

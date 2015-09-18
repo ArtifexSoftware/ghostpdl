@@ -1394,6 +1394,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
     pdf_standard_font_t *const psfa =
         pdev->text->outline_fonts->standard_fonts;
     int code = 0;
+    bool do_subset;
 
     if (pdev->version < psdf_version_level2_with_TT) {
         switch(font->FontType) {
@@ -1493,9 +1494,17 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
             }
         }
     }
+    if ((code = pdf_font_descriptor_alloc(pdev, &pfd,
+                                          (gs_font_base *)base_font,
+                                          embed == FONT_EMBED_YES)) < 0 ||
+        (code = font_alloc(pdev, &pdfont, base_font->id, pfd)) < 0
+        )
+        return code;
+
+    do_subset = pdf_do_subset_font(pdev, pfd->base_font, -1);
     if (font->FontType == ft_encrypted || font->FontType == ft_encrypted2
         || (font->FontType == ft_TrueType && pdev->ForOPDFRead)
-        || (font->FontType == ft_TrueType && ((const gs_font_base *)base_font)->nearest_encoding_index != ENCODING_INDEX_UNKNOWN)) {
+        || (font->FontType == ft_TrueType && ((const gs_font_base *)base_font)->nearest_encoding_index != ENCODING_INDEX_UNKNOWN && pfd->base_font->do_subset == DO_SUBSET_NO)) {
         /* Yet more crazy heuristics. If we embed a TrueType font and don't subset it, then
          * we preserve the CMAP subtable(s) rather than generatng new ones. The problem is
          * that if we ake the font symbolic, Acrobat uses the 1,0 CMAP, whereas if we don't
@@ -1526,13 +1535,6 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
         BaseEncoding = pdf_refine_encoding_index(pdev,
             ((const gs_font_base *)base_font)->nearest_encoding_index, false);
     }
-    if ((code = pdf_font_descriptor_alloc(pdev, &pfd,
-                                          (gs_font_base *)base_font,
-                                          embed == FONT_EMBED_YES)) < 0 ||
-        (code = font_alloc(pdev, &pdfont, base_font->id, pfd)) < 0
-        )
-        return code;
-
     if (!pdf_is_CID_font(font)) {
         pdfont->u.simple.BaseEncoding = BaseEncoding;
         pdfont->mark_glyph = font->dir->ccache.mark_glyph;
