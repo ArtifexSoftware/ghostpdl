@@ -2171,6 +2171,9 @@ textw_text_process(gs_text_enum_t *pte)
     gs_font_base *font_base = (gs_font_base *)pte->current_font;
     int code = 0;
 
+    if (pte->text.size == 0)
+        return 0;
+
     if (!penum->TextBuffer) {
         /* We can get up to 4 Unicode points per glyph, and a glyph can be
          * be represented by as little as one byte. So we make a very large
@@ -2346,6 +2349,7 @@ txtwrite_text_begin(gx_device * dev, gs_imager_state * pis,
     penum->returned.total_width.x = penum->returned.total_width.y = 0;
     penum->TextBuffer = NULL;
     penum->TextBufferIndex = 0;
+    penum->Widths = NULL;
     /* The enumerator's text_release method frees this memory */
     penum->text_state = (text_list_entry_t *)gs_malloc(tdev->memory->stable_memory, 1,
             sizeof(text_list_entry_t), "txtwrite alloc text state");
