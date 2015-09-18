@@ -1561,6 +1561,7 @@ idata:                  data_size = 0;
                                     }
                                     if (cbp[0] == cmd_opv_extend && cbp[1] == cmd_opv_ext_create_compositor) {
                                         gs_composite_t *pcomp, *pcomp_opening;
+                                        gs_compositor_closing_state closing_state;
 
                                         cbuf.ptr = cbp += 2;
                                         code = read_create_compositor(&cbuf, mem, &pcomp);
@@ -1577,47 +1578,47 @@ idata:                  data_size = 0;
                                             continue;
                                         }
                                         pcomp_opening = pcomp_last;
-                                        code = pcomp->type->procs.is_closing(pcomp, &pcomp_opening, tdev);
-                                        if (code < 0)
+                                        closing_state = pcomp->type->procs.is_closing(pcomp, &pcomp_opening, tdev);
+                                        if (closing_state < 0)
                                             goto out;
-                                        else if (code == 0) {
+                                        else if (closing_state == ENQUEUE) {
                                             /* Enqueue. */
                                             enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
-                                        } else if (code == 1) {
+                                        } else if (closing_state == EXECUTE_IDLE) {
                                             /* Execute idle. */
                                             enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
                                             code = execute_compositor_queue(cdev, &target, &tdev,
                                                 &imager_state, &pcomp_first, &pcomp_last, pcomp_opening, x0, y0, mem, true);
                                             if (code < 0)
                                                 goto out;
-                                        } else if (code == 2) {
+                                        } else if (closing_state == EXECUTE_QUEUE) {
                                             /* The opening command was executed. Execute the queue. */
                                             enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
                                             code = execute_compositor_queue(cdev, &target, &tdev,
                                                 &imager_state, &pcomp_first, &pcomp_last, pcomp_first, x0, y0, mem, false);
                                             if (code < 0)
                                                 goto out;
-                                        } else if (code == 3) {
+                                        } else if (closing_state == REPLACE_PREVIOUS) {
                                             /* Replace last compositors. */
                                             code = execute_compositor_queue(cdev, &target, &tdev,
                                                 &imager_state, &pcomp_first, &pcomp_last, pcomp_opening, x0, y0, mem, true);
                                             if (code < 0)
                                                 goto out;
                                             enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
-                                        } else if (code == 4) {
+                                        } else if (closing_state == REPLACE_CURRENT) {
                                             /* Replace specific compositor. */
                                             code = dequeue_compositor(&pcomp_first, &pcomp_last, pcomp_opening);
                                             if (code < 0)
                                                 goto out;
                                             enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
                                             free_compositor(pcomp_opening, mem);
-                                        } else if (code == 5) {
+                                        } else if (closing_state == DROP_QUEUE) {
                                             /* Annihilate the last compositors. */
                                             enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
                                             code = drop_compositor_queue(&pcomp_first, &pcomp_last, pcomp_opening, mem, x0, y0, &imager_state);
                                             if (code < 0)
                                                 goto out;
-                                        } else if (code == 6) {
+                                        } else if (closing_state == MARK_IDLE) {
                                             /* Mark as idle. */
                                             enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
                                             mark_as_idle(pcomp_opening, pcomp);

@@ -221,15 +221,14 @@ c_overprint_read(
 /*
  * Check for closing compositor.
  */
-static int
+static gs_compositor_closing_state
 c_overprint_is_closing(const gs_composite_t *this, gs_composite_t **ppcte, gx_device *dev)
 {
     if (*ppcte != NULL && (*ppcte)->type->comp_id != GX_COMPOSITOR_OVERPRINT)
-        return 0;
-    return 3;
+        return ENQUEUE;
+    return REPLACE_PREVIOUS;
 }
 
-static composite_create_default_compositor_proc(c_overprint_create_default_compositor);
 static composite_create_default_compositor_proc(c_overprint_create_default_compositor);
 static composite_equal_proc(c_overprint_equal);
 static composite_write_proc(c_overprint_write);
@@ -363,7 +362,7 @@ gs_private_st_suffix_add0_final( st_overprint_device_t,
                                  overprint_device_t_enum_ptrs,
                                  overprint_device_t_reloc_ptrs,
                                  gx_device_finalize,
-                                 st_device_forward );
+                                 st_device_forward);
 
 /*
  * In the default (overprint false) case, the overprint device is almost

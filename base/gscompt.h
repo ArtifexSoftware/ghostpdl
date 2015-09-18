@@ -47,4 +47,14 @@ typedef struct gs_composite_s gs_composite_t;
  */
 gs_id gs_composite_id(const gs_composite_t * pcte);
 
+typedef enum {
+    ENQUEUE = 0,
+    EXECUTE_IDLE = 1,
+    EXECUTE_QUEUE = 2,
+    REPLACE_PREVIOUS = 3,
+    REPLACE_CURRENT = 4,
+    DROP_QUEUE = 5,
+    MARK_IDLE = 6
+} gs_compositor_closing_state;
+
 #endif /* gscompt_INCLUDED */

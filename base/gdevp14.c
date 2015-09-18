@@ -6140,8 +6140,9 @@ c_pdf14trans_create_default_compositor(const gs_composite_t * pct,
 /*
  * Find an opening compositor op.
  */
-static int
-find_opening_op(int opening_op, gs_composite_t **ppcte, int return_code)
+static gs_compositor_closing_state
+find_opening_op(int opening_op, gs_composite_t **ppcte,
+                gs_compositor_closing_state return_code)
 {
     /* Assuming a right *BEGIN* - *END* operation balance. */
     gs_composite_t *pcte = *ppcte;
@@ -6156,29 +6157,29 @@ find_opening_op(int opening_op, gs_composite_t **ppcte, int return_code)
                 return return_code;
             if (op != PDF14_SET_BLEND_PARAMS) {
                 if (opening_op == PDF14_BEGIN_TRANS_MASK)
-                    return 0;
+                    return ENQUEUE;
                 if (opening_op == PDF14_BEGIN_TRANS_GROUP) {
                     if (op != PDF14_BEGIN_TRANS_MASK && op != PDF14_END_TRANS_MASK)
-                        return 0;
+                        return ENQUEUE;
                 }
                 if (opening_op == PDF14_PUSH_DEVICE) {
                     if (op != PDF14_BEGIN_TRANS_MASK && op != PDF14_END_TRANS_MASK &&
                         op != PDF14_BEGIN_TRANS_GROUP && op != PDF14_END_TRANS_GROUP)
-                        return 0;
+                        return ENQUEUE;
                 }
             }
         } else
-            return 0;
+            return ENQUEUE;
         pcte = pcte->prev;
         if (pcte == NULL)
-            return 2; /* Not in queue. */
+            return EXECUTE_QUEUE; /* Not in queue. */
     }
 }
 
 /*
  * Find an opening compositor op.
  */
-static int
+static gs_compositor_closing_state
 find_same_op(const gs_composite_t *composite_action, int my_op, gs_composite_t **ppcte)
 {
     const gs_pdf14trans_t *pct0 = (gs_pdf14trans_t *)composite_action;
@@ -6190,29 +6191,29 @@ find_same_op(const gs_composite_t *composite_action, int my_op, gs_composite_t *
 
             *ppcte = pct;
             if (pct_pdf14->params.pdf14_op != my_op)
-                return 0;
+                return ENQUEUE;
             if (pct_pdf14->params.csel == pct0->params.csel) {
                 /* If the new parameters completely replace the old ones
                    then remove the old one from the queu */
                 if ((pct_pdf14->params.changed & pct0->params.changed) ==
                     pct_pdf14->params.changed) {
-                    return 4;
+                    return REPLACE_CURRENT;
                 } else {
-                    return 0;
+                    return ENQUEUE;
                 }
             }
         } else
-            return 0;
+            return ENQUEUE;
         pct = pct->prev;
         if (pct == NULL)
-            return 0; /* Not in queue. */
+            return ENQUEUE; /* Not in queue. */
     }
 }
 
 /*
  * Check for closing compositor.
  */
-static int
+static gs_compositor_closing_state
 c_pdf14trans_is_closing(const gs_composite_t * composite_action, gs_composite_t ** ppcte,
                         gx_device *dev)
 {
@@ -6222,44 +6223,44 @@ c_pdf14trans_is_closing(const gs_composite_t * composite_action, gs_composite_t 
     switch (op0) {
         default: return_error(gs_error_unregistered); /* Must not happen. */
         case PDF14_PUSH_DEVICE:
-            return 0;
+            return ENQUEUE;
         case PDF14_ABORT_DEVICE:
-            return 0;
+            return ENQUEUE;
         case PDF14_POP_DEVICE:
             if (*ppcte == NULL)
-                return 0;
+                return ENQUEUE;
             else {
-                int code = find_opening_op(PDF14_PUSH_DEVICE, ppcte, 1);
+                gs_compositor_closing_state state = find_opening_op(PDF14_PUSH_DEVICE, ppcte, EXECUTE_IDLE);
 
-                if (code == 1)
-                    return 5;
-                return code;
+                if (state == EXECUTE_IDLE)
+                    return DROP_QUEUE;
+                return state;
             }
         case PDF14_BEGIN_TRANS_GROUP:
-            return 0;
+            return ENQUEUE;
         case PDF14_END_TRANS_GROUP:
             if (*ppcte == NULL)
-                return 2;
-            return find_opening_op(PDF14_BEGIN_TRANS_GROUP, ppcte, 6);
+                return EXECUTE_QUEUE;
+            return find_opening_op(PDF14_BEGIN_TRANS_GROUP, ppcte, MARK_IDLE);
         case PDF14_BEGIN_TRANS_MASK:
-            return 0;
+            return ENQUEUE;
         case PDF14_PUSH_TRANS_STATE:
-            return 0;
+            return ENQUEUE;
         case PDF14_POP_TRANS_STATE:
-            return 0;
+            return ENQUEUE;
         case PDF14_PUSH_SMASK_COLOR:
-            return 0;
+            return ENQUEUE;
             break;
         case PDF14_POP_SMASK_COLOR:
-            return 0;
+            return ENQUEUE;
             break;
         case PDF14_END_TRANS_MASK:
             if (*ppcte == NULL)
-                return 2;
-            return find_opening_op(PDF14_BEGIN_TRANS_MASK, ppcte, 6);
+                return EXECUTE_QUEUE;
+            return find_opening_op(PDF14_BEGIN_TRANS_MASK, ppcte, MARK_IDLE);
         case PDF14_SET_BLEND_PARAMS:
             if (*ppcte == NULL)
-                return 0;
+                return ENQUEUE;
             /* hack : ignore csel - here it is always zero : */
             return find_same_op(composite_action, PDF14_SET_BLEND_PARAMS, ppcte);
     }
