@@ -24,6 +24,12 @@
 #include "scommon.h"
 #include <jbig2.h>
 
+typedef struct s_jbig2_callback_data_s
+{
+    gs_memory_t *memory;
+    int error;
+} s_jbig2_callback_data_t;
+
 /* See zfjbig2.c for details. */
 typedef struct s_jbig2_global_data_s {
         void *data;
@@ -38,14 +44,16 @@ typedef struct stream_jbig2decode_state_s
     Jbig2Ctx *decode_ctx;
     Jbig2Image *image;
     long offset; /* offset into the image bitmap of the next byte to be returned */
-    int error;
+    s_jbig2_callback_data_t *callback_data; /* is allocated in non-gc memory */
 }
 stream_jbig2decode_state;
 
+struct_proc_finalize(s_jbig2decode_finalize);
+
 #define private_st_jbig2decode_state()	\
-  gs_private_st_ptrs1(st_jbig2decode_state, stream_jbig2decode_state,\
+  gs_private_st_ptrs1_final(st_jbig2decode_state, stream_jbig2decode_state,\
     "jbig2decode filter state", jbig2decode_state_enum_ptrs,\
-     jbig2decode_state_reloc_ptrs, global_struct)
+     jbig2decode_state_reloc_ptrs, s_jbig2decode_finalize, global_struct)
 extern const stream_template s_jbig2decode_template;
 
 /* call ins to process the JBIG2Globals parameter */
