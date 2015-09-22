@@ -1385,7 +1385,7 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
         shade = t_level_frac_color * nshades / (frac_1_long + 1);
     } while (shade < num_levels && t_level < 255);
     /* Initialize the thresholds to the lowest level that will be all white */
-    for( i = 0; i < d_order->num_bits; i++ ) {
+    for( i = 0; i < d_order->width * d_order->full_height; i++ ) {
         thresh[i] = t_level;
     }
     for (t_level = 1; t_level < 256; t_level++) {
