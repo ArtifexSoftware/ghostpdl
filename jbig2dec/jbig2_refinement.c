@@ -508,6 +508,9 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     /* the reference is just (a subset of) the page buffer */
     params.reference = jbig2_image_clone(ctx,
       ctx->pages[ctx->current_page].image);
+    if (params.reference == NULL)
+      return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+        "could not clone reference bitmap!");
     /* TODO: subset the image if appropriate */
   }
 
