@@ -225,8 +225,8 @@ static gs_compositor_closing_state
 c_overprint_is_closing(const gs_composite_t *this, gs_composite_t **ppcte, gx_device *dev)
 {
     if (*ppcte != NULL && (*ppcte)->type->comp_id != GX_COMPOSITOR_OVERPRINT)
-        return ENQUEUE;
-    return REPLACE_PREVIOUS;
+        return COMP_ENQUEUE;
+    return COMP_REPLACE_PREV;
 }
 
 static composite_create_default_compositor_proc(c_overprint_create_default_compositor);

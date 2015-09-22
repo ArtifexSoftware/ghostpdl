@@ -6157,22 +6157,22 @@ find_opening_op(int opening_op, gs_composite_t **ppcte,
                 return return_code;
             if (op != PDF14_SET_BLEND_PARAMS) {
                 if (opening_op == PDF14_BEGIN_TRANS_MASK)
-                    return ENQUEUE;
+                    return COMP_ENQUEUE;
                 if (opening_op == PDF14_BEGIN_TRANS_GROUP) {
                     if (op != PDF14_BEGIN_TRANS_MASK && op != PDF14_END_TRANS_MASK)
-                        return ENQUEUE;
+                        return COMP_ENQUEUE;
                 }
                 if (opening_op == PDF14_PUSH_DEVICE) {
                     if (op != PDF14_BEGIN_TRANS_MASK && op != PDF14_END_TRANS_MASK &&
                         op != PDF14_BEGIN_TRANS_GROUP && op != PDF14_END_TRANS_GROUP)
-                        return ENQUEUE;
+                        return COMP_ENQUEUE;
                 }
             }
         } else
-            return ENQUEUE;
+            return COMP_ENQUEUE;
         pcte = pcte->prev;
         if (pcte == NULL)
-            return EXECUTE_QUEUE; /* Not in queue. */
+            return COMP_EXEC_QUEUE; /* Not in queue. */
     }
 }
 
@@ -6191,22 +6191,22 @@ find_same_op(const gs_composite_t *composite_action, int my_op, gs_composite_t *
 
             *ppcte = pct;
             if (pct_pdf14->params.pdf14_op != my_op)
-                return ENQUEUE;
+                return COMP_ENQUEUE;
             if (pct_pdf14->params.csel == pct0->params.csel) {
                 /* If the new parameters completely replace the old ones
                    then remove the old one from the queu */
                 if ((pct_pdf14->params.changed & pct0->params.changed) ==
                     pct_pdf14->params.changed) {
-                    return REPLACE_CURRENT;
+                    return COMP_REPLACE_CURR;
                 } else {
-                    return ENQUEUE;
+                    return COMP_ENQUEUE;
                 }
             }
         } else
-            return ENQUEUE;
+            return COMP_ENQUEUE;
         pct = pct->prev;
         if (pct == NULL)
-            return ENQUEUE; /* Not in queue. */
+            return COMP_ENQUEUE; /* Not in queue. */
     }
 }
 
@@ -6223,44 +6223,44 @@ c_pdf14trans_is_closing(const gs_composite_t * composite_action, gs_composite_t 
     switch (op0) {
         default: return_error(gs_error_unregistered); /* Must not happen. */
         case PDF14_PUSH_DEVICE:
-            return ENQUEUE;
+            return COMP_ENQUEUE;
         case PDF14_ABORT_DEVICE:
-            return ENQUEUE;
+            return COMP_ENQUEUE;
         case PDF14_POP_DEVICE:
             if (*ppcte == NULL)
-                return ENQUEUE;
+                return COMP_ENQUEUE;
             else {
-                gs_compositor_closing_state state = find_opening_op(PDF14_PUSH_DEVICE, ppcte, EXECUTE_IDLE);
+                gs_compositor_closing_state state = find_opening_op(PDF14_PUSH_DEVICE, ppcte, COMP_EXEC_IDLE);
 
-                if (state == EXECUTE_IDLE)
-                    return DROP_QUEUE;
+                if (state == COMP_EXEC_IDLE)
+                    return COMP_DROP_QUEUE;
                 return state;
             }
         case PDF14_BEGIN_TRANS_GROUP:
-            return ENQUEUE;
+            return COMP_ENQUEUE;
         case PDF14_END_TRANS_GROUP:
             if (*ppcte == NULL)
-                return EXECUTE_QUEUE;
-            return find_opening_op(PDF14_BEGIN_TRANS_GROUP, ppcte, MARK_IDLE);
+                return COMP_EXEC_QUEUE;
+            return find_opening_op(PDF14_BEGIN_TRANS_GROUP, ppcte, COMP_MARK_IDLE);
         case PDF14_BEGIN_TRANS_MASK:
-            return ENQUEUE;
+            return COMP_ENQUEUE;
         case PDF14_PUSH_TRANS_STATE:
-            return ENQUEUE;
+            return COMP_ENQUEUE;
         case PDF14_POP_TRANS_STATE:
-            return ENQUEUE;
+            return COMP_ENQUEUE;
         case PDF14_PUSH_SMASK_COLOR:
-            return ENQUEUE;
+            return COMP_ENQUEUE;
             break;
         case PDF14_POP_SMASK_COLOR:
-            return ENQUEUE;
+            return COMP_ENQUEUE;
             break;
         case PDF14_END_TRANS_MASK:
             if (*ppcte == NULL)
-                return EXECUTE_QUEUE;
-            return find_opening_op(PDF14_BEGIN_TRANS_MASK, ppcte, MARK_IDLE);
+                return COMP_EXEC_QUEUE;
+            return find_opening_op(PDF14_BEGIN_TRANS_MASK, ppcte, COMP_MARK_IDLE);
         case PDF14_SET_BLEND_PARAMS:
             if (*ppcte == NULL)
-                return ENQUEUE;
+                return COMP_ENQUEUE;
             /* hack : ignore csel - here it is always zero : */
             return find_same_op(composite_action, PDF14_SET_BLEND_PARAMS, ppcte);
     }

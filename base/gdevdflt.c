@@ -879,7 +879,7 @@ gx_default_composite_adjust_ctm(gs_composite_t *pcte, int x0, int y0, gs_imager_
 gs_compositor_closing_state
 gx_default_composite_is_closing(const gs_composite_t *this, gs_composite_t **pcte, gx_device *dev)
 {
-    return ENQUEUE;
+    return COMP_ENQUEUE;
 }
 
 /*

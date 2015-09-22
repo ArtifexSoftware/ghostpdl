@@ -1581,44 +1581,44 @@ idata:                  data_size = 0;
                                         closing_state = pcomp->type->procs.is_closing(pcomp, &pcomp_opening, tdev);
                                         if (closing_state < 0)
                                             goto out;
-                                        else if (closing_state == ENQUEUE) {
+                                        else if (closing_state == COMP_ENQUEUE) {
                                             /* Enqueue. */
                                             enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
-                                        } else if (closing_state == EXECUTE_IDLE) {
+                                        } else if (closing_state == COMP_EXEC_IDLE) {
                                             /* Execute idle. */
                                             enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
                                             code = execute_compositor_queue(cdev, &target, &tdev,
                                                 &imager_state, &pcomp_first, &pcomp_last, pcomp_opening, x0, y0, mem, true);
                                             if (code < 0)
                                                 goto out;
-                                        } else if (closing_state == EXECUTE_QUEUE) {
+                                        } else if (closing_state == COMP_EXEC_QUEUE) {
                                             /* The opening command was executed. Execute the queue. */
                                             enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
                                             code = execute_compositor_queue(cdev, &target, &tdev,
                                                 &imager_state, &pcomp_first, &pcomp_last, pcomp_first, x0, y0, mem, false);
                                             if (code < 0)
                                                 goto out;
-                                        } else if (closing_state == REPLACE_PREVIOUS) {
+                                        } else if (closing_state == COMP_REPLACE_PREV) {
                                             /* Replace last compositors. */
                                             code = execute_compositor_queue(cdev, &target, &tdev,
                                                 &imager_state, &pcomp_first, &pcomp_last, pcomp_opening, x0, y0, mem, true);
                                             if (code < 0)
                                                 goto out;
                                             enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
-                                        } else if (closing_state == REPLACE_CURRENT) {
+                                        } else if (closing_state == COMP_REPLACE_CURR) {
                                             /* Replace specific compositor. */
                                             code = dequeue_compositor(&pcomp_first, &pcomp_last, pcomp_opening);
                                             if (code < 0)
                                                 goto out;
                                             enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
                                             free_compositor(pcomp_opening, mem);
-                                        } else if (closing_state == DROP_QUEUE) {
+                                        } else if (closing_state == COMP_DROP_QUEUE) {
                                             /* Annihilate the last compositors. */
                                             enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
                                             code = drop_compositor_queue(&pcomp_first, &pcomp_last, pcomp_opening, mem, x0, y0, &imager_state);
                                             if (code < 0)
                                                 goto out;
-                                        } else if (closing_state == MARK_IDLE) {
+                                        } else if (closing_state == COMP_MARK_IDLE) {
                                             /* Mark as idle. */
                                             enqueue_compositor(&pcomp_first, &pcomp_last, pcomp);
                                             mark_as_idle(pcomp_opening, pcomp);
