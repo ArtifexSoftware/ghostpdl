@@ -1394,7 +1394,6 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
     pdf_standard_font_t *const psfa =
         pdev->text->outline_fonts->standard_fonts;
     int code = 0;
-    bool do_subset;
 
     if (pdev->version < psdf_version_level2_with_TT) {
         switch(font->FontType) {
@@ -1501,7 +1500,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
         )
         return code;
 
-    do_subset = pdf_do_subset_font(pdev, pfd->base_font, -1);
+    pdf_do_subset_font(pdev, pfd->base_font, -1);
     if (font->FontType == ft_encrypted || font->FontType == ft_encrypted2
         || (font->FontType == ft_TrueType && pdev->ForOPDFRead)
         || (font->FontType == ft_TrueType && ((const gs_font_base *)base_font)->nearest_encoding_index != ENCODING_INDEX_UNKNOWN && pfd->base_font->do_subset == DO_SUBSET_NO)) {
