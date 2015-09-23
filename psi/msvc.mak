@@ -261,9 +261,9 @@ PCL_TARGET=gpcl6
 XPS_TARGET=gxps
 !endif
 
-!if $(BUILD_GPDL)
-GPDL_TARGET=gpdl
-!endif
+# !if $(BUILD_GPDL)
+# GPDL_TARGET=gpdl
+# !endif
 
 PCL_XPS_TARGETS=$(PCL_TARGET) $(XPS_TARGET) $(GPDL_TARGET)
 
@@ -1613,8 +1613,8 @@ $(GPCL_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(PCL_DEVS_ALL) $(P
 	echo /SUBSYSTEM:CONSOLE > $(PCLGEN)pclwin.rsp
         echo /OUT:$(GPCL_XE) >> $(PCLGEN)pclwin.rsp
 	$(LINK) $(LCT) @$(PCLGEN)pclwin.rsp @$(PCLGEN)gpclwin.tr $(LINKLIBPATH) @$(LIBCTR) @$(PCLGEN)pcllib.rsp
-	del $(PCLGEN)pclwin.rsp
-	del $(PCLGEN)gpclwin.tr
+        del $(PCLGEN)pclwin.rsp
+        del $(PCLGEN)gpclwin.tr
 
 $(GXPS_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(XPS_DEVS_ALL) $(XPSGEN)xpslib.rsp \
                 $(XPS_TOP_OBJS) $(XPSOBJ)xpsromfs$(COMPILE_INITS).$(OBJ) \
@@ -1626,8 +1626,8 @@ $(GXPS_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(XPS_DEVS_ALL) $(X
 	echo /SUBSYSTEM:CONSOLE > $(XPSGEN)xpswin.rsp
         echo /OUT:$(GXPS_XE) >> $(XPSGEN)xpswin.rsp
 	$(LINK) $(LCT) @$(XPSGEN)xpswin.rsp @$(XPSGEN)gxpswin.tr $(LINKLIBPATH) @$(LIBCTR) @$(XPSGEN)xpslib.rsp
-	del $(XPSGEN)xpswin.rsp
-	del $(XPSGEN)gxpswin.tr
+        del $(XPSGEN)xpswin.rsp
+        del $(XPSGEN)gxpswin.tr
 
 $(GPDL_XE): $(ECHOGS_XE) $(ld_tr) $(gpdl_tr) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(XPS_DEVS_ALL) $(PCL_DEVS_ALL) $(GS_ALL) \
                 $(GPDLGEN)gpdllib.rsp $(GPDLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) \

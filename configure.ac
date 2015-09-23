@@ -1706,13 +1706,14 @@ GPDL_TARGET=
 
 GPDL_MAK="\$(GLSRCDIR)\$(D)stub.mak"
 # in order to build gpdl we need the pdls available
+
 if test "x$XPS_TARGET" != "x" && test "x$PCL_TARGET" != "x" ; then
   if test -f $srcdir/gpdl/gpdl.mak; then
     AC_ARG_WITH([gpdl], AC_HELP_STRING([--with-gpdl=NAME],
           [name of the GhostPDL executible (if the source is available, ignored otherwise) [[gpdl]]]),
           [GPDL="$with_gpdl"],[GPDL='gpdl'])
 
-    GPDL_TARGET=gpdl
+#    GPDL_TARGET=gpdl
     GPDL_MAK="\$(GPDLSRCDIR)\$(D)gpdl.mak"
   fi
 fi
