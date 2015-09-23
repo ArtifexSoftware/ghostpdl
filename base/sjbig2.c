@@ -127,6 +127,7 @@ s_jbig2decode_make_global_data(byte *data, uint length, void **result)
 
     if (code) {
         /* error parsing the global stream */
+        jbig2_ctx_free(ctx);
         *result = NULL;
         return code;
     }
