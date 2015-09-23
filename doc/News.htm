@@ -56,33 +56,36 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h2><a name="Version9.16"></a>Version 9.16 (2015-03-30)</h2>
+<h2><a name="Version9.18"></a>Version 9.18 (2015-09-23)</h2>
 
-<p>This is the twelfth full release in the stable 9.x series, and is
-primarily a maintenance release.
+<p>This is the thirteenth full release in the stable 9.x series, and is
+a maintenance release.
 
 <p> Highlights in this release include:
 <ul>
 <li>
-<p>"LockColorants" command line option for tiffsep and psdcmyk devices. Specifying
--dLockColorants will restrict those devices to only the colorants list on the command
-line (thus: -c "<< /SeparationColorNames [ /Cyan /Magenta /Yellow /Black /Violet /Orange]
-/SeparationOrder [ /Cyan /Magenta /Yellow /Black /Violet /Orange]>> setpagedevice"), rather
-than allowing the devices to add new colorants as encountered in the input. This is, obviously,
-preferable for real printers, where only a certain of inks will be available.
+<p>
+A substantial revision of the build system and GhostPDL directory structure,
+meaning the GhostPCL and GhostXPS &quotproducts&quot are now built by the
+Ghostscript build system &quotproper&quot rather than having their own builds
+which called the Ghostscript build system for certain parts of the builds.
+<p>
+Ghostscript-only users should not be affected by this change.
 </li>
 <li>
-<p>Improved high level devices handling of Forms. Whilst High level devices (eg pdfwrite)
-already checked Forms to see if they are duplicates, and if so use the initial definition.
-However, this does not improve performance, since the Form PaintProc still needs to be executed
-for each instance of the Form, and the matching algorithm could, in very odd circumstances, be
-defeated. The new implementation benefits both causes, meaning the second and subsequent invocation
-of the form need not re-run the PaintProc, and removes the heurisic aspect of the reuse detection.
+<p>
+A new method of internally inserting devices into the device chain has been
+developed, named "device subclassing". This allows suitably written devices to
+be more easily and consistently as &quotfilter&quot devices.
+<p>
+The first fruit of this is a new implementation of the &quot-dFirstPage&quot/&quot-dLastPage&quot
+feature which functions a device filter in the Ghostscript graphics library,
+meaning it works consistently with all input languages.
 </li>
 <li>
-<p>New URW+ fonts in which the families NimbusMono, NimbusRoman and NimbusSans have been
-augmented with production quality Greek and Cyrillic glyphs. These correspond to our
-substitutes for the PDF base 14 fonts.
+The &quotghostpdl.inf&quot file, provided to simplify installing a Postscript
+printer configure to produce output to suit Ghostscript's &quotpdfwrite&quot device
+is now available as a digitally signed version: &quotghostpdl.cat&quot.
 </li>
 <li>
 <p>Plus the usual round of bug fixes, compatibility changes, and incremental improvements.
@@ -91,11 +94,11 @@ substitutes for the PDF base 14 fonts.
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 
-<h3><a name="9.16_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="9.18_Incompatible_changes"></a>Incompatible changes</h3>
 <p>
 No recorded incompatible changes.
 
-<h3><a name="9.16_changelog"></a>Changelog</h3>
+<h3><a name="9.18_changelog"></a>Changelog</h3>
 
 <p>See the <a href="History9.htm">history file</a> for complete log 
 of changes.
@@ -120,7 +123,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.16, 30 March 2015
+<small>Ghostscript version 9.18, 23 September 2015
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
