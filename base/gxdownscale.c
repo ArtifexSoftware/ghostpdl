@@ -1938,7 +1938,7 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     if (code < 0)
         return code;
 
-    if (upfactor)
+    if (upfactor > 1)
     {
         /* Downscale the block of lines into our output buffer */
         for (plane=0; plane < ds->num_planes; plane++)
