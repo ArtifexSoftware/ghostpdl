@@ -55,7 +55,8 @@ typedef struct pjl_envir_var_s {
    systems. */
 typedef struct pjl_parser_state_s
 {
-    char line[81];              /* buffered command line */
+    char *line;                 /* buffered command line */
+    int line_size;
     int bytes_to_write;         /* data processing by fsdownload */
     int bytes_to_read;          /* data processed by fsupload */
     FILE *fp;                   /* fsdownload or fsupload file */
@@ -104,7 +105,7 @@ static pjl_envir_var_t pjl_factory_defaults[] = {
     {"paperlength", ""},
     {"resolution", "0"},
     /*    {"personality", "rtl"}, */
-    {"pdfa_profile", ""},
+    {"pdfmark", ""},
     {"", ""}
 };
 
@@ -381,7 +382,7 @@ pjl_get_token(pjl_parser_state_t * pst, char token[])
 
         /* we allow = to special case for allowing
            token doesn't fit or is empty */
-        if ((slength > PJL_STRING_LENGTH) || slength == 0)
+        if (slength == 0)
             return DONE;
         /* now the string can be safely copied */
         strncpy(token, &pst->line[start_pos], slength);
@@ -797,14 +798,22 @@ static int
 pjl_parse_and_process_line(pjl_parser_state_t * pst)
 {
     pjl_token_type_t tok;
-    char token[PJL_STRING_LENGTH + 1] = { 0 };
+    char *token;
     char pathname[MAXPATHLEN];
+    int bufsize = pst->pos + 1, code;
+
+    token = (char *)gs_alloc_bytes(pst->mem, bufsize, "working buffer for PJL parsing");
+    if (token == 0)
+        return -1;
+    memset(token, 0x00, bufsize);
 
     /* reset the line position to the beginning of the line */
     pst->pos = 0;
     /* all pjl commands start with the pjl prefix @PJL */
-    if ((tok = pjl_get_token(pst, token)) != PREFIX)
+    if ((tok = pjl_get_token(pst, token)) != PREFIX) {
+        gs_free_object(pst->mem, token, "working buffer for PJL parsing");
         return -1;
+    }
     /* NB we should check for required and optional used of whitespace
        but we don't see PJLTRM 2-6 PJL Command Syntax and Format. */
     while ((tok = pjl_get_token(pst, token)) != DONE) {
@@ -814,11 +823,18 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                 {
                     bool defaults;
 
-                  var:defaults = (tok == DEFAULT);
+                    var:defaults = (tok == DEFAULT);
                     /* NB we skip over lparm and search for the variable */
                     while ((tok = pjl_get_token(pst, token)) != DONE)
                         if (tok == VARIABLE) {
-                            char variable[PJL_STRING_LENGTH + 1];
+                            char *variable;
+
+                            variable = (char *)gs_alloc_bytes(pst->mem, bufsize, "2nd working buffer for PJL parsing");
+                            if (variable == 0) {
+                                gs_free_object(pst->mem, token, "2nd working buffer for PJL parsing");
+                                return -1;
+                            }
+                            memset(variable, 0x00, bufsize);
 
                             strcpy(variable, token);
                             if (((tok = pjl_get_token(pst, token)) == EQUAL)
@@ -833,10 +849,16 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                                 if (!pjl_compare(variable, "FORMLINES"))
                                     pjl_set(pst, (char *)"FORMLINES_SET",
                                             (char *)"on", defaults);
-                                return pjl_set(pst, variable, token,
+                                code = pjl_set(pst, variable, token,
                                                defaults);
-                            } else
+                                gs_free_object(pst->mem, variable, "2nd working buffer for PJL parsing");
+                                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
+                                return code;
+                            } else {
+                                gs_free_object(pst->mem, variable, "2nd working buffer for PJL parsing");
+                                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                                 return -1;      /* syntax error */
+                            }
                         } else
                             continue;
                     return 0;
@@ -848,6 +870,7 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                 free_pjl_default_fontsource(pst->mem, &pst->font_defaults);
                 set_pjl_default_fontsource_to_factory(pst->mem, &pst->font_defaults);
                 pjl_reset_fontsource_fontnumbers(pst);
+                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return 0;
                 /* set the current environment to the user default environment */
             case RESET:
@@ -855,6 +878,7 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                 set_pjl_environment_to_factory(pst->mem, &pst->defaults);
                 free_pjl_fontsource(pst->mem, &pst->font_envir);
                 set_pjl_fontsource_to_factory(pst->mem, &pst->font_envir);
+                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return 0;
             case ENTER:
                 /* there is no setting for the default language */
@@ -875,6 +899,7 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                     if (pjl_get_setting(pst, SIZE, token) < 0)
                         return -1;
                     size = pjl_vartoi(token);
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return pjl_set_fs_download_state(pst, pathname, size);
                 }
             case FSAPPEND:{
@@ -889,43 +914,61 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                     if (pjl_get_setting(pst, SIZE, token) < 0)
                         return -1;
                     size = pjl_vartoi(token);
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return pjl_set_append_state(pst, pathname, size);
                 }
             case FSDELETE:
                 if (pjl_get_setting(pst, NAME, token) < 0)
                     return -1;
                 strcpy(pathname, token);
+                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return pjl_delete_file(pst, pathname);
             case FSDIRLIST:{
                     int entry;
 
                     int count;
 
-                    if (pjl_get_setting(pst, NAME, token) < 0)
+                    if (pjl_get_setting(pst, NAME, token) < 0) {
+                        gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                         return -1;
+                    }
                     strcpy(pathname, token);
-                    if (pjl_get_setting(pst, ENTRY, token) < 0)
+                    if (pjl_get_setting(pst, ENTRY, token) < 0) {
+                        gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                         return -1;
+                    }
                     entry = pjl_vartoi(token);
-                    if (pjl_get_setting(pst, COUNT, token) < 0)
+                    if (pjl_get_setting(pst, COUNT, token) < 0) {
+                        gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                         return -1;
+                    }
                     count = pjl_vartoi(token);
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return pjl_fsdirlist(pst, pathname, entry, count);
                 }
             case FSINIT:
-                if (pjl_get_setting(pst, VOLUME, token) < 0)
+                if (pjl_get_setting(pst, VOLUME, token) < 0) {
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return -1;
+                }
                 strcpy(pathname, token);
+                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return pjl_fsinit(pst, pathname);
             case FSMKDIR:
-                if (pjl_get_setting(pst, NAME, token) < 0)
+                if (pjl_get_setting(pst, NAME, token) < 0) {
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return -1;
+                }
                 strcpy(pathname, token);
+                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return pjl_fsmkdir(pst, pathname);
             case FSQUERY:
-                if (pjl_get_setting(pst, NAME, token) < 0)
+                if (pjl_get_setting(pst, NAME, token) < 0) {
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return -1;
+                }
                 strcpy(pathname, token);
+                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return pjl_fsquery(pst, pathname);
             case FSUPLOAD:{
                     int size;
@@ -935,21 +978,30 @@ pjl_parse_and_process_line(pjl_parser_state_t * pst)
                     if ((tok = pjl_get_token(pst, token)) == FORMATBINARY) {
                         ;
                     }
-                    if (pjl_get_setting(pst, NAME, token) < 0)
+                    if (pjl_get_setting(pst, NAME, token) < 0) {
+                        gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                         return -1;
+                    }
                     strcpy(pathname, token);
-                    if (pjl_get_setting(pst, OFFSET, token) < 0)
+                    if (pjl_get_setting(pst, OFFSET, token) < 0) {
+                        gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                         return -1;
+                    }
                     offset = pjl_vartoi(token);
-                    if (pjl_get_setting(pst, SIZE, token) < 0)
+                    if (pjl_get_setting(pst, SIZE, token) < 0) {
+                        gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                         return -1;
+                    }
                     size = pjl_vartoi(token);
+                    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                     return pjl_fsupload(pst, pathname, size, offset);
                 }
             default:
+                gs_free_object(pst->mem, token, "working buffer for PJL parsing");
                 return -1;
         }
     }
+    gs_free_object(pst->mem, token, "working buffer for PJL parsing");
     return (tok == DONE ? 0 : -1);
 }
 
@@ -1138,7 +1190,17 @@ pjl_process(pjl_parser_state * pst, void *pstate, stream_cursor_read * pr)
 
         /* Copy the PJL line into the parser's line buffer. */
         /* Always leave room for a terminator. */
-        if (pst->pos < countof(pst->line) - 1)
+        if (pst->pos == pst->line_size) {
+            char *temp = (char *)gs_alloc_bytes (pst->mem, pst->line_size + 256, "pjl_state increase line buffer");
+
+            if (p) {
+                memcpy(temp, pst->line, pst->line_size);
+                gs_free_object(pst->mem, pst->line, "pjl_state line buffer");
+                pst->line = temp;
+                pst->line_size += 256;
+                pst->line[pst->pos] = p[1], pst->pos++;
+            }
+        } else
             pst->line[pst->pos] = p[1], pst->pos++;
         ++p;
     }
@@ -1533,6 +1595,13 @@ pjl_process_init(gs_memory_t * mem)
 
     if (pjlstate == NULL)
         return NULL;            /* should be fatal so we don't bother piecemeal frees */
+
+    pjlstate->line = (char *)gs_alloc_bytes(mem, 256, "pjl_state line buffer");
+    if (pjlstate->line == NULL) {
+        gs_free_object(mem, pjlstate, "pjl_state");
+        return NULL;
+    }
+    pjlstate->line_size = 255;
 
     /* check for an environment variable */
     {
