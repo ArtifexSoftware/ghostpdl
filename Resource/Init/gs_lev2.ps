@@ -647,7 +647,9 @@ currentuserparams /WaitTimeout known
 } {
   % First see if the current value is valid so we don't have to guess
   mark .currentuserparams .dicttomark /ICCProfilesDir get
-  (default_gray.icc) concatstrings status {
+  (default_gray.icc) concatstrings {status} .internalstopped
+  {pop //false} if
+  {
     pop pop pop pop		% current value was OK. Just clean up stack
   } {
     % Search for valid (iccprofiles) directory as a sibling to (Resource)
