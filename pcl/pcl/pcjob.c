@@ -287,7 +287,7 @@ pcl_pjl_res(pcl_state_t * pcs)
     return atof(pres);
 }
 
-static int pdfa_write_list(pcl_state_t * pcs, gs_param_string_array *array_list)
+static int pdfmark_write_list(pcl_state_t * pcs, gs_param_string_array *array_list)
 {
     gs_c_param_list list;
     int code;
@@ -305,100 +305,207 @@ static int pdfa_write_list(pcl_state_t * pcs, gs_param_string_array *array_list)
     return code;
 }
 
-static int pcl_pjl_pdfa(pcl_state_t * pcs, char *profile_path)
+static int process_pdfmark(pcl_state_t * pcs, char *pdfmark)
 {
-    FILE *f;
-    int code, bytes;
-    char *profile;
-    gs_param_string a[12];
+    char *p, *type, *start, *copy, *stream_data = 0L;
+    int tokens = 0, code = 0;
+    gs_param_string *parray;
     gs_param_string_array array_list;
+    bool putdict = false;
 
-    array_list.data = a;
+    /* Our parsing will alter the string contents, so copy it and perform the parsing on the copy */
+    copy = (char *)gs_alloc_bytes(pcs->memory, strlen(pdfmark) + 1, "working buffer for pdfmark processing");
+    if (copy == 0)
+        return -1;
+    strcpy(copy, pdfmark);
+
+    start = copy + 1;
+    if (*pdfmark != '[') {
+        gs_free_object(pcs->memory, copy, "working buffer for pdfmark processing");
+        return -1;
+    }
+
+    p = start;
+    while (*p != 0x00){
+        if(*p == '(') {
+            while (*p != ')' && *p != 0x00) {
+                if (*p == '\\')
+                    p++;
+                p++;
+            }
+            if (*p != ')') {
+                gs_free_object(pcs->memory, copy, "working buffer for pdfmark processing");
+                return -1;
+            }
+        } else {
+            if (*p == ' ') {
+                tokens++;
+            }
+        }
+        p++;
+    }
+
+    if (*(p-1) != ' ')
+        tokens++;
+
+    /* We need an extra one for a dummy CTM */
+    tokens++;
+
+    parray = (gs_param_string *)gs_alloc_bytes(pcs->memory, tokens * sizeof(gs_param_string), "temporary pdfmark array");
+    if (!parray) {
+        gs_free_object(pcs->memory, copy, "working buffer for pdfmark processing");
+        return -1;
+    }
+
+    tokens = 0;
+    while (*start == ' ')
+        start++;
+    p = start;
+
+    while (*p != 0x00){
+        if(*p == '(') {
+            while (*p != ')' && *p != 0x00) {
+                if (*p == '\\')
+                    p++;
+                p++;
+            }
+            if (*p != ')') {
+                gs_free_object(pcs->memory, copy, "working buffer for pdfmark processing");
+                return -1;
+            }
+        } else {
+            if (*p == ' ') {
+                if (strncmp(start, "<<", 2) == 0) {
+                    putdict = true;
+                } else {
+                    if (strncmp(start, ">>", 2) != 0) {
+                        *p = 0x00;
+                        parray[tokens].data = (const byte *)start;
+                        parray[tokens].size = strlen(start);
+                        parray[tokens++].persistent = false;
+                    }
+                }
+                start = ++p;
+            } else
+                p++;
+        }
+    }
+    if (*(p-1) != ' ') {
+        parray[tokens].data = (const byte *)start;
+        parray[tokens].size = strlen(start);
+        parray[tokens++].persistent = false;
+    }
+
+    /* Move last entry up one and add a dummy CTM where it used to be */
+    parray[tokens].data = parray[tokens - 1].data;
+    parray[tokens].size = parray[tokens - 1].size;
+    parray[tokens].persistent = parray[tokens - 1].persistent;
+    parray[tokens - 1].data = (const byte *)"[0 0 0 0 0 0]";
+    parray[tokens - 1].size = 13;
+    parray[tokens - 1].persistent = false;
+
+    /* Features are name objects (ie they start with a '/') but putdeviceparams wants them
+     * as strings without the #/#, so we need to strip that here.
+     */
+    if (parray[tokens].data[0] != '/') {
+        gs_free_object(pcs->memory, copy, "working buffer for pdfmark processing");
+        gs_free_object(pcs->memory, parray, "temporary pdfmark array");
+        return -1;
+    } else {
+        parray[tokens].data++;
+        parray[tokens].size--;
+    }
+
+    /* We need to convert a 'PUT' with a dictonayr into a 'PUTDICT', this is normally done
+     * in PostScript
+     */
+    if (putdict && strncmp((const char *)(parray[tokens].data), "PUT", 3) == 0) {
+        parray[tokens].data = (const byte *)".PUTDICT";
+        parray[tokens].size = 8;
+        parray[tokens].persistent = false;
+    }
+    /* We also need some means to handle file data. Normally ths is done by creating a
+     * PostScript file object and doing a 'PUT', but we can't do that, so we define a
+     * special variety of 'PUT' called 'PUTFILE' and we handle that here.
+     */
+    if (strncmp((const char *)(parray[tokens].data), "PUTFILE", 7) == 0) {
+        FILE *f;
+        char *filename;
+        int bytes;
+
+        if (parray[tokens - 2].data[0] != '(') {
+            gs_free_object(pcs->memory, copy, "working buffer for pdfmark processing");
+            gs_free_object(pcs->memory, parray, "temporary pdfmark array");
+            return -1;
+        }
+        filename = (char *)&(parray[tokens - 2].data[1]);
+        filename[strlen(filename) - 1] = 0x00;
+
+        f = gp_fopen((const char *)filename, "rb");
+        if (!f) {
+            gs_free_object(pcs->memory, copy, "working buffer for pdfmark processing");
+            gs_free_object(pcs->memory, parray, "temporary pdfmark array");
+            return -1;
+        }
+
+        gp_fseek_64(f, 0, SEEK_END);
+        bytes = gp_ftell_64(f);
+        parray[tokens - 2].data = (const byte *)gs_alloc_bytes(pcs->memory, bytes, "PJL pdfmark, stream");
+        if (!parray[tokens - 2].data) {
+            gs_free_object(pcs->memory, copy, "working buffer for pdfmark processing");
+            gs_free_object(pcs->memory, parray, "temporary pdfmark array");
+            return -1;
+        }
+        stream_data = (char *)(parray[tokens - 2].data);
+
+        gp_fseek_64(f, 0, SEEK_SET);
+        fread(stream_data, 1, bytes, f);
+        fclose(f);
+        parray[tokens - 2].size = bytes;
+
+        parray[tokens].data = (const byte *)".PUTSTREAM";
+        parray[tokens].size = 10;
+        parray[tokens].persistent = false;
+    }
+
+    array_list.data = parray;
     array_list.persistent = 0;
+    array_list.size = ++tokens;
 
-    array_list.size = 6;
-    param_string_from_transient_string(a[0], "/_objdef");
-    param_string_from_transient_string(a[1], "{icc_PDFA}");
-    param_string_from_transient_string(a[2], "/type");
-    param_string_from_transient_string(a[3], "/stream");
-    param_string_from_transient_string(a[4], "[0 0 0 0 0 0]");
-    param_string_from_transient_string(a[5], "OBJ");
-    code = pdfa_write_list(pcs, &array_list);
-    if (code < 0)
-        return code;
+    code = pdfmark_write_list(pcs, &array_list);
 
-    array_list.size = 5;
-    param_string_from_transient_string(a[0], "{icc_PDFA}");
-    param_string_from_transient_string(a[1], "/N");
-    param_string_from_transient_string(a[2], "3");
-    param_string_from_transient_string(a[3], "[0 0 0 0 0 0]");
-    param_string_from_transient_string(a[4], ".PUTDICT");
-    code = pdfa_write_list(pcs, &array_list);
-    if (code < 0)
-        return code;
-
-    f = gp_fopen(profile_path, "rb");
-    if (!f)
-        return -1;
-
-    gp_fseek_64(f, 0, SEEK_END);
-    bytes = gp_ftell_64(f);
-    profile = (char *)gs_alloc_bytes(pcs->memory, bytes, "PJL, ICC profile");
-    if (!profile)
-        return -1;
-
-    gp_fseek_64(f, 0, SEEK_SET);
-    fread(profile, 1, bytes, f);
-    fclose(f);
-
-    array_list.size = 4;
-    param_string_from_transient_string(a[0], "{icc_PDFA}");
-    a[1].data = (const byte *)profile;
-    a[1].size = bytes;
-    a[1].persistent = 0;
-    param_string_from_transient_string(a[2], "[0 0 0 0 0 0]");
-    param_string_from_transient_string(a[3], ".PUTSTREAM");
-    code = pdfa_write_list(pcs, &array_list);
-    gs_free_object(pcs->memory, profile, "PJL, ICC profile");
-    if (code < 0)
-        return code;
-
-    array_list.size = 6;
-    param_string_from_transient_string(a[0], "/_objdef");
-    param_string_from_transient_string(a[1], "{OutputIntent_PDFA}");
-    param_string_from_transient_string(a[2], "/type");
-    param_string_from_transient_string(a[3], "/dict");
-    param_string_from_transient_string(a[4], "[0 0 0 0 0 0]");
-    param_string_from_transient_string(a[5], "OBJ");
-    code = pdfa_write_list(pcs, &array_list);
-    if (code < 0)
-        return code;
-
-    array_list.size = 11;
-    param_string_from_transient_string(a[0], "{OutputIntent_PDFA}");
-    param_string_from_transient_string(a[1], "/S");
-    param_string_from_transient_string(a[2], "/GTS_PDFA1");
-    param_string_from_transient_string(a[3], "/Type");
-    param_string_from_transient_string(a[4], "/OutputIntent");
-    param_string_from_transient_string(a[5], "/DestOutputProfile");
-    param_string_from_transient_string(a[6], "{icc_PDFA}");
-    param_string_from_transient_string(a[7], "/OutputConditionIdentifier");
-    param_string_from_transient_string(a[8], "(sRGB)");
-    param_string_from_transient_string(a[9], "[0 0 0 0 0 0]");
-    param_string_from_transient_string(a[10], ".PUTDICT");
-    code = pdfa_write_list(pcs, &array_list);
-    if (code < 0)
-        return code;
-
-    array_list.size = 5;
-    param_string_from_transient_string(a[0], "{Catalog}");
-    param_string_from_transient_string(a[1], "/OutputIntents");
-    param_string_from_transient_string(a[2], "[ {OutputIntent_PDFA} ]");
-    param_string_from_transient_string(a[3], "[0 0 0 0 0 0]");
-    param_string_from_transient_string(a[4], ".PUTDICT");
-    code = pdfa_write_list(pcs, &array_list);
+    if (stream_data)
+        gs_free_object(pcs->memory, stream_data, "PJL pdfmark, stream");
+    gs_free_object(pcs->memory, copy, "working buffer for pdfmark processing");
+    gs_free_object(pcs->memory, parray, "temporary pdfmark array");
 
     return code;
+}
+
+static int pcl_pjl_pdfmark(pcl_state_t * pcs, char *pdfmark)
+{
+    char *pdfmark_start, *token_start, end, *p;
+
+    p = token_start = pdfmark_start = pdfmark + 1;
+
+    do {
+        while (*p != ' ' && *p != '"' && *p != 0x00)
+            p++;
+        if((p - token_start) != 7 || strncmp(token_start, "pdfmark", 7) != 0){
+            if (*p != 0x00)
+                token_start = ++p;
+            else
+                break;
+        } else {
+            token_start--;
+            end = *token_start;
+            *token_start = 0x00;
+            process_pdfmark(pcs, pdfmark_start);
+            *token_start = end;
+            token_start = pdfmark_start = ++p;
+        }
+    } while (*p != 0x00);
+    return 0;
 }
 
 static void
@@ -450,10 +557,10 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         {
             pjl_envvar_t *pres;
 
-            pres = pjl_proc_get_envvar(pcs->pjls, "pdfa_profile");
+            pres = pjl_proc_get_envvar(pcs->pjls, "pdfmark");
 
             if (strlen(pres) > 0) {
-                pcl_pjl_pdfa(pcs, pres);
+                pcl_pjl_pdfmark(pcs, pres);
             }
         }
     }
