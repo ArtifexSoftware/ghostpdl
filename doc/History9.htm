@@ -88,6 +88,17 @@ Ghostscript build system &quotproper&quot rather than having their own builds
 which called the Ghostscript build system for certain parts of the builds.
 <p>
 Ghostscript-only users should not be affected by this change.
+<p>
+For users of the PCL and XPS interpreters (collectively downloaded as &quotGhostPDL&quot) there
+is a new, &quotflatter&quot directory structure and only one <code>configure</code> and one
+<code>make</code> invocation to build all the products. There are also some executable default name changes
+to bring the PCL and XPS binaries in line with the Ghostscript ones. All executables now end up in
+the &quotbin&quot directory (or build specific variant thereof, e.g. &quotdebugbin&quot). The PCL
+executable, by default, is now &quotgpcl6&quot on Unix like systems and &quotgpcl6win??.exe&quot (where
+&quot??&quot is either &quot32&quot or &quot64&quot). The XPS executable remains &quotgxps&quot on Unix-like
+systems, but similarly becomes &quotgxpswin??.exe&quot on Windows.
+<p>
+Those using scripts or other automated processes will need to take steps to cope with these changes.
 </li>
 <li>
 <p>
