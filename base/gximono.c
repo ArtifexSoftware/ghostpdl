@@ -1065,7 +1065,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                             dda_next(dda_ht);
                             xn = fixed2int_var_rounded(dda_current(dda_ht));
                             while (xr < xn) {
-                                dev_value = color_cache[*psrc * spp_out];
+                                dev_value = &(color_cache[*psrc * spp_out]);
                                 for (j = 0; j < spp_out; j++) {
                                     *(devc_contone[j])++ = dev_value[j];
                                 }
@@ -1097,7 +1097,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                             dda_next(dda_ht);
                             xn = fixed2int_var_rounded(dda_current(dda_ht));
                             while (xr > xn) {
-                                dev_value = color_cache[*psrc * spp_out];
+                                dev_value = &(color_cache[*psrc * spp_out]);
                                 for (j = 0; j < spp_out; j++) {
                                     *(devc_contone[j])-- = dev_value[j];
                                 }
@@ -1135,7 +1135,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                             dda_next(dda_ht);
                             xn = fixed2int_var_rounded(dda_current(dda_ht));
                             while (xr > xn) {
-                                dev_value = color_cache[*psrc * spp_out];
+                                dev_value = &(color_cache[*psrc * spp_out]);
                                 for (j = 0; j < spp_out; j++) {
                                     *(devc_contone[j] + position) = dev_value[j];
                                     position -= LAND_BITS;
@@ -1172,7 +1172,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                             dda_next(dda_ht);
                             xn = fixed2int_var_rounded(dda_current(dda_ht));
                             while (xr < xn) {
-                                dev_value = color_cache[*psrc * spp_out];
+                                dev_value = &(color_cache[*psrc * spp_out]);
                                 for (j = 0; j < spp_out; j++) {
                                     *(devc_contone[j] + position) = dev_value[j];
                                     devc_contone[j] += LAND_BITS;
