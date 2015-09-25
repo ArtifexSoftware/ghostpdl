@@ -3128,7 +3128,7 @@ $(GLOBJ)gsshade.$(OBJ) : $(GLSRC)gsshade.c $(AK) $(gx_h) $(gserrors_h)\
 $(GLOBJ)gxshade.$(OBJ) : $(GLSRC)gxshade.c $(AK) $(gx_h) $(gserrors_h)\
  $(math__h) $(gsrect_h) $(gxcspace_h) $(gscindex_h) $(gscie_h) \
  $(gxdevcli_h) $(gxistate_h) $(gxdht_h) $(gxpaint_h) $(gxshade_h) $(gxshade4_h)\
- $(gsicc_h) $(gsicc_cache_h) $(MAKEDIRS)
+ $(gsicc_h) $(gsicc_cache_h) $(gxcdevn_h) $(gximage_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxshade.$(OBJ) $(C_) $(GLSRC)gxshade.c
 
 $(GLOBJ)gxshade1.$(OBJ) : $(GLSRC)gxshade1.c $(AK) $(gx_h)\
