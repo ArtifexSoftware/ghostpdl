@@ -30,6 +30,8 @@
 #include "gxshade4.h"
 #include "gsicc.h"
 #include "gsicc_cache.h"
+#include "gxcdevn.h"
+#include "gximage.h"
 
 /* Define a maximum smoothness value. */
 /* smoothness > 0.2 produces severely blocky output. */
@@ -317,6 +319,7 @@ shade_init_fill_state(shading_fill_state_t * pfs, const gs_shading_t * psh,
     const gs_color_space *pcs = psh->params.ColorSpace;
     float max_error = min(pis->smoothness, MAX_SMOOTHNESS);
     bool is_lab;
+    bool cs_lin_test;
 
     /*
      * There's no point in trying to achieve smoothness beyond what
@@ -329,6 +332,7 @@ shade_init_fill_state(shading_fill_state_t * pfs, const gs_shading_t * psh,
     int ci;
     gsicc_rendering_param_t rendering_params;
 
+    pfs->cs_always_linear = false;
     pfs->dev = dev;
     pfs->pis = pis;
 top:
@@ -405,6 +409,29 @@ top:
         } else {
             pfs->icclink = NULL;
         }
+    }
+    /* Two possible cases of interest here for performance.  One is that the
+    * icclink is NULL, which could occur if the source space were DeviceN or
+    * a separation color space, while at the same time, the output device
+    * supports these colorants (e.g. a separation device).   The other case is
+    * that the icclink is the identity.  This could happen for example if the
+    * source space were CMYK and we are going out to a CMYK device. For both
+    * of these cases we can avoid going through the standard
+    * color mappings to determine linearity. This is true, provided that the
+    * transfer function is linear.  It is likely that we can improve
+    * things even in cases where the transfer function is nonlinear, but for
+    * now, we will punt on those and let them go through the longer processing
+    * steps */
+    if (pfs->icclink == NULL)
+        if (pis->is_gstate)
+            cs_lin_test = !(using_alt_color_space((gs_state*)pis));
+        else
+            cs_lin_test = false;
+    else
+        cs_lin_test = pfs->icclink->is_identity;
+
+    if (cs_lin_test && !gx_has_transfer(pis, dev->color_info.num_components)) {
+        pfs->cs_always_linear = true;
     }
     return 0;
 }
