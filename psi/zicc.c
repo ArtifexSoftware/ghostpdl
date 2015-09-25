@@ -48,7 +48,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     gs_color_space *        pcs;
     ref *                   pstrmval;
     stream *                s = 0L;
-    cmm_profile_t           *picc_profile;
+    cmm_profile_t           *picc_profile = NULL;
     gs_imager_state *       pis = (gs_imager_state *)igs;
     int                     i, expected = 0;
     ref *                   pnameval;
@@ -84,7 +84,6 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         str[size] = 0;
 
         /* Compare this to the standard profile names */
-        picc_profile = NULL;
         for (k = 0; k < GSICC_NUMBER_STANDARD_PROFILES; k++) {
             if ( strcmp( str, icc_std_profile_keys[k] ) == 0 ) {
                 picc_profile = gsicc_get_profile_handle_file(icc_std_profile_names[k],
@@ -94,8 +93,16 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         }
     } else {
         picc_profile = gsicc_profile_new(s, gs_state_memory(igs), NULL, 0);
+        /* We have to get the profile handle due to the fact that we need to know
+           if it has a data space that is CIELAB */
+        picc_profile->profile_handle =
+            gsicc_get_profile_handle_buffer(picc_profile->buffer,
+                                            picc_profile->buffer_size,
+                                            gs_state_memory(igs));
     }
-    if (picc_profile == NULL) {
+    if (picc_profile == NULL || picc_profile->profile_handle == NULL) {
+        /* Free up everything, the profile is not valid. We will end up going
+           ahead and using a default based upon the number of components */
         rc_decrement(picc_profile,"seticc");
         rc_decrement(pcs,"seticc");
         return -1;
@@ -108,19 +115,6 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     }
     picc_profile->num_comps = ncomps;
 
-    /* We have to get the profile handle due to the fact that we need to know
-       if it has a data space that is CIELAB */
-    picc_profile->profile_handle =
-        gsicc_get_profile_handle_buffer(picc_profile->buffer,
-                                        picc_profile->buffer_size,
-                                        gs_state_memory(igs));
-    if (picc_profile->profile_handle == NULL) {
-        /* Free up everything, the profile is not valid. We will end up going
-           ahead and using a default based upon the number of components */
-        rc_decrement(picc_profile,"seticc");
-        rc_decrement(pcs,"seticc");
-        return -1;
-    }
     picc_profile->data_cs = gscms_get_profile_data_space(picc_profile->profile_handle);
     switch( picc_profile->data_cs ) {
         case gsCIEXYZ:
@@ -478,11 +472,6 @@ seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
     gs_imager_state *       pis = (gs_imager_state *)igs;
     int                     i;
     static const char *const rfs = LAB_ICC;
-    gs_param_string val;
-
-    val.data = (const byte *)rfs;
-    val.size = strlen(rfs);
-    val.persistent = true;
 
     /* build the color space object */
     code = gs_cspace_build_ICC(&pcs, NULL, gs_state_memory(igs));
@@ -499,7 +488,6 @@ seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
     }
     /* Assign the LAB to LAB profile to this color space */
     code = gsicc_set_gscs_profile(pcs, pis->icc_manager->lab_profile, gs_state_memory(igs));
-    rc_increment(pis->icc_manager->lab_profile);
     if (code < 0)
         return gs_rethrow(code, "installing the lab profile");
     pcs->cmm_icc_profile_data->Range.ranges[0].rmin = 0.0;
@@ -546,6 +534,10 @@ seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma,
             return gs_rethrow(-1, "creating the cal profile");
         /* Assign the profile to this color space */
         code = gsicc_set_gscs_profile(pcs, cal_profile, mem->stable_memory);
+        /* profile is created with ref count of 1, gsicc_set_gscs_profile()
+         * increments the ref count, so we need to decrement it here.
+         */
+        rc_decrement(cal_profile, "seticc_cal");
         if (code < 0)
             return gs_rethrow(code, "installing the cal profile");
         for (i = 0; i < num_colorants; i++) {
