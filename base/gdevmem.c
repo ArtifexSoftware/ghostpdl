@@ -448,6 +448,13 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
                                     "mem_open");
         if (mdev->base == 0)
             return_error(gs_error_VMerror);
+#ifdef PACIFY_VALGRIND
+        /* If we end up writing the bitmap to the clist, we can get valgrind errors
+         * because we write and read the padding at the end of each raster line.
+         * Easiest to set the entire block.
+         */
+        memset(mdev->base, 0x00, size);
+#endif
         align = 1<<mdev->log2_align_mod;
         mdev->base += (-(int)mdev->base) & (align-1);
         mdev->foreign_bits = false;

@@ -630,6 +630,7 @@ in:                             /* Initialize for a new page. */
         code = gs_note_error(gs_error_VMerror);
         goto out;
     }
+    dev_color.ccolor_valid = false;
     color_unset(&dev_color);
     data_bits = gs_alloc_bytes(mem, data_bits_size,
                                "clist_playback_band(data_bits)");
