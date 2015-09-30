@@ -126,6 +126,160 @@ please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 No recorded incompatible changes.
 
 <h3><a name="9.18_changelog"></a>Changelog</h3>
+
+<p><strong>2015-09-29 15:32:52 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=60ecc24519fa3c5be80617bd88fd0489344fd617">60ecc24519fa3c5be80617bd88fd0489344fd617</a>
+<blockquote>
+<p>
+    Contents of CIDSystemInfo can be indirect references<br>
+<br>
+    Cope with that....<br>
+<br>
+    No cluster differences.<br>
+<br>
+Resource/Init/pdf_font.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2015-09-25 14:36:11 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=6c1b1ccce595e6477c972c9bf927462986b343a2">6c1b1ccce595e6477c972c9bf927462986b343a2</a>
+<blockquote>
+<p>
+    More ICC reference counting problems<br>
+<br>
+    Fix a few ICC profile reference counting issues with LAB and Calibrated color<br>
+    spaces.<br>
+<br>
+    No cluster differences.<br>
+<br>
+psi/zicc.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2015-09-24 21:09:53 -0700
+</strong>
+<br>Michael Vrhel &lt;michael.vrhel@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=f616e3be41a6c3a13ddda3dddf9d57d73edc32be">f616e3be41a6c3a13ddda3dddf9d57d73edc32be</a>
+<blockquote>
+<p>
+    Avoid doing color linearity tests when they are not needed.<br>
+<br>
+    In the shading code there are several tests to determine if we<br>
+    are sufficiently linear in our fill region.  If not, it is further<br>
+    divided.  For certain color mappings we are always going to be linear<br>
+    and do not need to check.  We test for these now and avoid the check.<br>
+    Cluster push reported 119 diffs.  Checked them and they looked<br>
+    reasonable.  Differences in various gradient fills.  The run time<br>
+    numbers from the regression test improved significantly.<br>
+    Going from a cpu time of 37:29:22  to 29:28:04 with gs going from<br>
+    19:42:34 to 15:25:29<br>
+<br>
+base/gxshade.c<br>
+base/gxshade.h<br>
+base/gxshade6.c<br>
+base/lib.mak<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2015-09-24 11:44:23 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=b675dca5482eadece52ba917e1e492d9f30df618">b675dca5482eadece52ba917e1e492d9f30df618</a>
+<blockquote>
+<p>
+    gximono.c: fix use of color sample cache<br>
+<br>
+    When pulling multiple samples from the color cache (for example, for RGB and<br>
+    CMYK) we should get the pointer to the first sample (from which we can work<br>
+    through the samples) rather than the sample value itself.<br>
+<br>
+    Identified by Johannes Meixner.<br>
+<br>
+    No cluster differences.<br>
+<br>
+base/gximono.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2015-09-24 14:30:20 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=3a5faa7c23b323b7cdac8377a666c2fc64dc1990">3a5faa7c23b323b7cdac8377a666c2fc64dc1990</a>
+<blockquote>
+<p>
+    Bug 696223: cope with empty %rom% returning an error<br>
+<br>
+    The romfs is always included now, but if there are no files (i.e. if we're using<br>
+    the &quot;dummy&quot; romfs for COMPILE_INITS=0) it returns an &quot;unregistered&quot; error from<br>
+    the &quot;status&quot; method.<br>
+<br>
+    This trips up the code for identifying the ICC profiles path, which stats the<br>
+    default ICC profile path, which happens to be %rom%iccprofiles.<br>
+<br>
+    So, put the status call in a stopped context, and act accordingly.<br>
+<br>
+    No cluster differences.<br>
+<br>
+Resource/Init/gs_lev2.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2015-09-24 09:32:22 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=67d03961a838a391f79fcb0fbbded02ca53ad2e9">67d03961a838a391f79fcb0fbbded02ca53ad2e9</a>
+<blockquote>
+<p>
+    Bug 696151: fix logic in gx_downscaler_get_bits_rectangle()<br>
+<br>
+    The logic about whether to use an interim buffer or not did not match between<br>
+    gx_downscaler_init_planar() and gx_downscaler_get_bits_rectangle() causing the<br>
+    latter to attempt to write into a buffer that had not been allocated, thus<br>
+    crashing.<br>
+<br>
+    No cluster differences.<br>
+<br>
+base/gxdownscale.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2015-09-24 11:04:22 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=e35c4ca446faf442b558aa3dd2d2957e18d45ea4">e35c4ca446faf442b558aa3dd2d2957e18d45ea4</a>
+<blockquote>
+<p>
+    Add words to release notes<br>
+<br>
+    about the revised directory structure, build and executable names<br>
+<br>
+doc/History9.htm<br>
+doc/News.htm<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2015-09-24 08:26:17 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=30021e7ba7cac7310cf0018746aad0ea1f2ee772">30021e7ba7cac7310cf0018746aad0ea1f2ee772</a>
+<blockquote>
+<p>
+    Add missing dependencies....<br>
+<br>
+    gsromfs0.c -&gt; time_.h<br>
+    iconfig.c -&gt; gs.tr<br>
+<br>
+    No cluster differences.<br>
+<br>
+base/lib.mak<br>
+psi/int.mak<br>
+<p>
+</blockquote>
+<hr>
 <p><strong>2015-09-23 12:04:49 +0100
 </strong>
 <br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
