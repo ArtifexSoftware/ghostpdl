@@ -1295,7 +1295,7 @@ pdf_find_resource_by_resource_id(gx_device_pdf * pdev, pdf_resource_type_t rtype
 
     for (i = 0; i < NUM_RESOURCE_CHAINS; i++) {
         for (pres = pchain[i]; pres != 0; pres = pres->next) {
-            if (pres->object->id == id)
+            if (pres->object && pres->object->id == id)
                 return pres;
         }
     }
