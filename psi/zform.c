@@ -41,7 +41,7 @@ static int zbeginform(i_ctx_t *i_ctx_p)
     int code;
     float BBox[4], Matrix[6];
     gs_form_template_t tmplate;
-    gs_point pt;
+    gs_point ll, ur;
     gs_fixed_rect box;
 
     check_type(*op, t_dictionary);
@@ -59,8 +59,8 @@ static int zbeginform(i_ctx_t *i_ctx_p)
     tmplate.FormID = -1;
     tmplate.BBox.p.x = BBox[0];
     tmplate.BBox.p.y = BBox[1];
-    pt.x = tmplate.BBox.q.x = BBox[2];
-    pt.y = tmplate.BBox.q.y = BBox[3];
+    tmplate.BBox.q.x = BBox[2];
+    tmplate.BBox.q.y = BBox[3];
  
     code = dict_floats_param(imemory, op, "Matrix", 6, Matrix, NULL);
     if (code < 0)
@@ -85,7 +85,8 @@ static int zbeginform(i_ctx_t *i_ctx_p)
     if (code > 0)
     {
         gs_setmatrix(igs, &tmplate.CTM);
-        gs_distance_transform(tmplate.BBox.q.x, tmplate.BBox.q.y, &tmplate.CTM, &pt);
+        gs_distance_transform(tmplate.BBox.p.x, tmplate.BBox.p.y, &tmplate.CTM, &ll);
+        gs_distance_transform(tmplate.BBox.q.x, tmplate.BBox.q.y, &tmplate.CTM, &ur);
 
         /* A form can legitimately have negative co-ordinates in paths
          * because it can be translated. But we always clip paths to the
@@ -98,11 +99,23 @@ static int zbeginform(i_ctx_t *i_ctx_p)
         /* We choose to permit negative values of the same magnitude as the
          * positive ones.
          */
-        box.p.x = float2fixed(pt.x * -1);
-        box.p.y = float2fixed(pt.y * -1);
-        box.q.x = float2fixed(pt.x);
-        box.q.y = float2fixed(pt.y);
+        box.p.x = float2fixed(ll.x);
+        box.p.y = float2fixed(ll.y);
+        box.q.x = float2fixed(ur.x);
+        box.q.y = float2fixed(ur.y);
 
+        if (box.p.x < 0) {
+            if(box.p.x * -1 > box.q.x)
+                box.q.x = box.p.x * -1;
+        } else {
+            box.p.x = box.q.x * -1;
+        }
+        if (box.p.y < 0) {
+            if(box.p.y * -1 > box.q.y)
+                box.q.y = box.p.y * -1;
+        } else {
+            box.p.y = box.q.y * -1;
+        }
         /* This gets undone when we grestore after the form is executed */
         code = gx_clip_to_rectangle(igs, &box);
     }
