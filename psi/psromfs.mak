@@ -432,7 +432,7 @@ PS_MISC_DEPS=\
 	$(PSRESDIR)$(D)Init$(D)cidfmap \
 	$(PSRESDIR)$(D)Init$(D)gs_cet.ps
 
-PS_ROMFS_DEPS=$(PSSRCDIR)$(D)psromfs.mak $(gconfig_h) \
+PS_ROMFS_DEPS=$(PSSRCDIR)$(D)psromfs.mak $(gconfig_h) $(gs_tr) \
 	$(PDF_RESOURCE_DEPS) $(PS_COLORSPACE_DEPS) $(PS_DECODING_DEPS) $(PS_ENCODING_DEPS) \
 	$(PS_FONT_DEPS) $(PS_IDIOMSET_DEPS) $(PS_PROCSET_DEPS) $(PS_INIT_DEPS) $(PS_SUBSTCID_DEPS) \
 	$(PS_MISC_DEPS)
