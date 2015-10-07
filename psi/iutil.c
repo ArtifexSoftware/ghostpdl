@@ -308,7 +308,7 @@ int
 obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
         int full_print, uint start_pos, const gs_memory_t *mem, bool restart)
 {
-    char buf[50];  /* big enough for any float, double, or struct name */
+    char buf[256];  /* big enough for any float, double, or struct name */
     const byte *data = (const byte *)buf;
     uint size;
     int code;
