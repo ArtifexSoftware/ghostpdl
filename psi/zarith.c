@@ -21,9 +21,6 @@
 #include "store.h"
 #include "gsstate.h"
 
-/****** NOTE: none of the arithmetic operators  ******/
-/****** currently check for floating exceptions ******/
-
 /*
  * Many of the procedures in this file are public only so they can be
  * called from the FunctionType 4 interpreter (zfunc4.c).
@@ -36,6 +33,7 @@ int
 zop_add(i_ctx_t *i_ctx_p)
 {
     register os_ptr op = osp;
+    float result;
 
     switch (r_type(op)) {
     default:
@@ -45,7 +43,16 @@ zop_add(i_ctx_t *i_ctx_p)
         default:
             return_op_typecheck(op - 1);
         case t_real:
-            op[-1].value.realval += op->value.realval;
+            result = op[-1].value.realval + op->value.realval;
+#ifdef HAVE_ISINF
+            if (isinf(result))
+                return_error(gs_error_undefinedresult);
+#endif
+#ifdef HAVE_ISNAN
+            if (isnan(result))
+                return_error(gs_error_undefinedresult);
+#endif
+            op[-1].value.realval = result;
             break;
         case t_integer:
             make_real(op - 1, (double)op[-1].value.intval + op->value.realval);
@@ -56,7 +63,16 @@ zop_add(i_ctx_t *i_ctx_p)
         default:
             return_op_typecheck(op - 1);
         case t_real:
-            op[-1].value.realval += (double)op->value.intval;
+            result = op[-1].value.realval + (double)op->value.intval;
+#ifdef HAVE_ISINF
+            if (isinf(result))
+                return_error(gs_error_undefinedresult);
+#endif
+#ifdef HAVE_ISNAN
+            if (isnan(result))
+                return_error(gs_error_undefinedresult);
+#endif
+            op[-1].value.realval = result;
             break;
         case t_integer: {
             if (sizeof(ps_int) != 4 && gs_currentcpsimode(imemory)) {
@@ -103,6 +119,7 @@ zdiv(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     os_ptr op1 = op - 1;
+    float result;
 
     /* We can't use the non_int_cases macro, */
     /* because we have to check explicitly for op == 0. */
@@ -116,10 +133,20 @@ zdiv(i_ctx_t *i_ctx_p)
                 default:
                     return_op_typecheck(op1);
                 case t_real:
-                    op1->value.realval /= op->value.realval;
+                    result = op1->value.realval / op->value.realval;
+#ifdef HAVE_ISINF
+                    if (isinf(result))
+                        return_error(gs_error_undefinedresult);
+#endif
+#ifdef HAVE_ISNAN
+                    if (isnan(result))
+                        return_error(gs_error_undefinedresult);
+#endif
+                    op1->value.realval = result;
                     break;
                 case t_integer:
-                    make_real(op1, (double)op1->value.intval / op->value.realval);
+                    result = (double)op1->value.intval / op->value.realval;
+                    make_real(op1, result);
             }
             break;
         case t_integer:
@@ -129,10 +156,28 @@ zdiv(i_ctx_t *i_ctx_p)
                 default:
                     return_op_typecheck(op1);
                 case t_real:
-                    op1->value.realval /= (double)op->value.intval;
+                    result = op1->value.realval / (double)op->value.intval;
+#ifdef HAVE_ISINF
+                    if (isinf(result))
+                        return_error(gs_error_undefinedresult);
+#endif
+#ifdef HAVE_ISNAN
+                    if (isnan(result))
+                        return_error(gs_error_undefinedresult);
+#endif
+                    op1->value.realval = result;
                     break;
                 case t_integer:
-                    make_real(op1, (double)op1->value.intval / (double)op->value.intval);
+                    result = (double)op1->value.intval / (double)op->value.intval;
+#ifdef HAVE_ISINF
+                    if (isinf(result))
+                        return_error(gs_error_undefinedresult);
+#endif
+#ifdef HAVE_ISNAN
+                    if (isnan(result))
+                        return_error(gs_error_undefinedresult);
+#endif
+                    make_real(op1, result);
             }
     }
     pop(1);
@@ -144,6 +189,7 @@ int
 zmul(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    float result;
 
     switch (r_type(op)) {
     default:
@@ -153,10 +199,20 @@ zmul(i_ctx_t *i_ctx_p)
         default:
             return_op_typecheck(op - 1);
         case t_real:
-            op[-1].value.realval *= op->value.realval;
+            result = op[-1].value.realval * op->value.realval;
+#ifdef HAVE_ISINF
+            if (isinf(result))
+                return_error(gs_error_undefinedresult);
+#endif
+#ifdef HAVE_ISNAN
+            if (isnan(result))
+                return_error(gs_error_undefinedresult);
+#endif
+            op[-1].value.realval = result;
             break;
         case t_integer:
-            make_real(op - 1, (double)op[-1].value.intval * op->value.realval);
+            result = (double)op[-1].value.intval * op->value.realval;
+            make_real(op - 1, result);
         }
         break;
     case t_integer:
@@ -164,7 +220,16 @@ zmul(i_ctx_t *i_ctx_p)
         default:
             return_op_typecheck(op - 1);
         case t_real:
-            op[-1].value.realval *= (double)op->value.intval;
+            result = op[-1].value.realval * (double)op->value.intval;
+#ifdef HAVE_ISINF
+            if (isinf(result))
+                return_error(gs_error_undefinedresult);
+#endif
+#ifdef HAVE_ISNAN
+            if (isnan(result))
+                return_error(gs_error_undefinedresult);
+#endif
+            op[-1].value.realval = result;
             break;
         case t_integer: {
             if (sizeof(ps_int) != 4 && gs_currentcpsimode(imemory)) {

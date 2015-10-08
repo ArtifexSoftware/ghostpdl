@@ -79,4 +79,14 @@ extern double gs_sqrt(double, const char *, int);
 #define sqrt(x) gs_sqrt(x, __FILE__, __LINE__)
 #endif /* DEBUG */
 
+#if defined(_MSC_VER)
+#if _MSC_VER < 1800
+#define isnan(x) _isnan(x)
+#define isfinite(x) _finite(x)
+#define isinf(x) (!_finite(x))
+#endif
+#define HAVE_ISNAN
+#define HAVE_ISINF
+#endif
+
 #endif /* math__INCLUDED */
