@@ -1400,6 +1400,9 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
             int l = I->ff.get_glyphdirectory_data(&(I->ff), cr.char_codes[0],
                                                   &data_ptr);
 
+            /* We do not need to apply the unitsPerEm scale here because
+             * these values are read directly from the glyph data.
+             */
             if (MetricsCount == 2 && l >= 4) {
                 if (!bVertical0) {
                     cr.sb_x = GET_S16_MSB(data_ptr + 2) * scale;
@@ -1416,6 +1419,15 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
             }
         }
     }
+    /* Metrics in GS are scaled to a 1.0x1.0 square, as that's what Postscript
+     * fonts expect. But for Truetype we need the "native" units,
+     */
+    em_scale_x = 1.0;
+    if (pfont->FontType == ft_TrueType) {
+        gs_font_type42 *pfont42 = (gs_font_type42 *) pfont;
+        em_scale_x = pfont42->data.unitsPerEm;
+    }
+
     if (cr.metrics_type != gs_fapi_metrics_replace && bVertical) {
         double pwv[4];
 
@@ -1426,9 +1438,9 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
             return code;
         if (code == 0 /* metricsNone */ ) {
             if (bCID && (!bIsType1GlyphData && font_file_path)) {
-                cr.sb_x = fapi_round(sbw[2] / 2 * scale);
-                cr.sb_y = fapi_round(pbfont->FontBBox.q.y * scale);
-                cr.aw_y = fapi_round(-pbfont->FontBBox.q.x * scale);    /* Sic ! */
+                cr.sb_x = fapi_round((sbw[2] / 2) * scale )* em_scale_x;
+                cr.sb_y = fapi_round(pbfont->FontBBox.q.y * scale) * em_scale_x;
+                cr.aw_y = fapi_round(-pbfont->FontBBox.q.x * scale) * em_scale_x;    /* Sic ! */
                 cr.metrics_scale = 1;
                 cr.metrics_type = gs_fapi_metrics_replace;
                 sbw[0] = sbw[2] / 2;
@@ -1442,10 +1454,10 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
             }
         }
         else {
-            cr.sb_x = fapi_round(pwv[2] * scale);
-            cr.sb_y = fapi_round(pwv[3] * scale);
-            cr.aw_x = fapi_round(pwv[0] * scale);
-            cr.aw_y = fapi_round(pwv[1] * scale);
+            cr.sb_x = fapi_round(pwv[2] * scale) * em_scale_x;
+            cr.sb_y = fapi_round(pwv[3] * scale) * em_scale_x;
+            cr.aw_x = fapi_round(pwv[0] * scale) * em_scale_x;
+            cr.aw_y = fapi_round(pwv[1] * scale) * em_scale_x;
             cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
             cr.metrics_type = (code == 2 /* metricsSideBearingAndWidth */ ? gs_fapi_metrics_replace
                                : gs_fapi_metrics_replace_width);
@@ -1475,10 +1487,10 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
             }
         }
         else {
-            cr.sb_x = fapi_round(sbw[0] * scale);
-            cr.sb_y = fapi_round(sbw[1] * scale);
-            cr.aw_x = fapi_round(sbw[2] * scale);
-            cr.aw_y = fapi_round(sbw[3] * scale);
+            cr.sb_x = fapi_round(sbw[0] * scale * em_scale_x);
+            cr.sb_y = fapi_round(sbw[1] * scale * em_scale_x);
+            cr.aw_x = fapi_round(sbw[2] * scale * em_scale_x);
+            cr.aw_y = fapi_round(sbw[3] * scale * em_scale_x);
             cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
             cr.metrics_type = (code == 2 /* metricsSideBearingAndWidth */ ? gs_fapi_metrics_replace
                                : gs_fapi_metrics_replace_width);

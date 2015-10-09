@@ -534,6 +534,7 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
     FT_Long h;
     FT_Long fflags;
     FT_Int32 load_flags = 0;
+    FT_Vector  delta = {0,0};
 
     /* Save a_fapi_font->char_data, which is set to null by FAPI_FF_get_glyph as part of a hack to
      * make the deprecated Type 2 endchar ('seac') work, so that it can be restored
@@ -598,6 +599,7 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
     /* Store the overriding metrics if they have been supplied. */
     if (face->ft_inc_int
         && a_char_ref->metrics_type != gs_fapi_metrics_notdef) {
+
         FT_Incremental_MetricsRec *m =
             &face->ft_inc_int->object->glyph_metrics;
         m->bearing_x = a_char_ref->sb_x >> 16;
@@ -605,6 +607,13 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
         m->advance = a_char_ref->aw_x >> 16;
         face->ft_inc_int->object->glyph_metrics_index = index;
         face->ft_inc_int->object->metrics_type = a_char_ref->metrics_type;
+
+        /* we only want this for fonts with TT outlines */
+        if (!a_fapi_font->is_type1) {
+            delta.y = 0;
+            delta.x = FT_MulFix(a_char_ref->sb_x, ft_face->size->metrics.x_scale);
+            FT_Vector_Transform( &delta, &face->ft_transform);
+       }
     }
     else if (face->ft_inc_int)
         /* Make sure we don't leave this set to the last value, as we may then use inappropriate metrics values */
@@ -683,6 +692,10 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
 
         a_fapi_font->char_data = saved_char_data;
         a_fapi_font->char_data_len = saved_char_data_len;
+    }
+
+    if ((!ft_error || !ft_error_fb) && (delta.x != 0 || delta.y != 0)) {
+        FT_Outline_Translate( &ft_face->glyph->outline, delta.x >> 16, delta.y >> 16 );
     }
 
     /* Previously we interpreted the glyph unscaled, and derived the metrics from that. Now we only interpret it

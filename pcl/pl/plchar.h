@@ -28,6 +28,12 @@ int pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
 int pl_tt_get_outline(gs_font_type42 * pfont, uint index,
                       gs_glyph_data_t * pdata);
 
+/* retrieve lsb and width metrics for Format 1 Class 2 glyphs */
+int
+pl_tt_f1c2_get_metrics(gs_font_type42 * pfont, uint glyph_index,
+                  int wmode, float *sbw);
+
+
 ulong tt_find_table(gs_font_type42 * pfont, const char *tname, uint * plen);
 
 gs_glyph

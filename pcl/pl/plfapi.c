@@ -216,7 +216,28 @@ static int
 pl_fapi_get_metrics(gs_fapi_font * ff, gs_string * char_name, int cid,
                     double *m, bool vertical)
 {
-    return (0);
+    gs_font_base *pfont = (gs_font_base *) ff->client_font_data;
+    int code = 0;
+
+    /* We only want to supply metrics for Format 1 Class 2 glyph data (with their
+     * PCL/PXL specific LSB and width metrics), all the others we leave the
+     * scaler/render to use the metrics directly from the font/glyph.
+     */
+    if (pfont->FontType == ft_TrueType) {
+        float sbw[4];
+
+        code = pl_tt_f1c2_get_metrics((gs_font_type42 *)pfont, cid, pfont->WMode & 1, sbw);
+        if (code == 0) {
+            m[0] = sbw[0];
+            m[1] = sbw[1];
+            m[2] = sbw[2];
+            m[3] = sbw[3];
+            code = 2;
+        }
+        else
+            code = 0;
+    }
+    return code;
 }
 
 static int

@@ -545,18 +545,15 @@ pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t * plfont)
     return gs_no_glyph;
 }
 
-/* get metrics with support for XL tt class 1 and 2
- * pl overrides gstype42_default_get_metrics
- */
-
-static int
-pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index,
-                  gs_type42_metrics_options_t options, float *sbw)
+/* retrieve lsb and width metrics for Format 1 Class 2 glyphs */
+int
+pl_tt_f1c2_get_metrics(gs_font_type42 * pfont, uint glyph_index,
+                  int wmode, float *sbw)
 {
+    int code = gs_error_undefined;
     pl_font_t *plfont = pfont->client_data;
     const pl_font_glyph_t *pfg = 0;
     const byte *cdata = 0;
-    int wmode = gs_type42_metrics_options_wmode(options);
 
     if (plfont->glyphs.table != 0) {
         /* at least one caller calls before the glyph.table is valid, no chars yet
@@ -586,8 +583,24 @@ pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index,
                 sbw[0] = lsb * factor, sbw[1] = 0;
                 sbw[2] = width * factor, sbw[3] = 0;
             }
-            return 0;           /* tt class 1,2 */
+            code = 0;           /* tt class 1,2 */
         }
+    }
+    return code;
+}
+
+/* get metrics with support for XL tt class 1 and 2
+ * pl overrides gstype42_default_get_metrics
+ */
+static int
+pl_tt_get_metrics(gs_font_type42 * pfont, uint glyph_index,
+                  gs_type42_metrics_options_t options, float *sbw)
+{
+    int wmode = gs_type42_metrics_options_wmode(options);
+    int code;
+
+    if ((code = pl_tt_f1c2_get_metrics (pfont, glyph_index, wmode, sbw)) != gs_error_undefined) {
+        return code;
     }
     /* else call default implementation for tt class 0, incomplete font */
     /* first check for a vertical substitute if writing mode is
