@@ -827,6 +827,10 @@ gsijs_open(gx_device *dev)
     if (code < 0)
         return code;
 
+    while (dev->child)
+        dev = dev->child;
+    ijsdev = (gx_device_ijs *)dev;
+
     if (use_outputfd) {
         /* Note: dup() may not be portable to all interesting IJS
            platforms. In that case, this branch should be #ifdef'ed out.
