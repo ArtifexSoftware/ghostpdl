@@ -17,6 +17,8 @@
 #include "math_.h"
 #include "memory_.h"
 #include "gx.h"
+#include "gsstruct.h"
+#include "gxobj.h"
 #include "gserrors.h"
 #include "gsropt.h"
 #include "gxcomp.h"
@@ -25,6 +27,7 @@
 #include "gdevp14.h"        /* Needed to patch up the procs after compositor creation */
 #include "gstrans.h"        /* For gs_pdf14trans_t */
 #include "gxistate.h"       /* for gs_image_state_s */
+
 
 /* defined in gsdpram.c */
 int gx_default_get_param(gx_device *dev, char *Param, void *list);
@@ -1293,6 +1296,11 @@ int gx_device_subclass(gx_device *dev_to_subclass, gx_device *new_prototype, uns
     ptr = ((char *)dev_to_subclass) + sizeof(gx_device);
     ptr1 = ((char *)new_prototype) + sizeof(gx_device);
     memcpy(ptr, ptr1, new_prototype->params_size - sizeof(gx_device));
+
+    /* We have to patch up the "type" parameters that the memory manage/garbage
+     * collector will use, as well.
+     */
+    (((obj_header_t *)dev_to_subclass) - 1)->o_type = new_prototype->stype;
 
     /* If the original device's stype structure was dynamically allocated, we need
      * to 'fixup' the contents, it's procs need to point to the new device's procs

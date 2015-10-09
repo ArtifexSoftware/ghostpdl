@@ -1210,7 +1210,7 @@ $(GLOBJ)gdevdsha.$(OBJ) : $(GLSRC)gdevdsha.c $(AK) $(gx_h)\
 
 $(GLOBJ)gdevdflt.$(OBJ) : $(GLSRC)gdevdflt.c $(AK) $(gx_h)\
  $(gserrors_h) $(gsropt_h) $(gxcomp_h) $(gxdevice_h) $(gxdevsop_h) $(math__h)\
- $(MAKEDIRS)
+ $(gsstruct_h) $(gxobj_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevdflt.$(OBJ) $(C_) $(GLSRC)gdevdflt.c
 
 $(GLOBJ)gdevdgbr.$(OBJ) : $(GLSRC)gdevdgbr.c $(AK) $(gx_h)\
