@@ -267,6 +267,22 @@ pjl_impl_get_envvar(pl_interp_instance_t * pli, const char *pjl_var)
     return pjl_get_envvar(pjli->state, pjl_var);
 }
 
+/* return the current setting of a pjl environment variable. */
+static void
+pjl_impl_set_envvar(pl_interp_instance_t * pli, const char *pjl_var, const char *data)
+{
+    pjl_interp_instance_t *pjli = (pjl_interp_instance_t *) pli;
+    pjl_set_envvar(pjli->state, pjl_var, data);
+}
+
+/* return the current setting of a pjl environment variable. */
+static void
+pjl_impl_set_defvar(pl_interp_instance_t * pli, const char *pjl_var, const char *data)
+{
+    pjl_interp_instance_t *pjli = (pjl_interp_instance_t *) pli;
+    pjl_set_defvar(pjli->state, pjl_var, data);
+}
+
 /* compare a pjl environment variable to a string values. */
 static int
 pjl_impl_compare(pl_interp_instance_t * pli,
@@ -377,6 +393,8 @@ pjl_implementation_t pjl_implementation = {
     },
     /* PJL-specific portion */
     pjl_impl_get_envvar,
+    pjl_impl_set_envvar,
+    pjl_impl_set_defvar,
     pjl_impl_compare,
     pjl_impl_map_pjl_sym_to_pcl_sym,
     pjl_impl_vartoi,

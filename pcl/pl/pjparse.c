@@ -1122,6 +1122,51 @@ pjl_get_envvar(pjl_parser_state * pst, const char *pjl_var)
     return NULL;
 }
 
+/* get a pjl environment variable from the current environment - not
+   the user default environment */
+pjl_envvar_t *
+pjl_set_envvar(pjl_parser_state * pst, const char *pjl_var, const char *data)
+{
+    int i=0;
+    pjl_envir_var_t *env = pst->envir;
+    char *newvalue;
+
+    /* Find the current value */
+    while(env[i].var) {
+        if (!pjl_compare(env[i].var, pjl_var)) {
+            if (env[i].value)
+                gs_free_object(pst->mem, env[i].value, "pjl_set_envvar value");
+            newvalue = (char *)gs_alloc_bytes(pst->mem, strlen(data) + 1, "pjl_set_envvar, value");
+            strcpy(newvalue, data);
+            env[i].value = newvalue;
+        }
+        i++;
+    }
+    return NULL;
+}
+
+/* get a pjl environment variable from the current environment - not
+   the user default environment */
+pjl_envvar_t *
+pjl_set_defvar(pjl_parser_state * pst, const char *pjl_var, const char *data)
+{
+    int i=0;
+    pjl_envir_var_t *env = pst->defaults;
+    char *newvalue;
+
+    /* Find the current value */
+    while(env[i].var) {
+        if (!pjl_compare(env[i].var, pjl_var)) {
+            if (env[i].value)
+                gs_free_object(pst->mem, env[i].value, "pjl_set_defvar value");
+            newvalue = (char *)gs_alloc_bytes(pst->mem, strlen(data) + 1, "pjl_set_defvar, value");
+            strcpy(newvalue, data);
+            env[i].value = newvalue;
+        }
+        i++;
+    }
+    return NULL;
+}
 /*
  * Detect illegal characters when preprocessing each line of PJL.
  */
