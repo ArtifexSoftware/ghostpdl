@@ -691,6 +691,8 @@ plib_open(gx_device * pdev)
     bdev->printer_procs.buf_procs.size_buf_device = plib_size_buf_device;
     pdev->is_planar = 1;
 
+    bdev->space_params.banding_type = BandingAlways;
+
     /* You might expect us to call gdev_prn_open_planar rather than
      * gdev_prn_open, but if we do that, it overwrites the 2 function
      * pointers we've just overwritten! */
