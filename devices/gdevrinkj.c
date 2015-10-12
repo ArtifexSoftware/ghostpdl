@@ -1193,6 +1193,10 @@ rinkj_print_page(gx_device_printer *pdev, FILE *file)
     int code = 0;
     RinkjDevice *cmyk_dev;
 
+    if (rdev->setup_fn == 0 || rdev->setup_fn[0] == 0) {
+        emprintf(rdev->memory, "Error, SetupFile not defined, output aborted\n");
+        return 0;
+    }
     cmyk_dev = rinkj_init(rdev, file);
     if (cmyk_dev == 0)
         return gs_note_error(gs_error_ioerror);
