@@ -471,6 +471,9 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
         line_pointers_adjacent = false;
     }
     if (line_pointers_adjacent) {
+        if (mdev->base == 0)
+            return_error(gs_error_rangecheck);
+
         gdev_mem_bits_size(mdev, mdev->width, mdev->height, &size);
         mdev->line_ptrs = (byte **)(mdev->base + size);
     }
