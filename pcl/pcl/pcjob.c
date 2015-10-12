@@ -343,6 +343,9 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
             if (strlen(pres) > 0) {
                 pcl_pjl_pdfmark(pcs->memory, pcs->pgs->device, pres);
             }
+
+            pjl_proc_set_envvar(pcs->pjls, "pdfmark", "");
+            pjl_proc_set_defvar(pcs->pjls, "pdfmark", "");
         }
     }
 
