@@ -37,6 +37,14 @@
 #include "gxistate.h"
 #include "gzstate.h"
 #include "stream.h"
+
+/* For WOFF Support */
+#include "strimpl.h"
+#include "stream.h"
+#include "strmio.h"
+#include "szlibx.h"
+
+
 #include <stdlib.h>		/* for qsort */
 
 /* Structure descriptor */
@@ -58,6 +66,9 @@ font_proc_font_info(gs_truetype_font_info); /* Type check. */
 #define U16(p) (((uint)((p)[0]) << 8) + (p)[1])
 #define S16(p) (int)((U16(p) ^ 0x8000) - 0x8000)
 #define u32(p) get_u32_msb(p)
+
+#define PUTU16(p, n, offs) {(p + offs)[0] = n >> 8  & 255; (p + offs)[1] = n & 255;}
+
 
 /* ---------------- Font level ---------------- */
 
@@ -145,7 +156,7 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
     byte TableDirectory[MAX_NUM_TT_TABLES * 16];
     uint i;
     int code;
-    byte head_box[8];
+    byte head_box[8] = {0};
     ulong loca_size = 0;
     ulong glyph_start, glyph_offset, glyph_length, glyph_size = 0;
     uint numFonts, version;
@@ -548,6 +559,7 @@ no_scale:
     *psmat = mat;
 }
 
+#if 0 /* not called */
 /* Compute the total number of points in a (possibly composite) glyph. */
 static int
 total_points(gs_font_type42 *pfont, uint glyph_index)
@@ -592,6 +604,7 @@ total_points(gs_font_type42 *pfont, uint glyph_index)
     gs_glyph_data_free(&glyph_data, "total_points");
     return total;
 }
+#endif /* not called */
 
 /*
  * Define the default implementation for getting the glyph index from a
@@ -1690,4 +1703,222 @@ gs_type42_font_info(gs_font *font, const gs_point *pscale, int members,
     if (code < 0)
         return code;
     return gs_truetype_font_info(font, pscale, members, info);
+}
+
+/******************** WOFF Support *************************/
+static int
+gs_woff_tabdir_compare (const void *a, const void *b)
+{
+    uint32_t poffs, qoffs;
+
+    poffs = u32((*(byte **)a) + 4);
+    qoffs = u32((*(byte **)b) + 4);
+
+    return poffs > qoffs ? 1 : poffs < qoffs ? -1 : 0;
+}
+
+static stream *
+gs_woff_push_flate_filter(stream *s)
+{
+    gs_memory_t *mem = s->memory;
+    stream *fs, *ffs = NULL;
+    byte *buf;
+    stream_zlib_state *st;
+
+    fs = s_alloc(mem, "gs_woff_push_flate_filter(fs)");
+    buf = gs_alloc_bytes(mem, 4096, "gs_woff_push_flate_filter(buf)");
+    st = gs_alloc_struct(mem, stream_zlib_state, s_zlibD_template.stype, "gs_woff_push_flate_filter(st)");
+    if (fs == 0 || st == 0 || buf == 0) {
+        gs_free_object(mem, fs, "gs_woff_push_flate_filter(fs)");
+        gs_free_object(mem, buf, "gs_woff_push_flate_filter(buf)");
+        gs_free_object(mem, st, "gs_woff_push_flate_filter(st)");
+        goto done;
+    }
+    s_std_init(fs, buf, 4096, &s_filter_read_procs, s_mode_read);
+    st->memory = mem;
+    st->templat = &s_zlibD_template;
+    fs->state = (stream_state *) st;
+    fs->procs.process = s_zlibD_template.process;
+    fs->strm = s;
+    (*s_zlibD_template.set_defaults) ((stream_state *) st);
+    (*s_zlibD_template.init) ((stream_state *) st);
+    ffs = fs;
+done:
+    return ffs;
+}
+
+static stream *
+gs_woff_pop_flate_filter(stream *s)
+{
+    gs_memory_t *mem = s->memory;
+    stream *strm = s->strm;
+    byte *buf = s->cbuf;
+
+    sclose(s);
+    gs_free_object(mem, s, "gs_woff_pop_flate_filter(s)");
+    gs_free_object(mem, buf, "gs_woff_pop_flate_filter(buf)");
+
+    return strm;
+}
+
+#define WOFFHDR_LEN 44
+#define WOFFHDR_SFNT_FLAVOR_OFFS 4
+#define WOFFHDR_SFNT_NUMTABS_OFFS 12
+#define WOFFHDR_SFNT_LEN_OFFS 16
+
+#define WOFF_TABDIR_ENT_LEN 20
+#define WOFF_TABDIR_TAG_OFFS 0
+#define WOFF_TABDIR_OFFSET_OFFS 4
+#define WOFF_TABDIR_CLEN_OFFS 8
+#define WOFF_TABDIR_OLEN_OFFS 12
+#define WOFF_TABDIR_CSUM_OFFS 16
+
+#define WOFF_TABDIR_FIELD_LEN 4
+
+#define SFNT_TABDIR_ENT_LEN 16
+#define SFNT_TABDIR_CSUM_OFFS 4
+#define SFNT_TABDIR_OFFSET_OFFS 8
+#define SFNT_TABDIR_LEN_OFFS 12
+
+
+static int
+gs_woff2sfnt(gs_memory_t *mem, stream *s, byte *outbuf, int *outbuflen)
+{
+    int code = 0;
+    gs_offset_t start;
+    uint32_t sfntlen, ntables, sr, es, rs, i;
+    byte woffhdr[44], *tabbuf = NULL;
+    byte **tabbufptrs = NULL;
+    byte *obuf = outbuf, *tdir;
+
+    if (!sseekable(s)) {
+        code = gs_note_error(gs_error_ioerror);
+        goto done;
+    }
+    start = stell(s);
+    if (s->bsize < 44){
+        code = gs_note_error(gs_error_invalidfont);
+        goto done;
+    }
+
+    if ((code = sfread(woffhdr, WOFFHDR_LEN, 1, s) < 0))
+        goto done;
+
+    if (memcmp(woffhdr, "wOFF", 4) != 0
+     || memcmp(woffhdr + WOFFHDR_SFNT_FLAVOR_OFFS, "OTTO", 4) == 0) {
+        (void)sseek(s, start);
+        code = gs_note_error(gs_error_invalidfont);
+        goto done;
+    }
+    sfntlen = u32(woffhdr + WOFFHDR_SFNT_LEN_OFFS);
+    if (!outbuf || *outbuflen < sfntlen) {
+        *outbuflen = sfntlen;
+        (void)sseek(s, start);
+        goto done;
+    }
+    ntables = U16(woffhdr + WOFFHDR_SFNT_NUMTABS_OFFS);
+    memcpy(obuf, woffhdr + WOFFHDR_SFNT_FLAVOR_OFFS, 4);
+    obuf += 4;
+    memcpy(obuf, woffhdr + WOFFHDR_SFNT_NUMTABS_OFFS, 2);
+    obuf += 2;
+    sr = ntables;
+    sr |= (sr >> 1);
+    sr |= (sr >> 2);
+    sr |= (sr >> 4);
+    sr |= (sr >> 8);
+    sr &= ~(sr >> 1);
+    sr *= 16;
+    PUTU16(obuf, (ushort)sr, 0)
+    rs = ntables * 16 - sr;
+    es = 0;
+    while (sr > 16) {
+        es++;
+        sr >>= 1;
+    }
+    PUTU16(obuf, (ushort)es, 2)
+    PUTU16(obuf, (ushort)rs, 4);
+    obuf += 6;
+
+    tabbuf = gs_alloc_bytes(mem, WOFF_TABDIR_ENT_LEN * ntables, "gs_woff2sfnt(tabbuf)");
+    tabbufptrs = (byte **)gs_alloc_bytes(mem, (ntables + 1) * sizeof(byte *), "gs_woff2sfnt(tabbufptrs)");
+    if (!tabbuf || !tabbufptrs) {
+        code = gs_note_error(gs_error_VMerror);
+        goto done;
+    }
+    if ((code = sfread(tabbuf, WOFF_TABDIR_ENT_LEN * ntables, 1, s)) < 0)
+        goto done;
+
+    for (i = 0; i < ntables; i++)
+        tabbufptrs[i] = tabbuf + (i * WOFF_TABDIR_ENT_LEN);
+    tabbufptrs[i] = NULL;
+    qsort(tabbufptrs, ntables, sizeof(byte **), gs_woff_tabdir_compare);
+
+    /* Two pointers into the output buffer: tdir and obuf.
+     * tdir is the beginning of the current entry in the table directory
+     * and obuf is the beginning of the current table.
+     */
+    tdir = obuf;
+    obuf += (16 * ntables);
+    for (i = 0; i < ntables; i++) {
+        byte *tdirent = tabbufptrs[i];
+        uint32_t len, clen, pad;
+        len = u32(tdirent + WOFF_TABDIR_OLEN_OFFS);
+        clen = u32(tdirent + WOFF_TABDIR_CLEN_OFFS);
+        /* Build the sfnts table directory entry.
+         * For those cases where encoded fields are the same in WOFF and SFNT,
+         * we just copy the bytes over
+         */
+        memcpy(tdir, tdirent, WOFF_TABDIR_FIELD_LEN);
+        memcpy(tdir + SFNT_TABDIR_CSUM_OFFS, tdirent + WOFF_TABDIR_CSUM_OFFS, WOFF_TABDIR_FIELD_LEN);
+        memcpy(tdir + SFNT_TABDIR_LEN_OFFS, tdirent + WOFF_TABDIR_OLEN_OFFS, WOFF_TABDIR_FIELD_LEN);
+        put_u32_msb(tdir, (uint32_t)(obuf - outbuf), SFNT_TABDIR_OFFSET_OFFS);
+        tdir += SFNT_TABDIR_ENT_LEN;
+        /* Now handle the actual table data */
+        sseek(s, u32(tdirent + WOFF_TABDIR_OFFSET_OFFS));
+        if (clen != len)
+            s = gs_woff_push_flate_filter(s);
+        code = sfread(obuf, 1, len, s);
+        if (clen != len)
+            s = gs_woff_pop_flate_filter(s);
+        if (code < 0)
+            goto done;
+        obuf += len;
+        /* TTF requires each table to start on a 4 byte boundary, and
+         * padding to be zeroed bytes.
+         */
+        pad = ((len + 3) & ~3) - len;
+        while (pad > 0) {
+            *obuf = (byte)0;
+            obuf++;
+            pad--;
+        }
+    }
+done:
+    gs_free_object(mem, tabbuf, "gs_woff2sfnt(tabbuf)");
+    gs_free_object(mem, tabbufptrs, "gs_woff2sfnt(tabbufptrs)");
+    return code;
+}
+
+int
+gs_woff2sfnt_stream(gs_memory_t *mem, stream *s, byte *outbuf, int *outbuflen)
+{
+    return gs_woff2sfnt(mem, s, outbuf, outbuflen);
+}
+
+int
+gs_woff2sfnt_buffer(gs_memory_t *mem, byte *inbuf, int inbuflen, byte *outbuf, int *outbuflen)
+{
+    stream *sstrm;
+    int code = 0;
+    sstrm = file_alloc_stream(mem, "gs_woff2sfnt_buffer(buf stream)");
+    if (sstrm) {
+        sread_string(sstrm, inbuf, inbuflen);
+        code = gs_woff2sfnt(mem,sstrm , outbuf, outbuflen);
+        sclose(sstrm);
+        gs_free_object(mem, sstrm, "gs_woff2sfnt_buffer(buf stream)");
+    }
+    else {
+        code = gs_note_error(gs_error_VMerror);
+    }
+    return code;
 }

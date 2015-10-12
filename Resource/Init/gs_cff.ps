@@ -36,10 +36,22 @@
 % <file> .loadfontfile -
 /.loadnonottofontfile /.loadfontfile load def
 /.loadfontfile {
-  dup 4 string .peekstring pop (OTTO) eq {
-                % If this is a font at all, it's an OpenType CFF font set.
-    .init_otto_font_file
-        % Use a random FontSet resource name.  ****** WRONG ******
+  dup (12345678) .peekstring pop (wOFFOTTO) eq
+  {
+    .init_wOFF_otto_font_file
+    //true //false
+  }{//true} ifelse
+
+  {
+    dup 4 string .peekstring pop (OTTO) eq
+    {
+                  % If this is a font at all, it's an OpenType CFF font set.
+      .init_otto_font_file //true
+    }
+    { //false } ifelse
+  } if
+
+  {      % Use a random FontSet resource name.  ****** WRONG ******
     realtime rand xor =string cvs exch //false //false
     ReadData pop
   } {
@@ -69,6 +81,41 @@
   f exch subfilefilter end
 } bind def
 
+% <file> .init_otto_font_file <file>
+/.init_wOFF_otto_font_file {
+  /FontSetInit /ProcSet findresource begin
+  2 dict begin
+  /f exch def /cff //null def
+  3 {card32 pop} repeat % (wOFF), (OTTO) and file length
+
+  card16
+  30 { next pop } repeat
+  dup
+  {
+                % Stack: numtables tablesleft
+    dup 0 eq {
+      pop pop /.loadottofontfile cvx /invalidfont signalerror
+    } if
+    f 4 string readstring pop (CFF ) eq { sub exit } if
+    f 12 string readstring pop pop 1 sub	% skip to next table
+  } loop
+                % Stack: tablesread
+  4 { card32 } repeat
+                % Stack: tablesread start complen len checksum
+  pop
+                % Stack: tablesread start complen len
+  4 -2 roll exch
+                % Stack: complen len start tablesread
+  1 add 20 mul 44 add sub
+                % Stack: complen len offset
+  f exch subfilefilter flushfile	% skip to start
+                % Stack: complen len
+  % the table can legally be uncompressed: complen == len
+  1 index 1 index eq
+  { exch pop f exch subfilefilter}
+  { pop f exch subfilefilter /FlateDecode filter} ifelse
+  end
+} bind def
 20 dict begin
 
 % ------ Utilities ------ %

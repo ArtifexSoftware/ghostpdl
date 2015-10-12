@@ -192,4 +192,10 @@ void gs_type42_parse_component(const byte **pdata, uint *pflags, gs_matrix_fixed
                                int *pmp /*[2], may be null*/, const gs_font_type42 *pfont,
                                const gs_matrix_fixed *pmat);
 
+int
+gs_woff2sfnt_stream(gs_memory_t *mem, stream *s, byte *outbuf, int *outbuflen);
+
+int
+gs_woff2sfnt_buffer(gs_memory_t *mem, byte *inbuf, int inbuflen, byte *outbuf, int *outbuflen);
+
 #endif /* gxfont42_INCLUDED */

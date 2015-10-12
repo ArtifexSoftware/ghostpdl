@@ -32,7 +32,7 @@
 
 /.scanfontheaders where {
   pop /.scanfontheaders [
-   .scanfontheaders aload pop (\000\001\000\000*) (true*)
+   .scanfontheaders aload pop (\000\001\000\000*) (true*) (wOFF*)
   ] def
 } if
 
@@ -42,7 +42,11 @@
 /.findnonttfontvalue /.findfontvalue load def
 /.findfontvalue {
   1 index .is_woff {
-    /.findfontvalue cvx /invalidfont signalerror
+    dup /FontType eq {
+      pop closefile 42 //true
+    } {
+      dup /FontName eq { pop .findwoffname } { pop closefile //false } ifelse
+    } ifelse
   }
   {
     1 index .is_ttf_or_otf {
@@ -82,21 +86,62 @@
   f closefile end end
 } bind def
 
+/.findwoffname {
+  //true 0 .loadwofftables
+  tabdict /name .knownget {
+    dup /clen exch 8 getu32 def
+    dup /olen exch 12 getu32 def
+    4 getu32 f exch setfileposition
+    olen dup 65535 gt { pop 65535 } if % protect against extremely large name
+    /fs
+    clen olen ne
+    {f clen () /SubFileDecode filter /FlateDecode filter}
+    {f clen () /SubFileDecode filter}
+    ifelse def
+    string fs exch readstring pop
+    fs closefile
+    dup
+    6 findname not {
+      4 findname	% Try FullName
+    } {
+      exch pop //true
+    }
+    ifelse
+  } {
+    //false
+  } ifelse
+  f closefile end end
+} bind def
+
+
 % Load a font file that might be a TrueType font.
 
 /tt_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 >> readonly def
 /ttf_otf_tag_dict << <00010000> 0 (true) 0 (typ1) 0 (ttcf) 0 (OTTO) 0>> readonly def
-/woff_tag_dict << (wOFF) 0>> readonly def
+% The wOFF tag is immediately followed by the sfnt "flavour" so for simplicity
+% combine them
+/woff_tag_dict <<
+  (wOFF) 0
+  <774F464600010000> 0 % (wOFF)<00010000> .concatstrings
+  (wOFFtrue) 0
+  (wOFFtyp1) 0
+>> readonly def
 
 % <file> .loadfontfile -
 /.loadnonttfontfile /.loadfontfile load def
 /.loadfontfile {
-  dup (1234) .peekstring { //tt_tag_dict exch known } { //false } ifelse {
-                % If this is a font at all, it's a TrueType font.
-    .loadttfont pop
-  } {
-                % Not a TrueType font.
-    .loadnonttfontfile
+  dup (12345678) .peekstring { //woff_tag_dict exch known } { //false } ifelse
+  {
+    .loadwofffont pop
+  }
+  {
+    dup (1234) .peekstring { //tt_tag_dict exch known } { //false } ifelse {
+                  % If this is a font at all, it's a TrueType font.
+      .loadttfont pop
+    } {
+                  % Not a TrueType font.
+      .loadnonttfontfile
+    } ifelse
   } ifelse
 } bind def
 
@@ -810,7 +855,6 @@ currentdict /woff_tag_dict .undef
   (loca) 1 index
   (hmtx) 1 index
   (vmtx) 1 index
-        % Tables only needed for embedding in PDF files
   (cvt ) //call.readtable
   (fpgm) 1 index
   (prep) 1 index
@@ -872,7 +916,7 @@ end readonly def                % .loadttfontdict
 
 % <file> <bool> <SubfontID> .loadttfonttables -
 % Pushes .loadttfontdict & scratch dict on d-stack.
-% Defines f, offsets, tables, tabdict, tabs.
+% Defines f, offsets, tables, tabdict, tabs, tthdrlen.
 % Skips loca and glyf if <bool> is true.
 /.loadttfonttables {
   .loadttfontdict begin
@@ -881,6 +925,7 @@ end readonly def                % .loadttfontdict
   /load_stripped exch def
   /f exch def
   /offsets f 12 string readstring pop def
+  /tthdrlen offsets length def
   load_stripped { readtables_stripped } { readtables } ifelse /readtables_ exch def
   offsets 0 4 getinterval (ttcf) eq {
     offsets 8 getu32 /num_fonts exch def
@@ -943,6 +988,53 @@ end readonly def                % .loadttfontdict
   } for
 } bind def
 
+
+
+% <file> <bool> <SubfontID> .loadwofftables -
+% Pushes .loadttfontdict & scratch dict on d-stack.
+% Defines f, offsets, tables, tabdict, tabs, tthdrlen.
+% Skips loca and glyf if <bool> is true.
+/.loadwofftables {
+  .loadttfontdict begin
+  40 dict begin
+  /SubfontID exch def
+  /load_stripped exch def
+  /f exch def
+  % loading WOFFs "stripped" only works for .findfontvalue - we cannot
+  % (currently) use a stripped wOFF font
+  load_stripped { readtables_stripped } { readtables } ifelse /readtables_ exch def
+  /offsets 12 string def
+  /woffhdr f 44 string readstring pop def
+  /tthdrlen woffhdr length def
+  /ttc_offset 0 def
+  woffhdr 0 4 getinterval (wOFF) eq not
+  % allow loading wOFFOTTO fonts "stripped" for .findfontvalue
+  woffhdr 4 4 getinterval (OTTO) eq load_stripped not and or
+  {/.loadwofftables cvx /invalidfont signalerror}
+  {
+    offsets 0 woffhdr 4 4 getinterval putinterval
+    /tables f woffhdr 12 getu16 20 mul string .peekstring pop def
+    offsets 4 tables length 20 idiv putu16
+    /tabdict tables length 20 idiv dict def
+    /tabs [ 0 20 tables length 1 sub
+      {
+        tables exch 20 getinterval
+        TTFDEBUG { dup .printtab } if
+        dup  0 4 getinterval readtables_ 1 index known
+        {
+          % put all 0 length tables at 0 to avoid overlap
+          1 index 12 getu32 0 eq { 1 index 8 0 putu32 } if
+          tabdict exch 2 index put
+         }
+         {pop pop}
+         ifelse
+      }for
+    ]
+    { exch 4 getu32 exch 4 getu32 lt } .sort
+    def
+  } ifelse
+} bind def
+
 /.file_table_pos_names
 mark
 /glyf 0
@@ -953,19 +1045,36 @@ mark
 % Read data.  Updates offsets, tabs; stores data in tabdict.
 /.readttdata {
   /file_table_pos 10 dict def
-  /fpos offsets length ttc_offset add def
+  /fpos tthdrlen ttc_offset add def
   /sfpos offsets length tabs length 16 mul add def
   offsets 4 tabs length putu16
-  tabs {
+  0 1 tabs length 1 sub {
+    dup tabs exch get
     dup 0 4 getinterval /tname exch def
-    dup 8 getu32 /tpos exch def
-    dup 12 getu32 /tlen exch def
+    dup length 20 eq
+    {
+      dup 4 getu32 /tpos exch def
+      dup 8 getu32 /tclen exch def
+      dup 12 getu32 /tlen exch def
+    }
+    {
+      dup 8 getu32 /tpos exch def
+      dup 12 getu32 /tlen exch def
+      /tclen tlen def
+    } ifelse
     load_stripped //.file_table_pos_names tname known and {
         pop
-        file_table_pos tname [tpos tlen] put
+        file_table_pos tname [tpos tlen tclen] put
         tabdict tname () put
+        pop
     } {
-      8 sfpos putu32
+      dup length 20 eq
+      {
+        0 16 getinterval dup 8 sfpos putu32
+        tabs 3 -2 roll put
+      }
+      {8 sfpos putu32 pop}
+      ifelse
         % Skip data between the end of the previous table and
         % the beginning of this one, if any.
       tpos fpos gt {
@@ -977,13 +1086,20 @@ mark
           /fpos tpos def
         } ifelse
       } if
-      f tlen readtables_ tname get exec
+      /ff
+      tlen tclen eq not
+      {f tclen () /SubFileDecode filter /FlateDecode filter}
+      {f tlen  () /SubFileDecode filter}
+      ifelse
+      def
+      ff tlen readtables_ tname get exec
+      ff closefile
       tabdict tname 3 -1 roll put
         % Round up the table length to an even value.
       /sfpos sfpos tlen dup 1 and add add def
     } ifelse
-    /fpos fpos tlen add def
-  } forall
+    /fpos fpos tclen add def
+  } for
 } bind def
 
 % Find the string in a list of strings that includes a given index.
@@ -1403,6 +1519,29 @@ currentdict /postalias undef
   end end dup /FontName get exch definefont
 } bind def
 
+% <file> .loadwofffont <type42font>
+/.loadwofffont
+{
+  TTFDEBUG { (.loadwofffont) = } if
+  //false 0 .loadwofftables
+  .makesfnts
+  .getpost
+  .pickcmap
+  mark
+  .charkeys
+  .ttkeys
+  /FontType 42
+  /PaintType 0
+  TTFDEBUG {
+    (numloca=) print numloca =
+  } if
+  .dicttomark
+  end end dup /FontName get exch
+() //true .setdebug
+  definefont
+} bind def
+
+
 % ---------------- CIDFontType 2 font loading ---------------- %
 
 % Fill a string with sequential CIDs starting from the initial value.
@@ -1479,6 +1618,25 @@ currentdict /postalias undef
   /NumGlyphs numloca
   /TT_cmap cmaptab cmaparray
   /file_table_pos file_table_pos
+  /Decoding Decoding
+  .dicttomark
+  end end
+} bind def
+
+/.load_woff_for_cid {
+  //false exch .loadwofftables
+  .makesfnts
+  % we have to set load_stripped here so
+  % .pickcmap will follow the right logic
+  % for emulating a CIDFont
+  /load_stripped //true def
+  .pickcmap
+  /load_stripped //false def
+  mark
+  .ttkeys
+  /NumGlyphs numloca
+  /TT_cmap cmaptab cmaparray
+%  /file_table_pos file_table_pos
   /Decoding Decoding
   .dicttomark
   end end

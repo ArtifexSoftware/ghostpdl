@@ -37,6 +37,10 @@ void memflip8x8(const byte * inp, int line_size, byte * outp, int dist);
 /* Get an unsigned, big-endian 32-bit value. */
 ulong get_u32_msb(const byte *p);
 
+/* Put an unsigned, big-endian 32-bit value. */
+void
+put_u32_msb(byte *p, const ulong n, const int offs);
+
 /* ------ String utilities ------ */
 
 /* Compare two strings, returning -1 if the first is less, */

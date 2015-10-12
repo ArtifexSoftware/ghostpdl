@@ -119,6 +119,16 @@ get_u32_msb(const byte *p)
     return ((uint)p[0] << 24) + ((uint)p[1] << 16) + ((uint)p[2] << 8) + p[3];
 }
 
+/* Put an unsigned, big-endian 32-bit value. */
+void
+put_u32_msb(byte *p, const ulong n, const int offs)
+{
+    (p + offs)[0] = n >> 24 & 255;
+    (p + offs)[1] = n >> 16 & 255;
+    (p + offs)[2] = n >> 8  & 255;
+    (p + offs)[3] = n & 255;
+}
+
 /* ------ String utilities ------ */
 
 /* Compare two strings, returning -1 if the first is less, */

@@ -72,12 +72,20 @@ currentdict /super.complete_instance currentdict /complete_instance get put
   (r) file dup                                             % <font> file file
   3 1 roll                                                 % file <font> file
   1 index /SubfontID .knownget not { 0 } if                % file <font> file SubfontID
-  .load_tt_font_stripped exch copy                         % file <font>
-  QUIET not {
-    (Done.) =
-  } if
-  dup 3 1 roll                                             % <font> file <font>
-  exch /File exch put                                      % <font>
+  2 index /FileType .knownget
+  {/WOFF eq}
+  {//false} ifelse
+  % It's not (currently) viable to load WOFF fonts "stripped", so we don't try
+  {.load_woff_for_cid exch copy exch pop}
+  {
+    .load_tt_font_stripped exch
+    copy                         % file <font>
+    QUIET not {
+      (Done.) =
+    } if
+    dup 3 1 roll                                             % <font> file <font>
+    exch /File exch put                                      % <font>
+  } ifelse
   dup dup /CIDSystemInfo get /Ordering get (.)             % <font> () ()
   2 index /Decoding get =string cvs                        % <font> () () ()
   concatstrings concatstrings cvn /Decoding exch put       % <font>
@@ -130,9 +138,18 @@ currentdict /super.complete_instance currentdict /complete_instance get put
   //load_sfnts exec
 } bind def
 
+/ValidFileTypes
+<<
+  /TrueType 0
+  /WOFF 0
+>> def
+
 /IsMyRecord      % <raw_record> -> <raw_record> bool
-{ dup type /dicttype eq { dup /FileType .knownget { /TrueType eq } { //false } ifelse } { //false } ifelse
+{
+  dup type /dicttype eq { dup /FileType .knownget { //ValidFileTypes exch known } { //false } ifelse } { //false } ifelse
 } bind def
+
+currentdict /ValidFileTypes undef
 
 /IsActive       % <record> IsActive <bool>
 { pop //true

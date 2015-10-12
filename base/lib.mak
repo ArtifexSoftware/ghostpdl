@@ -2324,7 +2324,8 @@ $(GLOBJ)gstype42.$(OBJ) : $(GLSRC)gstype42.c $(AK) $(gx_h)\
  $(gsccode_h) $(gsline_h) $(gsmatrix_h) $(gsstruct_h) $(gsutil_h)\
  $(gxchrout_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h)\
  $(gxpath_h) $(gxttf_h) $(gxttfb_h) $(gxtext_h) $(gxchar_h) $(gxfcache_h)\
- $(gxistate_h) $(gzstate_h) $(stream_h) $(stdint__h) $(LIB_MAK) $(MAKEDIRS)
+ $(gxistate_h) $(gzstate_h) $(stream_h) $(stdint__h) \
+ $(strimpl_h) $(stream_h) $(strmio_h) $(szlibx_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gstype42.$(OBJ) $(C_) $(GLSRC)gstype42.c
 
 ttfsfnt_h=$(GLSRC)ttfsfnt.h $(stdint__h)
