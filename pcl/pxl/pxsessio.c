@@ -42,6 +42,7 @@
 #include "pllfont.h"
 #include "pxptable.h"
 #include "pxvendor.h"
+#include "gzstate.h"
 
 /* Imported operators */
 px_operator_proc(pxCloseDataSource);
@@ -282,6 +283,19 @@ pxBeginSession(px_args_t * par, px_state_t * pxs)
             dmprintf(pxs->memory, "Fatal error - no resident fonts\n");
             return -1;
 
+        }
+
+        {
+            pjl_envvar_t *pres;
+
+            pres = pjl_proc_get_envvar(pxs->pjls, "pdfmark");
+
+            if (strlen(pres) > 0) {
+                pcl_pjl_pdfmark(pxs->memory, pxs->pgs->device, pres);
+            }
+
+            pjl_proc_set_envvar(pxs->pjls, "pdfmark", "");
+            pjl_proc_set_defvar(pxs->pjls, "pdfmark", "");
         }
     }
     return 0;
