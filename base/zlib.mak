@@ -58,7 +58,7 @@ ZCCAUXFLAGS=$(I_)$(ZI_)$(_I) $(ZF_) $(D_)verbose$(_D_)-1$(_D)
 ZCCAUX=$(CCAUX_) $(ZCCAUXFLAGS)
 
 # Define the name of this makefile.
-ZLIB_MAK=$(GLSRC)zlib.mak
+ZLIB_MAK=$(GLSRC)zlib.mak $(TOP_MAKEFILES)
 
 z.clean : z.config-clean z.clean-not-config-clean
 
@@ -69,7 +69,7 @@ z.clean-not-config-clean :
 z.config-clean :
 	$(RMN_) $(ZGEN)zlib*.dev $(ZGEN)crc32*.dev
 
-ZDEP=$(AK) $(MAKEDIRS)
+ZDEP=$(AK) $(ZLIB_MAK) $(MAKEDIRS)
 
 # Code common to compression and decompression.
 
@@ -82,11 +82,11 @@ $(ZOBJ)zutil.$(OBJ) : $(ZSRC)zutil.c $(ZDEP)
 
 # Encoding (compression) code.
 
-$(ZGEN)zlibe.dev : $(TOP_MAKEFILES) $(ZGEN)zlibe_$(SHARE_ZLIB).dev \
+$(ZGEN)zlibe.dev : $(ZLIB_MAK) $(ZGEN)zlibe_$(SHARE_ZLIB).dev \
  $(MAKEDIRS)
 	$(CP_) $(ZGEN)zlibe_$(SHARE_ZLIB).dev $(ZGEN)zlibe.dev
 
-$(ZGEN)zlibe_1.dev : $(TOP_MAKEFILES) $(ZLIB_MAK) $(ECHOGS_XE) \
+$(ZGEN)zlibe_1.dev : $(ZLIB_MAK) $(ZLIB_MAK) $(ECHOGS_XE) \
  $(MAKEDIRS)
 	$(SETMOD) $(ZGEN)zlibe_1 -lib $(ZLIB_NAME)
 
@@ -113,11 +113,11 @@ $(ZOBJ)trees.$(OBJ) : $(ZSRC)trees.c $(ZDEP)
 # The zlib filters per se don't need crc32, but libpng versions starting
 # with 0.90 do.
 
-$(ZGEN)crc32.dev : $(TOP_MAKEFILES) $(ZGEN)crc32_$(SHARE_ZLIB).dev \
+$(ZGEN)crc32.dev : $(ZLIB_MAK) $(ZGEN)crc32_$(SHARE_ZLIB).dev \
  $(MAKEDIRS)
 	$(CP_) $(ZGEN)crc32_$(SHARE_ZLIB).dev $(ZGEN)crc32.dev
 
-$(ZGEN)crc32_1.dev : $(TOP_MAKEFILES) $(ZLIB_MAK) $(ECHOGS_XE) \
+$(ZGEN)crc32_1.dev : $(ZLIB_MAK) $(ZLIB_MAK) $(ECHOGS_XE) \
  $(MAKEDIRS)
 	$(SETMOD) $(ZGEN)crc32_1 -lib $(ZLIB_NAME)
 
@@ -132,10 +132,10 @@ $(ZOBJ)crc32.$(OBJ) : $(ZSRC)crc32.c $(ZDEP)
 
 # Decoding (decompression) code.
 
-$(ZGEN)zlibd.dev : $(TOP_MAKEFILES) $(ZGEN)zlibd_$(SHARE_ZLIB).dev $(MAKEDIRS)
+$(ZGEN)zlibd.dev : $(ZLIB_MAK) $(ZGEN)zlibd_$(SHARE_ZLIB).dev $(MAKEDIRS)
 	$(CP_) $(ZGEN)zlibd_$(SHARE_ZLIB).dev $(ZGEN)zlibd.dev
 
-$(ZGEN)zlibd_1.dev : $(TOP_MAKEFILES) $(ZLIB_MAK) $(ECHOGS_XE) \
+$(ZGEN)zlibd_1.dev : $(ZLIB_MAK) $(ZLIB_MAK) $(ECHOGS_XE) \
  $(MAKEDIRS)
 	$(SETMOD) $(ZGEN)zlibd_1 -lib $(ZLIB_NAME)
 

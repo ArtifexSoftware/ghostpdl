@@ -480,19 +480,19 @@ GSPLATFORM=mslib32_
 
 # For some reason, C-file dependencies have to come before mslib32__.dev
 
-$(GLOBJ)gp_mslib.$(OBJ): $(GLSRC)gp_mslib.c $(AK)
+$(GLOBJ)gp_mslib.$(OBJ): $(GLSRC)gp_mslib.c $(TOP_MAKEFILES) $(AK)
 	$(GLCCWIN) $(GLO_)gp_mslib.$(OBJ) $(C_) $(GLSRC)gp_mslib.c
 
 mslib32__=$(GLOBJ)gp_mslib.$(OBJ)
 
-$(GLGEN)mslib32_.dev: $(mslib32__) $(ECHOGS_XE) $(GLGEN)mswin32_.dev
+$(GLGEN)mslib32_.dev: $(mslib32__) $(ECHOGS_XE) $(GLGEN)mswin32_.dev $(TOP_MAKEFILES)
 	$(SETMOD) $(GLGEN)mslib32_ $(mslib32__)
 	$(ADDMOD) $(GLGEN)mslib32_ -include $(GLGEN)mswin32_.dev
 
 # ----------------------------- Main program ------------------------------ #
 
 # The library tester EXE
-$(GS_XE):  $(GS_ALL) $(DEVS_ALL) $(LIB_ONLY) $(LIBCTR)
+$(GS_XE):  $(GS_ALL) $(DEVS_ALL) $(LIB_ONLY) $(LIBCTR) $(TOP_MAKEFILES)
 	copy $(ld_tr) $(GLGENDIR)\gslib32.tr
 	echo $(GLOBJDIR)\gsromfs$(COMPILE_INITS).$(OBJ) >> $(GLGENDIR)\gslib32.tr
 	echo $(GLOBJ)gsnogc.obj >> $(GLGENDIR)\gslib32.tr

@@ -29,7 +29,7 @@
 # This partial makefile compiles the lwf_jp2 library for use in
 # Ghostscript.
 
-LWF_JP2_MAK=$(GLSRC)lwf_jp2.mak
+LWF_JP2_MAK=$(GLSRC)lwf_jp2.mak $(TOP_MAKEFILES)
 
 LWF_JP2_SRC=$(JPXSRCDIR)$(D)library$(D)source$(D)
 LWF_JP2_GEN=$(JPXOBJDIR)$(D)
@@ -175,17 +175,17 @@ lwf_jp2_HDRS = \
 	$(LWF_JP2_SRC)lwf_jp2.h
 
 # switch in the selected library .dev
-$(LWF_JP2_GEN)lwf_jp2.dev : $(TOP_MAKEFILES) $(LWF_JP2_GEN)lwf_jp2_$(SHARE_JPX).dev \
- $(MAKEDIRS)
+$(LWF_JP2_GEN)lwf_jp2.dev : $(LWF_JP2_GEN)lwf_jp2_$(SHARE_JPX).dev \
+ $(LWF_JP2_MAK) $(MAKEDIRS)
 	$(CP_) $(LWF_JP2_GEN)lwf_jp2_$(SHARE_JPX).dev $(LWF_JP2_GEN)lwf_jp2.dev
 
 # external link .dev
-$(LWF_JP2_GEN)lwf_jp2_1.dev : $(TOP_MAKEFILES) $(LWF_JP2_MAK) $(ECHOGS_XE) \
+$(LWF_JP2_GEN)lwf_jp2_1.dev : $(LWF_JP2_MAK) $(ECHOGS_XE) \
  $(MAKEDIRS)
 	$(SETMOD) $(LWF_JP2_GEN)lwf_jp2_1 -lib lwf_jp2
 
 # compile our own .dev
-$(LWF_JP2_GEN)lwf_jp2_0.dev : $(TOP_MAKEFILES) $(LWF_JP2_MAK) $(ECHOGS_XE) $(lwf_jp2_OBJS) \
+$(LWF_JP2_GEN)lwf_jp2_0.dev : $(LWF_JP2_MAK) $(ECHOGS_XE) $(lwf_jp2_OBJS) \
  $(MAKEDIRS)
 	$(SETMOD) $(LWF_JP2_GEN)lwf_jp2_0 $(lwf_jp2_OBJS)
 

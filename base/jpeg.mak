@@ -60,7 +60,7 @@ JOBJ=$(JOBJDIR)$(D)
 JO_=$(O_)$(JOBJ)
 
 # Define the name of this makefile.
-JPEG_MAK=$(GLSRC)jpeg.mak
+JPEG_MAK=$(GLSRC)jpeg.mak $(TOP_MAKEFILES)
 
 jpeg.clean : jpeg.config-clean jpeg.clean-not-config-clean
 
@@ -95,25 +95,25 @@ jmorecf__h=$(GLGEN)jmorecf_.h
 jconfig_h=$(GLGEN)jconfig.h
 jmorecfg_h=$(GLGEN)jmorecfg.h
 
-$(GLGEN)jconfig_.h : $(GLGEN)jconfig$(SHARE_JPEG).h $(MAKEFILE) $(MAKEDIRS)
+$(GLGEN)jconfig_.h : $(GLGEN)jconfig$(SHARE_JPEG).h $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(GLGEN)jconfig$(SHARE_JPEG).h $(GLGEN)jconfig_.h
 
-$(GLGEN)jconfig0.h : $(ECHOGS_XE) $(GLSRC)gsjconf.h $(stdpre_h) $(MAKEFILE)\
+$(GLGEN)jconfig0.h : $(ECHOGS_XE) $(GLSRC)gsjconf.h $(stdpre_h) $(JPEG_MAK)\
  $(MAKEDIRS)
 	$(EXP)$(ECHOGS_XE) -w $(GLGEN)jconfig0.h -+R $(GLSRC)stdpn.h -+R $(GLSRC)stdpre.h -+R $(GLSRC)gsjconf.h
 	$(RM_) $(GLGEN)jconfig1.h
 
-$(GLGEN)jconfig1.h : $(ECHOGS_XE) $(JPEG_MAK) $(MAKEDIRS)
+$(GLGEN)jconfig1.h : $(ECHOGS_XE) $(JPEG_MAK) $(JPEG_MAK) $(MAKEDIRS)
 	$(EXP)$(ECHOGS_XE) -w $(GLGEN)jconfig1.h -x 23 include -x 203c jconfig.h -x 3e
 	$(RMN_) $(GLGEN)jconfig0.h $(GLGEN)jconfig.h
 
-$(GLGEN)jconfig.h : $(GLGEN)jconfig0.h $(MAKEDIRS)
+$(GLGEN)jconfig.h : $(GLGEN)jconfig0.h $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(GLGEN)jconfig0.h $(GLGEN)jconfig.h
 
-$(GLGEN)jmorecf_.h : $(GLGEN)jmorecf$(SHARE_JPEG).h $(MAKEFILE) $(MAKEDIRS)
+$(GLGEN)jmorecf_.h : $(GLGEN)jmorecf$(SHARE_JPEG).h $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(GLGEN)jmorecf$(SHARE_JPEG).h $(GLGEN)jmorecf_.h
 
-$(GLGEN)jmorecf0.h : $(GLSRC)gsjmorec.h $(GLGEN)jmcorig.h $(MAKEDIRS)
+$(GLGEN)jmorecf0.h : $(GLSRC)gsjmorec.h $(GLGEN)jmcorig.h $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(GLSRC)gsjmorec.h $(GLGEN)jmorecf0.h
 	$(RM_) $(GLGEN)jmorecf1.h
 
@@ -121,10 +121,10 @@ $(GLGEN)jmorecf1.h : $(ECHOGS_XE) $(JPEG_MAK) $(MAKEDIRS)
 	$(EXP)$(ECHOGS_XE) -w $(GLGEN)jmorecf1.h -x 23 include -x 203c jmorecfg.h -x 3e
 	$(RMN_) $(GLGEN)jmorecf0.h $(GLGEN)jmorecfg.h
 
-$(GLGEN)jmorecfg.h : $(GLGEN)jmorecf0.h $(MAKEDIRS)
+$(GLGEN)jmorecfg.h : $(GLGEN)jmorecf0.h $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(GLGEN)jmorecf0.h $(GLGEN)jmorecfg.h
 
-$(GLGEN)jmcorig.h : $(JSRC)jmorecfg.h $(MAKEDIRS)
+$(GLGEN)jmcorig.h : $(JSRC)jmorecfg.h $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(JSRC)jmorecfg.h $(GLGEN)jmcorig.h
 
 # Contrary to what some portability bigots assert as fact, C compilers are
@@ -140,23 +140,23 @@ $(GLGEN)jmcorig.h : $(JSRC)jmorecfg.h $(MAKEDIRS)
 
 JHCOPY=$(GLGEN)jinclude.h $(GLGEN)jpeglib.h
 
-$(GLGEN)jinclude.h : $(JSRC)jinclude.h $(MAKEDIRS)
+$(GLGEN)jinclude.h : $(JSRC)jinclude.h $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(JSRC)jinclude.h $(GLGEN)jinclude.h
 
 # jpeglib_.h doesn't really depend on jconfig.h or jmcorig.h,
 # but we choose to put the dependencies here rather than in the
 # definition of jpeglib__h.
-$(GLGEN)jpeglib_.h : $(GLGEN)jpeglib$(SHARE_JPEG).h $(MAKEDIRS)
+$(GLGEN)jpeglib_.h : $(GLGEN)jpeglib$(SHARE_JPEG).h $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(GLGEN)jpeglib$(SHARE_JPEG).h $(GLGEN)jpeglib_.h
 
-$(GLGEN)jpeglib0.h : $(JSRC)jpeglib.h $(jconfig_h) $(jmorecfg_h) $(MAKEDIRS)
+$(GLGEN)jpeglib0.h : $(JSRC)jpeglib.h $(jconfig_h) $(jmorecfg_h) $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(JSRC)jpeglib.h $(GLGEN)jpeglib0.h
 
 $(GLGEN)jpeglib1.h : $(ECHOGS_XE) $(JPEG_MAK) $(MAKEDIRS)
 	$(EXP)$(ECHOGS_XE) -w $(GLGEN)jpeglib1.h -x 23 include -x 203c jpeglib.h -x 3e
 
 # We also need jpeglib.h for #includes in the library itself.
-$(GLGEN)jpeglib.h : $(JSRC)jpeglib.h $(MAKEDIRS)
+$(GLGEN)jpeglib.h : $(JSRC)jpeglib.h $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(JSRC)jpeglib.h $(GLGEN)jpeglib.h
 
 # In order to avoid having to keep the dependency lists for the IJG code
@@ -165,7 +165,7 @@ $(GLGEN)jpeglib.h : $(JSRC)jpeglib.h $(MAKEDIRS)
 # This is too conservative, but only hurts us if we are changing our own
 # j*.h files, which happens only rarely during development.
 
-JDEP=$(AK) $(jconfig_h) $(jmorecfg_h) $(JHCOPY) $(MAKEDIRS)
+JDEP=$(AK) $(jconfig_h) $(jmorecfg_h) $(JHCOPY) $(JPEG_MAK) $(MAKEDIRS)
 
 
 # Code common to compression and decompression.
@@ -207,13 +207,13 @@ $(JOBJ)jaricom.$(OBJ) : $(JSRC)jaricom.c $(JDEP)
 
 # Encoding (compression) code.
 
-$(JGEN)jpege.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(JGEN)jpege_$(SHARE_JPEG).dev $(MAKEDIRS)
+$(JGEN)jpege.dev : $(JPEG_MAK) $(JGEN)jpege_$(SHARE_JPEG).dev $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(JGEN)jpege_$(SHARE_JPEG).dev $(JGEN)jpege.dev
 
-$(JGEN)jpege_1.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(ECHOGS_XE) $(MAKEDIRS)
+$(JGEN)jpege_1.dev : $(JPEG_MAK) $(ECHOGS_XE) $(JPEG_MAK) $(MAKEDIRS)
 	$(SETMOD) $(JGEN)jpege_1 -lib $(JPEG_NAME)
 
-$(JGEN)jpege_0.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(JGEN)jpege6.dev $(MAKEDIRS)
+$(JGEN)jpege_0.dev : $(JPEG_MAK) $(JGEN)jpege6.dev $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(JGEN)jpege6.dev $(JGEN)jpege_0.dev
 
 jpege6=$(JOBJ)jcapimin.$(OBJ) $(JOBJ)jcapistd.$(OBJ) $(JOBJ)jcinit.$(OBJ)
@@ -223,7 +223,7 @@ jpege_2=$(JOBJ)jchuff.$(OBJ) $(JOBJ)jcmainct.$(OBJ) $(JOBJ)jcmarker.$(OBJ) $(JOB
 jpege_3=$(JOBJ)jcparam.$(OBJ) $(JOBJ)jcprepct.$(OBJ) $(JOBJ)jcsample.$(OBJ) $(JOBJ)jfdctint.$(OBJ)
 
 $(JGEN)jpege6.dev : $(JPEG_MAK) $(ECHOGS_XE) $(JGEN)jpegc0.dev $(jpege6) $(jpege_1) $(jpege_2) $(jpege_3) \
-  $(MAKEDIRS)
+  $(JPEG_MAK) $(MAKEDIRS)
 	$(SETMOD) $(JGEN)jpege6 $(jpege6)
 	$(ADDMOD) $(JGEN)jpege6 -include $(JGEN)jpegc0.dev
 	$(ADDMOD) $(JGEN)jpege6 -obj $(jpege_1)
@@ -307,14 +307,14 @@ $(JOBJ)jcarith.$(OBJ) : $(JSRC)jcarith.c $(JDEP)
 
 # Decompression code
 
-$(JGEN)jpegd.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(JGEN)jpegd_$(SHARE_JPEG).dev \
-  $(MAKEDIRS)
+$(JGEN)jpegd.dev : $(JPEG_MAK) $(JGEN)jpegd_$(SHARE_JPEG).dev \
+  $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(JGEN)jpegd_$(SHARE_JPEG).dev $(JGEN)jpegd.dev
 
-$(JGEN)jpegd_1.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(ECHOGS_XE) $(MAKEDIRS)
+$(JGEN)jpegd_1.dev : $(JPEG_MAK) $(ECHOGS_XE) $(JPEG_MAK) $(MAKEDIRS)
 	$(SETMOD) $(JGEN)jpegd_1 -lib $(JPEG_NAME)
 
-$(JGEN)jpegd_0.dev : $(TOP_MAKEFILES) $(JPEG_MAK) $(JGEN)jpegd6.dev $(MAKEDIRS)
+$(JGEN)jpegd_0.dev : $(JPEG_MAK) $(JGEN)jpegd6.dev $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(JGEN)jpegd6.dev $(JGEN)jpegd_0.dev
 
 jpegd6=$(JOBJ)jdapimin.$(OBJ) $(JOBJ)jdapistd.$(OBJ) $(JOBJ)jdinput.$(OBJ) $(JOBJ)jdhuff.$(OBJ)
@@ -324,7 +324,7 @@ jpegd_2=$(JOBJ)jddctmgr.$(OBJ) $(JOBJ)jdhuff.$(OBJ) $(JOBJ)jdmainct.$(OBJ) $(JOB
 jpegd_3=$(JOBJ)jdmaster.$(OBJ) $(JOBJ)jdpostct.$(OBJ) $(JOBJ)jdsample.$(OBJ) $(JOBJ)jidctint.$(OBJ) $(JOBJ)jdarith.$(OBJ)
 
 $(JGEN)jpegd6.dev : $(JPEG_MAK) $(ECHOGS_XE) $(JGEN)jpegc0.dev $(jpegd6) $(jpegd_1) $(jpegd_2) $(jpegd_3) \
- $(MAKEDIRS)
+ $(JPEG_MAK) $(MAKEDIRS)
 	$(SETMOD) $(JGEN)jpegd6 $(jpegd6)
 	$(ADDMOD) $(JGEN)jpegd6 -include $(JGEN)jpegc0.dev
 	$(ADDMOD) $(JGEN)jpegd6 -obj $(jpegd_1)

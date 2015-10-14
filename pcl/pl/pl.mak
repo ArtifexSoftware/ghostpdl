@@ -41,7 +41,7 @@ CC_W=$(CC_WX) $(D_)PCL_INCLUDED$(_D) $(COMPILE_FULL_OPTIMIZED) $(ZM)
 PLCCC_W=$(CC_W) $(D_)PCL_INCLUDED$(_D) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
 # Define the name of this makefile.
-PL_MAK=$(PLSRC)pl.mak
+PL_MAK=$(PLSRC)pl.mak $(TOP_MAKEFILES)
 
 pl.clean: pl.config-clean pl.clean-not-config-clean
 
@@ -101,10 +101,10 @@ PJL_VOLUME_1=/tmp/pjl1
 plver_h=$(PLOBJ)plver.h
 
 # FIXME: move elsewhere
-$(GLGEN)pconf.h $(GLGEN)/ldconf.tr: $(TARGET_DEVS) $(GENCONF_XE)
+$(GLGEN)pconf.h $(GLGEN)/ldconf.tr: $(TARGET_DEVS) $(GENCONF_XE) $(PL_MAK) $(MAKEDIRS)
 	$(GENCONF_XE) -n - $(TARGET_DEVS) -h $(GLGEN)/pconf.h -p "%s&s&&" -o $(GLGEN)/ldconf.tr
 
-$(PLOBJ)plver.h: $(PLSRC)pl.mak $(ECHOGS_XE)
+$(PLOBJ)plver.h: $(ECHOGS_XE) $(PL_MAK) $(MAKEDIRS)
 	$(ECHOGS_XE) -e .h -w $(PLOBJ)plver -n -x 23 "define PJLVERSION"
 	$(ECHOGS_XE) -e .h -a $(PLOBJ)plver -s -x 22 $(PJLVERSION) -x 22
 	$(ECHOGS_XE) -e .h -a $(PLOBJ)plver -n -x 23 "define PJLBUILDDATE"
@@ -128,18 +128,22 @@ $(PLOBJ)pjparse.$(OBJ): $(PLSRC)pjparse.c\
         $(gdevpxen_h) \
         $(pjparse_h)  \
         $(plfont_h)   \
-        $(plver_h)
+        $(plver_h)    \
+        $(PL_MAK)     \
+        $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)pjparse.c $(PLO_)pjparse.$(OBJ)
 
 $(PLOBJ)pjparsei.$(OBJ): $(PLSRC)pjparsei.c \
- $(string__h) $(pjtop_h) $(pjparse_h) $(plparse_h) $(string__h) $(gserrors_h) $(plver_h)
+ $(string__h) $(pjtop_h) $(pjparse_h) $(plparse_h) $(string__h) $(gserrors_h) $(plver_h) \
+ $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)pjparsei.c $(PLO_)pjparsei.$(OBJ)
 
-$(PLOBJ)pjtop.$(OBJ): $(PLSRC)pjtop.c $(AK) $(pjtop_h) $(string__h)
+$(PLOBJ)pjtop.$(OBJ): $(PLSRC)pjtop.c $(AK) $(pjtop_h) $(string__h) \
+ $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)pjtop.c $(PLO_)pjtop.$(OBJ)
 
 pjl_obj=$(PLOBJ)pjparse.$(OBJ) $(PLOBJ)pjparsei.$(OBJ) $(PLOBJ)pjtop.$(OBJ) $(PLOBJ)pltop.$(OBJ)
-$(PLOBJ)pjl.dev: $(PL_MAK) $(ECHOGS_XE) $(pjl_obj)
+$(PLOBJ)pjl.dev: $(PL_MAK) $(ECHOGS_XE) $(pjl_obj) $(PL_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PLOBJ)pjl $(pjl_obj)
 
 ################ Shared libraries ################
@@ -167,7 +171,8 @@ $(PLOBJ)plchar.$(OBJ): $(PLSRC)plchar.c $(AK) $(math__h) $(memory__h) $(stdio__h
  $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
  $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
- $(plfont_h) $(plvalue_h) $(plchar_h)
+ $(plfont_h) $(plvalue_h) $(plchar_h) \
+ $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plchar.c $(PLO_)plchar.$(OBJ)
 
 # agfa ufst character module.
@@ -178,21 +183,23 @@ $(PLOBJ)pluchar.$(OBJ): $(PLSRC)pluchar.c $(AK) $(math__h) $(memory__h) $(stdio_
  $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
  $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gxpath_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
- $(gxchar_h) $(gxfcache_h) $(plfont_h) $(plvalue_h) $(plchar_h)
+ $(gxchar_h) $(gxfcache_h) $(plfont_h) $(plvalue_h) $(plchar_h) \
+ $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(UFST_CFLAGS) $(UFST_INCLUDES) $(PLSRC)pluchar.c $(PLO_)pluchar.$(OBJ)
 
 $(PLOBJ)pldict.$(OBJ): $(PLSRC)pldict.c $(AK) $(memory__h)\
  $(gsmemory_h) $(gsstruct_h) $(gstypes_h)\
- $(pldict_h)
+ $(pldict_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)pldict.c $(PLO_)pldict.$(OBJ)
 
 $(PLOBJ)plht.$(OBJ): $(PLSRC)plht.c  $(stdpre_h) $(plht_h) $(gxdevice_h)\
-   $(gsstate_h) $(gxtmap_h) $(gsmemory_h) $(gstypes_h) $(gxht_h)
+   $(gsstate_h) $(gxtmap_h) $(gsmemory_h) $(gstypes_h) $(gxht_h) \
+   $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plht.c $(PLO_)plht.$(OBJ)
 
 $(PLOBJ)pldraw.$(OBJ): $(PLSRC)pldraw.c $(AK) $(std_h)\
  $(gsmemory_h) $(gstypes_h) $(gxdevice_h) $(gzstate_h)\
- $(pldraw_h)
+ $(pldraw_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)pldraw.c $(PLO_)pldraw.$(OBJ)
 
 
@@ -203,13 +210,13 @@ $(PLOBJ)plfont.$(OBJ): $(PLSRC)plfont.c $(AK) $(memory__h) $(stdio__h)\
  $(gsstate_h) $(gsstruct_h) $(gsmatrix_h) $(gstypes_h) $(gsutil_h)\
  $(gsimage_h) $(gxfont_h) $(gxfont42_h) $(gzstate_h)\
  $(gxfache_h) $(plfont_h) $(plvalue_h) $(plchar_h) \
- $(plfapi_h)
+ $(plfapi_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plfont.c $(PLO_)plfont.$(OBJ)
 
 $(PLOBJ)plfapi.$(OBJ): $(PLSRC)plfapi.c $(plfapi_h) $(gxfapi_h) $(memory__h) \
            $(gsmemory_h) $(gserrors_h) $(gxdevice_h) $(gxfont_h) $(gzstate_h) \
            $(gxchar_h) $(gdebug_h) $(plfont_h) $(gxfapi_h) $(plchar_h) \
-           $(gsimage_h) $(gspath_h)
+           $(gsimage_h) $(gspath_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plfapi.c $(PLO_)plfapi.$(OBJ)
 
 #ufst font module.
@@ -218,41 +225,43 @@ $(PLOBJ)plufont.$(OBJ): $(PLSRC)plufont.c $(AK) $(memory__h) $(stdio__h)\
  $(gschar_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)\
  $(gxfont_h) $(gxfont42_h)\
- $(plfont_h) $(plvalue_h)
+ $(plfont_h) $(plvalue_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(UFST_CFLAGS) $(UFST_INCLUDES) $(PLSRC)plufont.c $(PLO_)plufont.$(OBJ)
 
 $(PLOBJ)plplatf$(PLPLATFORM).$(OBJ): $(PLSRC)plplatf$(PLPLATFORM).c $(AK) $(string__h)\
  $(string__h)\
  $(gdebug_h) $(gp_h) $(gsio_h) $(gslib_h) $(gsmemory_h) $(gstypes_h)\
- $(gsstruct_h) $(plplatf_h)
+ $(gsstruct_h) $(plplatf_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plplatf$(PLPLATFORM).c $(PLO_)plplatf$(PLPLATFORM).$(OBJ)
 
 plftable_h=$(PLSRC)plftable.h
 
 # hack - need ufst included for -DAGFA_FONT_TABLE
 $(PLOBJ)plftable.$(OBJ): $(PLSRC)plftable.c $(AK) $(plftable_h)\
-  $(ctype__h) $(gstypes_h) $(plfont_h)
+  $(ctype__h) $(gstypes_h) $(plfont_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(UFST_INCLUDES) $(PLSRC)plftable.c $(PLO_)plftable.$(OBJ)
 
 $(PLOBJ)pltop.$(OBJ): $(PLSRC)pltop.c $(AK) $(string__h)\
  $(gdebug_h) $(gsnogc_h) $(gsdevice_h) $(gsmemory_h) $(gsstruct_h)\
- $(gstypes_h) $(pltop_h)
+ $(gstypes_h) $(pltop_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)pltop.c $(PLO_)pltop.$(OBJ)
 
 $(PLOBJ)pltoputl.$(OBJ): $(PLSRC)pltoputl.c $(AK) $(string__h)\
- $(gdebug_h) $(gsmemory_h) $(gstypes_h) $(gsstruct_h) $(pltoputl_h)
+ $(gdebug_h) $(gsmemory_h) $(gstypes_h) $(gsstruct_h) $(pltoputl_h) \
+ $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)pltoputl.c $(PLO_)pltoputl.$(OBJ)
 
 $(PLOBJ)plsymbol.$(OBJ): $(PLSRC)plsymbol.c $(AK) $(stdpre_h)\
- $(std_h) $(gdebug_h) $(plsymbol_h) $(plvocab_h) $(plvalue_h)
+ $(std_h) $(gdebug_h) $(plsymbol_h) $(plvocab_h) $(plvalue_h) \
+ $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plsymbol.c $(PLO_)plsymbol.$(OBJ)
 
 $(PLOBJ)plvalue.$(OBJ): $(PLSRC)plvalue.c $(AK) $(std_h)\
- $(plvalue_h)
+ $(plvalue_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plvalue.c $(PLO_)plvalue.$(OBJ)
 
 $(PLOBJ)plvocab.$(OBJ): $(PLSRC)plvocab.c $(AK) $(stdpre_h)\
- $(plvocab_h)
+ $(plvocab_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plvocab.c $(PLO_)plvocab.$(OBJ)
 
 plalloc_h=$(PLSRC)plalloc.h
@@ -260,20 +269,20 @@ plalloc_h=$(PLSRC)plalloc.h
 $(PLOBJ)plalloc.$(OBJ): $(PLSRC)plalloc.c $(AK) \
   $(malloc__h) $(memory__h) $(gdebug_h)\
   $(gsmalloc_h) $(gsmemret_h) $(gsstype_h)\
-  $(gsmchunk_h) $(plalloc_h)
+  $(gsmchunk_h) $(plalloc_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plalloc.c $(PLO_)plalloc.$(OBJ)
 
 # ufst font loading module.
 uconfig_h=$(PLOBJ)uconfig.h
 
-$(uconfig_h): $(PLSRC)pl.mak $(ECHOGS_XE)
+$(uconfig_h): $(PLSRC)pl.mak $(ECHOGS_XE) $(PL_MAK) $(MAKEDIRS)
 	$(ECHOGS_XE) -e .h -w $(PLOBJ)uconfig -x 23 "define UFSTFONTDIR" -s -x 22 $(UFSTFONTDIR) -x 22
 
 $(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(pllfont_h) $(uconfig_h) $(AK)\
 	$(stdio__h) $(string__h)\
         $(gpgetenv_h) $(gsmemory_h) $(gp_h) $(gstypes_h)\
 	$(plfont_h) $(pldict_h) $(pllfont_h) $(plvalue_h)\
-	$(plftable_h) $(plvocab_h) $(uconfig_h)
+	$(plftable_h) $(plvocab_h) $(uconfig_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(UFST_CFLAGS) $(UFST_INCLUDES) $(PLSRC)plulfont.c $(PLO_)plulfont.$(OBJ)
 
 # artifex font loading module.
@@ -282,7 +291,7 @@ $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(pllfont_h) $(AK)\
 	$(gx_h) $(gp_h) $(gsccode_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
 	$(gxfont_h) $(gxfont42_h) $(gxiodev_h) \
         $(plfont_h) $(pldict_h) $(plvalue_h) $(plftable_h) $(plfapi_h) \
-        $(gxfapi_h) $(plufstlp_h) $(plvocab_h)
+        $(gxfapi_h) $(plufstlp_h) $(plvocab_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)pllfont.c $(PLO_)pllfont.$(OBJ)
 
 pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plht.$(OBJ)
@@ -302,20 +311,20 @@ afs_obj=$(font_common_obj) $(PLOBJ)pllfont.$(OBJ)
 ufst_obj=$(font_common_obj) $(PLOBJ)pluchar.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plulfont.$(OBJ)
 
 # artifex font device.
-$(PLOBJ)afs.dev: $(PL_MAK) $(ECHOGS_XE) $(afs_obj) 
+$(PLOBJ)afs.dev: $(ECHOGS_XE) $(afs_obj) $(PL_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PLOBJ)afs $(afs_obj)
 
 $(PLOBJ)plufstlp1.$(OBJ): $(PLSRC)plufstlp1.c $(plufstlp_h) $(stdio__h) $(string__h) $(gsmemory_h) \
-                                         $(gstypes_h) $(gxfapi_h)
+                                         $(gstypes_h) $(gxfapi_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(UFST_CFLAGS) $(I_)$(UFST_ROOT)$(D)rts$(D)inc$(_I) $(PLSRC)plufstlp1.c $(PLO_)plufstlp1.$(OBJ)
 
 $(PLOBJ)plufstlp.$(OBJ): $(PLSRC)plufstlp.c $(plufstlp_h)$(stdio__h) $(string__h) $(gsmemory_h) \
-                                         $(gstypes_h) $(gxfapi_h)
+                                         $(gstypes_h) $(gxfapi_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plufstlp.c $(PLO_)plufstlp.$(OBJ)
 
 # ufst font device.  the libraries are expected to be linked in the
 # main platform makefile.
-$(PLOBJ)ufst.dev: $(PL_MAK) $(ECHOGS_XE)  $(ufst_obj) $(PLOBJ)plufstlp1.$(OBJ)
+$(PLOBJ)ufst.dev: $(ECHOGS_XE)  $(ufst_obj) $(PLOBJ)plufstlp1.$(OBJ) $(PL_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PLOBJ)ufst $(ufst_obj)
 	$(ADDMOD) $(PLOBJ)ufst $(PLOBJ)plufstlp1.$(OBJ)
 
@@ -323,18 +332,19 @@ plufstlp_h=$(PLSRC)plufstlp.h $(studio__h) $(string__h) $(gsmemory_h) \
            $(gstypes_h)
 
 fapi_objs=$(PLOBJ)plfapi.$(OBJ)
-$(PLOBJ)fapi_pl.dev: $(PL_MAK) $(ECHOGS_XE) $(fapi_objs) 
+$(PLOBJ)fapi_pl.dev: $(ECHOGS_XE) $(fapi_objs) $(PL_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PLOBJ)fapi_pl $(fapi_objs)
 
 
 ### BROKEN #####
 # Bitstream font device
-$(PLOBJ)bfs.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj1) $(pl_obj2)
+$(PLOBJ)bfs.dev: $(ECHOGS_XE) $(pl_obj1) $(pl_obj2) $(PL_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PLOBJ)bfs $(pl_obj1) $(pl_obj2)
 ### END BROKEN ###
 
-$(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj) $(PLOBJ)fapi_pl.dev \
-                $(PLOBJ)plufstlp$(UFST_BRIDGE).$(OBJ) $(GLOBJ)gsargs.$(OBJ)
+$(PLOBJ)pl.dev: $(ECHOGS_XE) $(pl_obj) $(PLOBJ)fapi_pl.dev \
+                $(PLOBJ)plufstlp$(UFST_BRIDGE).$(OBJ) $(GLOBJ)gsargs.$(OBJ)\
+                $(PL_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PLOBJ)pl $(pl_obj1)
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj2)
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj3)
@@ -352,23 +362,23 @@ $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(string__h)\
  $(gsalloc_h) $(gsargs_h) $(gp_h) $(gsdevice_h) $(gslib_h) $(gslibctx_h)\
  $(gxdevice_h) $(gsparam_h) $(pjtop_h) $(plapi_h) $(plparse_h) $(plplatf_h)\
  $(plmain_h) $(pltop_h) $(pltoputl_h) $(gsargs_h) $(dwtrace_h) $(vdtrace_h)\
- $(gxclpage_h) $(gdevprn_h)
+ $(gxclpage_h) $(gdevprn_h) $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plmain.c $(PLO_)plmain.$(OBJ)
 
 # Real top level; provides main that just calls pl_main
 # On Windows this also sets up the display device so that we
 # can view the output.
-$(PLOBJ)$(REALMAIN_SRC).$(OBJ): $(PLSRC)$(REALMAIN_SRC).c
+$(PLOBJ)$(REALMAIN_SRC).$(OBJ): $(PLSRC)$(REALMAIN_SRC).c $(PL_MAK) $(MAKEDIRS)
 	$(PLATCCC) $(PLSRC)$(REALMAIN_SRC).c $(PLO_)$(REALMAIN_SRC).$(OBJ)
 
 
-$(PLOBJ)plwmainc.$(OBJ): $(PLSRC)plwmainc.c
+$(PLOBJ)plwmainc.$(OBJ): $(PLSRC)plwmainc.c $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC_W) $(COMPILE_FOR_CONSOLE_EXE) $(PLSRC)plwmainc.c $(PLO_)plwmainc.$(OBJ)
 
-$(PLOBJ)plwimg.$(OBJ): $(PLSRC)plwimg.c
+$(PLOBJ)plwimg.$(OBJ): $(PLSRC)plwimg.c $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC_W)$(COMPILE_FOR_CONSOLE_EXE)  $(PLSRC)plwimg.c $(PLO_)plwimg.$(OBJ)
 
-$(PLOBJ)plwreg.$(OBJ): $(PLSRC)plwreg.c
+$(PLOBJ)plwreg.$(OBJ): $(PLSRC)plwreg.c $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC_W) $(COMPILE_FOR_CONSOLE_EXE) $(PLSRC)plwreg.c $(PLO_)plwreg.$(OBJ)
 
 WINMAINOBJS=$(MAIN_OBJ) $(PLOBJ)plwmainc.$(OBJ) $(PLOBJ)plwimg.$(OBJ) $(PLOBJ)plwreg.$(OBJ)
@@ -378,5 +388,7 @@ $(PLOBJ)plimpl.$(OBJ):  $(PLSRC)plimpl.c            \
                         $(memory__h)                \
                         $(scommon_h)                \
                         $(gxdevice_h)               \
-                        $(pltop_h)
+                        $(pltop_h)                  \
+                        $(PL_MAK)                   \
+                        $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plimpl.c $(PLO_)plimpl.$(OBJ)

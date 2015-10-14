@@ -36,7 +36,7 @@ FTO_=$(O_)$(FTOBJ)
 FTCC=$(CC_) $(I_)$(FTSRCDIR)$(D)include$(_I) $(D_)FT2_BUILD_LIBRARY$(_D) $(D_)DARWIN_NO_CARBON$(_D) $(FT_CONFIG_SYSTEM_ZLIB)
 
 # Define the name of this makefile.
-FT_MAK=$(GLSRC)freetype.mak
+FT_MAK=$(GLSRC)freetype.mak $(TOP_MAKEFILES)
 
 # file complements for each component
 ft_autofit=\
@@ -211,15 +211,15 @@ ft_type42=\
 ft_winfonts=$(FTOBJ)winfnt.$(OBJ)
 
 # instantiate the requested build option (shared or compiled in)
-$(FTGEN)freetype.dev : $(TOP_MAKEFILES) $(FTGEN)freetype_$(SHARE_FT).dev $(MAKEDIRS)
+$(FTGEN)freetype.dev : $(FT_MAK) $(FTGEN)freetype_$(SHARE_FT).dev $(FT_MAK) $(MAKEDIRS)
 	$(CP_) $(FTGEN)freetype_$(SHARE_FT).dev $(FTGEN)freetype.dev
 
 # Define the shared version.
-$(FTGEN)freetype_1.dev : $(TOP_MAKEFILES) $(FT_MAK) $(ECHOGS_XE) $(MAKEDIRS)
+$(FTGEN)freetype_1.dev : $(TOP_MAKEFILES) $(FT_MAK) $(ECHOGS_XE) $(FT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(FTGEN)freetype_1 -link $(FT_LIBS)
 
 # Define the non-shared version.
-$(FTGEN)freetype_0.dev : $(TOP_MAKEFILES) $(FT_MAK) $(ECHOGS_XE) \
+$(FTGEN)freetype_0.dev : $(FT_MAK) $(ECHOGS_XE) \
     $(ft_autofit) $(ft_base) $(ft_bdf) $(ft_cache) $(ft_cff) $(ft_cid) \
     $(ft_gzip) $(ft_lzw) $(ft_pcf) $(ft_pfr) $(ft_psaux) $(ft_pshinter) \
     $(ft_psnames) $(ft_raster) $(ft_smooth) $(ft_sfnt) $(ft_truetype) \
@@ -248,398 +248,398 @@ $(FTGEN)freetype_0.dev : $(TOP_MAKEFILES) $(FT_MAK) $(ECHOGS_XE) \
 
 # custom build rules for each source file
 
-$(FTOBJ)afangles.$(OBJ) : $(FTSRC)autofit$(D)afangles.c $(MAKEDIRS)
+$(FTOBJ)afangles.$(OBJ) : $(FTSRC)autofit$(D)afangles.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afangles.$(OBJ) $(C_) $(FTSRC)autofit$(D)afangles.c
 
-$(FTOBJ)afcjk.$(OBJ) : $(FTSRC)autofit$(D)afcjk.c $(MAKEDIRS)
+$(FTOBJ)afcjk.$(OBJ) : $(FTSRC)autofit$(D)afcjk.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afcjk.$(OBJ) $(C_) $(FTSRC)autofit$(D)afcjk.c
 
-$(FTOBJ)afdummy.$(OBJ) : $(FTSRC)autofit$(D)afdummy.c $(MAKEDIRS)
+$(FTOBJ)afdummy.$(OBJ) : $(FTSRC)autofit$(D)afdummy.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afdummy.$(OBJ) $(C_) $(FTSRC)autofit$(D)afdummy.c
 
-$(FTOBJ)afglobal.$(OBJ) : $(FTSRC)autofit$(D)afglobal.c $(MAKEDIRS)
+$(FTOBJ)afglobal.$(OBJ) : $(FTSRC)autofit$(D)afglobal.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afglobal.$(OBJ) $(C_) $(FTSRC)autofit$(D)afglobal.c
 
-$(FTOBJ)afhints.$(OBJ) : $(FTSRC)autofit$(D)afhints.c $(MAKEDIRS)
+$(FTOBJ)afhints.$(OBJ) : $(FTSRC)autofit$(D)afhints.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afhints.$(OBJ) $(C_) $(FTSRC)autofit$(D)afhints.c
 
-$(FTOBJ)afindic.$(OBJ) : $(FTSRC)autofit$(D)afindic.c $(MAKEDIRS)
+$(FTOBJ)afindic.$(OBJ) : $(FTSRC)autofit$(D)afindic.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afindic.$(OBJ) $(C_) $(FTSRC)autofit$(D)afindic.c
 
-$(FTOBJ)aflatin.$(OBJ) : $(FTSRC)autofit$(D)aflatin.c $(MAKEDIRS)
+$(FTOBJ)aflatin.$(OBJ) : $(FTSRC)autofit$(D)aflatin.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)aflatin.$(OBJ) $(C_) $(FTSRC)autofit$(D)aflatin.c
 
-$(FTOBJ)afloader.$(OBJ) : $(FTSRC)autofit$(D)afloader.c $(MAKEDIRS)
+$(FTOBJ)afloader.$(OBJ) : $(FTSRC)autofit$(D)afloader.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afloader.$(OBJ) $(C_) $(FTSRC)autofit$(D)afloader.c
 
-$(FTOBJ)afmodule.$(OBJ) : $(FTSRC)autofit$(D)afmodule.c $(MAKEDIRS)
+$(FTOBJ)afmodule.$(OBJ) : $(FTSRC)autofit$(D)afmodule.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afmodule.$(OBJ) $(C_) $(FTSRC)autofit$(D)afmodule.c
 
-$(FTOBJ)afwarp.$(OBJ) : $(FTSRC)autofit$(D)afwarp.c $(MAKEDIRS)
+$(FTOBJ)afwarp.$(OBJ) : $(FTSRC)autofit$(D)afwarp.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afwarp.$(OBJ) $(C_) $(FTSRC)autofit$(D)afwarp.c
 
-$(FTOBJ)afblue.$(OBJ) : $(FTSRC)autofit$(D)afblue.c $(MAKEDIRS)
+$(FTOBJ)afblue.$(OBJ) : $(FTSRC)autofit$(D)afblue.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afblue.$(OBJ) $(C_) $(FTSRC)autofit$(D)afblue.c
 
-$(FTOBJ)afranges.$(OBJ) : $(FTSRC)autofit$(D)afranges.c $(MAKEDIRS)
+$(FTOBJ)afranges.$(OBJ) : $(FTSRC)autofit$(D)afranges.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afranges.$(OBJ) $(C_) $(FTSRC)autofit$(D)afranges.c
 
-$(FTOBJ)hbshim.$(OBJ) : $(FTSRC)autofit$(D)hbshim.c $(MAKEDIRS)
+$(FTOBJ)hbshim.$(OBJ) : $(FTSRC)autofit$(D)hbshim.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)hbshim.$(OBJ) $(C_) $(FTSRC)autofit$(D)hbshim.c
 
-$(FTOBJ)ftadvanc.$(OBJ) : $(FTSRC)base$(D)ftadvanc.c $(MAKEDIRS)
+$(FTOBJ)ftadvanc.$(OBJ) : $(FTSRC)base$(D)ftadvanc.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftadvanc.$(OBJ) $(C_) $(FTSRC)base$(D)ftadvanc.c
 
-$(FTOBJ)ftcalc.$(OBJ) : $(FTSRC)base$(D)ftcalc.c $(MAKEDIRS)
+$(FTOBJ)ftcalc.$(OBJ) : $(FTSRC)base$(D)ftcalc.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftcalc.$(OBJ) $(C_) $(FTSRC)base$(D)ftcalc.c
 
-$(FTOBJ)ftdbgmem.$(OBJ) : $(FTSRC)base$(D)ftdbgmem.c $(MAKEDIRS)
+$(FTOBJ)ftdbgmem.$(OBJ) : $(FTSRC)base$(D)ftdbgmem.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftdbgmem.$(OBJ) $(C_) $(FTSRC)base$(D)ftdbgmem.c
 
-$(FTOBJ)ftgloadr.$(OBJ) : $(FTSRC)base$(D)ftgloadr.c $(MAKEDIRS)
+$(FTOBJ)ftgloadr.$(OBJ) : $(FTSRC)base$(D)ftgloadr.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftgloadr.$(OBJ) $(C_) $(FTSRC)base$(D)ftgloadr.c
 
-$(FTOBJ)ftobjs.$(OBJ) : $(FTSRC)base$(D)ftobjs.c $(MAKEDIRS)
+$(FTOBJ)ftobjs.$(OBJ) : $(FTSRC)base$(D)ftobjs.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftobjs.$(OBJ) $(C_) $(FTSRC)base$(D)ftobjs.c
 
-$(FTOBJ)ftoutln.$(OBJ) : $(FTSRC)base$(D)ftoutln.c $(MAKEDIRS)
+$(FTOBJ)ftoutln.$(OBJ) : $(FTSRC)base$(D)ftoutln.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftoutln.$(OBJ) $(C_) $(FTSRC)base$(D)ftoutln.c
 
-$(FTOBJ)ftrfork.$(OBJ) : $(FTSRC)base$(D)ftrfork.c $(MAKEDIRS)
+$(FTOBJ)ftrfork.$(OBJ) : $(FTSRC)base$(D)ftrfork.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftrfork.$(OBJ) $(C_) $(FTSRC)base$(D)ftrfork.c
 
-$(FTOBJ)ftsnames.$(OBJ) : $(FTSRC)base$(D)ftsnames.c $(MAKEDIRS)
+$(FTOBJ)ftsnames.$(OBJ) : $(FTSRC)base$(D)ftsnames.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftsnames.$(OBJ) $(C_) $(FTSRC)base$(D)ftsnames.c
 
-$(FTOBJ)ftstream.$(OBJ) : $(FTSRC)base$(D)ftstream.c $(MAKEDIRS)
+$(FTOBJ)ftstream.$(OBJ) : $(FTSRC)base$(D)ftstream.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftstream.$(OBJ) $(C_) $(FTSRC)base$(D)ftstream.c
 
-$(FTOBJ)fttrigon.$(OBJ) : $(FTSRC)base$(D)fttrigon.c $(MAKEDIRS)
+$(FTOBJ)fttrigon.$(OBJ) : $(FTSRC)base$(D)fttrigon.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)fttrigon.$(OBJ) $(C_) $(FTSRC)base$(D)fttrigon.c
 
-$(FTOBJ)ftutil.$(OBJ) : $(FTSRC)base$(D)ftutil.c $(MAKEDIRS)
+$(FTOBJ)ftutil.$(OBJ) : $(FTSRC)base$(D)ftutil.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftutil.$(OBJ) $(C_) $(FTSRC)base$(D)ftutil.c
 
-$(FTOBJ)ftbbox.$(OBJ) : $(FTSRC)base$(D)ftbbox.c $(MAKEDIRS)
+$(FTOBJ)ftbbox.$(OBJ) : $(FTSRC)base$(D)ftbbox.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftbbox.$(OBJ) $(C_) $(FTSRC)base$(D)ftbbox.c
 
-$(FTOBJ)ftbdf.$(OBJ) : $(FTSRC)base$(D)ftbdf.c $(MAKEDIRS)
+$(FTOBJ)ftbdf.$(OBJ) : $(FTSRC)base$(D)ftbdf.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftbdf.$(OBJ) $(C_) $(FTSRC)base$(D)ftbdf.c
 
-$(FTOBJ)ftbitmap.$(OBJ) : $(FTSRC)base$(D)ftbitmap.c $(MAKEDIRS)
+$(FTOBJ)ftbitmap.$(OBJ) : $(FTSRC)base$(D)ftbitmap.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftbitmap.$(OBJ) $(C_) $(FTSRC)base$(D)ftbitmap.c
 
-$(FTOBJ)ftdebug.$(OBJ) : $(FTSRC)base$(D)ftdebug.c $(MAKEDIRS)
+$(FTOBJ)ftdebug.$(OBJ) : $(FTSRC)base$(D)ftdebug.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftdebug.$(OBJ) $(C_) $(FTSRC)base$(D)ftdebug.c
 
-$(FTOBJ)ftgasp.$(OBJ) : $(FTSRC)base$(D)ftgasp.c $(MAKEDIRS)
+$(FTOBJ)ftgasp.$(OBJ) : $(FTSRC)base$(D)ftgasp.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftgasp.$(OBJ) $(C_) $(FTSRC)base$(D)ftgasp.c
 
-$(FTOBJ)ftglyph.$(OBJ) : $(FTSRC)base$(D)ftglyph.c $(MAKEDIRS)
+$(FTOBJ)ftglyph.$(OBJ) : $(FTSRC)base$(D)ftglyph.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftglyph.$(OBJ) $(C_) $(FTSRC)base$(D)ftglyph.c
 
-$(FTOBJ)ftgxval.$(OBJ) : $(FTSRC)base$(D)ftgxval.c $(MAKEDIRS)
+$(FTOBJ)ftgxval.$(OBJ) : $(FTSRC)base$(D)ftgxval.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftgxval.$(OBJ) $(C_) $(FTSRC)base$(D)ftgxval.c
 
-$(FTOBJ)ftinit.$(OBJ) : $(FTSRC)base$(D)ftinit.c $(MAKEDIRS)
+$(FTOBJ)ftinit.$(OBJ) : $(FTSRC)base$(D)ftinit.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftinit.$(OBJ) $(C_) $(FTSRC)base$(D)ftinit.c
 
-$(FTOBJ)ftlcdfil.$(OBJ) : $(FTSRC)base$(D)ftlcdfil.c $(MAKEDIRS)
+$(FTOBJ)ftlcdfil.$(OBJ) : $(FTSRC)base$(D)ftlcdfil.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftlcdfil.$(OBJ) $(C_) $(FTSRC)base$(D)ftlcdfil.c
 
-$(FTOBJ)ftmm.$(OBJ) : $(FTSRC)base$(D)ftmm.c $(MAKEDIRS)
+$(FTOBJ)ftmm.$(OBJ) : $(FTSRC)base$(D)ftmm.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftmm.$(OBJ) $(C_) $(FTSRC)base$(D)ftmm.c
 
-$(FTOBJ)ftotval.$(OBJ) : $(FTSRC)base$(D)ftotval.c $(MAKEDIRS)
+$(FTOBJ)ftotval.$(OBJ) : $(FTSRC)base$(D)ftotval.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftotval.$(OBJ) $(C_) $(FTSRC)base$(D)ftotval.c
 
-$(FTOBJ)ftpfr.$(OBJ) : $(FTSRC)base$(D)ftpfr.c $(MAKEDIRS)
+$(FTOBJ)ftpfr.$(OBJ) : $(FTSRC)base$(D)ftpfr.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftpfr.$(OBJ) $(C_) $(FTSRC)base$(D)ftpfr.c
 
-$(FTOBJ)ftstroke.$(OBJ) : $(FTSRC)base$(D)ftstroke.c $(MAKEDIRS)
+$(FTOBJ)ftstroke.$(OBJ) : $(FTSRC)base$(D)ftstroke.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftstroke.$(OBJ) $(C_) $(FTSRC)base$(D)ftstroke.c
 
-$(FTOBJ)ftsynth.$(OBJ) : $(FTSRC)base$(D)ftsynth.c $(MAKEDIRS)
+$(FTOBJ)ftsynth.$(OBJ) : $(FTSRC)base$(D)ftsynth.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftsynth.$(OBJ) $(C_) $(FTSRC)base$(D)ftsynth.c
 
-$(FTOBJ)ftsystem.$(OBJ) : $(FTSRC)base$(D)ftsystem.c $(MAKEDIRS)
+$(FTOBJ)ftsystem.$(OBJ) : $(FTSRC)base$(D)ftsystem.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftsystem.$(OBJ) $(C_) $(FTSRC)base$(D)ftsystem.c
 
-$(FTOBJ)fttype1.$(OBJ) : $(FTSRC)base$(D)fttype1.c $(MAKEDIRS)
+$(FTOBJ)fttype1.$(OBJ) : $(FTSRC)base$(D)fttype1.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)fttype1.$(OBJ) $(C_) $(FTSRC)base$(D)fttype1.c
 
-$(FTOBJ)ftwinfnt.$(OBJ) : $(FTSRC)base$(D)ftwinfnt.c $(MAKEDIRS)
+$(FTOBJ)ftwinfnt.$(OBJ) : $(FTSRC)base$(D)ftwinfnt.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftwinfnt.$(OBJ) $(C_) $(FTSRC)base$(D)ftwinfnt.c
 
-$(FTOBJ)ftxf86.$(OBJ) : $(FTSRC)base$(D)ftxf86.c $(MAKEDIRS)
+$(FTOBJ)ftxf86.$(OBJ) : $(FTSRC)base$(D)ftxf86.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftxf86.$(OBJ) $(C_) $(FTSRC)base$(D)ftxf86.c
 
-$(FTOBJ)ftpatent.$(OBJ) : $(FTSRC)base$(D)ftpatent.c $(MAKEDIRS)
+$(FTOBJ)ftpatent.$(OBJ) : $(FTSRC)base$(D)ftpatent.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftpatent.$(OBJ) $(C_) $(FTSRC)base$(D)ftpatent.c
 
-$(FTOBJ)ftmd5.$(OBJ) : $(FTSRC)base$(D)md5.c $(MAKEDIRS)
+$(FTOBJ)ftmd5.$(OBJ) : $(FTSRC)base$(D)md5.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftmd5.$(OBJ) $(C_) $(FTSRC)base$(D)md5.c
 
-$(FTOBJ)bdflib.$(OBJ) : $(FTSRC)bdf$(D)bdflib.c $(MAKEDIRS)
+$(FTOBJ)bdflib.$(OBJ) : $(FTSRC)bdf$(D)bdflib.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)bdflib.$(OBJ) $(C_) $(FTSRC)bdf$(D)bdflib.c
 
-$(FTOBJ)bdfdrivr.$(OBJ) : $(FTSRC)bdf$(D)bdfdrivr.c $(MAKEDIRS)
+$(FTOBJ)bdfdrivr.$(OBJ) : $(FTSRC)bdf$(D)bdfdrivr.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)bdfdrivr.$(OBJ) $(C_) $(FTSRC)bdf$(D)bdfdrivr.c
 
-$(FTOBJ)ftcbasic.$(OBJ) : $(FTSRC)cache$(D)ftcbasic.c $(MAKEDIRS)
+$(FTOBJ)ftcbasic.$(OBJ) : $(FTSRC)cache$(D)ftcbasic.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftcbasic.$(OBJ) $(C_) $(FTSRC)cache$(D)ftcbasic.c
 
-$(FTOBJ)ft2ccache.$(OBJ) : $(FTSRC)cache$(D)ftccache.c $(MAKEDIRS)
+$(FTOBJ)ft2ccache.$(OBJ) : $(FTSRC)cache$(D)ftccache.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ft2ccache.$(OBJ) $(C_) $(FTSRC)cache$(D)ftccache.c
 
-$(FTOBJ)ftccmap.$(OBJ) : $(FTSRC)cache$(D)ftccmap.c $(MAKEDIRS)
+$(FTOBJ)ftccmap.$(OBJ) : $(FTSRC)cache$(D)ftccmap.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftccmap.$(OBJ) $(C_) $(FTSRC)cache$(D)ftccmap.c
 
-$(FTOBJ)ftcglyph.$(OBJ) : $(FTSRC)cache$(D)ftcglyph.c $(MAKEDIRS)
+$(FTOBJ)ftcglyph.$(OBJ) : $(FTSRC)cache$(D)ftcglyph.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftcglyph.$(OBJ) $(C_) $(FTSRC)cache$(D)ftcglyph.c
 
-$(FTOBJ)ftcimage.$(OBJ) : $(FTSRC)cache$(D)ftcimage.c $(MAKEDIRS)
+$(FTOBJ)ftcimage.$(OBJ) : $(FTSRC)cache$(D)ftcimage.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftcimage.$(OBJ) $(C_) $(FTSRC)cache$(D)ftcimage.c
 
-$(FTOBJ)ftcmanag.$(OBJ) : $(FTSRC)cache$(D)ftcmanag.c $(MAKEDIRS)
+$(FTOBJ)ftcmanag.$(OBJ) : $(FTSRC)cache$(D)ftcmanag.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftcmanag.$(OBJ) $(C_) $(FTSRC)cache$(D)ftcmanag.c
 
-$(FTOBJ)ftcmru.$(OBJ) : $(FTSRC)cache$(D)ftcmru.c $(MAKEDIRS)
+$(FTOBJ)ftcmru.$(OBJ) : $(FTSRC)cache$(D)ftcmru.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftcmru.$(OBJ) $(C_) $(FTSRC)cache$(D)ftcmru.c
 
-$(FTOBJ)ftcsbits.$(OBJ) : $(FTSRC)cache$(D)ftcsbits.c $(MAKEDIRS)
+$(FTOBJ)ftcsbits.$(OBJ) : $(FTSRC)cache$(D)ftcsbits.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftcsbits.$(OBJ) $(C_) $(FTSRC)cache$(D)ftcsbits.c
 
-$(FTOBJ)cffobjs.$(OBJ) : $(FTSRC)cff$(D)cffobjs.c $(MAKEDIRS)
+$(FTOBJ)cffobjs.$(OBJ) : $(FTSRC)cff$(D)cffobjs.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cffobjs.$(OBJ) $(C_) $(FTSRC)cff$(D)cffobjs.c
 
-$(FTOBJ)cffload.$(OBJ) : $(FTSRC)cff$(D)cffload.c $(MAKEDIRS)
+$(FTOBJ)cffload.$(OBJ) : $(FTSRC)cff$(D)cffload.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cffload.$(OBJ) $(C_) $(FTSRC)cff$(D)cffload.c
 
-$(FTOBJ)cffgload.$(OBJ) : $(FTSRC)cff$(D)cffgload.c $(MAKEDIRS)
+$(FTOBJ)cffgload.$(OBJ) : $(FTSRC)cff$(D)cffgload.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cffgload.$(OBJ) $(C_) $(FTSRC)cff$(D)cffgload.c
 
-$(FTOBJ)cffparse.$(OBJ) : $(FTSRC)cff$(D)cffparse.c $(MAKEDIRS)
+$(FTOBJ)cffparse.$(OBJ) : $(FTSRC)cff$(D)cffparse.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cffparse.$(OBJ) $(C_) $(FTSRC)cff$(D)cffparse.c
 
-$(FTOBJ)cffcmap.$(OBJ) : $(FTSRC)cff$(D)cffcmap.c $(MAKEDIRS)
+$(FTOBJ)cffcmap.$(OBJ) : $(FTSRC)cff$(D)cffcmap.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cffcmap.$(OBJ) $(C_) $(FTSRC)cff$(D)cffcmap.c
 
-$(FTOBJ)cffdrivr.$(OBJ) : $(FTSRC)cff$(D)cffdrivr.c $(MAKEDIRS)
+$(FTOBJ)cffdrivr.$(OBJ) : $(FTSRC)cff$(D)cffdrivr.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cffdrivr.$(OBJ) $(C_) $(FTSRC)cff$(D)cffdrivr.c
 
-$(FTOBJ)cf2arrst.$(OBJ) : $(FTSRC)cff$(D)cf2arrst.c $(MAKEDIRS)
+$(FTOBJ)cf2arrst.$(OBJ) : $(FTSRC)cff$(D)cf2arrst.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cf2arrst.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2arrst.c
 
-$(FTOBJ)cf2blues.$(OBJ) : $(FTSRC)cff$(D)cf2blues.c $(MAKEDIRS)
+$(FTOBJ)cf2blues.$(OBJ) : $(FTSRC)cff$(D)cf2blues.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cf2blues.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2blues.c
 
-$(FTOBJ)cf2error.$(OBJ) : $(FTSRC)cff$(D)cf2error.c $(MAKEDIRS)
+$(FTOBJ)cf2error.$(OBJ) : $(FTSRC)cff$(D)cf2error.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cf2error.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2error.c
 
-$(FTOBJ)cf2font.$(OBJ) : $(FTSRC)cff$(D)cf2font.c $(MAKEDIRS)
+$(FTOBJ)cf2font.$(OBJ) : $(FTSRC)cff$(D)cf2font.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cf2font.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2font.c
 
-$(FTOBJ)cf2ft.$(OBJ) : $(FTSRC)cff$(D)cf2ft.c $(MAKEDIRS)
+$(FTOBJ)cf2ft.$(OBJ) : $(FTSRC)cff$(D)cf2ft.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cf2ft.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2ft.c
 
-$(FTOBJ)cf2hints.$(OBJ) : $(FTSRC)cff$(D)cf2hints.c $(MAKEDIRS)
+$(FTOBJ)cf2hints.$(OBJ) : $(FTSRC)cff$(D)cf2hints.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cf2hints.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2hints.c
 
-$(FTOBJ)cf2intrp.$(OBJ) : $(FTSRC)cff$(D)cf2intrp.c $(MAKEDIRS)
+$(FTOBJ)cf2intrp.$(OBJ) : $(FTSRC)cff$(D)cf2intrp.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cf2intrp.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2intrp.c
 
-$(FTOBJ)cf2read.$(OBJ) : $(FTSRC)cff$(D)cf2read.c $(MAKEDIRS)
+$(FTOBJ)cf2read.$(OBJ) : $(FTSRC)cff$(D)cf2read.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cf2read.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2read.c
 
-$(FTOBJ)cf2stack.$(OBJ) : $(FTSRC)cff$(D)cf2stack.c $(MAKEDIRS)
+$(FTOBJ)cf2stack.$(OBJ) : $(FTSRC)cff$(D)cf2stack.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cf2stack.$(OBJ) $(C_) $(FTSRC)cff$(D)cf2stack.c
 
-$(FTOBJ)cidparse.$(OBJ) : $(FTSRC)cid$(D)cidparse.c $(MAKEDIRS)
+$(FTOBJ)cidparse.$(OBJ) : $(FTSRC)cid$(D)cidparse.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cidparse.$(OBJ) $(C_) $(FTSRC)cid$(D)cidparse.c
 
-$(FTOBJ)cidload.$(OBJ) : $(FTSRC)cid$(D)cidload.c $(MAKEDIRS)
+$(FTOBJ)cidload.$(OBJ) : $(FTSRC)cid$(D)cidload.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cidload.$(OBJ) $(C_) $(FTSRC)cid$(D)cidload.c
 
-$(FTOBJ)cidriver.$(OBJ) : $(FTSRC)cid$(D)cidriver.c $(MAKEDIRS)
+$(FTOBJ)cidriver.$(OBJ) : $(FTSRC)cid$(D)cidriver.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cidriver.$(OBJ) $(C_) $(FTSRC)cid$(D)cidriver.c
 
-$(FTOBJ)cidgload.$(OBJ) : $(FTSRC)cid$(D)cidgload.c $(MAKEDIRS)
+$(FTOBJ)cidgload.$(OBJ) : $(FTSRC)cid$(D)cidgload.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cidgload.$(OBJ) $(C_) $(FTSRC)cid$(D)cidgload.c
 
-$(FTOBJ)cidobjs.$(OBJ) : $(FTSRC)cid$(D)cidobjs.c $(MAKEDIRS)
+$(FTOBJ)cidobjs.$(OBJ) : $(FTSRC)cid$(D)cidobjs.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)cidobjs.$(OBJ) $(C_) $(FTSRC)cid$(D)cidobjs.c
 
-$(FTOBJ)ftgzip.$(OBJ) : $(FTSRC)gzip$(D)ftgzip.c $(MAKEDIRS)
+$(FTOBJ)ftgzip.$(OBJ) : $(FTSRC)gzip$(D)ftgzip.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftgzip.$(OBJ) $(C_) $(FTSRC)gzip$(D)ftgzip.c
 
-$(FTOBJ)ftlzw.$(OBJ) : $(FTSRC)lzw$(D)ftlzw.c $(MAKEDIRS)
+$(FTOBJ)ftlzw.$(OBJ) : $(FTSRC)lzw$(D)ftlzw.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftlzw.$(OBJ) $(C_) $(FTSRC)lzw$(D)ftlzw.c
 
-$(FTOBJ)pcfdrivr.$(OBJ) : $(FTSRC)pcf$(D)pcfdrivr.c $(MAKEDIRS)
+$(FTOBJ)pcfdrivr.$(OBJ) : $(FTSRC)pcf$(D)pcfdrivr.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pcfdrivr.$(OBJ) $(C_) $(FTSRC)pcf$(D)pcfdrivr.c
 
-$(FTOBJ)pcfread.$(OBJ) : $(FTSRC)pcf$(D)pcfread.c $(MAKEDIRS)
+$(FTOBJ)pcfread.$(OBJ) : $(FTSRC)pcf$(D)pcfread.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pcfread.$(OBJ) $(C_) $(FTSRC)pcf$(D)pcfread.c
 
-$(FTOBJ)pcfutil.$(OBJ) : $(FTSRC)pcf$(D)pcfutil.c $(MAKEDIRS)
+$(FTOBJ)pcfutil.$(OBJ) : $(FTSRC)pcf$(D)pcfutil.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pcfutil.$(OBJ) $(C_) $(FTSRC)pcf$(D)pcfutil.c
 
-$(FTOBJ)pfrload.$(OBJ) : $(FTSRC)pfr$(D)pfrload.c $(MAKEDIRS)
+$(FTOBJ)pfrload.$(OBJ) : $(FTSRC)pfr$(D)pfrload.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pfrload.$(OBJ) $(C_) $(FTSRC)pfr$(D)pfrload.c
 
-$(FTOBJ)pfrgload.$(OBJ) : $(FTSRC)pfr$(D)pfrgload.c $(MAKEDIRS)
+$(FTOBJ)pfrgload.$(OBJ) : $(FTSRC)pfr$(D)pfrgload.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pfrgload.$(OBJ) $(C_) $(FTSRC)pfr$(D)pfrgload.c
 
-$(FTOBJ)pfrcmap.$(OBJ) : $(FTSRC)pfr$(D)pfrcmap.c $(MAKEDIRS)
+$(FTOBJ)pfrcmap.$(OBJ) : $(FTSRC)pfr$(D)pfrcmap.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pfrcmap.$(OBJ) $(C_) $(FTSRC)pfr$(D)pfrcmap.c
 
-$(FTOBJ)pfrdrivr.$(OBJ) : $(FTSRC)pfr$(D)pfrdrivr.c $(MAKEDIRS)
+$(FTOBJ)pfrdrivr.$(OBJ) : $(FTSRC)pfr$(D)pfrdrivr.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pfrdrivr.$(OBJ) $(C_) $(FTSRC)pfr$(D)pfrdrivr.c
 
-$(FTOBJ)pfrsbit.$(OBJ) : $(FTSRC)pfr$(D)pfrsbit.c $(MAKEDIRS)
+$(FTOBJ)pfrsbit.$(OBJ) : $(FTSRC)pfr$(D)pfrsbit.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pfrsbit.$(OBJ) $(C_) $(FTSRC)pfr$(D)pfrsbit.c
 
-$(FTOBJ)pfrobjs.$(OBJ) : $(FTSRC)pfr$(D)pfrobjs.c $(MAKEDIRS)
+$(FTOBJ)pfrobjs.$(OBJ) : $(FTSRC)pfr$(D)pfrobjs.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pfrobjs.$(OBJ) $(C_) $(FTSRC)pfr$(D)pfrobjs.c
 
-$(FTOBJ)psobjs.$(OBJ) : $(FTSRC)psaux$(D)psobjs.c $(MAKEDIRS)
+$(FTOBJ)psobjs.$(OBJ) : $(FTSRC)psaux$(D)psobjs.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)psobjs.$(OBJ) $(C_) $(FTSRC)psaux$(D)psobjs.c
 
-$(FTOBJ)t1decode.$(OBJ) : $(FTSRC)psaux$(D)t1decode.c $(MAKEDIRS)
+$(FTOBJ)t1decode.$(OBJ) : $(FTSRC)psaux$(D)t1decode.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)t1decode.$(OBJ) $(C_) $(FTSRC)psaux$(D)t1decode.c
 
-$(FTOBJ)t1cmap.$(OBJ) : $(FTSRC)psaux$(D)t1cmap.c $(MAKEDIRS)
+$(FTOBJ)t1cmap.$(OBJ) : $(FTSRC)psaux$(D)t1cmap.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)t1cmap.$(OBJ) $(C_) $(FTSRC)psaux$(D)t1cmap.c
 
-$(FTOBJ)afmparse.$(OBJ) : $(FTSRC)psaux$(D)afmparse.c $(MAKEDIRS)
+$(FTOBJ)afmparse.$(OBJ) : $(FTSRC)psaux$(D)afmparse.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afmparse.$(OBJ) $(C_) $(FTSRC)psaux$(D)afmparse.c
 
-$(FTOBJ)psconv.$(OBJ) : $(FTSRC)psaux$(D)psconv.c $(MAKEDIRS)
+$(FTOBJ)psconv.$(OBJ) : $(FTSRC)psaux$(D)psconv.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)psconv.$(OBJ) $(C_) $(FTSRC)psaux$(D)psconv.c
 
-$(FTOBJ)psauxmod.$(OBJ) : $(FTSRC)psaux$(D)psauxmod.c $(MAKEDIRS)
+$(FTOBJ)psauxmod.$(OBJ) : $(FTSRC)psaux$(D)psauxmod.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)psauxmod.$(OBJ) $(C_) $(FTSRC)psaux$(D)psauxmod.c
 
-$(FTOBJ)pshrec.$(OBJ) : $(FTSRC)pshinter$(D)pshrec.c $(MAKEDIRS)
+$(FTOBJ)pshrec.$(OBJ) : $(FTSRC)pshinter$(D)pshrec.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pshrec.$(OBJ) $(C_) $(FTSRC)pshinter$(D)pshrec.c
 
-$(FTOBJ)pshglob.$(OBJ) : $(FTSRC)pshinter$(D)pshglob.c $(MAKEDIRS)
+$(FTOBJ)pshglob.$(OBJ) : $(FTSRC)pshinter$(D)pshglob.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pshglob.$(OBJ) $(C_) $(FTSRC)pshinter$(D)pshglob.c
 
-$(FTOBJ)pshmod.$(OBJ) : $(FTSRC)pshinter$(D)pshmod.c $(MAKEDIRS)
+$(FTOBJ)pshmod.$(OBJ) : $(FTSRC)pshinter$(D)pshmod.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pshmod.$(OBJ) $(C_) $(FTSRC)pshinter$(D)pshmod.c
 
-$(FTOBJ)pshalgo.$(OBJ) : $(FTSRC)pshinter$(D)pshalgo.c $(MAKEDIRS)
+$(FTOBJ)pshalgo.$(OBJ) : $(FTSRC)pshinter$(D)pshalgo.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pshalgo.$(OBJ) $(C_) $(FTSRC)pshinter$(D)pshalgo.c
 
-$(FTOBJ)psmodule.$(OBJ) : $(FTSRC)psnames$(D)psmodule.c $(MAKEDIRS)
+$(FTOBJ)psmodule.$(OBJ) : $(FTSRC)psnames$(D)psmodule.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)psmodule.$(OBJ) $(C_) $(FTSRC)psnames$(D)psmodule.c
 
-$(FTOBJ)pspic.$(OBJ) : $(FTSRC)psnames$(D)pspic.c $(MAKEDIRS)
+$(FTOBJ)pspic.$(OBJ) : $(FTSRC)psnames$(D)pspic.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pspic.$(OBJ) $(C_) $(FTSRC)psnames$(D)pspic.c
 
-$(FTOBJ)ftraster.$(OBJ) : $(FTSRC)raster$(D)ftraster.c $(MAKEDIRS)
+$(FTOBJ)ftraster.$(OBJ) : $(FTSRC)raster$(D)ftraster.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftraster.$(OBJ) $(C_) $(FTSRC)raster$(D)ftraster.c
 
-$(FTOBJ)ftrend1.$(OBJ) : $(FTSRC)raster$(D)ftrend1.c $(MAKEDIRS)
+$(FTOBJ)ftrend1.$(OBJ) : $(FTSRC)raster$(D)ftrend1.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftrend1.$(OBJ) $(C_) $(FTSRC)raster$(D)ftrend1.c
 
-$(FTOBJ)rastpic.$(OBJ) : $(FTSRC)raster$(D)rastpic.c $(MAKEDIRS)
+$(FTOBJ)rastpic.$(OBJ) : $(FTSRC)raster$(D)rastpic.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)rastpic.$(OBJ) $(C_) $(FTSRC)raster$(D)rastpic.c
 
-$(FTOBJ)ftgrays.$(OBJ) : $(FTSRC)smooth$(D)ftgrays.c $(MAKEDIRS)
+$(FTOBJ)ftgrays.$(OBJ) : $(FTSRC)smooth$(D)ftgrays.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftgrays.$(OBJ) $(C_) $(FTSRC)smooth$(D)ftgrays.c
 
-$(FTOBJ)ftsmooth.$(OBJ) : $(FTSRC)smooth$(D)ftsmooth.c $(MAKEDIRS)
+$(FTOBJ)ftsmooth.$(OBJ) : $(FTSRC)smooth$(D)ftsmooth.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftsmooth.$(OBJ) $(C_) $(FTSRC)smooth$(D)ftsmooth.c
 
-$(FTOBJ)ftspic.$(OBJ) : $(FTSRC)smooth$(D)ftspic.c $(MAKEDIRS)
+$(FTOBJ)ftspic.$(OBJ) : $(FTSRC)smooth$(D)ftspic.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftspic.$(OBJ) $(C_) $(FTSRC)smooth$(D)ftspic.c
 
-$(FTOBJ)sfobjs.$(OBJ) : $(FTSRC)sfnt$(D)sfobjs.c $(MAKEDIRS)
+$(FTOBJ)sfobjs.$(OBJ) : $(FTSRC)sfnt$(D)sfobjs.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)sfobjs.$(OBJ) $(C_) $(FTSRC)sfnt$(D)sfobjs.c
 
-$(FTOBJ)sfdriver.$(OBJ) : $(FTSRC)sfnt$(D)sfdriver.c $(MAKEDIRS)
+$(FTOBJ)sfdriver.$(OBJ) : $(FTSRC)sfnt$(D)sfdriver.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)sfdriver.$(OBJ) $(C_) $(FTSRC)sfnt$(D)sfdriver.c
 
-$(FTOBJ)ttcmap.$(OBJ) : $(FTSRC)sfnt$(D)ttcmap.c $(MAKEDIRS)
+$(FTOBJ)ttcmap.$(OBJ) : $(FTSRC)sfnt$(D)ttcmap.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttcmap.$(OBJ) $(C_) $(FTSRC)sfnt$(D)ttcmap.c
 
-$(FTOBJ)ttmtx.$(OBJ) : $(FTSRC)sfnt$(D)ttmtx.c $(MAKEDIRS)
+$(FTOBJ)ttmtx.$(OBJ) : $(FTSRC)sfnt$(D)ttmtx.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttmtx.$(OBJ) $(C_) $(FTSRC)sfnt$(D)ttmtx.c
 
-$(FTOBJ)ttpost.$(OBJ) : $(FTSRC)sfnt$(D)ttpost.c $(MAKEDIRS)
+$(FTOBJ)ttpost.$(OBJ) : $(FTSRC)sfnt$(D)ttpost.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttpost.$(OBJ) $(C_) $(FTSRC)sfnt$(D)ttpost.c
 
-$(FTOBJ)ft2ttload.$(OBJ) : $(FTSRC)sfnt$(D)ttload.c $(MAKEDIRS)
+$(FTOBJ)ft2ttload.$(OBJ) : $(FTSRC)sfnt$(D)ttload.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ft2ttload.$(OBJ) $(C_) $(FTSRC)sfnt$(D)ttload.c
 
-$(FTOBJ)ttsbit.$(OBJ) : $(FTSRC)sfnt$(D)ttsbit.c $(MAKEDIRS)
+$(FTOBJ)ttsbit.$(OBJ) : $(FTSRC)sfnt$(D)ttsbit.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttsbit.$(OBJ) $(C_) $(FTSRC)sfnt$(D)ttsbit.c
 
-$(FTOBJ)ttkern.$(OBJ) : $(FTSRC)sfnt$(D)ttkern.c $(MAKEDIRS)
+$(FTOBJ)ttkern.$(OBJ) : $(FTSRC)sfnt$(D)ttkern.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttkern.$(OBJ) $(C_) $(FTSRC)sfnt$(D)ttkern.c
 
-$(FTOBJ)ttbdf.$(OBJ) : $(FTSRC)sfnt$(D)ttbdf.c $(MAKEDIRS)
+$(FTOBJ)ttbdf.$(OBJ) : $(FTSRC)sfnt$(D)ttbdf.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttbdf.$(OBJ) $(C_) $(FTSRC)sfnt$(D)ttbdf.c
 
-$(FTOBJ)sfntpic.$(OBJ) : $(FTSRC)sfnt$(D)sfntpic.c $(MAKEDIRS)
+$(FTOBJ)sfntpic.$(OBJ) : $(FTSRC)sfnt$(D)sfntpic.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)sfntpic.$(OBJ) $(C_) $(FTSRC)sfnt$(D)sfntpic.c
 
-$(FTOBJ)pngshim.$(OBJ) : $(FTSRC)sfnt$(D)pngshim.c $(MAKEDIRS)
+$(FTOBJ)pngshim.$(OBJ) : $(FTSRC)sfnt$(D)pngshim.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)pngshim.$(OBJ) $(C_) $(FTSRC)sfnt$(D)pngshim.c
 
-$(FTOBJ)ttdriver.$(OBJ) : $(FTSRC)truetype$(D)ttdriver.c $(MAKEDIRS)
+$(FTOBJ)ttdriver.$(OBJ) : $(FTSRC)truetype$(D)ttdriver.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttdriver.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttdriver.c
 
-$(FTOBJ)ft2ttobjs.$(OBJ) : $(FTSRC)truetype$(D)ttobjs.c $(MAKEDIRS)
+$(FTOBJ)ft2ttobjs.$(OBJ) : $(FTSRC)truetype$(D)ttobjs.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ft2ttobjs.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttobjs.c
 
-$(FTOBJ)ttpload.$(OBJ) : $(FTSRC)truetype$(D)ttpload.c $(MAKEDIRS)
+$(FTOBJ)ttpload.$(OBJ) : $(FTSRC)truetype$(D)ttpload.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttpload.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttpload.c
 
-$(FTOBJ)ttgload.$(OBJ) : $(FTSRC)truetype$(D)ttgload.c $(MAKEDIRS)
+$(FTOBJ)ttgload.$(OBJ) : $(FTSRC)truetype$(D)ttgload.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttgload.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttgload.c
 
-$(FTOBJ)ft2ttinterp.$(OBJ) : $(FTSRC)truetype$(D)ttinterp.c $(MAKEDIRS)
+$(FTOBJ)ft2ttinterp.$(OBJ) : $(FTSRC)truetype$(D)ttinterp.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ft2ttinterp.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttinterp.c
 
-$(FTOBJ)ttgxvar.$(OBJ) : $(FTSRC)truetype$(D)ttgxvar.c $(MAKEDIRS)
+$(FTOBJ)ttgxvar.$(OBJ) : $(FTSRC)truetype$(D)ttgxvar.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttgxvar.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttgxvar.c
 
-$(FTOBJ)ttpic.$(OBJ) : $(FTSRC)truetype$(D)ttpic.c $(MAKEDIRS)
+$(FTOBJ)ttpic.$(OBJ) : $(FTSRC)truetype$(D)ttpic.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttpic.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttpic.c
 
-$(FTOBJ)ttsubpix.$(OBJ) : $(FTSRC)truetype$(D)ttsubpix.c $(MAKEDIRS)
+$(FTOBJ)ttsubpix.$(OBJ) : $(FTSRC)truetype$(D)ttsubpix.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ttsubpix.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttsubpix.c
 
-$(FTOBJ)t1afm.$(OBJ) : $(FTSRC)type1$(D)t1afm.c $(MAKEDIRS)
+$(FTOBJ)t1afm.$(OBJ) : $(FTSRC)type1$(D)t1afm.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)t1afm.$(OBJ) $(C_) $(FTSRC)type1$(D)t1afm.c
 
-$(FTOBJ)t1driver.$(OBJ) : $(FTSRC)type1$(D)t1driver.c $(MAKEDIRS)
+$(FTOBJ)t1driver.$(OBJ) : $(FTSRC)type1$(D)t1driver.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)t1driver.$(OBJ) $(C_) $(FTSRC)type1$(D)t1driver.c
 
-$(FTOBJ)t1objs.$(OBJ) : $(FTSRC)type1$(D)t1objs.c $(MAKEDIRS)
+$(FTOBJ)t1objs.$(OBJ) : $(FTSRC)type1$(D)t1objs.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)t1objs.$(OBJ) $(C_) $(FTSRC)type1$(D)t1objs.c
 
-$(FTOBJ)t1load.$(OBJ) : $(FTSRC)type1$(D)t1load.c $(MAKEDIRS)
+$(FTOBJ)t1load.$(OBJ) : $(FTSRC)type1$(D)t1load.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)t1load.$(OBJ) $(C_) $(FTSRC)type1$(D)t1load.c
 
-$(FTOBJ)t1gload.$(OBJ) : $(FTSRC)type1$(D)t1gload.c $(MAKEDIRS)
+$(FTOBJ)t1gload.$(OBJ) : $(FTSRC)type1$(D)t1gload.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)t1gload.$(OBJ) $(C_) $(FTSRC)type1$(D)t1gload.c
 
-$(FTOBJ)t1parse.$(OBJ) : $(FTSRC)type1$(D)t1parse.c $(MAKEDIRS)
+$(FTOBJ)t1parse.$(OBJ) : $(FTSRC)type1$(D)t1parse.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)t1parse.$(OBJ) $(C_) $(FTSRC)type1$(D)t1parse.c
 
-$(FTOBJ)t42objs.$(OBJ) : $(FTSRC)type42$(D)t42objs.c $(MAKEDIRS)
+$(FTOBJ)t42objs.$(OBJ) : $(FTSRC)type42$(D)t42objs.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)t42objs.$(OBJ) $(C_) $(FTSRC)type42$(D)t42objs.c
 
-$(FTOBJ)t42parse.$(OBJ) : $(FTSRC)type42$(D)t42parse.c $(MAKEDIRS)
+$(FTOBJ)t42parse.$(OBJ) : $(FTSRC)type42$(D)t42parse.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)t42parse.$(OBJ) $(C_) $(FTSRC)type42$(D)t42parse.c
 
-$(FTOBJ)t42drivr.$(OBJ) : $(FTSRC)type42$(D)t42drivr.c $(MAKEDIRS)
+$(FTOBJ)t42drivr.$(OBJ) : $(FTSRC)type42$(D)t42drivr.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)t42drivr.$(OBJ) $(C_) $(FTSRC)type42$(D)t42drivr.c
 
-$(FTOBJ)winfnt.$(OBJ) : $(FTSRC)winfonts$(D)winfnt.c $(MAKEDIRS)
+$(FTOBJ)winfnt.$(OBJ) : $(FTSRC)winfonts$(D)winfnt.c $(FT_MAK) $(MAKEDIRS)
 	$(FTCC) $(FTO_)winfnt.$(OBJ) $(C_) $(FTSRC)winfonts$(D)winfnt.c

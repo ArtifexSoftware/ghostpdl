@@ -16,42 +16,44 @@
 # Watcom MS-DOS build.
 
 # Define the name of this makefile.
-WINPLAT_MAK=$(GLSRC)winplat.mak
+WINPLAT_MAK=$(GLSRC)winplat.mak $(TOP_MAKEFILES)
 
 # Define generic Windows-specific modules.
 
 winplat_=$(GLOBJ)gp_ntfs.$(OBJ) $(GLOBJ)gp_win32.$(OBJ)
-$(GLD)winplat.dev : $(WINPLAT_MAK) $(ECHOGS_XE) $(winplat_)
+$(GLD)winplat.dev : $(WINPLAT_MAK) $(ECHOGS_XE) $(winplat_) $(WINPLAT_MAK)
 	$(SETMOD) $(GLD)winplat $(winplat_)
 
 $(GLOBJ)gp_ntfs.$(OBJ): $(GLSRC)gp_ntfs.c $(AK)\
  $(dos__h) $(memory__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gpmisc_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)
+ $(gp_h) $(gpmisc_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h) \
+ $(WINPLAT_MAK)
 	$(GLCCWIN) $(GLO_)gp_ntfs.$(OBJ) $(C_) $(GLSRC)gp_ntfs.c
 
 $(AUX)gp_ntfs.$(OBJ): $(GLSRC)gp_ntfs.c $(AK)\
  $(dos__h) $(memory__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gpmisc_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)
+ $(gp_h) $(gpmisc_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h) \
+ $(WINPLAT_MAK)
 	$(GLCCAUX) $(AUXO_)gp_ntfs.$(OBJ) $(C_) $(GLSRC)gp_ntfs.c
 
 $(GLOBJ)gp_win32.$(OBJ): $(GLSRC)gp_win32.c $(AK)\
  $(dos__h) $(malloc__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gsmemory_h) $(gstypes_h)
+ $(gp_h) $(gsmemory_h) $(gstypes_h) $(WINPLAT_MAK)
 	$(GLCCWIN) $(GLO_)gp_win32.$(OBJ) $(C_) $(GLSRC)gp_win32.c
 
 $(AUX)gp_win32.$(OBJ): $(GLSRC)gp_win32.c $(AK)\
  $(dos__h) $(malloc__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gsmemory_h) $(gstypes_h)
+ $(gp_h) $(gsmemory_h) $(gstypes_h) $(WINPLAT_MAK)
 	$(GLCCAUX) $(AUXO_)gp_win32.$(OBJ) $(C_) $(GLSRC)gp_win32.c
 
 # Define the Windows thread / synchronization module.
 
 winsync_=$(GLOBJ)gp_wsync.$(OBJ)
-$(GLD)winsync.dev : $(WINPLAT_MAK) $(ECHOGS_XE) $(winsync_)
+$(GLD)winsync.dev : $(WINPLAT_MAK) $(ECHOGS_XE) $(winsync_) $(WINPLAT_MAK)
 	$(SETMOD) $(GLD)winsync $(winsync_)
 	$(ADDMOD) $(GLD)winsync -replace $(GLD)nosync
 
 $(GLOBJ)gp_wsync.$(OBJ): $(GLSRC)gp_wsync.c $(AK)\
  $(dos__h) $(malloc__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gsmemory_h) $(gstypes_h)
+ $(gp_h) $(gsmemory_h) $(gstypes_h) $(WINPLAT_MAK)
 	$(GLCCWIN) $(GLO_)gp_wsync.$(OBJ) $(C_) $(GLSRC)gp_wsync.c

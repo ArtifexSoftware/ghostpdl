@@ -29,7 +29,7 @@
 # This partial makefile compiles the openjpeg library for use in
 # Ghostscript.
 
-OPEN_JPEG_MAK=$(GLSRC)openjpeg.mak
+OPEN_JPEG_MAK=$(GLSRC)openjpeg.mak $(TOP_MAKEFILES)
 
 OPEN_JPEG_SRC=$(JPXSRCDIR)$(D)src$(D)lib$(D)openjp2$(D)
 OPEN_JPEG_GEN=$(JPXOBJDIR)$(D)
@@ -98,18 +98,18 @@ open_jpeg_HDRS = \
 	$(OPEN_JPEG_SRC)tgt.h	\
 
 # switch in the selected library .dev
-$(OPEN_JPEG_GEN)openjpeg.dev : $(TOP_MAKEFILES) $(OPEN_JPEG_GEN)openjpeg_$(SHARE_JPX).dev \
- $(MAKEDIRS)
+$(OPEN_JPEG_GEN)openjpeg.dev : $(OPEN_JPEG_GEN)openjpeg_$(SHARE_JPX).dev \
+ $(OPEN_JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(OPEN_JPEG_GEN)openjpeg_$(SHARE_JPX).dev $(OPEN_JPEG_GEN)openjpeg.dev
 
 # external link .dev
-$(OPEN_JPEG_GEN)openjpeg_1.dev : $(TOP_MAKEFILES) $(OPEN_JPEG_MAK) $(ECHOGS_XE) \
- $(MAKEDIRS)
+$(OPEN_JPEG_GEN)openjpeg_1.dev : $(OPEN_JPEG_MAK) $(ECHOGS_XE) \
+ $(OPEN_JPEG_MAK) $(MAKEDIRS)
 	$(SETMOD) $(OPEN_JPEG_GEN)openjpeg_1 -lib lib_openjpeg
 
 # compile our own .dev
-$(OPEN_JPEG_GEN)openjpeg_0.dev : $(TOP_MAKEFILES) $(OPEN_JPEG_MAK) $(ECHOGS_XE) $(open_jpeg_OBJS) \
- $(MAKEDIRS)
+$(OPEN_JPEG_GEN)openjpeg_0.dev : $(ECHOGS_XE) $(open_jpeg_OBJS) \
+ $(OPEN_JPEG_MAK) $(MAKEDIRS)
 	$(SETMOD) $(OPEN_JPEG_GEN)openjpeg_0 $(open_jpeg_OBJS)
 
 # define our specific compiler

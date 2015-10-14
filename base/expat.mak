@@ -23,7 +23,7 @@
 #	EXPATOBJDIR - directory for object files.
 
 # Define the name of this makefile
-EXPAT_MAK=$(GLSRC)expat.mak
+EXPAT_MAK=$(GLSRC)expat.mak $(TOP_MAKEFILES)
 
 # local aliases
 EXPATSRC=$(EXPATSRCDIR)$(D)lib$(D)
@@ -70,17 +70,17 @@ expat_xmltok_hdrs=$(EXPATSRC)xmltok_impl.c \
 	$(EXPATSRC)expat_external.h \
 	$(EXPATSRC)internal.h
 
-$(EXPATOBJ)xmlparse.$(OBJ) : $(EXPATSRC)xmlparse.c $(expat_xmlparse_hdrs) $(MAKEDIRS)
+$(EXPATOBJ)xmlparse.$(OBJ) : $(EXPATSRC)xmlparse.c $(expat_xmlparse_hdrs) $(EXPAT_MAK) $(MAKEDIRS)
 	$(EXPATCC) $(EXPATO_)xmlparse.$(OBJ) $(C_) $(EXPATSRC)xmlparse.c
 
-$(EXPATOBJ)xmlrole.$(OBJ) : $(EXPATSRC)xmlrole.c $(expat_xmlrole_hdrs) $(MAKEDIRS)
+$(EXPATOBJ)xmlrole.$(OBJ) : $(EXPATSRC)xmlrole.c $(expat_xmlrole_hdrs) $(EXPAT_MAK) $(MAKEDIRS)
 	$(EXPATCC) $(EXPATO_)xmlrole.$(OBJ) $(C_) $(EXPATSRC)xmlrole.c
 
-$(EXPATOBJ)xmltok.$(OBJ) : $(EXPATSRC)xmltok.c $(expat_xmltok_hdrs) $(MAKEDIRS)
+$(EXPATOBJ)xmltok.$(OBJ) : $(EXPATSRC)xmltok.c $(expat_xmltok_hdrs) $(EXPAT_MAK) $(MAKEDIRS)
 	$(EXPATCC) $(EXPATO_)xmltok.$(OBJ) $(C_) $(EXPATSRC)xmltok.c
 
 # Copy the target definition we want
-$(EXPATGEN)expat.dev : $(TOP_MAKEFILES) $(EXPAT_MAK) \
+$(EXPATGEN)expat.dev : $(EXPAT_MAK) \
  $(EXPATGEN)expat_$(SHARE_EXPAT).dev $(MAKEDIRS)
 	$(CP_) $(EXPATGEN)expat_$(SHARE_EXPAT).dev $(EXPATGEN)expat.dev
 

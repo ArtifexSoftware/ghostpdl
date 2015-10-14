@@ -24,6 +24,8 @@
 #  export LD_LIBRARY_PATH=/insert-path-here/sobin
 #  export GS_LIB=/insert-path-here/lib
 
+UNIX_DLL_MAK=$(GLSRC)unix-dll.mak $(TOP_MAKEFILES)
+
 # Location for building shared object
 SODIRPREFIX=so
 SODEBUGDIRPREFIX=sodebug
@@ -80,23 +82,23 @@ GS_SO_MAJOR_MINOR=$(BINDIR)/$(GS_SONAME_MAJOR_MINOR)
 
 # Create symbolic links to the Ghostscript interpreter library
 
-$(GS_SO): $(GS_SO_MAJOR)
+$(GS_SO): $(GS_SO_MAJOR) $(UNIX_DLL_MAK) $(MAKEDIRS)
 	$(RM_) $(GS_SO)
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(GS_SO)
 
-$(GS_SO_MAJOR): $(GS_SO_MAJOR_MINOR)
+$(GS_SO_MAJOR): $(GS_SO_MAJOR_MINOR) $(UNIX_DLL_MAK) $(MAKEDIRS)
 	$(RM_) $(GS_SO_MAJOR)
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(GS_SO_MAJOR)
 
-so-links-subtarget:	$(GS_SO)
+so-links-subtarget:	$(GS_SO) $(UNIX_DLL_MAK) $(MAKEDIRS)
 	$(NO_OP)
 
 # Build the small Ghostscript loaders, with Gtk+ and without
-$(GSSOC_XE): so-links-subtarget $(PSSRC)$(SOC_LOADER)
+$(GSSOC_XE): so-links-subtarget $(PSSRC)$(SOC_LOADER) $(UNIX_DLL_MAK) $(MAKEDIRS)
 	$(GLCC) -g -o $(GSSOC_XE) $(PSSRC)dxmainc.c \
 	-L$(BINDIR) -l$(GS_SO_BASE)
 
-$(GSSOX_XE): so-links-subtarget $(PSSRC)$(SOC_LOADER)
+$(GSSOX_XE): so-links-subtarget $(PSSRC)$(SOC_LOADER) $(UNIX_DLL_MAK) $(MAKEDIRS)
 	$(GLCC) -g $(SOC_CFLAGS) -o $(GSSOX_XE) $(PSSRC)$(SOC_LOADER) \
 	-L$(BINDIR) -l$(GS_SO_BASE) $(SOC_LIBS)
 

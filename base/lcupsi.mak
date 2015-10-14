@@ -35,7 +35,7 @@ LCUPSI_CC=$(CUPS_CC) $(I_)$(LIBCUPSISRC) $(I_)$(LIBCUPSIGEN)$(D)cups $(I_)$(LCUP
          $(I_)$(ZSRCDIR) $(I_)$(PNGSRCDIR) $(I_)$(TIFFSRCDIR) $(I_)$(TIFFCONFDIR) $(I_)$(TI_) 
 
 # Define the name of this makefile.
-LCUPSI_MAK=$(GLSRC)lcupsi.mak
+LCUPSI_MAK=$(GLSRC)lcupsi.mak $(TOP_MAKEFILES)
 
 LIBCUPSI_OBJS =\
     $(LIBCUPSIOBJ)error.$(OBJ) \
@@ -43,7 +43,7 @@ LIBCUPSI_OBJS =\
     $(LIBCUPSIOBJ)raster.$(OBJ)
 
 LIBCUPSI_DEPS	=	\
-		$(LIBCUPSISRC)common.h \
+		$(LIBCUPSISRC)common.h $(LCUPSI_MAK) \
 		$(MAKEDIRS)
 
 libcupsi.clean : libcupsi.config-clean libcupsi.clean-not-config-clean
@@ -56,18 +56,16 @@ libcupsi.config-clean :
 	$(RMN_) $(LIBCUPSIGEN)$(D)lcupsi*.dev
 
 # instantiate the requested build option (shared or compiled in)
-$(LIBCUPSIGEN)lcupsi.dev : $(TOP_MAKEFILES) $(LIBCUPSIGEN)lcupsi_$(SHARE_LCUPSI).dev\
- $(MAKEDIRS)
+$(LIBCUPSIGEN)lcupsi.dev : $(LIBCUPSIGEN)lcupsi_$(SHARE_LCUPSI).dev\
+ $(LIBCUPSI_DEPS)
 	$(CP_) $(LIBCUPSIGEN)lcupsi_$(SHARE_LCUPSI).dev $(LIBCUPSIGEN)lcupsi.dev
 
 # Define the shared version.
-$(LIBCUPSIGEN)lcupsi_1.dev : $(TOP_MAKEFILES) $(LCUPSI_MAK) $(ECHOGS_XE) \
- $(MAKEDIRS)
+$(LIBCUPSIGEN)lcupsi_1.dev : $(ECHOGS_XE) $(LIBCUPSI_DEPS)
 	$(SETMOD) $(LIBCUPSIGEN)lcupsi_1 -link $(LCUPSI_LIBS)
 
 # Define the non-shared version.
-$(LIBCUPSIGEN)lcupsi_0.dev : $(TOP_MAKEFILES) $(LCUPSI_MAK) $(ECHOGS_XE) \
-	$(LIBCUPSI_OBJS) $(MAKEDIRS)
+$(LIBCUPSIGEN)lcupsi_0.dev : $(ECHOGS_XE) $(LIBCUPSI_OBJS) $(LIBCUPSI_DEPS)
 	$(SETMOD) $(LIBCUPSIGEN)lcupsi_0 $(LIBCUPSI_OBJS)
 
 # explicit rules for building the source files

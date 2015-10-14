@@ -16,6 +16,8 @@
 # containing the `install' targets.
 # This is the very last part of the makefile for these configurations.
 
+UNIXINST_MAK=$(GLSRC)unixinst.mak $(TOP_MAKEFILES)
+
 install: install-gs install-$(PCL) install-$(XPS)
 
 # The sh -c in the rules below is required because Ultrix's implementation
@@ -28,7 +30,7 @@ install: install-gs install-$(PCL) install-$(XPS)
 install-exec-bindir:
 	-mkdir -p $(DESTDIR)$(bindir)
 
-install-exec: $(GS_XE) install-exec-bindir $(MAKEDIRS)
+install-exec: $(GS_XE) install-exec-bindir $(UNIXINST_MAK) $(MAKEDIRS)
 	-mkdir -p $(DESTDIR)$(datadir)
 	-mkdir -p $(DESTDIR)$(gsdir)
 	-mkdir -p $(DESTDIR)$(gsdatadir)
@@ -37,17 +39,17 @@ install-exec: $(GS_XE) install-exec-bindir $(MAKEDIRS)
 install-gs: install-exec install-scripts install-data $(INSTALL_SHARED) $(INSTALL_CONTRIB)
 	$(NO_OP)
 
-install-gpcl6: $(GPCL_XE) install-exec-bindir
+install-gpcl6: $(GPCL_XE) install-exec-bindir $(UNIXINST_MAK) $(MAKEDIRS)
 	$(INSTALL_PROGRAM) $(GPCL_XE) $(DESTDIR)$(bindir)/$(PCL)$(XE)
 
-install-gxps: $(GXPS_XE) install-exec-bindir
+install-gxps: $(GXPS_XE) install-exec-bindir $(UNIXINST_MAK) $(MAKEDIRS)
 	$(INSTALL_PROGRAM) $(GXPS_XE) $(DESTDIR)$(bindir)/$(XPS)$(XE)
 
 # dummy install taget if we don't have pcl and xps available
 install-:
 	$(NO_OP)
 
-install-scripts: $(PSLIBDIR)/gsnd
+install-scripts: $(PSLIBDIR)/gsnd $(UNIXINST_MAK) $(MAKEDIRS)
 	-mkdir -p $(DESTDIR)$(datadir)
 	-mkdir -p $(DESTDIR)$(gsdir)
 	-mkdir -p $(DESTDIR)$(gsdatadir)

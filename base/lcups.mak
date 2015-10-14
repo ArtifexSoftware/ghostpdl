@@ -33,7 +33,7 @@ LCUPSO_=$(O_)$(LIBCUPSOBJ)
 LCUPS_CC=$(CUPS_CC) $(I_)$(LIBCUPSSRC) $(I_)$(LIBCUPSGEN)$(D)cups $(I_)$(LCUPSSRCDIR)$(D)libs 
 
 # Define the name of this makefile.
-LCUPS_MAK=$(GLSRC)lcups.mak
+LCUPS_MAK=$(GLSRC)lcups.mak $(TOP_MAKEFILES)
 
 LIBCUPS_OBJS =\
 	$(LIBCUPSOBJ)adminutil.$(OBJ) \
@@ -100,6 +100,7 @@ LIBCUPS_DEPS	=	\
 		$(LIBCUPSSRC)sidechannel.h \
 		$(LIBCUPSSRC)transcode.h \
 		$(LIBCUPSSRC)versioning.h \
+                $(LCUPS_MAK) \
 		$(MAKEDIRS)
 
 libcups.clean : libcups.config-clean libcups.clean-not-config-clean
@@ -116,26 +117,24 @@ libcups.config-clean :
 	$(RMN_) $(LIBCUPSGEN)$(D)cups_util.c
 
 # instantiate the requested build option (shared or compiled in)
-$(LIBCUPSGEN)lcups.dev : $(TOP_MAKEFILES) $(LIBCUPSGEN)lcups_$(SHARE_LCUPS).dev \
- $(MAKEDIRS)
+$(LIBCUPSGEN)lcups.dev : $(LIBCUPSGEN)lcups_$(SHARE_LCUPS).dev \
+ $(LIBCUPS_DEPS)
 	$(CP_) $(LIBCUPSGEN)lcups_$(SHARE_LCUPS).dev $(LIBCUPSGEN)lcups.dev
 
 # Define the shared version.
-$(LIBCUPSGEN)lcups_1.dev : $(TOP_MAKEFILES) $(LCUPS_MAK) $(ECHOGS_XE)\
- $(MAKEDIRS)
+$(LIBCUPSGEN)lcups_1.dev : $(ECHOGS_XE) $(LIBCUPS_DEPS)
 	$(SETMOD) $(LIBCUPSGEN)lcups_1 -link $(LCUPS_LIBS)
 	$(ADDMOD) $(DD)lcups_1 -libpath $(CUPSLIBDIRS)
 	$(ADDMOD) $(DD)lcups_1 -lib $(CUPSLIBS)
 
 # Define the non-shared version.
-$(LIBCUPSGEN)lcups_0.dev : $(TOP_MAKEFILES) $(LCUPS_MAK) $(ECHOGS_XE) \
-	$(LIBCUPS_OBJS) $(MAKEDIRS)
+$(LIBCUPSGEN)lcups_0.dev : $(ECHOGS_XE) $(LIBCUPS_OBJS) $(LIBCUPS_DEPS)
 	$(SETMOD) $(LIBCUPSGEN)lcups_0 $(LIBCUPS_OBJS)
 
 # explicit rules for building the source files
 # for simplicity we have every source file depend on all headers
 
-$(LIBCUPSGEN)$(D)cups$(D)config.h : $(LCUPSSRCDIR)$(D)libs$(D)config$(LCUPSBUILDTYPE).h $(MAKEDIRS)
+$(LIBCUPSGEN)$(D)cups$(D)config.h : $(LCUPSSRCDIR)$(D)libs$(D)config$(LCUPSBUILDTYPE).h $(LIBCUPS_DEPS)
 	$(CP_) $(LCUPSSRCDIR)$(D)libs$(D)config$(LCUPSBUILDTYPE).h $(LIBCUPSGEN)$(D)cups$(D)config.h
 
 $(LIBCUPSOBJ)adminutil.$(OBJ) : $(LIBCUPSSRC)adminutil.c $(LIBCUPSGEN)$(D)cups$(D)config.h $(LIBCUPS_DEPS) 

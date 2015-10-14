@@ -46,7 +46,7 @@ GLCPP=$(CPP) $(CO) $(I_)$(GLI_)$(_I)
 PSCCWIN=$(CC_WX) $(CCWINFLAGS) $(I_)$(PSI_)$(_I) $(I_)$(DEVSRCDIR)$(_I) $(PSF_)
 
 # Define the name of this makefile.
-WININT_MAK=$(PSSRC)winint.mak
+WININT_MAK=$(PSSRC)winint.mak $(TOP_MAKEFILES)
 
 # Define the RCOMP switch for including INCDIR.
 !if "$(INCDIR)"==""
@@ -108,15 +108,15 @@ DWOBJNO = $(PSOBJ)dwnodll.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(PSOBJ)dwmain.obj \
 $(GLOBJ)dwtext.obj $(GLOBJ)dwreg.obj
 
 $(PSOBJ)dwnodll.obj: $(PSSRC)dwnodll.c $(AK)\
- $(dwdll_h) $(iapi_h)
+ $(dwdll_h) $(iapi_h) $(WININT_MAK)
 	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwnodll.obj $(C_) $(PSSRC)dwnodll.c
 
 # Compile gsdll.c, the main program of the DLL.
 
-$(PSOBJ)gsdll.obj: $(PSSRC)gsdll.c $(AK) $(iapi_h) $(ghost_h)
+$(PSOBJ)gsdll.obj: $(PSSRC)gsdll.c $(AK) $(iapi_h) $(ghost_h) $(WININT_MAK)
 	$(PSCCWIN) $(COMPILE_FOR_DLL) $(PSO_)gsdll.$(OBJ) $(C_) $(PSSRC)gsdll.c
 
-$(GLOBJ)gp_msdll.obj: $(GLSRC)gp_msdll.c $(AK) $(iapi_h)
+$(GLOBJ)gp_msdll.obj: $(GLSRC)gp_msdll.c $(AK) $(iapi_h) $(WININT_MAK)
 	$(PSCCWIN) $(COMPILE_FOR_DLL) $(GLO_)gp_msdll.$(OBJ) $(C_) $(GLSRC)gp_msdll.c
 
 # Modules for console mode EXEs
@@ -131,13 +131,13 @@ OBJC=$(PSOBJ)dwmainc.obj $(PSOBJ)dwdllc.obj $(GLOBJ)gscdefs.obj\
 OBJCNO=$(PSOBJ)dwmainc.obj $(PSOBJ)dwnodllc.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwreg.obj
 
 $(PSOBJ)dwmainc.obj: $(PSSRC)dwmainc.c $(AK) $(windows__h) $(fcntl__h) $(unistd__h) \
-  $(iapi_h) $(vdtrace_h) $(gdevdsp_h) $(dwdll_h) $(dwimg_h) $(dwtrace_h)
+  $(iapi_h) $(vdtrace_h) $(gdevdsp_h) $(dwdll_h) $(dwimg_h) $(dwtrace_h) $(WININT_MAK)
 	$(PSCCWIN) $(COMPILE_FOR_CONSOLE_EXE) $(PSO_)dwmainc.obj $(C_) $(PSSRC)dwmainc.c
 
-$(PSOBJ)dwdllc.obj: $(PSSRC)dwdll.c $(AK) $(dwdll_h) $(iapi_h)
+$(PSOBJ)dwdllc.obj: $(PSSRC)dwdll.c $(AK) $(dwdll_h) $(iapi_h) $(WININT_MAK)
 	$(PSCCWIN) $(COMPILE_FOR_CONSOLE_EXE) $(PSO_)dwdllc.obj $(C_) $(PSSRC)dwdll.c
 
-$(PSOBJ)dwnodllc.obj: $(PSSRC)dwnodll.c $(AK) $(dwdll_h) $(iapi_h)
+$(PSOBJ)dwnodllc.obj: $(PSSRC)dwnodll.c $(AK) $(dwdll_h) $(iapi_h) $(WININT_MAK)
 	$(PSCCWIN) $(COMPILE_FOR_CONSOLE_EXE) $(PSO_)dwnodllc.obj $(C_) $(PSSRC)dwnodll.c
 
 
@@ -147,44 +147,45 @@ DWOBJ=$(PSOBJ)dwdll.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(PSOBJ)dwmain.obj \
 $(PSOBJ)dwtext.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj $(PSOBJ)dwreg.obj
 
 $(PSOBJ)dwdll.obj: $(PSSRC)dwdll.c $(AK)\
- $(dwdll_h) $(iapi_h)
+ $(dwdll_h) $(iapi_h) $(WININT_MAK)
 	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwdll.obj $(C_) $(PSSRC)dwdll.c
 
 $(PSOBJ)dwimg.obj: $(PSSRC)dwimg.c $(AK)\
  $(dwres_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(gdevdsp_h) $(stdio__h) \
- $(gscdefs_h) $(dwreg_h)
+ $(gscdefs_h) $(dwreg_h) $(WININT_MAK)
         $(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwimg.obj $(C_) $(PSSRC)dwimg.c
 
 $(PSOBJ)dwtrace.obj: $(PSSRC)dwtrace.c $(AK)\
  $(dwimg_h) $(dwtrace_h)\
- $(gscdefs_h) $(stdpre_h) $(gsdll_h) $(vdtrace_h)
+ $(gscdefs_h) $(stdpre_h) $(gsdll_h) $(vdtrace_h) $(WININT_MAK)
         $(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwtrace.obj $(C_) $(PSSRC)dwtrace.c
 
 $(PSOBJ)dwmain.obj: $(PSSRC)dwmain.c $(AK)  $(windows__h) \
  $(iapi_h) $(vdtrace_h) $(dwres_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(dwtrace_h) \
- $(dwreg_h) $(gdevdsp_h)
+ $(dwreg_h) $(gdevdsp_h) $(WININT_MAK)
 	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwmain.obj $(C_) $(PSSRC)dwmain.c
 
-$(PSOBJ)dwtext.obj: $(PSSRC)dwtext.c $(AK) $(dwtext_h)
+$(PSOBJ)dwtext.obj: $(PSSRC)dwtext.c $(AK) $(dwtext_h) $(WININT_MAK)
         $(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwtext.obj $(C_) $(PSSRC)dwtext.c
 
-$(PSOBJ)dwreg.obj: $(PSSRC)dwreg.c $(AK) $(dwreg_h)
+$(PSOBJ)dwreg.obj: $(PSSRC)dwreg.c $(AK) $(dwreg_h) $(WININT_MAK)
         $(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwreg.obj $(C_) $(PSSRC)dwreg.c
 
 
 # ------------ Windows version of the .locale_to_utf8 operator ------------ #
 
 zwinutf8_=$(PSOBJ)zwinutf8.$(OBJ)
-$(PSD)winutf8.dev : $(MAKEFILE) $(ECHOGS_XE) $(zwinutf8_)
+$(PSD)winutf8.dev : $(MAKEFILE) $(ECHOGS_XE) $(zwinutf8_) $(WININT_MAK)
 	$(SETMOD) $(PSD)winutf8 $(zwinutf8_)
 	$(ADDMOD) $(PSD)winutf8 -oper zwinutf8
 
 $(PSOBJ)zwinutf8.$(OBJ) : $(PSSRC)zwinutf8.c $(OP)\
- $(ghost_h) $(oper_h) $(iutil_h) $(store_h) $(windows__h)
+ $(ghost_h) $(oper_h) $(iutil_h) $(store_h) $(windows__h) $(WININT_MAK)
 	$(PSCCWIN) $(PSO_)zwinutf8.$(OBJ) $(C_) $(PSSRC)zwinutf8.c
 
 # -------------------- NSIS Installer -------------------------------- #
-nsis: $(PSSRC)nsisinst.nsi $(GSCONSOLE_XE) $(GS_ALL) $(GS_XE) $(GSDLL_DLL) $(BINDIR)\$(GSDLL).lib
+nsis: $(PSSRC)nsisinst.nsi $(GSCONSOLE_XE) $(GS_ALL) $(GS_XE) $(GSDLL_DLL) $(BINDIR)\$(GSDLL).lib \
+      $(WININT_MAK)
 	$(MAKENSIS_XE) -NOCD -DTARGET=$(NSISTARGET) -DVERSION=$(GS_DOT_VERSION) $(PSSRC)nsisinst.nsi
 
 # -------------------- Distribution source archive ------------------- #

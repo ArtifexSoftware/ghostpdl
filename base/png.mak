@@ -64,7 +64,7 @@ PNGCC=$(CC) $(CFLAGS) $(PNG_CFLAGS) $(I_)$(PI_)$(_I) $(I_)$(PNGGENDIR)$(_I) $(PF
 $(D_)PNG_NO_ASSEMBLER_CODE$(_D)
 
 # Define the name of this makefile.
-LIBPNG_MAK=$(GLSRC)png.mak
+LIBPNG_MAK=$(GLSRC)png.mak $(TOP_MAKEFILES)
 
 png.clean : png.config-clean png.clean-not-config-clean
 
@@ -78,10 +78,10 @@ png.config-clean :
 	$(RM_) $(pnglibconf_h)
 	$(RM_) $(PNGGEN)lpg*.dev
 
-$(pnglibconf_h) : $(PNGSRC)scripts$(D)pnglibconf.h.prebuilt $(MAKEDIRS)
+$(pnglibconf_h) : $(PNGSRC)scripts$(D)pnglibconf.h.prebuilt $(TOP_MAKEFILES) $(MAKEDIRS)
 	$(CP_)  $(PNGSRC)scripts$(D)pnglibconf.h.prebuilt $(pnglibconf_h)
 
-PDEP=$(AK) $(pnglibconf_h) $(MAKEDIRS)
+PDEP=$(AK) $(pnglibconf_h) $(LIBPNG_MAK) $(MAKEDIRS)
 
 png_1=$(PNGOBJ)png.$(OBJ) $(PNGOBJ)pngmem.$(OBJ) $(PNGOBJ)pngerror.$(OBJ) $(PNGOBJ)pngset.$(OBJ)
 png_2=$(PNGOBJ)pngtrans.$(OBJ) $(PNGOBJ)pngwrite.$(OBJ) $(PNGOBJ)pngwtran.$(OBJ) $(PNGOBJ)pngwutil.$(OBJ) $(PNGOBJ)pngwio.$(OBJ)
@@ -133,13 +133,13 @@ $(PNGOBJ)pngget.$(OBJ) : $(PNGSRC)pngget.c $(PDEP)
 
 
 # Define the version of libpng.dev that we are actually using.
-$(PNGGEN)libpng.dev : $(TOP_MAKEFILES) $(PNGGEN)libpng_$(SHARE_LIBPNG).dev $(MAKEDIRS)
+$(PNGGEN)libpng.dev : $(PNGGEN)libpng_$(SHARE_LIBPNG).dev $(LIBPNG_MAK) $(MAKEDIRS)
 	$(CP_) $(PNGGEN)libpng_$(SHARE_LIBPNG).dev $(PNGGEN)libpng.dev
 
 # Define the shared version of libpng.
 # Note that it requires libz, which must be searched *after* libpng.
-$(PNGGEN)libpng_1.dev : $(TOP_MAKEFILES) $(LIBPNG_MAK) $(ECHOGS_XE) $(PZGEN)zlibe.dev \
- $(MAKEDIRS)
+$(PNGGEN)libpng_1.dev : $(ECHOGS_XE) $(PZGEN)zlibe.dev \
+ $(LIBPNG_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PNGGEN)libpng_1 -lib $(LIBPNG_NAME)
 	$(ADDMOD) $(PNGGEN)libpng_1 -include $(PZGEN)zlibe.dev
 

@@ -15,6 +15,7 @@
 
 # pcl_top.mak
 # Top-level platform-independent makefile for PCL5* et al
+PCL_TOP_MAK=$(PCLSRC)pcl_top.mak $(TOP_MAKEFILES)
 
 # This file must be preceded by pcl.mak.
 
@@ -25,5 +26,7 @@ $(PCLOBJ)pcimpl.$(OBJ): $(PCLSRC)pcimpl.c           \
                         $(memory__h)                \
                         $(scommon_h)                \
                         $(gxdevice_h)               \
-                        $(pltop_h)
+                        $(pltop_h)                  \
+                        $(PCL_TOP_MAK)              \
+                        $(MAKEDIRS)
 	$(PCLCCC) $(PCLSRC)pcimpl.c $(PCLO_)pcimpl.$(OBJ)

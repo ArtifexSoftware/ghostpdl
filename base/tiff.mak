@@ -31,11 +31,11 @@ TIFFCONFIG_H=$(TIFFCONF)libtiff$(D)tif_config$(TIFFCONFIG_SUFFIX).h
 TIFFCONF_H=$(TIFFCONF)libtiff$(D)tiffconf$(TIFFCONFIG_SUFFIX).h
 
 # Define the name of this makefile.
-LIBTIFF_MAK=$(GLSRC)tiff.mak
+LIBTIFF_MAK=$(GLSRC)tiff.mak $(TOP_MAKEFILES)
 
 TIFFCC=$(CC_) $(I_)$(TI_) $(II)$(JI_)$(_I) $(PF_)
 
-TIFFDEP = $(AK) $(TIFFGEN)tif_config.h $(TIFFGEN)tiffconf.h $(MAKEDIRS)
+TIFFDEP = $(AK) $(TIFFGEN)tif_config.h $(TIFFGEN)tiffconf.h $(LIBTIFF_MAK) $(MAKEDIRS)
 gstiffio_h=$(GLSRC)gstiffio.h
 
 tiff_1=$(TIFFOBJ)tif_aux.$(OBJ) $(TIFFOBJ)tif_close.$(OBJ) $(TIFFOBJ)tif_codec.$(OBJ) $(TIFFOBJ)tif_color.$(OBJ)
@@ -51,11 +51,11 @@ tiff_9=$(TIFFOBJ)tif_version.$(OBJ) $(TIFFOBJ)tif_warning.$(OBJ) $(TIFFOBJ)tif_w
 tiff_10=$(TIFFOBJ)tif_zip.$(OBJ)
 tiff_11=$(TIFFOBJ)gstiffio.$(OBJ)
 
-$(TIFFSRC)libtiff$(D)tif_config.unix.h : $(TIFFSRC)libtiff$(D)tif_config.h.in
+$(TIFFSRC)libtiff$(D)tif_config.unix.h : $(TIFFSRC)libtiff$(D)tif_config.h.in $(LIBTIFF_MAK)
 	cd $(TIFFSRC) && ./configure
 	$(CP_) $(TIFFCONF)libtiff$(D)tif_config.h $(TIFFCONF)libtiff$(D)tif_config.unix.h
 
-$(TIFFSRC)libtiff$(D)tiffconf.unix.h : $(TIFFSRC)libtiff$(D)tiffconf.h.in
+$(TIFFSRC)libtiff$(D)tiffconf.unix.h : $(TIFFSRC)libtiff$(D)tiffconf.h.in $(LIBTIFF_MAK)
 	cd $(TIFFSRC) && ./configure
 	$(CP_) $(TIFFCONF)libtiff$(D)tiffconf.h $(TIFFCONF)libtiff$(D)tiffconf.unix.h
 
@@ -185,22 +185,22 @@ $(TIFFOBJ)tif_zip.$(OBJ) : $(TIFFSRC)/libtiff/tif_zip.c $(TIFFDEP)
 # instead of the platform specific files above, we include our own which stubs out
 # the platform specific code, and routes via the Ghostscript I/O functions.
 $(TIFFOBJ)gstiffio.$(OBJ) : $(GLSRC)gstiffio.c $(gstiffio_h) $(PDEVH) $(stdint__h) $(stdio__h) $(time__h)\
-    $(gscdefs_h) $(gstypes_h) $(stream_h) $(strmio_h) $(malloc__h) $(MAKEDIRS)
+    $(gscdefs_h) $(gstypes_h) $(stream_h) $(strmio_h) $(malloc__h) $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)gstiffio.$(OBJ) $(D_)SHARE_LIBTIFF=$(SHARE_LIBTIFF) $(C_) $(GLSRC)gstiffio.c
 
-$(TIFFGEN)tif_config.h: $(TIFFCONFIG_H) $(MAKEDIRS)
+$(TIFFGEN)tif_config.h: $(TIFFCONFIG_H) $(LIBTIFF_MAK) $(MAKEDIRS)
 	$(CP_) $(TIFFCONFIG_H) $(TIFFGEN)tif_config.h
 	
-$(TIFFGEN)tiffconf.h: $(TIFFCONF_H) $(MAKEDIRS)
+$(TIFFGEN)tiffconf.h: $(TIFFCONF_H) $(LIBTIFF_MAK) $(MAKEDIRS)
 	$(CP_) $(TIFFCONF_H) $(TIFFGEN)tiffconf.h
 	
 # Define the version of libtiff.dev that we are actually using.
-$(TIFFGEN)libtiff.dev : $(TOP_MAKEFILES) $(TIFFGEN)libtiff_$(SHARE_LIBTIFF).dev $(MAKEDIRS)
+$(TIFFGEN)libtiff.dev : $(TIFFGEN)libtiff_$(SHARE_LIBTIFF).dev $(LIBTIFF_MAK) $(MAKEDIRS)
 	$(CP_) $(TIFFGEN)libtiff_$(SHARE_LIBTIFF).dev $(TIFFGEN)libtiff.dev
 
 
 # Define the shared version.
-$(TIFFGEN)libtiff_1.dev : $(TOP_MAKEFILES) $(LIBTIFF_MAK) $(ECHOGS_XE) $(JPEGGEN)jpegd.dev $(JPEGGEN)jpege.dev \
+$(TIFFGEN)libtiff_1.dev : $(LIBTIFF_MAK) $(ECHOGS_XE) $(JPEGGEN)jpegd.dev $(JPEGGEN)jpege.dev \
     $(tiff_11) $(MAKEDIRS)
 	$(SETMOD) $(TIFFGEN)libtiff_1 $(tiff_11)
 	$(ADDMOD) $(TIFFGEN)libtiff_1 -lib $(LIBTIFF_NAME)

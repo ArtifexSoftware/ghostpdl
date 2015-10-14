@@ -21,7 +21,7 @@
 #
 
 # define the name of this makefile
-CUPS_MAK=$(LCUPSSRCDIR)$(D)cups.mak
+CUPS_MAK=$(LCUPSSRCDIR)$(D)cups.mak $(TOP_MAKEFILES)
 
 ### ----------------- CUPS Ghostscript Driver ---------------------- ###
 

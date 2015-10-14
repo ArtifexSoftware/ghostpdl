@@ -24,7 +24,7 @@
 #	BITSTREAM_CFLAGS   - The include options for the Bitstream library
 
 # Define the name of this makefile.
-FAPI_BS_MAK=$(GLSRC)fapi_bs.mak
+FAPI_BS_MAK=$(GLSRC)fapi_bs.mak $(TOP_MAKEFILES)
 
 # Bitstream bridge :
 
