@@ -35,7 +35,7 @@
 
 /* ---------------- Unpacking procedures ---------------- */
 
-static const byte *
+const byte *
 sample_unpack_16(byte * bptr, int *pdata_x, const byte * data,
                  int data_x, uint dsize, const sample_map *ignore_smap, int spread,
                  int ignore_num_components_per_plane)
@@ -59,7 +59,7 @@ sample_unpack_16(byte * bptr, int *pdata_x, const byte * data,
     return bptr;
 }
 
-static const byte *
+const byte *
 sample_unpackicc_16(byte * bptr, int *pdata_x, const byte * data,
                  int data_x, uint dsize, const sample_map *ignore_smap, int spread,
                  int ignore_num_components_per_plane)

@@ -80,4 +80,9 @@ SAMPLE_UNPACK_PROC(sample_unpack_2_interleaved);
 SAMPLE_UNPACK_PROC(sample_unpack_4_interleaved);
 SAMPLE_UNPACK_PROC(sample_unpack_8_interleaved);
 
+/* The following don't have interleaved variants */
+SAMPLE_UNPACK_PROC(sample_unpack_12);
+SAMPLE_UNPACK_PROC(sample_unpack_16);
+SAMPLE_UNPACK_PROC(sample_unpackicc_16);
+
 #endif /* gxsample_INCLUDED */

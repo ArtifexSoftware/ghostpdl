@@ -123,19 +123,6 @@ typedef struct sample_map_s sample_map;
   frac_value_out =\
     gx_unit_frac(penum->map[i].decode_base + (frac_value) * penum->map[i].decode_factor)
 
-/*
- * Declare the pointer that holds the 12-bit unpacking procedure
- * if 12-bit samples are supported, 0 otherwise.
- */
-extern const sample_unpack_proc_t sample_unpack_12_proc;
-
-/*
- * Declare the pointer that holds the 16-bit unpacking procedure
- * if 16-bit samples are supported, 0 otherwise.
- */
-extern const sample_unpack_proc_t sample_unpack_16_proc;
-extern const sample_unpack_proc_t sample_unpackicc_16_proc;
-
 /* Define the distinct postures of an image. */
 /* Each posture includes its reflected variant. */
 typedef enum {

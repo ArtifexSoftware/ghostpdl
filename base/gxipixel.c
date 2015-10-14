@@ -888,18 +888,16 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
         static sample_unpack_proc_t procs[2][6] = {
         {   sample_unpack_1, sample_unpack_2,
             sample_unpack_4, sample_unpack_8,
-            0, 0
+            sample_unpack_12, sample_unpack_16
         },
         {   sample_unpack_1_interleaved, sample_unpack_2_interleaved,
             sample_unpack_4_interleaved, sample_unpack_8_interleaved,
-            0, 0
+            sample_unpack_12, sample_unpack_16
         }};
         int num_planes = penum->num_planes;
         bool interleaved = (num_planes == 1 && penum->plane_depths[0] != penum->bps);
         int i;
 
-        procs[0][4] = procs[1][4] = sample_unpack_12_proc;
-        procs[0][5] = procs[1][5] = sample_unpack_16_proc;
         if (interleaved) {
             int num_components = penum->plane_depths[0] / penum->bps;
 
@@ -911,16 +909,8 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
             if (i == num_components)
                 interleaved = false; /* Use single table. */
         }
-        if (index_bps >= 4) {
-            if ((penum->unpack = procs[interleaved][index_bps]) == 0) {         /* bps case not supported. */
-                gx_default_end_image(dev,
-                                     (gx_image_enum_common_t *) penum,
-                                     false);
-                return_error(gs_error_rangecheck);
-            }
-        } else {
-            penum->unpack = procs[interleaved][index_bps];
-        }
+        penum->unpack = procs[interleaved][index_bps];
+
         if_debug1m('b', mem, "[b]unpack=%d\n", bps);
         /* Set up pixel0 for image class procedures. */
         penum->dda.pixel0 = penum->dda.strip;

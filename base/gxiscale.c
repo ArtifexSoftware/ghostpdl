@@ -575,7 +575,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         /* We need to make sure that we do the proper unpacking proc if we
            are doing 16 bit */
         if (penum->bps == 16) {
-            penum->unpack = sample_unpackicc_16_proc;
+            penum->unpack = sample_unpackicc_16;
         }
         return (penum->posture == image_portrait ?
                 &image_render_interpolate_icc :

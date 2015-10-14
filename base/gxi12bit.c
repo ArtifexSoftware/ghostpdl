@@ -42,7 +42,7 @@
 
 /* ---------------- Unpacking procedures ---------------- */
 
-static const byte *
+const byte *
 sample_unpack_12(byte * bptr, int *pdata_x, const byte * data,
                  int data_x, uint dsize, const sample_map *ignore_smap, int spread,
                  int ignore_num_components_per_plane)
@@ -97,8 +97,6 @@ sample_unpack_12(byte * bptr, int *pdata_x, const byte * data,
     *pdata_x = 0;
     return bptr;
 }
-
-const sample_unpack_proc_t sample_unpack_12_proc = sample_unpack_12;
 
 /* ------ Strategy procedure ------ */
 
@@ -181,7 +179,7 @@ gs_image_class_2_fracs(gx_image_enum * penum)
                     &rendering_params, penum->memory);
             }
             /* Use the direct unpacking proc */
-            penum->unpack = sample_unpackicc_16_proc;
+            penum->unpack = sample_unpackicc_16;
             if_debug0m('b', penum->memory, "[b]render=icc16\n");
             return &image_render_icc16;
         }

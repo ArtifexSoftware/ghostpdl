@@ -28,11 +28,11 @@ get_unpack_proc(gx_image_enum_common_t *pie, image_decode_t *imd,
     static sample_unpack_proc_t procs[2][6] = {
         { sample_unpack_1, sample_unpack_2,
         sample_unpack_4, sample_unpack_8,
-        0, 0
+        sample_unpack_12, sample_unpackicc_16
         },
         { sample_unpack_1_interleaved, sample_unpack_2_interleaved,
         sample_unpack_4_interleaved, sample_unpack_8_interleaved,
-        0, 0
+        sample_unpack_12, sample_unpackicc_16
         } };
     int num_planes = pie->num_planes;
     bool interleaved = (num_planes == 1 && pie->plane_depths[0] != imd->bps);
@@ -54,8 +54,6 @@ get_unpack_proc(gx_image_enum_common_t *pie, image_decode_t *imd,
         imd->spread = 0;
     }
 
-    procs[0][4] = procs[1][4] = sample_unpack_12_proc;
-    procs[0][5] = procs[1][5] = sample_unpackicc_16_proc;
     if (interleaved) {
         int num_components = pie->plane_depths[0] / imd->bps;
 
