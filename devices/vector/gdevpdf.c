@@ -1547,7 +1547,7 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
         }
     } while (target);
 
-    do {
+    while (Size) {
         if (Size > ScratchSize) {
             code = fread(Scratch, ScratchSize, 1, linear_params->sfile);
             if (code != 1)
@@ -1561,7 +1561,7 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
             fwrite(Scratch, Size, 1, linear_params->Lin_File.file);
             Size = 0;
         }
-    } while (Size);
+    };
 
     gs_free_object(pdev->pdf_memory, Scratch, "Free working memory for object rewriting");
     return 0;
@@ -2313,7 +2313,7 @@ error:
     for (i=0;i<pdev->next_page;i++) {
         page_hint_stream_t *pagehint = &linear_params->PageHints[i];
 
-        if (pagehint->SharedObjectRef)
+        if (pagehint && pagehint->SharedObjectRef)
             gs_free_object(pdev->pdf_memory, pagehint->SharedObjectRef, "Free Shared object references");
     }
 
