@@ -148,7 +148,7 @@ $(PLOBJ)plparams.$(OBJ): $(PLSRC)plparams.c \
  $(PL_MAK) $(MAKEDIRS)
 	$(PLCCC) $(PLSRC)plparams.c $(PLO_)plparams.$(OBJ)
 
-pjl_obj=$(PLOBJ)pjparse.$(OBJ) $(PLOBJ)pjparsei.$(OBJ) $(PLOBJ)pjtop.$(OBJ) $(PLOBJ)pltop.$(OBJ)
+pjl_obj=$(PLOBJ)pjparse.$(OBJ) $(PLOBJ)pjparsei.$(OBJ) $(PLOBJ)pjtop.$(OBJ) $(PLOBJ)plparams.$(OBJ) $(PLOBJ)pltop.$(OBJ)
 $(PLOBJ)pjl.dev: $(PL_MAK) $(ECHOGS_XE) $(pjl_obj) $(PL_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PLOBJ)pjl $(pjl_obj)
 
