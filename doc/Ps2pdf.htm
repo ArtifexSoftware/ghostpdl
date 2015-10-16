@@ -549,7 +549,7 @@ containing '=' mean that the value of the parameter is the same as in the
 <tr valign=top><td><code>CalRGBProfile</code><td><td><a href="#note_0">(0)</a><td><td>()<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><code>CannotEmbedFontPolicy</code><td><td><a href="#note_0">(0)</a><td><td>/Warning<td><td>/Warning<td><td>/Warning<td><td>/Warning<td><td>/Error
 <tr valign=top><td><code>ColorACSImageDict</code><td><td><a href="#note_13">(13)</a><td><td><a href="#note_7">(note 7)</a><td><td><a href="#note_10">(note 10)</a><td><td><a href="#note_10">(note 10)</a><td><td><a href="#note_8">(note 8)</a><td><td><a href="#note_9">(note 9)</a>
-<tr valign=top><td><code>ColorConversionStrategy</code><td><td><a href="#note_0">(0</a>,<a href="#note_6">6)</a><td><td>/LeaveColorUnchanged<td><td>/sRGB<td><td>/sRGB<td><td>/UseDeviceIndependentColor<td><td>/LeaveColorUnchanged
+<tr valign=top><td><code>ColorConversionStrategy</code><td><td><a href="#note_0">(0</a>,<a href="#note_6">6)</a><td><td>LeaveColorUnchanged<td><td>RGB<td><td>RGB<td><td>UseDeviceIndependentColor<td><td>LeaveColorUnchanged
 <tr valign=top><td><code>ColorImageDepth</code><td><td><td><td>-1<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><code>ColorImageDict</code><td><td><a href="#note_13">(13)</a><td><td><a href="#note_7">(note 7)</a><td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><code>ColorImageFilter</code><td><td><td><td>/DCTEncode<td><td>=<td><td>=<td><td>=<td><td>=
@@ -822,8 +822,8 @@ To create a PDF/X-3 document from a Postscript or a PDF file, you should :
 <li> Specify the <code>pdfwrite</code> device or use the <code>ps2pdf</code> script.
 <li> Specify the <code>-dPDFX</code> option. It provides the document conformity 
      and forces <code>-dCompatibilityLevel=1.3</code>.
-<li> Specify <code>-sColorConversionStrategy=/Gray</code>, <code>-sColorConversionStrategy=/CMYK</code>
-     or <code>-sColorConversionStrategy=/UseDeviceIndependentColor</code>(<code>RGB</code> is not allowed).
+<li> Specify <code>-sColorConversionStrategy=Gray</code>, <code>-sColorConversionStrategy=CMYK</code>
+     or <code>-sColorConversionStrategy=UseDeviceIndependentColor</code>(<code>RGB</code> is not allowed).
      If you plan to create a device-independent color PDF file then you should set the ProcessColorModel
      using <code>-sProcessColorModel=DeviceGray</code> or <code>-sProcessColorModel=DeviceCMYK</code>.
 <li> Specify a PDF/X definition file before running the input document.
@@ -946,13 +946,10 @@ with the following exceptions :
 <ul>
 <li> Specify the <code>pdfwrite</code> device or use the <code>ps2pdf</code> script.
 <li> Specify the <code>-dPDFA</code> option to specify PDF/A-1, or <code>-dPDFA=2</code> for PDF/A-2.
-<li> Specify <code>-sColorConversionStrategy=/RGB</code>, <code>-sColorConversionStrategy=/CMYK</code>
-     or <code>-sColorConversionStrategy=/UseDeviceIndependentColor</code>.
+<li> Specify <code>-sColorConversionStrategy=RGB</code>, <code>-sColorConversionStrategy=CMYK</code>
+     or <code>-sColorConversionStrategy=UseDeviceIndependentColor</code>.
      If you plan to create a device-independent color PDF file then you should set the ProcessColorModel
      using <code>-sProcessColorModel=DeviceRGB</code> or <code>-sProcessColorModel=DeviceCMYK</code>.
-<li> Specify, using <code>-sOutputICCProfile</code>, an ICC profile which represents the color
-     space (either CMYK or RGB) of the final file. This is the same ICC profile used in the
-     PDF/X definition file as the ICCProfile.
 <li> Specify a PDF/A definition file before running the input document.
      It provides additional information to be included in the output document.
      A sample PDF/A definition file may be found in <code>gs/lib/PDFA_def.ps</code>.
@@ -981,7 +978,7 @@ depending on the nature of the PDF/A incompatibility.
 
 Here is a sample command line to invoke Ghostscript for generating a PDF/A document :
 <blockquote><code>
-gs -dPDFA=1 -dBATCH -dNOPAUSE -sColorConversionStrategy=/RGB -sDEVICE=pdfwrite -sOutputFile=out-a.pdf PDFA_def.ps input.ps
+gs -dPDFA=1 -dBATCH -dNOPAUSE -sColorConversionStrategy=RGB -sDEVICE=pdfwrite -sOutputFile=out-a.pdf PDFA_def.ps input.ps
 </code></blockquote>
 
 <p>
