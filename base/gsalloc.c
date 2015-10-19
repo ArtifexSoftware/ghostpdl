@@ -219,7 +219,7 @@ ialloc_alloc_state(gs_memory_t * parent, uint chunk_size)
 #ifdef MEMENTO
     iimem->large_size = 1;
 #else
-    iimem->large_size = ((chunk_size / 4) & -obj_align_mod) + 1;
+    iimem->large_size = 1;
 #endif
     iimem->is_controlled = false;
     iimem->gc_status.vm_threshold = chunk_size * 3L;

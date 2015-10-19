@@ -116,13 +116,8 @@ ps_impl_allocate_interp_instance(
   gs_memory_t            *mem            /* allocator to allocate instance from */
 )
 {
-#ifdef DEBUG_WITH_EXPERIMENTAL_GSOPTIONS_FILE
-#   define MAX_ARGS 40
-#else
-#   define MAX_ARGS /* unspecified */
-#endif
         int code = 0, exit_code;
-        const char *argv[MAX_ARGS] = {
+        const char *argv[] = {
             "",
             "-dNOPAUSE",
 #ifndef DEBUG
@@ -131,17 +126,10 @@ ps_impl_allocate_interp_instance(
             "-dOSTACKPRINT", // NB: debuggging postscript Needs to be removed.
             "-dESTACKPRINT", // NB: debuggging postscript Needs to be removed.
 #endif
-            0
         };
-#ifndef DEBUG
-        int argc = 9;
-#else
-        int argc = 10;
-#endif
-#ifdef DEBUG_WITH_EXPERIMENTAL_GSOPTIONS_FILE
-        char argbuf[1024];
-#endif
-#   undef MAX_ARGS
+
+        int argc = countof(argv);
+
         ps_interp_instance_t *psi  /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
             = (ps_interp_instance_t *)
             gs_alloc_bytes( mem,
@@ -159,46 +147,6 @@ ps_impl_allocate_interp_instance(
         /* Setup pointer to mem used by PostScript */
         psi->plmemory = mem;
         psi->minst = gs_main_alloc_instance(mem->non_gc_memory);
-
-#ifdef DEBUG_WITH_EXPERIMENTAL_GSOPTIONS_FILE
-        {   /* Fetch more GS arguments (debug purposes only).
-               Pulling debugging arguments from a file allows easy additions
-               of postscript arguments to a debug system, it is not recommended for
-               production systems since some options will conflict with commandline
-               arguments in unpleasant ways.
-            */
-            FILE *f = fopen("gsoptions", "rb"); /* Sorry we handle
-                                                  the current directory only.
-                                                  Assuming it always fails with no crash
-                                                  in a real embedded system. */
-
-            if (f != NULL) {
-                int i;
-                int l = fread(argbuf, 1, sizeof(argbuf) - 1, f);
-
-                if (l >= sizeof(argbuf) - 1)
-                    errprintf("The gsoptions file is too big. Truncated to the buffer length %d.\n", l - 1);
-                if (l > 0) {
-                    argbuf[l] = 0;
-                    if (argbuf[0] && argbuf[0] != '\r' && argbuf[0] != '\n') /* Silently skip empty lines. */
-                        argv[argc++] = argbuf;
-                    for (i = 0; i < l; i++)
-                        if (argbuf[i] == '\r' || argbuf[i] == '\n') {
-                            argbuf[i] = 0;
-                            if (argbuf[i + 1] == 0 || argbuf[i + 1] == '\r' || argbuf[i + 1] == '\n')
-                                continue; /* Silently skip empty lines. */
-                            if (argc >= count_of(argv)) {
-                                errprintf("The gsoptions file contains too many options. "
-                                          "Truncated to the buffer length %d.\n", argc);
-                                break;
-                            }
-                            argv[argc++] = argbuf + i + 1;
-                        }
-                }
-                fclose(f);
-            }
-        }
-#endif
 
         *instance = (pl_interp_instance_t *)psi;
         code = gs_main_init_with_args(psi->minst, argc, (char**)argv);
