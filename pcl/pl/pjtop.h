@@ -51,16 +51,6 @@ typedef pjl_envvar_t *(*pjl_proc_get_envvar_t) (pl_interp_instance_t * pli,
 pjl_envvar_t *pjl_proc_get_envvar(pl_interp_instance_t * pli,
                                   const char *pjl_var);
 
-typedef void (*pjl_proc_set_envvar_t) (pl_interp_instance_t * pli,
-                                                const char *pjl_var, const char *data);
-void pjl_proc_set_envvar(pl_interp_instance_t * pli,
-                                  const char *pjl_var, const char *data);
-
-typedef void (*pjl_proc_set_defvar_t) (pl_interp_instance_t * pli,
-                                                const char *pjl_var, const char *data);
-void pjl_proc_set_defvar(pl_interp_instance_t * pli,
-                                  const char *pjl_var, const char *data);
-
 /* compare a pjl environment variable to a string values. */
 typedef int (*pjl_proc_compare_t) (pl_interp_instance_t * pli,
                                    const pjl_envvar_t * s1, const char *s2);
@@ -148,8 +138,6 @@ typedef struct pjl_implementation_s
 
     /* PJL-specific procedure vector */
     pjl_proc_get_envvar_t proc_get_envvar;
-    pjl_proc_set_envvar_t proc_set_envvar;
-    pjl_proc_set_defvar_t proc_set_defvar;
     pjl_proc_compare_t proc_compare;
     pjl_proc_map_pjl_sym_to_pcl_sym_t proc_map_pjl_sym_to_pcl_sym;
     pjl_proc_vartoi_t proc_vartoi;

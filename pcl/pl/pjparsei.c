@@ -393,8 +393,6 @@ pjl_implementation_t pjl_implementation = {
     },
     /* PJL-specific portion */
     pjl_impl_get_envvar,
-    pjl_impl_set_envvar,
-    pjl_impl_set_defvar,
     pjl_impl_compare,
     pjl_impl_map_pjl_sym_to_pcl_sym,
     pjl_impl_vartoi,

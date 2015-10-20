@@ -28,20 +28,6 @@ pjl_proc_get_envvar(pl_interp_instance_t * pli, const char *pjl_var)
         ->proc_get_envvar(pli, pjl_var);
 }
 
-void
-pjl_proc_set_envvar(pl_interp_instance_t * pli, const char *pjl_var, const char *data)
-{
-    ((pjl_implementation_t *) pli->interp->implementation)
-        ->proc_set_envvar(pli, pjl_var, data);
-}
-
-void
-pjl_proc_set_defvar(pl_interp_instance_t * pli, const char *pjl_var, const char *data)
-{
-    ((pjl_implementation_t *) pli->interp->implementation)
-        ->proc_set_defvar(pli, pjl_var, data);
-}
-
 /* compare a pjl environment variable to a string values. */
 int
 pjl_proc_compare(pl_interp_instance_t * pli,
