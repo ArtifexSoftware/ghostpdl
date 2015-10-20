@@ -243,3 +243,165 @@ int pcl_pjl_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
     } while (*p != 0x00);
     return 0;
 }
+
+int pjl_dist_process_dict(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
+{
+    return 0;
+}
+
+int pjl_dist_process_dict_or_hexstring(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
+{
+    if (*p[1] == '<') {
+        return pjl_dist_process_dict(mem, plist, key, p);
+    }
+    return 0;
+}
+
+int pjl_dist_process_name(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name *key, char **p)
+{
+    char *start = *p;
+    gs_param_string ps;
+
+    while (**p != ' ' && **p != 0x00)
+        *p++;
+    if (**p != 0x00)
+        **p = 0x00;
+
+    if (*key == NULL)
+        *key = (gs_param_name)start;
+    else {
+        ps.data = (const byte *)start;
+        ps.size = strlen(start);
+        ps.persistent = false;
+        param_write_name((gs_param_list *)plist, *key, &ps);
+    }
+    return 0;
+}
+
+int pjl_dist_process_string(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
+{
+    char *start = *p + 1;
+    gs_param_string ps;
+
+    while (**p != ')' && **p != 0x00)
+        *p++;
+
+    if (**p != ')')
+        return -1;
+
+    **p= 0x00;
+    ps.data = (const byte *)start;
+    ps.size = strlen(start);
+    ps.persistent = false;
+    param_write_string((gs_param_list *)plist, *key, &ps);
+
+    return 0;
+}
+
+int pjl_dist_process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
+{
+    return 0;
+}
+
+int pjl_dist_process_number(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
+{
+    return 0;
+}
+
+int pcl_pjl_setdistillerparams(gs_memory_t *mem, gx_device *device, char *distillerparams)
+{
+    char *p, *type, *start, *copy;
+    int tokens = 0, code = 0;
+    gs_c_param_list *plist;
+    gs_param_name key = NULL;
+
+    plist = gs_c_param_list_alloc(mem, "temp C param list for PJL distillerparams");
+    gs_c_param_list_write(plist, mem);
+
+    /* Our parsing will alter the string contents, so copy it and perform the parsing on the copy */
+    copy = (char *)gs_alloc_bytes(mem, strlen(distillerparams) + 1, "working buffer for distillerparams processing");
+    if (copy == 0)
+        return -1;
+    strcpy(copy, distillerparams);
+
+    if (*copy == '"') {
+        start = copy + 1;
+        copy[strlen(copy) - 1] = 0x00;
+    }
+    else
+        start = copy;
+
+    if (*start != '<' || start[1] != '<') {
+        gs_free_object(mem, copy, "working buffer for distillerparams processing");
+        return -1;
+    }
+    start += 2;
+
+    if (copy[strlen(copy) - 1] != '>' || copy[strlen(copy) - 2] != '>') {
+        gs_free_object(mem, copy, "working buffer for distillerparams processing");
+        return -1;
+    }
+    copy[strlen(copy) - 2] = 0x00;
+
+    while (*start == ' ')
+        start++;
+    p = start;
+
+    while (*p != 0x00){
+        switch (*p) {
+            case '<':
+                if (key == NULL) {
+                    gs_free_object(mem, copy, "working buffer for distillerparams processing");
+                    return -1;
+                }
+                code = pjl_dist_process_dict_or_hexstring(mem, plist, key, &p);
+                break;
+            case '/':
+                code = pjl_dist_process_name(mem, plist, &key, &p);
+                break;
+            case '(':
+                if (key == NULL) {
+                    gs_free_object(mem, copy, "working buffer for distillerparams processing");
+                    return -1;
+                }
+                code = pjl_dist_process_string(mem, plist, key, &p);
+                break;
+            case '[':
+                if (key == NULL) {
+                    gs_free_object(mem, copy, "working buffer for distillerparams processing");
+                    return -1;
+                }
+                code = pjl_dist_process_array(mem, plist, key, &p);
+                break;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case '.':
+                if (key == NULL) {
+                    gs_free_object(mem, copy, "working buffer for distillerparams processing");
+                    return -1;
+                }
+                code = pjl_dist_process_number(mem, plist, key, &p);
+                break;
+            default:
+                gs_free_object(mem, copy, "working buffer for distillerparams processing");
+                return -1;
+                break;
+        }
+        if (code < 0) {
+            gs_free_object(mem, copy, "working buffer for distillerparams processing");
+            return -1;
+        }
+    }
+
+    gs_free_object(mem, copy, "working buffer for distillerparams processing");
+    gs_c_param_list_release(plist);
+    return 0;
+}

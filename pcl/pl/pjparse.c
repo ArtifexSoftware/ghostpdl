@@ -106,6 +106,7 @@ static pjl_envir_var_t pjl_factory_defaults[] = {
     {"resolution", "0"},
     /*    {"personality", "rtl"}, */
     {"pdfmark", ""},
+    {"setdistillerparams", ""},
     {"", ""}
 };
 
