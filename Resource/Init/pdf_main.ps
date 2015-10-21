@@ -2256,7 +2256,7 @@ currentdict /PDF2PS_matrix_key undef
         } forall
         { pop //true exit } if
       } {
-        (   **** Ignoring non-dictionary /XObject attribute.\n)
+        (   **** Ignoring non-dictionary /XObject.\n)
         pdfformaterror
         pop
       } ifelse
@@ -2379,18 +2379,22 @@ currentdict /PDF2PS_matrix_key undef
     /XObject knownoget {
       dup type /dicttype eq {
         { exch pop oforce
-          dup //null ne {
-            dup /Subtype oget 
-            dup /Form eq { 
-              pop resourcespotcolors 
-            } { 
-              /Image eq {
-                /ColorSpace knownoget {
-                  2 index colorspacespotcolors
-                } if
+          dup type /dicttype eq {
+            dup //null ne {
+              dup /Subtype oget
+              dup /Form eq {
+                pop resourcespotcolors
               } {
-                pop
-              } ifelse 
+                /Image eq {
+                  /ColorSpace knownoget {
+                    2 index colorspacespotcolors
+                  } if
+                } {
+                  pop
+                } ifelse
+              } ifelse
+            } {
+              pop
             } ifelse
           } {
             pop
