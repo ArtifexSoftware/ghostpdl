@@ -202,7 +202,8 @@ xps_parse_metadata_imp(void *zp, char *name, char **atts)
         if (target && type)
         {
             xps_absolute_path(tgtbuf, ctx->base_uri, target, sizeof tgtbuf);
-            if (!strcmp(type, REL_START_PART))
+            if (!strcmp(type, REL_START_PART) ||
+                !strcmp(type, REL_START_PART_OXPS))
                 ctx->start_part = xps_strdup(ctx, tgtbuf);
         }
     }

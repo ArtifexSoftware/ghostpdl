@@ -24,7 +24,7 @@
 
 #define NS_XPS "http://schemas.microsoft.com/xps/2005/06"
 #define NS_MC "http://schemas.openxmlformats.org/markup-compatibility/2006"
-
+#define NS_OXPS "http://schemas.openxps.org/oxps/v1.0"
 typedef struct xps_parser_s xps_parser_t;
 
 struct xps_parser_s
@@ -87,6 +87,12 @@ on_open_tag(void *zp, char *ns_name, char **atts)
     {
         name = strchr(ns_name, ' ') + 1;
         parser->compat = 1;
+    }
+
+    p = strstr(ns_name, NS_OXPS);
+    if (p == ns_name)
+    {
+        name = strchr(ns_name, ' ') + 1;
     }
 
     if (!name)

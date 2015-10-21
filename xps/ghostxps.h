@@ -98,6 +98,12 @@ typedef struct xps_context_s xps_context_t;
 #define REL_REQUIRED_RESOURCE_RECURSIVE \
     "http://schemas.microsoft.com/xps/2005/06/required-resource#recursive"
 
+/* Open xps */
+#define REL_START_PART_OXPS \
+	"http://schemas.openxps.org/oxps/v1.0/fixedrepresentation"
+#define REL_DOC_STRUCTURE_OXPS \
+	"http://schemas.openxps.org/oxps/v1.0/documentstructure"
+
 #define ZIP_LOCAL_FILE_SIG 0x04034b50
 #define ZIP_DATA_DESC_SIG 0x08074b50
 #define ZIP_CENTRAL_DIRECTORY_SIG 0x02014b50
