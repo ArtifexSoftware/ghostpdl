@@ -772,7 +772,7 @@ currentdict /no_debug_dict undef
       (%Resolving: ) print 2 copy 2 array astore //== exec
     } if
   } if
-  1 index dup 0 lt exch NumObjects ge or {
+  1 index dup 0 le exch NumObjects ge or {
     (   **** Considering object with an invalid number ) 
     2 index 20 string cvs concatstrings   
     ( as null.\n) concatstrings pdfformaterror
