@@ -625,7 +625,25 @@ such as halftones. By changing options in the top-level makefile for the
 platform, you can cause some of these files to be compiled into the
 executable: this simplifies installation, improves
 security, may reduce memory requirements, and may be essential if you are
-planning on putting Ghostscript into ROM.
+planning on putting Ghostscript into ROM. Compiling these files into the executable
+also means the executable is (largely) self-contained, meaning initialization
+files, font files, resource files and ICC profile files are certain to be available
+and accessible. In general, Ghostscript should initialize more quickly, and files
+(especially PDF) files making heavy use of the built-in fonts will interpret more
+quickly.
+<p>
+For those distributing Ghostscript binaries, compiling those files into the executable
+has another implication, any site-specific customizations (such as font and CIDFont
+substitutions) are slightly more complex to implement - see:
+<blockquote>
+<a href="Use.htm#Finding_files">How Ghostscript finds files</a>
+</blockquote>
+for how to influence where Ghostscript searches for files. Furthermore, if the files
+Ghostscript uses are also required to be accessible by applications other than Ghostscript
+(the mostly case for this would be font files and ICC profile files), having those files
+compiled into Ghostscript maybe suboptimal, essentially require two copies of the file
+data to be distributed (one set built into Ghostscript, and the other as &quotnormal&quot files
+accessible outside of Ghostscript.
 
 <p>
 Compiling the initialization files (<code>Resource/Init/gs_init.ps</code>, etc.)
