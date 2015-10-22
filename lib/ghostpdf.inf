@@ -8,6 +8,7 @@
 ; file). You must install this from the Control Panel using Add Printer.
 ;
 
+
 [Version]
 Signature="$Windows NT$"
 Provider=Artifex Software Inc.
