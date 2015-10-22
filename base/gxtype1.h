@@ -181,6 +181,19 @@ typedef fixed *cs_ptr;
       return_error(gs_error_invalidfont);\
   END
 
+#define CS_CHECK_POP(csp, cstack)\
+  BEGIN\
+    if (csp < &cstack[0])\
+      return_error(gs_error_invalidfont);\
+  END
+
+#define CS_CHECK_IPSTACK(ips, ipstack)\
+  BEGIN\
+    if (ips > &ipstack[ipstack_size + 1] \
+        || ips < &ipstack[0])\
+      return_error(gs_error_invalidfont);\
+  END
+
 /* Decode a 1-byte number. */
 #define decode_num1(var, c)\
   (var = c_value_num1(c))
