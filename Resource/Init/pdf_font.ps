@@ -1183,7 +1183,6 @@ currentdict /eexec_pdf_param_dict .undef
                 % Stack: filepos fontres stream
   1 index /CIDSystemInfo oknown {
     1 index /CIDSystemInfo get dup type /packedarraytype eq {exec}if
-    oforce_recursive
     3 1 roll
     1 index /Subtype knownoget {
       /CIDFontType2 ne {
@@ -2110,6 +2109,11 @@ currentdict /bndef undef
     {
         dup /FontDescriptor undef
     }if
+    dup /CIDSystemInfo .knownget
+    {
+      oforce_recursive
+      1 index exch /CIDSystemInfo exch put
+    } if
 
     dup dup /FontDescriptor knownoget {
                                           % font-res font-res font-desc
