@@ -47,10 +47,10 @@ typedef struct
 
 typedef struct
 {
-    gs_memory_t *memory;	/* save our allocator */
-    int64_t filesize;
-    int64_t block_size;		/* full block size, MUST BE powerr of 2 */
+    int block_size;		/* full block size, MUST BE power of 2 */
     int nslots;
+    int64_t filesize;
+    gs_memory_t *memory;	/* save our allocator */
     CL_CACHE_SLOT *slots;	/* array of slots */
     byte *base;                 /* save base of slot data area */
 } CL_CACHE;
@@ -229,6 +229,7 @@ typedef struct
     gs_memory_t *mem;
     FILE *f;
     int64_t pos;
+    int64_t filesize;		/* filesize maintained by clist_fwrite */
     CL_CACHE *cache;
 } IFILE;
 
@@ -261,6 +262,7 @@ static IFILE *wrap_file(gs_memory_t *mem, FILE *f, const char *fmode)
     ifile->mem = mem->non_gc_memory;
     ifile->f = f;
     ifile->pos = 0;
+    ifile->filesize = 0;
     ifile->cache = cl_cache_alloc(ifile->mem);
     return ifile;
 }
@@ -300,10 +302,12 @@ clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
                                                        fname, fmode), fmode);
         }
     } else {
-        // Check if a special path is passed in. If so, clone the FILE handle
         clist_file_ptr ocf = fake_path_to_file(fname);
         if (ocf) {
+            /*  A special (fake) fname is passed in. If so, clone the FILE handle */
             *pcf = wrap_file(mem, gp_fdup(((IFILE *)ocf)->f, fmode), fmode);
+            /* when cloning, copy other parts not done by wrap_file */
+            ((IFILE *)(*pcf))->filesize = ((IFILE *)ocf)->filesize;
         } else {
             *pcf = wrap_file(mem, gp_fopen(fname, fmode), fmode);
         }
@@ -352,13 +356,17 @@ clist_fclose(clist_file_ptr cf, const char *fname, bool delete)
 static int
 clist_fwrite_chars(const void *data, uint len, clist_file_ptr cf)
 {
+    int res = 0;
+
     if (gp_can_share_fdesc()) {
-        int res = gp_fpwrite((char *)data, len, ((IFILE *)cf)->pos, ((IFILE *)cf)->f);
-        if (res >= 0)
-            ((IFILE *)cf)->pos += len; return res;
+        res = gp_fpwrite((char *)data, len, ((IFILE *)cf)->pos, ((IFILE *)cf)->f);
     } else {
-        return fwrite(data, 1, len, ((IFILE *)cf)->f);
+        res = fwrite(data, 1, len, ((IFILE *)cf)->f);
     }
+    if (res >= 0)
+        ((IFILE *)cf)->pos += len;
+    ((IFILE *)cf)->filesize = ((IFILE *)cf)->pos;	/* write truncates file */
+    return res;
 }
 
 /* ------ Reading ------ */
@@ -374,12 +382,7 @@ clist_fread_chars(void *data, uint len, clist_file_ptr cf)
 
          /* if we have a cache, check if it needs init, and do it */
         if (CL_CACHE_NEEDS_INIT(icf->cache)) {
-            int64_t filesize;
-
-            /* NB: We don't need to preserve the position for a wrapped file */
-            gp_fseek_64(icf->f, 0, SEEK_END);
-            filesize = gp_ftell_64(icf->f);
-            icf->cache = cl_cache_read_init(icf->cache, CL_CACHE_NSLOTS, 1<<CL_CACHE_SLOT_SIZE_LOG2, filesize);
+            icf->cache = cl_cache_read_init(icf->cache, CL_CACHE_NSLOTS, 1<<CL_CACHE_SLOT_SIZE_LOG2, icf->filesize);
         }
         /* cl_cache_read_init may have failed, and set cache to NULL, check before using it */
         if (icf->cache != NULL) {
@@ -482,6 +485,7 @@ clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname)
                 cl_cache_destroy(ocf->cache);
                 ocf->cache = cl_cache_alloc(ocf->mem);
             }
+            ((IFILE *)cf)->filesize = 0;
         }
         ((IFILE *)cf)->pos = 0;
     } else {
@@ -496,6 +500,8 @@ clist_rewind(clist_file_ptr cf, bool discard_data, const char *fname)
             /* Opening with "w" mode deletes the contents when closing. */
             f = freopen(fname, gp_fmode_wb, f);
             ((IFILE *)cf)->f = freopen(fname, fmode, f);
+            ((IFILE *)cf)->pos = 0;
+            ((IFILE *)cf)->filesize = 0;
         } else {
             rewind(f);
         }
@@ -506,10 +512,15 @@ static int
 clist_fseek(clist_file_ptr cf, int64_t offset, int mode, const char *ignore_fname)
 {
     IFILE *ifile = (IFILE *)cf;
+    int res = 0;
 
-    if (gp_can_share_fdesc()) {
-        switch (mode)
-        {
+    if (!gp_can_share_fdesc()) {
+        res = gp_fseek_64(ifile->f, offset, mode);
+    }
+    /* NB: if gp_can_share_fdesc, we don't actually seek */
+    if (res >= 0) {
+        /* Update the ifile->pos */
+        switch (mode) {
             case SEEK_SET:
                 ifile->pos = offset;
                 break;
@@ -517,14 +528,11 @@ clist_fseek(clist_file_ptr cf, int64_t offset, int mode, const char *ignore_fnam
                 ifile->pos += offset;
                 break;
             case SEEK_END:
-                gp_fseek_64(ifile->f, 0, SEEK_END);
-                ifile->pos = ftell(ifile->f);
+                ifile->pos = ifile->filesize;	/* filesize maintained in clist_fwrite */
                 break;
         }
-        return 0;
-    } else {
-        return gp_fseek_64(ifile->f, offset, mode);
     }
+    return res;
 }
 
 static clist_io_procs_t clist_io_procs_file = {

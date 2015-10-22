@@ -158,7 +158,11 @@ int gp_stat(const char *path, struct stat *buf)
 
 int gp_can_share_fdesc(void)
 {
+#if defined(HAVE_PREAD_PWRITE) && HAVE_PREAD_PWRITE == 1
     return 1;
+#else
+    return 0;	/* can't share FILE * descriptors w/o pread due to seek..read..seek */
+#endif
 }
 
 FILE *gp_open_scratch_file_rm(const gs_memory_t *mem,
