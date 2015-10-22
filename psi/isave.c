@@ -205,10 +205,10 @@ static RELOC_PTRS_WITH(change_reloc_ptrs, alloc_change_t *ptr)
                igc_reloc_ref_ptr from RELOC_REF_PTR_VAR.
                Calling igc_reloc_ref_ptr_nocheck instead. */
             {	/* A sanity check. */
-                obj_header_t *pre = (obj_header_t *)ptr->where - 1, *pre1 = 0;
+                obj_header_t *pre = (obj_header_t *)ptr->where - 1;
 
                 if (pre->o_type != &st_refs)
-                    pre1->o_type = 0; /* issue a segfault. */
+                    gs_abort(gcst->heap);
             }
             if (ptr->where != 0 && !gcst->relocating_untraced)
                 ptr->where = igc_reloc_ref_ptr_nocheck(ptr->where, gcst);
