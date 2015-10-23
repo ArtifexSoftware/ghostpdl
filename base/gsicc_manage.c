@@ -862,6 +862,8 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
             char *nameptr;
 
             icc_profile = gsicc_profile_new(NULL, mem_gc, NULL, 0);
+            if (icc_profile == NULL)
+                return gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
             icc_profile->data_cs = gsNAMED;
             code = gsicc_load_namedcolor_buffer(icc_profile, str, mem_gc);
             if (code < 0) return gs_throw1(-1, "problems with profile %s", pname);
@@ -993,10 +995,16 @@ gsicc_get_profile_handle_file(const char* pname, int namelen, gs_memory_t *mem)
 
     /* First see if we can get the stream.  NOTE  icc directory not used! */
     code = gsicc_open_search(pname, namelen, mem, NULL, 0, &str);
-    if (code < 0 || str == NULL)
+    if (code < 0 || str == NULL) {
+        gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
         return NULL;
+    }
     result = gsicc_profile_new(str, mem, pname, namelen);
     code = sfclose(str);
+    if (result == NULL) {
+        gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
+        return NULL;
+    }
     gsicc_init_profile_info(result);
     return result;
 }
@@ -1629,7 +1637,7 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                 gsicc_profile_new(str, mem, file_name, strlen(file_name));
             code = sfclose(str);
             if (icc_profile == NULL)
-                return_error(gs_error_VMerror);
+                return gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
             if (pro_enum < gsPROOFPROFILE) {
                 if_debug1m(gs_debug_flag_icc, mem,
                            "[icc] Setting device profile %d\n", pro_enum);
@@ -2271,6 +2279,10 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer, int profile_size, gs_memo
         case gs_color_space_index_CIEABC:
             gs_colorspace->cmm_icc_profile_data =
                 gsicc_profile_new(NULL, icc_manager->memory, NULL, 0);
+            if (gs_colorspace->cmm_icc_profile_data == NULL) {
+                gs_throw(gs_error_VMerror, "Creation of ICC profile for CIEABC failed");
+                return NULL;
+            }
             code =
                 gsicc_create_fromabc(gs_colorspace,
                         &(gs_colorspace->cmm_icc_profile_data->buffer),
@@ -2299,6 +2311,10 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer, int profile_size, gs_memo
         case gs_color_space_index_CIEA:
             gs_colorspace->cmm_icc_profile_data =
                 gsicc_profile_new(NULL, icc_manager->memory, NULL, 0);
+            if (gs_colorspace->cmm_icc_profile_data == NULL) {
+                gs_throw(gs_error_VMerror, "Creation of ICC profile for CIEA failed");
+                return NULL;
+            }
             code =
                 gsicc_create_froma(gs_colorspace,
                             &(gs_colorspace->cmm_icc_profile_data->buffer),

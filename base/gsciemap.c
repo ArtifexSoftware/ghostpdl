@@ -242,7 +242,7 @@ gx_ciedefg_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *m
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory->stable_memory);
     if (code < 0)
-        gs_rethrow(code, "Failed to build ICC color space");
+        return gs_rethrow(code, "Failed to build ICC color space");
     /* record the cie alt space as the icc alternative color space */
     (*ppcs_icc)->base_space = palt_cs;
     rc_increment_cs(palt_cs);
@@ -253,7 +253,7 @@ gx_ciedefg_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *m
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory,
                     abc_caches, lmn_caches, defg_caches);
     if (code < 0)
-        gs_rethrow(code, "Failed to create ICC profile from CIEDEFG");
+        return gs_rethrow(code, "Failed to create ICC profile from CIEDEFG");
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
     (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_DEFG;
     pcs->icc_equivalent = *ppcs_icc;
@@ -280,7 +280,7 @@ gx_remap_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs_in,
     if (pcs->icc_equivalent == NULL) {
         code = gx_ciedefg_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         if (code < 0)
-            gs_rethrow(code, "Failed to create ICC profile from CIEDEFG");
+            return gs_rethrow(code, "Failed to create ICC profile from CIEDEFG");
     } else {
         pcs_icc = pcs->icc_equivalent;
     }
@@ -319,7 +319,7 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs_in,
     if (pcs->icc_equivalent == NULL) {
         code = gx_ciedefg_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         if (code < 0)
-            gs_rethrow(code, "Failed to create ICC profile from CIEDEFG");
+            return gs_rethrow(code, "Failed to create ICC profile from CIEDEFG");
     } else {
         pcs_icc = pcs->icc_equivalent;
     }
@@ -523,7 +523,7 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *me
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory->stable_memory);
     if (code < 0)
-        gs_rethrow(code, "Failed to build ICC color space");
+        return gs_rethrow(code, "Failed to build ICC color space");
     /* record the cie alt space as the icc alternative color space */
     (*ppcs_icc)->base_space = palt_cs;
     rc_increment_cs(palt_cs);
@@ -534,7 +534,7 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *me
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory,
                     abc_caches, lmn_caches, def_caches);
     if (code < 0)
-        gs_rethrow(code, "Failed to build ICC profile from CIEDEF");
+        return gs_rethrow(code, "Failed to build ICC profile from CIEDEF");
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
     (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_DEF;
     /* Assign to the icc_equivalent member variable */
@@ -562,7 +562,7 @@ gx_remap_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs_in,
     if (pcs->icc_equivalent == NULL) {
         code = gx_ciedef_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         if (code < 0)
-            gs_rethrow(code, "Failed to build ICC profile from CIEDEF");
+            return gs_rethrow(code, "Failed to build ICC profile from CIEDEF");
     } else {
         pcs_icc = pcs->icc_equivalent;
     }
@@ -601,7 +601,7 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs_in,
     if (pcs->icc_equivalent == NULL) {
         code = gx_ciedef_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         if (code < 0)
-            gs_rethrow(code, "Failed to build ICC profile from CIEDEF");
+            return gs_rethrow(code, "Failed to build ICC profile from CIEDEF");
     } else {
         pcs_icc = pcs->icc_equivalent;
     }
@@ -631,7 +631,7 @@ gx_cieabc_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, bool *islab,
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory);
     if (code < 0)
-        gs_rethrow(code, "Failed to create ICC profile");
+        return gs_rethrow(code, "Failed to create ICC profile");
     /* record the cie alt space as the icc alternative color space */
     (*ppcs_icc)->base_space = palt_cs;
     rc_increment_cs(palt_cs);
@@ -642,7 +642,7 @@ gx_cieabc_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, bool *islab,
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory,
                     abc_caches, lmn_caches, islab);
     if (code < 0)
-        gs_rethrow(code, "Failed to build ICC profile from CIEABC");
+        return gs_rethrow(code, "Failed to build ICC profile from CIEABC");
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
     (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_ABC;
     /* Assign to the icc_equivalent member variable */
@@ -674,7 +674,7 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs_in,
     if (pcs->icc_equivalent == NULL) {
         code = gx_cieabc_to_icc(&pcs_icc, pcs, &islab, pis->memory->stable_memory);
         if (code < 0)
-            gs_rethrow(code, "Failed to create ICC profile from CIEABC");
+            return gs_rethrow(code, "Failed to create ICC profile from CIEABC");
     } else {
         pcs_icc = pcs->icc_equivalent;
     }
@@ -714,7 +714,7 @@ gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs_in,
     if (pcs->icc_equivalent == NULL) {
         code = gx_cieabc_to_icc(&pcs_icc, pcs, &islab, pis->memory->stable_memory);
         if (code < 0)
-            gs_rethrow(code, "Failed to create ICC profile from CIEABC");
+            return gs_rethrow(code, "Failed to create ICC profile from CIEABC");
     } else {
         pcs_icc = pcs->icc_equivalent;
     }
@@ -743,7 +743,7 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *memo
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory);
     if (code < 0)
-        gs_rethrow(code, "Failed to create ICC profile");
+        return gs_rethrow(code, "Failed to create ICC profile");
     /* record the cie alt space as the icc alternative color space */
     (*ppcs_icc)->base_space = palt_cs;
     rc_increment_cs(palt_cs);
@@ -754,7 +754,7 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *memo
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory,
                     a_cache, lmn_caches);
     if (code < 0)
-        gs_rethrow(code, "Failed to create ICC profile from CIEA");
+        return gs_rethrow(code, "Failed to create ICC profile from CIEA");
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
     (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_A;
     /* Assign to the icc_equivalent member variable */
@@ -780,7 +780,7 @@ gx_remap_CIEA(const gs_client_color * pc, const gs_color_space * pcs_in,
     if (pcs->icc_equivalent == NULL) {
         code = gx_ciea_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         if (code < 0)
-            gs_rethrow(code, "Failed to create ICC profile from CIEA");
+            return gs_rethrow(code, "Failed to create ICC profile from CIEA");
     } else {
         /* Once the ICC color space is set, we should be doing all the remaps through the ICC equivalent */
         pcs_icc = pcs->icc_equivalent;
@@ -817,7 +817,7 @@ gx_concretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs_in,
     if (pcs->icc_equivalent == NULL) {
         code = gx_ciea_to_icc(&pcs_icc, pcs, pis->memory->stable_memory);
         if (code < 0)
-            gs_rethrow(code, "Failed to create ICC profile from CIEA");
+            return gs_rethrow(code, "Failed to create ICC profile from CIEA");
     } else {
         /* Once the ICC color space is set, we should be doing all the remaps through the ICC equivalent */
         pcs_icc = pcs->icc_equivalent;

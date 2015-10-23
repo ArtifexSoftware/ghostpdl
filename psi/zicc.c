@@ -93,6 +93,8 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         }
     } else {
         picc_profile = gsicc_profile_new(s, gs_state_memory(igs), NULL, 0);
+        if (picc_profile == NULL)
+            return gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
         /* We have to get the profile handle due to the fact that we need to know
            if it has a data space that is CIELAB */
         picc_profile->profile_handle =
@@ -259,6 +261,8 @@ zset_outputintent(i_ctx_t * i_ctx_p)
     check_read_file(i_ctx_p, s, pstrmval);
 
     picc_profile = gsicc_profile_new(s, gs_state_memory(igs), NULL, 0);
+    if (picc_profile == NULL)
+        return gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
     picc_profile->num_comps = ncomps;
     picc_profile->profile_handle =
         gsicc_get_profile_handle_buffer(picc_profile->buffer,
@@ -531,7 +535,7 @@ seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma,
         cal_profile = gsicc_create_from_cal(white, black, gamma, matrix,
                                             mem->stable_memory, num_colorants);
         if (cal_profile == NULL)
-            return gs_rethrow(-1, "creating the cal profile");
+            return gs_rethrow(gs_error_VMerror, "creating the cal profile failed");
         /* Assign the profile to this color space */
         code = gsicc_set_gscs_profile(pcs, cal_profile, mem->stable_memory);
         /* profile is created with ref count of 1, gsicc_set_gscs_profile()
@@ -575,6 +579,9 @@ znumicc_components(i_ctx_t * i_ctx_p)
     check_read_file(i_ctx_p, s, pstrmval);
 
     picc_profile = gsicc_profile_new(s, gs_state_memory(igs), NULL, 0);
+    if (picc_profile == NULL)
+        return gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
+
     picc_profile->num_comps = ncomps;
     picc_profile->profile_handle =
         gsicc_get_profile_handle_buffer(picc_profile->buffer,
