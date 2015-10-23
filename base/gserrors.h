@@ -25,7 +25,7 @@
 /* We don't use a typedef internally to avoid a lot of casting. */
 
 enum gs_error_type {
-    gs_error_ok = 0,	/* unknown error */
+    gs_error_ok = 0,
     gs_error_unknownerror = -1,	/* unknown error */
     gs_error_dictfull = -2,
     gs_error_dictstackoverflow = -3,
