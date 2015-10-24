@@ -1420,8 +1420,12 @@ end
   } bdef
 
   % Palette colors are decoded by the library.
-  % For now, ignore 'pclr' table.
-  /pclr { } bdef
+  /pclr {
+    4 sub
+    1 index (1234) readstring pop
+    3 get 16#7F and 1 add
+    /BitsPerComponent exch def
+  } bdef
 
   /cdef {
     pop

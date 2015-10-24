@@ -504,6 +504,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
 
             if_debug1m('w', state->memory, "[w]jpxd image has %d components\n", state->ncomp);
 
+            state->bpc = 0;
             {
                 const char *cspace = "unknown";
                 err = JP2_Decompress_GetProp(state->handle,
@@ -541,6 +542,8 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                     case cJP2_Colorspace_Palette_RGBa:
                         cspace = "indexed sRGB";
                         state->image_is_indexed = true;
+                        if (state->colorspace != gs_jpx_cs_indexed)
+                            state->bpc = 8;
                         break;
                     case cJP2_Colorspace_Palette_RGB_YCCa:
                         cspace = "indexed sRGB YCrCb";
@@ -570,7 +573,6 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                or depth, so we take the maximum of the component values */
             state->width = 0;
             state->height = 0;
-            state->bpc = 0;
             {
                 int comp;
                 int width, height;
