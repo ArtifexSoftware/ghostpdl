@@ -859,9 +859,9 @@ is_dc_nearly_linear(const gx_device *dev, const gx_device_color *c,
         const gx_device_color *c0, const gx_device_color *c1,
         double t, int n, float smoothness)
 {
+    int i;
 
     if (c0->type == &gx_dc_type_data_pure) {
-        int i;
         gx_color_index pure0 = c0->colors.pure;
         gx_color_index pure1 = c1->colors.pure;
         gx_color_index pure = c->colors.pure;
@@ -876,6 +876,22 @@ is_dc_nearly_linear(const gx_device *dev, const gx_device_color *c,
             int b = (pure >> shift) & mask;
             double bb = b0 * t + b1 * (1 - t);
 
+            if (any_abs(b - bb) > max_diff)
+                return false;
+        }
+        return true;
+    } else if (c0->type == &gx_dc_type_data_devn) {
+        for (i = 0; i < n; i++) {
+            int max_color = (i == dev->color_info.gray_index ? dev->color_info.max_gray
+                : dev->color_info.max_color);
+            double max_diff = max(1, max_color * smoothness);
+            /* Color values are 16 bit.  We are basing the smoothness on the
+               device bit depth.  So make sure to adjust the above max diff
+               base upon our device bit depth */
+            double b0 = (c0->colors.devn.values[i]) * max_color / gx_max_color_value;
+            double b1 = (c1->colors.devn.values[i]) * max_color / gx_max_color_value;
+            double b = (c->colors.devn.values[i]) * max_color / gx_max_color_value;
+            double bb = b0 * t + b1 * (1 - t);
             if (any_abs(b - bb) > max_diff)
                 return false;
         }
