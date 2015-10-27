@@ -437,6 +437,21 @@ error_in_rect:
     return 0;
 }
 
+static void update_color_use_frac_array(int num_colors, const frac31 *color,
+    cmd_rects_enum_t *re)
+{
+    int k;
+
+    if (color == NULL)
+        return;
+
+    for (k = 0; k < num_colors; k++){
+        if (color[k] != 0) {
+            re->pcls->color_usage.or |= (1<<k);
+        }
+    }
+}
+
 static inline int
 clist_write_fill_trapezoid(gx_device * dev,
     const gs_fixed_edge *left, const gs_fixed_edge *right,
@@ -512,8 +527,15 @@ clist_write_fill_trapezoid(gx_device * dev,
                     return gx_default_fill_trapezoid(dev, left, right, ybot, ytop, swap_axes, pdcolor, lop);
                 }
                 code = cmd_update_lop(cdev, re.pcls, lop);
-            } else
+            } else {
+                /* Even with pdcolor NULL, we may still have colors packed in 
+                   c0, c1, c2 or c3 */
+                update_color_use_frac_array(dev->color_info.num_components, c0, &re);
+                update_color_use_frac_array(dev->color_info.num_components, c1, &re);
+                update_color_use_frac_array(dev->color_info.num_components, c2, &re);
+                update_color_use_frac_array(dev->color_info.num_components, c3, &re);
                 code = 0;
+            }
             if (code >= 0) {
                 /* Dont't want to shorten the trapezoid by the band boundary,
                    keeping in mind a further optimization with writing same data to all bands. */
