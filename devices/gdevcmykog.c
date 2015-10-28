@@ -162,9 +162,17 @@ static int
 cmykog_open(gx_device * pdev)
 {
   gx_device_cmykog *dev = (gx_device_cmykog *)pdev;
+  int k;
 
   dev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
   dev->icc_struct->supports_devn = true;
+
+  /* For the planar device we need to set up the bit depth of each plane.
+   * For other devices this is handled in check_device_separable where
+   * we compute the bit shift for the components etc. */
+  for (k = 0; k < pdev->color_info.num_components; k++) {
+      pdev->color_info.comp_bits[k] = 8;
+  }
 
   /* Here we set the device so that any buffers set up will be aligned to a
    * multiple of 1<<5 = 32. This is so the SSE code can safely load 32 bytes

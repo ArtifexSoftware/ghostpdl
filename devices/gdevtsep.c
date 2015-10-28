@@ -1609,6 +1609,14 @@ tiffsep_prn_open(gx_device * pdev)
             force_ps = true;
         }
     }
+
+    /* For the planar device we need to set up the bit depth of each plane.
+       For other devices this is handled in check_device_separable where
+       we compute the bit shift for the components etc. */
+    for (k = 0; k < GS_CLIENT_COLOR_MAX_COMPONENTS; k++) {
+        pdev->color_info.comp_bits[k] = 8;
+    }
+
     /* With planar the depth can be more than 64.  Update the color
        info to reflect the proper depth and number of planes */
     pdev_sep->warning_given = false;

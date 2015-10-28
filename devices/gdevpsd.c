@@ -354,12 +354,19 @@ psd_prn_open(gx_device * pdev)
         }
     }
     pdev_psd->warning_given = false;
+
+    /* For the planar device we need to set up the bit depth of each plane.
+       For other devices this is handled in check_device_separable where
+       we compute the bit shift for the components etc. */
+    for (k = 0; k < GS_CLIENT_COLOR_MAX_COMPONENTS; k++) {
+        pdev->color_info.comp_bits[k] = 8;
+    }
+
     /* With planar the depth can be more than 64.  Update the color
        info to reflect the proper depth and number of planes.  Also note
        that the number of spot colors can change from page to page.  
        Update things so that we only output separations for the
        inks on that page. */
-
     if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
         if ((pdev_psd->devn_params.page_spot_colors >= 0 || force_pdf) && !force_ps) {
             if (force_pdf) {
