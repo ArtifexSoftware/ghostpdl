@@ -232,7 +232,7 @@ than the fact that there is at least one character.
 static int
 write_charset(gs_fapi_font * a_fapi_font, WRF_output * a_output, unsigned char *a_charset_offset_ptr)
 {
-    const int characters = 1;
+    const int characters = 2; /* .notdef + one other */
     int i = 0;
 
     /* Write the offset to the start of the charset to the top dictionary. */
