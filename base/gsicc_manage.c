@@ -1627,6 +1627,14 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
        decremented for any profile that we might be replacing
        in gsicc_init_device_profile_struct */
     if (file_name != '\0') {
+        /* Silent on failure if this is an output intent profile that
+         * could not be found.  Bug 695042.  Multi-threaded rendering
+         * set up will try to find the file for the profile during the set
+         * up via put/get params. but one does not exist.  The OI profile
+         * will be cloned after the put/get params */
+        if (strncmp(file_name, OI_PROFILE, strlen(OI_PROFILE)) == 0)
+            return -1;
+
         code = gsicc_open_search(file_name, strlen(file_name), mem,
                                  mem->gs_lib_ctx->profiledir,
                                  mem->gs_lib_ctx->profiledir_len, &str);
@@ -1740,6 +1748,26 @@ gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile,
         rc_decrement(pcs->cmm_icc_profile_data, "gsicc_set_gscs_profile");
     }
     pcs->cmm_icc_profile_data = icc_profile;
+    return 0;
+}
+
+int
+gsicc_clone_profile(cmm_profile_t *source, cmm_profile_t **destination,
+                    gs_memory_t *memory)
+{
+    cmm_profile_t *des = gsicc_profile_new(NULL, memory, source->name,
+        source->name_length);
+
+    if (des == NULL)
+        return gs_throw(gs_error_VMerror, "Profile clone failed");
+    des->buffer = gs_alloc_bytes(memory, source->buffer_size, "gsicc_clone_profile");
+    if (des->buffer == NULL) {
+        rc_decrement(des, "gsicc_clone_profile");
+        return gs_throw(gs_error_VMerror, "Profile clone failed");
+    }
+    memcpy(des->buffer, source->buffer, source->buffer_size);
+    des->buffer_size = source->buffer_size;
+    *destination = des;
     return 0;
 }
 

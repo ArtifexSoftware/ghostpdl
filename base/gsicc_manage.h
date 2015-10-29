@@ -22,7 +22,7 @@
 #define ICC_DUMP 0
 
 /* Define the default ICC profiles in the file system */
-#define OI_PROFILE        "OIProfile" /* Keyword to indicate use of OI profile */
+#define OI_PROFILE        "\xffOIProfile" /* Keyword to indicate use of OI profile */
 #define DEFAULT_GRAY_ICC  "default_gray.icc"
 #define DEFAULT_RGB_ICC   "default_rgb.icc"
 #define DEFAULT_CMYK_ICC  "default_cmyk.icc"
@@ -104,6 +104,8 @@ int gsicc_initialize_default_profile(cmm_profile_t *icc_profile);
 gsicc_manager_t* gsicc_manager_new(gs_memory_t *memory);
 cmm_profile_t* gsicc_profile_new(stream *s, gs_memory_t *memory,
                                  const char* pname, int namelen);
+int gsicc_clone_profile(cmm_profile_t *source, cmm_profile_t **destination,
+                        gs_memory_t *memory);
 int gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile,
                            gs_memory_t * mem);
 cmm_profile_t* gsicc_get_gscs_profile(gs_color_space *gs_colorspace,

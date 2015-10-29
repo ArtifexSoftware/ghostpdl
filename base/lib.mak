@@ -2153,7 +2153,8 @@ $(GLOBJ)gxclthrd.$(OBJ) :  $(GLSRC)gxclthrd.c $(gxsync_h) $(AK)\
  $(gxclthrd_h) $(gdevplnx_h) $(gdevprn_h) $(gp_h)\
  $(gpcheck_h) $(gsdevice_h) $(gserrors_h) $(gsmchunk_h) $(gsmemlok_h)\
  $(gsmemory_h) $(gx_h) $(gxcldev_h) $(gdevdevn_h) $(gsicc_cache_h)\
- $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h) $(memory__h) $(LIB_MAK) $(MAKEDIRS)
+ $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h) $(memory__h) $(gsicc_manage_h)\
+ $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxclthrd.$(OBJ) $(C_) $(GLSRC)gxclthrd.c
 
 $(GLOBJ)gsmchunk.$(OBJ) :  $(GLSRC)gsmchunk.c $(AK) $(gx_h)\

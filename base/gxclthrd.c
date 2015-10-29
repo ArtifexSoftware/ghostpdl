@@ -35,6 +35,7 @@
 #include "gxclthrd.h"
 #include "gdevdevn.h"
 #include "gsicc_cache.h"
+#include "gsicc_manage.h"
 
 /* Forward reference prototypes */
 static int clist_start_render_thread(gx_device *dev, int thread_index, int band);
@@ -113,6 +114,38 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
         goto out_cleanup;
     gs_c_param_list_release(&paramlist);
 
+    /* If the device ICC profile (or proof) is OI_PROFILE, then that was not handled
+     * by put/get params.  In this case we need to clone the profiles */
+    if (dev->icc_struct != NULL && dev->icc_struct->device_profile[0] != NULL &&
+        strncmp(dev->icc_struct->device_profile[0]->name, OI_PROFILE, strlen(OI_PROFILE)) == 0) {
+        if ((code = gsicc_clone_profile(dev->icc_struct->device_profile[0],
+            &(ndev->icc_struct->device_profile[0]), ndev->memory)) < 0) {
+            emprintf1(dev->memory,
+                "Error setting up device profile, code=%d. Rendering threads not started.\n",
+                code);
+            goto out_cleanup;
+        }
+    }
+    if (dev->icc_struct != NULL && dev->icc_struct->proof_profile != NULL &&
+        strncmp(dev->icc_struct->proof_profile->name, OI_PROFILE, strlen(OI_PROFILE)) == 0) {
+        if ((code = gsicc_clone_profile(dev->icc_struct->proof_profile,
+            &ndev->icc_struct->proof_profile, ndev->memory)) < 0) {
+            emprintf1(dev->memory,
+                "Error setting up proof profile, code=%d. Rendering threads not started.\n",
+                code);
+            goto out_cleanup;
+        }
+    }
+    /* Finally set the OI profile also if needed */
+    if (dev->icc_struct != NULL && dev->icc_struct->oi_profile != NULL) {
+        if ((code = gsicc_clone_profile(dev->icc_struct->oi_profile,
+            &ndev->icc_struct->oi_profile, ndev->memory)) < 0) {
+            emprintf1(dev->memory,
+                "Error setting up OI profile, code=%d. Rendering threads not started.\n",
+                code);
+            goto out_cleanup;
+        }
+    }
     /* In the case of a separation device, we need to make sure we get the
        devn params copied over */
     pclist_devn_params = dev_proc(dev, ret_devn_params)(dev);
