@@ -1064,6 +1064,25 @@ currentdict /eexec_pdf_param_dict .undef
    PDFfile file-position setfileposition
    count stack-count sub { pop } repeat
    topFontDict end end
+
+   %% Bug #696306 has a broken type 1 font where the eexec encrypted portion simply ends
+   %% leaving a partial glyph description and, more importantly, the Private dictionary
+   %% on the operand stack. Ths means the font dictonary does not contain a Private
+   %% dictionary which causes .buildfont1 to throw an error. Despite my best efforts
+   %% I have not been able to deal with the error that late (largely due to code
+   %% which attempts to handle other error conditions). So we check for it here and
+   %% return a null object insted of an invalid font dictionary.
+   %%
+   dup /Private known not {
+     (   **** ERROR: The font named ) print
+     dup /FontName known {
+       /FontName get 256 string cvs
+     }{
+       pop (Unknown font name)
+     }ifelse
+     print ( is invalid.\n) print flush
+     //null
+   } if
  } bdef
 
 % ---------------- Type 3 fonts ---------------- %
@@ -2058,7 +2077,7 @@ currentdict /CMap_read_dict undef
     } bdef
 
   /bad_stream
-    { (   **** Warning: Error reading font stream, loading font by the name\n)
+    { (   **** Warning: Error reading font stream, attempting to load the font using its name\n)
       pdfformaterror
       //no_stream exec
     } bdef
@@ -2181,7 +2200,7 @@ currentdict /bndef undef
         } ifelse
         dup //null eq {
           pop
-          (   **** Warning: can't process font stream, loading font by the name.\n)
+          (   **** Warning: can't process embedded font stream,\n        attempting to load the font using its name.\n)
           pdfformaterror
           dup run-fonttypeproc            % /key res font
         } if
