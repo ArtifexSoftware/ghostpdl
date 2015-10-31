@@ -136,8 +136,17 @@
      pop
      dup /.AGLprocessed~GS //true //.growput superexec
    } if
-   //.buildfont1
-   3 2 roll .setglobal
+
+   %% We need to excute the C .buildfont1 in a stopped context so that, if there
+   %% are errors we can put the stack back sanely and exit. Otherwise callers won't
+   %% be able to execute this redefinied .buildfont1 in a stopped context and still
+   %% usefully continue (because the stack will be altered, which it shold not be).
+   %%
+   %% Uncovered working on bug #696306 and fixed as part of that bug.
+   %%
+   {//.buildfont1} stopped
+   4 3 roll .setglobal
+   {//.buildfont1 $error /errorname get signalerror} if
  } bind def
 
 % If the diskfont feature isn't included, define a dummy .loadfontdict.

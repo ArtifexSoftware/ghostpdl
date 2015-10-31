@@ -150,7 +150,19 @@ currentdict /known_symbolic_fonts undef
 /adjustfont {		% <font-resource> <font> adjustfont <font'>
   getfontencoding
   3 copy .processToUnicode
-  getfontmetrics 5 -1 roll pop .updatefont { .completefont } if
+  getfontmetrics 5 -1 roll pop .updatefont {
+    %% Bug #696306 has a broken type 1 font where the eexec encrypted portion simply ends
+    %% leaving a partial glyph description and, more importantly, the Private dictionary
+    %% on the operand stack. Ths means the font dictonary does not contain a Private
+    %% dictionary which causes .buildfont1 to throw an error. .completefont calls .buildfont1
+    %% (which is obscured by a definition in gs_type1.ps) so we need to check the reault
+    %% of .completefont. If it fails we must discard the font dictionary and use a fallback.
+    {.completefont} stopped {
+      (\n *** ERROR: The font ) print /FontName get 256 string cvs print ( is damaged and cannot be used. Switching to a\n) print flush
+      (            last-ditch fallback, text may not render correctly, or at all.\n\n) pdfformaterror
+      /Helvetica findfont
+    }if
+  } if
 } bind def
 
 % Get the (possibly modified) encoding of a font.
@@ -1064,25 +1076,6 @@ currentdict /eexec_pdf_param_dict .undef
    PDFfile file-position setfileposition
    count stack-count sub { pop } repeat
    topFontDict end end
-
-   %% Bug #696306 has a broken type 1 font where the eexec encrypted portion simply ends
-   %% leaving a partial glyph description and, more importantly, the Private dictionary
-   %% on the operand stack. Ths means the font dictonary does not contain a Private
-   %% dictionary which causes .buildfont1 to throw an error. Despite my best efforts
-   %% I have not been able to deal with the error that late (largely due to code
-   %% which attempts to handle other error conditions). So we check for it here and
-   %% return a null object insted of an invalid font dictionary.
-   %%
-   dup /Private known not {
-     (   **** ERROR: The font named ) print
-     dup /FontName known {
-       /FontName get 256 string cvs
-     }{
-       pop (Unknown font name)
-     }ifelse
-     print ( is invalid.\n) print flush
-     //null
-   } if
  } bdef
 
 % ---------------- Type 3 fonts ---------------- %
