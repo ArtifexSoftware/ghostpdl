@@ -893,13 +893,17 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
                The names are in the order such that the fastest
                index in the table is the first name */
             gsicc_get_devicen_names(icc_profile, icc_manager->memory);
+            /* Init this profile now */
+            gsicc_init_profile_info(icc_profile);
+        } else {
+            /* Delay the loading of the handle buffer until we need the profile.
+               But set some basic stuff that we need. Take care of DeviceN
+               profile now, since we don't know the number of components etc */
+            icc_profile->num_comps = num_comps;
+            icc_profile->num_comps_out = 3;
+            gscms_set_icc_range(&icc_profile);
+            icc_profile->data_cs = default_space;
         }
-        /* Delay the loading of the handle buffer until we need the profile.
-           But set some basic stuff that we need */
-        icc_profile->num_comps = num_comps;
-        icc_profile->num_comps_out = 3;
-        gscms_set_icc_range(&icc_profile);
-        icc_profile->data_cs = default_space;
         return 0;
     }
     return -1;
