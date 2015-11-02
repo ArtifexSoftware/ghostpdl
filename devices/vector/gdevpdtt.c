@@ -335,7 +335,7 @@ static const gs_text_enum_procs_t pdf_text_procs = {
  * aren't set up to accept this, and just throw an error. Trying to rework the
  * interpreter routines began turning into a gigantic task, so I chose instead
  * to 'set' the colours here, which is called from text_begin, where the code
- * allows us to return e_RemapColor. Attempting to write the colour to the PDF file
+ * allows us to return gs_error_RemapColor. Attempting to write the colour to the PDF file
  * in this routine as well caused trouble keeping the graphics states synchronised,
  * so this functionality was left in pdf_prepare_text_drawing.
  */

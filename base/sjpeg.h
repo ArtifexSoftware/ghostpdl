@@ -28,7 +28,7 @@
  *   (b) it catches any error exit from the IJG code and converts it into
  *       an error return value per Ghostscript custom.  A negative return
  *       value is an error code, except for gs_jpeg_alloc_xxx which return
- *       NULL (indicating e_VMerror).
+ *       NULL (indicating gs_error_VMerror).
  */
 
 /* Common to encode/decode */

@@ -1344,8 +1344,8 @@ int pdfmark_write_article(gx_device_pdf * pdev, const pdf_article_t * part);
 bool pdf_objname_is_valid(const byte *data, uint size);
 
 /*
- * Look up a named object.  Return e_rangecheck if the syntax is invalid,
- * e_undefined if no object by that name exists.
+ * Look up a named object.  Return gs_error_rangecheck if the syntax is invalid,
+ * gs_error_undefined if no object by that name exists.
  */
 int pdf_find_named(gx_device_pdf * pdev, const gs_param_string * pname,
                    cos_object_t **ppco);
@@ -1370,7 +1370,7 @@ int pdf_refer_named(gx_device_pdf *pdev, const gs_param_string *pname,
 
 /*
  * Look up a named object as for pdf_refer_named.  If the object already
- * exists and is not simply a forward reference, return e_rangecheck;
+ * exists and is not simply a forward reference, return gs_error_rangecheck;
  * if it exists as a forward reference, set its type and return 0;
  * otherwise, create the object with the given type and return 1.
  * pname = 0 is allowed: in this case, simply create the object.
@@ -1382,8 +1382,8 @@ int pdf_make_named_dict(gx_device_pdf * pdev, const gs_param_string * pname,
 
 /*
  * Look up a named object as for pdf_refer_named.  If the object does not
- * exist, or is a forward reference, return e_undefined; if the object
- * exists has the wrong type, return e_typecheck.
+ * exist, or is a forward reference, return gs_error_undefined; if the object
+ * exists has the wrong type, return gs_error_typecheck.
  */
 int pdf_get_named(gx_device_pdf * pdev, const gs_param_string * pname,
                   cos_type_t cotype, cos_object_t **ppco);

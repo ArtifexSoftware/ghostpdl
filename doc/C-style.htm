@@ -464,8 +464,7 @@ but a comment <code>/*&nbsp;falls&nbsp;through&nbsp;*/</code> is
 required.
 
 <li>If you are returning an error code specified explicitly (e.g.,
-<code>return&nbsp;gs_error_rangecheck</code> or
-<code>return&nbsp;e_rangecheck</code>), use
+<code>return&nbsp;gs_error_rangecheck</code>), use
 <code>return_error()</code> rather than plain <code>return</code>.
 However, if the program is simply propagating an error code generated
 elsewhere, as opposed to generating the error, use <code>return</code>

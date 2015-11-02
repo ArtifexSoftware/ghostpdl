@@ -252,7 +252,7 @@ interaction.  In particular:
 <ul>
 
 <li>For callers that want to pass input to Ghostscript piece by piece,
-Ghostscript returns with an <code>e_NeedInput</code> code rather than
+Ghostscript returns with an <code>gs_error_NeedInput</code> code rather than
 using a callback.  This allows the caller complete flexibility in its
 control structure for managing the source of input.  (It might, for example,
 be generating the input dynamically.)
@@ -1195,7 +1195,7 @@ The device color for a tiled (PatternType 1) pattern contains a pointer to a
 pattern instance, plus (for uncolored patterns) the device color to be
 masked.  The pattern instance includes a procedure that actually paints the
 pattern if the pattern is not in the cache.  For the PostScript interpreter,
-this procedure returns an <code>e_RemapColor</code> exception code: this
+this procedure returns an <code>gs_error_RemapColor</code> exception code: this
 eventually causes the interpreter to run the pattern's PaintProc, loading
 the rendering into the cache, and then re-execute the original drawing
 operator.

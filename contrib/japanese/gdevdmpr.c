@@ -435,7 +435,7 @@ gdev_dmprt_put_dmprt_params(gx_device *pdev, gs_param_list *plist)
   code = param_read_int_array(plist, "MaxSize", &vaint);
   if (code < 0) return code;
   if (code == 0) {
-    if (vaint.size != 2) return e_typecheck;
+    if (vaint.size != 2) return gs_error_typecheck;
     pddev->dmprt.max_width = vaint.data[0];
     pddev->dmprt.max_height = vaint.data[1];
   }
@@ -443,7 +443,7 @@ gdev_dmprt_put_dmprt_params(gx_device *pdev, gs_param_list *plist)
   code = param_read_int_array(plist, "Offsets", &vaint);
   if (code < 0) return code;
   if (code == 0) {
-    if (vaint.size != 2) return e_typecheck;
+    if (vaint.size != 2) return gs_error_typecheck;
     pddev->dmprt.x_offset = vaint.data[0];
     pddev->dmprt.y_offset = vaint.data[1];
   }
@@ -452,7 +452,7 @@ gdev_dmprt_put_dmprt_params(gx_device *pdev, gs_param_list *plist)
   if (code < 0) return code;
   if (code == 0) {
     int i;
-    if (vaint.size != 4) return e_typecheck;
+    if (vaint.size != 4) return gs_error_typecheck;
     for (i=0;i<4;i++) pddev->dmprt.dev_margin[i] = vaint.data[i];
   }
 
@@ -475,7 +475,7 @@ gdev_dmprt_put_dviprt_params(gx_device *pdev, gs_param_list *plist)
     char *filename = gs_malloc(pdev->memory->non_gc_memory, vstr.size + 1, 1,
                                "gdev_dmprt_put_props(filename)");
     int ccode;
-    if (filename == 0) return e_VMerror;
+    if (filename == 0) return gs_error_VMerror;
     strncpy(filename, (const char*)vstr.data, vstr.size);
     filename[vstr.size] = '\0';
     ccode = gdev_dmprt_get_printer_props(pddev,filename);
@@ -566,7 +566,7 @@ gdev_dmprt_put_dviprt_params(gx_device *pdev, gs_param_list *plist)
       }
     }
     if (gdev_dmprt_encode_list[i].name == 0)
-      return e_rangecheck;
+      return gs_error_rangecheck;
   }
 
   return code;
@@ -582,9 +582,9 @@ gdev_dmprt_put_prt_code_param(gs_param_list *plist,
   if (code == 0) {
     int ccode = gdev_dmprt_check_code_props(vstr.data, vstr.size);
     byte *pbyte;
-    if (ccode < 0) return e_rangecheck;
+    if (ccode < 0) return gs_error_rangecheck;
     pbyte = (byte *)malloc(vstr.size+1);
-    if (pbyte == 0) return e_VMerror;
+    if (pbyte == 0) return gs_error_VMerror;
     memcpy(pbyte, vstr.data, vstr.size);
     pbyte[vstr.size] = 0;
     pprt->prtcode[idx] = pbyte;
@@ -604,7 +604,7 @@ gdev_dmprt_put_prt_string_param(gs_param_list *plist,
   if (code == 0) {
     byte *pbyte;
     pbyte = (byte *)malloc(vstr.size+1);
-    if (pbyte == 0) return e_VMerror;
+    if (pbyte == 0) return gs_error_VMerror;
     memcpy(pbyte, vstr.data, vstr.size);
     pbyte[vstr.size] = 0;
     pprt->strings[idx] = pbyte;
@@ -686,7 +686,7 @@ gdev_dmprt_print_page(gx_device_printer *pdev, FILE *prn_stream)
   /* get work buffer */
   in = (byte *)gs_malloc(pdev->memory->non_gc_memory, 1, i_buf_size ,"gdev_dmprt_print_page(in)");
   if ( in == 0 )
-    return e_VMerror;
+    return gs_error_VMerror;
 
   /* Initialize this printer driver */
   if (pdev->file_is_new) {
@@ -760,19 +760,19 @@ gdev_dmprt_check_code_props(byte *str,int len)
     if (fmt & CFG_FMT_BIT) {
       int s = *str++;
       str += s;
-      if (str > end) return e_rangecheck;
+      if (str > end) return gs_error_rangecheck;
       if ((fmt & CFG_FMT_FORMAT_BIT) == CFG_FMT_STRINGS) {
         s = *str++;
         str += s;
-        if (str > end) return e_rangecheck;
+        if (str > end) return gs_error_rangecheck;
       }
     }
     else {
       str += fmt;
-      if (str > end) return e_rangecheck;
+      if (str > end) return gs_error_rangecheck;
     }
   }
-  return str == end ? 0 : e_rangecheck;
+  return str == end ? 0 : gs_error_rangecheck;
 }
 
 static void
@@ -803,19 +803,19 @@ gdev_dmprt_get_printer_props(gx_device_dmprt *pdev,char *fnamebase)
   char *fname;
 
   fname = gs_malloc(pdev->memory->non_gc_memory, 256,1,"dviprt_lib_fname");
-  if (fname == NULL) return e_VMerror;
+  if (fname == NULL) return gs_error_VMerror;
 
   fp = gdev_dmprt_dviprt_lib_fopen(fnamebase,fname);
   if (fp == NULL) {
-    return e_undefinedfilename;
+    return gs_error_undefinedfilename;
   }
   if (fseek(fp,18,0) < 0)
-    return e_ioerror;
+    return gs_error_ioerror;
   code = fgetc(fp);
   fclose(fp);
 
   if (code == EOF)
-    code = e_ioerror;
+    code = gs_error_ioerror;
   else if (code == 0xff) {
     code = dviprt_readcfg(fname,&cfg,NULL,0,NULL,0);
   }
@@ -865,10 +865,10 @@ gdev_dmprt_error_no_dviprt_to_gs(int code)
 {
   switch (code) {
   case CFG_ERROR_MEMORY:
-    return e_VMerror;
+    return gs_error_VMerror;
   case CFG_ERROR_FILE_OPEN:
   case CFG_ERROR_OUTPUT:
-    return e_ioerror;
+    return gs_errpr_ioerror;
   default:
     return -1;
   }

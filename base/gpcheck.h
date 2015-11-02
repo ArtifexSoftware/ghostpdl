@@ -25,7 +25,7 @@
  * to handle multi-tasking through the 'context' facility.)  Routines that
  * run for a long time must periodically call gp_check_interrupts(), and
  * if it returns true, must clean up whatever they are doing and return an
- * e_interrupted (or gs_error_interrupted) exceptional condition.
+ * gs_error_interrupt exceptional condition.
  * The return_if_interrupt macro provides a convenient way to do this.
  *
  * On platforms that require an interrupt check, the makefile defines

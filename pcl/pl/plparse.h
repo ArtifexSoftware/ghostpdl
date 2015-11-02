@@ -51,7 +51,7 @@ typedef struct pl_process_state_s pl_process_state_t;
  *	detected.
  *	other <0 value - an error was detected.
  */
-#define e_ExitLanguage (-102)   /* e_InterpreterExit */
+#define e_ExitLanguage gs_error_InterpreterExit
 #define pl_process_proc(proc)\
   int proc(pl_process_state_t *process_data, stream_cursor_read *pr)
 typedef pl_process_proc((*pl_process_proc_t));

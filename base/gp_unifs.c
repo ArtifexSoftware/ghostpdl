@@ -547,7 +547,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
                 d->entry = pfen->dirp;
                 pfen->dstack = d;
             } else
-                DO_NOTHING;     /* >>> e_VMerror!!! */
+                DO_NOTHING;     /* >>> gs_error_VMerror!!! */
 
             if_debug1m('e', pfen->memory, "[e]file_enum:Dir pushed '%s'\n",
                        work);

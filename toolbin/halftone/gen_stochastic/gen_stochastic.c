@@ -951,7 +951,7 @@ init_gs_display(int argc, char **argv)
                 " (genpat0.ps) run\n"
                 "1 false .outputpage\n",
                 array_width, array_height, resolution[0], resolution[1]);
-    if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) != e_NeedInput) {
+    if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) != gs_error_NeedInput) {
         printf(" Execution of 'genpat0.ps' returned code = %d\n", code);
         return -1;
     }
@@ -978,7 +978,7 @@ update_gs_image()
             Gray = 0;
         if ((i % array_width) == array_width - 1) {
             sprintf(bufp, "%02X\n", Gray);
-            if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) < e_NeedInput) {
+            if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) < gs_error_NeedInput) {
                 printf(" during image data for DoImage returned code = %d\n", code);
                 return -1;
             }
@@ -999,7 +999,7 @@ update_gs_dot(int choice_X, int choice_Y, int last)
 
     if (loop_ctr <= 1) {
         sprintf(buf, "%d %d %d Dot\n", choice_X, choice_Y, 180);
-        if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) < e_NeedInput) {
+        if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) < gs_error_NeedInput) {
             printf(" Execution of Dot returned code = %d\n", code);
             return -1;
         }
@@ -1007,7 +1007,7 @@ update_gs_dot(int choice_X, int choice_Y, int last)
     if (last) {
         /* Sync the display before waiting for a character */
         sprintf(buf, "1 false .outputpage\n");
-        if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) < e_NeedInput) {
+        if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) < gs_error_NeedInput) {
             printf(" Execution of .outputpage returned code = %d\n", code);
             return -1;
         }
@@ -1031,7 +1031,7 @@ update_gs_dot(int choice_X, int choice_Y, int last)
 
         /* Now change that dot to black (0) before proceeding */
         sprintf(buf, "%d %d %d Dot\n", choice_X, choice_Y, 0);
-        if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) < e_NeedInput) {
+        if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) < gs_error_NeedInput) {
             printf(" Execution of Dot returned code = %d\n", code);
             return -1;
         }

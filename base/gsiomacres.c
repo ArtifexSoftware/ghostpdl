@@ -392,14 +392,14 @@ iodev_macresource_open_file(gx_io_device *iodev, const char *fname, uint namelen
     res_type_string = strrchr(filename, '#');
     if (res_type_string == NULL) {
         if_debug0('s', "[s] couldn't find resource type separator\n");
-        code = gs_note_error(e_invalidfileaccess);
+        code = gs_note_error(gs_error_invalidfileaccess);
 	goto done;
     }
     *res_type_string++ = '\0';
     res_id_string = strrchr(res_type_string, '+');
     if (res_id_string == NULL) {
         if_debug0('s', "couldn't find resource id separator\n");
-        code = gs_note_error(e_invalidfileaccess);
+        code = gs_note_error(gs_error_invalidfileaccess);
 	goto done;
     }
     *res_id_string++ = '\0';
@@ -418,7 +418,7 @@ iodev_macresource_open_file(gx_io_device *iodev, const char *fname, uint namelen
             datafork = true;
         } else {
             if_debug0('s', "could not get resource size\n");
-            code = gs_note_error(e_invalidfileaccess);
+            code = gs_note_error(gs_error_invalidfileaccess);
 	    goto done;
         }
     }
@@ -427,7 +427,7 @@ iodev_macresource_open_file(gx_io_device *iodev, const char *fname, uint namelen
     buf = gs_alloc_string(mem, size, "macresource buffer");
     if (buf == NULL) {
         if_debug0('s', "macresource: could not allocate buffer for resource data\n");
-        code = gs_note_error(e_VMerror);
+        code = gs_note_error(gs_error_VMerror);
 	goto done;
     }
     /* call again to get the resource data */

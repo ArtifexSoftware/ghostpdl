@@ -380,7 +380,7 @@ The <code>gsapi_run_*</code> functions are like
 If these functions return &lt;= -100, either quit or a fatal
 error has occured.  You must call <code>gsapi_exit()</code> next.
 The only exception is <code>gsapi_run_string_continue()</code>
-which will return <code>e_NeedInput</code> if all is well.
+which will return <code>gs_error_NeedInput</code> if all is well.
 See below for <a href="#return_codes">return codes</a>.
 <p>
 The address passed in <code>pexit_code</code> will be used to return the 
@@ -390,7 +390,7 @@ errors should be handled through the normal mechanisms within the
 interpreted code. If set to a negative value, the functions will return 
 an error code directly to the caller, bypassing the interpreted 
 language. The interpreted language's error handler is bypassed, regardless of 
-<code>user_errors</code> parameter, for the <code>e_interrupt</code> 
+<code>user_errors</code> parameter, for the <code>gs_error_interrupt</code>
 generated when <a href="#set_poll">the polling callback</a> returns a negative 
 value. A positive <code>user_errors</code> is treated the same as zero.
 <p>
@@ -434,21 +434,21 @@ The <code>gsapi_init_with_args</code>, <code>gsapi_run_*</code> and
 <tr valign=top>	<td align=left>0
 	<td>&nbsp;
 	<td>No errors
-<tr valign=top>	<td align=left>e_Quit
+<tr valign=top>	<td align=left>gs_error_Quit
 	<td>&nbsp;
 	<td>"<code>quit</code>" has been executed.
 	This is not an error.
 	<code>gsapi_exit()</code> must be called next.
-<tr valign=top>	<td align=left>e_interrupt
+<tr valign=top>	<td align=left>gs_error_interrupt
 	<td>&nbsp;
 	<td><a href="#set_poll">The polling callback function</a> 
 	returned a negative value, requesting Ghostscript to abort.
-<tr valign=top>	<td align=left>e_NeedInput
+<tr valign=top>	<td align=left>gs_error_NeedInput
 	<td>&nbsp;
 	<td>More input is needed by
         <code>gsapi_run_string_continue()</code>.
         This is not an error.
-<tr valign=top>	<td align=left>e_Info
+<tr valign=top>	<td align=left>gs_error_Info
 	<td>&nbsp;
 	<td>"<code>gs -h</code>" has been executed. 
 	This is not an error.
@@ -456,7 +456,7 @@ The <code>gsapi_init_with_args</code>, <code>gsapi_run_*</code> and
 <tr valign=top>	<td align=left>&lt; 0
 	<td>&nbsp;
 	<td>Error
-<tr valign=top>	<td align=left>&lt;= -100
+<tr valign=top>	<td align=left>&lt;= gs_error_Fatal
 	<td>&nbsp;
 	<td>Fatal error.
 <code>gsapi_exit()</code> must be called next.
@@ -533,12 +533,12 @@ int main(int argc, char *argv[])
     if (code == 0)
         code = gsapi_init_with_args(minst, gsargc, gsargv);
     code1 = gsapi_exit(minst);
-    if ((code == 0) || (code == e_Quit))
+    if ((code == 0) || (code == gs_error_Quit))
 	code = code1;
 
     gsapi_delete_instance(minst);
 
-    if ((code == 0) || (code == e_Quit))
+    if ((code == 0) || (code == gs_error_Quit))
 	return 0;
     return 1;
 }
@@ -614,12 +614,12 @@ int main(int argc, char *argv[])
     if (code == 0)
 	code = gsapi_run_string(minst, start_string, 0, &amp;exit_code);
     code1 = gsapi_exit(minst);
-    if ((code == 0) || (code == e_Quit))
+    if ((code == 0) || (code == gs_error_Quit))
 	code = code1;
 
     gsapi_delete_instance(minst);
 
-    if ((code == 0) || (code == e_Quit))
+    if ((code == 0) || (code == gs_error_Quit))
 	return 0;
     return 1;
 }
@@ -653,12 +653,12 @@ int main(int argc, char *argv[])
     }
 
     code1 = gsapi_exit(minst);
-    if ((code == 0) || (code == e_Quit))
+    if ((code == 0) || (code == gs_error_Quit))
 	code = code1;
 
     gsapi_delete_instance(minst);
 
-    if ((code == 0) || (code == e_Quit))
+    if ((code == 0) || (code == gs_error_Quit))
 	return 0;
     return 1;
 }

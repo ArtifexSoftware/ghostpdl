@@ -89,7 +89,7 @@ InitFont(Bitstream_server * server, FAPI_font * ff)
             else
                 written = FF_serialize_type2_font(ff, own_font_data, length);
             if (written != length)
-                return (e_unregistered);        /* Must not happen. */
+                return (gs_error_unregistered);        /* Must not happen. */
         }
         /* It must be type 42 (see code in FAPI_FF_get_glyph in zfapi.c). */
         else {
@@ -97,14 +97,14 @@ InitFont(Bitstream_server * server, FAPI_font * ff)
             long length = ff->get_long(ff, FAPI_FONT_FEATURE_TT_size, 0);
 
             if (length == 0)
-                return e_invalidfont;
+                return = gs_error_invalidfont;
 
             /* Load the TrueType data into a single buffer. */
             own_font_data = gs_malloc(mem, 1, length, "Type 42 fotn copy");
             if (!own_font_data)
-                return e_VMerror;
+                return gs_error_VMerror;
             if (ff->serialize_tt_font(ff, own_font_data, length))
-                return e_invalidfont;
+                return gs_error_invalidfont;
         }
     }
     face->font_data = own_font_data;
@@ -370,7 +370,7 @@ gs_fapibstm_instantiate(i_plugin_client_memory * client_mem,
                                                     (fapi_bitstream_server),
                                                     "fapi_bitstream_server");
     if (r == 0)
-        return e_VMerror;
+        return gs_error_VMerror;
     memset(r, 0, sizeof(*r));
     r->If = If0;
     r->client_mem = *client_mem;

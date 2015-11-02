@@ -333,7 +333,7 @@ int main(int argc, char *argv[])
         fclose(black_fd);
         fclose(temp_fd);
 
-    if ((code == 0) || (code == e_Quit))
+    if ((code == 0) || (code == gs_error_Quit))
         return 0;
     return 1;
 }

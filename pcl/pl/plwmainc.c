@@ -46,29 +46,7 @@
 
 typedef int (* GSPLDLLCALLLINK GS_PL_DLL_CALLBACK) (int, char *, unsigned long);
 GS_PL_DLL_CALLBACK pgsdll_callback = NULL;
-
-/* ------ Pseudo-errors used internally ------ */
-/* Copied from gs/psi/ierrors.h */
-/*
- * Internal code for a fatal error.
- * gs_interpret also returns this for a .quit with a positive exit code.
- */
-#define e_Fatal (-100)
-
-/*
- * Internal code for the .quit operator.
- * The real quit code is an integer on the operand stack.
- * gs_interpret returns this only for a .quit with a zero exit code.
- */
-#define e_Quit (-101)
-
-/*
- * Internal code for a normal exit when usage info is displayed.
- * This allows Window versions of Ghostscript to pause until
- * the message can be read.
- */
-#define e_Info (-110)
-
+e
 void *instance;
 
 #ifndef METRO
@@ -476,10 +454,10 @@ main_utf8(int argc, char *argv[])
     exit_status = 0;
     switch (code) {
         case 0:
-        case e_Info:
-        case e_Quit:
+        case gs_error_Info:
+        case gs_error_Quit:
             break;
-        case e_Fatal:
+        case gs_error_Fatal:
             exit_status = 1;
             break;
         default:
