@@ -1376,6 +1376,7 @@ $(DEVOBJ)gdevxcf.$(OBJ) : $(DEVSRC)gdevxcf.c $(PDEVH) $(math__h)\
 ### --------------------------- The PSD device ------------------------- ###
 
 psd_=$(DEVOBJ)gdevpsd.$(OBJ) $(GLOBJ)gdevdevn.$(OBJ) $(GLOBJ)gsequivc.$(OBJ)
+gdevpsd_h=$(DEVSRC)gdevpsd.h
 
 $(DD)psdrgb.dev : $(psd_) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV) $(DD)psdrgb $(psd_)
@@ -1387,7 +1388,7 @@ $(DEVOBJ)gdevpsd.$(OBJ) : $(DEVSRC)gdevpsd.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
  $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h)\
  $(gscms_h) $(gsicc_cache_h) $(gsicc_manage_h) $(gxgetbit_h)\
- $(gdevppla_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(gdevppla_h) $(gxiodev_h) $(gdevpsd_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevpsd.$(OBJ) $(C_) $(DEVSRC)gdevpsd.c
 
 ### --------------------------- The GPRF device ------------------------- ###
@@ -2063,10 +2064,11 @@ $(DD)tracedev.dev : $(GDEV) $(DEVOBJ)gdevtrac.$(OBJ) \
 
 psdcmykog_=$(DEVOBJ)gdevcmykog.$(OBJ)
 
-$(DD)psdcmykog.dev : $(GDEV) $(psdcmykog_) $(DD)page.dev \
+$(DD)psdcmykog.dev : $(GDEV) $(psdcmykog_) $(DD)page.dev $(DD)psdcmyk.dev \
   $(GLOBJ)gdevdevn.$(OBJ) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)psdcmykog $(psdcmykog_)
 
 $(DEVOBJ)gdevcmykog.$(OBJ) : $(DEVSRC)gdevcmykog.c $(GDEV) \
- $(GDEVH) $(gdevdevn_h) $(gsequivc_h) $(gdevdevnprn_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(GDEVH) $(gdevdevn_h) $(gsequivc_h) $(gdevdevnprn_h) $(gdevpsd_h) \
+ $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevcmykog.$(OBJ) $(C_) $(DEVSRC)gdevcmykog.c

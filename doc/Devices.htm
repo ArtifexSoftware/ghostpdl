@@ -749,7 +749,12 @@ device about the maximum number of spot colors supported by Ghostscript</a>
 
 <p>
 These devices support the same -dDownScaleFactor= ratios as tiffsep.
-
+<p>
+NOTE: The PSD format is a single image per file format, so you must use the &quot%d&quot
+format for the &quotOutputFile&quot (or &quot-o&quot) file name parameter (see
+<a href="Use.htm#One_page_per_file">One_page_per_file</a> for details). An attempt
+to output multiple pages to a single PSD file (i.e. without the &quot%d&quot format) will
+result in an <code>ioerror</code> Postscript error.
 <h2><a name="High-level"></a>High-level devices</h2>
 
 <p>

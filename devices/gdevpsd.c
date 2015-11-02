@@ -17,6 +17,7 @@
 /* PhotoShop (PSD) export device, supporting DeviceN color models. */
 
 #include "math_.h"
+#include "gxiodev.h"
 #include "gdevprn.h"
 #include "gsparam.h"
 #include "gscrd.h"
@@ -34,6 +35,7 @@
 #include "gdevppla.h"
 #include "gxdownscale.h"
 #include "gdevdevnprn.h"
+#include "gdevpsd.h"
 
 #ifndef cmm_gcmmhlink_DEFINED
     #define cmm_gcmmhlink_DEFINED
@@ -885,7 +887,7 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
                 break;
             emprintf1(pdevn->memory, "MaxSpots must be between 0 and %d\n",
                       GS_CLIENT_COLOR_MAX_COMPONENTS-4);
-            code = gs_error_rangecheck;
+            code = gs_note_error(gs_error_rangecheck);
             /* fall through */
         default:
             param_signal_error(plist, "MaxSpots", code);
@@ -1381,17 +1383,43 @@ cleanup:
     return code;
 }
 
+bool
+psd_allow_multiple_pages (gx_device_printer *pdev)
+{
+    psd_device *psd_dev = (psd_device *)pdev;
+    int code;
+    const char *fmt;
+    bool retval = true;
+    gs_parsed_file_name_t parsed;
+
+    code = gx_parse_output_file_name(&parsed, &fmt, psd_dev->fname,
+                                     strlen(psd_dev->fname), psd_dev->memory);
+    if (code < 0 || fmt == NULL && psd_dev->PageCount > 0) {
+        retval = false;
+    }
+    return retval;
+}
+
 static int
 psd_print_page(gx_device_printer *pdev, FILE *file)
 {
     psd_write_ctx xc;
     gx_devn_prn_device *devn_dev = (gx_devn_prn_device *)pdev;
     psd_device *psd_dev = (psd_device *)pdev;
+    int code = 0;
 
-    psd_setup(&xc, devn_dev, file,
-              gx_downscaler_scale(pdev->width, psd_dev->downscale_factor),
-              gx_downscaler_scale(pdev->height, psd_dev->downscale_factor));
-    psd_write_header(&xc, devn_dev);
-    psd_write_image_data(&xc, pdev);
-    return 0;
+    if (!psd_allow_multiple_pages(pdev)) {
+       emprintf(pdev->memory, "Use of the %%d format is required to output more than one page to PSD\nSee doc/Devices.htm#PSD for details\n\n");
+       code = gs_note_error(gs_error_ioerror);
+    }
+    else {
+        code = psd_setup(&xc, devn_dev, file,
+                  gx_downscaler_scale(pdev->width, psd_dev->downscale_factor),
+                  gx_downscaler_scale(pdev->height, psd_dev->downscale_factor));
+        if (code >= 0)
+            code = psd_write_header(&xc, devn_dev);
+        if (code >= 0)
+            code = psd_write_image_data(&xc, pdev);
+    }
+    return code;
 }
