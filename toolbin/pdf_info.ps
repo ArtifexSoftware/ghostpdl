@@ -100,6 +100,15 @@ cleartomark		% discard the dict from --where--
     dup /CropBox pget {
       ( CropBox: ) print oforce_array ==only
     } if
+    dup /BleedBox pget {
+      ( BleedBox: ) print oforce_array ==only
+    } if
+    dup /TrimBox pget {
+      ( TrimBox: ) print oforce_array ==only
+    } if
+    dup /ArtBox pget {
+      ( ArtBox: ) print oforce_array ==only
+    } if
     dup /Rotate pget {
        (    Rotate = ) print =print
     } if
