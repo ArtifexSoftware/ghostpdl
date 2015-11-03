@@ -724,7 +724,7 @@ $(GLOBJ)gxhldevc.$(OBJ) : $(GLSRC)gxhldevc.c $(AK) $(gx_h)\
 	$(GLCC) $(GLO_)gxhldevc.$(OBJ) $(C_) $(GLSRC)gxhldevc.c
 
 $(GLOBJ)gxfill.$(OBJ) : $(GLSRC)gxfill.c $(AK) $(gx_h) $(gserrors_h)\
- $(gsstruct_h) $(gxdevsop_h)\
+ $(gsstruct_h) $(gxdevsop_h) $(assert__h)\
  $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxhttile_h)\
  $(gxistate_h) $(gxpaint_h) $(gxfdrop_h) $(gxfill_h) $(gxpath_h)\
  $(gsptype1_h) $(gsptype2_h) $(gxpcolor_h) $(gsstate_h)\

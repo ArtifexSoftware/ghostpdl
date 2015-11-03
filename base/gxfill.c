@@ -59,6 +59,7 @@
 #include "gxfillsl.h" - Do not remove this comment. "gxfillsl.h" is included below.
 #include "gxfillts.h" - Do not remove this comment. "gxfillts.h" is included below.
 */
+#include "assert_.h"
 
 /* #define ENABLE_TRAP_AMALGAMATION */
 
@@ -768,7 +769,7 @@ insert_y_line(line_list *ll, active_line *alp)
 
 typedef struct contour_cursor_s {
     segment *prev, *pseg, *pfirst, *plast;
-    gx_flattened_iterator *fi;
+    gx_flattened_iterator fi;
     bool more_flattened;
     bool first_flattened;
     int dir;
@@ -781,9 +782,9 @@ static inline int
 compute_dir(const fill_options *fo, fixed y0, fixed y1)
 {
     if (max(y0, y1) < fo->ymin)
-        return 2;
+        return DIR_OUT_OF_Y_RANGE;
     if (min(y0, y1) > fo->ymax)
-        return 2;
+        return DIR_OUT_OF_Y_RANGE;
     return (y0 < y1 ? DIR_UP :
             y0 > y1 ? DIR_DOWN : DIR_HORIZONTAL);
 }
@@ -836,14 +837,14 @@ start_al_pair(line_list *ll, contour_cursor *q, contour_cursor *p)
     if (q->monotonic_y)
         code = add_y_line(q->prev, q->pseg, DIR_DOWN, ll);
     else
-        code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi,
+        code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, &q->fi,
                             !q->first_flattened, false, q->monotonic_x);
     if (code < 0)
         return code;
     if (p->monotonic_y)
         code = add_y_line(p->prev, p->pseg, DIR_UP, ll);
     else
-        code = add_y_curve_part(ll, p->prev, p->pseg, DIR_UP, p->fi,
+        code = add_y_curve_part(ll, p->prev, p->pseg, DIR_UP, &p->fi,
                             p->more_flattened, false, p->monotonic_x);
     return code;
 }
@@ -857,41 +858,41 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
 
     /* q stands at the first segment, which isn't last. */
     do {
-        code = gx_flattened_iterator__next(q->fi);
+        code = gx_flattened_iterator__next(&q->fi);
         if (code < 0)
             return code;
         q->more_flattened = code;
-        dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
-        if (q->fi->ly0 > fo->ymax && ll->y_break > q->fi->y0)
-            ll->y_break = q->fi->ly0;
-        if (q->fi->ly1 > fo->ymax && ll->y_break > q->fi->ly1)
-            ll->y_break = q->fi->ly1;
-        if (dir == DIR_UP && ll->main_dir == DIR_DOWN && q->fi->ly0 >= fo->ymin) {
-            code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi,
-                            true, true, q->monotonic_x);
-            if (code < 0)
-                return code;
-            code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, q->fi,
-                            q->more_flattened, false, q->monotonic_x);
-            if (code < 0)
-                return code;
-        } else if (q->fi->ly0 < fo->ymin && q->fi->ly1 >= fo->ymin) {
-            code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, q->fi,
-                            q->more_flattened, false, q->monotonic_x);
-            if (code < 0)
-                return code;
-        } else if (q->fi->ly0 >= fo->ymin && q->fi->ly1 < fo->ymin) {
-            code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi,
-                            true, false, q->monotonic_x);
+        dir = compute_dir(fo, q->fi.ly0, q->fi.ly1);
+        if (q->fi.ly0 > fo->ymax && ll->y_break > q->fi.y0)
+            ll->y_break = q->fi.ly0;
+        if (q->fi.ly1 > fo->ymax && ll->y_break > q->fi.ly1)
+            ll->y_break = q->fi.ly1;
+        if (q->fi.ly0 >= fo->ymin) {
+            if (dir == DIR_UP && ll->main_dir == DIR_DOWN) {
+                code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, &q->fi,
+                                        true, true, q->monotonic_x);
+                if (code < 0)
+                    return code;
+                code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, &q->fi,
+                                        q->more_flattened, false, q->monotonic_x);
+                if (code < 0)
+                    return code;
+            } else if (q->fi.ly1 < fo->ymin) {
+                code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, &q->fi,
+                                        true, false, q->monotonic_x);
+                if (code < 0)
+                    return code;
+            }
+        } else if (q->fi.ly1 >= fo->ymin) {
+            code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, &q->fi,
+                                    q->more_flattened, false, q->monotonic_x);
             if (code < 0)
                 return code;
         }
         q->first_flattened = false;
         q->dir = dir;
-        ll->main_dir = (dir == DIR_DOWN ? DIR_DOWN :
-                        dir == DIR_UP ? DIR_UP : ll->main_dir);
-        if (!q->more_flattened)
-            break;
+        if (dir == DIR_DOWN || dir == DIR_UP)
+            ll->main_dir = dir;
     } while(q->more_flattened);
     /* q stands at the last segment. */
     return 0;
@@ -900,10 +901,8 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
 }
 
 static inline int
-init_contour_cursor(line_list *ll, contour_cursor *q)
+init_contour_cursor(const fill_options * const fo, contour_cursor *q)
 {
-    const fill_options * const fo = ll->fo;
-
     if (q->pseg->type == s_curve) {
         curve_segment *s = (curve_segment *)q->pseg;
         fixed ymin = min(min(q->prev->pt.y, s->p1.y), min(s->p2.y, s->pt.y));
@@ -923,11 +922,11 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
         curve_segment *s = (curve_segment *)q->pseg;
         int k = gx_curve_log2_samples(q->prev->pt.x, q->prev->pt.y, s, fo->fixed_flat);
 
-        if (!gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, s, k))
+        if (!gx_flattened_iterator__init(&q->fi, q->prev->pt.x, q->prev->pt.y, s, k))
             return_error(gs_error_rangecheck);
     } else {
         q->dir = compute_dir(fo, q->prev->pt.y, q->pseg->pt.y);
-        gx_flattened_iterator__init_line(q->fi,
+        gx_flattened_iterator__init_line(&q->fi,
             q->prev->pt.x, q->prev->pt.y, q->pseg->pt.x, q->pseg->pt.y); /* fake for curves. */
         vd_bar(q->prev->pt.x, q->prev->pt.y, q->pseg->pt.x, q->pseg->pt.y, 1, RGB(0, 0, 255));
     }
@@ -936,141 +935,179 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
 }
 
 static int
-scan_contour(line_list *ll, contour_cursor *q)
+scan_contour(line_list *ll, segment *pfirst, segment *plast, segment *prev)
 {
-    contour_cursor p;
-    gx_flattened_iterator fi, save_fi;
-    segment *pseg;
+    contour_cursor p, q;
     int code;
     bool only_horizontal = true, saved = false;
     const fill_options * const fo = ll->fo;
     contour_cursor save_q;
 
+    q.prev = prev;
+    q.pseg = plast;
+    q.pfirst = pfirst;
+    q.plast = plast;
+
     memset(&save_q, 0, sizeof(save_q)); /* Quiet gcc warning. */
     p.monotonic_x = false; /* Quiet gcc warning. */
-    p.fi = &fi;
-    save_q.dir = 2;
+    q.monotonic_x = false; /* Quiet gcc warning. */
+
+    /* The first thing we do is to walk BACKWARDS along the contour (aka the subpath or
+     * set of curve segments). We stop either when we reach the beginning again,
+     * or when we hit a non-horizontal segment. If we hit the beginning, then we
+     * remember that the segment is 'only_horizontal'. Otherwise, we remember the
+     * direction of this contour (UP or DOWN). */
+    save_q.dir = DIR_OUT_OF_Y_RANGE;
     ll->main_dir = DIR_HORIZONTAL;
-    for (; ; q->pseg = q->prev, q->prev = q->prev->prev) {
-        code = init_contour_cursor(ll, q);
+    for (; ; q.pseg = q.prev, q.prev = q.prev->prev) {
+        /* Prepare to walk FORWARDS along the single curve segment in 'q'. */
+        code = init_contour_cursor(fo, &q);
         if (code < 0)
             return code;
         for (;;) {
-            code = gx_flattened_iterator__next(q->fi);
+            code = gx_flattened_iterator__next(&q.fi);
+            assert(code >= 0); /* Indicates an internal error */
             if (code < 0)
                 return code;
+            q.dir = compute_dir(fo, q.fi.ly0, q.fi.ly1);
+            if (q.dir == DIR_DOWN || q.dir == DIR_UP)
+                ll->main_dir = q.dir;
+            /* Exit the loop when we hit the end of the single curve segment */
             if (!code)
                 break;
-            q->first_flattened = false;
-            q->dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
-            ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN :
-                            q->dir == DIR_UP ? DIR_UP : ll->main_dir);
+            q.first_flattened = false;
         }
-        q->dir = compute_dir(fo, q->fi->ly0, q->fi->ly1);
-        q->more_flattened = false;
-        ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN :
-                        q->dir == DIR_UP ? DIR_UP : ll->main_dir);
+        /* Thus first_flattened == true, iff the curve needed no subdivisions */
+        q.more_flattened = false;
+        /* ll->maindir == DIR_HORIZONTAL, iff the curve is entirely horizontal
+         * (or entirely out of y range). It will contain whatever the last UP or DOWN
+         * section was otherwise. */
         if (ll->main_dir != DIR_HORIZONTAL) {
             only_horizontal = false;
+            /* Now we know we're not entirely horizontal, we can abort this run. */
             break;
         }
-        if (!saved && q->dir != 2) {
-            save_q = *q;
-            save_fi = *q->fi;
+        /* If we haven't saved one yet, and we are not out of range, save this one.
+         * i.e. save_q and save_fi are the first 'in range' section. We can save
+         * time in subsequent passes through by starting here. */
+        if (!saved && q.dir != DIR_OUT_OF_Y_RANGE) {
+            save_q = q;
             saved = true;
         }
-        if (q->prev == q->pfirst)
-            break;
+        if (q.prev == q.pfirst)
+            break; /* Exit if we're back at the start of the contour */
     }
+
+    /* Second run through; this is where we actually do the hard work. */
+    /* Restore q if we saved it above */
     if (saved) {
-        *q = save_q;
-        *q->fi = save_fi;
+        q = save_q;
     }
-    for (pseg = q->pfirst; pseg != q->plast; pseg = pseg->next) {
-        p.prev = pseg;
-        p.pseg = pseg->next;
-        if (!fo->pseudo_rasterization || only_horizontal
-                || p.prev->pt.x != p.pseg->pt.x || p.prev->pt.y != p.pseg->pt.y
-                || p.pseg->type == s_curve) {
-            code = init_contour_cursor(ll, &p);
-            if (code < 0)
-                return code;
+    /* q is now at the start of a run that we know will head in an
+     * ll->main_dir direction. Start p at the next place and walk
+     * forwards. */
+    for (p.prev = q.pfirst; p.prev != q.plast; p.prev = p.pseg) {
+        p.pseg = p.prev->next;
+        /* Can we ignore this segment entirely? */
+        if (fo->pseudo_rasterization && !only_horizontal && p.pseg->type != s_curve &&
+            p.prev->pt.x == p.pseg->pt.x && p.prev->pt.y == p.pseg->pt.y)
+            continue;
+
+        /* Prepare to walk down 'p' */
+        code = init_contour_cursor(fo, &p);
+        if (code < 0)
+            return code;
+        /* Find the next flattened section that is within range */
+        do {
+            /* Find the next flattened section that is within range */
             do {
-                code = gx_flattened_iterator__next(p.fi);
+                code = gx_flattened_iterator__next(&p.fi);
+                assert(code >= 0); /* Indicates an internal error */
                 if (code < 0)
                     return code;
                 p.more_flattened = code;
-                p.dir = compute_dir(fo, p.fi->ly0, p.fi->ly1);
-            } while (p.more_flattened && p.dir == 2);
-            if (p.fi->ly0 > fo->ymax && ll->y_break > p.fi->ly0)
-                ll->y_break = p.fi->ly0;
-            if (p.fi->ly1 > fo->ymax && ll->y_break > p.fi->ly1)
-                ll->y_break = p.fi->ly1;
-            if (p.monotonic_y && p.dir == DIR_HORIZONTAL &&
-                    !fo->pseudo_rasterization &&
+                p.dir = compute_dir(fo, p.fi.ly0, p.fi.ly1);
+            } while (p.more_flattened && p.dir == DIR_OUT_OF_Y_RANGE);
+
+            /* So either we're in range, or we've reached the end of the segment (or both) */
+            /* FIXME: Can we break here if p.dir == DIR_OUT_OF_Y_RANGE? */
+
+            /* Set ll->y_break to be the smallest line endpoint we find > ymax */
+            if (p.fi.ly0 > fo->ymax && ll->y_break > p.fi.ly0)
+                ll->y_break = p.fi.ly0;
+            if (p.fi.ly1 > fo->ymax && ll->y_break > p.fi.ly1)
+                ll->y_break = p.fi.ly1;
+
+            added = 0;
+            if (p.dir == DIR_HORIZONTAL) {
+                if (p.monotonic_y) {
+                    if (!fo->pseudo_rasterization) {
+                        if (
 #ifdef FILL_ZERO_WIDTH
-                    (fo->adjust_below | fo->adjust_above) != 0) {
+                        (fo->adjust_below | fo->adjust_above) != 0) {
 #else
-                    (fo->adjust_below + fo->adjust_above >= (fixed_1 - fixed_epsilon) ||
-                    fixed2int_pixround(p.pseg->pt.y - fo->adjust_below) <
-                    fixed2int_pixround(p.pseg->pt.y + fo->adjust_above))) {
+                        (fo->adjust_below + fo->adjust_above >= (fixed_1 - fixed_epsilon) ||
+                         fixed2int_pixround(p.pseg->pt.y - fo->adjust_below) <
+                         fixed2int_pixround(p.pseg->pt.y + fo->adjust_above))) {
 #endif
-                /* Add it here to avoid double processing in process_h_segments. */
-                code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
-                if (code < 0)
-                    return code;
+                        /* Add it here to avoid double processing in process_h_segments. */
+                        code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
+                        if (code < 0)
+                            return code;
+                    }
+                } else if (only_horizontal) {
+                    /* Add it here to avoid double processing in process_h_segments. */
+                    code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
+                    if (code < 0)
+                        return code;
+                }
             }
-            if (p.monotonic_y && p.dir == DIR_HORIZONTAL &&
-                    fo->pseudo_rasterization && only_horizontal) {
-                /* Add it here to avoid double processing in process_h_segments. */
-                code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
-                if (code < 0)
-                    return code;
-            }
-            if (p.fi->ly0 >= fo->ymin && p.dir == DIR_UP && ll->main_dir == DIR_DOWN) {
-                code = start_al_pair(ll, q, &p);
-                if (code < 0)
-                    return code;
-            }
-            if (p.fi->ly0 < fo->ymin && p.fi->ly1 >= fo->ymin) {
+        } else {
+            if (p.fi.ly0 >= fo->ymin) {
+                if (p.dir == DIR_UP && ll->main_dir == DIR_DOWN) {
+                    /* p starts within range, and heads up. q was heading down. Therefore
+                     * they meet at a local minima. Start a pair of active lines from that. */
+                    code = start_al_pair(ll, &q, &p);
+                    if (code < 0)
+                        return code;
+                } else if (p.fi.ly1 < fo->ymin) {
+                    /* p heading downwards */
+                    if (p.monotonic_y)
+                        code = add_y_line(p.prev, p.pseg, DIR_DOWN, ll);
+                    else
+                        code = add_y_curve_part(ll, p.prev, p.pseg, DIR_DOWN, &p.fi,
+                                                !p.first_flattened, false, p.monotonic_x);
+                    if (code < 0)
+                        return code;
+                }
+            } else if (p.fi.ly1 >= fo->ymin) {
+                /* p heading upwards */
                 if (p.monotonic_y)
                     code = add_y_line(p.prev, p.pseg, DIR_UP, ll);
                 else
-                    code = add_y_curve_part(ll, p.prev, p.pseg, DIR_UP, p.fi,
-                                        p.more_flattened, false, p.monotonic_x);
+                    code = add_y_curve_part(ll, p.prev, p.pseg, DIR_UP, &p.fi,
+                                            p.more_flattened, false, p.monotonic_x);
                 if (code < 0)
                     return code;
             }
-            if (p.fi->ly0 >= fo->ymin && p.fi->ly1 < fo->ymin) {
-                if (p.monotonic_y)
-                    code = add_y_line(p.prev, p.pseg, DIR_DOWN, ll);
-                else
-                    code = add_y_curve_part(ll, p.prev, p.pseg, DIR_DOWN, p.fi,
-                                        !p.first_flattened, false, p.monotonic_x);
-                if (code < 0)
-                    return code;
-            }
-            ll->main_dir = (p.dir == DIR_DOWN ? DIR_DOWN :
-                            p.dir == DIR_UP ? DIR_UP : ll->main_dir);
-            if (!p.monotonic_y && p.more_flattened) {
-                code = start_al_pair_from_min(ll, &p);
-                if (code < 0)
-                    return code;
-            }
-            if (p.dir == DIR_DOWN || p.dir == DIR_HORIZONTAL) {
-                gx_flattened_iterator *fi1 = q->fi;
-                q->prev = p.prev;
-                q->pseg = p.pseg;
-                q->monotonic_y = p.monotonic_y;
-                q->more_flattened = p.more_flattened;
-                q->first_flattened = p.first_flattened;
-                q->fi = p.fi;
-                q->dir = p.dir;
-                p.fi = fi1;
-            }
+            if (p.dir == DIR_DOWN || p.dir == DIR_UP)
+                ll->main_dir = p.dir;
+        }
+        if (!p.monotonic_y && p.more_flattened) {
+            code = start_al_pair_from_min(ll, &p);
+            if (code < 0)
+                return code;
+        }
+        if (p.dir == DIR_DOWN || p.dir == DIR_HORIZONTAL) {
+            q.prev = p.prev;
+            q.pseg = p.pseg;
+            q.monotonic_y = p.monotonic_y;
+            q.more_flattened = p.more_flattened;
+            q.first_flattened = p.first_flattened;
+            q.fi = p.fi;
+            q.dir = p.dir;
         }
     }
-    q->fi = NULL; /* safety. */
     return 0;
 }
 
@@ -1086,10 +1123,7 @@ add_y_list(gx_path * ppath, line_list *ll)
     subpath *psub = ppath->first_subpath;
     int close_count = 0;
     int code;
-    contour_cursor q;
-    gx_flattened_iterator fi;
 
-    q.monotonic_x = false; /* Quiet gcc warning. */
     ll->y_break = max_fixed;
 
     for (;psub; psub = (subpath *)psub->last->next) {
@@ -1097,7 +1131,6 @@ add_y_list(gx_path * ppath, line_list *ll)
         segment *pfirst = (segment *)psub;
         segment *plast = psub->last, *prev;
 
-        q.fi = &fi;
         if (plast->type != s_line_close) {
             /* Create a fake s_line_close */
             line_close_segment *lp = &psub->closer;
@@ -1120,11 +1153,7 @@ add_y_list(gx_path * ppath, line_list *ll)
             plast = prev;
             prev = prev->prev;
         }
-        q.prev = prev;
-        q.pseg = plast;
-        q.pfirst = pfirst;
-        q.plast = plast;
-        code = scan_contour(ll, &q);
+        code = scan_contour(ll, pfirst, plast, prev);
         if (code < 0)
             return code;
         ll->contour_count++;
