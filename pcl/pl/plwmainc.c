@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <process.h>
 #include "vdtrace.h"
+#include "gserrors.h"
 #include "gdevdsp.h"
 #include "plwimg.h"
 #include "plapi.h"
@@ -46,7 +47,7 @@
 
 typedef int (* GSPLDLLCALLLINK GS_PL_DLL_CALLBACK) (int, char *, unsigned long);
 GS_PL_DLL_CALLBACK pgsdll_callback = NULL;
-e
+
 void *instance;
 
 #ifndef METRO
