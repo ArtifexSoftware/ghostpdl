@@ -371,6 +371,7 @@ cleanup1:
 			segment->number,
 			"couldn't allocate reference image");
 	        }
+                jbig2_image_clear(ctx, refimage, 0x00);
 
 		/* Table 12 */
 		rparams.GRTEMPLATE = params->SBRTEMPLATE;
