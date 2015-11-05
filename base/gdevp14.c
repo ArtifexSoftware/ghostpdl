@@ -7947,7 +7947,10 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight,
                        OUTSIDE the bounding box of the soft mask */
                     *ry = cropping_min;
                     *rheight = cropping_max - cropping_min;
-                    return PUSHCROP; /* Push cropping. */
+                    if (pdf14pct->params.subtype == TRANSPARENCY_MASK_None)
+                        return SAMEAS_PUSHCROP_BUTNOPUSH;
+                    else
+                        return PUSHCROP; /* Push cropping. */
                 }
             }
         case PDF14_END_TRANS_GROUP: return POPCROP; /* Pop cropping. */
