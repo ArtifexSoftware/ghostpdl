@@ -187,6 +187,9 @@ pdfdict begin
       [ exch { oforce resolvefunction } forall ]
     } ifelse
   } bind
+  /Extend {
+    mark exch {oforce} forall ]
+  } bind
 .dicttomark readonly def
 
 /resolveshading {	% <shadingstream> resolveshading <shading>
