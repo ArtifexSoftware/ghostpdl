@@ -3496,12 +3496,16 @@ currentdict end def
 
 /draw_form_field { % <field> draw_form_field -
   dup /Kids knownoget {                       % field []
-    dup 0 oget /Parent knownoget {            % field [] kid
-      pop % mon-terminal field                % field []
-      exch pop                                % []
-      { oforce draw_form_field } forall
+    dup length 0 gt {
+      dup 0 oget /Parent knownoget {            % field [] kid
+        pop % mon-terminal field                % field []
+        exch pop                                % []
+        { oforce draw_form_field } forall
+      } {
+        pop draw_terminal_field % separate annots % -
+      } ifelse
     } {
-      pop draw_terminal_field % separate annots % -
+      QUIET not {(  **** Warning: Ignoring empty /Kids array in Form field.\n) pdfformaterror}if
     } ifelse
   } {
     draw_terminal_field % merged annotation   % -
