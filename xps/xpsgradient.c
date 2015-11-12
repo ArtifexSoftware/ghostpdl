@@ -32,6 +32,7 @@ struct stop
 {
     float offset;
     float color[4];
+    int index;
 };
 
 static int cmp_stop(const void *a, const void *b)
@@ -43,7 +44,7 @@ static int cmp_stop(const void *a, const void *b)
         return -1;
     if (diff > 0)
         return 1;
-    return 0;
+    return astop->index - bstop->index;
 }
 
 static inline float lerp(float a, float b, float x)
@@ -77,6 +78,7 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
             if (offset && color)
             {
                 stops[count].offset = atof(offset);
+                stops[count].index = count;
 
                 xps_parse_color(ctx, base_uri, color, &colorspace, sample);
 
