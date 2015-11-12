@@ -279,6 +279,8 @@ void xps_debug_path(xps_context_t *ctx);
  * Colorspaces and colors.
  */
 
+#define XPS_MAX_COLORS 32
+
 gs_color_space *xps_read_icc_colorspace(xps_context_t *ctx, char *base_uri, char *profile);
 void xps_parse_color(xps_context_t *ctx, char *base_uri, char *hexstring, gs_color_space **csp, float *samples);
 void xps_set_color(xps_context_t *ctx, gs_color_space *colorspace, float *samples);

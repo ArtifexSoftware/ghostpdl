@@ -890,7 +890,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     gs_line_join linejoin;
     float linewidth;
     float miterlimit;
-    float samples[32];
+    float samples[XPS_MAX_COLORS];
     gs_color_space *colorspace;
 
     bool opacity_pushed = false;

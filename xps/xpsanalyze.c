@@ -60,7 +60,7 @@ xps_gradient_stops_have_transparency(xps_context_t *ctx, char *base_uri, xps_ite
     xps_item_t *node;
     gs_color_space *colorspace;
     char *color_att;
-    float samples[32];
+    float samples[XPS_MAX_COLORS];
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
@@ -123,7 +123,7 @@ xps_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
     xps_item_t *node;
 
     gs_color_space *colorspace;
-    float samples[32];
+    float samples[XPS_MAX_COLORS];
 
     if (!strcmp(xps_tag(root), "SolidColorBrush"))
     {
@@ -279,7 +279,7 @@ xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *nod
     char *fill_att;
 
     gs_color_space *colorspace;
-    float samples[32];
+    float samples[XPS_MAX_COLORS];
 
     stroke_att = xps_att(node, "Stroke");
     if (stroke_att)

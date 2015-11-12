@@ -133,7 +133,13 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string,
 
         *p++ = 0;
         n = count_commas(p) + 1;
+        if (n > XPS_MAX_COLORS)
+        {
+            gs_warn("too many color components; ignoring extras");
+            n = XPS_MAX_COLORS;
+        }
         i = 0;
+        /* TODO: check for buffer overflow! */
         while (i < n)
         {
             samples[i++] = atof(p);
@@ -228,7 +234,7 @@ xps_parse_solid_color_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *
     char *opacity_att;
     char *color_att;
     gs_color_space *colorspace;
-    float samples[32];
+    float samples[XPS_MAX_COLORS];
 
     color_att = xps_att(node, "Color");
     opacity_att = xps_att(node, "Opacity");

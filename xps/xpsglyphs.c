@@ -641,7 +641,7 @@ xps_parse_glyphs(xps_context_t *ctx,
 
     if (fill_att)
     {
-        float samples[32];
+        float samples[XPS_MAX_COLORS];
         gs_color_space *colorspace;
 
         xps_parse_color(ctx, base_uri, fill_att, &colorspace, samples);
