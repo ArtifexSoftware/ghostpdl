@@ -379,6 +379,7 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
         if (glyph == gs_no_glyph)
             return_error (gs_error_invalidfont);
 
+        memset(&info, 0x00, sizeof(gs_glyph_info_t));
         code = font->procs.glyph_info((gs_font *)font, glyph, NULL,
                                             GLYPH_INFO_WIDTH0 << WMode,
                                             &info);
