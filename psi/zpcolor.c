@@ -291,6 +291,8 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
     }
     push_mark_estack(es_other, pattern_paint_cleanup);
     ++esp;
+    make_istruct(esp, 0, pinst); /* see comment in pattern_paint_cleanup() */
+    ++esp;
     make_istruct(esp, 0, pdev);
     ++esp;
     /* Save operator stack depth in case PaintProc leaves junk on ostack. */
@@ -343,7 +345,7 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
 #endif
         pop(o_stack_adjust);
     }
-    esp -= 3;
+    esp -= 4;
     pattern_paint_cleanup(i_ctx_p);
     return o_pop_estack;
 }
@@ -353,9 +355,26 @@ static int
 pattern_paint_cleanup(i_ctx_t *i_ctx_p)
 {
     gx_device_pattern_accum *const pdev =
-        r_ptr(esp + 2, gx_device_pattern_accum);
+        r_ptr(esp + 3, gx_device_pattern_accum);
         gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)gs_currentcolor(igs->saved)->pattern;
-    int code;
+    gs_pattern1_instance_t *pinst2 = r_ptr(esp + 2, gs_pattern1_instance_t);
+    int code, i;
+    /* If the PaintProc does one or more gsaves, then encounters an error, we can get
+     * here with the graphics state stack not how we expect.
+     * Hence we stored a reference to the pattern instance on the exec stack, and that
+     * allows us to roll back the graphics states until we have the one we expect,
+     * and pattern instance we expect
+     */
+    if (pinst != pinst2) {
+        gs_state *pgs = igs;
+        for (i = 0; pgs->saved && pinst != pinst2; i++, pgs = pgs->saved) {
+            pinst = (gs_pattern1_instance_t *)gs_currentcolor(pgs->saved)->pattern;
+        }
+        for (;i > 1; i--) {
+            gs_grestore(igs);
+        }
+        pinst = (gs_pattern1_instance_t *)gs_currentcolor(igs->saved)->pattern;
+    }
 
     if (pdev != NULL) {
         /* grestore will free the device, so close it first. */
