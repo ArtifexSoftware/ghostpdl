@@ -167,6 +167,13 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
         }
 
         xps_free(ctx, inbuf);
+
+        /* If the stream has less data than advertised, then zero the remainder. */
+        if (stream.avail_out > 0)
+        {
+            gs_warn("truncated zipfile entry; possibly corrupt data");
+            memset(stream.next_out, 0, stream.avail_out);
+        }
     }
     else
     {
