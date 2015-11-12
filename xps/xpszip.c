@@ -113,6 +113,8 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
 
     version = getshort(ctx->file);
     general = getshort(ctx->file);
+    if (general & ZIP_ENCRYPTED_FLAG)
+        return gs_throw(-1, "zip file content is encrypted");
     method = getshort(ctx->file);
     (void) getshort(ctx->file); /* file time */
     (void) getshort(ctx->file); /* file date */

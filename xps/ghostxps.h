@@ -109,6 +109,8 @@ typedef struct xps_context_s xps_context_t;
 #define ZIP_CENTRAL_DIRECTORY_SIG 0x02014b50
 #define ZIP_END_OF_CENTRAL_DIRECTORY_SIG 0x06054b50
 
+#define ZIP_ENCRYPTED_FLAG 0x1
+
 /*
  * Memory, and string functions.
  */
