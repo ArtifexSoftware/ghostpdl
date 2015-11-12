@@ -1014,6 +1014,16 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
                 s++;
         }
 
+        if (dash_count > 0)
+        {
+            float phase_len = 0;
+            int i;
+            for (i = 0; i < dash_count; ++i)
+                phase_len += dash_array[i];
+            if (phase_len == 0)
+                dash_count = 0;
+        }
+
         gs_setdash(ctx->pgs, dash_array, dash_count, dash_offset);
     }
     else

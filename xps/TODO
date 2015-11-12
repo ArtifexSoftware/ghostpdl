@@ -1,6 +1,8 @@
 High Priority Problems
 ======================
 
+ZIP64 support (copy from MuXPS).
+
 Font style simulation.
 ICC profile colorspaces.
 Gradient colorspace conversion.
