@@ -1035,10 +1035,10 @@ gs_fapi_finish_render(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, gs_f
     }
     else {
         int code;
-
         memset(&rast, 0x00, sizeof(rast));
 
-        code = I->get_char_raster(I, &rast);
+        if ((code = I->get_char_raster(I, &rast)) < 0 && code != gs_error_unregistered)
+            return code;
 
         if (!SHOW_IS(penum, TEXT_DO_NONE) && I->use_outline) {
             /* The server provides an outline instead the raster. */
@@ -1324,13 +1324,20 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
         scale_ctm.xx = dev->HWResolution[0] / 72;
         scale_ctm.yy = dev->HWResolution[1] / 72;
 
-        code = gs_matrix_invert((const gs_matrix *)&scale_ctm, &scale_ctm);
+        if ((code = gs_matrix_invert((const gs_matrix *)&scale_ctm, &scale_ctm)) < 0)
+            return code;
 
-        code = gs_matrix_multiply(ctm, &scale_ctm, &scale_mat); /* scale_mat ==  CTM - resolution scaling */
+        if ((code = gs_matrix_multiply(ctm, &scale_ctm, &scale_mat)) < 0)  /* scale_mat ==  CTM - resolution scaling */
+            return code;
 
-        code = I->get_fontmatrix(I, &scale_ctm);
-        code = gs_matrix_invert((const gs_matrix *)&scale_ctm, &scale_ctm);
-        code = gs_matrix_multiply(&scale_mat, &scale_ctm, &scale_mat);  /* scale_mat ==  CTM - resolution scaling - FontMatrix scaling */
+        if ((code = I->get_fontmatrix(I, &scale_ctm)) < 0)
+            return code;
+
+        if ((code = gs_matrix_invert((const gs_matrix *)&scale_ctm, &scale_ctm)) < 0)
+            return code;
+
+        if ((code = gs_matrix_multiply(&scale_mat, &scale_ctm, &scale_mat)) < 0)  /* scale_mat ==  CTM - resolution scaling - FontMatrix scaling */
+            return code;
 
         font_scale.matrix[0] =
             (fracint) (scale_mat.xx * FontMatrix_div * scale + 0.5);
@@ -1512,8 +1519,9 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
 
     }
     else if (I->use_outline) {
-
-        code = I->get_char_outline_metrics(I, &I->ff, &cr, &metrics);
+        if ((code = gs_fapi_renderer_retcode(mem, I,
+                    I->get_char_outline_metrics(I, &I->ff, &cr, &metrics))) < 0)
+            return code;
     }
     else {
         code = I->get_char_raster_metrics(I, &I->ff, &cr, &metrics);
@@ -1754,6 +1762,9 @@ gs_fapi_passfont(gs_font *pfont, int subfont, char *font_file_path,
     
     list = gs_fapi_get_server_list(mem);
     
+    if (!list) /* Should never happen */
+      return_error(gs_error_unregistered);
+
     (*fapi_id) = NULL;
 
     pbfont = (gs_font_base *) pfont;
@@ -1911,13 +1922,10 @@ gs_fapi_find_server(gs_memory_t *mem, const char *name, gs_fapi_server **server,
                                     &server_param, &server_param_size);
         }
 
-        if ((code =
-             gs_fapi_renderer_retcode(mem, (*servs),
-                                      (*servs)->ensure_open((*servs),
-                                                            server_param,
-                                                            server_param_size)))
-            < 0) {
-        }
+        code = gs_fapi_renderer_retcode(mem, (*servs),
+                                 (*servs)->ensure_open((*servs),
+                                                       server_param,
+                                                       server_param_size));
 
         if (free_params) {
             gs_free_object(mem->non_gc_memory, server_param,
