@@ -179,7 +179,7 @@ xps_draw_arc(xps_context_t *ctx,
     /* F.6.6.1 -- ensure radii are positive and non-zero */
     rx = fabsf(rx);
     ry = fabsf(ry);
-    if (rx < 0.001 || ry < 0.001)
+    if (rx < 0.001 || ry < 0.001 || (x1 == x2 && y1 == y2))
     {
         gs_lineto(ctx->pgs, x2, y2);
         return;

@@ -616,8 +616,8 @@ static int
 xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_function_t *func)
 {
     gs_rect bbox;
-    float x0, y0, r0;
-    float x1, y1, r1;
+    float x0 = 0, y0 = 0, r0;
+    float x1 = 0, y1 = 0, r1;
     float xrad = 1;
     float yrad = 1;
     float invscale;
@@ -640,13 +640,18 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
     if (radius_y_att)
         yrad = atof(radius_y_att);
 
-    /* scale the ctm to make ellipses */
     gs_gsave(ctx->pgs);
-    gs_scale(ctx->pgs, 1.0, yrad / xrad);
 
-    invscale = xrad / yrad;
-    y0 = y0 * invscale;
-    y1 = y1 * invscale;
+    /* scale the ctm to make ellipses */
+    if (xrad != 0)
+        gs_scale(ctx->pgs, 1.0, yrad / xrad);
+
+    if (yrad != 0)
+    {
+        invscale = xrad / yrad;
+        y0 = y0 * invscale;
+        y1 = y1 * invscale;
+    }
 
     r0 = 0.0;
     r1 = xrad;

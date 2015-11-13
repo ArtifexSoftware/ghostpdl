@@ -231,6 +231,9 @@ xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
     unsigned int used;
     byte *samples;
 
+    if (image->xres == 0 || image->yres == 0)
+        return 0;
+
     if (alpha)
     {
         colorspace = ctx->gray_lin;
