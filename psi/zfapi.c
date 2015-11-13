@@ -978,6 +978,39 @@ FAPI_FF_get_charstring(gs_fapi_font *ff, int index, byte *buf,
     return (r_size(&eltp[1]));
 }
 
+static int
+sfnt_get_sfnt_length(ref *pdr, ulong *len)
+{
+    int code = 0;
+    ref *sfnts, sfnt_elem;
+    const gs_memory_t *mem = dict_mem(pdr->value.pdict);
+
+    *len = 0;
+    if (r_type(pdr) != t_dictionary ||
+        dict_find_string(pdr, "sfnts", &sfnts) <= 0) {
+        code = gs_error_invalidfont;
+    }
+    else {
+        if (r_type(sfnts) != t_array && r_type(sfnts) != t_string) {
+            code = gs_error_invalidfont;
+        }
+        else {
+            if (r_type(sfnts) == t_string) {
+                *len = r_size(sfnts);
+            }
+            else {
+                int i;
+                for (i = 0; i < r_size(sfnts); i++) {
+                    code = array_get(mem, sfnts, i, &sfnt_elem);
+                    if (code < 0) break;
+                    *len += r_size(&sfnt_elem);
+                }
+            }
+        }
+    }
+    return code;
+}
+
 static bool
 sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index,
                       ulong *offset0)
@@ -1184,14 +1217,38 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, int char_code, byte *buf,
                            min(glyph_length, buf_length) /* safety */ );
             }
             else {
-                gs_font_type42 *pfont42 =
-                    (gs_font_type42 *) ff->client_font_data;
+                gs_font_type42 *pfont42 = (gs_font_type42 *) ff->client_font_data;
                 ulong offset0, length_read;
-                bool error =
-                    sfnt_get_glyph_offset(pdr, pfont42, char_code, &offset0);
+                bool error = sfnt_get_glyph_offset(pdr, pfont42, char_code, &offset0);
 
-                glyph_length =
-                    (error ? -1 : pfont42->data.len_glyphs[char_code]);
+                if (error != 0) {
+                    glyph_length = -1;
+                }
+                else if (pfont42->data.len_glyphs) {
+                    glyph_length = pfont42->data.len_glyphs[char_code];
+                }
+                else {
+                    ulong noffs;
+                    /* If we haven't got a len_glyphs array, try using the offset of the next glyph offset
+                     * to work out the length
+                     */
+                    error = sfnt_get_glyph_offset(pdr, pfont42, char_code + 1, &noffs);
+                    if (error == 0) {
+                        glyph_length = noffs - offset0;
+                    }
+                    else {
+                        /* And if we can't get the next glyph offset, use the end of the sfnt data
+                         * to work out the length.
+                         */
+                        int code = sfnt_get_sfnt_length(pdr, &noffs);
+                        if (code < 0) {
+                            glyph_length = -1;
+                        }
+                        else {
+                            glyph_length = noffs - offset0;
+                        }
+                    }
+                }
 
                 if (buf != 0 && !error) {
                     sfnts_reader r;
