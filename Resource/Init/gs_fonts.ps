@@ -410,7 +410,7 @@ systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
             pop
           }
           {
-            3 -1 roll pop
+            counttomark 1 add -1 roll pop
             not { dup 0 get } if  % stack: (newname) [ (name) (path) ]
             % DEBUG { (  found ) print dup print (\n) print flush } if
             % add entry to the fontmap
