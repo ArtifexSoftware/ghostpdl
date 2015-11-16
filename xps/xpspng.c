@@ -48,18 +48,34 @@ xps_png_read(png_structp png, png_bytep data, png_size_t length)
     io->ptr += length;
 }
 
+#define PNG_MEM_ALIGN 16
 static png_voidp
 xps_png_malloc(png_structp png, png_size_t size)
 {
     gs_memory_t *mem = png_get_mem_ptr(png);
-    return gs_alloc_bytes(mem, size, "libpng");
+    uchar *unaligned;
+    uchar *aligned;
+
+    if (size == 0)
+        return NULL;
+    unaligned = gs_alloc_bytes(mem, size + PNG_MEM_ALIGN, "libpng");
+    if (unaligned == NULL)
+        return NULL;
+
+    aligned = (uchar *)((intptr_t)(unaligned + PNG_MEM_ALIGN) & ~(PNG_MEM_ALIGN - 1));
+    aligned[-1] = (uchar)(aligned - unaligned);
+
+    return aligned;
 }
 
 static void
 xps_png_free(png_structp png, png_voidp ptr)
 {
     gs_memory_t *mem = png_get_mem_ptr(png);
-    gs_free_object(mem, ptr, "libpng");
+    uchar *aligned = ptr;
+    if (aligned == NULL)
+        return;
+    gs_free_object(mem, aligned - aligned[-1], "libpng");
 }
 
 /* This only determines if we have an alpha value */

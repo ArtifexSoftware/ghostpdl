@@ -423,6 +423,36 @@ png_put_params_downscale_mfs(gx_device *dev, gs_param_list *plist)
     return ecode;
 }
 
+#define PNG_MEM_ALIGN 16
+static png_voidp
+gdevpng_malloc(png_structp png, png_size_t size)
+{
+    gs_memory_t *mem = png_get_mem_ptr(png);
+    uchar *unaligned;
+    uchar *aligned;
+
+    if (size == 0)
+        return NULL;
+    unaligned = gs_alloc_bytes(mem, size + PNG_MEM_ALIGN, "libpng");
+    if (unaligned == NULL)
+        return NULL;
+
+    aligned = (uchar *)((intptr_t)(unaligned + PNG_MEM_ALIGN) & ~(PNG_MEM_ALIGN - 1));
+    aligned[-1] = (uchar)(aligned - unaligned);
+
+    return aligned;
+}
+
+static void
+gdevpng_free(png_structp png, png_voidp ptr)
+{
+    gs_memory_t *mem = png_get_mem_ptr(png);
+    uchar *aligned = ptr;
+    if (aligned == NULL)
+        return;
+    gs_free_object(mem, aligned - aligned[-1], "libpng");
+}
+
 
 /* Write out a page in PNG format. */
 /* This routine is used for all formats. */
@@ -436,9 +466,8 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
     /* PNG structures */
     byte *row = gs_alloc_bytes(mem, raster, "png raster buffer");
     png_struct *png_ptr =
-    png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-    png_info *info_ptr =
-    png_create_info_struct(png_ptr);
+        png_create_write_struct_2(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL, pdev->memory, gdevpng_malloc, gdevpng_free);
+    png_info *info_ptr = png_create_info_struct(png_ptr);
     int depth = pdev->color_info.depth;
     int y;
     int code;			/* return code */
