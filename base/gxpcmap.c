@@ -216,6 +216,9 @@ gx_pattern_size_estimate(gs_pattern1_instance_t *pinst, bool has_tags)
     int64_t raster;
     int64_t size;
 
+    if (pinst->size.x == 0 || pinst->size.y == 0)
+        return 0;
+
     if (pinst->templat.uses_transparency) {
         /* if the device has tags, add in an extra tag byte for the pdf14 compositor */
         raster = (pinst->size.x * ((depth/8) + 1 + (has_tags ? 1 : 0)));
