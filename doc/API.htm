@@ -72,11 +72,10 @@ is described here.
 
 <p>
 The Ghostscript interpreter can be built as a dynamic link library 
-(DLL) on the Windows or OS/2 platforms, as a shared object on the 
-Linux platform and as a framework on MacOS X.
-With some changes, it could be built as a static library.
-This document describes the Application Programming Interface (API)
-for the Ghostscript interpreter library.  
+(DLL) on Microsoft Windows, as a shared object on the
+Linux, Unix and MacOS X platforms. With some changes, it could be built
+as a static library. This document describes the Application Programming
+Interface (API) for the Ghostscript interpreter library.
 This should not be confused with the 
 <a href="Lib.htm">Ghostscript library</a> which provides a graphics
 library but not the interpreter.
@@ -105,28 +104,15 @@ simultaneously.
 <li>The Linux shared object <code>libgs.so</code>
 can be used by multiple programs simultaneously.
 
-<li>The MacOS X <code>Ghostscript.framework</code> can also be used
-by multiple applications at once.
-</ul>
-
 <p>
 The source for the executable is in <code>dw</code>*.* (Windows),
-<code>dp</code>*.* (OS/2) and  <code>dx</code>*.* (Linux).  
-See these source files for examples of how to use the DLL. A similar
-example for MacOS using the Carbon API is provided in <code>dm</code>*.*.
+<code>dp</code>*.* (OS/2) and  <code>dx</code>*.* (Linux/Unix).
+See these source files for examples of how to use the DLL.
 
 <p>
 The source file <tt>dxmainc.c</tt> can also serve as an example of how to use the 
-framework shared component on MacOS X, providing the same command-line tool it does
-on any linux, bsd or similar operating system. Just change the header includes to 
-use the Ghostscript namespace:
-<blockquote><pre><tt>#include &lt;Ghostscript/ierrors.h&gt;
-#include &lt;Ghostscript/iapi.h&gt;</tt></pre></blockquote>
-and link with:
-<blockquote><pre><tt>cc -o gsc dxmainc.c -framework Ghostscript</tt></pre></blockquote>
-To get a useable executable. <tt>Ghostscript.framework</tt> must be properly
-installed in the search path for this to work.
-
+shared library component on MacOS X, providing the same command-line tool it does
+on any linux, bsd or similar operating system.
 <p>
 At this stage, Ghostscript does not support multiple instances
 of the interpreter within a single process.
