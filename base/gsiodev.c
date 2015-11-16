@@ -74,6 +74,7 @@ gs_iodev_init(gs_memory_t * mem)
         return_error(gs_error_VMerror);
 
     libctx->io_device_table_size = gx_io_device_table_count + NUM_RUNTIME_IODEVS;
+    libctx->io_device_table_count = 0;
 
     for (i = 0; i < gx_io_device_table_count; ++i) {
         gx_io_device *iodev =
@@ -145,7 +146,7 @@ gs_iodev_register_dev(gs_memory_t * mem, const gx_io_device *newiodev)
 
     return(code);
   fail2:
-    for (; i > 0; --i)
+    for (i = libctx->io_device_table_count; i > 0; --i)
         gs_free_object(mem, table[i - 1], "gs_iodev_init(iodev)");
     gs_free_object(mem, table, "gs_iodev_init(table)");
     libctx->io_device_table = NULL;
@@ -159,6 +160,8 @@ gs_iodev_finalize(const gs_memory_t *cmem, void *vptr)
 {
     if (cmem->gs_lib_ctx->io_device_table == vptr) {
         cmem->gs_lib_ctx->io_device_table = NULL;
+        cmem->gs_lib_ctx->io_device_table_size =
+            cmem->gs_lib_ctx->io_device_table_count = 0;
     }
 }
 
