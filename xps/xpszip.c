@@ -310,6 +310,7 @@ xps_read_zip_part(xps_context_t *ctx, char *partname)
     int count, size, offset, i;
     int code;
     char *name;
+    int seen_last = 0;
 
     name = partname;
     if (name[0] == '/')
@@ -333,7 +334,7 @@ xps_read_zip_part(xps_context_t *ctx, char *partname)
     /* Count the number of pieces and their total size */
     count = 0;
     size = 0;
-    while (1)
+    while (!seen_last)
     {
         gs_sprintf(buf, "%s/[%d].piece", name, count);
         ent = xps_find_zip_entry(ctx, buf);
@@ -341,11 +342,17 @@ xps_read_zip_part(xps_context_t *ctx, char *partname)
         {
             gs_sprintf(buf, "%s/[%d].last.piece", name, count);
             ent = xps_find_zip_entry(ctx, buf);
+            seen_last = !!ent;
         }
         if (!ent)
             break;
         count ++;
         size += ent->usize;
+    }
+    if (!seen_last)
+    {
+        gs_throw1(-1, "cannot find all pieces for part '%s'", partname);
+        return NULL;
     }
 
     /* Inflate the pieces */
