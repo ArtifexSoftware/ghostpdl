@@ -438,8 +438,10 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
     bool has_defg_procs, has_abc_procs, has_lmn_procs;
     gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
 
-/*    pcs = gsicc_find_cs(dictkey, igs); */
-    pcs = NULL;
+    if (dictkey != 0)
+        pcs = gsicc_find_cs(dictkey, igs);
+    else
+        pcs = NULL;
     push(1); /* Sacrificial */
     procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
@@ -538,8 +540,10 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
     bool has_def_procs, has_lmn_procs, has_abc_procs;
     gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
 
-/*    pcs = gsicc_find_cs(dictkey, igs); */
-    pcs = NULL;
+    if (dictkey != 0)
+        pcs = gsicc_find_cs(dictkey, igs);
+    else
+        pcs = NULL;
     push(1); /* Sacrificial */
     procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
@@ -596,8 +600,11 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, ulong dictkey)
     gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
 
 /* See if the color space is in the profile cache */
-/*    pcs = gsicc_find_cs(dictkey, igs); */
-    pcs = NULL;
+    if (dictkey != 0)
+        pcs = gsicc_find_cs(dictkey, igs);
+    else
+        pcs = NULL;
+
     push(1); /* Sacrificial */
     procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
@@ -653,8 +660,10 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, ulong dictkey)
     bool has_lmn_procs;
 
 /* See if the color space is in the profile cache */
-/*    pcs = gsicc_find_cs(dictkey, igs); */
-    pcs = NULL;
+    if (dictkey != 0)
+        pcs = gsicc_find_cs(dictkey, igs);
+    else
+        pcs = NULL;
     push(1); /* Sacrificial */
     procs = istate->colorspace[0].procs.cie;
     if (pcs == NULL ) {
