@@ -308,6 +308,7 @@ xps_read_zip_part(xps_context_t *ctx, char *partname)
     xps_entry_t *ent;
     xps_part_t *part;
     int count, size, offset, i;
+    int code;
     char *name;
 
     name = partname;
@@ -319,7 +320,13 @@ xps_read_zip_part(xps_context_t *ctx, char *partname)
     if (ent)
     {
         part = xps_new_part(ctx, partname, ent->usize);
-        xps_read_zip_entry(ctx, ent, part->data);
+        code = xps_read_zip_entry(ctx, ent, part->data);
+        if (code < 0)
+        {
+            xps_free_part(ctx, part);
+            gs_rethrow1(-1, "cannot read zip entry '%s'", name);
+            return NULL;
+        }
         return part;
     }
 
@@ -357,7 +364,13 @@ xps_read_zip_part(xps_context_t *ctx, char *partname)
                 gs_warn("missing piece");
             else
             {
-                xps_read_zip_entry(ctx, ent, part->data + offset);
+                code = xps_read_zip_entry(ctx, ent, part->data + offset);
+                if (code < 0)
+                {
+                    xps_free_part(ctx, part);
+                    gs_rethrow1(-1, "cannot read zip entry '%s'", buf);
+                    return NULL;
+                }
                 offset += ent->usize;
             }
         }

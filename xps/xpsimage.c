@@ -405,7 +405,7 @@ xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t 
     xps_absolute_path(partname, base_uri, image_name, sizeof partname);
     part = xps_read_part(ctx, partname);
     if (!part)
-        return gs_throw1(-1, "cannot find image resource part '%s'", partname);
+        return gs_rethrow1(-1, "cannot find image resource part '%s'", partname);
 
     *partp = part;
     *profilep = xps_strdup(ctx, profile_name);
