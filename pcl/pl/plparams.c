@@ -467,6 +467,42 @@ int pjl_dist_process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_na
                 }
                 break;
             case '<':
+                if (*(p1+1) == '<') {
+                    /* dictionary inside an array, not supported */
+                } else {
+                    char *src, *dest;
+                    char data = 0;
+                    int i;
+
+                    src = dest = ++p1;
+                    parray[index].data = (const byte *)p1;
+                    while (*src != 0x00 && *src != '>') {
+                        data = 0;
+                        for (i=0;i<2;i++) {
+                            if(*src >= '0' && *src <= '9') {
+                                data = (data << 4);
+                                data += (*src - '0');
+                            } else {
+                                if (*src >= 'A' && *src <= 'F') {
+                                    data = (data << 4);
+                                    data += (*src - 'A' + 10);
+                                } else {
+                                    if (*src >= 'a' && *src <= 'f') {
+                                        data = (data << 4);
+                                        data += (*src - 'a' + 10);
+                                    } else {
+                                        return -1;
+                                    }
+                                }
+                            }
+                            src++;
+                        }
+                        *dest++ = data;
+                    }
+                    *dest = 0x00;
+                    parray[index].size = strlen(parray[index].data);
+                    parray[index++].persistent = false;
+                }
                 break;
             case '/':
                 parray[index].data = (const byte *)p1;
@@ -489,6 +525,7 @@ int pjl_dist_process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_na
                 parray[index++].persistent = false;
                 break;
             case '[':
+                /* Nested arrays, not supported */
                 break;
             case '0':
             case '1':
@@ -501,6 +538,14 @@ int pjl_dist_process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_na
             case '8':
             case '9':
             case '.':
+                parray[index].data = (const byte *)p1;
+                while (*p1 != 0x00 && ((*p1 >= '0' && *p1 <= '9') || *p1 == '.'))
+                    p1++;
+                if (*p1 == 0x00)
+                    return -1;
+                *p1++ = 0x00;
+                parray[index].size = strlen(parray[index].data);
+                parray[index++].persistent = false;
                 break;
             default:
                 return -1;
