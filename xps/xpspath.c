@@ -894,7 +894,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     gs_color_space *colorspace;
 
     bool opacity_pushed = false;
-    bool uses_stroke;
+    bool uses_stroke = false;
 
     gs_gsave(ctx->pgs);
 
