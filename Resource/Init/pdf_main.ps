@@ -631,7 +631,16 @@ currentdict /xref-char-dict undef
         % Ensure that we we have room in the objects array, etc.
    dup /Size get 1 index /Index .knownget {
      %% if we have a /Index, remember to add the starting index on to the size
-     0 get add
+     dup 0 get 3 -1 roll add exch
+     %% Get the staring index and number of entries from the Index array
+     %% add them, and see if the result is larger than the starting index plus
+     %% Size entry (yes they are *supposed* to be consistent.....)
+     %% Bug #696365
+     dup 0 get exch 1 get add 2 copy gt {
+       pop
+     }{
+       exch pop
+     } ifelse
    } if
    growPDFobjects
         % Create a stream for the XRef data
