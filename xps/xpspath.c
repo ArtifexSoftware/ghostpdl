@@ -85,6 +85,9 @@ xps_fill(xps_context_t *ctx)
  * line segments. We cannot use the gs_arc function because they only draw
  * circular arcs, we need to transform the line to make them elliptical but
  * without transforming the line width.
+ *
+ * We are guaranteed that on entry the point is at the point that would be
+ * calculated by th0, and on exit, a point is generated for us at th0.
  */
 static inline void
 xps_draw_arc_segment(xps_context_t *ctx, gs_matrix *mtx, float th0, float th1, int iscw)
@@ -99,28 +102,20 @@ xps_draw_arc_segment(xps_context_t *ctx, gs_matrix *mtx, float th0, float th1, i
 
     if (iscw)
     {
-        gs_point_transform(cos(th0), sin(th0), mtx, &p);
-        gs_lineto(ctx->pgs, p.x, p.y);
-        for (t = th0; t < th1; t += d)
+        for (t = th0 + d; t < th1 - d/2; t += d)
         {
             gs_point_transform(cos(t), sin(t), mtx, &p);
             gs_lineto(ctx->pgs, p.x, p.y);
         }
-        gs_point_transform(cos(th1), sin(th1), mtx, &p);
-        gs_lineto(ctx->pgs, p.x, p.y);
     }
     else
     {
         th0 += M_PI * 2;
-        gs_point_transform(cos(th0), sin(th0), mtx, &p);
-        gs_lineto(ctx->pgs, p.x, p.y);
-        for (t = th0; t > th1; t -= d)
+        for (t = th0 - d; t > th1 + d/2; t -= d)
         {
             gs_point_transform(cos(t), sin(t), mtx, &p);
             gs_lineto(ctx->pgs, p.x, p.y);
         }
-        gs_point_transform(cos(th1), sin(th1), mtx, &p);
-        gs_lineto(ctx->pgs, p.x, p.y);
     }
 }
 
