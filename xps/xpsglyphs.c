@@ -11,14 +11,12 @@
    Refer to licensing information at http://www.artifex.com or contact
    Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134, San Rafael,
    CA  94903, U.S.A., +1(415)492-9861, for further information.
-*/
+ */
 
 
 /* XPS interpreter - text drawing support */
 
 #include "ghostxps.h"
-
-#include <ctype.h>
 
 #define XPS_TEXT_BUFFER_SIZE 300
 
@@ -32,11 +30,13 @@ struct xps_text_buffer_s
     gs_glyph g[XPS_TEXT_BUFFER_SIZE];
 };
 
-static inline int unhex(int i)
+static inline int unhex(int c)
 {
-    if (isdigit(i))
-        return i - '0';
-    return tolower(i) - 'a' + 10;
+    if (c >= '0' && c <= '9')
+        return c - '0';
+    if (c >= 'A' && c <= 'Z')
+        return c - 'A' + 10;
+    return c - 'a' + 10;
 }
 
 void
