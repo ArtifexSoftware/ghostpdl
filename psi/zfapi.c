@@ -1997,7 +1997,7 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                                                  (const byte **)&Map);
                 }
                 else {
-                    if (CIDMap->tas.rsize < c_code * gdb) {
+                    if (CIDMap->tas.rsize <= c_code * gdb) {
                         c_code = 0;
                     }
                     Map = &CIDMap->value.bytes[c_code * gdb];
