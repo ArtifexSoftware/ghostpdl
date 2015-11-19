@@ -1919,7 +1919,7 @@ ps_get_glyphname_or_cid(gs_font_base *pbfont, gs_string *charstring,
                 char *cmapnm = NULL;
                 int cmapnmlen = 0;
                 /* leave off the -H or -V */
-                char *utfcmap = "Identity-UTF16";
+                const char * const utfcmap = "Identity-UTF16";
                 int utfcmaplen = strlen(utfcmap);
 
                 fdict = pfont_dict(gs_rootfont(igs));

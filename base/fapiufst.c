@@ -2011,7 +2011,7 @@ gs_fapi_ufst_get_char_raster(gs_fapi_server * server, gs_fapi_raster * rast)
     fapi_ufst_server *r = If_to_I(server);
 
     if (!r->bRaster)
-        return gs_error_limitcheck;
+        return gs_error_unregistered;
     else if (r->char_data == NULL) {
         rast->height = rast->width = rast->line_step = 0;
         rast->p = 0;

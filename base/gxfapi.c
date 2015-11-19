@@ -1508,20 +1508,9 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
     /* Take metrics from font : */
     if (I->ff.metrics_only) {
         code = I->get_char_outline_metrics(I, &I->ff, &cr, &metrics);
-        /* A VMerror could be a real out of memory, or the glyph being too big for a bitmap
-         * so it's worth retrying as an outline glyph
-         */
-        if (code == gs_error_VMerror && I->use_outline == false) {
-            I->max_bitmap = 0;
-            I->use_outline = true;
-            goto retry_oversampling;
-        }
-
     }
     else if (I->use_outline) {
-        if ((code = gs_fapi_renderer_retcode(mem, I,
-                    I->get_char_outline_metrics(I, &I->ff, &cr, &metrics))) < 0)
-            return code;
+        code = I->get_char_outline_metrics(I, &I->ff, &cr, &metrics);
     }
     else {
         code = I->get_char_raster_metrics(I, &I->ff, &cr, &metrics);
@@ -1539,14 +1528,7 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
                 I->release_char_data(I);
                 goto retry_oversampling;
             }
-            if ((code =
-                 gs_fapi_renderer_retcode(mem, I,
-                                          I->get_char_outline_metrics(I,
-                                                                      &I->ff,
-                                                                      &cr,
-                                                                      &metrics)))
-                < 0)
-                return code;
+            code = I->get_char_outline_metrics(I, &I->ff, &cr, &metrics);
         }
     }
 
