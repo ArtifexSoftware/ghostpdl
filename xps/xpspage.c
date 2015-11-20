@@ -138,15 +138,24 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
         return gs_rethrow(-1, "cannot parse xml");
 
     if (strcmp(xps_tag(root), "FixedPage"))
-        return gs_throw1(-1, "expected FixedPage element (found %s)", xps_tag(root));
+    {
+        xps_free_item(ctx, root);
+        return gs_throw(-1, "expected FixedPage element");
+    }
 
     width_att = xps_att(root, "Width");
     height_att = xps_att(root, "Height");
 
     if (!width_att)
+    {
+        xps_free_item(ctx, root);
         return gs_throw(-1, "FixedPage missing required attribute: Width");
+    }
     if (!height_att)
+    {
+        xps_free_item(ctx, root);
         return gs_throw(-1, "FixedPage missing required attribute: Height");
+    }
 
     dict = NULL;
 
