@@ -183,7 +183,7 @@ int usage (void) {
     printf ("   ps indicates postscript style output file\n");
     printf ("   raw is a raw 8-bit binary, row major file\n");
     printf ("   tos indicates to output a turn on sequence which can\n");
-    printf ("     be fed into linearize_threshold to apply a linearization curve.\n");
+    printf ("     be fed into thresh_remap to apply a linearization curve.\n");
     printf ("l is the desired lines per inch (lpi)\n");
     printf ("q is the desired number of quantization (gray) levels\n");
     printf ("r is the device resolution in dots per inch (dpi)\n");

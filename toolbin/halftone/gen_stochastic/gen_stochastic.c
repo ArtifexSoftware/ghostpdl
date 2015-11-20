@@ -51,7 +51,7 @@
  *				x	xx
  *			x	xx	xxx
  *
- *	-p#.##  power for exponential bias of random choice. Default 1.0
+ *	-p#.##  power for exponential bias of random choice. Default 2.0
  *
  *	-q	Quiet mode (default verbose).
  *
@@ -61,7 +61,7 @@
  *	-s#	Initial seed for random number generation. Useful to generate
  *		decorrelated threshold arrays to be used with different colors.
  *
- *	-t#	sets the choice value threshold in 0.1% units (default 50 = 5%)
+ *	-t#	sets the choice value threshold in 0.1% units (default 10 = 1%)
  *
  *	-v      verbose mode. Details to stdout about choices. Default OFF
  *
@@ -254,13 +254,13 @@ int
 main(int argc, char *argv[])
 {
     /*	Initialize master threshold array	*/
-    int		i, j, k, m, level;
+    int		i, j, k, m, level, level_up = 1;
     int		X, Y, choice_range, choice, choice_X, choice_Y;
     int		SortRange;
     int		min_dot_pattern = 0, do_min_dot;
-    double	value, val_thresh = 0.05;	/* default -t50 */
+    double	value, val_thresh = 0.01;	/* default -t10 */
     double	rx_sq = 1.0, ry_sq = 1.0;
-    double	rand_scaled, bias_power = 1.0;
+    double	rand_scaled, bias_power = 2.0;
     float	x;
 
     int	gsarg_start;
@@ -350,7 +350,7 @@ main(int argc, char *argv[])
 #endif
 
     /* Write out the header line for the threshold array */
-    /* This should be compatible with 'linearize_threshold.c' */
+    /* This should be compatible with 'thresh_remap.c' */
     fprintf(fp,"# W=%d H=%d\n", array_width, array_height);
 
     /* Initialize the ThresholdArray to -1 (an invalid value) for unfilled dots. */
@@ -369,7 +369,7 @@ main(int argc, char *argv[])
     MaxVal = 0.0;
     ValRange = 1.0;
 
-    for (level = 0; level < (array_width * array_height); level++) {
+    for (level = 0; level < (array_width * array_height); level += level_up) {
 
         /* We focus the processing on the first "SortRange" number of */
         /* elements to speed up the processing. The SortRange starts  */
@@ -418,53 +418,137 @@ main(int argc, char *argv[])
         /* neighboring dots. If the edge of the expanded dot is adajcent  */
         /* to a dot aleady 'on', then increase the size of that dot instead */
         do_min_dot = min_dot_pattern;
+        level_up = 1;                   /* set for the default, single dot case */
         if (min_dot_pattern != 0) {
             int row, dot, cX, cY;
+            int row_direction, dot_direction;
+            int userow;
 
-            /* If a nearby dot it 'on', choose the 'best' one instead of the	*/
-            /* 'min_dot'. This insures that each min_dot will have at least	*/
-            /* a one dot 'white' area around it					*/
+            /* Scan the area covered by this dot, including above and below by	*/
+            /* one row, and to the left and to the right by one dot. If one 	*/
+            /* marked dot is found, choose a single dot adjacent to the marked  */
+            /* dot.                                                             */
             for (row=-1; row <= min_dot_edges[min_dot_pattern].num_rows; row++) {
-                int userow = row < 0 ? 0 :
-                                row == min_dot_edges[min_dot_pattern].num_rows ?
-                                        row - 1 : row;
-
-                cY = (choice_Y + row) % array_height;
+                /* for the left and right edges, we use a row within the num_rows range */
+                userow = row < 0 ? 0 :	/* top row of the min_dot_pattern	*/
+                             row < min_dot_edges[min_dot_pattern].num_rows ?
+                                 row:	     /* current row is within numrows	*/
+                                 row - 1;    /* last row of min_dot_pattern	*/
+                cY = (choice_Y + row + array_height) % array_height;
                 for (dot=min_dot_edges[min_dot_pattern].left[userow] - 1;
-                        dot <= min_dot_edges[min_dot_pattern].right[userow]; dot++) {
-                    cX = (choice_X + dot) % array_width;
-                    if (ThresholdArray[cX][cY] != -1) {
+                        dot <= min_dot_edges[min_dot_pattern].right[userow] + 1; dot++) {
+                    cX = (choice_X + dot + array_height) % array_width;
+                    if (ThresholdArray[cX][cY] != -1)
+                        goto find_neighbor;
+                }
+            }
+            goto do_dot;		/* we have room for a minimum dot, do it */
+
+find_neighbor:
+            /* Found an adjacent dot that is already used, select an unused	*/
+            /* single dot contiguous to the dot that is used		*/
+            do_min_dot = 0;			/* select a single dot	*/
+            if (!quiet)
+                printf("min_dot at [%d, %d] suppressed due to neighbor dot at: [%d, %d]\n",
+                choice_X, choice_Y, cX, cY);
+            /* Choose a white dot adjacent to this dot, closest to our initial */
+            /* choice position.                                                */
+            if (row < min_dot_edges[min_dot_pattern].num_rows >> 1)
+                row_direction = 1;		/* go down from the marked dot found */
+            else
+                row_direction = -1;		/* go above the marked dot */
+            if (dot < min_dot_edges[min_dot_pattern].right[userow] >> 1)
+                dot_direction = 1;		/* move right */
+            else
+                dot_direction = -1;		/* move left */
+            if (!quiet)
+                printf("searching for unmarked dot %s and to the %s\n",
+                   row_direction < 0 ? "above" : "below",
+                   dot_direction < 0 ? "left" : "right");
+            if ((choice_X & 1) == 0) {
+                /* even columns are column major */
+                for (; (row >= -1) && (row <= min_dot_edges[min_dot_pattern].num_rows);
+                     row += row_direction) {
+                   userow = row < 0 ? 0 :	/* top row of the min_dot_pattern	*/
+                               row < min_dot_edges[min_dot_pattern].num_rows ?
+                                   row:	    /* current row is within numrows	*/
+                                   row - 1;    /* last row of min_dot_pattern	*/
+                   cY = (choice_Y + row + array_height) % array_height;
+                   dot = dot_direction > 0 ? min_dot_edges[min_dot_pattern].left[userow] - 1 :
+                                             min_dot_edges[min_dot_pattern].right[userow] + 1;
+                   for (; (dot >= -1) && (dot <= min_dot_edges[min_dot_pattern].right[userow] + 1);
+                           dot += dot_direction) {
+                        cX = (choice_X + dot + array_height) % array_width;
                         if (!quiet)
-                            printf("min_dot suppressed due to neighbor dot at: [%d, %d]\n",
-                                cX, cY);
-                        /* Choose a white dot adjacent to this dot */
-                        choice_X = cX;
-                        choice_Y = cY;
-                        do_min_dot = 0;	/* don't do the min_dot expansion */
-                        break;
+                            printf("dot at %d, %d is %s\n", cX, cY, ThresholdArray[cX][cY] == -1 ?
+                                   "unmarked" : "marked");
+                        if (ThresholdArray[cX][cY] == -1) {
+                            choice_X = cX;
+                            choice_Y = cY;
+                            goto do_dot;
+                        }
                     }
                 }
-                if (do_min_dot == 0)	/* did we bail out of the 'dot' loop ? */
-                    break;
+            } else {
+                /* odd columns are row major */
+                for (dot = dot_direction > 0 ? -1 : 3;
+                         dot >= -1 && dot <= 3;
+                         dot += dot_direction) {
+                    /* actual dot constrained below */
+                    for (row = row_direction > 0 ? -1 : min_dot_edges[min_dot_pattern].num_rows;
+                           (row <= min_dot_edges[min_dot_pattern].num_rows);
+                           row += row_direction) {
+                        userow = row < 0 ? 0 :	/* top row of the min_dot_pattern	*/
+                                     row < min_dot_edges[min_dot_pattern].num_rows ?
+                                        row:	    /* current row is within numrows	*/
+                                        row - 1;    /* last row of min_dot_pattern	*/
+                        cY = (choice_Y + row + array_height) % array_height;
+                        if (dot > min_dot_edges[min_dot_pattern].right[userow] + 1)
+                                break;      /* don't need this dot row */
+                        cX = (choice_X + dot + array_height) % array_width;
+                        if (!quiet)
+                             printf("dot at %d, %d is %s\n", cX, cY, ThresholdArray[cX][cY] == -1 ?
+                                    "unmarked" : "marked");
+                        if (ThresholdArray[cX][cY] == -1) {
+                            choice_X = cX;
+                            choice_Y = cY;
+                            goto do_dot;
+                        }
+                    }
+                }
             }
-        }
+            printf("what now?\n");
+        }	/* end min_dot_pattern != 0 */
+do_dot:
         if (!quiet)
             printf("choice: %d, choice_range: %d, do_min_dot: %d\n", choice,
-                        choice_range, do_min_dot);
-        if (! quiet)
+                        choice_range, do_min_dot);	/* if do_min_dot is 0 and min_dot_pattern is not */
+                                                        /* that means we are doing a single adjacent dot */
+        if (!quiet)
             printf("Threshold Level %4d is depth %d, val = %5.3f at (%4d, %4d)\n",
                         level, choice, Val[ (choice_Y * array_width) + choice_X ], choice_X, choice_Y);
         if (do_min_dot != 0) {
             int row, dot, cX, cY;
 
+            /* First, loop through marking the dots, then loop adjusting array density values */
             for (row=0; row < min_dot_edges[min_dot_pattern].num_rows; row++) {
                 cY = (choice_Y + row) % array_height;
                 for (dot=min_dot_edges[min_dot_pattern].left[row];
                         dot <= min_dot_edges[min_dot_pattern].right[row]; dot++) {
                     cX = (choice_X + dot) % array_width;
-                    if ((row > 0) || (dot > 0))
+                    if ((row >= 0) || (dot >= 0))
+                        ThresholdArray[cX][cY] = level;                }
+            }
+            for (row=0; row < min_dot_edges[min_dot_pattern].num_rows; row++) {
+                cY = (choice_Y + row) % array_height;
+                for (dot=min_dot_edges[min_dot_pattern].left[row];
+                        dot <= min_dot_edges[min_dot_pattern].right[row]; dot++) {
+                    cX = (choice_X + dot) % array_width;
+                    if ((row > 0) || (dot > 0)) {
                         /* The 'choice' dot will be done outside this block as the 'last' */
                         do_dot(cX, cY, level, 0);
+                        level_up++;
+                    }
                 }
             }
         }
@@ -515,7 +599,7 @@ usage_exit:
     printf("\t\tvalues are used for aspect ratio -- actual values arbitrary\n");
     printf("\n\t-s#\tInitial seed for random number generation. Useful to generate");
     printf("\n\t\tdecorrelated threshold arrays to be used with different colors.");
-    printf("\n\t-t#\tsets the choice value threshold in 0.1%% units (default 50 = 5%%)\n");
+    printf("\n\t-t#\tsets the choice value threshold in 0.1%% units (default 10 = 1%%)\n");
     printf("\n\t-g\t(must be last) Following arguments are passed to Ghostscript if \n");
     printf("\t\tcompiled wuth USE_GS_DISPLAY=1.\n");
     printf("\n");

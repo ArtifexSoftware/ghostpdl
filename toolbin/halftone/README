@@ -1,0 +1,12 @@
+The directories gen_stochastic and gen_ordered contain tools to generate
+threshold arrays for use with ghostscript.
+
+In the thresh_map directory is a tool that converts the "tos" (turn on sequence)
+file produced by the above threshold array tools into a PostScript file usable
+by ghostscript or any Level 2 compliant PS interpreter. The "tos" may have more
+than 256 levels, so thresh_remap creates a threshold array with 256 levels.
+
+Also thresh_remap optionally applies a transfer function as it converts the
+"tos" so that a device can produce 256 levels that are visibly linear.
+
+Refer to the README file in each directory for more information.

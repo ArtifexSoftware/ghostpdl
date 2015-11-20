@@ -1,0 +1,43 @@
+Coming up with the proper table for the thresh_map is best done by printing
+(on the target printer) a linear ramp using a theshold array that has been
+mapped to 256 levels using thresh_map without a trasfer function data file.
+
+The invocation for that would be:
+	thresh_map -p -o thresh_lin.ps threshold.dat
+
+Then print a gray ramp to your device, XXXX with ghostscript using this
+thresh_lin.ps file:
+	gs -sDEVICE=XXXX -o out.prn thresh_lin.ps grayramp.ps
+	
+Next measure several patches from the print with a densitometer to get
+the "L" value (0.0 is black, 1.0 is white).
+
+Create a text file with the measurement results with each value, in order
+on a separate line. with the patch number (integer 1-256) followed by a 
+space, followed by the L value (real number). Even though the lightest
+patch is 255, the file should end with a line:
+
+256 1.0000
+
+	thresh_map [-c] [-p] [-q] [-o thresh_new.ps] threshold.dat [linear.dat][> threshold.bin]
+
+	threshold.dat is the file produced by genpat: A list of pixels in
+	order of painting, one line per pixel format %d %d
+
+	linear.dat is optional. If missing, the thresold array will have
+	1/256 of the total at each level. The format of the linear.dat
+	file is: %d %f     where the first integer is the level and the
+	second float is the brightness (0 == dark, similar to L* value).
+	The 'level' is in the range 0 to 256. The final entry should be
+	256 WHITEVALUE. If the final measurement is not level 256, then
+	the assumed WHITEVALUE will be 1.0000
+
+	-c outputs the count of pixels at each of 256 levels
+	-p generates output in PostScript HalftoneType 3 format
+	-q suppresses output (except -c)
+	-o specifies the file for the binary or PostScript mapped threshold array
+
+To use your newly created PS threshold array file to print a file (such as the
+gray ramp to allow verification of the quality) use:
+
+	gs -sDEVICE=XXXX -o out.prn thresh_new.ps grayramp.ps

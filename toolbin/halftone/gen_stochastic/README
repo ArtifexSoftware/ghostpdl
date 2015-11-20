@@ -1,0 +1,74 @@
+
+gen_stochastic is a Program to generate a stochastic threshold array that has
+good edge blending and high frequency spatial distribution.
+
+The output file (the "outfile" command line parameter) is a "turn on sequence"
+(tos) consisting of a header line that has a "# W=SIZEW H=SIZEH" where SIZEW
+is the widh of the threshold array and SIZEH is the height. Following the
+header line are lines with two numbers separated by a tab character. These
+are the X and Y coordinates of the next dot to be turned on the the sequence.
+
+Usage:  gen_stochastic [ options ] SIZEWxSIZEH outfile [ -g ghostscript args ...]
+
+    SIZEWxSIZEH are the width and height of the threshold array separated
+    by a lower case 'x'. If the threshold array is square, then only the
+    first number is required and the 'x' should not be present. Maximum
+    value is 512 (MAX_ARRAY_WIDTH, MAX_ARRAY_HEIGHT compile time option).
+
+    'outfile' is the name of the threshold array file.
+
+options are any combination of the following:
+
+-m#	set the minimum dot size/shape pattern. This is an index
+	to a specific size/shape table as follows:
+
+	0:	1:	2:	3:	4:	5:
+	x	xx	x	xx	x	xx
+			x	x	 x	xx
+ 
+	6:	7:	8:	9:	10:	11:	12:	13:
+	xxx	xxx	xxx	xxx	xxx	xxx	xxx	xxx
+	   	x  	xx 	xxx	x  	xx 	xxx	xxx
+	   	   	   	   	x  	x 	x 	xx
+
+	14:	15:	16:	17:	18:	11:	13:	19:
+	x  	xx 	xx 	xx 	xxx	xxx	xxx	xxx
+	x   	x  	xx 	xx 	xx 	xx	xxx	xxx
+	x   	x   	x   	xx	xx	x  	xx	xxx
+
+	Note that the duplicated indices for duplicated patterns are
+	for clarity. Also, some patterns are intentionally omitted e.g.,
+		x	xx	xxx
+			x	xx
+		x	xx	xxx
+
+-p#.##  power for exponential bias of random choice. Default 2.0
+
+-q	Quiet mode (default verbose).
+
+-rWxH	allows for horizontal / vertical resolution, e.g. -r2x1
+	values are used for aspect ratio -- actual values arbitrary
+
+-s#	Initial seed for random number generation. Useful to generate
+	decorrelated threshold arrays to be used with different colors.
+
+-t#	sets the choice value threshold in 0.1% units (default 10 = 1%)
+
+-v      verbose mode. Details to stdout about choices. Default OFF
+
+If the build #defined USE_GSDLL, then a graphical display will be shown
+as the choices are made. Three sections of the page show the pseudo-color
+map of densities, the expanded view of the pixels, and the 1:1 pixel view
+of 3 tiles wide by 3 tiles tall, allowing interactive examination of the
+choices. Ghostscript is used to generate this display and any Ghostscript
+parameters may follow the '-g' trailing option. This option is last so
+that the number of gs args is variable.
+
+	-g 	followed by ghostscript args are only used if built with the
+	USE_GSDLL option and must follow the SIZE and outfile parameters.
+	All parameters are then passed to gs to control the display.
+
+when paused between values, <ret> for next value, 'g' or <esc> for
+continuous or a character to repeat c-0x20 times (! = 1, " = 2, ...)
+'q' for exit.
+
