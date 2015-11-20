@@ -285,10 +285,10 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         xps_parse_rectangle(ctx, viewport_att, &viewport);
 
     /* some sanity checks on the viewport/viewbox size */
-    if (fabs(viewport.q.x - viewport.p.x) < 0.01) return 0;
-    if (fabs(viewport.q.y - viewport.p.y) < 0.01) return 0;
-    if (fabs(viewbox.q.x - viewbox.p.x) < 0.01) return 0;
-    if (fabs(viewbox.q.y - viewbox.p.y) < 0.01) return 0;
+    if (fabs(viewport.q.x - viewport.p.x) < 0.01) { gs_warn("skipping tile with zero width view port"); return 0; }
+    if (fabs(viewport.q.y - viewport.p.y) < 0.01) { gs_warn("skipping tile with zero height view port"); return 0; }
+    if (fabs(viewbox.q.x - viewbox.p.x) < 0.01) { gs_warn("skipping tile with zero width view box"); return 0; }
+    if (fabs(viewbox.q.y - viewbox.p.y) < 0.01) { gs_warn("skipping tile with zero height view box"); return 0; }
 
     scalex = (viewport.q.x - viewport.p.x) / (viewbox.q.x - viewbox.p.x);
     scaley = (viewport.q.y - viewport.p.y) / (viewbox.q.y - viewbox.p.y);

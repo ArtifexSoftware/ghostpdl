@@ -190,6 +190,7 @@ xps_parse_metadata_imp(void *zp, char *name, char **atts)
         char tgtbuf[1024];
         char *target = NULL;
         char *type = NULL;
+        char *id = NULL;
 
         for (i = 0; atts[i]; i += 2)
         {
@@ -197,6 +198,8 @@ xps_parse_metadata_imp(void *zp, char *name, char **atts)
                 target = atts[i + 1];
             if (!strcmp(atts[i], "Type"))
                 type = atts[i + 1];
+            if (!strcmp(atts[i], "Id"))
+                id = atts[i + 1];
         }
 
         if (target && type)
@@ -205,6 +208,8 @@ xps_parse_metadata_imp(void *zp, char *name, char **atts)
             if (!strcmp(type, REL_START_PART) ||
                 !strcmp(type, REL_START_PART_OXPS))
                 ctx->start_part = xps_strdup(ctx, tgtbuf);
+            if (!id)
+                gs_warn1("missing relationship Id for %s", target);
         }
     }
 
