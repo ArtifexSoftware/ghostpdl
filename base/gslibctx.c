@@ -47,7 +47,7 @@ static gs_memory_t *mem_err_print = NULL;
 gs_memory_t *
 gs_lib_ctx_get_non_gc_memory_t()
 {
-    return mem_err_print ? mem_err_print->non_gc_memory : NULL;
+    return mem_err_print ? mem_err_print : NULL;
 }
 #endif
 
@@ -71,12 +71,12 @@ gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
         if (strncmp(pname, p_ctx->profiledir, p_ctx->profiledir_len) == 0) {
             return;
         }
-        gs_free_object(p_ctx_mem->non_gc_memory, p_ctx->profiledir,
-                       "gsicc_set_icc_directory");
+        gs_free_object(p_ctx_mem, p_ctx->profiledir,
+                       "gs_lib_ctx_set_icc_directory");
     }
     /* User param string.  Must allocate in non-gc memory */
-    result = (char*) gs_alloc_bytes(p_ctx_mem->non_gc_memory, dir_namelen+1,
-                                     "gsicc_set_icc_directory");
+    result = (char*) gs_alloc_bytes(p_ctx_mem, dir_namelen+1,
+                                     "gs_lib_ctx_set_icc_directory");
     if (result != NULL) {
         strcpy(result, pname);
         p_ctx->profiledir = result;
@@ -91,13 +91,14 @@ gs_lib_ctx_set_default_device_list(const gs_memory_t *mem, const char* dev_list_
 {
     char *result;
     gs_lib_ctx_t *p_ctx = mem->gs_lib_ctx;
+    gs_memory_t *ctx_mem = p_ctx->memory;
     int code = 0;
     
-    result = (char *)gs_alloc_bytes(mem->thread_safe_memory, list_str_len + 1,
+    result = (char *)gs_alloc_bytes(ctx_mem, list_str_len + 1,
              "gs_lib_ctx_set_default_device_list");
 
     if (result) {
-      gs_free_object(mem->thread_safe_memory, p_ctx->default_device_list,
+      gs_free_object(ctx_mem, p_ctx->default_device_list,
                 "gs_lib_ctx_set_default_device_list");
 
       memcpy(result, dev_list_str, list_str_len);
@@ -131,8 +132,9 @@ int gs_lib_ctx_init( gs_memory_t *mem )
 {
     gs_lib_ctx_t *pio = 0;
 
-    if ( mem == 0 )
-        return -1;  /* assert mem != 0 */
+    /* assert mem != 0 and the non gc allocator is in play */
+    if (mem == 0 || mem != mem->non_gc_memory)
+        return -1;  
 
 #ifndef GS_THREADSAFE
     mem_err_print = mem;
@@ -174,7 +176,7 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     /* Initialise the underlying CMS. */
     if (gscms_create(mem)) {
 
-        gs_free_object(mem->non_gc_memory, mem->gs_lib_ctx->default_device_list,
+        gs_free_object(mem, mem->gs_lib_ctx->default_device_list,
                 "gs_lib_ctx_fin");
 
         gs_free_object(mem, pio, "gsicc_set_icc_directory");
@@ -199,24 +201,29 @@ static void remove_ctx_pointers(gs_memory_t *mem)
         remove_ctx_pointers(mem->thread_safe_memory);
 }
 
-void gs_lib_ctx_fin( gs_memory_t *mem )
+void gs_lib_ctx_fin(gs_memory_t *mem)
 {
     gs_lib_ctx_t *ctx;
+    gs_memory_t *ctx_mem;
+
     if (!mem || !mem->gs_lib_ctx)
         return;
-    gscms_destroy(mem);
-    gs_free_object(mem->thread_safe_memory, mem->gs_lib_ctx->profiledir,
-        "gsicc_set_icc_directory");
+    
+    ctx = mem->gs_lib_ctx;
+    ctx_mem = ctx->memory;
+
+    gscms_destroy(ctx_mem);
+    gs_free_object(ctx_mem, ctx->profiledir,
+        "gs_lib_ctx_fin");
         
-    gs_free_object(mem->thread_safe_memory, mem->gs_lib_ctx->default_device_list,
+    gs_free_object(ctx_mem, ctx->default_device_list,
                 "gs_lib_ctx_fin");
 
 #ifndef GS_THREADSAFE
     mem_err_print = NULL;
 #endif
-    ctx = mem->gs_lib_ctx;
-    remove_ctx_pointers(mem);
-    gs_free_object(mem->thread_safe_memory, ctx, "gs_lib_ctx_init");
+    remove_ctx_pointers(ctx_mem);
+    gs_free_object(ctx_mem, ctx, "gs_lib_ctx_init");
 }
 
 gs_lib_ctx_t *gs_lib_ctx_get_interp_instance(const gs_memory_t *mem)
