@@ -132,9 +132,9 @@ int gs_lib_ctx_init( gs_memory_t *mem )
 {
     gs_lib_ctx_t *pio = 0;
 
-    /* assert mem != 0 and the non gc allocator is in play */
+    /* Check the non gc allocator is being passed in */
     if (mem == 0 || mem != mem->non_gc_memory)
-        return -1;  
+        return gs_error_Fatal;
 
 #ifndef GS_THREADSAFE
     mem_err_print = mem;
@@ -169,7 +169,7 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     if (gs_lib_ctx_set_default_device_list(mem, gs_dev_defaults,
                         strlen(gs_dev_defaults)) < 0) {
         
-        gs_free_object(mem, pio, "gsicc_set_icc_directory");
+        gs_free_object(mem, pio, "gs_lib_ctx_init");
         mem->gs_lib_ctx = NULL;
     }
 
@@ -179,11 +179,10 @@ int gs_lib_ctx_init( gs_memory_t *mem )
         gs_free_object(mem, mem->gs_lib_ctx->default_device_list,
                 "gs_lib_ctx_fin");
 
-        gs_free_object(mem, pio, "gsicc_set_icc_directory");
+        gs_free_object(mem, pio, "gs_lib_ctx_init");
         mem->gs_lib_ctx = NULL;
         return -1;
     }
-    
     
     gp_get_realtime(pio->real_time_0);
 
