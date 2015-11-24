@@ -298,6 +298,7 @@ xps_item_t * xps_next(xps_item_t *item);
 xps_item_t * xps_down(xps_item_t *item);
 char * xps_tag(xps_item_t *item);
 char * xps_att(xps_item_t *item, const char *att);
+void xps_detach_and_free_remainder(xps_context_t *ctx, xps_item_t *root, xps_item_t *item);
 void xps_free_item(xps_context_t *ctx, xps_item_t *item);
 void xps_debug_item(xps_item_t *item, int level);
 
@@ -326,6 +327,8 @@ void xps_debug_resource_dictionary(xps_context_t *ctx, xps_resource_t *dict);
 /*
  * Fixed page/graphics parsing.
  */
+
+xps_item_t *xps_lookup_alternate_content(xps_item_t *node);
 
 int xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part);
 int xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);

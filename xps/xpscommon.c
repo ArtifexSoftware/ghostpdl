@@ -18,6 +18,26 @@
 
 #include "ghostxps.h"
 
+xps_item_t *
+xps_lookup_alternate_content(xps_item_t *node)
+{
+    for (node = xps_down(node); node; node = xps_next(node))
+    {
+        if (xps_tag(node))
+        {
+            if (!strcmp(xps_tag(node), "Choice"))
+            {
+                const char *req = xps_att(node, "Requires");
+                if (req && !strcmp(req, "xps"))
+                    return xps_down(node);
+            }
+            if (!strcmp(xps_tag(node), "Fallback"))
+                return xps_down(node);
+        }
+    }
+    return NULL;
+}
+
 int
 xps_parse_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node)
 {
@@ -48,6 +68,12 @@ xps_parse_element(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_
         return xps_parse_glyphs(ctx, base_uri, dict, node);
     if (!strcmp(xps_tag(node), "Canvas"))
         return xps_parse_canvas(ctx, base_uri, dict, node);
+    if (!strcmp(xps_tag(node), "AlternateContent"))
+    {
+        node = xps_lookup_alternate_content(node);
+        if (node)
+            xps_parse_element(ctx, base_uri, dict, node);
+    }
     /* skip unknown tags (like Foo.Resources and similar) */
     return 0;
 }

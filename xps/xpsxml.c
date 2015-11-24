@@ -33,7 +33,6 @@ struct xps_parser_s
     xps_item_t *root;
     xps_item_t *head;
     char *error;
-    int compat;
     char *base; /* base of relative URIs */
 };
 
@@ -86,7 +85,6 @@ on_open_tag(void *zp, char *ns_name, char **atts)
     if (p == ns_name)
     {
         name = strchr(ns_name, ' ') + 1;
-        parser->compat = 1;
     }
 
     p = strstr(ns_name, NS_OXPS);
@@ -223,13 +221,6 @@ on_text(void *zp, char *buf, int len)
     }
 }
 
-static xps_item_t *
-xps_process_compatibility(xps_context_t *ctx, xps_item_t *root)
-{
-    gs_warn("XPS document uses markup compatibility tags");
-    return root;
-}
-
 xps_item_t *
 xps_parse_xml(xps_context_t *ctx, byte *buf, int len)
 {
@@ -241,7 +232,6 @@ xps_parse_xml(xps_context_t *ctx, byte *buf, int len)
     parser.root = NULL;
     parser.head = NULL;
     parser.error = NULL;
-    parser.compat = 0;
 
     xp = XML_ParserCreateNS(NULL, ' ');
     if (!xp)
@@ -269,9 +259,6 @@ xps_parse_xml(xps_context_t *ctx, byte *buf, int len)
     }
 
     XML_ParserFree(xp);
-
-    if (parser.compat)
-        xps_process_compatibility(ctx, parser.root);
 
     return parser.root;
 }
@@ -302,6 +289,18 @@ xps_att(xps_item_t *item, const char *att)
         if (!strcmp(item->atts[i], att))
             return item->atts[i + 1];
     return NULL;
+}
+
+void
+xps_detach_and_free_remainder(xps_context_t *ctx, xps_item_t *root, xps_item_t *item)
+{
+    if (item->up)
+        item->up->down = NULL;
+
+    xps_free_item(ctx, item->next);
+    item->next = NULL;
+
+    xps_free_item(ctx, root);
 }
 
 void

@@ -137,6 +137,18 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     if (!root)
         return gs_rethrow(-1, "cannot parse xml");
 
+    if (!strcmp(xps_tag(root), "AlternateContent"))
+    {
+        xps_item_t *node = xps_lookup_alternate_content(root);
+        if (!node)
+        {
+            xps_free_item(ctx, root);
+            return gs_throw(-1, "expected FixedPage alternate content element");
+        }
+        xps_detach_and_free_remainder(ctx, root, node);
+        root = node;
+    }
+
     if (strcmp(xps_tag(root), "FixedPage"))
     {
         xps_free_item(ctx, root);
