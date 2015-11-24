@@ -678,7 +678,6 @@ xps_parse_poly_line_segment(xps_context_t *ctx, xps_item_t *root, int stroking, 
     char *points_att = xps_att(root, "Points");
     char *is_stroked_att = xps_att(root, "IsStroked");
     int is_stroked;
-    float x, y;
     float xy[2];
     char *s;
 
