@@ -3533,10 +3533,6 @@ a PostScript error handler that prints detailed information about the problem an
 kills the job.
 </p>
 
-<p>With switching to freetype 2 as the default font renderer in April 2010, we
-added a new switch:<code>-dDisableFAPI=true</code> to revert to the older
-behavior, just in case serious regression happens that cannot be resolved in a timely manner.</p>
-
 <p><p>
 The <code>-Z</code> and <code>-T</code> switches apply only
 if the interpreter was <a href="Make.htm#Debugging">built for a debugging
@@ -4086,7 +4082,13 @@ behavior, just in case serious regression happens that cannot be resolved in a t
 It is intended that this switch will be removed once the FAPI/Freetype implementation has
 proven itself robust and reliable in the "real world".
 
-
+<p>
+<em>
+NOTE: With version 9.18 recently released we have, for some time, regarded FAPI/Freetype as being
+the canonical glyph rendering solution for Ghostscript and associated products, and the non-FAPI
+rendering to be deprecated. As such, the <code>-dDisableFAPI=true</code> option is also considered
+deprecated, and should be expected to be removed shortly after the next release.
+</em>
 </p>
 
 <p>
