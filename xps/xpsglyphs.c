@@ -129,7 +129,6 @@ xps_select_best_font_encoding(xps_font_t *font)
         { 3, 3 },       /* Prc */
         { 3, 2 },       /* ShiftJis */
         { 3, 0 },       /* Symbol */
-        // { 0, * }, -- Unicode (deprecated)
         { 1, 0 },
         { -1, -1 },
     };
@@ -646,7 +645,7 @@ xps_parse_glyphs(xps_context_t *ctx,
 
         xps_parse_color(ctx, base_uri, fill_att, &colorspace, samples);
         if (fill_opacity_att)
-            samples[0] = atof(fill_opacity_att);
+            samples[0] *= atof(fill_opacity_att);
         xps_set_color(ctx, colorspace, samples);
 
         if (sim_bold)

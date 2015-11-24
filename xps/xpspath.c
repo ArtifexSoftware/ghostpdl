@@ -1083,7 +1083,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
         /* Color must be set *after* we begin opacity */
         xps_parse_color(ctx, base_uri, fill_att, &colorspace, samples);
         if (fill_opacity_att)
-            samples[0] = atof(fill_opacity_att);
+            samples[0] *= atof(fill_opacity_att);
         xps_set_color(ctx, colorspace, samples);
 
         opacity_pushed = true;
@@ -1136,7 +1136,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
         /* Color must be set *after* the group is pushed */
         xps_parse_color(ctx, base_uri, stroke_att, &colorspace, samples);
         if (stroke_opacity_att)
-            samples[0] = atof(stroke_opacity_att);
+            samples[0] *= atof(stroke_opacity_att);
         xps_set_color(ctx, colorspace, samples);
 
         gs_stroke(ctx->pgs);
