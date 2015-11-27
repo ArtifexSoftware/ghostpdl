@@ -878,7 +878,7 @@ s_jpxe_init(stream_state *ss)
 
 #if defined(JP2_LICENSE_NUM_1) && defined(JP2_LICENSE_NUM_2)
     /* set license keys if appropriate */
-    err = JP2_Decompress_SetLicense(state->handle,
+    err = JP2_Compress_SetLicense(state->handle,
         JP2_LICENSE_NUM_1, JP2_LICENSE_NUM_2);
     if (err != cJP2_Error_OK) {
         dmlprintf1(state->memory, "Luratech JP2 error %d setting license\n", (int)err);
