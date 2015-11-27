@@ -2350,7 +2350,7 @@ static int setcieaspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
          * the full 16 byte hashs.
          */
         gs_md5_finish(&md5, key);
-        dictkey = *(ulong *)&key[12];
+        dictkey = *(ulong *)&key[sizeof(key) - sizeof(ulong)];
     } else {
         gs_md5_finish(&md5, key);
     }
@@ -2607,7 +2607,7 @@ static int setcieabcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
          * the full 16 byte hashs.
          */
         gs_md5_finish(&md5, key);
-        dictkey = *(ulong *)&key[12];
+        dictkey = *(ulong *)&key[sizeof(key) - sizeof(ulong)];
     } else {
         gs_md5_finish(&md5, key);
     }
@@ -2877,7 +2877,7 @@ static int setciedefspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int 
          * the full 16 byte hashs.
          */
         gs_md5_finish(&md5, key);
-        dictkey = *(ulong *)&key[12];
+        dictkey = *(ulong *)&key[sizeof(key) - sizeof(ulong)];
     } else {
         gs_md5_finish(&md5, key);
     }
@@ -3178,7 +3178,7 @@ static int setciedefgspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
          * the full 16 byte hashs.
          */
         gs_md5_finish(&md5, key);
-        dictkey = *(ulong *)&key[12];
+        dictkey = *(ulong *)&key[sizeof(key) - sizeof(ulong)];
     } else {
         gs_md5_finish(&md5, key);
     }
