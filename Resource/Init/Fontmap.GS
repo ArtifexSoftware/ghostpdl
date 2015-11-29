@@ -32,11 +32,9 @@
 %	- Information depending on whether this is a real font or a
 %	font alias:
 %
-%		- For real fonts, the name of the Ghostscript font
-%		file (a Ghostscript string, enclosed in parentheses).
-%		The filename should include the extension, which (by
-%		convention) is `.gsf'.  `.pfa' and `.pfb' files are
-%		also usable as fonts for Ghostscript.
+%		- For real fonts, `PFA', `PFB', 'CFF', 'TTF,
+%               'TTC' (see below) files are usable as fonts for
+%               Ghostscript.
 %
 %		- For font aliases, the name of the font which should
 %		be used when this one is requested, preceded by a
@@ -44,6 +42,30 @@
 %		Note that an alias name cannot be enclosed in parentheses.
 %
 %	- At least one space or tab, and a terminating semicolon.
+
+%
+%
+%	There are three forms of record:
+%		Substitute a font by name:
+%			/FontName	/SubstituteFont ;
+%		Substitute a font with a file:
+%			/FontName	(/path/to/font/file) ;
+%		Substitute a font with a font from a Truetype collection:
+%			/FontName	<< /Path (/path/to/font/file) /SubfontID <ttc-index> >> ;
+%
+%	Substituting a font with a file can either use the full path form, for example:
+%			/CenturySchL-Ital (/usr/share/fonts/type1/gsfonts/c059033l.pfb) ;
+%	Or rely on the Ghostscript font search path:
+%			/CenturySchL-Ital (c059033l.pfb) ;
+%
+%
+%	The dictionary form can be used to substitute a font with an individual font from a Truetype
+%	collection:
+%			/NSimSun	<< /Path (/home/user/fonts/simsun.ttc) /SubfontID 1>> ;
+%	If the target is not a TTC, the SubfontID entry is ignored.
+%
+%	NOTE: The font name (the entry in first column) must match the name of the TTC index. As
+%	in the above example, index 0 in simsun.ttc must be /SimSun and index 1 must be /NSimSin.
 
 % The following table is executed as a PostScript file.
 % If you add new entries, be sure to copy the punctuation accurately;
@@ -340,4 +362,3 @@
 /TimesNewRoman,Bold			/TimesNewRomanPS-BoldMT		;
 /TimesNewRoman,Italic			/TimesNewRomanPS-ItalicMT	;
 /TimesNewRoman,BoldItalic		/TimesNewRomanPS-BoldItalicMT	;
-

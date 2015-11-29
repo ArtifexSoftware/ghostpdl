@@ -1817,7 +1817,18 @@ currentdict /.pickcmap_with_no_xlatmap .undef
 % <file> .loadttfont <type42font>
 /.loadttfont {
   TTFDEBUG { (.loadttfont) = } if
-  //false 0 .loadttfonttables
+  //false
+  % if this came from Fontmap, there may be a dictionary on the dict stack
+  % with a SubfontID in it. Validate it *is* a Fontmap record by also
+  % checking for a Path key
+  /SubfontID where
+  {
+    dup /Path known
+    {/SubfontID get}
+    {pop 0} ifelse
+  }
+  {0} ifelse
+  .loadttfonttables
   .makesfnts
   .getpost
   .pickcmap
