@@ -2173,6 +2173,11 @@ contains just the word "<code>quit</code>", then
 <code>quit.ps</code> there.  Each argument must be valid PostScript,
 either individual tokens as defined by the <code>token</code> operator,
 or a string containing valid PostScript.
+<p>
+Because Ghostscript must initialize the PostScript environment
+before executing the commands specified by this option it should
+be specified after other setup options.  Specifically this option
+'bind's all operations and sets the systemdict to readonly.
 </dl>
 
 <dl>
