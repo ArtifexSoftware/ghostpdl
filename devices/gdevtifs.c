@@ -92,6 +92,8 @@ tiff_get_some_params(gx_device * dev, gs_param_list * plist, int which)
     if ((code = param_write_bool(plist, "UseBigTIFF", &tfdev->UseBigTIFF)) < 0)
         ecode = code;
 #endif
+    if ((code = param_write_bool(plist, "TIFFDateTime", &tfdev->write_datetime)) < 0)
+        ecode = code;
     if ((code = tiff_compression_param_string(&comprstr, tfdev->Compression)) < 0 ||
         (code = param_write_string(plist, "Compression", &comprstr)) < 0)
         ecode = code;
@@ -130,6 +132,7 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
     const char *param_name;
     bool big_endian = tfdev->BigEndian;
     bool usebigtiff = tfdev->UseBigTIFF;
+    bool write_datetime = tfdev->write_datetime;
     uint16 compr = tfdev->Compression;
     gs_param_string comprstr;
     long downscale = tfdev->DownScaleFactor;
@@ -162,6 +165,15 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
         dmlprintf(dev->memory, "Warning: this version of libtiff does not support BigTIFF, ignoring parameter\n");
     usebigtiff = false;
 #endif
+
+    switch (code = param_read_bool(plist, (param_name = "TIFFDateTime"), &write_datetime)) {
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 0:
+        case 1:
+            break;
+    }
 
     /* Read Compression */
     switch (code = param_read_string(plist, (param_name = "Compression"), &comprstr)) {
@@ -249,6 +261,7 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
 
     tfdev->BigEndian = big_endian;
     tfdev->UseBigTIFF = usebigtiff;
+    tfdev->write_datetime = write_datetime;
     tfdev->Compression = compr;
     tfdev->MaxStripSize = mss;
     tfdev->DownScaleFactor = downscale;
@@ -282,7 +295,8 @@ int gdev_tiff_begin_page(gx_device_tiff *tfdev,
     }
 
     return tiff_set_fields_for_printer(pdev, tfdev->tif, tfdev->DownScaleFactor,
-                                       tfdev->AdjustWidth);
+                                       tfdev->AdjustWidth,
+                                       tfdev->write_datetime);
 }
 
 int tiff_set_compression(gx_device_printer *pdev,
@@ -309,7 +323,8 @@ int tiff_set_compression(gx_device_printer *pdev,
 int tiff_set_fields_for_printer(gx_device_printer *pdev,
                                 TIFF              *tif,
                                 int                factor,
-                                int                adjustWidth)
+                                int                adjustWidth,
+                                bool               writedatetime)
 {
     int width = gx_downscaler_scale(pdev->width, factor);
     int height = gx_downscaler_scale(pdev->height, factor);
@@ -338,7 +353,7 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
 
         TIFFSetField(tif, TIFFTAG_SOFTWARE, softwareValue);
     }
-    {
+    if (writedatetime) {
         struct tm tms;
         time_t t;
         char dateTimeValue[20];

@@ -49,7 +49,7 @@ struct gx_device_tfax_s {
     bool  BigEndian;            /* true = big endian; false = little endian*/
     bool UseBigTIFF;
     uint16 Compression;         /* same values as TIFFTAG_COMPRESSION */
-
+    bool write_datetime;
     TIFF *tif;                  /* For TIFF output only */
 };
 typedef struct gx_device_tfax_s gx_device_tfax;
@@ -68,7 +68,8 @@ static const gx_device_procs gdev_tfax_std_procs =
     arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,\
     false,                      /* default to not using bigtiff */\
     compr,\
-    NULL\
+    true, /* write_datetime */ \
+    NULL \
 }
 
 const gx_device_tfax gs_tiffcrle_device =
@@ -130,9 +131,11 @@ tfax_get_params(gx_device * dev, gs_param_list * plist)
     if ((code = param_write_bool(plist, "BigEndian", &tfdev->BigEndian)) < 0)
         ecode = code;
 #if (TIFFLIB_VERSION >= 20111221)
-    if ((code = param_write_bool(plist, "UseBigTiff", &tfdev->UseBigTIFF)) < 0)
+    if ((code = param_write_bool(plist, "UseBigTIFF", &tfdev->UseBigTIFF)) < 0)
         ecode = code;
 #endif
+    if ((code = param_write_bool(plist, "TIFFDateTime", &tfdev->write_datetime)) < 0)
+        ecode = code;
     if ((code = tiff_compression_param_string(&comprstr, tfdev->Compression)) < 0 ||
         (code = param_write_string(plist, "Compression", &comprstr)) < 0)
         ecode = code;
@@ -151,6 +154,7 @@ tfax_put_params(gx_device * dev, gs_param_list * plist)
     const char *param_name;
     bool big_endian = tfdev->BigEndian;
     bool usebigtiff = tfdev->UseBigTIFF;
+    bool write_datetime = tfdev->write_datetime;
     uint16 compr = tfdev->Compression;
     gs_param_string comprstr;
 
@@ -195,7 +199,7 @@ tfax_put_params(gx_device * dev, gs_param_list * plist)
     }
 
     /* Read UseBigTIFF option as bool */
-    switch (code = param_read_bool(plist, (param_name = "UseBigTiff"), &usebigtiff)) {
+    switch (code = param_read_bool(plist, (param_name = "UseBigTIFF"), &usebigtiff)) {
         default:
             ecode = code;
             param_signal_error(plist, param_name, ecode);
@@ -209,6 +213,15 @@ tfax_put_params(gx_device * dev, gs_param_list * plist)
         dmlprintf(dev->memory, "Warning: this version of libtiff does not support BigTIFF, ignoring parameter\n");
     usebigtiff = false;
 #endif
+
+    switch (code = param_read_bool(plist, (param_name = "TIFFDateTime"), &write_datetime)) {
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 0:
+        case 1:
+            break;
+    }
 
     /* Read Compression */
     switch (code = param_read_string(plist, (param_name = "Compression"), &comprstr)) {
@@ -390,6 +403,6 @@ tfax_begin_page(gx_device_tfax * tfdev, FILE * file)
             return_error(gs_error_invalidfileaccess);
     }
 
-    code = tiff_set_fields_for_printer(pdev, tfdev->tif, 1, tfdev->AdjustWidth);
+    code = tiff_set_fields_for_printer(pdev, tfdev->tif, 1, tfdev->AdjustWidth, tfdev->write_datetime);
     return code;
 }

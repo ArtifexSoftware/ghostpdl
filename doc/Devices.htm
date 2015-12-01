@@ -589,7 +589,8 @@ since readers need only store and process one strip at a time.  The
 <dl>
 <dt><code>-dMaxStripSize=<em>N</em></code> (non-negative integer; default = 8192)
 <dd>Set the maximum (uncompressed) size of a strip.
-</dl></blockquote>
+</dl>
+</blockquote>
 
 <p>
 The TIFF 6.0 specification, Section 7, page 27, recommends that the size of
@@ -622,6 +623,33 @@ pixels are arranged in reverse order.
 Earlier versions of Ghostscript always generated TIFF files with FillOrder = 2.
 According to the TIFF 6.0 specification, Section 8, page 32, support of
 FillOrder = 2 is not required in a Baseline TIFF compliant reader
+
+<p>
+The writing of BigTIFF format output files is controlled with the
+<code>-dUseBigTIFF</code> parameter.
+<p>
+Unfortunately, due the unpredictable size of compressed output, we cannot
+automate the selection of BigTIFF, using it only when the output file
+grows large enough to warrant it.
+
+<blockquote>
+<dl>
+<dt><code>-dUseBigTIFF(=<em>false/true</em>)</code> (boolean, default: false)
+<dd>Force use (or not) of BigTIFF format in output from TIFF devices
+</dl>
+</blockquote>
+
+<p>
+The writing of the DateTime TAG can be controlled using the
+<code>-dTIFFDateTime</code> parameter.
+
+<blockquote>
+<dl>
+<dt><code>-dTIFFDateTime(=<em>true/false</em>)</code> (boolean, default: true)
+<dd>Write or otherwise the DateTime TAG to the TIFF output file. Thus to disable
+writing the TAG, use: <code>-dTIFFDateTime=false</code>
+</dl>
+</blockquote>
 
 <p>
 The compression scheme that is used for the image data can be set for all tiff

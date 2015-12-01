@@ -36,6 +36,7 @@ typedef struct gx_device_tiff_s {
     long DownScaleFactor;
     long AdjustWidth;            /* 0 = no adjust, 1 = adjust to fax values, >1 = adjust to this */
     long MinFeatureSize;         /* < 2 == no darkening */
+    bool write_datetime;
     TIFF *tif;                  /* TIFF file opened on gx_device_common.file */
 } gx_device_tiff;
 
@@ -67,7 +68,7 @@ int tiff_set_compression(gx_device_printer *pdev,
                          long max_strip_size);
 
 int tiff_set_fields_for_printer(gx_device_printer *pdev, TIFF *tif, int factor,
-                                int adjustWidth);
+                                int adjustWidth, bool writedatetime);
 
 int gdev_tiff_begin_page(gx_device_tiff *tfdev, FILE *file);
 

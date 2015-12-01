@@ -82,7 +82,8 @@ const gx_device_tiff gs_tiffgray_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1  /* MinFeatureSize */
+    1,  /* MinFeatureSize */
+    true /* write_datetime */
 };
 
 /* ------ The tiffscaled device ------ */
@@ -115,7 +116,8 @@ const gx_device_tiff gs_tiffscaled_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1  /* MinFeatureSize */
+    1,  /* MinFeatureSize */
+    true /* write_datetime */
 };
 
 /* ------ The tiffscaled8 device ------ */
@@ -148,7 +150,8 @@ const gx_device_tiff gs_tiffscaled8_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1  /* MinFeatureSize */
+    1,  /* MinFeatureSize */
+    true /* write_datetime */
 };
 
 /* ------ The tiffscaled24 device ------ */
@@ -181,7 +184,8 @@ const gx_device_tiff gs_tiffscaled24_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1  /* MinFeatureSize */
+    1,  /* MinFeatureSize */
+    true /* write_datetime */
 };
 
 /* ------ The tiffscaled32 device ------ */
@@ -212,7 +216,8 @@ const gx_device_tiff gs_tiffscaled32_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1  /* MinFeatureSize */
+    1,  /* MinFeatureSize */
+    true /* write_datetime */
 };
 
 /* ------ The tiffscaled4 device ------ */
@@ -243,7 +248,8 @@ const gx_device_tiff gs_tiffscaled4_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1  /* MinFeatureSize */
+    1,  /* MinFeatureSize */
+    true /* write_datetime */
 };
 
 /* ------ Private functions ------ */
@@ -450,7 +456,8 @@ const gx_device_tiff gs_tiff32nc_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1  /* MinFeatureSize */
+    1,  /* MinFeatureSize */
+    true /* write_datetime */
 };
 
 /* 16-bit-per-plane separated CMYK color. */
@@ -534,6 +541,7 @@ static dev_proc_output_page(tiffseps_output_page);
     TIFF *tiff[GX_DEVICE_COLOR_MAX_COMPONENTS]; \
     bool  BigEndian;            /* true = big endian; false = little endian */\
     bool  UseBigTIFF;           /* true = output bigtiff, false don't */ \
+    bool  write_datetime;       /* true = write DATETIME tag, false = don't */ \
     bool  PrintSpotCMYK;        /* true = print CMYK equivalents for spot inks; false = do nothing */\
     uint16 Compression;         /* for the separation files, same values as
                                    TIFFTAG_COMPRESSION */\
@@ -705,6 +713,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
         { 0 },                  /* separation files */\
         arch_is_big_endian      /* true = big endian; false = little endian */,\
         false,                  /* UseBigTIFF */\
+        true,                   /* write_datetime */ \
         false,                  /* PrintSpotCMYK */\
         compr                   /* COMPRESSION_* */,\
         true,                   /* close_files */ \
@@ -2238,7 +2247,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
         }
 
     }
-    code = tiff_set_fields_for_printer(pdev, tfdev->tiff_comp, factor, 0);
+    code = tiff_set_fields_for_printer(pdev, tfdev->tiff_comp, factor, 0, tfdev->write_datetime);
 
     if (dst_bpc == 1 || dst_bpc == 8) {
         tiff_set_cmyk_fields(pdev, tfdev->tiff_comp, dst_bpc, tfdev->Compression, tfdev->MaxStripSize);
@@ -2296,7 +2305,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
         }
 
         
-        code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], factor, 0);
+        code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], factor, 0, tfdev->write_datetime);
         tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], dst_bpc, tfdev->Compression, tfdev->MaxStripSize);
         pdev->color_info.depth = save_depth;
         pdev->color_info.num_components = save_numcomps;
@@ -2602,7 +2611,7 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
 
         pdev->color_info.depth = 8;     /* Create files for 8 bit gray */
         pdev->color_info.num_components = 1;
-        code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 1, 0);
+        code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 1, 0, tfdev->write_datetime);
         tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], 1, tfdev->Compression, tfdev->MaxStripSize);
         pdev->color_info.depth = save_depth;
         pdev->color_info.num_components = save_numcomps;

@@ -60,7 +60,8 @@ const gx_device_tiff gs_tiff12nc_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1  /* MinFeatureSize */
+    1,  /* MinFeatureSize */
+    true /* write_datetime */
 };
 
 const gx_device_tiff gs_tiff24nc_device = {
@@ -75,7 +76,8 @@ const gx_device_tiff gs_tiff24nc_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1  /* MinFeatureSize */
+    1,  /* MinFeatureSize */
+    true /* write_datetime */
 };
 
 const gx_device_tiff gs_tiff48nc_device = {
@@ -90,7 +92,8 @@ const gx_device_tiff gs_tiff48nc_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1  /* MinFeatureSize */
+    1,  /* MinFeatureSize */
+    true /* write_datetime */
 };
 
 /* ------ Private functions ------ */
