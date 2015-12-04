@@ -702,7 +702,7 @@ put_clamped_coord(byte *p, double v, int num_bytes)
 /* scaling is as defined below. */
 static int
 put_float_mesh_data(gx_device_pdf *pdev, cos_stream_t *pscs, shade_coord_stream_t *cs,
-                    int flag, const pdf_mesh_data_params_t *pmdp)
+                    int flag, int num_comps, const pdf_mesh_data_params_t *pmdp)
 {
     int num_points = pmdp->num_points;
     byte b[1 + (3 + 3) * 16];	/* flag + x + y or c */
@@ -722,10 +722,13 @@ put_float_mesh_data(gx_device_pdf *pdev, cos_stream_t *pscs, shade_coord_stream_
                                      (flag >= 0) + num_points * 6)) < 0)
         return code;
     for (i = 0; i < pmdp->num_components; ++i) {
-        float c;
+        float c = 0;
         double v;
 
-        cs->get_decoded(cs, 0, NULL, &c);
+        code = cs->get_decoded(cs, 0, NULL, &c);
+        if (code < 0)
+            return code;
+
         if (pmdp->is_indexed)
             v = ENCODE_MESH_COLOR_INDEX(c);
         else {
@@ -742,7 +745,7 @@ put_float_mesh_data(gx_device_pdf *pdev, cos_stream_t *pscs, shade_coord_stream_
             else
                 vmin = 0.0, vmax = 1.0;
             if (pranges) {
-                double base = pranges[i].rmin, factor = pranges[i].rmax - base;
+                double base = pranges[i % num_comps].rmin, factor = pranges[i % num_comps].rmax - base;
 
                 vmin = vmin * factor + base;
                 vmax = vmax * factor + base;
@@ -861,7 +864,7 @@ pdf_put_mesh_shading(gx_device_pdf *pdev, cos_stream_t *pscs, const gs_shading_t
         if (from_array) {
             while ((flag = shade_next_flag(&cs, 0)) >= 0)
                 if ((code = put_float_mesh_data(pdev, pscs, &cs, flag,
-                                                &data_params)) < 0)
+                                                num_comp, &data_params)) < 0)
                     return code;
             if (!seofp(cs.s))
                 code = gs_note_error(gs_error_rangecheck);
@@ -879,7 +882,7 @@ pdf_put_mesh_shading(gx_device_pdf *pdev, cos_stream_t *pscs, const gs_shading_t
         if (from_array)
             while (!seofp(cs.s))
                 if ((code = put_float_mesh_data(pdev, pscs, &cs, -1,
-                                                &data_params)) < 0)
+                                                num_comp, &data_params)) < 0)
                     return code;
         code = cos_dict_put_c_key_int(pscd, "/VerticesPerRow",
                                       params->VerticesPerRow);
@@ -894,7 +897,7 @@ pdf_put_mesh_shading(gx_device_pdf *pdev, cos_stream_t *pscs, const gs_shading_t
                 data_params.num_points = (flag == 0 ? 12 : 8);
                 data_params.num_components = num_comp * (flag == 0 ? 4 : 2);
                 if ((code = put_float_mesh_data(pdev, pscs, &cs, flag,
-                                                &data_params)) < 0)
+                                                num_comp, &data_params)) < 0)
                     return code;
             }
             if (!seofp(cs.s))
@@ -912,7 +915,7 @@ pdf_put_mesh_shading(gx_device_pdf *pdev, cos_stream_t *pscs, const gs_shading_t
             while ((flag = shade_next_flag(&cs, 0)) >= 0) {
                 data_params.num_points = (flag == 0 ? 16 : 12);
                 data_params.num_components = num_comp * (flag == 0 ? 4 : 2);
-                if ((code = put_float_mesh_data(pdev, pscs, &cs, flag,
+                if ((code = put_float_mesh_data(pdev, pscs, &cs, flag, num_comp,
                                                 &data_params)) < 0)
                     return code;
             }
