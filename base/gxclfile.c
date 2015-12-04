@@ -307,7 +307,8 @@ clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
             /*  A special (fake) fname is passed in. If so, clone the FILE handle */
             *pcf = wrap_file(mem, gp_fdup(((IFILE *)ocf)->f, fmode), fmode);
             /* when cloning, copy other parts not done by wrap_file */
-            ((IFILE *)(*pcf))->filesize = ((IFILE *)ocf)->filesize;
+            if (*pcf)
+                ((IFILE *)(*pcf))->filesize = ((IFILE *)ocf)->filesize;
         } else {
             *pcf = wrap_file(mem, gp_fopen(fname, fmode), fmode);
         }

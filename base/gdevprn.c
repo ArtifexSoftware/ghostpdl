@@ -315,22 +315,10 @@ gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
         ppdev->buffer_space = 0;
         was_command_list = true;
 
+        prn_finish_bg_print(ppdev);
+        
         gs_free_object(pcldev->memory->non_gc_memory, pcldev->cache_chunk, "free tile cache for clist");
         pcldev->cache_chunk = 0;
-        if (ppdev->bg_print.ocfile) {
-            (void)ppdev->bg_print.oio_procs->fclose(ppdev->bg_print.ocfile, ppdev->bg_print.ocfname, true);
-        }
-        if (ppdev->bg_print.obfile) {
-            (void)ppdev->bg_print.oio_procs->fclose(ppdev->bg_print.obfile, ppdev->bg_print.obfname, true);
-        }
-        ppdev->bg_print.ocfile = ppdev->bg_print.obfile = NULL;
-        if (ppdev->bg_print.ocfname) {
-            gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.ocfname, "gdev_prn_tear_down(ocfname)");
-        }
-        if (ppdev->bg_print.obfname) {
-            gs_free_object(ppdev->memory->non_gc_memory, ppdev->bg_print.obfname, "gdev_prn_tear_down(obfname)");
-        }
-        ppdev->bg_print.ocfname = ppdev->bg_print.obfname = NULL;
 
         rc_decrement(pcldev->icc_cache_cl, "gdev_prn_tear_down");
         pcldev->icc_cache_cl = NULL;
@@ -1045,10 +1033,7 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                 threads_enabled = 0;	/* and allow current page to try foreground */
             }
             /* Use 'while' instead of 'if' to avoid nesting */
-            while (ppdev->bg_print_requested && threads_enabled &&
-                   /* FIXME: Don't allow bg_print if multiple rendering threads are used.  */
-                   /* TEMPORARY WORK AROUND FOR BUG 695711 */
-                   ppdev->num_render_threads_requested == 0) {
+            while (ppdev->bg_print_requested && threads_enabled) {
                 gx_device *ndev;
                 gx_device_printer *npdev;
                 gx_device_clist_reader *crdev = (gx_device_clist_reader *)ppdev;
