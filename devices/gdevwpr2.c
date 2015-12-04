@@ -1061,7 +1061,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     }
 #endif
     driver = gs_strtok(driverbuf, ",", &dbuflast);
-    output = gs_strtok(NULL, ",", dbuflast);
+    output = gs_strtok(NULL, ",", &dbuflast);
 
     if (!gp_OpenPrinter(device, &hprinter))
         return FALSE;
