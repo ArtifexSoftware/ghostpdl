@@ -125,7 +125,14 @@ prn_finish_bg_print(gx_device_printer *ppdev)
     /* close and unlink the files and free the device and its private allocator	*/
     if (ppdev->bg_print.device != NULL) {
         int closecode;
+        gx_device_printer *bgppdev = (gx_device_printer *)ppdev->bg_print.device;
         gx_semaphore_wait(ppdev->bg_print.sema);
+        /* If numcopies > 1, then the bg_print->device will have closed and reopened
+         * the output file, so the pointer in the original device is now stale,
+         * so copy it back.
+         * If numcopies == 1, this is pointless, but benign.
+         */
+        ppdev->file = bgppdev->file;
         closecode = gdev_prn_close_printer((gx_device *)ppdev);
         if (ppdev->bg_print.return_code == 0)
             ppdev->bg_print.return_code = closecode;	/* return code here iff there wasn't another error */
