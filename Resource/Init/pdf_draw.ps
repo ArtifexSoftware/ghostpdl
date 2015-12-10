@@ -217,6 +217,15 @@ pdfdict begin
 /resolvesh {		% <shname> resolvesh <shading>
                         % <shname> resolvesh <null>
   Page /Shading rget {
+  %% Horrible hacky fix, see /DoImage later in ths file for more information
+  %%
+  dup /ColorSpace known {
+    dup /ColorSpace get dup type /arraytype eq {
+      exch dup length dict copy exch
+      dup length array copy /ColorSpace exch 2 index 3 1 roll put
+    } {pop} ifelse
+  } if
+
     resolveshading
   } {
     //null
@@ -1828,6 +1837,26 @@ currentdict /add-to-last-param undef
 currentdict /last-ditch-bpc-csp undef
 
 /DoImage {
+  %% Bug #696439. This is incredibly icky. When we find indirect obects we resolve them
+  %% and store the resolved object in the containing object. This means that we retain
+  %% the image dicionary here until the end of job. Potentially wasteful. Even worse though
+  %% is the case where the image has a ColorSpace which is not an indirect object, but *is*
+  %% an ICCBased colour space. In ths case we end up resolving the colour space and storing it
+  %% here. Unfortunately, we use a ReusableStreamDecode filter on the ICC profile, which means
+  %% we end up retaining the memory for that too. ICC profiles can be large, and if there are a
+  %% lot of places where they get used, we can exhaust memory.
+  %% Here we check if the ColorSpace is an array object, if it is we *copy* the image dictionary
+  %% and use the copy instead. The copy is (eventually) discarded so we don't retain the ICC profile
+  %% and don't exhaust memory. Note that we have to copy the actual colour space array too, copying
+  %% the dictionary just copies the opriginal array as well.
+  %%
+  dup /ColorSpace known {
+    dup /ColorSpace get dup type /arraytype eq {
+      exch dup length dict copy exch
+      dup length array copy /ColorSpace exch 2 index 3 1 roll put
+    } {pop} ifelse
+  } if
+
   checkaltimage dup length 6 add dict  % <<image>> <<>>
   1 index /SMask knownoget {           % <<image>> <<>> <<sm>>
     dup 3 index ne {                   % <<image>> <<>> <<sm>> <<sm>>
@@ -2209,9 +2238,6 @@ drawopdict begin
       pdfformaterror
     } ifelse
     PDFfile exch setfileposition
-%    currentdict /TextSaveMatrix known currentdict /TextSaveMatrix known or {
-%      grestore
-%    } if
   } bdef
 end
 
