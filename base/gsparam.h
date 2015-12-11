@@ -387,6 +387,16 @@ int param_read_requested_typed(gs_param_list *, gs_param_name,
    param_read_requested_typed(plist, pkey, pvalue))
 
 /* Transmit parameters of specific types. */
+
+/*************** WARNING ********************
+ * You CANNOT use heap allocated strings as
+ * KEYS in param lists. Keys MUST be string
+ * constants.
+ * String values can be heap allocated by
+ * using param_string_from_transient_string()
+ * rather than param_string_from_string()
+ *
+ ********************************************/
 int param_read_null(gs_param_list *, gs_param_name);
 int param_write_null(gs_param_list *, gs_param_name);
 int param_read_bool(gs_param_list *, gs_param_name, bool *);

@@ -99,6 +99,70 @@ int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
                                   int old_width, int old_height,
                                   bool old_page_uses_transparency);
 
+/* Strings for cups_put/get_params */
+static const char * const cups_Integer_strings[] =
+{
+  "cupsInteger0",
+  "cupsInteger1",
+  "cupsInteger2",
+  "cupsInteger3",
+  "cupsInteger4",
+  "cupsInteger5",
+  "cupsInteger6",
+  "cupsInteger7",
+  "cupsInteger8",
+  "cupsInteger9",
+  "cupsInteger10",
+  "cupsInteger11",
+  "cupsInteger12",
+  "cupsInteger13",
+  "cupsInteger14",
+  "cupsInteger15",
+  NULL
+};
+
+static const char * const cups_Real_strings[] =
+{
+  "cupsReal0",
+  "cupsReal1",
+  "cupsReal2",
+  "cupsReal3",
+  "cupsReal4",
+  "cupsReal5",
+  "cupsReal6",
+  "cupsReal7",
+  "cupsReal8",
+  "cupsReal9",
+  "cupsReal10",
+  "cupsReal11",
+  "cupsReal12",
+  "cupsReal13",
+  "cupsReal14",
+  "cupsReal15",
+  NULL
+};
+
+static const char * const cups_String_strings[] =
+{
+  "cupsString0",
+  "cupsString1",
+  "cupsString2",
+  "cupsString3",
+  "cupsString4",
+  "cupsString5",
+  "cupsString6",
+  "cupsString7",
+  "cupsString8",
+  "cupsString9",
+  "cupsString10",
+  "cupsString11",
+  "cupsString12",
+  "cupsString13",
+  "cupsString14",
+  "cupsString15",
+  NULL
+};
+
 /*
  * Check if we are compiling against CUPS 1.2.  If so, enable
  * certain extended attributes and use a different page header
@@ -875,10 +939,6 @@ cups_get_params(gx_device     *pdev,	/* I - Device info */
   bool			b;		/* Temporary boolean value */
 #ifdef CUPS_RASTER_SYNCv1
   int			i;		/* Looping var */
-  char *get_name = (char *)gs_alloc_bytes(pdev->memory->non_gc_memory, gp_file_name_sizeof, "cups_get_params(get_name)");
-
-  if (get_name == NULL)
-    return(gs_note_error(gs_error_VMerror));
 #endif /* CUPS_RASTER_SYNCv1 */
 
 
@@ -1050,27 +1110,24 @@ cups_get_params(gx_device     *pdev,	/* I - Device info */
                         	&(cups->header.cupsBorderlessScalingFactor))) < 0)
     goto done;
 
-  for (i = 0; i < 16; i ++)
+  for (i = 0; cups_Integer_strings[i] != NULL; i ++)
   {
-    gs_sprintf(get_name, "cupsInteger%d", i);
-    if ((code = param_write_int(plist, get_name,
+    if ((code = param_write_int(plist, cups_Integer_strings[i],
                         	(int *)(cups->header.cupsInteger + i))) < 0)
       goto done;
   }
 
-  for (i = 0; i < 16; i ++)
+  for (i = 0; cups_Real_strings[i] != NULL; i ++)
   {
-    gs_sprintf(get_name, "cupsReal%d", i);
-    if ((code = param_write_float(plist, get_name,
+    if ((code = param_write_float(plist, cups_Real_strings[i],
                         	  cups->header.cupsReal + i)) < 0)
       goto done;
   }
 
-  for (i = 0; i < 16; i ++)
+  for (i = 0; cups_String_strings[i] != NULL; i ++)
   {
-    gs_sprintf(get_name, "cupsString%d", i);
     param_string_from_transient_string(s, cups->header.cupsString[i]);
-    if ((code = param_write_string(plist, get_name, &s)) < 0)
+    if ((code = param_write_string(plist, cups_String_strings[i], &s)) < 0)
       goto done;
   }
 
@@ -3036,11 +3093,6 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   int old_depth = cups->color_info.depth;
 #ifdef CUPS_RASTER_SYNCv1
   float			sf;		/* cupsBorderlessScalingFactor */
-  char *put_name = (char *)gs_alloc_bytes(pdev->memory->non_gc_memory, gp_file_name_sizeof, "cups_put_params(put_name)");
-
-  if (put_name == NULL)
-    return(gs_note_error(gs_error_VMerror));
-
 #endif /* CUPS_RASTER_SYNCv1 */
 
 #ifdef CUPS_DEBUG
@@ -3207,22 +3259,19 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 #ifdef CUPS_RASTER_SYNCv1
   floatoption(cupsBorderlessScalingFactor, "cupsBorderlessScalingFactor");
 
-  for (i = 0; i < 16; i ++)
+  for (i = 0; cups_Integer_strings[i] != NULL; i ++)
   {
-    gs_sprintf(put_name, "cupsInteger%d", i);
-    intoption(cupsInteger[i], put_name, unsigned)
+    intoption(cupsInteger[i], cups_Integer_strings[i], unsigned)
   }
 
-  for (i = 0; i < 16; i ++)
+  for (i = 0; cups_Real_strings[i] != NULL; i ++)
   {
-    gs_sprintf(put_name, "cupsReal%d", i);
-    floatoption(cupsReal[i], put_name)
+    floatoption(cupsReal[i], cups_Real_strings[i])
   }
 
-  for (i = 0; i < 16; i ++)
+  for (i = 0; cups_String_strings[i] != NULL; i ++)
   {
-    gs_sprintf(put_name, "cupsString%d", i);
-    stringoption(cupsString[i], put_name)
+    stringoption(cupsString[i], cups_String_strings[i])
   }
 
   stringoption(cupsMarkerType, "cupsMarkerType");
@@ -3938,9 +3987,6 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 #endif /* CUPS_DEBUG */
 
 done:
-#ifdef CUPS_RASTER_SYNCv1
-  gs_free_object(pdev->memory->non_gc_memory, put_name, "cups_put_params(put_name)");
-#endif
   return code;
 }
 
@@ -4494,7 +4540,9 @@ cups_print_chunked(gx_device_printer *pdev,
 		*dstptr;		/* Pointer to bits */
   int		count;			/* Count for loop */
   int		xflip,			/* Flip scanline? */
+#ifdef CUPS_DEBUG
                 yflip,			/* Reverse scanline order? */
+#endif
                 ystart, yend, ystep;    /* Loop control for scanline order */
   ppd_attr_t    *backside = NULL;
 
@@ -4533,12 +4581,16 @@ cups_print_chunked(gx_device_printer *pdev,
        (cups->header.Tumble &&
 	(backside && !strcasecmp(backside->value, "ManualTumble")))) &&
       !(cups->page & 1)) {
+#ifdef CUPS_DEBUG
     yflip = 1;
+#endif
     ystart = cups->height - 1;
     yend = -1;
     ystep = -1;
   } else {
+#ifdef CUPS_DEBUG
     yflip = 0;
+#endif
     ystart = 0;
     yend = cups->height;
     ystep = 1;
@@ -4721,7 +4773,9 @@ cups_print_banded(gx_device_printer *pdev,
   unsigned char	*cptr, *mptr, *yptr,	/* Pointer to components */
 		*kptr, *lcptr, *lmptr;	/* ... */
   int		xflip,			/* Flip scanline? */
+#ifdef CUPS_DEBUG
                 yflip,			/* Reverse scanline order? */
+#endif
                 ystart, yend, ystep;    /* Loop control for scanline order */
   ppd_attr_t    *backside = NULL;
 
@@ -4760,12 +4814,16 @@ cups_print_banded(gx_device_printer *pdev,
        (cups->header.Tumble &&
 	(backside && !strcasecmp(backside->value, "ManualTumble")))) &&
       !(cups->page & 1)) {
+#ifdef CUPS_DEBUG
     yflip = 1;
+#endif
     ystart = cups->height - 1;
     yend = -1;
     ystep = -1;
   } else {
+#ifdef CUPS_DEBUG
     yflip = 0;
+#endif
     ystart = 0;
     yend = cups->height;
     ystep = 1;
