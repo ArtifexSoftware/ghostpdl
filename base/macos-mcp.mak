@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2012 Artifex Software, Inc.
+# Copyright (C) 2001-2015 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -329,8 +329,8 @@ $(GLOBJ)gp_stdin.$(OBJ): $(GLSRC)gp_stdin.c $(AK) $(stdio__h) $(gx_h) $(gp_h)
 
 # ------------------------------------------------------------------- #
 
-MAC1=$(GLOBJ)gp_macio.$(OBJ) $(GLOBJ)gp_mac.$(OBJ) $(GLOBJ)gp_stdin.$(OBJ)
-MAC2=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_paper.$(OBJ) $(GLOBJ)gp_nsync.$(OBJ) $(GLOBJ)gdevemap.$(OBJ) $(GLOBJ)gsdll.$(OBJ)
+MAC1=$(GLOBJ)gp_macio.$(OBJ) $(GLOBJ)gp_mac.$(OBJ) $(GLOBJ)gp_stdin.$(OBJ) 
+MAC2=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_paper.$(OBJ) $(GLOBJ)gp_nsync.$(OBJ) $(GLOBJ)gdevemap.$(OBJ) $(GLOBJ)gsdll.$(OBJ) $(GLOBJ)gp_nxpsprn.$(OBJ)
 
 $(GLD)macos_.dev: $(MAC1)
 	$(SETMOD) $(DD)macos_ $(MAC1) $(MAC)

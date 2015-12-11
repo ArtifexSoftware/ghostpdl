@@ -165,8 +165,6 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 # This requires GL*_ to be defined, so it has to come after lib.mak.
 GLCCWIN=$(CC_WX) $(CCWINFLAGS) $(I_)$(GLI_)$(_I) $(GLF_)
 
-GLCCWINXPSPRINT=$(CC_WX) $(XPSPRINTCFLAGS) $(CCWINFLAGS) $(I_)$(GLI_)$(_I) $(GLF_)
-
 !include $(GLSRCDIR)\winplat.mak
 !include $(GLSRCDIR)\pcwin.mak
 
@@ -252,29 +250,15 @@ $(GLOBJ)gp_mshdl.$(OBJ): $(GLSRC)gp_mshdl.c $(AK)\
 # Define MS-Windows printer (file system) as a separable feature.
 
 msprinter_=$(GLOBJ)gp_msprn.$(OBJ)
-msxpsprinter_=$(GLOBJ)xpsprint.$(OBJ)
 
-$(GLD)msprinter_0.dev: $(ECHOGS_XE) $(msprinter_) $(WINLIB_MAK)
-	$(SETMOD) $(GLD)msprinter_0 $(msprinter_)
-	$(ADDMOD) $(GLD)msprinter_0 -iodev printer
-
-$(GLD)msprinter_1.dev: $(ECHOGS_XE) $(msprinter_) $(msxpsprinter_) \
- $(DD)xpswrite.dev $(WINLIB_MAK)
-	$(SETMOD) $(GLD)msprinter_1 $(msprinter_) $(msxpsprinter_)
-	$(ADDMOD) $(GLD)msprinter_1 -iodev printer
-
-$(GLD)msprinter.dev: $(GLD)msprinter_$(XPSPRINT).dev $(WINLIB_MAK)
-	$(CP_) $(GLD)msprinter_$(XPSPRINT).dev $(GLD)msprinter.dev
+$(GLD)msprinter.dev: $(msprinter_) $(WINLIB_MAK)
+	$(SETMOD) $(GLD)msprinter $(msprinter_)
+	$(ADDMOD) $(GLD)msprinter -iodev printer
 
 $(GLOBJ)gp_msprn.$(OBJ): $(GLSRC)gp_msprn.c $(AK)\
  $(ctype__h) $(errno__h) $(stdio__h) $(string__h)\
  $(gsmemory_h) $(gstypes_h) $(gxiodev_h) $(WINLIB_MAK)
 	$(GLCCWIN) $(GLO_)gp_msprn.$(OBJ) $(C_) $(GLSRC)gp_msprn.c
-
-# The XPS printer
-$(GLOBJ)xpsprint.$(OBJ): $(GLSRC)xpsprint.cpp $(windows__h) $(string__h) \
- $(gx_h) $(gserrors_h) $(WINLIB_MAK)
-	$(GLCCWINXPSPRINT) $(GLO_)xpsprint.$(OBJ) $(C_) $(GLSRC)xpsprint.cpp
 
 # Define MS-Windows polling as a separable feature
 # because it is not needed by the gslib.

@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2012 Artifex Software, Inc.
+# Copyright (C) 2001-2015 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -3467,6 +3467,12 @@ $(GLOBJ)gp_msdos.$(OBJ) : $(GLSRC)gp_msdos.c $(AK)\
  $(dos__h) $(stdio__h) $(string__h)\
  $(gsmemory_h) $(gstypes_h) $(gp_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gp_msdos.$(OBJ) $(C_) $(GLSRC)gp_msdos.c
+
+# Dummy XPS printing function - the only real one is in the Windows
+# platform code
+$(GLOBJ)gp_nxpsprn.$(OBJ) : $(GLSRC)gp_nxpsprn.c $(gp_h) $(LIB_MAK) \
+                            $(AK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gp_nxpsprn.$(OBJ) $(C_) $(GLSRC)gp_nxpsprn.c
 
 # ================ Dependencies for auxiliary programs ================ #
 

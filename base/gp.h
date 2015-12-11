@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2012 Artifex Software, Inc.
+/* Copyright (C) 2001-2015 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -530,5 +530,9 @@ bool gp_fseekable (FILE *f);
  */
 int
 gp_local_arg_encoding_get_codepoint(FILE *file, const char **astr);
+
+int
+gp_xpsprint(char *filename, char *printername, int *result);
+
 
 #endif /* gp_INCLUDED */

@@ -1,3 +1,18 @@
+/* Copyright (C) 2001-2015 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134, San Rafael,
+   CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+
 #include <stdio.h>
 #include <windows.h>
 #include <XpsObjectModel.h>
@@ -28,7 +43,7 @@ typedef HRESULT (CALLBACK* StartXpsPrintJobType)(
     /* [out] */ __RPC__deref_out_opt IXpsPrintJobStream **printTicketStream
 );
 
-extern "C" int XPSPrint(char *FileName, char *PrinterName, int *result)
+extern "C" int gp_xpsprint(char *filename, char *printername, int *result)
 {
     HRESULT hr = S_OK;
     HANDLE completionEvent = NULL;
@@ -92,7 +107,7 @@ extern "C" int XPSPrint(char *FileName, char *PrinterName, int *result)
         WCHAR MBStr[64];
         int code;
 
-        code = MultiByteToWideChar(CP_ACP, 0, PrinterName, -1, MBStr, 64);
+        code = MultiByteToWideChar(CP_ACP, 0, printername, -1, MBStr, 64);
         if (code != 0) {
             if (FAILED(hr = StartXpsPrintJobPtr(
                         (LPCWSTR)MBStr,
@@ -139,7 +154,7 @@ extern "C" int XPSPrint(char *FileName, char *PrinterName, int *result)
         WCHAR MBStr[MAX_PATH];
         int code;
 
-        code = MultiByteToWideChar(CP_ACP, 0, FileName, -1, MBStr, MAX_PATH);
+        code = MultiByteToWideChar(CP_ACP, 0, filename, -1, MBStr, MAX_PATH);
         if (code != 0) {
             if (FAILED(hr = xpsFactory->CreatePackageFromFile((LPCWSTR)MBStr, false, &package))){
                 *result = hr;

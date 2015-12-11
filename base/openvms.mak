@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2012 Artifex Software, Inc.
+# Copyright (C) 2001-2015 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -453,7 +453,7 @@ $(GS_XE) : openvms $(GLOBJDIR)gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
 
 # OpenVMS.dev
 
-openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_paper.$(OBJ) $(GLOBJ)gp_vms.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)
+openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_paper.$(OBJ) $(GLOBJ)gp_vms.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ) $(GLOBJ)gp_nxpsprn.$(OBJ)
 $(GLGEN)openvms_.dev : $(openvms__) $(GLGEN)nosync.dev
 	$(SETMOD) $(GLGEN)openvms_ $(openvms__) -include $(GLGEN)nosync
 

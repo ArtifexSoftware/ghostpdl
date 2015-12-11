@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2012 Artifex Software, Inc.
+# Copyright (C) 2001-2015 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -30,7 +30,7 @@ UNIX_AUX_MAK=$(GLSRC)unix-aux.mak $(TOP_MAKEFILES)
 # (SVR4) platforms.
 unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_upapr.$(OBJ) $(GLOBJ)gp_unix.$(OBJ)\
        $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)\
-       $(GLOBJ)gp_unix_cache.$(OBJ)
+       $(GLOBJ)gp_unix_cache.$(OBJ) $(GLOBJ)gp_nxpsprn.$(OBJ)
 
 $(GLGEN)unix_.dev: $(unix__) $(GLD)nosync.dev $(GLD)smd5.dev $(UNIX_AUX_MAK) $(MAKEDIRS)
 	$(SETMOD) $(GLGEN)unix_ $(unix__) -include $(GLD)nosync
@@ -61,7 +61,7 @@ $(AUX)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
 
 # System V platforms other than SVR4, which lack some system calls,
 # but have pipes.
-sysv__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_upapr.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_sysv.$(OBJ)
+sysv__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_upapr.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_sysv.$(OBJ) $(GLOBJ)gp_nxpsprn.$(OBJ)
 $(GLGEN)sysv_.dev: $(sysv__) $(GLD)nosync.dev $(UNIX_AUX_MAK) $(MAKEDIRS)
 	$(SETMOD) $(GLGEN)sysv_ $(sysv__) -include $(GLD)nosync
 

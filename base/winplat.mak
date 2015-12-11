@@ -18,11 +18,23 @@
 # Define the name of this makefile.
 WINPLAT_MAK=$(GLSRC)winplat.mak $(TOP_MAKEFILES)
 
+GLCCWINXPSPRINT=$(CC_WX) $(XPSPRINTCFLAGS) $(CCWINFLAGS) $(I_)$(GLI_)$(_I) $(GLF_)
+
 # Define generic Windows-specific modules.
 
-winplat_=$(GLOBJ)gp_ntfs.$(OBJ) $(GLOBJ)gp_win32.$(OBJ)
-$(GLD)winplat.dev : $(WINPLAT_MAK) $(ECHOGS_XE) $(winplat_) $(WINPLAT_MAK)
-	$(SETMOD) $(GLD)winplat $(winplat_)
+winplatcommon_=$(GLOBJ)gp_ntfs.$(OBJ) $(GLOBJ)gp_win32.$(OBJ)
+
+winplat_=$(winplatcommon_) $(GLOBJ)gp_nxpsprn.$(OBJ)
+winplatxpsprint_=$(winplatcommon_) $(GLOBJ)gp_wxpsprn.$(OBJ)
+
+$(GLD)winplat0.dev : $(WINPLAT_MAK) $(ECHOGS_XE) $(winplat_) $(WINPLAT_MAK)
+	$(SETMOD) $(GLD)winplat0 $(winplat_)
+
+$(GLD)winplat1.dev : $(WINPLAT_MAK) $(ECHOGS_XE) $(winplatxpsprint_) $(WINPLAT_MAK)
+	$(SETMOD) $(GLD)winplat1 $(winplatxpsprint_)
+
+$(GLD)winplat.dev : $(GLD)winplat$(XPSPRINT).dev
+	$(CP_) $(GLD)winplat$(XPSPRINT).dev $(GLD)winplat.dev 
 
 $(GLOBJ)gp_ntfs.$(OBJ): $(GLSRC)gp_ntfs.c $(AK)\
  $(dos__h) $(memory__h) $(stdio__h) $(string__h) $(windows__h)\
@@ -57,3 +69,9 @@ $(GLOBJ)gp_wsync.$(OBJ): $(GLSRC)gp_wsync.c $(AK)\
  $(dos__h) $(malloc__h) $(stdio__h) $(string__h) $(windows__h)\
  $(gp_h) $(gsmemory_h) $(gstypes_h) $(WINPLAT_MAK)
 	$(GLCCWIN) $(GLO_)gp_wsync.$(OBJ) $(C_) $(GLSRC)gp_wsync.c
+
+# The XPS printer
+$(GLOBJ)gp_wxpsprn.$(OBJ): $(GLSRC)gp_wxpsprn.cpp $(windows__h) $(string__h) \
+ $(gx_h) $(gserrors_h) $(WINLIB_MAK)
+	$(GLCCWINXPSPRINT) $(GLO_)gp_wxpsprn.$(OBJ) $(C_) $(GLSRC)gp_wxpsprn.cpp
+

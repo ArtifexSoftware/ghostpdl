@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2014 Artifex Software, Inc.
+/* Copyright (C) 2001-2015 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -30,9 +30,6 @@
 #include "gximdecode.h" /* Need so that we can unpack and decode */
 
 #define MAXPRINTERNAME 64
-#if defined(__WIN32__) && XPSPRINT==1
-int XPSPrint(char *FileName, char *PrinterName, int *reason);
-#endif
 
 #define MAXNAME 64
 #define PROFILEPATH "Documents/1/Resources/Profiles/"
@@ -1087,14 +1084,13 @@ xps_close_device(gx_device *dev)
     /* Release the icc info */
     xps_release_icc_info(dev);
 
-#if defined(__WIN32__) && XPSPRINT==1
     code = gdev_vector_close_file((gx_device_vector*)dev);
     if (code < 0)
         return gs_rethrow_code(code);
 
     if (strlen((const char *)xps->PrinterName)) {
         int reason;
-        code = XPSPrint(xps->fname, (char *)xps->PrinterName, &reason);
+        code = gp_xpsprint(xps->fname, (char *)xps->PrinterName, &reason);
         if (code < 0) {
             switch(code) {
                 case -1:
@@ -1145,11 +1141,8 @@ xps_close_device(gx_device *dev)
             }
             return(gs_throw_code(gs_error_invalidaccess));
         }
-        return(0);
     }
-#else
-    return gdev_vector_close_file((gx_device_vector*)dev);
-#endif
+    return(0);
 }
 
 /* Respond to a device parameter query from the client */
