@@ -2596,54 +2596,57 @@ currentdict /PDF2PS_matrix_key undef
   .getdeviceparams
   mark ne { pop pop
     % device supports OutputIntent parameter
-    Trailer /Root oget /OutputIntents knownoget {
-      dup type /arraytype eq {
-        {	% process all output profiles present
-          oforce
-          dup length dict .copydict
-          dup /DestOutputProfile knownoget {
-            PDFfile fileposition exch
-            mark exch { oforce } forall .dicttomark
-            //true resolvestream
-            [ { counttomark 1 add index
-                64000 string readstring
-                not { exit } if
-              } loop
-            ] exch closefile
-            0 1 index { length add } forall .bytestring
-            0 3 2 roll {
-              3 copy putinterval
-              length add
-            } forall pop
-            exch PDFfile exch setfileposition
-            1 index /DestOutputProfile 3 2 roll put
-          } if
-          % Convert to string array because it's easier for the device
-          [ 1 index /OutputCondition knownoget not { () } if
-            2 index /OutputConditionIdentifier knownoget not { () } if
-            3 index /RegistryName knownoget not { () } if
-            4 index /Info knownoget not { () } if
-            5 index /DestOutputProfile knownoget not { () } if
-          ]
-          [ /OutputIntent 3 2 roll /.pdfputparams where
-            { pop .pdfputparams }
-            { currentdevice //null //false counttomark 1 add 3 roll .putdeviceparamsonly }
-          ifelse
-          pop pop
-          pop	  % done with this OutputIntent dictionary
-        } forall
-      } {
-        pop
-        (   **** Warning: OutputIntent attribute of a wrong type is ignored.\n)
-        pdfformaterror
-      } ifelse
-    } if	% OutputIntents known
-    % tell device there are no more OutputIntents
-    [ /OutputIntent [ ] /.pdfputparams where
-      { pop .pdfputparams }
-      { currentdevice //null //false counttomark 1 add 3 roll .putdeviceparamsonly }
-      ifelse
-      pop pop
+    % Make sure we don't have a badly broken PDF file!
+    Trailer /Root knownoget {
+      /OutputIntents knownoget {
+        dup type /arraytype eq {
+          {	% process all output profiles present
+            oforce
+            dup length dict .copydict
+            dup /DestOutputProfile knownoget {
+              PDFfile fileposition exch
+              mark exch { oforce } forall .dicttomark
+              //true resolvestream
+              [ { counttomark 1 add index
+                  64000 string readstring
+                  not { exit } if
+                } loop
+              ] exch closefile
+              0 1 index { length add } forall .bytestring
+              0 3 2 roll {
+                3 copy putinterval
+                length add
+              } forall pop
+              exch PDFfile exch setfileposition
+              1 index /DestOutputProfile 3 2 roll put
+            } if
+            % Convert to string array because it's easier for the device
+            [ 1 index /OutputCondition knownoget not { () } if
+              2 index /OutputConditionIdentifier knownoget not { () } if
+              3 index /RegistryName knownoget not { () } if
+              4 index /Info knownoget not { () } if
+              5 index /DestOutputProfile knownoget not { () } if
+            ]
+            [ /OutputIntent 3 2 roll /.pdfputparams where
+              { pop .pdfputparams }
+              { currentdevice //null //false counttomark 1 add 3 roll .putdeviceparamsonly }
+            ifelse
+            pop pop
+            pop	  % done with this OutputIntent dictionary
+          } forall
+        } {
+          pop
+          (   **** Warning: OutputIntent attribute of a wrong type is ignored.\n)
+          pdfformaterror
+        } ifelse
+      } if	% OutputIntents known
+      % tell device there are no more OutputIntents
+      [ /OutputIntent [ ] /.pdfputparams where
+        { pop .pdfputparams }
+        { currentdevice //null //false counttomark 1 add 3 roll .putdeviceparamsonly }
+        ifelse
+        pop pop
+    } if
   } if
 } bind def
 
