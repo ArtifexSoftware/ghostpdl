@@ -1634,7 +1634,7 @@ $(GLOBJ)sjpegd.$(OBJ) : $(GLOBJ)sjpegd_$(SHARE_JPEG).$(OBJ) $(LIB_MAK) $(MAKEDIR
 
 # One .dev for both encoding and decoding
 $(GLD)sdct.dev: $(GLD)sdctd.dev $(GLD)sdcte.dev $(LIB_MAK) $(MAKEDIRS)
-	$(ADDMOD) $(GLD)sdct -include $(GLD)sdctd.dev $(GLD)sdcte.dev
+	$(SETMOD) $(GLD)sdct -include $(GLD)sdctd.dev $(GLD)sdcte.dev
 
 # sddparam is used by the filter operator.
 # It is not included automatically in sdctd.
