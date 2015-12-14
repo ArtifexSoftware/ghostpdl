@@ -1002,13 +1002,14 @@ $(PSD)psl2.dev : $(ECHOGS_XE)\
  $(PSD)filter.dev $(PSD)iodevice.dev $(PSD)pagedev.dev $(PSD)pattern.dev\
  $(PSD)psl1.dev $(GLD)psl2lib.dev $(PSD)psl2read.dev\
  $(PSD)sepr.dev $(PSD)type32.dev $(PSD)type42.dev\
- $(PSD)fimscale.dev $(PSD)form.dev $(INT_MAK) $(MAKEDIRS)
+ $(PSD)fimscale.dev $(PSD)form.dev $(PSD)icc.dev $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)psl2 -include $(PSD)dpsand2
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)cidfont $(PSD)cie $(PSD)cmapread $(PSD)compfont
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)dct $(PSD)filter $(PSD)iodevice
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)pagedev $(PSD)pattern $(PSD)psl1 $(GLD)psl2lib $(PSD)psl2read
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)sepr $(PSD)type32 $(PSD)type42
 	$(ADDMOD) $(PSD)psl2 -include $(PSD)fimscale $(PSD)form
+	$(ADDMOD) $(PSD)psl3 -include $(PSD)icc
 	$(ADDMOD) $(PSD)psl2 -emulator PostScript PostScriptLevel2
 
 # Define basic Level 2 language support.
@@ -1704,6 +1705,7 @@ $(PSD)psl3.dev : $(ECHOGS_XE)\
  $(GLD)psl3lib.dev $(PSD)psl3read.dev $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)psl3 -include $(PSD)psl2 $(PSD)cspixel $(PSD)frsd $(PSD)func
 	$(ADDMOD) $(PSD)psl3 -include $(GLD)psl3lib $(PSD)psl3read
+	$(ADDMOD) $(PSD)psl3 -include $(PSD)icc
 	$(ADDMOD) $(PSD)psl3 -emulator PostScript PostScriptLevel2 PostScriptLevel3
 
 $(PSOBJ)zfunc3.$(OBJ) : $(PSSRC)zfunc3.c $(memory__h) $(OP)\
@@ -1865,7 +1867,7 @@ $(PSD)pdf.dev : $(ECHOGS_XE)\
  $(GLD)dps2lib.dev $(PSD)dps2read.dev\
  $(PSD)pdffonts.dev $(PSD)psl3.dev $(PSD)pdfread.dev $(PSD)cff.dev\
  $(PSD)fmd5.dev $(PSD)fsha2.dev $(PSD)farc4.dev $(PSD)faes.dev\
- $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)icc.dev $(PSD)pdfops.dev\
+ $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)pdfops.dev\
  $(PSD)pdf_r6.dev $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)pdf -include $(PSD)psbase $(GLD)dps2lib
 	$(ADDMOD) $(PSD)pdf -include $(PSD)dps2read $(PSD)pdffonts $(PSD)psl3
@@ -1873,7 +1875,7 @@ $(PSD)pdf.dev : $(ECHOGS_XE)\
 	$(ADDMOD) $(PSD)pdf -include $(PSD)fmd5 $(PSD)fsha2
 	$(ADDMOD) $(PSD)pdf -include $(PSD)farc4 $(PSD)faes.dev
 	$(ADDMOD) $(PSD)pdf -include $(PSD)ttfont $(PSD)type2
-	$(ADDMOD) $(PSD)pdf -include $(PSD)icc $(PSD)pdfops
+	$(ADDMOD) $(PSD)pdf -include $(PSD)pdfops
 	$(ADDMOD) $(PSD)pdf -include $(PSD)pdf_r6
 	$(ADDMOD) $(PSD)pdf -functiontype 4
 	$(ADDMOD) $(PSD)pdf -emulator PDF

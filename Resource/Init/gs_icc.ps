@@ -13,6 +13,10 @@
 % CA  94903, U.S.A., +1(415)492-9861, for further information.
 %
 
+% We need LanguageLevel 2 or higher in order to have setuserparams and
+% << >> dictionaries
+languagelevel dup 2 .max .setlanguagelevel
+
 % ICCBased color space method dictionaries.
 % This assumes gs_ciecs2.ps has already been processed.
 
@@ -102,3 +106,4 @@ dup //null eq {pop {pop pop}} if /exec load
 end	% systemdict
 %END PSICC
 .setglobal
+.setlanguagelevel
