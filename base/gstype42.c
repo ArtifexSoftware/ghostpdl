@@ -1851,7 +1851,7 @@ gs_woff2sfnt(gs_memory_t *mem, stream *s, byte *outbuf, int *outbuflen)
     for (i = 0; i < ntables; i++)
         tabbufptrs[i] = tabbuf + (i * WOFF_TABDIR_ENT_LEN);
     tabbufptrs[i] = NULL;
-    qsort(tabbufptrs, ntables, sizeof(byte **), gs_woff_tabdir_compare);
+    qsort(tabbufptrs, ntables, sizeof(byte *), gs_woff_tabdir_compare);
 
     /* Two pointers into the output buffer: tdir and obuf.
      * tdir is the beginning of the current entry in the table directory
