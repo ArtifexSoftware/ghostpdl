@@ -2141,7 +2141,8 @@ currentdict end readonly def
 currentdict /bndef undef
 
 /resourcefont                   % <font-resource> resourcefont <font>
-{ dup /PSFont .knownget dup {
+{
+  dup /PSFont .knownget dup {
     pop /FID knownoget dup { pop type /fonttype eq } if
   } if {
     /PSFont get
@@ -2218,18 +2219,28 @@ currentdict /bndef undef
         5 array astore cvx                % /key res res desc stream {{proc} --stopped-- # ## ###}
         exec
         4 -1 roll {
+          PDFSTOPONERROR not {
+            PDFfile exch setfileposition
+            countdictstack exch sub 0 .max { end } repeat
+            count 4 add exch sub 0 .max { pop } repeat
+            //null
+          } {
+            /resourcefont cvx /undefinederror signalerror
+          } ifelse
+        } {
           PDFfile exch setfileposition
           countdictstack exch sub 0 .max { end } repeat
-          count 4 add exch sub 0 .max { pop } repeat
-          //null
-        } {
-          pop pop pop
+          count 3 sub exch sub 0 .max { pop } repeat
         } ifelse
         dup //null eq {
-          pop
-          (   **** Warning: can't process embedded font stream,\n        attempting to load the font using its name.\n)
-          pdfformaterror
-          dup run-fonttypeproc            % /key res font
+          PDFSTOPONERROR not {
+            pop
+            (   **** Warning: can't process embedded font stream,\n        attempting to load the font using its name.\n)
+            pdfformaterror
+            dup run-fonttypeproc            % /key res font
+          } {
+            /resourcefont cvx /undefinederror signalerror
+          } ifelse
         } if
         1 index                           % /key res font res
         4 -1 roll 2 index                 % res font desc /key font
