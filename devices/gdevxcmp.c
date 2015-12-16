@@ -564,9 +564,10 @@ iabs(int x)
     return (x < 0 ? -x : x);
 }
 
-/* Map RGB values to a pixel value. */
-gx_color_index
-gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
+/* Map RGB values to a pixel value. If force is true, then we will force 
+ * a match to one of the table values, avoiding an encode error */
+static gx_color_index
+encode_color(gx_device * dev, const gx_color_value cv[], bool force)
 {
     gx_device_X *const xdev = (gx_device_X *) dev;
     gx_color_value r = cv[0];
@@ -628,9 +629,9 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
                 cvg = X_max_color_value * cg / cmap->green_max;
                 cvb = X_max_color_value * cb / cmap->blue_max;
             }
-            if ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0 &&
+            if (force || ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0 &&
                 (iabs((int)g - (int)cvg) & xdev->cman.match_mask.green) == 0 &&
-                (iabs((int)b - (int)cvb) & xdev->cman.match_mask.blue) == 0) {
+                (iabs((int)b - (int)cvb) & xdev->cman.match_mask.blue) == 0)) {
                 gx_color_index pixel =
                     (xdev->cman.std_cmap.fast ?
                      (cr << xdev->cman.std_cmap.red.pixel_shift) +
@@ -650,7 +651,7 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 
             cr = r * (cmap->red_max + 1) / CV_DENOM;
             cvr = X_max_color_value * cr / cmap->red_max;
-            if ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0) {
+            if (force || ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0)) {
                 gx_color_index pixel = cr * cmap->red_mult + cmap->base_pixel;
 
                 if_debug2m('C', dev->memory, "[cX]%u (std cmap) => %lu\n", r, pixel);
@@ -683,9 +684,9 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
                 cvg = CV_FRACTION(cg, max_rgb);
                 cvb = CV_FRACTION(cb, max_rgb);
             }
-            if ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0 &&
+            if (force || ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0 &&
                 (iabs((int)g - (int)cvg) & xdev->cman.match_mask.green) == 0 &&
-                (iabs((int)b - (int)cvb) & xdev->cman.match_mask.blue) == 0) {
+                (iabs((int)b - (int)cvb) & xdev->cman.match_mask.blue) == 0)) {
                 gx_color_index pixel =
                     xdev->cman.dither_ramp[CUBE_INDEX(cr, cg, cb)];
 
@@ -702,7 +703,7 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 
             cr = r * dither_grays / CV_DENOM;
             cvr = (X_max_color_value * cr / max_gray);
-            if ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0) {
+            if (force || ((iabs((int)r - (int)cvr) & xdev->cman.match_mask.red) == 0)) {
                 gx_color_index pixel = xdev->cman.dither_ramp[cr];
 
                 if_debug2m('C', dev->memory, "[cX]%u (dither ramp) => %lu\n", r, pixel);
@@ -773,6 +774,18 @@ gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
     if_debug3m('C', dev->memory, "[cX]%u,%u,%u fails\n", r, g, b);
     return gx_no_color_index;
 #undef CV_DENOM
+}
+
+gx_color_index
+gdev_x_map_rgb_color(gx_device * dev, const gx_color_value cv[])
+{
+    gx_color_index color;
+
+    if ((color = encode_color(dev, cv, false)) != gx_no_color_index)
+        return color;
+    /* Failure. At this point get the closest color that we can.
+    * This should not fail. */
+    return encode_color(dev, cv, true);
 }
 
 /* Map a pixel value back to r-g-b. */
