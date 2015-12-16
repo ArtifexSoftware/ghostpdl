@@ -460,6 +460,45 @@ pdfdict begin
 /readorigxref		% <pos> readorigxref <trailerdict>
  {
    pop				% We do not need the position.
+
+   % First we search this (and any Previous) trailers, looking for
+   % the /Size of the xref. We use ths to initialise our storage
+   % of xref and similar objects. This avoids us havign to continually
+   % resize these objescts which is very wasteful, and leads to us
+   % spending much time in memory amanagement.
+   % Bug #696454
+   PDFfile fileposition
+   /dictlevelcount 0 def
+   /TrailerSizeError false def
+   /TrailerSize 0 def
+
+   {
+     % Throw away the 'xref' data up to the trailer dictionary
+     PDFfile 0 (trailer) /SubFileDecode filter flushfile
+     % Now read the trailer dictionary
+     PDFfile traileropdict .pdfrun
+
+     dup /Size known {
+       % If we have a /Size then use it and exit this loop
+       /Size get /TrailerSize exch def
+       exit
+     }{
+       dup /Prev known {
+         % We don't have a Size, but we have a Previous, set up to read it.
+         /Prev get PDFfile exch setfileposition
+       }{
+         % No size and no Prev with a Size. Fall back to resizing the xref as we go.
+         pop
+         (*** Warning: No trailer dictionary with a Size detected, xref processing will be dynamic and slower) pdfformaterror
+         /TrailerDict 0 def
+         exit
+       } ifelse
+     }ifelse
+   }loop
+
+   % Initialise the objects with the detected Size.
+   TrailerSize growPDFobjects
+   PDFfile exch setfileposition
    0				% Initialize xref table error counter
    false            % Have we seen at least one section entry in this xref ? Bug #694342
    { PDFfile token pop		% first object # or trailer
@@ -492,7 +531,24 @@ pdfdict begin
                 % This section might be adding new objects:
                 % ensure that Objects and Generations are big enough.
                 % stack: <err count> <first obj> <entry count>
-     2 copy add growPDFobjects
+     2 copy add
+     TrailerSize gt {
+       TrailerSizeError not {
+         /TrailerSizeError true def
+         PDFSTOPONERROR not {
+           (**** Warning: Discovered more enties in xref than declared in trailer /Size\n) pdfformaterror
+         } {
+           /readorigxref cvx /rangecheckerror signa lerror
+         } ifelse
+       } if
+       % We now know that the /Size was wrong. We could read the whole table
+       % resizing on every section, but if there are a lot of sections we
+       % end up spending lots of time in memory management (Bug #696454) so
+       % instead add 64k to the first object number in the section. This will
+       % waste some memory, but is faster in ths case.
+       1 index 65534 add dup /TrailerSize exch def
+       growPDFobjects
+     } if
      {				% stack: <err count> <obj num>
                 % Read xref line
        PDFfile 20 string readstring pop  % always read 20 chars.
@@ -541,7 +597,6 @@ pdfdict begin
      (   **** Warning:  length of some xref entries is not equal to 20 bytes.\n)
      pdfformaterror
    } if
-   /dictlevelcount 0 def
    PDFfile traileropdict .pdfrun
  } bind def
 
@@ -1024,7 +1079,9 @@ currentdict /xref-char-dict undef
         % Read the last cross-reference table.
    count /pdfemptycount exch def
    /Trailer << >> def		% Initialize to an emptry dict.
-   {initPDFobjects findxref readxref} .internalstopped {
+   {initPDFobjects findxref readxref}
+   PDFSTOPONERROR not {
+   .internalstopped {
      recover_xref_data		% Read failed.  Attempt to recover xref data.
      search_trailer		% Search for the primary trailer
    } {
@@ -1057,7 +1114,9 @@ currentdict /xref-char-dict undef
        } forall
      } loop			% Loop to previous trailer
    } ifelse			% Ifelse readxref stopped
-
+   }{
+     exec
+   } ifelse
    /NumObjects Objects length def  % To check that obj# < NumObjects
 
    % Scan numbers in the range 2147483648..4294967295 in Encrypt dictionary
