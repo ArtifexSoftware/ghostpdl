@@ -1410,23 +1410,49 @@ tiffsep_get_color_comp_index(gx_device * dev, const char * pname,
  */
 static void
 copy_separation_name(tiffsep_device * pdev,
-                char * buffer, int max_size, int sep_num)
+                char * buffer, int max_size, int sep_num, int escape)
 {
     int sep_size = pdev->devn_params.separations.names[sep_num].size;
     const byte *p = pdev->devn_params.separations.names[sep_num].data;
-    int i;
+    int r, w;
 
-    /* If name is too long then clip it. */
-    if (sep_size > max_size - 1)
-        sep_size = max_size - 1;
-    /* Avoid the use of '%' in names here. This is checked for here, rather
-     * than in gp_file_name_good_char, as this is NOT a requirement of the
-     * underlying file system, but rather a requirement of the code handling
-     * the separation names (where % is interpreted as a format specifier).
+    /* Previously the code here would simply replace any char that wasn't
+     * passed by gp_file_name_good_char (and %) with '_'. The grounds for
+     * gp_file_name_good_char are obvious enough. The reason for '%' is
+     * that the string gets fed to a printf style consumer later. It had
+     * problems in that any top bit set char was let through, which upset
+     * the file handling routines as they assume the filenames are in
+     * utf-8 format. */
+
+    /* New code: Copy the name, escaping non gp_file_name_good_char chars,
+     * % and top bit set chars using %02x format. In addition, if 'escape'
+     * is set, output % as %% to allow for printf later.
      */
-    for (i=0; i < sep_size; i++)
-        buffer[i] = (gp_file_name_good_char(p[i]) && p[i] != '%') ? p[i] : '_';
-    buffer[sep_size] = 0;       /* Terminate string */
+    r = 0;
+    w = 0;
+    while (r < sep_size && w < max_size-1)
+    {
+        int c = p[r++];
+        if (c >= 127 ||
+            !gp_file_name_good_char(c) ||
+            c == '%')
+        {
+            /* Top bit set, backspace, or char we can't represent on the
+             * filesystem. */
+            if (w + 2 + escape >= max_size-1)
+                break;
+            buffer[w++] = '%';
+            if (escape)
+                buffer[w++] = '%';
+            buffer[w++] = "0123456789ABCDEF"[c>>4];
+            buffer[w++] = "0123456789ABCDEF"[c&15];
+        }
+        else
+        {
+            buffer[w++] = c;
+        }
+    }
+    buffer[w] = 0;       /* Terminate string */
 }
 
 /*
@@ -1482,7 +1508,7 @@ create_separation_file_name(tiffsep_device * pdev, char * buffer,
         sep_num -= pdev->devn_params.num_std_colorant_names;
         if (use_sep_name) {
             copy_separation_name(pdev, buffer + base_filename_length,
-                                max_size - SUFFIX_SIZE - 2, sep_num);
+                                max_size - SUFFIX_SIZE - 2, sep_num, 1);
         } else {
                 /* Max of 10 chars in %d format */
             if (max_size < base_filename_length + 11)
@@ -2214,7 +2240,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     if (num_order == 0) {
         for (sep_num = 0; sep_num < num_spot; sep_num++) {
             copy_separation_name(tfdev, name,
-                gp_file_name_sizeof - base_filename_length - SUFFIX_SIZE, sep_num);
+                gp_file_name_sizeof - base_filename_length - SUFFIX_SIZE, sep_num, 0);
             dmlprintf1(pdev->memory, "%%%%SeparationName: %s\n", name);
         }
     }
