@@ -65,20 +65,7 @@ jbig2_alloc (Jbig2Allocator *allocator, size_t size, size_t num)
   return allocator->alloc(allocator, size * num);
 }
 
-void
-jbig2_free (Jbig2Allocator *allocator, void *p)
-{
-  allocator->free (allocator, p);
-}
-
-void *
-jbig2_realloc (Jbig2Allocator *allocator, void *p, size_t size, size_t num)
-{
-  /* check for integer multiplication overflow */
-  if (num > 0 && size >= (size_t)-0x100 / num)
-    return NULL;
-  return allocator->realloc(allocator, p, size * num);
-}
+/* jbig2_free and jbig2_realloc moved to the bottom of this file */
 
 static int
 jbig2_default_error(void *data, const char *msg,
@@ -481,3 +468,28 @@ jbig2_word_stream_buf_free(Jbig2Ctx *ctx, Jbig2WordStream *ws)
 {
   jbig2_free(ctx->allocator, ws);
 }
+
+/* When Memento is in use, the ->free and ->realloc calls get
+ * turned into ->Memento_free and ->Memento_realloc, which is
+ * obviously problematic. Undefine free and realloc here to
+ * avoid this. */
+#ifdef MEMENTO
+#undef free
+#undef realloc
+#endif
+
+void
+jbig2_free (Jbig2Allocator *allocator, void *p)
+{
+  allocator->free (allocator, p);
+}
+
+void *
+jbig2_realloc (Jbig2Allocator *allocator, void *p, size_t size, size_t num)
+{
+  /* check for integer multiplication overflow */
+  if (num > 0 && size >= (size_t)-0x100 / num)
+    return NULL;
+  return allocator->realloc(allocator, p, size * num);
+}
+

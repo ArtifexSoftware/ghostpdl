@@ -18,6 +18,20 @@
 */
 
 
+/* To enable Memento, either uncomment the following, or arrange to
+ * predefine MEMENTO whilst building. */
+/* #define MEMENTO */
+
+/* If we are being compiled as part of a larger project that includes
+ * Memento, that project should define JBIG_EXTERNAL_MEMENTO_H to point
+ * to the include file to use.
+ */
+#ifdef JBIG_EXTERNAL_MEMENTO_H
+#include JBIG_EXTERNAL_MEMENTO_H
+#else
+#include "memento.h"
+#endif
+
 /* library internals */
 
 typedef uint8_t byte;

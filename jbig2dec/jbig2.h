@@ -25,21 +25,6 @@ extern "C" {
 #ifndef _JBIG2_H
 #define _JBIG2_H
 
-/* To enable Memento, either uncomment the following, or arrange to
- * predefine MEMENTO whilst building. */
-/* #define MEMENTO */
-
-/* SumatraPDF: allow to build without MEMENTO (clashes with MuPDF's) */
-#ifndef JBIG_NO_MEMENTO
-/* If we are building as part of GS then make sure we use the version
- * of MEMENTO that is part of gs (in case of version skew) */
-#ifdef GSBUILD
-#include "../base/memento.h"
-#else
-#include "memento.h"
-#endif
-#endif
-
 /* warning levels */
 typedef enum {
   JBIG2_SEVERITY_DEBUG,
