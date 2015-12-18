@@ -164,7 +164,8 @@ def
   % Step 5.
   Trailer /ID knownoget { 0 oget } {
     ()
-    (   **** ID key in the trailer is required for encrypted files.\n) pdfformaterror
+    (   **** Error: ID key in the trailer is required for encrypted files.\n) pdfformaterror
+    (               File may not be possible to decrypt.\n) pdfformaterror
   } ifelse
   3 { concatstrings } repeat
   % We will finish step 5 after possibly including step 6.
@@ -215,7 +216,8 @@ def
   % Step 3.
   Trailer /ID knownoget { 0 oget } {
     ()
-    (   **** ID key in the trailer is required for encrypted files.\n) pdfformaterror
+    (   **** Error: ID key in the trailer is required for encrypted files.\n) pdfformaterror
+    (               File may not be possible to decrypt.\n) pdfformaterror
   } ifelse
   concatstrings md5
 
@@ -367,7 +369,8 @@ def
     << /Key 4 index /Padding //false >> aesdecode
 
     9 3 getinterval (adb) eq not {
-      (   **** Failed to decrypt Perms string.\n) pdfformaterror
+      (   **** Error: Failed to decrypt Perms string.\n) pdfformaterror
+      (               Cannot decrypt PDF file.\n) pdfformaterror
       printProducer
       /pdf_check_r5_password cvx /rangecheck signalerror
     } if
@@ -432,8 +435,9 @@ def
           } ifelse
         } ifelse
       } {
-        (   **** This file uses an unknown standard security handler revision: )
-        exch =string cvs concatstrings (\n) concatstrings pdfformaterror
+        (   **** Warning: This file uses an unknown standard security handler revision: )
+        exch =string cvs concatstrings (\n) concatstrings pdfformatwarning
+        (                 Cannot decrypt PDF file.\n) pdfformaterror
         printProducer
         /pdf_check_password cvx /undefined signalerror
       } ifelse
@@ -445,7 +449,8 @@ def
 /pdf_process_Encrypt {
   Trailer /Encrypt oget
   /Filter oget /Standard eq not {
-    (   **** This file uses an unknown security handler.\n) pdfformaterror
+    (   **** Warning: This file uses an unknown security handler.\n) pdfformatwarning
+    (                 Cannot decrypt PDF file.\n) pdfformaterror
     printProducer
     /pdf_process_Encrypt cvx /undefined signalerror
   } if
@@ -458,7 +463,8 @@ def
        {
          /FileKey exch def
        } {
-         (   **** Password did not work.\n) pdfformaterror
+         (   **** Error: Password did not work.\n) pdfformaterror
+         (               Cannot decrypt PDF file.\n) pdfformaterror
 
          % If ghostscript was built without libidn, it's missing the
          % .saslprep operator and thus can't do proper Unicode password
@@ -574,9 +580,10 @@ def
                   { dup /null eq
                       { pop //null
                       }
-                      { (   **** Unknown operator: )
+                      { (   **** Error: Unknown operator: )
                         exch =string cvs concatstrings (\n) concatstrings
                         pdfformaterror
+                        (               Output may be incorrect.\n) pdfformaterror
                       }
                     ifelse
                   }

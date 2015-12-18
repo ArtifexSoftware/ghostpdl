@@ -30,8 +30,9 @@ pdfdict begin
 /valueopdict mark
   (<<) cvn { mark } bind	% don't push an actual mark!
   (>>) cvn { { .dicttomark } stopped {
-      (   **** File has an unbalanced >> \(close dictionary\).\n)
+      (   **** Error: File has an unbalanced >> \(close dictionary\).\n)
       pdfformaterror
+      (                Output may be incorrect.\n) pdfformaterror
     } if
   } bind
   ([) cvn { mark } bind		% ditto
@@ -68,8 +69,9 @@ pdfdict begin
                 % Stack: post pre stream char t/f
   not {	% tolerate, but complain about bad syntax
     pop closefile (#) concatstrings exch
-    (   **** Warning: Invalid hex following '#' name escape, using literal '#' in name.\n)
+    (   **** Error: Invalid hex following '#' name escape, using literal '#' in name.\n)
     pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
   } {
     exch closefile concatstrings
     exch 2 1 index length 2 sub getinterval
@@ -84,7 +86,7 @@ pdfdict begin
 % to the operand stack.
 /.pdftokenerror {		% <count> <opdict> <errtoken> .pdftokenerror -
   BXlevel 0 le {
-    (   **** Unknown operator: ') pdfformaterror
+    (   **** Error: Unknown operator: ') pdfformaterror
     dup =string cvs pdfformaterror
     (') pdfformaterror
     % Attempt a retry scan of the element after changing to PDFScanInvNum
@@ -121,6 +123,7 @@ pdfdict begin
   { % clean up the operand stack if this was non-recoverable
   pop pop count exch sub { pop } repeat	% pop all the operands
   } if
+  (                Output may be incorrect.\n) pdfformaterror
 } bind def
 
 currentdict /num-chars-dict .undef
@@ -167,7 +170,8 @@ currentdict /num-chars-dict .undef
       % Hackish fix to detect missing whitespace after "endobj". Yet another
       % problem that (you guessed it!) Adobe Acrobat ignores silently
       dup .namestring (endobj) anchorsearch {
-        (   **** Missing whitespace after 'endobj'.\n) pdfformaterror
+        (   **** Error: Missing whitespace after 'endobj'.\n) pdfformaterror
+        (               Output may be incorrect.\n) pdfformaterror
         pop pop pop exch pop /endobj get exec
       } {
         %% First, lets try and see if this 'might' be a broken number
@@ -268,6 +272,7 @@ currentdict /num-chars-dict .undef
       /StreamRunAborted //true store
       (   **** Error reading a content stream. The page may be incomplete.\n)
       pdfformaterror
+      (               Output may be incorrect.\n) pdfformaterror
     } if
   } aload pop                           % file [ { {cnt <<>> file ... } loop } stopped /PDFsource PDFsource store {...} if
   .packtomark cvx                       % file { { {cnt <<>> file ... } loop } stopped /PDFsource PDFsource store {...} if}
@@ -511,7 +516,7 @@ currentdict /token_nofail_dict .undef
         (, xref gen#: ) concatstrings 1 index Generations  % put xref gen #
         exch get 1 sub =string cvs concatstrings (\n) concatstrings
       } ifelse
-      pdfformaterror			% Output warning message
+      pdfformatwarning			% Output warning message
     } {					% Else QUIET ...
       pop				% Pop generation number
     } ifelse
@@ -554,11 +559,13 @@ currentdict /token_nofail_dict .undef
     {
       2 index type /integertype ne 2 index type /integertype ne or {
         count 3 gt {
-          (   **** Warning: obj definition followed by multiple tokens, attempting to recover.\n) pdfformaterror
+          (   **** Error: obj definition followed by multiple tokens, attempting to recover.\n) pdfformaterror
+          (               Output may be incorrect.\n) pdfformaterror
           pop
         } {
           //null
-          (   **** Warning: ignoring obj followed by multiple tokens.\n) pdfformaterror
+          (   **** Error: ignoring obj followed by multiple tokens.\n) pdfformaterror
+          (               Output may be incorrect.\n) pdfformaterror
           exit
         } ifelse
       } {
@@ -594,8 +601,9 @@ currentdict /token_nofail_dict .undef
   valueopdict { } forall
   (%%EOF) cvn { exit } bind
   /endobj {  % bug 689795
-    (   **** Warning: Objects in an object stream should not have 'endobj'.\n)
+    (   **** Error: Objects in an object stream should not have 'endobj'.\n)
     pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
   } bind
 .dicttomark readonly def
 
@@ -687,7 +695,8 @@ currentdict /token_nofail_dict .undef
   PDFDEBUG { (%Resolving object stream: ) print } if
   dup 0 resolveR % Get the objectstream dict, all objstrms use 0 as the gen #
   dup /Type get /ObjStm ne {	% Verify type is object stream
-    (   **** Incorrect Type in object stream dictionary.\n) pdfformaterror
+    (   **** Error: Incorrect Type in object stream dictionary.\n) pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
     /resolveobjectstream cvx /typecheck signalerror
   } if
   dup /N get			% Save number of objects onto the stack
@@ -716,7 +725,8 @@ currentdict /token_nofail_dict .undef
   3 1 roll
   resolveobjstreamopdict .pdfrun % Get PDF objects
   count counttomark 1 add index ne { % Check stack depth
-    (   **** Incorrect object count in object stream.\n) pdfformaterror
+    (   **** Error: Incorrect object count in object stream.\n) pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
     /resolveobjectstream cvx /rangecheck signalerror
   } if
                 % We have the object data
@@ -754,11 +764,13 @@ currentdict /no_debug_dict undef
   /endstream { endobj exit } bind
   /endobj { endobj exit } bind
   /endjobj { % Bug 689876.
-     (   **** Operator 'endobj' is misspelled as 'endjobj'.\n) pdfformaterror
+     (   **** Error: Operator 'endobj' is misspelled as 'endjobj'.\n) pdfformaterror
+     (               Output may be incorrect.\n) pdfformaterror
      endobj exit
   } bind
   /enbobj { % Bug 690397.
-     (   **** Operator 'endobj' is misspelled as 'enbobj'.\n) pdfformaterror
+     (   **** Error: Operator 'endobj' is misspelled as 'enbobj'.\n) pdfformaterror
+     (               Output may be incorrect.\n) pdfformaterror
      endobj exit
   } bind
                 % OmniForm generates PDF file with endobj missing in some
@@ -773,9 +785,10 @@ currentdict /no_debug_dict undef
     } if
   } if
   1 index dup 0 le exch NumObjects ge or {
-    (   **** Considering object with an invalid number ) 
+    (   **** Error: Considering object with an invalid number )
     2 index 20 string cvs concatstrings   
     ( as null.\n) concatstrings pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
     pop pop //null
   } {
     1 index resolved? {           % If object has already been resolved ...
@@ -788,12 +801,14 @@ currentdict /no_debug_dict undef
          ObjectStream 1 index get dup 0 eq { % Check if obj in not an objstream
            pop exch PDFoffset add PDFfile exch setfileposition
            PDFfile token pop 2 copy ne
-            { (   **** Unrecoverable error in xref!\n) pdfformaterror
+            { (   **** Error: Unrecoverable error in xref!\n) pdfformaterror
+              (               Output may be incorrect.\n) pdfformaterror
               /resolveR cvx /rangecheck signalerror
             }
            if pop PDFfile token pop
            PDFfile token pop /obj ne
-            { (   **** Unrecoverable error in xref!\n) pdfformaterror
+            { (   **** Error: Unrecoverable error in xref!\n) pdfformaterror
+              (               Output may be incorrect.\n) pdfformaterror
               /resolveR cvx /rangecheck signalerror
             }
            if
@@ -869,7 +884,8 @@ currentdict /no_debug_dict undef
         PDFfile dup fileposition 1 sub setfileposition
         //true or
       } if {
-         (   **** Warning: stream operator isn't terminated by valid EOL.\n) pdfformaterror
+         (   **** Error: stream operator isn't terminated by valid EOL.\n) pdfformaterror
+         (               Output may be incorrect.\n) pdfformaterror
       } if
 
       dup /FilePosition PDFfile fileposition put
@@ -897,7 +913,8 @@ currentdict /no_debug_dict undef
         % Capture the sub-stream contents in a string.
     dup /Length oget string PDFsource exch readstring
     not {
-      (   **** Warning: Unexpected EOF in stream!\n) pdfformaterror
+      (   **** Error: Unexpected EOF in stream!\n) pdfformaterror
+      (               Output may be incorrect.\n) pdfformaterror
       /stream cvx /rangecheck signalerror
     } if
     1 index exch /File exch put
@@ -905,16 +922,19 @@ currentdict /no_debug_dict undef
   PDFsource token_nofail not { //null } if
   dup /endobj eq {
     % Another case that Acrobat Reader handles -- 'endobj' without 'endstream'.
-    (   **** Warning: stream missing 'endstream'.\n) pdfformaterror
+    (   **** Error: stream missing 'endstream'.\n) pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
     pop /endstream		% fake a valid endstream
   } if
   /endstream ne {
-    (   **** Warning: stream Length incorrect.\n) pdfformaterror
+    (   **** Error: stream Length incorrect.\n) pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
     dup /Length undef % prevent the use of the incorrect length.
     cvx endobj exit   % exit from .pdfrun now.
   } {
     PDFsource (??) .peekstring pop (>>) eq { % Bug 690161, sample #1
-      (   **** Warning: Spurious '>>' after 'endstream' ignored.\n) pdfformaterror
+      (   **** Error: Spurious '>>' after 'endstream' ignored.\n) pdfformaterror
+      (               Output may be incorrect.\n) pdfformaterror
       PDFsource (12) readstring pop pop
     } if
   } ifelse
@@ -967,9 +987,11 @@ currentdict /no_debug_dict undef
   //unabbrevfilterdict 1 index .knownget { exch pop } if
   dup /Filter resourcestatus { pop pop } {
     Repaired exch	% this error is not the creator's fault
+    RepiredAnError exch
     (   **** ERROR: Unable to process ) pdfformaterror
     64 string cvs pdfformaterror
     ( data. Page will be missing data.\n) pdfformaterror
+    /RepairedAnError exch store
     /Repaired exch store % restore the previous "Repaired" state
     % provide a filter that returns EOF (no data)
     /.EOFDecode
@@ -1003,7 +1025,8 @@ currentdict /pdf_rules_dict undef
   {
     dup length 3 index length ne         %% compare lengths of DecodeParmas and Filter arrays
     {                                    %% if they aren't the same, ignore the decode params
-      (   **** Warning: ignoring stream /DecodeParams array as its length is different to the Filters array.\n) pdfformaterror
+      (   **** Error: ignoring stream /DecodeParams array as its length is different to the Filters array.\n) pdfformaterror
+      (               Output may be incorrect.\n) pdfformaterror
       3 -1 roll pop //null 3 1 roll
       { filtername add_A85_param filter }
     }
@@ -1072,7 +1095,8 @@ currentdict /pdf_rules_dict undef
       /DecodeParms /Filter filterparms
                 % Stack: readdata? dict parms filternames
       2 index /File .knownget not { 
-        (   **** Warning: Stream object is missing the stream data.\n)
+        (   **** Error: Stream object is missing the stream data.\n)
+        (               Output may be incorrect.\n) pdfformaterror
         pdfformaterror
         () 
       } if exch

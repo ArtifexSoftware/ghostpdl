@@ -39,8 +39,9 @@ pdfdict begin
   drawopdict { } forall
   /endstream { exit } bind
   (%%EOF) cvn { exit } bind		% for filters
-  /obj { (   **** Warning: Content stream is not terminated by 'endstream'.\n)
-         pdfformaterror pop pop exit
+  /obj { (   **** Error: Content stream is not terminated by 'endstream'.\n)
+         pdfformaterror
+         (                Output may be incorrect.\n) pdfformaterror
        } bind
         % PDF 1.1 operators
   /BX { /BXlevel BXlevel 1 add store } bind
@@ -80,8 +81,9 @@ pdfdict begin
   /MP { pop } bind
   /DP { pop pop } bind
   /- { 0  % Bug 690016
-       (   **** Warning: Invalid operator '-' is assumed to be a number 0.\n)
+       (   **** Error: Invalid operator '-' is assumed to be the number 0.\n)
        pdfformaterror
+       (               Output may be incorrect.\n) pdfformaterror
      } bind
 .dicttomark readonly def
 
@@ -261,7 +263,12 @@ currentdict /runpdfstring .undef
 } bind def
 
 /runpdfend {
-   Repaired { printrepaired } if
+   RepairedAnError
+   {
+     printrepairederror
+   } {
+     Repaired { printrepaired } if
+   } ifelse
    currentdict pdfclose
    end			% temporary dict
    end			% pdfdict
@@ -407,7 +414,7 @@ pdfdict begin
 /traileropdict mark
   (<<) cvn { /dictlevelcount dictlevelcount 1 add store mark } bind
   (>>) cvn { { .dicttomark } stopped {
-              (   **** File has unbalanced >> in trailer.\n) pdfformaterror
+              (   **** Warning: File has unbalanced >> in trailer.\n) pdfformatwarning
              } if
              /dictlevelcount dictlevelcount 1 sub def
              dictlevelcount 0 eq { exit } if
@@ -446,9 +453,9 @@ pdfdict begin
           % Empty xref section
           pop exit
         } {
-          (   **** Warning: bad string \() exch concatstrings
+          (   **** Warning: Invalid string \() exch concatstrings
           (\) follows xref section header.\n) concatstrings
-          pdfformaterror
+          pdfformatwarning
           /setxrefentry cvx /syntaxerror signalerror
         } ifelse
       } bind
@@ -489,7 +496,7 @@ pdfdict begin
        }{
          % No size and no Prev with a Size. Fall back to resizing the xref as we go.
          pop
-         (*** Warning: No trailer dictionary with a Size detected, xref processing will be dynamic and slower) pdfformaterror
+         (*** Warning: No trailer dictionary with a Size detected, xref processing will be dynamic and slower) pdfformatwarning
          /TrailerDict 0 def
          exit
        } ifelse
@@ -523,7 +530,7 @@ pdfdict begin
          exec
        } {
          (   **** Warning: xref subsection header has extra characters.\n)
-         pdfformaterror
+         pdfformatwarning
          /setxrefentry cvx /syntaxerror signalerror
        } ifelse
        PDFfile read { pop } { exit } ifelse
@@ -536,7 +543,7 @@ pdfdict begin
        TrailerSizeError not {
          /TrailerSizeError true def
          PDFSTOPONERROR not {
-           (**** Warning: Discovered more enties in xref than declared in trailer /Size\n) pdfformaterror
+           (**** Warning: Discovered more enties in xref than declared in trailer /Size\n) pdfformatwarning
          } {
            /readorigxref cvx /rangecheckerror signa lerror
          } ifelse
@@ -574,7 +581,7 @@ pdfdict begin
          pop			% pop dup of line tag
          1 index 0 eq {
            (   **** Warning: considering '0000000000 XXXXX n' as a free entry.\n)
-           pdfformaterror
+           pdfformatwarning
          } {
            0 3 1 roll		% Set ObjectStream object number = 0
            //false setxrefentry	% Save xref entry, don't change existing entries
@@ -595,7 +602,7 @@ pdfdict begin
    } loop
    0 ne {
      (   **** Warning:  length of some xref entries is not equal to 20 bytes.\n)
-     pdfformaterror
+     pdfformatwarning
    } if
    PDFfile traileropdict .pdfrun
  } bind def
@@ -745,7 +752,7 @@ currentdict /xref-char-dict undef
    % Check that the given location is within the file.
    dup PDFfilelen gt {
        (   **** Warning:  Specified xref location is beyond end of file.\n)
-       pdfformaterror
+       pdfformatwarning
        /readxref cvx /invalidaccess signalerror
    } if
    setfileposition
@@ -773,7 +780,7 @@ currentdict /xref-char-dict undef
         dup PDFfilelen lt{
           readpdf15xref pop
         } {
-          (   **** Warning:  This hybrid file's XRefStm points beyond the end of file.\n   Ignoring error, this may cause some objects not to display.\n) pdfformaterror
+          (   **** Error:  This hybrid file's XRefStm points beyond the end of file.\n   Ignoring error, output may be incorrect.\n) pdfformaterror
           pop
         }ifelse
      } if
@@ -854,7 +861,7 @@ currentdict /xref-char-dict undef
     /D knownoget {
       dup /BaseState knownoget { /OFF eq } { //false } ifelse {
         (   **** Warning:  Default viewing OC config dictionary has /BaseState /OFF\n)
-        pdfformaterror
+        pdfformatwarning
         1 index {
           oforce dup type /dicttype eq {
             /OFF 0 put
@@ -997,9 +1004,9 @@ currentdict /xref-char-dict undef
         % Stack:  <filesize> <obj num> <need rebuild flag>
         {
           (   **** Warning:  File has an invalid xref entry:  )
-          pdfformaterror
-          pdfstring cvs pdfformaterror
-          (.  Rebuilding xref table.\n) pdfformaterror
+          pdfformatwarning
+          pdfstring cvs pdfformatwarning
+          (.  Rebuilding xref table.\n) pdfformatwarning
           search_objects
           exit
         } if				% If the entry is invalid
@@ -1046,6 +1053,7 @@ currentdict /xref-char-dict undef
    cvlit /PDFfile exch def
    /PDFsource PDFfile def
    /Repaired //false def
+   /RepairedAnError //false def
    /StreamRunAborted //false def
    /NeedAppearances //false def
    currentglobal //true .setglobal globaldict begin
@@ -1067,7 +1075,7 @@ currentdict /xref-char-dict undef
      }
      { exch {
          (   **** Warning: PDF version number not followed by EOL.\n)
-         pdfformaterror
+         pdfformatwarning
        }
        if exit
      }
@@ -1165,6 +1173,7 @@ currentdict /xref-char-dict undef
     dup 0 le {
        (   **** Error: Cannot find a 'startxref' anywhere in the file.\n)
        pdfformaterror
+       (               Output may be incorrect.\n) pdfformaterror
        /findxref cvx /syntaxerror signalerror
     } if
   } if
@@ -1172,6 +1181,7 @@ currentdict /xref-char-dict undef
   pop token not { //null } if
   dup type /integertype ne {
     (   **** Error: invalid token after startxref.\n)  pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
         /findxref cvx /syntaxerror signalerror
   } if
 } bind def
@@ -1188,6 +1198,12 @@ currentdict /xref-char-dict undef
 } bind def
 
 /pdfformaterror {	% <string> pdfformaterror -
+  stdoutprint
+  /Repaired //true store
+  /RepairedAnError //true store
+} bind def
+
+/pdfformatwarning {	% <string> pdfformaterror -
   stdoutprint
   /Repaired //true store
 } bind def
@@ -1229,17 +1245,30 @@ currentdict /xref-char-dict undef
       (\n) stderrprint
    } if
 } bind def
+
 /printrepaired {
-   printCollectedWarnings
-   (\n   **** This file had errors that were repaired or ignored.\n)
-  stderrprint
-  printProducer
-  (   **** Please notify the author of the software that produced this\n)
-  stderrprint
-  (   **** file that it does not conform to Adobe's published PDF\n)
-  stderrprint
-  (   **** specification.\n\n)
-  stderrprint
+  QUIET not
+  {
+    printCollectedWarnings
+    (\n   **** This file had errors that were repaired or ignored.\n)
+    stdoutprint
+    printProducer
+    (   **** Please notify the author of the software that produced this\n)
+    stdoutprint
+    (   **** file that it does not conform to Adobe's published PDF\n)
+    stdoutprint
+    (   **** specification.\n\n)
+    stdoutprint
+  } if
+} bind def
+
+/printrepairederror {
+  QUIET not
+  {
+    printrepaired
+    (   **** The rendered output from this file may be incorrect.\n)
+    stdoutprint
+  } if
 } bind def
 
 % Write the outline structure for a file.  Uses linkdest (below).
@@ -1307,14 +1336,14 @@ currentdict /xref-char-dict undef
     {
       cleartomark	% ignore this link
       (   **** Warning: Outline has invalid link that was discarded.\n)
-      pdfformaterror
+      pdfformatwarning
     } {
       /Title knownoget {
         {/Title exch /OUT pdfmark} stopped {cleartomark} if
       } {
         cleartomark
         (   **** Warning: Outline without /Title attribute was discarded.\n)
-        pdfformaterror
+        pdfformatwarning
       } ifelse
     }
    ifelse
@@ -1342,8 +1371,9 @@ currentdict /xref-char-dict undef
       { exch pget }
         % finally see if the key is (misplaced) in the Root Catalog dict
       { dup Trailer /Root oget exch knownoget dup {
-          3 -1 roll (   **** Warning:  The /) pdfformaterror 50 string cvs pdfformaterror
+          3 -1 roll (   **** Error:  The /) pdfformaterror 50 string cvs pdfformaterror
           ( key is missing from the Page tree.\n) pdfformaterror
+          (                Output may be incorrect.\n) pdfformaterror
         }
         { exch pop }
         ifelse
@@ -1377,7 +1407,7 @@ currentdict /xref-char-dict undef
         /FormResDict .knownget {    % false /Name <<>> /Type [] <<res>>
           2 index knownoget {       % false /Name <<>> /Type [] <<type_dict>>
             4 index knownoget {     % false /Name <<>> /type [] <<res_dict>>
-              (   **** Warning: resource was found only in the external context.\n) pdfformaterror
+              (   **** Warning: resource was found only in an external (parent) context.\n) pdfformatwarning
               //true 7 2 roll       % <<res_dict>> true false /Name <<>> /Type []
               pop exit
             } if
@@ -1398,7 +1428,7 @@ currentdict /xref-char-dict undef
          pop
          dup /Kids knownoget {
            pop
-           (   **** Warning:  Invalid Page count.\n) pdfformaterror
+           (   **** Warning:  Invalid Page count.\n) pdfformatwarning
            % find the last page and use that as the Count
            1 1 999999999 {
              dup pdffindpage?
@@ -1409,7 +1439,7 @@ currentdict /xref-char-dict undef
            2 copy /Count exch put
          } {
            0 % return 0 and keep 0 page count.
-           (   **** Warning:  PDF document has no pages.\n) pdfformaterror
+           (   **** Warning:  PDF document has no pages.\n) pdfformatwarning
          } ifelse
        } if
        exch pop
@@ -1418,11 +1448,11 @@ currentdict /xref-char-dict undef
            << exch 1 array astore /Kids exch /Count 1 /Type /Pages >>
            Trailer /Root oget /Pages 3 -1 roll put
            1
-           (   **** Warning:  No /Pages node. The document root directly point a page.\n)
-           pdfformaterror
+           (   **** Warning:  No /Pages node. The document /Root points directly to a page.\n)
+           pdfformatwarning
        } {
          (   **** Warning:  Page count not found; assuming 1.\n)
-         pdfformaterror
+         pdfformatwarning
          pop 1
        } ifelse
      } ifelse
@@ -1446,7 +1476,7 @@ currentdict /xref-char-dict undef
           { oforce
             dup //null ne {
               currentdict 1 index known {
-                (   **** Error: there's a loop in the page tree. Giving up.\n) pdfformaterror
+                (   **** Error: there's a loop in the Pages tree. Giving up.\n) pdfformaterror
                 /verify_page_tree cvx /syntaxerror signalerror
               } if
               verify_page_tree_recursive
@@ -1535,8 +1565,9 @@ currentdict /xref-char-dict undef
 {
     4 { % Bug 693919
       dup type dup /integertype ne exch /realtype ne and {
-         (   **** Warning: replacing malformed number ') pdfformaterror pdfstring cvs pdfformaterror
+         (   **** Error: replacing malformed number ') pdfformaterror pdfstring cvs pdfformaterror
          (' with 0.\n) pdfformaterror
+         (               Output may be incorrect.\n) pdfformaterror
          0
       } if
       4 1 roll
@@ -1559,6 +1590,7 @@ currentdict /xref-char-dict undef
      pop pop pop pop
      (   **** Warning:  File has an empty ) pdfformaterror pdfstring cvs pdfformaterror
      (. Using the current page size instead.\n) pdfformaterror
+     (                  Output may be incorrect.\n) pdfformaterror
      0 0 currentpagedevice /PageSize get aload pop
    } {
      5 -1 roll pop
@@ -1749,7 +1781,7 @@ end readonly def
                       exec {
                         pop
                         (   **** Warning: Ignoring a named action pointing out of the document page range.\n)
-                        pdfformaterror
+                        pdfformatwarning
                       } {
                         /Page exch 3 -1 roll
                       } ifelse
@@ -1765,7 +1797,7 @@ end readonly def
     { linkdest } stopped {
       cleartomark
       (   **** Warning: Link annotation points out of the document page range.\n)
-      pdfformaterror
+      pdfformatwarning
     } {
       pop {/LNK pdfmark} stopped {cleartomark} if
     } ifelse
@@ -1796,8 +1828,9 @@ end readonly def
   /MediaBox pget {
     oforce_array //true
   } {
-    (   **** Page has no /MediaBox attribute. Using the current page size.\n)
+    (   **** Error: Page has no /MediaBox attribute. Using the current page size.\n)
     pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
     [ 0 0 currentpagedevice /PageSize get aload pop ] //false
   } ifelse
 } bind def
@@ -2129,7 +2162,7 @@ currentdict /PDF2PS_matrix_key undef
     end
   } loop {
     StreamRunAborted not {
-      (\n   **** File has unbalanced q/Q operators \(too many Q's\) ****\n)
+      (\n   **** Error: File has unbalanced q/Q operators \(too many Q's\)\n               Output may be incorrect.\n)
 
       pdfdict /.Qqwarning_issued .knownget
       {
@@ -2155,10 +2188,12 @@ currentdict /PDF2PS_matrix_key undef
   count PDFexecstackcount sub { pop } repeat
   (after exec) VMDEBUG
   Repaired		% pass Repaired state around the restore
+  RepairedAnError
   PDFSave restore
   currentglobal pdfdict gcheck .setglobal
   pdfdict /.Qqwarning_issued //false .forceput
   .setglobal
+  /RepairedAnError exch def
   /Repaired exch def
 } bind def
 
@@ -2179,8 +2214,9 @@ currentdict /PDF2PS_matrix_key undef
   } forall
   % check for extra garbage on the ostack and clean it up
   count pdfemptycount sub dup 0 ne {
-    (   **** File did not complete the page properly and may be damaged.\n)
+    (   **** Error: File did not complete the page properly and may be damaged.\n)
     pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
     { pop } repeat
   } {
     pop
@@ -2191,7 +2227,7 @@ currentdict /PDF2PS_matrix_key undef
     /Annots knownoget {
       { oforce
         dup //null ne {
-          mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation\n) pdfformaterror} if} ifelse cleartomark
+          mark exch {drawannot} PDFSTOPONERROR {exec}{stopped {(Error: Ignoring invalid annotation, output may be incorrect.\n) pdfformaterror} if} ifelse cleartomark
         } {
           pop
         } ifelse
@@ -2276,8 +2312,8 @@ currentdict /PDF2PS_matrix_key undef
     2 copy .knownget {
       { % Some circular references may be missed because scanning stops
         % when the 1st transparency is found.
-        (   **** File has circular references in resource dictionaries.\n)
-        pdfformaterror
+        (   **** Warning: Found circular references in resource dictionaries while checking for transparency.\n)
+        pdfformatwarning
       } if
       pop //false exit
     } if
@@ -2315,8 +2351,8 @@ currentdict /PDF2PS_matrix_key undef
                 } ifelse
             } {
               pop
-              (   **** Ignoring non-dictionary /XObject attribute.\n)
-              pdfformaterror
+              (   **** Warning: Ignoring non-dictionary /XObject attribute while checking for transparency.\n)
+              pdfformatwarning
             } ifelse
           } {
             pop
@@ -2324,8 +2360,8 @@ currentdict /PDF2PS_matrix_key undef
         } forall
         { pop //true exit } if
       } {
-        (   **** Ignoring non-dictionary /XObject.\n)
-        pdfformaterror
+        (   **** Warning: Ignoring non-dictionary /XObject while checking for transparency.\n)
+        pdfformatwarning
         pop
       } ifelse
     } if
@@ -2438,7 +2474,7 @@ currentdict /PDF2PS_matrix_key undef
         { oget } stopped
         {
           pop pop
-          (   **** Warning: invalid color space in shading.\n) pdfformaterror
+          (   **** Error: invalid color space in shading, output may be incorrect.\n) pdfformaterror
         }
         { 3 index colorspacespotcolors}
         ifelse        
@@ -2606,8 +2642,9 @@ currentdict /PDF2PS_matrix_key undef
       pop //true
     } {
       pop 
-      (   **** Warning: ignoring invalid /DefaultGray color space.\n)
+      (   **** Error: ignoring invalid /DefaultGray color space.\n)
       pdfformaterror
+      (                 Output may be incorrect.\n) pdfformaterror
     } ifelse
   } if
 
@@ -2618,8 +2655,9 @@ currentdict /PDF2PS_matrix_key undef
       pop //true
     } {
       pop
-      (   **** Warning: ignoring invalid /DefaultRGB color space.\n)
+      (   **** Error: ignoring invalid /DefaultRGB color space.\n)
       pdfformaterror
+      (                 Output may be incorrect.\n) pdfformaterror
     } ifelse
   } if
 
@@ -2630,8 +2668,9 @@ currentdict /PDF2PS_matrix_key undef
       pop //true
     } {
       pop
-      (   **** Warning: ignoring invalid /DefaultCMYK color space.\n)
+      (   **** Error: ignoring invalid /DefaultCMYK color space.\n)
       pdfformaterror
+      (                 Output may be incorrect.\n) pdfformaterror
     } ifelse
   } if
 
@@ -2695,8 +2734,9 @@ currentdict /PDF2PS_matrix_key undef
           } forall
         } {
           pop
-          (   **** Warning: OutputIntent attribute of a wrong type is ignored.\n)
+          (   **** Error: /OutputIntent is of an incorrect type, ignoring OutputIntent.\n)
           pdfformaterror
+          (                 Output may be incorrect.\n) pdfformaterror
         } ifelse
       } if	% OutputIntents known
       % tell device there are no more OutputIntents

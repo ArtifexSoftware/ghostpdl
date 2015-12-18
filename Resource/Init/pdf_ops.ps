@@ -88,8 +88,8 @@ nodict readonly pop
  {
    currentdict /n known {
      pop pop
-     (   **** Ignoring changes to the graphic state after operator 'W'.\n)
-     pdfformaterror
+     (   **** Error: Ignoring changes to the graphic state after operator 'W'.\n) pdfformaterror
+     (               Output may be incorrect.\n) pdfformaterror
    } {
      exch currentdict //nodict eq { /self dup load end 5 dict begin def } if
      def
@@ -137,8 +137,9 @@ nodict readonly pop
   //false
   { currentdict /n known { end pop //true } { exit } ifelse
   } loop {
-    (   **** Dropping unfinished 'W' mode at 'Q'.\n)
+    (   **** Error: Encountered a 'Q' before finishing 'W' mode.\n)
     pdfformaterror
+    (               Outptu may be incorrect..\n) pdfformaterror
   } if
   currentdict /self .knownget {
     exec //nodict eq {
@@ -149,7 +150,7 @@ nodict readonly pop
       % Collecting the path with one ctm and re-playing it with another ctm
       % transforms the path exactly as PDF needs.
       {.getpath} stopped {
-      (   **** Warning: unable to preserve current path, probable degenerate CTM.\n) pdfformaterror
+      (   **** Error: unable to preserve current path, probable degenerate CTM, output may be incorrect.\n) pdfformaterror
       grestore newpath
       }{
       grestore newpath { exec } forall
@@ -162,7 +163,7 @@ nodict readonly pop
     //true	% formaterror -- not a gsave dict
   } ifelse
   {
-    (\n   **** File has unbalanced q/Q operators \(too many Q's\) ****\n)
+    (\n   **** Error: File has unbalanced q/Q operators \(too many Q's\)\n               Output may be incorrect.\n)
 
     pdfdict /.Qqwarning_issued .knownget
     {
@@ -743,8 +744,9 @@ end readonly def
     aload pop
     5 index 0 ne 3 index 0 ne and
     5 index 0 ne 5 index 0 ne and or not {
-      (\n   **** Warning: Invalid (0 scaling) text matrix for Tm ****\n)
+      (\n   **** Error: Invalid (0 scaling) text matrix for Tm ****\n)
       pdfformaterror
+      (                 Output may be incorrect.\n) pdfformaterror
       % handle invalid scale by using a really small value
       2 -6 roll pop pop pop pop
       0.00000001 0 0 0.00000001
@@ -766,7 +768,8 @@ end readonly def
   TextTempMatrix currentmatrix 4 2 getinterval astore pop
   TextTempMatrix setmatrix
   } {
-      (   **** Warning: ignoring currentpoint error, probable degenerate CTM.\n) pdfformaterror
+      (   **** Error: Invalid currentpoint, probable degenerate CTM.\n) pdfformaterror
+      (               Ignroing error, output may be incorrect.\n) pdfformaterror
     grestore
   } ifelse
 } bdef
@@ -791,16 +794,18 @@ end readonly def
 
 /BT {
   currentdict /TextSaveMatrix known {
-    (   **** illegal; nested BT operator detected.\n)
+    (   **** Error: illegal nested BT operator detected.\n)
     pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
     ET
   } if
 
   %% Bug #695897 see the explanation in /q defined above.
   currentdict /qTextSaveMatrix known {
     currentdict /qTextSaveMatrix get /TextSaveMatrix gput
-    (   **** Illegal; nested BT operator (inside a gsave) detected.\n)
+    (   **** Error: Illegal nested BT operator (inside a gsave) detected.\n)
     pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
     ET
   }if
   % If we are in a W/W* "context", pack away the dictionary
@@ -838,8 +843,9 @@ end readonly def
       begin
     } if
   } {
-     (   **** Ignoring spurious ET operator.\n)
+     (   **** Error: Ignoring spurious ET operator.\n)
      pdfformaterror
+     (               Output may be incorrect.\n) pdfformaterror
   } ifelse
   %% Only switch back to the regular marking operations if we were not
   %% in a nested text block (inside a gsave).
@@ -854,7 +860,8 @@ end readonly def
 /Tw { /WordSpacing gput { showfirst } /Show gput } bdef
 /Tz {
   dup 0 eq {
-    (\n   **** Warning: Invalid 0.0 horizontal text scaling given for Tz ****\n)
+    (\n   **** Error: Invalid 0.0 horizontal text scaling given for Tz\n)
+    (                 Output may be incorrect.\n) pdfformaterror
     pdfformaterror
     pop 0.00000001	% handle invalid scale by using a really small value
   }{
@@ -921,8 +928,9 @@ end readonly def
 
 /Tf {		% <font> <scale> Tf -
   dup 0 eq {
-    (\n   **** Warning: Invalid 0.0 font scale given for Tf ****\n)
+    (\n   **** Error: Invalid 0.0 font scale given for Tf\n)
     pdfformaterror
+    (          Output may be incorrect.\n) pdfformaterror
     pop 0.00000001	% handle invalid scale by using a really small value
   } if
   1 index type /dicttype ne {
@@ -1033,11 +1041,13 @@ end readonly def
   %% Testing reveals that Acrobat clamps these out of range values to 0, it doesn't
   %% simply ignore the error.
   exch dup dup 4294967295 ge exch 4294967295 neg le or {
-    (   **** invalid argument to Td, Treating argument as 0.\n) pdfformaterror
+    (   **** Error: invalid argument to Td, Treating argument as 0.\n) pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
     pop 0
   } if
   exch dup dup 4294967295 ge exch 4294967295 neg le or {
-    (   **** invalid argument to Td, Treating argument as 0.\n) pdfformaterror
+    (   **** Error: invalid argument to Td, Treating argument as 0.\n) pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
     pop 0
   } if
   TextLineMatrix transform TextLineMatrix 4 2 getinterval astore pop
@@ -1048,8 +1058,9 @@ end readonly def
 /Tm {
   5 index 0 ne 3 index 0 ne and
   5 index 0 ne 5 index 0 ne and or not {
-    (\n   **** Warning: Invalid (0 scaling) text matrix for Tm ****\n)
+    (   **** Error: Invalid (0 scaling) text matrix for Tm ****\n)
     pdfformaterror
+    (               Output may be incorrect.\n) pdfformaterror
     % handle invalid scale by using a really small value
     2 -6 roll pop pop pop pop
     0.00000001 0 0 0.00000001
