@@ -1447,6 +1447,29 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
     if (pdev->CompatibilityLevel < 1.4)
         return_error(gs_error_undefined);
+    if (pdev->PDFA < 2) {
+        switch(pdev->PDFACompatibilityPolicy) {
+            default:
+            case 0:
+                emprintf(pdev->memory,
+                "The PDF/A-1 specifcation prohibits the embedding of files, reverting to normal PDF output.\n");
+                pdev->AbortPDFAX = true;
+                pdev->PDFX = 0;
+                return 0;
+            case 1:
+                emprintf(pdev->memory,
+                "The PDF/A-1 specifcation prohibits the embedding of files, pdfamrk operatoin ignored.\n");
+                break;
+            case 2:
+                return_error(gs_error_undefined);
+        }
+    }
+    if (pdev->PDFA < 3) {
+        emprintf(pdev->memory,
+        "The PDF/A-2 specifcation only permits the embedding of PDF/A-1 or PDF/A-2 files.\n");
+        emprintf(pdev->memory,
+        "The pdfwrite device has not validated this embedded file, output may not conform to PDF/A-2.\n");
+    }
     if (!pdfmark_find_key("/FS", pairs, count, &key))
         return_error(gs_error_rangecheck);
     if (!pdfmark_find_key("/Name", pairs, count, &key))

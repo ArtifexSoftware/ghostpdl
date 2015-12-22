@@ -810,10 +810,17 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
                 pdf_xml_attribute_name(s, "xmlns:pdfaid");
                 pdf_xml_attribute_value(s, "http://www.aiim.org/pdfa/ns/id/");
                 pdf_xml_attribute_name(s, "pdfaid:part");
-                if (pdev->PDFA == 1)
-                    pdf_xml_attribute_value(s,"1");
-                else
-                    pdf_xml_attribute_value(s,"2");
+                switch(pdev->PDFA) {
+                    case 1:
+                        pdf_xml_attribute_value(s,"1");
+                        break;
+                    case 2:
+                        pdf_xml_attribute_value(s,"2");
+                        break;
+                    case 3:
+                        pdf_xml_attribute_value(s,"3");
+                        break;
+                }
                 pdf_xml_attribute_name(s, "pdfaid:conformance");
                 pdf_xml_attribute_value(s,"B");
                 pdf_xml_tag_end_empty(s);
