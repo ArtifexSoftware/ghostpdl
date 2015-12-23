@@ -485,8 +485,14 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
         ss->AntiAlias = pdip->AntiAlias;
         ss->padX = ss->padY = false; /* should be true */
 
-        if (templat->init)
-            templat->init(st);
+        if (templat->init) {
+            code = templat->init(st);
+            if (code < 0) {
+                dmprintf(st->memory, "Failed to initialise downsample filter, downsampling aborted\n");
+                gs_free_object(pdev->v_memory, st, "setup_image_compression");
+                return 0;
+            }
+        }
         pim->BitsPerComponent = pdip->Depth;
         pim->Width = s_Downsample_size_out(pim->Width, factor, false);
         pim->Height = s_Downsample_size_out(pim->Height, factor, false);
@@ -524,8 +530,14 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
         ss->params.early_cm = true;
         ss->params.MaxValueIn = ss->params.MaxValueOut = (int)pow(2, pdip->Depth);;
 
-        if (templat->init)
-            templat->init(st);
+        if (templat->init) {
+            code = templat->init(st);
+            if (code < 0) {
+                dmprintf(st->memory, "Failed to initialise downsample filter, downsampling aborted\n");
+                gs_free_object(pdev->v_memory, st, "setup_image_compression");
+                return 0;
+            }
+        }
         pim->Width = s_Downsample_size_out(pim->Width, factor, false);
         pim->Height = s_Downsample_size_out(pim->Height, factor, false);
         pim->BitsPerComponent = pdip->Depth;
