@@ -273,6 +273,18 @@ Acrobat Distiller "eBook" setting.
 wide variety of uses, possibly at the expense of a larger output file.
 
 </ul>
+<dd>Please be aware that the <code>/prepress</code> setting does <b>not</b> indicate
+the highest quality conversion. Using any of these presets will involve altering the
+input, and as such may result in a PDF of poorer quality (compared to the input) than
+simply using the defaults. The 'best' quality (where best means closest to the original
+input) is obtained by not setting this parameter at all (or by using <code>/default</code>).
+</dd>
+
+<dd>The PDFSETTINGS presets should only be used if you are sure you understand that the
+output will be altered in a variety of ways from the input. It is usually better to
+adjust the controls individually (see the table below) if you have a genuine requirement to produce,
+for example, a PDF file where the images are reduced in resolution.
+</dd>
 
 <dt><code>-dDoNumCopies</code>
 <dd>When present, causes pdfwrite to use the #copies or /NumCopies entry in the page
