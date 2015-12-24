@@ -881,6 +881,10 @@ struct gx_device_pdf_s {
                                      */
     bool FlattenFonts;
     int LastFormID;
+    char *ExtensionMetadata;        /* If present the non-standard pdfmark Extension_Metadata has been
+                                     * used, the content of ths string is written out as part of the
+                                     * metadata referenced by the Catalog.
+                                     */
 };
 
 #define is_in_page(pdev)\
@@ -914,7 +918,7 @@ struct gx_device_pdf_s {
  m(40, outline_levels) m(41, EmbeddedFiles)
  m(41, gx_device_pdf, EmbeddedFiles);
  m(42, gx_device_pdf, pdf_font_dir);*/
-#define gx_device_pdf_num_ptrs 43
+#define gx_device_pdf_num_ptrs 44
 #define gx_device_pdf_do_param_strings(m)\
     m(0, OwnerPassword) m(1, UserPassword) m(2, NoEncrypt)\
     m(3, DocumentUUID) m(4, InstanceUUID)
