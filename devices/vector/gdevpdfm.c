@@ -2568,7 +2568,6 @@ pdfmark_Ext_Metadata(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
              const gs_matrix * pctm, const gs_param_string * objname)
 {
     int i, j=0;
-    char *ptr;
 
     if (pdev->CompatibilityLevel < 1.4) {
         dmprintf(pdev->pdf_memory, "Cannot add Metadata to PDF files with version earlier than 1.4.\n");
@@ -2587,7 +2586,6 @@ pdfmark_Ext_Metadata(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     pdev->ExtensionMetadata = (char *)gs_alloc_bytes(pdev->pdf_memory->stable_memory, pairs[1].size, "Extension metadata");
     memset(pdev->ExtensionMetadata, 0x00, pairs[1].size);
     for (i=1;i<pairs[1].size - 2;i++) {
-        ptr = &pairs[1].data[i];
         if (pairs[1].data[i] == '\\') {
             switch(pairs[1].data[i+1]) {
                 case '(':
