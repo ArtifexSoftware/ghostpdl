@@ -1306,8 +1306,11 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
             for (i = 15 - step; i > 0; i -= step)
                 pmap->decode_lookup[i] = pmap->decode_base +
                     i * (255.0 / 15) * pmap->decode_factor;
-        } else
+            pmap->inverted = 0;
+        } else {
             pmap->decoding = sd_compute;
+            pmap->inverted = 0;
+        }
         if (spp == 1) {         /* and ci == 0 *//* Pre-map entries 0 and 255. */
             gs_client_color cc;
 
