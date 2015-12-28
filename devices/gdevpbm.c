@@ -1189,6 +1189,11 @@ pkm_print_row_4(gx_device_printer * pdev, byte * data, int depth,
      * change it, we buffer groups of pixels ourselves and use fwrite.
      */
     if (bdev->is_raw) {
+#ifdef PACIFY_VALGRIND
+        if ((pdev->width & 1) != 0) {
+            data[pdev->width>>1] &= 0xf0;
+        }
+#endif
         for (bp = data, x = 0; x < pdev->width;) {
             byte raw[50 * 3];   /* 50 is arbitrary, but must be even */
             int end = min(x + sizeof(raw) / 3, pdev->width);
