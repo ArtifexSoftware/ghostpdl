@@ -1608,6 +1608,50 @@ stroke_add(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
     return gx_path_close_subpath(ppath);
 }
 
+/* When painting the 'underjoin' (the 'inside' of a join), we
+ * need to take special care if the curve is particularly wide as
+ * the leading edge of the underside of the first stroked segment
+ * may be beyond the leading edge of the underside of the second
+ * stroked segment. Similarly, the trailing edge of the second
+ * stroked segment may be behing the trailing edge of the first
+ * stroked segment. We detect those cases here.
+ *
+ * We detect the first case by projecting plp.width onto nplp.vector.
+ * If the projected vector is longer then nplp.vector, we have a
+ * problem.
+ *
+ * len_vector_squared = nplp.vector.x * nplp.vector.x + nplp.vector.y * nplp.nvector.y
+ * len_vector = sqr(len_vector_squared)
+ * len_projection_unnormalised = plp.width.x * nplp.vector.x + plp.width.y * nplp.vector.y
+ * len_projection = len_projection_unnormalised / len_vector
+ *
+ * len_projection > len_vector === len_projection_unnormalised > len_vector * len_vector
+ * === len_projection_unnormalised > len_vector_squared
+ */
+
+#ifdef SLOWER_BUT_MORE_ACCURATE_STROKING
+static bool
+wide_underjoin(pl_ptr plp, pl_ptr nplp)
+{
+    double h_squared = (double)nplp->vector.x * nplp->vector.x + (double)nplp->vector.y * nplp->vector.y;
+    double dot = (double)plp->width.x * nplp->vector.x + (double)plp->width.y * nplp->vector.y;
+
+    if (dot < 0)
+        dot = -dot;
+    if (dot > h_squared)
+        return 1;
+
+    h_squared = (double)plp->vector.x * plp->vector.x + (double)plp->vector.y * plp->vector.y;
+    dot = (double)nplp->width.x * plp->vector.x + (double)nplp->width.y * plp->vector.y;
+    if (dot < 0)
+        dot = -dot;
+    if (dot > h_squared)
+        return 1;
+
+    return 0;
+}
+#endif
+
 /* Add a segment to the path.
  * This works by crafting 2 paths, one for each edge, that will later be
  * merged together. */
@@ -1728,7 +1772,8 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
             if (code < 0)
                 return code;
             /* The underjoin */
-            if (!(flags & nf_some_from_arc)) {
+#ifndef SLOWER_BUT_MORE_ACCURATE_STROKING
+            if ((flags & (nf_some_from_arc | nf_prev_some_from_arc)) == 0) {
                 /* RJW: This is an approximation. We ought to draw a line
                  * back to nplp->o.p, and then independently fill any exposed
                  * region under the curve with a round join. Sadly, that's
@@ -1741,10 +1786,31 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
                  * most cases it's close, and results in faster to fill
                  * paths.
                  */
+                /* RJW: This goes wrong for some paths, as the 'underjoin' wind
+                 * will be the wrong way. See bug 694971 */
                 code = gx_path_add_line(rpath, nplp->o.p.x, nplp->o.p.y);
                 if (code < 0)
                     return code;
             }
+#else
+            if (wide_underjoin(plp, nplp))
+            {
+                code = gx_path_add_line(rpath, nplp->o.p.x, nplp->o.p.y);
+                if (code < 0)
+                    return code;
+                if ((flags & (nf_some_from_arc | nf_prev_some_from_arc)) != 0) {
+                    code = gx_path_add_line(rpath, nplp->o.co.x, nplp->o.co.y);
+                    if (code < 0)
+                        return code;
+                    code = gx_path_add_line(rpath, plp->e.ce.x, plp->e.ce.y);
+                    if (code < 0)
+                        return code;
+                    code = gx_path_add_line(rpath, nplp->o.p.x, nplp->o.p.y);
+                    if (code < 0)
+                        return code;
+                }
+            }
+#endif
             code = gx_path_add_line(rpath, nplp->o.co.x, nplp->o.co.y);
         } else {
             /* CW rotation. Join in the reverse path. "Underjoin" in the
@@ -1767,7 +1833,8 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
             if (code < 0)
                 return code;
             /* The underjoin */
-            if (!(flags & nf_some_from_arc)) {
+#ifndef SLOWER_BUT_MORE_ACCURATE_STROKING
+            if ((flags & (nf_some_from_arc | nf_prev_some_from_arc)) == 0) {
                 /* RJW: This is an approximation. We ought to draw a line
                  * back to nplp->o.p, and then independently fill any exposed
                  * region under the curve with a round join. Sadly, that's
@@ -1780,10 +1847,31 @@ stroke_add_fast(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
                  * most cases it's close, and results in faster to fill
                  * paths.
                  */
+                /* RJW: This goes wrong for some paths, as the 'underjoin' wind
+                 * will be the wrong way. See bug 694971 */
                 code = gx_path_add_line(ppath, nplp->o.p.x, nplp->o.p.y);
                 if (code < 0)
                     return code;
             }
+#else
+            if (wide_underjoin(plp, nplp))
+            {
+                code = gx_path_add_line(ppath, nplp->o.p.x, nplp->o.p.y);
+                if (code < 0)
+                    return code;
+                if ((flags & (nf_some_from_arc | nf_prev_some_from_arc)) != 0) {
+                    code = gx_path_add_line(ppath, nplp->o.ce.x, nplp->o.ce.y);
+                    if (code < 0)
+                        return code;
+                    code = gx_path_add_line(ppath, plp->e.co.x, plp->e.co.y);
+                    if (code < 0)
+                        return code;
+                    code = gx_path_add_line(ppath, nplp->o.p.x, nplp->o.p.y);
+                    if (code < 0)
+                        return code;
+                }
+            }
+#endif
             code = gx_path_add_line(ppath, nplp->o.ce.x, nplp->o.ce.y);
         }
     }
