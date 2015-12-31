@@ -678,9 +678,9 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
         float max_dash_len = 0;
         float expand_squared;
         int i;
-        float adjust = pis->fill_adjust.x;
-        if (adjust > pis->fill_adjust.y)
-            adjust = pis->fill_adjust.y;
+        float adjust = (float)pis->fill_adjust.x;
+        if (adjust > (float)pis->fill_adjust.y)
+            adjust = (float)pis->fill_adjust.y;
         for (i = 0; i < dash_count; i++) {
             if (max_dash_len < pgs_lp->dash.pattern[i])
                 max_dash_len = pgs_lp->dash.pattern[i];
