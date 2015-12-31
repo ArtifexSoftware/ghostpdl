@@ -381,7 +381,7 @@ clist_fread_chars(void *data, uint len, clist_file_ptr cf)
         IFILE *icf = (IFILE *)cf;
         byte *dp = data;
 
-         /* if we have a cache, check if it needs init, and do it */
+        /* if we have a cache, check if it needs init, and do it */
         if (CL_CACHE_NEEDS_INIT(icf->cache)) {
             icf->cache = cl_cache_read_init(icf->cache, CL_CACHE_NSLOTS, 1<<CL_CACHE_SLOT_SIZE_LOG2, icf->filesize);
         }
