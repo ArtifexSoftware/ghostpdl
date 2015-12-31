@@ -407,7 +407,10 @@ clist_find_pseudoband(gx_device_clist_reader *crdev, int band, cmd_block *cb)
     start_pos = page_info->bfile_end_pos - sizeof(cmd_block);
     page_info->io_procs->fseek(bfile, start_pos, SEEK_SET, page_info->bfname);
     while( 1 ) {
-        page_info->io_procs->fread_chars(cb, sizeof(cmd_block), bfile);
+        int read = page_info->io_procs->fread_chars(cb, sizeof(cmd_block), bfile);
+
+        if (read < sizeof(cmd_block))
+	    return -1;
         if (cb->band_max == band && cb->band_min == band) {
             page_info->io_procs->fseek(bfile, save_pos, SEEK_SET, page_info->bfname);
             return(0);  /* Found it */
