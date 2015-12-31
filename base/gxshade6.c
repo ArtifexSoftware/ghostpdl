@@ -1374,10 +1374,6 @@ patch_color_to_device_color_inline(const patch_fill_state_t *pfs,
      */
     int code;
     gx_device_color devc;
-    gx_device *dev = pfs->dev;
-
-    if (pfs->trans_device != NULL) 
-        dev = pfs->trans_device;
 
     if (DEBUG_COLOR_INDEX_CACHE && pdevc == NULL)
         pdevc = &devc;
