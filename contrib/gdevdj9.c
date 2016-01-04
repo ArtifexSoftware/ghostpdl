@@ -1139,10 +1139,6 @@ static void do_floyd_steinberg(	int 										scan,
         byte *dpc;
         int *epc;
 
-        /* the b/w pointers */
-        byte *kP, *dp;
-        int *ep;
-
         /* the color pointers, lower byte */
         cPa = data_ptrs->plane_data_c[cscan + 2][2];
         mPa = data_ptrs->plane_data_c[cscan + 2][1];
@@ -1156,11 +1152,6 @@ static void do_floyd_steinberg(	int 										scan,
         /* data and error */
         dpc = data_ptrs->data_c[cscan + 2];
         epc = data_ptrs->errors_c[cscan];
-
-        /* the b/w pointers */
-        kP = data_ptrs->plane_data[scan + 2][3];
-        dp = data_ptrs->data[scan + 2];
-        ep = data_ptrs->errors[scan];
 
         switch (cdj970->intensities) {
                 case 2:

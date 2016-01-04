@@ -1183,8 +1183,10 @@ static void
                      struct error_val_field *error_values,
                      const Gamma *gamma,
                      FILE * prn_stream);
+#ifdef UNUSED
 static void
      do_gamma(float mastergamma, float gammaval, byte * values);
+#endif
 static void
      do_black_correction(float kvalue, int *kcorrect);
 
@@ -2087,6 +2089,7 @@ print_c2plane(FILE *prn_stream, char plane_code, int plane_size,
     fwrite(out_data, sizeof(byte), out_count, prn_stream);
 }
 
+#ifdef UNUSED
 /*  print_c0plane()
  *
  *  Outputs a plane with no compression.
@@ -2099,6 +2102,7 @@ print_c0plane(FILE *prn_stream, char plane_code, int plane_size,
   if (plane_size > 0)
     fwrite(curr, sizeof(byte), plane_size, prn_stream);
 }
+#endif
 
 /* Printing non-blank lines */
 static void
@@ -2274,10 +2278,6 @@ do_floyd_steinberg(int scan, int cscan, int plane_size,
     byte *dpc;
     int *epc;
 
-    /* the b/w pointers */
-    byte *kP, *dp;
-    int *ep;
-
     /* the color pointers, lower byte */
     cPa = data_ptrs->plane_data_c[cscan + 2][2];
     mPa = data_ptrs->plane_data_c[cscan + 2][1];
@@ -2289,10 +2289,6 @@ do_floyd_steinberg(int scan, int cscan, int plane_size,
     /* data and error */
     dpc = data_ptrs->data_c[cscan + 2];
     epc = data_ptrs->errors_c[cscan];
-    /* the b/w pointers */
-    kP = data_ptrs->plane_data[scan + 2][3];
-    dp = data_ptrs->data[scan + 2];
-    ep = data_ptrs->errors[scan];
 
     switch (cdj850->intensities) {
         case 2:
@@ -2313,6 +2309,7 @@ do_floyd_steinberg(int scan, int cscan, int plane_size,
     return;
 }
 
+#ifdef UNUSED
 /* here we do our own gamma-correction */
 static void
 do_gamma(float mastergamma, float gammaval, byte values[256])
@@ -2334,6 +2331,7 @@ do_gamma(float mastergamma, float gammaval, byte values[256])
 
     return;
 }
+#endif
 
 /* here we calculate a lookup-table which is used to compensate the
    relative loss of color due to undercolor-removal */
@@ -2417,12 +2415,10 @@ do_gcr(int bytecount, byte * inbyte, const byte kvalues[256],
        const byte yvalues[256], const int kcorrect[256],
        word * inword)
 {
-  int i, ucr, kadd, is_color = 0;
-  float uca_fac;
+  int i, ucr, is_color = 0;
   byte *black, *cyan, *magenta, *yellow;
   word last_color_value = 0;
   word *last_color;
-  char output[255], out2[128];
 
   /* initialise *last_color with a dummmy value */
   last_color = &last_color_value;
@@ -2443,6 +2439,7 @@ do_gcr(int bytecount, byte * inbyte, const byte kvalues[256],
 #if 0
       if ((*cyan > 0) && (*magenta > 0) && (*yellow > 0))
       {
+        char output[255];
         gs_sprintf(output, "%3d %3d %3d %3d - ", *cyan, *magenta, *yellow, *black);
         debug_print_string(output, strlen(output));
       }
@@ -2488,20 +2485,21 @@ do_gcr(int bytecount, byte * inbyte, const byte kvalues[256],
         } else {		/* do gamma only if no black */
         }
 #if 0
-          if (ucr > 0)
-          {
-      gs_sprintf(output, "%3d %3d %3d %3d - %5d\n", *cyan, *magenta, *yellow, *black, ucr);
-      debug_print_string(output, strlen(output));
-    }
+        if (ucr > 0)
+        {
+          char output[255];
+          gs_sprintf(output, "%3d %3d %3d %3d - %5d\n", *cyan, *magenta, *yellow, *black, ucr);
+          debug_print_string(output, strlen(output));
+        }
 #endif /* 0 */
-          if (   *cyan > 255)    *cyan = 255;
-          if (*magenta > 255) *magenta = 255;
-          if ( *yellow > 255)  *yellow = 255;
+        if (   *cyan > 255)    *cyan = 255;
+        if (*magenta > 255) *magenta = 255;
+        if ( *yellow > 255)  *yellow = 255;
 
-          *cyan = *(cvalues + *cyan);
-          *magenta = *(mvalues + *magenta);
-          *yellow = *(yvalues + *yellow);
-          last_color =  inword; /* save pointer */
+        *cyan = *(cvalues + *cyan);
+        *magenta = *(mvalues + *magenta);
+        *yellow = *(yvalues + *yellow);
+        last_color =  inword; /* save pointer */
       }/* end current_color */
     }			/* end of if c+m+y > 0 */
     *black = *(kvalues + *black);
@@ -3325,7 +3323,6 @@ cdnj500_start_raster_mode(gx_device_printer * pdev, int paper_size,
 {
     /* x,y resolution for color planes, assume x=y */
     int xres = cdj850->x_pixels_per_inch;
-    int yres = cdj850->y_pixels_per_inch;
     float x = pdev->width  / pdev->x_pixels_per_inch * 10;
     float y = pdev->height / pdev->y_pixels_per_inch * 10;
 

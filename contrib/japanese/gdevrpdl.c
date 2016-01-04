@@ -230,7 +230,7 @@ rpdl_printer_initialize(gx_device_printer * pdev, FILE * prn_stream, int num_cop
 static void
 rpdl_paper_set(gx_device_printer * pdev, FILE * prn_stream)
 {
-    int width, height, w, h, wp, hp;
+    int width, height, w, h;
 
     width = pdev->MediaSize[0];
     height = pdev->MediaSize[1];
@@ -238,13 +238,9 @@ rpdl_paper_set(gx_device_printer * pdev, FILE * prn_stream)
     if (width < height) {
         w = width;
         h = height;
-        wp = width / 72.0 * pdev->x_pixels_per_inch;
-        hp = height / 72.0 * pdev->y_pixels_per_inch;
     } else {
         w = height;
         h = width;
-        wp = height / 72.0 * pdev->y_pixels_per_inch;
-        hp = width / 72.0 * pdev->x_pixels_per_inch;
     }
 
     if (w == 1684 && h == 2380) /* A1 */

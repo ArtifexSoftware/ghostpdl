@@ -175,7 +175,8 @@ gdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
         int dots_per_inch = (int)pdev->y_pixels_per_inch;
         int raster = gx_device_raster((gx_device *)pdev, true);
         int real_line_width;
-        long ul_band_size, ul_comp_size, ul_tiff_size, ul_min_size;
+        long ul_band_size, ul_comp_size;
+        /* long ul_tiff_size, ul_min_size; */
         byte *ibp=NULL, *obp=NULL, *tmp=NULL;
         byte paper_type=0, compression_type;
 
@@ -242,7 +243,7 @@ gdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
             /*ul_tiff_size = FrameTiffComp(obp, ibp, band_height, band_width_bytes, GDI_PRE_COMP);*/
             /*ul_scan_size = (unsigned long)bmp2run(obp, ibp, band_height, band_width_bytes, GDI_PRE_COMP);*/
             /*ul_min_size =  (ul_scan_size > ul_tiff_size) ? ul_tiff_size : ul_scan_size;*/
-            ul_min_size = ul_tiff_size;
+            /* ul_min_size = ul_tiff_size; */
             compression_type = GDI_COMP_MODITIFF;
             /*compression_type =  (ul_scan_size > ul_tiff_size) ? GDI_COMP_MODITIFF : GDI_COMP_SCANLINE;*/
             switch (compression_type) {
@@ -268,7 +269,7 @@ gdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
                                                band_height, band_width_bytes,
                                                GDI_REAL_COMP);
                   if (ul_comp_size > MAXBAND-8) {
-                    int f, g, h;
+                    int f;
                     if (!fudge) {
                       ASSERT(use_band == ibp);
                       use_band = (byte*)gs_malloc(pdev->memory->non_gc_memory, ul_band_size, 1, "gdi_print_page/fudge");
@@ -296,7 +297,6 @@ gdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
                     }
                   }
                 } while (ul_comp_size > MAXBAND-8);
-              oh_well:
                 if (fudge > 1) {
                   ASSERT(use_band != ibp);
                   gs_free(pdev->memory->non_gc_memory, use_band, ul_band_size, 1, "gdi_print_page/fudge");
@@ -331,7 +331,7 @@ gdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 FILE *WritePJLHeaderData(gx_device_printer *pdev, FILE *fp)
 {
   unsigned long ulSize;
-  unsigned char buffer[300];
+  char buffer[300];
   int dots_per_inch = (int)pdev->y_pixels_per_inch;
 
   strcpy(buffer, "\033%-12345X");

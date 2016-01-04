@@ -242,7 +242,6 @@ return (((156 * resolution / 150 ) * 5 )/4) + 8;
 static dev_proc_open_device(hl7x0_open);
 static dev_proc_close_device(hl7x0_close);
 static dev_proc_print_page(hl720_print_page);
-static dev_proc_print_page(hl730_print_page);
 
 /* Since the print_page doesn't alter the device, this device can print in the background */
 static const gx_device_procs prn_hl_procs =
@@ -310,11 +309,6 @@ hl720_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
         return hl7x0_print_page(pdev, prn_stream, HL720, 300,
                &initCommand);
-}
-/* The HL 730 can compress  */
-static int
-hl730_print_page(gx_device_printer *pdev, FILE *prn_stream)
-{	return hl720_print_page(pdev, prn_stream);
 }
 
 /* Send the page to the printer.  For speed, compress each scan line, */

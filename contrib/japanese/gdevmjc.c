@@ -503,8 +503,9 @@ mj_put_params(gx_device *pdev,  gs_param_list *plist, int ptype)
 
 #define FSDline(scan, i, j, plane_size, cErr, mErr, yErr, kErr, cP, mP, yP, kP, n)\
 {\
-        unsigned short *mat = matrix2 + (lnum & 127)*128;\
-        int x;\
+    unsigned short *mat = matrix2 + (lnum & 127)*128;\
+    int x;\
+    cErr = cErr; /* Stop compiler warning */\
     if (scan == 0) {       /* going_up */\
       x = 0;\
       for (i = 0; i < plane_size; i++) {\
@@ -932,7 +933,7 @@ mj_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
   int scan = 0;
   int *errors[2];
   byte *data[4], *plane_data[4][4], *out_data;
-  byte *out_row, *out_row_alt;
+  byte *out_row;
   word *storage;
   uint storage_size_words;
   uint mj_tmp_buf_size;
@@ -1046,7 +1047,6 @@ mj_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
     byte *p = out_data = out_row = (byte *)storage;
     data[0] = data[1] = data[2] = p;
     data[3] = p + databuff_size;
-    out_row_alt = out_row + plane_size * 2;
     if (bits_per_pixel > 1) {
       p += databuff_size;
     }
@@ -1066,7 +1066,6 @@ mj_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
     }
     if (bits_per_pixel == 1) {
       out_data = out_row = p;	  /* size is outbuff_size * 4 */
-      out_row_alt = out_row + plane_size * 2;
       data[1] += databuff_size;   /* coincides with plane_data pointers */
       data[3] += databuff_size;
     }
@@ -1209,7 +1208,6 @@ mj_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
         register byte *mP = plane_data[scan + 2][1];
         register byte *yP = plane_data[scan + 2][0];
         register byte *dp = data[scan + 2];
-        int zero_row_count;
         int i, j;
         byte *odp;
 
@@ -1340,19 +1338,18 @@ mj_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
          * in the order (K), C, M, Y. */
         switch (mj->colorcomp) {
         case 1:
-          zero_row_count = 0;
           out_data = (byte*) plane_data[scan][0];
           /* 3 for balck */
           mj_raster_cmd(3, plane_size, out_data, mj_tmp_buf, pdev, prn_stream);
           break;
         case 3:
-          for (zero_row_count = 0, i = 3 - 1; i >= 0; i--) {
+          for (i = 3 - 1; i >= 0; i--) {
             out_data = (byte*) plane_data[scan][i];
             mj_raster_cmd(i, plane_size, out_data, mj_tmp_buf, pdev, prn_stream);
           }
           break;
         default:
-          for (zero_row_count = 0, i = num_comps - 1; i >= 0; i--) {
+          for (i = num_comps - 1; i >= 0; i--) {
             out_data = (byte*) plane_data[scan][i];
             mj_raster_cmd(i, plane_size, out_data, mj_tmp_buf, pdev, prn_stream);
           }

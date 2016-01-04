@@ -237,13 +237,9 @@ oki4w_print_page(gx_device_printer *pdev, FILE *prn_stream)
                                            "oki4w_print_page");
         word
           *data_words,
-          *out_row_words,
-          *out_row_alt_words,
-          *prev_row_words;
+          *out_row_words;
 #define data ((byte *)data_words)
 #define out_row ((byte *)out_row_words)
-#define out_row_alt ((byte *)out_row_alt_words)
-#define prev_row ((byte *)prev_row_words)
         byte *out_data;
         int x_dpi = pdev->x_pixels_per_inch;
         int y_dpi = pdev->y_pixels_per_inch;
@@ -261,8 +257,6 @@ oki4w_print_page(gx_device_printer *pdev, FILE *prn_stream)
                 return_error(gs_error_VMerror);
         data_words = storage;
         out_row_words = data_words + (line_size_words * 2);
-        out_row_alt_words = out_row_words + (line_size_words * 2);
-        prev_row_words = out_row_alt_words + (line_size_words * 2);
         /* Clear temp storage */
         memset(data, 0, storage_size_words * W);
 

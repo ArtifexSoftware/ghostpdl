@@ -229,11 +229,6 @@ eprintf_program_ident(const char *program_name,
         epf(": ");
     }
 }
-void
-lprintf_file_only(FILE * f, const char *file)
-{
-    epf("%s(?): ", file);
-}
 #endif
 
 void

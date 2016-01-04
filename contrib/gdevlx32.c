@@ -1086,7 +1086,8 @@ fillheader(pagedata *gendata, int head, int numcol, int firstcol, int bytes)
 {
         int len, offs1, startabs;
         int endabs, select, fwd;
-        int back, nabspos, sep;
+        int back, nabspos;
+        /* int sep;*/
         byte *header;
 
         header = gendata->header;
@@ -1109,11 +1110,11 @@ fillheader(pagedata *gendata, int head, int numcol, int firstcol, int bytes)
          */
         if(head == LEFT)
         {
-                sep = (gendata->bwsep * 2) / gendata->xrmul;
+                /* sep = (gendata->bwsep * 2) / gendata->xrmul;*/
         }
         else
         {
-                sep = (gendata->colsep * 2) / gendata->xrmul;
+                /* sep = (gendata->colsep * 2) / gendata->xrmul; */
                 select |= 0x80;
         }
 
