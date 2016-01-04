@@ -112,6 +112,7 @@ xps_read_zip_entry(xps_context_t *ctx, xps_entry_t *ent, unsigned char *outbuf)
         return gs_throw1(-1, "wrong zip local file signature (0x%x)", sig);
 
     version = getshort(ctx->file);
+    version = version; /* Avoid unused variable compiler warning */
     general = getshort(ctx->file);
     if (general & ZIP_ENCRYPTED_FLAG)
         return gs_throw(-1, "zip file content is encrypted");

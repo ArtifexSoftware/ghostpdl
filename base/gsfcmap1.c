@@ -373,7 +373,6 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
 
     uint pm_index;
     uint pm_fidx;
-    gs_char pm_chr;
 
     /* For first, check defined map */
     if_debug0('J', "[J]GCDN() check def CMap\n");
@@ -388,7 +387,6 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
     /* save partially matched results */
     pm_index = *pindex;
     pm_fidx = *pfidx;
-    pm_chr = *pchr;
 
     /* check notdef map. */
     if_debug0('J', "[J]GCDN() check notdef CMap\n");

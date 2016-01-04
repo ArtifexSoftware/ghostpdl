@@ -711,7 +711,7 @@ even_better_line_hi (EvenBetterCtx *ebc, uchar **dest,
   int im;
   int *pa, *pb, *piir, *pr;
   int r[M], rg;
-  int xd, xs;
+  int xd;
   uint32 seed1 = ebc->seed1;
   uint32 seed2 = ebc->seed2;
   uint32 sum;
@@ -737,7 +737,6 @@ even_better_line_hi (EvenBetterCtx *ebc, uchar **dest,
   int count[M], src_idx[M];
   int rs[M];
 
-  xs = ebc->source_width;
   xd = ebc->dest_width;
 
   for (plane_idx = 0; plane_idx < n_planes; plane_idx++)

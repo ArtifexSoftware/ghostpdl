@@ -148,6 +148,8 @@ gs_image_class_2_fracs(gx_image_enum * penum)
             cmm_dev_profile_t *dev_profile;
 
             code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
+            if (code < 0)
+                return 0;
             num_des_comps = gsicc_get_device_profile_comps(dev_profile);
             penum->icc_setup.need_decode = false;
             /* Check if we need to do any decoding.  If yes, then that will slow us down */
@@ -593,7 +595,6 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     fixed xprev, yprev;
     fixed pdyx, pdyy;		/* edge of parallelogram */
     int vci, vdi;
-    const gs_color_space *pcs;
     gx_device_color devc1;
     gx_device_color devc2;
     gx_device_color *pdevc;
@@ -631,11 +632,6 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     }
     /* Needed for device N */
     memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
-    if (gs_color_space_is_PSCIE(penum->pcs) && penum->pcs->icc_equivalent != NULL) {
-        pcs = penum->pcs->icc_equivalent;
-    } else {
-        pcs = penum->pcs;
-    }
     pdevc = &devc1;
     pdevc_next = &devc2;
     /* These used to be set by init clues */

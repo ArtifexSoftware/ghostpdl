@@ -877,9 +877,9 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
     xps_item_t *node;
 
     char *opacity_att;
-    char *interpolation_att;
+    /*char *interpolation_att;*/
     char *spread_att;
-    char *mapping_att;
+    /*char *mapping_att;*/
     char *transform_att;
 
     xps_item_t *transform_tag = NULL;
@@ -898,9 +898,9 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
     int has_opacity = 0;
 
     opacity_att = xps_att(root, "Opacity");
-    interpolation_att = xps_att(root, "ColorInterpolationMode");
+    /*interpolation_att = xps_att(root, "ColorInterpolationMode");*/
     spread_att = xps_att(root, "SpreadMethod");
-    mapping_att = xps_att(root, "MappingMode");
+    /*mapping_att = xps_att(root, "MappingMode");*/
     transform_att = xps_att(root, "Transform");
 
     for (node = xps_down(root); node; node = xps_next(node))

@@ -562,8 +562,8 @@ param_get_cie_render1(gs_cie_render * pcrd, gs_param_list * plist,
         pcrd->EncodeABC = Encode_default;
     else
         pcrd->EncodeABC = EncodeABC_from_data;
-    code_rt = code = param_read_int_array(plist, "RenderTableSize", &rt_size);
-    if (code == 1) {
+    code_rt = param_read_int_array(plist, "RenderTableSize", &rt_size);
+    if (code_rt == 1) {
         if (pcrd->RenderTable.lookup.table) {
             gs_free_object(pcrd->rc.memory,
                 (void *)pcrd->RenderTable.lookup.table, /* break const */
@@ -572,8 +572,8 @@ param_get_cie_render1(gs_cie_render * pcrd, gs_param_list * plist,
         }
         pcrd->RenderTable.T = RenderTableT_default;
         code_t = 1;
-    } else if (code < 0)
-        return code;
+    } else if (code_rt < 0)
+        return code_rt;
     else if (rt_size.size != 4)
         return_error(gs_error_rangecheck);
     else {

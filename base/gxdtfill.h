@@ -143,7 +143,9 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
         const int iy1 = fixed2int_var(ymax);
         trap_line l, r;
         register int rxl, rxr;
+#if !LINEAR_COLOR
         int ry;
+#endif
         const fixed
             x0l = left->start.x, x1l = left->end.x, x0r = right->start.x,
             x1r = right->end.x, dxl = x1l - x0l, dxr = x1r - x0r;
@@ -181,7 +183,9 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
         r.h = right->end.y - right->start.y;
         l.x = x0l + (fixed_half - fixed_epsilon);
         r.x = x0r + (fixed_half - fixed_epsilon);
+#if !LINEAR_COLOR
         ry = iy;
+#endif
 
 /*
  * Free variables of FILL_TRAP_RECT:

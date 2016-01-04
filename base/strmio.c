@@ -89,6 +89,8 @@ sfread(void *ptr, size_t size, size_t count, stream *s)
     uint nread;
 
     code = sgets(s, ptr, size*count, &nread);
+    if (code < 0)
+        return code;
     return nread*size;
 }
 

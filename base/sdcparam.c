@@ -262,7 +262,6 @@ s_DCT_get_huffman_tables(gs_param_list * plist,
     gs_param_string *huff_data;
     gs_param_string_array hta;
     int num_in_tables;
-    jpeg_component_info *comp_info;
     JHUFF_TBL **dc_table_ptrs;
     JHUFF_TBL **ac_table_ptrs;
     int i;
@@ -272,7 +271,6 @@ s_DCT_get_huffman_tables(gs_param_list * plist,
         dc_table_ptrs = pdct->data.compress->cinfo.dc_huff_tbl_ptrs;
         ac_table_ptrs = pdct->data.compress->cinfo.ac_huff_tbl_ptrs;
         num_in_tables = pdct->data.compress->cinfo.input_components * 2;
-        comp_info = pdct->data.compress->cinfo.comp_info;
     } else {
         dc_table_ptrs = pdct->data.decompress->dinfo.dc_huff_tbl_ptrs;
         ac_table_ptrs = pdct->data.decompress->dinfo.ac_huff_tbl_ptrs;
@@ -280,7 +278,6 @@ s_DCT_get_huffman_tables(gs_param_list * plist,
             if (dc_table_ptrs[i - 1] || ac_table_ptrs[i - 1])
                 break;
         num_in_tables = i * 2;
-        comp_info = NULL;	/* do not set for decompress case */
     }
 /****** byte_array IS WRONG ******/
     huff_data = (gs_param_string *)

@@ -1339,11 +1339,9 @@ static const unsigned char	xtrans[ 256 ] = {
 
 static int		photoex_open( DEV *pdev )
 {
-double	height;
 double	width;
 float	margins[ 4 ];						/* L, B, R, T					*/
 
-        height = pdev->height / pdev->y_pixels_per_inch;
         width  = pdev->width  / pdev->x_pixels_per_inch;
 
         margins[ 0 ] = 0.12;
@@ -1374,10 +1372,7 @@ static	CINX	photoex_map_rgb_color( DEV *dev, const CVAL prgb[] )
 CVAL            r = prgb[0], g = prgb[1], b = prgb[2];
 int		c, y, m, k;
 int		a, s, f;
-EDEV	*edev;
 int		i;
-
-        edev = (EDEV *) dev;
 
         /* White and black are treated on their own */
 
@@ -2760,7 +2755,6 @@ static	void	HalftoneLine( RENDER *render, int line, byte *data )
 {
 void		(*htone)( HTONE *, int );
 EDEV		*dev;
-int			offs;
 HTONE		hdata;
 short		*errs[ MAX_ED_LINES ];
 int			i;
@@ -2769,7 +2763,6 @@ int			i;
 
         dev   = render->dev;
         htone = htable[ render->dev->halftoner ].htone;
-        offs  = render->mono ? 0 : OFFS_K;
 
         if ( dev->mono ) {
 

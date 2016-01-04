@@ -793,6 +793,8 @@ clist_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
     if (dev_profile == NULL) {
         gsicc_rendering_param_t temp_render_cond;
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+        if (code < 0)
+            return code;
         gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
                                               &(gs_output_profile),
                                               &(temp_render_cond));

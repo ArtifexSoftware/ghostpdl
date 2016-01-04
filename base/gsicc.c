@@ -107,6 +107,8 @@ gx_icc_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
     int k;
 
     code = dev_proc(dev, get_profile)(dev, &(dev_profile));
+    if (code < 0)
+        return code;
     ndes = gsicc_get_device_profile_comps(dev_profile);
 
     /* Get us to ushort and get mid point */
@@ -159,6 +161,8 @@ gx_icc_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * p
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(dev, get_profile)(dev, &(dev_profile));
+    if (code < 0)
+        return code;
     ndes = gsicc_get_device_profile_comps(dev_profile);
 
     /* This needs to be optimized. And range corrected */
@@ -377,6 +381,8 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    if (code < 0)
+        return code;
     if (dev_profile == NULL)
         return gs_throw(gs_error_Fatal, "Attempting to do ICC remap with no profile");
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
@@ -468,6 +474,8 @@ gx_remap_ICC_imagelab(const gs_client_color * pcc, const gs_color_space * pcs,
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    if (code < 0)
+        return code;
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     rendering_params.black_point_comp = pis->blackptcomp;
     rendering_params.graphics_type_tag = dev->graphics_type_tag;
@@ -534,6 +542,8 @@ gx_concretize_ICC(
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    if (code < 0)
+        return code;
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     /* Define the rendering intents.  */
     rendering_params.black_point_comp = pis->blackptcomp;

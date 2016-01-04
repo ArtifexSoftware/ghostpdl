@@ -224,7 +224,7 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
         }
         /* Decompress the data into this block */
         code = uncompress (dest, &buflen, block_data, block_length);
-        if (count != buflen)
+        if (code != Z_OK || count != buflen)
             return ERRC;
         if (need_copy) {
             memcpy(pw->ptr+1, dest, max_count);

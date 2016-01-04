@@ -514,7 +514,7 @@ xps_read_cff_file(xps_font_t *font, gs_font_type1 *pt1)
 
     /* CFF header */
     {
-        int major, minor, hdrsize, offsize;
+        int major, minor, hdrsize;
 
         if (p + 4 > e)
             return gs_throw(-1, "not enough data for header");
@@ -522,7 +522,7 @@ xps_read_cff_file(xps_font_t *font, gs_font_type1 *pt1)
         major = *p++;
         minor = *p++;
         hdrsize = *p++;
-        offsize = *p++;
+        /*offsize = **/p++;
 
         if (major != 1 || minor != 0)
             return gs_throw(-1, "not a CFF 1.0 file");

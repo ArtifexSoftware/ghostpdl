@@ -131,7 +131,6 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
     crypt_state state;
     register int c;
     int code = 0;
-    fixed ftx = pcis->origin.x, fty = pcis->origin.y;
 
     switch (pcis->init_done) {
         case -1:
@@ -139,7 +138,6 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
             break;
         case 0:
             gs_type1_finish_init(pcis);	/* sets origin */
-            ftx = pcis->origin.x, fty = pcis->origin.y;
             code = t1_hinter__set_mapping(h, &pcis->pis->ctm,
                             &pfont->FontMatrix, &pfont->base->FontMatrix,
                             pcis->scale.x.log2_unit, pcis->scale.x.log2_unit,

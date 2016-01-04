@@ -233,8 +233,8 @@ static void fraction_matrix__set(fraction_matrix * self, const double_matrix * p
     double ayx = fabs(pmat->yx), ayy = fabs(pmat->yy);
     double scale = max(axx + axy, ayx + ayy);
     int matrix_exp, m;
-    double unused = frexp(scale, &matrix_exp);
 
+    (void)frexp(scale, &matrix_exp);
     self->bitshift = matrix_bits - matrix_exp;
     if (self->bitshift >= sizeof( self->denominator) * 8) {
         self->denominator = 0;
@@ -247,7 +247,7 @@ static void fraction_matrix__set(fraction_matrix * self, const double_matrix * p
         self->yx = (int32_t)(pmat->yx * self->denominator + 0.5);
         self->yy = (int32_t)(pmat->yy * self->denominator + 0.5);
         m = Max(Max(any_abs(self->xx), any_abs(self->xy)), Max(any_abs(self->yx), any_abs(self->yy)));
-        unused = frexp(m, &matrix_exp);
+        (void)frexp(m, &matrix_exp);
         if (matrix_exp > matrix_bits)
             fraction_matrix__drop_bits(self, matrix_exp - matrix_bits);
     }
@@ -1007,14 +1007,13 @@ static bool t1_hinter__find_flex(t1_hinter * self, int k, int contour_beg, int c
                 /* Compute the curvity direction relative to the middle coord. */
                 bool gt = false, lt = false;
                 double area = 0, area0;
-                int pl = i;
                 int dir = 0, prev_dir = 0, dir_change = 0;
 
                 *gm = gc0; /* Safety. */
                 /* fixme: optimize: the computaion of gt, lt may be replaced with
                    a longer loop, so that dir_change accounts outer segments.
                    optimize : move the 1st iteratiot outside the loop. */
-                for (l = i; ; pl = l, gcp = gcl, gdp = gdl, prev_dir = dir, l++) {
+                for (l = i; ; gcp = gcl, gdp = gdl, prev_dir = dir, l++) {
                     if (l == contour_end)
                         l = contour_beg;
                     gcl = *member_prt(t1_glyph_space_coord, &self->pole[l], offset_gc);
@@ -2787,7 +2786,7 @@ static void t1_hinter__interpolate_other_poles(t1_hinter * self)
                 bool moved = false;
 
                 do {
-                    int min_l = 0, max_l = 0, jp;
+                    int min_l = 0, max_l = 0;
                     int min_w, max_w, w0;
 
                     g0 = *member_prt(t1_glyph_space_coord, &self->pole[start_pole], offset_gc);
@@ -2796,7 +2795,6 @@ static void t1_hinter__interpolate_other_poles(t1_hinter * self)
                     min_g = g0;
                     max_g = g0;
                     min_w = max_w = w0;
-                    jp = start_pole;
                     for (j = ranger_step_f(start_pole,  beg_contour_pole, end_contour_pole), l = 1;
                          j != start_pole;
                          j = ranger_step_f(j,  beg_contour_pole, end_contour_pole), l++) {
@@ -2815,7 +2813,6 @@ static void t1_hinter__interpolate_other_poles(t1_hinter * self)
                             break;
                         if (j == stop_pole)
                             break;
-                        jp = j;
                     }
                     stop_pole = j;
                     cut_l = l;

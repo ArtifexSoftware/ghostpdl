@@ -611,9 +611,10 @@ static gx_color_index
 x_cmyk_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 {
     int shift = dev->color_info.depth >> 2;
-    gx_color_index pixel = cv[0] >> (gx_color_value_bits - shift);
+    gx_color_index pixel;
     gx_color_value c, m, y, k;
     c = cv[0]; m = cv[1]; y = cv[2]; k = cv[3];
+    pixel = c >> (gx_color_value_bits - shift);
     pixel = (pixel << shift) | (m >> (gx_color_value_bits - shift));
     pixel = (pixel << shift) | (y >> (gx_color_value_bits - shift));
     return (pixel << shift) | (k >> (gx_color_value_bits - shift));

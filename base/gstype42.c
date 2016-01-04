@@ -840,6 +840,7 @@ gs_type42_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_inde
                     subst.SubstFormat = format; /* Debug purpose. */
                     subst.Coverage = U16(subtable_ptr + offset_of(SingleSubstFormat1, Coverage));
                     subst.DeltaGlyphId = U16(subtable_ptr + offset_of(SingleSubstFormat1, DeltaGlyphId));
+                    format = subst.SubstFormat; /* Stops gcc warning */
                 } else {
                     SingleSubstFormat2 subst;
                     byte *coverage_ptr;

@@ -709,6 +709,8 @@ xcf_get_params(gx_device * pdev, gs_param_list * plist)
         prgbs.size = strlen(xdev->profile_rgb_fn),
         prgbs.persistent = false;
     code = param_write_string(plist, "ProfileRgb", &prgbs);
+    if (code < 0)
+        return code;
 
     pcmyks.data = (const byte *)xdev->profile_cmyk_fn,
         pcmyks.size = strlen(xdev->profile_cmyk_fn),

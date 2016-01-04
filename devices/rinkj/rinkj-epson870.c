@@ -460,9 +460,6 @@ static int
 rinkj_escp_init (RinkjDevice *self, const RinkjDeviceParams *params)
 {
   RinkjEscp *z = (RinkjEscp *)self;
-  int resolution = 720; /* todo: make settable */
-  int uweave;
-  int height, top, bottom;
   int i;
 
   z->width = params->width;
@@ -471,11 +468,6 @@ rinkj_escp_init (RinkjDevice *self, const RinkjDeviceParams *params)
 
   /* weaving stuff */
   z->pass = 0;
-
-  /* 0 inch margins on top, 0.5 on bottom */
-  top = 0 * resolution;
-  bottom = params->height + 0.5 * resolution;
-  height = params->height * resolution + resolution;
 
   /* some defaults */
   for (i = 0; i < sizeof(z->plane_offsets) / sizeof(z->plane_offsets[0]); i++)
@@ -536,9 +528,6 @@ rinkj_escp_init (RinkjDevice *self, const RinkjDeviceParams *params)
 
   z->spacing = z->yres / z->head_yres;
   z->passes_per_scan = z->xres / z->head_xres;
-
-  /* microweave */
-  uweave = (z->n_pins == 1);
 
   z->max_offset = 0;
   for (i = 0; i < sizeof(z->plane_offsets) / sizeof(z->plane_offsets[0]); i++)
@@ -855,7 +844,6 @@ static int
 rinkj_escp_flush (RinkjEscp *z)
 {
   int xsb, xsb_out;
-  int xs_out;
   int status;
   const int plane[7] = {3, 1, 0, 2, 5, 4, 6};
   const int color[7] = {0, 1, 2, 4, 17, 18, 16};
@@ -879,7 +867,6 @@ rinkj_escp_flush (RinkjEscp *z)
 
   xsb = (z->width * z->bps + 7) >> 3;
 
-  xs_out = (z->width + z->passes_per_scan - 1) / (z->passes_per_scan);
   xsb_out = (((z->width * z->head_bps + 7) >> 3) + z->passes_per_scan - 1) /
     (z->passes_per_scan);
 

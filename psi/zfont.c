@@ -454,7 +454,6 @@ font_restore(const alloc_save_t * save)
 
     gs_memory_t *smem = gs_save_any_memory(save);
     gs_font_dir *pdir = smem->gs_lib_ctx->font_dir;
-    const gs_memory_t *mem = 0;
     int code;
 
     if (pdir == 0)		/* not initialized yet */
@@ -469,7 +468,6 @@ otop:
         for (pfont = pdir->orig_fonts; pfont != 0;
              pfont = pfont->next
             ) {
-            mem = pfont->memory;
             if (alloc_is_since_save((char *)pfont, save)) {
                 code = gs_purge_font(pfont);
                 if (code < 0)

@@ -256,7 +256,6 @@ starting X value of the printer line.
                 byte *in_end;
                 byte *outp;
                 register byte *p, *q;
-                int lcnt;
 
                 /*
                 ** Check buffer for 0 data.
@@ -274,7 +273,7 @@ starting X value of the printer line.
                 if(lnum == bottom ) break;
                 /* finished with this page */
 
-                lcnt = gdev_prn_copy_scan_lines(pdev, lnum, in, in_size);
+                (void)gdev_prn_copy_scan_lines(pdev, lnum, in, in_size);
 
                 inp = in  + left;
                 in_end = inp + width;

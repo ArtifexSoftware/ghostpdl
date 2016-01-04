@@ -167,7 +167,8 @@ xps_load_sfnt_name(xps_font_t *font, char *namep)
 {
     byte *namedata;
     int offset, length;
-    int format, count, stringoffset;
+    /*int format;*/
+    int count, stringoffset;
     int found;
     int i, k;
 
@@ -183,7 +184,7 @@ xps_load_sfnt_name(xps_font_t *font, char *namep)
 
     namedata = font->data + offset;
 
-    format = u16(namedata + 0);
+    /*format = u16(namedata + 0);*/
     count = u16(namedata + 2);
     stringoffset = u16(namedata + 4);
 
