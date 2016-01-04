@@ -339,7 +339,7 @@ display_callback display = {
 
 typedef BOOL (SetProcessDPIAwareFn)(void);
 
-static int
+static void
 avoid_windows_scale(void)
 {
     /* Fetch the function address and only call it if it is there; this keeps
