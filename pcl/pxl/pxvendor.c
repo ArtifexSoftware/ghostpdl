@@ -418,8 +418,10 @@ vu_begin_image(px_state_t * pxs)
 	params.color_space = eGray;
     else
 	params.color_space = eSRGB;
-    params.width = params.dest_width = v_state->SourceWidth;
-    params.height = params.dest_height = v_state->BlockHeight;
+    params.width = (uint)v_state->SourceWidth;
+    params.dest_width = (real)v_state->SourceWidth;
+    params.height = (uint)v_state->BlockHeight;
+    params.dest_height = (real)v_state->BlockHeight;
     params.depth = 8;
     params.indexed = false;
     code = px_image_color_space(&image, &params,

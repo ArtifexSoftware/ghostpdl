@@ -933,7 +933,7 @@ pxSetHalftoneMethod(px_args_t * par, px_state_t * pxs)
                         break;
                     case eLandscapeOrientation:
                         dest += (width - 1 - source_x) * height + source_y;
-                        skip = -height;
+                        skip = -(int)height;
                         break;
                     case eReversePortrait:
                         dest += (height - 1 - source_y) * width +

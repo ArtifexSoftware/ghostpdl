@@ -245,7 +245,7 @@ pl_fill_in_mt_font(gs_font_base * pfont, pl_font_t * plfont, ushort handle,
             plfont->allow_vertical_substitutes = false;
 
             gs_make_identity(&pfont->FontMatrix);
-            pfont->FontMatrix.xx = pfont->FontMatrix.yy = 0.001;
+            pfont->FontMatrix.xx = pfont->FontMatrix.yy = 0.001f;
             pfont->FontType = ft_MicroType;
             pfont->BitmapWidths = true;
             pfont->ExactSize = fbit_use_outlines;
@@ -498,7 +498,7 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
                          (char *)pname) != 0)
                         continue;
 
-                    pitch_cp = (spaceBand * 100.0) / scaleFactor + 0.5;
+                    pitch_cp = (uint)((spaceBand * 100.0) / scaleFactor + 0.5);
 
 #ifdef DEBUG
                     if (gs_debug_c('='))
@@ -509,10 +509,9 @@ pl_load_built_in_mtype_fonts(const char *pathname, gs_memory_t * mem,
                        for Intellifont derived fonts. */
 
                     if (scaleFactor == 8782) {
-                        plfont->pts_per_inch = 72.307;
-                        pitch_cp =
-                            (spaceBand * 100 * 72.0) / (scaleFactor *
-                                                        72.307) + 0.5;
+                        plfont->pts_per_inch = 72.307f;
+                        pitch_cp = (uint)((spaceBand * 100 * 72.0) /
+                                          (scaleFactor * 72.307) + 0.5);
                     }
 #ifdef DEBUG
                     if (gs_debug_c('='))

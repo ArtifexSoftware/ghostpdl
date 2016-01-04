@@ -472,7 +472,7 @@ hpgl_rotation_transform_distance(hpgl_state_t * pgls, gs_point * dxy,
 {
     double run = pgls->g.character.direction.x;
     double rise = pgls->g.character.direction.y;
-    int angle = (hpgl_compute_angle(run, rise) * radians_to_degrees) + 0.5;
+    int angle = (int)((hpgl_compute_angle(run, rise) * radians_to_degrees) + 0.5);
     gs_point tmp_dxy = *dxy;
     gs_matrix rmat;
 
@@ -831,7 +831,7 @@ hpgl_print_char(hpgl_state_t * pgls, uint ch)
             }
 
             angle =
-                (hpgl_compute_angle(run, rise) * radians_to_degrees) + 0.5;
+                (int)((hpgl_compute_angle(run, rise) * radians_to_degrees) + 0.5);
             gs_currentmatrix(pgs, &pre_rmat);
             gs_rotate(pgs, angle);
             /* we do something special if the angle is greater than

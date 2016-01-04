@@ -267,7 +267,7 @@ read_uncompressed_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
     if (par->pv[3])
         pad = par->pv[3]->value.i;
 
-    data_per_row_padded = round_up(data_per_row, pad);
+    data_per_row_padded = round_up(data_per_row, (int)pad);
     pos_in_row = par->source.position % data_per_row_padded;
 
     /* consumed all of the data */
@@ -307,7 +307,7 @@ read_rle_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata, px_args_t * par)
     if (par->pv[3])
         pad = par->pv[3]->value.i;
     data_per_row = benum->data_per_row;
-    data_per_row_padded = round_up(benum->data_per_row, pad);
+    data_per_row_padded = round_up(benum->data_per_row, (int)pad);
     pos_in_row = par->source.position % data_per_row_padded;
 
     /* consumed all of the data */

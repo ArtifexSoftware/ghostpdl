@@ -746,7 +746,7 @@ gmode_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
         if (pcs->personality == rtl) {
             float res = atof(pjl_proc_get_envvar(pcs->pjls, "resolution"));
             if (res != 0)
-                prstate->resolution = res;
+                prstate->resolution = (uint)res;
             prstate->pres_mode_3 = false;
         } else {
             prstate->pres_mode_3 = true;

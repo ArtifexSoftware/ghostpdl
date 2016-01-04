@@ -347,7 +347,7 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
             res[0] = res[1] = pcl_pjl_res(pcs);
 
             if (res[0] != 0)
-                arg_set_uint(&args, res[0]);
+                arg_set_uint(&args, (uint)res[0]);
             else
                 arg_set_uint(&args,
                              (uint) gs_currentdevice(pcs->pgs)->

@@ -522,7 +522,7 @@ hpgl_RF_build_mask(byte * data, uint index, uint height, uint width,
     mask.size.y = height;
     mask.id = 0;
     mask.num_comps = 1;
-    code = pcl_pattern_RF(-index, &mask, pgls);
+    code = pcl_pattern_RF(-(int)index, &mask, pgls);
     if (code < 0)
         gs_free_object(pgls->memory, mdata, "hpgl_RF_build_mask");
     return code;
@@ -623,7 +623,7 @@ hpgl_RF(hpgl_args_t * pargs, hpgl_state_t * pgls)
         if (is_mask) {
             /* if a mask was built, realease it.  We ignore the return
                value since we are already in an error state. */
-            pcl_pattern_RF(-index, NULL, pgls);
+            pcl_pattern_RF(-(int)index, NULL, pgls);
         }
     }
     pgls->g.raster_fill.data = 0;

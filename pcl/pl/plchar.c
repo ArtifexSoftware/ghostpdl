@@ -240,7 +240,7 @@ bits_smear_horizontally(byte * dest, const byte * src, uint width,
                         *dp++ = 0xff;
                         bits_on += 8 -
                             byte_count_bits[(*zp & (zmask - 1)) +
-                                            (zp[1] & -zmask)];
+                                            (zp[1] & -(int)zmask)];
                         ++zp;
                         i += 8;
                         goto on;

@@ -1203,9 +1203,9 @@ pcl_get_default_paper(pcl_state_t * pcs)
             if (!pjl_proc_compare(pcs->pjls, "custom", PAPER_SIZES[i].pname)) {
                 if (pcs->page_set_on_command_line) {
                     PAPER_SIZES[i].psize.width =
-                        gs_currentdevice(pcs->pgs)->MediaSize[0] * 100;
+                        (coord)(gs_currentdevice(pcs->pgs)->MediaSize[0] * 100);
                     PAPER_SIZES[i].psize.height =
-                        gs_currentdevice(pcs->pgs)->MediaSize[1] * 100;
+                        (coord)(gs_currentdevice(pcs->pgs)->MediaSize[1] * 100);
                 } else {
                     PAPER_SIZES[i].psize.width = atol(pwidth) * 10L;
                     PAPER_SIZES[i].psize.height = atol(plength) * 10L;
