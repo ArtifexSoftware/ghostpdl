@@ -82,7 +82,7 @@ requested_includes_stored(const gx_device *dev,
                  dev->color_info.depth : dev->color_info.num_components);
 
         if (!(requested->options & GB_SELECT_PLANES) ||
-            !(both & (GB_PACKING_PLANAR || GB_PACKING_BIT_PLANAR))
+            !(both & (GB_PACKING_PLANAR | GB_PACKING_BIT_PLANAR))
             )
             return false;
         for (i = 0; i < n; ++i)
