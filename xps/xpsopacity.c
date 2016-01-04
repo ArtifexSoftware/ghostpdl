@@ -38,8 +38,8 @@ xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *ubox)
 
 /* This will get the proper bounds based upon the current path, clip path
    and stroke width */
-void xps_bounds_in_user_space_path_clip(xps_context_t *ctx, gs_rect *ubox,
-                                        bool use_path, bool is_stroke)
+int xps_bounds_in_user_space_path_clip(xps_context_t *ctx, gs_rect *ubox,
+                                       bool use_path, bool is_stroke)
 {
     int code;
     gs_rect bbox;
@@ -52,7 +52,10 @@ void xps_bounds_in_user_space_path_clip(xps_context_t *ctx, gs_rect *ubox,
         else
             code = gx_curr_bbox(ctx->pgs, &bbox, PATH_FILL);
     }
+    if (code < 0)
+        return code;
     gs_bbox_transform_inverse(&bbox, &ctm_only(ctx->pgs), ubox);
+    return code;
 }
 
 int
@@ -76,7 +79,9 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
     gs_setblendmode(ctx->pgs, BLEND_MODE_Normal);
     gs_setopacityalpha(ctx->pgs, opacity);
 
-    xps_bounds_in_user_space_path_clip(ctx, &bbox, use_path, is_stroke);
+    code = xps_bounds_in_user_space_path_clip(ctx, &bbox, use_path, is_stroke);
+    if (code < 0)
+        return code;
 
     if (opacity_mask_tag)
     {

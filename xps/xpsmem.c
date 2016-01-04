@@ -35,7 +35,7 @@ xps_tolower(int c)
 }
 
 int
-xps_strcasecmp(char *a, char *b)
+xps_strcasecmp(const char *a, const char *b)
 {
         while (xps_tolower(*a) == xps_tolower(*b))
         {

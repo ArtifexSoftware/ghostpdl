@@ -71,7 +71,7 @@ xps_compare_entries(const void *a0, const void *b0)
 }
 
 static xps_entry_t *
-xps_find_zip_entry(xps_context_t *ctx, char *name)
+xps_find_zip_entry(xps_context_t *ctx, const char *name)
 {
     int l = 0;
     int r = ctx->zip_count - 1;
@@ -303,14 +303,14 @@ xps_find_and_read_zip_dir(xps_context_t *ctx)
  */
 
 static xps_part_t *
-xps_read_zip_part(xps_context_t *ctx, char *partname)
+xps_read_zip_part(xps_context_t *ctx, const char *partname)
 {
     char buf[2048];
     xps_entry_t *ent;
     xps_part_t *part;
     int count, size, offset, i;
     int code;
-    char *name;
+    const char *name;
     int seen_last = 0;
 
     name = partname;
@@ -393,7 +393,7 @@ xps_read_zip_part(xps_context_t *ctx, char *partname)
  */
 
 static xps_part_t *
-xps_read_dir_part(xps_context_t *ctx, char *name)
+xps_read_dir_part(xps_context_t *ctx, const char *name)
 {
     char buf[2048];
     xps_part_t *part;
@@ -459,7 +459,7 @@ xps_read_dir_part(xps_context_t *ctx, char *name)
 }
 
 xps_part_t *
-xps_read_part(xps_context_t *ctx, char *partname)
+xps_read_part(xps_context_t *ctx, const char *partname)
 {
     if (ctx->directory)
         return xps_read_dir_part(ctx, partname);
@@ -471,7 +471,7 @@ xps_read_part(xps_context_t *ctx, char *partname)
  */
 
 static int
-xps_read_and_process_metadata_part(xps_context_t *ctx, char *name)
+xps_read_and_process_metadata_part(xps_context_t *ctx, const char *name)
 {
     xps_part_t *part;
     int code;

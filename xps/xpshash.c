@@ -207,14 +207,14 @@ xps_hash_debug(xps_hash_table_t *table)
 {
     int i;
 
-    printf("hash table load %d / %d\n", table->load, table->size);
+    dlprintf2("hash table load %d / %d\n", table->load, table->size);
 
     for (i = 0; i < table->size; i++)
     {
         if (!table->entries[i].value)
-            printf("table % 4d: empty\n", i);
+            dlprintf1("table % 4d: empty\n", i);
         else
-            printf("table % 4d: key=%s value=%p\n", i,
-                    table->entries[i].key, table->entries[i].value);
+            dlprintf3("table % 4d: key=%s value=%p\n", i,
+                      table->entries[i].key, table->entries[i].value);
     }
 }

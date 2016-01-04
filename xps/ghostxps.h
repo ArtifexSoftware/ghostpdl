@@ -70,6 +70,7 @@
 #include "gsicc_manage.h"
 #include "gscms.h"
 #include "gsicc_cache.h"
+#include "gxpcolor.h"
 
 #include "zlib.h"
 
@@ -128,7 +129,7 @@ void * xps_realloc_imp(xps_context_t *ctx, void *ptr, int size, const char *func
 
 size_t xps_strlcpy(char *destination, const char *source, size_t size);
 size_t xps_strlcat(char *destination, const char *source, size_t size);
-int xps_strcasecmp(char *a, char *b);
+int xps_strcasecmp(const char *a, const char *b);
 char *xps_strdup_imp(xps_context_t *ctx, const char *str, const char *function);
 void xps_absolute_path(char *output, char *base_uri, char *path, int output_size);
 
@@ -162,8 +163,8 @@ struct xps_part_s
     byte *data;
 };
 
-xps_part_t *xps_new_part(xps_context_t *ctx, char *name, int size);
-xps_part_t *xps_read_part(xps_context_t *ctx, char *partname);
+xps_part_t *xps_new_part(xps_context_t *ctx, const char *name, int size);
+xps_part_t *xps_read_part(xps_context_t *ctx, const char *partname);
 void xps_free_part(xps_context_t *ctx, xps_part_t *part);
 
 /*
@@ -359,7 +360,7 @@ char * xps_get_point(char *s_in, float *x, float *y);
 void xps_clip(xps_context_t *ctx);
 void xps_fill(xps_context_t *ctx);
 void xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *user);
-void xps_bounds_in_user_space_path_clip(xps_context_t *ctx, gs_rect *ubox, bool use_path, bool is_stroke);
+int xps_bounds_in_user_space_path_clip(xps_context_t *ctx, gs_rect *ubox, bool use_path, bool is_stroke);
 
 int xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *node);
 int xps_resource_dictionary_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *node);
@@ -433,3 +434,8 @@ int xps_process_file(xps_context_t *ctx, char *filename);
 
 /* end of page device callback foo */
 int xps_show_page(xps_context_t *ctx, int num_copies, int flush);
+
+unsigned int
+xps_crc32(unsigned int crc, unsigned char *buf, int len);
+
+int xps_high_level_pattern(xps_context_t *ctx);

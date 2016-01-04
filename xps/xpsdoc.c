@@ -21,7 +21,7 @@
 #include <expat.h>
 
 xps_part_t *
-xps_new_part(xps_context_t *ctx, char *name, int size)
+xps_new_part(xps_context_t *ctx, const char *name, int size)
 {
     xps_part_t *part;
 

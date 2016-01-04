@@ -32,7 +32,7 @@ struct xps_parser_s
     xps_context_t *ctx;
     xps_item_t *root;
     xps_item_t *head;
-    char *error;
+    const char *error;
     char *base; /* base of relative URIs */
 };
 
@@ -46,17 +46,17 @@ struct xps_item_s
     xps_item_t *next;
 };
 
-static char *
-skip_namespace(char *s)
+static const char *
+skip_namespace(const char *s)
 {
-    char *p = strchr(s, ' ');
+    const char *p = strchr(s, ' ');
     if (p)
         return p + 1;
     return s;
 }
 
 static void
-on_open_tag(void *zp, char *ns_name, char **atts)
+on_open_tag(void *zp, const char *ns_name, const char **atts)
 {
     xps_parser_t *parser = zp;
     xps_context_t *ctx = parser->ctx;
@@ -65,7 +65,8 @@ on_open_tag(void *zp, char *ns_name, char **atts)
     int namelen;
     int attslen;
     int textlen;
-    char *name, *p;
+    const char *name;
+    char *p;
     int i;
 
     if (parser->error)
@@ -167,7 +168,7 @@ on_open_tag(void *zp, char *ns_name, char **atts)
 }
 
 static void
-on_close_tag(void *zp, char *name)
+on_close_tag(void *zp, const char *name)
 {
     xps_parser_t *parser = zp;
 
@@ -189,7 +190,7 @@ on_text(void *zp, char *buf, int len)
 {
     xps_parser_t *parser = zp;
     xps_context_t *ctx = parser->ctx;
-    char *atts[3];
+    const char *atts[3];
     int i;
 
     if (parser->error)
@@ -320,7 +321,7 @@ xps_free_item(xps_context_t *ctx, xps_item_t *item)
 static void indent(int n)
 {
     while (n--)
-        printf("  ");
+        dlprintf("  ");
 }
 
 static void
@@ -333,23 +334,23 @@ xps_debug_item_imp(xps_item_t *item, int level, int loop)
         indent(level);
 
         if (strlen(item->name) == 0)
-            printf("%s\n", item->atts[1]);
+            dlprintf1("%s\n", item->atts[1]);
         else
         {
-            printf("<%s", item->name);
+            dlprintf1("<%s", item->name);
 
             for (i = 0; item->atts[i]; i += 2)
-                printf(" %s=\"%s\"", item->atts[i], item->atts[i+1]);
+                dlprintf2(" %s=\"%s\"", item->atts[i], item->atts[i+1]);
 
             if (item->down)
             {
-                printf(">\n");
+                dlprintf(">\n");
                 xps_debug_item_imp(item->down, level + 1, 1);
                 indent(level);
-                printf("</%s>\n", item->name);
+                dlprintf1("</%s>\n", item->name);
             }
             else
-                printf(" />\n");
+                dlprintf(" />\n");
         }
 
         item = item->next;
