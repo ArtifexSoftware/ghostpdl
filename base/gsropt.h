@@ -94,14 +94,21 @@ typedef enum {
  * RasterOp operand is called texture, not pattern.
  */
 
+/* We have to define rop3_{T,S,D} as enum values to shut compilers
+ * up that do switch checking. We also have to #define them to allow
+ * the preprocessor templating to work. */
+
 /* 3-input RasterOp */
 typedef enum {
     rop3_0 = 0,
-#define rop3_T 0xf0              /* texture */
+    rop3_T = 0xf0,              /* texture */
+#define rop3_T 0xf0
 #define rop3_T_shift 4
-#define rop3_S 0xcc              /* source */
+    rop3_S = 0xcc,              /* source */
+#define rop3_S 0xcc
 #define rop3_S_shift 2
     rop3_D = 0xaa,              /* destination */
+#define rop3_D 0xaa
 #define rop3_D_shift 1
     rop3_1 = 0xff,
     rop3_default = rop3_T | rop3_S
