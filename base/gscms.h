@@ -98,14 +98,14 @@ typedef struct gsicc_bufferdesc_s {
 
 /* Mapping procedures to allow easy vectoring depending upon if we are using
    the CMM or doing "dumb" color transforms */
-typedef void (*gscms_trans_color_proc_t) (gx_device * dev, gsicc_link_t *icclink, 
-                                          void *inputcolor, void *outputcolor,
-                                          int num_bytes);
+typedef int (*gscms_trans_color_proc_t) (gx_device * dev, gsicc_link_t *icclink, 
+                                         void *inputcolor, void *outputcolor,
+                                         int num_bytes);
 
-typedef void (*gscms_trans_buffer_proc_t) (gx_device * dev, gsicc_link_t *icclink,
-                                           gsicc_bufferdesc_t *input_buff_desc,
-                                           gsicc_bufferdesc_t *output_buff_desc,
-                                           void *inputbuffer, void *outputbuffer);
+typedef int (*gscms_trans_buffer_proc_t) (gx_device * dev, gsicc_link_t *icclink,
+                                          gsicc_bufferdesc_t *input_buff_desc,
+                                          gsicc_bufferdesc_t *output_buff_desc,
+                                          void *inputbuffer, void *outputbuffer);
 
 typedef void (*gscms_link_free_proc_t) (gsicc_link_t *icclink);
 

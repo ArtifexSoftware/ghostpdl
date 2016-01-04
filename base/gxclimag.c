@@ -813,7 +813,9 @@ clist_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
             if (pie->decode.unpack == NULL) {
                 /* If we cant unpack, then end monitoring now. Treat as has color */
                 dev_profile->pageneutralcolor = false;
-                gsicc_mcm_end_monitor(pis->icc_link_cache, dev);
+                code = gsicc_mcm_end_monitor(pis->icc_link_cache, dev);
+                if (code < 0)
+                    return code;
             } else {
                 /* We need to allocate the buffer for unpacking during monitoring.
                     This is mainly for the 12bit case */
@@ -831,7 +833,9 @@ clist_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
             if (palette_has_color(pim->ColorSpace, pim)) {
                 /* Has color.  We are done monitoring */
                 dev_profile->pageneutralcolor = false;
-                gsicc_mcm_end_monitor(pis->icc_link_cache, dev);
+                code = gsicc_mcm_end_monitor(pis->icc_link_cache, dev);
+                if (code < 0)
+                    return code;
             }
         }
     } else {
@@ -1206,7 +1210,7 @@ clist_image_plane_data(gx_image_enum_common_t * info,
                                 cmm_dev_profile_t *dev_profile;
                                 code = dev_proc(dev, get_profile)(dev,  &dev_profile);
                                 dev_profile->pageneutralcolor = false;
-                                gsicc_mcm_end_monitor(pie->pis->icc_link_cache, dev);
+                                code |= gsicc_mcm_end_monitor(pie->pis->icc_link_cache, dev);
                                 pie->monitor_color = false;
                             }
                         } else {

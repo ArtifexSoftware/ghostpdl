@@ -489,34 +489,39 @@ gsicc_profile_from_ps(cmm_profile_t *profile_data)
 }
 
 /* Fill in the actual source structure rending information */
-static void
+static int
 gsicc_fill_srcgtag_item(gsicc_rendering_param_t *r_params, char **pstrlast, bool cmyk)
 {
     char *curr_ptr;
     int blackptcomp;
     int or_icc, preserve_k;
-    int ri, count = 0;
+    int ri;
 
     /* Get the intent */
     curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
-    count = sscanf(curr_ptr, "%d", &ri);
+    if (sscanf(curr_ptr, "%d", &ri) != 1)
+        return gs_error_unknownerror;
     r_params->rendering_intent = ri | gsRI_OVERRIDE;
     /* Get the black point compensation setting */
     curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
-    count = sscanf(curr_ptr, "%d", &blackptcomp);
+    if (sscanf(curr_ptr, "%d", &blackptcomp) != 1)
+        return gs_error_unknownerror;
     r_params->black_point_comp = blackptcomp | gsBP_OVERRIDE;
     /* Get the over-ride embedded ICC boolean */
     curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
-    count = sscanf(curr_ptr, "%d", &or_icc);
+    if (sscanf(curr_ptr, "%d", &or_icc) != 1)
+        return gs_error_unknownerror;
     r_params->override_icc = or_icc;
     if (cmyk) {
         /* Get the preserve K control */
         curr_ptr = gs_strtok(NULL, "\t,\32\n\r", pstrlast);
-        count = sscanf(curr_ptr, "%d", &preserve_k);
+        if (sscanf(curr_ptr, "%d", &preserve_k) < 1)
+            return gs_error_unknownerror;
         r_params->preserve_black = preserve_k | gsKP_OVERRIDE;
     } else {
         r_params->preserve_black = gsBKPRESNOTSPECIFIED;
     }
+    return 0;
 }
 
 static int
@@ -570,8 +575,12 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
     if (str != NULL) {
         /* Get the information in the file */
         code = sfseek(str,0,SEEK_END);
+        if (code < 0)
+            return code;
         info_size = sftell(str);
         code = srewind(str);
+        if (code < 0)
+            return code;
         if (info_size > (GSICC_NUM_SRCGTAG_KEYS + 1) * FILENAME_MAX) {
             return gs_throw1(-1, "setting of %s src obj color info failed",
                                pname);
@@ -585,6 +594,8 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
         }
         num_bytes = sfread(buffer_ptr,sizeof(unsigned char), info_size, str);
         code = sfclose(str);
+        if (code < 0)
+            return code;
         buffer_ptr[info_size] = 0;
         if (num_bytes != info_size) {
             gs_free_object(mem, buffer_ptr, "gsicc_set_srcgtag_struct");
@@ -643,6 +654,8 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                             icc_profile =
                                 gsicc_profile_new(str, mem, curr_ptr, strlen(curr_ptr));
                             code = sfclose(str);
+                            if (code < 0)
+                                return code;
                         }
                         if (str != NULL && icc_profile != NULL) {
                             gsicc_init_profile_info(icc_profile);
@@ -673,42 +686,54 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                     srcgtag->cmyk_profiles[gsSRC_GRAPPRO] = icc_profile;
                     srcgtag->cmyk_rend_cond[gsSRC_GRAPPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
-                        gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_GRAPPRO]), &last, true);
+                        code = gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_GRAPPRO]), &last, true);
+                        if (code < 0)
+                            return code;
                     }
                     break;
                 case IMAGE_CMYK:
                     srcgtag->cmyk_profiles[gsSRC_IMAGPRO] = icc_profile;
                     srcgtag->cmyk_rend_cond[gsSRC_IMAGPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
-                        gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_IMAGPRO]), &last, true);
+                        code = gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_IMAGPRO]), &last, true);
+                        if (code < 0)
+                            return code;
                     }
                     break;
                 case TEXT_CMYK:
                     srcgtag->cmyk_profiles[gsSRC_TEXTPRO] = icc_profile;
                     srcgtag->cmyk_rend_cond[gsSRC_TEXTPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
-                        gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_TEXTPRO]), &last, true);
+                        code = gsicc_fill_srcgtag_item(&(srcgtag->cmyk_rend_cond[gsSRC_TEXTPRO]), &last, true);
+                        if (code < 0)
+                            return code;
                     }
                     break;
                 case GRAPHIC_RGB:
                     srcgtag->rgb_profiles[gsSRC_GRAPPRO] = icc_profile;
                     srcgtag->rgb_rend_cond[gsSRC_GRAPPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
-                        gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_GRAPPRO]), &last, false);
+                        code = gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_GRAPPRO]), &last, false);
+                        if (code < 0)
+                            return code;
                     }
                    break;
                 case IMAGE_RGB:
                     srcgtag->rgb_profiles[gsSRC_IMAGPRO] = icc_profile;
                     srcgtag->rgb_rend_cond[gsSRC_IMAGPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
-                        gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_IMAGPRO]), &last, false);
+                        code = gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_IMAGPRO]), &last, false);
+                        if (code < 0)
+                            return code;
                     }
                     break;
                 case TEXT_RGB:
                     srcgtag->rgb_profiles[gsSRC_TEXTPRO] = icc_profile;
                     srcgtag->rgb_rend_cond[gsSRC_TEXTPRO].cmm = cmm;
                     if (cmm == gsCMM_DEFAULT) {
-                        gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_TEXTPRO]), &last, false);
+                        code = gsicc_fill_srcgtag_item(&(srcgtag->rgb_rend_cond[gsSRC_TEXTPRO]), &last, false);
+                        if (code < 0)
+                            return code;
                     }
                     break;
                 case GSICC_NUM_SRCGTAG_KEYS:

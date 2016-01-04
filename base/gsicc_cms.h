@@ -37,8 +37,8 @@ bool gsicc_mcm_monitor_rgb(void *inputcolor, int num_bytes);
 bool gsicc_mcm_monitor_cmyk(void *inputcolor, int num_bytes);
 bool gsicc_mcm_monitor_lab(void *inputcolor, int num_bytes);
 void gsicc_mcm_set_link(gsicc_link_t* link);
-void gsicc_mcm_end_monitor(gsicc_link_cache_t *cache, gx_device *dev);
-void gsicc_mcm_begin_monitor(gsicc_link_cache_t *cache, gx_device *dev);
+int gsicc_mcm_end_monitor(gsicc_link_cache_t *cache, gx_device *dev);
+int gsicc_mcm_begin_monitor(gsicc_link_cache_t *cache, gx_device *dev);
 gsicc_link_t* gsicc_rcm_get_link(const gs_imager_state *pis, gx_device *dev, 
                                  gsicc_colorbuffer_t data_cs);
 gsicc_link_t* gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev, 
@@ -48,11 +48,11 @@ gcmmhprofile_t gscms_get_profile_handle_mem(gs_memory_t *mem,
                                             unsigned int input_size);
 gcmmhprofile_t gscms_get_profile_handle_file(gs_memory_t *mem,
                                              const char *filename);
-void gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
-                                  gsicc_bufferdesc_t *input_buff_desc,
-                                  gsicc_bufferdesc_t *output_buff_desc,
-                                  void *inputbuffer,
-                                  void *outputbuffer);
+int gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
+                                 gsicc_bufferdesc_t *input_buff_desc,
+                                 gsicc_bufferdesc_t *output_buff_desc,
+                                 void *inputbuffer,
+                                 void *outputbuffer);
 int gscms_get_channel_count(gcmmhprofile_t profile);
 int gscms_get_pcs_channel_count(gcmmhprofile_t profile);
 char* gscms_get_clrtname(gcmmhprofile_t profile, int colorcount, gs_memory_t *memory);
@@ -61,8 +61,8 @@ bool gscms_is_device_link(gcmmhprofile_t profile);
 int gscms_get_device_class(gcmmhprofile_t profile);
 bool gscms_is_input(gcmmhprofile_t profile);
 gsicc_colorbuffer_t gscms_get_profile_data_space(gcmmhprofile_t profile);
-void gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
-                           void *outputcolor, int num_bytes);
+int gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
+                          void *outputcolor, int num_bytes);
 gcmmhlink_t gscms_get_link(gcmmhprofile_t lcms_srchandle,
                            gcmmhprofile_t lcms_deshandle,
                            gsicc_rendering_param_t *rendering_params,

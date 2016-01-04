@@ -152,7 +152,7 @@ update_Separation_spot_equivalent_cmyk_colors(gx_device * pdev,
 
 /* This is used for getting the equivalent CMYK values for the spots that
    may exist in a DeviceN output ICC profile */
-static void
+static int
 update_ICC_spot_equivalent_cmyk_colors(gx_device * pdev,
                     const gs_state * pgs, const gs_color_space * pcs,
                     gs_devn_params * pdevn_params,
@@ -165,6 +165,8 @@ update_ICC_spot_equivalent_cmyk_colors(gx_device * pdev,
 
 
     code = dev_proc(pdev, get_profile)(pdev, &dev_profile);
+    if (code < 0)
+        return code;
     /*
      * Check if the ICC spot names matche any of the
      * separations for which we need an equivalent CMYK color.
@@ -197,6 +199,7 @@ update_ICC_spot_equivalent_cmyk_colors(gx_device * pdev,
             }
         }
     }
+    return 0;
 }
 
 static void
@@ -281,7 +284,7 @@ static bool check_all_colors_known(int num_spot,
 }
 
 /* If possible, update the equivalent CMYK color for a spot color */
-void
+int
 update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     gs_devn_params * pdevn_params, equivalent_cmyk_color_params * pparams)
 {
@@ -291,16 +294,16 @@ update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
 
     code = dev_proc(pdev, get_profile)(pdev, &dev_profile);
     if (code < 0)
-        return;
+        return code;
 
     /* If all of the color_info is valid then there is nothing to do. */
     if (pparams->all_color_info_valid)
-        return;
+        return 0;
 
     /* Verify that we really have some separations. */
     if (pdevn_params->separations.num_separations == 0) {
         pparams->all_color_info_valid = true;
-        return;
+        return 0;
     }
     /*
      * Verify that the given color space is a Separation or a DeviceN color
@@ -324,12 +327,16 @@ update_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
             dev_profile->spotnames != NULL) {
             /* In this case, we are trying to set up the equivalent colors
                for the spots in the output ICC profile */
-            update_ICC_spot_equivalent_cmyk_colors(pdev, pgs, pcs, pdevn_params,
-                                                   pparams);
+            code = update_ICC_spot_equivalent_cmyk_colors(pdev, pgs, pcs,
+                                                          pdevn_params,
+                                                          pparams);
+            if (code < 0)
+                return code;
             pparams->all_color_info_valid = check_all_colors_known
                     (pdevn_params->separations.num_separations, pparams);
         }
     }
+    return 0;
 }
 
 static void

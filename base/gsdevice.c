@@ -207,9 +207,11 @@ gs_output_page(gs_state * pgs, int num_copies, int flush)
         return code;
 
     code = dev_proc(dev, get_profile)(dev, &(dev_profile));
+    if (code < 0)
+        return code;
     if (dev_profile->graydetection && !dev_profile->pageneutralcolor) {
         dev_profile->pageneutralcolor = true;             /* start detecting again */
-        gsicc_mcm_begin_monitor(pgs->icc_link_cache, dev);
+        code = gsicc_mcm_begin_monitor(pgs->icc_link_cache, dev);
     }
     return code;
 }

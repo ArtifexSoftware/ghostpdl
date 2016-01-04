@@ -188,7 +188,7 @@ gsicc_nocm_chunky_to_chunky(gx_device *dev, gsicc_link_t *icclink,
 
 /* Transform an entire buffer using the generic (non color managed)
    transformations */
-static void
+static int
 gsicc_nocm_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
@@ -219,7 +219,7 @@ gsicc_nocm_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                                         outputbuffer);
         }
     }
-    return;
+    return 0;
 }
 
 /* Shared function between the single and buffer conversions */
@@ -282,13 +282,14 @@ gsicc_nocm_transform_general(gx_device *dev, gsicc_link_t *icclink,
 
 /* Transform a single color using the generic (non color managed)
    transformations */
-static void
+static int
 gsicc_nocm_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
                            void *outputcolor, int num_bytes)
 {
 
     gsicc_nocm_transform_general(dev, icclink, inputcolor, outputcolor,
                                  num_bytes, num_bytes);
+    return 0;
 }
 
 static void

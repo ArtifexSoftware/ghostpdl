@@ -292,7 +292,7 @@ gscms_get_profile_handle_file(gs_memory_t *mem, const char *filename)
 }
 
 /* Transform an entire buffer */
-void
+int
 gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                              gsicc_bufferdesc_t *input_buff_desc,
                              gsicc_bufferdesc_t *output_buff_desc,
@@ -344,7 +344,7 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     if (num_src_lcms != input_buff_desc->num_chan ||
         num_des_lcms != output_buff_desc->num_chan) {
         /* We can't transform this. Someone is doing something odd */
-        return;
+        return gs_error_unknownerror;
     }
     dwInputFormat = dwInputFormat | CHANNELS_SH(num_src_lcms);
     dwOutputFormat = dwOutputFormat | CHANNELS_SH(num_des_lcms);
@@ -391,12 +391,12 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                                               source_size * input_buff_desc->num_chan, 
                                               "gscms_transform_color_buffer");
             if (temp_src == NULL)
-                return;
+                return gs_error_VMerror;
             temp_des = (byte*) gs_alloc_bytes(dev->memory->non_gc_memory,
                                               des_size * output_buff_desc->num_chan, 
                                               "gscms_transform_color_buffer");
             if (temp_des == NULL)
-                return;
+                return gs_error_VMerror;
             for (y = 0; y < input_buff_desc->num_rows; y++) {
                 byte *src_cm = temp_src;
                 byte *src_buff = inputpos;
@@ -445,12 +445,13 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
     fclose(fid_in);
     fclose(fid_out);
 #endif
+    return 0;
 }
 
 /* Transform a single color. We assume we have passed to us the proper number
    of elements of size gx_device_color. It is up to the caller to make sure
    the proper allocations for the colors are there. */
-void
+int
 gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
                              void *outputcolor, int num_bytes)
 {
@@ -469,6 +470,8 @@ gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
     cmsChangeBuffersFormat(hTransform,dwInputFormat,dwOutputFormat);
     /* Do conversion */
     cmsDoTransform(hTransform,inputcolor,outputcolor,1);
+
+    return 0;
 }
 
 /* Get the flag to avoid having to the cmm do any white fix up, it such a flag

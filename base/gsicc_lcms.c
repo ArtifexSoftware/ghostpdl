@@ -128,7 +128,7 @@ gscms_get_profile_handle_file(gs_memory_t *mem, const char *filename)
 }
 
 /* Transform an entire buffer */
-void
+int
 gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                              gsicc_bufferdesc_t *input_buff_desc,
                              gsicc_bufferdesc_t *output_buff_desc,
@@ -242,6 +242,7 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
         fclose(fid_out);
 #endif
     }
+    return 0;
 }
 
 /* Transform a single color. We assume we have passed to us the proper number
@@ -267,6 +268,7 @@ gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
     cmsChangeBuffersFormat(hTransform,dwInputFormat,dwOutputFormat);
     /* Do conversion */
     cmsDoTransform(hTransform,inputcolor,outputcolor,1);
+    return 0;
 }
 
 /* Get the link from the CMS. TODO:  Add error checking */
