@@ -392,6 +392,7 @@ jbig2_decode_generic_template2a(Jbig2Ctx *ctx,
   return 0;
 }
 
+#ifdef UNUSED
 static int
 jbig2_decode_generic_template3(Jbig2Ctx *ctx,
 			       Jbig2Segment *segment,
@@ -457,6 +458,7 @@ jbig2_decode_generic_template3(Jbig2Ctx *ctx,
 
   return 0;
 }
+#endif
 
 static int
 jbig2_decode_generic_template3_unopt(Jbig2Ctx *ctx,

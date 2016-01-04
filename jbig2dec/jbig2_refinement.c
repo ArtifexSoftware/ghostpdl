@@ -403,7 +403,7 @@ jbig2_decode_refinement_region(Jbig2Ctx *ctx,
  * Find the first referred-to intermediate region segment
  * with a non-NULL result for use as a reference image
  */
-Jbig2Segment *
+static Jbig2Segment *
 jbig2_region_find_referred(Jbig2Ctx *ctx,Jbig2Segment *segment)
 {
   const int nsegments = segment->referred_to_segment_count;

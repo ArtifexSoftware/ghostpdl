@@ -218,8 +218,9 @@ jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info,
 }
 
 /* dispatch code for extension segment parsing */
-int jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment,
-                            const uint8_t *segment_data)
+static int
+jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment,
+                              const uint8_t *segment_data)
 {
     uint32_t type = jbig2_get_uint32(segment_data);
     bool reserved = type & 0x20000000;
