@@ -433,7 +433,7 @@ static const gx_device_vector_procs escv_vector_procs =
   };
 
 static void escv_write_begin(gx_device *dev, int bits, int x, int y, int sw, int sh, int dw, int dh, int roll);
-static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int w, int ras);
+static void escv_write_data(gx_device *dev, int bits, byte *buf, int bsize, int w, int ras);
 static void escv_write_end(gx_device *dev, int bits);
 
 /* ---------------- Utilities ---------------- */
@@ -513,7 +513,7 @@ escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
   bool do_close = (type & gx_path_type_stroke) != 0;
   gs_fixed_rect rect;
   gs_point scale;
-  double x_start = 0, y_start = 0, x_prev = 0, y_prev = 0;
+  double x_start = 0, y_start = 0;
   bool first = true;
   gs_path_enum cenum;
   int code;
@@ -535,88 +535,88 @@ escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
 
     pe_op = gx_path_enum_next(&cenum, (gs_fixed_point *) vs);
 
-  sw:switch (pe_op) {
-  case 0:		/* done */
-    return (*vdev_proc(vdev, endpath)) (vdev, type);
+   sw:
+    switch (pe_op) {
+    case 0:		/* done */
+      return (*vdev_proc(vdev, endpath)) (vdev, type);
 
-  case gs_pe_moveto:
-    x = fixed2float(vs[0]) / scale.x;
-    y = fixed2float(vs[1]) / scale.y;
+    case gs_pe_moveto:
+      x = fixed2float(vs[0]) / scale.x;
+      y = fixed2float(vs[1]) / scale.y;
 
-    /* サブパス開始命令 p1 */
-    (void)gs_sprintf(obuf, ESC_GS "0;%d;%dmvpG", (int)x, (int)y);
-    lputs(s, obuf);
-
-    if (first)
-      x_start = x, y_start = y, first = false;
-    break;
-
-  case gs_pe_lineto:
-    cnt = 1;
-    for (pseg = cenum.pseg; pseg != 0 && pseg->type == s_line; cnt++, pseg = pseg->next);
-
-    (void)gs_sprintf(obuf, ESC_GS "0;%d", cnt);
-    lputs(s, obuf);
-
-    do {
-      (void)gs_sprintf(obuf, ";%d;%d",
-                    (int)(fixed2float(vs[0]) / scale.x),
-                    (int)(fixed2float(vs[1]) / scale.y));
+      /* サブパス開始命令 p1 */
+      (void)gs_sprintf(obuf, ESC_GS "0;%d;%dmvpG", (int)x, (int)y);
       lputs(s, obuf);
 
-      pe_op = gx_path_enum_next(&cenum, (gs_fixed_point *) vs);
-    } while (pe_op == gs_pe_lineto);
+      if (first)
+        x_start = x, y_start = y, first = false;
+      break;
 
-    /* パス・ポリライン命令 */
-    lputs(s, "lnpG");
-    pdev->ispath = 1;
+    case gs_pe_lineto:
+      cnt = 1;
+      for (pseg = cenum.pseg; pseg != 0 && pseg->type == s_line; cnt++, pseg = pseg->next);
 
-    goto sw;
+      (void)gs_sprintf(obuf, ESC_GS "0;%d", cnt);
+      lputs(s, obuf);
 
-  case gs_pe_curveto:
-    cnt = 1;
-    for (pseg = cenum.pseg; pseg != 0 && pseg->type == s_curve; cnt++, pseg = pseg->next);
-    (void)gs_sprintf(obuf, ESC_GS "0;%d", cnt * 3);
-    lputs(s, obuf);
+      do {
+        (void)gs_sprintf(obuf, ";%d;%d",
+                         (int)(fixed2float(vs[0]) / scale.x),
+                         (int)(fixed2float(vs[1]) / scale.y));
+        lputs(s, obuf);
 
-    do {
-      (void)gs_sprintf(obuf, ";%d;%d;%d;%d;%d;%d",
+        pe_op = gx_path_enum_next(&cenum, (gs_fixed_point *) vs);
+      } while (pe_op == gs_pe_lineto);
+
+      /* パス・ポリライン命令 */
+      lputs(s, "lnpG");
+      pdev->ispath = 1;
+
+      goto sw;
+
+    case gs_pe_curveto:
+      cnt = 1;
+      for (pseg = cenum.pseg; pseg != 0 && pseg->type == s_curve; cnt++, pseg = pseg->next);
+      (void)gs_sprintf(obuf, ESC_GS "0;%d", cnt * 3);
+      lputs(s, obuf);
+
+      do {
+        (void)gs_sprintf(obuf, ";%d;%d;%d;%d;%d;%d",
                     (int)(fixed2float(vs[0]) / scale.x), (int)(fixed2float(vs[1]) / scale.y),
                     (int)(fixed2float(vs[2]) / scale.x), (int)(fixed2float(vs[3]) / scale.y),
                     (int)(fixed2float(vs[4]) / scale.x), (int)(fixed2float(vs[5]) / scale.y));
-      lputs(s, obuf);
+        lputs(s, obuf);
+
+        pe_op = gx_path_enum_next(&cenum, (gs_fixed_point *) vs);
+      } while (pe_op == gs_pe_curveto);
+
+      /* ベジェ曲線 */
+      lputs(s, "bzpG");
+      pdev->ispath = 1;
+
+      goto sw;
+
+    case gs_pe_closepath:
+      x = x_start, y = y_start;
+      if (do_close) {
+        lputs(s, ESC_GS "clpG");
+        break;
+      }
 
       pe_op = gx_path_enum_next(&cenum, (gs_fixed_point *) vs);
-    } while (pe_op == gs_pe_curveto);
+      if (pe_op != 0) {
+        lputs(s, ESC_GS "clpG");
 
-    /* ベジェ曲線 */
-    lputs(s, "bzpG");
-    pdev->ispath = 1;
-
-    goto sw;
-
-  case gs_pe_closepath:
-    x = x_start, y = y_start;
-    if (do_close) {
-      lputs(s, ESC_GS "clpG");
-      break;
+        if (code < 0)
+          return code;
+        goto sw;
+      }
+      return (*vdev_proc(vdev, endpath)) (vdev, type);
+    default:		/* can't happen */
+      return_error(gs_error_unknownerror);
     }
-
-    pe_op = gx_path_enum_next(&cenum, (gs_fixed_point *) vs);
-    if (pe_op != 0) {
-      lputs(s, ESC_GS "clpG");
-
-      if (code < 0)
-        return code;
-      goto sw;
-    }
-    return (*vdev_proc(vdev, endpath)) (vdev, type);
-  default:		/* can't happen */
-    return_error(gs_error_unknownerror);
-  }
     if (code < 0)
       return code;
-    x_prev = x, y_prev = y;
   }
 }
 
@@ -1260,7 +1260,7 @@ escv_beginpage(gx_device_vector * vdev)
         lputs(s, LP8200_CODE);
       }
 
-      put_bytes(s, ESC_GS "7;0;2;0cam{E\012\000\000\000\000\000\000", 20);
+      put_bytes(s, (const byte *)ESC_GS "7;0;2;0cam{E\012\000\000\000\000\000\000", 20);
       lputs(s, ESC_GS "0;0cmmE");
 
       if (vdev->x_pixels_per_inch == 1200) {
@@ -1282,7 +1282,7 @@ escv_beginpage(gx_device_vector * vdev)
 
       lputs(s, COLOR_START_CODE1);
       lputs(s, ESC_GS "8;1;2;2;2plr{E");
-      put_bytes(s, "\377\377\377\377\000\000\000\000", 8);
+      put_bytes(s, (const byte *)"\377\377\377\377\000\000\000\000", 8);
 
       lputs(s, ESC_GS "0sarG");		/* 絶対座標指定 */
       lputs(s, ESC_GS "2;204wfE");		/* rop 指定 */
@@ -1879,7 +1879,7 @@ escv_set_str_param( gs_param_list * plist, const char * key, char *strvalue, int
     switch (code = param_read_string(plist, (param_name = key), &gsstr)) {
     case 0:
       writesize = ( bufmax < gsstr.size )? bufmax : gsstr.size ;
-      strncpy( strvalue, gsstr.data, writesize );
+      strncpy( strvalue, (const char *)gsstr.data, writesize );
       strvalue[ writesize ] = '\0';
       break;
     default:
@@ -2003,27 +2003,27 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
         goto pmediae;
     } else {   /* Check the validity of ``MediaType'' characters */
 
-      if (strcmp(pmedia.data, "NM") == 0) {
+      if (strcmp((const char *)pmedia.data, "NM") == 0) {
         pdev->MediaType = 0;
-      } else if ((strcmp(pmedia.data, "THICK") == 0) ||
-                 (strcmp(pmedia.data, "TH") == 0)) {
+      } else if ((strcmp((const char *)pmedia.data, "THICK") == 0) ||
+                 (strcmp((const char *)pmedia.data, "TH") == 0)) {
         pdev->MediaType = 1;
-      } else if ((strcmp(pmedia.data, "TRANS") == 0) ||
-                 (strcmp(pmedia.data, "TR") == 0)) {
+      } else if ((strcmp((const char *)pmedia.data, "TRANS") == 0) ||
+                 (strcmp((const char *)pmedia.data, "TR") == 0)) {
         pdev->MediaType = 2;
-      } else if (strcmp(pmedia.data, "TN") == 0) {
+      } else if (strcmp((const char *)pmedia.data, "TN") == 0) {
         pdev->MediaType = 3;
-      } else if (strcmp(pmedia.data, "LH") == 0) {
+      } else if (strcmp((const char *)pmedia.data, "LH") == 0) {
         pdev->MediaType = 4;
-      } else if (strcmp(pmedia.data, "CT") == 0) {
+      } else if (strcmp((const char *)pmedia.data, "CT") == 0) {
         pdev->MediaType = 5;
-      } else if (strcmp(pmedia.data, "ET") == 0) {
+      } else if (strcmp((const char *)pmedia.data, "ET") == 0) {
         pdev->MediaType = 6;
-      } else if (strcmp(pmedia.data, "HQ") == 0) {
+      } else if (strcmp((const char *)pmedia.data, "HQ") == 0) {
         pdev->MediaType = 7;
-      } else if (strcmp(pmedia.data, "UT") == 0) {
+      } else if (strcmp((const char *)pmedia.data, "UT") == 0) {
         pdev->MediaType = 8;
-      } else if (strcmp(pmedia.data, "UM") == 0) {
+      } else if (strcmp((const char *)pmedia.data, "UM") == 0) {
         pdev->MediaType = 9;
       } else {
         ecode = gs_error_rangecheck;
@@ -2494,7 +2494,7 @@ escv_begin_image(gx_device * dev,
 
   gs_matrix			imat;
   int				code;
-  int				ty, bx, by, cx, cy, dx, dy, sx, sy;
+  int				ty, bx, by, cy, sx, sy;
 
   gx_color_index		color = gx_dc_pure_color(pdcolor);
   char		        obuf[128];
@@ -2543,7 +2543,7 @@ escv_begin_image(gx_device * dev,
       if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
       } else {			/* ESC/Page-Color */
         lputs(s, ESC_GS "8;1;2;2;2plr{E");
-        put_bytes(s, "\000\000\000\000\377\377\377\377", 8);
+        put_bytes(s, (const byte *)"\000\000\000\000\377\377\377\377", 8);
       }	/* ESC/Page-Color */
       pdev->MaskReverse = 0;
     }
@@ -2556,10 +2556,7 @@ escv_begin_image(gx_device * dev,
   ty = imat.ty;
   bx = imat.xx * pim->Width + imat.yx * pim->Height + imat.tx;
   by = imat.xy * pim->Width + imat.yy * pim->Height + imat.ty;
-  cx = imat.yx * pim->Height + imat.tx;
   cy = imat.yy * pim->Height + imat.ty;
-  dx = imat.xx * pim->Width + imat.tx;
-  dy = imat.xy * pim->Width + imat.ty;
 
   sx = bx - (int)imat.tx;
   sy = by - (int)imat.ty;
@@ -2888,7 +2885,7 @@ escv_image_end_image(gx_image_enum_common_t * info, bool draw_last)
       stream			*s = gdev_vector_stream((gx_device_vector *)pdev);
 
       lputs(s, ESC_GS "8;1;2;2;2plr{E");
-      put_bytes(s, "\377\377\377\377\000\000\000\000", 8);
+      put_bytes(s, (const byte *)"\377\377\377\377\000\000\000\000", 8);
     }	/* ESC/Page-Color */
   }
   pdev->MaskReverse = -1;
@@ -2902,7 +2899,8 @@ static void escv_write_begin(gx_device *dev, int bits, int x, int y, int sw, int
   gx_device_vector *const     vdev = (gx_device_vector *) dev;
   gx_device_escv   *const     pdev = (gx_device_escv *)dev;
   stream			*s = gdev_vector_stream((gx_device_vector *)dev);
-  char                        obuf[128], *tmp, *p;
+  char                          obuf[128];
+  byte                         *tmp, *p;
   int				i, comp;
 
   if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
@@ -2987,17 +2985,17 @@ static void escv_write_begin(gx_device *dev, int bits, int x, int y, int sw, int
   return;
 }
 
-static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int w, int ras)
+static void escv_write_data(gx_device *dev, int bits, byte *buf, int bsize, int w, int ras)
 {
-  gx_device_vector *const     vdev = (gx_device_vector *) dev;
-  gx_device_escv *const       pdev = (gx_device_escv *) dev;
-  stream			*s = gdev_vector_stream((gx_device_vector *)pdev);
-  char                        obuf[128];
-  int				size;
-  char			*tmps, *p;
-  unsigned char                *rgbbuf;
-  unsigned char                *ucp;
-  double                        gray8;
+  gx_device_vector *const  vdev = (gx_device_vector *) dev;
+  gx_device_escv   *const  pdev = (gx_device_escv *) dev;
+  stream		  *s = gdev_vector_stream((gx_device_vector *)pdev);
+  char                     obuf[128];
+  int                      size;
+  byte                    *tmps, *p;
+  unsigned char           *rgbbuf;
+  unsigned char           *ucp;
+  double                   gray8;
 
   if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
 

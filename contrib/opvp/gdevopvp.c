@@ -1831,7 +1831,6 @@ prepare_open(gx_device *dev)
 {
     int ecode = 0;
     int code;
-    opvp_result_t r = -1;
     opvp_api_procs_t *api_entry;
     int dumFD = -1;
     opvp_dc_t dumContext = -1;
@@ -1901,7 +1900,7 @@ prepare_open(gx_device *dev)
         }
         /* call GetColorSpace */
         if (apiEntry->opvpGetColorSpace) {
-            r = apiEntry->opvpGetColorSpace(dumContext, &cspace);
+            (void)apiEntry->opvpGetColorSpace(dumContext, &cspace);
         }
         if (cspace == OPVP_CSPACE_BW) {
             /* mono-color */

@@ -60,7 +60,7 @@ lprn_duplex_device(gx_device_lprn, escpage_prn_procs, "escpage",
 
 #define ppdev ((gx_device_printer *)pdev)
 
-static char *epson_remote_start = "\033\001@EJL \r\n";
+static const char *epson_remote_start = "\033\001@EJL \r\n";
 
 /* Open the printer. */
 static int

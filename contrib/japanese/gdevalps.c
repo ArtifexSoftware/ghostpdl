@@ -201,6 +201,8 @@ md50_print_page(gx_device_printer *pdev, FILE *prn_stream,
     memset(data, 0, LINE_SIZE);
     n = gdev_prn_copy_scan_lines(pdev, lnum,
                              (byte *)data, line_size);
+    if (n != 1)
+      return n;
 
     /* Remove trailing 0s. */
     while ( end_data > data && end_data[-1] == 0 )

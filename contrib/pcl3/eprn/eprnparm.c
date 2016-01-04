@@ -221,7 +221,7 @@ eprn_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
 }
 
 
-void eprn_replace_fillpage(gx_device *dev)
+static void eprn_replace_fillpage(gx_device *dev)
 {
     eprn_Eprn *eprn = &((eprn_Device *)dev)->eprn;
 
@@ -963,7 +963,7 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
     if (rc != 0) {                                                      \
       if (rc != gs_error_VMerror) {                                     \
         eprintf1("%s" ERRPREF "Unknown colour model: `", epref);        \
-        errwrite(dev->memory, string_value.data, sizeof(char)*string_value.size); \
+        errwrite(dev->memory, (const char *)string_value.data, sizeof(char)*string_value.size); \
         eprintf("'.\n");                                                \
       }                                                                 \
       last_error = rc;                                                  \
@@ -1078,7 +1078,7 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
     else {
       eprintf1("%s" ERRPREF "Invalid method for IntensityRendering: `",
         epref);
-      errwrite(dev->memory, string_value.data, sizeof(char)*string_value.size);
+      errwrite(dev->memory, (const char *)string_value.data, sizeof(char)*string_value.size);
       eprintf("'.\n");
       last_error = gs_error_rangecheck;
       param_signal_error(plist, pname, last_error);

@@ -505,11 +505,11 @@ lips4_put_params(gx_device * pdev, gs_param_list * plist)
                 ecode = gs_error_limitcheck;
                 goto pmediae;
             } else {   /* Check the validity of ``MediaType'' characters */
-                if (strcmp(pmedia.data, "PlainPaper") != 0 &&
-                    strcmp(pmedia.data, "OHP") != 0 &&
-                    strcmp(pmedia.data, "TransparencyFilm") != 0 &&	/* same as OHP */
-                    strcmp(pmedia.data, "GlossyFilm") != 0 &&
-                    strcmp(pmedia.data, "CardBoard") != 0
+                if (strcmp((const char *)pmedia.data, "PlainPaper") != 0 &&
+                    strcmp((const char *)pmedia.data, "OHP") != 0 &&
+                    strcmp((const char *)pmedia.data, "TransparencyFilm") != 0 &&	/* same as OHP */
+                    strcmp((const char *)pmedia.data, "GlossyFilm") != 0 &&
+                    strcmp((const char *)pmedia.data, "CardBoard") != 0
                     ) {
                     ecode = gs_error_rangecheck;
                     goto pmediae;

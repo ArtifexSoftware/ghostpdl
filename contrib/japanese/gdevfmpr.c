@@ -50,13 +50,13 @@ prn_putc(gx_device_printer *pdev, int c)
 }
 
 static int
-prn_puts(gx_device_printer *pdev, char *ptr)
+prn_puts(gx_device_printer *pdev, const char *ptr)
 {
   return fputs(ptr, pdev->file);
 }
 
 static int
-prn_write(gx_device_printer *pdev, char *ptr, int size)
+prn_write(gx_device_printer *pdev, const char *ptr, int size)
 {
   return fwrite(ptr, 1, size, pdev->file);
 }
@@ -192,7 +192,7 @@ fmpr_print_page(gx_device_printer *pdev, FILE *prn_stream)
     size = out_end - out_beg + 1;
     gs_sprintf(prn_buf, "\033Q%d W", size / bytes_per_column);
     prn_puts(pdev, prn_buf);
-    prn_write(pdev, out_beg, size);
+    prn_write(pdev, (const char *)out_beg, size);
 
     prn_putc(pdev, '\n');
   }

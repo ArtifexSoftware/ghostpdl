@@ -158,9 +158,7 @@ ml600_print_page(
         rmask = (byte)(0xff << (-pdev->width & 7));	/* right edge */
 
         for (lnum = 0; lnum < pdev->height; lnum++) {
-                int	s;
-
-                s = gdev_prn_copy_scan_lines(pdev, lnum, data[current],
+                (void)gdev_prn_copy_scan_lines(pdev, lnum, data[current],
                                                                 line_size);
                 /* Mask right edge bits */
                 *(data[current] + line_size - 1) &= rmask;

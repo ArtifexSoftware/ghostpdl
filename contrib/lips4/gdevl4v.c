@@ -997,6 +997,7 @@ lips4v_setlinecap(gx_device_vector * vdev, gs_line_cap cap)
         pdev->TextMode = FALSE;
     }
     switch (cap) {
+        default:
         case 0:
         case 3:
         line_cap = 0;		/* butt */
@@ -1034,6 +1035,7 @@ lips4v_setlinejoin(gx_device_vector * vdev, gs_line_join join)
     }
 
     switch (join) {
+        default:
         case 0:
         lips_join = 2;		/* miter */
         break;
@@ -1194,7 +1196,9 @@ lips4v_setdash(gx_device_vector * vdev, const float *pattern, uint count,
     stream *s = gdev_vector_stream(vdev);
     gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
     int i;
+#if 0
     float scale, xscale, yscale;
+#endif
 
     if (pdev->TextMode) {
         sputc(s, LIPS_CSI);
@@ -1648,11 +1652,11 @@ lips4v_put_params(gx_device * dev, gs_param_list * plist)
             ecode = gs_error_limitcheck;
             goto pmediae;
         } else {   /* Check the validity of ``MediaType'' characters */
-            if (strcmp(pmedia.data, "PlainPaper") != 0 &&
-                strcmp(pmedia.data, "OHP") != 0 &&
-                strcmp(pmedia.data, "TransparencyFilm") != 0 &&	/* same as OHP */
-                strcmp(pmedia.data, "GlossyFilm") != 0 &&
-                strcmp(pmedia.data, "CardBoard") != 0) {
+            if (strcmp((const char *)pmedia.data, "PlainPaper") != 0 &&
+                strcmp((const char *)pmedia.data, "OHP") != 0 &&
+                strcmp((const char *)pmedia.data, "TransparencyFilm") != 0 &&	/* same as OHP */
+                strcmp((const char *)pmedia.data, "GlossyFilm") != 0 &&
+                strcmp((const char *)pmedia.data, "CardBoard") != 0) {
                 ecode = gs_error_rangecheck;
                 goto pmediae;
             }

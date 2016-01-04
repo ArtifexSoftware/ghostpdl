@@ -99,7 +99,7 @@ mag_print_page(gx_device_printer *pdev, int depth, FILE *file)
 {
     int code = 0;			/* return code */
     const char *magic = "MAKI02  gs   ";
-    char *user = getenv("USER");
+    const char *user = getenv("USER");
     char check[256];
     byte header[32] = "\000\000\000\000"
                       "\000\000\000\000"

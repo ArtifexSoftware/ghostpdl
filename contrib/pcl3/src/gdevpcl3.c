@@ -908,7 +908,8 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
       else {
         eprintf1("%s" ERRPREF "Unknown subdevice name: `", epref);
         errwrite(dev->memory,
-                 string_value.data, sizeof(char)*string_value.size);
+                 (const char *)string_value.data,
+                 sizeof(char)*string_value.size);
         eprintf("'.\n");
         last_error = gs_error_rangecheck;
         param_signal_error(plist, pname, last_error);
@@ -1018,7 +1019,8 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
       else {
         eprintf1("%s" ERRPREF "Invalid duplex capability: `", epref);
         errwrite(dev->memory,
-                 string_value.data, sizeof(char)*string_value.size);
+                 (const char *)string_value.data,
+                 sizeof(char)*string_value.size);
         eprintf("'.\n");
         last_error = gs_error_rangecheck;
         param_signal_error(plist, pname, last_error);
@@ -1074,7 +1076,8 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
       if (rc != gs_error_VMerror) {
         eprintf1("%s" ERRPREF "Unknown medium: `", epref);
         errwrite(dev->memory,
-                 string_value.data, sizeof(char)*string_value.size);
+                 (const char *)string_value.data,
+                 sizeof(char)*string_value.size);
         eprintf("'.\n");
       }
       last_error = rc;
@@ -1144,7 +1147,8 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
       if (rc != gs_error_VMerror) {
         eprintf1("%s" ERRPREF "Unknown print quality: `", epref);
         errwrite(dev->memory,
-                 string_value.data, sizeof(char)*string_value.size);
+                 (const char *)string_value.data,
+                 sizeof(char)*string_value.size);
         eprintf("'.\n");
       }
       last_error = rc;
