@@ -164,10 +164,6 @@ typedef struct gs_shading_mesh_s {
     gs_shading_mesh_params_t params;
 } gs_shading_mesh_t;
 
-#define private_st_shading_mesh()	/* in gsshade.c */\
-  gs_private_st_composite(st_shading_mesh, gs_shading_mesh_t,\
-    "gs_shading_mesh_t", shading_mesh_enum_ptrs, shading_mesh_reloc_ptrs)
-
 /* Define Free-form Gouraud triangle mesh shading. */
 typedef struct gs_shading_FfGt_params_s {
     gs_shading_mesh_params_common;

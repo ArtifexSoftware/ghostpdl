@@ -38,7 +38,6 @@
 
 /* GC descriptors */
 private_st_shading();
-private_st_shading_mesh();
 
 static
 ENUM_PTRS_WITH(shading_mesh_enum_ptrs, gs_shading_mesh_t *psm)
@@ -270,9 +269,8 @@ gs_shading_R_init(gs_shading_t ** ppsh,
 
     if (code < 0)
         return code;
-    if ((params->Domain != 0 && params->Domain[0] == params->Domain[1]) ||
-        params->Coords[2] < 0 || params->Coords[5] < 0
-        )
+    if (params == NULL || params->Domain[0] == params->Domain[1] ||
+        params->Coords[2] < 0 || params->Coords[5] < 0)
         return_error(gs_error_rangecheck);
     ALLOC_SHADING(&st_shading_R, shading_type_Radial,
                   shading_R_procs, "gs_shading_R_init");
