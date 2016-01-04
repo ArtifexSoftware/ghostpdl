@@ -166,7 +166,7 @@ gs_color_space *
 gs_cspace_new_ICC(gs_memory_t *pmem, gs_state * pgs, int components)
 {
     gsicc_manager_t *icc_manage = pgs->icc_manager;
-    int code;
+    int code = 0;
     gs_color_space *pcspace = gs_cspace_alloc(pmem, &gs_color_space_type_ICC);
 
     switch (components) {
