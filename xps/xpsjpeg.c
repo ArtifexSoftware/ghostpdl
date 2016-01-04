@@ -117,8 +117,8 @@ xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     }
     else if (jddp.dinfo.density_unit == 2)
     {
-        image->xres = jddp.dinfo.X_density * 2.54;
-        image->yres = jddp.dinfo.Y_density * 2.54;
+        image->xres = (int)(jddp.dinfo.X_density * 2.54 + 0.5);
+        image->yres = (int)(jddp.dinfo.Y_density * 2.54 + 0.5);
     }
     else
     {

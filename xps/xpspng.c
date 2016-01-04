@@ -291,8 +291,8 @@ xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     {
         if (unit == PNG_RESOLUTION_METER)
         {
-            image->xres = xres * 0.0254 + 0.5;
-            image->yres = yres * 0.0254 + 0.5;
+            image->xres = (int)(xres * 0.0254 + 0.5);
+            image->yres = (int)(yres * 0.0254 + 0.5);
         }
     }
 

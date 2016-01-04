@@ -918,10 +918,10 @@ xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font)
     pt1->data.nominalWidthX = 0;
 
     pt1->data.BlueFuzz = 1;
-    pt1->data.BlueScale = 0.039625;
+    pt1->data.BlueScale = 0.039625f;
     pt1->data.BlueShift = 7;
     pt1->data.BlueValues.count = 0;
-    pt1->data.ExpansionFactor = 0.06;
+    pt1->data.ExpansionFactor = 0.06f;
     pt1->data.ForceBold = 0;
     pt1->data.FamilyBlues.count = 0;
     pt1->data.FamilyOtherBlues.count = 0;

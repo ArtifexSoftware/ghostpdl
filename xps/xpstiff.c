@@ -668,8 +668,8 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
         image->yres = tiff->yresolution;
         break;
     case 3:
-        image->xres = tiff->xresolution * 2.54 + 0.5;
-        image->yres = tiff->yresolution * 2.54 + 0.5;
+        image->xres = (int)(tiff->xresolution * 2.54 + 0.5);
+        image->yres = (int)(tiff->yresolution * 2.54 + 0.5);
 
         break;
     default:

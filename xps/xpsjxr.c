@@ -66,7 +66,7 @@ scale_bits(int depth, int value)
         return CLAMP(value, 0, 255);
     case JXR_BD32F:
         bd32f.iv = value;
-        value = bd32f.fv * 255;
+        value = (int)(bd32f.fv * 255);
         return CLAMP(value, 0, 255);
 #if 0
     case JXR_BDRESERVED: return value;
@@ -211,8 +211,8 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
     offset = jxrc_image_offset(container, 0);
     alpha_offset = jxrc_alpha_offset(container, 0);
 
-    output->xres = jxrc_width_resolution(container, 0);
-    output->yres = jxrc_height_resolution(container, 0);
+    output->xres = (int)jxrc_width_resolution(container, 0);
+    output->yres = (int)jxrc_height_resolution(container, 0);
 
     image = jxr_create_input();
     jxr_set_PROFILE_IDC(image, 111);

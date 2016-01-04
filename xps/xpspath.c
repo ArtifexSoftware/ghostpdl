@@ -96,9 +96,9 @@ xps_draw_arc_segment(xps_context_t *ctx, gs_matrix *mtx, float th0, float th1, i
     gs_point p;
 
     while (th1 < th0)
-        th1 += M_PI * 2.0;
+        th1 += (float)(M_PI * 2.0);
 
-    d = 1 * (M_PI / 180.0); /* 1-degree precision */
+    d = (float)(1 * (M_PI / 180.0)); /* 1-degree precision */
 
     if (iscw)
     {
@@ -110,7 +110,7 @@ xps_draw_arc_segment(xps_context_t *ctx, gs_matrix *mtx, float th0, float th1, i
     }
     else
     {
-        th0 += M_PI * 2;
+        th0 += (float)(M_PI * 2);
         for (t = th0 - d; t > th1 + d/2; t -= d)
         {
             gs_point_transform(cos(t), sin(t), mtx, &p);

@@ -22,6 +22,9 @@
 #include <stdlib.h>
 #include <ctype.h> /* for toupper() */
 
+/* Include zlib early to avoid offsetof redef problems on windows */
+#include "zlib.h"
+
 #include "gp.h"
 
 #include "gsgc.h"
@@ -71,8 +74,6 @@
 #include "gscms.h"
 #include "gsicc_cache.h"
 #include "gxpcolor.h"
-
-#include "zlib.h"
 
 #include "xpsfapi.h"
 

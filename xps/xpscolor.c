@@ -82,17 +82,17 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string,
     {
         if (strlen(string) == 9)
         {
-            samples[0] = unhex(string[1]) * 16 + unhex(string[2]);
-            samples[1] = unhex(string[3]) * 16 + unhex(string[4]);
-            samples[2] = unhex(string[5]) * 16 + unhex(string[6]);
-            samples[3] = unhex(string[7]) * 16 + unhex(string[8]);
+            samples[0] = (float)(unhex(string[1]) * 16 + unhex(string[2]));
+            samples[1] = (float)(unhex(string[3]) * 16 + unhex(string[4]));
+            samples[2] = (float)(unhex(string[5]) * 16 + unhex(string[6]));
+            samples[3] = (float)(unhex(string[7]) * 16 + unhex(string[8]));
         }
         else
         {
             samples[0] = 255.0;
-            samples[1] = unhex(string[1]) * 16 + unhex(string[2]);
-            samples[2] = unhex(string[3]) * 16 + unhex(string[4]);
-            samples[3] = unhex(string[5]) * 16 + unhex(string[6]);
+            samples[1] = (float)(unhex(string[1]) * 16 + unhex(string[2]));
+            samples[2] = (float)(unhex(string[3]) * 16 + unhex(string[4]));
+            samples[3] = (float)(unhex(string[5]) * 16 + unhex(string[6]));
         }
 
         samples[0] /= 255.0;

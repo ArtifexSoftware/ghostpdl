@@ -384,7 +384,7 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
             /* Adjust glyph offset and advance width for emboldening */
             if (sim_bold)
             {
-                advance *= 1.02;
+                advance *= 1.02f;
                 u_offset += 0.01 * size;
                 v_offset += 0.01 * size;
             }
@@ -471,7 +471,7 @@ xps_parse_glyphs(xps_context_t *ctx,
     int sim_bold = 0;
     int sim_italic = 0;
 
-    gs_matrix shear = { 1, 0, 0.36397, 1, 0, 0 }; /* shear by 20 degrees */
+    gs_matrix shear = { 1, 0, 0.36397f, 1, 0, 0 }; /* shear by 20 degrees */
 
     /*
      * Extract attributes and extended attributes.

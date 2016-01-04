@@ -100,7 +100,7 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
                     int num_colors = gsicc_getsrc_channel_count(colorspace->cmm_icc_profile_data);
                     for (i = 0; i < num_colors; i++)
                     {
-                        sample_in[i] = sample[i+1]*65535;
+                        sample_in[i] = (unsigned short)(sample[i+1]*65535);
                     }
                     gscms_transform_color((gx_device *)(ctx->pgs->device),
                                           icclink, sample_in, sample_out, 2);
@@ -605,7 +605,7 @@ xps_draw_one_linear_gradient(xps_context_t *ctx,
  * reach a reasonable limit for infinite cases.
  */
 
-static inline float point_inside_circle(float px, float py, float x, float y, float r)
+static inline int point_inside_circle(float px, float py, float x, float y, float r)
 {
     float dx = px - x;
     float dy = py - y;
@@ -840,8 +840,8 @@ xps_draw_linear_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
             if (dist[i] > d1) d1 = dist[i];
         }
 
-        i0 = floor(d0 / len);
-        i1 = ceil(d1 / len);
+        i0 = (int)floor(d0 / len);
+        i1 = (int)ceil(d1 / len);
 
         for (i = i0; i < i1; i++)
         {
