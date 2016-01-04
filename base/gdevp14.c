@@ -1924,7 +1924,7 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * tar
     gs_separations * pseparations = &pdevn_params->separations;
     int planestride = buf->planestride;
     int rowstride = buf->rowstride;
-    const byte bg = pdev->ctx->additive ? gx_max_color_value : 0;
+    const byte bg = pdev->ctx->additive ? 0xff : 0;
     int num_comp = buf->n_chan - 1;
     byte *buf_ptr;
 
@@ -1974,7 +1974,7 @@ pdf14_custom_put_image(gx_device * dev, gs_imager_state * pis, gx_device * targe
     int planestride = buf->planestride;
     int rowstride = buf->rowstride;
     int num_comp = buf->n_chan - 1;
-    const byte bg = pdev->ctx->additive ? gx_max_color_value : 0;
+    const byte bg = pdev->ctx->additive ? 0xff : 0;
     int x1, y1, width, height;
     byte *buf_ptr;
 
