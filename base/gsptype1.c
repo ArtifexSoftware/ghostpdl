@@ -2012,7 +2012,7 @@ gx_dc_pattern_read(
     int64_t offset1 = offset;
     gx_color_tile *ptile;
     int code, l;
-    tile_trans_clist_info_t trans_info = { 0 };
+    tile_trans_clist_info_t trans_info = { { { 0 } } };
     int cache_space_needed;
 
     if (offset == 0) {
