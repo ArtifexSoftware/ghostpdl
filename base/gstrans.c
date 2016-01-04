@@ -52,7 +52,7 @@ gs_setblendmode(gs_state *pgs, gs_blend_mode_t mode)
     /* Compatible is now specified to be the same.                        */
     if (mode == BLEND_MODE_Compatible)
         mode = BLEND_MODE_Normal;
-    if (mode < 0 || mode > MAX_BLEND_MODE)
+    if ((int)mode < 0 || (int)mode > MAX_BLEND_MODE)
         return_error(gs_error_rangecheck);
     pgs->blend_mode = mode;
     return 0;
