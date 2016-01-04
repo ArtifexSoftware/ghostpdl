@@ -2374,6 +2374,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\gxfapi.c"
+				>
+			</File>
+			<File
 				RelativePath="..\base\gxfapiu.c"
 				>
 			</File>
@@ -6888,7 +6892,6 @@
 				>
 			</File>
 		</Filter>
-
 		<Filter
 			Name="jbig2dec"
 			>

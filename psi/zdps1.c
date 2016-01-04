@@ -396,7 +396,7 @@ rect_get(local_rects_t * plr, os_ptr op, gs_memory_t *mem)
                                  (n << 2) + i, &rnum);
             switch (code) {
                 case t_integer:
-                    rv[i] = rnum.value.intval;
+                    rv[i] = (double)rnum.value.intval;
                     break;
                 case t_real:
                     rv[i] = rnum.value.realval;

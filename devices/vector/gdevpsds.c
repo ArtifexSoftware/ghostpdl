@@ -557,7 +557,7 @@ const stream_template s_IE_template = {
 int
 s_Downsample_size_out(int size_in, float factor, bool pad)
 {
-    return ((pad ? size_in + factor - 1 : size_in) / factor);
+    return (int)((pad ? size_in + factor - 1 : size_in) / factor);
 }
 
 static void
@@ -586,7 +586,7 @@ static int
 s_Subsample_init(stream_state * st)
 {
     stream_Subsample_state *const ss = (stream_Subsample_state *) st;
-    int xf = ss->XFactor;
+    int xf = (int)ss->XFactor;
 
     if ((float)xf != ss->XFactor) {
         dmprintf1(st->memory,
@@ -609,7 +609,7 @@ s_Subsample_process(stream_state * st, stream_cursor_read * pr,
     byte *wlimit = pw->limit;
     int spp = ss->Colors;
     int width = ss->WidthIn, height = ss->HeightIn;
-    int xf = ss->XFactor, yf = ss->YFactor;
+    int xf = (int)ss->XFactor, yf = (int)ss->YFactor;
     int xf2 = xf / 2, yf2 = yf / 2;
     int xlimit = (width / xf) * xf, ylimit = (height / yf) * yf;
     int xlast =
@@ -670,7 +670,7 @@ static int
 s_Average_init(stream_state * st)
 {
     stream_Average_state *const ss = (stream_Average_state *) st;
-    int xf = ss->XFactor;
+    int xf = (int)ss->XFactor;
 
     if ((float)xf != ss->XFactor) {
         dmprintf1(st->memory,
@@ -715,7 +715,7 @@ s_Average_process(stream_state * st, stream_cursor_read * pr,
     byte *wlimit = pw->limit;
     int spp = ss->Colors;
     int width = ss->WidthIn;
-    int xf = ss->XFactor, yf = ss->YFactor;
+    int xf = (int)ss->XFactor, yf = (int)ss->YFactor;
     int x = ss->x, y = ss->y;
     uint *sums = ss->sums;
     int status = 0;
@@ -840,7 +840,7 @@ s_Bicubic_interpolate_pixel(stream_Bicubic_state *const ss, int x_out,
     double x = x_out * ss->XFactor;
     double y = y_out * ss->YFactor;
     double dx = x - floor(x), dy = y - floor(y);
-    int start_x = floor(x) - 1, start_y = floor(y) - 1;
+    int start_x = (int)floor(x) - 1, start_y = (int)floor(y) - 1;
     int c, i, k;
 
     for (c = 0; c < ss->Colors; c++) {
@@ -866,7 +866,7 @@ s_Bicubic_process(stream_state * st, stream_cursor_read * pr,
 
     for (;;) {
         /* Find required y-offset in data buffer before doing more work */
-        req_y = floor(ss->y * ss->YFactor) - 1;
+        req_y = (int)floor(ss->y * ss->YFactor) - 1;
         if (req_y < 0)
             req_y = 0;
 

@@ -112,7 +112,7 @@ gsdll_init(GSDLL_CALLBACK callback, HWND hwnd, int argc, char * argv[])
 int GSDLLEXPORT GSDLLAPI
 gsdll_initW(GSDLL_CALLBACK callback, HWND hwnd, int argc, wchar_t * argv[])
 {
-    return gsdll_init_with_encoding(callback, hwnd, argc, argv, GS_ARG_ENCODING_UTF16LE);
+    return gsdll_init_with_encoding(callback, hwnd, argc, (char **)argv, GS_ARG_ENCODING_UTF16LE);
 }
 int GSDLLEXPORT GSDLLAPI
 gsdll_initA(GSDLL_CALLBACK callback, HWND hwnd, int argc, char * argv[])

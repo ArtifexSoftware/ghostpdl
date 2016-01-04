@@ -125,7 +125,7 @@ scan_number(const byte * str, const byte * end, int sign,
                     break;
                 }
             } else
-                dval = ival;
+                dval = (double)ival;
             goto l2d;
         }
     }
@@ -144,7 +144,7 @@ scan_number(const byte * str, const byte * end, int sign,
         case 'E':
             if (sign < 0)
                 ival = -ival;
-            dval = ival;
+            dval = (double)ival;
             exp10 = 0;
             goto fe;
         case '#':
@@ -276,7 +276,7 @@ i2r:
             break;
         }
         if (WOULD_OVERFLOW(ival, d, max_int)) {
-            dval = ival;
+            dval = (double)ival;
             goto fd;
         }
         ival = ival * 10 + d;
@@ -292,7 +292,7 @@ i2r:
         make_real(pref, ival * neg_powers_10[-exp10]);
         return code;
     }
-    dval = ival;
+    dval = (double)ival;
     goto fe;
 
     /* Now we are accumulating a double in dval. */

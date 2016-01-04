@@ -328,8 +328,8 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
 {
     int width = gx_downscaler_scale(pdev->width, factor);
     int height = gx_downscaler_scale(pdev->height, factor);
-    int xpi = gx_downscaler_scale(pdev->x_pixels_per_inch, factor);
-    int ypi = gx_downscaler_scale(pdev->y_pixels_per_inch, factor);
+    int xpi = gx_downscaler_scale((int)pdev->x_pixels_per_inch, factor);
+    int ypi = gx_downscaler_scale((int)pdev->y_pixels_per_inch, factor);
     width = fax_adjusted_width(width, adjustWidth);
     TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, width);
     TIFFSetField(tif, TIFFTAG_IMAGELENGTH, height);

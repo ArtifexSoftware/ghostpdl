@@ -844,8 +844,8 @@ clist_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
     if (gx_device_must_halftone(dev) && pim->BitsPerComponent == 8 && !masked &&
         (dev->color_info.num_components == 1 || is_planar_dev) &&
         dev_profile->prebandthreshold) {
-        int dev_width = dbox.q.x - dbox.p.x;
-        int dev_height = dbox.q.y - dbox.p.y;
+        int dev_width = (int)(ceil(dbox.q.x) - floor(dbox.p.x));
+        int dev_height = (int)(ceil(dbox.q.y) - floor(dbox.p.y));
 
         int src_size = pim->Height *
                        bitmap_raster(pim->Width * pim->BitsPerComponent *

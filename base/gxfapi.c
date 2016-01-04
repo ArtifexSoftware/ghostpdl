@@ -697,7 +697,7 @@ on:           switch ( (dbyte = sbyte = *++sp) ) {
                     break;
                   *dp++ = 0xff;
                   bits_on += 8 -
-                    byte_count_bits[(*zp & (zmask - 1)) + (zp[1] & -zmask)];
+                    byte_count_bits[(*zp & (zmask - 1)) + (zp[1] & -(int)zmask)];
                   ++zp;
                   i += 8;
                   goto on;
@@ -1445,9 +1445,9 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
             return code;
         if (code == 0 /* metricsNone */ ) {
             if (bCID && (!bIsType1GlyphData && font_file_path)) {
-                cr.sb_x = fapi_round((sbw[2] / 2) * scale )* em_scale_x;
-                cr.sb_y = fapi_round(pbfont->FontBBox.q.y * scale) * em_scale_x;
-                cr.aw_y = fapi_round(-pbfont->FontBBox.q.x * scale) * em_scale_x;    /* Sic ! */
+                cr.sb_x = (fracint)(fapi_round( (sbw[2] / 2)         * scale) * em_scale_x);
+                cr.sb_y = (fracint)(fapi_round( pbfont->FontBBox.q.y * scale) * em_scale_x);
+                cr.aw_y = (fracint)(fapi_round(-pbfont->FontBBox.q.x * scale) * em_scale_x);    /* Sic ! */
                 cr.metrics_scale = 1;
                 cr.metrics_type = gs_fapi_metrics_replace;
                 sbw[0] = sbw[2] / 2;
@@ -1461,10 +1461,10 @@ gs_fapi_do_char(gs_font *pfont, gs_state *pgs, gs_text_enum_t *penum, char *font
             }
         }
         else {
-            cr.sb_x = fapi_round(pwv[2] * scale) * em_scale_x;
-            cr.sb_y = fapi_round(pwv[3] * scale) * em_scale_x;
-            cr.aw_x = fapi_round(pwv[0] * scale) * em_scale_x;
-            cr.aw_y = fapi_round(pwv[1] * scale) * em_scale_x;
+            cr.sb_x = (fracint)(fapi_round(pwv[2] * scale) * em_scale_x);
+            cr.sb_y = (fracint)(fapi_round(pwv[3] * scale) * em_scale_x);
+            cr.aw_x = (fracint)(fapi_round(pwv[0] * scale) * em_scale_x);
+            cr.aw_y = (fracint)(fapi_round(pwv[1] * scale) * em_scale_x);
             cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
             cr.metrics_type = (code == 2 /* metricsSideBearingAndWidth */ ? gs_fapi_metrics_replace
                                : gs_fapi_metrics_replace_width);

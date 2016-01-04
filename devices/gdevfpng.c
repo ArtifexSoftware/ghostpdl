@@ -16,11 +16,11 @@
 
 /* PNG (Portable Network Graphics) Format.  Pronounced "ping". */
 
+#include "zlib.h"
 #include "gdevprn.h"
 #include "gdevmem.h"
 #include "gscdefs.h"
 #include "gxgetbit.h"
-#include "zlib.h"
 #include "gxdownscale.h"
 #include "gxdevsop.h"
 

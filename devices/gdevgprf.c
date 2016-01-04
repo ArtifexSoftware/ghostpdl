@@ -17,6 +17,7 @@
 /* gprf device, based upon the gdevpsd.c code. */
 
 #include "math_.h"
+#include "zlib.h"
 #include "gdevprn.h"
 #include "gsparam.h"
 #include "gscrd.h"
@@ -34,7 +35,6 @@
 #include "gdevppla.h"
 #include "gxdownscale.h"
 #include "gdevdevnprn.h"
-#include "zlib.h"
 
 #ifndef MAX_CHAN
 #   define MAX_CHAN 15
@@ -975,16 +975,16 @@ get_rgb_planar_line(gprf_write_ctx *xc, byte *c, byte *m, byte *y, byte *k,
 
     for (x_pos = 0; x_pos < width; x_pos++) {
 
-        c_val = ((long)(*c++)* frac_1 / 255.0);
+        c_val = (int)((long)(*c++)* frac_1 / 255.0);
         c_val = (c_val < 0 ? 0 : (c_val > frac_1 ? frac_1 : c_val));
 
-        m_val = ((long)(*m++)* frac_1 / 255.0);
+        m_val = (int)((long)(*m++)* frac_1 / 255.0);
         m_val = (m_val < 0 ? 0 : (m_val > frac_1 ? frac_1 : m_val));
 
-        y_val = ((long)(*y++)* frac_1 / 255.0);
+        y_val = (int)((long)(*y++)* frac_1 / 255.0);
         y_val = (y_val < 0 ? 0 : (y_val > frac_1 ? frac_1 : y_val));
 
-        k_val = ((long)(*k++)* frac_1 / 255.0);
+        k_val = (int)((long)(*k++)* frac_1 / 255.0);
         k_val = (k_val < 0 ? 0 : (k_val > frac_1 ? frac_1 : k_val));
 
         color_cmyk_to_rgb(c_val, m_val, y_val, k_val, NULL, rgb_frac,

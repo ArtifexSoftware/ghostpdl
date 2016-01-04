@@ -16,10 +16,10 @@
 
 /* Miscellaneous support for platform facilities */
 
+#include "stat_.h"
 #include "unistd_.h"
 #include "fcntl_.h"
 #include "stdio_.h"
-#include "stat_.h"
 #include "memory_.h"
 #include "string_.h"
 #include "gp.h"

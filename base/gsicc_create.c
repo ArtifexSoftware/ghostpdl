@@ -439,15 +439,15 @@ gsicc_vec_to_mlut(gs_vector3 *vec, unsigned short *clut)
     *curr_ptr ++= 0;
     *curr_ptr ++= 0;
     *curr_ptr ++= 0;
-    temp = vec->u * 65535;
+    temp = (int)(vec->u * 65535);
     if (temp > 65535) temp = 65535;
     if (temp < 0) temp = 0;
     *curr_ptr ++= temp;
-    temp = vec->v * 65535;
+    temp = (int)(vec->v * 65535);
     if (temp > 65535) temp = 65535;
     if (temp < 0) temp = 0;
     *curr_ptr ++= temp;
-    temp = vec->w * 65535;
+    temp = (int)(vec->w * 65535);
     if (temp > 65535) temp = 65535;
     if (temp < 0) temp = 0;
     *curr_ptr ++= temp;
@@ -1560,9 +1560,9 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
                 d50_cieA[2] = D50_Z;
             } else {
                 /* Need to do final scaling to ICC CIEXYZ range */
-                d50_cieA[0] = D50_X / (1.0 + (32767.0/32768.0)) ;
-                d50_cieA[1] = D50_Y / (1.0 + (32767.0/32768.0));
-                d50_cieA[2] = D50_Z / (1.0 + (32767.0/32768.0));
+                d50_cieA[0] = (float)(D50_X / (1.0 + (32767.0/32768.0)));
+                d50_cieA[1] = (float)(D50_Y / (1.0 + (32767.0/32768.0)));
+                d50_cieA[2] = (float)(D50_Z / (1.0 + (32767.0/32768.0)));
             }
             matrixmult(&(d50_cieA[0]), 3, 1, &(lmn_vector[0]), 1, 3,
                         &(lutatobparts->matrix->cu.u));

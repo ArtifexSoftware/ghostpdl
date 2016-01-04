@@ -246,7 +246,7 @@ display_open(gx_device * dev)
     ccode = install_internal_subclass_devices((gx_device **)&ddev, NULL);
     if (ccode < 0)
         return ccode;
-    dev = ddev;
+    dev = (gx_device *)ddev;
 
     /* Make sure we have been passed a valid callback structure. */
     if ((ccode = display_check_structure(ddev)) < 0)

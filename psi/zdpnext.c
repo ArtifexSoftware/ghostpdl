@@ -235,8 +235,8 @@ zsizeimagebox(i_ctx_t *i_ctx_p)
     check_type(op[-3], t_integer);
     check_type(op[-2], t_integer);
     check_type(op[-1], t_integer);
-    srect.p.x = op[-4].value.intval;
-    srect.p.y = op[-3].value.intval;
+    srect.p.x = (double)op[-4].value.intval;
+    srect.p.y = (double)op[-3].value.intval;
     srect.q.x = srect.p.x + op[-2].value.intval;
     srect.q.y = srect.p.y + op[-1].value.intval;
     gs_currentmatrix(igs, &mat);

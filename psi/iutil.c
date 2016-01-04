@@ -781,7 +781,7 @@ num_params(const ref * op, int count, double *pval)
                 *--pval = op->value.realval;
                 break;
             case t_integer:
-                *--pval = op->value.intval;
+                *--pval = (double)op->value.intval;
                 mask++;
                 break;
             case t__invalid:
@@ -851,7 +851,7 @@ real_param(const ref * op, double *pparam)
 {
     switch (r_type(op)) {
         case t_integer:
-            *pparam = op->value.intval;
+            *pparam = (double)op->value.intval;
             break;
         case t_real:
             *pparam = op->value.realval;

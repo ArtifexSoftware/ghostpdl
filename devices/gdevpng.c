@@ -33,12 +33,7 @@
 /* lpd (L. Peter Deutsch) 1996-4-7: Modified for libpng 0.88. */
 /* Original version by Russell Lang 1995-07-04 */
 
-#include "gdevprn.h"
-#include "gdevmem.h"
-#include "gdevpccm.h"
-#include "gscdefs.h"
-#include "gxdownscale.h"
-
+/* RJW: Include png header BEFORE the gs ones to avoid warnings. */
 /*
  * libpng versions 1.0.3 and later allow disabling access to the stdxxx
  * files while retaining support for FILE * I/O.
@@ -54,6 +49,12 @@
  */
 /*#define PNG_NO_STDIO*/
 #include "png_.h"
+
+#include "gdevprn.h"
+#include "gdevmem.h"
+#include "gdevpccm.h"
+#include "gscdefs.h"
+#include "gxdownscale.h"
 
 /* ------ The device descriptors ------ */
 

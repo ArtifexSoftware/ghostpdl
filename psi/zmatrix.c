@@ -279,7 +279,7 @@ common_transform(i_ctx_t *i_ctx_p,
             opxy[1] = op->value.realval;
             break;
         case t_integer:
-            opxy[1] = op->value.intval;
+            opxy[1] = (double)op->value.intval;
             break;
         case t_array:		/* might be a matrix */
         case t_shortarray:
@@ -306,7 +306,7 @@ common_transform(i_ctx_t *i_ctx_p,
             opxy[0] = (op - 1)->value.realval;
             break;
         case t_integer:
-            opxy[0] = (op - 1)->value.intval;
+            opxy[0] = (double)(op - 1)->value.intval;
             break;
         default:
             return_op_typecheck(op - 1);
