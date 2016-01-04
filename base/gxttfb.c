@@ -239,6 +239,7 @@ static void DebugRepaint(ttfFont *ttf)
 {
 }
 
+#ifdef DEBUG
 static int DebugPrint(ttfFont *ttf, const char *fmt, ...)
 {
     char buf[500];
@@ -255,6 +256,7 @@ static int DebugPrint(ttfFont *ttf, const char *fmt, ...)
     }
     return 0;
 }
+#endif
 
 static void WarnBadInstruction(gs_font_type42 *pfont, int glyph_index)
 {

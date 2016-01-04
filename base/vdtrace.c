@@ -42,10 +42,12 @@ static inline double scale_y(vd_trace_interface *I, double y)
 #define SX(x) scale_x(vd_trace1, x)
 #define SY(y) scale_y(vd_trace1, y)
 
+#ifdef DEBUG
 static inline double bezier_point(double p0, double p1, double p2, double p3, double t)
 {   double s = 1-t;
     return p0*s*s*s + 3*p1*s*s*t + 3*p2*s*t*t + p3*t*t*t;
 }
+#endif
 
 static void vd_flatten(double p0x, double p0y, double p1x, double p1y, double p2x, double p2y, double p3x, double p3y)
 {

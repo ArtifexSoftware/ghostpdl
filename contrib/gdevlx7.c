@@ -361,18 +361,22 @@ static void find_lr_pixels(byte *buf[],int bytelen,int bufheight,
 /* ------ Driver procedures ------ */
 
 /*** THIS NEED TO BE REWORKED SOON ***/
-static const int LEFT_MARGIN=50;
-static const int VERTSIZE=LX7_BSW_H;
+enum {
+    LEFT_MARGIN=50,
+    VERTSIZE=LX7_BSW_H
+};
 /* offsets to print line sequence (defined in outbuf)
  */
-static const int IDX_SEQLEN=5;
-static const int IDX_HORRES=8;
-static const int IDX_PACKETS=13;
-static const int IDX_5700DIF=12;
-static const int IDX_HSTART=15;
-static const int IDX_HEND=17;
-static const int IDX_DATA=26;
-static const int IDX_CARTRIDGE=10;
+enum {
+    IDX_SEQLEN=5,
+    IDX_HORRES=8,
+    IDX_PACKETS=13,
+    IDX_5700DIF=12,
+    IDX_HSTART=15,
+    IDX_HEND=17,
+    IDX_DATA=26,
+    IDX_CARTRIDGE=10
+};
 
 #define DIV8(x) ( (x) >> 3 )
 #define MOD8(x) ( (x) & 0x7 )

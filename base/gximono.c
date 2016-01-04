@@ -208,6 +208,7 @@ not_fast_halftoning:
 }
 
 #define USE_SET_GRAY_FUNCTION 0
+#if USE_SET_GRAY_FUNCTION
 /* Temporary function to make it easier to debug the uber-macro below */
 static inline int
 image_set_gray(byte sample_value, const bool masked, uint mask_base,
@@ -249,6 +250,7 @@ image_set_gray(byte sample_value, const bool masked, uint mask_base,
     }
     return(0);
 }
+#endif
 
 /*
  * Rendering procedure for general mono-component images, dealing with

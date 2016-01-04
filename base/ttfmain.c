@@ -707,8 +707,8 @@ retry:
                     /* We have a range or errors that can be caused by
                      * bad bytecode
                      */
-                    if (error >= TT_Err_Invalid_Opcode
-                     || error <= TT_Err_Invalid_Displacement) {
+                    if ((int)error >= TT_Err_Invalid_Opcode
+                     || (int)error <= TT_Err_Invalid_Displacement) {
                         error = fBadInstruction;
                     }
                     else {

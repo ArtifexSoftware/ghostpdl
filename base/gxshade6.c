@@ -1817,6 +1817,7 @@ split_curve(const gs_fixed_point pole[4], gs_fixed_point q0[4], gs_fixed_point q
     split_curve_s(pole, q0, q1, 1);
 }
 
+#ifdef SHADING_SWAP_AXES_FOR_PRECISION
 static inline void
 do_swap_axes(gs_fixed_point *p, int k)
 {
@@ -1825,18 +1826,6 @@ do_swap_axes(gs_fixed_point *p, int k)
     for (i = 0; i < k; i++) {
         p[i].x ^= p[i].y; p[i].y ^= p[i].x; p[i].x ^= p[i].y;
     }
-}
-
-static inline void
-y_extreme_vertice(gs_fixed_point *q, const gs_fixed_point *p, int k, int minmax)
-{
-    int i;
-    gs_fixed_point r = *p;
-
-    for (i = 1; i < k; i++)
-        if ((p[i].y - r.y) * minmax > 0)
-            r = p[i];
-    *q = r;
 }
 
 static inline fixed
@@ -1864,27 +1853,7 @@ span_y(const gs_fixed_point *p, int k)
     }
     return ymax - ymin;
 }
-
-static inline void
-draw_wedge(const gs_fixed_point *p, int n)
-{
-#ifdef DEBUG
-    int i;
-
-    if (!vd_enabled)
-        return;
-    vd_setlinewidth(4);
-    vd_setcolor(RGB(255, 0, 0));
-    vd_beg_path;
-    vd_moveto(p[0].x, p[0].y);
-    for (i = 1; i < n; i++)
-        vd_lineto(p[i].x, p[i].y);
-    vd_closepath;
-    vd_end_path;
-    vd_fill;
-    /*vd_stroke;*/
 #endif
-}
 
 static inline fixed
 manhattan_dist(const gs_fixed_point *p0, const gs_fixed_point *p1)
@@ -2635,8 +2604,9 @@ constant_color_quadrangle_aux(patch_fill_state_t *pfs, const quadrangle_patch *p
     {   gs_fixed_point qq[4];
 
         make_vertices(qq, p);
-#       if 0 /* Swapping axes may improve the precision,
-                but slows down due to the area expantion needed
+#ifdef SHADING_SWAP_AXES_FOR_PRECISION
+             /* Swapping axes may improve the precision,
+                but slows down due to the area expansion needed
                 in gx_shade_trapezoid. */
             dx = span_x(qq, 4);
             dy = span_y(qq, 4);
@@ -2644,7 +2614,7 @@ constant_color_quadrangle_aux(patch_fill_state_t *pfs, const quadrangle_patch *p
                 do_swap_axes(qq, 4);
                 swap_axes = true;
             }
-#       endif
+#endif
         wrap_vertices_by_y(q, qq);
     }
     {   fixed dx1 = q[1].x - q[0].x, dy1 = q[1].y - q[0].y;
@@ -2876,26 +2846,6 @@ is_quadrangle_color_monotonic(const patch_fill_state_t *pfs, const quadrangle_pa
     if (r & 2)
         *not_monotonic_by_v = true;
     return !code;
-}
-
-static inline bool
-quadrangle_bbox_covers_pixel_centers(const quadrangle_patch *p)
-{
-    fixed xbot, xtop, ybot, ytop;
-
-    xbot = min(min(p->p[0][0]->p.x, p->p[0][1]->p.x),
-               min(p->p[1][0]->p.x, p->p[1][1]->p.x));
-    xtop = max(max(p->p[0][0]->p.x, p->p[0][1]->p.x),
-               max(p->p[1][0]->p.x, p->p[1][1]->p.x));
-    if (covers_pixel_centers(xbot, xtop))
-        return true;
-    ybot = min(min(p->p[0][0]->p.y, p->p[0][1]->p.y),
-               min(p->p[1][0]->p.y, p->p[1][1]->p.y));
-    ytop = max(max(p->p[0][0]->p.y, p->p[0][1]->p.y),
-               max(p->p[1][0]->p.y, p->p[1][1]->p.y));
-    if (covers_pixel_centers(ybot, ytop))
-        return true;
-    return false;
 }
 
 static inline void
@@ -3884,28 +3834,6 @@ fill_stripe(patch_fill_state_t *pfs, const tensor_patch *p)
     if (code < 0)
         return code;
     return fill_wedges(pfs, ku[3], kum, p->pole[3], 1, p->c[1][0], p->c[1][1], inpatch_wedge);
-}
-
-static inline bool
-is_curve_x_monotonic(const gs_fixed_point *pole, int pole_step)
-{   /* true = monotonic, false = don't know. */
-    return (pole[0 * pole_step].x <= pole[1 * pole_step].x &&
-            pole[1 * pole_step].x <= pole[2 * pole_step].x &&
-            pole[2 * pole_step].x <= pole[3 * pole_step].x) ||
-           (pole[0 * pole_step].x >= pole[1 * pole_step].x &&
-            pole[1 * pole_step].x >= pole[2 * pole_step].x &&
-            pole[2 * pole_step].x >= pole[3 * pole_step].x);
-}
-
-static inline bool
-is_curve_y_monotonic(const gs_fixed_point *pole, int pole_step)
-{   /* true = monotonic, false = don't know. */
-    return (pole[0 * pole_step].y <= pole[1 * pole_step].y &&
-            pole[1 * pole_step].y <= pole[2 * pole_step].y &&
-            pole[2 * pole_step].y <= pole[3 * pole_step].y) ||
-           (pole[0 * pole_step].y >= pole[1 * pole_step].y &&
-            pole[1 * pole_step].y >= pole[2 * pole_step].y &&
-            pole[2 * pole_step].y >= pole[3 * pole_step].y);
 }
 
 static inline bool neqs(int *a, int b)

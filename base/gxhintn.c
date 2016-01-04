@@ -151,7 +151,9 @@ static const unsigned int split_bits = 12;
 static const unsigned int max_coord_bits = 24; /* = split_bits * 2 */
 static const unsigned int matrix_bits = 19; /* <= sizeof(int) * 8 - 1 - split_bits */
 static const unsigned int g2o_bitshift = 12; /* <= matrix_bits + max_coord_bits - (sizeof(int) * 8 + 1) */
+#ifndef HAVE_INT64_T
 static const int32_t FFFFF000 = ~(int32_t)0xFFF; /* = ~(((int32_t)1 << split_bits) - 1) */
+#endif
 /* Constants above must satisfy expressions given in comments. */
 
 /* Computes (a*b)>>s, s <= 12 */
@@ -188,14 +190,7 @@ static inline int32_t Max(int32_t a, int32_t b)
 {   return a > b ? a : b;
 }
 
-static inline int32_t Min(int32_t a, int32_t b)
-{   return a < b ? a : b;
-}
-
 static inline long rshift(long a, int b)
-{   return b > 0 ? a << b : a >> -b;
-}
-static inline ulong urshift(ulong a, int b)
 {   return b > 0 ? a << b : a >> -b;
 }
 /*---------------------- members of matrix classes -------------------------*/
@@ -345,10 +340,12 @@ static inline t1_glyph_space_coord o2g_dist(t1_hinter * h, t1_hinter_space_coord
 {   return shift_rounded(mul_shift(od, coef, split_bits), h->g2o_fraction_bits + h->ctmi.bitshift - _fixed_shift - split_bits);
 }
 
+#if VD_TRACE
 static inline void o2g_float(t1_hinter * h, t1_hinter_space_coord ox, t1_hinter_space_coord oy, t1_glyph_space_coord *gx, t1_glyph_space_coord *gy)
 {   *gx = (long)(((double)ox * h->ctmi.xx + (double)oy * h->ctmi.yx) * fixed_scale / h->g2o_fraction / h->ctmi.denominator);
     *gy = (long)(((double)ox * h->ctmi.xy + (double)oy * h->ctmi.yy) * fixed_scale / h->g2o_fraction / h->ctmi.denominator);
 }
+#endif
 
 /* --------------------- t1_hint class members ---------------------*/
 
@@ -1815,23 +1812,6 @@ static inline bool t1_hinter__is_small_angle(t1_hinter * self, int pole_index0, 
     }
     *quality = vp1 * 100 / sp1; /* The best quality is 0. */
     return true;
-}
-
-static inline bool t1_hinter__is_conjugated(t1_hinter * self, int pole_index)
-{   int prev = t1_hinter__segment_beg(self, pole_index);
-    int next = t1_hinter__segment_end(self, pole_index);
-    long gx0 = self->pole[prev].gx - self->pole[pole_index].gx;
-    long gy0 = self->pole[prev].gy - self->pole[pole_index].gy;
-    long gx1 = self->pole[next].gx - self->pole[pole_index].gx;
-    long gy1 = self->pole[next].gy - self->pole[pole_index].gy;
-    long vp = gx0 * gy1 - gy0 * gx1;
-    long sp = gx0 * gy1 - gy0 * gx1;
-
-    if (sp > 0)
-        return false;
-    if (vp == 0)
-        return true;
-    return any_abs(vp) < -sp / 1000; /* The threshold is taken from scratch. */
 }
 
 static inline bool t1_hinter__next_contour_pole(t1_hinter * self, int pole_index)

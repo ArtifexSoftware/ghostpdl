@@ -2028,11 +2028,6 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw, bool all_bands)
     *y_top = y1;
 }
 
-static inline int sign(int a)
-{
-    return a < 0 ? -1 : a > 0 ? 1 : 0;
-}
-
 /* ---------------- Trapezoid filling loop ---------------- */
 
 /* Generate specialized algorythms for the most important cases : */

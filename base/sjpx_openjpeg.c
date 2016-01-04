@@ -35,7 +35,7 @@ static OPJ_SIZE_T sjpx_stream_read(void * p_buffer, OPJ_SIZE_T p_nb_bytes, void 
 	OPJ_SIZE_T len;
 
 	len = sb->size - sb->pos;
-	if (len < 0)
+        if (sb->size < sb->pos)
 		len = 0;
 	if (len == 0)
 		return (OPJ_SIZE_T)-1;  /* End of file! */

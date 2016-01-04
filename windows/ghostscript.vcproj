@@ -2646,6 +2646,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\sjpx_openjpeg.c"
+				>
+			</File>
+			<File
 				RelativePath="..\base\slzwc.c"
 				>
 			</File>

@@ -176,7 +176,7 @@ static int store_margin(line_list * ll, margin_set * set, int ii0, int ii1)
         }
         me = (m0 == 0 ? set->margin_list : m0->next);
         if (me == 0)
-            m0 = m0; /* Already set. */
+        {}  /* Already set. */
         else if (me->iend < i0)
             m0 = me; /* Insert after me. */
         else if (me->ibeg > i1)
@@ -210,10 +210,6 @@ static int store_margin(line_list * ll, margin_set * set, int ii0, int ii1)
     m1->iend = i1;
     set->margin_touched = m1;
     return 0;
-}
-
-static inline int to_interval(int x, int l, int u)
-{   return x < l ? l : x > u ? u : x;
 }
 
 static inline fixed Y_AT_X(active_line *alp, fixed xp)

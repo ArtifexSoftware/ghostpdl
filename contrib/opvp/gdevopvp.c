@@ -489,7 +489,7 @@ static opvp_cspace_t cspace_0_2_to_1_0[] = {
 };
 
 /* color space mapping 1.0 to 0.2 */
-static opvp_cspace_t cspace_1_0_to_0_2[] = {
+static OPVP_ColorSpace cspace_1_0_to_0_2[] = {
     OPVP_cspaceBW,
     OPVP_cspaceDeviceGray,
     OPVP_cspaceDeviceCMY,
@@ -501,7 +501,7 @@ static opvp_cspace_t cspace_1_0_to_0_2[] = {
 };
 
 /* image format mapping 1.0 to 0.2 */
-static opvp_imageformat_t iformat_1_0_to_0_2[] = {
+static OPVP_ImageFormat iformat_1_0_to_0_2[] = {
     OPVP_iformatRaw,
     OPVP_iformatRaw, /* OPVP_IFORMAT_MASK use iformat raw in 0.2 */
     OPVP_iformatRLE,
@@ -620,7 +620,7 @@ SetColorSpaceWrapper(opvp_dc_t printerContext, opvp_cspace_t cspace)
         *ErrorNo = OPVP_NOTSUPPORTED_0_2;
         return -1;
     }
-    if (cspace
+    if ((int)cspace
          >= sizeof(cspace_1_0_to_0_2)/sizeof(OPVP_ColorSpace)) {
         /* unknown color space */
         *ErrorNo = OPVP_PARAMERROR_0_2;
@@ -664,7 +664,7 @@ SetStrokeColorWrapper(opvp_dc_t printerContext, const opvp_brush_t *brush)
         /* 0.2 doesn't have OPVP_CSPACE_DEVICEKRGB */
         return OPVP_NOTSUPPORTED;
     }
-    if (brush->colorSpace
+    if ((int)brush->colorSpace
          >= sizeof(cspace_1_0_to_0_2)/sizeof(OPVP_ColorSpace)) {
         /* unknown color space */
         *ErrorNo = OPVP_PARAMERROR_0_2;
@@ -691,7 +691,7 @@ SetFillColorWrapper(opvp_dc_t printerContext, const opvp_brush_t *brush)
         /* 0.2 doesn't have OPVP_CSPACE_DEVICEKRGB */
         return OPVP_NOTSUPPORTED;
     }
-    if (brush->colorSpace
+    if ((int)brush->colorSpace
          >= sizeof(cspace_1_0_to_0_2)/sizeof(OPVP_ColorSpace)) {
         /* unknown color space */
         *ErrorNo = OPVP_PARAMERROR_0_2;
@@ -719,7 +719,7 @@ SetBgColorWrapper(opvp_dc_t printerContext, const opvp_brush_t *brush)
         *ErrorNo = OPVP_NOTSUPPORTED_0_2;
         return -1;
     }
-    if (brush->colorSpace
+    if ((int)brush->colorSpace
          >= sizeof(cspace_1_0_to_0_2)/sizeof(OPVP_ColorSpace)) {
         /* unknown color space */
         *ErrorNo = OPVP_PARAMERROR_0_2;
@@ -2061,8 +2061,7 @@ opvp_open(gx_device *dev)
         /* open printer device */
         code = gdev_prn_open(dev);
         if (code < 0) {
-            ecode = ecode;
-            return ecode;
+            return code;
         }
         while (dev->child) {
             dev = dev->child;
@@ -2072,16 +2071,14 @@ opvp_open(gx_device *dev)
         /* open output stream */
         code = gdev_prn_open_printer_seekable(dev, true, false);
         if (code < 0) {
-            ecode = code;
-            return ecode;
+            return code;
         }
         outputFD = fileno(rdev->file);
     }
 
     /* RE-load vector driver */
     if ((code = opvp_load_vector_driver())) {
-        ecode = code;
-        return ecode;
+        return code;
     }
 
     /* call opvpOpenPrinter */
@@ -2131,7 +2128,7 @@ opvp_open(gx_device *dev)
             int i;
 
             for (i = 0;i < nn;i++) {
-                if (p[i] < sizeof(cspace_available)) {
+                if ((unsigned int)p[i] < sizeof(cspace_available)) {
                     cspace_available[p[i]] = 1;
                 }
             }
