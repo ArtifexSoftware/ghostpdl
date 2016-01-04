@@ -516,7 +516,7 @@ ijs_server_parse_int (const char *value, int size, int *result)
         return IJS_ESYNTAX;
       num = (num * 10) + (c - '0');
     }
-  *result = num;
+  *result = sign * num;
   return 0;
 }
 
