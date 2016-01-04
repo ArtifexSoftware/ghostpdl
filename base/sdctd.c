@@ -209,7 +209,13 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
             /* falls through */
         case 1:		/* reading header markers */
             if (ss->data.common->Height != 0)
-                update_jpeg_header_height(pr->ptr + 1, src->bytes_in_buffer, ss->data.common->Height);
+            {
+               /* Deliberate and naughty. We cast away a const pointer
+                * here and write to a supposedly read-only stream. */
+                union { const byte *c; byte *u; } u;
+                u.c = pr->ptr+1;
+                update_jpeg_header_height(u.u, src->bytes_in_buffer, ss->data.common->Height);
+            }
             if ((code = gs_jpeg_read_header(ss, TRUE)) < 0)
                 return ERRC;
             pr->ptr =

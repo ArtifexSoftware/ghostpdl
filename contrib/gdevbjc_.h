@@ -216,13 +216,13 @@ void bjc_put_raster_resolution(FILE *file, int x_resolution, int y_resolution);
 void bjc_put_raster_skip(FILE *file, int skip);
 void bjc_put_page_margins(FILE *file, int length, int lm, int rm, int top);
 void bjc_put_media_supply(FILE *file, char supply, char type);
-void bjc_put_cmyk_image(FILE *file, char component, const char *data, int count);
+void bjc_put_cmyk_image(FILE *file, char component, const byte *data, int count);
 void bjc_put_move_lines(FILE *file, int lines);
 void bjc_put_move_lines_unit(FILE *file, int unit);
 void bjc_put_extended_margins(FILE *file, int length, int lm, int rm, int top);
 void bjc_put_image_format(FILE *file, char depth, char format, char ink);
 void bjc_put_page_id(FILE *file, int id);
-void bjc_put_continue_image(FILE *file, const char *data, int count);
+void bjc_put_continue_image(FILE *file, const byte *data, int count);
 void bjc_put_indexed_image(FILE *file, int dot_rows, int dot_cols, int layers);
 
 bool bjc_invert_bytes(byte *row, uint raster, bool inverse, byte lastmask);

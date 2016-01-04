@@ -23,7 +23,7 @@ struct _RinkjDeviceParams {
   int width;
   int height;
   int n_planes;
-  char *plane_names;
+  const char *plane_names;
 };
 
 struct _RinkjDevice {

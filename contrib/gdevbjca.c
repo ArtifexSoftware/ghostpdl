@@ -46,7 +46,7 @@
 #include <math.h>
 #include <time.h>
 
-static void bjc_put_bytes(FILE *file, const char *data, int count);
+static void bjc_put_bytes(FILE *file, const byte *data, int count);
 static void bjc_put_hi_lo(FILE *file, int value);
 static void bjc_put_lo_hi(FILE *file, int value);
 static void bjc_put_command(FILE *file, char command, int count);
@@ -54,9 +54,8 @@ static void bjc_put_command(FILE *file, char command, int count);
 /* ---------------- Utilities ---------------- */
 
 static void
-bjc_put_bytes(FILE *file, const char *data, int count)
+bjc_put_bytes(FILE *file, const byte *data, int count)
 {
-
     fwrite(data, count, 1, file);
 }
 
@@ -109,14 +108,14 @@ bjc_put_CR(FILE *file)
 void
 bjc_put_initialize(FILE *file)
 {
-    bjc_put_bytes(file, "\033@", 2);
+    bjc_put_bytes(file, (const byte *)"\033@", 2);
 }
 
 /* Set initial condition (ESC [ K <count> <init> <id> <parm1> <parm2>) */
 void
 bjc_put_set_initial(FILE *file)
 {
-    bjc_put_bytes(file, "\033[K\002\000\000\017", 7);
+    bjc_put_bytes(file, (const byte *)"\033[K\002\000\000\017", 7);
 }
 
 /* Set data compression (ESC [ b <count> <state>) */
@@ -170,7 +169,7 @@ bjc_put_raster_skip(FILE *file, int skip)
 void
 bjc_put_page_margins(FILE *file, int length, int lm, int rm, int top)
 {
-    char parms[4];
+    byte parms[4];
 
     parms[0] = length, parms[1] = lm, parms[2] = rm, parms[3] = top;
 /*    count = 4;       */ 	/* could be 1..3 */
@@ -199,7 +198,7 @@ bjc_put_identify_cartridge(FILE *file,
 /* CMYK raster image (ESC ( A <count> <color>) */
 void
 bjc_put_cmyk_image(FILE *file, char component,
-                   const char *data, int count)
+                   const byte *data, int count)
 {
     bjc_put_command(file, 'A', count + 1);
     fputc(component, file);
@@ -254,7 +253,7 @@ bjc_put_page_id(FILE *file, int id)
 
 /* Continue raster image (ESC ( F <count> <data>) */
 void
-bjc_put_continue_image(FILE *file, const char *data, int count)
+bjc_put_continue_image(FILE *file, const byte *data, int count)
 {
     bjc_put_command(file, 'F', count);
     bjc_put_bytes(file, data, count);

@@ -920,7 +920,7 @@ gsicc_initialize_default_profile(cmm_profile_t *icc_profile)
     gsicc_profile_t defaulttype = icc_profile->default_match;
     gsicc_colorbuffer_t default_space = gsUNDEFINED;
     int num_comps, num_comps_out;
-    const gs_memory_t *mem = icc_profile->memory;
+    gs_memory_t *mem = icc_profile->memory;
 
     /* Get the profile handle if it is not already set */
     if (icc_profile->profile_handle == NULL) {

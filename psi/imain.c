@@ -350,7 +350,7 @@ gs_main_init2(gs_main_instance * minst)
                           pdev->dname);
                 return gs_error_Fatal;
             }
-            code = gx_saved_pages_param_process(ppdev, minst->saved_pages_initial_arg,
+            code = gx_saved_pages_param_process(ppdev, (byte *)minst->saved_pages_initial_arg,
                                                 strlen(minst->saved_pages_initial_arg));
             if (code > 0)
                 if ((code = gs_erasepage(minst->i_ctx_p->pgs)) < 0)

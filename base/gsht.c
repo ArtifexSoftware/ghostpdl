@@ -1239,7 +1239,7 @@ gx_ht_install(gs_state * pgs, const gs_halftone * pht,
 void
 gx_imager_set_effective_xfer(gs_imager_state * pis)
 {
-    const gx_device_halftone *pdht = pis->dev_ht;
+    gx_device_halftone *pdht = pis->dev_ht;
     gx_transfer_map *pmap;
     gx_ht_order *porder;
     int i, component_num;
@@ -1298,7 +1298,7 @@ gx_set_effective_transfer(gs_state * pgs)
 /* Check if the transfer function for a component is monotonic.	*/
 /* Used to determine if we can do fast halftoning		*/
 bool
-gx_transfer_is_monotonic(gs_imager_state *pis, int plane_index)
+gx_transfer_is_monotonic(const gs_imager_state *pis, int plane_index)
 {
     if (pis->effective_transfer[plane_index]->proc != gs_identity_transfer) {
         bool threshold_inverted;

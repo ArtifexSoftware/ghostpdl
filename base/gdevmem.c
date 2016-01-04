@@ -456,7 +456,7 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
         memset(mdev->base, 0x00, size);
 #endif
         align = 1<<mdev->log2_align_mod;
-        mdev->base += (-(int)mdev->base) & (align-1);
+        mdev->base += (-(int)(intptr_t)mdev->base) & (align-1);
         mdev->foreign_bits = false;
     } else if (mdev->line_pointer_memory != 0) {
         /* Allocate the line pointers now. */
@@ -516,7 +516,7 @@ gdev_mem_set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
     /* Now, pad and align as required. */
     if (mdev->log2_align_mod > log2_align_bitmap_mod) {
         int align = 1<<mdev->log2_align_mod;
-        align = (-(int)base) & (align-1);
+        align = (-(int)(intptr_t)base) & (align-1);
         data = base + align;
     } else {
         data = mdev->base;
