@@ -28,21 +28,6 @@
 #include "gzht.h"
 #include "gxfmap.h"             /* For effective transfer usage in threshold */
 
-/* Used in threshold from tiles construction */
-static const uint32_t bit_order[32]={
-#if arch_is_big_endian
-        0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x08000000, 0x04000000, 0x02000000, 0x01000000,
-        0x00800000, 0x00400000, 0x00200000, 0x00100000, 0x00080000, 0x00040000, 0x00020000, 0x00010000,
-        0x00008000, 0x00004000, 0x00002000, 0x00001000, 0x00000800, 0x00000400, 0x00000200, 0x00000100,
-        0x00000080, 0x00000040, 0x00000020, 0x00000010, 0x00000008, 0x00000004, 0x00000002, 0x00000001
-#else
-        0x00000080, 0x00000040, 0x00000020, 0x00000010, 0x00000008, 0x00000004, 0x00000002, 0x00000001,
-        0x00008000, 0x00004000, 0x00002000, 0x00001000, 0x00000800, 0x00000400, 0x00000200, 0x00000100,
-        0x00800000, 0x00400000, 0x00200000, 0x00100000, 0x00080000, 0x00040000, 0x00020000, 0x00010000,
-        0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x08000000, 0x04000000, 0x02000000, 0x01000000
-#endif
-    };
-
 /* Forward declarations */
 void gx_set_effective_transfer(gs_state *);
 
@@ -198,7 +183,7 @@ gx_imager_setscreenphase(gs_imager_state * pis, int x, int y,
         for (i = 0; i < gs_color_select_count; ++i)
             gx_imager_setscreenphase(pis, x, y, (gs_color_select_t) i);
         return 0;
-    } else if (select < 0 || select >= gs_color_select_count)
+    } else if ((int)select < 0 || (int)select >= gs_color_select_count)
         return_error(gs_error_rangecheck);
     pis->screen_phase[select].x = x;
     pis->screen_phase[select].y = y;
@@ -226,7 +211,7 @@ int
 gs_currentscreenphase_pis(const gs_imager_state * pis, gs_int_point * pphase,
                       gs_color_select_t select)
 {
-    if (select < 0 || select >= gs_color_select_count)
+    if ((int)select < 0 || (int)select >= gs_color_select_count)
         return_error(gs_error_rangecheck);
     *pphase = pis->screen_phase[select];
     return 0;
