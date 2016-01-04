@@ -1084,9 +1084,9 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
                 npdev->num_render_threads_requested = ppdev->num_render_threads_requested;
 
                 /* Now start the thread to print the page */
-                if ((code == gp_thread_start(prn_print_page_in_background,
-                                             (void *)&(ppdev->bg_print),
-                                             &(ppdev->bg_print.thread_id))) < 0) {
+                if ((code = gp_thread_start(prn_print_page_in_background,
+                                            (void *)&(ppdev->bg_print),
+                                            &(ppdev->bg_print.thread_id))) < 0) {
                     /* Did not start cleanly - clean up is in print_foreground block below */
                     break;
                 }
