@@ -6525,12 +6525,6 @@ static	const gx_device_procs pdf14_clist_CMYKspot_procs =
                         pdf14_encode_color,
                         pdf14_decode_color);
 
-static	const gx_device_procs pdf14_clist_custom_procs =
-        pdf14_clist_procs(gx_forward_get_color_mapping_procs,
-                        gx_forward_get_color_comp_index,
-                        gx_forward_encode_color,
-                        gx_forward_decode_color);
-
 const pdf14_clist_device pdf14_clist_Gray_device = {
     std_device_color_stype_body(pdf14_clist_device, &pdf14_clist_Gray_procs,
                         "pdf14clistgray", &st_pdf14_device,
