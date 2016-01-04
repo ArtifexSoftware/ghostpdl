@@ -715,7 +715,7 @@ xcf_get_params(gx_device * pdev, gs_param_list * plist)
     pcmyks.data = (const byte *)xdev->profile_cmyk_fn,
         pcmyks.size = strlen(xdev->profile_cmyk_fn),
         pcmyks.persistent = false;
-    code = param_write_string(plist, "ProfileCmyk", &prgbs);
+    code = param_write_string(plist, "ProfileCmyk", &pcmyks);
 
     return code;
 }
