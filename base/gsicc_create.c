@@ -802,7 +802,7 @@ scale_matrix(float *matrix_input,float scale_factor)
 
 static void
 add_gammadata(unsigned char *input_ptr, unsigned short gamma,
-              icTagSignature curveType)
+              icTagTypeSignature curveType)
 {
     unsigned char *curr_ptr;
 
