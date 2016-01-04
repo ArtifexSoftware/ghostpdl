@@ -195,7 +195,7 @@ gs_memory_chunk_dump_memory(const gs_memory_t *mem)
     chunk_mem_node_t *next;
     int i;
 
-    dmprintf2(mem, "chunk_dump_memory: current used=%d, max_used=%d\n", cmem->used, cmem->max_used);
+    dmprintf2(mem, "chunk_dump_memory: current used=%lu, max_used=%lu\n", cmem->used, cmem->max_used);
     if (cmem->in_use != 0)
         dmprintf1(mem, "*** this memory allocator is not idle, used for: %s\n",
                   cmem->in_use < 0 ? "free" : "alloc");

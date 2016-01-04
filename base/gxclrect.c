@@ -278,9 +278,12 @@ cmd_write_trapezoid_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         cmd_putw(ytop, dp);
     }
     if_debug6m('L', cldev->memory, "    t%d:%ld,%ld,%ld,%ld   %ld\n",
-               rcsize - 1, left->start.x, left->start.y, left->end.x, left->end.y, ybot);
+               rcsize - 1, (long int)left->start.x, (long int)left->start.y,
+               (long int)left->end.x, (long int)left->end.y, (long int)ybot);
     if_debug6m('L', cldev->memory, "    t%ld,%ld,%ld,%ld   %ld   o=%d\n",
-               right->start.x, right->start.y, right->end.x, right->end.y, ytop, options);
+               (long int)right->start.x, (long int)right->start.y,
+               (long int)right->end.x, (long int)right->end.y, (long int)ytop,
+               options);
     if (options & 2) {
         cmd_putw(fa->clip->p.x, dp);
         cmd_putw(fa->clip->p.y, dp);

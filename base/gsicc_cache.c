@@ -116,7 +116,7 @@ gsicc_cache_new(gs_memory_t *memory)
     result->num_links = 0;
     result->memory = memory->stable_memory;
     if_debug2m(gs_debug_flag_icc, memory,
-               "[icc] Allocating link cache = 0x%x memory = 0x%x\n", result,
+               "[icc] Allocating link cache = 0x%p memory = 0x%p\n", result,
                result->memory);
     return(result);
 }
@@ -128,7 +128,7 @@ rc_gsicc_link_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     gsicc_link_cache_t *link_cache = (gsicc_link_cache_t * ) ptr_in;
 
     if_debug2m(gs_debug_flag_icc, mem,
-               "[icc] Removing link cache = 0x%x memory = 0x%x\n",
+               "[icc] Removing link cache = 0x%p memory = 0x%p\n",
                link_cache, link_cache->memory);
     gs_free_object(mem->stable_memory, link_cache, "rc_gsicc_link_cache_free");
 }
@@ -533,7 +533,7 @@ gsicc_remove_link(gsicc_link_t *link, gs_memory_t *memory)
     gsicc_link_cache_t *icc_link_cache = link->icc_link_cache;
 
     if_debug2m(gs_debug_flag_icc, memory,
-               "[icc] Removing link = 0x%x memory = 0x%x\n", link,
+               "[icc] Removing link = 0x%p memory = 0x%p\n", link,
                memory->stable_memory);
     /* NOTE: link->ref_count must be 0: assert ? */
     gx_monitor_enter(icc_link_cache->lock);
@@ -852,14 +852,16 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
     /* Got a hit, return link (ref_count for the link was already bumped */
     if (found_link != NULL) {
         if_debug2m(gs_debug_flag_icc, memory,
-                   "[icc] Found Link = 0x%x, hash = %I64d \n", 
-                   found_link, hash.link_hashcode);
+                   "[icc] Found Link = 0x%p, hash = %lld \n", 
+                   found_link, (long long)hash.link_hashcode);
         if_debug2m(gs_debug_flag_icc, memory,
-                   "[icc] input_numcomps = %d, input_hash = %I64d \n",
-                   gs_input_profile->num_comps, gs_input_profile->hashcode);
+                   "[icc] input_numcomps = %d, input_hash = %lld \n",
+                   gs_input_profile->num_comps,
+                   (long long)gs_input_profile->hashcode);
         if_debug2m(gs_debug_flag_icc, memory,
-                   "[icc] output_numcomps = %d, output_hash = %I64d \n",
-                   gs_output_profile->num_comps, gs_output_profile->hashcode);
+                   "[icc] output_numcomps = %d, output_hash = %lld \n",
+                   gs_output_profile->num_comps,
+                   (long long)gs_output_profile->hashcode);
         return found_link;
     }
     /* Before we do anything, check if we have a case where the source profile
@@ -1082,14 +1084,16 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                             include_softproof, include_devicelink, pageneutralcolor, 
                             gs_input_profile->data_cs);
         if_debug2m(gs_debug_flag_icc, cache_mem,
-                   "[icc] New Link = 0x%x, hash = %I64d \n", 
-                   link, hash.link_hashcode);
+                   "[icc] New Link = 0x%p, hash = %lld \n", 
+                   link, (long long)hash.link_hashcode);
         if_debug2m(gs_debug_flag_icc, cache_mem,
-                   "[icc] input_numcomps = %d, input_hash = %I64d \n",
-                   gs_input_profile->num_comps, gs_input_profile->hashcode);
+                   "[icc] input_numcomps = %d, input_hash = %lld \n",
+                   gs_input_profile->num_comps,
+                   (long long)gs_input_profile->hashcode);
         if_debug2m(gs_debug_flag_icc, cache_mem,
-                   "[icc] output_numcomps = %d, output_hash = %I64d \n",
-                   gs_output_profile->num_comps, gs_output_profile->hashcode);
+                   "[icc] output_numcomps = %d, output_hash = %lld \n",
+                   gs_output_profile->num_comps,
+                   (long long)gs_output_profile->hashcode);
     } else {
         gsicc_remove_link(link, cache_mem);
         icc_link_cache->num_links--;

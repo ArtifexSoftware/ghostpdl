@@ -1200,16 +1200,16 @@ gc_objects_set_reloc(gc_state_t * gcst, chunk_t * cp)
         pfree = (byte *) pre;
         pre->o_back = (pfree - (byte *) chead) >> obj_back_shift;
         pre->o_nreloc = reloc;
-        if_debug3m('7', gcst->heap, " [7]at 0x%lx, unmarked %lu, new reloc = %u\n",
-                   (ulong) pre, (ulong) size, reloc);
+        if_debug3m('7', gcst->heap, " [7]at 0x%p, unmarked %lu, new reloc = %u\n",
+                   pre, (ulong) size, (unsigned int)reloc);
     } else {			/* Useful object */
         debug_check_object(pre, cp, gcst);
         pre->o_back = ((byte *) pre - pfree) >> obj_back_shift;
     }
     END_OBJECTS_SCAN
 #ifdef DEBUG
-        if (reloc != 0) {
-        if_debug1m('6', gcst->heap, "[6]freed %u", reloc);
+    if (reloc != 0) {
+        if_debug1m('6', gcst->heap, "[6]freed %u", (unsigned int)reloc);
         if_debug_chunk('6', gcst->heap, " in", cp);
     }
 #endif

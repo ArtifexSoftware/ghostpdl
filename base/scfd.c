@@ -801,7 +801,7 @@ rlen_lt_zero:
             /* Remember that count counts *down*. */
             prev_count += rlen - vertical_0;	/* a1 */
             if_debug2m('W', ss->memory, " vertical %d -> %d\n",
-                      rlen - vertical_0, prev_count);
+                       (int)(rlen - vertical_0), prev_count);
         }
         /* Now either invert or skip from count */
         /* to prev_count, and reset count. */

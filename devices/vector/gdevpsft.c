@@ -136,7 +136,7 @@ write_range(stream *s, gs_font_type42 *pfont, ulong start, uint length)
 {
     ulong base = start, size = length;
 
-    if_debug3m('l', s->memory, "[l]write_range pos = %"PRId64", start = %"PRIu32", length = %"PRIu32"\n",
+    if_debug3m('l', s->memory, "[l]write_range pos = %"PRId64", start = %lu, length = %u\n",
                stell(s), start, length);
     while (size > 0) {
         const byte *ptr;

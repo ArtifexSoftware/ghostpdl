@@ -144,7 +144,8 @@ print_points(const gs_fixed_point *points, int count)
     if (!gs_debug_c('3'))
         return;
     for (i = 0; i < count; i++)
-        if_debug2('3', "[3]out x=%ld y=%ld\n", points[i].x, points[i].y);
+      if_debug2('3', "[3]out x=%ld y=%ld\n",
+                (long)points[i].x, (long)points[i].y);
 #endif
 }
 
@@ -415,7 +416,7 @@ gx_flattened_iterator__next(gx_flattened_iterator *self)
         if_debug5('3', "[3]%s x=%g, y=%g x=%ld y=%ld\n",
                   (((x ^ self->x0) | (y ^ self->y0)) & float2fixed(-0.5) ?
                    "add" : "skip"),
-                  fixed2float(x), fixed2float(y), x, y);
+                  fixed2float(x), fixed2float(y), (long)x, (long)y);
         self->lx1 = x, self->ly1 = y;
         vd_bar(self->lx0, self->ly0, self->lx1, self->ly1, 1, RGB(0, 255, 0));
         return true;
@@ -438,7 +439,7 @@ gx_flattened_iterator__next(gx_flattened_iterator *self)
         if_debug5('3', "[3]%s x=%g, y=%g x=%ld y=%ld\n",
                   (((x ^ self->lx0) | (y ^ self->ly0)) & float2fixed(-0.5) ?
                    "add" : "skip"),
-                  fixed2float(x), fixed2float(y), x, y);
+                  fixed2float(x), fixed2float(y), (long)x, (long)y);
 #	undef accum
         self->lx1 = self->x = x;
         self->ly1 = self->y = y;
@@ -449,7 +450,8 @@ last:
     self->lx1 = self->x3;
     self->ly1 = self->y3;
     if_debug4('3', "[3]last x=%g, y=%g x=%ld y=%ld\n",
-              fixed2float(self->lx1), fixed2float(self->ly1), self->lx1, self->ly1);
+              fixed2float(self->lx1), fixed2float(self->ly1),
+              (long)self->lx1, (long)self->ly1);
     vd_bar(self->lx0, self->ly0, self->lx1, self->ly1, 1, RGB(0, 255, 0));
     return false;
 }
@@ -501,7 +503,8 @@ gx_flattened_iterator__prev(gx_flattened_iterator *self)
     if_debug5('3', "[3]%s x=%g, y=%g x=%ld y=%ld\n",
               (((self->x ^ self->lx1) | (self->y ^ self->ly1)) & float2fixed(-0.5) ?
                "add" : "skip"),
-              fixed2float(self->x), fixed2float(self->y), self->x, self->y);
+              fixed2float(self->x), fixed2float(self->y),
+              (long)self->x, (long)self->y);
     gx_flattened_iterator__print_state(self);
 #   endif
     last = (self->i == (1 << self->k) - 1);

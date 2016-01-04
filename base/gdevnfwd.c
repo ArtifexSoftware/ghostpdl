@@ -1328,7 +1328,7 @@ static void do_device_dump(gx_device *dev, int n)
         dmlprintf(dev->memory, "NULL\n");
         return;
     }
-    dmlprintf3(dev->memory, "%x(%d) = '%s'\n", dev, dev->rc.ref_count, dev->dname);
+    dmlprintf3(dev->memory, "%p(%ld) = '%s'\n", dev, dev->rc.ref_count, dev->dname);
 
     data.n = 0;
     do {

@@ -801,7 +801,7 @@ gs_abort_pdf14trans_device(gs_state * pgs)
 int
 gx_abort_trans_device(gs_imager_state * pis, gx_device * pdev)
 {
-    if_debug1m('v', pis->memory, "[v](0x%lx)gx_abort_trans_device(%d)\n", (ulong)pis);
+    if_debug1m('v', pis->memory, "[v](0x%lx)gx_abort_trans_device\n", (ulong)pis);
     if (dev_proc(pdev, discard_transparency_layer) != 0)
     return (*dev_proc(pdev, discard_transparency_layer)) (pdev, pis);
     else
