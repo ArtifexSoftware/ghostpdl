@@ -77,6 +77,7 @@ public_st_cmap_lookup_range_element();
  */
 
 #ifndef GS_THREADSAFE
+#ifdef DEBUG
 static void
 print_msg_str_in_range(const byte *str,
                        const byte *key_lo, const byte *key_hi,
@@ -89,6 +90,7 @@ print_msg_str_in_range(const byte *str,
     debug_print_string_hex_nomem(key_hi, key_size);
     dlprintf("\n");
 }
+#endif
 #endif
 
 static int
