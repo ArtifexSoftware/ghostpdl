@@ -79,9 +79,7 @@
            { //true}
            {                                                 % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname
              dup length 16 gt
-             {
-               //false
-             }
+             { //false }
              {
                % if we couldn't derive the code point from the AGL, we might derive it
                % from a formatted "uniXXXX" name.
@@ -89,8 +87,8 @@
                {
                  % as luck would have it, we can just replace the "uni" with "16#"
                  % to get something we can convert to a number
-                 pop pop dup 0 (16#) putinterval {cvi} stopped
-                 {//false}
+                 pop pop dup 0 (16#) putinterval {cvi} .internalstopped
+                 { pop //false}
                  {                                             % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname cpoint
                    dup 5 index exch known
                    { //true }
