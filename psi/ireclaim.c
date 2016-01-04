@@ -33,7 +33,7 @@
 extern void ialloc_gc_prepare(gs_ref_memory_t *);
 
 /* Forward references */
-static void gs_vmreclaim(gs_dual_memory_t *, bool);
+static int gs_vmreclaim(gs_dual_memory_t *, bool);
 
 /* Initialize the GC hook in the allocator. */
 static int ireclaim(gs_dual_memory_t *, int);
@@ -51,6 +51,7 @@ ireclaim(gs_dual_memory_t * dmem, int space)
 {
     bool global;
     gs_ref_memory_t *mem;
+    int code;
 
     if (space < 0) {
         /* Determine which allocator exceeded the limit. */
@@ -74,7 +75,9 @@ ireclaim(gs_dual_memory_t * dmem, int space)
     global = mem->space != avm_local;
     /* Since dmem may move, reset the request now. */
     ialloc_reset_requested(dmem);
-    gs_vmreclaim(dmem, global);
+    code = gs_vmreclaim(dmem, global);
+    if (code < 0)
+        return code;
     ialloc_set_limit(mem);
     if (space < 0) {
         gs_memory_status_t stats;
@@ -97,7 +100,7 @@ ireclaim(gs_dual_memory_t * dmem, int space)
 }
 
 /* Interpreter entry to garbage collector. */
-static void
+static int
 gs_vmreclaim(gs_dual_memory_t *dmem, bool global)
 {
     /* HACK: we know the gs_dual_memory_t is embedded in a context state. */
@@ -108,6 +111,9 @@ gs_vmreclaim(gs_dual_memory_t *dmem, bool global)
     gs_ref_memory_t *memories[5];
     gs_ref_memory_t *mem;
     int nmem, i;
+
+    if (code < 0)
+        return code;
 
     memories[0] = dmem->space_system;
     memories[1] = mem = dmem->space_global;
@@ -178,7 +184,7 @@ gs_vmreclaim(gs_dual_memory_t *dmem, bool global)
        we would lose those allocations when the chunks were opened */
 
     code = context_state_load(i_ctx_p);
-
+    return code;
 }
 
 /* ------ Initialization procedure ------ */
