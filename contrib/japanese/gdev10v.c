@@ -223,7 +223,6 @@ bj10v_print_page(gx_device_printer *pdev, FILE *prn_stream)
            {	byte *out_beg;
                 byte *out_end;
                 byte *outl, *outp;
-                byte *zp;
                 int count, bnum;
 
                 /* Copy 1 scan line and test for all zero. */

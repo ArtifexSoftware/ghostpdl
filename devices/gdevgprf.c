@@ -57,7 +57,6 @@ static dev_proc_close_device(gprf_prn_close);
 static dev_proc_get_params(gprf_get_params);
 static dev_proc_put_params(gprf_put_params);
 static dev_proc_print_page(gprf_print_page);
-static dev_proc_get_color_mapping_procs(get_gprfrgb_color_mapping_procs);
 static dev_proc_get_color_mapping_procs(get_gprf_color_mapping_procs);
 static dev_proc_get_color_comp_index(gprf_get_color_comp_index);
 
@@ -78,6 +77,7 @@ static
 ENUM_PTRS_WITH(gprf_device_enum_ptrs, gprf_device *pdev)
 {
     ENUM_PREFIX(st_gx_devn_prn_device, 0);
+    pdev = pdev; /* Stop unused var warning */
     return 0;
 }
 ENUM_PTRS_END
@@ -85,6 +85,7 @@ ENUM_PTRS_END
 static RELOC_PTRS_WITH(gprf_device_reloc_ptrs, gprf_device *pdev)
 {
     RELOC_PREFIX(st_gx_devn_prn_device);
+    pdev = pdev; /* Stop unused var warning */
 }
 RELOC_PTRS_END
 
@@ -451,14 +452,6 @@ gprf_get_params(gx_device * pdev, gs_param_list * plist)
     return code;
 }
 
-/* Compare a C string and a gs_param_string. */
-static bool
-param_string_eq(const gs_param_string *pcs, const char *str)
-{
-    return (strlen(str) == pcs->size &&
-            !strncmp(str, (const char *)pcs->data, pcs->size));
-}
-
 /* Set parameters.  We allow setting the number of bits per component. */
 static int
 gprf_put_params(gx_device * pdev, gs_param_list * plist)
@@ -466,7 +459,6 @@ gprf_put_params(gx_device * pdev, gs_param_list * plist)
     gprf_device * const pdevn = (gprf_device *) pdev;
     int code = 0;
 
-    gs_param_string pcm;
     gx_device_color_info save_info = pdevn->color_info;
 
     switch (code = param_read_long(plist,
@@ -583,7 +575,7 @@ typedef struct {
     byte *deflate_block;
 } gprf_write_ctx;
 
-int
+static int
 gprf_setup(gprf_write_ctx *xc, gx_device_printer *pdev, FILE *file, int w, int h,
            gsicc_link_t *icclink)
 {
@@ -662,7 +654,7 @@ gprf_setup(gprf_write_ctx *xc, gx_device_printer *pdev, FILE *file, int w, int h
 #  define assign_u32(a,v) a = (v)
 #endif
 
-int
+static int
 gprf_write(gprf_write_ctx *xc, const byte *buf, int size) {
     int code;
 
@@ -672,13 +664,13 @@ gprf_write(gprf_write_ctx *xc, const byte *buf, int size) {
     return 0;
 }
 
-int
+static int
 gprf_write_8(gprf_write_ctx *xc, byte v)
 {
     return gprf_write(xc, (byte *)&v, 1);
 }
 
-int
+static int
 gprf_write_16(gprf_write_ctx *xc, bits16 v)
 {
     bits16 buf;
@@ -687,7 +679,7 @@ gprf_write_16(gprf_write_ctx *xc, bits16 v)
     return gprf_write(xc, (byte *)&buf, 2);
 }
 
-int
+static int
 gprf_write_32(gprf_write_ctx *xc, bits32 v)
 {
     bits32 buf;
@@ -696,21 +688,7 @@ gprf_write_32(gprf_write_ctx *xc, bits32 v)
     return gprf_write(xc, (byte *)&buf, 4);
 }
 
-static fixed_colorant_name
-get_sep_name(gx_devn_prn_device *pdev, int n)
-{
-    fixed_colorant_name p = NULL;
-    int i;
-
-    for (i = 0; i <= n; i++) {
-        p = pdev->devn_params.std_colorant_names[i];
-        if (p == NULL)
-            break;
-    }
-    return p;
-}
-
-void
+static void
 gprf_write_header(gprf_write_ctx *xc)
 {
     int i;
@@ -776,11 +754,10 @@ gprf_write_header(gprf_write_ctx *xc)
            project. At this point, everything has an alpha of 1.0 */
         rgba[3] = 255;
         if (xc->icclink != NULL) {
-            xc->icclink->procs.map_color(dev, xc->icclink, &(cmyk[0]), &(rgba[0]), 1);
+	  xc->icclink->procs.map_color((gx_device *)dev, xc->icclink, &(cmyk[0]), &(rgba[0]), 1);
         } else {
             /* Something was wrong with the icclink. Use the canned routines. */
             frac rgb_frac[3], cmyk_frac[4];
-            int r, g, b;
             int index;
             int temp;
 
@@ -992,7 +969,6 @@ get_rgb_planar_line(gprf_write_ctx *xc, byte *c, byte *m, byte *y, byte *k,
     gprf_device *gprf_dev = (gprf_device *)xc->dev;
     frac rgb_frac[3];
     int temp;
-    int i;
     byte *rp = red_in;
     byte *gp = green_in;
     byte *bp = blue_in;
@@ -1172,8 +1148,8 @@ gprf_write_image_data(gprf_write_ctx *xc)
                         raster_row, raster_row, 1, pdev->width);
                     gsicc_init_buffer(&output_buffer_desc, 3, 1, false, false, true,
                         raster_plane, raster_row, 1, pdev->width);
-                    xc->icclink->procs.map_buffer(gprf_dev, xc->icclink,
-                        &input_buffer_desc, &output_buffer_desc,
+                    xc->icclink->procs.map_buffer((gx_device *)gprf_dev,
+                        xc->icclink, &input_buffer_desc, &output_buffer_desc,
                         cmyk, rgb[0] + y * raster_row);
                 }
             } else {
@@ -1192,8 +1168,8 @@ gprf_write_image_data(gprf_write_ctx *xc)
                         false, true, raster_plane, raster_row, 1, pdev->width);
                     gsicc_init_buffer(&output_buffer_desc, 3, 1, false, false, true,
                         raster_plane, raster_row, 1, pdev->width);
-                    xc->icclink->procs.map_buffer(gprf_dev, xc->icclink,
-                        &input_buffer_desc, &output_buffer_desc,
+                    xc->icclink->procs.map_buffer((gx_device *)gprf_dev,
+                        xc->icclink, &input_buffer_desc, &output_buffer_desc,
                         planes[0] + y * raster_row, rgb[0] + y * raster_row);
                 }
             }

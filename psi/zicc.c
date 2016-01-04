@@ -475,7 +475,6 @@ seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
     gs_color_space *        pcs;
     gs_imager_state *       pis = (gs_imager_state *)igs;
     int                     i;
-    static const char *const rfs = LAB_ICC;
 
     /* build the color space object */
     code = gs_cspace_build_ICC(&pcs, NULL, gs_state_memory(igs));

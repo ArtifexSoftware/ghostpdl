@@ -92,7 +92,6 @@ ENUM_PTRS_END
 static
 RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
 {
-    int i;
     RELOC_PREFIX(st_device_forward);
     if (CLIST_IS_WRITER(cdev)) {
         if (cdev->writer.image_enum_id != gs_no_id) {

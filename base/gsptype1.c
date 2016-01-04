@@ -1324,10 +1324,12 @@ static RELOC_PTRS_WITH(dc_colored_masked_reloc_ptrs, gx_device_color *cptr)
 RELOC_PTRS_END
 static ENUM_PTRS_WITH(dc_devn_masked_enum_ptrs, gx_device_color *cptr)
 ENUM_SUPER(gx_device_color, st_client_color, ccolor, 0);
+cptr = cptr; /* Avoid unused warning */
 ENUM_PTRS_END
 static RELOC_PTRS_WITH(dc_devn_masked_reloc_ptrs, gx_device_color *cptr)
 {
     RELOC_SUPER(gx_device_color, st_client_color, ccolor);
+cptr = cptr; /* Avoid unused warning */
 }
 RELOC_PTRS_END
 static ENUM_PTRS_BEGIN(dc_binary_masked_enum_ptrs)

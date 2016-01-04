@@ -124,6 +124,7 @@ typedef struct gx_device_cmykog_s gx_device_cmykog;
 static
 ENUM_PTRS_WITH(cmykog_device_enum_ptrs, gx_device_cmykog *pdev)
 {
+  pdev = pdev; /* Silenced unused var warning */
   ENUM_PREFIX(st_gx_devn_prn_device, 0);
   /* Any extra pointers added to our device after the gx_devn_prn_device
    * fields would be enumerated here. */
@@ -133,6 +134,7 @@ ENUM_PTRS_END
 
 static RELOC_PTRS_WITH(cmykog_device_reloc_ptrs, gx_device_cmykog *pdev)
 {
+  pdev = pdev; /* Silenced unused var warning */
   RELOC_PREFIX(st_gx_devn_prn_device);
   /* Any extra pointers added to our device after the gx_devn_prn_device
    * fields would be relocated here. */

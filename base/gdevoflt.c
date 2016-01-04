@@ -316,10 +316,12 @@ gs_private_st_composite(st_obj_filter_image_enum, obj_filter_image_enum, "obj_fi
   obj_filter_image_enum_enum_ptrs, obj_filter_image_enum_reloc_ptrs);
 
 static ENUM_PTRS_WITH(obj_filter_image_enum_enum_ptrs, obj_filter_image_enum *pie)
+    pie = pie; /* Silence unused var warning */
     return ENUM_USING_PREFIX(st_gx_image_enum_common, 0);
 ENUM_PTRS_END
 static RELOC_PTRS_WITH(obj_filter_image_enum_reloc_ptrs, obj_filter_image_enum *pie)
 {
+    pie = pie; /* Silence unused var warning */
     RELOC_USING(st_gx_image_enum_common, vptr, size);
 }
 RELOC_PTRS_END

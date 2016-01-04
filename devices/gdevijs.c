@@ -428,7 +428,7 @@ static int gsijs_fill_path(gx_device * dev, const gs_imager_state * pis,
 
    ijsdev->k_path = 0;
 
-   return 0;
+   return code;
 }
 
 static int gsijs_stroke_path(gx_device * dev, const gs_imager_state * pis,

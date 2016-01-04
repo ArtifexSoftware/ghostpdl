@@ -306,7 +306,6 @@ static dump_row dump_start(int w, int h, int num_comps, int log2bits,
 static int
 plan_open(gx_device * pdev)
 {
-    gx_device_printer * const bdev = (gx_device_printer *)pdev;
     int code;
 
 #ifdef DEBUG_PRINT
@@ -324,8 +323,6 @@ plan_open(gx_device * pdev)
 static int
 plan_close(gx_device *pdev)
 {
-    gx_device_printer *pldev = (gx_device_printer *)pdev;
-
 #ifdef DEBUG_PRINT
     emprintf(pdev->memory, "plan_close\n");
 #endif
@@ -456,7 +453,6 @@ static int
 plan_print_page_loop(gx_device_printer * pdev, int log2bits, int numComps,
                      FILE *pstream)
 {
-    gx_device_printer *pldev = (gx_device_printer *)pdev;
     int lnum;
     int code = 0;
     gs_get_bits_options_t options;

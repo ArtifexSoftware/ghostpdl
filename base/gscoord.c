@@ -247,7 +247,6 @@ int
 gs_translate_untransformed(gs_state * pgs, double dx, double dy)
 {
     gs_point pt;
-    int code;
 
     pt.x = (float)dx + pgs->ctm.tx;
     pt.y = (float)dy + pgs->ctm.ty;

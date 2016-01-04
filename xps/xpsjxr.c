@@ -141,7 +141,7 @@ xps_decode_jpegxr_alpha_block(jxr_image_t image, int mx, int my, int *data)
     xps_image_t *output = state->output;
     int depth;
     unsigned char *p;
-    int x, y, k;
+    int x, y;
 
     if (!output->alpha)
     {
