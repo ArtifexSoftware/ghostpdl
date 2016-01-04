@@ -123,7 +123,7 @@ static
 ENUM_PTRS_WITH(psd_device_enum_ptrs, psd_device *pdev)
 {
     ENUM_PREFIX(st_gx_devn_prn_device, 0);
-    pdev = pdev; /* Stop unused var warning */
+    (void)pdev; /* Stop unused var warning */
     return 0;
 }
 ENUM_PTRS_END
@@ -131,7 +131,7 @@ ENUM_PTRS_END
 static RELOC_PTRS_WITH(psd_device_reloc_ptrs, psd_device *pdev)
 {
     RELOC_PREFIX(st_gx_devn_prn_device);
-    pdev = pdev; /* Stop unused var warning */
+    (void)pdev; /* Stop unused var warning */
 }
 RELOC_PTRS_END
 

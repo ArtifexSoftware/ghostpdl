@@ -155,7 +155,7 @@ update_func(ULONG unused)
     BOOL flag;
     ULONG count;
 
-    unused = unused;		/* to shut up warning */
+    (void)unused;		/* to shut up warning */
     while (!DosQueryEventSem(update_event_sem, &count)) {
         /* loop while semaphore exists */
         DosWaitEventSem(update_event_sem, SEM_INDEFINITE_WAIT);
@@ -172,7 +172,7 @@ exit_func(ULONG code)
     DosCloseMutexSem(bmp_mutex_sem);
     DosFreeMem((PVOID) bitmap.pbmi);
     DosExitList(EXLST_EXIT, 0);
-    code = code;		/* to shut up warning */
+    (void)code;		/* to shut up warning */
 }
 
 void

@@ -505,7 +505,7 @@ mj_put_params(gx_device *pdev,  gs_param_list *plist, int ptype)
 {\
     unsigned short *mat = matrix2 + (lnum & 127)*128;\
     int x;\
-    cErr = cErr; /* Stop compiler warning */\
+    (void)cErr; /* Stop compiler warning */\
     if (scan == 0) {       /* going_up */\
       x = 0;\
       for (i = 0; i < plane_size; i++) {\
