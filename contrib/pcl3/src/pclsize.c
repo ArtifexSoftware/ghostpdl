@@ -126,7 +126,7 @@ pcl_PageSize pcl3_page_size(ms_MediaCode code)
     initialized = TRUE;
   }
 
-  key.mc = ms_without_flags(code) | code & PCL_CARD_FLAG;
+  key.mc = ms_without_flags(code) |( code & PCL_CARD_FLAG);
   result = (const CodeEntry *)bsearch(&key, code_map, array_size(code_map),
     sizeof(CodeEntry), cmp_by_size);
 

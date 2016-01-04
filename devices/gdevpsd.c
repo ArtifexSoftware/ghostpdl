@@ -1396,7 +1396,7 @@ psd_allow_multiple_pages (gx_device_printer *pdev)
 
     code = gx_parse_output_file_name(&parsed, &fmt, psd_dev->fname,
                                      strlen(psd_dev->fname), psd_dev->memory);
-    if (code < 0 || fmt == NULL && psd_dev->PageCount > 0) {
+    if (code < 0 || (fmt == NULL && psd_dev->PageCount > 0)) {
         retval = false;
     }
     return retval;

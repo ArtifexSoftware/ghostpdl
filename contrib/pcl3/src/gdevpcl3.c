@@ -1232,8 +1232,9 @@ static int pcl3_put_params(gx_device *device, gs_param_list *plist)
 
   /* Process parameters defined by base classes (should occur after treating
      parameters defined for the derived class, see gsparam.h) */
-  if ((rc = eprn_put_params(device, plist)) < 0 ||
-    rc > 0 && last_error >= 0) last_error = rc;
+  rc = eprn_put_params(device, plist);
+  if (rc < 0 || (rc > 0 && last_error >= 0))
+    last_error = rc;
 
   /* Act if the colour model was changed */
   if (previous_colour_model != dev->eprn.colour_model) set_palette(dev);

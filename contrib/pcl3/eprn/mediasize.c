@@ -171,8 +171,8 @@ static void check(void)
     assert(list[j].dimen[0] <= list[j].dimen[1]);
     assert(strlen(list[j].name) < LONGER_THAN_NAMES);
     assert(list[j].dimen[0] == 0.0 || list[j-1].dimen[0] < list[j].dimen[0] ||
-      list[j-1].dimen[0] == list[j].dimen[0] &&
-        list[j-1].dimen[1] <= list[j].dimen[1]);
+           (list[j-1].dimen[0] == list[j].dimen[0] &&
+            list[j-1].dimen[1] <= list[j].dimen[1]));
   }
 
   /* Check that the highest accepted value does not collide with the flags */
@@ -408,9 +408,9 @@ extern int ms_find_name_from_code(char *buffer, size_t length,
   code = ms_flags(code);
 
   /* Substrings */
-  if (user_flag_list != NULL &&
-      add_substrings(buffer, &length, &code, user_flag_list) != 0 ||
-    add_substrings(buffer, &length, &code, substrings) != 0) return -1;
+  if ((user_flag_list != NULL &&
+       add_substrings(buffer, &length, &code, user_flag_list) != 0) ||
+      add_substrings(buffer, &length, &code, substrings) != 0) return -1;
 
   /* Transverse qualifier */
   if (code & MS_TRANSVERSE_FLAG) {

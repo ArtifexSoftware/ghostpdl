@@ -162,7 +162,7 @@ static int compress_tiff(const pcl_Octet *in, int incount, pcl_Octet *out,
     last = *in; in++; /* Fetch one octet and remember it. */
     /* to state2 */
 
-  state2:
+  /* state2: */
     /* One octet to be treated is in 'last', 'in' points to the next. */
     if (*in != last) {
       if (available < 3) return -1;
@@ -696,7 +696,7 @@ static int compress_crdr(const pcl_Octet *in, int incount,
 
 /* Test macro for an argument of type "pcl_OctetString *" */
 #define is_valid(s)	\
-  (s != NULL && ((s)->length == 0 || (s)->length > 0 && (s)->str != NULL))
+  (s != NULL && ((s)->length == 0 || ((s)->length > 0 && (s)->str != NULL)))
 
 int pcl_compress(pcl_Compression method, const pcl_OctetString *in,
   const pcl_OctetString *prev, pcl_OctetString *out)
@@ -704,8 +704,8 @@ int pcl_compress(pcl_Compression method, const pcl_OctetString *in,
   int result = -1;
 
   /* Prevent silly mistakes with the arguments */
-  assert(is_valid(in) && is_valid(out) &&
-    (method != pcl_cm_delta && method != pcl_cm_crdr || is_valid(prev)));
+  assert((is_valid(in) && is_valid(out) &&
+          method != pcl_cm_delta && method != pcl_cm_crdr) || is_valid(prev));
 
   /* Treat zero-length case for the "purely horizontal" methods */
   if (in->length == 0 && method != pcl_cm_delta && method != pcl_cm_crdr) {

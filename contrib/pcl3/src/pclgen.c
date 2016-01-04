@@ -82,7 +82,7 @@ static const char
 /* Macro to check whether an octet is an ASCII letter. Note that we can't use
    the isalpha() function because we might be operating in an internationalized
    environment. */
-#define is_letter(c)  (0x41 <= (c) && (c) <= 0x5A || 0x61 <= (c) && (c) <= 0x7A)
+#define is_letter(c)  ((0x41 <= (c) && (c) <= 0x5A) || (0x61 <= (c) && (c) <= 0x7A))
 
 /* Same for digits */
 #define is_digit(c)	(0x30 <= (c) && (c) <= 0x39)
@@ -308,7 +308,7 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
 
         /* Permissible characters are HT and the octets 32-255 with the
            exception of '"' (PJLTRM, with some corrections). */
-        while (*s != '\0' && (*s == '\t' || 32 <= *s && *s != '"')) s++;
+        while (*s != '\0' && (*s == '\t' || (32 <= *s && *s != '"'))) s++;
         if (*s != '\0') {
           fprintf(stderr,
             ERRPREF "Illegal character in PJL job name (code 0x%02X).\n", *s);
@@ -578,8 +578,8 @@ int pcl3_begin_raster(FILE *out, pcl_RasterData *data)
       invalid = j < global->number_of_bitplanes;
       if (!invalid && pcl_cm_is_differential(global->compression)) {
         invalid = (data->previous == NULL ||
-          global->compression == pcl_cm_delta &&
-            data->workspace[1] == NULL);
+                   (global->compression == pcl_cm_delta &&
+                    data->workspace[1] == NULL));
         if (!invalid) {
           for (j = 0;
             j < global->number_of_bitplanes &&
@@ -1107,8 +1107,8 @@ int pcl3_set_oldquality(pcl_FileData *data)
     data->depletion = 2;		/* 25 % */
     data->raster_graphics_quality = 0;	/* use current control panel setting */
     if (data->media_type == 3 ||
-        data->media_type == 4 && data->palette != pcl_CMY &&
-           data->palette != pcl_RGB)
+        (data->media_type == 4 && data->palette != pcl_CMY &&
+         data->palette != pcl_RGB))
       data->shingling = 2;		/* 4 passes (25 % each pass) */
     else data->shingling = 1;		/* 2 passes (50 % each pass) */
   }

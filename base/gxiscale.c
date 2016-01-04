@@ -929,8 +929,8 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
     }
     /* Go ahead and take apart any indexed color space or do the decode
        so that we can then perform the interpolation or color management */
-    need_decode = !((penum->device_color || penum->icc_setup.is_lab) &&
-                     (penum->icc_setup.need_decode == 0) ||
+    need_decode = !(((penum->device_color || penum->icc_setup.is_lab) &&
+                     (penum->icc_setup.need_decode == 0)) ||
                      gs_color_space_is_CIE(pcs));
     initial_decode(penum, buffer, data_x, h, need_decode, &stream_r, true);
     /*
@@ -1338,8 +1338,8 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
      * OR gs_color_space_is_CIE(pcs) == 0 (i.e. we have indexed/sep or devn)
      * FIXME: Understand this! Michael says change the second || to && maybe.
      */
-    need_decode = !((penum->device_color || penum->icc_setup.is_lab) &&
-                     (penum->icc_setup.need_decode == 0) ||
+    need_decode = !(((penum->device_color || penum->icc_setup.is_lab) &&
+                     (penum->icc_setup.need_decode == 0)) ||
                      gs_color_space_is_CIE(pcs));
     initial_decode(penum, buffer, data_x, h, need_decode, &stream_r, true);
     /*

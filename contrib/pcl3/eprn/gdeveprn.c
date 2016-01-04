@@ -688,9 +688,9 @@ int eprn_set_page_layout(eprn_Device *dev)
         best_cmatch->code: best_cdmatch->code);
 
     if (best_dmatch == NULL ||
-        best_cmatch != NULL &&
-          better_flag_match(desired, eprn->optional_flags, best_dmatch->code,
-            custom_code)) {
+        (best_cmatch != NULL &&
+         better_flag_match(desired, eprn->optional_flags, best_dmatch->code,
+                           custom_code))) {
       if (flag_match(desired, eprn->optional_flags, custom_code)) {
         if (eprn->media_overrides == NULL) {
           eprn->code = best_cmatch->code;

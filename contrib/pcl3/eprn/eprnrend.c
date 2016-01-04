@@ -211,10 +211,10 @@ gx_color_index eprn_map_rgb_color_for_CMY_or_K(gx_device *device,
     red, green, blue);
 #endif
 
-  assert(dev->eprn.colour_model == eprn_DeviceGray && red == green &&
-      green == blue && (blue == 0 || blue == gx_max_color_value) ||
-    dev->eprn.colour_model == eprn_DeviceCMY ||
-    dev->eprn.colour_model == eprn_DeviceCMY_plus_K);
+  assert((dev->eprn.colour_model == eprn_DeviceGray && red == green &&
+          green == blue && (blue == 0 || blue == gx_max_color_value)) ||
+         dev->eprn.colour_model == eprn_DeviceCMY ||
+         dev->eprn.colour_model == eprn_DeviceCMY_plus_K);
 
   /* Map to CMY */
   if (red   > half) value &= ~CYAN_BIT;
@@ -730,13 +730,13 @@ static void split_line_le8(eprn_Device *dev, const eprn_Octet *line,
        */
       comp = pixel & comp_mask;	/* black */
       for (j = 0; j < black_planes; j++) {
-        *ptr[j] = (*ptr[j] << 1) | comp & 1;
+        *ptr[j] = (*ptr[j] << 1) | (comp & 1);
         comp >>= 1;
       }
       if (non_black_planes > 0) for (l = 1; l < 4; l++) {
         comp = (pixel >> l*dev->eprn.bits_per_colorant) & comp_mask;
         for (m = 0; m < non_black_planes; m++, j++) {
-          *ptr[j] = (*ptr[j] << 1) | comp & 1;
+          *ptr[j] = (*ptr[j] << 1) | (comp & 1);
           comp >>= 1;
         }
       }
@@ -819,13 +819,13 @@ static void split_line_ge8(eprn_Device *dev, const eprn_Octet *line,
     /* Split and distribute over planes */
     comp = pixel & comp_mask;	/* black */
     for (j = 0; j < black_planes; j++) {
-      *ptr[j] = (*ptr[j] << 1) | comp & 1;
+      *ptr[j] = (*ptr[j] << 1) | (comp & 1);
       comp >>= 1;
     }
     for (l = 1; l < 4; l++) {
       comp = (pixel >> l*dev->eprn.bits_per_colorant) & comp_mask;
       for (m = 0; m < non_black_planes; m++, j++) {
-        *ptr[j] = (*ptr[j] << 1) | comp & 1;
+        *ptr[j] = (*ptr[j] << 1) | (comp & 1);
         comp >>= 1;
       }
     }
@@ -953,9 +953,9 @@ static void split_line_4x2(eprn_Device *dev, const eprn_Octet *line,
     pixel = line[k];
 
     /* Split and distribute over planes */
-    *ptr[0] = (*ptr[0] << 1) | pixel & 0x01;
+    *ptr[0] = (*ptr[0] << 1) | (pixel & 0x01);
 #define assign_bit(index) \
-        *ptr[index] = (*ptr[index] << 1) | (pixel >> index) & 0x01
+    *ptr[index] = (*ptr[index] << 1) | ((pixel >> index) & 0x01)
     assign_bit(1);
     assign_bit(2);
     assign_bit(3);

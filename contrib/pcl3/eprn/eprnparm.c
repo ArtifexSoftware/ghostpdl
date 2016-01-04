@@ -770,8 +770,8 @@ int eprn_check_colour_info(const eprn_ColourInfo *list,
   /* Search for a match. Successful exits are in the middle of the loop. */
   for (entry = list; entry->info[0] != NULL; entry++)
     if (entry->colour_model == *model ||
-        entry->colour_model == eprn_DeviceCMYK &&
-          *model == eprn_DeviceCMY_plus_K) {
+        (entry->colour_model == eprn_DeviceCMYK &&
+         *model == eprn_DeviceCMY_plus_K)) {
       const eprn_ResLev *rl;
       unsigned int levels = (entry->colour_model == eprn_DeviceRGB ||
           entry->colour_model == eprn_DeviceCMY? *non_black_levels:
@@ -792,8 +792,8 @@ int eprn_check_colour_info(const eprn_ColourInfo *list,
             for (rl2 = entry->info[1]; rl2->levels != NULL; rl2++)
               if (reslev_supported(rl2, *hres, *vres, *non_black_levels)) break;
           }
-          if (entry->info[1] == NULL && *black_levels == *non_black_levels ||
-              entry->info[1] != NULL && rl2->levels != NULL)
+          if ((entry->info[1] == NULL && *black_levels == *non_black_levels) ||
+              (entry->info[1] != NULL && rl2->levels != NULL))
             return 0;
         }
     }
@@ -1019,11 +1019,11 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
 
   /* BlackLevels. Various depending values will be adjusted below. */
   if ((rc = param_read_int(plist, (pname = "BlackLevels"), &temp)) == 0) {
-    if (temp == 0 && (eprn->colour_model == eprn_DeviceRGB ||
-          eprn->colour_model == eprn_DeviceCMY) ||
-        2 <= temp && temp <= 256 &&
-          eprn->colour_model != eprn_DeviceRGB &&
-          eprn->colour_model != eprn_DeviceCMY) {
+    if ((temp == 0 && (eprn->colour_model == eprn_DeviceRGB ||
+                       eprn->colour_model == eprn_DeviceCMY)) ||
+        (2 <= temp && temp <= 256 &&
+         eprn->colour_model != eprn_DeviceRGB &&
+         eprn->colour_model != eprn_DeviceCMY)) {
       if (eprn->black_levels != temp && dev->is_open) gs_closedevice(dev);
       eprn->black_levels = temp;
     }
@@ -1039,8 +1039,8 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
 
   /* CMYLevels */
   if ((rc = param_read_int(plist, (pname = "CMYLevels"), &temp)) == 0) {
-    if (temp == 0 && eprn->colour_model == eprn_DeviceGray ||
-        2 <= temp && temp <= 256 && eprn->colour_model != eprn_DeviceGray) {
+    if ((temp == 0 && eprn->colour_model == eprn_DeviceGray) ||
+        (2 <= temp && temp <= 256 && eprn->colour_model != eprn_DeviceGray)) {
       if (eprn->non_black_levels != temp && dev->is_open) gs_closedevice(dev);
       eprn->non_black_levels = temp;
     }
@@ -1196,7 +1196,7 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
 
   /* RGBLevels */
   if ((rc = param_read_int(plist, (pname = "RGBLevels"), &temp)) == 0) {
-    if (temp == 0 || 2 <= temp && temp <= 256) {
+    if (temp == 0 || (2 <= temp && temp <= 256)) {
       if (eprn->non_black_levels != temp && dev->is_open) gs_closedevice(dev);
       eprn->non_black_levels = temp;
     }
@@ -1246,7 +1246,8 @@ int eprn_put_params(gx_device *dev, gs_param_list *plist)
 
   /* Process parameters defined by base classes (should occur after treating
      parameters defined for the derived class, see gsparam.h) */
-  if ((rc = gdev_prn_put_params(dev, plist)) < 0 || rc > 0 && last_error >= 0)
+  rc = gdev_prn_put_params(dev, plist);
+  if (rc < 0 || (rc > 0 && last_error >= 0))
     last_error = rc;
 
   if (last_error < 0) return_error(last_error);
