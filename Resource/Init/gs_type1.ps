@@ -71,7 +71,10 @@
      % to disables it by modifying t1_glyph_equivalence).
      t1_glyph_equivalence length 0 ne
      {
-         16 string //ReverseAdobeGlyphList //AdobeGlyphList 4 -1 roll  % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict)
+         % 16 byte scratch string
+         % 16 bytes is arbitrary, but should be large enough to hold any "uniXXXX" style name
+         //ReverseAdobeGlyphList //AdobeGlyphList 3 -1 roll
+                                                             % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict)
          dup
          {                                                   % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) gname cstring
            exch dup                                          % scratch(string) RAGL(dict) AGL(dict) CharStrings(dict) cstring gname gname
@@ -83,7 +86,7 @@
              {
                % if we couldn't derive the code point from the AGL, we might derive it
                % from a formatted "uniXXXX" name.
-               dup 6 index 0 1 15 {1 index exch 0 put} for cvs dup (uni) anchorsearch
+               dup <00000000000000000000000000000000> cvs dup flush (uni) anchorsearch
                {
                  % as luck would have it, we can just replace the "uni" with "16#"
                  % to get something we can convert to a number
@@ -129,7 +132,7 @@
              pop pop
            } ifelse
          } forall
-         4 1 roll pop pop pop
+         3 1 roll pop pop
      } if
      pop
      dup /.AGLprocessed~GS //true //.growput superexec
