@@ -32,12 +32,6 @@
 
 ******************************************************************************/
 
-/* Configuration management identification */
-#ifndef lint
-static const char
-  cm_id[] = "@(#)$Id: eprnparm.c,v 1.24 2001/08/18 17:42:34 Martin Rel $";
-#endif
-
 /*****************************************************************************/
 
 #ifndef _XOPEN_SOURCE

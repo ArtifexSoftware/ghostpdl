@@ -44,12 +44,6 @@
 
 ******************************************************************************/
 
-/* Configuration management identification */
-#ifndef lint
-static const char
-  cm_id[] = "@(#)$Id: eprnrend.c,v 1.15 2001/08/01 05:12:56 Martin Rel $";
-#endif
-
 /*****************************************************************************/
 
 #ifndef _XOPEN_SOURCE

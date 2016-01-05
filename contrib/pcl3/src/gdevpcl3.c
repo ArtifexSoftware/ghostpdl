@@ -23,12 +23,6 @@
 
 ******************************************************************************/
 
-/* Configuration management identification */
-#ifndef lint
-static const char
-  cm_id[] = "@(#)$Id: gdevpcl3.c,v 1.32 2001/08/14 15:22:35 Martin Rel $";
-#endif
-
 /*****************************************************************************/
 
 #ifndef _XOPEN_SOURCE
@@ -127,7 +121,7 @@ static const ms_MediaCode
 /*****************************************************************************/
 
 /* Forward declaration */
-static void pcl3_flag_mismatch_reporter(FILE *err,
+static void pcl3_flag_mismatch_reporter(
   const struct s_eprn_Device *eprn, bool no_match);
 
 /* Macro for creating device structure instances */
@@ -428,7 +422,7 @@ static void init(pcl3_Device *dev)
 
 ******************************************************************************/
 
-static void pcl3_flag_mismatch_reporter(FILE *err,
+static void pcl3_flag_mismatch_reporter(
   const struct s_eprn_Device *eprn, bool no_match)
 {
   const char *epref = eprn->CUPS_messages? CUPS_ERRPREF: "";

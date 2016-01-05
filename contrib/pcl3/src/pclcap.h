@@ -14,9 +14,6 @@
 #ifndef _pclcap_h	/* Inclusion protection */
 #define _pclcap_h
 
-/* Configuration management identification */
-#pragma ident "@(#)$Id: pclcap.h,v 1.10 2000/11/19 07:05:17 Martin Rel $"
-
 /*****************************************************************************/
 
 #include "gdeveprn.h"

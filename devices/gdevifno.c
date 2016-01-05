@@ -164,7 +164,7 @@ inferno_cmap2rgb(gx_device *dev, gx_color_index color,
         int nbits = bdev->nbits;
         int mask = (1<<nbits)-1;
 
-        if(color < 0 || color > 255)
+        if((int)color < 0 || (int)color > 255)
                 return_error(gs_error_rangecheck);
 
         rgb[2] = (color >> (2*nbits)) & mask;

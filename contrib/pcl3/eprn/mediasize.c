@@ -11,12 +11,6 @@
 *									      *
 ******************************************************************************/
 
-/* Configuration management identification */
-#ifndef lint
-static const char
-  cm_id[] = "@(#)$Id: mediasize.c,v 1.11 2001/04/12 18:35:26 Martin Rel $";
-#endif
-
 /*****************************************************************************/
 
 #ifndef _XOPEN_SOURCE

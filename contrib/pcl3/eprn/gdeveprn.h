@@ -173,9 +173,6 @@
 #ifndef _gdeveprn_h	/* Inclusion protection */
 #define _gdeveprn_h
 
-/* Configuration management identification */
-#pragma ident "@(#)$Id: gdeveprn.h,v 1.23 2001/04/30 05:15:51 Martin Rel $"
-
 /*****************************************************************************/
 
 /* Special Aladdin header, must be included before <sys/types.h> on some

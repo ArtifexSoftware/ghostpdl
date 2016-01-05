@@ -16,12 +16,6 @@
 int dummy;
 #else
 
-/* Configuration management identification */
-#ifndef lint
-static const char
-  cm_id[] = "@(#)$Id: pagecount.c,v 1.6 2000/10/07 17:48:49 Martin Rel $";
-#endif
-
 /*****************************************************************************/
 
 #ifndef _XOPEN_SOURCE

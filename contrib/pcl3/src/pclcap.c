@@ -11,12 +11,6 @@
 *									      *
 ******************************************************************************/
 
-/* Configuration management identification */
-#ifndef lint
-static const char
-  cm_id[] = "@(#)$Id: pclcap.c,v 1.17 2001/03/08 09:17:51 Martin Rel $";
-#endif
-
 /*****************************************************************************/
 
 #ifndef _XOPEN_SOURCE

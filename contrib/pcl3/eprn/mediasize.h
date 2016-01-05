@@ -14,9 +14,6 @@
 #ifndef _mediasize_h	/* Inclusion protection */
 #define _mediasize_h
 
-/* Configuration management identification */
-#pragma ident "@(#)$Id: mediasize.h,v 1.11 2001/04/12 18:35:26 Martin Rel $"
-
 /*****************************************************************************/
 
 /* Macros for conversion between units.

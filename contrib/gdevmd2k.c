@@ -568,7 +568,8 @@ alps_print_page(gx_device_printer *pdev, FILE *prn_stream,
                     int xskip = 0;
 
                     /* Count pre print skip octets */
-                    for( ; len > 0 && *dp == 0; len --, dp ++, xskip ++);
+                    for( ; len > 0 && *dp == 0; len --, dp ++, xskip ++)
+                    {}
 
                     alps_cmd("\033\052\142", len, 0124, prn_stream);
                     write_short(xskip, prn_stream);

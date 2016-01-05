@@ -13,12 +13,6 @@
 *									      *
 ******************************************************************************/
 
-/* Configuration management identification */
-#ifndef lint
-static char
-  cm_id[] = "@(#)$Id: pcl3opts.c,v 1.17 2001/05/31 15:19:16 Martin Rel $";
-#endif
-
 /*****************************************************************************/
 
 #ifndef _XOPEN_SOURCE

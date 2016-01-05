@@ -18,9 +18,6 @@
 #define EPRN_NO_PAGECOUNTFILE
 #else
 
-/* Configuration management identification */
-#pragma ident "@(#)$Id: pagecount.h,v 1.3 2000/11/19 07:05:17 Martin Rel $"
-
 /*****************************************************************************/
 
 /*  The following two functions are used to read and write a "page count file".

@@ -11,12 +11,6 @@
 *									      *
 ******************************************************************************/
 
-/* Configuration management identification */
-#ifndef lint
-static const char
-  cm_id[] = "@(#)$Id: pclsize.c,v 1.10 2001/08/18 17:41:49 Martin Rel $";
-#endif
-
 /*****************************************************************************/
 
 #ifndef _XOPEN_SOURCE

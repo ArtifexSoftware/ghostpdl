@@ -14,13 +14,6 @@
 #ifndef _pclscan_h	/* Inclusion protection */
 #define _pclscan_h
 
-/* Configuration management identification */
-#ifdef __GNUC__
-#ident "@(#)$Id: pclscan.h,v 1.6 2000-10-22 11:05:34+02 Martin Rel $"
-#else
-#pragma ident "@(#)$Id: pclscan.h,v 1.6 2000-10-22 11:05:34+02 Martin Rel $"
-#endif
-
 /*****************************************************************************/
 
 /* Standard headers */
