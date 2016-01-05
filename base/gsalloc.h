@@ -33,9 +33,8 @@ typedef struct gs_memory_gc_status_s {
         /* Set by client */
     long vm_threshold;		/* GC interval */
     long max_vm;		/* maximum allowed allocation */
-    int *psignal;		/* if not NULL, store signal_value */
-                                /* here if we go over the vm_threshold */
-    int signal_value;		/* value to store in *psignal */
+
+    int signal_value;		/* value to store in gs_lib_ctx->gcsignal */
     bool enabled;		/* auto GC enabled if true */
         /* Set by allocator */
     long requested;		/* amount of last failing request */

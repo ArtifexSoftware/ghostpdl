@@ -83,6 +83,7 @@ typedef struct gs_lib_ctx_s
     void *cms_context;  /* Opaque context pointer from underlying CMS in use */
     gs_fapi_server **fapi_servers;
     char *default_device_list;
+    int gcsignal;
 } gs_lib_ctx_t;
 
 /** initializes and stores itself in the given gs_memory_t pointer.

@@ -224,7 +224,6 @@ ialloc_alloc_state(gs_memory_t * parent, uint chunk_size)
     iimem->is_controlled = false;
     iimem->gc_status.vm_threshold = chunk_size * 3L;
     iimem->gc_status.max_vm = max_long;
-    iimem->gc_status.psignal = NULL;
     iimem->gc_status.signal_value = 0;
     iimem->gc_status.enabled = false;
     iimem->gc_status.requested = 0;
@@ -1836,7 +1835,12 @@ alloc_acquire_chunk(gs_ref_memory_t * mem, ulong csize, bool has_strings,
 #endif
     cp = gs_raw_alloc_struct_immovable(parent, &st_chunk, cname);
 
-    if( mem->gc_status.psignal != 0) {
+    /* gc_status.signal_value is initialised to zero when the
+     * allocator is created, only the Postscript interpreter
+     * (which implement garbage collection) takes the action to set
+     * it to anything other than zero
+     */
+    if( mem->gc_status.signal_value != 0) {
         /* we have a garbage collector */
         if ((ulong) (mem->allocated) >= mem->limit) {
             mem->gc_status.requested += csize;
@@ -1848,7 +1852,7 @@ alloc_acquire_chunk(gs_ref_memory_t * mem, ulong csize, bool has_strings,
                        "[0]signaling space=%d, allocated=%ld, limit=%ld, requested=%ld\n",
                        mem->space, (long)mem->allocated,
                        (long)mem->limit, (long)mem->gc_status.requested);
-            *mem->gc_status.psignal = mem->gc_status.signal_value;
+            mem->gs_lib_ctx->gcsignal = mem->gc_status.signal_value;
         }
     }
     cdata = gs_alloc_bytes_immovable(parent, csize, cname);

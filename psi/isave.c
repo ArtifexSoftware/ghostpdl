@@ -757,12 +757,6 @@ alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 
         sprev = mem->saved;
         sid = sprev->id;
-        /* In case the saved state was created during a previous
-           call to interp() and co., we need to copy the psignal
-           pointer from the state we're throwing away, back to
-           one about to come active again.
-         */
-        sprev->state.gc_status.psignal = mem->gc_status.psignal;
         restore_finalize(mem);	/* finalize objects */
         mem = &sprev->state;
         if (sid != 0)
@@ -774,7 +768,6 @@ alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
         /* need to restore global VM. */
         mem = gmem;
         if (mem != lmem && mem->saved != 0) {
-            mem->saved->state.gc_status.psignal = mem->gc_status.psignal;
             restore_finalize(mem);
         }
     }
@@ -786,7 +779,6 @@ alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
 
         sprev = mem->saved;
         sid = sprev->id;
-        sprev->state.gc_status.psignal = mem->gc_status.psignal;
         code = restore_resources(sprev, mem);	/* release other resources */
         if (code < 0)
             return code;
@@ -801,7 +793,6 @@ alloc_restore_step_in(gs_dual_memory_t *dmem, alloc_save_t * save)
         /* need to restore global VM. */
         mem = gmem;
         if (mem != lmem && mem->saved != 0) {
-            mem->saved->state.gc_status.psignal = mem->gc_status.psignal;
             code = restore_resources(mem->saved, mem);
             if (code < 0)
                 return code;
