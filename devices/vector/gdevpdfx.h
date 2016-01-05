@@ -1132,7 +1132,7 @@ int pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_u
 
 /* Copy data from a temporary file to a stream. */
 void pdf_copy_data(stream *s, FILE *file, gs_offset_t count, stream_arcfour_state *ss);
-void pdf_copy_data_safe(stream *s, FILE *file, gs_offset_t position, long count);
+int pdf_copy_data_safe(stream *s, FILE *file, gs_offset_t position, long count);
 
 /* Add the encryption filter. */
 int pdf_begin_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id);

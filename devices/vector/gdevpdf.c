@@ -1396,7 +1396,7 @@ pdf_output_page(gx_device * dev, int num_copies, int flush)
         emprintf(pdev->memory, "\n\nUse of -dUseCIEColor detected!\nSince the release of version 9.11 of Ghostscript we recommend you do not set\n-dUseCIEColor with the pdfwrite/ps2write device family.\n\n");
     }
     if (pdf_ferror(pdev))
-        gs_note_error(gs_error_ioerror);
+        return_error(gs_error_ioerror);
 
     if ((code = gx_finish_output_page(dev, num_copies, flush)) < 0)
         return code;

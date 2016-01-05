@@ -1719,7 +1719,7 @@ pdf_copy_data(stream *s, FILE *file, gs_offset_t count, stream_arcfour_state *ss
 
 /* Copy data from a temporary file to a stream,
    which may be targetted to the same file. */
-void
+int
 pdf_copy_data_safe(stream *s, FILE *file, gs_offset_t position, long count)
 {
     long r, left = count;
@@ -1730,22 +1730,20 @@ pdf_copy_data_safe(stream *s, FILE *file, gs_offset_t position, long count)
         int64_t end_pos = gp_ftell_64(file);
 
         if (gp_fseek_64(file, position + count - left, SEEK_SET) != 0) {
-            gs_note_error(gs_error_ioerror);
-            return;
+            return_error(gs_error_ioerror);
         }
         r = fread(buf, 1, copy, file);
         if (r < 1) {
-            gs_note_error(gs_error_ioerror);
-            return;
+            return_error(gs_error_ioerror);
         }
         if (gp_fseek_64(file, end_pos, SEEK_SET) != 0) {
-            gs_note_error(gs_error_ioerror);
-            return;
+            return_error(gs_error_ioerror);
         }
         stream_write(s, buf, copy);
         sflush(s);
         left -= copy;
     }
+    return 0;
 }
 
 /* ------ Pages ------ */
