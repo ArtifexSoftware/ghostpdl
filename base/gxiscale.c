@@ -457,13 +457,28 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
    application of color management. */
 static void
 initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
-               bool need_decode, stream_cursor_read *stream_r, bool is_icc) 
+               stream_cursor_read *stream_r, bool is_icc) 
 {
     stream_image_scale_state *pss = penum->scaler;
     const gs_color_space *pcs = penum->pcs;
     int spp_decode = pss->params.spp_decode;
     byte *out = penum->line;
-    int reversed = (penum->posture == image_portrait ? penum->matrix.xx : penum->matrix.xy) < 0;
+    bool need_decode;
+    int reversed = 
+        (penum->posture == image_portrait ? penum->matrix.xx : penum->matrix.xy) < 0;
+    /* If cs is neither a device color nor a CIE color then for an image case
+       it is going to be deviceN, sep, or index. */
+    bool is_devn_sep_index =
+        (!(penum->device_color) && !gs_color_space_is_CIE(pcs));
+
+    /* Determine if we need to perform any decode procedures */
+    if (is_icc) {
+        /* In icc case, decode upfront occurs if specified by icc setup or if 
+           cs is neither a device color nor a CIE color (i.e. if it's DeviceN,
+           Index or Separation) The color space cannot be a pattern for an image */
+        need_decode = (penum->icc_setup.need_decode || is_devn_sep_index);
+    } else
+        need_decode = is_devn_sep_index;
 
     if (h != 0) {
         /* Convert the unpacked data to concrete values in the source buffer. */
@@ -705,29 +720,91 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
     }
 }
 
+static int handle_colors(gx_image_enum *penum, const frac *psrc, int spp_decode,
+    gx_device_color *devc, bool islab, gx_device *dev)
+{
+    const gs_color_space *pactual_cs;
+    const gs_color_space *pconcs;
+    const gs_imager_state *pis = penum->pis;
+    const gs_color_space *pcs = penum->pcs;
+    bool device_color;
+    bool is_index_space = (pcs->type->index == gs_color_space_index_Indexed);
+    int code = 0;
+
+#ifdef DEBUG
+    if (gs_debug_c('B')) {
+        int ci;
+
+        for (ci = 0; ci < spp_decode; ++ci)
+            dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
+            psrc[ci]);
+    }
+#endif
+    /* If we are in a non device space then work from the pcs not from the
+    concrete space also handle index case, where base case was device type */
+    if (pcs->type->index == gs_color_space_index_Indexed) {
+        pactual_cs = pcs->base_space;
+    } else {
+        pactual_cs = pcs;
+    }
+    pconcs = cs_concrete_space(pactual_cs, pis);
+    if (pconcs->cmm_icc_profile_data != NULL) {
+        device_color = false;
+    } else {
+        device_color = (pconcs == pactual_cs);
+    }
+    if (device_color) {
+        /* Use the underlying concrete space remap */
+        code = (*pconcs->type->remap_concrete_color)
+            (psrc, pconcs, devc, pis, dev, gs_color_select_source);
+    } else {
+        /* If we are device dependent we need to get back to float prior to remap.*/
+        gs_client_color cc;
+        int j;
+        int num_components = gs_color_space_num_components(pactual_cs);
+
+        for (j = 0; j < num_components; ++j) {
+            /* If we were indexed, dont use the decode procedure for the index
+            values just get to float directly */
+            if (is_index_space || islab) {
+                cc.paint.values[j] = frac2float(psrc[j]);
+            } else {
+                decode_sample_frac_to_float(penum, psrc[j], &cc, j);
+            }
+        }
+        /* If the source colors are LAB then use the mapping that does not
+        rescale the source colors */
+        if (gs_color_space_is_ICC(pactual_cs) &&
+            pactual_cs->cmm_icc_profile_data != NULL &&
+            pactual_cs->cmm_icc_profile_data->islab) {
+            code = gx_remap_ICC_imagelab(&cc, pactual_cs, devc, pis, dev,
+                gs_color_select_source);
+        } else {
+            code = (pactual_cs->type->remap_color)
+                (&cc, pactual_cs, devc, pis, dev, gs_color_select_source);
+        }
+    }
+    return code;
+}
+
 static int
 image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                          int data_x, uint iw, int h, gx_device * dev)
 {
     stream_image_scale_state *pss = penum->scaler;
-    const gs_imager_state *pis = penum->pis;
     const gs_color_space *pcs = penum->pcs;
     gs_logical_operation_t lop = penum->log_op;
     int spp_decode = pss->params.spp_decode;
     stream_cursor_read stream_r;
     stream_cursor_write stream_w;
-    bool is_index_space;
     byte *out = penum->line;
     bool islab = false;
-    bool need_decode;
 
     if (pcs->cmm_icc_profile_data != NULL) {
         islab = pcs->cmm_icc_profile_data->islab;
     }
     /* Perform any decode procedure if needed */
-    need_decode = !(penum->device_color || gs_color_space_is_CIE(pcs) || islab);
-    initial_decode(penum, buffer, data_x, h, need_decode, &stream_r, false);
-    is_index_space = (pcs->type->index == gs_color_space_index_Indexed);
+    initial_decode(penum, buffer, data_x, h, &stream_r, false);
     /*
      * Process input and/or collect output.  By construction, the pixels are
      * 1-for-1 with the device, but the Y coordinate might be inverted.
@@ -738,11 +815,8 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
         int width = pss->params.WidthOut;
         int sizeofPixelOut = pss->params.BitsPerComponentOut / 8;
         int dy;
-        const gs_color_space *pconcs;
-        const gs_color_space *pactual_cs;
         int bpp = dev->color_info.depth;
         uint raster = bitmap_raster(width * bpp);
-        bool device_color;
 
         if (penum->matrix.yy > 0)
             dy = 1;
@@ -779,69 +853,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                            penum->line_xy);
                 psrc += pss->params.LeftMarginOut * spp_decode;
                 for (x = xo; x < xe;) {
-#ifdef DEBUG
-                    if (gs_debug_c('B')) {
-                        int ci;
-
-                        for (ci = 0; ci < spp_decode; ++ci)
-                            dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
-                                     psrc[ci]);
-                    }
-#endif
-                    /* if we are in a non device space then work
-                       from the pcs not from the concrete space
-                       also handle index case, where base case was device type */
-                    if (pcs->type->index == gs_color_space_index_Indexed) {
-                        pactual_cs = pcs->base_space;
-                    } else {
-                        pactual_cs = pcs;
-                    }
-                    pconcs = cs_concrete_space(pactual_cs, pis);
-                    if (pconcs->cmm_icc_profile_data != NULL) {
-                        device_color = false;
-                    } else {
-                        device_color = (pconcs == pactual_cs);
-                    }
-                    if (device_color) {
-                        /* Use the underlying concrete space remap */
-                        code = (*pconcs->type->remap_concrete_color)
-                        (psrc, pconcs, &devc, pis, dev, gs_color_select_source);
-                    } else {
-                        /* if we are device dependent we need to get back to
-                           float prior to remap.  This stuff needs to be
-                           reworked  as  part of the ICC flow update.
-                           In such a flow, we will want the interpolation
-                           algorithm output likely to be 8 bit (if the input
-                           were 8 bit) and hit that buffer of values directly
-                           with the linked transform */
-                        gs_client_color cc;
-                        int j;
-                        int num_components =
-                              gs_color_space_num_components(pactual_cs);
-
-                        for (j = 0; j < num_components;  ++j) {
-                            /* If we were indexed, dont use the decode procedure
-                               for the index values just get to float directly */
-                            if (is_index_space || islab) {
-                                cc.paint.values[j] = frac2float(psrc[j]);
-                            } else {
-                                decode_sample_frac_to_float(penum, psrc[j], &cc, j);
-                            }
-                        }
-                        /* If the source colors are LAB then use the mapping
-                           that does not rescale the source colors */
-                        if (gs_color_space_is_ICC(pactual_cs) &&
-                            pactual_cs->cmm_icc_profile_data != NULL &&
-                            pactual_cs->cmm_icc_profile_data->islab) {
-                            code = gx_remap_ICC_imagelab (&cc, pactual_cs, &devc,
-                                                          pis, dev,
-                                                          gs_color_select_source);
-                        } else {
-                            code = (pactual_cs->type->remap_color)
-                                    (&cc, pactual_cs, &devc, pis, dev,
-                                     gs_color_select_source);
-                        }
-                    }
+                    code = handle_colors(penum, psrc, spp_decode, &devc, islab, dev);
                     if (code < 0)
                         return code;
                     if (color_is_pure(&devc)) {
@@ -906,6 +918,73 @@ inactive:
     return (h == 0 ? 0 : 1);
 }
 
+static void
+icc_cm_setup(gx_image_enum *penum, stream_image_scale_state *pss,
+int spp_cm, gsicc_bufferdesc_t *input_buff_desc,
+gsicc_bufferdesc_t *output_buff_desc, int width_cm_out, byte **p_cm_buff,
+stream_cursor_read stream_r, gx_device * dev)
+{
+    int num_bytes_decode = pss->params.BitsPerComponentIn / 8;
+    int width_out = pss->params.WidthOut;
+    int width_in = pss->params.WidthIn;
+    bool early_cm = pss->params.early_cm;
+    int spp_decode = pss->params.spp_decode;
+    gsicc_link_t *icc_link = penum->icc_link;
+    byte *psrc;
+
+    /* If it makes sense (if enlarging), do early CM */
+    if (early_cm && !icc_link->is_identity && stream_r.ptr != stream_r.limit) {
+        /* Get the buffers set up. */
+        *p_cm_buff = (byte *)gs_alloc_bytes(penum->memory,
+            num_bytes_decode * width_in * spp_cm, "image_render_interpolate_icc");
+        /* Set up the buffer descriptors. We keep the bytes the same */
+        gsicc_init_buffer(input_buff_desc, spp_decode, num_bytes_decode,
+            false, false, false, 0, width_in * spp_decode, 1, width_in);
+        gsicc_init_buffer(output_buff_desc, spp_cm, num_bytes_decode,
+            false, false, false, 0, width_in * spp_cm, 1, width_in);
+        /* Do the transformation */
+        psrc = (byte*)(stream_r.ptr + 1);
+        (icc_link->procs.map_buffer)(dev, icc_link, input_buff_desc,
+            output_buff_desc, (void*)psrc, (void*)*p_cm_buff);
+        /* Re-set the reading stream to use the cm data */
+        stream_r.ptr = *p_cm_buff - 1;
+        stream_r.limit = stream_r.ptr + num_bytes_decode * width_in * spp_cm;
+    } else {
+        /* CM after interpolation (or none).  Just set up the buffers if needed.
+        16 bit operations if CM takes place. */
+        if (!icc_link->is_identity) {
+            *p_cm_buff = (byte *)gs_alloc_bytes(penum->memory,
+                sizeof(unsigned short) * width_out * spp_cm,
+                "image_render_interpolate_icc");
+            /* Set up the buffer descriptors. */
+            gsicc_init_buffer(input_buff_desc, spp_decode, 2,
+                false, false, false, 0, width_out * spp_decode, 1, width_cm_out);
+            gsicc_init_buffer(output_buff_desc, spp_cm, 2,
+                false, false, false, 0, width_out * spp_cm, 1, width_cm_out);
+        }
+    }
+}
+
+static void
+get_device_color(gx_image_enum * penum, unsigned short *p_cm_interp,
+gx_device_color *devc, gx_color_index *color, gx_device * dev)
+{
+    bool must_halftone = penum->icc_setup.must_halftone;
+    bool has_transfer = penum->icc_setup.has_transfer;
+
+    if (must_halftone || has_transfer) {
+        /* We need to do the tranfer function and/or the halftoning */
+        cmap_transfer_halftone(p_cm_interp, devc, penum->pis, dev,
+            has_transfer, must_halftone, gs_color_select_source);
+    } else {
+        /* encode as a color index. avoid all the cv to frac to cv conversions */
+        *color = dev_proc(dev, encode_color)(dev, p_cm_interp);
+        /* check if the encoding was successful; we presume failure is rare */
+        if (*color != gx_no_color_index)
+            color_set_pure(devc, *color);
+    }
+}
+
 /* Interpolation with ICC based source spaces. This is done seperately to
    enable optimization and avoid the multiple tranformations that occur in
    the above code */
@@ -915,25 +994,15 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
 {
     stream_image_scale_state *pss = penum->scaler;
     const gs_imager_state *pis = penum->pis;
-    const gs_color_space *pcs = penum->pcs;
     gs_logical_operation_t lop = penum->log_op;
     byte *out = penum->line;
-    bool must_halftone = penum->icc_setup.must_halftone;
-    bool has_transfer = penum->icc_setup.has_transfer;
     stream_cursor_read stream_r;
     stream_cursor_write stream_w;
-    bool need_decode;
 
     if (penum->icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during gs_image_class_0_interpolate");
     }
-    /* Go ahead and take apart any indexed color space or do the decode
-       so that we can then perform the interpolation or color management.
-       Decode upfront occurs if specified by icc setup or if cs is neither
-       a device color nor a CIE color (e.g. if it's DeviceN, Index, Separation) */
-    need_decode = (penum->icc_setup.need_decode || (!(penum->device_color) &&
-        !gs_color_space_is_CIE(pcs)));
-    initial_decode(penum, buffer, data_x, h, need_decode, &stream_r, true);
+    initial_decode(penum, buffer, data_x, h, &stream_r, true);
     /*
      * Process input and/or collect output.  By construction, the pixels are
      * 1-for-1 with the device, but the Y coordinate might be inverted.
@@ -1065,20 +1134,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                     }
 #endif
                     /* Get the device color */
-                    /* Now we can do an encoding directly or we have to apply transfer
-                       and or halftoning */
-                    if (must_halftone || has_transfer) {
-                        /* We need to do the tranfer function and/or the halftoning */
-                        cmap_transfer_halftone(p_cm_interp, &devc, pis, dev,
-                            has_transfer, must_halftone, gs_color_select_source);
-                    } else {
-                        /* encode as a color index. avoid all the cv to frac to cv
-                           conversions */
-                        color = dev_proc(dev, encode_color)(dev, p_cm_interp);
-                        /* check if the encoding was successful; we presume failure is rare */
-                        if (color != gx_no_color_index)
-                            color_set_pure(&devc, color);
-                    }
+                    get_device_color(penum, p_cm_interp, &devc, &color, dev);
                     if (color_is_pure(&devc)) {
                         /* Just pack colors into a scan line. */
                         gx_color_index color = devc.colors.pure;
@@ -1151,24 +1207,19 @@ image_render_interpolate_landscape(gx_image_enum * penum,
                                    gx_device * dev)
 {
     stream_image_scale_state *pss = penum->scaler;
-    const gs_imager_state *pis = penum->pis;
     const gs_color_space *pcs = penum->pcs;
     gs_logical_operation_t lop = penum->log_op;
     int spp_decode = pss->params.spp_decode;
     stream_cursor_read stream_r;
     stream_cursor_write stream_w;
-    bool is_index_space;
     byte *out = penum->line;
     bool islab = false;
-    bool need_decode;
 
     if (pcs->cmm_icc_profile_data != NULL) {
         islab = pcs->cmm_icc_profile_data->islab;
     }
     /* Perform any decode procedure if needed */
-    need_decode = !(penum->device_color || gs_color_space_is_CIE(pcs) || islab);
-    initial_decode(penum, buffer, data_x, h, need_decode, &stream_r, false);
-    is_index_space = (pcs->type->index == gs_color_space_index_Indexed);
+    initial_decode(penum, buffer, data_x, h, &stream_r, false);
     /*
      * Process input and/or collect output.  By construction, the pixels are
      * 1-for-1 with the device, but the Y coordinate might be inverted.
@@ -1179,9 +1230,6 @@ image_render_interpolate_landscape(gx_image_enum * penum,
         int width = pss->params.WidthOut;
         int sizeofPixelOut = pss->params.BitsPerComponentOut / 8;
         int dy;
-        const gs_color_space *pconcs;
-        const gs_color_space *pactual_cs;
-        bool device_color;
 
         if (penum->matrix.yx > 0)
             dy = 1;
@@ -1217,69 +1265,7 @@ image_render_interpolate_landscape(gx_image_enum * penum,
                            penum->line_xy);
                 psrc += pss->params.LeftMarginOut * spp_decode;
                 for (x = xo; x < xe;) {
-#ifdef DEBUG
-                    if (gs_debug_c('B')) {
-                        int ci;
-
-                        for (ci = 0; ci < spp_decode; ++ci)
-                            dmprintf2(dev->memory, "%c%04x", (ci == 0 ? ' ' : ','),
-                                     psrc[ci]);
-                    }
-#endif
-                    /* if we are in a non device space then work
-                       from the pcs not from the concrete space
-                       also handle index case, where base case was device type */
-                    if (pcs->type->index == gs_color_space_index_Indexed) {
-                        pactual_cs = pcs->base_space;
-                    } else {
-                        pactual_cs = pcs;
-                    }
-                    pconcs = cs_concrete_space(pactual_cs, pis);
-                    if (pconcs->cmm_icc_profile_data != NULL) {
-                        device_color = false;
-                    } else {
-                        device_color = (pconcs == pactual_cs);
-                    }
-                    if (device_color) {
-                        /* Use the underlying concrete space remap */
-                        code = (*pconcs->type->remap_concrete_color)
-                        (psrc, pconcs, &devc, pis, dev, gs_color_select_source);
-                    } else {
-                        /* if we are device dependent we need to get back to
-                           float prior to remap.  This stuff needs to be
-                           reworked  as  part of the ICC flow update.
-                           In such a flow, we will want the interpolation
-                           algorithm output likely to be 8 bit (if the input
-                           were 8 bit) and hit that buffer of values directly
-                           with the linked transform */
-                        gs_client_color cc;
-                        int j;
-                        int num_components =
-                              gs_color_space_num_components(pactual_cs);
-
-                        for (j = 0; j < num_components;  ++j) {
-                            /* If we were indexed, dont use the decode procedure
-                               for the index values just get to float directly */
-                            if (is_index_space || islab) {
-                                cc.paint.values[j] = frac2float(psrc[j]);
-                            } else {
-                                decode_sample_frac_to_float(penum, psrc[j], &cc, j);
-                            }
-                        }
-                        /* If the source colors are LAB then use the mapping
-                           that does not rescale the source colors */
-                        if (gs_color_space_is_ICC(pactual_cs) &&
-                            pactual_cs->cmm_icc_profile_data != NULL &&
-                            pactual_cs->cmm_icc_profile_data->islab) {
-                            code = gx_remap_ICC_imagelab (&cc, pactual_cs, &devc,
-                                                          pis, dev,
-                                                          gs_color_select_source);
-                        } else {
-                            code = (pactual_cs->type->remap_color)
-                                    (&cc, pactual_cs, &devc, pis, dev,
-                                     gs_color_select_source);
-                        }
-                    }
+                    code = handle_colors(penum, psrc, spp_decode, &devc, islab, dev);
                     if (code < 0)
                         return code;
                     /* Cannot collate runs of pixels for landscape cases.
@@ -1319,25 +1305,15 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
 {
     stream_image_scale_state *pss = penum->scaler;
     const gs_imager_state *pis = penum->pis;
-    const gs_color_space *pcs = penum->pcs;
     gs_logical_operation_t lop = penum->log_op;
     byte *out = penum->line;
-    bool must_halftone = penum->icc_setup.must_halftone;
-    bool has_transfer = penum->icc_setup.has_transfer;
     stream_cursor_read stream_r;
     stream_cursor_write stream_w;
-    bool need_decode;
 
     if (penum->icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during gs_image_class_0_interpolate");
     }
-    /* Go ahead and take apart any indexed color space or do the decode
-       so that we can then perform the interpolation or color management.
-       Decode upfront occurs if specified by icc setup or if cs is neither
-       a device color nor a CIE color (e.g. if it's DeviceN, Index, Separation) */
-    need_decode = (penum->icc_setup.need_decode || (!(penum->device_color) && 
-        !gs_color_space_is_CIE(pcs)));
-    initial_decode(penum, buffer, data_x, h, need_decode, &stream_r, true);
+    initial_decode(penum, buffer, data_x, h, &stream_r, true);
     /*
      * Process input and/or collect output.  By construction, the pixels are
      * 1-for-1 with the device, but the Y coordinate might be inverted.
@@ -1466,20 +1442,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                     }
 #endif
                     /* Get the device color */
-                    /* Now we can do an encoding directly or we have to apply transfer
-                       and or halftoning */
-                    if (must_halftone || has_transfer) {
-                        /* We need to do the tranfer function and/or the halftoning */
-                        cmap_transfer_halftone(p_cm_interp, &devc, pis, dev,
-                            has_transfer, must_halftone, gs_color_select_source);
-                    } else {
-                        /* encode as a color index. avoid all the cv to frac to cv
-                           conversions */
-                        color = dev_proc(dev, encode_color)(dev, p_cm_interp);
-                        /* check if the encoding was successful; we presume failure is rare */
-                        if (color != gx_no_color_index)
-                            color_set_pure(&devc, color);
-                    }
+                    get_device_color(penum, p_cm_interp, &devc, &color, dev);
                     /* Cannot collate runs of pixels for landscape cases.
                      * Every pixel gets sent directly. Even if we tried to
                      * collate runs, they'd end up being split up in most
