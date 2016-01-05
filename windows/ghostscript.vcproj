@@ -5882,6 +5882,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\devices\gdevpxut.c"
+				>
+			</File>
+			<File
 				RelativePath="..\devices\gdevrinkj.c"
 				>
 			</File>
@@ -6190,10 +6194,6 @@
 				</File>
 				<File
 					RelativePath="..\devices\vector\gdevpx.c"
-					>
-				</File>
-				<File
-					RelativePath="..\devices\vector\gdevpxut.c"
 					>
 				</File>
 				<File
