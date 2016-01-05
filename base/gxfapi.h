@@ -355,14 +355,14 @@ struct gs_fapi_server_s
 };
 
 /* The font type 10 (ft_CID_user_defined) must not pass to FAPI. */
-#define FAPI_ISCIDFONT(basefont) basefont->FontType == ft_CID_encrypted ||\
+#define FAPI_ISCIDFONT(basefont) (basefont->FontType == ft_CID_encrypted ||\
                          basefont->FontType == ft_CID_user_defined || \
-                         basefont->FontType == ft_CID_TrueType
+                         basefont->FontType == ft_CID_TrueType)
 
 
-#define FAPI_ISTYPE1GLYPHDATA(basefont) pbfont->FontType == ft_encrypted || \
+#define FAPI_ISTYPE1GLYPHDATA(basefont) (pbfont->FontType == ft_encrypted || \
                                 basefont->FontType == ft_encrypted2 ||\
-                                basefont->FontType == ft_CID_encrypted
+                                basefont->FontType == ft_CID_encrypted)
 
 typedef int (*gs_fapi_get_server_param_callback) (gs_fapi_server *I,
                                                   const char *subtype,
