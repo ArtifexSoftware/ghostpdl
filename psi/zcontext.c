@@ -99,11 +99,6 @@ struct gs_context_s {
     gs_context_t *table_next;	/* hash table chain -- this must be a real */
                                 /* pointer, for looking up indices */
 };
-static inline bool
-context_is_visible(const gs_context_t *pctx)
-{
-    return (pctx && pctx->visible);
-}
 static inline gs_context_t *
 visible_context(gs_context_t *pctx)
 {

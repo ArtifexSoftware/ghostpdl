@@ -31,9 +31,11 @@
 #include "ivmspace.h"
 #include "store.h"
 
+#ifdef DEBUG
 static int do_validate_chunk(const chunk_t * cp, gc_state_t * gcst);
 static int do_validate_object(const obj_header_t * ptr, const chunk_t * cp,
                               gc_state_t * gcst);
+#endif
 
 
 /* ================ Locating ================ */
