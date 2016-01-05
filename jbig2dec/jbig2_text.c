@@ -899,7 +899,8 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     }
 
 	/* Table 31 */
-	for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < SBNUMSYMS; SBSYMCODELEN++);
+	for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < SBNUMSYMS; SBSYMCODELEN++)
+		{}
     params.IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
 	params.IARI = jbig2_arith_int_ctx_new(ctx);
 	params.IARDW = jbig2_arith_int_ctx_new(ctx);
