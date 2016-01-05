@@ -375,7 +375,7 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
          * a type 3 font, then set pet to NULL, this means we will fall back to
          * the 'collection' font, as pet is checked below.
          */
-        if (char_code >= 0 && char_code <= 255) {
+        if ((int)char_code >= 0 && (int)char_code <= 255) {
             pet = &font->u.simple.Encoding[char_code];
             if (pet) {
                 /* Check to see if we *already* have this glyph in this font. If

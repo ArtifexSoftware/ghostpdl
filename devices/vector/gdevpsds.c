@@ -223,7 +223,8 @@ s_16_8_process(stream_state * st, stream_cursor_read * pr,
 {
     BEGIN_1248;
 
-    n = ss->samples_per_row; n = n;  /* misuse n to avoid a compiler warning */
+    (void)n;  /* misuse n to avoid a compiler warning */
+    (void)ss;
     status = 0;
     for (; rlimit - p >= 2; ++q) {
         if (q >= wlimit) {

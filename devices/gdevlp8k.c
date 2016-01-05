@@ -309,7 +309,8 @@ starting X value of the printer line.
           }
           else
             {
-            for (count = 2; ( *p == *q ) && (q < in_end); q++, count++);
+                for (count = 2; ( *p == *q ) && (q < in_end); q++, count++)
+                {}
 
                 /*
                 Copy repeated bytes and counts to the output buffer.

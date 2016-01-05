@@ -1243,7 +1243,7 @@ pclxl_setlinejoin(gx_device_vector * vdev, gs_line_join join)
 {
     stream *s = gdev_vector_stream(vdev);
 
-    if ((join < 0) || (join > 3)) {
+    if (((int)join < 0) || ((int)join > 3)) {
         emprintf1(vdev->memory,
                   "Igoring invalid linejoin enumerator %d\n",
                   join);

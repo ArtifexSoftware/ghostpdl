@@ -119,11 +119,6 @@ typedef struct gx_device_txtwrite_s {
 #endif
 } gx_device_txtwrite_t;
 
-/* GC descriptor */
-gs_private_st_suffix_add0_final(st_device_txtwrite, gx_device_txtwrite_t,
-   "gx_device_txtwrite", device_txtwrite_enum_ptrs, device_txtwrite_reloc_ptrs,
-    gx_device_finalize, st_device_forward);
-
 /* Device procedures */
 static dev_proc_open_device(txtwrite_open_device);
 static dev_proc_close_device(txtwrite_close_device);

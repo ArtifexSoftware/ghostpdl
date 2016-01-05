@@ -100,6 +100,8 @@ rinkj_screen_eb_init (RinkjDevice *self, const RinkjDeviceParams *params)
     strengths = strengths6;
   else if (n_planes == 7)
     strengths = strengths7;
+  else
+    return -1;
 
   ebp.source_width = params->width;
   ebp.dest_width = out_params.width;

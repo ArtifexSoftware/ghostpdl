@@ -412,7 +412,7 @@ px_put_rpa(stream * s, double rx, double ry, px_attribute_t a)
 void
 px_put_ubaa(stream * s, const byte * data, uint count, px_attribute_t a)
 {
-    if (count < 0)
+    if ((int)count < 0)
         return;
     spputc(s, pxt_ubyte_array);
     /* uint16 LE length field */

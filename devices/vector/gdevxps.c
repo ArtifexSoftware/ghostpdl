@@ -401,7 +401,9 @@ zip_new_info_node(gx_device_xps *xps_dev, const char *filename)
 
     if (gs_debug_c('_')) {
         gx_device_xps_f2i_t *f2i = xps_dev->f2i;
+#ifdef DEBUG
         int node = 1;
+#endif
         gx_device_xps_f2i_t *prev_f2i;
         
         while (f2i != NULL) {
@@ -713,7 +715,7 @@ zip_close_archive_file(gx_device_xps *xps_dev, const char *filename)
     if (info->saved)
         return 0;
 
-    if (data.count >= 0) {
+    if ((int)data.count >= 0) {
         FILE *fp = data.fp;
         uint nread;
 
@@ -1336,7 +1338,7 @@ xps_setlinecap(gx_device_vector *vdev, gs_line_cap cap)
         "triangle", "unknown"};
 #endif
 
-    if (cap < 0 || cap > gs_cap_unknown)
+    if ((int)cap < 0 || (int)cap > gs_cap_unknown)
         return gs_throw_code(gs_error_rangecheck);
     if_debug1m('_', xps->memory, "xps_setlinecap(%s)\n", linecap_names[cap]);
 
@@ -1354,7 +1356,7 @@ xps_setlinejoin(gx_device_vector *vdev, gs_line_join join)
         "none", "triangle", "unknown"};
 #endif
 
-    if (join < 0 || join > gs_join_unknown)
+    if ((int)join < 0 || (int)join > gs_join_unknown)
         return gs_throw_code(gs_error_rangecheck);
     if_debug1m('_', xps->memory, "xps_setlinejoin(%s)\n", linejoin_names[join]);
 

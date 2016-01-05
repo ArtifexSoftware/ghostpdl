@@ -733,7 +733,7 @@ $(RINKJ_OBJ)rinkj-dither.$(OBJ) : $(RINKJ_SRC)rinkj-dither.c $(DEVS_MAK) $(MAKED
 $(RINKJ_OBJ)rinkj-epson870.$(OBJ) : $(RINKJ_SRC)rinkj-epson870.c $(DEVS_MAK) $(MAKEDIRS)
 	$(RINKJ_CC) $(RINKJ_O_)rinkj-epson870.$(OBJ) $(C_) $(RINKJ_SRC)rinkj-epson870.c
 
-$(RINKJ_OBJ)rinkj-screen-eb.$(OBJ) : $(RINKJ_SRC)rinkj-screen-eb.c $(DEVS_MAK) $(MAKEDIRS)
+$(RINKJ_OBJ)rinkj-screen-eb.$(OBJ) : $(RINKJ_SRC)rinkj-screen-eb.c $(DEVS_MAK) $(MAKEDIRS) $(gserrors_h)
 	$(RINKJ_CC) $(RINKJ_O_)rinkj-screen-eb.$(OBJ) $(C_) $(RINKJ_SRC)rinkj-screen-eb.c
 
 rinkj_=$(DEVOBJ)gdevrinkj.$(OBJ) $(rinkj_core)

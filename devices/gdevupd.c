@@ -970,10 +970,6 @@ Here are several Macros, named "UPD_MM_*" to deal with that.
 
 static const char rcsid[] = "$Revision: 5215 $";
 
-/** Default-Transfer-curve */
-
-static const float upd_data_xfer[2] = { 0.0, 1.0 };
-
 /*@ > */
 
 /* ------------------------------------------------------------------- */
@@ -1197,8 +1193,7 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
         gs_parsed_file_name_t parsed;
         const char *fmt;
 
-        if (NULL != udev->fname &&
-            0 <= gx_parse_output_file_name(&parsed, &fmt, udev->fname,
+        if (0 <= gx_parse_output_file_name(&parsed, &fmt, udev->fname,
                                            strlen(udev->fname), udev->memory) &&
             fmt
             ) {
