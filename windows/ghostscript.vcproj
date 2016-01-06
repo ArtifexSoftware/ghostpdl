@@ -1786,6 +1786,18 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\fapi_ft.c"
+				>
+			</File>
+			<File
+				RelativePath="..\base\fapibstm.c"
+				>
+			</File>
+			<File
+				RelativePath="..\base\fapiufst.c"
+				>
+			</File>
+			<File
 				RelativePath="..\base\gconf.c"
 				>
 			</File>
@@ -3315,6 +3327,14 @@
 			</File>
 			<File
 				RelativePath="..\base\gdebug.h"
+				>
+			</File>
+			<File
+				RelativePath="..\base\gdevflp.h"
+				>
+			</File>
+			<File
+				RelativePath="..\base\gdevoflt.h"
 				>
 			</File>
 			<File
@@ -5718,6 +5738,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\gdevflp.c"
+				>
+			</File>
+			<File
 				RelativePath="..\devices\gdevfpng.c"
 				>
 			</File>
@@ -5811,6 +5835,10 @@
 			</File>
 			<File
 				RelativePath="..\devices\gdevo182.c"
+				>
+			</File>
+			<File
+				RelativePath="..\base\gdevoflt.c"
 				>
 			</File>
 			<File
@@ -7929,14 +7957,6 @@
 			</File>
 			<File
 				RelativePath="..\psi\dxmainc.c"
-				>
-			</File>
-			<File
-				RelativePath="..\psi\fapi_ft.c"
-				>
-			</File>
-			<File
-				RelativePath="..\psi\fapiufst.c"
 				>
 			</File>
 			<File
