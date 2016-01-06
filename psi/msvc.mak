@@ -672,6 +672,10 @@ UNICODECFLAGS=
 CFLAGS=
 !endif
 
+!ifdef DEVSTUDIO
+CFLAGS=$(CFLAGS) /FC
+!endif
+
 !if "$(MEMENTO)"=="1"
 CFLAGS=$(CFLAGS) -DMEMENTO
 !endif
