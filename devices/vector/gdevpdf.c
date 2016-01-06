@@ -2778,7 +2778,9 @@ pdf_close(gx_device * dev)
         for (pages = 0; pages <= pdev->next_page; ++pages)
             ;
 
-        code = ps2write_dsc_header(pdev, pages - 1);
+        code1 = ps2write_dsc_header(pdev, pages - 1);
+        if (code >= 0)
+            code = code1;
     }
 
     /* Copy the resources into the main file. */
@@ -2791,13 +2793,14 @@ pdf_close(gx_device * dev)
         int64_t res_end = gp_ftell_64(rfile);
 
         gp_fseek_64(rfile, 0L, SEEK_SET);
-        pdf_copy_data(s, rfile, res_end, NULL);
+        code1 = pdf_copy_data(s, rfile, res_end, NULL);
+        if (code >= 0)
+            code = code1;
     }
 
     if (pdev->ForOPDFRead && pdev->ProduceDSC) {
         int j;
 
-        code = 0;
         pagecount = 1;
 
         /* All resources and procsets written, end the prolog */

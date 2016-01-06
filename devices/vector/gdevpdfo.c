@@ -1832,7 +1832,9 @@ cos_stream_contents_write(const cos_stream_t *pcs, gx_device_pdf *pdev)
             end_pos = gp_ftell_64(sfile);
             if (gp_fseek_64(sfile, pcsp->position, SEEK_SET) != 0)
                 return gs_error_ioerror;
-            pdf_copy_data(s, sfile, pcsp->size, ss);
+            code = pdf_copy_data(s, sfile, pcsp->size, ss);
+            if (code < 0)
+                return code;
             if (gp_fseek_64(sfile, end_pos, SEEK_SET) != 0)
                 return gs_error_ioerror;
         }

@@ -1696,7 +1696,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage
 }
 
 /* Copy data from a temporary file to a stream. */
-void
+int
 pdf_copy_data(stream *s, FILE *file, gs_offset_t count, stream_arcfour_state *ss)
 {
     gs_offset_t r, left = count;
@@ -1707,14 +1707,14 @@ pdf_copy_data(stream *s, FILE *file, gs_offset_t count, stream_arcfour_state *ss
 
         r = fread(buf, 1, copy, file);
         if (r < 1) {
-            gs_note_error(gs_error_ioerror);
-            return;
+            return gs_note_error(gs_error_ioerror);
         }
         if (ss)
             s_arcfour_process_buffer(ss, buf, copy);
         stream_write(s, buf, copy);
         left -= copy;
     }
+    return 0;
 }
 
 /* Copy data from a temporary file to a stream,
