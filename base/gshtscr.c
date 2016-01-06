@@ -358,7 +358,10 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
         p.R = p.R1 = rt;
         for (p.M = m0 + 1; p.M >= m0; p.M--)
             for (p.N = n0 + 1; p.N >= n0; p.N--) {
-                long raster, wt, wt_size;
+                long raster, wt;
+#ifdef DEBUG
+                long wt_size;
+#endif
                 double fr, ar, ft, at, f_diff, a_diff, f_err, a_err;
 
                 p.M1 = (int)floor(p.M / T + 0.5);
@@ -373,7 +376,9 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
                 raster = bitmap_raster(wt);
                 if (raster > max_size / p.D || raster > max_long / wt)
                     continue;
+#ifdef DEBUG
                 wt_size = raster * wt;
+#endif
 
                 /* Compute the corresponding values of F and A. */
 

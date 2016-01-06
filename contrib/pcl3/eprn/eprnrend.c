@@ -160,7 +160,6 @@ gx_color_index eprn_map_rgb_color_for_RGB(gx_device *device,
   gx_color_value red = cv[0], green = cv[1], blue = cv[2];
   static const gx_color_value half = gx_max_color_value/2;
   gx_color_index value = 0;
-  const eprn_Device *dev = (eprn_Device *)device;
 
 #ifdef EPRN_TRACE
   if_debug3(EPRN_TRACE_CHAR,
@@ -168,7 +167,7 @@ gx_color_index eprn_map_rgb_color_for_RGB(gx_device *device,
     red, green, blue);
 #endif
 
-  assert(dev->eprn.colour_model == eprn_DeviceRGB);
+  assert(((eprn_Device *)device)->eprn.colour_model == eprn_DeviceRGB);
 
   if (red   > half) value |= RED_BIT;
   if (green > half) value |= GREEN_BIT;

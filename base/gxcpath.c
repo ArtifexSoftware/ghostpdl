@@ -38,7 +38,6 @@ public_st_clip_list();
 public_st_clip_path();
 private_st_clip_rect_list();
 public_st_device_clip();
-private_st_cpath_enum();
 private_st_cpath_path_list();
 
 /* GC procedures for gx_clip_path */

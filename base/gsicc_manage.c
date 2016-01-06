@@ -102,13 +102,6 @@ gs_private_st_ptrs1(st_gsicc_devicen_entry, gsicc_devicen_entry_t,
                     "gsicc_devicen_entry", gsicc_devicen_entry_enum_ptrs,
                     gsicc_devicen_entry_reloc_ptrs, next);
 
-static const gs_color_space_type gs_color_space_type_icc = {
-    gs_color_space_index_ICC,       /* index */
-    true,                           /* can_be_base_space */
-    true,                           /* can_be_alt_space */
-    NULL                            /* This is going to be outside the norm. struct union*/
-};
-
 typedef struct default_profile_def_s {
     const char *path;
     gsicc_profile_t default_type;

@@ -110,9 +110,4 @@ struct gs_cpath_enum_s {
     bool any_rectangles;
 };
 
-#define private_st_cpath_enum()		/* in gxcpath.c */\
-  gs_private_st_suffix_add2(st_cpath_enum, gs_cpath_enum, "gs_cpath_enum",\
-    cpath_enum_enum_ptrs, cpath_enum_reloc_ptrs, st_path_enum,\
-    visit, rp)
-
 #endif /* gzcpath_INCLUDED */

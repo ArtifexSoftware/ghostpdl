@@ -229,7 +229,7 @@ buffer_segment_index(const stream_band_read_state *ss, uint buffer_offset, uint 
             return i;
         }
     }
-    gs_note_error(gs_error_unregistered); /* Must not happen. */
+    (void)gs_note_error(gs_error_unregistered); /* Must not happen. */
     return -1;
 }
 

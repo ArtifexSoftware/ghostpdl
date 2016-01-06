@@ -216,15 +216,28 @@ static int gp_cache_loaditem(FILE *file, gp_cache_entry *item, gp_cache_alloc al
     unsigned char version;
     unsigned char *filekey;
     int len, keylen;
+    size_t read;
 
-    (void)fread(&version, 1, 1, file);
+    read = fread(&version, 1, 1, file);
+    if (read != 1) {
+#ifdef DEBUG_CACHE
+        dlprintf("pcache file read failed (1)\n");
+#endif
+        return -1;
+    }
     if (version != GP_CACHE_VERSION) {
 #ifdef DEBUG_CACHE
         dlprintf2("pcache file version mismatch (%d vs expected %d)\n", version, GP_CACHE_VERSION);
 #endif
         return -1;
     }
-    (void)fread(&keylen, 1, sizeof(keylen), file);
+    read = fread(&keylen, 1, sizeof(keylen), file);
+    if (read != sizeof(keylen)) {
+#ifdef DEBUG_CACHE
+        dlprintf("pcache file read failed (2)\n");
+#endif
+        return -1;
+    }
     if (keylen != item->keylen) {
 #ifdef DEBUG_CACHE
         dlprintf2("pcache file has correct hash but wrong key length (%d vs %d)\n",
@@ -237,7 +250,13 @@ static int gp_cache_loaditem(FILE *file, gp_cache_entry *item, gp_cache_alloc al
         dprintf("pcache: couldn't allocate file key!\n");
         return -1;
     }
-    (void)fread(filekey, 1, keylen, file);
+    read = fread(filekey, 1, keylen, file);
+    if (read != keylen) {
+#ifdef DEBUG_CACHE
+        dlprintf("pcache file read failed (3)\n");
+#endif
+        return -1;
+    }
     if (memcmp(filekey, item->key, keylen)) {
 #ifdef DEBUG_CACHE
         dlprintf("pcache file has correct hash but doesn't match the full key\n");
@@ -249,7 +268,13 @@ static int gp_cache_loaditem(FILE *file, gp_cache_entry *item, gp_cache_alloc al
     }
     free(filekey);
 
-    (void)fread(&len, 1, sizeof(len), file);
+    read = fread(&len, 1, sizeof(len), file);
+    if (read != sizeof(len)) {
+#ifdef DEBUG_CACHE
+        dlprintf("pcache file read failed (4)\n");
+#endif
+        return -1;
+    }
 #ifdef DEBUG_CACHE
     dlprintf2("key matches file with version %d, data length %d\n", version, len);
 #endif

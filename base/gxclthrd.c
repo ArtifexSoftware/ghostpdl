@@ -153,7 +153,7 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
         code = devn_copy_params(dev, ndev);
         if (code < 0) {
 #ifdef DEBUG /* suppress a warning on a release build */
-            gs_note_error(gs_error_VMerror);
+            (void)gs_note_error(gs_error_VMerror);
 #endif
             goto out_cleanup;
         }

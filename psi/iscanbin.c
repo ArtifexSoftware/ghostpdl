@@ -359,8 +359,7 @@ scan_bin_scalar(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
                  */
                 s_end_inline(s, p, rlimit);
                 make_const_string(pref, a_all | avm_foreign, arg, sbufptr(s));
-                sbufskip(s, arg);
-                return 0;
+                return sbufskip(s, arg);
             } else {
                 byte *str = ialloc_string(arg, "string token");
 
@@ -495,7 +494,7 @@ scan_bin_num_array_continue(i_ctx_t *i_ctx_p, ref * pref,
             case t_integer:
             case t_real:
                 r_set_type(np, code);
-                sbufskip(s, wanted);
+                (void)sbufskip(s, wanted);
                 break;
             case t_null:
                 scan_bos_error(pstate, "bad number format");

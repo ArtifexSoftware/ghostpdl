@@ -2457,7 +2457,9 @@ static int nInstrCount=0;
 
   static void  Ins_WCVTF( INS_ARG )
   {
+#ifdef DEBUG
     int ov;
+#endif
 
     if ( BOUNDS( args[0], CUR.cvtSize ) )
     {
@@ -2465,9 +2467,13 @@ static int nInstrCount=0;
       return;
     }
 
+#ifdef DEBUG
     ov = CUR.cvt[args[0]];
+#endif
     CUR.cvt[args[0]] = FUnits_To_Pixels( EXEC_ARGS args[1] );
+#ifdef DEBUG
     DBG_PRINT3(" cvt[%d]%d:=%d", args[0], ov, CUR.cvt[args[0]]);
+#endif
   }
 
 /*******************************************/
@@ -4921,7 +4927,9 @@ static int nInstrCount=0;
     Int          A;
     PDefRecord   WITH;
     PCallRecord  WITH1;
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
     bool bFirst;
+#endif
     bool dbg_prt = (DBG_PRT_FUN != NULL);
 #   ifdef DEBUG
         ttfMemory *mem = exc->current_face->font->tti->ttf_memory;
@@ -4969,8 +4977,9 @@ static int nInstrCount=0;
         CUR.error = Result;
         goto _LExit;
     }
+#if defined(DEBUG) && !defined(GS_THREADSAFE)
     bFirst = true;
-
+#endif
     do
     {
       CALC_Length();

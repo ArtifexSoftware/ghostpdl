@@ -277,6 +277,10 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                 code = dev_proc(dev, copy_planes)(dev, &(gb_buff[gb_buff_start]), 
                                                   0, out_raster, gs_no_bitmap_id, 
                                                   x_curr, ry, w_curr-1, 1, 1);
+                if (code < 0) {
+                    gs_free_object(mem, gb_buff, "copy_alpha_hl_color");
+                    return code;
+                }
                 /* reset ourselves */
                 gb_buff_start = gb_buff_start + w_curr;
                 w_curr = 0;

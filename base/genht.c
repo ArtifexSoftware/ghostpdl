@@ -198,7 +198,7 @@ parse_halftone(gx_device_halftone_resource_t *phtr, byte **pThresholds,
             phtr->bit_data =
                 malloc(num_bits * sizeof(ushort));
             Thresholds = malloc(num_bits);
-            s_AXD_init_inline(&ss);
+            (void)s_AXD_init_inline(&ss);
             r.ptr = (const byte *)eol;
             r.limit = (const byte *)eol + strlen(eol + 1);
             w.ptr = Thresholds - 1;

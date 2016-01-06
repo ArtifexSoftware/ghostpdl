@@ -600,7 +600,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                 }
                 scan_putback();
             }
-            s_AXD_init_inline(&sstate.s_ss.axd);
+            (void)s_AXD_init_inline(&sstate.s_ss.axd);
             sstate.s_ss.st.templat = &s_AXD_template;
           str:scan_end_inline();
             dynamic_init(&da, imemory);

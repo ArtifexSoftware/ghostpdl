@@ -514,7 +514,9 @@ clist_playback_band(clist_playback_action playback_action,
     float dash_pattern[cmd_max_dash];
     gx_fill_params fill_params;
     gx_stroke_params stroke_params;
+#ifdef DEBUG
     gs_halftone_type halftone_type;
+#endif
     union im_ {
         gs_image_common_t c;
         gs_data_image_t d;
@@ -624,7 +626,9 @@ in:                             /* Initialize for a new page. */
         gx_set_cmap_procs(&imager_state, tdev);
     }
     gx_imager_setscreenphase(&imager_state, -x0, -y0, gs_color_select_all);
+#ifdef DEBUG
     halftone_type = ht_type_none;
+#endif
     pcs = gs_cspace_new_DeviceGray(mem);
     if (pcs == NULL) {
         code = gs_note_error(gs_error_VMerror);
@@ -755,11 +759,14 @@ in:                             /* Initialize for a new page. */
                                     break;
                                 case cmd_set_misc_halftone >> 6: {
                                     uint num_comp;
-
+#ifdef DEBUG
                                     halftone_type = cb & 0x3f;
+#endif
                                     cmd_getw(num_comp, cbp);
+#ifdef DEBUG
                                     if_debug2m('L', mem, " halftone type=%d num_comp=%u\n",
                                                halftone_type, num_comp);
+#endif
                                     code = cmd_resize_halftone(
                                                         &imager_state.dev_ht,
                                                         num_comp, mem);

@@ -103,32 +103,6 @@
 #define ERRPREF "? eprn: "
 
 
-static
-ENUM_PTRS_WITH(eprn_Device_enum_ptrs, eprn_Device *pdev)
-{
-  if (index < st_device_max_ptrs) {
-    gs_ptr_type_t ret = ENUM_USING_PREFIX(st_device_printer, 0);
-    return (ret ? ret : ENUM_OBJ(0));
-  }
-  index -= st_device_max_ptrs;
-
-  if (index == 0) {
-    return ENUM_OBJ(pdev->eprn.pis);
-  }
-
-  return 0;
-}
-ENUM_PTRS_END
-
-static RELOC_PTRS_WITH(eprn_Device_reloc_ptrs, eprn_Device *pdev)
-{
-  RELOC_PREFIX(st_device_printer);
-  RELOC_VAR(pdev->eprn.pis);
-}
-RELOC_PTRS_END
-
-private_st_device_EPRN(eprn_Device_enum_ptrs, eprn_Device_reloc_ptrs);
-
 /******************************************************************************
 
   Function: eprn_get_initial_matrix

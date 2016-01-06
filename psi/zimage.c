@@ -574,7 +574,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
             total_used = 0;
             for (pi = 0, pp = ETOP_SOURCE(esp, 0); pi < num_sources;
                  ++pi, pp -= 2 ) {
-                sbufskip(pp->value.pfile, used[pi]);
+                (void)sbufskip(pp->value.pfile, used[pi]);
                 total_used += used[pi];
             }
             if (code == gs_error_Remap_Color)
