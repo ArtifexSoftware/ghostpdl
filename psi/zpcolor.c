@@ -312,11 +312,29 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
     gs_pattern1_instance_t *pinst =
         (gs_pattern1_instance_t *)gs_currentcolor(igs->saved)->pattern;
     gx_device_pattern_accum const *padev = (const gx_device_pattern_accum *) pdev;
+    gs_pattern1_instance_t *pinst2 = r_ptr(esp - 2, gs_pattern1_instance_t);
 
     if (pdev != NULL) {
         gx_color_tile *ctile;
         int code;
         gs_state *pgs = igs;
+        /* If the PaintProc does one or more gsaves, then fails to do an equal numer of
+         * grestores, we can get here with the graphics state stack not how we expect.
+         * Hence we stored a reference to the pattern instance on the exec stack, and that
+         * allows us to roll back the graphics states until we have the one we expect,
+         * and pattern instance we expect
+         */
+        if (pinst != pinst2) {
+            int i;
+            for (i = 0; pgs->saved && pinst != pinst2; i++, pgs = pgs->saved) {
+                pinst = (gs_pattern1_instance_t *)gs_currentcolor(pgs->saved)->pattern;
+            }
+            for (;i > 1; i--) {
+                gs_grestore(igs);
+            }
+            pinst = (gs_pattern1_instance_t *)gs_currentcolor(igs->saved)->pattern;
+        }
+        pgs = igs;
 
         if (pinst->templat.uses_transparency) {
             if (pinst->is_clist) {
