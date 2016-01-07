@@ -919,53 +919,6 @@ inactive:
 }
 
 static void
-icc_cm_setup(gx_image_enum *penum, stream_image_scale_state *pss,
-int spp_cm, gsicc_bufferdesc_t *input_buff_desc,
-gsicc_bufferdesc_t *output_buff_desc, int width_cm_out, byte **p_cm_buff,
-stream_cursor_read stream_r, gx_device * dev)
-{
-    int num_bytes_decode = pss->params.BitsPerComponentIn / 8;
-    int width_out = pss->params.WidthOut;
-    int width_in = pss->params.WidthIn;
-    bool early_cm = pss->params.early_cm;
-    int spp_decode = pss->params.spp_decode;
-    gsicc_link_t *icc_link = penum->icc_link;
-    byte *psrc;
-
-    /* If it makes sense (if enlarging), do early CM */
-    if (early_cm && !icc_link->is_identity && stream_r.ptr != stream_r.limit) {
-        /* Get the buffers set up. */
-        *p_cm_buff = (byte *)gs_alloc_bytes(penum->memory,
-            num_bytes_decode * width_in * spp_cm, "image_render_interpolate_icc");
-        /* Set up the buffer descriptors. We keep the bytes the same */
-        gsicc_init_buffer(input_buff_desc, spp_decode, num_bytes_decode,
-            false, false, false, 0, width_in * spp_decode, 1, width_in);
-        gsicc_init_buffer(output_buff_desc, spp_cm, num_bytes_decode,
-            false, false, false, 0, width_in * spp_cm, 1, width_in);
-        /* Do the transformation */
-        psrc = (byte*)(stream_r.ptr + 1);
-        (icc_link->procs.map_buffer)(dev, icc_link, input_buff_desc,
-            output_buff_desc, (void*)psrc, (void*)*p_cm_buff);
-        /* Re-set the reading stream to use the cm data */
-        stream_r.ptr = *p_cm_buff - 1;
-        stream_r.limit = stream_r.ptr + num_bytes_decode * width_in * spp_cm;
-    } else {
-        /* CM after interpolation (or none).  Just set up the buffers if needed.
-        16 bit operations if CM takes place. */
-        if (!icc_link->is_identity) {
-            *p_cm_buff = (byte *)gs_alloc_bytes(penum->memory,
-                sizeof(unsigned short) * width_out * spp_cm,
-                "image_render_interpolate_icc");
-            /* Set up the buffer descriptors. */
-            gsicc_init_buffer(input_buff_desc, spp_decode, 2,
-                false, false, false, 0, width_out * spp_decode, 1, width_cm_out);
-            gsicc_init_buffer(output_buff_desc, spp_cm, 2,
-                false, false, false, 0, width_out * spp_cm, 1, width_cm_out);
-        }
-    }
-}
-
-static void
 get_device_color(gx_image_enum * penum, unsigned short *p_cm_interp,
 gx_device_color *devc, gx_color_index *color, gx_device * dev)
 {
