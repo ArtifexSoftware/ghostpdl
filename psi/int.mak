@@ -1255,11 +1255,25 @@ $(PSOBJ)zfaes.$(OBJ) : $(PSSRC)zfaes.c $(OP) $(memory__h)\
 # this can be turned on and off with a FEATURE_DEV
 
 fjbig2_=$(PSOBJ)zfjbig2_$(JBIG2_LIB).$(OBJ)
-$(PSD)jbig2.dev : $(ECHOGS_XE) $(fjbig2_) $(GLD)sjbig2.dev\
+
+$(PSD)jbig2_jbig2dec.dev : $(ECHOGS_XE) $(fjbig2_) $(GLD)sjbig2.dev\
  $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)jbig2 $(fjbig2_)
-	$(ADDMOD) $(PSD)jbig2 -include $(GLD)sjbig2
-	$(ADDMOD) $(PSD)jbig2 -oper zfjbig2
+	$(SETMOD) $(PSD)jbig2_jbig2dec $(fjbig2_)
+	$(ADDMOD) $(PSD)jbig2_jbig2dec -include $(GLD)sjbig2
+	$(ADDMOD) $(PSD)jbig2_jbig2dec -oper zfjbig2
+
+$(PSD)jbig2_luratech.dev : $(ECHOGS_XE) $(fjbig2_) $(GLD)sjbig2.dev\
+ $(INT_MAK) $(MAKEDIRS)
+	$(SETMOD) $(PSD)jbig2_luratech $(fjbig2_)
+	$(ADDMOD) $(PSD)jbig2_luratech -include $(GLD)sjbig2
+	$(ADDMOD) $(PSD)jbig2_luratech -oper zfjbig2
+
+$(PSD)jbig2_.dev : $(ECHOGS_XE) $(INT_MAK) $(MAKEDIRS)
+	$(SETMOD) $(PSD)jbig2_ 
+
+$(PSD)jbig2.dev : $(PSD)jbig2_$(JBIG2_LIB).dev $(INT_MAK) $(MAKEDIRS)
+	$(CP_) $(PSD)jbig2_$(JBIG2_LIB).dev $(PSD)jbig2.dev
+
 
 $(PSOBJ)zfjbig2_jbig2dec.$(OBJ) : $(PSSRC)zfjbig2.c $(OP) $(memory__h)\
  $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\

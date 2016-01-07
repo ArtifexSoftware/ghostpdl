@@ -1735,12 +1735,21 @@ $(GLD)sjbig2_jbig2dec.dev : $(LIB_MAK) $(ECHOGS_XE) \
 	$(SETMOD) $(GLD)sjbig2_jbig2dec $(sjbig2_jbig2dec)
 	$(ADDMOD) $(GLD)sjbig2_jbig2dec -include $(GLD)jbig2dec.dev
 
+$(GLD)sjbig2_.dev : $(LIB_MAK) $(ECHOGS_XE) \
+  $(LIB_MAK) $(MAKEDIRS)
+	$(SETMOD) $(GLD)sjbig2_
+
 # jbig2dec.dev is defined in jbig2.mak
 
 $(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) \
  $(stdint__h) $(memory__h) $(stdio__h) $(gserrors_h) $(gdebug_h) \
  $(sjbig2_h) $(strimpl_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLJBIG2CC) $(GLO_)sjbig2.$(OBJ) $(C_) $(GLSRC)sjbig2.c
+
+$(GLOBJ)snojbig2.$(OBJ) : $(GLSRC)snojbig2.c $(AK) \
+ $(stdint__h) $(memory__h) $(stdio__h) $(gserrors_h) $(gdebug_h) \
+ $(strimpl_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLJBIG2CC) $(GLO_)snojbig2.$(OBJ) $(C_) $(GLSRC)snojbig2.c
 
 # luratech version
 sjbig2_luratech=$(GLOBJ)sjbig2_luratech.$(OBJ)
