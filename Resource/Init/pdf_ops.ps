@@ -84,9 +84,17 @@ nodict readonly pop
   1 ca  1 CA //null SMask //false AIS  /Compatible BM //true TK
 } bdef
 
+% We must allow /Show to be set, otherwise a text operation can
+% end up in infinite recursion with showfirst calling Show, and
+% Show calling showfirst.
+/gput_always_allow
+1 dict dup begin
+  /Show 0 def
+end def
+
 /gput		% <value> <key> gput -
  {
-   currentdict /n known {
+   dup //gput_always_allow exch known not currentdict /n known and {
      pop pop
      (   **** Error: Ignoring changes to the graphic state after operator 'W'.\n) pdfformaterror
      (               Output may be incorrect.\n) pdfformaterror
@@ -95,6 +103,7 @@ nodict readonly pop
      def
    } ifelse
  } bdef
+currentdict /gput_always_allow .undef
 
 /q {
   %% Special case, if we get a 'q' while accumulating clip/eoclip then
