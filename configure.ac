@@ -811,7 +811,7 @@ if test x"$enable_fapi" != xno; then
       fi
     done
 
-    if test -z $FTSRCDIR; then
+    if test x"$FTSRCDIR" = x"src"; then
       AC_MSG_RESULT([no])
       if test "x$PKGCONFIG" != x; then
         AC_MSG_CHECKING(for system freetype2 >= 2.4.2 with pkg-config)
