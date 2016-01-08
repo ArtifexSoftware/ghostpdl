@@ -20,7 +20,7 @@ dnl Initialization and Versioning
 dnl ------------------------------------------------
 
 AC_INIT
-AC_PREREQ(2.60)
+AC_PREREQ(2.63)
 AC_LANG(C)
 AC_CONFIG_SRCDIR(psi/gs.c)
 
@@ -262,34 +262,7 @@ dnl ----------------------------
 dnl check for big/little endian
 dnl ----------------------------
 
-BIGENDIAN=
-
-AC_MSG_CHECKING([for big endian])
-
-AC_ARG_ENABLE([big-endian], AC_HELP_STRING([--enable-big-endian],
-    [Force big endian]), [BIGENDIAN=1])
-
-if test x$BIGENDIAN = x; then
-  AC_ARG_ENABLE([little-endian], AC_HELP_STRING([--enable-little-endian],
-      [Force little endian]), [BIGENDIAN=0])
-fi
-
-if test x$BIGENDIAN = x ; then
-  AC_RUN_IFELSE(
-    [AC_LANG_PROGRAM([#include <stdio.h>], [
-     static const int one = 1;
-     return (*(char*)&one == 0 ? 0 : 1);
-    ])],
-    [BIGENDIAN=1;AC_MSG_RESULT(big)],
-    [BIGENDIAN=0;AC_MSG_RESULT(little)],
-    [BIGENDIAN=1;AC_MSG_RESULT(cross compiling: assuming big engian, otherwise use "--enable-little-endian")])
-else
-  if test x$BIGENDIAN = x1 ; then
-    AC_MSG_RESULT(big)
-  else
-    AC_MSG_RESULT(little)
-  fi
-fi
+AC_C_BIGENDIAN([BIGENDIAN=1], [BIGENDIAN=0])
 
 dnl --------------------------------------------------
 dnl check for sse2 intrinsics
