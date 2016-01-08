@@ -1292,6 +1292,9 @@ $(PSD)jpx.dev : $(ECHOGS_XE) $(PSD)jpx_$(JPX_LIB).dev\
  $(INT_MAK) $(MAKEDIRS)
 	$(CP_) $(PSD)jpx_$(JPX_LIB).dev $(PSD)jpx.dev
 
+$(PSD)jpx_.dev : $(ECHOGS_XE) $(INT_MAK) $(MAKEDIRS)
+	$(SETMOD) $(PSD)jpx_
+
 fjpx_luratech=$(PSOBJ)zfjpx_luratech.$(OBJ)
 
 $(PSOBJ)zfjpx.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\

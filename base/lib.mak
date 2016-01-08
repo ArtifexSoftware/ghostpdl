@@ -1777,6 +1777,9 @@ $(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
  $(gdebug_h) $(strimpl_h) $(sjpx_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLJASCC) $(GLO_)sjpx.$(OBJ) $(C_) $(GLSRC)sjpx.c
 
+$(GLD)sjpx_.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIB_MAK) $(MAKEDIRS)
+	$(SETMOD) $(GLD)sjpx_
+
 # luratech version
 sjpx_luratech=$(GLOBJ)sjpx_luratech.$(OBJ)
 $(GLD)sjpx_luratech.dev : $(LIB_MAK) $(ECHOGS_XE) \
