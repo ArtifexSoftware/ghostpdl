@@ -399,13 +399,13 @@ AC_ARG_WITH([large_color_index],, large_color_index="$with_large_color_index")
 if test x"$large_color_index" != "x0"; then
   dnl try to find a 64 bit type for devicen color index
   color_ind_type="none"
-   AC_CHECK_SIZEOF(unsigned long int)
-   if test $ac_cv_sizeof_unsigned_long_int = 8; then
-          color_ind_type="unsigned long int"
-   else
-    AC_CHECK_SIZEOF(unsigned long long)
-    if test $ac_cv_sizeof_unsigned_long_long = 8; then
+   AC_CHECK_SIZEOF(unsigned long long)
+   if test $ac_cv_sizeof_unsigned_long_long = 8; then
           color_ind_type="unsigned long long"
+   else
+    AC_CHECK_SIZEOF(unsigned long int)
+    if test $ac_cv_sizeof_unsigned_long_int = 8; then
+          color_ind_type="unsigned long int"
     else
      AC_CHECK_SIZEOF(unsigned __int64)
      if test $ac_cv_sizeof_unsigned___int64 = 8; then
@@ -458,7 +458,6 @@ SUBCONFIG_OPTS=""
 if test x$build_alias != x; then
 SUBCONFIG_OPTS="$SUBCONFIG_OPTS --build=$build_alias"
 fi
-
 
 dnl --------------------------------------------------
 dnl Check for libraries
@@ -2235,9 +2234,13 @@ esac
 dnl --------------------------------------------------
 dnl set big/little endian for LCMS
 dnl --------------------------------------------------
+LCMS_ENDIAN=
+LCMS2_ENDIAN=
 
-LCMS_ENDIAN="-DUSE_BIG_ENDIAN=$BIGENDIAN"
-LCMS2_ENDIAN="-DCMS_USE_BIG_ENDIAN=$BIGENDIAN"
+if test x"$BIGENDIAN" != x""; then
+  LCMS_ENDIAN="-DUSE_BIG_ENDIAN=$BIGENDIAN"
+  LCMS2_ENDIAN="-DCMS_USE_BIG_ENDIAN=$BIGENDIAN"
+fi
 
 AC_SUBST(LCMS_ENDIAN)
 AC_SUBST(LCMS2_ENDIAN)
