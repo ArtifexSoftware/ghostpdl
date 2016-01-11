@@ -213,7 +213,7 @@ hl1250_device_copies("hl1240", X_DPI, Y_DPI);
 typedef unsigned short u16;
 
 /* The printer expects 16-bit data words in big endian order.  */
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #define cpu_to_be16(x) (x)
 #else
 static u16

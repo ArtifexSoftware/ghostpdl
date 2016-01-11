@@ -263,7 +263,7 @@
  * This is always uint, regardless of byte order.
  */
 #define mono_fill_chunk uint
-#define mono_fill_chunk_bytes arch_sizeof_int
+#define mono_fill_chunk_bytes ARCH_SIZEOF_INT
 
 /* ---------------- Procedures ---------------- */
 

@@ -147,7 +147,7 @@ const gx_device_printer gs_pcxcmyk_device =
 /* ------ Private definitions ------ */
 
 /* All two-byte quantities are stored LSB-first! */
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #  define assign_ushort(a,v) a = ((v) >> 8) + ((v) << 8)
 #else
 #  define assign_ushort(a,v) a = (v)

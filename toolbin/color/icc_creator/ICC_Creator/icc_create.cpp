@@ -25,7 +25,7 @@
 #include <math.h>
 #include "icc_create.h"
 
-#define arch_is_big_endian 0;
+#define ARCH_IS_BIG_ENDIAN 0;
 
 typedef unsigned long ulong;
 typedef unsigned short ushort;
@@ -135,7 +135,7 @@ static void
 write_bigendian_4bytes(unsigned char *curr_ptr,ulong input)
 {
 
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
     *curr_ptr ++= ((0x000000ff) & (input >> 24));
    *curr_ptr ++= ((0x000000ff) & (input >> 16));
    *curr_ptr ++= ((0x000000ff) & (input >> 8));
@@ -151,7 +151,7 @@ write_bigendian_4bytes(unsigned char *curr_ptr,ulong input)
 static void
 write_bigendian_2bytes(unsigned char *curr_ptr,ushort input)
 {
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
     *curr_ptr ++= ((0x000ff) & (input >> 8));
    *curr_ptr ++= ((0x000ff) & (input));
 #else

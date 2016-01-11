@@ -590,7 +590,7 @@ since gdevprn.c does (currently) support only 32-Bit Rasterdata.
 #undef INT32_MAX
 #undef UINT32_MAX
 
-#if     arch_log2_sizeof_int < 2  /* int is too small */
+#if     ARCH_LOG2_SIZEOF_INT < 2  /* int is too small */
 #define                   INT32_MIN  LONG_MIN
 #define                   INT32_MAX  LONG_MAX
 #define                  UINT32_MAX ULONG_MAX
@@ -4651,7 +4651,7 @@ upd_open_rascomp(upd_device *udev)
 /* ------------------------------------------------------------------- */
 /* upd_start_rascomp: write appropiate raster-header                   */
 /* ------------------------------------------------------------------- */
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #define put32(I32,Out)       \
    fwrite(&I32,1,4,Out)
 #else

@@ -173,13 +173,13 @@
    imPress swatches are 4 bytes wide, so type must align on a 4-byte
    boundary.  Swatch interleaving restricts the copy to 4 bytes in a row.
    Type must be numeric where value is zero when all bytes in it are zero. */
-#if arch_sizeof_long == 4
+#if ARCH_SIZEOF_LONG == 4
 #  define BIGTYPE unsigned long int
 #else
-#  if arch_sizeof_short == 4
+#  if ARCH_SIZEOF_SHORT == 4
 #    define BIGTYPE unsigned short int
 #  else
-#    if arch_sizeof_short == 2
+#    if ARCH_SIZEOF_SHORT == 2
 #      define BIGTYPE unsigned short
 #    endif
 #  endif

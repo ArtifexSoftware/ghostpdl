@@ -193,7 +193,7 @@ gs_image_class_2_fracs(gx_image_enum * penum)
 
 /* ------ Rendering for 12-bit samples ------ */
 
-#define FRACS_PER_LONG (arch_sizeof_long / arch_sizeof_frac)
+#define FRACS_PER_LONG (ARCH_SIZEOF_LONG / arch_sizeof_frac)
 typedef union {
     frac v[GS_IMAGE_MAX_COLOR_COMPONENTS];
 #define LONGS_PER_COLOR_FRACS\
@@ -201,7 +201,7 @@ typedef union {
     long all[LONGS_PER_COLOR_FRACS];	/* for fast comparison */
 } color_fracs;
 
-#define LONGS_PER_4_FRACS ((arch_sizeof_frac * 4 + arch_sizeof_long - 1) / arch_sizeof_long)
+#define LONGS_PER_4_FRACS ((arch_sizeof_frac * 4 + ARCH_SIZEOF_LONG - 1) / ARCH_SIZEOF_LONG)
 #if LONGS_PER_4_FRACS == 1
 #  define COLOR_FRACS_4_EQ(f1, f2)\
      ((f1).all[0] == (f2).all[0])

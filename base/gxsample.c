@@ -41,7 +41,7 @@
 #  define ffL16 0x00ff0000U
 #  define ffL24 0xff000000U
 #else
-#if arch_sizeof_long == 4
+#if ARCH_SIZEOF_LONG == 4
 /*
  * The compiler evaluates long expressions mod 2^32.  Even very picky
  * compilers allow assigning signed longs to unsigned longs, so we use
@@ -61,14 +61,14 @@
 #  define ffL24 0xff000000L
 #endif
 #endif
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 const bits32 lookup4x1to32_identity[16] = {
     map4tox(0, 0xff, ffL8, ffL16, ffL24)
 };
 const bits32 lookup4x1to32_inverted[16] = {
     map4tox(n0L, 0xff, ffL8, ffL16, ffL24)
 };
-#else /* !arch_is_big_endian */
+#else /* !ARCH_IS_BIG_ENDIAN */
 const bits32 lookup4x1to32_identity[16] = {
     map4tox(0, ffL24, ffL16, ffL8, 0xff)
 };

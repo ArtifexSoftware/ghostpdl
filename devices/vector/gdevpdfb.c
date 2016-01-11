@@ -131,7 +131,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
     gs_color_space *pcs = NULL;
     cos_value_t cs_value;
     cos_value_t *pcsvalue;
-    byte palette[arch_sizeof_color_index * 2];
+    byte palette[ARCH_SIZEOF_COLOR_INDEX * 2];
     gs_image_t image;
     pdf_image_writer writer;
     pdf_stream_position_t ipos;

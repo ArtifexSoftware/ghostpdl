@@ -352,7 +352,7 @@ repack_bit_planes(const gx_image_plane_t *src_planes, const ulong *offsets,
      */
     for (x = 0; x < width; x += 8) {
         bits32 w0 = 0, w1 = 0;
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
         static const bits32 expand[16] = {
             0x00000000, 0x00000001, 0x00000100, 0x00000101,
             0x00010000, 0x00010001, 0x00010100, 0x00010101,

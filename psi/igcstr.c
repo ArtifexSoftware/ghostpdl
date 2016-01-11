@@ -48,7 +48,7 @@ typedef string_mark_unit bword;
 #define bword_bits (1 << bword_log2_bits)
 #define bword_1s (~(bword)0)
 /* Compensate for byte order reversal if necessary. */
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #  if bword_bytes == 2
 #    define bword_swap_bytes(m) m = (m << 8) | (m >> 8)
 #  else				/* bword_bytes == 4 */

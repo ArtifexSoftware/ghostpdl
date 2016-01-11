@@ -497,7 +497,7 @@ mem_mono_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
  */
 /* cshift = chunk_bits - shift. */
 #undef chunk
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #  define chunk uint
 #  define CFETCH_RIGHT(cptr, shift, cshift)\
         (CFETCH_ALIGNED(cptr) >> shift)
@@ -699,7 +699,7 @@ mem_mono_copy_mono(gx_device * dev,
 #undef CINVERT
 #define CINVERT(bits) (bits)    /* pre-inverted here */
 
-#if arch_is_big_endian          /* no byte swapping */
+#if ARCH_IS_BIG_ENDIAN          /* no byte swapping */
 #  define WRITE_1TO2(wr_op)\
   for ( ; ; )\
    { register uint bits = CFETCH_ALIGNED(bptr) ^ invert;\
@@ -961,7 +961,7 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
 
         set_mono_left_mask(mask, dbit);
         set_mono_right_mask(rmask, wleft);
-#if arch_is_big_endian          /* no byte swapping */
+#if ARCH_IS_BIG_ENDIAN          /* no byte swapping */
 #undef CINVERT
 #define CINVERT(bits) (bits)    /* pre-inverted here */
         for (;;) {
@@ -1077,7 +1077,7 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
 /* Note that on a big-endian machine, this is the same as the */
 /* standard byte-oriented-device. */
 
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
 
 /* Procedures */
 static dev_proc_copy_mono(mem1_word_copy_mono);
@@ -1134,4 +1134,4 @@ mem1_word_copy_mono(gx_device * dev,
     return 0;
 }
 
-#endif /* !arch_is_big_endian */
+#endif /* !ARCH_IS_BIG_ENDIAN */

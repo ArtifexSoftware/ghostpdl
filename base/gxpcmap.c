@@ -51,7 +51,7 @@ unsigned int global_pat_index = 0;
 uint
 gx_pat_cache_default_tiles(void)
 {
-#if arch_small_memory
+#if ARCH_SMALL_MEMORY
     return max_cached_patterns_SMALL;
 #else
 #ifdef DEBUG
@@ -65,7 +65,7 @@ gx_pat_cache_default_tiles(void)
 ulong
 gx_pat_cache_default_bits(void)
 {
-#if arch_small_memory
+#if ARCH_SMALL_MEMORY
     return max_pattern_bits_SMALL;
 #else
 #ifdef DEBUG

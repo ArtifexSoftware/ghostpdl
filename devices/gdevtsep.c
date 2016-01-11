@@ -76,7 +76,7 @@ const gx_device_tiff gs_tiffgray_device = {
                     X_DPI, Y_DPI,
                     0, 0, 0, 0, /* Margins */
                     1, 8, 255, 0, 256, 0, tiffgray_print_page),
-    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    ARCH_IS_BIG_ENDIAN          /* default to native endian (i.e. use big endian iff the platform is so*/,
     false,                      /* default to *not* bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
@@ -110,7 +110,7 @@ const gx_device_tiff gs_tiffscaled_device = {
                     8,          /* bits per sample */
                     255, 0, 256, 0,
                     tiffscaled_print_page),
-    arch_is_big_endian,/* default to native endian (i.e. use big endian iff the platform is so */
+    ARCH_IS_BIG_ENDIAN,/* default to native endian (i.e. use big endian iff the platform is so */
     false,             /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
@@ -144,7 +144,7 @@ const gx_device_tiff gs_tiffscaled8_device = {
                     8,          /* bits per sample */
                     255, 0, 256, 0,
                     tiffscaled8_print_page),
-    arch_is_big_endian,/* default to native endian (i.e. use big endian iff the platform is so */
+    ARCH_IS_BIG_ENDIAN,/* default to native endian (i.e. use big endian iff the platform is so */
     false,             /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
@@ -178,7 +178,7 @@ const gx_device_tiff gs_tiffscaled24_device = {
                     24,         /* bits per sample */
                     255, 255, 256, 256,
                     tiffscaled24_print_page),
-    arch_is_big_endian,/* default to native endian (i.e. use big endian iff the platform is so */
+    ARCH_IS_BIG_ENDIAN,/* default to native endian (i.e. use big endian iff the platform is so */
     false,             /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
@@ -210,7 +210,7 @@ const gx_device_tiff gs_tiffscaled32_device = {
                     32,         /* bits per sample */
                     255, 255, 256, 256,
                     tiffscaled32_print_page),
-    arch_is_big_endian,/* default to native endian (i.e. use big endian iff the platform is so */
+    ARCH_IS_BIG_ENDIAN,/* default to native endian (i.e. use big endian iff the platform is so */
     false,             /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
@@ -242,7 +242,7 @@ const gx_device_tiff gs_tiffscaled4_device = {
                     32,         /* bits per sample */
                     255, 255, 256, 256,
                     tiffscaled4_print_page),
-    arch_is_big_endian,/* default to native endian (i.e. use big endian iff the platform is so */
+    ARCH_IS_BIG_ENDIAN,/* default to native endian (i.e. use big endian iff the platform is so */
     false,             /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
@@ -450,7 +450,7 @@ const gx_device_tiff gs_tiff32nc_device = {
                     X_DPI, Y_DPI,
                     0, 0, 0, 0, /* Margins */
                     4, 32, 255, 255, 256, 256, tiffcmyk_print_page),
-    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    ARCH_IS_BIG_ENDIAN          /* default to native endian (i.e. use big endian iff the platform is so*/,
     false,                      /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
@@ -472,7 +472,7 @@ const gx_device_tiff gs_tiff64nc_device = {
                     X_DPI, Y_DPI,
                     0, 0, 0, 0, /* Margins */
                     4, 64, 255, 255, 256, 256, tiffcmyk_print_page),
-    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    ARCH_IS_BIG_ENDIAN          /* default to native endian (i.e. use big endian iff the platform is so*/,
     false,                      /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
@@ -711,7 +711,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
         prn_device_body_rest2_(print_page, print_page_copies, -1),\
         { 0 },                  /* tiff state for separation files */\
         { 0 },                  /* separation files */\
-        arch_is_big_endian      /* true = big endian; false = little endian */,\
+        ARCH_IS_BIG_ENDIAN      /* true = big endian; false = little endian */,\
         false,                  /* UseBigTIFF */\
         true,                   /* write_datetime */ \
         false,                  /* PrintSpotCMYK */\
@@ -778,7 +778,7 @@ const tiffsep1_device gs_tiffsep1_device =
 #undef DECODE_COLOR
 
 static const uint32_t bit_order[32]={
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
         0x80000000, 0x40000000, 0x20000000, 0x10000000, 0x08000000, 0x04000000, 0x02000000, 0x01000000,
         0x00800000, 0x00400000, 0x00200000, 0x00100000, 0x00080000, 0x00040000, 0x00020000, 0x00010000,
         0x00008000, 0x00004000, 0x00002000, 0x00001000, 0x00000800, 0x00000400, 0x00000200, 0x00000100,

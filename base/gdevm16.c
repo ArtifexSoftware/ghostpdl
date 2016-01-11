@@ -74,7 +74,7 @@ mem_true16_fill_rectangle(gx_device * dev,
                           int x, int y, int w, int h, gx_color_index color)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
     const ushort color16 = (ushort)color;
 #else
     const ushort color16 = (ushort)((color << 8) | (color >> 8));
@@ -118,7 +118,7 @@ mem_true16_copy_mono(gx_device * dev,
                      gx_color_index zero, gx_color_index one)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
     const ushort zero16 = (ushort)zero;
     const ushort one16 = (ushort)one;
 #else

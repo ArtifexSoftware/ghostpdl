@@ -233,7 +233,7 @@ typedef fixed *cs_ptr;
 
 /* Decode a 4-byte number, but don't push it, because Type 1 and Type 2 */
 /* charstrings scale it differently. */
-#if arch_sizeof_long > 4
+#if ARCH_SIZEOF_LONG > 4
 #  define sign_extend_num4(lw)\
      lw = (lw ^ 0x80000000L) - 0x80000000L
 #else

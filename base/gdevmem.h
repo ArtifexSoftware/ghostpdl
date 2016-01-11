@@ -91,7 +91,7 @@ dev_proc_draw_thin_line(mem_draw_thin_line);
 dev_proc_open_device(mem_open);
 dev_proc_get_bits_rectangle(mem_get_bits_rectangle);
 /* The following are for word-oriented devices. */
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #  define mem_word_get_bits_rectangle mem_get_bits_rectangle
 #else
 dev_proc_get_bits_rectangle(mem_word_get_bits_rectangle);
@@ -248,7 +248,7 @@ dev_proc_strip_copy_rop(mem_mono_strip_copy_rop_dev);
 dev_proc_strip_copy_rop(mem_gray_strip_copy_rop);
 dev_proc_strip_copy_rop(mem_gray8_rgb24_strip_copy_rop);
 
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #  define mem_mono_word_device mem_mono_device
 #  define mem_mapped2_word_device mem_mapped2_device
 #  define mem_mapped4_word_device mem_mapped4_device

@@ -65,7 +65,7 @@ static const gx_device_procs gdev_tfax_std_procs =
     FAX_DEVICE_BODY(gx_device_tfax, gdev_tfax_std_procs, dname, print_page),\
     TIFF_DEFAULT_STRIP_SIZE     /* strip size byte count */,\
     1                           /* lowest column in the high-order bit */,\
-    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,\
+    ARCH_IS_BIG_ENDIAN          /* default to native endian (i.e. use big endian iff the platform is so*/,\
     false,                      /* default to not using bigtiff */\
     compr,\
     true, /* write_datetime */ \
@@ -270,7 +270,7 @@ const gx_device_tfax gs_tifflzw_device = {
     0                           /* MinFeatureSize */,
     TIFF_DEFAULT_STRIP_SIZE     /* strip size byte count */,
     1                           /* lowest column in the high-order bit, not used */,
-    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    ARCH_IS_BIG_ENDIAN          /* default to native endian (i.e. use big endian iff the platform is so*/,
     false                       /* defauilt to *not* UseBigTIFF */,
     COMPRESSION_LZW
 };
@@ -285,7 +285,7 @@ const gx_device_tfax gs_tiffpack_device = {
     0                           /* MinFeatureSize */,
     TIFF_DEFAULT_STRIP_SIZE     /* strip size byte count */,
     1                           /* lowest column in the high-order bit, not used */,
-    arch_is_big_endian          /* default to native endian (i.e. use big endian iff the platform is so*/,
+    ARCH_IS_BIG_ENDIAN          /* default to native endian (i.e. use big endian iff the platform is so*/,
     false                       /* defauilt to *not* UseBigTIFF */,
     COMPRESSION_PACKBITS
 };

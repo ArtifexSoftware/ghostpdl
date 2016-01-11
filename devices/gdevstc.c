@@ -2377,7 +2377,7 @@ stc_map_cmyk10_color(gx_device *pdev, const gx_color_value cv[])
 /*
  * We may need some swapping
  */
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
    {
       union { stc_pixel cv; byte bv[4]; } ui,uo;
       ui.cv = rv;
@@ -2402,7 +2402,7 @@ stc_map_color_cmyk10(gx_device *pdev, gx_color_index color,
 /*
  * We may need some swapping
  */
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
    union { stc_pixel cv; byte bv[4]; } ui,uo;
    ui.cv = color;
    uo.bv[0] = ui.bv[3];

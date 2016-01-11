@@ -355,7 +355,7 @@ static int
 zdcvi(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-#define alt_min_long (-1L << (arch_sizeof_long * 8 - 1))
+#define alt_min_long (-1L << (ARCH_SIZEOF_LONG * 8 - 1))
 #define alt_max_long (~(alt_min_long))
     static const double min_int_real = (alt_min_long * 1.0 - 1);
     static const double max_int_real = (alt_max_long * 1.0 + 1);

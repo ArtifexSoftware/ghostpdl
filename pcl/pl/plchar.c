@@ -183,7 +183,7 @@ bits_merge(byte * dest, const byte * src, uint nbytes)
 {
     long *dp = (long *)dest;
     const long *sp = (const long *)src;
-    uint n = (nbytes + sizeof(long) - 1) >> arch_log2_sizeof_long;
+    uint n = (nbytes + sizeof(long) - 1) >> ARCH_LOG2_SIZEOF_LONG;
 
     for (; n >= 4; sp += 4, dp += 4, n -= 4)
         dp[0] |= sp[0], dp[1] |= sp[1], dp[2] |= sp[2], dp[3] |= sp[3];

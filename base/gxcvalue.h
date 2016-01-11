@@ -22,7 +22,6 @@
 /* Define the type for gray or RGB values at the driver interface. */
 typedef unsigned short gx_color_value;
 
-#define arch_sizeof_gx_color_value arch_sizeof_short
 /* We might use less than the full range someday. */
 /* ...bits must lie between 8 and 16. */
 #define gx_color_value_bits (sizeof(gx_color_value) * 8)

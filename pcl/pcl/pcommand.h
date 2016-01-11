@@ -26,12 +26,12 @@
 
 /* Define a PCL value (PCL command parameter). */
 /* The 16+16 representation is required to match the PCL5 documentation. */
-#if arch_sizeof_int == 4
+#if ARCH_SIZEOF_INT == 4
 typedef int int32;
 
 typedef uint uint32;
 #else
-# if arch_sizeof_long == 4
+# if ARCH_SIZEOF_LONG == 4
 typedef long int32;
 
 typedef ulong uint32;

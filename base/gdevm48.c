@@ -73,7 +73,7 @@ mem_full_alpha_device("image48", 48, 0, mem_open,
         *(bits32 *)(ptr) = (wxyz)
 /* Load the 3-word 48-bit-color cache. */
 /* Free variables: [m]dev, abcd, bcde, cdea, deab, earc. */
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #  define set_color48_cache(color, a, b, c, d, e, f)\
         mdev->color48.abcd = abcd = (color) >> 16, \
         mdev->color48.cdef = cdef = (abcd << 16) | ((e) <<8) | (f),\
@@ -378,7 +378,7 @@ mem_true48_copy_color(gx_device * dev,
 /* Note that on a big-endian machine, this is the same as the */
 /* standard byte-oriented-device. */
 
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
 
 /* Procedures */
 declare_mem_procs(mem48_word_copy_mono, mem48_word_copy_color, mem48_word_fill_rectangle);
@@ -451,4 +451,4 @@ mem48_word_copy_color(gx_device * dev,
     return 0;
 }
 
-#endif /* !arch_is_big_endian */
+#endif /* !ARCH_IS_BIG_ENDIAN */

@@ -92,7 +92,7 @@
  * is also needed.
  */
 #define obj_flag_bits 1
-#define obj_mb_bits (arch_sizeof_int * 8 - obj_flag_bits)
+#define obj_mb_bits (ARCH_SIZEOF_INT * 8 - obj_flag_bits)
 #define o_unmarked (((uint)1 << obj_mb_bits) - 1)
 #define o_set_unmarked(pp)\
   ((pp)->o_smark = o_unmarked)
@@ -203,8 +203,8 @@ struct obj_header_s {		/* must be a struct because of forward reference */
  */
 typedef struct chunk_head_s {
     byte *dest;			/* destination for objects */
-#if obj_align_mod > arch_sizeof_ptr
-    byte *_pad[obj_align_mod / arch_sizeof_ptr - 1];
+#if obj_align_mod > ARCH_SIZEOF_PTR
+    byte *_pad[obj_align_mod / ARCH_SIZEOF_PTR - 1];
 #endif
     obj_header_t free;		/* header for a free object, */
     /* in case the first real object */

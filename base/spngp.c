@@ -66,7 +66,7 @@ s_pngp_init(stream_state * st, bool need_prev)
     long bits_per_row = (long)bits_per_pixel * ss->Columns;
     byte *prev_row = 0;
 
-#if arch_sizeof_long > arch_sizeof_int
+#if ARCH_SIZEOF_LONG > ARCH_SIZEOF_INT
     if (bits_per_row > max_uint * 7L)
         return ERRC;	/****** WRONG ******/
 #endif

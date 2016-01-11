@@ -81,13 +81,13 @@ typedef struct gx_device_sun {
         int freecols;			/* unallocated colors */
         byte *red, *green, *blue;	/* colormap */
         char cmsname[sizeof(CMSNAME)+9];/* color map name */
-#if !arch_is_big_endian			/* need to swap bits & bytes */
+#if !ARCH_IS_BIG_ENDIAN			/* need to swap bits & bytes */
 #  define BUF_WIDTH_BYTES (((int)(8.5*DEFAULT_DPI)+15)/16*2)
         byte swap_buf[BUF_WIDTH_BYTES];
 #endif
 } gx_device_sun;
 
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
 /* Define a table for reversing bit order. */
 static byte reverse_bits[256] = {
   0, 128, 64, 192, 32, 160, 96, 224, 16, 144, 80, 208, 48, 176, 112, 240,
@@ -599,7 +599,7 @@ sun_copy_mono(register gx_device *dev,
         register int i;
         int nbytes;
         extern struct pixrectops mem_ops;
-#if !arch_is_big_endian			/* need to swap bits & bytes */
+#if !ARCH_IS_BIG_ENDIAN			/* need to swap bits & bytes */
 #  define BUF_WIDTH_BYTES (((int)(8.5*DEFAULT_DPI)+15)/16*2)
         byte swap_buf[BUF_WIDTH_BYTES];
 #endif
@@ -614,7 +614,7 @@ sun_copy_mono(register gx_device *dev,
         xdev->pr.pr_data = (caddr_t)&(xdev->mpr);
         xdev->mpr.md_linebytes = raster;
         xdev->mpr.md_image = (short *)((ulong)base & ~1);
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
         /* Reverse the bit order in each byte. */
         for ( i = 0; i < nbytes; i++ )
                 non_const_base[i] = reverse_bits[base[i]];
@@ -637,7 +637,7 @@ sun_copy_mono(register gx_device *dev,
                         non_const_base[i] = ~base[i];
         }
         pw_batch_off(xdev->pw);
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
         /* Reverse the bits back again. */
         for ( i = 0; i < nbytes; i++ )
                 non_const_base[i] = reverse_bits[base[i]];

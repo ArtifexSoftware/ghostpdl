@@ -27,8 +27,8 @@
 typedef short frac;
 typedef short signed_frac;
 
-#define arch_log2_sizeof_frac arch_log2_sizeof_short
-#define arch_sizeof_frac arch_sizeof_short
+#define arch_log2_sizeof_frac ARCH_LOG2_SIZEOF_SHORT
+#define arch_sizeof_frac ARCH_SIZEOF_SHORT
 #define frac_bits 15
 #define frac_0 ((frac)0)
 
@@ -71,7 +71,7 @@ typedef short signed_frac;
 /*
  * Conversion between fracs and unsigned shorts.
  */
-#define ushort_bits (arch_sizeof_short * 8)
+#define ushort_bits (ARCH_SIZEOF_SHORT * 8)
 #define frac2ushort(fr) ((ushort)(\
   ((fr) << (ushort_bits - frac_bits)) +\
   ((fr) >> (frac_bits * 2 - ushort_bits - frac_1_0bits)) ))

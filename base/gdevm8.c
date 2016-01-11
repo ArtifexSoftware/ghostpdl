@@ -321,7 +321,7 @@ mem_mapped8_copy_color(gx_device * dev,
 /* Note that on a big-endian machine, this is the same as the */
 /* standard byte-oriented-device. */
 
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
 
 /* Procedures */
 declare_mem_procs(mem8_word_copy_mono, mem8_word_copy_color, mem8_word_fill_rectangle);
@@ -393,4 +393,4 @@ mem8_word_copy_color(gx_device * dev,
     return 0;
 }
 
-#endif /* !arch_is_big_endian */
+#endif /* !ARCH_IS_BIG_ENDIAN */

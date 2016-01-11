@@ -72,7 +72,7 @@ mem_full_alpha_device("image40", 40, 0, mem_open,
         *(bits32 *)(ptr) = (wxyz)
 /* Load the 5-word 40-bit-color cache. */
 /* Free variables: [m]dev, abcd, bcde, cdea, deab, earc. */
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #  define set_color40_cache(color, a, b, c, d, e)\
         mdev->color40.abcd = abcd = (color) >> 8, \
         mdev->color40.bcde = bcde = (abcd << 8) | (e),\
@@ -409,7 +409,7 @@ mem_true40_copy_color(gx_device * dev,
 /* Note that on a big-endian machine, this is the same as the */
 /* standard byte-oriented-device. */
 
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
 
 /* Procedures */
 declare_mem_procs(mem40_word_copy_mono, mem40_word_copy_color, mem40_word_fill_rectangle);
@@ -482,4 +482,4 @@ mem40_word_copy_color(gx_device * dev,
     return 0;
 }
 
-#endif /* !arch_is_big_endian */
+#endif /* !ARCH_IS_BIG_ENDIAN */

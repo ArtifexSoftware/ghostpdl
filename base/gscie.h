@@ -77,7 +77,7 @@
 #ifndef CIE_FIXED_FRACTION_BITS
 /* Take as many bits as we can without having to multiply in two pieces. */
 #  define CIE_FIXED_FRACTION_BITS\
-     ((arch_sizeof_long * 8 - gx_cie_log2_cache_size) / 2 - 1)
+     ((ARCH_SIZEOF_LONG * 8 - gx_cie_log2_cache_size) / 2 - 1)
 #endif
 
 /* From CIE_RENDER_TABLE_INTERPOLATE */
@@ -93,7 +93,7 @@
 /* in a positive int (i.e., leaving 1 bit for the sign), plus a little slop. */
 /* The values for interpolation are cie_cached_values by default. */
 #  define _cie_interpolate_bits\
-     min(arch_sizeof_int * 8 - gx_cie_log2_cache_size - 2, 10)
+     min(ARCH_SIZEOF_INT * 8 - gx_cie_log2_cache_size - 2, 10)
 #  define _cix(i) ((i) >> _cie_interpolate_bits)
 #  define _cif(i) ((int)(i) & ((1 << _cie_interpolate_bits) - 1))
 #  define cie_interpolate_between(v0, v1, i)\
@@ -130,7 +130,7 @@ typedef long cie_cached_value;
 /* lies between 0 and gx_cie_cache_size - 1.  If the intermediate result */
 /* might overflow, compute it in pieces (being a little sloppy). */
 #  define _cie_product_excess_bits\
-     (_cie_fixed_shift * 2 + gx_cie_log2_cache_size - (arch_sizeof_long * 8 - 1))
+     (_cie_fixed_shift * 2 + gx_cie_log2_cache_size - (ARCH_SIZEOF_LONG * 8 - 1))
 #  define cie_cached_product2int(v, factor, fbits)\
      (_cie_product_excess_bits > 0 ?\
       arith_rshift( (v) * arith_rshift(factor, _cie_product_excess_bits) +\

@@ -79,7 +79,7 @@ typedef struct gs_ref_memory_s gs_ref_memory_t;
  */
 typedef uint string_mark_unit;
 
-#define log2_sizeof_string_mark_unit arch_log2_sizeof_int
+#define log2_sizeof_string_mark_unit ARCH_LOG2_SIZEOF_INT
 /*
  * Define the quantum of relocation for strings, which determines
  * the quantum for reserving space.  This value must be a power of 2,
@@ -88,7 +88,7 @@ typedef uint string_mark_unit;
  */
 typedef uint string_reloc_offset;
 
-#define log2_string_data_quantum (arch_log2_sizeof_int + 4)
+#define log2_string_data_quantum (ARCH_LOG2_SIZEOF_INT + 4)
 #define string_data_quantum (1 << log2_string_data_quantum)
 /*
  * Define the quantum for reserving string space, including data,

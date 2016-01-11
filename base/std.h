@@ -25,18 +25,6 @@
 #include "arch.h"
 
 /*
- * Define lower-case versions of the architecture parameters for backward
- * compatibility.
- */
-#define arch_log2_sizeof_short ARCH_LOG2_SIZEOF_SHORT
-#define arch_log2_sizeof_int ARCH_LOG2_SIZEOF_INT
-#define arch_log2_sizeof_long ARCH_LOG2_SIZEOF_LONG
-#define arch_sizeof_ptr ARCH_SIZEOF_PTR
-#define arch_sizeof_float ARCH_SIZEOF_FLOAT
-#define arch_sizeof_double ARCH_SIZEOF_DOUBLE
-#define arch_is_big_endian ARCH_IS_BIG_ENDIAN
-#define arch_arith_rshift ARCH_ARITH_RSHIFT
-/*
  * Define the alignment that the memory manager must preserve.
  * We assume all alignment moduli are powers of 2.
  * NOTE: we require that malloc align blocks at least this strictly.
@@ -52,16 +40,10 @@
 #define ARCH_SIZEOF_LONG (1 << ARCH_LOG2_SIZEOF_LONG)
 #define ARCH_SIZEOF_LONG_LONG (1 << ARCH_LOG2_SIZEOF_LONG_LONG)
 #define ARCH_INTS_ARE_SHORT (ARCH_SIZEOF_INT == ARCH_SIZEOF_SHORT)
-/* Backward compatibility */
-#define arch_sizeof_short ARCH_SIZEOF_SHORT
-#define arch_sizeof_int ARCH_SIZEOF_INT
-#define arch_sizeof_long ARCH_SIZEOF_LONG
 
 /* Define whether we are on a large- or small-memory machine. */
 /* Currently, we assume small memory and 16-bit ints are synonymous. */
 #define ARCH_SMALL_MEMORY (ARCH_SIZEOF_INT <= 2)
-/* Backward compatibility */
-#define arch_small_memory ARCH_SMALL_MEMORY
 
 /* Define unsigned 16- and 32-bit types.  These are needed in */
 /* a surprising number of places that do bit manipulation. */
@@ -78,11 +60,11 @@ typedef ulong bits32;
 
 /* Minimum and maximum values for the signed types. */
 /* Avoid casts, to make them acceptable to strict ANSI compilers. */
-#define min_short (-1 << (arch_sizeof_short * 8 - 1))
+#define min_short (-1 << (ARCH_SIZEOF_SHORT * 8 - 1))
 #define max_short (~min_short)
-#define min_int (-1 << (arch_sizeof_int * 8 - 1))
+#define min_int (-1 << (ARCH_SIZEOF_INT * 8 - 1))
 #define max_int (~min_int)
-#define min_long (-1L << (arch_sizeof_long * 8 - 1))
+#define min_long (-1L << (ARCH_SIZEOF_LONG * 8 - 1))
 #define max_long (~min_long)
 
 #define min_int64_t (-((int64_t)1) << (sizeof(int64_t) * 8 - 1))
@@ -116,11 +98,11 @@ typedef ulong bits32;
 /* Define a reliable arithmetic right shift. */
 /* Must use arith_rshift_1 for a shift by a literal 1. */
 #define arith_rshift_slow(x,n) ((x) < 0 ? ~(~(x) >> (n)) : (x) >> (n))
-#if arch_arith_rshift == 2
+#if ARCH_ARITH_RSHIFT == 2
 #  define arith_rshift(x,n) ((x) >> (n))
 #  define arith_rshift_1(x) ((x) >> 1)
 #else
-#if arch_arith_rshift == 1      /* OK except for n=1 */
+#if ARCH_ARITH_RSHIFT == 1      /* OK except for n=1 */
 #  define arith_rshift(x,n) ((x) >> (n))
 #  define arith_rshift_1(x) arith_rshift_slow(x,1)
 #else

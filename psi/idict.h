@@ -247,7 +247,7 @@ uint dict_round_size_small(uint rsize);
 uint dict_round_size_large(uint rsize);
 
 /* Choose the algorithms depending on the size of memory. */
-#if arch_small_memory
+#if ARCH_SMALL_MEMORY
 #  define dict_hash_mod(h, s) dict_hash_mod_small(h, s)
 #  define dict_hash_mod_inline(h, s) dict_hash_mod_inline_small(h, s)
 #  define dict_round_size(s) dict_round_size_small(s)

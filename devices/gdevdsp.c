@@ -986,7 +986,7 @@ display_put_params(gx_device * dev, gs_param_list * plist)
          * devn_put_params, but we always use 64bpp,
          * so reset it to the the correct value.
          */
-        dev->color_info.depth = arch_sizeof_color_index * 8;
+        dev->color_info.depth = ARCH_SIZEOF_COLOR_INDEX * 8;
     }
 
     if (ecode >= 0) {
@@ -1128,8 +1128,8 @@ display_separation_encode_color(gx_device *dev, const gx_color_value colors[])
         color <<= bpc;
         color |= COLROUND_ROUND(colors[i]);
     }
-    if (bpc*ncomp < arch_sizeof_color_index * 8)
-        color <<= (arch_sizeof_color_index * 8 - ncomp * bpc);
+    if (bpc*ncomp < ARCH_SIZEOF_COLOR_INDEX * 8)
+        color <<= (ARCH_SIZEOF_COLOR_INDEX * 8 - ncomp * bpc);
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
 
@@ -1148,8 +1148,8 @@ display_separation_decode_color(gx_device * dev, gx_color_index color,
     COLDUP_VARS;
 
     COLDUP_SETUP(bpc);
-    if (bpc*ncomp < arch_sizeof_color_index * 8)
-        color >>= (arch_sizeof_color_index * 8 - ncomp * bpc);
+    if (bpc*ncomp < ARCH_SIZEOF_COLOR_INDEX * 8)
+        color >>= (ARCH_SIZEOF_COLOR_INDEX * 8 - ncomp * bpc);
     for (; i<ncomp; i++) {
         out[ncomp - i - 1] = COLDUP_DUP(color & mask);
         color >>= bpc;
@@ -1761,7 +1761,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
         case DISPLAY_COLORS_SEPARATION:
             if ((nFormat & DISPLAY_ENDIAN_MASK) != DISPLAY_BIGENDIAN)
                 return_error(gs_error_rangecheck);
-            bpp = arch_sizeof_color_index * 8;
+            bpp = ARCH_SIZEOF_COLOR_INDEX * 8;
             set_color_info(&dci, DISPLAY_MODEL_SEP, bpp/bpc, bpp,
                 maxvalue, maxvalue);
             if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8) {

@@ -131,7 +131,7 @@ win_map_rgb_color(gx_device * dev, const gx_color_value cv[])
                 gx_color_index color = ((r >> (gx_color_value_bits - 5)) << 11) +
                                        ((g >> (gx_color_value_bits - 6)) << 5) +
                                        (b >> (gx_color_value_bits - 5));
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
                 ushort color16 = (ushort)color;
 #else
                 ushort color16 = (ushort)((color << 8) | (color >> 8));
@@ -142,7 +142,7 @@ win_map_rgb_color(gx_device * dev, const gx_color_value cv[])
                 gx_color_index color = ((r >> (gx_color_value_bits - 5)) << 10) +
                                        ((g >> (gx_color_value_bits - 5)) << 5) +
                                        (b >> (gx_color_value_bits - 5));
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
                 ushort color15 = (ushort)color;
 #else
                 ushort color15 = (ushort)((color << 8) | (color >> 8));

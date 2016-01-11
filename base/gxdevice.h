@@ -64,7 +64,7 @@
 #endif
 
 /* Define parameters for machines with little dinky RAMs.... */
-#if arch_small_memory
+#if ARCH_SMALL_MEMORY
 #   define MAX_BITMAP 32000
 #   define BUFFER_SPACE 25000
 #   define MIN_MEMORY_LEFT 32000

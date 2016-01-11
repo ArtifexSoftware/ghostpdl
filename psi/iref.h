@@ -41,8 +41,8 @@ typedef struct ref_s ref;
  */
 typedef ushort ref_packed;
 
-#define log2_sizeof_ref_packed arch_log2_sizeof_short
-#define sizeof_ref_packed (1 << log2_sizeof_ref_packed)
+#define ARCH_LOG2_SIZEOF_REF_PACKED ARCH_LOG2_SIZEOF_SHORT
+#define ARCH_SIZEOF_REF_PACKED (1 << ARCH_LOG2_SIZEOF_REF_PACKED)
 
 /* PS integer objects default to 64 bit, and the relevant operator
  * C functions have code to allow the QL tests to pass when
@@ -498,7 +498,7 @@ struct ref_s {
  * faster dispatch in the interpreter -- see interp.h for more information).
  */
 #if r_type_shift == 8
-#  if arch_is_big_endian
+#  if ARCH_IS_BIG_ENDIAN
 #    define r_type(rp) (((const byte *)&((rp)->tas.type_attrs))[sizeof(ushort)-2])
 #  else
 #    define r_type(rp) (((const byte *)&((rp)->tas.type_attrs))[1])
@@ -606,7 +606,7 @@ struct ref_s {
               /*rsize*/ 0 } }
 
 /* Define the size of a ref. */
-#define arch_sizeof_ref sizeof(ref)
+#define ARCH_SIZEOF_REF sizeof(ref)
 /* Define the required alignment for refs. */
 /* We assume all alignment values are powers of 2. */
 #define ARCH_ALIGN_REF_MOD\
@@ -614,7 +614,7 @@ struct ref_s {
    (ARCH_ALIGN_PTR_MOD - 1)) + 1)
 
 /* Select reasonable values for PDF interpreter */
-/* The maximum array size cannot exceed max_uint/arch_sizeof_ref */
+/* The maximum array size cannot exceed max_uint/ARCH_SIZEOF_REF */
 /* because the allocator cannot allocate a block larger than max_uint. */
 #define max_array_size  (16*1024*1024)
 #define max_string_size (16*1024*1024)

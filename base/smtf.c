@@ -103,7 +103,7 @@ s_MTFD_process(stream_state * st, stream_cursor_read * pr,
                     byte *bp = &ss->prev.b[b];
 
                     *++q = first = *bp;
-#if arch_sizeof_long == 4
+#if ARCH_SIZEOF_LONG == 4
                     ss->prev.b[3] = v3;
 #endif
                     /* Move trailing entries individually. */
@@ -116,7 +116,7 @@ s_MTFD_process(stream_state * st, stream_cursor_read * pr,
                     for (; (b -= sizeof(long)) != 0;) {
                         bp -= sizeof(long);
 
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
                         *(ulong *) bp =
                             (*(ulong *) bp >> 8) |
                             ((ulong) bp[-1] << ((sizeof(long) - 1) * 8));
@@ -126,7 +126,7 @@ s_MTFD_process(stream_state * st, stream_cursor_read * pr,
 #endif
                     }
                 }
-#if arch_sizeof_long > 4	/* better be 8! */
+#if ARCH_SIZEOF_LONG > 4	/* better be 8! */
                 goto m7;
             case 7:
                 *++q = first = ss->prev.b[7];

@@ -346,7 +346,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     {
         uint out_size =
             iss.WidthOut * max(iss.spp_interp * (iss.BitsPerComponentOut / 8),
-                               arch_sizeof_color_index);
+                               ARCH_SIZEOF_COLOR_INDEX);
         /* Allocate based upon frac size (as BitsPerComponentOut=16) output scan
            line input plus output. The outsize may have an adjustment for
            word boundary on it. Need to account for that now */
@@ -831,7 +831,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 
             DECLARE_LINE_ACCUM_COPY(out, bpp, xo);
             stream_w.limit = out + width *
-                max(spp_decode * sizeofPixelOut, arch_sizeof_color_index) - 1;
+                max(spp_decode * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
             stream_w.ptr = stream_w.limit - width * spp_decode * sizeofPixelOut;
             psrc = (const frac *)(stream_w.ptr + 1);
             /* This is where the rescale takes place; this will consume the
@@ -1039,7 +1039,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
 
             DECLARE_LINE_ACCUM_COPY(out, bpp, xo);
             stream_w.limit = out + width *
-                max(spp_interp * sizeofPixelOut, arch_sizeof_color_index) - 1;
+                max(spp_interp * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
             stream_w.ptr = stream_w.limit - width * spp_interp * sizeofPixelOut;
             pinterp = (const unsigned short *)(stream_w.ptr + 1);
             /* This is where the rescale takes place; this will consume the
@@ -1196,7 +1196,7 @@ image_render_interpolate_landscape(gx_image_enum * penum,
             int status, code;
 
             stream_w.limit = out + width *
-                max(spp_decode * sizeofPixelOut, arch_sizeof_color_index) - 1;
+                max(spp_decode * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
             stream_w.ptr = stream_w.limit - width * spp_decode * sizeofPixelOut;
             psrc = (const frac *)(stream_w.ptr + 1);
             /* This is where the rescale takes place; this will consume the
@@ -1349,7 +1349,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
             int status;
 
             stream_w.limit = out + width *
-                max(spp_interp * sizeofPixelOut, arch_sizeof_color_index) - 1;
+                max(spp_interp * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
             stream_w.ptr = stream_w.limit - width * spp_interp * sizeofPixelOut;
             pinterp = (const unsigned short *)(stream_w.ptr + 1);
             /* This is where the rescale takes place; this will consume the

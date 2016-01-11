@@ -38,7 +38,7 @@
 /* Define the nominal size for alpha buffers. */
 #define abuf_nominal_SMALL 500
 #define abuf_nominal_LARGE 2000
-#if arch_small_memory
+#if ARCH_SMALL_MEMORY
 #  define abuf_nominal abuf_nominal_SMALL
 #else
 #ifdef DEBUG

@@ -629,7 +629,7 @@ mem_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
     }
 }
 
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
 
 /*
  * Swap byte order in a rectangular subset of a bitmap.  If store = true,
@@ -709,7 +709,7 @@ mem_word_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
     return code;
 }
 
-#endif /* !arch_is_big_endian */
+#endif /* !ARCH_IS_BIG_ENDIAN */
 
 /* Map a r-g-b color to a color index for a mapped color memory device */
 /* (2, 4, or 8 bits per pixel.) */

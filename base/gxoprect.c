@@ -232,7 +232,7 @@ gx_overprint_generic_fill_rectangle(
     /* allocate space for a scanline of color indices */
     pcolor_buff = (gx_color_index *)
                       gs_alloc_bytes( mem,
-                                      w *  arch_sizeof_color_index,
+                                      w *  ARCH_SIZEOF_COLOR_INDEX,
                                       "overprint generic fill rectangle" );
     if (pcolor_buff == 0)
         return gs_note_error(gs_error_VMerror);
@@ -562,9 +562,9 @@ gx_overprint_sep_fill_rectangle_2(
     /* set up color and retain mask pointers */
     pcolor = (byte *)&color;
     pmask = (byte *)&retain_mask;
-#if arch_is_big_endian
-    pcolor += arch_sizeof_color_index - byte_depth;
-    pmask += arch_sizeof_color_index - byte_depth;
+#if ARCH_IS_BIG_ENDIAN
+    pcolor += ARCH_SIZEOF_COLOR_INDEX - byte_depth;
+    pmask += ARCH_SIZEOF_COLOR_INDEX - byte_depth;
 #endif
 
     /* allocate a buffer for the returned data */

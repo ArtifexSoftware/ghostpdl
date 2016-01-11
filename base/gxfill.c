@@ -494,7 +494,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
             /*
              * Note that execution pass here only for character size
              * grater that MAX_LOCAL_SECTION and lesser than
-             * SMALL_CHARACTER. Therefore with !arch_small_memory
+             * SMALL_CHARACTER. Therefore with !ARCH_SMALL_MEMORY
              * the dynamic allocation only happens for characters
              * wider than 100 pixels.
              */

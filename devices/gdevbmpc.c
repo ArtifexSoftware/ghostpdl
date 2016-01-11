@@ -23,14 +23,14 @@
  */
 
 typedef ushort word;
-#if arch_sizeof_int == 4
+#if ARCH_SIZEOF_INT == 4
 typedef uint dword;
 #else
-#  if arch_sizeof_long == 4
+#  if ARCH_SIZEOF_LONG == 4
 typedef ulong dword;
 #  endif
 #endif
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #  define BMP_ASSIGN_WORD(a,v) a = ((v) >> 8) + ((v) << 8)
 #  define BMP_ASSIGN_DWORD(a,v)\
      a = ((v) >> 24) + (((v) >> 8) & 0xff00L) +\

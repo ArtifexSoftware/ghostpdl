@@ -142,7 +142,7 @@ struct line_list_s {
     /* small displacements. */
     /* Allocate a few active_lines locally */
     /* to avoid round trips through the allocator. */
-#if arch_small_memory
+#if ARCH_SMALL_MEMORY
 #  define MAX_LOCAL_ACTIVE 6	/* don't overburden the stack */
 #  define MAX_LOCAL_SECTION 50
 #else

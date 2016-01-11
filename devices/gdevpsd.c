@@ -1001,7 +1001,7 @@ psd_get_color_comp_index(gx_device * dev, const char * pname,
 /* ------ Private definitions ------ */
 
 /* All two-byte quantities are stored MSB-first! */
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #  define assign_u16(a,v) a = (v)
 #  define assign_u32(a,v) a = (v)
 #else

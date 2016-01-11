@@ -36,7 +36,7 @@
 /* Define the size of the tile buffer allocated on the stack. */
 #define tile_longs_LARGE 256
 #define tile_longs_SMALL 64
-#if arch_small_memory
+#if ARCH_SMALL_MEMORY
 #  define tile_longs_allocated tile_longs_SMALL
 #  define tile_longs tile_longs_SMALL
 #else

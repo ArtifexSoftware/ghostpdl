@@ -413,7 +413,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
          */
         m_tile = pdc->mask.m_tile;
         if (m_tile) {
-            if (p_tile && !(p_tile->depth & 7) && p_tile->depth <= arch_sizeof_color_index * 8) {
+            if (p_tile && !(p_tile->depth & 7) && p_tile->depth <= ARCH_SIZEOF_COLOR_INDEX * 8) {
                 int depth_bytes = p_tile->depth >> 3;
                 int width = p_tile->tbits.rep_width;
                 int skip = p_tile->tbits.raster -

@@ -25,7 +25,7 @@
 /*
  * Define the maximum number of components in a device color.
  * The minimum value is 4, to handle CMYK; the maximum value is
- * arch_sizeof_color_index * 8, since for larger values, there aren't enough
+ * ARCH_SIZEOF_COLOR_INDEX * 8, since for larger values, there aren't enough
  * bits in a gx_color_index to have even 1 bit per component.
  */
 #define GX_DEVICE_COLOR_MAX_COMPONENTS (ARCH_SIZEOF_GX_COLOR_INDEX * 8)
@@ -73,7 +73,7 @@ typedef GX_COLOR_INDEX_TYPE gx_color_index_data;
 
 /* Define the type for device color indices (pixel values). */
 typedef gx_color_index_data * gx_color_index;
-#define arch_sizeof_color_index arch_sizeof_ptr
+#define ARCH_SIZEOF_COLOR_INDEX ARCH_SIZEOF_PTR
 
 extern const gx_color_index_data gx_no_color_index_data;
 #define gx_no_color_index_values (&gx_no_color_index_data)
@@ -81,7 +81,7 @@ extern const gx_color_index_data gx_no_color_index_data;
 
 #else  /* !TEST_CINDEX_POINTER */
 
-#define arch_sizeof_color_index sizeof(gx_color_index_data)
+#define ARCH_SIZEOF_COLOR_INDEX sizeof(gx_color_index_data)
 
 /* Define the type for device color indices (pixel values). */
 typedef gx_color_index_data gx_color_index;

@@ -1166,7 +1166,7 @@ gx_dc_read_color(
         num_bytes = sizeof(gx_color_index) + 1;
     }
 
-    /* num_bytes > arch_sizeof_color_index, discard first byte */
+    /* num_bytes > ARCH_SIZEOF_COLOR_INDEX, discard first byte */
     for (i = 0; i < num_bytes; i++)
         color = (color << 8) | pdata[i];
     *pcolor = color;

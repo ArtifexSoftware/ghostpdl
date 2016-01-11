@@ -28,7 +28,7 @@
 
 /* Define masks for little-endian operation. */
 /* masks[i] has the first i bits off and the rest on. */
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
 const bits16 mono_copy_masks[17] = {
     0xffff, 0xff7f, 0xff3f, 0xff1f,
     0xff0f, 0xff07, 0xff03, 0xff01,
@@ -354,7 +354,7 @@ bits_bounding_box(const byte * data, uint height, uint raster,
     /* We know that the first and last rows are non-blank. */
 
     {
-        uint raster_longs = raster >> arch_log2_sizeof_long;
+        uint raster_longs = raster >> ARCH_LOG2_SIZEOF_LONG;
         uint left = raster_longs - 1, right = 0;
         ulong llong = 0, rlong = 0;
         const byte *q;
@@ -382,22 +382,22 @@ bits_bounding_box(const byte * data, uint height, uint raster,
 
         /* Do binary subdivision on edge longs.  We assume that */
         /* sizeof(long) = 4 or 8. */
-#if arch_sizeof_long > 8
+#if ARCH_SIZEOF_LONG > 8
         Error_longs_are_too_large();
 #endif
 
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #  define last_bits(n) ((1L << (n)) - 1)
 #  define shift_out_last(x,n) ((x) >>= (n))
 #  define right_justify_last(x,n) DO_NOTHING
 #else
-#  define last_bits(n) (-1L << ((arch_sizeof_long * 8) - (n)))
+#  define last_bits(n) (-1L << ((ARCH_SIZEOF_LONG * 8) - (n)))
 #  define shift_out_last(x,n) ((x) <<= (n))
-#  define right_justify_last(x,n) (x) >>= ((arch_sizeof_long * 8) - (n))
+#  define right_justify_last(x,n) (x) >>= ((ARCH_SIZEOF_LONG * 8) - (n))
 #endif
 
-        left <<= arch_log2_sizeof_long + 3;
-#if arch_sizeof_long == 8
+        left <<= ARCH_LOG2_SIZEOF_LONG + 3;
+#if ARCH_SIZEOF_LONG == 8
         if (llong & ~last_bits(32))
             shift_out_last(llong, 32);
         else
@@ -417,8 +417,8 @@ bits_bounding_box(const byte * data, uint height, uint raster,
         else
             left += first_1[(byte) llong] + 4;
 
-        right <<= arch_log2_sizeof_long + 3;
-#if arch_sizeof_long == 8
+        right <<= ARCH_LOG2_SIZEOF_LONG + 3;
+#if ARCH_SIZEOF_LONG == 8
         if (!(rlong & last_bits(32)))
             shift_out_last(rlong, 32);
         else
@@ -498,7 +498,7 @@ bits_extract_plane(const bits_plane_t *dest /*write*/,
 
                 *dst++ =
                     byte_acegbdfh_to_abcdefgh[(
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
                     (sword >> 21) | (sword >> 14) | (sword >> 7) | sword
 #else
                     (sword << 3) | (sword >> 6) | (sword >> 15) | (sword >> 24)
@@ -589,7 +589,7 @@ bits_expand_plane(const bits_plane_t *dest /*write*/,
     switch (loop_case) {
 
     case EXPAND_8_TO_32: {
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #  define word_shift (shift)
 #else
         int word_shift = 24 - shift;

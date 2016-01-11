@@ -136,7 +136,7 @@ struct gx_ht_cache_s {
 #define max_ht_cached_tiles_SMALL 256
 #define max_ht_cache_bits_size_SMALL 8192	/* enough for 256 levels 8x8 */
 
-#if arch_small_memory
+#if ARCH_SMALL_MEMORY
 #  define max_ht_cached_tiles max_ht_cached_tiles_SMALL
 #  define max_ht_cache_bits_size max_ht_cache_bits_size_SMALL
 #else

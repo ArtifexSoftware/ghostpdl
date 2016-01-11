@@ -820,7 +820,7 @@ dict_grow(ref * pdref, dict_stack_t *pds)
         new_size *= 2;
     else
         new_size += new_size / 2;
-#if arch_sizeof_int < arch_sizeof_long
+#if ARCH_SIZEOF_INT < ARCH_SIZEOF_LONG
     if (new_size > max_uint)
         new_size = max_uint;
 #endif

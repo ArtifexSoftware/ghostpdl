@@ -305,7 +305,7 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
             make_mark(obj);
         }
         return;
-    } else if (num_refs >= (mem->large_size / arch_sizeof_ref - 1)) {
+    } else if (num_refs >= (mem->large_size / ARCH_SIZEOF_REF - 1)) {
         /* See if this array has a chunk all to itself. */
         /* We only make this check when freeing very large objects, */
         /* so it doesn't need to be cheap. */

@@ -36,7 +36,7 @@
 
 #define tile_clip_buffer_request 16384	/* enough for 2400 dpi up to 54" wide */
 #define tile_clip_buffer_size\
-  ((tile_clip_buffer_request / arch_sizeof_long) * arch_sizeof_long)
+  ((tile_clip_buffer_request / ARCH_SIZEOF_LONG) * ARCH_SIZEOF_LONG)
 typedef struct gx_device_mask_clip_s {
     gx_device_forward_common;	/* target is set by client */
     gx_strip_bitmap tiles;
@@ -46,7 +46,7 @@ typedef struct gx_device_mask_clip_s {
     /* Ensure that the buffer is long-aligned. */
     union _b {
         byte bytes[tile_clip_buffer_size];
-        ulong longs[tile_clip_buffer_size / arch_sizeof_long];
+        ulong longs[tile_clip_buffer_size / ARCH_SIZEOF_LONG];
     } buffer;
 } gx_device_mask_clip;
 

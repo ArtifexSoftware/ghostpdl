@@ -659,7 +659,7 @@ const overprint_device_t    gs_overprint_device = {
  * takes advantage of the fact that depths that are > 8 must be a multiple
  * of 8 and <= 64
  */
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
 
 static gx_color_index
 swap_color_index(int depth, gx_color_index color)
@@ -697,7 +697,7 @@ swap_color_index(int depth, gx_color_index color)
     return color;
 }
 
-#endif  /* !arch_is_big_endian */
+#endif  /* !ARCH_IS_BIG_ENDIAN */
 
 /*
  * Update the retain_mask field to reflect the information in the
@@ -709,7 +709,7 @@ set_retain_mask(overprint_device_t * opdev)
 {
     int             i, ncomps = opdev->color_info.num_components;
     gx_color_index  drawn_comps = opdev->drawn_comps, retain_mask = 0;
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
     int             depth = opdev->color_info.depth;
 #endif
 
@@ -717,7 +717,7 @@ set_retain_mask(overprint_device_t * opdev)
         if ((drawn_comps & 0x1) == 0)
             retain_mask |= opdev->color_info.comp_mask[i];
     }
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
     if (depth > 8)
         retain_mask = swap_color_index(depth, retain_mask);
 #endif
@@ -1217,7 +1217,7 @@ overprint_sep_fill_rectangle(
          * bitmap. This is required only for littl-endian processors, and
          * then only if the depth > 8.
          */
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
         if (depth > 8)
             color = swap_color_index(depth, color);
 #endif

@@ -521,7 +521,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, double llx, double lly,
         static const fixed max_cdim[3] =
         {
 #define max_cd(n)\
-            (fixed_1 << (arch_sizeof_short * 8 - n)) - (fixed_1 >> n) * 3
+            (fixed_1 << (ARCH_SIZEOF_SHORT * 8 - n)) - (fixed_1 >> n) * 3
             max_cd(0), max_cd(1), max_cd(2)
 #undef max_cd
         };
@@ -1468,7 +1468,7 @@ show_state_setup(gs_show_enum * penum)
             double fdx = pgs->char_tm.tx - pgs->ctm.tx;
             double fdy = pgs->char_tm.ty - pgs->ctm.ty;
 
-#define int_bits (arch_sizeof_int * 8 - 1)
+#define int_bits (ARCH_SIZEOF_INT * 8 - 1)
             if (!(f_fits_in_bits(fdx, int_bits) &&
                   f_fits_in_bits(fdy, int_bits))
                 )

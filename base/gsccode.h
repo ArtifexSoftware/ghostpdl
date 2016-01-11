@@ -74,7 +74,7 @@ typedef ulong gs_char;
 typedef ulong gs_glyph;
 
 #define GS_NO_GLYPH ((gs_glyph)0x7fffffff)
-#if arch_sizeof_long > 4
+#if ARCH_SIZEOF_LONG > 4
 #  define GS_MIN_CID_GLYPH ((gs_glyph)0x80000000L)
 #else
 /* Avoid compiler warnings about signed/unsigned constants. */

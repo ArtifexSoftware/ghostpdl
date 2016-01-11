@@ -266,7 +266,7 @@ mgrN_print_page(gx_device_printer *pdev, FILE *pstream)
                mgr->clut[i].red    = mgr->clut[i].green = mgr->clut[i].blue = clut2mgr(mgr->bgrey256table[i], 8);
             }
         }
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
         swap_bwords( (unsigned char *) mgr->clut, sizeof( struct nclut ) * i );
 #endif
         if ( fwrite(&mgr->clut, sizeof(struct nclut), i, pstream) < i )
@@ -351,7 +351,7 @@ cmgrN_print_page(gx_device_printer *pdev, FILE *pstream)
                mgr->clut[i].blue   = clut2mgr(prgb[2], 16);
             }
         }
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
         swap_bwords( (unsigned char *) mgr->clut, sizeof( struct nclut ) * i );
 #endif
         if ( fwrite(&mgr->clut, sizeof(struct nclut), i, pstream) < i )

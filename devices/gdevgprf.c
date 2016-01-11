@@ -646,7 +646,7 @@ gprf_setup(gprf_write_ctx *xc, gx_device_printer *pdev, FILE *file, int w, int h
 }
 
 /* All multi-byte quantities are stored LSB-first! */
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #  define assign_u16(a,v) a = ((v) >> 8) + ((v) << 8)
 #  define assign_u32(a,v) a = (((v) >> 24) & 0xff) + (((v) >> 8) & 0xff00) + (((v) & 0xff00) << 8) + (((v) & 0xff) << 24)
 #else

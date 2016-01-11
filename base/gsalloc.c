@@ -1314,7 +1314,7 @@ alloc_obj(gs_ref_memory_t *mem, ulong lsize, gs_memory_type_ptr_t pstype,
                                 "large object chunk");
 
         if (
-#if arch_sizeof_long > arch_sizeof_int
+#if ARCH_SIZEOF_LONG > ARCH_SIZEOF_INT
             asize > max_uint
 #else
             asize < lsize
@@ -1829,7 +1829,7 @@ alloc_acquire_chunk(gs_ref_memory_t * mem, ulong csize, bool has_strings,
     chunk_t *cp;
     byte *cdata;
 
-#if arch_sizeof_long > arch_sizeof_int
+#if ARCH_SIZEOF_LONG > ARCH_SIZEOF_INT
     /* If csize is larger than max_uint, punt. */
     if (csize != (uint) csize)
         return 0;

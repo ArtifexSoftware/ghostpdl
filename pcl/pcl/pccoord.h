@@ -23,7 +23,7 @@
  * Following the PCL documentation, we represent coordinates internally in
  * centipoints (1/7200").
  */
-#if arch_sizeof_int == 2
+#if ARCH_SIZEOF_INT == 2
 typedef long coord;
 #else
 typedef int coord;

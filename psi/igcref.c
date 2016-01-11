@@ -232,7 +232,7 @@ refs_set_reloc(obj_header_t * hdr, uint reloc, uint size)
              */
 #define all_marked (align_packed_per_ref * lp_mark)
 # if align_packed_per_ref == 2
-#  if arch_sizeof_int == arch_sizeof_short * 2
+#  if ARCH_SIZEOF_INT == ARCH_SIZEOF_SHORT * 2
 #    undef all_marked
 #    define all_marked ( (lp_mark << (sizeof(short) * 8)) + lp_mark )
 #    define marked (*(int *)rp & all_marked)
@@ -326,7 +326,7 @@ refs_set_reloc(obj_header_t * hdr, uint reloc, uint size)
               (ulong) (hdr + 1), size, freed);
     if (freed == size)
         return false;
-#if arch_sizeof_int > arch_sizeof_short
+#if ARCH_SIZEOF_INT > ARCH_SIZEOF_SHORT
     /*
      * If the final relocation can't fit in the r_size field
      * (which can't happen if the object shares a chunk with

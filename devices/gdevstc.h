@@ -31,7 +31,7 @@
 #include "gsstate.h"
 
 /*** Private Type for 32Bit-Pixels ***/
-#if     arch_log2_sizeof_int < 2  /* int is too small */
+#if     ARCH_LOG2_SIZEOF_INT < 2  /* int is too small */
    typedef unsigned long stc_pixel;
 #else                             /* int is sufficient */
    typedef unsigned int  stc_pixel;

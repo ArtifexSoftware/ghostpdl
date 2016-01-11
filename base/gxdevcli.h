@@ -321,7 +321,7 @@ typedef struct gx_device_color_info_s {
 
     /*
      * The number of bits of gx_color_index actually used.
-     * This must be <= arch_sizeof_color_index, which is usually 64.
+     * This must be <= ARCH_SIZEOF_COLOR_INDEX, which is usually 64.
      * Note that we now have planar devices which can support much more.
      * Changing this to a ushort to reflect this.
      */

@@ -85,7 +85,7 @@ t4693d_print_page(gx_device_printer *dev, FILE *ps_stream)
         int checksum;
         int lnum;
         int i;
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
         byte swap;
 #endif
 
@@ -135,7 +135,7 @@ t4693d_print_page(gx_device_printer *dev, FILE *ps_stream)
                                 data[i] &= 0x3f;
                                 break;
                         case 16:
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
                                 data[i] &= 0x0f;
 #else
                                 swap = data[i];

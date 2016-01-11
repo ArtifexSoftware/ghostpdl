@@ -61,7 +61,7 @@ mem_full_alpha_device("image64", 64, 0, mem_open,
 #define put8(ptr, abcd, efgh)\
         (ptr)[0] = abcd, (ptr)[1] = efgh
 /* Free variables: [m]dev, abcd, degh. */
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 /* Unpack a color into 32 bit chunks. */
 #  define declare_unpack_color(abcd, efgh, color)\
         bits32 abcd = (bits32)((color) >> 32);\
@@ -336,7 +336,7 @@ mem_true64_copy_color(gx_device * dev,
 /* Note that on a big-endian machine, this is the same as the */
 /* standard byte-oriented-device. */
 
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
 
 /* Procedures */
 declare_mem_procs(mem64_word_copy_mono, mem64_word_copy_color, mem64_word_fill_rectangle);
@@ -409,4 +409,4 @@ mem64_word_copy_color(gx_device * dev,
     return 0;
 }
 
-#endif /* !arch_is_big_endian */
+#endif /* !ARCH_IS_BIG_ENDIAN */

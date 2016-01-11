@@ -74,7 +74,7 @@ typedef struct stream_hc_state_s {
     stream_hc_state_common;
 } stream_hc_state;
 
-#define hc_bits_size (arch_sizeof_int * 8)
+#define hc_bits_size (ARCH_SIZEOF_INT * 8)
 #define s_hce_init_inline(ss)\
   ((ss)->bits = 0, (ss)->bits_left = hc_bits_size)
 #define s_hcd_init_inline(ss)\

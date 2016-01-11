@@ -83,7 +83,7 @@ mem_full_alpha_device("image24", 24, 0, mem_open,
         *(bits32 *)(ptr) = (wxyz)
 /* Load the 3-word 24-bit-color cache. */
 /* Free variables: [m]dev, rgbr, gbrg, brgb. */
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #  define set_color24_cache(crgb, r, g, b)\
         mdev->color24.rgbr = rgbr = ((bits32)(crgb) << 8) | (r),\
         mdev->color24.gbrg = gbrg = (rgbr << 8) | (g),\
@@ -536,7 +536,7 @@ mem_true24_copy_alpha(gx_device * dev, const byte * base, int sourcex,
 /* Note that on a big-endian machine, this is the same as the */
 /* standard byte-oriented-device. */
 
-#if !arch_is_big_endian
+#if !ARCH_IS_BIG_ENDIAN
 
 /* Procedures */
 declare_mem_procs(mem24_word_copy_mono, mem24_word_copy_color, mem24_word_fill_rectangle);
@@ -609,4 +609,4 @@ mem24_word_copy_color(gx_device * dev,
     return 0;
 }
 
-#endif /* !arch_is_big_endian */
+#endif /* !ARCH_IS_BIG_ENDIAN */

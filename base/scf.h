@@ -40,7 +40,7 @@
  * hence 1.5 * ceil(N / 2560) bytes.  Taking the largest safe stream
  * buffer size as 32K, we arrive at the following maximum width:
  */
-#if arch_sizeof_int > 2
+#if ARCH_SIZEOF_INT > 2
 #  define cfe_max_width (2560 * 32000 * 2 / 3)
 #else
 #  define cfe_max_width (max_int - 40)	/* avoid overflows */
@@ -154,7 +154,7 @@ extern const cfd_node cf_uncompressed_decode[];
 
 #if defined(SKIP_PIXELS_USING_INTS) && (ARCH_LOG2_SIZEOF_INT >= 2) && (ARCH_ALIGN_INT_MOD <= 4) && (ARCH_LOG2_SIZEOF_SHORT >= 1) && (ARCH_ALIGN_SHORT_MOD <= 2)
 
-#if arch_is_big_endian
+#if ARCH_IS_BIG_ENDIAN
 #define BYTE0OF2(S) ((byte)(S>>8))
 #define BYTE1OF2(S) ((byte)S)
 #define BYTE0OF4(S) ((byte)(S>>24))
