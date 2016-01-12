@@ -217,7 +217,7 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 #endif
         }
     }
-    while ((arg = arg_next(&args, &code, minst->heap)) != 0) {
+    while ((code = arg_next(&args, (const char **)&arg, minst->heap)) > 0) {
         switch (*arg) {
             case '-':
                 code = swproc(minst, arg, &args);
@@ -394,7 +394,9 @@ run_stdin:
             /* FALLTHROUGH */
         case '@':               /* ditto with @-expansion */
             {
-                const char *psarg = arg_next(pal, &code, minst->heap);
+                char *psarg;
+
+                code = arg_next(pal, (const char **)&psarg, minst->heap);
 
                 if (code < 0)
                     return gs_error_Fatal;
@@ -411,7 +413,7 @@ run_stdin:
                 if (code >= 0)
                     code = run_string(minst, "userdict/ARGUMENTS[", 0);
                 if (code >= 0)
-                    while ((arg = arg_next(pal, &code, minst->heap)) != 0) {
+                    while ((code = arg_next(pal, (const char **)&arg, minst->heap)) > 0) {
                         code = runarg(minst, "", arg, "", runInit);
                         if (code < 0)
                             break;
@@ -462,7 +464,7 @@ run_stdin:
                 if (code < 0)
                     return code;
                 pal->expand_ats = false;
-                while ((arg = arg_next(pal, &code, minst->heap)) != 0) {
+                while ((code = arg_next(pal, (const char **)&arg, minst->heap)) > 0) {
                     if (arg[0] == '@' ||
                         (arg[0] == '-' && !isdigit((unsigned char)arg[1]))
                         )
@@ -568,7 +570,7 @@ run_stdin:
                 const char *path;
 
                 if (arg[0] == 0) {
-                    path = arg_next(pal, &code, minst->heap);
+                    code = arg_next(pal, (const char **)&path, minst->heap);
                     if (code < 0)
                         return code;
                 } else
@@ -631,7 +633,7 @@ run_stdin:
                 int len;
 
                 if (arg[0] == 0) {
-                    adef = arg_next(pal, &code, minst->heap);
+                    code = arg_next(pal, (const char **)&adef, minst->heap);
                     if (code < 0)
                         return code;
                 } else

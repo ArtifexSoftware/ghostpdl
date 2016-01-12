@@ -180,24 +180,33 @@ static int get_codepoint(FILE *file, const char **astr, arg_list *pal, arg_sourc
 
 /* Get the next arg from a list. */
 /* Note that these are not copied to the heap. */
-const char *
-arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
+/* returns:
+ * >0 - valid argument
+ *  0 - arguments exhausted
+ * <0 - error condition
+ * *argstr is *always* set: to the arg string if it is valid,
+ * or to NULL otherwise
+ */
+int
+arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
 {
     arg_source *pas;
     FILE *f;
     const char *astr = 0; /* initialized only to pacify gcc */
     char *cstr;
-    const char *result;
     int c;
     int i;
     bool in_quote, eol;
 
+    *argstr = NULL;
+
   top:pas = &pal->sources[pal->depth - 1];
     if (pal->depth == 0) {
-        if (pal->argn <= 0) /* all done */
+        if (pal->argn <= 0) { /* all done */
             return 0;
+        }
         pal->argn--;
-        result = *(pal->argp++);
+        *argstr = *(pal->argp++);
         goto at;
     }
     if (pas->is_file)
@@ -208,11 +217,10 @@ arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
         /* assert(pas->u.s.decoded); */
         if (strlen(pas->u.s.str) >= arg_str_max) {
             errprintf(errmem, "Command too long: %s\n", pas->u.s.str);
-            *code = gs_error_Fatal;
-            return NULL;
+            return gs_error_Fatal;
         } else {
             strcpy(pal->cstr, pas->u.s.str);
-            result = pal->cstr;
+            *argstr = pal->cstr;
             if (pas->u.s.memory)
                 gs_free_object(pas->u.s.memory, pas->u.s.chars, "arg_next");
             pal->depth--;
@@ -221,7 +229,7 @@ arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
         }
     else
         astr = pas->u.s.str, f = NULL;
-    result = cstr = pal->cstr;
+    *argstr = cstr = pal->cstr;
 #define is_eol(c) (c == '\r' || c == '\n')
     i = 0;
     in_quote = false;
@@ -233,8 +241,7 @@ arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
                 cstr[i] = 0;
                 errprintf(errmem,
                           "Unterminated quote in @-file: %s\n", cstr);
-                *code = gs_error_Fatal;
-                return NULL;
+                return_error(gs_error_Fatal);
             }
             if (i == 0) {
                 /* EOF before any argument characters. */
@@ -285,8 +292,7 @@ arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
             if (i >= arg_str_max - 1) {
                 cstr[i] = 0;
                 errprintf(errmem, "Command too long: %s\n", cstr);
-                *code = gs_error_Fatal;
-                return NULL;
+                return_error(gs_error_Fatal);
             }
             cstr[i++] = '\\';
             eol = false;
@@ -296,8 +302,7 @@ arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
         if (i >= arg_str_max - 1) {
             cstr[i] = 0;
             errprintf(errmem, "Command too long: %s\n", cstr);
-            *code = gs_error_Fatal;
-            return NULL;
+            return_error(gs_error_Fatal);
         }
         /* Allow quotes to protect whitespace. */
         /* (special cases have already been handled and don't reach this point) */
@@ -315,18 +320,17 @@ arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
     cstr[i] = 0;
     if (f == NULL)
         pas->u.s.str = astr;
-  at:if (pal->expand_ats && result[0] == '@') {
+  at:if (pal->expand_ats && *argstr[0] == '@') {
+        char *fname;
         if (pal->depth == arg_depth_max) {
             errprintf(errmem, "Too much nesting of @-files.\n");
-            *code = gs_error_Fatal;
-            return NULL;
+            return_error(gs_error_Fatal);
         }
-        result++; /* skip @ */
-        f = (*pal->arg_fopen) (result, pal->fopen_data);
+        fname = (char *)*argstr + 1; /* skip @ */
+        f = (*pal->arg_fopen) (fname, pal->fopen_data);
         if (f == NULL) {
-            errprintf(errmem, "Unable to open command line file %s\n", result);
-            *code = gs_error_Fatal;
-            return NULL;
+            errprintf(errmem, "Unable to open command line file %s\n", *argstr);
+            return gs_error_Fatal;
         }
         pal->depth++;
         pas++;
@@ -334,7 +338,8 @@ arg_next(arg_list * pal, int *code, const gs_memory_t *errmem)
         pas->u.file = f;
         goto top;
     }
-    return result;
+
+    return 1;
 }
 
 /* Copy an argument string to the heap. */

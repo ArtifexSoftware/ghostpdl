@@ -88,7 +88,14 @@ void arg_finit(arg_list * pal);
  * Get the next arg from a list.
  * Note that these are not copied to the heap.
  */
-const char *arg_next(arg_list * pal, int *code, const gs_memory_t *errmem);
+/* returns:
+ * >0 - valid argument
+ *  0 - arguments exhausted
+ * <0 - error condition
+ * *argstr is *always* set: to the arg string if it is valid,
+ * or to NULL otherwise
+ */
+int arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem);
 
 /* Copy an argument string to the heap. */
 char *arg_copy(const char *str, gs_memory_t * mem);

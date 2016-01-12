@@ -946,9 +946,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
     char *arg;
 
     gs_c_param_list_write_more(params);
-    while ((arg = (char *)arg_next(pal, &code, pmi->memory)) != 0 && *arg == '-') { /* just - read from stdin */
-        if (code < 0)
-            break;
+    while ((code = arg_next(pal, (const char **)&arg, pmi->memory)) > 0 && *arg == '-') { /* just - read from stdin */
         if (arg[1] == '\0')
             break;
         arg += 2;
@@ -1307,7 +1305,7 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     gs_param_string str;
 
                     if (arg[0] == 0) {
-                        adef = arg_next(pal, &code, pmi->memory);
+                        code = arg_next(pal, (const char **)&adef, pmi->memory);
                         if (code < 0)
                             break;
                     } else
