@@ -725,6 +725,8 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
                     return_error(gs_error_unregistered); /* Unimplemented. */
                 if (exec_cont != 0)
                     return_error(gs_error_unregistered); /* Must not happen. */
+                if (code < 0)
+                    return op_show_free(i_ctx_p, code);
                 return code;
             }
         default:		/* error */
