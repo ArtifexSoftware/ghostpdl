@@ -385,14 +385,14 @@ image_close(IMAGE *img)
 void
 register_class(void)
 {
-    WNDCLASS wndclass;
+    WNDCLASS wndclass = { 0 };
     HINSTANCE hInstance = GetModuleHandle(NULL);
 
     /* register the window class for graphics */
     wndclass.style = CS_HREDRAW | CS_VREDRAW;
     wndclass.lpfnWndProc = WndImg2Proc;
     wndclass.cbClsExtra = 0;
-    wndclass.cbWndExtra = sizeof(LONG);
+    wndclass.cbWndExtra = sizeof(void*);
     wndclass.hInstance = hInstance;
     wndclass.hIcon = LoadIcon(hInstance,(LPSTR)MAKEINTRESOURCE(GSIMAGE_ICON));
     wndclass.hCursor = LoadCursor((HINSTANCE)NULL, IDC_ARROW);
@@ -1164,9 +1164,9 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
          * initializes it here.
          */
         img = (IMAGE *)(((CREATESTRUCT *)lParam)->lpCreateParams);
-        SetWindowLong(hwnd, 0, (LONG)img);
+        SetWindowLongPtr(hwnd, 0, (LONG_PTR)img);
     }
-    img = (IMAGE *)GetWindowLong(hwnd, 0);
+    img = (IMAGE *)GetWindowLongPtr(hwnd, 0);
 
     switch(message) {
         case WM_SYSCOMMAND:
