@@ -107,7 +107,7 @@ $(GLGEN)jconfig1.h : $(ECHOGS_XE) $(JPEG_MAK) $(JPEG_MAK) $(MAKEDIRS)
 	$(EXP)$(ECHOGS_XE) -w $(GLGEN)jconfig1.h -x 23 include -x 203c jconfig.h -x 3e
 	$(RMN_) $(GLGEN)jconfig0.h $(GLGEN)jconfig.h
 
-$(GLGEN)jconfig.h : $(GLGEN)jconfig0.h $(JPEG_MAK) $(MAKEDIRS)
+$(GLGEN)jconfig.h : $(GLGEN)jconfig0.h $(arch_h) $(JPEG_MAK) $(MAKEDIRS)
 	$(CP_) $(GLGEN)jconfig0.h $(GLGEN)jconfig.h
 
 $(GLGEN)jmorecf_.h : $(GLGEN)jmorecf$(SHARE_JPEG).h $(JPEG_MAK) $(MAKEDIRS)
