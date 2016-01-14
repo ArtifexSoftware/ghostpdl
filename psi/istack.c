@@ -141,7 +141,18 @@ ref_stack_set_error_codes(ref_stack_t *pstack, int underflow_error,
 int
 ref_stack_set_max_count(ref_stack_t *pstack, long nmax)
 {
-    uint nmin = ref_stack_count_inline(pstack);
+    long nmin;
+
+    /* Bypass checking if we're setting the amximum to -1 'no limits' */
+    if (nmax == -1) {
+        pstack->max_stack.value.intval = nmax;
+        return 0;
+    }
+
+    /* check how many items we already have on the stack, don't allow
+     * a maximum less than this.
+     */
+    nmin = ref_stack_count_inline(pstack);
 
     if (nmax < nmin)
         nmax = nmin;
@@ -510,11 +521,14 @@ ref_stack_push_block(ref_stack_t *pstack, uint keep, uint add)
         return_error(gs_error_Fatal);
     /* Check for overflowing the maximum size, */
     /* or expansion not allowed.  */
-    if (pstack->extension_used + (pstack->top - pstack->bot) + add >=
-        pstack->max_stack.value.intval ||
-        !params->allow_expansion
-        )
-        return_error(params->overflow_error);
+    /* Or specifically allowing unlimited expansion */
+    if (pstack->max_stack.value.intval > 0) {
+        if (pstack->extension_used + (pstack->top - pstack->bot) + add >=
+            pstack->max_stack.value.intval ||
+            !params->allow_expansion
+            )
+            return_error(params->overflow_error);
+    }
     code = gs_alloc_ref_array(pstack->memory, &next, 0,
                               params->block_size, "ref_stack_push_block");
     if (code < 0)

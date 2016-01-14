@@ -183,6 +183,12 @@ currentdict /runpdfstring .undef
    pdfdict begin
    pdfopen begin
    /CumulativePageCount currentpagedevice /PageCount get def
+
+   %% Bug #696487, allow dict stack to grow without limit, as these PDF
+   %% files have stupidly deep gsave nesting and we need a dictionary per gsave
+   %% at the moment.
+   %% Remove ths if bug #696511 is ever completed (move ExtGstate parameters into gstate)
+   <</MaxDictStack -1>> setuserparams
 } bind def
 
 /runpdfpagerange {	% - runpdfpagerange <firstpage#> <lastpage#>
