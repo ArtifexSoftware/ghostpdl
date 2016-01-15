@@ -936,6 +936,14 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             goto nr;
         case '-':
             sign = -1;
+            if(i_ctx_p->scanner_options & SCAN_PDF_INV_NUM) {
+                do {
+                    if (*(sptr + 1) == '-') {
+                        sptr++;
+                    } else
+                        break;
+                } while (1);
+            }
             goto nr;
 
             /* Check for a binary object */
