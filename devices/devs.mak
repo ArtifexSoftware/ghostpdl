@@ -1224,12 +1224,22 @@ $(libtiff_dev) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV2) $(DD)xpswrite $(xpswrite_)
 	$(ADDMOD) $(DD)xpswrite -include $(GLD)vector $(tiff_i_)
 
-$(DEVOBJ)gdevxps.$(OBJ) : $(DEVVECSRC)gdevxps.c $(gdevvec_h) \
+$(DEVOBJ)gdevxps_1.$(OBJ) : $(DEVVECSRC)gdevxps.c $(gdevvec_h) \
+$(string__h) $(stdio__h) $(libtiff_dev) $(gx_h) $(gserrors_h) \
+$(gxpath_h) $(gzcpath_h) $(stream_h) \
+$(stdint__h) $(gdevtifs_h) $(gsicc_create_h) $(gsicc_cache_h) \
+$(gximdecode_h) $(DEVS_MAK) $(MAKEDIRS)
+	$(XPSDEVCC) $(I_)$(TI_)$(_I) $(GLO_)gdevxps_1.$(OBJ) $(C_) $(DEVVECSRC)gdevxps.c
+
+$(DEVOBJ)gdevxps_0.$(OBJ) : $(DEVVECSRC)gdevxps.c $(gdevvec_h) \
 $(string__h) $(stdio__h) $(libtiff_dev) $(gx_h) $(gserrors_h) \
 $(gxpath_h) $(gzcpath_h) $(stream_h) $(zlib_h) \
 $(stdint__h) $(gdevtifs_h) $(gsicc_create_h) $(gsicc_cache_h) \
 $(gximdecode_h) $(DEVS_MAK) $(MAKEDIRS)
-	$(XPSDEVCC) $(I_)$(TI_)$(_I) $(GLO_)gdevxps.$(OBJ) $(C_) $(DEVVECSRC)gdevxps.c
+	$(XPSDEVCC) $(I_)$(TI_)$(_I) $(GLO_)gdevxps_0.$(OBJ) $(C_) $(DEVVECSRC)gdevxps.c
+
+$(DEVOBJ)gdevxps.$(OBJ) : $(DEVOBJ)gdevxps_$(SHARE_ZLIB).$(OBJ) $(DEVS_MAK) $(MAKEDIRS)
+	$(CP_) $(DEVOBJ)gdevxps_$(SHARE_ZLIB).$(OBJ) $(DEVOBJ)gdevxps.$(OBJ)
 
 ###### --------------------- Raster file formats --------------------- ######
 
@@ -1398,12 +1408,22 @@ gprf_=$(DEVOBJ)gdevgprf.$(OBJ) $(GLOBJ)gdevdevn.$(OBJ) $(GLOBJ)gsequivc.$(OBJ) $
 $(DD)gprf.dev : $(gprf_) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV) $(DD)gprf $(gprf_)
 
-$(DEVOBJ)gdevgprf.$(OBJ) : $(DEVSRC)gdevgprf.c $(PDEVH) $(math__h)\
+$(DEVOBJ)gdevgprf_1.$(OBJ) : $(DEVSRC)gdevgprf.c $(PDEVH) $(math__h)\
+ $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
+ $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h) \
+ $(gscms_h) $(gsicc_cache_h) $(gsicc_manage_h) $(gxgetbit_h)\
+ $(gdevppla_h) $(DEVS_MAK) $(MAKEDIRS)
+	$(DEVCC) $(DEVO_)gdevgprf_1.$(OBJ) $(II)$(ZI_)$(_I) $(C_) $(DEVSRC)gdevgprf.c
+
+$(DEVOBJ)gdevgprf_0.$(OBJ) : $(DEVSRC)gdevgprf.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
  $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h) $(zlib_h)\
  $(gscms_h) $(gsicc_cache_h) $(gsicc_manage_h) $(gxgetbit_h)\
  $(gdevppla_h) $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevgprf.$(OBJ) $(II)$(ZI_)$(_I) $(C_) $(DEVSRC)gdevgprf.c
+	$(DEVCC) $(DEVO_)gdevgprf_0.$(OBJ) $(II)$(ZI_)$(_I) $(C_) $(DEVSRC)gdevgprf.c
+
+$(DEVOBJ)gdevgprf.$(OBJ) : $(DEVOBJ)gdevgprf_$(SHARE_ZLIB).$(OBJ) $(DEVS_MAK) $(MAKEDIRS)
+	$(CP_) $(DEVOBJ)gdevgprf_$(SHARE_ZLIB).$(OBJ) $(DEVOBJ)gdevgprf.$(OBJ)
 
 ### ----------------------- The permutation device --------------------- ###
 
