@@ -47,7 +47,6 @@
 #include "gsicc_manage.h"
 #include "gsicc.h"
 #include "gxdevsop.h"
-
 #include <limits.h>             /* For INT_MAX */
 
 static void
@@ -101,6 +100,10 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     if (penum->Width == 0 || penum->Height == 0) {
         penum->interpolate = false; /* No need to interpolate and      */
         return 0;                  /* causes division by 0 if we try. */
+    }
+    if (penum->Width == 1 && penum->Height == 1) {
+        penum->interpolate = false; /* No need to interpolate */
+        return 0;
     }
     if (any_abs(penum->dst_width) < 0 || any_abs(penum->dst_height) < 0)
     {
@@ -893,16 +896,50 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                                 x++, psrc += spp_decode;
                         }
                     } else {
-                        int rcode;
+                        int rcode, i, rep = 0;
 
+                        /* do _COPY in case any pure colors were accumulated above */
                         LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
-                        rcode = gx_fill_rectangle_device_rop(x, ry, 1, 1,
-                                                             &devc, dev, lop);
+                        /* as above, see if we can accumulate any runs */
+                        switch (spp_decode) {
+                            case 1:
+                                do {
+                                    rep++, psrc += 1;
+                                } while ((rep + x) < xe &&
+                                         psrc[-1] == psrc[0]);
+                                break;
+                            case 3:
+                                do {
+                                    rep++, psrc += 3;
+                                } while ((rep + x) < xe &&
+                                         psrc[-3] == psrc[0] &&
+                                         psrc[-2] == psrc[1] &&
+                                         psrc[-1] == psrc[2]);
+                                break;
+                            case 4:
+                                do {
+                                    rep++, psrc += 4;
+                                } while ((rep + x) < xe &&
+                                         psrc[-4] == psrc[0] &&
+                                         psrc[-3] == psrc[1] &&
+                                         psrc[-2] == psrc[2] &&
+                                         psrc[-1] == psrc[3]);
+                                break;
+                            default:
+                                rep = 1;
+                                psrc += spp_decode;
+                                break;
+                        }
+                        rcode = gx_fill_rectangle_device_rop(x, ry, rep, 1, &devc, dev, lop);
                         if (rcode < 0)
                             return rcode;
-                        LINE_ACCUM_SKIP(bpp);
-                        l_xprev = x + 1;
-                        x++, psrc += spp_decode;
+                        /* FIXME: LINE_ACCUM_SKIP can't handle aritrary skip lengths */
+                        /* I recommend getting rid of the macros !!! */
+                        for (i = 0; i < rep; i++) {
+                            LINE_ACCUM_SKIP(bpp);
+                        }
+                        l_xprev = x + rep;
+                        x += rep;
                     }
                 }
                 LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
@@ -1123,16 +1160,46 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                                 x++, p_cm_interp += spp_cm;
                         }
                     } else {
-                        int rcode;
+                        int rcode, i, rep = 0;
 
+                        /* do _COPY in case any pure colors were accumulated above*/
                         LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
-                        rcode = gx_fill_rectangle_device_rop(x, ry,
-                                                     1, 1, &devc, dev, lop);
+                        /* as above, see if we can accumulate any runs */
+                        switch (spp_cm) {
+                            case 1:
+                                do {
+                                    rep++, p_cm_interp += 1;
+                                } while ((rep + x) < xe && p_cm_interp[-1] == p_cm_interp[0]);
+                                break;
+                            case 3:
+                                do {
+                                    rep++, p_cm_interp += 3;
+                                } while ((rep + x) < xe && p_cm_interp[-3] == p_cm_interp[0] &&
+                                     p_cm_interp[-2] == p_cm_interp[1] &&
+                                     p_cm_interp[-1] == p_cm_interp[2]);
+                                break;
+                            case 4:
+                                do {
+                                    rep++, p_cm_interp += 4;
+                                } while ((rep + x) < xe && p_cm_interp[-4] == p_cm_interp[0] &&
+                                     p_cm_interp[-3] == p_cm_interp[1] &&
+                                     p_cm_interp[-2] == p_cm_interp[2] &&
+                                     p_cm_interp[-1] == p_cm_interp[3]);
+                                break;
+                            default:
+                                rep = 1, p_cm_interp += spp_cm;
+                                break;
+                        }
+                        rcode = gx_fill_rectangle_device_rop(x, ry, rep, 1, &devc, dev, lop);
                         if (rcode < 0)
                             return rcode;
-                        LINE_ACCUM_SKIP(bpp);
-                        l_xprev = x + 1;
-                        x++, p_cm_interp += spp_cm;
+                        /* FIXME: LINE_ACCUM_SKIP can't handle aritrary skip lengths */
+                        /* I recommend getting rid of the macros !!! */
+                        for (i = 0; i < rep; i++) {
+                            LINE_ACCUM_SKIP(bpp);
+                        }
+                        l_xprev = x + rep;
+                        x += rep;
                     }
                 }  /* End on x loop */
                 LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
