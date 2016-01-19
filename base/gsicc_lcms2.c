@@ -522,8 +522,8 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     if (lcms_deshandle != NULL) {
         des_color_space  = cmsGetColorSpace(lcms_deshandle);
     } else {
-        /* We must have a device link profile. */
-        des_color_space = cmsGetPCS(lcms_deshandle);
+        /* We must have a device link profile. Use it's PCS space. */
+        des_color_space = cmsGetPCS(lcms_srchandle);
     }
     lcms_des_color_space = _cmsLCMScolorSpace(des_color_space);
     if (lcms_des_color_space < 0) lcms_des_color_space = 0;
