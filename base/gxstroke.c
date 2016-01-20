@@ -720,6 +720,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
         bool is_closed = ((const subpath *)pseg)->is_closed;
         partial_line pl, pl_prev, pl_first;
         bool zero_length = true;
+        int pseg_notes = pseg->notes;
 
         flags = nf_all_from_arc;
 
@@ -733,9 +734,12 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
             /* Compute the width parameters in device space. */
             /* We work with unscaled values, for speed. */
             fixed sx, udx, sy, udy;
-            bool is_dash_segment = false;
+            bool is_dash_segment;
 
-        d1:if (pseg->type == s_dash) {
+            pseg_notes = pseg->notes;
+
+         d2:is_dash_segment = false;
+         d1:if (pseg->type == s_dash) {
                 dash_segment *pd = (dash_segment *)pseg;
 
                 sx = pd->pt.x;
@@ -757,10 +761,10 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
             }
             zero_length &= ((udx | udy) == 0);
             pl.o.p.x = x, pl.o.p.y = y;
-          d:flags = (((pseg->notes & sn_not_first) ?
+          d:flags = (((pseg_notes & sn_not_first) ?
                       ((flags & nf_all_from_arc) | nf_some_from_arc) : 0) |
-                     ((pseg->notes & sn_dash_head) ? nf_dash_head : 0)    |
-                     ((pseg->notes & sn_dash_tail) ? nf_dash_tail : 0)    |
+                     ((pseg_notes & sn_dash_head) ? nf_dash_head : 0)    |
+                     ((pseg_notes & sn_dash_tail) ? nf_dash_tail : 0)    |
                      (flags & ~nf_all_from_arc));
             pl.e.p.x = sx, pl.e.p.y = sy;
             if (!(udx | udy) || pseg->type == s_dash || pseg->type == s_gap) { /* degenerate or short */
@@ -770,7 +774,20 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                  * Otherwise, ignore the degenerate segment.
                  */
                 if (index != 0 && pseg->type != s_dash && pseg->type != s_gap)
-                    continue;
+                {
+                    if (pseg->next == NULL || pseg->next->type == s_start)
+                        continue;
+                    pseg = pseg->next;
+                    /* We're skipping a degenerate path segment; if it was
+                     * labelled as being the first from a curve, then make
+                     * sure the one we're skipping to is also labelled as
+                     * being the first from a curve, otherwise we can get
+                     * improper joins being used. See Bug 696466. */
+                    pseg_notes = (((pseg_notes & sn_not_first) == 0) ?
+                                  (pseg->notes & ~sn_not_first) :
+                                  pseg->notes);
+                    goto d2;
+                }
                 /* Check for a degenerate subpath. */
                 while ((pseg = pseg->next) != 0 &&
                        pseg->type != s_start
@@ -942,7 +959,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
             }
             if (index++) {
                 gs_line_join join =
-                    (pseg->notes & not_first ? curve_join : pgs_lp->join);
+                    (pseg_notes & not_first ? curve_join : pgs_lp->join);
                 int first;
                 pl_ptr lptr;
                 bool ensure_closed;
