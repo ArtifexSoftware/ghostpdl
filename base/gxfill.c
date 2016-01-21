@@ -465,11 +465,11 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
         pfpath = ppath;
     else if (is_spotan_device(dev))
         pfpath = ppath;
-    else if (!big_path && gx_path__check_curves(ppath, pco_small_curves, fo.fixed_flat))
+    else if (!big_path && !pis->accurate_curves && gx_path__check_curves(ppath, pco_small_curves, fo.fixed_flat))
         pfpath = ppath;
     else {
         code = gx_path_copy_reducing(ppath, &ffpath, fo.fixed_flat, NULL,
-                            pco_small_curves);
+                                     pco_small_curves | (pis->accurate_curves ? pco_accurate : 0));
         if (code < 0)
             return code;
         pfpath = &ffpath;

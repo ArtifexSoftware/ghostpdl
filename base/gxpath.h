@@ -244,8 +244,6 @@ int gx_path_copy_reducing(const gx_path * ppath_old, gx_path * ppath_new,
 
 #define gx_path_copy(old, new)\
   gx_path_copy_reducing(old, new, max_fixed, NULL, pco_none)
-#define gx_path_add_flattened(old, new, flatness)\
-  gx_path_copy_reducing(old, new, float2fixed(flatness), NULL, pco_none)
 #define gx_path_add_flattened_accurate(old, new, flatness, accurate)\
   gx_path_copy_reducing(old, new, float2fixed(flatness), NULL,\
                         (accurate ? pco_accurate : pco_none))
@@ -253,8 +251,6 @@ int gx_path_copy_reducing(const gx_path * ppath_old, gx_path * ppath_new,
   gx_path_copy_reducing(old, new, float2fixed(flatness), pis,\
                         (pis->accurate_curves ?\
                          pco_accurate | pco_for_stroke : pco_for_stroke))
-#define gx_path_add_monotonized(old, new)\
-  gx_path_copy_reducing(old, new, max_fixed, NULL, pco_monotonize)
 int gx_path_add_dash_expansion(const gx_path * /*old*/, gx_path * /*new*/,
                                   const gs_imager_state *),
       gx_path_copy_reversed(const gx_path * /*old*/, gx_path * /*new*/),
