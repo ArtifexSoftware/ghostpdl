@@ -61,8 +61,8 @@ dnl IJS_CFLAGS:  cflags for compiling libraries and example progs
 dnl IJS_LIBS:    libraries for linking programs. ONLY to be used
 dnl                    to generate ${ijs_libs}
 dnl IJS_DEPLIBS: libraries for linking libraries against
-dnl ijs_cflags:  cflags to store in ijs-config
-dnl ijs_libs:    libs to store in ijs-config
+dnl ijs_cflags:  cflags to store for pkg-config
+dnl ijs_libs:    libs to store for pkg-config
 dnl LIBIJS_LIBS  libs to link programs IN THIS PACKAGE ONLY against
 
 dnl initial default values
@@ -158,6 +158,5 @@ AC_SUBST(LIBIJS_LIBS)
 
 dnl output files and headers
 AC_CONFIG_FILES([Makefile])
-AC_CONFIG_FILES([ijs-config], [chmod +x ijs-config])
 AC_CONFIG_FILES([ijs.pc])
 AC_OUTPUT

@@ -46,8 +46,6 @@ noinst_HEADERS = unistd_.h
 
 bin_PROGRAMS = ijs_client_example ijs_server_example
 
-bin_SCRIPTS = ijs-config
-
 
 libijs_la_SOURCES = \
 	ijs.c \
@@ -79,12 +77,9 @@ ijs_server_example_LDADD = libijs.la
 
 pkgconfig_DATA = ijs.pc
 
-man_MANS = ijs-config.1
-
 EXTRA_DIST = \
 	common.mak unix.mak windows.mak \
-	ijs_spec.sgml state.eps state.fig ijs_spec.pdf \
-	$(man_MANS)
+	ijs_spec.sgml state.eps state.fig ijs_spec.pdf
 
 ## Rules
 
@@ -118,7 +113,7 @@ CLEANSCRIPTS = \
 	ltmain.sh
 
 CLEANFILES = gmon.out core ijs_spec.log ijs_spec.tex ijs_spec.aux
-DISTCLEANFILES = ijs-config config.cache config.log config.status
-# ijs-config.in ijs.pc ijs.pc.in ijs.m4 ijs.h
+DISTCLEANFILES = config.cache config.log config.status
+# ijs.pc ijs.pc.in ijs.m4 ijs.h
 MAINTAINERCLEANFILES = INSTALL aclocal.m4 config.h.in configure Makefile.in stamp-h.in $(CLEANSCRIPTS)
 
