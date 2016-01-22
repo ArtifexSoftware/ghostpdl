@@ -368,8 +368,8 @@ int pdf_make_sampled_base_space_function(gx_device_pdf *pdev, gs_function_t **pf
     int i, code;
     gs_const_string str;
 
-    str.data = gs_alloc_string(pdev->memory, nDstComp * nSrcComp * 2 * sizeof(float), "pdf_DeviceN");
     str.size = nDstComp * (uint)pow(2, nSrcComp);
+    str.data = gs_alloc_string(pdev->memory, str.size, "pdf_DeviceN");
     memcpy((void *)str.data, data, str.size);
 
     params.m = nSrcComp;
