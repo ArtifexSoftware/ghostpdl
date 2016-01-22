@@ -156,13 +156,13 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
         } else
             set_dev_proc(mdev, copy_color, mem_planar_copy_color);
         set_dev_proc(mdev, copy_alpha, gx_default_copy_alpha);
-        set_dev_proc(mdev, copy_planes, mem_planar_copy_planes);
         set_dev_proc(mdev, strip_tile_rectangle, mem_planar_strip_tile_rectangle);
         set_dev_proc(mdev, strip_tile_rect_devn, mem_planar_strip_tile_rect_devn);
         set_dev_proc(mdev, strip_copy_rop, mem_planar_strip_copy_rop);
         set_dev_proc(mdev, strip_copy_rop2, mem_planar_strip_copy_rop2);
         set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
     }
+    set_dev_proc(mdev, copy_planes, mem_planar_copy_planes);
     return 0;
 }
 
