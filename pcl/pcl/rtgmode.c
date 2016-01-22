@@ -414,27 +414,40 @@ pcl_end_graphics_mode_implicit(pcl_state_t * pcs, bool ignore_in_rtl)
 /*
  * ESC * t # R
  *
- * Set raster graphics resolution.
- * The value provided will be rounded up to the nearest legal value or down to 600dpi.
- * 75 100 150 200 300 600 are legal;  120 and 85.7143 are multiples of 75 but not legal.
+ * Set raster graphics resolution.  PCL5 allows integer factors of 600
+ * dpi with minimum 75 and maximum of 600, except a few missing values
+ * (see the table below).  Many HPGL2/RTL plotters allow any positive
+ * integer resolution, and we do the same in RTL mode.
  */
+
+/* 
+ * A table to round up to the next higher permitted resolution.  Note
+ * there are duplicates in the table because some factors are not
+ * supported and they default to the next higher resolution.
+ */
+
+const unsigned int pcl_legal_resolutions[] =
+    {600, 300, 200, 150, 150, 100, 100, 75};
+
 static int
 set_graphics_resolution(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint res = arg_is_present(pargs) ? uint_arg(pargs) : 75;
-    uint qi;
 
     if (res == 0)
         res = 75;
 
-    qi = 600 / res;
+    /* PCL mode - resolution restricted */
+    if (pcs->personality != rtl) {
+        if (res > 600)
+            res = 600;
 
-    /* HP does not allow 120 dpi or 85.7 dpi as a resolution */
-    qi = (qi == 0 ? 1 : (qi > 8 ? 8 : (qi == 7 ? 6 : (qi == 5 ? 4 : qi))));
+        res = pcl_legal_resolutions[600/res - 1];
+    }
 
     /* ignore if already in graphics mode */
     if (!pcs->raster_state.graphics_mode)
-        pcs->raster_state.resolution = 600 / qi;
+        pcs->raster_state.resolution = res;
 
     return 0;
 }
