@@ -434,7 +434,7 @@ set_graphics_resolution(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint res = arg_is_present(pargs) ? uint_arg(pargs) : 75;
 
-    if (res == 0)
+    if (res < 75)
         res = 75;
 
     /* PCL mode - resolution restricted */
