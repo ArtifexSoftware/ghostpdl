@@ -97,18 +97,22 @@ AC_PROG_CPP
 CFLAGS=$save_cflags
 
 if test x"$CCAUX" != x"" ; then
+
   SUBCONFPARMS=
   for parm in $OPARMS ; do
     SUBCONFPARMS="$(echo $parm | grep -v CC | grep -v CCAUX) $SUBCONFPARMS"
   done
   # rerun configure for the AUX tools, disabling a load of tests not relevant for CCAUX
   CONFAUXDIR=auxtmp$RANDOM$RANDOM
+  olddir=`pwd`
   mkdir $CONFAUXDIR
   cd $CONFAUXDIR
-  ../configure CC=$CCAUX CCAUX= MAKEFILE=../auxflags.mak --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
+  echo olddir = $olddir
+  $olddir/$0 CC=$CCAUX CCAUX= MAKEFILE=../auxflags.mak --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
   mv config.log ../configaux.log
-  cd ..
+  cd $olddir
   rm -rf $CONFAUXDIR
+
 fi
 
 AC_PROG_SED

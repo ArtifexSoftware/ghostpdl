@@ -14,3 +14,14 @@
 #
 # CCAUX flags template for/from the autoconf build.
 # @configure_input@
+
+CCAUX=@CC@
+
+GCFLAGSAUX=
+
+CFLAGSAUX_STANDARD=@OPT_CFLAGS@
+CFLAGSAUX_DEBUG=@DBG_CFLAGS@
+
+LDFLAGSAUX=@LDFLAGS@
+
+AUXEXTRALIBS=@LIBS@
