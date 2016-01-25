@@ -80,6 +80,7 @@ INSTALL_DATA = $(INSTALL) -m 644
 INSTALL_SHARED = @INSTALL_SHARED@
 
 prefix = @prefix@
+datarootdir = @datarootdir@
 exec_prefix = @exec_prefix@
 bindir = @bindir@
 scriptdir = $(bindir)
@@ -89,7 +90,6 @@ mandir = @mandir@
 man1ext = 1
 man1dir = $(mandir)/man$(man1ext)
 datadir = @datadir@
-datarootdir = @datarootdir@
 
 # The following must be substituted using @datadir@ and @libdir@
 # to avoid adding RPM generation paths (CUPS STR #1112)
@@ -138,6 +138,7 @@ TARGET_ARCH_FILE=@ARCH_CONF_HEADER@
 #	  are set.
 
 GENOPT=
+GENOPTAUX=
 
 # Choose capability options.
 
@@ -372,7 +373,7 @@ STRIP_XE_OPTS=
 # Define the name of the C compiler (target and host (AUX))
 
 CC=@CC@
-CCAUX=@CC@
+CCAUX=@CCAUX@
 
 # Define the name of the linker for the final link step.
 # Normally this is the same as the C compiler.
@@ -382,6 +383,7 @@ CCAUXLD=$(CCAUX)
 
 # Define the default gcc flags.
 GCFLAGS=@CPPFLAGS@ @GCFLAGS@ @CFLAGS@
+GCFLAGSAUX=@GCFLAGSAUX@
 
 # Define the added flags for standard, debugging, profiling 
 # and shared object builds.
@@ -390,6 +392,10 @@ CFLAGS_STANDARD=@OPT_CFLAGS@
 CFLAGS_DEBUG=@DBG_CFLAGS@
 CFLAGS_PROFILE=-pg @OPT_CFLAGS@
 CFLAGS_SO=@DYNAMIC_CFLAGS@
+
+CFLAGSAUX_STANDARD=@CFLAGSAUX_STANDARD@
+CFLAGSAUX_DEBUG=@CFLAGSAUX_DEBUG@
+CFLAGSAUX_PROFILE=-pg @CFLAGSAUX_STANDARD@
 
 # Define the extra flags added for address sanitizer builds
 
@@ -422,6 +428,7 @@ DBUS_LIBS=@DBUS_LIBS@
 ACDEFS=@DEFS@
 
 CFLAGS=$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)
+CFLAGSAUX=$(CFLAGSAUX_STANDARD) $(GCFLAGSAUX) $(XCFLAGSAUX)
 
 # Define platform flags for ld.
 # SunOS 4.n may need -Bstatic.
@@ -434,6 +441,8 @@ CFLAGS=$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)
 AC_LDFLAGS=@X_LDFLAGS@
 
 LDFLAGS=@LDFLAGS@ $(AC_LDFLAGS) $(XLDFLAGS)
+
+LDFLAGSAUX=@LDFLAGSAUX@
 
 GS_LDFLAGS=$(LDFLAGS)
 PCL_LDFLAGS=$(LDFLAGS)
@@ -451,7 +460,7 @@ XPS_LDFLAGS_SO=@XPS_DYNAMIC_LDFLAGS@
 # (Libraries required by individual drivers are handled automatically.)
 
 EXTRALIBS=$(XTRALIBS) @LIBS@ @DYNAMIC_LIBS@ @FONTCONFIG_LIBS@ @FT_LIBS@ @JPX_AUTOCONF_LIBS@
-AUXEXTRALIBS=$(XTRALIBS) @LIBS@ @DYNAMIC_LIBS@ @FONTCONFIG_LIBS@ @FT_LIBS@ @JPX_AUTOCONF_LIBS@ @AUX_SHARED_ZLIB@
+AUXEXTRALIBS=@AUXEXTRALIBS@
 
 # Define the standard libraries to search at the end of linking.
 # Most platforms require -lpthread for the POSIX threads library;
@@ -535,9 +544,6 @@ FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev 
 	     $(GLD)seprlib.dev $(GLD)translib.dev $(GLD)cidlib.dev $(GLD)psf0lib.dev $(GLD)psf1lib.dev\
              $(GLD)psf2lib.dev $(GLD)lzwd.dev $(GLD)sicclib.dev \
              $(GLD)sjbig2.dev $(GLD)sjpx.dev $(GLD)ramfs.dev
-
-
-
 
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(GLD)pipe.dev
@@ -654,8 +660,11 @@ AK=
 
 CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
-CCAUX_=$(CCAUX) $(CFLAGS)
 CC_LEAF=$(CC_)
+
+CCFLAGSAUX=$(GENOPTAUX) $(CAPOPTAUX) $(CFLAGSAUX)
+CCAUX_=$(CCAUX) $(CCFLAGSAUX)
+
 # note gcc can't use -fomit-frame-pointer with -pg.
 CC_LEAF_PG=$(CC_)
 # These are the specific warnings we have to turn off to compile those

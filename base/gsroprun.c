@@ -18,7 +18,6 @@
 #include "std.h"
 #include "stdpre.h"
 #include "gsropt.h"
-#include "arch.h"
 #include "gp.h"
 
 /* Enable the following define to use 'template'd code (code formed by

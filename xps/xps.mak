@@ -57,7 +57,7 @@ $(XPSOBJ)xpshash.$(OBJ): $(XPSSRC)xpshash.c $(XPSINCLUDES) $(XPS_MAK) $(MAKEDIRS
 $(XPSOBJ)xpsjpeg.$(OBJ): $(XPSSRC)xpsjpeg.c $(XPSINCLUDES) $(XPS_MAK) $(MAKEDIRS)
 	$(XPSCCC) $(XPSSRC)xpsjpeg.c $(XPSO_)xpsjpeg.$(OBJ)
 
-$(XPSOBJ)xpspng.$(OBJ): $(XPSSRC)xpspng.c $(XPSINCLUDES) $(PNGSRCDIR)$(D)png.h \
+$(XPSOBJ)xpspng.$(OBJ): $(XPSSRC)xpspng.c $(XPSINCLUDES) $(png__h) \
                         $(PNGGENDIR)$(D)libpng.dev $(XPS_MAK) $(MAKEDIRS)
 	$(XPSCCC) $(I_)$(PNGSRCDIR)$(_I) $(XPSSRC)xpspng.c $(XPSO_)xpspng.$(OBJ)
 
