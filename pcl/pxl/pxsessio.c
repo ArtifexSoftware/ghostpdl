@@ -474,15 +474,6 @@ pxBeginPage(px_args_t * par, px_state_t * pxs)
         ecode = px_put1(dev, &list, ecode);
         gs_c_param_list_write(&list, mem);
 
-        /* Set the mis-named "Margins" (actually the offset on the page) */
-        /* to zero. */
-        gs_c_param_list_write(&list, mem);
-        fv[0] = 0;
-        fv[1] = 0;
-        fa.size = 2;
-        param_write_float_array(plist, "Margins", &fa);
-        ecode = px_put1(dev, &list, ecode);
-
         iv = pxs->media_source; /* might not be an int */
         if (iv < 0 || iv >= pxeMediaSource_next)
             px_record_warning("IllegalMediaSource", false, pxs);
