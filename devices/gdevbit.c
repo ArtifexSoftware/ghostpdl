@@ -50,6 +50,7 @@ static dev_proc_put_params(bit_put_params);
 static dev_proc_print_page(bit_print_page);
 static dev_proc_print_page(bittags_print_page);
 static dev_proc_put_image(bit_put_image);
+dev_proc_get_color_comp_index(gx_default_DevRGB_get_color_comp_index);
 
 #define bit_procs(encode_color)\
 {	gdev_prn_open,\
@@ -207,7 +208,7 @@ static const gx_device_procs bitrgbtags_procs =
         ((void *)0),                       /* end_transparency_mask */
         ((void *)0),                       /* discard_transparency_layer */
         bittag_get_color_mapping_procs,      /* get_color_mapping_procs */
-        ((void *)0),                       /* get_color_comp_index */
+        gx_default_DevRGB_get_color_comp_index, /* get_color_comp_index */
         bittag_rgb_map_rgb_color,           /* encode_color */
         bittag_map_color_rgb,               /* decode_color */
         ((void *)0),                        /* pattern_manage */
