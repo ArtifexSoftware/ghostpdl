@@ -924,6 +924,8 @@ typedef	struct {
 /****************************************************************************/
 /*							Prototypes										*/
 /****************************************************************************/
+static dev_proc_encode_color(photoex_encode_color);
+static dev_proc_decode_color(photoex_decode_color);
 
 static int		photoex_open( gx_device *pdev );
 static	int		photoex_print_page( PDEV *dev, FILE *prn_stream );
@@ -1005,8 +1007,7 @@ static	const HFUNCS	htable[ MAXHTONE ] = {
 *	The definition is based on GS macros, the only real stuff that we
 *	define here are the photoex_ functions.
 */
-
-static	const gx_device_procs photoex_device_procs = prn_color_params_procs(
+static	const gx_device_procs photoex_device_procs = prn_color_params_procs_enc_dec(
 
         photoex_open,					/* Opens the device						*/
 /* Since the print_page doesn't alter the device, this device can print in the background */
@@ -1015,7 +1016,9 @@ static	const gx_device_procs photoex_device_procs = prn_color_params_procs(
         photoex_map_rgb_color,			/* Maps an RGB pixel to device colour	*/
         photoex_map_color_rgb,			/* Maps device colour back to RGB		*/
         photoex_get_params,				/* Gets device parameters				*/
-        photoex_put_params				/* Puts device parameters				*/
+        photoex_put_params,				/* Puts device parameters				*/
+        photoex_encode_color,
+        photoex_decode_color
 );
 
 /*
@@ -1467,6 +1470,24 @@ CVAL	r, g, b;
         prgb[ 2 ] = b;
 
         return( 0 );
+}
+
+/*
+* Encode a list of colorant values into a gx_color_index_value.
+*/
+static gx_color_index
+photoex_encode_color(gx_device *dev, const gx_color_value colors[])
+{
+    return photoex_map_rgb_color(dev, colors);
+}
+
+/*
+* Decode a gx_color_index value back to a list of colorant values.
+*/
+static int
+photoex_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
+{
+    return photoex_map_color_rgb(dev, color, out);
 }
 
 /*

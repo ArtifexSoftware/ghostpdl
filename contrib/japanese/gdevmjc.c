@@ -141,6 +141,8 @@ copies.  */
 /* Colour mapping procedures */
 static dev_proc_map_rgb_color (gdev_mjc_map_rgb_color);
 static dev_proc_map_color_rgb (gdev_mjc_map_color_rgb);
+static dev_proc_encode_color(gdev_mjc_encode_color);
+static dev_proc_decode_color(gdev_mjc_decode_color);
 
 /* Print-page, properties and miscellaneous procedures */
 static dev_proc_open_device(mj700v2c_open);
@@ -221,7 +223,45 @@ typedef struct gx_device_mj_s gx_device_mj;
         NULL,	/* draw_line */\
         gx_default_get_bits,\
         proc_get_params,\
-        proc_put_params\
+        proc_put_params,\
+        NULL,	/* map_cmyk_color */\
+        NULL,	/* get_xfont_procs */\
+        NULL,	/* get_xfont_device */\
+        NULL,	/* map_rgb_alpha_color */\
+        NULL,   /* get_page_device */\
+        NULL,	/* get_alpha_bits */\
+        NULL,   /* copy_alpha */\
+        NULL,	/* get_band */\
+        NULL,	/* copy_rop */\
+        NULL,	/* fill_path */\
+        NULL,	/* stroke_path */\
+        NULL,	/* fill_mask */\
+        NULL,	/* fill_trapezoid */\
+        NULL,	/* fill_parallelogram */\
+        NULL,	/* fill_triangle */\
+        NULL,	/* draw_thin_line */\
+        NULL,	/* begin_image */\
+        NULL,	/* image_data */\
+        NULL,	/* end_image */\
+        NULL,	/* strip_tile_rectangle */\
+        NULL,	/* strip_copy_rop, */\
+        NULL,	/* get_clipping_box */\
+        NULL,	/* begin_typed_image */\
+        NULL,	/* get_bits_rectangle */\
+        NULL,	/* map_color_rgb_alpha */\
+        NULL,	/* create_compositor */\
+        NULL,	/* get_hardware_params */\
+        NULL,	/* text_begin */\
+        NULL,	/* finish_copydevice */\
+        NULL, 	/* begin_transparency_group */\
+        NULL, 	/* end_transparency_group */\
+        NULL, 	/* begin_transparency_mask */\
+        NULL, 	/* end_transparency_mask */\
+        NULL, 	/* discard_transparency_layer */\
+        NULL,   /* get_color_mapping_procs */\
+        NULL,   /* get_color_comp_index */\
+        gdev_mjc_encode_color,\
+        gdev_mjc_decode_color\
 }
 
 static gx_device_procs mj700v2c_procs =
@@ -1608,6 +1648,24 @@ gdev_mjc_map_color_rgb(gx_device *pdev, gx_color_index color,
     break;
   }
   return 0;
+}
+
+/*
+* Encode a list of colorant values into a gx_color_index_value.
+*/
+static gx_color_index
+gdev_mjc_encode_color(gx_device *dev, const gx_color_value colors[])
+{
+    return gdev_mjc_map_rgb_color(dev, colors);
+}
+
+/*
+* Decode a gx_color_index value back to a list of colorant values.
+*/
+static int
+gdev_mjc_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
+{
+    return gdev_mjc_map_color_rgb(dev, color, out);
 }
 
 /*
