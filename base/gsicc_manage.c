@@ -651,7 +651,9 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                                 return code;
                         }
                         if (str != NULL && icc_profile != NULL) {
-                            gsicc_init_profile_info(icc_profile);
+                            code = gsicc_init_profile_info(icc_profile);
+                            if (code < 0)
+                                return code;
                             cmm = gsCMM_DEFAULT;
                             /* Check if this object is a devicelink profile.
                                If it is then the intent, blackpoint etc. are not
@@ -912,7 +914,8 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
                index in the table is the first name */
             gsicc_get_devicen_names(icc_profile, icc_manager->memory);
             /* Init this profile now */
-            gsicc_init_profile_info(icc_profile);
+            code = gsicc_init_profile_info(icc_profile);
+            if (code < 0) return gs_throw1(-1, "problems with profile %s", pname);
         } else {
             /* Delay the loading of the handle buffer until we need the profile.
                But set some basic stuff that we need. Take care of DeviceN
@@ -1027,13 +1030,17 @@ gsicc_get_profile_handle_file(const char* pname, int namelen, gs_memory_t *mem)
         gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
         return NULL;
     }
-    gsicc_init_profile_info(result);
+    code = gsicc_init_profile_info(result);
+    if (code < 0) {
+        gs_throw(gs_error_VMerror, "Creation of ICC profile failed");
+        return NULL;
+    }
     return result;
 }
 
 /* Given that we already have a profile in a buffer (e.g. generated from a PS object)
    this gets the handle and initializes the various member variables that we need */
-void
+int
 gsicc_init_profile_info(cmm_profile_t *profile)
 {
     int k;
@@ -1043,6 +1050,8 @@ gsicc_init_profile_info(cmm_profile_t *profile)
         gsicc_get_profile_handle_buffer(profile->buffer,
                                         profile->buffer_size,
                                         profile->memory);
+    if (profile->profile_handle == NULL)
+        return -1;
 
     /* Compute the hash code of the profile. */
     gsicc_get_icc_buff_hash(profile->buffer, &(profile->hashcode),
@@ -1058,6 +1067,7 @@ gsicc_init_profile_info(cmm_profile_t *profile)
         profile->Range.ranges[k].rmin = 0.0;
         profile->Range.ranges[k].rmax = 1.0;
     }
+    return 0;
 }
 
 /* This is used to try to find the specified or default ICC profiles */

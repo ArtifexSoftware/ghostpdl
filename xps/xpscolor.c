@@ -177,6 +177,7 @@ xps_read_icc_colorspace(xps_context_t *ctx, char *base_uri, char *profilename)
     cmm_profile_t *profile;
     xps_part_t *part;
     char partname[1024];
+    int code;
 
     /* Find ICC colorspace part */
     xps_absolute_path(partname, base_uri, profilename, sizeof partname);
@@ -203,10 +204,10 @@ xps_read_icc_colorspace(xps_context_t *ctx, char *base_uri, char *profilename)
         profile->buffer_size = part->size;
 
         /* Parse */
-        gsicc_init_profile_info(profile);
+        code = gsicc_init_profile_info(profile);
 
         /* Problem with profile.  Don't fail, just use the default */
-        if (profile->profile_handle == NULL)
+        if (code < 0)
         {
             gsicc_profile_reference(profile, -1);
             gs_warn1("there was a problem with the profile: %s", partname);

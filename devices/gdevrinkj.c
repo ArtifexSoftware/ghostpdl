@@ -127,19 +127,17 @@ typedef struct rinkj_device_s {
      */
     gs_separation_names separation_order;
 
-    /* ICC color profile objects, for color conversion. */
-    char profile_out_fn[256];
-
     /* This device can use a device link ICC profile to map
        the colors to the appropriate color space.  Not
        as flexible as having source and destination profiles
        and creating the link on the fly, but I am doing
        the minimal changes on this device to make it work
        with the new ICC architecture.  No optimizations yet. */
-
     gcmmhlink_t icc_link;
     cmm_profile_t *link_profile;
 
+    /* ICC color profile objects, for color conversion. */
+    char profile_out_fn[256];
     char setup_fn[256];
 } rinkj_device;
 
@@ -245,7 +243,9 @@ const rinkj_device gs_rinkj_device =
     (&DeviceCMYKComponents),	/* Names of color model colorants */
     4,				/* Number colorants for CMYK */
     {0},			/* SeparationNames */
-    {0}				/* SeparationOrder names */
+    {0},			/* SeparationOrder names */
+     0,              /* icc_link (link handle) */
+     0               /* link_profile (device link profile) */
 };
 
 /*
@@ -480,7 +480,6 @@ rinkj_open_profile(rinkj_device *rdev)
 
         if (rdev->icc_link == NULL)
             return gs_throw(-1, "Could not create link handle for rinkj device");
-
     }
     return(0);
 }
@@ -774,7 +773,9 @@ rinkj_close_device(gx_device *dev)
 {
     rinkj_device * const rdev = (rinkj_device *) dev;
 
-    gscms_release_link(rdev->icc_link);
+    /* ICC link profile only used (and set) if specified on command line */
+    if (rdev->icc_link != NULL)
+        gscms_release_link(rdev->icc_link);
     rc_decrement(rdev->link_profile, "rinkj_close_device");
 
     return gdev_prn_close(dev);

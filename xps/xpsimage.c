@@ -122,6 +122,7 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
     int len = part->size;
     cmm_profile_t *profile;
     int error;
+    int code;
 
     if (len < 8)
         return gs_throw(-1, "unknown image file format");
@@ -178,9 +179,9 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
         profile->buffer_size = image->profilesize;
 
         /* Parse */
-        gsicc_init_profile_info(profile);
+        code = gsicc_init_profile_info(profile);
 
-        if (profile->profile_handle == NULL)
+        if (code < 0)
         {
             /* Problem with profile. Just ignore it */
             gs_warn("ignoring problem with icc profile embedded in an image");

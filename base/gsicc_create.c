@@ -3124,6 +3124,7 @@ get_xyzprofile(cmm_profile_t *xyz_profile)
     byte mediawhitept[12];
     icS15Fixed16Number one, zero;
     int k, j;
+    int code;
 
     /* Fill in the common stuff */
     setheader_common(header, 2);
@@ -3212,12 +3213,12 @@ get_xyzprofile(cmm_profile_t *xyz_profile)
     gs_free_object(memory, tag_list, "get_xyzprofile");
     xyz_profile->buffer = buffer;
     xyz_profile->buffer_size = profile_size;
-    gsicc_init_profile_info(xyz_profile);
+    code = gsicc_init_profile_info(xyz_profile);
 #if SAVEICCPROFILE
     /* Dump the buffer to a file for testing if its a valid ICC profile */
     save_profile(buffer, "XYZProfile", profile_size);
 #endif
-    return 0;
+    return code;
 }
 
 static bool

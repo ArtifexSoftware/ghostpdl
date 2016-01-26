@@ -99,7 +99,7 @@ int gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                             int namelen);
 cmm_profile_t* gsicc_get_profile_handle_file(const char* pname, int namelen,
                                              gs_memory_t *mem);
-void gsicc_init_profile_info(cmm_profile_t *profile);
+int gsicc_init_profile_info(cmm_profile_t *profile);
 int gsicc_initialize_default_profile(cmm_profile_t *icc_profile); 
 gsicc_manager_t* gsicc_manager_new(gs_memory_t *memory);
 cmm_profile_t* gsicc_profile_new(stream *s, gs_memory_t *memory,

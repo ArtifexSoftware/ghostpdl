@@ -254,7 +254,9 @@ gx_ciedefg_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *m
                     abc_caches, lmn_caches, defg_caches);
     if (code < 0)
         return gs_rethrow(code, "Failed to create ICC profile from CIEDEFG");
-    gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
+    code = gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
+    if (code < 0)
+        return gs_rethrow(code, "Failed to create ICC profile from CIEDEFG");
     (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_DEFG;
     pcs->icc_equivalent = *ppcs_icc;
     pcs->icc_equivalent->cmm_icc_profile_data->data_cs = gsCMYK;
@@ -535,7 +537,9 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *me
                     abc_caches, lmn_caches, def_caches);
     if (code < 0)
         return gs_rethrow(code, "Failed to build ICC profile from CIEDEF");
-    gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
+    code = gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
+    if (code < 0)
+        return gs_rethrow(code, "Failed to build ICC profile from CIEDEF");
     (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_DEF;
     /* Assign to the icc_equivalent member variable */
     pcs->icc_equivalent = *ppcs_icc;
@@ -643,7 +647,9 @@ gx_cieabc_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, bool *islab,
                     abc_caches, lmn_caches, islab);
     if (code < 0)
         return gs_rethrow(code, "Failed to build ICC profile from CIEABC");
-    gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
+    code = gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
+    if (code < 0)
+        return gs_rethrow(code, "Failed to build ICC profile from CIEDEF");
     (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_ABC;
     /* Assign to the icc_equivalent member variable */
     pcs->icc_equivalent = *ppcs_icc;
@@ -755,7 +761,9 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *memo
                     a_cache, lmn_caches);
     if (code < 0)
         return gs_rethrow(code, "Failed to create ICC profile from CIEA");
-    gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
+    code = gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
+    if (code < 0)
+        return gs_rethrow(code, "Failed to build ICC profile from CIEDEF");
     (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_A;
     /* Assign to the icc_equivalent member variable */
     pcs->icc_equivalent = *ppcs_icc;
