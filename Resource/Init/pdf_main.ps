@@ -846,16 +846,23 @@ currentdict /xref-char-dict undef
         }ifelse
       } if
     } if
-    Trailer /Info knownoget {
-      mark exch
-      { /Author /Creator /Title /Subject /Keywords
-        % /Producer is Ghostscript; /CreationDate is now; /ModDate is also now.
-      } {
-        2 copy knownoget { 3 -1 roll } { pop } ifelse
-      } forall
-      pop
-      dup mark ne { {/DOCINFO pdfmark} stopped {cleartomark} if } { pop } ifelse
-    } if
+    count /pdfemptycount exch def
+    Trailer /Info {knownoget} stopped {
+      (   **** Error:  Unable to read Info dictionary from Trailer, Info will not be preserved.\n) pdfformaterror
+      count pdfemptycount sub {pop} repeat
+    }
+    {
+      {
+        mark exch
+        { /Author /Creator /Title /Subject /Keywords
+          % /Producer is Ghostscript; /CreationDate is now; /ModDate is also now.
+        } {
+          2 copy knownoget { 3 -1 roll } { pop } ifelse
+        } forall
+        pop
+        dup mark ne { {/DOCINFO pdfmark} stopped {cleartomark} if } { pop } ifelse
+      } if
+    } ifelse
   } if
   % Initialize OC groups
   Trailer /Root knownoget {
