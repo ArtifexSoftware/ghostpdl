@@ -23,6 +23,8 @@
 #include "gsparam.h"
 #include "gp.h"
 
+int pjl_dist_add_token_to_list(gs_c_param_list *, char **);
+
 static int pdfmark_write_list(gs_memory_t *mem, gx_device *device, gs_param_string_array *array_list)
 {
     gs_c_param_list list;
@@ -246,12 +248,61 @@ int pcl_pjl_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
 
 int pjl_dist_process_dict(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
 {
+    gs_param_dict dict;
+    int code, tokens, nested = 0;
+    char *p1 = *p, *start = *p;
+
+    /* for now we won't handle nested dicts */
+    do {
+        if (*p1 != '>' && *p1 != 0x00) {
+            if (*p1 == '<' && *(p1 + 1) == '<') {
+                nested++;
+                p1 += 2;
+            } else
+                p1++;
+        } else {
+            if (*(p1 + 1) != '>' && *(p1 + 1) != 0x00) {
+                p1++;
+            } else {
+                if (nested)
+                    nested--;
+                else
+                    break;
+                p1 += 2;
+            }
+        }
+    }while (1);
+
+    if (*p1 == 0x00)
+        return -1;
+
+    *p1++ = 0x00;
+    if (*p1 == 0x00)
+        return -1;
+    *p1 = 0x00;
+
+    *p = p1 + 1;
+
+    p1 = start;
+
+    tokens = count_tokens(p1);
+    dict.size = tokens;
+
+    code = param_begin_write_dict((gs_param_list *)plist, key, &dict, false);
+
+    gs_param_list_set_persistent_keys(dict.list, false);
+
+    code = pjl_dist_add_token_to_list(dict.list, &p1);
+
+    code = param_end_write_dict((gs_param_list *)plist, key, &dict);
     return 0;
 }
 
 int pjl_dist_process_dict_or_hexstring(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char **p)
 {
-    if (*p[1] == '<') {
+    char *p1 = *p;
+    if (p1[1] == '<') {
+        *p += 2;
         return pjl_dist_process_dict(mem, plist, key, p);
     }
     return 0;
@@ -378,6 +429,13 @@ int count_tokens(char *p)
                 tokens++;
                 break;
             case '[':
+                while (*p != 0x00 && *p != ']') {
+                    p++;
+                }
+                if (*p == 0x00)
+                    return -1;
+                p++;
+                tokens++;
                 break;
             case '0':
             case '1':
@@ -582,12 +640,96 @@ int pjl_dist_process_number(gs_memory_t *mem, gs_c_param_list *plist, gs_param_n
         (*p)++;
     }
 
-    if (integer) {
+    if (!integer) {
         double f = atof(start);
         param_write_float((gs_param_list *)plist, key, (float *)&f);
     } else {
         long i = atol(start);
         param_write_long((gs_param_list *)plist, key, &i);
+    }
+
+    return 0;
+}
+
+int pjl_dist_add_token_to_list(gs_c_param_list *plist, char **p)
+{
+    char *p1 = *p;
+    int code;
+    gs_param_name key = NULL;
+
+    while (*p1 != 0x00){
+        switch (*p1) {
+            case ' ':
+                p1++;
+                break;
+            case 'f':
+                if (strncmp(p1, "false", 5) == 0) {
+                    bool t = false;
+                    param_write_bool((gs_param_list *)plist, key, &t);
+                    p1 += 5;
+                    key = NULL;
+                } else {
+                    return -1;
+                }
+                break;
+            case 't':
+                if (strncmp(p1, "true", 4) == 0) {
+                    bool t = true;
+                    param_write_bool((gs_param_list *)plist, key, &t);
+                    p1 += 4;
+                    key = NULL;
+                } else {
+                    return -1;
+                }
+                break;
+            case '<':
+                if (key == NULL) {
+                    return -1;
+                }
+                code = pjl_dist_process_dict_or_hexstring(plist->memory, plist, key, &p1);
+                key = NULL;
+                break;
+            case '/':
+                code = pjl_dist_process_name(plist->memory, plist, &key, &p1);
+                break;
+            case '(':
+                if (key == NULL) {
+                    return -1;
+                }
+                code = pjl_dist_process_string(plist->memory, plist, key, &p1);
+                key = NULL;
+                break;
+            case '[':
+                if (key == NULL) {
+                    return -1;
+                }
+                code = pjl_dist_process_array(plist->memory, plist, key, &p1);
+                key = NULL;
+                break;
+            case '0':
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+            case '5':
+            case '6':
+            case '7':
+            case '8':
+            case '9':
+            case '.':
+                if (key == NULL) {
+                    return -1;
+                }
+                code = pjl_dist_process_number(plist->memory, plist, key, &p1);
+                key = NULL;
+                break;
+            default:
+                return -1;
+                break;
+        }
+        if (code < 0) {
+            return code;
+        }
     }
 
     return 0;
@@ -634,6 +776,9 @@ int pcl_pjl_setdistillerparams(gs_memory_t *mem, gx_device *device, char *distil
         start++;
     p = start;
 
+    code = pjl_dist_add_token_to_list(plist, &p);
+
+#if 0
     while (*p != 0x00){
         switch (*p) {
             case ' ':
@@ -716,6 +861,7 @@ int pcl_pjl_setdistillerparams(gs_memory_t *mem, gx_device *device, char *distil
             return -1;
         }
     }
+#endif
 
     gs_free_object(mem, copy, "working buffer for distillerparams processing");
 
