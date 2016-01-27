@@ -37,7 +37,13 @@
    0 0 moveto
  } def
 
-(landscap.ps) runlibfile
+% draw the page landscape
+gsave clippath pathbbox grestore
+4 dict begin
+/ury exch def /urx exch def /lly exch def /llx exch def
+90 rotate  llx neg               llx urx sub lly sub  translate  % llx,lly
+end
+
 clippath pathbbox newpath
 /ury exch def /urx exch def /lly exch def /llx exch def
 llx 18 add ury 18 sub translate
