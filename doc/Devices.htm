@@ -196,7 +196,7 @@ black-and-white for special needs. The <tt>pngmonod</tt> device is also a
 black-and-white device, but the output is formed from an internal 8 bit grayscale
 rendering which is then error diffused and converted down to 1bpp.</p>
 
-<p>The pngalpha device is 32-bit RGBA color with transparency 
+<p>The <tt>pngalpha</tt> device is 32-bit RGBA color with transparency 
 indicating pixel coverage.  The background is transparent unless
 it has been explicitly filled.  PDF 1.4 transparent files do not
 give a transparent background with this device.  Text and graphics 
@@ -384,7 +384,7 @@ drivers that produce uncompressed output:
 <dd>Produces 64-bit CMYK output (16 bits per component).
 <a name="tiffsep"></a><dt><code>tiffsep</code>
 <dd>
-The tiffsep device creates multiple output files: a single 32 bit
+The <tt>tiffsep</tt> device creates multiple output files: a single 32 bit
 composite CMYK file and multiple tiffgray files, one for each
 separation.  The default compression is <code>lzw</code> but this
 may be overridden by the <code>-sCompression=</code> option.
@@ -414,7 +414,7 @@ of output the function create_separation_file_name in gdevtsep.c should be
 called with a true value for its use_sep_name parameter.
 
 <p>
-The tiffsep device will automatically recognize spot colors. In this 
+The <tt>tiffsep</tt> device will automatically recognize spot colors. In this 
 case their order is determined by when they are found in the input file. 
 The names of spot colors may be specified via the SeparationColorNames 
 device parameters. 
@@ -441,7 +441,7 @@ Reference "Separation Color Spaces" and "DeviceN Color Spaces"), may
 not produce an accurate preview, if the job uses overprinting.
 
 <p>
-The tiffsep device also prints the names of any spot colors
+The <tt>tiffsep</tt> device also prints the names of any spot colors
 detected within a document to stderr.  (stderr is also used for the
 output from the bbox device.)  For each spot color, the name of
 the color is printed preceded by '%%SeparationName:  '.  This
@@ -450,7 +450,7 @@ the names of spot colors within a document.
 
 <p>
 Generally Ghostscript will support a maximum of 64 process and spot 
-colors.   The tiffsep device and the psdcmyk device maintain rendered data
+colors.   The <tt>tiffsep</tt> device and the <tt>psdcmyk</tt> device maintain rendered data
 in a planar form with a maximum of 64 planes set by the definition of 
 GS_CLIENT_COLOR_MAX_COMPONENTS in the code.  That is there can be up to 
 64 colorants accurately handled with overprint on a single page.  If more
@@ -483,14 +483,14 @@ the <code>tiffscaled</code> device. No composite file is produced in
 parameters as described below in the tiffscaled device, but
 MinFeatureSize is only honoured in 1bpp mode.
 
-<p>When -dDownScaleFactor= is used in 8 bit mode with the tiffsep
-(and psdcmyk/psdrgb) device(s) 2 additional &quot;special&quot; ratios
+<p>When -dDownScaleFactor= is used in 8 bit mode with the <tt>tiffsep</tt>
+(and <tt>psdcmyk</tt>/<tt>psdrgb</tt>) device(s) 2 additional &quot;special&quot; ratios
 are available, 32 and 34. 32 provides a 3:2 downscale (so from 300 to
 200 dpi, say). 34 produces a 3:4 upscale (so from 300 to 400 dpi, say).
 
 <a name="tiffsep1"></a><dt><code>tiffsep1</code>
 <dd>
-The tiffsep1 device creates multiple output files, one for each component
+The <tt>tiffsep1</tt> device creates multiple output files, one for each component
 or separation color. The device creates multiple tiffg4 files (the compression
 can be set using -sCompression= described below). The 1 bit per component
 output is halftoned using the current screening set by  'setcolorscreen'
@@ -513,7 +513,7 @@ If the file name specified via the OutputFile parameter ends with the suffix
 
 <a name="tiffscaled"></a><dt><code>tiffscaled</code>
 <dd>
-The tiffscaled device renders internally at the specified resolution to an
+The <tt>tiffscaled</tt> device renders internally at the specified resolution to an
 8 bit greyscale image. This is then scaled down by an integer scale factor
 (set by -dDownScaleFactor= described below) and then error diffused to give
 1bpp output. The compression can be set using -sCompression= as described
@@ -521,7 +521,7 @@ below.
 
 <a name="tiffscaled4"></a><dt><code>tiffscaled4</code>
 <dd>
-The tiffscaled4 device renders internally at the specified resolution to an
+The <tt>tiffscaled4</tt> device renders internally at the specified resolution to an
 8 bit cmyk image. This is then scaled down by an integer scale factor
 (set by -dDownScaleFactor= described below) and then error diffused to give
 4bpp cmyk output. The compression can be set using -sCompression= as described
@@ -529,14 +529,14 @@ below.
 
 <a name="tiffscaled8"></a><dt><code>tiffscaled8</code>
 <dd>
-The tiffscaled8 device renders internally at the specified resolution to an
+The <tt>tiffscaled8</tt> device renders internally at the specified resolution to an
 8 bit greyscale image. This is then scaled down by an integer scale factor
 (set by -dDownScaleFactor= described below). The compression can be set using
 -sCompression= as described below.
 
 <a name="tiffscaled24"></a><dt><code>tiffscaled24</code>
 <dd>
-The tiffscaled24 device renders internally at the specified resolution to a
+The <tt>tiffscaled24</tt> device renders internally at the specified resolution to a
 24 bit rgb image. This is then scaled down by an integer scale factor
 (set by -dDownScaleFactor= described below). The compression can be set using
 -sCompression= as described below.
@@ -544,7 +544,7 @@ The tiffscaled24 device renders internally at the specified resolution to a
 
 <a name="tiffscaled32"></a><dt><code>tiffscaled32</code>
 <dd>
-The tiffscaled32 device renders internally at the specified resolution to a
+The <tt>tiffscaled32</tt> device renders internally at the specified resolution to a
 32 bit cmyk image. This is then scaled down by an integer scale factor
 (set by -dDownScaleFactor= described below). The compression can be set using
 -sCompression= as described below.
@@ -720,15 +720,44 @@ a 200dpi image.
 </dl></blockquote>
 
 <p>
-The <tt>tiffsep</tt> TIFF
-device also provide this parameter:
+The <tt>tiffsep</tt> TIFF device also provide this parameter:
 
 <blockquote><dl>
 <dt><code>-dPrintSpotCMYK=<em>boolean</em></code> defaults to false. When set to true
 the device will print (to stdout) the name of each ink used on the page, and the CMYK
 values which are equivalent to 100% of that ink. The values are 16-bits ranging from 0
 to 32760.
+</dl></blockquote>
 
+<p>The <code>tiffsep</code> device (along with the <code>tiffscaled32</code> and
+<code>psdcmyk</code> devices) can perform rudimentary automatic bitmap
+'trapping' on the final rendered bitmap.
+
+<p>Trapping is a process whereby the output is adjusted to minimise the
+visual impact of offsets between each printed plane. Typically this involves
+slightly extending abutting regions that are rendered in different inks. The
+intent of this is to avoid the unsightly gaps that might be otherwise be
+revealed in the final printout if the different color plates do not exactly
+line up.
+
+<p>This trapping is controlled by 3 device parameters. Firstly the maximum
+X and Y offsets are specified using <tt>-dTrapX=N</tt> and <tt>-dTrapY=N</tt> (where <tt>N</tt> is a
+figure in pixels, before the downscaler is applied).
+
+<p>The final control is to inform the trapping process in what order inks
+should be processed, from darkest to lightest. For a typical CMYK device
+this order would be [ 3 1 0 2 ] (K darker than M darker than C darker than Y).
+This is the default. In the case where CMYK + spots are used, the code
+defaults to assuming that the spots are lighter than the standard colours
+and are sent darkest first (thus [ 3 1 0 2 4 5 6 ... ]).
+
+<p>To override these defaults, the TrapOrder parameter can be used, for
+example:
+  
+<blockquote><code>
+    gs -sDEVICE=psdcmyk -dTrapX=2 -dTrapY=2 -o out.psd -c "&lt;&lt; [ 4 5 3 1 0 2 ] &gt;&gt; setpagedevice" -f examples\tiger.eps
+</code></blockquote>
+  
 
 <h3><a name="fax"></a>FAX</h3>
 
@@ -771,11 +800,13 @@ series of devices.
 PSD is the image format used by Adobe Photoshop.
 It is supported by the <tt>psdcmyk</tt> and <tt>psdrgb</tt> devices.
 Of special interest with the <tt>psdcmyk</tt> device is that it supports spot
-colors.  <a href="#tiffsep">See the comments under the tiffsep and tiffsep1 
+colors.  <a href="#tiffsep">See the comments under the <tt>tiffsep</tt> and <tt>tiffsep1</tt> 
 device about the maximum number of spot colors supported by Ghostscript</a>
 
 <p>
-These devices support the same -dDownScaleFactor= ratios as tiffsep.
+These devices support the same -dDownScaleFactor= ratios as <tt>tiffsep</tt>. <tt>tiffscaled32</tt>
+supports the same trapping options as <tt>tiffsep</tt>.
+
 <p>
 NOTE: The PSD format is a single image per file format, so you must use the &quot%d&quot
 format for the &quotOutputFile&quot (or &quot-o&quot) file name parameter (see
@@ -823,7 +854,7 @@ and masks continues to be compressed with RLE.
 
 <h3><a name="TXT"></a>Text output</h3>
 
-<p> The txtwrite device will output the text contained in the original
+<p> The <tt>txtwrite</tt> device will output the text contained in the original
 document as Unicode.
 
 <h4>Options</h4>
@@ -874,8 +905,8 @@ The available devices are:
 <dd>This is the default device, handling display on X11R6.
 
 <dt><b>x11alpha</b>
-<dd>This is the x11 device, but with antialiasing. It is equivalent to
-invoking the x11 device with the options <tt>-dGraphicsAlphaBits=4 
+<dd>This is the <tt>x11</tt> device, but with antialiasing. It is equivalent to
+invoking the <tt>x11</tt> device with the options <tt>-dGraphicsAlphaBits=4 
 -dTextAlphaBits=4 -dMaxBitmap=50000000</tt>.
 
 <dt><b>x11cmyk</b>

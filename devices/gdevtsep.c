@@ -303,7 +303,8 @@ tiffscaled_print_page(gx_device_printer * pdev, FILE * file)
                                          tfdev->DownScaleFactor,
                                          tfdev->MinFeatureSize,
                                          tfdev->AdjustWidth,
-                                         1, 1);
+                                         1, 1,
+                                         0, 0, NULL);
 }
 
 static int
@@ -322,7 +323,8 @@ tiffscaled8_print_page(gx_device_printer * pdev, FILE * file)
                                          tfdev->DownScaleFactor,
                                          tfdev->MinFeatureSize,
                                          tfdev->AdjustWidth,
-                                         8, 1);
+                                         8, 1,
+                                         0, 0, NULL);
 }
 
 static void
@@ -365,7 +367,8 @@ tiffscaled24_print_page(gx_device_printer * pdev, FILE * file)
                                          tfdev->DownScaleFactor,
                                          tfdev->MinFeatureSize,
                                          tfdev->AdjustWidth,
-                                         8, 3);
+                                         8, 3,
+                                         0, 0, NULL);
 }
 
 static void
@@ -402,7 +405,9 @@ tiffscaled32_print_page(gx_device_printer * pdev, FILE * file)
                                          tfdev->DownScaleFactor,
                                          tfdev->MinFeatureSize,
                                          tfdev->AdjustWidth,
-                                         8, 4);
+                                         8, 4,
+                                         tfdev->trap_w, tfdev->trap_h,
+                                         tfdev->trap_order);
 }
 
 static int
@@ -425,7 +430,9 @@ tiffscaled4_print_page(gx_device_printer * pdev, FILE * file)
                                          tfdev->DownScaleFactor,
                                          tfdev->MinFeatureSize,
                                          tfdev->AdjustWidth,
-                                         1, 4);
+                                         1, 4,
+                                         tfdev->trap_w, tfdev->trap_h,
+                                         tfdev->trap_order);
 }
 
 /* ------ The cmyk devices ------ */
@@ -552,6 +559,9 @@ static dev_proc_output_page(tiffseps_output_page);
     long BitsPerComponent;\
     int max_spots;\
     bool lock_colorants;\
+    int trap_w;\
+    int trap_h;\
+    int trap_order[GS_CLIENT_COLOR_MAX_COMPONENTS];\
     gs_devn_params devn_params;         /* DeviceN generated parameters */\
     equivalent_cmyk_color_params equiv_cmyk_colors
 
@@ -722,7 +732,10 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
         0,                      /* MinFeatureSize */\
         8,                      /* BitsPerComponent */\
         GS_SOFT_MAX_SPOTS,      /* max_spots */\
-        false                   /* Colorants not locked */
+        false,                  /* Colorants not locked */\
+        0,                      /* Trapping off by default */\
+        0,                      /* Trapping off by default */\
+        { 0 }                   /* Trapping off by default */
 
 #define GCIB (ARCH_SIZEOF_GX_COLOR_INDEX * 8)
 
@@ -934,6 +947,10 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
     int code = gdev_prn_get_params(pdev, plist);
     int ecode = code;
     gs_param_string comprstr;
+    gs_param_int_array trap_order;
+    trap_order.data = pdevn->trap_order;
+    trap_order.size = GS_CLIENT_COLOR_MAX_COMPONENTS;
+    trap_order.persistent = false;
 
     if (code < 0)
         return code;
@@ -963,6 +980,12 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
         ecode = code;
     if ((code = param_write_bool(plist, "PrintSpotCMYK", &pdevn->PrintSpotCMYK)) < 0)
         ecode = code;
+    if ((code = param_write_int(plist, "TrapX", &pdevn->trap_w)) < 0)
+        ecode = code;
+    if ((code = param_write_int(plist, "TrapY", &pdevn->trap_h)) < 0)
+        ecode = code;
+    if ((code = param_write_int_array(plist, "TrapOrder", &trap_order)) < 0)
+        ecode = code;
 
     return ecode;
 }
@@ -980,6 +1003,11 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
     long mfs = pdevn->MinFeatureSize;
     long bpc = pdevn->BitsPerComponent;
     int max_spots = pdevn->max_spots;
+    int trap_w = pdevn->trap_w;
+    int trap_h = pdevn->trap_h;
+    gs_param_int_array trap_order;
+
+    trap_order.data = NULL;
 
     /* Read BigEndian option as bool */
     switch (code = param_read_bool(plist, (param_name = "BigEndian"), &pdevn->BigEndian)) {
@@ -1108,7 +1136,78 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
             param_signal_error(plist, param_name, code);
             return code;
     }
+    switch (code = param_read_int(plist,
+                                  (param_name = "TrapX"),
+                                  &trap_w)) {
+        case 0:
+            if (trap_w <= 0)
+                trap_w = 0;
+            break;
+        case 1:
+            break;
+        default:
+            param_signal_error(plist, param_name, code);
+            return code;
+    }
+    switch (code = param_read_int(plist,
+                                  (param_name = "TrapY"),
+                                  &trap_h)) {
+        case 0:
+            if (trap_h <= 0)
+                trap_h = 0;
+            break;
+        case 1:
+            break;
+        default:
+            param_signal_error(plist, param_name, code);
+            return code;
+    }
+    switch (code = param_read_int_array(plist, (param_name = "TrapOrder"), &trap_order)) {
+        case 0:
+            break;
+        case 1:
+            trap_order.data = 0;          /* mark as not filled */
+            break;
+        default:
+            param_signal_error(plist, param_name, code);
+            return code;
+    }
 
+    if (trap_order.data != NULL)
+    {
+        int i;
+        int n = trap_order.size;
+
+        if (n > GS_CLIENT_COLOR_MAX_COMPONENTS)
+            n = GS_CLIENT_COLOR_MAX_COMPONENTS;
+
+        for (i = 0; i < n; i++)
+        {
+            pdevn->trap_order[i] = trap_order.data[i];
+        }
+        for (; i < GS_CLIENT_COLOR_MAX_COMPONENTS; i++)
+        {
+            pdevn->trap_order[i] = i;
+        }
+    }
+    else
+    {
+        /* Set some sane defaults */
+        int i;
+
+        pdevn->trap_order[0] = 3; /* K */
+        pdevn->trap_order[1] = 1; /* M */
+        pdevn->trap_order[2] = 0; /* C */
+        pdevn->trap_order[3] = 2; /* Y */
+
+        for (i = 4; i < GS_CLIENT_COLOR_MAX_COMPONENTS; i++)
+        {
+            pdevn->trap_order[i] = i;
+        }
+    }
+
+    pdevn->trap_w = trap_w;
+    pdevn->trap_h = trap_h;
     pdevn->close_files = false;
 
     code = devn_printer_put_params(pdev, plist,
@@ -2440,8 +2539,9 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
                     }
                 }
             }
-            code = gx_downscaler_init_planar(&ds, (gx_device *)pdev, &params,
-                                             num_comp, factor, mfs, 8, dst_bpc);
+            code = gx_downscaler_init_planar_trapped(&ds, (gx_device *)pdev, &params,
+                                                     num_comp, factor, mfs, 8, dst_bpc,
+                                                     tfdev->trap_w, tfdev->trap_h, tfdev->trap_order);
             if (code < 0)
                 goto cleanup;
             byte_width = (width * dst_bpc + 7)>>3;

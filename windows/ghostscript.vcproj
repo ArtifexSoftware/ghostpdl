@@ -1778,6 +1778,18 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\claptrap-init.c"
+				>
+			</File>
+			<File
+				RelativePath="..\base\claptrap-planar.c"
+				>
+			</File>
+			<File
+				RelativePath="..\base\claptrap.c"
+				>
+			</File>
+			<File
 				RelativePath="..\base\ConvertUTF.c"
 				>
 			</File>
@@ -3291,6 +3303,14 @@
 			</File>
 			<File
 				RelativePath="..\base\assert_.h"
+				>
+			</File>
+			<File
+				RelativePath="..\base\claptrap-impl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\base\claptrap.h"
 				>
 			</File>
 			<File

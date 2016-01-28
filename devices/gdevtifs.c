@@ -85,6 +85,10 @@ tiff_get_some_params(gx_device * dev, gs_param_list * plist, int which)
     int code = gdev_prn_get_params(dev, plist);
     int ecode = code;
     gs_param_string comprstr;
+    gs_param_int_array trap_order;
+    trap_order.data = tfdev->trap_order;
+    trap_order.size = GS_CLIENT_COLOR_MAX_COMPONENTS;
+    trap_order.persistent = false;
 
     if ((code = param_write_bool(plist, "BigEndian", &tfdev->BigEndian)) < 0)
         ecode = code;
@@ -100,6 +104,12 @@ tiff_get_some_params(gx_device * dev, gs_param_list * plist, int which)
     if (which & 1)
     {
       if ((code = param_write_long(plist, "DownScaleFactor", &tfdev->DownScaleFactor)) < 0)
+          ecode = code;
+      if ((code = param_write_int(plist, "TrapX", &tfdev->trap_w)) < 0)
+          ecode = code;
+      if ((code = param_write_int(plist, "TrapY", &tfdev->trap_h)) < 0)
+          ecode = code;
+      if ((code = param_write_int_array(plist, "TrapOrder", &trap_order)) < 0)
           ecode = code;
     }
     if ((code = param_write_long(plist, "MaxStripSize", &tfdev->MaxStripSize)) < 0)
@@ -139,6 +149,11 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
     long mss = tfdev->MaxStripSize;
     long aw = tfdev->AdjustWidth;
     long mfs = tfdev->MinFeatureSize;
+    int trap_w = tfdev->trap_w;
+    int trap_h = tfdev->trap_h;
+    gs_param_int_array trap_order;
+
+    trap_order.data = NULL;
 
     /* Read BigEndian option as bool */
     switch (code = param_read_bool(plist, (param_name = "BigEndian"), &big_endian)) {
@@ -213,6 +228,54 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
                 ecode = code;
                 param_signal_error(plist, param_name, ecode);
         }
+        switch (code = param_read_long(plist,
+                                       (param_name = "DownScaleFactor"),
+                                       &downscale)) {
+            case 0:
+                if (downscale <= 0)
+                    downscale = 1;
+                break;
+            case 1:
+                break;
+            default:
+                ecode = code;
+                param_signal_error(plist, param_name, ecode);
+        }
+        switch (code = param_read_int(plist,
+                                      (param_name = "TrapX"),
+                                      &trap_w)) {
+            case 0:
+                if (trap_w <= 0)
+                    trap_w = 0;
+                break;
+            case 1:
+                break;
+            default:
+                ecode = code;
+                param_signal_error(plist, param_name, ecode);
+        }
+        switch (code = param_read_int(plist,
+                                      (param_name = "TrapY"),
+                                      &trap_h)) {
+            case 0:
+                if (trap_h <= 0)
+                    trap_h = 0;
+                break;
+            case 1:
+                break;
+            default:
+                ecode = code;
+                param_signal_error(plist, param_name, ecode);
+        }
+        switch (code = param_read_int_array(plist, (param_name = "TrapOrder"), &trap_order)) {
+            case 0:
+                break;
+            default:
+                ecode = code;
+                param_signal_error(plist, param_name, ecode);
+            case 1:
+                trap_order.data = 0;          /* mark as not filled */
+        }
     }
     switch (code = param_read_long(plist, (param_name = "MaxStripSize"), &mss)) {
         case 0:
@@ -267,6 +330,41 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
     tfdev->DownScaleFactor = downscale;
     tfdev->AdjustWidth = aw;
     tfdev->MinFeatureSize = mfs;
+    tfdev->trap_w = trap_w;
+    tfdev->trap_h = trap_h;
+
+    if (trap_order.data != NULL)
+    {
+        int i;
+        int n = trap_order.size;
+
+        if (n > GS_CLIENT_COLOR_MAX_COMPONENTS)
+            n = GS_CLIENT_COLOR_MAX_COMPONENTS;
+
+        for (i = 0; i < n; i++)
+        {
+            tfdev->trap_order[i] = trap_order.data[i];
+        }
+        for (; i < GS_CLIENT_COLOR_MAX_COMPONENTS; i++)
+        {
+            tfdev->trap_order[i] = i;
+        }
+    }
+    else
+    {
+        /* Set some sane defaults */
+        int i;
+
+        tfdev->trap_order[0] = 3; /* K */
+        tfdev->trap_order[1] = 1; /* M */
+        tfdev->trap_order[2] = 0; /* C */
+        tfdev->trap_order[3] = 2; /* Y */
+
+        for (i = 4; i < GS_CLIENT_COLOR_MAX_COMPONENTS; i++)
+        {
+            tfdev->trap_order[i] = i;
+        }
+    }
     return code;
 }
 
@@ -456,7 +554,8 @@ cleanup:
  * output. */
 int
 tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
-                              int mfs, int aw, int bpc, int num_comps)
+                              int mfs, int aw, int bpc, int num_comps,
+                              int trap_w, int trap_h, const int *trap_order)
 {
     int code = 0;
     byte *data = NULL;
@@ -470,8 +569,13 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
     if (code < 0)
         return code;
 
-    code = gx_downscaler_init(&ds, (gx_device *)dev, 8, bpc, num_comps,
-                              factor, mfs, &fax_adjusted_width, aw);
+    if (num_comps == 4) {
+        code = gx_downscaler_init_trapped(&ds, (gx_device *)dev, 8, bpc, num_comps,
+                                          factor, mfs, &fax_adjusted_width, aw, trap_w, trap_h, trap_order);
+    } else {
+        code = gx_downscaler_init(&ds, (gx_device *)dev, 8, bpc, num_comps,
+                                  factor, mfs, &fax_adjusted_width, aw);
+    }
     if (code < 0)
         return code;
 

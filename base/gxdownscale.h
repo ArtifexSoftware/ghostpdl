@@ -23,6 +23,8 @@
 #include "gxdevcli.h"
 #include "gxgetbit.h"
 
+#include "claptrap.h"
+
 /* The following structure definitions should really be considered
  * private, and are exposed here only because it enables us to define
  * gx_downscaler_t's on the stack, thus avoiding mallocs.
@@ -53,6 +55,10 @@ struct gx_downscaler_s {
     gx_downscale_core    *down_core;  /* Core downscaling function */
     gs_get_bits_params_t  params;     /* Params if in planar mode */
     int                   num_planes; /* Number of planes if planar, 0 otherwise */
+
+    ClapTrap             *claptrap;   /* ClapTrap pointer (if trapping) */
+    int                   claptrap_y; /* y pointer (if trapping) */
+    gs_get_bits_params_t *claptrap_params; /* params (if trapping) */
 };
 
 /* To use the downscaler:
@@ -128,5 +134,30 @@ int gx_downscaler_adjust_bandheight(int factor, int band_height);
 int gx_downscaler_process_page(gx_device                 *dev,
                                gx_process_page_options_t *options,
                                int                        factor);
+
+int gx_downscaler_init_trapped(gx_downscaler_t   *ds,
+                               gx_device         *dev,
+                               int                src_bpc,
+                               int                dst_bpc,
+                               int                num_comps,
+                               int                factor,
+                               int                mfs,
+                               int              (*adjust_width_proc)(int, int),
+                               int                adjust_width,
+                               int                trap_w,
+                               int                trap_h,
+                               const int         *comp_order);
+
+int gx_downscaler_init_planar_trapped(gx_downscaler_t      *ds,
+                                      gx_device            *dev,
+                                      gs_get_bits_params_t *params,
+                                      int                   num_comps,
+                                      int                   factor,
+                                      int                   mfs,
+                                      int                   src_bpc,
+                                      int                   dst_bpc,
+                                      int                   trap_w,
+                                      int                   trap_h,
+                                      const int            *comp_order);
 
 #endif

@@ -1303,12 +1303,30 @@ $(GLD)gxfapi.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gxfapi.$(OBJ) $(GLD)fapiu$(UF
 $(GLOBJ)gdevemap.$(OBJ) : $(GLSRC)gdevemap.c $(AK) $(std_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevemap.$(OBJ) $(C_) $(GLSRC)gdevemap.c
 
+# ----------- Trapping routines ------------ #
+claptrap_h=$(GLSRC)claptrap.h $(std_h) $(stdpre_h)
+claptrap_impl_h=$(GLSRC)claptrap-impl.h
+claptrap=$(GLOBJ)claptrap.$(OBJ) $(GLOBJ)claptrap-init.$(OBJ) \
+ $(GLOBJ)claptrap-planar.$(OBJ)
+
+$(GLOBJ)claptrap.$(OBJ) : $(GLSRC)claptrap.c $(AK) \
+ $(claptrap_h) $(claptrap_impl_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)claptrap.$(OBJ) $(C_) $(GLSRC)claptrap.c
+
+$(GLOBJ)claptrap-init.$(OBJ) : $(GLSRC)claptrap-init.c $(AK) \
+ $(claptrap_h) $(claptrap_impl_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)claptrap-init.$(OBJ) $(C_) $(GLSRC)claptrap-init.c
+
+$(GLOBJ)claptrap-planar.$(OBJ) : $(GLSRC)claptrap-planar.c $(AK) \
+ $(claptrap_h) $(claptrap_impl_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)claptrap-planar.$(OBJ) $(C_) $(GLSRC)claptrap-planar.c
+
 # ----------- Downsampling routines ------------ #
 gxdownscale_h=$(GLSRC)gxdownscale.h $(gsmemory_h) $(gxdevcli_h) $(ctype__h) \
- $(gstypes_h) $(gxgetbit_h)
-downscale_=$(GLOBJ)gxdownscale.$(OBJ)
+ $(gstypes_h) $(gxgetbit_h) $(claptrap_h)
+downscale_=$(GLOBJ)gxdownscale.$(OBJ) $(claptrap)
 
-$(GLOBJ)gxdownscale.$(OBJ) : $(GLSRC)gxdownscale.c $(AK) \
+$(GLOBJ)gxdownscale.$(OBJ) : $(GLSRC)gxdownscale.c $(AK) $(string__h) \
  $(gxdownscale_h) $(gserrors_h) $(gdevprn_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxdownscale.$(OBJ) $(C_) $(GLSRC)gxdownscale.c
 
