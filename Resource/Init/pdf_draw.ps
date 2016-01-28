@@ -2307,6 +2307,24 @@ currentdict /ocg_pocs .undef
 drawopdict begin
   /BI { mark } bdef
   /ID {
+    gsave
+    %% Bug 696547, related to Bug 695897 (see /Do above) This file has an inline image inside
+    %% a text block. Here we attempt to detect and recover from this by setting the
+    %% CTM to the matrix we saved before the text block. NB we update the 'TextSaveMatrix'
+    %% or 'qTextSaveMatrix' whenever a 'cm' is issued, even if we are in a text block, so
+    %% these matrices 'ought' to be correct.
+    %% Of course, the file is badly broken, but 'Acrobat can open it....'
+    currentdict /TextSaveMatrix known {
+      (   **** Error: Executing ID inside a text block, attempting to recover\n) pdfformaterror
+      currentdict /TextSaveMatrix get setmatrix
+      (               Output may be incorrect.\n) pdfformaterror
+    } if
+    currentdict /qTextSaveMatrix known {
+      (   **** Error: Executing ID inside a text block, attempting to recover\n) pdfformaterror
+      (               Output may be incorrect.\n) pdfformaterror
+      currentdict /qTextSaveMatrix get setmatrix
+    } if
+
     counttomark 2 idiv dup 7 add dict begin {
       exch //unabbrevkeydict 1 index .knownget { exch pop } if
       exch unabbrevvalue def
@@ -2355,6 +2373,7 @@ drawopdict begin
           } ifelse
       } ifelse
     } loop
+    grestore
   } bdef
 end
 
