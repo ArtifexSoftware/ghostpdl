@@ -1369,7 +1369,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
                  * width scaled by the CTM before the text, either of which would be wrong.
                  */
                 scale = 72 / pdev->HWResolution[0];
-                scale *= pis->ctm.xx;
+                scale *= fabs(pis->ctm.xx);
                 pprintg1(s, "%g w\n", (pis->line_params.half_width * 2) * (float)scale);
                 /* Some trickery here. We have altered the colour, text render mode and linewidth,
                  * we don't want those to persist. By switching to a stream context we will flush the
