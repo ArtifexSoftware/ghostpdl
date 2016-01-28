@@ -1102,10 +1102,18 @@ currentdict /xref-char-dict undef
    /Trailer << >> def		% Initialize to an emptry dict.
    {initPDFobjects findxref readxref}
    PDFSTOPONERROR not {
-   .internalstopped {
-     recover_xref_data		% Read failed.  Attempt to recover xref data.
-     search_trailer		% Search for the primary trailer
+     .internalstopped {
+       recover_xref_data		% Read failed.  Attempt to recover xref data.
+       search_trailer		% Search for the primary trailer
+       false                % search_trailer sets up /Trailer, so don't run the code to do that...
+     } {
+       true
+     } ifelse
    } {
+     exec true
+   } ifelse
+
+   {
      /Trailer exch def		% Save trailer dict after first xref table
         % Read any previous cross-reference tables.  When we are done,
         % verify that the entries in the xref tables are valid if NoVerifyXref
@@ -1117,10 +1125,15 @@ currentdict /xref-char-dict undef
          } if  
          exit
        } if
-       { readxref } .internalstopped {
-         recover_xref_data	% Read failed.  Attempt to recover xref data.
-         exit			% Exit loop since recover gets all obj data.
-       } if  			% If readxref stopped
+       { readxref }
+       PDFSTOPONERROR not {
+         .internalstopped {
+           recover_xref_data	% Read failed.  Attempt to recover xref data.
+           exit			% Exit loop since recover gets all obj data.
+         } if  			% If readxref stopped
+       } {
+         exec
+       } ifelse
        % The PDF spec. says that each trailer dict should contain the required
        % entries.  However we have seen a PDF file that only has a Prev entry in
        % the initial trailer dict.  Acrobat complains but it accepts these files.
@@ -1134,10 +1147,8 @@ currentdict /xref-char-dict undef
          } ifelse
        } forall
      } loop			% Loop to previous trailer
-   } ifelse			% Ifelse readxref stopped
-   }{
-     exec
-   } ifelse
+   } if
+
    /NumObjects Objects length def  % To check that obj# < NumObjects
 
    % Scan numbers in the range 2147483648..4294967295 in Encrypt dictionary
