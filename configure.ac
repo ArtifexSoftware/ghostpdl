@@ -33,7 +33,8 @@ LDFLAGS="${LDFLAGS:=}"
 # save these for later
 OPARMS=$@
 
-THEMAKEFILE="${MAKEFILE:=Makefile}"
+THEMAKEFILE="${MAKEFILE:-Makefile}"
+AUXFLAGS_MAK=auxflags.mak
 
 dnl --------------------------------------------------
 dnl List of non-threadsafe devices
@@ -96,24 +97,33 @@ AC_PROG_CC
 AC_PROG_CPP
 CFLAGS=$save_cflags
 
-if test x"$CCAUX" != x"" ; then
+# purposefully do not include "help" output for this
+AC_ARG_ENABLE([save-confaux])
 
+if test x"$CCAUX" != x"" ; then
   SUBCONFPARMS=
   for parm in $OPARMS ; do
     SUBCONFPARMS="$(echo $parm | grep -v CC | grep -v CCAUX) $SUBCONFPARMS"
   done
   # rerun configure for the AUX tools, disabling a load of tests not relevant for CCAUX
-  CONFAUXDIR=auxtmp$RANDOM$RANDOM
   olddir=`pwd`
+  if test "x$enable_save-confaux" != "xno"; then
+    CONFAUXDIR=auxtmp
+  else
+    CONFAUXDIR=auxtmp$RANDOM$RANDOM
+  fi
   mkdir $CONFAUXDIR
   cd $CONFAUXDIR
-  echo olddir = $olddir
-  $olddir/$0 CC=$CCAUX CCAUX= MAKEFILE=../auxflags.mak --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
-  mv config.log ../configaux.log
+  echo $0 $olddir
+  ../$0 CC=$CCAUX CCAUX= MAKEFILE=../$AUXFLAGS_MAK --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-luratech --without-jbig2dec --without-x --with-drivers=""
+  cp config.log ../configaux.log
   cd $olddir
-  rm -rf $CONFAUXDIR
-
+  if test "x$enable_save-confaux" = "xno"; then
+    rm -rf $CONFAUXDIR
+  fi
 fi
+
+CCAUX="${CCAUX:-$CC}"
 
 AC_PROG_SED
 dnl See if it is GNU sed or else.
@@ -2532,7 +2542,11 @@ AC_SUBST(CFLAGS_SANITIZE)
 AC_SUBST(STRIP_XE)
 AC_SUBST(JPX_SSE_CFLAGS)
 
-AC_OUTPUT($MAKEFILE)
+AC_OUTPUT($THEMAKEFILE)
+
+if test x"$THEMAKEFILE" != x"$MAKEFILE" && test x"$CCAUX" = x"$CC"; then
+  AC_OUTPUT($AUXFLAGS_MAK)
+fi
 
 if test "x$AFS" = "x1"; then
    AC_MSG_WARN([Using "native" font scaler which is now deprecated (rather than freetype),])
