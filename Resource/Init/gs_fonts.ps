@@ -183,7 +183,7 @@ userdict /.nativeFontmap .FontDirectory maxlength dict put
     } if
     {           % Stack: key file
                 % Protect ourselves against syntax errors here.
-      dup { token } stopped { pop //false exit } if
+      dup { token } stopped { //false exit } if
       not { //false exit } if               % end of file
       dup /eexec eq { pop //false exit } if       % reached eexec section
       dup /Subrs eq { pop //false exit } if       % Subrs without eexec
