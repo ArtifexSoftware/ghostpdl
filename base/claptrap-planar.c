@@ -32,7 +32,8 @@ inline static void process_at_pixel(ClapTrap      * restrict ct,
                                     int             last_comp,
                                     int             prev_comp,
                                     int             comp,
-                                    int             line_offset)
+                                    int             line_offset,
+                                    unsigned char  *process)
 {
     /* We look at the pixel values on comp.
      * We look at the process values passed into us from prev_comp, and pass out
@@ -48,17 +49,13 @@ inline static void process_at_pixel(ClapTrap      * restrict ct,
     int            span         = ct->span;
     int            lines_in_buf = ct->lines_in_buf;
     unsigned char *linebuf      = ct->linebuf;
-    unsigned char *process      = ct->process;
     int            y            = ct->y;
     /* Some offsets we will use repeatedly */
     int            oc           = x + comp * width;
     /* p != 0 if we need to be processed because a previous component shadows us.
      * If we're the first component then no one can shadow us. */
-    int            p            = (first_comp ? 0 :
-                                   process[line_offset + x + prev_comp * width]);
-    /* Process flag for next component inherits from this one */
-    int            np           = p;
-    int            cx, cy, sx, sy, ex, ey, lo;
+    int            p            = (first_comp ? 0 : *process);
+    int            sx, sy, ex, ey, lo, v;
     unsigned char *pc;
     unsigned char *ppc;
 
@@ -84,30 +81,27 @@ inline static void process_at_pixel(ClapTrap      * restrict ct,
      * here if we are not the first component (!first_comp) and
      * if (p != 0) then we need to search for the maximum local value
      * of  this component. */
+    v = linebuf[line_offset + oc];
     if (!last_comp || (!first_comp && p))
     {
-        int min_v, max_v, v;
+        int min_v, max_v;
 
         lo = sy % lines_in_buf;
         if (!first_comp)
-            max_v = 0;
+            max_v = v;
         if (!last_comp)
-            min_v = 255;
+            min_v = v;
         pc = &linebuf[lo * span + comp * width + sx];
-        for (cy = sy; cy <= ey; cy++)
+        ex -= sx;
+        for (sy = ey-sy; sy >= 0; sy--)
         {
             ppc = pc;
-            for (cx = sx; cx <= ex; cx++)
+            for (sx = ex; sx >= 0; sx--)
             {
                 int cv = *ppc++;
-                if (cx == x && cy == y)
-                {
-                    v = cv;
-                    continue;
-                }
                 if (!first_comp && cv > max_v)
                     max_v = cv;
-                if (!last_comp && cv < min_v)
+                else if (!last_comp && cv < min_v)
                     min_v = cv;
             }
             pc += span;
@@ -119,33 +113,29 @@ inline static void process_at_pixel(ClapTrap      * restrict ct,
         }
         /* If we're not the last component, and we meet the criteria
          * the next component needs processing. */
-        if (!last_comp && shadow_here(v, min_v, comp))
+        if (!last_comp)
         {
-            if (v > np)
+            /* Process flag for next component inherits from this one */
+            int np = p;
+            if (v > np && shadow_here(v, min_v, comp))
                 np = v;
-        }
 
-        /* Update the next components process flag if required */
-        if (!last_comp)
-            process[line_offset + oc] = np;
-
+            /* Update the next components process flag if required */
+            *process = np;
 #ifdef SAVE_PROCESS_BUFFER
-        if (!last_comp)
-        {
-            buffer[x] = ct->process[line_offset + oc];
+            buffer[x] = np;
             return;
+#endif
         }
-#else
+
         if (!first_comp && p > v && trap_here(v, max_v, comp))
         {
             if (max_v < p)
                 p = max_v;
-            buffer[x] = p;
-            return;
+            v = p;
         }
-#endif
     }
-    buffer[x] = linebuf[line_offset + oc];
+    buffer[x] = v;
 }
 
 int ClapTrap_GetLinePlanar(ClapTrap       * restrict ct,
@@ -159,6 +149,7 @@ int ClapTrap_GetLinePlanar(ClapTrap       * restrict ct,
     int comp;
     int x;
     int line_offset;
+    unsigned char *process;
 
     /* Read in as many lines as we need */
     max_y = ct->y + ct->max_y_offset;
@@ -170,7 +161,6 @@ int ClapTrap_GetLinePlanar(ClapTrap       * restrict ct,
         int code = ct->get_line(ct->get_line_arg, &ct->linebuf[bufpos]);
         if (code < 0)
             return code;
-        memset(&ct->process[bufpos], 0, ct->span);
         ct->lines_read++;
     }
 
@@ -182,101 +172,109 @@ int ClapTrap_GetLinePlanar(ClapTrap       * restrict ct,
         r_margin = 0;
         l_margin = 0;
     }
-    line_offset = (ct->y % ct->lines_in_buf) * ct->span;
+    x = (ct->y % ct->lines_in_buf);
+    process = &ct->process[x * ct->width];
+    line_offset = x * ct->span;
     if (ct->y < ct->max_y_offset || ct->y >= ct->height - ct->max_y_offset)
     {
+        unsigned char *p = process;
         /* Some of our search area is off the end of the bitmap. We must be careful. */
         comp = ct->comp_order[0];
         for (x = 0; x < l_margin; x++)
         {
-            process_at_pixel(ct, buffer[comp], x, 1, 1, 1, 0, -1, comp, line_offset);
+            process_at_pixel(ct, buffer[comp], x, 1, 1, 1, 0, -1, comp, line_offset, p++);
         }
         for (; x < r_margin; x++)
         {
-            process_at_pixel(ct, buffer[comp], x, 0, 1, 1, 0, -1, comp, line_offset);
+            process_at_pixel(ct, buffer[comp], x, 0, 1, 1, 0, -1, comp, line_offset, p++);
         }
         for (; x < ct->width; x++)
         {
-            process_at_pixel(ct, buffer[comp], x, 1, 1, 1, 0, -1, comp, line_offset);
+            process_at_pixel(ct, buffer[comp], x, 1, 1, 1, 0, -1, comp, line_offset, p++);
         }
         for (comp_idx = 1; comp_idx < ct->num_comps-1; comp_idx++)
         {
             prev_comp = comp;
+            p = process;
             comp = ct->comp_order[comp_idx];
             for (x = 0; x < l_margin; x++)
             {
-                process_at_pixel(ct, buffer[comp], x, 1, 1, 0, 0, prev_comp, comp, line_offset);
+                process_at_pixel(ct, buffer[comp], x, 1, 1, 0, 0, prev_comp, comp, line_offset, p++);
             }
             for (; x < r_margin; x++)
             {
-                process_at_pixel(ct, buffer[comp], x, 0, 1, 0, 0, prev_comp, comp, line_offset);
+                process_at_pixel(ct, buffer[comp], x, 0, 1, 0, 0, prev_comp, comp, line_offset, p++);
             }
             for (; x < ct->width; x++)
             {
-                process_at_pixel(ct, buffer[comp], x, 1, 1, 0, 0, prev_comp, comp, line_offset);
+                process_at_pixel(ct, buffer[comp], x, 1, 1, 0, 0, prev_comp, comp, line_offset, p++);
             }
         }
         prev_comp = comp;
+        p = process;
         comp = ct->comp_order[comp_idx];
         for (x = 0; x < l_margin; x++)
         {
-            process_at_pixel(ct, buffer[comp], x, 1, 1, 0, 1, prev_comp, comp, line_offset);
+            process_at_pixel(ct, buffer[comp], x, 1, 1, 0, 1, prev_comp, comp, line_offset, p++);
         }
         for (; x < r_margin; x++)
         {
-            process_at_pixel(ct, buffer[comp], x, 0, 1, 0, 1, prev_comp, comp, line_offset);
+            process_at_pixel(ct, buffer[comp], x, 0, 1, 0, 1, prev_comp, comp, line_offset, p++);
         }
         for (; x < ct->width; x++)
         {
-            process_at_pixel(ct, buffer[comp], x, 1, 1, 0, 1, prev_comp, comp, line_offset);
+            process_at_pixel(ct, buffer[comp], x, 1, 1, 0, 1, prev_comp, comp, line_offset, p++);
         }
     }
     else
     {
         /* Our search area never clips on y at least. */
+        unsigned char *p = process;
         comp = ct->comp_order[0];
         for (x = 0; x < l_margin; x++)
         {
-            process_at_pixel(ct, buffer[comp], x, 1, 0, 1, 0, -1, comp, line_offset);
+            process_at_pixel(ct, buffer[comp], x, 1, 0, 1, 0, -1, comp, line_offset, p++);
         }
         for (; x < r_margin; x++)
         {
-            process_at_pixel(ct, buffer[comp], x, 0, 0, 1, 0, -1, comp, line_offset);
+            process_at_pixel(ct, buffer[comp], x, 0, 0, 1, 0, -1, comp, line_offset, p++);
         }
         for (; x < ct->width; x++)
         {
-            process_at_pixel(ct, buffer[comp], x, 1, 0, 1, 0, -1, comp, line_offset);
+            process_at_pixel(ct, buffer[comp], x, 1, 0, 1, 0, -1, comp, line_offset, p++);
         }
         for (comp_idx = 1; comp_idx < ct->num_comps-1; comp_idx++)
         {
             prev_comp = comp;
+            p = process;
             comp = ct->comp_order[comp_idx];
             for (x = 0; x < l_margin; x++)
             {
-                process_at_pixel(ct, buffer[comp], x, 1, 0, 0, 0, prev_comp, comp, line_offset);
+                process_at_pixel(ct, buffer[comp], x, 1, 0, 0, 0, prev_comp, comp, line_offset, p++);
             }
             for (; x < r_margin; x++)
             {
-                process_at_pixel(ct, buffer[comp], x, 0, 0, 0, 0, prev_comp, comp, line_offset);
+                process_at_pixel(ct, buffer[comp], x, 0, 0, 0, 0, prev_comp, comp, line_offset, p++);
             }
             for (; x < ct->width; x++)
             {
-                process_at_pixel(ct, buffer[comp], x, 1, 0, 0, 0, prev_comp, comp, line_offset);
+                process_at_pixel(ct, buffer[comp], x, 1, 0, 0, 0, prev_comp, comp, line_offset, p++);
             }
         }
         prev_comp = comp;
+        p = process;
         comp = ct->comp_order[comp_idx];
         for (x = 0; x < l_margin; x++)
         {
-            process_at_pixel(ct, buffer[comp], x, 1, 0, 0, 1, prev_comp, comp, line_offset);
+            process_at_pixel(ct, buffer[comp], x, 1, 0, 0, 1, prev_comp, comp, line_offset, p++);
         }
         for (; x < r_margin; x++)
         {
-            process_at_pixel(ct, buffer[comp], x, 0, 0, 0, 1, prev_comp, comp, line_offset);
+            process_at_pixel(ct, buffer[comp], x, 0, 0, 0, 1, prev_comp, comp, line_offset, p++);
         }
         for (; x < ct->width; x++)
         {
-            process_at_pixel(ct, buffer[comp], x, 1, 0, 0, 1, prev_comp, comp, line_offset);
+            process_at_pixel(ct, buffer[comp], x, 1, 0, 0, 1, prev_comp, comp, line_offset, p++);
         }
     }
     ct->y++;

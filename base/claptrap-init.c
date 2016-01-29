@@ -46,7 +46,7 @@ ClapTrap *ClapTrap_Init(gs_memory_t     *mem,
     ct->span         = width * num_comps;
 
     ct->linebuf      = gs_alloc_bytes(mem, ct->span * ct->lines_in_buf, "ClapTrap linebuf");
-    ct->process      = gs_alloc_bytes(mem, ct->span * ct->lines_in_buf, "ClapTrap process");
+    ct->process      = gs_alloc_bytes(mem, ct->width * ct->lines_in_buf, "ClapTrap process");
     if (ct->linebuf == NULL || ct->process == NULL)
     {
         gs_free_object(mem, ct->linebuf, "ClapTrap linebuf");
@@ -54,7 +54,6 @@ ClapTrap *ClapTrap_Init(gs_memory_t     *mem,
         gs_free_object(mem, ct, "ClapTrap");
         return NULL;
     }
-    memset(ct->process, 0, ct->span * ct->lines_in_buf);
 
     return ct;
 }
