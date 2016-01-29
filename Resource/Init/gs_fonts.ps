@@ -1131,8 +1131,13 @@ $error /SubstituteFont { } put
             {   % Yes.  Stack: origfontname fontdirectory path filefontname fontdict
               dup 4 -1 roll /PathLoad exch //.putgstringcopy exec
                       % Stack: origfontname fontdirectory filefontname fontdict
-              3 -1 roll pop exch
-                      % Stack: origfontname fontdict filefontname
+              3 -1 roll pop
+                      % Stack: origfontname filefontname fontdict
+              dup /FontName get dup FontDirectory exch .forceundef
+              GlobalFontDirectory exch .forceundef
+              dup length dict .copydict dup 3 index /FontName exch put
+              2 index exch definefont
+              exch
               QUIET
                { pop
                }
