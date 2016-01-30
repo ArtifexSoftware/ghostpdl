@@ -2797,10 +2797,26 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
         pdev->state.soft_mask_id = pis->soft_mask_id;
     }
     if (pdev->state.opacity.alpha != pis->opacity.alpha) {
-        if (pdev->state.shape.alpha != pis->shape.alpha)
-            return_error(gs_error_rangecheck);
-        ais = false;
-        alpha = pdev->state.opacity.alpha = pis->opacity.alpha;
+        if (pdev->state.shape.alpha != pis->shape.alpha) {
+            /* We had previously set one of opacity or shape, but we didn't
+             * ever need to write the graphcis state out, leaving us with a
+             * dangling alpha. We should honour the current state. One of
+             * opacity or alpha will be the default (1.0), so use the other.
+             */
+            pdev->state.opacity.alpha = pis->opacity.alpha;
+            pdev->state.shape.alpha = pis->shape.alpha;
+            if (pis->opacity.alpha != 1.0) {
+                ais = false;
+                alpha = pdev->state.opacity.alpha;
+            }
+            else {
+                ais = true;
+                alpha = pdev->state.shape.alpha;
+            }
+        } else {
+            ais = false;
+            alpha = pdev->state.opacity.alpha = pis->opacity.alpha;
+        }
     } else if (pdev->state.shape.alpha != pis->shape.alpha) {
         ais = true;
         alpha = pdev->state.shape.alpha = pis->shape.alpha;
