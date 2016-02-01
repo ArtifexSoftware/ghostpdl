@@ -342,7 +342,7 @@ s_DCT_byte_params(gs_param_list * plist, gs_param_name key, int start,
             }
             for (i = 0; i < count; ++i)
                 pvals[i] = (UINT8) bytes.data[start + i];
-            return 0;
+            code = 1;
         default:		/* might be a float array */
             code = param_read_int_array(plist, key, &ints);
             if (!code) {
@@ -353,6 +353,7 @@ s_DCT_byte_params(gs_param_list * plist, gs_param_name key, int start,
                 for (i = 0; i < count; ++i) {
                     pvals[i] = ints.data[start + i];
                 }
+                code = 1;
             } else {
                 code = param_read_float_array(plist, key, &floats);
                 if (!code) {
@@ -370,6 +371,7 @@ s_DCT_byte_params(gs_param_list * plist, gs_param_name key, int start,
                         pvals[i] = (UINT8) (v + 0.5);
                     }
                 }
+                code = 1;
             }
     }
     if (code < 0)
