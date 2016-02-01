@@ -741,7 +741,7 @@ const tiffsep_device gs_tiffsep_device =
 {
     tiffsep_devices_body(tiffsep_device, spot_cmyk_procs, "tiffsep", ARCH_SIZEOF_GX_COLOR_INDEX, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, GX_CINFO_SEP_LIN, "DeviceCMYK", tiffsep_print_page, tiffseps_print_page_copies, COMPRESSION_LZW),
     /* devn_params specific parameters */
-    { 8,                        /* Not used - Bits per color */
+    { 8,                        /* Ignored - Bits per color */
       DeviceCMYKComponents,     /* Names of color model colorants */
       4,                        /* Number colorants for CMYK */
       0,                        /* MaxSeparations has not been specified */
@@ -757,7 +757,7 @@ const tiffsep1_device gs_tiffsep1_device =
 {
     tiffsep_devices_body(tiffsep1_device, spot1_cmyk_procs, "tiffsep1", ARCH_SIZEOF_GX_COLOR_INDEX, GX_CINFO_POLARITY_SUBTRACTIVE, GCIB, MAX_COLOR_VALUE, MAX_COLOR_VALUE, GX_CINFO_SEP_LIN, "DeviceCMYK", tiffsep1_print_page, tiffseps_print_page_copies, COMPRESSION_CCITTFAX4),
     /* devn_params specific parameters */
-    { 8,                        /* Not used - Bits per color */
+    { 8,                        /* Ignored - Bits per color */
       DeviceCMYKComponents,     /* Names of color model colorants */
       4,                        /* Number colorants for CMYK */
       0,                        /* MaxSeparations has not been specified */
@@ -1023,8 +1023,11 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
                 param_signal_error(plist, param_name, code);
                 return code;
             }
-
-            if (!tiff_compression_allowed(pdevn->Compression, pdevn->BitsPerComponent)) {
+            /* Because pdevn->BitsPerComponent is ignored for tiffsep(1) we have to get
+             * the value based on whether we're called from tiffsep or tiffsep1
+             */
+            bpc = (dev_proc(pdev, put_params) == tiffsep1_put_params) ? 1 : 8;
+            if (!tiff_compression_allowed(pdevn->Compression, bpc)) {
                 errprintf(pdevn->memory, "Invalid compression setting for this bitdepth\n");
 
                 param_signal_error(plist, param_name, gs_error_rangecheck);
