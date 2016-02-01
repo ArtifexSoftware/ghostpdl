@@ -92,13 +92,10 @@ typedef struct psd_device_s {
 
     psd_color_model color_model;
 
-    long downscale_factor;
     int max_spots;
     bool lock_colorants;
 
-    int trap_w;
-    int trap_h;
-    int trap_order[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    gx_downscaler_params downscale;
 
     /* ICC color profile objects, for color conversion.
        These are all device link profiles.  At least that
@@ -275,9 +272,9 @@ const psd_device gs_psdrgb_device =
     { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
     psd_DEVICE_RGB,		/* Color model */
-    1,                          /* downscale_factor */
     GS_SOFT_MAX_SPOTS,           /* max_spots */
     false,                      /* colorants not locked */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
 /*
@@ -306,12 +303,9 @@ const psd_device gs_psdcmyk_device =
     { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
     psd_DEVICE_CMYK,		/* Color model */
-    1,                          /* downscale_factor */
     GS_SOFT_MAX_SPOTS,          /* max_spots */
     false,                      /* colorants not locked */
-    0,                          /* trapping disabled initially */
-    0,                          /* trapping disabled initially */
-    { 0 },                      /* trapping disabled initially */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
 /* Open the psd devices */
@@ -758,10 +752,6 @@ psd_get_params_generic(gx_device * pdev, gs_param_list * plist, int cmyk)
     gs_param_string prgbs;
     gs_param_string pcmyks;
 #endif
-    gs_param_int_array trap_order;
-    trap_order.data = xdev->trap_order;
-    trap_order.size = GS_CLIENT_COLOR_MAX_COMPONENTS;
-    trap_order.persistent = false;
 
     code = gx_devn_prn_get_params(pdev, plist);
     if (code < 0)
@@ -789,18 +779,8 @@ psd_get_params_generic(gx_device * pdev, gs_param_list * plist, int cmyk)
     if (code < 0)
         return code;
 #endif
-    code = param_write_long(plist, "DownScaleFactor", &xdev->downscale_factor);
-    if (code < 0)
-        return code;
-    if (cmyk)
-    {
-      if ((code = param_write_int(plist, "TrapX", &xdev->trap_w)) < 0)
-          return code;
-      if ((code = param_write_int(plist, "TrapY", &xdev->trap_h)) < 0)
-          return code;
-      if ((code = param_write_int_array(plist, "TrapOrder", &trap_order)) < 0)
-          return code;
-    }
+    code = gx_downscaler_write_params(plist, &xdev->downscale,
+                                      cmyk ? GX_DOWNSCALER_PARAMS_TRAP : 0);
     code = param_write_int(plist, "MaxSpots", &xdev->max_spots);
     if (code < 0)
         return code;
@@ -891,94 +871,11 @@ psd_put_params_generic(gx_device * pdev, gs_param_list * plist, int cmyk)
     gs_param_string pcm;
     psd_color_model color_model = pdevn->color_model;
     gx_device_color_info save_info = pdevn->color_info;
-    gs_param_int_array trap_order;
 
-    trap_order.data = NULL;
-
-    switch (code = param_read_long(plist,
-                                   "DownScaleFactor",
-                                   &pdevn->downscale_factor)) {
-        case 0:
-            if (pdevn->downscale_factor <= 0)
-                pdevn->downscale_factor = 1;
-            break;
-        case 1:
-            break;
-        default:
-            param_signal_error(plist, "DownScaleFactor", code);
-            return code;
-    }
-    if (cmyk)
-    {
-        switch (code = param_read_int(plist,
-                                      "TrapX",
-                                      &pdevn->trap_w)) {
-            case 0:
-                if (pdevn->trap_w <= 0)
-                    pdevn->trap_w = 0;
-                break;
-            case 1:
-                break;
-            default:
-                param_signal_error(plist, "TrapX", code);
-                return code;
-        }
-        switch (code = param_read_int(plist,
-                                      "TrapY",
-                                      &pdevn->trap_h)) {
-            case 0:
-                if (pdevn->trap_h <= 0)
-                    pdevn->trap_h = 0;
-                break;
-            case 1:
-                break;
-            default:
-                param_signal_error(plist, "TrapY", code);
-                return code;
-        }
-        switch (code = param_read_int_array(plist, "TrapOrder", &trap_order)) {
-            case 0:
-                break;
-            case 1:
-                trap_order.data = 0;          /* mark as not filled */
-                break;
-            default:
-                param_signal_error(plist, "TrapOrder", code);
-                return code;
-        }
-        if (trap_order.data != NULL)
-        {
-            int i;
-            int n = trap_order.size;
-
-            if (n > GS_CLIENT_COLOR_MAX_COMPONENTS)
-                n = GS_CLIENT_COLOR_MAX_COMPONENTS;
-
-            for (i = 0; i < n; i++)
-            {
-                pdevn->trap_order[i] = trap_order.data[i];
-            }
-            for (; i < GS_CLIENT_COLOR_MAX_COMPONENTS; i++)
-            {
-                pdevn->trap_order[i] = i;
-            }
-        }
-        else
-        {
-            /* Set some sane defaults */
-            int i;
-
-            pdevn->trap_order[0] = 3; /* K */
-            pdevn->trap_order[1] = 1; /* M */
-            pdevn->trap_order[2] = 0; /* C */
-            pdevn->trap_order[3] = 2; /* Y */
-
-            for (i = 4; i < GS_CLIENT_COLOR_MAX_COMPONENTS; i++)
-            {
-              pdevn->trap_order[i] = i;
-            }
-        }
-    }
+    code = gx_downscaler_read_params(plist, &pdevn->downscale,
+                                     cmyk ? GX_DOWNSCALER_PARAMS_TRAP : 0);
+    if (code < 0)
+        return code;
 
     switch (code = param_read_bool(plist, "LockColorants", &(pdevn->lock_colorants))) {
         case 0:
@@ -1455,9 +1352,10 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
         return_error(gs_error_VMerror);
 
     code = gx_downscaler_init_planar_trapped(&ds, (gx_device *)pdev, &params, num_comp,
-                                             psd_dev->downscale_factor, 0, 8, 8,
-                                             psd_dev->trap_w, psd_dev->trap_h,
-                                             psd_dev->trap_order);
+                                             psd_dev->downscale.downscale_factor, 0, 8, 8,
+                                             psd_dev->downscale.trap_w,
+                                             psd_dev->downscale.trap_h,
+                                             psd_dev->downscale.trap_order);
     if (code < 0)
         goto cleanup;
 
@@ -1539,8 +1437,8 @@ psd_print_page(gx_device_printer *pdev, FILE *file)
     }
     else {
         code = psd_setup(&xc, devn_dev, file,
-                  gx_downscaler_scale(pdev->width, psd_dev->downscale_factor),
-                  gx_downscaler_scale(pdev->height, psd_dev->downscale_factor));
+                  gx_downscaler_scale(pdev->width, psd_dev->downscale.downscale_factor),
+                  gx_downscaler_scale(pdev->height, psd_dev->downscale.downscale_factor));
         if (code >= 0)
             code = psd_write_header(&xc, devn_dev);
         if (code >= 0)

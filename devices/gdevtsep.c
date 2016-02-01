@@ -80,10 +80,9 @@ const gx_device_tiff gs_tiffgray_device = {
     false,                      /* default to *not* bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
-    TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1,  /* MinFeatureSize */
-    true /* write_datetime */
+    true, /* write_datetime */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
 /* ------ The tiffscaled device ------ */
@@ -114,10 +113,9 @@ const gx_device_tiff gs_tiffscaled_device = {
     false,             /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
-    TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1,  /* MinFeatureSize */
-    true /* write_datetime */
+    true, /* write_datetime */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
 /* ------ The tiffscaled8 device ------ */
@@ -148,10 +146,9 @@ const gx_device_tiff gs_tiffscaled8_device = {
     false,             /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
-    TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1,  /* MinFeatureSize */
-    true /* write_datetime */
+    true, /* write_datetime */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
 /* ------ The tiffscaled24 device ------ */
@@ -182,10 +179,9 @@ const gx_device_tiff gs_tiffscaled24_device = {
     false,             /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
-    TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1,  /* MinFeatureSize */
-    true /* write_datetime */
+    true, /* write_datetime */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
 /* ------ The tiffscaled32 device ------ */
@@ -195,7 +191,7 @@ static dev_proc_print_page(tiffscaled32_print_page);
 static const gx_device_procs tiffscaled32_procs = {
     tiff_open, NULL, NULL, gdev_prn_output_page_seekable, tiff_close,
     NULL, cmyk_8bit_map_color_cmyk, NULL, NULL, NULL, NULL, NULL, NULL,
-    tiff_get_params_downscale, tiff_put_params_downscale,
+    tiff_get_params_downscale_cmyk, tiff_put_params_downscale_cmyk,
     cmyk_8bit_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device
 };
 
@@ -214,10 +210,9 @@ const gx_device_tiff gs_tiffscaled32_device = {
     false,             /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
-    TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1,  /* MinFeatureSize */
-    true /* write_datetime */
+    true, /* write_datetime */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
 /* ------ The tiffscaled4 device ------ */
@@ -246,10 +241,9 @@ const gx_device_tiff gs_tiffscaled4_device = {
     false,             /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
-    TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1,  /* MinFeatureSize */
-    true /* write_datetime */
+    true, /* write_datetime */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
 /* ------ Private functions ------ */
@@ -300,8 +294,8 @@ tiffscaled_print_page(gx_device_printer * pdev, FILE * file)
     tiff_set_gray_fields(pdev, tfdev->tif, 1, tfdev->Compression, tfdev->MaxStripSize);
 
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
-                                         tfdev->DownScaleFactor,
-                                         tfdev->MinFeatureSize,
+                                         tfdev->downscale.downscale_factor,
+                                         tfdev->downscale.min_feature_size,
                                          tfdev->AdjustWidth,
                                          1, 1,
                                          0, 0, NULL);
@@ -320,8 +314,8 @@ tiffscaled8_print_page(gx_device_printer * pdev, FILE * file)
     tiff_set_gray_fields(pdev, tfdev->tif, 8, tfdev->Compression, tfdev->MaxStripSize);
 
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
-                                         tfdev->DownScaleFactor,
-                                         tfdev->MinFeatureSize,
+                                         tfdev->downscale.downscale_factor,
+                                         tfdev->downscale.min_feature_size,
                                          tfdev->AdjustWidth,
                                          8, 1,
                                          0, 0, NULL);
@@ -364,8 +358,8 @@ tiffscaled24_print_page(gx_device_printer * pdev, FILE * file)
     tiff_set_rgb_fields(tfdev);
 
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
-                                         tfdev->DownScaleFactor,
-                                         tfdev->MinFeatureSize,
+                                         tfdev->downscale.downscale_factor,
+                                         tfdev->downscale.min_feature_size,
                                          tfdev->AdjustWidth,
                                          8, 3,
                                          0, 0, NULL);
@@ -402,12 +396,12 @@ tiffscaled32_print_page(gx_device_printer * pdev, FILE * file)
                          tfdev->MaxStripSize);
 
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
-                                         tfdev->DownScaleFactor,
-                                         tfdev->MinFeatureSize,
+                                         tfdev->downscale.downscale_factor,
+                                         tfdev->downscale.min_feature_size,
                                          tfdev->AdjustWidth,
                                          8, 4,
-                                         tfdev->trap_w, tfdev->trap_h,
-                                         tfdev->trap_order);
+                                         tfdev->downscale.trap_w, tfdev->downscale.trap_h,
+                                         tfdev->downscale.trap_order);
 }
 
 static int
@@ -427,12 +421,12 @@ tiffscaled4_print_page(gx_device_printer * pdev, FILE * file)
                          tfdev->MaxStripSize);
 
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
-                                         tfdev->DownScaleFactor,
-                                         tfdev->MinFeatureSize,
+                                         tfdev->downscale.downscale_factor,
+                                         tfdev->downscale.min_feature_size,
                                          tfdev->AdjustWidth,
                                          1, 4,
-                                         tfdev->trap_w, tfdev->trap_h,
-                                         tfdev->trap_order);
+                                         tfdev->downscale.trap_w, tfdev->downscale.trap_h,
+                                         tfdev->downscale.trap_order);
 }
 
 /* ------ The cmyk devices ------ */
@@ -461,10 +455,9 @@ const gx_device_tiff gs_tiff32nc_device = {
     false,                      /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
-    TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1,  /* MinFeatureSize */
-    true /* write_datetime */
+    true, /* write_datetime */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
 /* 16-bit-per-plane separated CMYK color. */
@@ -483,9 +476,9 @@ const gx_device_tiff gs_tiff64nc_device = {
     false,                      /* default to not bigtiff */
     COMPRESSION_NONE,
     TIFF_DEFAULT_STRIP_SIZE,
-    TIFF_DEFAULT_DOWNSCALE,
     0, /* Adjust size */
-    1  /* MinFeatureSize */
+    false, /* write_datetime */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
 /* ------ Private functions ------ */
@@ -554,14 +547,10 @@ static dev_proc_output_page(tiffseps_output_page);
                                    TIFFTAG_COMPRESSION */\
     bool close_files;\
     long MaxStripSize;\
-    long DownScaleFactor;\
-    long MinFeatureSize;\
     long BitsPerComponent;\
     int max_spots;\
     bool lock_colorants;\
-    int trap_w;\
-    int trap_h;\
-    int trap_order[GS_CLIENT_COLOR_MAX_COMPONENTS];\
+    gx_downscaler_params downscale;\
     gs_devn_params devn_params;         /* DeviceN generated parameters */\
     equivalent_cmyk_color_params equiv_cmyk_colors
 
@@ -728,14 +717,10 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
         compr                   /* COMPRESSION_* */,\
         true,                   /* close_files */ \
         TIFF_DEFAULT_STRIP_SIZE,/* MaxStripSize */\
-        1,                      /* DownScaleFactor */\
-        0,                      /* MinFeatureSize */\
         8,                      /* BitsPerComponent */\
         GS_SOFT_MAX_SPOTS,      /* max_spots */\
         false,                  /* Colorants not locked */\
-        0,                      /* Trapping off by default */\
-        0,                      /* Trapping off by default */\
-        { 0 }                   /* Trapping off by default */
+        GX_DOWNSCALER_PARAMS_DEFAULTS
 
 #define GCIB (ARCH_SIZEOF_GX_COLOR_INDEX * 8)
 
@@ -947,10 +932,6 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
     int code = gdev_prn_get_params(pdev, plist);
     int ecode = code;
     gs_param_string comprstr;
-    gs_param_int_array trap_order;
-    trap_order.data = pdevn->trap_order;
-    trap_order.size = GS_CLIENT_COLOR_MAX_COMPONENTS;
-    trap_order.persistent = false;
 
     if (code < 0)
         return code;
@@ -968,10 +949,6 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
         ecode = code;
     if ((code = param_write_long(plist, "MaxStripSize", &pdevn->MaxStripSize)) < 0)
         ecode = code;
-    if ((code = param_write_long(plist, "DownScaleFactor", &pdevn->DownScaleFactor)) < 0)
-        ecode = code;
-    if ((code = param_write_long(plist, "MinFeatureSize", &pdevn->MinFeatureSize)) < 0)
-        ecode = code;
     if ((code = param_write_long(plist, "BitsPerComponent", &pdevn->BitsPerComponent)) < 0)
         ecode = code;
     if ((code = param_write_int(plist, "MaxSpots", &pdevn->max_spots)) < 0)
@@ -980,11 +957,10 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
         ecode = code;
     if ((code = param_write_bool(plist, "PrintSpotCMYK", &pdevn->PrintSpotCMYK)) < 0)
         ecode = code;
-    if ((code = param_write_int(plist, "TrapX", &pdevn->trap_w)) < 0)
-        ecode = code;
-    if ((code = param_write_int(plist, "TrapY", &pdevn->trap_h)) < 0)
-        ecode = code;
-    if ((code = param_write_int_array(plist, "TrapOrder", &trap_order)) < 0)
+
+    if ((code = gx_downscaler_write_params(plist, &pdevn->downscale,
+                                           GX_DOWNSCALER_PARAMS_MFS |
+                                           GX_DOWNSCALER_PARAMS_TRAP)) < 0)
         ecode = code;
 
     return ecode;
@@ -999,15 +975,8 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
     const char *param_name;
     gs_param_string comprstr;
     bool save_close_files = pdevn->close_files;
-    long downscale = pdevn->DownScaleFactor;
-    long mfs = pdevn->MinFeatureSize;
     long bpc = pdevn->BitsPerComponent;
     int max_spots = pdevn->max_spots;
-    int trap_w = pdevn->trap_w;
-    int trap_h = pdevn->trap_h;
-    gs_param_int_array trap_order;
-
-    trap_order.data = NULL;
 
     /* Read BigEndian option as bool */
     switch (code = param_read_bool(plist, (param_name = "BigEndian"), &pdevn->BigEndian)) {
@@ -1084,33 +1053,6 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
         case 1:
             break;
     }
-    switch (code = param_read_long(plist,
-                                   (param_name = "DownScaleFactor"),
-                                   &downscale)) {
-        case 0:
-            if (downscale <= 0)
-                downscale = 1;
-            pdevn->DownScaleFactor = downscale;
-            break;
-        case 1:
-            break;
-        default:
-            param_signal_error(plist, param_name, code);
-            return code;
-    }
-    switch (code = param_read_long(plist, (param_name = "MinFeatureSize"), &mfs)) {
-        case 0:
-            if ((mfs >= 0) && (mfs <= 4)) {
-                pdevn->MinFeatureSize = mfs;
-                break;
-            }
-            code = gs_error_rangecheck;
-        case 1:
-            break;
-        default:
-            param_signal_error(plist, param_name, code);
-            return code;
-    }
     switch (code = param_read_bool(plist, (param_name = "LockColorants"), 
             &(pdevn->lock_colorants))) {
         case 0:
@@ -1136,78 +1078,12 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
             param_signal_error(plist, param_name, code);
             return code;
     }
-    switch (code = param_read_int(plist,
-                                  (param_name = "TrapX"),
-                                  &trap_w)) {
-        case 0:
-            if (trap_w <= 0)
-                trap_w = 0;
-            break;
-        case 1:
-            break;
-        default:
-            param_signal_error(plist, param_name, code);
-            return code;
-    }
-    switch (code = param_read_int(plist,
-                                  (param_name = "TrapY"),
-                                  &trap_h)) {
-        case 0:
-            if (trap_h <= 0)
-                trap_h = 0;
-            break;
-        case 1:
-            break;
-        default:
-            param_signal_error(plist, param_name, code);
-            return code;
-    }
-    switch (code = param_read_int_array(plist, (param_name = "TrapOrder"), &trap_order)) {
-        case 0:
-            break;
-        case 1:
-            trap_order.data = 0;          /* mark as not filled */
-            break;
-        default:
-            param_signal_error(plist, param_name, code);
-            return code;
-    }
 
-    if (trap_order.data != NULL)
-    {
-        int i;
-        int n = trap_order.size;
+    code = gx_downscaler_read_params(plist, &pdevn->downscale,
+                                     GX_DOWNSCALER_PARAMS_MFS | GX_DOWNSCALER_PARAMS_TRAP);
+    if (code < 0)
+        return code;
 
-        if (n > GS_CLIENT_COLOR_MAX_COMPONENTS)
-            n = GS_CLIENT_COLOR_MAX_COMPONENTS;
-
-        for (i = 0; i < n; i++)
-        {
-            pdevn->trap_order[i] = trap_order.data[i];
-        }
-        for (; i < GS_CLIENT_COLOR_MAX_COMPONENTS; i++)
-        {
-            pdevn->trap_order[i] = i;
-        }
-    }
-    else
-    {
-        /* Set some sane defaults */
-        int i;
-
-        pdevn->trap_order[0] = 3; /* K */
-        pdevn->trap_order[1] = 1; /* M */
-        pdevn->trap_order[2] = 0; /* C */
-        pdevn->trap_order[3] = 2; /* Y */
-
-        for (i = 4; i < GS_CLIENT_COLOR_MAX_COMPONENTS; i++)
-        {
-            pdevn->trap_order[i] = i;
-        }
-    }
-
-    pdevn->trap_w = trap_w;
-    pdevn->trap_h = trap_h;
     pdevn->close_files = false;
 
     code = devn_printer_put_params(pdev, plist,
@@ -2327,8 +2203,8 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     const char *fmt;
     gs_parsed_file_name_t parsed;
     int plane_count = 0;  /* quiet compiler */
-    int factor = tfdev->DownScaleFactor;
-    int mfs = tfdev->MinFeatureSize;
+    int factor = tfdev->downscale.downscale_factor;
+    int mfs = tfdev->downscale.min_feature_size;
     int dst_bpc = tfdev->BitsPerComponent;
     gx_downscaler_t ds;
     int width = gx_downscaler_scale(tfdev->width, factor);
@@ -2541,7 +2417,8 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
             }
             code = gx_downscaler_init_planar_trapped(&ds, (gx_device *)pdev, &params,
                                                      num_comp, factor, mfs, 8, dst_bpc,
-                                                     tfdev->trap_w, tfdev->trap_h, tfdev->trap_order);
+                                                     tfdev->downscale.trap_w, tfdev->downscale.trap_h,
+                                                     tfdev->downscale.trap_order);
             if (code < 0)
                 goto cleanup;
             byte_width = (width * dst_bpc + 7)>>3;

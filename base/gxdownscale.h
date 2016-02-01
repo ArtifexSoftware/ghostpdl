@@ -160,4 +160,32 @@ int gx_downscaler_init_planar_trapped(gx_downscaler_t      *ds,
                                       int                   trap_h,
                                       const int            *comp_order);
 
+/* The following structure is used to hold the configuration
+ * parameters for the downscaler.
+ */
+typedef struct gx_downscaler_params_s
+{
+    long downscale_factor;
+    long min_feature_size;
+    int trap_w;
+    int trap_h;
+    int trap_order[GS_CLIENT_COLOR_MAX_COMPONENTS];
+} gx_downscaler_params;
+
+#define GX_DOWNSCALER_PARAMS_DEFAULTS \
+{ 1, 0, 0, 0, { 3, 1, 0, 2 } }
+
+enum {
+    GX_DOWNSCALER_PARAMS_MFS = 1,
+    GX_DOWNSCALER_PARAMS_TRAP = 2
+};
+
+int gx_downscaler_read_params(gs_param_list        *plist,
+                              gx_downscaler_params *params,
+                              int                   features);
+
+int gx_downscaler_write_params(gs_param_list        *plist,
+                               gx_downscaler_params *params,
+                               int                   features);
+
 #endif

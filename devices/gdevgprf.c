@@ -65,7 +65,7 @@ static dev_proc_get_color_comp_index(gprf_get_color_comp_index);
  */
 typedef struct gprf_device_s {
     gx_devn_prn_device_common;
-    long downscale_factor;
+    gx_downscaler_params downscale;
     int max_spots;
     bool lock_colorants;
     gsicc_link_t *icclink;
@@ -214,7 +214,7 @@ const gprf_device gs_gprf_device =
     },
     { true },			/* equivalent CMYK colors for spot colors */
     /* gprf device specific parameters */
-    1,                          /* downscale_factor */
+    GX_DOWNSCALER_PARAMS_DEFAULTS,
     GS_SOFT_MAX_SPOTS,          /* max_spots */
     false,                      /* colorants not locked */
     0,                          /* ICC link */
@@ -442,7 +442,7 @@ gprf_get_params(gx_device * pdev, gs_param_list * plist)
     if (code < 0)
         return code;
 
-    code = param_write_long(plist, "DownScaleFactor", &xdev->downscale_factor);
+    code = gx_downscaler_write_params(plist, &xdev->downscale, 0);
     if (code < 0)
         return code;
     code = param_write_int(plist, "MaxSpots", &xdev->max_spots);
@@ -461,19 +461,9 @@ gprf_put_params(gx_device * pdev, gs_param_list * plist)
 
     gx_device_color_info save_info = pdevn->color_info;
 
-    switch (code = param_read_long(plist,
-                                   "DownScaleFactor",
-                                   &pdevn->downscale_factor)) {
-        case 0:
-            if (pdevn->downscale_factor <= 0)
-                pdevn->downscale_factor = 1;
-            break;
-        case 1:
-            break;
-        default:
-            param_signal_error(plist, "DownScaleFactor", code);
-            return code;
-    }
+    code = gx_downscaler_read_params(plist, &pdevn->downscale, 0);
+    if (code < 0)
+        return code;
 
     switch (code = param_read_bool(plist, "LockColorants", &(pdevn->lock_colorants))) {
         case 0:
@@ -1099,7 +1089,7 @@ gprf_write_image_data(gprf_write_ctx *xc)
     }
 
     code = gx_downscaler_init_planar(&ds, (gx_device *)pdev, &params, num_comp,
-                                     gprf_dev->downscale_factor, 0, 8, 8);
+                                     gprf_dev->downscale.downscale_factor, 0, 8, 8);
     if (code < 0)
         goto cleanup;
 
@@ -1219,8 +1209,8 @@ gprf_print_page(gx_device_printer *pdev, FILE *file)
     gprf_device *gprf_dev = (gprf_device *)pdev;
 
     gprf_setup(&xc, pdev, file,
-              gx_downscaler_scale(pdev->width, gprf_dev->downscale_factor),
-              gx_downscaler_scale(pdev->height, gprf_dev->downscale_factor),
+              gx_downscaler_scale(pdev->width, gprf_dev->downscale.downscale_factor),
+              gx_downscaler_scale(pdev->height, gprf_dev->downscale.downscale_factor),
               gprf_dev->icclink);
     gprf_write_header(&xc);
     gprf_write_image_data(&xc);

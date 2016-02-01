@@ -2370,3 +2370,162 @@ int gx_downscaler_process_page(gx_device                 *dev,
 
     return dev_proc(dev, process_page)(dev, &my_options);
 }
+
+int gx_downscaler_read_params(gs_param_list        *plist,
+                              gx_downscaler_params *params,
+                              int                   features)
+{
+    int code;
+    long downscale, mfs;
+    int trap_w, trap_h;
+    const char *param_name;
+    gs_param_int_array trap_order;
+
+    trap_order.data = NULL;
+
+    switch (code = param_read_long(plist,
+                                   (param_name = "DownScaleFactor"),
+                                   &downscale)) {
+        case 1:
+            break;
+        case 0:
+            if (downscale >= 1) {
+                params->downscale_factor = downscale;
+                break;
+            }
+            code = gs_error_rangecheck;
+        default:
+            param_signal_error(plist, param_name, code);
+            return code;
+    }
+
+    if (features & GX_DOWNSCALER_PARAMS_MFS)
+    {
+        switch (code = param_read_long(plist, (param_name = "MinFeatureSize"), &mfs)) {
+            case 1:
+                break;
+            case 0:
+                if ((mfs >= 0) && (mfs <= 4)) {
+                    params->min_feature_size = mfs;
+                    break;
+                }
+                code = gs_error_rangecheck;
+            default:
+                param_signal_error(plist, param_name, code);
+                return code;
+        }
+    }
+
+    if (features & GX_DOWNSCALER_PARAMS_TRAP)
+    {
+        switch (code = param_read_int(plist,
+                                      (param_name = "TrapX"),
+                                      &trap_w)) {
+            case 1:
+                break;
+            case 0:
+                if (trap_w >= 0)
+                {
+                    params->trap_w = trap_w;
+                    break;
+                }
+                code = gs_error_rangecheck;
+            default:
+                param_signal_error(plist, param_name, code);
+                return code;
+        }
+        switch (code = param_read_int(plist,
+                                      (param_name = "TrapY"),
+                                      &trap_h)) {
+            case 1:
+                break;
+            case 0:
+                if (trap_h >= 0)
+                {
+                    params->trap_h = trap_h;
+                    break;
+                }
+                code = gs_error_rangecheck;
+            default:
+                param_signal_error(plist, param_name, code);
+                return code;
+        }
+        switch (code = param_read_int_array(plist, (param_name = "TrapOrder"), &trap_order)) {
+            case 0:
+                break;
+            case 1:
+                trap_order.data = 0;          /* mark as not filled */
+                break;
+            default:
+                param_signal_error(plist, param_name, code);
+                return code;
+        }
+
+        if (trap_order.data != NULL)
+        {
+            int i;
+            int n = trap_order.size;
+
+            if (n > GS_CLIENT_COLOR_MAX_COMPONENTS)
+                n = GS_CLIENT_COLOR_MAX_COMPONENTS;
+
+            for (i = 0; i < n; i++)
+            {
+                params->trap_order[i] = trap_order.data[i];
+            }
+            for (; i < GS_CLIENT_COLOR_MAX_COMPONENTS; i++)
+            {
+                params->trap_order[i] = i;
+            }
+        }
+        else
+        {
+            /* Set some sane defaults */
+            int i;
+
+            params->trap_order[0] = 3; /* K */
+            params->trap_order[1] = 1; /* M */
+            params->trap_order[2] = 0; /* C */
+            params->trap_order[3] = 2; /* Y */
+
+            for (i = 4; i < GS_CLIENT_COLOR_MAX_COMPONENTS; i++)
+            {
+                params->trap_order[i] = i;
+            }
+        }
+    }
+
+    return 0;
+}
+
+int gx_downscaler_write_params(gs_param_list        *plist,
+                               gx_downscaler_params *params,
+                               int                   features)
+{
+    int code;
+    int ecode = 0;
+    gs_param_int_array trap_order;
+
+    trap_order.data = params->trap_order;
+    trap_order.size = GS_CLIENT_COLOR_MAX_COMPONENTS;
+    trap_order.persistent = false;
+
+    if ((code = param_write_long(plist, "DownScaleFactor", &params->downscale_factor)) < 0)
+        ecode = code;
+    if (features & GX_DOWNSCALER_PARAMS_MFS)
+    {
+        if ((code = param_write_long(plist, "MinFeatureSize", &params->min_feature_size)) < 0)
+            ecode = code;
+    }
+    if (features & GX_DOWNSCALER_PARAMS_TRAP)
+    {
+        if ((code = param_write_int(plist, "TrapX", &params->trap_w)) < 0)
+            ecode = code;
+        if ((code = param_write_int(plist, "TrapY", &params->trap_h)) < 0)
+            ecode = code;
+        if ((code = param_write_int_array(plist, "TrapOrder", &trap_order)) < 0)
+            ecode = code;
+    }
+
+    return ecode;
+}

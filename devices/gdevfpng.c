@@ -38,7 +38,7 @@ typedef struct gx_device_fpng_s gx_device_fpng;
 struct gx_device_fpng_s {
     gx_device_common;
     gx_prn_device_common;
-    int downscale_factor;
+    gx_downscaler_params downscale;
 };
 
 static int
@@ -48,9 +48,7 @@ fpng_get_param(gx_device *dev, char *Param, void *list)
     gs_param_list * plist = (gs_param_list *)list;
 
     if (strcmp(Param, "DownScaleFactor") == 0) {
-        if (pdev->downscale_factor < 1)
-            pdev->downscale_factor = 1;
-        return param_write_int(plist, "DownScaleFactor", &pdev->downscale_factor);
+        return param_write_int(plist, "DownScaleFactor", (int *)&pdev->downscale.downscale_factor);
     }
     return gdev_prn_get_param(dev, Param, list);
 }
@@ -62,9 +60,7 @@ fpng_get_params(gx_device * dev, gs_param_list * plist)
     int code, ecode;
 
     ecode = 0;
-    if (pdev->downscale_factor < 1)
-        pdev->downscale_factor = 1;
-    if ((code = param_write_int(plist, "DownScaleFactor", &pdev->downscale_factor)) < 0)
+    if ((code = gx_downscaler_write_params(plist, &pdev->downscale, 0)) < 0)
         ecode = code;
 
     code = gdev_prn_get_params(dev, plist);
@@ -79,27 +75,12 @@ fpng_put_params(gx_device *dev, gs_param_list *plist)
 {
     gx_device_fpng *pdev = (gx_device_fpng *)dev;
     int code, ecode;
-    int dsf = pdev->downscale_factor;
-    const char *param_name;
 
-    ecode = 0;
-    switch (code = param_read_int(plist, (param_name = "DownScaleFactor"), &dsf)) {
-        case 0:
-            if (dsf >= 1)
-                break;
-            code = gs_error_rangecheck;
-        default:
-            ecode = code;
-            param_signal_error(plist, param_name, ecode);
-        case 1:
-            break;
-    }
+    ecode = gx_downscaler_read_params(plist, &pdev->downscale, 0);
 
     code = gdev_prn_put_params(dev, plist);
     if (code < 0)
         ecode = code;
-
-    pdev->downscale_factor = dsf;
 
     return ecode;
 }
@@ -110,7 +91,7 @@ fpng_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
     gx_device_fpng *fdev = (gx_device_fpng *)pdev;
 
     if (dev_spec_op == gxdso_adjust_bandheight)
-        return gx_downscaler_adjust_bandheight(fdev->downscale_factor, size);
+        return gx_downscaler_adjust_bandheight(fdev->downscale.downscale_factor, size);
 
     if (dev_spec_op == gxdso_get_dev_param) {
         int code;
@@ -204,6 +185,7 @@ const gx_device_fpng gs_fpng_device =
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
                  3, 24, 255, 255, 256, 256, fpng_print_page),
+                 GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
 /* ------ Private definitions ------ */
@@ -323,7 +305,7 @@ static int fpng_process(void *arg, gx_device *dev, gx_device *bdev, const gs_int
     gs_int_rect my_rect;
     z_stream stream;
     int err;
-    int page_height = gx_downscaler_scale_rounded(dev->height, fdev->downscale_factor);
+    int page_height = gx_downscaler_scale_rounded(dev->height, fdev->downscale.downscale_factor);
     fpng_buffer_t *buffer = (fpng_buffer_t *)buffer_;
 
     if (h <= 0 || w <= 0)
@@ -438,8 +420,8 @@ fpng_print_page(gx_device_printer *pdev, FILE *file)
     fwrite(pngsig, 1, 8, file); /* Signature */
 
     /* IHDR chunk */
-    big32(&head[0], gx_downscaler_scale_rounded(pdev->width, fdev->downscale_factor));
-    big32(&head[4], gx_downscaler_scale_rounded(pdev->height, fdev->downscale_factor));
+    big32(&head[0], gx_downscaler_scale_rounded(pdev->width, fdev->downscale.downscale_factor));
+    big32(&head[4], gx_downscaler_scale_rounded(pdev->height, fdev->downscale.downscale_factor));
     head[8] = 8; /* 8bpc */
     head[9] = 2; /* rgb */
     head[10] = 0; /* compression */
@@ -453,5 +435,5 @@ fpng_print_page(gx_device_printer *pdev, FILE *file)
     process.output_fn = fpng_output;
     process.arg = file;
 
-    return gx_downscaler_process_page((gx_device *)pdev, &process, fdev->downscale_factor);
+    return gx_downscaler_process_page((gx_device *)pdev, &process, fdev->downscale.downscale_factor);
 }
