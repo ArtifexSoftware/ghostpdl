@@ -302,12 +302,21 @@ typedef int bool;
  * an enum in the (MacOS) Universal Interfaces. The only way around this is to escape
  * our own definitions wherever MacTypes.h is included.
  */
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+/* VS 2014 defines bool already, but has it as _Bool (a 1 byte thing).
+ * We can't live with that. */
+#undef false
+#define false ((bool)0)
+#undef true
+#define true ((bool)1)
+#else
 #ifndef __MACOS__
 #undef false
 #define false ((bool)0)
 #undef true
 #define true ((bool)1)
 #endif /* __MACOS__ */
+#endif
 
 /*
  * Compilers disagree as to whether macros used in macro arguments

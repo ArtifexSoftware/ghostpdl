@@ -15,6 +15,8 @@
 
 
 /* Type 42 (TrueType) font library routines */
+#include <stdlib.h>		/* for qsort */
+
 #include "memory_.h"
 #include "stdint_.h"
 #include "gx.h"
@@ -43,9 +45,6 @@
 #include "stream.h"
 #include "strmio.h"
 #include "szlibx.h"
-
-
-#include <stdlib.h>		/* for qsort */
 
 /* Structure descriptor */
 public_st_gs_font_type42();

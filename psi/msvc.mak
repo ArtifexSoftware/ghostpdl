@@ -789,6 +789,9 @@ MSVC_VERSION=11
 !if "$(_NMAKE_VER)" == "12.00.21005.1"
 MSVC_VERSION=12
 !endif
+!if "$(_NMAKE_VER)" == "14.00.23506.0"
+MSVC_VERSION=14
+!endif
 !endif
 
 !ifndef MSVC_VERSION
@@ -997,44 +1000,86 @@ LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\L
 
 !if $(MSVC_VERSION) == 12
 ! ifndef DEVSTUDIO
-!if $(BUILD_SYSTEM) == 64
+!  if $(BUILD_SYSTEM) == 64
 DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 12.0
-!else
+!  else
 DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 12.0
-!endif
+!  endif
 ! endif
-!if "$(DEVSTUDIO)"==""
+! if "$(DEVSTUDIO)"==""
 COMPBASE=
 SHAREDBASE=
-!else
+! else
 # There are at least 4 different values:
 # "v6.0"=Vista, "v6.0A"=Visual Studio 2008,
 # "v6.1"=Windows Server 2008, "v7.0"=Windows 7
-! ifdef MSSDK
-!  ifdef WIN64
+!  ifdef MSSDK
+!   ifdef WIN64
 RCDIR=$(MSSDK)\bin\x64
-!  else
+!   else
 RCDIR=$(MSSDK)\bin
-!  endif
-! else
-!if $(BUILD_SYSTEM) == 64
+!   endif
+!  else
+!   if $(BUILD_SYSTEM) == 64
 RCDIR=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Bin
-!else
+!   else
 RCDIR=C:\Program Files\Microsoft SDKs\Windows\v7.1A\Bin
-!endif
-! endif
+!   endif
+!  endif
 COMPBASE=$(DEVSTUDIO)\VC
 SHAREDBASE=$(DEVSTUDIO)\VC
-!ifdef WIN64
-!if $(BUILD_SYSTEM) == 64
+!  ifdef WIN64
+!   if $(BUILD_SYSTEM) == 64
 COMPDIR64=$(COMPBASE)\bin\x86_amd64
 LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64"
-!else
+!   else
 COMPDIR64=$(COMPBASE)\bin\x86_amd64
 LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\x64"
+!   endif
+!  endif
+! endif
 !endif
-!endif
-!endif
+
+!if $(MSVC_VERSION) == 14
+! ifndef DEVSTUDIO
+!  if $(BUILD_SYSTEM) == 64
+DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 14.0
+!  else
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 14.0
+!  endif
+! endif
+! if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+! else
+# There are at least 4 different values:
+# "v6.0"=Vista, "v6.0A"=Visual Studio 2008,
+# "v6.1"=Windows Server 2008, "v7.0"=Windows 7
+!  ifdef MSSDK
+!   ifdef WIN64
+RCDIR=$(MSSDK)\bin\x64
+!   else
+RCDIR=$(MSSDK)\bin
+!   endif
+!  else
+!   if $(BUILD_SYSTEM) == 64
+RCDIR=C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\Bin
+!   else
+RCDIR=C:\Program Files\Microsoft SDKs\Windows\v10.0A\Bin
+!   endif
+!  endif
+COMPBASE=$(DEVSTUDIO)\VC
+SHAREDBASE=$(DEVSTUDIO)\VC
+!  ifdef WIN64
+!   if $(BUILD_SYSTEM) == 64
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64"
+!   else
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\x64"
+!   endif
+!  endif
+! endif
 !endif
 
 !if "$(ARM)"=="1"

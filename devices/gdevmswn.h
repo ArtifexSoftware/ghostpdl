@@ -18,6 +18,7 @@
 #ifndef gdevmswn_INCLUDED
 #  define gdevmswn_INCLUDED
 
+#include "windows_.h"
 #include "string_.h"
 #include <stdlib.h>
 #include "gx.h"
@@ -25,7 +26,6 @@
 #include "gxdevice.h"
 #include "memory_.h"
 
-#include "windows_.h"
 #include <shellapi.h>
 #include "gp_mswin.h"
 

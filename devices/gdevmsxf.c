@@ -14,6 +14,7 @@
 */
 
 /* External font (xfont) implementation for Microsoft Windows. */
+#include "windows_.h"
 #include "ctype_.h"
 #include "math_.h"
 #include "memory_.h"

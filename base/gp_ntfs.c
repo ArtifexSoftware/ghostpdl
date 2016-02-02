@@ -17,6 +17,7 @@
 /* file system stuff for MS-Windows WIN32 and MS-Windows NT */
 /* hacked from gp_dosfs.c by Russell Lang */
 
+#include "windows_.h"
 #include "stdio_.h"
 #include <fcntl.h>
 #include <io.h>
@@ -29,7 +30,6 @@
 #include "gp.h"
 #include "gpmisc.h"
 #include "gsutil.h"
-#include "windows_.h"
 
 /* ------ Printer accessing ------ */
 

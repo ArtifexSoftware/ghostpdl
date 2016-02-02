@@ -16,10 +16,10 @@
 
 /* MS Windows (Win32) thread / semaphore / monitor implementation */
 /* original multi-threading code by John Desrosiers */
+#include "windows_.h"
 #include "malloc_.h"
 #include "gserrors.h"
 #include "gpsync.h"
-#include "windows_.h"
 #include <process.h>
 
 /* It seems that both Borland and Watcom *should* be able to cope with the

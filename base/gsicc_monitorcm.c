@@ -16,6 +16,8 @@
 /* gsicc handling for monitoring colors.  Used for detecting gray only pages */
 
 
+#include <stdlib.h> /* abs() */
+
 #include "std.h"
 #include "stdpre.h"
 #include "gstypes.h"
@@ -28,7 +30,6 @@
 #include "gxdevsop.h"
 #include "gdevp14.h"
 #include "string_.h"
-#include <stdlib.h> /* abs() */
 
 static int gsicc_mcm_transform_general(gx_device *dev, gsicc_link_t *icclink,
                                        void *inputcolor, void *outputcolor,

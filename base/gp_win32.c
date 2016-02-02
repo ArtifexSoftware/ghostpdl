@@ -16,6 +16,7 @@
 
 /* Common platform-specific routines for MS-Windows WIN32 */
 /* originally hacked from gp_msdos.c by Russell Lang */
+#include "windows_.h"
 #include "malloc_.h"
 #include "stdio_.h"
 #include "string_.h"		/* for strerror */
@@ -23,7 +24,6 @@
 #include "gsmemory.h"		/* for gp.h */
 #include "gserrors.h"
 #include "gp.h"
-#include "windows_.h"
 
 /* ------ Miscellaneous ------ */
 

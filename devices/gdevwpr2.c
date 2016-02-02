@@ -119,10 +119,10 @@
  * if the Windows printer supports duplex printing.
  */
 
+#include "windows_.h"
 #include "gdevprn.h"
 #include "gdevpccm.h"
 #include "string_.h"
-#include "windows_.h"
 #include <shellapi.h>
 #include "gp_mswin.h"
 

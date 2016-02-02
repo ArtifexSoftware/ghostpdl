@@ -32,6 +32,7 @@
 /* prevent gp.h from defining fopen */
 #define fopen fopen
 
+#include "windows_.h"
 #include "stdio_.h"
 #include "string_.h"
 #include "memory_.h"
@@ -53,8 +54,6 @@
 #include "gsexit.h"
 #include "scommon.h"
 
-#include "windows_.h"
-#include <stdarg.h>
 #include <shellapi.h>
 #include <winspool.h>
 #include "gp_mswin.h"

@@ -17,11 +17,11 @@
 /* The Windows implementation of the .locale_to_utf8 operator.  See
  * also zutf8.c, which is the non-Windows implementation. */
 
+#include "windows_.h"
 #include "ghost.h"
 #include "oper.h"
 #include "iutil.h"
 #include "store.h"
-#include "windows_.h"
 
 /* Convert a string from the current locale's character set to UTF-8.
  * Unfortunately, "current locale" can mean a few different things on
